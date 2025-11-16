@@ -7,6 +7,7 @@ import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
 import Markets from "./pages/Markets";
 import Portfolio from "./pages/Portfolio";
+import AureonDashboard from "./pages/AureonDashboard";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -22,6 +23,7 @@ const App = () => (
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/markets" element={<Markets />} />
           <Route path="/portfolio" element={<Portfolio />} />
+          <Route path="/aureon" element={<AureonDashboard />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
