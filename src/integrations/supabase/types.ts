@@ -14,13 +14,144 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      lighthouse_events: {
+        Row: {
+          coherence: number
+          confidence: number
+          created_at: string
+          dominant_node: string | null
+          id: string
+          is_lhe: boolean
+          lambda_value: number
+          lighthouse_signal: number
+          metric_clin: number
+          metric_cnonlin: number
+          metric_cphi: number
+          metric_geff: number
+          metric_q: number
+          prism_level: number | null
+          prism_state: string | null
+          threshold: number
+          timestamp: string
+        }
+        Insert: {
+          coherence: number
+          confidence: number
+          created_at?: string
+          dominant_node?: string | null
+          id?: string
+          is_lhe: boolean
+          lambda_value: number
+          lighthouse_signal: number
+          metric_clin: number
+          metric_cnonlin: number
+          metric_cphi: number
+          metric_geff: number
+          metric_q: number
+          prism_level?: number | null
+          prism_state?: string | null
+          threshold: number
+          timestamp?: string
+        }
+        Update: {
+          coherence?: number
+          confidence?: number
+          created_at?: string
+          dominant_node?: string | null
+          id?: string
+          is_lhe?: boolean
+          lambda_value?: number
+          lighthouse_signal?: number
+          metric_clin?: number
+          metric_cnonlin?: number
+          metric_cphi?: number
+          metric_geff?: number
+          metric_q?: number
+          prism_level?: number | null
+          prism_state?: string | null
+          threshold?: number
+          timestamp?: string
+        }
+        Relationships: []
+      }
+      trading_signals: {
+        Row: {
+          coherence: number
+          created_at: string
+          id: string
+          lighthouse_event_id: string | null
+          lighthouse_value: number
+          prism_level: number
+          reason: string
+          signal_type: string
+          strength: number
+          timestamp: string
+        }
+        Insert: {
+          coherence: number
+          created_at?: string
+          id?: string
+          lighthouse_event_id?: string | null
+          lighthouse_value: number
+          prism_level: number
+          reason: string
+          signal_type: string
+          strength: number
+          timestamp?: string
+        }
+        Update: {
+          coherence?: number
+          created_at?: string
+          id?: string
+          lighthouse_event_id?: string | null
+          lighthouse_value?: number
+          prism_level?: number
+          reason?: string
+          signal_type?: string
+          strength?: number
+          timestamp?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trading_signals_lighthouse_event_id_fkey"
+            columns: ["lighthouse_event_id"]
+            isOneToOne: false
+            referencedRelation: "lighthouse_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
-      [_ in never]: never
+      recent_optimal_signals: {
+        Row: {
+          coherence: number | null
+          id: string | null
+          is_lhe: boolean | null
+          lhe_confidence: number | null
+          lighthouse_signal: number | null
+          lighthouse_value: number | null
+          reason: string | null
+          signal_type: string | null
+          strength: number | null
+          timestamp: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
-      [_ in never]: never
+      get_signal_statistics: {
+        Args: { time_range?: unknown }
+        Returns: {
+          avg_strength: number
+          hold_signals: number
+          lhe_count: number
+          long_signals: number
+          optimal_signals: number
+          short_signals: number
+          total_signals: number
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
