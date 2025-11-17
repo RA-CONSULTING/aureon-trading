@@ -56,6 +56,23 @@ export const AureonField = ({ lambda, rainbow, prism }: AureonFieldProps) => {
           <p className="text-sm text-muted-foreground">Dominant Node</p>
           <Badge className="mt-1">{lambda.dominantNode}</Badge>
         </div>
+        
+        {lambda.stargateInfluence && (
+          <div className="mt-4 p-3 rounded-lg bg-primary/5 border border-primary/20">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <span className="text-xl">🌍</span>
+                <p className="text-sm font-semibold">Stargate Lattice Active</p>
+              </div>
+              <Badge variant="default">
+                +{(lambda.stargateInfluence.coherenceModifier * 100).toFixed(1)}% Γ
+              </Badge>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Nearest: {lambda.stargateInfluence.nearestNode} ({lambda.stargateInfluence.distance}km)
+            </p>
+          </div>
+        )}
       </Card>
 
       {/* Rainbow Bridge */}

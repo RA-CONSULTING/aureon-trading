@@ -16,6 +16,8 @@ import { CoherenceTracker } from '@/components/CoherenceTracker';
 import { CoherenceHeatmap } from '@/components/CoherenceHeatmap';
 import { CoherenceForecaster } from '@/components/CoherenceForecaster';
 import { MultiSymbolForecastComparison } from '@/components/MultiSymbolForecastComparison';
+import { StargateVisualization } from '@/components/StargateVisualization';
+import { StargateStatus } from '@/components/StargateStatus';
 import { useAutoTrading } from '@/hooks/useAutoTrading';
 import { MasterEquation, type LambdaState } from '@/core/masterEquation';
 import { RainbowBridge, type RainbowState } from '@/core/rainbowBridge';
@@ -47,6 +49,7 @@ const AureonDashboard = () => {
   const [currentSymbol, setCurrentSymbol] = useState('BTCUSDT');
   const [selectedSymbol, setSelectedSymbol] = useState('btcusdt');
   const [currentPrice, setCurrentPrice] = useState(0);
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   
   const { toast } = useToast();
   const masterEqRef = useRef(new MasterEquation());
@@ -66,6 +69,13 @@ const AureonDashboard = () => {
     currentPrice,
     currentSymbol,
   });
+  
+  // Update Master Equation with user location when available
+  useEffect(() => {
+    if (userLocation) {
+      masterEqRef.current.setUserLocation(userLocation.lat, userLocation.lng);
+    }
+  }, [userLocation]);
   
   // Function to save Lighthouse Event to database
   const saveLighthouseEvent = async (
@@ -447,8 +457,11 @@ const AureonDashboard = () => {
         )}
 
         {/* Lighthouse Metrics Visualization */}
-        <div className="mb-8">
-          <LighthouseMetricsPanel lighthouse={lighthouse} />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+          <div className="lg:col-span-2">
+            <LighthouseMetricsPanel lighthouse={lighthouse} />
+          </div>
+          <StargateStatus onLocationUpdate={setUserLocation} />
         </div>
 
         {/* FTCP Timeline Visualization */}
@@ -495,6 +508,10 @@ const AureonDashboard = () => {
 
         <div className="mb-8">
           <MultiSymbolForecastComparison />
+        </div>
+
+        <div className="mb-8">
+          <StargateVisualization />
         </div>
 
         <div className="mb-8">

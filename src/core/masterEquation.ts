@@ -5,6 +5,7 @@
 // Γ = Coherence (0-1, measures field alignment)
 
 import { AurisNodes, type MarketSnapshot } from './aurisNodes';
+import { stargateLayer, type StargateInfluence } from './stargateLattice';
 
 export type LambdaState = {
   lambda: number;
@@ -14,11 +15,17 @@ export type LambdaState = {
   echo: number;
   dominantNode: string;
   nodeResponses: Record<string, number>;
+  stargateInfluence?: StargateInfluence;
 };
 
 export class MasterEquation {
   private history: number[] = [];
   private maxHistory = 100;
+  private userLocation: { lat: number; lng: number } | null = null;
+  
+  setUserLocation(lat: number, lng: number) {
+    this.userLocation = { lat, lng };
+  }
   
   step(snapshot: MarketSnapshot): LambdaState {
     // Compute substrate S(t) from all 9 Auris nodes
@@ -60,8 +67,20 @@ export class MasterEquation {
       this.history.shift();
     }
     
-    // Compute coherence Γ
-    const coherence = this.computeCoherence(nodeResponses, substrate);
+    // Compute base coherence Γ
+    let coherence = this.computeCoherence(nodeResponses, substrate);
+    
+    // Apply Stargate Lattice influence if location available
+    let stargateInfluence: StargateInfluence | undefined;
+    if (this.userLocation) {
+      stargateInfluence = stargateLayer.getInfluence(
+        this.userLocation.lat,
+        this.userLocation.lng
+      );
+      
+      // Boost coherence based on proximity to sacred nodes
+      coherence = Math.min(1, coherence + stargateInfluence.coherenceModifier);
+    }
     
     return {
       lambda,
@@ -71,6 +90,7 @@ export class MasterEquation {
       echo,
       dominantNode,
       nodeResponses,
+      stargateInfluence,
     };
   }
   
