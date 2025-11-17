@@ -3,10 +3,12 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { TrendingUp, TrendingDown, DollarSign, Activity } from 'lucide-react';
+import { usePositionMonitor } from '@/hooks/usePositionMonitor';
 
 export const TradingDashboard = () => {
   const [executions, setExecutions] = useState<any[]>([]);
   const [positions, setPositions] = useState<any[]>([]);
+  const [isMonitoring, setIsMonitoring] = useState(false);
   const [stats, setStats] = useState({
     totalTrades: 0,
     openPositions: 0,
@@ -14,8 +16,12 @@ export const TradingDashboard = () => {
     winRate: 0,
   });
 
+  // Enable position monitoring
+  usePositionMonitor(isMonitoring);
+
   useEffect(() => {
     loadData();
+    checkMonitoringStatus();
 
     // Subscribe to realtime updates
     const channel = supabase
@@ -28,6 +34,15 @@ export const TradingDashboard = () => {
       supabase.removeChannel(channel);
     };
   }, []);
+
+  const checkMonitoringStatus = async () => {
+    const { data } = await supabase
+      .from('trading_config')
+      .select('is_enabled')
+      .single();
+    
+    setIsMonitoring(data?.is_enabled || false);
+  };
 
   const loadData = async () => {
     // Load executions
@@ -123,6 +138,18 @@ export const TradingDashboard = () => {
                   <p className="text-sm text-muted-foreground">
                     Entry: ${parseFloat(pos.entry_price).toFixed(2)} | Qty: {parseFloat(pos.quantity).toFixed(8)}
                   </p>
+                  {pos.current_price && (
+                    <p className="text-sm text-muted-foreground">
+                      Current: ${parseFloat(pos.current_price).toFixed(2)}
+                    </p>
+                  )}
+                  {(pos.stop_loss_price || pos.take_profit_price) && (
+                    <p className="text-xs text-muted-foreground">
+                      {pos.stop_loss_price && `SL: $${parseFloat(pos.stop_loss_price).toFixed(2)}`}
+                      {pos.stop_loss_price && pos.take_profit_price && ' | '}
+                      {pos.take_profit_price && `TP: $${parseFloat(pos.take_profit_price).toFixed(2)}`}
+                    </p>
+                  )}
                 </div>
                 <div className="text-right">
                   <p className={`font-bold ${parseFloat(pos.unrealized_pnl) >= 0 ? 'text-green-500' : 'text-red-500'}`}>

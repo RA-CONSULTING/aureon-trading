@@ -1,1 +1,7 @@
 project_id = "owfeyxrfyhprpcgqwxqh"
+
+[functions.execute-trade]
+verify_jwt = false
+
+[functions.monitor-positions]
+verify_jwt = false
