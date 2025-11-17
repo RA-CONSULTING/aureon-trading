@@ -143,6 +143,51 @@ export type Database = {
         }
         Relationships: []
       }
+      monte_carlo_simulations: {
+        Row: {
+          base_config: Json
+          confidence_intervals: Json
+          created_at: string
+          distribution_stats: Json
+          end_date: string
+          id: string
+          num_simulations: number
+          randomization_method: string
+          results: Json
+          start_date: string
+          status: string
+          symbol: string
+        }
+        Insert: {
+          base_config: Json
+          confidence_intervals: Json
+          created_at?: string
+          distribution_stats: Json
+          end_date: string
+          id?: string
+          num_simulations: number
+          randomization_method: string
+          results: Json
+          start_date: string
+          status?: string
+          symbol: string
+        }
+        Update: {
+          base_config?: Json
+          confidence_intervals?: Json
+          created_at?: string
+          distribution_stats?: Json
+          end_date?: string
+          id?: string
+          num_simulations?: number
+          randomization_method?: string
+          results?: Json
+          start_date?: string
+          status?: string
+          symbol?: string
+        }
+        Relationships: []
+      }
       price_alerts: {
         Row: {
           alert_type: string
