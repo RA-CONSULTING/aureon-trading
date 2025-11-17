@@ -12,6 +12,7 @@ import { FTCPTimeline } from '@/components/FTCPTimeline';
 import { ResearchValidation } from '@/components/ResearchValidation';
 import { MasterEquationField3D } from '@/components/MasterEquationField3D';
 import { HarmonicRealityFramework } from '@/components/HarmonicRealityFramework';
+import { CoherenceTracker } from '@/components/CoherenceTracker';
 import { useAutoTrading } from '@/hooks/useAutoTrading';
 import { MasterEquation, type LambdaState } from '@/core/masterEquation';
 import { RainbowBridge, type RainbowState } from '@/core/rainbowBridge';
@@ -442,6 +443,10 @@ const AureonDashboard = () => {
 
         <div className="mb-8">
           <HarmonicRealityFramework />
+        </div>
+
+        <div className="mb-8">
+          <CoherenceTracker lambda={lambda} isRunning={isRunning} />
         </div>
 
         <div className="mb-8">
