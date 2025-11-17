@@ -146,6 +146,7 @@ serve(async (req) => {
     
     let solarPower = 1.0;
     let solarPhase = 'Quiet';
+    let dominantFlareClass = '';
     let topFlare: { class: string; time: string; power: number; hoursSince: number } | null = null;
     
     recentFlares.forEach(flare => {
@@ -153,6 +154,7 @@ serve(async (req) => {
       if (info.power > solarPower) {
         solarPower = info.power;
         solarPhase = `Active: ${flare.classType} Flare`;
+        dominantFlareClass = flare.classType;
         topFlare = {
           class: flare.classType,
           time: flare.peakTime || flare.beginTime,
@@ -171,8 +173,11 @@ serve(async (req) => {
     const sacredFrequencies: number[] = [];
     if (moonInfo.name.includes('Full')) sacredFrequencies.push(528, 639, 741);
     else if (moonInfo.name.includes('New')) sacredFrequencies.push(396, 417, 528);
-    if (topFlare && topFlare.class.startsWith('X')) sacredFrequencies.push(963, 852, 741);
+    
+    // Check for X-class flares
+    if (dominantFlareClass.startsWith('X')) sacredFrequencies.push(963, 852, 741);
     else if (solarPower > 1.5) sacredFrequencies.push(852, 963);
+    
     if (seasonal.name.includes('Equinox')) sacredFrequencies.push(528);
     else if (seasonal.name.includes('Solstice')) sacredFrequencies.push(396, 963);
     if (planetary.score > 0.5) sacredFrequencies.push(741, 852);
