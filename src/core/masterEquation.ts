@@ -22,9 +22,11 @@ export class MasterEquation {
   private history: number[] = [];
   private maxHistory = 100;
   private userLocation: { lat: number; lng: number } | null = null;
+  private celestialBoost: number = 0;
   
-  setUserLocation(lat: number, lng: number) {
+  setUserLocation(lat: number, lng: number, celestialBoost: number = 0) {
     this.userLocation = { lat, lng };
+    this.celestialBoost = celestialBoost;
   }
   
   step(snapshot: MarketSnapshot): LambdaState {
@@ -75,10 +77,11 @@ export class MasterEquation {
     if (this.userLocation) {
       stargateInfluence = stargateLayer.getInfluence(
         this.userLocation.lat,
-        this.userLocation.lng
+        this.userLocation.lng,
+        this.celestialBoost
       );
       
-      // Boost coherence based on proximity to sacred nodes
+      // Boost coherence based on proximity to sacred nodes + celestial alignments
       coherence = Math.min(1, coherence + stargateInfluence.coherenceModifier);
     }
     

@@ -17,3 +17,6 @@ verify_jwt = false
 
 [functions.fetch-binance-portfolio]
 verify_jwt = false
+
+[functions.celestial-alignments]
+verify_jwt = false

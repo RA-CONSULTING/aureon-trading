@@ -8,9 +8,10 @@ import type { StargateInfluence } from '@/core/stargateLattice';
 
 type StargateStatusProps = {
   onLocationUpdate?: (location: { lat: number; lng: number } | null) => void;
+  celestialBoost?: number;
 };
 
-export const StargateStatus = ({ onLocationUpdate }: StargateStatusProps) => {
+export const StargateStatus = ({ onLocationUpdate, celestialBoost = 0 }: StargateStatusProps) => {
   const [influence, setInfluence] = useState<StargateInfluence | null>(null);
   const [gridEnergy, setGridEnergy] = useState(0);
   const [isLocating, setIsLocating] = useState(false);
@@ -29,7 +30,7 @@ export const StargateStatus = ({ onLocationUpdate }: StargateStatusProps) => {
     navigator.geolocation.getCurrentPosition(
       (position) => {
         const { latitude, longitude } = position.coords;
-        const inf = stargateLayer.getInfluence(latitude, longitude);
+        const inf = stargateLayer.getInfluence(latitude, longitude, celestialBoost);
         setInfluence(inf);
         setIsLocating(false);
         
@@ -121,6 +122,17 @@ export const StargateStatus = ({ onLocationUpdate }: StargateStatusProps) => {
                   +{(influence.coherenceModifier * 100).toFixed(1)}%
                 </Badge>
               </div>
+              
+              {influence.celestialBoost !== undefined && influence.celestialBoost > 0 && (
+                <div className="mb-3 p-2 rounded bg-purple-500/10 border border-purple-500/20">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-purple-400">✨ Celestial Amplification</span>
+                    <span className="font-mono font-bold text-purple-400">
+                      +{(influence.celestialBoost * 100).toFixed(1)}%
+                    </span>
+                  </div>
+                </div>
+              )}
               
               {influence.frequencyBoost.length > 0 && (
                 <div>

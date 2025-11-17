@@ -68,9 +68,15 @@ export const AureonField = ({ lambda, rainbow, prism }: AureonFieldProps) => {
                 +{(lambda.stargateInfluence.coherenceModifier * 100).toFixed(1)}% Γ
               </Badge>
             </div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-muted-foreground mb-1">
               Nearest: {lambda.stargateInfluence.nearestNode} ({lambda.stargateInfluence.distance}km)
             </p>
+            {lambda.stargateInfluence.celestialBoost !== undefined && lambda.stargateInfluence.celestialBoost > 0 && (
+              <div className="mt-2 flex items-center gap-2 text-xs text-purple-400">
+                <span>✨</span>
+                <span>Celestial amplification active: +{(lambda.stargateInfluence.celestialBoost * 100).toFixed(1)}%</span>
+              </div>
+            )}
           </div>
         )}
       </Card>

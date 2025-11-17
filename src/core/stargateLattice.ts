@@ -25,6 +25,7 @@ export type StargateInfluence = {
   proximityFactor: number; // 0-1 (1 = at node, 0 = far away)
   frequencyBoost: number[]; // Active frequencies from nearby nodes
   coherenceModifier: number; // -0.2 to +0.2
+  celestialBoost?: number; // Additional boost from celestial alignments
 };
 
 export class StargateLattice {
@@ -183,7 +184,7 @@ export class StargateLattice {
   }
 
   // Get influence based on user location
-  getInfluence(userLat: number, userLng: number): StargateInfluence {
+  getInfluence(userLat: number, userLng: number, celestialBoost: number = 0): StargateInfluence {
     let nearestNode = '';
     let minDistance = Infinity;
     let activeFrequencies: number[] = [];
@@ -214,14 +215,18 @@ export class StargateLattice {
 
     // Coherence modifier based on proximity
     // Nodes boost coherence when near (+0.2 max), neutral when far
-    const coherenceModifier = proximityFactor * 0.2;
+    let coherenceModifier = proximityFactor * 0.2;
+    
+    // Add celestial boost (can add up to +0.15 more)
+    coherenceModifier += celestialBoost;
 
     return {
       nearestNode,
       distance: Math.round(minDistance),
       proximityFactor: Math.min(1, proximityFactor),
       frequencyBoost: [...new Set(activeFrequencies)].sort((a, b) => a - b),
-      coherenceModifier
+      coherenceModifier,
+      celestialBoost
     };
   }
 

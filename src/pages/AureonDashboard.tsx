@@ -18,7 +18,9 @@ import { CoherenceForecaster } from '@/components/CoherenceForecaster';
 import { MultiSymbolForecastComparison } from '@/components/MultiSymbolForecastComparison';
 import { StargateVisualization } from '@/components/StargateVisualization';
 import { StargateStatus } from '@/components/StargateStatus';
+import { CelestialAlignments } from '@/components/CelestialAlignments';
 import { useAutoTrading } from '@/hooks/useAutoTrading';
+import { useCelestialData } from '@/hooks/useCelestialData';
 import { MasterEquation, type LambdaState } from '@/core/masterEquation';
 import { RainbowBridge, type RainbowState } from '@/core/rainbowBridge';
 import { Prism, type PrismOutput } from '@/core/prism';
@@ -52,6 +54,7 @@ const AureonDashboard = () => {
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   
   const { toast } = useToast();
+  const { celestialBoost } = useCelestialData();
   const masterEqRef = useRef(new MasterEquation());
   const rainbowBridgeRef = useRef(new RainbowBridge());
   const prismEngineRef = useRef(new Prism());
@@ -73,9 +76,9 @@ const AureonDashboard = () => {
   // Update Master Equation with user location when available
   useEffect(() => {
     if (userLocation) {
-      masterEqRef.current.setUserLocation(userLocation.lat, userLocation.lng);
+      masterEqRef.current.setUserLocation(userLocation.lat, userLocation.lng, celestialBoost);
     }
-  }, [userLocation]);
+  }, [userLocation, celestialBoost]);
   
   // Function to save Lighthouse Event to database
   const saveLighthouseEvent = async (
@@ -461,7 +464,7 @@ const AureonDashboard = () => {
           <div className="lg:col-span-2">
             <LighthouseMetricsPanel lighthouse={lighthouse} />
           </div>
-          <StargateStatus onLocationUpdate={setUserLocation} />
+          <StargateStatus onLocationUpdate={setUserLocation} celestialBoost={celestialBoost} />
         </div>
 
         {/* FTCP Timeline Visualization */}
@@ -512,6 +515,10 @@ const AureonDashboard = () => {
 
         <div className="mb-8">
           <StargateVisualization />
+        </div>
+
+        <div className="mb-8">
+          <CelestialAlignments />
         </div>
 
         <div className="mb-8">
