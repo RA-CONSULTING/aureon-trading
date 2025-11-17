@@ -7,6 +7,7 @@ import { TradingConfig } from '@/components/TradingConfig';
 import { TradingDashboard } from '@/components/TradingDashboard';
 import { TradingAnalytics } from '@/components/TradingAnalytics';
 import { AIAnalysisPanel } from '@/components/AIAnalysisPanel';
+import { LighthouseMetricsPanel } from '@/components/LighthouseMetricsPanel';
 import { useAutoTrading } from '@/hooks/useAutoTrading';
 import { MasterEquation, type LambdaState } from '@/core/masterEquation';
 import { RainbowBridge, type RainbowState } from '@/core/rainbowBridge';
@@ -403,6 +404,11 @@ const AureonDashboard = () => {
             </div>
           </Card>
         )}
+
+        {/* Lighthouse Metrics Visualization */}
+        <div className="mb-8">
+          <LighthouseMetricsPanel lighthouse={lighthouse} />
+        </div>
 
         {/* FTCP Detection Card */}
         {ftcpPoint && (
