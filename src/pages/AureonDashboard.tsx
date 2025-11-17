@@ -3,6 +3,9 @@ import Navbar from '@/components/Navbar';
 import { AureonField } from '@/components/AureonField';
 import { SignalHistory } from '@/components/SignalHistory';
 import { Watchlist } from '@/components/Watchlist';
+import { TradingConfig } from '@/components/TradingConfig';
+import { TradingDashboard } from '@/components/TradingDashboard';
+import { useAutoTrading } from '@/hooks/useAutoTrading';
 import { MasterEquation, type LambdaState } from '@/core/masterEquation';
 import { RainbowBridge, type RainbowState } from '@/core/rainbowBridge';
 import { Prism, type PrismOutput } from '@/core/prism';
@@ -20,6 +23,7 @@ import { useToast } from '@/hooks/use-toast';
 
 const AureonDashboard = () => {
   const [isRunning, setIsRunning] = useState(false);
+  const [autoTradingEnabled, setAutoTradingEnabled] = useState(false);
   const [lambda, setLambda] = useState<LambdaState | null>(null);
   const [rainbow, setRainbow] = useState<RainbowState | null>(null);
   const [prism, setPrism] = useState<PrismOutput | null>(null);
@@ -41,6 +45,16 @@ const AureonDashboard = () => {
   const lighthouseRef = useRef(new LighthouseConsensus());
   const signalGenRef = useRef(new TradingSignalGenerator());
   const binanceClientRef = useRef<BinanceWebSocketClient | null>(null);
+  
+  // Auto-trading hook
+  useAutoTrading({
+    isEnabled: autoTradingEnabled && isRunning,
+    signal,
+    lighthouse,
+    prism,
+    currentPrice,
+    currentSymbol,
+  });
   
   // Function to save Lighthouse Event to database
   const saveLighthouseEvent = async (
@@ -407,6 +421,14 @@ const AureonDashboard = () => {
             </div>
           </Card>
         )}
+
+        <div className="mb-8">
+          <TradingConfig />
+        </div>
+
+        <div className="mb-8">
+          <TradingDashboard />
+        </div>
 
         <div className="mb-8">
           <Watchlist />
