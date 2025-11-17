@@ -13,6 +13,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -28,6 +29,7 @@ const AureonDashboard = () => {
   const [savedSignalsCount, setSavedSignalsCount] = useState(0);
   const [isConnected, setIsConnected] = useState(false);
   const [currentSymbol, setCurrentSymbol] = useState('BTCUSDT');
+  const [selectedSymbol, setSelectedSymbol] = useState('btcusdt');
   const [currentPrice, setCurrentPrice] = useState(0);
   
   const { toast } = useToast();
@@ -117,9 +119,14 @@ const AureonDashboard = () => {
     }
   };
 
-  // Initialize Binance WebSocket on mount
+  // Initialize Binance WebSocket when symbol changes
   useEffect(() => {
-    const client = new BinanceWebSocketClient('btcusdt');
+    // Disconnect existing client if any
+    if (binanceClientRef.current) {
+      binanceClientRef.current.disconnect();
+    }
+
+    const client = new BinanceWebSocketClient(selectedSymbol);
     binanceClientRef.current = client;
 
     client.onConnect(() => {
@@ -148,7 +155,7 @@ const AureonDashboard = () => {
         binanceClientRef.current.disconnect();
       }
     };
-  }, [toast]);
+  }, [selectedSymbol, toast]);
 
   // Process real-time market data
   const processMarketData = async (marketData: MarketData) => {
@@ -236,8 +243,24 @@ const AureonDashboard = () => {
 
         <Card className="p-6 mb-8">
           <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-xl font-semibold">Field Status</h2>
+            <div className="flex-1">
+              <div className="flex items-center justify-between mb-2">
+                <h2 className="text-xl font-semibold">Field Status</h2>
+                <Select 
+                  value={selectedSymbol} 
+                  onValueChange={setSelectedSymbol}
+                  disabled={isRunning}
+                >
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="Select pair" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="btcusdt">BTC/USDT</SelectItem>
+                    <SelectItem value="ethusdt">ETH/USDT</SelectItem>
+                    <SelectItem value="bnbusdt">BNB/USDT</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
               <div className="flex items-center gap-4 mt-1">
                 <p className="text-sm text-muted-foreground">
                   {isRunning ? '🟢 Active - Live Market Data' : '⚪ Idle'}
