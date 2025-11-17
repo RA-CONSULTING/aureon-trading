@@ -5,6 +5,7 @@ import { SignalHistory } from '@/components/SignalHistory';
 import { Watchlist } from '@/components/Watchlist';
 import { TradingConfig } from '@/components/TradingConfig';
 import { TradingDashboard } from '@/components/TradingDashboard';
+import { TradingAnalytics } from '@/components/TradingAnalytics';
 import { useAutoTrading } from '@/hooks/useAutoTrading';
 import { MasterEquation, type LambdaState } from '@/core/masterEquation';
 import { RainbowBridge, type RainbowState } from '@/core/rainbowBridge';
@@ -428,6 +429,10 @@ const AureonDashboard = () => {
 
         <div className="mb-8">
           <TradingDashboard />
+        </div>
+
+        <div className="mb-8">
+          <TradingAnalytics />
         </div>
 
         <div className="mb-8">
