@@ -8,6 +8,7 @@ import { TradingDashboard } from '@/components/TradingDashboard';
 import { TradingAnalytics } from '@/components/TradingAnalytics';
 import { AIAnalysisPanel } from '@/components/AIAnalysisPanel';
 import { LighthouseMetricsPanel } from '@/components/LighthouseMetricsPanel';
+import { FTCPTimeline } from '@/components/FTCPTimeline';
 import { useAutoTrading } from '@/hooks/useAutoTrading';
 import { MasterEquation, type LambdaState } from '@/core/masterEquation';
 import { RainbowBridge, type RainbowState } from '@/core/rainbowBridge';
@@ -410,39 +411,15 @@ const AureonDashboard = () => {
           <LighthouseMetricsPanel lighthouse={lighthouse} />
         </div>
 
-        {/* FTCP Detection Card */}
-        {ftcpPoint && (
-          <Card className="p-6 mb-8">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h3 className="text-lg font-semibold">📐 FTCP Detection</h3>
-                <p className="text-sm text-muted-foreground">
-                  Fibonacci-Tightened Curvature Points
-                </p>
-              </div>
-              {ftcpPoint.isFTCP && (
-                <Badge className="text-lg px-4 py-2" style={{ backgroundColor: '#FFD700' }}>
-                  ✨ FTCP FOUND
-                </Badge>
-              )}
-            </div>
-            
-            <div className="grid grid-cols-3 gap-4">
-              <div>
-                <p className="text-sm text-muted-foreground">Curvature</p>
-                <p className="text-xl font-mono">{ftcpPoint.curvature.toFixed(3)}</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Golden Ratio Score</p>
-                <p className="text-xl font-mono">{(ftcpPoint.goldenRatioScore * 100).toFixed(0)}%</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">φ (1.618...)</p>
-                <p className="text-xl font-mono">1.618</p>
-              </div>
-            </div>
-          </Card>
-        )}
+        {/* FTCP Timeline Visualization */}
+        <div className="mb-8">
+          <FTCPTimeline 
+            ftcpPoint={ftcpPoint}
+            currentPrice={currentPrice}
+            currentSymbol={currentSymbol}
+          />
+        </div>
+
 
         <div className="mb-8">
           <TradingConfig />
