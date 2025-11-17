@@ -30,6 +30,9 @@ const Navbar = () => {
             <Link to="/aureon" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
               AUREON 🌈
             </Link>
+            <Link to="/analytics" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
+              Analytics 📊
+            </Link>
           </div>
 
           <div className="flex items-center gap-3">
