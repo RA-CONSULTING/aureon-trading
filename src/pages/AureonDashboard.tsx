@@ -8,6 +8,7 @@ import { Prism, type PrismOutput } from '@/core/prism';
 import { FTCPDetector, type CurvaturePoint } from '@/core/ftcpDetector';
 import { LighthouseConsensus, type LighthouseState } from '@/core/lighthouseConsensus';
 import { TradingSignalGenerator, type TradingSignal } from '@/core/tradingSignals';
+import { BinanceWebSocketClient, type MarketData } from '@/core/binanceWebSocket';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -25,6 +26,9 @@ const AureonDashboard = () => {
   const [signal, setSignal] = useState<TradingSignal | null>(null);
   const [savedEventsCount, setSavedEventsCount] = useState(0);
   const [savedSignalsCount, setSavedSignalsCount] = useState(0);
+  const [isConnected, setIsConnected] = useState(false);
+  const [currentSymbol, setCurrentSymbol] = useState('BTCUSDT');
+  const [currentPrice, setCurrentPrice] = useState(0);
   
   const { toast } = useToast();
   const masterEqRef = useRef(new MasterEquation());
@@ -33,6 +37,7 @@ const AureonDashboard = () => {
   const ftcpDetectorRef = useRef(new FTCPDetector());
   const lighthouseRef = useRef(new LighthouseConsensus());
   const signalGenRef = useRef(new TradingSignalGenerator());
+  const binanceClientRef = useRef<BinanceWebSocketClient | null>(null);
   
   // Function to save Lighthouse Event to database
   const saveLighthouseEvent = async (
@@ -112,74 +117,111 @@ const AureonDashboard = () => {
     }
   };
 
+  // Initialize Binance WebSocket on mount
   useEffect(() => {
-    if (!isRunning) return;
+    const client = new BinanceWebSocketClient('btcusdt');
+    binanceClientRef.current = client;
 
-    const interval = setInterval(async () => {
-      const timestamp = Date.now();
-      
-      // Simulate market snapshot (in production, this would come from WebSocket)
-      const snapshot = {
-        price: 50000 + Math.random() * 1000,
-        volume: Math.random(),
-        volatility: Math.random() * 0.5,
-        momentum: (Math.random() - 0.5) * 2,
-        spread: Math.random() * 0.1,
-        timestamp,
-      };
+    client.onConnect(() => {
+      setIsConnected(true);
+      setCurrentSymbol(client.getSymbol());
+      toast({
+        title: '🌐 Connected to Binance',
+        description: `Live ${client.getSymbol()} market data streaming`,
+        duration: 3000,
+      });
+    });
 
-      // Compute field state
-      const lambdaState = masterEqRef.current.step(snapshot);
-      const rainbowState = rainbowBridgeRef.current.map(lambdaState.lambda, lambdaState.coherence);
-      const prismOutput = prismEngineRef.current.transform(
-        lambdaState.lambda,
-        lambdaState.coherence,
-        rainbowState.frequency
-      );
+    client.onError((error) => {
+      console.error('Binance WebSocket error:', error);
+      setIsConnected(false);
+      toast({
+        title: '⚠️ Connection Error',
+        description: 'Lost connection to Binance. Retrying...',
+        variant: 'destructive',
+        duration: 3000,
+      });
+    });
 
-      // FTCP Detection
-      const ftcpResult = ftcpDetectorRef.current.addPoint(timestamp, lambdaState.lambda);
-      const Geff = ftcpDetectorRef.current.computeGeff();
-      
-      // Lighthouse Consensus
-      const lighthouseState = lighthouseRef.current.validate(
-        lambdaState.lambda,
-        lambdaState.coherence,
-        lambdaState.substrate,
-        lambdaState.observer,
-        lambdaState.echo,
-        Geff,
-        ftcpResult?.isFTCP || false
-      );
-      
-      // Trading Signal Generation
-      const tradingSignal = signalGenRef.current.generateSignal(
-        lambdaState,
-        lighthouseState,
-        prismOutput
-      );
-
-      // Save to database (only save significant events)
-      let lighthouseEventId: string | null = null;
-      
-      // Always save if it's an LHE, or periodically save all events (every 10 seconds)
-      if (lighthouseState.isLHE || timestamp % 10000 < 1000) {
-        lighthouseEventId = await saveLighthouseEvent(lambdaState, lighthouseState, prismOutput);
+    return () => {
+      if (binanceClientRef.current) {
+        binanceClientRef.current.disconnect();
       }
-      
-      // Save trading signals (all of them for analysis)
-      await saveTradingSignal(tradingSignal, lighthouseEventId);
+    };
+  }, [toast]);
 
-      setLambda(lambdaState);
-      setRainbow(rainbowState);
-      setPrism(prismOutput);
-      setFtcpPoint(ftcpResult);
-      setLighthouse(lighthouseState);
-      setSignal(tradingSignal);
-    }, 1000);
+  // Process real-time market data
+  const processMarketData = async (marketData: MarketData) => {
+    // Update current price
+    setCurrentPrice(marketData.price);
 
-    return () => clearInterval(interval);
-  }, [isRunning, toast]);
+    // Compute field state
+    const lambdaState = masterEqRef.current.step(marketData);
+    const rainbowState = rainbowBridgeRef.current.map(lambdaState.lambda, lambdaState.coherence);
+    const prismOutput = prismEngineRef.current.transform(
+      lambdaState.lambda,
+      lambdaState.coherence,
+      rainbowState.frequency
+    );
+
+    // FTCP Detection
+    const ftcpResult = ftcpDetectorRef.current.addPoint(marketData.timestamp, lambdaState.lambda);
+    const Geff = ftcpDetectorRef.current.computeGeff();
+    
+    // Lighthouse Consensus
+    const lighthouseState = lighthouseRef.current.validate(
+      lambdaState.lambda,
+      lambdaState.coherence,
+      lambdaState.substrate,
+      lambdaState.observer,
+      lambdaState.echo,
+      Geff,
+      ftcpResult?.isFTCP || false
+    );
+    
+    // Trading Signal Generation
+    const tradingSignal = signalGenRef.current.generateSignal(
+      lambdaState,
+      lighthouseState,
+      prismOutput
+    );
+
+    // Save to database
+    let lighthouseEventId: string | null = null;
+    
+    if (lighthouseState.isLHE || marketData.timestamp % 10000 < 1000) {
+      lighthouseEventId = await saveLighthouseEvent(lambdaState, lighthouseState, prismOutput);
+    }
+    
+    await saveTradingSignal(tradingSignal, lighthouseEventId);
+
+    // Update UI state
+    setLambda(lambdaState);
+    setRainbow(rainbowState);
+    setPrism(prismOutput);
+    setFtcpPoint(ftcpResult);
+    setLighthouse(lighthouseState);
+    setSignal(tradingSignal);
+  };
+
+  useEffect(() => {
+    if (!isRunning || !binanceClientRef.current) return;
+
+    // Start WebSocket connection
+    if (!binanceClientRef.current.isConnected()) {
+      binanceClientRef.current.connect();
+    }
+
+    // Set up data handler
+    binanceClientRef.current.onData(processMarketData);
+
+    return () => {
+      // Keep connection alive but stop processing
+      if (binanceClientRef.current) {
+        binanceClientRef.current.onData(() => {});
+      }
+    };
+  }, [isRunning]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -196,16 +238,29 @@ const AureonDashboard = () => {
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-xl font-semibold">Field Status</h2>
-              <p className="text-sm text-muted-foreground">
-                {isRunning ? '🟢 Active - QGITA Lighthouse + FTCP Detection' : '⚪ Idle'}
-              </p>
+              <div className="flex items-center gap-4 mt-1">
+                <p className="text-sm text-muted-foreground">
+                  {isRunning ? '🟢 Active - Live Market Data' : '⚪ Idle'}
+                </p>
+                {isConnected && (
+                  <Badge style={{ backgroundColor: '#00FF88' }}>
+                    Connected: {currentSymbol}
+                  </Badge>
+                )}
+                {!isConnected && isRunning && (
+                  <Badge variant="destructive">Connecting...</Badge>
+                )}
+              </div>
               {isRunning && (
                 <div className="mt-2 flex gap-4 text-xs">
                   <span className="text-muted-foreground">
-                    📊 LHEs Saved: <strong>{savedEventsCount}</strong>
+                    💰 Price: <strong>${currentPrice.toFixed(2)}</strong>
                   </span>
                   <span className="text-muted-foreground">
-                    📈 Signals Saved: <strong>{savedSignalsCount}</strong>
+                    📊 LHEs: <strong>{savedEventsCount}</strong>
+                  </span>
+                  <span className="text-muted-foreground">
+                    📈 Signals: <strong>{savedSignalsCount}</strong>
                   </span>
                 </div>
               )}
