@@ -20,8 +20,11 @@ import { StargateVisualization } from '@/components/StargateVisualization';
 import { StargateStatus } from '@/components/StargateStatus';
 import { CelestialAlignments } from '@/components/CelestialAlignments';
 import { SolarFlareCorrelation } from '@/components/SolarFlareCorrelation';
+import { SchumannResonanceMonitor } from '@/components/SchumannResonanceMonitor';
+import { ConsciousnessCoherenceTracker } from '@/components/ConsciousnessCoherenceTracker';
 import { useAutoTrading } from '@/hooks/useAutoTrading';
 import { useCelestialData } from '@/hooks/useCelestialData';
+import { useSchumannResonance } from '@/hooks/useSchumannResonance';
 import { MasterEquation, type LambdaState } from '@/core/masterEquation';
 import { RainbowBridge, type RainbowState } from '@/core/rainbowBridge';
 import { Prism, type PrismOutput } from '@/core/prism';
@@ -56,6 +59,7 @@ const AureonDashboard = () => {
   
   const { toast } = useToast();
   const { celestialBoost } = useCelestialData();
+  const { schumannData } = useSchumannResonance();
   const masterEqRef = useRef(new MasterEquation());
   const rainbowBridgeRef = useRef(new RainbowBridge());
   const prismEngineRef = useRef(new Prism());
@@ -74,12 +78,16 @@ const AureonDashboard = () => {
     currentSymbol,
   });
   
-  // Update Master Equation with user location when available
+  // Update Master Equation with user location and field boosts when available
   useEffect(() => {
+    const schumannBoost = schumannData?.coherenceBoost || 0;
     if (userLocation) {
-      masterEqRef.current.setUserLocation(userLocation.lat, userLocation.lng, celestialBoost);
+      masterEqRef.current.setUserLocation(userLocation.lat, userLocation.lng, celestialBoost, schumannBoost);
+    } else if (schumannBoost > 0) {
+      // Apply Schumann boost even without location (global Earth field effect)
+      masterEqRef.current.setUserLocation(0, 0, celestialBoost, schumannBoost);
     }
-  }, [userLocation, celestialBoost]);
+  }, [userLocation, celestialBoost, schumannData]);
   
   // Function to save Lighthouse Event to database
   const saveLighthouseEvent = async (
@@ -468,6 +476,13 @@ const AureonDashboard = () => {
           <StargateStatus onLocationUpdate={setUserLocation} celestialBoost={celestialBoost} />
         </div>
 
+        {/* Consciousness Coherence Tracker */}
+        {lambda && (
+          <div className="mb-8">
+            <ConsciousnessCoherenceTracker currentCoherence={lambda.coherence} />
+          </div>
+        )}
+
         {/* FTCP Timeline Visualization */}
         <div className="mb-8">
           <FTCPTimeline 
@@ -520,6 +535,10 @@ const AureonDashboard = () => {
 
         <div className="mb-8">
           <CelestialAlignments />
+        </div>
+
+        <div className="mb-8">
+          <SchumannResonanceMonitor />
         </div>
 
         <div className="mb-8">

@@ -23,10 +23,12 @@ export class MasterEquation {
   private maxHistory = 100;
   private userLocation: { lat: number; lng: number } | null = null;
   private celestialBoost: number = 0;
+  private schumannBoost: number = 0;
   
-  setUserLocation(lat: number, lng: number, celestialBoost: number = 0) {
+  setUserLocation(lat: number, lng: number, celestialBoost: number = 0, schumannBoost: number = 0) {
     this.userLocation = { lat, lng };
     this.celestialBoost = celestialBoost;
+    this.schumannBoost = schumannBoost;
   }
   
   step(snapshot: MarketSnapshot): LambdaState {
@@ -81,8 +83,15 @@ export class MasterEquation {
         this.celestialBoost
       );
       
-      // Boost coherence based on proximity to sacred nodes + celestial alignments
-      coherence = Math.min(1, coherence + stargateInfluence.coherenceModifier);
+      // Boost coherence based on:
+      // 1. Proximity to sacred Stargate nodes
+      // 2. Celestial alignments (moon, solar, planetary)
+      // 3. Schumann Resonance (Earth's electromagnetic field)
+      const totalBoost = stargateInfluence.coherenceModifier + this.schumannBoost;
+      coherence = Math.min(1, coherence + totalBoost);
+    } else if (this.schumannBoost > 0) {
+      // Apply Schumann boost even without location
+      coherence = Math.min(1, coherence + this.schumannBoost);
     }
     
     return {
