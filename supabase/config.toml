@@ -11,3 +11,6 @@ verify_jwt = false
 
 [functions.analyze-lighthouse-event]
 verify_jwt = false
+
+[functions.forecast-coherence]
+verify_jwt = false
