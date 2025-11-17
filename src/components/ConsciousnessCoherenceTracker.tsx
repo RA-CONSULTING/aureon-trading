@@ -1,9 +1,10 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Brain, Heart, Activity, Sparkles } from "lucide-react";
+import { Brain, Heart, Activity, Sparkles, Wifi, WifiOff } from "lucide-react";
 import { useSchumannResonance } from "@/hooks/useSchumannResonance";
 import { useCelestialData } from "@/hooks/useCelestialData";
+import { useBiometricSensors } from "@/hooks/useBiometricSensors";
 
 interface ConsciousnessCoherenceTrackerProps {
   currentCoherence: number;
@@ -12,16 +13,18 @@ interface ConsciousnessCoherenceTrackerProps {
 export function ConsciousnessCoherenceTracker({ currentCoherence }: ConsciousnessCoherenceTrackerProps) {
   const { schumannData } = useSchumannResonance();
   const { celestialBoost } = useCelestialData();
+  const { biometricData, isConnected: biometricConnected } = useBiometricSensors();
 
   // Calculate total consciousness field coherence
   const schumannBoost = schumannData?.coherenceBoost || 0;
   const totalBoost = celestialBoost + schumannBoost;
   const enhancedCoherence = currentCoherence * (1 + totalBoost);
 
-  // Simulate biometric data (in production, this would come from actual sensors)
-  const mockHRV = 45 + (schumannBoost * 200); // Heart Rate Variability
-  const mockAlpha = 0.4 + (celestialBoost * 2); // Alpha brain waves
-  const mockTheta = 0.3 + (schumannBoost * 1.5); // Theta brain waves
+  // Use real biometric data from sensors when available
+  const hrv = biometricData?.hrv || 45 + (schumannBoost * 200);
+  const alpha = biometricData?.alpha || 0.4 + (celestialBoost * 2);
+  const theta = biometricData?.theta || 0.3 + (schumannBoost * 1.5);
+  const heartRate = biometricData?.heartRate || 72;
 
   const getCoherenceLevel = (coherence: number) => {
     if (coherence >= 0.9) return { level: 'TRANSCENDENT', color: 'text-purple-500', bg: 'bg-purple-500/20' };
@@ -98,32 +101,49 @@ export function ConsciousnessCoherenceTracker({ currentCoherence }: Consciousnes
           </div>
         </div>
 
-        {/* Biometric Indicators (Simulated) */}
+        {/* Real Biometric Indicators */}
         <div className="p-4 bg-muted/50 rounded-lg">
           <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
             <Heart className="w-4 h-4 text-red-500" />
             Consciousness Biometrics
+            {biometricConnected ? (
+              <Wifi className="w-3 h-3 text-green-500 ml-auto" />
+            ) : (
+              <WifiOff className="w-3 h-3 text-muted-foreground ml-auto" />
+            )}
           </h4>
           
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-4 gap-3">
             <div className="text-center">
               <div className="text-xs text-muted-foreground mb-1">HRV</div>
-              <div className="text-lg font-bold">{mockHRV.toFixed(0)}</div>
-              <div className="text-xs text-green-500">Optimal</div>
+              <div className="text-lg font-bold">{hrv.toFixed(0)}</div>
+              <div className="text-xs text-green-500">ms</div>
+            </div>
+            
+            <div className="text-center">
+              <div className="text-xs text-muted-foreground mb-1">HR</div>
+              <div className="text-lg font-bold">{heartRate}</div>
+              <div className="text-xs text-red-500">BPM</div>
             </div>
             
             <div className="text-center">
               <div className="text-xs text-muted-foreground mb-1">Alpha</div>
-              <div className="text-lg font-bold">{(mockAlpha * 100).toFixed(0)}%</div>
+              <div className="text-lg font-bold">{(alpha * 100).toFixed(0)}%</div>
               <div className="text-xs text-blue-500">8-13 Hz</div>
             </div>
             
             <div className="text-center">
               <div className="text-xs text-muted-foreground mb-1">Theta</div>
-              <div className="text-lg font-bold">{(mockTheta * 100).toFixed(0)}%</div>
+              <div className="text-lg font-bold">{(theta * 100).toFixed(0)}%</div>
               <div className="text-xs text-purple-500">4-8 Hz</div>
             </div>
           </div>
+
+          {!biometricConnected && (
+            <div className="mt-3 p-2 bg-yellow-500/10 border border-yellow-500/30 rounded text-xs text-yellow-500">
+              ⚠️ Biometric sensors disconnected. Ensure HRV monitor and EEG headset are connected to Earth Live Data server (port 8787).
+            </div>
+          )}
         </div>
 
         {/* Coherence Level Descriptions */}
