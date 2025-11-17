@@ -14,6 +14,7 @@ import { MasterEquationField3D } from '@/components/MasterEquationField3D';
 import { HarmonicRealityFramework } from '@/components/HarmonicRealityFramework';
 import { CoherenceTracker } from '@/components/CoherenceTracker';
 import { CoherenceHeatmap } from '@/components/CoherenceHeatmap';
+import { CoherenceForecaster } from '@/components/CoherenceForecaster';
 import { useAutoTrading } from '@/hooks/useAutoTrading';
 import { MasterEquation, type LambdaState } from '@/core/masterEquation';
 import { RainbowBridge, type RainbowState } from '@/core/rainbowBridge';
@@ -483,6 +484,10 @@ const AureonDashboard = () => {
 
         <div className="mb-8">
           <CoherenceHeatmap />
+        </div>
+
+        <div className="mb-8">
+          <CoherenceForecaster />
         </div>
 
         <div className="mb-8">
