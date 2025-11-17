@@ -8,3 +8,6 @@ verify_jwt = false
 
 [functions.fetch-historical-data]
 verify_jwt = false
+
+[functions.analyze-lighthouse-event]
+verify_jwt = false

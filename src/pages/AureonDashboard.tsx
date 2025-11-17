@@ -6,6 +6,7 @@ import { Watchlist } from '@/components/Watchlist';
 import { TradingConfig } from '@/components/TradingConfig';
 import { TradingDashboard } from '@/components/TradingDashboard';
 import { TradingAnalytics } from '@/components/TradingAnalytics';
+import { AIAnalysisPanel } from '@/components/AIAnalysisPanel';
 import { useAutoTrading } from '@/hooks/useAutoTrading';
 import { MasterEquation, type LambdaState } from '@/core/masterEquation';
 import { RainbowBridge, type RainbowState } from '@/core/rainbowBridge';
@@ -334,6 +335,20 @@ const AureonDashboard = () => {
             </div>
             <Progress value={signal.strength * 100} className="h-3" />
           </Card>
+        )}
+
+        {/* AI Analysis Panel */}
+        {signal && lighthouse && (
+          <div className="mb-8">
+            <AIAnalysisPanel
+              lambda={lambda}
+              lighthouse={lighthouse}
+              prism={prism}
+              signal={signal}
+              currentPrice={currentPrice}
+              currentSymbol={currentSymbol}
+            />
+          </div>
         )}
 
         {/* Lighthouse Consensus Card */}
