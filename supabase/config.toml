@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.monitor-positions]
 verify_jwt = false
+
+[functions.fetch-historical-data]
+verify_jwt = false

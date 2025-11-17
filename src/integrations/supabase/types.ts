@@ -14,6 +14,75 @@ export type Database = {
   }
   public: {
     Tables: {
+      backtest_results: {
+        Row: {
+          avg_trade_duration: number | null
+          config: Json
+          created_at: string
+          end_date: string
+          equity_curve: Json
+          final_capital: number
+          id: string
+          initial_capital: number
+          losing_trades: number
+          max_drawdown: number
+          profit_factor: number
+          sharpe_ratio: number | null
+          start_date: string
+          status: string
+          symbol: string
+          total_return: number
+          total_trades: number
+          trades: Json
+          win_rate: number
+          winning_trades: number
+        }
+        Insert: {
+          avg_trade_duration?: number | null
+          config: Json
+          created_at?: string
+          end_date: string
+          equity_curve: Json
+          final_capital: number
+          id?: string
+          initial_capital: number
+          losing_trades: number
+          max_drawdown: number
+          profit_factor: number
+          sharpe_ratio?: number | null
+          start_date: string
+          status?: string
+          symbol: string
+          total_return: number
+          total_trades: number
+          trades: Json
+          win_rate: number
+          winning_trades: number
+        }
+        Update: {
+          avg_trade_duration?: number | null
+          config?: Json
+          created_at?: string
+          end_date?: string
+          equity_curve?: Json
+          final_capital?: number
+          id?: string
+          initial_capital?: number
+          losing_trades?: number
+          max_drawdown?: number
+          profit_factor?: number
+          sharpe_ratio?: number | null
+          start_date?: string
+          status?: string
+          symbol?: string
+          total_return?: number
+          total_trades?: number
+          trades?: Json
+          win_rate?: number
+          winning_trades?: number
+        }
+        Relationships: []
+      }
       lighthouse_events: {
         Row: {
           coherence: number

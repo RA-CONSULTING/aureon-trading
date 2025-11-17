@@ -9,6 +9,7 @@ import Markets from "./pages/Markets";
 import Portfolio from "./pages/Portfolio";
 import AureonDashboard from "./pages/AureonDashboard";
 import Analytics from "./pages/Analytics";
+import Backtest from "./pages/Backtest";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -26,6 +27,7 @@ const App = () => (
           <Route path="/portfolio" element={<Portfolio />} />
           <Route path="/aureon" element={<AureonDashboard />} />
           <Route path="/analytics" element={<Analytics />} />
+          <Route path="/backtest" element={<Backtest />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

@@ -33,6 +33,9 @@ const Navbar = () => {
             <Link to="/analytics" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
               Analytics 📊
             </Link>
+            <Link to="/backtest" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
+              Backtest 🔬
+            </Link>
           </div>
 
           <div className="flex items-center gap-3">
