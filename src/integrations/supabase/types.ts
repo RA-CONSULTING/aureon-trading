@@ -74,6 +74,45 @@ export type Database = {
         }
         Relationships: []
       }
+      price_alerts: {
+        Row: {
+          alert_type: string
+          created_at: string
+          current_value: number | null
+          id: string
+          is_active: boolean
+          is_triggered: boolean
+          notes: string | null
+          symbol: string
+          target_value: number
+          triggered_at: string | null
+        }
+        Insert: {
+          alert_type: string
+          created_at?: string
+          current_value?: number | null
+          id?: string
+          is_active?: boolean
+          is_triggered?: boolean
+          notes?: string | null
+          symbol: string
+          target_value: number
+          triggered_at?: string | null
+        }
+        Update: {
+          alert_type?: string
+          created_at?: string
+          current_value?: number | null
+          id?: string
+          is_active?: boolean
+          is_triggered?: boolean
+          notes?: string | null
+          symbol?: string
+          target_value?: number
+          triggered_at?: string | null
+        }
+        Relationships: []
+      }
       trading_signals: {
         Row: {
           coherence: number

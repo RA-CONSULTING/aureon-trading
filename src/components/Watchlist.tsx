@@ -1,6 +1,7 @@
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useMultiSymbolWatchlist, type WatchlistSymbol } from '@/hooks/useMultiSymbolWatchlist';
+import { PriceAlerts } from '@/components/PriceAlerts';
 import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
 
 const WATCHLIST_SYMBOLS = ['BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'SOLUSDT', 'ADAUSDT', 'DOGEUSDT'];
@@ -78,22 +79,26 @@ export const Watchlist = () => {
   };
 
   return (
-    <Card className="p-6">
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <h3 className="text-lg font-semibold">Market Watchlist</h3>
-          <p className="text-sm text-muted-foreground">Real-time monitoring across multiple pairs</p>
+    <div className="space-y-6">
+      <Card className="p-6">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h3 className="text-lg font-semibold">Market Watchlist</h3>
+            <p className="text-sm text-muted-foreground">Real-time monitoring across multiple pairs</p>
+          </div>
+          {isConnected ? (
+            <Badge style={{ backgroundColor: '#00FF88' }}>Live</Badge>
+          ) : (
+            <Badge variant="outline">Connecting...</Badge>
+          )}
         </div>
-        {isConnected ? (
-          <Badge style={{ backgroundColor: '#00FF88' }}>Live</Badge>
-        ) : (
-          <Badge variant="outline">Connecting...</Badge>
-        )}
-      </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {WATCHLIST_SYMBOLS.map(renderSymbolCard)}
-      </div>
-    </Card>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {WATCHLIST_SYMBOLS.map(renderSymbolCard)}
+        </div>
+      </Card>
+
+      <PriceAlerts symbolData={symbolData} />
+    </div>
   );
 };
