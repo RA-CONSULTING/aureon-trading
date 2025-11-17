@@ -15,6 +15,9 @@ serve(async (req) => {
   try {
     console.log('[forecast-coherence] Starting coherence forecast');
 
+    const { symbol = 'BTCUSDT' } = await req.json();
+    console.log('[forecast-coherence] Forecasting for symbol:', symbol);
+
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
@@ -34,6 +37,7 @@ serve(async (req) => {
     const { data: historyData, error: historyError } = await supabase
       .from('coherence_history')
       .select('*')
+      .eq('symbol', symbol)
       .gte('timestamp', fourteenDaysAgo.toISOString())
       .order('timestamp', { ascending: true });
 
@@ -135,17 +139,18 @@ OUTPUT FORMAT (JSON):
   "dataQuality": "excellent|good|fair|poor"
 }`;
 
-    const userPrompt = `Analyze this historical coherence data and forecast optimal trading windows for the upcoming week:
+    const userPrompt = `Analyze this historical coherence data for ${symbol} and forecast optimal trading windows for the upcoming week:
 
 HISTORICAL DATA (Last 14 days, sorted by avg coherence):
 ${JSON.stringify(dataSummary, null, 2)}
 
 STATISTICS:
+- Symbol: ${symbol}
 - Total data points: ${historyData.length}
 - Date range: ${new Date(historyData[0].timestamp).toLocaleDateString()} to ${new Date(historyData[historyData.length - 1].timestamp).toLocaleDateString()}
 - Unique time slots with data: ${Object.keys(aggregatedData).length}
 
-Provide a comprehensive forecast for the next 7 days with specific time slots that are predicted to achieve optimal coherence.`;
+Provide a comprehensive forecast for the next 7 days with specific time slots that are predicted to achieve optimal coherence for ${symbol}.`;
 
     console.log('[forecast-coherence] Calling Lovable AI for analysis');
 
@@ -187,11 +192,13 @@ Provide a comprehensive forecast for the next 7 days with specific time slots th
     // Add metadata
     const response = {
       ...forecastResult,
+      symbol,
       metadata: {
         generatedAt: new Date().toISOString(),
         historicalDataPoints: historyData.length,
         analysisWindow: '14 days',
         forecastWindow: '7 days',
+        symbol,
       },
     };
 

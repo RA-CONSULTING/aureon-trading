@@ -91,6 +91,7 @@ export type Database = {
           hour_of_day: number
           id: string
           lambda_value: number
+          symbol: string
           timestamp: string
         }
         Insert: {
@@ -100,6 +101,7 @@ export type Database = {
           hour_of_day: number
           id?: string
           lambda_value: number
+          symbol?: string
           timestamp?: string
         }
         Update: {
@@ -109,6 +111,7 @@ export type Database = {
           hour_of_day?: number
           id?: string
           lambda_value?: number
+          symbol?: string
           timestamp?: string
         }
         Relationships: []

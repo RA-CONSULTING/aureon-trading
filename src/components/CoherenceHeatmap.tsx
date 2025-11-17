@@ -22,7 +22,11 @@ interface OptimalWindow {
 const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 const DAY_ABBR = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-export const CoherenceHeatmap = () => {
+interface CoherenceHeatmapProps {
+  symbol?: string;
+}
+
+export const CoherenceHeatmap = ({ symbol = 'BTCUSDT' }: CoherenceHeatmapProps) => {
   const [heatmapData, setHeatmapData] = useState<HeatmapCell[]>([]);
   const [optimalWindows, setOptimalWindows] = useState<OptimalWindow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -40,6 +44,7 @@ export const CoherenceHeatmap = () => {
       const { data, error } = await supabase
         .from('coherence_history')
         .select('*')
+        .eq('symbol', symbol)
         .gte('timestamp', sevenDaysAgo.toISOString())
         .order('timestamp', { ascending: false });
 
@@ -142,7 +147,7 @@ export const CoherenceHeatmap = () => {
     // Refresh every 5 minutes
     const interval = setInterval(fetchCoherenceData, 5 * 60 * 1000);
     return () => clearInterval(interval);
-  }, []);
+  }, [symbol]);
 
   const getColorForCoherence = (coherence: number, count: number): string => {
     if (count === 0) return 'bg-gray-900/30';
@@ -190,6 +195,7 @@ export const CoherenceHeatmap = () => {
             <CardTitle className="text-xl font-bold flex items-center gap-2">
               <Calendar className="h-5 w-5 text-primary" />
               Coherence Temporal Heatmap
+              <Badge variant="outline">{symbol.replace('USDT', '/USDT')}</Badge>
             </CardTitle>
             <CardDescription>
               C(t) distribution across days and hours — Identify optimal trading windows

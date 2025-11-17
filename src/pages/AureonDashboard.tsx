@@ -15,6 +15,7 @@ import { HarmonicRealityFramework } from '@/components/HarmonicRealityFramework'
 import { CoherenceTracker } from '@/components/CoherenceTracker';
 import { CoherenceHeatmap } from '@/components/CoherenceHeatmap';
 import { CoherenceForecaster } from '@/components/CoherenceForecaster';
+import { MultiSymbolForecastComparison } from '@/components/MultiSymbolForecastComparison';
 import { useAutoTrading } from '@/hooks/useAutoTrading';
 import { MasterEquation, type LambdaState } from '@/core/masterEquation';
 import { RainbowBridge, type RainbowState } from '@/core/rainbowBridge';
@@ -147,7 +148,8 @@ const AureonDashboard = () => {
   // Function to save coherence history
   const saveCoherenceHistory = async (
     lambdaState: LambdaState,
-    timestamp: number
+    timestamp: number,
+    symbol: string
   ) => {
     try {
       const date = new Date(timestamp);
@@ -162,6 +164,7 @@ const AureonDashboard = () => {
           lambda_value: lambdaState.lambda,
           day_of_week: dayOfWeek,
           hour_of_day: hourOfDay,
+          symbol: symbol,
         });
 
       if (error) throw error;
@@ -255,7 +258,7 @@ const AureonDashboard = () => {
 
     // Save coherence history (every 10 data points to avoid overwhelming the database)
     if (marketData.timestamp % 10000 < 1000) {
-      await saveCoherenceHistory(lambdaState, marketData.timestamp);
+      await saveCoherenceHistory(lambdaState, marketData.timestamp, currentSymbol);
     }
 
     // Update UI state
@@ -483,11 +486,15 @@ const AureonDashboard = () => {
         </div>
 
         <div className="mb-8">
-          <CoherenceHeatmap />
+          <CoherenceHeatmap symbol={currentSymbol} />
         </div>
 
         <div className="mb-8">
           <CoherenceForecaster />
+        </div>
+
+        <div className="mb-8">
+          <MultiSymbolForecastComparison />
         </div>
 
         <div className="mb-8">
