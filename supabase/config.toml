@@ -14,3 +14,6 @@ verify_jwt = false
 
 [functions.forecast-coherence]
 verify_jwt = false
+
+[functions.fetch-binance-portfolio]
+verify_jwt = false
