@@ -19,6 +19,18 @@ type CelestialData = {
     phase: string;
     power: number;
     cycleDay: number;
+    recentFlares?: Array<{
+      class: string;
+      time: string;
+      source: string;
+      power: number;
+    }>;
+    dominantFlare?: {
+      class: string;
+      time: string;
+      power: number;
+      hoursSince: number;
+    } | null;
   };
   planetary: {
     alignmentScore: number;
@@ -184,10 +196,51 @@ export const CelestialAlignments = () => {
             </div>
             <p className="font-bold mb-1">{celestialData.solar.phase}</p>
             <Progress value={celestialData.solar.activity * 100} className="h-2 mb-2" />
-            <div className="flex items-center justify-between text-xs">
-              <span className="text-muted-foreground">Cycle Day</span>
-              <span className="font-mono">{celestialData.solar.cycleDay}/4018</span>
-            </div>
+            
+            {celestialData.solar.dominantFlare ? (
+              <div className="mt-2 p-2 rounded bg-orange-500/10 border border-orange-500/20">
+                <div className="flex items-center justify-between text-xs mb-1">
+                  <span className="font-bold text-orange-400">
+                    {celestialData.solar.dominantFlare.class} FLARE DETECTED
+                  </span>
+                  <span className="text-orange-300">
+                    {celestialData.solar.dominantFlare.power.toFixed(1)}x
+                  </span>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {celestialData.solar.dominantFlare.hoursSince}h ago • 
+                  {celestialData.solar.dominantFlare.class.startsWith('X') ? ' EXTREME EVENT' : ' Active'}
+                </p>
+              </div>
+            ) : (
+              <div className="flex items-center justify-between text-xs mt-2">
+                <span className="text-muted-foreground">Cycle Day</span>
+                <span className="font-mono">{celestialData.solar.cycleDay}/4018</span>
+              </div>
+            )}
+            
+            {celestialData.solar.recentFlares && celestialData.solar.recentFlares.length > 0 && (
+              <div className="mt-2">
+                <p className="text-xs text-muted-foreground mb-1">
+                  Recent flares (48h):
+                </p>
+                <div className="flex flex-wrap gap-1">
+                  {celestialData.solar.recentFlares.slice(0, 5).map((flare, i) => (
+                    <Badge 
+                      key={i} 
+                      variant="outline" 
+                      className={`text-xs ${
+                        flare.class.startsWith('X') ? 'border-orange-500 text-orange-500' :
+                        flare.class.startsWith('M') ? 'border-yellow-500 text-yellow-500' :
+                        'border-muted'
+                      }`}
+                    >
+                      {flare.class}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Planetary Alignment */}
@@ -242,10 +295,11 @@ export const CelestialAlignments = () => {
 
         <div className="p-3 rounded-lg bg-primary/5 border border-primary/20">
           <p className="text-xs text-muted-foreground leading-relaxed">
-            <span className="font-semibold">💫 Cosmic Integration:</span> Astronomical alignments 
-            amplify Stargate node frequencies, creating windows of enhanced coherence. Full moons, 
-            solar peaks, planetary conjunctions, and seasonal gateways (solstices/equinoxes) 
-            multiply trading signal strength during sacred alignments.
+            <span className="font-semibold">💫 Cosmic Integration:</span> Real-time NASA solar flare 
+            data combined with astronomical alignments amplify Stargate node frequencies. X-class solar 
+            flares provide extreme power multipliers (up to 5.5x for X10+ events), creating unprecedented 
+            coherence windows. Full moons, planetary conjunctions, and seasonal gateways multiply trading 
+            signal strength during sacred alignments. System updates every 10 minutes with live space weather.
           </p>
         </div>
       </CardContent>
