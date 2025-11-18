@@ -506,6 +506,54 @@ export type Database = {
         }
         Relationships: []
       }
+      stargate_network_states: {
+        Row: {
+          active_nodes: number
+          avg_coherence: number | null
+          avg_frequency: number | null
+          created_at: string
+          event_timestamp: string
+          grid_energy: number
+          id: string
+          metadata: Json | null
+          network_strength: number
+          phase_locks: number | null
+          resonance_quality: number | null
+          sentinel_name: string | null
+          temporal_id: string
+        }
+        Insert: {
+          active_nodes: number
+          avg_coherence?: number | null
+          avg_frequency?: number | null
+          created_at?: string
+          event_timestamp?: string
+          grid_energy: number
+          id?: string
+          metadata?: Json | null
+          network_strength: number
+          phase_locks?: number | null
+          resonance_quality?: number | null
+          sentinel_name?: string | null
+          temporal_id: string
+        }
+        Update: {
+          active_nodes?: number
+          avg_coherence?: number | null
+          avg_frequency?: number | null
+          created_at?: string
+          event_timestamp?: string
+          grid_energy?: number
+          id?: string
+          metadata?: Json | null
+          network_strength?: number
+          phase_locks?: number | null
+          resonance_quality?: number | null
+          sentinel_name?: string | null
+          temporal_id?: string
+        }
+        Relationships: []
+      }
       trading_config: {
         Row: {
           allowed_symbols: string[]

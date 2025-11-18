@@ -213,18 +213,45 @@ async function syncHarmonicNexus(
 ) {
   // Check if this is a stargate network ping (no harmonic state data)
   if (payload.stargateNetwork && !payload.harmonicState) {
-    // Log stargate network sync but don't insert to database
+    const networkData = payload.stargateNetwork;
+    
     console.log("🌍 Stargate Network Sync:", {
-      activeNodes: payload.stargateNetwork.metrics?.activeNodes || 0,
-      networkStrength: payload.stargateNetwork.metrics?.networkStrength || 0,
-      gridEnergy: payload.stargateNetwork.gridEnergy || 0,
+      activeNodes: networkData.metrics?.activeNodes || 0,
+      networkStrength: networkData.metrics?.networkStrength || 0,
+      gridEnergy: networkData.gridEnergy || 0,
     });
+    
+    // Store network metrics in dedicated table
+    const { data: networkState, error: networkError } = await supabase
+      .from("stargate_network_states")
+      .insert({
+        temporal_id: temporalId,
+        sentinel_name: sentinelName,
+        active_nodes: networkData.metrics?.activeNodes || 0,
+        network_strength: networkData.metrics?.networkStrength || 0,
+        grid_energy: networkData.gridEnergy || 0,
+        avg_coherence: networkData.metrics?.avgCoherence,
+        avg_frequency: networkData.metrics?.avgFrequency,
+        phase_locks: networkData.metrics?.phaseLocks,
+        resonance_quality: networkData.metrics?.resonanceQuality,
+        metadata: {
+          activations: networkData.activations,
+          raw_metrics: networkData.metrics,
+        },
+      })
+      .select()
+      .single();
+    
+    if (networkError) {
+      console.error("Failed to store network state:", networkError);
+    }
     
     return {
       success: true,
       synced: true,
       type: "stargate_network",
-      message: "Stargate network metrics received"
+      message: "Stargate network metrics received",
+      stateId: networkState?.id,
     };
   }
 
