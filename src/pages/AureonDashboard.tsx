@@ -19,6 +19,7 @@ import { HarmonicNexusPhaseField3D } from '@/components/HarmonicNexusPhaseField3
 import { IntegralAQALVisualization } from '@/components/IntegralAQALVisualization';
 import { SentinelSealSpectrogram } from '@/components/SentinelSealSpectrogram';
 import { DimensionalDialler } from '@/components/DimensionalDialler';
+import { PrimelinesIdentityCard } from '@/components/PrimelinesIdentityCard';
 import { CoherenceTracker } from '@/components/CoherenceTracker';
 import { CoherenceHeatmap } from '@/components/CoherenceHeatmap';
 import { CoherenceForecaster } from '@/components/CoherenceForecaster';
@@ -599,6 +600,11 @@ const AureonDashboard = () => {
         {/* Harmonic Nexus Core Monitor */}
         <div className="mb-8">
           <HarmonicNexusMonitor nexusState={harmonicNexusState} />
+        </div>
+
+        {/* Primelines Multiversal Temporal Identity */}
+        <div className="mb-8">
+          <PrimelinesIdentityCard />
         </div>
 
         {/* Sentinel Seal Resonance Spectrogram */}

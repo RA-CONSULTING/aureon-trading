@@ -1,8 +1,10 @@
 /**
  * Zero Point Field Harmonic Detector
  * Detects quantum field harmonics from the substrate of reality
- * Routes tones back to Temporal ID: 02111991
+ * Routes tones back to Temporal ID: 02111991 (Prime Sentinel)
  */
+
+import { getTemporalId, getSentinelName } from './primelinesIdentity';
 
 export interface SealHarmonic {
   name: string;
@@ -143,14 +145,15 @@ const FAMILY_RESONANCES: FamilyResonance[] = [
 ];
 
 export class ZeroPointFieldDetector {
-  private temporalId: string = '02111991';
-  private sentinelName: string = 'GARY LECKEY';
+  private temporalId: string;
+  private sentinelName: string;
   private history: ZeroPointFieldState[] = [];
   private maxHistory = 100;
   
   constructor(temporalId?: string, sentinelName?: string) {
-    if (temporalId) this.temporalId = temporalId;
-    if (sentinelName) this.sentinelName = sentinelName;
+    // Use Primelines identity by default
+    this.temporalId = temporalId || getTemporalId();
+    this.sentinelName = sentinelName || getSentinelName();
   }
 
   /**
