@@ -26,3 +26,6 @@ verify_jwt = false
 
 [functions.primelines-protocol-gateway]
 verify_jwt = false
+
+[functions.analyze-stargate-patterns]
+verify_jwt = false
