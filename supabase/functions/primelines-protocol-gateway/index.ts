@@ -209,7 +209,29 @@ async function syncHarmonicNexus(
   temporalId: string, 
   sentinelName: string
 ) {
+  // Check if this is a stargate network ping (no harmonic state data)
+  if (payload.stargateNetwork && !payload.harmonicState) {
+    // Log stargate network sync but don't insert to database
+    console.log("🌍 Stargate Network Sync:", {
+      activeNodes: payload.stargateNetwork.metrics?.activeNodes || 0,
+      networkStrength: payload.stargateNetwork.metrics?.networkStrength || 0,
+      gridEnergy: payload.stargateNetwork.gridEnergy || 0,
+    });
+    
+    return {
+      success: true,
+      synced: true,
+      type: "stargate_network",
+      message: "Stargate network metrics received"
+    };
+  }
+
+  // Full harmonic state sync
   const { harmonicState } = payload;
+  
+  if (!harmonicState) {
+    throw new Error("No harmonic state or stargate network data provided");
+  }
   
   const { data, error } = await supabase
     .from("harmonic_nexus_states")
@@ -226,6 +248,7 @@ async function syncHarmonicNexus(
   return {
     success: true,
     synced: true,
+    type: "harmonic_state",
     stateId: data.id,
   };
 }
