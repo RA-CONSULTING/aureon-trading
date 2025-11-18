@@ -12,6 +12,7 @@ import { FTCPTimeline } from '@/components/FTCPTimeline';
 import { ResearchValidation } from '@/components/ResearchValidation';
 import { MasterEquationField3D } from '@/components/MasterEquationField3D';
 import { HarmonicRealityFramework } from '@/components/HarmonicRealityFramework';
+import { HarmonicNexusMonitor } from '@/components/HarmonicNexusMonitor';
 import { CoherenceTracker } from '@/components/CoherenceTracker';
 import { CoherenceHeatmap } from '@/components/CoherenceHeatmap';
 import { CoherenceForecaster } from '@/components/CoherenceForecaster';
@@ -33,6 +34,7 @@ import { useSchumannResonance } from '@/hooks/useSchumannResonance';
 import { OmegaEquation, type OmegaState } from '@/core/omegaEquation';
 import { UnityDetector, type UnityEvent } from '@/core/unityDetector';
 import { attuneToAkashicFrequency, calculateAkashicBoost, type AkashicAttunement } from '@/core/akashicFrequencyMapper';
+import { HarmonicNexusCore, type HarmonicNexusState } from '@/core/harmonicNexusCore';
 import { RainbowBridge, type RainbowState } from '@/core/rainbowBridge';
 import { Prism, type PrismOutput } from '@/core/prism';
 import { FTCPDetector, type CurvaturePoint } from '@/core/ftcpDetector';
@@ -55,6 +57,7 @@ const AureonDashboard = () => {
   const [unityEvent, setUnityEvent] = useState<UnityEvent | null>(null);
   const [akashicAttunement, setAkashicAttunement] = useState<AkashicAttunement | null>(null);
   const [akashicBoost, setAkashicBoost] = useState(0);
+  const [harmonicNexusState, setHarmonicNexusState] = useState<HarmonicNexusState | null>(null);
   const [rainbow, setRainbow] = useState<RainbowState | null>(null);
   const [prism, setPrism] = useState<PrismOutput | null>(null);
   const [ftcpPoint, setFtcpPoint] = useState<CurvaturePoint | null>(null);
@@ -83,6 +86,7 @@ const AureonDashboard = () => {
   
   const omegaEqRef = useRef(new OmegaEquation());
   const unityDetectorRef = useRef(new UnityDetector());
+  const harmonicNexusRef = useRef(new HarmonicNexusCore('02111991', 'GARY LECKEY'));
   const rainbowBridgeRef = useRef(new RainbowBridge());
   const prismEngineRef = useRef(new Prism());
   const ftcpDetectorRef = useRef(new FTCPDetector());
@@ -309,6 +313,44 @@ const AureonDashboard = () => {
         await saveCoherenceHistory(omegaState, marketSnapshot.timestamp, binanceData.symbol);
       }
 
+      // Compute Harmonic Nexus State
+      const nexusState = harmonicNexusRef.current.computeNexusState(
+        omegaState,
+        akashicAttunement,
+        akashicBoost,
+        lighthouseState,
+        prismOutput
+      );
+      
+      // Sync to prime timeline every 10 seconds
+      if (marketSnapshot.timestamp % 10000 < 1000) {
+        await supabase.functions.invoke('sync-harmonic-nexus', {
+          body: {
+            temporal_id: nexusState.temporalId,
+            sentinel_name: nexusState.sentinelName,
+            omega_value: nexusState.omega,
+            psi_potential: nexusState.psi,
+            love_coherence: nexusState.love,
+            observer_consciousness: nexusState.observer,
+            theta_alignment: nexusState.theta,
+            unity_probability: nexusState.unityProbability,
+            akashic_frequency: nexusState.akashicFrequency,
+            akashic_convergence: nexusState.akashicConvergence,
+            akashic_stability: nexusState.akashicStability,
+            akashic_boost: nexusState.akashicBoost,
+            substrate_coherence: nexusState.substrateCoherence,
+            field_integrity: nexusState.fieldIntegrity,
+            harmonic_resonance: nexusState.harmonicResonance,
+            dimensional_alignment: nexusState.dimensionalAlignment,
+            sync_status: nexusState.syncStatus,
+            sync_quality: nexusState.syncQuality,
+            timeline_divergence: nexusState.timelineDivergence,
+            lighthouse_signal: nexusState.lighthouseSignal,
+            prism_level: nexusState.prismLevel
+          }
+        });
+      }
+
       // Update UI state
       setOmega(omegaState);
       setRainbow(rainbowState);
@@ -316,6 +358,7 @@ const AureonDashboard = () => {
       setFtcpPoint(ftcpResult);
       setLighthouse(lighthouseState);
       setSignal(tradingSignal);
+      setHarmonicNexusState(nexusState);
     };
 
     processData();
@@ -533,6 +576,11 @@ const AureonDashboard = () => {
               console.log("🔄 Akashic Frequency re-attuned:", newAttunement.finalFrequency.toFixed(4), "Hz");
             }}
           />
+        </div>
+
+        {/* Harmonic Nexus Core Monitor */}
+        <div className="mb-8">
+          <HarmonicNexusMonitor nexusState={harmonicNexusState} />
         </div>
 
         {/* Consciousness Coherence Tracker */}
