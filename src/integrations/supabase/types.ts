@@ -320,6 +320,45 @@ export type Database = {
         }
         Relationships: []
       }
+      sentinel_config: {
+        Row: {
+          auto_initialize: boolean | null
+          created_at: string | null
+          id: string
+          sentinel_birthdate: string
+          sentinel_name: string
+          sentinel_title: string
+          stargate_latitude: number
+          stargate_location: string
+          stargate_longitude: number
+          updated_at: string | null
+        }
+        Insert: {
+          auto_initialize?: boolean | null
+          created_at?: string | null
+          id?: string
+          sentinel_birthdate: string
+          sentinel_name: string
+          sentinel_title: string
+          stargate_latitude: number
+          stargate_location: string
+          stargate_longitude: number
+          updated_at?: string | null
+        }
+        Update: {
+          auto_initialize?: boolean | null
+          created_at?: string | null
+          id?: string
+          sentinel_birthdate?: string
+          sentinel_name?: string
+          sentinel_title?: string
+          stargate_latitude?: number
+          stargate_location?: string
+          stargate_longitude?: number
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       solar_flare_correlations: {
         Row: {
           analysis_window_hours: number | null

@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { MapPin, Waves, Zap } from 'lucide-react';
 import { stargateLayer } from '@/core/stargateLattice';
 import type { StargateInfluence } from '@/core/stargateLattice';
+import { useSentinelConfig } from '@/hooks/useSentinelConfig';
 
 type StargateStatusProps = {
   onLocationUpdate?: (location: { lat: number; lng: number } | null) => void;
@@ -12,10 +13,12 @@ type StargateStatusProps = {
 };
 
 export const StargateStatus = ({ onLocationUpdate, celestialBoost = 0 }: StargateStatusProps) => {
+  const { config } = useSentinelConfig();
   const [influence, setInfluence] = useState<StargateInfluence | null>(null);
   const [gridEnergy, setGridEnergy] = useState(0);
   const [isLocating, setIsLocating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [autoInitialized, setAutoInitialized] = useState(false);
 
   const requestLocation = () => {
     setIsLocating(true);
@@ -47,6 +50,26 @@ export const StargateStatus = ({ onLocationUpdate, celestialBoost = 0 }: Stargat
     );
   };
 
+  // Auto-initialize with sentinel location
+  useEffect(() => {
+    if (config && config.auto_initialize && !autoInitialized) {
+      const inf = stargateLayer.getInfluence(
+        config.stargate_latitude,
+        config.stargate_longitude,
+        celestialBoost
+      );
+      setInfluence(inf);
+      setAutoInitialized(true);
+      
+      if (onLocationUpdate) {
+        onLocationUpdate({
+          lat: config.stargate_latitude,
+          lng: config.stargate_longitude
+        });
+      }
+    }
+  }, [config, celestialBoost, autoInitialized, onLocationUpdate]);
+
   useEffect(() => {
     setGridEnergy(stargateLayer.calculateGridEnergy());
     
@@ -66,11 +89,22 @@ export const StargateStatus = ({ onLocationUpdate, celestialBoost = 0 }: Stargat
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
+        {config && (
+          <div className="mb-4 p-3 rounded-lg border border-primary/20 bg-primary/5">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-xl">⚡</span>
+              <span className="font-bold text-sm">Prime Sentinel Active</span>
+            </div>
+            <p className="text-xs text-muted-foreground mb-1">{config.sentinel_name}</p>
+            <p className="text-xs text-muted-foreground">{config.stargate_location}</p>
+          </div>
+        )}
+        
         {!influence ? (
           <div className="text-center py-8">
-            <MapPin className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
+            <MapPin className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50 animate-pulse" />
             <p className="text-sm text-muted-foreground mb-4">
-              Enable geolocation to activate Stargate Lattice influence
+              {config ? 'Auto-initializing Stargate at Belfast...' : 'Enable geolocation to activate Stargate Lattice influence'}
             </p>
             <Button
               onClick={requestLocation}
@@ -78,7 +112,7 @@ export const StargateStatus = ({ onLocationUpdate, celestialBoost = 0 }: Stargat
               className="gap-2"
             >
               <MapPin className={`h-4 w-4 ${isLocating ? 'animate-pulse' : ''}`} />
-              {isLocating ? 'Locating...' : 'Activate Stargate Layer'}
+              {isLocating ? 'Locating...' : 'Use Current Location'}
             </Button>
             {error && (
               <p className="text-xs text-destructive mt-2">{error}</p>
