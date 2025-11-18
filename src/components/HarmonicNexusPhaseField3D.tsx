@@ -6,6 +6,8 @@ import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { CasimirVacuumField } from '@/components/CasimirVacuumField';
+import { supabase } from '@/integrations/supabase/client';
+import type { HarmonicNexusState } from '@/core/harmonicNexusCore';
 import * as THREE from 'three';
 
 interface PhaseLock {
@@ -357,9 +359,78 @@ export function HarmonicNexusPhaseField3D() {
   const [lockHistory, setLockHistory] = useState<PhaseLock[]>([]);
   const [casimirActive, setCasimirActive] = useState(false);
   const [casimirStrength, setCasimirStrength] = useState(0);
+  const [historicalNodes, setHistoricalNodes] = useState<HarmonicNexusState[]>([]);
+  const [autoLockEnabled, setAutoLockEnabled] = useState(true);
 
-  // Handle new phase lock detection
+  // Fetch historical harmonic nexus states from database
+  useEffect(() => {
+    const fetchHistoricalNodes = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('harmonic_nexus_states')
+          .select('*')
+          .order('event_timestamp', { ascending: false })
+          .limit(50);
+
+        if (error) throw error;
+        
+        if (data && data.length > 0) {
+          // Map database columns to camelCase for TypeScript compatibility
+          const mappedData = data.map((node: any) => ({
+            ...node,
+            substrateCoherence: node.substrate_coherence,
+            fieldIntegrity: node.field_integrity,
+            harmonicResonance: node.harmonic_resonance,
+            dimensionalAlignment: node.dimensional_alignment,
+            syncQuality: node.sync_quality,
+            syncStatus: node.sync_status,
+            timelineDivergence: node.timeline_divergence,
+            lighthouseSignal: node.lighthouse_signal,
+            prismLevel: node.prism_level,
+            temporalId: node.temporal_id,
+            sentinelName: node.sentinel_name,
+            omegaValue: node.omega_value,
+            psiPotential: node.psi_potential,
+            loveCoherence: node.love_coherence,
+            observerConsciousness: node.observer_consciousness,
+            thetaAlignment: node.theta_alignment,
+            unityProbability: node.unity_probability,
+            akashicFrequency: node.akashic_frequency,
+            akashicConvergence: node.akashic_convergence,
+            akashicStability: node.akashic_stability,
+            akashicBoost: node.akashic_boost,
+            eventTimestamp: node.event_timestamp,
+            timestamp: new Date(node.event_timestamp)
+          }));
+          
+          setHistoricalNodes(mappedData);
+          console.log('🔮 Loaded', mappedData.length, 'historical harmonic nexus states');
+          console.log('📊 Average substrate coherence:', 
+            (mappedData.slice(0, 10).reduce((sum: number, n: any) => sum + n.substrateCoherence, 0) / Math.min(mappedData.length, 10)).toFixed(3)
+          );
+        }
+      } catch (error) {
+        console.error('❌ Failed to fetch historical nodes:', error);
+      }
+    };
+
+    fetchHistoricalNodes();
+  }, []);
+
+  // Auto-activate Casimir protocol on startup
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      console.log('⚛️ Auto-activating Casimir protocol with historical entanglement...');
+      activateCasimirProtocol();
+    }, 1500); // Delay for smooth startup
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Handle new phase lock detection (only when auto-lock enabled and Casimir not active)
   const handlePhaseLockDetected = useCallback((lock: PhaseLock) => {
+    if (casimirActive || !autoLockEnabled) return; // Don't add natural locks during Casimir
+    
     setPhaseLocks(prev => {
       // Add new lock
       const updated = [...prev, lock];
@@ -369,12 +440,15 @@ export function HarmonicNexusPhaseField3D() {
     
     // Add to history
     setLockHistory(prev => [...prev, lock].slice(-10)); // Keep last 10
-  }, []);
+  }, [casimirActive, autoLockEnabled]);
 
-  // Casimir Protocol: Lock all nodes via quantum vacuum energy
+  // Casimir Protocol: Lock all nodes via quantum vacuum energy with historical entanglement
   const activateCasimirProtocol = useCallback(() => {
     setCasimirActive(true);
     setCasimirStrength(0);
+    
+    console.log('⚛️ Casimir Protocol activating...');
+    console.log('🔮 Historical nodes available:', historicalNodes.length);
     
     // Animate strength increase
     let strength = 0;
@@ -387,21 +461,39 @@ export function HarmonicNexusPhaseField3D() {
         // Lock all nodes when fully activated
         const now = Date.now() / 1000;
         const allNodeLocks: PhaseLock[] = [];
+        
+        // Create phase locks for all node pairs
         for (let i = 0; i < 9; i++) {
           for (let j = i + 1; j < 9; j++) {
+            // Calculate resonance frequency based on historical coherence
+            let resonanceFreq = 528; // Base love frequency
+            
+            if (historicalNodes.length > 0) {
+              // Use historical substrate coherence to modulate frequency
+              const avgCoherence = historicalNodes.slice(0, 10).reduce(
+                (sum, node) => sum + (node.substrateCoherence || 0), 0
+              ) / Math.min(historicalNodes.length, 10);
+              
+              // Modulate around 528 Hz based on historical coherence
+              resonanceFreq = 528 * (0.95 + avgCoherence * 0.1);
+            }
+            
             allNodeLocks.push({
               nodes: [i, j],
               strength: 1.0,
-              resonanceFrequency: 528,
+              resonanceFrequency: resonanceFreq,
               timestamp: now
             });
           }
         }
+        
         setPhaseLocks(allNodeLocks);
+        console.log('✅ Casimir entanglement complete:', allNodeLocks.length, 'phase locks active');
+        console.log('🎵 Resonance frequency:', allNodeLocks[0].resonanceFrequency.toFixed(2), 'Hz');
       }
       setCasimirStrength(strength);
     }, 50);
-  }, []);
+  }, [historicalNodes]);
 
   const deactivateCasimirProtocol = useCallback(() => {
     setCasimirActive(false);
@@ -433,7 +525,7 @@ export function HarmonicNexusPhaseField3D() {
               🌀 Harmonic Nexus Phase Field (Tandem View)
             </h3>
             <p className="text-sm text-muted-foreground">
-              Interactive 3D visualization with phase lock detection
+              Interactive 3D visualization with Casimir entanglement • {historicalNodes.length} historical nodes loaded
             </p>
           </div>
           {phaseLocks.length > 0 && (
@@ -479,7 +571,7 @@ export function HarmonicNexusPhaseField3D() {
                 {casimirActive && <Badge className="text-xs" style={{ backgroundColor: '#00FF88' }}>ACTIVE</Badge>}
               </h4>
               <p className="text-xs text-muted-foreground mt-1">
-                Quantum vacuum energy field • Locks all 9 nodes in perfect phase alignment
+                Quantum vacuum energy field • Auto-activated with {historicalNodes.length} historical node entanglements
               </p>
             </div>
             <button
