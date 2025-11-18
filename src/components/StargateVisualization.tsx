@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { stargateLayer } from '@/core/stargateLattice';
 import type { StargateNode } from '@/core/stargateLattice';
+import { useSentinelConfig } from '@/hooks/useSentinelConfig';
 
 // Convert lat/lng to 3D sphere coordinates
 const latLngToVector3 = (lat: number, lng: number, radius: number = 2) => {
@@ -201,6 +202,7 @@ const Scene = ({ nodes }: { nodes: StargateNode[] }) => {
 };
 
 export const StargateVisualization = () => {
+  const { config } = useSentinelConfig();
   const [nodes, setNodes] = useState<StargateNode[]>([]);
   const [gridEnergy, setGridEnergy] = useState(0);
   
@@ -228,6 +230,17 @@ export const StargateVisualization = () => {
             <p className="text-sm text-muted-foreground mt-1">
               12-node planetary sacred geometry grid
             </p>
+            {config && (
+              <div className="mt-2 px-3 py-2 rounded-lg bg-primary/10 border border-primary/30">
+                <p className="text-xs font-semibold text-primary flex items-center gap-2">
+                  <span>⚡</span>
+                  {config.sentinel_title}
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Stargate Locked: {config.stargate_location}
+                </p>
+              </div>
+            )}
           </div>
           <div className="text-right">
             <div className="text-xs text-muted-foreground mb-1">Grid Energy</div>

@@ -6,6 +6,7 @@ import { useSchumannResonance } from "@/hooks/useSchumannResonance";
 import { useCelestialData } from "@/hooks/useCelestialData";
 import { useBiometricSensors } from "@/hooks/useBiometricSensors";
 import { useConsciousnessHistory } from "@/hooks/useConsciousnessHistory";
+import { useSentinelConfig } from "@/hooks/useSentinelConfig";
 import { useEffect, useRef } from "react";
 
 interface ConsciousnessCoherenceTrackerProps {
@@ -13,6 +14,7 @@ interface ConsciousnessCoherenceTrackerProps {
 }
 
 export function ConsciousnessCoherenceTracker({ currentCoherence }: ConsciousnessCoherenceTrackerProps) {
+  const { config } = useSentinelConfig();
   const { schumannData, isConnected: schumannConnected } = useSchumannResonance();
   const { celestialBoost } = useCelestialData();
   const { biometricData, isConnected: biometricConnected } = useBiometricSensors();
@@ -63,7 +65,7 @@ export function ConsciousnessCoherenceTracker({ currentCoherence }: Consciousnes
               Consciousness Field Coherence
             </CardTitle>
             <CardDescription>
-              Multi-dimensional consciousness alignment tracking
+              {config ? `Prime Sentinel: ${config.sentinel_name}` : 'Multi-dimensional consciousness alignment tracking'}
             </CardDescription>
           </div>
           <Badge className={`${coherenceStatus.color} ${coherenceStatus.bg} border-0 text-lg px-4 py-2`}>
