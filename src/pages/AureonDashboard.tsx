@@ -33,7 +33,7 @@ import { Prism, type PrismOutput } from '@/core/prism';
 import { FTCPDetector, type CurvaturePoint } from '@/core/ftcpDetector';
 import { LighthouseConsensus, type LighthouseState } from '@/core/lighthouseConsensus';
 import { TradingSignalGenerator, type TradingSignal } from '@/core/tradingSignals';
-import { BinanceWebSocketClient, type MarketData } from '@/core/binanceWebSocket';
+import { type MarketData } from '@/core/binanceWebSocket';
 import { useBinanceMarketData } from '@/hooks/useBinanceMarketData';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -79,7 +79,6 @@ const AureonDashboard = () => {
   const ftcpDetectorRef = useRef(new FTCPDetector());
   const lighthouseRef = useRef(new LighthouseConsensus());
   const signalGenRef = useRef(new TradingSignalGenerator());
-  const binanceClientRef = useRef<BinanceWebSocketClient | null>(null);
   
   // Auto-trading hook
   useAutoTrading({
@@ -212,152 +211,93 @@ const AureonDashboard = () => {
   useEffect(() => {
     if (!isRunning || !binanceData) return;
 
-    const marketSnapshot: MarketData = {
-      price: binanceData.price,
-      volume: binanceData.volumeNormalized,
-      volatility: binanceData.volatility,
-      momentum: binanceData.momentum,
-      spread: binanceData.spreadPercent,
-      timestamp: binanceData.timestamp,
+    const processData = async () => {
+      const marketSnapshot: MarketData = {
+        price: binanceData.price,
+        volume: binanceData.volumeNormalized,
+        volatility: binanceData.volatility,
+        momentum: binanceData.momentum,
+        spread: binanceData.spreadPercent,
+        timestamp: binanceData.timestamp,
+      };
+
+      setCurrentPrice(binanceData.price);
+      setIsConnected(binanceConnected);
+      setConnectionHealthy(binanceConnected);
+      setReconnectAttempts(0);
+      setCurrentSymbol(binanceData.symbol);
+
+      // Process with AUREON field
+      const lambdaState = masterEqRef.current.step(marketSnapshot);
+      const rainbowState = rainbowBridgeRef.current.map(lambdaState.lambda, lambdaState.coherence);
+      const prismOutput = prismEngineRef.current.transform(
+        lambdaState.lambda,
+        lambdaState.coherence,
+        rainbowState.frequency
+      );
+
+      // FTCP Detection
+      const ftcpResult = ftcpDetectorRef.current.addPoint(marketSnapshot.timestamp, lambdaState.lambda);
+      const Geff = ftcpDetectorRef.current.computeGeff();
+      
+      // Lighthouse Consensus
+      const lighthouseState = lighthouseRef.current.validate(
+        lambdaState.lambda,
+        lambdaState.coherence,
+        lambdaState.substrate,
+        lambdaState.observer,
+        lambdaState.echo,
+        Geff,
+        ftcpResult?.isFTCP || false
+      );
+      
+      // Trading Signal Generation
+      const tradingSignal = signalGenRef.current.generateSignal(
+        lambdaState,
+        lighthouseState,
+        prismOutput
+      );
+
+      // Save to database
+      let lighthouseEventId: string | null = null;
+      
+      if (lighthouseState.isLHE || marketSnapshot.timestamp % 10000 < 1000) {
+        lighthouseEventId = await saveLighthouseEvent(lambdaState, lighthouseState, prismOutput);
+      }
+      
+      await saveTradingSignal(tradingSignal, lighthouseEventId);
+
+      // Save coherence history periodically
+      if (marketSnapshot.timestamp % 10000 < 1000) {
+        await saveCoherenceHistory(lambdaState, marketSnapshot.timestamp, binanceData.symbol);
+      }
+
+      // Update UI state
+      setLambda(lambdaState);
+      setRainbow(rainbowState);
+      setPrism(prismOutput);
+      setFtcpPoint(ftcpResult);
+      setLighthouse(lighthouseState);
+      setSignal(tradingSignal);
     };
 
-    setCurrentPrice(binanceData.price);
-    setIsConnected(binanceConnected);
-    setCurrentSymbol(binanceData.symbol);
-
-    // Process with AUREON field
-    const lambdaState = masterEqRef.current.step(marketSnapshot);
-    setLambda(lambdaState);
-    // ... rest of processing logic remains the same
+    processData();
   }, [binanceData, isRunning, binanceConnected]);
-    // Disconnect existing client if any
-    if (binanceClientRef.current) {
-      binanceClientRef.current.disconnect();
-    }
-
-    const client = new BinanceWebSocketClient(selectedSymbol);
-    binanceClientRef.current = client;
-
-    client.onConnect(() => {
-      const health = client.getConnectionHealth();
-      setIsConnected(health.connected);
-      setConnectionHealthy(health.healthy);
-      setReconnectAttempts(health.attempts);
-      setLastConnectionError(null);
-      setCurrentSymbol(client.getSymbol());
-      toast({
-        title: '✅ Binance Connected',
-        description: `Live ${client.getSymbol().toUpperCase()} market data streaming`,
-        duration: 3000,
-      });
-    });
-
-    client.onDisconnect(() => {
-      const health = client.getConnectionHealth();
-      setIsConnected(health.connected);
-      setConnectionHealthy(health.healthy);
-      setReconnectAttempts(health.attempts);
-    });
-
-    client.onError((error) => {
-      console.error('Binance WebSocket error:', error);
-      const health = client.getConnectionHealth();
-      setIsConnected(health.connected);
-      setConnectionHealthy(health.healthy);
-      setReconnectAttempts(health.attempts);
-      setLastConnectionError(error.message);
+  // Handle connection errors
+  useEffect(() => {
+    if (binanceError) {
+      setLastConnectionError(binanceError);
       toast({
         title: '⚠️ Connection Error',
-        description: error.message,
+        description: binanceError,
         variant: 'destructive',
         duration: 5000,
       });
-    });
-
-    return () => {
-      if (binanceClientRef.current) {
-        binanceClientRef.current.disconnect();
-      }
-    };
-  }, [selectedSymbol, toast]);
-
-  // Process real-time market data
-  const processMarketData = async (marketData: MarketData) => {
-    // Update current price
-    setCurrentPrice(marketData.price);
-
-    // Compute field state
-    const lambdaState = masterEqRef.current.step(marketData);
-    const rainbowState = rainbowBridgeRef.current.map(lambdaState.lambda, lambdaState.coherence);
-    const prismOutput = prismEngineRef.current.transform(
-      lambdaState.lambda,
-      lambdaState.coherence,
-      rainbowState.frequency
-    );
-
-    // FTCP Detection
-    const ftcpResult = ftcpDetectorRef.current.addPoint(marketData.timestamp, lambdaState.lambda);
-    const Geff = ftcpDetectorRef.current.computeGeff();
-    
-    // Lighthouse Consensus
-    const lighthouseState = lighthouseRef.current.validate(
-      lambdaState.lambda,
-      lambdaState.coherence,
-      lambdaState.substrate,
-      lambdaState.observer,
-      lambdaState.echo,
-      Geff,
-      ftcpResult?.isFTCP || false
-    );
-    
-    // Trading Signal Generation
-    const tradingSignal = signalGenRef.current.generateSignal(
-      lambdaState,
-      lighthouseState,
-      prismOutput
-    );
-
-    // Save to database
-    let lighthouseEventId: string | null = null;
-    
-    if (lighthouseState.isLHE || marketData.timestamp % 10000 < 1000) {
-      lighthouseEventId = await saveLighthouseEvent(lambdaState, lighthouseState, prismOutput);
     }
-    
-    await saveTradingSignal(tradingSignal, lighthouseEventId);
+  }, [binanceError, toast]);
 
-    // Save coherence history (every 10 data points to avoid overwhelming the database)
-    if (marketData.timestamp % 10000 < 1000) {
-      await saveCoherenceHistory(lambdaState, marketData.timestamp, currentSymbol);
-    }
-
-    // Update UI state
-    setLambda(lambdaState);
-    setRainbow(rainbowState);
-    setPrism(prismOutput);
-    setFtcpPoint(ftcpResult);
-    setLighthouse(lighthouseState);
-    setSignal(tradingSignal);
-  };
-
-  useEffect(() => {
-    if (!isRunning || !binanceClientRef.current) return;
-
-    // Start WebSocket connection
-    if (!binanceClientRef.current.isConnected()) {
-      binanceClientRef.current.connect();
-    }
-
-    // Set up data handler
-    binanceClientRef.current.onData(processMarketData);
-
-    return () => {
-      // Keep connection alive but stop processing
-      if (binanceClientRef.current) {
-        binanceClientRef.current.onData(() => {});
-      }
-    };
-  }, [isRunning]);
+  // REST API polling handles data automatically via useBinanceMarketData hook
+  // No manual connection management needed
 
   return (
     <div className="min-h-screen bg-background">
@@ -434,14 +374,8 @@ const AureonDashboard = () => {
             reconnectAttempts={reconnectAttempts}
             lastError={lastConnectionError}
             onReconnect={() => {
-              if (binanceClientRef.current) {
-                binanceClientRef.current.disconnect();
-                setTimeout(() => {
-                  if (binanceClientRef.current) {
-                    binanceClientRef.current.connect();
-                  }
-                }, 1000);
-              }
+              // Refetch market data manually
+              window.location.reload();
             }}
           />
         </div>
