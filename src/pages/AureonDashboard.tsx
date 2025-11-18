@@ -23,12 +23,14 @@ import { SolarFlareCorrelation } from '@/components/SolarFlareCorrelation';
 import { SchumannResonanceMonitor } from '@/components/SchumannResonanceMonitor';
 import { ConsciousnessCoherenceTracker } from '@/components/ConsciousnessCoherenceTracker';
 import { TemporalAlignmentTracker } from '@/components/TemporalAlignmentTracker';
+import { OmegaFieldVisualization } from '@/components/OmegaFieldVisualization';
 import { ConsciousnessHistoryChart } from '@/components/ConsciousnessHistoryChart';
 import { BinanceConnectionStatus } from '@/components/BinanceConnectionStatus';
 import { useAutoTrading } from '@/hooks/useAutoTrading';
 import { useCelestialData } from '@/hooks/useCelestialData';
 import { useSchumannResonance } from '@/hooks/useSchumannResonance';
-import { MasterEquation, type LambdaState } from '@/core/masterEquation';
+import { OmegaEquation, type OmegaState } from '@/core/omegaEquation';
+import { UnityDetector, type UnityEvent } from '@/core/unityDetector';
 import { RainbowBridge, type RainbowState } from '@/core/rainbowBridge';
 import { Prism, type PrismOutput } from '@/core/prism';
 import { FTCPDetector, type CurvaturePoint } from '@/core/ftcpDetector';
@@ -47,7 +49,8 @@ import { useToast } from '@/hooks/use-toast';
 const AureonDashboard = () => {
   const [isRunning, setIsRunning] = useState(false);
   const [autoTradingEnabled, setAutoTradingEnabled] = useState(false);
-  const [lambda, setLambda] = useState<LambdaState | null>(null);
+  const [omega, setOmega] = useState<OmegaState | null>(null);
+  const [unityEvent, setUnityEvent] = useState<UnityEvent | null>(null);
   const [rainbow, setRainbow] = useState<RainbowState | null>(null);
   const [prism, setPrism] = useState<PrismOutput | null>(null);
   const [ftcpPoint, setFtcpPoint] = useState<CurvaturePoint | null>(null);
@@ -74,7 +77,8 @@ const AureonDashboard = () => {
     5000 // Refresh every 5 seconds
   );
   
-  const masterEqRef = useRef(new MasterEquation());
+  const omegaEqRef = useRef(new OmegaEquation());
+  const unityDetectorRef = useRef(new UnityDetector());
   const rainbowBridgeRef = useRef(new RainbowBridge());
   const prismEngineRef = useRef(new Prism());
   const ftcpDetectorRef = useRef(new FTCPDetector());
@@ -91,20 +95,20 @@ const AureonDashboard = () => {
     currentSymbol,
   });
   
-  // Update Master Equation with user location and field boosts when available
+  // Update Omega Equation with user location and field boosts when available
   useEffect(() => {
     const schumannBoost = schumannData?.coherenceBoost || 0;
     if (userLocation) {
-      masterEqRef.current.setUserLocation(userLocation.lat, userLocation.lng, celestialBoost, schumannBoost);
+      omegaEqRef.current.setUserLocation(userLocation.lat, userLocation.lng, celestialBoost, schumannBoost);
     } else if (schumannBoost > 0) {
       // Apply Schumann boost even without location (global Earth field effect)
-      masterEqRef.current.setUserLocation(0, 0, celestialBoost, schumannBoost);
+      omegaEqRef.current.setUserLocation(0, 0, celestialBoost, schumannBoost);
     }
   }, [userLocation, celestialBoost, schumannData]);
   
   // Function to save Lighthouse Event to database
   const saveLighthouseEvent = async (
-    lambdaState: LambdaState,
+    omegaState: OmegaState,
     lighthouseState: LighthouseState,
     prismOutput: PrismOutput
   ) => {
@@ -113,8 +117,8 @@ const AureonDashboard = () => {
         .from('lighthouse_events')
         .insert({
           timestamp: new Date().toISOString(),
-          lambda_value: lambdaState.lambda,
-          coherence: lambdaState.coherence,
+          lambda_value: omegaState.lambda, // Use legacy lambda for backward compatibility
+          coherence: omegaState.coherence,
           lighthouse_signal: lighthouseState.L,
           threshold: lighthouseState.threshold,
           confidence: lighthouseState.confidence,
@@ -124,7 +128,7 @@ const AureonDashboard = () => {
           metric_cphi: lighthouseState.metrics.Cphi,
           metric_geff: lighthouseState.metrics.Geff,
           metric_q: lighthouseState.metrics.Q,
-          dominant_node: lambdaState.dominantNode,
+          dominant_node: omegaState.dominantNode,
           prism_level: prismOutput.level,
           prism_state: prismOutput.state,
         })
@@ -182,7 +186,7 @@ const AureonDashboard = () => {
 
   // Function to save coherence history
   const saveCoherenceHistory = async (
-    lambdaState: LambdaState,
+    omegaState: OmegaState,
     timestamp: number,
     symbol: string
   ) => {
@@ -195,8 +199,8 @@ const AureonDashboard = () => {
         .from('coherence_history')
         .insert({
           timestamp: date.toISOString(),
-          coherence: lambdaState.coherence,
-          lambda_value: lambdaState.lambda,
+          coherence: omegaState.coherence,
+          lambda_value: omegaState.lambda, // Use legacy lambda for backward compatibility
           day_of_week: dayOfWeek,
           hour_of_day: hourOfDay,
           symbol: symbol,
@@ -228,33 +232,41 @@ const AureonDashboard = () => {
       setReconnectAttempts(0);
       setCurrentSymbol(binanceData.symbol);
 
-      // Process with AUREON field
-      const lambdaState = masterEqRef.current.step(marketSnapshot);
-      const rainbowState = rainbowBridgeRef.current.map(lambdaState.lambda, lambdaState.coherence);
+      // Process with AUREON field - Ω(t) = Tr[Ψ × ℒ ⊗ O]
+      const omegaState = omegaEqRef.current.step(marketSnapshot);
+      
+      // Detect unity events (θ→0, coherence→1)
+      const detectedUnity = unityDetectorRef.current.detect(omegaState);
+      if (detectedUnity) {
+        setUnityEvent(detectedUnity);
+        console.log('🌟 UNITY EVENT:', detectedUnity);
+      }
+      
+      const rainbowState = rainbowBridgeRef.current.map(omegaState.lambda, omegaState.coherence);
       const prismOutput = prismEngineRef.current.transform(
-        lambdaState.lambda,
-        lambdaState.coherence,
+        omegaState.lambda,
+        omegaState.coherence,
         rainbowState.frequency
       );
 
       // FTCP Detection
-      const ftcpResult = ftcpDetectorRef.current.addPoint(marketSnapshot.timestamp, lambdaState.lambda);
+      const ftcpResult = ftcpDetectorRef.current.addPoint(marketSnapshot.timestamp, omegaState.lambda);
       const Geff = ftcpDetectorRef.current.computeGeff();
       
       // Lighthouse Consensus
       const lighthouseState = lighthouseRef.current.validate(
-        lambdaState.lambda,
-        lambdaState.coherence,
-        lambdaState.substrate,
-        lambdaState.observer,
-        lambdaState.echo,
+        omegaState.lambda,
+        omegaState.coherence,
+        omegaState.substrate,
+        omegaState.observer,
+        omegaState.echo,
         Geff,
         ftcpResult?.isFTCP || false
       );
       
       // Trading Signal Generation
       const tradingSignal = signalGenRef.current.generateSignal(
-        lambdaState,
+        omegaState,
         lighthouseState,
         prismOutput
       );
@@ -263,18 +275,18 @@ const AureonDashboard = () => {
       let lighthouseEventId: string | null = null;
       
       if (lighthouseState.isLHE || marketSnapshot.timestamp % 10000 < 1000) {
-        lighthouseEventId = await saveLighthouseEvent(lambdaState, lighthouseState, prismOutput);
+        lighthouseEventId = await saveLighthouseEvent(omegaState, lighthouseState, prismOutput);
       }
       
       await saveTradingSignal(tradingSignal, lighthouseEventId);
 
       // Save coherence history periodically
       if (marketSnapshot.timestamp % 10000 < 1000) {
-        await saveCoherenceHistory(lambdaState, marketSnapshot.timestamp, binanceData.symbol);
+        await saveCoherenceHistory(omegaState, marketSnapshot.timestamp, binanceData.symbol);
       }
 
       // Update UI state
-      setLambda(lambdaState);
+      setOmega(omegaState);
       setRainbow(rainbowState);
       setPrism(prismOutput);
       setFtcpPoint(ftcpResult);
@@ -405,10 +417,10 @@ const AureonDashboard = () => {
         )}
 
         {/* AI Analysis Panel */}
-        {signal && lighthouse && (
+        {signal && lighthouse && omega && (
           <div className="mb-8">
             <AIAnalysisPanel
-              lambda={lambda}
+              lambda={omega}
               lighthouse={lighthouse}
               prism={prism}
               signal={signal}
@@ -479,10 +491,17 @@ const AureonDashboard = () => {
           <StargateStatus onLocationUpdate={setUserLocation} celestialBoost={celestialBoost} />
         </div>
 
-        {/* Consciousness Coherence Tracker */}
-        {lambda && (
+        {/* Omega Field Visualization - Full Tensor Product */}
+        {omega && (
           <div className="mb-8">
-            <ConsciousnessCoherenceTracker currentCoherence={lambda.coherence} />
+            <OmegaFieldVisualization omega={omega} unityEvent={unityEvent} />
+          </div>
+        )}
+
+        {/* Consciousness Coherence Tracker */}
+        {omega && (
+          <div className="mb-8">
+            <ConsciousnessCoherenceTracker currentCoherence={omega.coherence} />
           </div>
         )}
 
@@ -527,7 +546,7 @@ const AureonDashboard = () => {
         </div>
 
         <div className="mb-8">
-          <CoherenceTracker lambda={lambda} isRunning={isRunning} />
+          <CoherenceTracker lambda={omega} isRunning={isRunning} />
         </div>
 
         <div className="mb-8">
@@ -559,14 +578,14 @@ const AureonDashboard = () => {
         </div>
 
         <div className="mb-8">
-          <MasterEquationField3D lambda={lambda} />
+          <MasterEquationField3D lambda={omega} />
         </div>
 
         <div className="mb-8">
           <Watchlist />
         </div>
 
-        <AureonField lambda={lambda} rainbow={rainbow} prism={prism} />
+        <AureonField lambda={omega} rainbow={rainbow} prism={prism} />
 
         <div className="mt-8">
           <SignalHistory />
