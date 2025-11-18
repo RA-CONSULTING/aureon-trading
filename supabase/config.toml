@@ -23,3 +23,6 @@ verify_jwt = false
 
 [functions.analyze-solar-correlations]
 verify_jwt = false
+
+[functions.primelines-protocol-gateway]
+verify_jwt = false

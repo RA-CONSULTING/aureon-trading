@@ -20,6 +20,7 @@ import { IntegralAQALVisualization } from '@/components/IntegralAQALVisualizatio
 import { SentinelSealSpectrogram } from '@/components/SentinelSealSpectrogram';
 import { DimensionalDialler } from '@/components/DimensionalDialler';
 import { PrimelinesIdentityCard } from '@/components/PrimelinesIdentityCard';
+import { PrimelinesProtocolStatus } from '@/components/PrimelinesProtocolStatus';
 import { CoherenceTracker } from '@/components/CoherenceTracker';
 import { CoherenceHeatmap } from '@/components/CoherenceHeatmap';
 import { CoherenceForecaster } from '@/components/CoherenceForecaster';
@@ -628,6 +629,11 @@ const AureonDashboard = () => {
         {/* Harmonic Nexus Core Monitor */}
         <div className="mb-8">
           <HarmonicNexusMonitor nexusState={harmonicNexusState} />
+        </div>
+
+        {/* Primelines Protocol Gateway */}
+        <div className="mb-8">
+          <PrimelinesProtocolStatus />
         </div>
 
         {/* Primelines Multiversal Temporal Identity */}

@@ -450,6 +450,34 @@ export function HarmonicNexusPhaseField3D() {
     console.log('⚛️ Casimir Protocol activating...');
     console.log('🔮 Historical nodes available:', historicalNodes.length);
     
+    // Invoke Primelines Protocol for validation
+    const protocolRequest = async () => {
+      try {
+        const { data } = await supabase.functions.invoke('primelines-protocol-gateway', {
+          body: {
+            operation: 'LOCK_CASIMIR_FIELD',
+            payload: { 
+              nodeCount: 9, 
+              resonanceFrequency: 528,
+              historicalNodeCount: historicalNodes.length 
+            },
+            temporalId: '02111991',
+            sentinelName: 'GARY LECKEY',
+            requireValidation: true,
+          },
+        });
+        
+        if (data?.success) {
+          console.log('✅ Casimir lock validated by Primelines Protocol');
+          console.log('🤖 AI Validation:', data.aiValidation);
+        }
+      } catch (error) {
+        console.error('❌ Protocol validation failed:', error);
+      }
+    };
+    
+    protocolRequest();
+    
     // Animate strength increase
     let strength = 0;
     const interval = setInterval(() => {
