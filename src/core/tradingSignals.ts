@@ -7,6 +7,7 @@
 import type { LighthouseState } from './lighthouseConsensus';
 import type { LambdaState } from './masterEquation';
 import type { PrismOutput } from './prism';
+import type { HarmonizationProfile } from './stargateFrequencyHarmonizer';
 
 export type TradingSignal = {
   timestamp: number;
@@ -16,6 +17,8 @@ export type TradingSignal = {
   coherence: number;       // Γ value
   prismLevel: number;      // 1-5
   reason: string;
+  harmonizationBoost?: number; // Boost from frequency harmonization
+  tradingBias?: 'BULLISH' | 'BEARISH' | 'NEUTRAL';
 };
 
 export class TradingSignalGenerator {
@@ -27,52 +30,77 @@ export class TradingSignalGenerator {
   generateSignal(
     lambda: LambdaState,
     lighthouse: LighthouseState,
-    prism: PrismOutput
+    prism: PrismOutput,
+    harmonization?: HarmonizationProfile
   ): TradingSignal {
     const timestamp = Date.now();
     
+    // Apply frequency harmonization if available
+    const harmonizedCoherence = harmonization 
+      ? lambda.coherence + harmonization.coherenceBoost 
+      : lambda.coherence;
+    
     // Check conditions for optimal trading moment
-    const highCoherence = lambda.coherence >= this.COHERENCE_THRESHOLD;
+    const highCoherence = harmonizedCoherence >= this.COHERENCE_THRESHOLD;
     const lighthouseEvent = lighthouse.isLHE;
     const prismReady = prism.state === 'CONVERGING' || prism.state === 'MANIFEST';
+    const optimalWindow = harmonization?.optimalEntryWindow || false;
     
     // Determine signal type and strength
     let type: 'LONG' | 'SHORT' | 'HOLD' = 'HOLD';
     let strength = 0;
     let reason = '';
     
-    if (lighthouseEvent && highCoherence && prismReady) {
-      // Perfect conditions - strongest signal
-      type = 'LONG';
+    // Apply trading bias from harmonization
+    const biasModifier = harmonization ? this.getBiasModifier(harmonization.tradingBias) : 1;
+    const signalAmp = harmonization?.signalAmplification || 1;
+    const confidenceMod = harmonization?.confidenceModifier || 1;
+    
+    if (optimalWindow && lighthouseEvent && highCoherence && prismReady) {
+      // PERFECT conditions - optimal entry window with all systems aligned
+      type = harmonization?.tradingBias === 'BEARISH' ? 'SHORT' : 'LONG';
       strength = Math.min(
-        lighthouse.confidence * lambda.coherence * (prism.level / 5),
+        lighthouse.confidence * harmonizedCoherence * (prism.level / 5) * signalAmp * confidenceMod,
         1
       );
-      reason = `🎯 OPTIMAL: LHE + Γ=${lambda.coherence.toFixed(3)} + Prism L${prism.level}`;
+      reason = `🌟 PERFECT: Optimal Window + LHE + Γ=${harmonizedCoherence.toFixed(3)} + Prism L${prism.level} + ${harmonization?.dominantFrequency}Hz`;
+      
+    } else if (lighthouseEvent && highCoherence && prismReady) {
+      // Optimal conditions - strongest signal
+      type = harmonization?.tradingBias === 'BEARISH' ? 'SHORT' : 'LONG';
+      strength = Math.min(
+        lighthouse.confidence * harmonizedCoherence * (prism.level / 5) * signalAmp * biasModifier,
+        1
+      );
+      reason = `🎯 OPTIMAL: LHE + Γ=${harmonizedCoherence.toFixed(3)} + Prism L${prism.level}`;
+      if (harmonization) {
+        reason += ` + ${harmonization.tradingBias} bias`;
+      }
       
     } else if (lighthouseEvent && highCoherence) {
       // Strong signal - lighthouse + coherence
-      type = 'LONG';
-      strength = lighthouse.confidence * lambda.coherence * 0.8;
-      reason = `✨ STRONG: LHE + High Coherence Γ=${lambda.coherence.toFixed(3)}`;
+      type = harmonization?.tradingBias === 'BEARISH' ? 'SHORT' : 'LONG';
+      strength = lighthouse.confidence * harmonizedCoherence * 0.8 * signalAmp * biasModifier;
+      reason = `✨ STRONG: LHE + High Coherence Γ=${harmonizedCoherence.toFixed(3)}`;
       
     } else if (highCoherence && prismReady) {
       // Moderate signal - coherence + prism alignment
       type = 'LONG';
-      strength = lambda.coherence * (prism.level / 5) * 0.6;
+      strength = harmonizedCoherence * (prism.level / 5) * 0.6 * signalAmp;
       reason = `📊 MODERATE: High Γ + Prism ${prism.state}`;
       
-    } else if (lambda.coherence < 0.3 && lighthouse.L < lighthouse.threshold * 0.5) {
-      // Weak conditions - consider short
+    } else if (harmonizedCoherence < 0.3 && lighthouse.L < lighthouse.threshold * 0.5) {
+      // Weak conditions - consider short (amplified if bearish bias)
       type = 'SHORT';
-      strength = (1 - lambda.coherence) * 0.4;
-      reason = `⚠️ WEAK: Low Γ=${lambda.coherence.toFixed(3)} + Low L(t)`;
+      const shortBias = harmonization?.tradingBias === 'BEARISH' ? 1.5 : 1;
+      strength = (1 - harmonizedCoherence) * 0.4 * shortBias;
+      reason = `⚠️ WEAK: Low Γ=${harmonizedCoherence.toFixed(3)} + Low L(t)`;
       
     } else {
       // Hold - conditions not met
       type = 'HOLD';
       strength = 0.5;
-      reason = `⏸️ HOLD: Γ=${lambda.coherence.toFixed(3)}, L(t)=${lighthouse.L.toFixed(2)}`;
+      reason = `⏸️ HOLD: Γ=${harmonizedCoherence.toFixed(3)}, L(t)=${lighthouse.L.toFixed(2)}`;
     }
     
     const signal: TradingSignal = {
@@ -80,9 +108,11 @@ export class TradingSignalGenerator {
       type,
       strength,
       lighthouse: lighthouse.L,
-      coherence: lambda.coherence,
+      coherence: harmonizedCoherence,
       prismLevel: prism.level,
       reason,
+      harmonizationBoost: harmonization?.coherenceBoost,
+      tradingBias: harmonization?.tradingBias,
     };
     
     this.lastSignal = signal;
@@ -93,6 +123,13 @@ export class TradingSignalGenerator {
     }
     
     return signal;
+  }
+
+  private getBiasModifier(bias: 'BULLISH' | 'BEARISH' | 'NEUTRAL'): number {
+    // Amplify signals that align with bias
+    if (bias === 'BULLISH') return 1.2;
+    if (bias === 'BEARISH') return 0.9; // Reduce long signals in bearish conditions
+    return 1.0;
   }
   
   getLastSignal(): TradingSignal | null {

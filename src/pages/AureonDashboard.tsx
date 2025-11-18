@@ -27,6 +27,7 @@ import { CoherenceForecaster } from '@/components/CoherenceForecaster';
 import { MultiSymbolForecastComparison } from '@/components/MultiSymbolForecastComparison';
 import { StargateVisualization } from '@/components/StargateVisualization';
 import { StargateStatus } from '@/components/StargateStatus';
+import { FrequencyHarmonizationPanel } from '@/components/FrequencyHarmonizationPanel';
 import { CelestialAlignments } from '@/components/CelestialAlignments';
 import { SolarFlareCorrelation } from '@/components/SolarFlareCorrelation';
 import { SchumannResonanceMonitor } from '@/components/SchumannResonanceMonitor';
@@ -40,6 +41,7 @@ import { BinanceConnectionStatus } from '@/components/BinanceConnectionStatus';
 import { useAutoTrading } from '@/hooks/useAutoTrading';
 import { useCelestialData } from '@/hooks/useCelestialData';
 import { useSchumannResonance } from '@/hooks/useSchumannResonance';
+import { useFrequencyHarmonization } from '@/hooks/useFrequencyHarmonization';
 import { OmegaEquation, type OmegaState } from '@/core/omegaEquation';
 import { UnityDetector, type UnityEvent } from '@/core/unityDetector';
 import { attuneToAkashicFrequency, calculateAkashicBoost, type AkashicAttunement } from '@/core/akashicFrequencyMapper';
@@ -89,6 +91,7 @@ const AureonDashboard = () => {
   const { toast } = useToast();
   const { celestialBoost } = useCelestialData();
   const { schumannData } = useSchumannResonance();
+  const { harmonization } = useFrequencyHarmonization();
   
   // Use authenticated REST API instead of WebSocket
   const { marketData: binanceData, isConnected: binanceConnected, error: binanceError } = useBinanceMarketData(
@@ -330,11 +333,12 @@ const AureonDashboard = () => {
         ftcpResult?.isFTCP || false
       );
       
-      // Trading Signal Generation
+      // Trading Signal Generation (with frequency harmonization)
       const tradingSignal = signalGenRef.current.generateSignal(
         omegaState,
         lighthouseState,
-        prismOutput
+        prismOutput,
+        harmonization || undefined
       );
 
       // Save to database
@@ -749,6 +753,10 @@ const AureonDashboard = () => {
 
         <div className="mb-8">
           <StargateVisualization />
+        </div>
+
+        <div className="mb-8">
+          <FrequencyHarmonizationPanel />
         </div>
 
         <div className="mb-8">
