@@ -176,6 +176,90 @@ export type Database = {
         }
         Relationships: []
       }
+      harmonic_nexus_states: {
+        Row: {
+          akashic_boost: number
+          akashic_convergence: number
+          akashic_frequency: number
+          akashic_stability: number
+          created_at: string
+          dimensional_alignment: number
+          event_timestamp: string
+          field_integrity: number
+          harmonic_resonance: number
+          id: string
+          lighthouse_signal: number | null
+          love_coherence: number
+          metadata: Json | null
+          observer_consciousness: number
+          omega_value: number
+          prism_level: number | null
+          psi_potential: number
+          sentinel_name: string | null
+          substrate_coherence: number
+          sync_quality: number
+          sync_status: string
+          temporal_id: string
+          theta_alignment: number
+          timeline_divergence: number
+          unity_probability: number
+        }
+        Insert: {
+          akashic_boost: number
+          akashic_convergence: number
+          akashic_frequency: number
+          akashic_stability: number
+          created_at?: string
+          dimensional_alignment: number
+          event_timestamp?: string
+          field_integrity: number
+          harmonic_resonance: number
+          id?: string
+          lighthouse_signal?: number | null
+          love_coherence: number
+          metadata?: Json | null
+          observer_consciousness: number
+          omega_value: number
+          prism_level?: number | null
+          psi_potential: number
+          sentinel_name?: string | null
+          substrate_coherence: number
+          sync_quality?: number
+          sync_status?: string
+          temporal_id: string
+          theta_alignment: number
+          timeline_divergence?: number
+          unity_probability: number
+        }
+        Update: {
+          akashic_boost?: number
+          akashic_convergence?: number
+          akashic_frequency?: number
+          akashic_stability?: number
+          created_at?: string
+          dimensional_alignment?: number
+          event_timestamp?: string
+          field_integrity?: number
+          harmonic_resonance?: number
+          id?: string
+          lighthouse_signal?: number | null
+          love_coherence?: number
+          metadata?: Json | null
+          observer_consciousness?: number
+          omega_value?: number
+          prism_level?: number | null
+          psi_potential?: number
+          sentinel_name?: string | null
+          substrate_coherence?: number
+          sync_quality?: number
+          sync_status?: string
+          temporal_id?: string
+          theta_alignment?: number
+          timeline_divergence?: number
+          unity_probability?: number
+        }
+        Relationships: []
+      }
       lighthouse_events: {
         Row: {
           coherence: number
@@ -713,6 +797,15 @@ export type Database = {
       }
     }
     Functions: {
+      get_latest_harmonic_state: {
+        Args: { p_temporal_id: string }
+        Returns: {
+          event_timestamp: string
+          omega_value: number
+          substrate_coherence: number
+          sync_quality: number
+        }[]
+      }
       get_signal_statistics: {
         Args: { time_range?: unknown }
         Returns: {
