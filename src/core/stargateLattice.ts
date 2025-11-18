@@ -255,6 +255,68 @@ export class StargateLattice {
     
     return Math.max(0, Math.min(1, baseEnergy + lunarBoost));
   }
+
+  /**
+   * Activate all stargates with continuous pinging
+   */
+  activateAllNodes(): StargateActivation[] {
+    const timestamp = Date.now();
+    return Object.entries(this.nodes).map(([name, node]) => {
+      const pingLatency = Math.random() * 50 + 10; // 10-60ms
+      const coherence = 0.85 + Math.random() * 0.15; // 0.85-1.0
+      const energyFlow = 0.7 + Math.random() * 0.3; // 0.7-1.0
+      
+      return {
+        nodeName: name,
+        status: 'ACTIVE' as const,
+        pingLatency,
+        coherence,
+        energyFlow,
+        lastPing: timestamp,
+        frequencyLock: node.frequencies[0],
+        connectionStrength: coherence * energyFlow,
+      };
+    });
+  }
+
+  /**
+   * Calculate network-wide metrics
+   */
+  calculateNetworkMetrics(activations: StargateActivation[]): NetworkMetrics {
+    const avgCoherence = activations.reduce((sum, a) => sum + a.coherence, 0) / activations.length;
+    const avgEnergyFlow = activations.reduce((sum, a) => sum + a.energyFlow, 0) / activations.length;
+    const avgLatency = activations.reduce((sum, a) => sum + a.pingLatency, 0) / activations.length;
+    const networkStrength = activations.reduce((sum, a) => sum + a.connectionStrength, 0) / activations.length;
+    
+    return {
+      avgCoherence,
+      avgEnergyFlow,
+      avgLatency,
+      networkStrength,
+      activeNodes: activations.filter(a => a.status === 'ACTIVE').length,
+      totalNodes: activations.length,
+    };
+  }
+}
+
+export interface StargateActivation {
+  nodeName: string;
+  status: 'ACTIVE' | 'SYNCING' | 'OFFLINE';
+  pingLatency: number;
+  coherence: number;
+  energyFlow: number;
+  lastPing: number;
+  frequencyLock: number;
+  connectionStrength: number;
+}
+
+export interface NetworkMetrics {
+  avgCoherence: number;
+  avgEnergyFlow: number;
+  avgLatency: number;
+  networkStrength: number;
+  activeNodes: number;
+  totalNodes: number;
 }
 
 // Singleton instance
