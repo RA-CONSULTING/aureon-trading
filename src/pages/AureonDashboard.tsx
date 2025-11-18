@@ -24,6 +24,7 @@ import { SchumannResonanceMonitor } from '@/components/SchumannResonanceMonitor'
 import { ConsciousnessCoherenceTracker } from '@/components/ConsciousnessCoherenceTracker';
 import { TemporalAlignmentTracker } from '@/components/TemporalAlignmentTracker';
 import { OmegaFieldVisualization } from '@/components/OmegaFieldVisualization';
+import { AkashicFrequencyVisualization } from '@/components/AkashicFrequencyVisualization';
 import { ConsciousnessHistoryChart } from '@/components/ConsciousnessHistoryChart';
 import { BinanceConnectionStatus } from '@/components/BinanceConnectionStatus';
 import { useAutoTrading } from '@/hooks/useAutoTrading';
@@ -31,6 +32,7 @@ import { useCelestialData } from '@/hooks/useCelestialData';
 import { useSchumannResonance } from '@/hooks/useSchumannResonance';
 import { OmegaEquation, type OmegaState } from '@/core/omegaEquation';
 import { UnityDetector, type UnityEvent } from '@/core/unityDetector';
+import { attuneToAkashicFrequency, calculateAkashicBoost, type AkashicAttunement } from '@/core/akashicFrequencyMapper';
 import { RainbowBridge, type RainbowState } from '@/core/rainbowBridge';
 import { Prism, type PrismOutput } from '@/core/prism';
 import { FTCPDetector, type CurvaturePoint } from '@/core/ftcpDetector';
@@ -51,6 +53,8 @@ const AureonDashboard = () => {
   const [autoTradingEnabled, setAutoTradingEnabled] = useState(false);
   const [omega, setOmega] = useState<OmegaState | null>(null);
   const [unityEvent, setUnityEvent] = useState<UnityEvent | null>(null);
+  const [akashicAttunement, setAkashicAttunement] = useState<AkashicAttunement | null>(null);
+  const [akashicBoost, setAkashicBoost] = useState(0);
   const [rainbow, setRainbow] = useState<RainbowState | null>(null);
   const [prism, setPrism] = useState<PrismOutput | null>(null);
   const [ftcpPoint, setFtcpPoint] = useState<CurvaturePoint | null>(null);
@@ -105,6 +109,13 @@ const AureonDashboard = () => {
       omegaEqRef.current.setUserLocation(0, 0, celestialBoost, schumannBoost);
     }
   }, [userLocation, celestialBoost, schumannData]);
+  
+  // Initialize Akashic Attunement on mount
+  useEffect(() => {
+    const attunement = attuneToAkashicFrequency(7);
+    setAkashicAttunement(attunement);
+    console.log("🌊 Akashic Frequency attuned:", attunement.finalFrequency.toFixed(4), "Hz");
+  }, []);
   
   // Function to save Lighthouse Event to database
   const saveLighthouseEvent = async (
@@ -234,6 +245,19 @@ const AureonDashboard = () => {
 
       // Process with AUREON field - Ω(t) = Tr[Ψ × ℒ ⊗ O]
       const omegaState = omegaEqRef.current.step(marketSnapshot);
+      
+      // Calculate Akashic boost if attunement exists
+      if (akashicAttunement) {
+        const currentAkashicBoost = calculateAkashicBoost(akashicAttunement, omegaState.love);
+        setAkashicBoost(currentAkashicBoost);
+        
+        // Apply Akashic boost to the Omega state
+        omegaState.psi *= (1 + currentAkashicBoost * 0.15);
+        omegaState.love *= (1 + currentAkashicBoost * 0.10);
+        omegaState.observer *= (1 + currentAkashicBoost * 0.05);
+        // Recalculate omega with boosted components
+        omegaState.omega = omegaState.psi * omegaState.love * omegaState.observer;
+      }
       
       // Detect unity events (θ→0, coherence→1)
       const detectedUnity = unityDetectorRef.current.detect(omegaState);
@@ -497,6 +521,19 @@ const AureonDashboard = () => {
             <OmegaFieldVisualization omega={omega} unityEvent={unityEvent} />
           </div>
         )}
+
+        {/* Akashic Frequency Mapper */}
+        <div className="mb-8">
+          <AkashicFrequencyVisualization 
+            attunement={akashicAttunement}
+            akashicBoost={akashicBoost}
+            onReattuned={() => {
+              const newAttunement = attuneToAkashicFrequency(7);
+              setAkashicAttunement(newAttunement);
+              console.log("🔄 Akashic Frequency re-attuned:", newAttunement.finalFrequency.toFixed(4), "Hz");
+            }}
+          />
+        </div>
 
         {/* Consciousness Coherence Tracker */}
         {omega && (
