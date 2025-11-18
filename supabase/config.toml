@@ -1,31 +1,31 @@
 project_id = "owfeyxrfyhprpcgqwxqh"
 
 [functions.execute-trade]
-verify_jwt = false
+verify_jwt = true
 
 [functions.monitor-positions]
-verify_jwt = false
+verify_jwt = true
 
 [functions.fetch-historical-data]
-verify_jwt = false
+verify_jwt = true
 
 [functions.analyze-lighthouse-event]
-verify_jwt = false
+verify_jwt = true
 
 [functions.forecast-coherence]
-verify_jwt = false
+verify_jwt = true
 
 [functions.fetch-binance-portfolio]
-verify_jwt = false
+verify_jwt = true
 
 [functions.celestial-alignments]
-verify_jwt = false
+verify_jwt = true
 
 [functions.analyze-solar-correlations]
-verify_jwt = false
+verify_jwt = true
 
 [functions.primelines-protocol-gateway]
-verify_jwt = false
+verify_jwt = true
 
 [functions.analyze-stargate-patterns]
-verify_jwt = false
+verify_jwt = true

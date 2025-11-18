@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -31,7 +32,13 @@ serve(async (req) => {
   }
 
   try {
-    const { symbol = 'BTCUSDT' } = await req.json();
+    // Input validation
+    const requestSchema = z.object({
+      symbol: z.string().regex(/^[A-Z]+USDT$/, 'Invalid symbol').default('BTCUSDT')
+    });
+    
+    const body = await req.json().catch(() => ({}));
+    const { symbol } = requestSchema.parse(body);
     
     console.log('[fetch-binance-market-data] Fetching market data for:', symbol);
 
@@ -70,9 +77,11 @@ serve(async (req) => {
     const [tickerRes, avgPriceRes, depthRes, tradesRes] = await Promise.all(requests);
 
     if (!tickerRes.ok) {
-      const errorText = await tickerRes.text();
-      console.error('[fetch-binance-market-data] Ticker API error:', tickerRes.status, errorText);
-      throw new Error(`Binance API error: ${tickerRes.status}`);
+      console.error('[fetch-binance-market-data] Ticker API error:', tickerRes.status);
+      return new Response(
+        JSON.stringify({ success: false, error: 'Market data unavailable' }),
+        { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     const ticker = await tickerRes.json();
@@ -162,11 +171,17 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('[fetch-binance-market-data] Error:', error);
+    
+    // Return generic error
+    if (error instanceof z.ZodError) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Invalid symbol format' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
     return new Response(
-      JSON.stringify({
-        error: error instanceof Error ? error.message : 'Unknown error',
-        details: 'Failed to fetch Binance market data',
-      }),
+      JSON.stringify({ success: false, error: 'Failed to fetch market data' }),
       {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
