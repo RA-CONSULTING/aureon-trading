@@ -2,8 +2,9 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { Button } from '@/components/ui/button';
 import { DimensionalDialler as Dialler, DimensionalDiallerState } from '@/core/dimensionalDialler';
-import { Circle, Activity, Zap, Lock, Radio } from 'lucide-react';
+import { Circle, Activity, Zap, Lock, Radio, AlertTriangle, CheckCircle, RefreshCw } from 'lucide-react';
 
 interface DimensionalDiallerProps {
   harmonicCoherence: number;
@@ -38,10 +39,46 @@ export const DimensionalDialler = ({
 
   if (!state) return null;
 
-  const { stability, primeLocks, schumannLattice, quantumEntanglements, dialPosition, activePrime, temporalSync } = state;
+  const { 
+    stability, 
+    primeLocks, 
+    schumannLattice, 
+    quantumEntanglements, 
+    dialPosition, 
+    activePrime, 
+    temporalSync,
+    driftDetection,
+    correctionStatus
+  } = state;
 
   const lockedPrimes = primeLocks.filter(p => p.locked);
   const coherentEntanglements = quantumEntanglements.filter(e => e.coherentState);
+
+  // Drift status
+  const isDrifting = driftDetection?.isDrifting || false;
+  const driftUrgency = driftDetection?.urgency || 'low';
+  const affectedSystems = driftDetection?.affectedSystems || [];
+
+  // Correction status
+  const isCorrecting = correctionStatus.isActive;
+  const correctionPhase = correctionStatus.currentPhase;
+
+  const getUrgencyColor = (urgency: string) => {
+    switch (urgency) {
+      case 'critical': return 'text-destructive';
+      case 'high': return 'text-orange-500';
+      case 'medium': return 'text-yellow-500';
+      default: return 'text-muted-foreground';
+    }
+  };
+
+  const handleManualCorrection = async () => {
+    try {
+      await dialler.manualCorrection();
+    } catch (error) {
+      console.error('Manual correction failed:', error);
+    }
+  };
 
   return (
     <Card className="border-primary/20 bg-background/95 backdrop-blur">
@@ -52,6 +89,18 @@ export const DimensionalDialler = ({
             Dimensional Dialler
           </CardTitle>
           <div className="flex gap-2">
+            {isDrifting && (
+              <Badge variant="destructive" className={`gap-1 ${getUrgencyColor(driftUrgency)}`}>
+                <AlertTriangle className="h-3 w-3" />
+                Drift: {driftUrgency.toUpperCase()}
+              </Badge>
+            )}
+            {isCorrecting && (
+              <Badge variant="outline" className="gap-1 animate-pulse">
+                <RefreshCw className="h-3 w-3 animate-spin" />
+                Correcting
+              </Badge>
+            )}
             <Badge variant={stability.overall > 0.8 ? "default" : "secondary"}>
               Stability: {(stability.overall * 100).toFixed(0)}%
             </Badge>
@@ -62,6 +111,65 @@ export const DimensionalDialler = ({
         </div>
       </CardHeader>
       <CardContent className="space-y-6">
+        {/* Drift Detection Alert */}
+        {isDrifting && (
+          <div className={`p-3 rounded-lg border ${
+            driftUrgency === 'critical' 
+              ? 'bg-destructive/10 border-destructive/20' 
+              : driftUrgency === 'high'
+              ? 'bg-orange-500/10 border-orange-500/20'
+              : 'bg-yellow-500/10 border-yellow-500/20'
+          }`}>
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <AlertTriangle className={`h-4 w-4 ${getUrgencyColor(driftUrgency)}`} />
+                <span className={`text-sm font-medium ${getUrgencyColor(driftUrgency)}`}>
+                  Dimensional Drift Detected
+                </span>
+              </div>
+              <Button 
+                size="sm" 
+                variant="outline" 
+                onClick={handleManualCorrection}
+                disabled={isCorrecting}
+              >
+                <RefreshCw className={`h-3 w-3 mr-1 ${isCorrecting ? 'animate-spin' : ''}`} />
+                Manual Correction
+              </Button>
+            </div>
+            <div className="text-xs text-muted-foreground">
+              Affected systems: {affectedSystems.join(', ') || 'none'}
+              {driftDetection && ` • Drift rate: ${(driftDetection.driftRate * 100).toFixed(2)}%/s`}
+            </div>
+            {isCorrecting && (
+              <div className="mt-2 space-y-1">
+                <div className="flex justify-between text-xs">
+                  <span className="text-muted-foreground">Phase: {correctionPhase}</span>
+                  <span className="font-mono">{(correctionStatus.progress * 100).toFixed(0)}%</span>
+                </div>
+                <Progress value={correctionStatus.progress * 100} className="h-1" />
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Successful Correction Alert */}
+        {correctionStatus.lastCorrection && !isCorrecting && (
+          <div className="p-3 rounded-lg bg-primary/10 border border-primary/20">
+            <div className="flex items-center gap-2 mb-1">
+              <CheckCircle className="h-4 w-4 text-primary" />
+              <span className="text-sm font-medium text-primary">
+                Last Correction: {correctionStatus.lastCorrection.correctionType.replace(/_/g, ' ')}
+              </span>
+            </div>
+            <div className="text-xs text-muted-foreground">
+              Stability improved from {(correctionStatus.lastCorrection.preCorrection.stability * 100).toFixed(0)}% 
+              to {(correctionStatus.lastCorrection.postCorrection.stability * 100).toFixed(0)}% 
+              in {correctionStatus.lastCorrection.duration}ms
+            </div>
+          </div>
+        )}
+
         {/* Dimensional Dial Visualization */}
         <div className="relative w-full aspect-square max-w-xs mx-auto">
           <svg viewBox="0 0 200 200" className="w-full h-full">

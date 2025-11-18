@@ -5,6 +5,8 @@
  * Quantum entanglement through ping-pong resonance
  */
 
+import { DimensionalDriftCorrector, type DriftDetection, type CorrectionStatus } from './dimensionalDriftCorrector';
+
 export interface PrimeLock {
   prime: number;
   index: number;
@@ -47,6 +49,8 @@ export interface DimensionalDiallerState {
   dialPosition: number; // Current dimensional coordinate
   temporalSync: number; // 0-1
   timestamp: number;
+  driftDetection: DriftDetection | null;
+  correctionStatus: CorrectionStatus;
 }
 
 // First 20 prime numbers for phase locking
@@ -62,11 +66,19 @@ export class DimensionalDialler {
   private dialPosition: number = 0;
   private history: DimensionalDiallerState[] = [];
   private maxHistory = 50;
+  private driftCorrector: DimensionalDriftCorrector;
+  private previousState: DimensionalDiallerState | null = null;
+  private autoCorrectionEnabled = true;
 
   constructor() {
     this.initializePrimeLocks();
     this.initializeSchumannLattice();
     this.initializeQuantumEntanglements();
+    this.driftCorrector = new DimensionalDriftCorrector();
+  }
+
+  public setAutoCorrection(enabled: boolean): void {
+    this.autoCorrectionEnabled = enabled;
   }
 
   private initializePrimeLocks(): void {
@@ -138,7 +150,8 @@ export class DimensionalDialler {
     // Calculate temporal sync
     const temporalSync = this.calculateTemporalSync(timestamp);
 
-    const state: DimensionalDiallerState = {
+    // Create initial state (before drift detection/correction)
+    let state: DimensionalDiallerState = {
       primeLocks: [...this.primeLocks],
       activePrime: this.getActivePrime(),
       schumannLattice: [...this.schumannLattice],
@@ -146,15 +159,56 @@ export class DimensionalDialler {
       stability,
       dialPosition: this.dialPosition,
       temporalSync,
-      timestamp
+      timestamp,
+      driftDetection: null,
+      correctionStatus: this.driftCorrector.getCorrectionStatus()
     };
 
+    // Detect drift
+    const drift = this.driftCorrector.detectDrift(state, this.previousState);
+    state.driftDetection = drift;
+
+    // Auto-correct if enabled and drifting detected
+    if (this.autoCorrectionEnabled && drift.isDrifting && !state.correctionStatus.isActive) {
+      this.triggerAutoCorrection(state, drift);
+    }
+
+    this.previousState = state;
     this.history.push(state);
     if (this.history.length > this.maxHistory) {
       this.history.shift();
     }
 
     return state;
+  }
+
+  /**
+   * Trigger automatic drift correction (non-blocking)
+   */
+  private async triggerAutoCorrection(state: DimensionalDiallerState, drift: DriftDetection): Promise<void> {
+    try {
+      const result = await this.driftCorrector.applyCorrection(state, drift);
+      
+      // Apply corrections
+      this.primeLocks = result.primeLocks;
+      this.schumannLattice = result.schumannLattice;
+      
+      console.log('🔧 Dimensional drift corrected:', result.correctionEvent.correctionType);
+    } catch (error) {
+      console.error('❌ Drift correction failed:', error);
+    }
+  }
+
+  /**
+   * Manually trigger correction
+   */
+  public async manualCorrection(): Promise<void> {
+    if (!this.previousState) {
+      throw new Error('No state available for correction');
+    }
+
+    const drift = this.driftCorrector.detectDrift(this.previousState, null);
+    await this.triggerAutoCorrection(this.previousState, drift);
   }
 
   private updatePrimeLocks(coherence: number, timestamp: number): void {
