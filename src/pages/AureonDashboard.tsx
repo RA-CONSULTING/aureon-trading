@@ -16,6 +16,7 @@ import { HarmonicNexusMonitor } from '@/components/HarmonicNexusMonitor';
 import { FieldPullMetricsPanel } from '@/components/FieldPullMetricsPanel';
 import { HarmonicTheoryFoundation } from '@/components/HarmonicTheoryFoundation';
 import { HarmonicNexusPhaseField3D } from '@/components/HarmonicNexusPhaseField3D';
+import { IntegralAQALVisualization } from '@/components/IntegralAQALVisualization';
 import { CoherenceTracker } from '@/components/CoherenceTracker';
 import { CoherenceHeatmap } from '@/components/CoherenceHeatmap';
 import { CoherenceForecaster } from '@/components/CoherenceForecaster';
@@ -38,6 +39,7 @@ import { OmegaEquation, type OmegaState } from '@/core/omegaEquation';
 import { UnityDetector, type UnityEvent } from '@/core/unityDetector';
 import { attuneToAkashicFrequency, calculateAkashicBoost, type AkashicAttunement } from '@/core/akashicFrequencyMapper';
 import { HarmonicNexusCore, type HarmonicNexusState } from '@/core/harmonicNexusCore';
+import { mapToAQAL, type IntegralFieldState } from '@/core/integralAQAL';
 import { RainbowBridge, type RainbowState } from '@/core/rainbowBridge';
 import { Prism, type PrismOutput } from '@/core/prism';
 import { FTCPDetector, type CurvaturePoint } from '@/core/ftcpDetector';
@@ -61,6 +63,7 @@ const AureonDashboard = () => {
   const [akashicAttunement, setAkashicAttunement] = useState<AkashicAttunement | null>(null);
   const [akashicBoost, setAkashicBoost] = useState(0);
   const [harmonicNexusState, setHarmonicNexusState] = useState<HarmonicNexusState | null>(null);
+  const [integralFieldState, setIntegralFieldState] = useState<IntegralFieldState | null>(null);
   const [rainbow, setRainbow] = useState<RainbowState | null>(null);
   const [prism, setPrism] = useState<PrismOutput | null>(null);
   const [ftcpPoint, setFtcpPoint] = useState<CurvaturePoint | null>(null);
@@ -362,6 +365,16 @@ const AureonDashboard = () => {
       setLighthouse(lighthouseState);
       setSignal(tradingSignal);
       setHarmonicNexusState(nexusState);
+      
+      // Map to Integral AQAL Framework
+      const aqalState = mapToAQAL(
+        omegaState.coherence,
+        nexusState.observer,
+        nexusState.substrateCoherence,
+        nexusState.harmonicResonance,
+        nexusState.dimensionalAlignment
+      );
+      setIntegralFieldState(aqalState);
     };
 
     processData();
@@ -594,6 +607,11 @@ const AureonDashboard = () => {
         {/* Harmonic Theory Foundation */}
         <div className="mb-8">
           <HarmonicTheoryFoundation />
+        </div>
+
+        {/* Integral AQAL Framework Mapping */}
+        <div className="mb-8">
+          <IntegralAQALVisualization fieldState={integralFieldState} />
         </div>
 
         {/* Interactive 3D Phase Field Visualization */}
