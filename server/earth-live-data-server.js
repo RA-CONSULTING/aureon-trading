@@ -35,11 +35,23 @@ schumannServer.on('connection', (ws) => {
     // Variance in measurements
     const variance = 0.02 + Math.random() * 0.05;
     
+    // Generate harmonics (7 harmonics of Schumann Resonance)
+    const harmonics = [
+      { frequency: 7.83, amplitude: amplitude, name: 'Fundamental' },
+      { frequency: 14.3, amplitude: amplitude * (0.6 + Math.random() * 0.2), name: '2nd Harmonic' },
+      { frequency: 20.8, amplitude: amplitude * (0.4 + Math.random() * 0.2), name: '3rd Harmonic' },
+      { frequency: 27.3, amplitude: amplitude * (0.3 + Math.random() * 0.15), name: '4th Harmonic' },
+      { frequency: 33.8, amplitude: amplitude * (0.2 + Math.random() * 0.1), name: '5th Harmonic' },
+      { frequency: 39.0, amplitude: amplitude * (0.15 + Math.random() * 0.08), name: '6th Harmonic' },
+      { frequency: 45.0, amplitude: amplitude * (0.1 + Math.random() * 0.05), name: '7th Harmonic' },
+    ];
+    
     const data = {
       frequency,
       amplitude,
       quality,
       variance,
+      harmonics,
       timestamp: new Date().toISOString()
     };
     

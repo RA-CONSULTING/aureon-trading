@@ -29,6 +29,7 @@ import { StargateStatus } from '@/components/StargateStatus';
 import { CelestialAlignments } from '@/components/CelestialAlignments';
 import { SolarFlareCorrelation } from '@/components/SolarFlareCorrelation';
 import { SchumannResonanceMonitor } from '@/components/SchumannResonanceMonitor';
+import { SchumannSpectrograph } from '@/components/SchumannSpectrograph';
 import { ConsciousnessCoherenceTracker } from '@/components/ConsciousnessCoherenceTracker';
 import { TemporalAlignmentTracker } from '@/components/TemporalAlignmentTracker';
 import { OmegaFieldVisualization } from '@/components/OmegaFieldVisualization';
@@ -749,7 +750,7 @@ const AureonDashboard = () => {
         </div>
 
         <div className="mb-8">
-          <SchumannResonanceMonitor />
+          <SchumannSpectrograph />
         </div>
 
         <div className="mb-8">

@@ -1,5 +1,11 @@
 import { useState, useEffect } from 'react';
 
+export interface SchumannHarmonic {
+  frequency: number;
+  amplitude: number;
+  name: string;
+}
+
 export interface SchumannData {
   fundamentalHz: number;
   amplitude: number;
@@ -8,11 +14,14 @@ export interface SchumannData {
   timestamp: Date;
   coherenceBoost: number;
   resonancePhase: 'stable' | 'elevated' | 'peak' | 'disturbed';
+  harmonics: SchumannHarmonic[];
+  spectrumHistory: number[][];
 }
 
 export function useSchumannResonance() {
   const [schumannData, setSchumannData] = useState<SchumannData | null>(null);
   const [isConnected, setIsConnected] = useState(false);
+  const [spectrumHistory, setSpectrumHistory] = useState<number[][]>([]);
 
   useEffect(() => {
     let ws: WebSocket | null = null;
@@ -50,6 +59,24 @@ export function useSchumannResonance() {
             else if (amplitude > 0.8 || quality > 0.75) resonancePhase = 'elevated';
             else if (amplitude < 0.4 || quality < 0.6) resonancePhase = 'disturbed';
             
+            // Parse harmonics (if provided by server, or calculate)
+            const harmonics: SchumannHarmonic[] = data.harmonics || [
+              { frequency: 7.83, amplitude: amplitude, name: 'Fundamental' },
+              { frequency: 14.3, amplitude: amplitude * 0.7, name: '2nd Harmonic' },
+              { frequency: 20.8, amplitude: amplitude * 0.5, name: '3rd Harmonic' },
+              { frequency: 27.3, amplitude: amplitude * 0.35, name: '4th Harmonic' },
+              { frequency: 33.8, amplitude: amplitude * 0.25, name: '5th Harmonic' },
+              { frequency: 39.0, amplitude: amplitude * 0.18, name: '6th Harmonic' },
+              { frequency: 45.0, amplitude: amplitude * 0.12, name: '7th Harmonic' },
+            ];
+            
+            // Update spectrum history for spectrograph
+            setSpectrumHistory(prev => {
+              const newSpectrum = harmonics.map(h => h.amplitude);
+              const updated = [...prev, newSpectrum];
+              return updated.slice(-100); // Keep last 100 samples
+            });
+            
             setSchumannData({
               fundamentalHz,
               amplitude,
@@ -57,7 +84,9 @@ export function useSchumannResonance() {
               variance,
               timestamp: new Date(),
               coherenceBoost,
-              resonancePhase
+              resonancePhase,
+              harmonics,
+              spectrumHistory
             });
           } catch (error) {
             console.error('❌ Error parsing Schumann data:', error);
