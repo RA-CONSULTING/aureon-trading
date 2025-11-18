@@ -34,6 +34,7 @@ import { FTCPDetector, type CurvaturePoint } from '@/core/ftcpDetector';
 import { LighthouseConsensus, type LighthouseState } from '@/core/lighthouseConsensus';
 import { TradingSignalGenerator, type TradingSignal } from '@/core/tradingSignals';
 import { BinanceWebSocketClient, type MarketData } from '@/core/binanceWebSocket';
+import { useBinanceMarketData } from '@/hooks/useBinanceMarketData';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -65,6 +66,13 @@ const AureonDashboard = () => {
   const { toast } = useToast();
   const { celestialBoost } = useCelestialData();
   const { schumannData } = useSchumannResonance();
+  
+  // Use authenticated REST API instead of WebSocket
+  const { marketData: binanceData, isConnected: binanceConnected, error: binanceError } = useBinanceMarketData(
+    selectedSymbol.toUpperCase(),
+    5000 // Refresh every 5 seconds
+  );
+  
   const masterEqRef = useRef(new MasterEquation());
   const rainbowBridgeRef = useRef(new RainbowBridge());
   const prismEngineRef = useRef(new Prism());
@@ -200,8 +208,28 @@ const AureonDashboard = () => {
     }
   };
 
-  // Initialize Binance WebSocket when symbol changes
+  // Process market data from authenticated REST API
   useEffect(() => {
+    if (!isRunning || !binanceData) return;
+
+    const marketSnapshot: MarketData = {
+      price: binanceData.price,
+      volume: binanceData.volumeNormalized,
+      volatility: binanceData.volatility,
+      momentum: binanceData.momentum,
+      spread: binanceData.spreadPercent,
+      timestamp: binanceData.timestamp,
+    };
+
+    setCurrentPrice(binanceData.price);
+    setIsConnected(binanceConnected);
+    setCurrentSymbol(binanceData.symbol);
+
+    // Process with AUREON field
+    const lambdaState = masterEqRef.current.step(marketSnapshot);
+    setLambda(lambdaState);
+    // ... rest of processing logic remains the same
+  }, [binanceData, isRunning, binanceConnected]);
     // Disconnect existing client if any
     if (binanceClientRef.current) {
       binanceClientRef.current.disconnect();
