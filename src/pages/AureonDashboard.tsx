@@ -22,6 +22,7 @@ import { CelestialAlignments } from '@/components/CelestialAlignments';
 import { SolarFlareCorrelation } from '@/components/SolarFlareCorrelation';
 import { SchumannResonanceMonitor } from '@/components/SchumannResonanceMonitor';
 import { ConsciousnessCoherenceTracker } from '@/components/ConsciousnessCoherenceTracker';
+import { TemporalAlignmentTracker } from '@/components/TemporalAlignmentTracker';
 import { ConsciousnessHistoryChart } from '@/components/ConsciousnessHistoryChart';
 import { BinanceConnectionStatus } from '@/components/BinanceConnectionStatus';
 import { useAutoTrading } from '@/hooks/useAutoTrading';
@@ -488,6 +489,11 @@ const AureonDashboard = () => {
         {/* Consciousness Field History Chart */}
         <div className="mb-8">
           <ConsciousnessHistoryChart />
+        </div>
+
+        {/* Temporal Alignment Tracker */}
+        <div className="mb-8">
+          <TemporalAlignmentTracker />
         </div>
 
         {/* FTCP Timeline Visualization */}
