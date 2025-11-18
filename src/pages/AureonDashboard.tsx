@@ -27,6 +27,7 @@ import { CoherenceForecaster } from '@/components/CoherenceForecaster';
 import { MultiSymbolForecastComparison } from '@/components/MultiSymbolForecastComparison';
 import { StargateVisualization } from '@/components/StargateVisualization';
 import { StargateStatus } from '@/components/StargateStatus';
+import { StargatePatternAnalysis } from '@/components/StargatePatternAnalysis';
 import { FrequencyHarmonizationPanel } from '@/components/FrequencyHarmonizationPanel';
 import { CelestialAlignments } from '@/components/CelestialAlignments';
 import { SolarFlareCorrelation } from '@/components/SolarFlareCorrelation';
@@ -638,6 +639,11 @@ const AureonDashboard = () => {
         {/* Primelines Protocol Gateway */}
         <div className="mb-8">
           <PrimelinesProtocolStatus />
+        </div>
+
+        {/* AI-Powered Stargate Pattern Analysis */}
+        <div className="mb-8">
+          <StargatePatternAnalysis />
         </div>
 
         {/* Primelines Multiversal Temporal Identity */}
