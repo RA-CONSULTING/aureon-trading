@@ -141,32 +141,34 @@ Return JSON with: { valid: boolean, coherence: number, resonance: number, recomm
         };
     }
 
-    // Log protocol interaction
-    await supabase.from("harmonic_nexus_states").insert({
-      temporal_id: temporalId,
-      sentinel_name: sentinelName,
-      omega_value: aiValidation?.coherence || 0.9,
-      substrate_coherence: aiValidation?.coherence || 0.9,
-      field_integrity: aiValidation?.valid ? 1.0 : 0.5,
-      harmonic_resonance: aiValidation?.resonance || 528,
-      dimensional_alignment: 0.95,
-      psi_potential: 1.0,
-      love_coherence: aiValidation?.resonance ? aiValidation.resonance / 528 : 1.0,
-      observer_consciousness: 1.0,
-      theta_alignment: 0.98,
-      unity_probability: aiValidation?.valid ? 0.95 : 0.7,
-      akashic_frequency: 528,
-      akashic_convergence: 0.9,
-      akashic_stability: 0.95,
-      akashic_boost: 0.1,
-      sync_status: "synced",
-      sync_quality: 1.0,
-      metadata: {
-        operation,
-        aiValidation,
-        result: result.success,
-      },
-    });
+    // Log protocol interaction (skip for stargate network pings)
+    if (!('type' in result) || result.type !== "stargate_network") {
+      await supabase.from("harmonic_nexus_states").insert({
+        temporal_id: temporalId,
+        sentinel_name: sentinelName,
+        omega_value: aiValidation?.coherence || 0.9,
+        substrate_coherence: aiValidation?.coherence || 0.9,
+        field_integrity: aiValidation?.valid ? 1.0 : 0.5,
+        harmonic_resonance: aiValidation?.resonance || 528,
+        dimensional_alignment: 0.95,
+        psi_potential: 1.0,
+        love_coherence: aiValidation?.resonance ? aiValidation.resonance / 528 : 1.0,
+        observer_consciousness: 1.0,
+        theta_alignment: 0.98,
+        unity_probability: aiValidation?.valid ? 0.95 : 0.7,
+        akashic_frequency: 528,
+        akashic_convergence: 0.9,
+        akashic_stability: 0.95,
+        akashic_boost: 0.1,
+        sync_status: "synced",
+        sync_quality: 1.0,
+        metadata: {
+          operation,
+          aiValidation,
+          result: result.success,
+        },
+      });
+    }
 
     return new Response(
       JSON.stringify({
