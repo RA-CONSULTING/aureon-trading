@@ -14,6 +14,7 @@ import { MasterEquationField3D } from '@/components/MasterEquationField3D';
 import { HarmonicRealityFramework } from '@/components/HarmonicRealityFramework';
 import { HarmonicNexusMonitor } from '@/components/HarmonicNexusMonitor';
 import { FieldPullMetricsPanel } from '@/components/FieldPullMetricsPanel';
+import { HarmonicTheoryFoundation } from '@/components/HarmonicTheoryFoundation';
 import { CoherenceTracker } from '@/components/CoherenceTracker';
 import { CoherenceHeatmap } from '@/components/CoherenceHeatmap';
 import { CoherenceForecaster } from '@/components/CoherenceForecaster';
@@ -587,6 +588,11 @@ const AureonDashboard = () => {
         {/* Field Pull Metrics Panel */}
         <div className="mb-8">
           <FieldPullMetricsPanel />
+        </div>
+
+        {/* Harmonic Theory Foundation */}
+        <div className="mb-8">
+          <HarmonicTheoryFoundation />
         </div>
 
         {/* Consciousness Coherence Tracker */}
