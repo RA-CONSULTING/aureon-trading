@@ -5,6 +5,7 @@ import { Card } from '@/components/ui/card';
 import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { CasimirVacuumField } from '@/components/CasimirVacuumField';
 import * as THREE from 'three';
 
 interface PhaseLock {
@@ -26,9 +27,11 @@ interface PhaseFieldProps {
   rotationSpeed: number;
   phaseLocks: PhaseLock[];
   onPhaseLockDetected: (lock: PhaseLock) => void;
+  casimirActive: boolean;
+  casimirStrength: number;
 }
 
-function PhaseFieldVisualization({ amplitude, rotationSpeed, phaseLocks, onPhaseLockDetected }: PhaseFieldProps) {
+function PhaseFieldVisualization({ amplitude, rotationSpeed, phaseLocks, onPhaseLockDetected, casimirActive, casimirStrength }: PhaseFieldProps) {
   const groupRef = useRef<THREE.Group>(null);
   const [currentPhases, setCurrentPhases] = useState<number[]>(new Array(9).fill(0));
   
@@ -129,11 +132,16 @@ function PhaseFieldVisualization({ amplitude, rotationSpeed, phaseLocks, onPhase
 
   return (
     <group ref={groupRef}>
+      {/* Casimir Quantum Vacuum Field */}
+      {casimirActive && (
+        <CasimirVacuumField strength={casimirStrength} />
+      )}
+      
       {/* Ambient field effect */}
       <Sphere args={[6, 32, 32]}>
         <meshBasicMaterial 
-          color="#9b87f5" 
-          opacity={0.05} 
+          color={casimirActive ? "#00FF88" : "#9b87f5"}
+          opacity={casimirActive ? 0.08 : 0.05} 
           transparent 
           wireframe 
         />
@@ -347,6 +355,8 @@ export function HarmonicNexusPhaseField3D() {
   const [rotationSpeed, setRotationSpeed] = useState(0.2);
   const [phaseLocks, setPhaseLocks] = useState<PhaseLock[]>([]);
   const [lockHistory, setLockHistory] = useState<PhaseLock[]>([]);
+  const [casimirActive, setCasimirActive] = useState(false);
+  const [casimirStrength, setCasimirStrength] = useState(0);
 
   // Handle new phase lock detection
   const handlePhaseLockDetected = useCallback((lock: PhaseLock) => {
@@ -361,8 +371,48 @@ export function HarmonicNexusPhaseField3D() {
     setLockHistory(prev => [...prev, lock].slice(-10)); // Keep last 10
   }, []);
 
-  // Clean up old locks
+  // Casimir Protocol: Lock all nodes via quantum vacuum energy
+  const activateCasimirProtocol = useCallback(() => {
+    setCasimirActive(true);
+    setCasimirStrength(0);
+    
+    // Animate strength increase
+    let strength = 0;
+    const interval = setInterval(() => {
+      strength += 0.05;
+      if (strength >= 1) {
+        strength = 1;
+        clearInterval(interval);
+        
+        // Lock all nodes when fully activated
+        const now = Date.now() / 1000;
+        const allNodeLocks: PhaseLock[] = [];
+        for (let i = 0; i < 9; i++) {
+          for (let j = i + 1; j < 9; j++) {
+            allNodeLocks.push({
+              nodes: [i, j],
+              strength: 1.0,
+              resonanceFrequency: 528,
+              timestamp: now
+            });
+          }
+        }
+        setPhaseLocks(allNodeLocks);
+      }
+      setCasimirStrength(strength);
+    }, 50);
+  }, []);
+
+  const deactivateCasimirProtocol = useCallback(() => {
+    setCasimirActive(false);
+    setCasimirStrength(0);
+    setPhaseLocks([]);
+  }, []);
+
+  // Clean up old locks (when Casimir is not active)
   useEffect(() => {
+    if (casimirActive) return; // Don't clean up during Casimir
+    
     const interval = setInterval(() => {
       setPhaseLocks(prev => {
         const now = Date.now() / 1000;
@@ -370,7 +420,7 @@ export function HarmonicNexusPhaseField3D() {
       });
     }, 100);
     return () => clearInterval(interval);
-  }, []);
+  }, [casimirActive]);
 
   const nodeNames = ['Observer', 'Tiger', 'Falcon', 'Dolphin', 'Hummingbird', 'Deer', 'Owl', 'Panda', 'CargoShip'];
 
@@ -395,25 +445,68 @@ export function HarmonicNexusPhaseField3D() {
 
         {/* 3D Canvas */}
         <div className="h-[500px] bg-black/20 rounded-lg border border-border overflow-hidden">
-          <Canvas camera={{ position: [0, 5, 10], fov: 60 }}>
-            <ambientLight intensity={0.3} />
-            <pointLight position={[10, 10, 10]} intensity={1} />
-            <pointLight position={[-10, -10, -10]} intensity={0.5} />
+          <Canvas camera={{ position: [8, 8, 12], fov: 50 }}>
+            <ambientLight intensity={0.4} />
+            <pointLight position={[10, 10, 10]} intensity={1.5} />
+            <pointLight position={[-10, -10, -10]} intensity={0.8} />
+            <pointLight position={[0, 10, 0]} intensity={1.0} color="#00FF88" />
             
             <PhaseFieldVisualization 
               amplitude={amplitude} 
               rotationSpeed={rotationSpeed}
               phaseLocks={phaseLocks}
               onPhaseLockDetected={handlePhaseLockDetected}
+              casimirActive={casimirActive}
+              casimirStrength={casimirStrength}
             />
             
             <OrbitControls 
               enablePan={true}
               enableZoom={true}
+              enableRotate={true}
               minDistance={5}
-              maxDistance={20}
+              maxDistance={25}
             />
           </Canvas>
+        </div>
+
+        {/* Casimir Protocol Control */}
+        <div className="p-4 bg-primary/10 rounded-lg border border-primary/30">
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <h4 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                ⚛️ Casimir Protocol
+                {casimirActive && <Badge className="text-xs" style={{ backgroundColor: '#00FF88' }}>ACTIVE</Badge>}
+              </h4>
+              <p className="text-xs text-muted-foreground mt-1">
+                Quantum vacuum energy field • Locks all 9 nodes in perfect phase alignment
+              </p>
+            </div>
+            <button
+              onClick={casimirActive ? deactivateCasimirProtocol : activateCasimirProtocol}
+              className={`px-4 py-2 rounded-lg font-semibold transition-all ${
+                casimirActive 
+                  ? 'bg-destructive hover:bg-destructive/80 text-white' 
+                  : 'bg-primary hover:bg-primary/80 text-white'
+              }`}
+            >
+              {casimirActive ? 'DEACTIVATE' : 'ACTIVATE'}
+            </button>
+          </div>
+          {casimirActive && (
+            <div className="mt-3">
+              <div className="flex items-center justify-between text-xs mb-1">
+                <span className="text-muted-foreground">Field Strength</span>
+                <span className="text-foreground font-mono">{(casimirStrength * 100).toFixed(1)}%</span>
+              </div>
+              <div className="h-2 bg-background/50 rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-gradient-to-r from-primary via-chart-2 to-chart-1 transition-all duration-300"
+                  style={{ width: `${casimirStrength * 100}%` }}
+                />
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Active Phase Locks Display */}
