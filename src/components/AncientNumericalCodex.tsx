@@ -5,6 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { BookOpen, Infinity, Sparkles, Waves, Radio, Zap } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useFieldGlyphResonance } from '@/hooks/useFieldGlyphResonance';
+import { GlyphTradingCorrelationChart } from './GlyphTradingCorrelationChart';
 import { formatDistanceToNow } from 'date-fns';
 import ancientCodexImage from '@/assets/research/harmonic-theory/ancient-numerical-codex.png';
 
@@ -114,11 +115,12 @@ export function AncientNumericalCodex() {
       </CardHeader>
       <CardContent>
         <Tabs defaultValue="glyphs" className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="glyphs">Sacred Glyphs</TabsTrigger>
             <TabsTrigger value="live">Live Field</TabsTrigger>
-            <TabsTrigger value="ratios">Harmonic Ratios</TabsTrigger>
-            <TabsTrigger value="codex">Ancient Codex</TabsTrigger>
+            <TabsTrigger value="correlation">Correlation</TabsTrigger>
+            <TabsTrigger value="ratios">Ratios</TabsTrigger>
+            <TabsTrigger value="codex">Codex</TabsTrigger>
           </TabsList>
 
           {/* Sacred Glyphs Tab */}
@@ -374,6 +376,11 @@ export function AncientNumericalCodex() {
                 </div>
               </>
             )}
+          </TabsContent>
+
+          {/* Correlation Analysis Tab */}
+          <TabsContent value="correlation" className="space-y-4">
+            <GlyphTradingCorrelationChart />
           </TabsContent>
 
           {/* Harmonic Ratios Tab */}
