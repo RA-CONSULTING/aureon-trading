@@ -32,6 +32,7 @@ import { StargateNetworkAnalytics } from '@/components/StargateNetworkAnalytics'
 import { FrequencyHarmonizationPanel } from '@/components/FrequencyHarmonizationPanel';
 import { CelestialAlignments } from '@/components/CelestialAlignments';
 import { SolarFlareCorrelation } from '@/components/SolarFlareCorrelation';
+import { SolarWeatherDashboard } from '@/components/SolarWeatherDashboard';
 import { SchumannResonanceMonitor } from '@/components/SchumannResonanceMonitor';
 import { SchumannSpectrograph } from '@/components/SchumannSpectrograph';
 import { ConsciousnessCoherenceTracker } from '@/components/ConsciousnessCoherenceTracker';
@@ -773,6 +774,10 @@ const AureonDashboard = () => {
 
         <div className="mb-8">
           <CelestialAlignments />
+        </div>
+
+        <div className="mb-8">
+          <SolarWeatherDashboard />
         </div>
 
         <div className="mb-8">
