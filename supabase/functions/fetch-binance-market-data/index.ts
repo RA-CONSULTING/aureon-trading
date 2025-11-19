@@ -51,25 +51,46 @@ serve(async (req) => {
 
     const timestamp = Date.now();
     
-    // Fetch multiple endpoints in parallel for comprehensive market data
+    // Helper function to fetch with timeout
+    const fetchWithTimeout = async (url: string, options: RequestInit, timeoutMs = 8000) => {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+      
+      try {
+        const response = await fetch(url, {
+          ...options,
+          signal: controller.signal
+        });
+        clearTimeout(timeoutId);
+        return response;
+      } catch (error) {
+        clearTimeout(timeoutId);
+        if (error instanceof Error && error.name === 'AbortError') {
+          throw new Error(`Request timeout after ${timeoutMs}ms`);
+        }
+        throw error;
+      }
+    };
+
+    // Fetch multiple endpoints in parallel for comprehensive market data with timeout
     const requests = [
       // 24hr ticker statistics
-      fetch(`https://api.binance.com/api/v3/ticker/24hr?symbol=${symbol}`, {
+      fetchWithTimeout(`https://api.binance.com/api/v3/ticker/24hr?symbol=${symbol}`, {
         headers: { 'X-MBX-APIKEY': apiKey }
       }),
       
       // Current average price
-      fetch(`https://api.binance.com/api/v3/avgPrice?symbol=${symbol}`, {
+      fetchWithTimeout(`https://api.binance.com/api/v3/avgPrice?symbol=${symbol}`, {
         headers: { 'X-MBX-APIKEY': apiKey }
       }),
       
       // Order book depth
-      fetch(`https://api.binance.com/api/v3/depth?symbol=${symbol}&limit=20`, {
+      fetchWithTimeout(`https://api.binance.com/api/v3/depth?symbol=${symbol}&limit=20`, {
         headers: { 'X-MBX-APIKEY': apiKey }
       }),
       
       // Recent trades
-      fetch(`https://api.binance.com/api/v3/trades?symbol=${symbol}&limit=10`, {
+      fetchWithTimeout(`https://api.binance.com/api/v3/trades?symbol=${symbol}&limit=10`, {
         headers: { 'X-MBX-APIKEY': apiKey }
       }),
     ];
