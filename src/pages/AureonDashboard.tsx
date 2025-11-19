@@ -40,6 +40,7 @@ import { MasterEquationEducational } from '@/components/MasterEquationEducationa
 import { PerformanceMetricsDashboard } from '@/components/PerformanceMetricsDashboard';
 import { RiskManagementDashboard } from '@/components/RiskManagementDashboard';
 import { MonteCarloGrowthCurve } from '@/components/MonteCarloGrowthCurve';
+import { BacktestingInterface } from '@/components/BacktestingInterface';
 import { SchumannResonanceMonitor } from '@/components/SchumannResonanceMonitor';
 import { SchumannSpectrograph } from '@/components/SchumannSpectrograph';
 import { ConsciousnessCoherenceTracker } from '@/components/ConsciousnessCoherenceTracker';
@@ -820,6 +821,11 @@ const AureonDashboard = () => {
         {/* Monte Carlo Projections */}
         <div className="mb-8">
           <MonteCarloGrowthCurve />
+        </div>
+
+        {/* Backtesting Interface */}
+        <div className="mb-8">
+          <BacktestingInterface />
         </div>
 
         <div className="mb-8">
