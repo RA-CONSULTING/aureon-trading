@@ -33,15 +33,19 @@ serve(async (req) => {
   try {
     console.log('[fetch-binance-portfolio] Fetching live Binance portfolio');
 
-    const apiKey = Deno.env.get('BINANCE_API_KEY');
-    const apiSecret = Deno.env.get('BINANCE_API_SECRET');
+    const apiKey = Deno.env.get('BINANCE_API_KEY')?.trim();
+    const apiSecret = Deno.env.get('BINANCE_API_SECRET')?.trim();
 
     if (!apiKey || !apiSecret) {
       throw new Error('Binance API credentials not configured');
     }
 
+    console.log('[fetch-binance-portfolio] API Key length:', apiKey.length);
+    console.log('[fetch-binance-portfolio] API Key prefix:', apiKey.substring(0, 8) + '...');
+
     const timestamp = Date.now();
-    const queryString = `timestamp=${timestamp}`;
+    const recvWindow = 60000; // 60 seconds
+    const queryString = `timestamp=${timestamp}&recvWindow=${recvWindow}`;
     
     // Create HMAC signature
     const signature = await createSignature(apiSecret, queryString);
@@ -49,7 +53,7 @@ serve(async (req) => {
     // Fetch account information
     const accountUrl = `https://api.binance.com/api/v3/account?${queryString}&signature=${signature}`;
     
-    console.log('[fetch-binance-portfolio] Calling Binance API');
+    console.log('[fetch-binance-portfolio] Calling Binance API with timestamp:', timestamp);
 
     const response = await fetch(accountUrl, {
       method: 'GET',
@@ -60,8 +64,19 @@ serve(async (req) => {
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('[fetch-binance-portfolio] Binance API error:', response.status, errorText);
-      throw new Error(`Binance API error: ${response.status}`);
+      console.error('[fetch-binance-portfolio] Binance API error response:', errorText);
+      console.error('[fetch-binance-portfolio] Status:', response.status);
+      
+      let errorMessage = `Binance API error: ${response.status}`;
+      try {
+        const errorJson = JSON.parse(errorText);
+        errorMessage = `Binance API error: ${errorJson.msg || errorJson.code || response.status}`;
+        console.error('[fetch-binance-portfolio] Parsed error:', errorJson);
+      } catch (e) {
+        console.error('[fetch-binance-portfolio] Could not parse error response');
+      }
+      
+      throw new Error(errorMessage);
     }
 
     const accountData = await response.json();
