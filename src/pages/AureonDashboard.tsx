@@ -34,6 +34,12 @@ import { CelestialAlignments } from '@/components/CelestialAlignments';
 import { SolarFlareCorrelation } from '@/components/SolarFlareCorrelation';
 import { SolarWeatherDashboard } from '@/components/SolarWeatherDashboard';
 import { SolarCoherenceCorrelationChart } from '@/components/SolarCoherenceCorrelationChart';
+import { AurisNodesVisualization } from '@/components/AurisNodesVisualization';
+import { KellyCriterionCalculator } from '@/components/KellyCriterionCalculator';
+import { MasterEquationEducational } from '@/components/MasterEquationEducational';
+import { PerformanceMetricsDashboard } from '@/components/PerformanceMetricsDashboard';
+import { RiskManagementDashboard } from '@/components/RiskManagementDashboard';
+import { MonteCarloGrowthCurve } from '@/components/MonteCarloGrowthCurve';
 import { SchumannResonanceMonitor } from '@/components/SchumannResonanceMonitor';
 import { SchumannSpectrograph } from '@/components/SchumannSpectrograph';
 import { ConsciousnessCoherenceTracker } from '@/components/ConsciousnessCoherenceTracker';
@@ -783,6 +789,37 @@ const AureonDashboard = () => {
 
         <div className="mb-8">
           <SolarCoherenceCorrelationChart />
+        </div>
+
+        {/* Educational & Analysis Components */}
+        <div className="mb-8">
+          <MasterEquationEducational />
+        </div>
+
+        <div className="mb-8">
+          <AurisNodesVisualization 
+            nodeResponses={omega?.nodeResponses || {}}
+            dominantNode={omega?.dominantNode || ""}
+          />
+        </div>
+
+        {/* Performance & Risk Management */}
+        <div className="mb-8">
+          <PerformanceMetricsDashboard />
+        </div>
+
+        <div className="mb-8">
+          <RiskManagementDashboard />
+        </div>
+
+        {/* Position Sizing Calculator */}
+        <div className="mb-8">
+          <KellyCriterionCalculator />
+        </div>
+
+        {/* Monte Carlo Projections */}
+        <div className="mb-8">
+          <MonteCarloGrowthCurve />
         </div>
 
         <div className="mb-8">
