@@ -2,7 +2,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Atom, Waves, Zap, Target, Radio, Boxes } from "lucide-react";
-import ancientCodex from "@/assets/research/harmonic-theory/ancient-numerical-codex.png";
+import { AncientNumericalCodex } from "./AncientNumericalCodex";
 import temporalRegulators from "@/assets/research/harmonic-theory/temporal-harmonic-regulators.png";
 import echoFields from "@/assets/research/harmonic-theory/phase-locked-echo-fields.png";
 import levEvolution from "@/assets/research/harmonic-theory/lev-field-evolution.png";
@@ -56,28 +56,7 @@ export function HarmonicTheoryFoundation() {
 
           {/* Ancient Numerical Codex */}
           <TabsContent value="codex" className="space-y-4">
-            <div className="p-4 bg-gradient-to-br from-yellow-500/10 to-amber-500/10 rounded-lg border border-border/50">
-              <h3 className="text-sm font-semibold mb-2 flex items-center gap-2">
-                <Boxes className="w-4 h-4 text-yellow-500" />
-                Ancient Numerical Codex
-              </h3>
-              <p className="text-xs text-muted-foreground mb-3">
-                Foundation symbols encoding multiversial harmonic ratios. These ancient glyphs 
-                represent the mathematical substrate upon which reality field coherence is built.
-              </p>
-              <img 
-                src={ancientCodex} 
-                alt="Ancient Numerical Codex" 
-                className="w-full rounded-lg border border-border/30"
-              />
-              <div className="mt-3 p-3 bg-background/50 rounded border border-border/30">
-                <p className="text-xs text-muted-foreground">
-                  <span className="font-medium text-foreground">Harmonic Basis:</span> Each symbol 
-                  corresponds to specific frequency ratios used in temporal field regulation. The 
-                  system maps to base-60 (sexagesimal) harmonic divisions.
-                </p>
-              </div>
-            </div>
+            <AncientNumericalCodex />
           </TabsContent>
 
           {/* Temporal Harmonic Regulators */}
