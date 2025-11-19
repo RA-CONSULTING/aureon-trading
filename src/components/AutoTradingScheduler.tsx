@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Clock, Play, Pause, Settings, TrendingUp, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import { SchedulerHistoryCharts } from "./SchedulerHistoryCharts";
+import { PredictiveWindowsPanel } from "./PredictiveWindowsPanel";
 
 interface SchedulerConfig {
   enabled: boolean;
@@ -368,6 +369,11 @@ export const AutoTradingScheduler = () => {
             Historical decision patterns, coherence trends, and activation timelines
           </p>
         </div>
+        
+        {/* Predictive Analytics */}
+        <PredictiveWindowsPanel />
+        
+        {/* Historical Charts */}
         <SchedulerHistoryCharts />
       </div>
     </div>
