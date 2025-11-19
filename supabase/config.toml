@@ -38,3 +38,6 @@ verify_jwt = true
 
 [functions.fetch-usgs-seismic-data]
 verify_jwt = true
+
+[functions.unified-field-analysis]
+verify_jwt = true
