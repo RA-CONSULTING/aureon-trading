@@ -43,6 +43,7 @@ import { MonteCarloGrowthCurve } from '@/components/MonteCarloGrowthCurve';
 import { BacktestingInterface } from '@/components/BacktestingInterface';
 import { TradeAnalyzer } from '@/components/TradeAnalyzer';
 import { NoaaSpaceWeatherDashboard } from '@/components/NoaaSpaceWeatherDashboard';
+import { SpaceWeatherCorrelationAnalyzer } from '@/components/SpaceWeatherCorrelationAnalyzer';
 import { SchumannResonanceMonitor } from '@/components/SchumannResonanceMonitor';
 import { SchumannSpectrograph } from '@/components/SchumannSpectrograph';
 import { ConsciousnessCoherenceTracker } from '@/components/ConsciousnessCoherenceTracker';
@@ -838,6 +839,11 @@ const AureonDashboard = () => {
         {/* NOAA Space Weather Dashboard */}
         <div className="mb-8">
           <NoaaSpaceWeatherDashboard />
+        </div>
+
+        {/* Space Weather Correlation Analyzer */}
+        <div className="mb-8">
+          <SpaceWeatherCorrelationAnalyzer />
         </div>
 
         <div className="mb-8">

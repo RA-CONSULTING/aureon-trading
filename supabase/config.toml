@@ -32,3 +32,6 @@ verify_jwt = true
 
 [functions.fetch-noaa-space-weather]
 verify_jwt = true
+
+[functions.analyze-space-weather-correlation]
+verify_jwt = true
