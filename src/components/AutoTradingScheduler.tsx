@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { Clock, Play, Pause, Settings, TrendingUp, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
+import { SchedulerHistoryCharts } from "./SchedulerHistoryCharts";
 
 interface SchedulerConfig {
   enabled: boolean;
@@ -357,6 +358,17 @@ export const AutoTradingScheduler = () => {
       {/* Footer */}
       <div className="text-xs text-muted-foreground text-center">
         Auto-scheduler checks every 15 minutes when enabled • Based on unified field coherence analysis
+      </div>
+
+      {/* Scheduler History & Analytics */}
+      <div className="space-y-4">
+        <div>
+          <h3 className="text-xl font-bold mb-2">Scheduler History & Analytics</h3>
+          <p className="text-sm text-muted-foreground">
+            Historical decision patterns, coherence trends, and activation timelines
+          </p>
+        </div>
+        <SchedulerHistoryCharts />
       </div>
     </div>
   );
