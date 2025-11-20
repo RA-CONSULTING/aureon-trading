@@ -52,7 +52,11 @@ export default function PaymentGate({ userId, onPaymentComplete }: PaymentGatePr
           payment_url: paymentUrl,
           metadata: {
             purpose: "signup_fee",
-            created_from: "payment_gate"
+            created_from: "payment_gate",
+            total_amount: 100.00,
+            platform_amount: 90.00,
+            charity_amount: 10.00,
+            charity_percentage: 10
           }
         })
         .select()
@@ -152,6 +156,17 @@ export default function PaymentGate({ userId, onPaymentComplete }: PaymentGatePr
             <p className="text-4xl font-bold text-primary">£100.00</p>
             <p className="text-xs text-muted-foreground mt-1">One-time payment</p>
           </div>
+          
+          <div className="mb-4 p-3 bg-green-500/10 border border-green-500/20 rounded-lg">
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-green-700 dark:text-green-400 font-medium">💚 Charitable Contribution</span>
+              <span className="font-bold text-green-700 dark:text-green-400">£10.00</span>
+            </div>
+            <p className="text-xs text-green-600 dark:text-green-400 mt-1">
+              10% of your payment supports charitable causes
+            </p>
+          </div>
+
           <div className="space-y-2 text-sm">
             <div className="flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4 text-green-500" />
