@@ -1,11 +1,31 @@
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { TrendingUp, LogOut } from "lucide-react";
+import { TrendingUp, LogOut, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
+import { useEffect, useState } from "react";
 
 const Navbar = () => {
   const navigate = useNavigate();
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    checkAdminStatus();
+  }, []);
+
+  const checkAdminStatus = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { data } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', user.id)
+      .eq('role', 'admin')
+      .maybeSingle();
+
+    setIsAdmin(!!data);
+  };
 
   const handleSignOut = async () => {
     const { error } = await supabase.auth.signOut();
@@ -50,6 +70,12 @@ const Navbar = () => {
             <Link to="/backtest" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
               Backtest 🔬
             </Link>
+            {isAdmin && (
+              <Link to="/admin/kyc" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors flex items-center gap-1">
+                <ShieldCheck className="h-4 w-4" />
+                Admin KYC
+              </Link>
+            )}
           </div>
 
           <div className="flex items-center gap-3">

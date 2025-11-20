@@ -14,6 +14,7 @@ import AureonDashboard from "./pages/AureonDashboard";
 import Analytics from "./pages/Analytics";
 import Backtest from "./pages/Backtest";
 import Auth from "./pages/Auth";
+import AdminKYC from "./pages/AdminKYC";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -70,6 +71,7 @@ const App = () => (
           <Route path="/aureon" element={<ProtectedRoute><AureonDashboard /></ProtectedRoute>} />
           <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
           <Route path="/backtest" element={<ProtectedRoute><Backtest /></ProtectedRoute>} />
+          <Route path="/admin/kyc" element={<ProtectedRoute><AdminKYC /></ProtectedRoute>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
