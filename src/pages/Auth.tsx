@@ -150,6 +150,22 @@ export default function Auth() {
 
       if (auditError) console.warn('Audit log failed:', auditError);
 
+      // Step 6: Send signup notification email to admin
+      try {
+        await supabase.functions.invoke('send-signup-notification', {
+          body: {
+            email: signUpEmail,
+            fullName: fullName,
+            location: location,
+            dateOfBirth: dateOfBirth
+          }
+        });
+        console.log('[Auth] Signup notification sent to admin');
+      } catch (notificationError) {
+        // Don't block signup if notification fails
+        console.warn('[Auth] Failed to send signup notification:', notificationError);
+      }
+
       toast.success("Registration complete! Your account is pending KYC verification.");
       
       // Clear form
