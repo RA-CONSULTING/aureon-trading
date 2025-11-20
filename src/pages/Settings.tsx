@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, CheckCircle2, XCircle, Clock, Shield, Key, User } from "lucide-react";
+import { Loader2, CheckCircle2, XCircle, Clock, Shield, Key, User, Home } from "lucide-react";
 
 export default function Settings() {
   const navigate = useNavigate();
@@ -182,9 +182,15 @@ export default function Settings() {
 
   return (
     <div className="container max-w-4xl mx-auto py-8 px-4">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Settings</h1>
-        <p className="text-muted-foreground">Manage your account settings and preferences</p>
+      <div className="mb-8 flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold mb-2">Settings</h1>
+          <p className="text-muted-foreground">Manage your account settings and preferences</p>
+        </div>
+        <Button variant="outline" onClick={() => navigate("/")} className="gap-2">
+          <Home className="w-4 h-4" />
+          Home
+        </Button>
       </div>
 
       <Tabs defaultValue="profile" className="w-full">
