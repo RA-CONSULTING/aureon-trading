@@ -398,6 +398,51 @@ export type Database = {
         }
         Relationships: []
       }
+      payment_transactions: {
+        Row: {
+          amount: number
+          created_at: string
+          currency: string
+          id: string
+          metadata: Json | null
+          paid_at: string | null
+          payment_provider: string
+          payment_status: string
+          payment_url: string | null
+          transaction_reference: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          currency?: string
+          id?: string
+          metadata?: Json | null
+          paid_at?: string | null
+          payment_provider?: string
+          payment_status?: string
+          payment_url?: string | null
+          transaction_reference?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          id?: string
+          metadata?: Json | null
+          paid_at?: string | null
+          payment_provider?: string
+          payment_status?: string
+          payment_url?: string | null
+          transaction_reference?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       price_alerts: {
         Row: {
           alert_type: string
@@ -450,6 +495,8 @@ export type Database = {
           kyc_status: string | null
           kyc_verified_at: string | null
           location: string | null
+          payment_completed: boolean | null
+          payment_completed_at: string | null
           updated_at: string
         }
         Insert: {
@@ -464,6 +511,8 @@ export type Database = {
           kyc_status?: string | null
           kyc_verified_at?: string | null
           location?: string | null
+          payment_completed?: boolean | null
+          payment_completed_at?: string | null
           updated_at?: string
         }
         Update: {
@@ -478,6 +527,8 @@ export type Database = {
           kyc_status?: string | null
           kyc_verified_at?: string | null
           location?: string | null
+          payment_completed?: boolean | null
+          payment_completed_at?: string | null
           updated_at?: string
         }
         Relationships: []

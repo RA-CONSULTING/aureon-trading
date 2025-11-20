@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { z } from "zod";
+import PaymentGate from "@/components/PaymentGate";
 
 const emailSchema = z.string().email("Invalid email address");
 const passwordSchema = z.string().min(8, "Password must be at least 8 characters");
@@ -18,6 +19,8 @@ const binanceApiSecretSchema = z.string().min(10, "Binance API secret is require
 export default function Auth() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [showPaymentGate, setShowPaymentGate] = useState(false);
+  const [pendingUserId, setPendingUserId] = useState<string | null>(null);
   
   // Sign In State
   const [email, setEmail] = useState("");
@@ -34,6 +37,29 @@ export default function Auth() {
   const [idDocument, setIdDocument] = useState<File | null>(null);
   const [dataConsent, setDataConsent] = useState(false);
   const [termsConsent, setTermsConsent] = useState(false);
+
+  useEffect(() => {
+    checkExistingSession();
+  }, []);
+
+  const checkExistingSession = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session) {
+      // Check if payment is complete
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("payment_completed")
+        .eq("id", session.user.id)
+        .single();
+
+      if (profile?.payment_completed) {
+        navigate("/");
+      } else {
+        setPendingUserId(session.user.id);
+        setShowPaymentGate(true);
+      }
+    }
+  };
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -166,7 +192,11 @@ export default function Auth() {
         console.warn('[Auth] Failed to send signup notification:', notificationError);
       }
 
-      toast.success("Registration complete! Your account is pending KYC verification.");
+      toast.success("Registration complete! Please proceed to payment.");
+      
+      // Show payment gate
+      setPendingUserId(authData.user.id);
+      setShowPaymentGate(true);
       
       // Clear form
       setSignUpEmail("");
@@ -202,12 +232,26 @@ export default function Auth() {
       
       setLoading(true);
       
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
       });
 
       if (error) throw error;
+
+      // Check if user has completed payment
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("payment_completed")
+        .eq("id", data.user.id)
+        .single();
+
+      if (!profile?.payment_completed) {
+        toast.info("Please complete payment to access the platform");
+        setPendingUserId(data.user.id);
+        setShowPaymentGate(true);
+        return;
+      }
 
       toast.success("Signed in successfully!");
       navigate("/");
@@ -223,6 +267,31 @@ export default function Auth() {
       setLoading(false);
     }
   };
+
+  const handlePaymentComplete = async () => {
+    if (!pendingUserId) return;
+
+    // Update profile to mark payment as completed
+    await supabase
+      .from("profiles")
+      .update({
+        payment_completed: true,
+        payment_completed_at: new Date().toISOString()
+      })
+      .eq("id", pendingUserId);
+
+    toast.success("Welcome to AUREON! Redirecting to dashboard...");
+    setTimeout(() => navigate("/"), 2000);
+  };
+
+  // Show payment gate if user has registered but not paid
+  if (showPaymentGate && pendingUserId) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-primary/5 p-4">
+        <PaymentGate userId={pendingUserId} onPaymentComplete={handlePaymentComplete} />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-primary/5 p-4">

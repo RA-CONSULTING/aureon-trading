@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import AdminKYCDashboard from "@/components/AdminKYCDashboard";
+import AdminPaymentVerification from "@/components/AdminPaymentVerification";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Navbar from "@/components/Navbar";
 import { toast } from "sonner";
 
@@ -69,9 +71,23 @@ export default function AdminKYC() {
       <main className="container mx-auto px-4 py-8">
         <div className="mb-6">
           <h1 className="text-3xl font-bold">Admin Panel</h1>
-          <p className="text-muted-foreground">KYC Verification Management</p>
+          <p className="text-muted-foreground">Platform Management & Verification</p>
         </div>
-        <AdminKYCDashboard />
+        
+        <Tabs defaultValue="kyc" className="w-full">
+          <TabsList className="grid w-full grid-cols-2 max-w-md">
+            <TabsTrigger value="kyc">KYC Verification</TabsTrigger>
+            <TabsTrigger value="payments">Payment Verification</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="kyc" className="mt-6">
+            <AdminKYCDashboard />
+          </TabsContent>
+
+          <TabsContent value="payments" className="mt-6">
+            <AdminPaymentVerification />
+          </TabsContent>
+        </Tabs>
       </main>
     </div>
   );
