@@ -139,23 +139,6 @@ serve(async (req) => {
       throw new Error(errorMessage);
     }
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('[fetch-binance-portfolio] Binance API error response:', errorText);
-      console.error('[fetch-binance-portfolio] Status:', response.status);
-      
-      let errorMessage = `Binance API error: ${response.status}`;
-      try {
-        const errorJson = JSON.parse(errorText);
-        errorMessage = `Binance API error: ${errorJson.msg || errorJson.code || response.status}`;
-        console.error('[fetch-binance-portfolio] Parsed error:', errorJson);
-      } catch (e) {
-        console.error('[fetch-binance-portfolio] Could not parse error response');
-      }
-      
-      throw new Error(errorMessage);
-    }
-
     const accountData = await response.json();
     console.log('[fetch-binance-portfolio] Account data received');
 
