@@ -113,24 +113,35 @@ serve(async (req) => {
       const errorText = await response.text();
       console.error('[fetch-binance-portfolio] Binance API error response:', errorText);
       console.error('[fetch-binance-portfolio] Status:', response.status);
+      console.error('[fetch-binance-portfolio] API Key (first 8 chars):', apiKey.substring(0, 8) + '...');
       
       let errorMessage = `Binance API error: ${response.status}`;
       try {
         const errorJson = JSON.parse(errorText);
+        console.error('[fetch-binance-portfolio] Binance error code:', errorJson.code);
+        console.error('[fetch-binance-portfolio] Binance error message:', errorJson.msg);
         
         // Provide specific error guidance
         if (errorJson.code === -2015) {
-          throw new Error('Binance API key has IP restrictions. Please go to Binance API Management and set "IP access restrictions" to "Unrestricted" or whitelist Lovable Cloud IPs');
+          // Log more details for IP restriction issues
+          console.error('[fetch-binance-portfolio] IP RESTRICTION DETECTED');
+          console.error('[fetch-binance-portfolio] This usually means:');
+          console.error('[fetch-binance-portfolio] 1. API key has IP whitelist enabled on Binance');
+          console.error('[fetch-binance-portfolio] 2. Current request IP is not in the whitelist');
+          console.error('[fetch-binance-portfolio] Solution: Set IP restrictions to "Unrestricted" in Binance API Management');
+          
+          throw new Error(`Binance IP restriction active. Current API key has IP access restrictions enabled. Please visit Binance.com → API Management → Edit your API key → Set "Restrict access to trusted IPs only" to OFF (Unrestricted). Full error: ${errorJson.msg}`);
         } else if (errorJson.code === -2014) {
           throw new Error('Binance API key invalid format or signature mismatch. Please verify your API credentials');
         } else if (errorJson.code === -1022) {
           throw new Error('Binance API signature invalid. Please check your API secret is correct');
+        } else if (errorJson.code === -1021) {
+          throw new Error('Timestamp for this request is outside of the recvWindow. This may be a server time sync issue. Please try again.');
         }
         
         errorMessage = `Binance API error: ${errorJson.msg || errorJson.code || response.status}`;
-        console.error('[fetch-binance-portfolio] Parsed error:', errorJson);
       } catch (e) {
-        if (e instanceof Error && e.message.includes('Binance API')) {
+        if (e instanceof Error && e.message.includes('Binance')) {
           throw e; // Re-throw our custom errors
         }
         console.error('[fetch-binance-portfolio] Could not parse error response');
