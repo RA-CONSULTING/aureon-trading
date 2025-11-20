@@ -176,6 +176,39 @@ export type Database = {
         }
         Relationships: []
       }
+      data_access_audit: {
+        Row: {
+          access_type: string
+          accessed_by: string | null
+          id: string
+          ip_address: string | null
+          metadata: Json | null
+          resource_type: string
+          timestamp: string
+          user_id: string
+        }
+        Insert: {
+          access_type: string
+          accessed_by?: string | null
+          id?: string
+          ip_address?: string | null
+          metadata?: Json | null
+          resource_type: string
+          timestamp?: string
+          user_id: string
+        }
+        Update: {
+          access_type?: string
+          accessed_by?: string | null
+          id?: string
+          ip_address?: string | null
+          metadata?: Json | null
+          resource_type?: string
+          timestamp?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       harmonic_nexus_states: {
         Row: {
           akashic_boost: number
@@ -407,23 +440,44 @@ export type Database = {
       profiles: {
         Row: {
           created_at: string
+          data_consent_date: string | null
+          data_consent_given: boolean | null
+          date_of_birth: string | null
           email: string | null
           full_name: string | null
           id: string
+          id_document_path: string | null
+          kyc_status: string | null
+          kyc_verified_at: string | null
+          location: string | null
           updated_at: string
         }
         Insert: {
           created_at?: string
+          data_consent_date?: string | null
+          data_consent_given?: boolean | null
+          date_of_birth?: string | null
           email?: string | null
           full_name?: string | null
           id: string
+          id_document_path?: string | null
+          kyc_status?: string | null
+          kyc_verified_at?: string | null
+          location?: string | null
           updated_at?: string
         }
         Update: {
           created_at?: string
+          data_consent_date?: string | null
+          data_consent_given?: boolean | null
+          date_of_birth?: string | null
           email?: string | null
           full_name?: string | null
           id?: string
+          id_document_path?: string | null
+          kyc_status?: string | null
+          kyc_verified_at?: string | null
+          location?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -891,6 +945,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      user_binance_credentials: {
+        Row: {
+          api_key_encrypted: string
+          api_secret_encrypted: string
+          created_at: string
+          id: string
+          last_used_at: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          api_key_encrypted: string
+          api_secret_encrypted: string
+          created_at?: string
+          id?: string
+          last_used_at?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          api_key_encrypted?: string
+          api_secret_encrypted?: string
+          created_at?: string
+          id?: string
+          last_used_at?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       user_roles: {
         Row: {
