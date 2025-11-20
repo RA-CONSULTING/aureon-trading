@@ -1,7 +1,7 @@
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { TrendingUp, LogOut, ShieldCheck } from "lucide-react";
+import { TrendingUp, LogOut, ShieldCheck, Settings } from "lucide-react";
 import { toast } from "sonner";
 import { useEffect, useState } from "react";
 
@@ -79,6 +79,15 @@ const Navbar = () => {
           </div>
 
           <div className="flex items-center gap-3">
+            <Button 
+              variant="ghost" 
+              size="sm"
+              onClick={() => navigate("/settings")}
+              className="flex items-center gap-2"
+            >
+              <Settings className="h-4 w-4" />
+              Settings
+            </Button>
             <Button 
               variant="ghost" 
               size="sm"
