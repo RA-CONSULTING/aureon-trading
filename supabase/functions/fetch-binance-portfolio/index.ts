@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.81.1';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -31,17 +32,45 @@ serve(async (req) => {
   }
 
   try {
-    console.log('[fetch-binance-portfolio] Fetching live Binance portfolio');
+    console.log('[fetch-binance-portfolio] Fetching portfolio for authenticated user');
 
-    const apiKey = Deno.env.get('BINANCE_API_KEY')?.trim();
-    const apiSecret = Deno.env.get('BINANCE_API_SECRET')?.trim();
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseKey);
 
-    if (!apiKey || !apiSecret) {
-      throw new Error('Binance API credentials not configured');
+    // Get authenticated user
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      throw new Error('No authorization header - user must be logged in');
     }
 
-    console.log('[fetch-binance-portfolio] API Key length:', apiKey.length);
-    console.log('[fetch-binance-portfolio] API Key prefix:', apiKey.substring(0, 8) + '...');
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    
+    if (authError || !user) {
+      throw new Error('Unauthorized - please sign in');
+    }
+
+    console.log('[fetch-binance-portfolio] Authenticated user:', user.id);
+
+    // Get user's Binance credentials
+    const { data: credsResponse, error: credsError } = await supabase.functions.invoke('get-binance-credentials', {
+      headers: {
+        Authorization: authHeader
+      }
+    });
+
+    if (credsError || !credsResponse) {
+      throw new Error('Failed to retrieve Binance credentials. Please add your API credentials in settings.');
+    }
+
+    const { apiKey, apiSecret } = credsResponse;
+
+    if (!apiKey || !apiSecret) {
+      throw new Error('Binance API credentials not configured. Please add them in your account settings.');
+    }
+
+    console.log('[fetch-binance-portfolio] User credentials retrieved successfully');
 
     // First, test with a simple unauthenticated endpoint to check connectivity
     console.log('[fetch-binance-portfolio] Testing Binance connectivity...');
@@ -200,13 +229,28 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('[fetch-binance-portfolio] Error:', error);
+    
+    let errorMessage = 'Unknown error';
+    let statusCode = 500;
+    
+    if (error instanceof Error) {
+      errorMessage = error.message;
+      
+      // Set appropriate status codes
+      if (errorMessage.includes('Unauthorized') || errorMessage.includes('sign in')) {
+        statusCode = 401;
+      } else if (errorMessage.includes('credentials not configured') || errorMessage.includes('add your API credentials')) {
+        statusCode = 428; // Precondition Required
+      }
+    }
+    
     return new Response(
       JSON.stringify({
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: errorMessage,
         details: 'Failed to fetch Binance portfolio',
       }),
       {
-        status: 500,
+        status: statusCode,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       }
     );

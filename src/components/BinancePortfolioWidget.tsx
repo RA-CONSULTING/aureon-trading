@@ -31,8 +31,17 @@ export const BinancePortfolioWidget = () => {
     setError(null);
 
     try {
+      // Get the current session to pass auth token
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        throw new Error('Please sign in to view your portfolio');
+      }
+
       const { data, error: functionError } = await supabase.functions.invoke('fetch-binance-portfolio', {
-        body: {},
+        headers: {
+          Authorization: `Bearer ${session.access_token}`
+        }
       });
 
       if (functionError) throw functionError;
@@ -41,15 +50,22 @@ export const BinancePortfolioWidget = () => {
       setPortfolio(data);
       toast({
         title: "Portfolio Synced",
-        description: `Live data from Binance`,
+        description: `Live data from your Binance account`,
         duration: 2000,
       });
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to fetch portfolio';
       setError(errorMessage);
+      
+      // Show helpful error messages
+      let errorDescription = errorMessage;
+      if (errorMessage.includes('credentials not configured') || errorMessage.includes('add your API credentials')) {
+        errorDescription = 'Please add your Binance API credentials in account settings to view your portfolio.';
+      }
+      
       toast({
-        title: "API Connection Failed",
-        description: errorMessage,
+        title: "Portfolio Sync Failed",
+        description: errorDescription,
         variant: "destructive",
       });
     } finally {
@@ -101,8 +117,18 @@ export const BinancePortfolioWidget = () => {
           <div className="flex items-start gap-2 p-3 rounded-lg bg-destructive/10 border border-destructive/20">
             <AlertCircle className="h-4 w-4 text-destructive mt-0.5 flex-shrink-0" />
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-destructive">Connection Failed</p>
-              <p className="text-xs text-muted-foreground truncate">{error}</p>
+              <p className="text-sm font-medium text-destructive">Portfolio Unavailable</p>
+              <p className="text-xs text-muted-foreground">{error}</p>
+              {error.includes('credentials') && (
+                <Button 
+                  variant="link" 
+                  size="sm" 
+                  className="h-auto p-0 mt-1 text-xs"
+                  onClick={() => window.location.href = '/settings'}
+                >
+                  Add Binance API Credentials →
+                </Button>
+              )}
             </div>
           </div>
         )}
@@ -110,7 +136,7 @@ export const BinancePortfolioWidget = () => {
         {isLoading && !portfolio && (
           <div className="text-center py-8">
             <RefreshCw className="h-8 w-8 mx-auto mb-2 text-primary animate-spin" />
-            <p className="text-sm text-muted-foreground">Testing API connection...</p>
+            <p className="text-sm text-muted-foreground">Connecting to your Binance account...</p>
           </div>
         )}
 
