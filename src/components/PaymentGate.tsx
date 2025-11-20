@@ -45,8 +45,8 @@ export default function PaymentGate({ userId, onPaymentComplete }: PaymentGatePr
         .from("payment_transactions")
         .insert({
           user_id: userId,
-          amount: 29.99, // Your signup fee
-          currency: "EUR",
+          amount: 100.00,
+          currency: "GBP",
           payment_provider: "sumup",
           payment_status: "pending",
           payment_url: paymentUrl,
@@ -70,7 +70,7 @@ export default function PaymentGate({ userId, onPaymentComplete }: PaymentGatePr
           resource_type: "PAYMENT_INITIATION",
           metadata: {
             transaction_id: transaction.id,
-            amount: 29.99,
+            amount: 100.00,
             timestamp: new Date().toISOString()
           }
         });
@@ -149,7 +149,7 @@ export default function PaymentGate({ userId, onPaymentComplete }: PaymentGatePr
         <div className="p-6 bg-gradient-to-br from-primary/10 to-primary/5 rounded-lg border border-primary/20">
           <div className="text-center mb-4">
             <p className="text-sm text-muted-foreground mb-2">Registration Fee</p>
-            <p className="text-4xl font-bold text-primary">€29.99</p>
+            <p className="text-4xl font-bold text-primary">£100.00</p>
             <p className="text-xs text-muted-foreground mt-1">One-time payment</p>
           </div>
           <div className="space-y-2 text-sm">
