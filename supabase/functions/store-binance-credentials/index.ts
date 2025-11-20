@@ -6,8 +6,8 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// AES-256-GCM encryption using Web Crypto API
-async function encryptCredential(credential: string): Promise<{ encrypted: string; iv: string }> {
+// AES-256-GCM encryption using Web Crypto API with provided IV
+async function encryptCredentialWithIV(credential: string, iv: Uint8Array): Promise<string> {
   const encoder = new TextEncoder();
   const data = encoder.encode(credential);
   
@@ -27,24 +27,19 @@ async function encryptCredential(credential: string): Promise<{ encrypted: strin
     ['encrypt']
   );
   
-  // Generate random initialization vector
-  const iv = crypto.getRandomValues(new Uint8Array(12)); // 12 bytes for GCM
-  
-  // Encrypt the credential
+  // Encrypt the credential with provided IV
   const encryptedData = await crypto.subtle.encrypt(
-    { name: 'AES-GCM', iv },
+    { 
+      name: 'AES-GCM', 
+      iv: iv as BufferSource
+    },
     masterKey,
     data
   );
   
   // Convert to base64 for storage
   const encryptedArray = new Uint8Array(encryptedData);
-  const ivArray = new Uint8Array(iv);
-  
-  return {
-    encrypted: btoa(String.fromCharCode(...encryptedArray)),
-    iv: btoa(String.fromCharCode(...ivArray))
-  };
+  return btoa(String.fromCharCode(...encryptedArray));
 }
 
 serve(async (req) => {
@@ -65,18 +60,19 @@ serve(async (req) => {
 
     console.log('[store-binance-credentials] Encrypting credentials for user:', userId);
 
-    // Encrypt both credentials (each gets own IV for proper security)
-    const encryptedApiKey = await encryptCredential(apiKey);
-    const encryptedApiSecret = await encryptCredential(apiSecret);
+    // Encrypt the credentials with AES-256-GCM using a single shared IV
+    const iv = crypto.getRandomValues(new Uint8Array(12)); // Generate once for both
+    const encryptedApiKey = await encryptCredentialWithIV(apiKey, iv);
+    const encryptedApiSecret = await encryptCredentialWithIV(apiSecret, iv);
 
-    // Store encrypted credentials - using API key's IV for both (we'll update schema to separate these)
+    // Store encrypted credentials with shared IV
     const { error: insertError } = await supabase
       .from('user_binance_credentials')
       .insert({
         user_id: userId,
-        api_key_encrypted: encryptedApiKey.encrypted,
-        api_secret_encrypted: encryptedApiSecret.encrypted,
-        iv: encryptedApiKey.iv, // For now use single IV field
+        api_key_encrypted: encryptedApiKey,
+        api_secret_encrypted: encryptedApiSecret,
+        iv: btoa(String.fromCharCode(...iv)), // Store the shared IV
         last_used_at: new Date().toISOString()
       });
 
@@ -85,9 +81,9 @@ serve(async (req) => {
       const { error: updateError } = await supabase
         .from('user_binance_credentials')
         .update({
-          api_key_encrypted: encryptedApiKey.encrypted,
-          api_secret_encrypted: encryptedApiSecret.encrypted,
-          iv: encryptedApiKey.iv,
+          api_key_encrypted: encryptedApiKey,
+          api_secret_encrypted: encryptedApiSecret,
+          iv: btoa(String.fromCharCode(...iv)),
           updated_at: new Date().toISOString(),
           last_used_at: new Date().toISOString()
         })
