@@ -952,6 +952,7 @@ export type Database = {
           api_secret_encrypted: string
           created_at: string
           id: string
+          iv: string | null
           last_used_at: string | null
           updated_at: string
           user_id: string
@@ -961,6 +962,7 @@ export type Database = {
           api_secret_encrypted: string
           created_at?: string
           id?: string
+          iv?: string | null
           last_used_at?: string | null
           updated_at?: string
           user_id: string
@@ -970,6 +972,7 @@ export type Database = {
           api_secret_encrypted?: string
           created_at?: string
           id?: string
+          iv?: string | null
           last_used_at?: string | null
           updated_at?: string
           user_id?: string
