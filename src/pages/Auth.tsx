@@ -43,8 +43,25 @@ export default function Auth() {
   }, []);
 
   const checkExistingSession = async () => {
+    const SUPER_USER_EMAIL = "gary@raconsultingandbrokerageservices.com";
     const { data: { session } } = await supabase.auth.getSession();
+    
     if (session) {
+      // Super user bypasses payment
+      if (session.user.email === SUPER_USER_EMAIL) {
+        // Auto-mark payment as completed for super user
+        await supabase
+          .from("profiles")
+          .update({ 
+            payment_completed: true,
+            payment_completed_at: new Date().toISOString()
+          })
+          .eq("id", session.user.id);
+        
+        navigate("/");
+        return;
+      }
+      
       // Check if payment is complete
       const { data: profile } = await supabase
         .from("profiles")
@@ -192,11 +209,27 @@ export default function Auth() {
         console.warn('[Auth] Failed to send signup notification:', notificationError);
       }
 
-      toast.success("Registration complete! Please proceed to payment.");
+      const SUPER_USER_EMAIL = "gary@raconsultingandbrokerageservices.com";
       
-      // Show payment gate
-      setPendingUserId(authData.user.id);
-      setShowPaymentGate(true);
+      // Super user bypasses payment
+      if (authData.user.email === SUPER_USER_EMAIL) {
+        await supabase
+          .from("profiles")
+          .update({ 
+            payment_completed: true,
+            payment_completed_at: new Date().toISOString()
+          })
+          .eq("id", authData.user.id);
+        
+        toast.success("Welcome, Gary! Redirecting...");
+        setTimeout(() => navigate("/"), 1500);
+      } else {
+        toast.success("Registration complete! Please proceed to payment.");
+        
+        // Show payment gate
+        setPendingUserId(authData.user.id);
+        setShowPaymentGate(true);
+      }
       
       // Clear form
       setSignUpEmail("");
@@ -225,6 +258,7 @@ export default function Auth() {
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
+    const SUPER_USER_EMAIL = "gary@raconsultingandbrokerageservices.com";
     
     try {
       emailSchema.parse(email);
@@ -238,6 +272,22 @@ export default function Auth() {
       });
 
       if (error) throw error;
+
+      // Super user bypasses payment
+      if (data.user.email === SUPER_USER_EMAIL) {
+        // Auto-mark payment as completed for super user
+        await supabase
+          .from("profiles")
+          .update({ 
+            payment_completed: true,
+            payment_completed_at: new Date().toISOString()
+          })
+          .eq("id", data.user.id);
+        
+        toast.success("Welcome back, Gary!");
+        navigate("/");
+        return;
+      }
 
       // Check if user has completed payment
       const { data: profile } = await supabase
