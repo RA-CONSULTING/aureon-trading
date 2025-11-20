@@ -6,18 +6,45 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Simple XOR encryption for demonstration - in production use proper encryption like AES-256
-async function encryptCredential(credential: string, userId: string): Promise<string> {
+// AES-256-GCM encryption using Web Crypto API
+async function encryptCredential(credential: string): Promise<{ encrypted: string; iv: string }> {
   const encoder = new TextEncoder();
   const data = encoder.encode(credential);
-  const key = encoder.encode(userId.substring(0, 16).padEnd(16, '0'));
   
-  const encrypted = new Uint8Array(data.length);
-  for (let i = 0; i < data.length; i++) {
-    encrypted[i] = data[i] ^ key[i % key.length];
+  // Get master encryption key from environment
+  const masterKeyString = Deno.env.get('MASTER_ENCRYPTION_KEY');
+  if (!masterKeyString) {
+    throw new Error('MASTER_ENCRYPTION_KEY not configured');
   }
   
-  return btoa(String.fromCharCode(...encrypted));
+  // Import master key for AES-GCM
+  const masterKeyData = encoder.encode(masterKeyString);
+  const masterKey = await crypto.subtle.importKey(
+    'raw',
+    masterKeyData.slice(0, 32), // Use first 32 bytes for AES-256
+    { name: 'AES-GCM', length: 256 },
+    false,
+    ['encrypt']
+  );
+  
+  // Generate random initialization vector
+  const iv = crypto.getRandomValues(new Uint8Array(12)); // 12 bytes for GCM
+  
+  // Encrypt the credential
+  const encryptedData = await crypto.subtle.encrypt(
+    { name: 'AES-GCM', iv },
+    masterKey,
+    data
+  );
+  
+  // Convert to base64 for storage
+  const encryptedArray = new Uint8Array(encryptedData);
+  const ivArray = new Uint8Array(iv);
+  
+  return {
+    encrypted: btoa(String.fromCharCode(...encryptedArray)),
+    iv: btoa(String.fromCharCode(...ivArray))
+  };
 }
 
 serve(async (req) => {
@@ -38,17 +65,18 @@ serve(async (req) => {
 
     console.log('[store-binance-credentials] Encrypting credentials for user:', userId);
 
-    // Encrypt the credentials
-    const encryptedApiKey = await encryptCredential(apiKey, userId);
-    const encryptedApiSecret = await encryptCredential(apiSecret, userId);
+    // Encrypt the credentials with AES-256-GCM
+    const encryptedApiKey = await encryptCredential(apiKey);
+    const encryptedApiSecret = await encryptCredential(apiSecret);
 
-    // Store encrypted credentials
+    // Store encrypted credentials with IVs
     const { error: insertError } = await supabase
       .from('user_binance_credentials')
       .insert({
         user_id: userId,
-        api_key_encrypted: encryptedApiKey,
-        api_secret_encrypted: encryptedApiSecret,
+        api_key_encrypted: encryptedApiKey.encrypted,
+        api_secret_encrypted: encryptedApiSecret.encrypted,
+        iv: encryptedApiKey.iv, // Store single IV (both use same IV for simplicity)
         last_used_at: new Date().toISOString()
       });
 
@@ -57,8 +85,9 @@ serve(async (req) => {
       const { error: updateError } = await supabase
         .from('user_binance_credentials')
         .update({
-          api_key_encrypted: encryptedApiKey,
-          api_secret_encrypted: encryptedApiSecret,
+          api_key_encrypted: encryptedApiKey.encrypted,
+          api_secret_encrypted: encryptedApiSecret.encrypted,
+          iv: encryptedApiKey.iv,
           updated_at: new Date().toISOString(),
           last_used_at: new Date().toISOString()
         })

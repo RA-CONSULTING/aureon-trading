@@ -6,22 +6,42 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Simple XOR decryption matching the encryption in store-binance-credentials
-async function decryptCredential(encryptedCredential: string, userId: string): Promise<string> {
+// AES-256-GCM decryption using Web Crypto API
+async function decryptCredential(encryptedCredential: string, iv: string): Promise<string> {
   try {
-    const encrypted = Uint8Array.from(atob(encryptedCredential), c => c.charCodeAt(0));
     const encoder = new TextEncoder();
-    const key = encoder.encode(userId.substring(0, 16).padEnd(16, '0'));
     
-    const decrypted = new Uint8Array(encrypted.length);
-    for (let i = 0; i < encrypted.length; i++) {
-      decrypted[i] = encrypted[i] ^ key[i % key.length];
+    // Get master encryption key from environment
+    const masterKeyString = Deno.env.get('MASTER_ENCRYPTION_KEY');
+    if (!masterKeyString) {
+      throw new Error('MASTER_ENCRYPTION_KEY not configured');
     }
     
-    return new TextDecoder().decode(decrypted);
+    // Import master key for AES-GCM
+    const masterKeyData = encoder.encode(masterKeyString);
+    const masterKey = await crypto.subtle.importKey(
+      'raw',
+      masterKeyData.slice(0, 32), // Use first 32 bytes for AES-256
+      { name: 'AES-GCM', length: 256 },
+      false,
+      ['decrypt']
+    );
+    
+    // Convert base64 strings back to Uint8Arrays
+    const encryptedData = Uint8Array.from(atob(encryptedCredential), c => c.charCodeAt(0));
+    const ivData = Uint8Array.from(atob(iv), c => c.charCodeAt(0));
+    
+    // Decrypt the credential
+    const decryptedData = await crypto.subtle.decrypt(
+      { name: 'AES-GCM', iv: ivData },
+      masterKey,
+      encryptedData
+    );
+    
+    return new TextDecoder().decode(decryptedData);
   } catch (error) {
     console.error('[decrypt-credentials] Decryption error:', error);
-    throw new Error('Failed to decrypt credentials');
+    throw new Error('Failed to decrypt credentials - may be corrupted or encrypted with different key');
   }
 }
 
@@ -61,9 +81,13 @@ serve(async (req) => {
       throw new Error('No Binance credentials found. Please add your API credentials in settings.');
     }
 
-    // Decrypt credentials
-    const apiKey = await decryptCredential(credentials.api_key_encrypted, user.id);
-    const apiSecret = await decryptCredential(credentials.api_secret_encrypted, user.id);
+    if (!credentials.iv) {
+      throw new Error('Credentials encrypted with old format. Please re-enter your API credentials.');
+    }
+
+    // Decrypt credentials using AES-256-GCM
+    const apiKey = await decryptCredential(credentials.api_key_encrypted, credentials.iv);
+    const apiSecret = await decryptCredential(credentials.api_secret_encrypted, credentials.iv);
 
     // Update last_used_at
     await supabase
