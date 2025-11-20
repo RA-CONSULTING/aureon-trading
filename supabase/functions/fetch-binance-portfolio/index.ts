@@ -91,47 +91,13 @@ serve(async (req) => {
     }
     console.log('[fetch-binance-portfolio] Binance API is reachable');
 
-    // Test authenticated endpoint with API key restrictions check
+    // Test authenticated endpoint - go straight to account data
     const timestamp = Date.now();
     const recvWindow = 60000; // 60 seconds
     
-    // Try api key check endpoint first (less restrictive)
-    console.log('[fetch-binance-portfolio] Testing API key validity...');
-    const apiKeyCheckUrl = `https://api.binance.com/api/v3/account/status?timestamp=${timestamp}&recvWindow=${recvWindow}`;
-    const checkSignature = await createSignature(apiSecret, `timestamp=${timestamp}&recvWindow=${recvWindow}`);
-    
-    const checkResponse = await fetch(`${apiKeyCheckUrl}&signature=${checkSignature}`, {
-      method: 'GET',
-      headers: {
-        'X-MBX-APIKEY': apiKey,
-      },
-    });
+    console.log('[fetch-binance-portfolio] Fetching account data...');
 
-    if (!checkResponse.ok) {
-      const errorText = await checkResponse.text();
-      console.error('[fetch-binance-portfolio] API key check failed:', errorText);
-      let errorJson;
-      try {
-        errorJson = JSON.parse(errorText);
-      } catch (e) {
-        throw new Error(`Binance API error: ${checkResponse.status}`);
-      }
-      
-      // Provide specific error guidance
-      if (errorJson.code === -2015) {
-        throw new Error('Binance API key has IP restrictions enabled. Please go to Binance API Management and set "IP access restrictions" to "Unrestricted (Less Secure)" or whitelist Lovable Cloud IPs');
-      } else if (errorJson.code === -2014) {
-        throw new Error('Binance API key invalid format or signature mismatch. Please regenerate your API keys');
-      } else if (errorJson.code === -1022) {
-        throw new Error('Binance API signature invalid. Please check your API secret is correct');
-      }
-      
-      throw new Error(`Binance API error: ${errorJson.msg || errorJson.code || checkResponse.status}`);
-    }
-
-    console.log('[fetch-binance-portfolio] API key is valid, fetching account data...');
-
-    // Now fetch the actual account information
+    // Fetch the account information
     const queryString = `timestamp=${timestamp}&recvWindow=${recvWindow}`;
     const signature = await createSignature(apiSecret, queryString);
     const accountUrl = `https://api.binance.com/api/v3/account?${queryString}&signature=${signature}`;
@@ -142,6 +108,36 @@ serve(async (req) => {
         'X-MBX-APIKEY': apiKey,
       },
     });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('[fetch-binance-portfolio] Binance API error response:', errorText);
+      console.error('[fetch-binance-portfolio] Status:', response.status);
+      
+      let errorMessage = `Binance API error: ${response.status}`;
+      try {
+        const errorJson = JSON.parse(errorText);
+        
+        // Provide specific error guidance
+        if (errorJson.code === -2015) {
+          throw new Error('Binance API key has IP restrictions. Please go to Binance API Management and set "IP access restrictions" to "Unrestricted" or whitelist Lovable Cloud IPs');
+        } else if (errorJson.code === -2014) {
+          throw new Error('Binance API key invalid format or signature mismatch. Please verify your API credentials');
+        } else if (errorJson.code === -1022) {
+          throw new Error('Binance API signature invalid. Please check your API secret is correct');
+        }
+        
+        errorMessage = `Binance API error: ${errorJson.msg || errorJson.code || response.status}`;
+        console.error('[fetch-binance-portfolio] Parsed error:', errorJson);
+      } catch (e) {
+        if (e instanceof Error && e.message.includes('Binance API')) {
+          throw e; // Re-throw our custom errors
+        }
+        console.error('[fetch-binance-portfolio] Could not parse error response');
+      }
+      
+      throw new Error(errorMessage);
+    }
 
     if (!response.ok) {
       const errorText = await response.text();
