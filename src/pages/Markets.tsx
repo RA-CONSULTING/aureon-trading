@@ -2,6 +2,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Search, TrendingUp, TrendingDown } from "lucide-react";
 import Navbar from "@/components/Navbar";
+import { QuickTrade } from "@/components/QuickTrade";
+import { BinancePortfolioWidget } from "@/components/BinancePortfolioWidget";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 const marketsData = [
   { category: "Cryptocurrencies", assets: [
@@ -25,72 +29,110 @@ const marketsData = [
 ];
 
 const Markets = () => {
+  const [balances, setBalances] = useState<any[]>([]);
+  const [canTrade, setCanTrade] = useState(false);
+  const [isLoadingPortfolio, setIsLoadingPortfolio] = useState(true);
+
+  useEffect(() => {
+    fetchPortfolio();
+  }, []);
+
+  const fetchPortfolio = async () => {
+    setIsLoadingPortfolio(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('fetch-binance-portfolio');
+      
+      if (error) throw error;
+      
+      if (data.balances) {
+        setBalances(data.balances);
+        setCanTrade(data.canTrade || false);
+      }
+    } catch (error) {
+      console.error('Error fetching portfolio:', error);
+    } finally {
+      setIsLoadingPortfolio(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
       
       <main className="container mx-auto px-4 pt-24 pb-12">
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-2">Markets</h1>
-          <p className="text-muted-foreground">Explore trading opportunities across global markets</p>
-        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Left side - Markets listings */}
+          <div className="lg:col-span-2 space-y-8">
+            <div className="mb-8">
+              <h1 className="text-4xl font-bold mb-2">Markets</h1>
+              <p className="text-muted-foreground">Explore trading opportunities across global markets</p>
+            </div>
 
-        {/* Search */}
-        <div className="mb-8">
-          <div className="relative max-w-md">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input 
-              placeholder="Search markets..." 
-              className="pl-10 bg-card border-border"
-            />
-          </div>
-        </div>
-
-        {/* Markets by Category */}
-        <div className="space-y-8">
-          {marketsData.map((category) => (
-            <div key={category.category}>
-              <h2 className="text-2xl font-bold mb-4">{category.category}</h2>
-              <div className="grid gap-4">
-                {category.assets.map((asset) => (
-                  <Card key={asset.symbol} className="bg-card shadow-card hover:shadow-glow transition-all duration-300 cursor-pointer">
-                    <CardContent className="p-6">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-4 flex-1">
-                          <div>
-                            <p className="font-bold text-lg">{asset.symbol}</p>
-                            <p className="text-sm text-muted-foreground">{asset.name}</p>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center gap-8">
-                          <div className="text-right">
-                            <p className="text-sm text-muted-foreground mb-1">Price</p>
-                            <p className="font-bold text-lg">${asset.price}</p>
-                          </div>
-
-                          <div className="text-right">
-                            <p className="text-sm text-muted-foreground mb-1">24h Change</p>
-                            <p className={`font-bold text-lg flex items-center gap-1 ${
-                              asset.positive ? "text-success" : "text-destructive"
-                            }`}>
-                              {asset.positive ? <TrendingUp className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />}
-                              {asset.change}
-                            </p>
-                          </div>
-
-                          <div className="text-right">
-                            <p className="text-sm text-muted-foreground mb-1">Volume</p>
-                            <p className="font-semibold">{asset.volume}</p>
-                          </div>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+            {/* Search */}
+            <div className="mb-8">
+              <div className="relative max-w-md">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input 
+                  placeholder="Search markets..." 
+                  className="pl-10 bg-card border-border"
+                />
               </div>
             </div>
-          ))}
+
+            {/* Markets by Category */}
+            <div className="space-y-8">
+              {marketsData.map((category) => (
+                <div key={category.category}>
+                  <h2 className="text-2xl font-bold mb-4">{category.category}</h2>
+                  <div className="grid gap-4">
+                    {category.assets.map((asset) => (
+                      <Card key={asset.symbol} className="bg-card shadow-card hover:shadow-glow transition-all duration-300 cursor-pointer">
+                        <CardContent className="p-6">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-4 flex-1">
+                              <div>
+                                <p className="font-bold text-lg">{asset.symbol}</p>
+                                <p className="text-sm text-muted-foreground">{asset.name}</p>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-8">
+                              <div className="text-right">
+                                <p className="text-sm text-muted-foreground mb-1">Price</p>
+                                <p className="font-bold text-lg">${asset.price}</p>
+                              </div>
+
+                              <div className="text-right">
+                                <p className="text-sm text-muted-foreground mb-1">24h Change</p>
+                                <p className={`font-bold text-lg flex items-center gap-1 ${
+                                  asset.positive ? "text-success" : "text-destructive"
+                                }`}>
+                                  {asset.positive ? <TrendingUp className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />}
+                                  {asset.change}
+                                </p>
+                              </div>
+
+                              <div className="text-right">
+                                <p className="text-sm text-muted-foreground mb-1">Volume</p>
+                                <p className="font-semibold">{asset.volume}</p>
+                              </div>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Right side - Quick Trade */}
+          <div className="lg:col-span-1">
+            <div className="sticky top-24 space-y-6">
+              <QuickTrade balances={balances} canTrade={canTrade} />
+            </div>
+          </div>
         </div>
       </main>
     </div>
