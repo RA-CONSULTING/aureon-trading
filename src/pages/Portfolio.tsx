@@ -6,6 +6,7 @@ import { PieChart, Wallet, RefreshCw, AlertCircle } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { QuickTrade } from '@/components/QuickTrade';
 
 interface Balance {
   asset: string;
@@ -120,52 +121,61 @@ const Portfolio = () => {
 
         {portfolio && (
           <>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-              <Card className="bg-card shadow-card">
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">Total Value</CardTitle>
-                  <Wallet className="h-4 w-4 text-primary" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold">{formatCurrency(portfolio.totalUSDT)}</div>
-                  <p className="text-xs text-muted-foreground mt-1">≈ {portfolio.totalBTC.toFixed(4)} BTC</p>
-                </CardContent>
-              </Card>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+              <div className="lg:col-span-2 space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <Card className="bg-card shadow-card">
+                    <CardHeader className="flex flex-row items-center justify-between pb-2">
+                      <CardTitle className="text-sm font-medium text-muted-foreground">Total Value</CardTitle>
+                      <Wallet className="h-4 w-4 text-primary" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-3xl font-bold">{formatCurrency(portfolio.totalUSDT)}</div>
+                      <p className="text-xs text-muted-foreground mt-1">≈ {portfolio.totalBTC.toFixed(4)} BTC</p>
+                    </CardContent>
+                  </Card>
 
-              <Card className="bg-card shadow-card">
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">Total Assets</CardTitle>
-                  <PieChart className="h-4 w-4 text-primary" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold">{portfolio.balances.length}</div>
-                  <p className="text-xs text-muted-foreground mt-1">Non-zero balances</p>
-                </CardContent>
-              </Card>
+                  <Card className="bg-card shadow-card">
+                    <CardHeader className="flex flex-row items-center justify-between pb-2">
+                      <CardTitle className="text-sm font-medium text-muted-foreground">Total Assets</CardTitle>
+                      <PieChart className="h-4 w-4 text-primary" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-3xl font-bold">{portfolio.balances.length}</div>
+                      <p className="text-xs text-muted-foreground mt-1">Non-zero balances</p>
+                    </CardContent>
+                  </Card>
 
-              <Card className="bg-card shadow-card">
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">Account Type</CardTitle>
-                  <Wallet className="h-4 w-4 text-primary" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold capitalize">{portfolio.accountType}</div>
-                  <Badge variant={portfolio.canTrade ? "default" : "secondary"} className="text-xs mt-2">
-                    {portfolio.canTrade ? '✓ Trading' : '✗ Trading'}
-                  </Badge>
-                </CardContent>
-              </Card>
+                  <Card className="bg-card shadow-card">
+                    <CardHeader className="flex flex-row items-center justify-between pb-2">
+                      <CardTitle className="text-sm font-medium text-muted-foreground">Account Type</CardTitle>
+                      <Wallet className="h-4 w-4 text-primary" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold capitalize">{portfolio.accountType}</div>
+                      <Badge variant={portfolio.canTrade ? "default" : "secondary"} className="text-xs mt-2">
+                        {portfolio.canTrade ? '✓ Trading' : '✗ Trading'}
+                      </Badge>
+                    </CardContent>
+                  </Card>
 
-              <Card className="bg-card shadow-card">
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">Last Updated</CardTitle>
-                  <RefreshCw className="h-4 w-4 text-primary" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-sm font-mono">{new Date(portfolio.fetchedAt).toLocaleTimeString()}</div>
-                  <p className="text-xs text-muted-foreground mt-1">{new Date(portfolio.fetchedAt).toLocaleDateString()}</p>
-                </CardContent>
-              </Card>
+                  <Card className="bg-card shadow-card">
+                    <CardHeader className="flex flex-row items-center justify-between pb-2">
+                      <CardTitle className="text-sm font-medium text-muted-foreground">Last Updated</CardTitle>
+                      <RefreshCw className="h-4 w-4 text-primary" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-sm font-mono">{new Date(portfolio.fetchedAt).toLocaleTimeString()}</div>
+                      <p className="text-xs text-muted-foreground mt-1">{new Date(portfolio.fetchedAt).toLocaleDateString()}</p>
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
+
+              <QuickTrade 
+                balances={portfolio.balances} 
+                canTrade={portfolio.canTrade}
+              />
             </div>
 
             <Card className="bg-card shadow-card mb-8">
