@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Wallet, RefreshCw, AlertCircle, TrendingUp, CheckCircle, XCircle } from "lucide-react";
+import { Wallet, RefreshCw, AlertCircle, TrendingUp, CheckCircle, XCircle, PieChart, List, Settings } from "lucide-react";
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -112,7 +113,7 @@ export const BinancePortfolioWidget = () => {
           </Button>
         </div>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent>
         {error && !portfolio && (
           <div className="flex items-start gap-2 p-4 rounded-lg bg-destructive/10 border border-destructive/20">
             <AlertCircle className="h-5 w-5 text-destructive mt-0.5 flex-shrink-0" />
@@ -152,73 +153,149 @@ export const BinancePortfolioWidget = () => {
         )}
 
         {isLoading && !portfolio && (
-          <div className="text-center py-8">
+          <div className="text-center py-12">
             <RefreshCw className="h-8 w-8 mx-auto mb-2 text-primary animate-spin" />
             <p className="text-sm text-muted-foreground">Connecting to your Binance account...</p>
           </div>
         )}
 
         {portfolio && (
-          <>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1">
-                <p className="text-xs text-muted-foreground">Total Value</p>
-                <p className="text-2xl font-bold text-foreground">
-                  {formatCurrency(portfolio.totalUSDT)}
-                </p>
-              </div>
-              <div className="space-y-1">
-                <p className="text-xs text-muted-foreground">BTC Value</p>
-                <p className="text-lg font-semibold text-foreground">
-                  {portfolio.totalBTC.toFixed(6)} BTC
-                </p>
-              </div>
-            </div>
+          <Tabs defaultValue="overview" className="w-full">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="overview" className="flex items-center gap-2">
+                <PieChart className="h-4 w-4" />
+                Overview
+              </TabsTrigger>
+              <TabsTrigger value="holdings" className="flex items-center gap-2">
+                <List className="h-4 w-4" />
+                Holdings
+              </TabsTrigger>
+              <TabsTrigger value="account" className="flex items-center gap-2">
+                <Settings className="h-4 w-4" />
+                Account
+              </TabsTrigger>
+            </TabsList>
 
-            <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/50">
-              {portfolio.canTrade ? (
-                <>
-                  <CheckCircle className="h-4 w-4 text-green-500" />
-                  <span className="text-sm font-medium">API Connected & Trading Enabled</span>
-                </>
-              ) : (
-                <>
-                  <XCircle className="h-4 w-4 text-destructive" />
-                  <span className="text-sm font-medium">Trading Disabled</span>
-                </>
+            <TabsContent value="overview" className="space-y-4 mt-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-4 rounded-lg bg-primary/5 border border-primary/10">
+                  <p className="text-xs text-muted-foreground mb-1">Total Value</p>
+                  <p className="text-2xl font-bold text-foreground">
+                    {formatCurrency(portfolio.totalUSDT)}
+                  </p>
+                </div>
+                <div className="p-4 rounded-lg bg-secondary/5 border border-secondary/10">
+                  <p className="text-xs text-muted-foreground mb-1">BTC Value</p>
+                  <p className="text-lg font-semibold text-foreground">
+                    {portfolio.totalBTC.toFixed(6)} BTC
+                  </p>
+                </div>
+              </div>
+
+              {topHoldings.length > 0 && (
+                <div className="space-y-3">
+                  <p className="text-sm font-medium text-foreground">Top 5 Holdings</p>
+                  <div className="space-y-2">
+                    {topHoldings.map((balance) => (
+                      <div key={balance.asset} className="flex items-center justify-between p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors">
+                        <div className="flex items-center gap-3">
+                          <Badge variant="secondary" className="font-mono text-xs">
+                            {balance.asset}
+                          </Badge>
+                          <span className="text-sm text-muted-foreground">
+                            {balance.total < 1 ? balance.total.toFixed(6) : balance.total.toFixed(4)}
+                          </span>
+                        </div>
+                        <span className="text-sm font-semibold">
+                          {formatCurrency(balance.usdtValue)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               )}
-            </div>
+            </TabsContent>
 
-            {topHoldings.length > 0 && (
-              <div className="space-y-2">
-                <p className="text-xs font-medium text-muted-foreground">Top Holdings</p>
-                <div className="space-y-2">
-                  {topHoldings.map((balance) => (
-                    <div key={balance.asset} className="flex items-center justify-between p-2 rounded bg-muted/30">
-                      <div className="flex items-center gap-2">
-                        <Badge variant="outline" className="font-mono text-xs">
+            <TabsContent value="holdings" className="space-y-3 mt-4">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-sm font-medium text-foreground">All Assets ({portfolio.balances.length})</p>
+                <p className="text-xs text-muted-foreground">Showing balances &gt; $1</p>
+              </div>
+              <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2">
+                {portfolio.balances
+                  .filter(b => b.usdtValue > 1)
+                  .sort((a, b) => b.usdtValue - a.usdtValue)
+                  .map((balance) => (
+                    <div key={balance.asset} className="flex items-center justify-between p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors">
+                      <div className="flex flex-col gap-1">
+                        <Badge variant="outline" className="font-mono text-xs w-fit">
                           {balance.asset}
                         </Badge>
                         <span className="text-xs text-muted-foreground">
-                          {balance.total < 1 ? balance.total.toFixed(6) : balance.total.toFixed(4)}
+                          {balance.total < 1 ? balance.total.toFixed(6) : balance.total.toFixed(4)} {balance.asset}
                         </span>
                       </div>
-                      <span className="text-sm font-semibold">
-                        {formatCurrency(balance.usdtValue)}
-                      </span>
+                      <div className="text-right">
+                        <p className="text-sm font-semibold">
+                          {formatCurrency(balance.usdtValue)}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {((balance.usdtValue / portfolio.totalUSDT) * 100).toFixed(1)}%
+                        </p>
+                      </div>
                     </div>
                   ))}
+              </div>
+            </TabsContent>
+
+            <TabsContent value="account" className="space-y-4 mt-4">
+              <div className="space-y-3">
+                <div className="p-4 rounded-lg bg-muted/50">
+                  <div className="flex items-center gap-2 mb-3">
+                    {portfolio.canTrade ? (
+                      <>
+                        <CheckCircle className="h-5 w-5 text-green-500" />
+                        <span className="text-sm font-medium">Trading Enabled</span>
+                      </>
+                    ) : (
+                      <>
+                        <XCircle className="h-5 w-5 text-destructive" />
+                        <span className="text-sm font-medium">Trading Disabled</span>
+                      </>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {portfolio.canTrade 
+                      ? 'Your API key has trading permissions enabled.'
+                      : 'Your API key does not have trading permissions. Enable them in Binance API Management.'}
+                  </p>
+                </div>
+
+                <div className="p-4 rounded-lg bg-muted/50 space-y-2">
+                  <p className="text-sm font-medium">Account Statistics</p>
+                  <div className="grid grid-cols-2 gap-3 pt-2">
+                    <div>
+                      <p className="text-xs text-muted-foreground">Total Assets</p>
+                      <p className="text-lg font-semibold">{portfolio.balances.length}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Active Holdings</p>
+                      <p className="text-lg font-semibold">
+                        {portfolio.balances.filter(b => b.usdtValue > 1).length}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-4 rounded-lg bg-muted/50">
+                  <p className="text-xs text-muted-foreground mb-1">Last Updated</p>
+                  <p className="text-sm font-medium">
+                    {new Date(portfolio.fetchedAt).toLocaleString()}
+                  </p>
                 </div>
               </div>
-            )}
-
-            <div className="pt-2 border-t border-border/50">
-              <div className="flex items-center justify-between text-xs text-muted-foreground">
-                <span>Assets: {portfolio.balances.length}</span>
-                <span>Updated: {new Date(portfolio.fetchedAt).toLocaleTimeString()}</span>
-              </div>
-            </div>
-          </>
+            </TabsContent>
+          </Tabs>
         )}
       </CardContent>
     </Card>
