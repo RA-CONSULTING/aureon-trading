@@ -47,3 +47,6 @@ verify_jwt = true
 
 [functions.sync-harmonic-nexus]
 verify_jwt = true
+
+[functions.fetch-binance-symbols]
+verify_jwt = true
