@@ -32,13 +32,30 @@ export class QGITASignalGenerator {
   private volumeHistory: number[] = [];
   private timestampHistory: number[] = [];
   
-  private readonly minConfidenceThreshold = 60;
+  private config = {
+    curvatureThresholdPercentile: 90,
+    goldenRatioTolerance: 0.05,
+    lighthouseThresholdSigma: 2.0,
+    minConfidenceForSignal: 60,
+    tier1Threshold: 80,
+    tier2Threshold: 60,
+    tier1PositionMultiplier: 1.0,
+    tier2PositionMultiplier: 0.5,
+    tier3PositionMultiplier: 0.0,
+  };
   
   constructor() {
     this.ftcpDetector = new FTCPDetector();
     this.lighthouse = new LighthouseConsensus();
     this.coherenceEngine = new QGITACoherenceEngine();
     this.fibLattice = new FibonacciLattice();
+  }
+  
+  /**
+   * Update configuration parameters
+   */
+  updateConfig(newConfig: Partial<typeof this.config>) {
+    this.config = { ...this.config, ...newConfig };
   }
   
   /**
@@ -236,9 +253,9 @@ export class QGITASignalGenerator {
    * Determine signal tier based on confidence
    */
   private determineSignalTier(confidence: number): 1 | 2 | 3 {
-    if (confidence >= 80) return 1; // Full position
-    if (confidence >= 60) return 2; // Half position
-    return 3; // No trade
+    if (confidence >= this.config.tier1Threshold) return 1;
+    if (confidence >= this.config.tier2Threshold) return 2;
+    return 3;
   }
   
   /**
@@ -266,9 +283,9 @@ export class QGITASignalGenerator {
    */
   getPositionSizeMultiplier(tier: 1 | 2 | 3): number {
     switch (tier) {
-      case 1: return 1.0;   // Full position (100%)
-      case 2: return 0.5;   // Half position (50%)
-      case 3: return 0.0;   // No trade (0%)
+      case 1: return this.config.tier1PositionMultiplier;
+      case 2: return this.config.tier2PositionMultiplier;
+      case 3: return this.config.tier3PositionMultiplier;
     }
   }
   

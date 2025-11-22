@@ -2,13 +2,20 @@ import { useState, useEffect } from 'react';
 import { qgitaSignalGenerator, QGITASignal } from '@/core/qgitaSignalGenerator';
 import { useBinanceMarketData } from './useBinanceMarketData';
 import { MasterEquation } from '@/core/masterEquation';
+import { useQGITAConfig } from './useQGITAConfig';
 
 export function useQGITASignals(symbol: string) {
   const [signals, setSignals] = useState<QGITASignal[]>([]);
   const [latestSignal, setLatestSignal] = useState<QGITASignal | null>(null);
   const [masterEq] = useState(() => new MasterEquation());
+  const { config } = useQGITAConfig();
   
   const { marketData } = useBinanceMarketData(symbol);
+  
+  // Update signal generator config when it changes
+  useEffect(() => {
+    qgitaSignalGenerator.updateConfig(config);
+  }, [config]);
   
   useEffect(() => {
     if (!marketData) return;
@@ -40,8 +47,8 @@ export function useQGITASignals(symbol: string) {
       
       setLatestSignal(signal);
       
-      // Only keep signals that are actionable (BUY/SELL with confidence > 60%)
-      if (signal.signalType !== 'HOLD' && signal.confidence >= 60) {
+      // Only keep signals that are actionable (BUY/SELL with min confidence)
+      if (signal.signalType !== 'HOLD' && signal.confidence >= config.minConfidenceForSignal) {
         setSignals(prev => {
           const updated = [...prev, signal];
           // Keep only last 50 signals
