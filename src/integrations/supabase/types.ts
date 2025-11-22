@@ -293,6 +293,232 @@ export type Database = {
         }
         Relationships: []
       }
+      hive_agents: {
+        Row: {
+          agent_index: number
+          created_at: string
+          current_symbol: string
+          hive_id: string
+          id: string
+          last_trade_at: string | null
+          position_entry_price: number | null
+          position_open: boolean
+          position_quantity: number | null
+          position_side: string | null
+          total_pnl: number
+          trades_count: number
+        }
+        Insert: {
+          agent_index: number
+          created_at?: string
+          current_symbol: string
+          hive_id: string
+          id?: string
+          last_trade_at?: string | null
+          position_entry_price?: number | null
+          position_open?: boolean
+          position_quantity?: number | null
+          position_side?: string | null
+          total_pnl?: number
+          trades_count?: number
+        }
+        Update: {
+          agent_index?: number
+          created_at?: string
+          current_symbol?: string
+          hive_id?: string
+          id?: string
+          last_trade_at?: string | null
+          position_entry_price?: number | null
+          position_open?: boolean
+          position_quantity?: number | null
+          position_side?: string | null
+          total_pnl?: number
+          trades_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hive_agents_hive_id_fkey"
+            columns: ["hive_id"]
+            isOneToOne: false
+            referencedRelation: "hive_instances"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hive_instances: {
+        Row: {
+          created_at: string
+          current_balance: number
+          generation: number
+          id: string
+          initial_balance: number
+          num_agents: number
+          parent_hive_id: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          current_balance: number
+          generation?: number
+          id?: string
+          initial_balance: number
+          num_agents?: number
+          parent_hive_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          current_balance?: number
+          generation?: number
+          id?: string
+          initial_balance?: number
+          num_agents?: number
+          parent_hive_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hive_instances_parent_hive_id_fkey"
+            columns: ["parent_hive_id"]
+            isOneToOne: false
+            referencedRelation: "hive_instances"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hive_sessions: {
+        Row: {
+          created_at: string
+          current_equity: number
+          id: string
+          initial_capital: number
+          root_hive_id: string
+          started_at: string
+          status: string
+          steps_executed: number
+          stopped_at: string | null
+          total_agents: number
+          total_hives_spawned: number
+          total_trades: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          current_equity: number
+          id?: string
+          initial_capital: number
+          root_hive_id: string
+          started_at?: string
+          status?: string
+          steps_executed?: number
+          stopped_at?: string | null
+          total_agents?: number
+          total_hives_spawned?: number
+          total_trades?: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          current_equity?: number
+          id?: string
+          initial_capital?: number
+          root_hive_id?: string
+          started_at?: string
+          status?: string
+          steps_executed?: number
+          stopped_at?: string | null
+          total_agents?: number
+          total_hives_spawned?: number
+          total_trades?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hive_sessions_root_hive_id_fkey"
+            columns: ["root_hive_id"]
+            isOneToOne: false
+            referencedRelation: "hive_instances"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hive_trades: {
+        Row: {
+          agent_id: string
+          closed_at: string | null
+          created_at: string
+          entry_price: number
+          exit_price: number | null
+          hive_id: string
+          id: string
+          opened_at: string
+          pnl: number | null
+          quantity: number
+          session_id: string
+          side: string
+          status: string
+          symbol: string
+        }
+        Insert: {
+          agent_id: string
+          closed_at?: string | null
+          created_at?: string
+          entry_price: number
+          exit_price?: number | null
+          hive_id: string
+          id?: string
+          opened_at?: string
+          pnl?: number | null
+          quantity: number
+          session_id: string
+          side: string
+          status?: string
+          symbol: string
+        }
+        Update: {
+          agent_id?: string
+          closed_at?: string | null
+          created_at?: string
+          entry_price?: number
+          exit_price?: number | null
+          hive_id?: string
+          id?: string
+          opened_at?: string
+          pnl?: number | null
+          quantity?: number
+          session_id?: string
+          side?: string
+          status?: string
+          symbol?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hive_trades_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "hive_agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hive_trades_hive_id_fkey"
+            columns: ["hive_id"]
+            isOneToOne: false
+            referencedRelation: "hive_instances"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hive_trades_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "hive_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lighthouse_events: {
         Row: {
           coherence: number
