@@ -8,6 +8,8 @@ import { QGITASignalPanel } from "@/components/QGITASignalPanel";
 import { QGITAConfigPanel } from "@/components/QGITAConfigPanel";
 import { QGITAAutoTradingControl } from "@/components/QGITAAutoTradingControl";
 import { QueenHiveControl } from "@/components/QueenHiveControl";
+import { OMSQueueMonitor } from "@/components/OMSQueueMonitor";
+import { useQueenHive } from "@/hooks/useQueenHive";
 import { useQGITAAutoTrading, useQGITAAutoTradingToggle } from "@/hooks/useQGITAAutoTrading";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -40,6 +42,7 @@ const Markets = () => {
   const [canTrade, setCanTrade] = useState(false);
   const [isLoadingPortfolio, setIsLoadingPortfolio] = useState(true);
   const [selectedSymbol, setSelectedSymbol] = useState('BTCUSDT');
+  const { session: hiveSession } = useQueenHive();
   
   // QGITA Auto-Trading
   const { isEnabled: autoTradingEnabled, setIsEnabled: setAutoTradingEnabled } = useQGITAAutoTradingToggle();
@@ -165,8 +168,9 @@ const Markets = () => {
                   <QuickTrade balances={balances} canTrade={canTrade} />
                 </TabsContent>
                 
-                <TabsContent value="hive" className="mt-6">
+                <TabsContent value="hive" className="mt-6 space-y-6">
                   <QueenHiveControl />
+                  <OMSQueueMonitor sessionId={hiveSession?.id || null} />
                 </TabsContent>
               </Tabs>
             </div>

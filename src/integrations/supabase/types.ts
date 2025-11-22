@@ -621,6 +621,166 @@ export type Database = {
         }
         Relationships: []
       }
+      oms_execution_metrics: {
+        Row: {
+          avg_execution_latency_ms: number | null
+          avg_wait_time_ms: number | null
+          created_at: string
+          current_window_orders: number
+          id: string
+          orders_executed_last_minute: number
+          orders_failed_last_minute: number
+          queue_depth: number
+          rate_limit_utilization: number
+          timestamp: string
+        }
+        Insert: {
+          avg_execution_latency_ms?: number | null
+          avg_wait_time_ms?: number | null
+          created_at?: string
+          current_window_orders: number
+          id?: string
+          orders_executed_last_minute: number
+          orders_failed_last_minute: number
+          queue_depth: number
+          rate_limit_utilization: number
+          timestamp?: string
+        }
+        Update: {
+          avg_execution_latency_ms?: number | null
+          avg_wait_time_ms?: number | null
+          created_at?: string
+          current_window_orders?: number
+          id?: string
+          orders_executed_last_minute?: number
+          orders_failed_last_minute?: number
+          queue_depth?: number
+          rate_limit_utilization?: number
+          timestamp?: string
+        }
+        Relationships: []
+      }
+      oms_order_queue: {
+        Row: {
+          agent_id: string
+          cancelled_at: string | null
+          coherence: number | null
+          created_at: string
+          error_message: string | null
+          exchange_order_id: string | null
+          executed_at: string | null
+          executed_price: number | null
+          executed_quantity: number | null
+          hive_id: string
+          id: string
+          lighthouse_value: number | null
+          order_type: string
+          price: number
+          priority: number
+          quantity: number
+          queued_at: string
+          session_id: string
+          side: string
+          signal_strength: number | null
+          status: string
+          symbol: string
+        }
+        Insert: {
+          agent_id: string
+          cancelled_at?: string | null
+          coherence?: number | null
+          created_at?: string
+          error_message?: string | null
+          exchange_order_id?: string | null
+          executed_at?: string | null
+          executed_price?: number | null
+          executed_quantity?: number | null
+          hive_id: string
+          id?: string
+          lighthouse_value?: number | null
+          order_type?: string
+          price: number
+          priority?: number
+          quantity: number
+          queued_at?: string
+          session_id: string
+          side: string
+          signal_strength?: number | null
+          status?: string
+          symbol: string
+        }
+        Update: {
+          agent_id?: string
+          cancelled_at?: string | null
+          coherence?: number | null
+          created_at?: string
+          error_message?: string | null
+          exchange_order_id?: string | null
+          executed_at?: string | null
+          executed_price?: number | null
+          executed_quantity?: number | null
+          hive_id?: string
+          id?: string
+          lighthouse_value?: number | null
+          order_type?: string
+          price?: number
+          priority?: number
+          quantity?: number
+          queued_at?: string
+          session_id?: string
+          side?: string
+          signal_strength?: number | null
+          status?: string
+          symbol?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "oms_order_queue_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "hive_agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "oms_order_queue_hive_id_fkey"
+            columns: ["hive_id"]
+            isOneToOne: false
+            referencedRelation: "hive_instances"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "oms_order_queue_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "hive_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      oms_rate_limit_windows: {
+        Row: {
+          created_at: string
+          id: string
+          orders_executed: number
+          window_end: string
+          window_start: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          orders_executed?: number
+          window_end: string
+          window_start: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          orders_executed?: number
+          window_end?: string
+          window_start?: string
+        }
+        Relationships: []
+      }
       payment_transactions: {
         Row: {
           amount: number

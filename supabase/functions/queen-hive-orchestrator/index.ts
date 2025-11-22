@@ -158,61 +158,71 @@ serve(async (req) => {
         throw new Error('No agents found');
       }
 
-      // Execute trades for each agent (simplified - paper trading simulation)
-      let totalTrades = 0;
+      // Enqueue orders via OMS for rate-limited execution
+      let totalOrders = 0;
       for (const agent of agents) {
         // Random decision: 30% chance to trade
         if (Math.random() > 0.7) {
           const hive = hives.find(h => h.id === agent.hive_id);
           if (!hive) continue;
 
-          // Simulate trade
+          // Generate order
           const side = Math.random() > 0.5 ? 'BUY' : 'SELL';
           const price = 50000 + Math.random() * 10000; // Mock price
           const positionSize = hive.current_balance * 0.01; // 1% risk
           const quantity = positionSize / price;
 
-          // Simulate P&L (random walk)
-          const pnl = positionSize * (Math.random() * 0.04 - 0.02); // ±2% return
+          // Calculate priority (higher coherence = higher priority)
+          const priority = Math.floor(50 + Math.random() * 50); // 50-100
+
+          // Enqueue order via OMS
+          try {
+            const { data: omsResult, error: omsError } = await supabase.functions.invoke('oms-leaky-bucket', {
+              body: {
+                action: 'enqueue',
+                sessionId,
+                hiveId: hive.id,
+                agentId: agent.id,
+                symbol: agent.current_symbol,
+                side,
+                quantity,
+                price,
+                priority,
+                metadata: {
+                  signalStrength: Math.random(),
+                  coherence: 0.7 + Math.random() * 0.3,
+                  lighthouseValue: 0.8 + Math.random() * 0.2,
+                },
+              },
+            });
+
+            if (!omsError && omsResult.success) {
+              totalOrders++;
+              console.log(`📋 Order enqueued: ${agent.current_symbol} ${side} ${quantity.toFixed(8)} @ ${price.toFixed(2)}`);
+            }
+          } catch (error) {
+            console.error('Failed to enqueue order:', error);
+          }
 
           // Update agent
           await supabase
             .from('hive_agents')
             .update({
-              trades_count: agent.trades_count + 1,
-              total_pnl: agent.total_pnl + pnl,
               last_trade_at: new Date().toISOString(),
               current_symbol: SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)],
             })
             .eq('id', agent.id);
-
-          // Update hive balance
-          const newBalance = hive.current_balance + pnl;
-          await supabase
-            .from('hive_instances')
-            .update({ current_balance: newBalance, updated_at: new Date().toISOString() })
-            .eq('id', hive.id);
-
-          // Record trade
-          await supabase
-            .from('hive_trades')
-            .insert({
-              session_id: sessionId,
-              hive_id: hive.id,
-              agent_id: agent.id,
-              symbol: agent.current_symbol,
-              side,
-              entry_price: price,
-              exit_price: price * (1 + (Math.random() * 0.04 - 0.02)),
-              quantity,
-              pnl,
-              status: 'closed',
-              closed_at: new Date().toISOString(),
-            });
-
-          totalTrades++;
         }
       }
+
+      // Get actual trade count (orders that were executed)
+      const { count: executedCount } = await supabase
+        .from('hive_trades')
+        .select('*', { count: 'exact', head: true })
+        .eq('session_id', sessionId)
+        .gte('created_at', new Date(Date.now() - 2000).toISOString());
+
+      const totalTrades = executedCount || 0;
 
       // Check hive spawning conditions
       for (const hive of hives) {
