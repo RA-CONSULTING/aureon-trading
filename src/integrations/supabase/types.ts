@@ -305,7 +305,6 @@ export type Database = {
           lighthouse_signal: number
           metric_clin: number
           metric_cnonlin: number
-          metric_cphi: number
           metric_geff: number
           metric_q: number
           prism_level: number | null
@@ -324,7 +323,6 @@ export type Database = {
           lighthouse_signal: number
           metric_clin: number
           metric_cnonlin: number
-          metric_cphi: number
           metric_geff: number
           metric_q: number
           prism_level?: number | null
@@ -343,7 +341,6 @@ export type Database = {
           lighthouse_signal?: number
           metric_clin?: number
           metric_cnonlin?: number
-          metric_cphi?: number
           metric_geff?: number
           metric_q?: number
           prism_level?: number | null

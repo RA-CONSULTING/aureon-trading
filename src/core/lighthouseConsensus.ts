@@ -3,11 +3,10 @@
 // Lighthouse Event (LHE) confirmed when L(t) > μ + 2σ
 
 export type LighthouseMetrics = {
-  Clin: number;      // Linear coherence (QGITA: MACD-based)
-  Cnonlin: number;   // Nonlinear coherence (QGITA: Volatility-adjusted)
-  Cphi: number;      // Cross-scale coherence (QGITA: Self-similarity at φ)
-  Geff: number;      // Effective gravity (from FTCP)
-  Q: number;         // Anomaly pointer (sudden change detector)
+  Q: number;         // |Q| — Anomaly pointer (0-1), FLAME metric
+  Geff: number;      // G_eff — Effective gravity (0-1), BRAKE metric
+  Clin: number;      // C_lin — Linear coherence (MACD-based)
+  Cnonlin: number;   // C_nonlin — Nonlinear coherence (volatility-adjusted)
 };
 
 export type LighthouseState = {
@@ -21,7 +20,13 @@ export type LighthouseState = {
 export class LighthouseConsensus {
   private history: number[] = [];
   private readonly maxHistory = 100;
-  private readonly weights = [1, 1, 1, 1, 1]; // Equal weights by default
+  // Ablation study weights: C_nonlin and G_eff strongest drivers, |Q| suppressor
+  private readonly weights = {
+    Cnonlin: 1.2,  // Strongest driver
+    Geff: 1.2,     // Strongest driver
+    Clin: 1.0,     // Baseline
+    Q: 0.8,        // Suppressor for spurious triggers
+  };
   
   validate(
     lambda: number,
@@ -30,49 +35,55 @@ export class LighthouseConsensus {
     observer: number,
     echo: number,
     Geff: number,
-    ftcpDetected: boolean
+    ftcpDetected: boolean,
+    volumeSpike: number = 0,
+    spreadExpansion: number = 0,
+    priceAcceleration: number = 0
   ): LighthouseState {
-    // Compute five consensus metrics
+    // Compute four consensus metrics (ablation study alignment)
     
-    // 1. Clin: Linear coherence (direct from Γ)
+    // 1. C_lin: Linear coherence (direct from Γ)
     const Clin = coherence;
     
-    // 2. Cnonlin: Nonlinear coherence (substrate variance)
+    // 2. C_nonlin: Nonlinear coherence (substrate variance)
     const Cnonlin = this.computeNonlinearCoherence(substrate, observer, echo);
     
-    // 3. Cφ: Phase coherence (lambda stability)
-    const Cphi = this.computePhaseCoherence(lambda);
+    // 3. G_eff: Effective gravity (from FTCP detector)
+    // Already provided as parameter (0-1 normalized)
     
-    // 4. Geff: Effective gravity (from FTCP detector)
-    // Already provided as parameter
-    
-    // 5. |Q|: Quality factor (sharpness of coherence peak)
-    const Q = this.computeQualityFactor(coherence, Geff);
+    // 4. |Q|: Anomaly pointer (flame metric)
+    const Q = this.computeAnomalyPointer(volumeSpike, spreadExpansion, priceAcceleration);
     
     const metrics: LighthouseMetrics = {
+      Q,
+      Geff,
       Clin,
       Cnonlin,
-      Cphi,
-      Geff,
-      Q,
     };
     
-    // Compute L(t) via weighted geometric mean
-    // L(t) = (Clin^w1 * Cnonlin^w2 * Cφ^w3 * Geff^w4 * |Q|^w5)^(1/Σw_i)
-    let product = 1.0;
-    const metricsArray = [Clin, Cnonlin, Cphi, Geff, Math.abs(Q)];
+    // Compute L(t) via weighted geometric mean (ablation study formula)
+    // L(t) = (C_lin^w1 × C_nonlin^w2 × G_eff^w3 × |Q|^w4)^(1/Σw_i)
+    const metricsWithWeights = [
+      { value: Clin, weight: this.weights.Clin },
+      { value: Cnonlin, weight: this.weights.Cnonlin },
+      { value: Geff, weight: this.weights.Geff },
+      { value: Math.abs(Q), weight: this.weights.Q },
+    ];
     
-    for (let i = 0; i < metricsArray.length; i++) {
-      if (metricsArray[i] > 0) {
-        product *= Math.pow(metricsArray[i], this.weights[i]);
-      } else {
-        product = 0; // Any zero kills the consensus
+    let product = 1.0;
+    let canComputeConsensus = true;
+    
+    for (const { value, weight } of metricsWithWeights) {
+      if (value <= 0) {
+        // Geometric mean requires all metrics > 0
+        canComputeConsensus = false;
         break;
       }
+      product *= Math.pow(value, weight);
     }
     
-    const totalWeight = this.weights.reduce((sum, w) => sum + w, 0);
-    const L = product > 0 ? Math.pow(product, 1.0 / totalWeight) : 0;
+    const totalWeight = Object.values(this.weights).reduce((sum, w) => sum + w, 0);
+    const L = canComputeConsensus ? Math.pow(product, 1.0 / totalWeight) : 0;
     
     // Track history
     this.history.push(L);
@@ -138,12 +149,15 @@ export class LighthouseConsensus {
     return Math.max(0, Math.min(1, 1 - stddev));
   }
   
-  private computeQualityFactor(coherence: number, Geff: number): number {
-    // Q factor measures sharpness of coherence peak
-    // High when coherence is high and gravity signal is focused
-    if (Geff === 0) return 0;
-    
-    return coherence / (1 + Geff);
+  private computeAnomalyPointer(
+    volumeSpike: number,
+    spreadExpansion: number,
+    priceAcceleration: number
+  ): number {
+    // |Q| — Anomaly pointer (FLAME metric)
+    // Composition: 40% volume spike, 30% spread expansion, 30% price acceleration
+    // Range: 0-1 (normalized)
+    return 0.4 * volumeSpike + 0.3 * spreadExpansion + 0.3 * priceAcceleration;
   }
   
   private computeThreshold(): number {
