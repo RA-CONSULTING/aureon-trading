@@ -189,9 +189,8 @@ const AureonDashboard = () => {
     try {
       const { data, error } = await supabase
         .from('lighthouse_events')
-        .insert({
-          timestamp: new Date().toISOString(),
-          lambda_value: omegaState.lambda, // Use legacy lambda for backward compatibility
+        .insert([{
+          lambda_value: omegaState.lambda,
           coherence: omegaState.coherence,
           lighthouse_signal: lighthouseState.L,
           threshold: lighthouseState.threshold,
@@ -199,13 +198,12 @@ const AureonDashboard = () => {
           is_lhe: lighthouseState.isLHE,
           metric_clin: lighthouseState.metrics.Clin,
           metric_cnonlin: lighthouseState.metrics.Cnonlin,
-          metric_cphi: lighthouseState.metrics.Cphi,
           metric_geff: lighthouseState.metrics.Geff,
           metric_q: lighthouseState.metrics.Q,
           dominant_node: omegaState.dominantNode,
           prism_level: prismOutput.level,
           prism_state: prismOutput.state,
-        })
+        }])
         .select()
         .single();
 
@@ -606,11 +604,7 @@ const AureonDashboard = () => {
                 <p className="text-sm font-mono">{lighthouse.metrics.Cnonlin.toFixed(2)}</p>
               </div>
               <div className="text-center">
-                <p className="text-xs font-medium">Cφ</p>
-                <p className="text-sm font-mono">{lighthouse.metrics.Cphi.toFixed(2)}</p>
-              </div>
-              <div className="text-center">
-                <p className="text-xs font-medium">Gₑff</p>
+                <p className="text-xs font-medium">Gₑff (BRAKE)</p>
                 <p className="text-sm font-mono">{lighthouse.metrics.Geff.toFixed(2)}</p>
               </div>
               <div className="text-center">

@@ -57,7 +57,7 @@ export const LighthouseMetricsPanel = ({ lighthouse }: LighthouseMetricsPanelPro
       label: 'Linear Coherence',
       value: lighthouse.metrics.Clin,
       icon: Waves,
-      description: 'Direct coherence from Γ',
+      description: 'MACD-based trend strength',
       color: 'hsl(var(--chart-1))',
     },
     {
@@ -65,31 +65,23 @@ export const LighthouseMetricsPanel = ({ lighthouse }: LighthouseMetricsPanelPro
       label: 'Nonlinear Coherence',
       value: lighthouse.metrics.Cnonlin,
       icon: TrendingUp,
-      description: 'Substrate-Observer-Echo alignment',
+      description: 'Volatility-adjusted stability',
       color: 'hsl(var(--chart-2))',
     },
     {
-      name: 'Cφ',
-      label: 'Phase Coherence',
-      value: lighthouse.metrics.Cphi,
-      icon: Activity,
-      description: 'Lambda stability over time',
-      color: 'hsl(var(--chart-3))',
-    },
-    {
       name: 'Geff',
-      label: 'Effective Gravity',
+      label: 'Effective Gravity (BRAKE)',
       value: lighthouse.metrics.Geff,
       icon: Zap,
-      description: 'FTCP curvature signal',
+      description: 'Fibonacci curvature signal',
       color: 'hsl(var(--chart-4))',
     },
     {
-      name: 'Q',
-      label: 'Quality Factor',
+      name: '|Q|',
+      label: 'Anomaly Pointer (FLAME)',
       value: lighthouse.metrics.Q,
       icon: Target,
-      description: 'Coherence peak sharpness',
+      description: 'Sudden change detector',
       color: 'hsl(var(--chart-5))',
     },
   ];
@@ -110,7 +102,7 @@ export const LighthouseMetricsPanel = ({ lighthouse }: LighthouseMetricsPanelPro
           <div>
             <h3 className="text-xl font-bold">Lighthouse Consensus Metrics</h3>
             <p className="text-sm text-muted-foreground mt-1">
-              Five metrics combine via geometric mean to form L(t)
+              Four metrics (Clin, Cnonlin, Geff, |Q|) combine via weighted geometric mean → L(t)
             </p>
           </div>
           {lighthouse.isLHE && (
@@ -123,16 +115,16 @@ export const LighthouseMetricsPanel = ({ lighthouse }: LighthouseMetricsPanelPro
         {/* Geometric Mean Formula */}
         <div className="p-4 rounded-lg bg-muted/50 border border-border">
           <div className="text-center font-mono text-sm space-y-2">
-            <div className="font-semibold text-foreground">L(t) = (Clin × Cnonlin × Cφ × Geff × |Q|)^(1/5)</div>
+            <div className="font-semibold text-foreground">L(t) = (Clin^1.0 × Cnonlin^1.2 × Geff^1.2 × |Q|^0.8)^(1/4.2)</div>
             <div className="text-muted-foreground text-xs">
-              Normalized Geometric Mean of Five Consensus Metrics
+              Weighted Geometric Mean | Ablation Study: Cnonlin & Geff strongest, |Q| suppressor
             </div>
           </div>
         </div>
       </Card>
 
       {/* Individual Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {metrics.map((metric) => {
           const Icon = metric.icon;
           const percentage = Math.min(Math.max(metric.value * 100, 0), 100);
