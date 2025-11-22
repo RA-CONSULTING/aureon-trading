@@ -5,6 +5,7 @@ import Navbar from "@/components/Navbar";
 import { QuickTrade } from "@/components/QuickTrade";
 import { BinancePortfolioWidget } from "@/components/BinancePortfolioWidget";
 import { QGITASignalPanel } from "@/components/QGITASignalPanel";
+import { QGITAConfigPanel } from "@/components/QGITAConfigPanel";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -131,6 +132,7 @@ const Markets = () => {
           {/* Right side - Quick Trade & QGITA */}
           <div className="lg:col-span-1">
             <div className="sticky top-24 space-y-6">
+              <QGITAConfigPanel />
               <QGITASignalPanel symbol="BTCUSDT" />
               <QuickTrade balances={balances} canTrade={canTrade} />
             </div>
