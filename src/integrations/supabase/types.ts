@@ -519,6 +519,195 @@ export type Database = {
           },
         ]
       }
+      hunt_scans: {
+        Row: {
+          created_at: string
+          hunt_session_id: string
+          id: string
+          orders_queued: number
+          pairs_scanned: number
+          scan_duration_ms: number
+          scan_timestamp: string
+          signals_generated: number
+          targets_found: number
+          top_score: number | null
+          top_symbol: string | null
+        }
+        Insert: {
+          created_at?: string
+          hunt_session_id: string
+          id?: string
+          orders_queued: number
+          pairs_scanned: number
+          scan_duration_ms: number
+          scan_timestamp?: string
+          signals_generated: number
+          targets_found: number
+          top_score?: number | null
+          top_symbol?: string | null
+        }
+        Update: {
+          created_at?: string
+          hunt_session_id?: string
+          id?: string
+          orders_queued?: number
+          pairs_scanned?: number
+          scan_duration_ms?: number
+          scan_timestamp?: string
+          signals_generated?: number
+          targets_found?: number
+          top_score?: number | null
+          top_symbol?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hunt_scans_hunt_session_id_fkey"
+            columns: ["hunt_session_id"]
+            isOneToOne: false
+            referencedRelation: "hunt_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hunt_sessions: {
+        Row: {
+          created_at: string
+          hive_session_id: string | null
+          id: string
+          last_scan_at: string | null
+          max_targets: number
+          min_volatility_pct: number
+          min_volume_usd: number
+          scan_interval_seconds: number
+          started_at: string
+          status: string
+          stopped_at: string | null
+          total_orders_queued: number
+          total_scans: number
+          total_signals_generated: number
+          total_targets_found: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          hive_session_id?: string | null
+          id?: string
+          last_scan_at?: string | null
+          max_targets?: number
+          min_volatility_pct?: number
+          min_volume_usd?: number
+          scan_interval_seconds?: number
+          started_at?: string
+          status?: string
+          stopped_at?: string | null
+          total_orders_queued?: number
+          total_scans?: number
+          total_signals_generated?: number
+          total_targets_found?: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          hive_session_id?: string | null
+          id?: string
+          last_scan_at?: string | null
+          max_targets?: number
+          min_volatility_pct?: number
+          min_volume_usd?: number
+          scan_interval_seconds?: number
+          started_at?: string
+          status?: string
+          stopped_at?: string | null
+          total_orders_queued?: number
+          total_scans?: number
+          total_signals_generated?: number
+          total_targets_found?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hunt_sessions_hive_session_id_fkey"
+            columns: ["hive_session_id"]
+            isOneToOne: false
+            referencedRelation: "hive_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hunt_targets: {
+        Row: {
+          base_asset: string
+          created_at: string
+          discovered_at: string
+          hunt_session_id: string
+          id: string
+          opportunity_score: number
+          order_queued: boolean | null
+          price: number
+          processed_at: string | null
+          quote_asset: string
+          rejection_reason: string | null
+          signal_confidence: number | null
+          signal_generated: boolean | null
+          signal_tier: number | null
+          signal_type: string | null
+          status: string
+          symbol: string
+          volatility_24h: number
+          volume_24h: number
+        }
+        Insert: {
+          base_asset: string
+          created_at?: string
+          discovered_at?: string
+          hunt_session_id: string
+          id?: string
+          opportunity_score: number
+          order_queued?: boolean | null
+          price: number
+          processed_at?: string | null
+          quote_asset: string
+          rejection_reason?: string | null
+          signal_confidence?: number | null
+          signal_generated?: boolean | null
+          signal_tier?: number | null
+          signal_type?: string | null
+          status?: string
+          symbol: string
+          volatility_24h: number
+          volume_24h: number
+        }
+        Update: {
+          base_asset?: string
+          created_at?: string
+          discovered_at?: string
+          hunt_session_id?: string
+          id?: string
+          opportunity_score?: number
+          order_queued?: boolean | null
+          price?: number
+          processed_at?: string | null
+          quote_asset?: string
+          rejection_reason?: string | null
+          signal_confidence?: number | null
+          signal_generated?: boolean | null
+          signal_tier?: number | null
+          signal_type?: string | null
+          status?: string
+          symbol?: string
+          volatility_24h?: number
+          volume_24h?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hunt_targets_hunt_session_id_fkey"
+            columns: ["hunt_session_id"]
+            isOneToOne: false
+            referencedRelation: "hunt_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lighthouse_events: {
         Row: {
           coherence: number

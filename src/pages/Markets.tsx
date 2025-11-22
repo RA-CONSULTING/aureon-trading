@@ -10,6 +10,7 @@ import { QGITAAutoTradingControl } from "@/components/QGITAAutoTradingControl";
 import { QueenHiveControl } from "@/components/QueenHiveControl";
 import { OMSQueueMonitor } from "@/components/OMSQueueMonitor";
 import { QGITAOMSIntegrationStatus } from "@/components/QGITAOMSIntegrationStatus";
+import { AutomatedHuntControl } from "@/components/AutomatedHuntControl";
 import { useQueenHive } from "@/hooks/useQueenHive";
 import { useQGITAAutoTrading, useQGITAAutoTradingToggle } from "@/hooks/useQGITAAutoTrading";
 import { useState, useEffect } from "react";
@@ -152,12 +153,18 @@ const Markets = () => {
           {/* Right side - Trading Controls */}
           <div className="lg:col-span-1">
             <div className="sticky top-24 space-y-6">
-              <Tabs defaultValue="qgita" className="w-full">
-                <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="qgita">QGITA Signals</TabsTrigger>
-                  <TabsTrigger value="hive">Queen-Hive</TabsTrigger>
+              <Tabs defaultValue="hunt" className="w-full">
+                <TabsList className="grid w-full grid-cols-3">
+                  <TabsTrigger value="hunt">🦁 Hunt</TabsTrigger>
+                  <TabsTrigger value="qgita">QGITA</TabsTrigger>
+                  <TabsTrigger value="hive">Hive</TabsTrigger>
                 </TabsList>
                 
+                <TabsContent value="hunt" className="mt-6 space-y-6">
+                  <AutomatedHuntControl />
+                  <OMSQueueMonitor sessionId={hiveSession?.id || null} />
+                </TabsContent>
+
                 <TabsContent value="qgita" className="space-y-6 mt-6">
                   <QGITAAutoTradingControl
                     isEnabled={autoTradingEnabled}
