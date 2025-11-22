@@ -7,10 +7,12 @@ import { BinancePortfolioWidget } from "@/components/BinancePortfolioWidget";
 import { QGITASignalPanel } from "@/components/QGITASignalPanel";
 import { QGITAConfigPanel } from "@/components/QGITAConfigPanel";
 import { QGITAAutoTradingControl } from "@/components/QGITAAutoTradingControl";
+import { QueenHiveControl } from "@/components/QueenHiveControl";
 import { useQGITAAutoTrading, useQGITAAutoTradingToggle } from "@/hooks/useQGITAAutoTrading";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQGITASignals } from "@/hooks/useQGITASignals";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const marketsData = [
   { category: "Cryptocurrencies", assets: [
@@ -143,17 +145,30 @@ const Markets = () => {
             </div>
           </div>
 
-          {/* Right side - Quick Trade & QGITA */}
+          {/* Right side - Trading Controls */}
           <div className="lg:col-span-1">
             <div className="sticky top-24 space-y-6">
-              <QGITAAutoTradingControl
-                isEnabled={autoTradingEnabled}
-                onToggle={setAutoTradingEnabled}
-                isExecuting={isAutoTrading}
-              />
-              <QGITASignalPanel symbol={selectedSymbol} />
-              <QGITAConfigPanel />
-              <QuickTrade balances={balances} canTrade={canTrade} />
+              <Tabs defaultValue="qgita" className="w-full">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="qgita">QGITA Signals</TabsTrigger>
+                  <TabsTrigger value="hive">Queen-Hive</TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="qgita" className="space-y-6 mt-6">
+                  <QGITAAutoTradingControl
+                    isEnabled={autoTradingEnabled}
+                    onToggle={setAutoTradingEnabled}
+                    isExecuting={isAutoTrading}
+                  />
+                  <QGITASignalPanel symbol={selectedSymbol} />
+                  <QGITAConfigPanel />
+                  <QuickTrade balances={balances} canTrade={canTrade} />
+                </TabsContent>
+                
+                <TabsContent value="hive" className="mt-6">
+                  <QueenHiveControl />
+                </TabsContent>
+              </Tabs>
             </div>
           </div>
         </div>
