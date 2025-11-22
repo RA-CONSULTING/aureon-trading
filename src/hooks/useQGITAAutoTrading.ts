@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { QGITASignal } from '@/core/qgitaSignalGenerator';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useQueenHive } from '@/hooks/useQueenHive';
 
 interface QGITAAutoTradingProps {
   signal: QGITASignal | null;
@@ -25,6 +26,7 @@ let circuitBreakerTrippedUntil = 0;
 
 export function useQGITAAutoTrading({ signal, symbol, currentPrice, enabled }: QGITAAutoTradingProps) {
   const { toast } = useToast();
+  const { session: hiveSession } = useQueenHive();
   const [isExecuting, setIsExecuting] = useState(false);
   const lastExecutedSignalRef = useRef<string | null>(null);
 
@@ -76,17 +78,14 @@ export function useQGITAAutoTrading({ signal, symbol, currentPrice, enabled }: Q
       return;
     }
 
-    // 4. RATE LIMIT COMPLIANCE: Binance 100 orders/10s (we use conservative 5/10s)
-    const tenSecondsAgo = now - 10000;
-    const recentOrders = orderTimestamps.filter(ts => ts > tenSecondsAgo);
-    if (recentOrders.length >= MAX_ORDERS_PER_10S) {
-      console.warn(`⏸️ RATE LIMIT: ${recentOrders.length}/${MAX_ORDERS_PER_10S} orders in last 10s`);
+    // 4. QUEEN-HIVE SESSION CHECK: OMS requires active session
+    if (!hiveSession || hiveSession.status !== 'running') {
+      console.warn('⏸️ No active Queen-Hive session. Start a session to enable QGITA auto-trading.');
       toast({
-        title: "⏸️ Rate Limit Protection",
-        description: `Order queued. ${recentOrders.length} orders in last 10s.`,
+        title: "⏸️ No Active Session",
+        description: "Start a Queen-Hive session to enable QGITA auto-trading.",
+        variant: "destructive",
       });
-      // Queue for next window (simplified - production needs priority queue)
-      setTimeout(() => executeQGITATrade(), 2000);
       return;
     }
 
@@ -99,51 +98,101 @@ export function useQGITAAutoTrading({ signal, symbol, currentPrice, enabled }: Q
         setIsExecuting(true);
         lastExecutedSignalRef.current = signalKey;
 
-        // Track order timestamp for rate limiting
-        orderTimestamps.push(Date.now());
-        // Clean up old timestamps (keep only last 10s)
-        while (orderTimestamps.length > 0 && orderTimestamps[0] < Date.now() - 10000) {
-          orderTimestamps.shift();
-        }
+        // Calculate priority based on signal quality (0-100)
+        // Tier 1 (80-100% confidence) → Priority 80-100
+        // Tier 2 (60-79% confidence) → Priority 60-79
+        // Tier 3 (<60% confidence) → Priority 40-59
+        let priority = Math.floor(signal.confidence);
+        
+        // Boost priority for exceptional signals
+        if (signal.ftcpDetected) priority = Math.min(100, priority + 10);
+        if (signal.coherence.crossScaleCoherence > 0.95) priority = Math.min(100, priority + 5);
+        if (signal.lighthouse.L > 0.95) priority = Math.min(100, priority + 5);
+        
+        // Calculate position size based on tier
+        const tierMultiplier = signal.tier === 1 ? 1.0 : signal.tier === 2 ? 0.5 : 0.25;
+        const baseSize = 100; // $100 base position
+        const positionSize = baseSize * tierMultiplier;
+        const quantity = positionSize / currentPrice;
 
         toast({
-          title: "🎯 QGITA Auto-Trading",
-          description: `Executing ${signal.signalType} signal (Tier ${signal.tier}, ${signal.confidence.toFixed(1)}% confidence)`,
+          title: "📋 QGITA → OMS Queue",
+          description: `Queuing ${signal.signalType} signal (Tier ${signal.tier}, P${priority}, ${signal.confidence.toFixed(1)}%)`,
         });
 
-        const { data, error } = await supabase.functions.invoke('execute-trade', {
+        // Get active hive and agent (use first available)
+        const { data: hives } = await supabase
+          .from('hive_instances')
+          .select('id')
+          .eq('status', 'active')
+          .limit(1)
+          .single();
+
+        if (!hives) {
+          throw new Error('No active hive found');
+        }
+
+        const { data: agent } = await supabase
+          .from('hive_agents')
+          .select('id')
+          .eq('hive_id', hives.id)
+          .limit(1)
+          .single();
+
+        if (!agent) {
+          throw new Error('No active agent found');
+        }
+
+        // Enqueue order via OMS with priority
+        const { data, error } = await supabase.functions.invoke('oms-leaky-bucket', {
           body: {
+            action: 'enqueue',
+            sessionId: hiveSession!.id,
+            hiveId: hives.id,
+            agentId: agent.id,
             symbol,
-            signalType: signal.signalType,
+            side: signal.signalType,
+            quantity,
             price: currentPrice,
-            coherence: signal.coherence.crossScaleCoherence,
-            lighthouseValue: signal.lighthouse.L,
-            lighthouseConfidence: signal.lighthouse.confidence,
-            prismLevel: 5, // QGITA signals are high-quality
-            signalStrength: signal.confidence,
-            signalReasoning: signal.reasoning,
-            // QGITA-specific metadata
-            qgitaTier: signal.tier,
-            qgitaCurvature: signal.curvature,
-            qgitaFTCP: signal.ftcpDetected,
-            qgitaGoldenRatio: signal.goldenRatioScore,
+            priority,
+            metadata: {
+              signalStrength: signal.confidence,
+              coherence: signal.coherence.crossScaleCoherence,
+              lighthouseValue: signal.lighthouse.L,
+              lighthouseConfidence: signal.lighthouse.confidence,
+              prismLevel: 5,
+              qgitaTier: signal.tier,
+              qgitaCurvature: signal.curvature,
+              qgitaFTCP: signal.ftcpDetected,
+              qgitaGoldenRatio: signal.goldenRatioScore,
+              qgitaAnomaly: signal.anomalyPointer,
+              reasoning: signal.reasoning,
+            },
           },
         });
 
         if (error) throw error;
 
-        // SUCCESS: Reset failure counter
-        consecutiveFailures = 0;
+        if (data.success) {
+          // SUCCESS: Reset failure counter
+          consecutiveFailures = 0;
 
-        toast({
-          title: "✅ Trade Executed",
-          description: `${signal.signalType} order placed successfully via QGITA auto-trading`,
-        });
+          toast({
+            title: "✅ Order Queued",
+            description: `${signal.signalType} order queued via OMS (Position #${data.position}, Priority ${priority})`,
+          });
 
-        console.log('QGITA Auto-Trade executed:', data);
+          console.log('QGITA order enqueued:', {
+            orderId: data.orderId,
+            position: data.position,
+            priority,
+            tier: signal.tier,
+            confidence: signal.confidence,
+          });
+        }
 
       } catch (error) {
-        console.error('QGITA Auto-Trading error:', error);
+        console.error('QGITA OMS queueing error:', error);
         
         // FAILURE: Increment counter and potentially trip circuit breaker
         consecutiveFailures++;
@@ -160,8 +209,8 @@ export function useQGITAAutoTrading({ signal, symbol, currentPrice, enabled }: Q
           consecutiveFailures = 0;
         } else {
           toast({
-            title: "❌ Auto-Trade Failed",
-            description: error instanceof Error ? error.message : 'Failed to execute QGITA trade',
+            title: "❌ Failed to Queue Order",
+            description: error instanceof Error ? error.message : 'Failed to queue QGITA trade',
             variant: "destructive",
           });
         }

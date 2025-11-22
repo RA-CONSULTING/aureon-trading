@@ -9,6 +9,7 @@ import { QGITAConfigPanel } from "@/components/QGITAConfigPanel";
 import { QGITAAutoTradingControl } from "@/components/QGITAAutoTradingControl";
 import { QueenHiveControl } from "@/components/QueenHiveControl";
 import { OMSQueueMonitor } from "@/components/OMSQueueMonitor";
+import { QGITAOMSIntegrationStatus } from "@/components/QGITAOMSIntegrationStatus";
 import { useQueenHive } from "@/hooks/useQueenHive";
 import { useQGITAAutoTrading, useQGITAAutoTradingToggle } from "@/hooks/useQGITAAutoTrading";
 import { useState, useEffect } from "react";
@@ -163,6 +164,7 @@ const Markets = () => {
                     onToggle={setAutoTradingEnabled}
                     isExecuting={isAutoTrading}
                   />
+                  <QGITAOMSIntegrationStatus />
                   <QGITASignalPanel symbol={selectedSymbol} />
                   <QGITAConfigPanel />
                   <QuickTrade balances={balances} canTrade={canTrade} />
