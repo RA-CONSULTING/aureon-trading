@@ -71,6 +71,26 @@ export class QGITASignalGenerator {
     observer: number,
     echo: number
   ): QGITASignal {
+    // === CRITICAL DATA VALIDATION: Fail Safe, Not Fail Open ===
+    if (!price || isNaN(price) || price <= 0) {
+      console.error('🛑 Invalid price data:', price);
+      return this.createFailSafeSignal(timestamp, 'Invalid price data');
+    }
+    if (!volume || isNaN(volume) || volume < 0) {
+      console.error('🛑 Invalid volume data:', volume);
+      return this.createFailSafeSignal(timestamp, 'Invalid volume data');
+    }
+    if (isNaN(lambda) || isNaN(coherenceValue) || isNaN(substrate) || isNaN(observer) || isNaN(echo)) {
+      console.error('🛑 Invalid Master Equation data');
+      return this.createFailSafeSignal(timestamp, 'Invalid field metrics');
+    }
+    
+    // === DATA QUALITY CHECK: Insufficient History ===
+    if (this.priceHistory.length < 10) {
+      console.warn('⏳ Insufficient historical data. Collecting...');
+      // Still process to build history, but force HOLD
+    }
+    
     // Update history
     this.priceHistory.push(price);
     this.volumeHistory.push(volume);
@@ -100,14 +120,12 @@ export class QGITASignalGenerator {
     // Stage 2: Coherence Metrics
     const coherence = this.coherenceEngine.calculateAllMetrics(this.priceHistory);
     
-    // Calculate Anomaly Pointer
-    const anomalyPointer = calculateAnomalyPointer(
-      this.priceHistory,
-      this.volumeHistory
-    );
+    // Calculate Anomaly Pointer |Q| and component metrics (Ablation Study)
+    const { pointer: anomalyPointer, volumeSpike, spreadExpansion, priceAcceleration } = 
+      this.calculateAnomalyComponents(this.priceHistory, this.volumeHistory);
     const normalizedQ = Math.min(1.0, anomalyPointer);
     
-    // Stage 3: Lighthouse Validation
+    // Stage 3: Lighthouse Validation (Ablation Study: weighted geometric mean)
     const lighthouseState = this.lighthouse.validate(
       lambda,
       coherenceValue,
@@ -115,8 +133,30 @@ export class QGITASignalGenerator {
       observer,
       echo,
       normalizedGeff,
-      ftcpDetected
+      ftcpDetected,
+      volumeSpike,
+      spreadExpansion,
+      priceAcceleration
     );
+    
+    // === KILL SWITCH: If Lighthouse = 0, force HOLD (geometric mean requires all > 0) ===
+    if (lighthouseState.L === 0 && this.priceHistory.length >= 10) {
+      console.warn('🛑 Lighthouse consensus failed (L=0). Forcing HOLD.');
+      return {
+        timestamp,
+        signalType: 'HOLD',
+        confidence: 0,
+        tier: 3,
+        curvature,
+        curvatureDirection: this.determineCurvatureDirection(curvature),
+        lighthouse: lighthouseState,
+        coherence,
+        ftcpDetected,
+        goldenRatioScore,
+        anomalyPointer,
+        reasoning: '🛑 KILL SWITCH: Lighthouse consensus failed (L=0). All metrics must align for trade.',
+      };
+    }
     
     // Stage 4: Signal Generation
     const signal = this.interpretSignal(
@@ -134,6 +174,71 @@ export class QGITASignalGenerator {
   }
   
   /**
+   * Calculate Anomaly Pointer components (Ablation Study: 40% volume, 30% spread, 30% price accel)
+   */
+  private calculateAnomalyComponents(
+    prices: number[],
+    volumes: number[]
+  ): { pointer: number; volumeSpike: number; spreadExpansion: number; priceAcceleration: number } {
+    if (prices.length < 10 || volumes.length < 10) {
+      return { pointer: 0, volumeSpike: 0, spreadExpansion: 0, priceAcceleration: 0 };
+    }
+
+    // Volume spike (recent volume vs 20-period average)
+    const recentVolume = volumes.slice(-1)[0];
+    const avgVolume = volumes.slice(-20).reduce((a, b) => a + b, 0) / Math.min(20, volumes.length);
+    const volumeSpike = avgVolume > 0 ? Math.min(1.0, (recentVolume - avgVolume) / avgVolume) : 0;
+
+    // Spread expansion (recent price range vs average range)
+    const recentPrices = prices.slice(-5);
+    const recentSpread = Math.max(...recentPrices) - Math.min(...recentPrices);
+    const avgPrices = prices.slice(-20);
+    const avgSpread = (Math.max(...avgPrices) - Math.min(...avgPrices)) / 4; // /4 to normalize to 5-period chunks
+    const spreadExpansion = avgSpread > 0 ? Math.min(1.0, (recentSpread - avgSpread) / avgSpread) : 0;
+
+    // Price acceleration (second derivative)
+    const p1 = prices[prices.length - 1];
+    const p2 = prices[prices.length - 2];
+    const p3 = prices[prices.length - 3];
+    const velocity1 = p1 - p2;
+    const velocity2 = p2 - p3;
+    const acceleration = Math.abs(velocity1 - velocity2);
+    const avgPrice = prices.slice(-20).reduce((a, b) => a + b, 0) / Math.min(20, prices.length);
+    const priceAcceleration = avgPrice > 0 ? Math.min(1.0, acceleration / (avgPrice * 0.01)) : 0;
+
+    // Weighted combination (Ablation Study)
+    const pointer = 0.4 * volumeSpike + 0.3 * spreadExpansion + 0.3 * priceAcceleration;
+
+    return { pointer, volumeSpike, spreadExpansion, priceAcceleration };
+  }
+
+  /**
+   * Create fail-safe HOLD signal when data is invalid
+   */
+  private createFailSafeSignal(timestamp: number, reason: string): QGITASignal {
+    return {
+      timestamp,
+      signalType: 'HOLD',
+      confidence: 0,
+      tier: 3,
+      curvature: 0,
+      curvatureDirection: 'NEUTRAL',
+      lighthouse: {
+        L: 0,
+        metrics: { Q: 0, Geff: 0, Clin: 0, Cnonlin: 0 },
+        isLHE: false,
+        threshold: 0,
+        confidence: 0,
+      },
+      coherence: { linearCoherence: 0, nonlinearCoherence: 0, crossScaleCoherence: 0 },
+      ftcpDetected: false,
+      goldenRatioScore: 0,
+      anomalyPointer: 0,
+      reasoning: `🛑 FAIL-SAFE: ${reason}. Trading halted.`,
+    };
+  }
+  
+  /**
    * Interpret all metrics to generate final signal
    */
   private interpretSignal(
@@ -148,6 +253,24 @@ export class QGITASignalGenerator {
   ): QGITASignal {
     let signalType: 'BUY' | 'SELL' | 'HOLD' = 'HOLD';
     let reasoning = '';
+    
+    // Force HOLD if insufficient history
+    if (this.priceHistory.length < 10) {
+      return {
+        timestamp,
+        signalType: 'HOLD',
+        confidence: 0,
+        tier: 3,
+        curvature,
+        curvatureDirection,
+        lighthouse,
+        coherence,
+        ftcpDetected,
+        goldenRatioScore,
+        anomalyPointer,
+        reasoning: '⏳ Insufficient historical data. Collecting...',
+      };
+    }
     
     // BUY Signal Conditions:
     // - FTCP detected with positive curvature (upward bend)

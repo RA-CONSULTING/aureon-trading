@@ -21,10 +21,24 @@ serve(async (req) => {
       lighthouseValue,
       lighthouseConfidence,
       prismLevel,
-      currentPrice
+      currentPrice,
+      price, // Alias for currentPrice
     } = await req.json();
 
-    console.log('Execute trade request:', { symbol, signalType, coherence, currentPrice });
+    const validatedPrice = currentPrice || price;
+
+    // === CRITICAL FAIL-SAFES (Strategic Plan Requirements) ===
+    
+    // 1. PRICE VALIDATION: Reject invalid or stale prices
+    if (!validatedPrice || isNaN(validatedPrice) || validatedPrice <= 0) {
+      console.error('🛑 FAIL-SAFE: Invalid price', validatedPrice);
+      return new Response(
+        JSON.stringify({ success: false, error: `Invalid price: ${validatedPrice}` }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+      );
+    }
+
+    console.log('Execute trade request:', { symbol, signalType, coherence, price: validatedPrice });
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -108,28 +122,37 @@ serve(async (req) => {
 
     // Calculate position size
     const positionSizeUsdt = parseFloat(configData.base_position_size_usdt as any);
-    const quantity = positionSizeUsdt / currentPrice;
+    const quantity = positionSizeUsdt / validatedPrice;
+
+    // === SANITY CHECK: Validate calculated quantity ===
+    if (!quantity || isNaN(quantity) || quantity <= 0) {
+      console.error('🛑 FAIL-SAFE: Invalid quantity calculation', { positionSizeUsdt, price: validatedPrice, quantity });
+      return new Response(
+        JSON.stringify({ success: false, error: `Invalid quantity: ${quantity}` }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+      );
+    }
 
     // Calculate stop loss and take profit
     const stopLossPrice = signalType === 'LONG'
-      ? currentPrice * (1 - parseFloat(configData.stop_loss_percentage as any) / 100)
-      : currentPrice * (1 + parseFloat(configData.stop_loss_percentage as any) / 100);
+      ? validatedPrice * (1 - parseFloat(configData.stop_loss_percentage as any) / 100)
+      : validatedPrice * (1 + parseFloat(configData.stop_loss_percentage as any) / 100);
 
     const takeProfitPrice = signalType === 'LONG'
-      ? currentPrice * (1 + parseFloat(configData.take_profit_percentage as any) / 100)
-      : currentPrice * (1 - parseFloat(configData.take_profit_percentage as any) / 100);
+      ? validatedPrice * (1 + parseFloat(configData.take_profit_percentage as any) / 100)
+      : validatedPrice * (1 - parseFloat(configData.take_profit_percentage as any) / 100);
 
     const side = signalType === 'LONG' ? 'BUY' : 'SELL';
 
     let executionResult;
     if (configData.trading_mode === 'paper') {
       // Paper trading - simulate execution
-      console.log('Paper trading execution:', { side, symbol, quantity, currentPrice });
+      console.log('Paper trading execution:', { side, symbol, quantity, price: validatedPrice });
       executionResult = {
         success: true,
         orderId: `PAPER_${Date.now()}`,
         executedQty: quantity.toString(),
-        executedPrice: currentPrice.toString(),
+        executedPrice: validatedPrice.toString(),
         status: 'FILLED',
       };
     } else {
@@ -164,23 +187,45 @@ serve(async (req) => {
         .map(b => b.toString(16).padStart(2, '0'))
         .join('');
 
-      const binanceResponse = await fetch(
-        `https://api.binance.com/api/v3/order?${queryString}&signature=${signature}`,
-        {
-          method: 'POST',
-          headers: {
-            'X-MBX-APIKEY': binanceApiKey,
-          },
+      // === NETWORK FAIL-SAFE: Timeout and retry logic ===
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5s timeout
+
+      try {
+        const binanceResponse = await fetch(
+          `https://api.binance.com/api/v3/order?${queryString}&signature=${signature}`,
+          {
+            method: 'POST',
+            headers: {
+              'X-MBX-APIKEY': binanceApiKey,
+            },
+            signal: controller.signal,
+          }
+        );
+
+        clearTimeout(timeoutId);
+
+        if (!binanceResponse.ok) {
+          const errorText = await binanceResponse.text();
+          console.error('Binance API error:', errorText);
+          
+          // Check for rate limit error (429)
+          if (binanceResponse.status === 429) {
+            throw new Error('🛑 RATE LIMIT: Binance order limit exceeded. Trading paused.');
+          }
+          
+          throw new Error(`Binance API error (${binanceResponse.status}): ${errorText}`);
         }
-      );
 
-      if (!binanceResponse.ok) {
-        const errorText = await binanceResponse.text();
-        throw new Error(`Binance API error: ${errorText}`);
+        executionResult = await binanceResponse.json();
+        console.log('Live trade executed:', executionResult);
+      } catch (fetchError: any) {
+        clearTimeout(timeoutId);
+        if (fetchError?.name === 'AbortError') {
+          throw new Error('🛑 TIMEOUT: Binance API request timed out after 5s');
+        }
+        throw fetchError;
       }
-
-      executionResult = await binanceResponse.json();
-      console.log('Live trade executed:', executionResult);
     }
 
     // Save execution to database
@@ -194,8 +239,8 @@ serve(async (req) => {
         signal_type: signalType,
         order_type: 'MARKET',
         quantity,
-        price: currentPrice,
-        executed_price: parseFloat(executionResult.executedPrice || currentPrice),
+        price: validatedPrice,
+        executed_price: parseFloat(executionResult.executedPrice || validatedPrice),
         position_size_usdt: positionSizeUsdt,
         stop_loss_price: stopLossPrice,
         take_profit_price: takeProfitPrice,
@@ -221,12 +266,12 @@ serve(async (req) => {
         execution_id: execution.id,
         symbol,
         side: signalType,
-        entry_price: currentPrice,
+        entry_price: validatedPrice,
         quantity,
         position_value_usdt: positionSizeUsdt,
         stop_loss_price: stopLossPrice,
         take_profit_price: takeProfitPrice,
-        current_price: currentPrice,
+        current_price: validatedPrice,
         status: 'open',
       });
 
@@ -236,7 +281,7 @@ serve(async (req) => {
       JSON.stringify({
         success: true,
         execution: execution,
-        message: `${configData.trading_mode === 'paper' ? 'Paper' : 'Live'} trade executed: ${side} ${quantity.toFixed(8)} ${symbol} @ $${currentPrice.toFixed(2)}`
+        message: `${configData.trading_mode === 'paper' ? 'Paper' : 'Live'} trade executed: ${side} ${quantity.toFixed(8)} ${symbol} @ $${validatedPrice.toFixed(2)}`
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
