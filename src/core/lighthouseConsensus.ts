@@ -3,11 +3,11 @@
 // Lighthouse Event (LHE) confirmed when L(t) > μ + 2σ
 
 export type LighthouseMetrics = {
-  Clin: number;      // Linear coherence
-  Cnonlin: number;   // Nonlinear coherence
-  Cphi: number;      // Phase coherence
+  Clin: number;      // Linear coherence (QGITA: MACD-based)
+  Cnonlin: number;   // Nonlinear coherence (QGITA: Volatility-adjusted)
+  Cphi: number;      // Cross-scale coherence (QGITA: Self-similarity at φ)
   Geff: number;      // Effective gravity (from FTCP)
-  Q: number;         // Quality factor
+  Q: number;         // Anomaly pointer (sudden change detector)
 };
 
 export type LighthouseState = {
@@ -21,6 +21,7 @@ export type LighthouseState = {
 export class LighthouseConsensus {
   private history: number[] = [];
   private readonly maxHistory = 100;
+  private readonly weights = [1, 1, 1, 1, 1]; // Equal weights by default
   
   validate(
     lambda: number,
@@ -56,10 +57,22 @@ export class LighthouseConsensus {
       Q,
     };
     
-    // Compute L(t) via normalized geometric mean
-    // L(t) = (Clin * Cnonlin * Cφ * Geff * |Q|)^(1/5)
-    const product = Clin * Cnonlin * Cphi * Geff * Math.abs(Q);
-    const L = Math.pow(Math.max(product, 0), 1 / 5);
+    // Compute L(t) via weighted geometric mean
+    // L(t) = (Clin^w1 * Cnonlin^w2 * Cφ^w3 * Geff^w4 * |Q|^w5)^(1/Σw_i)
+    let product = 1.0;
+    const metricsArray = [Clin, Cnonlin, Cphi, Geff, Math.abs(Q)];
+    
+    for (let i = 0; i < metricsArray.length; i++) {
+      if (metricsArray[i] > 0) {
+        product *= Math.pow(metricsArray[i], this.weights[i]);
+      } else {
+        product = 0; // Any zero kills the consensus
+        break;
+      }
+    }
+    
+    const totalWeight = this.weights.reduce((sum, w) => sum + w, 0);
+    const L = product > 0 ? Math.pow(product, 1.0 / totalWeight) : 0;
     
     // Track history
     this.history.push(L);

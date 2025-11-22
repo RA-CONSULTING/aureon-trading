@@ -17,6 +17,7 @@ export class FTCPDetector {
   private history: Array<{ timestamp: number; value: number }> = [];
   private readonly maxHistory = 200;
   private readonly curvatureThreshold = 0.5;
+  private curvatureHistory: number[] = [];
   
   addPoint(timestamp: number, value: number): CurvaturePoint | null {
     this.history.push({ timestamp, value });
@@ -42,9 +43,18 @@ export class FTCPDetector {
       Math.pow((curr.timestamp - prev.timestamp) / 1000, 2)
     );
     
+    // Track curvature history for adaptive threshold
+    this.curvatureHistory.push(curvature);
+    if (this.curvatureHistory.length > this.maxHistory) {
+      this.curvatureHistory.shift();
+    }
+    
+    // Adaptive threshold: 90th percentile of historical curvatures
+    const adaptiveThreshold = this.computeAdaptiveThreshold(90);
+    
     // Check for golden ratio timing
     const goldenRatioScore = this.computeGoldenRatioScore();
-    const isFTCP = curvature > this.curvatureThreshold && goldenRatioScore > 0.7;
+    const isFTCP = curvature > adaptiveThreshold && goldenRatioScore > 0.7;
     
     return {
       timestamp: curr.timestamp,
@@ -105,7 +115,19 @@ export class FTCPDetector {
     return sumCurvature / Math.max(recentPoints.length - 2, 1);
   }
   
+  // Compute adaptive curvature threshold based on percentile
+  private computeAdaptiveThreshold(percentile: number): number {
+    if (this.curvatureHistory.length < 10) {
+      return this.curvatureThreshold; // Use default if not enough history
+    }
+    
+    const sorted = [...this.curvatureHistory].sort((a, b) => a - b);
+    const index = Math.floor((percentile / 100) * sorted.length);
+    return sorted[index];
+  }
+  
   reset() {
     this.history = [];
+    this.curvatureHistory = [];
   }
 }

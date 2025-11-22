@@ -4,6 +4,7 @@ import { Search, TrendingUp, TrendingDown } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import { QuickTrade } from "@/components/QuickTrade";
 import { BinancePortfolioWidget } from "@/components/BinancePortfolioWidget";
+import { QGITASignalPanel } from "@/components/QGITASignalPanel";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -127,9 +128,10 @@ const Markets = () => {
             </div>
           </div>
 
-          {/* Right side - Quick Trade */}
+          {/* Right side - Quick Trade & QGITA */}
           <div className="lg:col-span-1">
             <div className="sticky top-24 space-y-6">
+              <QGITASignalPanel symbol="BTCUSDT" />
               <QuickTrade balances={balances} canTrade={canTrade} />
             </div>
           </div>
