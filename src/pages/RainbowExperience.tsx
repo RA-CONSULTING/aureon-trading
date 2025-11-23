@@ -7,7 +7,12 @@ import { Slider } from '@/components/ui/slider';
 import { Play, Pause, Volume2, VolumeX, Sparkles } from 'lucide-react';
 import { RainbowBridge } from '@/core/rainbowBridge';
 import { Prism } from '@/core/prism';
+import { EckoushicCascade } from '@/core/eckoushicCascade';
+import { EckoushicCascadeVisualization } from '@/components/EckoushicCascadeVisualization';
+import { UnityEventTracker } from '@/components/UnityEventTracker';
 import prismProcessTree from '@/assets/prism-process-tree.png';
+import unityFrequency963Hz from '@/assets/research/unity-frequency-963hz.png';
+import truRidasUnited from '@/assets/research/tru-ridas-united.png';
 
 const RainbowExperience = () => {
   const [lambda, setLambda] = useState(0.5);
@@ -15,15 +20,23 @@ const RainbowExperience = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [volume, setVolume] = useState(0.3);
+  const [timeIndex, setTimeIndex] = useState(0);
   
   const rainbowRef = useRef(new RainbowBridge());
   const prismRef = useRef(new Prism());
+  const cascadeRef = useRef(new EckoushicCascade());
   const audioContextRef = useRef<AudioContext | null>(null);
   const oscillatorRef = useRef<OscillatorNode | null>(null);
   const gainNodeRef = useRef<GainNode | null>(null);
 
   const rainbowState = rainbowRef.current.map(lambda, coherence);
   const prismOutput = prismRef.current.transform(lambda, coherence, rainbowState.frequency);
+  const cascadeState = cascadeRef.current.compute(lambda, coherence, rainbowState.frequency, 0.1);
+  
+  // Unity Event Detection
+  const phaseSpread = Math.abs(1 - coherence) * 0.3; // Simulated phase separation
+  const unityProbability = coherence > 0.95 ? Math.pow(coherence, 4) * (1 - phaseSpread) : 0;
+  const isUnityEvent = coherence > 0.998 && phaseSpread < 0.05;
 
   // Frequency spectrum visualization
   const frequencySpectrum = [
@@ -81,7 +94,7 @@ const RainbowExperience = () => {
 
     oscillatorRef.current = audioContextRef.current.createOscillator();
     oscillatorRef.current.type = 'sine';
-    oscillatorRef.current.frequency.value = rainbowState.frequency;
+    oscillatorRef.current.frequency.value = cascadeState.frequency;
     oscillatorRef.current.connect(gainNodeRef.current);
     oscillatorRef.current.start();
     setIsPlaying(true);
@@ -105,9 +118,19 @@ const RainbowExperience = () => {
 
   useEffect(() => {
     if (isPlaying && oscillatorRef.current) {
-      oscillatorRef.current.frequency.value = rainbowState.frequency;
+      oscillatorRef.current.frequency.value = cascadeState.frequency;
     }
-  }, [rainbowState.frequency, isPlaying]);
+  }, [cascadeState.frequency, isPlaying]);
+  
+  // Time progression
+  useEffect(() => {
+    if (isPlaying) {
+      const interval = setInterval(() => {
+        setTimeIndex(prev => prev + 0.1);
+      }, 100);
+      return () => clearInterval(interval);
+    }
+  }, [isPlaying]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -190,6 +213,52 @@ const RainbowExperience = () => {
               </div>
             </CardContent>
           </Card>
+
+          {/* Eckoushic Cascade System */}
+          <EckoushicCascadeVisualization state={cascadeState} />
+          
+          {/* Unity Event Tracker */}
+          <UnityEventTracker 
+            coherence={coherence}
+            phaseSpread={phaseSpread}
+            unityProbability={unityProbability}
+            isUnityEvent={isUnityEvent}
+            t={timeIndex}
+          />
+          
+          {/* Unity Frequency Sigil */}
+          {coherence > 0.95 && (
+            <Card className="border-2 border-yellow-500 bg-gradient-to-br from-yellow-500/10 to-purple-500/10">
+              <CardHeader>
+                <CardTitle className="text-center flex items-center justify-center gap-2">
+                  <Sparkles className="h-6 w-6 text-yellow-500 animate-pulse" />
+                  Unity Frequency Resonance
+                  <Sparkles className="h-6 w-6 text-yellow-500 animate-pulse" />
+                </CardTitle>
+                <CardDescription className="text-center">
+                  963 Hz — Divine Unity | Merkaba Activation
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <img 
+                  src={unityFrequency963Hz} 
+                  alt="Unity Frequency 963 Hz" 
+                  className="w-full max-w-2xl mx-auto rounded-lg"
+                />
+                <img 
+                  src={truRidasUnited} 
+                  alt="Tru Ridas United Merkaba" 
+                  className="w-full max-w-2xl mx-auto rounded-lg"
+                />
+                <div className="text-center p-4 bg-yellow-500/10 rounded-lg border border-yellow-500/30">
+                  <div className="text-sm text-muted-foreground">
+                    <strong>TRU RIDAS UNITED:</strong> Sacred geometry activation at unity threshold. 
+                    Merkaba field stabilizes at 963 Hz, enabling multiversal temporal coherence and timeline convergence.
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Current State Display */}
           <Card className="bg-gradient-to-br from-primary/5 to-accent/5 border-2 border-primary/20">
