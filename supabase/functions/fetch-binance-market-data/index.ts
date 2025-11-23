@@ -51,25 +51,38 @@ serve(async (req) => {
 
     const timestamp = Date.now();
     
-    // Helper function to fetch with timeout
-    const fetchWithTimeout = async (url: string, options: RequestInit, timeoutMs = 8000) => {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
-      
-      try {
-        const response = await fetch(url, {
-          ...options,
-          signal: controller.signal
-        });
-        clearTimeout(timeoutId);
-        return response;
-      } catch (error) {
-        clearTimeout(timeoutId);
-        if (error instanceof Error && error.name === 'AbortError') {
-          throw new Error(`Request timeout after ${timeoutMs}ms`);
+    // Helper function to fetch with timeout and retry
+    const fetchWithTimeout = async (url: string, options: RequestInit, timeoutMs = 15000, retries = 2) => {
+      for (let attempt = 0; attempt <= retries; attempt++) {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+        
+        try {
+          const response = await fetch(url, {
+            ...options,
+            signal: controller.signal
+          });
+          clearTimeout(timeoutId);
+          return response;
+        } catch (error) {
+          clearTimeout(timeoutId);
+          
+          // If this is the last attempt, throw the error
+          if (attempt === retries) {
+            if (error instanceof Error && error.name === 'AbortError') {
+              throw new Error(`Request timeout after ${timeoutMs}ms (${retries + 1} attempts)`);
+            }
+            throw error;
+          }
+          
+          // Wait before retrying (exponential backoff)
+          const delay = Math.min(1000 * Math.pow(2, attempt), 3000);
+          console.log(`[fetch-binance-market-data] Retry attempt ${attempt + 1} after ${delay}ms`);
+          await new Promise(resolve => setTimeout(resolve, delay));
         }
-        throw error;
       }
+      
+      throw new Error('Max retries exceeded');
     };
 
     // Fetch multiple endpoints in parallel for comprehensive market data with timeout
@@ -191,18 +204,27 @@ serve(async (req) => {
     );
 
   } catch (error) {
-    console.error('[fetch-binance-market-data] Error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    console.error('[fetch-binance-market-data] Error:', errorMessage);
     
-    // Return generic error
+    // Return specific error types
     if (error instanceof z.ZodError) {
       return new Response(
-        JSON.stringify({ success: false, error: 'Invalid symbol format' }),
+        JSON.stringify({ success: false, error: 'Invalid symbol format', details: error.errors }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
     
+    // Network/timeout errors
+    if (errorMessage.includes('timeout') || errorMessage.includes('network')) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Network timeout - please try again', details: errorMessage }),
+        { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
     return new Response(
-      JSON.stringify({ success: false, error: 'Failed to fetch market data' }),
+      JSON.stringify({ success: false, error: 'Failed to fetch market data', details: errorMessage }),
       {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
