@@ -586,6 +586,8 @@ export type Database = {
           total_scans: number
           total_signals_generated: number
           total_targets_found: number
+          twap_duration_seconds: number | null
+          twap_threshold_usd: number | null
           user_id: string
         }
         Insert: {
@@ -604,6 +606,8 @@ export type Database = {
           total_scans?: number
           total_signals_generated?: number
           total_targets_found?: number
+          twap_duration_seconds?: number | null
+          twap_threshold_usd?: number | null
           user_id: string
         }
         Update: {
@@ -622,6 +626,8 @@ export type Database = {
           total_scans?: number
           total_signals_generated?: number
           total_targets_found?: number
+          twap_duration_seconds?: number | null
+          twap_threshold_usd?: number | null
           user_id?: string
         }
         Relationships: [
@@ -1565,6 +1571,161 @@ export type Database = {
             columns: ["lighthouse_event_id"]
             isOneToOne: false
             referencedRelation: "lighthouse_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      twap_orders: {
+        Row: {
+          algo_id: number | null
+          algo_status: string | null
+          avg_price: number | null
+          book_time: string | null
+          client_algo_id: string
+          created_at: string
+          duration_seconds: number
+          end_time: string | null
+          error_code: number | null
+          error_message: string | null
+          executed_amount: number | null
+          executed_quantity: number | null
+          hunt_session_id: string | null
+          id: string
+          limit_price: number | null
+          metadata: Json | null
+          oms_order_id: string | null
+          side: string
+          symbol: string
+          total_quantity: number
+          updated_at: string
+          urgency: string | null
+        }
+        Insert: {
+          algo_id?: number | null
+          algo_status?: string | null
+          avg_price?: number | null
+          book_time?: string | null
+          client_algo_id: string
+          created_at?: string
+          duration_seconds: number
+          end_time?: string | null
+          error_code?: number | null
+          error_message?: string | null
+          executed_amount?: number | null
+          executed_quantity?: number | null
+          hunt_session_id?: string | null
+          id?: string
+          limit_price?: number | null
+          metadata?: Json | null
+          oms_order_id?: string | null
+          side: string
+          symbol: string
+          total_quantity: number
+          updated_at?: string
+          urgency?: string | null
+        }
+        Update: {
+          algo_id?: number | null
+          algo_status?: string | null
+          avg_price?: number | null
+          book_time?: string | null
+          client_algo_id?: string
+          created_at?: string
+          duration_seconds?: number
+          end_time?: string | null
+          error_code?: number | null
+          error_message?: string | null
+          executed_amount?: number | null
+          executed_quantity?: number | null
+          hunt_session_id?: string | null
+          id?: string
+          limit_price?: number | null
+          metadata?: Json | null
+          oms_order_id?: string | null
+          side?: string
+          symbol?: string
+          total_quantity?: number
+          updated_at?: string
+          urgency?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "twap_orders_hunt_session_id_fkey"
+            columns: ["hunt_session_id"]
+            isOneToOne: false
+            referencedRelation: "hunt_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "twap_orders_oms_order_id_fkey"
+            columns: ["oms_order_id"]
+            isOneToOne: false
+            referencedRelation: "oms_order_queue"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      twap_sub_orders: {
+        Row: {
+          avg_price: number | null
+          book_time: string
+          created_at: string
+          executed_amount: number
+          executed_quantity: number
+          fee_amount: number | null
+          fee_asset: string | null
+          id: string
+          order_id: number
+          order_status: string
+          orig_quantity: number
+          side: string
+          sub_id: number
+          symbol: string
+          time_in_force: string | null
+          twap_order_id: string
+        }
+        Insert: {
+          avg_price?: number | null
+          book_time: string
+          created_at?: string
+          executed_amount?: number
+          executed_quantity?: number
+          fee_amount?: number | null
+          fee_asset?: string | null
+          id?: string
+          order_id: number
+          order_status: string
+          orig_quantity: number
+          side: string
+          sub_id: number
+          symbol: string
+          time_in_force?: string | null
+          twap_order_id: string
+        }
+        Update: {
+          avg_price?: number | null
+          book_time?: string
+          created_at?: string
+          executed_amount?: number
+          executed_quantity?: number
+          fee_amount?: number | null
+          fee_asset?: string | null
+          id?: string
+          order_id?: number
+          order_status?: string
+          orig_quantity?: number
+          side?: string
+          sub_id?: number
+          symbol?: string
+          time_in_force?: string | null
+          twap_order_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "twap_sub_orders_twap_order_id_fkey"
+            columns: ["twap_order_id"]
+            isOneToOne: false
+            referencedRelation: "twap_orders"
             referencedColumns: ["id"]
           },
         ]

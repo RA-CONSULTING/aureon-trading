@@ -11,6 +11,7 @@ import { QueenHiveControl } from "@/components/QueenHiveControl";
 import { OMSQueueMonitor } from "@/components/OMSQueueMonitor";
 import { QGITAOMSIntegrationStatus } from "@/components/QGITAOMSIntegrationStatus";
 import { AutomatedHuntControl } from "@/components/AutomatedHuntControl";
+import { TWAPMonitor } from "@/components/TWAPMonitor";
 import { useQueenHive } from "@/hooks/useQueenHive";
 import { useQGITAAutoTrading, useQGITAAutoTradingToggle } from "@/hooks/useQGITAAutoTrading";
 import { useState, useEffect } from "react";
@@ -161,7 +162,10 @@ const Markets = () => {
                 </TabsList>
                 
                 <TabsContent value="hunt" className="mt-6 space-y-6">
-                  <AutomatedHuntControl />
+                  <div className="grid grid-cols-1 gap-6">
+                    <AutomatedHuntControl />
+                    <TWAPMonitor />
+                  </div>
                   <OMSQueueMonitor sessionId={hiveSession?.id || null} />
                 </TabsContent>
 

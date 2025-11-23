@@ -183,38 +183,74 @@ serve(async (req) => {
             const baseSize = 100;
             const positionSize = baseSize * tierMultiplier;
             const quantity = positionSize / target.price;
+            const orderValueUSD = positionSize;
 
-            // Enqueue via OMS
-            const { data: omsResult } = await supabase.functions.invoke('oms-leaky-bucket', {
-              body: {
-                action: 'enqueue',
-                sessionId: huntSession.hive_session_id,
-                hiveId: hives.id,
-                agentId: agent.id,
-                symbol: target.symbol,
-                side: signalType,
-                quantity,
-                price: target.price,
-                priority,
-                metadata: {
-                  signalStrength: confidence,
-                  coherence: 0.85 + (tier === 1 ? 0.1 : 0.0),
-                  lighthouseValue: 0.9,
-                  huntOpportunityScore: target.opportunityScore,
-                  volatility24h: target.volatility24h,
-                  volume24h: target.volume24h,
+            // Check if order should use TWAP (above threshold)
+            const useTWAP = orderValueUSD >= (huntSession.twap_threshold_usd || 500);
+
+            if (useTWAP) {
+              // Place TWAP order directly
+              console.log(`📊 ${target.symbol} using TWAP: $${orderValueUSD.toFixed(2)}`);
+              
+              const { data: twapResult, error: twapError } = await supabase.functions.invoke('binance-algo-twap', {
+                body: {
+                  action: 'place',
+                  symbol: target.symbol,
+                  side: signalType,
+                  quantity,
+                  duration: huntSession.twap_duration_seconds || 600,
+                  limitPrice: target.price,
+                  huntSessionId: huntSessionId,
                 },
-              },
-            });
+              });
 
-            if (omsResult?.success) {
-              await supabase
-                .from('hunt_targets')
-                .update({ order_queued: true })
-                .eq('id', savedTargetId);
+              if (twapResult?.success) {
+                await supabase
+                  .from('hunt_targets')
+                  .update({ 
+                    order_queued: true,
+                    status: 'twap_placed',
+                  })
+                  .eq('id', savedTargetId);
 
-              ordersQueued++;
-              console.log(`✅ ${target.symbol} queued: ${signalType} P${priority} Tier${tier}`);
+                ordersQueued++;
+                console.log(`✅ ${target.symbol} TWAP placed: ${signalType} ${quantity.toFixed(8)} over ${huntSession.twap_duration_seconds}s`);
+              } else {
+                console.error(`❌ ${target.symbol} TWAP failed:`, twapError);
+              }
+            } else {
+              // Enqueue via OMS for regular execution
+              const { data: omsResult } = await supabase.functions.invoke('oms-leaky-bucket', {
+                body: {
+                  action: 'enqueue',
+                  sessionId: huntSession.hive_session_id,
+                  hiveId: hives.id,
+                  agentId: agent.id,
+                  symbol: target.symbol,
+                  side: signalType,
+                  quantity,
+                  price: target.price,
+                  priority,
+                  metadata: {
+                    signalStrength: confidence,
+                    coherence: 0.85 + (tier === 1 ? 0.1 : 0.0),
+                    lighthouseValue: 0.9,
+                    huntOpportunityScore: target.opportunityScore,
+                    volatility24h: target.volatility24h,
+                    volume24h: target.volume24h,
+                  },
+                },
+              });
+
+              if (omsResult?.success) {
+                await supabase
+                  .from('hunt_targets')
+                  .update({ order_queued: true })
+                  .eq('id', savedTargetId);
+
+                ordersQueued++;
+                console.log(`✅ ${target.symbol} queued: ${signalType} P${priority} Tier${tier}`);
+              }
             }
           } else {
             // Tier 3 signals rejected
