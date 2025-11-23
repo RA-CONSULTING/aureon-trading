@@ -82,7 +82,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
 const AureonDashboard = () => {
-  const [isRunning, setIsRunning] = useState(false);
+  const [isRunning, setIsRunning] = useState(true); // 🔥 AUTO-START ON LOAD
   const [autoTradingEnabled, setAutoTradingEnabled] = useState(false);
   const [omega, setOmega] = useState<OmegaState | null>(null);
   const [unityEvent, setUnityEvent] = useState<UnityEvent | null>(null);
@@ -97,6 +97,8 @@ const AureonDashboard = () => {
   const [signal, setSignal] = useState<TradingSignal | null>(null);
   const [savedEventsCount, setSavedEventsCount] = useState(0);
   const [savedSignalsCount, setSavedSignalsCount] = useState(0);
+  const [totalTrackedSymbols, setTotalTrackedSymbols] = useState(0);
+  const [activeSymbolsCount, setActiveSymbolsCount] = useState(0);
   const [isConnected, setIsConnected] = useState(false);
   const [connectionHealthy, setConnectionHealthy] = useState(false);
   const [reconnectAttempts, setReconnectAttempts] = useState(0);
@@ -106,12 +108,51 @@ const AureonDashboard = () => {
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [lastConnectionError, setLastConnectionError] = useState<string | null>(null);
   
+  // 🌊 Track ALL major trading pairs simultaneously
+  const trackedSymbols = [
+    'BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'SOLUSDT', 'XRPUSDT',
+    'ADAUSDT', 'DOGEUSDT', 'MATICUSDT', 'DOTUSDT', 'AVAXUSDT',
+    'LINKUSDT', 'ATOMUSDT', 'UNIUSDT', 'LTCUSDT', 'ETCUSDT',
+    'FILUSDT', 'NEARUSDT', 'APTUSDT', 'ARBUSDT', 'OPUSDT'
+  ];
+  
   const { toast } = useToast();
   const { celestialBoost } = useCelestialData();
   const { schumannData } = useSchumannResonance();
   const { harmonization } = useFrequencyHarmonization();
   
-  // Use authenticated REST API instead of WebSocket
+  // 🔥 Multi-symbol tracking - ALL COINS ALL THE TIME
+  useEffect(() => {
+    if (!isRunning) return;
+    
+    let activeCount = 0;
+    const fetchAllSymbols = async () => {
+      for (const sym of trackedSymbols) {
+        try {
+          const { data, error } = await supabase.functions.invoke('fetch-binance-market-data', {
+            body: { symbol: sym }
+          });
+          if (!error && data) {
+            activeCount++;
+          }
+        } catch (err) {
+          console.error(`Error fetching ${sym}:`, err);
+        }
+      }
+      setActiveSymbolsCount(activeCount);
+      setTotalTrackedSymbols(trackedSymbols.length);
+    };
+    
+    // Initial fetch
+    fetchAllSymbols();
+    
+    // Refresh every 10 seconds for all symbols
+    const interval = setInterval(fetchAllSymbols, 10000);
+    
+    return () => clearInterval(interval);
+  }, [isRunning, trackedSymbols]);
+  
+  // Primary symbol for detailed visualization
   const { marketData: binanceData, isConnected: binanceConnected, error: binanceError } = useBinanceMarketData(
     selectedSymbol.toUpperCase(),
     5000 // Refresh every 5 seconds
@@ -458,58 +499,73 @@ const AureonDashboard = () => {
           </p>
         </div>
 
-        <Card className="p-6 mb-8">
+        <Card className="p-6 mb-8 bg-gradient-to-br from-primary/5 to-accent/5 border-2 border-primary/20">
           <div className="flex items-center justify-between">
             <div className="flex-1">
               <div className="flex items-center justify-between mb-2">
-                <h2 className="text-xl font-semibold">Field Status</h2>
+                <h2 className="text-xl font-semibold flex items-center gap-2">
+                  🌊 Field Status 
+                  <Badge className="animate-pulse" variant="default">LIVE</Badge>
+                </h2>
                 <Select 
                   value={selectedSymbol} 
                   onValueChange={setSelectedSymbol}
-                  disabled={isRunning}
                 >
                   <SelectTrigger className="w-[180px]">
-                    <SelectValue placeholder="Select pair" />
+                    <SelectValue placeholder="Primary Symbol" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="btcusdt">BTC/USDT</SelectItem>
-                    <SelectItem value="ethusdt">ETH/USDT</SelectItem>
-                    <SelectItem value="bnbusdt">BNB/USDT</SelectItem>
+                    {trackedSymbols.map(sym => (
+                      <SelectItem key={sym} value={sym.toLowerCase()}>
+                        {sym.replace('USDT', '/USDT')}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
               <div className="flex items-center gap-4 mt-1">
-                <p className="text-sm text-muted-foreground">
-                  {isRunning ? '🟢 Active - Live Market Data' : '⚪ Idle'}
+                <p className="text-sm font-semibold text-primary">
+                  🟢 AUTO-TRACKING ALL COINS
                 </p>
+                <Badge variant="outline" className="bg-primary/10">
+                  {activeSymbolsCount} / {totalTrackedSymbols} Active
+                </Badge>
                 {isConnected && (
                   <Badge style={{ backgroundColor: '#00FF88' }}>
-                    Connected: {currentSymbol}
+                    Primary: {currentSymbol}
                   </Badge>
-                )}
-                {!isConnected && isRunning && (
-                  <Badge variant="destructive">Connecting...</Badge>
                 )}
               </div>
               {isRunning && (
-                <div className="mt-2 flex gap-4 text-xs">
-                  <span className="text-muted-foreground">
-                    💰 Price: <strong>${currentPrice.toFixed(2)}</strong>
-                  </span>
-                  <span className="text-muted-foreground">
-                    📊 LHEs: <strong>{savedEventsCount}</strong>
-                  </span>
-                  <span className="text-muted-foreground">
-                    📈 Signals: <strong>{savedSignalsCount}</strong>
-                  </span>
+                <div className="mt-3 grid grid-cols-4 gap-4 text-xs">
+                  <div className="p-2 rounded bg-background/50">
+                    <span className="text-muted-foreground block">Primary Price</span>
+                    <strong className="text-lg">${currentPrice.toFixed(2)}</strong>
+                  </div>
+                  <div className="p-2 rounded bg-background/50">
+                    <span className="text-muted-foreground block">Tracked Symbols</span>
+                    <strong className="text-lg">{totalTrackedSymbols}</strong>
+                  </div>
+                  <div className="p-2 rounded bg-background/50">
+                    <span className="text-muted-foreground block">LHE Events</span>
+                    <strong className="text-lg">{savedEventsCount}</strong>
+                  </div>
+                  <div className="p-2 rounded bg-background/50">
+                    <span className="text-muted-foreground block">Signals</span>
+                    <strong className="text-lg">{savedSignalsCount}</strong>
+                  </div>
                 </div>
               )}
+              <p className="text-xs text-muted-foreground mt-2">
+                💡 Field auto-started on page load. Tracking 20+ major trading pairs continuously.
+              </p>
             </div>
             <Button
               onClick={() => setIsRunning(!isRunning)}
               variant={isRunning ? 'destructive' : 'default'}
+              size="lg"
             >
-              {isRunning ? 'Stop Field' : 'Start Field'}
+              {isRunning ? '⏸️ Pause Field' : '▶️ Resume Field'}
             </Button>
           </div>
         </Card>
