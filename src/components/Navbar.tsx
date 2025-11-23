@@ -70,6 +70,9 @@ const Navbar = () => {
             <Link to="/backtest" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
               Backtest 🔬
             </Link>
+            <Link to="/rainbow" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
+              Rainbow 🌈
+            </Link>
             {isAdmin && (
               <Link to="/admin/kyc" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors flex items-center gap-1">
                 <ShieldCheck className="h-4 w-4" />
