@@ -113,10 +113,11 @@ export function BinanceConnectionStatus({
         )}
 
         <div className="text-xs text-muted-foreground space-y-1">
-          <p>• Connection: wss://stream.binance.com:9443</p>
+          <p>• Connection: wss://stream.binance.com:443</p>
           <p>• Streams: aggTrade, depth, miniTicker</p>
           <p>• Health check: Every 30s</p>
-          <p>• Auto-reconnect: Exponential backoff</p>
+          <p>• Auto-reconnect: Max 30s delay</p>
+          <p>• Timeout: 10s per connection attempt</p>
         </div>
       </CardContent>
     </Card>

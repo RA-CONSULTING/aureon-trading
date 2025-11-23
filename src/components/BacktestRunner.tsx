@@ -48,6 +48,12 @@ export const BacktestRunner = ({ onResultsReady }: BacktestRunnerProps) => {
 
       // Fetch historical data
       setProgress(10);
+      
+      toast({
+        title: '📡 Fetching Data',
+        description: 'Downloading historical market data from Binance...',
+      });
+      
       const { data: histData, error: histError } = await supabase.functions.invoke('fetch-historical-data', {
         body: {
           symbol: config.symbol,
@@ -58,18 +64,32 @@ export const BacktestRunner = ({ onResultsReady }: BacktestRunnerProps) => {
         },
       });
 
-      if (histError) throw histError;
+      if (histError) {
+        console.error('Historical data error:', histError);
+        throw new Error(`Failed to fetch historical data: ${histError.message}`);
+      }
+      
       if (!histData?.candles || histData.candles.length === 0) {
-        throw new Error('No historical data available for selected period');
+        throw new Error('No historical data available for selected period. Try a different date range.');
       }
 
       console.log(`📊 Fetched ${histData.candles.length} candles`);
       setProgress(30);
 
+      toast({
+        title: '⚙️ Running Backtest',
+        description: `Processing ${histData.candles.length} candles through AUREON system...`,
+      });
+
       // Run backtest
       const engine = new BacktestEngine();
       const results = await engine.runBacktest(histData.candles, config);
       setProgress(70);
+      
+      toast({
+        title: '💾 Saving Results',
+        description: 'Storing backtest results in database...',
+      });
 
       // Save results to database
       const { error: saveError } = await supabase

@@ -85,15 +85,26 @@ export class BinanceWebSocketClient {
     this.isConnecting = true;
     this.connectionHealthy = false;
     const streamNames = this.streams.join('/');
-    const wsUrl = `wss://stream.binance.com:9443/stream?streams=${streamNames}`;
+    // Use standard port 443 instead of 9443 for better compatibility
+    const wsUrl = `wss://stream.binance.com:443/stream?streams=${streamNames}`;
 
     console.log('[Binance WS] Attempting connection to:', wsUrl);
     console.log('[Binance WS] Attempt #', this.reconnectAttempts + 1);
 
     try {
       this.ws = new WebSocket(wsUrl);
+      
+      // Add connection timeout
+      const connectionTimeout = setTimeout(() => {
+        if (this.ws && this.ws.readyState !== WebSocket.OPEN) {
+          console.warn('[Binance WS] Connection timeout, retrying...');
+          this.ws.close();
+        }
+      }, 10000); // 10 second timeout
 
       this.ws.onopen = () => {
+        clearTimeout(connectionTimeout);
+
         console.log('✅ [Binance WS] Connected successfully');
         this.isConnecting = false;
         this.reconnectAttempts = 0;
@@ -342,17 +353,18 @@ export class BinanceWebSocketClient {
 
   private attemptReconnect() {
     if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-      console.error('Max reconnection attempts reached');
+      console.error('❌ [Binance WS] Max reconnection attempts reached. Please refresh the page to retry.');
       if (this.onErrorCallback) {
-        this.onErrorCallback(new Error('Max reconnection attempts reached'));
+        this.onErrorCallback(new Error('Connection failed after multiple attempts. Please check your internet connection and refresh the page.'));
       }
       return;
     }
 
     this.reconnectAttempts++;
-    const delay = this.reconnectDelay * Math.pow(2, this.reconnectAttempts - 1);
+    // Cap delay at 30 seconds max
+    const delay = Math.min(this.reconnectDelay * Math.pow(2, this.reconnectAttempts - 1), 30000);
     
-    console.log(`Reconnecting in ${delay}ms (attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts})`);
+    console.log(`🔄 [Binance WS] Reconnecting in ${delay / 1000}s (attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts})`);
 
     setTimeout(() => {
       this.connect();
