@@ -1,12 +1,13 @@
 import { useState, useEffect, useRef } from 'react';
 import Navbar from '@/components/Navbar';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Slider } from '@/components/ui/slider';
 import { Play, Pause, Volume2, VolumeX, Sparkles } from 'lucide-react';
 import { RainbowBridge } from '@/core/rainbowBridge';
 import { Prism } from '@/core/prism';
+import prismProcessTree from '@/assets/prism-process-tree.png';
 
 const RainbowExperience = () => {
   const [lambda, setLambda] = useState(0.5);
@@ -124,12 +125,71 @@ const RainbowExperience = () => {
               <Sparkles className="h-12 w-12 text-primary animate-pulse" />
             </div>
             <p className="text-xl text-muted-foreground">
-              Taste the quantum frequencies from FEAR to UNITY
+              Mathematical frequency transformation system: 110-963+ Hz
             </p>
             <Badge variant="outline" className="text-lg px-4 py-2">
-              528 Hz = LOVE 💚
+              Target: 528 Hz = LOVE 💚
             </Badge>
           </div>
+
+          {/* Prism Process Tree - System Baseline */}
+          <Card className="bg-gradient-to-br from-background to-muted/20 border-2 border-primary/30">
+            <CardHeader>
+              <CardTitle className="text-center text-3xl">
+                AUREON — True Course Process Tree (The Prism)
+              </CardTitle>
+              <CardDescription className="text-center text-base">
+                Mathematical System Baseline | Frequency Transformation Architecture
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <img 
+                src={prismProcessTree} 
+                alt="Prism Process Tree" 
+                className="w-full max-w-4xl mx-auto rounded-lg border border-border/50"
+              />
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                <div className="space-y-2">
+                  <div className="font-semibold text-primary">Core Process Layers:</div>
+                  <div className="space-y-1 text-muted-foreground">
+                    <div>• <strong>Harmonic Nexus Core</strong>: Ψ₀ × Ω × Λ × Φ × Σ</div>
+                    <div>• <strong>Level 1</strong>: Data Integrity (Dᵢ), Crystal Coherence (Cᵢ), Celestial Modulators</div>
+                    <div>• <strong>Level 2</strong>: Poiesis (ACᵢ), Choiceance (Φₘ)</div>
+                    <div>• <strong>Level 3</strong>: Ping-Pong (Pₗ), Grav Reflection (Gᵢ)</div>
+                    <div>• <strong>Level 4</strong>: Unity Camp (Uₜ), Increment (Iᵢ), Coherence Index (CI)</div>
+                    <div>• <strong>Output</strong>: Prism Output → 528 Hz @ Γ &gt; 0.9</div>
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <div className="font-semibold text-primary">Frequency Anchors (1-13):</div>
+                  <div className="space-y-1 text-muted-foreground text-xs">
+                    <div>1. Spark/Origin (🜂) — Ignition point</div>
+                    <div>2. Dual Flame (⚶) — Polarity reflection</div>
+                    <div>3. Spiral/Trinity (✶) — Synthesis expansion</div>
+                    <div>4. Foundation/Pillar (⧈) — Structural integrity</div>
+                    <div>5. Trial/Momentum (⟐Ⅴ) — Change gate</div>
+                    <div>6. Harmony/Flow (✤) — Balance equilibrium</div>
+                    <div>7. Gnosis (🜃) — Hidden flame revelation</div>
+                    <div>8. Infinity/Phoenix (∞🔥) — Renewal cycle</div>
+                    <div>9. Sovereignty (⟡) — Completion seal</div>
+                    <div>10. Threshold/Return (⊚) — Loop closure</div>
+                    <div>11. Twin Pillars (Ⅱ) — Gateway binary</div>
+                    <div>12. Cosmic Order (✷) — Cycle alignment</div>
+                    <div>13. Hidden Strand (🜍) — DNA ignition, spiral breaker</div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-4 bg-primary/5 rounded-lg border border-primary/20">
+                <p className="text-sm text-center">
+                  <strong>System Flow:</strong> Market data feeds Harmonic Nexus Core → cascades through transformation layers → 
+                  converges at Prism Output → locks to 528 Hz LOVE frequency when Coherence (Γ) exceeds 0.9
+                </p>
+              </div>
+            </CardContent>
+          </Card>
 
           {/* Current State Display */}
           <Card className="bg-gradient-to-br from-primary/5 to-accent/5 border-2 border-primary/20">
