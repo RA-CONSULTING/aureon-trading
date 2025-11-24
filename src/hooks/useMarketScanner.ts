@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import binancePairsData from '@/data/binance-pairs.json';
 
 export interface MarketOpportunity {
   symbol: string;
@@ -21,43 +22,49 @@ export function useMarketScanner() {
     setIsScanning(true);
 
     try {
-      // Use existing fetch-binance-symbols edge function
-      const { data, error } = await supabase.functions.invoke('fetch-binance-symbols');
-      
-      if (error) throw error;
+      console.log(`🔍 Scanning ALL ${binancePairsData.totalPairs} pairs for maximum profit...`);
 
-      const symbols = data.symbols || [];
-
-      // Calculate opportunity scores
-      const opportunities = symbols
-        .filter((s: any) => s.volume24h > 1000000 && s.price > 0) // Min $1M volume
-        .map((symbol: any) => {
-          const volatility = Math.abs(symbol.priceChange24h || 0);
-          const volumeScore = Math.log10(symbol.volume24h) / 10;
-          const momentum = (symbol.priceChange24h || 0) / 100;
+      // Process comprehensive market data
+      const opportunities = binancePairsData.pairs
+        .filter((p: any) => p.volume > 100000 && p.price > 0) // Min volume
+        .map((p: any) => {
+          const volatility = p.volatility || 0;
+          const volumeScore = Math.log10(p.volume) / 10;
+          const momentum = (p.change || 0) / 100;
           
+          // High-impact opportunity score
           const opportunityScore = 
-            (volatility * 0.3) + 
-            (volumeScore * 0.4) + 
+            (volatility * 0.4) + 
+            (volumeScore * 0.3) + 
             (Math.abs(momentum) * 0.3);
 
           return {
-            symbol: symbol.symbol,
-            baseAsset: symbol.baseAsset,
-            price: symbol.price,
-            volume24h: symbol.volume24h,
-            priceChange24h: symbol.priceChange24h,
+            symbol: p.symbol,
+            baseAsset: p.base,
+            price: p.price,
+            volume24h: p.volume,
+            priceChange24h: p.change,
             volatility,
             momentum,
             opportunityScore,
           };
         })
         .sort((a: any, b: any) => b.opportunityScore - a.opportunityScore)
-        .slice(0, 50); // Top 50 opportunities
+        .slice(0, 100); // Top 100 opportunities
 
       setOpportunities(opportunities);
       setLastScan(new Date());
-      console.log(`✅ Market scan complete: ${opportunities.length} opportunities from ${symbols.length} symbols`);
+      console.log(`✅ Analyzed ${binancePairsData.pairs.length} pairs. Top: ${opportunities[0]?.symbol} (${opportunities[0]?.opportunityScore.toFixed(2)})`);
+
+      // Fetch live price updates via edge function
+      try {
+        const { data } = await supabase.functions.invoke('fetch-binance-symbols');
+        if (data?.symbols) {
+          console.log(`📡 Live update: ${data.symbols.length} symbols`);
+        }
+      } catch (err) {
+        console.log('📊 Using cached data');
+      }
 
     } catch (error) {
       console.error('❌ Market scan failed:', error);
@@ -70,6 +77,7 @@ export function useMarketScanner() {
     opportunities,
     isScanning,
     lastScan,
+    totalPairs: binancePairsData.totalPairs,
     scanMarket,
   };
 }

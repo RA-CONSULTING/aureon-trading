@@ -12,7 +12,7 @@ export function useAutonomousTrading() {
   const [totalProfit, setTotalProfit] = useState(0);
   const [totalFees, setTotalFees] = useState(0);
   const [netProfit, setNetProfit] = useState(0);
-  const { opportunities, scanMarket, isScanning } = useMarketScanner();
+  const { opportunities, scanMarket, isScanning, totalPairs } = useMarketScanner();
   const { toast } = useToast();
   const signalGenerator = useRef(new QGITASignalGenerator());
   const processingRef = useRef(false);
@@ -86,13 +86,14 @@ export function useAutonomousTrading() {
       
       processingRef.current = true;
       
-      // Process top 10 opportunities in parallel (respecting rate limits)
-      const topOpportunities = opportunities.slice(0, 10);
+      // Process top 20 opportunities aggressively for maximum profit
+      const topOpportunities = opportunities.slice(0, 20);
+      console.log(`🎯 Processing top 20 of ${opportunities.length} opportunities for maximum net profit`);
       
       for (const opp of topOpportunities) {
         if (!isActive) break;
         await processOpportunity(opp);
-        await new Promise(resolve => setTimeout(resolve, 200)); // Rate limiting
+        await new Promise(resolve => setTimeout(resolve, 100)); // Faster rate (100ms between trades)
       }
       
       processingRef.current = false;
@@ -117,10 +118,10 @@ export function useAutonomousTrading() {
     setTotalFees(0);
     toast({
       title: '🚀 Autonomous Trading Started',
-      description: 'Using execute-trade, fetch-binance-symbols edge functions',
+      description: `Scanning ${totalPairs} pairs for maximum net profit`,
     });
-    console.log('🚀 Autonomous trading started - using existing edge functions');
-  }, [toast]);
+    console.log(`🚀 Autonomous trading started - scanning ${totalPairs} pairs`);
+  }, [toast, totalPairs]);
 
   const stop = useCallback(() => {
     setIsActive(false);
@@ -138,7 +139,8 @@ export function useAutonomousTrading() {
     totalProfit,
     totalFees,
     netProfit,
-    opportunities: opportunities.slice(0, 10),
+    opportunities: opportunities.slice(0, 20), // Show top 20
+    totalPairs,
     start,
     stop,
   };

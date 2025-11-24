@@ -12,6 +12,7 @@ export const AutonomousTradingPanel = () => {
     totalFees,
     netProfit,
     opportunities,
+    totalPairs,
     isScanning,
     start,
     stop,
@@ -26,7 +27,7 @@ export const AutonomousTradingPanel = () => {
             Autonomous Trading Engine
           </h3>
           <p className="text-sm text-muted-foreground">
-            Using execute-trade & fetch-binance-symbols edge functions
+            Scanning {totalPairs} pairs • execute-trade + fetch-binance-symbols
           </p>
         </div>
         {isActive ? (
@@ -85,10 +86,10 @@ export const AutonomousTradingPanel = () => {
       <div>
         <h4 className="text-sm font-medium mb-3 flex items-center gap-2">
           <TrendingUp className="h-4 w-4" />
-          Top 10 Opportunities (via fetch-binance-symbols)
+          Top 20 Opportunities (of {totalPairs} pairs)
         </h4>
         <div className="space-y-2 max-h-[300px] overflow-y-auto">
-          {opportunities.map((opp) => (
+          {opportunities.slice(0, 20).map((opp) => (
             <div
               key={opp.symbol}
               className="flex items-center justify-between p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors"
