@@ -70,8 +70,6 @@ export const NanoParticleVisualizer: React.FC = () => {
         particle.y += particle.vy;
 
         // Apply field effects
-        const centerX = canvas.width / 2;
-        const centerY = canvas.height / 2;
         const dx = centerX - particle.x;
         const dy = centerY - particle.y;
         const distance = Math.sqrt(dx * dx + dy * dy);

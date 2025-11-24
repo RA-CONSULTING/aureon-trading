@@ -80,7 +80,7 @@ export class UnifiedHarmonicReality {
     t: number
   ): UnifiedHarmonicState {
     // Step 1: Master Equation (Λ field dynamics)
-    const lambdaState = this.masterEq.step(marketSnapshot);
+    const lambdaState = await this.masterEq.step(marketSnapshot);
     
     // Step 2: Eckoushic Cascade (Sound → Light → Resonance → Love)
     const deltaLambda = lambdaState.lambda - this.previousLambda;
