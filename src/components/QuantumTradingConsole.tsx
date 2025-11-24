@@ -9,6 +9,7 @@ import {
   TrendingUp, TrendingDown, Activity, Radio, Zap, 
   Waves, DollarSign, BarChart3, Shield, AlertCircle, AlertTriangle, Wifi 
 } from 'lucide-react';
+import { AutonomousTradingPanel } from './AutonomousTradingPanel';
 
 interface MarketData {
   symbol: string;
@@ -228,6 +229,9 @@ export default function QuantumTradingConsole() {
           </div>
         </div>
       </div>
+
+      {/* Autonomous Trading Panel */}
+      <AutonomousTradingPanel />
 
       {/* Master Controls */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
