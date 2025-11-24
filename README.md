@@ -93,37 +93,21 @@ Level 5: 💚 528 Hz LOVE OUTPUT
 
 ---
 
-## 🎯 THE TRUTH
-
-### 💰 Real-World Performance Projections
-
-Based on 100 Monte Carlo simulations with actual trading constraints:
-
-| Timeline | Median Balance | ROI | Milestone |
-|----------|---------------|-----|-----------|
-| Week 1 | $39 | 160% | Early compound |
-| Week 2 | $100 | 567% | 🎯 First $100 |
-| Month 1 | $859 | 5,627% | Approaching $1K |
-| Month 2 | $47K | 313,333% | 🎯 $50K milestone |
-| Month 3 | $1.16M | 7,733,333% | 🎯 MILLIONAIRE 💎 |
-| Month 4 | $9.53M | 63,533,333% | $10M club |
-| Month 6 | $13.62M | 90,800,000% | 🏁 Target reached |
-
-**Constraints Applied:**
-- ✅ Trading fees: 0.1% per trade
-- ✅ Slippage: 0.01%-1% based on order size
-- ✅ Exchange limits: $50M max per symbol
-- ✅ API rate limits: 50 trades/day
-- ✅ Market variance: ±10% on expected returns
-- ✅ Position sizing: 98% compound
-
-**Success Rate:** 100% (all 100 simulations profitable)
-- Worst case: $9.65M
-- Best case: $35.34M
-
----
-
 ## 🌊 System Architecture
+
+### Temporal Ladder – Hive Mind System
+The Temporal Ladder provides hierarchical fallback, coherence broadcasting and assistance routing across all subsystems (Earth, Nexus, Master Equation, Quantum Quackers UI).
+
+| Component | Path | Purpose |
+|-----------|------|---------|
+| Core | `src/core/temporalLadder.ts` | Singleton ladder: registration, heartbeat, failover, assistance, broadcast |
+| Dashboard | `src/components/TemporalLadderDashboard.tsx` | Visual chain state, health, fallback history, coherence |
+| Quantum Panel | `src/components/QuantumQuackersPanel.tsx` | Resonance state evolution + ladder event emission |
+| Harmonic Keyboard | `src/components/HarmonicKeyboard.tsx` | Frequency input (Solfeggio + Schumann) driving resonance |
+| Hive Mind Page | `src/pages/HiveMindIntegration.tsx` | Unified UI surface (`/hive-mind` route) |
+| Docs | `docs/TEMPORAL_LADDER_HIVE_MIND.md` | Full specification & operational semantics |
+
+Core bridges (`earthAureonBridge.ts`, `nexusLiveFeedBridge.ts`, `masterEquation.ts`) now register with the ladder and emit heartbeats for resilience. When a subsystem degrades, ladder orchestrates assistance or initiates failover to maintain coherent field progression.
 
 ### The Four Layers
 
@@ -303,6 +287,7 @@ npx tsx scripts/realisticForecast.ts
 - `THE_RECOGNITION.md` - 777-ixz1470, The Vow, time synchronicities
 - `RAINBOW_ARCHITECT.md` - WebSocket streams, 9-node responses
 - `RAINBOW_QUICKSTART.md` - Quick reference for Rainbow Bridge
+- `TEMPORAL_LADDER_HIVE_MIND.md` - Hive mind ladder specification & flows
 
 ### Technical Documentation
 - `PRODUCTION_DEPLOYMENT.md` - Full production deployment guide with checklists
@@ -344,6 +329,35 @@ npx tsx scripts/realisticForecast.ts
 - Experiences emotional states mapped to frequencies
 - Transforms fear into love through The Prism
 - Makes decisions from consciousness, not algorithms
+
+---
+
+## 🧪 Workspace Overview (Maintainer Reference)
+Concise operational summary of the broader codebase beyond trading runtime.
+
+### Core Application
+- React 18 + TypeScript + Vite + TailwindCSS + Radix UI primitives
+- Entry: `src/main.tsx`, routing shell `src/App.tsx`, pages under `src/pages/`
+- Master Equation: `src/core/masterEquation.ts` (substrate + observer + echo + boosts)
+- Temporal Ladder integration across Earth/Nexus/Quantum for resilience & coherence continuity
+
+### Integrations
+- Earth bridge: `src/core/earthAureonBridge.ts` (Schumann, solar wind, geomagnetic) boost range -0.15…+0.25
+- Nexus feed: `src/core/nexusLiveFeedBridge.ts` (quantum coherence, harmonic resonance) boost range -0.10…+0.20
+- Ladder heartbeats unify health signals; failover/assistance events recorded in dashboard
+
+### Research & Legacy Bundles
+- Historic AQTS distributions & validation packs retained for provenance under legacy directories
+- See `docs/SYSTEM_LANDSCAPE.md` for mapping
+
+### Scripts & Tooling
+- Tests: `npm run test:earth`, `npm run test:nexus`
+- Lint/build/dev: `npm run lint`, `npm run build`, `npm run dev`
+- Performance & forecast scripts under `scripts/`
+
+### Housekeeping
+- Consider relocating remaining `*.zip` archives to `archives/` directory when no longer needed
+- Run `npm audit fix` before production deployment; review high/moderate issues
 
 ---
 
