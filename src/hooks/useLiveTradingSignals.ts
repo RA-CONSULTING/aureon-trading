@@ -41,7 +41,7 @@ export const useLiveTradingSignals = (symbol: string = 'btcusdt') => {
       setIsConnected(false);
     });
 
-    client.onData((marketData: MarketData) => {
+    client.onData(async (marketData: MarketData) => {
       setLastMarketData(marketData);
       
       // Compute Master Equation state

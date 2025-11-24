@@ -68,7 +68,7 @@ export class UnifiedHarmonicReality {
   /**
    * Compute unified harmonic state at time t
    */
-  compute(
+  async compute(
     marketSnapshot: {
       price: number;
       volume: number;
