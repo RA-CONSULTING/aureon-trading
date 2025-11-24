@@ -117,10 +117,10 @@ export function useAutonomousTrading() {
     setTotalProfit(0);
     setTotalFees(0);
     toast({
-      title: '🚀 Autonomous Trading Started',
-      description: `Scanning ${totalPairs} pairs for maximum net profit`,
+      title: '🚀 Multi-Account Trading Started',
+      description: `12 accounts scanning ${totalPairs} pairs for max profit`,
     });
-    console.log(`🚀 Autonomous trading started - scanning ${totalPairs} pairs`);
+    console.log(`🚀 Multi-account autonomous trading started - 12 testnet accounts × ${totalPairs} pairs`);
   }, [toast, totalPairs]);
 
   const stop = useCallback(() => {
