@@ -22,3 +22,15 @@ export function fmtPct(x: unknown, digits = 1) {
   const val = Math.abs(n) <= 1 ? n * 100 : n;
   return `${val.toFixed(digits)}%`;
 }
+
+// Aliases for backwards compatibility
+export const toFixedSafe = fmt;
+export const pct = fmtPct;
+
+// Format population numbers
+export function formatPopulation(pop: number): string {
+  if (pop >= 1e9) return `${(pop / 1e9).toFixed(2)}B`;
+  if (pop >= 1e6) return `${(pop / 1e6).toFixed(2)}M`;
+  if (pop >= 1e3) return `${(pop / 1e3).toFixed(2)}K`;
+  return pop.toString();
+}

@@ -162,3 +162,9 @@ function generateEmotionalDescription(valence: number, arousal: number, primaryE
   
   return `${primaryEmotion} with ${intensityLevel} intensity and ${positivity} resonance`;
 }
+
+// Alias for backwards compatibility
+export const getEmotionalStateFromFrequency = generateEmotionalState;
+
+// Type alias for backwards compatibility
+export type EmotionalProfile = typeof REGIONAL_EMOTIONAL_PROFILES[keyof typeof REGIONAL_EMOTIONAL_PROFILES];
