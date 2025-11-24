@@ -1,68 +1,107 @@
-import { useWarRoom } from '@/hooks/useWarRoom';
-import { useStrikeFeed } from '@/hooks/useStrikeFeed';
-import { useWarMetrics } from '@/hooks/useWarMetrics';
-import { CommandCenter } from './warroom/CommandCenter';
-import { BattleMap } from './warroom/BattleMap';
-import { StrikeFeed } from './warroom/StrikeFeed';
-import { MetricsHQ } from './warroom/MetricsHQ';
-import { AurisNodesPanel } from './warroom/AurisNodesPanel';
+import { useQuantumWarRoom } from '@/hooks/useQuantumWarRoom';
+import { QuantumStatePanel } from './warroom/QuantumStatePanel';
+import { HistoricalTimeline } from './warroom/HistoricalTimeline';
+import { LiveStrikeStream } from './warroom/LiveStrikeStream';
+import { AurisNodesOrbit } from './warroom/AurisNodesOrbit';
+import { ProjectionHorizon } from './warroom/ProjectionHorizon';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 
 export default function WarRoomDashboard() {
-  const warRoom = useWarRoom();
-  const strikeFeed = useStrikeFeed();
-  const { metrics } = useWarMetrics(warRoom.totals.totalUSDValue);
+  const { state, launchAssault, emergencyStop } = useQuantumWarRoom();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-destructive/5">
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
       <div className="container mx-auto p-4 space-y-4">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-destructive via-primary to-destructive bg-clip-text text-transparent">
-              🔥 TOTAL WAR COMMAND CENTER
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-primary via-destructive to-primary bg-clip-text text-transparent">
+              🦆 QUANTUM QUACKERS WAR ROOM
             </h1>
             <p className="text-muted-foreground mt-1">
-              GENERAL QUACKERS: MAXIMUM AGGRESSION MODE
+              Autonomous Trading • Real Quantum Data • Temporal Ladder Connected
             </p>
           </div>
         </div>
 
-        {/* Command Center */}
-        <CommandCenter 
-          warState={warRoom.warState}
-          onLaunch={warRoom.launchWar}
-          onPause={warRoom.pauseWar}
-          onResume={warRoom.resumeWar}
-          onStop={warRoom.stopWar}
-          onEmergencyHalt={warRoom.emergencyHalt}
-          onConfigUpdate={warRoom.updateConfig}
+        {/* Status & Controls */}
+        <Card className="bg-card/50 backdrop-blur border-primary/20">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div className="space-y-2">
+                <div className="flex items-center gap-4">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Status</p>
+                    <p className="text-2xl font-bold">
+                      {state.status === 'idle' && '⏸️ IDLE'}
+                      {state.status === 'active' && '🔥 ACTIVE ASSAULT'}
+                      {state.status === 'emergency_stopped' && '🚨 EMERGENCY STOP'}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Balance</p>
+                    <p className="text-2xl font-bold text-green-500">
+                      ${state.currentBalance.toFixed(2)}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Trades</p>
+                    <p className="text-2xl font-bold text-blue-500">
+                      {state.tradesExecuted}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Net P&L</p>
+                    <p className={`text-2xl font-bold ${state.netPnL >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                      ${state.netPnL.toFixed(2)}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-2">
+                {state.status === 'idle' && (
+                  <Button
+                    size="lg"
+                    onClick={launchAssault}
+                    className="bg-gradient-to-r from-destructive to-primary hover:from-destructive/90 hover:to-primary/90 text-white font-bold text-lg px-8"
+                  >
+                    🚀 LAUNCH ASSAULT
+                  </Button>
+                )}
+                {state.status === 'active' && (
+                  <Button
+                    size="lg"
+                    variant="destructive"
+                    onClick={emergencyStop}
+                    className="font-bold text-lg px-8"
+                  >
+                    🚨 EMERGENCY STOP
+                  </Button>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Quantum State */}
+        <QuantumStatePanel 
+          quantumState={state.quantumState} 
+          hiveMindCoherence={state.hiveMindCoherence}
         />
 
-        {/* Metrics HQ */}
-        <MetricsHQ 
-          metrics={metrics}
-          totals={warRoom.totals}
-          isScanning={warRoom.isScanning}
-        />
-
-        {/* Main Grid - Battle Map & Strike Feed */}
+        {/* Historical + Live Feed */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <BattleMap 
-            opportunities={warRoom.opportunities}
-            accounts={warRoom.accounts}
-          />
-          <StrikeFeed 
-            events={strikeFeed.events}
-            executionCount={strikeFeed.executionCount}
-            onClear={strikeFeed.clearEvents}
-          />
+          <HistoricalTimeline />
+          <LiveStrikeStream />
         </div>
 
-        {/* Auris Nodes Panel */}
-        <AurisNodesPanel 
-          coherence={metrics.currentCoherence}
-          lighthouse={metrics.currentLighthouse}
-        />
+        {/* Auris Nodes Orbit */}
+        <AurisNodesOrbit quantumState={state.quantumState} />
+
+        {/* Projection Horizon */}
+        <ProjectionHorizon />
       </div>
     </div>
   );
