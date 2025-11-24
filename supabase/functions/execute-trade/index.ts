@@ -156,13 +156,33 @@ serve(async (req) => {
         status: 'FILLED',
       };
     } else {
-      // Live trading - execute on Binance
-      const binanceApiKey = Deno.env.get('BINANCE_API_KEY');
-      const binanceApiSecret = Deno.env.get('BINANCE_API_SECRET');
+      // Live trading - get available credential from pool
+      console.log('🔄 Selecting credential from pool...');
+      
+      const { data: credData, error: credError } = await supabase
+        .from('binance_credentials')
+        .select('*')
+        .eq('is_active', true)
+        .or(`rate_limit_reset_at.is.null,rate_limit_reset_at.lt.${new Date().toISOString()}`)
+        .order('last_used_at', { ascending: true, nullsFirst: true })
+        .limit(1)
+        .single();
 
-      if (!binanceApiKey || !binanceApiSecret) {
-        throw new Error('Binance API credentials not configured');
+      if (credError || !credData) {
+        throw new Error('No available Binance credentials. All accounts may be rate limited.');
       }
+
+      // Decrypt credentials (simple decrypt matching store function)
+      function decryptValue(encrypted: string): string {
+        const key = Deno.env.get('MASTER_ENCRYPTION_KEY') || 'default-key';
+        const decoded = atob(encrypted);
+        return decoded.split('::')[0];
+      }
+
+      const binanceApiKey = decryptValue(credData.api_key_encrypted);
+      const binanceApiSecret = decryptValue(credData.api_secret_encrypted);
+
+      console.log(`✅ Using credential: ${credData.name}`);
 
       // Create order on Binance
       const timestamp = Date.now();
@@ -219,11 +239,34 @@ serve(async (req) => {
 
         executionResult = await binanceResponse.json();
         console.log('Live trade executed:', executionResult);
+
+        // Update credential usage
+        await supabase
+          .from('binance_credentials')
+          .update({
+            last_used_at: new Date().toISOString(),
+            requests_count: credData.requests_count + 1,
+          })
+          .eq('id', credData.id);
+
       } catch (fetchError: any) {
         clearTimeout(timeoutId);
+        
+        // Handle rate limit
         if (fetchError?.name === 'AbortError') {
           throw new Error('🛑 TIMEOUT: Binance API request timed out after 5s');
         }
+        
+        // If rate limited, mark credential and try next
+        if (binanceResponse?.status === 429) {
+          await supabase
+            .from('binance_credentials')
+            .update({
+              rate_limit_reset_at: new Date(Date.now() + 60000).toISOString(), // 1 min cooldown
+            })
+            .eq('id', credData.id);
+        }
+        
         throw fetchError;
       }
     }

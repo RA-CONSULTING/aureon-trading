@@ -83,6 +83,45 @@ export type Database = {
         }
         Relationships: []
       }
+      binance_credentials: {
+        Row: {
+          api_key_encrypted: string
+          api_secret_encrypted: string
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          last_used_at: string | null
+          name: string
+          rate_limit_reset_at: string | null
+          requests_count: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          api_key_encrypted: string
+          api_secret_encrypted: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          last_used_at?: string | null
+          name: string
+          rate_limit_reset_at?: string | null
+          requests_count?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          api_key_encrypted?: string
+          api_secret_encrypted?: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          last_used_at?: string | null
+          name?: string
+          rate_limit_reset_at?: string | null
+          requests_count?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       coherence_history: {
         Row: {
           coherence: number
