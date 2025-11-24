@@ -132,7 +132,7 @@ const AuraReader: React.FC = () => {
                 karmic: reading.karmic,
                 strengths: reading.state_profile.strengths,
                 challenges: reading.state_profile.challenges,
-                colors: reading.colors,
+                emotions: reading.colors,
                 chakra: reading.chakra,
                 crossroad: reading.state_profile.crossroad,
                 confidence: reading.state_profile.confidence,
