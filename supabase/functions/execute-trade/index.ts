@@ -210,9 +210,10 @@ serve(async (req) => {
       // === NETWORK FAIL-SAFE: Timeout and retry logic ===
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 5000); // 5s timeout
+      let binanceResponse: Response;
 
       try {
-        const binanceResponse = await fetch(
+        binanceResponse = await fetch(
           `https://api.binance.com/api/v3/order?${queryString}&signature=${signature}`,
           {
             method: 'POST',
@@ -229,9 +230,15 @@ serve(async (req) => {
           const errorText = await binanceResponse.text();
           console.error('Binance API error:', errorText);
           
-          // Check for rate limit error (429)
+          // Check for rate limit error (429) and mark credential
           if (binanceResponse.status === 429) {
-            throw new Error('🛑 RATE LIMIT: Binance order limit exceeded. Trading paused.');
+            await supabase
+              .from('binance_credentials')
+              .update({
+                rate_limit_reset_at: new Date(Date.now() + 60000).toISOString(),
+              })
+              .eq('id', credData.id);
+            throw new Error('🛑 RATE LIMIT: Binance order limit exceeded. Switching to next account.');
           }
           
           throw new Error(`Binance API error (${binanceResponse.status}): ${errorText}`);
@@ -252,19 +259,8 @@ serve(async (req) => {
       } catch (fetchError: any) {
         clearTimeout(timeoutId);
         
-        // Handle rate limit
         if (fetchError?.name === 'AbortError') {
           throw new Error('🛑 TIMEOUT: Binance API request timed out after 5s');
-        }
-        
-        // If rate limited, mark credential and try next
-        if (binanceResponse?.status === 429) {
-          await supabase
-            .from('binance_credentials')
-            .update({
-              rate_limit_reset_at: new Date(Date.now() + 60000).toISOString(), // 1 min cooldown
-            })
-            .eq('id', credData.id);
         }
         
         throw fetchError;

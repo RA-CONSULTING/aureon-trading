@@ -1,97 +1,62 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
 
-export const useBinanceCredentials = () => {
-  const [hasCredentials, setHasCredentials] = useState<boolean>(false);
-  const [loading, setLoading] = useState(true);
-  const { toast } = useToast();
-
-  const checkCredentials = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        setHasCredentials(false);
-        setLoading(false);
-        return;
-      }
-
-      const { data, error } = await supabase
-        .from('user_binance_credentials')
-        .select('id')
-        .eq('user_id', user.id)
-        .maybeSingle();
-
-      setHasCredentials(!!data && !error);
-    } catch (error) {
-      console.error('Error checking credentials:', error);
-      setHasCredentials(false);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const storeCredentials = async (apiKey: string, apiSecret: string) => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
-
-      const { data, error } = await supabase.functions.invoke('store-binance-credentials', {
-        body: { userId: user.id, apiKey, apiSecret }
-      });
-
-      if (error) throw error;
-
-      toast({
-        title: 'Credentials Stored',
-        description: 'Your Binance API credentials have been encrypted and stored securely.',
-      });
-
-      await checkCredentials();
-      return true;
-    } catch (error: any) {
-      toast({
-        title: 'Error',
-        description: error.message || 'Failed to store credentials',
-        variant: 'destructive',
-      });
-      return false;
-    }
-  };
-
-  const getCredentials = async () => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error('Not authenticated');
-
-      const { data, error } = await supabase.functions.invoke('get-binance-credentials', {
-        headers: {
-          Authorization: `Bearer ${session.access_token}`
-        }
-      });
-
-      if (error) throw error;
-      return data as { apiKey: string; apiSecret: string; userId: string };
-    } catch (error: any) {
-      console.error('Error fetching credentials:', error);
-      toast({
-        title: 'Error',
-        description: error.message || 'Failed to retrieve credentials',
-        variant: 'destructive',
-      });
-      return null;
-    }
-  };
+export function useBinanceCredentials() {
+  const [credentialsCount, setCredentialsCount] = useState(0);
+  const [activeCount, setActiveCount] = useState(0);
+  const [hasCredentials, setHasCredentials] = useState(false);
+  const [useTestnet, setUseTestnet] = useState(true);
 
   useEffect(() => {
-    checkCredentials();
+    fetchCredentials();
+    const savedTestnet = localStorage.getItem('use_testnet');
+    if (savedTestnet !== null) {
+      setUseTestnet(savedTestnet === 'true');
+    }
   }, []);
 
-  return {
-    hasCredentials,
-    loading,
-    storeCredentials,
-    getCredentials,
-    refreshCredentials: checkCredentials,
+  const fetchCredentials = async () => {
+    try {
+      const { count: total } = await supabase
+        .from('binance_credentials')
+        .select('*', { count: 'exact', head: true });
+
+      const { count: active } = await supabase
+        .from('binance_credentials')
+        .select('*', { count: 'exact', head: true })
+        .eq('is_active', true);
+
+      setCredentialsCount(total || 0);
+      setActiveCount(active || 0);
+      setHasCredentials((active || 0) > 0);
+    } catch (error) {
+      console.error('Failed to fetch credentials:', error);
+    }
   };
-};
+
+  const toggleTestnet = (value: boolean) => {
+    setUseTestnet(value);
+    localStorage.setItem('use_testnet', value.toString());
+  };
+
+  const storeCredentials = async (credentials: Array<{ name: string; apiKey: string; apiSecret: string }>) => {
+    const { data, error } = await supabase.functions.invoke('store-binance-credentials', {
+      body: { credentials },
+    });
+
+    if (error) throw error;
+    
+    await fetchCredentials();
+    return data;
+  };
+
+  return {
+    credentialsCount,
+    activeCount,
+    hasCredentials,
+    useTestnet,
+    toggleTestnet,
+    storeCredentials,
+    refreshCredentials: fetchCredentials,
+  };
+}

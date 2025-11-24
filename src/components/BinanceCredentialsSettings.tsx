@@ -17,13 +17,20 @@ export const BinanceCredentialsSettings = () => {
     if (!apiKey.trim() || !apiSecret.trim()) return;
     
     setSaving(true);
-    const success = await storeCredentials(apiKey, apiSecret);
-    if (success) {
+    try {
+      await storeCredentials([{
+        name: 'primary',
+        apiKey: apiKey.trim(),
+        apiSecret: apiSecret.trim(),
+      }]);
       setApiKey('');
       setApiSecret('');
       await refreshCredentials();
+    } catch (error) {
+      console.error('Failed to store credentials:', error);
+    } finally {
+      setSaving(false);
     }
-    setSaving(false);
   };
 
   return (
