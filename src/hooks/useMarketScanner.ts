@@ -14,7 +14,7 @@ export function useMarketScanner() {
   const [pairs, setPairs] = useState<MarketPair[]>([]);
   const [isScanning, setIsScanning] = useState(false);
   const [lastScan, setLastScan] = useState<Date | null>(null);
-  const { hasCredentials } = useBinanceCredentials();
+  const { hasCredentials, useTestnet } = useBinanceCredentials();
 
   const scanMarket = useCallback(async () => {
     if (!hasCredentials) return;
@@ -22,7 +22,12 @@ export function useMarketScanner() {
     setIsScanning(true);
     try {
       // Fetch 24hr ticker for all USDT pairs
-      const response = await fetch('https://api.binance.com/api/v3/ticker/24hr');
+      const apiUrl = useTestnet 
+        ? 'https://testnet.binance.vision/api/v3/ticker/24hr'
+        : 'https://api.binance.com/api/v3/ticker/24hr';
+      
+      console.log(`📊 Scanning market on ${useTestnet ? 'TESTNET' : 'MAINNET'}`);
+      const response = await fetch(apiUrl);
       const tickers = await response.json();
       
       // Filter for USDT pairs with sufficient volume
@@ -67,7 +72,7 @@ export function useMarketScanner() {
     scanMarket();
     const interval = setInterval(scanMarket, 30000);
     return () => clearInterval(interval);
-  }, [hasCredentials, scanMarket]);
+  }, [hasCredentials, useTestnet, scanMarket]);
 
   return {
     pairs,

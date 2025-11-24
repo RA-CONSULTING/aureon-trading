@@ -6,10 +6,14 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { QGITASignalGenerator } from '@/core/qgitaSignalGenerator';
 
+const TRADING_FEE_RATE = 0.001; // 0.1% per trade (maker/taker fee)
+
 export function useAutonomousTrading() {
   const [isActive, setIsActive] = useState(false);
   const [tradesExecuted, setTradesExecuted] = useState(0);
   const [totalProfit, setTotalProfit] = useState(0);
+  const [totalFees, setTotalFees] = useState(0);
+  const [netProfit, setNetProfit] = useState(0);
   const { pairs, isScanning } = useMarketScanner();
   const { session } = useQueenHive();
   const { enqueueOrder, status } = useOMSQueue(session?.id || null);
@@ -83,6 +87,12 @@ export function useAutonomousTrading() {
           const opportunityMultiplier = Math.min(pair.opportunityScore / 10, 2);
           const positionSize = baseSize * tierMultiplier * opportunityMultiplier;
           const quantity = positionSize / pair.price;
+          
+          // Calculate trading fee (0.1% per side = 0.2% round trip)
+          const estimatedFee = positionSize * TRADING_FEE_RATE * 2; // Entry + exit
+          
+          // Track fees
+          setTotalFees(prev => prev + estimatedFee);
 
           // Calculate priority
           let priority = Math.floor(signal.confidence);
@@ -154,6 +164,8 @@ export function useAutonomousTrading() {
     isActive,
     tradesExecuted,
     totalProfit,
+    totalFees,
+    netProfit,
     topPairs: pairs.slice(0, 10),
     isScanning,
     start,

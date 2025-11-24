@@ -9,6 +9,8 @@ export const AutonomousTradingPanel = () => {
     isActive,
     tradesExecuted,
     totalProfit,
+    totalFees,
+    netProfit,
     topPairs,
     isScanning,
     start,
@@ -41,30 +43,43 @@ export const AutonomousTradingPanel = () => {
       </div>
 
       {/* Status */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-4 gap-4">
         <div className="p-4 rounded-lg bg-muted/50">
           <div className="text-2xl font-bold">{tradesExecuted}</div>
           <div className="text-xs text-muted-foreground">Trades Executed</div>
         </div>
         <div className="p-4 rounded-lg bg-muted/50">
-          <div className="text-2xl font-bold text-green-500">
+          <div className="text-2xl font-bold text-blue-500">
             ${totalProfit.toFixed(2)}
+          </div>
+          <div className="text-xs text-muted-foreground">Gross Profit</div>
+        </div>
+        <div className="p-4 rounded-lg bg-muted/50">
+          <div className="text-2xl font-bold text-red-500">
+            -${totalFees.toFixed(2)}
+          </div>
+          <div className="text-xs text-muted-foreground">Trading Fees (0.1%)</div>
+        </div>
+        <div className="p-4 rounded-lg bg-muted/50">
+          <div className={`text-2xl font-bold ${netProfit >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+            ${netProfit.toFixed(2)}
           </div>
           <div className="text-xs text-muted-foreground">Net Profit</div>
         </div>
-        <div className="p-4 rounded-lg bg-muted/50">
-          <div className="flex items-center gap-2">
-            {isActive ? (
-              <Badge className="bg-green-500">
-                <Activity className="h-3 w-3 mr-1" />
-                ACTIVE
-              </Badge>
-            ) : (
-              <Badge variant="outline">PAUSED</Badge>
-            )}
-          </div>
-          <div className="text-xs text-muted-foreground mt-2">Status</div>
-        </div>
+      </div>
+
+      {/* Active Status Badge */}
+      <div className="flex items-center justify-center">
+        {isActive ? (
+          <Badge className="bg-green-500 text-lg px-6 py-2">
+            <Activity className="h-4 w-4 mr-2 animate-pulse" />
+            LIVE TRADING ON TESTNET
+          </Badge>
+        ) : (
+          <Badge variant="outline" className="text-lg px-6 py-2">
+            PAUSED
+          </Badge>
+        )}
       </div>
 
       {/* Top Opportunities */}
