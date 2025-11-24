@@ -135,6 +135,11 @@ export function useAutonomousTrading() {
     return () => clearInterval(interval);
   }, [isActive, processTopOpportunities]);
 
+  // Calculate net profit (profit - fees)
+  useEffect(() => {
+    setNetProfit(totalProfit - totalFees);
+  }, [totalProfit, totalFees]);
+
   const start = useCallback(async () => {
     if (!session) {
       toast({
