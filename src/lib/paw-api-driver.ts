@@ -66,3 +66,86 @@ export class PAWAPIDriver {
     this.fault_bias = Math.max(0.0, 1.0 - Math.min(balance_B, 2.0) / 2.0);
     return [true, "Armed"];
   }
+
+  Inject(element: Element, voxel: Voxel): [boolean, string] {
+    if (!this.armed) {
+      return [false, "Not armed"];
+    }
+    // Mock injection - always succeeds
+    return [true, `Injected ${element} at (${voxel.x}, ${voxel.y}, ${voxel.z})`];
+  }
+
+  Place(): PlaceReply {
+    if (this.aborted) {
+      return {
+        ok: false,
+        error_pm: this.error_pm,
+        epa_eV: this.epa_eV,
+        safety_violation: { reason: "Aborted", category: "abort" }
+      };
+    }
+
+    if (this.paused) {
+      return {
+        ok: false,
+        error_pm: this.error_pm,
+        epa_eV: this.epa_eV,
+        safety_violation: { reason: "Paused", category: "pause" }
+      };
+    }
+
+    // Simulate placement with Gaussian error
+    this.error_pm = Math.abs(this.gauss(this.caps.error_goal_pm, 20.0)) + this.fault_bias * 50.0;
+    this.epa_eV = this.gauss(0.8, 0.1);
+    
+    // Check safety thresholds
+    if (this.error_pm > this.caps.error_hard_pm) {
+      return {
+        ok: false,
+        error_pm: this.error_pm,
+        epa_eV: this.epa_eV,
+        safety_violation: { reason: `Error ${this.error_pm.toFixed(1)} pm exceeds limit`, category: "precision" }
+      };
+    }
+
+    this.last_place_t = Date.now() / 1000.0;
+    return {
+      ok: true,
+      error_pm: this.error_pm,
+      epa_eV: this.epa_eV
+    };
+  }
+
+  Pause(): [boolean, string] {
+    this.paused = true;
+    return [true, "Paused"];
+  }
+
+  Resume(): [boolean, string] {
+    this.paused = false;
+    return [true, "Resumed"];
+  }
+
+  Abort(): [boolean, string] {
+    this.aborted = true;
+    this.armed = false;
+    return [true, "Aborted"];
+  }
+
+  GetTelemetry(): Telemetry {
+    // Simulate temperature drift
+    this.temp_K += (this.random() - 0.5) * 0.05;
+    this.flux_ips = this.armed ? this.caps.flux_max * (0.3 + this.random() * 0.4) : 0.0;
+    
+    return {
+      temp_K: this.temp_K,
+      flux_ips: this.flux_ips,
+      balance_B: this.balance_B,
+      interlocks_ok: this.interlocks_ok,
+      error_pm: this.error_pm,
+      epa_eV: this.epa_eV,
+      paused: this.paused,
+      aborted: this.aborted
+    };
+  }
+}

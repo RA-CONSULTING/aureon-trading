@@ -1,12 +1,21 @@
-import { useState } from 'react';
-import { Calendar } from '@/components/ui/calendar';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { generateSchumannData } from '@/lib/aureon-data';
+import { Button } from '@/components/ui/button';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { getEmotionalStateFromFrequency } from '@/lib/schumann-emotional-mapping';
 import { toFixedSafe } from '@/utils/number';
-  emotionalState: EmotionState;
+
+interface DayData {
+  date: string;
+  frequency: number;
+  amplitude: number;
+  emotionalState: any;
   activity: string;
+}
+
+const mapFrequencyToEmotion = (freq: number) => {
+  return getEmotionalStateFromFrequency(freq);
 }
 
 const CalendarView: React.FC = () => {
@@ -143,6 +152,7 @@ const CalendarView: React.FC = () => {
                   <div>
                     <div className="text-sm text-purple-200">Amplitude</div>
                     <div className="text-lg font-semibold">{toFixedSafe(selectedDay.amplitude * 100, 1)}%</div>
+                  </div>
                 </div>
                 
                 <div>
