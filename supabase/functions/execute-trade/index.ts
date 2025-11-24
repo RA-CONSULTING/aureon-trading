@@ -210,10 +210,9 @@ serve(async (req) => {
       // === NETWORK FAIL-SAFE: Timeout and retry logic ===
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 5000); // 5s timeout
-      let binanceResponse: Response;
 
       try {
-        binanceResponse = await fetch(
+        const binanceResponse = await fetch(
           `https://api.binance.com/api/v3/order?${queryString}&signature=${signature}`,
           {
             method: 'POST',
