@@ -25,9 +25,10 @@ export const AutonomousTradingPanel = () => {
           <h3 className="text-lg font-semibold flex items-center gap-2">
             <Zap className="h-5 w-5 text-yellow-500" />
             Autonomous Trading Engine
+            <Badge className="bg-red-500 text-white ml-2">🔴 LIVE</Badge>
           </h3>
           <p className="text-sm text-muted-foreground">
-            Scanning {totalPairs} pairs • execute-trade + fetch-binance-symbols
+            Scanning {totalPairs} pairs • Real wallet trading enabled
           </p>
         </div>
         {isActive ? (
