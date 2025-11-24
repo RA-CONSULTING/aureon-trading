@@ -24,11 +24,11 @@ export const AutonomousTradingPanel = () => {
         <div>
           <h3 className="text-lg font-semibold flex items-center gap-2">
             <Zap className="h-5 w-5 text-yellow-500" />
-            Autonomous Trading Engine
-            <Badge className="bg-red-500 text-white ml-2">🔴 LIVE</Badge>
+            AUREON Quantum Trading System
+            <Badge className="bg-gradient-to-r from-purple-500 to-pink-500 text-white ml-2">🌈 LIVE</Badge>
           </h3>
           <p className="text-sm text-muted-foreground">
-            Scanning {totalPairs} pairs • Real wallet trading enabled
+            Master Equation (Λ) • 9 Auris Nodes • Lighthouse (Γ{'>'}0.945) • 528Hz Prism | {totalPairs} pairs
           </p>
         </div>
         {isActive ? (
