@@ -7,6 +7,8 @@
 import { AurisNodes, type MarketSnapshot } from './aurisNodes';
 import { stargateLayer, type StargateInfluence } from './stargateLattice';
 import { earthAureonBridge, type EarthFieldInfluence } from './earthAureonBridge';
+import { nexusLiveFeedBridge, type NexusInfluence } from './nexusLiveFeedBridge';
+import type { NexusBridgeConfig } from './nexusLiveFeedBridge';
 import type { SimpleEarthStreams } from '../lib/earth-streams';
 
 export type LambdaState = {
@@ -19,6 +21,7 @@ export type LambdaState = {
   nodeResponses: Record<string, number>;
   stargateInfluence?: StargateInfluence;
   earthFieldInfluence?: EarthFieldInfluence;
+  nexusInfluence?: NexusInfluence;
 };
 
 export class MasterEquation {
@@ -29,6 +32,7 @@ export class MasterEquation {
   private schumannBoost: number = 0;
   private earthStreams: SimpleEarthStreams | null = null;
   private regionId: string | null = null;
+  private nexusEnabled = true;
   
   setUserLocation(lat: number, lng: number, celestialBoost: number = 0, schumannBoost: number = 0) {
     this.userLocation = { lat, lng };
@@ -43,6 +47,11 @@ export class MasterEquation {
 
   enableEarthSync(enable: boolean = true) {
     earthAureonBridge.setConfig({ enableEarthSync: enable });
+  }
+
+  enableNexusSync(enable: boolean = true, configOverrides?: Partial<NexusBridgeConfig>) {
+    this.nexusEnabled = enable;
+    nexusLiveFeedBridge.setConfig({ enable, ...(configOverrides || {}) });
   }
   
   async step(snapshot: MarketSnapshot): Promise<LambdaState> {
@@ -102,6 +111,17 @@ export class MasterEquation {
       console.warn('Earth field sync error (non-critical):', error);
     }
     
+    // Apply Nexus harmonic nexus influence
+    let nexusInfluence: NexusInfluence | undefined;
+    if (this.nexusEnabled) {
+      try {
+        nexusInfluence = await nexusLiveFeedBridge.poll();
+        coherence = Math.min(1, Math.max(0, coherence + nexusInfluence.compositeBoost));
+      } catch (error) {
+        console.warn('Nexus live feed error (non-critical):', error);
+      }
+    }
+
     // Apply Stargate Lattice influence if location available
     let stargateInfluence: StargateInfluence | undefined;
     if (this.userLocation) {
@@ -132,6 +152,7 @@ export class MasterEquation {
       nodeResponses,
       stargateInfluence,
       earthFieldInfluence,
+      nexusInfluence,
     };
   }
   
