@@ -62,8 +62,10 @@ export const NanoParticleVisualizer: React.FC = () => {
     const time = Date.now() * 0.001;
     const field = fieldStrength[0] / 100;
     const coherence = coherenceLevel[0] / 100;
+    const centerX = canvas.width / 2;
+    const centerY = canvas.height / 2;
 
-    setParticles(prevParticles => 
+    setParticles(prevParticles =>
       prevParticles.map(particle => {
         // Update position
         particle.x += particle.vx;

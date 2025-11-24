@@ -69,16 +69,16 @@ export class UnifiedHarmonicReality {
    * Compute unified harmonic state at time t
    */
   compute(
-    marketSnapshot: { 
-      price: number; 
-      volume: number; 
-      volatility: number; 
-      momentum: number; 
+    marketSnapshot: {
+      price: number;
+      volume: number;
+      volatility: number;
+      momentum: number;
       spread: number;
       timestamp: number;
     },
     t: number
-  ): UnifiedHarmonicState {
+  ): Promise<UnifiedHarmonicState> {
     // Step 1: Master Equation (Λ field dynamics)
     const lambdaState = await this.masterEq.step(marketSnapshot);
     
