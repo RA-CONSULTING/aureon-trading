@@ -121,14 +121,16 @@ export const NanoParticleVisualizer: React.FC = () => {
 
     // Draw field lines
     if (field > 0.3) {
+      const fieldCenterX = canvas.width / 2;
+      const fieldCenterY = canvas.height / 2;
       ctx.strokeStyle = `rgba(0, 150, 255, ${field * 0.3})`;
       ctx.lineWidth = 1;
       for (let i = 0; i < 8; i++) {
         const angle = (i / 8) * Math.PI * 2 + time * 0.5;
-        const x1 = centerX + Math.cos(angle) * 50;
-        const y1 = centerY + Math.sin(angle) * 50;
-        const x2 = centerX + Math.cos(angle) * 200;
-        const y2 = centerY + Math.sin(angle) * 200;
+        const x1 = fieldCenterX + Math.cos(angle) * 50;
+        const y1 = fieldCenterY + Math.sin(angle) * 50;
+        const x2 = fieldCenterX + Math.cos(angle) * 200;
+        const y2 = fieldCenterY + Math.sin(angle) * 200;
         
         ctx.beginPath();
         ctx.moveTo(x1, y1);

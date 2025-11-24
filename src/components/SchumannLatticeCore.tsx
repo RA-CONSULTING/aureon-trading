@@ -24,6 +24,9 @@ export function frequenciesToBlobs(frequencies: number[], weights?: number[]): B
   });
 }
 
+// Alias for backwards compatibility
+export const schumannToBlobs = frequenciesToBlobs;
+
 // Fuse tensor field data with blobs for TSV modulation
 export function fuseWithTSV(blobs: Blob[], tensorField: TensorDatum[], scale = 0.12): Blob[] {
   if (!tensorField.length) return blobs;

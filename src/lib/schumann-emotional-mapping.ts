@@ -28,6 +28,8 @@ export interface EmotionalState {
   emotionalTags: string[];
   color: string;
   description: string;
+  note?: string;
+  emotion?: string;
 }
 
 // Regional emotional frequency profiles based on geographical characteristics
@@ -36,49 +38,81 @@ export const REGIONAL_EMOTIONAL_PROFILES = {
     baseFrequency: 7.83,
     variance: 2.1,
     dominantEmotions: ['Confidence', 'Trust', 'Empowerment'],
-    intensityRange: [0.6, 0.9]
+    intensityRange: [0.6, 0.9] as [number, number],
+    urbanFrequency: 8.1,
+    dominantFrequency: 7.83,
+    emotionalState: 'Confident',
+    emotionalTags: ['trust', 'empowerment', 'stability']
   },
   'south-america': {
     baseFrequency: 14.3,
     variance: 3.2,
     dominantEmotions: ['Joy', 'Celebration', 'Warmth'],
-    intensityRange: [0.7, 0.95]
+    intensityRange: [0.7, 0.95] as [number, number],
+    urbanFrequency: 14.8,
+    dominantFrequency: 14.3,
+    emotionalState: 'Joyful',
+    emotionalTags: ['celebration', 'warmth', 'vitality']
   },
   'europe': {
     baseFrequency: 20.8,
     variance: 1.8,
     dominantEmotions: ['Stability', 'Integration', 'Wisdom'],
-    intensityRange: [0.5, 0.8]
+    intensityRange: [0.5, 0.8] as [number, number],
+    urbanFrequency: 21.2,
+    dominantFrequency: 20.8,
+    emotionalState: 'Stable',
+    emotionalTags: ['wisdom', 'integration', 'balance']
   },
   'asia': {
     baseFrequency: 27.3,
     variance: 4.1,
     dominantEmotions: ['Transcendence', 'Harmony', 'Balance'],
-    intensityRange: [0.6, 0.85]
+    intensityRange: [0.6, 0.85] as [number, number],
+    urbanFrequency: 28.0,
+    dominantFrequency: 27.3,
+    emotionalState: 'Harmonious',
+    emotionalTags: ['transcendence', 'balance', 'peace']
   },
   'africa': {
     baseFrequency: 33.8,
     variance: 3.5,
     dominantEmotions: ['Vitality', 'Connection', 'Rhythm'],
-    intensityRange: [0.8, 0.98]
+    intensityRange: [0.8, 0.98] as [number, number],
+    urbanFrequency: 34.5,
+    dominantFrequency: 33.8,
+    emotionalState: 'Vital',
+    emotionalTags: ['connection', 'rhythm', 'energy']
   },
   'oceania': {
     baseFrequency: 39.3,
     variance: 2.7,
     dominantEmotions: ['Flow', 'Serenity', 'Freedom'],
-    intensityRange: [0.4, 0.75]
+    intensityRange: [0.4, 0.75] as [number, number],
+    urbanFrequency: 40.0,
+    dominantFrequency: 39.3,
+    emotionalState: 'Serene',
+    emotionalTags: ['flow', 'freedom', 'peace']
   },
   'antarctica': {
     baseFrequency: 45.9,
     variance: 1.2,
     dominantEmotions: ['Clarity', 'Purity', 'Stillness'],
-    intensityRange: [0.2, 0.5]
+    intensityRange: [0.2, 0.5] as [number, number],
+    urbanFrequency: 46.2,
+    dominantFrequency: 45.9,
+    emotionalState: 'Clear',
+    emotionalTags: ['purity', 'stillness', 'clarity']
   },
   'arctic': {
     baseFrequency: 59.9,
     variance: 1.5,
     dominantEmotions: ['Awakening', 'Insight', 'Transformation'],
-    intensityRange: [0.3, 0.6]
+    intensityRange: [0.3, 0.6] as [number, number],
+    urbanFrequency: 60.5,
+    dominantFrequency: 59.9,
+    emotionalState: 'Awakening',
+    emotionalTags: ['insight', 'transformation', 'clarity']
   }
 };
 

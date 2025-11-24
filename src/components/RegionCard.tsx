@@ -97,7 +97,7 @@ export function RegionCard({ region, emotionalState, onClick }: RegionCardProps)
         
         {/* HNC Score Card */}
         <div className="pt-2 border-t border-white/10">
-          <HNCScoreCard tick={hncTick} region={region.name} />
+          <HNCScoreCard tick={hncTick} />
         </div>
       </CardContent>
     </Card>

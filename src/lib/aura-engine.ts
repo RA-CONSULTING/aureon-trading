@@ -16,7 +16,7 @@ export interface AuraInput {
   tob?: string;
   pob?: { lat: number; lon: number };
   now_timestamp: string;
-  mode: 'dual' | 'symbolic' | 'technical';
+  mode: 'dual' | 'symbolic' | 'technical' | 'story';
   options: {
     use_astrology: boolean;
     use_earth: boolean;
@@ -43,6 +43,8 @@ export interface AuraReading {
     red: number; orange: number; yellow: number; green: number;
     blue: number; indigo: number; violet: number;
   };
+  colors: string[]; // Add colors array for compatibility
+  karmic: { note: string }; // Add karmic field
   timelines: {
     aligned: { likelihood: number; outcomes: string[]; drivers: string[] };
     middle: { likelihood: number; outcomes: string[]; drivers: string[] };
@@ -141,7 +143,12 @@ export function generateReading(input: AuraInput): AuraReading {
       ritual: 0.8 + (seed % 15) / 100,
       timing: 0.85 + ((seed >> 6) % 15) / 100
     },
-    cosmic: { note: 'Mercury in harmonious aspect' },
-    earth: { note: 'Schumann resonance elevated' }
+    karmic: { note: 'Past life patterns emerging' },
+    colors: Object.values(color).map((val, i) => {
+      const colors = ['Red', 'Orange', 'Yellow', 'Green', 'Blue', 'Indigo', 'Violet'];
+      return colors[i];
+    }),
+    cosmic: { note: 'Mercury in harmonious aspect', motifs: ['transformation', 'communication'] },
+    earth: { note: 'Schumann resonance elevated', motifs: ['grounding', 'integration'] }
   };
 }
