@@ -54,12 +54,8 @@ serve(async (req) => {
       console.error('Failed to fetch prices:', error);
     }
 
-    // Fetch balances from all accounts
+    // Fetch balances from all accounts (all 11 bots access the same wallet)
     const accountBalances = [];
-    let totalUSDT = 0;
-    let totalBTC = 0;
-    let totalETH = 0;
-    let totalUSDValue = 0;
 
     for (const cred of credentials) {
       const apiKey = decryptValue(cred.api_key_encrypted);
@@ -145,15 +141,8 @@ serve(async (req) => {
             };
             
             accountUSDValue += usdValue;
-            
-            // Aggregate totals
-            if (balance.asset === 'USDT') totalUSDT += total;
-            if (balance.asset === 'BTC') totalBTC += total;
-            if (balance.asset === 'ETH') totalETH += total;
           }
         }
-
-        totalUSDValue += accountUSDValue;
 
         accountBalances.push({
           name: cred.name,
@@ -173,20 +162,34 @@ serve(async (req) => {
       }
     }
 
-    console.log(`✅ Fetched balances from ${accountBalances.length} accounts`);
-    console.log(`Total USDT: ${totalUSDT.toFixed(2)}, BTC: ${totalBTC.toFixed(6)}, ETH: ${totalETH.toFixed(6)}`);
-    console.log(`💰 Total Portfolio Value: $${totalUSDValue.toFixed(2)} USD`);
+    // All 11 accounts access the same wallet, so use only the first successful account's data
+    const firstSuccessfulAccount = accountBalances.find(a => !a.error);
+    let walletTotals = {
+      USDT: 0,
+      BTC: 0,
+      ETH: 0,
+      totalUSDValue: 0
+    };
+
+    if (firstSuccessfulAccount && firstSuccessfulAccount.balances) {
+      for (const [asset, balance] of Object.entries(firstSuccessfulAccount.balances)) {
+        const bal = balance as { total: number; usdValue?: number };
+        if (asset === 'USDT') walletTotals.USDT = bal.total;
+        if (asset === 'BTC') walletTotals.BTC = bal.total;
+        if (asset === 'ETH') walletTotals.ETH = bal.total;
+        walletTotals.totalUSDValue += bal.usdValue || 0;
+      }
+    }
+
+    console.log(`✅ Fetched balances from ${accountBalances.length} bots (1 shared wallet)`);
+    console.log(`Wallet Totals - USDT: ${walletTotals.USDT.toFixed(2)}, BTC: ${walletTotals.BTC.toFixed(6)}, ETH: ${walletTotals.ETH.toFixed(6)}`);
+    console.log(`💰 Total Portfolio Value: $${walletTotals.totalUSDValue.toFixed(2)} USD`);
 
     return new Response(
       JSON.stringify({
         success: true,
         accounts: accountBalances,
-        totals: {
-          USDT: totalUSDT,
-          BTC: totalBTC,
-          ETH: totalETH,
-        },
-        totalUSDValue,
+        totals: walletTotals,
         timestamp: new Date().toISOString(),
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

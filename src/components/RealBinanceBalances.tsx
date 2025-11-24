@@ -13,23 +13,34 @@ export function RealBinanceBalances() {
       <div className="space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
-          <div>
-            <h3 className="text-lg font-semibold flex items-center gap-2">
-              <Wallet className="h-5 w-5" />
-              Live Binance Wallets
-            </h3>
-            <p className="text-sm text-muted-foreground">
-              {accounts.length} accounts connected
-              {lastUpdated && ` • Updated ${formatDistanceToNow(lastUpdated, { addSuffix: true })}`}
-            </p>
-          </div>
+        <div>
+          <h3 className="text-lg font-semibold flex items-center gap-2">
+            <Wallet className="h-5 w-5" />
+            Live Binance Wallet
+          </h3>
+          <p className="text-sm text-muted-foreground">
+            1 Shared Wallet • {accounts.length} Active Trading Bots
+            {lastUpdated && ` • Updated ${formatDistanceToNow(lastUpdated, { addSuffix: true })}`}
+          </p>
+        </div>
           <Button onClick={refresh} disabled={loading} variant="outline" size="sm">
             <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
         </div>
 
-        {/* Total Balances */}
+        {/* Total Portfolio Value */}
+        <div className="p-6 rounded-lg bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20">
+          <div className="flex items-center gap-2 mb-2">
+            <DollarSign className="h-5 w-5 text-primary" />
+            <div className="text-sm text-muted-foreground">Total Portfolio Value</div>
+          </div>
+          <div className="text-4xl font-bold text-primary">
+            ${totals.totalUSDValue.toFixed(2)}
+          </div>
+        </div>
+
+        {/* Asset Breakdown */}
         <div className="grid grid-cols-3 gap-4">
           <div className="p-4 rounded-lg bg-gradient-to-br from-green-500/10 to-green-600/10 border border-green-500/20">
             <div className="flex items-center gap-2 mb-2">
@@ -62,8 +73,9 @@ export function RealBinanceBalances() {
           </div>
         </div>
 
-        {/* Account Details */}
+        {/* Bot Status */}
         <div className="space-y-2 max-h-[400px] overflow-y-auto">
+          <div className="text-sm font-medium mb-2">Active Trading Bots</div>
           {accounts.map((account) => (
             <div
               key={account.name}
