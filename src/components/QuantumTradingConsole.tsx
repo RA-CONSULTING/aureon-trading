@@ -10,6 +10,7 @@ import {
   Waves, DollarSign, BarChart3, Shield, AlertCircle, AlertTriangle, Wifi 
 } from 'lucide-react';
 import { AutonomousTradingPanel } from './AutonomousTradingPanel';
+import { RealBinanceBalances } from './RealBinanceBalances';
 
 interface MarketData {
   symbol: string;
@@ -229,6 +230,9 @@ export default function QuantumTradingConsole() {
           </div>
         </div>
       </div>
+
+      {/* Real Binance Wallet Balances */}
+      <RealBinanceBalances />
 
       {/* Autonomous Trading Panel */}
       <AutonomousTradingPanel />
