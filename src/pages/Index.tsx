@@ -1,9 +1,9 @@
-import QuantumDashboard from "@/components/QuantumDashboard";
+import QuantumTradingConsole from "@/components/QuantumTradingConsole";
 
 const Index = () => {
   return (
     <div className="min-h-screen">
-      <QuantumDashboard />
+      <QuantumTradingConsole />
     </div>
   );
 };
