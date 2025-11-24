@@ -13,12 +13,12 @@ export type BalanceTotals = {
   USDT: number;
   BTC: number;
   ETH: number;
-  totalUSDValue?: number;
+  totalUSDValue: number;
 };
 
 export function useBinanceBalances() {
   const [accounts, setAccounts] = useState<AccountBalance[]>([]);
-  const [totals, setTotals] = useState<BalanceTotals>({ USDT: 0, BTC: 0, ETH: 0 });
+  const [totals, setTotals] = useState<BalanceTotals>({ USDT: 0, BTC: 0, ETH: 0, totalUSDValue: 0 });
   const [loading, setLoading] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const { toast } = useToast();
