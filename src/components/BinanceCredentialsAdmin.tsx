@@ -79,21 +79,27 @@ export function BinanceCredentialsAdmin() {
     }
 
     try {
-      const { error } = await supabase.functions.invoke('update-bot-credentials', {
+      // Auto-sync: Update ALL bots with the same credentials since they share the same wallet
+      const allBotCredentials = credentials.map(cred => ({
+        name: cred.name,
+        apiKey: apiKey.trim(),
+        apiSecret: apiSecret.trim(),
+      }));
+
+      const { data, error } = await supabase.functions.invoke('update-bot-credentials', {
         body: {
-          credentials: [{
-            name,
-            apiKey: apiKey.trim(),
-            apiSecret: apiSecret.trim(),
-          }],
+          credentials: allBotCredentials,
         },
       });
 
       if (error) throw error;
 
+      const successCount = data?.summary?.successful || 0;
+      const totalCount = data?.summary?.total || 0;
+
       toast({
-        title: '✅ Credentials Updated',
-        description: `Successfully updated ${name}`,
+        title: '✅ All Bots Synced',
+        description: `Successfully updated ${successCount}/${totalCount} bots with new credentials`,
       });
 
       setEditingId(null);
@@ -155,13 +161,22 @@ export function BinanceCredentialsAdmin() {
           </Button>
         </div>
 
+        {/* Info Alert */}
+        <Alert className="bg-primary/10 border-primary/20">
+          <CheckCircle2 className="h-4 w-4 text-primary" />
+          <AlertDescription className="text-primary">
+            <strong>🔄 Auto-Sync Enabled</strong> - All {credentials.length} bots share the same wallet.
+            Updating any bot will automatically sync credentials to all bots.
+          </AlertDescription>
+        </Alert>
+
         {/* Error Alert */}
         {credentials.some(c => c.hasError) && (
           <Alert className="bg-red-500/10 border-red-500/20">
             <AlertCircle className="h-4 w-4 text-red-500" />
             <AlertDescription className="text-red-500">
               <strong>⚠️ Signature Errors Detected</strong> - Some credentials are failing validation.
-              Update them below to fix the issue.
+              Update any bot below to sync new credentials to all bots.
             </AlertDescription>
           </Alert>
         )}
@@ -242,7 +257,7 @@ export function BinanceCredentialsAdmin() {
                             disabled={!apiKey.trim() || !apiSecret.trim()}
                           >
                             <Save className="h-4 w-4 mr-2" />
-                            Save
+                            Sync All Bots
                           </Button>
                           <Button
                             size="sm"
@@ -296,8 +311,10 @@ export function BinanceCredentialsAdmin() {
         <Alert>
           <Lock className="h-4 w-4" />
           <AlertDescription>
-            <strong>Security Note:</strong> All credentials are encrypted with AES-256-GCM before storage.
-            Since all bots access the same wallet, they should all use the same API key and secret.
+            <strong>🔐 Security:</strong> All credentials are encrypted with AES-256-GCM before storage.
+            <br />
+            <strong>🔄 Auto-Sync:</strong> Updating any bot automatically syncs credentials to all {credentials.length} bots
+            since they all access the same wallet.
           </AlertDescription>
         </Alert>
       </div>
