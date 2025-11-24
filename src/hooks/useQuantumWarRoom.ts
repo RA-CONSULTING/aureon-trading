@@ -1,12 +1,19 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { temporalLadder, SYSTEMS } from '@/core/temporalLadder';
 
 export interface QuantumState {
-  coherence: number;
-  entanglement: number;
-  superposition: number;
-  waveFunction: number[];
+  coherence: number;           // REAL Γ from lighthouse_events
+  lambda: number;              // REAL Λ(t) from lighthouse_events
+  dominantNode: string | null; // REAL from lighthouse_events
+  lighthouseSignal: number;    // REAL L value
+  prismLevel: number;          // REAL prism level (1-5)
+  prismState: string;          // FORMING | CONVERGING | MANIFEST
+  isLHE: boolean;              // Is Lighthouse Event active?
+  entanglement: number;        // Derived from hive mind coherence
+  superposition: number;       // Derived from active systems
+  waveFunction: number[];      // 9 Auris node weights
   dominantFrequency: number | null;
 }
 
@@ -18,11 +25,8 @@ export interface WarRoomState {
   tradesExecuted: number;
   netPnL: number;
   currentBalance: number;
+  hiveMindCoherence: number;
 }
-
-const WAVE_SLOTS = 10;
-const COHERENCE_DECAY = 0.002;
-const ENTANGLEMENT_DECAY = 0.001;
 
 export function useQuantumWarRoom() {
   const [state, setState] = useState<WarRoomState>({
@@ -31,45 +35,99 @@ export function useQuantumWarRoom() {
     tradesExecuted: 0,
     netPnL: 0,
     currentBalance: 0,
+    hiveMindCoherence: 0,
   });
 
   const { toast } = useToast();
-  const evolutionRef = useRef<NodeJS.Timeout | null>(null);
+  const heartbeatIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const balanceIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Cleanup on unmount
+  // Register with Temporal Ladder on mount
   useEffect(() => {
+    temporalLadder.registerSystem(SYSTEMS.QUANTUM_QUACKERS);
+    console.log('🦆 Quantum Quackers registered with Temporal Ladder');
+
     return () => {
-      if (evolutionRef.current) clearInterval(evolutionRef.current);
-      if (balanceIntervalRef.current) clearInterval(balanceIntervalRef.current);
+      temporalLadder.unregisterSystem(SYSTEMS.QUANTUM_QUACKERS);
+      console.log('🦆 Quantum Quackers unregistered from Temporal Ladder');
     };
   }, []);
 
-  // Auto-evolve quantum state
+  // Subscribe to Temporal Ladder hive mind
+  useEffect(() => {
+    const unsubscribe = temporalLadder.subscribe((ladderState) => {
+      setState(prev => ({
+        ...prev,
+        hiveMindCoherence: ladderState.hiveMindCoherence,
+        quantumState: {
+          ...prev.quantumState,
+          entanglement: ladderState.hiveMindCoherence,
+          superposition: ladderState.activeChain.length / 8,
+        },
+      }));
+    });
+
+    return unsubscribe;
+  }, []);
+
+  // Send heartbeat to Temporal Ladder
   useEffect(() => {
     if (state.status !== 'active') return;
 
-    evolutionRef.current = setInterval(() => {
-      setState(prev => ({
-        ...prev,
-        quantumState: evolveQuantumState(prev.quantumState),
-      }));
-    }, 100);
+    heartbeatIntervalRef.current = setInterval(() => {
+      temporalLadder.heartbeat(SYSTEMS.QUANTUM_QUACKERS, state.quantumState.coherence);
+    }, 2000);
 
     return () => {
-      if (evolutionRef.current) {
-        clearInterval(evolutionRef.current);
-        evolutionRef.current = null;
+      if (heartbeatIntervalRef.current) {
+        clearInterval(heartbeatIntervalRef.current);
+        heartbeatIntervalRef.current = null;
       }
     };
-  }, [state.status]);
+  }, [state.status, state.quantumState.coherence]);
 
-  // Real-time subscriptions
+  // Real-time subscription to lighthouse_events for REAL quantum data
   useEffect(() => {
     if (state.status !== 'active') return;
 
     const channel = supabase
       .channel('quantum-war-room')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'lighthouse_events',
+        },
+        (payload: any) => {
+          const event = payload.new;
+          console.log('🔥 REAL Lighthouse Event:', event);
+          
+          setState(prev => ({
+            ...prev,
+            quantumState: {
+              ...prev.quantumState,
+              coherence: event.coherence,
+              lambda: event.lambda_value,
+              dominantNode: event.dominant_node,
+              lighthouseSignal: event.lighthouse_signal,
+              prismLevel: event.prism_level || 0,
+              prismState: event.prism_state || 'FORMING',
+              isLHE: event.is_lhe,
+              dominantFrequency: event.is_lhe ? 528 : null,
+            },
+          }));
+
+          // Request assistance from Nexus Feed on high coherence
+          if (event.coherence > 0.9) {
+            temporalLadder.requestAssistance(
+              SYSTEMS.QUANTUM_QUACKERS,
+              SYSTEMS.NEXUS_FEED,
+              'high_coherence_amplification'
+            );
+          }
+        }
+      )
       .on(
         'postgres_changes',
         {
@@ -82,8 +140,14 @@ export function useQuantumWarRoom() {
           setState(prev => ({
             ...prev,
             tradesExecuted: prev.tradesExecuted + 1,
-            quantumState: boostQuantumState(prev.quantumState, 0.05),
           }));
+
+          // Broadcast trade to hive mind
+          temporalLadder.broadcast(SYSTEMS.QUANTUM_QUACKERS, 'TRADE_EXECUTED', {
+            symbol: payload.new.symbol,
+            side: payload.new.side,
+            status: payload.new.status,
+          });
         }
       )
       .on(
@@ -100,24 +164,6 @@ export function useQuantumWarRoom() {
             setState(prev => ({
               ...prev,
               netPnL: prev.netPnL + pnl,
-              quantumState: boostQuantumState(prev.quantumState, pnl > 0 ? 0.03 : -0.02),
-            }));
-          }
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'lighthouse_events',
-        },
-        (payload: any) => {
-          if (payload.new.is_lhe) {
-            console.log('🔥 LHE EVENT!', payload.new);
-            setState(prev => ({
-              ...prev,
-              quantumState: boostQuantumState(prev.quantumState, 0.1),
             }));
           }
         }
@@ -127,6 +173,36 @@ export function useQuantumWarRoom() {
     return () => {
       supabase.removeChannel(channel);
     };
+  }, [state.status]);
+
+  // Fetch real-time node weights from master_equation_field_history
+  useEffect(() => {
+    if (state.status !== 'active') return;
+
+    const fetchNodeWeights = async () => {
+      const { data } = await supabase
+        .from('master_equation_field_history')
+        .select('node_weights')
+        .order('timestamp', { ascending: false })
+        .limit(1)
+        .single();
+
+      if (data?.node_weights) {
+        const weights = Object.values(data.node_weights) as number[];
+        setState(prev => ({
+          ...prev,
+          quantumState: {
+            ...prev.quantumState,
+            waveFunction: weights.length === 9 ? weights : prev.quantumState.waveFunction,
+          },
+        }));
+      }
+    };
+
+    fetchNodeWeights();
+    const interval = setInterval(fetchNodeWeights, 3000);
+
+    return () => clearInterval(interval);
   }, [state.status]);
 
   // Fetch balance periodically
@@ -177,9 +253,14 @@ export function useQuantumWarRoom() {
         netPnL: 0,
       }));
 
+      // Broadcast assault launch to hive mind
+      temporalLadder.broadcast(SYSTEMS.QUANTUM_QUACKERS, 'ASSAULT_LAUNCHED', {
+        timestamp: Date.now(),
+      });
+
       toast({
         title: '🚀 QUANTUM ASSAULT LAUNCHED',
-        description: 'Autonomous trading activated. Quantum Quackers is now in control.',
+        description: 'Autonomous trading activated. Quantum Quackers connected to hive mind.',
       });
 
     } catch (error: any) {
@@ -201,6 +282,11 @@ export function useQuantumWarRoom() {
         status: 'emergency_stopped',
       }));
 
+      // Broadcast emergency stop
+      temporalLadder.broadcast(SYSTEMS.QUANTUM_QUACKERS, 'EMERGENCY_STOP', {
+        reason: 'manual_trigger',
+      });
+
       toast({
         title: '🚨 EMERGENCY STOP',
         description: 'All trading halted immediately.',
@@ -220,36 +306,16 @@ export function useQuantumWarRoom() {
 
 function createInitialQuantumState(): QuantumState {
   return {
-    coherence: 0.75,
-    entanglement: 0.5,
-    superposition: 0.6,
-    waveFunction: Array.from({ length: WAVE_SLOTS }, () => 1 / WAVE_SLOTS),
+    coherence: 0,
+    lambda: 0,
+    dominantNode: null,
+    lighthouseSignal: 0,
+    prismLevel: 0,
+    prismState: 'FORMING',
+    isLHE: false,
+    entanglement: 0,
+    superposition: 0,
+    waveFunction: Array(9).fill(1 / 9),
     dominantFrequency: null,
-  };
-}
-
-function evolveQuantumState(state: QuantumState): QuantumState {
-  const newWave = state.waveFunction.map(amp => {
-    const noise = (Math.random() - 0.5) * 0.02;
-    return Math.max(0, Math.min(1, amp + noise));
-  });
-
-  const sum = newWave.reduce((a, b) => a + b, 0);
-  const normalized = sum > 0 ? newWave.map(a => a / sum) : newWave;
-
-  return {
-    ...state,
-    coherence: Math.max(0.3, state.coherence - COHERENCE_DECAY),
-    entanglement: Math.max(0.2, state.entanglement - ENTANGLEMENT_DECAY),
-    waveFunction: normalized,
-  };
-}
-
-function boostQuantumState(state: QuantumState, boost: number): QuantumState {
-  return {
-    ...state,
-    coherence: Math.min(1, Math.max(0, state.coherence + boost)),
-    entanglement: Math.min(1, Math.max(0, state.entanglement + boost * 0.5)),
-    superposition: Math.min(1, Math.max(0, state.superposition + boost * 0.3)),
   };
 }
