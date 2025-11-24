@@ -44,7 +44,7 @@ export interface AuraReading {
     blue: number; indigo: number; violet: number;
   };
   colors: string[]; // Add colors array for compatibility
-  karmic: { note: string }; // Add karmic field
+  karmic: { note: string; motifs: string[] }; // Add karmic field
   timelines: {
     aligned: { likelihood: number; outcomes: string[]; drivers: string[] };
     middle: { likelihood: number; outcomes: string[]; drivers: string[] };
@@ -54,8 +54,8 @@ export interface AuraReading {
     grounding: number; devotion: number; meditation: number; dreamwork: number;
     service: number; movement: number; ritual: number; timing: number;
   };
-  cosmic: { note: string };
-  earth: { note: string };
+  cosmic: { note: string; motifs: string[] };
+  earth: { note: string; motifs: string[] };
 }
 
 export function generateReading(input: AuraInput): AuraReading {
@@ -143,12 +143,12 @@ export function generateReading(input: AuraInput): AuraReading {
       ritual: 0.8 + (seed % 15) / 100,
       timing: 0.85 + ((seed >> 6) % 15) / 100
     },
-    karmic: { note: 'Past life patterns emerging' },
     colors: Object.values(color).map((val, i) => {
       const colors = ['Red', 'Orange', 'Yellow', 'Green', 'Blue', 'Indigo', 'Violet'];
       return colors[i];
     }),
     cosmic: { note: 'Mercury in harmonious aspect', motifs: ['transformation', 'communication'] },
-    earth: { note: 'Schumann resonance elevated', motifs: ['grounding', 'integration'] }
+    earth: { note: 'Schumann resonance elevated', motifs: ['grounding', 'integration'] },
+    karmic: { note: 'Past life patterns emerging', motifs: ['karma', 'patterns'] }
   };
 }
