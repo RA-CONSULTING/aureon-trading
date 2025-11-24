@@ -40,10 +40,10 @@ export function useQuantumWarRoom() {
 
   // Register with temporal ladder
   useEffect(() => {
-    temporalLadder.registerSystem(SYSTEMS.WAR_ROOM);
+    temporalLadder.registerSystem(SYSTEMS.QUANTUM_QUACKERS);
     
     return () => {
-      temporalLadder.unregisterSystem(SYSTEMS.WAR_ROOM);
+      temporalLadder.unregisterSystem(SYSTEMS.QUANTUM_QUACKERS);
       if (evolutionRef.current) clearInterval(evolutionRef.current);
       if (balanceIntervalRef.current) clearInterval(balanceIntervalRef.current);
     };
@@ -52,7 +52,7 @@ export function useQuantumWarRoom() {
   // Heartbeat to temporal ladder
   useEffect(() => {
     const interval = setInterval(() => {
-      temporalLadder.heartbeat(SYSTEMS.WAR_ROOM, state.quantumState.coherence);
+      temporalLadder.heartbeat(SYSTEMS.QUANTUM_QUACKERS, state.quantumState.coherence);
     }, 2000);
     return () => clearInterval(interval);
   }, [state.quantumState.coherence]);
@@ -98,7 +98,7 @@ export function useQuantumWarRoom() {
           }));
 
           // Broadcast to hive mind
-          temporalLadder.broadcast(SYSTEMS.WAR_ROOM, 'trade_execution', {
+          temporalLadder.broadcast(SYSTEMS.QUANTUM_QUACKERS, 'trade_execution', {
             symbol: payload.new.symbol,
             side: payload.new.side,
             coherence: state.quantumState.coherence,
@@ -142,7 +142,7 @@ export function useQuantumWarRoom() {
             // Request assistance if high coherence
             if (state.quantumState.coherence > 0.9) {
               temporalLadder.requestAssistance(
-                SYSTEMS.WAR_ROOM,
+                SYSTEMS.QUANTUM_QUACKERS,
                 SYSTEMS.NEXUS_FEED,
                 'lhe_amplification'
               );
@@ -211,7 +211,7 @@ export function useQuantumWarRoom() {
       });
 
       // Broadcast launch
-      temporalLadder.broadcast(SYSTEMS.WAR_ROOM, 'assault_launched', {
+      temporalLadder.broadcast(SYSTEMS.QUANTUM_QUACKERS, 'assault_launched', {
         timestamp: new Date().toISOString(),
         coherence: state.quantumState.coherence,
       });
@@ -241,7 +241,7 @@ export function useQuantumWarRoom() {
         variant: 'destructive',
       });
 
-      temporalLadder.broadcast(SYSTEMS.WAR_ROOM, 'emergency_stop', {
+      temporalLadder.broadcast(SYSTEMS.QUANTUM_QUACKERS, 'emergency_stop', {
         timestamp: new Date().toISOString(),
       });
     } catch (error: any) {

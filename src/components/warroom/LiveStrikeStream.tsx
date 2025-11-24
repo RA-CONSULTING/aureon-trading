@@ -52,9 +52,9 @@ export function LiveStrikeStream() {
                   </Badge>
                 )}
               </div>
-              {event.details && (
+              {event.message && (
                 <div className="text-xs text-muted-foreground truncate">
-                  {event.details}
+                  {event.message}
                 </div>
               )}
             </div>
