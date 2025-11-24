@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "@/components/theme-provider";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
+import HiveMindIntegration from "./pages/HiveMindIntegration";
 
 const queryClient = new QueryClient();
 
@@ -19,6 +20,7 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Index />} />
+            <Route path="/hive-mind" element={<HiveMindIntegration />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

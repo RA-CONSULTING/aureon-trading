@@ -3,7 +3,11 @@
  * Integrates external Nexus feed metrics (quantum coherence, harmonic resonance,
  * schumann resonance proxy, rainbow spectrum, consciousness metric) into AUREON.
  * Provides normalized contributions and composite nexusInfluence boost similar to earthAureonBridge.
+ * 
+ * TEMPORAL LADDER INTEGRATION: Registered as 'nexus-feed' system
  */
+
+import { temporalLadder, SYSTEMS } from './temporalLadder';
 
 export interface RawNexusMetric {
   value: number;
@@ -58,6 +62,9 @@ export class NexusLiveFeedBridge {
 
   constructor(cfg?: Partial<NexusBridgeConfig>) {
     if (cfg) this.config = { ...this.config, ...cfg };
+    
+    // Register with Temporal Ladder
+    temporalLadder.registerSystem(SYSTEMS.NEXUS_FEED);
   }
 
   /** Subscribe to influence updates */
@@ -72,6 +79,10 @@ export class NexusLiveFeedBridge {
       return this.latestInfluence;
     }
     this.lastPoll = now;
+
+    // Send heartbeat to Temporal Ladder
+    const health = this.config.enable ? 1.0 : 0.5;
+    temporalLadder.heartbeat(SYSTEMS.NEXUS_FEED, health);
 
     // If disabled, return neutral influence
     if (!this.config.enable) {
