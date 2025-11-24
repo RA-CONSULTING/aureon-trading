@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useBinanceWebSocket } from '@/hooks/useBinanceWebSocket';
 import { useBinanceCredentials } from '@/hooks/useBinanceCredentials';
+import { useBinanceBalances } from '@/hooks/useBinanceBalances';
 import { 
   TrendingUp, TrendingDown, Activity, Radio, Zap, 
   Waves, DollarSign, BarChart3, Shield, AlertCircle, AlertTriangle, Wifi 
@@ -40,6 +41,7 @@ interface Position {
 export default function QuantumTradingConsole() {
   const { hasCredentials } = useBinanceCredentials();
   const { marketData: liveData, connected } = useBinanceWebSocket(['BTCUSDT', 'ETHUSDT', 'SOLUSDT']);
+  const { accounts, totals, loading: balancesLoading } = useBinanceBalances();
   
   const [marketData, setMarketData] = useState<MarketData[]>([
     { symbol: 'BTC/USDT', price: 43250.50, change24h: 2.34, volume: 28500000000, volatility: 0.042 },
@@ -87,7 +89,25 @@ export default function QuantumTradingConsole() {
   ]);
 
   const [totalPnl, setTotalPnl] = useState(0);
-  const [accountBalance, setAccountBalance] = useState(10250.50);
+  const [accountBalance, setAccountBalance] = useState(0);
+
+  // Update account balance from FIRST account only (all accounts share same wallet)
+  useEffect(() => {
+    if (accounts.length > 0 && liveData) {
+      const firstAccount = accounts[0]; // Use only first account since all share same wallet
+      let totalUSD = 0;
+      
+      // Calculate USD value for each asset
+      Object.entries(firstAccount.balances).forEach(([asset, balance]) => {
+        const symbol = asset + 'USDT';
+        const price = liveData[symbol]?.price || 0;
+        const usdValue = balance.total * price;
+        totalUSD += usdValue;
+      });
+      
+      setAccountBalance(totalUSD);
+    }
+  }, [accounts, liveData]);
 
   useEffect(() => {
     // Update market data from live WebSocket
