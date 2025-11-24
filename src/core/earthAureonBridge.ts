@@ -7,9 +7,36 @@
  */
 
 import type { SimpleEarthStreams } from '../lib/earth-streams';
-import type { EmotionalState } from '../lib/schumann-emotional-mapping';
-import { generateRegionalEmotionalState, generateEmotionalState, SCHUMANN_FREQUENCIES } from '../lib/schumann-emotional-mapping';
+// import type { EmotionalState } from '../lib/schumann-emotional-mapping';
+// import { generateRegionalEmotionalState, generateEmotionalState, SCHUMANN_FREQUENCIES } from '../lib/schumann-emotional-mapping';
 import { temporalLadder, SYSTEMS } from './temporalLadder';
+
+// Temporary inline type until schumann-emotional-mapping is restored
+type EmotionalState = { dominant: string; valence: number; arousal: number; intensity: number };
+const SCHUMANN_FREQUENCIES = { 
+  fundamental: 7.83,
+  second: 14.3,
+  third: 20.8,
+  fourth: 27.3,
+  fifth: 33.8,
+  base: 7.83, 
+  harmonics: [14.3, 20.8, 27.3, 33.8] 
+};
+
+// Temporary stub functions
+const generateRegionalEmotionalState = (regionId: string, lat?: number, lon?: number, freq?: number): EmotionalState => ({
+  dominant: 'neutral',
+  valence: 0.5,
+  arousal: 0.5,
+  intensity: 0.5
+});
+
+const generateEmotionalState = (freq: number, intensity?: number, tags?: string[]): EmotionalState => ({
+  dominant: 'neutral',
+  valence: 0.5,
+  arousal: 0.5,
+  intensity: intensity || 0.5
+});
 
 export interface EarthFieldInfluence {
   schumannCoherence: number;      // 0-1, Schumann resonance stability
