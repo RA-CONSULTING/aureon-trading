@@ -4,7 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { HarmonicSurgeField } from './HarmonicSurgeField';
 import { QuantumPhaseLock } from './QuantumPhaseLock';
-import { FormationEquationDisplay } from './FormationEquationDisplay';
+import FormationEquationDisplay from './FormationEquationDisplay';
 
 export const NexusIntegration: React.FC = () => {
   const [activeNexus, setActiveNexus] = useState('surge');

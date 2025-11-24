@@ -12,9 +12,21 @@ export function classifyMood(v?: number|null, a?: number|null): Mood {
 
 export interface EmotionSample { t: number; f: number; v: number; a: number; }
 export interface EmotionStats24h {
-  count: number; vAvg: number; aAvg: number; fAvg: number;
-  vNow: number|null; aNow: number|null; fNow: number|null;
-  mood: Mood; deltaV: number; deltaA: number; deltaF: number;
+  count: number; 
+  vAvg: number; 
+  aAvg: number; 
+  fAvg: number;
+  vNow: number|null; 
+  aNow: number|null; 
+  fNow: number|null;
+  mood: Mood; 
+  deltaV: number; 
+  deltaA: number; 
+  deltaF: number;
+  // Aliases for compatibility
+  avgValence: number;
+  avgArousal: number;
+  avgFrequency: number;
 }
 
 export function summarize24h(samples: EmotionSample[]): EmotionStats24h {
@@ -31,6 +43,12 @@ export function summarize24h(samples: EmotionSample[]): EmotionStats24h {
     count: last24.length, vAvg, aAvg, fAvg,
     vNow: last?.v ?? null, aNow: last?.a ?? null, fNow: last?.f ?? null,
     mood: classifyMood(vAvg, aAvg),
-    deltaV: avg(w1,'v')-avg(w2,'v'), deltaA: avg(w1,'a')-avg(w2,'a'), deltaF: avg(w1,'f')-avg(w2,'f')
+    deltaV: avg(w1,'v')-avg(w2,'v'), 
+    deltaA: avg(w1,'a')-avg(w2,'a'), 
+    deltaF: avg(w1,'f')-avg(w2,'f'),
+    // Aliases
+    avgValence: vAvg,
+    avgArousal: aAvg,
+    avgFrequency: fAvg
   };
 }
