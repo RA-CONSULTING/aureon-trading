@@ -56,6 +56,18 @@ export interface HarmonicNexusState {
   prismLevel?: number;
 }
 
+// Legacy type alias for backwards compatibility
+export type HNCRegionTick = HarmonicNexusState;
+
+// Surge event type for anomaly detection
+export interface SurgeEvent {
+  timestamp: Date;
+  type: 'positive' | 'negative' | 'neutral';
+  magnitude: number;
+  frequency: number;
+  description: string;
+}
+
 export class HarmonicNexusCore {
   private temporalId: string;
   private sentinelName: string;

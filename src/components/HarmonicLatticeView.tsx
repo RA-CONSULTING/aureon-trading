@@ -12,12 +12,12 @@ interface Props {
 const SCHUMANN_FREQUENCIES = [7.83, 14.3, 20.8, 27.3, 33.8, 39.3, 45.9];
 
 export default function HarmonicLatticeView({ className = '' }: Props) {
-  const { currentEmotion } = useEmotionStream();
+  const { samples, stats } = useEmotionStream('region', 'global');
   
   // Map Schumann frequencies to lattice blobs with emotional weighting
   const latticeBlobs = useMemo(() => {
-    const baseIntensity = 0.3 + (currentEmotion?.arousal || 0) * 0.4;
-    const harmonicShift = (currentEmotion?.valence || 0) * 2; // shift frequencies slightly
+    const baseIntensity = 0.3 + (stats.avgArousal || 0) * 0.4;
+    const harmonicShift = (stats.avgValence || 0) * 2; // shift frequencies slightly
     
     return SCHUMANN_FREQUENCIES.flatMap((freq, i) => {
       const adjustedFreq = freq + harmonicShift * (i + 1);
