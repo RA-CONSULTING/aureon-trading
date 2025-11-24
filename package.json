@@ -10,7 +10,9 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "test:earth": "tsx scripts/testEarthIntegration.ts",
-    "test:nexus": "tsx scripts/testNexusIntegration.ts"
+    "test:nexus": "tsx scripts/testNexusIntegration.ts",
+    "test:paper": "tsx scripts/paperTradeSimulation.ts",
+    "validate:secrets": "tsx scripts/validateSecrets.ts"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
