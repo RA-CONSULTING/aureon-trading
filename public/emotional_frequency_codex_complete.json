@@ -1,0 +1,51 @@
+{
+  "schema_version": "1.2-unified",
+  "purpose": "Unified emotional frequency codex for Auris Symbolic Compiler Layer integration",
+  "integration_notes": [
+    "Designed for seamless integration with symbolic_compiler_layer.json",
+    "Frequencies calibrated for biofield resonance and Schumann harmonics",
+    "Color codes support visual aura field rendering",
+    "Band classifications align with brainwave states"
+  ],
+  "emotional_frequency_codex": [
+    { "emotion": "Shame", "frequency_hz": 20, "color": "#000000", "band": "low", "effect": "Collapse, ego-constriction; closes lattice channels.", "decay": 0.95, "amplitude": 0.3 },
+    { "emotion": "Guilt", "frequency_hz": 30, "color": "#8B4513", "band": "low", "effect": "Heavy pull, karmic feedback loop; weakens prime concordance.", "decay": 0.92, "amplitude": 0.4 },
+    { "emotion": "Fear", "frequency_hz": 100, "color": "#FF0000", "band": "low", "effect": "Survival resonance; contracts aura field.", "decay": 0.88, "amplitude": 0.8 },
+    { "emotion": "Desire", "frequency_hz": 125, "color": "#FF4500", "band": "low", "effect": "Pull toward matter; can distort lattice when imbalanced.", "decay": 0.85, "amplitude": 0.7 },
+    { "emotion": "Anger", "frequency_hz": 150, "color": "#FFA500", "band": "low", "effect": "Activates energy; raw drive; unstable coherence.", "decay": 0.82, "amplitude": 0.9 },
+    { "emotion": "Pride", "frequency_hz": 175, "color": "#DAA520", "band": "low", "effect": "Rigid lattice; brittle alignment; false coherence.", "decay": 0.80, "amplitude": 0.6 },
+    { "emotion": "Courage", "frequency_hz": 200, "color": "#FFFF00", "band": "growth", "effect": "First opening; lattice stabilizer; gateway upwards.", "decay": 0.78, "amplitude": 1.0 },
+    { "emotion": "Neutrality", "frequency_hz": 250, "color": "#FFFFE0", "band": "growth", "effect": "Equilibrium; aura smooths; lattice flows evenly.", "decay": 0.75, "amplitude": 0.8 },
+    { "emotion": "Willingness", "frequency_hz": 310, "color": "#9AFF9A", "band": "growth", "effect": "Readiness to grow; aura elasticity increases.", "decay": 0.72, "amplitude": 0.9 },
+    { "emotion": "Acceptance", "frequency_hz": 350, "color": "#00FF00", "band": "growth", "effect": "Lattice anchor; bio-field becomes permeable.", "decay": 0.70, "amplitude": 1.1 },
+    { "emotion": "Reason", "frequency_hz": 400, "color": "#00FFFF", "band": "heart", "effect": "Mind alignment; harmonics lock with Schumann bands.", "decay": 0.68, "amplitude": 1.0 },
+    { "emotion": "Love", "frequency_hz": 550, "color": "#FF69B4", "band": "heart", "effect": "Core resonance; stabilizes aura; emits coherence.", "decay": 0.65, "amplitude": 1.3 },
+    { "emotion": "Gratitude", "frequency_hz": 528, "color": "#FFD700", "band": "heart", "effect": "DNA harmony; lattice recalibration.", "decay": 0.63, "amplitude": 1.2 },
+    { "emotion": "Joy", "frequency_hz": 540, "color": "#FFD700", "band": "heart", "effect": "Expansive field; aura radius multiplies.", "decay": 0.60, "amplitude": 1.4 },
+    { "emotion": "Peace", "frequency_hz": 600, "color": "#87CEEB", "band": "spirit", "effect": "Stillness; aura glow stabilizes coherence.", "decay": 0.58, "amplitude": 1.1 },
+    { "emotion": "Compassion", "frequency_hz": 620, "color": "#E6E6FA", "band": "spirit", "effect": "Connective; lattice nodes merge smoothly.", "decay": 0.55, "amplitude": 1.2 },
+    { "emotion": "Forgiveness", "frequency_hz": 650, "color": "#9370DB", "band": "spirit", "effect": "Dissolves karmic knots; resets lattice interference.", "decay": 0.52, "amplitude": 1.0 },
+    { "emotion": "Ecstasy", "frequency_hz": 700, "color": "#4B0082", "band": "peak", "effect": "Transcendent aura; merges with prime harmonic.", "decay": 0.50, "amplitude": 1.5 },
+    { "emotion": "Awe", "frequency_hz": 735, "color": "#800080", "band": "peak", "effect": "Opens lattice nexus to multiversal channels.", "decay": 0.48, "amplitude": 1.3 },
+    { "emotion": "Illumination", "frequency_hz": 800, "color": "#FFFFFF", "band": "peak", "effect": "Source band; full rainbow convergence.", "decay": 0.45, "amplitude": 1.6 }
+  ],
+  "compiler_integration": {
+    "tokenization_keywords": [
+      "shame", "guilt", "fear", "desire", "anger", "pride",
+      "courage", "neutrality", "willingness", "acceptance", "reason",
+      "love", "gratitude", "joy", "peace", "compassion", "forgiveness",
+      "ecstasy", "awe", "illumination"
+    ],
+    "harmonic_generation": {
+      "method": "golden_ratio_harmonics",
+      "phi": 1.618033988749895,
+      "harmonic_multipliers": [1.618, 2.618, 4.236]
+    },
+    "synthesis_parameters": {
+      "max_emotions_per_intent": 3,
+      "frequency_blend_mode": "weighted_average",
+      "amplitude_scaling": "logarithmic",
+      "decay_interpolation": "exponential"
+    }
+  }
+}

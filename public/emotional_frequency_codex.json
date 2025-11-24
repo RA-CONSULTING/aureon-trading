@@ -1,0 +1,90 @@
+{
+  "codex_name": "Emotional Frequency Codex",
+  "version": "3.0",
+  "description": "Precise emotional frequency mapping with exact Hz values and spectrum colors",
+  "total_emotions": 18,
+  "frequency_range": "20-800 Hz",
+  "emotions": [
+    {
+      "name": "Shame",
+      "frequency": 20,
+      "color": "#000000",
+      "color_name": "Black",
+      "symbol": "⚫",
+      "level": "survival",
+      "description": "Lowest vibrational state, feelings of unworthiness"
+    },
+    {
+      "name": "Guilt", 
+      "frequency": 30,
+      "color": "#A0522D",
+      "color_name": "Brown",
+      "symbol": "🤎",
+      "level": "survival",
+      "description": "Self-blame and regret patterns"
+    },
+    {
+      "name": "Fear",
+      "frequency": 100,
+      "color": "#FF0000", 
+      "color_name": "Red",
+      "symbol": "🔴",
+      "level": "survival",
+      "description": "Fight-or-flight response activation"
+    },
+    {
+      "name": "Desire",
+      "frequency": 125,
+      "color": "#FF4500",
+      "color_name": "Orange-red", 
+      "symbol": "🟠",
+      "level": "survival",
+      "description": "Craving and attachment states"
+    },
+    {
+      "name": "Anger",
+      "frequency": 150,
+      "color": "#FFA500",
+      "color_name": "Orange",
+      "symbol": "🟠", 
+      "level": "survival",
+      "description": "Reactive emotional energy"
+    },
+    {
+      "name": "Pride",
+      "frequency": 175,
+      "color": "#CD853F",
+      "color_name": "Peru/Earth",
+      "symbol": "🟤",
+      "level": "ego",
+      "description": "Inflated sense of self"
+    },
+    {
+      "name": "Courage",
+      "frequency": 200,
+      "color": "#FFFF00",
+      "color_name": "Yellow",
+      "symbol": "🟡",
+      "level": "growth",
+      "description": "First positive energy level"
+    },
+    {
+      "name": "Neutrality",
+      "frequency": 250,
+      "color": "#F0E68C",
+      "color_name": "Khaki",
+      "symbol": "🤍",
+      "level": "growth", 
+      "description": "Non-attachment and acceptance"
+    },
+    {
+      "name": "Willingness",
+      "frequency": 310,
+      "color": "#ADFF2F",
+      "color_name": "Yellow-green",
+      "symbol": "🟢",
+      "level": "growth",
+      "description": "Openness to change and growth"
+    }
+  ]
+}

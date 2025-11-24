@@ -1,0 +1,15 @@
+{
+  "version": "1.0.0", 
+  "schema": "elder-futhark-second-aett",
+  "description": "Second aett (8 runes) of Elder Futhark - runes 9-16",
+  "runes": [
+    {"id": "hagalaz", "name": "Hagalaz", "meaning": "Hail, disruption, crisis", "lesson": "Accept what breaks; find strength in the storm", "warning": "Resistance to change, victim mentality, chaos", "element": "Water"},
+    {"id": "nauthiz", "name": "Nauthiz", "meaning": "Need, constraint, necessity", "lesson": "Work with limitations; find freedom through discipline", "warning": "Desperation, forcing outcomes, ignoring needs", "element": "Fire"},
+    {"id": "isa", "name": "Isa", "meaning": "Ice, stillness, pause", "lesson": "Rest in the waiting; clarity comes through stillness", "warning": "Stagnation, coldness, emotional freezing", "element": "Water"},
+    {"id": "jera", "name": "Jera", "meaning": "Year, harvest, cycles", "lesson": "Trust the timing; what you plant will return", "warning": "Impatience, forcing harvest, ignoring seasons", "element": "Earth"},
+    {"id": "eihwaz", "name": "Eihwaz", "meaning": "Yew tree, endurance, transformation", "lesson": "Stand firm through change; death leads to rebirth", "warning": "Rigidity, fear of transformation, clinging to old forms", "element": "Earth"},
+    {"id": "perthro", "name": "Perthro", "meaning": "Lot cup, mystery, fate", "lesson": "Trust the unknown; some things unfold in their time", "warning": "Gambling, avoiding responsibility, fatalism", "element": "Water"},
+    {"id": "algiz", "name": "Algiz", "meaning": "Elk, protection, higher self", "lesson": "Connect to divine guidance; protect what matters", "warning": "Paranoia, isolation, spiritual bypassing", "element": "Air"},
+    {"id": "sowilo", "name": "Sowilo", "meaning": "Sun, success, wholeness", "lesson": "Shine your light; integrate all parts of yourself", "warning": "Ego inflation, burning others, false confidence", "element": "Fire"}
+  ]
+}

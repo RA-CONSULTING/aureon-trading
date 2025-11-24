@@ -1,0 +1,72 @@
+{
+  "name": "Auris • Nexus Live",
+  "version": "1.0.0",
+  "description": "Prime Seal–bound, real-time aura + lattice validation with Song of the Spheres and Schumann resonance.",
+
+  "identity": {
+    "default_name": "Gary Leckey",
+    "default_dob": "1991-11-02",
+    "phi": 1.618033988749895,
+    "gaia_hz": 7.83,
+    "t0_hint_hz": 2911.91,
+    "prime_seal": "10-9-1",
+    "lattice_id_format": "Φ·Gaia·{dob}·10:9:1"
+  },
+
+  "paths": {
+    "codex": "auris_codex.json",
+    "compiler_layer": "symbolic_compiler_layer.json",
+    "auris_metrics_csv": "validation/auris_metrics.csv",
+    "aura_features_csv": "validation/aura_features.csv",
+    "control_hints": "validation/control_hints.json",
+    "snapshots_dir": "validation/snapshots",
+    "unity_bindings": "unity/LatticeTimelineBindings.json"
+  },
+
+  "streams": {
+    "lattice_wave": { "format": "float32", "sample_rate": 44100, "channels": 1 },
+    "auris_metrics": { "format": "csv", "path": "@paths.auris_metrics_csv" },
+    "aura_features": { "format": "csv", "path": "@paths.aura_features_csv" }
+  },
+
+  "schumann": {
+    "fundamental_default": 7.83,
+    "harmonics_default": [14.3, 20.8, 27.3, 33.8],
+    "snap_fund": [7.50, 7.83, 8.00],
+    "snap_harm": [14.3, 20.8, 27.3, 33.8],
+    "window_ms": 2048,
+    "overlap": 0.5
+  },
+
+  "song_of_the_spheres": {
+    "enabled": true,
+    "lfo_scale": "astronomical_periods",
+    "planets": {
+      "mercury": { "weight": 0.15, "route": ["phase_bias"] },
+      "venus":   { "weight": 0.18, "route": ["palette_hue","harmonic_weight"] },
+      "earth":   { "weight": 0.20, "route": ["phase_bias","palette_hue"] },
+      "mars":    { "weight": 0.12, "route": ["harmonic_weight"] },
+      "jupiter": { "weight": 0.22, "route": ["phase_bias","surge_gate"] },
+      "saturn":  { "weight": 0.20, "route": ["phase_bias"] }
+    },
+    "synodic_beats": {
+      "jupiter_saturn": { "enabled": true, "weight": 0.35 },
+      "earth_venus":    { "enabled": true, "weight": 0.15 }
+    }
+  },
+
+  "circle_of_fifths": {
+    "base_hz": 7.83,
+    "steps": 12,
+    "ratio": 1.5,
+    "fold_to_band": [6.5, 40.0],
+    "key_to_hue": "cyclic" 
+  },
+
+  "controls": {
+    "gain": { "default": 1.0, "min": 0.2, "max": 3.0, "step": 0.05, "softclip": "tanh" },
+    "fundamental": { "min": 6.5, "max": 9.5, "step": 0.01, "snap": "@schumann.snap_fund" },
+    "harmonics":   { "min": 10.0, "max": 40.0, "step": 0.1,  "snap": "@schumann.snap_harm" },
+    "debounce_ms": 140
+  }
+}

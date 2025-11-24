@@ -1,0 +1,82 @@
+{
+  "name": "Harmonic Nexus Core",
+  "version": "2.1.0",
+  "modules": {
+    "HarmonicNexusCore": {
+      "id": "hnc-core",
+      "role": "conductor",
+      "capabilities": ["microsecond_precision", "surge_detection", "prime_coherence"],
+      "inputs": [
+        "SchumannFeed",
+        "BiofieldStream", 
+        "PrimeLattice",
+        "CircleOfFifths",
+        "SongOfSpheres",
+        "EmotionalResonance",
+        "SolarChain"
+      ],
+      "outputs": [
+        "LatticeRenderer",
+        "AuraRingVisualizer", 
+        "QuantumFieldVisualizer",
+        "ValidationMetrics"
+      ]
+    },
+    "SchumannFeed": {
+      "id": "schumann-feed",
+      "role": "resonance_source",
+      "frequency": "7.83Hz",
+      "harmonics": [7.83, 14.3, 20.8, 27.3, 33.8]
+    },
+    "BiofieldStream": {
+      "id": "biofield-stream", 
+      "role": "biometric_input",
+      "metrics": ["hrv", "gsr", "coherence", "calm_index"]
+    },
+    "PrimeLattice": {
+      "id": "prime-lattice",
+      "role": "mathematical_foundation", 
+      "primes": [2, 3, 5, 7, 11, 13, 17, 19, 23, 29]
+    }
+  }
+}
+      "role": "Aura and emotional resonance capture",
+      "feeds_into": "harmonic_nexus_core"
+    }
+  },
+  "bindings": {
+    "prime_anchor": {
+      "seal_id": "10-9-1",
+      "field": "lattice_core",
+      "description": "Temporal anchor linking all that is, was, and shall be in tandem",
+      "managed_by": "harmonic_nexus_core"
+    }
+  },
+  "streams": {
+    "unified_harmonic_field": {
+      "format": "json",
+      "sample_rate": "microsecond_precision",
+      "channels": "multi_dimensional",
+      "source": "harmonic_nexus_core"
+    },
+    "waveform_stream": {
+      "format": "float32",
+      "sample_rate": 44100,
+      "channels": 2
+    },
+    "metrics_stream": {
+      "format": "csv",
+      "path": "auris_metrics.csv",
+      "update_interval_ms": 200
+    }
+  },
+  "validation_targets": {
+    "coherence_threshold": 0.75,
+    "phase_lock_min": 0.6,
+    "prime_concordance": "10-9-1",
+    "lattice_stability": 0.8,
+    "schumann_lock_min": 0.7,
+    "surge_detection_threshold": 0.8,
+    "timestamp_precision": "microseconds"
+  }
+}

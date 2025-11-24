@@ -1,0 +1,4 @@
+timestamp_utc,Ex,Ey,Bx,By,Bz,gain,qf,station_id,lat,lon,alt,fs_hz,units,channel,calibration_factor,sensor_orientation,clock_source,clock_drift_ppm
+2025-01-27T12:00:00.000Z,-0.0012,0.0034,12.45,-8.67,15.23,1.0,0,GAIA-UK-01,51.4778,-0.0015,45.0,200,V/m|pT,Ex|Ey|Bx|By|Bz,1.0,N/E/Z,GPS,0.001
+2025-01-27T12:00:00.005Z,-0.0015,0.0031,12.48,-8.64,15.26,1.0,0,GAIA-UK-01,51.4778,-0.0015,45.0,200,V/m|pT,Ex|Ey|Bx|By|Bz,1.0,N/E/Z,GPS,0.001
+2025-01-27T12:00:00.010Z,-0.0018,0.0028,12.51,-8.61,15.29,1.0,0,GAIA-UK-01,51.4778,-0.0015,45.0,200,V/m|pT,Ex|Ey|Bx|By|Bz,1.0,N/E/Z,GPS,0.001

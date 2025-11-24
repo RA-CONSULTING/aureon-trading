@@ -1,0 +1,153 @@
+{
+  "version": "1.0.0",
+  "schema": "multiverseal-aura-ruleset",
+  "updated_at_utc": "2025-01-14T00:00:00Z",
+  "globals": {
+    "time_bucket_seconds": 3600,
+    "softmax_temperature": 0.7,
+    "min_confidence": 0.0,
+    "max_confidence": 1.0
+  },
+  "humanize": {
+    "crossroads": {
+      "comfort_vs_growth": "comfort vs. growth",
+      "control_vs_trust": "control vs. trust",
+      "silence_vs_voice": "staying quiet vs. speaking up",
+      "guarding_vs_opening": "guarding the heart vs. opening to love"
+    }
+  },
+  "color_bands": {
+    "names": ["red","orange","yellow","green","blue","indigo","violet"],
+    "affect_weights": {
+      "joy": {"yellow": 0.35, "green": 0.25, "blue": 0.15, "violet": 0.10, "orange": 0.10, "indigo": 0.03, "red": 0.02},
+      "fear": {"red": 0.45, "indigo": 0.15, "orange": 0.10, "yellow": 0.10, "blue": 0.08, "violet": 0.07, "green": 0.05},
+      "anger": {"red": 0.60, "yellow": 0.20, "orange": 0.12, "indigo": 0.04, "blue": 0.02, "violet": 0.01, "green": 0.01},
+      "love": {"green": 0.55, "blue": 0.18, "violet": 0.12, "yellow": 0.07, "orange": 0.05, "red": 0.03},
+      "focus": {"yellow": 0.40, "indigo": 0.25, "blue": 0.15, "red": 0.10, "violet": 0.05, "orange": 0.03, "green": 0.02},
+      "calm": {"blue": 0.42, "green": 0.28, "violet": 0.14, "indigo": 0.08, "yellow": 0.04, "orange": 0.02, "red": 0.02}
+    },
+    "descriptions": {
+      "red": "drive, survival, raw power",
+      "orange": "emotion, creativity, connection",
+      "yellow": "clarity, confidence, will",
+      "green": "healing, compassion, belonging",
+      "blue": "truth, expression, peace",
+      "indigo": "intuition, inner sight",
+      "violet": "meaning, unity, faith"
+    }
+  },
+  "archetypes": {
+    "primary_types": {
+      "Seeker": {
+        "traits": ["curious", "questioning", "exploring", "restless"],
+        "strengths": ["adaptability", "openness", "learning"],
+        "challenges": ["commitment", "grounding", "direction"],
+        "colors": {"indigo": 0.4, "violet": 0.3, "blue": 0.2, "yellow": 0.1}
+      },
+      "Builder": {
+        "traits": ["practical", "methodical", "creating", "manifesting"],
+        "strengths": ["persistence", "structure", "reliability"],
+        "challenges": ["flexibility", "spontaneity", "flow"],
+        "colors": {"yellow": 0.4, "red": 0.3, "orange": 0.2, "green": 0.1}
+      },
+      "Transformer": {
+        "traits": ["changing", "healing", "catalyzing", "evolving"],
+        "strengths": ["adaptability", "healing", "insight"],
+        "challenges": ["stability", "consistency", "patience"],
+        "colors": {"green": 0.4, "violet": 0.3, "blue": 0.2, "indigo": 0.1}
+      },
+      "Guardian": {
+        "traits": ["protecting", "nurturing", "serving", "stabilizing"],
+        "strengths": ["loyalty", "compassion", "strength"],
+        "challenges": ["boundaries", "self-care", "letting go"],
+        "colors": {"green": 0.4, "blue": 0.3, "red": 0.2, "yellow": 0.1}
+      },
+      "Mystic": {
+        "traits": ["intuitive", "spiritual", "visionary", "transcendent"],
+        "strengths": ["wisdom", "intuition", "connection"],
+        "challenges": ["grounding", "practicality", "communication"],
+        "colors": {"violet": 0.4, "indigo": 0.3, "blue": 0.2, "green": 0.1}
+      },
+      "Warrior": {
+        "traits": ["courageous", "decisive", "protective", "strong"],
+        "strengths": ["courage", "leadership", "determination"],
+        "challenges": ["gentleness", "patience", "surrender"],
+        "colors": {"red": 0.4, "yellow": 0.3, "orange": 0.2, "blue": 0.1}
+      }
+    }
+  },
+  "practices": {
+    "types": {
+      "grounding": {
+        "description": "earth connection, body awareness, stability",
+        "methods": ["walking barefoot", "gardening", "breathwork", "yoga"]
+      },
+      "meditation": {
+        "description": "inner stillness, awareness, presence",
+        "methods": ["sitting meditation", "mindfulness", "contemplation"]
+      },
+      "devotion": {
+        "description": "heart opening, gratitude, service to others",
+        "methods": ["prayer", "chanting", "loving-kindness", "service"]
+      },
+      "movement": {
+        "description": "energy flow, embodiment, vitality",
+        "methods": ["dance", "exercise", "martial arts", "stretching"]
+      },
+      "ritual": {
+        "description": "sacred ceremony, intention setting, transformation",
+        "methods": ["ceremony", "altar work", "seasonal celebrations"]
+      },
+      "dreamwork": {
+        "description": "subconscious exploration, inner wisdom, symbols",
+        "methods": ["dream journaling", "lucid dreaming", "symbol work"]
+      },
+      "service": {
+        "description": "giving back, community, purpose beyond self",
+        "methods": ["volunteering", "mentoring", "environmental action"]
+      },
+      "timing": {
+        "description": "natural rhythms, cosmic cycles, right action",
+        "methods": ["lunar cycles", "seasonal awareness", "astrology"]
+      }
+    }
+  },
+  "timeline_drivers": {
+    "aligned": {
+      "high_coherence": "chakras in harmony",
+      "strong_practices": "consistent spiritual practice",
+      "clear_archetype": "living authentic nature",
+      "balanced_colors": "emotional equilibrium"
+    },
+    "middle": {
+      "mixed_signals": "conflicting energies",
+      "partial_practice": "inconsistent effort",
+      "archetype_tension": "identity confusion",
+      "color_imbalance": "emotional fluctuation"
+    },
+    "resistant": {
+      "low_coherence": "chakras blocked",
+      "avoiding_practice": "resistance to growth",
+      "shadow_archetype": "living in shadow",
+      "color_dominance": "emotional extremes"
+    }
+  },
+  "crossroad_triggers": {
+    "comfort_vs_growth": {
+      "indicators": ["low_solar", "high_root", "fear_dominant"],
+      "description": "choosing safety vs expansion"
+    },
+    "control_vs_trust": {
+      "indicators": ["high_solar", "low_heart", "anger_present"],
+      "description": "holding tight vs letting go"
+    },
+    "silence_vs_voice": {
+      "indicators": ["low_throat", "high_indigo", "fear_of_expression"],
+      "description": "staying hidden vs speaking truth"
+    },
+    "guarding_vs_opening": {
+      "indicators": ["low_heart", "high_root", "love_blocked"],
+      "description": "protecting heart vs vulnerability"
+    }
+  }
+}

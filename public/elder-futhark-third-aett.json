@@ -1,0 +1,15 @@
+{
+  "version": "1.0.0",
+  "schema": "elder-futhark-third-aett", 
+  "description": "Third aett (8 runes) of Elder Futhark - runes 17-24",
+  "runes": [
+    {"id": "tiwaz", "name": "Tiwaz", "meaning": "Warrior, justice, sacrifice", "lesson": "Fight for what matters; lead with honor and courage", "warning": "Aggression, injustice, martyrdom", "element": "Air"},
+    {"id": "berkano", "name": "Berkano", "meaning": "Birch, growth, nurturing", "lesson": "Tend new life; create conditions for flourishing", "warning": "Overprotection, stagnant growth, smothering", "element": "Earth"},
+    {"id": "ehwaz", "name": "Ehwaz", "meaning": "Horse, partnership, movement", "lesson": "Work in harmony; trust the relationship to carry you forward", "warning": "Control issues, imbalance, forcing partnership", "element": "Earth"},
+    {"id": "mannaz", "name": "Mannaz", "meaning": "Human, community, self", "lesson": "Know yourself; serve the collective while honoring individuality", "warning": "Isolation, conformity, losing authentic self", "element": "Air"},
+    {"id": "laguz", "name": "Laguz", "meaning": "Lake, flow, intuition", "lesson": "Flow with feeling; trust your inner knowing", "warning": "Emotional overwhelm, illusion, avoiding reality", "element": "Water"},
+    {"id": "ingwaz", "name": "Ingwaz", "meaning": "Seed, potential, fertility", "lesson": "Plant with intention; nurture what wants to grow", "warning": "Wasted potential, forcing growth, impatience", "element": "Earth"},
+    {"id": "dagaz", "name": "Dagaz", "meaning": "Dawn, breakthrough, awakening", "lesson": "Step into new light; embrace the transformation", "warning": "False dawn, spiritual bypassing, avoiding integration", "element": "Air"},
+    {"id": "othala", "name": "Othala", "meaning": "Heritage, home, legacy", "lesson": "Honor your roots; build something lasting for those who follow", "warning": "Nationalism, clinging to past, excluding others", "element": "Earth"}
+  ]
+}

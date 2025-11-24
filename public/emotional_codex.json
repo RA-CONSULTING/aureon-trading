@@ -1,0 +1,147 @@
+{
+  "codex_name": "Emotional Frequency Codex",
+  "version": "1.0",
+  "description": "Unified emotional → frequency → symbol mapping for Auris Symbolic Compiler",
+  "entries": [
+    {
+      "emotion": "Shame",
+      "frequency_hz": 20,
+      "color": "Deep Gray/Black",
+      "symbol": "⬛",
+      "role": "Collapse, ego-constriction; closes lattice channels"
+    },
+    {
+      "emotion": "Guilt",
+      "frequency_hz": 30,
+      "color": "Dull Red",
+      "symbol": "🩸",
+      "role": "Karmic feedback loop; weakens prime concordance"
+    },
+    {
+      "emotion": "Fear",
+      "frequency_hz": 100,
+      "color": "Red",
+      "symbol": "🔴",
+      "role": "Survival resonance; contracts aura"
+    },
+    {
+      "emotion": "Desire",
+      "frequency_hz": 125,
+      "color": "Red-Orange",
+      "symbol": "🔥",
+      "role": "Pull toward matter; distorts lattice when imbalanced"
+    },
+    {
+      "emotion": "Anger",
+      "frequency_hz": 150,
+      "color": "Orange",
+      "symbol": "⚡",
+      "role": "Activates energy; unstable coherence"
+    },
+    {
+      "emotion": "Pride",
+      "frequency_hz": 175,
+      "color": "Yellow-Brown",
+      "symbol": "🦁",
+      "role": "Rigid lattice; brittle alignment"
+    },
+    {
+      "emotion": "Courage",
+      "frequency_hz": 200,
+      "color": "Yellow",
+      "symbol": "🌟",
+      "role": "Gateway upwards; stabilizer"
+    },
+    {
+      "emotion": "Neutrality",
+      "frequency_hz": 250,
+      "color": "Light Yellow",
+      "symbol": "⚖️",
+      "role": "Equilibrium; smooth aura"
+    },
+    {
+      "emotion": "Willingness",
+      "frequency_hz": 310,
+      "color": "Green-Yellow",
+      "symbol": "🌱",
+      "role": "Readiness to grow; elastic aura"
+    },
+    {
+      "emotion": "Acceptance",
+      "frequency_hz": 350,
+      "color": "Green",
+      "symbol": "🍃",
+      "role": "Lattice anchor; permeability"
+    },
+    {
+      "emotion": "Reason",
+      "frequency_hz": 400,
+      "color": "Blue-Green",
+      "symbol": "🔷",
+      "role": "Mind alignment; Schumann harmonic lock"
+    },
+    {
+      "emotion": "Love",
+      "frequency_hz": 550,
+      "color": "Emerald / Pink",
+      "symbol": "💖",
+      "role": "Core resonance; coherence outward"
+    },
+    {
+      "emotion": "Gratitude",
+      "frequency_hz": 528,
+      "color": "Golden Green",
+      "symbol": "💚",
+      "role": "Repair tone; DNA harmony"
+    },
+    {
+      "emotion": "Joy",
+      "frequency_hz": 540,
+      "color": "Yellow-Gold",
+      "symbol": "🌞",
+      "role": "Expansive aura field"
+    },
+    {
+      "emotion": "Peace",
+      "frequency_hz": 600,
+      "color": "Sky Blue",
+      "symbol": "🕊️",
+      "role": "Stillness; stabilizes Schumann coherence"
+    },
+    {
+      "emotion": "Compassion",
+      "frequency_hz": 620,
+      "color": "Rose-Gold",
+      "symbol": "🌸",
+      "role": "Connective; merges lattice nodes"
+    },
+    {
+      "emotion": "Forgiveness",
+      "frequency_hz": 650,
+      "color": "Soft Violet",
+      "symbol": "💜",
+      "role": "Dissolves karmic knots"
+    },
+    {
+      "emotion": "Ecstasy",
+      "frequency_hz": 700,
+      "color": "Indigo",
+      "symbol": "🌌",
+      "role": "Transcendent aura; merges with prime harmonic"
+    },
+    {
+      "emotion": "Awe",
+      "frequency_hz": 735,
+      "color": "Violet",
+      "symbol": "👁️",
+      "role": "Opens nexus to multiversal channels"
+    },
+    {
+      "emotion": "Illumination",
+      "frequency_hz": 800,
+      "color": "White / Rainbow",
+      "symbol": "🌈",
+      "role": "Full rainbow convergence; Golden Spark ignition"
+    }
+  ]
+}

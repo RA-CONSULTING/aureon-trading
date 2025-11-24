@@ -1,0 +1,29 @@
+{
+  "lattice_id": "Φ·R_Gaia ^ 2911.91 ⊕ (10:9:1)",
+  "intent": "Peace Joy Love",
+  "packet_hz": [7.83, 9.592, 11.130, 12.599, 12.920, 15.269],
+  "amplitude_gain": 1.0,
+  "seal_config": {
+    "unity_weight": 10,
+    "flow_weight": 9,
+    "anchor_weight": 1,
+    "observer": "Gary Leckey",
+    "seal_lock": true
+  },
+  "markers": [
+    {"t":0.0,"name":"PRIME_LOCK","phase":0.0,"coherence":0.945},
+    {"t":5.0,"name":"SURGE_START","phase":0.25,"coherence":0.967},
+    {"t":15.0,"name":"HARMONIC_PEAK","phase":0.75,"coherence":0.989},
+    {"t":30.0,"name":"UNITY_SYNC","phase":1.5,"coherence":0.998},
+    {"t":45.0,"name":"ANCHOR_HOLD","phase":2.25,"coherence":0.923},
+    {"t":60.0,"name":"FLOW_CYCLE","phase":3.0,"coherence":0.856}
+  ],
+  "processing": {
+    "fs_hz": 200,
+    "window_seconds": 60,
+    "overlap": 0.5,
+    "calibration_applied": true,
+    "clock_sync": "GPS",
+    "quality_validated": true
+  }
+}

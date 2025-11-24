@@ -9,7 +9,8 @@
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
     "preview": "vite preview",
-    "test:earth": "tsx scripts/testEarthIntegration.ts"
+    "test:earth": "tsx scripts/testEarthIntegration.ts",
+    "test:nexus": "tsx scripts/testNexusIntegration.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",

@@ -1,0 +1,64 @@
+{
+  "major_arcana": [
+    {
+      "id": "fool",
+      "name": "The Fool",
+      "number": 0,
+      "arcana": "major",
+      "element": "Air",
+      "upright": "New beginnings, innocence, spontaneity, free spirit",
+      "reversed": "Recklessness, taken advantage of, inconsideration",
+      "lesson": "Trust the journey and embrace new experiences with open heart",
+      "warning": "Beware of naivety and impulsive decisions without consideration",
+      "keywords": ["beginnings", "trust", "adventure", "potential"]
+    },
+    {
+      "id": "magician",
+      "name": "The Magician",
+      "number": 1,
+      "arcana": "major",
+      "element": "Air",
+      "upright": "Manifestation, resourcefulness, power, inspired action",
+      "reversed": "Manipulation, poor planning, untapped talents",
+      "lesson": "You have all the tools needed to create your reality",
+      "warning": "Power without wisdom leads to manipulation and harm",
+      "keywords": ["manifestation", "willpower", "creation", "focus"]
+    },
+    {
+      "id": "high_priestess",
+      "name": "The High Priestess",
+      "number": 2,
+      "arcana": "major",
+      "element": "Water",
+      "upright": "Intuition, sacred knowledge, divine feminine, subconscious",
+      "reversed": "Secrets, disconnected from intuition, withdrawal",
+      "lesson": "Listen to your inner wisdom and trust your intuitive knowing",
+      "warning": "Ignoring intuition leads to poor decisions and disconnection",
+      "keywords": ["intuition", "mystery", "wisdom", "inner knowing"]
+    },
+    {
+      "id": "empress",
+      "name": "The Empress",
+      "number": 3,
+      "arcana": "major",
+      "element": "Earth",
+      "upright": "Femininity, beauty, nature, nurturing, abundance",
+      "reversed": "Creative block, dependence on others, smothering",
+      "lesson": "Nurture yourself and others; create beauty and abundance",
+      "warning": "Overprotection and dependence stifle growth and creativity",
+      "keywords": ["nurturing", "abundance", "creativity", "fertility"]
+    },
+    {
+      "id": "emperor",
+      "name": "The Emperor",
+      "number": 4,
+      "arcana": "major",
+      "element": "Fire",
+      "upright": "Authority, establishment, structure, father figure",
+      "reversed": "Tyranny, rigidity, coldness, domination",
+      "lesson": "Lead with wisdom and create stable foundations for growth",
+      "warning": "Rigid control and domination destroy trust and creativity",
+      "keywords": ["authority", "structure", "leadership", "stability"]
+    }
+  ]
+}

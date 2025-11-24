@@ -1,0 +1,67 @@
+{
+  "name": "Auris Codex — Live Harmonic Nexus",
+  "version": "1.1.0",
+  "owner": "Prime Sentinel (Gary Leckey, 02111991)",
+  "lattice_id": {
+    "phi": 1.61803398875,
+    "gaia_baseline_hz": 7.83,
+    "t0_date": "1991-11-02",
+    "t0_harmonic_key_hz": 2911.91,
+    "law_10_9_1": [10, 9, 1],
+    "seal": "((phi*gaia)^t0) XOR (10:9:1)"
+  },
+
+  "schemas": {
+    "timeseries": {
+      "required": ["ts", "value", "channel", "unit"],
+      "ts": "ISO-8601 UTC",
+      "value": "number",
+      "channel": "string",
+      "unit": "string",
+      "meta": "object"
+    },
+    "frame": {
+      "required": ["start", "end", "sample_rate_hz", "features"],
+      "features": {
+        "rms": "float",
+        "spectral_centroid_hz": "float",
+        "bandpowers": "object (band->float)",
+        "coherence_pairs": "object ([ch_i,ch_j]->float)",
+        "q_factor": "float"
+      }
+    }
+  },
+
+  "streams": {
+    "earth_live": {
+      "description": "Realtime/near-realtime geophysical streams",
+      "channels": {
+        "schumann_mode1": { "hz_center": 7.83, "bandwidth": 0.5, "units": "pT", "musical_key": "C" },
+        "schumann_mode2": { "hz_center": 14.3, "bandwidth": 0.7, "units": "pT", "musical_key": "G" },
+        "schumann_mode3": { "hz_center": 20.8, "bandwidth": 0.9, "units": "pT", "musical_key": "D" },
+        "solar_wind": { "hz_range": [0.001, 0.1], "units": "nT", "musical_key": "F" },
+        "geomagnetic": { "hz_range": [0.0001, 1.0], "units": "nT", "musical_key": "A" },
+        "seismic_p": { "hz_range": [0.01, 10], "units": "m/s²", "musical_key": "E" }
+      }
+    }
+  },
+
+  "validation": {
+    "coherence_threshold": 0.75,
+    "phase_lock_window_s": 300,
+    "harmonic_deviation_max": 0.05,
+    "live_metrics": [
+      "field_alignment_percent",
+      "harmonic_coherence_index",
+      "phase_lock_stability",
+      "resonance_amplitude_db"
+    ]
+  },
+
+  "measurement_formulas": {
+    "field_alignment": "sum(cos(phase_diff[i,j])) / n_pairs",
+    "coherence_index": "sqrt(sum(coherence[band]²) / n_bands)",
+    "phase_stability": "1 - std(unwrap(phase)) / π",
+    "resonance_q": "f_center / bandwidth_3db"
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "codex_name": "Emotional Spectrum Tree",
+  "version": "2.0",
+  "description": "Full spectrum tree of emotional states with bands, branches, and frequencies",
+  "structure": {
+    "roots": "Survival Band (20-150 Hz)",
+    "trunk": "Growth Band (200-400 Hz)", 
+    "branches": "Heart Band (400-600 Hz)",
+    "crown": "High Spirit Band (600-700 Hz)",
+    "radiance": "Transcendent Peak (700-1000+ Hz)"
+  },
+  "bands": {
+    "survival": {
+      "name": "Low Survival Band",
+      "range": "20-150 Hz",
+      "symbol": "🜃",
+      "color_base": "red-black",
+      "emotions": [
+        {"name": "Shame", "freq": 25, "range": "20-30", "branches": ["humiliation", "worthlessness", "self-contempt"], "color": "#2D1B1B"},
+        {"name": "Guilt", "freq": 40, "range": "30-50", "branches": ["remorse", "blame", "regret", "unworthiness"], "color": "#4A2C2A"},
+        {"name": "Apathy", "freq": 62, "range": "50-75", "branches": ["despair", "victimhood", "hopelessness"], "color": "#5D3A2F"},
+        {"name": "Grief", "freq": 87, "range": "75-100", "branches": ["sadness", "loss", "longing", "loneliness"], "color": "#3D2B4A"},
+        {"name": "Fear", "freq": 112, "range": "100-125", "branches": ["anxiety", "worry", "insecurity", "panic"], "color": "#4A5D6B"},
+        {"name": "Desire", "freq": 137, "range": "125-150", "branches": ["craving", "addiction", "obsession"], "color": "#B85C3E"},
+        {"name": "Anger", "freq": 150, "range": "150", "branches": ["frustration", "hate", "jealousy", "rage"], "color": "#D2423C"}
+      ]
+    },
+    "growth": {
+      "name": "Growth Band", 
+      "range": "200-400 Hz",
+      "symbol": "🜁",
+      "color_base": "orange-yellow",
+      "emotions": [
+        {"name": "Courage", "freq": 225, "range": "200-250", "branches": ["determination", "resilience", "daring"], "color": "#D2691E"},
+        {"name": "Neutrality", "freq": 275, "range": "250-300", "branches": ["calm acceptance", "trust in flow"], "color": "#DAA520"},
+        {"name": "Willingness", "freq": 325, "range": "300-350", "branches": ["optimism", "readiness", "commitment"], "color": "#FFD700"},
+        {"name": "Acceptance", "freq": 375, "range": "350-400", "branches": ["forgiveness", "openness", "harmony"], "color": "#ADFF2F"}
+      ]
+    }
+  }
+}

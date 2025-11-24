@@ -1,0 +1,108 @@
+{
+  "deck": {
+    "name": "Angel Answers Oracle Cards",
+    "authors": [
+      "Radleigh Valentine",
+      "Doreen Virtue (original edition)"
+    ],
+    "total_cards": 44,
+    "categories": {
+      "yes_no": {
+        "border_color": "blue",
+        "count": 9
+      },
+      "timing": {
+        "border_color": "gold",
+        "count": 9
+      },
+      "angel_message": {
+        "border_color": "purple",
+        "count": 26
+      }
+    },
+    "generated_at": "2025-09-01T22:08:34.170013Z",
+    "schema_version": "1.0.0"
+  },
+  "cards": [
+    {
+      "name": "Yes",
+      "category": "yes_no",
+      "border_color": "blue",
+      "yes_no_value": "yes",
+      "oracle_summary": "Direct affirmative answer. Proceed; outcome favorable.",
+      "nexus_mapping": {
+        "op_type": "binary",
+        "signal": "affirm",
+        "effect": "activate_path"
+      },
+      "tags": [
+        "affirmation",
+        "proceed"
+      ]
+    },
+    {
+      "name": "Yes!",
+      "category": "yes_no",
+      "border_color": "blue",
+      "yes_no_value": "strong_yes",
+      "oracle_summary": "Resounding YES. Stop searching alternatives and move forward confidently.",
+      "nexus_mapping": {
+        "op_type": "binary",
+        "signal": "affirm_strong",
+        "effect": "open_gateway"
+      },
+      "tags": [
+        "greenlight",
+        "commit"
+      ]
+    },
+    {
+      "name": "No",
+      "category": "yes_no",
+      "border_color": "blue",
+      "yes_no_value": "no",
+      "oracle_summary": "Direct negative or 'not at this time.' Consider follow-up question.",
+      "nexus_mapping": {
+        "op_type": "binary",
+        "signal": "negate",
+        "effect": "halt_path"
+      },
+      "tags": [
+        "decline",
+        "pause"
+      ]
+    },
+    {
+      "name": "No!",
+      "category": "yes_no",
+      "border_color": "blue",
+      "yes_no_value": "strong_no",
+      "oracle_summary": "Firm NO. Clear stop. Trust that a better alignment exists.",
+      "nexus_mapping": {
+        "op_type": "binary",
+        "signal": "negate_strong",
+        "effect": "hard_stop"
+      },
+      "tags": [
+        "redlight",
+        "stop"
+      ]
+    },
+    {
+      "name": "Unlikely",
+      "category": "yes_no",
+      "border_color": "blue",
+      "yes_no_value": "probably_no",
+      "oracle_summary": "Outcome probably won't occur as imagined; stay open to alternatives.",
+      "nexus_mapping": {
+        "op_type": "probabilistic",
+        "probability": 0.2,
+        "effect": "reframe_goal"
+      },
+      "tags": [
+        "reframe",
+        "alternatives"
+      ]
+    }
+  ]
+}

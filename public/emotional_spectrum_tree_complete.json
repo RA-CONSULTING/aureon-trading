@@ -1,0 +1,37 @@
+{
+  "heart": {
+    "name": "Heart Band",
+    "range": "400-600 Hz", 
+    "symbol": "🜂",
+    "color_base": "green-pink",
+    "emotions": [
+      {"name": "Reason", "freq": 425, "range": "400-450", "branches": ["clarity", "insight", "curiosity"], "color": "#32CD32"},
+      {"name": "Trust", "freq": 475, "range": "450-500", "branches": ["safety", "surrender", "loyalty"], "color": "#00C851"},
+      {"name": "Love", "freq": 525, "range": "500-550", "branches": ["compassion", "tenderness", "intimacy"], "color": "#FF69B4"},
+      {"name": "Joy", "freq": 575, "range": "550-600", "branches": ["delight", "gratitude", "bliss"], "color": "#FFB6C1"}
+    ]
+  },
+  "spirit": {
+    "name": "High Spirit Band",
+    "range": "600-700 Hz",
+    "symbol": "🜄", 
+    "color_base": "blue-violet",
+    "emotions": [
+      {"name": "Peace", "freq": 625, "range": "600-650", "branches": ["serenity", "stillness", "balance"], "color": "#40E0D0"},
+      {"name": "Reverence", "freq": 662, "range": "650-675", "branches": ["devotion", "sacredness", "awe"], "color": "#4B0082"},
+      {"name": "Compassion", "freq": 682, "range": "675-690", "branches": ["mercy", "empathy", "selflessness"], "color": "#8A2BE2"},
+      {"name": "Ecstasy", "freq": 695, "range": "690-700", "branches": ["rapture", "mystical joy"], "color": "#9370DB"}
+    ]
+  },
+  "transcendent": {
+    "name": "Transcendent Peak",
+    "range": "700-1000+ Hz",
+    "symbol": "✨",
+    "color_base": "white-rainbow",
+    "emotions": [
+      {"name": "Illumination", "freq": 750, "range": "700-800", "branches": ["higher knowing", "awakening"], "color": "#FFD700"},
+      {"name": "Unity", "freq": 850, "range": "800-900", "branches": ["oneness", "Christ-consciousness", "Source-link"], "color": "#F8F8FF"},
+      {"name": "Non-duality", "freq": 950, "range": "900-1000", "branches": ["boundlessness", "pure being"], "color": "#FFFFFF"}
+    ]
+  }
+}

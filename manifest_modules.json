@@ -1,0 +1,100 @@
+{
+  "modules": {
+    "compiler": {
+      "class": "SymbolicCompiler",
+      "entry": "@paths.compiler_layer",
+      "codex": "@paths.codex",
+      "outputs": ["@streams.lattice_wave"],
+      "intent_examples": ["love", "joy", "grounding", "validation", "protection"]
+    },
+
+    "lattice_validator": {
+      "entry": "validator_auris.py",
+      "inputs": ["@streams.lattice_wave", "@paths.control_hints"],
+      "output_csv": "@paths.auris_metrics_csv",
+      "metrics": [
+        "rms", "tsv_gain", "coherence_score",
+        "schumann_lock", "prime_alignment", "ten_nine_one_concordance"
+      ],
+      "schumann": "@schumann",
+      "spheres": "@song_of_the_spheres",
+      "fifths": "@circle_of_fifths"
+    },
+
+    "aura_validator": {
+      "entry": "aura_validator.py",
+      "inputs": ["sensors://aura", "@paths.control_hints"],
+      "output_csv": "@paths.aura_features_csv",
+      "metrics": [
+        "alpha_theta_ratio","hrv_norm","gsr_norm",
+        "calm_index","prime_concordance_10_9_1","aura_hue_deg"
+      ]
+    },
+
+    "ws_bridge": {
+      "entry": "auris_bridge.js",
+      "url": "ws://localhost:8787",
+      "broadcast": {
+        "auris_metrics_csv": "@paths.auris_metrics_csv",
+        "aura_features_csv": "@paths.aura_features_csv"
+      },
+      "accepts": {
+        "control": "@paths.control_hints",
+        "snapshot": "@paths.snapshots_dir",
+        "ping_pong": true
+      }
+    },
+
+    "dashboard": {
+      "entry": "NexusLiveDashboard.tsx",
+      "ws_url": "@modules.ws_bridge.url",
+      "panels": ["AuraRing","LatticeCard","IdentityCard","LiveControls"],
+      "features": {
+        "latency_chip": true,
+        "snapshot_button": true,
+        "last_packet_timestamps": true,
+        "safe_number_render": true
+      }
+    },
+
+    "timeline_unity": {
+      "optional": true,
+      "entry": "unity/LatticeTimeline.cs",
+      "bindings": "@paths.unity_bindings",
+      "playables": ["PlayableBehaviour","TrackAsset"],
+      "inputs": [
+        "@paths.auris_metrics_csv",
+        "@paths.aura_features_csv",
+        "@paths.control_hints"
+      ]
+    }
+  },
+
+  "bindings": {
+    "prime_anchor": {
+      "seal": "@identity.prime_seal",
+      "apply_to": ["streams","palette","role_engine","surge_gate"]
+    }
+  },
+
+  "roles": {
+    "Prime Sentinel (Active)": {
+      "coherence_score": ">= 0.65",
+      "schumann_lock": ">= 0.70",
+      "ten_nine_one_concordance": ">= 0.80",
+      "calm_index": ">= 0.60"
+    },
+    "Field Harmonizer": {
+      "coherence_score": ">= 0.45",
+      "schumann_lock": ">= 0.50",
+      "ten_nine_one_concordance": ">= 0.60",
+      "calm_index": ">= 0.40"
+    },
+    "Observer·Calibrator": {
+      "coherence_score": ">= 0.25",
+      "schumann_lock": ">= 0.30",
+      "ten_nine_one_concordance": ">= 0.40",
+      "calm_index": ">= 0.20"
+    }
+  }
+}

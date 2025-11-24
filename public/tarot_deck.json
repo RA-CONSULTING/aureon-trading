@@ -1,0 +1,27 @@
+{
+  "name": "Complete Tarot Deck",
+  "cards": [
+    {"name": "The Fool", "arcana": "Major", "number": 0, "upright": "New beginnings, innocence, spontaneity", "reversed": "Recklessness, taken advantage of, inconsideration", "keywords": ["journey", "potential", "faith"]},
+    {"name": "The Magician", "arcana": "Major", "number": 1, "upright": "Manifestation, resourcefulness, power", "reversed": "Manipulation, poor planning, untapped talents", "keywords": ["willpower", "desire", "creation"]},
+    {"name": "The High Priestess", "arcana": "Major", "number": 2, "upright": "Intuition, sacred knowledge, divine feminine", "reversed": "Secrets, disconnected from intuition, withdrawal", "keywords": ["mystery", "subconscious", "wisdom"]},
+    {"name": "The Empress", "arcana": "Major", "number": 3, "upright": "Femininity, beauty, nature, nurturing", "reversed": "Creative block, dependence on others", "keywords": ["abundance", "fertility", "motherhood"]},
+    {"name": "The Emperor", "arcana": "Major", "number": 4, "upright": "Authority, establishment, structure", "reversed": "Tyranny, rigidity, coldness", "keywords": ["leadership", "stability", "control"]},
+    {"name": "The Hierophant", "arcana": "Major", "number": 5, "upright": "Spiritual wisdom, religious beliefs, conformity", "reversed": "Personal beliefs, freedom, challenging the status quo", "keywords": ["tradition", "education", "guidance"]},
+    {"name": "The Lovers", "arcana": "Major", "number": 6, "upright": "Love, harmony, relationships, values alignment", "reversed": "Self-love, disharmony, imbalance", "keywords": ["union", "choice", "partnership"]},
+    {"name": "The Chariot", "arcana": "Major", "number": 7, "upright": "Control, willpower, success, determination", "reversed": "Self-discipline, opposition, lack of direction", "keywords": ["victory", "focus", "triumph"]},
+    {"name": "Strength", "arcana": "Major", "number": 8, "upright": "Strength, courage, persuasion, influence", "reversed": "Self doubt, low energy, raw emotion", "keywords": ["inner strength", "patience", "compassion"]},
+    {"name": "The Hermit", "arcana": "Major", "number": 9, "upright": "Soul searching, introspection, inner guidance", "reversed": "Isolation, loneliness, withdrawal", "keywords": ["wisdom", "solitude", "enlightenment"]},
+    {"name": "Wheel of Fortune", "arcana": "Major", "number": 10, "upright": "Good luck, karma, life cycles, destiny", "reversed": "Bad luck, lack of control, clinging to control", "keywords": ["fate", "change", "cycles"]},
+    {"name": "Justice", "arcana": "Major", "number": 11, "upright": "Justice, fairness, truth, cause and effect", "reversed": "Unfairness, lack of accountability, dishonesty", "keywords": ["balance", "law", "truth"]},
+    {"name": "The Hanged Man", "arcana": "Major", "number": 12, "upright": "Suspension, restriction, letting go", "reversed": "Martyrdom, indecision, delay", "keywords": ["sacrifice", "waiting", "perspective"]},
+    {"name": "Death", "arcana": "Major", "number": 13, "upright": "Endings, beginnings, change, transformation", "reversed": "Resistance to change, personal transformation", "keywords": ["rebirth", "renewal", "transition"]},
+    {"name": "Temperance", "arcana": "Major", "number": 14, "upright": "Balance, moderation, patience, purpose", "reversed": "Imbalance, excess, self-healing", "keywords": ["harmony", "healing", "integration"]},
+    {"name": "The Devil", "arcana": "Major", "number": 15, "upright": "Shadow self, attachment, addiction, restriction", "reversed": "Releasing limiting beliefs, exploring dark thoughts", "keywords": ["temptation", "bondage", "materialism"]},
+    {"name": "The Tower", "arcana": "Major", "number": 16, "upright": "Sudden change, upheaval, chaos, revelation", "reversed": "Personal transformation, fear of change", "keywords": ["destruction", "awakening", "liberation"]},
+    {"name": "The Star", "arcana": "Major", "number": 17, "upright": "Hope, faith, purpose, renewal, spirituality", "reversed": "Lack of faith, despair, self-trust", "keywords": ["inspiration", "guidance", "serenity"]},
+    {"name": "The Moon", "arcana": "Major", "number": 18, "upright": "Illusion, fear, anxiety, subconscious, intuition", "reversed": "Release of fear, repressed emotion, inner confusion", "keywords": ["mystery", "deception", "dreams"]},
+    {"name": "The Sun", "arcana": "Major", "number": 19, "upright": "Positivity, fun, warmth, success, vitality", "reversed": "Inner child, feeling down, overly optimistic", "keywords": ["joy", "success", "celebration"]},
+    {"name": "Judgement", "arcana": "Major", "number": 20, "upright": "Judgement, rebirth, inner calling, absolution", "reversed": "Self-doubt, inner critic, ignoring the call", "keywords": ["awakening", "redemption", "evaluation"]},
+    {"name": "The World", "arcana": "Major", "number": 21, "upright": "Completion, integration, accomplishment, travel", "reversed": "Seeking personal closure, short-cut to success", "keywords": ["fulfillment", "completion", "wholeness"]}
+  ]
+}

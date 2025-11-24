@@ -1,0 +1,15 @@
+{
+  "version": "1.0.0",
+  "schema": "elder-futhark-complete",
+  "description": "Complete 24-rune Elder Futhark set for aura reading integration",
+  "runes": [
+    {"id": "fehu", "name": "Fehu", "meaning": "Wealth, resources, new beginnings", "lesson": "Tend what you have and let it flow; invest energy where it grows", "warning": "Clinging, greed, or chasing status over substance", "element": "Fire"},
+    {"id": "uruz", "name": "Uruz", "meaning": "Raw strength, life force, vitality", "lesson": "Channel power with purpose and discipline", "warning": "Force without focus; burnout or stubbornness", "element": "Earth"},
+    {"id": "thurisaz", "name": "Thurisaz", "meaning": "Threshold, protection, catalytic force", "lesson": "Pause at the gateway; act consciously and defend your boundaries", "warning": "Reactivity, picking fights, rash decisions", "element": "Fire"},
+    {"id": "ansuz", "name": "Ansuz", "meaning": "Communication, wisdom, divine breath", "lesson": "Listen deeply and speak truth with clarity", "warning": "Miscommunication, gossip, empty words", "element": "Air"},
+    {"id": "raidho", "name": "Raidho", "meaning": "Journey, rhythm, right order", "lesson": "Move in step with timing; align travel and choices to purpose", "warning": "Forcing the pace; drifting without direction", "element": "Air"},
+    {"id": "kenaz", "name": "Kenaz", "meaning": "Torch, knowledge, illumination", "lesson": "Light the way with wisdom; teach and learn with passion", "warning": "Arrogance, false knowledge, burning out others", "element": "Fire"},
+    {"id": "gebo", "name": "Gebo", "meaning": "Gift, exchange, partnership", "lesson": "Give and receive in balance; honor sacred reciprocity", "warning": "Obligation, debt, unequal exchange", "element": "Air"},
+    {"id": "wunjo", "name": "Wunjo", "meaning": "Joy, harmony, fulfillment", "lesson": "Celebrate what works; align with your true happiness", "warning": "False joy, addiction to pleasure, avoiding shadow", "element": "Air"}
+  ]
+}

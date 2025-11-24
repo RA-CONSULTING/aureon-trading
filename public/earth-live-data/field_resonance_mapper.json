@@ -1,0 +1,55 @@
+{
+  "mapper_version": "1.0",
+  "description": "Field resonance mapping for Auris broadcast integration",
+  
+  "field_grid": {
+    "resolution": "1km",
+    "coverage": "global",
+    "update_frequency": "1Hz",
+    "coordinate_system": "WGS84"
+  },
+  
+  "resonance_layers": [
+    {
+      "name": "schumann_cavity",
+      "frequency_range": [7.0, 45.0],
+      "propagation_speed": 299792458,
+      "attenuation_factor": 0.1
+    },
+    {
+      "name": "consciousness_grid", 
+      "frequency_range": [0.1, 100.0],
+      "propagation_speed": "instantaneous",
+      "attenuation_factor": 0.05
+    },
+    {
+      "name": "electromagnetic_field",
+      "frequency_range": [0.01, 1000.0],
+      "propagation_speed": 299792458,
+      "attenuation_factor": 0.2
+    }
+  ],
+  
+  "broadcast_nodes": [
+    {
+      "node_id": "GAIA-UK-01",
+      "lat": 54.6079,
+      "lon": -5.9264,
+      "power_level": 1.0,
+      "coverage_radius_km": 1000
+    }
+  ],
+  
+  "coupling_parameters": {
+    "observer_lock_strength": 0.85,
+    "field_coherence_threshold": 0.7,
+    "resonance_amplification": 1.618,
+    "phase_lock_tolerance": 0.1
+  },
+  
+  "feedback_channels": [
+    "schumann_amplitude_monitor",
+    "field_coherence_detector", 
+    "consciousness_resonance_meter"
+  ]
+}

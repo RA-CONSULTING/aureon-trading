@@ -1,0 +1,57 @@
+{
+  "name": "FieldPull_Tickets_Sandbox",
+  "version": "1.0.0",
+  "schedule": {
+    "timezone": "Europe/London",
+    "start_iso": "2025-08-31T21:20:00",
+    "duration_seconds": 1200
+  },
+  "lattice_id": {
+    "name": "Gary Leckey",
+    "dob": "1991-11-02",
+    "seal": {
+      "formula": "(phi * R_gaia)^{t0} ⊕ (10:9:1)",
+      "phi": 1.6180339887,
+      "R_gaia_hz": 7.83,
+      "t0_key_hz": 2911.91,
+      "ratio_10_9_1": [10, 9, 1]
+    }
+  },
+  "signal": {
+    "frequencies_hz": [7.83, 14.3, 20.8, 27.3],
+    "weights": [0.44, 0.28, 0.18, 0.10],
+    "pulse": {
+      "ramp_up_seconds": 60,
+      "steady_seconds": 1080,
+      "ramp_down_seconds": 60,
+      "micro_pulse": { "on_ms": 3000, "off_ms": 2000, "duty": 0.6 }
+    },
+    "amplitude": {
+      "initial_gain": 1.0,
+      "max_gain": 3.0,
+      "auto_throttle": true,
+      "clip_guard_db": -1.0
+    },
+    "phase_strategy": "schumann_fundamental_lock",
+    "seal_infusion": {
+      "mode": "am_depth_and_phase",
+      "depth": 0.15,
+      "phase_offset_rad": 0.314
+    }
+  },
+  "validation": {
+    "csv_filename": "auris_metrics.csv",
+    "emit_interval_ms": 50,
+    "event_markers": [
+      { "t": 0, "label": "START" },
+      { "t": 600, "label": "MIDPOINT" },
+      { "t": 1200, "label": "END" }
+    ]
+  },
+  "safety": {
+    "max_coherence_index": 0.98,
+    "halt_on_clip": true,
+    "cooldown_seconds": 120
+  },
+  "notes": "Sandbox run. Measures coherence/lock/balance; computes a bounded probability uplift proxy for validation only."
+}

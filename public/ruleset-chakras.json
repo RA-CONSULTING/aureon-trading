@@ -1,0 +1,69 @@
+{
+  "chakra_system": {
+    "centers": {
+      "root": {
+        "name": "Root (Muladhara)",
+        "color": "red",
+        "element": "earth",
+        "themes": ["survival", "grounding", "security", "foundation"],
+        "low_state": "ungrounded, anxious, scattered",
+        "high_state": "stable, secure, present",
+        "practices": ["grounding", "movement", "ritual"]
+      },
+      "sacral": {
+        "name": "Sacral (Svadhisthana)",
+        "color": "orange",
+        "element": "water",
+        "themes": ["creativity", "emotion", "sexuality", "flow"],
+        "low_state": "blocked creativity, emotional numbness",
+        "high_state": "creative, emotionally fluid, passionate",
+        "practices": ["movement", "ritual", "devotion"]
+      },
+      "solar": {
+        "name": "Solar Plexus (Manipura)",
+        "color": "yellow",
+        "element": "fire",
+        "themes": ["will", "confidence", "personal power"],
+        "low_state": "powerless, indecisive, low confidence",
+        "high_state": "confident, decisive, empowered",
+        "practices": ["meditation", "service", "timing"]
+      },
+      "heart": {
+        "name": "Heart (Anahata)",
+        "color": "green",
+        "element": "air",
+        "themes": ["love", "compassion", "connection", "healing"],
+        "low_state": "closed heart, resentment, isolation",
+        "high_state": "loving, compassionate, connected",
+        "practices": ["devotion", "service", "meditation"]
+      },
+      "throat": {
+        "name": "Throat (Vishuddha)",
+        "color": "blue",
+        "element": "sound",
+        "themes": ["truth", "expression", "communication"],
+        "low_state": "unable to speak truth, suppressed voice",
+        "high_state": "authentic expression, clear communication",
+        "practices": ["ritual", "timing", "service"]
+      },
+      "third_eye": {
+        "name": "Third Eye (Ajna)",
+        "color": "indigo",
+        "element": "light",
+        "themes": ["intuition", "insight", "inner vision"],
+        "low_state": "confusion, lack of clarity, disconnected from intuition",
+        "high_state": "clear insight, strong intuition, inner knowing",
+        "practices": ["meditation", "dreamwork", "timing"]
+      },
+      "crown": {
+        "name": "Crown (Sahasrara)",
+        "color": "violet",
+        "element": "thought",
+        "themes": ["unity", "spirituality", "connection to source"],
+        "low_state": "disconnected from purpose, spiritual emptiness",
+        "high_state": "connected to source, purposeful, unified",
+        "practices": ["meditation", "devotion", "dreamwork"]
+      }
+    }
+  }
+}
