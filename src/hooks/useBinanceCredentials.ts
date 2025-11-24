@@ -2,10 +2,30 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
+const TESTNET_KEY = 'aureon-use-testnet';
+
 export const useBinanceCredentials = () => {
   const [hasCredentials, setHasCredentials] = useState<boolean>(false);
   const [loading, setLoading] = useState(true);
+  const [useTestnet, setUseTestnet] = useState<boolean>(() => {
+    // Default to testnet for safety
+    try {
+      const stored = localStorage.getItem(TESTNET_KEY);
+      return stored === null ? true : stored === 'true';
+    } catch {
+      return true;
+    }
+  });
   const { toast } = useToast();
+
+  // Persist testnet preference
+  useEffect(() => {
+    try {
+      localStorage.setItem(TESTNET_KEY, String(useTestnet));
+    } catch (error) {
+      console.error('Failed to save testnet preference:', error);
+    }
+  }, [useTestnet]);
 
   const checkCredentials = async () => {
     try {
@@ -90,6 +110,8 @@ export const useBinanceCredentials = () => {
   return {
     hasCredentials,
     loading,
+    useTestnet,
+    setUseTestnet,
     storeCredentials,
     getCredentials,
     refreshCredentials: checkCredentials,

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { useBinanceCredentials } from './useBinanceCredentials';
 
 export interface MarketData {
@@ -14,16 +14,22 @@ export interface MarketData {
 export const useBinanceWebSocket = (symbols: string[] = ['BTCUSDT', 'ETHUSDT']) => {
   const [marketData, setMarketData] = useState<Record<string, MarketData>>({});
   const [connected, setConnected] = useState(false);
-  const { hasCredentials } = useBinanceCredentials();
+  const { hasCredentials, useTestnet } = useBinanceCredentials();
 
   useEffect(() => {
     if (!hasCredentials) return;
 
     const streams = symbols.map(s => `${s.toLowerCase()}@ticker`).join('/');
-    const ws = new WebSocket(`wss://stream.binance.com:9443/stream?streams=${streams}`);
+    const baseUrl = useTestnet 
+      ? 'wss://testnet.binance.vision/stream'
+      : 'wss://stream.binance.com:9443/stream';
+    const wsUrl = `${baseUrl}?streams=${streams}`;
+    
+    console.log(`🌐 Connecting to Binance ${useTestnet ? 'TESTNET' : 'MAINNET'} WebSocket`);
+    const ws = new WebSocket(wsUrl);
 
     ws.onopen = () => {
-      console.log('🌈 Connected to Binance WebSocket');
+      console.log(`🌈 Connected to Binance ${useTestnet ? 'TESTNET' : 'MAINNET'} WebSocket`);
       setConnected(true);
     };
 
@@ -63,7 +69,7 @@ export const useBinanceWebSocket = (symbols: string[] = ['BTCUSDT', 'ETHUSDT']) 
     return () => {
       ws.close();
     };
-  }, [symbols, hasCredentials]);
+  }, [symbols, hasCredentials, useTestnet]);
 
   return { marketData, connected };
 };
