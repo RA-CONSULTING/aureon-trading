@@ -1,9 +1,10 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import QuantumTradingConsole from '@/components/QuantumTradingConsole';
+import WarRoomDashboard from '@/components/WarRoomDashboard';
 import { BinanceCredentialsSettings } from '@/components/BinanceCredentialsSettings';
 import { BinanceCredentialsAdmin } from '@/components/BinanceCredentialsAdmin';
 import { TradingConfig } from '@/components/TradingConfig';
-import { Activity, Settings, Sliders, Shield } from 'lucide-react';
+import { Activity, Settings, Sliders, Shield, Flame } from 'lucide-react';
 
 const Index = () => {
   return (
@@ -11,10 +12,14 @@ const Index = () => {
       <Tabs defaultValue="trading" className="w-full">
         <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
           <div className="container mx-auto px-4">
-            <TabsList className="grid w-full max-w-2xl grid-cols-4 bg-muted/50">
+            <TabsList className="grid w-full max-w-3xl grid-cols-5 bg-muted/50">
               <TabsTrigger value="trading" className="gap-2">
                 <Activity className="h-4 w-4" />
                 Trading
+              </TabsTrigger>
+              <TabsTrigger value="warroom" className="gap-2">
+                <Flame className="h-4 w-4" />
+                War Room
               </TabsTrigger>
               <TabsTrigger value="config" className="gap-2">
                 <Sliders className="h-4 w-4" />
@@ -34,6 +39,10 @@ const Index = () => {
 
         <TabsContent value="trading" className="m-0">
           <QuantumTradingConsole />
+        </TabsContent>
+
+        <TabsContent value="warroom" className="m-0">
+          <WarRoomDashboard />
         </TabsContent>
 
         <TabsContent value="config" className="container mx-auto py-6 px-4">
