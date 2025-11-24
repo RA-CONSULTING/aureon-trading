@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
-import { LiveValidationDashboard } from '@/components/LiveValidationDashboard';
+import LiveValidationDashboard from '@/components/LiveValidationDashboard';
 
 const HarmonicUniversalTheory = () => {
   const [activeResonance, setActiveResonance] = useState('validation');

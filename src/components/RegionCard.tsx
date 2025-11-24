@@ -19,6 +19,8 @@ export interface Region {
   coordinates: { lat: number; lng: number };
   timeZone: string;
   currency: string;
+  population?: number;
+  area?: number;
 }
 
 interface RegionCardProps {

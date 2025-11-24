@@ -41,6 +41,9 @@ export interface EmotionState {
   color: string;
   confidence: number;
   tags: string[];
+  // Legacy properties for backwards compatibility
+  note?: NoteID;
+  emotion?: string[];
 }
 
 export interface EarthPacket {
