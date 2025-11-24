@@ -75,8 +75,8 @@ const DataLogger: React.FC = () => {
       frequency: newEntry.frequency,
       amplitude: newEntry.amplitude,
       emotionalState: {
-        note: emotionState.note || emotionState.description,
-        emotions: emotionState.emotion || emotionState.emotionalTags[0],
+        note: emotionState.primary,
+        emotions: [emotionState.tags[0] || 'neutral'],
         color: emotionState.color
       },
       notes: newEntry.notes || undefined,
@@ -174,9 +174,9 @@ const DataLogger: React.FC = () => {
                         className="w-4 h-4 rounded-full"
                         style={{ backgroundColor: previewEmotion.color }}
                       />
-                      <span className="font-semibold">{previewEmotion.note}</span>
+                      <span className="font-semibold">{previewEmotion.primary}</span>
                       <div className="text-sm text-purple-300">
-                        {previewEmotion.emotion.join(' • ')}
+                        {previewEmotion.tags.join(' • ')}
                       </div>
                     </>
                   );
