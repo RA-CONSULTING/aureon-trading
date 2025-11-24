@@ -1,192 +1,198 @@
 /**
- * Quantum Quackers Panel
- * Prime Sentinel: GARY LECKEY 02111991
- * 
- * Quantum state modulation system driven by harmonic keyboard input.
- * Responds to frequency stimulation and broadcasts quantum field updates
- * across the temporal ladder network.
+ * Quantum Quackers Panel - Technicolor Protocol interface
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useReducer, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Sparkles, Zap, Activity, Radio } from 'lucide-react';
 import { HarmonicKeyboard, type HarmonicNote } from './HarmonicKeyboard';
 import { temporalLadder, SYSTEMS } from '@/core/temporalLadder';
+import { QuackersEventType, buildBroadcast, HarmonicResonancePayload, AbsurdityDeploymentPayload } from '@/core/quackersEvents';
 
 export interface QuantumState {
-  coherence: number; // 0-1
-  entanglement: number; // 0-1
-  superposition: number; // 0-1
-  decoherenceTime: number; // ms
-  waveFunction: number[]; // probability amplitudes
+  coherence: number;
+  entanglement: number;
+  superposition: number;
+  decoherenceTime: number;
+  waveFunction: number[];
   dominantFrequency: number | null;
 }
+
+export type FieldModulation = 'constructive' | 'destructive' | 'neutral';
 
 export interface QuackerResponse {
   timestamp: number;
   inputFrequency: number;
   outputCoherence: number;
   resonanceAmplification: number;
-  fieldModulation: string; // 'constructive' | 'destructive' | 'neutral'
+  fieldModulation: FieldModulation;
 }
 
-export function QuantumQuackersPanel() {
-  const [quantumState, setQuantumState] = useState<QuantumState>({
-    coherence: 0.75,
-    entanglement: 0.5,
-    superposition: 0.6,
-    decoherenceTime: 1000,
-    waveFunction: Array(10).fill(0.1),
-    dominantFrequency: null
-  });
+const WAVE_SLOTS = 10;
+const COHERENCE_FLOOR = 0.3;
+const ENTANGLEMENT_FLOOR = 0.2;
+const BROADCAST_TIME_THRESHOLD = 1500;
+const BROADCAST_COHERENCE_DELTA = 0.02;
 
+interface NoteAction {
+  type: 'note_input';
+  frequency: number;
+  resonance: number;
+}
+
+interface ChordAction {
+  type: 'chord_input';
+  coherenceBoost: number;
+  entanglementBoost: number;
+  superpositionBoost: number;
+  dominantFrequency: number;
+}
+
+interface EvolveAction {
+  type: 'evolve';
+}
+
+type QuantumAction = NoteAction | ChordAction | EvolveAction;
+
+export function QuantumQuackersPanel() {
+  const [quantumState, dispatchQuantumState] = useReducer(
+    quantumStateReducer,
+    undefined,
+    createInitialQuantumState
+  );
   const [isActive, setIsActive] = useState(false);
   const [responses, setResponses] = useState<QuackerResponse[]>([]);
   const [ladderHealth, setLadderHealth] = useState(0);
+  const animationFrameRef = useRef<number | null>(null);
+  const lastBroadcastTimeRef = useRef(0);
+  const lastBroadcastCoherenceRef = useRef(quantumState.coherence);
 
-  // Register with Temporal Ladder
   useEffect(() => {
     temporalLadder.registerSystem(SYSTEMS.QUANTUM_QUACKERS);
-    
-    // Subscribe to ladder state updates
     const unsubscribe = temporalLadder.subscribe(state => {
       setLadderHealth(state.hiveMindCoherence);
     });
-
     return () => {
       temporalLadder.unregisterSystem(SYSTEMS.QUANTUM_QUACKERS);
       unsubscribe();
     };
   }, []);
 
-  // Heartbeat to Temporal Ladder
   useEffect(() => {
     const interval = setInterval(() => {
       temporalLadder.heartbeat(SYSTEMS.QUANTUM_QUACKERS, quantumState.coherence);
     }, 2000);
-
     return () => clearInterval(interval);
   }, [quantumState.coherence]);
 
-  // Quantum state evolution
   useEffect(() => {
-    if (!isActive) return;
+    if (!isActive) {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = null;
+      }
+      return;
+    }
 
-    const interval = setInterval(() => {
-      setQuantumState(prev => {
-        // Natural decoherence
-        const coherence = Math.max(0.3, prev.coherence - 0.01);
-        const entanglement = Math.max(0.2, prev.entanglement - 0.005);
-        
-        // Wave function collapse and regeneration
-        const waveFunction = prev.waveFunction.map((amp, i) => {
-          const noise = (Math.random() - 0.5) * 0.02;
-          return Math.max(0, Math.min(1, amp + noise));
-        });
+    const step = () => {
+      dispatchQuantumState({ type: 'evolve' });
+      animationFrameRef.current = requestAnimationFrame(step);
+    };
 
-        // Normalize wave function
-        const sum = waveFunction.reduce((a, b) => a + b, 0);
-        const normalized = waveFunction.map(amp => amp / sum);
+    animationFrameRef.current = requestAnimationFrame(step);
 
-        return {
-          ...prev,
-          coherence,
-          entanglement,
-          waveFunction: normalized
-        };
-      });
-    }, 100);
-
-    return () => clearInterval(interval);
+    return () => {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = null;
+      }
+    };
   }, [isActive]);
 
-  // Handle harmonic input from keyboard
   const handleNotePlay = useCallback((note: HarmonicNote) => {
-    console.log('🦆 Quantum Quackers received note:', note);
-
-    // Determine resonance with quantum field
     const resonance = calculateResonance(note.frequency, quantumState);
-    
-    // Update quantum state based on input
-    setQuantumState(prev => {
-      const coherenceBoost = resonance * 0.3;
-      const entanglementBoost = resonance * 0.2;
-      
-      // Update wave function based on frequency
-      const waveFunction = prev.waveFunction.map((amp, i) => {
-        const freqIndex = Math.floor((note.frequency % 100) / 10);
-        if (i === freqIndex) {
-          return Math.min(1, amp + resonance * 0.5);
-        }
-        return amp * 0.95; // slight decay for non-resonant modes
-      });
+    const fieldModulation: FieldModulation = resonance > 0.7 ? 'constructive' :
+      resonance < 0.3 ? 'destructive' : 'neutral';
 
-      const fieldModulation = resonance > 0.7 ? 'constructive' : 
-                             resonance < 0.3 ? 'destructive' : 'neutral';
+    const action: NoteAction = { type: 'note_input', frequency: note.frequency, resonance };
+    const nextState = quantumStateReducer(quantumState, action);
+    dispatchQuantumState(action);
 
-      const response: QuackerResponse = {
-        timestamp: Date.now(),
-        inputFrequency: note.frequency,
-        outputCoherence: Math.min(1, prev.coherence + coherenceBoost),
-        resonanceAmplification: resonance,
-        fieldModulation
-      };
+    const response: QuackerResponse = {
+      timestamp: Date.now(),
+      inputFrequency: note.frequency,
+      outputCoherence: nextState.coherence,
+      resonanceAmplification: resonance,
+      fieldModulation
+    };
+    setResponses(prev => [...prev.slice(-19), response]);
 
-      setResponses(prev => [...prev.slice(-19), response]);
-
-      // Broadcast to temporal ladder
-      temporalLadder.broadcast(SYSTEMS.QUANTUM_QUACKERS, 'harmonic_resonance', {
+    const now = Date.now();
+    const coherenceDelta = Math.abs(nextState.coherence - lastBroadcastCoherenceRef.current);
+    const timeDelta = now - lastBroadcastTimeRef.current;
+    if (coherenceDelta > BROADCAST_COHERENCE_DELTA || timeDelta > BROADCAST_TIME_THRESHOLD) {
+      const payload: HarmonicResonancePayload = {
         frequency: note.frequency,
-        coherence: response.outputCoherence,
+        coherence: nextState.coherence,
         resonance
-      });
-
-      return {
-        ...prev,
-        coherence: Math.min(1, prev.coherence + coherenceBoost),
-        entanglement: Math.min(1, prev.entanglement + entanglementBoost),
-        superposition: Math.min(1, prev.superposition + resonance * 0.1),
-        dominantFrequency: note.frequency,
-        waveFunction
       };
-    });
+      const broadcast = buildBroadcast(SYSTEMS.QUANTUM_QUACKERS, QuackersEventType.HarmonicResonance, payload);
+      if (broadcast) {
+        temporalLadder.broadcast(SYSTEMS.QUANTUM_QUACKERS, broadcast.type, broadcast.payload);
+        lastBroadcastCoherenceRef.current = nextState.coherence;
+        lastBroadcastTimeRef.current = now;
+      }
+    }
+
+    if (fieldModulation === 'destructive' && nextState.coherence < 0.5) {
+      const absurdPayload: AbsurdityDeploymentPayload = {
+        trigger: 'destructive_modulation',
+        coherence: nextState.coherence,
+        fieldModulation,
+        injection: 'duck_intrusion_protocol_v1'
+      };
+      const broadcast = buildBroadcast(
+        SYSTEMS.QUANTUM_QUACKERS,
+        QuackersEventType.AbsurdityDeployment,
+        absurdPayload
+      );
+      if (broadcast) {
+        temporalLadder.broadcast(SYSTEMS.QUANTUM_QUACKERS, broadcast.type, broadcast.payload);
+      }
+    }
   }, [quantumState]);
 
-  // Handle chord input
   const handleChordPlay = useCallback((notes: HarmonicNote[]) => {
-    console.log('🦆 Quantum Quackers received chord:', notes);
+    const avgFreq = notes.reduce((sum, note) => sum + note.frequency, 0) / notes.length;
+    const interference = notes.length * 0.15;
 
-    // Calculate constructive interference
-    const avgFreq = notes.reduce((sum, n) => sum + n.frequency, 0) / notes.length;
-    const interference = notes.length * 0.15; // chord multiplier
-
-    setQuantumState(prev => ({
-      ...prev,
-      coherence: Math.min(1, prev.coherence + interference),
-      entanglement: Math.min(1, prev.entanglement + interference * 0.8),
-      superposition: Math.min(1, prev.superposition + interference * 0.5),
+    const action: ChordAction = {
+      type: 'chord_input',
+      coherenceBoost: interference,
+      entanglementBoost: interference * 0.8,
+      superpositionBoost: interference * 0.5,
       dominantFrequency: avgFreq
-    }));
+    };
+    const nextState = quantumStateReducer(quantumState, action);
+    dispatchQuantumState(action);
 
-    // Request assistance from Nexus if coherence is very high
-    if (quantumState.coherence + interference > 0.9) {
+    if (nextState.coherence > 0.9) {
       temporalLadder.requestAssistance(
         SYSTEMS.QUANTUM_QUACKERS,
         SYSTEMS.NEXUS_FEED,
         'high_coherence_amplification'
       );
     }
-  }, [quantumState.coherence]);
+  }, [quantumState]);
 
-  // Toggle system activation
   const toggleActive = () => {
-    setIsActive(!isActive);
-    if (!isActive) {
-      temporalLadder.broadcast(SYSTEMS.QUANTUM_QUACKERS, 'system_activated', {});
-    } else {
-      temporalLadder.broadcast(SYSTEMS.QUANTUM_QUACKERS, 'system_deactivated', {});
+    setIsActive(prev => !prev);
+    const type = !isActive ? QuackersEventType.SystemActivated : QuackersEventType.SystemDeactivated;
+    const broadcast = buildBroadcast(SYSTEMS.QUANTUM_QUACKERS, type, {});
+    if (broadcast) {
+      temporalLadder.broadcast(SYSTEMS.QUANTUM_QUACKERS, broadcast.type, broadcast.payload);
     }
   };
 
@@ -199,7 +205,7 @@ export function QuantumQuackersPanel() {
               <CardTitle className="flex items-center gap-2 text-2xl">
                 <Sparkles className="w-6 h-6 text-purple-400" />
                 Quantum Quackers
-                <Badge variant={isActive ? "default" : "secondary"}>
+                <Badge variant={isActive ? 'default' : 'secondary'}>
                   {isActive ? 'ACTIVE' : 'STANDBY'}
                 </Badge>
               </CardTitle>
@@ -210,9 +216,7 @@ export function QuantumQuackersPanel() {
             <button
               onClick={toggleActive}
               className={`px-4 py-2 rounded-lg transition-all ${
-                isActive 
-                  ? 'bg-purple-500 hover:bg-purple-600' 
-                  : 'bg-gray-600 hover:bg-gray-700'
+                isActive ? 'bg-purple-500 hover:bg-purple-600' : 'bg-gray-600 hover:bg-gray-700'
               }`}
             >
               {isActive ? 'Deactivate' : 'Activate'}
@@ -220,46 +224,13 @@ export function QuantumQuackersPanel() {
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* Quantum State Metrics */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="bg-black/40 p-4 rounded-lg border border-purple-500/30">
-              <div className="flex items-center gap-2 mb-2">
-                <Activity className="w-4 h-4 text-purple-400" />
-                <span className="text-xs text-muted-foreground">Coherence</span>
-              </div>
-              <Progress value={quantumState.coherence * 100} className="h-2 mb-1" />
-              <span className="text-lg font-bold">{(quantumState.coherence * 100).toFixed(1)}%</span>
-            </div>
-
-            <div className="bg-black/40 p-4 rounded-lg border border-cyan-500/30">
-              <div className="flex items-center gap-2 mb-2">
-                <Zap className="w-4 h-4 text-cyan-400" />
-                <span className="text-xs text-muted-foreground">Entanglement</span>
-              </div>
-              <Progress value={quantumState.entanglement * 100} className="h-2 mb-1" />
-              <span className="text-lg font-bold">{(quantumState.entanglement * 100).toFixed(1)}%</span>
-            </div>
-
-            <div className="bg-black/40 p-4 rounded-lg border border-green-500/30">
-              <div className="flex items-center gap-2 mb-2">
-                <Radio className="w-4 h-4 text-green-400" />
-                <span className="text-xs text-muted-foreground">Superposition</span>
-              </div>
-              <Progress value={quantumState.superposition * 100} className="h-2 mb-1" />
-              <span className="text-lg font-bold">{(quantumState.superposition * 100).toFixed(1)}%</span>
-            </div>
-
-            <div className="bg-black/40 p-4 rounded-lg border border-orange-500/30">
-              <div className="flex items-center gap-2 mb-2">
-                <Sparkles className="w-4 h-4 text-orange-400" />
-                <span className="text-xs text-muted-foreground">Ladder Health</span>
-              </div>
-              <Progress value={ladderHealth * 100} className="h-2 mb-1" />
-              <span className="text-lg font-bold">{(ladderHealth * 100).toFixed(1)}%</span>
-            </div>
+            <MetricCard icon={Activity} label="Coherence" value={quantumState.coherence} border="border-purple-500/30" />
+            <MetricCard icon={Zap} label="Entanglement" value={quantumState.entanglement} border="border-cyan-500/30" />
+            <MetricCard icon={Radio} label="Superposition" value={quantumState.superposition} border="border-green-500/30" />
+            <MetricCard icon={Sparkles} label="Ladder Health" value={ladderHealth} border="border-orange-500/30" />
           </div>
 
-          {/* Dominant Frequency Display */}
           {quantumState.dominantFrequency && (
             <div className="bg-gradient-to-r from-purple-500/10 to-cyan-500/10 p-4 rounded-lg border border-border/30">
               <div className="flex items-center justify-between">
@@ -271,7 +242,6 @@ export function QuantumQuackersPanel() {
             </div>
           )}
 
-          {/* Wave Function Visualization */}
           <div className="bg-black/40 p-4 rounded-lg border border-border/30">
             <h3 className="text-sm font-semibold mb-3">Quantum Wave Function</h3>
             <div className="flex items-end gap-1 h-24">
@@ -286,7 +256,6 @@ export function QuantumQuackersPanel() {
             </div>
           </div>
 
-          {/* Recent Responses */}
           {responses.length > 0 && (
             <div className="bg-black/40 p-4 rounded-lg border border-border/30">
               <h3 className="text-sm font-semibold mb-3">Recent Harmonic Responses</h3>
@@ -294,11 +263,16 @@ export function QuantumQuackersPanel() {
                 {responses.slice(-5).reverse().map((resp, i) => (
                   <div key={i} className="flex items-center justify-between text-xs p-2 bg-black/30 rounded">
                     <span>{resp.inputFrequency.toFixed(2)} Hz</span>
-                    <Badge variant="outline" className={
-                      resp.fieldModulation === 'constructive' ? 'border-green-500' :
-                      resp.fieldModulation === 'destructive' ? 'border-red-500' :
-                      'border-gray-500'
-                    }>
+                    <Badge
+                      variant="outline"
+                      className={
+                        resp.fieldModulation === 'constructive'
+                          ? 'border-green-500'
+                          : resp.fieldModulation === 'destructive'
+                            ? 'border-red-500'
+                            : 'border-gray-500'
+                      }
+                    >
                       {resp.fieldModulation}
                     </Badge>
                     <span>+{(resp.resonanceAmplification * 100).toFixed(1)}%</span>
@@ -310,37 +284,124 @@ export function QuantumQuackersPanel() {
         </CardContent>
       </Card>
 
-      {/* Harmonic Keyboard Integration */}
-      <HarmonicKeyboard
-        onNotePlay={handleNotePlay}
-        onChordPlay={handleChordPlay}
-        disabled={!isActive}
-      />
+      <HarmonicKeyboard onNotePlay={handleNotePlay} onChordPlay={handleChordPlay} disabled={!isActive} />
     </div>
   );
 }
 
-/**
- * Calculate resonance between input frequency and quantum state
- */
+interface MetricCardProps {
+  icon: typeof Activity;
+  label: string;
+  value: number;
+  border: string;
+}
+
+function MetricCard({ icon: Icon, label, value, border }: MetricCardProps) {
+  return (
+    <div className={`bg-black/40 p-4 rounded-lg border ${border}`}>
+      <div className="flex items-center gap-2 mb-2">
+        <Icon className="w-4 h-4 text-purple-400" />
+        <span className="text-xs text-muted-foreground">{label}</span>
+      </div>
+      <Progress value={value * 100} className="h-2 mb-1" />
+      <span className="text-lg font-bold">{(value * 100).toFixed(1)}%</span>
+    </div>
+  );
+}
+
 function calculateResonance(frequency: number, state: QuantumState): number {
-  // Check for Schumann resonance alignment
   const schumannHarmonics = [7.83, 14.3, 20.8, 27.3, 33.8, 39.0, 45.0];
   const schumannResonance = schumannHarmonics.reduce((max, harmonic) => {
     const alignment = 1 - Math.min(1, Math.abs(frequency - harmonic) / harmonic);
     return Math.max(max, alignment);
   }, 0);
 
-  // Check for Solfeggio alignment
   const solfeggioFreqs = [396, 417, 528, 639, 741, 852];
   const solfeggioResonance = solfeggioFreqs.reduce((max, solfeggio) => {
     const alignment = 1 - Math.min(1, Math.abs(frequency - solfeggio) / solfeggio);
     return Math.max(max, alignment);
   }, 0);
 
-  // Weight by current quantum state
   const baseResonance = Math.max(schumannResonance, solfeggioResonance);
   const stateModulation = (state.coherence + state.entanglement + state.superposition) / 3;
 
   return Math.min(1, baseResonance * (0.5 + stateModulation * 0.5));
+}
+
+function createInitialQuantumState(): QuantumState {
+  return {
+    coherence: 0.75,
+    entanglement: 0.5,
+    superposition: 0.6,
+    decoherenceTime: 1000,
+    waveFunction: createUniformWaveFunction(),
+    dominantFrequency: null
+  };
+}
+
+function quantumStateReducer(state: QuantumState, action: QuantumAction): QuantumState {
+  switch (action.type) {
+    case 'evolve':
+      return {
+        ...state,
+        coherence: Math.max(COHERENCE_FLOOR, state.coherence - 0.01),
+        entanglement: Math.max(ENTANGLEMENT_FLOOR, state.entanglement - 0.005),
+        waveFunction: evolveWaveFunction(state.waveFunction)
+      };
+    case 'note_input':
+      return {
+        ...state,
+        coherence: Math.min(1, state.coherence + action.resonance * 0.3),
+        entanglement: Math.min(1, state.entanglement + action.resonance * 0.2),
+        superposition: Math.min(1, state.superposition + action.resonance * 0.1),
+        dominantFrequency: action.frequency,
+        waveFunction: exciteWaveFunction(state.waveFunction, action.frequency, action.resonance)
+      };
+    case 'chord_input':
+      return {
+        ...state,
+        coherence: Math.min(1, state.coherence + action.coherenceBoost),
+        entanglement: Math.min(1, state.entanglement + action.entanglementBoost),
+        superposition: Math.min(1, state.superposition + action.superpositionBoost),
+        dominantFrequency: action.dominantFrequency
+      };
+    default:
+      return state;
+  }
+}
+
+function createUniformWaveFunction(): number[] {
+  const amplitude = 1 / WAVE_SLOTS;
+  return Array.from({ length: WAVE_SLOTS }, () => amplitude);
+}
+
+function evolveWaveFunction(current: number[]): number[] {
+  const next = current.map(amp => {
+    const noise = (Math.random() - 0.5) * 0.02;
+    return Math.max(0, Math.min(1, amp + noise));
+  });
+  return normalizeWaveFunction(next);
+}
+
+function exciteWaveFunction(current: number[], frequency: number, resonance: number): number[] {
+  const slotSize = 100 / WAVE_SLOTS;
+  const normalizedFreq = ((frequency % 100) + 100) % 100;
+  const freqIndex = Math.min(WAVE_SLOTS - 1, Math.floor(normalizedFreq / slotSize));
+
+  const next = current.map((amp, index) => {
+    if (index === freqIndex) {
+      return Math.min(1, amp + resonance * 0.5);
+    }
+    return amp * 0.95;
+  });
+
+  return normalizeWaveFunction(next);
+}
+
+function normalizeWaveFunction(wave: number[]): number[] {
+  const sum = wave.reduce((acc, value) => acc + value, 0);
+  if (sum <= 0) {
+    return createUniformWaveFunction();
+  }
+  return wave.map(amp => amp / sum);
 }
