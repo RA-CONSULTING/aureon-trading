@@ -4,7 +4,7 @@ import { useToast } from '@/hooks/use-toast';
 
 export type AccountBalance = {
   name: string;
-  balances: Record<string, { free: number; locked: number; total: number }>;
+  balances: Record<string, { free: number; locked: number; total: number; usdValue?: number }>;
   canTrade?: boolean;
   error?: string;
 };
@@ -13,6 +13,7 @@ export type BalanceTotals = {
   USDT: number;
   BTC: number;
   ETH: number;
+  totalUSDValue?: number;
 };
 
 export function useBinanceBalances() {

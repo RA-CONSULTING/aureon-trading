@@ -38,11 +38,28 @@ serve(async (req) => {
       return decoded.split('::')[0];
     }
 
+    // Fetch all current prices from Binance
+    let priceMap: Record<string, number> = {};
+    try {
+      const priceResponse = await fetch('https://api.binance.com/api/v3/ticker/price');
+      if (priceResponse.ok) {
+        const prices = await priceResponse.json();
+        priceMap = prices.reduce((acc: Record<string, number>, p: any) => {
+          acc[p.symbol] = parseFloat(p.price);
+          return acc;
+        }, {});
+        console.log(`✅ Fetched ${Object.keys(priceMap).length} price pairs`);
+      }
+    } catch (error) {
+      console.error('Failed to fetch prices:', error);
+    }
+
     // Fetch balances from all accounts
     const accountBalances = [];
     let totalUSDT = 0;
     let totalBTC = 0;
     let totalETH = 0;
+    let totalUSDValue = 0;
 
     for (const cred of credentials) {
       const apiKey = decryptValue(cred.api_key_encrypted);
@@ -89,19 +106,45 @@ serve(async (req) => {
 
         const accountData = await response.json();
         
-        // Extract relevant balances
+        // Extract relevant balances and calculate USD value
         const balances: any = {};
+        let accountUSDValue = 0;
+
         for (const balance of accountData.balances) {
           const free = parseFloat(balance.free);
           const locked = parseFloat(balance.locked);
           const total = free + locked;
           
           if (total > 0) {
+            let usdValue = 0;
+            
+            // Calculate USD value
+            if (balance.asset === 'USDT' || balance.asset === 'USDC' || balance.asset === 'BUSD') {
+              usdValue = total; // Stablecoins are 1:1 with USD
+            } else if (balance.asset === 'LDUSDT' || balance.asset === 'LDUSDC') {
+              usdValue = total; // Liquid stablecoins are also ~1:1
+            } else {
+              // Try to find price in USDT pair
+              const usdtSymbol = `${balance.asset}USDT`;
+              if (priceMap[usdtSymbol]) {
+                usdValue = total * priceMap[usdtSymbol];
+              } else {
+                // Try BTC pair, then convert BTC to USDT
+                const btcSymbol = `${balance.asset}BTC`;
+                if (priceMap[btcSymbol] && priceMap['BTCUSDT']) {
+                  usdValue = total * priceMap[btcSymbol] * priceMap['BTCUSDT'];
+                }
+              }
+            }
+            
             balances[balance.asset] = {
               free,
               locked,
-              total
+              total,
+              usdValue
             };
+            
+            accountUSDValue += usdValue;
             
             // Aggregate totals
             if (balance.asset === 'USDT') totalUSDT += total;
@@ -109,6 +152,8 @@ serve(async (req) => {
             if (balance.asset === 'ETH') totalETH += total;
           }
         }
+
+        totalUSDValue += accountUSDValue;
 
         accountBalances.push({
           name: cred.name,
@@ -130,6 +175,7 @@ serve(async (req) => {
 
     console.log(`✅ Fetched balances from ${accountBalances.length} accounts`);
     console.log(`Total USDT: ${totalUSDT.toFixed(2)}, BTC: ${totalBTC.toFixed(6)}, ETH: ${totalETH.toFixed(6)}`);
+    console.log(`💰 Total Portfolio Value: $${totalUSDValue.toFixed(2)} USD`);
 
     return new Response(
       JSON.stringify({
@@ -140,6 +186,7 @@ serve(async (req) => {
           BTC: totalBTC,
           ETH: totalETH,
         },
+        totalUSDValue,
         timestamp: new Date().toISOString(),
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
