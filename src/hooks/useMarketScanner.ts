@@ -1,76 +1,73 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useBinanceCredentials } from './useBinanceCredentials';
+import { supabase } from '@/integrations/supabase/client';
 
-interface MarketPair {
+export interface MarketOpportunity {
   symbol: string;
+  baseAsset: string;
   price: number;
   volume24h: number;
   priceChange24h: number;
   volatility: number;
+  momentum: number;
   opportunityScore: number;
 }
 
 export function useMarketScanner() {
-  const [pairs, setPairs] = useState<MarketPair[]>([]);
+  const [opportunities, setOpportunities] = useState<MarketOpportunity[]>([]);
   const [isScanning, setIsScanning] = useState(false);
   const [lastScan, setLastScan] = useState<Date | null>(null);
-  const { hasCredentials } = useBinanceCredentials();
 
   const scanMarket = useCallback(async () => {
-    if (!hasCredentials) return;
-    
     setIsScanning(true);
+
     try {
-      // Fetch 24hr ticker for all USDT pairs
-      const response = await fetch('https://api.binance.com/api/v3/ticker/24hr');
-      const tickers = await response.json();
+      // Use existing fetch-binance-symbols edge function
+      const { data, error } = await supabase.functions.invoke('fetch-binance-symbols');
       
-      // Filter for USDT pairs with sufficient volume
-      const usdtPairs = tickers
-        .filter((t: any) => t.symbol.endsWith('USDT') && parseFloat(t.quoteVolume) > 100000)
-        .map((t: any) => {
-          const priceChange = parseFloat(t.priceChangePercent);
-          const volume = parseFloat(t.quoteVolume);
-          const volatility = Math.abs(priceChange);
+      if (error) throw error;
+
+      const symbols = data.symbols || [];
+
+      // Calculate opportunity scores
+      const opportunities = symbols
+        .filter((s: any) => s.volume24h > 1000000 && s.price > 0) // Min $1M volume
+        .map((symbol: any) => {
+          const volatility = Math.abs(symbol.priceChange24h || 0);
+          const volumeScore = Math.log10(symbol.volume24h) / 10;
+          const momentum = (symbol.priceChange24h || 0) / 100;
           
-          // Opportunity score: high volatility + high volume + positive momentum
-          const volumeScore = Math.min(volume / 1000000, 10); // Cap at 10
-          const volatilityScore = Math.min(volatility * 2, 10);
-          const momentumScore = priceChange > 0 ? 5 : -2;
-          const opportunityScore = volumeScore + volatilityScore + momentumScore;
-          
+          const opportunityScore = 
+            (volatility * 0.3) + 
+            (volumeScore * 0.4) + 
+            (Math.abs(momentum) * 0.3);
+
           return {
-            symbol: t.symbol,
-            price: parseFloat(t.lastPrice),
-            volume24h: volume,
-            priceChange24h: priceChange,
+            symbol: symbol.symbol,
+            baseAsset: symbol.baseAsset,
+            price: symbol.price,
+            volume24h: symbol.volume24h,
+            priceChange24h: symbol.priceChange24h,
             volatility,
-            opportunityScore: Math.max(0, opportunityScore),
+            momentum,
+            opportunityScore,
           };
         })
-        .sort((a: MarketPair, b: MarketPair) => b.opportunityScore - a.opportunityScore)
+        .sort((a: any, b: any) => b.opportunityScore - a.opportunityScore)
         .slice(0, 50); // Top 50 opportunities
-      
-      setPairs(usdtPairs);
+
+      setOpportunities(opportunities);
       setLastScan(new Date());
+      console.log(`✅ Market scan complete: ${opportunities.length} opportunities from ${symbols.length} symbols`);
+
     } catch (error) {
-      console.error('Market scan error:', error);
+      console.error('❌ Market scan failed:', error);
     } finally {
       setIsScanning(false);
     }
-  }, [hasCredentials]);
-
-  // Auto-scan every 30 seconds
-  useEffect(() => {
-    if (!hasCredentials) return;
-    
-    scanMarket();
-    const interval = setInterval(scanMarket, 30000);
-    return () => clearInterval(interval);
-  }, [hasCredentials, scanMarket]);
+  }, []);
 
   return {
-    pairs,
+    opportunities,
     isScanning,
     lastScan,
     scanMarket,

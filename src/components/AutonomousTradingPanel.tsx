@@ -9,7 +9,9 @@ export const AutonomousTradingPanel = () => {
     isActive,
     tradesExecuted,
     totalProfit,
-    topPairs,
+    totalFees,
+    netProfit,
+    opportunities,
     isScanning,
     start,
     stop,
@@ -24,7 +26,7 @@ export const AutonomousTradingPanel = () => {
             Autonomous Trading Engine
           </h3>
           <p className="text-sm text-muted-foreground">
-            AI-powered multi-pair profit maximization
+            Using execute-trade & fetch-binance-symbols edge functions
           </p>
         </div>
         {isActive ? (
@@ -41,7 +43,7 @@ export const AutonomousTradingPanel = () => {
       </div>
 
       {/* Status */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-4 gap-4">
         <div className="p-4 rounded-lg bg-muted/50">
           <div className="text-2xl font-bold">{tradesExecuted}</div>
           <div className="text-xs text-muted-foreground">Trades Executed</div>
@@ -50,53 +52,64 @@ export const AutonomousTradingPanel = () => {
           <div className="text-2xl font-bold text-green-500">
             ${totalProfit.toFixed(2)}
           </div>
-          <div className="text-xs text-muted-foreground">Net Profit</div>
+          <div className="text-xs text-muted-foreground">Total Profit</div>
         </div>
         <div className="p-4 rounded-lg bg-muted/50">
-          <div className="flex items-center gap-2">
-            {isActive ? (
-              <Badge className="bg-green-500">
-                <Activity className="h-3 w-3 mr-1" />
-                ACTIVE
-              </Badge>
-            ) : (
-              <Badge variant="outline">PAUSED</Badge>
-            )}
+          <div className="text-2xl font-bold text-red-500">
+            ${totalFees.toFixed(2)}
           </div>
-          <div className="text-xs text-muted-foreground mt-2">Status</div>
+          <div className="text-xs text-muted-foreground">Total Fees</div>
         </div>
+        <div className="p-4 rounded-lg bg-muted/50">
+          <div className={`text-2xl font-bold ${netProfit >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+            ${netProfit.toFixed(2)}
+          </div>
+          <div className="text-xs text-muted-foreground">Net Profit</div>
+        </div>
+      </div>
+
+      {/* Status Badge */}
+      <div className="flex items-center gap-2">
+        {isActive ? (
+          <Badge className="bg-green-500">
+            <Activity className="h-3 w-3 mr-1" />
+            ACTIVE
+          </Badge>
+        ) : (
+          <Badge variant="outline">PAUSED</Badge>
+        )}
+        {isScanning && <Badge variant="secondary">Scanning Market...</Badge>}
       </div>
 
       {/* Top Opportunities */}
       <div>
         <h4 className="text-sm font-medium mb-3 flex items-center gap-2">
           <TrendingUp className="h-4 w-4" />
-          Top 10 Opportunities
-          {isScanning && <span className="text-xs text-muted-foreground">(Scanning...)</span>}
+          Top 10 Opportunities (via fetch-binance-symbols)
         </h4>
         <div className="space-y-2 max-h-[300px] overflow-y-auto">
-          {topPairs.map((pair) => (
+          {opportunities.map((opp) => (
             <div
-              key={pair.symbol}
+              key={opp.symbol}
               className="flex items-center justify-between p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors"
             >
               <div className="flex-1">
-                <div className="font-medium text-sm">{pair.symbol}</div>
+                <div className="font-medium text-sm">{opp.symbol}</div>
                 <div className="text-xs text-muted-foreground">
-                  ${pair.price.toFixed(2)} • Vol: ${(pair.volume24h / 1e6).toFixed(2)}M
+                  ${opp.price.toFixed(4)} • Vol: ${(opp.volume24h / 1e6).toFixed(1)}M
                 </div>
               </div>
               <div className="text-right">
                 <div
                   className={`text-sm font-medium ${
-                    pair.priceChange24h > 0 ? 'text-green-500' : 'text-red-500'
+                    opp.priceChange24h > 0 ? 'text-green-500' : 'text-red-500'
                   }`}
                 >
-                  {pair.priceChange24h > 0 ? '+' : ''}
-                  {pair.priceChange24h.toFixed(2)}%
+                  {opp.priceChange24h > 0 ? '+' : ''}
+                  {opp.priceChange24h.toFixed(2)}%
                 </div>
                 <div className="text-xs text-muted-foreground">
-                  Score: {pair.opportunityScore.toFixed(1)}
+                  Score: {opp.opportunityScore.toFixed(2)}
                 </div>
               </div>
             </div>

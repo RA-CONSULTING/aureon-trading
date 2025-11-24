@@ -5,10 +5,10 @@ import { Activity, Radio, Zap, GitBranch, TrendingUp, Shield } from "lucide-reac
 import type { HarmonicNexusState } from "@/core/harmonicNexusCore";
 
 interface HarmonicNexusMonitorProps {
-  nexusState: HarmonicNexusState | null;
+  nexusState?: HarmonicNexusState | null;
 }
 
-export function HarmonicNexusMonitor({ nexusState }: HarmonicNexusMonitorProps) {
+export function HarmonicNexusMonitor({ nexusState = null }: HarmonicNexusMonitorProps) {
   if (!nexusState) {
     return (
       <Card className="bg-card/50 backdrop-blur border-border/50">
