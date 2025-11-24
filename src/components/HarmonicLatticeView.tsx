@@ -28,7 +28,7 @@ export default function HarmonicLatticeView({ className = '' }: Props) {
         weight: blob.weight * intensity
       }));
     }).filter(blob => blob.weight > 0.05); // filter weak blobs
-  }, [currentEmotion]);
+  }, [stats]);
 
   const emotionLabel = currentEmotion ? 
     `V:${currentEmotion.valence.toFixed(2)} A:${currentEmotion.arousal.toFixed(2)}` : 
