@@ -771,6 +771,84 @@ export type Database = {
         }
         Relationships: []
       }
+      master_equation_field_history: {
+        Row: {
+          coherence: number
+          coherence_linear: number
+          coherence_nonlinear: number
+          coherence_phi: number
+          created_at: string
+          dominant_node: string
+          echo: number
+          effective_gain: number
+          id: string
+          lambda: number
+          metadata: Json | null
+          momentum: number | null
+          node_weights: Json
+          observer: number
+          price: number | null
+          quality_factor: number
+          sentinel_name: string | null
+          substrate: number
+          symbol: string | null
+          temporal_id: string
+          timestamp: string
+          volatility: number | null
+          volume: number | null
+        }
+        Insert: {
+          coherence: number
+          coherence_linear?: number
+          coherence_nonlinear: number
+          coherence_phi: number
+          created_at?: string
+          dominant_node: string
+          echo: number
+          effective_gain: number
+          id?: string
+          lambda: number
+          metadata?: Json | null
+          momentum?: number | null
+          node_weights?: Json
+          observer: number
+          price?: number | null
+          quality_factor: number
+          sentinel_name?: string | null
+          substrate: number
+          symbol?: string | null
+          temporal_id: string
+          timestamp?: string
+          volatility?: number | null
+          volume?: number | null
+        }
+        Update: {
+          coherence?: number
+          coherence_linear?: number
+          coherence_nonlinear?: number
+          coherence_phi?: number
+          created_at?: string
+          dominant_node?: string
+          echo?: number
+          effective_gain?: number
+          id?: string
+          lambda?: number
+          metadata?: Json | null
+          momentum?: number | null
+          node_weights?: Json
+          observer?: number
+          price?: number | null
+          quality_factor?: number
+          sentinel_name?: string | null
+          substrate?: number
+          symbol?: string | null
+          temporal_id?: string
+          timestamp?: string
+          volatility?: number | null
+          volume?: number | null
+        }
+        Relationships: []
+      }
       monte_carlo_simulations: {
         Row: {
           base_config: Json
@@ -1060,6 +1138,80 @@ export type Database = {
         }
         Relationships: []
       }
+      prism_transformation_states: {
+        Row: {
+          coherence: number
+          created_at: string
+          frequency: number
+          harmonic_purity: number
+          id: string
+          input_frequency: number
+          is_lhe_correlated: boolean | null
+          is_love_locked: boolean | null
+          lambda_value: number
+          level: number
+          lighthouse_event_id: string | null
+          lighthouse_signal: number | null
+          metadata: Json | null
+          resonance_strength: number
+          sentinel_name: string | null
+          state: string
+          temporal_id: string
+          timestamp: string
+          transformation_quality: number
+        }
+        Insert: {
+          coherence: number
+          created_at?: string
+          frequency: number
+          harmonic_purity: number
+          id?: string
+          input_frequency: number
+          is_lhe_correlated?: boolean | null
+          is_love_locked?: boolean | null
+          lambda_value: number
+          level: number
+          lighthouse_event_id?: string | null
+          lighthouse_signal?: number | null
+          metadata?: Json | null
+          resonance_strength: number
+          sentinel_name?: string | null
+          state: string
+          temporal_id: string
+          timestamp?: string
+          transformation_quality: number
+        }
+        Update: {
+          coherence?: number
+          created_at?: string
+          frequency?: number
+          harmonic_purity?: number
+          id?: string
+          input_frequency?: number
+          is_lhe_correlated?: boolean | null
+          is_love_locked?: boolean | null
+          lambda_value?: number
+          level?: number
+          lighthouse_event_id?: string | null
+          lighthouse_signal?: number | null
+          metadata?: Json | null
+          resonance_strength?: number
+          sentinel_name?: string | null
+          state?: string
+          temporal_id?: string
+          timestamp?: string
+          transformation_quality?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prism_transformation_states_lighthouse_event_id_fkey"
+            columns: ["lighthouse_event_id"]
+            isOneToOne: false
+            referencedRelation: "lighthouse_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
@@ -1108,6 +1260,75 @@ export type Database = {
           payment_completed?: boolean | null
           payment_completed_at?: string | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      rainbow_bridge_states: {
+        Row: {
+          arousal: number
+          base_frequency: number
+          coherence: number
+          color: string
+          created_at: string
+          dominant_emotion: string
+          emotional_tags: string[] | null
+          frequency: number
+          harmonic_index: number
+          id: string
+          intensity: number
+          lambda_value: number
+          metadata: Json | null
+          phase: string
+          phase_transition: boolean | null
+          previous_phase: string | null
+          sentinel_name: string | null
+          temporal_id: string
+          timestamp: string
+          valence: number
+        }
+        Insert: {
+          arousal: number
+          base_frequency: number
+          coherence: number
+          color: string
+          created_at?: string
+          dominant_emotion: string
+          emotional_tags?: string[] | null
+          frequency: number
+          harmonic_index: number
+          id?: string
+          intensity: number
+          lambda_value: number
+          metadata?: Json | null
+          phase: string
+          phase_transition?: boolean | null
+          previous_phase?: string | null
+          sentinel_name?: string | null
+          temporal_id: string
+          timestamp?: string
+          valence: number
+        }
+        Update: {
+          arousal?: number
+          base_frequency?: number
+          coherence?: number
+          color?: string
+          created_at?: string
+          dominant_emotion?: string
+          emotional_tags?: string[] | null
+          frequency?: number
+          harmonic_index?: number
+          id?: string
+          intensity?: number
+          lambda_value?: number
+          metadata?: Json | null
+          phase?: string
+          phase_transition?: boolean | null
+          previous_phase?: string | null
+          sentinel_name?: string | null
+          temporal_id?: string
+          timestamp?: string
+          valence?: number
         }
         Relationships: []
       }
