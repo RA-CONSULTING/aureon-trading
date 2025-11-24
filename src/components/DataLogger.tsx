@@ -75,8 +75,8 @@ const DataLogger: React.FC = () => {
       frequency: newEntry.frequency,
       amplitude: newEntry.amplitude,
       emotionalState: {
-        note: emotionState.note,
-        emotions: emotionState.emotion,
+        note: emotionState.note || emotionState.description,
+        emotions: emotionState.emotion || emotionState.emotionalTags[0],
         color: emotionState.color
       },
       notes: newEntry.notes || undefined,

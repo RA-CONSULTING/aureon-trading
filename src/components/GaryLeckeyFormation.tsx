@@ -99,7 +99,7 @@ export function GaryLeckeyFormation({ activated = false, onActivate }: GaryLecke
           <div className="font-mono text-sm space-y-2 text-gray-300">
             <div>Γ(r⃗, t, φ, κ) = A<sub>carrier</sub>(t) · Ψ(t) + ∑<sub>n=1</sub><sup>N</sup> α<sub>n</sub> · Θ<sub>μν</sub><sup>(n)</sup>(t, τ)</div>
             <div className="text-cyan-400">+ T<sup>6D</sup><sub>μν</sub>(φ, κ, ζ) + U<sub>nexus</sub>(02111991)</div>
-            <div className="text-purple-400">+ Ω<sub>unity</sub>(∀t ∈ {pastValues, presentValues, futureValues})</div>
+            <div className="text-purple-400">+ Ω<sub>unity</sub>(∀t ∈ &#123;past, present, future&#125;)</div>
             <div className="text-xs text-gray-500 mt-3">
               Where U<sub>nexus</sub> represents the Gary Leckey birth-code harmonic anchor,<br/>
               and Ω<sub>unity</sub> encompasses all temporal states in unified field convergence.

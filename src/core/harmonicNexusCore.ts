@@ -56,6 +56,13 @@ export interface HarmonicNexusState {
   prismLevel?: number;
 }
 
+// Export HNCRegionTick type for external use
+export interface HNCRegionTick {
+  score: number;
+  byBand: Record<string, number>;
+  drivers: Array<{ label: string; weight: number }>;
+}
+
 export class HarmonicNexusCore {
   private temporalId: string;
   private sentinelName: string;

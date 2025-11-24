@@ -112,7 +112,7 @@ export class BacktestEngine {
       };
 
       // Process through AUREON system
-      const lambdaState = this.masterEq.step(marketData);
+      const lambdaState = await this.masterEq.step(marketData);
       const rainbowState = this.rainbowBridge.map(lambdaState.lambda, lambdaState.coherence);
       const prismOutput = this.prism.transform(lambdaState.lambda, lambdaState.coherence, rainbowState.frequency);
       const ftcpResult = this.ftcpDetector.addPoint(marketData.timestamp, lambdaState.lambda);
