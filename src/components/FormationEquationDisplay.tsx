@@ -1,13 +1,14 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { fmt } from '@/utils/number';
 
-interface FormationEquationDisplayProps {
-  carrierAmplitude: number;
-  feedbackTensor: number;
-  harmonicPhase: number;
-  isActive: boolean;
+const FormationEquationDisplay: React.FC = () => {
+  const [carrierAmplitude, setCarrierAmplitude] = useState(1.0);
+  const [feedbackTensor, setFeedbackTensor] = useState(0.0);
+  const [harmonicPhase, setHarmonicPhase] = useState(0.0);
+
+  useEffect(() => {
     const updateEquation = () => {
       const time = Date.now() * 0.001;
       setCarrierAmplitude(1 + 0.3 * Math.sin(time * 0.5));
@@ -97,3 +98,5 @@ interface FormationEquationDisplayProps {
     </Card>
   );
 };
+
+export default FormationEquationDisplay;

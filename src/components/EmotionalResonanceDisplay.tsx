@@ -30,7 +30,6 @@ export const EmotionalResonanceDisplay: React.FC<EmotionalResonanceDisplayProps>
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Frequency Display */
         <div className="flex justify-between items-center">
           <span className="text-sm font-medium">Schumann Frequency</span>
           <span className="text-lg font-bold text-foreground">
@@ -38,7 +37,6 @@ export const EmotionalResonanceDisplay: React.FC<EmotionalResonanceDisplayProps>
           </span>
         </div>
 
-        {/* Dominant Note */}
         <div className="flex justify-between items-center">
           <span className="text-sm font-medium">Dominant Note</span>
           <Badge variant="outline" style={{ borderColor: emotionalState.color }}>
@@ -46,7 +44,6 @@ export const EmotionalResonanceDisplay: React.FC<EmotionalResonanceDisplayProps>
           </Badge>
         </div>
 
-        {/* Emotional Metrics */}
         <div className="space-y-3">
           <div>
             <div className="flex justify-between text-sm font-medium text-gray-800 dark:text-gray-200 mb-1">
@@ -88,9 +85,7 @@ export const EmotionalResonanceDisplay: React.FC<EmotionalResonanceDisplayProps>
             />
           </div>
         </div>
-        </div>
 
-        {/* Emotional Tags */}
         <div>
           <span className="text-sm font-medium mb-2 block">Emotional Qualities</span>
           <div className="flex flex-wrap gap-1">
@@ -106,11 +101,10 @@ export const EmotionalResonanceDisplay: React.FC<EmotionalResonanceDisplayProps>
               >
                 {tag}
               </Badge>
-             ))}
+            ))}
           </div>
         </div>
 
-        {/* Description */}
         <div className="pt-2 border-t">
           <p className="text-sm text-muted-foreground italic">
             {emotionalState.description}
