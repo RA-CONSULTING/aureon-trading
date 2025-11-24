@@ -2,6 +2,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import QuantumTradingConsole from '@/components/QuantumTradingConsole';
 import { BinanceCredentialsSettings } from '@/components/BinanceCredentialsSettings';
 import { TradingConfig } from '@/components/TradingConfig';
+import { TestnetToggle } from '@/components/TestnetToggle';
 import { Activity, Settings, Sliders } from 'lucide-react';
 
 const Index = () => {
@@ -31,7 +32,8 @@ const Index = () => {
           <QuantumTradingConsole />
         </TabsContent>
 
-        <TabsContent value="config" className="container mx-auto py-6 px-4">
+        <TabsContent value="config" className="container mx-auto py-6 px-4 space-y-6">
+          <TestnetToggle />
           <TradingConfig />
         </TabsContent>
 
