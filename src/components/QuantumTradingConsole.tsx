@@ -2,9 +2,12 @@ import { useEffect, useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useBinanceWebSocket } from '@/hooks/useBinanceWebSocket';
+import { useBinanceCredentials } from '@/hooks/useBinanceCredentials';
 import { 
   TrendingUp, TrendingDown, Activity, Radio, Zap, 
-  Waves, DollarSign, BarChart3, Shield, AlertCircle 
+  Waves, DollarSign, BarChart3, Shield, AlertCircle, AlertTriangle, Wifi 
 } from 'lucide-react';
 
 interface MarketData {
@@ -33,6 +36,9 @@ interface Position {
 }
 
 export default function QuantumTradingConsole() {
+  const { hasCredentials } = useBinanceCredentials();
+  const { marketData: liveData, connected } = useBinanceWebSocket(['BTCUSDT', 'ETHUSDT', 'SOLUSDT']);
+  
   const [marketData, setMarketData] = useState<MarketData[]>([
     { symbol: 'BTC/USDT', price: 43250.50, change24h: 2.34, volume: 28500000000, volatility: 0.042 },
     { symbol: 'ETH/USDT', price: 2285.75, change24h: -1.12, volume: 15200000000, volatility: 0.038 },
@@ -82,15 +88,39 @@ export default function QuantumTradingConsole() {
   const [accountBalance, setAccountBalance] = useState(10250.50);
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      // Simulate real-time updates
-      setMarketData(prev => prev.map(m => ({
-        ...m,
-        price: m.price * (1 + (Math.random() - 0.5) * 0.001),
-        change24h: m.change24h + (Math.random() - 0.5) * 0.1,
-      })));
+    // Update market data from live WebSocket
+    if (connected && liveData) {
+      setMarketData(prev => prev.map((m, i) => {
+        const symbols = ['BTCUSDT', 'ETHUSDT', 'SOLUSDT'];
+        const live = liveData[symbols[i]];
+        if (live) {
+          return {
+            ...m,
+            price: live.price,
+            change24h: live.priceChange24h,
+            volume: live.volume24h,
+            volatility: Math.abs(live.priceChange24h) / 100
+          };
+        }
+        return m;
+      }));
+    }
+  }, [liveData, connected]);
 
-      setLambda(prev => Math.max(0, Math.min(1, prev + (Math.random() - 0.5) * 0.05)));
+  useEffect(() => {
+    const interval = setInterval(() => {
+      // Simulate real-time updates if not connected
+      if (!connected) {
+        setMarketData(prev => prev.map(m => ({
+          ...m,
+          price: m.price * (1 + (Math.random() - 0.5) * 0.001),
+          change24h: m.change24h + (Math.random() - 0.5) * 0.1,
+        })));
+      }
+
+      // Update Λ, Γ, Prism based on market volatility
+      const avgVolatility = marketData.reduce((sum, m) => sum + (m.volatility || 0), 0) / marketData.length;
+      setLambda(prev => Math.max(0, Math.min(1, prev + avgVolatility * (Math.random() - 0.5) * 0.1)));
       setCoherence(prev => Math.max(0, Math.min(1, prev + (Math.random() - 0.5) * 0.03)));
       
       const votes = Math.floor(Math.random() * 3) + 6;
@@ -145,6 +175,34 @@ export default function QuantumTradingConsole() {
 
   return (
     <div className="min-h-screen p-6 space-y-6">
+      {/* Connection Status */}
+      {!hasCredentials && (
+        <Alert className="bg-yellow-500/10 border-yellow-500/20 animate-fade-in">
+          <AlertTriangle className="h-4 w-4 text-yellow-500" />
+          <AlertDescription className="text-yellow-500">
+            <strong>No API credentials configured.</strong> Go to the "API Keys" tab to connect your Binance account for live trading.
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {hasCredentials && !connected && (
+        <Alert className="bg-blue-500/10 border-blue-500/20 animate-fade-in">
+          <Wifi className="h-4 w-4 text-blue-500 animate-pulse" />
+          <AlertDescription className="text-blue-500">
+            Connecting to Binance WebSocket streams...
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {connected && (
+        <Alert className="bg-green-500/10 border-green-500/20 animate-fade-in">
+          <Wifi className="h-4 w-4 text-green-500" />
+          <AlertDescription className="text-green-500">
+            🌈 <strong>LIVE</strong> • Connected to Binance • {Object.keys(liveData).length} pairs streaming in real-time
+          </AlertDescription>
+        </Alert>
+      )}
+      
       {/* Header with Account Summary */}
       <div className="flex items-center justify-between animate-fade-in">
         <div>
