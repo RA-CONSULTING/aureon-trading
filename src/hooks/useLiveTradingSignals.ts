@@ -45,7 +45,7 @@ export const useLiveTradingSignals = (symbol: string = 'btcusdt') => {
       setLastMarketData(marketData);
       
       // Compute Master Equation state
-      const lambda = masterEq.step({
+      const lambda = await masterEq.step({
         price: marketData.price,
         volume: marketData.volume,
         volatility: marketData.volatility,
