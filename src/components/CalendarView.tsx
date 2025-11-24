@@ -15,7 +15,7 @@ interface DayData {
 }
 
 const mapFrequencyToEmotion = (freq: number) => {
-  return getEmotionalStateFromFrequency(freq);
+  return getEmotionalStateFromFrequency(freq, 0.7); // frequency, intensity
 }
 
 const CalendarView: React.FC = () => {

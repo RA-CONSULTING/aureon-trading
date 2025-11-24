@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { fmt, fmtHz } from '@/utils/number';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
