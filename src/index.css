@@ -8,86 +8,101 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    --background: 222 47% 11%;
-    --foreground: 210 40% 98%;
+    /* AUREON Enhanced Theme - Deep Space with Quantum Glow */
+    --background: 240 10% 3.9%;
+    --foreground: 180 100% 95%;
 
-    --card: 217 33% 17%;
-    --card-foreground: 210 40% 98%;
+    --card: 240 8% 8%;
+    --card-foreground: 180 100% 95%;
 
-    --popover: 222 47% 11%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 240 8% 8%;
+    --popover-foreground: 180 100% 95%;
 
-    --primary: 199 89% 48%;
-    --primary-foreground: 222 47% 11%;
+    /* Quantum Cyan Primary */
+    --primary: 180 100% 50%;
+    --primary-foreground: 240 10% 5%;
+    --primary-glow: 180 100% 60%;
 
-    --secondary: 38 92% 50%;
-    --secondary-foreground: 222 47% 11%;
+    /* Love Frequency Gold */
+    --secondary: 45 100% 51%;
+    --secondary-foreground: 240 10% 5%;
+    --secondary-glow: 45 100% 65%;
 
-    --muted: 217 33% 17%;
-    --muted-foreground: 215 20% 65%;
+    /* Unity Purple */
+    --accent: 270 80% 60%;
+    --accent-foreground: 180 100% 95%;
+    --accent-glow: 270 80% 70%;
 
-    --accent: 199 89% 48%;
-    --accent-foreground: 222 47% 11%;
+    --muted: 240 8% 15%;
+    --muted-foreground: 180 20% 60%;
 
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 180 100% 95%;
 
-    --success: 142 76% 36%;
-    --success-foreground: 210 40% 98%;
+    --success: 142 76% 45%;
+    --success-foreground: 180 100% 95%;
 
-    --border: 217 33% 25%;
-    --input: 217 33% 25%;
-    --ring: 199 89% 48%;
+    --border: 240 8% 20%;
+    --input: 240 8% 15%;
+    --ring: 180 100% 50%;
 
-    --radius: 0.75rem;
+    --radius: 1rem;
 
-    --gradient-primary: linear-gradient(135deg, hsl(199 89% 48%) 0%, hsl(199 89% 38%) 100%);
-    --gradient-gold: linear-gradient(135deg, hsl(38 92% 50%) 0%, hsl(45 93% 47%) 100%);
-    --gradient-hero: linear-gradient(180deg, hsl(222 47% 11%) 0%, hsl(217 33% 17%) 100%);
+    /* Enhanced Gradients with Quantum Glow */
+    --gradient-primary: linear-gradient(135deg, hsl(180 100% 50%) 0%, hsl(200 100% 50%) 50%, hsl(270 80% 60%) 100%);
+    --gradient-secondary: linear-gradient(135deg, hsl(45 100% 51%) 0%, hsl(35 100% 55%) 100%);
+    --gradient-hero: radial-gradient(ellipse at top, hsl(180 100% 15%) 0%, hsl(240 10% 3.9%) 50%);
+    --gradient-card: linear-gradient(135deg, hsl(240 8% 10%) 0%, hsl(240 8% 8%) 100%);
     
-    --shadow-glow: 0 0 40px hsla(199, 89%, 48%, 0.3);
-    --shadow-card: 0 10px 30px -10px hsla(222, 47%, 5%, 0.5);
+    /* Enhanced Shadows with Quantum Glow */
+    --shadow-glow-primary: 0 0 60px hsla(180, 100%, 50%, 0.4), 0 0 120px hsla(180, 100%, 50%, 0.2);
+    --shadow-glow-secondary: 0 0 60px hsla(45, 100%, 51%, 0.4), 0 0 120px hsla(45, 100%, 51%, 0.2);
+    --shadow-glow-accent: 0 0 60px hsla(270, 80%, 60%, 0.4), 0 0 120px hsla(270, 80%, 60%, 0.2);
+    --shadow-card: 0 20px 60px -20px hsla(180, 100%, 50%, 0.3);
 
-    --sidebar-background: 222 47% 11%;
-    --sidebar-foreground: 210 40% 98%;
-    --sidebar-primary: 199 89% 48%;
-    --sidebar-primary-foreground: 222 47% 11%;
-    --sidebar-accent: 217 33% 17%;
-    --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 217 33% 25%;
-    --sidebar-ring: 199 89% 48%;
+    --sidebar-background: 240 10% 5%;
+    --sidebar-foreground: 180 100% 95%;
+    --sidebar-primary: 180 100% 50%;
+    --sidebar-primary-foreground: 240 10% 5%;
+    --sidebar-accent: 240 8% 12%;
+    --sidebar-accent-foreground: 180 100% 95%;
+    --sidebar-border: 240 8% 20%;
+    --sidebar-ring: 180 100% 50%;
   }
 
   .dark {
-    --background: 222 47% 11%;
-    --foreground: 210 40% 98%;
-    --card: 217 33% 17%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222 47% 11%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 199 89% 48%;
-    --primary-foreground: 222 47% 11%;
-    --secondary: 38 92% 50%;
-    --secondary-foreground: 222 47% 11%;
-    --muted: 217 33% 17%;
-    --muted-foreground: 215 20% 65%;
-    --accent: 199 89% 48%;
-    --accent-foreground: 222 47% 11%;
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 210 40% 98%;
-    --success: 142 76% 36%;
-    --success-foreground: 210 40% 98%;
-    --border: 217 33% 25%;
-    --input: 217 33% 25%;
-    --ring: 199 89% 48%;
-    --sidebar-background: 222 47% 11%;
-    --sidebar-foreground: 210 40% 98%;
-    --sidebar-primary: 199 89% 48%;
-    --sidebar-primary-foreground: 222 47% 11%;
-    --sidebar-accent: 217 33% 17%;
-    --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 217 33% 25%;
-    --sidebar-ring: 199 89% 48%;
+    --background: 240 10% 3.9%;
+    --foreground: 180 100% 95%;
+    --card: 240 8% 8%;
+    --card-foreground: 180 100% 95%;
+    --popover: 240 8% 8%;
+    --popover-foreground: 180 100% 95%;
+    --primary: 180 100% 50%;
+    --primary-foreground: 240 10% 5%;
+    --primary-glow: 180 100% 60%;
+    --secondary: 45 100% 51%;
+    --secondary-foreground: 240 10% 5%;
+    --secondary-glow: 45 100% 65%;
+    --accent: 270 80% 60%;
+    --accent-foreground: 180 100% 95%;
+    --accent-glow: 270 80% 70%;
+    --muted: 240 8% 15%;
+    --muted-foreground: 180 20% 60%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 180 100% 95%;
+    --success: 142 76% 45%;
+    --success-foreground: 180 100% 95%;
+    --border: 240 8% 20%;
+    --input: 240 8% 15%;
+    --ring: 180 100% 50%;
+    --sidebar-background: 240 10% 5%;
+    --sidebar-foreground: 180 100% 95%;
+    --sidebar-primary: 180 100% 50%;
+    --sidebar-primary-foreground: 240 10% 5%;
+    --sidebar-accent: 240 8% 12%;
+    --sidebar-accent-foreground: 180 100% 95%;
+    --sidebar-border: 240 8% 20%;
+    --sidebar-ring: 180 100% 50%;
   }
 }
 
@@ -97,6 +112,58 @@ All colors MUST be HSL.
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
+    background-image: radial-gradient(ellipse at top, hsl(180 100% 15% / 0.1) 0%, transparent 50%);
+  }
+
+  /* Quantum Glow Effects */
+  .glow-primary {
+    box-shadow: var(--shadow-glow-primary);
+  }
+
+  .glow-secondary {
+    box-shadow: var(--shadow-glow-secondary);
+  }
+
+  .glow-accent {
+    box-shadow: var(--shadow-glow-accent);
+  }
+
+  /* Auto-activate pulse animation */
+  @keyframes quantum-pulse {
+    0%, 100% { 
+      opacity: 1;
+      transform: scale(1);
+      box-shadow: 0 0 20px hsla(180, 100%, 50%, 0.4);
+    }
+    50% { 
+      opacity: 0.8;
+      transform: scale(1.02);
+      box-shadow: 0 0 40px hsla(180, 100%, 50%, 0.6);
+    }
+  }
+
+  @keyframes glow-rotate {
+    0% { filter: hue-rotate(0deg); }
+    100% { filter: hue-rotate(360deg); }
+  }
+
+  @keyframes shimmer {
+    0% { background-position: -1000px 0; }
+    100% { background-position: 1000px 0; }
+  }
+
+  .quantum-pulse {
+    animation: quantum-pulse 3s ease-in-out infinite;
+  }
+
+  .glow-rotate {
+    animation: glow-rotate 10s linear infinite;
+  }
+
+  .shimmer {
+    background: linear-gradient(90deg, transparent, hsla(180, 100%, 50%, 0.3), transparent);
+    background-size: 1000px 100%;
+    animation: shimmer 3s infinite;
   }
 }
