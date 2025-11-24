@@ -73,104 +73,90 @@ export default function EvidenceAuditPanel() {
         <TabsContent value="validation">
           <LiveValidationDashboard />
         </TabsContent>
-                <div className="text-xs text-purple-300">Feature vectors</div>
-              </div>
-            </div>
 
-            <div className="space-y-2">
-              <div className="text-sm text-purple-400">Current Session</div>
-              <div className="flex items-center gap-2">
-                <CheckCircle className="w-4 h-4 text-green-400" />
-                <span className="text-green-400 text-sm">Active logging</span>
-                <Badge variant="outline" className="border-green-500 text-green-400 ml-auto">
-                  Real-time
-                </Badge>
-              </div>
-            </div>
-
-            <Button className="w-full bg-purple-600 hover:bg-purple-700">
-              <Download className="w-4 h-4 mr-2" />
-              Export CSV Files
-            </Button>
-          </TabsContent>
-
-          <TabsContent value="snapshots" className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="text-sm text-purple-400">
-                Last snapshot: {lastSnapshot ? lastSnapshot.toLocaleTimeString() : 'None'}
-              </div>
-              <Button onClick={handleSnapshot} className="bg-purple-600 hover:bg-purple-700">
-                <Camera className="w-4 h-4 mr-2" />
-                Take Snapshot
-              </Button>
-            </div>
-
-            <div className="space-y-2">
-              <div className="text-sm text-purple-400">Recent Snapshots</div>
-              {recentSnapshots.map(snapshot => (
-                <div key={snapshot.id} className="bg-black/60 p-3 rounded border border-purple-500/20">
-                  <div className="flex items-center justify-between text-xs">
-                    <div className="text-purple-300">{snapshot.timestamp}</div>
-                    <Badge variant="outline" className="border-purple-500/30">
-                      {snapshot.intent}
-                    </Badge>
+        <TabsContent value="csv" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Database className="w-5 h-5" />
+                CSV Data Streams
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {csvStats.map(stat => (
+                <div key={stat.filename} className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <FileText className="w-4 h-4 text-muted-foreground" />
+                    <div>
+                      <div className="font-medium">{stat.filename}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {stat.rows.toLocaleString()} rows • {stat.size}
+                      </div>
+                    </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-2 mt-2 text-xs">
-                    <div>
-                      <span className="text-purple-400">Lock:</span>
-                      <span className="text-green-400 ml-1">{snapshot.lock}</span>
-                    </div>
-                    <div>
-                      <span className="text-purple-400">Coherence:</span>
-                      <span className="text-green-400 ml-1">{snapshot.coherence}</span>
-                    </div>
+                  <div className="flex items-center gap-3">
+                    <div className="text-xs text-muted-foreground">{stat.lastUpdate}</div>
+                    <Badge variant={stat.status === 'active' ? 'default' : 'secondary'}>
+                      {stat.status}
+                    </Badge>
                   </div>
                 </div>
               ))}
-            </div>
-          </TabsContent>
 
-          <TabsContent value="audit" className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+              <Button className="w-full">
+                <Download className="w-4 h-4 mr-2" />
+                Export All CSV Files
+              </Button>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="snapshots" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Evidence Snapshots</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-sm text-muted-foreground text-center py-8">
+                Snapshot capture feature coming soon
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="audit" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Activity className="w-5 h-5" />
+                Audit Trail
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
               <div className="space-y-2">
-                <div className="text-sm text-purple-400">Total Entries</div>
-                <div className="text-2xl font-mono text-blue-400">{auditEntries}</div>
+                {auditLog.map((log, idx) => (
+                  <div key={idx} className="flex items-start gap-3 p-2 rounded-lg hover:bg-muted/50">
+                    <div className="text-xs text-muted-foreground min-w-[60px]">{log.time}</div>
+                    <div className="text-sm flex-1">{log.event}</div>
+                    <Badge variant={
+                      log.type === 'success' ? 'default' : 
+                      log.type === 'warning' ? 'secondary' : 
+                      'outline'
+                    }>
+                      {log.type}
+                    </Badge>
+                  </div>
+                ))}
               </div>
-              <div className="space-y-2">
-                <div className="text-sm text-purple-400">Latency</div>
-                <div className="text-2xl font-mono text-green-400">&lt;10ms</div>
-              </div>
-            </div>
 
-            <div className="space-y-2">
-              <div className="text-sm text-purple-400">System Status</div>
-              <div className="grid grid-cols-2 gap-2 text-xs">
-                <div className="flex items-center gap-2">
-                  <CheckCircle className="w-3 h-3 text-green-400" />
-                  <span className="text-green-400">WebSocket Bridge</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <CheckCircle className="w-3 h-3 text-green-400" />
-                  <span className="text-green-400">Validators Online</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <CheckCircle className="w-3 h-3 text-green-400" />
-                  <span className="text-green-400">CSV Writers</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Clock className="w-3 h-3 text-yellow-400" />
-                  <span className="text-yellow-400">Unity Timeline</span>
-                </div>
-              </div>
-            </div>
-
-            <Button className="w-full bg-blue-600 hover:bg-blue-700">
-              <FileText className="w-4 h-4 mr-2" />
-              Generate Audit Report
-            </Button>
-          </TabsContent>
-        </Tabs>
-      </CardContent>
-    </Card>
+              <Button className="w-full">
+                <FileText className="w-4 h-4 mr-2" />
+                Export Audit Log
+              </Button>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+    </div>
   );
 }
