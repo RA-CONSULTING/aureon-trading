@@ -15,10 +15,60 @@ This is not just a trading system. This is **mathematical research** made availa
 
 **The core discovery:** Markets exhibit coherence patterns that can be detected and acted upon with positive mathematical expectancy. This research is now **open source** so that anyone, anywhere, can study, replicate, and build upon this work.
 
-**Author:** Gary Leckey  
-**Organization:** R&A Consulting and Brokerage Services Ltd  
-**Date:** November 25, 2025  
-**Location:** United Kingdom
+---
+
+## 👤 ABOUT THE AUTHOR
+
+### Gary Leckey
+**Founder & Principal Researcher** — R&A Consulting and Brokerage Services Ltd
+
+| | |
+|---|---|
+| **Location** | United Kingdom 🇬🇧 |
+| **Organization** | [R&A Consulting and Brokerage Services Ltd](https://raconsultingandbrokerageservices.com) |
+| **GitHub** | [@RA-CONSULTING](https://github.com/RA-CONSULTING) |
+| **Date** | November 25, 2025 |
+
+### Original Research Contributions
+
+Gary Leckey is the **original creator** of the following mathematical frameworks:
+
+| Framework | Contribution | Date |
+|-----------|-------------|------|
+| **Master Equation Λ(t)** | Unified field dynamics for market coherence | 2025 |
+| **9 Auris Nodes** | Multi-sensor ensemble architecture | 2025 |
+| **Rainbow Bridge** | Frequency-coherence mapping (110-963 Hz) | 2025 |
+| **The Prism** | 5-level signal transformation pipeline | 2025 |
+| **Earth Field Integration** | Schumann resonance correlation | 2025 |
+| **Stargate Lattice** | Celestial alignment timing system | 2025 |
+| **4-Broker Symphony** | Multi-platform diversification strategy | 2025 |
+| **A→Z/Z→A Sweep** | Fair scheduling for bias elimination | 2025 |
+
+### Mathematical Synthesis
+
+This work represents a **novel synthesis** combining:
+
+- **Dynamical Systems Theory** (Lorenz, Prigogine) → Master Equation dynamics
+- **Ensemble Methods** (Breiman, Dietterich) → 9 Auris Nodes architecture  
+- **Market Microstructure** (Kyle, O'Hara) → Coherence as price discovery
+- **Information Theory** (Shannon, Kelly) → Optimal position sizing
+- **Wave Physics** (Schumann, Kuramoto) → Harmonic frequency mapping
+- **Portfolio Theory** (Markowitz) → Multi-broker diversification
+
+### Citation
+
+If you use this research, please cite:
+
+```bibtex
+@software{leckey2025aureon,
+  author = {Leckey, Gary},
+  title = {Aureon: The Dance of Space and Time - A Coherence-Based Trading System},
+  year = {2025},
+  publisher = {GitHub},
+  organization = {R&A Consulting and Brokerage Services Ltd},
+  url = {https://github.com/RA-CONSULTING/aureon-trading}
+}
+```
 
 ---
 
