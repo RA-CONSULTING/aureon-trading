@@ -41,6 +41,7 @@ export function useQuantumWarRoom() {
   const { toast } = useToast();
   const heartbeatIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const balanceIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const dataIngestionIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // Register with Temporal Ladder on mount
   useEffect(() => {
@@ -230,6 +231,87 @@ export function useQuantumWarRoom() {
       if (balanceIntervalRef.current) {
         clearInterval(balanceIntervalRef.current);
         balanceIntervalRef.current = null;
+      }
+    };
+  }, [state.status]);
+
+  // 🔥 DATA INGESTION LOOP - Connect MasterEquation to database
+  useEffect(() => {
+    if (state.status !== 'active') return;
+
+    const ingestQuantumData = async () => {
+      try {
+        // Import dynamically to avoid circular deps
+        const { MasterEquation } = await import('@/core/masterEquation');
+        const { getTemporalId, getSentinelName } = await import('@/core/primelinesIdentity');
+        
+        const masterEq = new MasterEquation();
+        
+        // Fetch current market data (simplified for now)
+        const snapshot = {
+          price: 50000, // Would fetch real BTC price
+          volume: 1000000,
+          volatility: 0.02,
+          momentum: 0.01,
+          spread: 0.001,
+          timestamp: Date.now()
+        };
+        
+        // Compute Master Equation field state
+        const lambdaState = await masterEq.step(snapshot);
+        
+        // Persist to database via edge function
+        const { error } = await supabase.functions.invoke('ingest-master-equation', {
+          body: {
+            temporal_id: getTemporalId(),
+            sentinel_name: getSentinelName(),
+            symbol: 'BTCUSDT',
+            lambda: lambdaState.lambda,
+            substrate: lambdaState.substrate,
+            observer: lambdaState.observer,
+            echo: lambdaState.echo,
+            coherence: lambdaState.coherence,
+            coherence_linear: 1.0,
+            coherence_nonlinear: lambdaState.coherence,
+            coherence_phi: lambdaState.coherence,
+            quality_factor: lambdaState.coherence,
+            effective_gain: lambdaState.lambda,
+            dominant_node: lambdaState.dominantNode,
+            node_weights: lambdaState.nodeResponses,
+            price: snapshot.price,
+            volume: snapshot.volume,
+            volatility: snapshot.volatility,
+            momentum: snapshot.momentum,
+            metadata: {
+              stargateInfluence: lambdaState.stargateInfluence,
+              earthFieldInfluence: lambdaState.earthFieldInfluence,
+              nexusInfluence: lambdaState.nexusInfluence
+            }
+          }
+        });
+        
+        if (error) {
+          console.error('Data ingestion failed:', error);
+        } else {
+          console.log('✅ Quantum data ingested:', {
+            lambda: lambdaState.lambda.toFixed(3),
+            coherence: lambdaState.coherence.toFixed(3),
+            dominant: lambdaState.dominantNode
+          });
+        }
+      } catch (err) {
+        console.error('Data ingestion error:', err);
+      }
+    };
+
+    // Ingest immediately, then every 3 seconds
+    ingestQuantumData();
+    dataIngestionIntervalRef.current = setInterval(ingestQuantumData, 3000);
+
+    return () => {
+      if (dataIngestionIntervalRef.current) {
+        clearInterval(dataIngestionIntervalRef.current);
+        dataIngestionIntervalRef.current = null;
       }
     };
   }, [state.status]);

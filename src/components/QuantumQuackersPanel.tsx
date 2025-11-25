@@ -69,13 +69,12 @@ export function QuantumQuackersPanel() {
   const lastBroadcastTimeRef = useRef(0);
   const lastBroadcastCoherenceRef = useRef(quantumState.coherence);
 
+  // 🔥 REMOVED DUPLICATE REGISTRATION - useQuantumWarRoom handles this now
   useEffect(() => {
-    temporalLadder.registerSystem(SYSTEMS.QUANTUM_QUACKERS);
     const unsubscribe = temporalLadder.subscribe(state => {
       setLadderHealth(state.hiveMindCoherence);
     });
     return () => {
-      temporalLadder.unregisterSystem(SYSTEMS.QUANTUM_QUACKERS);
       unsubscribe();
     };
   }, []);
