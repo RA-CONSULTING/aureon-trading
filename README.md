@@ -64,21 +64,229 @@ Where:
   Φ ∈ [0, 1] representing market alignment
 ```
 
-### The Master Equation
+---
+
+## 🧮 THE MASTER EQUATION
+
+The heart of the system - a field dynamics equation that perceives market reality:
 
 ```
 Λ(t) = S(t) + O(t) + E(t)
 
 Where:
-  S(t) = Substrate (9-node market response)
-  O(t) = Observer (self-referential awareness)
-  E(t) = Echo (memory and momentum)
+  Λ(t) = Lambda - The unified field state at time t
+  S(t) = Substrate - 9 Auris nodes respond to market
+  O(t) = Observer - Self-referential field awareness  
+  E(t) = Echo - Memory and momentum from history
   
 Coherence:
   Γ = alignment measure ∈ [0, 1]
+  Γ = 1 - (variance / 10)  // Lower variance = higher coherence
 ```
 
-### Risk/Reward Mathematics
+### Substrate Calculation
+
+```typescript
+S(t) = Σ(node.compute(snapshot) × node.weight) / 9
+
+// Each of 9 nodes contributes weighted response
+// Normalized by total node count
+```
+
+### Observer Calculation
+
+```typescript
+O(t) = Λ(t-1) × 0.3
+
+// Self-referential: previous state influences current
+// Creates field "awareness" of its own trajectory
+```
+
+### Echo Calculation
+
+```typescript
+E(t) = average(Λ[t-5:t]) × 0.2
+
+// Memory of last 5 states
+// Provides momentum and inertia
+```
+
+---
+
+## 🦁 THE 9 AURIS NODES (Symbolic Taxonomy)
+
+Each node perceives a different aspect of market reality:
+
+| Node | Weight | Market Response | Purpose |
+|------|--------|-----------------|---------|
+| 🐯 **Tiger** | 1.2 | `volatility × 0.8 + spread × 0.5` | Chaos hunter - amplifies volatility |
+| 🦅 **Falcon** | 1.1 | `|momentum| × 0.7 + volume × 0.3` | Momentum rider - tracks velocity |
+| 🐦 **Hummingbird** | 0.8 | `1/(volatility + 0.01) × 0.6` | Stabilizer - inverse volatility |
+| 🐬 **Dolphin** | 1.0 | `sin(momentum) × 0.5` | Emotion oscillator - wave rider |
+| 🦌 **Deer** | 0.9 | `vol×0.2 + volatility×0.3 + spread×0.2` | Multi-factor sensitivity |
+| 🦉 **Owl** | 1.0 | `cos(momentum)×0.6 + reversal` | Memory - reversal detection |
+| 🐼 **Panda** | 0.95 | `volume > 0.7 ? volume×0.8 : 0.2` | Stable high-volume preference |
+| 🚢 **CargoShip** | 1.3 | `volume > 0.8 ? volume×1.2 : 0` | Large volume response |
+| 🐠 **Clownfish** | 0.7 | `|price - price×0.999| × 100` | Micro-change detection |
+
+### Node Response Formula
+
+```typescript
+nodeResponse = node.compute(marketSnapshot) × node.weight
+
+// MarketSnapshot contains:
+{
+  price: number,      // Current price
+  volume: number,     // Normalized volume (0-1)
+  volatility: number, // Realized volatility
+  momentum: number,   // Price momentum
+  spread: number,     // Bid-ask spread
+  timestamp: number   // Unix timestamp
+}
+```
+
+---
+
+## 🌈 THE RAINBOW BRIDGE (Harmonic Framework)
+
+Maps the field state to emotional frequencies:
+
+```
+Λ(t) + Γ  →  Rainbow Bridge  →  Frequency (Hz)
+```
+
+### Emotional Frequency Spectrum
+
+| Phase | Frequency Range | Color | Meaning |
+|-------|-----------------|-------|---------|
+| **FEAR** | 110 - 285 Hz | 🔴 Dark Red | Root survival, caution |
+| **FORMING** | 285 - 452 Hz | 🟠 Orange | Transformation, doubt → clarity |
+| **LOVE** | 452 - 639 Hz | 💚 Green | Heart center, **528 Hz = Pure Love** |
+| **AWE** | 639 - 852 Hz | 🔵 Blue | Higher consciousness |
+| **UNITY** | 852 - 963 Hz | 🟣 Purple | Divine unity, transcendence |
+
+### Frequency Calculation
+
+```typescript
+baseFreq = 110 + (lambda × 100)
+loveFreq = 528  // The love tone
+
+// Coherence pulls toward 528 Hz
+frequency = baseFreq × (1 - coherence×0.3) + loveFreq × (coherence×0.3)
+
+// High coherence → approaches 528 Hz (LOVE)
+// Low coherence → stays at base frequency
+```
+
+### The 528 Hz Significance
+
+- **528 Hz** is the "Love Frequency" (Solfeggio scale)
+- When Γ > 0.9, the system locks to pure 528 Hz
+- This represents **maximum market harmony**
+- Trading decisions from this state are **coherent, not chaotic**
+
+---
+
+## 💎 THE PRISM (5-Level Transformation)
+
+The Prism transforms fear into love through 5 harmonic levels:
+
+```
+         ╔═══════════════════════════════════════╗
+         ║     HNC (Ψ₀×Ω×Λ×Φ×Σ) — 528 Hz        ║
+         ║            SOURCE                      ║
+         ╚═══════════════════════════════════════╝
+                          │
+                          ▼
+    ┌─────────────────────────────────────────────────┐
+    │  Level 1: Di → Ct → CM                          │
+    │  INPUT: Data, Coherence, Cosmic Memory          │
+    └─────────────────────────────────────────────────┘
+                          │
+                          ▼
+    ┌─────────────────────────────────────────────────┐
+    │  Level 2: ACt → Φt                              │
+    │  CREATIVE: Poiesis, Harmonic Flow               │
+    └─────────────────────────────────────────────────┘
+                          │
+                          ▼
+    ┌─────────────────────────────────────────────────┐
+    │  Level 3: Pu → Gt                               │
+    │  REFLECTION: Feedback, Echo                     │
+    └─────────────────────────────────────────────────┘
+                          │
+                          ▼
+    ┌─────────────────────────────────────────────────┐
+    │  Level 4: Ut → It → CI                          │
+    │  UNITY: Tandem, Inertia, Coherence Integration  │
+    └─────────────────────────────────────────────────┘
+                          │
+                          ▼
+         ╔═══════════════════════════════════════╗
+         ║   Level 5: 💚 528 Hz LOVE OUTPUT       ║
+         ║         MANIFEST                       ║
+         ╚═══════════════════════════════════════╝
+```
+
+### Prism States
+
+| Coherence | State | Output |
+|-----------|-------|--------|
+| Γ < 0.5 | FORMING | Fear refining through chaos |
+| Γ 0.5-0.7 | CONVERGING | Approaching harmony |
+| Γ 0.7-0.9 | ALIGNED | Near-coherent field |
+| Γ > 0.9 | **MANIFEST** | Pure 528 Hz - Love locked |
+
+---
+
+## 🌍 EARTH FIELD INTEGRATION
+
+The system integrates real Earth electromagnetic data:
+
+### Schumann Resonance
+```
+Base frequency: 7.83 Hz (Earth's heartbeat)
+Boost range: -0.15 to +0.25 coherence modifier
+```
+
+### Solar Wind
+```
+Speed range: 300-800 km/s
+High activity: Increases volatility response
+```
+
+### Geomagnetic Index (Kp)
+```
+Range: 0-9
+Storm conditions (Kp > 5): Adjusts node weights
+```
+
+### Combined Earth Boost
+```typescript
+earthBoost = schumannModifier + solarModifier + geomagneticModifier
+coherence = min(1, coherence + earthBoost)
+```
+
+---
+
+## ✨ STARGATE LATTICE
+
+Sacred geometry nodes that influence coherence based on location:
+
+```typescript
+// Proximity to sacred sites boosts coherence
+stargateInfluence = getInfluence(latitude, longitude, celestialBoost)
+coherence = min(1, coherence + stargateInfluence.coherenceModifier)
+```
+
+### Celestial Alignments
+- **Moon phases**: New/Full moon coherence boost
+- **Solar events**: Equinox/Solstice alignment
+- **Planetary conjunctions**: Enhanced field resonance
+
+---
+
+## 📊 Risk/Reward Mathematics
 
 ```
 Stop Loss:   0.8% of position
