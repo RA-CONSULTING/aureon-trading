@@ -247,15 +247,32 @@ export function useQuantumWarRoom() {
         
         const masterEq = new MasterEquation();
         
-        // Fetch current market data (simplified for now)
+        // Fetch REAL market data from Binance
+        const { data: marketDataResponse, error: marketError } = await supabase.functions.invoke('fetch-binance-market-data', {
+          body: { symbol: 'BTCUSDT' }
+        });
+
+        if (marketError || !marketDataResponse) {
+          console.error('Failed to fetch market data, using fallback:', marketError);
+          // Skip this cycle if Binance fails
+          return;
+        }
+
         const snapshot = {
-          price: 50000, // Would fetch real BTC price
-          volume: 1000000,
-          volatility: 0.02,
-          momentum: 0.01,
-          spread: 0.001,
+          price: marketDataResponse.price,
+          volume: marketDataResponse.volumeNormalized,
+          volatility: marketDataResponse.volatility,
+          momentum: marketDataResponse.momentum / 100, // Convert percentage to decimal
+          spread: marketDataResponse.spreadPercent / 100,
           timestamp: Date.now()
         };
+
+        console.log('📊 Real market data:', {
+          price: `$${snapshot.price.toFixed(2)}`,
+          volume: snapshot.volume.toFixed(2),
+          volatility: `${(snapshot.volatility * 100).toFixed(2)}%`,
+          momentum: `${(snapshot.momentum * 100).toFixed(2)}%`,
+        });
         
         // Compute Master Equation field state
         const lambdaState = await masterEq.step(snapshot);
@@ -360,6 +377,31 @@ export function useQuantumWarRoom() {
           prism: `L${prismOutput.level} ${prismOutput.state}`,
           loveLocked: prismOutput.frequency === 528
         });
+
+        // AUTO-GENERATE PAPER TRADE on high coherence (LHE condition)
+        if (lambdaState.coherence > 0.945) {
+          console.log('🎯 HIGH COHERENCE DETECTED - Auto-generating paper trade');
+          
+          const { data: tradeResult, error: tradeError } = await supabase.functions.invoke('execute-trade', {
+            body: {
+              symbol: 'BTCUSDT',
+              side: lambdaState.lambda > 0 ? 'BUY' : 'SELL',
+              quantity: 0.001, // Small paper trade amount
+              coherence: lambdaState.coherence,
+              lighthouse_value: lambdaState.lambda * lambdaState.coherence,
+              lighthouse_confidence: lambdaState.coherence,
+              prism_level: prismOutput.level,
+              signal_type: lambdaState.lambda > 0 ? 'LONG' : 'SHORT',
+              mode: 'paper'
+            }
+          });
+
+          if (tradeError) {
+            console.error('❌ Paper trade execution failed:', tradeError);
+          } else {
+            console.log('✅ Paper trade executed:', tradeResult);
+          }
+        }
       } catch (err) {
         console.error('Data ingestion error:', err);
       }

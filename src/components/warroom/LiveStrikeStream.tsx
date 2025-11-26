@@ -3,6 +3,9 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useEffect, useState, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import { Volume2, VolumeX } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface StrikeEvent {
   id: string;
@@ -15,6 +18,21 @@ interface StrikeEvent {
 export function LiveStrikeStream() {
   const [events, setEvents] = useState<StrikeEvent[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const { toast } = useToast();
+  const [soundEnabled, setSoundEnabled] = useState(true);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  // Initialize audio
+  useEffect(() => {
+    audioRef.current = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBjaO1fPTgjMGHm7A7+OZQQ0PVqzn77BaGAg+ltv1xWwcBiuF0PLaizsKFl+z7OqnVRQKRp/g8r5sIQY2j9Xz04IzBh5uwO/jmUENEFar5++xWhgIPpbb9cVsHAYrhdDy2os7ChZfs+zqp1UUCkaf4PK+bCEGNo/V89OCMwYebsDv45lBDRBWq+fvsVoYCD6W2/XFbBwGK4XQ8tqLOwoWX7Ps6qdVFApGn+DyvmwhBjaP1fPTgjMGHm7A7+OZQQ0QVqvn77FaGAg+ltv1xWwcBiuF0PLaizsKFl+z7OqnVRQKRp/g8r5sIQY2j9Xz04IzBh5uwO/jmUENEFar5++xWhgIPpbb9cVsHAYrhdDy2os7ChZfs+zqp1UUCkaf4PK+bCEGNo/V89OCMwYebsDv45lBDRBWq+fvsVoYCD6W2/XFbBwGK4XQ8tqLOwoWX7Ps6qdVFApGn+DyvmwhBjaP1fPTgjMGHm7A7+OZQQ0QVqvn77FaGAg+ltv1xWwcBiuF0PLaizsKFl+z7OqnVRQKRp/g8r5sIQY2j9Xz04IzBh5uwO/jmUENEFar5++xWhgIPpbb9cVsHAYrhdDy2os7ChZfs+zqp1UUCkaf4PK+bCEGNo/V89OCMwYebsDv45lBDRBWq+fvsVoYCD6W2/XFbBwGK4XQ8tqLOwoWX7Ps6qdVFApGn+DyvmwhBjaP1fPTgjMGHm7A7+OZQQ0QVqvn77FaGAg=');
+  }, []);
+
+  const playSound = () => {
+    if (soundEnabled && audioRef.current) {
+      audioRef.current.currentTime = 0;
+      audioRef.current.play().catch(e => console.log('Sound play failed:', e));
+    }
+  };
 
   useEffect(() => {
     // Subscribe to real-time trading executions
@@ -30,16 +48,24 @@ export function LiveStrikeStream() {
         (payload: any) => {
           const exec = payload.new;
           const severity: 'info' | 'success' | 'critical' = exec.status === 'executed' ? 'success' : 'info';
-          setEvents(prev => [
-            {
-              id: exec.id,
-              timestamp: exec.executed_at || exec.created_at,
-              type: 'execution' as const,
-              message: `${exec.side} ${exec.symbol} @ $${exec.executed_price?.toFixed(2) || 'MARKET'}`,
-              severity,
-            },
-            ...prev,
-          ].slice(0, 50));
+          const newEvent = {
+            id: exec.id,
+            timestamp: exec.executed_at || exec.created_at,
+            type: 'execution' as const,
+            message: `${exec.side} ${exec.symbol} @ $${exec.executed_price?.toFixed(2) || 'MARKET'}`,
+            severity,
+          };
+          
+          setEvents(prev => [newEvent, ...prev].slice(0, 50));
+          
+          // Show toast notification for trades
+          toast({
+            title: `🦆 ${exec.side} Trade Executed`,
+            description: `${exec.symbol} @ $${exec.executed_price?.toFixed(2) || 'MARKET'} | Coherence: ${(exec.coherence * 100).toFixed(1)}%`,
+            duration: 3000,
+          });
+          
+          playSound();
         }
       )
       .on(
@@ -52,16 +78,25 @@ export function LiveStrikeStream() {
         (payload: any) => {
           const event = payload.new;
           if (event.is_lhe) {
-            setEvents(prev => [
-              {
-                id: event.id,
-                timestamp: event.timestamp,
-                type: 'lhe' as const,
-                message: `🔥 LHE DETECTED - Γ=${(event.coherence * 100).toFixed(1)}% L=${event.lighthouse_signal.toFixed(2)}`,
-                severity: 'critical' as const,
-              },
-              ...prev,
-            ].slice(0, 50));
+            const newEvent = {
+              id: event.id,
+              timestamp: event.timestamp,
+              type: 'lhe' as const,
+              message: `🔥 LHE DETECTED - Γ=${(event.coherence * 100).toFixed(1)}% L=${event.lighthouse_signal.toFixed(2)}`,
+              severity: 'critical' as const,
+            };
+            
+            setEvents(prev => [newEvent, ...prev].slice(0, 50));
+            
+            // Show critical toast for LHE events
+            toast({
+              title: '🔥 LIGHTHOUSE HARMONIC EVENT',
+              description: `Coherence: ${(event.coherence * 100).toFixed(1)}% | Signal: ${event.lighthouse_signal.toFixed(2)}`,
+              variant: 'destructive',
+              duration: 5000,
+            });
+            
+            playSound();
           }
         }
       )
@@ -117,7 +152,17 @@ export function LiveStrikeStream() {
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
           <span>⚡ Live Strike Stream</span>
-          <Badge variant="outline">{events.length} events</Badge>
+          <div className="flex items-center gap-2">
+            <Badge variant="outline">{events.length} events</Badge>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setSoundEnabled(!soundEnabled)}
+              className="h-8 w-8"
+            >
+              {soundEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
+            </Button>
+          </div>
         </CardTitle>
       </CardHeader>
       <CardContent>
