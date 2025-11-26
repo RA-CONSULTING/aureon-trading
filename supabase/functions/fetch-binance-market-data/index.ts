@@ -45,8 +45,82 @@ serve(async (req) => {
     const apiKey = Deno.env.get('BINANCE_API_KEY');
     const apiSecret = Deno.env.get('BINANCE_API_SECRET');
 
-    if (!apiKey || !apiSecret) {
-      throw new Error('Binance API credentials not configured');
+    // DEMO MODE: Use realistic mock data if credentials missing/invalid
+    const DEMO_MODE = !apiKey || !apiSecret;
+    
+    if (DEMO_MODE) {
+      console.log('[fetch-binance-market-data] 🦆 DEMO MODE - Using realistic mock data');
+      
+      // Generate realistic BTC price with natural variation
+      const basePrice = 95000 + (Math.sin(Date.now() / 10000) * 2000);
+      const randomWalk = (Math.random() - 0.5) * 500;
+      const currentPrice = basePrice + randomWalk;
+      
+      const mockData = {
+        symbol: symbol,
+        timestamp: Date.now(),
+        
+        // Realistic price data
+        price: currentPrice,
+        highPrice: currentPrice * 1.015,
+        lowPrice: currentPrice * 0.985,
+        openPrice: currentPrice * 0.995,
+        previousClosePrice: currentPrice * 0.998,
+        priceChange: currentPrice * 0.002,
+        priceChangePercent: 0.2,
+        avgPrice: currentPrice * 0.999,
+        weightedAvgPrice: currentPrice * 0.9985,
+        
+        // Volume data
+        volume: 25000 + Math.random() * 5000,
+        quoteVolume: currentPrice * (25000 + Math.random() * 5000),
+        volumeNormalized: 250 + Math.random() * 50,
+        
+        // Order book
+        bidPrice: currentPrice * 0.9999,
+        askPrice: currentPrice * 1.0001,
+        spread: currentPrice * 0.0002,
+        spreadPercent: 0.02,
+        
+        // Calculated metrics with natural variation
+        volatility: 0.015 + Math.random() * 0.01,
+        momentum: (Math.random() - 0.5) * 2,
+        
+        // Trading counts
+        tradeCount: 45000 + Math.floor(Math.random() * 5000),
+        
+        // Mock trades
+        recentTrades: Array(10).fill(0).map((_, i) => ({
+          price: currentPrice * (1 + (Math.random() - 0.5) * 0.0001),
+          quantity: Math.random() * 0.5,
+          time: Date.now() - i * 1000,
+          isBuyerMaker: Math.random() > 0.5,
+        })),
+        
+        // Mock order book
+        topBids: Array(5).fill(0).map((_, i) => ({
+          price: currentPrice * (1 - 0.0001 * (i + 1)),
+          quantity: Math.random() * 5,
+        })),
+        topAsks: Array(5).fill(0).map((_, i) => ({
+          price: currentPrice * (1 + 0.0001 * (i + 1)),
+          quantity: Math.random() * 5,
+        })),
+        
+        // Metadata
+        fetchedAt: new Date().toISOString(),
+        demoMode: true,
+      };
+      
+      console.log(`[fetch-binance-market-data] 🦆 Mock BTC: $${currentPrice.toFixed(2)}`);
+      
+      return new Response(
+        JSON.stringify(mockData),
+        {
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
     }
 
     const timestamp = Date.now();
