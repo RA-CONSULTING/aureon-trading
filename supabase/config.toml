@@ -50,3 +50,21 @@ verify_jwt = true
 
 [functions.fetch-binance-symbols]
 verify_jwt = true
+
+[functions.ingest-master-equation]
+verify_jwt = false
+
+[functions.ingest-prism-state]
+verify_jwt = false
+
+[functions.ingest-rainbow-bridge]
+verify_jwt = false
+
+[functions.ingest-stargate-network]
+verify_jwt = false
+
+[functions.emergency-stop]
+verify_jwt = false
+
+[functions.get-binance-balances]
+verify_jwt = false

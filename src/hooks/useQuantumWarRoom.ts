@@ -291,14 +291,75 @@ export function useQuantumWarRoom() {
         });
         
         if (error) {
-          console.error('Data ingestion failed:', error);
+          console.error('Master Equation ingestion failed:', error);
         } else {
-          console.log('✅ Quantum data ingested:', {
+          console.log('✅ Master Equation ingested:', {
             lambda: lambdaState.lambda.toFixed(3),
             coherence: lambdaState.coherence.toFixed(3),
             dominant: lambdaState.dominantNode
           });
         }
+
+        // Also ingest Prism transformation state
+        const { RainbowBridge } = await import('@/core/rainbowBridge');
+        const { Prism } = await import('@/core/prism');
+        
+        const rainbow = new RainbowBridge();
+        const prism = new Prism();
+        
+        const rainbowState = rainbow.map(lambdaState.lambda, lambdaState.coherence);
+        const prismOutput = prism.transform(lambdaState.lambda, lambdaState.coherence, rainbowState.frequency);
+        
+        // Ingest Rainbow Bridge state
+        await supabase.functions.invoke('ingest-rainbow-bridge', {
+          body: {
+            temporal_id: getTemporalId(),
+            sentinel_name: getSentinelName(),
+            lambda_value: lambdaState.lambda,
+            coherence: lambdaState.coherence,
+            frequency: rainbowState.frequency,
+            base_frequency: 110,
+            harmonic_index: Math.floor(rainbowState.frequency / 110),
+            phase: rainbowState.phase,
+            color: rainbow.getPhaseColor(rainbowState.phase),
+            dominant_emotion: rainbowState.phase,
+            emotional_tags: [rainbowState.phase],
+            valence: rainbowState.intensity,
+            arousal: lambdaState.lambda,
+            intensity: rainbowState.intensity,
+            phase_transition: false,
+            previous_phase: null,
+            metadata: {}
+          }
+        });
+        
+        // Ingest Prism state
+        await supabase.functions.invoke('ingest-prism-state', {
+          body: {
+            temporal_id: getTemporalId(),
+            sentinel_name: getSentinelName(),
+            lambda_value: lambdaState.lambda,
+            coherence: lambdaState.coherence,
+            level: prismOutput.level,
+            state: prismOutput.state,
+            input_frequency: rainbowState.frequency,
+            frequency: prismOutput.frequency,
+            transformation_quality: prismOutput.transformation,
+            harmonic_purity: prismOutput.frequency === 528 ? 1.0 : prismOutput.transformation,
+            resonance_strength: lambdaState.coherence,
+            is_love_locked: prismOutput.frequency === 528 && lambdaState.coherence > 0.9,
+            lighthouse_signal: lambdaState.lambda * lambdaState.coherence,
+            is_lhe_correlated: lambdaState.coherence > 0.945,
+            metadata: {}
+          }
+        });
+        
+        console.log('✅ Full quantum pipeline ingested:', {
+          masterEq: '✓',
+          rainbow: `${rainbowState.phase} @ ${rainbowState.frequency}Hz`,
+          prism: `L${prismOutput.level} ${prismOutput.state}`,
+          loveLocked: prismOutput.frequency === 528
+        });
       } catch (err) {
         console.error('Data ingestion error:', err);
       }
