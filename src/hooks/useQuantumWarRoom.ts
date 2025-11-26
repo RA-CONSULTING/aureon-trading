@@ -241,21 +241,25 @@ export function useQuantumWarRoom() {
 
     const ingestQuantumData = async () => {
       try {
+        console.log('🌀 === QUANTUM CYCLE START ===');
         // Import dynamically to avoid circular deps
         const { MasterEquation } = await import('@/core/masterEquation');
         const { getTemporalId, getSentinelName } = await import('@/core/primelinesIdentity');
         
         const masterEq = new MasterEquation();
         
-        // Fetch REAL market data from Binance
+        // Fetch REAL market data from Binance (or demo data)
         const { data: marketDataResponse, error: marketError } = await supabase.functions.invoke('fetch-binance-market-data', {
           body: { symbol: 'BTCUSDT' }
         });
 
         if (marketError || !marketDataResponse) {
-          console.error('Failed to fetch market data, using fallback:', marketError);
-          // Skip this cycle if Binance fails
+          console.error('❌ Failed to fetch market data:', marketError);
           return;
+        }
+
+        if (marketDataResponse.demoMode) {
+          console.log('🦆 DEMO MODE ACTIVE - Using realistic mock BTC data');
         }
 
         const snapshot = {
@@ -272,9 +276,11 @@ export function useQuantumWarRoom() {
           volume: snapshot.volume.toFixed(2),
           volatility: `${(snapshot.volatility * 100).toFixed(2)}%`,
           momentum: `${(snapshot.momentum * 100).toFixed(2)}%`,
+          demoMode: marketDataResponse.demoMode || false,
         });
         
         // Compute Master Equation field state
+        console.log('🧮 Computing Master Equation with 9 Auris nodes...');
         const lambdaState = await masterEq.step(snapshot);
         
         // Persist to database via edge function
@@ -379,14 +385,20 @@ export function useQuantumWarRoom() {
         });
 
         // AUTO-GENERATE PAPER TRADE on high coherence (LHE condition)
-        if (lambdaState.coherence > 0.945) {
-          console.log('🎯 HIGH COHERENCE DETECTED - Auto-generating paper trade');
+        // Demo mode: Use lower threshold to ensure trades happen
+        const DEMO_THRESHOLD = marketDataResponse.demoMode ? 0.85 : 0.945;
+        
+        if (lambdaState.coherence > DEMO_THRESHOLD) {
+          console.log(`🎯 HIGH COHERENCE (Γ=${lambdaState.coherence.toFixed(3)} > ${DEMO_THRESHOLD}) - Auto-generating paper trade`);
+          
+          const tradeSide = lambdaState.lambda > 0 ? 'BUY' : 'SELL';
+          console.log(`📈 Executing paper ${tradeSide} trade for BTCUSDT @ $${snapshot.price.toFixed(2)}`);
           
           const { data: tradeResult, error: tradeError } = await supabase.functions.invoke('execute-trade', {
             body: {
               symbol: 'BTCUSDT',
-              side: lambdaState.lambda > 0 ? 'BUY' : 'SELL',
-              quantity: 0.001, // Small paper trade amount
+              side: tradeSide,
+              quantity: 0.001,
               coherence: lambdaState.coherence,
               lighthouse_value: lambdaState.lambda * lambdaState.coherence,
               lighthouse_confidence: lambdaState.coherence,
@@ -399,11 +411,15 @@ export function useQuantumWarRoom() {
           if (tradeError) {
             console.error('❌ Paper trade execution failed:', tradeError);
           } else {
-            console.log('✅ Paper trade executed:', tradeResult);
+            console.log('✅ Paper trade executed successfully:', tradeResult);
           }
+        } else {
+          console.log(`⏳ Coherence Γ=${lambdaState.coherence.toFixed(3)} (need >${DEMO_THRESHOLD} for trade)`);
         }
+        
+        console.log('🌀 === QUANTUM CYCLE COMPLETE ===\n');
       } catch (err) {
-        console.error('Data ingestion error:', err);
+        console.error('❌ Data ingestion error:', err);
       }
     };
 
