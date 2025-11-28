@@ -4,6 +4,7 @@ import { HistoricalTimeline } from './warroom/HistoricalTimeline';
 import { LiveStrikeStream } from './warroom/LiveStrikeStream';
 import { AurisNodesOrbit } from './warroom/AurisNodesOrbit';
 import { ProjectionHorizon } from './warroom/ProjectionHorizon';
+import { GasTankDisplay } from './warroom/GasTankDisplay';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 
@@ -26,8 +27,9 @@ export default function WarRoomDashboard() {
         </div>
 
         {/* Status & Controls */}
-        <Card className="bg-card/50 backdrop-blur border-primary/20">
-          <CardContent className="p-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <Card className="bg-card/50 backdrop-blur border-primary/20 lg:col-span-2">
+            <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div className="space-y-2">
                 <div className="flex items-center gap-4">
@@ -84,6 +86,13 @@ export default function WarRoomDashboard() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Gas Tank Display */}
+        <GasTankDisplay 
+          userId="demo-user" 
+          onEmpty={emergencyStop}
+        />
+      </div>
 
         {/* Quantum State */}
         <QuantumStatePanel 

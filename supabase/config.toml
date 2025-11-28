@@ -1,7 +1,19 @@
 project_id = "owfeyxrfyhprpcgqwxqh"
 
 [functions.execute-trade]
-verify_jwt = true
+verify_jwt = false
+
+[functions.fetch-binance-market-data]
+verify_jwt = false
+
+[functions.gas-tank-topup]
+verify_jwt = false
+
+[functions.gas-tank-deduct-fee]
+verify_jwt = false
+
+[functions.gas-tank-check-balance]
+verify_jwt = false
 
 [functions.monitor-positions]
 verify_jwt = true
