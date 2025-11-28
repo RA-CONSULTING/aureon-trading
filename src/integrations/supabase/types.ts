@@ -248,6 +248,111 @@ export type Database = {
         }
         Relationships: []
       }
+      gas_tank_accounts: {
+        Row: {
+          balance: number
+          created_at: string
+          fee_rate: number
+          fees_paid_today: number
+          high_water_mark: number
+          id: string
+          initial_balance: number
+          last_fee_deducted_at: string | null
+          last_top_up_at: string | null
+          membership_type: string
+          status: string
+          total_fees_paid: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          balance?: number
+          created_at?: string
+          fee_rate?: number
+          fees_paid_today?: number
+          high_water_mark?: number
+          id?: string
+          initial_balance?: number
+          last_fee_deducted_at?: string | null
+          last_top_up_at?: string | null
+          membership_type?: string
+          status?: string
+          total_fees_paid?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          balance?: number
+          created_at?: string
+          fee_rate?: number
+          fees_paid_today?: number
+          high_water_mark?: number
+          id?: string
+          initial_balance?: number
+          last_fee_deducted_at?: string | null
+          last_top_up_at?: string | null
+          membership_type?: string
+          status?: string
+          total_fees_paid?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      gas_tank_transactions: {
+        Row: {
+          account_id: string
+          amount: number
+          balance_after: number
+          balance_before: number
+          created_at: string
+          description: string | null
+          id: string
+          metadata: Json | null
+          trade_execution_id: string | null
+          type: string
+        }
+        Insert: {
+          account_id: string
+          amount: number
+          balance_after: number
+          balance_before: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          metadata?: Json | null
+          trade_execution_id?: string | null
+          type: string
+        }
+        Update: {
+          account_id?: string
+          amount?: number
+          balance_after?: number
+          balance_before?: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          metadata?: Json | null
+          trade_execution_id?: string | null
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gas_tank_transactions_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "gas_tank_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gas_tank_transactions_trade_execution_id_fkey"
+            columns: ["trade_execution_id"]
+            isOneToOne: false
+            referencedRelation: "trading_executions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       harmonic_nexus_states: {
         Row: {
           akashic_boost: number

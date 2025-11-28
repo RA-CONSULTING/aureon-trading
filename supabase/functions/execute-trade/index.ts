@@ -44,6 +44,10 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
+    // === GAS TANK CHECK (if userId provided) ===
+    // For demo mode without auth, we'll skip this check
+    // In production with auth, check gas tank balance before trading
+    
     // Get trading config
     const { data: configData, error: configError } = await supabase
       .from('trading_config')
