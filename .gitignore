@@ -28,3 +28,4 @@ dist-ssr
 .env.local
 .env.*.local
 *.env
+scripts/binanceKeys.json
