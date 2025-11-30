@@ -21,7 +21,7 @@ import AutonomousTradingGuide from './AutonomousTradingGuide';
 
 import { runAnalysis, runBacktest } from '@/services/lighthouseService';
 import { runGaelicHistoricalSimulation } from '@/services/aureonService';
-import { connectWebSocket } from '@/services/websocketService';
+import { connectWebSocket, type AureonWebSocketConnection } from '@/services/websocketService';
 import { streamLiveAnalysis, streamChatResponse, startTranscriptionSession } from '@/services/geminiService';
 import { executeMarketTrade, annotateTradeEventWithExecution } from '@/services/tradingService.browser';
 import { NexusAnalysisResult, CoherenceDataPoint, ChatMessage, NexusReport, MonitoringEvent, HistoricalDataPoint, AureonDataPoint, AureonReport, GroundingSource } from '@/types';
@@ -32,6 +32,7 @@ interface TradingConsoleProps {
 }
 
 const ANALYSIS_UPDATE_THRESHOLD = 20; // Run analysis every 20 data points
+const STREAM_INTERVAL_MS = 150;
 
 const TradingConsole: React.FC<TradingConsoleProps> = ({ onBackToLanding }) => {
   const [isConnected, setIsConnected] = useState<boolean>(false);
@@ -48,7 +49,7 @@ const TradingConsole: React.FC<TradingConsoleProps> = ({ onBackToLanding }) => {
 
   const analysisLockRef = useRef<boolean>(false);
   const transcriptionSessionRef = useRef<Awaited<ReturnType<typeof startTranscriptionSession>> | null>(null);
-  const webSocketRef = useRef<{ close: () => void } | null>(null);
+  const webSocketRef = useRef<AureonWebSocketConnection | null>(null);
   const isApiActiveRef = useRef<boolean>(false);
   
   // Ref to hold all cumulative data from the stream without causing re-renders on every addition
@@ -60,6 +61,11 @@ const TradingConsole: React.FC<TradingConsoleProps> = ({ onBackToLanding }) => {
   }>({ nexus: [], aureon: [], historical: [], monitoring: [] });
 
   const disconnect = useCallback(() => {
+    try {
+      webSocketRef.current?.sendCommand('stop_stream');
+    } catch (error) {
+      console.warn('Failed to signal stream stop:', error);
+    }
     webSocketRef.current?.close();
     webSocketRef.current = null;
     setIsConnected(false);
@@ -113,6 +119,7 @@ const TradingConsole: React.FC<TradingConsoleProps> = ({ onBackToLanding }) => {
     webSocketRef.current = connectWebSocket({
       onOpen: () => {
         setIsConnected(true);
+        webSocketRef.current?.sendCommand('start_stream', { intervalMs: STREAM_INTERVAL_MS });
         const newEvent: MonitoringEvent = { ts: Date.now(), stage: 'risk_update', note: 'WebSocket connection established. Live data flowing.' };
         dataStreamRef.current.monitoring.push(newEvent);
         setNexusResult(prev => ({
@@ -230,7 +237,15 @@ const TradingConsole: React.FC<TradingConsoleProps> = ({ onBackToLanding }) => {
       },
       onError: (error) => {
         console.error("WebSocket Error:", error);
-        disconnect();
+        const newEvent: MonitoringEvent = { ts: Date.now(), stage: 'risk_update', note: `WebSocket error: ${error.message}` };
+        dataStreamRef.current.monitoring.push(newEvent);
+        setNexusResult(prev => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            monitoringEvents: [...dataStreamRef.current.monitoring],
+          };
+        });
       },
       onClose: () => {
         setIsConnected(false);
@@ -251,9 +266,9 @@ const TradingConsole: React.FC<TradingConsoleProps> = ({ onBackToLanding }) => {
   useEffect(() => {
     // ComponentWillUnmount cleanup
     return () => {
-      webSocketRef.current?.close();
-    }
-  }, []);
+      disconnect();
+    };
+  }, [disconnect]);
 
   useEffect(() => {
     isApiActiveRef.current = isApiActive;

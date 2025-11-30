@@ -1,0 +1,81 @@
+{
+  "balance": 70.3269370095566,
+  "peak_balance": 70.33305398932461,
+  "total_trades": 0,
+  "wins": 0,
+  "losses": 0,
+  "total_fees": 0.008766944985824416,
+  "compounded": 0.0,
+  "harvested": 0.0,
+  "max_drawdown": 0.014484216397554083,
+  "positions": {
+    "LINKGBP": {
+      "entry_price": 9.846,
+      "quantity": 2.16897554,
+      "entry_fee": 0.0,
+      "entry_value": 21.35573316684,
+      "momentum": 0.0,
+      "coherence": 0.5,
+      "entry_time": 1764502987.2599828,
+      "dominant_node": "Portfolio",
+      "cycles": 50
+    },
+    "SOLGBP": {
+      "entry_price": 103.2,
+      "quantity": 0.07639601,
+      "entry_fee": 0.0,
+      "entry_value": 7.884068232000001,
+      "momentum": 0.0,
+      "coherence": 0.5,
+      "entry_time": 1764502987.295219,
+      "dominant_node": "Portfolio",
+      "cycles": 50
+    },
+    "ETHGBP": {
+      "entry_price": 2271.17,
+      "quantity": 0.01013214,
+      "entry_fee": 0.0,
+      "entry_value": 23.0118124038,
+      "momentum": 0.0,
+      "coherence": 0.5,
+      "entry_time": 1764502987.328377,
+      "dominant_node": "Portfolio",
+      "cycles": 50
+    },
+    "XLTCGBP": {
+      "entry_price": 63.54064,
+      "quantity": 0.11948124,
+      "entry_fee": 0.0,
+      "entry_value": 7.5919144575936,
+      "momentum": 0.0,
+      "coherence": 0.5,
+      "entry_time": 1764502987.364184,
+      "dominant_node": "Portfolio",
+      "cycles": 50
+    },
+    "XXBTGBP": {
+      "entry_price": 68931.3,
+      "quantity": 5.224e-05,
+      "entry_fee": 0.0,
+      "entry_value": 3.6009711120000003,
+      "momentum": 0.0,
+      "coherence": 0.5,
+      "entry_time": 1764502987.4111395,
+      "dominant_node": "Portfolio",
+      "cycles": 50
+    },
+    "EURGBP": {
+      "entry_price": 0.8758,
+      "quantity": 3.850082116493235,
+      "entry_fee": 0.008766944985824416,
+      "entry_value": 3.3719019176247755,
+      "momentum": -0.03652467698488642,
+      "coherence": 1.0,
+      "entry_time": 1764502993.3569968,
+      "dominant_node": "CargoShip",
+      "cycles": 49
+    }
+  },
+  "timestamp": 1764503334.9662552,
+  "iteration": 50
+}

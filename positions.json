@@ -1,0 +1,26 @@
+{
+  "SOLBTC": {
+    "quantity": 0.0807052,
+    "entry_price": 0.0015106,
+    "entry_time": "2025-11-28T20:50:00.000000",
+    "score": 70
+  },
+  "SEIBTC": {
+    "quantity": 78.8211,
+    "entry_price": 1.52e-06,
+    "entry_time": "2025-11-28T20:52:57.154391",
+    "score": 65
+  },
+  "ADABTC": {
+    "quantity": 30.0,
+    "entry_price": 4.62e-06,
+    "entry_time": "2025-11-28T20:59:00.000000",
+    "score": 68
+  },
+  "AVAXBTC": {
+    "quantity": 0.73,
+    "entry_price": 0.0001631,
+    "entry_time": "2025-11-28T21:01:19.376245",
+    "score": 70
+  }
+}
