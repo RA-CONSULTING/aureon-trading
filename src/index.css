@@ -166,4 +166,78 @@ All colors MUST be HSL.
     background-size: 1000px 100%;
     animation: shimmer 3s infinite;
   }
+
+  /* HNC Imperial Detection - CRT Terminal Styles */
+  @keyframes hnc-scan {
+    0% { top: 0%; }
+    100% { top: 100%; }
+  }
+
+  @keyframes hnc-glitch {
+    0% { clip: rect(10px, 9999px, 30px, 0); transform: skew(0.2deg); }
+    20% { clip: rect(50px, 9999px, 90px, 0); transform: skew(-0.5deg); }
+    40% { clip: rect(20px, 9999px, 60px, 0); transform: skew(0.3deg); }
+    60% { clip: rect(80px, 9999px, 100px, 0); transform: skew(-0.2deg); }
+    80% { clip: rect(10px, 9999px, 40px, 0); transform: skew(0.4deg); }
+    100% { clip: rect(60px, 9999px, 80px, 0); transform: skew(-0.1deg); }
+  }
+
+  .hnc-terminal {
+    font-family: 'Share Tech Mono', 'Courier New', monospace;
+    background-color: hsl(120 100% 5% / 0.9);
+    color: hsl(120 100% 60%);
+  }
+
+  .hnc-text-glow {
+    text-shadow: 0 0 5px hsl(120 100% 60%), 0 0 10px hsl(120 100% 60%);
+  }
+
+  .hnc-crt::before {
+    content: " ";
+    display: block;
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%),
+                linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+    background-size: 100% 2px, 3px 100%;
+    pointer-events: none;
+    z-index: 20;
+  }
+
+  .hnc-scan-line {
+    width: 100%;
+    height: 5px;
+    background: hsla(120, 100%, 60%, 0.3);
+    position: absolute;
+    z-index: 10;
+    animation: hnc-scan 3s linear infinite;
+    opacity: 0.3;
+    pointer-events: none;
+  }
+
+  .hnc-glitch {
+    position: relative;
+  }
+
+  .hnc-glitch::before,
+  .hnc-glitch::after {
+    content: attr(data-text);
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  .hnc-glitch::before {
+    left: 2px;
+    text-shadow: -1px 0 hsl(330 100% 60%);
+    animation: hnc-glitch 5s infinite linear alternate-reverse;
+  }
+
+  .hnc-glitch::after {
+    left: -2px;
+    text-shadow: -1px 0 hsl(180 100% 60%);
+    animation: hnc-glitch 5s infinite linear alternate-reverse reverse;
+  }
 }
