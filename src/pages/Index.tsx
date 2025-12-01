@@ -4,7 +4,8 @@ import WarRoomDashboard from '@/components/WarRoomDashboard';
 import { BinanceCredentialsSettings } from '@/components/BinanceCredentialsSettings';
 import { BinanceCredentialsAdmin } from '@/components/BinanceCredentialsAdmin';
 import { TradingConfig } from '@/components/TradingConfig';
-import { Activity, Settings, Sliders, Shield, Flame } from 'lucide-react';
+import HNCImperialDetection from '@/components/HNCImperialDetection';
+import { Activity, Settings, Sliders, Shield, Flame, Radio } from 'lucide-react';
 
 const Index = () => {
   return (
@@ -12,7 +13,7 @@ const Index = () => {
       <Tabs defaultValue="trading" className="w-full">
         <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
           <div className="container mx-auto px-4">
-            <TabsList className="grid w-full max-w-3xl grid-cols-5 bg-muted/50">
+            <TabsList className="grid w-full max-w-4xl grid-cols-6 bg-muted/50">
               <TabsTrigger value="trading" className="gap-2">
                 <Activity className="h-4 w-4" />
                 Trading
@@ -20,6 +21,10 @@ const Index = () => {
               <TabsTrigger value="warroom" className="gap-2">
                 <Flame className="h-4 w-4" />
                 War Room
+              </TabsTrigger>
+              <TabsTrigger value="hnc-detection" className="gap-2">
+                <Radio className="h-4 w-4" />
+                HNC Detection
               </TabsTrigger>
               <TabsTrigger value="config" className="gap-2">
                 <Sliders className="h-4 w-4" />
@@ -43,6 +48,10 @@ const Index = () => {
 
         <TabsContent value="warroom" className="m-0">
           <WarRoomDashboard />
+        </TabsContent>
+
+        <TabsContent value="hnc-detection" className="m-0">
+          <HNCImperialDetection />
         </TabsContent>
 
         <TabsContent value="config" className="container mx-auto py-6 px-4">
