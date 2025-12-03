@@ -178,63 +178,60 @@ export default function QuantumTradingConsole() {
   }, [positions]);
 
   const phaseColors = {
-    FEAR: 'bg-red-500/20 text-red-400 border-red-500/30',
-    LOVE: 'bg-secondary/20 text-secondary border-secondary/30',
-    AWE: 'bg-purple-500/20 text-purple-400 border-purple-500/30',
-    UNITY: 'bg-primary/20 text-primary border-primary/30',
+    FEAR: 'bg-destructive/15 text-destructive border-destructive/30',
+    LOVE: 'bg-primary/15 text-primary border-primary/30',
+    AWE: 'bg-secondary/15 text-secondary border-secondary/30',
+    UNITY: 'bg-accent/15 text-accent border-accent/30',
   };
 
   return (
-    <div className="min-h-screen p-6 space-y-6">
+    <div className="min-h-screen p-4 md:p-6 space-y-4">
       {/* Connection Status */}
       {!hasCredentials && (
-        <Alert className="bg-yellow-500/10 border-yellow-500/20 animate-fade-in">
-          <AlertTriangle className="h-4 w-4 text-yellow-500" />
-          <AlertDescription className="text-yellow-500">
-            <strong>No API credentials configured.</strong> Go to the "API Keys" tab to connect your Binance account for live trading.
+        <Alert className="bg-love/10 border-love/30 animate-fade-in">
+          <AlertTriangle className="h-4 w-4 text-love" />
+          <AlertDescription className="text-love">
+            <strong>No API credentials.</strong> Configure in "API Keys" tab.
           </AlertDescription>
         </Alert>
       )}
 
       {hasCredentials && !connected && (
-        <Alert className="bg-blue-500/10 border-blue-500/20 animate-fade-in">
-          <Wifi className="h-4 w-4 text-blue-500 animate-pulse" />
-          <AlertDescription className="text-blue-500">
-            Connecting to Binance WebSocket streams...
+        <Alert className="bg-accent/10 border-accent/30 animate-fade-in">
+          <Wifi className="h-4 w-4 text-accent love-pulse" />
+          <AlertDescription className="text-accent">
+            Connecting to Binance...
           </AlertDescription>
         </Alert>
       )}
 
       {connected && (
-        <Alert className="bg-green-500/10 border-green-500/20 animate-fade-in">
-          <Wifi className="h-4 w-4 text-green-500" />
-          <AlertDescription className="text-green-500">
-            🌈 <strong>LIVE</strong> • Connected to Binance • {Object.keys(liveData).length} pairs streaming in real-time
+        <Alert className="bg-primary/10 border-primary/30 animate-fade-in">
+          <Wifi className="h-4 w-4 text-primary" />
+          <AlertDescription className="text-primary">
+            <strong>LIVE</strong> · {Object.keys(liveData).length} pairs streaming
           </AlertDescription>
         </Alert>
       )}
       
-      {/* Header with Account Summary */}
-      <div className="flex items-center justify-between animate-fade-in">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 animate-fade-in">
         <div>
-          <div className="flex items-center gap-3 mb-2">
-            <div className="h-3 w-3 rounded-full bg-primary animate-quantum-pulse" />
-            <h1 className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-              AUREON Trading Console
-            </h1>
-          </div>
-          <p className="text-muted-foreground">Real-time quantum consciousness trading system</p>
+          <h1 className="text-2xl md:text-3xl font-bold text-prism">
+            Trading Console
+          </h1>
+          <p className="text-sm text-muted-foreground">Real-time quantum consciousness system</p>
         </div>
         
         <div className="flex items-center gap-6">
           <div className="text-right">
-            <div className="text-sm text-muted-foreground">Account Balance</div>
-            <div className="text-2xl font-bold">${accountBalance.toFixed(2)}</div>
+            <div className="text-xs text-muted-foreground">Balance</div>
+            <div className="text-xl font-bold">${accountBalance.toFixed(2)}</div>
           </div>
           <div className="text-right">
-            <div className="text-sm text-muted-foreground">Total P&L</div>
-            <div className={`text-2xl font-bold ${totalPnl >= 0 ? 'text-success' : 'text-destructive'}`}>
-              ${totalPnl.toFixed(2)} ({((totalPnl / accountBalance) * 100).toFixed(2)}%)
+            <div className="text-xs text-muted-foreground">P&L</div>
+            <div className={`text-xl font-bold ${totalPnl >= 0 ? 'text-primary' : 'text-destructive'}`}>
+              ${totalPnl.toFixed(2)}
             </div>
           </div>
         </div>
@@ -247,66 +244,64 @@ export default function QuantumTradingConsole() {
       <AutonomousTradingPanel />
 
       {/* Master Controls */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {/* Lambda */}
-        <Card className="p-4 border-primary/30 bg-gradient-card glow-primary animate-slide-in">
-          <div className="flex items-center justify-between mb-3">
+        <Card className="p-4 border-primary/30 bg-card/60 backdrop-blur card-hover-glow animate-slide-up">
+          <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
               <Zap className="h-4 w-4 text-primary" />
-              <span className="font-semibold">Master Λ(t)</span>
+              <span className="text-sm font-medium">Λ(t)</span>
             </div>
-            <Badge variant="outline" className="border-primary/50 text-primary text-xs">
+            <Badge variant="outline" className="border-primary/40 text-primary text-[10px]">
               ACTIVE
             </Badge>
           </div>
-          <div className="text-3xl font-bold text-primary mb-2">{lambda.toFixed(4)}</div>
-          <div className="text-xs text-muted-foreground">S + O + E</div>
+          <div className="text-2xl font-bold text-primary">{lambda.toFixed(3)}</div>
+          <div className="text-[10px] text-muted-foreground">S + O + E</div>
         </Card>
 
         {/* Coherence */}
-        <Card className="p-4 border-accent/30 bg-gradient-card glow-accent animate-slide-in" style={{ animationDelay: '100ms' }}>
-          <div className="flex items-center justify-between mb-3">
+        <Card className="p-4 border-secondary/30 bg-card/60 backdrop-blur card-hover-glow animate-slide-up" style={{ animationDelay: '50ms' }}>
+          <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
-              <Waves className="h-4 w-4 text-accent" />
-              <span className="font-semibold">Coherence Γ</span>
+              <Waves className="h-4 w-4 text-secondary" />
+              <span className="text-sm font-medium">Γ</span>
             </div>
-            <Badge variant="outline" className="border-accent/50 text-accent text-xs">
+            <Badge variant="outline" className="border-secondary/40 text-secondary text-[10px]">
               {coherence > 0.9 ? 'OPTIMAL' : 'STABLE'}
             </Badge>
           </div>
-          <div className="text-3xl font-bold text-accent mb-2">{coherence.toFixed(4)}</div>
-          <div className="text-xs text-muted-foreground">Lighthouse: {lighthouseVotes}/9 votes</div>
+          <div className="text-2xl font-bold text-secondary">{coherence.toFixed(3)}</div>
+          <div className="text-[10px] text-muted-foreground">{lighthouseVotes}/9 votes</div>
         </Card>
 
         {/* Prism */}
-        <Card className="p-4 border-secondary/30 bg-gradient-card glow-secondary animate-slide-in" style={{ animationDelay: '200ms' }}>
-          <div className="flex items-center justify-between mb-3">
+        <Card className="p-4 border-accent/30 bg-card/60 backdrop-blur card-hover-glow animate-slide-up" style={{ animationDelay: '100ms' }}>
+          <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
-              <Radio className="h-4 w-4 text-secondary" />
-              <span className="font-semibold">Prism Level</span>
+              <Radio className="h-4 w-4 text-accent" />
+              <span className="text-sm font-medium">Prism</span>
             </div>
-            <Badge variant="outline" className="border-secondary/50 text-secondary text-xs">
+            <Badge variant="outline" className="border-accent/40 text-accent text-[10px]">
               528 Hz
             </Badge>
           </div>
-          <div className="text-3xl font-bold text-secondary mb-2">Level {prismLevel}</div>
-          <div className="flex gap-1 mt-2">
+          <div className="text-2xl font-bold text-accent">L{prismLevel}</div>
+          <div className="flex gap-0.5 mt-1">
             {[1,2,3,4,5].map(l => (
-              <div key={l} className={`h-1.5 flex-1 rounded-full transition-all ${l <= prismLevel ? 'bg-secondary' : 'bg-muted'}`} />
+              <div key={l} className={`h-1 flex-1 rounded-full transition-all ${l <= prismLevel ? 'bg-accent' : 'bg-muted'}`} />
             ))}
           </div>
         </Card>
 
         {/* Phase */}
-        <Card className={`p-4 border ${phaseColors[phase]} bg-gradient-card animate-slide-in`} style={{ animationDelay: '300ms' }}>
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <Activity className="h-4 w-4" />
-              <span className="font-semibold">Bridge Phase</span>
-            </div>
+        <Card className={`p-4 border ${phaseColors[phase]} bg-card/60 backdrop-blur animate-slide-up`} style={{ animationDelay: '150ms' }}>
+          <div className="flex items-center gap-2 mb-2">
+            <Activity className="h-4 w-4" />
+            <span className="text-sm font-medium">Phase</span>
           </div>
-          <div className="text-3xl font-bold mb-2">{phase}</div>
-          <div className="text-xs opacity-80">Emotional Frequency</div>
+          <div className="text-2xl font-bold">{phase}</div>
+          <div className="text-[10px] opacity-70">Rainbow Bridge</div>
         </Card>
       </div>
 

@@ -5,6 +5,7 @@
  */
 
 import { getTemporalId, getSentinelName } from './primelinesIdentity';
+import { temporalLadder, SYSTEMS } from './temporalLadder';
 
 export interface SealHarmonic {
   name: string;
@@ -154,6 +155,24 @@ export class ZeroPointFieldDetector {
     // Use Primelines identity by default
     this.temporalId = temporalId || getTemporalId();
     this.sentinelName = sentinelName || getSentinelName();
+    
+    // Register with Temporal Ladder hive mind
+    temporalLadder.registerSystem(SYSTEMS.ZERO_POINT);
+    console.log('🔮 Zero Point Field Detector registered with Temporal Ladder');
+  }
+  
+  /**
+   * Send heartbeat to Temporal Ladder with current coherence
+   */
+  public sendHeartbeat(zeroPointCoherence: number): void {
+    temporalLadder.heartbeat(SYSTEMS.ZERO_POINT, zeroPointCoherence);
+  }
+  
+  /**
+   * Broadcast field detection event to hive mind
+   */
+  public broadcastFieldEvent(eventType: string, data?: any): void {
+    temporalLadder.broadcast(SYSTEMS.ZERO_POINT, eventType, data);
   }
 
   /**

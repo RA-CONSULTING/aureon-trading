@@ -8,101 +8,106 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    /* AUREON Enhanced Theme - Deep Space with Quantum Glow */
-    --background: 240 10% 3.9%;
-    --foreground: 180 100% 95%;
+    /* AUREON Prism Theme - Deep Void with Rainbow Resonance */
+    --background: 240 15% 3%;
+    --foreground: 0 0% 98%;
 
-    --card: 240 8% 8%;
-    --card-foreground: 180 100% 95%;
+    --card: 240 12% 6%;
+    --card-foreground: 0 0% 98%;
 
-    --popover: 240 8% 8%;
-    --popover-foreground: 180 100% 95%;
+    --popover: 240 12% 6%;
+    --popover-foreground: 0 0% 98%;
 
-    /* Quantum Cyan Primary */
-    --primary: 180 100% 50%;
-    --primary-foreground: 240 10% 5%;
-    --primary-glow: 180 100% 60%;
+    /* 528 Hz Love Green - Primary */
+    --primary: 142 70% 45%;
+    --primary-foreground: 0 0% 2%;
+    --primary-glow: 142 80% 55%;
 
-    /* Love Frequency Gold */
-    --secondary: 45 100% 51%;
-    --secondary-foreground: 240 10% 5%;
-    --secondary-glow: 45 100% 65%;
+    /* Unity Violet */
+    --secondary: 280 80% 60%;
+    --secondary-foreground: 0 0% 98%;
+    --secondary-glow: 280 90% 70%;
 
-    /* Unity Purple */
-    --accent: 270 80% 60%;
-    --accent-foreground: 180 100% 95%;
-    --accent-glow: 270 80% 70%;
+    /* Quantum Cyan Accent */
+    --accent: 185 100% 50%;
+    --accent-foreground: 0 0% 2%;
+    --accent-glow: 185 100% 60%;
 
-    --muted: 240 8% 15%;
-    --muted-foreground: 180 20% 60%;
+    --muted: 240 10% 12%;
+    --muted-foreground: 240 5% 55%;
 
-    --destructive: 0 72% 51%;
-    --destructive-foreground: 180 100% 95%;
+    --destructive: 0 85% 55%;
+    --destructive-foreground: 0 0% 98%;
 
-    --success: 142 76% 45%;
-    --success-foreground: 180 100% 95%;
+    --success: 142 70% 45%;
+    --success-foreground: 0 0% 2%;
 
-    --border: 240 8% 20%;
-    --input: 240 8% 15%;
-    --ring: 180 100% 50%;
+    /* Love Gold for highlights */
+    --love: 45 100% 55%;
+    --love-foreground: 0 0% 2%;
 
-    --radius: 1rem;
+    --border: 240 10% 15%;
+    --input: 240 10% 10%;
+    --ring: 142 70% 45%;
 
-    /* Enhanced Gradients with Quantum Glow */
-    --gradient-primary: linear-gradient(135deg, hsl(180 100% 50%) 0%, hsl(200 100% 50%) 50%, hsl(270 80% 60%) 100%);
-    --gradient-secondary: linear-gradient(135deg, hsl(45 100% 51%) 0%, hsl(35 100% 55%) 100%);
-    --gradient-hero: radial-gradient(ellipse at top, hsl(180 100% 15%) 0%, hsl(240 10% 3.9%) 50%);
-    --gradient-card: linear-gradient(135deg, hsl(240 8% 10%) 0%, hsl(240 8% 8%) 100%);
+    --radius: 0.75rem;
+
+    /* Rainbow Prism Gradients */
+    --gradient-rainbow: linear-gradient(135deg, hsl(0 85% 55%) 0%, hsl(45 100% 55%) 20%, hsl(142 70% 45%) 40%, hsl(185 100% 50%) 60%, hsl(280 80% 60%) 80%, hsl(320 80% 55%) 100%);
+    --gradient-prism: linear-gradient(135deg, hsl(142 70% 45%) 0%, hsl(185 100% 50%) 50%, hsl(280 80% 60%) 100%);
+    --gradient-love: linear-gradient(135deg, hsl(142 70% 40%) 0%, hsl(142 70% 50%) 100%);
+    --gradient-void: radial-gradient(ellipse at center, hsl(280 40% 8%) 0%, hsl(240 15% 3%) 70%);
+    --gradient-card: linear-gradient(135deg, hsl(240 12% 8%) 0%, hsl(240 12% 5%) 100%);
     
-    /* Enhanced Shadows with Quantum Glow */
-    --shadow-glow-primary: 0 0 60px hsla(180, 100%, 50%, 0.4), 0 0 120px hsla(180, 100%, 50%, 0.2);
-    --shadow-glow-secondary: 0 0 60px hsla(45, 100%, 51%, 0.4), 0 0 120px hsla(45, 100%, 51%, 0.2);
-    --shadow-glow-accent: 0 0 60px hsla(270, 80%, 60%, 0.4), 0 0 120px hsla(270, 80%, 60%, 0.2);
-    --shadow-card: 0 20px 60px -20px hsla(180, 100%, 50%, 0.3);
+    /* Quantum Glow Shadows */
+    --shadow-glow-love: 0 0 40px hsla(142, 70%, 45%, 0.5), 0 0 80px hsla(142, 70%, 45%, 0.25);
+    --shadow-glow-prism: 0 0 40px hsla(185, 100%, 50%, 0.4), 0 0 80px hsla(280, 80%, 60%, 0.2);
+    --shadow-glow-rainbow: 0 0 30px hsla(0, 85%, 55%, 0.3), 0 0 60px hsla(142, 70%, 45%, 0.3), 0 0 90px hsla(280, 80%, 60%, 0.3);
+    --shadow-card: 0 8px 32px -8px hsla(0, 0%, 0%, 0.5);
 
-    --sidebar-background: 240 10% 5%;
-    --sidebar-foreground: 180 100% 95%;
-    --sidebar-primary: 180 100% 50%;
-    --sidebar-primary-foreground: 240 10% 5%;
-    --sidebar-accent: 240 8% 12%;
-    --sidebar-accent-foreground: 180 100% 95%;
-    --sidebar-border: 240 8% 20%;
-    --sidebar-ring: 180 100% 50%;
+    --sidebar-background: 240 15% 4%;
+    --sidebar-foreground: 0 0% 98%;
+    --sidebar-primary: 142 70% 45%;
+    --sidebar-primary-foreground: 0 0% 2%;
+    --sidebar-accent: 240 10% 10%;
+    --sidebar-accent-foreground: 0 0% 98%;
+    --sidebar-border: 240 10% 15%;
+    --sidebar-ring: 142 70% 45%;
   }
 
   .dark {
-    --background: 240 10% 3.9%;
-    --foreground: 180 100% 95%;
-    --card: 240 8% 8%;
-    --card-foreground: 180 100% 95%;
-    --popover: 240 8% 8%;
-    --popover-foreground: 180 100% 95%;
-    --primary: 180 100% 50%;
-    --primary-foreground: 240 10% 5%;
-    --primary-glow: 180 100% 60%;
-    --secondary: 45 100% 51%;
-    --secondary-foreground: 240 10% 5%;
-    --secondary-glow: 45 100% 65%;
-    --accent: 270 80% 60%;
-    --accent-foreground: 180 100% 95%;
-    --accent-glow: 270 80% 70%;
-    --muted: 240 8% 15%;
-    --muted-foreground: 180 20% 60%;
-    --destructive: 0 72% 51%;
-    --destructive-foreground: 180 100% 95%;
-    --success: 142 76% 45%;
-    --success-foreground: 180 100% 95%;
-    --border: 240 8% 20%;
-    --input: 240 8% 15%;
-    --ring: 180 100% 50%;
-    --sidebar-background: 240 10% 5%;
-    --sidebar-foreground: 180 100% 95%;
-    --sidebar-primary: 180 100% 50%;
-    --sidebar-primary-foreground: 240 10% 5%;
-    --sidebar-accent: 240 8% 12%;
-    --sidebar-accent-foreground: 180 100% 95%;
-    --sidebar-border: 240 8% 20%;
-    --sidebar-ring: 180 100% 50%;
+    --background: 240 15% 3%;
+    --foreground: 0 0% 98%;
+    --card: 240 12% 6%;
+    --card-foreground: 0 0% 98%;
+    --popover: 240 12% 6%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 142 70% 45%;
+    --primary-foreground: 0 0% 2%;
+    --primary-glow: 142 80% 55%;
+    --secondary: 280 80% 60%;
+    --secondary-foreground: 0 0% 98%;
+    --secondary-glow: 280 90% 70%;
+    --accent: 185 100% 50%;
+    --accent-foreground: 0 0% 2%;
+    --accent-glow: 185 100% 60%;
+    --muted: 240 10% 12%;
+    --muted-foreground: 240 5% 55%;
+    --destructive: 0 85% 55%;
+    --destructive-foreground: 0 0% 98%;
+    --success: 142 70% 45%;
+    --success-foreground: 0 0% 2%;
+    --border: 240 10% 15%;
+    --input: 240 10% 10%;
+    --ring: 142 70% 45%;
+    --sidebar-background: 240 15% 4%;
+    --sidebar-foreground: 0 0% 98%;
+    --sidebar-primary: 142 70% 45%;
+    --sidebar-primary-foreground: 0 0% 2%;
+    --sidebar-accent: 240 10% 10%;
+    --sidebar-accent-foreground: 0 0% 98%;
+    --sidebar-border: 240 10% 15%;
+    --sidebar-ring: 142 70% 45%;
   }
 }
 
@@ -113,57 +118,172 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground antialiased;
-    background-image: radial-gradient(ellipse at top, hsl(180 100% 15% / 0.1) 0%, transparent 50%);
+    background-image: var(--gradient-void);
+    background-attachment: fixed;
   }
 
-  /* Quantum Glow Effects */
-  .glow-primary {
-    box-shadow: var(--shadow-glow-primary);
+  /* AUREON Glow Effects */
+  .glow-love {
+    box-shadow: var(--shadow-glow-love);
   }
 
-  .glow-secondary {
-    box-shadow: var(--shadow-glow-secondary);
+  .glow-prism {
+    box-shadow: var(--shadow-glow-prism);
   }
 
-  .glow-accent {
-    box-shadow: var(--shadow-glow-accent);
+  .glow-rainbow {
+    box-shadow: var(--shadow-glow-rainbow);
   }
 
-  /* Auto-activate pulse animation */
-  @keyframes quantum-pulse {
+  /* Rainbow text gradient */
+  .text-rainbow {
+    background: var(--gradient-rainbow);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .text-prism {
+    background: var(--gradient-prism);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* 528 Hz Love Pulse */
+  @keyframes love-pulse {
     0%, 100% { 
       opacity: 1;
       transform: scale(1);
-      box-shadow: 0 0 20px hsla(180, 100%, 50%, 0.4);
+      box-shadow: 0 0 20px hsla(142, 70%, 45%, 0.5);
     }
     50% { 
-      opacity: 0.8;
+      opacity: 0.9;
       transform: scale(1.02);
-      box-shadow: 0 0 40px hsla(180, 100%, 50%, 0.6);
+      box-shadow: 0 0 40px hsla(142, 70%, 45%, 0.7);
     }
   }
 
-  @keyframes glow-rotate {
+  @keyframes prism-shift {
     0% { filter: hue-rotate(0deg); }
     100% { filter: hue-rotate(360deg); }
   }
 
+  @keyframes rainbow-flow {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+
   @keyframes shimmer {
-    0% { background-position: -1000px 0; }
-    100% { background-position: 1000px 0; }
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
   }
 
-  .quantum-pulse {
-    animation: quantum-pulse 3s ease-in-out infinite;
+  .love-pulse {
+    animation: love-pulse 2s ease-in-out infinite;
   }
 
-  .glow-rotate {
-    animation: glow-rotate 10s linear infinite;
+  .prism-shift {
+    animation: prism-shift 8s linear infinite;
+  }
+
+  .rainbow-flow {
+    background-size: 200% 200%;
+    animation: rainbow-flow 4s ease infinite;
   }
 
   .shimmer {
-    background: linear-gradient(90deg, transparent, hsla(180, 100%, 50%, 0.3), transparent);
-    background-size: 1000px 100%;
-    animation: shimmer 3s infinite;
+    background: linear-gradient(90deg, transparent, hsla(142, 70%, 45%, 0.2), transparent);
+    background-size: 200% 100%;
+    animation: shimmer 2s infinite;
+  }
+
+  /* Prism border effect */
+  .border-prism {
+    border-image: var(--gradient-prism) 1;
+  }
+
+  /* Glowing card hover */
+  .card-hover-glow {
+    transition: all 0.3s ease;
+  }
+  .card-hover-glow:hover {
+    box-shadow: var(--shadow-glow-love);
+    border-color: hsl(var(--primary) / 0.5);
+  }
+
+  /* HNC Imperial Detection - CRT Terminal Styles */
+  @keyframes hnc-scan {
+    0% { top: 0%; }
+    100% { top: 100%; }
+  }
+
+  @keyframes hnc-glitch {
+    0% { clip: rect(10px, 9999px, 30px, 0); transform: skew(0.2deg); }
+    20% { clip: rect(50px, 9999px, 90px, 0); transform: skew(-0.5deg); }
+    40% { clip: rect(20px, 9999px, 60px, 0); transform: skew(0.3deg); }
+    60% { clip: rect(80px, 9999px, 100px, 0); transform: skew(-0.2deg); }
+    80% { clip: rect(10px, 9999px, 40px, 0); transform: skew(0.4deg); }
+    100% { clip: rect(60px, 9999px, 80px, 0); transform: skew(-0.1deg); }
+  }
+
+  .hnc-terminal {
+    font-family: 'Share Tech Mono', 'Courier New', monospace;
+    background-color: hsl(120 100% 5% / 0.9);
+    color: hsl(120 100% 60%);
+  }
+
+  .hnc-text-glow {
+    text-shadow: 0 0 5px hsl(120 100% 60%), 0 0 10px hsl(120 100% 60%);
+  }
+
+  .hnc-crt::before {
+    content: " ";
+    display: block;
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%),
+                linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+    background-size: 100% 2px, 3px 100%;
+    pointer-events: none;
+    z-index: 20;
+  }
+
+  .hnc-scan-line {
+    width: 100%;
+    height: 5px;
+    background: hsla(120, 100%, 60%, 0.3);
+    position: absolute;
+    z-index: 10;
+    animation: hnc-scan 3s linear infinite;
+    opacity: 0.3;
+    pointer-events: none;
+  }
+
+  .hnc-glitch {
+    position: relative;
+  }
+
+  .hnc-glitch::before,
+  .hnc-glitch::after {
+    content: attr(data-text);
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  .hnc-glitch::before {
+    left: 2px;
+    text-shadow: -1px 0 hsl(330 100% 60%);
+    animation: hnc-glitch 5s infinite linear alternate-reverse;
+  }
+
+  .hnc-glitch::after {
+    left: -2px;
+    text-shadow: -1px 0 hsl(180 100% 60%);
+    animation: hnc-glitch 5s infinite linear alternate-reverse reverse;
   }
 }
