@@ -1,0 +1,92 @@
+{
+  "generated": "2025-12-03T19:59:00.188405",
+  "exchanges": {
+    "binance": {
+      "pairs": 1282,
+      "bullish": 334
+    },
+    "kraken": {
+      "pairs": 1341,
+      "bullish": 369
+    },
+    "alpaca": {
+      "pairs": 2,
+      "bullish": 2,
+      "results": [
+        {
+          "symbol": "AVAX/USD",
+          "price": 14.4997,
+          "24h_change": 2.419625418957919,
+          "probability": 0.5583250358849615,
+          "action": "SLIGHT BUY",
+          "state": "\u2197\ufe0f SLIGHT BULLISH"
+        },
+        {
+          "symbol": "BCH/USD",
+          "price": 598.199,
+          "24h_change": 2.99746896468603,
+          "probability": 0.5760567204235122,
+          "action": "SLIGHT BUY",
+          "state": "\u2197\ufe0f SLIGHT BULLISH"
+        }
+      ]
+    },
+    "capital": {
+      "pairs": 7,
+      "bullish": 0,
+      "results": [
+        {
+          "symbol": "ETHUSD",
+          "price": 11731.3,
+          "24h_change": 0.0,
+          "probability": 0.52,
+          "action": "HOLD"
+        },
+        {
+          "symbol": "US500",
+          "price": 6859.450000000001,
+          "24h_change": 0.0,
+          "probability": 0.52,
+          "action": "HOLD"
+        },
+        {
+          "symbol": "US100",
+          "price": 25623.5,
+          "24h_change": 0.0,
+          "probability": 0.52,
+          "action": "HOLD"
+        },
+        {
+          "symbol": "EURUSD",
+          "price": 11731.3,
+          "24h_change": 0.0,
+          "probability": 0.52,
+          "action": "HOLD"
+        },
+        {
+          "symbol": "GBPUSD",
+          "price": 13352.0,
+          "24h_change": 0.0,
+          "probability": 0.52,
+          "action": "HOLD"
+        },
+        {
+          "symbol": "XAUUSD",
+          "price": 4208.43,
+          "24h_change": 0.0,
+          "probability": 0.52,
+          "action": "HOLD"
+        },
+        {
+          "symbol": "USOIL",
+          "price": 5884.65,
+          "24h_change": 0.0,
+          "probability": 0.52,
+          "action": "HOLD"
+        }
+      ]
+    }
+  },
+  "total_pairs": 2632,
+  "total_bullish": 705
+}

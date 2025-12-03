@@ -1,0 +1,22 @@
+{
+  "generated": "2025-12-03T19:50:31.858792",
+  "exchanges": {
+    "binance": {
+      "pairs": 1282,
+      "bullish": 334
+    },
+    "kraken": {
+      "pairs": 1341,
+      "bullish": 369
+    },
+    "alpaca": {
+      "pairs": 0,
+      "results": []
+    },
+    "capital": {
+      "pairs": 0,
+      "results": []
+    }
+  },
+  "total_pairs": 2623
+}

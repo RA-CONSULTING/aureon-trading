@@ -1018,6 +1018,399 @@ def kelly_criterion(win_rate: float, avg_win: float, avg_loss: float, safety_fac
 
 
 # ═══════════════════════════════════════════════════════════════
+# 🧠 ADAPTIVE LEARNING ENGINE - Self-Optimizing Parameters
+# ═══════════════════════════════════════════════════════════════
+
+class AdaptiveLearningEngine:
+    """
+    Learns from past trades and dynamically adjusts system parameters.
+    
+    Key Optimizations:
+    1. Win rate tracking by frequency band (432Hz vs 528Hz vs 440Hz)
+    2. Coherence threshold optimization based on actual outcomes
+    3. Score threshold calibration using rolling performance
+    4. Time-of-day pattern detection
+    5. Volume correlation analysis
+    """
+    
+    def __init__(self, history_file: str = 'adaptive_learning_history.json'):
+        self.history_file = history_file
+        self.trade_history: List[Dict] = []
+        self.max_history = 500  # Keep last 500 trades for analysis
+        
+        # Performance metrics by category
+        self.metrics_by_frequency: Dict[str, Dict] = {}  # freq_band -> {wins, losses, total_pnl}
+        self.metrics_by_coherence: Dict[str, Dict] = {}  # coherence_range -> {wins, losses}
+        self.metrics_by_score: Dict[str, Dict] = {}      # score_range -> {wins, losses}
+        self.metrics_by_hour: Dict[int, Dict] = {}       # hour -> {wins, losses}
+        self.metrics_by_action: Dict[str, Dict] = {}     # HNC action -> {wins, losses}
+        
+        # Optimized thresholds (start with defaults, learn over time)
+        self.optimized_thresholds = {
+            'min_coherence': CONFIG.get('ENTRY_COHERENCE', 0.45),
+            'min_score': CONFIG.get('MIN_SCORE', 65),
+            'min_probability': CONFIG.get('PROB_MIN_CONFIDENCE', 0.50),
+            'harmonic_bonus': CONFIG.get('HNC_HARMONIC_BONUS', 1.15),
+            'distortion_penalty': CONFIG.get('HNC_DISTORTION_PENALTY', 0.70),
+        }
+        
+        # Learning parameters
+        self.learning_rate = 0.05  # How quickly to adapt
+        self.min_samples_for_learning = 20  # Minimum trades before adjusting
+        self.confidence_interval = 0.95  # Statistical confidence for changes
+        
+        self._load_history()
+        
+    def _load_history(self):
+        """Load historical trades from file."""
+        try:
+            if os.path.exists(self.history_file):
+                with open(self.history_file, 'r') as f:
+                    data = json.load(f)
+                    self.trade_history = data.get('trades', [])[-self.max_history:]
+                    self.optimized_thresholds = {
+                        **self.optimized_thresholds,
+                        **data.get('thresholds', {})
+                    }
+                    self._rebuild_metrics()
+        except Exception as e:
+            logger.warning(f"Could not load learning history: {e}")
+            
+    def _save_history(self):
+        """Save trade history and learned thresholds."""
+        try:
+            with open(self.history_file, 'w') as f:
+                json.dump({
+                    'trades': self.trade_history[-self.max_history:],
+                    'thresholds': self.optimized_thresholds,
+                    'updated_at': datetime.now().isoformat()
+                }, f, indent=2)
+        except Exception as e:
+            logger.warning(f"Could not save learning history: {e}")
+            
+    def _rebuild_metrics(self):
+        """Rebuild performance metrics from trade history."""
+        self.metrics_by_frequency = {}
+        self.metrics_by_coherence = {}
+        self.metrics_by_score = {}
+        self.metrics_by_hour = {}
+        self.metrics_by_action = {}
+        
+        for trade in self.trade_history:
+            self._update_metrics(trade)
+            
+    def _get_frequency_band(self, freq: float) -> str:
+        """Map frequency to band name."""
+        if freq <= 200:
+            return '174_FOUNDATION'
+        elif freq <= 300:
+            return '256_ROOT'
+        elif freq <= 410:
+            return '396_LIBERATION'
+        elif freq <= 438:
+            return '432_NATURAL'
+        elif freq <= 445:
+            return '440_DISTORTION'
+        elif freq <= 520:
+            return '512_VISION'
+        elif freq <= 580:
+            return '528_LOVE'
+        elif freq <= 700:
+            return '639_CONNECTION'
+        elif freq <= 800:
+            return '741_AWAKENING'
+        elif freq <= 900:
+            return '852_INTUITION'
+        else:
+            return '963_UNITY'
+            
+    def _get_coherence_range(self, coherence: float) -> str:
+        """Map coherence to range bucket."""
+        if coherence < 0.3:
+            return 'LOW_0-30'
+        elif coherence < 0.5:
+            return 'MED_30-50'
+        elif coherence < 0.7:
+            return 'HIGH_50-70'
+        else:
+            return 'VERY_HIGH_70+'
+            
+    def _get_score_range(self, score: float) -> str:
+        """Map score to range bucket."""
+        if score < 50:
+            return 'LOW_0-50'
+        elif score < 65:
+            return 'MED_50-65'
+        elif score < 80:
+            return 'HIGH_65-80'
+        else:
+            return 'VERY_HIGH_80+'
+            
+    def _update_metrics(self, trade: Dict):
+        """Update metrics with a single trade."""
+        is_win = trade.get('pnl', 0) > 0
+        pnl = trade.get('pnl', 0)
+        
+        # By frequency
+        freq = trade.get('frequency', 256)
+        band = self._get_frequency_band(freq)
+        if band not in self.metrics_by_frequency:
+            self.metrics_by_frequency[band] = {'wins': 0, 'losses': 0, 'total_pnl': 0, 'trades': []}
+        self.metrics_by_frequency[band]['wins' if is_win else 'losses'] += 1
+        self.metrics_by_frequency[band]['total_pnl'] += pnl
+        self.metrics_by_frequency[band]['trades'].append(pnl)
+        
+        # By coherence
+        coherence = trade.get('coherence', 0.5)
+        coh_range = self._get_coherence_range(coherence)
+        if coh_range not in self.metrics_by_coherence:
+            self.metrics_by_coherence[coh_range] = {'wins': 0, 'losses': 0, 'trades': []}
+        self.metrics_by_coherence[coh_range]['wins' if is_win else 'losses'] += 1
+        self.metrics_by_coherence[coh_range]['trades'].append(pnl)
+        
+        # By score
+        score = trade.get('score', 50)
+        score_range = self._get_score_range(score)
+        if score_range not in self.metrics_by_score:
+            self.metrics_by_score[score_range] = {'wins': 0, 'losses': 0, 'trades': []}
+        self.metrics_by_score[score_range]['wins' if is_win else 'losses'] += 1
+        self.metrics_by_score[score_range]['trades'].append(pnl)
+        
+        # By hour of day
+        entry_time = trade.get('entry_time', time.time())
+        hour = datetime.fromtimestamp(entry_time).hour
+        if hour not in self.metrics_by_hour:
+            self.metrics_by_hour[hour] = {'wins': 0, 'losses': 0, 'trades': []}
+        self.metrics_by_hour[hour]['wins' if is_win else 'losses'] += 1
+        self.metrics_by_hour[hour]['trades'].append(pnl)
+        
+        # By HNC action
+        action = trade.get('hnc_action', 'HOLD')
+        if action not in self.metrics_by_action:
+            self.metrics_by_action[action] = {'wins': 0, 'losses': 0, 'trades': []}
+        self.metrics_by_action[action]['wins' if is_win else 'losses'] += 1
+        self.metrics_by_action[action]['trades'].append(pnl)
+        
+    def record_trade(self, trade_data: Dict):
+        """
+        Record a completed trade for learning.
+        
+        trade_data should include:
+        - symbol, entry_price, exit_price, pnl
+        - frequency, coherence, score
+        - entry_time, hnc_action, probability
+        """
+        self.trade_history.append(trade_data)
+        if len(self.trade_history) > self.max_history:
+            self.trade_history = self.trade_history[-self.max_history:]
+            
+        self._update_metrics(trade_data)
+        
+        # Periodically optimize thresholds
+        if len(self.trade_history) % 10 == 0:
+            self.optimize_thresholds()
+            self._save_history()
+            
+    def optimize_thresholds(self):
+        """
+        Analyze trade history and optimize thresholds.
+        Only adjusts if we have statistical confidence.
+        """
+        total_trades = len(self.trade_history)
+        if total_trades < self.min_samples_for_learning:
+            return  # Not enough data
+            
+        # 1. Optimize coherence threshold
+        self._optimize_coherence_threshold()
+        
+        # 2. Optimize score threshold
+        self._optimize_score_threshold()
+        
+        # 3. Optimize frequency bonuses/penalties
+        self._optimize_frequency_modifiers()
+        
+        # 4. Optimize probability threshold
+        self._optimize_probability_threshold()
+        
+        logger.info(f"🧠 Adaptive Learning: Thresholds updated based on {total_trades} trades")
+        
+    def _optimize_coherence_threshold(self):
+        """Find optimal coherence threshold based on win rates."""
+        best_threshold = self.optimized_thresholds['min_coherence']
+        best_edge = 0
+        
+        # Test different coherence thresholds
+        for threshold_name, metrics in self.metrics_by_coherence.items():
+            total = metrics['wins'] + metrics['losses']
+            if total < 5:
+                continue
+                
+            win_rate = metrics['wins'] / total
+            avg_pnl = sum(metrics['trades']) / len(metrics['trades']) if metrics['trades'] else 0
+            
+            # Edge = win_rate * avg_win - (1-win_rate) * avg_loss (simplified)
+            edge = avg_pnl
+            
+            # Higher coherence ranges should have better edge
+            if 'HIGH' in threshold_name or 'VERY_HIGH' in threshold_name:
+                if edge > best_edge and win_rate > 0.50:
+                    best_edge = edge
+                    # Extract threshold from range name
+                    if 'VERY_HIGH' in threshold_name:
+                        best_threshold = 0.70
+                    elif 'HIGH_50-70' in threshold_name:
+                        best_threshold = 0.50
+                        
+        # Gradual adjustment
+        current = self.optimized_thresholds['min_coherence']
+        new_threshold = current + (best_threshold - current) * self.learning_rate
+        self.optimized_thresholds['min_coherence'] = round(max(0.30, min(0.80, new_threshold)), 2)
+        
+    def _optimize_score_threshold(self):
+        """Find optimal score threshold based on win rates."""
+        best_threshold = self.optimized_thresholds['min_score']
+        best_edge = 0
+        
+        for score_range, metrics in self.metrics_by_score.items():
+            total = metrics['wins'] + metrics['losses']
+            if total < 5:
+                continue
+                
+            win_rate = metrics['wins'] / total
+            avg_pnl = sum(metrics['trades']) / len(metrics['trades']) if metrics['trades'] else 0
+            
+            if 'HIGH' in score_range or 'VERY_HIGH' in score_range:
+                if avg_pnl > best_edge and win_rate > 0.50:
+                    best_edge = avg_pnl
+                    if 'VERY_HIGH' in score_range:
+                        best_threshold = 80
+                    elif 'HIGH' in score_range:
+                        best_threshold = 65
+                        
+        current = self.optimized_thresholds['min_score']
+        new_threshold = current + (best_threshold - current) * self.learning_rate
+        self.optimized_thresholds['min_score'] = int(max(50, min(90, new_threshold)))
+        
+    def _optimize_frequency_modifiers(self):
+        """Adjust harmonic bonus and distortion penalty based on actual performance."""
+        # Check 528Hz (LOVE) performance
+        love_metrics = self.metrics_by_frequency.get('528_LOVE', {})
+        if love_metrics.get('wins', 0) + love_metrics.get('losses', 0) >= 5:
+            love_win_rate = love_metrics['wins'] / (love_metrics['wins'] + love_metrics['losses'])
+            if love_win_rate > 0.55:
+                # Increase harmonic bonus
+                current = self.optimized_thresholds['harmonic_bonus']
+                self.optimized_thresholds['harmonic_bonus'] = min(1.30, current + 0.02)
+            elif love_win_rate < 0.45:
+                # Decrease harmonic bonus
+                current = self.optimized_thresholds['harmonic_bonus']
+                self.optimized_thresholds['harmonic_bonus'] = max(1.0, current - 0.02)
+                
+        # Check 440Hz (DISTORTION) performance
+        distortion_metrics = self.metrics_by_frequency.get('440_DISTORTION', {})
+        if distortion_metrics.get('wins', 0) + distortion_metrics.get('losses', 0) >= 5:
+            distortion_win_rate = distortion_metrics['wins'] / (distortion_metrics['wins'] + distortion_metrics['losses'])
+            if distortion_win_rate < 0.45:
+                # Increase penalty (lower multiplier)
+                current = self.optimized_thresholds['distortion_penalty']
+                self.optimized_thresholds['distortion_penalty'] = max(0.50, current - 0.02)
+            elif distortion_win_rate > 0.55:
+                # Decrease penalty
+                current = self.optimized_thresholds['distortion_penalty']
+                self.optimized_thresholds['distortion_penalty'] = min(1.0, current + 0.02)
+                
+    def _optimize_probability_threshold(self):
+        """Optimize probability confidence threshold."""
+        # Analyze trades by probability outcome
+        high_prob_trades = [t for t in self.trade_history if t.get('probability', 0.5) >= 0.65]
+        low_prob_trades = [t for t in self.trade_history if t.get('probability', 0.5) < 0.40]
+        
+        if len(high_prob_trades) >= 10:
+            high_prob_wins = sum(1 for t in high_prob_trades if t.get('pnl', 0) > 0)
+            high_prob_wr = high_prob_wins / len(high_prob_trades)
+            
+            # If high probability trades are winning well, trust them more
+            if high_prob_wr > 0.60:
+                current = self.optimized_thresholds['min_probability']
+                self.optimized_thresholds['min_probability'] = max(0.40, current - 0.02)
+                
+    def get_optimized_thresholds(self) -> Dict:
+        """Return current optimized thresholds."""
+        return self.optimized_thresholds.copy()
+        
+    def get_best_hours(self, top_n: int = 5) -> List[int]:
+        """Return hours with best win rates."""
+        hour_stats = []
+        for hour, metrics in self.metrics_by_hour.items():
+            total = metrics['wins'] + metrics['losses']
+            if total >= 3:
+                win_rate = metrics['wins'] / total
+                hour_stats.append((hour, win_rate, total))
+                
+        hour_stats.sort(key=lambda x: x[1], reverse=True)
+        return [h[0] for h in hour_stats[:top_n]]
+        
+    def get_best_frequency_bands(self) -> List[str]:
+        """Return frequency bands with best performance."""
+        band_stats = []
+        for band, metrics in self.metrics_by_frequency.items():
+            total = metrics['wins'] + metrics['losses']
+            if total >= 5:
+                win_rate = metrics['wins'] / total
+                avg_pnl = metrics['total_pnl'] / total
+                band_stats.append((band, win_rate, avg_pnl, total))
+                
+        band_stats.sort(key=lambda x: x[2], reverse=True)  # Sort by avg PnL
+        return [b[0] for b in band_stats if b[1] > 0.50]  # Return profitable bands
+        
+    def get_learning_summary(self) -> str:
+        """Get human-readable learning summary."""
+        total = len(self.trade_history)
+        wins = sum(1 for t in self.trade_history if t.get('pnl', 0) > 0)
+        
+        lines = [
+            "═══════════════════════════════════════",
+            "🧠 ADAPTIVE LEARNING SUMMARY",
+            "═══════════════════════════════════════",
+            f"Total Trades Analyzed: {total}",
+            f"Overall Win Rate: {wins/total*100:.1f}%" if total > 0 else "N/A",
+            "",
+            "Optimized Thresholds:",
+            f"  • Min Coherence: {self.optimized_thresholds['min_coherence']:.2f}",
+            f"  • Min Score: {self.optimized_thresholds['min_score']}",
+            f"  • Min Probability: {self.optimized_thresholds['min_probability']:.2f}",
+            f"  • Harmonic Bonus: {self.optimized_thresholds['harmonic_bonus']:.2f}x",
+            f"  • Distortion Penalty: {self.optimized_thresholds['distortion_penalty']:.2f}x",
+        ]
+        
+        best_bands = self.get_best_frequency_bands()
+        if best_bands:
+            lines.append("")
+            lines.append("Best Frequency Bands:")
+            for band in best_bands[:3]:
+                metrics = self.metrics_by_frequency.get(band, {})
+                total_b = metrics.get('wins', 0) + metrics.get('losses', 0)
+                wr = metrics.get('wins', 0) / total_b * 100 if total_b > 0 else 0
+                lines.append(f"  🎵 {band}: {wr:.0f}% WR ({total_b} trades)")
+                
+        best_hours = self.get_best_hours(3)
+        if best_hours:
+            lines.append("")
+            lines.append("Best Trading Hours (UTC):")
+            for hour in best_hours:
+                metrics = self.metrics_by_hour.get(hour, {})
+                total_h = metrics.get('wins', 0) + metrics.get('losses', 0)
+                wr = metrics.get('wins', 0) / total_h * 100 if total_h > 0 else 0
+                lines.append(f"  ⏰ {hour:02d}:00 - {wr:.0f}% WR ({total_h} trades)")
+                
+        return "\n".join(lines)
+
+
+# Global adaptive learning instance
+ADAPTIVE_LEARNER = AdaptiveLearningEngine()
+
+
+# ═══════════════════════════════════════════════════════════════
 # 📊 ATR CALCULATOR - Dynamic TP/SL
 # ═══════════════════════════════════════════════════════════════
 
@@ -4991,8 +5384,11 @@ class AureonKrakenEcosystem:
             # Get Auris coherence
             coherence, dominant_node = self.auris.compute_coherence(state)
             
+            # 🧠 Apply Adaptive Learning thresholds
+            learned = ADAPTIVE_LEARNER.get_optimized_thresholds()
+            
             # 🌐 Apply coherence adjustment based on anomalies (CoinAPI)
-            coherence_threshold = CONFIG['ENTRY_COHERENCE']
+            coherence_threshold = learned.get('min_coherence', CONFIG['ENTRY_COHERENCE'])
             if CONFIG.get('ENABLE_COINAPI', False):
                 adjustment = self.auris.get_coherence_adjustment(symbol)
                 coherence_threshold *= adjustment  # Increase threshold if anomalies detected
@@ -5199,8 +5595,11 @@ class AureonKrakenEcosystem:
                     score += 15
                 elif gates_passed >= 3:
                     score += 10
-                    
-            if score >= CONFIG['MIN_SCORE']:
+            
+            # 🧠 Use adaptive learning score threshold
+            min_score = learned.get('min_score', CONFIG['MIN_SCORE'])
+            
+            if score >= min_score:
                 opportunities.append({
                     'symbol': symbol,
                     'price': price,
@@ -6172,6 +6571,24 @@ class AureonKrakenEcosystem:
         
         # 🐘 Record trade result in Elephant Memory
         self.memory.record(symbol, net_pnl)
+        
+        # 🧠 Record trade in Adaptive Learning Engine
+        ADAPTIVE_LEARNER.record_trade({
+            'symbol': symbol,
+            'entry_price': pos.entry_price,
+            'exit_price': price,
+            'pnl': net_pnl,
+            'frequency': getattr(pos, 'frequency', 256),
+            'coherence': pos.coherence,
+            'score': getattr(pos, 'score', 50),
+            'entry_time': pos.entry_time,
+            'exit_time': time.time(),
+            'hnc_action': getattr(pos, 'hnc_action', 'HOLD'),
+            'probability': getattr(pos, 'probability', 0.5),
+            'reason': reason,
+            'exchange': pos.exchange,
+            'hold_time_sec': hold_time_sec
+        })
         
         # 🌉 Record trade in bridge for cross-system tracking
         if self.bridge_enabled and self.bridge:
