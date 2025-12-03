@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, lazy, Suspense } from 'react';
 import { cn } from '@/lib/utils';
 import QuantumTradingConsole from '@/components/QuantumTradingConsole';
 import WarRoomDashboard from '@/components/WarRoomDashboard';
@@ -6,11 +6,13 @@ import { BinanceCredentialsSettings } from '@/components/BinanceCredentialsSetti
 import { BinanceCredentialsAdmin } from '@/components/BinanceCredentialsAdmin';
 import { TradingConfig } from '@/components/TradingConfig';
 import HNCImperialDetection from '@/components/HNCImperialDetection';
-import { Activity, Settings, Sliders, Shield, Flame, Radio, Sparkles } from 'lucide-react';
+import SystemsIntegrationDashboard from '@/components/SystemsIntegrationDashboard';
+import { Activity, Settings, Sliders, Shield, Flame, Radio, Sparkles, Orbit, Gauge, Compass, Network } from 'lucide-react';
 
 const navItems = [
   { id: 'trading', label: 'Trading', icon: Activity },
   { id: 'warroom', label: 'War Room', icon: Flame },
+  { id: 'systems', label: 'Systems', icon: Network },
   { id: 'hnc-detection', label: 'HNC', icon: Radio },
   { id: 'config', label: 'Config', icon: Sliders },
   { id: 'credentials', label: 'API Keys', icon: Settings },
@@ -82,6 +84,7 @@ const Index = () => {
       <main className="animate-fade-in">
         {activeTab === 'trading' && <QuantumTradingConsole />}
         {activeTab === 'warroom' && <WarRoomDashboard />}
+        {activeTab === 'systems' && <SystemsIntegrationDashboard />}
         {activeTab === 'hnc-detection' && <HNCImperialDetection />}
         {activeTab === 'config' && (
           <div className="container mx-auto py-6 px-4">

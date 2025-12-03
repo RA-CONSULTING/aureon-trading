@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { HNCImperialDetector, HNC_FREQUENCIES, CRITICAL_MASS } from '@/core/hncImperialDetector';
+import { temporalLadder, SYSTEMS } from '@/core/temporalLadder';
 import { Radio } from 'lucide-react';
 
 interface LogEntry {
@@ -29,6 +30,24 @@ const HNCImperialDetection = () => {
   const spectrogramDataRef = useRef<number[][]>([]);
 
   const detector = new HNCImperialDetector();
+
+  // Register with Temporal Ladder on mount
+  useEffect(() => {
+    // Register HNC as part of Harmonic Nexus system
+    temporalLadder.registerSystem(SYSTEMS.HARMONIC_NEXUS);
+    console.log('🌈 HNC Imperial Detection connected to Temporal Ladder');
+    
+    // Periodic heartbeat
+    const heartbeatInterval = setInterval(() => {
+      const health = status === 'BRIDGE OPEN' ? 1.0 : status === 'ACTIVE SCAN' ? 0.8 : 0.6;
+      temporalLadder.heartbeat(SYSTEMS.HARMONIC_NEXUS, health);
+    }, 2000);
+
+    return () => {
+      clearInterval(heartbeatInterval);
+      temporalLadder.unregisterSystem(SYSTEMS.HARMONIC_NEXUS);
+    };
+  }, [status]);
 
   // Auto-scroll logs
   useEffect(() => {
@@ -210,6 +229,13 @@ const HNCImperialDetection = () => {
 
     setStatus('BRIDGE OPEN');
     setIsRunning(false);
+    
+    // Broadcast completion to hive mind
+    temporalLadder.broadcast(SYSTEMS.HARMONIC_NEXUS, 'BRIDGE_OPENED', {
+      imperialYield: CRITICAL_MASS,
+      harmonicFidelity: 100,
+      timestamp: Date.now()
+    });
   };
 
   const getStatusColor = () => {
