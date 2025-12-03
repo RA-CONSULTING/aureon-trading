@@ -248,6 +248,51 @@ export type Database = {
         }
         Relationships: []
       }
+      elephant_memory: {
+        Row: {
+          blacklisted: boolean | null
+          cooldown_until: string | null
+          created_at: string | null
+          id: string
+          last_trade: string | null
+          loss_streak: number | null
+          losses: number | null
+          profit: number | null
+          symbol: string
+          trades: number | null
+          updated_at: string | null
+          wins: number | null
+        }
+        Insert: {
+          blacklisted?: boolean | null
+          cooldown_until?: string | null
+          created_at?: string | null
+          id?: string
+          last_trade?: string | null
+          loss_streak?: number | null
+          losses?: number | null
+          profit?: number | null
+          symbol: string
+          trades?: number | null
+          updated_at?: string | null
+          wins?: number | null
+        }
+        Update: {
+          blacklisted?: boolean | null
+          cooldown_until?: string | null
+          created_at?: string | null
+          id?: string
+          last_trade?: string | null
+          loss_streak?: number | null
+          losses?: number | null
+          profit?: number | null
+          symbol?: string
+          trades?: number | null
+          updated_at?: string | null
+          wins?: number | null
+        }
+        Relationships: []
+      }
       gas_tank_accounts: {
         Row: {
           balance: number
@@ -2094,6 +2139,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      unified_bus_snapshots: {
+        Row: {
+          consensus_confidence: number | null
+          consensus_signal: string | null
+          created_at: string | null
+          id: string
+          snapshot: Json
+          systems_ready: number | null
+          total_systems: number | null
+        }
+        Insert: {
+          consensus_confidence?: number | null
+          consensus_signal?: string | null
+          created_at?: string | null
+          id?: string
+          snapshot: Json
+          systems_ready?: number | null
+          total_systems?: number | null
+        }
+        Update: {
+          consensus_confidence?: number | null
+          consensus_signal?: string | null
+          created_at?: string | null
+          id?: string
+          snapshot?: Json
+          systems_ready?: number | null
+          total_systems?: number | null
+        }
+        Relationships: []
       }
       user_binance_credentials: {
         Row: {
