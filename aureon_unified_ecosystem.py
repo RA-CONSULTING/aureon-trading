@@ -1002,6 +1002,396 @@ def kelly_criterion(win_rate: float, avg_win: float, avg_loss: float, safety_fac
 
 
 # ═══════════════════════════════════════════════════════════════
+# 📊 ATR CALCULATOR - Dynamic TP/SL
+# ═══════════════════════════════════════════════════════════════
+
+class ATRCalculator:
+    """
+    Average True Range calculator for dynamic TP/SL scaling.
+    Implements volatility-adjusted position management.
+    """
+    
+    def __init__(self, period: int = 14):
+        self.period = period
+        self.price_history: Dict[str, List[Dict]] = {}  # symbol -> [{high, low, close}]
+        self.atr_cache: Dict[str, float] = {}
+        self.last_update: Dict[str, float] = {}
+        
+    def update(self, symbol: str, high: float, low: float, close: float):
+        """Add new price data for ATR calculation."""
+        if symbol not in self.price_history:
+            self.price_history[symbol] = []
+            
+        self.price_history[symbol].append({
+            'high': high,
+            'low': low,
+            'close': close,
+            'timestamp': time.time()
+        })
+        
+        # Keep only last period * 2 candles
+        if len(self.price_history[symbol]) > self.period * 2:
+            self.price_history[symbol] = self.price_history[symbol][-self.period * 2:]
+            
+        self.last_update[symbol] = time.time()
+        
+    def calculate_atr(self, symbol: str) -> float:
+        """Calculate ATR for a symbol."""
+        if symbol not in self.price_history or len(self.price_history[symbol]) < 2:
+            return 0.0
+            
+        history = self.price_history[symbol]
+        true_ranges = []
+        
+        for i in range(1, min(len(history), self.period + 1)):
+            current = history[-i]
+            previous = history[-i - 1] if i < len(history) else current
+            
+            # True Range = max(H-L, |H-Prev Close|, |L-Prev Close|)
+            tr1 = current['high'] - current['low']
+            tr2 = abs(current['high'] - previous['close'])
+            tr3 = abs(current['low'] - previous['close'])
+            true_ranges.append(max(tr1, tr2, tr3))
+            
+        if not true_ranges:
+            return 0.0
+            
+        atr = sum(true_ranges) / len(true_ranges)
+        self.atr_cache[symbol] = atr
+        return atr
+        
+    def get_dynamic_tp_sl(self, symbol: str, base_tp: float = 2.0, base_sl: float = 0.8,
+                          atr_tp_mult: float = 2.0, atr_sl_mult: float = 1.5) -> Dict[str, float]:
+        """
+        Calculate dynamic TP/SL based on ATR.
+        
+        Args:
+            symbol: Trading symbol
+            base_tp: Base take profit % (used if no ATR data)
+            base_sl: Base stop loss % (used if no ATR data)
+            atr_tp_mult: ATR multiplier for take profit
+            atr_sl_mult: ATR multiplier for stop loss
+            
+        Returns:
+            {'tp_pct': float, 'sl_pct': float, 'atr': float, 'is_dynamic': bool}
+        """
+        atr = self.calculate_atr(symbol)
+        
+        if atr <= 0 or symbol not in self.price_history:
+            return {
+                'tp_pct': base_tp,
+                'sl_pct': base_sl,
+                'atr': 0,
+                'is_dynamic': False
+            }
+            
+        # Get current price from latest candle
+        current_price = self.price_history[symbol][-1]['close']
+        if current_price <= 0:
+            return {'tp_pct': base_tp, 'sl_pct': base_sl, 'atr': atr, 'is_dynamic': False}
+            
+        # ATR as percentage of price
+        atr_pct = (atr / current_price) * 100
+        
+        # Scale TP/SL by ATR
+        dynamic_tp = min(atr_pct * atr_tp_mult, 10.0)  # Cap at 10%
+        dynamic_sl = min(atr_pct * atr_sl_mult, 5.0)   # Cap at 5%
+        
+        # Ensure minimum values
+        dynamic_tp = max(dynamic_tp, base_tp * 0.5)
+        dynamic_sl = max(dynamic_sl, base_sl * 0.5)
+        
+        return {
+            'tp_pct': round(dynamic_tp, 2),
+            'sl_pct': round(dynamic_sl, 2),
+            'atr': round(atr, 6),
+            'atr_pct': round(atr_pct, 2),
+            'is_dynamic': True
+        }
+
+
+# ═══════════════════════════════════════════════════════════════
+# 🔥 PORTFOLIO HEAT MANAGER
+# ═══════════════════════════════════════════════════════════════
+
+class PortfolioHeatManager:
+    """
+    Tracks total portfolio risk across all positions.
+    Implements correlation-adjusted position sizing and heat limits.
+    """
+    
+    def __init__(self, max_heat: float = 0.60, heat_decay: float = 0.95):
+        self.max_heat = max_heat  # Maximum 60% portfolio at risk
+        self.heat_decay = heat_decay  # Heat decays 5% per cycle
+        self.current_heat = 0.0
+        self.position_heat: Dict[str, float] = {}  # symbol -> heat contribution
+        self.correlation_matrix: Dict[str, Dict[str, float]] = {}
+        self.heat_history: List[float] = []
+        
+    def add_position_heat(self, symbol: str, position_pct: float, risk_pct: float = 1.0):
+        """
+        Add heat from a new position.
+        
+        Args:
+            symbol: Trading symbol
+            position_pct: Position size as % of portfolio
+            risk_pct: Risk adjustment (1.0 = full risk, 0.5 = hedged)
+        """
+        heat = position_pct * risk_pct
+        
+        # Apply correlation adjustment (correlated assets add more heat)
+        correlation_mult = self._get_correlation_multiplier(symbol)
+        heat *= correlation_mult
+        
+        self.position_heat[symbol] = heat
+        self._recalculate_total_heat()
+        
+    def remove_position_heat(self, symbol: str):
+        """Remove heat when position is closed."""
+        if symbol in self.position_heat:
+            del self.position_heat[symbol]
+        self._recalculate_total_heat()
+        
+    def _recalculate_total_heat(self):
+        """Recalculate total portfolio heat."""
+        self.current_heat = sum(self.position_heat.values())
+        self.heat_history.append(self.current_heat)
+        if len(self.heat_history) > 100:
+            self.heat_history = self.heat_history[-100:]
+            
+    def _get_correlation_multiplier(self, symbol: str) -> float:
+        """
+        Get correlation multiplier for a symbol.
+        Highly correlated assets with existing positions add more heat.
+        """
+        if not self.position_heat:
+            return 1.0
+            
+        # Simple heuristic: same-category assets have higher correlation
+        # BTC-related: BTC, WBTC, etc.
+        # ETH-related: ETH, STETH, etc.
+        btc_related = ['BTC', 'XBT', 'WBTC', 'BTCUSD', 'XBTUSD']
+        eth_related = ['ETH', 'STETH', 'ETHUSD', 'XETHUSD']
+        
+        symbol_upper = symbol.upper()
+        correlation_boost = 0.0
+        
+        for existing in self.position_heat:
+            existing_upper = existing.upper()
+            
+            # Check BTC correlation
+            if any(b in symbol_upper for b in btc_related) and any(b in existing_upper for b in btc_related):
+                correlation_boost += 0.3
+            # Check ETH correlation
+            elif any(e in symbol_upper for e in eth_related) and any(e in existing_upper for e in eth_related):
+                correlation_boost += 0.3
+            # General crypto correlation
+            elif 'USD' in symbol_upper and 'USD' in existing_upper:
+                correlation_boost += 0.1
+                
+        return 1.0 + min(correlation_boost, 0.5)  # Cap at 1.5x
+        
+    def can_add_position(self, position_pct: float) -> Tuple[bool, str]:
+        """
+        Check if adding a position would exceed heat limits.
+        
+        Returns:
+            (can_add: bool, reason: str)
+        """
+        projected_heat = self.current_heat + position_pct
+        
+        if projected_heat > self.max_heat:
+            return False, f"Heat limit: {self.current_heat:.1%} + {position_pct:.1%} > {self.max_heat:.1%}"
+            
+        return True, "OK"
+        
+    def get_max_position_size(self) -> float:
+        """Get maximum position size allowed given current heat."""
+        available_heat = max(0, self.max_heat - self.current_heat)
+        return available_heat
+        
+    def decay_heat(self):
+        """Apply heat decay (called each cycle)."""
+        for symbol in self.position_heat:
+            self.position_heat[symbol] *= self.heat_decay
+        self._recalculate_total_heat()
+        
+    def get_heat_status(self) -> Dict[str, Any]:
+        """Get current heat status."""
+        return {
+            'current_heat': round(self.current_heat, 3),
+            'max_heat': self.max_heat,
+            'available': round(self.max_heat - self.current_heat, 3),
+            'utilization': round(self.current_heat / self.max_heat, 3) if self.max_heat > 0 else 0,
+            'position_count': len(self.position_heat),
+            'positions': dict(self.position_heat)
+        }
+
+
+# ═══════════════════════════════════════════════════════════════
+# 🎛️ ADAPTIVE FILTER THRESHOLDS
+# ═══════════════════════════════════════════════════════════════
+
+class AdaptiveFilterThresholds:
+    """
+    Auto-adjusts MIN_MOMENTUM, MIN_VOLUME based on market conditions.
+    Learns optimal thresholds from historical performance.
+    """
+    
+    def __init__(self):
+        # Base thresholds
+        self.base_momentum = CONFIG.get('MIN_MOMENTUM', 0.5)
+        self.base_volume = CONFIG.get('MIN_VOLUME', 50000)
+        self.base_coherence = CONFIG.get('MIN_COHERENCE', 0.45)
+        
+        # Current adaptive thresholds
+        self.momentum_threshold = self.base_momentum
+        self.volume_threshold = self.base_volume
+        self.coherence_threshold = self.base_coherence
+        
+        # Performance tracking
+        self.trades_by_threshold: Dict[str, List[Dict]] = {
+            'momentum': [],
+            'volume': [],
+            'coherence': []
+        }
+        
+        # Market regime
+        self.market_regime = 'NORMAL'  # NORMAL, TRENDING, RANGING, VOLATILE
+        self.regime_history: List[str] = []
+        
+    def detect_market_regime(self, recent_changes: List[float]) -> str:
+        """
+        Detect current market regime from recent price changes.
+        
+        Args:
+            recent_changes: List of recent 24h % changes across symbols
+        """
+        if not recent_changes:
+            return 'NORMAL'
+            
+        avg_change = sum(recent_changes) / len(recent_changes)
+        volatility = sum(abs(c - avg_change) for c in recent_changes) / len(recent_changes)
+        
+        # Count direction consistency
+        positive = sum(1 for c in recent_changes if c > 0)
+        negative = len(recent_changes) - positive
+        direction_ratio = max(positive, negative) / len(recent_changes)
+        
+        # Determine regime
+        if volatility > 5.0:
+            regime = 'VOLATILE'
+        elif direction_ratio > 0.7 and abs(avg_change) > 2.0:
+            regime = 'TRENDING'
+        elif direction_ratio < 0.6 and volatility < 2.0:
+            regime = 'RANGING'
+        else:
+            regime = 'NORMAL'
+            
+        self.market_regime = regime
+        self.regime_history.append(regime)
+        if len(self.regime_history) > 50:
+            self.regime_history = self.regime_history[-50:]
+            
+        return regime
+        
+    def adjust_thresholds(self, regime: str = None):
+        """
+        Adjust thresholds based on market regime.
+        """
+        regime = regime or self.market_regime
+        
+        if regime == 'TRENDING':
+            # In trends, lower momentum threshold to catch moves early
+            self.momentum_threshold = self.base_momentum * 0.7
+            self.volume_threshold = self.base_volume * 0.8
+            self.coherence_threshold = self.base_coherence * 0.9
+            
+        elif regime == 'VOLATILE':
+            # In volatility, raise thresholds to filter noise
+            self.momentum_threshold = self.base_momentum * 1.5
+            self.volume_threshold = self.base_volume * 1.3
+            self.coherence_threshold = self.base_coherence * 1.2
+            
+        elif regime == 'RANGING':
+            # In ranging, require strong signals
+            self.momentum_threshold = self.base_momentum * 1.2
+            self.volume_threshold = self.base_volume * 1.1
+            self.coherence_threshold = self.base_coherence * 1.1
+            
+        else:  # NORMAL
+            self.momentum_threshold = self.base_momentum
+            self.volume_threshold = self.base_volume
+            self.coherence_threshold = self.base_coherence
+            
+    def record_trade_result(self, threshold_type: str, threshold_value: float, 
+                           actual_value: float, profit: float):
+        """Record trade result for learning."""
+        self.trades_by_threshold[threshold_type].append({
+            'threshold': threshold_value,
+            'actual': actual_value,
+            'profit': profit,
+            'timestamp': time.time()
+        })
+        
+        # Keep last 100 trades per type
+        if len(self.trades_by_threshold[threshold_type]) > 100:
+            self.trades_by_threshold[threshold_type] = \
+                self.trades_by_threshold[threshold_type][-100:]
+                
+    def learn_optimal_thresholds(self):
+        """
+        Learn optimal thresholds from trade history.
+        Adjusts base thresholds based on profitability patterns.
+        """
+        for threshold_type in ['momentum', 'volume', 'coherence']:
+            trades = self.trades_by_threshold[threshold_type]
+            if len(trades) < 20:
+                continue
+                
+            # Group trades by threshold quartile
+            sorted_trades = sorted(trades, key=lambda x: x['actual'])
+            quartile_size = len(sorted_trades) // 4
+            
+            if quartile_size < 5:
+                continue
+                
+            # Calculate profitability by quartile
+            quartile_profits = []
+            for i in range(4):
+                start = i * quartile_size
+                end = start + quartile_size if i < 3 else len(sorted_trades)
+                q_trades = sorted_trades[start:end]
+                avg_profit = sum(t['profit'] for t in q_trades) / len(q_trades)
+                avg_value = sum(t['actual'] for t in q_trades) / len(q_trades)
+                quartile_profits.append((avg_value, avg_profit))
+                
+            # Find most profitable quartile
+            best_quartile = max(quartile_profits, key=lambda x: x[1])
+            optimal_value = best_quartile[0]
+            
+            # Gradually adjust base threshold toward optimal
+            if threshold_type == 'momentum':
+                self.base_momentum = self.base_momentum * 0.9 + optimal_value * 0.1
+            elif threshold_type == 'volume':
+                self.base_volume = self.base_volume * 0.9 + optimal_value * 0.1
+            elif threshold_type == 'coherence':
+                self.base_coherence = self.base_coherence * 0.9 + optimal_value * 0.1
+                
+    def get_thresholds(self) -> Dict[str, float]:
+        """Get current adaptive thresholds."""
+        return {
+            'momentum': round(self.momentum_threshold, 2),
+            'volume': round(self.volume_threshold, 0),
+            'coherence': round(self.coherence_threshold, 2),
+            'regime': self.market_regime,
+            'base_momentum': round(self.base_momentum, 2),
+            'base_volume': round(self.base_volume, 0),
+            'base_coherence': round(self.base_coherence, 2)
+        }
+
+
+# ═══════════════════════════════════════════════════════════════
 # 🌟 SWARM ORCHESTRATOR ENHANCEMENTS
 # ═══════════════════════════════════════════════════════════════
 
@@ -2788,7 +3178,14 @@ class AureonKrakenEcosystem:
         self.arb_scanner = CrossExchangeArbitrageScanner(self.client)
         self.trade_confirmation = UnifiedTradeConfirmation(self.client)
         self.rebalancer = PortfolioRebalancer(self.client)
+        
+        # 🔥 WAR-READY ENHANCEMENTS 🔥
+        self.atr_calculator = ATRCalculator(period=14)
+        self.heat_manager = PortfolioHeatManager(max_heat=0.60)
+        self.adaptive_filters = AdaptiveFilterThresholds()
+        
         print("   🚀 Enhanced trading components initialized (Router/Arbitrage/Confirmation/Rebalancer)")
+        print("   🔥 War-ready enhancements active (ATR/HeatManager/AdaptiveFilters)")
         
         # Determine tradeable currencies based on wallet
         self.tradeable_currencies = ['USD', 'GBP', 'EUR', 'USDT', 'USDC']
@@ -4221,6 +4618,85 @@ class AureonKrakenEcosystem:
     def print_rebalance_summary(self):
         """Print human-readable portfolio rebalance summary."""
         print(self.rebalancer.get_rebalance_summary())
+    
+    # ─────────────────────────────────────────────────────────
+    # War-Ready Enhancements (ATR, Heat, Adaptive Filters)
+    # ─────────────────────────────────────────────────────────
+    
+    def update_atr(self, symbol: str, high: float, low: float, close: float):
+        """Update ATR data for a symbol."""
+        self.atr_calculator.update(symbol, high, low, close)
+        
+    def get_dynamic_tp_sl(self, symbol: str) -> Dict[str, float]:
+        """
+        Get dynamic TP/SL percentages based on ATR.
+        Returns: {'tp_pct': float, 'sl_pct': float, 'atr': float, 'is_dynamic': bool}
+        """
+        return self.atr_calculator.get_dynamic_tp_sl(
+            symbol,
+            base_tp=CONFIG.get('TAKE_PROFIT_PCT', 2.0),
+            base_sl=CONFIG.get('STOP_LOSS_PCT', 0.8)
+        )
+        
+    def check_portfolio_heat(self, position_pct: float) -> Tuple[bool, str]:
+        """
+        Check if adding a position would exceed heat limits.
+        Returns: (can_add: bool, reason: str)
+        """
+        return self.heat_manager.can_add_position(position_pct)
+        
+    def add_position_heat(self, symbol: str, position_pct: float):
+        """Add heat for a new position."""
+        self.heat_manager.add_position_heat(symbol, position_pct)
+        
+    def remove_position_heat(self, symbol: str):
+        """Remove heat when position closes."""
+        self.heat_manager.remove_position_heat(symbol)
+        
+    def get_heat_status(self) -> Dict[str, Any]:
+        """Get current portfolio heat status."""
+        return self.heat_manager.get_heat_status()
+        
+    def decay_heat(self):
+        """Apply heat decay (call each cycle)."""
+        self.heat_manager.decay_heat()
+        
+    def update_market_regime(self, recent_changes: List[float]):
+        """
+        Update market regime detection and adjust filter thresholds.
+        Args:
+            recent_changes: List of recent 24h % changes across symbols
+        """
+        regime = self.adaptive_filters.detect_market_regime(recent_changes)
+        self.adaptive_filters.adjust_thresholds(regime)
+        return regime
+        
+    def get_adaptive_thresholds(self) -> Dict[str, float]:
+        """Get current adaptive filter thresholds."""
+        return self.adaptive_filters.get_thresholds()
+        
+    def record_filter_performance(self, threshold_type: str, threshold_value: float,
+                                   actual_value: float, profit: float):
+        """Record trade result for filter learning."""
+        self.adaptive_filters.record_trade_result(threshold_type, threshold_value, 
+                                                   actual_value, profit)
+        
+    def learn_optimal_filters(self):
+        """Learn optimal filter thresholds from history."""
+        self.adaptive_filters.learn_optimal_thresholds()
+        
+    def print_war_ready_status(self):
+        """Print WAR-READY enhancement status."""
+        heat = self.get_heat_status()
+        thresholds = self.get_adaptive_thresholds()
+        
+        print("\n🔥 WAR-READY STATUS:")
+        print(f"   📊 ATR Calculator: {len(self.atr_calculator.price_history)} symbols tracked")
+        print(f"   🌡️  Portfolio Heat: {heat['current_heat']:.1%} / {heat['max_heat']:.0%} "
+              f"({heat['position_count']} positions)")
+        print(f"   🎛️  Market Regime: {thresholds['regime']}")
+        print(f"   📈 Adaptive Thresholds: Mom={thresholds['momentum']:.2f} "
+              f"Vol={thresholds['volume']:.0f} Coh={thresholds['coherence']:.2f}")
     
     # ─────────────────────────────────────────────────────────
     # Position Management
