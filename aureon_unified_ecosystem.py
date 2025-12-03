@@ -1392,6 +1392,268 @@ class AdaptiveFilterThresholds:
 
 
 # ═══════════════════════════════════════════════════════════════
+# 📢 NOTIFICATION SYSTEM (Telegram/Discord/Webhook)
+# ═══════════════════════════════════════════════════════════════
+
+class NotificationManager:
+    """
+    Sends trade alerts and notifications to Telegram, Discord, or webhooks.
+    Configurable via environment variables.
+    """
+    
+    def __init__(self):
+        # Telegram config
+        self.telegram_token = os.getenv('TELEGRAM_BOT_TOKEN', '')
+        self.telegram_chat_id = os.getenv('TELEGRAM_CHAT_ID', '')
+        self.telegram_enabled = bool(self.telegram_token and self.telegram_chat_id)
+        
+        # Discord config
+        self.discord_webhook = os.getenv('DISCORD_WEBHOOK_URL', '')
+        self.discord_enabled = bool(self.discord_webhook)
+        
+        # Generic webhook config
+        self.webhook_url = os.getenv('ALERT_WEBHOOK_URL', '')
+        self.webhook_enabled = bool(self.webhook_url)
+        
+        # Rate limiting
+        self.last_notification = 0
+        self.min_interval = 60  # Minimum 60 seconds between notifications
+        self.notification_history: List[Dict] = []
+        
+        # Alert levels
+        self.alert_levels = {
+            'TRADE': True,      # Trade executed
+            'PROFIT': True,     # Position closed with profit
+            'LOSS': True,       # Position closed with loss
+            'CIRCUIT': True,    # Circuit breaker triggered
+            'ARBITRAGE': True,  # Arbitrage opportunity
+            'WARNING': True,    # System warnings
+            'INFO': False       # General info (disabled by default)
+        }
+        
+    def is_enabled(self) -> bool:
+        """Check if any notification channel is enabled."""
+        return self.telegram_enabled or self.discord_enabled or self.webhook_enabled
+        
+    def set_alert_level(self, level: str, enabled: bool):
+        """Enable/disable specific alert types."""
+        if level in self.alert_levels:
+            self.alert_levels[level] = enabled
+            
+    def _can_send(self) -> bool:
+        """Check rate limiting."""
+        now = time.time()
+        if now - self.last_notification < self.min_interval:
+            return False
+        return True
+        
+    def _send_telegram(self, message: str) -> bool:
+        """Send message via Telegram."""
+        if not self.telegram_enabled:
+            return False
+            
+        try:
+            import urllib.request
+            import urllib.parse
+            
+            url = f"https://api.telegram.org/bot{self.telegram_token}/sendMessage"
+            data = urllib.parse.urlencode({
+                'chat_id': self.telegram_chat_id,
+                'text': message,
+                'parse_mode': 'HTML'
+            }).encode()
+            
+            req = urllib.request.Request(url, data=data)
+            with urllib.request.urlopen(req, timeout=10) as response:
+                return response.status == 200
+        except Exception as e:
+            logger.error(f"Telegram send error: {e}")
+            return False
+            
+    def _send_discord(self, message: str, title: str = "Aureon Alert") -> bool:
+        """Send message via Discord webhook."""
+        if not self.discord_enabled:
+            return False
+            
+        try:
+            import urllib.request
+            import json
+            
+            payload = {
+                "embeds": [{
+                    "title": title,
+                    "description": message,
+                    "color": 0x00ff00  # Green
+                }]
+            }
+            
+            data = json.dumps(payload).encode()
+            req = urllib.request.Request(
+                self.discord_webhook,
+                data=data,
+                headers={'Content-Type': 'application/json'}
+            )
+            
+            with urllib.request.urlopen(req, timeout=10) as response:
+                return response.status in [200, 204]
+        except Exception as e:
+            logger.error(f"Discord send error: {e}")
+            return False
+            
+    def _send_webhook(self, payload: Dict) -> bool:
+        """Send to generic webhook."""
+        if not self.webhook_enabled:
+            return False
+            
+        try:
+            import urllib.request
+            import json
+            
+            data = json.dumps(payload).encode()
+            req = urllib.request.Request(
+                self.webhook_url,
+                data=data,
+                headers={'Content-Type': 'application/json'}
+            )
+            
+            with urllib.request.urlopen(req, timeout=10) as response:
+                return response.status == 200
+        except Exception as e:
+            logger.error(f"Webhook send error: {e}")
+            return False
+            
+    def send_alert(self, level: str, title: str, message: str, 
+                   data: Dict = None) -> bool:
+        """
+        Send alert to all enabled channels.
+        
+        Args:
+            level: Alert level (TRADE, PROFIT, LOSS, CIRCUIT, ARBITRAGE, WARNING, INFO)
+            title: Alert title
+            message: Alert message
+            data: Optional additional data for webhook
+        """
+        # Check if this alert level is enabled
+        if not self.alert_levels.get(level, False):
+            return False
+            
+        # Rate limiting
+        if not self._can_send():
+            return False
+            
+        self.last_notification = time.time()
+        
+        # Build formatted message
+        emoji_map = {
+            'TRADE': '📊',
+            'PROFIT': '💰',
+            'LOSS': '📉',
+            'CIRCUIT': '🚨',
+            'ARBITRAGE': '⚡',
+            'WARNING': '⚠️',
+            'INFO': 'ℹ️'
+        }
+        emoji = emoji_map.get(level, '📢')
+        
+        formatted_msg = f"{emoji} <b>{title}</b>\n{message}"
+        discord_msg = f"{emoji} **{title}**\n{message}"
+        
+        success = False
+        
+        # Send to all channels
+        if self.telegram_enabled:
+            success = self._send_telegram(formatted_msg) or success
+            
+        if self.discord_enabled:
+            success = self._send_discord(discord_msg, f"{emoji} {title}") or success
+            
+        if self.webhook_enabled:
+            webhook_payload = {
+                'level': level,
+                'title': title,
+                'message': message,
+                'timestamp': time.time(),
+                'data': data or {}
+            }
+            success = self._send_webhook(webhook_payload) or success
+            
+        # Record notification
+        self.notification_history.append({
+            'level': level,
+            'title': title,
+            'timestamp': time.time(),
+            'success': success
+        })
+        
+        if len(self.notification_history) > 100:
+            self.notification_history = self.notification_history[-100:]
+            
+        return success
+        
+    def notify_trade(self, symbol: str, side: str, price: float, 
+                    quantity: float, exchange: str):
+        """Send trade execution notification."""
+        curr = "£" if CONFIG.get('BASE_CURRENCY') == 'GBP' else "$"
+        value = price * quantity
+        
+        msg = (f"Symbol: {symbol}\n"
+               f"Side: {side}\n"
+               f"Price: {curr}{price:.6f}\n"
+               f"Value: {curr}{value:.2f}\n"
+               f"Exchange: {exchange.upper()}")
+               
+        self.send_alert('TRADE', f"{side} {symbol}", msg)
+        
+    def notify_close(self, symbol: str, pnl: float, pct: float, reason: str):
+        """Send position close notification."""
+        level = 'PROFIT' if pnl > 0 else 'LOSS'
+        curr = "£" if CONFIG.get('BASE_CURRENCY') == 'GBP' else "$"
+        
+        msg = (f"Symbol: {symbol}\n"
+               f"P&L: {curr}{pnl:+.2f} ({pct:+.1f}%)\n"
+               f"Reason: {reason}")
+               
+        title = f"{'WIN' if pnl > 0 else 'LOSS'} {symbol}"
+        self.send_alert(level, title, msg)
+        
+    def notify_circuit_breaker(self, reason: str, drawdown: float):
+        """Send circuit breaker alert."""
+        msg = (f"⚠️ TRADING HALTED\n"
+               f"Reason: {reason}\n"
+               f"Drawdown: {drawdown:.1f}%\n"
+               f"Manual restart required!")
+               
+        self.send_alert('CIRCUIT', "CIRCUIT BREAKER", msg)
+        
+    def notify_arbitrage(self, opportunity: Dict):
+        """Send arbitrage opportunity alert."""
+        msg = (f"Symbol: {opportunity.get('symbol')}\n"
+               f"Buy: {opportunity.get('buy_exchange')} @ {opportunity.get('buy_price'):.6f}\n"
+               f"Sell: {opportunity.get('sell_exchange')} @ {opportunity.get('sell_price'):.6f}\n"
+               f"Spread: {opportunity.get('spread_pct', 0):.2f}%\n"
+               f"Net Profit: {opportunity.get('net_profit_pct', 0):.2f}%")
+               
+        self.send_alert('ARBITRAGE', "Arbitrage Found", msg)
+        
+    def get_status(self) -> Dict[str, Any]:
+        """Get notification system status."""
+        return {
+            'telegram_enabled': self.telegram_enabled,
+            'discord_enabled': self.discord_enabled,
+            'webhook_enabled': self.webhook_enabled,
+            'total_sent': len(self.notification_history),
+            'recent_success_rate': self._calc_success_rate()
+        }
+        
+    def _calc_success_rate(self) -> float:
+        """Calculate recent notification success rate."""
+        recent = self.notification_history[-20:]
+        if not recent:
+            return 0.0
+        return sum(1 for n in recent if n['success']) / len(recent)
+
+
+# ═══════════════════════════════════════════════════════════════
 # 🌟 SWARM ORCHESTRATOR ENHANCEMENTS
 # ═══════════════════════════════════════════════════════════════
 
@@ -3184,8 +3446,18 @@ class AureonKrakenEcosystem:
         self.heat_manager = PortfolioHeatManager(max_heat=0.60)
         self.adaptive_filters = AdaptiveFilterThresholds()
         
+        # 📢 NOTIFICATION SYSTEM
+        self.notifier = NotificationManager()
+        
         print("   🚀 Enhanced trading components initialized (Router/Arbitrage/Confirmation/Rebalancer)")
         print("   🔥 War-ready enhancements active (ATR/HeatManager/AdaptiveFilters)")
+        if self.notifier.is_enabled():
+            status = self.notifier.get_status()
+            channels = []
+            if status['telegram_enabled']: channels.append('Telegram')
+            if status['discord_enabled']: channels.append('Discord')
+            if status['webhook_enabled']: channels.append('Webhook')
+            print(f"   📢 Notifications enabled: {', '.join(channels)}")
         
         # Determine tradeable currencies based on wallet
         self.tradeable_currencies = ['USD', 'GBP', 'EUR', 'USDT', 'USDC']
@@ -4697,6 +4969,46 @@ class AureonKrakenEcosystem:
         print(f"   🎛️  Market Regime: {thresholds['regime']}")
         print(f"   📈 Adaptive Thresholds: Mom={thresholds['momentum']:.2f} "
               f"Vol={thresholds['volume']:.0f} Coh={thresholds['coherence']:.2f}")
+    
+    # ─────────────────────────────────────────────────────────
+    # Notification System
+    # ─────────────────────────────────────────────────────────
+    
+    def send_notification(self, level: str, title: str, message: str) -> bool:
+        """
+        Send a notification alert.
+        
+        Args:
+            level: TRADE, PROFIT, LOSS, CIRCUIT, ARBITRAGE, WARNING, INFO
+            title: Alert title
+            message: Alert message
+        """
+        return self.notifier.send_alert(level, title, message)
+        
+    def notify_trade_executed(self, symbol: str, side: str, price: float,
+                              quantity: float, exchange: str):
+        """Send trade execution notification."""
+        self.notifier.notify_trade(symbol, side, price, quantity, exchange)
+        
+    def notify_position_closed(self, symbol: str, pnl: float, pct: float, reason: str):
+        """Send position close notification."""
+        self.notifier.notify_close(symbol, pnl, pct, reason)
+        
+    def notify_circuit_breaker(self, reason: str, drawdown: float):
+        """Send circuit breaker triggered alert."""
+        self.notifier.notify_circuit_breaker(reason, drawdown)
+        
+    def notify_arbitrage_opportunity(self, opportunity: Dict):
+        """Send arbitrage opportunity alert."""
+        self.notifier.notify_arbitrage(opportunity)
+        
+    def set_notification_level(self, level: str, enabled: bool):
+        """Enable/disable specific notification types."""
+        self.notifier.set_alert_level(level, enabled)
+        
+    def get_notification_status(self) -> Dict[str, Any]:
+        """Get notification system status."""
+        return self.notifier.get_status()
     
     # ─────────────────────────────────────────────────────────
     # Position Management
