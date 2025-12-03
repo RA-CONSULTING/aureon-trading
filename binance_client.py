@@ -281,6 +281,8 @@ class BinanceClient:
             'min_notional': min_notional_val,
             'base_precision': base_precision,
             'quote_precision': quote_precision,
+            'base_asset': entry.get('baseAsset'),
+            'quote_asset': entry.get('quoteAsset'),
         }
         self._symbol_filters_cache[symbol] = data
         return data

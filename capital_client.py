@@ -199,7 +199,11 @@ class CapitalClient:
         payload = {
             "epic": symbol,
             "direction": direction,
-            "size": quantity
+            "size": quantity,
+            "orderType": "MARKET",
+            "guaranteedStop": False,
+            "forceOpen": True,
+            "currencyCode": os.getenv('CAPITAL_ACCOUNT_CURRENCY', 'GBP').upper()
         }
         
         try:
@@ -211,6 +215,26 @@ class CapitalClient:
                 return {'error': response.text}
         except Exception as e:
             logger.error(f"Capital.com order error: {e}")
+            return {'error': str(e)}
+
+    def confirm_order(self, deal_reference: str) -> Dict[str, Any]:
+        """Fetch confirmation for a previously submitted deal reference."""
+        if not self.enabled:
+            return {'error': 'Client disabled'}
+
+        if not deal_reference:
+            return {'error': 'Missing deal reference'}
+
+        url = f"{self.base_url}/confirms/{deal_reference}"
+        try:
+            response = requests.get(url, headers=self._get_headers())
+            if response.status_code == 200:
+                return response.json()
+            else:
+                logger.error(f"Capital.com confirm failed: {response.text}")
+                return {'error': response.text}
+        except Exception as e:
+            logger.error(f"Capital.com confirm error: {e}")
             return {'error': str(e)}
 
     def get_positions(self) -> List[Dict[str, Any]]:

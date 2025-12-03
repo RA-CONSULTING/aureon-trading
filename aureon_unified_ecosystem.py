@@ -53,7 +53,7 @@ if not logger.handlers:
 
 sys.path.insert(0, '/workspaces/aureon-trading')
 from unified_exchange_client import UnifiedExchangeClient, MultiExchangeClient
-from aureon_lattice import LatticeEngine
+from aureon_lattice import GaiaLatticeEngine, CarrierWaveDynamics  # 🌍 GAIA FREQUENCY PHYSICS
 from aureon_market_pulse import MarketPulse
 
 # 🌍⚡ HNC FREQUENCY INTEGRATION ⚡🌍
@@ -107,6 +107,15 @@ try:
 except ImportError as e:
     EARTH_RESONANCE_AVAILABLE = False
     print(f"⚠️  Earth Resonance Engine not available: {e}")
+
+# 🌌⚡ AUREON NEXUS - UNIFIED NEURAL TRADING ENGINE ⚡🌌
+try:
+    from aureon_nexus import NexusBus, MasterEquation, QueenHive, AureonNexus, NEXUS as NEXUS_BUS
+    NEXUS_AVAILABLE = True
+except ImportError as e:
+    NEXUS_AVAILABLE = False
+    NEXUS_BUS = None
+    print(f"⚠️  Aureon Nexus not available: {e}")
 
 # ═══════════════════════════════════════════════════════════════
 # CONFIGURATION - THE UNIFIED PARAMETERS
@@ -1773,6 +1782,325 @@ class NotificationManager:
         if not recent:
             return 0.0
         return sum(1 for n in recent if n['success']) / len(recent)
+
+
+# ═══════════════════════════════════════════════════════════════
+# 🌌 NEXUS INTEGRATION - UNIFIED NEURAL TRADING ENGINE
+# ═══════════════════════════════════════════════════════════════
+
+class NexusIntegration:
+    """
+    Integrates the Aureon Nexus (Master Equation + Queen Hive) into the ecosystem.
+    
+    The Nexus provides:
+    - Master Equation: Λ(t) = S(t) + O(t) + E(t) for signal generation
+    - Queen Hive: 10-9-1 compounding model for profit distribution
+    - NexusBus: State management and signal propagation
+    
+    Coherence thresholds:
+    - Entry: Γ > 0.938 (high confidence buy signal)
+    - Exit: Γ < 0.934 (exit positions)
+    """
+    
+    def __init__(self):
+        self.enabled = NEXUS_AVAILABLE
+        self.master_equation: Optional[Any] = None
+        self.queen_hive: Optional[Any] = None
+        self.nexus_bus = NEXUS_BUS
+        
+        # Coherence history for observer calculation
+        self.coherence_history: List[float] = []
+        
+        # Performance tracking
+        self.signals_generated = 0
+        self.signals_followed = 0
+        self.nexus_profits = 0.0
+        
+        if self.enabled:
+            self._initialize_nexus()
+        else:
+            logger.warning("⚠️ Nexus not available - using fallback signals")
+            
+    def _initialize_nexus(self):
+        """Initialize Nexus components."""
+        try:
+            from aureon_nexus import MasterEquation, QueenHive
+            self.master_equation = MasterEquation()
+            self.queen_hive = QueenHive(initial_capital=0.0)
+            logger.info("🌌 NEXUS Integration initialized")
+            logger.info(f"   └─ Master Equation: Λ(t) = S(t) + O(t) + E(t)")
+            logger.info(f"   └─ Queen Hive: 10-9-1 compounding active")
+            logger.info(f"   └─ Entry threshold: Γ > 0.938")
+            logger.info(f"   └─ Exit threshold: Γ < 0.934")
+        except Exception as e:
+            logger.error(f"Failed to initialize Nexus: {e}")
+            self.enabled = False
+            
+    def update_capital(self, capital: float):
+        """Update Queen Hive with current capital."""
+        if self.queen_hive:
+            self.queen_hive.current_capital = capital
+            if self.queen_hive.initial_capital == 0:
+                self.queen_hive.initial_capital = capital
+                
+    def calculate_master_equation(self, market_data: Dict[str, float]) -> Dict[str, Any]:
+        """
+        Calculate the Master Equation and return signal.
+        
+        Market data should include:
+        - volatility: 0.0 to 1.0
+        - momentum: 0.0 to 1.0
+        - sentiment: 0.0 to 1.0
+        - trend_strength: 0.0 to 1.0
+        - pattern_match: 0.0 to 1.0
+        - harmony: 0.0 to 1.0
+        - volume_ratio: 0.0 to 1.0
+        - correlation: 0.0 to 1.0
+        """
+        if not self.enabled or not self.master_equation:
+            return self._fallback_signal()
+            
+        try:
+            # Update S(t) - Substrate from market data
+            self.master_equation.update_substrate(market_data)
+            
+            # Update O(t) - Observer from coherence history
+            self.master_equation.update_observer(self.coherence_history)
+            
+            # Update E(t) - Echo from momentum
+            price_momentum = market_data.get('momentum', 0.5)
+            self.master_equation.update_echo(price_momentum)
+            
+            # Calculate Λ(t) and derive coherence Γ
+            self.master_equation.calculate_lambda()
+            
+            # Store coherence in history
+            self.coherence_history.append(self.master_equation.coherence)
+            if len(self.coherence_history) > 100:
+                self.coherence_history = self.coherence_history[-100:]
+                
+            # Get signal
+            signal, confidence = self.master_equation.get_signal()
+            self.signals_generated += 1
+            
+            return {
+                'signal': signal,
+                'confidence': confidence,
+                'coherence': self.master_equation.coherence,
+                'lambda': self.master_equation.lambda_value,
+                'substrate': self.master_equation.substrate,
+                'observer': self.master_equation.observer,
+                'echo': self.master_equation.echo,
+                'entry_threshold': self.master_equation.entry_threshold,
+                'exit_threshold': self.master_equation.exit_threshold
+            }
+        except Exception as e:
+            logger.error(f"Master Equation error: {e}")
+            return self._fallback_signal()
+            
+    def _fallback_signal(self) -> Dict[str, Any]:
+        """Fallback when Nexus is unavailable."""
+        return {
+            'signal': 'NEUTRAL',
+            'confidence': 0.5,
+            'coherence': 0.5,
+            'lambda': 1.5,
+            'substrate': 0.5,
+            'observer': 0.5,
+            'echo': 0.5,
+            'entry_threshold': 0.938,
+            'exit_threshold': 0.934
+        }
+        
+    def record_trade_profit(self, profit: float, btc_price: float = 95000) -> Dict[str, float]:
+        """
+        Record profit through Queen Hive 10-9-1 model.
+        
+        Returns distribution:
+        - compound: 90% goes back to capital
+        - harvest: 10% for spawning new hives
+        """
+        if not self.queen_hive:
+            return {'profit': profit, 'compound': profit * 0.9, 'harvest': profit * 0.1}
+            
+        result = self.queen_hive.record_profit(profit, btc_price)
+        self.nexus_profits += profit
+        
+        if profit > 0:
+            self.signals_followed += 1
+            
+        return result
+        
+    def get_hive_stats(self) -> Dict[str, Any]:
+        """Get Queen Hive statistics."""
+        if not self.queen_hive:
+            return {}
+            
+        try:
+            return self.queen_hive.get_stats()
+        except:
+            return {}
+            
+    def broadcast_signal(self, module: str, signal_type: str, data: Dict) -> bool:
+        """Broadcast signal through NexusBus."""
+        if not self.nexus_bus:
+            return False
+            
+        try:
+            self.nexus_bus.emit(module, signal_type, data)
+            return True
+        except Exception as e:
+            logger.error(f"NexusBus broadcast error: {e}")
+            return False
+            
+    def register_module(self, name: str, callback) -> bool:
+        """Register a module to receive NexusBus signals."""
+        if not self.nexus_bus:
+            return False
+            
+        try:
+            self.nexus_bus.register(name, callback)
+            return True
+        except Exception as e:
+            logger.error(f"NexusBus registration error: {e}")
+            return False
+            
+    def convert_klines_to_market_data(self, klines: List[Dict]) -> Dict[str, float]:
+        """
+        Convert kline data to market data format for Master Equation.
+        
+        Calculates volatility, momentum, trend_strength etc. from OHLCV data.
+        """
+        if not klines or len(klines) < 2:
+            return {
+                'volatility': 0.5,
+                'momentum': 0.5,
+                'sentiment': 0.5,
+                'trend_strength': 0.5,
+                'pattern_match': 0.5,
+                'harmony': 0.5,
+                'volume_ratio': 0.5,
+                'correlation': 0.5
+            }
+            
+        try:
+            # Get recent prices
+            closes = [float(k.get('close', k.get('c', 0))) for k in klines[-20:] if k]
+            highs = [float(k.get('high', k.get('h', 0))) for k in klines[-20:] if k]
+            lows = [float(k.get('low', k.get('l', 0))) for k in klines[-20:] if k]
+            volumes = [float(k.get('volume', k.get('v', 0))) for k in klines[-20:] if k]
+            
+            if not closes:
+                return self._default_market_data()
+                
+            current_price = closes[-1]
+            
+            # Volatility: Average true range normalized
+            if len(highs) >= 2 and len(lows) >= 2:
+                atr = sum(h - l for h, l in zip(highs[-14:], lows[-14:])) / min(14, len(highs))
+                volatility = min(1.0, atr / current_price * 10)  # Normalize
+            else:
+                volatility = 0.5
+                
+            # Momentum: Price change over period
+            if len(closes) >= 5:
+                momentum_raw = (closes[-1] - closes[-5]) / closes[-5]
+                momentum = 0.5 + (momentum_raw * 5)  # Scale to 0-1 range
+                momentum = max(0.0, min(1.0, momentum))
+            else:
+                momentum = 0.5
+                
+            # Trend strength: Directional consistency
+            if len(closes) >= 10:
+                ups = sum(1 for i in range(1, len(closes)) if closes[i] > closes[i-1])
+                trend_strength = ups / (len(closes) - 1)
+            else:
+                trend_strength = 0.5
+                
+            # Volume ratio: Current vs average
+            if volumes and sum(volumes[:-1]) > 0:
+                avg_vol = sum(volumes[:-1]) / len(volumes[:-1])
+                volume_ratio = min(1.0, volumes[-1] / avg_vol) if avg_vol > 0 else 0.5
+            else:
+                volume_ratio = 0.5
+                
+            # Sentiment: Based on close position in range
+            if len(highs) >= 1 and len(lows) >= 1:
+                high_low_range = max(highs[-1] - lows[-1], 0.0001)
+                sentiment = (current_price - lows[-1]) / high_low_range
+                sentiment = max(0.0, min(1.0, sentiment))
+            else:
+                sentiment = 0.5
+                
+            # Harmony: Golden ratio alignment (0.618, 1.618)
+            if len(closes) >= 5:
+                ratio = closes[-1] / closes[-5] if closes[-5] > 0 else 1.0
+                phi_distance = abs(ratio - 1.618)
+                harmony = max(0.0, 1.0 - phi_distance)
+            else:
+                harmony = 0.5
+                
+            return {
+                'volatility': volatility,
+                'momentum': momentum,
+                'sentiment': sentiment,
+                'trend_strength': trend_strength,
+                'pattern_match': 0.5,  # Requires pattern detection
+                'harmony': harmony,
+                'volume_ratio': volume_ratio,
+                'correlation': 0.5  # Requires cross-asset analysis
+            }
+        except Exception as e:
+            logger.error(f"Kline conversion error: {e}")
+            return self._default_market_data()
+            
+    def _default_market_data(self) -> Dict[str, float]:
+        """Default market data values."""
+        return {
+            'volatility': 0.5,
+            'momentum': 0.5,
+            'sentiment': 0.5,
+            'trend_strength': 0.5,
+            'pattern_match': 0.5,
+            'harmony': 0.5,
+            'volume_ratio': 0.5,
+            'correlation': 0.5
+        }
+        
+    def should_enter(self, coherence: float = None) -> bool:
+        """Check if coherence meets entry threshold."""
+        if coherence is None:
+            coherence = self.master_equation.coherence if self.master_equation else 0.5
+        return coherence >= 0.938
+        
+    def should_exit(self, coherence: float = None) -> bool:
+        """Check if coherence falls below exit threshold."""
+        if coherence is None:
+            coherence = self.master_equation.coherence if self.master_equation else 0.5
+        return coherence <= 0.934
+        
+    def get_stats(self) -> Dict[str, Any]:
+        """Get Nexus integration statistics."""
+        stats = {
+            'enabled': self.enabled,
+            'signals_generated': self.signals_generated,
+            'signals_followed': self.signals_followed,
+            'nexus_profits': self.nexus_profits,
+            'current_coherence': self.master_equation.coherence if self.master_equation else 0.0,
+            'coherence_avg': sum(self.coherence_history[-20:]) / max(1, len(self.coherence_history[-20:]))
+        }
+        
+        # Add hive stats if available
+        hive_stats = self.get_hive_stats()
+        if hive_stats:
+            stats['hive'] = hive_stats
+            
+        return stats
+        
+    def display_equation(self):
+        """Display current Master Equation state."""
+        if self.master_equation:
+            self.master_equation.display()
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -3503,7 +3831,7 @@ class AureonKrakenEcosystem:
         
         self.auris = AurisEngine()
         self.mycelium = MyceliumNetwork()
-        self.lattice = LatticeEngine()
+        self.lattice = GaiaLatticeEngine()  # 🌍 GAIA FREQUENCY PHYSICS - HNC Blackboard Carrier Wave Dynamics
         self.market_pulse = MarketPulse(self.client) # Initialize Market Pulse
         self.tracker = PerformanceTracker(initial_balance)
         self.memory = ElephantMemory()  # 🐘 Initialize Elephant Memory
@@ -3580,6 +3908,9 @@ class AureonKrakenEcosystem:
         # 📢 NOTIFICATION SYSTEM
         self.notifier = NotificationManager()
         
+        # 🌌 NEXUS INTEGRATION - MASTER EQUATION + QUEEN HIVE
+        self.nexus = NexusIntegration()
+        
         print("   🚀 Enhanced trading components initialized (Router/Arbitrage/Confirmation/Rebalancer)")
         print("   🔥 War-ready enhancements active (ATR/HeatManager/AdaptiveFilters)")
         if CONFIG.get('ENABLE_TRAILING_STOP', True):
@@ -3591,6 +3922,8 @@ class AureonKrakenEcosystem:
             if status['discord_enabled']: channels.append('Discord')
             if status['webhook_enabled']: channels.append('Webhook')
             print(f"   📢 Notifications enabled: {', '.join(channels)}")
+        if self.nexus.enabled:
+            print(f"   🌌 Nexus active: Master Equation Λ(t) + Queen Hive 10-9-1")
         
         # Determine tradeable currencies based on wallet
         self.tradeable_currencies = ['USD', 'GBP', 'EUR', 'USDT', 'USDC']
@@ -5239,6 +5572,85 @@ class AureonKrakenEcosystem:
             CONFIG['USE_ATR_TRAILING'] = use_atr
     
     # ─────────────────────────────────────────────────────────
+    # 🌌 NEXUS Integration Methods
+    # ─────────────────────────────────────────────────────────
+    
+    def get_nexus_signal(self, symbol: str, klines: List[Dict] = None) -> Dict[str, Any]:
+        """
+        Get Master Equation signal for a symbol.
+        
+        Returns signal with coherence thresholds:
+        - BUY when Γ > 0.938
+        - SELL when Γ < 0.934
+        - NEUTRAL otherwise
+        """
+        if not self.nexus.enabled:
+            return {'signal': 'NEUTRAL', 'coherence': 0.5, 'confidence': 0.5}
+            
+        # Convert klines to market data if provided
+        if klines:
+            market_data = self.nexus.convert_klines_to_market_data(klines)
+        else:
+            # Try to get klines from exchange
+            try:
+                klines = self.kraken.get_ohlc(symbol, interval=15)
+                market_data = self.nexus.convert_klines_to_market_data(klines) if klines else {}
+            except:
+                market_data = {}
+                
+        return self.nexus.calculate_master_equation(market_data)
+        
+    def enhance_opportunity_with_nexus(self, opp: Dict) -> Dict:
+        """
+        Enhance an opportunity with Nexus Master Equation signal.
+        Adds nexus_signal, nexus_coherence, nexus_boost to opportunity.
+        """
+        if not self.nexus.enabled:
+            return opp
+            
+        symbol = opp.get('symbol', '')
+        
+        # Get Nexus signal
+        nexus_result = self.get_nexus_signal(symbol)
+        
+        # Add Nexus data to opportunity
+        opp['nexus_signal'] = nexus_result.get('signal', 'NEUTRAL')
+        opp['nexus_coherence'] = nexus_result.get('coherence', 0.5)
+        opp['nexus_lambda'] = nexus_result.get('lambda', 1.5)
+        
+        # Apply coherence boost to score if above entry threshold
+        if nexus_result.get('coherence', 0) >= 0.938:
+            boost = 1.0 + (nexus_result['coherence'] - 0.938) * 10  # Up to 1.62x boost
+            opp['nexus_boost'] = boost
+            if 'score' in opp:
+                opp['score'] = opp['score'] * boost
+                
+        return opp
+        
+    def record_nexus_profit(self, profit: float) -> Dict[str, float]:
+        """
+        Record profit through Queen Hive 10-9-1 model.
+        Returns compound/harvest split.
+        """
+        return self.nexus.record_trade_profit(profit)
+        
+    def get_nexus_stats(self) -> Dict[str, Any]:
+        """Get Nexus integration statistics."""
+        return self.nexus.get_stats()
+        
+    def display_nexus_equation(self):
+        """Display current Master Equation state."""
+        self.nexus.display_equation()
+        
+    def check_nexus_exit_signal(self, symbol: str) -> bool:
+        """
+        Check if Nexus suggests exiting a position.
+        Returns True if coherence falls below 0.934.
+        """
+        nexus_result = self.get_nexus_signal(symbol)
+        return nexus_result.get('signal') == 'SELL'
+    
+    # ─────────────────────────────────────────────────────────
     # Position Management
     # ─────────────────────────────────────────────────────────
     
@@ -6052,7 +6464,15 @@ class AureonKrakenEcosystem:
                 print(f"   {cycle_icon} Cycle P&L: {curr_sym}{cycle_pnl:+.2f} ({cycle_pnl_pct:+.2f}%)")
                 print(f"   📈 Trades: {self.tracker.total_trades} | Wins: {self.tracker.wins} | WR: {self.tracker.win_rate:.1f}% | Avg Hold: {avg_hold_min:.1f}m")
                 print(f"   🍄 Network Γ: {network_coherence:.2f} {'⚠️ PAUSED' if trading_paused else ''} | WS: {ws_health} ({rt_count})")
-                print(f"   🌐 Lattice: {l_state.phase} ({l_state.frequency}Hz) | Purity: {l_state.field_purity*100:.0f}% | {lambda_str}")
+                
+                # 🌍 GAIA LATTICE DISPLAY - HNC CARRIER WAVE DYNAMICS 🌍
+                gaia_icon = "💜" if l_state.phase == "GAIA_RESONANCE" else ("⚡" if l_state.phase == "CARRIER_ACTIVE" else "🔴")
+                carrier_str = f"Carrier: {l_state.carrier_strength:.2f}φ" if hasattr(l_state, 'carrier_strength') else ""
+                nullification_str = f"Nullify: {l_state.nullification_pct:.0%}" if hasattr(l_state, 'nullification_pct') else ""
+                emergent_str = f"432Hz: {l_state.emergent_432:.0%}" if hasattr(l_state, 'emergent_432') else ""
+                print(f"   🌐 Gaia Lattice: {l_state.phase} ({l_state.frequency}Hz) {gaia_icon} | Purity: {l_state.field_purity*100:.0f}% | {carrier_str} | {emergent_str}")
+                if nullification_str:
+                    print(f"   🌍 Carrier Wave: {nullification_str} | Risk: {l_state.risk_mod:.2f}x | TP: {l_state.tp_mod:.2f}x | {lambda_str}")
                 # 🌍⚡ HNC Frequency Status ⚡🌍
                 if CONFIG.get('ENABLE_HNC_FREQUENCY', True):
                     hnc_status = self.auris.get_hnc_status()
@@ -6149,6 +6569,18 @@ class AureonKrakenEcosystem:
    ├─ Max Drawdown:   {self.tracker.max_drawdown:.1f}% / {CONFIG['MAX_DRAWDOWN_PCT']:.1f}%
    ├─ Position Sizing: {'Kelly Criterion' if CONFIG['USE_KELLY_SIZING'] else 'Fixed %'}
    └─ Circuit Breaker: {'🛑 ACTIVATED' if self.tracker.trading_halted else '✅ OK'}
+""")
+        
+        # Print Nexus stats if available
+        if self.nexus.enabled:
+            nexus_stats = self.get_nexus_stats()
+            hive_stats = nexus_stats.get('hive', {})
+            print(f"""   🌌 NEXUS INTEGRATION:
+   ├─ Signals Generated: {nexus_stats.get('signals_generated', 0)}
+   ├─ Signals Followed:  {nexus_stats.get('signals_followed', 0)}
+   ├─ Avg Coherence:     {nexus_stats.get('coherence_avg', 0):.4f}
+   ├─ Hive Generation:   {hive_stats.get('generation', 1)}
+   └─ Child Hives:       {hive_stats.get('child_hives', 0)}
 """)
         
         # Print platform-specific metrics
