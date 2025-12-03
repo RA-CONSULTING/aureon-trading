@@ -1,0 +1,320 @@
+import os
+import logging
+import requests
+import time
+from typing import Dict, Any, List, Optional
+
+logger = logging.getLogger(__name__)
+
+class CapitalClient:
+    """
+    Client for Capital.com API.
+    Handles session management and trading operations.
+    """
+    def __init__(self):
+        self.api_key = os.getenv('CAPITAL_API_KEY')
+        self.identifier = os.getenv('CAPITAL_IDENTIFIER')
+        self.password = os.getenv('CAPITAL_PASSWORD')
+        self.demo_mode = os.getenv('CAPITAL_DEMO', '1') == '1'
+        
+        if self.demo_mode:
+            self.base_url = "https://demo-api-capital.backend-capital.com/api/v1"
+        else:
+            self.base_url = "https://api-capital.backend-capital.com/api/v1"
+            
+        self.cst = None
+        self.x_security_token = None
+        self.session_start_time = 0
+        self.dry_run = os.getenv('LIVE', '0') != '1'
+        
+        if not self.api_key or not self.identifier or not self.password:
+            logger.warning("Capital.com credentials not fully set. Client will be disabled.")
+            self.enabled = False
+        else:
+            self.enabled = True
+            self._create_session()
+
+    def _create_session(self):
+        """Create a new session to get CST and X-SECURITY-TOKEN."""
+        if not self.enabled:
+            return
+
+        url = f"{self.base_url}/session"
+        payload = {
+            "identifier": self.identifier,
+            "password": self.password
+        }
+        headers = {
+            "X-CAP-API-KEY": self.api_key,
+            "Content-Type": "application/json"
+        }
+        
+        try:
+            response = requests.post(url, json=payload, headers=headers)
+            if response.status_code == 200:
+                self.cst = response.headers.get('CST')
+                self.x_security_token = response.headers.get('X-SECURITY-TOKEN')
+                self.session_start_time = time.time()
+                logger.info("Capital.com session established.")
+            else:
+                logger.error(f"Failed to create Capital.com session: {response.text}")
+                self.enabled = False
+        except Exception as e:
+            logger.error(f"Capital.com connection error: {e}")
+            self.enabled = False
+
+    def _get_headers(self):
+        """Get headers for authenticated requests."""
+        if not self.cst or not self.x_security_token:
+            self._create_session()
+            
+        return {
+            "X-CAP-API-KEY": self.api_key,
+            "CST": self.cst,
+            "X-SECURITY-TOKEN": self.x_security_token,
+            "Content-Type": "application/json"
+        }
+
+    def get_account_balance(self) -> Dict[str, float]:
+        """Get account balances.
+        
+        Note: Capital.com API may report currency incorrectly (e.g. 'USD' for GBP accounts).
+        We override to use the actual account currency which is GBP for UK accounts.
+        """
+        if not self.enabled:
+            return {}
+        
+        # Override: Capital.com UK accounts are denominated in GBP
+        # The API sometimes incorrectly reports 'USD' as the currency label
+        account_currency = os.getenv('CAPITAL_ACCOUNT_CURRENCY', 'GBP').upper()
+            
+        url = f"{self.base_url}/accounts"
+        try:
+            response = requests.get(url, headers=self._get_headers())
+            if response.status_code == 200:
+                data = response.json()
+                # Capital.com returns a list of accounts. We'll sum them up or take the main one.
+                # Structure: {'accounts': [{'accountId': ..., 'balance': {'balance': 1000, 'currency': 'USD'}}]}
+                balances = {}
+                if 'accounts' in data:
+                    for acc in data['accounts']:
+                        # Ignore API-reported currency, use our configured account currency
+                        amount = float(acc.get('balance', {}).get('balance', 0.0))
+                        balances[account_currency] = balances.get(account_currency, 0.0) + amount
+                return balances
+            else:
+                logger.error(f"Failed to get Capital.com balances: {response.text}")
+                return {}
+        except Exception as e:
+            logger.error(f"Error fetching Capital.com balances: {e}")
+            return {}
+
+    def get_ticker(self, symbol: str) -> Dict[str, float]:
+        """Get current price for a symbol."""
+        if not self.enabled:
+            return {'price': 0.0, 'bid': 0.0, 'ask': 0.0}
+            
+        # Capital.com uses 'epic' for symbols (e.g., 'BTCUSD', 'AAPL')
+        # We might need a mapping or search. For now, assume symbol is the epic.
+        url = f"{self.base_url}/markets"
+        params = {'searchTerm': symbol}
+        
+        try:
+            response = requests.get(url, headers=self._get_headers(), params=params)
+            if response.status_code == 200:
+                data = response.json()
+                markets = data.get('markets', [])
+                if markets:
+                    # Find exact match or first
+                    market = markets[0]
+                    # Try to get bid/ask from top level or snapshot
+                    bid = float(market.get('bid') or market.get('snapshot', {}).get('bid', 0))
+                    ask = float(market.get('offer') or market.get('snapshot', {}).get('offer', 0))
+                    price = (bid + ask) / 2
+                    return {'price': price, 'bid': bid, 'ask': ask}
+            return {'price': 0.0, 'bid': 0.0, 'ask': 0.0}
+        except Exception as e:
+            logger.error(f"Error fetching Capital.com ticker for {symbol}: {e}")
+            return {'price': 0.0, 'bid': 0.0, 'ask': 0.0}
+
+    def get_24h_tickers(self) -> List[Dict[str, Any]]:
+        """
+        Get top markets or a watchlist. 
+        Capital.com doesn't have a simple 'all tickers' endpoint that is lightweight.
+        We'll fetch a top list or specific categories if possible.
+        For now, let's fetch top crypto and tech stocks if we can, or just return empty if too complex.
+        Actually, let's try to fetch 'crypto' category.
+        """
+        if not self.enabled:
+            return []
+            
+        # Fetching top crypto markets
+        # This is a simplification. In a real scenario, we'd iterate categories.
+        # /markets?categoryId=...
+        # For now, we'll skip bulk fetching to avoid API limits or complexity, 
+        # or just return a few hardcoded ones if we can't discover them easily.
+        # Let's try searching for "USD" to get major pairs.
+        
+        url = f"{self.base_url}/markets"
+        params = {'searchTerm': 'USD', 'limit': 50} # Search for USD pairs
+        
+        tickers = []
+        try:
+            response = requests.get(url, headers=self._get_headers(), params=params)
+            if response.status_code == 200:
+                data = response.json()
+                for m in data.get('markets', []):
+                    snapshot = m.get('snapshot', {})
+                    bid = float(m.get('bid') or snapshot.get('bid', 0))
+                    ask = float(m.get('offer') or snapshot.get('offer', 0))
+                    price = (bid + ask) / 2
+                    change_pct = float(m.get('percentageChange') or snapshot.get('percentageChange', 0))
+                    
+                    tickers.append({
+                        'symbol': m.get('epic'),
+                        'price': price,
+                        'bid': bid,
+                        'ask': ask,
+                        'priceChangePercent': change_pct,
+                        'volume': 0.0, # Not always available
+                        'source': 'capital'
+                    })
+        except Exception as e:
+            logger.error(f"Error fetching Capital.com tickers: {e}")
+            
+        return tickers
+
+    def place_market_order(self, symbol: str, side: str, quantity: float) -> Dict[str, Any]:
+        """Place a market order."""
+        if not self.enabled:
+            return {'error': 'Client disabled'}
+        
+        if self.dry_run:
+            logger.info(f"[DRY RUN] Capital.com {side} {quantity} {symbol}")
+            return {'id': 'dry_run_id', 'status': 'filled'}
+
+        url = f"{self.base_url}/positions"
+        direction = "BUY" if side.upper() == "BUY" else "SELL"
+        
+        payload = {
+            "epic": symbol,
+            "direction": direction,
+            "size": quantity
+        }
+        
+        try:
+            response = requests.post(url, json=payload, headers=self._get_headers())
+            if response.status_code == 200:
+                return response.json()
+            else:
+                logger.error(f"Capital.com order failed: {response.text}")
+                return {'error': response.text}
+        except Exception as e:
+            logger.error(f"Capital.com order error: {e}")
+            return {'error': str(e)}
+
+    def get_positions(self) -> List[Dict[str, Any]]:
+        """Get all open positions."""
+        if not self.enabled:
+            return []
+            
+        url = f"{self.base_url}/positions"
+        try:
+            response = requests.get(url, headers=self._get_headers())
+            if response.status_code == 200:
+                data = response.json()
+                return data.get('positions', [])
+            return []
+        except Exception as e:
+            logger.error(f"Capital.com positions error: {e}")
+            return []
+
+    def get_order_history(self, from_date: str = None) -> List[Dict[str, Any]]:
+        """Get order/deal history."""
+        if not self.enabled:
+            return []
+            
+        url = f"{self.base_url}/history/activity"
+        params = {}
+        if from_date:
+            params['from'] = from_date
+            
+        try:
+            response = requests.get(url, headers=self._get_headers(), params=params)
+            if response.status_code == 200:
+                data = response.json()
+                return data.get('activities', [])
+            return []
+        except Exception as e:
+            logger.error(f"Capital.com history error: {e}")
+            return []
+
+    def compute_trade_fees(self, position: Dict[str, Any]) -> Dict[str, float]:
+        """
+        Calculate fees for a Capital.com position/trade.
+        
+        Capital.com Fee Structure (CFD/Spread Betting):
+        - Spread cost: Built into bid/ask (varies by instrument, typically 0.1-0.5%)
+        - Overnight financing: ~2.5% annually (charged daily on leveraged positions)
+        - No commission on most instruments
+        
+        Returns dict with:
+        - spread_cost: Estimated spread cost in account currency
+        - overnight_cost: Accumulated overnight financing
+        - total_fees: Total fees
+        - fee_pct: Approximate fee as percentage of notional
+        """
+        size = float(position.get('position', {}).get('size', 0) or 0)
+        level = float(position.get('position', {}).get('level', 0) or 0)  # Entry price
+        notional = size * level
+        
+        # Get current market to estimate spread
+        epic = position.get('market', {}).get('epic', '')
+        market = position.get('market', {})
+        bid = float(market.get('bid', 0) or 0)
+        offer = float(market.get('offer', 0) or 0)
+        
+        # Calculate spread percentage
+        if bid > 0 and offer > 0:
+            spread_pct = (offer - bid) / ((offer + bid) / 2)
+        else:
+            spread_pct = 0.001  # Default 0.1%
+            
+        # Spread cost (paid on entry)
+        spread_cost = notional * spread_pct
+        
+        # Overnight financing (calculate based on creation date if available)
+        overnight_cost = 0.0
+        # Note: Would need to track days held for accurate overnight cost
+        # For now, estimate based on typical overnight rates
+        
+        total_fees = spread_cost + overnight_cost
+        fee_pct = (total_fees / notional) if notional > 0 else 0
+        
+        return {
+            'spread_cost': spread_cost,
+            'spread_pct': spread_pct,
+            'overnight_cost': overnight_cost,
+            'total_fees': total_fees,
+            'fee_pct': fee_pct,
+            'notional': notional,
+            'epic': epic
+        }
+
+    def get_positions_with_fees(self) -> List[Dict[str, Any]]:
+        """Get all positions with computed fee metrics."""
+        positions = self.get_positions()
+        for pos in positions:
+            fees = self.compute_trade_fees(pos)
+            pos['computed_fees'] = fees
+        return positions
+
+    def compute_order_fees_in_quote(self, position: Dict[str, Any], primary_quote: str = "USD") -> float:
+        """
+        Calculate total fees for a position/trade in the quote currency.
+        This provides a consistent interface with Binance/Kraken clients.
+        
+        Returns: Total fee in quote currency
+        """
+        fees = self.compute_trade_fees(position)
+        return fees['total_fees']

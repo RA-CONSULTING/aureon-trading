@@ -39,6 +39,36 @@ from aureon_plums_guardian import PlumsGuardian, GuardianLimits  # 🇬🇧💎 
 from aureon_advanced_intelligence import AdvancedIntelligence, calculate_golden_ratio_alignment  # 🧠💎 THE MISSING PIECES!
 from lighthouse_metrics import LighthouseMetricsEngine
 
+# 🌉 BRIDGE INTEGRATION 🌉
+try:
+    from aureon_bridge import AureonBridge, Opportunity as BridgeOpportunity, CapitalState, Position as BridgePosition
+    BRIDGE_AVAILABLE = True
+except ImportError as e:
+    BRIDGE_AVAILABLE = False
+    # logger not defined yet, use print
+    print(f"⚠️ Aureon Bridge not available: {e}")
+
+# 🌌⚡ IMPERIAL PREDICTABILITY ENGINE ⚡🌌
+try:
+    from hnc_imperial_predictability import (
+        ImperialTradingIntegration, PredictabilityEngine, CosmicStateEngine,
+        CosmicPhase, MarketTorque, ImperialPredictabilityMatrix
+    )
+    IMPERIAL_AVAILABLE = True
+except ImportError as e:
+    IMPERIAL_AVAILABLE = False
+    print(f"⚠️ Imperial Predictability not available: {e}")
+
+# 🌌⚡ IMPERIAL PREDICTABILITY ENGINE ⚡🌌
+try:
+    from hnc_imperial_predictability import (
+        ImperialTradingIntegration, CosmicPhase, MarketTorque
+    )
+    IMPERIAL_AVAILABLE = True
+except ImportError as e:
+    IMPERIAL_AVAILABLE = False
+    print(f"⚠️ Imperial Predictability not available: {e}")
+
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s [%(levelname)s] %(message)s',
@@ -76,7 +106,7 @@ CONFIG = {
     'HUMMINGBIRD_SLOTS': 1,       # 🐝 Hummingbird: Quick rotations
     'ALLOW_SLOT_BORROWING': True, # Allow commandos to borrow idle slots
     'PRIMARY_QUOTE': 'USDC',      # Default spend asset for entries
-    'TARGET_QUOTES': ['USDC', 'BTC', 'BNB', 'ETH', 'EUR', 'USD', 'USDT'],  # Preferred quote assets when UK allows them
+    'TARGET_QUOTES': ['USDC', 'LDUSDC', 'BTC', 'BNB', 'ETH', 'EUR', 'USD', 'USDT'],  # Preferred quote assets (LDUSDC = Binance Earn)
     'PARTIAL_TP_PCT': 0.003,      # Trim half once +0.3% unrealized (floor = +0.1% net after fees)
     
     # Memory & Timing (Fibonacci from QGITA)
@@ -95,6 +125,13 @@ CONFIG = {
     'ENSEMBLE_WEIGHT': 0.6,
     'SENTIMENT_WEIGHT': 0.2,
     'COHERENCE_WEIGHT': 0.2,
+    
+    # 🌌⚡ Imperial Predictability Engine ⚡🌌
+    'ENABLE_IMPERIAL': os.getenv('ENABLE_IMPERIAL', '1') == '1',
+    'IMPERIAL_POSITION_WEIGHT': 0.30,   # Weight of imperial modifier in sizing
+    'IMPERIAL_MIN_COHERENCE': 0.40,     # Minimum cosmic coherence to trade
+    'IMPERIAL_DISTORTION_LIMIT': 0.20,  # Max distortion before halting
+    'IMPERIAL_COSMIC_BOOST': True,      # Apply cosmic phase boost
 }
 
 PNL_BASELINE_FILE = "pnl_baseline.json"
@@ -121,21 +158,48 @@ def get_emotional_state(coherence: float) -> Tuple[str, float]:
 class ElephantMemory:
     """
     Enhanced Elephant Memory from Quantum Quackers
-    Tracks hunts + results with JSONL history
+    Tracks hunts + results with JSONL history.
+    Integrates collective intelligence from all ecosystem agents.
     """
     
     def __init__(self, filepath: str = 'elephant_ultimate.json'):
         self.filepath = filepath
         self.history_path = filepath.replace('.json', '_history.jsonl')
-        self.symbols = {}
+        self.symbols = {} # Local memory
+        self.collective_symbols = {} # Collective memory
+        self.memory_sources = [
+            'elephant_unified.json',
+            'elephant_live.json'
+        ]
         self.load()
     
     def load(self):
+        # 1. Load local memory
         try:
             with open(self.filepath) as f:
                 self.symbols = json.load(f)
         except:
             self.symbols = {}
+            
+        # 2. Load and aggregate collective memory
+        self.collective_symbols = {}
+        for source in self.memory_sources:
+            if not os.path.exists(source):
+                continue
+            try:
+                with open(source, 'r') as f:
+                    data = json.load(f)
+                    for sym, stats in data.items():
+                        if sym not in self.collective_symbols:
+                            self.collective_symbols[sym] = stats.copy()
+                        else:
+                            # Merge critical stats
+                            s = self.collective_symbols[sym]
+                            s['blacklisted'] = s.get('blacklisted', False) or stats.get('blacklisted', False)
+                            s['streak'] = max(s.get('streak', 0), stats.get('streak', 0))
+                            s['losses'] = s.get('losses', 0) + stats.get('losses', 0)
+            except Exception as e:
+                logger.warning(f"⚠️ Error loading collective memory from {source}: {e}")
     
     def save(self):
         with open(self.filepath, 'w') as f:
@@ -208,16 +272,24 @@ class ElephantMemory:
         self.save()
     
     def should_avoid(self, symbol: str) -> bool:
-        if symbol not in self.symbols:
-            return False
-        s = self.symbols[symbol]
+        # Check local memory
+        if self._check_avoid(self.symbols.get(symbol)):
+            return True
+            
+        # Check collective memory
+        if self._check_avoid(self.collective_symbols.get(symbol)):
+            return True
+            
+        return False
+        
+    def _check_avoid(self, s: dict) -> bool:
+        if not s: return False
         
         # Blacklisted
         if s.get('blacklisted', False):
             return True
         
-        # Cooldown - only for symbols with actual TRADES (not just hunts)
-        # This allows re-entry attempts after failed hunts
+        # Cooldown
         if s.get('trades', 0) > 0 and time.time() - s.get('last_time', 0) < CONFIG['COOLDOWN_MINUTES'] * 60:
             return True
         
@@ -746,6 +818,35 @@ class AureonUltimate:
         self.last_equity_net = 0.0  # Mark-to-market net (equity vs start)
         self.last_realized_net = 0.0  # Realized net (closed trades only)
         self.business_green_light = False
+        
+        # 🌉 BRIDGE INTEGRATION 🌉
+        self.bridge = None
+        self.bridge_enabled = BRIDGE_AVAILABLE and os.getenv('ENABLE_BRIDGE', '1') == '1'
+        if self.bridge_enabled:
+            try:
+                self.bridge = AureonBridge()
+                logger.info("🌉 Bridge enabled: Ultimate ↔ Unified communication active")
+            except Exception as e:
+                logger.warning(f"⚠️ Bridge initialization failed: {e}")
+                self.bridge_enabled = False
+        self.last_bridge_sync = 0.0
+        self.bridge_sync_interval = 10.0  # Sync every 10 seconds
+        
+        # 🌌⚡ IMPERIAL PREDICTABILITY ENGINE ⚡🌌
+        self.imperial = None
+        self.cosmic_state = None
+        self.imperial_enabled = IMPERIAL_AVAILABLE and CONFIG.get('ENABLE_IMPERIAL', True)
+        if self.imperial_enabled:
+            try:
+                self.imperial = ImperialTradingIntegration()
+                self.cosmic_state = self.imperial.update_cosmic_state()
+                logger.info("🌌⚡ Imperial Predictability Engine ACTIVE")
+                logger.info(f"   ├─ Cosmic Phase: {self.cosmic_state.phase.value}")
+                logger.info(f"   ├─ Coherence: {self.cosmic_state.coherence:.2%}")
+                logger.info(f"   └─ Planetary Torque: ×{self.cosmic_state.planetary_torque:.2f}")
+            except Exception as e:
+                logger.warning(f"⚠️ Imperial Predictability initialization failed: {e}")
+                self.imperial_enabled = False
     
     def sync_allowed_quotes_with_account(self):
         """Blend Binance UK permissions with our preferred quotes - ONLY trade quotes with actual balance."""
@@ -956,8 +1057,16 @@ class AureonUltimate:
     def get_quote_balance(self, asset: Optional[str] = None) -> float:
         quote = asset or self.primary_quote
         try:
-            return self.client.get_free_balance(quote)
-        except Exception:
+            balance = self.client.get_free_balance(quote)
+            # If no balance in primary asset, check LDUSDC (Binance Earn)
+            if balance == 0.0 and quote == 'USDC':
+                ld_balance = self.client.get_free_balance('LDUSDC')
+                if ld_balance > 0:
+                    logger.info(f"💰 Found {ld_balance:.4f} LDUSDC (Binance Earn) - treating as USDC")
+                    balance = ld_balance
+            return balance
+        except Exception as e:
+            logger.warning(f"⚠️ Error fetching balance for {quote}: {e}")
             if self.client.dry_run:
                 return 10000.0  # Mock balance for dry-run
             return 0.0
@@ -1348,6 +1457,174 @@ class AureonUltimate:
         )
         logger.info(f"✅ Harvest order #{result.get('orderId', 'dry-run')}")
         return True
+
+    # ─────────────────────────────────────────────────────────
+    # 🌉 Bridge Integration Methods
+    # ─────────────────────────────────────────────────────────
+    
+    def sync_bridge(self):
+        """Sync state with Aureon Bridge for Ultimate ↔ Unified communication"""
+        if not BRIDGE_AVAILABLE or not self.bridge:
+            return
+        
+        now = time.time()
+        if now - self.last_bridge_sync < self.bridge_sync_interval:
+            return
+        
+        try:
+            # 1. Update Capital State
+            quote_balance = self.get_quote_balance()
+            pos_value = sum(
+                float(self.ticker_cache.get(s, {}).get('lastPrice', 0)) * p.quantity
+                for s, p in self.positions.items()
+            )
+            total_equity = quote_balance + pos_value
+            
+            capital_state = CapitalState(
+                total_equity=total_equity,
+                allocated_capital=pos_value,
+                free_capital=quote_balance,
+                realized_profit=self.last_realized_net,
+                unrealized_profit=sum(
+                    (float(self.ticker_cache.get(s, {}).get('lastPrice', 0)) - p.entry_price) * p.quantity
+                    for s, p in self.positions.items()
+                ),
+                total_fees=self.total_fees,
+                net_profit=self.last_equity_net,
+                trades_count=self.trades,
+                wins_count=self.wins,
+                win_rate=self.wins / max(1, self.trades),
+                exchange_breakdown={
+                    'binance': total_equity,
+                    'kraken': 0.0,  # Ultimate is Binance-only
+                    'alpaca': 0.0,
+                }
+            )
+            self.bridge.update_capital(capital_state)
+            
+            # 2. Register Open Positions
+            for symbol, pos in self.positions.items():
+                ticker = self.ticker_cache.get(symbol, {})
+                current_price = float(ticker.get('lastPrice', 0)) if ticker else pos.entry_price
+                
+                bridge_pos = BridgePosition(
+                    symbol=symbol,
+                    exchange='binance',
+                    side='BUY',
+                    size=pos.quantity,
+                    entry_price=pos.entry_price,
+                    current_price=current_price,
+                    unrealized_pnl=(current_price - pos.entry_price) * pos.quantity,
+                    entry_time=pos.entry_time,
+                    owner='ultimate'
+                )
+                self.bridge.register_position(bridge_pos)
+            
+            self.last_bridge_sync = now
+            
+        except Exception as e:
+            logger.warning(f"⚠️ Bridge sync error: {e}")
+    
+    def publish_opportunities_to_bridge(self, opportunities: List[Dict]):
+        """Publish top opportunities to bridge for Unified system"""
+        if not BRIDGE_AVAILABLE or not self.bridge:
+            return
+        
+        try:
+            bridge_opps = []
+            for opp in opportunities[:10]:  # Top 10
+                bridge_opp = BridgeOpportunity(
+                    symbol=opp['symbol'],
+                    exchange='binance',
+                    side='BUY',
+                    score=opp['score'],
+                    coherence=opp['coherence'],
+                    momentum=opp['change24h'],
+                    volume=opp['volume'],
+                    price=opp['price'],
+                    probability=opp.get('probability'),
+                    anomaly_flags=opp.get('anomaly_flags', []),
+                    frequency=opp.get('hnc_frequency'),
+                    source_system='ultimate'
+                )
+                bridge_opps.append(bridge_opp)
+            
+            self.bridge.publish_opportunities(bridge_opps)
+            
+        except Exception as e:
+            logger.warning(f"⚠️ Failed to publish opportunities to bridge: {e}")
+    
+    def consume_unified_opportunities(self) -> List[Dict]:
+        """Get opportunities from Unified system via bridge"""
+        if not BRIDGE_AVAILABLE or not self.bridge:
+            return []
+        
+        try:
+            # Get opportunities from Unified (Kraken focus)
+            bridge_opps = self.bridge.get_opportunities(
+                exchange='kraken',
+                min_score=CONFIG['MIN_SCORE'],
+                max_age_seconds=60.0
+            )
+            
+            # Convert to internal format
+            opportunities = []
+            for opp in bridge_opps:
+                opportunities.append({
+                    'symbol': opp.symbol,
+                    'price': opp.price,
+                    'change24h': opp.momentum,
+                    'volume': opp.volume,
+                    'score': opp.score,
+                    'coherence': opp.coherence,
+                    'dominant_node': 'TIGER',  # Default
+                    'source': opp.exchange,
+                    'hnc_frequency': opp.frequency or 256,
+                    'hnc_harmonic': False,
+                    'probability': opp.probability or 0.5,
+                    'prob_confidence': 0.5,
+                    'prob_action': 'BUY',
+                    'from_bridge': True
+                })
+            
+            if opportunities:
+                logger.info(f"🌉 Received {len(opportunities)} opportunities from Unified")
+            
+            return opportunities
+            
+        except Exception as e:
+            logger.warning(f"⚠️ Failed to consume Unified opportunities: {e}")
+            return []
+    
+    def check_bridge_commands(self):
+        """Process control commands from bridge"""
+        if not BRIDGE_AVAILABLE or not self.bridge:
+            return
+        
+        try:
+            commands = self.bridge.get_commands('ultimate', max_age_seconds=60.0, clear_after_read=True)
+            
+            for cmd in commands:
+                if cmd.command == 'pause':
+                    logger.info(f"🎛️ Trading PAUSED by bridge command")
+                    # Implement pause logic if needed
+                    
+                elif cmd.command == 'resume':
+                    logger.info(f"🎛️ Trading RESUMED by bridge command")
+                    
+                elif cmd.command == 'harvest':
+                    min_profit = cmd.params.get('min_profit', 0.0)
+                    # Force close winning positions
+                    self.harvest_winner_for_liquidity(min_profit)
+                    
+                elif cmd.command == 'force_exit':
+                    target_symbol = cmd.params.get('symbol')
+                    if target_symbol and target_symbol in self.positions:
+                        logger.info(f"🌉 Force exiting {target_symbol} via bridge command")
+                        # Implement force exit logic
+                        
+        except Exception as e:
+            logger.warning(f"⚠️ Bridge command processing error: {e}")
 
     def update_tickers(self):
         if time.time() - self.last_ticker_update < 2:
@@ -1959,6 +2236,16 @@ class AureonUltimate:
                     
                     # 🦆 Notify commandos of exit
                     self.commandos.record_exit(symbol, realized_net)
+                    
+                    # 🌉 Record trade in bridge
+                    if BRIDGE_AVAILABLE and self.bridge:
+                        self.bridge.record_trade(
+                            profit=pnl_usd,
+                            fee=entry_fee_actual + sell_fee,
+                            success=(realized_net > 0)
+                        )
+                        self.bridge.unregister_position('binance', symbol)
+                    
                     del self.positions[symbol]
                     
                 except Exception as e:
@@ -2100,6 +2387,209 @@ class AureonUltimate:
                     f"Now ${price:.4f} | {pnl_pct:+.2f}% | {age_min:.0f}m"
                 )
     
+    # ═══════════════════════════════════════════════════════════
+    # 🌉 BRIDGE INTEGRATION METHODS
+    # ═══════════════════════════════════════════════════════════
+    
+    def sync_bridge(self):
+        """Sync state with bridge for Unified ↔ Ultimate communication"""
+        if not self.bridge_enabled or not self.bridge:
+            return
+        
+        now = time.time()
+        if now - self.last_bridge_sync < self.bridge_sync_interval:
+            return
+        
+        try:
+            # Calculate current equity
+            quote_balance = self.get_quote_balance()
+            pos_value = sum(
+                float(self.ticker_cache.get(s, {}).get('lastPrice', 0)) * p.quantity
+                for s, p in self.positions.items()
+            )
+            total_equity = quote_balance + pos_value
+            
+            # 1. Update Capital State
+            capital_state = CapitalState(
+                total_equity=total_equity,
+                allocated_capital=sum(pos.entry_price * pos.quantity for pos in self.positions.values()),
+                free_capital=quote_balance,
+                realized_profit=self.total_gross_pnl,
+                unrealized_profit=sum(
+                    (float(self.ticker_cache.get(s, {}).get('lastPrice', 0)) - p.entry_price) * p.quantity
+                    for s, p in self.positions.items()
+                ),
+                total_fees=self.total_fees,
+                net_profit=self.total_gross_pnl - self.total_fees,
+                trades_count=self.trades,
+                wins_count=self.wins,
+                win_rate=self.wins / max(1, self.trades),
+                exchange_breakdown={'binance': total_equity}  # Ultimate is Binance-focused
+            )
+            self.bridge.update_capital(capital_state)
+            
+            # 2. Register Open Positions
+            for symbol, pos in self.positions.items():
+                current_price = float(self.ticker_cache.get(symbol, {}).get('lastPrice', pos.entry_price))
+                bridge_pos = BridgePosition(
+                    symbol=symbol,
+                    exchange='binance',
+                    side='BUY',
+                    size=pos.quantity,
+                    entry_price=pos.entry_price,
+                    current_price=current_price,
+                    unrealized_pnl=(current_price - pos.entry_price) * pos.quantity,
+                    entry_time=pos.entry_time,
+                    owner='ultimate'
+                )
+                self.bridge.register_position(bridge_pos)
+            
+            self.last_bridge_sync = now
+            
+        except Exception as e:
+            logger.warning(f"⚠️ Bridge sync error: {e}")
+    
+    def publish_opportunities_to_bridge(self):
+        """Publish commando targets as opportunities to bridge"""
+        if not self.bridge_enabled or not self.bridge or not self.commando_cache:
+            return
+        
+        try:
+            bridge_opps = []
+            for symbol, target_data in list(self.commando_cache.items())[:10]:  # Top 10
+                ticker = self.ticker_cache.get(symbol, {})
+                price = float(ticker.get('lastPrice', 0))
+                volume = float(ticker.get('quoteVolume', 0))
+                change = float(ticker.get('priceChangePercent', 0))
+                
+                if price == 0:
+                    continue
+                
+                # Get coherence from advanced intelligence
+                coherence = self.advanced.auris.compute_coherence_simple(change, volume)
+                
+                bridge_opp = BridgeOpportunity(
+                    symbol=symbol,
+                    exchange='binance',
+                    side='BUY',
+                    score=target_data.get('score', 50),
+                    coherence=coherence,
+                    momentum=change,
+                    volume=volume,
+                    price=price,
+                    source_system='ultimate'
+                )
+                bridge_opps.append(bridge_opp)
+            
+            if bridge_opps:
+                self.bridge.publish_opportunities(bridge_opps)
+                logger.debug(f"📡 Published {len(bridge_opps)} Ultimate opportunities to bridge")
+            
+        except Exception as e:
+            logger.warning(f"⚠️ Failed to publish opportunities to bridge: {e}")
+    
+    def consume_unified_opportunities(self) -> List[str]:
+        """Get opportunity symbols from Unified system via bridge"""
+        if not self.bridge_enabled or not self.bridge:
+            return []
+        
+        try:
+            # Get Kraken opportunities from Unified
+            bridge_opps = self.bridge.get_opportunities(
+                exchange='kraken',
+                min_score=40.0,
+                max_age_seconds=60.0
+            )
+            
+            # Convert to symbols list for commando consideration
+            symbols = [opp.symbol for opp in bridge_opps[:5]]  # Top 5
+            
+            if symbols:
+                logger.info(f"🌉 Received {len(symbols)} opportunities from Unified: {symbols[:3]}")
+            
+            return symbols
+            
+        except Exception as e:
+            logger.warning(f"⚠️ Failed to consume Unified opportunities: {e}")
+            return []
+    
+    def check_bridge_commands(self):
+        """Process control commands from bridge"""
+        if not self.bridge_enabled or not self.bridge:
+            return
+        
+        try:
+            commands = self.bridge.get_commands('ultimate', max_age_seconds=60.0, clear_after_read=True)
+            
+            for cmd in commands:
+                if cmd.command == 'harvest':
+                    min_profit = cmd.params.get('min_profit', 0.0)
+                    logger.info(f"🎛️ Harvest command received (min_profit=${min_profit})")
+                    # Force close winning positions
+                    for symbol, pos in list(self.positions.items()):
+                        ticker = self.ticker_cache.get(symbol)
+                        if ticker:
+                            price = float(ticker['lastPrice'])
+                            pnl = (price - pos.entry_price) * pos.quantity
+                            if pnl >= min_profit:
+                                logger.info(f"🌉 Harvesting {symbol} (${pnl:+.2f}) via bridge command")
+                                self.force_exit_position(symbol, "bridge_harvest")
+                    
+                elif cmd.command == 'force_exit':
+                    target_symbol = cmd.params.get('symbol')
+                    if target_symbol and target_symbol in self.positions:
+                        logger.info(f"🌉 Force exiting {target_symbol} via bridge command")
+                        self.force_exit_position(target_symbol, "bridge_force_exit")
+                        
+        except Exception as e:
+            logger.warning(f"⚠️ Bridge command processing error: {e}")
+    
+    def force_exit_position(self, symbol: str, reason: str):
+        """Force exit a position (used by bridge commands)"""
+        if symbol not in self.positions:
+            return
+        
+        pos = self.positions[symbol]
+        ticker = self.ticker_cache.get(symbol)
+        if not ticker:
+            return
+        
+        price = float(ticker['lastPrice'])
+        try:
+            qty_str = self.lot_mgr.format_qty(symbol, pos.quantity)
+            result = self.client.place_market_order(symbol, 'SELL', quantity=float(qty_str))
+            
+            # Calculate P&L
+            fee_pct = CONFIG.get('TAKER_FEE_PCT', 0.001)
+            actual_sell_fee = self.client.compute_order_fees_in_quote(result, self.primary_quote)
+            sell_fee = actual_sell_fee if actual_sell_fee and actual_sell_fee > 0 else (price * pos.quantity * fee_pct)
+            realized = pos.quantity * (price - pos.entry_price)
+            realized_net = realized - sell_fee - pos.fees_quote
+            
+            self.total_gross_pnl += realized
+            self.total_fees += sell_fee
+            
+            # Record in bridge
+            if self.bridge_enabled and self.bridge:
+                self.bridge.record_trade(
+                    profit=realized,
+                    fee=sell_fee,
+                    success=(realized_net >= 0)
+                )
+                self.bridge.unregister_position('binance', symbol)
+            
+            compound, harvest = self.hive.process_profit(realized_net)
+            self.memory.record(symbol, realized_net)
+            if realized_net >= 0:
+                self.wins += 1
+            self.commandos.record_exit(symbol, realized_net)
+            del self.positions[symbol]
+            
+            logger.info(f"✅ Force exit complete: {symbol} | Net ${realized_net:+.2f}")
+            
+        except Exception as e:
+            logger.error(f"❌ Force exit failed for {symbol}: {e}")
+    
     def run(self, duration_sec: int = 3600):
         """Run the ultimate trader"""
         logger.info("""
@@ -2128,6 +2618,12 @@ class AureonUltimate:
             self.cycle += 1
             
             self.update_tickers()
+            
+            # 🌉 Sync with Bridge
+            if BRIDGE_AVAILABLE and self.bridge:
+                self.sync_bridge()
+                self.check_bridge_commands()
+            
             self.display_status()
             
             # 🦆⚔️ ROLE-BASED EXECUTION ⚔️🦆
@@ -2183,6 +2679,11 @@ class AureonUltimate:
                                 entered = self.enter_position(opp, quote_balance, commando=eco_pick['commando'])
                                 if entered:
                                     self.commandos.record_entry(opp['symbol'], eco_pick['commando'])
+                                    
+                                    # 🌉 Publish opportunity to bridge for Unified system awareness
+                                    if BRIDGE_AVAILABLE and self.bridge:
+                                        # Convert to list of opportunities
+                                        self.publish_opportunities_to_bridge()
                                 else:
                                     logger.warning(f"⚠️ Entry failed for {opp['symbol']}")
                         else:

@@ -40,6 +40,8 @@ MIN_MOMENTUM = 2.0           # Minimum 24h change to enter (lowered for quiet ma
 MAX_MOMENTUM = 100.0         # Allow bigger movers
 MIN_SCORE = 55               # Minimum quality score (lowered)
 MIN_VOLUME = 50000           # Minimum volume for liquidity (lowered)
+LOSS_STREAK_LIMIT = 3        # Max consecutive losses before blacklist
+COOLDOWN_MINUTES = 13        # Fibonacci timing for cooldown
 
 # WebSocket
 KRAKEN_WS_URL = "wss://ws.kraken.com"
@@ -56,6 +58,150 @@ class Position:
     entry_time: float
     cycles: int = 0
 
+# ═══════════════════════════════════════════════════════════════
+# 🐘 ELEPHANT MEMORY - Enhanced Tracking
+# ═══════════════════════════════════════════════════════════════
+
+class ElephantMemory:
+    """
+    Enhanced Elephant Memory from Quantum Quackers
+    Tracks hunts + results with JSONL history.
+    Integrates collective intelligence from all ecosystem agents.
+    """
+    
+    def __init__(self, filepath: str = 'elephant_live.json'):
+        self.filepath = filepath
+        self.history_path = filepath.replace('.json', '_history.jsonl')
+        self.symbols = {} # Local memory
+        self.collective_symbols = {} # Collective memory
+        self.memory_sources = [
+            'elephant_unified.json',
+            'elephant_ultimate.json'
+        ]
+        self.load()
+    
+    def load(self):
+        # 1. Load local memory
+        try:
+            with open(self.filepath) as f:
+                self.symbols = json.load(f)
+        except:
+            self.symbols = {}
+            
+        # 2. Load and aggregate collective memory
+        self.collective_symbols = {}
+        for source in self.memory_sources:
+            if not os.path.exists(source):
+                continue
+            try:
+                with open(source, 'r') as f:
+                    data = json.load(f)
+                    for sym, stats in data.items():
+                        if sym not in self.collective_symbols:
+                            self.collective_symbols[sym] = stats.copy()
+                        else:
+                            # Merge critical stats
+                            s = self.collective_symbols[sym]
+                            s['blacklisted'] = s.get('blacklisted', False) or stats.get('blacklisted', False)
+                            s['streak'] = max(s.get('streak', 0), stats.get('streak', 0))
+                            s['losses'] = s.get('losses', 0) + stats.get('losses', 0)
+            except Exception as e:
+                print(f"⚠️ Error loading collective memory from {source}: {e}")
+    
+    def save(self):
+        with open(self.filepath, 'w') as f:
+            json.dump(self.symbols, f, indent=2)
+    
+    def record_hunt(self, symbol: str, volume: float = 0, change: float = 0):
+        """Remember we hunted this symbol (Quackers style)"""
+        if symbol not in self.symbols:
+            self.symbols[symbol] = {
+                'hunts': 0, 'trades': 0, 'wins': 0, 'losses': 0,
+                'profit': 0, 'last_time': 0, 'streak': 0, 'blacklisted': False
+            }
+        
+        s = self.symbols[symbol]
+        s['hunts'] = s.get('hunts', 0) + 1
+        s['last_time'] = time.time()
+        
+        # Append to JSONL history
+        try:
+            with open(self.history_path, 'a') as f:
+                record = {
+                    'ts': datetime.now().isoformat(),
+                    'type': 'hunt',
+                    'symbol': symbol,
+                    'volume': volume,
+                    'change': change
+                }
+                f.write(json.dumps(record) + '\n')
+        except:
+            pass
+        
+        self.save()
+    
+    def record(self, symbol: str, profit_usd: float):
+        """Record trade result"""
+        if symbol not in self.symbols:
+            self.symbols[symbol] = {
+                'hunts': 0, 'trades': 0, 'wins': 0, 'losses': 0,
+                'profit': 0, 'last_time': 0, 'streak': 0, 'blacklisted': False
+            }
+        
+        s = self.symbols[symbol]
+        s['trades'] += 1
+        s['profit'] += profit_usd
+        s['last_time'] = time.time()
+        
+        if profit_usd >= 0:
+            s['wins'] += 1
+            s['streak'] = 0
+        else:
+            s['losses'] += 1
+            s['streak'] += 1
+            if s['streak'] >= LOSS_STREAK_LIMIT:
+                s['blacklisted'] = True
+                print(f"🚫 {symbol} BLACKLISTED after {s['streak']} losses")
+        
+        # Append to JSONL history
+        try:
+            with open(self.history_path, 'a') as f:
+                record = {
+                    'ts': datetime.now().isoformat(),
+                    'type': 'result',
+                    'symbol': symbol,
+                    'profit': profit_usd
+                }
+                f.write(json.dumps(record) + '\n')
+        except:
+            pass
+        
+        self.save()
+    
+    def should_avoid(self, symbol: str) -> bool:
+        # Check local memory
+        if self._check_avoid(self.symbols.get(symbol)):
+            return True
+            
+        # Check collective memory
+        if self._check_avoid(self.collective_symbols.get(symbol)):
+            return True
+            
+        return False
+        
+    def _check_avoid(self, s: dict) -> bool:
+        if not s: return False
+        
+        # Blacklisted
+        if s.get('blacklisted', False):
+            return True
+        
+        # Cooldown
+        if s.get('trades', 0) > 0 and time.time() - s.get('last_time', 0) < COOLDOWN_MINUTES * 60:
+            return True
+        
+        return False
+
 
 class Aureon51Live:
     """
@@ -67,6 +213,7 @@ class Aureon51Live:
         self.balance = initial_balance
         self.dry_run = dry_run
         self.client = KrakenClient()
+        self.memory = ElephantMemory()
         self.positions: Dict[str, Position] = {}
         self.ticker_cache: Dict[str, Dict] = {}
         self.price_history: Dict[str, List[float]] = {}
@@ -276,6 +423,10 @@ class Aureon51Live:
             if change < MIN_MOMENTUM or change > MAX_MOMENTUM or price < 0.0001 or volume < MIN_VOLUME:
                 continue
             
+            # 🐘 Check Elephant Memory
+            if self.memory.should_avoid(symbol):
+                continue
+            
             # Calculate trend from price history
             history = self.price_history.get(symbol, [])
             if len(history) >= 5:
@@ -345,6 +496,9 @@ class Aureon51Live:
         
         self.total_fees += entry_fee
         
+        # 🐘 Record hunt
+        self.memory.record_hunt(symbol, opp.get('volume', 0), momentum)
+        
         # Update WS mapping
         self.symbol_to_ws[symbol] = ws_pair
         self.ws_to_symbol[ws_pair] = symbol
@@ -389,6 +543,9 @@ class Aureon51Live:
         self.balance += net_pnl
         self.net_profit += net_pnl
         self.total_trades += 1
+        
+        # 🐘 Record result
+        self.memory.record(symbol, net_pnl)
         
         if net_pnl > 0:
             self.wins += 1
