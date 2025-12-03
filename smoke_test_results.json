@@ -1,0 +1,52 @@
+{
+  "timestamp": "2025-12-03T20:25:09.276163",
+  "elapsed_sec": 12.543618440628052,
+  "summary": {
+    "passed": 9,
+    "warned": 0,
+    "failed": 1,
+    "total": 10
+  },
+  "results": {
+    "binance": {
+      "status": "PASS",
+      "price": 93057.66
+    },
+    "hnc_matrix": {
+      "status": "PASS",
+      "action": "HOLD"
+    },
+    "lighthouse": {
+      "status": "PASS",
+      "coherence": 0.9454389300673497
+    },
+    "wave_sim": {
+      "status": "PASS",
+      "samples": 1000
+    },
+    "kraken": {
+      "status": "PASS",
+      "price": 93018.6
+    },
+    "alpaca": {
+      "status": "PASS",
+      "equity": 100000.0
+    },
+    "capital": {
+      "status": "PASS",
+      "balance": "{'GBP': 49.97}"
+    },
+    "predictor": {
+      "status": "PASS"
+    },
+    "reports": {
+      "status": "PASS",
+      "found": 4
+    },
+    "prediction": {
+      "status": "FAIL",
+      "prediction": "UP",
+      "actual": "DOWN"
+    }
+  }
+}

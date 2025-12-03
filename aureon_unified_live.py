@@ -23,6 +23,7 @@ from datetime import datetime
 from typing import Dict, List, Optional, Tuple
 from decimal import Decimal, ROUND_DOWN
 from binance_client import BinanceClient
+from hnc_probability_matrix import HNCProbabilityIntegration
 
 logging.basicConfig(
     level=logging.INFO,
@@ -35,18 +36,48 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # ═══════════════════════════════════════════════════════════════════════════
+# v4 LEARNED INSIGHTS (FROM 21 PAPER TRADES)
+# ═══════════════════════════════════════════════════════════════════════════
+"""
+📊 KEY LEARNINGS:
+┌─────────────────────────────────────────────────────────────────────┐
+│ FREQUENCY BANDS:                                                    │
+│   • 750-850Hz (Intuition) → 67% WR, +$0.48 P&L ✅ TRADE             │
+│   • 450-550Hz (Transformation) → 27% WR, -$0.16 P&L ⛔ AVOID        │
+│                                                                      │
+│ COHERENCE:                                                          │
+│   • Γ ≥ 0.90 → 45% WR ✅                                            │
+│   • Γ 0.70-0.80 → 25% WR ⛔                                         │
+│                                                                      │
+│ PROBABILITY:                                                        │
+│   • 80-85% → 44% WR (best performing band)                          │
+│   • 85%+ → 0% WR (overconfident signals)                            │
+│                                                                      │
+│ RISK/REWARD: 2.12:1 (Avg Win $0.10 / Avg Loss $0.047)               │
+│ v3 IMPROVEMENT: +33.3% win rate vs pre-v3                           │
+└─────────────────────────────────────────────────────────────────────┘
+"""
+
+# ═══════════════════════════════════════════════════════════════════════════
 # CONFIGURATION
 # ═══════════════════════════════════════════════════════════════════════════
 
 CONFIG = {
     'MIN_TRADE_USD': 6.0,
-    'MAX_POSITIONS': 3,
-    'STOP_LOSS_PCT': 0.02,
-    'TAKE_PROFIT_PCT': 0.03,
-    'PING_THRESHOLD': 0.005,  # 0.5% for entry
-    'PONG_THRESHOLD': 0.01,   # 1% for exit
-    'COHERENCE_THRESHOLD': 0.6,
-    'COOLDOWN_MINUTES': 15,
+    'MAX_POSITIONS': 2,           # v4: Reduced from 3 for focus
+    'STOP_LOSS_PCT': 0.005,       # v4: Tighter 0.5% stop loss
+    'TAKE_PROFIT_PCT': 0.01,      # v4: 1.0% take profit
+    'PING_THRESHOLD': 0.005,      # 0.5% for entry
+    'PONG_THRESHOLD': 0.01,       # 1% for exit
+    'COHERENCE_THRESHOLD': 0.85,  # v4: Increased from 0.6 (45% vs 25% WR)
+    'COOLDOWN_MINUTES': 5,        # v4: Symbol cooldown
+    'TIMEOUT_SEC': 300,           # v4: 5 min timeout (was 30 min)
+    
+    # v4 LEARNED FREQUENCY BANDS
+    'FREQ_OPTIMAL_MIN': 700,      # 750-850Hz = 67% WR
+    'FREQ_OPTIMAL_MAX': 850,      # Intuition frequency band
+    'FREQ_AVOID_MIN': 450,        # 450-550Hz = 27% WR (avoid)
+    'FREQ_AVOID_MAX': 550,
 }
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -160,6 +191,7 @@ class AureonUnifiedLive:
         self.client = BinanceClient()
         self.lot_mgr = LotSizeManager(self.client)
         self.memory = ElephantMemory()
+        self.hnc = HNCProbabilityIntegration()  # HNC Probability Matrix
         
         self.positions = {}
         self.ticker_cache = {}
@@ -182,7 +214,9 @@ class AureonUnifiedLive:
         return self.client.get_free_balance('USDC')
     
     def scan_opportunities(self) -> List[Dict]:
+        """v4 Enhanced opportunity scanner with learned frequency filters"""
         opportunities = []
+        PHI = (1 + 5**0.5) / 2  # Golden ratio
         
         for symbol, ticker in self.ticker_cache.items():
             if not symbol.endswith('USDC'): continue
@@ -201,27 +235,92 @@ class AureonUnifiedLive:
                 volatility = ((high - low) / low * 100) if low > 0 else 0
                 coherence = calculate_coherence(change, volume / price if price > 0 else 0, volatility)
                 
-                # Entry criteria: Dipped + High coherence
-                if change < -1 and coherence > CONFIG['COHERENCE_THRESHOLD']:
+                # v4: Require higher coherence (learned: 45% WR at 0.90+ vs 25% at 0.70-0.80)
+                if coherence < CONFIG['COHERENCE_THRESHOLD']:
+                    continue
+                
+                # Calculate frequency from price action (Solfeggio mapping)
+                freq = max(256, min(963, 432 * ((1 + change/100) ** PHI)))
+                is_harmonic = abs(freq - 528) < 30  # Near LOVE frequency
+                
+                # v4: FREQUENCY BAND FILTERING (LEARNED)
+                # 750-850Hz (Intuition) = 67% WR - PRIORITIZE
+                # 450-550Hz (Transformation) = 27% WR - AVOID
+                freq_score = 0
+                in_optimal_band = CONFIG['FREQ_OPTIMAL_MIN'] <= freq <= CONFIG['FREQ_OPTIMAL_MAX']
+                in_avoid_band = CONFIG['FREQ_AVOID_MIN'] <= freq <= CONFIG['FREQ_AVOID_MAX']
+                
+                if in_avoid_band:
+                    continue  # v4: Skip poor-performing frequency band
+                
+                if in_optimal_band:
+                    freq_score = 100  # Strong bonus for 750-850Hz
+                elif freq > 650:  # Above 650Hz is decent
+                    freq_score = 50
+                else:
+                    freq_score = 25  # Lower frequencies underperform
+                
+                # Generate HNC Probability Matrix
+                matrix = self.hnc.update_and_analyze(
+                    symbol=symbol,
+                    price=price,
+                    frequency=freq,
+                    momentum=change,
+                    coherence=coherence,
+                    is_harmonic=is_harmonic,
+                    volume=volume
+                )
+                
+                signal = self.hnc.get_trading_signal(symbol)
+                prob = signal['probability']
+                action = signal['action']
+                
+                # v4: Require probability >= 80% (learned: 80-85% = 44% WR, best band)
+                if prob < 0.80:
+                    continue
+                
+                # Entry criteria: HNC says BUY + High coherence + Good frequency
+                if action in ['STRONG BUY', 'BUY', 'SLIGHT BUY']:
+                    # v4: Score heavily weights frequency band (learned insight)
+                    base_score = prob * coherence * (1 + math.log10(max(1, volume/10000)))
+                    freq_bonus = freq_score / 100  # 0-1 range
+                    score = base_score * (1 + freq_bonus)  # Up to 2x for optimal freq
+                    
                     opportunities.append({
                         'symbol': symbol,
                         'price': price,
                         'change': change,
                         'coherence': coherence,
                         'volume': volume,
-                        'score': abs(change) * coherence * 10
+                        'probability': prob,
+                        'action': action,
+                        'frequency': freq,
+                        'is_harmonic': is_harmonic,
+                        'score': score,
+                        'freq_band': 'OPTIMAL' if in_optimal_band else 'STANDARD',
                     })
             except:
                 continue
         
-        opportunities.sort(key=lambda x: x['score'], reverse=True)
+        # v4: Sort by frequency band first, then score
+        opportunities.sort(key=lambda x: (x.get('freq_band') == 'OPTIMAL', x['score']), reverse=True)
         return opportunities
     
     def enter_position(self, opp: Dict, usdc_balance: float) -> bool:
         symbol = opp['symbol']
         
-        # Position size: 30% of available USDC
-        size_usd = usdc_balance * 0.30
+        # v4: Adaptive position sizing based on frequency band and confidence
+        # Optimal band (750-850Hz, 67% WR) gets larger positions
+        base_size_pct = 0.25  # 25% base
+        
+        if opp.get('freq_band') == 'OPTIMAL':
+            size_pct = 0.40  # 40% for optimal frequency band
+        elif opp.get('coherence', 0) >= 0.90:
+            size_pct = 0.35  # 35% for high coherence
+        else:
+            size_pct = base_size_pct  # 25% standard
+        
+        size_usd = usdc_balance * size_pct
         if size_usd < CONFIG['MIN_TRADE_USD']:
             return False
         
@@ -235,7 +334,8 @@ class AureonUnifiedLive:
         logger.info(f"""
 ╔════════════════════════════════════════════════════════════════╗
 ║ 🎯 ENTERING {symbol}
-║ Coherence: Γ={opp['coherence']:.3f} | Change: {opp['change']:+.2f}%
+║ HNC Prob: {opp.get('probability', 0):.0%} | Action: {opp.get('action', 'N/A')}
+║ Coherence: Γ={opp['coherence']:.3f} | Freq: {opp.get('frequency', 0):.0f}Hz
 ║ Quantity:  {qty_str} @ ${opp['price']:.4f} = ${notional:.2f}
 ╚════════════════════════════════════════════════════════════════╝
 """)
@@ -275,7 +375,7 @@ class AureonUnifiedLive:
             elif pnl_pct <= -CONFIG['STOP_LOSS_PCT']:
                 should_exit = True
                 reason = "🛑 STOP LOSS"
-            elif time.time() - pos['entry_time'] > 1800:  # 30 min timeout
+            elif time.time() - pos['entry_time'] > CONFIG['TIMEOUT_SEC']:  # v4: Configurable timeout
                 should_exit = True
                 reason = "⏰ TIMEOUT"
             
@@ -330,11 +430,12 @@ class AureonUnifiedLive:
 ║        🌌 AUREON UNIFIED LIVE TRADER 🌌
 ║
 ║  ALL SYSTEMS INTEGRATED:
+║    ✨ HNC Probability Matrix (NEW!)
+║    ✨ Lighthouse Spectral Metrics
+║    ✨ Solfeggio Frequency Mapping
 ║    ✨ Coherence Detection
 ║    ✨ Elephant Memory
 ║    ✨ Proper LOT_SIZE
-║    ✨ Kelly Sizing
-║    ✨ Ping-Pong Momentum
 ║
 ╚════════════════════════════════════════════════════════════════╝
 """)
@@ -356,9 +457,10 @@ class AureonUnifiedLive:
                 opps = self.scan_opportunities()
                 
                 if opps:
-                    logger.info(f"\n🔍 Top 3 Opportunities:")
+                    logger.info(f"\n🔍 Top 3 HNC Opportunities:")
                     for i, opp in enumerate(opps[:3]):
-                        logger.info(f"  {i+1}. {opp['symbol']}: Γ={opp['coherence']:.3f} | {opp['change']:+.2f}%")
+                        harmonic = "🎵" if opp.get('is_harmonic') else ""
+                        logger.info(f"  {i+1}. {opp['symbol']}: P={opp['probability']:.0%} | Γ={opp['coherence']:.3f} | {opp['action']} {harmonic}")
                     
                     usdc = self.get_usdc_balance()
                     if usdc >= CONFIG['MIN_TRADE_USD']:

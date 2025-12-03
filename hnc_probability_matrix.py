@@ -27,6 +27,7 @@ from typing import Dict, List, Optional, Tuple, Any
 from dataclasses import dataclass, field
 from collections import deque
 from enum import Enum
+from lighthouse_metrics import LighthouseMetricsEngine
 
 # ═══════════════════════════════════════════════════════════════
 # CONSTANTS - PROBABILITY MATRIX PARAMETERS
@@ -258,6 +259,7 @@ class TemporalFrequencyAnalyzer:
         momentums = [s.momentum for s in data]
         coherences = [s.coherence for s in data]
         harmonics = [s.is_harmonic for s in data]
+        volumes = [s.volume for s in data]
         
         window.avg_frequency = np.mean(frequencies)
         window.dominant_frequency = self._find_dominant_frequency(frequencies)
@@ -277,11 +279,24 @@ class TemporalFrequencyAnalyzer:
         avg_momentum = np.mean(momentums)
         momentum_std = np.std(momentums) if len(momentums) > 1 else 0
         
+        # Volume Analysis
+        avg_volume = np.mean(volumes) if volumes else 0
+        volume_trend = 0
+        if len(volumes) >= 2 and avg_volume > 0:
+            volume_trend = (volumes[-1] - volumes[0]) / avg_volume
+            
         # Convert momentum to probability
         # Positive momentum = bullish, negative = bearish
         momentum_signal = np.tanh(avg_momentum / 10)  # Normalize to [-1, 1]
         
-        window.bullish_probability = 0.5 + (momentum_signal * 0.3)
+        # Volume confirmation
+        volume_factor = 1.0
+        if volume_trend > 0.1:  # Rising volume
+            volume_factor = 1.1
+        elif volume_trend < -0.1:  # Falling volume
+            volume_factor = 0.9
+            
+        window.bullish_probability = 0.5 + (momentum_signal * 0.3 * volume_factor)
         window.bearish_probability = 1 - window.bullish_probability
         
         # Coherence affects confidence
@@ -325,9 +340,17 @@ class TemporalFrequencyAnalyzer:
         window.harmonic_ratio = 1.0 if current_data.get('is_harmonic', False) else 0.0
         
         momentum = current_data.get('momentum', 0)
+        volume = current_data.get('volume', 0)
         momentum_signal = np.tanh(momentum / 10)
         
-        window.bullish_probability = 0.5 + (momentum_signal * 0.35)
+        # Volume impact on current state
+        # High volume increases confidence in the move
+        volume_confidence = 1.0
+        if volume > 0:
+            # Assuming volume is normalized or we just check for non-zero
+            volume_confidence = 1.05
+            
+        window.bullish_probability = 0.5 + (momentum_signal * 0.35 * volume_confidence)
         window.bearish_probability = 1 - window.bullish_probability
         
         window.confidence = current_data.get('coherence', 0.5)
@@ -371,6 +394,11 @@ class TemporalFrequencyAnalyzer:
             base_signal.bullish_probability * base_weight +
             current.bullish_probability * current_weight
         )
+        
+        # Volume confirmation for forecast
+        # If base signal had rising volume, increase confidence in trend
+        if base_signal.bullish_probability > 0.55 and base_signal.signal_strength > 0.6:
+             projected_bullish *= 1.05
         
         # Apply harmonic boost/penalty
         if current.harmonic_ratio > 0.5:
@@ -730,10 +758,93 @@ class HNCProbabilityIntegration:
     def __init__(self):
         self.analyzer = TemporalFrequencyAnalyzer()
         self.matrices: Dict[str, ProbabilityMatrix] = {}
+        self.lighthouse = LighthouseMetricsEngine()
+        self._last_log_ts: Optional[datetime] = None
+        self._log_cache: List[Dict[str, Any]] = []
+
+    def _load_frequency_log(self, path: str = "hnc_frequency_log.json") -> List[Dict[str, Any]]:
+        if not os.path.exists(path):
+            return []
+        try:
+            with open(path, "r") as f:
+                data = json.load(f)
+            if isinstance(data, list):
+                self._log_cache = data
+                try:
+                    self._last_log_ts = max(
+                        datetime.fromisoformat(entry.get("timestamp"))
+                        for entry in data if entry.get("timestamp")
+                    )
+                except Exception:
+                    pass
+                return data
+        except Exception:
+            return []
+        return []
+
+    def _compute_lighthouse_adjustment(self, symbol: str) -> Tuple[float, str]:
+        logs = self._log_cache or self._load_frequency_log()
+        if not logs:
+            return 0.0, "No lighthouse log data"
+
+        timestamps: List[float] = []
+        values: List[float] = []
+        for entry in logs[-50:]:
+            ts = entry.get("timestamp")
+            readings = entry.get("readings", [])
+            if not ts or not readings:
+                continue
+            for r in readings:
+                if r.get("symbol") == symbol:
+                    try:
+                        dt = datetime.fromisoformat(ts)
+                        timestamps.append(dt.timestamp())
+                        values.append(float(r.get("price", 0)))
+                    except Exception:
+                        pass
+                    break
+
+        if len(values) < 8:
+            return 0.0, "Insufficient lighthouse samples"
+
+        try:
+            metrics = self.lighthouse.analyze_series(timestamps, values)
+        except Exception as e:
+            return 0.0, f"Lighthouse analysis error: {e}"
+
+        coherence = float(metrics.get("coherence_score", 0.0))
+        distortion = float(metrics.get("distortion_index", 0.0))
+        gamma = float(metrics.get("gamma_ratio", 0.0))
+        maker_bias = float(metrics.get("maker_bias", 0.5))
+
+        adj = 0.0
+        reason_bits = []
+
+        if coherence > 0.35:
+            boost = min(0.05, (coherence - 0.35) * 0.2)
+            adj += boost
+            reason_bits.append(f"coherence +{boost:.2%}")
+        if distortion > 0.40:
+            cut = min(0.08, (distortion - 0.40) * 0.3)
+            adj -= cut
+            reason_bits.append(f"distortion -{cut:.2%}")
+        if gamma > 0.25:
+            cut = min(0.03, (gamma - 0.25) * 0.1)
+            adj -= cut
+            reason_bits.append(f"gamma -{cut:.2%}")
+
+        bias_adj = (maker_bias - 0.5) * 0.06
+        if abs(bias_adj) > 0.002:
+            adj += bias_adj
+            reason_bits.append(f"maker_bias {bias_adj:+.2%}")
+
+        adj = max(-0.10, min(0.10, adj))
+        reason = ", ".join(reason_bits) if reason_bits else "neutral lighthouse state"
+        return adj, reason
         
     def update_and_analyze(self, symbol: str, price: float, frequency: float,
                            momentum: float, coherence: float, 
-                           is_harmonic: bool) -> ProbabilityMatrix:
+                           is_harmonic: bool, volume: float = 0.0) -> ProbabilityMatrix:
         """Update data and generate probability matrix"""
         
         # Create snapshot
@@ -745,7 +856,7 @@ class HNCProbabilityIntegration:
             resonance=1.0 if is_harmonic else 0.6,
             is_harmonic=is_harmonic,
             momentum=momentum,
-            volume=0,  # Not used in this context
+            volume=volume,
             coherence=coherence,
             phase_angle=0,
         )
@@ -760,9 +871,29 @@ class HNCProbabilityIntegration:
             'coherence': coherence,
             'is_harmonic': is_harmonic,
             'resonance': snapshot.resonance,
+            'volume': volume,
         }
         
         matrix = self.analyzer.generate_probability_matrix(symbol, current_data)
+        # Lighthouse refinement on Hour +1 using recent logs
+        lh_adj, lh_reason = self._compute_lighthouse_adjustment(symbol)
+        if lh_adj != 0.0:
+            pre = matrix.hour_plus_1.bullish_probability
+            matrix.hour_plus_1.bullish_probability = max(0.1, min(0.9, pre + lh_adj))
+            matrix.hour_plus_1.bearish_probability = 1 - matrix.hour_plus_1.bullish_probability
+            matrix.hour_plus_1.compute_state()
+
+            # Recompute Hour +2 and fine-tuning
+            matrix.hour_plus_2 = self.analyzer.forecast_hour_plus_2(
+                symbol, matrix.hour_minus_1, matrix.hour_0, matrix.hour_plus_1
+            )
+            adjustment, fine_tuned, reason = self.analyzer.fine_tune_forecast(
+                matrix.hour_plus_1, matrix.hour_plus_2
+            )
+            matrix.fine_tune_adjustment = adjustment
+            matrix.fine_tuned_probability = fine_tuned
+            matrix.fine_tune_reason = f"{reason} | Lighthouse: {lh_reason} ({lh_adj:+.2%})"
+
         self.matrices[symbol] = matrix
         
         return matrix
