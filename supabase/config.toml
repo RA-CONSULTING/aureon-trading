@@ -80,3 +80,6 @@ verify_jwt = false
 
 [functions.get-binance-balances]
 verify_jwt = false
+
+[functions.ingest-elephant-memory]
+verify_jwt = false
