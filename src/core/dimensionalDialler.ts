@@ -6,6 +6,7 @@
  */
 
 import { DimensionalDriftCorrector, type DriftDetection, type CorrectionStatus } from './dimensionalDriftCorrector';
+import { temporalLadder, SYSTEMS } from './temporalLadder';
 
 export interface PrimeLock {
   prime: number;
@@ -75,6 +76,27 @@ export class DimensionalDialler {
     this.initializeSchumannLattice();
     this.initializeQuantumEntanglements();
     this.driftCorrector = new DimensionalDriftCorrector();
+    
+    // Register with Temporal Ladder hive mind
+    temporalLadder.registerSystem(SYSTEMS.DIMENSIONAL_DIALLER);
+    console.log('🎛️ Dimensional Dialler registered with Temporal Ladder');
+  }
+  
+  /**
+   * Send heartbeat to Temporal Ladder with current stability
+   */
+  public sendHeartbeat(): void {
+    const state = this.previousState;
+    if (state) {
+      temporalLadder.heartbeat(SYSTEMS.DIMENSIONAL_DIALLER, state.stability.overall);
+    }
+  }
+  
+  /**
+   * Broadcast drift correction event to hive mind
+   */
+  public broadcastDriftCorrection(correctionType: string): void {
+    temporalLadder.broadcast(SYSTEMS.DIMENSIONAL_DIALLER, 'DRIFT_CORRECTED', { correctionType });
   }
 
   public setAutoCorrection(enabled: boolean): void {
