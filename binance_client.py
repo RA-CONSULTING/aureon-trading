@@ -1,14 +1,37 @@
 import os, time, hmac, hashlib, requests, json
-from decimal import Decimal, InvalidOperation
+from decimal import Decimal, InvalidOperation, ROUND_DOWN, ROUND_UP
 try:
     from dotenv import load_dotenv  # type: ignore
     load_dotenv()
 except Exception:
     pass
-from typing import Dict, Any
+from typing import Dict, Any, Set
 
 BINANCE_MAINNET = "https://api.binance.com"
 BINANCE_TESTNET = "https://testnet.binance.vision"
+
+# 🇬🇧 UK Binance Restrictions (FCA regulated)
+# These are tokens/features restricted for UK retail accounts
+UK_RESTRICTED_TOKENS = {
+    # Derivatives/Leveraged tokens (banned for UK retail)
+    "BTCDOWN", "BTCUP", "ETHDOWN", "ETHUP", "BNBDOWN", "BNBUP",
+    "XRPDOWN", "XRPUP", "DOTDOWN", "DOTUP", "EOSDOWN", "EOSUP",
+    "TRXDOWN", "TRXUP", "LINKDOWN", "LINKUP", "ADAUP", "ADADOWN",
+    "SXPDOWN", "SXPUP", "UNIDOWN", "UNIUP", "FILDOWN", "FILUP",
+    "AAVEDOWN", "AAVEUP", "SUSHIDOWN", "SUSHIUP", "1INCHDOWN", "1INCHUP",
+    # Stock tokens (delisted for UK)
+    "TSLA", "COIN", "AAPL", "MSFT", "GOOGL", "AMZN", "MSTR",
+    # Some stablecoins have restrictions
+    "BUSD",  # Deprecated
+}
+
+# Features not available for UK accounts
+UK_RESTRICTED_FEATURES = {
+    "margin",      # No margin trading
+    "futures",     # No derivatives
+    "options",     # No options
+    "leveraged",   # No leveraged tokens
+}
 
 class BinanceClient:
     def __init__(self):
@@ -18,6 +41,9 @@ class BinanceClient:
         self.use_testnet = (os.getenv("BINANCE_USE_TESTNET") or os.getenv("BINANCE_TESTNET") or "true").lower() == "true"
         self.dry_run = os.getenv("BINANCE_DRY_RUN", "true").lower() == "true"
         
+        # 🇬🇧 UK Mode - Enable restrictions for FCA-regulated accounts
+        self.uk_mode = os.getenv("BINANCE_UK_MODE", "true").lower() == "true"
+        
         # Only require API keys if NOT in dry-run mode
         if not self.dry_run and (not self.api_key or not self.api_secret):
             raise ValueError("Missing BINANCE_API_KEY or BINANCE_API_SECRET in environment")
@@ -26,11 +52,97 @@ class BinanceClient:
         self.session = requests.Session()
         if self.api_key:
             self.session.headers.update({"X-MBX-APIKEY": self.api_key})
+        
+        # Cache allowed pairs for UK mode
+        self._allowed_pairs_cache: Set[str] = set()
+        self._cache_timestamp: float = 0
+        self._symbol_filters_cache: dict[str, dict[str, float]] = {}
 
     def _sign(self, params: Dict[str, Any]) -> str:
         query = "&".join(f"{k}={params[k]}" for k in params)
         signature = hmac.new(self.api_secret.encode(), query.encode(), hashlib.sha256).hexdigest()
         return signature
+
+    def is_uk_restricted_symbol(self, symbol: str) -> bool:
+        """Check if a symbol contains UK-restricted tokens."""
+        if not self.uk_mode:
+            return False
+        symbol_upper = symbol.upper()
+        for token in UK_RESTRICTED_TOKENS:
+            if token in symbol_upper:
+                return True
+        return False
+
+    def get_allowed_pairs_uk(self, force_refresh: bool = False) -> Set[str]:
+        """Get list of pairs allowed for UK accounts based on Trade Groups.
+        
+        Caches results for 1 hour to avoid repeated API calls.
+        """
+        if not self.uk_mode:
+            return set()  # No filtering needed
+        
+        # Return cache if fresh (< 1 hour)
+        if not force_refresh and self._allowed_pairs_cache and (time.time() - self._cache_timestamp) < 3600:
+            return self._allowed_pairs_cache
+        
+        try:
+            # Get account trade groups
+            account = self.account()
+            permissions = account.get('permissions', [])
+            trade_groups = {p for p in permissions if p.startswith('TRD_GRP_')}
+            
+            if not trade_groups:
+                print("⚠️  UK Account: No TRD_GRP permissions found - trading may be restricted")
+                return set()
+            
+            # Get exchange info and filter by trade groups
+            info = self.exchange_info()
+            symbols = info.get('symbols', [])
+            
+            allowed = set()
+            for sym in symbols:
+                if sym.get('status') != 'TRADING':
+                    continue
+                if not sym.get('isSpotTradingAllowed', False):
+                    continue
+                
+                # Check if symbol's permission sets match our trade groups
+                permission_sets = sym.get('permissionSets') or []
+                for perm_set in permission_sets:
+                    if trade_groups.intersection({p for p in perm_set if p.startswith('TRD_GRP_')}):
+                        symbol_name = sym.get('symbol', '')
+                        # Also filter out known restricted tokens
+                        if not self.is_uk_restricted_symbol(symbol_name):
+                            allowed.add(symbol_name)
+                        break
+            
+            self._allowed_pairs_cache = allowed
+            self._cache_timestamp = time.time()
+            print(f"🇬🇧 UK Mode: {len(allowed)} tradeable pairs loaded")
+            return allowed
+            
+        except Exception as e:
+            print(f"⚠️  Failed to load UK allowed pairs: {e}")
+            return set()
+
+    def can_trade_symbol(self, symbol: str) -> tuple[bool, str]:
+        """Check if a symbol can be traded (considering UK restrictions).
+        
+        Returns (can_trade: bool, reason: str)
+        """
+        if not self.uk_mode:
+            return True, "OK"
+        
+        # Check static blacklist first
+        if self.is_uk_restricted_symbol(symbol):
+            return False, f"🇬🇧 UK Restricted: Contains banned token"
+        
+        # Check dynamic allowed list (based on account's trade groups)
+        allowed = self.get_allowed_pairs_uk()
+        if allowed and symbol.upper() not in allowed:
+            return False, f"🇬🇧 UK Restricted: Not in account's permitted trade groups"
+        
+        return True, "OK"
 
     def _signed_request(self, method: str, path: str, params: Dict[str, Any]) -> Dict[str, Any]:
         params["timestamp"] = int(time.time() * 1000)
@@ -86,6 +198,18 @@ class BinanceClient:
         return formatted or '0'
 
     def place_market_order(self, symbol: str, side: str, quantity: float | str | Decimal | None = None, quote_qty: float | str | Decimal | None = None) -> Dict[str, Any]:
+        # 🇬🇧 UK Mode: Check restrictions before attempting trade
+        if self.uk_mode:
+            can_trade, reason = self.can_trade_symbol(symbol)
+            if not can_trade:
+                return {
+                    "rejected": True,
+                    "symbol": symbol,
+                    "side": side,
+                    "reason": reason,
+                    "uk_restricted": True
+                }
+        
         if self.dry_run:
             return {"dryRun": True, "symbol": symbol, "side": side, "quantity": quantity, "quoteQty": quote_qty}
         
@@ -99,30 +223,185 @@ class BinanceClient:
             
         return self._signed_request("POST", "/api/v3/order", params)
 
-    def best_price(self, symbol: str) -> Dict[str, Any]:
-        r = self.session.get(f"{self.base}/api/v3/ticker/price", params={"symbol": symbol})
-        return r.json()
+    def get_symbol_filters(self, symbol: str) -> Dict[str, float]:
+        symbol = symbol.upper()
+        if symbol in self._symbol_filters_cache:
+            return self._symbol_filters_cache[symbol]
+
+        info = self.exchange_info(symbol=symbol)
+        entry = None
+        if isinstance(info, dict):
+            symbols = info.get('symbols', [])
+            if symbols:
+                entry = symbols[0]
+        if entry is None:
+            raise RuntimeError(f"Failed to load symbol info for {symbol}")
+
+        filters = entry.get('filters', [])
+        def _find(filter_type: str) -> Dict[str, Any]:
+            for f in filters:
+                if f.get('filterType') == filter_type:
+                    return f
+            return {}
+
+        lot = _find('LOT_SIZE')
+        market_lot = _find('MARKET_LOT_SIZE')
+        min_notional = _find('MIN_NOTIONAL') or _find('NOTIONAL')
+
+        def _safe_float(value: str | float | None, fallback: float) -> float:
+            try:
+                parsed = float(value)
+                if parsed > 0:
+                    return parsed
+            except (TypeError, ValueError):
+                pass
+            return fallback
+
+        step_size = _safe_float(market_lot.get('stepSize'), 0.0) if market_lot else 0.0
+        if step_size <= 0:
+            step_size = _safe_float(lot.get('stepSize') if lot else None, 0.0001)
+
+        min_qty = _safe_float(market_lot.get('minQty') if market_lot else None, 0.0)
+        if min_qty <= 0:
+            min_qty = _safe_float(lot.get('minQty') if lot else None, 0.0)
+
+        max_qty = _safe_float(market_lot.get('maxQty') if market_lot else None, 0.0)
+        if max_qty <= 0:
+            max_qty = _safe_float(lot.get('maxQty') if lot else None, 0.0)
+
+        min_notional_val = _safe_float((min_notional or {}).get('minNotional'), 0.0)
+
+        base_precision = int(entry.get('baseAssetPrecision', 8))
+        quote_precision = int(entry.get('quoteAssetPrecision', entry.get('quotePrecision', 8)))
+
+        data = {
+            'step_size': step_size,
+            'min_qty': min_qty,
+            'max_qty': max_qty,
+            'min_notional': min_notional_val,
+            'base_precision': base_precision,
+            'quote_precision': quote_precision,
+        }
+        self._symbol_filters_cache[symbol] = data
+        return data
+
+    def adjust_quantity(self, symbol: str, quantity: float) -> float:
+        filters = self.get_symbol_filters(symbol)
+        qty_dec = Decimal(str(quantity))
+        step = Decimal(str(filters.get('step_size', 0.0))) if filters.get('step_size') else Decimal('0')
+        if step > 0:
+            qty_dec = (qty_dec // step) * step
+
+        precision = int(filters.get('base_precision', 8))
+        try:
+            scale = Decimal(1).scaleb(-precision)
+            qty_dec = qty_dec.quantize(scale, rounding=ROUND_DOWN)
+        except (InvalidOperation, ValueError):
+            pass
+
+        min_qty = Decimal(str(filters.get('min_qty', 0.0)))
+        if qty_dec < min_qty:
+            return 0.0
+
+        max_qty_val = filters.get('max_qty', 0.0)
+        if max_qty_val:
+            max_qty = Decimal(str(max_qty_val))
+            if qty_dec > max_qty:
+                qty_dec = max_qty
+
+        return float(qty_dec)
+
+    def best_price(self, symbol: str, timeout: float = 3.0) -> Dict[str, Any]:
+        try:
+            r = self.session.get(f"{self.base}/api/v3/ticker/price", params={"symbol": symbol}, timeout=timeout)
+            return r.json()
+        except Exception:
+            return {}
     
     def convert_to_quote(self, asset: str, amount: float, quote: str) -> float:
-        """Convert an asset amount into quote using spot ticker price if available."""
-        if asset.upper() == quote.upper():
+        """Convert an asset amount into quote using spot ticker price if available.
+        
+        Supports multi-hop conversion via USDT for pairs without direct trading pairs.
+        """
+        asset = asset.upper()
+        quote = quote.upper()
+        
+        if asset == quote:
             return amount
-        pair = f"{asset.upper()}{quote.upper()}"
-        inv_pair = f"{quote.upper()}{asset.upper()}"
+        
+        # Skip conversion for dust amounts (< $0.01 worth)
+        if amount < 0.00001:
+            return 0.0
+        
+        # Try direct pair first
+        pair = f"{asset}{quote}"
+        inv_pair = f"{quote}{asset}"
         try:
-            price_info = self.best_price(pair)
+            price_info = self.best_price(pair, timeout=2.0)
             price = float(price_info.get("price", 0))
             if price > 0:
                 return amount * price
         except Exception:
             pass
         try:
-            price_info = self.best_price(inv_pair)
+            price_info = self.best_price(inv_pair, timeout=2.0)
             price = float(price_info.get("price", 0))
             if price > 0:
                 return amount / price
         except Exception:
             pass
+        
+        # Multi-hop conversion via USDT or USDC
+        for pivot in ['USDT', 'USDC', 'BTC']:
+            if pivot in (asset, quote):
+                continue
+            
+            # asset -> pivot
+            asset_to_pivot = 0.0
+            try:
+                pair1 = f"{asset}{pivot}"
+                price_info = self.best_price(pair1, timeout=2.0)
+                price = float(price_info.get("price", 0))
+                if price > 0:
+                    asset_to_pivot = amount * price
+            except Exception:
+                pass
+            if asset_to_pivot <= 0:
+                try:
+                    pair1_inv = f"{pivot}{asset}"
+                    price_info = self.best_price(pair1_inv, timeout=2.0)
+                    price = float(price_info.get("price", 0))
+                    if price > 0:
+                        asset_to_pivot = amount / price
+                except Exception:
+                    pass
+            
+            if asset_to_pivot <= 0:
+                continue
+            
+            # pivot -> quote
+            pivot_to_quote = 0.0
+            try:
+                pair2 = f"{pivot}{quote}"
+                price_info = self.best_price(pair2, timeout=2.0)
+                price = float(price_info.get("price", 0))
+                if price > 0:
+                    pivot_to_quote = asset_to_pivot * price
+            except Exception:
+                pass
+            if pivot_to_quote <= 0:
+                try:
+                    pair2_inv = f"{quote}{pivot}"
+                    price_info = self.best_price(pair2_inv, timeout=2.0)
+                    price = float(price_info.get("price", 0))
+                    if price > 0:
+                        pivot_to_quote = asset_to_pivot / price
+                except Exception:
+                    pass
+            
+            if pivot_to_quote > 0:
+                return pivot_to_quote
+        
         return 0.0
 
     def compute_order_fees_in_quote(self, order: Dict[str, Any], primary_quote: str) -> float:
