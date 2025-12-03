@@ -155,6 +155,13 @@ CONFIG = {
     'EQUITY_MIN_DELTA': 0.10,       # Smaller delta for frequent compounding
     'EQUITY_TOLERANCE_GBP': 0.0,
     
+    # 🎯 TRAILING STOP CONFIGURATION
+    'ENABLE_TRAILING_STOP': True,           # Enable trailing stop system
+    'TRAILING_ACTIVATION_PCT': 0.5,         # Activate at 0.5% profit
+    'TRAILING_DISTANCE_PCT': 0.3,           # Trail 0.3% behind peak
+    'USE_ATR_TRAILING': True,               # Use ATR for dynamic trailing
+    'ATR_TRAIL_MULTIPLIER': 1.5,            # Trail at 1.5x ATR below peak
+    
     # Dynamic Portfolio Rebalancing
     'ENABLE_REBALANCING': True,     # Sell underperformers to buy better opportunities
     'REBALANCE_THRESHOLD': -0.5,    # Sell position if it's losing more than 0.5%
@@ -1389,6 +1396,121 @@ class AdaptiveFilterThresholds:
             'base_volume': round(self.base_volume, 0),
             'base_coherence': round(self.base_coherence, 2)
         }
+
+
+# ═══════════════════════════════════════════════════════════════
+# 🎯 TRAILING STOP MANAGER
+# ═══════════════════════════════════════════════════════════════
+
+class TrailingStopManager:
+    """
+    Manages trailing stops for all positions.
+    Activates trailing stop once position is in profit, then trails behind price.
+    """
+    
+    def __init__(self):
+        # Configuration
+        self.activation_profit_pct = CONFIG.get('TRAILING_ACTIVATION_PCT', 0.5)  # Activate at 0.5% profit
+        self.trail_distance_pct = CONFIG.get('TRAILING_DISTANCE_PCT', 0.3)  # Trail 0.3% behind peak
+        self.use_atr_trailing = CONFIG.get('USE_ATR_TRAILING', True)  # Use ATR for dynamic trailing
+        self.atr_trail_multiplier = CONFIG.get('ATR_TRAIL_MULTIPLIER', 1.5)  # Trail at 1.5x ATR
+        
+        # Statistics
+        self.trailing_stops_triggered = 0
+        self.trailing_profits_locked = 0.0
+        
+    def update_position(self, pos, current_price: float, atr: float = 0.0) -> Dict[str, Any]:
+        """
+        Update trailing stop for a position.
+        
+        Args:
+            pos: Position object
+            current_price: Current market price
+            atr: Average True Range (optional, for dynamic trailing)
+            
+        Returns:
+            {'should_exit': bool, 'reason': str, 'stop_price': float}
+        """
+        result = {
+            'should_exit': False,
+            'reason': '',
+            'stop_price': pos.trailing_stop_price,
+            'highest_price': pos.highest_price,
+            'pnl_pct': 0.0
+        }
+        
+        # Update highest price tracking
+        if current_price > pos.highest_price:
+            pos.highest_price = current_price
+            result['highest_price'] = current_price
+            
+        if current_price < pos.lowest_price:
+            pos.lowest_price = current_price
+            
+        # Calculate current P&L percentage
+        pnl_pct = ((current_price - pos.entry_price) / pos.entry_price) * 100
+        result['pnl_pct'] = pnl_pct
+        
+        # Check if trailing stop should activate
+        if not pos.trailing_stop_active:
+            if pnl_pct >= self.activation_profit_pct:
+                pos.trailing_stop_active = True
+                # Set initial trailing stop
+                pos.trailing_stop_price = self._calculate_stop_price(
+                    pos.highest_price, pos.entry_price, atr
+                )
+                result['stop_price'] = pos.trailing_stop_price
+                
+        # Update trailing stop if active
+        if pos.trailing_stop_active:
+            new_stop = self._calculate_stop_price(pos.highest_price, pos.entry_price, atr)
+            
+            # Only raise the stop, never lower it
+            if new_stop > pos.trailing_stop_price:
+                pos.trailing_stop_price = new_stop
+                result['stop_price'] = new_stop
+                
+            # Check if stop is triggered
+            if current_price <= pos.trailing_stop_price:
+                result['should_exit'] = True
+                result['reason'] = f"TRAILING_STOP @ {pos.trailing_stop_price:.6f}"
+                self.trailing_stops_triggered += 1
+                
+                # Calculate locked profit
+                locked_pnl = ((pos.trailing_stop_price - pos.entry_price) / pos.entry_price) * 100
+                self.trailing_profits_locked += locked_pnl
+                
+        return result
+        
+    def _calculate_stop_price(self, highest_price: float, entry_price: float, 
+                              atr: float = 0.0) -> float:
+        """Calculate trailing stop price."""
+        if self.use_atr_trailing and atr > 0:
+            # ATR-based trailing: trail at ATR * multiplier below peak
+            stop_distance = atr * self.atr_trail_multiplier
+            stop_price = highest_price - stop_distance
+        else:
+            # Percentage-based trailing
+            stop_distance = highest_price * (self.trail_distance_pct / 100)
+            stop_price = highest_price - stop_distance
+            
+        # Never set stop below entry (lock in breakeven minimum)
+        return max(stop_price, entry_price * 1.001)  # At least 0.1% above entry
+        
+    def get_stats(self) -> Dict[str, Any]:
+        """Get trailing stop statistics."""
+        return {
+            'stops_triggered': self.trailing_stops_triggered,
+            'profits_locked_pct': round(self.trailing_profits_locked, 2),
+            'activation_pct': self.activation_profit_pct,
+            'trail_distance_pct': self.trail_distance_pct,
+            'use_atr': self.use_atr_trailing
+        }
+        
+    def reset_stats(self):
+        """Reset statistics."""
+        self.trailing_stops_triggered = 0
+        self.trailing_profits_locked = 0.0
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -2856,6 +2978,12 @@ class Position:
     prime_size_multiplier: float = 1.0  # Prime-based sizing
     exchange: str = 'kraken'  # Exchange where position is held
     
+    # 🎯 TRAILING STOP SUPPORT
+    highest_price: float = 0.0  # Highest price since entry (for trailing stop)
+    lowest_price: float = float('inf')  # Lowest price since entry (for shorts)
+    trailing_stop_active: bool = False  # Is trailing stop currently active?
+    trailing_stop_price: float = 0.0  # Current trailing stop level
+    
     # Generate unique ID for position
     id: str = field(default_factory=lambda: f"pos_{int(time.time()*1000)}_{random.randint(1000,9999)}")
     
@@ -3446,11 +3574,16 @@ class AureonKrakenEcosystem:
         self.heat_manager = PortfolioHeatManager(max_heat=0.60)
         self.adaptive_filters = AdaptiveFilterThresholds()
         
+        # 🎯 TRAILING STOP SYSTEM
+        self.trailing_stop_manager = TrailingStopManager()
+        
         # 📢 NOTIFICATION SYSTEM
         self.notifier = NotificationManager()
         
         print("   🚀 Enhanced trading components initialized (Router/Arbitrage/Confirmation/Rebalancer)")
         print("   🔥 War-ready enhancements active (ATR/HeatManager/AdaptiveFilters)")
+        if CONFIG.get('ENABLE_TRAILING_STOP', True):
+            print(f"   🎯 Trailing stops enabled (activate at +{CONFIG.get('TRAILING_ACTIVATION_PCT', 0.5)}%, trail {CONFIG.get('TRAILING_DISTANCE_PCT', 0.3)}%)")
         if self.notifier.is_enabled():
             status = self.notifier.get_status()
             channels = []
@@ -5009,6 +5142,101 @@ class AureonKrakenEcosystem:
     def get_notification_status(self) -> Dict[str, Any]:
         """Get notification system status."""
         return self.notifier.get_status()
+    
+    # ─────────────────────────────────────────────────────────
+    # Trailing Stop System
+    # ─────────────────────────────────────────────────────────
+    
+    def update_trailing_stops(self, current_prices: Dict[str, float] = None) -> List[Dict]:
+        """
+        Update all trailing stops and check for triggered exits.
+        
+        Args:
+            current_prices: Dict of symbol -> current price. If None, fetches from cache.
+            
+        Returns:
+            List of positions that should be closed due to trailing stop
+        """
+        if not CONFIG.get('ENABLE_TRAILING_STOP', True):
+            return []
+            
+        exits = []
+        
+        for symbol, pos in self.positions.items():
+            # Get current price
+            if current_prices and symbol in current_prices:
+                current_price = current_prices[symbol]
+            elif symbol in self.realtime_prices:
+                current_price = self.realtime_prices[symbol]
+            elif symbol in self.ticker_cache:
+                current_price = self.ticker_cache[symbol].get('price', pos.entry_price)
+            else:
+                continue
+                
+            # Get ATR if available
+            atr = 0.0
+            if CONFIG.get('USE_ATR_TRAILING', True):
+                atr_data = self.atr_calculator.calculate_atr(symbol)
+                if atr_data > 0:
+                    atr = atr_data
+                    
+            # Update trailing stop
+            result = self.trailing_stop_manager.update_position(pos, current_price, atr)
+            
+            if result['should_exit']:
+                exits.append({
+                    'symbol': symbol,
+                    'position': pos,
+                    'reason': result['reason'],
+                    'stop_price': result['stop_price'],
+                    'pnl_pct': result['pnl_pct']
+                })
+                
+        return exits
+        
+    def get_trailing_stop_status(self, symbol: str = None) -> Dict[str, Any]:
+        """
+        Get trailing stop status for a position or all positions.
+        """
+        if symbol:
+            if symbol not in self.positions:
+                return {'error': 'Position not found'}
+            pos = self.positions[symbol]
+            return {
+                'symbol': symbol,
+                'entry_price': pos.entry_price,
+                'highest_price': pos.highest_price,
+                'trailing_active': pos.trailing_stop_active,
+                'stop_price': pos.trailing_stop_price,
+                'current_trail_pct': ((pos.highest_price - pos.trailing_stop_price) / pos.highest_price * 100) if pos.trailing_stop_price > 0 else 0
+            }
+        else:
+            # Return status for all positions
+            statuses = {}
+            for sym, pos in self.positions.items():
+                statuses[sym] = {
+                    'trailing_active': pos.trailing_stop_active,
+                    'highest_price': pos.highest_price,
+                    'stop_price': pos.trailing_stop_price
+                }
+            return statuses
+            
+    def get_trailing_stop_stats(self) -> Dict[str, Any]:
+        """Get overall trailing stop statistics."""
+        return self.trailing_stop_manager.get_stats()
+        
+    def set_trailing_stop_config(self, activation_pct: float = None, 
+                                  trail_pct: float = None, use_atr: bool = None):
+        """Configure trailing stop parameters."""
+        if activation_pct is not None:
+            self.trailing_stop_manager.activation_profit_pct = activation_pct
+            CONFIG['TRAILING_ACTIVATION_PCT'] = activation_pct
+        if trail_pct is not None:
+            self.trailing_stop_manager.trail_distance_pct = trail_pct
+            CONFIG['TRAILING_DISTANCE_PCT'] = trail_pct
+        if use_atr is not None:
+            self.trailing_stop_manager.use_atr_trailing = use_atr
+            CONFIG['USE_ATR_TRAILING'] = use_atr
     
     # ─────────────────────────────────────────────────────────
     # Position Management
