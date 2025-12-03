@@ -36,11 +36,20 @@ import random
 import asyncio
 import websockets
 import threading
+import logging
 from datetime import datetime
 from typing import Dict, List, Optional, Tuple, Any
 from dataclasses import dataclass, field
 from collections import deque
 from threading import Thread, Lock
+
+# Set up logger for this module
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+if not logger.handlers:
+    handler = logging.StreamHandler()
+    handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+    logger.addHandler(handler)
 
 sys.path.insert(0, '/workspaces/aureon-trading')
 from unified_exchange_client import UnifiedExchangeClient, MultiExchangeClient
@@ -260,6 +269,714 @@ CONFIG = {
 }
 
 PHI = (1 + math.sqrt(5)) / 2  # Golden Ratio = 1.618
+
+
+# ═══════════════════════════════════════════════════════════════
+# 🌐 SMART ORDER ROUTER - Best execution across exchanges
+# ═══════════════════════════════════════════════════════════════
+
+class SmartOrderRouter:
+    """
+    Routes orders to the best exchange based on price, liquidity, and fees.
+    Compares quotes across Binance, Kraken, and Capital.com in real-time.
+    """
+    
+    def __init__(self, multi_client):
+        self.client = multi_client
+        self.exchange_fees = {
+            'binance': 0.001,   # 0.10% taker
+            'kraken': 0.0026,   # 0.26% taker
+            'capital': 0.001,   # ~0.1% spread
+            'alpaca': 0.0       # Commission-free
+        }
+        self.exchange_priority = ['binance', 'kraken', 'capital', 'alpaca']
+        self.route_history: List[Dict] = []
+        
+    def get_best_quote(self, symbol: str, side: str, quantity: float = None) -> Dict[str, Any]:
+        """
+        Get best quote across all exchanges for a symbol.
+        Returns: {'exchange': str, 'price': float, 'effective_price': float, 'savings': float}
+        """
+        quotes = []
+        base_symbol = symbol.replace('/', '').upper()
+        
+        # Normalize symbol for each exchange
+        symbol_map = {
+            'binance': base_symbol,
+            'kraken': base_symbol,
+            'capital': base_symbol[:6] if len(base_symbol) > 6 else base_symbol,
+            'alpaca': f"{base_symbol[:3]}/{base_symbol[3:]}" if len(base_symbol) >= 6 else symbol
+        }
+        
+        for exchange in self.exchange_priority:
+            try:
+                ex_symbol = symbol_map.get(exchange, base_symbol)
+                ticker = self.client.get_ticker(exchange, ex_symbol)
+                if not ticker or ticker.get('price', 0) <= 0:
+                    continue
+                    
+                price = float(ticker.get('price', 0))
+                bid = float(ticker.get('bid', price))
+                ask = float(ticker.get('ask', price))
+                
+                # Calculate effective price including fees
+                fee_rate = self.exchange_fees.get(exchange, 0.002)
+                if side.upper() == 'BUY':
+                    exec_price = ask * (1 + fee_rate)
+                else:
+                    exec_price = bid * (1 - fee_rate)
+                    
+                quotes.append({
+                    'exchange': exchange,
+                    'symbol': ex_symbol,
+                    'price': price,
+                    'bid': bid,
+                    'ask': ask,
+                    'effective_price': exec_price,
+                    'fee_rate': fee_rate
+                })
+            except Exception as e:
+                logger.debug(f"Quote error for {exchange}/{symbol}: {e}")
+                continue
+                
+        if not quotes:
+            return None
+            
+        # Sort by effective price (lowest for BUY, highest for SELL)
+        if side.upper() == 'BUY':
+            quotes.sort(key=lambda x: x['effective_price'])
+        else:
+            quotes.sort(key=lambda x: -x['effective_price'])
+            
+        best = quotes[0]
+        
+        # Calculate savings vs worst quote
+        if len(quotes) > 1:
+            worst = quotes[-1]
+            if side.upper() == 'BUY':
+                savings_pct = (worst['effective_price'] - best['effective_price']) / worst['effective_price'] * 100
+            else:
+                savings_pct = (best['effective_price'] - worst['effective_price']) / best['effective_price'] * 100
+            best['savings_pct'] = savings_pct
+            best['alternatives'] = quotes[1:]
+        else:
+            best['savings_pct'] = 0
+            best['alternatives'] = []
+            
+        return best
+        
+    def route_order(self, symbol: str, side: str, quantity: float = None, quote_qty: float = None,
+                    preferred_exchange: str = None) -> Dict[str, Any]:
+        """
+        Route and execute order on best exchange.
+        Returns order result with routing metadata.
+        """
+        # Get best quote
+        best = self.get_best_quote(symbol, side, quantity)
+        if not best:
+            return {'error': 'No quotes available', 'symbol': symbol}
+            
+        # Override if preferred exchange specified and available
+        if preferred_exchange and preferred_exchange in [q['exchange'] for q in [best] + best.get('alternatives', [])]:
+            for q in [best] + best.get('alternatives', []):
+                if q['exchange'] == preferred_exchange:
+                    best = q
+                    break
+                    
+        # Execute order
+        exchange = best['exchange']
+        ex_symbol = best['symbol']
+        
+        try:
+            result = self.client.place_market_order(
+                exchange, ex_symbol, side,
+                quantity=quantity, quote_qty=quote_qty
+            )
+            
+            # Add routing metadata
+            result['routed_to'] = exchange
+            result['effective_price'] = best['effective_price']
+            result['savings_pct'] = best.get('savings_pct', 0)
+            
+            # Record route
+            self.route_history.append({
+                'timestamp': time.time(),
+                'symbol': symbol,
+                'side': side,
+                'exchange': exchange,
+                'price': best['price'],
+                'savings_pct': best.get('savings_pct', 0)
+            })
+            
+            return result
+        except Exception as e:
+            return {'error': str(e), 'exchange': exchange, 'symbol': ex_symbol}
+            
+    def get_routing_stats(self) -> Dict[str, Any]:
+        """Get routing performance statistics."""
+        if not self.route_history:
+            return {'total_routes': 0}
+            
+        by_exchange = {}
+        total_savings = 0
+        
+        for route in self.route_history:
+            ex = route['exchange']
+            by_exchange[ex] = by_exchange.get(ex, 0) + 1
+            total_savings += route.get('savings_pct', 0)
+            
+        return {
+            'total_routes': len(self.route_history),
+            'by_exchange': by_exchange,
+            'avg_savings_pct': total_savings / len(self.route_history) if self.route_history else 0
+        }
+
+
+# ═══════════════════════════════════════════════════════════════
+# ⚡ CROSS-EXCHANGE ARBITRAGE SCANNER
+# ═══════════════════════════════════════════════════════════════
+
+class CrossExchangeArbitrageScanner:
+    """
+    Detects price discrepancies across Binance, Kraken, and Capital.com.
+    Identifies triangular and direct arbitrage opportunities.
+    """
+    
+    def __init__(self, multi_client):
+        self.client = multi_client
+        self.min_spread_pct = 0.3  # Minimum 0.3% spread to consider
+        self.fee_buffer = 0.2     # 0.2% buffer for fees
+        self.opportunities: List[Dict] = []
+        self.last_scan = 0
+        self.scan_interval = 30   # Seconds between scans
+        
+    def scan_direct_arbitrage(self, symbols: List[str] = None) -> List[Dict]:
+        """
+        Scan for direct arbitrage: buy on exchange A, sell on exchange B.
+        """
+        opportunities = []
+        
+        # Default symbols to scan
+        if not symbols:
+            symbols = ['BTCUSD', 'ETHUSD', 'XRPUSD', 'ADAUSD', 'SOLUSD', 
+                      'DOTUSD', 'LINKUSD', 'AVAXUSD', 'DOGEUSD']
+        
+        exchanges = ['binance', 'kraken']
+        
+        for symbol in symbols:
+            prices = {}
+            
+            # Get prices from each exchange
+            for exchange in exchanges:
+                try:
+                    # Normalize symbol
+                    ex_symbol = symbol
+                    if exchange == 'binance':
+                        ex_symbol = symbol.replace('USD', 'USDT')
+                    
+                    ticker = self.client.get_ticker(exchange, ex_symbol)
+                    if ticker and ticker.get('bid', 0) > 0:
+                        prices[exchange] = {
+                            'bid': float(ticker.get('bid', 0)),
+                            'ask': float(ticker.get('ask', 0)),
+                            'symbol': ex_symbol
+                        }
+                except Exception:
+                    continue
+                    
+            # Check for arbitrage between each pair
+            if len(prices) < 2:
+                continue
+                
+            exchange_list = list(prices.keys())
+            for i, buy_ex in enumerate(exchange_list):
+                for sell_ex in exchange_list[i+1:]:
+                    buy_price = prices[buy_ex]['ask']
+                    sell_price = prices[sell_ex]['bid']
+                    
+                    # Check both directions
+                    spread_1 = (sell_price - buy_price) / buy_price * 100
+                    spread_2 = (prices[buy_ex]['bid'] - prices[sell_ex]['ask']) / prices[sell_ex]['ask'] * 100
+                    
+                    if spread_1 > self.min_spread_pct + self.fee_buffer:
+                        net_profit = spread_1 - self.fee_buffer
+                        opportunities.append({
+                            'type': 'direct',
+                            'symbol': symbol,
+                            'buy_exchange': buy_ex,
+                            'sell_exchange': sell_ex,
+                            'buy_price': buy_price,
+                            'sell_price': sell_price,
+                            'spread_pct': spread_1,
+                            'net_profit_pct': net_profit,
+                            'timestamp': time.time()
+                        })
+                        
+                    if spread_2 > self.min_spread_pct + self.fee_buffer:
+                        net_profit = spread_2 - self.fee_buffer
+                        opportunities.append({
+                            'type': 'direct',
+                            'symbol': symbol,
+                            'buy_exchange': sell_ex,
+                            'sell_exchange': buy_ex,
+                            'buy_price': prices[sell_ex]['ask'],
+                            'sell_price': prices[buy_ex]['bid'],
+                            'spread_pct': spread_2,
+                            'net_profit_pct': net_profit,
+                            'timestamp': time.time()
+                        })
+        
+        # Sort by profit potential
+        opportunities.sort(key=lambda x: -x['net_profit_pct'])
+        self.opportunities = opportunities
+        self.last_scan = time.time()
+        
+        return opportunities
+        
+    def get_top_opportunities(self, limit: int = 5) -> List[Dict]:
+        """Get top arbitrage opportunities."""
+        # Refresh if stale
+        if time.time() - self.last_scan > self.scan_interval:
+            self.scan_direct_arbitrage()
+        return self.opportunities[:limit]
+        
+    def execute_arbitrage(self, opportunity: Dict, amount_usd: float = 10.0) -> Dict[str, Any]:
+        """
+        Execute an arbitrage opportunity.
+        Returns: {'success': bool, 'profit': float, 'details': dict}
+        """
+        buy_ex = opportunity['buy_exchange']
+        sell_ex = opportunity['sell_exchange']
+        symbol = opportunity['symbol']
+        
+        # Calculate quantity
+        buy_price = opportunity['buy_price']
+        quantity = amount_usd / buy_price
+        
+        results = {'buy': None, 'sell': None, 'profit': 0, 'success': False}
+        
+        try:
+            # Execute buy
+            buy_symbol = symbol if buy_ex != 'binance' else symbol.replace('USD', 'USDT')
+            buy_result = self.client.place_market_order(buy_ex, buy_symbol, 'BUY', quantity=quantity)
+            results['buy'] = buy_result
+            
+            if not buy_result or buy_result.get('error'):
+                return results
+                
+            # Execute sell
+            sell_symbol = symbol if sell_ex != 'binance' else symbol.replace('USD', 'USDT')
+            sell_result = self.client.place_market_order(sell_ex, sell_symbol, 'SELL', quantity=quantity)
+            results['sell'] = sell_result
+            
+            if sell_result and not sell_result.get('error'):
+                results['success'] = True
+                results['profit'] = amount_usd * (opportunity['net_profit_pct'] / 100)
+                
+        except Exception as e:
+            results['error'] = str(e)
+            
+        return results
+
+
+# ═══════════════════════════════════════════════════════════════
+# ✅ UNIFIED TRADE CONFIRMATION
+# ═══════════════════════════════════════════════════════════════
+
+class UnifiedTradeConfirmation:
+    """
+    Normalizes trade confirmations across all exchanges.
+    Handles Binance orderId, Kraken txid, Capital.com dealReference.
+    """
+    
+    def __init__(self, multi_client):
+        self.client = multi_client
+        self.pending_confirmations: Dict[str, Dict] = {}
+        self.confirmed_trades: List[Dict] = []
+        
+    def submit_order(self, exchange: str, symbol: str, side: str, 
+                    quantity: float = None, quote_qty: float = None) -> Dict[str, Any]:
+        """
+        Submit order and return unified confirmation.
+        """
+        result = self.client.place_market_order(
+            exchange, symbol, side,
+            quantity=quantity, quote_qty=quote_qty
+        )
+        
+        if not result:
+            return {'status': 'FAILED', 'error': 'No response'}
+            
+        # Normalize confirmation based on exchange
+        exchange = exchange.lower()
+        confirmation = {
+            'exchange': exchange,
+            'symbol': symbol,
+            'side': side,
+            'quantity': quantity,
+            'quote_qty': quote_qty,
+            'timestamp': time.time(),
+            'raw_response': result
+        }
+        
+        if exchange == 'binance':
+            confirmation.update(self._parse_binance_response(result))
+        elif exchange == 'kraken':
+            confirmation.update(self._parse_kraken_response(result))
+        elif exchange == 'capital':
+            confirmation.update(self._parse_capital_response(result))
+        else:
+            confirmation['status'] = 'UNKNOWN'
+            confirmation['order_id'] = str(result.get('orderId', result.get('id', 'unknown')))
+            
+        # Store confirmed trade
+        if confirmation.get('status') in ['FILLED', 'ACCEPTED', 'OPEN']:
+            self.confirmed_trades.append(confirmation)
+            
+        return confirmation
+        
+    def _parse_binance_response(self, result: Dict) -> Dict:
+        """Parse Binance order response."""
+        if result.get('rejected') or result.get('uk_restricted'):
+            return {
+                'status': 'REJECTED',
+                'order_id': None,
+                'error': result.get('reason', 'UK restricted')
+            }
+            
+        status = result.get('status', 'UNKNOWN')
+        return {
+            'status': status,
+            'order_id': str(result.get('orderId', '')),
+            'executed_qty': float(result.get('executedQty', 0)),
+            'executed_quote_qty': float(result.get('cummulativeQuoteQty', 0)),
+            'avg_price': float(result.get('price', 0)) if result.get('price') else None,
+            'fills': result.get('fills', [])
+        }
+        
+    def _parse_kraken_response(self, result: Dict) -> Dict:
+        """Parse Kraken order response."""
+        txid = result.get('txid', [])
+        if isinstance(txid, list) and txid:
+            order_id = txid[0]
+            status = 'FILLED'  # Kraken market orders fill immediately
+        else:
+            order_id = str(result.get('orderId', result.get('id', '')))
+            status = result.get('status', 'UNKNOWN')
+            
+        return {
+            'status': status,
+            'order_id': order_id,
+            'executed_qty': float(result.get('executedQty', result.get('vol_exec', 0))),
+            'descr': result.get('descr', {})
+        }
+        
+    def _parse_capital_response(self, result: Dict) -> Dict:
+        """Parse Capital.com order response and confirm."""
+        deal_ref = result.get('dealReference')
+        deal_id = result.get('dealId')
+        
+        if deal_id:
+            return {
+                'status': 'ACCEPTED',
+                'order_id': deal_id,
+                'deal_reference': deal_ref
+            }
+            
+        # Need to confirm via API
+        if deal_ref:
+            try:
+                capital_client = self.client.clients.get('capital')
+                if capital_client and hasattr(capital_client.client, 'confirm_order'):
+                    confirm = capital_client.client.confirm_order(deal_ref)
+                    status = confirm.get('dealStatus', 'UNKNOWN')
+                    return {
+                        'status': status,
+                        'order_id': confirm.get('dealId', deal_ref),
+                        'deal_reference': deal_ref,
+                        'level': confirm.get('level'),
+                        'size': confirm.get('size'),
+                        'direction': confirm.get('direction'),
+                        'affected_deals': confirm.get('affectedDeals', [])
+                    }
+            except Exception as e:
+                logger.error(f"Capital.com confirm error: {e}")
+                
+        return {
+            'status': 'PENDING',
+            'order_id': deal_ref,
+            'deal_reference': deal_ref
+        }
+        
+    def get_trade_history(self, exchange: str = None, limit: int = 50) -> List[Dict]:
+        """Get confirmed trade history."""
+        trades = self.confirmed_trades
+        if exchange:
+            trades = [t for t in trades if t['exchange'] == exchange.lower()]
+        return trades[-limit:]
+        
+    def get_statistics(self) -> Dict[str, Any]:
+        """Get trade confirmation statistics."""
+        if not self.confirmed_trades:
+            return {'total': 0}
+            
+        by_exchange = {}
+        by_status = {}
+        
+        for trade in self.confirmed_trades:
+            ex = trade['exchange']
+            status = trade['status']
+            by_exchange[ex] = by_exchange.get(ex, 0) + 1
+            by_status[status] = by_status.get(status, 0) + 1
+            
+        return {
+            'total': len(self.confirmed_trades),
+            'by_exchange': by_exchange,
+            'by_status': by_status
+        }
+
+
+# ═══════════════════════════════════════════════════════════════
+# ⚖️ PORTFOLIO REBALANCER
+# ═══════════════════════════════════════════════════════════════
+
+class PortfolioRebalancer:
+    """
+    Unified portfolio rebalancing across Binance, Kraken, and Capital.com.
+    Optimizes asset allocation and can shift funds between exchanges.
+    """
+    
+    def __init__(self, multi_client):
+        self.client = multi_client
+        self.target_allocations: Dict[str, float] = {}  # asset -> target %
+        self.rebalance_threshold = 0.05  # 5% deviation triggers rebalance
+        self.min_trade_value = 5.0  # Minimum $5 to avoid dust trades
+        self.last_rebalance = 0
+        self.rebalance_history: List[Dict] = []
+        
+    def set_target_allocation(self, allocations: Dict[str, float]):
+        """
+        Set target portfolio allocation.
+        Example: {'BTC': 0.30, 'ETH': 0.25, 'USDT': 0.45}
+        """
+        total = sum(allocations.values())
+        if abs(total - 1.0) > 0.01:
+            logger.warning(f"Allocations sum to {total}, normalizing to 100%")
+            allocations = {k: v/total for k, v in allocations.items()}
+        self.target_allocations = allocations
+        
+    def get_current_allocation(self) -> Dict[str, Dict]:
+        """
+        Get current portfolio allocation across all exchanges.
+        Returns: {asset: {'amount': float, 'value_usd': float, 'pct': float, 'exchanges': dict}}
+        """
+        allocations = {}
+        total_value = 0.0
+        
+        # Gather balances from all exchanges
+        all_balances = self.client.get_all_balances()
+        
+        for exchange, balances in all_balances.items():
+            for asset, amount in balances.items():
+                try:
+                    amount = float(amount)
+                except:
+                    continue
+                if amount <= 0:
+                    continue
+                    
+                # Normalize asset name
+                asset_clean = asset.replace('Z', '').replace('X', '').upper()
+                if asset_clean.startswith('LD'):  # Binance Earn
+                    asset_clean = asset_clean[2:]
+                    
+                # Get USD value
+                try:
+                    if asset_clean in ['USD', 'USDT', 'USDC']:
+                        value_usd = amount
+                    else:
+                        value_usd = self.client.convert_to_quote(exchange, asset_clean, amount, 'USDT')
+                except:
+                    value_usd = 0
+                    
+                if asset_clean not in allocations:
+                    allocations[asset_clean] = {
+                        'amount': 0.0,
+                        'value_usd': 0.0,
+                        'exchanges': {}
+                    }
+                    
+                allocations[asset_clean]['amount'] += amount
+                allocations[asset_clean]['value_usd'] += value_usd
+                allocations[asset_clean]['exchanges'][exchange] = {
+                    'amount': amount,
+                    'value_usd': value_usd
+                }
+                total_value += value_usd
+                
+        # Calculate percentages
+        for asset in allocations:
+            if total_value > 0:
+                allocations[asset]['pct'] = allocations[asset]['value_usd'] / total_value
+            else:
+                allocations[asset]['pct'] = 0.0
+                
+        return {'assets': allocations, 'total_value_usd': total_value}
+        
+    def calculate_rebalance_trades(self) -> List[Dict]:
+        """
+        Calculate trades needed to rebalance portfolio to target allocation.
+        Returns list of trades: [{'asset': str, 'action': 'BUY'|'SELL', 'amount_usd': float, 'exchange': str}]
+        """
+        if not self.target_allocations:
+            return []
+            
+        current = self.get_current_allocation()
+        total_value = current['total_value_usd']
+        assets = current['assets']
+        
+        trades = []
+        
+        for asset, target_pct in self.target_allocations.items():
+            current_pct = assets.get(asset, {}).get('pct', 0.0)
+            current_value = assets.get(asset, {}).get('value_usd', 0.0)
+            target_value = total_value * target_pct
+            
+            deviation = abs(current_pct - target_pct)
+            
+            if deviation < self.rebalance_threshold:
+                continue  # Within tolerance
+                
+            diff_usd = target_value - current_value
+            
+            if abs(diff_usd) < self.min_trade_value:
+                continue  # Too small
+                
+            # Determine best exchange for this trade
+            exchanges = assets.get(asset, {}).get('exchanges', {})
+            
+            if diff_usd > 0:  # Need to BUY
+                # Pick exchange with most quote currency
+                best_exchange = 'binance'  # Default
+                trade = {
+                    'asset': asset,
+                    'action': 'BUY',
+                    'amount_usd': abs(diff_usd),
+                    'exchange': best_exchange,
+                    'current_pct': current_pct,
+                    'target_pct': target_pct
+                }
+            else:  # Need to SELL
+                # Pick exchange with most of this asset
+                best_exchange = max(exchanges.keys(), key=lambda e: exchanges[e]['amount']) if exchanges else 'binance'
+                trade = {
+                    'asset': asset,
+                    'action': 'SELL',
+                    'amount_usd': abs(diff_usd),
+                    'exchange': best_exchange,
+                    'current_pct': current_pct,
+                    'target_pct': target_pct
+                }
+                
+            trades.append(trade)
+            
+        # Sort: SELL first (to free up capital), then BUY
+        trades.sort(key=lambda t: 0 if t['action'] == 'SELL' else 1)
+        
+        return trades
+        
+    def execute_rebalance(self, dry_run: bool = True) -> Dict[str, Any]:
+        """
+        Execute portfolio rebalance.
+        Returns: {'success': bool, 'trades_executed': int, 'trades': list}
+        """
+        trades = self.calculate_rebalance_trades()
+        
+        if not trades:
+            return {'success': True, 'trades_executed': 0, 'message': 'Portfolio within tolerance'}
+            
+        results = {
+            'success': True,
+            'trades_executed': 0,
+            'trades': [],
+            'dry_run': dry_run
+        }
+        
+        for trade in trades:
+            asset = trade['asset']
+            action = trade['action']
+            amount_usd = trade['amount_usd']
+            exchange = trade['exchange']
+            
+            # Build symbol
+            symbol = f"{asset}USDT" if exchange == 'binance' else f"{asset}USD"
+            
+            if dry_run:
+                result = {'status': 'DRY_RUN', 'would_execute': trade}
+            else:
+                try:
+                    if action == 'BUY':
+                        result = self.client.place_market_order(
+                            exchange, symbol, 'BUY', quote_qty=amount_usd
+                        )
+                    else:
+                        # Calculate quantity from USD value
+                        ticker = self.client.get_ticker(exchange, symbol)
+                        price = float(ticker.get('price', 1))
+                        quantity = amount_usd / price
+                        result = self.client.place_market_order(
+                            exchange, symbol, 'SELL', quantity=quantity
+                        )
+                    results['trades_executed'] += 1
+                except Exception as e:
+                    result = {'error': str(e)}
+                    results['success'] = False
+                    
+            results['trades'].append({
+                'trade': trade,
+                'result': result
+            })
+            
+        self.last_rebalance = time.time()
+        self.rebalance_history.append({
+            'timestamp': time.time(),
+            'trades': len(trades),
+            'success': results['success']
+        })
+        
+        return results
+        
+    def get_rebalance_summary(self) -> str:
+        """Get human-readable rebalance summary."""
+        current = self.get_current_allocation()
+        trades = self.calculate_rebalance_trades()
+        
+        lines = [
+            "═══════════════════════════════════════",
+            "⚖️ PORTFOLIO REBALANCE SUMMARY",
+            "═══════════════════════════════════════",
+            f"Total Portfolio Value: ${current['total_value_usd']:.2f}",
+            "",
+            "Current vs Target Allocation:"
+        ]
+        
+        for asset, target in self.target_allocations.items():
+            current_pct = current['assets'].get(asset, {}).get('pct', 0) * 100
+            target_pct = target * 100
+            diff = current_pct - target_pct
+            indicator = "✅" if abs(diff) < 5 else "⚠️"
+            lines.append(f"  {indicator} {asset}: {current_pct:.1f}% → {target_pct:.1f}% ({diff:+.1f}%)")
+            
+        if trades:
+            lines.append("")
+            lines.append("Recommended Trades:")
+            for trade in trades:
+                lines.append(f"  • {trade['action']} ${trade['amount_usd']:.2f} of {trade['asset']} on {trade['exchange']}")
+        else:
+            lines.append("")
+            lines.append("✅ Portfolio is balanced within tolerance")
+            
+        return "\n".join(lines)
 
 
 def kelly_criterion(win_rate: float, avg_win: float, avg_loss: float, safety_factor: float = 0.5) -> float:
@@ -2066,6 +2783,13 @@ class AureonKrakenEcosystem:
         self.last_bridge_sync = 0.0
         self.bridge_sync_interval = 10.0  # Sync every 10 seconds
         
+        # 🚀 ENHANCED TRADING COMPONENTS 🚀
+        self.smart_router = SmartOrderRouter(self.client)
+        self.arb_scanner = CrossExchangeArbitrageScanner(self.client)
+        self.trade_confirmation = UnifiedTradeConfirmation(self.client)
+        self.rebalancer = PortfolioRebalancer(self.client)
+        print("   🚀 Enhanced trading components initialized (Router/Arbitrage/Confirmation/Rebalancer)")
+        
         # Determine tradeable currencies based on wallet
         self.tradeable_currencies = ['USD', 'GBP', 'EUR', 'USDT', 'USDC']
         self._detect_wallet_currency()
@@ -3385,6 +4109,120 @@ class AureonKrakenEcosystem:
         return top_opportunities
 
     # ─────────────────────────────────────────────────────────
+    # Enhanced Trading Methods (Smart Router + Arbitrage)
+    # ─────────────────────────────────────────────────────────
+    
+    def smart_route_order(self, symbol: str, side: str, quantity: float = None, 
+                          quote_qty: float = None, preferred_exchange: str = None) -> Dict[str, Any]:
+        """
+        Route an order through SmartOrderRouter for best execution.
+        Automatically selects best exchange based on price/fees.
+        """
+        result = self.smart_router.route_order(
+            symbol, side, quantity, quote_qty, preferred_exchange
+        )
+        
+        # Track in confirmation system
+        if result and not result.get('error'):
+            confirmation = self.trade_confirmation.submit_order(
+                result.get('routed_to', 'unknown'),
+                symbol, side, quantity, quote_qty
+            )
+            result['confirmation'] = confirmation
+            
+            # Log to elephant memory
+            self.memory.record_trade(
+                symbol=symbol,
+                entry_price=result.get('effective_price', 0),
+                exit_price=0,  # Will update on close
+                pnl=0,
+                duration=0,
+                metadata={
+                    'type': 'smart_routed',
+                    'exchange': result.get('routed_to'),
+                    'savings_pct': result.get('savings_pct', 0)
+                }
+            )
+        
+        return result
+    
+    def scan_arbitrage_opportunities(self, min_profit_pct: float = 0.3) -> List[Dict]:
+        """
+        Scan all exchanges for arbitrage opportunities.
+        Returns sorted list of profitable cross-exchange trades.
+        """
+        self.arb_scanner.min_spread_pct = min_profit_pct
+        opportunities = self.arb_scanner.scan_direct_arbitrage()
+        
+        if opportunities:
+            print(f"   💰 Found {len(opportunities)} arbitrage opportunities")
+            for opp in opportunities[:3]:  # Top 3
+                print(f"      {opp['symbol']}: {opp['buy_exchange']}→{opp['sell_exchange']} "
+                      f"Net +{opp['net_profit_pct']:.2f}%")
+        
+        return opportunities
+    
+    def execute_arbitrage(self, opportunity: Dict = None, amount_usd: float = 10.0) -> Dict:
+        """
+        Execute an arbitrage trade. If no opportunity provided, uses best available.
+        """
+        if not opportunity:
+            opportunities = self.arb_scanner.get_top_opportunities(limit=1)
+            if not opportunities:
+                return {'success': False, 'error': 'No opportunities found'}
+            opportunity = opportunities[0]
+        
+        result = self.arb_scanner.execute_arbitrage(opportunity, amount_usd)
+        
+        if result.get('success'):
+            print(f"   🎯 Arbitrage executed: {opportunity['symbol']} "
+                  f"Profit: ${result.get('profit', 0):.4f}")
+        
+        return result
+    
+    def get_best_exchange_quote(self, symbol: str, side: str) -> Dict[str, Any]:
+        """
+        Get best quote across all exchanges for a symbol.
+        Useful for comparing prices before trading.
+        """
+        return self.smart_router.get_best_quote(symbol, side)
+    
+    def get_routing_stats(self) -> Dict[str, Any]:
+        """Get smart routing performance statistics."""
+        return self.smart_router.get_routing_stats()
+    
+    # ─────────────────────────────────────────────────────────
+    # Portfolio Rebalancing
+    # ─────────────────────────────────────────────────────────
+    
+    def set_target_allocation(self, allocations: Dict[str, float]):
+        """
+        Set target portfolio allocation for rebalancing.
+        Example: set_target_allocation({'BTC': 0.30, 'ETH': 0.25, 'USDT': 0.45})
+        """
+        self.rebalancer.set_target_allocation(allocations)
+        logger.info(f"Target allocation set: {allocations}")
+        
+    def get_portfolio_allocation(self) -> Dict[str, Any]:
+        """Get current portfolio allocation across all exchanges."""
+        return self.rebalancer.get_current_allocation()
+        
+    def calculate_rebalance_trades(self) -> List[Dict]:
+        """Calculate trades needed to rebalance to target allocation."""
+        return self.rebalancer.calculate_rebalance_trades()
+        
+    def execute_rebalance(self, dry_run: bool = True) -> Dict[str, Any]:
+        """
+        Execute portfolio rebalance.
+        Set dry_run=False to actually execute trades.
+        """
+        return self.rebalancer.execute_rebalance(dry_run=dry_run)
+        
+    def print_rebalance_summary(self):
+        """Print human-readable portfolio rebalance summary."""
+        print(self.rebalancer.get_rebalance_summary())
+    
+    # ─────────────────────────────────────────────────────────
     # Position Management
     # ─────────────────────────────────────────────────────────
     
@@ -3838,16 +4676,23 @@ class AureonKrakenEcosystem:
         if not self.should_exit_trade(pos, price, reason):
             return  # Hold position, don't sell at a loss
         
-        # EXECUTE TRADE
+        # EXECUTE TRADE - Use unified confirmation for all exchanges
         success = False
         if not self.dry_run:
             try:
-                # Sell entire quantity
-                res = self.client.place_market_order(pos.exchange, symbol, 'SELL', quantity=pos.quantity)
-                if res.get('orderId'):
+                # Use unified trade confirmation for proper handling across exchanges
+                confirmation = self.trade_confirmation.submit_order(
+                    pos.exchange, symbol, 'SELL', quantity=pos.quantity
+                )
+                
+                status = confirmation.get('status', '').upper()
+                order_id = confirmation.get('order_id')
+                
+                if status in ['FILLED', 'ACCEPTED', 'OPEN', 'CLOSED']:
                     success = True
+                    logger.info(f"Trade confirmed: {pos.exchange}/{symbol} -> {order_id}")
                 else:
-                    print(f"   ⚠️ Sell failed for {symbol}: No order ID returned. Retrying next cycle.")
+                    print(f"   ⚠️ Sell failed for {symbol}: {status}. Retrying next cycle.")
                     return # Don't remove position, try again later
             except Exception as e:
                 print(f"   ⚠️ Sell execution error for {symbol}: {e}")
@@ -4062,6 +4907,16 @@ class AureonKrakenEcosystem:
                             print(f"   │  Best: {top_arb['asset']} ({top_arb['spread_pct']:.2f}%) - Buy {top_arb['buy_at']['source']} / Sell {top_arb['sell_at']['source']}")
                         else:
                             print("   ├─ ⚡ No significant arbitrage detected")
+                        
+                        # 🌐 Cross-Exchange Arbitrage Scan
+                        try:
+                            arb_opps = self.arbitrage_scanner.get_top_opportunities(3)
+                            if arb_opps:
+                                print(f"   ├─ 🔀 Cross-Exchange Arbitrage:")
+                                for arb in arb_opps[:2]:
+                                    print(f"   │  {arb['symbol']}: Buy {arb['buy_exchange']} → Sell {arb['sell_exchange']} ({arb['net_profit_pct']:.2f}% net)")
+                        except Exception as arb_err:
+                            logger.debug(f"Arbitrage scan error: {arb_err}")
                             
                         print(f"   └─ Top Gainer: {pulse['top_gainers'][0]['symbol']} ({pulse['top_gainers'][0]['priceChangePercent']:.1f}%)")
                         print("")
