@@ -5,6 +5,7 @@ import { LiveStrikeStream } from './warroom/LiveStrikeStream';
 import { AurisNodesOrbit } from './warroom/AurisNodesOrbit';
 import { ProjectionHorizon } from './warroom/ProjectionHorizon';
 import { GasTankDisplay } from './warroom/GasTankDisplay';
+import { UnifiedBusStatus } from './warroom/UnifiedBusStatus';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 
@@ -105,6 +106,9 @@ export default function WarRoomDashboard() {
           <HistoricalTimeline />
           <LiveStrikeStream />
         </div>
+
+        {/* Unified Bus Status */}
+        <UnifiedBusStatus />
 
         {/* Auris Nodes Orbit */}
         <AurisNodesOrbit quantumState={state.quantumState} />

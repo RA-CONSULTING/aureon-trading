@@ -1,6 +1,9 @@
 // Rainbow Bridge - Maps Λ(t) + Γ to emotional frequencies
 // Emotional spectrum: 110-963+ Hz
 // Phases: FEAR → LOVE → AWE → UNITY
+// Now publishes state to UnifiedBus
+
+import { unifiedBus, type SignalType } from './unifiedBus';
 
 export type EmotionalPhase = 'FEAR' | 'FORMING' | 'LOVE' | 'AWE' | 'UNITY';
 
@@ -35,11 +38,43 @@ export class RainbowBridge {
     // Intensity from coherence
     const intensity = coherence;
     
-    return {
+    const state = {
       frequency: Math.round(frequency),
       phase,
       intensity,
     };
+    
+    // Publish to UnifiedBus
+    this.publishToBus(state);
+    
+    return state;
+  }
+  
+  /**
+   * Publish state to UnifiedBus
+   */
+  private publishToBus(state: RainbowState): void {
+    // Map phase to signal
+    let signal: SignalType = 'NEUTRAL';
+    if (state.phase === 'LOVE' || state.phase === 'AWE' || state.phase === 'UNITY') {
+      signal = 'BUY';
+    } else if (state.phase === 'FEAR') {
+      signal = 'SELL';
+    }
+    
+    unifiedBus.publish({
+      systemName: 'RainbowBridge',
+      timestamp: Date.now(),
+      ready: true,
+      coherence: state.intensity,
+      confidence: state.intensity,
+      signal,
+      data: {
+        frequency: state.frequency,
+        phase: state.phase,
+        intensity: state.intensity,
+      },
+    });
   }
   
   private determinePhase(freq: number): EmotionalPhase {
