@@ -16,7 +16,7 @@
 import { temporalLadder, SYSTEMS, type SystemName } from './temporalLadder';
 import { ZeroPointFieldDetector, type ZeroPointFieldState } from './zeroPointFieldDetector';
 import { DimensionalDialler, type DimensionalDiallerState } from './dimensionalDialler';
-import { attuneToAkashicFrequency, calculateHarmonicBoost, type AkashicAttunement } from './akashicFrequencyMapper';
+import { attuneToAkashicFrequency, calculateAkashicBoost, type AkashicAttunement } from './akashicFrequencyMapper';
 
 export interface IntegratedSystemState {
   timestamp: number;
@@ -153,7 +153,7 @@ export class SystemsIntegrationManager {
       const phaseAlignment = Math.cos(now / 8000);
       const frequency = 7.83;
 
-      return this.dimensionalDialler.dial(coherence, phaseAlignment, frequency);
+      return this.dimensionalDialler.dial(coherence, frequency, phaseAlignment, Date.now());
     } catch (error) {
       console.error('Dimensional Dialler state error:', error);
       return null;
@@ -187,7 +187,7 @@ export class SystemsIntegrationManager {
    */
   public calculateAkashicBoost(systemCoherence: number): number {
     if (!this.akashicAttunement) return 1.0;
-    return calculateHarmonicBoost(this.akashicAttunement, systemCoherence);
+    return calculateAkashicBoost(this.akashicAttunement, systemCoherence);
   }
 
   /**
