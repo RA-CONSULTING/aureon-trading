@@ -98,6 +98,17 @@ except ImportError:
         def update(self, opps): return {}
         def filter_signals(self, opps): return opps
         def get_field_purity(self): return 1.0
+
+try:
+    from aureon_enhancements import EnhancementLayer
+    ENHANCEMENTS_AVAILABLE = True
+except ImportError:
+    ENHANCEMENTS_AVAILABLE = False
+    print("⚠️  Enhancement Layer not available: Running without codex integration")
+    class EnhancementLayer:
+        def __init__(self): pass
+        def get_unified_modifier(self, *args, **kwargs): return type('obj', (object,), {'trading_modifier': 1.0, 'confidence': 0.5, 'reasons': []})()
+        def display_status(self): return "✨ ENHANCEMENTS | Disabled"
     class CarrierWaveDynamics:
         pass
 try:
@@ -187,6 +198,14 @@ except ImportError as e:
     TRADE_LOGGER_AVAILABLE = False
     trade_logger = None
     print(f"⚠️  Trade Logger not available: {e}")
+
+# 🌈✨ AUREON ENHANCEMENTS - RAINBOW BRIDGE, SYNCHRONICITY, STARGATE ✨🌈
+try:
+    from aureon_enhancements import EnhancementLayer, apply_enhancement_to_signal, get_emotional_color
+    ENHANCEMENTS_AVAILABLE = True
+except ImportError as e:
+    ENHANCEMENTS_AVAILABLE = False
+    print(f"⚠️  Aureon Enhancements not available: {e}")
 
 # ═══════════════════════════════════════════════════════════════
 # CONFIGURATION - THE UNIFIED PARAMETERS
@@ -5140,6 +5159,7 @@ class AureonKrakenEcosystem:
         self.auris = AurisEngine()
         self.mycelium = MyceliumNetwork()
         self.lattice = GaiaLatticeEngine()  # 🌍 GAIA FREQUENCY PHYSICS - HNC Blackboard Carrier Wave Dynamics
+        self.enhancements = EnhancementLayer() if ENHANCEMENTS_AVAILABLE else None  # 🔯 CODEX INTEGRATION
         self.market_pulse = MarketPulse(self.client) # Initialize Market Pulse
         self.tracker = PerformanceTracker(initial_balance)
         self.memory = ElephantMemory()  # 🐘 Initialize Elephant Memory
@@ -5229,6 +5249,16 @@ class AureonKrakenEcosystem:
         self.trade_logger = None
         if TRADE_LOGGER_AVAILABLE and trade_logger:
             self.trade_logger = trade_logger
+        
+        # 🌈✨ ENHANCEMENT LAYER - Rainbow Bridge, Synchronicity, Stargate Grid ✨🌈
+        self.enhancement_layer = None
+        if ENHANCEMENTS_AVAILABLE:
+            try:
+                self.enhancement_layer = EnhancementLayer()
+                active_count = sum(1 for v in self.enhancement_layer.modules_active.values() if v)
+                print(f"   🌈 Enhancement Layer active ({active_count}/3 modules)")
+            except Exception as e:
+                print(f"   ⚠️ Enhancement Layer initialization failed: {e}")
         
         print("   🚀 Enhanced trading components initialized (Router/Arbitrage/Confirmation/Rebalancer)")
         print("   🌐 Multi-Exchange Orchestrator active (Binance/Kraken/Capital/Alpaca)")
@@ -6550,6 +6580,44 @@ class AureonKrakenEcosystem:
                 elif gates_passed >= 3:
                     score += 10
             
+            # 🌈✨ ENHANCEMENT LAYER MODIFIER ✨🌈
+            enhancement_modifier = 1.0
+            enhancement_state = 'Neutral'
+            enhancement_phase = 'LOVE'
+            enhancement_result = None
+            emotion_band = None
+            chakra_alignment = None
+            symbolic_alignment = None
+            
+            if self.enhancement_layer:
+                try:
+                    # Get Lambda and coherence for enhancement calculation
+                    nexus_data = self.nexus.evaluate_market({
+                        'price': price,
+                        'volume': volume,
+                        'momentum': change,
+                    }) if self.nexus.enabled else {'lambda': 0, 'coherence': coherence}
+                    
+                    lambda_value = nexus_data.get('lambda', 0)
+                    enhancement_result = self.enhancement_layer.get_unified_modifier(
+                        lambda_value=lambda_value,
+                        coherence=coherence,
+                        price=price,
+                        volume=volume,
+                        volatility=abs(change) / 100 if change else 0.1,
+                    )
+                    enhancement_modifier = enhancement_result.trading_modifier
+                    enhancement_state = enhancement_result.emotional_state
+                    enhancement_phase = enhancement_result.cycle_phase
+                    emotion_band = enhancement_result.emotion_band
+                    chakra_alignment = enhancement_result.chakra_alignment
+                    symbolic_alignment = enhancement_result.symbolic_alignment
+                    
+                    # Apply enhancement to score
+                    score = int(score * enhancement_modifier)
+                except Exception as e:
+                    pass  # Silently continue if enhancement fails
+            
             # 🧠 Use adaptive learning score threshold
             min_score = learned.get('min_score', CONFIG['MIN_SCORE'])
             
@@ -6580,6 +6648,13 @@ class AureonKrakenEcosystem:
                     # Optimal Win Rate fields
                     'gates_passed': gates_passed if CONFIG.get('ENABLE_OPTIMAL_WR', True) else 0,
                     'gate_status': '|'.join(gate_status) if CONFIG.get('ENABLE_OPTIMAL_WR', True) else '',
+                    # 🌈 Enhancement Layer fields
+                    'enhancement_modifier': enhancement_modifier,
+                    'emotional_state': enhancement_state,
+                    'cycle_phase': enhancement_phase,
+                    'emotion_band': emotion_band,
+                    'chakra_alignment': chakra_alignment,
+                    'symbolic_alignment': symbolic_alignment,
                 })
         
         # 🌉 Merge opportunities from Ultimate system via bridge
