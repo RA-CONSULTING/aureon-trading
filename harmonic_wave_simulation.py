@@ -20,8 +20,21 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 from datetime import datetime, timedelta
-from typing import Dict, List, Tuple, Optional
-from dataclasses import dataclass
+from typing import Dict, List, Tuple, Optional, Any
+from dataclasses import dataclass, field
+
+try:
+    from codex_loader import (
+        get_emotional_frequency_map,
+        get_auris_codex,
+        get_emotional_spectrum,
+        get_chakra_rules,
+        get_auris_symbols,
+        load_codex,
+    )
+    CODEX_AVAILABLE = True
+except ImportError:
+    CODEX_AVAILABLE = False
 
 # ═══════════════════════════════════════════════════════════════
 # CONSTANTS - HARMONIC FREQUENCIES
@@ -51,6 +64,54 @@ STATE_FREQ = {
     'EXTREME_BEARISH': 256,   # ROOT C4
 }
 
+STATE_EMOTION_MAP = {
+    'EXTREME_BULLISH': 'Ecstasy',
+    'BULLISH': 'Joy',
+    'SLIGHT_BULLISH': 'Hope',
+    'NEUTRAL': 'Peace',
+    'SLIGHT_BEARISH': 'Acceptance',
+    'BEARISH': 'Fear',
+    'EXTREME_BEARISH': 'Shame',
+}
+
+STATE_COLOR_MAP = {
+    'EXTREME_BULLISH': '#ff5ef5',
+    'BULLISH': '#ffd166',
+    'SLIGHT_BULLISH': '#7eb6ff',
+    'NEUTRAL': '#8fd3f4',
+    'SLIGHT_BEARISH': '#ffb347',
+    'BEARISH': '#ff6b6b',
+    'EXTREME_BEARISH': '#4a2c2a',
+}
+
+BAND_TO_CHAKRA = {
+    'survival': 'root',
+    'growth': 'solar',
+    'branches': 'heart',
+    'crown': 'third_eye',
+    'radiance': 'crown',
+}
+
+PRIME_TIER_BONUS = {
+    'Heart Prime': 0.08,
+    'Crown Prime': 0.1,
+    'Third-Eye Prime': 0.08,
+    'Gaia Tier': 0.04,
+    'Social Prime': 0.05,
+    'Visionary Tier': 0.05,
+    'Root Harmonic': 0.03,
+    'Root Prime': 0.03,
+    'Sacral Tier': 0.03,
+}
+
+SHADOW_TIER_PENALTIES = {
+    'Root Shadow': 0.06,
+    'Sacral Shadow': 0.05,
+    'Heart Shadow': 0.05,
+    'Root Collapse': 0.08,
+    'Sacral Collapse': 0.07,
+}
+
 
 @dataclass
 class WaveComponent:
@@ -73,6 +134,193 @@ class MarketWavePoint:
     amplitude: float
     phase: float
     state: str
+    emotion: str = 'Neutral'
+    emotion_color: Optional[str] = None
+    band: Optional[str] = None
+    chakra: Optional[str] = None
+    symbolic_alignment: Optional[str] = None
+    symbolic_meaning: Optional[str] = None
+    metadata: Dict[str, Any] = field(default_factory=dict)
+
+
+class CodexWaveEnhancer:
+    """Applies codex metadata to harmonic wave points"""
+
+    def __init__(self):
+        self.available = CODEX_AVAILABLE
+        self.emotion_freqs: Dict[str, float] = {}
+        self.emotion_meta: Dict[str, Dict[str, Any]] = {}
+        self.auris_lookup: Dict[str, Dict[str, Any]] = {}
+        self.spectrum_lookup: Dict[str, Dict[str, Any]] = {}
+        self.chakras: Dict[str, Dict[str, Any]] = {}
+        self.symbol_catalog: List[Dict[str, Any]] = []
+        if not self.available:
+            return
+        try:
+            self.emotion_freqs = get_emotional_frequency_map()
+            self.emotion_meta = self._load_emotion_metadata()
+            self.auris_lookup = self._build_auris_lookup(get_auris_codex())
+            self.spectrum_lookup = self._build_spectrum_lookup(get_emotional_spectrum())
+            chakra_rules = get_chakra_rules()
+            chakra_system = chakra_rules.get('chakra_system') if isinstance(chakra_rules, dict) else {}
+            self.chakras = chakra_system.get('centers', {}) if isinstance(chakra_system, dict) else {}
+            self.symbol_catalog = self._build_symbol_catalog(get_auris_symbols())
+        except Exception:
+            self.available = False
+
+    def _load_emotion_metadata(self) -> Dict[str, Dict[str, Any]]:
+        raw = load_codex('emotional_frequency') if CODEX_AVAILABLE else None
+        if isinstance(raw, dict):
+            entries = raw.get('emotional_frequency_codex')
+            if isinstance(entries, list):
+                out: Dict[str, Dict[str, Any]] = {}
+                for entry in entries:
+                    emotion = entry.get('emotion')
+                    if emotion:
+                        out[emotion.upper()] = entry
+                return out
+        return {}
+
+    def _build_auris_lookup(self, data: Dict[str, Any]) -> Dict[str, Dict[str, Any]]:
+        lookup: Dict[str, Dict[str, Any]] = {}
+        if not isinstance(data, dict):
+            return lookup
+        for bucket, kind in (("prime_frequencies", "prime"), ("shadow_frequencies", "shadow")):
+            entries = data.get(bucket)
+            if isinstance(entries, dict):
+                for name, meta in entries.items():
+                    if not isinstance(meta, dict) or not name:
+                        continue
+                    lookup[name.upper()] = {"kind": kind, **meta}
+        return lookup
+
+    def _build_spectrum_lookup(self, data: Dict[str, Any]) -> Dict[str, Dict[str, Any]]:
+        lookup: Dict[str, Dict[str, Any]] = {}
+        if not isinstance(data, dict):
+            return lookup
+        bands = data.get('bands')
+        if not isinstance(bands, dict):
+            return lookup
+        for band_key, band_data in bands.items():
+            emotions = band_data.get('emotions')
+            if not isinstance(emotions, list):
+                continue
+            for entry in emotions:
+                name = entry.get('name')
+                if not name:
+                    continue
+                lookup[name.upper()] = {
+                    'band_key': band_key,
+                    'band_name': band_data.get('name'),
+                    'band_range': band_data.get('range'),
+                    'band_symbol': band_data.get('symbol'),
+                    'color': entry.get('color') or band_data.get('color_base'),
+                    'freq': entry.get('freq'),
+                    'branches': entry.get('branches', []),
+                }
+        return lookup
+
+    def _build_symbol_catalog(self, symbols: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        catalog: List[Dict[str, Any]] = []
+        if not isinstance(symbols, list):
+            return catalog
+        for entry in symbols:
+            if not isinstance(entry, dict):
+                continue
+            freq = entry.get('frequency_hz')
+            if freq is None:
+                continue
+            try:
+                freq_val = float(freq)
+            except (TypeError, ValueError):
+                continue
+            amp = entry.get('amplitude')
+            if isinstance(amp, str) and amp.endswith('%'):
+                try:
+                    amp = float(amp[:-1]) / 100.0
+                except ValueError:
+                    amp = None
+            if isinstance(amp, str):
+                try:
+                    amp = float(amp)
+                except ValueError:
+                    amp = None
+            if amp is None:
+                amp = 1.0
+            catalog.append({
+                'symbol': entry.get('symbol'),
+                'frequency_hz': freq_val,
+                'meaning': entry.get('meaning'),
+                'state': entry.get('state'),
+                'amplitude': float(amp),
+                'decay': entry.get('decay'),
+            })
+        return catalog
+
+    def _select_symbol(self, frequency: float) -> Dict[str, Any]:
+        if not self.symbol_catalog or not frequency:
+            return {}
+        best = None
+        best_delta = float('inf')
+        for entry in self.symbol_catalog:
+            delta = abs(entry['frequency_hz'] - frequency)
+            if delta < best_delta:
+                best = entry
+                best_delta = delta
+        if best is None or best_delta > 200:
+            return {}
+        enriched = dict(best)
+        enriched['delta'] = best_delta
+        return enriched
+
+    def enrich(self, state_key: str, base_frequency: float, amplitude: float) -> Dict[str, Any]:
+        if not self.available:
+            return {}
+        emotion = STATE_EMOTION_MAP.get(state_key, 'Neutral')
+        meta = self.emotion_meta.get(emotion.upper(), {})
+        spectrum = self.spectrum_lookup.get(emotion.upper(), {})
+        auris = self.auris_lookup.get(emotion.upper(), {})
+        chakra = {}
+        if spectrum.get('band_key'):
+            chakra = self.chakras.get(BAND_TO_CHAKRA.get(spectrum['band_key'], ''), {})
+        freq = meta.get('frequency_hz') or self.emotion_freqs.get(emotion) or base_frequency
+        try:
+            freq = float(freq)
+        except (TypeError, ValueError):
+            freq = base_frequency
+        amplitude_scale = 1.0
+        tier = auris.get('tier')
+        if auris.get('kind') == 'prime':
+            amplitude_scale += PRIME_TIER_BONUS.get(tier, 0.03)
+        elif auris.get('kind') == 'shadow':
+            amplitude_scale -= SHADOW_TIER_PENALTIES.get(tier, 0.04)
+        amplitude_scale = max(0.5, min(1.3, amplitude_scale))
+        symbol_info = self._select_symbol(freq)
+        color = meta.get('color') or spectrum.get('color') or STATE_COLOR_MAP.get(state_key)
+        band_name = spectrum.get('band_name') or meta.get('band')
+        chakra_name = chakra.get('name')
+        return {
+            'frequency': freq,
+            'emotion': emotion,
+            'color': color,
+            'band': band_name,
+            'band_symbol': spectrum.get('band_symbol'),
+            'chakra': chakra_name,
+            'chakra_focus': chakra.get('high_state'),
+            'symbol': symbol_info.get('symbol'),
+            'symbol_meaning': symbol_info.get('meaning'),
+            'symbol_state': symbol_info.get('state'),
+            'symbol_delta': symbol_info.get('delta'),
+            'amplitude_scale': amplitude_scale,
+            'metadata': {
+                'tier': tier,
+                'kind': auris.get('kind'),
+                'band_range': spectrum.get('band_range'),
+                'branches': spectrum.get('branches'),
+                'chakra_color': chakra.get('color'),
+                'symbol_frequency': symbol_info.get('frequency_hz'),
+            },
+        }
 
 
 class HarmonicWaveSimulator:
@@ -86,6 +334,7 @@ class HarmonicWaveSimulator:
         self.wave_components: List[WaveComponent] = []
         self.time_series: np.ndarray = None
         self.composite_wave: np.ndarray = None
+        self.codex_enhancer = CodexWaveEnhancer() if CODEX_AVAILABLE else None
         
         # Initialize base wave components from Solfeggio
         self._init_base_waves()
@@ -132,6 +381,33 @@ class HarmonicWaveSimulator:
             # Phase from price change (maps -10% to +10% onto 0 to 2π)
             phase = ((change + 10) / 20) * 2 * math.pi
             phase = max(0, min(2 * math.pi, phase))
+
+            emotion_label = STATE_EMOTION_MAP.get(state_key, state_key.title())
+            emotion_color = STATE_COLOR_MAP.get(state_key)
+            band = None
+            chakra = None
+            symbol_mark = None
+            symbol_meaning = None
+            metadata: Dict[str, Any] = {}
+
+            if self.codex_enhancer and self.codex_enhancer.available:
+                enrichment = self.codex_enhancer.enrich(state_key, freq, amplitude)
+                if enrichment:
+                    freq = enrichment.get('frequency', freq)
+                    amp_scale = enrichment.get('amplitude_scale', 1.0)
+                    amplitude = max(0.05, min(1.0, amplitude * amp_scale))
+                    emotion_label = enrichment.get('emotion', emotion_label)
+                    emotion_color = enrichment.get('color') or emotion_color
+                    band = enrichment.get('band')
+                    chakra = enrichment.get('chakra') or enrichment.get('chakra_focus')
+                    symbol_mark = enrichment.get('symbol')
+                    symbol_meaning = enrichment.get('symbol_meaning')
+                    md = enrichment.get('metadata') or {}
+                    metadata = {k: v for k, v in md.items() if v is not None}
+                    if enrichment.get('symbol_state'):
+                        metadata['symbol_state'] = enrichment['symbol_state']
+                    if enrichment.get('symbol_delta') is not None:
+                        metadata['symbol_delta'] = enrichment['symbol_delta']
             
             self.wave_points.append(MarketWavePoint(
                 timestamp=datetime.now() - timedelta(minutes=len(top_data) - i),
@@ -141,7 +417,14 @@ class HarmonicWaveSimulator:
                 frequency=freq,
                 amplitude=amplitude,
                 phase=phase,
-                state=state_key
+                state=state_key,
+                emotion=emotion_label,
+                emotion_color=emotion_color,
+                band=band,
+                chakra=chakra,
+                symbolic_alignment=symbol_mark,
+                symbolic_meaning=symbol_meaning,
+                metadata=metadata,
             ))
         
         print(f"✅ Loaded {len(self.wave_points)} market wave points")
@@ -305,10 +588,44 @@ class HarmonicWaveSimulator:
             freqs_plot = [wp.frequency for wp in self.wave_points]
             amps_plot = [wp.amplitude for wp in self.wave_points]
             probs_plot = [wp.probability for wp in self.wave_points]
-            
-            scatter = ax5.scatter(freqs_plot, amps_plot, c=probs_plot, cmap='RdYlGn', 
-                                  s=50, alpha=0.7, edgecolors='white', linewidths=0.5)
-            plt.colorbar(scatter, ax=ax5, label='Probability')
+            colors_plot = [wp.emotion_color or '#00ff88' for wp in self.wave_points]
+            sizes_plot = [40 + 140 * p for p in probs_plot]
+            scatter = ax5.scatter(
+                freqs_plot,
+                amps_plot,
+                c=colors_plot,
+                s=sizes_plot,
+                alpha=0.85,
+                edgecolors='white',
+                linewidths=0.4,
+            )
+            ax5.text(
+                0.02,
+                0.95,
+                'Marker size = probability',
+                transform=ax5.transAxes,
+                color='white',
+                fontsize=8,
+                alpha=0.7,
+            )
+            codex_notes = []
+            for wp in self.wave_points:
+                if len(codex_notes) >= 4:
+                    break
+                if wp.symbolic_alignment or wp.chakra:
+                    label = wp.symbolic_alignment or wp.chakra
+                    desc = wp.symbolic_meaning or wp.emotion
+                    codex_notes.append(f"{label}: {desc}")
+            if codex_notes:
+                ax5.text(
+                    0.02,
+                    0.05,
+                    "Codex links:\n" + "\n".join(codex_notes),
+                    transform=ax5.transAxes,
+                    color='#ffd166',
+                    fontsize=8,
+                    bbox=dict(boxstyle='round', facecolor='black', alpha=0.3, edgecolor='#ffd166'),
+                )
             
             # Mark key frequencies
             for name, freq in [('LOVE', 528), ('NATURAL', 432), ('DISTORTION', 440)]:
@@ -376,6 +693,13 @@ class HarmonicWaveSimulator:
                     'amplitude': wp.amplitude,
                     'phase': wp.phase,
                     'state': wp.state,
+                    'emotion': wp.emotion,
+                    'emotion_color': wp.emotion_color,
+                    'band': wp.band,
+                    'chakra': wp.chakra,
+                    'symbolic_alignment': wp.symbolic_alignment,
+                    'symbolic_meaning': wp.symbolic_meaning,
+                    'metadata': wp.metadata,
                 }
                 for wp in self.wave_points
             ],
