@@ -1,0 +1,94 @@
+{
+  "data_points": [],
+  "calibration": {
+    "prob_buckets": {
+      "50-60": {
+        "range_min": 0.5,
+        "range_max": 0.6,
+        "total_signals": 0,
+        "profitable_signals": 0,
+        "avg_return": 0.0,
+        "returns": []
+      },
+      "60-70": {
+        "range_min": 0.6,
+        "range_max": 0.7,
+        "total_signals": 0,
+        "profitable_signals": 0,
+        "avg_return": 0.0,
+        "returns": []
+      },
+      "70-80": {
+        "range_min": 0.7,
+        "range_max": 0.8,
+        "total_signals": 0,
+        "profitable_signals": 0,
+        "avg_return": 0.0,
+        "returns": []
+      },
+      "80-90": {
+        "range_min": 0.8,
+        "range_max": 0.9,
+        "total_signals": 0,
+        "profitable_signals": 0,
+        "avg_return": 0.0,
+        "returns": []
+      }
+    },
+    "coherence_buckets": {
+      "0.5-0.6": {
+        "range_min": 0.5,
+        "range_max": 0.6,
+        "total_signals": 0,
+        "profitable_signals": 0,
+        "avg_return": 0.0,
+        "returns": []
+      },
+      "0.6-0.7": {
+        "range_min": 0.6,
+        "range_max": 0.7,
+        "total_signals": 0,
+        "profitable_signals": 0,
+        "avg_return": 0.0,
+        "returns": []
+      },
+      "0.7-0.8": {
+        "range_min": 0.7,
+        "range_max": 0.8,
+        "total_signals": 0,
+        "profitable_signals": 0,
+        "avg_return": 0.0,
+        "returns": []
+      },
+      "0.8-0.9": {
+        "range_min": 0.8,
+        "range_max": 0.9,
+        "total_signals": 0,
+        "profitable_signals": 0,
+        "avg_return": 0.0,
+        "returns": []
+      },
+      "0.9-1.0": {
+        "range_min": 0.9,
+        "range_max": 1.0,
+        "total_signals": 0,
+        "profitable_signals": 0,
+        "avg_return": 0.0,
+        "returns": []
+      }
+    },
+    "freq_optimal_signals": 0,
+    "freq_optimal_wins": 0,
+    "freq_standard_signals": 0,
+    "freq_standard_wins": 0,
+    "freq_avoid_signals": 0,
+    "freq_avoid_wins": 0,
+    "asset_class_stats": {},
+    "exchange_stats": {},
+    "dimension_correlations": {},
+    "total_observations": 0,
+    "collection_start": "2025-12-04T13:04:25.578220",
+    "collection_end": ""
+  },
+  "last_updated": "2025-12-04T13:13:55.592630"
+}
