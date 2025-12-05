@@ -14,6 +14,93 @@ export type Database = {
   }
   public: {
     Tables: {
+      aureon_user_sessions: {
+        Row: {
+          available_balance_usdt: number | null
+          binance_api_key_encrypted: string | null
+          binance_api_secret_encrypted: string | null
+          binance_iv: string | null
+          created_at: string | null
+          current_coherence: number | null
+          current_lambda: number | null
+          current_lighthouse_signal: number | null
+          dominant_node: string | null
+          gas_tank_balance: number | null
+          id: string
+          is_trading_active: boolean | null
+          last_quantum_update_at: string | null
+          last_trade_at: string | null
+          payment_completed: boolean | null
+          payment_completed_at: string | null
+          prism_level: number | null
+          prism_state: string | null
+          recent_trades: Json | null
+          total_equity_usdt: number | null
+          total_pnl_usdt: number | null
+          total_trades: number | null
+          trading_mode: string | null
+          updated_at: string | null
+          user_id: string
+          winning_trades: number | null
+        }
+        Insert: {
+          available_balance_usdt?: number | null
+          binance_api_key_encrypted?: string | null
+          binance_api_secret_encrypted?: string | null
+          binance_iv?: string | null
+          created_at?: string | null
+          current_coherence?: number | null
+          current_lambda?: number | null
+          current_lighthouse_signal?: number | null
+          dominant_node?: string | null
+          gas_tank_balance?: number | null
+          id?: string
+          is_trading_active?: boolean | null
+          last_quantum_update_at?: string | null
+          last_trade_at?: string | null
+          payment_completed?: boolean | null
+          payment_completed_at?: string | null
+          prism_level?: number | null
+          prism_state?: string | null
+          recent_trades?: Json | null
+          total_equity_usdt?: number | null
+          total_pnl_usdt?: number | null
+          total_trades?: number | null
+          trading_mode?: string | null
+          updated_at?: string | null
+          user_id: string
+          winning_trades?: number | null
+        }
+        Update: {
+          available_balance_usdt?: number | null
+          binance_api_key_encrypted?: string | null
+          binance_api_secret_encrypted?: string | null
+          binance_iv?: string | null
+          created_at?: string | null
+          current_coherence?: number | null
+          current_lambda?: number | null
+          current_lighthouse_signal?: number | null
+          dominant_node?: string | null
+          gas_tank_balance?: number | null
+          id?: string
+          is_trading_active?: boolean | null
+          last_quantum_update_at?: string | null
+          last_trade_at?: string | null
+          payment_completed?: boolean | null
+          payment_completed_at?: string | null
+          prism_level?: number | null
+          prism_state?: string | null
+          recent_trades?: Json | null
+          total_equity_usdt?: number | null
+          total_pnl_usdt?: number | null
+          total_trades?: number | null
+          trading_mode?: string | null
+          updated_at?: string | null
+          user_id?: string
+          winning_trades?: number | null
+        }
+        Relationships: []
+      }
       backtest_results: {
         Row: {
           avg_trade_duration: number | null
