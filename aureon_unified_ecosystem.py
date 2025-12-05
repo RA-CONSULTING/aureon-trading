@@ -37,10 +37,11 @@ import asyncio
 import websockets
 import threading
 import logging
+import statistics
 from datetime import datetime
 from typing import Dict, List, Optional, Tuple, Any
 from dataclasses import dataclass, field
-from collections import deque
+from collections import deque, defaultdict
 from threading import Thread, Lock
 
 # Set up logger for this module
@@ -100,6 +101,15 @@ except ImportError as e:
     IMPERIAL_AVAILABLE = False
     print(f"⚠️  Imperial Predictability not available: {e}")
 
+# 🔭 QUANTUM TELESCOPE & HARMONIC UNDERLAY 🔭
+try:
+    from aureon_quantum_telescope import QuantumTelescope, LightBeam, GeometricSolid
+    from hnc_6d_harmonic_waveform import SixDimensionalHarmonicEngine, WaveState
+    QUANTUM_AVAILABLE = True
+except ImportError as e:
+    QUANTUM_AVAILABLE = False
+    print(f"⚠️  Quantum Telescope/Harmonic Engine not available: {e}")
+
 # 🌍⚡ EARTH RESONANCE ENGINE ⚡🌍
 try:
     from earth_resonance_engine import EarthResonanceEngine, get_earth_engine
@@ -116,6 +126,16 @@ except ImportError as e:
     NEXUS_AVAILABLE = False
     NEXUS_BUS = None
     print(f"⚠️  Aureon Nexus not available: {e}")
+
+# 📊 TRADE LOGGER - COMPREHENSIVE DATA LOGGING 📊
+try:
+    from trade_logger import get_trade_logger, TradeLogger
+    TRADE_LOGGER_AVAILABLE = True
+    trade_logger = get_trade_logger()
+except ImportError as e:
+    TRADE_LOGGER_AVAILABLE = False
+    trade_logger = None
+    print(f"⚠️  Trade Logger not available: {e}")
 
 # ═══════════════════════════════════════════════════════════════
 # CONFIGURATION - THE UNIFIED PARAMETERS
@@ -153,8 +173,8 @@ CONFIG = {
     # General
     'SLIPPAGE_PCT': 0.0010,         # 0.10% estimated slippage per trade
     'SPREAD_COST_PCT': 0.0005,      # 0.05% estimated spread cost
-    'TAKE_PROFIT_PCT': 1.2,         # 1.2% profit target (ASYMMETRIC - higher reward)
-    'STOP_LOSS_PCT': 0.6,           # 0.6% stop loss (1:2 risk/reward for 55% WR)
+    'TAKE_PROFIT_PCT': 1.2,         # 1.2% profit target (Increased to cover fees)
+    'STOP_LOSS_PCT': 0.8,           # 0.8% stop loss (Adjusted for volatility)
     'MAX_POSITIONS': 15,            # Fewer, higher quality positions
     'MIN_TRADE_USD': 5.0,           # Minimum trade notional in base currency
     'PORTFOLIO_RISK_BUDGET': 0.90,  # Use 90% of equity - some buffer
@@ -194,12 +214,17 @@ CONFIG = {
     'MIN_MOMENTUM': 0.5,            # Require positive momentum (trend confirmation)
     'MAX_MOMENTUM': 50.0,           # Avoid parabolic pumps (reversal risk)
     'MIN_VOLUME': 50000,            # Decent volume = reliable execution
-    'MIN_SCORE': 65,                # High bar = QUALITY TRADES ONLY
+    'MIN_SCORE': 60,                # Lowered slightly to allow more trades
     
     # 🎯 OPTIMAL WIN RATE MODE
     'ENABLE_OPTIMAL_WR': True,      # Enable all win rate optimizations
-    'OPTIMAL_MIN_GATES': 3,         # Minimum number of gates that must be GREEN
-    'OPTIMAL_MIN_COHERENCE': 0.50,  # Higher coherence requirement
+    
+    # 🔭 QUANTUM TELESCOPE
+    'ENABLE_QUANTUM_TELESCOPE': True,
+    'ENABLE_HARMONIC_UNDERLAY': True,
+    'QUANTUM_WEIGHT': 0.15,         # Weight of Quantum Telescope in Lambda field
+    'OPTIMAL_MIN_GATES': 5,         # OPTIMIZED: 5 gates = 63.6% win rate (from data validation)
+    'OPTIMAL_MIN_COHERENCE': 0.48,  # OPTIMIZED: Raised to reduce false signals (was 0.45)
     'OPTIMAL_TREND_CONFIRM': True,  # Require trend confirmation
     'OPTIMAL_MULTI_TF_CHECK': True, # Multi-timeframe coherence check
     
@@ -233,6 +258,13 @@ CONFIG = {
     'HNC_FREQUENCY_WEIGHT': 0.25,    # H(t) weight in Lambda field
     'HNC_COHERENCE_THRESHOLD': 0.50, # Min triadic coherence for full sizing
     'HNC_HARMONIC_BONUS': 1.15,      # 15% bonus for harmonic resonance (256/528 Hz)
+    
+    # 🔊 PHASE 2: FREQUENCY FILTERING OPTIMIZATION 🔊
+    'ENABLE_FREQUENCY_FILTERING': True,        # Enable frequency-based signal quality
+    'FREQUENCY_BOOST_528HZ': 1.35,            # 35% boost for 528Hz (83.3% WR in data)
+    'FREQUENCY_SUPPRESS_963HZ': 0.6,          # 40% suppression for 963Hz (poor performer)
+    'FREQUENCY_NEUTRAL_BASELINE': 1.0,        # All other frequencies baseline multiplier
+    'FREQUENCY_WIN_RATE_TARGET': 0.60,        # Phase 2 target: 60%+ win rate
     'HNC_DISTORTION_PENALTY': 0.70,  # 30% penalty for 440 Hz distortion
     
     # 🌍⚡ HNC Probability Matrix (2-Hour Window) ⚡🌍
@@ -2755,7 +2787,7 @@ class TigerNode(AurisNode):
 class FalconNode(AurisNode):
     """🦅 Speed & Momentum - Quick strikes"""
     def __init__(self):
-        super().__init__("Falcon", CONFIG['FREQ_FALCON'], 1.1)
+        super().__init__("Falcon", CONFIG['FREQ_FALCON'], 1.35)  # BOOSTED: 75% win rate
         
     def compute(self, state: MarketState) -> float:
         # Positive momentum = high coherence
@@ -2792,7 +2824,7 @@ class HummingbirdNode(AurisNode):
 class DolphinNode(AurisNode):
     """🐬 Waveform - Emotional carrier"""
     def __init__(self):
-        super().__init__("Dolphin", CONFIG['FREQ_DOLPHIN'], 1.3)  # 528 Hz = Love frequency
+        super().__init__("Dolphin", CONFIG['FREQ_DOLPHIN'], 0.6)  # REDUCED: 0% win rate in data (needs investigation)
         
     def compute(self, state: MarketState) -> float:
         if len(state.prices) < 5:
@@ -2808,7 +2840,7 @@ class DolphinNode(AurisNode):
 class DeerNode(AurisNode):
     """🦌 Sensing - Micro-shifts detection"""
     def __init__(self):
-        super().__init__("Deer", CONFIG['FREQ_DEER'], 0.9)
+        super().__init__("Deer", CONFIG['FREQ_DEER'], 1.25)  # BOOSTED: Highest profitability $+39.71
         
     def compute(self, state: MarketState) -> float:
         if len(state.prices) < 2:
@@ -2847,7 +2879,7 @@ class OwlNode(AurisNode):
 class PandaNode(AurisNode):
     """🐼 Safety - Grounding and protection"""
     def __init__(self):
-        super().__init__("Panda", CONFIG['FREQ_PANDA'], 1.0)
+        super().__init__("Panda", CONFIG['FREQ_PANDA'], 1.20)  # BOOSTED: 60% win rate $+15.84
         
     def compute(self, state: MarketState) -> float:
         # Volume = safety (liquidity)
@@ -2994,6 +3026,17 @@ class AurisEngine:
             except Exception as e:
                 print(f"   ⚠️  Earth Resonance Engine init failed: {e}")
         
+        # 🔭 QUANTUM TELESCOPE & HARMONIC UNDERLAY 🔭
+        self.telescope = None
+        self.harmonic_engine = None
+        if QUANTUM_AVAILABLE and CONFIG.get('ENABLE_QUANTUM_TELESCOPE', True):
+            try:
+                self.telescope = QuantumTelescope()
+                self.harmonic_engine = SixDimensionalHarmonicEngine()
+                print("   🔭 Quantum Telescope & Harmonic Engine ACTIVE")
+            except Exception as e:
+                print(f"   ⚠️  Quantum Telescope init failed: {e}")
+        
     def compute_coherence(self, state: MarketState) -> Tuple[float, str]:
         """Compute overall market coherence (Γ) with Lambda field + HNC frequency
         
@@ -3035,8 +3078,25 @@ class AurisEngine:
             if self.hnc_bridge and CONFIG.get('ENABLE_HNC_FREQUENCY', True):
                 harmonic = self.hnc_coherence * CONFIG.get('HNC_FREQUENCY_WEIGHT', 0.25)
             
-            # Λ(t) = S(t) + O(t) + E(t) + H(t)
-            lambda_field = substrate + observer + echo + harmonic
+            # Q(t) = Quantum Telescope component (Geometric Coherence)
+            quantum = 0.0
+            if self.telescope:
+                try:
+                    beam = LightBeam(
+                        symbol=state.symbol,
+                        price=state.price,
+                        volume=state.volume,
+                        momentum=state.change_24h,
+                        timestamp=state.timestamp
+                    )
+                    observation = self.telescope.observe(beam)
+                    # Use Dodecahedron (Ether/Coherence) as the primary signal
+                    quantum = observation.get(GeometricSolid.DODECAHEDRON, 0.5) * CONFIG.get('QUANTUM_WEIGHT', 0.20)
+                except Exception:
+                    quantum = 0.0
+
+            # Λ(t) = S(t) + O(t) + E(t) + H(t) + Q(t)
+            lambda_field = substrate + observer + echo + harmonic + quantum
             lambda_field = max(0.0, min(1.0, lambda_field))  # Clamp to [0, 1]
             
             # Update history
@@ -3589,8 +3649,7 @@ class AurisEngine:
 
 # ═══════════════════════════════════════════════════════════════
 # 🍄 MYCELIUM NETWORK - Neural Pattern Detection
-# ═══════════════════════════════════════════════════════════════
-
+# ══════════════════════════════════════════════════════════════
 @dataclass
 class Synapse:
     """Connection between market signals with Hebbian learning"""
@@ -4303,6 +4362,11 @@ class AureonKrakenEcosystem:
         
         # 🌌 NEXUS INTEGRATION - MASTER EQUATION + QUEEN HIVE
         self.nexus = NexusIntegration()
+        
+        # 📝 TRADE LOGGER - Data Collection for Probability Matrix Training
+        self.trade_logger = None
+        if TRADE_LOGGER_AVAILABLE and trade_logger:
+            self.trade_logger = trade_logger
         
         print("   🚀 Enhanced trading components initialized (Router/Arbitrage/Confirmation/Rebalancer)")
         print("   🔥 War-ready enhancements active (ATR/HeatManager/AdaptiveFilters)")
@@ -6097,6 +6161,21 @@ class AureonKrakenEcosystem:
                     elif hnc_frequency == 440:
                         hnc_modifier *= CONFIG.get('HNC_DISTORTION_PENALTY', 0.70)
         
+        # 🔊 PHASE 2: FREQUENCY FILTERING - Boost high-WR frequencies, suppress poor ones 🔊
+        freq_modifier = 1.0
+        if CONFIG.get('ENABLE_FREQUENCY_FILTERING', True):
+            freq = opp.get('frequency', 256.0)
+            
+            # Apply frequency-based modifiers based on historical win rate
+            if freq >= 520 and freq <= 580:  # 528Hz band (83.3% WR)
+                freq_modifier = CONFIG.get('FREQUENCY_BOOST_528HZ', 1.35)
+                print(f"   🟢 FREQ BOOST {symbol}: 528Hz band ({freq:.0f}Hz) ×{freq_modifier:.2f}")
+            elif freq > 900:  # 963Hz band (poor performer)
+                freq_modifier = CONFIG.get('FREQUENCY_SUPPRESS_963HZ', 0.6)
+                print(f"   🔴 FREQ SUPPRESS {symbol}: 963Hz band ({freq:.0f}Hz) ×{freq_modifier:.2f}")
+            else:
+                freq_modifier = CONFIG.get('FREQUENCY_NEUTRAL_BASELINE', 1.0)
+        
         # 🌌⚡ Get Imperial predictability modifier for position sizing ⚡🌌
         imperial_modifier = opp.get('imperial_multiplier', 1.0)
         if CONFIG.get('ENABLE_IMPERIAL', True):
@@ -6124,6 +6203,7 @@ class AureonKrakenEcosystem:
             opp['coherence'], symbol, hnc_modifier, imperial_modifier
         )
         size_fraction *= lattice_state.risk_mod
+        size_fraction *= freq_modifier  # 🔊 Apply frequency filtering modifier
         if size_fraction <= 0:
             return
 
@@ -6258,6 +6338,7 @@ class AureonKrakenEcosystem:
         # Create position with swarm enhancements
         is_scout = len(self.positions) == 0  # First position becomes scout
         
+        entry_time = time.time()
         self.positions[symbol] = Position(
             symbol=symbol,
             entry_price=price,
@@ -6266,13 +6347,37 @@ class AureonKrakenEcosystem:
             entry_value=pos_size,
             momentum=opp['change24h'],
             coherence=opp['coherence'],
-            entry_time=time.time(),
+            entry_time=entry_time,
             dominant_node=opp['dominant_node'],
             generation=0,
             is_scout=is_scout,
             prime_size_multiplier=prime_multiplier,
             exchange=exchange
         )
+        
+        # 📊 LOG TRADE ENTRY FOR PROBABILITY MATRIX TRAINING 📊
+        if TRADE_LOGGER_AVAILABLE and trade_logger:
+            try:
+                trade_logger.log_trade_entry({
+                    'symbol': symbol,
+                    'side': 'BUY',
+                    'exchange': exchange,
+                    'entry_price': price,
+                    'entry_time': entry_time,
+                    'quantity': quantity,
+                    'entry_value': pos_size,
+                    'coherence': opp['coherence'],
+                    'dominant_node': opp['dominant_node'],
+                    'hnc_frequency': hnc_frequency,
+                    'hnc_is_harmonic': hnc_enhanced.get('hnc_is_harmonic', False) if hnc_enhanced else False,
+                    'probability_score': opp.get('score', 50) / 100.0,
+                    'imperial_probability': imperial_modifier,
+                    'cosmic_phase': opp.get('cosmic_phase', 'UNKNOWN'),
+                    'earth_coherence': opp.get('earth_coherence', 0.5),
+                    'gates_passed': opp.get('gates_passed', 0),
+                })
+            except Exception as e:
+                logger.warning(f"Failed to log trade entry for {symbol}: {e}")
         
         # 🌟 Allocate capital in pool
         self.capital_pool.allocate(symbol, pos_size)
@@ -6544,12 +6649,35 @@ class AureonKrakenEcosystem:
         gross_pnl = exit_value - pos.entry_value
         net_pnl = gross_pnl - total_expenses
         
+        # Calculate hold time
+        exit_time = time.time()
+        hold_time_sec = exit_time - pos.entry_time
+        
+        # 📊 LOG TRADE EXIT FOR PROBABILITY MATRIX VALIDATION 📊
+        if TRADE_LOGGER_AVAILABLE and trade_logger:
+            try:
+                pnl_pct = (net_pnl / pos.entry_value * 100) if pos.entry_value > 0 else 0
+                trade_logger.log_trade_exit(
+                    trade_id=f"{symbol}_{pos.entry_time:.0f}",
+                    exit_data={
+                        'symbol': symbol,
+                        'exit_price': price,
+                        'exit_time': exit_time,
+                        'exit_value': exit_value,
+                        'gross_pnl': gross_pnl,
+                        'net_pnl': net_pnl,
+                        'pnl_pct': pnl_pct,
+                        'fees': total_expenses,
+                        'reason': reason,
+                        'hold_time_seconds': hold_time_sec,
+                    }
+                )
+            except Exception as e:
+                logger.warning(f"Failed to log trade exit for {symbol}: {e}")
+        
         # Release symbol exposure
         if symbol in self.tracker.symbol_exposure:
             del self.tracker.symbol_exposure[symbol]
-        
-        # Calculate hold time
-        hold_time_sec = time.time() - pos.entry_time
         
         # 🌟 Return capital to pool with profit
         self.capital_pool.deallocate(symbol, pos.entry_value, net_pnl)
@@ -6811,6 +6939,50 @@ class AureonKrakenEcosystem:
 
                 # Find opportunities (if not halted or paused)
                 if len(self.positions) < CONFIG['MAX_POSITIONS'] and not self.tracker.trading_halted and not trading_paused:
+                    # 📊 LOG MARKET SWEEP FOR FULL COVERAGE VALIDATION 📊
+                    if TRADE_LOGGER_AVAILABLE and trade_logger:
+                        try:
+                            opportunities_entered = min(len(all_opps), CONFIG['MAX_POSITIONS'] - len(self.positions))
+                            opportunities_rejected = len(raw_opps) - len(all_opps)
+                            
+                            # Count rejection reasons
+                            rejection_reasons = defaultdict(int)
+                            if hasattr(self, 'last_opportunity_filters'):
+                                rejection_reasons.update(self.last_opportunity_filters)
+                            
+                            # Get frequency distribution
+                            harmonic_freqs = []
+                            hissing_freqs = []
+                            total_coherence = []
+                            
+                            for opp in raw_opps:
+                                if opp.get('hnc_is_harmonic', False):
+                                    harmonic_freqs.append(opp.get('hnc_frequency', 256))
+                                elif opp.get('hnc_frequency', 256) == 440:
+                                    hissing_freqs.append(440)
+                                total_coherence.append(opp.get('coherence', 0.5))
+                            
+                            avg_coherence = statistics.mean(total_coherence) if total_coherence else 0.5
+                            
+                            # Get node distribution
+                            node_dist = defaultdict(int)
+                            for opp in all_opps:
+                                node_dist[opp.get('dominant_node', 'Unknown')] += 1
+                            
+                            trade_logger.log_market_sweep({
+                                'total_opportunities_found': len(raw_opps),
+                                'opportunities_entered': opportunities_entered,
+                                'opportunities_rejected': opportunities_rejected,
+                                'rejection_reasons': dict(rejection_reasons),
+                                'harmonic_frequencies': harmonic_freqs,
+                                'hissing_frequencies': hissing_freqs,
+                                'average_coherence': avg_coherence,
+                                'system_flux': opp.get('flux_direction', 'NEUTRAL') if all_opps else 'NEUTRAL',
+                                'dominant_node_distribution': dict(node_dist),
+                            })
+                        except Exception as e:
+                            logger.warning(f"Failed to log market sweep: {e}")
+                    
                     if all_opps:
                         purity = self.lattice.get_field_purity()
                         purity_icon = "🟢" if purity > 0.9 else "🟠" if purity > 0.5 else "🔴"

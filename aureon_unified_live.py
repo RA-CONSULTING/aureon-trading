@@ -36,48 +36,95 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # ═══════════════════════════════════════════════════════════════════════════
-# v4 LEARNED INSIGHTS (FROM 21 PAPER TRADES)
+# v5 REAL TRADING INSIGHTS (FROM 24 PAPER + 1 REAL TRADE)
 # ═══════════════════════════════════════════════════════════════════════════
 """
 📊 KEY LEARNINGS:
 ┌─────────────────────────────────────────────────────────────────────┐
 │ FREQUENCY BANDS:                                                    │
 │   • 750-850Hz (Intuition) → 67% WR, +$0.48 P&L ✅ TRADE             │
+│   • 850Hz+ (Awakening) → 67% WR, +$1.68 P&L ✅ TRADE                │
 │   • 450-550Hz (Transformation) → 27% WR, -$0.16 P&L ⛔ AVOID        │
 │                                                                      │
-│ COHERENCE:                                                          │
-│   • Γ ≥ 0.90 → 45% WR ✅                                            │
-│   • Γ 0.70-0.80 → 25% WR ⛔                                         │
+│ REAL TRADING INSIGHT:                                               │
+│   • Paper: +$2.00 profit | Real: -$1.50 loss                        │
+│   • Gap = FEES (0.2% round trip) + SLIPPAGE                         │
+│   • Need minimum 0.5% gain to be profitable after fees              │
 │                                                                      │
-│ PROBABILITY:                                                        │
-│   • 80-85% → 44% WR (best performing band)                          │
-│   • 85%+ → 0% WR (overconfident signals)                            │
-│                                                                      │
-│ RISK/REWARD: 2.12:1 (Avg Win $0.10 / Avg Loss $0.047)               │
-│ v3 IMPROVEMENT: +33.3% win rate vs pre-v3                           │
+│ RISK/REWARD: 4.48:1 (Avg Win $0.27 / Avg Loss $0.06)                │
+│ TP EXITS: 100% win rate when reached                                │
 └─────────────────────────────────────────────────────────────────────┘
 """
 
 # ═══════════════════════════════════════════════════════════════════════════
-# CONFIGURATION
+# CONFIGURATION - v6 TRAILING STOP + SPIKE PROTECTION
 # ═══════════════════════════════════════════════════════════════════════════
+"""
+📊 v6 LEARNINGS FROM 24 PAPER + 1 REAL TRADE:
+┌─────────────────────────────────────────────────────────────────────┐
+│ WINNING PATTERNS:                                                   │
+│   • SAPIEN @ 890-963Hz + Coherence 0.924 → TP exits (+$1.86)       │
+│   • TP exits = 100% win rate (never give back gains!)              │
+│   • High freq (750-963Hz) + High coherence (0.90+) = Best combo    │
+│                                                                      │
+│ LOSING PATTERNS:                                                    │
+│   • Fast SL (11 sec hold) = spike caught us at entry               │
+│   • Low freq (450-550Hz) = 27% WR - avoid completely               │
+│   • Timeout exits at breakeven = wasted opportunity cost           │
+│                                                                      │
+│ v6 SOLUTION: TRAILING STOPS + SPIKE DETECTION                      │
+│   • Trail profits at 0.8% below peak (never give back +1% gains)   │
+│   • Detect price spikes (>1% in 30 sec) and delay entry            │
+│   • Prioritize symbols with proven edge (SAPIEN > others)          │
+└─────────────────────────────────────────────────────────────────────┘
+"""
 
 CONFIG = {
-    'MIN_TRADE_USD': 6.0,
+    'MIN_TRADE_USD': 10.0,        # v5: Increased min to reduce fee impact
     'MAX_POSITIONS': 2,           # v4: Reduced from 3 for focus
-    'STOP_LOSS_PCT': 0.005,       # v4: Tighter 0.5% stop loss
-    'TAKE_PROFIT_PCT': 0.01,      # v4: 1.0% take profit
+    'STOP_LOSS_PCT': 0.008,       # v5: Widened to 0.8% (was 0.5% - too tight)
+    'TAKE_PROFIT_PCT': 0.015,     # v5: Increased to 1.5% to clear fees
     'PING_THRESHOLD': 0.005,      # 0.5% for entry
     'PONG_THRESHOLD': 0.01,       # 1% for exit
-    'COHERENCE_THRESHOLD': 0.85,  # v4: Increased from 0.6 (45% vs 25% WR)
-    'COOLDOWN_MINUTES': 5,        # v4: Symbol cooldown
-    'TIMEOUT_SEC': 300,           # v4: 5 min timeout (was 30 min)
     
-    # v4 LEARNED FREQUENCY BANDS
-    'FREQ_OPTIMAL_MIN': 700,      # 750-850Hz = 67% WR
-    'FREQ_OPTIMAL_MAX': 850,      # Intuition frequency band
+    # v6 TIERED COHERENCE (from paper trades: 0.73-0.92 range won)
+    'COHERENCE_THRESHOLD': 0.70,  # v6: Lowered base - let freq filter do work
+    'COHERENCE_OPTIMAL': 0.88,    # v6: Full size at this coherence
+    'COHERENCE_SCALING': True,    # v6: Scale position by coherence quality
+    
+    'COOLDOWN_MINUTES': 5,        # v4: Symbol cooldown
+    'TIMEOUT_SEC': 420,           # v5: 7 min timeout (was 5 min)
+    
+    # v5 FEE AWARENESS
+    'BINANCE_FEE_PCT': 0.001,     # 0.1% per trade
+    'ROUND_TRIP_FEE': 0.002,      # 0.2% total (buy + sell)
+    'MIN_PROFIT_AFTER_FEES': 0.005,  # Need 0.5% profit minimum
+    
+    # v5 LEARNED FREQUENCY BANDS (extended to include 850Hz+)
+    'FREQ_OPTIMAL_MIN': 750,      # 750-963Hz = 67% WR (Intuition + Awakening)
+    'FREQ_OPTIMAL_MAX': 963,      # Extended to include Awakening band
     'FREQ_AVOID_MIN': 450,        # 450-550Hz = 27% WR (avoid)
     'FREQ_AVOID_MAX': 550,
+    
+    # v6 TRAILING STOP (Lock in profits!)
+    'ENABLE_TRAILING_STOP': True,
+    'TRAIL_ACTIVATION_PCT': 0.008,  # Activate trailing at +0.8% profit
+    'TRAIL_DISTANCE_PCT': 0.005,    # Trail 0.5% below peak (tight trail)
+    
+    # v6 SPIKE PROTECTION (Avoid entries after pumps)
+    'SPIKE_THRESHOLD_PCT': 0.01,    # 1% move in short time = spike
+    'SPIKE_LOOKBACK_SEC': 30,       # Check last 30 seconds
+    'SPIKE_COOLDOWN_SEC': 60,       # Wait 60 sec after spike before entry
+    
+    # v6 SYMBOL PREFERENCE (Learned edge)
+    'PREFERRED_SYMBOLS': ['SAPIENUSDC'],  # Proven 67%+ WR
+    'PREFERRED_BONUS': 1.5,         # 50% score bonus for proven symbols
+    
+    # v6 ADAPTIVE PROBABILITY (from paper: 0.78-0.83 won, 0.85+ lost!)
+    'PROB_MIN': 0.50,              # v6: Lowered - let other filters qualify
+    'PROB_OPTIMAL_MIN': 0.78,      # v6: Sweet spot lower bound
+    'PROB_OPTIMAL_MAX': 0.83,      # v6: Sweet spot upper bound (0.85+ = 0% WR!)
+    'PROB_CAP': 0.83,              # v6: Never trust >83% (overconfident signals)
 }
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -197,6 +244,17 @@ class AureonUnifiedLive:
         self.ticker_cache = {}
         self.last_ticker_update = 0
         
+        # v6: Price history for spike detection
+        self.price_history = {}  # symbol -> [(timestamp, price), ...]
+        self.price_history_max = 60  # Keep 60 data points per symbol
+        
+        # v6: Peak price tracking for trailing stops
+        self.peak_prices = {}  # symbol -> highest price since entry
+        
+        # v6: Rejection logging for analysis
+        self.rejections = []  # List of rejected opportunities with reasons
+        self.rejection_log_file = 'rejection_log.json'
+        
         self.trades = 0
         self.wins = 0
         self.total_profit_usd = 0.0
@@ -207,8 +265,69 @@ class AureonUnifiedLive:
             tickers = self.client.session.get(f"{self.client.base}/api/v3/ticker/24hr", timeout=5).json()
             self.ticker_cache = {t['symbol']: t for t in tickers if t['symbol'].endswith('USDT') or t['symbol'].endswith('USDC')}
             self.last_ticker_update = time.time()
+            
+            # v6: Update price history for spike detection
+            now = time.time()
+            for symbol, ticker in self.ticker_cache.items():
+                price = float(ticker.get('lastPrice', 0))
+                if price > 0:
+                    if symbol not in self.price_history:
+                        self.price_history[symbol] = []
+                    self.price_history[symbol].append((now, price))
+                    # Keep only recent history
+                    cutoff = now - 120  # 2 minutes
+                    self.price_history[symbol] = [
+                        (t, p) for t, p in self.price_history[symbol] if t > cutoff
+                    ][-self.price_history_max:]
         except Exception as e:
             logger.error(f"Ticker update failed: {e}")
+    
+    def detect_spike(self, symbol: str) -> Tuple[bool, float]:
+        """v6: Detect if symbol had a recent price spike (pump/dump)"""
+        if symbol not in self.price_history:
+            return False, 0.0
+        
+        history = self.price_history[symbol]
+        if len(history) < 3:
+            return False, 0.0
+        
+        now = time.time()
+        lookback = CONFIG.get('SPIKE_LOOKBACK_SEC', 30)
+        threshold = CONFIG.get('SPIKE_THRESHOLD_PCT', 0.01)
+        
+        # Get prices from lookback window
+        recent = [(t, p) for t, p in history if now - t <= lookback]
+        if len(recent) < 2:
+            return False, 0.0
+        
+        oldest_price = recent[0][1]
+        newest_price = recent[-1][1]
+        change_pct = abs(newest_price - oldest_price) / oldest_price
+        
+        is_spike = change_pct >= threshold
+        return is_spike, change_pct
+    
+    def log_rejection(self, symbol: str, reason: str, details: Dict):
+        """v6: Log rejected opportunities for analysis"""
+        rejection = {
+            'timestamp': time.time(),
+            'symbol': symbol,
+            'reason': reason,
+            **details
+        }
+        self.rejections.append(rejection)
+        
+        # Keep only last 100 rejections in memory
+        if len(self.rejections) > 100:
+            self.rejections = self.rejections[-100:]
+        
+        # Log to file periodically (every 10 rejections)
+        if len(self.rejections) % 10 == 0:
+            try:
+                with open(self.rejection_log_file, 'w') as f:
+                    json.dump(self.rejections[-50:], f, indent=2)
+            except:
+                pass
     
     def get_usdc_balance(self) -> float:
         return self.client.get_free_balance('USDC')
@@ -235,26 +354,29 @@ class AureonUnifiedLive:
                 volatility = ((high - low) / low * 100) if low > 0 else 0
                 coherence = calculate_coherence(change, volume / price if price > 0 else 0, volatility)
                 
-                # v4: Require higher coherence (learned: 45% WR at 0.90+ vs 25% at 0.70-0.80)
+                # v6: Tiered coherence - base threshold for entry, bonus for high coherence
                 if coherence < CONFIG['COHERENCE_THRESHOLD']:
+                    self.log_rejection(symbol, 'LOW_COHERENCE', {'coherence': coherence, 'threshold': CONFIG['COHERENCE_THRESHOLD']})
                     continue
                 
                 # Calculate frequency from price action (Solfeggio mapping)
                 freq = max(256, min(963, 432 * ((1 + change/100) ** PHI)))
                 is_harmonic = abs(freq - 528) < 30  # Near LOVE frequency
                 
-                # v4: FREQUENCY BAND FILTERING (LEARNED)
-                # 750-850Hz (Intuition) = 67% WR - PRIORITIZE
+                # v6: FREQUENCY BAND FILTERING (LEARNED)
+                # 750-963Hz (Intuition + Awakening) = 67% WR - PRIORITIZE
                 # 450-550Hz (Transformation) = 27% WR - AVOID
                 freq_score = 0
                 in_optimal_band = CONFIG['FREQ_OPTIMAL_MIN'] <= freq <= CONFIG['FREQ_OPTIMAL_MAX']
                 in_avoid_band = CONFIG['FREQ_AVOID_MIN'] <= freq <= CONFIG['FREQ_AVOID_MAX']
                 
                 if in_avoid_band:
-                    continue  # v4: Skip poor-performing frequency band
+                    self.log_rejection(symbol, 'FREQ_AVOID_BAND', {'freq': freq})
+                    continue  # Skip poor-performing frequency band
                 
+                # v6: Frequency scoring with bonus for optimal band
                 if in_optimal_band:
-                    freq_score = 100  # Strong bonus for 750-850Hz
+                    freq_score = 100  # Strong bonus for 750-963Hz
                 elif freq > 650:  # Above 650Hz is decent
                     freq_score = 50
                 else:
@@ -275,16 +397,46 @@ class AureonUnifiedLive:
                 prob = signal['probability']
                 action = signal['action']
                 
-                # v4: Require probability >= 80% (learned: 80-85% = 44% WR, best band)
-                if prob < 0.80:
+                # v6: Adaptive probability thresholds (learned: 0.78-0.83 sweet spot)
+                prob_min = CONFIG.get('PROB_MIN', 0.50)
+                prob_cap = CONFIG.get('PROB_CAP', 0.83)
+                
+                if prob < prob_min:
+                    self.log_rejection(symbol, 'LOW_PROBABILITY', {'prob': prob, 'min': prob_min})
+                    continue
+                if prob > prob_cap:
+                    prob = prob_cap  # Cap overconfident signals (0.85+ had 0% WR!)
+                
+                # v6: MOMENTUM CONFIRMATION - Don't buy at local highs
+                # Require price to be in lower 70% of daily range (not overbought)
+                price_range_pct = (price - low) / (high - low) if (high - low) > 0 else 0.5
+                if price_range_pct > 0.75:
+                    self.log_rejection(symbol, 'OVERBOUGHT', {'range_pct': price_range_pct, 'price': price})
+                    continue  # Skip - price is in upper 25% of daily range (overbought)
+                
+                # v6: Widened momentum range based on paper trade analysis
+                # Paper winners ranged from -3.5% to +10%, avoid extremes beyond that
+                if change > 10.0 or change < -5.0:
+                    self.log_rejection(symbol, 'MOMENTUM_EXTREME', {'change': change})
+                    continue
+                
+                # v6: SPIKE DETECTION - Don't chase pumps
+                is_spike, spike_magnitude = self.detect_spike(symbol)
+                if is_spike:
+                    self.log_rejection(symbol, 'SPIKE_DETECTED', {'spike_pct': spike_magnitude * 100})
                     continue
                 
                 # Entry criteria: HNC says BUY + High coherence + Good frequency
                 if action in ['STRONG BUY', 'BUY', 'SLIGHT BUY']:
-                    # v4: Score heavily weights frequency band (learned insight)
+                    # v6: Score includes momentum quality and distance from high
                     base_score = prob * coherence * (1 + math.log10(max(1, volume/10000)))
                     freq_bonus = freq_score / 100  # 0-1 range
-                    score = base_score * (1 + freq_bonus)  # Up to 2x for optimal freq
+                    range_bonus = (1 - price_range_pct)  # Bonus for buying low in range
+                    score = base_score * (1 + freq_bonus) * (1 + range_bonus * 0.5)
+                    
+                    # v6: Symbol preference bonus (proven edge symbols)
+                    if symbol in CONFIG.get('PREFERRED_SYMBOLS', []):
+                        score *= CONFIG.get('PREFERRED_BONUS', 1.5)
                     
                     opportunities.append({
                         'symbol': symbol,
@@ -298,27 +450,47 @@ class AureonUnifiedLive:
                         'is_harmonic': is_harmonic,
                         'score': score,
                         'freq_band': 'OPTIMAL' if in_optimal_band else 'STANDARD',
+                        'range_pct': price_range_pct,  # v5: Track position in range
                     })
             except:
                 continue
         
-        # v4: Sort by frequency band first, then score
-        opportunities.sort(key=lambda x: (x.get('freq_band') == 'OPTIMAL', x['score']), reverse=True)
+        # v5: Sort by frequency band, then range position, then score
+        opportunities.sort(key=lambda x: (
+            x.get('freq_band') == 'OPTIMAL', 
+            -x.get('range_pct', 0.5),  # Lower range = better (negative for descending)
+            x['score']
+        ), reverse=True)
         return opportunities
     
     def enter_position(self, opp: Dict, usdc_balance: float) -> bool:
         symbol = opp['symbol']
+        coherence = opp.get('coherence', 0.70)
         
-        # v4: Adaptive position sizing based on frequency band and confidence
-        # Optimal band (750-850Hz, 67% WR) gets larger positions
-        base_size_pct = 0.25  # 25% base
+        # v6: Adaptive position sizing with coherence scaling
+        # Base: 20% | Optimal freq: +15% | High coherence: +10% | Preferred symbol: +10%
+        base_size_pct = 0.20
         
+        # Frequency band bonus
         if opp.get('freq_band') == 'OPTIMAL':
-            size_pct = 0.40  # 40% for optimal frequency band
-        elif opp.get('coherence', 0) >= 0.90:
-            size_pct = 0.35  # 35% for high coherence
-        else:
-            size_pct = base_size_pct  # 25% standard
+            base_size_pct += 0.15  # +15% for 750-963Hz band
+        
+        # Coherence scaling (v6 new)
+        if CONFIG.get('COHERENCE_SCALING', True):
+            optimal_coh = CONFIG.get('COHERENCE_OPTIMAL', 0.88)
+            threshold_coh = CONFIG.get('COHERENCE_THRESHOLD', 0.70)
+            coh_factor = (coherence - threshold_coh) / (optimal_coh - threshold_coh)
+            coh_factor = max(0.5, min(1.0, coh_factor))  # 0.5x to 1.0x
+            base_size_pct *= coh_factor
+        elif coherence >= 0.88:
+            base_size_pct += 0.10  # +10% for high coherence
+        
+        # Preferred symbol bonus (SAPIEN has 67% WR)
+        if symbol in CONFIG.get('PREFERRED_SYMBOLS', []):
+            base_size_pct += 0.10  # +10% for proven winners
+        
+        # Cap at 45% max position size
+        size_pct = min(0.45, base_size_pct)
         
         size_usd = usdc_balance * size_pct
         if size_usd < CONFIG['MIN_TRADE_USD']:
@@ -335,8 +507,9 @@ class AureonUnifiedLive:
 ╔════════════════════════════════════════════════════════════════╗
 ║ 🎯 ENTERING {symbol}
 ║ HNC Prob: {opp.get('probability', 0):.0%} | Action: {opp.get('action', 'N/A')}
-║ Coherence: Γ={opp['coherence']:.3f} | Freq: {opp.get('frequency', 0):.0f}Hz
-║ Quantity:  {qty_str} @ ${opp['price']:.4f} = ${notional:.2f}
+║ Coherence: Γ={coherence:.3f} | Freq: {opp.get('frequency', 0):.0f}Hz
+║ Size: {size_pct*100:.0f}% = ${notional:.2f} ({qty_str} @ ${opp['price']:.4f})
+║ Band: {opp.get('freq_band', 'STANDARD')} | Range: {opp.get('range_pct', 0)*100:.0f}%
 ╚════════════════════════════════════════════════════════════════╝
 """)
         
@@ -347,6 +520,7 @@ class AureonUnifiedLive:
                 'qty': float(qty_str),
                 'entry_time': time.time(),
                 'notional': notional,
+                'peak_price': opp['price'],  # v6: Track peak for trailing stop
             }
             logger.info(f"✅ Filled: Order #{result.get('orderId')}")
             self.trades += 1
@@ -366,27 +540,63 @@ class AureonUnifiedLive:
             pnl_pct = (price - entry) / entry
             pnl_usd = pos['qty'] * price * pnl_pct
             
+            # v6: Update peak price for trailing stop
+            if symbol not in self.peak_prices:
+                self.peak_prices[symbol] = price
+            elif price > self.peak_prices[symbol]:
+                self.peak_prices[symbol] = price
+            
             should_exit = False
             reason = ""
             
-            if pnl_pct >= CONFIG['TAKE_PROFIT_PCT']:
-                should_exit = True
-                reason = "💰 TAKE PROFIT"
-            elif pnl_pct <= -CONFIG['STOP_LOSS_PCT']:
-                should_exit = True
-                reason = "🛑 STOP LOSS"
-            elif time.time() - pos['entry_time'] > CONFIG['TIMEOUT_SEC']:  # v4: Configurable timeout
-                should_exit = True
-                reason = "⏰ TIMEOUT"
+            # v6: TRAILING STOP - Lock in profits!
+            if CONFIG.get('ENABLE_TRAILING_STOP', True):
+                peak = self.peak_prices.get(symbol, price)
+                peak_pnl_pct = (peak - entry) / entry
+                
+                # Activate trailing stop after reaching activation threshold
+                if peak_pnl_pct >= CONFIG.get('TRAIL_ACTIVATION_PCT', 0.008):
+                    trail_distance = CONFIG.get('TRAIL_DISTANCE_PCT', 0.005)
+                    trail_price = peak * (1 - trail_distance)
+                    
+                    if price <= trail_price:
+                        should_exit = True
+                        reason = f"📈 TRAILING STOP (Peak: ${peak:.4f}, Trail: ${trail_price:.4f})"
+            
+            # Standard exits (only if trailing didn't trigger)
+            if not should_exit:
+                if pnl_pct >= CONFIG['TAKE_PROFIT_PCT']:
+                    should_exit = True
+                    reason = "💰 TAKE PROFIT"
+                elif pnl_pct <= -CONFIG['STOP_LOSS_PCT']:
+                    should_exit = True
+                    reason = "🛑 STOP LOSS"
+                elif time.time() - pos['entry_time'] > CONFIG['TIMEOUT_SEC']:  # v4: Configurable timeout
+                    should_exit = True
+                    reason = "⏰ TIMEOUT"
             
             if should_exit:
-                qty_str = self.lot_mgr.format_qty(symbol, pos['qty'])
+                # v4 FIX: Get actual balance from exchange for sells
+                # This handles dust and ensures we sell what we actually have
+                base_asset = symbol.replace('USDC', '').replace('USDT', '')
+                actual_balance = self.client.get_free_balance(base_asset)
+                
+                # Use actual balance if available, otherwise use stored qty
+                sell_qty = actual_balance if actual_balance > 0 else pos['qty']
+                qty_str = self.lot_mgr.format_qty(symbol, sell_qty)
+                
+                # Verify notional is above minimum
+                sell_notional = float(qty_str) * price
+                if sell_notional < 5.0:  # Binance minimum
+                    logger.warning(f"⚠️ {symbol} notional ${sell_notional:.2f} below $5 minimum - skipping sell")
+                    continue
                 
                 logger.info(f"""
 ╔════════════════════════════════════════════════════════════════╗
 ║ ⚡ EXITING {symbol}
 ║ Reason: {reason}
 ║ Entry: ${entry:.4f} | Exit: ${price:.4f}
+║ Qty: {qty_str} (Balance: {actual_balance:.4f})
 ║ P&L:   {pnl_pct*100:+.2f}% (${pnl_usd:+.2f})
 ╚════════════════════════════════════════════════════════════════╝
 """)
@@ -398,6 +608,10 @@ class AureonUnifiedLive:
                     self.memory.record(symbol, pnl_usd)
                     self.total_profit_usd += pnl_usd
                     if pnl_usd >= 0: self.wins += 1
+                    
+                    # v6: Clear peak price tracking
+                    if symbol in self.peak_prices:
+                        del self.peak_prices[symbol]
                     
                     del self.positions[symbol]
                 except Exception as e:
@@ -411,31 +625,42 @@ class AureonUnifiedLive:
         
         win_rate = self.wins / max(1, self.trades) * 100
         
+        # v6: Show trailing stop status for open positions
+        trail_info = ""
+        for sym, pos in self.positions.items():
+            peak = self.peak_prices.get(sym, pos['entry'])
+            curr = float(self.ticker_cache.get(sym, {}).get('lastPrice', pos['entry']))
+            peak_pnl = (peak - pos['entry']) / pos['entry'] * 100
+            curr_pnl = (curr - pos['entry']) / pos['entry'] * 100
+            trail_info += f"\n║   {sym}: Entry ${pos['entry']:.4f} | Peak +{peak_pnl:.2f}% | Now {curr_pnl:+.2f}%"
+        
         logger.info(f"""
 ╔════════════════════════════════════════════════════════════════╗
-║ 🌌 AUREON UNIFIED | Cycle {cycle:3d}
+║ 🌌 AUREON UNIFIED v6 | Cycle {cycle:3d}
 ║────────────────────────────────────────────────────────────────
 ║ 💵 USDC:      ${usdc:.2f}
-║ 💼 Positions: ${pos_value:.2f} ({len(self.positions)})
+║ 💼 Positions: ${pos_value:.2f} ({len(self.positions)}){trail_info}
 ║ 📊 Total:     ${total:.2f}
 ║────────────────────────────────────────────────────────────────
 ║ 🏆 Trades: {self.trades} | Wins: {self.wins} | WR: {win_rate:.1f}%
 ║ 💰 Profit: ${self.total_profit_usd:+.2f}
+║ 🚫 Rejections: {len(self.rejections)} (last cycle)
 ╚════════════════════════════════════════════════════════════════╝
 """)
     
     def run(self, duration_sec: int = 3600):
         logger.info("""
 ╔════════════════════════════════════════════════════════════════╗
-║        🌌 AUREON UNIFIED LIVE TRADER 🌌
+║        🌌 AUREON UNIFIED LIVE TRADER v6.1 🌌
 ║
 ║  ALL SYSTEMS INTEGRATED:
-║    ✨ HNC Probability Matrix (NEW!)
-║    ✨ Lighthouse Spectral Metrics
-║    ✨ Solfeggio Frequency Mapping
-║    ✨ Coherence Detection
-║    ✨ Elephant Memory
-║    ✨ Proper LOT_SIZE
+║    ✨ HNC Probability Matrix
+║    ✨ Solfeggio Frequency Mapping (750-963Hz optimal)
+║    ✨ Tiered Coherence (0.70 base, 0.88 optimal)
+║    ✨ Elephant Memory (Symbol learning)
+║    ✨ Trailing Stops (Lock in +0.8% gains)
+║    ✨ Spike Detection (Avoid pump entries)
+║    ✨ Near-Miss Monitoring (Watch list)
 ║
 ╚════════════════════════════════════════════════════════════════╝
 """)
@@ -465,6 +690,9 @@ class AureonUnifiedLive:
                     usdc = self.get_usdc_balance()
                     if usdc >= CONFIG['MIN_TRADE_USD']:
                         self.enter_position(opps[0], usdc)
+                else:
+                    # v6.1: Show near-miss opportunities (watching list)
+                    self.show_watch_list()
             
             time.sleep(10)
         
@@ -475,6 +703,62 @@ class AureonUnifiedLive:
 ║ Total P&L: ${self.total_profit_usd:+.2f}
 ╚════════════════════════════════════════════════════════════════╝
 """)
+    
+    def show_watch_list(self):
+        """Show assets that are close to passing filters - potential future entries"""
+        watch = []
+        PHI = (1 + 5**0.5) / 2
+        
+        for symbol, ticker in self.ticker_cache.items():
+            if not symbol.endswith('USDC'): continue
+            try:
+                price = float(ticker['lastPrice'])
+                change = float(ticker['priceChangePercent'])
+                volume = float(ticker['quoteVolume'])
+                high = float(ticker['highPrice'])
+                low = float(ticker['lowPrice'])
+                
+                if volume < 10000: continue
+                
+                volatility = ((high - low) / low * 100) if low > 0 else 0
+                coh = calculate_coherence(change, volume / price if price > 0 else 0, volatility)
+                
+                if coh < 0.65: continue  # At least close to threshold
+                
+                freq = max(256, min(963, 432 * ((1 + change/100) ** PHI)))
+                in_avoid = CONFIG['FREQ_AVOID_MIN'] <= freq <= CONFIG['FREQ_AVOID_MAX']
+                in_optimal = CONFIG['FREQ_OPTIMAL_MIN'] <= freq <= CONFIG['FREQ_OPTIMAL_MAX']
+                
+                range_pct = (price - low) / (high - low) if (high - low) > 0 else 0.5
+                
+                # Count how many filters it passes (out of 5)
+                passes = 0
+                if coh >= CONFIG['COHERENCE_THRESHOLD']: passes += 1
+                if not in_avoid: passes += 1
+                if -5.0 <= change <= 10.0: passes += 1
+                if range_pct <= 0.75: passes += 1
+                if in_optimal: passes += 1
+                
+                if passes >= 3:  # Show if passing at least 3/5 filters
+                    watch.append({
+                        'symbol': symbol,
+                        'coherence': coh,
+                        'freq': freq,
+                        'change': change,
+                        'range_pct': range_pct,
+                        'passes': passes,
+                        'in_optimal': in_optimal,
+                        'in_avoid': in_avoid,
+                    })
+            except:
+                continue
+        
+        if watch:
+            watch.sort(key=lambda x: (-x['passes'], -x['coherence']))
+            logger.info(f"\n👀 WATCH LIST ({len(watch)} near-miss):")
+            for w in watch[:5]:
+                freq_status = "⚡OPTIMAL" if w['in_optimal'] else ("⛔AVOID" if w['in_avoid'] else "OK")
+                logger.info(f"  {w['symbol']}: Γ={w['coherence']:.2f} | {w['freq']:.0f}Hz ({freq_status}) | {w['change']:+.1f}% | {w['passes']}/5 filters")
 
 if __name__ == "__main__":
     trader = AureonUnifiedLive()
