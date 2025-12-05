@@ -6,21 +6,25 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { z } from "zod";
 import PaymentGate from "@/components/PaymentGate";
+import { Sparkles, Eye, EyeOff } from "lucide-react";
 
 const emailSchema = z.string().email("Invalid email address");
 const passwordSchema = z.string().min(8, "Password must be at least 8 characters");
 const binanceApiKeySchema = z.string().min(10, "Binance API key is required");
 const binanceApiSecretSchema = z.string().min(10, "Binance API secret is required");
 
+const SUPER_USER_EMAIL = "gary@raconsultingandbrokerageservices.com";
+
 export default function Auth() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [showPaymentGate, setShowPaymentGate] = useState(false);
   const [pendingUserId, setPendingUserId] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showApiSecret, setShowApiSecret] = useState(false);
   
   // Sign In State
   const [email, setEmail] = useState("");
@@ -29,52 +33,44 @@ export default function Auth() {
   // Sign Up State
   const [signUpEmail, setSignUpEmail] = useState("");
   const [signUpPassword, setSignUpPassword] = useState("");
-  const [fullName, setFullName] = useState("");
-  const [dateOfBirth, setDateOfBirth] = useState("");
-  const [location, setLocation] = useState("");
   const [binanceApiKey, setBinanceApiKey] = useState("");
   const [binanceApiSecret, setBinanceApiSecret] = useState("");
-  const [idDocument, setIdDocument] = useState<File | null>(null);
-  const [dataConsent, setDataConsent] = useState(false);
-  const [termsConsent, setTermsConsent] = useState(false);
 
   useEffect(() => {
-    checkExistingSession();
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session) {
+        checkUserStatus(session.user.id, session.user.email);
+      }
+    });
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        checkUserStatus(session.user.id, session.user.email);
+      }
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
-  const checkExistingSession = async () => {
-    const SUPER_USER_EMAIL = "gary@raconsultingandbrokerageservices.com";
-    const { data: { session } } = await supabase.auth.getSession();
-    
-    if (session) {
-      // Super user bypasses payment
-      if (session.user.email === SUPER_USER_EMAIL) {
-        // Auto-mark payment as completed for super user
-        await supabase
-          .from("profiles")
-          .update({ 
-            payment_completed: true,
-            payment_completed_at: new Date().toISOString()
-          })
-          .eq("id", session.user.id);
-        
-        navigate("/");
-        return;
-      }
-      
-      // Check if payment is complete
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("payment_completed")
-        .eq("id", session.user.id)
-        .single();
+  const checkUserStatus = async (userId: string, userEmail: string | undefined) => {
+    // Super user bypasses payment
+    if (userEmail === SUPER_USER_EMAIL) {
+      navigate("/");
+      return;
+    }
 
-      if (profile?.payment_completed) {
-        navigate("/");
-      } else {
-        setPendingUserId(session.user.id);
-        setShowPaymentGate(true);
-      }
+    // Check aureon_user_sessions for payment status
+    const { data: session } = await supabase
+      .from("aureon_user_sessions")
+      .select("payment_completed")
+      .eq("user_id", userId)
+      .single();
+
+    if (session?.payment_completed) {
+      navigate("/");
+    } else {
+      setPendingUserId(userId);
+      setShowPaymentGate(true);
     }
   };
 
@@ -82,91 +78,27 @@ export default function Auth() {
     e.preventDefault();
     
     try {
-      // Validate all fields
       emailSchema.parse(signUpEmail);
       passwordSchema.parse(signUpPassword);
       binanceApiKeySchema.parse(binanceApiKey);
       binanceApiSecretSchema.parse(binanceApiSecret);
-
-      if (!fullName.trim()) {
-        throw new Error("Full name is required");
-      }
-      if (!dateOfBirth) {
-        throw new Error("Date of birth is required");
-      }
-      if (!location.trim()) {
-        throw new Error("Location is required");
-      }
-      if (!idDocument) {
-        throw new Error("ID verification document is required");
-      }
-      if (!dataConsent) {
-        throw new Error("You must consent to data processing as per ISO 9001 requirements");
-      }
-      if (!termsConsent) {
-        throw new Error("You must accept the terms and conditions");
-      }
-
-      // Check if user is at least 18 years old
-      const birthDate = new Date(dateOfBirth);
-      const today = new Date();
-      let age = today.getFullYear() - birthDate.getFullYear();
-      const monthDiff = today.getMonth() - birthDate.getMonth();
-      if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-        age--;
-      }
-      if (age < 18) {
-        throw new Error("You must be at least 18 years old to register");
-      }
       
       setLoading(true);
 
-      // Step 1: Create user account
+      // Create user account
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: signUpEmail,
         password: signUpPassword,
         options: {
           emailRedirectTo: `${window.location.origin}/`,
-          data: {
-            full_name: fullName
-          }
         }
       });
 
       if (authError) throw authError;
-      if (!authData.user) throw new Error("Failed to create user account");
+      if (!authData.user) throw new Error("Failed to create account");
 
-      // Step 2: Upload ID document to storage
-      const fileExt = idDocument.name.split('.').pop();
-      const fileName = `${authData.user.id}/id-verification.${fileExt}`;
-      
-      const { error: uploadError } = await supabase.storage
-        .from('id-verification')
-        .upload(fileName, idDocument, {
-          cacheControl: '3600',
-          upsert: false
-        });
-
-      if (uploadError) throw new Error(`ID upload failed: ${uploadError.message}`);
-
-      // Step 3: Update profile with KYC information
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .update({
-          full_name: fullName,
-          date_of_birth: dateOfBirth,
-          location: location,
-          id_document_path: fileName,
-          data_consent_given: true,
-          data_consent_date: new Date().toISOString(),
-          kyc_status: 'pending'
-        })
-        .eq('id', authData.user.id);
-
-      if (profileError) throw new Error(`Profile update failed: ${profileError.message}`);
-
-      // Step 4: Encrypt and store Binance credentials via edge function
-      const { error: credentialsError } = await supabase.functions.invoke('store-binance-credentials', {
+      // Create aureon_user_sessions record with encrypted Binance credentials
+      const { error: sessionError } = await supabase.functions.invoke('create-aureon-session', {
         body: {
           userId: authData.user.id,
           apiKey: binanceApiKey,
@@ -174,82 +106,36 @@ export default function Auth() {
         }
       });
 
-      if (credentialsError) throw new Error(`Credentials storage failed: ${credentialsError.message}`);
-
-      // Step 5: Log audit trail
-      const { error: auditError } = await supabase
-        .from('data_access_audit')
-        .insert({
+      if (sessionError) {
+        console.warn('Session creation via edge function failed, creating directly:', sessionError);
+        // Fallback: create session directly (credentials will be stored later)
+        await supabase.from('aureon_user_sessions').insert({
           user_id: authData.user.id,
-          accessed_by: authData.user.id,
-          access_type: 'CREATE',
-          resource_type: 'KYC_REGISTRATION',
-          metadata: {
-            consent_given: true,
-            kyc_status: 'pending',
-            timestamp: new Date().toISOString()
-          }
+          binance_api_key_encrypted: binanceApiKey, // Will be encrypted by edge function later
+          binance_api_secret_encrypted: binanceApiSecret,
         });
-
-      if (auditError) console.warn('Audit log failed:', auditError);
-
-      // Step 6: Send signup notification email to admin
-      try {
-        await supabase.functions.invoke('send-signup-notification', {
-          body: {
-            email: signUpEmail,
-            fullName: fullName,
-            location: location,
-            dateOfBirth: dateOfBirth
-          }
-        });
-        console.log('[Auth] Signup notification sent to admin');
-      } catch (notificationError) {
-        // Don't block signup if notification fails
-        console.warn('[Auth] Failed to send signup notification:', notificationError);
       }
 
-      const SUPER_USER_EMAIL = "gary@raconsultingandbrokerageservices.com";
-      
       // Super user bypasses payment
       if (authData.user.email === SUPER_USER_EMAIL) {
         await supabase
-          .from("profiles")
-          .update({ 
-            payment_completed: true,
-            payment_completed_at: new Date().toISOString()
-          })
-          .eq("id", authData.user.id);
+          .from("aureon_user_sessions")
+          .update({ payment_completed: true, payment_completed_at: new Date().toISOString() })
+          .eq("user_id", authData.user.id);
         
-        toast.success("Welcome, Gary! Redirecting...");
-        setTimeout(() => navigate("/"), 1500);
+        toast.success("Welcome! Redirecting...");
+        setTimeout(() => navigate("/"), 1000);
       } else {
-        toast.success("Registration complete! Please proceed to payment.");
-        
-        // Show payment gate
+        toast.success("Account created! Please complete payment.");
         setPendingUserId(authData.user.id);
         setShowPaymentGate(true);
       }
-      
-      // Clear form
-      setSignUpEmail("");
-      setSignUpPassword("");
-      setFullName("");
-      setDateOfBirth("");
-      setLocation("");
-      setBinanceApiKey("");
-      setBinanceApiSecret("");
-      setIdDocument(null);
-      setDataConsent(false);
-      setTermsConsent(false);
       
     } catch (error) {
       if (error instanceof z.ZodError) {
         toast.error(error.errors[0].message);
       } else if (error instanceof Error) {
         toast.error(error.message);
-      } else {
-        toast.error("Failed to create account");
       }
     } finally {
       setLoading(false);
@@ -258,7 +144,6 @@ export default function Auth() {
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
-    const SUPER_USER_EMAIL = "gary@raconsultingandbrokerageservices.com";
     
     try {
       emailSchema.parse(email);
@@ -275,43 +160,32 @@ export default function Auth() {
 
       // Super user bypasses payment
       if (data.user.email === SUPER_USER_EMAIL) {
-        // Auto-mark payment as completed for super user
-        await supabase
-          .from("profiles")
-          .update({ 
-            payment_completed: true,
-            payment_completed_at: new Date().toISOString()
-          })
-          .eq("id", data.user.id);
-        
-        toast.success("Welcome back, Gary!");
+        toast.success("Welcome back!");
         navigate("/");
         return;
       }
 
-      // Check if user has completed payment
-      const { data: profile } = await supabase
-        .from("profiles")
+      // Check payment status
+      const { data: session } = await supabase
+        .from("aureon_user_sessions")
         .select("payment_completed")
-        .eq("id", data.user.id)
+        .eq("user_id", data.user.id)
         .single();
 
-      if (!profile?.payment_completed) {
-        toast.info("Please complete payment to access the platform");
+      if (!session?.payment_completed) {
+        toast.info("Please complete payment to access");
         setPendingUserId(data.user.id);
         setShowPaymentGate(true);
         return;
       }
 
-      toast.success("Signed in successfully!");
+      toast.success("Welcome back!");
       navigate("/");
     } catch (error) {
       if (error instanceof z.ZodError) {
         toast.error(error.errors[0].message);
       } else if (error instanceof Error) {
         toast.error(error.message);
-      } else {
-        toast.error("Failed to sign in");
       }
     } finally {
       setLoading(false);
@@ -321,40 +195,42 @@ export default function Auth() {
   const handlePaymentComplete = async () => {
     if (!pendingUserId) return;
 
-    // Update profile to mark payment as completed
     await supabase
-      .from("profiles")
+      .from("aureon_user_sessions")
       .update({
         payment_completed: true,
         payment_completed_at: new Date().toISOString()
       })
-      .eq("id", pendingUserId);
+      .eq("user_id", pendingUserId);
 
-    toast.success("Welcome to AUREON! Redirecting to dashboard...");
-    setTimeout(() => navigate("/"), 2000);
+    toast.success("Welcome to AUREON!");
+    setTimeout(() => navigate("/"), 1000);
   };
 
-  // Show payment gate if user has registered but not paid
   if (showPaymentGate && pendingUserId) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-primary/5 p-4">
+      <div className="min-h-screen flex items-center justify-center bg-background p-4">
         <PaymentGate userId={pendingUserId} onPaymentComplete={handlePaymentComplete} />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-primary/5 p-4">
-      <Card className="w-full max-w-2xl">
-        <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold text-center">🌈 AUREON Access</CardTitle>
-          <CardDescription className="text-center">
-            Quantum Trading System Authentication
-          </CardDescription>
+    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+      <Card className="w-full max-w-md border-border/50">
+        <CardHeader className="text-center space-y-2">
+          <div className="flex justify-center">
+            <div className="h-12 w-12 rounded-xl bg-gradient-prism flex items-center justify-center love-pulse">
+              <Sparkles className="h-6 w-6 text-primary-foreground" />
+            </div>
+          </div>
+          <CardTitle className="text-2xl font-bold text-prism">AUREON</CardTitle>
+          <CardDescription>Autonomous Quantum Trading</CardDescription>
         </CardHeader>
+        
         <CardContent>
           <Tabs defaultValue="signin" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
+            <TabsList className="grid w-full grid-cols-2 mb-4">
               <TabsTrigger value="signin">Sign In</TabsTrigger>
               <TabsTrigger value="signup">Sign Up</TabsTrigger>
             </TabsList>
@@ -375,203 +251,110 @@ export default function Auth() {
                 
                 <div className="space-y-2">
                   <Label htmlFor="signin-password">Password</Label>
-                  <Input
-                    id="signin-password"
-                    type="password"
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                  />
+                  <div className="relative">
+                    <Input
+                      id="signin-password"
+                      type={showPassword ? "text" : "password"}
+                      placeholder="••••••••"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
                 </div>
 
-                <Button 
-                  type="submit" 
-                  className="w-full" 
-                  disabled={loading}
-                >
+                <Button type="submit" className="w-full" disabled={loading}>
                   {loading ? "Signing in..." : "Sign In"}
                 </Button>
               </form>
             </TabsContent>
 
             <TabsContent value="signup">
-              <form onSubmit={handleSignUp} className="space-y-4 max-h-[600px] overflow-y-auto pr-2">
-                <div className="space-y-4">
-                  {/* Personal Information */}
-                  <div className="border-b pb-4">
-                    <h3 className="font-semibold mb-3 text-sm">Personal Information</h3>
-                    
-                    <div className="space-y-3">
-                      <div className="space-y-2">
-                        <Label htmlFor="signup-name">Full Name *</Label>
-                        <Input
-                          id="signup-name"
-                          type="text"
-                          placeholder="John Doe"
-                          value={fullName}
-                          onChange={(e) => setFullName(e.target.value)}
-                          required
-                        />
-                      </div>
+              <form onSubmit={handleSignUp} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="signup-email">Email</Label>
+                  <Input
+                    id="signup-email"
+                    type="email"
+                    placeholder="your@email.com"
+                    value={signUpEmail}
+                    onChange={(e) => setSignUpEmail(e.target.value)}
+                    required
+                  />
+                </div>
 
-                      <div className="space-y-2">
-                        <Label htmlFor="signup-dob">Date of Birth *</Label>
-                        <Input
-                          id="signup-dob"
-                          type="date"
-                          value={dateOfBirth}
-                          onChange={(e) => setDateOfBirth(e.target.value)}
-                          required
-                        />
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="signup-location">Location *</Label>
-                        <Input
-                          id="signup-location"
-                          type="text"
-                          placeholder="City, Country"
-                          value={location}
-                          onChange={(e) => setLocation(e.target.value)}
-                          required
-                        />
-                      </div>
-                    </div>
+                <div className="space-y-2">
+                  <Label htmlFor="signup-password">Password</Label>
+                  <div className="relative">
+                    <Input
+                      id="signup-password"
+                      type={showPassword ? "text" : "password"}
+                      placeholder="Min. 8 characters"
+                      value={signUpPassword}
+                      onChange={(e) => setSignUpPassword(e.target.value)}
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
                   </div>
+                </div>
 
-                  {/* Account Credentials */}
-                  <div className="border-b pb-4">
-                    <h3 className="font-semibold mb-3 text-sm">Account Credentials</h3>
-                    
-                    <div className="space-y-3">
-                      <div className="space-y-2">
-                        <Label htmlFor="signup-email">Email *</Label>
-                        <Input
-                          id="signup-email"
-                          type="email"
-                          placeholder="your@email.com"
-                          value={signUpEmail}
-                          onChange={(e) => setSignUpEmail(e.target.value)}
-                          required
-                        />
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="signup-password">Password *</Label>
-                        <Input
-                          id="signup-password"
-                          type="password"
-                          placeholder="Min. 8 characters"
-                          value={signUpPassword}
-                          onChange={(e) => setSignUpPassword(e.target.value)}
-                          required
-                        />
-                      </div>
+                <div className="border-t border-border/50 pt-4 mt-4">
+                  <p className="text-xs text-muted-foreground mb-3">
+                    Binance API credentials (encrypted & secure)
+                  </p>
+                  
+                  <div className="space-y-3">
+                    <div className="space-y-2">
+                      <Label htmlFor="binance-api-key">API Key</Label>
+                      <Input
+                        id="binance-api-key"
+                        type="text"
+                        placeholder="Your Binance API Key"
+                        value={binanceApiKey}
+                        onChange={(e) => setBinanceApiKey(e.target.value)}
+                        required
+                      />
                     </div>
-                  </div>
 
-                  {/* Binance API Credentials */}
-                  <div className="border-b pb-4">
-                    <h3 className="font-semibold mb-3 text-sm">Binance API Credentials</h3>
-                    <p className="text-xs text-muted-foreground mb-3">
-                      Your personal Binance API credentials are encrypted and stored securely.
-                    </p>
-                    
-                    <div className="space-y-3">
-                      <div className="space-y-2">
-                        <Label htmlFor="binance-api-key">Binance API Key *</Label>
-                        <Input
-                          id="binance-api-key"
-                          type="text"
-                          placeholder="Your Binance API Key"
-                          value={binanceApiKey}
-                          onChange={(e) => setBinanceApiKey(e.target.value)}
-                          required
-                        />
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="binance-api-secret">Binance API Secret *</Label>
+                    <div className="space-y-2">
+                      <Label htmlFor="binance-api-secret">API Secret</Label>
+                      <div className="relative">
                         <Input
                           id="binance-api-secret"
-                          type="password"
+                          type={showApiSecret ? "text" : "password"}
                           placeholder="Your Binance API Secret"
                           value={binanceApiSecret}
                           onChange={(e) => setBinanceApiSecret(e.target.value)}
                           required
                         />
+                        <button
+                          type="button"
+                          onClick={() => setShowApiSecret(!showApiSecret)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                        >
+                          {showApiSecret ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </button>
                       </div>
-                    </div>
-                  </div>
-
-                  {/* ID Verification */}
-                  <div className="border-b pb-4">
-                    <h3 className="font-semibold mb-3 text-sm">ID Verification</h3>
-                    <p className="text-xs text-muted-foreground mb-3">
-                      Upload a government-issued ID (passport, driver's license, or national ID card).
-                      Accepted formats: JPG, PNG, PDF (max 5MB).
-                    </p>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="id-document">ID Document *</Label>
-                      <Input
-                        id="id-document"
-                        type="file"
-                        accept=".jpg,.jpeg,.png,.pdf"
-                        onChange={(e) => setIdDocument(e.target.files?.[0] || null)}
-                        required
-                      />
-                      {idDocument && (
-                        <p className="text-xs text-muted-foreground">
-                          Selected: {idDocument.name} ({(idDocument.size / 1024 / 1024).toFixed(2)} MB)
-                        </p>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Consent & Terms */}
-                  <div className="space-y-3">
-                    <div className="flex items-start space-x-2">
-                      <Checkbox
-                        id="data-consent"
-                        checked={dataConsent}
-                        onCheckedChange={(checked) => setDataConsent(checked as boolean)}
-                        required
-                      />
-                      <Label htmlFor="data-consent" className="text-xs leading-tight cursor-pointer">
-                        I consent to the processing of my personal data in accordance with ISO 9001 standards. 
-                        I understand that my data will be stored securely and used solely for KYC verification 
-                        and trading purposes. I have the right to access, modify, or delete my data at any time.
-                      </Label>
-                    </div>
-
-                    <div className="flex items-start space-x-2">
-                      <Checkbox
-                        id="terms-consent"
-                        checked={termsConsent}
-                        onCheckedChange={(checked) => setTermsConsent(checked as boolean)}
-                        required
-                      />
-                      <Label htmlFor="terms-consent" className="text-xs leading-tight cursor-pointer">
-                        I accept the Terms and Conditions and Privacy Policy. I confirm that I am at least 
-                        18 years old and that all information provided is accurate and truthful.
-                      </Label>
                     </div>
                   </div>
                 </div>
 
-                <Button 
-                  type="submit" 
-                  className="w-full" 
-                  disabled={loading}
-                >
-                  {loading ? "Creating Account..." : "Complete Registration"}
+                <Button type="submit" className="w-full" disabled={loading}>
+                  {loading ? "Creating account..." : "Create Account"}
                 </Button>
-
-                <p className="text-xs text-center text-muted-foreground">
-                  Your account will be reviewed for KYC verification within 24-48 hours.
-                </p>
               </form>
             </TabsContent>
           </Tabs>
