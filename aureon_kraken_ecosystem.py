@@ -34,7 +34,12 @@ import time
 import math
 import random
 import asyncio
-import websockets
+try:
+    import websockets
+    WEBSOCKETS_AVAILABLE = True
+except ImportError:
+    websockets = None
+    WEBSOCKETS_AVAILABLE = False
 import threading
 from datetime import datetime
 from typing import Dict, List, Optional, Tuple, Any
@@ -1348,6 +1353,10 @@ class AureonKrakenEcosystem:
         
     async def websocket_handler(self, pairs: List[str]):
         """Handle WebSocket connection for real-time prices"""
+        if not WEBSOCKETS_AVAILABLE:
+            print("   ⚠️ WebSocket library not available. Real-time prices disabled.")
+            return
+
         while True:
             try:
                 async with websockets.connect(CONFIG['WS_URL'], ping_interval=20) as ws:

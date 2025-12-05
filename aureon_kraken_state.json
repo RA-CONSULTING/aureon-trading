@@ -1,14 +1,15 @@
 {
-  "balance": 124.80387764710763,
-  "peak_balance": 197.4861151631128,
-  "total_trades": 11,
-  "wins": 3,
-  "losses": 8,
-  "total_fees": 1.2356320100660123,
-  "compounded": 0.7292556095978738,
-  "harvested": 0.08102840106643044,
-  "max_drawdown": 36.807803264689234,
+  "balance": 0,
+  "peak_balance": 0,
+  "total_trades": 0,
+  "wins": 0,
+  "losses": 0,
+  "total_fees": 0.0,
+  "compounded": 0.0,
+  "harvested": 0.0,
+  "max_drawdown": 0.0,
   "positions": {},
-  "timestamp": 1764924869.3573096,
-  "iteration": 150
+  "timestamp": 0,
+  "iteration": 0,
+  "reset_reason": "Fresh start - old data cleared Dec 5 2025"
 }

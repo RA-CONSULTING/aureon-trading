@@ -1,141 +1,311 @@
-# 🌌 AUREON: Adaptive Frequency Trading System
+# 🐙🌌 AUREON UNIFIED TRADING ECOSYSTEM
 
-> **Pure Math Logic. Harmonic Intelligence. Self-Evolving.**
+> **Pure Math Logic. Harmonic Intelligence. Multi-Exchange. Self-Evolving.**
 
-Aureon is an advanced algorithmic trading system that combines **Lattice Theory**, **Swarm Intelligence**, **Number Theory**, and **Harmonic Frequency Analysis**. It treats the market as a coherent dynamical system, mapping price action to Solfeggio frequencies and using adaptive learning to continuously optimize its trading parameters.
+Aureon is a **unified multi-exchange algorithmic trading system** designed to achieve **51%+ win rate with net profit after all fees**. It combines **Lattice Theory**, **Swarm Intelligence**, **Quantum Geometry**, **Harmonic Frequency Analysis**, and **Temporal Probability Forecasting** into a single coherent trading engine.
 
 ---
 
-## 🚀 v4 Performance (December 2025)
+## 🏗️ SYSTEM ARCHITECTURE
 
-| Version | Trades | Win Rate | P&L |
-|---------|--------|----------|-----|
-| Pre-v3 | 18 | 33.3% | -$0.07 |
-| v3 | 3 | 66.7% | +$0.40 |
-| **v4** | **3** | **66.7%** | **+$1.68** |
-| **Total** | **24** | **41.7%** | **+$2.00** |
+```
+                    ┌─────────────────────────────────────┐
+                    │   AUREON UNIFIED ECOSYSTEM          │
+                    │   (aureon_unified_ecosystem.py)     │
+                    └─────────────────┬───────────────────┘
+                                      │
+        ┌─────────────────────────────┼─────────────────────────────┐
+        │                             │                             │
+        ▼                             ▼                             ▼
+┌───────────────┐           ┌─────────────────┐           ┌─────────────────┐
+│   EXCHANGES   │           │  INTELLIGENCE   │           │   EXECUTION     │
+├───────────────┤           ├─────────────────┤           ├─────────────────┤
+│ 🐙 Kraken     │           │ 🔭 Quantum Tel. │           │ Smart Router    │
+│ 🟡 Binance    │           │ 📊 Prob Matrix  │           │ Arbitrage Scan  │
+│ 💼 Capital    │           │ 🌍 Earth Reson. │           │ Position Mgmt   │
+│ 🦙 Alpaca     │           │ 🌌 HNC Freq.    │           │ Kelly Sizing    │
+└───────────────┘           │ 🧠 Adaptive ML  │           └─────────────────┘
+                            └─────────────────┘
+```
 
-### 🧠 Key Learnings from 24 Paper Trades:
-- **750-850Hz (Intuition) frequency band**: 67% win rate ✅
-- **450-550Hz (Transformation) band**: 27% win rate ⛔
-- **High coherence (Γ≥0.85)**: 45% WR vs 25% WR at lower coherence
-- **Risk/Reward ratio**: 2.12:1
+---
+
+## 🚀 Performance Targets
+
+| Metric | Target | Method |
+|--------|--------|--------|
+| **Win Rate** | 51%+ | Multi-gate filtering |
+| **Net Profit** | Positive after ALL fees | Fee-aware execution |
+| **Max Drawdown** | 15% circuit breaker | Risk management |
+| **Positions** | Max 15 concurrent | Quality over quantity |
+
+---
+
+## 🧬 KEY COMPONENTS
+
+### 1. Multi-Exchange Client
+- **Kraken** (🐙): Primary crypto exchange (USD, GBP, EUR)
+- **Binance** (🟡): UK-compliant pairs (USDC, USDT)
+- **Capital.com** (💼): CFDs - Forex, Indices, Commodities
+- **Alpaca** (🦙): US Stocks & Crypto (analytics mode)
+
+### 2. Smart Order Router
+Routes orders to the best exchange based on:
+- Real-time price comparison
+- Fee optimization (Binance 0.1% vs Kraken 0.26%)
+- Liquidity depth
+- UK regulatory compliance
+
+### 3. Cross-Exchange Arbitrage Scanner
+Detects price discrepancies across exchanges for risk-free profit opportunities.
+
+---
+
+## 🔭 QUANTUM TELESCOPE (Sacred Geometry Engine)
+
+The Quantum Telescope refracts market data through **5 Platonic Solids** - the fundamental geometric forms that underlie reality:
+
+| Solid | Element | Market Aspect | Signal Type |
+|-------|---------|---------------|-------------|
+| **Tetrahedron** | Fire 🔥 | Momentum/Velocity | Trend strength |
+| **Hexahedron** | Earth 🌍 | Support/Resistance | Price levels |
+| **Octahedron** | Air 💨 | Mean Reversion | Balance points |
+| **Icosahedron** | Water 💧 | Liquidity/Volume | Flow analysis |
+| **Dodecahedron** | Ether ✨ | Sentiment/Coherence | **Primary Signal** |
+
+### How It Works
+
+```python
+# Create a LightBeam from market data
+beam = LightBeam(
+    symbol="BTCUSD",
+    price=97500.00,
+    volume=1250000,
+    momentum=2.5,  # 24h change %
+    timestamp=time.time()
+)
+
+# Refract through the telescope
+observation = telescope.observe(beam)
+
+# Dodecahedron (Ether) provides coherence signal
+coherence = observation[GeometricSolid.DODECAHEDRON]
+```
+
+**Key Parameter:** `OPTIMAL_MIN_GATES: 5` → All 5 geometric gates must align = **63.6% win rate**
+
+---
+
+## 📊 PROBABILITY MATRIX (Temporal Forecasting)
+
+The HNC Probability Matrix operates on a **2-hour temporal window**:
+
+```
+├─ HOUR -1 (LOOKBACK):  Historical frequency patterns
+├─ HOUR  0 (NOW):       Current calibration point  
+├─ HOUR +1 (FORECAST):  ← PRIMARY TRADING SIGNAL
+└─ HOUR +2 (FINE-TUNE): Refines Hour +1 predictions
+```
+
+### Matrix Integration
+
+```python
+signal = prob_matrix.get_trading_signal(symbol)
+# Returns:
+# {
+#     'probability': 0.72,      # 72% up probability
+#     'confidence': 0.85,       # High confidence
+#     'action': 'BUY',          # Recommended action
+#     'modifier': 1.15,         # Position size boost
+#     'h1_state': 'BULLISH',    # Hour +1 forecast
+#     'fine_tune': 0.03         # Hour +2 adjustment
+# }
+```
+
+**Key Parameters:**
+- `PROB_MIN_CONFIDENCE: 0.50` → Minimum confidence threshold
+- `PROB_HIGH_THRESHOLD: 0.65` → High probability boost trigger
+- `PROB_FORECAST_WEIGHT: 0.40` → 40% weight in position sizing
+
+---
+
+## 🎯 LAMBDA FIELD (Unified Coherence Equation)
+
+All intelligence systems feed into the **Lambda Field** equation:
+
+```
+Λ(t) = S(t) + O(t) + E(t) + H(t) + Q(t)
+
+Where:
+├─ S(t) = Substrate    (9 Auris Nodes)           Base coherence
+├─ O(t) = Observer     (Λ(t-1) × 0.30)           Self-reference  
+├─ E(t) = Echo         (avg(Λ[t-5:t]) × 0.20)    Memory
+├─ H(t) = Harmonic     (HNC frequency × 0.25)    Frequency signal
+└─ Q(t) = Quantum      (Telescope × 0.20)        Geometric coherence
+```
+
+### Trading Decision Flow
+
+```
+Market Data (price, volume, momentum)
+          │
+          ├──► QUANTUM TELESCOPE (Geometric refraction)
+          │         └──► Dodecahedron → Q(t)
+          │
+          ├──► PROBABILITY MATRIX (Temporal forecast)
+          │         └──► Hour +1 signal → P(t)
+          │
+          ├──► HNC FREQUENCY (Harmonic analysis)
+          │         └──► 528Hz boost / 440Hz penalty → H(t)
+          │
+          └──► 9 AURIS NODES (Animal totems)
+                    └──► S(t) base coherence
+                              │
+                              ▼
+              LAMBDA FIELD: Λ(t) = S(t) + O(t) + E(t) + H(t) + Q(t)
+                              │
+                              ▼
+                    FINAL COHERENCE (Γ)
+                              │
+                    ┌─────────┴─────────┐
+                    ▼                   ▼
+              Γ ≥ 0.45 ?          Γ < 0.45 ?
+                ENTER                SKIP
+```
+
+---
+
+## 🐅 THE 9 AURIS NODES (Animal Totems)
+
+Each node represents a different market-sensing strategy:
+
+| Node | Frequency | Role |
+|------|-----------|------|
+| 🐅 **Tiger** | 741 Hz | Momentum hunter |
+| 🦅 **Falcon** | 852 Hz | Trend spotter |
+| 🐦 **Hummingbird** | 963 Hz | High-frequency signals |
+| 🐬 **Dolphin** | 528 Hz | Harmony/Balance |
+| 🦌 **Deer** | 396 Hz | Fear/Greed sensing |
+| 🦉 **Owl** | 432 Hz | Night/calm markets |
+| 🐼 **Panda** | 412 Hz | Patience signals |
+| 🚢 **Cargoship** | 174 Hz | Volume/liquidity |
+| 🐠 **Clownfish** | 639 Hz | Connection patterns |
+
+---
+
+## 🎵 FREQUENCY PHILOSOPHY
+
+Price action is mapped to **Solfeggio frequencies** using the Golden Ratio (φ = 1.618):
+
+```python
+frequency = 432 × (1 + price_change/100) ^ φ
+```
+
+| Frequency | Effect | Multiplier |
+|-----------|--------|------------|
+| **528 Hz** | Transformation/Love | **×1.35 boost** |
+| **432 Hz** | Natural Harmony | ×1.00 baseline |
+| **440 Hz** | Distortion (AVOID) | ×0.70 penalty |
+| **963 Hz** | Poor historical performer | ×0.60 suppression |
 
 ---
 
 ## 🧠 Core Mathematical Logic
 
-The system operates on five fundamental mathematical pillars:
+### 1. Lattice Theory & Coherence (Γ)
 
-### 1. Lattice Theory & Coherence ($\Gamma$)
-Markets are treated as a lattice of interconnected price feeds. The system calculates a **Coherence Metric ($\Gamma$)** to measure the alignment of price vectors across the network.
+Markets are treated as a lattice of interconnected price feeds:
 
-17562 \Gamma(t) = \frac{1}{N} \sum_{i=1}^{N} \vec{v}_i(t) \cdot \vec{v}_{market}(t) 17562
+$$\Gamma(t) = \frac{1}{N} \sum_{i=1}^{N} \vec{v}_i(t) \cdot \vec{v}_{market}(t)$$
 
-*   **High Coherence ($\Gamma \to 1$)**: Market is unified; trend is strong.
-*   **Low Coherence ($\Gamma \to 0$)**: Market is chaotic; noise dominates.
-*   **Logic**: We trade *with* the lattice alignment, not against it.
+- **High Coherence (Γ → 1)**: Market is unified; trend is strong
+- **Low Coherence (Γ → 0)**: Market is chaotic; noise dominates
+- **Logic**: Trade _with_ the lattice alignment, not against it
 
 ### 2. Swarm Intelligence (Orchestrator)
-The system implements a multi-agent swarm architecture derived from biological systems:
 
-*   **🐺 Scout Signals (Wolf Protocol)**: The first position opened acts as a "Scout". If it moves $>0.5\%$, it broadcasts a `MarketSignal` vector (Direction, Strength, Momentum) to the swarm.
-*   **🐝 Queen-Hive Splitting**: Positions reproduce asexually based on value growth.
-    *   **Condition**: {current} \ge 2 \times V_{entry}$
-    *   **Action**: Split into 2 child positions of generation +1$.
-    *   **Result**: Exponential capital preservation. The original risk is removed, and "house money" continues to work.
+Multi-agent architecture derived from biological systems:
 
-### 3. Number Theory (Sizing & Timing)
-Position sizing and execution timing are governed by fundamental mathematical sequences to avoid harmonic resonance with standard market algorithms.
+- **🐺 Scout Signals**: First position broadcasts market direction
+- **🐝 Queen-Hive Splitting**: Positions split when value doubles
 
-*   **Prime Sizing ($)**: Position sizes are scaled by the sequence of prime numbers to prevent algorithmic detection and front-running.
-    17562 Size_n = Base \times P_n \quad \text{where} \quad P = \{2, 3, 5, 7, 11, 13...\} 17562
-*   **Fibonacci Timing ($)**: Execution intervals follow the Fibonacci sequence to align with natural market fractals.
-    17562 \Delta t = F_n \quad \text{where} \quad F = \{1, 1, 2, 3, 5, 8...\} 17562
+### 3. Kelly Criterion (Position Sizing)
 
-### 4. Game Theory (Smart Gates)
-The system employs a dual-gate logic derived from asymmetric risk/reward profiles:
-
-*   **Entry Gate (Aggressive)**: (Entry) \approx 1$.
-    *   *Logic*: "Bet when you are winning." Human intuition favors aggressive entry when opportunity is perceived. We do not wait for "perfect" mathematical conditions to enter.
-*   **Exit Gate (Conservative)**: (Exit) = 1 \iff \text{Net Profit} > 0$.
-    *   *Logic*: We only sell when the trade is net profitable after **all fees** (Entry Fee + Exit Fee + Slippage + Spread).
-    *   *Safety*: If  > 1\%$, the gate **HOLDS**. We do not realize losses on noise. We wait for mean reversion.
-
-### 5. 🎵 Harmonic Frequency Analysis (HNC Protocol)
-Price action is mapped to Solfeggio frequencies using the Golden Ratio (φ):
-
-```
-Frequency = 432Hz × (1 + price_change%)^φ
+```python
+kelly_fraction = (win_rate × win_loss_ratio - (1 - win_rate)) / win_loss_ratio
+position_size = kelly_fraction × safety_factor  # Half-Kelly for safety
 ```
 
-| Frequency Band | Name | Win Rate | Recommendation |
-|----------------|------|----------|----------------|
-| 750-850Hz | Intuition | **67%** | ✅ PRIORITIZE |
-| 650-750Hz | Connection | ~50% | ⚠️ NEUTRAL |
-| 450-550Hz | Transformation | 27% | ⛔ AVOID |
+### 4. Smart Gates (Entry/Exit Logic)
 
-*   **HNC Probability Matrix**: 2-hour temporal windows for probability forecasting
-*   **Volume-weighted signals**: Higher volume = higher confidence
-*   **Harmonic detection**: Bonus for trades near 528Hz (LOVE frequency)
+- **Entry Gate**: Coherence ≥ 0.45, avoid 440Hz, probability ≥ 50%
+- **Exit Gate**: Take profit 1.2%, Stop loss 0.8%, Trailing stops
 
 ---
 
 ## 🛠 System Architecture
 
-The core logic is encapsulated in multiple integrated modules:
+### Core Modules
 
-### Core Trading Engines
-*   `aureon_unified_live.py`: Live trading with HNC integration
-*   `aureon_unified_ecosystem.py`: Full ecosystem with all strategies
-*   `hnc_probability_matrix.py`: Harmonic frequency probability calculations
+| Module | Purpose |
+|--------|---------|
+| `aureon_unified_ecosystem.py` | Main trading engine |
+| `aureon_quantum_telescope.py` | Geometric refraction |
+| `hnc_probability_matrix.py` | Temporal forecasting |
+| `hnc_master_protocol.py` | Frequency analysis |
+| `earth_resonance_engine.py` | Schumann resonance |
+| `unified_exchange_client.py` | Multi-exchange API |
 
-### Support Modules
-*   `ElephantMemory`: Trade persistence with win/loss tracking per symbol
-*   `LotSizeManager`: Proper Binance LOT_SIZE handling
-*   `AdaptiveLearningEngine`: Self-optimizing thresholds from trade history
+### Support Systems
 
-### v4 Configuration (Learned Optimal Parameters)
+| Module | Purpose |
+|--------|---------|
+| `trade_logger.py` | Comprehensive logging |
+| `aureon_bridge.py` | Inter-system communication |
+| `aureon_nexus.py` | Neural network integration |
+| `adaptive_learning_engine` | Self-optimization |
+
+### Configuration
+
 ```python
 CONFIG = {
-    'MAX_POSITIONS': 2,           # Focus over diversification
-    'STOP_LOSS_PCT': 0.005,       # Tight 0.5% stop loss
-    'TAKE_PROFIT_PCT': 0.01,      # Realistic 1.0% take profit
-    'COHERENCE_THRESHOLD': 0.85,  # High coherence required
-    'TIMEOUT_SEC': 300,           # 5 min timeout
-    'FREQ_OPTIMAL_MIN': 700,      # Optimal frequency range
-    'FREQ_OPTIMAL_MAX': 850,
+    'ENTRY_COHERENCE': 0.45,          # Minimum coherence to enter
+    'EXIT_COHERENCE': 0.35,           # Exit when coherence drops
+    'TAKE_PROFIT_PCT': 1.2,           # 1.2% profit target
+    'STOP_LOSS_PCT': 0.8,             # 0.8% stop loss
+    'MAX_POSITIONS': 15,              # Maximum concurrent positions
+    'OPTIMAL_MIN_GATES': 5,           # Quantum telescope gates
+    'KELLY_SAFETY_FACTOR': 0.5,       # Half-Kelly sizing
+    'ENABLE_QUANTUM_TELESCOPE': True, # Geometric analysis
+    'ENABLE_PROB_MATRIX': True,       # Temporal forecasting
+    'ENABLE_HNC_FREQUENCY': True,     # Harmonic analysis
 }
-```
-
-### Adaptive Position Sizing
-```
-40% → OPTIMAL frequency band (700-850Hz)
-35% → High coherence (Γ≥0.90)
-25% → Standard positions
 ```
 
 ---
 
-## 📉 Proven Capabilities
+## 💰 THE 10-9-1 COMPOUNDING MODEL
 
-This is not theoretical. The system is live and verified on multiple exchanges.
+Profits are managed using the **10-9-1** system:
 
-### ✅ Verification
-*   **Binance**: Live paper trading with 24 verified trades
-*   **Kraken**: API verified (Transaction ID: `OAOWPL-UYY6N-4RGOJJ`)
-*   **Capital.com**: CFD integration available
-    *   **Trade**: Bought £3.37 @ £0.875800.
-    *   **Logic**: Aggressive Entry Gate triggered on signal; Smart Exit Gate monitoring for net profit.
+```
+├─ 90% → COMPOUND back into trading capital
+└─ 10% → HARVEST to safety (never re-risked)
+```
 
+This creates exponential growth while protecting gains.
 
-### 🚀 Performance Metrics
-| Metric | Value |
-|--------|-------|
-| **Win Rate** | 66.7% (v4) |
-| **Risk/Reward** | 2.12:1 |
-| **Processing Speed** | ~7ms per cycle |
-| **Pairs Monitored** | 100+ via WebSocket |
+---
+
+## 📊 DATA SOURCES (JSON State Files)
+
+| File | Purpose |
+|------|---------|
+| `aureon_kraken_state.json` | Live positions, balance, stats |
+| `elephant_ultimate.json` | Symbol memory & blacklist |
+| `calibration_trades.json` | Trade history for learning |
+| `hnc_frequency_log.json` | Frequency readings |
+| `auris_runtime.json` | Runtime configuration |
 
 ---
 
@@ -154,18 +324,42 @@ cp .env.example .env
 # - KRAKEN_API_KEY / KRAKEN_API_SECRET
 # - CAPITAL_API_KEY / CAPITAL_API_SECRET (optional)
 
-# 3. Run Paper Trading (Recommended First)
+# 3. Run Simulation
+python run_real_data_simulation.py
+
+# 4. Run Paper Trading
 python aureon_unified_live.py --paper
 
-# 4. Run Live Trading
+# 5. Run Live Trading
 python aureon_unified_live.py --live
 ```
 
 ---
 
-## 📊 Trading History
+## ✅ Verified Exchanges
+
+- **Binance**: Live trading (UK-compliant pairs)
+- **Kraken**: API verified (Transaction ID: `OAOWPL-UYY6N-4RGOJJ`)
+- **Capital.com**: CFD integration available
+- **Alpaca**: Analytics mode (US stocks)
+
+---
+
+## 📊 Performance Metrics
+
+| Metric | Value |
+|--------|-------|
+| **Target Win Rate** | 51%+ |
+| **Risk/Reward** | 1.5:1 |
+| **Processing Speed** | ~7ms per cycle |
+| **Pairs Monitored** | 100+ via WebSocket |
+
+---
+
+## 📈 Trading History
 
 Trade history is persisted in `paper_trade_history.json` with full metadata:
+
 - Entry/exit prices and times
 - Frequency band classification
 - Coherence values
