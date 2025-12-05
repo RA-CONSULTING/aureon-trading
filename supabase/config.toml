@@ -86,3 +86,6 @@ verify_jwt = false
 
 [functions.get-kraken-balances]
 verify_jwt = false
+
+[functions.create-aureon-session]
+verify_jwt = false
