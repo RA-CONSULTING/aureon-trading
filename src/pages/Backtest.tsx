@@ -1,6 +1,7 @@
 import Navbar from "@/components/Navbar";
 import { BacktestingInterface } from "@/components/BacktestingInterface";
 import { SimulationDashboard } from "@/components/SimulationDashboard";
+import { SimulationVerificationPanel } from "@/components/SimulationVerificationPanel";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 const Backtest = () => {
@@ -14,6 +15,17 @@ const Backtest = () => {
             <h1 className="text-3xl font-bold text-foreground">Backtesting & Simulation</h1>
           </div>
           
+          {/* Simulation Verification */}
+          <Card className="bg-card border-border">
+            <CardHeader>
+              <CardTitle className="text-lg">Simulation Verification</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <SimulationVerificationPanel />
+            </CardContent>
+          </Card>
+          
+          {/* Backtesting Interface */}
           <Card className="bg-card border-border">
             <CardHeader>
               <CardTitle className="text-lg">Backtesting Interface</CardTitle>
@@ -23,6 +35,7 @@ const Backtest = () => {
             </CardContent>
           </Card>
           
+          {/* Simulation Dashboard */}
           <Card className="bg-card border-border">
             <CardHeader>
               <CardTitle className="text-lg">Simulation Dashboard</CardTitle>

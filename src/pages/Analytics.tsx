@@ -2,6 +2,7 @@ import Navbar from "@/components/Navbar";
 import { TradingAnalytics } from "@/components/TradingAnalytics";
 import { PerformanceMetricsDashboard } from "@/components/PerformanceMetricsDashboard";
 import DecisionVerificationPanel from "@/components/DecisionVerificationPanel";
+import { LiveTradingStatusPanel } from "@/components/LiveTradingStatusPanel";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 const Analytics = () => {
@@ -15,13 +16,14 @@ const Analytics = () => {
             <h1 className="text-3xl font-bold text-foreground">Trading Analytics</h1>
           </div>
           
+          {/* Live Status + Decision Verification */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <Card className="bg-card border-border">
               <CardHeader>
-                <CardTitle className="text-lg">Performance Metrics</CardTitle>
+                <CardTitle className="text-lg">Live Trading Status</CardTitle>
               </CardHeader>
               <CardContent>
-                <PerformanceMetricsDashboard />
+                <LiveTradingStatusPanel />
               </CardContent>
             </Card>
             
@@ -35,6 +37,17 @@ const Analytics = () => {
             </Card>
           </div>
           
+          {/* Performance Metrics */}
+          <Card className="bg-card border-border">
+            <CardHeader>
+              <CardTitle className="text-lg">Performance Metrics</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <PerformanceMetricsDashboard />
+            </CardContent>
+          </Card>
+          
+          {/* Trading Analytics */}
           <Card className="bg-card border-border">
             <CardHeader>
               <CardTitle className="text-lg">Trading Analytics</CardTitle>
