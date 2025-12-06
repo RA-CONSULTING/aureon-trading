@@ -34,7 +34,7 @@ export interface MultiExchangeState {
   lastUpdate: number;
 }
 
-const SUPPORTED_EXCHANGES: ExchangeType[] = ['binance', 'kraken'];
+const SUPPORTED_EXCHANGES: ExchangeType[] = ['binance', 'kraken', 'alpaca', 'capital'];
 
 export class MultiExchangeClient {
   private clients: Map<ExchangeType, UnifiedExchangeClient> = new Map();

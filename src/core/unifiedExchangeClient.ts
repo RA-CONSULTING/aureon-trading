@@ -232,15 +232,45 @@ export class UnifiedExchangeClient {
   }
 
   private async fetchAlpacaBalances(): Promise<ExchangeBalance[]> {
-    // Placeholder for Alpaca integration
-    console.log('Alpaca balance fetch not yet implemented');
-    return [];
+    const response = await fetch(
+      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/get-alpaca-balances`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      }
+    );
+    
+    if (!response.ok) throw new Error('Failed to fetch Alpaca balances');
+    
+    const data = await response.json();
+    
+    if (data.balances) {
+      this.lastBalances = data.balances;
+      this.lastUpdate = Date.now();
+    }
+    
+    return this.lastBalances;
   }
 
   private async fetchCapitalBalances(): Promise<ExchangeBalance[]> {
-    // Placeholder for Capital.com integration
-    console.log('Capital.com balance fetch not yet implemented');
-    return [];
+    const response = await fetch(
+      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/get-capital-balances`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      }
+    );
+    
+    if (!response.ok) throw new Error('Failed to fetch Capital.com balances');
+    
+    const data = await response.json();
+    
+    if (data.balances) {
+      this.lastBalances = data.balances;
+      this.lastUpdate = Date.now();
+    }
+    
+    return this.lastBalances;
   }
 
   private async fetchBinanceTicker(symbol: string): Promise<ExchangeTicker | null> {
