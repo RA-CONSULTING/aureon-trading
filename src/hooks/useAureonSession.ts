@@ -4,6 +4,7 @@ import { unifiedOrchestrator, type OrchestrationResult } from '@/core/unifiedOrc
 import { unifiedBus, type BusSnapshot } from '@/core/unifiedBus';
 import { temporalLadder, SYSTEMS } from '@/core/temporalLadder';
 import { multiExchangeClient, type MultiExchangeState } from '@/core/multiExchangeClient';
+import { thePrism, type PrismOutput } from '@/core/thePrism';
 import { toast } from 'sonner';
 
 export interface QuantumState {
@@ -13,6 +14,9 @@ export interface QuantumState {
   dominantNode: string;
   prismLevel: number;
   prismState: string;
+  substrate: number;
+  observer: number;
+  echo: number;
 }
 
 export interface TradingState {
@@ -53,6 +57,22 @@ export interface ExchangeState {
   exchanges: Array<{ exchange: string; connected: boolean; totalUsdValue: number }>;
 }
 
+export interface PrismState {
+  output: PrismOutput | null;
+  frequency: number;
+  resonance: number;
+  isLoveLocked: boolean;
+}
+
+export interface MarketData {
+  price: number;
+  volume: number;
+  volatility: number;
+  momentum: number;
+  spread: number;
+  timestamp: number;
+}
+
 export function useAureonSession(userId: string | null) {
   const [quantumState, setQuantumState] = useState<QuantumState>({
     coherence: 0,
@@ -60,7 +80,26 @@ export function useAureonSession(userId: string | null) {
     lighthouseSignal: 0,
     dominantNode: 'Tiger',
     prismLevel: 0,
-    prismState: 'FORMING'
+    prismState: 'FORMING',
+    substrate: 0,
+    observer: 0,
+    echo: 0
+  });
+
+  const [prismState, setPrismState] = useState<PrismState>({
+    output: null,
+    frequency: 0,
+    resonance: 0,
+    isLoveLocked: false
+  });
+
+  const [marketData, setMarketData] = useState<MarketData>({
+    price: 0,
+    volume: 0,
+    volatility: 0,
+    momentum: 0,
+    spread: 0,
+    timestamp: 0
   });
   
   const [tradingState, setTradingState] = useState<TradingState>({
@@ -187,16 +226,40 @@ export function useAureonSession(userId: string | null) {
       const result = await unifiedOrchestrator.runCycle(marketData, 'BTCUSDT');
       setLastDecision(result);
 
+      // Store market data for Prism
+      setMarketData(marketData);
+
       // Update quantum state from orchestration result
       if (result.lambdaState) {
+        // Run The Prism transformation
+        const prismOutput = thePrism.transform({
+          lambda: result.lambdaState.lambda,
+          coherence: result.lambdaState.coherence,
+          substrate: result.lambdaState.substrate,
+          observer: result.lambdaState.observer,
+          echo: result.lambdaState.echo,
+          volatility: marketData.volatility,
+          momentum: marketData.momentum,
+          baseFrequency: result.rainbowState?.frequency || 396
+        });
+
+        setPrismState({
+          output: prismOutput,
+          frequency: prismOutput.frequency,
+          resonance: prismOutput.resonance,
+          isLoveLocked: prismOutput.isLoveLocked
+        });
+
         const newQuantumState: QuantumState = {
           coherence: result.lambdaState.coherence,
           lambda: result.lambdaState.lambda,
           lighthouseSignal: result.lighthouseState?.L || 0,
           dominantNode: result.lambdaState.dominantNode,
-          prismLevel: Math.floor(result.lambdaState.coherence * 5),
-          prismState: result.lambdaState.coherence > 0.9 ? 'MANIFEST' : 
-                      result.lambdaState.coherence > 0.7 ? 'CONVERGING' : 'FORMING'
+          prismLevel: prismOutput.level,
+          prismState: prismOutput.state,
+          substrate: result.lambdaState.substrate,
+          observer: result.lambdaState.observer,
+          echo: result.lambdaState.echo
         };
         
         setQuantumState(newQuantumState);
@@ -340,7 +403,10 @@ export function useAureonSession(userId: string | null) {
           lighthouseSignal: Number(data.current_lighthouse_signal) || 0,
           dominantNode: data.dominant_node || 'Tiger',
           prismLevel: data.prism_level || 0,
-          prismState: data.prism_state || 'FORMING'
+          prismState: data.prism_state || 'FORMING',
+          substrate: 0,
+          observer: 0,
+          echo: 0
         });
         
         setTradingState({
@@ -397,6 +463,8 @@ export function useAureonSession(userId: string | null) {
     systemStatus,
     busState,
     exchangeState,
+    prismState,
+    marketData,
     lastSignal,
     nextCheckIn,
     lastDecision,
