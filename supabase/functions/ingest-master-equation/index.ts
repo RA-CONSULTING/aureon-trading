@@ -42,29 +42,29 @@ serve(async (req) => {
 
     console.log('Ingesting Master Equation field state for temporal ID:', temporal_id);
 
-    // Insert into master_equation_field_history
+    // Insert into master_equation_field_history with safe defaults
     const { data, error } = await supabase
       .from('master_equation_field_history')
       .insert({
         temporal_id,
         sentinel_name,
         symbol,
-        lambda,
-        substrate,
-        observer,
-        echo,
-        coherence,
-        coherence_linear: coherence_linear || 1.0,
-        coherence_nonlinear,
-        coherence_phi,
-        quality_factor,
-        effective_gain,
-        dominant_node,
+        lambda: lambda ?? 1.0,
+        substrate: substrate ?? 0.5,
+        observer: observer ?? 0.5,
+        echo: echo ?? 0.3,
+        coherence: coherence ?? 0.5,
+        coherence_linear: coherence_linear ?? 1.0,
+        coherence_nonlinear: coherence_nonlinear ?? 0.5,
+        coherence_phi: coherence_phi ?? 0.618,
+        quality_factor: quality_factor ?? 1.0,
+        effective_gain: effective_gain ?? 1.0,
+        dominant_node: dominant_node ?? 'Tiger',
         node_weights: node_weights || {},
-        price,
-        volume,
-        volatility,
-        momentum,
+        price: price ?? null,
+        volume: volume ?? null,
+        volatility: volatility ?? null,
+        momentum: momentum ?? null,
         metadata: metadata || {}
       })
       .select()

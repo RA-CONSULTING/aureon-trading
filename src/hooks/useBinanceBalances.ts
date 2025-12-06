@@ -26,16 +26,48 @@ export function useBinanceBalances() {
   const fetchBalances = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('get-binance-balances');
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('Not authenticated');
+      }
+      
+      const { data, error } = await supabase.functions.invoke('get-user-balances', {
+        headers: { Authorization: `Bearer ${session.access_token}` }
+      });
 
       if (error) throw error;
 
-      if (data.success) {
-        setAccounts(data.accounts);
-        setTotals(data.totals);
-        setLastUpdated(new Date(data.timestamp));
+      if (data?.success) {
+        // Convert to legacy format for compatibility
+        const binanceExchange = data.balances?.find((b: any) => b.exchange === 'binance');
+        if (binanceExchange?.assets) {
+          const accountBalance: AccountBalance = {
+            name: 'User Account',
+            balances: {},
+          };
+          
+          let totalUSD = 0;
+          binanceExchange.assets.forEach((asset: any) => {
+            accountBalance.balances[asset.asset] = {
+              free: asset.free,
+              locked: asset.locked,
+              total: asset.free + asset.locked,
+              usdValue: asset.usdValue
+            };
+            totalUSD += asset.usdValue || 0;
+          });
+          
+          setAccounts([accountBalance]);
+          setTotals({
+            USDT: accountBalance.balances['USDT']?.total || 0,
+            BTC: accountBalance.balances['BTC']?.total || 0,
+            ETH: accountBalance.balances['ETH']?.total || 0,
+            totalUSDValue: totalUSD
+          });
+        }
+        setLastUpdated(new Date());
       } else {
-        throw new Error(data.error || 'Failed to fetch balances');
+        throw new Error(data?.error || 'Failed to fetch balances');
       }
     } catch (error: any) {
       console.error('Failed to fetch Binance balances:', error);

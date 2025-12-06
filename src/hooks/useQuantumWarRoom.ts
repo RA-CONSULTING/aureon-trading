@@ -212,11 +212,16 @@ export function useQuantumWarRoom() {
 
     const fetchBalance = async () => {
       try {
-        const { data, error } = await supabase.functions.invoke('get-binance-balances');
-        if (!error && data?.totals?.totalUSDT) {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) return;
+        
+        const { data, error } = await supabase.functions.invoke('get-user-balances', {
+          headers: { Authorization: `Bearer ${session.access_token}` }
+        });
+        if (!error && data?.totalEquityUsd) {
           setState(prev => ({
             ...prev,
-            currentBalance: parseFloat(data.totals.totalUSDT),
+            currentBalance: data.totalEquityUsd,
           }));
         }
       } catch (err) {
