@@ -3210,6 +3210,7 @@ export type Database = {
           executed_at: string | null
           executed_price: number | null
           id: string
+          is_forced_validation: boolean | null
           lighthouse_confidence: number
           lighthouse_event_id: string | null
           lighthouse_value: number
@@ -3225,6 +3226,7 @@ export type Database = {
           stop_loss_price: number | null
           symbol: string
           take_profit_price: number | null
+          validation_trace: Json | null
         }
         Insert: {
           coherence: number
@@ -3234,6 +3236,7 @@ export type Database = {
           executed_at?: string | null
           executed_price?: number | null
           id?: string
+          is_forced_validation?: boolean | null
           lighthouse_confidence: number
           lighthouse_event_id?: string | null
           lighthouse_value: number
@@ -3249,6 +3252,7 @@ export type Database = {
           stop_loss_price?: number | null
           symbol: string
           take_profit_price?: number | null
+          validation_trace?: Json | null
         }
         Update: {
           coherence?: number
@@ -3258,6 +3262,7 @@ export type Database = {
           executed_at?: string | null
           executed_price?: number | null
           id?: string
+          is_forced_validation?: boolean | null
           lighthouse_confidence?: number
           lighthouse_event_id?: string | null
           lighthouse_value?: number
@@ -3273,6 +3278,7 @@ export type Database = {
           stop_loss_price?: number | null
           symbol?: string
           take_profit_price?: number | null
+          validation_trace?: Json | null
         }
         Relationships: [
           {
