@@ -15,6 +15,7 @@ import { PrismStatus } from '@/components/warroom/PrismStatus';
 import { EcosystemStatus } from '@/components/warroom/EcosystemStatus';
 import { HarmonicWaveform6DStatus } from '@/components/warroom/HarmonicWaveform6DStatus';
 import { ProbabilityMatrixDisplay } from '@/components/warroom/ProbabilityMatrixDisplay';
+import { Live6DWaveformVisualizer } from '@/components/Live6DWaveformVisualizer';
 import { TradingModeToggle } from '@/components/TradingModeToggle';
 import { UserAssetsPanel } from '@/components/warroom/UserAssetsPanel';
 import { DataStreamMonitorPanel } from '@/components/DataStreamMonitorPanel';
@@ -310,7 +311,10 @@ export default function AureonDashboard() {
         {/* User Assets Panel - Real Multi-Exchange Holdings */}
         <UserAssetsPanel />
         
-        {/* 6D Harmonic Waveform + Probability Matrix Row */}
+        {/* Live 6D Harmonic Visualization */}
+        <Live6DWaveformVisualizer />
+        
+        {/* 6D Harmonic Waveform Status + Probability Matrix Row */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <HarmonicWaveform6DStatus waveform={waveform6D} />
           <ProbabilityMatrixDisplay fusion={probabilityFusion} />
