@@ -92,3 +92,33 @@ verify_jwt = false
 
 [functions.get-user-market-data]
 verify_jwt = false
+
+[functions.ingest-6d-harmonic]
+verify_jwt = false
+
+[functions.ingest-probability-matrix]
+verify_jwt = false
+
+[functions.ingest-integral-aqal]
+verify_jwt = false
+
+[functions.ingest-ftcp-detector]
+verify_jwt = false
+
+[functions.ingest-qgita-signal]
+verify_jwt = false
+
+[functions.ingest-hnc-detection]
+verify_jwt = false
+
+[functions.ingest-smart-router]
+verify_jwt = false
+
+[functions.ingest-decision-fusion]
+verify_jwt = false
+
+[functions.ingest-ecosystem-snapshot]
+verify_jwt = false
+
+[functions.ingest-temporal-anchor]
+verify_jwt = false
