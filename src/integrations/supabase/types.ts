@@ -14,6 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      akashic_attunement_states: {
+        Row: {
+          attunement_quality: string
+          convergence_rate: number
+          created_at: string | null
+          cycles_performed: number
+          final_frequency: number
+          id: string
+          metadata: Json | null
+          stability_index: number
+          temporal_id: string
+          timestamp: string | null
+        }
+        Insert: {
+          attunement_quality?: string
+          convergence_rate?: number
+          created_at?: string | null
+          cycles_performed?: number
+          final_frequency?: number
+          id?: string
+          metadata?: Json | null
+          stability_index?: number
+          temporal_id: string
+          timestamp?: string | null
+        }
+        Update: {
+          attunement_quality?: string
+          convergence_rate?: number
+          created_at?: string | null
+          cycles_performed?: number
+          final_frequency?: number
+          id?: string
+          metadata?: Json | null
+          stability_index?: number
+          temporal_id?: string
+          timestamp?: string | null
+        }
+        Relationships: []
+      }
       aureon_user_sessions: {
         Row: {
           available_balance_usdt: number | null
@@ -383,6 +422,48 @@ export type Database = {
           temporal_id?: string
           timestamp?: string | null
           wave_state?: string | null
+        }
+        Relationships: []
+      }
+      eckoushic_cascade_states: {
+        Row: {
+          akashic: number
+          cascade_level: number
+          created_at: string | null
+          eckoushic: number
+          frequency: number
+          harmonic_nexus: number
+          heart_wave: number
+          id: string
+          metadata: Json | null
+          temporal_id: string
+          timestamp: string | null
+        }
+        Insert: {
+          akashic?: number
+          cascade_level?: number
+          created_at?: string | null
+          eckoushic?: number
+          frequency?: number
+          harmonic_nexus?: number
+          heart_wave?: number
+          id?: string
+          metadata?: Json | null
+          temporal_id: string
+          timestamp?: string | null
+        }
+        Update: {
+          akashic?: number
+          cascade_level?: number
+          created_at?: string | null
+          eckoushic?: number
+          frequency?: number
+          harmonic_nexus?: number
+          heart_wave?: number
+          id?: string
+          metadata?: Json | null
+          temporal_id?: string
+          timestamp?: string | null
         }
         Relationships: []
       }
@@ -1476,6 +1557,75 @@ export type Database = {
         }
         Relationships: []
       }
+      omega_equation_states: {
+        Row: {
+          celestial_boost: number | null
+          coherence: number
+          created_at: string | null
+          dominant_node: string
+          echo: number
+          fibonacci_level: number
+          id: string
+          lambda: number
+          love: number
+          metadata: Json | null
+          observer: number
+          omega: number
+          psi: number
+          schumann_boost: number | null
+          spiral_phase: number
+          substrate: number
+          temporal_id: string
+          theta: number
+          timestamp: string | null
+          unity: number
+        }
+        Insert: {
+          celestial_boost?: number | null
+          coherence?: number
+          created_at?: string | null
+          dominant_node?: string
+          echo?: number
+          fibonacci_level?: number
+          id?: string
+          lambda?: number
+          love?: number
+          metadata?: Json | null
+          observer?: number
+          omega?: number
+          psi?: number
+          schumann_boost?: number | null
+          spiral_phase?: number
+          substrate?: number
+          temporal_id: string
+          theta?: number
+          timestamp?: string | null
+          unity?: number
+        }
+        Update: {
+          celestial_boost?: number | null
+          coherence?: number
+          created_at?: string | null
+          dominant_node?: string
+          echo?: number
+          fibonacci_level?: number
+          id?: string
+          lambda?: number
+          love?: number
+          metadata?: Json | null
+          observer?: number
+          omega?: number
+          psi?: number
+          schumann_boost?: number | null
+          spiral_phase?: number
+          substrate?: number
+          temporal_id?: string
+          theta?: number
+          timestamp?: string | null
+          unity?: number
+        }
+        Relationships: []
+      }
       oms_execution_metrics: {
         Row: {
           avg_execution_latency_ms: number | null
@@ -1678,6 +1828,87 @@ export type Database = {
           transaction_reference?: string | null
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      performance_tracker_states: {
+        Row: {
+          created_at: string | null
+          id: string
+          max_drawdown: number
+          metadata: Json | null
+          realized_pnl: number
+          sharpe: number
+          temporal_id: string
+          timestamp: string | null
+          total_trades: number
+          unrealized_pnl: number
+          wins: number
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          max_drawdown?: number
+          metadata?: Json | null
+          realized_pnl?: number
+          sharpe?: number
+          temporal_id: string
+          timestamp?: string | null
+          total_trades?: number
+          unrealized_pnl?: number
+          wins?: number
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          max_drawdown?: number
+          metadata?: Json | null
+          realized_pnl?: number
+          sharpe?: number
+          temporal_id?: string
+          timestamp?: string | null
+          total_trades?: number
+          unrealized_pnl?: number
+          wins?: number
+        }
+        Relationships: []
+      }
+      planetary_modulation_states: {
+        Row: {
+          coherence_nudge: number
+          color_palette_shift: number
+          created_at: string | null
+          harmonic_weight_modulation: Json
+          id: string
+          metadata: Json | null
+          phase_bias: Json
+          planetary_states: Json
+          temporal_id: string
+          timestamp: string | null
+        }
+        Insert: {
+          coherence_nudge?: number
+          color_palette_shift?: number
+          created_at?: string | null
+          harmonic_weight_modulation?: Json
+          id?: string
+          metadata?: Json | null
+          phase_bias?: Json
+          planetary_states?: Json
+          temporal_id: string
+          timestamp?: string | null
+        }
+        Update: {
+          coherence_nudge?: number
+          color_palette_shift?: number
+          created_at?: string | null
+          harmonic_weight_modulation?: Json
+          id?: string
+          metadata?: Json | null
+          phase_bias?: Json
+          planetary_states?: Json
+          temporal_id?: string
+          timestamp?: string | null
         }
         Relationships: []
       }
@@ -2004,6 +2235,42 @@ export type Database = {
         }
         Relationships: []
       }
+      risk_manager_states: {
+        Row: {
+          created_at: string | null
+          equity: number
+          id: string
+          max_drawdown: number
+          metadata: Json | null
+          open_positions: Json | null
+          open_positions_count: number
+          temporal_id: string
+          timestamp: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          equity?: number
+          id?: string
+          max_drawdown?: number
+          metadata?: Json | null
+          open_positions?: Json | null
+          open_positions_count?: number
+          temporal_id: string
+          timestamp?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          equity?: number
+          id?: string
+          max_drawdown?: number
+          metadata?: Json | null
+          open_positions?: Json | null
+          open_positions_count?: number
+          temporal_id?: string
+          timestamp?: string | null
+        }
+        Relationships: []
+      }
       scheduler_history: {
         Row: {
           action: string
@@ -2184,6 +2451,54 @@ export type Database = {
           trading_signals_count?: number | null
           updated_at?: string | null
           win_rate?: number | null
+        }
+        Relationships: []
+      }
+      stargate_harmonizer_states: {
+        Row: {
+          coherence_boost: number
+          confidence_modifier: number
+          created_at: string | null
+          dominant_frequency: number
+          harmonics: Json | null
+          id: string
+          metadata: Json | null
+          optimal_entry_window: boolean | null
+          resonance_quality: number
+          signal_amplification: number
+          temporal_id: string
+          timestamp: string | null
+          trading_bias: string
+        }
+        Insert: {
+          coherence_boost?: number
+          confidence_modifier?: number
+          created_at?: string | null
+          dominant_frequency?: number
+          harmonics?: Json | null
+          id?: string
+          metadata?: Json | null
+          optimal_entry_window?: boolean | null
+          resonance_quality?: number
+          signal_amplification?: number
+          temporal_id: string
+          timestamp?: string | null
+          trading_bias?: string
+        }
+        Update: {
+          coherence_boost?: number
+          confidence_modifier?: number
+          created_at?: string | null
+          dominant_frequency?: number
+          harmonics?: Json | null
+          id?: string
+          metadata?: Json | null
+          optimal_entry_window?: boolean | null
+          resonance_quality?: number
+          signal_amplification?: number
+          temporal_id?: string
+          timestamp?: string | null
+          trading_bias?: string
         }
         Relationships: []
       }
@@ -2731,6 +3046,51 @@ export type Database = {
           snapshot?: Json
           systems_ready?: number | null
           total_systems?: number | null
+        }
+        Relationships: []
+      }
+      unity_event_states: {
+        Row: {
+          coherence: number
+          created_at: string | null
+          duration_ms: number
+          event_type: string
+          id: string
+          is_peak: boolean | null
+          metadata: Json | null
+          omega: number
+          temporal_id: string
+          theta: number
+          timestamp: string | null
+          unity: number
+        }
+        Insert: {
+          coherence?: number
+          created_at?: string | null
+          duration_ms?: number
+          event_type?: string
+          id?: string
+          is_peak?: boolean | null
+          metadata?: Json | null
+          omega?: number
+          temporal_id: string
+          theta?: number
+          timestamp?: string | null
+          unity?: number
+        }
+        Update: {
+          coherence?: number
+          created_at?: string | null
+          duration_ms?: number
+          event_type?: string
+          id?: string
+          is_peak?: boolean | null
+          metadata?: Json | null
+          omega?: number
+          temporal_id?: string
+          theta?: number
+          timestamp?: string | null
+          unity?: number
         }
         Relationships: []
       }
