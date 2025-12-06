@@ -5,12 +5,12 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Sparkles, Activity, Zap, Brain, Radio, Database, Router, TrendingUp, TrendingDown, LogOut, Play, Square } from 'lucide-react';
-import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { UnifiedBusStatus } from '@/components/warroom/UnifiedBusStatus';
 import { TemporalLadderStatus } from '@/components/warroom/TemporalLadderStatus';
 import { ExchangeBalances } from '@/components/warroom/ExchangeBalances';
+import { PrismStatus } from '@/components/warroom/PrismStatus';
 
 export default function AureonDashboard() {
   const navigate = useNavigate();
@@ -23,6 +23,8 @@ export default function AureonDashboard() {
     systemStatus,
     busState,
     exchangeState,
+    prismState,
+    marketData,
     lastSignal,
     nextCheckIn,
     lastDecision,
@@ -181,8 +183,18 @@ export default function AureonDashboard() {
           </Card>
         </div>
 
-        {/* Unified Ecosystem Row */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* The Prism + Unified Ecosystem Row */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <PrismStatus 
+            lambda={quantumState.lambda}
+            coherence={quantumState.coherence}
+            substrate={quantumState.substrate}
+            observer={quantumState.observer}
+            echo={quantumState.echo}
+            volatility={marketData.volatility}
+            momentum={marketData.momentum}
+            baseFrequency={396}
+          />
           <UnifiedBusStatus />
           <TemporalLadderStatus />
           <ExchangeBalances 
