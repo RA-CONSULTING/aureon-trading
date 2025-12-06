@@ -391,6 +391,9 @@ class FullEcosystemConnector {
     const timestamp = Date.now();
     const temporalId = `eco-${timestamp}`;
     
+    // Store market data for later use in persistence
+    this.currentMarketData = { price, volume, volatility, momentum };
+    
     // 1. FTCP Detection
     this.ftcpState = this.ftcpDetector.addPoint(timestamp, price);
     
@@ -434,10 +437,13 @@ class FullEcosystemConnector {
     this.publishAllStates();
     
     // 10. Persist all states to database via edge functions
-    await this.persistAllStatesToDatabase(temporalId);
+    await this.persistAllStatesToDatabase(temporalId, price, volume, volatility, momentum, lambda, coherence, substrate, observer, echo);
     
     this.notifyListeners();
   }
+  
+  // Current market data cache
+  private currentMarketData: { price: number; volume: number; volatility: number; momentum: number } | null = null;
 
   /**
    * Compute 6D Harmonic State
@@ -502,7 +508,18 @@ class FullEcosystemConnector {
    * Persist all states to database via edge functions
    * Calls ALL 18 ingest functions for complete data capture
    */
-  private async persistAllStatesToDatabase(temporalId: string): Promise<void> {
+  private async persistAllStatesToDatabase(
+    temporalId: string,
+    price?: number,
+    volume?: number,
+    volatility?: number,
+    momentum?: number,
+    lambda?: number,
+    coherence?: number,
+    substrate?: number,
+    observer?: number,
+    echo?: number
+  ): Promise<void> {
     try {
       // Run all ingestion calls in parallel for efficiency
       const ingestPromises: Promise<any>[] = [];
@@ -742,18 +759,23 @@ class FullEcosystemConnector {
       
       // ========== GROUP 3: EXISTING BUT PREVIOUSLY UNCALLED ==========
       
-      // 19. Ingest Master Equation (call existing function)
+      // 19. Ingest Master Equation with real market data
       ingestPromises.push(
         supabase.functions.invoke('ingest-master-equation', {
           body: {
             temporal_id: temporalId,
-            lambda: this.decisionFusionState?.confidence || 0,
-            coherence: this.decisionFusionState?.confidence || 0,
-            substrate: 0.7,
-            observer: 0.8,
-            echo: 0.3,
+            symbol: 'BTCUSDT',
+            lambda: lambda ?? this.decisionFusionState?.confidence ?? 0,
+            coherence: coherence ?? this.decisionFusionState?.confidence ?? 0,
+            substrate: substrate ?? 0.7,
+            observer: observer ?? 0.8,
+            echo: echo ?? 0.3,
             dominant_node: 'Tiger',
             node_weights: {},
+            price: price ?? this.currentMarketData?.price ?? null,
+            volume: volume ?? this.currentMarketData?.volume ?? null,
+            volatility: volatility ?? this.currentMarketData?.volatility ?? null,
+            momentum: momentum ?? this.currentMarketData?.momentum ?? null,
           }
         })
       );

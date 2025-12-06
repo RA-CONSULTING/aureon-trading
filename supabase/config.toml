@@ -186,3 +186,11 @@ verify_jwt = true
 
 [functions.ingest-risk-manager]
 verify_jwt = true
+
+# Multi-symbol ticker fetching (public for live data)
+[functions.fetch-all-tickers]
+verify_jwt = false
+
+# Ticker snapshot ingestion
+[functions.ingest-ticker-snapshot]
+verify_jwt = true
