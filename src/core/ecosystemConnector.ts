@@ -13,6 +13,8 @@ import { HarmonicNexusCore, type HarmonicNexusState } from './harmonicNexusCore'
 import { OmegaEquation, type OmegaState } from './omegaEquation';
 import { QGITAEngine, type LighthouseEvent } from './qgitaEngine';
 import { ecosystemEnhancements } from './ecosystemEnhancements';
+import { sixDimensionalEngine, type HarmonicWaveform6D, type EcosystemState6D } from './sixDimensionalHarmonicEngine';
+import { probabilityMatrix, type ProbabilityFusion } from './enhanced6DProbabilityMatrix';
 import type { MarketSnapshot } from './aurisNodes';
 import type { LambdaState } from './masterEquation';
 import type { AkashicAttunement } from './akashicFrequencyMapper';
@@ -21,7 +23,7 @@ import type { PrismOutput } from './thePrism';
 // Note: Using thePrism.ts (5-level engine with full layers) not prism.ts (simple version)
 
 // Extended system names for new systems
-export type ExtendedSystemName = SystemName | 'qgita-engine' | 'eckoushic-cascade' | 'unity-detector' | 'fibonacci-lattice';
+export type ExtendedSystemName = SystemName | 'qgita-engine' | 'eckoushic-cascade' | 'unity-detector' | 'fibonacci-lattice' | '6d-harmonic';
 
 export interface EckoushicCascadeState {
   echoResonance: number;
@@ -55,6 +57,11 @@ export interface EcosystemState {
   unity: UnityDetectorState | null;
   fibonacci: FibonacciLatticeState | null;
   
+  // 6D Harmonic Waveform
+  waveform6D: HarmonicWaveform6D | null;
+  ecosystem6D: EcosystemState6D | null;
+  probabilityFusion: ProbabilityFusion | null;
+  
   // Status
   totalSystems: number;
   activeSystems: number;
@@ -75,6 +82,11 @@ class EcosystemConnectorCore {
   private harmonicNexusState: HarmonicNexusState | null = null;
   private omegaState: OmegaState | null = null;
   private qgitaState: LighthouseEvent | null = null;
+  
+  // 6D Harmonic state
+  private waveform6D: HarmonicWaveform6D | null = null;
+  private ecosystem6D: EcosystemState6D | null = null;
+  private probabilityFusion: ProbabilityFusion | null = null;
   
   private isInitialized = false;
   private heartbeatInterval: number | null = null;
@@ -199,8 +211,86 @@ class EcosystemConnectorCore {
     );
     this.publishFibonacci(this.fibonacciState);
 
+    // 6. Compute 6D Harmonic Waveform
+    this.waveform6D = sixDimensionalEngine.updateAsset(
+      'BTCUSDT',
+      marketSnapshot.price,
+      marketSnapshot.volume,
+      marketSnapshot.momentum * 10, // Convert to percentage
+      marketSnapshot.price * (1 + marketSnapshot.volatility),
+      marketSnapshot.price * (1 - marketSnapshot.volatility),
+      prismOutput?.frequency || 528,
+      lambdaState.coherence
+    );
+    this.ecosystem6D = sixDimensionalEngine.getEcosystemState();
+    this.publish6DWaveform(this.waveform6D);
+
+    // 7. Fuse probabilities (6D + HNC + Lighthouse)
+    const hncProbability = this.harmonicNexusState.substrateCoherence;
+    const lighthouseProbability = lighthouseState?.confidence || 0.5;
+    this.probabilityFusion = probabilityMatrix.fuse(
+      'BTCUSDT',
+      hncProbability,
+      lighthouseProbability,
+      this.waveform6D
+    );
+    this.publishProbabilityFusion(this.probabilityFusion);
+
     // Return complete ecosystem state
     return this.getState();
+  }
+  
+  /**
+   * Publish 6D Waveform state to bus
+   */
+  private publish6DWaveform(wf: HarmonicWaveform6D): void {
+    let signal: SignalType = 'NEUTRAL';
+    if (wf.action.includes('BUY')) signal = 'BUY';
+    else if (wf.action.includes('SELL')) signal = 'SELL';
+
+    unifiedBus.publish({
+      systemName: '6DHarmonic',
+      timestamp: Date.now(),
+      ready: true,
+      coherence: wf.dimensionalCoherence,
+      confidence: wf.resonanceScore,
+      signal,
+      data: {
+        waveState: wf.waveState,
+        marketPhase: wf.marketPhase,
+        harmonicLock: wf.harmonicLock,
+        probabilityField: wf.probabilityField,
+        action: wf.action,
+        phaseAlignment: wf.phaseAlignment,
+        energyDensity: wf.energyDensity,
+      },
+    });
+  }
+  
+  /**
+   * Publish probability fusion to bus
+   */
+  private publishProbabilityFusion(fusion: ProbabilityFusion): void {
+    let signal: SignalType = 'NEUTRAL';
+    if (fusion.action.includes('BUY')) signal = 'BUY';
+    else if (fusion.action.includes('SELL')) signal = 'SELL';
+
+    unifiedBus.publish({
+      systemName: 'ProbabilityMatrix',
+      timestamp: Date.now(),
+      ready: true,
+      coherence: fusion.fusedProbability,
+      confidence: fusion.confidence,
+      signal,
+      data: {
+        probability6D: fusion.probability6D,
+        probabilityHNC: fusion.probabilityHNC,
+        probabilityLighthouse: fusion.probabilityLighthouse,
+        fusedProbability: fusion.fusedProbability,
+        action: fusion.action,
+        harmonicLock: fusion.harmonicLock,
+      },
+    });
   }
 
   /**
@@ -411,11 +501,28 @@ class EcosystemConnectorCore {
       eckoushic: this.eckoushicState,
       unity: this.unityState,
       fibonacci: this.fibonacciState,
-      totalSystems: 11, // All quantum systems
+      waveform6D: this.waveform6D,
+      ecosystem6D: this.ecosystem6D,
+      probabilityFusion: this.probabilityFusion,
+      totalSystems: 13, // All quantum systems including 6D
       activeSystems,
       enhancementsLoaded: ecosystemEnhancements.isLoaded(),
       lastUpdate: Date.now(),
     };
+  }
+  
+  /**
+   * Get current 6D waveform
+   */
+  getWaveform6D(): HarmonicWaveform6D | null {
+    return this.waveform6D;
+  }
+  
+  /**
+   * Get current probability fusion
+   */
+  getProbabilityFusion(): ProbabilityFusion | null {
+    return this.probabilityFusion;
   }
 
   /**

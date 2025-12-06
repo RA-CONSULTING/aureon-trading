@@ -12,11 +12,16 @@ import { TemporalLadderStatus } from '@/components/warroom/TemporalLadderStatus'
 import { ExchangeBalances } from '@/components/warroom/ExchangeBalances';
 import { PrismStatus } from '@/components/warroom/PrismStatus';
 import { EcosystemStatus } from '@/components/warroom/EcosystemStatus';
+import { HarmonicWaveform6DStatus } from '@/components/warroom/HarmonicWaveform6DStatus';
+import { ProbabilityMatrixDisplay } from '@/components/warroom/ProbabilityMatrixDisplay';
+import { ecosystemConnector } from '@/core/ecosystemConnector';
 
 export default function AureonDashboard() {
   const navigate = useNavigate();
   const [userId, setUserId] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [waveform6D, setWaveform6D] = useState(ecosystemConnector.getWaveform6D());
+  const [probabilityFusion, setProbabilityFusion] = useState(ecosystemConnector.getProbabilityFusion());
   
   const {
     quantumState,
@@ -32,6 +37,15 @@ export default function AureonDashboard() {
     startTrading,
     stopTrading
   } = useAureonSession(userId);
+  
+  // Subscribe to ecosystem updates for 6D state
+  useEffect(() => {
+    const unsubscribe = ecosystemConnector.subscribe((state) => {
+      setWaveform6D(state.waveform6D);
+      setProbabilityFusion(state.probabilityFusion);
+    });
+    return () => unsubscribe();
+  }, []);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
@@ -202,6 +216,12 @@ export default function AureonDashboard() {
             totalEquityUsd={exchangeState.totalEquityUsd}
             exchanges={exchangeState.exchanges}
           />
+        </div>
+        
+        {/* 6D Harmonic Waveform + Probability Matrix Row */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <HarmonicWaveform6DStatus waveform={waveform6D} />
+          <ProbabilityMatrixDisplay fusion={probabilityFusion} />
         </div>
         
         {/* Extended System Status Row */}
