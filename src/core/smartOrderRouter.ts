@@ -92,7 +92,26 @@ export class SmartOrderRouter {
     }
 
     if (quotes.length === 0) {
-      throw new Error(`No quotes available for ${symbol}`);
+      // Return a default routing decision with Binance as fallback
+      const defaultQuote: OrderQuote = {
+        exchange: 'binance',
+        symbol,
+        side,
+        price: 0,
+        estimatedFee: 0,
+        effectivePrice: 0,
+        spread: 0,
+        available: false,
+        timestamp: Date.now()
+      };
+      
+      return {
+        recommendedExchange: 'binance',
+        quotes: [defaultQuote],
+        bestQuote: defaultQuote,
+        savings: 0,
+        reasoning: 'DEFAULT: No live quotes available, using Binance fallback'
+      };
     }
 
     // Sort by effective price (best first)
