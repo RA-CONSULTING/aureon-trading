@@ -20,6 +20,7 @@ export interface UseMultiExchangeBalancesResult {
   refresh: () => Promise<void>;
   getRouting: (symbol: string, side: 'BUY' | 'SELL', quantity: number) => Promise<RoutingDecision | null>;
   lastRoutingDecision: RoutingDecision | null;
+  getPositionSize: (riskPercentage?: number) => { positionSizeUsd: number; availableBalance: number; riskAmount: number };
 }
 
 export function useMultiExchangeBalances(): UseMultiExchangeBalancesResult {
@@ -82,6 +83,10 @@ export function useMultiExchangeBalances(): UseMultiExchangeBalancesResult {
     }
   }, []);
 
+  const getPositionSize = useCallback((riskPercentage: number = 0.02) => {
+    return multiExchangeClient.calculatePositionSize(riskPercentage, 'USDT');
+  }, []);
+
   return {
     state,
     consolidatedBalances: state?.consolidatedBalances || [],
@@ -91,7 +96,8 @@ export function useMultiExchangeBalances(): UseMultiExchangeBalancesResult {
     error,
     refresh,
     getRouting,
-    lastRoutingDecision
+    lastRoutingDecision,
+    getPositionSize
   };
 }
 
