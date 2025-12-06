@@ -39,7 +39,6 @@ export const KrakenStatusPanel: React.FC = () => {
   const [apiData, setApiData] = useState<KrakenAPIData | null>(null);
   const [isLoadingAPI, setIsLoadingAPI] = useState(false);
 
-  // Fetch from edge function as backup/validation
   const fetchFromAPI = async () => {
     setIsLoadingAPI(true);
     try {
@@ -59,7 +58,6 @@ export const KrakenStatusPanel: React.FC = () => {
 
   useEffect(() => {
     fetchFromAPI();
-    // Refresh API data every 30 seconds
     const interval = setInterval(fetchFromAPI, 30000);
     return () => clearInterval(interval);
   }, []);
@@ -74,153 +72,103 @@ export const KrakenStatusPanel: React.FC = () => {
     return new Date(timestamp).toLocaleTimeString();
   };
 
+  // Show setup message if not connected and no data
+  const showSetupMessage = !isConnected && !apiData?.success;
+
   return (
-    <Card className="bg-card/50 border-border/50">
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-lg flex items-center gap-2">
-            <span className="text-2xl">🦑</span>
-            Kraken Integration
-          </CardTitle>
-          <div className="flex items-center gap-2">
-            {isConnected ? (
-              <Badge className="bg-green-500/20 text-green-400 border-green-500/50">
-                <Wifi className="h-3 w-3 mr-1" />
-                WebSocket LIVE
-              </Badge>
-            ) : (
-              <Badge variant="destructive">
-                <WifiOff className="h-3 w-3 mr-1" />
-                Disconnected
-              </Badge>
-            )}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={isConnected ? disconnect : connect}
-            >
-              <RefreshCw className={`h-4 w-4 ${isConnected ? '' : 'animate-spin'}`} />
-            </Button>
-          </div>
+    <div className="space-y-4">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span className="text-xl">🦑</span>
+          <span className="font-medium">Kraken</span>
         </div>
-      </CardHeader>
-      
-      <CardContent className="space-y-4">
-        {/* Connection Status */}
-        <div className="grid grid-cols-2 gap-3">
-          <div className="p-3 rounded-lg bg-muted/30 border border-border/50">
-            <p className="text-xs text-muted-foreground mb-1">WebSocket Status</p>
-            <div className="flex items-center gap-2">
-              {isConnected ? (
-                <Activity className="h-4 w-4 text-green-500 animate-pulse" />
-              ) : (
-                <WifiOff className="h-4 w-4 text-destructive" />
-              )}
-              <span className={isConnected ? 'text-green-400' : 'text-destructive'}>
-                {isConnected ? 'Connected' : 'Disconnected'}
-              </span>
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Attempts: {connectionAttempts}
-            </p>
-          </div>
-          
-          <div className="p-3 rounded-lg bg-muted/30 border border-border/50">
-            <p className="text-xs text-muted-foreground mb-1">Tickers Streaming</p>
-            <p className="text-xl font-bold">{tickerCount}</p>
-            <p className="text-xs text-muted-foreground">
-              Updated: {formatTime(lastUpdate)}
-            </p>
-          </div>
+        <div className="flex items-center gap-2">
+          {isConnected ? (
+            <Badge className="bg-green-500/20 text-green-400 text-xs">
+              <Wifi className="h-3 w-3 mr-1" />
+              LIVE
+            </Badge>
+          ) : (
+            <Badge variant="outline" className="text-xs">
+              <WifiOff className="h-3 w-3 mr-1" />
+              Offline
+            </Badge>
+          )}
+          <Button variant="ghost" size="sm" onClick={isConnected ? disconnect : connect}>
+            <RefreshCw className={`h-4 w-4 ${!isConnected && connectionAttempts > 0 ? 'animate-spin' : ''}`} />
+          </Button>
         </div>
+      </div>
 
-        {/* Live Prices from WebSocket */}
-        <div className="space-y-2">
-          <h4 className="text-sm font-semibold text-muted-foreground">WebSocket Prices</h4>
+      {showSetupMessage ? (
+        <div className="text-center py-8">
+          <div className="text-4xl mb-3">🔗</div>
+          <p className="text-muted-foreground text-sm mb-2">No Kraken credentials configured</p>
+          <p className="text-xs text-muted-foreground">Add your Kraken API keys in Settings to see your balances</p>
+        </div>
+      ) : (
+        <>
+          {/* Connection Stats */}
           <div className="grid grid-cols-2 gap-2">
-            <div className="p-2 rounded bg-muted/20 border border-border/30">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">BTC</span>
-                {btcPrice && (
-                  <TrendingUp className="h-3 w-3 text-green-500" />
+            <div className="p-3 rounded-lg bg-muted/30 border border-border/50">
+              <p className="text-xs text-muted-foreground mb-1">Status</p>
+              <div className="flex items-center gap-2">
+                {isConnected ? (
+                  <Activity className="h-4 w-4 text-green-500 animate-pulse" />
+                ) : (
+                  <WifiOff className="h-4 w-4 text-muted-foreground" />
                 )}
-              </div>
-              <p className="text-lg font-bold text-primary">{formatPrice(btcPrice)}</p>
-            </div>
-            <div className="p-2 rounded bg-muted/20 border border-border/30">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">ETH</span>
-                {ethPrice && (
-                  <TrendingUp className="h-3 w-3 text-green-500" />
-                )}
-              </div>
-              <p className="text-lg font-bold text-primary">{formatPrice(ethPrice)}</p>
-            </div>
-          </div>
-        </div>
-
-        {/* API Data (Edge Function) */}
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <h4 className="text-sm font-semibold text-muted-foreground">REST API Validation</h4>
-            <Button variant="ghost" size="sm" onClick={fetchFromAPI} disabled={isLoadingAPI}>
-              <RefreshCw className={`h-3 w-3 ${isLoadingAPI ? 'animate-spin' : ''}`} />
-            </Button>
-          </div>
-          
-          {apiData?.success ? (
-            <div className="p-2 rounded bg-green-500/10 border border-green-500/30">
-              <div className="flex items-center justify-between">
-                <Badge className="bg-green-500/20 text-green-400 border-green-500/50">
-                  {apiData.dataSource}
-                </Badge>
-                <span className="text-xs text-muted-foreground">
-                  {apiData.latencyMs}ms
+                <span className={isConnected ? 'text-green-400 text-sm' : 'text-muted-foreground text-sm'}>
+                  {isConnected ? 'Connected' : 'Disconnected'}
                 </span>
               </div>
-              {apiData.primaryTicker && (
-                <p className="text-sm mt-1">
-                  BTC: {formatPrice(apiData.primaryTicker.price)}
-                </p>
-              )}
             </div>
-          ) : (
-            <div className="p-2 rounded bg-destructive/10 border border-destructive/30">
-              <p className="text-xs text-destructive">{apiData?.error || 'No data'}</p>
+            
+            <div className="p-3 rounded-lg bg-muted/30 border border-border/50">
+              <p className="text-xs text-muted-foreground mb-1">Tickers</p>
+              <p className="text-lg font-bold">{tickerCount}</p>
+            </div>
+          </div>
+
+          {/* Live Prices */}
+          {(btcPrice || ethPrice) && (
+            <div className="grid grid-cols-2 gap-2">
+              <div className="p-2 rounded bg-muted/20 border border-border/30">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">BTC</span>
+                  {btcPrice && <TrendingUp className="h-3 w-3 text-green-500" />}
+                </div>
+                <p className="text-lg font-bold text-primary">{formatPrice(btcPrice)}</p>
+              </div>
+              <div className="p-2 rounded bg-muted/20 border border-border/30">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">ETH</span>
+                  {ethPrice && <TrendingUp className="h-3 w-3 text-green-500" />}
+                </div>
+                <p className="text-lg font-bold text-primary">{formatPrice(ethPrice)}</p>
+              </div>
             </div>
           )}
-        </div>
 
-        {/* Error Display */}
-        {error && (
-          <div className="p-2 rounded bg-destructive/10 border border-destructive/30">
-            <p className="text-xs text-destructive">WebSocket Error: {error}</p>
-          </div>
-        )}
-
-        {/* All Streaming Tickers */}
-        {Object.keys(tickers).length > 0 && (
-          <div className="space-y-2">
-            <h4 className="text-sm font-semibold text-muted-foreground">All Streaming Tickers</h4>
-            <div className="max-h-40 overflow-y-auto space-y-1">
-              {Object.entries(tickers).map(([symbol, ticker]) => (
-                <div 
-                  key={symbol}
-                  className="flex items-center justify-between p-2 rounded bg-muted/20 text-sm"
-                >
-                  <span className="font-mono">{symbol}</span>
-                  <div className="flex items-center gap-2">
-                    <span className="font-bold">{formatPrice(ticker.price)}</span>
-                    <span className={`text-xs ${ticker.change24h >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                      {ticker.change24h >= 0 ? '+' : ''}{ticker.change24h.toFixed(2)}%
-                    </span>
-                  </div>
-                </div>
-              ))}
+          {/* API Status */}
+          {apiData?.success && (
+            <div className="p-2 rounded bg-green-500/10 border border-green-500/30">
+              <div className="flex items-center justify-between">
+                <Badge className="bg-green-500/20 text-green-400 text-xs">{apiData.dataSource}</Badge>
+                <span className="text-xs text-muted-foreground">{apiData.latencyMs}ms</span>
+              </div>
             </div>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+          )}
+
+          {/* Error Display */}
+          {error && (
+            <div className="p-2 rounded bg-destructive/10 border border-destructive/30">
+              <p className="text-xs text-destructive">{error}</p>
+            </div>
+          )}
+        </>
+      )}
+    </div>
   );
 };
