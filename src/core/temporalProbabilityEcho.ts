@@ -30,6 +30,8 @@ export interface EchoMetrics {
   echoCount: number;
   temporalPosition: number;
   isSteeringCorrectly: boolean;
+  predictionAccuracy: number; // Historical accuracy of predictions
+  temporalAlignment: number; // How well past predictions align with outcomes
 }
 
 export interface TemporalEchoState {
@@ -89,7 +91,9 @@ class TemporalProbabilityEchoClass {
         volatility: 0,
         echoCount: this.snapshots.length,
         temporalPosition: 0,
-        isSteeringCorrectly: false
+        isSteeringCorrectly: false,
+        predictionAccuracy: 0.5,
+        temporalAlignment: 0.5
       };
     }
 
@@ -138,6 +142,12 @@ class TemporalProbabilityEchoClass {
     // Is steering correctly? (high convergence, low drift, consistent trend)
     const isSteeringCorrectly = convergence > 0.7 && drift < 0.2 && trendStrength > 0.3;
 
+    // Prediction accuracy: how often did the action match the probability movement
+    const predictionAccuracy = this.calculatePredictionAccuracy();
+    
+    // Temporal alignment: how well do past predictions align with current state
+    const temporalAlignment = this.calculateTemporalAlignment();
+
     return {
       trend,
       trendStrength,
@@ -147,8 +157,62 @@ class TemporalProbabilityEchoClass {
       volatility,
       echoCount: this.snapshots.length,
       temporalPosition,
-      isSteeringCorrectly
+      isSteeringCorrectly,
+      predictionAccuracy,
+      temporalAlignment
     };
+  }
+
+  private calculatePredictionAccuracy(): number {
+    const recent = this.snapshots.slice(-20);
+    if (recent.length < 5) return 0.5;
+    
+    let correctPredictions = 0;
+    let totalPredictions = 0;
+    
+    for (let i = 0; i < recent.length - 1; i++) {
+      const current = recent[i];
+      const next = recent[i + 1];
+      
+      // Compare predicted action with actual probability movement
+      const probabilityMoved = next.fusedProbability - current.fusedProbability;
+      const predictedUp = current.action === 'BUY';
+      const predictedDown = current.action === 'SELL';
+      
+      if (predictedUp && probabilityMoved > 0) correctPredictions++;
+      else if (predictedDown && probabilityMoved < 0) correctPredictions++;
+      else if (!predictedUp && !predictedDown && Math.abs(probabilityMoved) < 0.05) correctPredictions++;
+      
+      totalPredictions++;
+    }
+    
+    return totalPredictions > 0 ? correctPredictions / totalPredictions : 0.5;
+  }
+
+  private calculateTemporalAlignment(): number {
+    const recent = this.snapshots.slice(-10);
+    if (recent.length < 3) return 0.5;
+    
+    let alignmentScore = 0;
+    
+    for (let i = 0; i < recent.length - 2; i++) {
+      const s1 = recent[i];
+      const s2 = recent[i + 1];
+      const s3 = recent[i + 2];
+      
+      // Check if probability trend matches action expectations
+      const trend1 = s2.fusedProbability - s1.fusedProbability;
+      const trend2 = s3.fusedProbability - s2.fusedProbability;
+      
+      // Aligned if trends are consistent
+      if ((trend1 > 0 && trend2 > 0) || (trend1 < 0 && trend2 < 0)) {
+        alignmentScore += 1;
+      } else if (Math.abs(trend1) < 0.02 && Math.abs(trend2) < 0.02) {
+        alignmentScore += 0.5; // Neutral alignment
+      }
+    }
+    
+    return Math.min(1, alignmentScore / (recent.length - 2));
   }
 
   getState(): TemporalEchoState {
