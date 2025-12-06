@@ -9,7 +9,6 @@ import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { UnifiedBusStatus } from '@/components/warroom/UnifiedBusStatus';
 import { TemporalLadderStatus } from '@/components/warroom/TemporalLadderStatus';
-import { ExchangeBalances } from '@/components/warroom/ExchangeBalances';
 import { PrismStatus } from '@/components/warroom/PrismStatus';
 import { EcosystemStatus } from '@/components/warroom/EcosystemStatus';
 import { HarmonicWaveform6DStatus } from '@/components/warroom/HarmonicWaveform6DStatus';
@@ -280,7 +279,7 @@ export default function AureonDashboard() {
         </div>
 
         {/* The Prism + Unified Ecosystem Row */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <PrismStatus 
             lambda={quantumState.lambda}
             coherence={quantumState.coherence}
@@ -293,10 +292,6 @@ export default function AureonDashboard() {
           />
           <UnifiedBusStatus />
           <EcosystemStatus />
-          <ExchangeBalances 
-            totalEquityUsd={exchangeState.totalEquityUsd}
-            exchanges={exchangeState.exchanges}
-          />
         </div>
         
         {/* User Assets Panel - Real Multi-Exchange Holdings */}

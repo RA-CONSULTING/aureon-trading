@@ -2,13 +2,45 @@
  * Multi-Exchange Balances Hook
  * Prime Sentinel: GARY LECKEY 02111991
  * 
- * React hook for managing multi-exchange balances
+ * React hook for managing multi-exchange balances using authenticated get-user-balances
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import { multiExchangeClient, MultiExchangeState, ConsolidatedBalance, ExchangeStatus } from '../core/multiExchangeClient';
+import { supabase } from '@/integrations/supabase/client';
 import { smartOrderRouter, RoutingDecision } from '../core/smartOrderRouter';
 import { ExchangeType } from '../core/unifiedExchangeClient';
+
+export interface ExchangeBalance {
+  exchange: string;
+  connected: boolean;
+  assets: Array<{ asset: string; free: number; locked: number; usdValue: number }>;
+  totalUsd: number;
+  error?: string;
+}
+
+export interface ConsolidatedBalance {
+  asset: string;
+  totalFree: number;
+  totalLocked: number;
+  grandTotal: number;
+  usdValue: number;
+  balances: Record<string, { free: number; locked: number }>;
+}
+
+export interface ExchangeStatus {
+  exchange: ExchangeType;
+  connected: boolean;
+  lastUpdate: number;
+  balanceCount: number;
+  totalUsdValue: number;
+}
+
+export interface MultiExchangeState {
+  exchanges: ExchangeStatus[];
+  consolidatedBalances: ConsolidatedBalance[];
+  totalEquityUsd: number;
+  lastUpdate: number;
+}
 
 export interface UseMultiExchangeBalancesResult {
   state: MultiExchangeState | null;
@@ -29,44 +61,91 @@ export function useMultiExchangeBalances(): UseMultiExchangeBalancesResult {
   const [error, setError] = useState<string | null>(null);
   const [lastRoutingDecision, setLastRoutingDecision] = useState<RoutingDecision | null>(null);
 
-  useEffect(() => {
-    // Initialize multi-exchange client
-    multiExchangeClient.initialize().catch(console.error);
-
-    // Subscribe to state updates
-    const unsubscribe = multiExchangeClient.subscribe((newState) => {
-      setState(newState);
-      setIsLoading(false);
-      setError(null);
-    });
-
-    // Initial fetch
-    setIsLoading(true);
-    multiExchangeClient.fetchAllBalances()
-      .then(setState)
-      .catch((err) => {
-        setError(err instanceof Error ? err.message : 'Failed to fetch balances');
-      })
-      .finally(() => setIsLoading(false));
-
-    return () => {
-      unsubscribe();
-    };
-  }, []);
-
-  const refresh = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-    
+  const fetchBalances = useCallback(async () => {
     try {
-      const newState = await multiExchangeClient.fetchAllBalances();
-      setState(newState);
+      setIsLoading(true);
+      setError(null);
+
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        setError('Not authenticated');
+        setIsLoading(false);
+        return;
+      }
+
+      const { data, error: fnError } = await supabase.functions.invoke('get-user-balances', {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`
+        }
+      });
+
+      if (fnError) {
+        throw new Error(fnError.message || 'Failed to fetch balances');
+      }
+
+      if (data?.success) {
+        const balances: ExchangeBalance[] = data.balances || [];
+        
+        // Build consolidated balances
+        const assetMap = new Map<string, ConsolidatedBalance>();
+        
+        for (const exchange of balances) {
+          if (!exchange.connected) continue;
+          
+          for (const asset of exchange.assets) {
+            const existing = assetMap.get(asset.asset);
+            if (existing) {
+              existing.totalFree += asset.free;
+              existing.totalLocked += asset.locked;
+              existing.grandTotal += asset.free + asset.locked;
+              existing.usdValue += asset.usdValue;
+              existing.balances[exchange.exchange] = { free: asset.free, locked: asset.locked };
+            } else {
+              assetMap.set(asset.asset, {
+                asset: asset.asset,
+                totalFree: asset.free,
+                totalLocked: asset.locked,
+                grandTotal: asset.free + asset.locked,
+                usdValue: asset.usdValue,
+                balances: { [exchange.exchange]: { free: asset.free, locked: asset.locked } }
+              });
+            }
+          }
+        }
+
+        // Build exchange statuses
+        const exchangeStatuses: ExchangeStatus[] = balances.map(b => ({
+          exchange: b.exchange as ExchangeType,
+          connected: b.connected,
+          lastUpdate: Date.now(),
+          balanceCount: b.assets.length,
+          totalUsdValue: b.totalUsd
+        }));
+
+        setState({
+          exchanges: exchangeStatuses,
+          consolidatedBalances: Array.from(assetMap.values()).sort((a, b) => b.usdValue - a.usdValue),
+          totalEquityUsd: data.totalEquityUsd || 0,
+          lastUpdate: Date.now()
+        });
+      } else {
+        throw new Error(data?.error || 'Failed to fetch balances');
+      }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to refresh balances');
+      console.error('[useMultiExchangeBalances] Error:', err);
+      setError(err instanceof Error ? err.message : 'Failed to fetch balances');
     } finally {
       setIsLoading(false);
     }
   }, []);
+
+  useEffect(() => {
+    fetchBalances();
+    
+    // Refresh every 30 seconds
+    const interval = setInterval(fetchBalances, 30000);
+    return () => clearInterval(interval);
+  }, [fetchBalances]);
 
   const getRouting = useCallback(async (
     symbol: string,
@@ -84,8 +163,14 @@ export function useMultiExchangeBalances(): UseMultiExchangeBalancesResult {
   }, []);
 
   const getPositionSize = useCallback((riskPercentage: number = 0.02) => {
-    return multiExchangeClient.calculatePositionSize(riskPercentage, 'USDT');
-  }, []);
+    const totalEquity = state?.totalEquityUsd || 0;
+    const riskAmount = totalEquity * riskPercentage;
+    return {
+      positionSizeUsd: riskAmount * 10, // 10x leverage assumption
+      availableBalance: totalEquity,
+      riskAmount
+    };
+  }, [state?.totalEquityUsd]);
 
   return {
     state,
@@ -94,7 +179,7 @@ export function useMultiExchangeBalances(): UseMultiExchangeBalancesResult {
     totalEquityUsd: state?.totalEquityUsd || 0,
     isLoading,
     error,
-    refresh,
+    refresh: fetchBalances,
     getRouting,
     lastRoutingDecision,
     getPositionSize
