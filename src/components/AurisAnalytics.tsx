@@ -1,66 +1,57 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Progress } from './ui/progress';
 import { Badge } from './ui/badge';
+import { useAurisMetrics, useBasicEcosystemMetrics } from '@/hooks/useEcosystemData';
+
+// 9 Auris nodes with their frequencies
+const AURIS_SYMBOLS = [
+  { symbol: '🐯', name: 'Tiger', frequency: 174 },
+  { symbol: '🦅', name: 'Falcon', frequency: 285 },
+  { symbol: '🐦', name: 'Hummingbird', frequency: 396 },
+  { symbol: '🐬', name: 'Dolphin', frequency: 417 },
+  { symbol: '🦌', name: 'Deer', frequency: 528 },
+  { symbol: '🦉', name: 'Owl', frequency: 639 },
+  { symbol: '🐼', name: 'Panda', frequency: 741 },
+  { symbol: '🚢', name: 'CargoShip', frequency: 852 },
+  { symbol: '🐠', name: 'Clownfish', frequency: 963 },
+];
 
 export const AurisAnalytics = () => {
-  const [aurisData, setAurisData] = useState({
-    compilationRate: 0.87,
-    symbolProcessing: 0.94,
-    quantumEntanglement: 0.76,
-    dataIntegrity: 0.99
-  });
+  const {
+    compilationRate,
+    symbolProcessing,
+    quantumEntanglement,
+    dataIntegrity,
+    dominantNode,
+    isInitialized,
+  } = useAurisMetrics();
+  
+  const { coherence, systemsOnline } = useBasicEcosystemMetrics();
 
-  const [symbols, setSymbols] = useState([
-    { symbol: '◯', frequency: 7.83, resonance: 0.95, active: true },
-    { symbol: '∞', frequency: 108, resonance: 0.89, active: true },
-    { symbol: '👁', frequency: 111, resonance: 0.72, active: false },
-    { symbol: '△', frequency: 144, resonance: 0.84, active: false },
-    { symbol: '◊', frequency: 432, resonance: 0.91, active: true },
-    { symbol: '□', frequency: 432, resonance: 0.88, active: true },
-    { symbol: '☆', frequency: 528, resonance: 0.93, active: true },
-    { symbol: '✡', frequency: 639, resonance: 0.86, active: true },
-    { symbol: '⚇', frequency: 729, resonance: 0.75, active: false },
-    { symbol: '⚡', frequency: 741, resonance: 0.82, active: false },
-    { symbol: '✺', frequency: 852, resonance: 0.79, active: false },
-    { symbol: '🌀', frequency: 852, resonance: 0.81, active: false },
-    { symbol: '☥', frequency: 963, resonance: 0.87, active: true },
-    { symbol: '⭐', frequency: 963, resonance: 0.90, active: true },
-    { symbol: '✝', frequency: 697.5, resonance: 0.85, active: true }
-  ]);
+  // Generate symbol activity based on dominant node and coherence
+  const symbols = AURIS_SYMBOLS.map((s, i) => ({
+    ...s,
+    resonance: s.name === dominantNode 
+      ? 0.9 + coherence * 0.1 
+      : 0.5 + coherence * 0.4 + (Math.sin(Date.now() / 1000 + i) * 0.05),
+    active: s.name === dominantNode || coherence > 0.6 + (i * 0.03),
+  }));
 
-  const [streamData, setStreamData] = useState({
-    packetsProcessed: 15847,
-    errorRate: 0.003,
-    throughput: 2.4,
-    latency: 12
-  });
+  const streamData = {
+    packetsProcessed: 15847 + Math.floor(Date.now() / 500) % 5000,
+    errorRate: (1 - dataIntegrity) * 0.1,
+    throughput: 1.5 + compilationRate * 1.5,
+    latency: Math.max(5, 15 - compilationRate * 8),
+  };
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setAurisData(prev => ({
-        compilationRate: Math.max(0.1, prev.compilationRate + (Math.random() - 0.5) * 0.02),
-        symbolProcessing: Math.max(0.1, prev.symbolProcessing + (Math.random() - 0.5) * 0.01),
-        quantumEntanglement: Math.max(0.1, prev.quantumEntanglement + (Math.random() - 0.5) * 0.03),
-        dataIntegrity: Math.max(0.95, prev.dataIntegrity + (Math.random() - 0.5) * 0.005)
-      }));
-
-      setSymbols(prev => prev.map(s => ({
-        ...s,
-        resonance: Math.max(0.1, s.resonance + (Math.random() - 0.5) * 0.05),
-        active: Math.random() > 0.3
-      })));
-
-      setStreamData(prev => ({
-        packetsProcessed: prev.packetsProcessed + Math.floor(Math.random() * 10),
-        errorRate: Math.max(0, prev.errorRate + (Math.random() - 0.5) * 0.001),
-        throughput: Math.max(0.1, prev.throughput + (Math.random() - 0.5) * 0.1),
-        latency: Math.max(1, prev.latency + (Math.random() - 0.5) * 2)
-      }));
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, []);
+  if (!isInitialized) {
+    return (
+      <div className="flex items-center justify-center h-48">
+        <div className="text-muted-foreground">Initializing Auris nodes...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -70,10 +61,10 @@ export const AurisAnalytics = () => {
             <CardTitle className="text-sm">Compilation Rate</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-600">
-              {(aurisData.compilationRate * 100).toFixed(1)}%
+            <div className="text-2xl font-bold text-primary">
+              {(compilationRate * 100).toFixed(1)}%
             </div>
-            <Progress value={aurisData.compilationRate * 100} className="mt-2" />
+            <Progress value={compilationRate * 100} className="mt-2" />
           </CardContent>
         </Card>
 
@@ -82,10 +73,10 @@ export const AurisAnalytics = () => {
             <CardTitle className="text-sm">Symbol Processing</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">
-              {(aurisData.symbolProcessing * 100).toFixed(1)}%
+            <div className="text-2xl font-bold text-emerald-500">
+              {(symbolProcessing * 100).toFixed(1)}%
             </div>
-            <Progress value={aurisData.symbolProcessing * 100} className="mt-2" />
+            <Progress value={symbolProcessing * 100} className="mt-2" />
           </CardContent>
         </Card>
 
@@ -94,10 +85,10 @@ export const AurisAnalytics = () => {
             <CardTitle className="text-sm">Quantum Link</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-purple-600">
-              {(aurisData.quantumEntanglement * 100).toFixed(1)}%
+            <div className="text-2xl font-bold text-violet-500">
+              {(quantumEntanglement * 100).toFixed(1)}%
             </div>
-            <Progress value={aurisData.quantumEntanglement * 100} className="mt-2" />
+            <Progress value={quantumEntanglement * 100} className="mt-2" />
           </CardContent>
         </Card>
 
@@ -106,10 +97,10 @@ export const AurisAnalytics = () => {
             <CardTitle className="text-sm">Data Integrity</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-orange-600">
-              {(aurisData.dataIntegrity * 100).toFixed(1)}%
+            <div className="text-2xl font-bold text-amber-500">
+              {(dataIntegrity * 100).toFixed(1)}%
             </div>
-            <Progress value={aurisData.dataIntegrity * 100} className="mt-2" />
+            <Progress value={dataIntegrity * 100} className="mt-2" />
           </CardContent>
         </Card>
       </div>
@@ -117,19 +108,19 @@ export const AurisAnalytics = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
-            <CardTitle>Active Symbols</CardTitle>
+            <CardTitle>Auris Nodes ({symbols.filter(s => s.active).length}/9 Active)</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
+            <div className="space-y-3 max-h-96 overflow-y-auto">
               {symbols.map((symbol, index) => (
                 <div key={index} className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
                     <div className="text-2xl">{symbol.symbol}</div>
-                    <div className="text-sm text-gray-600">
-                      {symbol.frequency} Hz
+                    <div className="text-sm text-muted-foreground">
+                      {symbol.name} • {symbol.frequency} Hz
                     </div>
                     <Badge variant={symbol.active ? "default" : "secondary"}>
-                      {symbol.active ? "Active" : "Idle"}
+                      {symbol.name === dominantNode ? "DOMINANT" : symbol.active ? "Active" : "Idle"}
                     </Badge>
                   </div>
                   <div className="flex items-center space-x-2">
@@ -149,20 +140,24 @@ export const AurisAnalytics = () => {
           <CardContent>
             <div className="space-y-4">
               <div className="flex justify-between">
-                <span className="text-sm text-gray-600">Packets Processed</span>
+                <span className="text-sm text-muted-foreground">Packets Processed</span>
                 <span className="font-bold">{streamData.packetsProcessed.toLocaleString()}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-sm text-gray-600">Error Rate</span>
-                <span className="font-bold text-red-600">{(streamData.errorRate * 100).toFixed(3)}%</span>
+                <span className="text-sm text-muted-foreground">Error Rate</span>
+                <span className="font-bold text-destructive">{(streamData.errorRate * 100).toFixed(3)}%</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-sm text-gray-600">Throughput</span>
-                <span className="font-bold text-green-600">{streamData.throughput.toFixed(1)} MB/s</span>
+                <span className="text-sm text-muted-foreground">Throughput</span>
+                <span className="font-bold text-emerald-500">{streamData.throughput.toFixed(1)} MB/s</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-sm text-gray-600">Latency</span>
-                <span className="font-bold text-blue-600">{streamData.latency.toFixed(0)} ms</span>
+                <span className="text-sm text-muted-foreground">Latency</span>
+                <span className="font-bold text-primary">{streamData.latency.toFixed(0)} ms</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-sm text-muted-foreground">Systems Online</span>
+                <span className="font-bold text-violet-500">{systemsOnline}</span>
               </div>
             </div>
           </CardContent>
