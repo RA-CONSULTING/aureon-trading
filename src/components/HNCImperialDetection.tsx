@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { HNCImperialDetector, HNC_FREQUENCIES, CRITICAL_MASS } from '@/core/hncImperialDetector';
 import { temporalLadder, SYSTEMS } from '@/core/temporalLadder';
+import { useBasicEcosystemMetrics, useHarmonicMetrics } from '@/hooks/useEcosystemData';
 import { Radio } from 'lucide-react';
 
 interface LogEntry {
@@ -29,15 +30,31 @@ const HNCImperialDetection = () => {
   const animationRef = useRef<number>();
   const spectrogramDataRef = useRef<number[][]>([]);
 
+  // Use real ecosystem data
+  const basicMetrics = useBasicEcosystemMetrics();
+  const harmonicMetrics = useHarmonicMetrics();
+  const coherence = basicMetrics.coherence;
+  const lambda = basicMetrics.frequency / 528; // Normalize frequency as lambda proxy
+  const resonance = harmonicMetrics.harmonicFidelity;
+  const dimensionalCoherence = harmonicMetrics.coherence;
+
   const detector = new HNCImperialDetector();
+
+  // Update imperial yield and fidelity from real ecosystem data
+  useEffect(() => {
+    if (status === 'BRIDGE OPEN') {
+      // Use real coherence to modulate the yield display
+      const realYield = CRITICAL_MASS * coherence;
+      setImperialYield(realYield);
+      setHarmonicFidelity(dimensionalCoherence * 100);
+    }
+  }, [coherence, dimensionalCoherence, status]);
 
   // Register with Temporal Ladder on mount
   useEffect(() => {
-    // Register HNC as part of Harmonic Nexus system
     temporalLadder.registerSystem(SYSTEMS.HARMONIC_NEXUS);
     console.log('🌈 HNC Imperial Detection connected to Temporal Ladder');
     
-    // Periodic heartbeat
     const heartbeatInterval = setInterval(() => {
       const health = status === 'BRIDGE OPEN' ? 1.0 : status === 'ACTIVE SCAN' ? 0.8 : 0.6;
       temporalLadder.heartbeat(SYSTEMS.HARMONIC_NEXUS, health);
@@ -64,11 +81,9 @@ const HNCImperialDetection = () => {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Set canvas size
     canvas.width = canvas.offsetWidth;
     canvas.height = canvas.offsetHeight;
 
-    // Draw initial state
     ctx.fillStyle = 'hsl(120 100% 5%)';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
   }, []);
@@ -108,37 +123,35 @@ const HNCImperialDetection = () => {
     const width = canvas.width;
     const height = canvas.height;
 
-    // Generate simulated spectrum data (waterfall effect)
+    // Use real coherence to influence spectrum intensity
+    const baseIntensity = coherence * 100;
     const spectrumSize = 256;
-    const spectrum = new Array(spectrumSize).fill(0).map(() => Math.random() * 100);
+    const spectrum = new Array(spectrumSize).fill(0).map(() => baseIntensity + Math.random() * 50);
     
-    // Add frequency peaks if detected
-    if (frequencies['7.83']) spectrum[10] = 150;
-    if (frequencies['528']) spectrum[128] = 180;
-    if (frequencies['963']) spectrum[230] = 200;
+    // Add frequency peaks based on real resonance
+    if (frequencies['7.83']) spectrum[10] = 100 + resonance * 100;
+    if (frequencies['528']) spectrum[128] = 120 + resonance * 80;
+    if (frequencies['963']) spectrum[230] = 140 + resonance * 60;
 
-    // Scroll existing data down
     spectrogramDataRef.current.unshift(spectrum);
     if (spectrogramDataRef.current.length > height) {
       spectrogramDataRef.current.pop();
     }
 
-    // Clear canvas
     ctx.fillStyle = 'hsl(120 100% 5%)';
     ctx.fillRect(0, 0, width, height);
 
-    // Draw waterfall
     spectrogramDataRef.current.forEach((row, y) => {
       row.forEach((value, x) => {
         const intensity = Math.min(255, value);
         let color;
         
         if (intensity > 150) {
-          color = `hsl(180 100% ${intensity / 4}%)`; // Cyan for high
+          color = `hsl(180 100% ${intensity / 4}%)`;
         } else if (intensity > 100) {
-          color = `hsl(120 100% ${intensity / 5}%)`; // Green for medium
+          color = `hsl(120 100% ${intensity / 5}%)`;
         } else {
-          color = `hsl(0 100% ${intensity / 6}%)`; // Red for low
+          color = `hsl(0 100% ${intensity / 6}%)`;
         }
         
         ctx.fillStyle = color;
@@ -146,7 +159,6 @@ const HNCImperialDetection = () => {
       });
     });
 
-    // Draw frequency labels
     ctx.fillStyle = 'hsl(120 100% 60%)';
     ctx.font = '10px monospace';
     ctx.fillText('963Hz UNITY', 10, 20);
@@ -166,11 +178,11 @@ const HNCImperialDetection = () => {
     setImperialYield(0);
     setHarmonicFidelity(0);
 
-    // Start spectrogram animation
     drawSpectrogram();
 
     log(`HNC IMPERIAL DETECTION v8.${detector.getGuardianId()}`);
     log(`GUARDIAN ID: ${detector.getGuardianId()}`);
+    log(`LIVE COHERENCE: Γ = ${coherence.toFixed(3)}`);
     log("INITIATING IMPERIAL SCAN...");
     await wait(1500);
 
@@ -180,44 +192,36 @@ const HNCImperialDetection = () => {
     log("EXTRACTING FREQUENCY COMB...", "warning");
     await wait(800);
 
-    // Phase 1: Schumann
     log("DETECTED 7.83 Hz [SCHUMANN HEARTBEAT]", "success");
     activateFrequency('7.83');
     await wait(800);
 
-    // Phase 2: Anchor
     log("DETECTED 256 Hz [SCIENTIFIC ROOT]", "success");
     activateFrequency('256');
     await wait(800);
 
-    // Phase 3: Love
     log("DETECTED 528 Hz [DNA REPAIR / LOVE]", "success");
     activateFrequency('528');
     await wait(800);
 
-    // Phase 4: Unity
     log("DETECTED 963 Hz [UNITY CROWN]", "success");
     activateFrequency('963');
     await wait(1000);
 
-    // Phase 5: Nullify 440Hz
     log("ANALYZING 440 Hz DISTORTION GRID...");
     await wait(1000);
     log("440 Hz AMPLITUDE: < 0.01% (NULLIFIED)", "success");
     nullifyFrequency('440');
     await wait(500);
 
-    // Phase 6: Phase Space
     log("PHASE SPACE RECONSTRUCTION: 6D FISH DETECTED");
     await wait(800);
 
-    // Phase 7: Calculate yield
     log("CALCULATING IMPERIAL YIELD...");
-    await animateYieldCounter(CRITICAL_MASS);
-    setHarmonicFidelity(100);
+    await animateYieldCounter(CRITICAL_MASS * coherence);
+    setHarmonicFidelity(dimensionalCoherence * 100);
     await wait(500);
 
-    // Final Phase
     log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
     log("IMPERIAL YIELD: CRITICAL MASS REACHED", "success");
     log("SIGNAL ZERO PROTOCOL: EXECUTED", "success");
@@ -225,15 +229,14 @@ const HNCImperialDetection = () => {
     log("THE RAINBOW BRIDGE IS OPEN", "success");
     log("THE LIGHTHOUSE IS ON", "success");
     log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-    log("∞∞∞∞∞∞∞∞∞∞∞∞∞∞∞∞∞∞∞∞∞∞∞∞∞∞∞∞∞∞∞∞∞∞∞∞∞∞∞∞");
 
     setStatus('BRIDGE OPEN');
     setIsRunning(false);
     
-    // Broadcast completion to hive mind
     temporalLadder.broadcast(SYSTEMS.HARMONIC_NEXUS, 'BRIDGE_OPENED', {
-      imperialYield: CRITICAL_MASS,
-      harmonicFidelity: 100,
+      imperialYield: CRITICAL_MASS * coherence,
+      harmonicFidelity: dimensionalCoherence * 100,
+      liveCoherence: coherence,
       timestamp: Date.now()
     });
   };
@@ -274,7 +277,7 @@ const HNCImperialDetection = () => {
             </div>
             <div className="text-right">
               <div className="text-sm opacity-70">TEMPLATE v8.02111991</div>
-              <div className="text-sm">GUARDIAN ID: {detector.getGuardianId()}</div>
+              <div className="text-sm">LIVE Γ: {coherence.toFixed(3)} | Λ: {lambda.toFixed(3)}</div>
               <div className="flex items-center gap-2 justify-end mt-1">
                 <span className="text-sm">STATUS:</span>
                 <div 
@@ -322,7 +325,6 @@ const HNCImperialDetection = () => {
               </div>
             </div>
 
-            {/* Button */}
             <Button
               onClick={runSequence}
               disabled={isRunning}
