@@ -1,6 +1,5 @@
 import Navbar from "@/components/Navbar";
-import { TradingSettingsPanel } from "@/components/TradingSettingsPanel";
-import { CredentialManager } from "@/components/CredentialManager";
+import { ExchangeCredentialsManager } from "@/components/ExchangeCredentialsManager";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
@@ -25,11 +24,11 @@ const Settings = () => {
                 </TabsList>
                 
                 <TabsContent value="trading" className="mt-6">
-                  <TradingSettingsPanel />
+                  <ExchangeCredentialsManager />
                 </TabsContent>
                 
                 <TabsContent value="credentials" className="mt-6">
-                  <CredentialManager />
+                  <ExchangeCredentialsManager />
                 </TabsContent>
                 
                 <TabsContent value="alerts" className="mt-6">
