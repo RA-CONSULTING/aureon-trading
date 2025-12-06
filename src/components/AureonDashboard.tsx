@@ -19,6 +19,7 @@ import { DataStreamMonitorPanel } from '@/components/DataStreamMonitorPanel';
 import { LiveTradingStatusPanel } from '@/components/LiveTradingStatusPanel';
 import { SimulationVerificationPanel } from '@/components/SimulationVerificationPanel';
 import DecisionVerificationPanel from '@/components/DecisionVerificationPanel';
+import { SmokeTestPhasePanel } from '@/components/SmokeTestPhasePanel';
 import { ecosystemConnector } from '@/core/ecosystemConnector';
 import { toast } from 'sonner';
 
@@ -307,8 +308,9 @@ export default function AureonDashboard() {
           <ProbabilityMatrixDisplay fusion={probabilityFusion} />
         </div>
         
-        {/* Extended System Status Row */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Smoke Test Phase Validator + Extended System Status Row */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <SmokeTestPhasePanel />
           <TemporalLadderStatus />
           <LiveTradingStatusPanel />
         </div>
