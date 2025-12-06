@@ -36,7 +36,8 @@ export type SystemName =
   | 'decision-fusion'
   | 'prism'
   | '6d-harmonic'
-  | 'probability-matrix';
+  | 'probability-matrix'
+  | 'quantum-telescope';
 
 export interface SystemStatus {
   name: SystemName;
@@ -90,7 +91,8 @@ class TemporalLadderCore {
     'decision-fusion',
     'prism',
     '6d-harmonic',
-    'probability-matrix'
+    'probability-matrix',
+    'quantum-telescope'
   ];
 
   constructor() {
@@ -341,4 +343,5 @@ export const SYSTEMS = {
   PRISM: 'prism' as SystemName,
   SIX_D_HARMONIC: '6d-harmonic' as SystemName,
   PROBABILITY_MATRIX: 'probability-matrix' as SystemName,
+  QUANTUM_TELESCOPE: 'quantum-telescope' as SystemName,
 };

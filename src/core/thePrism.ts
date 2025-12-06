@@ -19,6 +19,8 @@ export interface PrismInput {
   volatility: number;
   momentum: number;
   baseFrequency: number; // From Rainbow Bridge
+  geometricAlignment?: number; // From Quantum Telescope (0-1)
+  prismBoostFactor?: number;   // Telescope boost multiplier
 }
 
 export interface PrismOutput {
@@ -54,6 +56,7 @@ const FREQUENCIES = {
 export class ThePrism {
   private readonly HNC_FREQUENCY = FREQUENCIES.LOVE; // 528 Hz source
   private readonly LOVE_LOCK_THRESHOLD = 0.9; // Γ > 0.9 = pure love lock
+  private readonly GEOMETRIC_BOOST_THRESHOLD = 0.8; // High geometric alignment accelerates 528 Hz lock
   
   /**
    * Transform market reality through 5 harmonic levels
@@ -79,14 +82,18 @@ export class ThePrism {
     // Level 5: Output - Final transformation toward 528 Hz
     const output = this.computeOutputLayer(input, unityLayer, hnc);
     
-    // Determine current level based on coherence
-    const level = this.determineLevel(input.coherence);
+    // Determine current level based on coherence (boosted by geometric alignment)
+    const effectiveCoherence = this.applyGeometricBoost(input.coherence, input.geometricAlignment, input.prismBoostFactor);
+    const level = this.determineLevel(effectiveCoherence);
     
     // Determine state based on level
     const state = this.determineState(level);
     
-    // Check if locked to pure 528 Hz (Love Manifest)
-    const isLoveLocked = input.coherence >= this.LOVE_LOCK_THRESHOLD;
+    // Check if locked to pure 528 Hz (Love Manifest) - geometric alignment can lower threshold
+    const effectiveThreshold = input.geometricAlignment && input.geometricAlignment > this.GEOMETRIC_BOOST_THRESHOLD
+      ? this.LOVE_LOCK_THRESHOLD * 0.95 // 5% lower threshold when geometry is aligned
+      : this.LOVE_LOCK_THRESHOLD;
+    const isLoveLocked = effectiveCoherence >= effectiveThreshold;
     
     // Final frequency - lock to 528 Hz if coherence is high enough
     const frequency = isLoveLocked ? this.HNC_FREQUENCY : Math.round(output);
@@ -249,6 +256,26 @@ export class ThePrism {
     
     // Normalize distance (max expected distance ~500 Hz)
     return Math.max(0, 1 - (minDistance / 100));
+  }
+  
+  /**
+   * Apply geometric alignment boost from Quantum Telescope
+   * High geometric alignment accelerates convergence to 528 Hz
+   */
+  private applyGeometricBoost(
+    coherence: number,
+    geometricAlignment?: number,
+    prismBoostFactor?: number
+  ): number {
+    if (!geometricAlignment) return coherence;
+    
+    // Geometric alignment adds up to 10% coherence boost
+    const alignmentBoost = geometricAlignment * 0.1;
+    
+    // Prism boost factor multiplies the boost
+    const effectiveBoost = alignmentBoost * (prismBoostFactor ?? 1);
+    
+    return Math.min(1, coherence + effectiveBoost);
   }
   
   /**
