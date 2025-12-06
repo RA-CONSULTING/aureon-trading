@@ -371,6 +371,69 @@ export type Database = {
         }
         Relationships: []
       }
+      crypto_assets_registry: {
+        Row: {
+          base_asset: string
+          created_at: string
+          exchange: string
+          id: string
+          is_active: boolean | null
+          is_spot_trading_allowed: boolean | null
+          last_synced_at: string | null
+          max_qty: number | null
+          min_notional: number | null
+          min_qty: number | null
+          price_precision: number | null
+          quantity_precision: number | null
+          quote_asset: string
+          status: string | null
+          step_size: number | null
+          symbol: string
+          tick_size: number | null
+          updated_at: string
+        }
+        Insert: {
+          base_asset: string
+          created_at?: string
+          exchange?: string
+          id?: string
+          is_active?: boolean | null
+          is_spot_trading_allowed?: boolean | null
+          last_synced_at?: string | null
+          max_qty?: number | null
+          min_notional?: number | null
+          min_qty?: number | null
+          price_precision?: number | null
+          quantity_precision?: number | null
+          quote_asset: string
+          status?: string | null
+          step_size?: number | null
+          symbol: string
+          tick_size?: number | null
+          updated_at?: string
+        }
+        Update: {
+          base_asset?: string
+          created_at?: string
+          exchange?: string
+          id?: string
+          is_active?: boolean | null
+          is_spot_trading_allowed?: boolean | null
+          last_synced_at?: string | null
+          max_qty?: number | null
+          min_notional?: number | null
+          min_qty?: number | null
+          price_precision?: number | null
+          quantity_precision?: number | null
+          quote_asset?: string
+          status?: string | null
+          step_size?: number | null
+          symbol?: string
+          tick_size?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       data_access_audit: {
         Row: {
           access_type: string
@@ -2724,6 +2787,81 @@ export type Database = {
           volatility?: number | null
           volume?: number | null
           volume_usd?: number | null
+        }
+        Relationships: []
+      }
+      trade_audit_log: {
+        Row: {
+          client_order_id: string | null
+          commission: number | null
+          commission_asset: string | null
+          created_at: string
+          error_code: string | null
+          error_message: string | null
+          exchange: string
+          exchange_response: Json | null
+          executed_price: number | null
+          executed_qty: number | null
+          external_order_id: string | null
+          id: string
+          order_type: string | null
+          price: number | null
+          quantity: number
+          side: string
+          stage: string
+          symbol: string
+          trade_id: string
+          updated_at: string
+          validation_message: string | null
+          validation_status: string | null
+        }
+        Insert: {
+          client_order_id?: string | null
+          commission?: number | null
+          commission_asset?: string | null
+          created_at?: string
+          error_code?: string | null
+          error_message?: string | null
+          exchange: string
+          exchange_response?: Json | null
+          executed_price?: number | null
+          executed_qty?: number | null
+          external_order_id?: string | null
+          id?: string
+          order_type?: string | null
+          price?: number | null
+          quantity: number
+          side: string
+          stage?: string
+          symbol: string
+          trade_id: string
+          updated_at?: string
+          validation_message?: string | null
+          validation_status?: string | null
+        }
+        Update: {
+          client_order_id?: string | null
+          commission?: number | null
+          commission_asset?: string | null
+          created_at?: string
+          error_code?: string | null
+          error_message?: string | null
+          exchange?: string
+          exchange_response?: Json | null
+          executed_price?: number | null
+          executed_qty?: number | null
+          external_order_id?: string | null
+          id?: string
+          order_type?: string | null
+          price?: number | null
+          quantity?: number
+          side?: string
+          stage?: string
+          symbol?: string
+          trade_id?: string
+          updated_at?: string
+          validation_message?: string | null
+          validation_status?: string | null
         }
         Relationships: []
       }
