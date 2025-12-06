@@ -25,6 +25,21 @@ verify_jwt = true
 [functions.get-kraken-balances]
 verify_jwt = true
 
+[functions.execute-trade-kraken]
+verify_jwt = true
+
+[functions.get-alpaca-balances]
+verify_jwt = true
+
+[functions.execute-trade-alpaca]
+verify_jwt = true
+
+[functions.get-capital-balances]
+verify_jwt = true
+
+[functions.execute-trade-capital]
+verify_jwt = true
+
 [functions.get-user-market-data]
 verify_jwt = true
 
