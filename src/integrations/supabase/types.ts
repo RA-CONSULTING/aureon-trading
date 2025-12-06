@@ -2679,6 +2679,81 @@ export type Database = {
         }
         Relationships: []
       }
+      telescope_observations: {
+        Row: {
+          beam_angle: number
+          beam_intensity: number
+          beam_polarization: number
+          beam_velocity: number
+          beam_wavelength: number
+          created_at: string
+          dodecahedron_resonance: number
+          dominant_solid: string
+          focal_coherence: number
+          geometric_alignment: number
+          hexahedron_resonance: number
+          holographic_projection: Json | null
+          icosahedron_resonance: number
+          id: string
+          metadata: Json | null
+          octahedron_resonance: number
+          prism_boost_factor: number
+          probability_spectrum: Json | null
+          symbol: string
+          temporal_id: string
+          tetrahedron_resonance: number
+          timestamp: string
+        }
+        Insert: {
+          beam_angle?: number
+          beam_intensity?: number
+          beam_polarization?: number
+          beam_velocity?: number
+          beam_wavelength?: number
+          created_at?: string
+          dodecahedron_resonance?: number
+          dominant_solid?: string
+          focal_coherence?: number
+          geometric_alignment?: number
+          hexahedron_resonance?: number
+          holographic_projection?: Json | null
+          icosahedron_resonance?: number
+          id?: string
+          metadata?: Json | null
+          octahedron_resonance?: number
+          prism_boost_factor?: number
+          probability_spectrum?: Json | null
+          symbol?: string
+          temporal_id: string
+          tetrahedron_resonance?: number
+          timestamp?: string
+        }
+        Update: {
+          beam_angle?: number
+          beam_intensity?: number
+          beam_polarization?: number
+          beam_velocity?: number
+          beam_wavelength?: number
+          created_at?: string
+          dodecahedron_resonance?: number
+          dominant_solid?: string
+          focal_coherence?: number
+          geometric_alignment?: number
+          hexahedron_resonance?: number
+          holographic_projection?: Json | null
+          icosahedron_resonance?: number
+          id?: string
+          metadata?: Json | null
+          octahedron_resonance?: number
+          prism_boost_factor?: number
+          probability_spectrum?: Json | null
+          symbol?: string
+          temporal_id?: string
+          tetrahedron_resonance?: number
+          timestamp?: string
+        }
+        Relationships: []
+      }
       temporal_anchor_states: {
         Row: {
           anchor_strength: number

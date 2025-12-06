@@ -13,6 +13,10 @@ verify_jwt = false
 [functions.aureon-chat]
 verify_jwt = false
 
+# Quantum Telescope state ingestion
+[functions.ingest-telescope-state]
+verify_jwt = false
+
 # Critical endpoints - require authentication
 [functions.execute-trade]
 verify_jwt = true
@@ -50,9 +54,6 @@ verify_jwt = true
 verify_jwt = true
 
 [functions.get-kraken-balances]
-verify_jwt = true
-
-[functions.execute-trade-kraken]
 verify_jwt = true
 
 [functions.get-alpaca-balances]
