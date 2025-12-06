@@ -1,5 +1,9 @@
 project_id = "owfeyxrfyhprpcgqwxqh"
 
+# AUREON AI Chat - public for unauthenticated access
+[functions.aureon-chat]
+verify_jwt = false
+
 # Critical endpoints - require authentication
 [functions.execute-trade]
 verify_jwt = true

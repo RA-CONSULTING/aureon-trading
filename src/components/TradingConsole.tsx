@@ -22,10 +22,13 @@ import AutonomousTradingGuide from './AutonomousTradingGuide';
 import { runAnalysis, runBacktest } from '@/services/lighthouseService';
 import { runGaelicHistoricalSimulation } from '@/services/aureonService';
 import { connectWebSocket, type AureonWebSocketConnection } from '@/services/websocketService';
-import { streamLiveAnalysis, streamChatResponse, startTranscriptionSession } from '@/services/geminiService';
+import { streamLiveAnalysis, startTranscriptionSession } from '@/services/geminiService';
+import { streamAureonChat } from '@/services/aureonChatService';
+import { buildEcosystemContext } from '@/services/ecosystemContextBuilder';
 import { executeMarketTrade, annotateTradeEventWithExecution } from '@/services/tradingService.browser';
 import { NexusAnalysisResult, CoherenceDataPoint, ChatMessage, NexusReport, MonitoringEvent, HistoricalDataPoint, AureonDataPoint, AureonReport, GroundingSource } from '@/types';
 import TradeNotification from './TradeNotification';
+import { useEcosystemData } from '@/hooks/useEcosystemData';
 
 interface TradingConsoleProps {
   onBackToLanding?: () => void;
@@ -46,6 +49,9 @@ const TradingConsole: React.FC<TradingConsoleProps> = ({ onBackToLanding }) => {
   const [chatInput, setChatInput] = useState<string>('');
   const [lastTrade, setLastTrade] = useState<MonitoringEvent | null>(null);
   const [isApiActive, setIsApiActive] = useState<boolean>(false);
+  
+  // Get ecosystem data for AI context
+  const { metrics, busSnapshot } = useEcosystemData();
 
   const analysisLockRef = useRef<boolean>(false);
   const transcriptionSessionRef = useRef<Awaited<ReturnType<typeof startTranscriptionSession>> | null>(null);
@@ -374,7 +380,7 @@ const TradingConsole: React.FC<TradingConsoleProps> = ({ onBackToLanding }) => {
   };
 
   const handleSendMessage = async () => {
-    if (isChatLoading || !nexusResult || !chatInput.trim()) return;
+    if (isChatLoading || !chatInput.trim()) return;
 
     const message = chatInput;
     const newMessages: ChatMessage[] = [...chatMessages, { role: 'user', content: message }];
@@ -388,7 +394,15 @@ const TradingConsole: React.FC<TradingConsoleProps> = ({ onBackToLanding }) => {
     setChatMessages(prev => [...prev, { role: 'model', content: '', sources: [] }]);
 
     try {
-      const stream = streamChatResponse(newMessages);
+      // Build ecosystem context for AI
+      const ecosystemContext = buildEcosystemContext(metrics, busSnapshot, {
+        tradingMode: isApiActive ? 'live' : 'paper',
+        recentTrades: nexusResult?.monitoringEvents?.filter(e => e.stage === 'trade_executed').length ?? 0,
+        totalPnL: 0,
+      });
+
+      // Use new AUREON chat with ecosystem awareness
+      const stream = streamAureonChat(newMessages, ecosystemContext);
       
       for await (const chunk of stream) {
         aiResponse += chunk.text;
@@ -415,7 +429,7 @@ const TradingConsole: React.FC<TradingConsoleProps> = ({ onBackToLanding }) => {
             const updatedMessages = [...prev];
             const lastMessage = updatedMessages[updatedMessages.length - 1];
             if(lastMessage) {
-                lastMessage.content = 'Sorry, I encountered a data stream error.';
+                lastMessage.content = 'I experienced a disruption in my quantum perception. Please try again.';
             }
             return updatedMessages;
         });
