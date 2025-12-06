@@ -1,6 +1,6 @@
-
 import React, { useRef, useEffect } from 'react';
 import { marked } from 'marked';
+import DOMPurify from 'dompurify';
 import { ChatMessage } from '@/types';
 
 interface ChatPanelProps {
@@ -44,8 +44,9 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
   };
 
   const renderMessageContent = (content: string) => {
-    const sanitizedHtml = marked.parse(content, { gfm: true, breaks: true });
-    return { __html: sanitizedHtml as string };
+    const rawHtml = marked.parse(content, { gfm: true, breaks: true });
+    const sanitizedHtml = DOMPurify.sanitize(rawHtml as string);
+    return { __html: sanitizedHtml };
   };
 
   return (

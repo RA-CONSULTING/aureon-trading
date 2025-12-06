@@ -1,20 +1,34 @@
 project_id = "owfeyxrfyhprpcgqwxqh"
 
+# Critical endpoints - require authentication
 [functions.execute-trade]
-verify_jwt = false
-
-[functions.fetch-binance-market-data]
-verify_jwt = false
+verify_jwt = true
 
 [functions.gas-tank-topup]
-verify_jwt = false
+verify_jwt = true
 
 [functions.gas-tank-deduct-fee]
-verify_jwt = false
+verify_jwt = true
 
 [functions.gas-tank-check-balance]
-verify_jwt = false
+verify_jwt = true
 
+[functions.emergency-stop]
+verify_jwt = true
+
+[functions.create-aureon-session]
+verify_jwt = true
+
+[functions.get-binance-balances]
+verify_jwt = true
+
+[functions.get-kraken-balances]
+verify_jwt = true
+
+[functions.get-user-market-data]
+verify_jwt = true
+
+# Protected endpoints
 [functions.monitor-positions]
 verify_jwt = true
 
@@ -63,89 +77,79 @@ verify_jwt = true
 [functions.fetch-binance-symbols]
 verify_jwt = true
 
-[functions.ingest-master-equation]
-verify_jwt = false
-
-[functions.ingest-prism-state]
-verify_jwt = false
-
-[functions.ingest-rainbow-bridge]
-verify_jwt = false
-
-[functions.ingest-stargate-network]
-verify_jwt = false
-
-[functions.emergency-stop]
-verify_jwt = false
-
-[functions.get-binance-balances]
-verify_jwt = false
-
-[functions.ingest-elephant-memory]
-verify_jwt = false
-
-[functions.get-kraken-balances]
-verify_jwt = false
-
-[functions.create-aureon-session]
-verify_jwt = false
-
-[functions.get-user-market-data]
-verify_jwt = false
-
-[functions.ingest-6d-harmonic]
-verify_jwt = false
-
-[functions.ingest-probability-matrix]
-verify_jwt = false
-
-[functions.ingest-integral-aqal]
-verify_jwt = false
-
-[functions.ingest-ftcp-detector]
-verify_jwt = false
-
-[functions.ingest-qgita-signal]
-verify_jwt = false
-
-[functions.ingest-hnc-detection]
-verify_jwt = false
-
-[functions.ingest-smart-router]
-verify_jwt = false
-
-[functions.ingest-decision-fusion]
-verify_jwt = false
-
-[functions.ingest-ecosystem-snapshot]
-verify_jwt = false
-
-[functions.ingest-temporal-anchor]
-verify_jwt = false
-
-[functions.ingest-omega-equation]
-verify_jwt = false
-
-[functions.ingest-unity-event]
-verify_jwt = false
-
-[functions.ingest-eckoushic-cascade]
-verify_jwt = false
-
-[functions.ingest-akashic-attunement]
-verify_jwt = false
-
-[functions.ingest-stargate-harmonizer]
-verify_jwt = false
-
-[functions.ingest-planetary-modulation]
-verify_jwt = false
-
-[functions.ingest-performance-tracker]
-verify_jwt = false
-
-[functions.ingest-risk-manager]
+# Public read-only endpoints (market data only, no user data)
+[functions.fetch-binance-market-data]
 verify_jwt = false
 
 [functions.fetch-schumann-data]
 verify_jwt = false
+
+# Internal ingestion endpoints - protected by service role key validation
+[functions.ingest-master-equation]
+verify_jwt = true
+
+[functions.ingest-prism-state]
+verify_jwt = true
+
+[functions.ingest-rainbow-bridge]
+verify_jwt = true
+
+[functions.ingest-stargate-network]
+verify_jwt = true
+
+[functions.ingest-elephant-memory]
+verify_jwt = true
+
+[functions.ingest-6d-harmonic]
+verify_jwt = true
+
+[functions.ingest-probability-matrix]
+verify_jwt = true
+
+[functions.ingest-integral-aqal]
+verify_jwt = true
+
+[functions.ingest-ftcp-detector]
+verify_jwt = true
+
+[functions.ingest-qgita-signal]
+verify_jwt = true
+
+[functions.ingest-hnc-detection]
+verify_jwt = true
+
+[functions.ingest-smart-router]
+verify_jwt = true
+
+[functions.ingest-decision-fusion]
+verify_jwt = true
+
+[functions.ingest-ecosystem-snapshot]
+verify_jwt = true
+
+[functions.ingest-temporal-anchor]
+verify_jwt = true
+
+[functions.ingest-omega-equation]
+verify_jwt = true
+
+[functions.ingest-unity-event]
+verify_jwt = true
+
+[functions.ingest-eckoushic-cascade]
+verify_jwt = true
+
+[functions.ingest-akashic-attunement]
+verify_jwt = true
+
+[functions.ingest-stargate-harmonizer]
+verify_jwt = true
+
+[functions.ingest-planetary-modulation]
+verify_jwt = true
+
+[functions.ingest-performance-tracker]
+verify_jwt = true
+
+[functions.ingest-risk-manager]
+verify_jwt = true
