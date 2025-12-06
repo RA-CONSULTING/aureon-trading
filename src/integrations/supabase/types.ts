@@ -2255,42 +2255,81 @@ export type Database = {
       }
       qgita_signal_states: {
         Row: {
+          anomaly_pointer: number | null
           coherence_boost: number
           confidence: number
           created_at: string | null
+          cross_scale_coherence: number | null
+          curvature: number | null
+          curvature_direction: string | null
           frequency: number
+          ftcp_detected: boolean | null
+          golden_ratio_score: number | null
           id: string
+          is_lhe: boolean | null
+          lighthouse_l: number | null
+          lighthouse_threshold: number | null
+          linear_coherence: number | null
           metadata: Json | null
+          nonlinear_coherence: number | null
           phase: string
+          reasoning: string | null
           signal_type: string
           strength: number
           temporal_id: string
+          tier: number | null
           timestamp: string | null
         }
         Insert: {
+          anomaly_pointer?: number | null
           coherence_boost?: number
           confidence?: number
           created_at?: string | null
+          cross_scale_coherence?: number | null
+          curvature?: number | null
+          curvature_direction?: string | null
           frequency?: number
+          ftcp_detected?: boolean | null
+          golden_ratio_score?: number | null
           id?: string
+          is_lhe?: boolean | null
+          lighthouse_l?: number | null
+          lighthouse_threshold?: number | null
+          linear_coherence?: number | null
           metadata?: Json | null
+          nonlinear_coherence?: number | null
           phase?: string
+          reasoning?: string | null
           signal_type?: string
           strength?: number
           temporal_id: string
+          tier?: number | null
           timestamp?: string | null
         }
         Update: {
+          anomaly_pointer?: number | null
           coherence_boost?: number
           confidence?: number
           created_at?: string | null
+          cross_scale_coherence?: number | null
+          curvature?: number | null
+          curvature_direction?: string | null
           frequency?: number
+          ftcp_detected?: boolean | null
+          golden_ratio_score?: number | null
           id?: string
+          is_lhe?: boolean | null
+          lighthouse_l?: number | null
+          lighthouse_threshold?: number | null
+          linear_coherence?: number | null
           metadata?: Json | null
+          nonlinear_coherence?: number | null
           phase?: string
+          reasoning?: string | null
           signal_type?: string
           strength?: number
           temporal_id?: string
+          tier?: number | null
           timestamp?: string | null
         }
         Relationships: []
