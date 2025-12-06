@@ -19,6 +19,7 @@ import { Live6DWaveformVisualizer } from '@/components/Live6DWaveformVisualizer'
 import { TradingModeToggle } from '@/components/TradingModeToggle';
 import { UserAssetsPanel } from '@/components/warroom/UserAssetsPanel';
 import { DataStreamMonitorPanel } from '@/components/DataStreamMonitorPanel';
+import FrequencyAIInterpreter from '@/components/FrequencyAIInterpreter';
 import { LiveTradingStatusPanel } from '@/components/LiveTradingStatusPanel';
 import { SimulationVerificationPanel } from '@/components/SimulationVerificationPanel';
 import DecisionVerificationPanel from '@/components/DecisionVerificationPanel';
@@ -310,6 +311,9 @@ export default function AureonDashboard() {
         
         {/* User Assets Panel - Real Multi-Exchange Holdings */}
         <UserAssetsPanel />
+        
+        {/* AI Frequency Interpreter - Human ↔ AI ↔ Frequency Loop */}
+        <FrequencyAIInterpreter />
         
         {/* Live 6D Harmonic Visualization */}
         <Live6DWaveformVisualizer />

@@ -211,3 +211,7 @@ verify_jwt = true
 # Exchange connectivity verification (public for smoke test)
 [functions.verify-exchange-connectivity]
 verify_jwt = false
+
+# AI Frequency Interpreter (public for ecosystem access)
+[functions.interpret-frequency]
+verify_jwt = false
