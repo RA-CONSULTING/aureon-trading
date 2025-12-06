@@ -31,18 +31,25 @@ Deno.serve(async (req) => {
 
     console.log(`[ingest-integral-aqal] Ingesting state for temporal_id: ${temporal_id}`);
 
+    // Ensure numeric values (handle objects being passed)
+    const safeNumber = (val: any, fallback: number = 0): number => {
+      if (typeof val === 'number') return val;
+      if (typeof val === 'object' && val !== null && 'coherenceLevel' in val) return val.coherenceLevel;
+      return fallback;
+    };
+    
     const { data, error } = await supabase
       .from('integral_aqal_states')
       .insert({
         temporal_id,
-        upper_left: upper_left || 0,
-        upper_right: upper_right || 0,
-        lower_left: lower_left || 0,
-        lower_right: lower_right || 0,
-        quadrant_balance: quadrant_balance || 0,
-        dominant_quadrant: dominant_quadrant || 'UPPER_RIGHT',
-        integration_level: integration_level || 0,
-        spiral_stage: spiral_stage || 'ORANGE',
+        upper_left: safeNumber(upper_left),
+        upper_right: safeNumber(upper_right),
+        lower_left: safeNumber(lower_left),
+        lower_right: safeNumber(lower_right),
+        quadrant_balance: safeNumber(quadrant_balance),
+        dominant_quadrant: typeof dominant_quadrant === 'string' ? dominant_quadrant : 'UPPER_RIGHT',
+        integration_level: safeNumber(integration_level),
+        spiral_stage: typeof spiral_stage === 'string' ? spiral_stage : 'ORANGE',
         metadata: metadata || {}
       })
       .select()

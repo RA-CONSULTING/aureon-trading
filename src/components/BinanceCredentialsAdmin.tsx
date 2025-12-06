@@ -42,13 +42,20 @@ export function BinanceCredentialsAdmin() {
 
       if (error) throw error;
 
-      // Check balances to see which accounts have errors
-      const balancesResponse = await supabase.functions.invoke('get-binance-balances');
-      const failedAccounts = new Set(
-        balancesResponse.data?.accounts
-          ?.filter((acc: any) => acc.error)
-          ?.map((acc: any) => acc.name) || []
-      );
+      // Check balances to see which accounts have errors using authenticated endpoint
+      const { data: { session } } = await supabase.auth.getSession();
+      let failedAccounts = new Set<string>();
+      
+      if (session) {
+        const balancesResponse = await supabase.functions.invoke('get-user-balances', {
+          headers: { Authorization: `Bearer ${session.access_token}` }
+        });
+        failedAccounts = new Set(
+          balancesResponse.data?.balances
+            ?.filter((b: any) => b.error)
+            ?.map((b: any) => b.exchange) || []
+        );
+      }
 
       const enriched = (data || []).map(cred => ({
         ...cred,
