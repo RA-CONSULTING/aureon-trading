@@ -6,6 +6,16 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+async function encryptCredential(value: string, cryptoKey: CryptoKey, iv: Uint8Array): Promise<string> {
+  const encoder = new TextEncoder();
+  const encrypted = await crypto.subtle.encrypt(
+    { name: 'AES-GCM', iv: iv as unknown as BufferSource },
+    cryptoKey,
+    encoder.encode(value)
+  );
+  return btoa(String.fromCharCode(...new Uint8Array(encrypted)));
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -15,7 +25,22 @@ serve(async (req) => {
 
   try {
     const body = await req.json();
-    const { userId, apiKey, apiSecret } = body;
+    const { 
+      userId, 
+      // Binance (required)
+      apiKey, 
+      apiSecret,
+      // Kraken (optional)
+      krakenApiKey,
+      krakenApiSecret,
+      // Alpaca (optional)
+      alpacaApiKey,
+      alpacaSecretKey,
+      // Capital.com (optional)
+      capitalApiKey,
+      capitalPassword,
+      capitalIdentifier
+    } = body;
 
     console.log('[create-aureon-session] Processing for userId:', userId);
 
@@ -40,7 +65,7 @@ serve(async (req) => {
       );
     }
 
-    // === SECURITY FIX: Verify the JWT token matches the userId ===
+    // === SECURITY: Verify the JWT token matches the userId ===
     const authHeader = req.headers.get('Authorization');
     const token = authHeader?.replace('Bearer ', '');
 
@@ -52,7 +77,6 @@ serve(async (req) => {
       );
     }
 
-    // Use anon key to verify the user's token
     const anonSupabase = createClient(supabaseUrl, supabaseAnonKey);
     const { data: { user }, error: authError } = await anonSupabase.auth.getUser(token);
 
@@ -64,9 +88,8 @@ serve(async (req) => {
       );
     }
 
-    // Verify the authenticated user matches the requested userId
     if (user.id !== userId) {
-      console.error('[create-aureon-session] User ID mismatch:', { authenticated: user.id, requested: userId });
+      console.error('[create-aureon-session] User ID mismatch');
       return new Response(
         JSON.stringify({ error: 'Unauthorized: user mismatch' }),
         { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -75,56 +98,19 @@ serve(async (req) => {
 
     console.log('[create-aureon-session] User verified:', user.id);
 
-    // Use service role for database operations
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    let apiKeyEncrypted = null;
-    let apiSecretEncrypted = null;
-    let ivBase64 = null;
+    // Prepare crypto key for encryption
+    const encoder = new TextEncoder();
+    const keyData = encoder.encode(encryptionKey.padEnd(32, '0').slice(0, 32));
+    const cryptoKey = await crypto.subtle.importKey(
+      'raw',
+      keyData,
+      { name: 'AES-GCM' },
+      false,
+      ['encrypt']
+    );
 
-    // Only encrypt if API credentials are provided
-    if (apiKey && apiSecret) {
-      console.log('[create-aureon-session] Encrypting API credentials...');
-      
-      try {
-        const encoder = new TextEncoder();
-        const keyData = encoder.encode(encryptionKey.padEnd(32, '0').slice(0, 32));
-        
-        const cryptoKey = await crypto.subtle.importKey(
-          'raw',
-          keyData,
-          { name: 'AES-GCM' },
-          false,
-          ['encrypt']
-        );
-
-        const iv = crypto.getRandomValues(new Uint8Array(12));
-        
-        const encryptedApiKeyBuffer = await crypto.subtle.encrypt(
-          { name: 'AES-GCM', iv },
-          cryptoKey,
-          encoder.encode(apiKey)
-        );
-        
-        const encryptedApiSecretBuffer = await crypto.subtle.encrypt(
-          { name: 'AES-GCM', iv },
-          cryptoKey,
-          encoder.encode(apiSecret)
-        );
-
-        // Convert to base64
-        apiKeyEncrypted = btoa(String.fromCharCode(...new Uint8Array(encryptedApiKeyBuffer)));
-        apiSecretEncrypted = btoa(String.fromCharCode(...new Uint8Array(encryptedApiSecretBuffer)));
-        ivBase64 = btoa(String.fromCharCode(...iv));
-        
-        console.log('[create-aureon-session] Encryption successful');
-      } catch (encryptError) {
-        console.error('[create-aureon-session] Encryption failed:', encryptError);
-        // Continue without encryption - credentials won't be stored
-      }
-    }
-
-    // Create or update aureon_user_sessions
     const sessionData: Record<string, any> = {
       user_id: userId,
       payment_completed: false,
@@ -133,10 +119,41 @@ serve(async (req) => {
       is_trading_active: false
     };
 
-    if (apiKeyEncrypted && apiSecretEncrypted && ivBase64) {
-      sessionData.binance_api_key_encrypted = apiKeyEncrypted;
-      sessionData.binance_api_secret_encrypted = apiSecretEncrypted;
-      sessionData.binance_iv = ivBase64;
+    // Encrypt Binance credentials (required)
+    if (apiKey && apiSecret) {
+      console.log('[create-aureon-session] Encrypting Binance credentials...');
+      const binanceIv = crypto.getRandomValues(new Uint8Array(12));
+      sessionData.binance_api_key_encrypted = await encryptCredential(apiKey, cryptoKey, binanceIv);
+      sessionData.binance_api_secret_encrypted = await encryptCredential(apiSecret, cryptoKey, binanceIv);
+      sessionData.binance_iv = btoa(String.fromCharCode(...binanceIv));
+    }
+
+    // Encrypt Kraken credentials (optional)
+    if (krakenApiKey && krakenApiSecret) {
+      console.log('[create-aureon-session] Encrypting Kraken credentials...');
+      const krakenIv = crypto.getRandomValues(new Uint8Array(12));
+      sessionData.kraken_api_key_encrypted = await encryptCredential(krakenApiKey, cryptoKey, krakenIv);
+      sessionData.kraken_api_secret_encrypted = await encryptCredential(krakenApiSecret, cryptoKey, krakenIv);
+      sessionData.kraken_iv = btoa(String.fromCharCode(...krakenIv));
+    }
+
+    // Encrypt Alpaca credentials (optional)
+    if (alpacaApiKey && alpacaSecretKey) {
+      console.log('[create-aureon-session] Encrypting Alpaca credentials...');
+      const alpacaIv = crypto.getRandomValues(new Uint8Array(12));
+      sessionData.alpaca_api_key_encrypted = await encryptCredential(alpacaApiKey, cryptoKey, alpacaIv);
+      sessionData.alpaca_secret_key_encrypted = await encryptCredential(alpacaSecretKey, cryptoKey, alpacaIv);
+      sessionData.alpaca_iv = btoa(String.fromCharCode(...alpacaIv));
+    }
+
+    // Encrypt Capital.com credentials (optional)
+    if (capitalApiKey && capitalPassword && capitalIdentifier) {
+      console.log('[create-aureon-session] Encrypting Capital.com credentials...');
+      const capitalIv = crypto.getRandomValues(new Uint8Array(12));
+      sessionData.capital_api_key_encrypted = await encryptCredential(capitalApiKey, cryptoKey, capitalIv);
+      sessionData.capital_password_encrypted = await encryptCredential(capitalPassword, cryptoKey, capitalIv);
+      sessionData.capital_identifier_encrypted = await encryptCredential(capitalIdentifier, cryptoKey, capitalIv);
+      sessionData.capital_iv = btoa(String.fromCharCode(...capitalIv));
     }
 
     console.log('[create-aureon-session] Upserting session...');
@@ -149,7 +166,6 @@ serve(async (req) => {
 
     if (error) {
       console.error('[create-aureon-session] Database error:', error);
-      // SECURITY FIX: Return generic error, log details server-side
       return new Response(
         JSON.stringify({ error: 'Session creation failed. Please try again.' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -165,7 +181,6 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('[create-aureon-session] Unexpected error:', error);
-    // SECURITY FIX: Return generic error, don't leak internal details
     return new Response(
       JSON.stringify({ error: 'An unexpected error occurred. Please try again.' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
