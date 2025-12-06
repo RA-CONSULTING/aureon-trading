@@ -223,3 +223,7 @@ verify_jwt = false
 # 10-9-1 Prime Seal packet ingestion
 [functions.ingest-10-9-1-packet]
 verify_jwt = false
+
+# Force Validated Trade - ignition button
+[functions.force-validated-trade]
+verify_jwt = false
