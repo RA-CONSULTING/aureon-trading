@@ -7,6 +7,9 @@ import { useExchangeDataVerification } from '@/hooks/useExchangeDataVerification
 import { useDataStreamMonitor } from '@/hooks/useDataStreamMonitor';
 import { useBackendHealth } from '@/hooks/useBackendHealth';
 import { usePrimeSeal } from '@/hooks/usePrimeSeal';
+import { IgnitionButton } from '@/components/IgnitionButton';
+import { ValidationTracePanel } from '@/components/ValidationTracePanel';
+import { ForceTradeResult } from '@/core/forceValidatedTrade';
 import { 
   CheckCircle, 
   XCircle, 
@@ -18,7 +21,8 @@ import {
   Key,
   Activity,
   Lock,
-  Unlock
+  Unlock,
+  Flame
 } from 'lucide-react';
 
 interface SystemCheck {
@@ -29,12 +33,19 @@ interface SystemCheck {
   actionNeeded?: string;
 }
 
-export function SystemHealthPanel() {
+interface SystemHealthPanelProps {
+  userId?: string;
+  tradingMode?: 'paper' | 'live';
+}
+
+export function SystemHealthPanel({ userId, tradingMode = 'paper' }: SystemHealthPanelProps) {
   const { verification, isLiveData, isDemoMode, liveExchangeCount, verify, getExchangeStatus } = useExchangeDataVerification();
   const { overallHealth, healthyEndpoints, unhealthyEndpoints } = useDataStreamMonitor();
   const { healthReport, refresh: refreshHealth } = useBackendHealth();
   const primeSeal = usePrimeSeal();
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [validationResult, setValidationResult] = useState<ForceTradeResult | null>(null);
+  const [showTrace, setShowTrace] = useState(false);
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
@@ -241,6 +252,50 @@ export function SystemHealthPanel() {
             <span>Anchor: {(primeSeal.anchorCoherence * 100).toFixed(0)}% (1×)</span>
           </div>
         </div>
+
+        {/* Cycle 1 Ignition Section */}
+        {userId && (
+          <div className="p-4 rounded-lg border-2 border-dashed border-primary/30 bg-primary/5">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <Flame className="h-5 w-5 text-orange-500" />
+                <span className="font-bold">Cycle 1 Validation</span>
+              </div>
+              {validationResult && (
+                <Badge variant={validationResult.success ? "default" : "destructive"}>
+                  {validationResult.success ? '✅ PASSED' : '❌ FAILED'}
+                </Badge>
+              )}
+            </div>
+            <p className="text-sm text-muted-foreground mb-3">
+              Force a single fully validated trade through all 10 system steps to verify the pipeline is operational.
+            </p>
+            <div className="flex items-center gap-3">
+              <IgnitionButton 
+                userId={userId} 
+                tradingMode={tradingMode}
+                onComplete={(result) => {
+                  setValidationResult(result);
+                  setShowTrace(true);
+                }}
+              />
+              {validationResult && (
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setShowTrace(!showTrace)}
+                >
+                  {showTrace ? 'Hide Trace' : 'Show Trace'}
+                </Button>
+              )}
+            </div>
+            {showTrace && validationResult && (
+              <div className="mt-4">
+                <ValidationTracePanel trace={validationResult.trace} />
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Overall status message */}
         <div className={`p-4 rounded-lg text-center ${
