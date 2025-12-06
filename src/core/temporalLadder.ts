@@ -24,7 +24,19 @@ export type SystemName =
   | 'quantum-quackers'
   | 'akashic-mapper'
   | 'zero-point'
-  | 'dimensional-dialler';
+  | 'dimensional-dialler'
+  | 'integral-aqal'
+  | 'stargate-lattice'
+  | 'ftcp-detector'
+  | 'qgita-signal'
+  | 'hnc-imperial'
+  | 'smart-router'
+  | 'temporal-anchor'
+  | 'hive-controller'
+  | 'decision-fusion'
+  | 'prism'
+  | '6d-harmonic'
+  | 'probability-matrix';
 
 export interface SystemStatus {
   name: SystemName;
@@ -66,7 +78,19 @@ class TemporalLadderCore {
     'quantum-quackers',
     'akashic-mapper',
     'zero-point',
-    'dimensional-dialler'
+    'dimensional-dialler',
+    'integral-aqal',
+    'stargate-lattice',
+    'ftcp-detector',
+    'qgita-signal',
+    'hnc-imperial',
+    'smart-router',
+    'temporal-anchor',
+    'hive-controller',
+    'decision-fusion',
+    'prism',
+    '6d-harmonic',
+    'probability-matrix'
   ];
 
   constructor() {
@@ -305,4 +329,16 @@ export const SYSTEMS = {
   AKASHIC_MAPPER: 'akashic-mapper' as SystemName,
   ZERO_POINT: 'zero-point' as SystemName,
   DIMENSIONAL_DIALLER: 'dimensional-dialler' as SystemName,
+  INTEGRAL_AQAL: 'integral-aqal' as SystemName,
+  STARGATE_LATTICE: 'stargate-lattice' as SystemName,
+  FTCP_DETECTOR: 'ftcp-detector' as SystemName,
+  QGITA_SIGNAL: 'qgita-signal' as SystemName,
+  HNC_IMPERIAL: 'hnc-imperial' as SystemName,
+  SMART_ROUTER: 'smart-router' as SystemName,
+  TEMPORAL_ANCHOR: 'temporal-anchor' as SystemName,
+  HIVE_CONTROLLER: 'hive-controller' as SystemName,
+  DECISION_FUSION: 'decision-fusion' as SystemName,
+  PRISM: 'prism' as SystemName,
+  SIX_D_HARMONIC: '6d-harmonic' as SystemName,
+  PROBABILITY_MATRIX: 'probability-matrix' as SystemName,
 };
