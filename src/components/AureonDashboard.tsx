@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Sparkles, Activity, Zap, Brain, Radio, Database, Router, TrendingUp, TrendingDown, LogOut, Play, Square, Wifi, WifiOff, BarChart3 } from 'lucide-react';
 import { DataSourceIndicator, DemoModeWarningBanner } from '@/components/DataSourceIndicator';
 import { ExchangeDataVerificationPanel } from '@/components/ExchangeDataVerificationPanel';
+import { AssetPriceListPanel } from '@/components/AssetPriceListPanel';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { UnifiedBusStatus } from '@/components/warroom/UnifiedBusStatus';
@@ -311,6 +312,9 @@ export default function AureonDashboard() {
         
         {/* User Assets Panel - Real Multi-Exchange Holdings */}
         <UserAssetsPanel />
+        
+        {/* Full Asset Price List - 805+ Tradeable Pairs */}
+        <AssetPriceListPanel />
         
         {/* AI Frequency Interpreter - Human ↔ AI ↔ Frequency Loop */}
         <FrequencyAIInterpreter />
