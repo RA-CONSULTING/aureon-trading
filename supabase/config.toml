@@ -122,3 +122,27 @@ verify_jwt = false
 
 [functions.ingest-temporal-anchor]
 verify_jwt = false
+
+[functions.ingest-omega-equation]
+verify_jwt = false
+
+[functions.ingest-unity-event]
+verify_jwt = false
+
+[functions.ingest-eckoushic-cascade]
+verify_jwt = false
+
+[functions.ingest-akashic-attunement]
+verify_jwt = false
+
+[functions.ingest-stargate-harmonizer]
+verify_jwt = false
+
+[functions.ingest-planetary-modulation]
+verify_jwt = false
+
+[functions.ingest-performance-tracker]
+verify_jwt = false
+
+[functions.ingest-risk-manager]
+verify_jwt = false
