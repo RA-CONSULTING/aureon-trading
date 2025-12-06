@@ -1,5 +1,8 @@
 project_id = "owfeyxrfyhprpcgqwxqh"
 
+[functions.store-binance-credentials]
+verify_jwt = true
+
 [functions.sync-exchange-assets]
 verify_jwt = false
 
