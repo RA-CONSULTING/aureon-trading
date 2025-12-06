@@ -24,12 +24,15 @@ export function useBinanceBalances() {
   const { toast } = useToast();
 
   const fetchBalances = async () => {
-    setLoading(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
-        throw new Error('Not authenticated');
+        // Not authenticated - silently skip, don't show error
+        setLoading(false);
+        return;
       }
+      
+      setLoading(true);
       
       const { data, error } = await supabase.functions.invoke('get-user-balances', {
         headers: { Authorization: `Bearer ${session.access_token}` }
