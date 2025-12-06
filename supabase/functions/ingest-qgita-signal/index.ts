@@ -19,23 +19,56 @@ Deno.serve(async (req) => {
     const {
       temporal_id,
       signal_type,
+      tier,
       strength,
       confidence,
+      curvature,
+      curvature_direction,
+      ftcp_detected,
+      golden_ratio_score,
+      lighthouse_l,
+      is_lhe,
+      lighthouse_threshold,
+      linear_coherence,
+      nonlinear_coherence,
+      cross_scale_coherence,
+      anomaly_pointer,
+      reasoning,
       coherence_boost,
       phase,
       frequency,
       metadata
     } = body;
 
-    console.log(`[ingest-qgita-signal] Ingesting state for temporal_id: ${temporal_id}`);
+    // Log with QGITA-style formatting
+    const tierEmoji = tier === 1 ? '🥇' : tier === 2 ? '🥈' : '🥉';
+    const signalEmoji = signal_type === 'BUY' ? '🟢' : signal_type === 'SELL' ? '🔴' : '⚪';
+    console.log(
+      `[ingest-qgita-signal] ${signalEmoji} ${signal_type} ${tierEmoji}T${tier} ` +
+      `Conf:${(confidence || 0).toFixed(1)}% LHE:${is_lhe} FTCP:${ftcp_detected} ` +
+      `temporal_id: ${temporal_id}`
+    );
 
     const { data, error } = await supabase
       .from('qgita_signal_states')
       .insert({
         temporal_id,
         signal_type: signal_type || 'HOLD',
+        tier: tier || 3,
         strength: strength || 0,
         confidence: confidence || 0,
+        curvature: curvature || 0,
+        curvature_direction: curvature_direction || 'NEUTRAL',
+        ftcp_detected: ftcp_detected || false,
+        golden_ratio_score: golden_ratio_score || 0,
+        lighthouse_l: lighthouse_l || 0,
+        is_lhe: is_lhe || false,
+        lighthouse_threshold: lighthouse_threshold || 0,
+        linear_coherence: linear_coherence || 0,
+        nonlinear_coherence: nonlinear_coherence || 0,
+        cross_scale_coherence: cross_scale_coherence || 0,
+        anomaly_pointer: anomaly_pointer || 0,
+        reasoning: reasoning || '',
         coherence_boost: coherence_boost || 0,
         phase: phase || 'NEUTRAL',
         frequency: frequency || 528,
@@ -49,7 +82,7 @@ Deno.serve(async (req) => {
       throw error;
     }
 
-    console.log(`[ingest-qgita-signal] Successfully ingested state: ${data.id}`);
+    console.log(`[ingest-qgita-signal] Successfully ingested: ${data.id}`);
 
     return new Response(JSON.stringify({ success: true, data }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
