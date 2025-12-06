@@ -89,3 +89,6 @@ verify_jwt = false
 
 [functions.create-aureon-session]
 verify_jwt = false
+
+[functions.get-user-market-data]
+verify_jwt = false
