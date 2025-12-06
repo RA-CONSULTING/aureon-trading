@@ -64,6 +64,13 @@ export interface PrismState {
   isLoveLocked: boolean;
 }
 
+export interface RoutingState {
+  recommendedExchange: string | null;
+  positionSizeUsd: number;
+  availableBalance: number;
+  reasoning: string | null;
+}
+
 export interface MarketData {
   price: number;
   volume: number;
@@ -100,6 +107,13 @@ export function useAureonSession(userId: string | null) {
     momentum: 0,
     spread: 0,
     timestamp: 0
+  });
+
+  const [routingState, setRoutingState] = useState<RoutingState>({
+    recommendedExchange: null,
+    positionSizeUsd: 0,
+    availableBalance: 0,
+    reasoning: null
   });
   
   const [tradingState, setTradingState] = useState<TradingState>({
@@ -267,6 +281,16 @@ export function useAureonSession(userId: string | null) {
         // Send heartbeat to Temporal Ladder
         temporalLadder.heartbeat(SYSTEMS.MASTER_EQUATION, result.lambdaState.coherence);
         temporalLadder.heartbeat(SYSTEMS.HARMONIC_NEXUS, result.busSnapshot.consensusConfidence);
+
+        // Update routing state from orchestration result
+        if (result.routingDecision) {
+          setRoutingState({
+            recommendedExchange: result.routingDecision.recommendedExchange,
+            positionSizeUsd: result.positionSizing?.positionSizeUsd || 0,
+            availableBalance: result.positionSizing?.availableBalance || 0,
+            reasoning: result.routingDecision.reasoning
+          });
+        }
 
         // Update database
         await supabase
@@ -489,6 +513,7 @@ export function useAureonSession(userId: string | null) {
     exchangeState,
     prismState,
     marketData,
+    routingState,
     lastSignal,
     nextCheckIn,
     lastDecision,

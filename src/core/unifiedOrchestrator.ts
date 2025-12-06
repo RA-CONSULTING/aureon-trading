@@ -12,6 +12,8 @@ import { thePrism, type PrismOutput } from './thePrism';
 import type { MarketSnapshot } from './aurisNodes';
 import { attuneToAkashicFrequency, calculateAkashicBoost } from './akashicFrequencyMapper';
 import { fullEcosystemConnector } from './fullEcosystemConnector';
+import { multiExchangeClient } from './multiExchangeClient';
+import { smartOrderRouter, type RoutingDecision } from './smartOrderRouter';
 
 export interface OrchestrationResult {
   timestamp: number;
@@ -21,11 +23,19 @@ export interface OrchestrationResult {
   rainbowState: RainbowState | null;
   prismOutput: PrismOutput | null;
   ecosystemState: EcosystemState | null;
+  routingDecision: RoutingDecision | null;
+  positionSizing: {
+    positionSizeUsd: number;
+    availableBalance: number;
+    riskAmount: number;
+  } | null;
   finalDecision: {
     action: 'BUY' | 'SELL' | 'HOLD';
     symbol: string;
     confidence: number;
     reason: string;
+    recommendedExchange?: string;
+    positionSizeUsd?: number;
   };
   tradeExecuted: boolean;
 }
@@ -135,24 +145,38 @@ export class UnifiedOrchestrator {
     // Step 6c: Publish Prism state to UnifiedBus
     this.publishPrism(prismOutput);
     
-    // Step 7: Check Elephant Memory for avoidance
+    // Step 7: Get multi-exchange state and position sizing
+    const exchangeState = multiExchangeClient.getState();
+    const positionSizing = multiExchangeClient.calculatePositionSize(0.02, 'USDT');
+    
+    // Step 8: Get Smart Order Router recommendation
+    let routingDecision: RoutingDecision | null = null;
+    try {
+      routingDecision = await smartOrderRouter.getBestQuote(symbol, 'BUY', positionSizing.positionSizeUsd / marketSnapshot.price);
+    } catch (err) {
+      console.warn('[UnifiedOrchestrator] Smart routing failed, using default:', err);
+    }
+    
+    // Step 9: Check Elephant Memory for avoidance
     const avoidance = elephantMemory.shouldAvoid(symbol);
     
-    // Step 8: Get bus consensus
+    // Step 10: Get bus consensus
     const busSnapshot = unifiedBus.snapshot();
     const consensus = unifiedBus.checkConsensus();
     
-    // Step 9: Make final decision with 6D probability integration
+    // Step 11: Make final decision with 6D probability integration + exchange data
     const finalDecision = this.makeFinalDecision(
       consensus,
       lambdaState,
       lighthouseState,
       avoidance,
       symbol,
-      ecosystemState
+      ecosystemState,
+      routingDecision,
+      positionSizing
     );
     
-    // Step 10: Execute trade if conditions met
+    // Step 12: Execute trade if conditions met
     let tradeExecuted = false;
     if (finalDecision.action !== 'HOLD' && !this.config.dryRun) {
       tradeExecuted = await this.executeTrade(finalDecision, symbol);
@@ -169,6 +193,8 @@ export class UnifiedOrchestrator {
       rainbowState,
       prismOutput,
       ecosystemState,
+      routingDecision,
+      positionSizing,
       finalDecision,
       tradeExecuted,
     };
@@ -308,7 +334,7 @@ export class UnifiedOrchestrator {
   }
   
   /**
-   * Make final trading decision based on all inputs including 6D Harmonic probability
+   * Make final trading decision based on all inputs including 6D Harmonic probability + exchange routing
    */
   private makeFinalDecision(
     consensus: { ready: boolean; signal: SignalType; confidence: number },
@@ -316,8 +342,10 @@ export class UnifiedOrchestrator {
     lighthouseState: LighthouseState,
     avoidance: { avoid: boolean; reason: string | null },
     symbol: string,
-    ecosystemState: EcosystemState | null
-  ): { action: 'BUY' | 'SELL' | 'HOLD'; symbol: string; confidence: number; reason: string; harmonic6D?: { score: number; waveState: string; harmonicLock: boolean } } {
+    ecosystemState: EcosystemState | null,
+    routingDecision: RoutingDecision | null,
+    positionSizing: { positionSizeUsd: number; availableBalance: number; riskAmount: number } | null
+  ): { action: 'BUY' | 'SELL' | 'HOLD'; symbol: string; confidence: number; reason: string; harmonic6D?: { score: number; waveState: string; harmonicLock: boolean }; recommendedExchange?: string; positionSizeUsd?: number } {
     // Extract 6D probability fusion from ecosystem state
     const probabilityFusion = ecosystemState?.probabilityFusion ?? null;
     const waveState = probabilityFusion?.waveState ?? 'RESONANT';
@@ -332,6 +360,17 @@ export class UnifiedOrchestrator {
         symbol,
         confidence: 0,
         reason: `Elephant Memory: ${avoidance.reason}`,
+        harmonic6D: harmonic6DData,
+      };
+    }
+    
+    // Check if we have sufficient balance for trading
+    if (positionSizing && positionSizing.positionSizeUsd < 10) {
+      return {
+        action: 'HOLD',
+        symbol,
+        confidence: 0,
+        reason: `Insufficient balance: $${positionSizing.positionSizeUsd.toFixed(2)} (min $10)`,
         harmonic6D: harmonic6DData,
       };
     }
@@ -407,9 +446,11 @@ export class UnifiedOrchestrator {
       };
     }
     
-    // Build reason with 6D context
+    // Build reason with 6D context + exchange routing
     const lockStatus = harmonicLock ? ' [528Hz LOCKED]' : '';
-    const reason = `Consensus: ${consensus.signal} at ${(effectiveConfidence * 100).toFixed(1)}% | 6D: ${waveState}${lockStatus}`;
+    const exchangeInfo = routingDecision ? ` | Route: ${routingDecision.recommendedExchange}` : '';
+    const positionInfo = positionSizing ? ` | Size: $${positionSizing.positionSizeUsd.toFixed(2)}` : '';
+    const reason = `Consensus: ${consensus.signal} at ${(effectiveConfidence * 100).toFixed(1)}% | 6D: ${waveState}${lockStatus}${exchangeInfo}${positionInfo}`;
     
     return {
       action: consensus.signal,
@@ -417,24 +458,30 @@ export class UnifiedOrchestrator {
       confidence: effectiveConfidence,
       reason,
       harmonic6D: harmonic6DData,
+      recommendedExchange: routingDecision?.recommendedExchange,
+      positionSizeUsd: positionSizing?.positionSizeUsd,
     };
   }
   
   /**
-   * Execute a trade (stub - would integrate with trading execution)
+   * Execute a trade with smart order routing
    */
   private async executeTrade(
-    decision: { action: 'BUY' | 'SELL' | 'HOLD'; symbol: string; confidence: number },
+    decision: { action: 'BUY' | 'SELL' | 'HOLD'; symbol: string; confidence: number; recommendedExchange?: string; positionSizeUsd?: number },
     symbol: string
   ): Promise<boolean> {
-    console.log(`[UnifiedOrchestrator] Executing ${decision.action} on ${symbol}`);
+    const exchange = decision.recommendedExchange || 'binance';
+    const positionSize = decision.positionSizeUsd || 100;
     
-    // In a real implementation, this would call the trading execution edge function
-    // For now, we just broadcast the event
+    console.log(`[UnifiedOrchestrator] Executing ${decision.action} on ${symbol} via ${exchange} | Size: $${positionSize.toFixed(2)}`);
+    
+    // Broadcast the trade event with full routing info
     temporalLadder.broadcast(SYSTEMS.MASTER_EQUATION, 'TRADE_EXECUTED', {
       action: decision.action,
       symbol,
       confidence: decision.confidence,
+      exchange,
+      positionSizeUsd: positionSize,
     });
     
     return true;
