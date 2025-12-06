@@ -33,6 +33,7 @@ import { PrismRevealVisualizer } from '@/components/PrismRevealVisualizer';
 import { ProbabilityReconstructionPanel } from '@/components/ProbabilityReconstructionPanel';
 import { HarmonicDataIntegrityPanel } from '@/components/HarmonicDataIntegrityPanel';
 import { UserDataVerificationPanel } from '@/components/UserDataVerificationPanel';
+import { KrakenStatusPanel } from '@/components/KrakenStatusPanel';
 
 export default function AureonDashboard() {
   const navigate = useNavigate();
@@ -361,9 +362,10 @@ export default function AureonDashboard() {
         </div>
         
         {/* User Data Verification & Exchange Connectivity */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <UserDataVerificationPanel />
           <ExchangeDataVerificationPanel />
+          <KrakenStatusPanel />
         </div>
 
         {/* Trading Control */}
