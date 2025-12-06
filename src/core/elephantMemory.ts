@@ -3,6 +3,7 @@
 // Browser-safe implementation using localStorage + Supabase sync
 
 import { unifiedBus, type SignalType } from './unifiedBus';
+import { loadFromDatabase, saveToDatabase, syncAllToDatabase } from './elephantMemoryDB';
 
 export interface SymbolMemory {
   symbol: string;
@@ -33,10 +34,38 @@ class ElephantMemory {
   private memories: Map<string, SymbolMemory> = new Map();
   private cooldownMs: number = DEFAULT_COOLDOWN_MS;
   private lossStreakLimit: number = LOSS_STREAK_LIMIT;
+  private dbInitialized: boolean = false;
   
   constructor() {
     this.loadFromStorage();
     this.publishState();
+    // Load from database async (will merge with localStorage)
+    this.initFromDatabase();
+  }
+  
+  /**
+   * Initialize from database (async, called after constructor)
+   */
+  private async initFromDatabase(): Promise<void> {
+    try {
+      const dbMemories = await loadFromDatabase();
+      
+      // Merge database memories with local (database takes precedence for conflicts)
+      Object.entries(dbMemories).forEach(([symbol, memory]) => {
+        const local = this.memories.get(symbol);
+        // If DB has more trades, it's more recent - use it
+        if (!local || memory.trades > local.trades) {
+          this.memories.set(symbol, memory);
+        }
+      });
+      
+      this.dbInitialized = true;
+      this.saveToStorage(); // Sync merged state back to localStorage
+      this.publishState();
+      console.log('[ElephantMemory] Initialized from database');
+    } catch (e) {
+      console.warn('[ElephantMemory] Failed to init from database:', e);
+    }
   }
   
   /**
@@ -69,6 +98,9 @@ class ElephantMemory {
     this.memories.set(symbol, memory);
     this.saveToStorage();
     this.publishState();
+    
+    // Persist to database
+    saveToDatabase(memory);
   }
   
   /**
@@ -155,6 +187,9 @@ class ElephantMemory {
       this.memories.set(symbol, memory);
       this.saveToStorage();
       this.publishState();
+      
+      // Persist to database
+      saveToDatabase(memory);
     }
   }
   
@@ -272,6 +307,17 @@ class ElephantMemory {
     this.memories.clear();
     localStorage.removeItem(STORAGE_KEY);
     this.publishState();
+  }
+  
+  /**
+   * Force sync all memories to database
+   */
+  async syncToDatabase(): Promise<void> {
+    const memories: Record<string, SymbolMemory> = {};
+    this.memories.forEach((memory, symbol) => {
+      memories[symbol] = memory;
+    });
+    await syncAllToDatabase(memories);
   }
 }
 
