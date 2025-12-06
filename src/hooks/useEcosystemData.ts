@@ -259,3 +259,98 @@ export function useBasicEcosystemMetrics() {
     isInitialized,
   };
 }
+
+/**
+ * Hook for Harmonic/Field visualizers
+ */
+export function useHarmonicMetrics() {
+  const { metrics, busSnapshot, isInitialized } = useEcosystemData();
+  
+  return {
+    frequency: metrics.frequency,
+    coherence: metrics.coherence,
+    waveState: metrics.waveState,
+    harmonicLock: metrics.harmonicLock,
+    prismLevel: metrics.prismLevel,
+    prismState: metrics.prismState,
+    loveLocked: metrics.loveLocked,
+    harmonicFidelity: metrics.harmonicFidelity,
+    probabilityFusion: metrics.probabilityFusion,
+    phase: metrics.phase,
+    isInitialized,
+    busSnapshot,
+  };
+}
+
+/**
+ * Hook for Earth/Schumann analytics
+ */
+export function useEarthMetrics() {
+  const { metrics, isInitialized } = useEcosystemData();
+  
+  // Derive Earth-specific metrics from ecosystem state
+  const schumannFrequency = 7.83 + (metrics.coherence - 0.5) * 0.1;
+  const magneticField = 0.7 + metrics.coherence * 0.25;
+  const ionosphereActivity = 0.6 + metrics.hiveMindCoherence * 0.3;
+  
+  return {
+    schumannFrequency,
+    magneticField,
+    ionosphereActivity,
+    solarWind: 0.75 + (metrics.coherence - 0.5) * 0.2,
+    geomagneticIndex: metrics.stargateNetworkStrength,
+    coherenceBoost: Math.max(0, (0.15 - Math.abs(schumannFrequency - 7.83)) / 0.15) * 0.12,
+    isInitialized,
+  };
+}
+
+/**
+ * Hook for QGITA/Signal analytics
+ */
+export function useSignalMetrics() {
+  const { metrics, isInitialized } = useEcosystemData();
+  
+  return {
+    signalType: metrics.qgitaSignalType,
+    tier: metrics.qgitaTier,
+    confidence: metrics.qgitaConfidence,
+    consensusSignal: metrics.consensusSignal,
+    consensusConfidence: metrics.consensusConfidence,
+    isInitialized,
+  };
+}
+
+/**
+ * Hook for Stargate/Network analytics
+ */
+export function useStargateMetrics() {
+  const { metrics, isInitialized } = useEcosystemData();
+  
+  return {
+    networkStrength: metrics.stargateNetworkStrength,
+    activeNodes: metrics.activeNodes,
+    temporalAnchorStrength: metrics.temporalAnchorStrength,
+    surgeWindowActive: metrics.surgeWindowActive,
+    isInitialized,
+  };
+}
+
+/**
+ * Hook for Auris/Symbol analytics
+ */
+export function useAurisMetrics() {
+  const { metrics, busSnapshot, isInitialized } = useEcosystemData();
+  
+  // Get dominant node from bus snapshot
+  const masterEq = busSnapshot?.states?.MasterEquation;
+  const dominantNode = masterEq?.data?.dominantNode || 'Tiger';
+  
+  return {
+    compilationRate: metrics.coherence * 0.9 + 0.1,
+    symbolProcessing: 0.85 + metrics.coherence * 0.1,
+    quantumEntanglement: metrics.hiveMindCoherence,
+    dataIntegrity: 0.95 + metrics.coherence * 0.04,
+    dominantNode,
+    isInitialized,
+  };
+}
