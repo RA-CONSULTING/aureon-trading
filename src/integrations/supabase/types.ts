@@ -503,6 +503,114 @@ export type Database = {
         }
         Relationships: []
       }
+      decision_audit_log: {
+        Row: {
+          accuracy_15m: boolean | null
+          accuracy_1m: boolean | null
+          accuracy_5m: boolean | null
+          actual_direction_15m: string | null
+          actual_direction_1m: string | null
+          actual_direction_5m: string | null
+          coherence: number
+          confidence: number
+          created_at: string
+          decision_action: string
+          decision_timestamp: string
+          factors: Json | null
+          geometric_alignment: number | null
+          harmonic_lock: boolean | null
+          id: string
+          lambda: number
+          lighthouse_l: number | null
+          price_after_15m: number | null
+          price_after_1m: number | null
+          price_after_5m: number | null
+          price_at_decision: number | null
+          prism_frequency: number | null
+          prism_level: number | null
+          probability_fused: number | null
+          qgita_confidence: number | null
+          qgita_tier: number | null
+          reasoning: Json | null
+          sentiment_score: number | null
+          summary: string | null
+          symbol: string
+          user_id: string
+          verified_at: string | null
+          wave_state: string | null
+        }
+        Insert: {
+          accuracy_15m?: boolean | null
+          accuracy_1m?: boolean | null
+          accuracy_5m?: boolean | null
+          actual_direction_15m?: string | null
+          actual_direction_1m?: string | null
+          actual_direction_5m?: string | null
+          coherence: number
+          confidence: number
+          created_at?: string
+          decision_action: string
+          decision_timestamp?: string
+          factors?: Json | null
+          geometric_alignment?: number | null
+          harmonic_lock?: boolean | null
+          id?: string
+          lambda: number
+          lighthouse_l?: number | null
+          price_after_15m?: number | null
+          price_after_1m?: number | null
+          price_after_5m?: number | null
+          price_at_decision?: number | null
+          prism_frequency?: number | null
+          prism_level?: number | null
+          probability_fused?: number | null
+          qgita_confidence?: number | null
+          qgita_tier?: number | null
+          reasoning?: Json | null
+          sentiment_score?: number | null
+          summary?: string | null
+          symbol?: string
+          user_id: string
+          verified_at?: string | null
+          wave_state?: string | null
+        }
+        Update: {
+          accuracy_15m?: boolean | null
+          accuracy_1m?: boolean | null
+          accuracy_5m?: boolean | null
+          actual_direction_15m?: string | null
+          actual_direction_1m?: string | null
+          actual_direction_5m?: string | null
+          coherence?: number
+          confidence?: number
+          created_at?: string
+          decision_action?: string
+          decision_timestamp?: string
+          factors?: Json | null
+          geometric_alignment?: number | null
+          harmonic_lock?: boolean | null
+          id?: string
+          lambda?: number
+          lighthouse_l?: number | null
+          price_after_15m?: number | null
+          price_after_1m?: number | null
+          price_after_5m?: number | null
+          price_at_decision?: number | null
+          prism_frequency?: number | null
+          prism_level?: number | null
+          probability_fused?: number | null
+          qgita_confidence?: number | null
+          qgita_tier?: number | null
+          reasoning?: Json | null
+          sentiment_score?: number | null
+          summary?: string | null
+          symbol?: string
+          user_id?: string
+          verified_at?: string | null
+          wave_state?: string | null
+        }
+        Relationships: []
+      }
       decision_fusion_states: {
         Row: {
           confidence: number
