@@ -44,13 +44,14 @@ export function useUserBalances(autoRefresh: boolean = true, refreshInterval: nu
 
   const fetchBalances = useCallback(async () => {
     try {
-      setState(prev => ({ ...prev, isLoading: true, error: null }));
-
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
-        setState(prev => ({ ...prev, isLoading: false, error: 'Not authenticated' }));
+        // Not authenticated - silently skip without error
+        setState(prev => ({ ...prev, isLoading: false }));
         return;
       }
+      
+      setState(prev => ({ ...prev, isLoading: true, error: null }));
 
       const { data, error } = await supabase.functions.invoke('get-user-balances', {
         headers: {
