@@ -8,7 +8,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { z } from "zod";
-import PaymentGate from "@/components/PaymentGate";
 import { Sparkles, Eye, EyeOff } from "lucide-react";
 
 const emailSchema = z.string().email("Invalid email address");
@@ -16,13 +15,9 @@ const passwordSchema = z.string().min(8, "Password must be at least 8 characters
 const binanceApiKeySchema = z.string().min(10, "Binance API key is required");
 const binanceApiSecretSchema = z.string().min(10, "Binance API secret is required");
 
-const SUPER_USER_EMAIL = "gary@raconsultingandbrokerageservices.com";
-
 export default function Auth() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
-  const [showPaymentGate, setShowPaymentGate] = useState(false);
-  const [pendingUserId, setPendingUserId] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [showApiSecret, setShowApiSecret] = useState(false);
   
@@ -39,40 +34,19 @@ export default function Auth() {
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (session) {
-        checkUserStatus(session.user.id, session.user.email);
+        // User is already authenticated, redirect to dashboard
+        navigate("/");
       }
     });
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
-        checkUserStatus(session.user.id, session.user.email);
+        navigate("/");
       }
     });
 
     return () => subscription.unsubscribe();
-  }, []);
-
-  const checkUserStatus = async (userId: string, userEmail: string | undefined) => {
-    // Super user bypasses payment
-    if (userEmail === SUPER_USER_EMAIL) {
-      navigate("/");
-      return;
-    }
-
-    // Check aureon_user_sessions for payment status
-    const { data: session } = await supabase
-      .from("aureon_user_sessions")
-      .select("payment_completed")
-      .eq("user_id", userId)
-      .single();
-
-    if (session?.payment_completed) {
-      navigate("/");
-    } else {
-      setPendingUserId(userId);
-      setShowPaymentGate(true);
-    }
-  };
+  }, [navigate]);
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -98,6 +72,7 @@ export default function Auth() {
       if (!authData.user) throw new Error("Failed to create account");
 
       // Create aureon_user_sessions record with encrypted Binance credentials
+      // Payment gate removed - all users get free access with payment_completed: true
       try {
         const { error: sessionError } = await supabase.functions.invoke('create-aureon-session', {
           body: {
@@ -111,12 +86,20 @@ export default function Auth() {
           console.warn('Session creation via edge function failed, using fallback:', sessionError);
           throw sessionError;
         }
+        
+        // Ensure payment is marked complete for free access
+        await supabase
+          .from("aureon_user_sessions")
+          .update({ payment_completed: true, payment_completed_at: new Date().toISOString() })
+          .eq("user_id", authData.user.id);
+          
       } catch (fnError) {
         console.warn('Edge function failed, creating session directly:', fnError);
-        // Fallback: create session directly with is_trading_active = true for auto-start
+        // Fallback: create session directly with payment_completed: true for free access
         const { error: insertError } = await supabase.from('aureon_user_sessions').insert({
           user_id: authData.user.id,
-          payment_completed: false,
+          payment_completed: true, // Free access
+          payment_completed_at: new Date().toISOString(),
           is_trading_active: false,
           gas_tank_balance: 100,
           trading_mode: 'paper'
@@ -127,20 +110,8 @@ export default function Auth() {
         }
       }
 
-      // Super user bypasses payment
-      if (authData.user.email === SUPER_USER_EMAIL) {
-        await supabase
-          .from("aureon_user_sessions")
-          .update({ payment_completed: true, payment_completed_at: new Date().toISOString() })
-          .eq("user_id", authData.user.id);
-        
-        toast.success("Welcome! Redirecting...");
-        setTimeout(() => navigate("/"), 1000);
-      } else {
-        toast.success("Account created! Please complete payment.");
-        setPendingUserId(authData.user.id);
-        setShowPaymentGate(true);
-      }
+      toast.success("Account created! Welcome to AUREON.");
+      setTimeout(() => navigate("/"), 1000);
       
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -162,34 +133,14 @@ export default function Auth() {
       
       setLoading(true);
       
-      const { data, error } = await supabase.auth.signInWithPassword({
+      const { error } = await supabase.auth.signInWithPassword({
         email,
         password
       });
 
       if (error) throw error;
 
-      // Super user bypasses payment
-      if (data.user.email === SUPER_USER_EMAIL) {
-        toast.success("Welcome back!");
-        navigate("/");
-        return;
-      }
-
-      // Check payment status
-      const { data: session } = await supabase
-        .from("aureon_user_sessions")
-        .select("payment_completed")
-        .eq("user_id", data.user.id)
-        .single();
-
-      if (!session?.payment_completed) {
-        toast.info("Please complete payment to access");
-        setPendingUserId(data.user.id);
-        setShowPaymentGate(true);
-        return;
-      }
-
+      // Free access - no payment check needed
       toast.success("Welcome back!");
       navigate("/");
     } catch (error) {
@@ -202,29 +153,6 @@ export default function Auth() {
       setLoading(false);
     }
   };
-
-  const handlePaymentComplete = async () => {
-    if (!pendingUserId) return;
-
-    await supabase
-      .from("aureon_user_sessions")
-      .update({
-        payment_completed: true,
-        payment_completed_at: new Date().toISOString()
-      })
-      .eq("user_id", pendingUserId);
-
-    toast.success("Welcome to AUREON!");
-    setTimeout(() => navigate("/"), 1000);
-  };
-
-  if (showPaymentGate && pendingUserId) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background p-4">
-        <PaymentGate userId={pendingUserId} onPaymentComplete={handlePaymentComplete} />
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
