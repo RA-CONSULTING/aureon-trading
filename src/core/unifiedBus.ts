@@ -23,20 +23,34 @@ export interface BusSnapshot {
   totalSystems: number;
 }
 
-// System weights for consensus calculation (expanded for full ecosystem)
+// 10-9-1 Prime Seal weighted system classification
+// Unity (10x): Core decision systems
+// Flow (9x): Signal processing systems  
+// Anchor (1x): Data ingestion systems
+
+const UNITY_SYSTEMS = ['MasterEquation', 'Lighthouse']; // 10x weight
+const FLOW_SYSTEMS = ['RainbowBridge', 'Prism', '6DHarmonic', 'DecisionFusion']; // 9x weight
+const ANCHOR_SYSTEMS = ['DataIngestion', 'ElephantMemory', 'MultiExchange']; // 1x weight
+
+// Legacy weights (normalized) - used as sub-weights within each tier
 const SYSTEM_WEIGHTS: Record<string, number> = {
-  MasterEquation: 0.16,
-  Lighthouse: 0.14,
-  RainbowBridge: 0.09,
-  DataIngestion: 0.09,
-  DecisionFusion: 0.09,
-  MultiExchange: 0.08, // NEW: Multi-exchange data integration
-  QGITASignal: 0.07,
-  Prism: 0.06,
+  // Unity tier (10x base)
+  MasterEquation: 0.55,
+  Lighthouse: 0.45,
+  // Flow tier (9x base)
+  RainbowBridge: 0.25,
+  DecisionFusion: 0.25,
+  Prism: 0.20,
+  '6DHarmonic': 0.20,
+  QGITASignal: 0.10,
+  // Anchor tier (1x base)
+  DataIngestion: 0.40,
+  MultiExchange: 0.35,
+  ElephantMemory: 0.25,
+  // Extended systems (contribute to flow)
   IntegralAQAL: 0.05,
   StargateLattice: 0.05,
   HNCImperial: 0.05,
-  '6DHarmonic': 0.07,
 };
 
 const REQUIRED_SYSTEMS = ['DataIngestion', 'Lighthouse', 'MasterEquation', 'RainbowBridge'];
@@ -112,40 +126,75 @@ class UnifiedBus {
   }
   
   /**
-   * Compute weighted consensus from all systems
+   * Compute 10-9-1 weighted consensus from all systems
+   * Unity systems (10x), Flow systems (9x), Anchor systems (1x)
    */
   private computeConsensus(): { signal: SignalType; confidence: number } {
-    let buyScore = 0;
-    let sellScore = 0;
-    let totalWeight = 0;
-    let totalConfidence = 0;
+    // Compute tier-weighted scores
+    let unityBuy = 0, unitySell = 0, unityTotal = 0;
+    let flowBuy = 0, flowSell = 0, flowTotal = 0;
+    let anchorBuy = 0, anchorSell = 0, anchorTotal = 0;
     
-    for (const [name, weight] of Object.entries(SYSTEM_WEIGHTS)) {
+    // Process Unity systems (10x weight)
+    for (const name of UNITY_SYSTEMS) {
       const state = this.states.get(name);
       if (!state?.ready) continue;
-      
-      totalWeight += weight;
-      totalConfidence += state.confidence * weight;
-      
-      if (state.signal === 'BUY') {
-        buyScore += weight * state.confidence;
-      } else if (state.signal === 'SELL') {
-        sellScore += weight * state.confidence;
-      }
+      const subWeight = SYSTEM_WEIGHTS[name] || 0.5;
+      unityTotal += subWeight;
+      if (state.signal === 'BUY') unityBuy += subWeight * state.confidence;
+      else if (state.signal === 'SELL') unitySell += subWeight * state.confidence;
     }
     
-    if (totalWeight === 0) {
-      return { signal: 'NEUTRAL', confidence: 0 };
+    // Process Flow systems (9x weight)
+    for (const name of FLOW_SYSTEMS) {
+      const state = this.states.get(name);
+      if (!state?.ready) continue;
+      const subWeight = SYSTEM_WEIGHTS[name] || 0.2;
+      flowTotal += subWeight;
+      if (state.signal === 'BUY') flowBuy += subWeight * state.confidence;
+      else if (state.signal === 'SELL') flowSell += subWeight * state.confidence;
     }
     
-    const normalizedBuy = buyScore / totalWeight;
-    const normalizedSell = sellScore / totalWeight;
-    const confidence = totalConfidence / totalWeight;
+    // Process Anchor systems (1x weight)
+    for (const name of ANCHOR_SYSTEMS) {
+      const state = this.states.get(name);
+      if (!state?.ready) continue;
+      const subWeight = SYSTEM_WEIGHTS[name] || 0.33;
+      anchorTotal += subWeight;
+      if (state.signal === 'BUY') anchorBuy += subWeight * state.confidence;
+      else if (state.signal === 'SELL') anchorSell += subWeight * state.confidence;
+    }
     
+    // Normalize within each tier
+    const unityBuyNorm = unityTotal > 0 ? unityBuy / unityTotal : 0;
+    const unitySellNorm = unityTotal > 0 ? unitySell / unityTotal : 0;
+    const flowBuyNorm = flowTotal > 0 ? flowBuy / flowTotal : 0;
+    const flowSellNorm = flowTotal > 0 ? flowSell / flowTotal : 0;
+    const anchorBuyNorm = anchorTotal > 0 ? anchorBuy / anchorTotal : 0;
+    const anchorSellNorm = anchorTotal > 0 ? anchorSell / anchorTotal : 0;
+    
+    // Apply 10-9-1 weights
+    const totalWeight = 10 + 9 + 1; // 20
+    const buyScore = (unityBuyNorm * 10 + flowBuyNorm * 9 + anchorBuyNorm * 1) / totalWeight;
+    const sellScore = (unitySellNorm * 10 + flowSellNorm * 9 + anchorSellNorm * 1) / totalWeight;
+    
+    // Compute overall confidence using 10-9-1 weighting
+    let totalConfidence = 0;
+    let confWeight = 0;
+    for (const name of [...UNITY_SYSTEMS, ...FLOW_SYSTEMS, ...ANCHOR_SYSTEMS]) {
+      const state = this.states.get(name);
+      if (!state?.ready) continue;
+      const tierWeight = UNITY_SYSTEMS.includes(name) ? 10 : FLOW_SYSTEMS.includes(name) ? 9 : 1;
+      totalConfidence += state.confidence * tierWeight;
+      confWeight += tierWeight;
+    }
+    const confidence = confWeight > 0 ? totalConfidence / confWeight : 0;
+    
+    // Determine signal
     let signal: SignalType = 'NEUTRAL';
-    if (normalizedBuy > normalizedSell && normalizedBuy > 0.3) {
+    if (buyScore > sellScore && buyScore > 0.3) {
       signal = 'BUY';
-    } else if (normalizedSell > normalizedBuy && normalizedSell > 0.3) {
+    } else if (sellScore > buyScore && sellScore > 0.3) {
       signal = 'SELL';
     }
     

@@ -10,6 +10,7 @@
 import { unifiedBus, SystemState, SignalType } from './unifiedBus';
 import { temporalLadder, SystemName, SYSTEMS } from './temporalLadder';
 import { ecosystemEnhancements } from './ecosystemEnhancements';
+import { primeSealComputer, PrimeSealPacket, PrimeSealState } from './primeSealComputer';
 import { supabase } from '@/integrations/supabase/client';
 import { invokeWithMonitoring } from './instrumentedSupabase';
 
@@ -437,14 +438,46 @@ class FullEcosystemConnector {
     // 9. Publish all to bus
     this.publishAllStates();
     
-    // 10. Persist all states to database via edge functions
+    // 10. Compute 10-9-1 Prime Seal packet
+    const busSnapshot = unifiedBus.snapshot();
+    const primeSealState = primeSealComputer.compute(busSnapshot);
+    this.primeSealState = primeSealState;
+    
+    // 11. Persist all states to database via edge functions (including Prime Seal)
     await this.persistAllStatesToDatabase(temporalId, price, volume, volatility, momentum, lambda, coherence, substrate, observer, echo);
+    
+    // 12. Persist Prime Seal packet
+    await this.persistPrimeSealPacket(primeSealState.packet);
     
     this.notifyListeners();
   }
   
+  // Prime Seal state cache
+  private primeSealState: PrimeSealState | null = null;
+  
   // Current market data cache
   private currentMarketData: { price: number; volume: number; volatility: number; momentum: number } | null = null;
+  
+  /**
+   * Persist 10-9-1 Prime Seal packet to database
+   */
+  private async persistPrimeSealPacket(packet: PrimeSealPacket): Promise<void> {
+    try {
+      await supabase.functions.invoke('ingest-10-9-1-packet', {
+        body: packet,
+      });
+      console.log('🔮 Prime Seal packet persisted:', packet.seal_lock ? '🔒 LOCKED' : '🔓 UNLOCKED');
+    } catch (error) {
+      console.error('❌ Failed to persist Prime Seal packet:', error);
+    }
+  }
+  
+  /**
+   * Get current Prime Seal state
+   */
+  getPrimeSealState(): PrimeSealState | null {
+    return this.primeSealState;
+  }
 
   /**
    * Compute 6D Harmonic State
