@@ -32,6 +32,7 @@ import { CymaticsFieldVisualizer } from '@/components/CymaticsFieldVisualizer';
 import { PrismRevealVisualizer } from '@/components/PrismRevealVisualizer';
 import { ProbabilityReconstructionPanel } from '@/components/ProbabilityReconstructionPanel';
 import { HarmonicDataIntegrityPanel } from '@/components/HarmonicDataIntegrityPanel';
+import { UserDataVerificationPanel } from '@/components/UserDataVerificationPanel';
 
 export default function AureonDashboard() {
   const navigate = useNavigate();
@@ -357,6 +358,12 @@ export default function AureonDashboard() {
           <DecisionVerificationPanel />
           <SimulationVerificationPanel />
           <DataStreamMonitorPanel />
+        </div>
+        
+        {/* User Data Verification & Exchange Connectivity */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <UserDataVerificationPanel />
+          <ExchangeDataVerificationPanel />
         </div>
 
         {/* Trading Control */}
