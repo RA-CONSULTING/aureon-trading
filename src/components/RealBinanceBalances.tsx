@@ -8,115 +8,117 @@ import { formatDistanceToNow } from 'date-fns';
 export function RealBinanceBalances() {
   const { accounts, totals, loading, lastUpdated, refresh } = useBinanceBalances();
 
+  const hasData = accounts.length > 0 || totals.totalUSDValue > 0;
+
   return (
-    <Card className="p-6">
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-        <div>
-          <h3 className="text-lg font-semibold flex items-center gap-2">
-            <Wallet className="h-5 w-5" />
-            Live Binance Wallet
-          </h3>
-          <p className="text-sm text-muted-foreground">
-            1 Shared Wallet • {accounts.length} Active Trading Bots
-            {lastUpdated && ` • Updated ${formatDistanceToNow(lastUpdated, { addSuffix: true })}`}
-          </p>
+    <div className="space-y-4">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Wallet className="h-5 w-5 text-primary" />
+          <span className="font-medium">Binance</span>
         </div>
-          <Button onClick={refresh} disabled={loading} variant="outline" size="sm">
-            <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-            Refresh
-          </Button>
-        </div>
-
-        {/* Total Portfolio Value */}
-        <div className="p-6 rounded-lg bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20">
-          <div className="flex items-center gap-2 mb-2">
-            <DollarSign className="h-5 w-5 text-primary" />
-            <div className="text-sm text-muted-foreground">Total Portfolio Value</div>
-          </div>
-          <div className="text-4xl font-bold text-primary">
-            ${totals.totalUSDValue.toFixed(2)}
-          </div>
-        </div>
-
-        {/* Asset Breakdown */}
-        <div className="grid grid-cols-3 gap-4">
-          <div className="p-4 rounded-lg bg-gradient-to-br from-green-500/10 to-green-600/10 border border-green-500/20">
-            <div className="flex items-center gap-2 mb-2">
-              <DollarSign className="h-4 w-4 text-green-500" />
-              <div className="text-xs text-muted-foreground">USDT</div>
-            </div>
-            <div className="text-2xl font-bold text-green-500">
-              ${totals.USDT.toFixed(2)}
-            </div>
-          </div>
-          
-          <div className="p-4 rounded-lg bg-gradient-to-br from-orange-500/10 to-orange-600/10 border border-orange-500/20">
-            <div className="flex items-center gap-2 mb-2">
-              <Bitcoin className="h-4 w-4 text-orange-500" />
-              <div className="text-xs text-muted-foreground">BTC</div>
-            </div>
-            <div className="text-2xl font-bold text-orange-500">
-              {totals.BTC.toFixed(6)}
-            </div>
-          </div>
-          
-          <div className="p-4 rounded-lg bg-gradient-to-br from-blue-500/10 to-blue-600/10 border border-blue-500/20">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="h-4 w-4 text-blue-500">Ξ</div>
-              <div className="text-xs text-muted-foreground">ETH</div>
-            </div>
-            <div className="text-2xl font-bold text-blue-500">
-              {totals.ETH.toFixed(6)}
-            </div>
-          </div>
-        </div>
-
-        {/* Bot Status */}
-        <div className="space-y-2 max-h-[400px] overflow-y-auto">
-          <div className="text-sm font-medium mb-2">Active Trading Bots</div>
-          {accounts.map((account) => (
-            <div
-              key={account.name}
-              className="p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors"
-            >
-              <div className="flex items-center justify-between mb-2">
-                <div className="font-medium text-sm">{account.name}</div>
-                {account.error ? (
-                  <Badge variant="destructive">Error</Badge>
-                ) : account.canTrade ? (
-                  <Badge className="bg-green-500">Active</Badge>
-                ) : (
-                  <Badge variant="outline">Restricted</Badge>
-                )}
-              </div>
-              
-              {account.error ? (
-                <div className="text-xs text-red-500">{account.error}</div>
-              ) : (
-                <div className="grid grid-cols-3 gap-2 text-xs">
-                  {Object.entries(account.balances)
-                    .filter(([_, bal]) => bal.total > 0.001) // Only show significant balances
-                    .slice(0, 6) // Limit to top 6 assets
-                    .map(([asset, balance]) => (
-                      <div key={asset} className="flex justify-between">
-                        <span className="text-muted-foreground">{asset}:</span>
-                        <span className="font-medium">{balance.total.toFixed(asset === 'USDT' ? 2 : 6)}</span>
-                      </div>
-                    ))}
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-
-        {loading && (
-          <div className="text-center text-sm text-muted-foreground">
-            Fetching real-time balances from Binance...
-          </div>
-        )}
+        <Button onClick={refresh} disabled={loading} variant="ghost" size="sm">
+          <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+        </Button>
       </div>
-    </Card>
+
+      {loading ? (
+        <div className="text-center py-8 text-muted-foreground">
+          <RefreshCw className="h-6 w-6 animate-spin mx-auto mb-2" />
+          <p className="text-sm">Fetching balances...</p>
+        </div>
+      ) : !hasData ? (
+        <div className="text-center py-8">
+          <div className="text-4xl mb-3">🔗</div>
+          <p className="text-muted-foreground text-sm mb-2">No Binance credentials configured</p>
+          <p className="text-xs text-muted-foreground">Add your Binance API keys in Settings to see your balances</p>
+        </div>
+      ) : (
+        <>
+          {/* Total Portfolio Value */}
+          <div className="p-4 rounded-lg bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20">
+            <div className="flex items-center gap-2 mb-1">
+              <DollarSign className="h-4 w-4 text-primary" />
+              <span className="text-xs text-muted-foreground">Total Value</span>
+            </div>
+            <div className="text-2xl font-bold text-primary">
+              ${totals.totalUSDValue.toFixed(2)}
+            </div>
+            {lastUpdated && (
+              <p className="text-xs text-muted-foreground mt-1">
+                Updated {formatDistanceToNow(lastUpdated, { addSuffix: true })}
+              </p>
+            )}
+          </div>
+
+          {/* Asset Breakdown */}
+          <div className="grid grid-cols-3 gap-2">
+            <div className="p-3 rounded-lg bg-muted/30 border border-border/50">
+              <div className="flex items-center gap-1 mb-1">
+                <DollarSign className="h-3 w-3 text-green-500" />
+                <span className="text-xs text-muted-foreground">USDT</span>
+              </div>
+              <div className="text-lg font-bold text-green-500">${totals.USDT.toFixed(2)}</div>
+            </div>
+            
+            <div className="p-3 rounded-lg bg-muted/30 border border-border/50">
+              <div className="flex items-center gap-1 mb-1">
+                <Bitcoin className="h-3 w-3 text-orange-500" />
+                <span className="text-xs text-muted-foreground">BTC</span>
+              </div>
+              <div className="text-lg font-bold text-orange-500">{totals.BTC.toFixed(6)}</div>
+            </div>
+            
+            <div className="p-3 rounded-lg bg-muted/30 border border-border/50">
+              <div className="flex items-center gap-1 mb-1">
+                <span className="text-xs text-blue-500">Ξ</span>
+                <span className="text-xs text-muted-foreground">ETH</span>
+              </div>
+              <div className="text-lg font-bold text-blue-500">{totals.ETH.toFixed(6)}</div>
+            </div>
+          </div>
+
+          {/* Bot Status */}
+          {accounts.length > 0 && (
+            <div className="space-y-2">
+              <div className="text-xs font-medium text-muted-foreground">Active Bots ({accounts.length})</div>
+              <div className="max-h-[200px] overflow-y-auto space-y-1">
+                {accounts.map((account) => (
+                  <div key={account.name} className="p-2 rounded bg-muted/20 border border-border/30">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-sm font-medium">{account.name}</span>
+                      {account.error ? (
+                        <Badge variant="destructive" className="text-xs">Error</Badge>
+                      ) : account.canTrade ? (
+                        <Badge className="bg-green-500/20 text-green-400 text-xs">Active</Badge>
+                      ) : (
+                        <Badge variant="outline" className="text-xs">Restricted</Badge>
+                      )}
+                    </div>
+                    
+                    {account.error ? (
+                      <div className="text-xs text-red-500">{account.error}</div>
+                    ) : (
+                      <div className="grid grid-cols-3 gap-1 text-xs">
+                        {Object.entries(account.balances)
+                          .filter(([_, bal]) => bal.total > 0.001)
+                          .slice(0, 3)
+                          .map(([asset, balance]) => (
+                            <div key={asset} className="flex justify-between">
+                              <span className="text-muted-foreground">{asset}:</span>
+                              <span>{balance.total.toFixed(asset === 'USDT' ? 2 : 4)}</span>
+                            </div>
+                          ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </>
+      )}
+    </div>
   );
 }
