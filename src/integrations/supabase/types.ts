@@ -335,6 +335,102 @@ export type Database = {
         }
         Relationships: []
       }
+      decision_fusion_states: {
+        Row: {
+          confidence: number
+          created_at: string | null
+          ensemble_score: number
+          final_action: string
+          harmonic_6d_score: number
+          harmonic_lock: boolean | null
+          id: string
+          metadata: Json | null
+          position_size: number
+          qgita_boost: number
+          sentiment_score: number
+          temporal_id: string
+          timestamp: string | null
+          wave_state: string | null
+        }
+        Insert: {
+          confidence?: number
+          created_at?: string | null
+          ensemble_score?: number
+          final_action?: string
+          harmonic_6d_score?: number
+          harmonic_lock?: boolean | null
+          id?: string
+          metadata?: Json | null
+          position_size?: number
+          qgita_boost?: number
+          sentiment_score?: number
+          temporal_id: string
+          timestamp?: string | null
+          wave_state?: string | null
+        }
+        Update: {
+          confidence?: number
+          created_at?: string | null
+          ensemble_score?: number
+          final_action?: string
+          harmonic_6d_score?: number
+          harmonic_lock?: boolean | null
+          id?: string
+          metadata?: Json | null
+          position_size?: number
+          qgita_boost?: number
+          sentiment_score?: number
+          temporal_id?: string
+          timestamp?: string | null
+          wave_state?: string | null
+        }
+        Relationships: []
+      }
+      ecosystem_snapshots: {
+        Row: {
+          bus_confidence: number
+          bus_consensus: string
+          created_at: string | null
+          hive_mind_coherence: number
+          id: string
+          json_enhancements_loaded: boolean | null
+          metadata: Json | null
+          system_states: Json
+          systems_online: number
+          temporal_id: string
+          timestamp: string | null
+          total_systems: number
+        }
+        Insert: {
+          bus_confidence?: number
+          bus_consensus?: string
+          created_at?: string | null
+          hive_mind_coherence?: number
+          id?: string
+          json_enhancements_loaded?: boolean | null
+          metadata?: Json | null
+          system_states?: Json
+          systems_online?: number
+          temporal_id: string
+          timestamp?: string | null
+          total_systems?: number
+        }
+        Update: {
+          bus_confidence?: number
+          bus_consensus?: string
+          created_at?: string | null
+          hive_mind_coherence?: number
+          id?: string
+          json_enhancements_loaded?: boolean | null
+          metadata?: Json | null
+          system_states?: Json
+          systems_online?: number
+          temporal_id?: string
+          timestamp?: string | null
+          total_systems?: number
+        }
+        Relationships: []
+      }
       elephant_memory: {
         Row: {
           blacklisted: boolean | null
@@ -377,6 +473,51 @@ export type Database = {
           trades?: number | null
           updated_at?: string | null
           wins?: number | null
+        }
+        Relationships: []
+      }
+      ftcp_detector_states: {
+        Row: {
+          created_at: string | null
+          curvature: number
+          curvature_direction: string
+          divergence_from_fib: number | null
+          id: string
+          is_fibonacci_level: boolean | null
+          metadata: Json | null
+          nearest_fib_ratio: number | null
+          phase: string
+          temporal_id: string
+          timestamp: string | null
+          trend_strength: number
+        }
+        Insert: {
+          created_at?: string | null
+          curvature?: number
+          curvature_direction?: string
+          divergence_from_fib?: number | null
+          id?: string
+          is_fibonacci_level?: boolean | null
+          metadata?: Json | null
+          nearest_fib_ratio?: number | null
+          phase?: string
+          temporal_id: string
+          timestamp?: string | null
+          trend_strength?: number
+        }
+        Update: {
+          created_at?: string | null
+          curvature?: number
+          curvature_direction?: string
+          divergence_from_fib?: number | null
+          id?: string
+          is_fibonacci_level?: boolean | null
+          metadata?: Json | null
+          nearest_fib_ratio?: number | null
+          phase?: string
+          temporal_id?: string
+          timestamp?: string | null
+          trend_strength?: number
         }
         Relationships: []
       }
@@ -484,6 +625,72 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      harmonic_6d_states: {
+        Row: {
+          created_at: string | null
+          d1_price: Json
+          d2_volume: Json
+          d3_time: Json
+          d4_correlation: Json
+          d5_momentum: Json
+          d6_frequency: Json
+          dimensional_coherence: number
+          energy_density: number
+          harmonic_lock: boolean | null
+          id: string
+          market_phase: string
+          metadata: Json | null
+          phase_alignment: number
+          probability_field: number
+          resonance_score: number
+          temporal_id: string
+          timestamp: string | null
+          wave_state: string
+        }
+        Insert: {
+          created_at?: string | null
+          d1_price?: Json
+          d2_volume?: Json
+          d3_time?: Json
+          d4_correlation?: Json
+          d5_momentum?: Json
+          d6_frequency?: Json
+          dimensional_coherence?: number
+          energy_density?: number
+          harmonic_lock?: boolean | null
+          id?: string
+          market_phase?: string
+          metadata?: Json | null
+          phase_alignment?: number
+          probability_field?: number
+          resonance_score?: number
+          temporal_id: string
+          timestamp?: string | null
+          wave_state?: string
+        }
+        Update: {
+          created_at?: string | null
+          d1_price?: Json
+          d2_volume?: Json
+          d3_time?: Json
+          d4_correlation?: Json
+          d5_momentum?: Json
+          d6_frequency?: Json
+          dimensional_coherence?: number
+          energy_density?: number
+          harmonic_lock?: boolean | null
+          id?: string
+          market_phase?: string
+          metadata?: Json | null
+          phase_alignment?: number
+          probability_field?: number
+          resonance_score?: number
+          temporal_id?: string
+          timestamp?: string | null
+          wave_state?: string
+        }
+        Relationships: []
       }
       harmonic_nexus_states: {
         Row: {
@@ -795,6 +1002,57 @@ export type Database = {
           },
         ]
       }
+      hnc_detection_states: {
+        Row: {
+          anchor_power: number | null
+          bridge_status: string
+          created_at: string | null
+          distortion_power: number | null
+          harmonic_fidelity: number
+          id: string
+          imperial_yield: number
+          is_lighthouse_detected: boolean | null
+          love_power: number | null
+          metadata: Json | null
+          schumann_power: number | null
+          temporal_id: string
+          timestamp: string | null
+          unity_power: number | null
+        }
+        Insert: {
+          anchor_power?: number | null
+          bridge_status?: string
+          created_at?: string | null
+          distortion_power?: number | null
+          harmonic_fidelity?: number
+          id?: string
+          imperial_yield?: number
+          is_lighthouse_detected?: boolean | null
+          love_power?: number | null
+          metadata?: Json | null
+          schumann_power?: number | null
+          temporal_id: string
+          timestamp?: string | null
+          unity_power?: number | null
+        }
+        Update: {
+          anchor_power?: number | null
+          bridge_status?: string
+          created_at?: string | null
+          distortion_power?: number | null
+          harmonic_fidelity?: number
+          id?: string
+          imperial_yield?: number
+          is_lighthouse_detected?: boolean | null
+          love_power?: number | null
+          metadata?: Json | null
+          schumann_power?: number | null
+          temporal_id?: string
+          timestamp?: string | null
+          unity_power?: number | null
+        }
+        Relationships: []
+      }
       hunt_scans: {
         Row: {
           created_at: string
@@ -989,6 +1247,54 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      integral_aqal_states: {
+        Row: {
+          created_at: string | null
+          dominant_quadrant: string
+          id: string
+          integration_level: number
+          lower_left: number
+          lower_right: number
+          metadata: Json | null
+          quadrant_balance: number
+          spiral_stage: string
+          temporal_id: string
+          timestamp: string | null
+          upper_left: number
+          upper_right: number
+        }
+        Insert: {
+          created_at?: string | null
+          dominant_quadrant?: string
+          id?: string
+          integration_level?: number
+          lower_left?: number
+          lower_right?: number
+          metadata?: Json | null
+          quadrant_balance?: number
+          spiral_stage?: string
+          temporal_id: string
+          timestamp?: string | null
+          upper_left?: number
+          upper_right?: number
+        }
+        Update: {
+          created_at?: string | null
+          dominant_quadrant?: string
+          id?: string
+          integration_level?: number
+          lower_left?: number
+          lower_right?: number
+          metadata?: Json | null
+          quadrant_balance?: number
+          spiral_stage?: string
+          temporal_id?: string
+          timestamp?: string | null
+          upper_left?: number
+          upper_right?: number
+        }
+        Relationships: []
       }
       lighthouse_events: {
         Row: {
@@ -1488,6 +1794,54 @@ export type Database = {
           },
         ]
       }
+      probability_matrix_states: {
+        Row: {
+          confidence: number
+          created_at: string | null
+          dynamic_weight: number
+          fused_probability: number
+          harmonic_lock: boolean | null
+          hnc_probability: number
+          id: string
+          metadata: Json | null
+          six_d_probability: number
+          temporal_id: string
+          timestamp: string | null
+          trading_action: string
+          wave_state: string | null
+        }
+        Insert: {
+          confidence?: number
+          created_at?: string | null
+          dynamic_weight?: number
+          fused_probability?: number
+          harmonic_lock?: boolean | null
+          hnc_probability?: number
+          id?: string
+          metadata?: Json | null
+          six_d_probability?: number
+          temporal_id: string
+          timestamp?: string | null
+          trading_action?: string
+          wave_state?: string | null
+        }
+        Update: {
+          confidence?: number
+          created_at?: string | null
+          dynamic_weight?: number
+          fused_probability?: number
+          harmonic_lock?: boolean | null
+          hnc_probability?: number
+          id?: string
+          metadata?: Json | null
+          six_d_probability?: number
+          temporal_id?: string
+          timestamp?: string | null
+          trading_action?: string
+          wave_state?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -1536,6 +1890,48 @@ export type Database = {
           payment_completed?: boolean | null
           payment_completed_at?: string | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      qgita_signal_states: {
+        Row: {
+          coherence_boost: number
+          confidence: number
+          created_at: string | null
+          frequency: number
+          id: string
+          metadata: Json | null
+          phase: string
+          signal_type: string
+          strength: number
+          temporal_id: string
+          timestamp: string | null
+        }
+        Insert: {
+          coherence_boost?: number
+          confidence?: number
+          created_at?: string | null
+          frequency?: number
+          id?: string
+          metadata?: Json | null
+          phase?: string
+          signal_type?: string
+          strength?: number
+          temporal_id: string
+          timestamp?: string | null
+        }
+        Update: {
+          coherence_boost?: number
+          confidence?: number
+          created_at?: string | null
+          frequency?: number
+          id?: string
+          metadata?: Json | null
+          phase?: string
+          signal_type?: string
+          strength?: number
+          temporal_id?: string
+          timestamp?: string | null
         }
         Relationships: []
       }
@@ -1689,6 +2085,45 @@ export type Database = {
         }
         Relationships: []
       }
+      smart_router_states: {
+        Row: {
+          binance_fee: number | null
+          created_at: string | null
+          fee_savings: number | null
+          id: string
+          kraken_fee: number | null
+          metadata: Json | null
+          routing_reason: string
+          selected_exchange: string
+          temporal_id: string
+          timestamp: string | null
+        }
+        Insert: {
+          binance_fee?: number | null
+          created_at?: string | null
+          fee_savings?: number | null
+          id?: string
+          kraken_fee?: number | null
+          metadata?: Json | null
+          routing_reason?: string
+          selected_exchange?: string
+          temporal_id: string
+          timestamp?: string | null
+        }
+        Update: {
+          binance_fee?: number | null
+          created_at?: string | null
+          fee_savings?: number | null
+          id?: string
+          kraken_fee?: number | null
+          metadata?: Json | null
+          routing_reason?: string
+          selected_exchange?: string
+          temporal_id?: string
+          timestamp?: string | null
+        }
+        Relationships: []
+      }
       solar_flare_correlations: {
         Row: {
           analysis_window_hours: number | null
@@ -1797,6 +2232,48 @@ export type Database = {
           resonance_quality?: number | null
           sentinel_name?: string | null
           temporal_id?: string
+        }
+        Relationships: []
+      }
+      temporal_anchor_states: {
+        Row: {
+          anchor_strength: number
+          created_at: string | null
+          drift_amount_ms: number | null
+          drift_detected: boolean | null
+          id: string
+          is_valid: boolean | null
+          metadata: Json | null
+          registered_systems: number
+          temporal_id: string
+          timestamp: string | null
+          verified_systems: number
+        }
+        Insert: {
+          anchor_strength?: number
+          created_at?: string | null
+          drift_amount_ms?: number | null
+          drift_detected?: boolean | null
+          id?: string
+          is_valid?: boolean | null
+          metadata?: Json | null
+          registered_systems?: number
+          temporal_id: string
+          timestamp?: string | null
+          verified_systems?: number
+        }
+        Update: {
+          anchor_strength?: number
+          created_at?: string | null
+          drift_amount_ms?: number | null
+          drift_detected?: boolean | null
+          id?: string
+          is_valid?: boolean | null
+          metadata?: Json | null
+          registered_systems?: number
+          temporal_id?: string
+          timestamp?: string | null
+          verified_systems?: number
         }
         Relationships: []
       }
