@@ -18,6 +18,7 @@ import { UserAssetsPanel } from '@/components/warroom/UserAssetsPanel';
 import { DataStreamMonitorPanel } from '@/components/DataStreamMonitorPanel';
 import { LiveTradingStatusPanel } from '@/components/LiveTradingStatusPanel';
 import { SimulationVerificationPanel } from '@/components/SimulationVerificationPanel';
+import DecisionVerificationPanel from '@/components/DecisionVerificationPanel';
 import { ecosystemConnector } from '@/core/ecosystemConnector';
 import { toast } from 'sonner';
 
@@ -312,8 +313,9 @@ export default function AureonDashboard() {
           <LiveTradingStatusPanel />
         </div>
         
-        {/* Simulation & Data Stream Monitoring */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Decision Verification & Simulation */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <DecisionVerificationPanel />
           <SimulationVerificationPanel />
           <DataStreamMonitorPanel />
         </div>
