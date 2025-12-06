@@ -2,9 +2,11 @@ import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress';
 import { useExchangeDataVerification } from '@/hooks/useExchangeDataVerification';
 import { useDataStreamMonitor } from '@/hooks/useDataStreamMonitor';
 import { useBackendHealth } from '@/hooks/useBackendHealth';
+import { usePrimeSeal } from '@/hooks/usePrimeSeal';
 import { 
   CheckCircle, 
   XCircle, 
@@ -14,7 +16,9 @@ import {
   WifiOff,
   Server,
   Key,
-  Activity
+  Activity,
+  Lock,
+  Unlock
 } from 'lucide-react';
 
 interface SystemCheck {
@@ -29,6 +33,7 @@ export function SystemHealthPanel() {
   const { verification, isLiveData, isDemoMode, liveExchangeCount, verify, getExchangeStatus } = useExchangeDataVerification();
   const { overallHealth, healthyEndpoints, unhealthyEndpoints } = useDataStreamMonitor();
   const { healthReport, refresh: refreshHealth } = useBackendHealth();
+  const primeSeal = usePrimeSeal();
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const handleRefresh = async () => {
@@ -94,6 +99,18 @@ export function SystemHealthPanel() {
       isRealData: isLiveData,
       actionNeeded: !isLiveData 
         ? 'Connect at least one exchange for live trading' 
+        : undefined
+    },
+    // 10-9-1 Prime Seal Status
+    {
+      name: '10-9-1 Prime Seal',
+      status: primeSeal.isLocked ? 'ok' : primeSeal.primeCoherence > 0.7 ? 'warning' : 'error',
+      message: primeSeal.isLocked 
+        ? `🔒 SEALED at Γ=${primeSeal.primeCoherence.toFixed(4)}` 
+        : `🔓 UNLOCKED Γ=${primeSeal.primeCoherence.toFixed(4)} < 0.945`,
+      isRealData: primeSeal.systemsContributing.length > 0,
+      actionNeeded: !primeSeal.isLocked 
+        ? 'Coherence must reach 0.945 to enable trading' 
         : undefined
     }
   ];
@@ -195,17 +212,48 @@ export function SystemHealthPanel() {
           </div>
         ))}
 
+        {/* 10-9-1 Prime Seal Status */}
+        <div className={`p-3 rounded-lg border ${
+          primeSeal.isLocked 
+            ? 'border-green-500/50 bg-green-500/10' 
+            : 'border-amber-500/50 bg-amber-500/10'
+        }`}>
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              {primeSeal.isLocked ? (
+                <Lock className="h-5 w-5 text-green-500" />
+              ) : (
+                <Unlock className="h-5 w-5 text-amber-500" />
+              )}
+              <span className="font-bold">10-9-1 Prime Seal</span>
+            </div>
+            <Badge className={primeSeal.isLocked ? 'bg-green-600' : 'bg-amber-600'}>
+              {primeSeal.isLocked ? 'LOCKED' : 'UNLOCKED'}
+            </Badge>
+          </div>
+          <Progress 
+            value={primeSeal.primeCoherence * 100} 
+            className="h-2 mb-1"
+          />
+          <div className="flex justify-between text-xs text-muted-foreground">
+            <span>Unity: {(primeSeal.unityCoherence * 100).toFixed(0)}% (10×)</span>
+            <span>Flow: {(primeSeal.flowCoherence * 100).toFixed(0)}% (9×)</span>
+            <span>Anchor: {(primeSeal.anchorCoherence * 100).toFixed(0)}% (1×)</span>
+          </div>
+        </div>
+
         {/* Overall status message */}
         <div className={`p-4 rounded-lg text-center ${
-          isLiveData ? 'bg-green-500/10 border border-green-500/30' : 'bg-destructive/10 border border-destructive/30'
+          isLiveData && primeSeal.isLocked ? 'bg-green-500/10 border border-green-500/30' : 'bg-destructive/10 border border-destructive/30'
         }`}>
-          {isLiveData ? (
+          {isLiveData && primeSeal.isLocked ? (
             <div className="flex items-center justify-center gap-2 text-green-500">
               <Wifi className="h-5 w-5" />
+              <Lock className="h-4 w-4" />
               <span className="font-bold">LIVE TRADING READY</span>
-              <span className="text-sm">- Real data from {liveExchangeCount} exchange(s)</span>
+              <span className="text-sm">- Seal locked, {liveExchangeCount} exchange(s)</span>
             </div>
-          ) : (
+          ) : !isLiveData ? (
             <div className="flex flex-col items-center gap-2 text-destructive">
               <div className="flex items-center gap-2">
                 <WifiOff className="h-5 w-5" />
@@ -213,6 +261,16 @@ export function SystemHealthPanel() {
               </div>
               <p className="text-sm text-muted-foreground">
                 Connect at least one exchange to enable live trading
+              </p>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center gap-2 text-amber-500">
+              <div className="flex items-center gap-2">
+                <Unlock className="h-5 w-5" />
+                <span className="font-bold">AWAITING SEAL LOCK</span>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Coherence at {(primeSeal.primeCoherence * 100).toFixed(1)}% - needs 94.5% to trade
               </p>
             </div>
           )}

@@ -2188,6 +2188,60 @@ export type Database = {
         }
         Relationships: []
       }
+      prime_seal_packets: {
+        Row: {
+          amplitude_gain: number
+          created_at: string
+          id: string
+          intent_text: string | null
+          lattice_phase: number
+          metadata: Json | null
+          packet_value: number
+          prime_coherence: number
+          seal_lock: boolean
+          systems_contributing: Json | null
+          temporal_id: string
+          timestamp: string
+          w_anchor_1: number
+          w_flow_9: number
+          w_unity_10: number
+        }
+        Insert: {
+          amplitude_gain?: number
+          created_at?: string
+          id?: string
+          intent_text?: string | null
+          lattice_phase?: number
+          metadata?: Json | null
+          packet_value?: number
+          prime_coherence?: number
+          seal_lock?: boolean
+          systems_contributing?: Json | null
+          temporal_id: string
+          timestamp?: string
+          w_anchor_1?: number
+          w_flow_9?: number
+          w_unity_10?: number
+        }
+        Update: {
+          amplitude_gain?: number
+          created_at?: string
+          id?: string
+          intent_text?: string | null
+          lattice_phase?: number
+          metadata?: Json | null
+          packet_value?: number
+          prime_coherence?: number
+          seal_lock?: boolean
+          systems_contributing?: Json | null
+          temporal_id?: string
+          timestamp?: string
+          w_anchor_1?: number
+          w_flow_9?: number
+          w_unity_10?: number
+        }
+        Relationships: []
+      }
       prism_transformation_states: {
         Row: {
           coherence: number
