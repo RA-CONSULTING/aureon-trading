@@ -25,13 +25,14 @@ export interface BusSnapshot {
 
 // System weights for consensus calculation (expanded for full ecosystem)
 const SYSTEM_WEIGHTS: Record<string, number> = {
-  MasterEquation: 0.18,
-  Lighthouse: 0.15,
-  RainbowBridge: 0.10,
-  DataIngestion: 0.10,
-  DecisionFusion: 0.10,
-  QGITASignal: 0.08,
-  Prism: 0.07,
+  MasterEquation: 0.16,
+  Lighthouse: 0.14,
+  RainbowBridge: 0.09,
+  DataIngestion: 0.09,
+  DecisionFusion: 0.09,
+  MultiExchange: 0.08, // NEW: Multi-exchange data integration
+  QGITASignal: 0.07,
+  Prism: 0.06,
   IntegralAQAL: 0.05,
   StargateLattice: 0.05,
   HNCImperial: 0.05,
@@ -39,7 +40,7 @@ const SYSTEM_WEIGHTS: Record<string, number> = {
 };
 
 const REQUIRED_SYSTEMS = ['DataIngestion', 'Lighthouse', 'MasterEquation', 'RainbowBridge'];
-const OPTIONAL_SYSTEMS = ['DecisionFusion', 'QGITASignal', 'Prism', 'IntegralAQAL', 'StargateLattice', 'HNCImperial', '6DHarmonic'];
+const OPTIONAL_SYSTEMS = ['DecisionFusion', 'QGITASignal', 'Prism', 'IntegralAQAL', 'StargateLattice', 'HNCImperial', '6DHarmonic', 'MultiExchange'];
 
 class UnifiedBus {
   private states: Map<string, SystemState> = new Map();

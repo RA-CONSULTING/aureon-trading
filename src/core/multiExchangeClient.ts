@@ -4,10 +4,12 @@
  * 
  * Aggregates data from all connected exchanges
  * Provides unified view of balances, tickers, and positions
+ * NOW PUBLISHES TO UNIFIED BUS for ecosystem integration
  */
 
 import { UnifiedExchangeClient, ExchangeBalance, ExchangeTicker, ExchangeType, EXCHANGE_FEES } from './unifiedExchangeClient';
 import { temporalLadder, SYSTEMS } from './temporalLadder';
+import { unifiedBus, type SignalType } from './unifiedBus';
 
 export interface ConsolidatedBalance {
   asset: string;
@@ -126,9 +128,82 @@ export class MultiExchangeClient {
     
     // Send heartbeat to Temporal Ladder
     const activeCount = state.exchanges.filter(e => e.connected).length;
-    temporalLadder.heartbeat(SYSTEMS.QUANTUM_QUACKERS, activeCount / state.exchanges.length);
+    const healthRatio = state.exchanges.length > 0 ? activeCount / state.exchanges.length : 0;
+    temporalLadder.heartbeat(SYSTEMS.QUANTUM_QUACKERS, healthRatio);
+    
+    // PUBLISH TO UNIFIED BUS for ecosystem integration
+    this.publishToUnifiedBus(state);
     
     return state;
+  }
+
+  /**
+   * Publish exchange state to UnifiedBus for ecosystem-wide visibility
+   */
+  private publishToUnifiedBus(state: MultiExchangeState): void {
+    const connectedCount = state.exchanges.filter(e => e.connected).length;
+    const totalExchanges = state.exchanges.length;
+    const healthRatio = totalExchanges > 0 ? connectedCount / totalExchanges : 0;
+    
+    // Derive signal from balance health
+    let signal: SignalType = 'NEUTRAL';
+    if (state.totalEquityUsd > 1000 && healthRatio >= 0.5) {
+      signal = 'BUY'; // Sufficient capital available
+    } else if (state.totalEquityUsd < 100 || healthRatio < 0.25) {
+      signal = 'SELL'; // Low capital or poor exchange connectivity
+    }
+    
+    unifiedBus.publish({
+      systemName: 'MultiExchange',
+      timestamp: Date.now(),
+      ready: connectedCount > 0,
+      coherence: healthRatio,
+      confidence: Math.min(healthRatio + 0.2, 1),
+      signal,
+      data: {
+        totalEquityUsd: state.totalEquityUsd,
+        connectedExchanges: connectedCount,
+        totalExchanges,
+        exchanges: state.exchanges.map(e => ({
+          name: e.exchange,
+          connected: e.connected,
+          usdValue: e.totalUsdValue
+        })),
+        topAssets: state.consolidatedBalances.slice(0, 5).map(b => ({
+          asset: b.asset,
+          total: b.grandTotal,
+          usdValue: b.usdValue
+        }))
+      }
+    });
+  }
+
+  /**
+   * Get available balance for position sizing
+   */
+  public getAvailableBalanceForTrading(quoteAsset: string = 'USDT'): number {
+    const consolidated = this.getConsolidatedBalances();
+    const quoteBalance = consolidated.find(b => b.asset === quoteAsset);
+    return quoteBalance?.totalFree || 0;
+  }
+
+  /**
+   * Calculate position size based on available equity and risk percentage
+   */
+  public calculatePositionSize(
+    riskPercentage: number = 0.02,
+    quoteAsset: string = 'USDT'
+  ): { positionSizeUsd: number; availableBalance: number; riskAmount: number } {
+    const availableBalance = this.getAvailableBalanceForTrading(quoteAsset);
+    const totalEquity = this.getTotalEquityUsd();
+    const riskAmount = totalEquity * riskPercentage;
+    const positionSizeUsd = Math.min(riskAmount, availableBalance * 0.95); // Leave 5% buffer
+    
+    return {
+      positionSizeUsd: Math.max(0, positionSizeUsd),
+      availableBalance,
+      riskAmount
+    };
   }
 
   /**
