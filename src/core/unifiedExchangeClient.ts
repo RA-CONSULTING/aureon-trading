@@ -184,24 +184,28 @@ export class UnifiedExchangeClient {
 
   // Exchange-specific implementations
   private async fetchBinanceBalances(): Promise<ExchangeBalance[]> {
-    const response = await fetch(
-      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/get-binance-balances`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
-      }
-    );
+    // Use the authenticated get-user-balances endpoint
+    const { supabase } = await import('@/integrations/supabase/client');
+    const { data: { session } } = await supabase.auth.getSession();
     
-    if (!response.ok) throw new Error('Failed to fetch Binance balances');
+    if (!session) {
+      console.warn('No session for fetchBinanceBalances');
+      return [];
+    }
     
-    const data = await response.json();
+    const { data, error } = await supabase.functions.invoke('get-user-balances', {
+      headers: { Authorization: `Bearer ${session.access_token}` }
+    });
     
-    if (data.balances) {
-      this.lastBalances = data.balances.map((b: any) => ({
+    if (error) throw new Error('Failed to fetch Binance balances');
+    
+    const binanceExchange = data?.balances?.find((b: any) => b.exchange === 'binance');
+    if (binanceExchange?.assets) {
+      this.lastBalances = binanceExchange.assets.map((b: any) => ({
         asset: b.asset,
-        free: parseFloat(b.free),
-        locked: parseFloat(b.locked),
-        total: parseFloat(b.free) + parseFloat(b.locked),
+        free: b.free,
+        locked: b.locked,
+        total: b.free + b.locked,
         usdValue: b.usdValue
       }));
       this.lastUpdate = Date.now();
