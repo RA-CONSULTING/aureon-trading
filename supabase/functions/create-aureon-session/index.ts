@@ -29,9 +29,10 @@ serve(async (req) => {
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY');
     const encryptionKey = Deno.env.get('MASTER_ENCRYPTION_KEY') || 'aureon-default-key-32chars!!';
 
-    if (!supabaseUrl || !supabaseServiceKey) {
+    if (!supabaseUrl || !supabaseServiceKey || !supabaseAnonKey) {
       console.error('[create-aureon-session] Missing env vars');
       return new Response(
         JSON.stringify({ error: 'Server configuration error' }),
@@ -39,6 +40,42 @@ serve(async (req) => {
       );
     }
 
+    // === SECURITY FIX: Verify the JWT token matches the userId ===
+    const authHeader = req.headers.get('Authorization');
+    const token = authHeader?.replace('Bearer ', '');
+
+    if (!token) {
+      console.error('[create-aureon-session] Missing authorization token');
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Use anon key to verify the user's token
+    const anonSupabase = createClient(supabaseUrl, supabaseAnonKey);
+    const { data: { user }, error: authError } = await anonSupabase.auth.getUser(token);
+
+    if (authError || !user) {
+      console.error('[create-aureon-session] Invalid token:', authError?.message);
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Verify the authenticated user matches the requested userId
+    if (user.id !== userId) {
+      console.error('[create-aureon-session] User ID mismatch:', { authenticated: user.id, requested: userId });
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized: user mismatch' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log('[create-aureon-session] User verified:', user.id);
+
+    // Use service role for database operations
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     let apiKeyEncrypted = null;
@@ -112,8 +149,9 @@ serve(async (req) => {
 
     if (error) {
       console.error('[create-aureon-session] Database error:', error);
+      // SECURITY FIX: Return generic error, log details server-side
       return new Response(
-        JSON.stringify({ error: error.message, code: error.code }),
+        JSON.stringify({ error: 'Session creation failed. Please try again.' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -127,8 +165,9 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('[create-aureon-session] Unexpected error:', error);
+    // SECURITY FIX: Return generic error, don't leak internal details
     return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
+      JSON.stringify({ error: 'An unexpected error occurred. Please try again.' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
