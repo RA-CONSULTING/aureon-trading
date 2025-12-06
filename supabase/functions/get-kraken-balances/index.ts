@@ -28,27 +28,22 @@ serve(async (req) => {
     const krakenApiKey = Deno.env.get('KRAKEN_API_KEY');
     const krakenApiSecret = Deno.env.get('KRAKEN_API_SECRET');
 
+    // NO DEMO MODE - Return explicit error if no credentials
+    // This prevents silent fallback to fake data
     if (!krakenApiKey || !krakenApiSecret) {
-      console.log('Kraken credentials not configured, returning demo balances');
-      
-      // Return demo balances for testing
-      const demoBalances = [
-        { asset: 'XBT', free: 0.05, locked: 0, total: 0.05, usdValue: 2150 },
-        { asset: 'ETH', free: 0.5, locked: 0, total: 0.5, usdValue: 1250 },
-        { asset: 'USDT', free: 500, locked: 0, total: 500, usdValue: 500 },
-      ];
-
+      console.error('[get-kraken-balances] ❌ NO CREDENTIALS - Cannot fetch real balances');
       return new Response(
         JSON.stringify({
-          success: true,
+          success: false,
           exchange: 'kraken',
-          balances: demoBalances,
-          totalUsdValue: demoBalances.reduce((sum, b) => sum + b.usdValue, 0),
-          mode: 'demo'
+          error: 'NO_CREDENTIALS',
+          message: 'Kraken API credentials not configured. Cannot fetch live balances.',
+          dataSource: 'NONE',
+          mode: 'error'
         }),
         { 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 200 
+          status: 401 
         }
       );
     }
