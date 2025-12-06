@@ -7,6 +7,7 @@ import { ProjectionHorizon } from './warroom/ProjectionHorizon';
 import { GasTankDisplay } from './warroom/GasTankDisplay';
 import { UnifiedBusStatus } from './warroom/UnifiedBusStatus';
 import { MultiExchangePanel } from './warroom/MultiExchangePanel';
+import { SystemHealthPanel } from './SystemHealthPanel';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 
@@ -113,6 +114,9 @@ export default function WarRoomDashboard() {
 
         {/* Multi-Exchange Panel */}
         <MultiExchangePanel />
+
+        {/* System Health Panel */}
+        <SystemHealthPanel />
 
         {/* Auris Nodes Orbit */}
         <AurisNodesOrbit quantumState={state.quantumState} />
