@@ -10,6 +10,10 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { toast } from "sonner";
 import { z } from "zod";
 import { Sparkles, Eye, EyeOff, ChevronDown, ChevronUp } from "lucide-react";
+import { APIKeySecurityGuide } from "@/components/auth/APIKeySecurityGuide";
+import { PasswordStrengthIndicator } from "@/components/auth/PasswordStrengthIndicator";
+import { SecurityBadges } from "@/components/auth/SecurityBadges";
+import { ConsentCheckboxes } from "@/components/auth/ConsentCheckboxes";
 
 const emailSchema = z.string().email("Invalid email address");
 const passwordSchema = z.string().min(8, "Password must be at least 8 characters");
@@ -30,7 +34,13 @@ export default function Auth() {
   // Sign Up State
   const [signUpEmail, setSignUpEmail] = useState("");
   const [signUpPassword, setSignUpPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [binanceApiKey, setBinanceApiKey] = useState("");
+  
+  // Consent State
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [privacyAccepted, setPrivacyAccepted] = useState(false);
+  const [riskAccepted, setRiskAccepted] = useState(false);
   const [binanceApiSecret, setBinanceApiSecret] = useState("");
   
   // Optional exchange credentials
@@ -64,6 +74,19 @@ export default function Auth() {
     try {
       emailSchema.parse(signUpEmail);
       passwordSchema.parse(signUpPassword);
+      
+      // Validate password confirmation
+      if (signUpPassword !== confirmPassword) {
+        toast.error("Passwords do not match");
+        return;
+      }
+      
+      // Validate consent checkboxes
+      if (!termsAccepted || !privacyAccepted || !riskAccepted) {
+        toast.error("Please accept all required agreements to continue");
+        return;
+      }
+      
       binanceApiKeySchema.parse(binanceApiKey);
       binanceApiSecretSchema.parse(binanceApiSecret);
       
@@ -263,7 +286,30 @@ export default function Auth() {
                       {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
                   </div>
+                  <PasswordStrengthIndicator password={signUpPassword} />
                 </div>
+
+                {/* Confirm Password */}
+                <div className="space-y-2">
+                  <Label htmlFor="confirm-password">Confirm Password</Label>
+                  <div className="relative">
+                    <Input
+                      id="confirm-password"
+                      type={showPassword ? "text" : "password"}
+                      placeholder="Re-enter password"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      required
+                      className={confirmPassword && signUpPassword !== confirmPassword ? "border-destructive" : ""}
+                    />
+                  </div>
+                  {confirmPassword && signUpPassword !== confirmPassword && (
+                    <p className="text-xs text-destructive">Passwords do not match</p>
+                  )}
+                </div>
+
+                {/* API Key Security Guide */}
+                <APIKeySecurityGuide />
 
                 {/* Binance - Required */}
                 <div className="border-t border-border/50 pt-4 mt-4">
@@ -410,12 +456,29 @@ export default function Auth() {
                   </CollapsibleContent>
                 </Collapsible>
 
-                <Button type="submit" className="w-full" disabled={loading}>
+                {/* Consent Checkboxes */}
+                <ConsentCheckboxes
+                  termsAccepted={termsAccepted}
+                  privacyAccepted={privacyAccepted}
+                  riskAccepted={riskAccepted}
+                  onTermsChange={setTermsAccepted}
+                  onPrivacyChange={setPrivacyAccepted}
+                  onRiskChange={setRiskAccepted}
+                />
+
+                <Button 
+                  type="submit" 
+                  className="w-full" 
+                  disabled={loading || !termsAccepted || !privacyAccepted || !riskAccepted}
+                >
                   {loading ? "Creating account..." : "Create Account"}
                 </Button>
               </form>
             </TabsContent>
           </Tabs>
+          
+          {/* Security Badges */}
+          <SecurityBadges />
         </CardContent>
       </Card>
     </div>
