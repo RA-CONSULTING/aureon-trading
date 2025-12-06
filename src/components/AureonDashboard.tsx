@@ -11,6 +11,7 @@ import { UnifiedBusStatus } from '@/components/warroom/UnifiedBusStatus';
 import { TemporalLadderStatus } from '@/components/warroom/TemporalLadderStatus';
 import { ExchangeBalances } from '@/components/warroom/ExchangeBalances';
 import { PrismStatus } from '@/components/warroom/PrismStatus';
+import { EcosystemStatus } from '@/components/warroom/EcosystemStatus';
 
 export default function AureonDashboard() {
   const navigate = useNavigate();
@@ -196,11 +197,16 @@ export default function AureonDashboard() {
             baseFrequency={396}
           />
           <UnifiedBusStatus />
-          <TemporalLadderStatus />
+          <EcosystemStatus />
           <ExchangeBalances 
             totalEquityUsd={exchangeState.totalEquityUsd}
             exchanges={exchangeState.exchanges}
           />
+        </div>
+        
+        {/* Extended System Status Row */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <TemporalLadderStatus />
         </div>
 
         {/* Trading Control */}
