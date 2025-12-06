@@ -1,10 +1,17 @@
-// Master Equation: Λ(t) = S(t) + O(t) + E(t)
-// S(t) = Substrate (9 Auris nodes respond to market)
-// O(t) = Observer (self-referential field awareness)
-// E(t) = Echo (memory and momentum)
-// Γ = Coherence (0-1, measures field alignment)
-//
-// TEMPORAL LADDER INTEGRATION: Orchestrates all systems with hive-mind coordination
+/**
+ * MASTER EQUATION — Harmonic Nexus Core (HNC) Implementation
+ * 
+ * Λ(t) = Σ wᵢ sin(2πfᵢt + φᵢ) + α·tanh[g·Λ̄_Δt(t)] + β·Λ(t-τ)
+ * 
+ * Level 5 - Composite Reality Field:
+ * - Term 1: Substrate (harmonic superposition of natural modes)
+ * - Term 2: Observer feedback (nonlinear saturation via tanh)
+ * - Term 3: Causal Echo (delayed self-reference - Lighthouse Echo)
+ * 
+ * Coherence Metric: Γ = 1 - σ/μ (target Γ ≥ 0.945)
+ * 
+ * TEMPORAL LADDER INTEGRATION: Orchestrates all systems with hive-mind coordination
+ */
 
 import { AurisNodes, type MarketSnapshot } from './aurisNodes';
 import { stargateLayer, type StargateInfluence } from './stargateLattice';
@@ -14,6 +21,32 @@ import type { NexusBridgeConfig } from './nexusLiveFeedBridge';
 import type { SimpleEarthStreams } from '../lib/earth-streams';
 import { temporalLadder, SYSTEMS } from './temporalLadder';
 
+// HNC Configuration Constants
+const HNC_CONFIG = {
+  // Base frequencies (Hz) - harmonic scaffold
+  frequencies: [7.83, 14.3, 20.8, 33.8, 528, 963], // Schumann harmonics + Love + Unity
+  
+  // Frequency weights (normalized contributions)
+  weights: [0.25, 0.15, 0.10, 0.05, 0.30, 0.15], // 528 Hz dominant
+  
+  // Observer feedback parameters
+  alpha: 0.35,      // Observer gain (feedback strength)
+  g: 2.5,           // Nonlinear gain for tanh saturation
+  deltaT: 5,        // Integration window (number of samples for moving average)
+  
+  // Causal Echo (Lighthouse) parameters  
+  beta: 0.25,       // Echo gain (memory strength)
+  tau: 10,          // Delay in samples (creates frequency comb at 1/τ)
+  
+  // Coherence target
+  gammaTarget: 0.945, // Minimum coherence for stable timeline
+  
+  // Harmonic interference
+  parasiteFreq: 440,   // Mars distortion frequency
+  gaiaFreq: 528,       // Earth love frequency
+  rho: 440 / 528,      // Interference ratio ≈ 0.833 (dissonant)
+};
+
 export type LambdaState = {
   lambda: number;
   coherence: number;
@@ -22,6 +55,18 @@ export type LambdaState = {
   echo: number;
   dominantNode: string;
   nodeResponses: Record<string, number>;
+  
+  // HNC-specific outputs
+  harmonicComponents: number[];  // Per-frequency contributions
+  observerResponse: number;      // tanh output
+  echoSignal: number;           // Delayed feedback
+  coherenceLinear: number;      // Raw Γ before boosts
+  coherenceNonlinear: number;   // After tanh stabilization
+  coherencePhi: number;         // Golden ratio alignment
+  qualityFactor: number;        // Q = stability metric
+  effectiveGain: number;        // G_eff = α + β
+  
+  // External influences
   stargateInfluence?: StargateInfluence;
   earthFieldInfluence?: EarthFieldInfluence;
   nexusInfluence?: NexusInfluence;
@@ -36,6 +81,9 @@ export class MasterEquation {
   private earthStreams: SimpleEarthStreams | null = null;
   private regionId: string | null = null;
   private nexusEnabled = true;
+  
+  // Time tracking for harmonic oscillation
+  private stepCount = 0;
   
   constructor() {
     // Register with Temporal Ladder as primary orchestrator
@@ -62,17 +110,139 @@ export class MasterEquation {
     nexusLiveFeedBridge.setConfig({ enable, ...(configOverrides || {}) });
   }
   
+  /**
+   * LEVEL 2 - SUBSTRATE: Harmonic Base
+   * Λ_base(t) = Σ wᵢ sin(2πfᵢt + φᵢ)
+   */
+  private computeSubstrate(snapshot: MarketSnapshot, nodeResponses: Record<string, number>): {
+    substrate: number;
+    harmonicComponents: number[];
+  } {
+    const t = this.stepCount;
+    const harmonicComponents: number[] = [];
+    let harmonicSum = 0;
+    
+    // Compute harmonic superposition
+    for (let i = 0; i < HNC_CONFIG.frequencies.length; i++) {
+      const f = HNC_CONFIG.frequencies[i];
+      const w = HNC_CONFIG.weights[i];
+      
+      // Phase offset from market volatility (creates variation)
+      const phi = (snapshot.volatility || 0) * Math.PI;
+      
+      // Normalized time (scale frequencies to sample rate)
+      const normalizedF = f / 1000; // Scale down for discrete steps
+      
+      // Harmonic component
+      const component = w * Math.sin(2 * Math.PI * normalizedF * t + phi);
+      harmonicComponents.push(component);
+      harmonicSum += component;
+    }
+    
+    // Combine with node responses (market-derived weights)
+    const nodeAvg = Object.values(nodeResponses).reduce((a, b) => a + b, 0) / 
+                    Object.keys(nodeResponses).length;
+    
+    // Substrate = harmonic scaffold + market modulation
+    const substrate = (harmonicSum + nodeAvg) / 2;
+    
+    return { substrate, harmonicComponents };
+  }
+  
+  /**
+   * LEVEL 4 - OBSERVER FEEDBACK: Integration & Nonlinearity
+   * Λ̄_Δt(t) = (1/Δt) ∫ Λ(t') dt' over [t-Δt, t]
+   * R_obs(t) = tanh[g · Λ̄_Δt(t)]
+   */
+  private computeObserver(): { observer: number; observerResponse: number } {
+    if (this.history.length < HNC_CONFIG.deltaT) {
+      return { observer: 0, observerResponse: 0 };
+    }
+    
+    // Moving average (integration over Δt window)
+    const recentHistory = this.history.slice(-HNC_CONFIG.deltaT);
+    const lambdaAvg = recentHistory.reduce((a, b) => a + b, 0) / recentHistory.length;
+    
+    // Nonlinear saturation: tanh(g · Λ̄)
+    // This prevents runaway amplification and ensures bounded output [-1, 1]
+    const observerResponse = Math.tanh(HNC_CONFIG.g * lambdaAvg);
+    
+    // Observer contribution with gain α
+    const observer = HNC_CONFIG.alpha * observerResponse;
+    
+    return { observer, observerResponse };
+  }
+  
+  /**
+   * LEVEL 3 - CAUSAL ECHO: Memory Loop (Lighthouse Echo)
+   * L_loop(t) = Λ(t - τ)
+   * Creates frequency comb at multiples of 1/τ
+   */
+  private computeEcho(): { echo: number; echoSignal: number } {
+    if (this.history.length < HNC_CONFIG.tau) {
+      return { echo: 0, echoSignal: 0 };
+    }
+    
+    // Delayed self-reference: Λ(t - τ)
+    const echoSignal = this.history[this.history.length - HNC_CONFIG.tau];
+    
+    // Echo contribution with gain β
+    const echo = HNC_CONFIG.beta * echoSignal;
+    
+    return { echo, echoSignal };
+  }
+  
+  /**
+   * COHERENCE METRIC: Γ = 1 - σ/μ
+   * Measures how well the field correlates with itself
+   */
+  private computeCoherence(nodeResponses: Record<string, number>): {
+    coherenceLinear: number;
+    coherenceNonlinear: number;
+    coherencePhi: number;
+    qualityFactor: number;
+  } {
+    const responses = Object.values(nodeResponses);
+    
+    // Mean (μ) and standard deviation (σ)
+    const mu = responses.reduce((a, b) => a + b, 0) / responses.length;
+    const variance = responses.reduce((sum, r) => sum + Math.pow(r - mu, 2), 0) / responses.length;
+    const sigma = Math.sqrt(variance);
+    
+    // Linear coherence: Γ = 1 - σ/μ (avoid division by zero)
+    const coherenceLinear = mu !== 0 
+      ? Math.max(0, Math.min(1, 1 - Math.abs(sigma / mu)))
+      : 0.5;
+    
+    // Nonlinear coherence (stabilized through observer feedback)
+    // Apply tanh to prevent extreme values
+    const coherenceNonlinear = (1 + Math.tanh(2 * (coherenceLinear - 0.5))) / 2;
+    
+    // Golden ratio alignment (φ = 1.618...)
+    const phi = 1.618033988749895;
+    const goldenCheck = Math.abs((coherenceLinear * phi) % 1);
+    const coherencePhi = 1 - Math.min(goldenCheck, 1 - goldenCheck) * 2;
+    
+    // Quality factor Q = stability of the resonance
+    const effectiveGain = HNC_CONFIG.alpha + HNC_CONFIG.beta;
+    const qualityFactor = effectiveGain < 1 
+      ? 1 / (1 - effectiveGain) 
+      : Math.min(10, effectiveGain * 2); // Bounded Q for high gains
+    
+    return { coherenceLinear, coherenceNonlinear, coherencePhi, qualityFactor };
+  }
+  
   async step(snapshot: MarketSnapshot): Promise<LambdaState> {
-    // Compute substrate S(t) from all 9 Auris nodes
+    this.stepCount++;
+    
+    // Compute node responses from 9 Auris nodes
     const nodeResponses: Record<string, number> = {};
-    let substrate = 0;
     let dominantNode = '';
     let maxResponse = -Infinity;
     
     Object.entries(AurisNodes).forEach(([name, node]) => {
       const response = node.compute(snapshot) * node.weight;
       nodeResponses[name] = response;
-      substrate += response;
       
       if (response > maxResponse) {
         maxResponse = response;
@@ -80,46 +250,48 @@ export class MasterEquation {
       }
     });
     
-    // Normalize substrate
-    substrate = substrate / Object.keys(AurisNodes).length;
+    // LEVEL 2: Substrate (harmonic superposition)
+    const { substrate, harmonicComponents } = this.computeSubstrate(snapshot, nodeResponses);
     
-    // Compute observer O(t) - self-referential awareness
-    const observer = this.history.length > 0 
-      ? this.history[this.history.length - 1] * 0.3 
-      : 0;
+    // LEVEL 4: Observer feedback (tanh nonlinearity)
+    const { observer, observerResponse } = this.computeObserver();
     
-    // Compute echo E(t) - memory and momentum
-    const echo = this.history.length > 5
-      ? this.history.slice(-5).reduce((sum, val) => sum + val, 0) / 5 * 0.2
-      : 0;
+    // LEVEL 3: Causal Echo (delayed self-reference)
+    const { echo, echoSignal } = this.computeEcho();
     
-    // Master equation
+    // LEVEL 5: Master Equation
+    // Λ(t) = Substrate + Observer + Echo
     const lambda = substrate + observer + echo;
     
-    // Update history
+    // Update history for next iteration
     this.history.push(lambda);
     if (this.history.length > this.maxHistory) {
       this.history.shift();
     }
     
-    // Compute base coherence Γ
-    let coherence = this.computeCoherence(nodeResponses, substrate);
+    // Compute coherence metrics
+    const { coherenceLinear, coherenceNonlinear, coherencePhi, qualityFactor } = 
+      this.computeCoherence(nodeResponses);
     
-    // Apply Earth Field influence (Schumann resonance, solar wind, geomagnetic)
+    // Start with nonlinear coherence as base
+    let coherence = coherenceNonlinear;
+    
+    // Effective gain for stability analysis
+    const effectiveGain = HNC_CONFIG.alpha + HNC_CONFIG.beta;
+    
+    // Apply Earth Field influence
     let earthFieldInfluence: EarthFieldInfluence | undefined;
     try {
       earthFieldInfluence = await earthAureonBridge.getEarthInfluence(
         this.earthStreams || undefined,
         this.regionId || undefined
       );
-      
-      // Apply Earth's electromagnetic boost to coherence
       coherence = Math.min(1, coherence + earthFieldInfluence.combinedBoost);
     } catch (error) {
       console.warn('Earth field sync error (non-critical):', error);
     }
     
-    // Apply Nexus harmonic nexus influence
+    // Apply Nexus influence
     let nexusInfluence: NexusInfluence | undefined;
     if (this.nexusEnabled) {
       try {
@@ -130,7 +302,7 @@ export class MasterEquation {
       }
     }
 
-    // Apply Stargate Lattice influence if location available
+    // Apply Stargate Lattice influence
     let stargateInfluence: StargateInfluence | undefined;
     if (this.userLocation) {
       stargateInfluence = stargateLayer.getInfluence(
@@ -138,15 +310,9 @@ export class MasterEquation {
         this.userLocation.lng,
         this.celestialBoost
       );
-      
-      // Boost coherence based on:
-      // 1. Proximity to sacred Stargate nodes
-      // 2. Celestial alignments (moon, solar, planetary)
-      // 3. Legacy Schumann boost (for backwards compatibility)
       const totalBoost = stargateInfluence.coherenceModifier + this.schumannBoost;
       coherence = Math.min(1, coherence + totalBoost);
     } else if (this.schumannBoost > 0) {
-      // Apply legacy Schumann boost even without location
       coherence = Math.min(1, coherence + this.schumannBoost);
     }
     
@@ -158,30 +324,54 @@ export class MasterEquation {
       echo,
       dominantNode,
       nodeResponses,
+      
+      // HNC-specific outputs
+      harmonicComponents,
+      observerResponse,
+      echoSignal,
+      coherenceLinear,
+      coherenceNonlinear,
+      coherencePhi,
+      qualityFactor,
+      effectiveGain,
+      
       stargateInfluence,
       earthFieldInfluence,
       nexusInfluence,
     };
   }
   
-  private computeCoherence(
-    nodeResponses: Record<string, number>,
-    substrate: number
-  ): number {
-    // Coherence measures alignment of node responses
-    const responses = Object.values(nodeResponses);
-    const avg = substrate;
+  /**
+   * Get HNC configuration for external reference
+   */
+  getConfig() {
+    return { ...HNC_CONFIG };
+  }
+  
+  /**
+   * Check if system is in stable attractor (locked timeline)
+   */
+  isLocked(): boolean {
+    if (this.history.length < HNC_CONFIG.tau * 2) return false;
     
-    // Calculate variance
-    const variance = responses.reduce((sum, r) => sum + Math.pow(r - avg, 2), 0) / responses.length;
+    // Check for periodicity in recent history (indicates limit cycle)
+    const recent = this.history.slice(-HNC_CONFIG.tau * 2);
+    const firstHalf = recent.slice(0, HNC_CONFIG.tau);
+    const secondHalf = recent.slice(HNC_CONFIG.tau);
     
-    // Normalize to 0-1 range (lower variance = higher coherence)
-    const coherence = Math.max(0, Math.min(1, 1 - variance / 10));
+    // Correlation between two periods
+    let correlation = 0;
+    for (let i = 0; i < HNC_CONFIG.tau; i++) {
+      correlation += firstHalf[i] * secondHalf[i];
+    }
+    correlation /= HNC_CONFIG.tau;
     
-    return coherence;
+    // High correlation indicates locked state
+    return correlation > 0.8;
   }
   
   reset() {
     this.history = [];
+    this.stepCount = 0;
   }
 }
