@@ -11,6 +11,7 @@ import { unifiedBus, SystemState, SignalType } from './unifiedBus';
 import { temporalLadder, SystemName, SYSTEMS } from './temporalLadder';
 import { ecosystemEnhancements } from './ecosystemEnhancements';
 import { supabase } from '@/integrations/supabase/client';
+import { invokeWithMonitoring } from './instrumentedSupabase';
 
 // Import all core systems
 import { mapToAQAL, IntegralFieldState } from './integralAQAL';

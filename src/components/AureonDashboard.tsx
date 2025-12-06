@@ -4,7 +4,7 @@ import { useAureonSession } from '@/hooks/useAureonSession';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Sparkles, Activity, Zap, Brain, Radio, Database, Router, TrendingUp, TrendingDown, LogOut, Play, Square, Wifi, WifiOff } from 'lucide-react';
+import { Sparkles, Activity, Zap, Brain, Radio, Database, Router, TrendingUp, TrendingDown, LogOut, Play, Square, Wifi, WifiOff, BarChart3 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { UnifiedBusStatus } from '@/components/warroom/UnifiedBusStatus';
@@ -15,6 +15,7 @@ import { HarmonicWaveform6DStatus } from '@/components/warroom/HarmonicWaveform6
 import { ProbabilityMatrixDisplay } from '@/components/warroom/ProbabilityMatrixDisplay';
 import { TradingModeToggle } from '@/components/TradingModeToggle';
 import { UserAssetsPanel } from '@/components/warroom/UserAssetsPanel';
+import { DataStreamMonitorPanel } from '@/components/DataStreamMonitorPanel';
 import { ecosystemConnector } from '@/core/ecosystemConnector';
 import { toast } from 'sonner';
 
@@ -306,6 +307,7 @@ export default function AureonDashboard() {
         {/* Extended System Status Row */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <TemporalLadderStatus />
+          <DataStreamMonitorPanel />
         </div>
 
         {/* Trading Control */}
