@@ -11,6 +11,20 @@ verify_jwt = true
 [functions.gas-tank-topup]
 verify_jwt = true
 
+# User-specific balance fetching
+[functions.get-user-balances]
+verify_jwt = true
+
+# User-specific trade execution per exchange
+[functions.execute-trade-kraken]
+verify_jwt = true
+
+[functions.execute-trade-user-alpaca]
+verify_jwt = true
+
+[functions.execute-trade-user-capital]
+verify_jwt = true
+
 [functions.gas-tank-deduct-fee]
 verify_jwt = true
 
