@@ -11,6 +11,7 @@ import { cn } from '@/lib/utils';
 import { UserAssetsPanel } from '@/components/warroom/UserAssetsPanel';
 import { SmartAlertBanner } from '@/components/SmartAlertBanner';
 import { FloatingAIButton } from '@/components/FloatingAIButton';
+import { ExchangeStatusSummary } from '@/components/ExchangeStatusSummary';
 import { ecosystemConnector } from '@/core/ecosystemConnector';
 import { backgroundServices } from '@/core/backgroundServices';
 import { toast } from 'sonner';
@@ -180,6 +181,9 @@ export default function AureonDashboard() {
       </header>
 
       <main className="container mx-auto px-4 py-6 space-y-6">
+        {/* Exchange Connection Status */}
+        <ExchangeStatusSummary />
+
         {/* Top Stats Row - Essential Cards Only */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Quantum State */}

@@ -227,3 +227,7 @@ verify_jwt = false
 # Force Validated Trade - ignition button
 [functions.force-validated-trade]
 verify_jwt = false
+
+# Update user exchange credentials
+[functions.update-user-credentials]
+verify_jwt = true
