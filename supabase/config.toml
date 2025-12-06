@@ -146,3 +146,6 @@ verify_jwt = false
 
 [functions.ingest-risk-manager]
 verify_jwt = false
+
+[functions.fetch-schumann-data]
+verify_jwt = false

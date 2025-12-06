@@ -2,6 +2,8 @@
 // Integrates five metrics to compute L(t) via normalized geometric mean
 // Lighthouse Event (LHE) confirmed when L(t) > μ + 2σ
 
+import { unifiedBus, SignalType } from './unifiedBus';
+
 export type LighthouseMetrics = {
   Q: number;         // |Q| — Anomaly pointer (0-1), FLAME metric
   Geff: number;      // G_eff — Effective gravity (0-1), BRAKE metric
@@ -102,13 +104,43 @@ export class LighthouseConsensus {
     // Confidence based on how far above threshold
     const confidence = threshold > 0 ? Math.min((L - threshold) / threshold, 1) : 0;
     
-    return {
+    const state: LighthouseState = {
       L,
       metrics,
       isLHE,
       threshold,
       confidence,
     };
+    
+    // Publish to UnifiedBus
+    this.publishToBus(state, coherence);
+    
+    return state;
+  }
+  
+  /**
+   * Publish Lighthouse state to UnifiedBus
+   */
+  private publishToBus(state: LighthouseState, coherence: number): void {
+    let signal: SignalType = 'NEUTRAL';
+    if (state.isLHE) {
+      signal = state.L > 0.5 ? 'BUY' : 'SELL';
+    }
+    
+    unifiedBus.publish({
+      systemName: 'Lighthouse',
+      timestamp: Date.now(),
+      ready: true,
+      coherence,
+      confidence: state.confidence,
+      signal,
+      data: {
+        L: state.L,
+        isLHE: state.isLHE,
+        threshold: state.threshold,
+        metrics: state.metrics,
+      },
+    });
   }
   
   private computeNonlinearCoherence(

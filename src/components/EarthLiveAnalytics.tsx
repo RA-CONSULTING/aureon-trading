@@ -1,55 +1,44 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Progress } from './ui/progress';
 import { Badge } from './ui/badge';
+import { useEarthMetrics, useBasicEcosystemMetrics } from '@/hooks/useEcosystemData';
 
 export const EarthLiveAnalytics = () => {
-  const [earthData, setEarthData] = useState({
-    magneticField: 0.89,
-    ionosphereActivity: 0.76,
-    solarWind: 0.82,
-    geomagneticIndex: 0.67
-  });
+  const {
+    schumannFrequency,
+    magneticField,
+    ionosphereActivity,
+    solarWind,
+    geomagneticIndex,
+    coherenceBoost,
+    isInitialized,
+  } = useEarthMetrics();
+  
+  const { systemsOnline } = useBasicEcosystemMetrics();
 
-  const [sensorData, setSensorData] = useState([
-    { id: 'MAG-01', location: 'Arctic', value: 54.2, status: 'active' },
-    { id: 'MAG-02', location: 'Antarctic', value: 48.7, status: 'active' },
-    { id: 'ION-01', location: 'Equatorial', value: 312.5, status: 'warning' },
-    { id: 'SOL-01', location: 'Solar Monitor', value: 425.8, status: 'active' }
-  ]);
+  // Sensor network derived from real metrics
+  const sensorData = [
+    { id: 'MAG-01', location: 'Arctic', value: magneticField * 60, status: magneticField > 0.8 ? 'active' : 'warning' },
+    { id: 'MAG-02', location: 'Antarctic', value: magneticField * 55, status: 'active' },
+    { id: 'ION-01', location: 'Equatorial', value: ionosphereActivity * 400, status: ionosphereActivity > 0.7 ? 'active' : 'warning' },
+    { id: 'SOL-01', location: 'Solar Monitor', value: solarWind * 500, status: solarWind > 0.6 ? 'active' : 'warning' },
+  ];
 
-  const [streamStats, setStreamStats] = useState({
-    dataPoints: 24847,
-    updateRate: 2.1,
-    accuracy: 0.987,
-    coverage: 0.94
-  });
+  const streamStats = {
+    dataPoints: 24847 + Math.floor(Date.now() / 1000) % 10000,
+    updateRate: 2.0 + coherenceBoost * 0.5,
+    accuracy: 0.97 + coherenceBoost * 0.02,
+    coverage: 0.9 + geomagneticIndex * 0.08,
+  };
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setEarthData(prev => ({
-        magneticField: Math.max(0.1, prev.magneticField + (Math.random() - 0.5) * 0.02),
-        ionosphereActivity: Math.max(0.1, prev.ionosphereActivity + (Math.random() - 0.5) * 0.03),
-        solarWind: Math.max(0.1, prev.solarWind + (Math.random() - 0.5) * 0.04),
-        geomagneticIndex: Math.max(0.1, prev.geomagneticIndex + (Math.random() - 0.5) * 0.02)
-      }));
-
-      setSensorData(prev => prev.map(s => ({
-        ...s,
-        value: Math.max(10, s.value + (Math.random() - 0.5) * 20),
-        status: Math.random() > 0.8 ? 'warning' : 'active'
-      })));
-
-      setStreamStats(prev => ({
-        dataPoints: prev.dataPoints + Math.floor(Math.random() * 5),
-        updateRate: Math.max(0.5, prev.updateRate + (Math.random() - 0.5) * 0.2),
-        accuracy: Math.max(0.95, prev.accuracy + (Math.random() - 0.5) * 0.005),
-        coverage: Math.max(0.8, prev.coverage + (Math.random() - 0.5) * 0.01)
-      }));
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, []);
+  if (!isInitialized) {
+    return (
+      <div className="flex items-center justify-center h-48">
+        <div className="text-muted-foreground">Connecting to Earth sensors...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -59,10 +48,10 @@ export const EarthLiveAnalytics = () => {
             <CardTitle className="text-sm">Magnetic Field</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-600">
-              {(earthData.magneticField * 100).toFixed(1)}%
+            <div className="text-2xl font-bold text-primary">
+              {(magneticField * 100).toFixed(1)}%
             </div>
-            <Progress value={earthData.magneticField * 100} className="mt-2" />
+            <Progress value={magneticField * 100} className="mt-2" />
           </CardContent>
         </Card>
 
@@ -71,10 +60,10 @@ export const EarthLiveAnalytics = () => {
             <CardTitle className="text-sm">Ionosphere</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">
-              {(earthData.ionosphereActivity * 100).toFixed(1)}%
+            <div className="text-2xl font-bold text-emerald-500">
+              {(ionosphereActivity * 100).toFixed(1)}%
             </div>
-            <Progress value={earthData.ionosphereActivity * 100} className="mt-2" />
+            <Progress value={ionosphereActivity * 100} className="mt-2" />
           </CardContent>
         </Card>
 
@@ -83,22 +72,25 @@ export const EarthLiveAnalytics = () => {
             <CardTitle className="text-sm">Solar Wind</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-purple-600">
-              {(earthData.solarWind * 100).toFixed(1)}%
+            <div className="text-2xl font-bold text-violet-500">
+              {(solarWind * 100).toFixed(1)}%
             </div>
-            <Progress value={earthData.solarWind * 100} className="mt-2" />
+            <Progress value={solarWind * 100} className="mt-2" />
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm">Geomagnetic Index</CardTitle>
+            <CardTitle className="text-sm">Schumann Resonance</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-orange-600">
-              {(earthData.geomagneticIndex * 100).toFixed(1)}%
+            <div className="text-2xl font-bold text-amber-500">
+              {schumannFrequency.toFixed(2)} Hz
             </div>
-            <Progress value={earthData.geomagneticIndex * 100} className="mt-2" />
+            <Progress value={(schumannFrequency / 8.5) * 100} className="mt-2" />
+            {coherenceBoost > 0.05 && (
+              <Badge variant="default" className="mt-2 bg-emerald-500">+{(coherenceBoost * 100).toFixed(1)}% Boost</Badge>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -106,7 +98,7 @@ export const EarthLiveAnalytics = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
-            <CardTitle>Sensor Network</CardTitle>
+            <CardTitle>Sensor Network ({systemsOnline} Online)</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
@@ -116,14 +108,14 @@ export const EarthLiveAnalytics = () => {
                     <Badge variant={sensor.status === 'active' ? "default" : "destructive"}>
                       {sensor.id}
                     </Badge>
-                    <div className="text-sm text-gray-600">
+                    <div className="text-sm text-muted-foreground">
                       {sensor.location}
                     </div>
                   </div>
                   <div className="flex items-center space-x-2">
                     <span className="text-sm font-bold">{sensor.value.toFixed(1)}</span>
                     <div className={`w-3 h-3 rounded-full ${
-                      sensor.status === 'active' ? 'bg-green-500' : 'bg-yellow-500'
+                      sensor.status === 'active' ? 'bg-emerald-500' : 'bg-amber-500'
                     }`} />
                   </div>
                 </div>
@@ -139,20 +131,20 @@ export const EarthLiveAnalytics = () => {
           <CardContent>
             <div className="space-y-4">
               <div className="flex justify-between">
-                <span className="text-sm text-gray-600">Data Points</span>
+                <span className="text-sm text-muted-foreground">Data Points</span>
                 <span className="font-bold">{streamStats.dataPoints.toLocaleString()}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-sm text-gray-600">Update Rate</span>
-                <span className="font-bold text-green-600">{streamStats.updateRate.toFixed(1)} Hz</span>
+                <span className="text-sm text-muted-foreground">Update Rate</span>
+                <span className="font-bold text-emerald-500">{streamStats.updateRate.toFixed(1)} Hz</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-sm text-gray-600">Accuracy</span>
-                <span className="font-bold text-blue-600">{(streamStats.accuracy * 100).toFixed(1)}%</span>
+                <span className="text-sm text-muted-foreground">Accuracy</span>
+                <span className="font-bold text-primary">{(streamStats.accuracy * 100).toFixed(1)}%</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-sm text-gray-600">Coverage</span>
-                <span className="font-bold text-purple-600">{(streamStats.coverage * 100).toFixed(1)}%</span>
+                <span className="text-sm text-muted-foreground">Coverage</span>
+                <span className="font-bold text-violet-500">{(streamStats.coverage * 100).toFixed(1)}%</span>
               </div>
             </div>
           </CardContent>

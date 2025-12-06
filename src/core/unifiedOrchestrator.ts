@@ -11,6 +11,7 @@ import { ecosystemConnector, type EcosystemState } from './ecosystemConnector';
 import { thePrism, type PrismOutput } from './thePrism';
 import type { MarketSnapshot } from './aurisNodes';
 import { attuneToAkashicFrequency, calculateAkashicBoost } from './akashicFrequencyMapper';
+import { fullEcosystemConnector } from './fullEcosystemConnector';
 
 export interface OrchestrationResult {
   timestamp: number;
@@ -117,6 +118,22 @@ export class UnifiedOrchestrator {
       lighthouseState,
       prismOutput
     );
+    
+    // Step 6b: Wire fullEcosystemConnector to persist ALL states to database
+    fullEcosystemConnector.processMarketData(
+      marketSnapshot.price,
+      marketSnapshot.volume,
+      marketSnapshot.volatility,
+      marketSnapshot.momentum,
+      lambdaState.lambda,
+      lambdaState.coherence,
+      lambdaState.substrate,
+      lambdaState.observer,
+      lambdaState.echo
+    ).catch(err => console.warn('[UnifiedOrchestrator] Ecosystem persistence error:', err));
+    
+    // Step 6c: Publish Prism state to UnifiedBus
+    this.publishPrism(prismOutput);
     
     // Step 7: Check Elephant Memory for avoidance
     const avoidance = elephantMemory.shouldAvoid(symbol);
@@ -256,6 +273,36 @@ export class UnifiedOrchestrator {
         frequency: state.frequency,
         phase: state.phase,
         intensity: state.intensity,
+      },
+    });
+  }
+  
+  /**
+   * Publish Prism state to bus
+   */
+  private publishPrism(output: PrismOutput): void {
+    let signal: SignalType = 'NEUTRAL';
+    if (output.state === 'MANIFEST' && output.isLoveLocked) {
+      signal = 'BUY';
+    } else if (output.state === 'FORMING' && output.resonance < 0.3) {
+      signal = 'SELL';
+    }
+    
+    unifiedBus.publish({
+      systemName: 'Prism',
+      timestamp: Date.now(),
+      ready: true,
+      coherence: output.resonance,
+      confidence: output.harmonicPurity,
+      signal,
+      data: {
+        level: output.level,
+        frequency: output.frequency,
+        state: output.state,
+        resonance: output.resonance,
+        isLoveLocked: output.isLoveLocked,
+        harmonicPurity: output.harmonicPurity,
+        layers: output.layers,
       },
     });
   }
