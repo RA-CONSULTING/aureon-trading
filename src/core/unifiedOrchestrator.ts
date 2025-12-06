@@ -14,6 +14,16 @@ import { attuneToAkashicFrequency, calculateAkashicBoost } from './akashicFreque
 import { fullEcosystemConnector } from './fullEcosystemConnector';
 import { multiExchangeClient } from './multiExchangeClient';
 import { smartOrderRouter, type RoutingDecision } from './smartOrderRouter';
+import { supabase } from '@/integrations/supabase/client';
+
+export interface TradeExecutionResult {
+  success: boolean;
+  orderId?: string;
+  executedPrice?: number;
+  quantity?: number;
+  error?: string;
+  exchange?: string;
+}
 
 export interface OrchestrationResult {
   timestamp: number;
@@ -178,8 +188,21 @@ export class UnifiedOrchestrator {
     
     // Step 12: Execute trade if conditions met
     let tradeExecuted = false;
+    let tradeResult: TradeExecutionResult | null = null;
     if (finalDecision.action !== 'HOLD' && !this.config.dryRun) {
-      tradeExecuted = await this.executeTrade(finalDecision, symbol);
+      tradeResult = await this.executeTrade(
+        finalDecision, 
+        symbol, 
+        marketSnapshot, 
+        lambdaState, 
+        lighthouseState, 
+        prismOutput
+      );
+      tradeExecuted = tradeResult.success;
+      
+      if (!tradeResult.success) {
+        console.warn('[UnifiedOrchestrator] Trade failed:', tradeResult.error);
+      }
     }
     
     // Send heartbeat to Temporal Ladder
@@ -464,27 +487,115 @@ export class UnifiedOrchestrator {
   }
   
   /**
-   * Execute a trade with smart order routing
+   * Execute a trade with smart order routing via edge function
    */
   private async executeTrade(
     decision: { action: 'BUY' | 'SELL' | 'HOLD'; symbol: string; confidence: number; recommendedExchange?: string; positionSizeUsd?: number },
-    symbol: string
-  ): Promise<boolean> {
+    symbol: string,
+    marketSnapshot?: MarketSnapshot,
+    lambdaState?: LambdaState | null,
+    lighthouseState?: LighthouseState | null,
+    prismOutput?: PrismOutput | null
+  ): Promise<TradeExecutionResult> {
     const exchange = decision.recommendedExchange || 'binance';
     const positionSize = decision.positionSizeUsd || 100;
     
     console.log(`[UnifiedOrchestrator] Executing ${decision.action} on ${symbol} via ${exchange} | Size: $${positionSize.toFixed(2)}`);
     
-    // Broadcast the trade event with full routing info
-    temporalLadder.broadcast(SYSTEMS.MASTER_EQUATION, 'TRADE_EXECUTED', {
-      action: decision.action,
-      symbol,
-      confidence: decision.confidence,
-      exchange,
-      positionSizeUsd: positionSize,
-    });
-    
-    return true;
+    try {
+      // Get current session for auth token
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session?.access_token) {
+        console.error('[UnifiedOrchestrator] No auth session available for trade execution');
+        return { success: false, error: 'Not authenticated' };
+      }
+
+      // Prepare trade payload
+      const signalType = decision.action === 'BUY' ? 'LONG' : 'SHORT';
+      const currentPrice = marketSnapshot?.price || 0;
+      
+      const payload = {
+        symbol,
+        signalType,
+        coherence: lambdaState?.coherence || 0,
+        lighthouseValue: lighthouseState?.L || 0,
+        lighthouseConfidence: lighthouseState?.confidence || 0,
+        prismLevel: prismOutput?.level || 1,
+        currentPrice,
+        price: currentPrice,
+        recommendedExchange: exchange,
+        positionSizeUsd: positionSize,
+      };
+
+      console.log('[UnifiedOrchestrator] Calling execute-trade edge function:', payload);
+
+      // Call the execute-trade edge function
+      const { data, error } = await supabase.functions.invoke('execute-trade', {
+        body: payload,
+      });
+
+      if (error) {
+        console.error('[UnifiedOrchestrator] Trade execution failed:', error);
+        return { success: false, error: error.message || 'Trade execution failed' };
+      }
+
+      if (!data?.success) {
+        console.error('[UnifiedOrchestrator] Trade rejected:', data?.error);
+        return { success: false, error: data?.error || 'Trade rejected' };
+      }
+
+      console.log('[UnifiedOrchestrator] Trade executed successfully:', data);
+
+      // Broadcast the trade event with full routing info
+      temporalLadder.broadcast(SYSTEMS.MASTER_EQUATION, 'TRADE_EXECUTED', {
+        action: decision.action,
+        symbol,
+        confidence: decision.confidence,
+        exchange,
+        positionSizeUsd: positionSize,
+        orderId: data.execution?.exchange_order_id,
+        executedPrice: data.execution?.executed_price,
+      });
+
+      // Update elephant memory with trade result
+      const estimatedProfit = positionSize * 0.01; // Assume small profit for now, will be updated on close
+      elephantMemory.recordTrade(symbol, estimatedProfit, decision.action === 'BUY' ? 'BUY' : 'SELL');
+
+      return {
+        success: true,
+        orderId: data.execution?.exchange_order_id,
+        executedPrice: data.execution?.executed_price,
+        quantity: data.execution?.quantity,
+        exchange,
+      };
+
+    } catch (err: any) {
+      console.error('[UnifiedOrchestrator] Trade execution error:', err);
+      return { success: false, error: err.message || 'Unexpected error' };
+    }
+  }
+  
+  /**
+   * Update dryRun configuration at runtime
+   */
+  setDryRun(dryRun: boolean): void {
+    this.config.dryRun = dryRun;
+    console.log(`[UnifiedOrchestrator] DryRun mode set to: ${dryRun}`);
+  }
+  
+  /**
+   * Get current configuration
+   */
+  getConfig(): OrchestratorConfig {
+    return { ...this.config };
+  }
+  
+  /**
+   * Check if live trading is enabled
+   */
+  isLiveTrading(): boolean {
+    return !this.config.dryRun;
   }
   
   /**
@@ -501,20 +612,6 @@ export class UnifiedOrchestrator {
   stop(): void {
     this.isRunning = false;
     console.log('[UnifiedOrchestrator] Stopped');
-  }
-  
-  /**
-   * Get current configuration
-   */
-  getConfig(): OrchestratorConfig {
-    return { ...this.config };
-  }
-  
-  /**
-   * Update configuration
-   */
-  setConfig(config: Partial<OrchestratorConfig>): void {
-    this.config = { ...this.config, ...config };
   }
 }
 
