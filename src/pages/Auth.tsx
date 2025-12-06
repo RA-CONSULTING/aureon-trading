@@ -6,10 +6,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+
 import { toast } from "sonner";
 import { z } from "zod";
-import { Sparkles, Eye, EyeOff, ChevronDown, ChevronUp } from "lucide-react";
+import { Sparkles, Eye, EyeOff } from "lucide-react";
 import { APIKeySecurityGuide } from "@/components/auth/APIKeySecurityGuide";
 import { PasswordStrengthIndicator } from "@/components/auth/PasswordStrengthIndicator";
 import { SecurityBadges } from "@/components/auth/SecurityBadges";
@@ -25,7 +25,9 @@ export default function Auth() {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showApiSecret, setShowApiSecret] = useState(false);
-  const [showOtherExchanges, setShowOtherExchanges] = useState(false);
+  const [showKrakenSecret, setShowKrakenSecret] = useState(false);
+  const [showAlpacaSecret, setShowAlpacaSecret] = useState(false);
+  const [showCapitalPassword, setShowCapitalPassword] = useState(false);
   
   // Sign In State
   const [email, setEmail] = useState("");
@@ -353,108 +355,152 @@ export default function Auth() {
                   </div>
                 </div>
 
-                {/* Other Exchanges - Optional */}
-                <Collapsible open={showOtherExchanges} onOpenChange={setShowOtherExchanges}>
-                  <CollapsibleTrigger asChild>
-                    <Button variant="ghost" className="w-full justify-between text-muted-foreground text-sm">
-                      Add Other Exchanges (Optional)
-                      {showOtherExchanges ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                    </Button>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent className="space-y-4 pt-2">
-                    {/* Kraken */}
-                    <div className="border border-border/30 rounded-lg p-3 space-y-3">
-                      <p className="text-xs font-medium text-muted-foreground">Kraken</p>
-                      <div className="space-y-2">
-                        <Label htmlFor="kraken-api-key" className="text-xs">API Key</Label>
-                        <Input
-                          id="kraken-api-key"
-                          type="text"
-                          placeholder="Kraken API Key"
-                          value={krakenApiKey}
-                          onChange={(e) => setKrakenApiKey(e.target.value)}
-                          className="h-9"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="kraken-api-secret" className="text-xs">API Secret</Label>
+                {/* Other Exchanges - Optional but Visible */}
+                <div className="border-t border-border/50 pt-4 mt-4 space-y-4">
+                  <p className="text-xs text-muted-foreground">
+                    Additional Exchanges (optional - connect more for better execution)
+                  </p>
+
+                  {/* Kraken */}
+                  <div className="border border-border/30 rounded-lg p-3 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-medium">Kraken <span className="text-xs text-muted-foreground ml-1">Crypto</span></p>
+                      {krakenApiKey && krakenApiSecret ? (
+                        <span className="text-xs text-green-500 flex items-center gap-1">✅ Ready</span>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">⚪ Not configured</span>
+                      )}
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="kraken-api-key" className="text-xs">API Key</Label>
+                      <Input
+                        id="kraken-api-key"
+                        type="text"
+                        placeholder="Kraken API Key"
+                        value={krakenApiKey}
+                        onChange={(e) => setKrakenApiKey(e.target.value)}
+                        className="h-9"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="kraken-api-secret" className="text-xs">API Secret</Label>
+                      <div className="relative">
                         <Input
                           id="kraken-api-secret"
-                          type="password"
+                          type={showKrakenSecret ? "text" : "password"}
                           placeholder="Kraken API Secret"
                           value={krakenApiSecret}
                           onChange={(e) => setKrakenApiSecret(e.target.value)}
                           className="h-9"
                         />
+                        <button
+                          type="button"
+                          onClick={() => setShowKrakenSecret(!showKrakenSecret)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                        >
+                          {showKrakenSecret ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </button>
                       </div>
                     </div>
+                  </div>
 
-                    {/* Alpaca */}
-                    <div className="border border-border/30 rounded-lg p-3 space-y-3">
-                      <p className="text-xs font-medium text-muted-foreground">Alpaca (US Stocks)</p>
-                      <div className="space-y-2">
-                        <Label htmlFor="alpaca-api-key" className="text-xs">API Key</Label>
-                        <Input
-                          id="alpaca-api-key"
-                          type="text"
-                          placeholder="Alpaca API Key"
-                          value={alpacaApiKey}
-                          onChange={(e) => setAlpacaApiKey(e.target.value)}
-                          className="h-9"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="alpaca-secret-key" className="text-xs">Secret Key</Label>
+                  {/* Alpaca */}
+                  <div className="border border-border/30 rounded-lg p-3 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-medium">Alpaca <span className="text-xs text-muted-foreground ml-1">US Stocks</span></p>
+                      {alpacaApiKey && alpacaSecretKey ? (
+                        <span className="text-xs text-green-500 flex items-center gap-1">✅ Ready</span>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">⚪ Not configured</span>
+                      )}
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="alpaca-api-key" className="text-xs">API Key</Label>
+                      <Input
+                        id="alpaca-api-key"
+                        type="text"
+                        placeholder="Alpaca API Key"
+                        value={alpacaApiKey}
+                        onChange={(e) => setAlpacaApiKey(e.target.value)}
+                        className="h-9"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="alpaca-secret-key" className="text-xs">Secret Key</Label>
+                      <div className="relative">
                         <Input
                           id="alpaca-secret-key"
-                          type="password"
+                          type={showAlpacaSecret ? "text" : "password"}
                           placeholder="Alpaca Secret Key"
                           value={alpacaSecretKey}
                           onChange={(e) => setAlpacaSecretKey(e.target.value)}
                           className="h-9"
                         />
+                        <button
+                          type="button"
+                          onClick={() => setShowAlpacaSecret(!showAlpacaSecret)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                        >
+                          {showAlpacaSecret ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </button>
                       </div>
                     </div>
+                  </div>
 
-                    {/* Capital.com */}
-                    <div className="border border-border/30 rounded-lg p-3 space-y-3">
-                      <p className="text-xs font-medium text-muted-foreground">Capital.com (CFDs)</p>
-                      <div className="space-y-2">
-                        <Label htmlFor="capital-api-key" className="text-xs">API Key</Label>
-                        <Input
-                          id="capital-api-key"
-                          type="text"
-                          placeholder="Capital.com API Key"
-                          value={capitalApiKey}
-                          onChange={(e) => setCapitalApiKey(e.target.value)}
-                          className="h-9"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="capital-identifier" className="text-xs">Identifier (Email)</Label>
-                        <Input
-                          id="capital-identifier"
-                          type="text"
-                          placeholder="Your Capital.com Email"
-                          value={capitalIdentifier}
-                          onChange={(e) => setCapitalIdentifier(e.target.value)}
-                          className="h-9"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="capital-password" className="text-xs">Password</Label>
+                  {/* Capital.com */}
+                  <div className="border border-border/30 rounded-lg p-3 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-medium">Capital.com <span className="text-xs text-muted-foreground ml-1">Forex/CFDs</span></p>
+                      {capitalApiKey && capitalPassword && capitalIdentifier ? (
+                        <span className="text-xs text-green-500 flex items-center gap-1">✅ Ready</span>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">⚪ Not configured</span>
+                      )}
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="capital-api-key" className="text-xs">API Key</Label>
+                      <Input
+                        id="capital-api-key"
+                        type="text"
+                        placeholder="Capital.com API Key"
+                        value={capitalApiKey}
+                        onChange={(e) => setCapitalApiKey(e.target.value)}
+                        className="h-9"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="capital-identifier" className="text-xs">Identifier (Email)</Label>
+                      <Input
+                        id="capital-identifier"
+                        type="text"
+                        placeholder="Your Capital.com Email"
+                        value={capitalIdentifier}
+                        onChange={(e) => setCapitalIdentifier(e.target.value)}
+                        className="h-9"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="capital-password" className="text-xs">Password</Label>
+                      <div className="relative">
                         <Input
                           id="capital-password"
-                          type="password"
+                          type={showCapitalPassword ? "text" : "password"}
                           placeholder="Capital.com Password"
                           value={capitalPassword}
                           onChange={(e) => setCapitalPassword(e.target.value)}
                           className="h-9"
                         />
+                        <button
+                          type="button"
+                          onClick={() => setShowCapitalPassword(!showCapitalPassword)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                        >
+                          {showCapitalPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </button>
                       </div>
                     </div>
-                  </CollapsibleContent>
-                </Collapsible>
+                  </div>
+                </div>
 
                 {/* Consent Checkboxes */}
                 <ConsentCheckboxes
