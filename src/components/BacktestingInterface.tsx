@@ -165,9 +165,15 @@ export function BacktestingInterface() {
     let equity = initial;
     const days = Math.floor((new Date(config.endDate).getTime() - new Date(config.startDate).getTime()) / (1000 * 60 * 60 * 24));
     const step = Math.floor(days / trades);
+    
+    // Use coherence threshold to influence simulation quality
+    const winBias = config.coherenceThreshold * 0.15; // Higher threshold = better bias
 
     for (let i = 1; i <= trades; i++) {
-      const change = (Math.random() - 0.35) * 0.05; // Slight positive bias
+      // Deterministic pseudo-random based on index for reproducibility
+      const seed = Math.sin(i * 12.9898) * 43758.5453;
+      const pseudoRandom = seed - Math.floor(seed);
+      const change = (pseudoRandom - 0.35 + winBias) * 0.05;
       equity = equity * (1 + change);
       const date = new Date(new Date(config.startDate).getTime() + (i * step * 24 * 60 * 60 * 1000));
       curve.push({
