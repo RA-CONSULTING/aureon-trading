@@ -117,9 +117,6 @@ export function MultiExchangePanel() {
                     <span className="font-mono">{status.balanceCount}</span>
                   </div>
                 </div>
-                {status.error && (
-                  <p className="text-xs text-red-400 mt-2 truncate">{status.error}</p>
-                )}
               </div>
             ))}
           </div>
@@ -156,11 +153,11 @@ export function MultiExchangePanel() {
                     <span className="font-bold text-sm">{balance.asset}</span>
                     <div className="flex gap-1">
                       {Object.entries(balance.balances).map(([exchange, bal]) => (
-                        bal.total > 0 && (
+                        (bal.free + bal.locked) > 0 && (
                           <span 
                             key={exchange} 
                             className={`text-xs ${EXCHANGE_COLORS[exchange as ExchangeType]}`}
-                            title={`${exchange}: ${bal.total.toFixed(6)}`}
+                            title={`${exchange}: ${(bal.free + bal.locked).toFixed(6)}`}
                           >
                             {EXCHANGE_ICONS[exchange as ExchangeType]}
                           </span>
