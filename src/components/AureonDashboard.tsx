@@ -15,6 +15,7 @@ import { EcosystemStatus } from '@/components/warroom/EcosystemStatus';
 import { HarmonicWaveform6DStatus } from '@/components/warroom/HarmonicWaveform6DStatus';
 import { ProbabilityMatrixDisplay } from '@/components/warroom/ProbabilityMatrixDisplay';
 import { TradingModeToggle } from '@/components/TradingModeToggle';
+import { UserAssetsPanel } from '@/components/warroom/UserAssetsPanel';
 import { ecosystemConnector } from '@/core/ecosystemConnector';
 import { toast } from 'sonner';
 
@@ -297,6 +298,9 @@ export default function AureonDashboard() {
             exchanges={exchangeState.exchanges}
           />
         </div>
+        
+        {/* User Assets Panel - Real Multi-Exchange Holdings */}
+        <UserAssetsPanel />
         
         {/* 6D Harmonic Waveform + Probability Matrix Row */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
