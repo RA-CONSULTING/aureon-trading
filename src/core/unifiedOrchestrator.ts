@@ -14,6 +14,7 @@ import { attuneToAkashicFrequency, calculateAkashicBoost } from './akashicFreque
 import { fullEcosystemConnector } from './fullEcosystemConnector';
 import { multiExchangeClient } from './multiExchangeClient';
 import { smartOrderRouter, type RoutingDecision } from './smartOrderRouter';
+import { qgitaSignalGenerator, type QGITASignal } from './qgitaSignalGenerator';
 import { supabase } from '@/integrations/supabase/client';
 
 export interface TradeExecutionResult {
@@ -34,6 +35,7 @@ export interface OrchestrationResult {
   prismOutput: PrismOutput | null;
   ecosystemState: EcosystemState | null;
   routingDecision: RoutingDecision | null;
+  qgitaSignal: QGITASignal | null;
   positionSizing: {
     positionSizeUsd: number;
     availableBalance: number;
@@ -46,6 +48,7 @@ export interface OrchestrationResult {
     reason: string;
     recommendedExchange?: string;
     positionSizeUsd?: number;
+    qgitaTier?: 1 | 2 | 3;
   };
   tradeExecuted: boolean;
 }
@@ -152,7 +155,20 @@ export class UnifiedOrchestrator {
       lambdaState.echo
     ).catch(err => console.warn('[UnifiedOrchestrator] Ecosystem persistence error:', err));
     
-    // Step 6c: Publish Prism state to UnifiedBus
+    // Step 6c: Generate QGITA signal directly in orchestrator
+    const qgitaSignal = qgitaSignalGenerator.generateSignal(
+      timestamp,
+      marketSnapshot.price,
+      marketSnapshot.volume,
+      lambdaState.lambda,
+      lambdaState.coherence,
+      lambdaState.substrate,
+      lambdaState.observer,
+      lambdaState.echo
+    );
+    this.publishQGITA(qgitaSignal);
+    
+    // Step 6d: Publish Prism state to UnifiedBus
     this.publishPrism(prismOutput);
     
     // Step 7: Get multi-exchange state and position sizing
@@ -174,7 +190,7 @@ export class UnifiedOrchestrator {
     const busSnapshot = unifiedBus.snapshot();
     const consensus = unifiedBus.checkConsensus();
     
-    // Step 11: Make final decision with 6D probability integration + exchange data
+    // Step 11: Make final decision with QGITA tier integration
     const finalDecision = this.makeFinalDecision(
       consensus,
       lambdaState,
@@ -183,7 +199,8 @@ export class UnifiedOrchestrator {
       symbol,
       ecosystemState,
       routingDecision,
-      positionSizing
+      positionSizing,
+      qgitaSignal
     );
     
     // Step 12: Execute trade if conditions met
@@ -217,10 +234,56 @@ export class UnifiedOrchestrator {
       prismOutput,
       ecosystemState,
       routingDecision,
+      qgitaSignal,
       positionSizing,
       finalDecision,
       tradeExecuted,
     };
+  }
+  
+  /**
+   * Publish QGITA signal to bus with logging
+   */
+  private publishQGITA(signal: QGITASignal): void {
+    // Map HOLD to NEUTRAL for SignalType
+    let busSignal: SignalType = 'NEUTRAL';
+    if (signal.signalType === 'BUY') busSignal = 'BUY';
+    else if (signal.signalType === 'SELL') busSignal = 'SELL';
+
+    // Structured logging
+    const tierEmoji = signal.tier === 1 ? '🥇' : signal.tier === 2 ? '🥈' : '🥉';
+    const signalEmoji = signal.signalType === 'BUY' ? '🟢' : signal.signalType === 'SELL' ? '🔴' : '⚪';
+    const lheEmoji = signal.lighthouse.isLHE ? '🔥' : '';
+    
+    console.log(
+      `[Orchestrator:QGITA] ${signalEmoji} ${signal.signalType} | ` +
+      `${tierEmoji} Tier ${signal.tier} | ` +
+      `Conf: ${signal.confidence.toFixed(1)}% | ` +
+      `${lheEmoji}LHE: ${signal.lighthouse.isLHE} (L=${signal.lighthouse.L.toFixed(3)}) | ` +
+      `FTCP: ${signal.ftcpDetected} | Curv: ${signal.curvatureDirection}`
+    );
+
+    unifiedBus.publish({
+      systemName: 'QGITASignal',
+      timestamp: Date.now(),
+      ready: true,
+      coherence: (signal.coherence.linearCoherence + signal.coherence.nonlinearCoherence + signal.coherence.crossScaleCoherence) / 3,
+      confidence: signal.confidence / 100,
+      signal: busSignal,
+      data: {
+        signal,
+        signalType: signal.signalType,
+        tier: signal.tier,
+        confidence: signal.confidence,
+        curvature: signal.curvature,
+        curvatureDirection: signal.curvatureDirection,
+        ftcpDetected: signal.ftcpDetected,
+        goldenRatioScore: signal.goldenRatioScore,
+        lighthouseL: signal.lighthouse.L,
+        isLHE: signal.lighthouse.isLHE,
+        anomalyPointer: signal.anomalyPointer,
+      },
+    });
   }
   
   /**
@@ -357,7 +420,7 @@ export class UnifiedOrchestrator {
   }
   
   /**
-   * Make final trading decision based on all inputs including 6D Harmonic probability + exchange routing
+   * Make final trading decision based on all inputs including QGITA tier
    */
   private makeFinalDecision(
     consensus: { ready: boolean; signal: SignalType; confidence: number },
@@ -367,8 +430,9 @@ export class UnifiedOrchestrator {
     symbol: string,
     ecosystemState: EcosystemState | null,
     routingDecision: RoutingDecision | null,
-    positionSizing: { positionSizeUsd: number; availableBalance: number; riskAmount: number } | null
-  ): { action: 'BUY' | 'SELL' | 'HOLD'; symbol: string; confidence: number; reason: string; harmonic6D?: { score: number; waveState: string; harmonicLock: boolean }; recommendedExchange?: string; positionSizeUsd?: number } {
+    positionSizing: { positionSizeUsd: number; availableBalance: number; riskAmount: number } | null,
+    qgitaSignal: QGITASignal | null
+  ): { action: 'BUY' | 'SELL' | 'HOLD'; symbol: string; confidence: number; reason: string; harmonic6D?: { score: number; waveState: string; harmonicLock: boolean }; recommendedExchange?: string; positionSizeUsd?: number; qgitaTier?: 1 | 2 | 3 } {
     // Extract 6D probability fusion from ecosystem state
     const probabilityFusion = ecosystemState?.probabilityFusion ?? null;
     const waveState = probabilityFusion?.waveState ?? 'RESONANT';
@@ -436,6 +500,21 @@ export class UnifiedOrchestrator {
       effectiveConfidence = Math.min(1, effectiveConfidence + 0.1);
     }
     
+    // QGITA tier-based position sizing and thresholds
+    const qgitaTier = qgitaSignal?.tier || 3;
+    const qgitaPositionMultiplier = qgitaSignalGenerator.getPositionSizeMultiplier(qgitaTier);
+    
+    // Tier 1: Lower confidence threshold, full position
+    // Tier 2: Normal threshold, half position
+    // Tier 3: Higher threshold, force HOLD
+    if (qgitaTier === 3 && qgitaSignal?.signalType !== 'HOLD') {
+      console.log('[UnifiedOrchestrator] QGITA Tier 3 - forcing reduced confidence');
+      effectiveConfidence *= 0.7;
+    } else if (qgitaTier === 1 && qgitaSignal?.lighthouse.isLHE) {
+      console.log('[UnifiedOrchestrator] QGITA Tier 1 + LHE - boosting confidence');
+      effectiveConfidence = Math.min(1, effectiveConfidence + 0.15);
+    }
+    
     // Check minimum confidence
     if (effectiveConfidence < this.config.minConfidence) {
       return {
@@ -466,14 +545,23 @@ export class UnifiedOrchestrator {
         confidence: effectiveConfidence,
         reason: 'No clear signal from consensus',
         harmonic6D: harmonic6DData,
+        qgitaTier,
       };
     }
     
-    // Build reason with 6D context + exchange routing
+    // Apply QGITA position sizing
+    let finalPositionSize = positionSizing?.positionSizeUsd || 0;
+    if (qgitaPositionMultiplier < 1) {
+      finalPositionSize *= qgitaPositionMultiplier;
+      console.log(`[UnifiedOrchestrator] QGITA Tier ${qgitaTier} reducing position: $${finalPositionSize.toFixed(2)}`);
+    }
+    
+    // Build reason with QGITA context
     const lockStatus = harmonicLock ? ' [528Hz LOCKED]' : '';
     const exchangeInfo = routingDecision ? ` | Route: ${routingDecision.recommendedExchange}` : '';
-    const positionInfo = positionSizing ? ` | Size: $${positionSizing.positionSizeUsd.toFixed(2)}` : '';
-    const reason = `Consensus: ${consensus.signal} at ${(effectiveConfidence * 100).toFixed(1)}% | 6D: ${waveState}${lockStatus}${exchangeInfo}${positionInfo}`;
+    const positionInfo = finalPositionSize > 0 ? ` | Size: $${finalPositionSize.toFixed(2)}` : '';
+    const qgitaInfo = ` | QGITA: T${qgitaTier} ${qgitaSignal?.signalType || 'N/A'} ${qgitaSignal?.lighthouse.isLHE ? '🔥LHE' : ''}`;
+    const reason = `Consensus: ${consensus.signal} at ${(effectiveConfidence * 100).toFixed(1)}% | 6D: ${waveState}${lockStatus}${qgitaInfo}${exchangeInfo}${positionInfo}`;
     
     return {
       action: consensus.signal,
@@ -482,7 +570,8 @@ export class UnifiedOrchestrator {
       reason,
       harmonic6D: harmonic6DData,
       recommendedExchange: routingDecision?.recommendedExchange,
-      positionSizeUsd: positionSizing?.positionSizeUsd,
+      positionSizeUsd: finalPositionSize,
+      qgitaTier,
     };
   }
   

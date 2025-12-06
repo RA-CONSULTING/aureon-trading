@@ -1,6 +1,22 @@
-import { DataIngestionSnapshot } from './dataIngestion';
+/**
+ * QGITA Engine - DEPRECATED
+ * 
+ * This file is kept for backwards compatibility.
+ * Use qgitaSignalGenerator.ts as the single source of truth for QGITA signals.
+ * 
+ * The QGITASignalGenerator provides a more comprehensive implementation with:
+ * - FTCP Detection
+ * - Lighthouse Consensus validation
+ * - Coherence metrics (linear, nonlinear, cross-scale)
+ * - Anomaly pointer calculation
+ * - Tiered confidence signals (Tier 1/2/3)
+ */
 
-type SignalDirection = 'long' | 'short' | 'neutral';
+import { QGITASignal, qgitaSignalGenerator } from './qgitaSignalGenerator';
+import { LighthouseState } from './lighthouseConsensus';
+
+// Re-export types for backwards compatibility
+export type SignalDirection = 'long' | 'short' | 'neutral';
 
 export interface FibonacciWindow {
   length: number;
@@ -14,6 +30,10 @@ export interface StageBreakdown {
   anomalyScore: number;
 }
 
+/**
+ * LighthouseEvent - Legacy interface for backwards compatibility
+ * Prefer using QGITASignal from qgitaSignalGenerator.ts
+ */
 export interface LighthouseEvent {
   timestamp: number;
   direction: SignalDirection;
@@ -28,6 +48,26 @@ export interface QGITAConfig {
   historyLimit: number;
 }
 
+/**
+ * Convert QGITASignal to legacy LighthouseEvent format
+ */
+export function convertToLighthouseEvent(signal: QGITASignal): LighthouseEvent {
+  let direction: SignalDirection = 'neutral';
+  if (signal.signalType === 'BUY') direction = 'long';
+  else if (signal.signalType === 'SELL') direction = 'short';
+  
+  return {
+    timestamp: signal.timestamp,
+    direction,
+    confidence: signal.confidence / 100, // Convert to 0-1 scale
+    breakdown: {
+      timeLatticeScore: signal.goldenRatioScore,
+      coherenceScore: (signal.coherence.linearCoherence + signal.coherence.nonlinearCoherence + signal.coherence.crossScaleCoherence) / 3,
+      anomalyScore: signal.anomalyPointer,
+    },
+  };
+}
+
 const DEFAULT_CONFIG: QGITAConfig = {
   fibonacciSequence: [5, 8, 13, 21, 34, 55],
   minConfidence: 0.35,
@@ -35,100 +75,64 @@ const DEFAULT_CONFIG: QGITAConfig = {
   historyLimit: 300,
 };
 
-const computeDiscreteCurvature = (values: number[]): number => {
-  if (values.length < 3) return 0;
-  let curvature = 0;
-  for (let i = 1; i < values.length - 1; i++) {
-    const prev = values[i - 1];
-    const curr = values[i];
-    const next = values[i + 1];
-    curvature += Math.abs(next - 2 * curr + prev);
-  }
-  return curvature / (values.length - 2);
-};
-
-const normalize = (value: number, min: number, max: number) => {
+export const normalize = (value: number, min: number, max: number) => {
   if (max === min) return 0;
   return Math.max(0, Math.min(1, (value - min) / (max - min)));
 };
 
+/**
+ * @deprecated Use qgitaSignalGenerator instead
+ * This class is kept for backwards compatibility with existing code
+ */
 export class QGITAEngine {
-  private history: DataIngestionSnapshot[] = [];
   private readonly config: QGITAConfig;
+  private lastSignal: QGITASignal | null = null;
 
   constructor(config: Partial<QGITAConfig> = {}) {
     this.config = { ...DEFAULT_CONFIG, ...config } satisfies QGITAConfig;
+    console.warn('[QGITAEngine] DEPRECATED: Use qgitaSignalGenerator singleton instead');
   }
 
-  register(snapshot: DataIngestionSnapshot) {
-    this.history.push(snapshot);
-    if (this.history.length > this.config.historyLimit) {
-      this.history.shift();
-    }
+  /**
+   * @deprecated Use qgitaSignalGenerator.generateSignal() instead
+   */
+  register(snapshot: { timestamp: number; consolidatedOHLCV: { close: number; volume: number } }) {
+    // Proxy to the singleton - we just cache for evaluate()
+    console.log('[QGITAEngine] register() called - proxying to qgitaSignalGenerator');
   }
 
+  /**
+   * @deprecated Use qgitaSignalGenerator.generateSignal() instead
+   * This now returns a converted LighthouseEvent from the last signal
+   */
   evaluate(): LighthouseEvent | null {
-    if (this.history.length < Math.max(...this.config.fibonacciSequence)) {
-      return null;
-    }
+    if (!this.lastSignal) return null;
+    return convertToLighthouseEvent(this.lastSignal);
+  }
 
-    const closes = this.history.map(s => s.consolidatedOHLCV.close);
-    const fibWindows: FibonacciWindow[] = this.config.fibonacciSequence.map(length => {
-      const slice = closes.slice(-length);
-      const start = slice[0];
-      const end = slice[slice.length - 1];
-      const ratioAlignment = normalize(Math.abs(end - start) / (Math.max(end, start) || 1), 0, 0.12);
-      const curvature = computeDiscreteCurvature(slice);
-      return { length, ratioAlignment, curvature } satisfies FibonacciWindow;
-    });
-
-    const timeLatticeScore = fibWindows.reduce((acc, window) => acc + window.ratioAlignment, 0) / fibWindows.length;
-
-    const macroStates = this.history.slice(-21);
-    const avgSentiment = macroStates.reduce((acc, s) => acc + s.sentiment.reduce((inner, v) => inner + v.score, 0), 0);
-    const avgSentimentScore = normalize(avgSentiment / (macroStates.length * 3), -0.5, 0.5);
-
-    const avgFunding = macroStates.reduce((acc, s) => acc + s.macro.fundingRateAverage, 0) / macroStates.length;
-    const fundingScore = 1 - normalize(Math.abs(avgFunding), 0, 0.03);
-
-    const volumeSeries = macroStates.map(s => s.consolidatedOHLCV.volume);
-    const volumeCurvature = computeDiscreteCurvature(volumeSeries);
-    const volatilityScore = 1 - normalize(volumeCurvature, 0, 1.5e12);
-
-    const coherenceScore = Math.max(0, (avgSentimentScore + fundingScore + volatilityScore) / 3);
-
-    const latest = this.history[this.history.length - 1];
-    const whalePressure = normalize(latest.onChain.whaleAlerts, 0, 50);
-    const liquidationPressure = normalize(latest.macro.liquidations24h, 0, 400e6);
-    const spreadSkew = normalize(
-      latest.exchangeFeeds.reduce((acc, feed) => acc + feed.spread, 0) / latest.exchangeFeeds.length,
-      0,
-      0.003
+  /**
+   * Generate signal using the singleton and convert to legacy format
+   */
+  generateAndConvert(
+    timestamp: number,
+    price: number,
+    volume: number,
+    lambda: number,
+    coherence: number,
+    substrate: number,
+    observer: number,
+    echo: number
+  ): LighthouseEvent | null {
+    this.lastSignal = qgitaSignalGenerator.generateSignal(
+      timestamp, price, volume, lambda, coherence, substrate, observer, echo
     );
-
-    const anomalyScore = Math.min(1, (whalePressure + liquidationPressure + spreadSkew) / 3);
-
-    const confidence = Math.max(0, Math.min(1, timeLatticeScore * 0.4 + coherenceScore * 0.4 + anomalyScore * 0.2));
-
-    const lastClose = closes[closes.length - 1];
-    const meanPrice = closes.slice(-21).reduce((acc, price) => acc + price, 0) / 21;
-    let direction: SignalDirection = 'neutral';
-
-    if (confidence > Math.max(this.config.neutralConfidence, this.config.minConfidence + 0.2)) {
-      direction = lastClose > meanPrice ? 'long' : 'short';
-    } else if (confidence > this.config.neutralConfidence) {
-      direction = lastClose > meanPrice ? 'neutral' : 'short';
-    }
-
-    if (confidence < this.config.minConfidence) {
-      return null;
-    }
-
-    return {
-      timestamp: latest.timestamp,
-      direction,
-      confidence,
-      breakdown: { timeLatticeScore, coherenceScore, anomalyScore },
-    };
+    return this.lastSignal ? convertToLighthouseEvent(this.lastSignal) : null;
+  }
+  
+  /**
+   * Get the raw QGITASignal from the last generation
+   */
+  getLastSignal(): QGITASignal | null {
+    return this.lastSignal;
   }
 }

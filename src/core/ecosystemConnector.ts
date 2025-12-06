@@ -11,7 +11,8 @@ import { unifiedBus, type SignalType } from './unifiedBus';
 import { temporalLadder, SYSTEMS, type SystemName } from './temporalLadder';
 import { HarmonicNexusCore, type HarmonicNexusState } from './harmonicNexusCore';
 import { OmegaEquation, type OmegaState } from './omegaEquation';
-import { QGITAEngine, type LighthouseEvent } from './qgitaEngine';
+import { qgitaSignalGenerator, type QGITASignal } from './qgitaSignalGenerator';
+import { type LighthouseEvent, convertToLighthouseEvent } from './qgitaEngine';
 import { ecosystemEnhancements } from './ecosystemEnhancements';
 import { sixDimensionalEngine, type HarmonicWaveform6D, type EcosystemState6D } from './sixDimensionalHarmonicEngine';
 import { probabilityMatrix, type ProbabilityFusion } from './enhanced6DProbabilityMatrix';
@@ -73,7 +74,7 @@ class EcosystemConnectorCore {
   // Core systems
   private harmonicNexusCore: HarmonicNexusCore;
   private omegaEquation: OmegaEquation;
-  private qgitaEngine: QGITAEngine;
+  // QGITA now uses singleton from qgitaSignalGenerator.ts
   
   // State
   private eckoushicState: EckoushicCascadeState | null = null;
@@ -82,6 +83,7 @@ class EcosystemConnectorCore {
   private harmonicNexusState: HarmonicNexusState | null = null;
   private omegaState: OmegaState | null = null;
   private qgitaState: LighthouseEvent | null = null;
+  private qgitaSignalState: QGITASignal | null = null;
   
   // 6D Harmonic state
   private waveform6D: HarmonicWaveform6D | null = null;
@@ -95,7 +97,7 @@ class EcosystemConnectorCore {
   constructor() {
     this.harmonicNexusCore = new HarmonicNexusCore();
     this.omegaEquation = new OmegaEquation();
-    this.qgitaEngine = new QGITAEngine();
+    // QGITA uses singleton - no instantiation needed
   }
 
   /**
@@ -210,6 +212,21 @@ class EcosystemConnectorCore {
       this.omegaState.nextFibonacciAnchor
     );
     this.publishFibonacci(this.fibonacciState);
+    
+    // 5b. Compute QGITA Signal (using singleton)
+    this.qgitaSignalState = qgitaSignalGenerator.generateSignal(
+      Date.now(),
+      marketSnapshot.price,
+      marketSnapshot.volume,
+      lambdaState.lambda,
+      lambdaState.coherence,
+      lambdaState.substrate,
+      lambdaState.observer,
+      lambdaState.echo
+    );
+    // Convert to legacy LighthouseEvent for backwards compatibility
+    this.qgitaState = convertToLighthouseEvent(this.qgitaSignalState);
+    this.publishQGITA(this.qgitaSignalState);
 
     // 6. Compute 6D Harmonic Waveform
     this.waveform6D = sixDimensionalEngine.updateAsset(
@@ -484,6 +501,57 @@ class EcosystemConnectorCore {
         nextAnchor: state.nextAnchor.toISOString(),
       },
     });
+  }
+
+  /**
+   * Publish QGITA Signal state to bus
+   */
+  private publishQGITA(signal: QGITASignal): void {
+    // Map HOLD to NEUTRAL for SignalType
+    let busSignal: SignalType = 'NEUTRAL';
+    if (signal.signalType === 'BUY') busSignal = 'BUY';
+    else if (signal.signalType === 'SELL') busSignal = 'SELL';
+
+    // Log signal generation
+    const tierEmoji = signal.tier === 1 ? '🥇' : signal.tier === 2 ? '🥈' : '🥉';
+    const signalEmoji = signal.signalType === 'BUY' ? '🟢' : signal.signalType === 'SELL' ? '🔴' : '⚪';
+    console.log(
+      `[EcosystemConnector] QGITA: ${signalEmoji} ${signal.signalType} ${tierEmoji}Tier${signal.tier} ` +
+      `Conf:${signal.confidence.toFixed(1)}% LHE:${signal.lighthouse.isLHE} FTCP:${signal.ftcpDetected}`
+    );
+
+    unifiedBus.publish({
+      systemName: 'QGITASignal',
+      timestamp: Date.now(),
+      ready: true,
+      coherence: (signal.coherence.linearCoherence + signal.coherence.nonlinearCoherence + signal.coherence.crossScaleCoherence) / 3,
+      confidence: signal.confidence / 100,
+      signal: busSignal,
+      data: {
+        signal,
+        signalType: signal.signalType,
+        tier: signal.tier,
+        confidence: signal.confidence,
+        curvature: signal.curvature,
+        curvatureDirection: signal.curvatureDirection,
+        ftcpDetected: signal.ftcpDetected,
+        goldenRatioScore: signal.goldenRatioScore,
+        lighthouseL: signal.lighthouse.L,
+        isLHE: signal.lighthouse.isLHE,
+        anomalyPointer: signal.anomalyPointer,
+        reasoning: signal.reasoning,
+      },
+    });
+
+    // Send heartbeat to Temporal Ladder
+    temporalLadder.heartbeat(SYSTEMS.MASTER_EQUATION, signal.confidence / 100);
+  }
+  
+  /**
+   * Get current QGITA signal
+   */
+  getQGITASignal(): QGITASignal | null {
+    return this.qgitaSignalState;
   }
 
   /**
