@@ -1,5 +1,9 @@
 project_id = "owfeyxrfyhprpcgqwxqh"
 
+# Kraken public market data (no auth needed)
+[functions.fetch-kraken-market-data]
+verify_jwt = false
+
 [functions.store-binance-credentials]
 verify_jwt = true
 
