@@ -404,6 +404,42 @@ export type Database = {
         }
         Relationships: []
       }
+      data_validation_log: {
+        Row: {
+          error_message: string | null
+          exchange: string
+          id: string
+          is_valid: boolean
+          metadata: Json | null
+          packet_timestamp: string | null
+          temporal_id: string
+          validation_timestamp: string
+          validation_type: string
+        }
+        Insert: {
+          error_message?: string | null
+          exchange: string
+          id?: string
+          is_valid: boolean
+          metadata?: Json | null
+          packet_timestamp?: string | null
+          temporal_id: string
+          validation_timestamp?: string
+          validation_type: string
+        }
+        Update: {
+          error_message?: string | null
+          exchange?: string
+          id?: string
+          is_valid?: boolean
+          metadata?: Json | null
+          packet_timestamp?: string | null
+          temporal_id?: string
+          validation_timestamp?: string
+          validation_type?: string
+        }
+        Relationships: []
+      }
       decision_fusion_states: {
         Row: {
           confidence: number
@@ -2619,6 +2655,75 @@ export type Database = {
           temporal_id?: string
           timestamp?: string | null
           verified_systems?: number
+        }
+        Relationships: []
+      }
+      ticker_snapshots: {
+        Row: {
+          ask_price: number | null
+          bid_price: number | null
+          created_at: string
+          data_source: string | null
+          exchange: string
+          fetched_at: string
+          high_24h: number | null
+          id: string
+          is_validated: boolean | null
+          low_24h: number | null
+          momentum: number | null
+          price: number
+          price_change_24h: number | null
+          spread: number | null
+          symbol: string
+          temporal_id: string
+          validation_status: string | null
+          volatility: number | null
+          volume: number | null
+          volume_usd: number | null
+        }
+        Insert: {
+          ask_price?: number | null
+          bid_price?: number | null
+          created_at?: string
+          data_source?: string | null
+          exchange?: string
+          fetched_at?: string
+          high_24h?: number | null
+          id?: string
+          is_validated?: boolean | null
+          low_24h?: number | null
+          momentum?: number | null
+          price: number
+          price_change_24h?: number | null
+          spread?: number | null
+          symbol: string
+          temporal_id: string
+          validation_status?: string | null
+          volatility?: number | null
+          volume?: number | null
+          volume_usd?: number | null
+        }
+        Update: {
+          ask_price?: number | null
+          bid_price?: number | null
+          created_at?: string
+          data_source?: string | null
+          exchange?: string
+          fetched_at?: string
+          high_24h?: number | null
+          id?: string
+          is_validated?: boolean | null
+          low_24h?: number | null
+          momentum?: number | null
+          price?: number
+          price_change_24h?: number | null
+          spread?: number | null
+          symbol?: string
+          temporal_id?: string
+          validation_status?: string | null
+          volatility?: number | null
+          volume?: number | null
+          volume_usd?: number | null
         }
         Relationships: []
       }
