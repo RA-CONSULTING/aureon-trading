@@ -1,5 +1,14 @@
 project_id = "owfeyxrfyhprpcgqwxqh"
 
+[functions.sync-exchange-assets]
+verify_jwt = false
+
+[functions.confirm-trade]
+verify_jwt = false
+
+[functions.poll-trade-confirmations]
+verify_jwt = false
+
 # AUREON AI Chat - public for unauthenticated access
 [functions.aureon-chat]
 verify_jwt = false
