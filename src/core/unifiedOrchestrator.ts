@@ -7,7 +7,10 @@ import { MasterEquation, type LambdaState } from './masterEquation';
 import { LighthouseConsensus, type LighthouseState } from './lighthouseConsensus';
 import { RainbowBridge, type RainbowState } from './rainbowBridge';
 import { temporalLadder, SYSTEMS } from './temporalLadder';
+import { ecosystemConnector, type EcosystemState } from './ecosystemConnector';
+import { thePrism, type PrismOutput } from './thePrism';
 import type { MarketSnapshot } from './aurisNodes';
+import { attuneToAkashicFrequency, calculateAkashicBoost } from './akashicFrequencyMapper';
 
 export interface OrchestrationResult {
   timestamp: number;
@@ -15,6 +18,8 @@ export interface OrchestrationResult {
   lambdaState: LambdaState | null;
   lighthouseState: LighthouseState | null;
   rainbowState: RainbowState | null;
+  prismOutput: PrismOutput | null;
+  ecosystemState: EcosystemState | null;
   finalDecision: {
     action: 'BUY' | 'SELL' | 'HOLD';
     symbol: string;
@@ -89,14 +94,38 @@ export class UnifiedOrchestrator {
     const rainbowState = this.rainbowBridge.map(lambdaState.lambda, lambdaState.coherence);
     this.publishRainbowBridge(rainbowState);
     
-    // Step 5: Check Elephant Memory for avoidance
+    // Step 5: Compute The Prism transformation (Fear → Love)
+    const prismOutput = thePrism.transform({
+      lambda: lambdaState.lambda,
+      coherence: lambdaState.coherence,
+      substrate: lambdaState.substrate,
+      observer: lambdaState.observer,
+      echo: lambdaState.echo,
+      volatility: marketSnapshot.volatility,
+      momentum: marketSnapshot.momentum,
+      baseFrequency: rainbowState.frequency,
+    });
+    
+    // Step 6: Run full Ecosystem cycle (HNC, Omega, QGITA, etc.)
+    const akashicAttunement = attuneToAkashicFrequency(7);
+    const akashicBoost = calculateAkashicBoost(akashicAttunement, lambdaState.coherence);
+    const ecosystemState = ecosystemConnector.runCycle(
+      marketSnapshot,
+      lambdaState,
+      akashicAttunement,
+      akashicBoost,
+      lighthouseState,
+      prismOutput
+    );
+    
+    // Step 7: Check Elephant Memory for avoidance
     const avoidance = elephantMemory.shouldAvoid(symbol);
     
-    // Step 6: Get bus consensus
+    // Step 8: Get bus consensus
     const busSnapshot = unifiedBus.snapshot();
     const consensus = unifiedBus.checkConsensus();
     
-    // Step 7: Make final decision
+    // Step 9: Make final decision
     const finalDecision = this.makeFinalDecision(
       consensus,
       lambdaState,
@@ -105,7 +134,7 @@ export class UnifiedOrchestrator {
       symbol
     );
     
-    // Step 8: Execute trade if conditions met
+    // Step 10: Execute trade if conditions met
     let tradeExecuted = false;
     if (finalDecision.action !== 'HOLD' && !this.config.dryRun) {
       tradeExecuted = await this.executeTrade(finalDecision, symbol);
@@ -120,6 +149,8 @@ export class UnifiedOrchestrator {
       lambdaState,
       lighthouseState,
       rainbowState,
+      prismOutput,
+      ecosystemState,
       finalDecision,
       tradeExecuted,
     };

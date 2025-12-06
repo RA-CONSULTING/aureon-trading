@@ -17,7 +17,7 @@
 import type { OmegaState } from './omegaEquation';
 import type { AkashicAttunement } from './akashicFrequencyMapper';
 import type { LighthouseState } from './lighthouseConsensus';
-import type { PrismOutput } from './prism';
+import type { PrismOutput } from './thePrism';
 import { getTemporalId, getSentinelName, PRIME_SENTINEL_IDENTITY } from './primelinesIdentity';
 
 export interface HarmonicNexusState {
