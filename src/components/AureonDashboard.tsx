@@ -14,7 +14,9 @@ import { PrismStatus } from '@/components/warroom/PrismStatus';
 import { EcosystemStatus } from '@/components/warroom/EcosystemStatus';
 import { HarmonicWaveform6DStatus } from '@/components/warroom/HarmonicWaveform6DStatus';
 import { ProbabilityMatrixDisplay } from '@/components/warroom/ProbabilityMatrixDisplay';
+import { TradingModeToggle } from '@/components/TradingModeToggle';
 import { ecosystemConnector } from '@/core/ecosystemConnector';
+import { toast } from 'sonner';
 
 export default function AureonDashboard() {
   const navigate = useNavigate();
@@ -22,6 +24,9 @@ export default function AureonDashboard() {
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [waveform6D, setWaveform6D] = useState(ecosystemConnector.getWaveform6D());
   const [probabilityFusion, setProbabilityFusion] = useState(ecosystemConnector.getProbabilityFusion());
+  
+  // Trading mode state (paper/live)
+  const [tradingMode, setTradingMode] = useState<'paper' | 'live'>('paper');
   
   // Ecosystem health check state
   const [lastDataReceived, setLastDataReceived] = useState<Date | null>(null);
@@ -77,6 +82,7 @@ export default function AureonDashboard() {
       if (session) {
         setUserId(session.user.id);
         setUserEmail(session.user.email);
+        loadTradingMode(session.user.id);
       } else {
         navigate('/auth');
       }
@@ -86,6 +92,7 @@ export default function AureonDashboard() {
       if (session) {
         setUserId(session.user.id);
         setUserEmail(session.user.email);
+        loadTradingMode(session.user.id);
       } else {
         navigate('/auth');
       }
@@ -93,6 +100,34 @@ export default function AureonDashboard() {
 
     return () => subscription.unsubscribe();
   }, [navigate]);
+
+  // Load trading mode from database
+  const loadTradingMode = async (uid: string) => {
+    const { data } = await supabase
+      .from('aureon_user_sessions')
+      .select('trading_mode')
+      .eq('user_id', uid)
+      .single();
+    
+    if (data?.trading_mode) {
+      setTradingMode(data.trading_mode as 'paper' | 'live');
+    }
+  };
+
+  // Handle trading mode change
+  const handleTradingModeChange = async (isLive: boolean) => {
+    const newMode = isLive ? 'live' : 'paper';
+    setTradingMode(newMode);
+    
+    if (userId) {
+      await supabase
+        .from('aureon_user_sessions')
+        .update({ trading_mode: newMode })
+        .eq('user_id', userId);
+    }
+    
+    toast.success(`Trading mode switched to ${newMode.toUpperCase()}`);
+  };
 
   const handleSignOut = async () => {
     stopTrading();
@@ -129,6 +164,13 @@ export default function AureonDashboard() {
             </div>
 
             <div className="flex items-center gap-3">
+              {/* Trading Mode Toggle */}
+              <TradingModeToggle 
+                isLive={tradingMode === 'live'} 
+                onModeChange={handleTradingModeChange}
+                disabled={tradingState.isActive}
+              />
+              
               {/* Ecosystem Health Indicator */}
               <Badge 
                 variant={ecosystemHealth === 'connected' ? 'default' : ecosystemHealth === 'stale' ? 'secondary' : 'destructive'} 
@@ -144,7 +186,7 @@ export default function AureonDashboard() {
               
               <Badge variant={tradingState.isActive ? "default" : "secondary"} className="gap-1">
                 <div className={cn("h-1.5 w-1.5 rounded-full", tradingState.isActive ? "bg-green-400 animate-pulse" : "bg-muted-foreground")} />
-                {tradingState.isActive ? 'LIVE' : 'IDLE'}
+                {tradingState.isActive ? 'ACTIVE' : 'IDLE'}
               </Badge>
               <Button variant="ghost" size="sm" onClick={handleSignOut}>
                 <LogOut className="h-4 w-4" />
