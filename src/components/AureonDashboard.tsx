@@ -4,45 +4,33 @@ import { useAureonSession } from '@/hooks/useAureonSession';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Sparkles, Activity, Zap, Brain, Radio, Database, Router, TrendingUp, TrendingDown, LogOut, Play, Square, Wifi, WifiOff, BarChart3 } from 'lucide-react';
+import { Sparkles, Activity, Zap, Brain, Radio, Database, Router, LogOut, Play, Square, Wifi, WifiOff } from 'lucide-react';
 import { DataSourceIndicator, DemoModeWarningBanner } from '@/components/DataSourceIndicator';
-import { ExchangeDataVerificationPanel } from '@/components/ExchangeDataVerificationPanel';
-import { AssetPriceListPanel } from '@/components/AssetPriceListPanel';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
-import { UnifiedBusStatus } from '@/components/warroom/UnifiedBusStatus';
-import { TemporalLadderStatus } from '@/components/warroom/TemporalLadderStatus';
-import { PrismStatus } from '@/components/warroom/PrismStatus';
-import { EcosystemStatus } from '@/components/warroom/EcosystemStatus';
-import { HarmonicWaveform6DStatus } from '@/components/warroom/HarmonicWaveform6DStatus';
-import { ProbabilityMatrixDisplay } from '@/components/warroom/ProbabilityMatrixDisplay';
-import { Live6DWaveformVisualizer } from '@/components/Live6DWaveformVisualizer';
 import { TradingModeToggle } from '@/components/TradingModeToggle';
 import { UserAssetsPanel } from '@/components/warroom/UserAssetsPanel';
-import { DataStreamMonitorPanel } from '@/components/DataStreamMonitorPanel';
-import FrequencyAIInterpreter from '@/components/FrequencyAIInterpreter';
-import { LiveTradingStatusPanel } from '@/components/LiveTradingStatusPanel';
-import { SimulationVerificationPanel } from '@/components/SimulationVerificationPanel';
-import DecisionVerificationPanel from '@/components/DecisionVerificationPanel';
-import { SmokeTestPhasePanel } from '@/components/SmokeTestPhasePanel';
+import { SmartAlertBanner } from '@/components/SmartAlertBanner';
+import { FloatingAIButton } from '@/components/FloatingAIButton';
 import { ecosystemConnector } from '@/core/ecosystemConnector';
+import { backgroundServices } from '@/core/backgroundServices';
 import { toast } from 'sonner';
-// Cymatics visualization components
-import { CymaticsFieldVisualizer } from '@/components/CymaticsFieldVisualizer';
-import { PrismRevealVisualizer } from '@/components/PrismRevealVisualizer';
-import { ProbabilityReconstructionPanel } from '@/components/ProbabilityReconstructionPanel';
-import { HarmonicDataIntegrityPanel } from '@/components/HarmonicDataIntegrityPanel';
-import { UserDataVerificationPanel } from '@/components/UserDataVerificationPanel';
-import { KrakenStatusPanel } from '@/components/KrakenStatusPanel';
+
+// Simple system indicator component
+function SystemIndicator({ name, active, icon: Icon }: { name: string; active: boolean; icon: React.ElementType }) {
+  return (
+    <div className="flex items-center gap-2 text-xs">
+      <div className={cn("h-2 w-2 rounded-full", active ? "bg-green-400" : "bg-muted-foreground")} />
+      <Icon className="h-3 w-3 text-muted-foreground" />
+      <span className={cn(active ? "text-foreground" : "text-muted-foreground")}>{name}</span>
+    </div>
+  );
+}
 
 export default function AureonDashboard() {
   const navigate = useNavigate();
   const [userId, setUserId] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string | null>(null);
-  const [waveform6D, setWaveform6D] = useState(ecosystemConnector.getWaveform6D());
-  const [probabilityFusion, setProbabilityFusion] = useState(ecosystemConnector.getProbabilityFusion());
-  
-  // Trading mode state (paper/live)
   const [tradingMode, setTradingMode] = useState<'paper' | 'live'>('paper');
   
   // Ecosystem health check state
@@ -54,22 +42,23 @@ export default function AureonDashboard() {
     quantumState,
     tradingState,
     systemStatus,
-    busState,
-    exchangeState,
-    prismState,
     marketData,
     lastSignal,
-    nextCheckIn,
     lastDecision,
+    nextCheckIn,
     startTrading,
     stopTrading
   } = useAureonSession(userId);
   
-  // Subscribe to ecosystem updates for 6D state + health monitoring
+  // Start background services on mount
   useEffect(() => {
-    const unsubscribe = ecosystemConnector.subscribe((state) => {
-      setWaveform6D(state.waveform6D);
-      setProbabilityFusion(state.probabilityFusion);
+    backgroundServices.start();
+    return () => backgroundServices.stop();
+  }, []);
+  
+  // Subscribe to ecosystem updates for health monitoring
+  useEffect(() => {
+    const unsubscribe = ecosystemConnector.subscribe(() => {
       setLastDataReceived(new Date());
       setEcosystemHealth('connected');
     });
@@ -118,7 +107,6 @@ export default function AureonDashboard() {
     return () => subscription.unsubscribe();
   }, [navigate]);
 
-  // Load trading mode from database
   const loadTradingMode = async (uid: string) => {
     const { data } = await supabase
       .from('aureon_user_sessions')
@@ -131,7 +119,6 @@ export default function AureonDashboard() {
     }
   };
 
-  // Handle trading mode change
   const handleTradingModeChange = async (isLive: boolean) => {
     const newMode = isLive ? 'live' : 'paper';
     setTradingMode(newMode);
@@ -148,6 +135,7 @@ export default function AureonDashboard() {
 
   const handleSignOut = async () => {
     stopTrading();
+    backgroundServices.stop();
     await supabase.auth.signOut();
     navigate('/auth');
   };
@@ -164,10 +152,17 @@ export default function AureonDashboard() {
     }
   };
 
+  // Count active systems
+  const activeSystemCount = Object.values(systemStatus).filter(Boolean).length;
+  const totalSystemCount = Object.keys(systemStatus).length;
+
   return (
     <div className="min-h-screen bg-background">
       {/* Demo Mode Warning Banner */}
       <DemoModeWarningBanner />
+      
+      {/* Smart Alert Banner - only shows when there are issues */}
+      <SmartAlertBanner />
       
       {/* Header */}
       <header className="sticky top-0 z-50 border-b border-border/40 bg-background/90 backdrop-blur-xl">
@@ -184,33 +179,34 @@ export default function AureonDashboard() {
             </div>
 
             <div className="flex items-center gap-3">
-              {/* Data Source Indicator */}
               <DataSourceIndicator compact />
               
-              {/* Trading Mode Toggle */}
               <TradingModeToggle
                 isLive={tradingMode === 'live'} 
                 onModeChange={handleTradingModeChange}
                 disabled={tradingState.isActive}
               />
               
-              {/* Ecosystem Health Indicator */}
+              {/* Ecosystem Health */}
               <Badge 
                 variant={ecosystemHealth === 'connected' ? 'default' : ecosystemHealth === 'stale' ? 'secondary' : 'destructive'} 
                 className="gap-1"
               >
-                {ecosystemHealth === 'connected' ? (
-                  <Wifi className="h-3 w-3" />
-                ) : (
-                  <WifiOff className="h-3 w-3" />
-                )}
-                {ecosystemHealth === 'connected' ? 'DATA OK' : ecosystemHealth === 'stale' ? 'STALE' : 'NO DATA'}
+                {ecosystemHealth === 'connected' ? <Wifi className="h-3 w-3" /> : <WifiOff className="h-3 w-3" />}
+                {ecosystemHealth === 'connected' ? 'OK' : ecosystemHealth === 'stale' ? 'STALE' : 'DOWN'}
+              </Badge>
+              
+              {/* Systems Summary */}
+              <Badge variant={activeSystemCount === totalSystemCount ? "default" : "secondary"} className="gap-1">
+                <Brain className="h-3 w-3" />
+                {activeSystemCount}/{totalSystemCount}
               </Badge>
               
               <Badge variant={tradingState.isActive ? "default" : "secondary"} className="gap-1">
                 <div className={cn("h-1.5 w-1.5 rounded-full", tradingState.isActive ? "bg-green-400 animate-pulse" : "bg-muted-foreground")} />
                 {tradingState.isActive ? 'ACTIVE' : 'IDLE'}
               </Badge>
+              
               <Button variant="ghost" size="sm" onClick={handleSignOut}>
                 <LogOut className="h-4 w-4" />
               </Button>
@@ -220,7 +216,7 @@ export default function AureonDashboard() {
       </header>
 
       <main className="container mx-auto px-4 py-6 space-y-6">
-        {/* Top Stats Row */}
+        {/* Top Stats Row - Essential Cards Only */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Quantum State */}
           <Card className="border-border/50">
@@ -231,11 +227,11 @@ export default function AureonDashboard() {
             </CardHeader>
             <CardContent className="space-y-1">
               <div className="flex justify-between">
-                <span className="text-xs text-muted-foreground">Γ</span>
+                <span className="text-xs text-muted-foreground">Γ (Coherence)</span>
                 <span className="text-sm font-mono font-bold">{quantumState.coherence.toFixed(3)}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-xs text-muted-foreground">Λ</span>
+                <span className="text-xs text-muted-foreground">Λ (Lambda)</span>
                 <span className="text-sm font-mono">{quantumState.lambda.toFixed(3)}</span>
               </div>
               <div className="flex justify-between">
@@ -278,7 +274,7 @@ export default function AureonDashboard() {
             </CardContent>
           </Card>
 
-          {/* Systems Status */}
+          {/* Systems Status - Compact */}
           <Card className="border-border/50 lg:col-span-2">
             <CardHeader className="pb-2">
               <CardTitle className="text-xs font-medium text-muted-foreground flex items-center gap-1">
@@ -300,73 +296,9 @@ export default function AureonDashboard() {
             </CardContent>
           </Card>
         </div>
-
-        {/* The Prism + Unified Ecosystem Row */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <PrismStatus 
-            lambda={quantumState.lambda}
-            coherence={quantumState.coherence}
-            substrate={quantumState.substrate}
-            observer={quantumState.observer}
-            echo={quantumState.echo}
-            volatility={marketData.volatility}
-            momentum={marketData.momentum}
-            baseFrequency={396}
-          />
-          <UnifiedBusStatus />
-          <EcosystemStatus />
-        </div>
         
-        {/* User Assets Panel - Real Multi-Exchange Holdings */}
+        {/* User Assets Panel - Multi-Exchange Holdings */}
         <UserAssetsPanel />
-        
-        {/* Full Asset Price List - 805+ Tradeable Pairs */}
-        <AssetPriceListPanel />
-        
-        {/* AI Frequency Interpreter - Human ↔ AI ↔ Frequency Loop */}
-        <FrequencyAIInterpreter />
-        
-        {/* Cymatics & Prism Visualization Row */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <CymaticsFieldVisualizer />
-          <PrismRevealVisualizer />
-        </div>
-        
-        {/* Probability Reconstruction & Data Integrity Row */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <ProbabilityReconstructionPanel />
-          <HarmonicDataIntegrityPanel />
-        </div>
-        
-        {/* Live 6D Harmonic Visualization */}
-        <Live6DWaveformVisualizer />
-        
-        {/* 6D Harmonic Waveform Status + Probability Matrix Row */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <HarmonicWaveform6DStatus waveform={waveform6D} />
-          <ProbabilityMatrixDisplay fusion={probabilityFusion} />
-        </div>
-        
-        {/* Smoke Test Phase Validator + Extended System Status Row */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <SmokeTestPhasePanel />
-          <TemporalLadderStatus />
-          <LiveTradingStatusPanel />
-        </div>
-        
-        {/* Decision Verification & Simulation */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <DecisionVerificationPanel />
-          <SimulationVerificationPanel />
-          <DataStreamMonitorPanel />
-        </div>
-        
-        {/* User Data Verification & Exchange Connectivity */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <UserDataVerificationPanel />
-          <ExchangeDataVerificationPanel />
-          <KrakenStatusPanel />
-        </div>
 
         {/* Trading Control */}
         <Card className="border-border/50">
@@ -414,34 +346,30 @@ export default function AureonDashboard() {
           </CardContent>
         </Card>
 
-        {/* Recent Trades */}
+        {/* Recent Trades - Compact */}
         <Card className="border-border/50">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">RECENT TRADES</CardTitle>
+            <CardTitle className="text-xs font-medium text-muted-foreground">RECENT TRADES</CardTitle>
           </CardHeader>
           <CardContent>
             {tradingState.recentTrades.length === 0 ? (
-              <p className="text-xs text-muted-foreground text-center py-4">No trades yet</p>
+              <p className="text-xs text-muted-foreground text-center py-4">
+                No trades yet. Start trading to see activity here.
+              </p>
             ) : (
-              <div className="space-y-2 max-h-[200px] overflow-y-auto">
-                {tradingState.recentTrades.map((trade, i) => (
-                  <div key={i} className="flex items-center justify-between text-xs py-1 border-b border-border/30 last:border-0">
+              <div className="space-y-2">
+                {tradingState.recentTrades.slice(0, 5).map((trade, i) => (
+                  <div key={i} className="flex items-center justify-between text-xs border-b border-border/30 pb-2 last:border-0">
                     <div className="flex items-center gap-2">
-                      <span className="text-muted-foreground font-mono">{trade.time}</span>
-                      <Badge variant={trade.side === 'BUY' ? 'default' : 'secondary'} className="text-[10px]">
+                      <Badge variant={trade.side === 'BUY' ? 'default' : 'secondary'} className="text-[9px]">
                         {trade.side}
                       </Badge>
-                      <span>{trade.symbol}</span>
-                      <span className="text-muted-foreground">{trade.quantity}</span>
+                      <span className="font-mono">{trade.symbol}</span>
                     </div>
-                    <div className="flex items-center gap-1">
-                      {trade.success ? (
-                        <TrendingUp className="h-3 w-3 text-green-400" />
-                      ) : (
-                        <TrendingDown className="h-3 w-3 text-red-400" />
-                      )}
+                    <div className="flex items-center gap-3">
+                      <span className="text-muted-foreground">{trade.quantity}</span>
                       <span className={cn("font-mono", trade.pnl >= 0 ? "text-green-400" : "text-red-400")}>
-                        {trade.pnl >= 0 ? '+' : ''}${trade.pnl.toFixed(2)}
+                        {trade.pnl >= 0 ? '+' : ''}{trade.pnl.toFixed(2)}
                       </span>
                     </div>
                   </div>
@@ -451,16 +379,9 @@ export default function AureonDashboard() {
           </CardContent>
         </Card>
       </main>
-    </div>
-  );
-}
-
-function SystemIndicator({ name, active, icon: Icon }: { name: string; active: boolean; icon: React.ElementType }) {
-  return (
-    <div className="flex items-center gap-2 text-xs">
-      <div className={cn("h-1.5 w-1.5 rounded-full", active ? "bg-green-400" : "bg-muted-foreground")} />
-      <Icon className="h-3 w-3 text-muted-foreground" />
-      <span className={active ? "text-foreground" : "text-muted-foreground"}>{name}</span>
+      
+      {/* Floating AI Button */}
+      <FloatingAIButton />
     </div>
   );
 }
