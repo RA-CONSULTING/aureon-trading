@@ -11,50 +11,106 @@ interface IntegrityMetric {
   score: number;
   weight: number;
   description: string;
+  hasData: boolean;
 }
 
+type DataStatus = 'LIVE' | 'STALE' | 'NO_DATA';
+
 export function HarmonicDataIntegrityPanel() {
-  const { metrics } = useEcosystemData();
+  const { metrics, isInitialized } = useEcosystemData();
   const [overallScore, setOverallScore] = useState(0);
-  const [status, setStatus] = useState<'valid' | 'suspect' | 'invalid'>('suspect');
+  const [status, setStatus] = useState<'valid' | 'suspect' | 'invalid'>('invalid');
   const [integrityMetrics, setIntegrityMetrics] = useState<IntegrityMetric[]>([]);
   const [history, setHistory] = useState<number[]>([]);
+  const [dataStatus, setDataStatus] = useState<DataStatus>('NO_DATA');
+  const [sourcesWithData, setSourcesWithData] = useState(0);
 
   useEffect(() => {
     if (!metrics) return;
 
-    // Calculate integrity metrics
-    const cymaticsMatch = Math.min(1, (metrics.coherence ?? 0.5) * 1.2);
-    const prismAlignment = metrics.frequency 
-      ? 1 - Math.abs(528 - (metrics.frequency ?? 396)) / 528
-      : 0.5;
-    const matrixConsensus = 1 - (metrics.harmonicFidelity 
-      ? Math.abs((metrics.harmonicFidelity ?? 0.5) - (metrics.coherence ?? 0.5))
-      : 0.3);
-    const temporalSync = metrics.temporalAnchorStrength ?? 0.5;
+    // Check actual data presence
+    const coherence = metrics.coherence ?? 0;
+    const frequency = metrics.frequency ?? 0;
+    const harmonicFidelity = metrics.harmonicFidelity ?? 0;
+    const temporalAnchor = metrics.temporalAnchorStrength ?? 0;
+    
+    // Count sources with actual data
+    const sources = [
+      coherence > 0,
+      frequency > 0,
+      harmonicFidelity > 0,
+      temporalAnchor > 0
+    ];
+    const activeSourceCount = sources.filter(Boolean).length;
+    setSourcesWithData(activeSourceCount);
+    
+    // Determine overall data status
+    if (!isInitialized) {
+      setDataStatus('NO_DATA');
+    } else if (activeSourceCount >= 2) {
+      setDataStatus('LIVE');
+    } else if (activeSourceCount === 1) {
+      setDataStatus('STALE');
+    } else {
+      setDataStatus('NO_DATA');
+    }
+
+    // Calculate integrity metrics only if we have data
+    const cymaticsMatch = coherence > 0 ? Math.min(1, coherence * 1.2) : 0;
+    const prismAlignment = frequency > 0 
+      ? 1 - Math.abs(528 - frequency) / 528
+      : 0;
+    const matrixConsensus = (harmonicFidelity > 0 && coherence > 0)
+      ? 1 - Math.abs(harmonicFidelity - coherence)
+      : 0;
+    const temporalSync = temporalAnchor;
 
     const metricsArray: IntegrityMetric[] = [
-      { name: 'Cymatics Pattern Match', score: cymaticsMatch, weight: 0.25, description: 'Water frequency resonance alignment' },
-      { name: 'Prism Alignment', score: prismAlignment, weight: 0.30, description: 'Distance to 528 Hz love frequency' },
-      { name: 'Matrix Consensus', score: matrixConsensus, weight: 0.25, description: 'Source agreement level' },
-      { name: 'Temporal Sync', score: temporalSync, weight: 0.20, description: 'Timeline coherence quality' },
+      { name: 'Cymatics Pattern Match', score: cymaticsMatch, weight: 0.25, description: 'Water frequency resonance alignment', hasData: coherence > 0 },
+      { name: 'Prism Alignment', score: prismAlignment, weight: 0.30, description: 'Distance to 528 Hz love frequency', hasData: frequency > 0 },
+      { name: 'Matrix Consensus', score: matrixConsensus, weight: 0.25, description: 'Source agreement level', hasData: harmonicFidelity > 0 && coherence > 0 },
+      { name: 'Temporal Sync', score: temporalSync, weight: 0.20, description: 'Timeline coherence quality', hasData: temporalAnchor > 0 },
     ];
 
-    // Calculate weighted overall score
-    const overall = metricsArray.reduce((sum, m) => sum + m.score * m.weight, 0);
+    // Calculate weighted overall score (only from sources with data)
+    const metricsWithData = metricsArray.filter(m => m.hasData);
+    const totalWeight = metricsWithData.reduce((sum, m) => sum + m.weight, 0);
+    const overall = totalWeight > 0 
+      ? metricsWithData.reduce((sum, m) => sum + m.score * m.weight, 0) / totalWeight
+      : 0;
     
-    // Determine status
-    let newStatus: 'valid' | 'suspect' | 'invalid' = 'valid';
-    if (overall < 0.4) newStatus = 'invalid';
-    else if (overall < 0.7) newStatus = 'suspect';
+    // Determine status based on data presence AND quality
+    let newStatus: 'valid' | 'suspect' | 'invalid' = 'invalid';
+    if (activeSourceCount === 0) {
+      newStatus = 'invalid';
+    } else if (activeSourceCount < 3 || overall < 0.4) {
+      newStatus = 'suspect';
+    } else if (overall >= 0.7) {
+      newStatus = 'valid';
+    } else {
+      newStatus = 'suspect';
+    }
 
     setIntegrityMetrics(metricsArray);
     setOverallScore(overall);
     setStatus(newStatus);
     
     // Update history (keep last 20 values)
-    setHistory(prev => [...prev.slice(-19), overall]);
-  }, [metrics]);
+    if (activeSourceCount > 0) {
+      setHistory(prev => [...prev.slice(-19), overall]);
+    }
+  }, [metrics, isInitialized]);
+
+  const getDataStatusBadge = () => {
+    switch (dataStatus) {
+      case 'LIVE':
+        return <Badge className="bg-green-500/20 text-green-400 border-green-500/30 text-[10px]">LIVE ({sourcesWithData}/4)</Badge>;
+      case 'STALE':
+        return <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30 text-[10px]">PARTIAL ({sourcesWithData}/4)</Badge>;
+      default:
+        return <Badge className="bg-red-500/20 text-red-400 border-red-500/30 text-[10px]">NO DATA</Badge>;
+    }
+  };
 
   const getStatusIcon = () => {
     switch (status) {
@@ -85,9 +141,16 @@ export function HarmonicDataIntegrityPanel() {
           <CardTitle className="text-xs font-medium text-muted-foreground flex items-center gap-2">
             <Shield className="h-3 w-3" />
             HARMONIC DATA INTEGRITY
+            {getDataStatusBadge()}
           </CardTitle>
           {getStatusBadge()}
         </div>
+        {dataStatus === 'NO_DATA' && (
+          <div className="flex items-center gap-1 text-[10px] text-yellow-500 mt-1">
+            <AlertTriangle className="h-3 w-3" />
+            <span>No integrity sources available</span>
+          </div>
+        )}
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Overall Score */}

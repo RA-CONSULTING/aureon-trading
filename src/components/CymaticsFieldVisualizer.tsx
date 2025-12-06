@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Waves } from 'lucide-react';
+import { Waves, AlertTriangle } from 'lucide-react';
 import { useEcosystemData } from '@/hooks/useEcosystemData';
 
 interface CymaticsPattern {
@@ -10,28 +10,47 @@ interface CymaticsPattern {
   patternType: 'chaos' | 'forming' | 'geometric' | 'sacred';
 }
 
+type DataStatus = 'LIVE' | 'STALE' | 'NO_DATA';
+
 export function CymaticsFieldVisualizer() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationRef = useRef<number | null>(null);
-  const { metrics } = useEcosystemData();
+  const { metrics, isInitialized, busSnapshot } = useEcosystemData();
   const [pattern, setPattern] = useState<CymaticsPattern>({
     frequency: 396,
-    coherence: 0.5,
-    patternType: 'forming'
+    coherence: 0,
+    patternType: 'chaos'
   });
+  const [dataStatus, setDataStatus] = useState<DataStatus>('NO_DATA');
+  const [lastUpdate, setLastUpdate] = useState<number>(0);
 
-  // Determine pattern type based on coherence
+  // Determine pattern type and data status based on coherence
   useEffect(() => {
-    const coherence = metrics?.coherence ?? 0.5;
-    const frequency = metrics?.frequency ?? 396;
+    const coherence = metrics?.coherence ?? 0;
+    const frequency = metrics?.frequency ?? 0;
+    
+    // Determine data status
+    const hasRealData = coherence > 0 || (busSnapshot?.states?.MasterEquation?.coherence ?? 0) > 0;
+    const now = Date.now();
+    
+    if (!isInitialized) {
+      setDataStatus('NO_DATA');
+    } else if (hasRealData) {
+      setDataStatus('LIVE');
+      setLastUpdate(now);
+    } else if (now - lastUpdate > 10000) {
+      setDataStatus('STALE');
+    } else {
+      setDataStatus('NO_DATA');
+    }
     
     let patternType: CymaticsPattern['patternType'] = 'chaos';
     if (coherence > 0.9) patternType = 'sacred';
     else if (coherence > 0.7) patternType = 'geometric';
     else if (coherence > 0.4) patternType = 'forming';
     
-    setPattern({ frequency, coherence, patternType });
-  }, [metrics]);
+    setPattern({ frequency: frequency || 396, coherence, patternType });
+  }, [metrics, isInitialized, busSnapshot, lastUpdate]);
 
   // Canvas animation
   useEffect(() => {
@@ -162,6 +181,17 @@ export function CymaticsFieldVisualizer() {
     }
   };
 
+  const getDataStatusBadge = () => {
+    switch (dataStatus) {
+      case 'LIVE':
+        return <Badge className="bg-green-500/20 text-green-400 border-green-500/30 text-[10px]">LIVE</Badge>;
+      case 'STALE':
+        return <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30 text-[10px]">STALE</Badge>;
+      default:
+        return <Badge className="bg-red-500/20 text-red-400 border-red-500/30 text-[10px]">NO DATA</Badge>;
+    }
+  };
+
   return (
     <Card className="border-border/50 overflow-hidden">
       <CardHeader className="pb-2">
@@ -169,9 +199,16 @@ export function CymaticsFieldVisualizer() {
           <CardTitle className="text-xs font-medium text-muted-foreground flex items-center gap-2">
             <Waves className="h-3 w-3" />
             CYMATICS FIELD
+            {getDataStatusBadge()}
           </CardTitle>
           {getPatternBadge()}
         </div>
+        {dataStatus === 'NO_DATA' && (
+          <div className="flex items-center gap-1 text-[10px] text-yellow-500 mt-1">
+            <AlertTriangle className="h-3 w-3" />
+            <span>Awaiting ecosystem data...</span>
+          </div>
+        )}
       </CardHeader>
       <CardContent className="p-2">
         <canvas
