@@ -52,9 +52,10 @@ export const defaultAQTSConfig: AQTSConfig = {
     sellThreshold: -0.15,
     minimumConfidence: 0.35,
     weights: {
-      ensemble: 0.6,
-      sentiment: 0.2,
-      qgita: 0.2,
+      ensemble: 0.50,
+      sentiment: 0.15,
+      qgita: 0.20,
+      harmonic6D: 0.15,
     },
   },
   risk: {
