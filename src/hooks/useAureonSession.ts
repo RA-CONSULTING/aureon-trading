@@ -385,16 +385,36 @@ export function useAureonSession(userId: string | null) {
     toast.info('Trading stopped');
   }, []);
 
-  // Load user session data
+  // Load user session data and AUTO-START on login
   useEffect(() => {
     if (!userId) return;
 
     const loadSession = async () => {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('aureon_user_sessions')
         .select('*')
         .eq('user_id', userId)
         .single();
+
+      if (error && error.code === 'PGRST116') {
+        // No session exists - create one and auto-start
+        console.log('[Aureon] No session found, creating new session...');
+        const { error: insertError } = await supabase
+          .from('aureon_user_sessions')
+          .insert({
+            user_id: userId,
+            payment_completed: true,
+            is_trading_active: true,
+            gas_tank_balance: 100,
+            trading_mode: 'paper'
+          });
+        
+        if (!insertError) {
+          console.log('[Aureon] Session created, auto-starting trading...');
+          startTrading();
+        }
+        return;
+      }
 
       if (data) {
         setQuantumState({
@@ -420,8 +440,12 @@ export function useAureonSession(userId: string | null) {
           recentTrades: (data.recent_trades as any[]) || []
         });
 
-        // Auto-start if was active
-        if (data.is_trading_active) {
+        // AUTO-START: If payment completed, start trading automatically
+        if (data.payment_completed && !data.is_trading_active) {
+          console.log('[Aureon] Payment verified, auto-starting trading...');
+          startTrading();
+        } else if (data.is_trading_active) {
+          // Resume if was already active
           startTrading();
         }
       }

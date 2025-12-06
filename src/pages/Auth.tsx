@@ -98,22 +98,33 @@ export default function Auth() {
       if (!authData.user) throw new Error("Failed to create account");
 
       // Create aureon_user_sessions record with encrypted Binance credentials
-      const { error: sessionError } = await supabase.functions.invoke('create-aureon-session', {
-        body: {
-          userId: authData.user.id,
-          apiKey: binanceApiKey,
-          apiSecret: binanceApiSecret
-        }
-      });
-
-      if (sessionError) {
-        console.warn('Session creation via edge function failed, creating directly:', sessionError);
-        // Fallback: create session directly (credentials will be stored later)
-        await supabase.from('aureon_user_sessions').insert({
-          user_id: authData.user.id,
-          binance_api_key_encrypted: binanceApiKey, // Will be encrypted by edge function later
-          binance_api_secret_encrypted: binanceApiSecret,
+      try {
+        const { error: sessionError } = await supabase.functions.invoke('create-aureon-session', {
+          body: {
+            userId: authData.user.id,
+            apiKey: binanceApiKey,
+            apiSecret: binanceApiSecret
+          }
         });
+
+        if (sessionError) {
+          console.warn('Session creation via edge function failed, using fallback:', sessionError);
+          throw sessionError;
+        }
+      } catch (fnError) {
+        console.warn('Edge function failed, creating session directly:', fnError);
+        // Fallback: create session directly with is_trading_active = true for auto-start
+        const { error: insertError } = await supabase.from('aureon_user_sessions').insert({
+          user_id: authData.user.id,
+          payment_completed: false,
+          is_trading_active: false,
+          gas_tank_balance: 100,
+          trading_mode: 'paper'
+        });
+        
+        if (insertError) {
+          console.error('Fallback session creation failed:', insertError);
+        }
       }
 
       // Super user bypasses payment

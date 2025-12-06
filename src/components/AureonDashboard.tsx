@@ -1,10 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAureonSession } from '@/hooks/useAureonSession';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Sparkles, Activity, Zap, Brain, Radio, Database, Router, TrendingUp, TrendingDown, LogOut, Play, Square } from 'lucide-react';
+import { Sparkles, Activity, Zap, Brain, Radio, Database, Router, TrendingUp, TrendingDown, LogOut, Play, Square, Wifi, WifiOff } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { UnifiedBusStatus } from '@/components/warroom/UnifiedBusStatus';
@@ -23,6 +23,11 @@ export default function AureonDashboard() {
   const [waveform6D, setWaveform6D] = useState(ecosystemConnector.getWaveform6D());
   const [probabilityFusion, setProbabilityFusion] = useState(ecosystemConnector.getProbabilityFusion());
   
+  // Ecosystem health check state
+  const [lastDataReceived, setLastDataReceived] = useState<Date | null>(null);
+  const [ecosystemHealth, setEcosystemHealth] = useState<'connected' | 'stale' | 'disconnected'>('disconnected');
+  const healthCheckRef = useRef<NodeJS.Timeout | null>(null);
+  
   const {
     quantumState,
     tradingState,
@@ -38,14 +43,34 @@ export default function AureonDashboard() {
     stopTrading
   } = useAureonSession(userId);
   
-  // Subscribe to ecosystem updates for 6D state
+  // Subscribe to ecosystem updates for 6D state + health monitoring
   useEffect(() => {
     const unsubscribe = ecosystemConnector.subscribe((state) => {
       setWaveform6D(state.waveform6D);
       setProbabilityFusion(state.probabilityFusion);
+      setLastDataReceived(new Date());
+      setEcosystemHealth('connected');
     });
-    return () => unsubscribe();
-  }, []);
+    
+    // Health check: mark as stale if no data for 10s, disconnected if 30s
+    healthCheckRef.current = setInterval(() => {
+      if (lastDataReceived) {
+        const timeSince = Date.now() - lastDataReceived.getTime();
+        if (timeSince > 30000) {
+          setEcosystemHealth('disconnected');
+        } else if (timeSince > 10000) {
+          setEcosystemHealth('stale');
+        } else {
+          setEcosystemHealth('connected');
+        }
+      }
+    }, 2000);
+    
+    return () => {
+      unsubscribe();
+      if (healthCheckRef.current) clearInterval(healthCheckRef.current);
+    };
+  }, [lastDataReceived]);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
@@ -104,6 +129,19 @@ export default function AureonDashboard() {
             </div>
 
             <div className="flex items-center gap-3">
+              {/* Ecosystem Health Indicator */}
+              <Badge 
+                variant={ecosystemHealth === 'connected' ? 'default' : ecosystemHealth === 'stale' ? 'secondary' : 'destructive'} 
+                className="gap-1"
+              >
+                {ecosystemHealth === 'connected' ? (
+                  <Wifi className="h-3 w-3" />
+                ) : (
+                  <WifiOff className="h-3 w-3" />
+                )}
+                {ecosystemHealth === 'connected' ? 'DATA OK' : ecosystemHealth === 'stale' ? 'STALE' : 'NO DATA'}
+              </Badge>
+              
               <Badge variant={tradingState.isActive ? "default" : "secondary"} className="gap-1">
                 <div className={cn("h-1.5 w-1.5 rounded-full", tradingState.isActive ? "bg-green-400 animate-pulse" : "bg-muted-foreground")} />
                 {tradingState.isActive ? 'LIVE' : 'IDLE'}
