@@ -16,6 +16,7 @@ import { ProbabilityMatrixDisplay } from '@/components/warroom/ProbabilityMatrix
 import { TradingModeToggle } from '@/components/TradingModeToggle';
 import { UserAssetsPanel } from '@/components/warroom/UserAssetsPanel';
 import { DataStreamMonitorPanel } from '@/components/DataStreamMonitorPanel';
+import { LiveTradingStatusPanel } from '@/components/LiveTradingStatusPanel';
 import { ecosystemConnector } from '@/core/ecosystemConnector';
 import { toast } from 'sonner';
 
@@ -305,8 +306,9 @@ export default function AureonDashboard() {
         </div>
         
         {/* Extended System Status Row */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <TemporalLadderStatus />
+          <LiveTradingStatusPanel />
           <DataStreamMonitorPanel />
         </div>
 
