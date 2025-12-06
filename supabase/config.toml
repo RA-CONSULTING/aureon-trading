@@ -207,3 +207,7 @@ verify_jwt = false
 # Ticker snapshot ingestion
 [functions.ingest-ticker-snapshot]
 verify_jwt = true
+
+# Exchange connectivity verification (public for smoke test)
+[functions.verify-exchange-connectivity]
+verify_jwt = false
