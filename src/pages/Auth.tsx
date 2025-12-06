@@ -6,9 +6,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { toast } from "sonner";
 import { z } from "zod";
-import { Sparkles, Eye, EyeOff } from "lucide-react";
+import { Sparkles, Eye, EyeOff, ChevronDown, ChevronUp } from "lucide-react";
 
 const emailSchema = z.string().email("Invalid email address");
 const passwordSchema = z.string().min(8, "Password must be at least 8 characters");
@@ -20,6 +21,7 @@ export default function Auth() {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showApiSecret, setShowApiSecret] = useState(false);
+  const [showOtherExchanges, setShowOtherExchanges] = useState(false);
   
   // Sign In State
   const [email, setEmail] = useState("");
@@ -30,11 +32,19 @@ export default function Auth() {
   const [signUpPassword, setSignUpPassword] = useState("");
   const [binanceApiKey, setBinanceApiKey] = useState("");
   const [binanceApiSecret, setBinanceApiSecret] = useState("");
+  
+  // Optional exchange credentials
+  const [krakenApiKey, setKrakenApiKey] = useState("");
+  const [krakenApiSecret, setKrakenApiSecret] = useState("");
+  const [alpacaApiKey, setAlpacaApiKey] = useState("");
+  const [alpacaSecretKey, setAlpacaSecretKey] = useState("");
+  const [capitalApiKey, setCapitalApiKey] = useState("");
+  const [capitalPassword, setCapitalPassword] = useState("");
+  const [capitalIdentifier, setCapitalIdentifier] = useState("");
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (session) {
-        // User is already authenticated, redirect to dashboard
         navigate("/");
       }
     });
@@ -59,7 +69,6 @@ export default function Auth() {
       
       setLoading(true);
 
-      // Create user account
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: signUpEmail,
         password: signUpPassword,
@@ -71,14 +80,23 @@ export default function Auth() {
       if (authError) throw authError;
       if (!authData.user) throw new Error("Failed to create account");
 
-      // Create aureon_user_sessions record with encrypted Binance credentials
-      // Payment gate removed - all users get free access with payment_completed: true
       try {
         const { error: sessionError } = await supabase.functions.invoke('create-aureon-session', {
           body: {
             userId: authData.user.id,
+            // Binance (required)
             apiKey: binanceApiKey,
-            apiSecret: binanceApiSecret
+            apiSecret: binanceApiSecret,
+            // Kraken (optional)
+            krakenApiKey: krakenApiKey || null,
+            krakenApiSecret: krakenApiSecret || null,
+            // Alpaca (optional)
+            alpacaApiKey: alpacaApiKey || null,
+            alpacaSecretKey: alpacaSecretKey || null,
+            // Capital.com (optional)
+            capitalApiKey: capitalApiKey || null,
+            capitalPassword: capitalPassword || null,
+            capitalIdentifier: capitalIdentifier || null
           }
         });
 
@@ -87,7 +105,6 @@ export default function Auth() {
           throw sessionError;
         }
         
-        // Ensure payment is marked complete for free access
         await supabase
           .from("aureon_user_sessions")
           .update({ payment_completed: true, payment_completed_at: new Date().toISOString() })
@@ -95,10 +112,9 @@ export default function Auth() {
           
       } catch (fnError) {
         console.warn('Edge function failed, creating session directly:', fnError);
-        // Fallback: create session directly with payment_completed: true for free access
         const { error: insertError } = await supabase.from('aureon_user_sessions').insert({
           user_id: authData.user.id,
-          payment_completed: true, // Free access
+          payment_completed: true,
           payment_completed_at: new Date().toISOString(),
           is_trading_active: false,
           gas_tank_balance: 100,
@@ -140,7 +156,6 @@ export default function Auth() {
 
       if (error) throw error;
 
-      // Free access - no payment check needed
       toast.success("Welcome back!");
       navigate("/");
     } catch (error) {
@@ -216,7 +231,7 @@ export default function Auth() {
             </TabsContent>
 
             <TabsContent value="signup">
-              <form onSubmit={handleSignUp} className="space-y-4">
+              <form onSubmit={handleSignUp} className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
                 <div className="space-y-2">
                   <Label htmlFor="signup-email">Email</Label>
                   <Input
@@ -250,9 +265,10 @@ export default function Auth() {
                   </div>
                 </div>
 
+                {/* Binance - Required */}
                 <div className="border-t border-border/50 pt-4 mt-4">
                   <p className="text-xs text-muted-foreground mb-3">
-                    Binance API credentials (encrypted & secure)
+                    Binance API credentials (required, encrypted & secure)
                   </p>
                   
                   <div className="space-y-3">
@@ -290,6 +306,109 @@ export default function Auth() {
                     </div>
                   </div>
                 </div>
+
+                {/* Other Exchanges - Optional */}
+                <Collapsible open={showOtherExchanges} onOpenChange={setShowOtherExchanges}>
+                  <CollapsibleTrigger asChild>
+                    <Button variant="ghost" className="w-full justify-between text-muted-foreground text-sm">
+                      Add Other Exchanges (Optional)
+                      {showOtherExchanges ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                    </Button>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="space-y-4 pt-2">
+                    {/* Kraken */}
+                    <div className="border border-border/30 rounded-lg p-3 space-y-3">
+                      <p className="text-xs font-medium text-muted-foreground">Kraken</p>
+                      <div className="space-y-2">
+                        <Label htmlFor="kraken-api-key" className="text-xs">API Key</Label>
+                        <Input
+                          id="kraken-api-key"
+                          type="text"
+                          placeholder="Kraken API Key"
+                          value={krakenApiKey}
+                          onChange={(e) => setKrakenApiKey(e.target.value)}
+                          className="h-9"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="kraken-api-secret" className="text-xs">API Secret</Label>
+                        <Input
+                          id="kraken-api-secret"
+                          type="password"
+                          placeholder="Kraken API Secret"
+                          value={krakenApiSecret}
+                          onChange={(e) => setKrakenApiSecret(e.target.value)}
+                          className="h-9"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Alpaca */}
+                    <div className="border border-border/30 rounded-lg p-3 space-y-3">
+                      <p className="text-xs font-medium text-muted-foreground">Alpaca (US Stocks)</p>
+                      <div className="space-y-2">
+                        <Label htmlFor="alpaca-api-key" className="text-xs">API Key</Label>
+                        <Input
+                          id="alpaca-api-key"
+                          type="text"
+                          placeholder="Alpaca API Key"
+                          value={alpacaApiKey}
+                          onChange={(e) => setAlpacaApiKey(e.target.value)}
+                          className="h-9"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="alpaca-secret-key" className="text-xs">Secret Key</Label>
+                        <Input
+                          id="alpaca-secret-key"
+                          type="password"
+                          placeholder="Alpaca Secret Key"
+                          value={alpacaSecretKey}
+                          onChange={(e) => setAlpacaSecretKey(e.target.value)}
+                          className="h-9"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Capital.com */}
+                    <div className="border border-border/30 rounded-lg p-3 space-y-3">
+                      <p className="text-xs font-medium text-muted-foreground">Capital.com (CFDs)</p>
+                      <div className="space-y-2">
+                        <Label htmlFor="capital-api-key" className="text-xs">API Key</Label>
+                        <Input
+                          id="capital-api-key"
+                          type="text"
+                          placeholder="Capital.com API Key"
+                          value={capitalApiKey}
+                          onChange={(e) => setCapitalApiKey(e.target.value)}
+                          className="h-9"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="capital-identifier" className="text-xs">Identifier (Email)</Label>
+                        <Input
+                          id="capital-identifier"
+                          type="text"
+                          placeholder="Your Capital.com Email"
+                          value={capitalIdentifier}
+                          onChange={(e) => setCapitalIdentifier(e.target.value)}
+                          className="h-9"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="capital-password" className="text-xs">Password</Label>
+                        <Input
+                          id="capital-password"
+                          type="password"
+                          placeholder="Capital.com Password"
+                          value={capitalPassword}
+                          onChange={(e) => setCapitalPassword(e.target.value)}
+                          className="h-9"
+                        />
+                      </div>
+                    </div>
+                  </CollapsibleContent>
+                </Collapsible>
 
                 <Button type="submit" className="w-full" disabled={loading}>
                   {loading ? "Creating account..." : "Create Account"}
