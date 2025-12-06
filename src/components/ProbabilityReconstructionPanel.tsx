@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Layers, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
+import { Layers, CheckCircle2, AlertCircle, Loader2, AlertTriangle } from 'lucide-react';
 import { useEcosystemData } from '@/hooks/useEcosystemData';
 import { cn } from '@/lib/utils';
 
@@ -10,20 +10,24 @@ interface DataStream {
   name: string;
   value: number;
   weight: number;
-  status: 'valid' | 'suspect' | 'invalid' | 'loading';
+  status: 'valid' | 'suspect' | 'invalid' | 'loading' | 'no_data';
+  hasData: boolean;
 }
 
+type DataStatus = 'LIVE' | 'STALE' | 'NO_DATA';
+
 export function ProbabilityReconstructionPanel() {
-  const { metrics } = useEcosystemData();
+  const { metrics, isInitialized } = useEcosystemData();
   const [streams, setStreams] = useState<DataStream[]>([
-    { name: '6D Harmonic', value: 0.5, weight: 0.35, status: 'loading' },
-    { name: 'HNC Signal', value: 0.5, weight: 0.35, status: 'loading' },
-    { name: 'Lighthouse', value: 0.5, weight: 0.30, status: 'loading' },
+    { name: '6D Harmonic', value: 0, weight: 0.35, status: 'loading', hasData: false },
+    { name: 'HNC Signal', value: 0, weight: 0.35, status: 'loading', hasData: false },
+    { name: 'Lighthouse', value: 0, weight: 0.30, status: 'loading', hasData: false },
   ]);
-  const [fusedValue, setFusedValue] = useState(0.5);
+  const [fusedValue, setFusedValue] = useState(0);
   const [variance, setVariance] = useState(0);
-  const [reconstructionStatus, setReconstructionStatus] = useState<'valid' | 'suspect' | 'invalid'>('suspect');
+  const [reconstructionStatus, setReconstructionStatus] = useState<'valid' | 'suspect' | 'invalid'>('invalid');
   const [isAnimating, setIsAnimating] = useState(false);
+  const [dataStatus, setDataStatus] = useState<DataStatus>('NO_DATA');
 
   useEffect(() => {
     if (!metrics) return;
@@ -32,9 +36,20 @@ export function ProbabilityReconstructionPanel() {
     setIsAnimating(true);
     
     const timer = setTimeout(() => {
-      const harmonic6D = metrics.harmonicFidelity ?? 0.5;
-      const hncSignal = metrics.coherence ?? 0.5;
-      const lighthouse = metrics.consensusConfidence ?? 0.5;
+      const harmonic6D = metrics.harmonicFidelity ?? 0;
+      const hncSignal = metrics.coherence ?? 0;
+      const lighthouse = metrics.consensusConfidence ?? 0;
+      
+      // Check if we have real data
+      const hasAnyData = harmonic6D > 0 || hncSignal > 0 || lighthouse > 0;
+      
+      if (!isInitialized) {
+        setDataStatus('NO_DATA');
+      } else if (hasAnyData) {
+        setDataStatus('LIVE');
+      } else {
+        setDataStatus('NO_DATA');
+      }
       
       // Calculate weighted fusion
       const fused = harmonic6D * 0.35 + hncSignal * 0.35 + lighthouse * 0.30;
@@ -44,15 +59,29 @@ export function ProbabilityReconstructionPanel() {
       const mean = values.reduce((a, b) => a + b, 0) / values.length;
       const variance = values.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / values.length;
       
-      // Determine status based on variance
-      let status: 'valid' | 'suspect' | 'invalid' = 'valid';
-      if (variance > 0.1) status = 'invalid';
-      else if (variance > 0.03) status = 'suspect';
+      // Determine status based on variance AND data presence
+      let status: 'valid' | 'suspect' | 'invalid' = 'invalid';
+      if (!hasAnyData) {
+        status = 'invalid';
+      } else if (variance > 0.1) {
+        status = 'invalid';
+      } else if (variance > 0.03) {
+        status = 'suspect';
+      } else {
+        status = 'valid';
+      }
+      
+      const getStreamStatus = (val: number): DataStream['status'] => {
+        if (val === 0) return 'no_data';
+        if (val > 0.5) return 'valid';
+        if (val > 0.2) return 'suspect';
+        return 'invalid';
+      };
       
       setStreams([
-        { name: '6D Harmonic', value: harmonic6D, weight: 0.35, status: harmonic6D > 0.3 ? 'valid' : 'suspect' },
-        { name: 'HNC Signal', value: hncSignal, weight: 0.35, status: hncSignal > 0.3 ? 'valid' : 'suspect' },
-        { name: 'Lighthouse', value: lighthouse, weight: 0.30, status: lighthouse > 0.3 ? 'valid' : 'suspect' },
+        { name: '6D Harmonic', value: harmonic6D, weight: 0.35, status: getStreamStatus(harmonic6D), hasData: harmonic6D > 0 },
+        { name: 'HNC Signal', value: hncSignal, weight: 0.35, status: getStreamStatus(hncSignal), hasData: hncSignal > 0 },
+        { name: 'Lighthouse', value: lighthouse, weight: 0.30, status: getStreamStatus(lighthouse), hasData: lighthouse > 0 },
       ]);
       setFusedValue(fused);
       setVariance(variance);
@@ -61,7 +90,18 @@ export function ProbabilityReconstructionPanel() {
     }, 300);
 
     return () => clearTimeout(timer);
-  }, [metrics]);
+  }, [metrics, isInitialized]);
+
+  const getDataStatusBadge = () => {
+    switch (dataStatus) {
+      case 'LIVE':
+        return <Badge className="bg-green-500/20 text-green-400 border-green-500/30 text-[10px]">LIVE</Badge>;
+      case 'STALE':
+        return <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30 text-[10px]">STALE</Badge>;
+      default:
+        return <Badge className="bg-red-500/20 text-red-400 border-red-500/30 text-[10px]">NO DATA</Badge>;
+    }
+  };
 
   const getStatusIcon = (status: DataStream['status']) => {
     switch (status) {
@@ -71,6 +111,8 @@ export function ProbabilityReconstructionPanel() {
         return <AlertCircle className="h-3 w-3 text-yellow-400" />;
       case 'invalid':
         return <AlertCircle className="h-3 w-3 text-red-400" />;
+      case 'no_data':
+        return <AlertTriangle className="h-3 w-3 text-muted-foreground" />;
       default:
         return <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />;
     }
@@ -97,9 +139,16 @@ export function ProbabilityReconstructionPanel() {
           <CardTitle className="text-xs font-medium text-muted-foreground flex items-center gap-2">
             <Layers className="h-3 w-3" />
             PROBABILITY RECONSTRUCTION
+            {getDataStatusBadge()}
           </CardTitle>
           {getReconstructionBadge()}
         </div>
+        {dataStatus === 'NO_DATA' && (
+          <div className="flex items-center gap-1 text-[10px] text-yellow-500 mt-1">
+            <AlertTriangle className="h-3 w-3" />
+            <span>Awaiting probability matrix streams...</span>
+          </div>
+        )}
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Input Streams */}

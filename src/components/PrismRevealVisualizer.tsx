@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, AlertTriangle } from 'lucide-react';
 import { useEcosystemData } from '@/hooks/useEcosystemData';
 
 interface PrismLevel {
@@ -11,19 +11,33 @@ interface PrismLevel {
   active: boolean;
 }
 
+type DataStatus = 'LIVE' | 'STALE' | 'NO_DATA';
+
 export function PrismRevealVisualizer() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationRef = useRef<number | null>(null);
-  const { metrics } = useEcosystemData();
+  const { metrics, isInitialized, busSnapshot } = useEcosystemData();
   
-  const [inputFreq, setInputFreq] = useState(396);
-  const [outputFreq, setOutputFreq] = useState(396);
+  const [inputFreq, setInputFreq] = useState(0);
+  const [outputFreq, setOutputFreq] = useState(0);
   const [prismLevel, setPrismLevel] = useState(1);
   const [isLoveLocked, setIsLoveLocked] = useState(false);
+  const [dataStatus, setDataStatus] = useState<DataStatus>('NO_DATA');
 
   useEffect(() => {
-    const freq = metrics?.frequency ?? 396;
-    const coherence = metrics?.coherence ?? 0.5;
+    const freq = metrics?.frequency ?? 0;
+    const coherence = metrics?.coherence ?? 0;
+    
+    // Determine data status
+    const hasRealData = coherence > 0 || freq > 0;
+    
+    if (!isInitialized) {
+      setDataStatus('NO_DATA');
+    } else if (hasRealData) {
+      setDataStatus('LIVE');
+    } else {
+      setDataStatus('NO_DATA');
+    }
     
     // Calculate prism level (1-5)
     let level = 1;
@@ -33,12 +47,23 @@ export function PrismRevealVisualizer() {
     else if (coherence >= 0.2) level = 2;
     
     // Input is raw Rainbow Bridge frequency, output is Prism-transformed
-    const rawFreq = 174 + coherence * 800; // Range from fear to unity
+    const rawFreq = hasRealData ? (174 + coherence * 800) : 0;
     setInputFreq(Math.round(rawFreq));
     setOutputFreq(Math.round(freq));
     setPrismLevel(level);
     setIsLoveLocked(coherence > 0.9 && freq >= 520 && freq <= 536);
-  }, [metrics]);
+  }, [metrics, isInitialized]);
+
+  const getDataStatusBadge = () => {
+    switch (dataStatus) {
+      case 'LIVE':
+        return <Badge className="bg-green-500/20 text-green-400 border-green-500/30 text-[10px]">LIVE</Badge>;
+      case 'STALE':
+        return <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30 text-[10px]">STALE</Badge>;
+      default:
+        return <Badge className="bg-red-500/20 text-red-400 border-red-500/30 text-[10px]">NO DATA</Badge>;
+    }
+  };
 
   // Canvas animation for light refraction
   useEffect(() => {
@@ -187,10 +212,11 @@ export function PrismRevealVisualizer() {
           <CardTitle className="text-xs font-medium text-muted-foreground flex items-center gap-2">
             <Sparkles className="h-3 w-3" />
             PRISM TRANSFORMATION
+            {getDataStatusBadge()}
           </CardTitle>
           <div className="flex gap-2">
             <Badge variant="outline" className="font-mono text-[10px]">
-              IN: {inputFreq} Hz
+              IN: {inputFreq || '---'} Hz
             </Badge>
             <Badge 
               className={isLoveLocked 
@@ -198,10 +224,16 @@ export function PrismRevealVisualizer() {
                 : "font-mono text-[10px]"
               }
             >
-              OUT: {outputFreq} Hz
+              OUT: {outputFreq || '---'} Hz
             </Badge>
           </div>
         </div>
+        {dataStatus === 'NO_DATA' && (
+          <div className="flex items-center gap-1 text-[10px] text-yellow-500 mt-1">
+            <AlertTriangle className="h-3 w-3" />
+            <span>Awaiting Prism data from ecosystem...</span>
+          </div>
+        )}
       </CardHeader>
       <CardContent className="p-2">
         <canvas
