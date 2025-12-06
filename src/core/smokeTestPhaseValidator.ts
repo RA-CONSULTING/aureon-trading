@@ -29,20 +29,24 @@ export interface PhaseValidation {
   coherence: number;
   timestamp: number;
   errorMessage?: string;
+  exchangeDataStatus?: 'LIVE' | 'DEMO' | 'OFFLINE' | 'PENDING';
+  liveExchangeCount?: number;
 }
 
 export interface SmokeTestState {
   currentPhase: number;
   totalPhases: number;
   phases: PhaseValidation[];
-  overallStatus: 'INITIALIZING' | 'RUNNING' | 'PASSED' | 'FAILED' | 'GHOST_ALERT';
+  overallStatus: 'INITIALIZING' | 'RUNNING' | 'PASSED' | 'FAILED' | 'GHOST_ALERT' | 'DEMO_DATA_DETECTED';
   startTime: number;
   endTime?: number;
   lighthouseValidated: boolean;
+  exchangeDataVerified: boolean;
+  isLiveData: boolean;
 }
 
 // System family groupings for phased startup
-const PHASE_FAMILIES: Array<{ name: string; systems: SystemName[] }> = [
+const PHASE_FAMILIES: Array<{ name: string; systems: SystemName[]; requiresExchangeData?: boolean }> = [
   {
     name: 'CORE_NEXUS',
     systems: [SYSTEMS.HARMONIC_NEXUS, SYSTEMS.MASTER_EQUATION],
@@ -74,6 +78,12 @@ const PHASE_FAMILIES: Array<{ name: string; systems: SystemName[] }> = [
   {
     name: 'ADVANCED_PERCEPTION',
     systems: [SYSTEMS.TEMPORAL_ANCHOR, SYSTEMS.QUANTUM_TELESCOPE],
+  },
+  {
+    // NEW PHASE: Exchange Data Verification
+    name: 'DATA_VERIFICATION',
+    systems: [], // No specific systems - validates exchange connectivity
+    requiresExchangeData: true,
   },
 ];
 
@@ -109,10 +119,13 @@ class SmokeTestPhaseValidator {
         lighthouseL: 0,
         coherence: 0,
         timestamp: 0,
+        exchangeDataStatus: family.requiresExchangeData ? 'PENDING' : undefined,
       })),
       overallStatus: 'INITIALIZING',
       startTime: Date.now(),
       lighthouseValidated: false,
+      exchangeDataVerified: false,
+      isLiveData: false,
     };
   }
 
@@ -144,7 +157,7 @@ class SmokeTestPhaseValidator {
   /**
    * Validate current phase using Lighthouse protocol
    */
-  private validateCurrentPhase(): void {
+  private async validateCurrentPhase(): Promise<void> {
     if (this.state.currentPhase >= this.state.totalPhases) {
       this.completeTest();
       return;
@@ -156,6 +169,12 @@ class SmokeTestPhaseValidator {
 
     phase.status = 'VALIDATING';
     phase.timestamp = Date.now();
+
+    // Special handling for DATA_VERIFICATION phase
+    if (family.requiresExchangeData) {
+      await this.validateExchangeData(phase);
+      return;
+    }
 
     // Check each system in this phase family
     const validatedSystems: SystemName[] = [];
@@ -209,6 +228,98 @@ class SmokeTestPhaseValidator {
     }
 
     this.notifyListeners();
+  }
+
+  /**
+   * Validate exchange data connectivity - no ghost/fake data allowed
+   */
+  private async validateExchangeData(phase: PhaseValidation): Promise<void> {
+    console.log('🔌 SMOKE TEST: Validating exchange data connectivity...');
+    
+    try {
+      // Call the verification endpoint
+      const response = await fetch(
+        `${this.getSupabaseUrl()}/functions/v1/verify-exchange-connectivity`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': this.getSupabaseAnonKey(),
+          },
+        }
+      );
+
+      if (!response.ok) {
+        phase.status = 'FAILED';
+        phase.exchangeDataStatus = 'OFFLINE';
+        phase.errorMessage = 'Failed to verify exchange connectivity';
+        console.error('❌ SMOKE TEST: Exchange verification failed');
+        this.notifyListeners();
+        return;
+      }
+
+      const data = await response.json();
+      
+      const liveCount = data.exchanges?.filter((e: any) => e.status === 'LIVE').length || 0;
+      const totalCount = data.exchanges?.length || 0;
+      
+      phase.liveExchangeCount = liveCount;
+      
+      if (data.overallStatus === 'ALL_LIVE') {
+        phase.status = 'PASSED';
+        phase.exchangeDataStatus = 'LIVE';
+        this.state.exchangeDataVerified = true;
+        this.state.isLiveData = true;
+        console.log(`✅ SMOKE TEST Phase ${phase.phase} (DATA_VERIFICATION): ALL EXCHANGES LIVE (${liveCount}/${totalCount})`);
+        this.state.currentPhase++;
+      } else if (data.overallStatus === 'PARTIAL_LIVE' && liveCount >= 1) {
+        // Allow partial live if at least one exchange is live
+        phase.status = 'PASSED';
+        phase.exchangeDataStatus = 'LIVE';
+        this.state.exchangeDataVerified = true;
+        this.state.isLiveData = true;
+        console.log(`⚠️ SMOKE TEST Phase ${phase.phase} (DATA_VERIFICATION): PARTIAL LIVE (${liveCount}/${totalCount})`);
+        this.state.currentPhase++;
+      } else if (data.overallStatus === 'ALL_DEMO') {
+        phase.status = 'GHOST_DETECTED';
+        phase.exchangeDataStatus = 'DEMO';
+        phase.errorMessage = '⚠️ ALL EXCHANGES RETURNING DEMO DATA - NOT REAL TRADING DATA';
+        this.state.overallStatus = 'DEMO_DATA_DETECTED';
+        this.state.isLiveData = false;
+        console.error('👻 SMOKE TEST: DEMO DATA DETECTED - Trading blocked until live data available');
+      } else {
+        phase.status = 'FAILED';
+        phase.exchangeDataStatus = 'OFFLINE';
+        phase.errorMessage = 'No exchange connections available';
+        console.error('❌ SMOKE TEST: No exchanges connected');
+      }
+      
+    } catch (error) {
+      phase.status = 'FAILED';
+      phase.exchangeDataStatus = 'OFFLINE';
+      phase.errorMessage = error instanceof Error ? error.message : 'Verification failed';
+      console.error('❌ SMOKE TEST: Exchange verification error:', error);
+    }
+
+    this.notifyListeners();
+  }
+
+  private getSupabaseUrl(): string {
+    // Browser environment
+    if (typeof window !== 'undefined' && (window as any).__SUPABASE_URL__) {
+      return (window as any).__SUPABASE_URL__;
+    }
+    // Fallback to hardcoded (replace in production)
+    return 'https://owfeyxrfyhprpcgqwxqh.supabase.co';
+  }
+
+  private getSupabaseAnonKey(): string {
+    // Browser environment
+    if (typeof window !== 'undefined' && (window as any).__SUPABASE_ANON_KEY__) {
+      return (window as any).__SUPABASE_ANON_KEY__;
+    }
+    // Fallback to hardcoded (replace in production)
+    return 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im93ZmV5eHJmeWhwcnBjZ3F3eHFoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMyOTU5MTksImV4cCI6MjA3ODg3MTkxOX0.sb5uA0adyyVazBItAL3pk9Gm7qCZJoYnwc3W7LvPFAQ';
   }
 
   /**
