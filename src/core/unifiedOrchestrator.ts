@@ -125,13 +125,14 @@ export class UnifiedOrchestrator {
     const busSnapshot = unifiedBus.snapshot();
     const consensus = unifiedBus.checkConsensus();
     
-    // Step 9: Make final decision
+    // Step 9: Make final decision with 6D probability integration
     const finalDecision = this.makeFinalDecision(
       consensus,
       lambdaState,
       lighthouseState,
       avoidance,
-      symbol
+      symbol,
+      ecosystemState
     );
     
     // Step 10: Execute trade if conditions met
@@ -260,15 +261,23 @@ export class UnifiedOrchestrator {
   }
   
   /**
-   * Make final trading decision based on all inputs
+   * Make final trading decision based on all inputs including 6D Harmonic probability
    */
   private makeFinalDecision(
     consensus: { ready: boolean; signal: SignalType; confidence: number },
     lambdaState: LambdaState,
     lighthouseState: LighthouseState,
     avoidance: { avoid: boolean; reason: string | null },
-    symbol: string
-  ): { action: 'BUY' | 'SELL' | 'HOLD'; symbol: string; confidence: number; reason: string } {
+    symbol: string,
+    ecosystemState: EcosystemState | null
+  ): { action: 'BUY' | 'SELL' | 'HOLD'; symbol: string; confidence: number; reason: string; harmonic6D?: { score: number; waveState: string; harmonicLock: boolean } } {
+    // Extract 6D probability fusion from ecosystem state
+    const probabilityFusion = ecosystemState?.probabilityFusion ?? null;
+    const waveState = probabilityFusion?.waveState ?? 'RESONANT';
+    const harmonicLock = probabilityFusion?.harmonicLock ?? false;
+    const harmonic6DScore = probabilityFusion ? (probabilityFusion.fusedProbability - 0.5) * 2 : 0;
+    const harmonic6DData = { score: harmonic6DScore, waveState, harmonicLock };
+
     // Check avoidance first
     if (avoidance.avoid) {
       return {
@@ -276,6 +285,7 @@ export class UnifiedOrchestrator {
         symbol,
         confidence: 0,
         reason: `Elephant Memory: ${avoidance.reason}`,
+        harmonic6D: harmonic6DData,
       };
     }
     
@@ -286,26 +296,45 @@ export class UnifiedOrchestrator {
         symbol,
         confidence: 0,
         reason: 'Systems not ready for consensus',
+        harmonic6D: harmonic6DData,
       };
     }
     
-    // Check minimum coherence
-    if (lambdaState.coherence < this.config.minCoherence) {
+    // Dynamic coherence threshold based on 6D wave state
+    let effectiveMinCoherence = this.config.minCoherence;
+    if (waveState === 'CRYSTALLINE') {
+      // Lower threshold when 6D is highly aligned
+      effectiveMinCoherence *= 0.85;
+    } else if (waveState === 'CHAOTIC') {
+      // Higher threshold in chaotic conditions
+      effectiveMinCoherence *= 1.2;
+    }
+    
+    // Check minimum coherence with dynamic threshold
+    if (lambdaState.coherence < effectiveMinCoherence) {
       return {
         action: 'HOLD',
         symbol,
         confidence: lambdaState.coherence,
-        reason: `Coherence ${(lambdaState.coherence * 100).toFixed(1)}% below threshold`,
+        reason: `Coherence ${(lambdaState.coherence * 100).toFixed(1)}% below ${waveState} threshold`,
+        harmonic6D: harmonic6DData,
       };
     }
     
+    // Apply harmonic lock confidence boost
+    let effectiveConfidence = consensus.confidence;
+    if (harmonicLock) {
+      effectiveConfidence = Math.min(1, effectiveConfidence + 0.1);
+    }
+    
     // Check minimum confidence
-    if (consensus.confidence < this.config.minConfidence) {
+    if (effectiveConfidence < this.config.minConfidence) {
       return {
         action: 'HOLD',
         symbol,
-        confidence: consensus.confidence,
-        reason: `Confidence ${(consensus.confidence * 100).toFixed(1)}% below threshold`,
+        confidence: effectiveConfidence,
+        reason: `Confidence ${(effectiveConfidence * 100).toFixed(1)}% below threshold`,
+        harmonic6D: harmonic6DData,
       };
     }
     
@@ -314,8 +343,9 @@ export class UnifiedOrchestrator {
       return {
         action: 'HOLD',
         symbol,
-        confidence: consensus.confidence,
+        confidence: effectiveConfidence,
         reason: 'Lighthouse Event not detected',
+        harmonic6D: harmonic6DData,
       };
     }
     
@@ -324,16 +354,22 @@ export class UnifiedOrchestrator {
       return {
         action: 'HOLD',
         symbol,
-        confidence: consensus.confidence,
+        confidence: effectiveConfidence,
         reason: 'No clear signal from consensus',
+        harmonic6D: harmonic6DData,
       };
     }
+    
+    // Build reason with 6D context
+    const lockStatus = harmonicLock ? ' [528Hz LOCKED]' : '';
+    const reason = `Consensus: ${consensus.signal} at ${(effectiveConfidence * 100).toFixed(1)}% | 6D: ${waveState}${lockStatus}`;
     
     return {
       action: consensus.signal,
       symbol,
-      confidence: consensus.confidence,
-      reason: `Consensus: ${consensus.signal} at ${(consensus.confidence * 100).toFixed(1)}% confidence`,
+      confidence: effectiveConfidence,
+      reason,
+      harmonic6D: harmonic6DData,
     };
   }
   
