@@ -8,6 +8,9 @@ import { Sparkles, Activity, Zap, Brain, Radio, Database, Router, TrendingUp, Tr
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
+import { UnifiedBusStatus } from '@/components/warroom/UnifiedBusStatus';
+import { TemporalLadderStatus } from '@/components/warroom/TemporalLadderStatus';
+import { ExchangeBalances } from '@/components/warroom/ExchangeBalances';
 
 export default function AureonDashboard() {
   const navigate = useNavigate();
@@ -18,8 +21,11 @@ export default function AureonDashboard() {
     quantumState,
     tradingState,
     systemStatus,
+    busState,
+    exchangeState,
     lastSignal,
     nextCheckIn,
+    lastDecision,
     startTrading,
     stopTrading
   } = useAureonSession(userId);
@@ -95,7 +101,7 @@ export default function AureonDashboard() {
 
       <main className="container mx-auto px-4 py-6 space-y-6">
         {/* Top Stats Row */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Quantum State */}
           <Card className="border-border/50">
             <CardHeader className="pb-2">
@@ -153,7 +159,7 @@ export default function AureonDashboard() {
           </Card>
 
           {/* Systems Status */}
-          <Card className="border-border/50 md:col-span-2">
+          <Card className="border-border/50 lg:col-span-2">
             <CardHeader className="pb-2">
               <CardTitle className="text-xs font-medium text-muted-foreground flex items-center gap-1">
                 <Brain className="h-3 w-3" /> SYSTEMS
@@ -173,6 +179,16 @@ export default function AureonDashboard() {
               </div>
             </CardContent>
           </Card>
+        </div>
+
+        {/* Unified Ecosystem Row */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <UnifiedBusStatus />
+          <TemporalLadderStatus />
+          <ExchangeBalances 
+            totalEquityUsd={exchangeState.totalEquityUsd}
+            exchanges={exchangeState.exchanges}
+          />
         </div>
 
         {/* Trading Control */}
@@ -204,13 +220,18 @@ export default function AureonDashboard() {
               <div className="bg-muted/30 rounded-md p-3 mb-4">
                 <p className="text-xs text-muted-foreground">Last Signal</p>
                 <p className="text-sm font-mono">{lastSignal}</p>
+                {lastDecision && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Reason: {lastDecision.finalDecision.reason}
+                  </p>
+                )}
               </div>
             )}
             
             <p className="text-xs text-muted-foreground">
               {tradingState.isActive 
-                ? 'All quantum systems are running. Trades execute automatically when Γ > 0.70 and Lighthouse confirms.'
-                : 'Click Start to begin autonomous quantum trading. Systems will run in background.'
+                ? 'All quantum systems are running via UnifiedOrchestrator. Trades execute automatically when Γ > 0.70 and bus consensus confirms.'
+                : 'Click Start to begin autonomous quantum trading. Systems will run in background with full Temporal Ladder integration.'
               }
             </p>
           </CardContent>

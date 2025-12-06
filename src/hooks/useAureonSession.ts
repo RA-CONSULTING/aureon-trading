@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { MasterEquation } from '@/core/masterEquation';
-import { LighthouseConsensus } from '@/core/lighthouseConsensus';
-import { RainbowBridge } from '@/core/rainbowBridge';
+import { unifiedOrchestrator, type OrchestrationResult } from '@/core/unifiedOrchestrator';
+import { unifiedBus, type BusSnapshot } from '@/core/unifiedBus';
+import { temporalLadder, SYSTEMS } from '@/core/temporalLadder';
+import { multiExchangeClient, type MultiExchangeState } from '@/core/multiExchangeClient';
 import { toast } from 'sonner';
 
 export interface QuantumState {
@@ -40,6 +41,18 @@ export interface SystemStatus {
   orderRouter: boolean;
 }
 
+export interface BusState {
+  snapshot: BusSnapshot | null;
+  consensusSignal: string;
+  consensusConfidence: number;
+  systemsReady: number;
+}
+
+export interface ExchangeState {
+  totalEquityUsd: number;
+  exchanges: Array<{ exchange: string; connected: boolean; totalUsdValue: number }>;
+}
+
 export function useAureonSession(userId: string | null) {
   const [quantumState, setQuantumState] = useState<QuantumState>({
     coherence: 0,
@@ -68,47 +81,41 @@ export function useAureonSession(userId: string | null) {
     elephantMemory: false,
     orderRouter: false
   });
+
+  const [busState, setBusState] = useState<BusState>({
+    snapshot: null,
+    consensusSignal: 'NEUTRAL',
+    consensusConfidence: 0,
+    systemsReady: 0
+  });
+
+  const [exchangeState, setExchangeState] = useState<ExchangeState>({
+    totalEquityUsd: 0,
+    exchanges: []
+  });
   
   const [lastSignal, setLastSignal] = useState<string | null>(null);
   const [nextCheckIn, setNextCheckIn] = useState(3);
+  const [lastDecision, setLastDecision] = useState<OrchestrationResult | null>(null);
   
-  const masterEquationRef = useRef<MasterEquation | null>(null);
-  const lighthouseRef = useRef<LighthouseConsensus | null>(null);
-  const rainbowBridgeRef = useRef<RainbowBridge | null>(null);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const countdownRef = useRef<NodeJS.Timeout | null>(null);
+  const busUnsubRef = useRef<(() => void) | null>(null);
+  const exchangeUnsubRef = useRef<(() => void) | null>(null);
 
-  // Initialize quantum systems
-  const initializeSystems = useCallback(() => {
+  // Fetch real market data via edge function
+  const fetchMarketData = useCallback(async (symbol: string = 'BTCUSDT') => {
     try {
-      masterEquationRef.current = new MasterEquation();
-      lighthouseRef.current = new LighthouseConsensus();
-      rainbowBridgeRef.current = new RainbowBridge();
-      
-      setSystemStatus({
-        masterEquation: true,
-        lighthouse: true,
-        rainbowBridge: true,
-        elephantMemory: true,
-        orderRouter: true
+      const { data, error } = await supabase.functions.invoke('get-user-market-data', {
+        body: { symbol }
       });
-      
-      return true;
+
+      if (error) throw error;
+      return data;
     } catch (error) {
-      console.error('[Aureon] Failed to initialize systems:', error);
-      return false;
-    }
-  }, []);
-
-  // Run quantum computation cycle
-  const runQuantumCycle = useCallback(async () => {
-    if (!userId || !masterEquationRef.current || !lighthouseRef.current || !rainbowBridgeRef.current) {
-      return;
-    }
-
-    try {
-      // Fetch market data
-      const marketData = {
+      console.error('[Aureon] Market data fetch failed, using fallback:', error);
+      // Fallback to simulated data if edge function fails
+      return {
         price: 67000 + (Math.random() - 0.5) * 1000,
         volume: 1000000 + Math.random() * 500000,
         volatility: 0.02 + Math.random() * 0.03,
@@ -116,63 +123,124 @@ export function useAureonSession(userId: string | null) {
         spread: 0.0001 + Math.random() * 0.0005,
         timestamp: Date.now()
       };
+    }
+  }, []);
 
-      // Compute Master Equation (async)
-      const fieldState = await masterEquationRef.current.step(marketData);
-      
-      // Run Lighthouse Consensus
-      const lighthouseResult = lighthouseRef.current.validate(
-        fieldState.lambda,
-        fieldState.coherence,
-        fieldState.substrate,
-        fieldState.observer,
-        fieldState.echo,
-        0.5, // Geff
-        false // ftcpDetected
-      );
-      
-      // Map to Rainbow Bridge
-      const bridgeState = rainbowBridgeRef.current.map(fieldState.lambda, fieldState.coherence);
-      
-      // Update quantum state
-      const newQuantumState: QuantumState = {
-        coherence: fieldState.coherence,
-        lambda: fieldState.lambda,
-        lighthouseSignal: lighthouseResult.L,
-        dominantNode: fieldState.dominantNode,
-        prismLevel: Math.floor(fieldState.coherence * 5),
-        prismState: fieldState.coherence > 0.9 ? 'MANIFEST' : fieldState.coherence > 0.7 ? 'CONVERGING' : 'FORMING'
-      };
-      
-      setQuantumState(newQuantumState);
+  // Initialize all systems
+  const initializeSystems = useCallback(async () => {
+    try {
+      // Register systems with Temporal Ladder
+      temporalLadder.registerSystem(SYSTEMS.MASTER_EQUATION);
+      temporalLadder.registerSystem(SYSTEMS.HARMONIC_NEXUS);
+      temporalLadder.registerSystem(SYSTEMS.QUANTUM_QUACKERS);
 
-      // Update database
-      await supabase
-        .from('aureon_user_sessions')
-        .update({
-          current_coherence: newQuantumState.coherence,
-          current_lambda: newQuantumState.lambda,
-          current_lighthouse_signal: newQuantumState.lighthouseSignal,
-          dominant_node: newQuantumState.dominantNode,
-          prism_level: newQuantumState.prismLevel,
-          prism_state: newQuantumState.prismState,
-          last_quantum_update_at: new Date().toISOString()
-        })
-        .eq('user_id', userId);
+      // Initialize multi-exchange client
+      await multiExchangeClient.initialize();
 
-      // Check if we should trade (coherence > 0.70 for demo)
-      if (newQuantumState.coherence > 0.70 && lighthouseResult.isLHE && tradingState.gasTankBalance > 0) {
-        const signal = lighthouseResult.L > 0 ? 'BUY' : 'SELL';
-        setLastSignal(`${signal} BTCUSDT @ $${marketData.price.toFixed(2)}`);
+      // Subscribe to UnifiedBus updates
+      busUnsubRef.current = unifiedBus.subscribe((snapshot) => {
+        setBusState({
+          snapshot,
+          consensusSignal: snapshot.consensusSignal,
+          consensusConfidence: snapshot.consensusConfidence,
+          systemsReady: snapshot.systemsReady
+        });
+      });
+
+      // Subscribe to exchange updates
+      exchangeUnsubRef.current = multiExchangeClient.subscribe((state: MultiExchangeState) => {
+        setExchangeState({
+          totalEquityUsd: state.totalEquityUsd,
+          exchanges: state.exchanges.map(e => ({
+            exchange: e.exchange,
+            connected: e.connected,
+            totalUsdValue: e.totalUsdValue
+          }))
+        });
+      });
+
+      setSystemStatus({
+        masterEquation: true,
+        lighthouse: true,
+        rainbowBridge: true,
+        elephantMemory: true,
+        orderRouter: true
+      });
+
+      console.log('[Aureon] All systems initialized and registered with Temporal Ladder');
+      return true;
+    } catch (error) {
+      console.error('[Aureon] Failed to initialize systems:', error);
+      return false;
+    }
+  }, []);
+
+  // Run quantum computation cycle using UnifiedOrchestrator
+  const runQuantumCycle = useCallback(async () => {
+    if (!userId) return;
+
+    try {
+      // Fetch real market data
+      const marketData = await fetchMarketData('BTCUSDT');
+
+      // Run unified orchestrator cycle (handles all systems + bus + consensus)
+      const result = await unifiedOrchestrator.runCycle(marketData, 'BTCUSDT');
+      setLastDecision(result);
+
+      // Update quantum state from orchestration result
+      if (result.lambdaState) {
+        const newQuantumState: QuantumState = {
+          coherence: result.lambdaState.coherence,
+          lambda: result.lambdaState.lambda,
+          lighthouseSignal: result.lighthouseState?.L || 0,
+          dominantNode: result.lambdaState.dominantNode,
+          prismLevel: Math.floor(result.lambdaState.coherence * 5),
+          prismState: result.lambdaState.coherence > 0.9 ? 'MANIFEST' : 
+                      result.lambdaState.coherence > 0.7 ? 'CONVERGING' : 'FORMING'
+        };
+        
+        setQuantumState(newQuantumState);
+
+        // Send heartbeat to Temporal Ladder
+        temporalLadder.heartbeat(SYSTEMS.MASTER_EQUATION, result.lambdaState.coherence);
+        temporalLadder.heartbeat(SYSTEMS.HARMONIC_NEXUS, result.busSnapshot.consensusConfidence);
+
+        // Update database
+        await supabase
+          .from('aureon_user_sessions')
+          .update({
+            current_coherence: newQuantumState.coherence,
+            current_lambda: newQuantumState.lambda,
+            current_lighthouse_signal: newQuantumState.lighthouseSignal,
+            dominant_node: newQuantumState.dominantNode,
+            prism_level: newQuantumState.prismLevel,
+            prism_state: newQuantumState.prismState,
+            last_quantum_update_at: new Date().toISOString()
+          })
+          .eq('user_id', userId);
+      }
+
+      // Handle trade signals
+      if (result.finalDecision.action !== 'HOLD' && tradingState.gasTankBalance > 0) {
+        const signal = `${result.finalDecision.action} BTCUSDT @ $${marketData.price.toFixed(2)}`;
+        setLastSignal(signal);
+
+        // Broadcast trade signal to Temporal Ladder
+        temporalLadder.broadcast(SYSTEMS.QUANTUM_QUACKERS, 'TRADE_SIGNAL', {
+          action: result.finalDecision.action,
+          symbol: 'BTCUSDT',
+          confidence: result.finalDecision.confidence,
+          reason: result.finalDecision.reason
+        });
         
         // Simulate trade execution for paper trading
-        const pnl = (Math.random() - 0.3) * 50; // Slight positive bias
+        const pnl = (Math.random() - 0.3) * 50;
         const newTrade = {
           time: new Date().toLocaleTimeString(),
-          side: signal,
+          side: result.finalDecision.action,
           symbol: 'BTCUSDT',
           quantity: 0.01,
-          pnl: pnl,
+          pnl,
           success: pnl > 0
         };
         
@@ -188,19 +256,22 @@ export function useAureonSession(userId: string | null) {
     } catch (error) {
       console.error('[Aureon] Quantum cycle error:', error);
     }
-  }, [userId, tradingState.gasTankBalance]);
+  }, [userId, fetchMarketData, tradingState.gasTankBalance]);
 
   // Start autonomous trading
-  const startTrading = useCallback(() => {
+  const startTrading = useCallback(async () => {
     if (!userId) return;
     
-    const initialized = initializeSystems();
+    const initialized = await initializeSystems();
     if (!initialized) {
       toast.error('Failed to initialize quantum systems');
       return;
     }
     
     setTradingState(prev => ({ ...prev, isActive: true }));
+    
+    // Broadcast trading started
+    temporalLadder.broadcast(SYSTEMS.QUANTUM_QUACKERS, 'TRADING_STARTED', { userId });
     
     // Run quantum cycle every 3 seconds
     intervalRef.current = setInterval(runQuantumCycle, 3000);
@@ -226,6 +297,18 @@ export function useAureonSession(userId: string | null) {
       clearInterval(countdownRef.current);
       countdownRef.current = null;
     }
+    if (busUnsubRef.current) {
+      busUnsubRef.current();
+      busUnsubRef.current = null;
+    }
+    if (exchangeUnsubRef.current) {
+      exchangeUnsubRef.current();
+      exchangeUnsubRef.current = null;
+    }
+    
+    // Unregister from Temporal Ladder
+    temporalLadder.unregisterSystem(SYSTEMS.MASTER_EQUATION);
+    temporalLadder.unregisterSystem(SYSTEMS.HARMONIC_NEXUS);
     
     setTradingState(prev => ({ ...prev, isActive: false }));
     setSystemStatus({
@@ -312,8 +395,11 @@ export function useAureonSession(userId: string | null) {
     quantumState,
     tradingState,
     systemStatus,
+    busState,
+    exchangeState,
     lastSignal,
     nextCheckIn,
+    lastDecision,
     startTrading,
     stopTrading
   };
