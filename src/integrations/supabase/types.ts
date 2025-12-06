@@ -3155,6 +3155,7 @@ export type Database = {
           take_profit_price: number | null
           unrealized_pnl: number | null
           updated_at: string
+          user_id: string | null
         }
         Insert: {
           close_reason?: string | null
@@ -3174,6 +3175,7 @@ export type Database = {
           take_profit_price?: number | null
           unrealized_pnl?: number | null
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
           close_reason?: string | null
@@ -3193,6 +3195,7 @@ export type Database = {
           take_profit_price?: number | null
           unrealized_pnl?: number | null
           updated_at?: string
+          user_id?: string | null
         }
         Relationships: [
           {
