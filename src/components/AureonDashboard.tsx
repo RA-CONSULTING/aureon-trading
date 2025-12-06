@@ -14,6 +14,7 @@ import { FloatingAIButton } from '@/components/FloatingAIButton';
 import { ExchangeStatusSummary } from '@/components/ExchangeStatusSummary';
 import { MasterEquationTree } from '@/components/MasterEquationTree';
 import { ecosystemConnector } from '@/core/ecosystemConnector';
+import { fullEcosystemConnector } from '@/core/fullEcosystemConnector';
 import { backgroundServices } from '@/core/backgroundServices';
 import { toast } from 'sonner';
 
@@ -50,9 +51,18 @@ export default function AureonDashboard() {
     stopTrading
   } = useAureonSession(userId);
   
-  // Start background services on mount
+  // Start background services and FULL ECOSYSTEM on mount
   useEffect(() => {
     backgroundServices.start();
+    
+    // Initialize the full ecosystem connector - this starts all heartbeats
+    fullEcosystemConnector.initialize().then(() => {
+      console.log('🌈 Full Ecosystem Connector initialized - all heartbeats active');
+      toast.success('Quantum systems online');
+    }).catch((err) => {
+      console.error('Failed to initialize ecosystem:', err);
+    });
+    
     return () => backgroundServices.stop();
   }, []);
   
