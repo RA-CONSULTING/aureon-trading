@@ -55,10 +55,17 @@ export type Database = {
       }
       aureon_user_sessions: {
         Row: {
+          alpaca_api_key_encrypted: string | null
+          alpaca_iv: string | null
+          alpaca_secret_key_encrypted: string | null
           available_balance_usdt: number | null
           binance_api_key_encrypted: string | null
           binance_api_secret_encrypted: string | null
           binance_iv: string | null
+          capital_api_key_encrypted: string | null
+          capital_identifier_encrypted: string | null
+          capital_iv: string | null
+          capital_password_encrypted: string | null
           created_at: string | null
           current_coherence: number | null
           current_lambda: number | null
@@ -67,6 +74,9 @@ export type Database = {
           gas_tank_balance: number | null
           id: string
           is_trading_active: boolean | null
+          kraken_api_key_encrypted: string | null
+          kraken_api_secret_encrypted: string | null
+          kraken_iv: string | null
           last_quantum_update_at: string | null
           last_trade_at: string | null
           payment_completed: boolean | null
@@ -83,10 +93,17 @@ export type Database = {
           winning_trades: number | null
         }
         Insert: {
+          alpaca_api_key_encrypted?: string | null
+          alpaca_iv?: string | null
+          alpaca_secret_key_encrypted?: string | null
           available_balance_usdt?: number | null
           binance_api_key_encrypted?: string | null
           binance_api_secret_encrypted?: string | null
           binance_iv?: string | null
+          capital_api_key_encrypted?: string | null
+          capital_identifier_encrypted?: string | null
+          capital_iv?: string | null
+          capital_password_encrypted?: string | null
           created_at?: string | null
           current_coherence?: number | null
           current_lambda?: number | null
@@ -95,6 +112,9 @@ export type Database = {
           gas_tank_balance?: number | null
           id?: string
           is_trading_active?: boolean | null
+          kraken_api_key_encrypted?: string | null
+          kraken_api_secret_encrypted?: string | null
+          kraken_iv?: string | null
           last_quantum_update_at?: string | null
           last_trade_at?: string | null
           payment_completed?: boolean | null
@@ -111,10 +131,17 @@ export type Database = {
           winning_trades?: number | null
         }
         Update: {
+          alpaca_api_key_encrypted?: string | null
+          alpaca_iv?: string | null
+          alpaca_secret_key_encrypted?: string | null
           available_balance_usdt?: number | null
           binance_api_key_encrypted?: string | null
           binance_api_secret_encrypted?: string | null
           binance_iv?: string | null
+          capital_api_key_encrypted?: string | null
+          capital_identifier_encrypted?: string | null
+          capital_iv?: string | null
+          capital_password_encrypted?: string | null
           created_at?: string | null
           current_coherence?: number | null
           current_lambda?: number | null
@@ -123,6 +150,9 @@ export type Database = {
           gas_tank_balance?: number | null
           id?: string
           is_trading_active?: boolean | null
+          kraken_api_key_encrypted?: string | null
+          kraken_api_secret_encrypted?: string | null
+          kraken_iv?: string | null
           last_quantum_update_at?: string | null
           last_trade_at?: string | null
           payment_completed?: boolean | null
