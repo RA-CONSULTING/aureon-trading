@@ -8,7 +8,6 @@ import { Sparkles, Activity, Zap, Brain, Radio, Database, Router, LogOut, Play, 
 import { DataSourceIndicator, DemoModeWarningBanner } from '@/components/DataSourceIndicator';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
-import { TradingModeToggle } from '@/components/TradingModeToggle';
 import { UserAssetsPanel } from '@/components/warroom/UserAssetsPanel';
 import { SmartAlertBanner } from '@/components/SmartAlertBanner';
 import { FloatingAIButton } from '@/components/FloatingAIButton';
@@ -31,7 +30,6 @@ export default function AureonDashboard() {
   const navigate = useNavigate();
   const [userId, setUserId] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string | null>(null);
-  const [tradingMode, setTradingMode] = useState<'paper' | 'live'>('paper');
   
   // Ecosystem health check state
   const [lastDataReceived, setLastDataReceived] = useState<Date | null>(null);
@@ -88,7 +86,6 @@ export default function AureonDashboard() {
       if (session) {
         setUserId(session.user.id);
         setUserEmail(session.user.email);
-        loadTradingMode(session.user.id);
       } else {
         navigate('/auth');
       }
@@ -98,7 +95,6 @@ export default function AureonDashboard() {
       if (session) {
         setUserId(session.user.id);
         setUserEmail(session.user.email);
-        loadTradingMode(session.user.id);
       } else {
         navigate('/auth');
       }
@@ -106,32 +102,6 @@ export default function AureonDashboard() {
 
     return () => subscription.unsubscribe();
   }, [navigate]);
-
-  const loadTradingMode = async (uid: string) => {
-    const { data } = await supabase
-      .from('aureon_user_sessions')
-      .select('trading_mode')
-      .eq('user_id', uid)
-      .single();
-    
-    if (data?.trading_mode) {
-      setTradingMode(data.trading_mode as 'paper' | 'live');
-    }
-  };
-
-  const handleTradingModeChange = async (isLive: boolean) => {
-    const newMode = isLive ? 'live' : 'paper';
-    setTradingMode(newMode);
-    
-    if (userId) {
-      await supabase
-        .from('aureon_user_sessions')
-        .update({ trading_mode: newMode })
-        .eq('user_id', userId);
-    }
-    
-    toast.success(`Trading mode switched to ${newMode.toUpperCase()}`);
-  };
 
   const handleSignOut = async () => {
     stopTrading();
@@ -180,12 +150,6 @@ export default function AureonDashboard() {
 
             <div className="flex items-center gap-3">
               <DataSourceIndicator compact />
-              
-              <TradingModeToggle
-                isLive={tradingMode === 'live'} 
-                onModeChange={handleTradingModeChange}
-                disabled={tradingState.isActive}
-              />
               
               {/* Ecosystem Health */}
               <Badge 
