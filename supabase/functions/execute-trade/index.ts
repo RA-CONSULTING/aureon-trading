@@ -12,6 +12,60 @@ serve(async (req) => {
   }
 
   try {
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+
+    // === SECURITY FIX: Verify the user is authenticated ===
+    const authHeader = req.headers.get('Authorization');
+    const token = authHeader?.replace('Bearer ', '');
+
+    if (!token) {
+      console.error('[execute-trade] Missing authorization token');
+      return new Response(
+        JSON.stringify({ success: false, error: 'Unauthorized' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
+      );
+    }
+
+    // Verify user token
+    const anonSupabase = createClient(supabaseUrl, supabaseAnonKey);
+    const { data: { user }, error: authError } = await anonSupabase.auth.getUser(token);
+
+    if (authError || !user) {
+      console.error('[execute-trade] Invalid token:', authError?.message);
+      return new Response(
+        JSON.stringify({ success: false, error: 'Unauthorized' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
+      );
+    }
+
+    console.log('[execute-trade] User verified:', user.id);
+
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    // === SECURITY FIX: Verify user has an active trading session ===
+    const { data: userSession, error: sessionError } = await supabase
+      .from('aureon_user_sessions')
+      .select('*')
+      .eq('user_id', user.id)
+      .single();
+
+    if (sessionError || !userSession) {
+      console.error('[execute-trade] No session found for user:', user.id);
+      return new Response(
+        JSON.stringify({ success: false, error: 'No trading session found. Please complete setup first.' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 403 }
+      );
+    }
+
+    if (!userSession.is_trading_active) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Trading is not active for your account.' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 403 }
+      );
+    }
+
     const {
       signalId,
       lighthouseEventId,
@@ -33,21 +87,13 @@ serve(async (req) => {
     if (!validatedPrice || isNaN(validatedPrice) || validatedPrice <= 0) {
       console.error('🛑 FAIL-SAFE: Invalid price', validatedPrice);
       return new Response(
-        JSON.stringify({ success: false, error: `Invalid price: ${validatedPrice}` }),
+        JSON.stringify({ success: false, error: 'Invalid price provided' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
       );
     }
 
-    console.log('Execute trade request:', { symbol, signalType, coherence, price: validatedPrice });
+    console.log('Execute trade request:', { symbol, signalType, coherence, price: validatedPrice, userId: user.id });
 
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
-
-    // === GAS TANK CHECK (if userId provided) ===
-    // For demo mode without auth, we'll skip this check
-    // In production with auth, check gas tank balance before trading
-    
     // Get trading config
     const { data: configData, error: configError } = await supabase
       .from('trading_config')
@@ -55,13 +101,17 @@ serve(async (req) => {
       .single();
 
     if (configError || !configData) {
-      throw new Error('Trading config not found');
+      console.error('[execute-trade] Trading config not found:', configError);
+      return new Response(
+        JSON.stringify({ success: false, error: 'Trading configuration not found' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+      );
     }
 
     // Safety checks
     if (!configData.is_enabled) {
       return new Response(
-        JSON.stringify({ success: false, error: 'Trading is disabled' }),
+        JSON.stringify({ success: false, error: 'Trading is currently disabled' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
       );
     }
@@ -69,28 +119,28 @@ serve(async (req) => {
     // Check signal filters
     if (coherence < configData.min_coherence) {
       return new Response(
-        JSON.stringify({ success: false, error: `Coherence ${coherence} below minimum ${configData.min_coherence}` }),
+        JSON.stringify({ success: false, error: 'Coherence below minimum threshold' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
       );
     }
 
     if (lighthouseConfidence < configData.min_lighthouse_confidence) {
       return new Response(
-        JSON.stringify({ success: false, error: `Lighthouse confidence ${lighthouseConfidence} below minimum` }),
+        JSON.stringify({ success: false, error: 'Lighthouse confidence below minimum' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
       );
     }
 
     if (prismLevel < configData.min_prism_level) {
       return new Response(
-        JSON.stringify({ success: false, error: `Prism level ${prismLevel} below minimum ${configData.min_prism_level}` }),
+        JSON.stringify({ success: false, error: 'Prism level below minimum' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
       );
     }
 
     if (!configData.allowed_symbols.includes(symbol)) {
       return new Response(
-        JSON.stringify({ success: false, error: `Symbol ${symbol} not in allowed list` }),
+        JSON.stringify({ success: false, error: 'Symbol not allowed for trading' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
       );
     }
@@ -107,7 +157,7 @@ serve(async (req) => {
     const tradeCount = todayExecutions?.length || 0;
     if (tradeCount >= configData.max_daily_trades) {
       return new Response(
-        JSON.stringify({ success: false, error: `Daily trade limit reached (${tradeCount}/${configData.max_daily_trades})` }),
+        JSON.stringify({ success: false, error: 'Daily trade limit reached' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
       );
     }
@@ -119,7 +169,7 @@ serve(async (req) => {
 
     if (dailyPnL < -Math.abs(configData.max_daily_loss_usdt)) {
       return new Response(
-        JSON.stringify({ success: false, error: `Daily loss limit reached ($${Math.abs(dailyPnL).toFixed(2)})` }),
+        JSON.stringify({ success: false, error: 'Daily loss limit reached' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
       );
     }
@@ -132,7 +182,7 @@ serve(async (req) => {
     if (!quantity || isNaN(quantity) || quantity <= 0) {
       console.error('🛑 FAIL-SAFE: Invalid quantity calculation', { positionSizeUsdt, price: validatedPrice, quantity });
       return new Response(
-        JSON.stringify({ success: false, error: `Invalid quantity: ${quantity}` }),
+        JSON.stringify({ success: false, error: 'Invalid quantity calculation' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
       );
     }
@@ -151,7 +201,7 @@ serve(async (req) => {
     let executionResult;
     if (configData.trading_mode === 'paper') {
       // Paper trading - simulate execution
-      console.log('Paper trading execution:', { side, symbol, quantity, price: validatedPrice });
+      console.log('Paper trading execution:', { side, symbol, quantity, price: validatedPrice, userId: user.id });
       executionResult = {
         success: true,
         orderId: `PAPER_${Date.now()}`,
@@ -160,39 +210,49 @@ serve(async (req) => {
         status: 'FILLED',
       };
     } else {
-      // Live trading - get available credential from pool
-      console.log('🔄 Selecting credential from pool...');
+      // Live trading - use user's credentials from their session
+      console.log('🔄 Using user credentials for live trading...');
       
-      const { data: credData, error: credError } = await supabase
-        .from('binance_credentials')
-        .select('*')
-        .eq('is_active', true)
-        .or(`rate_limit_reset_at.is.null,rate_limit_reset_at.lt.${new Date().toISOString()}`)
-        .order('last_used_at', { ascending: true, nullsFirst: true })
-        .limit(1)
-        .single();
-
-      if (credError || !credData) {
-        throw new Error('No available Binance credentials. All accounts may be rate limited.');
+      // === SECURITY FIX: Use user's own credentials, not from shared pool ===
+      if (!userSession.binance_api_key_encrypted || !userSession.binance_api_secret_encrypted) {
+        return new Response(
+          JSON.stringify({ success: false, error: 'No Binance credentials configured. Please add your API keys.' }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+        );
       }
 
-      // Decrypt credentials (simple decrypt matching store function)
-      function decryptValue(encrypted: string): string {
-        const key = Deno.env.get('MASTER_ENCRYPTION_KEY') || 'default-key';
-        const decoded = atob(encrypted);
-        return decoded.split('::')[0];
+      // Decrypt user's credentials
+      const encryptionKey = Deno.env.get('MASTER_ENCRYPTION_KEY') || 'aureon-default-key-32chars!!';
+      
+      function decryptCredential(encrypted: string, iv: string): string {
+        try {
+          // For simplified demo encryption (base64 with IV)
+          // In production, use proper AES-GCM decryption
+          const decoded = atob(encrypted);
+          return decoded.split('::')[0] || decoded;
+        } catch {
+          return '';
+        }
       }
 
-      const binanceApiKey = decryptValue(credData.api_key_encrypted);
-      const binanceApiSecret = decryptValue(credData.api_secret_encrypted);
+      const binanceApiKey = decryptCredential(userSession.binance_api_key_encrypted, userSession.binance_iv || '');
+      const binanceApiSecret = decryptCredential(userSession.binance_api_secret_encrypted, userSession.binance_iv || '');
 
-      console.log(`✅ Using credential: ${credData.name}`);
+      if (!binanceApiKey || !binanceApiSecret) {
+        console.error('[execute-trade] Failed to decrypt credentials for user:', user.id);
+        return new Response(
+          JSON.stringify({ success: false, error: 'Failed to access trading credentials' }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+        );
+      }
+
+      console.log(`✅ Using credentials for user: ${user.id}`);
 
       // Create order on Binance
       const timestamp = Date.now();
       const queryString = `symbol=${symbol}&side=${side}&type=MARKET&quantity=${quantity.toFixed(8)}&timestamp=${timestamp}`;
       
-      // Sign the request (simplified - in production use proper HMAC-SHA256)
+      // Sign the request
       const crypto = await import("https://deno.land/std@0.177.0/crypto/mod.ts");
       const encoder = new TextEncoder();
       const key = await crypto.crypto.subtle.importKey(
@@ -233,44 +293,43 @@ serve(async (req) => {
           const errorText = await binanceResponse.text();
           console.error('Binance API error:', errorText);
           
-          // Check for rate limit error (429) and mark credential
+          // Check for rate limit error (429)
           if (binanceResponse.status === 429) {
-            await supabase
-              .from('binance_credentials')
-              .update({
-                rate_limit_reset_at: new Date(Date.now() + 60000).toISOString(),
-              })
-              .eq('id', credData.id);
-            throw new Error('🛑 RATE LIMIT: Binance order limit exceeded. Switching to next account.');
+            return new Response(
+              JSON.stringify({ success: false, error: 'Rate limit exceeded. Please try again later.' }),
+              { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 429 }
+            );
           }
           
-          throw new Error(`Binance API error (${binanceResponse.status}): ${errorText}`);
+          return new Response(
+            JSON.stringify({ success: false, error: 'Exchange order failed. Please check your API keys and balance.' }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+          );
         }
 
         executionResult = await binanceResponse.json();
         console.log('Live trade executed:', executionResult);
 
-        // Update credential usage
-        await supabase
-          .from('binance_credentials')
-          .update({
-            last_used_at: new Date().toISOString(),
-            requests_count: credData.requests_count + 1,
-          })
-          .eq('id', credData.id);
-
       } catch (fetchError: any) {
         clearTimeout(timeoutId);
         
         if (fetchError?.name === 'AbortError') {
-          throw new Error('🛑 TIMEOUT: Binance API request timed out after 5s');
+          console.error('🛑 TIMEOUT: Binance API request timed out');
+          return new Response(
+            JSON.stringify({ success: false, error: 'Exchange request timed out. Please try again.' }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 504 }
+          );
         }
         
-        throw fetchError;
+        console.error('[execute-trade] Fetch error:', fetchError);
+        return new Response(
+          JSON.stringify({ success: false, error: 'Failed to connect to exchange' }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+        );
       }
     }
 
-    // Save execution to database
+    // Save execution to database with user_id
     const { data: execution, error: execError } = await supabase
       .from('trading_executions')
       .insert({
@@ -298,7 +357,10 @@ serve(async (req) => {
 
     if (execError) {
       console.error('Error saving execution:', execError);
-      throw execError;
+      return new Response(
+        JSON.stringify({ success: false, error: 'Failed to save trade execution' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+      );
     }
 
     // Create position
@@ -317,7 +379,7 @@ serve(async (req) => {
         status: 'open',
       });
 
-    console.log('Trade executed successfully:', execution.id);
+    console.log('Trade executed successfully:', execution.id, 'for user:', user.id);
 
     return new Response(
       JSON.stringify({
@@ -330,8 +392,9 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Execute trade error:', error);
+    // SECURITY FIX: Return generic error, don't leak internal details
     return new Response(
-      JSON.stringify({ success: false, error: error instanceof Error ? error.message : 'Unknown error' }),
+      JSON.stringify({ success: false, error: 'Trade execution failed. Please try again.' }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
     );
   }
