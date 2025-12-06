@@ -815,17 +815,26 @@ class FullEcosystemConnector {
         );
       }
       
-      // 23. Ingest Elephant Memory (call existing function)
+      // 23. Ingest Elephant Memory (call existing function with proper action)
       ingestPromises.push(
         supabase.functions.invoke('ingest-elephant-memory', {
           body: {
-            symbol: 'BTCUSDT',
-            trades: 0,
-            wins: 0,
-            losses: 0,
-            profit: 0,
-            loss_streak: 0,
-            blacklisted: false,
+            action: 'sync',
+            data: {
+              memories: {
+                BTCUSDT: {
+                  symbol: 'BTCUSDT',
+                  trades: 0,
+                  wins: 0,
+                  losses: 0,
+                  profit: 0,
+                  lastTrade: null,
+                  lossStreak: 0,
+                  blacklisted: false,
+                  cooldownUntil: null,
+                }
+              }
+            }
           }
         })
       );
