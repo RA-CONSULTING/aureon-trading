@@ -27,6 +27,11 @@ import DecisionVerificationPanel from '@/components/DecisionVerificationPanel';
 import { SmokeTestPhasePanel } from '@/components/SmokeTestPhasePanel';
 import { ecosystemConnector } from '@/core/ecosystemConnector';
 import { toast } from 'sonner';
+// Cymatics visualization components
+import { CymaticsFieldVisualizer } from '@/components/CymaticsFieldVisualizer';
+import { PrismRevealVisualizer } from '@/components/PrismRevealVisualizer';
+import { ProbabilityReconstructionPanel } from '@/components/ProbabilityReconstructionPanel';
+import { HarmonicDataIntegrityPanel } from '@/components/HarmonicDataIntegrityPanel';
 
 export default function AureonDashboard() {
   const navigate = useNavigate();
@@ -318,6 +323,18 @@ export default function AureonDashboard() {
         
         {/* AI Frequency Interpreter - Human ↔ AI ↔ Frequency Loop */}
         <FrequencyAIInterpreter />
+        
+        {/* Cymatics & Prism Visualization Row */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <CymaticsFieldVisualizer />
+          <PrismRevealVisualizer />
+        </div>
+        
+        {/* Probability Reconstruction & Data Integrity Row */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <ProbabilityReconstructionPanel />
+          <HarmonicDataIntegrityPanel />
+        </div>
         
         {/* Live 6D Harmonic Visualization */}
         <Live6DWaveformVisualizer />
