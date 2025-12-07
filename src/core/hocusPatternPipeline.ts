@@ -319,12 +319,14 @@ export class HocusPatternPipeline {
     if (this.codexLoaded) {
       const enhancements = ecosystemEnhancements.getEnhancements();
       
-      // Check if frequency matches any Auris node
-      for (const aurisNode of enhancements.aurisCodex) {
-        if (aurisNode.frequency && Math.abs(freq - aurisNode.frequency) < 50) {
-          aurisBoost = ecosystemEnhancements.applyAurisBoost(aurisNode.name, 1.0);
-          lambda *= (1 + (aurisBoost - 1) * 0.5); // Apply weighted boost to growth
-          break;
+      // Check if frequency matches any Auris node (with null check)
+      if (Array.isArray(enhancements.aurisCodex)) {
+        for (const aurisNode of enhancements.aurisCodex) {
+          if (aurisNode.frequency && Math.abs(freq - aurisNode.frequency) < 50) {
+            aurisBoost = ecosystemEnhancements.applyAurisBoost(aurisNode.name, 1.0);
+            lambda *= (1 + (aurisBoost - 1) * 0.5); // Apply weighted boost to growth
+            break;
+          }
         }
       }
       
