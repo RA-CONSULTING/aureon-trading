@@ -40,9 +40,20 @@ const HocusPatternPipelineVisualizer: React.FC = () => {
     const width = canvas.width;
     const height = canvas.height;
     
-    // Clear with dark background
-    ctx.fillStyle = 'hsl(222, 47%, 8%)';
+    // Clear with dark background gradient
+    const gradient = ctx.createLinearGradient(0, 0, 0, height);
+    gradient.addColorStop(0, 'hsl(222, 47%, 11%)');
+    gradient.addColorStop(1, 'hsl(222, 47%, 6%)');
+    ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, width, height);
+    
+    // Draw center line
+    ctx.strokeStyle = 'hsla(0, 0%, 100%, 0.1)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(0, height / 2);
+    ctx.lineTo(width, height / 2);
+    ctx.stroke();
     
     if (history.length < 2) return;
     
@@ -142,12 +153,13 @@ const HocusPatternPipelineVisualizer: React.FC = () => {
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Field Visualization */}
-        <div className="rounded-lg overflow-hidden border border-border">
+        <div className="rounded-lg overflow-hidden border border-border bg-background">
           <canvas 
             ref={canvasRef} 
-            width={400} 
-            height={120}
-            className="w-full"
+            width={600} 
+            height={150}
+            className="w-full h-[150px]"
+            style={{ display: 'block' }}
           />
         </div>
         
