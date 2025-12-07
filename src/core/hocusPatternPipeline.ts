@@ -1,5 +1,6 @@
 /**
  * Hocus → Pattern → Template Pipeline
+ * Enhanced with Ecosystem Codex Integration
  * 
  * 6-Stage Reality Field Emergence System:
  * 1. Pre-form (raw field + noise)
@@ -8,7 +9,11 @@
  * 4. Coherence Measurement (stable pattern check)
  * 5. Template Activation (observer node recognition)
  * 6. Dominant Template Selection
+ * 
+ * + Ecosystem Enhancements from JSON codex files
  */
+
+import { ecosystemEnhancements, FrequencyCodexEntry, AurisCodexEntry } from './ecosystemEnhancements';
 
 export interface PipelineConfig {
   // Stage 1: Pre-form
@@ -27,6 +32,9 @@ export interface PipelineConfig {
   
   // Stage 5: Template
   theta: number;               // coherence threshold for activation
+  
+  // Ecosystem enhancement
+  useCodexEnhancement: boolean;
 }
 
 export interface ModeState {
@@ -37,6 +45,11 @@ export interface ModeState {
   lambda: number;              // growth/decay rate
   coherence: number;           // Cₖ coherence metric
   isTemplate: boolean;         // Tₖ = 1 or 0
+  // Ecosystem enhancements
+  codexName?: string;          // Name from frequency codex
+  harmonics?: number[];        // Harmonic series from codex
+  emotionalPhase?: string;     // Emotional phase mapping
+  aurisBoost?: number;         // Boost from Auris codex
 }
 
 export interface PipelineState {
@@ -61,6 +74,11 @@ export interface PipelineState {
   totalCoherence: number;      // average across active templates
   activeTemplates: number;     // count of Tₖ = 1
   pipelineStage: 'HOCUS' | 'PATTERN' | 'TEMPLATE';
+  
+  // Ecosystem enhancement metrics
+  codexEnhanced: boolean;
+  dominantEmotionalPhase: string;
+  harmonicResonance: number;
 }
 
 const DEFAULT_CONFIG: PipelineConfig = {
@@ -70,7 +88,8 @@ const DEFAULT_CONFIG: PipelineConfig = {
   numModes: 5,
   modeFrequencies: [7.83, 14.1, 20.3, 528, 963], // Schumann + Love + Unity
   coherenceWindow: 20,
-  theta: 0.7
+  theta: 0.7,
+  useCodexEnhancement: true
 };
 
 export class HocusPatternPipeline {
@@ -79,10 +98,56 @@ export class HocusPatternPipeline {
   private modeHistories: Map<number, number[]> = new Map();
   private currentState: PipelineState | null = null;
   private stepCount = 0;
+  private codexLoaded = false;
   
   constructor(config: Partial<PipelineConfig> = {}) {
     this.config = { ...DEFAULT_CONFIG, ...config };
     this.initializeModeHistories();
+    this.loadCodexEnhancements();
+  }
+  
+  /**
+   * Load ecosystem enhancements from JSON codex files
+   */
+  private async loadCodexEnhancements(): Promise<void> {
+    if (!this.config.useCodexEnhancement) return;
+    
+    try {
+      await ecosystemEnhancements.loadAll();
+      this.codexLoaded = ecosystemEnhancements.isLoaded();
+      
+      // Enhance mode frequencies from codex
+      if (this.codexLoaded) {
+        this.enhanceModeFrequenciesFromCodex();
+      }
+      
+      console.log('🔮 Pipeline codex enhancement:', this.codexLoaded ? 'ACTIVE' : 'PENDING');
+    } catch (error) {
+      console.warn('Pipeline codex enhancement failed:', error);
+    }
+  }
+  
+  /**
+   * Enhance mode frequencies using frequency codex data
+   */
+  private enhanceModeFrequenciesFromCodex(): void {
+    const enhancements = ecosystemEnhancements.getEnhancements();
+    
+    if (enhancements.frequencyCodex.length > 0) {
+      // Add frequencies from codex that aren't already in config
+      const existingFreqs = new Set(this.config.modeFrequencies);
+      const codexFreqs = enhancements.frequencyCodex
+        .map(entry => entry.frequency)
+        .filter(f => !existingFreqs.has(f))
+        .slice(0, 3); // Add up to 3 new frequencies
+      
+      if (codexFreqs.length > 0) {
+        this.config.modeFrequencies = [...this.config.modeFrequencies, ...codexFreqs];
+        this.config.numModes = this.config.modeFrequencies.length;
+        this.initializeModeHistories();
+        console.log('📊 Pipeline frequencies enhanced:', this.config.modeFrequencies);
+      }
+    }
   }
   
   private initializeModeHistories(): void {
@@ -130,7 +195,7 @@ export class HocusPatternPipeline {
   }
   
   /**
-   * Stage 3: Mode Decomposition
+   * Stage 3: Mode Decomposition (Enhanced with Ecosystem Codex)
    * x(t) = Σₖ aₖ(t)φₖ
    * daₖ/dt = λₖaₖ(t) + ξₖ(t)
    */
@@ -147,8 +212,8 @@ export class HocusPatternPipeline {
       const amplitude = field * phi;
       
       // λₖ - growth rate (modes near resonance grow)
-      // Simplified: modes with frequency matching field oscillation grow
-      const lambda = this.computeGrowthRate(k, freq);
+      // Enhanced with codex boost
+      const { lambda, aurisBoost } = this.computeEnhancedGrowthRate(k, freq);
       
       // ξₖ - projected noise
       const xi = (Math.random() - 0.5) * 0.05;
@@ -166,8 +231,12 @@ export class HocusPatternPipeline {
       // Compute coherence for this mode (Stage 4)
       const coherence = this.computeModeCoherence(k);
       
-      // Template activation (Stage 5)
-      const isTemplate = coherence >= this.config.theta;
+      // Template activation (Stage 5) - enhanced threshold from codex
+      const enhancedTheta = this.getEnhancedThreshold(freq);
+      const isTemplate = coherence >= enhancedTheta;
+      
+      // Get codex enhancements for this mode
+      const { codexName, harmonics, emotionalPhase } = this.getCodexEnhancements(freq);
       
       modes.push({
         k,
@@ -176,7 +245,11 @@ export class HocusPatternPipeline {
         phase: (2 * Math.PI * freq * t / 1000) % (2 * Math.PI),
         lambda,
         coherence,
-        isTemplate
+        isTemplate,
+        codexName,
+        harmonics,
+        emotionalPhase,
+        aurisBoost
       });
     }
     
@@ -184,13 +257,56 @@ export class HocusPatternPipeline {
   }
   
   /**
-   * Compute growth rate λₖ for mode k
+   * Get codex enhancements for a frequency
+   */
+  private getCodexEnhancements(freq: number): { 
+    codexName: string; 
+    harmonics: number[]; 
+    emotionalPhase: string 
+  } {
+    if (!this.codexLoaded) {
+      return { codexName: 'Unknown', harmonics: [], emotionalPhase: 'neutral' };
+    }
+    
+    const freqEnhancement = ecosystemEnhancements.getFrequencyEnhancement(freq);
+    const { harmonics: codexHarmonics, name } = ecosystemEnhancements.applyFrequencyHarmonics(freq);
+    
+    // Map frequency to emotional phase
+    let emotionalPhase = 'neutral';
+    if (freq < 100) emotionalPhase = 'grounding';
+    else if (freq < 300) emotionalPhase = 'growth';
+    else if (freq < 600) emotionalPhase = 'love';
+    else emotionalPhase = 'transcendence';
+    
+    return {
+      codexName: name || freqEnhancement?.name || 'Mode-' + Math.round(freq),
+      harmonics: codexHarmonics,
+      emotionalPhase
+    };
+  }
+  
+  /**
+   * Get enhanced coherence threshold from codex
+   */
+  private getEnhancedThreshold(freq: number): number {
+    if (!this.codexLoaded) return this.config.theta;
+    
+    // Sacred frequencies get lower threshold (easier to activate)
+    const sacredFreqs = [7.83, 528, 963, 432];
+    const isSacred = sacredFreqs.some(sf => Math.abs(freq - sf) < 10);
+    
+    return isSacred ? this.config.theta * 0.85 : this.config.theta;
+  }
+  
+  /**
+   * Compute enhanced growth rate λₖ for mode k with Auris codex boost
    * Modes that resonate with the system's natural frequencies grow
    */
-  private computeGrowthRate(k: number, freq: number): number {
-    // Resonant frequencies grow (528 Hz Love frequency has highest growth)
+  private computeEnhancedGrowthRate(k: number, freq: number): { lambda: number; aurisBoost: number } {
+    // Base resonant frequencies grow (528 Hz Love frequency has highest growth)
     const resonanceFreqs = [7.83, 528, 963];
     let lambda = -0.01; // default decay
+    let aurisBoost = 1.0;
     
     for (const resFreq of resonanceFreqs) {
       const distance = Math.abs(freq - resFreq) / resFreq;
@@ -199,7 +315,29 @@ export class HocusPatternPipeline {
       }
     }
     
-    return lambda;
+    // Apply Auris codex enhancement
+    if (this.codexLoaded) {
+      const enhancements = ecosystemEnhancements.getEnhancements();
+      
+      // Check if frequency matches any Auris node
+      for (const aurisNode of enhancements.aurisCodex) {
+        if (aurisNode.frequency && Math.abs(freq - aurisNode.frequency) < 50) {
+          aurisBoost = ecosystemEnhancements.applyAurisBoost(aurisNode.name, 1.0);
+          lambda *= (1 + (aurisBoost - 1) * 0.5); // Apply weighted boost to growth
+          break;
+        }
+      }
+      
+      // Symbolic compiler trigger check
+      const symbolic = ecosystemEnhancements.getSymbolicTriggers('BUY');
+      if (symbolic && freq >= 500 && freq <= 600) {
+        // Love frequency range gets extra boost from symbolic layer
+        lambda *= 1.15;
+        aurisBoost *= 1.1;
+      }
+    }
+    
+    return { lambda, aurisBoost };
   }
   
   /**
@@ -262,7 +400,7 @@ export class HocusPatternPipeline {
   }
   
   /**
-   * Main pipeline step - runs all 6 stages
+   * Main pipeline step - runs all 6 stages with ecosystem enhancement
    */
   public step(externalInput: number = 0): PipelineState {
     this.stepCount++;
@@ -283,7 +421,7 @@ export class HocusPatternPipeline {
     this.fieldHistory.push(feedbackField);
     if (this.fieldHistory.length > 200) this.fieldHistory.shift();
     
-    // Stage 3-5: Mode decomposition, coherence, template activation
+    // Stage 3-5: Mode decomposition, coherence, template activation (enhanced)
     const modes = this.decomposeIntoModes(feedbackField, t);
     
     // Stage 6: Dominant template
@@ -297,6 +435,10 @@ export class HocusPatternPipeline {
     
     const pipelineStage = this.determinePipelineStage(modes);
     
+    // Ecosystem enhancement metrics
+    const dominantEmotionalPhase = modes[dominantMode]?.emotionalPhase || 'neutral';
+    const harmonicResonance = this.computeHarmonicResonance(modes);
+    
     this.currentState = {
       timestamp: Date.now(),
       rawField,
@@ -308,10 +450,37 @@ export class HocusPatternPipeline {
       dominantCoherence,
       totalCoherence,
       activeTemplates,
-      pipelineStage
+      pipelineStage,
+      codexEnhanced: this.codexLoaded,
+      dominantEmotionalPhase,
+      harmonicResonance
     };
     
     return this.currentState;
+  }
+  
+  /**
+   * Compute harmonic resonance across all modes using codex harmonics
+   */
+  private computeHarmonicResonance(modes: ModeState[]): number {
+    if (!this.codexLoaded || modes.length === 0) return 0;
+    
+    let resonanceSum = 0;
+    let count = 0;
+    
+    for (const mode of modes) {
+      if (mode.harmonics && mode.harmonics.length > 0) {
+        // Check how many harmonics are reinforcing
+        const harmonicStrength = mode.harmonics.reduce((sum, h, i) => {
+          return sum + h / (i + 1); // Weight earlier harmonics more
+        }, 0) / mode.harmonics.length;
+        
+        resonanceSum += mode.coherence * harmonicStrength * (mode.aurisBoost || 1);
+        count++;
+      }
+    }
+    
+    return count > 0 ? resonanceSum / count : 0;
   }
   
   public getState(): PipelineState | null {

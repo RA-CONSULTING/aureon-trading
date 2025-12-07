@@ -63,8 +63,8 @@ const HocusPatternPipelineVisualizer: React.FC = () => {
     ctx.stroke();
     
     // Draw mode contributions as colored overlays
-    const state = hocusPatternPipeline.getState();
-    if (state) {
+    const pipelineState = hocusPatternPipeline.getState();
+    if (pipelineState) {
       const colors = [
         'hsla(0, 76%, 50%, 0.3)',   // Mode 0 - red
         'hsla(45, 76%, 50%, 0.3)',  // Mode 1 - orange
@@ -73,7 +73,7 @@ const HocusPatternPipelineVisualizer: React.FC = () => {
         'hsla(280, 76%, 50%, 0.3)'  // Mode 4 - purple
       ];
       
-      state.modes.forEach((mode, idx) => {
+      pipelineState.modes.forEach((mode, idx) => {
         if (mode.isTemplate) {
           const modeHistory = hocusPatternPipeline.getModeHistory(idx);
           if (modeHistory.length < 2) return;
@@ -108,6 +108,16 @@ const HocusPatternPipelineVisualizer: React.FC = () => {
     if (mode.coherence > 0.5) return 'bg-yellow-500/20 text-yellow-400';
     return 'bg-red-500/20 text-red-400';
   };
+
+  const getPhaseColor = (phase: string) => {
+    switch (phase) {
+      case 'grounding': return 'text-amber-400';
+      case 'growth': return 'text-yellow-400';
+      case 'love': return 'text-green-400';
+      case 'transcendence': return 'text-purple-400';
+      default: return 'text-muted-foreground';
+    }
+  };
   
   return (
     <Card className="bg-card border-border">
@@ -116,11 +126,18 @@ const HocusPatternPipelineVisualizer: React.FC = () => {
           <CardTitle className="text-lg font-mono">
             Hocus → Pattern → Template Pipeline
           </CardTitle>
-          {state && (
-            <Badge className={getStageColor(state.pipelineStage)}>
-              {state.pipelineStage}
-            </Badge>
-          )}
+          <div className="flex items-center gap-2">
+            {state?.codexEnhanced && (
+              <Badge variant="outline" className="bg-purple-500/20 text-purple-400 border-purple-500/50 text-[10px]">
+                🔮 CODEX
+              </Badge>
+            )}
+            {state && (
+              <Badge className={getStageColor(state.pipelineStage)}>
+                {state.pipelineStage}
+              </Badge>
+            )}
+          </div>
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -133,6 +150,23 @@ const HocusPatternPipelineVisualizer: React.FC = () => {
             className="w-full"
           />
         </div>
+        
+        {/* Ecosystem Enhancement Status */}
+        {state?.codexEnhanced && (
+          <div className="bg-purple-500/10 rounded-lg p-2 border border-purple-500/30">
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-purple-400 font-mono">Ecosystem Enhanced</span>
+              <div className="flex items-center gap-3">
+                <span className={`font-mono ${getPhaseColor(state.dominantEmotionalPhase)}`}>
+                  {state.dominantEmotionalPhase.toUpperCase()}
+                </span>
+                <span className="text-muted-foreground">
+                  Harmonic Resonance: <span className="text-primary">{(state.harmonicResonance * 100).toFixed(1)}%</span>
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
         
         {/* Pipeline Equations */}
         <div className="grid grid-cols-2 gap-2 text-xs font-mono">
@@ -177,10 +211,10 @@ const HocusPatternPipelineVisualizer: React.FC = () => {
           </div>
         </div>
         
-        {/* Mode States */}
+        {/* Mode States with Codex Enhancement */}
         <div className="space-y-1">
           <div className="text-xs text-muted-foreground font-mono mb-2">
-            Stage 5: Template Activation (θ = 0.7)
+            Stage 5: Template Activation (θ = 0.7) + Codex Boost
           </div>
           <div className="grid grid-cols-5 gap-1">
             {state?.modes.map((mode) => (
@@ -194,18 +228,26 @@ const HocusPatternPipelineVisualizer: React.FC = () => {
                 <div className="text-[10px] opacity-70">
                   {mode.frequency} Hz
                 </div>
+                {mode.codexName && mode.codexName !== `Mode-${Math.round(mode.frequency)}` && (
+                  <div className="text-[9px] text-purple-400 truncate mt-0.5">
+                    {mode.codexName}
+                  </div>
+                )}
                 <div className="font-mono mt-1">
                   C = {(mode.coherence * 100).toFixed(0)}%
                 </div>
-                <div className="text-[10px] mt-1">
-                  T = {mode.isTemplate ? '1' : '0'}
+                <div className="flex items-center justify-center gap-1 text-[10px] mt-1">
+                  <span>T = {mode.isTemplate ? '1' : '0'}</span>
+                  {mode.aurisBoost && mode.aurisBoost > 1 && (
+                    <span className="text-purple-400">↑</span>
+                  )}
                 </div>
               </div>
             ))}
           </div>
         </div>
         
-        {/* Dominant Template */}
+        {/* Dominant Template with Ecosystem Info */}
         {state && (
           <div className="bg-primary/10 rounded-lg p-3 border border-primary/30">
             <div className="text-xs text-muted-foreground font-mono mb-1">
@@ -219,8 +261,13 @@ const HocusPatternPipelineVisualizer: React.FC = () => {
                 C = {(state.dominantCoherence * 100).toFixed(1)}%
               </Badge>
             </div>
-            <div className="text-xs text-muted-foreground mt-2">
-              Active Templates: {state.activeTemplates} / {state.modes.length}
+            <div className="flex items-center justify-between text-xs text-muted-foreground mt-2">
+              <span>Active Templates: {state.activeTemplates} / {state.modes.length}</span>
+              {state.modes[state.dominantMode]?.emotionalPhase && (
+                <span className={getPhaseColor(state.modes[state.dominantMode].emotionalPhase || '')}>
+                  Phase: {state.modes[state.dominantMode]?.emotionalPhase}
+                </span>
+              )}
             </div>
           </div>
         )}
