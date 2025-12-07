@@ -1,9 +1,11 @@
+import { useEffect, useState } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "@/components/theme-provider";
+import { globalSystemsManager } from "@/core/globalSystemsManager";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import TradingSettings from "./pages/TradingSettings";
@@ -24,7 +26,36 @@ import Privacy from "./pages/Privacy";
 
 const queryClient = new QueryClient();
 
-const App = () => (
+// Initialize global systems manager ONCE at app root
+let systemsInitialized = false;
+
+const App = () => {
+  const [ready, setReady] = useState(systemsInitialized);
+  
+  useEffect(() => {
+    if (!systemsInitialized) {
+      systemsInitialized = true;
+      console.log('🌌 App: Initializing GlobalSystemsManager...');
+      globalSystemsManager.initialize().then(() => {
+        console.log('✅ App: GlobalSystemsManager ready');
+        setReady(true);
+      });
+    }
+  }, []);
+  
+  // Show loading while systems initialize (only on first load)
+  if (!ready) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <div className="h-10 w-10 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+          <p className="text-sm text-muted-foreground">Initializing quantum systems...</p>
+        </div>
+      </div>
+    );
+  }
+  
+  return (
   <ThemeProvider defaultTheme="dark">
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
@@ -54,6 +85,7 @@ const App = () => (
       </TooltipProvider>
     </QueryClientProvider>
   </ThemeProvider>
-);
+  );
+};
 
 export default App;
