@@ -1,6 +1,5 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useAureonSession } from '@/hooks/useAureonSession';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -12,12 +11,12 @@ import { UserAssetsPanel } from '@/components/warroom/UserAssetsPanel';
 import { SmartAlertBanner } from '@/components/SmartAlertBanner';
 import { FloatingAIButton } from '@/components/FloatingAIButton';
 import { ExchangeStatusSummary } from '@/components/ExchangeStatusSummary';
-// UI visualizers removed - systems run as background automation
-// MasterEquationTree and HocusPatternPipeline publish to UnifiedBus silently
-import { ecosystemConnector } from '@/core/ecosystemConnector';
-import { fullEcosystemConnector } from '@/core/fullEcosystemConnector';
-import { backgroundServices } from '@/core/backgroundServices';
-import { toast } from 'sonner';
+// Import hooks for global state - NO MORE LOCAL INITIALIZATION
+import { 
+  useGlobalState, 
+  useGlobalTradingControls,
+} from '@/hooks/useGlobalState';
+import { globalSystemsManager } from '@/core/globalSystemsManager';
 
 // Simple system indicator component
 function SystemIndicator({ name, active, icon: Icon }: { name: string; active: boolean; icon: React.ElementType }) {
@@ -32,103 +31,56 @@ function SystemIndicator({ name, active, icon: Icon }: { name: string; active: b
 
 export default function AureonDashboard() {
   const navigate = useNavigate();
-  const [userId, setUserId] = useState<string | null>(null);
-  const [userEmail, setUserEmail] = useState<string | null>(null);
   
-  // Ecosystem health check state
-  const [lastDataReceived, setLastDataReceived] = useState<Date | null>(null);
-  const [ecosystemHealth, setEcosystemHealth] = useState<'connected' | 'stale' | 'disconnected'>('disconnected');
-  const healthCheckRef = useRef<NodeJS.Timeout | null>(null);
+  // Get ALL state from global manager - no local state management
+  const state = useGlobalState();
+  const { startTrading, stopTrading } = useGlobalTradingControls();
   
+  // Extract what we need from global state
   const {
-    quantumState,
-    tradingState,
-    systemStatus,
-    marketData,
+    userId,
+    userEmail,
+    isAuthenticated,
+    coherence,
+    lambda,
+    lighthouseSignal,
+    dominantNode,
+    prismLevel,
+    prismState,
+    isActive,
+    totalEquity,
+    totalTrades,
+    winningTrades,
+    totalPnl,
+    gasTankBalance,
+    recentTrades,
     lastSignal,
     lastDecision,
     nextCheckIn,
-    startTrading,
-    stopTrading
-  } = useAureonSession(userId);
+    systemStatus,
+    ecosystemHealth,
+    isInitialized,
+  } = state;
   
-  // Start background services and FULL ECOSYSTEM on mount
+  // Redirect to auth if not authenticated
   useEffect(() => {
-    backgroundServices.start();
-    
-    // Initialize the full ecosystem connector - this starts all heartbeats
-    fullEcosystemConnector.initialize().then(() => {
-      console.log('🌈 Full Ecosystem Connector initialized - all heartbeats active');
-      toast.success('Quantum systems online');
-    }).catch((err) => {
-      console.error('Failed to initialize ecosystem:', err);
-    });
-    
-    return () => backgroundServices.stop();
-  }, []);
-  
-  // Subscribe to ecosystem updates for health monitoring
-  useEffect(() => {
-    const unsubscribe = ecosystemConnector.subscribe(() => {
-      setLastDataReceived(new Date());
-      setEcosystemHealth('connected');
-    });
-    
-    // Health check: mark as stale if no data for 10s, disconnected if 30s
-    healthCheckRef.current = setInterval(() => {
-      if (lastDataReceived) {
-        const timeSince = Date.now() - lastDataReceived.getTime();
-        if (timeSince > 30000) {
-          setEcosystemHealth('disconnected');
-        } else if (timeSince > 10000) {
-          setEcosystemHealth('stale');
-        } else {
-          setEcosystemHealth('connected');
-        }
-      }
-    }, 2000);
-    
-    return () => {
-      unsubscribe();
-      if (healthCheckRef.current) clearInterval(healthCheckRef.current);
-    };
-  }, [lastDataReceived]);
-
-  useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (session) {
-        setUserId(session.user.id);
-        setUserEmail(session.user.email);
-      } else {
-        navigate('/auth');
-      }
-    });
-
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        setUserId(session.user.id);
-        setUserEmail(session.user.email);
-      } else {
-        navigate('/auth');
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, [navigate]);
+    if (isInitialized && !isAuthenticated) {
+      navigate('/auth');
+    }
+  }, [isInitialized, isAuthenticated, navigate]);
 
   const handleSignOut = async () => {
     stopTrading();
-    backgroundServices.stop();
     await supabase.auth.signOut();
     navigate('/auth');
   };
 
-  const winRate = tradingState.totalTrades > 0 
-    ? ((tradingState.winningTrades / tradingState.totalTrades) * 100).toFixed(0)
+  const winRate = totalTrades > 0 
+    ? ((winningTrades / totalTrades) * 100).toFixed(0)
     : '0';
 
   const getPrismColor = () => {
-    switch (quantumState.prismState) {
+    switch (prismState) {
       case 'MANIFEST': return 'text-green-400';
       case 'CONVERGING': return 'text-yellow-400';
       default: return 'text-muted-foreground';
@@ -138,6 +90,15 @@ export default function AureonDashboard() {
   // Count active systems
   const activeSystemCount = Object.values(systemStatus).filter(Boolean).length;
   const totalSystemCount = Object.keys(systemStatus).length;
+
+  // Show loading if not initialized
+  if (!isInitialized) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="h-8 w-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -179,9 +140,9 @@ export default function AureonDashboard() {
                 {activeSystemCount}/{totalSystemCount}
               </Badge>
               
-              <Badge variant={tradingState.isActive ? "default" : "secondary"} className="gap-1">
-                <div className={cn("h-1.5 w-1.5 rounded-full", tradingState.isActive ? "bg-green-400 animate-pulse" : "bg-muted-foreground")} />
-                {tradingState.isActive ? 'ACTIVE' : 'IDLE'}
+              <Badge variant={isActive ? "default" : "secondary"} className="gap-1">
+                <div className={cn("h-1.5 w-1.5 rounded-full", isActive ? "bg-green-400 animate-pulse" : "bg-muted-foreground")} />
+                {isActive ? 'ACTIVE' : 'IDLE'}
               </Badge>
               
               <Button variant="ghost" size="sm" onClick={handleSignOut}>
@@ -208,19 +169,19 @@ export default function AureonDashboard() {
             <CardContent className="space-y-1">
               <div className="flex justify-between">
                 <span className="text-xs text-muted-foreground">Γ (Coherence)</span>
-                <span className="text-sm font-mono font-bold">{quantumState.coherence.toFixed(3)}</span>
+                <span className="text-sm font-mono font-bold">{coherence.toFixed(3)}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-xs text-muted-foreground">Λ (Lambda)</span>
-                <span className="text-sm font-mono">{quantumState.lambda.toFixed(3)}</span>
+                <span className="text-sm font-mono">{lambda.toFixed(3)}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-xs text-muted-foreground">Prism</span>
-                <span className={cn("text-sm font-medium", getPrismColor())}>{quantumState.prismState}</span>
+                <span className={cn("text-sm font-medium", getPrismColor())}>{prismState}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-xs text-muted-foreground">Node</span>
-                <span className="text-sm">{quantumState.dominantNode}</span>
+                <span className="text-sm">{dominantNode}</span>
               </div>
             </CardContent>
           </Card>
@@ -235,21 +196,21 @@ export default function AureonDashboard() {
             <CardContent className="space-y-1">
               <div className="flex justify-between">
                 <span className="text-xs text-muted-foreground">Balance</span>
-                <span className="text-sm font-mono font-bold">${tradingState.totalEquity.toFixed(2)}</span>
+                <span className="text-sm font-mono font-bold">${totalEquity.toFixed(2)}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-xs text-muted-foreground">P/L</span>
-                <span className={cn("text-sm font-mono", tradingState.totalPnl >= 0 ? "text-green-400" : "text-red-400")}>
-                  {tradingState.totalPnl >= 0 ? '+' : ''}${tradingState.totalPnl.toFixed(2)}
+                <span className={cn("text-sm font-mono", totalPnl >= 0 ? "text-green-400" : "text-red-400")}>
+                  {totalPnl >= 0 ? '+' : ''}${totalPnl.toFixed(2)}
                 </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-xs text-muted-foreground">Trades</span>
-                <span className="text-sm font-mono">{tradingState.totalTrades} ({winRate}% win)</span>
+                <span className="text-sm font-mono">{totalTrades} ({winRate}% win)</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-xs text-muted-foreground">Gas Tank</span>
-                <span className="text-sm font-mono">£{tradingState.gasTankBalance.toFixed(2)}</span>
+                <span className="text-sm font-mono">£{gasTankBalance.toFixed(2)}</span>
               </div>
             </CardContent>
           </Card>
@@ -286,13 +247,13 @@ export default function AureonDashboard() {
             <div className="flex items-center justify-between">
               <CardTitle className="text-sm font-medium flex items-center gap-2">
                 AUTONOMOUS TRADING
-                <Badge variant={tradingState.isActive ? "default" : "outline"} className="text-[10px]">
-                  {tradingState.isActive ? '● ACTIVE' : '○ STOPPED'}
+                <Badge variant={isActive ? "default" : "outline"} className="text-[10px]">
+                  {isActive ? '● ACTIVE' : '○ STOPPED'}
                 </Badge>
               </CardTitle>
               
               <div className="flex gap-2">
-                {!tradingState.isActive ? (
+                {!isActive ? (
                   <Button size="sm" onClick={startTrading} className="gap-1">
                     <Play className="h-3 w-3" /> Start
                   </Button>
@@ -318,9 +279,9 @@ export default function AureonDashboard() {
             )}
             
             <p className="text-xs text-muted-foreground">
-              {tradingState.isActive 
-                ? 'All quantum systems are running via UnifiedOrchestrator. Trades execute automatically when Γ > 0.70 and bus consensus confirms.'
-                : 'Click Start to begin autonomous quantum trading. Systems will run in background with full Temporal Ladder integration.'
+              {isActive 
+                ? 'All quantum systems are running via GlobalSystemsManager. Trades execute automatically when Γ > 0.70 and bus consensus confirms.'
+                : 'Click Start to begin autonomous quantum trading. Systems run in background and persist across page navigation.'
               }
             </p>
           </CardContent>
@@ -332,13 +293,13 @@ export default function AureonDashboard() {
             <CardTitle className="text-xs font-medium text-muted-foreground">RECENT TRADES</CardTitle>
           </CardHeader>
           <CardContent>
-            {tradingState.recentTrades.length === 0 ? (
+            {recentTrades.length === 0 ? (
               <p className="text-xs text-muted-foreground text-center py-4">
                 No trades yet. Start trading to see activity here.
               </p>
             ) : (
               <div className="space-y-2">
-                {tradingState.recentTrades.slice(0, 5).map((trade, i) => (
+                {recentTrades.slice(0, 5).map((trade, i) => (
                   <div key={i} className="flex items-center justify-between text-xs border-b border-border/30 pb-2 last:border-0">
                     <div className="flex items-center gap-2">
                       <Badge variant={trade.side === 'BUY' ? 'default' : 'secondary'} className="text-[9px]">
