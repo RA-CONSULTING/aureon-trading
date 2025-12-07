@@ -13,6 +13,7 @@ import { SmartAlertBanner } from '@/components/SmartAlertBanner';
 import { FloatingAIButton } from '@/components/FloatingAIButton';
 import { ExchangeStatusSummary } from '@/components/ExchangeStatusSummary';
 import { MasterEquationTree } from '@/components/MasterEquationTree';
+import HocusPatternPipelineVisualizer from '@/components/HocusPatternPipelineVisualizer';
 import { ecosystemConnector } from '@/core/ecosystemConnector';
 import { fullEcosystemConnector } from '@/core/fullEcosystemConnector';
 import { backgroundServices } from '@/core/backgroundServices';
@@ -195,8 +196,11 @@ export default function AureonDashboard() {
         {/* Exchange Connection Status */}
         <ExchangeStatusSummary />
         
-        {/* Master Equation Tree */}
-        <MasterEquationTree />
+        {/* Master Equation Tree & Hocus Pattern Pipeline */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <MasterEquationTree />
+          <HocusPatternPipelineVisualizer />
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Quantum State */}
           <Card className="border-border/50">
