@@ -232,6 +232,10 @@ verify_jwt = false
 [functions.update-user-credentials]
 verify_jwt = true
 
+# Test exchange connection - public for credential verification
+[functions.test-exchange-connection]
+verify_jwt = false
+
 # Backend health check (public for monitoring)
 [functions.backend-health-check]
 verify_jwt = false

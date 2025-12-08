@@ -57,9 +57,15 @@ Deno.serve(async (req) => {
       capitalIdentifier
     } = body;
 
-    // Get or create encryption key
-    const masterKeyBase64 = Deno.env.get('CREDENTIAL_ENCRYPTION_KEY') || 
-      btoa(String.fromCharCode(...crypto.getRandomValues(new Uint8Array(32))));
+    // Use MASTER_ENCRYPTION_KEY for consistency with other edge functions
+    const masterKeyBase64 = Deno.env.get('MASTER_ENCRYPTION_KEY');
+    if (!masterKeyBase64) {
+      console.error('MASTER_ENCRYPTION_KEY not configured');
+      return new Response(JSON.stringify({ error: 'Encryption key not configured' }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
     const keyBytes = Uint8Array.from(atob(masterKeyBase64), c => c.charCodeAt(0));
     
     const cryptoKey = await crypto.subtle.importKey(

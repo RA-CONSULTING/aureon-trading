@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Eye, EyeOff, Key, CheckCircle2, XCircle, RefreshCw, Save } from 'lucide-react';
+import { Eye, EyeOff, Key, CheckCircle2, XCircle, RefreshCw, Save, Zap, Loader2 } from 'lucide-react';
 
 interface ExchangeStatus {
   binance: boolean;
@@ -15,9 +15,17 @@ interface ExchangeStatus {
   capital: boolean;
 }
 
+interface TestResult {
+  success: boolean;
+  message: string;
+  details?: Record<string, any>;
+}
+
 export function ExchangeCredentialsManager() {
   const [loading, setLoading] = useState(false);
   const [checking, setChecking] = useState(true);
+  const [testing, setTesting] = useState<string | null>(null);
+  const [testResults, setTestResults] = useState<Record<string, TestResult>>({});
   const [status, setStatus] = useState<ExchangeStatus>({
     binance: false,
     kraken: false,
@@ -67,6 +75,64 @@ export function ExchangeCredentialsManager() {
       console.error('Error checking credentials:', err);
     } finally {
       setChecking(false);
+    }
+  };
+
+  const testConnection = async (exchange: string) => {
+    let apiKey = '';
+    let apiSecret = '';
+    let identifier = '';
+    let password = '';
+
+    switch (exchange) {
+      case 'binance':
+        apiKey = binanceApiKey;
+        apiSecret = binanceApiSecret;
+        break;
+      case 'kraken':
+        apiKey = krakenApiKey;
+        apiSecret = krakenApiSecret;
+        break;
+      case 'alpaca':
+        apiKey = alpacaApiKey;
+        apiSecret = alpacaSecretKey;
+        break;
+      case 'capital':
+        apiKey = capitalApiKey;
+        password = capitalPassword;
+        identifier = capitalIdentifier;
+        break;
+    }
+
+    if (!apiKey || (!apiSecret && exchange !== 'capital') || (exchange === 'capital' && !password)) {
+      toast.error('Please enter credentials first');
+      return;
+    }
+
+    setTesting(exchange);
+    try {
+      const { data, error } = await supabase.functions.invoke('test-exchange-connection', {
+        body: { exchange, apiKey, apiSecret, identifier, password }
+      });
+
+      if (error) throw error;
+
+      setTestResults(prev => ({ ...prev, [exchange]: data }));
+
+      if (data.success) {
+        toast.success(`${exchange} connection verified!`);
+      } else {
+        toast.error(data.message || `${exchange} connection failed`);
+      }
+    } catch (err) {
+      console.error('Connection test error:', err);
+      setTestResults(prev => ({ 
+        ...prev, 
+        [exchange]: { success: false, message: 'Test failed - network error' } 
+      }));
+      toast.error('Connection test failed');
+    } finally {
+      setTesting(null);
     }
   };
 
@@ -141,10 +207,17 @@ export function ExchangeCredentialsManager() {
           break;
       }
       
+      // Clear test result for this exchange
+      setTestResults(prev => {
+        const updated = { ...prev };
+        delete updated[exchange];
+        return updated;
+      });
+      
       await checkExistingCredentials();
     } catch (err) {
       console.error('Error saving credentials:', err);
-      toast.error('Failed to save credentials');
+      toast.error('Failed to save credentials. Please check encryption key configuration.');
     } finally {
       setLoading(false);
     }
@@ -163,6 +236,7 @@ export function ExchangeCredentialsManager() {
     apiKeyOnChange,
     secretValue,
     secretOnChange,
+    secretLabel = 'API Secret',
     secretKey,
     extraFields
   }: {
@@ -174,71 +248,100 @@ export function ExchangeCredentialsManager() {
     apiKeyOnChange: (v: string) => void;
     secretValue: string;
     secretOnChange: (v: string) => void;
+    secretLabel?: string;
     secretKey: string;
     extraFields?: React.ReactNode;
-  }) => (
-    <Card className={`border ${isConnected ? 'border-green-500/30 bg-green-500/5' : 'border-border'}`}>
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="text-base flex items-center gap-2">
-              <Key className="h-4 w-4" />
-              {label}
-            </CardTitle>
-            <CardDescription className="text-xs">{description}</CardDescription>
+  }) => {
+    const testResult = testResults[name];
+    const isTesting = testing === name;
+
+    return (
+      <Card className={`border ${isConnected ? 'border-green-500/30 bg-green-500/5' : 'border-border'}`}>
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-base flex items-center gap-2">
+                <Key className="h-4 w-4" />
+                {label}
+              </CardTitle>
+              <CardDescription className="text-xs">{description}</CardDescription>
+            </div>
+            <Badge variant={isConnected ? 'default' : 'secondary'} className={isConnected ? 'bg-green-500' : ''}>
+              {isConnected ? (
+                <><CheckCircle2 className="h-3 w-3 mr-1" /> Connected</>
+              ) : (
+                <><XCircle className="h-3 w-3 mr-1" /> Not Connected</>
+              )}
+            </Badge>
           </div>
-          <Badge variant={isConnected ? 'default' : 'secondary'} className={isConnected ? 'bg-green-500' : ''}>
-            {isConnected ? (
-              <><CheckCircle2 className="h-3 w-3 mr-1" /> Connected</>
-            ) : (
-              <><XCircle className="h-3 w-3 mr-1" /> Not Connected</>
-            )}
-          </Badge>
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        <div className="space-y-2">
-          <Label className="text-xs">API Key</Label>
-          <Input
-            type="text"
-            placeholder={isConnected ? '••••••••' : 'Enter API Key'}
-            value={apiKeyValue}
-            onChange={(e) => apiKeyOnChange(e.target.value)}
-            className="h-9"
-          />
-        </div>
-        <div className="space-y-2">
-          <Label className="text-xs">API Secret</Label>
-          <div className="relative">
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="space-y-2">
+            <Label className="text-xs">API Key</Label>
             <Input
-              type={showSecrets[secretKey] ? 'text' : 'password'}
-              placeholder={isConnected ? '••••••••' : 'Enter API Secret'}
-              value={secretValue}
-              onChange={(e) => secretOnChange(e.target.value)}
-              className="h-9 pr-10"
+              type="text"
+              placeholder={isConnected ? '••••••••' : 'Enter API Key'}
+              value={apiKeyValue}
+              onChange={(e) => apiKeyOnChange(e.target.value)}
+              className="h-9"
             />
-            <button
-              type="button"
-              onClick={() => toggleSecret(secretKey)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-            >
-              {showSecrets[secretKey] ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-            </button>
           </div>
-        </div>
-        {extraFields}
-        <Button 
-          onClick={() => handleSaveCredentials(name)} 
-          disabled={loading}
-          size="sm"
-          className="w-full"
-        >
-          <Save className="h-4 w-4 mr-2" />
-          {isConnected ? 'Update' : 'Connect'}
-        </Button>
-      </CardContent>
-    </Card>
-  );
+          <div className="space-y-2">
+            <Label className="text-xs">{secretLabel}</Label>
+            <div className="relative">
+              <Input
+                type={showSecrets[secretKey] ? 'text' : 'password'}
+                placeholder={isConnected ? '••••••••' : `Enter ${secretLabel}`}
+                value={secretValue}
+                onChange={(e) => secretOnChange(e.target.value)}
+                className="h-9 pr-10"
+              />
+              <button
+                type="button"
+                onClick={() => toggleSecret(secretKey)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              >
+                {showSecrets[secretKey] ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
+          </div>
+          {extraFields}
+          
+          {/* Test result display */}
+          {testResult && (
+            <div className={`text-xs p-2 rounded ${testResult.success ? 'bg-green-500/10 text-green-500' : 'bg-destructive/10 text-destructive'}`}>
+              {testResult.success ? '✓' : '✗'} {testResult.message}
+            </div>
+          )}
+          
+          <div className="flex gap-2">
+            <Button 
+              onClick={() => testConnection(name)} 
+              disabled={isTesting || loading}
+              variant="outline"
+              size="sm"
+              className="flex-1"
+            >
+              {isTesting ? (
+                <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Testing...</>
+              ) : (
+                <><Zap className="h-4 w-4 mr-2" /> Test</>
+              )}
+            </Button>
+            <Button 
+              onClick={() => handleSaveCredentials(name)} 
+              disabled={loading || isTesting}
+              size="sm"
+              className="flex-1"
+            >
+              <Save className="h-4 w-4 mr-2" />
+              {isConnected ? 'Update' : 'Save'}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  };
 
   if (checking) {
     return (
@@ -311,6 +414,7 @@ export function ExchangeCredentialsManager() {
           apiKeyOnChange={setCapitalApiKey}
           secretValue={capitalPassword}
           secretOnChange={setCapitalPassword}
+          secretLabel="Password"
           secretKey="capital"
           extraFields={
             <div className="space-y-2">

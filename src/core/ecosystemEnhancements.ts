@@ -74,18 +74,25 @@ class EcosystemEnhancementsLoader {
     console.log('🔮 Loading Ecosystem Enhancements...');
 
     try {
-      const [auris, emotional, frequency, symbolic] = await Promise.all([
-        this.loadJSON<AurisCodexEntry[]>('/auris_codex.json'),
-        this.loadJSON<EmotionalCodexEntry[]>('/emotional_codex.json'),
-        this.loadJSON<FrequencyCodexEntry[]>('/emotional_frequency_codex.json'),
-        this.loadJSON<SymbolicCompilerLayer[]>('/symbolic_compiler_layer.json'),
+      const [aurisRaw, emotionalRaw, frequencyRaw, symbolicRaw] = await Promise.all([
+        this.loadJSON<any>('/auris_codex.json'),
+        this.loadJSON<any>('/emotional_codex.json'),
+        this.loadJSON<any>('/emotional_frequency_codex.json'),
+        this.loadJSON<any>('/symbolic_compiler_layer.json'),
       ]);
 
+      // Extract arrays from nested JSON structures
+      // Some JSONs wrap data in objects (e.g., { emotions: [...] })
+      const auris = Array.isArray(aurisRaw) ? aurisRaw : (aurisRaw?.nodes || aurisRaw?.entries || []);
+      const emotional = Array.isArray(emotionalRaw) ? emotionalRaw : (emotionalRaw?.phases || emotionalRaw?.entries || []);
+      const frequency = Array.isArray(frequencyRaw) ? frequencyRaw : (frequencyRaw?.emotions || frequencyRaw?.frequencies || []);
+      const symbolic = Array.isArray(symbolicRaw) ? symbolicRaw : (symbolicRaw?.processing_pipeline || symbolicRaw?.layers || []);
+
       this.enhancements = {
-        aurisCodex: auris || [],
-        emotionalCodex: emotional || [],
-        frequencyCodex: frequency || [],
-        symbolicCompiler: symbolic || [],
+        aurisCodex: auris,
+        emotionalCodex: emotional,
+        frequencyCodex: frequency,
+        symbolicCompiler: symbolic,
         loaded: true,
         loadedAt: Date.now(),
       };
@@ -152,6 +159,11 @@ class EcosystemEnhancementsLoader {
    * Get frequency enhancement for Prism
    */
   getFrequencyEnhancement(frequency: number): FrequencyCodexEntry | undefined {
+    // Defensive check - frequencyCodex might be an object instead of array
+    if (!Array.isArray(this.enhancements.frequencyCodex) || this.enhancements.frequencyCodex.length === 0) {
+      console.warn('⚠️ frequencyCodex is not an array or is empty');
+      return undefined;
+    }
     // Find closest frequency match
     return this.enhancements.frequencyCodex.reduce((closest, entry) => {
       if (!closest) return entry;
