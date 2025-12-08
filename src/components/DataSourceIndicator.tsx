@@ -1,6 +1,6 @@
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
-import { Wifi, Radio, WifiOff, AlertTriangle } from 'lucide-react';
+import { Wifi, WifiOff, AlertTriangle } from 'lucide-react';
 import { useExchangeDataVerification } from '@/hooks/useExchangeDataVerification';
 
 interface DataSourceIndicatorProps {
@@ -11,8 +11,8 @@ interface DataSourceIndicatorProps {
 /**
  * DATA SOURCE INDICATOR
  * 
- * Shows whether the system is receiving LIVE or DEMO data
- * Prominently displays warning when running on simulated data
+ * Shows whether the system is receiving LIVE data
+ * NO SIMULATION ALLOWED - Shows error when not connected
  */
 export const DataSourceIndicator: React.FC<DataSourceIndicatorProps> = ({
   compact = false,
@@ -21,7 +21,6 @@ export const DataSourceIndicator: React.FC<DataSourceIndicatorProps> = ({
   const { 
     verification, 
     isLiveData, 
-    isDemoMode, 
     liveExchangeCount, 
     totalExchangeCount,
     isLoading 
@@ -31,7 +30,7 @@ export const DataSourceIndicator: React.FC<DataSourceIndicatorProps> = ({
     return (
       <Badge variant="outline" className="animate-pulse">
         <Wifi className="h-3 w-3 mr-1" />
-        Checking...
+        Connecting...
       </Badge>
     );
   }
@@ -50,22 +49,6 @@ export const DataSourceIndicator: React.FC<DataSourceIndicatorProps> = ({
     );
   }
 
-  if (isDemoMode) {
-    return (
-      <div className="flex items-center gap-2">
-        <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/50 animate-pulse">
-          <Radio className="h-3 w-3 mr-1 animate-pulse" />
-          {compact ? '⚠️ DEMO' : '⚠️ SIMULATED DATA'}
-        </Badge>
-        {!compact && (
-          <span className="text-xs text-yellow-500 animate-pulse">
-            Not real trading data!
-          </span>
-        )}
-      </div>
-    );
-  }
-
   if (verification?.overallStatus === 'PARTIAL_LIVE') {
     return (
       <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/50">
@@ -80,30 +63,33 @@ export const DataSourceIndicator: React.FC<DataSourceIndicatorProps> = ({
     );
   }
 
+  // NO SIMULATION - Show error state
   return (
-    <Badge variant="destructive">
+    <Badge variant="destructive" className="animate-pulse">
       <WifiOff className="h-3 w-3 mr-1" />
-      {compact ? 'OFFLINE' : 'NO DATA'}
+      {compact ? '⛔ OFFLINE' : '⛔ NO LIVE DATA'}
     </Badge>
   );
 };
 
 /**
- * Prominent demo mode warning banner
+ * Critical warning banner when live data unavailable
+ * NO SIMULATION ALLOWED - Trading blocked
  */
 export const DemoModeWarningBanner: React.FC = () => {
-  const { isDemoMode, hasGhostData } = useExchangeDataVerification();
+  const { isLiveData, hasGhostData } = useExchangeDataVerification();
 
-  if (!isDemoMode && !hasGhostData) return null;
+  // Only show if NOT live data (no simulation fallback)
+  if (isLiveData && !hasGhostData) return null;
 
   return (
-    <div className="fixed top-0 left-0 right-0 z-50 bg-yellow-500/90 text-black px-4 py-2 text-center">
+    <div className="fixed top-0 left-0 right-0 z-50 bg-red-600/95 text-white px-4 py-2 text-center">
       <div className="flex items-center justify-center gap-2">
-        <Radio className="h-4 w-4 animate-pulse" />
+        <WifiOff className="h-4 w-4" />
         <span className="font-bold">
-          ⚠️ DEMO MODE - SIMULATED DATA ONLY - NOT CONNECTED TO REAL EXCHANGES ⚠️
+          ⛔ TRADING BLOCKED - NO LIVE DATA CONNECTION - CHECK EXCHANGE CREDENTIALS ⛔
         </span>
-        <Radio className="h-4 w-4 animate-pulse" />
+        <WifiOff className="h-4 w-4" />
       </div>
     </div>
   );

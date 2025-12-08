@@ -90,14 +90,29 @@ export class NexusLiveFeedBridge {
       return this.latestInfluence;
     }
 
-    // Simulate fetch (placeholder for real network or SSE subscription)
-    const raw = this.generateSimulatedSample();
-    this.latestSample = raw;
+    // LIVE DATA REQUIRED - No simulation
+    if (!this.latestSample) {
+      console.warn('[NexusLiveFeed] No live data available - returning cached or null influence');
+      return this.latestInfluence || this.getDefaultInfluence();
+    }
 
-    const inf = this.transformRaw(raw);
+    const inf = this.transformRaw(this.latestSample);
     this.latestInfluence = inf;
     this.listeners.forEach(l => l(inf));
     return inf;
+  }
+
+  private getDefaultInfluence(): NexusInfluence {
+    return {
+      quantumCoherence: 0,
+      harmonicResonance: 0,
+      schumannProxyHz: 7.83,
+      rainbowSpectrum: 0,
+      consciousnessShift: 0,
+      compositeBoost: 0,
+      status: 'degraded',
+      raw: null as any
+    };
   }
 
   /** Convert raw Nexus metrics to normalized influence */
@@ -143,38 +158,11 @@ export class NexusLiveFeedBridge {
     };
   }
 
+  /**
+   * @deprecated SIMULATION REMOVED - System requires real nexus data
+   */
   private generateSimulatedSample(): RawNexusSample {
-    const timestamp = Date.now();
-    return {
-      timestamp,
-      metrics: {
-        quantumCoherence: {
-          value: Math.random(),
-          unit: 'qbits',
-          description: 'Relative phase alignment of quantum events.'
-        },
-        harmonicResonance: {
-          value: 20 + Math.random() * 60 + Math.sin(timestamp / 15000) * 20, // 20-100 Hz
-          unit: 'Hz',
-          description: 'Amplitude alignment across frequencies.'
-        },
-        schumannResonance: {
-          value: 7.83 + Math.sin(timestamp / 20000) * 0.05 + Math.random() * 0.05,
-          unit: 'Hz',
-          description: 'Global electromagnetic resonance proxy.'
-        },
-        rainbowSpectrum: {
-          value: Math.random(),
-          unit: 'spectrum',
-          description: 'Spectral energy distribution representation.'
-        },
-        consciousnessMetric: {
-          value: 0.3 + Math.random() * 0.6,
-          unit: 'psi',
-          description: 'Synthetic collective consciousness metric.'
-        }
-      }
-    };
+    throw new Error('LIVE_DATA_REQUIRED: Nexus feed simulation is disabled. Connect to real data source.');
   }
 
   /** Neutral fallback influence */

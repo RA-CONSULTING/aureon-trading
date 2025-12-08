@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Play, Pause, RotateCcw } from 'lucide-react';
 import { toFixedSafe } from '@/utils/number';
+import { useEcosystemData } from '@/hooks/useEcosystemData';
 
 interface EmotionalReading {
   timestamp: Date;
@@ -19,6 +20,7 @@ interface EmotionalReading {
 }
 
 const LiveEmotionalReader: React.FC = () => {
+  const { metrics: ecosystemMetrics, isInitialized } = useEcosystemData();
   const [isLive, setIsLive] = useState(false);
   const [currentReading, setCurrentReading] = useState<EmotionalReading>({
     timestamp: new Date(),
@@ -45,23 +47,31 @@ const LiveEmotionalReader: React.FC = () => {
     { emotion: 'Focus', tags: ['Concentrated', 'Alert', 'Clear'], color: '#8b5cf6', valence: 0.6, arousal: 0.6 }
   ];
 
+  // LIVE DATA ONLY - Use real ecosystem metrics
   const generateLiveReading = (): EmotionalReading => {
-    const baseFreq = 7.83 + (Math.random() - 0.5) * 2;
-    const state = emotionalStates[Math.floor(Math.random() * emotionalStates.length)];
+    // Map ecosystem coherence to emotional state
+    const coherence = ecosystemMetrics.coherence || 0;
+    const emotionalFreq = ecosystemMetrics.emotionalFrequency || 7.83;
+    const emotion = ecosystemMetrics.emotion || 'Neutral';
     
-    const valenceNoise = (Math.random() - 0.5) * 0.3;
-    const arousalNoise = (Math.random() - 0.5) * 0.3;
+    // Determine emotional state based on coherence level
+    let state = emotionalStates.find(s => s.emotion.toLowerCase() === emotion.toLowerCase()) 
+      || emotionalStates[0];
+    
+    // Use coherence to determine intensity and confidence
+    const intensity = coherence;
+    const confidence = Math.min(1, coherence + 0.2);
     
     return {
       timestamp: new Date(),
-      frequency: baseFreq,
-      valence: Math.max(0, Math.min(1, state.valence + valenceNoise)),
-      arousal: Math.max(0, Math.min(1, state.arousal + arousalNoise)),
-      intensity: 0.3 + Math.random() * 0.7,
-      dominantEmotion: state.emotion,
+      frequency: emotionalFreq,
+      valence: state.valence,
+      arousal: state.arousal,
+      intensity,
+      dominantEmotion: emotion || state.emotion,
       emotionalTags: state.tags,
       color: state.color,
-      confidence: 0.6 + Math.random() * 0.4
+      confidence
     };
   };
 

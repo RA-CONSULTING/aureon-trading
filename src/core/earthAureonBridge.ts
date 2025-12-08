@@ -100,9 +100,10 @@ export class EarthAureonBridge {
       return this.getDefaultInfluence();
     }
 
-    // If no earth streams provided, generate simulated data
+    // If no earth streams provided, return default influence (no simulation)
     if (!earthStreams) {
-      earthStreams = this.generateSimulatedEarthData();
+      console.warn('[EarthBridge] No earth streams provided - returning default influence (no simulation)');
+      return this.getDefaultInfluence();
     }
 
     // Calculate Schumann coherence
@@ -270,17 +271,11 @@ export class EarthAureonBridge {
   }
 
   /**
-   * Generate simulated earth data for testing
+   * @deprecated SIMULATION REMOVED - System requires real earth data
+   * This method throws an error - no simulation allowed
    */
   private generateSimulatedEarthData(): SimpleEarthStreams {
-    const time = Date.now();
-    
-    return {
-      solarWindVelocity: 400 + Math.sin(time / 20000) * 100 + Math.random() * 50,
-      geomagneticKp: 2 + Math.sin(time / 30000) * 2 + Math.random() * 1,
-      ionosphericDensity: 50 + Math.cos(time / 25000) * 20 + Math.random() * 10,
-      fieldCoupling: 1.2 + Math.sin(time / 15000) * 0.5 + Math.random() * 0.3
-    };
+    throw new Error('LIVE_DATA_REQUIRED: Earth data simulation is disabled. Provide real earth streams or use default influence.');
   }
 
   /**

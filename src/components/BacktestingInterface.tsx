@@ -128,25 +128,29 @@ export function BacktestingInterface() {
 
       if (error) throw error;
 
-      // Simulate results for now (edge function would provide real results)
-      const simulatedResults: BacktestResults = {
-        totalTrades: 247,
-        winRate: 61.3,
-        totalReturn: 347.8,
-        sharpeRatio: 2.14,
-        maxDrawdown: 18.7,
-        profitFactor: 2.34,
-        avgWin: 3.24,
-        avgLoss: 1.79,
-        equityCurve: generateEquityCurve(config.initialCapital, 247),
-        trades: [],
+      // LIVE DATA ONLY - Use real results from edge function
+      if (!data || !data.results) {
+        throw new Error('LIVE_DATA_REQUIRED: Backtest edge function did not return results. No simulation allowed.');
+      }
+
+      const realResults: BacktestResults = {
+        totalTrades: data.results.totalTrades || 0,
+        winRate: data.results.winRate || 0,
+        totalReturn: data.results.totalReturn || 0,
+        sharpeRatio: data.results.sharpeRatio || 0,
+        maxDrawdown: data.results.maxDrawdown || 0,
+        profitFactor: data.results.profitFactor || 0,
+        avgWin: data.results.avgWin || 0,
+        avgLoss: data.results.avgLoss || 0,
+        equityCurve: data.results.equityCurve || [],
+        trades: data.results.trades || [],
       };
 
-      setResults(simulatedResults);
+      setResults(realResults);
 
       toast({
         title: "Backtest Complete",
-        description: `Analyzed ${simulatedResults.totalTrades} trades with ${simulatedResults.winRate.toFixed(1)}% win rate`,
+        description: `Analyzed ${realResults.totalTrades} trades with ${realResults.winRate.toFixed(1)}% win rate`,
       });
     } catch (error) {
       console.error('Backtest error:', error);

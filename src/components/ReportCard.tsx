@@ -1,6 +1,6 @@
-
 import React from 'react';
 import { NexusReport } from '@/types';
+import { useEcosystemData } from '@/hooks/useEcosystemData';
 
 interface ReportCardProps {
   report: NexusReport | null;
@@ -18,16 +18,28 @@ const MetricDisplay: React.FC<{ label: string; value: string | number; unit?: st
 
 
 const ReportCard: React.FC<ReportCardProps> = ({ report }) => {
+  const { metrics, isInitialized } = useEcosystemData();
+  
   if (!report) return null;
 
-  const { simulationYear } = report;
-  const days = (simulationYear - 2025) * 365;
+  // LIVE DATA ONLY - Use real ecosystem metrics
+  // Show loading state when not initialized
+  if (!isInitialized) {
+    return (
+      <div className="bg-gray-800/50 border border-gray-700 rounded-lg shadow-lg p-6 h-full">
+        <h3 className="text-xl font-semibold text-gray-200 mb-4">Live Performance Metrics</h3>
+        <div className="text-yellow-400 text-center py-8">
+          ⚠️ AWAITING LIVE DATA - No simulation
+        </div>
+      </div>
+    );
+  }
 
-  // Faked metrics for demonstration purposes
-  const pnl = (days * 123.45).toFixed(2);
-  const winRate = (62.5 + Math.sin(days / 30) * 5).toFixed(2);
-  const sharpeRatio = (1.85 + Math.cos(days / 50) * 0.5).toFixed(2);
-  const exposure = (35 + Math.sin(days/15) * 15).toFixed(2);
+  // Use real coherence and harmonic data 
+  const coherence = (metrics.coherence * 100).toFixed(2);
+  const lambda = metrics.lambda?.toFixed(4) || '0.0000';
+  const harmonicFidelity = (metrics.harmonicFidelity * 100).toFixed(2);
+  const prismLevel = metrics.prismLevel || 0;
 
   return (
     <div className="bg-gray-800/50 border border-gray-700 rounded-lg shadow-lg p-6 h-full">
@@ -35,29 +47,28 @@ const ReportCard: React.FC<ReportCardProps> = ({ report }) => {
       <div className="flex flex-col gap-4 h-full justify-between">
         <div className="flex flex-row gap-4">
            <MetricDisplay 
-                label="Total P&L"
-                value={`$${pnl}`}
-                tooltip="Total profit and loss since the start of the session."
-                valueColor="text-green-400"
+                label="Coherence (Γ)"
+                value={`${coherence}%`}
+                tooltip="Real-time field coherence from Master Equation."
+                valueColor={parseFloat(coherence) >= 70 ? 'text-green-400' : parseFloat(coherence) >= 45 ? 'text-yellow-400' : 'text-red-400'}
             />
             <MetricDisplay 
-                label="Sharpe Ratio" 
-                value={sharpeRatio}
-                tooltip="Risk-adjusted return. Higher is better."
+                label="Lambda (Λ)" 
+                value={lambda}
+                tooltip="Master Equation lambda value."
             />
         </div>
         <div className="flex flex-row gap-4">
             <MetricDisplay
-                label="Win Rate"
-                value={winRate}
+                label="Harmonic Fidelity"
+                value={harmonicFidelity}
                 unit="%"
-                tooltip="Percentage of profitable trades out of all closed trades."
+                tooltip="HNC Imperial harmonic fidelity measure."
             />
             <MetricDisplay 
-                label="Current Exposure" 
-                value={exposure}
-                unit="%"
-                tooltip="Percentage of capital currently allocated to open positions."
+                label="Prism Level" 
+                value={prismLevel}
+                tooltip="Current Prism transformation level (0-5)."
             />
         </div>
       </div>
