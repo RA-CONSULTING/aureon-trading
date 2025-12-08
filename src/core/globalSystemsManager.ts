@@ -240,11 +240,22 @@ class GlobalSystemsManager {
       }
     }, 2000);
     
-    // 6. Initialize full ecosystem connector
-    await fullEcosystemConnector.initialize();
+    // 6. Initialize full ecosystem connector with timeout for graceful degradation
+    try {
+      await Promise.race([
+        fullEcosystemConnector.initialize(),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Ecosystem init timeout')), 5000)
+        )
+      ]);
+      console.log('✅ Full ecosystem initialized successfully');
+    } catch (error) {
+      console.warn('⚠️ Ecosystem initialization timed out or failed, continuing with degraded mode:', error);
+      // Continue anyway - dashboard should still load
+    }
     
     this.updateState({ isInitialized: true });
-    console.log('✅ GlobalSystemsManager: Initialization complete');
+    console.log('✅ GlobalSystemsManager: Initialization complete (may be in degraded mode)');
     
     // 7. Auto-start trading if authenticated
     if (this.state.isAuthenticated && this.state.userId) {

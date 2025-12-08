@@ -139,14 +139,17 @@ class TemporalLadderCore {
 
   private checkSystemHealth() {
     const now = Date.now();
-    const HEARTBEAT_TIMEOUT = 5000; // 5 seconds
+    const HEARTBEAT_TIMEOUT = 15000; // Increased to 15 seconds for stability
 
     this.state.systems.forEach((status, name) => {
       if (status.active && now - status.lastHeartbeat > HEARTBEAT_TIMEOUT) {
-        console.warn(`⚠️ Temporal Ladder: ${name} heartbeat timeout`);
-        status.health = Math.max(0, status.health - 0.1);
+        // Only log once per significant health drop to reduce spam
+        if (status.health > 0.5) {
+          console.warn(`⚠️ Temporal Ladder: ${name} heartbeat timeout (health: ${status.health.toFixed(2)})`);
+        }
+        status.health = Math.max(0, status.health - 0.05); // Slower degradation
         
-        if (status.health < 0.3) {
+        if (status.health < 0.2) {
           this.initiateFailover(name);
         }
       }

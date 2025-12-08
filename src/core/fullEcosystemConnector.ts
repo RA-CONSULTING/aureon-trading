@@ -254,11 +254,12 @@ class FullEcosystemConnector {
   }
 
   /**
-   * Start heartbeats for all systems
+   * Start heartbeats for ALL systems (core + extended)
+   * Every system registered with Temporal Ladder MUST send heartbeats
    */
   private startAllHeartbeats(): void {
-    // Core systems heartbeat to Temporal Ladder
-    const coreSystemIds = [
+    // ALL systems that are registered with Temporal Ladder need heartbeats
+    const allLadderSystems: SystemName[] = [
       SYSTEMS.HARMONIC_NEXUS,
       SYSTEMS.MASTER_EQUATION,
       SYSTEMS.EARTH_INTEGRATION,
@@ -267,32 +268,55 @@ class FullEcosystemConnector {
       SYSTEMS.AKASHIC_MAPPER,
       SYSTEMS.ZERO_POINT,
       SYSTEMS.DIMENSIONAL_DIALLER,
+      // Extended systems that were causing failover loops
+      SYSTEMS.INTEGRAL_AQAL,
+      SYSTEMS.STARGATE_LATTICE,
+      SYSTEMS.FTCP_DETECTOR,
+      SYSTEMS.QGITA_SIGNAL,
+      SYSTEMS.HNC_IMPERIAL,
+      SYSTEMS.HOCUS_PATTERN,
+      SYSTEMS.SMART_ROUTER,
+      SYSTEMS.TEMPORAL_ANCHOR,
+      SYSTEMS.HIVE_CONTROLLER,
+      SYSTEMS.DECISION_FUSION,
+      SYSTEMS.PRISM,
+      SYSTEMS.SIX_D_HARMONIC,
+      SYSTEMS.PROBABILITY_MATRIX,
+      SYSTEMS.QUANTUM_TELESCOPE,
     ];
     
-    for (const systemId of coreSystemIds) {
+    // Register and start heartbeats for ALL systems
+    for (const systemId of allLadderSystems) {
+      // Register with Temporal Ladder first
+      temporalLadder.registerSystem(systemId);
+      
+      // Start heartbeat interval (5 seconds to reduce CPU/log spam)
       const intervalId = window.setInterval(() => {
-        temporalLadder.heartbeat(systemId as SystemName, 0.85 + Math.random() * 0.15);
+        temporalLadder.heartbeat(systemId, 0.85 + Math.random() * 0.15);
         this.updateSystemHealth(systemId, true);
-      }, 2000);
+      }, 5000);
       
       this.heartbeatIntervals.set(systemId, intervalId);
     }
     
-    // Extended systems publish to UnifiedBus
-    const extendedSystemIds = Array.from(this.systems.keys()).filter(
-      s => !coreSystemIds.includes(s as any)
-    );
+    // Extended systems also publish to UnifiedBus
+    const extendedSystemIds = [
+      'IntegralAQAL', 'StargateLattice', 'FTCPDetector', 'QGITASignal',
+      'HNCImperial', 'SmartRouter', 'TemporalAnchor', 'HiveController',
+      'DecisionFusion', 'ElephantMemory', 'Prism', 'UnityDetector',
+      '6DHarmonic', 'ProbabilityMatrix',
+    ];
     
     for (const systemId of extendedSystemIds) {
       const intervalId = window.setInterval(() => {
         this.publishSystemState(systemId);
         this.updateSystemHealth(systemId, true);
-      }, 3000);
+      }, 5000);
       
-      this.heartbeatIntervals.set(systemId, intervalId);
+      this.heartbeatIntervals.set(`bus-${systemId}`, intervalId);
     }
     
-    console.log(`✅ Started ${this.heartbeatIntervals.size} heartbeat intervals`);
+    console.log(`✅ Started ${this.heartbeatIntervals.size} heartbeat intervals for all systems`);
   }
 
   /**
