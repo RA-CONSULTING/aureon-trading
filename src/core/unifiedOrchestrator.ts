@@ -19,6 +19,9 @@ import { hocusPatternPipeline, type PipelineState } from './hocusPatternPipeline
 import { hncProbabilityMatrix, type ProbabilityMatrix, type TradingSignal as ProbabilitySignal } from './hncProbabilityMatrix';
 import { quantumTelescope, type TelescopeObservation } from './quantumTelescope';
 import { imperialPredictability, type CosmicState, type ImperialPrediction } from './imperialPredictability';
+import { crossExchangeArbitrageScanner, type ArbitrageScanResult } from './crossExchangeArbitrageScanner';
+import { trailingStopManager, type TrailingStop } from './trailingStopManager';
+import { positionHeatTracker, type HeatState } from './positionHeatTracker';
 import { supabase } from '@/integrations/supabase/client';
 
 export interface TradeExecutionResult {
@@ -44,6 +47,9 @@ export interface OrchestrationResult {
   telescopeObservation: TelescopeObservation | null;
   cosmicState: CosmicState | null;
   imperialPrediction: ImperialPrediction | null;
+  arbitrageScan: ArbitrageScanResult | null;
+  heatState: HeatState | null;
+  trailingStops: TrailingStop[];
   routingDecision: RoutingDecision | null;
   qgitaSignal: QGITASignal | null;
   positionSizing: {
@@ -61,6 +67,8 @@ export interface OrchestrationResult {
     qgitaTier?: 1 | 2 | 3;
     probabilityH1?: string;
     cosmicPhase?: string;
+    heatBlocked?: boolean;
+    arbitrageOpportunity?: boolean;
   };
   tradeExecuted: boolean;
 }
@@ -227,11 +235,38 @@ export class UnifiedOrchestrator {
       marketSnapshot.momentum
     );
     
-    // Step 9: Get multi-exchange state and position sizing
+    // Step 9: Get multi-exchange state and position sizing (moved up for heat tracker)
     const exchangeState = multiExchangeClient.getState();
     const positionSizing = multiExchangeClient.calculatePositionSize(0.02, 'USDT');
     
-    // Step 10: Get Smart Order Router recommendation
+    // Step 10: Cross-Exchange Arbitrage Scanner
+    // Update price cache with current market snapshot
+    crossExchangeArbitrageScanner.updatePrice(symbol, 'binance', marketSnapshot.price);
+    const arbitrageScan = crossExchangeArbitrageScanner.scanDirectArbitrage([symbol]);
+    if (arbitrageScan.bestOpportunity?.isViable) {
+      console.log(`[Orchestrator:Arbitrage] 💰 Opportunity: ${arbitrageScan.bestOpportunity.symbol} ` +
+        `Buy@${arbitrageScan.bestOpportunity.buyExchange} → Sell@${arbitrageScan.bestOpportunity.sellExchange} ` +
+        `Net: ${(arbitrageScan.bestOpportunity.netProfitPct * 100).toFixed(2)}%`);
+    }
+    
+    // Step 11: Position Heat Tracker - Check correlation concentration
+    positionHeatTracker.setCapital(exchangeState.totalEquityUsd || 10000);
+    const heatState = positionHeatTracker.getHeatState();
+    const heatCheck = positionHeatTracker.canAddPosition(symbol, positionSizing.positionSizeUsd);
+    if (!heatCheck.allowed) {
+      console.log(`[Orchestrator:Heat] 🔥 Position blocked: ${heatCheck.reason}`);
+    }
+    
+    // Step 12: Trailing Stop Manager - Update existing stops
+    const trailingStops = trailingStopManager.getAllStops();
+    for (const stop of trailingStops) {
+      const stopUpdate = trailingStopManager.updateStop(stop.symbol, marketSnapshot.price);
+      if (stopUpdate.triggered) {
+        console.log(`[Orchestrator:TrailingStop] ⚠️ Stop triggered for ${stop.symbol}`);
+      }
+    }
+    
+    // Step 13: Get Smart Order Router recommendation
     let routingDecision: RoutingDecision | null = null;
     try {
       routingDecision = await smartOrderRouter.getBestQuote(symbol, 'BUY', positionSizing.positionSizeUsd / marketSnapshot.price);
@@ -239,14 +274,14 @@ export class UnifiedOrchestrator {
       console.warn('[UnifiedOrchestrator] Smart routing failed, using default:', err);
     }
     
-    // Step 11: Check Elephant Memory for avoidance
+    // Step 14: Check Elephant Memory for avoidance
     const avoidance = elephantMemory.shouldAvoid(symbol);
     
-    // Step 12: Get bus consensus
+    // Step 15: Get bus consensus
     const busSnapshot = unifiedBus.snapshot();
     const consensus = unifiedBus.checkConsensus();
     
-    // Step 13: Make final decision with QGITA tier integration
+    // Step 16: Make final decision with QGITA tier integration and heat check
     const finalDecision = this.makeFinalDecision(
       consensus,
       lambdaState,
@@ -256,14 +291,15 @@ export class UnifiedOrchestrator {
       ecosystemState,
       routingDecision,
       positionSizing,
-      qgitaSignal
+      qgitaSignal,
+      heatCheck
     );
     
-    // Step 14: Execute trade if conditions met
+    // Step 17: Execute trade if conditions met
     let tradeExecuted = false;
     let tradeResult: TradeExecutionResult | null = null;
-    // Also check imperial should trade
-    if (finalDecision.action !== 'HOLD' && !this.config.dryRun && cosmicState.shouldTrade) {
+    // Also check imperial should trade and heat allows
+    if (finalDecision.action !== 'HOLD' && !this.config.dryRun && cosmicState.shouldTrade && heatCheck.allowed) {
       tradeResult = await this.executeTrade(
         finalDecision, 
         symbol, 
@@ -274,7 +310,12 @@ export class UnifiedOrchestrator {
       );
       tradeExecuted = tradeResult.success;
       
-      if (!tradeResult.success) {
+      if (tradeResult.success) {
+        // Add position to heat tracker
+        positionHeatTracker.addPosition(symbol, finalDecision.positionSizeUsd || positionSizing.positionSizeUsd);
+        // Create trailing stop for new position
+        trailingStopManager.createStop(symbol, marketSnapshot.price, marketSnapshot.price);
+      } else {
         console.warn('[UnifiedOrchestrator] Trade failed:', tradeResult.error);
       }
     }
@@ -296,12 +337,17 @@ export class UnifiedOrchestrator {
       telescopeObservation,
       cosmicState,
       imperialPrediction,
+      arbitrageScan,
+      heatState,
+      trailingStops,
       routingDecision,
       qgitaSignal,
       positionSizing,
       finalDecision: {
         ...finalDecision,
         cosmicPhase: cosmicState.phase,
+        heatBlocked: !heatCheck.allowed,
+        arbitrageOpportunity: arbitrageScan.bestOpportunity?.isViable || false,
       },
       tradeExecuted,
     };
@@ -559,7 +605,7 @@ export class UnifiedOrchestrator {
   }
   
   /**
-   * Make final trading decision based on all inputs including QGITA tier
+   * Make final trading decision based on all inputs including QGITA tier and heat check
    */
   private makeFinalDecision(
     consensus: { ready: boolean; signal: SignalType; confidence: number },
@@ -570,7 +616,8 @@ export class UnifiedOrchestrator {
     ecosystemState: EcosystemState | null,
     routingDecision: RoutingDecision | null,
     positionSizing: { positionSizeUsd: number; availableBalance: number; riskAmount: number } | null,
-    qgitaSignal: QGITASignal | null
+    qgitaSignal: QGITASignal | null,
+    heatCheck?: { allowed: boolean; reason: string; projectedHeat: number }
   ): { action: 'BUY' | 'SELL' | 'HOLD'; symbol: string; confidence: number; reason: string; harmonic6D?: { score: number; waveState: string; harmonicLock: boolean }; recommendedExchange?: string; positionSizeUsd?: number; qgitaTier?: 1 | 2 | 3 } {
     // Extract 6D probability fusion from ecosystem state
     const probabilityFusion = ecosystemState?.probabilityFusion ?? null;
@@ -579,7 +626,18 @@ export class UnifiedOrchestrator {
     const harmonic6DScore = probabilityFusion ? (probabilityFusion.fusedProbability - 0.5) * 2 : 0;
     const harmonic6DData = { score: harmonic6DScore, waveState, harmonicLock };
 
-    // Check avoidance first
+    // Check heat limit first
+    if (heatCheck && !heatCheck.allowed) {
+      return {
+        action: 'HOLD',
+        symbol,
+        confidence: 0,
+        reason: `Heat Limit: ${heatCheck.reason}`,
+        harmonic6D: harmonic6DData,
+      };
+    }
+
+    // Check avoidance
     if (avoidance.avoid) {
       return {
         action: 'HOLD',
