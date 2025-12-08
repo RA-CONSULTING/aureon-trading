@@ -27,6 +27,8 @@ import { adaptiveFilterThresholds } from './adaptiveFilterThresholds';
 import { unifiedStateAggregator } from './unifiedStateAggregator';
 import { notificationManager } from './notificationManager';
 import { exchangeLearningTracker } from './exchangeLearningTracker';
+import { tradeLogger } from './tradeLogger';
+import { adaptiveLearningEngine } from './adaptiveLearningEngine';
 import { supabase } from '@/integrations/supabase/client';
 
 export interface TradeExecutionResult {
@@ -314,13 +316,26 @@ export class UnifiedOrchestrator {
       heatCheck
     );
     
-    // Step 17: Execute trade if conditions met (also check adaptive thresholds)
+    // Step 17: Apply adaptive learning engine before trade
+    const frequencyBand = tradeLogger.classifyFrequencyBand(prismOutput.frequency);
+    const adaptiveCheck = adaptiveLearningEngine.shouldTrade({
+      coherence: lambdaState.coherence,
+      confidence: finalDecision.confidence,
+      frequencyBand,
+      regime: regimeResult.regime,
+      hour: new Date().getHours(),
+    });
+    
+    // Step 18: Execute trade if conditions met (also check adaptive thresholds)
     let tradeExecuted = false;
     let tradeResult: TradeExecutionResult | null = null;
     // Also check imperial should trade, heat allows, and adaptive thresholds pass
-    if (finalDecision.action !== 'HOLD' && !this.config.dryRun && cosmicState.shouldTrade && heatCheck.allowed && passesAdaptiveThresholds) {
+    if (finalDecision.action !== 'HOLD' && !this.config.dryRun && cosmicState.shouldTrade && heatCheck.allowed && passesAdaptiveThresholds && adaptiveCheck.allowed) {
+      // Apply adaptive position size modifier
+      const adjustedPositionSize = adaptiveLearningEngine.adjustPositionSize(finalDecision.positionSizeUsd || positionSizing.positionSizeUsd) * adaptiveCheck.modifier;
+      
       tradeResult = await this.executeTrade(
-        finalDecision, 
+        { ...finalDecision, positionSizeUsd: adjustedPositionSize }, 
         symbol, 
         marketSnapshot, 
         lambdaState, 
@@ -330,8 +345,27 @@ export class UnifiedOrchestrator {
       tradeExecuted = tradeResult.success;
       
       if (tradeResult.success) {
+        // Log trade entry via TradeLogger
+        await tradeLogger.logEntry({
+          symbol,
+          side: finalDecision.action as 'BUY' | 'SELL',
+          price: tradeResult.executedPrice || marketSnapshot.price,
+          quantity: tradeResult.quantity || adjustedPositionSize / marketSnapshot.price,
+          positionSizeUsd: adjustedPositionSize,
+          prismFrequency: prismOutput.frequency,
+          coherence: lambdaState.coherence,
+          lambda: lambdaState.lambda,
+          lighthouseConfidence: lighthouseState.confidence,
+          hncProbability: probabilitySignal.probability,
+          qgitaTier: qgitaSignal?.tier || 3,
+          exchange: tradeResult.exchange || 'binance',
+          orderId: tradeResult.orderId,
+          regime: regimeResult.regime,
+          cosmicPhase: cosmicState.phase,
+        });
+        
         // Add position to heat tracker
-        positionHeatTracker.addPosition(symbol, finalDecision.positionSizeUsd || positionSizing.positionSizeUsd);
+        positionHeatTracker.addPosition(symbol, adjustedPositionSize);
         // Create trailing stop for new position
         trailingStopManager.createStop(symbol, marketSnapshot.price, marketSnapshot.price);
         // Record to adaptive thresholds for learning
@@ -354,11 +388,13 @@ export class UnifiedOrchestrator {
           symbol, 
           finalDecision.action as 'BUY' | 'SELL', 
           marketSnapshot.price, 
-          (finalDecision.positionSizeUsd || positionSizing.positionSizeUsd) / marketSnapshot.price
+          adjustedPositionSize / marketSnapshot.price
         );
       } else {
         console.warn('[UnifiedOrchestrator] Trade failed:', tradeResult.error);
       }
+    } else if (!adaptiveCheck.allowed) {
+      console.log(`[UnifiedOrchestrator] Adaptive learning blocked trade: ${adaptiveCheck.reason}`);
     }
     
     // Send heartbeat to Temporal Ladder
@@ -815,6 +851,7 @@ export class UnifiedOrchestrator {
   
   /**
    * Execute a trade with smart order routing via edge function
+   * Phase 5C: Enhanced credential validation before execution
    */
   private async executeTrade(
     decision: { action: 'BUY' | 'SELL' | 'HOLD'; symbol: string; confidence: number; recommendedExchange?: string; positionSizeUsd?: number },
@@ -830,12 +867,31 @@ export class UnifiedOrchestrator {
     console.log(`[UnifiedOrchestrator] Executing ${decision.action} on ${symbol} via ${exchange} | Size: $${positionSize.toFixed(2)}`);
     
     try {
-      // Get current session for auth token
+      // Phase 5C: Pre-validate authentication and credentials
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session?.access_token) {
         console.error('[UnifiedOrchestrator] No auth session available for trade execution');
         return { success: false, error: 'Not authenticated' };
+      }
+      
+      // Phase 5C: Validate user has credentials for target exchange
+      const { data: userSession, error: sessionError } = await supabase
+        .from('aureon_user_sessions')
+        .select('binance_api_key_encrypted, kraken_api_key_encrypted, alpaca_api_key_encrypted, capital_api_key_encrypted')
+        .eq('user_id', session.user.id)
+        .maybeSingle();
+      
+      if (sessionError || !userSession) {
+        console.error('[UnifiedOrchestrator] Cannot verify user credentials:', sessionError?.message);
+        return { success: false, error: 'Cannot verify trading credentials' };
+      }
+      
+      // Check exchange-specific credentials
+      const credentialField = `${exchange}_api_key_encrypted` as keyof typeof userSession;
+      if (!userSession[credentialField]) {
+        console.error(`[UnifiedOrchestrator] Missing ${exchange} API credentials`);
+        return { success: false, error: `Missing ${exchange} API credentials. Add them in Settings.` };
       }
 
       // Prepare trade payload
