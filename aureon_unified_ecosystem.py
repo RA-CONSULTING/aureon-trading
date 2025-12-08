@@ -6549,7 +6549,8 @@ class AureonKrakenEcosystem:
                 if orch_score > 70:
                     orchestrator_boost = 1.10  # 10% boost for high cross-exchange score
                     logger.debug(f"{symbol}: Orchestrator boost {orchestrator_boost:.2f}x (score={orch_score:.1f})")
-            final_score = final_score * orchestrator_boost
+            # Apply boost to the composite score (fix: initialize from score)
+            score = int(score * orchestrator_boost)
             
             # Apply historical symbol performance
             if symbol_insight.get('trades', 0) >= 5:
