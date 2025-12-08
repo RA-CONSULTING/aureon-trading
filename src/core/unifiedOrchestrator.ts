@@ -22,6 +22,10 @@ import { imperialPredictability, type CosmicState, type ImperialPrediction } fro
 import { crossExchangeArbitrageScanner, type ArbitrageScanResult } from './crossExchangeArbitrageScanner';
 import { trailingStopManager, type TrailingStop } from './trailingStopManager';
 import { positionHeatTracker, type HeatState } from './positionHeatTracker';
+import { portfolioRebalancer } from './portfolioRebalancer';
+import { adaptiveFilterThresholds } from './adaptiveFilterThresholds';
+import { unifiedStateAggregator } from './unifiedStateAggregator';
+import { notificationManager } from './notificationManager';
 import { supabase } from '@/integrations/supabase/client';
 
 export interface TradeExecutionResult {
@@ -212,9 +216,8 @@ export class UnifiedOrchestrator {
       volume: marketSnapshot.volume,
       momentum: marketSnapshot.momentum,
       coherence: lambdaState.coherence,
-      resonance: prismOutput.resonance,
     };
-    const probabilityMatrix = hncProbabilityMatrix.generateMatrix(symbol, currentMarketData);
+    const probabilityMatrix = hncProbabilityMatrix.generateMatrix(symbol, { ...currentMarketData, resonance: prismOutput.resonance });
     const probabilitySignal = hncProbabilityMatrix.getTradingSignal(symbol, currentMarketData);
     this.publishProbabilityMatrix(probabilityMatrix, probabilitySignal);
     temporalLadder.heartbeat(SYSTEMS.PROBABILITY_MATRIX, probabilitySignal.confidence);
@@ -277,6 +280,21 @@ export class UnifiedOrchestrator {
     // Step 14: Check Elephant Memory for avoidance
     const avoidance = elephantMemory.shouldAvoid(symbol);
     
+    // Step 14b: Adaptive Filter Thresholds - Detect market regime
+    const priceHistory = [marketSnapshot.price]; // In production, maintain a window
+    const volumeHistory = [marketSnapshot.volume];
+    const regimeResult = adaptiveFilterThresholds.detectRegime(priceHistory, volumeHistory);
+    const passesAdaptiveThresholds = adaptiveFilterThresholds.passesThresholds(
+      lambdaState.coherence,
+      marketSnapshot.momentum,
+      marketSnapshot.volume
+    );
+    
+    // Step 14c: Unified State Aggregator - Check symbol insights
+    const symbolInsight = unifiedStateAggregator.getSymbolInsight(symbol);
+    const isOptimalHour = unifiedStateAggregator.isOptimalTradingHour();
+    const isPrimeSymbol = unifiedStateAggregator.isPrimeSymbol(symbol);
+    
     // Step 15: Get bus consensus
     const busSnapshot = unifiedBus.snapshot();
     const consensus = unifiedBus.checkConsensus();
@@ -295,11 +313,11 @@ export class UnifiedOrchestrator {
       heatCheck
     );
     
-    // Step 17: Execute trade if conditions met
+    // Step 17: Execute trade if conditions met (also check adaptive thresholds)
     let tradeExecuted = false;
     let tradeResult: TradeExecutionResult | null = null;
-    // Also check imperial should trade and heat allows
-    if (finalDecision.action !== 'HOLD' && !this.config.dryRun && cosmicState.shouldTrade && heatCheck.allowed) {
+    // Also check imperial should trade, heat allows, and adaptive thresholds pass
+    if (finalDecision.action !== 'HOLD' && !this.config.dryRun && cosmicState.shouldTrade && heatCheck.allowed && passesAdaptiveThresholds) {
       tradeResult = await this.executeTrade(
         finalDecision, 
         symbol, 
@@ -315,6 +333,25 @@ export class UnifiedOrchestrator {
         positionHeatTracker.addPosition(symbol, finalDecision.positionSizeUsd || positionSizing.positionSizeUsd);
         // Create trailing stop for new position
         trailingStopManager.createStop(symbol, marketSnapshot.price, marketSnapshot.price);
+        // Record to adaptive thresholds for learning
+        adaptiveFilterThresholds.recordTrade({
+          symbol,
+          profit: 0, // Will be updated on close
+          coherenceAtEntry: lambdaState.coherence,
+          momentumAtEntry: marketSnapshot.momentum,
+          volumeAtEntry: marketSnapshot.volume,
+          regime: regimeResult.regime,
+          timestamp: Date.now(),
+        });
+        // Update state aggregator
+        unifiedStateAggregator.updateSymbolInsight(symbol, 0, true);
+        // Send notification
+        await notificationManager.notifyTrade(
+          symbol, 
+          finalDecision.action as 'BUY' | 'SELL', 
+          marketSnapshot.price, 
+          (finalDecision.positionSizeUsd || positionSizing.positionSizeUsd) / marketSnapshot.price
+        );
       } else {
         console.warn('[UnifiedOrchestrator] Trade failed:', tradeResult.error);
       }
