@@ -5,6 +5,12 @@ import { TemporalLadderStatus } from "@/components/warroom/TemporalLadderStatus"
 import { EcosystemStatus } from "@/components/warroom/EcosystemStatus";
 import { DataStreamMonitorPanel } from "@/components/DataStreamMonitorPanel";
 import { SmokeTestPhasePanel } from "@/components/SmokeTestPhasePanel";
+import { ArbitrageScannerPanel } from "@/components/panels/ArbitrageScannerPanel";
+import { TrailingStopPanel } from "@/components/panels/TrailingStopPanel";
+import { PositionHeatPanel } from "@/components/panels/PositionHeatPanel";
+import { PortfolioRebalancerPanel } from "@/components/panels/PortfolioRebalancerPanel";
+import { MarketRegimeIndicator } from "@/components/panels/MarketRegimeIndicator";
+import { NotificationSettingsPanel } from "@/components/panels/NotificationSettingsPanel";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 const Systems = () => {
@@ -23,6 +29,20 @@ const Systems = () => {
             <UnifiedBusStatus />
             <TemporalLadderStatus />
             <EcosystemStatus />
+          </div>
+
+          {/* Risk Management & Trading Systems */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <ArbitrageScannerPanel />
+            <TrailingStopPanel />
+            <PositionHeatPanel />
+          </div>
+
+          {/* Portfolio & Market Analysis */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <PortfolioRebalancerPanel />
+            <MarketRegimeIndicator />
+            <NotificationSettingsPanel />
           </div>
           
           {/* Diagnostics */}
