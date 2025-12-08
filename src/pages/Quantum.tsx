@@ -44,7 +44,7 @@ const Quantum = () => {
     price: 97000, volume: 1000000, momentum: 0.01, coherence: 0.7, resonance: 0.8
   });
   const signalData = hncProbabilityMatrix.getTradingSignal('BTCUSDT', {
-    price: 97000, volume: 1000000, momentum: 0.01, coherence: 0.7, resonance: 0.8
+    price: 97000, volume: 1000000, momentum: 0.01, coherence: 0.7
   });
 
   return (
