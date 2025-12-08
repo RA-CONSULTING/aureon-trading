@@ -242,7 +242,6 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const encryptionKey = Deno.env.get('MASTER_ENCRYPTION_KEY') || 'aureon-default-key-32chars!!';
 
     // Verify user
     const authHeader = req.headers.get('Authorization');
@@ -282,13 +281,21 @@ serve(async (req) => {
       );
     }
 
-    // Prepare decryption key
-    const encoder = new TextEncoder();
-    const keyData = encoder.encode(encryptionKey.padEnd(32, '0').slice(0, 32));
+    // Prepare decryption key - must match encryption key format from update-user-credentials
+    const masterKeyBase64 = Deno.env.get('MASTER_ENCRYPTION_KEY');
+    if (!masterKeyBase64) {
+      console.error('[get-user-balances] MASTER_ENCRYPTION_KEY not configured');
+      return new Response(
+        JSON.stringify({ error: 'Encryption key not configured' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    const keyBytes = Uint8Array.from(atob(masterKeyBase64), c => c.charCodeAt(0));
     const cryptoKey = await crypto.subtle.importKey(
       'raw',
-      keyData,
-      { name: 'AES-GCM' },
+      keyBytes,
+      { name: 'AES-GCM', length: 256 },
       false,
       ['decrypt']
     );
