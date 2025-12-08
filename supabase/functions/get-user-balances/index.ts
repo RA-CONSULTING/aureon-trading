@@ -340,43 +340,63 @@ serve(async (req) => {
     const balances: ExchangeBalance[] = [];
     const fetchPromises: Promise<ExchangeBalance>[] = [];
 
-    // Fetch Binance balances
+    // Fetch Binance balances - wrapped in try/catch for decryption errors
     if (session.binance_api_key_encrypted && session.binance_api_secret_encrypted && session.binance_iv) {
-      const iv = Uint8Array.from(atob(session.binance_iv), c => c.charCodeAt(0));
-      const apiKey = await decryptCredential(session.binance_api_key_encrypted, cryptoKey, legacyCryptoKey, iv);
-      const apiSecret = await decryptCredential(session.binance_api_secret_encrypted, cryptoKey, legacyCryptoKey, iv);
-      fetchPromises.push(fetchBinanceBalances(apiKey, apiSecret));
+      try {
+        const iv = Uint8Array.from(atob(session.binance_iv), c => c.charCodeAt(0));
+        const apiKey = await decryptCredential(session.binance_api_key_encrypted, cryptoKey, legacyCryptoKey, iv);
+        const apiSecret = await decryptCredential(session.binance_api_secret_encrypted, cryptoKey, legacyCryptoKey, iv);
+        fetchPromises.push(fetchBinanceBalances(apiKey, apiSecret));
+      } catch (e) {
+        console.warn('[get-user-balances] Binance decryption failed:', e);
+        balances.push({ exchange: 'binance', connected: false, assets: [], totalUsd: 0, error: 'Credentials need to be re-entered' });
+      }
     } else {
       balances.push({ exchange: 'binance', connected: false, assets: [], totalUsd: 0 });
     }
 
-    // Fetch Kraken balances
+    // Fetch Kraken balances - wrapped in try/catch for decryption errors
     if (session.kraken_api_key_encrypted && session.kraken_api_secret_encrypted && session.kraken_iv) {
-      const iv = Uint8Array.from(atob(session.kraken_iv), c => c.charCodeAt(0));
-      const apiKey = await decryptCredential(session.kraken_api_key_encrypted, cryptoKey, legacyCryptoKey, iv);
-      const apiSecret = await decryptCredential(session.kraken_api_secret_encrypted, cryptoKey, legacyCryptoKey, iv);
-      fetchPromises.push(fetchKrakenBalances(apiKey, apiSecret));
+      try {
+        const iv = Uint8Array.from(atob(session.kraken_iv), c => c.charCodeAt(0));
+        const apiKey = await decryptCredential(session.kraken_api_key_encrypted, cryptoKey, legacyCryptoKey, iv);
+        const apiSecret = await decryptCredential(session.kraken_api_secret_encrypted, cryptoKey, legacyCryptoKey, iv);
+        fetchPromises.push(fetchKrakenBalances(apiKey, apiSecret));
+      } catch (e) {
+        console.warn('[get-user-balances] Kraken decryption failed:', e);
+        balances.push({ exchange: 'kraken', connected: false, assets: [], totalUsd: 0, error: 'Credentials need to be re-entered' });
+      }
     } else {
       balances.push({ exchange: 'kraken', connected: false, assets: [], totalUsd: 0 });
     }
 
-    // Fetch Alpaca balances
+    // Fetch Alpaca balances - wrapped in try/catch for decryption errors
     if (session.alpaca_api_key_encrypted && session.alpaca_secret_key_encrypted && session.alpaca_iv) {
-      const iv = Uint8Array.from(atob(session.alpaca_iv), c => c.charCodeAt(0));
-      const apiKey = await decryptCredential(session.alpaca_api_key_encrypted, cryptoKey, legacyCryptoKey, iv);
-      const secretKey = await decryptCredential(session.alpaca_secret_key_encrypted, cryptoKey, legacyCryptoKey, iv);
-      fetchPromises.push(fetchAlpacaBalances(apiKey, secretKey));
+      try {
+        const iv = Uint8Array.from(atob(session.alpaca_iv), c => c.charCodeAt(0));
+        const apiKey = await decryptCredential(session.alpaca_api_key_encrypted, cryptoKey, legacyCryptoKey, iv);
+        const secretKey = await decryptCredential(session.alpaca_secret_key_encrypted, cryptoKey, legacyCryptoKey, iv);
+        fetchPromises.push(fetchAlpacaBalances(apiKey, secretKey));
+      } catch (e) {
+        console.warn('[get-user-balances] Alpaca decryption failed:', e);
+        balances.push({ exchange: 'alpaca', connected: false, assets: [], totalUsd: 0, error: 'Credentials need to be re-entered' });
+      }
     } else {
       balances.push({ exchange: 'alpaca', connected: false, assets: [], totalUsd: 0 });
     }
 
-    // Fetch Capital.com balances
+    // Fetch Capital.com balances - wrapped in try/catch for decryption errors
     if (session.capital_api_key_encrypted && session.capital_password_encrypted && session.capital_identifier_encrypted && session.capital_iv) {
-      const iv = Uint8Array.from(atob(session.capital_iv), c => c.charCodeAt(0));
-      const apiKey = await decryptCredential(session.capital_api_key_encrypted, cryptoKey, legacyCryptoKey, iv);
-      const password = await decryptCredential(session.capital_password_encrypted, cryptoKey, legacyCryptoKey, iv);
-      const identifier = await decryptCredential(session.capital_identifier_encrypted, cryptoKey, legacyCryptoKey, iv);
-      fetchPromises.push(fetchCapitalBalances(apiKey, password, identifier));
+      try {
+        const iv = Uint8Array.from(atob(session.capital_iv), c => c.charCodeAt(0));
+        const apiKey = await decryptCredential(session.capital_api_key_encrypted, cryptoKey, legacyCryptoKey, iv);
+        const password = await decryptCredential(session.capital_password_encrypted, cryptoKey, legacyCryptoKey, iv);
+        const identifier = await decryptCredential(session.capital_identifier_encrypted, cryptoKey, legacyCryptoKey, iv);
+        fetchPromises.push(fetchCapitalBalances(apiKey, password, identifier));
+      } catch (e) {
+        console.warn('[get-user-balances] Capital.com decryption failed:', e);
+        balances.push({ exchange: 'capital', connected: false, assets: [], totalUsd: 0, error: 'Credentials need to be re-entered' });
+      }
     } else {
       balances.push({ exchange: 'capital', connected: false, assets: [], totalUsd: 0 });
     }
