@@ -26,6 +26,7 @@ import { portfolioRebalancer } from './portfolioRebalancer';
 import { adaptiveFilterThresholds } from './adaptiveFilterThresholds';
 import { unifiedStateAggregator } from './unifiedStateAggregator';
 import { notificationManager } from './notificationManager';
+import { exchangeLearningTracker } from './exchangeLearningTracker';
 import { supabase } from '@/integrations/supabase/client';
 
 export interface TradeExecutionResult {
@@ -345,6 +346,9 @@ export class UnifiedOrchestrator {
         });
         // Update state aggregator
         unifiedStateAggregator.updateSymbolInsight(symbol, 0, true);
+        // Record to exchange learning tracker
+        const routedExchange = (routingDecision?.bestQuote?.exchange || 'binance') as 'binance' | 'kraken' | 'alpaca' | 'capital';
+        exchangeLearningTracker.recordTrade(routedExchange, symbol, 0, true, 50);
         // Send notification
         await notificationManager.notifyTrade(
           symbol, 

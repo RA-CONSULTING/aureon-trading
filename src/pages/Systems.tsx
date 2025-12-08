@@ -11,6 +11,7 @@ import { PositionHeatPanel } from "@/components/panels/PositionHeatPanel";
 import { PortfolioRebalancerPanel } from "@/components/panels/PortfolioRebalancerPanel";
 import { MarketRegimeIndicator } from "@/components/panels/MarketRegimeIndicator";
 import { NotificationSettingsPanel } from "@/components/panels/NotificationSettingsPanel";
+import { ExchangeLearningPanel } from "@/components/panels/ExchangeLearningPanel";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 const Systems = () => {
@@ -39,10 +40,11 @@ const Systems = () => {
           </div>
 
           {/* Portfolio & Market Analysis */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <PortfolioRebalancerPanel />
             <MarketRegimeIndicator />
             <NotificationSettingsPanel />
+            <ExchangeLearningPanel />
           </div>
           
           {/* Diagnostics */}
