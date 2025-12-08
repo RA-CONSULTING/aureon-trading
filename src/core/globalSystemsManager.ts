@@ -185,6 +185,7 @@ class GlobalSystemsManager {
   
   /**
    * Initialize the global systems manager - called ONCE at app startup
+   * Wrapped with master timeout to prevent hanging
    */
   async initialize(): Promise<void> {
     if (this.state.isInitialized) {
@@ -192,19 +193,52 @@ class GlobalSystemsManager {
       return;
     }
     
+    try {
+      await Promise.race([
+        this.doInitialize(),
+        new Promise<void>((_, reject) => 
+          setTimeout(() => reject(new Error('Master init timeout')), 10000)
+        )
+      ]);
+    } catch (error) {
+      console.error('🚨 Initialization timeout/failure - forcing ready state:', error);
+      this.updateState({ isInitialized: true });
+    }
+  }
+  
+  /**
+   * Actual initialization logic
+   */
+  private async doInitialize(): Promise<void> {
     console.log('🌌 GlobalSystemsManager: Initializing...');
     
     // 1. Setup auth listener (this persists across the entire app lifecycle)
     this.setupAuthListener();
     
-    // 2. Check current auth state
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session) {
-      this.updateState({
-        userId: session.user.id,
-        userEmail: session.user.email || null,
-        isAuthenticated: true,
-      });
+    // 2. Check current auth state with timeout
+    try {
+      const sessionResult = await Promise.race([
+        supabase.auth.getSession(),
+        new Promise<never>((_, reject) => 
+          setTimeout(() => reject(new Error('Auth session check timeout')), 3000)
+        )
+      ]);
+      
+      if (sessionResult.data?.session) {
+        this.updateState({
+          userId: sessionResult.data.session.user.id,
+          userEmail: sessionResult.data.session.user.email || null,
+          isAuthenticated: true,
+        });
+      }
+    } catch (error) {
+      console.warn('⚠️ Auth session check failed/timed out, continuing unauthenticated:', error);
+      // Clear any stale session data
+      try {
+        await supabase.auth.signOut();
+      } catch (e) {
+        // Ignore signout errors
+      }
     }
     
     // 3. Start background services
@@ -267,7 +301,14 @@ class GlobalSystemsManager {
    * Setup persistent auth listener
    */
   private setupAuthListener(): void {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      // Handle token refresh failures - clear stale session
+      if (event === 'TOKEN_REFRESHED' && !session) {
+        console.warn('⚠️ Token refresh failed, clearing stale session');
+        supabase.auth.signOut().catch(() => {});
+        return;
+      }
+      
       if (session) {
         const wasAuthenticated = this.state.isAuthenticated;
         this.updateState({
@@ -276,9 +317,11 @@ class GlobalSystemsManager {
           isAuthenticated: true,
         });
         
-        // If just logged in, load session and auto-start
+        // If just logged in, load session and auto-start (deferred to avoid deadlock)
         if (!wasAuthenticated) {
-          await this.loadUserSession();
+          setTimeout(() => {
+            this.loadUserSession();
+          }, 0);
         }
       } else {
         // Logged out - stop trading but keep manager alive

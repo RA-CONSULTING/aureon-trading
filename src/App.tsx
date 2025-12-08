@@ -36,12 +36,26 @@ const App = () => {
     if (!systemsInitialized) {
       systemsInitialized = true;
       console.log('🌌 App: Initializing GlobalSystemsManager...');
+      
       globalSystemsManager.initialize().then(() => {
         console.log('✅ App: GlobalSystemsManager ready');
         setReady(true);
+      }).catch((error) => {
+        console.error('🚨 App: GlobalSystemsManager init failed:', error);
+        setReady(true); // Force ready even on failure
       });
+      
+      // Failsafe: force ready after 15 seconds no matter what
+      const failsafe = setTimeout(() => {
+        if (!ready) {
+          console.warn('⚠️ App: Initialization failsafe triggered after 15s');
+          setReady(true);
+        }
+      }, 15000);
+      
+      return () => clearTimeout(failsafe);
     }
-  }, []);
+  }, [ready]);
   
   // Show loading while systems initialize (only on first load)
   if (!ready) {
