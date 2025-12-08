@@ -6,14 +6,31 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-async function decryptCredential(encrypted: string, cryptoKey: CryptoKey, iv: Uint8Array): Promise<string> {
+async function decryptCredential(
+  encrypted: string, 
+  cryptoKey: CryptoKey, 
+  legacyCryptoKey: CryptoKey,
+  iv: Uint8Array
+): Promise<string> {
   const encryptedBytes = Uint8Array.from(atob(encrypted), c => c.charCodeAt(0));
-  const decrypted = await crypto.subtle.decrypt(
-    { name: 'AES-GCM', iv: iv as unknown as BufferSource },
-    cryptoKey,
-    encryptedBytes
-  );
-  return new TextDecoder().decode(decrypted);
+  
+  // Try new base64 key first, then fall back to legacy text-padded key
+  try {
+    const decrypted = await crypto.subtle.decrypt(
+      { name: 'AES-GCM', iv: iv as unknown as BufferSource },
+      cryptoKey,
+      encryptedBytes
+    );
+    return new TextDecoder().decode(decrypted);
+  } catch {
+    // Fall back to legacy key
+    const decrypted = await crypto.subtle.decrypt(
+      { name: 'AES-GCM', iv: iv as unknown as BufferSource },
+      legacyCryptoKey,
+      encryptedBytes
+    );
+    return new TextDecoder().decode(decrypted);
+  }
 }
 
 interface ExchangeBalance {
@@ -281,24 +298,44 @@ serve(async (req) => {
       );
     }
 
-    // Prepare decryption key - must match encryption key format from update-user-credentials
+    // Prepare decryption keys - try base64 key first, then legacy text-padded key
     const masterKeyBase64 = Deno.env.get('MASTER_ENCRYPTION_KEY');
-    if (!masterKeyBase64) {
-      console.error('[get-user-balances] MASTER_ENCRYPTION_KEY not configured');
-      return new Response(
-        JSON.stringify({ error: 'Encryption key not configured' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
+    const legacyKeyText = 'aureon-default-key-32chars!!';
     
-    const keyBytes = Uint8Array.from(atob(masterKeyBase64), c => c.charCodeAt(0));
-    const cryptoKey = await crypto.subtle.importKey(
+    let cryptoKey: CryptoKey | null = null;
+    let legacyCryptoKey: CryptoKey;
+    
+    // Create legacy key (text-padded to 32 chars)
+    const encoder = new TextEncoder();
+    const legacyKeyData = encoder.encode(legacyKeyText.padEnd(32, '0').slice(0, 32));
+    legacyCryptoKey = await crypto.subtle.importKey(
       'raw',
-      keyBytes,
-      { name: 'AES-GCM', length: 256 },
+      legacyKeyData,
+      { name: 'AES-GCM' },
       false,
       ['decrypt']
     );
+    
+    // Create new base64 key if available
+    if (masterKeyBase64) {
+      try {
+        const keyBytes = Uint8Array.from(atob(masterKeyBase64), c => c.charCodeAt(0));
+        cryptoKey = await crypto.subtle.importKey(
+          'raw',
+          keyBytes,
+          { name: 'AES-GCM', length: 256 },
+          false,
+          ['decrypt']
+        );
+      } catch (e) {
+        console.warn('[get-user-balances] Could not import base64 key, using legacy only:', e);
+      }
+    }
+    
+    // Use legacy key as primary if no base64 key available
+    if (!cryptoKey) {
+      cryptoKey = legacyCryptoKey;
+    }
 
     const balances: ExchangeBalance[] = [];
     const fetchPromises: Promise<ExchangeBalance>[] = [];
@@ -306,8 +343,8 @@ serve(async (req) => {
     // Fetch Binance balances
     if (session.binance_api_key_encrypted && session.binance_api_secret_encrypted && session.binance_iv) {
       const iv = Uint8Array.from(atob(session.binance_iv), c => c.charCodeAt(0));
-      const apiKey = await decryptCredential(session.binance_api_key_encrypted, cryptoKey, iv);
-      const apiSecret = await decryptCredential(session.binance_api_secret_encrypted, cryptoKey, iv);
+      const apiKey = await decryptCredential(session.binance_api_key_encrypted, cryptoKey, legacyCryptoKey, iv);
+      const apiSecret = await decryptCredential(session.binance_api_secret_encrypted, cryptoKey, legacyCryptoKey, iv);
       fetchPromises.push(fetchBinanceBalances(apiKey, apiSecret));
     } else {
       balances.push({ exchange: 'binance', connected: false, assets: [], totalUsd: 0 });
@@ -316,8 +353,8 @@ serve(async (req) => {
     // Fetch Kraken balances
     if (session.kraken_api_key_encrypted && session.kraken_api_secret_encrypted && session.kraken_iv) {
       const iv = Uint8Array.from(atob(session.kraken_iv), c => c.charCodeAt(0));
-      const apiKey = await decryptCredential(session.kraken_api_key_encrypted, cryptoKey, iv);
-      const apiSecret = await decryptCredential(session.kraken_api_secret_encrypted, cryptoKey, iv);
+      const apiKey = await decryptCredential(session.kraken_api_key_encrypted, cryptoKey, legacyCryptoKey, iv);
+      const apiSecret = await decryptCredential(session.kraken_api_secret_encrypted, cryptoKey, legacyCryptoKey, iv);
       fetchPromises.push(fetchKrakenBalances(apiKey, apiSecret));
     } else {
       balances.push({ exchange: 'kraken', connected: false, assets: [], totalUsd: 0 });
@@ -326,8 +363,8 @@ serve(async (req) => {
     // Fetch Alpaca balances
     if (session.alpaca_api_key_encrypted && session.alpaca_secret_key_encrypted && session.alpaca_iv) {
       const iv = Uint8Array.from(atob(session.alpaca_iv), c => c.charCodeAt(0));
-      const apiKey = await decryptCredential(session.alpaca_api_key_encrypted, cryptoKey, iv);
-      const secretKey = await decryptCredential(session.alpaca_secret_key_encrypted, cryptoKey, iv);
+      const apiKey = await decryptCredential(session.alpaca_api_key_encrypted, cryptoKey, legacyCryptoKey, iv);
+      const secretKey = await decryptCredential(session.alpaca_secret_key_encrypted, cryptoKey, legacyCryptoKey, iv);
       fetchPromises.push(fetchAlpacaBalances(apiKey, secretKey));
     } else {
       balances.push({ exchange: 'alpaca', connected: false, assets: [], totalUsd: 0 });
@@ -336,9 +373,9 @@ serve(async (req) => {
     // Fetch Capital.com balances
     if (session.capital_api_key_encrypted && session.capital_password_encrypted && session.capital_identifier_encrypted && session.capital_iv) {
       const iv = Uint8Array.from(atob(session.capital_iv), c => c.charCodeAt(0));
-      const apiKey = await decryptCredential(session.capital_api_key_encrypted, cryptoKey, iv);
-      const password = await decryptCredential(session.capital_password_encrypted, cryptoKey, iv);
-      const identifier = await decryptCredential(session.capital_identifier_encrypted, cryptoKey, iv);
+      const apiKey = await decryptCredential(session.capital_api_key_encrypted, cryptoKey, legacyCryptoKey, iv);
+      const password = await decryptCredential(session.capital_password_encrypted, cryptoKey, legacyCryptoKey, iv);
+      const identifier = await decryptCredential(session.capital_identifier_encrypted, cryptoKey, legacyCryptoKey, iv);
       fetchPromises.push(fetchCapitalBalances(apiKey, password, identifier));
     } else {
       balances.push({ exchange: 'capital', connected: false, assets: [], totalUsd: 0 });
