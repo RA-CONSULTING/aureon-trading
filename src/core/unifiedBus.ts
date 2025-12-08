@@ -29,7 +29,7 @@ export interface BusSnapshot {
 // Anchor (1x): Data ingestion systems
 
 const UNITY_SYSTEMS = ['MasterEquation', 'Lighthouse']; // 10x weight
-const FLOW_SYSTEMS = ['RainbowBridge', 'Prism', '6DHarmonic', 'DecisionFusion', 'HocusPattern']; // 9x weight
+const FLOW_SYSTEMS = ['RainbowBridge', 'Prism', '6DHarmonic', 'DecisionFusion', 'HocusPattern', 'ProbabilityMatrix']; // 9x weight
 const ANCHOR_SYSTEMS = ['DataIngestion', 'ElephantMemory', 'MultiExchange']; // 1x weight
 
 // Legacy weights (normalized) - used as sub-weights within each tier
@@ -37,13 +37,14 @@ const SYSTEM_WEIGHTS: Record<string, number> = {
   // Unity tier (10x base)
   MasterEquation: 0.55,
   Lighthouse: 0.45,
-  // Flow tier (9x base)
-  RainbowBridge: 0.25,
-  DecisionFusion: 0.25,
-  Prism: 0.20,
-  '6DHarmonic': 0.18,
-  HocusPattern: 0.12,
-  QGITASignal: 0.10,
+  // Flow tier (9x base) - now includes ProbabilityMatrix
+  RainbowBridge: 0.20,
+  DecisionFusion: 0.20,
+  Prism: 0.15,
+  '6DHarmonic': 0.15,
+  ProbabilityMatrix: 0.15, // HNC 2-hour temporal forecasting
+  HocusPattern: 0.10,
+  QGITASignal: 0.05,
   // Anchor tier (1x base)
   DataIngestion: 0.40,
   MultiExchange: 0.35,
@@ -55,7 +56,7 @@ const SYSTEM_WEIGHTS: Record<string, number> = {
 };
 
 const REQUIRED_SYSTEMS = ['DataIngestion', 'Lighthouse', 'MasterEquation', 'RainbowBridge'];
-const OPTIONAL_SYSTEMS = ['DecisionFusion', 'QGITASignal', 'Prism', 'IntegralAQAL', 'StargateLattice', 'HNCImperial', '6DHarmonic', 'MultiExchange'];
+const OPTIONAL_SYSTEMS = ['DecisionFusion', 'QGITASignal', 'Prism', 'IntegralAQAL', 'StargateLattice', 'HNCImperial', '6DHarmonic', 'MultiExchange', 'ProbabilityMatrix'];
 
 class UnifiedBus {
   private states: Map<string, SystemState> = new Map();

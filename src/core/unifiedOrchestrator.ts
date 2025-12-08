@@ -16,6 +16,7 @@ import { multiExchangeClient } from './multiExchangeClient';
 import { smartOrderRouter, type RoutingDecision } from './smartOrderRouter';
 import { qgitaSignalGenerator, type QGITASignal } from './qgitaSignalGenerator';
 import { hocusPatternPipeline, type PipelineState } from './hocusPatternPipeline';
+import { hncProbabilityMatrix, type ProbabilityMatrix, type TradingSignal as ProbabilitySignal } from './hncProbabilityMatrix';
 import { supabase } from '@/integrations/supabase/client';
 
 export interface TradeExecutionResult {
@@ -36,6 +37,8 @@ export interface OrchestrationResult {
   prismOutput: PrismOutput | null;
   ecosystemState: EcosystemState | null;
   hocusPatternState: PipelineState | null;
+  probabilityMatrix: ProbabilityMatrix | null;
+  probabilitySignal: ProbabilitySignal | null;
   routingDecision: RoutingDecision | null;
   qgitaSignal: QGITASignal | null;
   positionSizing: {
@@ -51,6 +54,7 @@ export interface OrchestrationResult {
     recommendedExchange?: string;
     positionSizeUsd?: number;
     qgitaTier?: 1 | 2 | 3;
+    probabilityH1?: string;
   };
   tradeExecuted: boolean;
 }
@@ -179,6 +183,28 @@ export class UnifiedOrchestrator {
     this.publishHocusPattern(hocusPatternState);
     temporalLadder.heartbeat(SYSTEMS.HOCUS_PATTERN, hocusPatternState.totalCoherence);
     
+    // Step 6f: HNC Probability Matrix - 2-hour temporal forecasting
+    const probSnapshot = hncProbabilityMatrix.createSnapshot(
+      symbol,
+      marketSnapshot.price,
+      marketSnapshot.volume,
+      marketSnapshot.momentum,
+      lambdaState.coherence
+    );
+    hncProbabilityMatrix.addSnapshot(probSnapshot);
+    
+    const currentMarketData = {
+      price: marketSnapshot.price,
+      volume: marketSnapshot.volume,
+      momentum: marketSnapshot.momentum,
+      coherence: lambdaState.coherence,
+      resonance: prismOutput.resonance,
+    };
+    const probabilityMatrix = hncProbabilityMatrix.generateMatrix(symbol, currentMarketData);
+    const probabilitySignal = hncProbabilityMatrix.getTradingSignal(symbol, currentMarketData);
+    this.publishProbabilityMatrix(probabilityMatrix, probabilitySignal);
+    temporalLadder.heartbeat(SYSTEMS.PROBABILITY_MATRIX, probabilitySignal.confidence);
+    
     // Step 7: Get multi-exchange state and position sizing
     const exchangeState = multiExchangeClient.getState();
     const positionSizing = multiExchangeClient.calculatePositionSize(0.02, 'USDT');
@@ -242,12 +268,53 @@ export class UnifiedOrchestrator {
       prismOutput,
       ecosystemState,
       hocusPatternState,
+      probabilityMatrix,
+      probabilitySignal,
       routingDecision,
       qgitaSignal,
       positionSizing,
       finalDecision,
       tradeExecuted,
     };
+  }
+  
+  /**
+   * Publish HNC Probability Matrix state to bus
+   */
+  private publishProbabilityMatrix(matrix: ProbabilityMatrix, signal: ProbabilitySignal): void {
+    let busSignal: SignalType = 'NEUTRAL';
+    if (signal.action === 'BUY') busSignal = 'BUY';
+    else if (signal.action === 'SELL') busSignal = 'SELL';
+    
+    const h1State = matrix.hourPlus1?.state || 'NEUTRAL';
+    const probEmoji = signal.action === 'BUY' ? '🟢' : signal.action === 'SELL' ? '🔴' : '⚪';
+    
+    console.log(
+      `[Orchestrator:ProbMatrix] ${probEmoji} ${signal.action} | ` +
+      `H+1: ${h1State} (${(signal.probability * 100).toFixed(1)}%) | ` +
+      `Conf: ${(signal.confidence * 100).toFixed(1)}% | ` +
+      `Mod: ${signal.modifier.toFixed(2)} | ` +
+      `FineTune: ${(signal.fineTune * 100).toFixed(1)}%`
+    );
+    
+    unifiedBus.publish({
+      systemName: 'ProbabilityMatrix',
+      timestamp: Date.now(),
+      ready: true,
+      coherence: signal.confidence,
+      confidence: signal.probability,
+      signal: busSignal,
+      data: {
+        matrix,
+        signal,
+        h1State,
+        h2State: matrix.hourPlus2?.state || 'NEUTRAL',
+        combinedProbability: matrix.combinedProbability,
+        fineTunedProbability: matrix.fineTunedProbability,
+        positionModifier: matrix.positionModifier,
+        recommendedAction: matrix.recommendedAction,
+      },
+    });
   }
   
   /**
