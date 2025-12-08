@@ -1,6 +1,6 @@
 {
-  "balance": 0,
-  "peak_balance": 0,
+  "balance": 74.83289102958476,
+  "peak_balance": 74.83289102958476,
   "total_trades": 0,
   "wins": 0,
   "losses": 0,
@@ -9,7 +9,6 @@
   "harvested": 0.0,
   "max_drawdown": 0.0,
   "positions": {},
-  "timestamp": 0,
-  "iteration": 0,
-  "reset_reason": "Fresh start - old data cleared Dec 5 2025"
+  "timestamp": 1765216469.8151417,
+  "iteration": 2
 }

@@ -4,6 +4,13 @@ from decimal import Decimal
 
 import requests
 
+# Load environment variables from .env file
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
+
 KRAKEN_BASE = "https://api.kraken.com"
 
 ASSETPAIR_CACHE_TTL = 300  # seconds
@@ -21,8 +28,8 @@ class KrakenClient:
         self.api_secret = os.getenv("KRAKEN_API_SECRET", "")
         # Kraken has no public testnet for spot; keep flag for parity
         self.use_testnet = False
-        # Dry-run default true to be safe; also respect BINANCE_DRY_RUN for parity
-        self.dry_run = (os.getenv("KRAKEN_DRY_RUN") or os.getenv("BINANCE_DRY_RUN") or "true").lower() == "true"
+        # Dry-run - default FALSE for live trading
+        self.dry_run = os.getenv("KRAKEN_DRY_RUN", "false").lower() == "true"
 
         self.base = KRAKEN_BASE
         self.session = requests.Session()

@@ -1,0 +1,22 @@
+{
+  "BTCGBP": {
+    "hunts": 2,
+    "trades": 0,
+    "wins": 0,
+    "losses": 0,
+    "profit": 0,
+    "last_time": 1765216798.759405,
+    "streak": 0,
+    "blacklisted": false
+  },
+  "ENJGBP": {
+    "hunts": 1,
+    "trades": 0,
+    "wins": 0,
+    "losses": 0,
+    "profit": 0,
+    "last_time": 1765216727.5267243,
+    "streak": 0,
+    "blacklisted": false
+  }
+}

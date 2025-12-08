@@ -4,6 +4,13 @@ import time
 from typing import Dict, Any, Optional, List, Tuple
 from decimal import Decimal
 
+# Load environment variables from .env file FIRST
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
+
 from kraken_client import KrakenClient
 from binance_client import BinanceClient
 from alpaca_client import AlpacaClient

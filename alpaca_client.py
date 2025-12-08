@@ -4,6 +4,13 @@ import time
 import logging
 from typing import Dict, Any, List, Optional
 
+# Load environment variables from .env file
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
+
 logger = logging.getLogger(__name__)
 
 class AlpacaClient:
@@ -13,8 +20,8 @@ class AlpacaClient:
     def __init__(self):
         self.api_key = os.getenv('ALPACA_API_KEY')
         self.secret_key = os.getenv('ALPACA_SECRET_KEY')
-        # Default to paper trading if not specified
-        self.use_paper = os.getenv('ALPACA_PAPER', 'true').lower() == 'true'
+        # Default to LIVE trading
+        self.use_paper = os.getenv('ALPACA_PAPER', 'false').lower() == 'true'
         self.dry_run = os.getenv('ALPACA_DRY_RUN', 'false').lower() == 'true'
 
         if self.use_paper:

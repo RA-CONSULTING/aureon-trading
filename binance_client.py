@@ -38,8 +38,8 @@ class BinanceClient:
         # Support common env var aliases from TS/Node side as well
         self.api_key = os.getenv("BINANCE_API_KEY") or os.getenv("BINANCE_KEY") or ""
         self.api_secret = os.getenv("BINANCE_API_SECRET") or os.getenv("BINANCE_SECRET") or ""
-        self.use_testnet = (os.getenv("BINANCE_USE_TESTNET") or os.getenv("BINANCE_TESTNET") or "true").lower() == "true"
-        self.dry_run = os.getenv("BINANCE_DRY_RUN", "true").lower() == "true"
+        self.use_testnet = (os.getenv("BINANCE_USE_TESTNET") or os.getenv("BINANCE_TESTNET") or "false").lower() == "true"
+        self.dry_run = os.getenv("BINANCE_DRY_RUN", "false").lower() == "true"
         
         # 🇬🇧 UK Mode - Enable restrictions for FCA-regulated accounts
         self.uk_mode = os.getenv("BINANCE_UK_MODE", "true").lower() == "true"

@@ -1,0 +1,27 @@
+{
+  "by_exchange": {},
+  "frequency_performance": {
+    "LOVE (528Hz)": {
+      "trades": 12,
+      "wins": 7,
+      "pnl": 0.06275695200808587
+    }
+  },
+  "coherence_bands": {
+    "low": {
+      "trades": 0,
+      "wins": 0
+    },
+    "mid": {
+      "trades": 23,
+      "wins": 0
+    },
+    "high": {
+      "trades": 12,
+      "wins": 7
+    }
+  },
+  "total_historical_trades": 35,
+  "combined_win_rate": 20.0,
+  "updated_at": "2025-12-08T17:54:29.816757"
+}

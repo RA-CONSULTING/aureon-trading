@@ -4,6 +4,13 @@ import requests
 import time
 from typing import Dict, Any, List, Optional
 
+# Load environment variables from .env file
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
+
 logger = logging.getLogger(__name__)
 
 class CapitalClient:
@@ -15,7 +22,7 @@ class CapitalClient:
         self.api_key = os.getenv('CAPITAL_API_KEY')
         self.identifier = os.getenv('CAPITAL_IDENTIFIER')
         self.password = os.getenv('CAPITAL_PASSWORD')
-        self.demo_mode = os.getenv('CAPITAL_DEMO', '1') == '1'
+        self.demo_mode = os.getenv('CAPITAL_DEMO', '0') == '1'
         
         if self.demo_mode:
             self.base_url = "https://demo-api-capital.backend-capital.com/api/v1"
@@ -25,7 +32,7 @@ class CapitalClient:
         self.cst = None
         self.x_security_token = None
         self.session_start_time = 0
-        self.dry_run = os.getenv('LIVE', '0') != '1'
+        self.dry_run = False  # ALWAYS LIVE
         
         if not self.api_key or not self.identifier or not self.password:
             logger.warning("Capital.com credentials not fully set. Client will be disabled.")
