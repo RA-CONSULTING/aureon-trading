@@ -1612,6 +1612,17 @@ class UnifiedStateAggregator:
         all_trades = []
         symbol_data = {}
         frequency_data = {}
+
+        def _extract_pnl(trade: Dict[str, Any]) -> float:
+            pnl = trade.get('pnl_usd')
+            if pnl is None:
+                pnl = trade.get('pnl')
+            if pnl is None:
+                return 0.0
+            try:
+                return float(pnl)
+            except (TypeError, ValueError):
+                return 0.0
         
         # 1. Load Main Trading State
         main_state = self._load_json(self.STATE_FILES['main_state'])
@@ -1658,9 +1669,10 @@ class UnifiedStateAggregator:
                 if freq_band not in frequency_data:
                     frequency_data[freq_band] = {'trades': 0, 'wins': 0, 'pnl': 0}
                 frequency_data[freq_band]['trades'] += 1
-                if trade.get('pnl_usd', 0) > 0:
+                trade_pnl = _extract_pnl(trade)
+                if trade_pnl > 0:
                     frequency_data[freq_band]['wins'] += 1
-                frequency_data[freq_band]['pnl'] += trade.get('pnl_usd', 0)
+                frequency_data[freq_band]['pnl'] += trade_pnl
                 
         self.aggregated_state['frequency_performance'] = frequency_data
         
@@ -1711,7 +1723,7 @@ class UnifiedStateAggregator:
         # Calculate aggregated metrics
         self.aggregated_state['total_historical_trades'] = len(all_trades)
         if all_trades:
-            wins = sum(1 for t in all_trades if t.get('pnl_usd', t.get('pnl', 0)) > 0)
+            wins = sum(1 for t in all_trades if _extract_pnl(t) > 0)
             self.aggregated_state['combined_win_rate'] = wins / len(all_trades) * 100
             
         # Calculate coherence bands performance
@@ -1720,7 +1732,7 @@ class UnifiedStateAggregator:
             coh = trade.get('coherence', 0.5)
             band = 'low' if coh < 0.5 else 'mid' if coh < 0.7 else 'high'
             coherence_bands[band]['trades'] += 1
-            if trade.get('pnl_usd', trade.get('pnl', 0)) > 0:
+            if _extract_pnl(trade) > 0:
                 coherence_bands[band]['wins'] += 1
         self.aggregated_state['coherence_bands'] = coherence_bands
         
