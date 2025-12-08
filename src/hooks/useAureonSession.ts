@@ -158,25 +158,20 @@ export function useAureonSession(userId: string | null) {
 
   // Fetch real market data via edge function
   const fetchMarketData = useCallback(async (symbol: string = 'BTCUSDT') => {
-    try {
-      const { data, error } = await supabase.functions.invoke('get-user-market-data', {
-        body: { symbol }
-      });
+    const { data, error } = await supabase.functions.invoke('get-user-market-data', {
+      body: { symbol }
+    });
 
-      if (error) throw error;
-      return data;
-    } catch (error) {
-      console.error('[Aureon] Market data fetch failed, using fallback:', error);
-      // Fallback to simulated data if edge function fails
-      return {
-        price: 67000 + (Math.random() - 0.5) * 1000,
-        volume: 1000000 + Math.random() * 500000,
-        volatility: 0.02 + Math.random() * 0.03,
-        momentum: (Math.random() - 0.5) * 0.1,
-        spread: 0.0001 + Math.random() * 0.0005,
-        timestamp: Date.now()
-      };
+    if (error) {
+      console.error('[Aureon] Market data fetch failed - NO SIMULATION FALLBACK:', error);
+      throw new Error(`LIVE_DATA_REQUIRED: Failed to fetch market data for ${symbol}. Check exchange credentials.`);
     }
+    
+    if (!data || !data.price) {
+      throw new Error(`LIVE_DATA_REQUIRED: Invalid market data response for ${symbol}. No simulation allowed.`);
+    }
+    
+    return data;
   }, []);
 
   // Initialize all systems

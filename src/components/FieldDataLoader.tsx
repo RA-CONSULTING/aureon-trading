@@ -78,46 +78,40 @@ export function FieldDataLoader({ onDataLoaded, className }: FieldDataLoaderProp
   const loadLiveEcosystemData = () => {
     setIsLoading(true);
     
-    // Generate field metrics from real ecosystem state
+    // LIVE DATA ONLY - Use real ecosystem metrics, no random generation
     const data: FieldMetric[] = [];
     const baseTime = Date.now();
     
-    for (let i = 0; i < 100; i++) {
-      const timeOffset = i * 12000; // 12 second intervals
-      // Use real ecosystem metrics as base, with simulated history
-      const coherenceBase = metrics.coherence || 0.7;
-      const coherencePhase = Math.sin(i * 0.1) * 0.15 + coherenceBase;
-      const entropyPhase = 1 - coherencePhase + (Math.random() - 0.5) * 0.1;
-      
-      data.push({
-        time: baseTime + timeOffset,
-        entropy: Math.max(0.1, Math.min(0.9, entropyPhase)),
-        coherence: Math.max(0.1, Math.min(0.9, coherencePhase)),
-        schumannLock: metrics.harmonicLock ? 0.9 + Math.random() * 0.1 : 0.5 + Math.random() * 0.3,
-        probabilityUplift: metrics.probabilityFusion * (0.9 + Math.random() * 0.2),
-      });
-    }
+    // Use real coherence and harmonic lock from ecosystem
+    const coherenceValue = metrics.coherence || 0;
+    const harmonicLockValue = metrics.harmonicLock ? 1 : 0;
+    const probabilityValue = metrics.probabilityFusion || 0;
+    
+    // Create single current data point (no simulated history)
+    data.push({
+      time: baseTime,
+      entropy: 1 - coherenceValue,
+      coherence: coherenceValue,
+      schumannLock: harmonicLockValue,
+      probabilityUplift: probabilityValue,
+    });
     
     setTimeout(() => {
       onDataLoaded(data);
-      setDataInfo({ count: data.length, source: 'Live Ecosystem Data' });
+      setDataInfo({ count: data.length, source: 'Live Ecosystem Data (Real-time)' });
       setIsLoading(false);
-    }, 500);
+    }, 100);
   };
 
   const downloadSampleCSV = () => {
-    // Use real ecosystem metrics in the sample
-    const coherence = metrics.coherence || 0.7;
+    // LIVE DATA ONLY - Use real current ecosystem values
+    const coherence = metrics.coherence || 0;
+    const harmonicLock = metrics.harmonicLock ? 1 : 0;
+    const probability = metrics.probabilityFusion || 0;
+    
     const csvContent = [
       'time,entropy,coherence,schumannLock,probabilityUplift',
-      ...Array.from({ length: 50 }, (_, i) => {
-        const time = Date.now() + i * 10000;
-        const coh = (coherence + (Math.random() - 0.5) * 0.2).toFixed(4);
-        const entropy = (1 - parseFloat(coh) + (Math.random() - 0.5) * 0.1).toFixed(4);
-        const schumannLock = (metrics.harmonicLock ? 0.85 : 0.5 + Math.random() * 0.3).toFixed(4);
-        const probabilityUplift = (metrics.probabilityFusion * (0.9 + Math.random() * 0.2)).toFixed(4);
-        return `${time},${entropy},${coh},${schumannLock},${probabilityUplift}`;
-      })
+      `${Date.now()},${(1 - coherence).toFixed(4)},${coherence.toFixed(4)},${harmonicLock},${probability.toFixed(4)}`
     ].join('\n');
 
     const blob = new Blob([csvContent], { type: 'text/csv' });

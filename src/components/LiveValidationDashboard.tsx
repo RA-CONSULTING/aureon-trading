@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Play, Pause, Square, Camera, Download } from 'lucide-react';
+import { useEcosystemData } from '@/hooks/useEcosystemData';
 
 interface ValidationMetrics {
   coherence: number;
@@ -27,21 +28,24 @@ interface ValidationPhase {
 }
 
 export default function LiveValidationDashboard() {
+  const { metrics: ecosystemMetrics, isInitialized } = useEcosystemData();
   const [isRunning, setIsRunning] = useState(false);
   const [currentPhase, setCurrentPhase] = useState(0);
   const [phaseTimer, setPhaseTimer] = useState(0);
   const [snapshots, setSnapshots] = useState<number[]>([]);
+  
+  // LIVE DATA ONLY - Use real ecosystem metrics
   const [metrics, setMetrics] = useState<ValidationMetrics>({
-    coherence: 0.45,
-    schumannLock: 0.52,
-    tsvGain: 0.73,
-    primeAlignment: 0.38,
-    tenNineOneConcordance: 0.41,
-    alphaTheta: 1.2,
-    hrvNorm: 0.55,
-    gsrNorm: 0.48,
-    calmIndex: 0.62,
-    auraHue: 85
+    coherence: 0,
+    schumannLock: 0,
+    tsvGain: 0,
+    primeAlignment: 0,
+    tenNineOneConcordance: 0,
+    alphaTheta: 1.0,
+    hrvNorm: 0,
+    gsrNorm: 0,
+    calmIndex: 0,
+    auraHue: 0
   });
 
   const phases: ValidationPhase[] = [
@@ -80,14 +84,19 @@ export default function LiveValidationDashboard() {
           return prev + 1;
         });
 
-        // Simulate metric updates
-        setMetrics(prev => ({
-          ...prev,
-          coherence: Math.max(0, Math.min(1, prev.coherence + (Math.random() - 0.5) * 0.1)),
-          schumannLock: Math.max(0, Math.min(1, prev.schumannLock + (Math.random() - 0.5) * 0.08)),
-          tsvGain: Math.max(0, Math.min(1, prev.tsvGain + (Math.random() - 0.5) * 0.05)),
-          calmIndex: Math.max(0, Math.min(1, prev.calmIndex + (Math.random() - 0.5) * 0.06))
-        }));
+        // LIVE DATA ONLY - Use real ecosystem metrics
+        setMetrics({
+          coherence: ecosystemMetrics.coherence || 0,
+          schumannLock: ecosystemMetrics.harmonicLock ? 1 : 0,
+          tsvGain: ecosystemMetrics.probabilityFusion || 0,
+          primeAlignment: ecosystemMetrics.consensusConfidence || 0,
+          tenNineOneConcordance: ecosystemMetrics.hiveMindCoherence || 0,
+          alphaTheta: 1.0 + (ecosystemMetrics.coherence || 0) * 0.5,
+          hrvNorm: ecosystemMetrics.harmonicFidelity || 0,
+          gsrNorm: ecosystemMetrics.qgitaConfidence || 0,
+          calmIndex: ecosystemMetrics.coherence || 0,
+          auraHue: (ecosystemMetrics.frequency || 528) / 10
+        });
       }, 1000);
     }
 
