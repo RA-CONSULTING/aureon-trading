@@ -231,3 +231,7 @@ verify_jwt = false
 # Update user exchange credentials
 [functions.update-user-credentials]
 verify_jwt = true
+
+# Backend health check (public for monitoring)
+[functions.backend-health-check]
+verify_jwt = false
