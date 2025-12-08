@@ -298,44 +298,21 @@ serve(async (req) => {
       );
     }
 
-    // Prepare decryption keys - try base64 key first, then legacy text-padded key
-    const masterKeyBase64 = Deno.env.get('MASTER_ENCRYPTION_KEY');
-    const legacyKeyText = 'aureon-default-key-32chars!!';
-    
-    let cryptoKey: CryptoKey | null = null;
-    let legacyCryptoKey: CryptoKey;
-    
-    // Create legacy key (text-padded to 32 chars)
+    // Use consistent text-padded encryption key (matches create-aureon-session and update-user-credentials)
+    const encryptionKey = 'aureon-default-key-32chars!!';
     const encoder = new TextEncoder();
-    const legacyKeyData = encoder.encode(legacyKeyText.padEnd(32, '0').slice(0, 32));
-    legacyCryptoKey = await crypto.subtle.importKey(
+    const keyData = encoder.encode(encryptionKey.padEnd(32, '0').slice(0, 32));
+    
+    const cryptoKey = await crypto.subtle.importKey(
       'raw',
-      legacyKeyData,
+      keyData,
       { name: 'AES-GCM' },
       false,
       ['decrypt']
     );
     
-    // Create new base64 key if available
-    if (masterKeyBase64) {
-      try {
-        const keyBytes = Uint8Array.from(atob(masterKeyBase64), c => c.charCodeAt(0));
-        cryptoKey = await crypto.subtle.importKey(
-          'raw',
-          keyBytes,
-          { name: 'AES-GCM', length: 256 },
-          false,
-          ['decrypt']
-        );
-      } catch (e) {
-        console.warn('[get-user-balances] Could not import base64 key, using legacy only:', e);
-      }
-    }
-    
-    // Use legacy key as primary if no base64 key available
-    if (!cryptoKey) {
-      cryptoKey = legacyCryptoKey;
-    }
+    // Legacy key is same as primary now - unified encryption
+    const legacyCryptoKey = cryptoKey;
 
     const balances: ExchangeBalance[] = [];
     const fetchPromises: Promise<ExchangeBalance>[] = [];

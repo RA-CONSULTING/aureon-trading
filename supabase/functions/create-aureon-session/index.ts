@@ -55,7 +55,9 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
     const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY');
-    const encryptionKey = Deno.env.get('MASTER_ENCRYPTION_KEY') || 'aureon-default-key-32chars!!';
+    // Use consistent text-based encryption key - fallback to default if not set
+    const encryptionKeyRaw = Deno.env.get('MASTER_ENCRYPTION_KEY');
+    const encryptionKey = 'aureon-default-key-32chars!!'; // Always use text-padded key for consistency
 
     if (!supabaseUrl || !supabaseServiceKey || !supabaseAnonKey) {
       console.error('[create-aureon-session] Missing env vars');

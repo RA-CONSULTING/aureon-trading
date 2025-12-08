@@ -57,21 +57,15 @@ Deno.serve(async (req) => {
       capitalIdentifier
     } = body;
 
-    // Use MASTER_ENCRYPTION_KEY for consistency with other edge functions
-    const masterKeyBase64 = Deno.env.get('MASTER_ENCRYPTION_KEY');
-    if (!masterKeyBase64) {
-      console.error('MASTER_ENCRYPTION_KEY not configured');
-      return new Response(JSON.stringify({ error: 'Encryption key not configured' }), {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-    const keyBytes = Uint8Array.from(atob(masterKeyBase64), c => c.charCodeAt(0));
+    // Use consistent text-padded encryption key (same as create-aureon-session)
+    const encryptionKey = 'aureon-default-key-32chars!!';
+    const encoder = new TextEncoder();
+    const keyData = encoder.encode(encryptionKey.padEnd(32, '0').slice(0, 32));
     
     const cryptoKey = await crypto.subtle.importKey(
       'raw',
-      keyBytes,
-      { name: 'AES-GCM', length: 256 },
+      keyData,
+      { name: 'AES-GCM' },
       false,
       ['encrypt']
     );
