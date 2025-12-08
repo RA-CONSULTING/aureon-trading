@@ -30,3 +30,14 @@ dist-ssr
 *.env
 scripts/binanceKeys.json
 .venv/
+
+# Python bytecode
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Dart/Flutter
+.dart_tool/
+.packages
+build/
