@@ -182,8 +182,9 @@ class EcosystemEnhancementsLoader {
       console.warn('⚠️ symbolicCompiler is not an array, skipping');
       return undefined;
     }
+    // Safe optional chaining - some entries may lack 'intent' field
     return this.enhancements.symbolicCompiler.find(
-      entry => entry.intent.toLowerCase() === signal.toLowerCase()
+      entry => entry?.intent?.toLowerCase() === signal.toLowerCase()
     );
   }
 
