@@ -5480,6 +5480,10 @@ class AureonKrakenEcosystem:
                     continue
                 if symbol in self.positions:
                     continue
+                # Avoid Kraken in FORCE scouts to prevent private balance rate-limits
+                source = data.get('source', '').lower()
+                if source == 'kraken':
+                    continue
                     
                 change = data.get('change24h', 0)
                 price = data.get('price', 0)
@@ -5521,6 +5525,7 @@ class AureonKrakenEcosystem:
                 print(f"   ✅ Scout #{scouts_deployed} DEPLOYED!")
             else:
                 print(f"   ⚠️  Scout {candidate['symbol']} skipped - trying next...")
+            time.sleep(0.25)  # small pause to avoid hammering exchange balance endpoints
                 
         self.scouts_deployed = True
         
