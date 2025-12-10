@@ -6,6 +6,57 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Rate limit configuration per exchange (in milliseconds)
+const RATE_LIMITS = {
+  binance: 10000,    // 10 seconds between calls
+  kraken: 60000,     // 60 seconds (Kraken is very strict - 15 req/min for private API)
+  alpaca: 15000,     // 15 seconds
+  capital: 60000,    // 60 seconds (Capital.com is strict)
+};
+
+// In-memory cache for rate limiting and balance caching
+interface CachedBalance {
+  data: ExchangeBalance;
+  timestamp: number;
+}
+
+const balanceCache = new Map<string, CachedBalance>();
+
+function canFetchExchange(exchange: string): boolean {
+  const cached = balanceCache.get(exchange);
+  if (!cached) return true;
+  
+  const rateLimit = RATE_LIMITS[exchange as keyof typeof RATE_LIMITS] || 30000;
+  const elapsed = Date.now() - cached.timestamp;
+  return elapsed >= rateLimit;
+}
+
+function getCachedBalance(exchange: string): ExchangeBalance | null {
+  const cached = balanceCache.get(exchange);
+  if (!cached) return null;
+  
+  // Return cached data if within cache window (2x rate limit for staleness)
+  const rateLimit = RATE_LIMITS[exchange as keyof typeof RATE_LIMITS] || 30000;
+  const elapsed = Date.now() - cached.timestamp;
+  if (elapsed < rateLimit * 2) {
+    return { ...cached.data, error: elapsed >= rateLimit ? 'Using cached data (rate limited)' : undefined };
+  }
+  return null;
+}
+
+function setCachedBalance(exchange: string, data: ExchangeBalance): void {
+  balanceCache.set(exchange, { data, timestamp: Date.now() });
+}
+
+// Move interface before cache functions that reference it
+interface ExchangeBalance {
+  exchange: string;
+  connected: boolean;
+  assets: Array<{ asset: string; free: number; locked: number; usdValue: number }>;
+  totalUsd: number;
+  error?: string;
+}
+
 async function decryptCredential(
   encrypted: string, 
   cryptoKey: CryptoKey, 
@@ -33,13 +84,6 @@ async function decryptCredential(
   }
 }
 
-interface ExchangeBalance {
-  exchange: string;
-  connected: boolean;
-  assets: Array<{ asset: string; free: number; locked: number; usdValue: number }>;
-  totalUsd: number;
-  error?: string;
-}
 
 async function fetchBinanceBalances(apiKey: string, apiSecret: string): Promise<ExchangeBalance> {
   try {
@@ -499,30 +543,74 @@ serve(async (req) => {
       capital: !!capitalApiKey
     });
 
-    // Fetch Binance balances from ecosystem secrets
+    // Fetch Binance balances with rate limiting
     if (binanceApiKey && binanceApiSecret) {
-      fetchPromises.push(fetchBinanceBalances(binanceApiKey, binanceApiSecret));
+      if (canFetchExchange('binance')) {
+        fetchPromises.push(
+          fetchBinanceBalances(binanceApiKey, binanceApiSecret)
+            .then(result => { setCachedBalance('binance', result); return result; })
+        );
+      } else {
+        const cached = getCachedBalance('binance');
+        if (cached) balances.push(cached);
+        else balances.push({ exchange: 'binance', connected: false, assets: [], totalUsd: 0, error: 'Rate limited, no cache' });
+      }
     } else {
       balances.push({ exchange: 'binance', connected: false, assets: [], totalUsd: 0, error: 'No ecosystem credentials' });
     }
 
-    // Fetch Kraken balances from ecosystem secrets
+    // Fetch Kraken balances with rate limiting (60s minimum between calls)
     if (krakenApiKey && krakenApiSecret) {
-      fetchPromises.push(fetchKrakenBalances(krakenApiKey, krakenApiSecret));
+      if (canFetchExchange('kraken')) {
+        fetchPromises.push(
+          fetchKrakenBalances(krakenApiKey, krakenApiSecret)
+            .then(result => { setCachedBalance('kraken', result); return result; })
+        );
+      } else {
+        const cached = getCachedBalance('kraken');
+        if (cached) {
+          console.log('[get-user-balances] Kraken: using cached data (rate limited)');
+          balances.push(cached);
+        } else {
+          balances.push({ exchange: 'kraken', connected: false, assets: [], totalUsd: 0, error: 'Rate limited, no cache' });
+        }
+      }
     } else {
       balances.push({ exchange: 'kraken', connected: false, assets: [], totalUsd: 0, error: 'No ecosystem credentials' });
     }
 
-    // Fetch Alpaca balances from ecosystem secrets
+    // Fetch Alpaca balances with rate limiting
     if (alpacaApiKey && alpacaSecretKey) {
-      fetchPromises.push(fetchAlpacaBalances(alpacaApiKey, alpacaSecretKey));
+      if (canFetchExchange('alpaca')) {
+        fetchPromises.push(
+          fetchAlpacaBalances(alpacaApiKey, alpacaSecretKey)
+            .then(result => { setCachedBalance('alpaca', result); return result; })
+        );
+      } else {
+        const cached = getCachedBalance('alpaca');
+        if (cached) balances.push(cached);
+        else balances.push({ exchange: 'alpaca', connected: false, assets: [], totalUsd: 0, error: 'Rate limited, no cache' });
+      }
     } else {
       balances.push({ exchange: 'alpaca', connected: false, assets: [], totalUsd: 0, error: 'No ecosystem credentials' });
     }
 
-    // Fetch Capital.com balances from ecosystem secrets
+    // Fetch Capital.com balances with rate limiting (60s minimum)
     if (capitalApiKey && capitalPassword && capitalIdentifier) {
-      fetchPromises.push(fetchCapitalBalances(capitalApiKey, capitalPassword, capitalIdentifier));
+      if (canFetchExchange('capital')) {
+        fetchPromises.push(
+          fetchCapitalBalances(capitalApiKey, capitalPassword, capitalIdentifier)
+            .then(result => { setCachedBalance('capital', result); return result; })
+        );
+      } else {
+        const cached = getCachedBalance('capital');
+        if (cached) {
+          console.log('[get-user-balances] Capital.com: using cached data (rate limited)');
+          balances.push(cached);
+        } else {
+          balances.push({ exchange: 'capital', connected: false, assets: [], totalUsd: 0, error: 'Rate limited, no cache' });
+        }
+      }
     } else {
       balances.push({ exchange: 'capital', connected: false, assets: [], totalUsd: 0, error: 'No ecosystem credentials' });
     }
