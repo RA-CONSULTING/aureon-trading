@@ -97,9 +97,27 @@ serve(async (req) => {
       throw new Error(`Kraken error: ${data.error.join(', ')}`);
     }
 
+    // Complete Kraken asset mapping (from Python aureon_unified_ecosystem.py)
+    const krakenAssetMap: Record<string, string> = {
+      'XXBT': 'BTC', 'XETH': 'ETH', 'XXLM': 'XLM', 'XXRP': 'XRP',
+      'XLTC': 'LTC', 'XZEC': 'ZEC', 'XXMR': 'XMR', 'XREP': 'REP',
+      'XMLN': 'MLN', 'XETC': 'ETC', 'XDAO': 'DAO', 'XICN': 'ICN',
+      'ZUSD': 'USD', 'ZEUR': 'EUR', 'ZGBP': 'GBP', 'ZJPY': 'JPY',
+      'ZCAD': 'CAD', 'ZAUD': 'AUD', 'XDOGE': 'DOGE', 'XBT': 'BTC',
+    };
+    
+    const normalizeKrakenAsset = (asset: string): string => {
+      if (krakenAssetMap[asset]) return krakenAssetMap[asset];
+      // Remove X/Z prefix if 4 chars, otherwise keep as-is
+      if (asset.length === 4 && (asset.startsWith('X') || asset.startsWith('Z'))) {
+        return asset.substring(1);
+      }
+      return asset;
+    };
+    
     // Convert Kraken balances to unified format
     const balances = Object.entries(data.result || {}).map(([asset, balance]) => ({
-      asset: asset.replace(/^X/, '').replace(/^Z/, ''), // Remove Kraken prefixes
+      asset: normalizeKrakenAsset(asset),
       free: parseFloat(balance as string),
       locked: 0,
       total: parseFloat(balance as string),

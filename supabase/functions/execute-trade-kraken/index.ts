@@ -60,8 +60,21 @@ serve(async (req) => {
       );
     }
 
-    // Kraken uses different pair format (e.g., XBTUSD instead of BTCUSD)
-    const krakenPair = symbol.replace('BTC', 'XBT');
+    // Complete Kraken pair mapping (from Python aureon_unified_ecosystem.py)
+    const normalizeToKrakenPair = (sym: string): string => {
+      // Map standard symbols to Kraken format
+      let pair = sym
+        .replace('BTCUSDT', 'XBTUSD')
+        .replace('BTCUSD', 'XBTUSD')
+        .replace('ETHUSDT', 'ETHUSD')
+        .replace('SOLUSDT', 'SOLUSD')
+        .replace('XRPUSDT', 'XRPUSD')
+        .replace('LTCUSDT', 'LTCUSD')
+        .replace('DOGEUSDT', 'DOGEUSD')
+        .replace('USDT', 'USD'); // Fallback for other pairs
+      return pair;
+    };
+    const krakenPair = normalizeToKrakenPair(symbol);
     
     const nonce = Date.now() * 1000;
     const path = '/0/private/AddOrder';

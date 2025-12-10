@@ -106,15 +106,34 @@ serve(async (req) => {
       }
     }
 
-    // Fetch from Kraken (if requested)
+    // Fetch from Kraken (if requested) - Extended pair list
     if (exchanges.includes('kraken')) {
       try {
         console.log('[fetch-all-tickers] Fetching Kraken tickers...');
         
-        const response = await fetch('https://api.kraken.com/0/public/Ticker?pair=XBTUSD,ETHUSD,SOLUSD');
+        // Expanded list of Kraken USD pairs (top 20 by volume)
+        const krakenPairs = [
+          'XBTUSD', 'ETHUSD', 'SOLUSD', 'XRPUSD', 'DOGEUSD', 'ADAUSD',
+          'DOTUSD', 'AVAXUSD', 'LINKUSD', 'MATICUSD', 'UNIUSD', 'LTCUSD',
+          'ATOMUSD', 'XLMUSD', 'ALGOUSD', 'NEARUSD', 'FILUSD', 'APEUSD'
+        ].join(',');
+        
+        const response = await fetch(`https://api.kraken.com/0/public/Ticker?pair=${krakenPairs}`);
         
         if (response.ok) {
           const data = await response.json();
+          
+          // Complete Kraken pair mapping (from Python aureon_unified_ecosystem.py)
+          const krakenPairMap: Record<string, string> = {
+            'XXBTZUSD': 'BTCUSDT', 'XBTUSD': 'BTCUSDT',
+            'XETHZUSD': 'ETHUSDT', 'ETHUSD': 'ETHUSDT',
+            'SOLUSD': 'SOLUSDT', 'XRPUSD': 'XRPUSDT', 'DOGEUSD': 'DOGEUSDT',
+            'ADAUSD': 'ADAUSDT', 'DOTUSD': 'DOTUSDT', 'AVAXUSD': 'AVAXUSDT',
+            'LINKUSD': 'LINKUSDT', 'MATICUSD': 'MATICUSDT', 'UNIUSD': 'UNIUSDT',
+            'LTCUSD': 'LTCUSDT', 'ATOMUSD': 'ATOMUSDT', 'XLMUSD': 'XLMUSDT',
+            'ALGOUSD': 'ALGOUSDT', 'NEARUSD': 'NEARUSDT', 'FILUSD': 'FILUSDT',
+            'APEUSD': 'APEUSDT',
+          };
           
           if (data.result) {
             for (const [pair, t] of Object.entries(data.result) as any) {
@@ -124,14 +143,7 @@ serve(async (req) => {
               const low = parseFloat(ticker.l[1]); // 24h low
               const volume = parseFloat(ticker.v[1]); // 24h volume
               
-              // Map Kraken pairs to standard symbols
-              const symbolMap: Record<string, string> = {
-                'XXBTZUSD': 'BTCUSDT',
-                'XETHZUSD': 'ETHUSDT',
-                'SOLUSD': 'SOLUSDT',
-              };
-              
-              const standardSymbol = symbolMap[pair] || pair;
+              const standardSymbol = krakenPairMap[pair] || pair.replace('USD', 'USDT');
               
               allTickers.push({
                 symbol: standardSymbol,
