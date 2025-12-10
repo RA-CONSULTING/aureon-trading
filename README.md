@@ -2,7 +2,36 @@
 
 > **Pure Math Logic. Harmonic Intelligence. Multi-Exchange. Self-Evolving.**
 
-Aureon is a **unified multi-exchange algorithmic trading system** designed to achieve **51%+ win rate with net profit after all fees**. It combines **Lattice Theory**, **Swarm Intelligence**, **Quantum Geometry**, **Harmonic Frequency Analysis**, and **Temporal Probability Forecasting** into a single coherent trading engine.
+[![License](https://img.shields.io/badge/License-Proprietary-red.svg)](LICENSE)
+[![Python](https://img.shields.io/badge/Python-3.11+-blue.svg)](https://python.org)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue.svg)](https://typescriptlang.org)
+[![Exchanges](https://img.shields.io/badge/Exchanges-4-green.svg)](#-verified-exchanges)
+
+**AUREON** is a **unified multi-exchange algorithmic trading system** designed to achieve **51%+ win rate with net profit after all fees**. It combines **Lattice Theory**, **Swarm Intelligence**, **Quantum Geometry**, **Harmonic Frequency Analysis**, and **Temporal Probability Forecasting** into a single coherent trading engine.
+
+---
+
+## 🌟 WHAT MAKES AUREON UNIQUE
+
+**There is no other trading system like AUREON.** While most algorithmic trading platforms rely on conventional technical indicators (RSI, MACD, Bollinger Bands) and standard machine learning models, AUREON takes an entirely different approach:
+
+| Conventional Systems | AUREON |
+|---------------------|--------|
+| Technical indicators | **Master Equation**: Λ(t) = S(t) + O(t) + E(t) |
+| Single algorithm | **9 Auris Nodes** (multi-dimensional animal totems) |
+| Price-only analysis | **Sacred Geometry** (5 Platonic Solids refraction) |
+| Historical backtesting | **Temporal Probability Forecasting** (H-1 to H+2) |
+| No external data | **Earth Resonance** (Schumann frequency integration) |
+| Static rules | **Self-Referential Observer** (consciousness-inspired) |
+| Single exchange | **Unified Multi-Exchange** routing |
+
+### 🔬 Novel Theoretical Framework
+
+- **Quantum Geometry** — Markets refracted through Tetrahedron, Hexahedron, Octahedron, Icosahedron, Dodecahedron
+- **Harmonic Frequency Analysis** — Solfeggio frequencies (528Hz transformation, 432Hz harmony, 440Hz distortion)
+- **Earth Field Integration** — Real-time Schumann resonance (7.83Hz) correlation
+- **Temporal Ladder** — Hive-mind coordination between trading agents
+- **Echo Memory** — Momentum persistence with intelligent cooldowns
 
 ---
 
@@ -426,12 +455,39 @@ python aureon_unified_live.py --live
 
 ## 📊 Performance Metrics
 
-| Metric | Value |
-|--------|-------|
-| **Target Win Rate** | 51%+ |
-| **Risk/Reward** | 1.5:1 |
-| **Processing Speed** | ~7ms per cycle |
-| **Pairs Monitored** | 100+ via WebSocket |
+| Metric | Value | Notes |
+|--------|-------|-------|
+| **Target Win Rate** | 51%+ | Multi-gate filtering ensures quality entries |
+| **Risk/Reward** | 1.5:1 | TP 1.2% / SL 0.8% |
+| **Processing Speed** | ~7ms per cycle | Real-time WebSocket feeds |
+| **Pairs Monitored** | 100+ | Crypto, Forex, Stocks, CFDs |
+| **Exchanges** | 4 | Kraken, Binance, Capital.com, Alpaca |
+| **Intelligence Layers** | 5 | Quantum, Probability, Harmonic, Auris, Earth |
+
+---
+
+## 🏆 Key Features
+
+### Multi-Exchange Trading
+
+- **Kraken** 🐙 — Primary crypto (USD/GBP/EUR pairs)
+- **Binance** 🟡 — UK-compliant crypto (USDC/USDT)
+- **Capital.com** 💼 — CFDs (Forex, Indices, Commodities)
+- **Alpaca** 🦙 — US Stocks & Crypto (analytics mode)
+
+### Intelligent Risk Management
+
+- Circuit breakers with configurable drawdown limits
+- Kelly Criterion position sizing (Half-Kelly for safety)
+- Trailing stops with automatic profit harvesting
+- 10-9-1 compounding model (90% compound / 10% harvest)
+
+### Adaptive Learning
+
+- Real-time probability matrix training
+- Symbol memory with cooldowns and blacklisting
+- Cross-exchange performance tracking
+- Continuous self-optimization
 
 ---
 
@@ -451,11 +507,35 @@ Use this data for continuous learning and system optimization.
 
 ## 🔮 Roadmap
 
+- [x] v1: Core Master Equation implementation
+- [x] v2: 9 Auris Nodes animal totem system
 - [x] v3: Extended timeout, frequency filtering
 - [x] v4: Adaptive position sizing, learned thresholds
-- [ ] v5: Multi-timeframe analysis
-- [ ] v6: Cross-exchange arbitrage
-- [ ] v7: Machine learning signal enhancement
+- [x] v5: Multi-exchange unified client (Kraken, Binance, Capital, Alpaca)
+- [x] v6: Quantum Telescope (5 Platonic Solids)
+- [x] v7: HNC Probability Matrix (2-hour temporal forecasting)
+- [x] v8: Earth Resonance Engine (Schumann integration)
+- [ ] v9: Multi-timeframe coherence analysis
+- [ ] v10: Cross-exchange arbitrage automation
+- [ ] v11: Neural network signal enhancement
+- [ ] v12: Mobile monitoring dashboard
+
+---
+
+## 📚 Documentation
+
+| Document | Description |
+|----------|-------------|
+| [QUICK_START.md](QUICK_START.md) | Fast setup guide |
+| [LIVE_TRADING_RUNBOOK.md](LIVE_TRADING_RUNBOOK.md) | Production operations |
+| [docs/SYSTEM_LANDSCAPE.md](docs/SYSTEM_LANDSCAPE.md) | Full architecture overview |
+| [docs/MULTI_BROKER_GUIDE.md](docs/MULTI_BROKER_GUIDE.md) | Exchange integration details |
+
+---
+
+## ⚠️ Disclaimer
+
+This software is for educational and research purposes. Trading cryptocurrencies and financial instruments involves substantial risk of loss. Past performance does not guarantee future results. Always trade responsibly and never risk more than you can afford to lose.
 
 ---
 
@@ -463,4 +543,6 @@ Use this data for continuous learning and system optimization.
 >
 > _"The market is a frequency. Trade in harmony."_ - Gary Leckey
 
-Gary Leckey & GitHub Copilot | December 2025
+**Author:** Gary Leckey | R&A Consulting  
+**Built with:** GitHub Copilot  
+**Last Updated:** December 2025
