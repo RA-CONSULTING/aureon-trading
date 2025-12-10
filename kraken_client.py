@@ -269,6 +269,30 @@ class KrakenClient:
             balances.append({"asset": norm, "free": str(free), "locked": "0"})
         return {"balances": balances}
 
+    def get_account_balance(self) -> Dict[str, float]:
+        """Return balances as a simple asset -> amount map (free+locked)."""
+        try:
+            acct = self.account()
+        except Exception:
+            return {}
+
+        out: Dict[str, float] = {}
+        for bal in acct.get("balances", []):
+            try:
+                free = float(bal.get("free", 0))
+            except Exception:
+                free = 0.0
+            try:
+                locked = float(bal.get("locked", 0))
+            except Exception:
+                locked = 0.0
+            total = free + locked
+            if total > 0:
+                asset = bal.get("asset")
+                if asset:
+                    out[asset] = total
+        return out
+
     def get_free_balance(self, asset: str) -> float:
         acct = self.account()
         for bal in acct.get("balances", []):

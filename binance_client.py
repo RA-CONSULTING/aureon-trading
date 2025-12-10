@@ -217,7 +217,9 @@ class BinanceClient:
         if quantity:
             params["quantity"] = self._format_order_value(quantity)
         elif quote_qty:
-            params["quoteOrderQty"] = self._format_order_value(quote_qty)
+            # Adjust quote quantity to match symbol's quote precision
+            adjusted_quote = self.adjust_quote_qty(symbol, float(quote_qty))
+            params["quoteOrderQty"] = self._format_order_value(adjusted_quote)
         else:
             raise ValueError("Must provide either quantity or quote_qty")
             
@@ -312,6 +314,23 @@ class BinanceClient:
                 qty_dec = max_qty
 
         return float(qty_dec)
+
+    def adjust_quote_qty(self, symbol: str, quote_qty: float) -> float:
+        """Adjust quoteOrderQty to match the symbol's quote precision for Binance."""
+        try:
+            filters = self.get_symbol_filters(symbol)
+            precision = int(filters.get('quote_precision', 8))
+            # Binance typically accepts 2 decimal places for most quote currencies
+            # But use the exchange's quote_precision as guidance
+            # Clamp to max 8 decimals to be safe
+            precision = min(precision, 8)
+            qty_dec = Decimal(str(quote_qty))
+            scale = Decimal(1).scaleb(-precision)
+            qty_dec = qty_dec.quantize(scale, rounding=ROUND_DOWN)
+            return float(qty_dec)
+        except Exception:
+            # Fallback: round to 2 decimal places
+            return round(quote_qty, 2)
 
     def best_price(self, symbol: str, timeout: float = 3.0) -> Dict[str, Any]:
         try:

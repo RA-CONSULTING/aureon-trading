@@ -216,20 +216,164 @@ except ImportError as e:
     print(f"⚠️  Aureon Enhancements not available: {e}")
 
 # ═══════════════════════════════════════════════════════════════
+# MODULE-LEVEL LOT SIZE CACHE - Used by UnifiedTradeConfirmation
+# ═══════════════════════════════════════════════════════════════
+_MODULE_LOT_SIZE_CACHE: Dict[str, Tuple[Optional[float], Optional[float]]] = {}
+
+def get_exchange_lot_size(exchange: str, symbol: str, client=None) -> Tuple[Optional[float], Optional[float]]:
+    """
+    Module-level lot size lookup for any exchange.
+    Returns (step_size, min_qty) or (None, None) if unavailable.
+    """
+    global _MODULE_LOT_SIZE_CACHE
+    cache_key = f"{exchange}:{symbol}"
+    
+    if cache_key in _MODULE_LOT_SIZE_CACHE:
+        return _MODULE_LOT_SIZE_CACHE[cache_key]
+    
+    exchange_name = (exchange or '').lower()
+    result = (None, None)
+    
+    try:
+        if exchange_name == 'binance' and client:
+            # Try to get from Binance exchange info
+            try:
+                info = client.client.session.get(
+                    f"{client.client.base}/api/v3/exchangeInfo",
+                    params={'symbol': symbol},
+                    timeout=5
+                ).json()
+                for sym_info in info.get('symbols', []):
+                    if sym_info['symbol'] == symbol:
+                        for f in sym_info.get('filters', []):
+                            if f['filterType'] == 'LOT_SIZE':
+                                step = float(f.get('stepSize', 0))
+                                min_q = float(f.get('minQty', 0))
+                                result = (step, min_q)
+                                break
+            except Exception:
+                # Fallback defaults for common Binance pairs
+                binance_defaults = {
+                    'BTCUSDC': (0.00001, 0.00001), 'BTCUSDT': (0.00001, 0.00001),
+                    'ETHUSDC': (0.0001, 0.0001), 'ETHUSDT': (0.0001, 0.0001),
+                    'SOLUSDC': (0.001, 0.001), 'SOLUSDT': (0.001, 0.001),
+                    'SHIBUSDC': (1, 1), 'SHIBUSDT': (1, 1),
+                    'XLMUSDC': (0.1, 0.1), 'XLMUSDT': (0.1, 0.1),
+                }
+                result = binance_defaults.get(symbol, (0.00000001, 0.00000001))
+                
+        elif exchange_name == 'kraken':
+            # Kraken common lot sizes
+            kraken_defaults = {
+                'XBTUSD': (0.0001, 0.0001), 'XBTUSDC': (0.0001, 0.0001),
+                'ETHUSD': (0.001, 0.001), 'ETHUSDC': (0.001, 0.001),
+                'SOLUSD': (0.01, 0.01), 'SOLUSDC': (0.01, 0.01),
+                'SHIBUSD': (50000, 50000), 'SHIBUSDC': (50000, 50000),  # Kraken SHIB is in large lots!
+                'XLMUSD': (1, 1), 'XLMUSDC': (1, 1),
+                'BCHUSD': (0.001, 0.001), 'BCHUSDC': (0.001, 0.001),
+            }
+            # Also handle Kraken's X-prefixed naming
+            alt_symbol = symbol
+            if symbol.startswith('X') and len(symbol) > 4:
+                alt_symbol = symbol[1:]  # XXBT -> XBT
+            result = kraken_defaults.get(symbol, kraken_defaults.get(alt_symbol, (0.00000001, 0.00000001)))
+            
+        elif exchange_name == 'capital':
+            # 💼 Capital.com CFD lot sizes - they use contract sizes
+            # Most CFDs have 1 unit minimum, crypto CFDs vary
+            capital_defaults = {
+                # Crypto CFDs on Capital.com
+                'BTCUSD': (0.01, 0.01), 'Bitcoin': (0.01, 0.01),
+                'ETHUSD': (0.1, 0.1), 'Ethereum': (0.1, 0.1),
+                'SOLUSD': (1.0, 1.0), 'Solana': (1.0, 1.0),
+                'XRPUSD': (10.0, 10.0), 'Ripple': (10.0, 10.0),
+                'ADAUSD': (10.0, 10.0), 'Cardano': (10.0, 10.0),
+                'DOTUSD': (1.0, 1.0), 'Polkadot': (1.0, 1.0),
+                'DOGEUSD': (100.0, 100.0), 'Dogecoin': (100.0, 100.0),
+                'SHIBUSD': (100000.0, 100000.0), 'Shiba': (100000.0, 100000.0),
+                # Forex/Indices - standard lot decimals
+                'EURUSD': (0.01, 0.01), 'GBPUSD': (0.01, 0.01),
+                'US500': (0.1, 0.1), 'UK100': (0.1, 0.1),
+                'Gold': (0.01, 0.01), 'XAUUSD': (0.01, 0.01),
+            }
+            result = capital_defaults.get(symbol, (1.0, 1.0))  # Default 1 unit for CFDs
+            
+        elif exchange_name == 'alpaca':
+            # 🦙 Alpaca crypto/stock lot sizes
+            # Stocks are fractional, crypto varies
+            alpaca_defaults = {
+                # Crypto on Alpaca
+                'BTC/USD': (0.0001, 0.0001), 'BTCUSD': (0.0001, 0.0001),
+                'ETH/USD': (0.001, 0.001), 'ETHUSD': (0.001, 0.001),
+                'SOL/USD': (0.01, 0.01), 'SOLUSD': (0.01, 0.01),
+                'DOGE/USD': (1.0, 1.0), 'DOGEUSD': (1.0, 1.0),
+                'SHIB/USD': (1000.0, 1000.0), 'SHIBUSD': (1000.0, 1000.0),
+                # Stocks - fractional shares supported
+                'AAPL': (0.001, 0.001), 'TSLA': (0.001, 0.001),
+                'NVDA': (0.001, 0.001), 'MSFT': (0.001, 0.001),
+            }
+            result = alpaca_defaults.get(symbol, (0.001, 0.001))  # Default fractional for stocks
+            
+    except Exception as e:
+        print(f"⚠️ Lot size lookup failed for {exchange}/{symbol}: {e}")
+        
+    _MODULE_LOT_SIZE_CACHE[cache_key] = result
+    return result
+
+def truncate_to_lot_size(quantity: float, step_size: float) -> float:
+    """Truncate quantity to valid lot size step."""
+    if step_size <= 0 or quantity <= 0:
+        return quantity
+    steps = int(quantity / step_size)
+    return steps * step_size
+
+def validate_order_quantity(exchange: str, symbol: str, quantity: float, price: float = 0, client=None) -> Tuple[Optional[float], Optional[str]]:
+    """
+    Validate and adjust quantity for exchange lot size requirements.
+    Returns (adjusted_quantity, error_message) - error_message is None if valid.
+    """
+    if quantity is None or quantity <= 0:
+        return None, "Invalid quantity"
+        
+    exchange_name = (exchange or '').lower()
+    step_size, min_qty = get_exchange_lot_size(exchange, symbol, client)
+    
+    # Truncate to lot size
+    if step_size and step_size > 0:
+        quantity = truncate_to_lot_size(quantity, step_size)
+        
+    if quantity <= 0:
+        return None, f"Quantity below lot step {step_size}"
+        
+    # Check minimum quantity
+    if min_qty and quantity < min_qty:
+        return None, f"Qty {quantity:.8f} below {exchange_name.upper()} min {min_qty:.8f}"
+        
+    # Check minimum notional
+    min_notional = CONFIG.get(f'{exchange_name.upper()}_MIN_NOTIONAL', 1.0)
+    if price and price > 0:
+        notional = quantity * price
+        if notional < min_notional:
+            return None, f"Notional ${notional:.2f} below {exchange_name.upper()} min ${min_notional:.2f}"
+            
+    return quantity, None
+
+
+# ═══════════════════════════════════════════════════════════════
 # CONFIGURATION - THE UNIFIED PARAMETERS
 # ═══════════════════════════════════════════════════════════════
 
 CONFIG = {
-    'EXCHANGE': os.getenv('EXCHANGE', 'both').lower(), # Default to BOTH
+    'EXCHANGE': os.getenv('EXCHANGE', 'binance').lower(), # Default to BINANCE (Kraken disabled)
     # Trading Parameters
     'BASE_CURRENCY': os.getenv('BASE_CURRENCY', 'USD'),  # USD or GBP
     
     # Platform-Specific Fees (as decimals)
     # ══════════════════════════════════════════════════════════
-    # 🐙 KRAKEN
-    'KRAKEN_FEE_MAKER': 0.0016,     # 0.16% maker fee (Standard Kraken Pro)
-    'KRAKEN_FEE_TAKER': 0.0026,     # 0.26% taker fee (Standard Kraken Pro)
-    'KRAKEN_FEE': 0.0026,           # Legacy field (uses taker)
+    # 🐙 KRAKEN (Actual observed: ~0.40% per trade on small volume)
+    'KRAKEN_FEE_MAKER': 0.0026,     # 0.26% maker fee 
+    'KRAKEN_FEE_TAKER': 0.0040,     # 0.40% taker fee (actual observed)
+    'KRAKEN_FEE': 0.0040,           # Legacy field (uses taker)
     
     # 🟡 BINANCE (UK Account - Spot only)
     'BINANCE_FEE_MAKER': 0.0010,    # 0.10% maker (with BNB discount: 0.075%)
@@ -251,11 +395,15 @@ CONFIG = {
     # General
     'SLIPPAGE_PCT': 0.0010,         # 0.10% estimated slippage per trade
     'SPREAD_COST_PCT': 0.0005,      # 0.05% estimated spread cost
-    'TAKE_PROFIT_PCT': 1.2,         # 1.2% profit target (Increased to cover fees)
-    'STOP_LOSS_PCT': 0.8,           # 0.8% stop loss (Adjusted for volatility)
+    'TAKE_PROFIT_PCT': 1.5,         # 1.5% profit target (was 1.2% - need more room to cover fees + slippage)
+    'STOP_LOSS_PCT': 1.5,           # 1.5% stop loss (was 0.8% - give trades room to breathe)
     'MAX_POSITIONS': 15,            # Fewer, higher quality positions
     'MIN_TRADE_USD': 5.0,           # Minimum trade notional in base currency
-    'PORTFOLIO_RISK_BUDGET': 0.90,  # Use 90% of equity - some buffer
+    'BINANCE_MIN_NOTIONAL': 1.0,    # Refuse sells if notional < $1 to avoid LOT_SIZE noise
+    'KRAKEN_MIN_NOTIONAL': 5.0,     # Kraken enforces ~$5 minimum notional on spot
+    'CAPITAL_MIN_NOTIONAL': 10.0,   # 💼 Capital.com CFD minimum ~$10 (varies by instrument)
+    'ALPACA_MIN_NOTIONAL': 1.0,     # 🦙 Alpaca crypto ~$1 min, stocks $1
+    'PORTFOLIO_RISK_BUDGET': 1.50,  # 150% - allow positions to exceed equity (existing holdings)
     'MIN_EXPECTED_EDGE_GBP': 0.001, # Require positive edge
     'DEFAULT_WIN_PROB': 0.55,       # Target win probability
     'WIN_RATE_CONFIDENCE_TRADES': 25,
@@ -264,21 +412,28 @@ CONFIG = {
     
     # 🎯 TRAILING STOP CONFIGURATION
     'ENABLE_TRAILING_STOP': True,           # Enable trailing stop system
-    'TRAILING_ACTIVATION_PCT': 0.5,         # Activate at 0.5% profit
-    'TRAILING_DISTANCE_PCT': 0.3,           # Trail 0.3% behind peak
+    'TRAILING_ACTIVATION_PCT': 0.8,         # Activate at 0.8% profit (was 0.5% - lock in more profit first)
+    'TRAILING_DISTANCE_PCT': 0.5,           # Trail 0.5% behind peak (was 0.3% - less whipsaw)
     'USE_ATR_TRAILING': True,               # Use ATR for dynamic trailing
     'ATR_TRAIL_MULTIPLIER': 1.5,            # Trail at 1.5x ATR below peak
     
     # Dynamic Portfolio Rebalancing
     'ENABLE_REBALANCING': True,     # Sell underperformers to buy better opportunities
-    'REBALANCE_THRESHOLD': -0.5,    # Sell position if it's losing more than 0.5%
-    'MIN_HOLD_CYCLES': 3,           # Hold at least 3 cycles before considering rebalance
-    'QUOTE_CURRENCIES': ['GBP', 'USD', 'EUR', 'USDT', 'BTC', 'ETH'],  # Trade ALL quote currencies
+    'REBALANCE_THRESHOLD': -2.0,    # Sell position if losing >2% (was -0.5% - too aggressive)
+    'MIN_HOLD_CYCLES': 10,          # Hold at least 10 cycles (~10 mins) before rebalance (was 3)
+    'QUOTE_CURRENCIES': ['USDC', 'USDT', 'GBP', 'USD', 'EUR', 'BTC', 'ETH'],  # 🔥 USDC first - where our money is!
+    
+    # 🌾 Startup Harvesting
+    'HARVEST_ON_STARTUP': False,     # 🚫 DISABLED - Sells blindly without knowing entry price! Use managed positions instead.
+    'HARVEST_MIN_VALUE': 1.0,        # Minimum net value to harvest (USD)
     
     # Scout Deployment (from immediateWaveRider.ts)
     'DEPLOY_SCOUTS_IMMEDIATELY': True,   # 🚀 Deploy positions immediately on first scan - HIT THE GROUND RUNNING!
     'SCOUT_MIN_MOMENTUM': 0.1,           # Very low threshold - get into trades FAST
     'SCOUT_FORCE_COUNT': 3,              # Force at least 3 scouts on startup
+    'SCOUT_MIN_VOLATILITY': 1.5,         # Lion Hunt style: require meaningful 24h move
+    'SCOUT_MIN_VOLUME_QUOTE': 100000,    # Minimum quote volume for scout candidates
+    'SCOUT_PER_QUOTE_LIMIT': 2,          # Spread early scouts across quote currencies
     
     # Kelly Criterion & Risk Management
     'USE_KELLY_SIZING': True,       # Use Kelly instead of fixed %
@@ -286,13 +441,13 @@ CONFIG = {
     'BASE_POSITION_SIZE': 0.10,     # Base size when Kelly disabled
     'MAX_POSITION_SIZE': 0.25,      # Hard cap per trade
     'MAX_SYMBOL_EXPOSURE': 0.30,    # Max 30% in one symbol
-    'MAX_DRAWDOWN_PCT': 15.0,       # Circuit breaker at 15% DD
+    'MAX_DRAWDOWN_PCT': 50.0,       # Circuit breaker at 50% DD - raised to allow recovery trades
     'MIN_NETWORK_COHERENCE': 0.20,  # NEVER pause - always trade!
     
     # Opportunity Filters - QUALITY OVER QUANTITY 🎯
     'MIN_MOMENTUM': 0.5,            # Require positive momentum (trend confirmation)
     'MAX_MOMENTUM': 50.0,           # Avoid parabolic pumps (reversal risk)
-    'MIN_VOLUME': 50000,            # Decent volume = reliable execution
+    'MIN_VOLUME': 20000,            # Lowered to allow thinner but tradeable books
     'MIN_SCORE': 40,                # Lowered from 60 to allow more trades (system was too selective)
     
     # 🎯 OPTIMAL WIN RATE MODE
@@ -306,8 +461,11 @@ CONFIG = {
     'ENABLE_QUANTUM_TELESCOPE': True,
     'ENABLE_HARMONIC_UNDERLAY': True,
     'QUANTUM_WEIGHT': 0.15,         # Weight of Quantum Telescope in Lambda field
-    'OPTIMAL_MIN_GATES': 5,         # OPTIMIZED: 5 gates = 63.6% win rate (from data validation)
-    'OPTIMAL_MIN_COHERENCE': 0.48,  # OPTIMIZED: Raised to reduce false signals (was 0.45)
+    'HARMONIC_WEIGHT': 0.20,        # Weight of 6D harmonic coherence in Lambda field
+    'HARMONIC_GATE': 0.30,          # LOWERED: Minimum harmonic dimensional coherence (was 0.45)
+    'HARMONIC_PROB_MIN': 0.40,      # LOWERED: Allow more trades (was 0.52)
+    'OPTIMAL_MIN_GATES': 2,         # REDUCED: 2 gates allows trading in consolidation (was 5)
+    'OPTIMAL_MIN_COHERENCE': 0.35,  # REDUCED: Lowered to allow more signals (was 0.48)
     'OPTIMAL_TREND_CONFIRM': True,  # Require trend confirmation
     'OPTIMAL_MULTI_TF_CHECK': True, # Multi-timeframe coherence check
     
@@ -327,9 +485,9 @@ CONFIG = {
     'FREQ_CLOWNFISH': 639.0,
     
     # Coherence Thresholds - OPTIMAL WIN RATE MODE 🎯
-    'HIGH_COHERENCE_MODE': True,   # Enabled for better win rate
-    'ENTRY_COHERENCE': 0.35,       # Lowered from 0.45 to allow more trades (was blocking too much)
-    'EXIT_COHERENCE': 0.25,        # Lowered from 0.35 to exit more flexibly
+    'HIGH_COHERENCE_MODE': False,   # DISABLED: Allow trading in any coherence
+    'ENTRY_COHERENCE': 0.20,       # LOWERED: Allow more trades (was 0.35)
+    'EXIT_COHERENCE': 0.15,        # LOWERED: Exit more flexibly (was 0.25)
     
     # Lambda Field Components (from coherenceTrader.ts)
     'ENABLE_LAMBDA_FIELD': os.getenv('ENABLE_LAMBDA_FIELD', '1') == '1',  # Full Λ(t) = S(t) + O(t) + E(t)
@@ -344,15 +502,35 @@ CONFIG = {
     
     # 🔊 PHASE 2: FREQUENCY FILTERING OPTIMIZATION 🔊
     'ENABLE_FREQUENCY_FILTERING': True,        # Enable frequency-based signal quality
-    'FREQUENCY_BOOST_528HZ': 1.35,            # 35% boost for 528Hz (83.3% WR in data)
+    'FREQUENCY_BOOST_300HZ': 1.50,            # 50% boost for 300-399Hz (98.8% prediction accuracy!)
+    'FREQUENCY_BOOST_528HZ': 1.35,            # 35% boost for 528Hz Love Frequency (83.3% WR)
     'FREQUENCY_SUPPRESS_963HZ': 0.6,          # 40% suppression for 963Hz (poor performer)
+    'FREQUENCY_SUPPRESS_600HZ': 0.75,         # 25% suppression for 600-699Hz (0% accuracy)
     'FREQUENCY_NEUTRAL_BASELINE': 1.0,        # All other frequencies baseline multiplier
     'FREQUENCY_WIN_RATE_TARGET': 0.60,        # Phase 2 target: 60%+ win rate
-    'HNC_DISTORTION_PENALTY': 0.70,  # 30% penalty for 440 Hz distortion
+    'HNC_DISTORTION_PENALTY': 0.70,           # 30% penalty for 440 Hz distortion
+    
+    # 🎵 SOLFEGGIO FREQUENCY BOOSTS (Ancient Sacred Healing Tones) 🎵
+    'FREQUENCY_BOOST_174HZ': 1.20,            # 174Hz - Pain Relief, Foundation
+    'FREQUENCY_BOOST_285HZ': 1.25,            # 285Hz - Healing, Tissue Regeneration  
+    'FREQUENCY_BOOST_396HZ': 1.40,            # 396Hz - Liberation from Fear/Guilt (UT)
+    'FREQUENCY_BOOST_417HZ': 1.30,            # 417Hz - Undoing Situations, Change (RE)
+    'FREQUENCY_BOOST_639HZ': 1.25,            # 639Hz - Connection, Relationships (FA)
+    'FREQUENCY_BOOST_741HZ': 1.15,            # 741Hz - Awakening Intuition (SOL)
+    'FREQUENCY_BOOST_852HZ': 1.20,            # 852Hz - Returning to Spiritual Order (LA)
+    
+    # 🌍 EARTH & COSMIC FREQUENCIES 🌍
+    'FREQUENCY_BOOST_SCHUMANN': 1.45,         # 7.83Hz - Earth's heartbeat (×harmonics)
+    'FREQUENCY_BOOST_432HZ': 1.30,            # 432Hz - Universal tuning, cosmic harmony
+    'FREQUENCY_BOOST_136HZ': 1.25,            # 136.1Hz - OM, Earth's year frequency
+    
+    # 🔴 DISTORTION FREQUENCIES (AVOID) 🔴
+    'FREQUENCY_SUPPRESS_440HZ': 0.70,         # 440Hz - Artificial concert pitch, dissonance
+    'FREQUENCY_SUPPRESS_HIGH_CHAOS': 0.50,    # 1000+Hz - Chaotic, unstable
     
     # 🌍⚡ HNC Probability Matrix (2-Hour Window) ⚡🌍
     'ENABLE_PROB_MATRIX': os.getenv('ENABLE_PROB_MATRIX', '1') == '1',
-    'PROB_MIN_CONFIDENCE': 0.50,     # Minimum confidence to use probability
+    'PROB_MIN_CONFIDENCE': 0.45,     # Lowered to admit more entries
     'PROB_HIGH_THRESHOLD': 0.65,     # High probability threshold for boost
     'PROB_LOW_THRESHOLD': 0.40,      # Low probability threshold for reduction
     'PROB_LOOKBACK_MINUTES': 60,     # Hour -1 lookback window
@@ -420,7 +598,7 @@ class SmartOrderRouter:
             'capital': 0.001,   # ~0.1% spread
             'alpaca': 0.0       # Commission-free
         }
-        self.exchange_priority = ['binance', 'kraken', 'capital', 'alpaca']
+        self.exchange_priority = ['binance', 'capital', 'alpaca']
         self.route_history: List[Dict] = []
         
     def get_best_quote(self, symbol: str, side: str, quantity: float = None) -> Dict[str, Any]:
@@ -729,7 +907,25 @@ class UnifiedTradeConfirmation:
                     quantity: float = None, quote_qty: float = None) -> Dict[str, Any]:
         """
         Submit order and return unified confirmation.
+        Validates lot sizes and minimum notional before submission.
         """
+        # Validate quantity for SELL orders (lot size + notional)
+        if side.upper() == 'SELL' and quantity is not None:
+            # Get current price for notional check
+            price = 0
+            try:
+                ticker = self.client.get_ticker(exchange, symbol)
+                if ticker:
+                    price = float(ticker.get('price', ticker.get('lastPrice', 0)))
+            except Exception:
+                pass
+                
+            adjusted_qty, error = validate_order_quantity(exchange, symbol, quantity, price, self.client)
+            if error:
+                print(f"   🚫 Order rejected pre-flight: {symbol} on {exchange}: {error}")
+                return {'status': 'REJECTED', 'error': error, 'pre_flight': True}
+            quantity = adjusted_qty
+            
         result = self.client.place_market_order(
             exchange, symbol, side,
             quantity=quantity, quote_qty=quote_qty
@@ -1111,6 +1307,515 @@ class PortfolioRebalancer:
 
 
 # ═══════════════════════════════════════════════════════════════
+# 🔮 PREDICTION VALIDATOR - Peer Review & Accuracy Tracking
+# ═══════════════════════════════════════════════════════════════
+
+class PredictionValidator:
+    """
+    🔮 PREDICTION VALIDATION SYSTEM
+    
+    Tracks prediction accuracy over time:
+    - Logs predictions with timestamps: "At 10:00 predicted BTCUSDC +0.5% by 10:01"
+    - Validates actual prices at predicted times
+    - Scores accuracy: how close was prediction to reality?
+    - Feeds accuracy back into confidence scores
+    - Maintains historical hit rate for peer review
+    
+    This creates an auditable trail of "did the probability matrix get it right?"
+    """
+    
+    def __init__(self, validation_window_seconds: int = 60):
+        self.validation_window = validation_window_seconds  # Default 1 minute predictions
+        self.pending_predictions: List[Dict] = []  # Predictions awaiting validation
+        self.validated_predictions: List[Dict] = []  # Historical validated predictions
+        self.max_history = 1000  # Keep last 1000 validated predictions
+        
+        # Accuracy metrics by various dimensions
+        self.accuracy_metrics = {
+            'total_predictions': 0,
+            'validated': 0,
+            'accurate': 0,  # Within 0.5% of predicted
+            'close': 0,     # Within 1% of predicted
+            'direction_correct': 0,  # Got the direction right (up/down)
+            'by_exchange': {},
+            'by_asset_class': {},
+            'by_frequency_band': {},
+            'by_coherence_level': {},
+            'recent_accuracy': []  # Rolling window for recent accuracy
+        }
+        
+        self.last_validation_check = time.time()
+        logger.info("🔮 PredictionValidator initialized - Tracking prediction accuracy")
+    
+    def log_prediction(self, exchange: str, symbol: str, current_price: float,
+                       predicted_direction: str, predicted_change_pct: float,
+                       probability: float, coherence: float, frequency: float,
+                       asset_class: str = 'crypto') -> str:
+        """
+        Log a new prediction for future validation.
+        
+        Args:
+            exchange: Exchange name (binance, kraken, etc.)
+            symbol: Trading pair (BTCUSDC, etc.)
+            current_price: Current price at prediction time
+            predicted_direction: 'up', 'down', or 'neutral'
+            predicted_change_pct: Expected % change
+            probability: Confidence probability (0-1)
+            coherence: HNC coherence at prediction time
+            frequency: HNC frequency at prediction time
+            asset_class: crypto, forex, stocks, etc.
+            
+        Returns:
+            Prediction ID for tracking
+        """
+        prediction_id = f"{exchange}_{symbol}_{int(time.time()*1000)}"
+        prediction_time = time.time()
+        validation_time = prediction_time + self.validation_window
+        
+        # Calculate expected price
+        if predicted_direction == 'up':
+            expected_price = current_price * (1 + predicted_change_pct / 100)
+        elif predicted_direction == 'down':
+            expected_price = current_price * (1 - predicted_change_pct / 100)
+        else:
+            expected_price = current_price
+        
+        prediction = {
+            'id': prediction_id,
+            'exchange': exchange,
+            'symbol': symbol,
+            'asset_class': asset_class,
+            'prediction_time': prediction_time,
+            'prediction_time_str': datetime.now().strftime('%H:%M:%S'),
+            'validation_time': validation_time,
+            'validation_time_str': datetime.fromtimestamp(validation_time).strftime('%H:%M:%S'),
+            'current_price': current_price,
+            'predicted_direction': predicted_direction,
+            'predicted_change_pct': predicted_change_pct,
+            'expected_price': expected_price,
+            'probability': probability,
+            'coherence': coherence,
+            'frequency': frequency,
+            'freq_band': self._get_freq_band(frequency),
+            'coherence_level': self._get_coherence_level(coherence),
+            'status': 'pending'
+        }
+        
+        self.pending_predictions.append(prediction)
+        self.accuracy_metrics['total_predictions'] += 1
+        
+        logger.info(f"🔮 PREDICTION LOGGED: {symbol} @ {prediction['prediction_time_str']}")
+        logger.info(f"   📊 Current: ${current_price:.6f} → Expected: ${expected_price:.6f} ({predicted_direction} {predicted_change_pct:.2f}%)")
+        logger.info(f"   🎯 Probability: {probability:.1%} | Coherence: {coherence:.2f} | Freq: {frequency:.0f}Hz")
+        logger.info(f"   ⏰ Will validate at: {prediction['validation_time_str']}")
+        
+        return prediction_id
+    
+    def validate_predictions(self, get_price_func) -> List[Dict]:
+        """
+        Check all pending predictions that are due for validation.
+        
+        Args:
+            get_price_func: Function that takes (exchange, symbol) and returns current price
+            
+        Returns:
+            List of newly validated predictions with results
+        """
+        now = time.time()
+        newly_validated = []
+        still_pending = []
+        
+        for prediction in self.pending_predictions:
+            if now >= prediction['validation_time']:
+                # Time to validate this prediction
+                try:
+                    actual_price = get_price_func(prediction['exchange'], prediction['symbol'])
+                    if actual_price and actual_price > 0:
+                        result = self._validate_single(prediction, actual_price)
+                        newly_validated.append(result)
+                        self._update_accuracy_metrics(result)
+                        
+                        # Log the validation result
+                        self._log_validation_result(result)
+                    else:
+                        # Couldn't get price, keep pending for one more cycle
+                        if now < prediction['validation_time'] + 60:  # Grace period
+                            still_pending.append(prediction)
+                        else:
+                            prediction['status'] = 'expired'
+                            logger.warning(f"⚠️ Prediction {prediction['id']} expired - couldn't get price")
+                except Exception as e:
+                    logger.error(f"Validation error for {prediction['id']}: {e}")
+                    still_pending.append(prediction)
+            else:
+                still_pending.append(prediction)
+        
+        self.pending_predictions = still_pending
+        
+        # Add to historical validated predictions
+        self.validated_predictions.extend(newly_validated)
+        
+        # Trim history if needed
+        if len(self.validated_predictions) > self.max_history:
+            self.validated_predictions = self.validated_predictions[-self.max_history:]
+        
+        self.last_validation_check = now
+        return newly_validated
+    
+    def _validate_single(self, prediction: Dict, actual_price: float) -> Dict:
+        """Validate a single prediction against actual price."""
+        current_price = prediction['current_price']
+        expected_price = prediction['expected_price']
+        predicted_direction = prediction['predicted_direction']
+        
+        # Calculate actual change
+        actual_change_pct = ((actual_price - current_price) / current_price) * 100
+        actual_direction = 'up' if actual_change_pct > 0.01 else ('down' if actual_change_pct < -0.01 else 'neutral')
+        
+        # Calculate prediction error
+        if expected_price > 0:
+            price_error_pct = abs((actual_price - expected_price) / expected_price) * 100
+        else:
+            price_error_pct = 100
+        
+        # Determine accuracy levels
+        is_accurate = price_error_pct <= 0.5  # Within 0.5% of predicted price
+        is_close = price_error_pct <= 1.0     # Within 1% of predicted price
+        direction_correct = (predicted_direction == actual_direction) or \
+                           (predicted_direction in ['up', 'down'] and actual_direction == predicted_direction)
+        
+        # Calculate accuracy score (0-100)
+        if is_accurate:
+            accuracy_score = 100 - (price_error_pct * 20)  # 100 at 0%, 90 at 0.5%
+        elif is_close:
+            accuracy_score = 80 - ((price_error_pct - 0.5) * 40)  # 80 at 0.5%, 60 at 1%
+        else:
+            accuracy_score = max(0, 60 - (price_error_pct - 1) * 10)  # Decreases after 1%
+        
+        # Bonus for correct direction
+        if direction_correct:
+            accuracy_score = min(100, accuracy_score + 10)
+        
+        result = {
+            **prediction,
+            'status': 'validated',
+            'validation_timestamp': time.time(),
+            'validation_timestamp_str': datetime.now().strftime('%H:%M:%S'),
+            'actual_price': actual_price,
+            'actual_change_pct': actual_change_pct,
+            'actual_direction': actual_direction,
+            'price_error_pct': price_error_pct,
+            'is_accurate': is_accurate,
+            'is_close': is_close,
+            'direction_correct': direction_correct,
+            'accuracy_score': accuracy_score
+        }
+        
+        return result
+    
+    def _update_accuracy_metrics(self, result: Dict):
+        """Update accuracy metrics with validation result."""
+        self.accuracy_metrics['validated'] += 1
+        
+        if result['is_accurate']:
+            self.accuracy_metrics['accurate'] += 1
+        if result['is_close']:
+            self.accuracy_metrics['close'] += 1
+        if result['direction_correct']:
+            self.accuracy_metrics['direction_correct'] += 1
+        
+        # Update by exchange
+        exchange = result['exchange']
+        if exchange not in self.accuracy_metrics['by_exchange']:
+            self.accuracy_metrics['by_exchange'][exchange] = {
+                'total': 0, 'accurate': 0, 'close': 0, 'direction_correct': 0, 'avg_score': 0, 'scores': []
+            }
+        ex = self.accuracy_metrics['by_exchange'][exchange]
+        ex['total'] += 1
+        if result['is_accurate']:
+            ex['accurate'] += 1
+        if result['is_close']:
+            ex['close'] += 1
+        if result['direction_correct']:
+            ex['direction_correct'] += 1
+        ex['scores'].append(result['accuracy_score'])
+        ex['scores'] = ex['scores'][-100:]  # Keep last 100
+        ex['avg_score'] = sum(ex['scores']) / len(ex['scores'])
+        
+        # Update by asset class
+        asset_class = result['asset_class']
+        if asset_class not in self.accuracy_metrics['by_asset_class']:
+            self.accuracy_metrics['by_asset_class'][asset_class] = {
+                'total': 0, 'accurate': 0, 'close': 0, 'direction_correct': 0, 'avg_score': 0, 'scores': []
+            }
+        ac = self.accuracy_metrics['by_asset_class'][asset_class]
+        ac['total'] += 1
+        if result['is_accurate']:
+            ac['accurate'] += 1
+        if result['is_close']:
+            ac['close'] += 1
+        if result['direction_correct']:
+            ac['direction_correct'] += 1
+        ac['scores'].append(result['accuracy_score'])
+        ac['scores'] = ac['scores'][-100:]
+        ac['avg_score'] = sum(ac['scores']) / len(ac['scores'])
+        
+        # Update by frequency band
+        freq_band = result.get('freq_band', 'unknown')
+        if freq_band not in self.accuracy_metrics['by_frequency_band']:
+            self.accuracy_metrics['by_frequency_band'][freq_band] = {
+                'total': 0, 'accurate': 0, 'direction_correct': 0, 'avg_score': 0, 'scores': []
+            }
+        fb = self.accuracy_metrics['by_frequency_band'][freq_band]
+        fb['total'] += 1
+        if result['is_accurate']:
+            fb['accurate'] += 1
+        if result['direction_correct']:
+            fb['direction_correct'] += 1
+        fb['scores'].append(result['accuracy_score'])
+        fb['scores'] = fb['scores'][-100:]
+        fb['avg_score'] = sum(fb['scores']) / len(fb['scores'])
+        
+        # Update by coherence level
+        coherence_level = result.get('coherence_level', 'unknown')
+        if coherence_level not in self.accuracy_metrics['by_coherence_level']:
+            self.accuracy_metrics['by_coherence_level'][coherence_level] = {
+                'total': 0, 'accurate': 0, 'direction_correct': 0, 'avg_score': 0, 'scores': []
+            }
+        cl = self.accuracy_metrics['by_coherence_level'][coherence_level]
+        cl['total'] += 1
+        if result['is_accurate']:
+            cl['accurate'] += 1
+        if result['direction_correct']:
+            cl['direction_correct'] += 1
+        cl['scores'].append(result['accuracy_score'])
+        cl['scores'] = cl['scores'][-100:]
+        cl['avg_score'] = sum(cl['scores']) / len(cl['scores'])
+        
+        # Update recent accuracy (rolling window)
+        self.accuracy_metrics['recent_accuracy'].append({
+            'timestamp': time.time(),
+            'score': result['accuracy_score'],
+            'accurate': result['is_accurate'],
+            'direction_correct': result['direction_correct']
+        })
+        self.accuracy_metrics['recent_accuracy'] = self.accuracy_metrics['recent_accuracy'][-100:]
+    
+    def _log_validation_result(self, result: Dict):
+        """Log validation result with clear formatting."""
+        symbol = result['symbol']
+        prediction_time = result['prediction_time_str']
+        validation_time = result['validation_timestamp_str']
+        
+        # Determine emoji based on accuracy
+        if result['is_accurate']:
+            emoji = "🎯"
+            status = "BANG ON!"
+        elif result['is_close']:
+            emoji = "✅"
+            status = "CLOSE"
+        elif result['direction_correct']:
+            emoji = "📈" if result['actual_direction'] == 'up' else "📉"
+            status = "DIRECTION OK"
+        else:
+            emoji = "❌"
+            status = "MISSED"
+        
+        logger.info(f"")
+        logger.info(f"═══════════════════════════════════════════════════════")
+        logger.info(f"{emoji} PREDICTION VALIDATED: {symbol} | {status}")
+        logger.info(f"═══════════════════════════════════════════════════════")
+        logger.info(f"   ⏰ Predicted at {prediction_time} → Checked at {validation_time}")
+        logger.info(f"   📊 Expected: ${result['expected_price']:.6f} ({result['predicted_direction']} {result['predicted_change_pct']:.2f}%)")
+        logger.info(f"   📊 Actual:   ${result['actual_price']:.6f} ({result['actual_direction']} {result['actual_change_pct']:.2f}%)")
+        logger.info(f"   🎯 Accuracy Score: {result['accuracy_score']:.1f}/100 | Error: {result['price_error_pct']:.3f}%")
+        logger.info(f"   📈 Direction: {'✅ CORRECT' if result['direction_correct'] else '❌ WRONG'}")
+        logger.info(f"═══════════════════════════════════════════════════════")
+        logger.info(f"")
+    
+    def get_accuracy_boost(self, exchange: str, asset_class: str, 
+                          frequency: float, coherence: float) -> float:
+        """
+        Get accuracy-based boost for probability calculations.
+        
+        If predictions at this frequency/coherence level have been historically accurate,
+        boost the confidence. If they've been inaccurate, reduce confidence.
+        
+        Returns: Multiplier (0.8 to 1.2)
+        """
+        boosts = []
+        
+        # Exchange accuracy boost
+        ex = self.accuracy_metrics['by_exchange'].get(exchange, {})
+        if ex.get('total', 0) >= 10:  # Need at least 10 predictions
+            ex_accuracy = ex.get('avg_score', 50) / 100
+            boosts.append(0.8 + (ex_accuracy * 0.4))  # 0.8 to 1.2
+        
+        # Asset class accuracy boost
+        ac = self.accuracy_metrics['by_asset_class'].get(asset_class, {})
+        if ac.get('total', 0) >= 10:
+            ac_accuracy = ac.get('avg_score', 50) / 100
+            boosts.append(0.8 + (ac_accuracy * 0.4))
+        
+        # Frequency band accuracy boost
+        freq_band = self._get_freq_band(frequency)
+        fb = self.accuracy_metrics['by_frequency_band'].get(freq_band, {})
+        if fb.get('total', 0) >= 10:
+            fb_accuracy = fb.get('avg_score', 50) / 100
+            boosts.append(0.8 + (fb_accuracy * 0.4))
+        
+        # Coherence level accuracy boost
+        coherence_level = self._get_coherence_level(coherence)
+        cl = self.accuracy_metrics['by_coherence_level'].get(coherence_level, {})
+        if cl.get('total', 0) >= 10:
+            cl_accuracy = cl.get('avg_score', 50) / 100
+            boosts.append(0.8 + (cl_accuracy * 0.4))
+        
+        if boosts:
+            return sum(boosts) / len(boosts)
+        return 1.0  # Neutral if no history
+    
+    def get_accuracy_summary(self) -> str:
+        """Get human-readable accuracy summary."""
+        m = self.accuracy_metrics
+        total = m['validated']
+        
+        if total == 0:
+            return "🔮 No predictions validated yet - collecting data..."
+        
+        accurate_pct = (m['accurate'] / total) * 100
+        close_pct = (m['close'] / total) * 100
+        direction_pct = (m['direction_correct'] / total) * 100
+        
+        # Calculate recent accuracy (last 20)
+        recent = m['recent_accuracy'][-20:]
+        if recent:
+            recent_scores = [r['score'] for r in recent]
+            recent_avg = sum(recent_scores) / len(recent_scores)
+            recent_accurate = sum(1 for r in recent if r['accurate'])
+            recent_direction = sum(1 for r in recent if r['direction_correct'])
+        else:
+            recent_avg = 0
+            recent_accurate = 0
+            recent_direction = 0
+        
+        lines = [
+            "",
+            "═══════════════════════════════════════════════════════════════",
+            "🔮 PREDICTION ACCURACY REPORT",
+            "═══════════════════════════════════════════════════════════════",
+            f"📊 Total Predictions: {m['total_predictions']} | Validated: {total}",
+            f"",
+            f"🎯 OVERALL ACCURACY:",
+            f"   • Bang On (≤0.5% error): {m['accurate']}/{total} ({accurate_pct:.1f}%)",
+            f"   • Close (≤1% error):     {m['close']}/{total} ({close_pct:.1f}%)",
+            f"   • Direction Correct:     {m['direction_correct']}/{total} ({direction_pct:.1f}%)",
+            f"",
+            f"📈 RECENT (Last {len(recent)} predictions):",
+            f"   • Average Score: {recent_avg:.1f}/100",
+            f"   • Accurate: {recent_accurate}/{len(recent)}",
+            f"   • Direction OK: {recent_direction}/{len(recent)}",
+        ]
+        
+        # By exchange breakdown
+        if m['by_exchange']:
+            lines.append("")
+            lines.append("📍 BY EXCHANGE:")
+            for ex, data in m['by_exchange'].items():
+                if data['total'] > 0:
+                    acc_rate = (data['accurate'] / data['total']) * 100
+                    lines.append(f"   • {ex}: {data['accurate']}/{data['total']} accurate ({acc_rate:.1f}%) | Avg Score: {data['avg_score']:.1f}")
+        
+        # By frequency band breakdown
+        if m['by_frequency_band']:
+            lines.append("")
+            lines.append("🎵 BY FREQUENCY BAND:")
+            for band, data in sorted(m['by_frequency_band'].items()):
+                if data['total'] > 0:
+                    acc_rate = (data['accurate'] / data['total']) * 100
+                    lines.append(f"   • {band}: {data['accurate']}/{data['total']} ({acc_rate:.1f}%) | Avg: {data['avg_score']:.1f}")
+        
+        # By coherence level
+        if m['by_coherence_level']:
+            lines.append("")
+            lines.append("🌊 BY COHERENCE LEVEL:")
+            for level, data in m['by_coherence_level'].items():
+                if data['total'] > 0:
+                    acc_rate = (data['accurate'] / data['total']) * 100
+                    lines.append(f"   • {level}: {data['accurate']}/{data['total']} ({acc_rate:.1f}%) | Avg: {data['avg_score']:.1f}")
+        
+        lines.append("")
+        lines.append("═══════════════════════════════════════════════════════════════")
+        
+        return "\n".join(lines)
+    
+    def _get_freq_band(self, freq: float) -> str:
+        """Get frequency band name with sacred frequency mapping."""
+        # Check for exact sacred frequency matches first (±5Hz tolerance)
+        sacred_freqs = {
+            7.83: "7.83Hz (Schumann)",
+            136.1: "136Hz (OM/Earth)",
+            174: "174Hz (Foundation)",
+            285: "285Hz (Healing)",
+            396: "396Hz (Liberation)",
+            417: "417Hz (Change)",
+            432: "432Hz (Cosmic)",
+            440: "440Hz (Distortion!)",
+            528: "528Hz (Love)",
+            639: "639Hz (Connection)",
+            741: "741Hz (Awakening)",
+            852: "852Hz (Spiritual)",
+            963: "963Hz (Unity)",
+        }
+        for sacred, name in sacred_freqs.items():
+            if abs(freq - sacred) <= 5:
+                return name
+        
+        # Fall back to band classification
+        if freq < 200:
+            return "Sub-200Hz (Deep Earth)"
+        elif freq < 300:
+            return "200-299Hz (Grounding)"
+        elif freq < 400:
+            return "300-399Hz (Activation)"
+        elif freq < 500:
+            return "400-499Hz (Transition)"
+        elif freq < 600:
+            return "500-599Hz (Heart)"
+        elif freq < 700:
+            return "600-699Hz (Expression)"
+        elif freq < 800:
+            return "700-799Hz (Intuition)"
+        elif freq < 900:
+            return "800-899Hz (Insight)"
+        elif freq < 1000:
+            return "900-999Hz (Crown)"
+        else:
+            return "1000+Hz (Transcendent)"
+    
+    def _get_coherence_level(self, coherence: float) -> str:
+        """Get coherence level name."""
+        if coherence < 0.3:
+            return "Low (<0.3)"
+        elif coherence < 0.5:
+            return "Medium (0.3-0.5)"
+        elif coherence < 0.7:
+            return "Good (0.5-0.7)"
+        elif coherence < 0.85:
+            return "High (0.7-0.85)"
+        else:
+            return "Excellent (0.85+)"
+    
+    def get_pending_count(self) -> int:
+        """Get number of predictions awaiting validation."""
+        return len(self.pending_predictions)
+    
+    def get_validated_count(self) -> int:
+        """Get total validated predictions."""
+        return self.accuracy_metrics['validated']
+
+
+# ═══════════════════════════════════════════════════════════════
 # 🌐 MULTI-EXCHANGE ORCHESTRATOR - Unified Cross-Exchange Intelligence
 # ═══════════════════════════════════════════════════════════════
 
@@ -1142,7 +1847,7 @@ class MultiExchangeOrchestrator:
                 'asset_class': 'crypto'
             },
             'kraken': {
-                'enabled': True,
+                'enabled': False,  # Disabled by user request
                 'quote_currencies': ['USD', 'GBP', 'EUR'],
                 'fee_rate': 0.0026,
                 'max_positions': 5,
@@ -1189,6 +1894,10 @@ class MultiExchangeOrchestrator:
         self.signal_history: List[Dict] = []
         
         logger.info("🌐 MultiExchangeOrchestrator initialized - All systems connected")
+
+    def get_learning_metrics(self) -> Dict[str, Any]:
+        """Expose cross-exchange learning metrics (wins, pnl, by exchange/class)."""
+        return self.learning_metrics
         
     def get_enabled_exchanges(self) -> List[str]:
         """Get list of enabled exchanges."""
@@ -1417,13 +2126,75 @@ class MultiExchangeOrchestrator:
         else:
             base_prob -= min(0.05, abs(change) / 100)
             
-        # Frequency adjustment
-        if 520 <= freq <= 540:  # Near 528Hz
-            base_prob *= CONFIG.get('FREQUENCY_BOOST_528HZ', 1.35)
-        elif 950 <= freq <= 970:  # Near 963Hz
-            base_prob *= CONFIG.get('FREQUENCY_SUPPRESS_963HZ', 0.6)
+        # Frequency adjustment - based on prediction accuracy data + sacred frequencies
+        freq_modifier = self._get_sacred_frequency_modifier(freq)
+        base_prob *= freq_modifier
             
         return max(0.0, min(CONFIG.get('PROB_CAP', 0.83), base_prob))
+    
+    def _get_sacred_frequency_modifier(self, freq: float) -> float:
+        """
+        🎵 SACRED FREQUENCY MODIFIER 🎵
+        
+        Maps market frequencies to sacred healing tones and returns
+        appropriate probability modifiers based on harmonic resonance.
+        
+        SOLFEGGIO SCALE (Ancient healing frequencies):
+        - 174 Hz: Foundation, pain relief
+        - 285 Hz: Healing, tissue regeneration
+        - 396 Hz: Liberation from fear/guilt (UT)
+        - 417 Hz: Undoing situations, facilitating change (RE)
+        - 528 Hz: Love frequency, DNA repair (MI) ⭐ OPTIMAL
+        - 639 Hz: Connection, relationships (FA)
+        - 741 Hz: Awakening intuition (SOL)
+        - 852 Hz: Returning to spiritual order (LA)
+        - 963 Hz: Unity, awakening (SI)
+        
+        EARTH FREQUENCIES:
+        - 7.83 Hz: Schumann Resonance (Earth's heartbeat)
+        - 136.1 Hz: OM frequency (Earth's year)
+        - 432 Hz: Universal tuning (cosmic harmony)
+        
+        DISTORTION:
+        - 440 Hz: Artificial concert pitch (dissonance)
+        """
+        # Check Schumann harmonics (7.83Hz × n)
+        schumann_base = 7.83
+        for harmonic in range(1, 128):  # Up to 128th harmonic (~1000Hz)
+            schumann_freq = schumann_base * harmonic
+            if abs(freq - schumann_freq) <= 3:
+                return CONFIG.get('FREQUENCY_BOOST_SCHUMANN', 1.45)
+        
+        # Check exact sacred frequencies (±5Hz tolerance)
+        sacred_map = {
+            (169, 179): CONFIG.get('FREQUENCY_BOOST_174HZ', 1.20),   # 174 Hz Foundation
+            (280, 290): CONFIG.get('FREQUENCY_BOOST_285HZ', 1.25),   # 285 Hz Healing
+            (391, 401): CONFIG.get('FREQUENCY_BOOST_396HZ', 1.40),   # 396 Hz Liberation
+            (412, 422): CONFIG.get('FREQUENCY_BOOST_417HZ', 1.30),   # 417 Hz Change
+            (427, 437): CONFIG.get('FREQUENCY_BOOST_432HZ', 1.30),   # 432 Hz Cosmic
+            (435, 445): CONFIG.get('FREQUENCY_SUPPRESS_440HZ', 0.70),# 440 Hz Distortion!
+            (523, 533): CONFIG.get('FREQUENCY_BOOST_528HZ', 1.35),   # 528 Hz Love ⭐
+            (634, 644): CONFIG.get('FREQUENCY_BOOST_639HZ', 1.25),   # 639 Hz Connection
+            (736, 746): CONFIG.get('FREQUENCY_BOOST_741HZ', 1.15),   # 741 Hz Awakening
+            (847, 857): CONFIG.get('FREQUENCY_BOOST_852HZ', 1.20),   # 852 Hz Spiritual
+            (958, 968): CONFIG.get('FREQUENCY_SUPPRESS_963HZ', 0.60),# 963 Hz (poor data)
+            (131, 141): CONFIG.get('FREQUENCY_BOOST_136HZ', 1.25),   # 136 Hz OM
+        }
+        
+        for (low, high), modifier in sacred_map.items():
+            if low <= freq <= high:
+                return modifier
+        
+        # Band-based fallback
+        if 300 <= freq <= 399:
+            return CONFIG.get('FREQUENCY_BOOST_300HZ', 1.50)  # 98.8% accuracy!
+        elif 600 <= freq <= 699:
+            return CONFIG.get('FREQUENCY_SUPPRESS_600HZ', 0.75)  # 0% accuracy
+        elif freq >= 1000:
+            return CONFIG.get('FREQUENCY_SUPPRESS_HIGH_CHAOS', 0.50)
+        
+        # Neutral baseline for unclassified frequencies
+        return CONFIG.get('FREQUENCY_NEUTRAL_BASELINE', 1.0)
         
     def _calculate_score(self, prob: float, coherence: float, volume: float, freq: float, change: float) -> float:
         """Calculate opportunity score."""
@@ -1605,6 +2376,43 @@ class UnifiedStateAggregator:
         'auris_runtime': 'auris_runtime.json',
         'multi_exchange_learning': 'multi_exchange_learning.json',
     }
+
+    PROBABILITY_REPORTS = [
+        'probability_all_markets_report.json',
+        'probability_all_exchanges_report.json',
+        'probability_kraken_report.json',
+        'probability_full_market_report.json',
+        'probability_batch_report.json',
+        'probability_data.json',
+        'probability_combined_report.json',
+        'probability_4_exchanges_report.json',
+        'probability_training_report.json',
+    ]
+
+    EXTRA_TRADE_HISTORY = [
+        'paper_trade_history.json',  # Paper trade log
+    ]
+
+    ANALYTICS_REPORTS = [
+        'multi_agent_results.json',
+        'multi_agent_aggressive_results.json',
+        'kelly_montecarlo_results.json',
+        'montecarlo_results.json',
+        'aureon_baseline_results.json',
+        'hive_baseline.json',
+        'harmonic_wave_data.json',
+    ]
+
+    POSITION_FILES = [
+        'positions.json',
+        'piano_positions.json',
+    ]
+
+    AUX_LOG_FILES = [
+        'rejection_log.json',
+        'smoke_test_results.json',
+        'prediction_test_result.json',
+    ]
     
     def __init__(self):
         self.aggregated_state = {
@@ -1613,6 +2421,10 @@ class UnifiedStateAggregator:
             'total_historical_trades': 0,
             'combined_win_rate': 0.0,
             'symbol_insights': {},
+            'probability_insights': {},
+            'analytics_insights': {},
+            'positions_snapshot': {},
+            'aux_logs': {},
             'frequency_performance': {},
             'exchange_performance': {},
             'coherence_bands': {},
@@ -1625,6 +2437,10 @@ class UnifiedStateAggregator:
         all_trades = []
         symbol_data = {}
         frequency_data = {}
+        probability_insights: Dict[str, Dict[str, Any]] = {}
+        analytics_insights: Dict[str, Dict[str, Any]] = {}
+        positions_snapshot: Dict[str, Any] = {}
+        aux_logs: Dict[str, Any] = {}
 
         def _extract_pnl(trade: Dict[str, Any]) -> float:
             pnl = trade.get('pnl_usd')
@@ -1688,6 +2504,13 @@ class UnifiedStateAggregator:
                 frequency_data[freq_band]['pnl'] += trade_pnl
                 
         self.aggregated_state['frequency_performance'] = frequency_data
+
+        # 3b. Load extra trade history files (paper trading, etc.)
+        for hist_file in self.EXTRA_TRADE_HISTORY:
+            hist = self._load_json(hist_file)
+            if hist and isinstance(hist, list):
+                self.aggregated_state['sources_loaded'].append(f"history:{hist_file}")
+                all_trades.extend(hist)
         
         # 4. Load HNC Frequency Log (frequency readings over time)
         hnc_log = self._load_json(self.STATE_FILES['hnc_frequency'])
@@ -1726,12 +2549,142 @@ class UnifiedStateAggregator:
         if multi_ex:
             self.aggregated_state['sources_loaded'].append('multi_exchange_learning')
             self.aggregated_state['exchange_performance'] = multi_ex.get('by_exchange', {})
+
+        # 7b. Load probability reports (market selection intelligence)
+        for report in self.PROBABILITY_REPORTS:
+            data = self._load_json(report)
+            if not data:
+                continue
+            self.aggregated_state['sources_loaded'].append(f"probability:{report}")
+            entries = []
+            for key in ('top_bullish', 'top_bearish', 'data', 'signals', 'items', 'predictions', 'data_points'):
+                if isinstance(data, list) and key == 'data':
+                    entries.extend(data)
+                if isinstance(data.get(key, None), list):
+                    entries.extend(data[key])
+            if isinstance(data, list):
+                entries.extend(data)
+
+            for item in entries:
+                if not isinstance(item, dict):
+                    continue
+                sym = item.get('symbol') or item.get('pair')
+                if not sym:
+                    continue
+                try:
+                    prob = float(item.get('probability', item.get('prob', 0)))
+                except Exception:
+                    prob = 0.0
+                change = item.get('24h_change') or item.get('change') or item.get('pct_change') or 0
+                state = item.get('state') or item.get('direction') or item.get('trend')
+
+                current = probability_insights.get(sym, {})
+                if not current or prob > current.get('probability', -1):
+                    probability_insights[sym] = {
+                        'probability': prob,
+                        'state': state,
+                        'change': change,
+                        'source': report
+                    }
             
         # 8. Scan trade logs directory
         trade_logs = self._scan_trade_logs()
         if trade_logs:
             self.aggregated_state['sources_loaded'].append('trade_logs')
             all_trades.extend(trade_logs)
+
+        # Save probability insights
+        if probability_insights:
+            self.aggregated_state['probability_insights'] = probability_insights
+
+        # 9. Load analytics reports (performance/forecast artifacts)
+        for report in self.ANALYTICS_REPORTS:
+            data = self._load_json(report)
+            if not data:
+                continue
+            self.aggregated_state['sources_loaded'].append(f"analytics:{report}")
+            entries = []
+            if isinstance(data, list):
+                entries = data
+            elif isinstance(data, dict):
+                for key in ('results', 'items', 'signals', 'data', 'top'):  # generic containers
+                    if isinstance(data.get(key, None), list):
+                        entries.extend(data[key])
+                if not entries:
+                    entries = [data]
+
+            for item in entries:
+                if not isinstance(item, dict):
+                    continue
+                sym = item.get('symbol') or item.get('pair') or item.get('asset')
+                if not sym:
+                    continue
+                pnl = item.get('pnl') or item.get('pnl_usd') or item.get('profit') or 0
+                wr = item.get('win_rate') or item.get('wr') or item.get('wins_ratio')
+                prob = item.get('probability') or item.get('prob')
+                score = item.get('score') or item.get('sharpe') or item.get('fitness')
+                current = analytics_insights.get(sym, {})
+
+                def _better(a, b):
+                    # prefer higher prob/score/wr, then pnl
+                    return (
+                        (a.get('probability', 0) or 0) > (b.get('probability', 0) or 0) or
+                        (a.get('score', 0) or 0) > (b.get('score', 0) or 0) or
+                        (a.get('win_rate', 0) or 0) > (b.get('win_rate', 0) or 0) or
+                        (a.get('pnl', 0) or 0) > (b.get('pnl', 0) or 0)
+                    )
+
+                candidate = {
+                    'pnl': pnl,
+                    'win_rate': wr,
+                    'probability': prob,
+                    'score': score,
+                    'source': report,
+                }
+
+                if not current or _better(candidate, current):
+                    analytics_insights[sym] = candidate
+
+        if analytics_insights:
+            self.aggregated_state['analytics_insights'] = analytics_insights
+
+        # 10. Load positions files (current holdings snapshots)
+        for pos_file in self.POSITION_FILES:
+            pdata = self._load_json(pos_file)
+            if not pdata:
+                continue
+            self.aggregated_state['sources_loaded'].append(f"positions:{pos_file}")
+            if isinstance(pdata, dict):
+                for sym, entry in pdata.items():
+                    size = entry.get('quantity') or entry.get('qty') or entry.get('amount') or entry
+                    positions_snapshot[sym] = size
+            elif isinstance(pdata, list):
+                for entry in pdata:
+                    if not isinstance(entry, dict):
+                        continue
+                    sym = entry.get('symbol') or entry.get('pair')
+                    if not sym:
+                        continue
+                    size = entry.get('quantity') or entry.get('qty') or entry.get('amount')
+                    positions_snapshot[sym] = size
+
+        if positions_snapshot:
+            self.aggregated_state['positions_snapshot'] = positions_snapshot
+
+        # 11. Load auxiliary logs (diagnostic only)
+        for log_file in self.AUX_LOG_FILES:
+            ldata = self._load_json(log_file)
+            if not ldata:
+                continue
+            self.aggregated_state['sources_loaded'].append(f"aux:{log_file}")
+            try:
+                count = len(ldata) if hasattr(ldata, '__len__') else 1
+            except Exception:
+                count = 1
+            aux_logs[log_file] = {'entries': count}
+
+        if aux_logs:
+            self.aggregated_state['aux_logs'] = aux_logs
             
         # Calculate aggregated metrics
         self.aggregated_state['total_historical_trades'] = len(all_trades)
@@ -1833,6 +2786,37 @@ class UnifiedStateAggregator:
             insight['frequency'] = hnc.get('frequency', 256)
             insight['resonance'] = hnc.get('resonance', 0.5)
             insight['is_harmonic'] = hnc.get('is_harmonic', False)
+
+        # Probability signals (market selection intelligence)
+        prob_insights = self.aggregated_state.get('probability_insights', {})
+        for sym, pdata in prob_insights.items():
+            base = sym.replace('USDT', '').replace('USD', '').replace('GBP', '').replace('EUR', '')
+            if base_symbol == base or base in base_symbol:
+                insight['probability_signal'] = pdata.get('probability', 0)
+                insight['probability_state'] = pdata.get('state')
+                insight['probability_change'] = pdata.get('change')
+                insight['probability_source'] = pdata.get('source')
+                break
+
+        # Analytics signals (sim/backtest/agent metrics)
+        analytics = self.aggregated_state.get('analytics_insights', {})
+        for sym, adata in analytics.items():
+            base = sym.replace('USDT', '').replace('USD', '').replace('GBP', '').replace('EUR', '')
+            if base_symbol == base or base in base_symbol:
+                insight['analytics_win_rate'] = adata.get('win_rate')
+                insight['analytics_prob'] = adata.get('probability')
+                insight['analytics_score'] = adata.get('score')
+                insight['analytics_pnl'] = adata.get('pnl')
+                insight['analytics_source'] = adata.get('source')
+                break
+
+        # Position snapshot (current holdings if available)
+        positions = self.aggregated_state.get('positions_snapshot', {})
+        for sym, qty in positions.items():
+            base = sym.replace('USDT', '').replace('USD', '').replace('GBP', '').replace('EUR', '')
+            if base_symbol == base or base in base_symbol:
+                insight['position_quantity'] = qty
+                break
             
         return insight
         
@@ -1879,6 +2863,41 @@ class UnifiedStateAggregator:
             'confidence': min(1.0, trades / 20),
             'recommended_min': 0.45 if band == 'low' else 0.50 if band == 'mid' else 0.55
         }
+
+    def get_top_signals(self, n: int = 5) -> Dict[str, List[Tuple[str, Dict[str, Any]]]]:
+        """Return top probability and analytics signals plus largest positions for visibility."""
+        probs = sorted(
+            self.aggregated_state.get('probability_insights', {}).items(),
+            key=lambda kv: kv[1].get('probability', 0) or 0,
+            reverse=True
+        )[:n]
+
+        def _analytic_key(item):
+            data = item[1]
+            return (
+                data.get('score') or 0,
+                data.get('win_rate') or 0,
+                data.get('probability') or 0,
+                data.get('pnl') or 0,
+            )
+
+        analytics = sorted(
+            self.aggregated_state.get('analytics_insights', {}).items(),
+            key=_analytic_key,
+            reverse=True
+        )[:n]
+
+        positions = sorted(
+            self.aggregated_state.get('positions_snapshot', {}).items(),
+            key=lambda kv: abs(kv[1]) if isinstance(kv[1], (int, float)) else 0,
+            reverse=True
+        )[:n]
+
+        return {
+            'probability': probs,
+            'analytics': analytics,
+            'positions': positions,
+        }
         
     def save_aggregated_state(self):
         """Save multi-exchange learning state for persistence."""
@@ -1889,6 +2908,7 @@ class UnifiedStateAggregator:
                     'by_exchange': self.aggregated_state.get('exchange_performance', {}),
                     'frequency_performance': self.aggregated_state.get('frequency_performance', {}),
                     'coherence_bands': self.aggregated_state.get('coherence_bands', {}),
+                    'probability_insights': self.aggregated_state.get('probability_insights', {}),
                     'total_historical_trades': self.aggregated_state.get('total_historical_trades', 0),
                     'combined_win_rate': self.aggregated_state.get('combined_win_rate', 0),
                     'updated_at': datetime.now().isoformat()
@@ -2335,6 +3355,173 @@ class AdaptiveLearningEngine:
                 wr = metrics.get('wins', 0) / total_h * 100 if total_h > 0 else 0
                 lines.append(f"  ⏰ {hour:02d}:00 - {wr:.0f}% WR ({total_h} trades)")
                 
+        return "\n".join(lines)
+        
+    def get_entry_recommendation(self, symbol: str, frequency: float, coherence: float, 
+                                  score: int, probability: float, current_hour: int = None) -> Dict:
+        """
+        🎯 PROACTIVE ANALYTICS: Get recommendation BEFORE entering a trade.
+        
+        Returns learned insights based on historical performance for similar conditions.
+        This is what was missing - the system now TELLS YOU what to expect.
+        """
+        if current_hour is None:
+            current_hour = datetime.now().hour
+            
+        recommendation = {
+            'should_trade': True,
+            'confidence': 'low',
+            'expected_win_rate': 0.50,
+            'similar_trades': 0,
+            'suggested_hold_cycles': CONFIG['MIN_HOLD_CYCLES'],
+            'suggested_take_profit': CONFIG['TAKE_PROFIT_PCT'],
+            'suggested_stop_loss': CONFIG['STOP_LOSS_PCT'],
+            'warnings': [],
+            'advantages': [],
+            'frequency_insight': None,
+            'hour_insight': None,
+            'coherence_insight': None
+        }
+        
+        # ═══ FREQUENCY BAND ANALYSIS ═══
+        band = self._get_frequency_band(frequency)
+        freq_metrics = self.metrics_by_frequency.get(band, {'wins': 0, 'losses': 0, 'total_pnl': 0, 'trades': []})
+        freq_total = freq_metrics.get('wins', 0) + freq_metrics.get('losses', 0)
+        
+        if freq_total >= 3:
+            freq_wr = freq_metrics['wins'] / freq_total
+            avg_pnl_per_trade = freq_metrics['total_pnl'] / freq_total if freq_total > 0 else 0
+            
+            recommendation['frequency_insight'] = {
+                'band': band,
+                'win_rate': freq_wr,
+                'avg_pnl': avg_pnl_per_trade,
+                'sample_size': freq_total
+            }
+            
+            if freq_wr >= 0.60:
+                recommendation['advantages'].append(f"🎵 {band} has {freq_wr*100:.0f}% WR ({freq_total} trades)")
+                recommendation['expected_win_rate'] = max(recommendation['expected_win_rate'], freq_wr * 0.9)  # 10% confidence haircut
+            elif freq_wr < 0.40:
+                recommendation['warnings'].append(f"⚠️ {band} only {freq_wr*100:.0f}% WR - historically weak")
+                recommendation['expected_win_rate'] = min(recommendation['expected_win_rate'], freq_wr * 1.1)
+                
+            # Adjust TP/SL based on historical PnL distribution
+            if freq_metrics['trades']:
+                winners = [p for p in freq_metrics['trades'] if p > 0]
+                losers = [p for p in freq_metrics['trades'] if p < 0]
+                if len(winners) >= 3:
+                    avg_win = sum(winners) / len(winners)
+                    # If winners average higher, we can afford tighter TP
+                    if avg_win > 0.015:  # 1.5%
+                        recommendation['suggested_take_profit'] = max(0.01, avg_win * 0.8)  # Take at 80% of avg win
+                if len(losers) >= 3:
+                    avg_loss = abs(sum(losers) / len(losers))
+                    # If losses are typically small, we can tighten stop loss
+                    if avg_loss < 0.01:  # <1%
+                        recommendation['suggested_stop_loss'] = max(0.005, avg_loss * 1.2)
+        
+        # ═══ HOUR OF DAY ANALYSIS ═══
+        hour_metrics = self.metrics_by_hour.get(current_hour, {'wins': 0, 'losses': 0, 'trades': []})
+        hour_total = hour_metrics.get('wins', 0) + hour_metrics.get('losses', 0)
+        
+        if hour_total >= 3:
+            hour_wr = hour_metrics['wins'] / hour_total
+            
+            recommendation['hour_insight'] = {
+                'hour': current_hour,
+                'win_rate': hour_wr,
+                'sample_size': hour_total
+            }
+            
+            if hour_wr >= 0.65:
+                recommendation['advantages'].append(f"⏰ {current_hour:02d}:00 is historically strong ({hour_wr*100:.0f}% WR)")
+            elif hour_wr < 0.35:
+                recommendation['warnings'].append(f"⚠️ {current_hour:02d}:00 is historically weak ({hour_wr*100:.0f}% WR)")
+                
+        # ═══ COHERENCE RANGE ANALYSIS ═══  
+        coh_range = self._get_coherence_range(coherence)
+        coh_metrics = self.metrics_by_coherence.get(coh_range, {'wins': 0, 'losses': 0, 'trades': []})
+        coh_total = coh_metrics.get('wins', 0) + coh_metrics.get('losses', 0)
+        
+        if coh_total >= 3:
+            coh_wr = coh_metrics['wins'] / coh_total
+            
+            recommendation['coherence_insight'] = {
+                'range': coh_range,
+                'win_rate': coh_wr,
+                'sample_size': coh_total
+            }
+            
+            if coh_wr >= 0.60:
+                recommendation['advantages'].append(f"✨ Coherence {coh_range} = {coh_wr*100:.0f}% WR historically")
+            elif coh_wr < 0.40:
+                recommendation['warnings'].append(f"⚠️ Coherence {coh_range} underperforms ({coh_wr*100:.0f}% WR)")
+                
+        # ═══ CALCULATE COMBINED EXPECTED WIN RATE ═══
+        contributing_factors = []
+        if freq_total >= 3:
+            contributing_factors.append(('frequency', freq_wr, freq_total))
+        if hour_total >= 3:
+            contributing_factors.append(('hour', hour_wr, hour_total))
+        if coh_total >= 3:
+            contributing_factors.append(('coherence', coh_wr, coh_total))
+            
+        if contributing_factors:
+            # Weighted average by sample size
+            total_weight = sum(f[2] for f in contributing_factors)
+            weighted_wr = sum(f[1] * f[2] for f in contributing_factors) / total_weight
+            recommendation['expected_win_rate'] = weighted_wr
+            recommendation['similar_trades'] = total_weight
+            
+        # ═══ SET CONFIDENCE LEVEL ═══
+        total_similar = freq_total + hour_total + coh_total
+        if total_similar >= 30 and len(contributing_factors) >= 2:
+            recommendation['confidence'] = 'high'
+        elif total_similar >= 10:
+            recommendation['confidence'] = 'medium'
+        else:
+            recommendation['confidence'] = 'low'
+            
+        # ═══ DETERMINE TRADE RECOMMENDATION ═══
+        if len(recommendation['warnings']) >= 2:
+            recommendation['should_trade'] = False
+            recommendation['warnings'].append("❌ Multiple red flags - consider skipping")
+        elif recommendation['expected_win_rate'] < 0.35 and recommendation['confidence'] != 'low':
+            recommendation['should_trade'] = False
+            recommendation['warnings'].append(f"❌ Expected WR {recommendation['expected_win_rate']*100:.0f}% too low")
+            
+        # ═══ HOLD TIME SUGGESTION ═══
+        # If frequency band has high variance, suggest longer hold
+        if freq_metrics['trades']:
+            pnl_variance = sum((p - (freq_metrics['total_pnl']/max(1,freq_total)))**2 for p in freq_metrics['trades']) / max(1, freq_total)
+            if pnl_variance > 0.001:  # High variance
+                recommendation['suggested_hold_cycles'] = min(20, CONFIG['MIN_HOLD_CYCLES'] + 5)
+                recommendation['advantages'].append("📊 High variance band - extended hold suggested")
+                
+        return recommendation
+        
+    def get_recommendation_summary(self, recommendation: Dict) -> str:
+        """Format recommendation as human-readable summary for logging."""
+        lines = []
+        
+        conf_emoji = {'high': '🟢', 'medium': '🟡', 'low': '⚪'}.get(recommendation['confidence'], '⚪')
+        trade_emoji = '✅' if recommendation['should_trade'] else '❌'
+        
+        lines.append(f"  {trade_emoji} Trade: {'RECOMMENDED' if recommendation['should_trade'] else 'SKIP'}")
+        lines.append(f"  {conf_emoji} Confidence: {recommendation['confidence'].upper()} ({recommendation['similar_trades']} similar trades)")
+        lines.append(f"  📈 Expected WR: {recommendation['expected_win_rate']*100:.0f}%")
+        
+        if recommendation['advantages']:
+            for adv in recommendation['advantages'][:2]:
+                lines.append(f"    {adv}")
+                
+        if recommendation['warnings']:
+            for warn in recommendation['warnings'][:2]:
+                lines.append(f"    {warn}")
+                
+        lines.append(f"  💡 Suggested: TP {recommendation['suggested_take_profit']*100:.1f}% / SL {recommendation['suggested_stop_loss']*100:.1f}% / Hold {recommendation['suggested_hold_cycles']} cycles")
+        
         return "\n".join(lines)
 
 
@@ -3977,6 +5164,17 @@ class AurisEngine:
             harmonic = 0.0
             if self.hnc_bridge and CONFIG.get('ENABLE_HNC_FREQUENCY', True):
                 harmonic = self.hnc_coherence * CONFIG.get('HNC_FREQUENCY_WEIGHT', 0.25)
+
+            # H6D(t) = 6D Harmonic waveform ecosystem coherence
+            harmonic6d = 0.0
+            if self.harmonic_engine:
+                try:
+                    eco = self.harmonic_engine.get_ecosystem_state()
+                    harmonic_coh = eco.get('ecosystem_coherence', 0.0)
+                    if harmonic_coh >= CONFIG.get('HARMONIC_GATE', 0.45):
+                        harmonic6d = harmonic_coh * CONFIG.get('HARMONIC_WEIGHT', 0.20)
+                except Exception:
+                    harmonic6d = 0.0
             
             # Q(t) = Quantum Telescope component (Geometric Coherence)
             quantum = 0.0
@@ -3995,8 +5193,8 @@ class AurisEngine:
                 except Exception:
                     quantum = 0.0
 
-            # Λ(t) = S(t) + O(t) + E(t) + H(t) + Q(t)
-            lambda_field = substrate + observer + echo + harmonic + quantum
+            # Λ(t) = S(t) + O(t) + E(t) + H(t) + H6D(t) + Q(t)
+            lambda_field = substrate + observer + echo + harmonic + harmonic6d + quantum
             lambda_field = max(0.0, min(1.0, lambda_field))  # Clamp to [0, 1]
             
             # Update history
@@ -4656,13 +5854,23 @@ class Position:
     is_scout: bool = False  # Can this position act as market scout?
     last_signal_broadcast: float = 0.0  # Timestamp of last signal
     prime_size_multiplier: float = 1.0  # Prime-based sizing
-    exchange: str = 'kraken'  # Exchange where position is held
+    exchange: str = 'binance'  # Exchange where position is held
     
     # 🎯 TRAILING STOP SUPPORT
     highest_price: float = 0.0  # Highest price since entry (for trailing stop)
     lowest_price: float = float('inf')  # Lowest price since entry (for shorts)
     trailing_stop_active: bool = False  # Is trailing stop currently active?
     trailing_stop_price: float = 0.0  # Current trailing stop level
+    
+    # 📦 HISTORICAL ASSET FLAG - These can be liquidated for cash when better opportunities arise
+    is_historical: bool = False  # True = imported from exchange, no known entry price, treat as available capital
+    
+    # 🧠 LEARNED PARAMETERS - Set from probability matrix recommendations
+    learned_tp_pct: Optional[float] = None  # Suggested take profit % from historical performance
+    learned_sl_pct: Optional[float] = None  # Suggested stop loss % from historical performance
+    learned_hold_cycles: Optional[int] = None  # Suggested minimum hold cycles
+    learned_win_rate: Optional[float] = None  # Expected win rate based on similar trades
+    learned_confidence: str = 'low'  # Confidence level of learned parameters
     
     # Generate unique ID for position
     id: str = field(default_factory=lambda: f"pos_{int(time.time()*1000)}_{random.randint(1000,9999)}")
@@ -4708,6 +5916,7 @@ class PerformanceTracker:
         self.halt_reason = ""
         self.total_hold_time_sec = 0.0  # Track average hold time
         self.closed_positions = 0
+        self.circuit_breaker_enabled = False  # Disabled until first baseline reset
         
         # Earth engine reference for PHI amplification
         self.earth_engine = None
@@ -4793,7 +6002,8 @@ class PerformanceTracker:
         self.current_drawdown = dd  # Track current DD from peak
         if dd > self.max_drawdown:
             self.max_drawdown = dd
-        if dd >= CONFIG['MAX_DRAWDOWN_PCT'] and not self.trading_halted:
+        # Only check circuit breaker if enabled (after first baseline reset)
+        if self.circuit_breaker_enabled and dd >= CONFIG['MAX_DRAWDOWN_PCT'] and not self.trading_halted:
             self.trading_halted = True
             self.halt_reason = f"Max drawdown {dd:.1f}% exceeded"
             print(f"\n🛑 CIRCUIT BREAKER ACTIVATED: {self.halt_reason}")
@@ -5189,6 +6399,9 @@ class AureonKrakenEcosystem:
         self.tracker = PerformanceTracker(initial_balance)
         self.memory = ElephantMemory()  # 🐘 Initialize Elephant Memory
         self.flux_predictor = SystemFluxPredictor() # 🔮 Initialize Flux Predictor
+
+        # Mirror harmonic engine reference for convenience
+        self.harmonic_engine = getattr(self.auris, 'harmonic_engine', None)
         
         # Share earth engine reference with tracker for PHI amplification
         if self.auris.earth_engine:
@@ -5208,6 +6421,23 @@ class AureonKrakenEcosystem:
         self.realtime_prices: Dict[str, float] = {}
         self.price_lock = Lock()
         self._liquidity_warnings: set[Tuple[str, str]] = set()
+
+        # Live P&L snapshot (updated in refresh_equity)
+        self.pnl_state: Dict[str, float] = {
+            'total_equity': initial_balance,
+            'cash': initial_balance,
+            'net_profit': 0.0,
+            'total_return_pct': 0.0,
+            'timestamp': time.time(),
+        }
+        
+        # 🚫 INVALID SYMBOL CACHE - Avoid repeated API calls for bad symbols
+        self._invalid_symbols: Dict[str, float] = {}  # symbol -> timestamp when marked invalid
+        self._valid_symbols: Dict[str, str] = {}  # symbol -> exchange (verified working)
+        self._symbol_cache_ttl = 3600  # Recheck invalid symbols after 1 hour
+        self._dust_positions: Dict[str, Tuple[str, float]] = {}  # symbol -> (reason, timestamp)
+        self._dust_ttl = 86400  # 24h dust TTL before re-attempting
+        self._lot_size_cache: Dict[str, Tuple[Optional[float], Optional[float]]] = {}
         
         # WebSocket
         self.ws_connected = False
@@ -5288,6 +6518,41 @@ class AureonKrakenEcosystem:
         print("   🚀 Enhanced trading components initialized (Router/Arbitrage/Confirmation/Rebalancer)")
         print("   🌐 Multi-Exchange Orchestrator active (Binance/Kraken/Capital/Alpaca)")
         print(f"   📊 State Aggregator: {len(self.state_aggregator.aggregated_state.get('sources_loaded', []))} data sources feeding ecosystem")
+        try:
+            top = self.state_aggregator.get_top_signals(3)
+            prob_lines = []
+            for sym, data in top.get('probability', []):
+                prob = data.get('probability') or 0
+                src = data.get('source', '')
+                prob_lines.append(f"      • {sym}: p={prob:.2f} src={src}")
+
+            an_lines = []
+            for sym, data in top.get('analytics', []):
+                score = data.get('score') or 0
+                wr = data.get('win_rate')
+                wr_str = f"{wr:.2f}" if isinstance(wr, (int, float)) else "n/a"
+                src = data.get('source', '')
+                an_lines.append(f"      • {sym}: score={score:.2f} wr={wr_str} src={src}")
+
+            pos_lines = []
+            for sym, qty in top.get('positions', []):
+                qty_str = f"{qty:.4f}" if isinstance(qty, (int, float)) else str(qty)
+                pos_lines.append(f"      • {sym}: qty={qty_str}")
+
+            if prob_lines:
+                print("   🔍 Top Probability Signals:")
+                for ln in prob_lines:
+                    print(ln)
+            if an_lines:
+                print("   🧪 Top Analytics Signals:")
+                for ln in an_lines:
+                    print(ln)
+            if pos_lines:
+                print("   📦 Position Snapshots:")
+                for ln in pos_lines:
+                    print(ln)
+        except Exception as e:
+            logger.debug("Top signal display failed: %s", e)
         print("   🔥 War-ready enhancements active (ATR/HeatManager/AdaptiveFilters)")
         if CONFIG.get('ENABLE_TRAILING_STOP', True):
             print(f"   🎯 Trailing stops enabled (activate at +{CONFIG.get('TRAILING_ACTIVATION_PCT', 0.5)}%, trail {CONFIG.get('TRAILING_DISTANCE_PCT', 0.3)}%)")
@@ -5301,6 +6566,19 @@ class AureonKrakenEcosystem:
         if self.nexus.enabled:
             print(f"   🌌 Nexus active: Master Equation Λ(t) + Queen Hive 10-9-1")
         
+        # 🔮 PREDICTION VALIDATOR - Track prediction accuracy over time
+        self.prediction_validator = PredictionValidator(validation_window_seconds=60)
+        print(f"   🔮 Prediction Validator active: 1-minute forecasts with peer review")
+        
+        # 📊 PROBABILITY MATRIX - Persistent learning from position outcomes
+        self.prob_matrix = None
+        if PROB_MATRIX_AVAILABLE and CONFIG.get('ENABLE_PROB_MATRIX', True):
+            try:
+                self.prob_matrix = HNCProbabilityIntegration()
+                print("   📊 Probability Matrix (Position Learning) ACTIVE")
+            except Exception as e:
+                print(f"   ⚠️ Probability Matrix init failed: {e}")
+        
         # Determine tradeable currencies based on wallet
         self.tradeable_currencies = ['USD', 'GBP', 'EUR', 'USDT', 'USDC']
         self._detect_wallet_currency()
@@ -5309,6 +6587,11 @@ class AureonKrakenEcosystem:
         fresh_start = os.environ.get('FRESH_START', '0') == '1'
         if fresh_start:
             print("   ✨ FRESH START: Ignoring previous state file")
+            # Reset baselines BEFORE refresh_equity to avoid circuit breaker trigger
+            self.tracker.trading_halted = False
+            self.tracker.halt_reason = ""
+            self.tracker.max_drawdown = 0.0
+            self.tracker.peak_balance = 1e9  # Temporarily high to avoid DD calc
         else:
             self.load_state()
 
@@ -5326,9 +6609,190 @@ class AureonKrakenEcosystem:
             self.tracker.trading_halted = False
             self.tracker.halt_reason = ""
             print(f"   📊 Baseline reset to real portfolio: £{self.total_equity_gbp:.2f}")
-            
-            # Import existing holdings as managed positions
+        
+        # Enable circuit breaker now that baselines are properly set
+        self.tracker.circuit_breaker_enabled = True
+        
+        # 🔧 ALWAYS import existing holdings as managed positions on startup
+        # This ensures any assets on exchanges are tracked properly
+        if not self.dry_run:
             self._import_existing_holdings()
+
+    # ═══════════════════════════════════════════════════════════════
+    # 🚫 SYMBOL VALIDATION CACHE - Reduce API noise for invalid symbols
+    # ═══════════════════════════════════════════════════════════════
+    
+    def _is_symbol_invalid(self, symbol: str) -> bool:
+        """Check if symbol is in invalid cache and not expired."""
+        if symbol not in self._invalid_symbols:
+            return False
+        # Check if cache entry has expired
+        cached_time = self._invalid_symbols[symbol]
+        if time.time() - cached_time > self._symbol_cache_ttl:
+            del self._invalid_symbols[symbol]
+            return False
+        return True
+    
+    def _mark_symbol_invalid(self, symbol: str) -> None:
+        """Mark a symbol as invalid to skip future API calls."""
+        self._invalid_symbols[symbol] = time.time()
+    
+    def _mark_symbol_valid(self, symbol: str, exchange: str) -> None:
+        """Mark a symbol as valid/working."""
+        self._valid_symbols[symbol] = exchange
+        # Remove from invalid cache if present
+        if symbol in self._invalid_symbols:
+            del self._invalid_symbols[symbol]
+        self._clear_symbol_dust(symbol)
+
+    def _is_symbol_dust(self, symbol: str) -> Optional[str]:
+        """Return dust reason if symbol is flagged as unsellable."""
+        entry = self._dust_positions.get(symbol)
+        if not entry:
+            return None
+        reason, ts = entry
+        if time.time() - ts > self._dust_ttl:
+            del self._dust_positions[symbol]
+            return None
+        return reason
+
+    def _mark_symbol_dust(self, symbol: str, reason: str) -> None:
+        """Persistently mark a symbol as dust/unsellable."""
+        self._dust_positions[symbol] = (reason, time.time())
+        self._invalid_symbols[symbol] = time.time()
+
+    def _clear_symbol_dust(self, symbol: str) -> None:
+        self._dust_positions.pop(symbol, None)
+    
+    def get_symbol_cache_stats(self) -> Dict[str, Any]:
+        """Get stats on symbol caching for telemetry."""
+        now = time.time()
+        active_invalid = sum(1 for t in self._invalid_symbols.values() if now - t < self._symbol_cache_ttl)
+        return {
+            'valid_symbols': len(self._valid_symbols),
+            'invalid_symbols': active_invalid,
+            'dust_symbols': len(self._dust_positions),
+            'total_cached': len(self._valid_symbols) + active_invalid,
+        }
+
+    # ═══════════════════════════════════════════════════════════════
+    # 🎵 SACRED FREQUENCY MAPPING - Harmonic Trading Intelligence 🎵
+    # ═══════════════════════════════════════════════════════════════
+    
+    def _get_sacred_frequency_modifier(self, freq: float) -> float:
+        """
+        🎵 SACRED FREQUENCY MODIFIER 🎵
+        
+        Maps market frequencies to sacred healing tones and returns
+        appropriate probability modifiers based on harmonic resonance.
+        
+        SOLFEGGIO SCALE (Ancient healing frequencies):
+        - 174 Hz: Foundation, pain relief
+        - 285 Hz: Healing, tissue regeneration
+        - 396 Hz: Liberation from fear/guilt (UT)
+        - 417 Hz: Undoing situations, facilitating change (RE)
+        - 528 Hz: Love frequency, DNA repair (MI) ⭐ OPTIMAL
+        - 639 Hz: Connection, relationships (FA)
+        - 741 Hz: Awakening intuition (SOL)
+        - 852 Hz: Returning to spiritual order (LA)
+        - 963 Hz: Unity, awakening (SI)
+        
+        EARTH FREQUENCIES:
+        - 7.83 Hz: Schumann Resonance (Earth's heartbeat)
+        - 136.1 Hz: OM frequency (Earth's year)
+        - 432 Hz: Universal tuning (cosmic harmony)
+        
+        DISTORTION:
+        - 440 Hz: Artificial concert pitch (dissonance)
+        """
+        # Check Schumann harmonics (7.83Hz × n)
+        schumann_base = 7.83
+        for harmonic in range(1, 128):  # Up to 128th harmonic (~1000Hz)
+            schumann_freq = schumann_base * harmonic
+            if abs(freq - schumann_freq) <= 3:
+                return CONFIG.get('FREQUENCY_BOOST_SCHUMANN', 1.45)
+        
+        # Check exact sacred frequencies (±5Hz tolerance)
+        sacred_map = {
+            (169, 179): CONFIG.get('FREQUENCY_BOOST_174HZ', 1.20),   # 174 Hz Foundation
+            (280, 290): CONFIG.get('FREQUENCY_BOOST_285HZ', 1.25),   # 285 Hz Healing
+            (391, 401): CONFIG.get('FREQUENCY_BOOST_396HZ', 1.40),   # 396 Hz Liberation
+            (412, 422): CONFIG.get('FREQUENCY_BOOST_417HZ', 1.30),   # 417 Hz Change
+            (427, 437): CONFIG.get('FREQUENCY_BOOST_432HZ', 1.30),   # 432 Hz Cosmic
+            (435, 445): CONFIG.get('FREQUENCY_SUPPRESS_440HZ', 0.70),# 440 Hz Distortion!
+            (523, 533): CONFIG.get('FREQUENCY_BOOST_528HZ', 1.35),   # 528 Hz Love ⭐
+            (634, 644): CONFIG.get('FREQUENCY_BOOST_639HZ', 1.25),   # 639 Hz Connection
+            (736, 746): CONFIG.get('FREQUENCY_BOOST_741HZ', 1.15),   # 741 Hz Awakening
+            (847, 857): CONFIG.get('FREQUENCY_BOOST_852HZ', 1.20),   # 852 Hz Spiritual
+            (958, 968): CONFIG.get('FREQUENCY_SUPPRESS_963HZ', 0.60),# 963 Hz (poor data)
+            (131, 141): CONFIG.get('FREQUENCY_BOOST_136HZ', 1.25),   # 136 Hz OM
+        }
+        
+        for (low, high), modifier in sacred_map.items():
+            if low <= freq <= high:
+                return modifier
+        
+        # Band-based fallback
+        if 300 <= freq <= 399:
+            return CONFIG.get('FREQUENCY_BOOST_300HZ', 1.50)  # 98.8% accuracy!
+        elif 600 <= freq <= 699:
+            return CONFIG.get('FREQUENCY_SUPPRESS_600HZ', 0.75)  # 0% accuracy
+        elif freq >= 1000:
+            return CONFIG.get('FREQUENCY_SUPPRESS_HIGH_CHAOS', 0.50)
+        
+        # Neutral baseline for unclassified frequencies
+        return CONFIG.get('FREQUENCY_NEUTRAL_BASELINE', 1.0)
+    
+    def _get_frequency_name(self, freq: float) -> str:
+        """Get human-readable name for a frequency."""
+        # Check for exact sacred frequency matches first (±5Hz tolerance)
+        sacred_names = {
+            (5, 11): "Schumann",
+            (131, 141): "OM/Earth",
+            (169, 179): "Foundation",
+            (280, 290): "Healing",
+            (295, 405): "Activation",  # Includes 300-399 golden band + 396
+            (412, 422): "Change",
+            (427, 437): "Cosmic",
+            (435, 445): "Distortion⚠️",
+            (523, 533): "Love💚",
+            (634, 644): "Connection",
+            (736, 746): "Awakening",
+            (847, 857): "Spiritual",
+            (958, 968): "Unity",
+        }
+        
+        for (low, high), name in sacred_names.items():
+            if low <= freq <= high:
+                return name
+        
+        # Schumann harmonics
+        schumann_base = 7.83
+        for harmonic in range(1, 128):
+            if abs(freq - schumann_base * harmonic) <= 3:
+                return f"Schumann×{harmonic}"
+        
+        # Generic band names
+        if freq < 200:
+            return "Earth"
+        elif freq < 300:
+            return "Grounding"
+        elif freq < 400:
+            return "Golden"
+        elif freq < 500:
+            return "Transition"
+        elif freq < 600:
+            return "Heart"
+        elif freq < 700:
+            return "Expression"
+        elif freq < 800:
+            return "Intuition"
+        elif freq < 900:
+            return "Insight"
+        elif freq < 1000:
+            return "Crown"
+        else:
+            return "Chaos⚠️"
 
     def _detect_wallet_currency(self):
         """Detect which currencies we actually have funds in"""
@@ -5409,50 +6873,199 @@ class AureonKrakenEcosystem:
                 # For Binance: BTCUSDT
                 # For Kraken: XXBTZUSD (or similar)
                 # We need to reconstruct the likely pair symbol
+                # Try multiple quote currencies since we might have positions in different pairs
                 
-                symbol = ""
-                if exchange == 'binance':
-                    # Try appending base currency
-                    symbol = f"{asset_clean}{base}"
-                    # Check if valid ticker exists? Maybe later.
-                else:
-                    # Kraken
-                    symbol = f"{asset_clean}{base}"
+                symbol = None
+                gbp_value = 0.0
+                price = 0.0
                 
-                # Skip if already tracked
+                # Try each quote currency until we find a valid pair with price
+                # Include BTC/XBT for Kraken BTC-denominated pairs
+                quote_options = ['USDC', 'USDT', 'USD', 'EUR', 'GBP', 'BTC', 'XBT', base] if base not in ['USDC', 'USDT'] else [base, 'USDT', 'USD', 'EUR', 'BTC', 'XBT']
+                
+                for quote in quote_options:
+                    try_symbol = f"{asset_clean}{quote}"
+                    
+                    # Skip if already tracked
+                    if try_symbol in self.positions:
+                        symbol = None  # Already tracked
+                        break
+                    
+                    # 🚫 Skip if symbol is in invalid cache
+                    if self._is_symbol_invalid(try_symbol):
+                        continue
+                    
+                    try:
+                        # Try to get ticker for this pair
+                        ticker = self.client.get_ticker(exchange, try_symbol)
+                        tick_price = ticker.get('price', 0) or ticker.get('last', 0) or ticker.get('c', 0)
+                        if tick_price and float(tick_price) > 0:
+                            symbol = try_symbol
+                            price = float(tick_price)
+                            gbp_value = amount * price
+                            self._mark_symbol_valid(try_symbol, exchange)
+                            print(f"   📍 Found valid pair: {symbol} @ ${price:.6f}")
+                            break
+                        else:
+                            self._mark_symbol_invalid(try_symbol)
+                    except:
+                        self._mark_symbol_invalid(try_symbol)
+                        continue
+                
+                if not symbol or gbp_value < 0.50:  # Skip dust < $0.50
+                    continue
+                
+                # Skip if already tracked (double check)
                 if symbol in self.positions:
                     continue
                     
-                # Get current price
-                try:
-                    # For conversion, remove FIRST X prefix only (XXBT -> XBT, XETH -> ETH)
-                    conversion_asset = asset_clean[1:] if asset_clean.startswith('X') and len(asset_clean) > 3 else asset_clean
-                    gbp_value = self.client.convert_to_quote(exchange, conversion_asset, amount, base)
-                    if gbp_value < 0.50:  # Skip dust < £0.50
-                        continue
-                    price = gbp_value / amount
-                except Exception as e:
-                    print(f"   ⚠️ Failed to import {asset_clean} on {exchange}: {e}")
-                    continue
-                    
                 # Create position from existing holding
+                # 🔧 FIX: Estimate entry fee for imported positions so profit gate works correctly
+                # We don't know the original entry fee, so estimate it from current value
+                estimated_entry_fee = gbp_value * get_platform_fee(exchange, 'taker')
+                
                 self.positions[symbol] = Position(
                     symbol=symbol,
                     entry_price=price,  # Use current price as "entry" 
                     quantity=amount,
-                    entry_fee=0.0,  # Already bought, no new fee
+                    entry_fee=estimated_entry_fee,  # Estimate original entry fee for proper P&L calc
                     entry_value=gbp_value,
                     momentum=0.0,
                     coherence=0.5,
                     entry_time=time.time(),
                     dominant_node='Portfolio',
-                    exchange=exchange
+                    exchange=exchange,
+                    is_historical=True  # 📦 Mark as historical - can be liquidated for cash
                 )
                 imported += 1
-                print(f"   📦 Imported {symbol} ({exchange}): {amount:.6f} @ £{price:.4f} = £{gbp_value:.2f}")
+                print(f"   📦 Imported {symbol} ({exchange}): {amount:.6f} @ £{price:.4f} = £{gbp_value:.2f} (est fee: £{estimated_entry_fee:.4f}) [HISTORICAL - can liquidate]")
             
         if imported > 0:
             print(f"   ✅ Imported {imported} existing holdings as managed positions")
+            print(f"   💡 Historical assets can be liquidated when better opportunities arise!")
+    
+    def _liquidate_historical_for_opportunity(self, needed_cash: float, target_exchange: str, target_symbol: str) -> float:
+        """🔄 Liquidate historical assets to free up cash for a better opportunity.
+        
+        Philosophy: Historical assets have no known entry price, so treat them as
+        available capital. If the bot finds a high-confidence trade, sell historical
+        assets to fund it!
+        
+        Returns: Amount of cash freed up
+        """
+        if self.dry_run:
+            return 0.0
+            
+        freed_cash = 0.0
+        historical_positions = [
+            (sym, pos) for sym, pos in self.positions.items() 
+            if pos.is_historical and pos.exchange == target_exchange
+        ]
+        
+        if not historical_positions:
+            # Try other exchanges too
+            historical_positions = [
+                (sym, pos) for sym, pos in self.positions.items() 
+                if pos.is_historical
+            ]
+        
+        if not historical_positions:
+            return 0.0
+            
+        # Sort by value (smallest first to minimize market impact)
+        historical_positions.sort(key=lambda x: x[1].entry_value)
+        
+        print(f"\n   🔄 LIQUIDATING HISTORICAL ASSETS for {target_symbol}")
+        print(f"   💰 Need £{needed_cash:.2f} - found {len(historical_positions)} historical positions")
+        
+        for sym, pos in historical_positions:
+            if freed_cash >= needed_cash:
+                break
+                
+            # Get current price
+            try:
+                ticker = self.client.get_ticker(pos.exchange, sym)
+                curr_price = float(ticker.get('price', 0) or ticker.get('last', 0) or ticker.get('c', 0))
+                if curr_price <= 0:
+                    continue
+            except:
+                continue
+                
+            available_qty = pos.quantity
+            if available_qty <= 0:
+                continue
+            current_value = available_qty * curr_price
+            
+            # Don't liquidate dust (less than £0.50) - wastes time on LOT_SIZE errors
+            DUST_THRESHOLD = 0.50
+            if current_value < DUST_THRESHOLD:
+                continue
+            
+            dust_reason = self._is_symbol_dust(sym)
+            if dust_reason:
+                print(f"   💤 Skipping {sym} - marked dust: {dust_reason}")
+                continue
+            
+            # Skip symbols that have repeatedly failed LOT_SIZE (can't be sold in current qty)
+            if self._is_symbol_invalid(sym):
+                continue
+            
+            sell_qty, block_reason, adj_note = self._prepare_liquidation_quantity(
+                pos.exchange, sym, available_qty, curr_price
+            )
+            if sell_qty is None:
+                reason = block_reason or "LOT_SIZE constraint"
+                self._mark_symbol_dust(sym, reason)
+                print(f"   💤 Skipping {sym}: {reason}")
+                continue
+            
+            current_value = sell_qty * curr_price
+            if current_value < DUST_THRESHOLD:
+                reason = f"value £{current_value:.2f} below dust floor"
+                self._mark_symbol_dust(sym, reason)
+                print(f"   💤 Skipping {sym}: {reason}")
+                continue
+
+            print(f"   📦→💵 Selling {sym}: {sell_qty:.6f} @ £{curr_price:.4f} = £{current_value:.2f}")
+            if adj_note:
+                print(f"      ↳ {adj_note}")
+            
+            try:
+                # Execute sell - use quantity parameter (not base_qty)
+                res = self.client.place_market_order(pos.exchange, sym, 'SELL', quantity=sell_qty)
+                
+                if isinstance(res, dict) and not res.get('rejected') and res.get('status') not in ['REJECTED', 'FAILED', None]:
+                    net_value = current_value * 0.998  # Account for fees
+                    freed_cash += net_value
+                    pos.quantity = max(pos.quantity - sell_qty, 0.0)
+                    if pos.quantity <= 1e-12:
+                        self.positions.pop(sym, None)
+                    else:
+                        pos.entry_value = pos.quantity * curr_price
+                    self._clear_symbol_dust(sym)
+                    print(f"   ✅ Liquidated {sym} - freed £{net_value:.2f}")
+                    if pos.quantity > 0:
+                        print(f"      ↪️ Remaining {sym}: {pos.quantity:.6f} (unsellable remainder)")
+                else:
+                    # Failed - blacklist to stop retry spam
+                    self._mark_symbol_invalid(sym)
+                    print(f"   ⚠️ Failed to liquidate {sym} - blacklisted for 1hr")
+            except Exception as e:
+                err_msg = str(e)
+                # Mark as invalid for any liquidation error - stop retry spam
+                self._mark_symbol_invalid(sym)
+                if 'LOT_SIZE' in err_msg or '-1013' in err_msg:
+                    self._mark_symbol_dust(sym, 'LOT_SIZE rejection')
+                    print(f"   ⚠️ {sym} LOT_SIZE fail - blacklisted for 1hr")
+                else:
+                    print(f"   ⚠️ Error liquidating {sym}: {e} - blacklisted for 1hr")
+                continue
+        
+        if freed_cash > 0:
+            print(f"   💰 Total freed: £{freed_cash:.2f}")
+            self.refresh_equity()  # Update balances
+            
+        return freed_cash
     
     def _deploy_scouts(self):
         """🚀 FORCE DEPLOY scout positions immediately on first scan!
@@ -5472,6 +7085,9 @@ class AureonKrakenEcosystem:
         quote_currencies = CONFIG.get('QUOTE_CURRENCIES', ['USD', 'USDT', 'GBP', 'EUR'])
         
         all_candidates = []
+        per_quote_cap = CONFIG.get('SCOUT_PER_QUOTE_LIMIT', 2)
+        min_vol = CONFIG.get('SCOUT_MIN_VOLATILITY', 1.5)
+        min_vol_q = CONFIG.get('SCOUT_MIN_VOLUME_QUOTE', 100000)
         
         # Gather ALL possible trades across all currencies
         for quote_curr in quote_currencies:
@@ -5480,34 +7096,152 @@ class AureonKrakenEcosystem:
                     continue
                 if symbol in self.positions:
                     continue
-                # Avoid Kraken in FORCE scouts to prevent private balance rate-limits
+                # Note: Kraken now allowed since Binance UK blocks most USDC pairs
+                # Rate limits handled by using cached ticker data
                 source = data.get('source', '').lower()
-                if source == 'kraken':
-                    continue
                     
                 change = data.get('change24h', 0)
                 price = data.get('price', 0)
                 volume = data.get('volume', 0)
+
+                # Lion Hunt style gating: need real movement and liquidity
+                if price <= 0 or volume <= 0:
+                    continue
+                if abs(change) < min_vol:
+                    continue
+                if volume < min_vol_q:
+                    continue
+
+                # Opportunity score: |volatility| × volume (in millions)
+                volume_m = max(volume / 1_000_000, 0.001)
+                lion_score = abs(change) * volume_m * 100
+
+                all_candidates.append({
+                    'symbol': symbol,
+                    'price': price,
+                    'change24h': change,
+                    'volume': volume,
+                    'score': lion_score,
+                    'coherence': 0.65,  # Force coherence above threshold
+                    'dominant_node': 'ForceScout',
+                    'quote_currency': quote_curr,
+                    'source': source  # 🔥 Route to correct exchange!
+                })
+        
+        # 🔥 BALANCE-AWARE BOOST: Get balances FIRST, then boost tradeable pairs BEFORE deduplication!
+        available_quotes = set()
+        exchange_quote_balances = {}  # Track actual balances per exchange+quote
+        try:
+            # Use the MultiExchangeClient's get_all_balances method
+            all_balances = self.client.get_all_balances()
+            for exchange_name, bals in all_balances.items():
+                for asset, amt in bals.items():
+                    asset_upper = asset.upper()
+                    # Remove Kraken prefixes (ZUSD, XXBT, etc)
+                    asset_clean = asset_upper.lstrip('ZX')
+                    if amt > 1.0:  # Meaningful balance
+                        # Map to quote currency patterns
+                        if asset_upper == 'USDC' or asset_clean == 'USDC':
+                            available_quotes.add('USDC')
+                            key = (exchange_name.lower(), 'USDC')
+                            exchange_quote_balances[key] = exchange_quote_balances.get(key, 0) + amt
+                        if asset_upper == 'USDT' or asset_clean == 'USDT':
+                            available_quotes.add('USDT')
+                            key = (exchange_name.lower(), 'USDT')
+                            exchange_quote_balances[key] = exchange_quote_balances.get(key, 0) + amt
+                        if asset_upper in ('USD', 'ZUSD') or asset_clean == 'USD':
+                            available_quotes.add('USD')
+                            available_quotes.add('USDC')  # USD can buy USDC pairs
+                            key = (exchange_name.lower(), 'USD')
+                            exchange_quote_balances[key] = exchange_quote_balances.get(key, 0) + amt
+                        if asset_upper in ('GBP', 'ZGBP') or asset_clean == 'GBP':
+                            available_quotes.add('GBP')
+                            key = (exchange_name.lower(), 'GBP')
+                            exchange_quote_balances[key] = exchange_quote_balances.get(key, 0) + amt
+                        if asset_upper in ('EUR', 'ZEUR') or asset_clean == 'EUR':
+                            available_quotes.add('EUR')
+                            key = (exchange_name.lower(), 'EUR')
+                            exchange_quote_balances[key] = exchange_quote_balances.get(key, 0) + amt
+        except Exception as e:
+            print(f"   ⚠️ Balance detection error: {e}")
+        
+        # Show balances per exchange
+        print(f"   💵 Quote balances by exchange:")
+        for (ex, quote), bal in sorted(exchange_quote_balances.items()):
+            print(f"      {ex.upper()} {quote}: {bal:.2f}")
+        
+        # 🔥 CRITICAL: Apply balance boost to scores BEFORE deduplication!
+        # Boost MORE if the exchange actually has balance for that quote currency!
+        for c in all_candidates:
+            source_exchange = (c.get('source') or 'kraken').lower()
+            quote = c['quote_currency']
+            ex_quote_key = (source_exchange, quote)
+            
+            if quote in available_quotes:
+                c['score'] += 10_000_000  # Massive boost for tradeable quote currency
                 
-                # VERY LOW threshold - we want to TRADE not wait!
-                if price > 0 and volume > 100:  # Very low volume threshold
-                    all_candidates.append({
-                        'symbol': symbol,
+                # 🔥 EXTRA boost if THIS exchange has balance (not just any exchange)
+                if ex_quote_key in exchange_quote_balances and exchange_quote_balances[ex_quote_key] > 10:
+                    c['score'] += 5_000_000  # Extra 5M for having balance on THIS exchange
+        
+        # Collapse duplicates per base asset: keep best score across quotes
+        # NOW the exchange WITH balance will win over exchange without!
+        def _base_from_symbol(sym: str) -> str:
+            for suffix in self.quote_currency_suffixes:
+                if sym.endswith(suffix):
+                    return sym[: -len(suffix)]
+            return sym
+
+        best_per_base: Dict[str, Dict] = {}
+        for c in all_candidates:
+            base = _base_from_symbol(c['symbol'])
+            if base not in best_per_base or c['score'] > best_per_base[base]['score']:
+                best_per_base[base] = c
+        all_candidates = list(best_per_base.values())
+
+        # Sort by score (tradeable pairs already boosted)
+        all_candidates.sort(key=lambda x: x['score'], reverse=True)
+
+        # Fallback: if no candidates met the aggressive filters, pick a best-effort symbol
+        if not all_candidates:
+            force_sym = CONFIG.get('FORCE_TRADE_SYMBOL') or None
+            fallback = None
+            best_change = 0
+            for sym, data in self.ticker_cache.items():
+                if sym in self.positions:
+                    continue
+                if force_sym and sym != force_sym:
+                    continue
+                price = data.get('price', 0)
+                change = data.get('change24h', 0)
+                volume = data.get('volume', 0)
+                if price <= 0 or volume <= 0:
+                    continue
+                if abs(change) > abs(best_change):
+                    best_change = change
+                    fallback = {
+                        'symbol': sym,
                         'price': price,
                         'change24h': change,
                         'volume': volume,
-                        'score': 75,  # Scout score - decent
-                        'coherence': 0.65,  # Force coherence above threshold
+                        'score': abs(change),
+                        'coherence': 0.55,
                         'dominant_node': 'ForceScout',
-                        'quote_currency': quote_curr
-                    })
-        
-        # Sort by momentum - ride the waves!
-        all_candidates.sort(key=lambda x: x['change24h'], reverse=True)
-        
-        print(f"   📊 Found {len(all_candidates)} tradeable pairs")
+                        'quote_currency': self._get_quote_asset(sym)
+                    }
+            if fallback:
+                all_candidates.append(fallback)
+
+        # 🔥 FILTER: Only keep pairs where we have balance to trade!
+        if available_quotes:
+            tradeable_candidates = [c for c in all_candidates if c['quote_currency'] in available_quotes]
+            print(f"   📊 Found {len(all_candidates)} pairs → {len(tradeable_candidates)} tradeable (have {available_quotes})")
+            all_candidates = tradeable_candidates
+        else:
+            print(f"   📊 Found {len(all_candidates)} tradeable pairs")
         
         # FORCE deploy scouts - don't stop until we hit the target!
+        deployed_per_quote: Dict[str, int] = {}
         for candidate in all_candidates:
             if scouts_deployed >= target_scouts:
                 break
@@ -5515,13 +7249,16 @@ class AureonKrakenEcosystem:
                 break
             if candidate['symbol'] in self.positions:
                 continue
+            if deployed_per_quote.get(candidate['quote_currency'], 0) >= per_quote_cap:
+                continue
                 
-            print(f"   🦅 FORCE Scout: {candidate['symbol']} ({candidate['change24h']:+.2f}% 24h)")
+            print(f"   🦅 Scout: {candidate['symbol']} ({candidate['change24h']:+.2f}% 24h | {candidate['quote_currency']})")
             
             # Call open_position - it will handle the actual trade
             result = self.open_position(candidate)
             if result:
                 scouts_deployed += 1
+                deployed_per_quote[candidate['quote_currency']] = deployed_per_quote.get(candidate['quote_currency'], 0) + 1
                 print(f"   ✅ Scout #{scouts_deployed} DEPLOYED!")
             else:
                 print(f"   ⚠️  Scout {candidate['symbol']} skipped - trying next...")
@@ -5743,12 +7480,31 @@ class AureonKrakenEcosystem:
                     conversion_asset = asset_raw[2:]
                     asset_clean = conversion_asset
                 
-                # Check if this is the base currency
-                if conversion_asset == base or asset_clean == base:
-                    cash_balance += amount
-                    total_equity += amount
-                    holdings_value[asset_clean] = holdings_value.get(asset_clean, 0.0) + amount
-                    continue
+                # Check if this is the base currency OR a stable coin (cash equivalent)
+                stable_coins = {'USD', 'USDC', 'USDT', 'EUR', 'GBP', 'ZUSD', 'ZEUR', 'ZGBP'}
+                is_cash = (conversion_asset == base or asset_clean == base or 
+                           conversion_asset in stable_coins or asset_clean in stable_coins)
+                if is_cash:
+                    # Convert stable coins to base currency value
+                    if conversion_asset != base and asset_clean != base:
+                        try:
+                            converted = self.client.convert_to_quote(exchange, conversion_asset, amount, base)
+                            if converted > 0:
+                                cash_balance += converted
+                                total_equity += converted
+                                holdings_value[asset_clean] = holdings_value.get(asset_clean, 0.0) + converted
+                                continue
+                        except Exception:
+                            # Fallback: treat 1:1 for stablecoins
+                            cash_balance += amount
+                            total_equity += amount
+                            holdings_value[asset_clean] = holdings_value.get(asset_clean, 0.0) + amount
+                            continue
+                    else:
+                        cash_balance += amount
+                        total_equity += amount
+                        holdings_value[asset_clean] = holdings_value.get(asset_clean, 0.0) + amount
+                        continue
                 try:
                     converted = self.client.convert_to_quote(exchange, conversion_asset, amount, base)
                     if converted > 0:
@@ -5766,6 +7522,22 @@ class AureonKrakenEcosystem:
         self.cash_balance_gbp = cash
         self.holdings_gbp = holdings
         self.tracker.update_equity(total, cash, mark_cycle=mark_cycle)
+
+        # 🧠 Store live P&L snapshot for decision making
+        try:
+            total_return_pct = 0.0
+            if self.tracker.initial_balance > 0:
+                total_return_pct = (total - self.tracker.initial_balance) / self.tracker.initial_balance * 100
+            self.pnl_state = {
+                'total_equity': total,
+                'cash': cash,
+                'net_profit': self.tracker.net_profit,
+                'total_return_pct': total_return_pct,
+                'drawdown_pct': self.tracker.current_drawdown,
+                'timestamp': time.time(),
+            }
+        except Exception:
+            pass
         
         # 🌟 Sync capital pool with current equity
         self.capital_pool.update_equity(total)
@@ -5778,21 +7550,359 @@ class AureonKrakenEcosystem:
             self.tracker.equity_baseline = total
         return total
 
+    def get_pnl_snapshot(self) -> Dict[str, float]:
+        """Return the latest live P&L snapshot for downstream consumers."""
+        return dict(self.pnl_state) if isinstance(self.pnl_state, dict) else {}
+
     def should_enter_trade(self, opp: Dict, pos_size: float, lattice_state) -> bool:
         """
-        Aggressive entry - buy when opportunity appears!
-        This gate is for ENTRIES, so be permissive.
+        🎯 PROBABILITY-INFORMED entry decision.
+        Uses learned analytics from AdaptiveLearner to inform trade decisions.
         """
-        # Minimal sanity checks only
+        # Minimal sanity checks
         if pos_size <= 0 or self.total_equity_gbp <= 0:
             return False
-        # AGGRESSIVE ENTRY - Trade when you see opportunity!
+            
+        # ═══ GET LEARNED RECOMMENDATION ═══
+        try:
+            symbol = opp.get('symbol', 'UNKNOWN')
+            frequency = opp.get('frequency', CONFIG.get('DEFAULT_FREQUENCY', 432))
+            coherence = opp.get('coherence', 0.5)
+            score = opp.get('score', 50)
+            probability = opp.get('probability', 0.5)
+            pnl_snapshot = self.get_pnl_snapshot()
+            opp['pnl_state'] = pnl_snapshot
+            
+            # 📉 Risk throttle from live P&L state
+            risk_mod = 1.0
+            dd = pnl_snapshot.get('drawdown_pct', 0) if pnl_snapshot else 0
+            net_pnl = pnl_snapshot.get('net_profit', 0) if pnl_snapshot else 0
+            if dd > 5:      # soften sizing when drawdown > 5%
+                risk_mod *= 0.6
+            if net_pnl < 0: # soften when running negative on the day/session
+                risk_mod *= 0.8
+            opp['risk_mod_from_pnl'] = risk_mod
+            
+            recommendation = ADAPTIVE_LEARNER.get_entry_recommendation(
+                symbol=symbol,
+                frequency=frequency,
+                coherence=coherence,
+                score=score,
+                probability=probability
+            )
+            
+            # Log the recommendation for visibility
+            if recommendation['similar_trades'] >= 5:
+                summary = ADAPTIVE_LEARNER.get_recommendation_summary(recommendation)
+                logger.info(f"\n📊 LEARNED ANALYTICS for {symbol}:\n{summary}")
+                
+                # Store recommendation in opp for use in position management
+                opp['learned_recommendation'] = recommendation
+                
+                # If confidence is HIGH and recommendation is NO, respect it
+                if recommendation['confidence'] == 'high' and not recommendation['should_trade']:
+                    logger.warning(f"⛔ SKIPPING {symbol}: High-confidence negative signal")
+                    logger.warning(f"   Expected WR: {recommendation['expected_win_rate']*100:.0f}% based on {recommendation['similar_trades']} similar trades")
+                    return False
+                    
+                # If confidence is MEDIUM and expected WR < 35%, skip
+                if recommendation['confidence'] == 'medium' and recommendation['expected_win_rate'] < 0.35:
+                    logger.warning(f"⚠️ SKIPPING {symbol}: Medium-confidence, low expected WR ({recommendation['expected_win_rate']*100:.0f}%)")
+                    return False
+                
+                # Extra caution: if we're in drawdown and WR is modest, skip
+                if dd > 5 and recommendation['expected_win_rate'] < 0.55:
+                    logger.warning(f"⚠️ SKIPPING {symbol}: In drawdown ({dd:.1f}%), WR only {recommendation['expected_win_rate']*100:.0f}%")
+                    return False
+                    
+                # Log advantages
+                if recommendation['advantages']:
+                    logger.info(f"✅ {symbol} advantages: {', '.join(recommendation['advantages'][:2])}")
+                
+                # 🔒 Risk-aware gate: if we're in a drawdown and the edge is weak, stand down
+                pnl = opp['pnl_state']
+                if pnl:
+                    if pnl.get('net_profit', 0) < 0 and recommendation['confidence'] == 'low':
+                        logger.warning(f"⏸️ Skipping {symbol}: Net P&L negative and low-confidence signal")
+                        return False
+                    if pnl.get('drawdown_pct', 0) >= CONFIG.get('MAX_DRAWDOWN_PCT', 20) * 0.5 and recommendation['expected_win_rate'] < 0.5:
+                        logger.warning(f"⏸️ Skipping {symbol}: Drawdown {pnl.get('drawdown_pct', 0):.1f}% and weak edge ({recommendation['expected_win_rate']*100:.0f}% WR)")
+                        return False
+                    
+        except Exception as e:
+            logger.debug(f"Could not get learned recommendation: {e}")
+            
+        # Default: Trade when you see opportunity (but now with learned wisdom)
         return True
+    
+    def _get_binance_lot_size(self, symbol: str) -> tuple:
+        """
+        Get Binance lot size filters for a symbol.
+        Returns (step_size, min_qty) or (None, None) if not found.
+        """
+        cache_key = f"binance:{symbol.upper()}"
+        cached = self._lot_size_cache.get(cache_key)
+        if cached:
+            return cached
+        step_size = None
+        min_qty = None
+        try:
+            import requests
+            resp = requests.get(f'https://api.binance.com/api/v3/exchangeInfo?symbol={symbol}')
+            if resp.status_code == 200:
+                info = resp.json()
+                for sym in info.get('symbols', []):
+                    if sym['symbol'] == symbol:
+                        for f in sym.get('filters', []):
+                            if f.get('filterType') == 'LOT_SIZE':
+                                step_size = float(f.get('stepSize', 0) or 0)
+                                min_qty = float(f.get('minQty', 0) or 0)
+                                break
+        except Exception:
+            pass
+        result = (step_size, min_qty)
+        self._lot_size_cache[cache_key] = result
+        return result
+
+    def _get_kraken_lot_size(self, symbol: str) -> tuple:
+        """Fetch Kraken lot size/min quantity using cached exchange info."""
+        cache_key = f"kraken:{symbol.upper()}"
+        cached = self._lot_size_cache.get(cache_key)
+        if cached:
+            return cached
+        step_size = None
+        min_qty = None
+        try:
+            kraken_client = self.client.clients.get('kraken') if hasattr(self.client, 'clients') else None
+            if kraken_client and hasattr(kraken_client, 'client') and hasattr(kraken_client.client, 'exchange_info'):
+                info = kraken_client.client.exchange_info(symbol)
+                for sym in info.get('symbols', []):
+                    if sym.get('symbol') == symbol:
+                        filters = sym.get('filters') or {}
+                        lot = filters.get('LOT_SIZE')
+                        if lot:
+                            try:
+                                step_size = float(lot.get('stepSize')) if lot.get('stepSize') else None
+                            except Exception:
+                                step_size = None
+                            try:
+                                min_qty = float(lot.get('minQty')) if lot.get('minQty') else None
+                            except Exception:
+                                min_qty = None
+                        break
+        except Exception:
+            pass
+        result = (step_size, min_qty)
+        self._lot_size_cache[cache_key] = result
+        return result
+    
+    def _truncate_to_lot_size(self, quantity: float, step_size: float) -> float:
+        """
+        Truncate quantity to valid lot size (round DOWN to step size).
+        """
+        if step_size is None or step_size <= 0:
+            return quantity
+        # Calculate number of steps and truncate
+        steps = int(quantity / step_size)
+        return steps * step_size
+
+    def _prepare_liquidation_quantity(self, exchange: str, symbol: str, quantity: float, price: float) -> Tuple[Optional[float], Optional[str], Optional[str]]:
+        """Apply exchange-specific lot size + notional checks before liquidation."""
+        if quantity <= 0:
+            return None, "zero quantity", None
+
+        exchange_name = (exchange or '').lower()
+        qty = float(quantity)
+        adjustment_note = None
+        step_size = None
+        min_qty = None
+
+        if exchange_name == 'binance':
+            step_size, min_qty = self._get_binance_lot_size(symbol)
+        elif exchange_name == 'kraken':
+            step_size, min_qty = self._get_kraken_lot_size(symbol)
+
+        if step_size and step_size > 0:
+            adjusted_qty = self._truncate_to_lot_size(qty, step_size)
+            if adjusted_qty != qty:
+                adjustment_note = f"lot adjust {qty:.8f}→{adjusted_qty:.8f} (step {step_size})"
+            qty = adjusted_qty
+
+        if qty <= 0:
+            return None, "quantity below lot step", adjustment_note
+
+        if min_qty and qty < min_qty:
+            pretty_exchange = exchange_name.upper() or 'EXCHANGE'
+            return None, f"qty {qty:.8f} below {pretty_exchange} min {min_qty:.8f}", adjustment_note
+
+        min_notional = None
+        if exchange_name == 'binance':
+            min_notional = CONFIG.get('BINANCE_MIN_NOTIONAL')
+        elif exchange_name == 'kraken':
+            min_notional = CONFIG.get('KRAKEN_MIN_NOTIONAL')
+
+        if min_notional and price and price > 0:
+            notional = qty * price
+            if notional < min_notional:
+                pretty_exchange = exchange_name.upper() or 'EXCHANGE'
+                return None, f"notional £{notional:.2f} below {pretty_exchange} min £{min_notional:.2f}", adjustment_note
+
+        return qty, None, adjustment_note
+    
+    def harvest_existing_assets(self):
+        """
+        🌾 STARTUP HARVESTER: Scan existing holdings and sell if profitable.
+        
+        At startup, checks all non-quote currency balances and attempts to 
+        sell them back to quote currencies (EUR/USDC) if they can be sold
+        for a net profit after fees.
+        
+        This compounds leftover positions from previous runs.
+        """
+        print("\n" + "="*70)
+        print("🌾 STARTUP HARVESTER: Scanning existing assets for compounding...")
+        print("="*70)
+        
+        if self.dry_run:
+            print("   ⚪ Dry run mode - skipping harvest")
+            return
+        
+        # Get all balances
+        all_balances = self.client.get_all_balances()
+        
+        # Quote currencies we want to compound INTO (don't sell these)
+        quote_currencies = set(CONFIG['QUOTE_CURRENCIES'])
+        stable_coins = {'USDC', 'USDT', 'EUR', 'USD', 'GBP', 'ZUSD', 'ZEUR', 'ZGBP'}
+        skip_assets = quote_currencies | stable_coins | {'BNB'}  # Keep BNB for fee discounts
+        
+        harvested_total = 0.0
+        harvested_count = 0
+        
+        for exchange_name, balances in all_balances.items():
+            if not isinstance(balances, dict):
+                continue
+                
+            if exchange_name not in ('binance', 'kraken'):
+                continue
+                
+            print(f"\n   📍 Scanning {exchange_name.upper()}...")
+            
+            for asset, balance in balances.items():
+                try:
+                    bal = float(balance)
+                except (ValueError, TypeError):
+                    continue
+                    
+                # Skip quote currencies and tiny balances
+                if asset.upper() in skip_assets or asset in skip_assets:
+                    continue
+                if bal < 0.0001:
+                    continue
+                
+                # Try to find a trading pair for this asset
+                # Priority: USDC > EUR > USDT
+                quote_priority = ['USDC', 'EUR', 'USDT'] if exchange_name == 'binance' else ['USDC', 'USD', 'EUR']
+                
+                # Kraken uses special naming for some assets
+                kraken_asset_map = {
+                    'XXBT': 'XBT', 'XBT': 'XBT',  # Bitcoin
+                    'XETH': 'ETH', 'ETH': 'ETH',  # Ethereum  
+                    'XLTC': 'LTC', 'LTC': 'LTC',  # Litecoin
+                    'XXLM': 'XLM', 'XLM': 'XLM',  # Stellar
+                    'XXRP': 'XRP', 'XRP': 'XRP',  # Ripple
+                    'XXMR': 'XMR', 'XMR': 'XMR',  # Monero
+                }
+                
+                # Get the base asset name for symbol construction
+                if exchange_name == 'kraken':
+                    base_asset = kraken_asset_map.get(asset, asset)
+                else:
+                    base_asset = asset
+                
+                for quote in quote_priority:
+                    symbol = f"{base_asset}{quote}"
+                    
+                    # Check if we can get a price for this pair
+                    try:
+                        ticker = self.client.get_ticker(exchange_name, symbol)
+                        price = ticker.get('price', 0) or ticker.get('last', 0)
+                        if not price or price <= 0:
+                            continue
+                    except:
+                        continue
+                    
+                    # Calculate potential value
+                    gross_value = bal * price
+                    
+                    # Skip if value is too small (< $0.50)
+                    if gross_value < 0.50:
+                        break
+                    
+                    # Calculate fees
+                    fee_rate = get_platform_fee(exchange_name, 'taker')
+                    fee = gross_value * fee_rate
+                    net_value = gross_value - fee
+                    
+                    # We don't have entry price, so we'll sell if value > $1 
+                    # (assumes any remaining assets are from profitable trades or dust)
+                    min_harvest_value = 1.0  # Only harvest if > $1 net
+                    
+                    if net_value >= min_harvest_value:
+                        print(f"   🌾 Found: {bal:.4f} {asset} = ${gross_value:.2f} (net: ${net_value:.2f})")
+                        
+                        # Universal lot size handling for ALL exchanges
+                        sell_qty, block_reason, adj_note = self._prepare_liquidation_quantity(
+                            exchange_name, symbol, bal, price
+                        )
+                        if sell_qty is None:
+                            print(f"   ⚠️ {symbol}: {block_reason}")
+                            continue
+                        if adj_note:
+                            print(f"   📐 {adj_note}")
+                        
+                        # Attempt to sell
+                        try:
+                            result = self.client.place_market_order(
+                                exchange_name, symbol, 'SELL', quantity=sell_qty
+                            )
+                            
+                            if result and not result.get('rejected') and not result.get('error'):
+                                # Extract actual fill value
+                                fills = result.get('fills', [])
+                                if fills:
+                                    actual_value = sum(float(f.get('qty', 0)) * float(f.get('price', 0)) for f in fills)
+                                else:
+                                    actual_value = float(result.get('cummulativeQuoteQty', net_value))
+                                
+                                harvested_total += actual_value
+                                harvested_count += 1
+                                print(f"   ✅ SOLD: {asset} → {quote} for ${actual_value:.2f}")
+                            else:
+                                reason = result.get('reason', 'Unknown error') if result else 'No response'
+                                print(f"   ⚠️ Failed to sell {asset}: {reason}")
+                        except Exception as e:
+                            print(f"   ⚠️ Error selling {asset}: {e}")
+                    
+                    break  # Found a pair, move to next asset
+        
+        print(f"\n{'─'*70}")
+        if harvested_count > 0:
+            print(f"   🌾 HARVEST COMPLETE: Sold {harvested_count} assets for ${harvested_total:.2f}")
+            print(f"   💰 Capital compounded back to trading pool!")
+        else:
+            print(f"   ⚪ No assets to harvest (all below minimum or already in quote currencies)")
+        print(f"{'─'*70}\n")
+        
+        # Refresh equity after harvesting
+        self.refresh_equity()
+        return harvested_total
     
     def should_exit_trade(self, pos: 'Position', current_price: float, reason: str) -> bool:
         """
         Smart exit gate - only sell if we're making NET PROFIT after fees.
         This ensures every closed trade is profitable.
+        
+        🔥 MINIMUM PROFIT REQUIREMENT: Must cover fees + spread + buffer
         """
         change_pct = (current_price - pos.entry_price) / pos.entry_price
         
@@ -5806,14 +7916,39 @@ class AureonKrakenEcosystem:
         gross_pnl = exit_value - pos.entry_value
         net_pnl = gross_pnl - total_expenses
         
-        # TAKE PROFIT: Always allow if we're in profit
-        if reason == "TP" and net_pnl > 0:
-            return True
+        # Calculate minimum required profit (0.5% buffer above breakeven for real profit)
+        # With 0.4% entry + 0.4% exit fees = 0.8% round-trip, we need >0.8% gross gain
+        min_profit_buffer = pos.entry_value * 0.005  # 0.5% minimum NET profit after fees
+        min_net_profit = min_profit_buffer
+        
+        # TAKE PROFIT: Only if we're making REAL profit (covering all fees + buffer)
+        if reason == "TP":
+            if net_pnl >= min_net_profit:
+                print(f"   ✅ EXIT APPROVED: {pos.symbol} net profit ${net_pnl:.4f} >= min ${min_net_profit:.4f}")
+                return True
+            else:
+                print(f"   🛑 HOLDING {pos.symbol}: Net profit ${net_pnl:.4f} < min required ${min_net_profit:.4f}")
+                return False
+        
+        # 🌾 HARVEST: Already verified net profitable in the check loop
+        # Include bridge_harvest for bridge command harvesting
+        if reason in ("HARVEST", "bridge_harvest"):
+            if net_pnl >= min_net_profit:
+                print(f"   🌾 HARVEST APPROVED: {pos.symbol} net profit ${net_pnl:.4f} - LOCKING IN PROFIT!")
+                return True
+            print(f"   🛑 HOLDING {pos.symbol}: Harvest blocked - net profit ${net_pnl:.4f} < min ${min_net_profit:.4f}")
+            return False
+        
+        # BRIDGE FORCE EXIT: Allow with warning if losing money
+        if reason == "bridge_force_exit":
+            if net_pnl < 0:
+                print(f"   ⚠️ FORCE EXIT {pos.symbol}: Bridge command - LOSS ${net_pnl:.4f}")
+            return True  # Force exits always allowed
         
         # STOP LOSS: Only allow if loss is small OR we must cut losses
         if reason == "SL":
             # Allow SL if loss is less than 1% or if change is catastrophic (>2%)
-            loss_pct = abs(net_pnl / pos.entry_value * 100)
+            loss_pct = abs(net_pnl / pos.entry_value * 100) if pos.entry_value > 0 else 0
             if loss_pct < 1.0 or abs(change_pct * 100) > 2.0:
                 return True
             # Otherwise hold - don't lock in losses on noise
@@ -5826,8 +7961,10 @@ class AureonKrakenEcosystem:
                 return True
             return False
         
-        # Default: allow exit
-        return True
+        # Default: require minimum profit
+        if net_pnl >= min_net_profit:
+            return True
+        return False
     
     def save_state(self):
         """Save current state to file for recovery"""
@@ -6200,6 +8337,33 @@ class AureonKrakenEcosystem:
         Uses synthetic but realistic data for common trading pairs.
         """
         import random
+
+        # If we have a recent snapshot file, prefer using it as fallback
+        snapshot_path = os.path.join('/workspaces/aureon-trading', 'market_snapshots_30.json')
+        if os.path.exists(snapshot_path):
+            try:
+                with open(snapshot_path, 'r') as f:
+                    data = json.load(f)
+                pairs = []
+                for item in data if isinstance(data, list) else data.get('snapshots', []):
+                    symbol = item.get('symbol')
+                    price = float(item.get('price', 0)) if item.get('price') is not None else 0
+                    change = float(item.get('change24h', item.get('priceChangePercent', 0))) if item.get('priceChangePercent') is not None or item.get('change24h') is not None else 0
+                    volume = float(item.get('quoteVolume', item.get('volume', 0))) if item.get('quoteVolume') is not None or item.get('volume') is not None else 0
+                    if symbol and price > 0 and volume > 0:
+                        pairs.append((symbol, price, change, volume))
+                if pairs:
+                    return [
+                        {
+                            'symbol': sym,
+                            'lastPrice': price,
+                            'priceChangePercent': change,
+                            'quoteVolume': vol,
+                        }
+                        for sym, price, change, vol in pairs
+                    ]
+            except Exception:
+                pass
         
         # Common pairs we trade on (covering major assets)
         pairs = [
@@ -6405,15 +8569,19 @@ class AureonKrakenEcosystem:
                     for symbol, pos in list(self.positions.items()):
                         current_price = self.get_realtime_price(symbol) or pos.entry_price
                         pnl = (current_price - pos.entry_price) * pos.quantity
+                        change_pct = ((current_price - pos.entry_price) / pos.entry_price * 100) if pos.entry_price > 0 else 0
                         if pnl >= min_profit:
                             print(f"   🌉 Harvesting {symbol} (${pnl:+.2f}) via bridge command")
-                            self.close_position(symbol, reason='bridge_harvest')
+                            self.close_position(symbol, 'bridge_harvest', change_pct, current_price)
                     
                 elif cmd.command == 'force_exit':
                     target_symbol = cmd.params.get('symbol')
                     if target_symbol and target_symbol in self.positions:
+                        pos = self.positions[target_symbol]
+                        current_price = self.get_realtime_price(target_symbol) or pos.entry_price
+                        change_pct = ((current_price - pos.entry_price) / pos.entry_price * 100) if pos.entry_price > 0 else 0
                         print(f"   🌉 Force exiting {target_symbol} via bridge command")
-                        self.close_position(target_symbol, reason='bridge_force_exit')
+                        self.close_position(target_symbol, 'bridge_force_exit', change_pct, current_price)
                         
         except Exception as e:
             print(f"   ⚠️ Bridge command processing error: {e}")
@@ -6452,6 +8620,8 @@ class AureonKrakenEcosystem:
             # Also add base currency if we have cash
             if self.cash_balance_gbp > CONFIG['MIN_TRADE_USD']:
                 available_quotes.add(CONFIG['BASE_CURRENCY'])
+                # Ensure stable-quote coverage when holding cash
+                available_quotes.update({'USDC', 'USDT'})
             
             quote_currencies = list(available_quotes) if available_quotes else [CONFIG['BASE_CURRENCY']]
         else:
@@ -6500,6 +8670,32 @@ class AureonKrakenEcosystem:
             
             # Get Auris coherence
             coherence, dominant_node = self.auris.compute_coherence(state)
+
+            # 6D Harmonic update (per-asset)
+            harmonic_prob = 0.5
+            harmonic_resonance = 0.0
+            harmonic_wave_state = 'unknown'
+            harmonic_dim_coh = 0.0
+            harmonic_engine = getattr(self, 'harmonic_engine', None)
+
+            if harmonic_engine:
+                try:
+                    wf6d = harmonic_engine.update_asset(
+                        symbol=symbol,
+                        price=price,
+                        volume=volume,
+                        change_pct=change,
+                        high=state.high_24h,
+                        low=state.low_24h,
+                        frequency=self.asset_frequencies.get(symbol, {}).get('frequency', 432.0),
+                        coherence=coherence
+                    )
+                    harmonic_prob = wf6d.probability_field
+                    harmonic_resonance = wf6d.resonance_score
+                    harmonic_wave_state = wf6d.wave_state.value
+                    harmonic_dim_coh = wf6d.dimensional_coherence
+                except Exception:
+                    pass
             
             # 🧠 Apply Adaptive Learning thresholds
             learned = ADAPTIVE_LEARNER.get_optimized_thresholds()
@@ -6512,6 +8708,10 @@ class AureonKrakenEcosystem:
             
             # Skip if coherence too low
             if coherence < coherence_threshold:
+                continue
+
+            # 6D harmonic gate: require minimal harmonic probability field when available
+            if harmonic_engine and harmonic_prob < CONFIG.get('HARMONIC_PROB_MIN', 0.52):
                 continue
             
             # Propagate through Mycelium network for enhanced signal
@@ -6540,6 +8740,25 @@ class AureonKrakenEcosystem:
             
             # Coherence bonus
             score += int(coherence * 20)
+            
+            # 🔮 PREDICTION ACCURACY BOOST 🔮
+            # Boost scores based on historical prediction accuracy
+            try:
+                hnc_freq_val = self.asset_frequencies.get(symbol, {}).get('frequency', 432.0)
+                accuracy_boost = self.prediction_validator.get_accuracy_boost(
+                    exchange=data.get('source', 'kraken'),
+                    asset_class='crypto',
+                    frequency=hnc_freq_val,
+                    coherence=coherence
+                )
+                if accuracy_boost != 1.0:
+                    score = int(score * accuracy_boost)
+                    if accuracy_boost > 1.05:
+                        logger.debug(f"{symbol}: Prediction accuracy boost {accuracy_boost:.2f}x")
+                    elif accuracy_boost < 0.95:
+                        logger.debug(f"{symbol}: Prediction accuracy penalty {accuracy_boost:.2f}x")
+            except Exception as e:
+                pass  # Silently continue if accuracy boost fails
             
             # 📊 STATE AGGREGATOR INSIGHTS - Historical Performance Boost 📊
             symbol_insight = self.state_aggregator.get_symbol_insight(symbol)
@@ -6659,6 +8878,13 @@ class AureonKrakenEcosystem:
                 ratio = prices[-1] / prices[-5] if prices[-5] > 0 else 1
                 if 1.5 < ratio < 1.7:  # Near PHI
                     score += 10
+
+            # 6D harmonic boosts
+            if harmonic_engine:
+                score += int(max(0.0, harmonic_resonance) * 20)
+                score += int((harmonic_prob - 0.5) * 40)  # ±20 around neutral
+                if harmonic_dim_coh >= CONFIG.get('HARMONIC_GATE', 0.45):
+                    score += 5
             
             # 🎯 OPTIMAL WIN RATE GATE COUNTING 🎯
             gates_passed = 0
@@ -6729,13 +8955,30 @@ class AureonKrakenEcosystem:
                 else:
                     gate_status.append('FLUX:✗')
                 
+                # Gate 7: Frequency Band Accuracy (98.8% at 300-399Hz!)
+                if 300 <= hnc_frequency <= 399:  # Golden zone
+                    gates_passed += 1
+                    gate_status.append('FREQ:✓✓')  # Double checkmark for golden band
+                    score += 15  # Extra bonus for golden frequency band
+                elif 400 <= hnc_frequency <= 499:  # Good zone (73.4% accuracy)
+                    gates_passed += 0.5
+                    gate_status.append('FREQ:✓')
+                elif 600 <= hnc_frequency <= 699:  # Danger zone (0% accuracy)
+                    gates_passed -= 0.5  # Penalty
+                    gate_status.append('FREQ:✗✗')
+                    score -= 10  # Penalty for danger zone
+                else:
+                    gate_status.append('FREQ:~')
+                
                 # Require minimum gates to pass
                 min_gates = CONFIG.get('OPTIMAL_MIN_GATES', 3)
                 if gates_passed < min_gates:
                     continue  # Skip - not enough gates passed
                 
-                # Bonus for high gate count
-                if gates_passed >= 5:
+                # Bonus for high gate count (updated for 7 gates)
+                if gates_passed >= 6:
+                    score += 25
+                elif gates_passed >= 5:
                     score += 20
                 elif gates_passed >= 4:
                     score += 15
@@ -6798,6 +9041,10 @@ class AureonKrakenEcosystem:
                     'probability': prob_probability,
                     'prob_confidence': prob_confidence,
                     'prob_action': prob_action,
+                    'harmonic_prob': harmonic_prob,
+                    'harmonic_resonance': harmonic_resonance,
+                    'harmonic_wave_state': harmonic_wave_state,
+                    'harmonic_dim_coherence': harmonic_dim_coh,
                     # Imperial Predictability fields
                     'imperial_probability': imperial_probability,
                     'imperial_confidence': imperial_confidence,
@@ -6818,6 +9065,24 @@ class AureonKrakenEcosystem:
                     'chakra_alignment': chakra_alignment,
                     'symbolic_alignment': symbolic_alignment,
                 })
+                
+                # 🔮 LOG PREDICTION FOR VALIDATION 🔮
+                # Record this prediction for future accuracy checking
+                try:
+                    predicted_direction = 'up' if change > 0 else ('down' if change < 0 else 'neutral')
+                    self.prediction_validator.log_prediction(
+                        exchange=data.get('source', 'kraken'),
+                        symbol=symbol,
+                        current_price=price,
+                        predicted_direction=predicted_direction,
+                        predicted_change_pct=abs(change) * 0.1,  # Predict 10% of 24h change in 1 min
+                        probability=prob_probability,
+                        coherence=coherence,
+                        frequency=hnc_frequency,
+                        asset_class='crypto'
+                    )
+                except Exception as e:
+                    logger.debug(f"Prediction logging error: {e}")
         
         # 🌉 Merge opportunities from Ultimate system via bridge
         ultimate_opps = self.consume_ultimate_opportunities()
@@ -6826,6 +9091,28 @@ class AureonKrakenEcosystem:
                 
         # Sort by score and return MORE opportunities
         opportunities.sort(key=lambda x: x['score'], reverse=True)
+
+        # 🪐 Harmonic snapshot for quick read (top 3)
+        top_harmonics = []
+        for opp in opportunities[:3]:
+            hw = opp.get('harmonic_wave_state', 'n/a')
+            hr = opp.get('harmonic_resonance')
+            hp = opp.get('harmonic_prob') if 'harmonic_prob' in opp else opp.get('harmonic_probability')
+            sym = opp.get('symbol', '?')
+            try:
+                hr_fmt = f"{float(hr):.2f}" if hr is not None else "n/a"
+            except Exception:
+                hr_fmt = "n/a"
+            try:
+                hp_fmt = f"{float(hp):.2f}" if hp is not None else "n/a"
+            except Exception:
+                hp_fmt = "n/a"
+            top_harmonics.append(f"      • {sym}: wave={hw} | res={hr_fmt} | prob={hp_fmt}")
+
+        if top_harmonics:
+            print("   🎼 Harmonic status (top 3):")
+            for ln in top_harmonics:
+                print(ln)
         
         # 🌉 Publish top opportunities to bridge for Ultimate
         top_opportunities = opportunities[:min(CONFIG['MAX_POSITIONS'] * 2, CONFIG['MAX_POSITIONS'] - len(self.positions) + 5)]
@@ -7292,20 +9579,19 @@ class AureonKrakenEcosystem:
                     elif hnc_frequency == 440:
                         hnc_modifier *= CONFIG.get('HNC_DISTORTION_PENALTY', 0.70)
         
-        # 🔊 PHASE 2: FREQUENCY FILTERING - Boost high-WR frequencies, suppress poor ones 🔊
+        # 🔊 PHASE 2: FREQUENCY FILTERING - Apply sacred frequency modifiers 🔊
         freq_modifier = 1.0
         if CONFIG.get('ENABLE_FREQUENCY_FILTERING', True):
             freq = opp.get('frequency', 256.0)
+            freq_modifier = self._get_sacred_frequency_modifier(freq)
             
-            # Apply frequency-based modifiers based on historical win rate
-            if freq >= 520 and freq <= 580:  # 528Hz band (83.3% WR)
-                freq_modifier = CONFIG.get('FREQUENCY_BOOST_528HZ', 1.35)
-                print(f"   🟢 FREQ BOOST {symbol}: 528Hz band ({freq:.0f}Hz) ×{freq_modifier:.2f}")
-            elif freq > 900:  # 963Hz band (poor performer)
-                freq_modifier = CONFIG.get('FREQUENCY_SUPPRESS_963HZ', 0.6)
-                print(f"   🔴 FREQ SUPPRESS {symbol}: 963Hz band ({freq:.0f}Hz) ×{freq_modifier:.2f}")
-            else:
-                freq_modifier = CONFIG.get('FREQUENCY_NEUTRAL_BASELINE', 1.0)
+            # Log significant frequency events
+            if freq_modifier >= 1.30:
+                freq_name = self._get_frequency_name(freq)
+                print(f"   🟢 FREQ BOOST {symbol}: {freq_name} ({freq:.0f}Hz) ×{freq_modifier:.2f}")
+            elif freq_modifier <= 0.75:
+                freq_name = self._get_frequency_name(freq)
+                print(f"   🔴 FREQ SUPPRESS {symbol}: {freq_name} ({freq:.0f}Hz) ×{freq_modifier:.2f}")
         
         # 🌌⚡ Get Imperial predictability modifier for position sizing ⚡🌌
         imperial_modifier = opp.get('imperial_multiplier', 1.0)
@@ -7340,6 +9626,7 @@ class AureonKrakenEcosystem:
             )
             size_fraction *= lattice_state.risk_mod
             size_fraction *= freq_modifier  # 🔊 Apply frequency filtering modifier
+            size_fraction *= opp.get('risk_mod_from_pnl', 1.0)  # 🧠 Live P&L throttle
         
         if size_fraction <= 0:
             return None
@@ -7387,13 +9674,25 @@ class AureonKrakenEcosystem:
                 cash_available = max(0.0, self.cash_balance_gbp)
         
         if cash_available < CONFIG['MIN_TRADE_USD']:
-            # Only print skip message once per cycle per symbol
-            if not hasattr(self, '_skip_logged'):
-                self._skip_logged = set()
-            if symbol not in self._skip_logged:
-                print(f"   ⚪ Skipping {symbol}: insufficient cash (£{cash_available:.2f})")
-                self._skip_logged.add(symbol)
-            return None
+            # 🔄 TRY TO LIQUIDATE HISTORICAL ASSETS FOR CASH
+            # Historical assets = imported holdings with no known entry price
+            # They're effectively "available capital" - sell them for better opportunities!
+            # Lower threshold to allow scouts (coherence 0.55+) to trigger liquidation
+            if opp.get('score', 0) > 50 or opp.get('coherence', 0) > 0.5:
+                needed = max(CONFIG['MIN_TRADE_USD'], pos_size) - cash_available
+                freed = self._liquidate_historical_for_opportunity(needed, exchange, symbol)
+                if freed > 0:
+                    cash_available += freed
+                    print(f"   💰 Freed £{freed:.2f} from historical assets - continuing trade!")
+            
+            # Still not enough? Skip
+            if cash_available < CONFIG['MIN_TRADE_USD']:
+                if not hasattr(self, '_skip_logged'):
+                    self._skip_logged = set()
+                if symbol not in self._skip_logged:
+                    print(f"   ⚪ Skipping {symbol}: insufficient cash (£{cash_available:.2f})")
+                    self._skip_logged.add(symbol)
+                return None
         
         # Clear skip log at end of cycle
         if hasattr(self, '_skip_logged'):
@@ -7421,16 +9720,25 @@ class AureonKrakenEcosystem:
         if liquidity_required:
             has_liquidity, available_quote, liquidity_tip = self.ensure_quote_liquidity(exchange, quote_asset, quote_amount_needed)
             if not has_liquidity:
-                warn_key = (exchange, quote_asset)
-                if warn_key not in self._liquidity_warnings:
-                    print(
-                        f"   ⚪ Skipping {symbol}: insufficient {quote_asset} on {exchange_marker} "
-                        f"({available_quote:.2f} available, need {quote_amount_needed:.2f})"
-                    )
-                    if liquidity_tip:
-                        print(f"   💡 Liquidity tip: {liquidity_tip}")
-                    self._liquidity_warnings.add(warn_key)
-                return
+                # 🔄 TRY TO LIQUIDATE HISTORICAL ASSETS ON THIS EXCHANGE
+                if opp.get('score', 0) > 70 or opp.get('coherence', 0) > 0.6:
+                    needed = quote_amount_needed - available_quote
+                    freed = self._liquidate_historical_for_opportunity(needed, exchange, symbol)
+                    if freed > 0:
+                        # Re-check liquidity
+                        has_liquidity, available_quote, _ = self.ensure_quote_liquidity(exchange, quote_asset, quote_amount_needed)
+                
+                if not has_liquidity:
+                    warn_key = (exchange, quote_asset)
+                    if warn_key not in self._liquidity_warnings:
+                        print(
+                            f"   ⚪ Skipping {symbol}: insufficient {quote_asset} on {exchange_marker} "
+                            f"({available_quote:.2f} available, need {quote_amount_needed:.2f})"
+                        )
+                        if liquidity_tip:
+                            print(f"   💡 Liquidity tip: {liquidity_tip}")
+                        self._liquidity_warnings.add(warn_key)
+                    return
 
         actual_fraction = (pos_size / self.tracker.balance) if self.tracker.balance > 0 else 0.0
         # Use platform-specific fee
@@ -7464,6 +9772,40 @@ class AureonKrakenEcosystem:
                     if not order_id:
                         print(f"   ⚠️ Order failed for {symbol}: No order ID returned")
                         return
+                    
+                    # 🔥 CRITICAL FIX: Use ACTUAL fill price, not pre-order price!
+                    # This ensures P&L calculations are accurate
+                    fills = res.get('fills', [])
+                    if fills:
+                        # Calculate weighted average fill price
+                        total_qty = sum(float(f.get('qty', 0)) for f in fills)
+                        total_value = sum(float(f.get('qty', 0)) * float(f.get('price', 0)) for f in fills)
+                        if total_qty > 0:
+                            actual_fill_price = total_value / total_qty
+                            actual_qty = total_qty
+                            actual_value = total_value
+                            # Calculate actual fee from fills
+                            actual_fee = sum(
+                                float(f.get('commission', 0)) * (float(f.get('price', price)) if f.get('commissionAsset') == symbol.replace(quote_asset, '') else 1.0)
+                                for f in fills
+                            )
+                            print(f"   📊 Fill: {actual_qty:.2f} @ {actual_fill_price:.8f} (pre-order: {price:.8f})")
+                            price = actual_fill_price
+                            quantity = actual_qty
+                            pos_size = actual_value
+                            entry_fee = actual_fee if actual_fee > 0 else pos_size * get_platform_fee(exchange, 'taker')
+                    elif res.get('cummulativeQuoteQty') and res.get('executedQty'):
+                        # Fallback: use order response totals
+                        exec_qty = float(res.get('executedQty', 0))
+                        cumm_quote = float(res.get('cummulativeQuoteQty', 0))
+                        if exec_qty > 0:
+                            actual_fill_price = cumm_quote / exec_qty
+                            print(f"   📊 Fill: {exec_qty:.2f} @ {actual_fill_price:.8f} (pre-order: {price:.8f})")
+                            price = actual_fill_price
+                            quantity = exec_qty
+                            pos_size = cumm_quote
+                            entry_fee = pos_size * get_platform_fee(exchange, 'taker')
+                            
         prime_multiplier = 1.0
         if len(self.positions) < 3:  # Apply prime sizing to first few positions
             prime_multiplier = self.prime_sizer.get_next_size(1.0) / CONFIG['BASE_POSITION_SIZE']
@@ -7476,6 +9818,10 @@ class AureonKrakenEcosystem:
         is_scout = len(self.positions) == 0  # First position becomes scout
         
         entry_time = time.time()
+        
+        # 🧠 GET LEARNED PARAMETERS FROM RECOMMENDATION
+        learned_rec = opp.get('learned_recommendation', {})
+        
         self.positions[symbol] = Position(
             symbol=symbol,
             entry_price=price,
@@ -7489,8 +9835,18 @@ class AureonKrakenEcosystem:
             generation=0,
             is_scout=is_scout,
             prime_size_multiplier=prime_multiplier,
-            exchange=exchange
+            exchange=exchange,
+            # 🧠 Apply learned parameters from probability matrix
+            learned_tp_pct=learned_rec.get('suggested_take_profit'),
+            learned_sl_pct=learned_rec.get('suggested_stop_loss'),
+            learned_hold_cycles=learned_rec.get('suggested_hold_cycles'),
+            learned_win_rate=learned_rec.get('expected_win_rate'),
+            learned_confidence=learned_rec.get('confidence', 'low')
         )
+        
+        # Log learned parameters if available
+        if learned_rec and learned_rec.get('confidence') != 'low':
+            logger.info(f"🧠 {symbol} using learned params: TP={learned_rec.get('suggested_take_profit', 0)*100:.1f}% SL={learned_rec.get('suggested_stop_loss', 0)*100:.1f}% Hold={learned_rec.get('suggested_hold_cycles', 0)} ExpWR={learned_rec.get('expected_win_rate', 0)*100:.0f}%")
         
         # 📊 LOG TRADE ENTRY FOR PROBABILITY MATRIX TRAINING 📊
         if TRADE_LOGGER_AVAILABLE and trade_logger:
@@ -7629,6 +9985,28 @@ class AureonKrakenEcosystem:
 
             change_pct = (current_price - pos.entry_price) / pos.entry_price * 100
             
+            # 📊 FEED POSITION DATA TO PROBABILITY MATRIX
+            # This allows the matrix to validate predictions against real positions
+            if self.prob_matrix and hasattr(self.prob_matrix, 'feed_position_data'):
+                try:
+                    self.prob_matrix.feed_position_data(
+                        symbol=symbol,
+                        exchange=pos.exchange,
+                        entry_price=pos.entry_price,
+                        entry_time=pos.entry_time,
+                        quantity=pos.quantity,
+                        entry_value=pos.entry_value,
+                        current_price=current_price,
+                        platform_timestamp=time.time(),  # Current sync time
+                        is_historical=pos.is_historical,
+                        momentum=change_pct,
+                        coherence=pos.coherence,
+                        trailing_stop_active=pos.trailing_stop_active,
+                        highest_price=pos.highest_price,
+                    )
+                except Exception as e:
+                    logger.warning(f"Matrix position feed error for {symbol}: {e}")
+            
             # 🌟 SIGNAL BROADCASTING: Scout positions broadcast market signals
             if pos.is_scout and abs(change_pct) > 0.5 and (time.time() - pos.last_signal_broadcast) > 30:
                 # Scout broadcasts signal when it moves significantly
@@ -7661,8 +10039,21 @@ class AureonKrakenEcosystem:
 
             # Get Lattice Modifiers
             lattice_state = self.lattice.get_state()
-            target_tp = CONFIG['TAKE_PROFIT_PCT'] * lattice_state.tp_mod
-            target_sl = CONFIG['STOP_LOSS_PCT'] * lattice_state.sl_mod
+            
+            # 🧠 USE LEARNED TP/SL IF AVAILABLE (from probability matrix recommendations)
+            if pos.learned_confidence in ('high', 'medium') and pos.learned_tp_pct is not None:
+                # Use learned parameters with lattice modifier
+                target_tp = (pos.learned_tp_pct * 100) * lattice_state.tp_mod  # Convert from decimal to %
+                target_sl = (pos.learned_sl_pct * 100) * lattice_state.sl_mod if pos.learned_sl_pct else CONFIG['STOP_LOSS_PCT'] * lattice_state.sl_mod
+                min_hold = pos.learned_hold_cycles if pos.learned_hold_cycles else CONFIG['MIN_HOLD_CYCLES']
+                
+                if pos.cycles % 20 == 0:
+                    logger.info(f"   🧠 {symbol}: Using LEARNED params - TP {target_tp:.1f}% / SL {target_sl:.1f}% / Hold {min_hold} (ExpWR: {pos.learned_win_rate*100:.0f}%)")
+            else:
+                # Use global CONFIG values
+                target_tp = CONFIG['TAKE_PROFIT_PCT'] * lattice_state.tp_mod
+                target_sl = CONFIG['STOP_LOSS_PCT'] * lattice_state.sl_mod
+                min_hold = CONFIG['MIN_HOLD_CYCLES']
             
             # 🌍✨ Apply Earth Resonance exit urgency to TP ✨🌍
             # When field coherence is low, exit earlier with smaller profits
@@ -7677,6 +10068,27 @@ class AureonKrakenEcosystem:
             # Check SL
             elif change_pct <= -target_sl:
                 to_close.append((symbol, "SL", change_pct, current_price))
+            # 🌾 HARVEST CHECK: Actively look for net profit opportunities
+            # Even if we haven't hit TP%, check if we're net profitable after fees
+            elif change_pct > 0 and pos.cycles >= min_hold:  # Use learned min_hold
+                # Calculate actual net profit
+                exit_value = pos.quantity * current_price
+                exit_fee = exit_value * get_platform_fee(pos.exchange, 'taker')
+                slippage_cost = exit_value * CONFIG['SLIPPAGE_PCT']
+                spread_cost = exit_value * CONFIG['SPREAD_COST_PCT']
+                
+                total_expenses = pos.entry_fee + exit_fee + slippage_cost + spread_cost
+                gross_pnl = exit_value - pos.entry_value
+                net_pnl = gross_pnl - total_expenses
+                
+                # Minimum profit buffer (0.5% net profit after all fees)
+                min_profit = pos.entry_value * 0.005
+                
+                # 🌾 If we're net profitable, harvest it!
+                if net_pnl >= min_profit:
+                    net_pnl_pct = (net_pnl / pos.entry_value * 100) if pos.entry_value > 0 else 0
+                    print(f"   🌾 HARVEST OPPORTUNITY: {symbol} net profit ${net_pnl:.4f} ({net_pnl_pct:.2f}%)")
+                    to_close.append((symbol, "HARVEST", change_pct, current_price))
                 
         for symbol, reason, pct, price in to_close:
             self.close_position(symbol, reason, pct, price)
@@ -7789,6 +10201,21 @@ class AureonKrakenEcosystem:
         # Calculate hold time
         exit_time = time.time()
         hold_time_sec = exit_time - pos.entry_time
+        
+        # 📊 FEED POSITION CLOSE TO PROBABILITY MATRIX 📊
+        # This helps the matrix validate predictions and learn from outcomes
+        if self.prob_matrix and hasattr(self.prob_matrix, 'feed_position_close'):
+            try:
+                self.prob_matrix.feed_position_close(
+                    symbol=symbol,
+                    exit_price=price,
+                    realized_pnl=net_pnl,
+                    exit_reason=reason,
+                    platform_timestamp=exit_time,
+                )
+                logger.info(f"Matrix outcome recorded: {symbol} PnL={net_pnl:.2f} reason={reason}")
+            except Exception as e:
+                logger.warning(f"Matrix position close feed error for {symbol}: {e}")
         
         # 📊 LOG TRADE EXIT FOR PROBABILITY MATRIX VALIDATION 📊
         if TRADE_LOGGER_AVAILABLE and trade_logger:
@@ -7959,6 +10386,47 @@ class AureonKrakenEcosystem:
             print(f"   ⚠️ Failed to generate portfolio report: {e}")
 
     # ─────────────────────────────────────────────────────────
+    # 💓 HEARTBEAT - Periodic status output
+    # ─────────────────────────────────────────────────────────
+    
+    def print_heartbeat(self):
+        """Print a periodic heartbeat with key metrics."""
+        now = datetime.now().strftime("%H:%M:%S")
+        uptime_mins = (time.time() - self.start_time) / 60
+        
+        # Calculate position stats
+        total_value = 0.0
+        total_pnl = 0.0
+        for symbol, pos in self.positions.items():
+            rt_price = self.get_realtime_price(symbol)
+            price = rt_price if rt_price else pos.entry_price
+            current_val = pos.quantity * price
+            pnl = current_val - pos.entry_value
+            total_value += current_val
+            total_pnl += pnl
+        
+        # Get win rate from tracker
+        win_rate = (self.tracker.wins / self.tracker.total_trades * 100) if self.tracker.total_trades > 0 else 0
+        
+        # Get symbol cache stats
+        cache_stats = self.get_symbol_cache_stats()
+        
+        # Get probability matrix stats if available
+        matrix_stats = ""
+        if self.prob_matrix:
+            try:
+                summary = self.prob_matrix.get_active_positions_summary()
+                win_stats = self.prob_matrix.get_position_win_rate()
+                matrix_stats = f" | Matrix: {summary['count']} tracked, {win_stats.get('trades', 0)} outcomes"
+            except:
+                pass
+        
+        print(f"\n   💓 HEARTBEAT [{now}] Uptime: {uptime_mins:.0f}m | "
+              f"Positions: {len(self.positions)} | Value: £{total_value:.2f} | "
+              f"PnL: £{total_pnl:+.2f} | Win: {win_rate:.0f}% ({self.tracker.wins}W/{self.tracker.losses}L)"
+              f"{matrix_stats}")
+
+    # ─────────────────────────────────────────────────────────
     # Main Loop
     # ─────────────────────────────────────────────────────────
     
@@ -7996,6 +10464,10 @@ class AureonKrakenEcosystem:
         # Deploy scouts on first cycle if enabled
         if self.iteration == 1 and not self.scouts_deployed:
             self._deploy_scouts()
+        
+        # 💓 Heartbeat every 5 cycles
+        if self.iteration % 5 == 0:
+            self.print_heartbeat()
         
         # Toggle scan direction
         self.scan_direction = 'Z→A' if self.iteration % 2 == 0 else 'A→Z'
@@ -8064,6 +10536,10 @@ class AureonKrakenEcosystem:
         pair_count = self.refresh_tickers()
         print(f"✅ Connected! {pair_count} pairs loaded")
         
+        # 🌾 STARTUP HARVESTER: Sell existing assets if profitable
+        if not self.dry_run and CONFIG.get('HARVEST_ON_STARTUP', True):
+            self.harvest_existing_assets()
+        
         # Find initial opportunities for WebSocket
         initial_opps = self.find_opportunities()
         symbols_to_watch = [o['symbol'] for o in initial_opps[:15]]
@@ -8081,6 +10557,10 @@ class AureonKrakenEcosystem:
         
         initial_equity = self.total_equity_gbp
         start_ts = time.time()
+
+        # 🚀 Force deploy scouts before entering the loop (guarantees first shot)
+        if not self.scouts_deployed and CONFIG['DEPLOY_SCOUTS_IMMEDIATELY']:
+            self._deploy_scouts()
 
         try:
             while True:
@@ -8137,6 +10617,37 @@ class AureonKrakenEcosystem:
                 # Refresh data
                 self.refresh_tickers()
                 print(f"   📊 Ticker cache: {len(self.ticker_cache)} symbols loaded")
+                
+                # 🔮 VALIDATE PENDING PREDICTIONS 🔮
+                # Check predictions that are due for validation
+                try:
+                    def get_price(exchange, symbol):
+                        """Get current price for validation."""
+                        # Try ticker cache first
+                        if symbol in self.ticker_cache:
+                            return self.ticker_cache[symbol].get('price', 0)
+                        # Try realtime prices
+                        if symbol in self.realtime_prices:
+                            return self.realtime_prices[symbol]
+                        return None
+                    
+                    validated = self.prediction_validator.validate_predictions(get_price)
+                    if validated:
+                        accurate_count = sum(1 for v in validated if v['is_accurate'])
+                        direction_count = sum(1 for v in validated if v['direction_correct'])
+                        print(f"   🔮 Validated {len(validated)} predictions: {accurate_count} accurate, {direction_count} direction correct")
+                    
+                    # Every 20 cycles, show full accuracy report
+                    if self.iteration % 20 == 0 and self.prediction_validator.get_validated_count() > 0:
+                        print(self.prediction_validator.get_accuracy_summary())
+                    
+                    # 🧠 Every 50 cycles, show adaptive learning summary
+                    if self.iteration % 50 == 0:
+                        print(ADAPTIVE_LEARNER.get_learning_summary())
+                        
+                except Exception as e:
+                    logger.debug(f"Prediction validation error: {e}")
+                
                 self.refresh_equity(mark_cycle=True)
                 
                 # 🌉 Sync with bridge (capital, positions, commands)

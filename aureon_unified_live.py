@@ -105,6 +105,9 @@ CONFIG = {
     'FREQ_OPTIMAL_MAX': 963,      # Extended to include Awakening band
     'FREQ_AVOID_MIN': 450,        # 450-550Hz = 27% WR (avoid)
     'FREQ_AVOID_MAX': 550,
+
+    # Quote coverage
+    'ALLOWED_QUOTES': ['USDC', 'USDT'],  # Trade both USDC and USDT pairs
     
     # v6 TRAILING STOP (Lock in profits!)
     'ENABLE_TRAILING_STOP': True,
@@ -119,6 +122,10 @@ CONFIG = {
     # v6 SYMBOL PREFERENCE (Learned edge)
     'PREFERRED_SYMBOLS': ['SAPIENUSDC'],  # Proven 67%+ WR
     'PREFERRED_BONUS': 1.5,         # 50% score bonus for proven symbols
+        # v6.1 FORCE MODE (bypass most gates to land first trade)
+        'FORCE_TRADE': os.getenv('FORCE_TRADE', '0') == '1',
+        'FORCE_TRADE_SYMBOL': os.getenv('FORCE_TRADE_SYMBOL', ''),
+        'FORCE_MIN_VOLUME': 15000,  # Still require basic liquidity guard
     
     # v6 ADAPTIVE PROBABILITY (from paper: 0.78-0.83 won, 0.85+ lost!)
     'PROB_MIN': 0.50,              # v6: Lowered - let other filters qualify
@@ -263,7 +270,8 @@ class AureonUnifiedLive:
         if time.time() - self.last_ticker_update < 2: return
         try:
             tickers = self.client.session.get(f"{self.client.base}/api/v3/ticker/24hr", timeout=5).json()
-            self.ticker_cache = {t['symbol']: t for t in tickers if t['symbol'].endswith('USDT') or t['symbol'].endswith('USDC')}
+            allowed_quotes = tuple(CONFIG.get('ALLOWED_QUOTES', ['USDC']))
+            self.ticker_cache = {t['symbol']: t for t in tickers if t['symbol'].endswith(allowed_quotes)}
             self.last_ticker_update = time.time()
             
             # v6: Update price history for spike detection
@@ -328,6 +336,59 @@ class AureonUnifiedLive:
                     json.dump(self.rejections[-50:], f, indent=2)
             except:
                 pass
+
+    def _force_candidate(self) -> Optional[Dict]:
+        """Pick a fallback candidate when FORCE_TRADE is enabled."""
+        target = CONFIG.get('FORCE_TRADE_SYMBOL', '').strip().upper()
+        candidates = []
+        allowed_quotes = tuple(CONFIG.get('ALLOWED_QUOTES', ['USDC']))
+
+        for symbol, ticker in self.ticker_cache.items():
+            if not symbol.endswith(allowed_quotes):  # keep stable quotes only
+                continue
+            if target and symbol != target:
+                continue
+            try:
+                price = float(ticker['lastPrice'])
+                change = float(ticker['priceChangePercent'])
+                volume = float(ticker['quoteVolume'])
+                high = float(ticker['highPrice'])
+                low = float(ticker['lowPrice'])
+            except Exception:
+                continue
+
+            if volume < CONFIG.get('FORCE_MIN_VOLUME', 15000):
+                continue  # still require a basic liquidity floor
+            if price <= 0 or high <= 0 or low <= 0:
+                continue
+
+            volatility = ((high - low) / low * 100) if low > 0 else 0
+            coherence = calculate_coherence(change, volume / price if price > 0 else 0, volatility)
+            price_range_pct = (price - low) / (high - low) if (high - low) > 0 else 0.5
+            freq = max(256, min(963, 432 * ((1 + change/100) ** ((1 + 5**0.5) / 2))))
+            freq_band = 'OPTIMAL' if CONFIG['FREQ_OPTIMAL_MIN'] <= freq <= CONFIG['FREQ_OPTIMAL_MAX'] else 'STANDARD'
+
+            score = volume * (1 + max(0.0, coherence)) * (1 + (1 - price_range_pct))
+            candidates.append({
+                'symbol': symbol,
+                'price': price,
+                'change': change,
+                'coherence': coherence,
+                'volume': volume,
+                'probability': 0.55,  # nudge above neutral
+                'action': 'FORCE BUY',
+                'frequency': freq,
+                'is_harmonic': False,
+                'score': score,
+                'freq_band': freq_band,
+                'range_pct': price_range_pct,
+            })
+
+        if not candidates:
+            return None
+
+        candidates.sort(key=lambda x: x['score'], reverse=True)
+        return candidates[0]
     
     def get_usdc_balance(self) -> float:
         return self.client.get_free_balance('USDC')
@@ -337,8 +398,10 @@ class AureonUnifiedLive:
         opportunities = []
         PHI = (1 + 5**0.5) / 2  # Golden ratio
         
+        allowed_quotes = tuple(CONFIG.get('ALLOWED_QUOTES', ['USDC']))
+
         for symbol, ticker in self.ticker_cache.items():
-            if not symbol.endswith('USDC'): continue
+            if not symbol.endswith(allowed_quotes): continue
             if not self.lot_mgr.can_trade(symbol): continue
             if self.memory.should_avoid(symbol): continue
             
@@ -461,6 +524,13 @@ class AureonUnifiedLive:
             -x.get('range_pct', 0.5),  # Lower range = better (negative for descending)
             x['score']
         ), reverse=True)
+
+        # Force mode: if nothing qualifies, pick the best minimally-filtered candidate
+        if not opportunities and CONFIG.get('FORCE_TRADE', False):
+            forced = self._force_candidate()
+            if forced:
+                logger.warning(f"FORCE_TRADE active - bypassing gates with {forced['symbol']}")
+                opportunities.append(forced)
         return opportunities
     
     def enter_position(self, opp: Dict, usdc_balance: float) -> bool:

@@ -18,9 +18,9 @@ print("-" * 70)
 
 try:
     from aureon_unified_ecosystem import STATE_AGGREGATOR
-    
-    summary = STATE_AGGREGATOR.get_summary()
-    sources = summary.get('sources_loaded', [])
+    summary_text = STATE_AGGREGATOR.get_summary()
+    state = STATE_AGGREGATOR.aggregated_state
+    sources = state.get('sources_loaded', [])
     
     print(f"   ✅ State Aggregator loaded successfully")
     print(f"   📁 Sources loaded: {len(sources)}")
@@ -28,10 +28,10 @@ try:
         print(f"      - {src}")
     
     print(f"\n   📈 Data Statistics:")
-    print(f"      Total Symbols Tracked: {summary.get('total_symbols_tracked', 0)}")
-    print(f"      Total Trades Logged: {summary.get('total_trades_logged', 0)}")
-    print(f"      Frequency Readings: {summary.get('frequency_readings', 0)}")
-    print(f"      Hunts/Wins: {summary.get('hunts', 0)}/{summary.get('wins', 0)}")
+    print(f"      Historical Trades: {state.get('total_historical_trades', 0)}")
+    print(f"      Combined Win Rate: {state.get('combined_win_rate', 0):.1f}%")
+    print(f"      Frequency Bands: {', '.join(state.get('frequency_performance', {}).keys()) or 'None'}")
+    print(f"\n{summary_text}")
     
 except Exception as e:
     print(f"   ❌ State Aggregator failed: {e}")

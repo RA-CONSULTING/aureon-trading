@@ -357,55 +357,8 @@ class UnifiedExchangeClient:
 
         if self.exchange_id == 'kraken':
             try:
-                # Get all tradeable pairs
-                pairs = self.client._load_asset_pairs()
-                pair_names = list(pairs.keys())
-                
-                # Filter for likely tradeable pairs to reduce load (e.g. ending in USD, GBP, EUR, XBT, ETH)
-                # actually, let's just take the first 100 or so relevant ones to avoid rate limits
-                # or do it properly with batches.
-                
-                # Kraken rate limits are strict. 
-                # Let's prioritize pairs with our base currencies.
-                bases = ['USD', 'ZUSD', 'GBP', 'ZGBP', 'EUR', 'ZEUR', 'XBT', 'XXBT', 'ETH', 'XETH', 'USDT']
-                relevant_pairs = []
-                for p, info in pairs.items():
-                    # Check if quote is in bases
-                    # info['quote'] gives quote currency
-                    if info.get('quote') in bases:
-                        relevant_pairs.append(p)
-                
-                all_tickers = []
-                chunk_size = 20 # Conservative chunk size
-                # Limit total requests?
-                
-                for i in range(0, len(relevant_pairs), chunk_size):
-                    chunk = relevant_pairs[i:i+chunk_size]
-                    pair_str = ",".join(chunk)
-                    try:
-                        res = self.client.session.get(f"{self.client.base}/0/public/Ticker?pair={pair_str}", timeout=5).json()
-                        if res.get('error'): continue
-                        
-                        for k, v in res['result'].items():
-                            open_price = float(v['o'][1])
-                            close_price = float(v['c'][0])
-                            volume = float(v['v'][1]) # 24h volume
-                            
-                            change_pct = ((close_price - open_price) / open_price * 100) if open_price > 0 else 0
-                            
-                            # Symbol name: use altname if available
-                            symbol = self.client._int_to_alt.get(k, k)
-                            
-                            all_tickers.append({
-                                'symbol': symbol,
-                                'lastPrice': close_price,
-                                'priceChangePercent': change_pct,
-                                'quoteVolume': volume * close_price # Approx quote volume
-                            })
-                        time.sleep(0.5) # Rate limit sleep
-                    except:
-                        continue
-                return all_tickers
+                # Use the KrakenClient's get_24h_tickers which handles all pairs properly
+                return self.client.get_24h_tickers()
             except Exception as e:
                 logger.error(f"Kraken get_24h_tickers error: {e}")
                 return []
@@ -488,25 +441,28 @@ class UnifiedExchangeClient:
         if self.exchange_id == "kraken":
             # Kraken uses pairs like 'XBTUSD'
             try:
-                # KrakenClient might not have a simple get_ticker. 
-                # Usually it's public/Ticker?pair=...
-                # Let's use the requests session from the client.
-                res = self.client.session.get(f"{self.client.base}/0/public/Ticker?pair={symbol}").json()
-                if res.get('error'):
-                    logger.error(f"Kraken ticker error: {res['error']}")
+                # Normalize to Kraken altname (no slash, upper)
+                alt = symbol.replace('/', '').upper()
+                # Kraken expects the internal pair name (e.g. XXBTZUSD). Map altname -> internal.
+                self.client._load_asset_pairs()
+                pair = self.client._alt_to_int.get(alt, alt)
+
+                # Use KrakenClient ticker helper so mapping/format stays consistent
+                result = self.client._ticker([alt])
+                if not result:
+                    logger.error(f"Kraken ticker empty result for {alt} (pair {pair})")
                     return {'price': 0.0, 'bid': 0.0, 'ask': 0.0}
-                
-                # Result is like {'XXBTZUSD': {'c': [...], 'b': [...], 'a': [...]}}
-                # We need to find the key.
-                result = res['result']
-                key = list(result.keys())[0]
-                data = result[key]
-                
-                return {
-                    'price': float(data['c'][0]),
-                    'bid': float(data['b'][0]),
-                    'ask': float(data['a'][0])
-                }
+
+                key, data = next(iter(result.items()))
+                try:
+                    price = float(data.get('c', [0])[0])
+                    bid = float(data.get('b', [0])[0])
+                    ask = float(data.get('a', [0])[0])
+                except Exception as inner:
+                    logger.error(f"Error parsing Kraken ticker for {alt} ({key}): {inner}")
+                    return {'price': 0.0, 'bid': 0.0, 'ask': 0.0}
+
+                return {'price': price, 'bid': bid, 'ask': ask}
             except Exception as e:
                 logger.error(f"Error getting Kraken ticker: {e}")
                 return {'price': 0.0, 'bid': 0.0, 'ask': 0.0}
@@ -515,19 +471,25 @@ class UnifiedExchangeClient:
             try:
                 # Binance has /api/v3/ticker/price and /api/v3/ticker/bookTicker
                 # Let's use bookTicker for bid/ask
-                res = self.client.session.get(f"{self.client.base}/api/v3/ticker/bookTicker?symbol={symbol}").json()
+                res = self.client.session.get(f"{self.client.base}/api/v3/ticker/bookTicker", params={"symbol": symbol}).json()
                 # {'symbol': 'BTCUSDT', 'bidPrice': '...', 'askPrice': '...'}
-                # For last price we might need ticker/price or just average bid/ask
-                
-                bid = float(res['bidPrice'])
-                ask = float(res['askPrice'])
-                price = (bid + ask) / 2.0 # Approximation
-                
-                return {
-                    'price': price,
-                    'bid': bid,
-                    'ask': ask
-                }
+                if isinstance(res, dict) and 'bidPrice' in res and 'askPrice' in res:
+                    bid = float(res['bidPrice'])
+                    ask = float(res['askPrice'])
+                    price = (bid + ask) / 2.0  # Approximation
+                    return {'price': price, 'bid': bid, 'ask': ask}
+
+                # Fallback: try ticker/price if bookTicker failed or returned error payload
+                price_res = self.client.session.get(f"{self.client.base}/api/v3/ticker/price", params={"symbol": symbol}).json()
+                if isinstance(price_res, dict) and 'price' in price_res:
+                    try:
+                        price = float(price_res['price'])
+                    except Exception:
+                        price = 0.0
+                    return {'price': price, 'bid': price, 'ask': price}
+
+                logger.error(f"Binance ticker unexpected payload for {symbol}: {res}")
+                return {'price': 0.0, 'bid': 0.0, 'ask': 0.0}
             except Exception as e:
                 logger.error(f"Error getting Binance ticker: {e}")
                 return {'price': 0.0, 'bid': 0.0, 'ask': 0.0}
@@ -559,39 +521,14 @@ class UnifiedExchangeClient:
         Place a market order.
         side: 'buy' or 'sell'
         quantity: amount of base asset (e.g. BTC)
-        quote_qty: amount of quote asset (e.g. USD) - Binance only usually, Kraken supports 'viqc' flags but complex.
+        quote_qty: amount of quote asset (e.g. USD)
         """
         side = side.lower()
         
         if self.exchange_id == "kraken":
-            # KrakenClient doesn't have place_market_order in the snippet, need to implement using _private
-            # Endpoint: /0/private/AddOrder
+            # Use KrakenClient's place_market_order which returns Binance-compatible format
             try:
-                params = {
-                    'pair': symbol,
-                    'type': side,
-                    'ordertype': 'market',
-                }
-                if quantity:
-                    params['volume'] = str(quantity)
-                elif quote_qty:
-                    # Kraken allows specifying volume in quote currency using 'oflags=viqc' 
-                    # BUT only for certain pairs and it's tricky.
-                    # Better to calculate volume based on current price if possible, 
-                    # or just fail if quote_qty is passed for Kraken without logic.
-                    # For now, let's try to estimate volume if quote_qty is given.
-                    ticker = self.get_ticker(symbol)
-                    if ticker['price'] > 0:
-                        est_vol = quote_qty / ticker['price']
-                        params['volume'] = f"{est_vol:.8f}"
-                    else:
-                        raise ValueError("Cannot estimate volume for Kraken quote_qty order")
-                
-                if self.dry_run:
-                    logger.info(f"[DRY RUN] Kraken Order: {params}")
-                    return {'id': 'dry_run_id', 'status': 'closed'}
-                
-                return self.client._private('/0/private/AddOrder', params)
+                return self.client.place_market_order(symbol, side, quantity=quantity, quote_qty=quote_qty)
             except Exception as e:
                 logger.error(f"Error placing Kraken order: {e}")
                 return {}

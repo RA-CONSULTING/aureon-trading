@@ -1,0 +1,351 @@
+[
+  {
+    "timestamp": 1765243098.1529622,
+    "symbol": "A2ZUSDC",
+    "reason": "LOW_COHERENCE",
+    "coherence": 0.46587710520592185,
+    "threshold": 0.7
+  },
+  {
+    "timestamp": 1765243098.1546006,
+    "symbol": "SSVUSDC",
+    "reason": "LOW_COHERENCE",
+    "coherence": 0.45496575711797144,
+    "threshold": 0.7
+  },
+  {
+    "timestamp": 1765243098.1561735,
+    "symbol": "DOLOUSDC",
+    "reason": "LOW_COHERENCE",
+    "coherence": 0.37910379117931864,
+    "threshold": 0.7
+  },
+  {
+    "timestamp": 1765243098.157664,
+    "symbol": "WLFIUSDC",
+    "reason": "LOW_COHERENCE",
+    "coherence": 0.44755636239589563,
+    "threshold": 0.7
+  },
+  {
+    "timestamp": 1765243098.15898,
+    "symbol": "BFUSDUSDC",
+    "reason": "LOW_COHERENCE",
+    "coherence": 0.3038806952048786,
+    "threshold": 0.7
+  },
+  {
+    "timestamp": 1765243098.1605875,
+    "symbol": "NMRUSDC",
+    "reason": "LOW_COHERENCE",
+    "coherence": 0.3760843335742712,
+    "threshold": 0.7
+  },
+  {
+    "timestamp": 1765243098.1621675,
+    "symbol": "SOMIUSDC",
+    "reason": "LOW_COHERENCE",
+    "coherence": 0.45891519391041313,
+    "threshold": 0.7
+  },
+  {
+    "timestamp": 1765243098.1638296,
+    "symbol": "OPENUSDC",
+    "reason": "LOW_COHERENCE",
+    "coherence": 0.383684266723485,
+    "threshold": 0.7
+  },
+  {
+    "timestamp": 1765243098.1653225,
+    "symbol": "USDEUSDC",
+    "reason": "LOW_COHERENCE",
+    "coherence": 0.3038333501888496,
+    "threshold": 0.7
+  },
+  {
+    "timestamp": 1765243098.1667423,
+    "symbol": "LINEAUSDC",
+    "reason": "LOW_COHERENCE",
+    "coherence": 0.4192625084324317,
+    "threshold": 0.7
+  },
+  {
+    "timestamp": 1765243098.1683075,
+    "symbol": "HOLOUSDC",
+    "reason": "LOW_COHERENCE",
+    "coherence": 0.38482994553376965,
+    "threshold": 0.7
+  },
+  {
+    "timestamp": 1765243098.1697104,
+    "symbol": "PUMPUSDC",
+    "reason": "LOW_COHERENCE",
+    "coherence": 0.4914678900297287,
+    "threshold": 0.7
+  },
+  {
+    "timestamp": 1765243098.1714163,
+    "symbol": "AVNTUSDC",
+    "reason": "LOW_COHERENCE",
+    "coherence": 0.39613214585912065,
+    "threshold": 0.7
+  },
+  {
+    "timestamp": 1765243098.1726363,
+    "symbol": "ZKCUSDC",
+    "reason": "LOW_COHERENCE",
+    "coherence": 0.3507526632619716,
+    "threshold": 0.7
+  },
+  {
+    "timestamp": 1765243098.1742465,
+    "symbol": "SKYUSDC",
+    "reason": "LOW_COHERENCE",
+    "coherence": 0.3787278984295121,
+    "threshold": 0.7
+  },
+  {
+    "timestamp": 1765243098.1755147,
+    "symbol": "BARDUSDC",
+    "reason": "LOW_COHERENCE",
+    "coherence": 0.4195000274831847,
+    "threshold": 0.7
+  },
+  {
+    "timestamp": 1765243098.1769502,
+    "symbol": "0GUSDC",
+    "reason": "LOW_COHERENCE",
+    "coherence": 0.40466706694700355,
+    "threshold": 0.7
+  },
+  {
+    "timestamp": 1765243098.1785455,
+    "symbol": "IMXUSDC",
+    "reason": "LOW_COHERENCE",
+    "coherence": 0.38495983687003443,
+    "threshold": 0.7
+  },
+  {
+    "timestamp": 1765243098.1799247,
+    "symbol": "TWTUSDC",
+    "reason": "LOW_COHERENCE",
+    "coherence": 0.40674279645511663,
+    "threshold": 0.7
+  },
+  {
+    "timestamp": 1765243098.1811879,
+    "symbol": "HEMIUSDC",
+    "reason": "LOW_COHERENCE",
+    "coherence": 0.5971383330943466,
+    "threshold": 0.7
+  },
+  {
+    "timestamp": 1765243098.183019,
+    "symbol": "XPLUSDC",
+    "reason": "LOW_COHERENCE",
+    "coherence": 0.5329373227021471,
+    "threshold": 0.7
+  },
+  {
+    "timestamp": 1765243098.1843486,
+    "symbol": "FFUSDC",
+    "reason": "LOW_COHERENCE",
+    "coherence": 0.40224343411759655,
+    "threshold": 0.7
+  },
+  {
+    "timestamp": 1765243098.186027,
+    "symbol": "SNXUSDC",
+    "reason": "LOW_COHERENCE",
+    "coherence": 0.4363376710548153,
+    "threshold": 0.7
+  },
+  {
+    "timestamp": 1765243098.1875086,
+    "symbol": "EDENUSDC",
+    "reason": "LOW_COHERENCE",
+    "coherence": 0.3882031475077116,
+    "threshold": 0.7
+  },
+  {
+    "timestamp": 1765243098.1889188,
+    "symbol": "NOMUSDC",
+    "reason": "LOW_COHERENCE",
+    "coherence": 0.36804233414151244,
+    "threshold": 0.7
+  },
+  {
+    "timestamp": 1765243098.190998,
+    "symbol": "2ZUSDC",
+    "reason": "LOW_PROBABILITY",
+    "prob": 0.26438449237101036,
+    "min": 0.5
+  },
+  {
+    "timestamp": 1765243098.1924124,
+    "symbol": "MORPHOUSDC",
+    "reason": "LOW_COHERENCE",
+    "coherence": 0.3729802676665788,
+    "threshold": 0.7
+  },
+  {
+    "timestamp": 1765243098.1940715,
+    "symbol": "ASTERUSDC",
+    "reason": "LOW_COHERENCE",
+    "coherence": 0.4601155839603293,
+    "threshold": 0.7
+  },
+  {
+    "timestamp": 1765243098.1955106,
+    "symbol": "WALUSDC",
+    "reason": "LOW_COHERENCE",
+    "coherence": 0.36442814419800856,
+    "threshold": 0.7
+  },
+  {
+    "timestamp": 1765243098.1970668,
+    "symbol": "EULUSDC",
+    "reason": "LOW_COHERENCE",
+    "coherence": 0.4006682864062891,
+    "threshold": 0.7
+  },
+  {
+    "timestamp": 1765243098.1991549,
+    "symbol": "ENSOUSDC",
+    "reason": "LOW_COHERENCE",
+    "coherence": 0.3642838709266169,
+    "threshold": 0.7
+  },
+  {
+    "timestamp": 1765243098.2007058,
+    "symbol": "YBUSDC",
+    "reason": "LOW_COHERENCE",
+    "coherence": 0.4240097793612037,
+    "threshold": 0.7
+  },
+  {
+    "timestamp": 1765243098.2027338,
+    "symbol": "ZBTUSDC",
+    "reason": "LOW_COHERENCE",
+    "coherence": 0.3618874557543531,
+    "threshold": 0.7
+  },
+  {
+    "timestamp": 1765243098.2063582,
+    "symbol": "TURTLEUSDC",
+    "reason": "LOW_COHERENCE",
+    "coherence": 0.6693077187637383,
+    "threshold": 0.7
+  },
+  {
+    "timestamp": 1765243098.2082806,
+    "symbol": "GIGGLEUSDC",
+    "reason": "LOW_COHERENCE",
+    "coherence": 0.4013148513058672,
+    "threshold": 0.7
+  },
+  {
+    "timestamp": 1765243098.2094872,
+    "symbol": "FUSDC",
+    "reason": "LOW_COHERENCE",
+    "coherence": 0.36283902268391965,
+    "threshold": 0.7
+  },
+  {
+    "timestamp": 1765243098.2112665,
+    "symbol": "KITEUSDC",
+    "reason": "LOW_PROBABILITY",
+    "prob": 0.2963141024031066,
+    "min": 0.5
+  },
+  {
+    "timestamp": 1765243098.2123177,
+    "symbol": "MMTUSDC",
+    "reason": "LOW_COHERENCE",
+    "coherence": 0.4156404350766491,
+    "threshold": 0.7
+  },
+  {
+    "timestamp": 1765243098.2138023,
+    "symbol": "DASHUSDC",
+    "reason": "FREQ_AVOID_BAND",
+    "freq": 490.27060065117763
+  },
+  {
+    "timestamp": 1765243098.2150662,
+    "symbol": "SAPIENUSDC",
+    "reason": "LOW_COHERENCE",
+    "coherence": 0.47551719766774003,
+    "threshold": 0.7
+  },
+  {
+    "timestamp": 1765243098.2162454,
+    "symbol": "MINAUSDC",
+    "reason": "LOW_COHERENCE",
+    "coherence": 0.4015587860884469,
+    "threshold": 0.7
+  },
+  {
+    "timestamp": 1765243098.218126,
+    "symbol": "XVGUSDC",
+    "reason": "LOW_COHERENCE",
+    "coherence": 0.44840271645643304,
+    "threshold": 0.7
+  },
+  {
+    "timestamp": 1765243098.2192266,
+    "symbol": "ALLOUSDC",
+    "reason": "LOW_COHERENCE",
+    "coherence": 0.6843142367812908,
+    "threshold": 0.7
+  },
+  {
+    "timestamp": 1765243098.2206643,
+    "symbol": "USD1USDC",
+    "reason": "LOW_COHERENCE",
+    "coherence": 0.3051047462661213,
+    "threshold": 0.7
+  },
+  {
+    "timestamp": 1765243098.2217662,
+    "symbol": "BANKUSDC",
+    "reason": "LOW_COHERENCE",
+    "coherence": 0.4028130801123906,
+    "threshold": 0.7
+  },
+  {
+    "timestamp": 1765243098.2229924,
+    "symbol": "METUSDC",
+    "reason": "LOW_COHERENCE",
+    "coherence": 0.5374990161065056,
+    "threshold": 0.7
+  },
+  {
+    "timestamp": 1765243098.2247505,
+    "symbol": "1INCHUSDC",
+    "reason": "LOW_COHERENCE",
+    "coherence": 0.39437987428686117,
+    "threshold": 0.7
+  },
+  {
+    "timestamp": 1765243098.2257783,
+    "symbol": "COTIUSDC",
+    "reason": "LOW_COHERENCE",
+    "coherence": 0.375957337252635,
+    "threshold": 0.7
+  },
+  {
+    "timestamp": 1765243098.227042,
+    "symbol": "LSKUSDC",
+    "reason": "LOW_COHERENCE",
+    "coherence": 0.48217795141620984,
+    "threshold": 0.7
+  },
+  {
+    "timestamp": 1765243098.228378,
+    "symbol": "ATUSDC",
+    "reason": "LOW_COHERENCE",
+    "coherence": 0.498812843760871,
+    "threshold": 0.7
+  }
+]

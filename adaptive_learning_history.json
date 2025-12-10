@@ -1,0 +1,144 @@
+{
+  "trades": [
+    {
+      "symbol": "SAPIENUSDT",
+      "pnl": 0.025657472738934168,
+      "frequency": 497.9227214012792,
+      "coherence": 0.8644398962891465,
+      "score": 83,
+      "entry_time": 1764856316.908731,
+      "hnc_action": "BUY",
+      "probability": 0.83,
+      "exchange": "binance",
+      "exit_reason": "\ud83d\udcb0 TAKE PROFIT"
+    },
+    {
+      "symbol": "SAPIENUSDT",
+      "pnl": 0.03838771593090321,
+      "frequency": 500.5524902639891,
+      "coherence": 0.8690086993490469,
+      "score": 83,
+      "entry_time": 1764856329.364551,
+      "hnc_action": "BUY",
+      "probability": 0.83,
+      "exchange": "binance",
+      "exit_reason": "\ud83d\udcb0 TAKE PROFIT"
+    },
+    {
+      "symbol": "LAYERUSDT",
+      "pnl": 0.004670714619336244,
+      "frequency": 481.95667062104087,
+      "coherence": 0.8335193426385424,
+      "score": 83,
+      "entry_time": 1764856354.567496,
+      "hnc_action": "BUY",
+      "probability": 0.83,
+      "exchange": "binance",
+      "exit_reason": "\ud83d\udcc8 TRAILING STOP (Peak: $0.2145)"
+    },
+    {
+      "symbol": "SAPIENUSDT",
+      "pnl": 0.0,
+      "frequency": 501.86195624504285,
+      "coherence": 0.8712312060065965,
+      "score": 83,
+      "entry_time": 1764856441.358303,
+      "hnc_action": "BUY",
+      "probability": 0.83,
+      "exchange": "binance",
+      "exit_reason": "\ud83d\udcc8 TRAILING STOP (Peak: $0.1574)"
+    },
+    {
+      "symbol": "SAPIENUSDT",
+      "pnl": 0.03182686187141951,
+      "frequency": 468.09143084183677,
+      "coherence": 0.8019016305150034,
+      "score": 83,
+      "entry_time": 1764856491.40615,
+      "hnc_action": "BUY",
+      "probability": 0.83,
+      "exchange": "binance",
+      "exit_reason": "\ud83d\udcb0 TAKE PROFIT"
+    },
+    {
+      "symbol": "SAPIENUSDT",
+      "pnl": -0.03172588832487313,
+      "frequency": 475.12432332554704,
+      "coherence": 0.8185171711918675,
+      "score": 83,
+      "entry_time": 1764856579.849353,
+      "hnc_action": "BUY",
+      "probability": 0.83,
+      "exchange": "binance",
+      "exit_reason": "\ud83d\uded1 STOP LOSS"
+    },
+    {
+      "symbol": "SAPIENUSDT",
+      "pnl": -0.050922978994270854,
+      "frequency": 468.5960562997885,
+      "coherence": 0.8031342719491155,
+      "score": 83,
+      "entry_time": 1764856642.357524,
+      "hnc_action": "BUY",
+      "probability": 0.83,
+      "exchange": "binance",
+      "exit_reason": "\ud83d\uded1 STOP LOSS"
+    },
+    {
+      "symbol": "SAPIENUSDT",
+      "pnl": 0.03198976327575179,
+      "frequency": 454.8446054724756,
+      "coherence": 0.767257341513913,
+      "score": 83,
+      "entry_time": 1764856666.978215,
+      "hnc_action": "BUY",
+      "probability": 0.83,
+      "exchange": "binance",
+      "exit_reason": "\ud83d\udcb0 TAKE PROFIT"
+    },
+    {
+      "symbol": "SAPIENUSDT",
+      "pnl": 0.00637755102040923,
+      "frequency": 458.1855786255337,
+      "coherence": 0.7764138495498217,
+      "score": 83,
+      "entry_time": 1764856679.25703,
+      "hnc_action": "BUY",
+      "probability": 0.83,
+      "exchange": "binance",
+      "exit_reason": "\ud83d\udcc8 TRAILING STOP (Peak: $0.1571)"
+    },
+    {
+      "symbol": "SAPIENUSDT",
+      "pnl": -0.031867431485022336,
+      "frequency": 462.6116706878926,
+      "coherence": 0.7881075207534363,
+      "score": 83,
+      "entry_time": 1764856755.299459,
+      "hnc_action": "BUY",
+      "probability": 0.83,
+      "exchange": "binance",
+      "exit_reason": "\ud83d\uded1 STOP LOSS"
+    },
+    {
+      "symbol": "SAPIENUSDT",
+      "pnl": 0.03836317135549804,
+      "frequency": 483.4151649834286,
+      "coherence": 0.8365801943416707,
+      "score": 83,
+      "entry_time": 1764856805.039521,
+      "hnc_action": "BUY",
+      "probability": 0.83,
+      "exchange": "binance",
+      "exit_reason": "\ud83d\udcb0 TAKE PROFIT"
+    }
+  ],
+  "thresholds": {
+    "min_coherence": 0.7,
+    "min_score": 60,
+    "min_probability": 0.5,
+    "harmonic_bonus": 1.15,
+    "distortion_penalty": 0.9
+  },
+  "updated_at": "2025-12-09T22:10:06.810820"
+}

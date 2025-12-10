@@ -18,5 +18,165 @@
     "last_time": 1765216727.5267243,
     "streak": 0,
     "blacklisted": false
+  },
+  "WINEUR": {
+    "hunts": 5,
+    "trades": 0,
+    "wins": 0,
+    "losses": 0,
+    "profit": 0,
+    "last_time": 1765272027.6006532,
+    "streak": 0,
+    "blacklisted": false
+  },
+  "ZECUSDC": {
+    "hunts": 4,
+    "trades": 0,
+    "wins": 0,
+    "losses": 0,
+    "profit": 0,
+    "last_time": 1765270820.9599802,
+    "streak": 0,
+    "blacklisted": false
+  },
+  "BCHUSDC": {
+    "hunts": 1,
+    "trades": 0,
+    "wins": 0,
+    "losses": 0,
+    "profit": 0,
+    "last_time": 1765269230.149519,
+    "streak": 0,
+    "blacklisted": false
+  },
+  "SHIBEUR": {
+    "hunts": 1,
+    "trades": 0,
+    "wins": 0,
+    "losses": 0,
+    "profit": 0,
+    "last_time": 1765270896.616916,
+    "streak": 0,
+    "blacklisted": false
+  },
+  "BTCUSDC": {
+    "hunts": 1,
+    "trades": 0,
+    "wins": 0,
+    "losses": 0,
+    "profit": 0,
+    "last_time": 1765271491.5315948,
+    "streak": 0,
+    "blacklisted": false
+  },
+  "BTCEUR": {
+    "hunts": 2,
+    "trades": 0,
+    "wins": 0,
+    "losses": 0,
+    "profit": 0,
+    "last_time": 1765313223.0108068,
+    "streak": 0,
+    "blacklisted": false
+  },
+  "CCUSDC": {
+    "hunts": 5,
+    "trades": 0,
+    "wins": 0,
+    "losses": 0,
+    "profit": 0,
+    "last_time": 1765277528.2183216,
+    "streak": 0,
+    "blacklisted": false
+  },
+  "FARTCOINUSDC": {
+    "hunts": 7,
+    "trades": 4,
+    "wins": 2,
+    "losses": 2,
+    "profit": -1.3684967382627762,
+    "last_time": 1765307156.1700852,
+    "streak": 1,
+    "blacklisted": false
+  },
+  "ETHUSDC": {
+    "hunts": 2,
+    "trades": 1,
+    "wins": 1,
+    "losses": 0,
+    "profit": 0.21412160608764735,
+    "last_time": 1765317783.9222658,
+    "streak": 0,
+    "blacklisted": false
+  },
+  "XBTUSDC": {
+    "hunts": 3,
+    "trades": 0,
+    "wins": 0,
+    "losses": 0,
+    "profit": 0,
+    "last_time": 1765316078.203498,
+    "streak": 0,
+    "blacklisted": false
+  },
+  "SOLUSDC": {
+    "hunts": 3,
+    "trades": 0,
+    "wins": 0,
+    "losses": 0,
+    "profit": 0,
+    "last_time": 1765318640.050128,
+    "streak": 0,
+    "blacklisted": false
+  },
+  "ETHEUR": {
+    "hunts": 2,
+    "trades": 0,
+    "wins": 0,
+    "losses": 0,
+    "profit": 0,
+    "last_time": 1765316101.7036028,
+    "streak": 0,
+    "blacklisted": false
+  },
+  "DOGEUSDC": {
+    "hunts": 2,
+    "trades": 0,
+    "wins": 0,
+    "losses": 0,
+    "profit": 0,
+    "last_time": 1765317792.7335536,
+    "streak": 0,
+    "blacklisted": false
+  },
+  "ADAUSDC": {
+    "hunts": 2,
+    "trades": 0,
+    "wins": 0,
+    "losses": 0,
+    "profit": 0,
+    "last_time": 1765317802.2232413,
+    "streak": 0,
+    "blacklisted": false
+  },
+  "LINKUSDC": {
+    "hunts": 1,
+    "trades": 0,
+    "wins": 0,
+    "losses": 0,
+    "profit": 0,
+    "last_time": 1765316486.7393591,
+    "streak": 0,
+    "blacklisted": false
+  },
+  "SUIUSDC": {
+    "hunts": 1,
+    "trades": 0,
+    "wins": 0,
+    "losses": 0,
+    "profit": 0,
+    "last_time": 1765316495.9710007,
+    "streak": 0,
+    "blacklisted": false
   }
 }

@@ -13,15 +13,809 @@
       "wins": 0
     },
     "mid": {
-      "trades": 23,
+      "trades": 104,
       "wins": 0
     },
     "high": {
-      "trades": 12,
-      "wins": 7
+      "trades": 23,
+      "wins": 14
     }
   },
-  "total_historical_trades": 35,
-  "combined_win_rate": 20.0,
-  "updated_at": "2025-12-08T17:54:29.816757"
+  "probability_insights": {
+    "LAYERFDUSD": {
+      "probability": 0.8332378472017732,
+      "state": "\ud83d\ude80 EXTREME BULLISH",
+      "change": 22.853,
+      "source": "probability_all_markets_report.json"
+    },
+    "SAPIENTRY": {
+      "probability": 0.8096544727709003,
+      "state": "\ud83d\ude80 EXTREME BULLISH",
+      "change": 37.772,
+      "source": "probability_all_markets_report.json"
+    },
+    "SAPIENUSDT": {
+      "probability": 0.8096531579608801,
+      "state": "\ud83d\ude80 EXTREME BULLISH",
+      "change": 37.753,
+      "source": "probability_all_markets_report.json"
+    },
+    "SAPIENUSDC": {
+      "probability": 0.8096791708010668,
+      "state": "\ud83d\ude80 EXTREME BULLISH",
+      "change": 38.143,
+      "source": "probability_full_market_report.json"
+    },
+    "LAYERUSDC": {
+      "probability": 0.801995232910379,
+      "state": "\ud83d\ude80 EXTREME BULLISH",
+      "change": 22.0,
+      "source": "probability_full_market_report.json"
+    },
+    "LAYERTRY": {
+      "probability": 0.8013901340691049,
+      "state": "\ud83d\ude80 EXTREME BULLISH",
+      "change": 21.631,
+      "source": "probability_all_markets_report.json"
+    },
+    "LAYERUSDT": {
+      "probability": 0.8007508938224591,
+      "state": "\ud83d\ude80 EXTREME BULLISH",
+      "change": 21.268,
+      "source": "probability_all_markets_report.json"
+    },
+    "VOXELUSDT": {
+      "probability": 0.791813178080383,
+      "state": "\ud83d\ude80 EXTREME BULLISH",
+      "change": 17.818,
+      "source": "probability_all_markets_report.json"
+    },
+    "BATUSDT": {
+      "probability": 0.7762144601301433,
+      "state": "\ud83d\ude80 EXTREME BULLISH",
+      "change": 9.984,
+      "source": "probability_all_markets_report.json"
+    },
+    "ENABRL": {
+      "probability": 0.7755859304782448,
+      "state": "\ud83d\ude80 EXTREME BULLISH",
+      "change": 9.943,
+      "source": "probability_all_markets_report.json"
+    },
+    "ZECUSDT": {
+      "probability": 0.7753550007510034,
+      "state": "\ud83d\ude80 EXTREME BULLISH",
+      "change": 9.928,
+      "source": "probability_all_markets_report.json"
+    },
+    "ZECUSDC": {
+      "probability": 0.7740832656794397,
+      "state": "\ud83d\ude80 EXTREME BULLISH",
+      "change": 9.846,
+      "source": "probability_all_markets_report.json"
+    },
+    "2ZTRY": {
+      "probability": 0.7732843240275776,
+      "state": "\ud83d\ude80 EXTREME BULLISH",
+      "change": 9.795,
+      "source": "probability_all_markets_report.json"
+    },
+    "2ZUSDT": {
+      "probability": 0.7697344481139863,
+      "state": "\ud83d\ude80 EXTREME BULLISH",
+      "change": 9.573,
+      "source": "probability_all_markets_report.json"
+    },
+    "2ZUSDC": {
+      "probability": 0.7681461362916205,
+      "state": "\ud83d\ude80 EXTREME BULLISH",
+      "change": 9.476,
+      "source": "probability_all_markets_report.json"
+    },
+    "FFTRY": {
+      "probability": 0.755645356412036,
+      "state": "\ud83d\ude80 EXTREME BULLISH",
+      "change": 12.28,
+      "source": "probability_all_markets_report.json"
+    },
+    "FFUSDT": {
+      "probability": 0.751342333386609,
+      "state": "\ud83d\ude80 EXTREME BULLISH",
+      "change": 11.886,
+      "source": "probability_all_markets_report.json"
+    },
+    "FFUSDC": {
+      "probability": 0.7508781020160543,
+      "state": "\ud83d\ude80 EXTREME BULLISH",
+      "change": 11.845,
+      "source": "probability_all_markets_report.json"
+    },
+    "FFFDUSD": {
+      "probability": 0.7506846882771254,
+      "state": "\ud83d\ude80 EXTREME BULLISH",
+      "change": 11.828,
+      "source": "probability_all_markets_report.json"
+    },
+    "CHESSUSDT": {
+      "probability": 0.7469768907800617,
+      "state": "\ud83d\ude80 EXTREME BULLISH",
+      "change": 11.511,
+      "source": "probability_all_markets_report.json"
+    },
+    "CHESSUSDC": {
+      "probability": 0.7480611329080805,
+      "state": "\ud83d\ude80 EXTREME BULLISH",
+      "change": 11.602,
+      "source": "probability_full_market_report.json"
+    },
+    "2ZFDUSD": {
+      "probability": 0.7286449174547402,
+      "state": "\ud83d\ude80 EXTREME BULLISH",
+      "change": 10.145,
+      "source": "probability_all_markets_report.json"
+    },
+    "ENATRY": {
+      "probability": 0.715312769271131,
+      "state": "\ud83d\ude80 EXTREME BULLISH",
+      "change": 8.934,
+      "source": "probability_all_markets_report.json"
+    },
+    "AWEUSDT": {
+      "probability": 0.7151504478193951,
+      "state": "\ud83d\ude80 EXTREME BULLISH",
+      "change": 8.924,
+      "source": "probability_all_markets_report.json"
+    },
+    "ENAFDUSD": {
+      "probability": 0.7142862752122212,
+      "state": "\ud83d\ude80 EXTREME BULLISH",
+      "change": 8.871,
+      "source": "probability_all_markets_report.json"
+    },
+    "ENAUSDT": {
+      "probability": 0.711436695580822,
+      "state": "\ud83d\ude80 EXTREME BULLISH",
+      "change": 8.699,
+      "source": "probability_all_markets_report.json"
+    },
+    "ENAUSDC": {
+      "probability": 0.7134320636061267,
+      "state": "\ud83d\ude80 EXTREME BULLISH",
+      "change": 8.819,
+      "source": "probability_full_market_report.json"
+    },
+    "EDENFDUSD": {
+      "probability": 0.7097990321182939,
+      "state": "\ud83d\ude80 EXTREME BULLISH",
+      "change": 8.602,
+      "source": "probability_all_markets_report.json"
+    },
+    "FIOUSDT": {
+      "probability": 0.7081046341987292,
+      "state": "\ud83d\ude80 EXTREME BULLISH",
+      "change": 8.503,
+      "source": "probability_all_markets_report.json"
+    },
+    "MMTTRY": {
+      "probability": 0.6999231699057389,
+      "state": "\ud83d\ude80 EXTREME BULLISH",
+      "change": 8.043,
+      "source": "probability_all_markets_report.json"
+    },
+    "BCHJPY": {
+      "probability": 0.6956392388983753,
+      "state": "\ud83d\ude80 EXTREME BULLISH",
+      "change": 7.813,
+      "source": "probability_all_markets_report.json"
+    },
+    "BCHTRY": {
+      "probability": 0.6952036779143573,
+      "state": "\ud83d\ude80 EXTREME BULLISH",
+      "change": 7.79,
+      "source": "probability_all_markets_report.json"
+    },
+    "BERAFDUSD": {
+      "probability": 0.6947858299255778,
+      "state": "\ud83d\ude80 EXTREME BULLISH",
+      "change": 7.768,
+      "source": "probability_all_markets_report.json"
+    },
+    "BERATRY": {
+      "probability": 0.6943667835851111,
+      "state": "\ud83d\ude80 EXTREME BULLISH",
+      "change": 7.746,
+      "source": "probability_all_markets_report.json"
+    },
+    "BCHFDUSD": {
+      "probability": 0.6941377073735182,
+      "state": "\ud83d\ude80 EXTREME BULLISH",
+      "change": 7.734,
+      "source": "probability_all_markets_report.json"
+    },
+    "BCHUSDC": {
+      "probability": 0.7756737348521106,
+      "state": "\ud83d\ude80 EXTREME BULLISH",
+      "change": 9.948712292505379,
+      "source": "probability_kraken_report.json"
+    },
+    "BCHUSDT": {
+      "probability": 0.6929869673804613,
+      "state": "\ud83d\ude80 EXTREME BULLISH",
+      "change": 7.674,
+      "source": "probability_all_markets_report.json"
+    },
+    "GPSUSDC": {
+      "probability": 0.6928714016384692,
+      "state": "\ud83d\ude80 EXTREME BULLISH",
+      "change": 7.668,
+      "source": "probability_all_markets_report.json"
+    },
+    "ENSOTRY": {
+      "probability": 0.6928714016384692,
+      "state": "\ud83d\ude80 EXTREME BULLISH",
+      "change": 7.668,
+      "source": "probability_all_markets_report.json"
+    },
+    "MMTUSDT": {
+      "probability": 0.6910296713718735,
+      "state": "\ud83d\ude80 EXTREME BULLISH",
+      "change": 7.573,
+      "source": "probability_all_markets_report.json"
+    },
+    "BERAUSDT": {
+      "probability": 0.6908930752955842,
+      "state": "\ud83d\ude80 EXTREME BULLISH",
+      "change": 7.566,
+      "source": "probability_all_markets_report.json"
+    },
+    "BERAUSDC": {
+      "probability": 0.6907368157777858,
+      "state": "\ud83d\ude80 EXTREME BULLISH",
+      "change": 7.558,
+      "source": "probability_all_markets_report.json"
+    },
+    "MMTUSDC": {
+      "probability": 0.6901690356261121,
+      "state": "\ud83d\ude80 EXTREME BULLISH",
+      "change": 7.529,
+      "source": "probability_all_markets_report.json"
+    },
+    "VIRTUALIDR": {
+      "probability": 0.6871786639740434,
+      "state": "\ud83d\ude80 EXTREME BULLISH",
+      "change": 7.378,
+      "source": "probability_all_markets_report.json"
+    },
+    "DASHUSDT": {
+      "probability": 0.6855105886306668,
+      "state": "\ud83d\ude80 EXTREME BULLISH",
+      "change": 7.295,
+      "source": "probability_all_markets_report.json"
+    },
+    "DASHUSDC": {
+      "probability": 0.683293649377483,
+      "state": "\ud83d\ude80 EXTREME BULLISH",
+      "change": 7.186,
+      "source": "probability_all_markets_report.json"
+    },
+    "BCHEUR": {
+      "probability": 0.6832117241127508,
+      "state": "\ud83d\ude80 EXTREME BULLISH",
+      "change": 7.182,
+      "source": "probability_all_markets_report.json"
+    },
+    "LINKTRY": {
+      "probability": 0.682637116723494,
+      "state": "\ud83d\ude80 EXTREME BULLISH",
+      "change": 7.154,
+      "source": "probability_all_markets_report.json"
+    },
+    "GPSUSDT": {
+      "probability": 0.682637116723494,
+      "state": "\ud83d\ude80 EXTREME BULLISH",
+      "change": 7.154,
+      "source": "probability_all_markets_report.json"
+    },
+    "LINKFDUSD": {
+      "probability": 0.6819779988698397,
+      "state": "\ud83d\ude80 EXTREME BULLISH",
+      "change": 7.122,
+      "source": "probability_all_markets_report.json"
+    },
+    "BANANAS31USDT": {
+      "probability": 0.3280233479629632,
+      "state": "\ud83d\udcc9 BEARISH",
+      "change": -6.651,
+      "source": "probability_all_markets_report.json"
+    },
+    "BANANAS31USDC": {
+      "probability": 0.3240492828413263,
+      "state": "\ud83d\udcc9 BEARISH",
+      "change": -6.835,
+      "source": "probability_all_markets_report.json"
+    },
+    "LSKUSDT": {
+      "probability": 0.32018200835787736,
+      "state": "\ud83d\udcc9 BEARISH",
+      "change": -7.018,
+      "source": "probability_all_markets_report.json"
+    },
+    "LSKUSDC": {
+      "probability": 0.32018200835787736,
+      "state": "\ud83d\udcc9 BEARISH",
+      "change": -7.018,
+      "source": "probability_all_markets_report.json"
+    },
+    "SYRUPTRY": {
+      "probability": 0.31726012968319894,
+      "state": "\ud83d\udca5 EXTREME BEARISH",
+      "change": -7.159,
+      "source": "probability_all_markets_report.json"
+    },
+    "SYRUPUSDT": {
+      "probability": 0.31457023804223183,
+      "state": "\ud83d\udca5 EXTREME BEARISH",
+      "change": -7.291,
+      "source": "probability_all_markets_report.json"
+    },
+    "SYRUPUSDC": {
+      "probability": 0.31457023804223183,
+      "state": "\ud83d\udca5 EXTREME BEARISH",
+      "change": -7.291,
+      "source": "probability_all_markets_report.json"
+    },
+    "JSTUSDT": {
+      "probability": 0.2736261664371826,
+      "state": "\ud83d\udca5 EXTREME BEARISH",
+      "change": -9.652,
+      "source": "probability_all_markets_report.json"
+    },
+    "DENTTRY": {
+      "probability": 0.246826609951278,
+      "state": "\ud83d\udca5 EXTREME BEARISH",
+      "change": -11.811,
+      "source": "probability_all_markets_report.json"
+    },
+    "DENTUSDT": {
+      "probability": 0.2431384453294478,
+      "state": "\ud83d\udca5 EXTREME BEARISH",
+      "change": -12.177,
+      "source": "probability_all_markets_report.json"
+    },
+    "PARTIFDUSD": {
+      "probability": 0.24079297944699338,
+      "state": "\ud83d\udca5 EXTREME BEARISH",
+      "change": -12.422,
+      "source": "probability_all_markets_report.json"
+    },
+    "PARTIUSDC": {
+      "probability": 0.2337811016409929,
+      "state": "\ud83d\udca5 EXTREME BEARISH",
+      "change": -13.222,
+      "source": "probability_full_market_report.json"
+    },
+    "PARTIUSDT": {
+      "probability": 0.22804851626762054,
+      "state": "\ud83d\udca5 EXTREME BEARISH",
+      "change": -13.97,
+      "source": "probability_all_markets_report.json"
+    },
+    "A2ZUSDT": {
+      "probability": 0.2273870736263888,
+      "state": "\ud83d\udca5 EXTREME BEARISH",
+      "change": -14.063,
+      "source": "probability_all_markets_report.json"
+    },
+    "PARTITRY": {
+      "probability": 0.22648746817888638,
+      "state": "\ud83d\udca5 EXTREME BEARISH",
+      "change": -14.192,
+      "source": "probability_all_markets_report.json"
+    },
+    "A2ZUSDC": {
+      "probability": 0.22858265813128673,
+      "state": "\ud83d\udca5 EXTREME BEARISH",
+      "change": -13.896,
+      "source": "probability_full_market_report.json"
+    },
+    "IOSTUSDT": {
+      "probability": 0.20962975480156407,
+      "state": "\ud83d\udca5 EXTREME BEARISH",
+      "change": -17.425,
+      "source": "probability_all_markets_report.json"
+    },
+    "HEITRY": {
+      "probability": 0.1945050124578918,
+      "state": "\ud83d\udca5 EXTREME BEARISH",
+      "change": -24.901,
+      "source": "probability_all_markets_report.json"
+    },
+    "HEIUSDT": {
+      "probability": 0.1943398620948675,
+      "state": "\ud83d\udca5 EXTREME BEARISH",
+      "change": -25.089,
+      "source": "probability_all_markets_report.json"
+    },
+    "HEIUSDC": {
+      "probability": 0.19385504136838713,
+      "state": "\ud83d\udca5 EXTREME BEARISH",
+      "change": -25.685,
+      "source": "probability_all_markets_report.json"
+    },
+    "AURAEUR": {
+      "probability": 0.8396498508849123,
+      "state": "\ud83d\ude80 EXTREME BULLISH",
+      "change": 17.021276595744688,
+      "source": "probability_kraken_report.json"
+    },
+    "B2USD": {
+      "probability": 0.8384920285909517,
+      "state": "\ud83d\ude80 EXTREME BULLISH",
+      "change": 30.395935529081992,
+      "source": "probability_kraken_report.json"
+    },
+    "FWOGEUR": {
+      "probability": 0.8382109827552122,
+      "state": "\ud83d\ude80 EXTREME BULLISH",
+      "change": 29.539295392953935,
+      "source": "probability_kraken_report.json"
+    },
+    "B2EUR": {
+      "probability": 0.8380917412895781,
+      "state": "\ud83d\ude80 EXTREME BULLISH",
+      "change": 29.215765948801298,
+      "source": "probability_kraken_report.json"
+    },
+    "FWOGUSD": {
+      "probability": 0.8378755707433085,
+      "state": "\ud83d\ude80 EXTREME BULLISH",
+      "change": 28.67756315007429,
+      "source": "probability_kraken_report.json"
+    },
+    "LAYERUSD": {
+      "probability": 0.8367583864400341,
+      "state": "\ud83d\ude80 EXTREME BULLISH",
+      "change": 26.556224899598398,
+      "source": "probability_kraken_report.json"
+    },
+    "PEAQUSD": {
+      "probability": 0.8333681253543651,
+      "state": "\ud83d\ude80 EXTREME BULLISH",
+      "change": 22.951265995099373,
+      "source": "probability_kraken_report.json"
+    },
+    "TEEREUR": {
+      "probability": 0.8326639552755003,
+      "state": "\ud83d\ude80 EXTREME BULLISH",
+      "change": 15.662650602409627,
+      "source": "probability_kraken_report.json"
+    },
+    "TOKEUSD": {
+      "probability": 0.8326482815045961,
+      "state": "\ud83d\ude80 EXTREME BULLISH",
+      "change": 15.659955257270685,
+      "source": "probability_kraken_report.json"
+    },
+    "BATUSD": {
+      "probability": 0.8260743823887422,
+      "state": "\ud83d\ude80 EXTREME BULLISH",
+      "change": 14.632218339157932,
+      "source": "probability_kraken_report.json"
+    },
+    "BATEUR": {
+      "probability": 0.8254445200598405,
+      "state": "\ud83d\ude80 EXTREME BULLISH",
+      "change": 14.543077146593056,
+      "source": "probability_kraken_report.json"
+    },
+    "KOBANEUR": {
+      "probability": 0.8243280750277571,
+      "state": "\ud83d\ude80 EXTREME BULLISH",
+      "change": 14.388489208633093,
+      "source": "probability_kraken_report.json"
+    },
+    "BOBUSD": {
+      "probability": 0.8099999999891027,
+      "state": "\ud83d\ude80 EXTREME BULLISH",
+      "change": 124.1349480968858,
+      "source": "probability_kraken_report.json"
+    },
+    "BOBEUR": {
+      "probability": 0.8099999999869467,
+      "state": "\ud83d\ude80 EXTREME BULLISH",
+      "change": 123.23232323232322,
+      "source": "probability_kraken_report.json"
+    },
+    "ARTUSD": {
+      "probability": 0.8099993315694655,
+      "state": "\ud83d\ude80 EXTREME BULLISH",
+      "change": 69.01408450704224,
+      "source": "probability_kraken_report.json"
+    },
+    "SAPIENEUR": {
+      "probability": 0.8098486364667778,
+      "state": "\ud83d\ude80 EXTREME BULLISH",
+      "change": 41.90040650406504,
+      "source": "probability_kraken_report.json"
+    },
+    "SAPIENUSD": {
+      "probability": 0.809802901407047,
+      "state": "\ud83d\ude80 EXTREME BULLISH",
+      "change": 40.57996179892343,
+      "source": "probability_kraken_report.json"
+    },
+    "LAYEREUR": {
+      "probability": 0.8093583062690834,
+      "state": "\ud83d\ude80 EXTREME BULLISH",
+      "change": 34.674556213017745,
+      "source": "probability_kraken_report.json"
+    },
+    "PEAQUSDC": {
+      "probability": 0.8029459410840623,
+      "state": "\ud83d\ude80 EXTREME BULLISH",
+      "change": 22.63945578231293,
+      "source": "probability_kraken_report.json"
+    },
+    "MOCAUSD": {
+      "probability": 0.8018580865881415,
+      "state": "\ud83d\ude80 EXTREME BULLISH",
+      "change": 21.914008321775317,
+      "source": "probability_kraken_report.json"
+    },
+    "PEAQEUR": {
+      "probability": 0.8015811225946392,
+      "state": "\ud83d\ude80 EXTREME BULLISH",
+      "change": 21.74462705436156,
+      "source": "probability_kraken_report.json"
+    },
+    "XZECZUSD": {
+      "probability": 0.7961761940194718,
+      "state": "\ud83d\ude80 EXTREME BULLISH",
+      "change": 19.223400178822324,
+      "source": "probability_kraken_report.json"
+    },
+    "XZECZEUR": {
+      "probability": 0.7959678729530137,
+      "state": "\ud83d\ude80 EXTREME BULLISH",
+      "change": 19.14700140298263,
+      "source": "probability_kraken_report.json"
+    },
+    "CLANKERUSD": {
+      "probability": 0.795487593952918,
+      "state": "\ud83d\ude80 EXTREME BULLISH",
+      "change": 18.97501058873359,
+      "source": "probability_kraken_report.json"
+    },
+    "TRACUSD": {
+      "probability": 0.7927480780691128,
+      "state": "\ud83d\ude80 EXTREME BULLISH",
+      "change": 18.08914651209275,
+      "source": "probability_kraken_report.json"
+    },
+    "TRACEUR": {
+      "probability": 0.7910582021301488,
+      "state": "\ud83d\ude80 EXTREME BULLISH",
+      "change": 17.608746220051184,
+      "source": "probability_kraken_report.json"
+    },
+    "CLANKEREUR": {
+      "probability": 0.7893743195927894,
+      "state": "\ud83d\ude80 EXTREME BULLISH",
+      "change": 17.16976575706353,
+      "source": "probability_kraken_report.json"
+    },
+    "DASHEUR": {
+      "probability": 0.7759380994625671,
+      "state": "\ud83d\ude80 EXTREME BULLISH",
+      "change": 9.96594106323115,
+      "source": "probability_kraken_report.json"
+    },
+    "WCTEUR": {
+      "probability": 0.7747905719274789,
+      "state": "\ud83d\ude80 EXTREME BULLISH",
+      "change": 9.891480603717092,
+      "source": "probability_kraken_report.json"
+    },
+    "HOUSEEUR": {
+      "probability": 0.22933707472772175,
+      "state": "\ud83d\udca5 EXTREME BEARISH",
+      "change": -13.793103448275861,
+      "source": "probability_kraken_report.json"
+    },
+    "RLSUSD": {
+      "probability": 0.22553954320160755,
+      "state": "\ud83d\udca5 EXTREME BEARISH",
+      "change": -14.331210191082807,
+      "source": "probability_kraken_report.json"
+    },
+    "KINEUR": {
+      "probability": 0.2190330753621139,
+      "state": "\ud83d\udca5 EXTREME BEARISH",
+      "change": -15.394088669950733,
+      "source": "probability_kraken_report.json"
+    },
+    "KEYUSD": {
+      "probability": 0.21777790042430847,
+      "state": "\ud83d\udca5 EXTREME BEARISH",
+      "change": -15.624999999999996,
+      "source": "probability_kraken_report.json"
+    },
+    "PTBEUR": {
+      "probability": 0.21634242701761416,
+      "state": "\ud83d\udca5 EXTREME BEARISH",
+      "change": -15.9016393442623,
+      "source": "probability_kraken_report.json"
+    },
+    "KEYEUR": {
+      "probability": 0.21066568988968534,
+      "state": "\ud83d\udca5 EXTREME BEARISH",
+      "change": -17.15976331360947,
+      "source": "probability_kraken_report.json"
+    },
+    "CHECKUSD": {
+      "probability": 0.6617647058823529,
+      "state": null,
+      "change": 0,
+      "source": "probability_data.json"
+    },
+    "HUSD": {
+      "probability": 0.1960759944532763,
+      "state": "\ud83d\udca5 EXTREME BEARISH",
+      "change": -23.393227366966144,
+      "source": "probability_kraken_report.json"
+    },
+    "HEUR": {
+      "probability": 0.19562681355270856,
+      "state": "\ud83d\udca5 EXTREME BEARISH",
+      "change": -23.780672523477733,
+      "source": "probability_kraken_report.json"
+    },
+    "LITEUR": {
+      "probability": 0.19475262476236418,
+      "state": "\ud83d\udca5 EXTREME BEARISH",
+      "change": -24.631578947368425,
+      "source": "probability_kraken_report.json"
+    },
+    "LITUSD": {
+      "probability": 0.19404356370008463,
+      "state": "\ud83d\udca5 EXTREME BEARISH",
+      "change": -25.444839857651246,
+      "source": "probability_kraken_report.json"
+    },
+    "OMNIEUR": {
+      "probability": 0.19069712014550874,
+      "state": "\ud83d\udca5 EXTREME BEARISH",
+      "change": -34.259902710215435,
+      "source": "probability_kraken_report.json"
+    },
+    "BDXNUSD": {
+      "probability": 0.19014995719562863,
+      "state": "\ud83d\udca5 EXTREME BEARISH",
+      "change": -41.94708994708995,
+      "source": "probability_kraken_report.json"
+    },
+    "BDXNEUR": {
+      "probability": 0.1900801960790485,
+      "state": "\ud83d\udca5 EXTREME BEARISH",
+      "change": -45.07699486700887,
+      "source": "probability_kraken_report.json"
+    },
+    "BRL1USD": {
+      "probability": 0.19006439528381702,
+      "state": "\ud83d\udca5 EXTREME BEARISH",
+      "change": -46.17428571428571,
+      "source": "probability_kraken_report.json"
+    },
+    "BABYUSDC": {
+      "probability": 0.6780322725063685,
+      "state": "\ud83d\udcc8 BULLISH",
+      "change": 6.933,
+      "source": "probability_full_market_report.json"
+    },
+    "LINKUSDC": {
+      "probability": 0.6775247554895707,
+      "state": "\ud83d\udcc8 BULLISH",
+      "change": 6.909,
+      "source": "probability_full_market_report.json"
+    },
+    "ENSOUSDC": {
+      "probability": 0.6697807699854298,
+      "state": "\ud83d\udcc8 BULLISH",
+      "change": 6.551,
+      "source": "probability_full_market_report.json"
+    },
+    "LAUSDC": {
+      "probability": 0.66479248268229,
+      "state": "\ud83d\udcc8 BULLISH",
+      "change": 6.328,
+      "source": "probability_full_market_report.json"
+    },
+    "SHIBUSDC": {
+      "probability": 0.6603039935642363,
+      "state": "\ud83d\udcc8 BULLISH",
+      "change": 6.132,
+      "source": "probability_full_market_report.json"
+    },
+    "TWTUSDC": {
+      "probability": 0.6594690042060711,
+      "state": "\ud83d\udcc8 BULLISH",
+      "change": 6.096,
+      "source": "probability_full_market_report.json"
+    },
+    "1000CHEEMSUSDC": {
+      "probability": 0.6593295207510164,
+      "state": "\ud83d\udcc8 BULLISH",
+      "change": 6.09,
+      "source": "probability_full_market_report.json"
+    },
+    "TRBUSDC": {
+      "probability": 0.6592597449023307,
+      "state": "\ud83d\udcc8 BULLISH",
+      "change": 6.087,
+      "source": "probability_full_market_report.json"
+    },
+    "TNSRUSDC": {
+      "probability": 0.35634163418635395,
+      "state": "\ud83d\udcc9 BEARISH",
+      "change": -5.439,
+      "source": "probability_full_market_report.json"
+    },
+    "XPLUSDC": {
+      "probability": 0.35302943888714533,
+      "state": "\ud83d\udcc9 BEARISH",
+      "change": -5.573,
+      "source": "probability_full_market_report.json"
+    },
+    "NXPCUSDC": {
+      "probability": 0.3413925929958992,
+      "state": "\ud83d\udcc9 BEARISH",
+      "change": -6.059,
+      "source": "probability_full_market_report.json"
+    },
+    "SOLVUSDC": {
+      "probability": 0.3383116437066912,
+      "state": "\ud83d\udcc9 BEARISH",
+      "change": -6.192,
+      "source": "probability_full_market_report.json"
+    },
+    "LUNA2USD": {
+      "probability": 0.6730769230769231,
+      "state": null,
+      "change": 0,
+      "source": "probability_data.json"
+    },
+    "ASRRUSD": {
+      "probability": 0.5777777777777777,
+      "state": null,
+      "change": 0,
+      "source": "probability_data.json"
+    },
+    "STABLEUSD": {
+      "probability": 0.46511627906976744,
+      "state": null,
+      "change": 0,
+      "source": "probability_data.json"
+    },
+    "MUBARAKUSD": {
+      "probability": 0.6585365853658537,
+      "state": null,
+      "change": 0,
+      "source": "probability_data.json"
+    },
+    "ACAUSD": {
+      "probability": 0.5540540540540541,
+      "state": null,
+      "change": 0,
+      "source": "probability_data.json"
+    },
+    "ALLOUSD": {
+      "probability": 0.35294117647058826,
+      "state": null,
+      "change": 0,
+      "source": "probability_data.json"
+    }
+  },
+  "total_historical_trades": 127,
+  "combined_win_rate": 11.023622047244094,
+  "updated_at": "2025-12-09T23:39:22.973520"
 }

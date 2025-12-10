@@ -749,10 +749,52 @@ class TemporalFrequencyAnalyzer:
 """)
 
 
+@dataclass
+class PositionData:
+    """Position data from trading platform for probability matrix validation"""
+    symbol: str
+    exchange: str
+    entry_price: float
+    entry_time: float  # Unix timestamp
+    quantity: float
+    entry_value: float
+    current_price: float = 0.0
+    current_value: float = 0.0
+    unrealized_pnl: float = 0.0
+    unrealized_pnl_pct: float = 0.0
+    platform_timestamp: float = 0.0  # Timestamp from exchange API
+    is_historical: bool = False
+    momentum: float = 0.0
+    coherence: float = 0.0
+    hold_duration_mins: float = 0.0
+    trailing_stop_active: bool = False
+    highest_price: float = 0.0
+    
+    def to_dict(self) -> Dict:
+        return {
+            'symbol': self.symbol,
+            'exchange': self.exchange,
+            'entry_price': self.entry_price,
+            'entry_time': self.entry_time,
+            'quantity': self.quantity,
+            'entry_value': self.entry_value,
+            'current_price': self.current_price,
+            'current_value': self.current_value,
+            'unrealized_pnl': self.unrealized_pnl,
+            'unrealized_pnl_pct': self.unrealized_pnl_pct,
+            'platform_timestamp': self.platform_timestamp,
+            'is_historical': self.is_historical,
+            'hold_duration_mins': self.hold_duration_mins,
+            'trailing_stop_active': self.trailing_stop_active,
+            'highest_price': self.highest_price,
+        }
+
+
 class HNCProbabilityIntegration:
     """
     Integrates Probability Matrix with HNC trading system.
     Provides position sizing and entry/exit signals based on temporal analysis.
+    Now includes position tracking for better navigation and validation.
     """
     
     def __init__(self):
@@ -761,6 +803,236 @@ class HNCProbabilityIntegration:
         self.lighthouse = LighthouseMetricsEngine()
         self._last_log_ts: Optional[datetime] = None
         self._log_cache: List[Dict[str, Any]] = []
+        
+        # 📊 Position tracking for probability validation
+        self.position_data: Dict[str, PositionData] = {}  # symbol -> position data
+        self.position_history: deque = deque(maxlen=1000)  # Historical position events
+        self.position_outcomes: Dict[str, List[Dict]] = {}  # symbol -> list of trade outcomes
+        self.last_position_sync: float = 0.0  # Timestamp of last sync
+        
+        # 💾 Persistence paths
+        self._outcomes_path = "probability_outcomes.json"
+        self._load_persisted_outcomes()
+
+    # ═══════════════════════════════════════════════════════════════
+    # 💾 PERSISTENCE - Save/load position outcomes for learning continuity
+    # ═══════════════════════════════════════════════════════════════
+    
+    def _load_persisted_outcomes(self) -> None:
+        """Load position outcomes from disk to preserve learning across restarts."""
+        if not os.path.exists(self._outcomes_path):
+            return
+        try:
+            with open(self._outcomes_path, 'r') as f:
+                data = json.load(f)
+            self.position_outcomes = data.get('outcomes', {})
+            loaded_count = sum(len(v) for v in self.position_outcomes.values())
+            print(f"   📊 Loaded {loaded_count} historical trade outcomes from {self._outcomes_path}")
+        except Exception as e:
+            print(f"   ⚠️ Failed to load outcomes: {e}")
+    
+    def _persist_outcomes(self) -> None:
+        """Save position outcomes to disk for learning continuity."""
+        try:
+            data = {
+                'outcomes': self.position_outcomes,
+                'last_updated': time.time(),
+                'total_trades': sum(len(v) for v in self.position_outcomes.values()),
+            }
+            with open(self._outcomes_path, 'w') as f:
+                json.dump(data, f, indent=2)
+        except Exception as e:
+            print(f"   ⚠️ Failed to persist outcomes: {e}")
+    
+    def feed_position_data(self, symbol: str, exchange: str, entry_price: float, 
+                           entry_time: float, quantity: float, entry_value: float,
+                           current_price: float = 0.0, platform_timestamp: float = 0.0,
+                           is_historical: bool = False, momentum: float = 0.0,
+                           coherence: float = 0.0, trailing_stop_active: bool = False,
+                           highest_price: float = 0.0) -> None:
+        """
+        Feed position data from trading platform to improve probability matrix accuracy.
+        This allows the matrix to validate predictions against actual outcomes.
+        
+        Args:
+            symbol: Trading pair (e.g., 'BTCUSDC')
+            exchange: Exchange name (e.g., 'binance', 'kraken')
+            entry_price: Price at entry
+            entry_time: Unix timestamp of entry
+            quantity: Position size
+            entry_value: Value at entry (GBP)
+            current_price: Current market price
+            platform_timestamp: Timestamp from exchange API (for validation)
+            is_historical: Whether this is a historical/imported position
+            momentum: Current momentum value
+            coherence: Current coherence score
+            trailing_stop_active: Whether trailing stop is engaged
+            highest_price: Highest price since entry
+        """
+        now = time.time()
+        hold_duration_mins = (now - entry_time) / 60 if entry_time > 0 else 0
+        
+        current_value = quantity * current_price if current_price > 0 else entry_value
+        unrealized_pnl = current_value - entry_value
+        unrealized_pnl_pct = (unrealized_pnl / entry_value * 100) if entry_value > 0 else 0
+        
+        pos_data = PositionData(
+            symbol=symbol,
+            exchange=exchange,
+            entry_price=entry_price,
+            entry_time=entry_time,
+            quantity=quantity,
+            entry_value=entry_value,
+            current_price=current_price,
+            current_value=current_value,
+            unrealized_pnl=unrealized_pnl,
+            unrealized_pnl_pct=unrealized_pnl_pct,
+            platform_timestamp=platform_timestamp or now,
+            is_historical=is_historical,
+            momentum=momentum,
+            coherence=coherence,
+            hold_duration_mins=hold_duration_mins,
+            trailing_stop_active=trailing_stop_active,
+            highest_price=highest_price,
+        )
+        
+        # Store/update position
+        self.position_data[symbol] = pos_data
+        self.last_position_sync = now
+        
+        # Log position event for history
+        self.position_history.append({
+            'timestamp': now,
+            'symbol': symbol,
+            'exchange': exchange,
+            'event': 'update',
+            'price': current_price,
+            'pnl_pct': unrealized_pnl_pct,
+            'hold_mins': hold_duration_mins,
+        })
+    
+    def feed_position_close(self, symbol: str, exit_price: float, 
+                            realized_pnl: float, exit_reason: str,
+                            platform_timestamp: float = 0.0) -> None:
+        """
+        Record a position close for probability validation.
+        Helps the matrix learn from actual outcomes.
+        
+        Args:
+            symbol: Trading pair
+            exit_price: Price at exit
+            realized_pnl: Final P&L (GBP)
+            exit_reason: Why the position was closed
+            platform_timestamp: Exchange timestamp
+        """
+        now = time.time()
+        
+        # Get entry data if we have it
+        entry_data = self.position_data.get(symbol)
+        
+        outcome = {
+            'timestamp': now,
+            'platform_timestamp': platform_timestamp or now,
+            'symbol': symbol,
+            'exit_price': exit_price,
+            'realized_pnl': realized_pnl,
+            'exit_reason': exit_reason,
+            'entry_price': entry_data.entry_price if entry_data else 0.0,
+            'entry_time': entry_data.entry_time if entry_data else 0.0,
+            'hold_duration_mins': entry_data.hold_duration_mins if entry_data else 0.0,
+            'was_historical': entry_data.is_historical if entry_data else False,
+            'entry_momentum': entry_data.momentum if entry_data else 0.0,
+            'entry_coherence': entry_data.coherence if entry_data else 0.0,
+            'win': realized_pnl > 0,
+        }
+        
+        # Store outcome for learning
+        if symbol not in self.position_outcomes:
+            self.position_outcomes[symbol] = []
+        self.position_outcomes[symbol].append(outcome)
+        
+        # Log close event
+        self.position_history.append({
+            'timestamp': now,
+            'symbol': symbol,
+            'event': 'close',
+            'price': exit_price,
+            'pnl': realized_pnl,
+            'reason': exit_reason,
+            'win': realized_pnl > 0,
+        })
+        
+        # Remove from active positions
+        if symbol in self.position_data:
+            del self.position_data[symbol]
+        
+        # 💾 Persist outcomes to disk after each close for learning continuity
+        self._persist_outcomes()
+    
+    def get_position_win_rate(self, symbol: str = None) -> Dict[str, Any]:
+        """
+        Get win rate statistics for a symbol or all symbols.
+        Used to adjust probability confidence based on actual performance.
+        """
+        if symbol:
+            outcomes = self.position_outcomes.get(symbol, [])
+            if not outcomes:
+                return {'symbol': symbol, 'trades': 0, 'win_rate': 0.5}
+            wins = sum(1 for o in outcomes if o.get('win', False))
+            return {
+                'symbol': symbol,
+                'trades': len(outcomes),
+                'wins': wins,
+                'losses': len(outcomes) - wins,
+                'win_rate': wins / len(outcomes) if outcomes else 0.5,
+                'avg_hold_mins': np.mean([o.get('hold_duration_mins', 0) for o in outcomes]),
+            }
+        else:
+            # All symbols
+            all_outcomes = []
+            for sym_outcomes in self.position_outcomes.values():
+                all_outcomes.extend(sym_outcomes)
+            if not all_outcomes:
+                return {'trades': 0, 'win_rate': 0.5}
+            wins = sum(1 for o in all_outcomes if o.get('win', False))
+            return {
+                'trades': len(all_outcomes),
+                'wins': wins,
+                'losses': len(all_outcomes) - wins,
+                'win_rate': wins / len(all_outcomes) if all_outcomes else 0.5,
+            }
+    
+    def get_active_positions_summary(self) -> Dict[str, Any]:
+        """
+        Get summary of all active positions tracked by the probability matrix.
+        """
+        if not self.position_data:
+            return {'count': 0, 'positions': []}
+        
+        positions = []
+        total_value = 0.0
+        total_pnl = 0.0
+        
+        for symbol, pos in self.position_data.items():
+            positions.append({
+                'symbol': symbol,
+                'exchange': pos.exchange,
+                'value': pos.current_value,
+                'pnl': pos.unrealized_pnl,
+                'pnl_pct': pos.unrealized_pnl_pct,
+                'hold_mins': pos.hold_duration_mins,
+                'historical': pos.is_historical,
+            })
+            total_value += pos.current_value
+            total_pnl += pos.unrealized_pnl
+        
+        return {
+            'count': len(positions),
+            'total_value': total_value,
+            'total_pnl': total_pnl,
+            'last_sync': self.last_position_sync,
+            'positions': positions,
+        }
 
     def _load_frequency_log(self, path: str = "hnc_frequency_log.json") -> List[Dict[str, Any]]:
         if not os.path.exists(path):
@@ -893,10 +1165,59 @@ class HNCProbabilityIntegration:
             matrix.fine_tune_adjustment = adjustment
             matrix.fine_tuned_probability = fine_tuned
             matrix.fine_tune_reason = f"{reason} | Lighthouse: {lh_reason} ({lh_adj:+.2%})"
+        
+        # 📊 Position-based validation adjustment
+        pos_adj, pos_reason = self._compute_position_adjustment(symbol)
+        if pos_adj != 0.0:
+            pre = matrix.fine_tuned_probability
+            matrix.fine_tuned_probability = max(0.1, min(0.9, pre + pos_adj))
+            matrix.confidence_score = min(1.0, matrix.confidence_score + abs(pos_adj) * 0.5)
+            matrix.fine_tune_reason += f" | Position: {pos_reason}"
 
         self.matrices[symbol] = matrix
         
         return matrix
+    
+    def _compute_position_adjustment(self, symbol: str) -> Tuple[float, str]:
+        """
+        Compute probability adjustment based on position tracking data.
+        Uses historical win rate and current position performance.
+        """
+        adj = 0.0
+        reasons = []
+        
+        # Check historical win rate for this symbol
+        win_stats = self.get_position_win_rate(symbol)
+        if win_stats.get('trades', 0) >= 3:
+            win_rate = win_stats.get('win_rate', 0.5)
+            # Boost confidence for symbols with good track record
+            if win_rate > 0.65:
+                adj += 0.03
+                reasons.append(f"winrate {win_rate:.0%}↑")
+            elif win_rate < 0.35:
+                adj -= 0.03
+                reasons.append(f"winrate {win_rate:.0%}↓")
+        
+        # Check if we have an active position
+        if symbol in self.position_data:
+            pos = self.position_data[symbol]
+            
+            # If position is in profit, current direction is validated
+            if pos.unrealized_pnl_pct > 1.0:
+                adj += 0.02
+                reasons.append(f"pos +{pos.unrealized_pnl_pct:.1f}%")
+            elif pos.unrealized_pnl_pct < -2.0:
+                adj -= 0.02
+                reasons.append(f"pos {pos.unrealized_pnl_pct:.1f}%")
+            
+            # Long hold times with profit = stable trend
+            if pos.hold_duration_mins > 30 and pos.unrealized_pnl_pct > 0:
+                adj += 0.01
+                reasons.append(f"hold {pos.hold_duration_mins:.0f}m+profit")
+        
+        adj = max(-0.10, min(0.10, adj))
+        reason = ", ".join(reasons) if reasons else "no pos data"
+        return adj, reason
     
     def get_trading_signal(self, symbol: str) -> Dict[str, Any]:
         """Get trading signal based on probability matrix"""
@@ -911,6 +1232,22 @@ class HNCProbabilityIntegration:
         
         matrix = self.matrices[symbol]
         
+        # Include position info if we have it
+        pos_info = {}
+        if symbol in self.position_data:
+            pos = self.position_data[symbol]
+            pos_info = {
+                'has_position': True,
+                'position_pnl_pct': pos.unrealized_pnl_pct,
+                'hold_duration_mins': pos.hold_duration_mins,
+                'position_exchange': pos.exchange,
+            }
+        else:
+            pos_info = {'has_position': False}
+        
+        # Get win rate for this symbol
+        win_stats = self.get_position_win_rate(symbol)
+        
         return {
             'action': matrix.recommended_action,
             'probability': matrix.fine_tuned_probability,
@@ -919,6 +1256,9 @@ class HNCProbabilityIntegration:
             'reason': matrix.fine_tune_reason,
             'h1_state': matrix.hour_plus_1.state.value,
             'h2_influence': matrix.fine_tune_adjustment,
+            'position': pos_info,
+            'historical_win_rate': win_stats.get('win_rate', 0.5),
+            'historical_trades': win_stats.get('trades', 0),
         }
     
     def get_high_probability_opportunities(self, 

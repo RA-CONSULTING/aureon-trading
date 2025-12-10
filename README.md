@@ -8,7 +8,7 @@ Aureon is a **unified multi-exchange algorithmic trading system** designed to ac
 
 ## 🏗️ SYSTEM ARCHITECTURE
 
-```
+```text
                     ┌─────────────────────────────────────┐
                     │   AUREON UNIFIED ECOSYSTEM          │
                     │   (aureon_unified_ecosystem.py)     │
@@ -41,22 +41,100 @@ Aureon is a **unified multi-exchange algorithmic trading system** designed to ac
 
 ---
 
+## ⚡ Quickstart (Dry Run vs Live)
+
+### Install & configure
+
+- `pip install -r requirements.txt`
+- Copy `.env.example` → `.env`, add API keys (Binance, Kraken, Capital.com, Alpaca)
+
+### Dry run (default)
+
+- `python aureon_unified_ecosystem.py`
+
+### Live trading
+
+- `LIVE=1 FRESH_START=1 python aureon_unified_ecosystem.py`
+- Optional: `EXCHANGE=binance` (default multi-exchange); `BINANCE_USE_TESTNET=true` for testnet
+- UK accounts: `BINANCE_UK_MODE=true` (default) filters to UK-allowed pairs
+- Force entry if stuck: `FORCE_TRADE=1 [FORCE_TRADE_SYMBOL=XXXUSDC]` (still respects min liquidity)
+
+### Probability training (offline)
+
+- `PROB_TRAIN_TRADES=300 python probability_matrix_training.py`
+
+Logs: `tail -f unified_ecosystem.log` (live decisions), state: `aureon_kraken_state.json`, rejection reasons: `rejection_log.json`.
+
+---
+
+## 🛡️ Safety & Risk Controls
+
+- **Circuit breaker**: `MAX_DRAWDOWN_PCT=50%` (was 15%). Skips breaker during init and after `FRESH_START` to prevent false halts.
+- **Portfolio budget**: `PORTFOLIO_RISK_BUDGET=1.50` (150% notional cap) so imported holdings don’t block new trades.
+- **Profit gate**: requires ≥0.5% net after fees/spread/slippage (see `test_profit_gate.py`).
+- **Trailing stops**: enable at +0.5%, trail 0.3% (per strategy config).
+- **Kelly sizing**: Half-Kelly with caps; `MAX_SYMBOL_EXPOSURE` and per-trade caps enforced.
+- **Fresh start**: `FRESH_START=1` resets baselines before breaker activates; recommended after manual interventions.
+
+---
+
+## 🚀 Recent Improvements (Live Trading UX)
+
+- **Historical holdings as fuel**: Startup imports all exchange balances; marks them `is_historical` and can liquidate them when cash is needed for better opportunities. Ongoing harvesting takes 10% slices of winners (`HARVEST_PCT=0.10`).
+- **Auto-harvest**: Detects gains on imported positions and locks profit (seen on FARTCOIN/ETH/SHIB/BTC/XLM).
+- **Probability matrix refresh**: `probability_matrix_training.py` emits `probability_training_report.json` and `adaptive_learning_history.json` for transparency.
+- **Binance precision & UK filters**: Quote precision fixes reduce `LOT_SIZE` errors; UK mode avoids blocked symbols and invalid payloads.
+- **Kraken ticker robustness**: Altname mapping to avoid `EQuery:Unknown asset pair`.
+- **Liquidity-aware entries**: Skips illiquid symbols; will attempt historical-asset liquidation first.
+
+---
+
+## 🧭 Monitoring & Ops
+
+- Live log: `unified_ecosystem.log` (entries, exits, harvests, sweeps, P&L pool)
+- State snapshots: `aureon_kraken_state.json`, `multi_exchange_learning.json`, `rejection_log.json`
+- Probability artifacts: `probability_training_report.json`, `adaptive_learning_history.json`
+- Quick health check: `tail -f unified_ecosystem.log | grep "Market Sweep\|Pool:\|HARVEST"`
+
+---
+
+## 🧪 Testing
+
+- `test_profit_gate.py` — validates profit-gate math (fees, spread, slippage)
+- `smoke_test_json_integration.py` — validates aggregated feeds
+- `test_trade_capability.py`, `test_scout_deployment.py` — entry/position smoke
+
+---
+
+## 🐛 Known Issues / Tips
+
+- **Binance UK restrictions**: Many symbols are blocked; USDC/USDT only. Expect occasional `Invalid symbol` or zero-liquidity skips.
+- **Lot size / precision**: If Binance returns `Filter failure: LOT_SIZE`, the amount was too small; precision fixes help but very tiny balances may still fail.
+- **Kraken pair naming**: If you see `Unknown asset pair`, ensure symbol maps to Kraken altname (client handles most cases).
+- **Liquidity shortfalls**: Bot will try to liquidate historical assets when cash is low; it skips anything under ~$1 to avoid dust churn.
+
+---
+
 ## 🧬 KEY COMPONENTS
 
 ### 1. Multi-Exchange Client
+
 - **Kraken** (🐙): Primary crypto exchange (USD, GBP, EUR)
 - **Binance** (🟡): UK-compliant pairs (USDC, USDT)
 - **Capital.com** (💼): CFDs - Forex, Indices, Commodities
 - **Alpaca** (🦙): US Stocks & Crypto (analytics mode)
 
 ### 2. Smart Order Router
+
 Routes orders to the best exchange based on:
+
 - Real-time price comparison
 - Fee optimization (Binance 0.1% vs Kraken 0.26%)
 - Liquidity depth
 - UK regulatory compliance
 
 ### 3. Cross-Exchange Arbitrage Scanner
+
 Detects price discrepancies across exchanges for risk-free profit opportunities.
 
 ---
@@ -100,7 +178,7 @@ coherence = observation[GeometricSolid.DODECAHEDRON]
 
 The HNC Probability Matrix operates on a **2-hour temporal window**:
 
-```
+```text
 ├─ HOUR -1 (LOOKBACK):  Historical frequency patterns
 ├─ HOUR  0 (NOW):       Current calibration point  
 ├─ HOUR +1 (FORECAST):  ← PRIMARY TRADING SIGNAL
@@ -123,6 +201,7 @@ signal = prob_matrix.get_trading_signal(symbol)
 ```
 
 **Key Parameters:**
+
 - `PROB_MIN_CONFIDENCE: 0.50` → Minimum confidence threshold
 - `PROB_HIGH_THRESHOLD: 0.65` → High probability boost trigger
 - `PROB_FORECAST_WEIGHT: 0.40` → 40% weight in position sizing
@@ -133,7 +212,7 @@ signal = prob_matrix.get_trading_signal(symbol)
 
 All intelligence systems feed into the **Lambda Field** equation:
 
-```
+```text
 Λ(t) = S(t) + O(t) + E(t) + H(t) + Q(t)
 
 Where:
@@ -146,7 +225,7 @@ Where:
 
 ### Trading Decision Flow
 
-```
+```text
 Market Data (price, volume, momentum)
           │
           ├──► QUANTUM TELESCOPE (Geometric refraction)
@@ -288,7 +367,7 @@ CONFIG = {
 
 Profits are managed using the **10-9-1** system:
 
-```
+```text
 ├─ 90% → COMPOUND back into trading capital
 └─ 10% → HARVEST to safety (never re-risked)
 ```
@@ -380,8 +459,8 @@ Use this data for continuous learning and system optimization.
 
 ---
 
-> *"Mathematics is the language in which God has written the universe."* - Galileo Galilei
-> 
-> *"The market is a frequency. Trade in harmony."* - Gary Leckey
+> _"Mathematics is the language in which God has written the universe."_ - Galileo Galilei
+>
+> _"The market is a frequency. Trade in harmony."_ - Gary Leckey
 
-**Gary Leckey & GitHub Copilot | December 2025**
+Gary Leckey & GitHub Copilot | December 2025

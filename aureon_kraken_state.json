@@ -1,14 +1,81 @@
 {
-  "balance": 74.83289102958476,
-  "peak_balance": 74.83289102958476,
-  "total_trades": 0,
-  "wins": 0,
-  "losses": 0,
-  "total_fees": 0.0,
-  "compounded": 0.0,
-  "harvested": 0.0,
-  "max_drawdown": 0.0,
-  "positions": {},
-  "timestamp": 1765216469.8151417,
-  "iteration": 2
+  "balance": 143.04506185339994,
+  "peak_balance": 168.34710459983415,
+  "total_trades": 3,
+  "wins": 2,
+  "losses": 1,
+  "total_fees": 1.394898918301815,
+  "compounded": 35.813586334134904,
+  "harvested": 3.9792873704594345,
+  "max_drawdown": 23.116123872008547,
+  "positions": {
+    "BTCUSDC": {
+      "entry_price": 92697.725,
+      "quantity": 6.74e-06,
+      "entry_fee": 0.0006247826665,
+      "entry_value": 0.6247826665,
+      "momentum": 0.0,
+      "coherence": 0.5,
+      "entry_time": 1765318485.277281,
+      "dominant_node": "Portfolio",
+      "cycles": 98
+    },
+    "ETHUSDC": {
+      "entry_price": 3321.455,
+      "quantity": 0.00788857,
+      "entry_fee": 0.026201530269349998,
+      "entry_value": 26.20153026935,
+      "momentum": 0.0,
+      "coherence": 0.5,
+      "entry_time": 1765318485.740779,
+      "dominant_node": "Portfolio",
+      "cycles": 98
+    },
+    "ADAUSDC": {
+      "entry_price": 0.47255,
+      "quantity": 51.497415,
+      "entry_fee": 0.02433510345825,
+      "entry_value": 24.33510345825,
+      "momentum": 0.0,
+      "coherence": 0.5,
+      "entry_time": 1765318490.32436,
+      "dominant_node": "Portfolio",
+      "cycles": 98
+    },
+    "XLMUSDC": {
+      "entry_price": 0.25345,
+      "quantity": 3.93635,
+      "entry_fee": 0.0009976679075,
+      "entry_value": 0.9976679075,
+      "momentum": 0.0,
+      "coherence": 0.5,
+      "entry_time": 1765318490.5525932,
+      "dominant_node": "Portfolio",
+      "cycles": 98
+    },
+    "DOGEUSDC": {
+      "entry_price": 0.148235,
+      "quantity": 0.46905000000000996,
+      "entry_fee": 0.025862419626750004,
+      "entry_value": 0.06956011500000148,
+      "momentum": 0.0,
+      "coherence": 0.5,
+      "entry_time": 1765318499.6455824,
+      "dominant_node": "Portfolio",
+      "cycles": 98
+    },
+    "SOLUSDC": {
+      "entry_price": 138.4081188118812,
+      "quantity": 0.20199999999999999,
+      "entry_fee": 0.026560518,
+      "entry_value": 27.95844,
+      "momentum": 3.279,
+      "coherence": 0.65,
+      "entry_time": 1765318640.0496092,
+      "dominant_node": "ForceScout",
+      "cycles": 98
+    }
+  },
+  "timestamp": 1765323562.9729803,
+  "iteration": 98
 }

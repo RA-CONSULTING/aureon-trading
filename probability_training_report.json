@@ -1,0 +1,70 @@
+{
+  "generated_at": "2025-12-09T00:49:47.752381+00:00",
+  "source": "probability_matrix_training",
+  "data": [
+    {
+      "symbol": "ASRRUSD",
+      "probability": 0.5507246376811594,
+      "win_rate": 0.5507246376811594,
+      "trades": 69,
+      "wins": 38,
+      "losses": 31,
+      "gross_pnl": 51.200000000000045,
+      "fees": 36.01312000000001,
+      "net_pnl": 15.186880000000007,
+      "avg_win": 1.4748000000000012,
+      "avg_loss": -1.3179200000000006,
+      "source": "probability_matrix_training",
+      "run_id": "20251209T004947",
+      "timestamp": "2025-12-09T00:49:47.752295+00:00"
+    },
+    {
+      "symbol": "MUBARAKUSD",
+      "probability": 0.5492957746478874,
+      "win_rate": 0.5492957746478874,
+      "trades": 71,
+      "wins": 39,
+      "losses": 32,
+      "gross_pnl": 52.39999999999999,
+      "fees": 37.05624000000001,
+      "net_pnl": 15.343760000000007,
+      "avg_win": 1.4748000000000014,
+      "avg_loss": -1.3179200000000006,
+      "source": "probability_matrix_training",
+      "run_id": "20251209T004947",
+      "timestamp": "2025-12-09T00:49:47.752295+00:00"
+    },
+    {
+      "symbol": "CHECKUSD",
+      "probability": 0.5411764705882353,
+      "win_rate": 0.5411764705882353,
+      "trades": 85,
+      "wins": 46,
+      "losses": 39,
+      "gross_pnl": 60.80000000000004,
+      "fees": 44.35807999999997,
+      "net_pnl": 16.44192000000001,
+      "avg_win": 1.4748000000000012,
+      "avg_loss": -1.3179200000000006,
+      "source": "probability_matrix_training",
+      "run_id": "20251209T004947",
+      "timestamp": "2025-12-09T00:49:47.752295+00:00"
+    },
+    {
+      "symbol": "ACAUSD",
+      "probability": 0.4666666666666667,
+      "win_rate": 0.4666666666666667,
+      "trades": 75,
+      "wins": 35,
+      "losses": 40,
+      "gross_pnl": 37.999999999999986,
+      "fees": 39.09879999999999,
+      "net_pnl": -1.0987999999999953,
+      "avg_win": 1.4748000000000012,
+      "avg_loss": -1.3179200000000006,
+      "source": "probability_matrix_training",
+      "run_id": "20251209T004947",
+      "timestamp": "2025-12-09T00:49:47.752295+00:00"
+    }
+  ]
+}
