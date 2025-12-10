@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { unifiedBus, type BusSnapshot, type SystemState } from '@/core/unifiedBus';
 import { elephantMemory, type ElephantState } from '@/core/elephantMemory';
 import { Activity, Brain, Zap, Heart, Database, Shield, TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 const systemIcons: Record<string, React.ReactNode> = {
   DataIngestion: <Database className="h-4 w-4" />,
@@ -25,6 +26,34 @@ const SignalIcon = ({ signal }: { signal: string }) => {
   if (signal === 'SELL') return <TrendingDown className="h-3 w-3" />;
   return <Minus className="h-3 w-3" />;
 };
+
+// Animated value that pulses on change
+function AnimatedValue({ value, format = 'percent' }: { value: number; format?: 'percent' | 'number' }) {
+  const [isAnimating, setIsAnimating] = useState(false);
+  const prevValueRef = useRef(value);
+  
+  useEffect(() => {
+    if (Math.abs(value - prevValueRef.current) > 0.001) {
+      setIsAnimating(true);
+      prevValueRef.current = value;
+      const timer = setTimeout(() => setIsAnimating(false), 300);
+      return () => clearTimeout(timer);
+    }
+  }, [value]);
+  
+  const displayValue = format === 'percent' 
+    ? `${(value * 100).toFixed(1)}%` 
+    : value.toFixed(3);
+  
+  return (
+    <span className={cn(
+      "transition-all duration-300 font-mono",
+      isAnimating && "text-primary scale-110"
+    )}>
+      {displayValue}
+    </span>
+  );
+}
 
 function SystemCard({ name, state }: { name: string; state: SystemState | undefined }) {
   if (!state) {
@@ -58,14 +87,14 @@ function SystemCard({ name, state }: { name: string; state: SystemState | undefi
       <div className="space-y-1">
         <div className="flex justify-between text-xs text-muted-foreground">
           <span>Coherence</span>
-          <span>{(state.coherence * 100).toFixed(1)}%</span>
+          <AnimatedValue value={state.coherence} format="percent" />
         </div>
-        <Progress value={state.coherence * 100} className="h-1" />
+        <Progress value={state.coherence * 100} className="h-1 transition-all duration-300" />
       </div>
       
       <div className="mt-2 flex justify-between text-xs text-muted-foreground">
         <span>Confidence</span>
-        <span>{(state.confidence * 100).toFixed(1)}%</span>
+        <AnimatedValue value={state.confidence} format="percent" />
       </div>
     </div>
   );
@@ -140,8 +169,12 @@ export function UnifiedBusStatus() {
     <Card className="bg-card/50 backdrop-blur border-primary/20">
       <CardHeader className="pb-2">
         <CardTitle className="flex items-center gap-2 text-lg">
-          <Activity className="h-5 w-5 text-primary" />
+          <Activity className="h-5 w-5 text-primary animate-pulse" />
           Unified Bus Status
+          <span className="ml-2 flex items-center gap-1 text-xs text-green-400">
+            <span className="h-2 w-2 rounded-full bg-green-400 animate-pulse" />
+            LIVE
+          </span>
           {snapshot && (
             <Badge 
               variant="outline" 
