@@ -23,10 +23,12 @@ export interface LearningState {
   confidence: number;
 }
 
+// Demo/calibration mode - lower thresholds to allow trades to flow
+// Once we have 10+ trades, system will learn optimal thresholds from actual performance
 const DEFAULT_THRESHOLDS: LearnedThresholds = {
-  coherenceMin: 0.70,
+  coherenceMin: 0.35, // Lowered from 0.70 to allow demo trading
   coherenceMax: 1.0,
-  confidenceMin: 0.50,
+  confidenceMin: 0.40, // Lowered from 0.50
   kellyMultiplier: 0.5, // Half-Kelly default
   optimalHours: [],
   avoidHours: [],

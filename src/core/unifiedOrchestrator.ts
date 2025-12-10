@@ -89,8 +89,8 @@ export interface OrchestratorConfig {
 }
 
 const DEFAULT_CONFIG: OrchestratorConfig = {
-  minCoherence: 0.70,
-  minConfidence: 0.50,
+  minCoherence: 0.35, // Lowered from 0.70 for demo mode
+  minConfidence: 0.40, // Lowered from 0.50 for demo mode
   requireLHE: false,
   dryRun: true,
 };
