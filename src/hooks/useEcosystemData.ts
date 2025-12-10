@@ -8,6 +8,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { unifiedBus, BusSnapshot, SignalType } from '../core/unifiedBus';
 import { fullEcosystemConnector, FullEcosystemState, SystemHealthStatus } from '../core/fullEcosystemConnector';
 import { temporalLadder, TemporalLadderState } from '../core/temporalLadder';
+import { earthLiveDataIntegration, EarthIntegrationState } from '../core/earthLiveDataIntegration';
 
 export interface EcosystemMetrics {
   // Core field metrics
@@ -283,23 +284,56 @@ export function useHarmonicMetrics() {
 }
 
 /**
- * Hook for Earth/Schumann analytics
+ * Hook for Earth/Schumann analytics - uses REAL Earth Live Data
  */
 export function useEarthMetrics() {
+  const [earthState, setEarthState] = useState<EarthIntegrationState | null>(null);
   const { metrics, isInitialized } = useEcosystemData();
   
-  // Derive Earth-specific metrics from ecosystem state
-  const schumannFrequency = 7.83 + (metrics.coherence - 0.5) * 0.1;
-  const magneticField = 0.7 + metrics.coherence * 0.25;
-  const ionosphereActivity = 0.6 + metrics.hiveMindCoherence * 0.3;
+  useEffect(() => {
+    // Subscribe to Earth integration updates
+    const unsubEarth = earthLiveDataIntegration.subscribe((state) => {
+      setEarthState(state);
+    });
+    
+    // Get initial state
+    setEarthState(earthLiveDataIntegration.getState());
+    
+    return () => unsubEarth();
+  }, []);
+  
+  // Use real data from CSV files if available, otherwise derive from ecosystem
+  const schumannFrequency = earthState?.frequency ?? (7.83 + (metrics.coherence - 0.5) * 0.1);
+  const magneticFieldMagnitude = earthState?.magneticField?.magnitude ?? (0.7 + metrics.coherence * 0.25);
+  const phaseLock = earthState?.phaseLock ?? false;
+  const harmonicFidelity = earthState?.harmonicFidelity ?? 0;
   
   return {
+    // Real Schumann data
     schumannFrequency,
-    magneticField,
-    ionosphereActivity,
+    magneticField: magneticFieldMagnitude,
+    electricField: earthState?.electricField?.magnitude ?? 0,
+    phaseLock,
+    harmonicFidelity,
+    
+    // 5-mode Schumann amplitudes
+    modes: earthState?.modes ?? { mode1: 0, mode2: 0, mode3: 0, mode4: 0, mode5: 0 },
+    
+    // Field vectors
+    magneticVector: earthState?.magneticField ?? { Bx: 0, By: 0, Bz: 0, magnitude: 0 },
+    electricVector: earthState?.electricField ?? { Ex: 0, Ey: 0, magnitude: 0 },
+    
+    // Validation
+    validation: earthState?.validation ?? null,
+    
+    // Legacy derived values
+    ionosphereActivity: 0.6 + metrics.hiveMindCoherence * 0.3,
     solarWind: 0.75 + (metrics.coherence - 0.5) * 0.2,
     geomagneticIndex: metrics.stargateNetworkStrength,
     coherenceBoost: Math.max(0, (0.15 - Math.abs(schumannFrequency - 7.83)) / 0.15) * 0.12,
+    
+    // State flags
+    isEarthDataLoaded: earthState?.isInitialized ?? false,
     isInitialized,
   };
 }
