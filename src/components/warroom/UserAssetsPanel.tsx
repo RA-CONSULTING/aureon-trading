@@ -37,22 +37,29 @@ export function UserAssetsPanel() {
     lastUpdated,
     refresh,
     getConsolidatedAssets 
-  } = useUserBalances(true, 30000);
+  } = useUserBalances(true, 10000); // Refresh every 10 seconds
 
   const consolidatedAssets = getConsolidatedAssets();
+  const isLive = lastUpdated && (Date.now() - lastUpdated.getTime()) < 15000;
 
   return (
-    <Card className="border-border/50">
+    <Card className="border-border/50 border-2 border-primary/20">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <CardTitle className="text-sm font-medium flex items-center gap-2">
             <Wallet className="h-4 w-4" />
-            PORTFOLIO HOLDINGS
+            LIVE PORTFOLIO
+            {isLive && (
+              <span className="flex items-center gap-1 text-[10px] text-green-400">
+                <span className="h-2 w-2 rounded-full bg-green-400 animate-pulse" />
+                LIVE
+              </span>
+            )}
           </CardTitle>
           <div className="flex items-center gap-2">
             {lastUpdated && (
               <span className="text-[10px] text-muted-foreground">
-                Updated {lastUpdated.toLocaleTimeString()}
+                {lastUpdated.toLocaleTimeString()}
               </span>
             )}
             <Button 

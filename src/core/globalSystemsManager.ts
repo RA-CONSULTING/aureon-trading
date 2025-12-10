@@ -18,6 +18,7 @@ import { tickerCacheManager } from './tickerCacheManager';
 import { startupHarvester } from './startupHarvester';
 import { predictionAccuracyTracker } from './predictionAccuracyTracker';
 import { tradeLogger } from './tradeLogger';
+import { capitalPool } from './capitalPool';
 import { supabase } from '@/integrations/supabase/client';
 
 export interface GlobalState {
@@ -434,9 +435,20 @@ class GlobalSystemsManager {
     // Initialize exchange client
     multiExchangeClient.initialize().catch(console.error);
     
-    // Subscribe to exchange updates
+    // Subscribe to exchange updates and sync balances for trading
     this.exchangeUnsubscribe = multiExchangeClient.subscribe((state: MultiExchangeState) => {
-      this.updateState({ exchangeState: state });
+      this.updateState({ 
+        exchangeState: state,
+        // Sync balance to trading state
+        totalEquity: state.totalEquityUsd || 0,
+        availableBalance: state.totalEquityUsd || 0,
+      });
+      
+      // Update Capital Pool with new equity
+      if (state.totalEquityUsd > 0) {
+        capitalPool.updateEquity(state.totalEquityUsd, 0);
+        console.log(`💰 [GlobalSystems] Balance synced: $${state.totalEquityUsd.toFixed(2)}`);
+      }
     });
     
     // Register systems with Temporal Ladder

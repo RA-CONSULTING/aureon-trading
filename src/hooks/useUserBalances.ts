@@ -32,7 +32,7 @@ export interface UserBalancesState {
   lastUpdated: Date | null;
 }
 
-export function useUserBalances(autoRefresh: boolean = true, refreshInterval: number = 30000) {
+export function useUserBalances(autoRefresh: boolean = true, refreshInterval: number = 10000) {
   const [state, setState] = useState<UserBalancesState>({
     balances: [],
     totalEquityUsd: 0,
@@ -41,6 +41,7 @@ export function useUserBalances(autoRefresh: boolean = true, refreshInterval: nu
     error: null,
     lastUpdated: null
   });
+  const [fetchCount, setFetchCount] = useState(0);
 
   const fetchBalances = useCallback(async () => {
     try {
@@ -64,6 +65,9 @@ export function useUserBalances(autoRefresh: boolean = true, refreshInterval: nu
       }
 
       if (data?.success) {
+        setFetchCount(c => c + 1);
+        console.log(`[useUserBalances] Fetch #${fetchCount + 1}: $${data.totalEquityUsd?.toFixed(2)} from ${data.connectedExchanges?.length || 0} exchanges`);
+        
         setState({
           balances: data.balances || [],
           totalEquityUsd: data.totalEquityUsd || 0,
@@ -83,7 +87,7 @@ export function useUserBalances(autoRefresh: boolean = true, refreshInterval: nu
         error: err instanceof Error ? err.message : 'Unknown error'
       }));
     }
-  }, []);
+  }, [fetchCount]);
 
   // Initial fetch and auto-refresh
   useEffect(() => {
