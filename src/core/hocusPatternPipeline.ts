@@ -165,9 +165,11 @@ export class HocusPatternPipeline {
     const F = -0.1 * currentField;
     const dt = 1;
     
-    // η(t) - Gaussian noise
-    const u1 = Math.random();
-    const u2 = Math.random();
+    // η(t) - Deterministic noise based on field state (not Math.random)
+    // Use a hash of the current field and step count for reproducible noise
+    const seedVal = Math.abs((currentField * 1000 + this.stepCount) % 1);
+    const u1 = Math.max(0.0001, seedVal || 0.5);
+    const u2 = Math.max(0.0001, Math.abs((currentField * 7919 + this.stepCount * 13) % 1) || 0.3);
     const noise = this.config.noiseAmplitude * Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
     
     const rawField = currentField + F * dt + noise;
@@ -215,8 +217,8 @@ export class HocusPatternPipeline {
       // Enhanced with codex boost
       const { lambda, aurisBoost } = this.computeEnhancedGrowthRate(k, freq);
       
-      // ξₖ - projected noise
-      const xi = (Math.random() - 0.5) * 0.05;
+      // ξₖ - projected noise (deterministic based on mode and step)
+      const xi = ((k * 7 + this.stepCount * 13) % 100 / 100 - 0.5) * 0.05;
       
       // Update amplitude with dynamics
       const history = this.modeHistories.get(k) || [];

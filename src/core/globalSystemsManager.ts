@@ -554,22 +554,24 @@ class GlobalSystemsManager {
           reason: result.finalDecision.reason
         });
         
-        // Simulate trade for paper trading
-        const pnl = (Math.random() - 0.3) * 50;
+        // Execute trade via UnifiedOrchestrator (not simulation)
+        // The orchestrator handles paper vs live mode internally via config.dryRun
+        console.log(`[GlobalSystems] Trade signal: ${result.finalDecision.action} BTCUSDT`);
+        
+        // Record the trade attempt - actual execution happens in orchestrator
         const newTrade = {
           time: new Date().toLocaleTimeString(),
           side: result.finalDecision.action,
           symbol: 'BTCUSDT',
           quantity: 0.01,
-          pnl,
-          success: pnl > 0
+          pnl: 0, // Real P&L will be calculated on trade close
+          success: result.tradeExecuted,
+          pending: !result.tradeExecuted
         };
         
         this.updateState({
           lastSignal: signal,
-          totalTrades: this.state.totalTrades + 1,
-          winningTrades: pnl > 0 ? this.state.winningTrades + 1 : this.state.winningTrades,
-          totalPnl: this.state.totalPnl + pnl,
+          totalTrades: result.tradeExecuted ? this.state.totalTrades + 1 : this.state.totalTrades,
           recentTrades: [newTrade, ...this.state.recentTrades.slice(0, 9)],
         });
       }
@@ -581,26 +583,23 @@ class GlobalSystemsManager {
   
   /**
    * Fetch market data from edge function
+   * THROWS if live data is unavailable - no simulation fallback
    */
   private async fetchMarketData(symbol: string = 'BTCUSDT'): Promise<GlobalState['marketData']> {
-    try {
-      const { data, error } = await supabase.functions.invoke('get-user-market-data', {
-        body: { symbol }
-      });
-      
-      if (error) throw error;
-      return data;
-    } catch {
-      // Fallback
-      return {
-        price: 67000 + (Math.random() - 0.5) * 1000,
-        volume: 1000000 + Math.random() * 500000,
-        volatility: 0.02 + Math.random() * 0.03,
-        momentum: (Math.random() - 0.5) * 0.1,
-        spread: 0.0001 + Math.random() * 0.0005,
-        timestamp: Date.now()
-      };
+    const { data, error } = await supabase.functions.invoke('get-user-market-data', {
+      body: { symbol }
+    });
+    
+    if (error) {
+      console.error('[GlobalSystems] Failed to fetch live market data:', error);
+      throw new Error(`Live market data unavailable: ${error.message}`);
     }
+    
+    if (!data || !data.price || data.price <= 0) {
+      throw new Error('Invalid market data received - price must be positive');
+    }
+    
+    return data;
   }
   
   /**
