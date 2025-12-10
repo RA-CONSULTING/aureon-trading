@@ -5,35 +5,94 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Decrypt credentials using MASTER_ENCRYPTION_KEY
+async function decrypt(encrypted: string, iv: string): Promise<string> {
+  const masterKey = Deno.env.get('MASTER_ENCRYPTION_KEY');
+  if (!masterKey) throw new Error('No encryption key configured');
+  
+  const keyData = new TextEncoder().encode(masterKey.padEnd(32, '0').slice(0, 32));
+  const key = await crypto.subtle.importKey('raw', keyData, { name: 'AES-GCM' }, false, ['decrypt']);
+  
+  const encryptedData = Uint8Array.from(atob(encrypted), c => c.charCodeAt(0));
+  const ivData = Uint8Array.from(atob(iv), c => c.charCodeAt(0));
+  
+  const decrypted = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: ivData }, key, encryptedData);
+  return new TextDecoder().decode(decrypted);
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { exchange, apiKey, apiSecret, identifier, password } = await req.json();
+    const { exchange } = await req.json();
 
-    if (!exchange || !apiKey) {
+    if (!exchange) {
       return new Response(JSON.stringify({ 
         success: false, 
-        error: 'Exchange and API key required' 
+        error: 'Exchange required' 
       }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    console.log(`🔌 Testing ${exchange} connection...`);
+    // Get authenticated user
+    const authHeader = req.headers.get('Authorization');
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
 
-    let result: { success: boolean; message: string; details?: any };
+    const token = authHeader?.replace('Bearer ', '');
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
 
-    switch (exchange.toLowerCase()) {
+    if (authError || !user) {
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: 'Authentication required' 
+      }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Get user's credentials from database
+    const { data: session, error: sessionError } = await supabase
+      .from('aureon_user_sessions')
+      .select('*')
+      .eq('user_id', user.id)
+      .single();
+
+    if (sessionError || !session) {
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: 'No session found. Please configure credentials in Settings.' 
+      }), {
+        status: 404,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    console.log(`🔌 Testing ${exchange} connection for user ${user.id.slice(0, 8)}...`);
+
+    let result: { success: boolean; message: string; balance?: number; details?: any };
+    const exchangeLower = exchange.toLowerCase().replace('.', '');
+
+    switch (exchangeLower) {
       case 'binance': {
-        // Test Binance connection by checking account status
+        if (!session.binance_api_key_encrypted || !session.binance_iv) {
+          result = { success: false, message: 'Binance credentials not configured' };
+          break;
+        }
+
+        const apiKey = await decrypt(session.binance_api_key_encrypted, session.binance_iv);
+        const apiSecret = await decrypt(session.binance_api_secret_encrypted, session.binance_iv);
+
         const timestamp = Date.now();
         const queryString = `timestamp=${timestamp}`;
         
-        // Create HMAC signature
         const encoder = new TextEncoder();
         const key = await crypto.subtle.importKey(
           'raw',
@@ -56,13 +115,16 @@ Deno.serve(async (req) => {
 
         if (response.ok) {
           const data = await response.json();
+          // Calculate total USDT balance
+          const usdtBalance = data.balances?.find((b: any) => b.asset === 'USDT');
+          const totalBalance = parseFloat(usdtBalance?.free || '0') + parseFloat(usdtBalance?.locked || '0');
+          
           result = { 
             success: true, 
             message: 'Binance connection successful',
+            balance: totalBalance,
             details: { 
               canTrade: data.canTrade,
-              canWithdraw: data.canWithdraw,
-              canDeposit: data.canDeposit,
               accountType: data.accountType
             }
           };
@@ -77,12 +139,18 @@ Deno.serve(async (req) => {
       }
 
       case 'kraken': {
-        // Test Kraken connection
+        if (!session.kraken_api_key_encrypted || !session.kraken_iv) {
+          result = { success: false, message: 'Kraken credentials not configured' };
+          break;
+        }
+
+        const apiKey = await decrypt(session.kraken_api_key_encrypted, session.kraken_iv);
+        const apiSecret = await decrypt(session.kraken_api_secret_encrypted, session.kraken_iv);
+
         const nonce = Date.now() * 1000;
         const postData = `nonce=${nonce}`;
         const path = '/0/private/Balance';
         
-        // Create Kraken signature
         const encoder = new TextEncoder();
         const sha256Hash = await crypto.subtle.digest('SHA-256', encoder.encode(nonce + postData));
         const message = new Uint8Array([...encoder.encode(path), ...new Uint8Array(sha256Hash)]);
@@ -95,8 +163,8 @@ Deno.serve(async (req) => {
           false,
           ['sign']
         );
-        const signature = await crypto.subtle.sign('HMAC', key, message);
-        const signatureB64 = btoa(String.fromCharCode(...new Uint8Array(signature)));
+        const signatureBuf = await crypto.subtle.sign('HMAC', key, message);
+        const signatureB64 = btoa(String.fromCharCode(...new Uint8Array(signatureBuf)));
 
         const response = await fetch(`https://api.kraken.com${path}`, {
           method: 'POST',
@@ -112,9 +180,11 @@ Deno.serve(async (req) => {
         if (data.error && data.error.length > 0) {
           result = { success: false, message: `Kraken error: ${data.error.join(', ')}` };
         } else {
+          const zusd = parseFloat(data.result?.ZUSD || '0');
           result = { 
             success: true, 
             message: 'Kraken connection successful',
+            balance: zusd,
             details: { balanceCount: Object.keys(data.result || {}).length }
           };
         }
@@ -122,7 +192,14 @@ Deno.serve(async (req) => {
       }
 
       case 'alpaca': {
-        // Test Alpaca connection
+        if (!session.alpaca_api_key_encrypted || !session.alpaca_iv) {
+          result = { success: false, message: 'Alpaca credentials not configured' };
+          break;
+        }
+
+        const apiKey = await decrypt(session.alpaca_api_key_encrypted, session.alpaca_iv);
+        const apiSecret = await decrypt(session.alpaca_secret_key_encrypted, session.alpaca_iv);
+
         const response = await fetch('https://api.alpaca.markets/v2/account', {
           headers: {
             'APCA-API-KEY-ID': apiKey,
@@ -135,10 +212,10 @@ Deno.serve(async (req) => {
           result = { 
             success: true, 
             message: 'Alpaca connection successful',
+            balance: parseFloat(data.portfolio_value || '0'),
             details: { 
               status: data.status,
-              tradingBlocked: data.trading_blocked,
-              accountNumber: data.account_number?.slice(-4)
+              tradingBlocked: data.trading_blocked
             }
           };
         } else {
@@ -147,24 +224,30 @@ Deno.serve(async (req) => {
         break;
       }
 
-      case 'capital': {
-        // Test Capital.com connection
+      case 'capitalcom': {
+        if (!session.capital_api_key_encrypted || !session.capital_iv) {
+          result = { success: false, message: 'Capital.com credentials not configured' };
+          break;
+        }
+
+        const apiKey = await decrypt(session.capital_api_key_encrypted, session.capital_iv);
+        const identifier = await decrypt(session.capital_identifier_encrypted, session.capital_iv);
+        const password = await decrypt(session.capital_password_encrypted, session.capital_iv);
+
         const response = await fetch('https://api-capital.backend-capital.com/api/v1/session', {
           method: 'POST',
           headers: {
             'X-CAP-API-KEY': apiKey,
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify({
-            identifier: identifier || '',
-            password: password || ''
-          })
+          body: JSON.stringify({ identifier, password })
         });
 
         if (response.ok) {
           result = { 
             success: true, 
-            message: 'Capital.com connection successful' 
+            message: 'Capital.com connection successful',
+            balance: 0 // Would need additional call to get balance
           };
         } else {
           result = { success: false, message: 'Capital.com: Invalid credentials' };
