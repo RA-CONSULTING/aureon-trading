@@ -233,6 +233,96 @@ export type Database = {
         }
         Relationships: []
       }
+      auris_node_states: {
+        Row: {
+          active_nodes: number
+          cargoship_frequency: number
+          cargoship_value: number
+          clownfish_frequency: number
+          clownfish_value: number
+          created_at: string | null
+          deer_frequency: number
+          deer_value: number
+          dolphin_frequency: number
+          dolphin_value: number
+          dominant_node: string
+          falcon_frequency: number
+          falcon_value: number
+          harmonic_resonance: number
+          hummingbird_frequency: number
+          hummingbird_value: number
+          id: string
+          metadata: Json | null
+          owl_frequency: number
+          owl_value: number
+          panda_frequency: number
+          panda_value: number
+          temporal_id: string
+          tiger_frequency: number
+          tiger_value: number
+          timestamp: string | null
+          total_coherence: number
+        }
+        Insert: {
+          active_nodes?: number
+          cargoship_frequency?: number
+          cargoship_value?: number
+          clownfish_frequency?: number
+          clownfish_value?: number
+          created_at?: string | null
+          deer_frequency?: number
+          deer_value?: number
+          dolphin_frequency?: number
+          dolphin_value?: number
+          dominant_node?: string
+          falcon_frequency?: number
+          falcon_value?: number
+          harmonic_resonance?: number
+          hummingbird_frequency?: number
+          hummingbird_value?: number
+          id?: string
+          metadata?: Json | null
+          owl_frequency?: number
+          owl_value?: number
+          panda_frequency?: number
+          panda_value?: number
+          temporal_id: string
+          tiger_frequency?: number
+          tiger_value?: number
+          timestamp?: string | null
+          total_coherence?: number
+        }
+        Update: {
+          active_nodes?: number
+          cargoship_frequency?: number
+          cargoship_value?: number
+          clownfish_frequency?: number
+          clownfish_value?: number
+          created_at?: string | null
+          deer_frequency?: number
+          deer_value?: number
+          dolphin_frequency?: number
+          dolphin_value?: number
+          dominant_node?: string
+          falcon_frequency?: number
+          falcon_value?: number
+          harmonic_resonance?: number
+          hummingbird_frequency?: number
+          hummingbird_value?: number
+          id?: string
+          metadata?: Json | null
+          owl_frequency?: number
+          owl_value?: number
+          panda_frequency?: number
+          panda_value?: number
+          temporal_id?: string
+          tiger_frequency?: number
+          tiger_value?: number
+          timestamp?: string | null
+          total_coherence?: number
+        }
+        Relationships: []
+      }
       backtest_results: {
         Row: {
           avg_trade_duration: number | null
@@ -1815,6 +1905,69 @@ export type Database = {
           timestamp?: string | null
           upper_left?: number
           upper_right?: number
+        }
+        Relationships: []
+      }
+      kelly_computation_states: {
+        Row: {
+          avg_loss: number
+          avg_win: number
+          created_at: string | null
+          id: string
+          kelly_fraction: number
+          kelly_half: number
+          kelly_quarter: number
+          losing_trades: number
+          max_position_pct: number
+          metadata: Json | null
+          min_position_pct: number
+          recommended_position_pct: number
+          temporal_id: string
+          timestamp: string | null
+          total_trades: number
+          win_loss_ratio: number
+          win_rate: number
+          winning_trades: number
+        }
+        Insert: {
+          avg_loss?: number
+          avg_win?: number
+          created_at?: string | null
+          id?: string
+          kelly_fraction?: number
+          kelly_half?: number
+          kelly_quarter?: number
+          losing_trades?: number
+          max_position_pct?: number
+          metadata?: Json | null
+          min_position_pct?: number
+          recommended_position_pct?: number
+          temporal_id: string
+          timestamp?: string | null
+          total_trades?: number
+          win_loss_ratio?: number
+          win_rate?: number
+          winning_trades?: number
+        }
+        Update: {
+          avg_loss?: number
+          avg_win?: number
+          created_at?: string | null
+          id?: string
+          kelly_fraction?: number
+          kelly_half?: number
+          kelly_quarter?: number
+          losing_trades?: number
+          max_position_pct?: number
+          metadata?: Json | null
+          min_position_pct?: number
+          recommended_position_pct?: number
+          temporal_id?: string
+          timestamp?: string | null
+          total_trades?: number
+          win_loss_ratio?: number
+          win_rate?: number
+          winning_trades?: number
         }
         Relationships: []
       }

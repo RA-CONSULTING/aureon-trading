@@ -249,3 +249,11 @@ verify_jwt = true
 
 [functions.ingest-exchange-learning]
 verify_jwt = true
+
+# Auris nodes state ingestion (9 animal totems)
+[functions.ingest-auris-state]
+verify_jwt = false
+
+# Dynamic Kelly computation from calibration trades
+[functions.ingest-kelly-computation]
+verify_jwt = false
