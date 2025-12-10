@@ -30,6 +30,7 @@ import { exchangeLearningTracker } from './exchangeLearningTracker';
 import { tradeLogger } from './tradeLogger';
 import { adaptiveLearningEngine } from './adaptiveLearningEngine';
 import { supabase } from '@/integrations/supabase/client';
+import { getEarthStreams, earthStreamsMonitor, type SimpleEarthStreams } from '@/lib/earth-streams';
 
 export interface TradeExecutionResult {
   success: boolean;
@@ -111,6 +112,40 @@ export class UnifiedOrchestrator {
     // Register with Temporal Ladder
     temporalLadder.registerSystem(SYSTEMS.MASTER_EQUATION);
     temporalLadder.registerSystem(SYSTEMS.HOCUS_PATTERN);
+    
+    // Initialize Earth streams monitoring
+    if (!earthStreamsMonitor.isMonitoringActive()) {
+      earthStreamsMonitor.initialize();
+    }
+  }
+  
+  /**
+   * Fetch Earth streams data
+   */
+  private async fetchEarthStreams(): Promise<SimpleEarthStreams | null> {
+    try {
+      return await getEarthStreams();
+    } catch (err) {
+      console.debug('[Orchestrator] Earth streams unavailable');
+      return null;
+    }
+  }
+  
+  /**
+   * Fetch Schumann resonance data from edge function
+   */
+  private async fetchSchumannData(): Promise<{ coherenceBoost: number; fundamentalHz: number } | null> {
+    try {
+      const { data, error } = await supabase.functions.invoke('fetch-schumann-data');
+      if (error || !data) return null;
+      return {
+        coherenceBoost: data.coherenceBoost || 0,
+        fundamentalHz: data.fundamentalHz || 7.83
+      };
+    } catch (err) {
+      console.debug('[Orchestrator] Schumann data unavailable');
+      return null;
+    }
   }
   
   /**
@@ -119,6 +154,22 @@ export class UnifiedOrchestrator {
   async runCycle(marketSnapshot: MarketSnapshot, symbol: string = 'BTCUSDT'): Promise<OrchestrationResult> {
     this.currentSymbol = symbol;
     const timestamp = Date.now();
+    
+    // Step 0: Fetch Earth streams and Schumann data to feed into MasterEquation
+    try {
+      const earthStreams = await this.fetchEarthStreams();
+      if (earthStreams) {
+        this.masterEquation.setEarthStreams(earthStreams);
+      }
+      
+      const schumannData = await this.fetchSchumannData();
+      if (schumannData && schumannData.coherenceBoost) {
+        this.masterEquation.setUserLocation(0, 0, 0, schumannData.coherenceBoost);
+      }
+    } catch (err) {
+      // Non-critical - continue with cycle
+      console.debug('[Orchestrator] Earth/Schumann data unavailable:', err);
+    }
     
     // Step 1: Publish DataIngestion state
     this.publishDataIngestion(marketSnapshot);
