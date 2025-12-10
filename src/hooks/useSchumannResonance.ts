@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 export interface SchumannHarmonic {
@@ -22,7 +22,7 @@ export interface SchumannData {
 
 /**
  * Production-ready Schumann Resonance hook
- * NO SIMULATION - Returns null when live data unavailable
+ * Fetches LIVE data and PERSISTS to consciousness_field_history
  */
 export function useSchumannResonance() {
   const [schumannData, setSchumannData] = useState<SchumannData | null>(null);
@@ -30,22 +30,59 @@ export function useSchumannResonance() {
   const [spectrumHistory, setSpectrumHistory] = useState<number[][]>([]);
   const [dataSource, setDataSource] = useState<'LIVE' | 'UNAVAILABLE'>('UNAVAILABLE');
   const [error, setError] = useState<string | null>(null);
+  const lastPersistTime = useRef<number>(0);
+
+  // Persist Schumann data to consciousness_field_history
+  const persistSchumannData = useCallback(async (data: SchumannData) => {
+    // Only persist every 30 seconds to avoid flooding the database
+    const now = Date.now();
+    if (now - lastPersistTime.current < 30000) return;
+    lastPersistTime.current = now;
+
+    try {
+      const { error: insertError } = await supabase
+        .from('consciousness_field_history')
+        .insert({
+          schumann_frequency: data.fundamentalHz,
+          schumann_amplitude: data.amplitude,
+          schumann_quality: data.quality,
+          schumann_coherence_boost: data.coherenceBoost,
+          schumann_phase: data.resonancePhase,
+          celestial_boost: 0,
+          total_coherence: data.coherenceBoost + 0.5, // Base coherence + Schumann boost
+        });
+
+      if (insertError) {
+        console.error('[Schumann] Failed to persist data:', insertError);
+      } else {
+        console.log('[Schumann] Data persisted to consciousness_field_history');
+      }
+    } catch (err) {
+      console.error('[Schumann] Persist error:', err);
+    }
+  }, []);
 
   // Attempt to fetch live Schumann data from edge function
   const fetchLiveData = useCallback(async (): Promise<SchumannData | null> => {
     try {
-      const { data, error } = await supabase.functions.invoke('fetch-schumann-data');
+      const { data, error: fetchError } = await supabase.functions.invoke('fetch-schumann-data');
       
-      if (error || !data || !data.success) {
-        setError('LIVE_DATA_REQUIRED: Failed to fetch Schumann data from API');
+      if (fetchError) {
+        setError(`LIVE_DATA_REQUIRED: ${fetchError.message}`);
         return null;
       }
 
-      const liveData = data.data;
+      // The edge function returns the data directly, not wrapped in {success, data}
+      const liveData = data;
+      
+      if (!liveData || !liveData.fundamentalHz) {
+        setError('LIVE_DATA_REQUIRED: Invalid response from Schumann API');
+        return null;
+      }
       
       // Build harmonics from live data
-      const harmonics: SchumannHarmonic[] = [
-        { frequency: liveData.frequency || 7.83, amplitude: liveData.amplitude || 0.7, name: 'Fundamental' },
+      const harmonics: SchumannHarmonic[] = liveData.harmonics || [
+        { frequency: liveData.fundamentalHz, amplitude: liveData.amplitude || 0.7, name: 'Fundamental' },
         { frequency: 14.3, amplitude: (liveData.amplitude || 0.7) * 0.7, name: '2nd Harmonic' },
         { frequency: 20.8, amplitude: (liveData.amplitude || 0.7) * 0.5, name: '3rd Harmonic' },
         { frequency: 27.3, amplitude: (liveData.amplitude || 0.7) * 0.35, name: '4th Harmonic' },
@@ -57,27 +94,15 @@ export function useSchumannResonance() {
       const newSpectrum = harmonics.map(h => h.amplitude);
       setSpectrumHistory(prev => [...prev, newSpectrum].slice(-100));
 
-      // Calculate coherence boost
-      const deviation = Math.abs((liveData.frequency || 7.83) - 7.83);
-      const coherenceBoost = Math.max(0, (0.15 - deviation) / 0.15) * 0.12;
-
-      // Determine resonance phase
-      let resonancePhase: SchumannData['resonancePhase'] = 'stable';
-      const amp = liveData.amplitude || 0.7;
-      const qual = liveData.quality || 0.7;
-      if (amp > 0.85 && qual > 0.85) resonancePhase = 'peak';
-      else if (amp > 0.7 || qual > 0.75) resonancePhase = 'elevated';
-      else if (amp < 0.4 || qual < 0.6) resonancePhase = 'disturbed';
-
       setError(null);
       return {
-        fundamentalHz: liveData.frequency || 7.83,
+        fundamentalHz: liveData.fundamentalHz,
         amplitude: liveData.amplitude || 0.7,
         quality: liveData.quality || 0.7,
         variance: liveData.variance || 0.05,
         timestamp: new Date(),
-        coherenceBoost,
-        resonancePhase,
+        coherenceBoost: liveData.coherenceBoost || 0,
+        resonancePhase: liveData.resonancePhase || 'stable',
         harmonics,
         spectrumHistory,
         dataSource: 'LIVE',
@@ -95,6 +120,8 @@ export function useSchumannResonance() {
       setSchumannData(liveData);
       setDataSource('LIVE');
       setIsConnected(true);
+      // Persist to database
+      await persistSchumannData(liveData);
     } else {
       // NO SIMULATION - Set null and mark as unavailable
       setSchumannData(null);
@@ -102,7 +129,7 @@ export function useSchumannResonance() {
       setIsConnected(false);
       console.warn('[Schumann] LIVE_DATA_REQUIRED: No simulation fallback - data unavailable');
     }
-  }, [fetchLiveData]);
+  }, [fetchLiveData, persistSchumannData]);
 
   useEffect(() => {
     updateSchumannData();
