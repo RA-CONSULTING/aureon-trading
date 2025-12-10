@@ -5,18 +5,29 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Decrypt credentials using MASTER_ENCRYPTION_KEY
+// Decrypt credentials using the same key as create-aureon-session
 async function decrypt(encrypted: string, iv: string): Promise<string> {
-  const masterKey = Deno.env.get('MASTER_ENCRYPTION_KEY');
-  if (!masterKey) throw new Error('No encryption key configured');
+  // Must match the key used in create-aureon-session
+  const encryptionKey = 'aureon-default-key-32chars!!';
   
-  const keyData = new TextEncoder().encode(masterKey.padEnd(32, '0').slice(0, 32));
-  const key = await crypto.subtle.importKey('raw', keyData, { name: 'AES-GCM' }, false, ['decrypt']);
+  const encoder = new TextEncoder();
+  const keyData = encoder.encode(encryptionKey.padEnd(32, '0').slice(0, 32));
+  const cryptoKey = await crypto.subtle.importKey(
+    'raw',
+    keyData,
+    { name: 'AES-GCM' },
+    false,
+    ['decrypt']
+  );
   
   const encryptedData = Uint8Array.from(atob(encrypted), c => c.charCodeAt(0));
   const ivData = Uint8Array.from(atob(iv), c => c.charCodeAt(0));
   
-  const decrypted = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: ivData }, key, encryptedData);
+  const decrypted = await crypto.subtle.decrypt(
+    { name: 'AES-GCM', iv: ivData },
+    cryptoKey,
+    encryptedData
+  );
   return new TextDecoder().decode(decrypted);
 }
 
@@ -247,7 +258,7 @@ Deno.serve(async (req) => {
           result = { 
             success: true, 
             message: 'Capital.com connection successful',
-            balance: 0 // Would need additional call to get balance
+            balance: 0
           };
         } else {
           result = { success: false, message: 'Capital.com: Invalid credentials' };
