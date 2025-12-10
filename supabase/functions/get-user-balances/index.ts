@@ -105,6 +105,114 @@ async function fetchBinanceBalances(apiKey: string, apiSecret: string): Promise<
   }
 }
 
+// Kraken asset name mapping - matches Python kraken_client.py
+const KRAKEN_ASSET_MAP: Record<string, string> = {
+  'XXBT': 'BTC',
+  'XBT': 'BTC',
+  'XETH': 'ETH',
+  'XXLM': 'XLM',
+  'XLTC': 'LTC',
+  'XXRP': 'XRP',
+  'XXDG': 'DOGE',
+  'XZEC': 'ZEC',
+  'XREP': 'REP',
+  'XETC': 'ETC',
+  'XMLN': 'MLN',
+  'XXMR': 'XMR',
+  'ZUSD': 'USD',
+  'ZEUR': 'EUR',
+  'ZGBP': 'GBP',
+  'ZCAD': 'CAD',
+  'ZJPY': 'JPY',
+  'ZAUD': 'AUD',
+  'USDT': 'USDT',
+  'USDC': 'USDC',
+  'DAI': 'DAI',
+  'DOT': 'DOT',
+  'SOL': 'SOL',
+  'ADA': 'ADA',
+  'MATIC': 'MATIC',
+  'ATOM': 'ATOM',
+  'LINK': 'LINK',
+  'UNI': 'UNI',
+  'AVAX': 'AVAX',
+  'SHIB': 'SHIB',
+  'TRX': 'TRX',
+  'NEAR': 'NEAR',
+  'APE': 'APE',
+  'SAND': 'SAND',
+  'MANA': 'MANA',
+  'CRV': 'CRV',
+  'AAVE': 'AAVE',
+  'FTM': 'FTM',
+  'GRT': 'GRT',
+  'ALGO': 'ALGO',
+  'XTZ': 'XTZ',
+  'EOS': 'EOS',
+  'FLOW': 'FLOW',
+  'AXS': 'AXS',
+  'CHZ': 'CHZ',
+  'ENJ': 'ENJ',
+  'BAT': 'BAT',
+  'COMP': 'COMP',
+  'MKR': 'MKR',
+  'SNX': 'SNX',
+  'YFI': 'YFI',
+  'SUSHI': 'SUSHI',
+  '1INCH': '1INCH',
+  'OCEAN': 'OCEAN',
+  'STORJ': 'STORJ',
+  'OMG': 'OMG',
+  'ZRX': 'ZRX',
+  'KNC': 'KNC',
+  'KEEP': 'KEEP',
+  'ANT': 'ANT',
+  'REN': 'REN',
+  'LRC': 'LRC',
+  'KAVA': 'KAVA',
+  'WAVES': 'WAVES',
+  'ICX': 'ICX',
+  'NANO': 'NANO',
+  'OMG.S': 'OMG',
+  'SC': 'SC',
+  'QTUM': 'QTUM',
+  'LSK': 'LSK',
+  'BABY': 'BABY',
+  'BABY.S': 'BABY',
+};
+
+function cleanKrakenAsset(krakenName: string): string {
+  // First check direct mapping
+  if (KRAKEN_ASSET_MAP[krakenName]) {
+    return KRAKEN_ASSET_MAP[krakenName];
+  }
+  
+  // Handle staked assets (e.g., ETH2.S, DOT.S)
+  const unstaked = krakenName.replace(/\.S$/, '');
+  if (KRAKEN_ASSET_MAP[unstaked]) {
+    return KRAKEN_ASSET_MAP[unstaked];
+  }
+  
+  // Legacy prefix stripping for unknown assets
+  let cleaned = krakenName;
+  
+  // Handle XX prefix (e.g., XXBT -> BTC is already mapped, but XXABC -> ABC)
+  if (cleaned.startsWith('XX') && cleaned.length > 2) {
+    cleaned = cleaned.slice(2);
+  }
+  // Handle single X prefix but preserve XRP, XLM, XTZ, XDG (DOGE)
+  else if (cleaned.startsWith('X') && cleaned.length > 1 && 
+           !['XRP', 'XLM', 'XTZ', 'XDG'].includes(cleaned)) {
+    cleaned = cleaned.slice(1);
+  }
+  // Handle Z prefix for fiat (ZUSD, ZEUR etc) - already mapped above
+  else if (cleaned.startsWith('Z') && cleaned.length > 1) {
+    cleaned = cleaned.slice(1);
+  }
+  
+  return cleaned;
+}
+
 async function fetchKrakenBalances(apiKey: string, apiSecret: string): Promise<ExchangeBalance> {
   try {
     const nonce = Date.now() * 1000;
@@ -132,16 +240,15 @@ async function fetchKrakenBalances(apiKey: string, apiSecret: string): Promise<E
     });
 
     const data = await response.json();
-    console.log('[get-user-balances] Kraken raw response:', JSON.stringify(data));
+    console.log('[get-user-balances] Kraken raw balances:', JSON.stringify(data.result));
     
     if (data.error && data.error.length > 0) {
       throw new Error(data.error[0]);
     }
 
-    // Fetch Kraken ticker prices for USD conversion - get ALL tradeable pairs
+    // Fetch ALL Kraken ticker prices for USD conversion
     const priceMap: Record<string, number> = {};
     try {
-      // Get ALL ticker prices from Kraken in one call
       const tickerRes = await fetch('https://api.kraken.com/0/public/Ticker');
       const tickerData = await tickerRes.json();
       
@@ -150,22 +257,25 @@ async function fetchKrakenBalances(apiKey: string, apiSecret: string): Promise<E
           const t = ticker as any;
           const price = parseFloat(t.c?.[0] || '0');
           
-          // Only store USD pairs for conversion
-          if (pair.includes('USD') || pair.includes('ZUSD')) {
-            // Extract base asset from pair
-            // XXBTZUSD -> XBT, XETHZUSD -> ETH, SOLUSD -> SOL, ADAUSD -> ADA
-            let base = pair.replace('ZUSD', '').replace('USD', '');
-            base = base.replace(/^XX/, '').replace(/^X/, '').replace(/^Z/, '');
+          // Store USD pairs for conversion
+          if (pair.includes('USD')) {
+            // Extract base asset - handle various Kraken pair formats
+            // XXBTZUSD, XETHZUSD, SOLUSD, ADAUSD, etc.
+            let base = pair;
             
+            // Remove USD suffix variants
+            base = base.replace(/ZUSD$/, '').replace(/USD$/, '');
+            
+            // Clean the base using our mapping
+            const cleanBase = cleanKrakenAsset(base);
+            
+            priceMap[cleanBase] = price;
+            // Also store with original Kraken name for fallback
             priceMap[base] = price;
-            priceMap[base.toUpperCase()] = price;
-            // Also store original Kraken names
-            priceMap[`X${base}`] = price;
-            priceMap[`XX${base}`] = price;
           }
         }
       }
-      console.log('[get-user-balances] Kraken prices fetched:', Object.keys(priceMap).length, 'pairs');
+      console.log('[get-user-balances] Kraken prices loaded:', Object.keys(priceMap).slice(0, 20).join(', '), '...');
     } catch (priceError) {
       console.warn('[get-user-balances] Failed to fetch Kraken prices:', priceError);
     }
@@ -173,43 +283,37 @@ async function fetchKrakenBalances(apiKey: string, apiSecret: string): Promise<E
     const assets: ExchangeBalance['assets'] = [];
     let totalUsd = 0;
 
-    // Process ALL balances from Kraken (even tiny ones for visibility)
-    for (const [asset, balance] of Object.entries(data.result || {})) {
+    // Process ALL balances from Kraken
+    for (const [rawAsset, balance] of Object.entries(data.result || {})) {
       const amount = parseFloat(balance as string);
       
-      // Include any non-zero balance
       if (amount > 0) {
+        // Use proper asset mapping
+        const displayAsset = cleanKrakenAsset(rawAsset);
         let usdValue = 0;
-        // Clean asset name (remove Kraken prefixes X, XX, Z)
-        let cleanAsset = asset;
-        if (cleanAsset.startsWith('XX')) cleanAsset = cleanAsset.slice(2);
-        else if (cleanAsset.startsWith('X') && cleanAsset !== 'XRP' && cleanAsset !== 'XLM') cleanAsset = cleanAsset.slice(1);
-        if (cleanAsset.startsWith('Z')) cleanAsset = cleanAsset.slice(1);
         
-        // Check if it's a USD stablecoin or fiat
-        if (cleanAsset === 'USD' || asset === 'ZUSD' || 
-            cleanAsset === 'USDT' || cleanAsset === 'USDC' || 
-            cleanAsset === 'EUR' || asset === 'ZEUR' ||
-            cleanAsset === 'GBP' || asset === 'ZGBP') {
-          // For stablecoins, value = amount (convert EUR/GBP approx)
-          if (cleanAsset === 'EUR' || asset === 'ZEUR') {
-            usdValue = amount * 1.05; // EUR to USD approx
-          } else if (cleanAsset === 'GBP' || asset === 'ZGBP') {
-            usdValue = amount * 1.27; // GBP to USD approx
-          } else {
-            usdValue = amount;
-          }
+        // Handle fiat and stablecoins
+        if (displayAsset === 'USD' || displayAsset === 'USDT' || displayAsset === 'USDC' || displayAsset === 'DAI') {
+          usdValue = amount;
+        } else if (displayAsset === 'EUR') {
+          usdValue = amount * 1.05; // EUR to USD approx
+        } else if (displayAsset === 'GBP') {
+          usdValue = amount * 1.27; // GBP to USD approx
+        } else if (displayAsset === 'CAD') {
+          usdValue = amount * 0.74; // CAD to USD approx
+        } else if (displayAsset === 'AUD') {
+          usdValue = amount * 0.65; // AUD to USD approx
+        } else if (displayAsset === 'JPY') {
+          usdValue = amount * 0.0067; // JPY to USD approx
         } else {
-          // Try to find price in our price map
-          const price = priceMap[cleanAsset] || priceMap[asset] || priceMap[cleanAsset.toUpperCase()] || 0;
+          // Look up price - try display name first, then raw name
+          const price = priceMap[displayAsset] || priceMap[rawAsset] || 0;
           usdValue = amount * price;
         }
         
-        // Map XBT -> BTC for display
-        const displayAsset = cleanAsset === 'XBT' ? 'BTC' : cleanAsset;
         assets.push({ asset: displayAsset, free: amount, locked: 0, usdValue });
         totalUsd += usdValue;
-        console.log(`[get-user-balances] Kraken asset: ${displayAsset} = ${amount}, USD: $${usdValue.toFixed(2)}`);
+        console.log(`[get-user-balances] Kraken: ${rawAsset} -> ${displayAsset} = ${amount}, USD: $${usdValue.toFixed(2)}`);
       }
     }
 
