@@ -78,26 +78,34 @@ serve(async (req) => {
     console.log('Master equation state ingested successfully:', data.id);
 
     // ALSO insert into lighthouse_events for War Room dashboard
-    const isLHE = coherence > 0.945 && lambda > 1.5;
-    const lighthouseSignal = lambda * coherence * quality_factor;
+    // Ensure all values have safe defaults to prevent null constraint violations
+    const safeLambda = lambda ?? 1.0;
+    const safeCoherence = coherence ?? 0.5;
+    const safeQualityFactor = quality_factor ?? 1.0;
+    const safeEffectiveGain = effective_gain ?? 1.0;
+    const safeCoherenceLinear = coherence_linear ?? 1.0;
+    const safeCoherenceNonlinear = coherence_nonlinear ?? 0.5;
+    
+    const isLHE = safeCoherence > 0.945 && safeLambda > 1.5;
+    const lighthouseSignal = safeLambda * safeCoherence * safeQualityFactor;
     
     const { error: lighthouseError } = await supabase
       .from('lighthouse_events')
       .insert({
         timestamp: new Date().toISOString(),
-        lambda_value: lambda,
-        coherence,
+        lambda_value: safeLambda,
+        coherence: safeCoherence,
         lighthouse_signal: lighthouseSignal,
         threshold: 0.945,
         is_lhe: isLHE,
-        confidence: quality_factor,
-        dominant_node,
-        metric_clin: coherence_linear || 1.0,
-        metric_cnonlin: coherence_nonlinear,
-        metric_geff: effective_gain,
-        metric_q: quality_factor,
-        prism_level: isLHE ? 5 : Math.floor(coherence * 5),
-        prism_state: isLHE ? 'MANIFEST' : coherence > 0.8 ? 'CONVERGING' : 'FORMING'
+        confidence: safeQualityFactor,
+        dominant_node: dominant_node ?? 'Tiger',
+        metric_clin: safeCoherenceLinear,
+        metric_cnonlin: safeCoherenceNonlinear,
+        metric_geff: safeEffectiveGain,
+        metric_q: safeQualityFactor,
+        prism_level: isLHE ? 5 : Math.floor(safeCoherence * 5),
+        prism_state: isLHE ? 'MANIFEST' : safeCoherence > 0.8 ? 'CONVERGING' : 'FORMING'
       });
 
     if (lighthouseError) {
