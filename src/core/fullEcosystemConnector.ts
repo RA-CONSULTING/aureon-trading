@@ -23,6 +23,7 @@ import { HNCImperialDetector, HNCDetectionResult } from './hncImperialDetector';
 import { smartOrderRouter, RoutingDecision } from './smartOrderRouter';
 import { getTemporalAnchor, TemporalAnchorStatus } from './temporalAnchor';
 import { HiveController, HiveState } from './hiveController';
+import { earthLiveDataIntegration, EarthIntegrationState } from './earthLiveDataIntegration';
 
 // Extended system names for the full ecosystem
 export type ExtendedSystemName = SystemName
@@ -149,10 +150,38 @@ class FullEcosystemConnector {
     // Step 4: Initialize temporal anchor
     this.initializeTemporalAnchor();
     
+    // Step 5: Initialize Earth Live Data Integration
+    await this.initializeEarthIntegration();
+    
     this.isInitialized = true;
     console.log('✅ Full Ecosystem Connector: All systems online');
     
     this.notifyListeners();
+  }
+  
+  /**
+   * Initialize Earth Live Data Integration - loads CSV/JSON and publishes to UnifiedBus
+   */
+  private async initializeEarthIntegration(): Promise<void> {
+    console.log('🌍 Initializing Earth Live Data Integration...');
+    try {
+      await earthLiveDataIntegration.initialize();
+      
+      // Subscribe to earth data updates to propagate through ecosystem
+      earthLiveDataIntegration.subscribe((earthState) => {
+        // Update system status
+        const status = this.systems.get('EarthIntegration');
+        if (status) {
+          status.coherence = earthState.coherence;
+          status.lastUpdate = earthState.lastUpdate;
+          status.publishedToBus = true;
+        }
+      });
+      
+      console.log('✅ Earth Live Data Integration: Online');
+    } catch (error) {
+      console.warn('⚠️ Earth Live Data Integration: Failed to initialize', error);
+    }
   }
 
   /**
