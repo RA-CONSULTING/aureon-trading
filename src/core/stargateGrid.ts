@@ -5,7 +5,7 @@
  * for market timing and energy flow analysis.
  */
 
-import { unifiedBus, BusState } from './unifiedBus';
+import { unifiedBus, type SystemState } from './unifiedBus';
 import { temporalLadder } from './temporalLadder';
 
 // Major Stargate nodes (simplified global grid)
@@ -92,17 +92,12 @@ export class StargateGrid {
   register(): void {
     if (this.registered) return;
     
-    temporalLadder.registerSystem({
-      id: 'STARGATE_GRID',
-      name: 'Stargate Grid',
-      type: 'EARTH',
-      priority: 7,
-      heartbeatInterval: 3000,
-      onHeartbeat: () => ({
-        coherence: this.currentState.overallCoherence,
-        dominantNode: this.currentState.dominantNode
-      })
-    });
+    temporalLadder.registerSystem('stargate-grid');
+    
+    // Start heartbeat
+    setInterval(() => {
+      temporalLadder.heartbeat('stargate-grid', this.currentState.overallCoherence);
+    }, 3000);
     
     this.registered = true;
     console.log('🌐 Stargate Grid registered');
@@ -137,20 +132,19 @@ export class StargateGrid {
     this.currentState = this.calculateGridState();
     
     // Publish to UnifiedBus
-    const busState: BusState = {
-      system_name: 'StargateGrid',
+    unifiedBus.publish({
+      systemName: 'StargateGrid',
       timestamp: Date.now(),
       ready: true,
       coherence: this.currentState.overallCoherence,
       confidence: this.currentState.gridAlignment,
-      signal: this.currentState.overallCoherence > 0.6 ? 1 : 0,
+      signal: this.currentState.overallCoherence > 0.6 ? 'BUY' : 'NEUTRAL',
       data: {
         dominantNode: this.currentState.dominantNode,
         dominantFrequency: this.currentState.dominantFrequency,
-        activeNodes: this.currentState.nodes.filter(n => n.activity > 0.6).length
+        gridAlignment: this.currentState.gridAlignment
       }
-    };
-    unifiedBus.publish(busState);
+    });
     
     return this.currentState;
   }

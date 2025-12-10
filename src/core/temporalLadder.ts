@@ -38,7 +38,13 @@ export type SystemName =
   | '6d-harmonic'
   | 'probability-matrix'
   | 'quantum-telescope'
-  | 'hocus-pattern';
+  | 'hocus-pattern'
+  | 'gaia-lattice'
+  | 'synchronicity-decoder'
+  | 'stargate-grid'
+  | 'market-pulse'
+  | 'anomaly-detector'
+  | 'enhancement-layer';
 
 export interface SystemStatus {
   name: SystemName;

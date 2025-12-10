@@ -5,7 +5,7 @@
  * holistic market sentiment and arbitrage detection.
  */
 
-import { unifiedBus, BusState } from './unifiedBus';
+import { unifiedBus, type SystemState } from './unifiedBus';
 import { temporalLadder } from './temporalLadder';
 
 export interface TickerData {
@@ -67,18 +67,12 @@ export class MarketPulse {
   register(): void {
     if (this.registered) return;
     
-    temporalLadder.registerSystem({
-      id: 'MARKET_PULSE',
-      name: 'Market Pulse',
-      type: 'PERCEPTION',
-      priority: 9,
-      heartbeatInterval: 3000,
-      onHeartbeat: () => ({
-        sentiment: this.currentState.overallSentiment,
-        arbitrageCount: this.currentState.arbitrageOpportunities.length,
-        assetsScanned: this.currentState.totalAssetsScanned
-      })
-    });
+    temporalLadder.registerSystem('market-pulse');
+    
+    // Start heartbeat
+    setInterval(() => {
+      temporalLadder.heartbeat('market-pulse', this.currentState.overallSentiment);
+    }, 3000);
     
     this.registered = true;
     console.log('📊 Market Pulse registered');
@@ -134,21 +128,20 @@ export class MarketPulse {
     };
     
     // Publish to UnifiedBus
-    const busState: BusState = {
-      system_name: 'MarketPulse',
+    unifiedBus.publish({
+      systemName: 'MarketPulse',
       timestamp: Date.now(),
       ready: true,
       coherence: overallSentiment,
       confidence: 1 - volatilityIndex,
-      signal: overallSentiment > 0.6 ? 1 : overallSentiment < 0.4 ? -1 : 0,
+      signal: overallSentiment > 0.6 ? 'BUY' : overallSentiment < 0.4 ? 'SELL' : 'NEUTRAL',
       data: {
-        cryptoLabel: cryptoSentiment.label,
-        stockLabel: stockSentiment.label,
+        cryptoSentiment: cryptoSentiment.label,
+        stockSentiment: stockSentiment.label,
         arbitrageCount: arbitrageOpportunities.length,
         volatilityIndex
       }
-    };
-    unifiedBus.publish(busState);
+    });
     
     return this.currentState;
   }

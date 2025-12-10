@@ -11,7 +11,7 @@
  * IV.  FOUR-WAVE MIXING (Emergent 432 Hz) - f_beat = 528 - 96 = 432
  */
 
-import { unifiedBus, BusState } from './unifiedBus';
+import { unifiedBus, type SystemState } from './unifiedBus';
 import { temporalLadder, SYSTEMS } from './temporalLadder';
 
 // Golden Ratio - The Universal Constant
@@ -280,18 +280,12 @@ export class GaiaLatticeEngine {
   register(): void {
     if (this.registered) return;
     
-    temporalLadder.registerSystem({
-      id: 'GAIA_LATTICE',
-      name: 'Gaia Lattice Engine',
-      type: 'QUANTUM',
-      priority: 8,
-      heartbeatInterval: 2000,
-      onHeartbeat: () => ({
-        coherence: this.currentState.fieldPurity,
-        frequency: this.currentState.frequency,
-        phase: this.currentState.phase
-      })
-    });
+    temporalLadder.registerSystem('gaia-lattice');
+    
+    // Start heartbeat
+    setInterval(() => {
+      temporalLadder.heartbeat('gaia-lattice', this.currentState.fieldPurity);
+    }, 2000);
     
     this.registered = true;
     console.log('🌍 Gaia Lattice Engine registered with Temporal Ladder');
@@ -341,22 +335,20 @@ export class GaiaLatticeEngine {
     };
     
     // Publish to UnifiedBus
-    const busState: BusState = {
-      system_name: 'GaiaLattice',
+    unifiedBus.publish({
+      systemName: 'GaiaLattice',
       timestamp: Date.now(),
       ready: true,
       coherence: cwState.fieldCoherence,
       confidence: cwState.emergent432Strength,
-      signal: phase === 'GAIA_RESONANCE' ? 1 : phase === 'CARRIER_ACTIVE' ? 0.5 : 0,
+      signal: phase === 'GAIA_RESONANCE' ? 'BUY' : phase === 'CARRIER_ACTIVE' ? 'BUY' : 'NEUTRAL',
       data: {
         phase,
         frequency,
-        carrierStrength: cwState.carrierComposite,
-        imperialEnergy: cwState.imperialEnergy,
-        quantumEnergy: cwState.quantumEnergy
+        fieldPurity: cwState.fieldCoherence,
+        carrierStrength: cwState.carrierComposite
       }
-    };
-    unifiedBus.publish(busState);
+    });
     
     return this.currentState;
   }

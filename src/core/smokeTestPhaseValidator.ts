@@ -405,6 +405,12 @@ class SmokeTestPhaseValidator {
       '6d-harmonic': '6DHarmonic',
       'probability-matrix': 'ProbabilityMatrix',
       'quantum-telescope': 'QuantumTelescope',
+      'gaia-lattice': 'GaiaLattice',
+      'synchronicity-decoder': 'SynchronicityDecoder',
+      'stargate-grid': 'StargateGrid',
+      'market-pulse': 'MarketPulse',
+      'anomaly-detector': 'AnomalyDetector',
+      'enhancement-layer': 'EnhancementLayer',
     };
     return mapping[systemName] || systemName;
   }

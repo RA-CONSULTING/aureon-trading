@@ -5,7 +5,7 @@
  * using Fibonacci sequences and sacred geometry principles.
  */
 
-import { unifiedBus, BusState } from './unifiedBus';
+import { unifiedBus, type SystemState } from './unifiedBus';
 import { temporalLadder } from './temporalLadder';
 
 // Fibonacci sequence for timing
@@ -100,17 +100,12 @@ export class SynchronicityDecoder {
   register(): void {
     if (this.registered) return;
     
-    temporalLadder.registerSystem({
-      id: 'SYNCHRONICITY_DECODER',
-      name: 'Synchronicity Decoder',
-      type: 'DETECTION',
-      priority: 6,
-      heartbeatInterval: 2000,
-      onHeartbeat: () => ({
-        patterns: this.patterns.length,
-        overallSync: this.calculateOverallSync()
-      })
-    });
+    temporalLadder.registerSystem('synchronicity-decoder');
+    
+    // Start heartbeat
+    setInterval(() => {
+      temporalLadder.heartbeat('synchronicity-decoder', this.calculateOverallSync());
+    }, 2000);
     
     this.registered = true;
     console.log('🔮 Synchronicity Decoder registered');
@@ -174,20 +169,19 @@ export class SynchronicityDecoder {
     const state = this.getState();
     
     // Publish to UnifiedBus
-    const busState: BusState = {
-      system_name: 'SynchronicityDecoder',
+    unifiedBus.publish({
+      systemName: 'SynchronicityDecoder',
       timestamp: Date.now(),
       ready: true,
       coherence: state.overallSync,
-      confidence: state.fibonacciAlignment,
-      signal: state.overallSync > 0.6 ? 1 : state.overallSync > 0.3 ? 0 : -1,
+      confidence: state.overallSync,
+      signal: state.overallSync > 0.6 ? 'BUY' : 'NEUTRAL',
       data: {
         patterns: this.patterns.length,
         dominantPattern: state.dominantPattern,
-        goldenRatioPresence: state.goldenRatioPresence
+        overallSync: state.overallSync
       }
-    };
-    unifiedBus.publish(busState);
+    });
     
     return state;
   }

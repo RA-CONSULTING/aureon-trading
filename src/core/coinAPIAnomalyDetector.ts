@@ -5,7 +5,7 @@
  * market manipulation patterns for signal filtering.
  */
 
-import { unifiedBus, BusState } from './unifiedBus';
+import { unifiedBus, type SystemState } from './unifiedBus';
 import { temporalLadder } from './temporalLadder';
 
 export enum AnomalyType {
@@ -56,18 +56,12 @@ export class CoinAPIAnomalyDetector {
   register(): void {
     if (this.registered) return;
     
-    temporalLadder.registerSystem({
-      id: 'ANOMALY_DETECTOR',
-      name: 'CoinAPI Anomaly Detector',
-      type: 'DETECTION',
-      priority: 10,
-      heartbeatInterval: 5000,
-      onHeartbeat: () => ({
-        anomalies: this.anomalies.length,
-        blacklisted: this.blacklist.size,
-        marketHealth: this.getMarketHealth()
-      })
-    });
+    temporalLadder.registerSystem('anomaly-detector');
+    
+    // Start heartbeat
+    setInterval(() => {
+      temporalLadder.heartbeat('anomaly-detector', this.getMarketHealth());
+    }, 5000);
     
     this.registered = true;
     console.log('🔍 CoinAPI Anomaly Detector registered');
@@ -138,20 +132,19 @@ export class CoinAPIAnomalyDetector {
     }
     
     // Publish to UnifiedBus
-    const busState: BusState = {
-      system_name: 'AnomalyDetector',
+    unifiedBus.publish({
+      systemName: 'AnomalyDetector',
       timestamp: now,
       ready: true,
       coherence: this.getMarketHealth(),
-      confidence: 1 - (this.anomalies.length / Math.max(1, this.priceHistory.size)),
-      signal: this.anomalies.length > 5 ? -1 : this.anomalies.length > 2 ? 0 : 1,
+      confidence: 1 - (this.anomalies.length / 10),
+      signal: this.getMarketHealth() > 0.7 ? 'NEUTRAL' : 'SELL',
       data: {
-        anomalyCount: this.anomalies.length,
-        blacklistCount: this.blacklist.size,
-        topAnomaly: this.anomalies[0]?.type || 'NONE'
+        anomalies: this.anomalies.length,
+        blacklisted: this.blacklist.size,
+        marketHealth: this.getMarketHealth()
       }
-    };
-    unifiedBus.publish(busState);
+    });
     
     return this.anomalies;
   }

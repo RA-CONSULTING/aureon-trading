@@ -8,12 +8,14 @@
  * - Gaia Lattice (carrier wave dynamics)
  */
 
-import { unifiedBus, BusState } from './unifiedBus';
+import { unifiedBus, type SystemState } from './unifiedBus';
 import { temporalLadder } from './temporalLadder';
 import { synchronicityDecoder, SyncState } from './synchronicityDecoder';
 import { stargateGrid, GridState } from './stargateGrid';
 import { gaiaLatticeEngine, LatticeState } from './gaiaLatticeEngine';
-import { rainbowBridge } from './rainbowBridge';
+import { RainbowBridge } from './rainbowBridge';
+
+const rainbowBridgeInstance = new RainbowBridge();
 
 // Prime tier bonuses
 const PRIME_TIER_BONUS: Record<string, number> = {
@@ -75,17 +77,12 @@ export class EnhancementLayer {
     stargateGrid.register();
     gaiaLatticeEngine.register();
     
-    temporalLadder.registerSystem({
-      id: 'ENHANCEMENT_LAYER',
-      name: 'Enhancement Layer',
-      type: 'CONSCIOUSNESS',
-      priority: 5,
-      heartbeatInterval: 2000,
-      onHeartbeat: () => ({
-        modifier: this.lastResult?.tradingModifier ?? 1.0,
-        confidence: this.lastResult?.confidence ?? 0.5
-      })
-    });
+    temporalLadder.registerSystem('enhancement-layer');
+    
+    // Start heartbeat
+    setInterval(() => {
+      temporalLadder.heartbeat('enhancement-layer', this.lastResult?.confidence ?? 0.5);
+    }, 2000);
     
     this.registered = true;
     console.log('🌈 Enhancement Layer registered');
@@ -108,13 +105,14 @@ export class EnhancementLayer {
     let cyclePhase = 'LOVE';
     
     try {
-      const rainbowState = rainbowBridge.getState();
+      // RainbowBridge doesn't have a getState method - use map instead
+      const rainbowState = rainbowBridgeInstance.map(lambdaValue, coherence);
       if (rainbowState) {
-        emotionalState = rainbowState.emotionalState || 'Neutral';
+        emotionalState = rainbowState.phase || 'Neutral';
         emotionalFrequency = rainbowState.frequency || 440;
         cyclePhase = rainbowState.phase || 'LOVE';
         
-        const rainbowMod = rainbowState.coherence > 0.7 ? 1.15 : rainbowState.coherence > 0.5 ? 1.05 : 0.95;
+        const rainbowMod = rainbowState.intensity > 0.7 ? 1.15 : rainbowState.intensity > 0.5 ? 1.05 : 0.95;
         modifiers.push(rainbowMod);
         
         if (rainbowMod > 1.1) {
@@ -199,13 +197,13 @@ export class EnhancementLayer {
     };
     
     // Publish to UnifiedBus
-    const busState: BusState = {
-      system_name: 'EnhancementLayer',
+    unifiedBus.publish({
+      systemName: 'EnhancementLayer',
       timestamp: Date.now(),
       ready: true,
       coherence: confidence,
       confidence: clampedModifier - 0.5,
-      signal: clampedModifier > 1.2 ? 1 : clampedModifier < 0.8 ? -1 : 0,
+      signal: clampedModifier > 1.2 ? 'BUY' : clampedModifier < 0.8 ? 'SELL' : 'NEUTRAL',
       data: {
         modifier: clampedModifier,
         emotionalState,
@@ -213,8 +211,7 @@ export class EnhancementLayer {
         gridNode: gridState.dominantNode,
         syncPattern: syncState.dominantPattern
       }
-    };
-    unifiedBus.publish(busState);
+    });
     
     return this.lastResult;
   }
