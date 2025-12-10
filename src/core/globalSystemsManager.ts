@@ -543,8 +543,8 @@ class GlobalSystemsManager {
           .eq('user_id', this.state.userId);
       }
       
-      // Handle trade signals
-      if (result.finalDecision.action !== 'HOLD' && this.state.gasTankBalance > 0) {
+      // Handle trade signals - gas tank check removed, trades flow automatically
+      if (result.finalDecision.action !== 'HOLD') {
         const signal = `${result.finalDecision.action} BTCUSDT @ $${marketData.price.toFixed(2)}`;
         
         temporalLadder.broadcast(SYSTEMS.QUANTUM_QUACKERS, 'TRADE_SIGNAL', {
