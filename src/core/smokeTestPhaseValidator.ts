@@ -205,6 +205,16 @@ class SmokeTestPhaseValidator {
       phase.status = 'GHOST_DETECTED';
       phase.errorMessage = `Ghost systems detected: ${ghostsDetected.join(', ')}`;
       console.warn(`👻 SMOKE TEST Phase ${phase.phase}: GHOST DETECTED - ${ghostsDetected.join(', ')}`);
+    } else if (family.systems.length === 0) {
+      // Phase has no required systems - skip
+      phase.status = 'PASSED';
+      console.log(`✅ SMOKE TEST Phase ${phase.phase} (${phase.name}): PASSED (no systems required)`);
+      this.state.currentPhase++;
+    } else if (validatedSystems.length === 0) {
+      // NO systems registered - this is a problem, not a pass!
+      phase.status = 'VALIDATING';
+      phase.errorMessage = `No systems registered - awaiting: ${family.systems.join(', ')}`;
+      console.warn(`⏳ SMOKE TEST Phase ${phase.phase} (${phase.name}): Waiting for systems to register...`);
     } else if (
       validatedSystems.length === family.systems.length &&
       lighthouseResult.L >= MIN_LIGHTHOUSE_L &&
@@ -215,7 +225,7 @@ class SmokeTestPhaseValidator {
       this.state.currentPhase++;
     } else if (validatedSystems.length < family.systems.length) {
       const missing = family.systems.filter(s => !validatedSystems.includes(s));
-      phase.errorMessage = `Awaiting: ${missing.join(', ')}`;
+      phase.errorMessage = `${validatedSystems.length}/${family.systems.length} ready - awaiting: ${missing.join(', ')}`;
     } else {
       phase.errorMessage = `Lighthouse validation pending: L=${lighthouseResult.L.toFixed(3)} (need ${MIN_LIGHTHOUSE_L})`;
     }
