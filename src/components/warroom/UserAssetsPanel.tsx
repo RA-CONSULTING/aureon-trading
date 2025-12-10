@@ -37,10 +37,10 @@ export function UserAssetsPanel() {
     lastUpdated,
     refresh,
     getConsolidatedAssets 
-  } = useUserBalances(true, 10000); // Refresh every 10 seconds
+  } = useUserBalances(true, 30000); // Refresh every 30 seconds to avoid rate limits
 
   const consolidatedAssets = getConsolidatedAssets();
-  const isLive = lastUpdated && (Date.now() - lastUpdated.getTime()) < 15000;
+  const isLive = lastUpdated && (Date.now() - lastUpdated.getTime()) < 45000;
 
   return (
     <Card className="border-border/50 border-2 border-primary/20">
@@ -88,11 +88,17 @@ export function UserAssetsPanel() {
           </div>
         </div>
 
-        {/* Exchange Connection Status */}
+        {/* Exchange Connection Status - Always show all 4 exchanges */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-          {balances.map((exchange) => (
-            <ExchangeStatusBadge key={exchange.exchange} exchange={exchange} />
-          ))}
+          {['binance', 'kraken', 'alpaca', 'capital'].map((exchangeName) => {
+            const exchange = balances.find(b => b.exchange === exchangeName) || {
+              exchange: exchangeName,
+              connected: false,
+              assets: [],
+              totalUsd: 0
+            };
+            return <ExchangeStatusBadge key={exchangeName} exchange={exchange} />;
+          })}
         </div>
 
         {/* Error State */}
@@ -148,24 +154,41 @@ export function UserAssetsPanel() {
 }
 
 function ExchangeStatusBadge({ exchange }: { exchange: ExchangeBalance }) {
+  const getStatusIcon = () => {
+    if (exchange.connected) return <CheckCircle2 className="h-3 w-3 text-green-400" />;
+    if (exchange.error) return <AlertCircle className="h-3 w-3 text-orange-400" />;
+    return <XCircle className="h-3 w-3 text-muted-foreground" />;
+  };
+
+  const getStatusColor = () => {
+    if (exchange.connected) return EXCHANGE_COLORS[exchange.exchange];
+    if (exchange.error) return "bg-orange-500/10 text-orange-400 border-orange-500/30";
+    return "bg-muted/30 text-muted-foreground border-border/50";
+  };
+
   return (
     <div 
       className={cn(
-        "flex items-center gap-1.5 px-2 py-1 rounded-md border text-[10px]",
-        exchange.connected 
-          ? EXCHANGE_COLORS[exchange.exchange] 
-          : "bg-muted/30 text-muted-foreground border-border/50"
+        "flex flex-col gap-0.5 px-2 py-1.5 rounded-md border text-[10px]",
+        getStatusColor()
       )}
+      title={exchange.error || (exchange.connected ? `${exchange.assets.length} assets` : 'Not configured')}
     >
-      {exchange.connected ? (
-        <CheckCircle2 className="h-3 w-3" />
-      ) : (
-        <XCircle className="h-3 w-3" />
-      )}
-      <span className="font-medium">{EXCHANGE_LABELS[exchange.exchange]}</span>
-      {exchange.connected && (
-        <span className="font-mono ml-auto">
-          ${exchange.totalUsd.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+      <div className="flex items-center gap-1.5">
+        {getStatusIcon()}
+        <span className="font-medium">{EXCHANGE_LABELS[exchange.exchange]}</span>
+        {exchange.connected && (
+          <span className="font-mono ml-auto">
+            ${exchange.totalUsd.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+          </span>
+        )}
+      </div>
+      {exchange.error && (
+        <span className="text-[8px] text-orange-300 truncate max-w-full">
+          {exchange.error.includes('Rate limit') ? 'Rate limited' : 
+           exchange.error.includes('401') ? 'Invalid credentials' :
+           exchange.error.includes('429') ? 'Rate limited' :
+           'Error'}
         </span>
       )}
     </div>

@@ -357,10 +357,10 @@ export class MultiExchangeClient {
   private startPeriodicUpdates(): void {
     if (this.updateInterval) return;
 
-    // Update every 10 seconds for live data
+    // Update every 30 seconds to avoid exchange rate limits
     this.updateInterval = setInterval(() => {
       this.fetchAllBalances().catch(console.error);
-    }, 10000);
+    }, 30000);
 
     // Initial fetch
     this.fetchAllBalances().catch(console.error);

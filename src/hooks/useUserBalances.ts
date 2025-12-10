@@ -32,7 +32,7 @@ export interface UserBalancesState {
   lastUpdated: Date | null;
 }
 
-export function useUserBalances(autoRefresh: boolean = true, refreshInterval: number = 10000) {
+export function useUserBalances(autoRefresh: boolean = true, refreshInterval: number = 30000) {
   const [state, setState] = useState<UserBalancesState>({
     balances: [],
     totalEquityUsd: 0,
