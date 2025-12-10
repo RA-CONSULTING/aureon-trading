@@ -14,6 +14,69 @@ export type Database = {
   }
   public: {
     Tables: {
+      adaptive_learning_states: {
+        Row: {
+          band_performance: Json | null
+          calibration_profit_factor: number | null
+          calibration_win_rate: number | null
+          confidence_score: number
+          created_at: string
+          hourly_performance: Json | null
+          id: string
+          kelly_multiplier: number
+          learning_rate: number
+          max_position_pct: number
+          metadata: Json | null
+          min_coherence: number
+          min_confidence: number
+          regime_adjustments: Json | null
+          symbol_adjustments: Json | null
+          temporal_id: string
+          tier_performance: Json | null
+          total_trades_learned: number
+        }
+        Insert: {
+          band_performance?: Json | null
+          calibration_profit_factor?: number | null
+          calibration_win_rate?: number | null
+          confidence_score?: number
+          created_at?: string
+          hourly_performance?: Json | null
+          id?: string
+          kelly_multiplier?: number
+          learning_rate?: number
+          max_position_pct?: number
+          metadata?: Json | null
+          min_coherence?: number
+          min_confidence?: number
+          regime_adjustments?: Json | null
+          symbol_adjustments?: Json | null
+          temporal_id: string
+          tier_performance?: Json | null
+          total_trades_learned?: number
+        }
+        Update: {
+          band_performance?: Json | null
+          calibration_profit_factor?: number | null
+          calibration_win_rate?: number | null
+          confidence_score?: number
+          created_at?: string
+          hourly_performance?: Json | null
+          id?: string
+          kelly_multiplier?: number
+          learning_rate?: number
+          max_position_pct?: number
+          metadata?: Json | null
+          min_coherence?: number
+          min_confidence?: number
+          regime_adjustments?: Json | null
+          symbol_adjustments?: Json | null
+          temporal_id?: string
+          tier_performance?: Json | null
+          total_trades_learned?: number
+        }
+        Relationships: []
+      }
       akashic_attunement_states: {
         Row: {
           attunement_quality: string
@@ -275,6 +338,96 @@ export type Database = {
           rate_limit_reset_at?: string | null
           requests_count?: number | null
           updated_at?: string | null
+        }
+        Relationships: []
+      }
+      calibration_trades: {
+        Row: {
+          coherence_at_entry: number
+          cosmic_phase: string | null
+          created_at: string
+          entry_price: number
+          entry_time: string
+          exchange: string
+          exit_price: number | null
+          exit_time: string | null
+          frequency_band: string
+          hnc_probability: number
+          id: string
+          is_forced: boolean | null
+          is_win: boolean | null
+          lambda_at_entry: number
+          lighthouse_confidence: number
+          metadata: Json | null
+          order_id: string | null
+          pnl: number | null
+          pnl_percent: number | null
+          position_size_usd: number
+          prism_frequency: number
+          qgita_tier: number
+          quantity: number
+          regime: string
+          side: string
+          symbol: string
+          temporal_id: string
+        }
+        Insert: {
+          coherence_at_entry: number
+          cosmic_phase?: string | null
+          created_at?: string
+          entry_price: number
+          entry_time?: string
+          exchange?: string
+          exit_price?: number | null
+          exit_time?: string | null
+          frequency_band: string
+          hnc_probability: number
+          id?: string
+          is_forced?: boolean | null
+          is_win?: boolean | null
+          lambda_at_entry: number
+          lighthouse_confidence: number
+          metadata?: Json | null
+          order_id?: string | null
+          pnl?: number | null
+          pnl_percent?: number | null
+          position_size_usd: number
+          prism_frequency: number
+          qgita_tier?: number
+          quantity: number
+          regime?: string
+          side: string
+          symbol: string
+          temporal_id: string
+        }
+        Update: {
+          coherence_at_entry?: number
+          cosmic_phase?: string | null
+          created_at?: string
+          entry_price?: number
+          entry_time?: string
+          exchange?: string
+          exit_price?: number | null
+          exit_time?: string | null
+          frequency_band?: string
+          hnc_probability?: number
+          id?: string
+          is_forced?: boolean | null
+          is_win?: boolean | null
+          lambda_at_entry?: number
+          lighthouse_confidence?: number
+          metadata?: Json | null
+          order_id?: string | null
+          pnl?: number | null
+          pnl_percent?: number | null
+          position_size_usd?: number
+          prism_frequency?: number
+          qgita_tier?: number
+          quantity?: number
+          regime?: string
+          side?: string
+          symbol?: string
+          temporal_id?: string
         }
         Relationships: []
       }
@@ -791,6 +944,57 @@ export type Database = {
           trades?: number | null
           updated_at?: string | null
           wins?: number | null
+        }
+        Relationships: []
+      }
+      exchange_learning_states: {
+        Row: {
+          avg_latency_ms: number | null
+          avg_pnl: number | null
+          created_at: string
+          exchange: string
+          id: string
+          last_trade_at: string | null
+          losses: number
+          metadata: Json | null
+          symbol: string
+          temporal_id: string
+          total_profit: number
+          total_trades: number
+          win_rate: number | null
+          wins: number
+        }
+        Insert: {
+          avg_latency_ms?: number | null
+          avg_pnl?: number | null
+          created_at?: string
+          exchange: string
+          id?: string
+          last_trade_at?: string | null
+          losses?: number
+          metadata?: Json | null
+          symbol: string
+          temporal_id: string
+          total_profit?: number
+          total_trades?: number
+          win_rate?: number | null
+          wins?: number
+        }
+        Update: {
+          avg_latency_ms?: number | null
+          avg_pnl?: number | null
+          created_at?: string
+          exchange?: string
+          id?: string
+          last_trade_at?: string | null
+          losses?: number
+          metadata?: Json | null
+          symbol?: string
+          temporal_id?: string
+          total_profit?: number
+          total_trades?: number
+          win_rate?: number | null
+          wins?: number
         }
         Relationships: []
       }

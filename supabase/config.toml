@@ -239,3 +239,13 @@ verify_jwt = false
 # Backend health check (public for monitoring)
 [functions.backend-health-check]
 verify_jwt = false
+
+# Training/Learning data ingestion
+[functions.ingest-calibration-trade]
+verify_jwt = true
+
+[functions.ingest-adaptive-learning]
+verify_jwt = true
+
+[functions.ingest-exchange-learning]
+verify_jwt = true
