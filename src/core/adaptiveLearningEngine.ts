@@ -63,14 +63,15 @@ class AdaptiveLearningEngine {
     this.state.samplesUsed = calibration.totalTrades;
 
     if (calibration.totalTrades < 10) {
-      // Not enough data, use defaults
+      // Not enough data, use permissive defaults for calibration trading
       this.state.confidence = 0.1;
-      console.log('[AdaptiveLearning] Insufficient trades for calibration, using defaults');
+      this.state.thresholds = { ...DEFAULT_THRESHOLDS };
+      console.log('[AdaptiveLearning] Insufficient trades for calibration, using permissive defaults');
       return this.state.thresholds;
     }
 
-    // Learn coherence range from winners
-    this.state.thresholds.coherenceMin = Math.max(0.5, calibration.optimalCoherenceRange.min - 0.05);
+    // Learn coherence range from winners - use low floor (0.30) to allow trades
+    this.state.thresholds.coherenceMin = Math.max(0.30, calibration.optimalCoherenceRange.min - 0.10);
     this.state.thresholds.coherenceMax = Math.min(1.0, calibration.optimalCoherenceRange.max + 0.05);
 
     // Learn optimal hours
@@ -106,13 +107,13 @@ class AdaptiveLearningEngine {
       this.state.thresholds.kellyMultiplier = 0.5;
     }
 
-    // Learn confidence threshold from tier performance
+    // Learn confidence threshold from tier performance - use lower floor (0.30)
     const tier1Performance = calibration.tierPerformance[1];
     if (tier1Performance.trades >= 5 && tier1Performance.winRate >= 0.6) {
       // Tier 1 trades are reliable, can lower confidence threshold
-      this.state.thresholds.confidenceMin = Math.max(0.4, 0.50 - 0.1);
+      this.state.thresholds.confidenceMin = Math.max(0.30, 0.40 - 0.1);
     } else {
-      this.state.thresholds.confidenceMin = 0.50;
+      this.state.thresholds.confidenceMin = 0.35; // Lowered from 0.50
     }
 
     // Calculate overall learning confidence

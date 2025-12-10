@@ -65,27 +65,22 @@ export class LighthouseConsensus {
     
     // Compute L(t) via weighted geometric mean (ablation study formula)
     // L(t) = (C_lin^w1 × C_nonlin^w2 × G_eff^w3 × |Q|^w4)^(1/Σw_i)
+    // Use minimum floor values to prevent zero (geometric mean requires all > 0)
     const metricsWithWeights = [
-      { value: Clin, weight: this.weights.Clin },
-      { value: Cnonlin, weight: this.weights.Cnonlin },
-      { value: Geff, weight: this.weights.Geff },
-      { value: Math.abs(Q), weight: this.weights.Q },
+      { value: Math.max(Clin, 0.1), weight: this.weights.Clin },
+      { value: Math.max(Cnonlin, 0.1), weight: this.weights.Cnonlin },
+      { value: Math.max(Geff, 0.1), weight: this.weights.Geff },
+      { value: Math.max(Math.abs(Q), 0.1), weight: this.weights.Q },
     ];
     
     let product = 1.0;
-    let canComputeConsensus = true;
     
     for (const { value, weight } of metricsWithWeights) {
-      if (value <= 0) {
-        // Geometric mean requires all metrics > 0
-        canComputeConsensus = false;
-        break;
-      }
       product *= Math.pow(value, weight);
     }
     
     const totalWeight = Object.values(this.weights).reduce((sum, w) => sum + w, 0);
-    const L = canComputeConsensus ? Math.pow(product, 1.0 / totalWeight) : 0;
+    const L = Math.pow(product, 1.0 / totalWeight);
     
     // Track history
     this.history.push(L);

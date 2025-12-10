@@ -13,6 +13,7 @@ import { multiExchangeClient, type MultiExchangeState } from './multiExchangeCli
 import { ecosystemConnector, type EcosystemState } from './ecosystemConnector';
 import { backgroundServices } from './backgroundServices';
 import { thePrism, type PrismOutput } from './thePrism';
+import { adaptiveLearningEngine } from './adaptiveLearningEngine';
 import { supabase } from '@/integrations/supabase/client';
 
 export interface GlobalState {
@@ -243,6 +244,10 @@ class GlobalSystemsManager {
     
     // 3. Start background services
     backgroundServices.start();
+    
+    // 3b. Reset adaptive learning to permissive defaults for calibration trading
+    adaptiveLearningEngine.reset();
+    console.log('🧠 Adaptive learning reset to permissive defaults');
     
     // 4. Setup bus subscription
     this.busUnsubscribe = unifiedBus.subscribe((snapshot) => {
