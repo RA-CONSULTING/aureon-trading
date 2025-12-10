@@ -139,9 +139,10 @@ export class QGITASignalGenerator {
       priceAcceleration
     );
     
-    // === KILL SWITCH: If Lighthouse = 0, force HOLD (geometric mean requires all > 0) ===
-    if (lighthouseState.L === 0 && this.priceHistory.length >= 10) {
-      console.warn('🛑 Lighthouse consensus failed (L=0). Forcing HOLD.');
+    // === KILL SWITCH: If Lighthouse is very low (< 0.05), force HOLD ===
+    // Note: Lighthouse now uses minimum floor values so L=0 is extremely rare
+    if (lighthouseState.L < 0.05 && this.priceHistory.length >= 20) {
+      console.warn(`🛑 Lighthouse consensus very low (L=${lighthouseState.L.toFixed(3)}). Forcing HOLD.`);
       return {
         timestamp,
         signalType: 'HOLD',
@@ -154,7 +155,7 @@ export class QGITASignalGenerator {
         ftcpDetected,
         goldenRatioScore,
         anomalyPointer,
-        reasoning: '🛑 KILL SWITCH: Lighthouse consensus failed (L=0). All metrics must align for trade.',
+        reasoning: `🛑 KILL SWITCH: Lighthouse consensus too low (L=${lighthouseState.L.toFixed(3)}). Need more data.`,
       };
     }
     
