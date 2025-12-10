@@ -14,6 +14,8 @@ import { ecosystemConnector, type EcosystemState } from './ecosystemConnector';
 import { backgroundServices } from './backgroundServices';
 import { thePrism, type PrismOutput } from './thePrism';
 import { adaptiveLearningEngine } from './adaptiveLearningEngine';
+import { tickerCacheManager } from './tickerCacheManager';
+import { startupHarvester } from './startupHarvester';
 import { supabase } from '@/integrations/supabase/client';
 
 export interface GlobalState {
@@ -406,6 +408,12 @@ class GlobalSystemsManager {
     
     console.log('🚀 GlobalSystemsManager: Starting autonomous trading...');
     
+    // Initialize ticker cache (800+ pairs like Python ecosystem)
+    tickerCacheManager.initialize().catch(console.error);
+    
+    // Run startup harvest (scan existing holdings for profit opportunities)
+    startupHarvester.harvest(unifiedOrchestrator.getConfig().dryRun).catch(console.error);
+    
     // Initialize exchange client
     multiExchangeClient.initialize().catch(console.error);
     
@@ -418,6 +426,8 @@ class GlobalSystemsManager {
     temporalLadder.registerSystem(SYSTEMS.MASTER_EQUATION);
     temporalLadder.registerSystem(SYSTEMS.HARMONIC_NEXUS);
     temporalLadder.registerSystem(SYSTEMS.QUANTUM_QUACKERS);
+    temporalLadder.registerSystem(SYSTEMS.TICKER_CACHE);
+    temporalLadder.registerSystem(SYSTEMS.CAPITAL_POOL);
     
     this.updateState({
       isActive: true,
@@ -431,7 +441,7 @@ class GlobalSystemsManager {
       },
     });
     
-    // Start 3-second orchestration loop
+    // Start 3-second orchestration loop (uses runFullCycle for multi-symbol scanning)
     this.orchestrationInterval = setInterval(() => this.runQuantumCycle(), 3000);
     
     // Countdown timer
@@ -444,7 +454,7 @@ class GlobalSystemsManager {
     // Run immediately
     this.runQuantumCycle();
     
-    console.log('✅ GlobalSystemsManager: Autonomous trading active');
+    console.log('✅ GlobalSystemsManager: Autonomous trading active with multi-symbol scanning');
   }
   
   /**
@@ -488,21 +498,28 @@ class GlobalSystemsManager {
   }
   
   /**
-   * Run a single quantum computation cycle
+   * Run a single quantum computation cycle - now uses full multi-symbol scanning
    */
   private async runQuantumCycle(): Promise<void> {
     if (!this.state.userId) return;
     
     try {
-      // Fetch market data
+      // Run full cycle with multi-symbol scanning (mirrors Python aureon_unified_ecosystem.py)
+      // This will: 1) Refresh all tickers, 2) Scan opportunities, 3) Check positions, 4) Execute best trade
+      const fullResult = await unifiedOrchestrator.runFullCycle();
+      
+      // Extract nested orchestration result
+      const result = fullResult.result;
+      
+      // Get latest market data for state update
       const marketData = await this.fetchMarketData('BTCUSDT');
       this.updateState({ marketData });
       
-      // Run unified orchestrator
-      const result = await unifiedOrchestrator.runCycle(marketData, 'BTCUSDT');
+      // Log market sweep stats
+      console.log(`[GlobalSystems] Sweep: ${fullResult.tickersScanned} tickers → ${fullResult.opportunitiesFound} opps → ${fullResult.filteredOpportunities} filtered | Best: ${fullResult.bestOpportunity?.symbol || 'none'}`);
       
       // Update state from result
-      if (result.lambdaState) {
+      if (result?.lambdaState) {
         // Run Prism transformation
         const prismOutput = thePrism.transform({
           lambda: result.lambdaState.lambda,
@@ -549,25 +566,26 @@ class GlobalSystemsManager {
       }
       
       // Handle trade signals - gas tank check removed, trades flow automatically
-      if (result.finalDecision.action !== 'HOLD') {
-        const signal = `${result.finalDecision.action} BTCUSDT @ $${marketData.price.toFixed(2)}`;
+      if (result?.finalDecision?.action !== 'HOLD') {
+        const symbol = fullResult.bestOpportunity?.symbol || 'BTCUSDT';
+        const signal = `${result.finalDecision.action} ${symbol} @ $${marketData.price.toFixed(2)}`;
         
         temporalLadder.broadcast(SYSTEMS.QUANTUM_QUACKERS, 'TRADE_SIGNAL', {
           action: result.finalDecision.action,
-          symbol: 'BTCUSDT',
+          symbol: symbol,
           confidence: result.finalDecision.confidence,
           reason: result.finalDecision.reason
         });
         
         // Execute trade via UnifiedOrchestrator (not simulation)
         // The orchestrator handles paper vs live mode internally via config.dryRun
-        console.log(`[GlobalSystems] Trade signal: ${result.finalDecision.action} BTCUSDT`);
+        console.log(`[GlobalSystems] Trade signal: ${result.finalDecision.action} ${symbol}`);
         
         // Record the trade attempt - actual execution happens in orchestrator
         const newTrade = {
           time: new Date().toLocaleTimeString(),
           side: result.finalDecision.action,
-          symbol: 'BTCUSDT',
+          symbol: symbol,
           quantity: 0.01,
           pnl: 0, // Real P&L will be calculated on trade close
           success: result.tradeExecuted,
