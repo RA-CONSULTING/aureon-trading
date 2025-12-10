@@ -44,7 +44,11 @@ export type SystemName =
   | 'stargate-grid'
   | 'market-pulse'
   | 'anomaly-detector'
-  | 'enhancement-layer';
+  | 'enhancement-layer'
+  | 'data-ingestion'
+  | 'opportunity-scanner'
+  | 'position-manager'
+  | 'ticker-cache';
 
 export interface SystemStatus {
   name: SystemName;
@@ -356,4 +360,8 @@ export const SYSTEMS = {
   SIX_D_HARMONIC: '6d-harmonic' as SystemName,
   PROBABILITY_MATRIX: 'probability-matrix' as SystemName,
   QUANTUM_TELESCOPE: 'quantum-telescope' as SystemName,
+  DATA_INGESTION: 'data-ingestion' as SystemName,
+  OPPORTUNITY_SCANNER: 'opportunity-scanner' as SystemName,
+  POSITION_MANAGER: 'position-manager' as SystemName,
+  TICKER_CACHE: 'ticker-cache' as SystemName,
 };
