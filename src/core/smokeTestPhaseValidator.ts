@@ -415,6 +415,8 @@ class SmokeTestPhaseValidator {
       'opportunity-scanner': 'OpportunityScanner',
       'position-manager': 'PositionManager',
       'ticker-cache': 'TickerCache',
+      'capital-pool': 'CapitalPool',
+      'startup-harvester': 'StartupHarvester',
     };
     return mapping[systemName] || systemName;
   }

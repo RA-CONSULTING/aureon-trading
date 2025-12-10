@@ -48,7 +48,9 @@ export type SystemName =
   | 'data-ingestion'
   | 'opportunity-scanner'
   | 'position-manager'
-  | 'ticker-cache';
+  | 'ticker-cache'
+  | 'capital-pool'
+  | 'startup-harvester';
 
 export interface SystemStatus {
   name: SystemName;
@@ -364,4 +366,6 @@ export const SYSTEMS = {
   OPPORTUNITY_SCANNER: 'opportunity-scanner' as SystemName,
   POSITION_MANAGER: 'position-manager' as SystemName,
   TICKER_CACHE: 'ticker-cache' as SystemName,
+  CAPITAL_POOL: 'capital-pool' as SystemName,
+  STARTUP_HARVESTER: 'startup-harvester' as SystemName,
 };

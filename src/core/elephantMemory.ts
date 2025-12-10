@@ -150,6 +150,13 @@ class ElephantMemory {
   }
   
   /**
+   * Get symbol memory (alias for getSymbolStats)
+   */
+  getSymbolMemory(symbol: string): SymbolMemory | null {
+    return this.memories.get(symbol) ?? null;
+  }
+  
+  /**
    * Get all blacklisted symbols
    */
   getBlacklistedSymbols(): string[] {
