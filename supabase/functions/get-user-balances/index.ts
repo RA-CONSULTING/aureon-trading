@@ -552,6 +552,24 @@ serve(async (req) => {
 
     console.log('[get-user-balances] Fetched balances from', connectedExchanges.length, 'exchanges, total:', totalEquityUsd);
 
+    // CRITICAL: Update aureon_user_sessions with fetched balance so trading system can use it
+    if (totalEquityUsd > 0) {
+      const { error: updateError } = await supabase
+        .from('aureon_user_sessions')
+        .update({
+          total_equity_usdt: totalEquityUsd,
+          available_balance_usdt: totalEquityUsd, // Use total as available for now
+          updated_at: new Date().toISOString()
+        })
+        .eq('user_id', user.id);
+      
+      if (updateError) {
+        console.error('[get-user-balances] Failed to update session balance:', updateError);
+      } else {
+        console.log('[get-user-balances] Updated session balance to:', totalEquityUsd);
+      }
+    }
+
     return new Response(
       JSON.stringify({
         success: true,
