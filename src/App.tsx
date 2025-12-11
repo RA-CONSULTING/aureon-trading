@@ -1,26 +1,16 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ThemeProvider } from "@/components/theme-provider";
 import { globalSystemsManager } from "@/core/globalSystemsManager";
-import Index from "./pages/Index";
 import Auth from "./pages/Auth";
-import TradingSettings from "./pages/TradingSettings";
 import NotFound from "./pages/NotFound";
 import WarRoom from "./pages/WarRoom";
-import Quantum from "./pages/Quantum";
-import Prism from "./pages/Prism";
-import Rainbow from "./pages/Rainbow";
-import Earth from "./pages/Earth";
-import Analytics from "./pages/Analytics";
-import Portfolio from "./pages/Portfolio";
-import Backtest from "./pages/Backtest";
-import Settings from "./pages/Settings";
 import Systems from "./pages/Systems";
-import AdminKYC from "./pages/AdminKYC";
+import Settings from "./pages/Settings";
 import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
 
@@ -46,7 +36,6 @@ const App = () => {
       });
       
       // Failsafe: force ready after 15 seconds no matter what
-      // Use a ref-based check since closure captures initial ready value
       const failsafe = setTimeout(() => {
         console.warn('⚠️ App: Initialization failsafe triggered after 15s');
         setReady(true);
@@ -76,22 +65,28 @@ const App = () => {
         <Sonner />
         <BrowserRouter>
           <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/war-room" element={<WarRoom />} />
-            <Route path="/quantum" element={<Quantum />} />
-            <Route path="/prism" element={<Prism />} />
-            <Route path="/rainbow" element={<Rainbow />} />
-            <Route path="/earth" element={<Earth />} />
-            <Route path="/analytics" element={<Analytics />} />
-            <Route path="/portfolio" element={<Portfolio />} />
-            <Route path="/backtest" element={<Backtest />} />
-            <Route path="/settings" element={<Settings />} />
-            <Route path="/settings/trading" element={<TradingSettings />} />
+            {/* Main 2 Pages */}
+            <Route path="/" element={<WarRoom />} />
             <Route path="/systems" element={<Systems />} />
-            <Route path="/admin/kyc" element={<AdminKYC />} />
+            
+            {/* Auth & Settings */}
+            <Route path="/auth" element={<Auth />} />
+            <Route path="/settings" element={<Settings />} />
+            
+            {/* Legal */}
             <Route path="/terms" element={<Terms />} />
             <Route path="/privacy" element={<Privacy />} />
+            
+            {/* Redirects for old routes */}
+            <Route path="/war-room" element={<Navigate to="/" replace />} />
+            <Route path="/quantum" element={<Navigate to="/systems" replace />} />
+            <Route path="/prism" element={<Navigate to="/systems" replace />} />
+            <Route path="/rainbow" element={<Navigate to="/systems" replace />} />
+            <Route path="/earth" element={<Navigate to="/systems" replace />} />
+            <Route path="/analytics" element={<Navigate to="/" replace />} />
+            <Route path="/portfolio" element={<Navigate to="/" replace />} />
+            <Route path="/backtest" element={<Navigate to="/systems" replace />} />
+            
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

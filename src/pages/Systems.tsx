@@ -1,3 +1,6 @@
+import { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useGlobalState } from '@/hooks/useGlobalState';
 import Navbar from "@/components/Navbar";
 import SystemRegistryPanel from "@/components/SystemRegistryPanel";
 import { UnifiedBusStatus } from "@/components/warroom/UnifiedBusStatus";
@@ -15,6 +18,27 @@ import { ExchangeLearningPanel } from "@/components/panels/ExchangeLearningPanel
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 const Systems = () => {
+  const navigate = useNavigate();
+  const { isInitialized, isAuthenticated } = useGlobalState();
+
+  useEffect(() => {
+    if (isInitialized && !isAuthenticated) {
+      navigate('/auth');
+    }
+  }, [isInitialized, isAuthenticated, navigate]);
+
+  if (!isInitialized) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="h-8 w-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return null;
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
