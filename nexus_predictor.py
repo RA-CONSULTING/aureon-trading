@@ -130,6 +130,102 @@ class NexusPredictor:
         self.min_edge = min_edge
         self.candle_history: deque = deque(maxlen=50)
         self.last_prediction: Optional[Dict] = None
+    
+    def predict_instant(self, price: float, high_24h: float, low_24h: float, 
+                        momentum: float = 0.0) -> Dict[str, Any]:
+        """
+        🔮 INSTANT PREDICTION - No history required!
+        
+        Uses price position (strongest pattern) for immediate signal.
+        
+        Args:
+            price: Current price
+            high_24h: 24h high
+            low_24h: 24h low  
+            momentum: Change % as decimal (e.g., 0.05 for 5%)
+        
+        Returns:
+            Same format as predict()
+        """
+        # Calculate price position
+        range_24h = high_24h - low_24h
+        if range_24h > 0:
+            pos = (price - low_24h) / range_24h
+        else:
+            pos = 0.5
+        
+        # Start with base probability
+        factors = []
+        weights = []
+        patterns = []
+        
+        # PRICE POSITION (Most important!)
+        if pos >= 0.85:
+            factors.append(self.PATTERNS['pos_very_high'])
+            weights.append(self.WEIGHTS['pos_very_high'])
+            patterns.append(f'pos_very_high({pos:.2f})')
+        elif pos >= 0.75:
+            factors.append(self.PATTERNS['pos_high'])
+            weights.append(self.WEIGHTS['pos_high'])
+            patterns.append(f'pos_high({pos:.2f})')
+        elif pos <= 0.15:
+            factors.append(self.PATTERNS['pos_very_low'])
+            weights.append(self.WEIGHTS['pos_very_low'])
+            patterns.append(f'pos_very_low({pos:.2f})')
+        elif pos <= 0.25:
+            factors.append(self.PATTERNS['pos_low'])
+            weights.append(self.WEIGHTS['pos_low'])
+            patterns.append(f'pos_low({pos:.2f})')
+        else:
+            factors.append(self.PATTERNS['pos_mid'])
+            weights.append(self.WEIGHTS['pos_mid'])
+        
+        # MOMENTUM (from 24h change)
+        if momentum > 0.10:  # Strong bullish
+            factors.append(self.PATTERNS['mom6_high'])
+            weights.append(self.WEIGHTS['mom6_high'])
+            patterns.append(f'momentum_high({momentum:.1%})')
+        elif momentum < -0.10:  # Strong bearish
+            factors.append(self.PATTERNS['mom6_low'])
+            weights.append(self.WEIGHTS['mom6_low'])
+            patterns.append(f'momentum_low({momentum:.1%})')
+        
+        # COMBO PATTERNS
+        is_high_pos = pos >= 0.75
+        is_low_pos = pos <= 0.25
+        is_high_mom = momentum > 0.05
+        is_low_mom = momentum < -0.05
+        
+        if is_high_pos and is_low_mom:
+            factors.append(self.PATTERNS['combo_high_price_low_mom'])
+            weights.append(self.WEIGHTS['combo_high_price_low_mom'])
+            patterns.append('combo_high_price_low_mom')
+        elif is_low_pos and is_high_mom:
+            factors.append(self.PATTERNS['combo_low_price_high_mom'])
+            weights.append(self.WEIGHTS['combo_low_price_high_mom'])
+            patterns.append('combo_low_price_high_mom')
+        
+        # Calculate weighted probability
+        if factors and weights:
+            prob = np.average(factors, weights=weights)
+        else:
+            prob = 0.5
+        
+        edge = abs(prob - 0.5)
+        should_trade = edge >= self.min_edge
+        
+        direction = 'LONG' if prob > 0.5 else 'SHORT' if prob < 0.5 else 'NEUTRAL'
+        
+        return {
+            'direction': direction,
+            'probability': prob,
+            'confidence': edge * 2,  # Scale to 0-1
+            'edge': edge,
+            'should_trade': should_trade,
+            'patterns_triggered': patterns,
+            'price_position': pos,
+            'timestamp': datetime.now()
+        }
         
     def update(self, candle: Dict[str, Any]) -> None:
         """
