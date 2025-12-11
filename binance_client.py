@@ -57,6 +57,38 @@ class BinanceClient:
         self._allowed_pairs_cache: Set[str] = set()
         self._cache_timestamp: float = 0
         self._symbol_filters_cache: dict[str, dict[str, float]] = {}
+        
+        # Server time offset for clock sync (fixes Windows clock drift)
+        self._time_offset_ms: int = 0
+        self._time_sync_timestamp: float = 0
+        self._sync_server_time()  # Auto-sync on init
+    
+    def _sync_server_time(self) -> None:
+        """Sync with Binance server time to handle local clock drift."""
+        try:
+            local_time_before = int(time.time() * 1000)
+            r = self.session.get(f"{self.base}/api/v3/time", timeout=5)
+            local_time_after = int(time.time() * 1000)
+            
+            if r.status_code == 200:
+                server_time = r.json().get('serverTime', local_time_before)
+                # Account for network latency (use midpoint)
+                local_time_mid = (local_time_before + local_time_after) // 2
+                self._time_offset_ms = server_time - local_time_mid
+                self._time_sync_timestamp = time.time()
+                
+                if abs(self._time_offset_ms) > 1000:
+                    print(f"   [Binance] Clock offset detected: {self._time_offset_ms}ms - auto-correcting")
+        except Exception as e:
+            print(f"   [Binance] Time sync failed: {e} - using local time")
+            self._time_offset_ms = 0
+    
+    def _get_server_timestamp(self) -> int:
+        """Get current timestamp adjusted for server time offset."""
+        # Re-sync every 5 minutes to handle drift
+        if time.time() - self._time_sync_timestamp > 300:
+            self._sync_server_time()
+        return int(time.time() * 1000) + self._time_offset_ms
 
     def _sign(self, params: Dict[str, Any]) -> str:
         query = "&".join(f"{k}={params[k]}" for k in params)
@@ -145,13 +177,22 @@ class BinanceClient:
         return True, "OK"
 
     def _signed_request(self, method: str, path: str, params: Dict[str, Any]) -> Dict[str, Any]:
-        params["timestamp"] = int(time.time() * 1000)
+        params["timestamp"] = self._get_server_timestamp()  # Use synced timestamp
         params["recvWindow"] = 60000  # Increased to 60 seconds for network latency
         signature = self._sign(params)
         params["signature"] = signature
         url = f"{self.base}{path}"
         resp = self.session.request(method, url, params=params if method == "GET" else None, data=params if method != "GET" else None)
         if resp.status_code != 200:
+            # If timestamp error, try re-syncing once
+            if resp.status_code == 400 and "-1021" in resp.text:
+                self._sync_server_time()
+                params["timestamp"] = self._get_server_timestamp()
+                signature = self._sign(params)
+                params["signature"] = signature
+                resp = self.session.request(method, url, params=params if method == "GET" else None, data=params if method != "GET" else None)
+                if resp.status_code == 200:
+                    return resp.json()
             raise RuntimeError(f"Binance error {resp.status_code}: {resp.text}")
         return resp.json()
 
