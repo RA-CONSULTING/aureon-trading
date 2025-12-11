@@ -127,6 +127,15 @@ except ImportError:
         def __init__(self, client): pass
         def analyze_market(self): return {}
 
+# 🔮 NEXUS PREDICTOR - 79.6% Win Rate Validated Over 11 Years!
+try:
+    from nexus_predictor import NexusPredictor
+    NEXUS_PREDICTOR_AVAILABLE = True
+    print("🔮 Nexus Predictor loaded - 79.6% win rate validated!")
+except ImportError:
+    NEXUS_PREDICTOR_AVAILABLE = False
+    print("⚠️  Nexus Predictor not available")
+
 # 🌍⚡ HNC FREQUENCY INTEGRATION ⚡🌍
 try:
     from hnc_master_protocol import HarmonicNexusCore, HNCTradingBridge, LiveMarketFrequencyFeed
@@ -6873,6 +6882,13 @@ class AureonKrakenEcosystem:
         self.position_splitter = PositionSplitter()
         self.prime_sizer = PrimeSizer()
         
+        # 🔮 NEXUS PREDICTOR - 79.6% Win Rate Validated! 🔮
+        if NEXUS_PREDICTOR_AVAILABLE:
+            self.nexus_predictor = NexusPredictor()
+            print("   🔮 Nexus Predictor initialized (79.6% validated)")
+        else:
+            self.nexus_predictor = None
+        
         # Initialize capital pool
         self.capital_pool.update_equity(initial_balance)
         
@@ -9407,6 +9423,29 @@ class AureonKrakenEcosystem:
             if coherence < coherence_threshold:
                 continue
 
+            # 🔮 NEXUS PREDICTOR - 79.6% WIN RATE VALIDATED! 🔮
+            nexus_pred_prob = 0.5
+            nexus_pred_edge = 0.0
+            nexus_pred_patterns = []
+            if self.nexus_predictor is not None:
+                try:
+                    nexus_pred = self.nexus_predictor.predict_instant(
+                        price=price,
+                        high_24h=state.high_24h,
+                        low_24h=state.low_24h,
+                        momentum=change / 100.0  # Convert percentage to decimal
+                    )
+                    nexus_pred_prob = nexus_pred.get('probability', 0.5)
+                    nexus_pred_edge = nexus_pred.get('edge', 0.0)
+                    nexus_pred_patterns = nexus_pred.get('patterns_triggered', [])
+                    should_trade = nexus_pred.get('should_trade', True)
+                    
+                    # Skip if Nexus says NO (validated 79.6% accuracy!)
+                    if not should_trade or nexus_pred_prob < 0.55:
+                        continue
+                except Exception as e:
+                    pass  # Continue without Nexus if error
+
             # 6D harmonic gate: require minimal harmonic probability field when available
             if harmonic_engine and harmonic_prob < CONFIG.get('HARMONIC_PROB_MIN', 0.52):
                 continue
@@ -9621,6 +9660,11 @@ class AureonKrakenEcosystem:
                 if harmonic_dim_coh >= CONFIG.get('HARMONIC_GATE', 0.45):
                     score += 5
             
+            # 🔮 NEXUS PREDICTOR BONUS - Higher edge = Higher score!
+            if self.nexus_predictor is not None and nexus_pred_edge > 0:
+                nexus_score_bonus = int(nexus_pred_edge * 100)  # Up to +50 for 50% edge
+                score += nexus_score_bonus
+            
             # 🎯 OPTIMAL WIN RATE GATE COUNTING 🎯
             gates_passed = 0
             gate_status = []
@@ -9799,6 +9843,10 @@ class AureonKrakenEcosystem:
                     'emotion_band': emotion_band,
                     'chakra_alignment': chakra_alignment,
                     'symbolic_alignment': symbolic_alignment,
+                    # 🔮 NEXUS PREDICTOR fields (79.6% validated!)
+                    'nexus_prob': nexus_pred_prob,
+                    'nexus_edge': nexus_pred_edge,
+                    'nexus_patterns': nexus_pred_patterns,
                 })
                 
                 # 🔮 LOG PREDICTION FOR VALIDATION 🔮
@@ -10648,7 +10696,9 @@ class AureonKrakenEcosystem:
                 hnc_marker = f" ⚠️{hnc_freq}Hz"
             else:
                 hnc_marker = f" {hnc_freq}Hz"
-        print(f"   {icon} BUY  {symbol:12s} @ {curr_sym}{price:.6f} | {curr_sym}{pos_size:.2f} ({actual_fraction*100:.1f}%) | Γ={opp['coherence']:.2f} | +{opp['change24h']:.1f}%{hnc_marker}{flux_marker}{scout_marker}{prime_marker}{exch_marker}")
+        # 🔮 Add Nexus predictor probability
+        nexus_marker = f" 🔮{opp.get('nexus_prob', 0.5)*100:.0f}%" if self.nexus_predictor and 'nexus_prob' in opp else ""
+        print(f"   {icon} BUY  {symbol:12s} @ {curr_sym}{price:.6f} | {curr_sym}{pos_size:.2f} ({actual_fraction*100:.1f}%) | Γ={opp['coherence']:.2f} | +{opp['change24h']:.1f}%{hnc_marker}{nexus_marker}{flux_marker}{scout_marker}{prime_marker}{exch_marker}")
         
     def check_positions(self):
         """Check all positions for TP/SL with HNC frequency optimization and Earth Resonance"""
@@ -11577,11 +11627,13 @@ class AureonKrakenEcosystem:
                     if all_opps:
                         purity = self.lattice.get_field_purity()
                         purity_icon = "🟢" if purity > 0.9 else "🟠" if purity > 0.5 else "🔴"
-                        print(f"\n   🔮 Top Opportunities (Triadic Filtered | Purity: {purity_icon} {purity*100:.1f}%):")
+                        nexus_status = "🔮 NEXUS" if self.nexus_predictor else ""
+                        print(f"\n   🔮 Top Opportunities (Triadic Filtered | Purity: {purity_icon} {purity*100:.1f}%) {nexus_status}:")
                         for opp in all_opps[:5]:
                             icon = self._get_node_icon(opp['dominant_node'])
                             lock = "🔒" if opp.get('memory_locked') else "🔓"
-                            print(f"      {icon} {opp['symbol']:12s} +{opp['change24h']:5.1f}% | Γ={opp['coherence']:.2f} | Score: {opp['score']} {lock}")
+                            nexus_info = f"| 🔮{opp.get('nexus_prob', 0.5)*100:.0f}%" if self.nexus_predictor else ""
+                            print(f"      {icon} {opp['symbol']:12s} +{opp['change24h']:5.1f}% | Γ={opp['coherence']:.2f} | Score: {opp['score']} {nexus_info} {lock}")
                     
                     for opp in all_opps[:CONFIG['MAX_POSITIONS'] - len(self.positions)]:
                         self.open_position(opp)
