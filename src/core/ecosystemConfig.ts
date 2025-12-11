@@ -45,18 +45,40 @@ export const ECOSYSTEM_CONFIG = {
   CAPITAL_MIN_NOTIONAL: 10.0,
   
   // ═══════════════════════════════════════════════════════════════
-  // TRADING PARAMETERS
+  // TRADING PARAMETERS - SYNCED FROM PYTHON CONFIG
   // ═══════════════════════════════════════════════════════════════
   SLIPPAGE_PCT: 0.0010,         // 0.10% estimated slippage per trade
   SPREAD_COST_PCT: 0.0005,      // 0.05% estimated spread cost
-  TAKE_PROFIT_PCT: 1.5,         // 1.5% profit target
-  STOP_LOSS_PCT: 1.5,           // 1.5% stop loss
-  MAX_POSITIONS: 15,            // Maximum concurrent positions
+  TAKE_PROFIT_PCT: 1.5,         // 1.5% profit target (was 1.2% - need room for fees)
+  STOP_LOSS_PCT: 1.5,           // 1.5% stop loss (was 0.8% - give trades room)
+  MAX_POSITIONS: 30,            // 🔥 BEAST MODE: 30 positions from Python
   MIN_TRADE_USD: 5.0,           // Minimum trade notional
-  PORTFOLIO_RISK_BUDGET: 1.50,  // 150% - allow positions to exceed equity
+  PORTFOLIO_RISK_BUDGET: 3.00,  // 300% - allow significant positions (synced)
   MIN_EXPECTED_EDGE_GBP: 0.001, // Require positive edge
   DEFAULT_WIN_PROB: 0.55,       // Target win probability
   WIN_RATE_CONFIDENCE_TRADES: 25,
+  EQUITY_MIN_DELTA: 0.10,       // Smaller delta for frequent compounding
+  
+  // ═══════════════════════════════════════════════════════════════
+  // QUOTE CURRENCIES - GREEDY MODE
+  // ═══════════════════════════════════════════════════════════════
+  QUOTE_CURRENCIES_EXTENDED: ['USDC', 'USDT', 'USD', 'GBP', 'EUR', 'BTC', 'ETH', 'BNB', 'FDUSD', 'TUSD', 'BUSD'],
+  
+  // ═══════════════════════════════════════════════════════════════
+  // SCOUT DEPLOYMENT (from Python immediateWaveRider)
+  // ═══════════════════════════════════════════════════════════════
+  DEPLOY_SCOUTS_IMMEDIATELY: true,   // 🚀 Deploy positions immediately
+  SCOUT_MIN_MOMENTUM: 0.1,           // Very low threshold
+  SCOUT_FORCE_COUNT: 10,             // 🤑 GREEDY: 10 scouts on startup
+  SCOUT_MIN_VOLATILITY: 1.0,         // More coins qualify
+  SCOUT_MIN_VOLUME_QUOTE: 50000,     // Trade thinner books too
+  SCOUT_PER_QUOTE_LIMIT: 3,          // Spread early scouts across quote currencies
+  
+  // ═══════════════════════════════════════════════════════════════
+  // HARVEST SETTINGS
+  // ═══════════════════════════════════════════════════════════════
+  HARVEST_ON_STARTUP: true,          // 🔥 Actively harvest and trade
+  HARVEST_MIN_VALUE: 0.50,           // Lowered - harvest even small gains
   
   // ═══════════════════════════════════════════════════════════════
   // TRAILING STOP CONFIGURATION
@@ -71,8 +93,8 @@ export const ECOSYSTEM_CONFIG = {
   // DYNAMIC PORTFOLIO REBALANCING
   // ═══════════════════════════════════════════════════════════════
   ENABLE_REBALANCING: true,
-  REBALANCE_THRESHOLD: -2.0,    // Sell if losing >2%
-  MIN_HOLD_CYCLES: 10,          // Hold at least 10 cycles
+  REBALANCE_THRESHOLD: -50.0,   // 🔥 Sell big losers (>50% loss) to free capital (synced)
+  MIN_HOLD_CYCLES: 10,          // Hold at least 10 cycles (~10 mins)
   QUOTE_CURRENCIES: ['USDC', 'USDT', 'GBP', 'USD', 'EUR', 'BTC', 'ETH'],
   
   // ═══════════════════════════════════════════════════════════════
@@ -95,11 +117,12 @@ export const ECOSYSTEM_CONFIG = {
   MIN_SCORE: 40,                // Minimum opportunity score
   
   // ═══════════════════════════════════════════════════════════════
-  // COHERENCE THRESHOLDS - OPTIMAL WIN RATE MODE
+  // COHERENCE THRESHOLDS - OPTIMAL WIN RATE MODE (SYNCED)
   // ═══════════════════════════════════════════════════════════════
-  HIGH_COHERENCE_MODE: false,
-  ENTRY_COHERENCE: 0.20,        // Minimum coherence to enter
-  EXIT_COHERENCE: 0.15,         // Exit when coherence drops below
+  HIGH_COHERENCE_MODE: false,   // DISABLED: Allow trading in any coherence
+  ENTRY_COHERENCE: 0.20,        // LOWERED: Allow more trades (was 0.35)
+  EXIT_COHERENCE: 0.15,         // LOWERED: Exit more flexibly (was 0.25)
+  ENABLE_OPTIMAL_WR: true,      // Enable all win rate optimizations
   
   // ═══════════════════════════════════════════════════════════════
   // LAMBDA FIELD COMPONENTS Λ(t) = S(t) + O(t) + E(t) + H(t)
@@ -218,8 +241,30 @@ export const ECOSYSTEM_CONFIG = {
   // ═══════════════════════════════════════════════════════════════
   // SYSTEM FLUX PREDICTION
   // ═══════════════════════════════════════════════════════════════
-  FLUX_SPAN: 30,
-  FLUX_THRESHOLD: 0.60,
+  FLUX_SPAN: 30,                // Number of assets to analyze
+  FLUX_THRESHOLD: 0.80,         // Raised from 0.60 - only override in VERY strong signals
+  
+  // ═══════════════════════════════════════════════════════════════
+  // COINAPI ANOMALY DETECTION
+  // ═══════════════════════════════════════════════════════════════
+  ENABLE_COINAPI: false,            // Requires API key
+  COINAPI_SCAN_INTERVAL: 300,       // Scan for anomalies every 5 minutes
+  COINAPI_MIN_SEVERITY: 0.40,       // Minimum severity to act on anomaly
+  COINAPI_BLACKLIST_DURATION: 3600, // Block symbol for 1 hour on wash trading
+  COINAPI_ADJUST_COHERENCE: true,   // Adjust coherence based on anomalies
+  COINAPI_PRICE_SOURCE: 'multi_exchange',
+  
+  // ═══════════════════════════════════════════════════════════════
+  // FORCE TRADE MODE (Testing)
+  // ═══════════════════════════════════════════════════════════════
+  FORCE_TRADE: false,
+  FORCE_TRADE_SYMBOL: '',
+  
+  // ═══════════════════════════════════════════════════════════════
+  // WEBSOCKET CONFIG
+  // ═══════════════════════════════════════════════════════════════
+  WS_RECONNECT_DELAY: 5,
+  WS_HEARTBEAT_TIMEOUT: 60,
   
   // ═══════════════════════════════════════════════════════════════
   // GOLDEN RATIO
