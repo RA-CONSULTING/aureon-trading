@@ -496,7 +496,8 @@ CONFIG = {
     'ENABLE_REBALANCING': True,     # Sell underperformers to buy better opportunities
     'REBALANCE_THRESHOLD': -50.0,   # 🔥 Sell big losers (>50% loss) to free capital for better opportunities
     'MIN_HOLD_CYCLES': 10,          # Hold at least 10 cycles (~10 mins) before rebalance (was 3)
-    'QUOTE_CURRENCIES': ['USDC', 'USDT', 'GBP', 'USD', 'EUR', 'BTC', 'ETH'],  # 🔥 USDC first - where our money is!
+    # 🤑 GREEDY HOE MODE: ALL THE QUOTE CURRENCIES!
+    'QUOTE_CURRENCIES': ['USDC', 'USDT', 'USD', 'GBP', 'EUR', 'BTC', 'ETH', 'BNB', 'FDUSD', 'TUSD', 'BUSD'],
     
     # 🌾 Startup Harvesting
     'HARVEST_ON_STARTUP': True,      # 🔥 ENABLED - Actively harvest and trade!
@@ -505,9 +506,9 @@ CONFIG = {
     # Scout Deployment (from immediateWaveRider.ts)
     'DEPLOY_SCOUTS_IMMEDIATELY': True,   # 🚀 Deploy positions immediately on first scan - HIT THE GROUND RUNNING!
     'SCOUT_MIN_MOMENTUM': 0.1,           # Very low threshold - get into trades FAST
-    'SCOUT_FORCE_COUNT': 5,              # Force at least 5 scouts on startup (use BOTH exchanges!)
-    'SCOUT_MIN_VOLATILITY': 1.5,         # Lion Hunt style: require meaningful 24h move
-    'SCOUT_MIN_VOLUME_QUOTE': 100000,    # Minimum quote volume for scout candidates
+    'SCOUT_FORCE_COUNT': 10,             # 🤑 GREEDY: 10 scouts on startup!
+    'SCOUT_MIN_VOLATILITY': 1.0,         # 🤑 LOWERED: More coins qualify
+    'SCOUT_MIN_VOLUME_QUOTE': 50000,     # 🤑 LOWERED: Trade thinner books too
     'SCOUT_PER_QUOTE_LIMIT': 3,          # Spread early scouts across quote currencies (3 per quote)
     
     # Kelly Criterion & Risk Management
@@ -1915,7 +1916,8 @@ class MultiExchangeOrchestrator:
         self.exchange_config = {
             'binance': {
                 'enabled': True,
-                'quote_currencies': ['USDC', 'USDT'],
+                # 🤑 GREEDY HOE: ALL THE BINANCE PAIRS!
+                'quote_currencies': ['USDC', 'USDT', 'BTC', 'ETH', 'BNB', 'FDUSD', 'EUR', 'GBP', 'TUSD'],
                 'fee_rate': 0.001,
                 'max_positions': 15,  # 🔥 BEAST MODE: 15 positions per exchange!
                 'min_trade_usd': 10.0,
@@ -1923,7 +1925,8 @@ class MultiExchangeOrchestrator:
             },
             'kraken': {
                 'enabled': True,  # ✅ ENABLED - Trading on Kraken with GBP
-                'quote_currencies': ['USD', 'GBP', 'EUR'],
+                # 🤑 GREEDY HOE: ALL THE KRAKEN PAIRS!
+                'quote_currencies': ['USD', 'EUR', 'GBP', 'USDT', 'USDC', 'BTC', 'ETH', 'AUD', 'CAD'],
                 'fee_rate': 0.0026,
                 'max_positions': 15,  # 🔥 BEAST MODE: 15 positions per exchange!
                 'min_trade_usd': 5.0,
@@ -11460,22 +11463,42 @@ class AureonKrakenEcosystem:
         
         # Find initial opportunities for WebSocket
         initial_opps = self.find_opportunities()
-        # 🔥 UNLEASHED: Watch 100 pairs instead of 15 - MAXIMUM SIGNAL CAPTURE!
-        symbols_to_watch = [o['symbol'] for o in initial_opps[:100]]
+        # 🔥 UNLEASHED: Watch 200 pairs instead of 15 - MAXIMUM SIGNAL CAPTURE!
+        symbols_to_watch = [o['symbol'] for o in initial_opps[:200]]
         
-        # Add major pairs for base currency - EXPANDED LIST!
+        # Add major pairs for base currency - MEGA EXPANDED LIST!
         base = CONFIG['BASE_CURRENCY']
-        # 🚀 ALL THE MAJORS - Two flies chasing shite? WE'LL TRADE THEM ALL!
-        major_bases = ['ETH', 'SOL', 'XBT', 'ADA', 'DOT', 'LINK', 'AVAX', 'MATIC', 'ATOM', 
-                       'UNI', 'AAVE', 'DOGE', 'SHIB', 'XRP', 'LTC', 'BCH', 'FIL', 'NEAR',
-                       'APT', 'ARB', 'OP', 'INJ', 'SEI', 'SUI', 'TIA', 'PEPE', 'WIF', 'BONK']
+        # 🤑 GREEDY HOE MODE: ALL THE ALTCOINS! Every shitcoin that moves!
+        major_bases = [
+            # 🏆 TOP 20 BY MARKET CAP
+            'BTC', 'ETH', 'XBT', 'BNB', 'SOL', 'XRP', 'ADA', 'DOGE', 'AVAX', 'DOT',
+            'LINK', 'MATIC', 'SHIB', 'LTC', 'BCH', 'ATOM', 'UNI', 'XLM', 'ETC', 'FIL',
+            # 🚀 DEFI TOKENS  
+            'AAVE', 'MKR', 'CRV', 'COMP', 'SNX', 'YFI', 'SUSHI', '1INCH', 'BAL', 'LDO',
+            # 🎮 GAMING & METAVERSE
+            'SAND', 'MANA', 'AXS', 'ENJ', 'GALA', 'IMX', 'RONIN', 'ILV', 'MAGIC',
+            # 🔮 LAYER 2 & NEW CHAINS
+            'ARB', 'OP', 'MATIC', 'IMX', 'STRK', 'ZK', 'SCROLL', 'BASE', 'LINEA',
+            # 🌊 NEW HOT ALTS
+            'APT', 'SUI', 'SEI', 'TIA', 'INJ', 'PYTH', 'JUP', 'JTO', 'WEN', 'BOME',
+            # 🐕 MEME COINS - WHERE THE DEGENS PLAY!
+            'PEPE', 'WIF', 'BONK', 'FLOKI', 'TURBO', 'BRETT', 'MOG', 'POPCAT', 'NEIRO',
+            # 💎 AI TOKENS
+            'FET', 'AGIX', 'OCEAN', 'RNDR', 'TAO', 'AKT', 'ARKM', 'PRIME', 'ALI',
+            # 📦 INFRASTRUCTURE
+            'GRT', 'AR', 'HNT', 'THETA', 'STX', 'KAS', 'QNT', 'VET', 'HBAR', 'ICP',
+            # 🔒 PRIVACY COINS
+            'XMR', 'ZEC', 'DASH', 'SCRT',
+            # 🌍 MISC ALTS
+            'NEAR', 'ALGO', 'EOS', 'XTZ', 'EGLD', 'FLOW', 'MINA', 'KAVA', 'ROSE', 'ZIL'
+        ]
         for base_asset in major_bases:
-            for quote in ['USD', 'GBP', 'EUR', 'USDT', 'USDC']:
+            for quote in ['USD', 'GBP', 'EUR', 'USDT', 'USDC', 'BTC', 'ETH', 'BNB']:
                 pair = f"{base_asset}{quote}"
                 if pair not in symbols_to_watch and pair in self.ticker_cache:
                     symbols_to_watch.append(pair)
                 
-        print(f"\n🔴🔥 BEAST MODE: Starting WebSocket for {len(symbols_to_watch)} pairs!")
+        print(f"\n🔴🤑 GREEDY HOE MODE: Starting WebSocket for {len(symbols_to_watch)} pairs!")
         self.start_websocket(symbols_to_watch)
         
         initial_equity = self.total_equity_gbp
