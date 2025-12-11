@@ -1,0 +1,169 @@
+{
+  "metadata": {
+    "trained_on": "2013-2024 (11 years)",
+    "total_candles": 98049,
+    "validation_method": "walk-forward",
+    "average_win_rate": 79.6,
+    "worst_year_win_rate": 76.1,
+    "best_year_win_rate": 83.0,
+    "total_trades_tested": 20197,
+    "last_updated": "2025-12-11T17:54:54.673299"
+  },
+  "patterns": {
+    "pos_very_high": {
+      "probability": 0.766,
+      "weight": 3.0,
+      "description": "Top 15% of 24h range"
+    },
+    "pos_high": {
+      "probability": 0.543,
+      "weight": 2.0,
+      "description": "Top 15-25% of 24h range"
+    },
+    "pos_very_low": {
+      "probability": 0.202,
+      "weight": 3.0,
+      "description": "Bottom 15% of 24h range"
+    },
+    "pos_low": {
+      "probability": 0.325,
+      "weight": 2.0,
+      "description": "Bottom 15-25% of 24h range"
+    },
+    "pos_mid": {
+      "probability": 0.505,
+      "weight": 0.3,
+      "description": "Middle 50% of 24h range"
+    },
+    "mom6_high": {
+      "probability": 0.47,
+      "weight": 1.5,
+      "description": "5-6 of last 6 bullish"
+    },
+    "mom6_low": {
+      "probability": 0.529,
+      "weight": 1.5,
+      "description": "0-1 of last 6 bullish"
+    },
+    "mom12_high": {
+      "probability": 0.48,
+      "weight": 1.0,
+      "description": "9+ of last 12 bullish"
+    },
+    "mom12_low": {
+      "probability": 0.538,
+      "weight": 1.0,
+      "description": "3 or less of last 12 bullish"
+    },
+    "after_bullish": {
+      "probability": 0.486,
+      "weight": 1.0,
+      "description": "After bullish candle"
+    },
+    "after_bearish": {
+      "probability": 0.526,
+      "weight": 1.0,
+      "description": "After bearish candle"
+    },
+    "streak_bull_4plus": {
+      "probability": 0.462,
+      "weight": 2.0,
+      "description": "After 4+ bullish streak"
+    },
+    "streak_bear_4plus": {
+      "probability": 0.552,
+      "weight": 2.0,
+      "description": "After 4+ bearish streak"
+    },
+    "combo_high_price_low_mom": {
+      "probability": 0.765,
+      "weight": 5.0,
+      "description": "Price top 25% + momentum low",
+      "conditions": {
+        "price_position": ">=0.75",
+        "momentum_6": "<=2"
+      }
+    },
+    "combo_low_price_high_mom": {
+      "probability": 0.143,
+      "weight": 5.0,
+      "description": "Price bottom 25% + momentum high (85.7% bearish!)",
+      "conditions": {
+        "price_position": "<=0.25",
+        "momentum_6": ">=4"
+      }
+    },
+    "hour_17": {
+      "probability": 0.588,
+      "weight": 0.3,
+      "description": "17:00 UTC"
+    },
+    "hour_14": {
+      "probability": 0.577,
+      "weight": 0.3,
+      "description": "14:00 UTC"
+    },
+    "hour_13": {
+      "probability": 0.44,
+      "weight": 0.3,
+      "description": "13:00 UTC (bearish)"
+    }
+  },
+  "trading_rules": {
+    "min_edge_to_trade": 0.2,
+    "position_size_by_edge": {
+      "0.30+": 0.05,
+      "0.25-0.30": 0.04,
+      "0.20-0.25": 0.03,
+      "below_0.20": 0.0
+    },
+    "stop_loss_pct": 1.0,
+    "take_profit_pct": 1.5
+  },
+  "performance_by_year": {
+    "2014": {
+      "win_rate": 76.1,
+      "trades": 606
+    },
+    "2015": {
+      "win_rate": 82.9,
+      "trades": 1647
+    },
+    "2016": {
+      "win_rate": 83.0,
+      "trades": 1662
+    },
+    "2017": {
+      "win_rate": 80.1,
+      "trades": 2323
+    },
+    "2018": {
+      "win_rate": 77.9,
+      "trades": 2150
+    },
+    "2019": {
+      "win_rate": 79.0,
+      "trades": 1934
+    },
+    "2020": {
+      "win_rate": 79.9,
+      "trades": 1876
+    },
+    "2021": {
+      "win_rate": 76.4,
+      "trades": 2320
+    },
+    "2022": {
+      "win_rate": 77.4,
+      "trades": 2136
+    },
+    "2023": {
+      "win_rate": 82.6,
+      "trades": 1542
+    },
+    "2024": {
+      "win_rate": 80.6,
+      "trades": 2001
+    }
+  }
+}

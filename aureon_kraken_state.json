@@ -1,5 +1,5 @@
 {
-  "balance": 126.02704726680386,
+  "balance": 130.31807743858775,
   "peak_balance": 155.69962862831332,
   "total_trades": 4,
   "wins": 1,
@@ -10,15 +10,26 @@
   "max_drawdown": 50.42967033293107,
   "positions": {
     "BTCUSDC": {
-      "entry_price": 91016.86499999999,
+      "entry_price": 90267.10500000001,
       "quantity": 6.74e-06,
-      "entry_fee": 0.0006134536700999999,
-      "entry_value": 0.6134536701,
+      "entry_fee": 0.0006084002877000002,
+      "entry_value": 0.6084002877000001,
       "momentum": 0.0,
       "coherence": 0.5,
-      "entry_time": 1765415696.6177938,
+      "entry_time": 1765454705.8233802,
       "dominant_node": "Portfolio",
-      "cycles": 324
+      "cycles": 26
+    },
+    "ETHUSDC": {
+      "entry_price": 3196.6600000000003,
+      "quantity": 0.00758144,
+      "entry_fee": 0.0242352859904,
+      "entry_value": 24.2352859904,
+      "momentum": 0.0,
+      "coherence": 0.5,
+      "entry_time": 1765454706.2600174,
+      "dominant_node": "Portfolio",
+      "cycles": 26
     },
     "XLMUSDC": {
       "entry_price": 0.2575421875,
@@ -27,33 +38,11 @@
       "entry_value": 1.013776189765625,
       "momentum": 0.0,
       "coherence": 0.5,
-      "entry_time": 1765415702.4550004,
+      "entry_time": 1765454710.863041,
       "dominant_node": "Portfolio",
-      "cycles": 324
-    },
-    "XRPUSDC": {
-      "entry_price": 2.0217,
-      "quantity": 12.4,
-      "entry_fee": 0.023815626000000003,
-      "entry_value": 25.069080000000003,
-      "momentum": -3.353,
-      "coherence": 0.65,
-      "entry_time": 1765415889.117383,
-      "dominant_node": "ForceScout",
-      "cycles": 324
-    },
-    "SUIGBP": {
-      "entry_price": 1.1694,
-      "quantity": 7.525885476165311,
-      "entry_fee": 0.03520308190331086,
-      "entry_value": 8.800770475827715,
-      "momentum": -2.9704613342183914,
-      "coherence": 0.65,
-      "entry_time": 1765415890.2321513,
-      "dominant_node": "ForceScout",
-      "cycles": 324
+      "cycles": 26
     }
   },
-  "timestamp": 1765424457.3470607,
-  "iteration": 324
+  "timestamp": 1765457322.9736905,
+  "iteration": 26
 }
