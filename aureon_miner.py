@@ -7,7 +7,8 @@ Aureon IS the miner. One process. Background thread doing hashes.
 
 COMPONENTS:
 ├─ StratumClient: Pool communication (subscribe, authorize, notify, submit)
-├─ AureonMiner: Background hash worker with probability hooks
+├─ MiningSession: Manages connection and mining for a single pool
+├─ AureonMiner: Orchestrates multiple MiningSessions (Multi-Pool)
 ├─ HarmonicMiningOptimizer: Ties harmonic/solar data into mining decisions
 └─ MiningTelemetry: Stats and integration with Aureon ecosystem
 
@@ -216,27 +217,27 @@ class StratumClient:
             self.socket.settimeout(30)
             self.socket.connect((self.host, self.port))
             self.connected = True
-            logger.info(f"✅ TCP connection established")
+            logger.info(f"✅ TCP connection established to {self.host}")
             
             # Start receive thread
             self._running = True
-            self._recv_thread = threading.Thread(target=self._receive_loop, daemon=True, name='stratum-recv')
+            self._recv_thread = threading.Thread(target=self._receive_loop, daemon=True, name=f'stratum-{self.host}')
             self._recv_thread.start()
             
             # Subscribe
-            logger.info("📝 Sending mining.subscribe...")
+            logger.info(f"📝 Sending mining.subscribe to {self.host}...")
             if not self._subscribe():
-                logger.error("❌ Subscribe failed")
+                logger.error(f"❌ Subscribe failed on {self.host}")
                 return False
             
             # Authorize
-            logger.info(f"🔐 Authorizing worker: {self.worker}")
+            logger.info(f"🔐 Authorizing worker: {self.worker} on {self.host}")
             if not self._authorize():
-                logger.error("❌ Authorization failed")
+                logger.error(f"❌ Authorization failed on {self.host}")
                 return False
             
             self.authorized = True
-            logger.info(f"✅ Authorized successfully!")
+            logger.info(f"✅ Authorized successfully on {self.host}!")
             return True
             
         except socket.timeout:
@@ -261,7 +262,7 @@ class StratumClient:
                 pass
         self.connected = False
         self.authorized = False
-        logger.info("🔌 Disconnected from pool")
+        logger.info(f"🔌 Disconnected from pool {self.host}")
     
     def _send(self, method: str, params: list) -> int:
         """Send JSON-RPC message to pool"""
@@ -289,7 +290,7 @@ class StratumClient:
                 data = self.socket.recv(4096)
                 
                 if not data:
-                    logger.warning("Pool closed connection")
+                    logger.warning(f"Pool {self.host} closed connection")
                     break
                 
                 self._recv_buffer += data.decode('utf-8', errors='ignore')
@@ -369,7 +370,7 @@ class StratumClient:
                 self.current_job = job
             
             clean_str = "🧹 CLEAN" if job.clean_jobs else ""
-            logger.info(f"📋 New job: {job.job_id} (diff={self.difficulty:.4f}) {clean_str}")
+            logger.info(f"📋 New job on {self.host}: {job.job_id} (diff={self.difficulty:.4f}) {clean_str}")
             
             if self.on_job:
                 self.on_job(job)
@@ -383,14 +384,14 @@ class StratumClient:
         """Handle difficulty change (mining.set_difficulty)"""
         if params:
             self.difficulty = float(params[0])
-            logger.info(f"⚙️ Pool difficulty set to: {self.difficulty}")
+            logger.info(f"⚙️ Pool {self.host} difficulty set to: {self.difficulty}")
     
     def _handle_set_extranonce(self, params: list):
         """Handle extranonce change (mining.set_extranonce)"""
         if len(params) >= 2:
             self.extranonce1 = bytes.fromhex(params[0])
             self.extranonce2_size = int(params[1])
-            logger.info(f"🔧 Extranonce updated: {params[0]}")
+            logger.info(f"🔧 Extranonce updated on {self.host}: {params[0]}")
     
     def _calculate_target_from_difficulty(self, difficulty: float) -> int:
         """Calculate target from pool difficulty"""
@@ -427,7 +428,7 @@ class StratumClient:
             # res = [[[subscription_details]], extranonce1, extranonce2_size]
             self.extranonce1 = bytes.fromhex(res[1])
             self.extranonce2_size = int(res[2])
-            logger.info(f"📝 Subscribed: extranonce1={res[1]}, extranonce2_size={res[2]}")
+            logger.info(f"📝 Subscribed to {self.host}: extranonce1={res[1]}, extranonce2_size={res[2]}")
             return True
         
         logger.error(f"Invalid subscribe response: {res}")
@@ -673,37 +674,30 @@ class HarmonicMiningOptimizer:
 
 
 # ═══════════════════════════════════════════════════════════════════════════
-# AUREON MINER (BACKGROUND WORKER)
+# MINING SESSION (SINGLE POOL)
 # ═══════════════════════════════════════════════════════════════════════════
 
-class AureonMiner:
+class MiningSession:
     """
-    Background mining worker that integrates with Aureon ecosystem.
-    
-    Runs SHA-256d hashing in a background thread while the rest of
-    Aureon does trading, harmonic analysis, etc.
+    Manages mining operations for a single pool connection.
     """
     
-    def __init__(self, pool_host: str, pool_port: int, 
-                 worker: str, password: str = 'x',
-                 threads: int = 1):
-        # Pool connection
-        self.stratum = StratumClient(pool_host, pool_port, worker, password)
+    def __init__(self, host: str, port: int, worker: str, password: str, 
+                 optimizer: HarmonicMiningOptimizer, session_id: str):
+        self.host = host
+        self.port = port
+        self.worker = worker
+        self.password = password
+        self.optimizer = optimizer
+        self.session_id = session_id
         
-        # Harmonic optimizer
-        self.optimizer = HarmonicMiningOptimizer()
-        
-        # Stats
+        self.stratum = StratumClient(host, port, worker, password)
         self.stats = MiningStats()
         
-        # Thread control
         self._running = False
         self._paused = False
-        self._threads = threads
-        self._mining_threads: List[threading.Thread] = []
-        self._stats_thread: Optional[threading.Thread] = None
+        self._threads: List[threading.Thread] = []
         
-        # Current extranonce2 counter (thread-safe)
         self._extranonce2_counter = 0
         self._extranonce2_lock = threading.Lock()
         
@@ -711,173 +705,105 @@ class AureonMiner:
         self.stratum.on_share_result = self._on_share_result
         self.stratum.on_disconnect = self._on_disconnect
     
-    def start(self) -> bool:
-        """Start the miner"""
-        print("""
-╔═══════════════════════════════════════════════════════════════════════════════╗
-║                                                                               ║
-║                    ⛏️  AUREON MINER - STARTING UP  ⛏️                         ║
-║                                                                               ║
-║   "Aureon IS the miner. One process. Background thread doing hashes."         ║
-║                                                                               ║
-║   Components:                                                                 ║
-║   ├─ Stratum Client: Pool communication                                       ║
-║   ├─ SHA-256d Hasher: Double-SHA256 proof of work                             ║
-║   ├─ Harmonic Optimizer: Probability-guided nonce selection                   ║
-║   └─ Aureon Integration: Coherence-based intensity control                    ║
-║                                                                               ║
-╚═══════════════════════════════════════════════════════════════════════════════╝
-        """)
-        
-        # Connect to pool
+    def start(self, num_threads: int) -> bool:
+        """Start mining on this session"""
         if not self.stratum.connect():
-            logger.error("Failed to connect to pool")
+            logger.error(f"[{self.session_id}] Failed to connect")
             return False
         
-        # Reset stats
-        self.stats = MiningStats()
-        
-        # Start mining threads
         self._running = True
-        for i in range(self._threads):
+        self._threads = []
+        
+        for i in range(num_threads):
             t = threading.Thread(
-                target=self._mine_loop, 
+                target=self._mine_loop,
                 args=(i,),
-                daemon=True, 
-                name=f'aureon-miner-{i}'
+                daemon=True,
+                name=f'miner-{self.session_id}-{i}'
             )
             t.start()
-            self._mining_threads.append(t)
-        
-        # Start stats reporting thread
-        self._stats_thread = threading.Thread(target=self._stats_loop, daemon=True, name='miner-stats')
-        self._stats_thread.start()
-        
-        logger.info(f"✅ Miner started with {self._threads} thread(s)")
+            self._threads.append(t)
+            
+        logger.info(f"[{self.session_id}] Started with {num_threads} threads")
         return True
     
     def stop(self):
-        """Stop the miner"""
-        logger.info("🛑 Stopping miner...")
+        """Stop mining on this session"""
         self._running = False
         self.stratum.disconnect()
-        
-        for t in self._mining_threads:
-            t.join(timeout=5)
-        if self._stats_thread:
-            self._stats_thread.join(timeout=5)
-        
-        self._mining_threads.clear()
-        
-        hr, unit = self.stats.format_hashrate()
-        print(f"""
-╔═══════════════════════════════════════════════════════════════════════════════╗
-║                     ⛏️  MINER STOPPED - FINAL STATS  ⛏️                       ║
-╠═══════════════════════════════════════════════════════════════════════════════╣
-║  Uptime:            {self.stats.uptime:>10.1f} seconds                                 
-║  Total Hashes:      {self.stats.hashes:>15,}                                     
-║  Hashrate:          {hr:>12.2f} {unit:<5}                            
-║  Shares Submitted:  {self.stats.shares_submitted:>15}                            
-║  Shares Accepted:   {self.stats.shares_accepted:>15}                             
-║  Shares Rejected:   {self.stats.shares_rejected:>15}                             
-║  Accept Rate:       {self.stats.accept_rate*100:>13.1f}%                              
-║  Best Difficulty:   {self.stats.best_difficulty:>15.6f}                          
-╚═══════════════════════════════════════════════════════════════════════════════╝
-        """)
+        for t in self._threads:
+            t.join(timeout=2)
+        self._threads.clear()
     
     def pause(self):
-        """Pause mining (e.g., during intensive trading)"""
         self._paused = True
-        logger.info("⏸️ Mining paused")
     
     def resume(self):
-        """Resume mining"""
         self._paused = False
-        logger.info("▶️ Mining resumed")
-    
+        
     def _get_next_extranonce2(self, job: MiningJob) -> bytes:
-        """Get next extranonce2 value (thread-safe)"""
         with self._extranonce2_lock:
             self._extranonce2_counter += 1
             counter = self._extranonce2_counter
-        
-        # Pad to required size
         en2 = struct.pack('<Q', counter)[:job.extranonce2_size]
         return en2
     
     def _mine_loop(self, thread_id: int):
-        """Main mining loop for a single thread"""
-        logger.info(f"⛏️ Mining thread {thread_id} started")
-        
         local_hashes = 0
         last_job_id = None
         
         while self._running:
-            # Check if paused
             if self._paused:
                 time.sleep(0.5)
                 continue
             
-            # Check if we should mine (harmonic conditions)
             if not self.optimizer.should_mine():
                 time.sleep(1)
                 continue
             
-            # Get current job
             job = self.stratum.get_current_job()
             if not job:
                 time.sleep(0.5)
                 continue
             
-            # Log new job
             if job.job_id != last_job_id:
                 last_job_id = job.job_id
-                logger.debug(f"Thread {thread_id} working on job {job.job_id}")
+                # logger.debug(f"[{self.session_id}] Thread {thread_id} new job {job.job_id}")
             
-            # Get batch parameters from optimizer
             batch_size = self.optimizer.get_batch_size()
             nonce_bias = self.optimizer.get_nonce_bias()
             
-            # Generate extranonce2 for this batch
             extranonce2 = self._get_next_extranonce2(job)
             
-            # Calculate nonce range for this batch
+            # Distribute nonces based on thread_id AND session_id hash to avoid overlap if multiple sessions use same logic
+            # But here we rely on extranonce2 being unique per session instance if we managed it globally, 
+            # but extranonce1 is unique per connection usually.
+            
             nonce_start = (nonce_bias + thread_id * batch_size) % MAX_NONCE
             nonce_end = min(nonce_start + batch_size, MAX_NONCE)
             
-            # Mine batch
             for nonce in range(nonce_start, nonce_end):
                 if not self._running or self._paused:
                     break
                 
-                # Check for new job every 10k hashes
                 if nonce % 10000 == 0:
                     new_job = self.stratum.get_current_job()
                     if new_job and new_job.job_id != job.job_id:
-                        break  # New job, restart loop
+                        break
                 
-                # Build header and hash
                 header = job.build_header(extranonce2, nonce)
                 hash_result = hashlib.sha256(hashlib.sha256(header).digest()).digest()
-                
-                # Bitcoin uses reversed byte order for comparison
                 hash_int = int.from_bytes(hash_result[::-1], 'big')
                 
                 local_hashes += 1
-                
-                # Update global stats periodically
                 if local_hashes >= 1000:
                     self.stats.hashes += local_hashes
                     local_hashes = 0
                 
-                # Check if meets target
                 if hash_int < job.target:
-                    # Calculate achieved difficulty
                     achieved_diff = self._calculate_difficulty_from_hash(hash_int)
+                    logger.info(f"💎 SHARE [{self.session_id}] Thread {thread_id} | Diff: {achieved_diff:.6f}")
                     
-                    logger.info(f"💎 SHARE FOUND! Thread {thread_id} | Nonce: {nonce:08x} | Diff: {achieved_diff:.6f}")
-                    
-                    # Submit share
                     self.stratum.submit_share(job, extranonce2, job.ntime, nonce)
                     self.stats.shares_submitted += 1
                     self.stats.last_share_time = time.time()
@@ -885,76 +811,147 @@ class AureonMiner:
                     if achieved_diff > self.stats.best_difficulty:
                         self.stats.best_difficulty = achieved_diff
                     
-                    # Notify optimizer
                     self.optimizer.on_share_found(hash_result, nonce, achieved_diff)
         
-        # Flush remaining hashes
         self.stats.hashes += local_hashes
-        logger.info(f"⛏️ Mining thread {thread_id} stopped")
-    
+
     def _calculate_difficulty_from_hash(self, hash_int: int) -> float:
-        """Calculate difficulty from hash value"""
         MAX_TARGET = 0x00000000FFFF0000000000000000000000000000000000000000000000000000
-        if hash_int == 0:
-            return float('inf')
+        if hash_int == 0: return float('inf')
         return MAX_TARGET / hash_int
-    
-    def _stats_loop(self):
-        """Stats reporting loop"""
-        while self._running:
-            time.sleep(HASH_REPORT_INTERVAL)
-            if self._running and not self._paused:
-                hr, unit = self.stats.format_hashrate()
-                insight = self.optimizer.get_mining_insight()
-                
-                logger.info(
-                    f"📊 {hr:.2f} {unit} | "
-                    f"Shares: {self.stats.shares_accepted}/{self.stats.shares_submitted} | "
-                    f"Coherence: {insight['coherence']:.3f} | "
-                    f"Intensity: {insight['intensity']:.2f}x"
-                )
-    
+
     def _on_share_result(self, accepted: bool, error: str):
-        """Callback when pool responds to share submission"""
         if accepted:
             self.stats.shares_accepted += 1
-            logger.info("✅ Share ACCEPTED!")
         else:
             self.stats.shares_rejected += 1
-            logger.warning(f"❌ Share REJECTED: {error}")
-    
+            logger.warning(f"[{self.session_id}] Share REJECTED: {error}")
+
     def _on_disconnect(self):
-        """Called when disconnected from pool"""
         if self._running:
-            logger.warning("⚠️ Disconnected from pool, attempting reconnect...")
+            logger.warning(f"[{self.session_id}] Disconnected, reconnecting...")
             time.sleep(5)
             if self._running:
-                if self.stratum.connect():
-                    logger.info("✅ Reconnected to pool")
-                else:
-                    logger.error("❌ Reconnect failed")
+                self.stratum.connect()
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# AUREON MINER (MULTI-POOL ORCHESTRATOR)
+# ═══════════════════════════════════════════════════════════════════════════
+
+class AureonMiner:
+    """
+    Orchestrates mining across one or more pools.
+    """
     
+    def __init__(self, pool_host: str = None, pool_port: int = None, 
+                 worker: str = None, password: str = 'x',
+                 threads: int = 1):
+        
+        self.optimizer = HarmonicMiningOptimizer()
+        self.sessions: List[MiningSession] = []
+        self.global_threads = threads
+        
+        self._running = False
+        self._stats_thread: Optional[threading.Thread] = None
+        
+        # Backward compatibility: if host/port provided in init, add as first pool
+        if pool_host and pool_port and worker:
+            self.add_pool(pool_host, pool_port, worker, password, "default")
+    
+    def add_pool(self, host: str, port: int, worker: str, password: str = 'x', name: str = "pool"):
+        """Add a mining pool configuration"""
+        session = MiningSession(host, port, worker, password, self.optimizer, name)
+        self.sessions.append(session)
+        logger.info(f"➕ Added mining pool: {name} ({host}:{port})")
+    
+    def start(self) -> bool:
+        """Start all mining sessions"""
+        if not self.sessions:
+            logger.error("No mining pools configured")
+            return False
+            
+        print("""
+╔═══════════════════════════════════════════════════════════════════════════════╗
+║                    ⛏️  AUREON MULTI-MINER STARTING  ⛏️                        ║
+╚═══════════════════════════════════════════════════════════════════════════════╝
+        """)
+        
+        # Distribute threads
+        threads_per_pool = max(1, self.global_threads // len(self.sessions))
+        remainder = self.global_threads % len(self.sessions)
+        
+        self._running = True
+        success_count = 0
+        
+        for i, session in enumerate(self.sessions):
+            t_count = threads_per_pool + (1 if i < remainder else 0)
+            if session.start(t_count):
+                success_count += 1
+        
+        if success_count == 0:
+            logger.error("❌ Failed to start any mining sessions")
+            return False
+            
+        # Start stats thread
+        self._stats_thread = threading.Thread(target=self._stats_loop, daemon=True, name='miner-stats')
+        self._stats_thread.start()
+        
+        logger.info(f"✅ Mining started on {success_count}/{len(self.sessions)} pools with {self.global_threads} total threads")
+        return True
+    
+    def stop(self):
+        """Stop all sessions"""
+        logger.info("🛑 Stopping all miners...")
+        self._running = False
+        for session in self.sessions:
+            session.stop()
+        if self._stats_thread:
+            self._stats_thread.join(timeout=2)
+            
+        self._print_final_stats()
+
+    def pause(self):
+        for session in self.sessions:
+            session.pause()
+        logger.info("⏸️ All miners paused")
+
+    def resume(self):
+        for session in self.sessions:
+            session.resume()
+        logger.info("▶️ All miners resumed")
+        
     def update_harmonic_state(self, solar_data: dict = None, planetary_data: dict = None):
-        """Update harmonic state from external sources"""
         self.optimizer.update_state(solar_data, planetary_data)
-    
-    def get_stats(self) -> dict:
-        """Get current mining stats"""
-        hr, unit = self.stats.format_hashrate()
-        return {
-            'hashrate': hr,
-            'hashrate_unit': unit,
-            'hashes': self.stats.hashes,
-            'shares_submitted': self.stats.shares_submitted,
-            'shares_accepted': self.stats.shares_accepted,
-            'shares_rejected': self.stats.shares_rejected,
-            'accept_rate': self.stats.accept_rate,
-            'uptime': self.stats.uptime,
-            'best_difficulty': self.stats.best_difficulty,
-            'paused': self._paused,
-            'connected': self.stratum.connected,
-            'harmonic': self.optimizer.get_mining_insight()
-        }
+
+    def _stats_loop(self):
+        while self._running:
+            time.sleep(HASH_REPORT_INTERVAL)
+            if self._running:
+                total_hr = sum(s.stats.hashrate for s in self.sessions)
+                total_shares = sum(s.stats.shares_accepted for s in self.sessions)
+                
+                # Format total hashrate
+                unit = 'H/s'
+                if total_hr > 1e12: total_hr /= 1e12; unit = 'TH/s'
+                elif total_hr > 1e9: total_hr /= 1e9; unit = 'GH/s'
+                elif total_hr > 1e6: total_hr /= 1e6; unit = 'MH/s'
+                elif total_hr > 1e3: total_hr /= 1e3; unit = 'KH/s'
+                
+                insight = self.optimizer.get_mining_insight()
+                logger.info(
+                    f"📊 TOTAL: {total_hr:.2f} {unit} | "
+                    f"Pools: {len(self.sessions)} | "
+                    f"Shares: {total_shares} | "
+                    f"Coherence: {insight['coherence']:.3f}"
+                )
+
+    def _print_final_stats(self):
+        print("\n╔════════════════════ FINAL MINING STATS ════════════════════╗")
+        for session in self.sessions:
+            hr, unit = session.stats.format_hashrate()
+            print(f"║ {session.session_id:<15} | {hr:>8.2f} {unit:<4} | Shares: {session.stats.shares_accepted:>5} ║")
+        print("╚════════════════════════════════════════════════════════════╝\n")
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -965,41 +962,36 @@ def main():
     """Run miner standalone (for testing)"""
     import signal
     
-    # Setup logging
     logging.basicConfig(
         level=logging.INFO,
         format='%(asctime)s [%(levelname)s] %(message)s',
         datefmt='%H:%M:%S'
     )
     
-    # Configuration from environment
+    # Configuration
     PLATFORM = os.getenv('MINING_PLATFORM')
-    RAW_HOST = os.getenv('MINING_POOL_HOST')
-    RAW_PORT = os.getenv('MINING_POOL_PORT')
-    
-    POOL_HOST, POOL_PORT = resolve_pool_config(
-        platform=PLATFORM,
-        host=RAW_HOST,
-        port=int(RAW_PORT) if RAW_PORT else None
-    )
-    
+    ENABLE_ALL = os.getenv('MINING_ENABLE_ALL', '0') == '1'
     WORKER = os.getenv('MINING_WORKER', 'your_btc_address.aureon')
     PASSWORD = os.getenv('MINING_PASSWORD', 'x')
     THREADS = int(os.getenv('MINING_THREADS', '1'))
     
-    print(f"""
-╔═══════════════════════════════════════════════════════════════════════════════╗
-║                         AUREON MINER CONFIGURATION                            ║
-╠═══════════════════════════════════════════════════════════════════════════════╣
-║  Platform: {PLATFORM or 'Custom':<54}
-║  Pool:     {POOL_HOST}:{POOL_PORT:<42}
-║  Worker:   {WORKER:<54}
-║  Threads:  {THREADS:<54}
-╚═══════════════════════════════════════════════════════════════════════════════╝
-    """)
+    miner = AureonMiner(threads=THREADS)
     
-    # Create miner
-    miner = AureonMiner(POOL_HOST, POOL_PORT, WORKER, PASSWORD, threads=THREADS)
+    if ENABLE_ALL:
+        print("🚀 ACTIVATING ALL AVAILABLE MINING PLATFORMS")
+        for name, config in KNOWN_POOLS.items():
+            miner.add_pool(config['host'], config['port'], WORKER, PASSWORD, name)
+    else:
+        # Single pool mode
+        RAW_HOST = os.getenv('MINING_POOL_HOST')
+        RAW_PORT = os.getenv('MINING_POOL_PORT')
+        
+        POOL_HOST, POOL_PORT = resolve_pool_config(
+            platform=PLATFORM,
+            host=RAW_HOST,
+            port=int(RAW_PORT) if RAW_PORT else None
+        )
+        miner.add_pool(POOL_HOST, POOL_PORT, WORKER, PASSWORD, PLATFORM or "custom")
     
     # Handle shutdown
     def shutdown(sig, frame):
@@ -1010,22 +1002,16 @@ def main():
     signal.signal(signal.SIGINT, shutdown)
     signal.signal(signal.SIGTERM, shutdown)
     
-    # Start mining
     if miner.start():
         logger.info("⛏️ Miner running... Press Ctrl+C to stop")
-        
-        # Keep main thread alive, update harmonic state periodically
         while True:
             try:
                 time.sleep(60)
-                # In real integration, this would come from Aureon's harmonic systems
                 miner.update_harmonic_state()
             except KeyboardInterrupt:
                 break
-        
         miner.stop()
     else:
-        logger.error("Failed to start miner")
         exit(1)
 
 

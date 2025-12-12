@@ -11997,36 +11997,56 @@ def main():
     # Start background miner if enabled
     if enable_mining:
         try:
-            from aureon_miner import AureonMiner, resolve_pool_config
-            
-            # Resolve pool configuration
-            platform = os.getenv('MINING_PLATFORM')
-            raw_host = os.getenv('MINING_POOL_HOST')
-            raw_port = os.getenv('MINING_POOL_PORT')
-            
-            pool_host, pool_port = resolve_pool_config(
-                platform=platform,
-                host=raw_host,
-                port=int(raw_port) if raw_port else None
-            )
+            from aureon_miner import AureonMiner, resolve_pool_config, KNOWN_POOLS
             
             worker = os.getenv('MINING_WORKER', '')
             password = os.getenv('MINING_PASSWORD', 'x')
             threads = int(os.getenv('MINING_THREADS', '1'))
-            
+            enable_all = os.getenv('MINING_ENABLE_ALL', '0') == '1'
+
             if not worker:
                 print("    ⚠️ MINING_WORKER not set! Mining disabled.")
                 print("    Set MINING_WORKER=your_btc_address.aureon")
             else:
-                print(f"    ⛏️ Starting background miner: {worker}")
-                print(f"       Pool: {pool_host}:{pool_port} ({platform or 'custom'})")
-                
-                miner = AureonMiner(pool_host, pool_port, worker, password, threads=threads)
-                if miner.start():
-                    print(f"    ✅ Miner running on {threads} thread(s)")
+                if enable_all:
+                    print(f"    ⛏️ Starting MULTI-POOL MINER: {worker}")
+                    print(f"       Mode: ALL AVAILABLE PLATFORMS")
+                    
+                    # Initialize empty miner
+                    miner = AureonMiner(threads=threads)
+                    
+                    # Add all known pools
+                    for key, config in KNOWN_POOLS.items():
+                        print(f"       Adding Pool: {config['desc']} ({config['host']})")
+                        miner.add_pool(config['host'], config['port'], worker, password)
+                        
+                    if miner.start():
+                        print(f"    ✅ Multi-Pool Miner running on {threads} threads (distributed)")
+                    else:
+                        print("    ❌ Miner failed to start")
+                        miner = None
                 else:
-                    print("    ❌ Miner failed to start")
-                    miner = None
+                    # Single pool mode
+                    platform = os.getenv('MINING_PLATFORM')
+                    raw_host = os.getenv('MINING_POOL_HOST')
+                    raw_port = os.getenv('MINING_POOL_PORT')
+                    
+                    pool_host, pool_port = resolve_pool_config(
+                        platform=platform,
+                        host=raw_host,
+                        port=int(raw_port) if raw_port else None
+                    )
+                    
+                    print(f"    ⛏️ Starting background miner: {worker}")
+                    print(f"       Pool: {pool_host}:{pool_port} ({platform or 'custom'})")
+                    
+                    miner = AureonMiner(pool_host, pool_port, worker, password, threads=threads)
+                    if miner.start():
+                        print(f"    ✅ Miner running on {threads} thread(s)")
+                    else:
+                        print("    ❌ Miner failed to start")
+                        miner = None
+
         except ImportError as e:
             print(f"    ⚠️ Mining module not available: {e}")
         except Exception as e:
