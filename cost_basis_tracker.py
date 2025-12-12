@@ -96,8 +96,8 @@ class CostBasisTracker:
             if total <= 0:
                 continue
             
-            # Skip stablecoins
-            if asset in ['USDC', 'USDT', 'USD', 'EUR', 'GBP', 'BUSD']:
+            # Skip stablecoins and Binance Earn (LD) assets
+            if asset in ['USDC', 'USDT', 'USD', 'EUR', 'GBP', 'BUSD'] or asset.startswith('LD'):
                 continue
             
             # Try different quote currencies

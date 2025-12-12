@@ -34,6 +34,13 @@ import time
 import math
 import random
 import asyncio
+import io
+
+# 🪟 WINDOWS COMPATIBILITY: Force UTF-8 encoding for console output
+# This prevents "UnicodeEncodeError: 'charmap' codec can't encode character" crashes
+if sys.platform == 'win32':
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
+    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
 
 # Load environment variables from .env file FIRST before any other imports
 try:
