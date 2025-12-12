@@ -11972,6 +11972,10 @@ def main():
     balance = float(os.getenv('BALANCE', 1000))
     interval = float(os.getenv('INTERVAL', 5))
     
+    # Mining configuration
+    enable_mining = os.getenv('ENABLE_MINING', '0') == '1'
+    miner = None
+    
     print("""
     ╔═══════════════════════════════════════════════════════════╗
     ║  🐙 AUREON KRAKEN ECOSYSTEM 🐙                            ║
@@ -11980,15 +11984,53 @@ def main():
     ║    LIVE=1 python aureon_kraken_ecosystem.py  # Live mode  ║
     ║    BALANCE=5000 python aureon_kraken_ecosystem.py         ║
     ║    INTERVAL=3 python aureon_kraken_ecosystem.py           ║
+    ║                                                           ║
+    ║  Mining (optional):                                       ║
+    ║    ENABLE_MINING=1 MINING_WORKER=bc1q... python ...       ║
+    ║    MINING_POOL_HOST=stratum.pool.com                      ║
+    ║    MINING_POOL_PORT=3333 MINING_THREADS=2                 ║
     ╚═══════════════════════════════════════════════════════════╝
     """)
     
-    ecosystem = AureonKrakenEcosystem(
-        initial_balance=balance,
-        dry_run=dry_run
-    )
+    # Start background miner if enabled
+    if enable_mining:
+        try:
+            from aureon_miner import AureonMiner
+            
+            pool_host = os.getenv('MINING_POOL_HOST', 'stratum.slushpool.com')
+            pool_port = int(os.getenv('MINING_POOL_PORT', '3333'))
+            worker = os.getenv('MINING_WORKER', '')
+            password = os.getenv('MINING_PASSWORD', 'x')
+            threads = int(os.getenv('MINING_THREADS', '1'))
+            
+            if not worker:
+                print("    ⚠️ MINING_WORKER not set! Mining disabled.")
+                print("    Set MINING_WORKER=your_btc_address.aureon")
+            else:
+                print(f"    ⛏️ Starting background miner: {worker}")
+                miner = AureonMiner(pool_host, pool_port, worker, password, threads=threads)
+                if miner.start():
+                    print(f"    ✅ Miner running on {threads} thread(s)")
+                else:
+                    print("    ❌ Miner failed to start")
+                    miner = None
+        except ImportError as e:
+            print(f"    ⚠️ Mining module not available: {e}")
+        except Exception as e:
+            print(f"    ❌ Mining setup error: {e}")
     
-    ecosystem.run(interval=interval)
+    try:
+        ecosystem = AureonKrakenEcosystem(
+            initial_balance=balance,
+            dry_run=dry_run
+        )
+        
+        ecosystem.run(interval=interval)
+    finally:
+        # Stop miner on shutdown
+        if miner:
+            print("\n    🛑 Stopping miner...")
+            miner.stop()
 
 
 if __name__ == "__main__":
