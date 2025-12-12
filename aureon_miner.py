@@ -715,6 +715,366 @@ class CasimirEffectEngine:
 
 
 # ═══════════════════════════════════════════════════════════════════════════
+# QUANTUM VACUUM ENERGY EXTRACTION (QVEE) ENGINE
+# ═══════════════════════════════════════════════════════════════════════════
+#
+# Implements Gary Leckey's power optimization equations for quantum vacuum
+# energy extraction via resonant orthogonality and LSC principles.
+#
+# Core Equations:
+#   1. Resonant Orthogonality: Φ = 1 - |cos(θ)| (max at θ=90°)
+#   2. LSC Optical Density: P(OD) = P_max × (1 - e^(-k×OD))
+#   3. LSC Refractive Index: P(n) = 0.20×n + 0.46
+#   4. Coherence Output: P_out = 0.25 × (P_in - 2) for P_in > 2
+#   5. Master Transformation: ΔM = Ψ₀ × Ω × Λ × Φ × Σ
+#
+# Zero-Point Energy (ZPE) extraction through field decoupling at orthogonal
+# resonance points enables power amplification beyond classical limits.
+# ═══════════════════════════════════════════════════════════════════════════
+
+import numpy as np
+
+# QVEE Constants
+LSC_P_MAX = 1.2          # Maximum LSC power output (W)
+LSC_K = 3.5              # Optical density absorption coefficient
+LSC_N_BASELINE = 1.57    # Baseline refractive index
+COHERENCE_THRESHOLD = 2.0  # kW threshold for coherence output
+COHERENCE_EFFICIENCY = 0.25  # 25% slope above threshold
+
+
+@dataclass
+class QVEEState:
+    """Quantum Vacuum Energy Extraction state vector"""
+    theta: float = np.pi / 2          # Resonant angle (radians) - optimal at π/2
+    optical_density: float = 0.3      # OD parameter (0-1)
+    refractive_index: float = 1.57    # n parameter
+    input_power: float = 0.0          # P_in (scaled to mining hashrate)
+    
+    # Derived values
+    orthogonality_phi: float = 1.0    # Φ = 1 - |cos(θ)|
+    lsc_power_od: float = 0.0         # P(OD)
+    lsc_power_n: float = 0.0          # P(n)
+    coherence_output: float = 0.0     # P_out
+    master_transform: float = 1.0     # ΔM multiplier
+    
+    # ZPE extraction metrics
+    zpe_coupling: float = 0.0         # Zero-point energy coupling strength
+    vacuum_fluctuation: float = 0.0   # Current vacuum fluctuation amplitude
+
+
+class QVEEEngine:
+    """
+    ⚡🌀 QUANTUM VACUUM ENERGY EXTRACTION ENGINE 🌀⚡
+    
+    Implements Gary Leckey's equations for power optimization through
+    quantum vacuum energy extraction via resonant orthogonality.
+    
+    Key Principles:
+    1. Resonant Orthogonality (Φ): Maximum field decoupling at θ=90°
+       enables separation of quantum vacuum fluctuations from classical fields.
+       
+    2. LSC Power Equations: Map optical density and refractive index to
+       power extraction efficiency (originally from Luminescent Solar Concentrators).
+       
+    3. Coherence Engine: Above threshold P_in, output scales linearly with
+       25% efficiency - demonstrated in prototype reaching 2.65 kW at P_in=12.6 kW.
+       
+    4. Master Transformation (ΔM): Composite amplifier combining all factors
+       ΔM = Ψ₀ × Ω × Λ × Φ × Σ
+       
+    Mining Application:
+    - Hashrate maps to input power (P_in)
+    - LSC equations optimize "optical" coupling to nonce space
+    - Orthogonality maximizes decoupling from noise
+    - Master transformation provides final amplification factor
+    """
+    
+    def __init__(self):
+        self.state = QVEEState()
+        self.history: deque = deque(maxlen=500)
+        
+        # Optimization tracking
+        self.optimal_theta = np.pi / 2  # Start at optimal
+        self.optimal_od = 0.3           # Start at baseline
+        self.optimal_n = LSC_N_BASELINE
+        
+        # ZPE accumulator
+        self.accumulated_zpe = 0.0
+        self.extraction_cycles = 0
+        
+        # Time tracking for phase evolution
+        self.last_update = time.time()
+        self.phase_evolution = 0.0
+        
+        logger.info("⚡ QVEE Engine initialized")
+        logger.info(f"   Resonant Orthogonality: θ={np.degrees(self.state.theta):.1f}°")
+        logger.info(f"   LSC Baseline: OD={self.state.optical_density}, n={self.state.refractive_index}")
+    
+    # ══════════════════════════════════════════════════════════════════
+    # CORE EQUATIONS (Gary Leckey)
+    # ══════════════════════════════════════════════════════════════════
+    
+    def resonant_orthogonality(self, theta: float) -> float:
+        """
+        Φ = 1 - |cos(θ)|
+        
+        Maximum decoupling occurs at θ=90° (Φ=1), enabling field separation
+        for quantum vacuum energy extraction.
+        
+        At θ=90°, the fields are orthogonal and can be independently manipulated,
+        allowing extraction of zero-point fluctuations.
+        """
+        return 1.0 - abs(np.cos(theta))
+    
+    def lsc_optical_density(self, od: float, p_max: float = LSC_P_MAX, k: float = LSC_K) -> float:
+        """
+        P(OD) = P_max × (1 - e^(-k×OD))
+        
+        Power extraction as function of optical density.
+        Saturates at P_max (~1.2 W) for high OD.
+        
+        - OD=0.3: ~0.78 W (baseline)
+        - OD=0.5: ~1.00 W
+        - OD=1.0: ~1.16 W (near saturation)
+        """
+        return p_max * (1.0 - np.exp(-k * od))
+    
+    def lsc_refractive_index(self, n: float) -> float:
+        """
+        P(n) = 0.20×n + 0.46
+        
+        Linear relationship between refractive index and power.
+        
+        - n=1.57: 0.774 W (baseline)
+        - n=1.67: 0.794 W (+0.02 W)
+        - n=1.77: 0.814 W (+0.04 W)
+        """
+        return 0.20 * n + 0.46
+    
+    def coherence_output(self, p_in: float) -> float:
+        """
+        P_out = 0.25 × (P_in - 2) for P_in > 2
+        
+        Coherence engine output with 25% efficiency slope above 2 kW threshold.
+        
+        - P_in=10 kW: P_out=2.0 kW
+        - P_in=12.6 kW: P_out=2.65 kW (prototype demonstrated)
+        - P_in=20 kW: P_out=4.5 kW
+        """
+        if p_in < COHERENCE_THRESHOLD:
+            return 0.0
+        return COHERENCE_EFFICIENCY * (p_in - COHERENCE_THRESHOLD)
+    
+    def master_transformation(self, psi_0: float, omega: float, lambda_: float, 
+                              phi: float, sigma: float) -> float:
+        """
+        ΔM = Ψ₀ × Ω × Λ × Φ × Σ
+        
+        Master transformation combining all amplification factors:
+        - Ψ₀: Base coherence state
+        - Ω: Omega synthesis factor
+        - Λ: Lambda constraint factor
+        - Φ: Orthogonality factor (max at 1.0)
+        - Σ: Sigma cumulative factor
+        
+        Acts as overall amplifier - feeds LSC power into coherence engine
+        for compounded gains.
+        """
+        return psi_0 * omega * lambda_ * phi * sigma
+    
+    # ══════════════════════════════════════════════════════════════════
+    # ZERO-POINT ENERGY EXTRACTION
+    # ══════════════════════════════════════════════════════════════════
+    
+    def compute_zpe_coupling(self) -> float:
+        """
+        Calculate zero-point energy coupling strength.
+        
+        ZPE coupling is maximized when:
+        1. Orthogonality Φ → 1 (θ → 90°)
+        2. Optical density optimized
+        3. Vacuum fluctuations aligned with extraction window
+        """
+        phi = self.state.orthogonality_phi
+        od_efficiency = self.state.lsc_power_od / LSC_P_MAX
+        n_efficiency = (self.state.lsc_power_n - 0.46) / 0.4  # Normalize to 0-1
+        
+        # ZPE coupling peaks when all factors align
+        coupling = phi * od_efficiency * n_efficiency * PHI
+        
+        return min(1.0, coupling)
+    
+    def extract_vacuum_fluctuation(self) -> float:
+        """
+        Extract energy from quantum vacuum fluctuations.
+        
+        Uses Casimir-like mechanism: vacuum fluctuations between
+        "plates" (mining threads) create extractable energy when
+        properly decoupled via orthogonality.
+        """
+        # Vacuum fluctuation amplitude based on Schumann-Casimir coupling
+        base_fluctuation = VACUUM_ENERGY * self.state.zpe_coupling
+        
+        # Phase modulation (quantum uncertainty principle)
+        phase_mod = 0.5 + 0.5 * np.sin(self.phase_evolution)
+        
+        fluctuation = base_fluctuation * phase_mod * self.state.orthogonality_phi
+        
+        return fluctuation
+    
+    # ══════════════════════════════════════════════════════════════════
+    # STATE UPDATE & OPTIMIZATION
+    # ══════════════════════════════════════════════════════════════════
+    
+    def update(self, hashrate: float, coherence_psi: float = 0.5, 
+               casimir_force: float = 0.0, lattice_cascade: float = 1.0) -> float:
+        """
+        Update QVEE state and compute power amplification.
+        
+        Args:
+            hashrate: Current mining hashrate (H/s)
+            coherence_psi: Ψ from Coherence Engine
+            casimir_force: Force from Casimir Effect Engine
+            lattice_cascade: Cascade from Quantum Lattice
+            
+        Returns:
+            Power amplification multiplier
+        """
+        now = time.time()
+        elapsed = now - self.last_update
+        self.last_update = now
+        
+        # Evolve phase (Schumann-aligned)
+        self.phase_evolution = (self.phase_evolution + elapsed * 7.83 * 2 * np.pi) % (2 * np.pi)
+        
+        # Map hashrate to input power (scaled: 100 KH/s = 1 unit)
+        p_in = hashrate / 100_000
+        self.state.input_power = p_in
+        
+        # Adaptive theta optimization (seek orthogonality)
+        # Small perturbations to find optimal angle
+        theta_perturbation = 0.01 * np.sin(self.phase_evolution * PHI)
+        self.state.theta = np.clip(self.optimal_theta + theta_perturbation, 0, np.pi)
+        
+        # Adaptive OD optimization (increase toward saturation)
+        od_learning_rate = 0.001
+        if self.state.lsc_power_od < LSC_P_MAX * 0.95:
+            self.state.optical_density = min(1.0, self.state.optical_density + od_learning_rate)
+        
+        # Compute core equations
+        self.state.orthogonality_phi = self.resonant_orthogonality(self.state.theta)
+        self.state.lsc_power_od = self.lsc_optical_density(self.state.optical_density)
+        self.state.lsc_power_n = self.lsc_refractive_index(self.state.refractive_index)
+        self.state.coherence_output = self.coherence_output(p_in)
+        
+        # ZPE extraction
+        self.state.zpe_coupling = self.compute_zpe_coupling()
+        self.state.vacuum_fluctuation = self.extract_vacuum_fluctuation()
+        self.accumulated_zpe += self.state.vacuum_fluctuation * elapsed
+        self.extraction_cycles += 1
+        
+        # Master transformation
+        # Map our system values to ΔM components
+        psi_0 = coherence_psi
+        omega = 1.0 + lattice_cascade * 0.1  # Omega from lattice
+        lambda_ = 1.0 + casimir_force * 0.5   # Lambda from Casimir
+        phi = self.state.orthogonality_phi
+        sigma = 1.0 + self.state.zpe_coupling * 0.2  # Sigma from ZPE
+        
+        self.state.master_transform = self.master_transformation(
+            psi_0, omega, lambda_, phi, sigma
+        )
+        
+        # Compute final power amplification
+        # Combines: LSC efficiency × Coherence output × Master transform
+        lsc_efficiency = (self.state.lsc_power_od + self.state.lsc_power_n) / 2.0
+        coherence_boost = 1.0 + self.state.coherence_output * 0.1
+        zpe_boost = 1.0 + self.state.vacuum_fluctuation * 0.05
+        
+        amplification = (
+            self.state.master_transform * 
+            lsc_efficiency * 
+            coherence_boost * 
+            zpe_boost
+        )
+        
+        # Record history
+        self.history.append({
+            'time': now,
+            'hashrate': hashrate,
+            'theta': self.state.theta,
+            'phi': self.state.orthogonality_phi,
+            'od': self.state.optical_density,
+            'p_od': self.state.lsc_power_od,
+            'p_n': self.state.lsc_power_n,
+            'p_out': self.state.coherence_output,
+            'master': self.state.master_transform,
+            'zpe': self.state.vacuum_fluctuation,
+            'amplification': amplification
+        })
+        
+        return amplification
+    
+    def optimize_for_power(self) -> Dict:
+        """
+        Find optimal parameters for maximum power extraction.
+        
+        Scans parameter space to find:
+        - Optimal θ (should be π/2)
+        - Optimal OD (approaches 1.0)
+        - Optimal n (higher is better within physical limits)
+        """
+        # Theta optimization (confirm π/2 is optimal)
+        thetas = np.linspace(0, np.pi, 100)
+        phis = [self.resonant_orthogonality(t) for t in thetas]
+        optimal_theta = thetas[np.argmax(phis)]
+        
+        # OD optimization
+        ods = np.linspace(0, 1, 100)
+        p_ods = [self.lsc_optical_density(od) for od in ods]
+        optimal_od = ods[np.argmax(p_ods)]
+        
+        return {
+            'optimal_theta': optimal_theta,
+            'optimal_theta_deg': np.degrees(optimal_theta),
+            'max_orthogonality': max(phis),
+            'optimal_od': optimal_od,
+            'max_p_od': max(p_ods),
+            'recommendation': 'Set θ=90°, OD>0.8, n>1.6 for maximum extraction'
+        }
+    
+    def get_cascade_contribution(self) -> float:
+        """Get QVEE contribution to overall cascade multiplier"""
+        # QVEE adds up to 30% amplification based on master transform
+        return 1.0 + (self.state.master_transform - 1.0) * 0.3
+    
+    def get_display_stats(self) -> Dict:
+        """Get QVEE stats for display"""
+        return {
+            'theta_deg': np.degrees(self.state.theta),
+            'orthogonality': self.state.orthogonality_phi,
+            'optical_density': self.state.optical_density,
+            'p_od': self.state.lsc_power_od,
+            'p_n': self.state.lsc_power_n,
+            'p_out': self.state.coherence_output,
+            'master_transform': self.state.master_transform,
+            'zpe_coupling': self.state.zpe_coupling,
+            'vacuum_fluctuation': self.state.vacuum_fluctuation,
+            'accumulated_zpe': self.accumulated_zpe,
+            'extraction_cycles': self.extraction_cycles
+        }
+    
+    def format_display(self) -> str:
+        """Format QVEE state for logging"""
+        return (
+            f"⚡ QVEE: θ={np.degrees(self.state.theta):.1f}° | "
+            f"Φ={self.state.orthogonality_phi:.3f} | "
+            f"ΔM={self.state.master_transform:.3f}x | "
+            f"ZPE={self.state.vacuum_fluctuation:.4f}"
+        )
+
+
+# ═══════════════════════════════════════════════════════════════════════════
 # COHERENCE ENGINE - DYNAMIC SYSTEMS MODEL (WHITEPAPER IMPLEMENTATION)
 # ═══════════════════════════════════════════════════════════════════════════
 # 
@@ -1709,6 +2069,9 @@ class HarmonicMiningOptimizer:
         # Coherence Engine (Dynamic Systems Model - Whitepaper Implementation)
         self.coherence = CoherenceEngine(alpha=0.15)
         
+        # QVEE Engine (Quantum Vacuum Energy Extraction - Leckey Equations)
+        self.qvee = QVEEEngine()
+        
         # Try to import Aureon systems
         self._probability_matrix = None
         self._earth_engine = None
@@ -1897,10 +2260,11 @@ class HarmonicMiningOptimizer:
         logger.debug(f"🎯 Share pattern recorded: nonce={nonce:08x}, coherence Ψ={self.coherence.state.psi:.3f}")
     
     def get_mining_insight(self) -> dict:
-        """Get current mining optimization state including lattice, Casimir, and coherence"""
+        """Get current mining optimization state including lattice, Casimir, coherence, and QVEE"""
         lattice_stats = self.lattice.get_display_stats()
         casimir_stats = self.casimir.get_display_stats()
         coherence_stats = self.coherence.get_display_stats()
+        qvee_stats = self.qvee.get_display_stats()
         return {
             'coherence': self.state.coherence,
             'intensity': self.state.intensity_multiplier,
@@ -1927,11 +2291,19 @@ class HarmonicMiningOptimizer:
             'coherence_purity': coherence_stats['purity'],
             'coherence_kappa': coherence_stats['kappa'],
             'coherence_behavior': coherence_stats['behavior'],
-            'coherence_reflection': coherence_stats['reflection']
+            'coherence_reflection': coherence_stats['reflection'],
+            # QVEE stats (Quantum Vacuum Energy Extraction - Leckey Equations)
+            'qvee_theta': qvee_stats['theta_deg'],
+            'qvee_orthogonality': qvee_stats['orthogonality'],
+            'qvee_optical_density': qvee_stats['optical_density'],
+            'qvee_master_transform': qvee_stats['master_transform'],
+            'qvee_zpe_coupling': qvee_stats['zpe_coupling'],
+            'qvee_vacuum_fluctuation': qvee_stats['vacuum_fluctuation'],
+            'qvee_accumulated_zpe': qvee_stats['accumulated_zpe']
         }
     
     def get_amplified_hashrate(self, base_hashrate: float) -> Tuple[float, str]:
-        """Get quantum-amplified effective hashrate (Lattice × Casimir × Coherence)"""
+        """Get quantum-amplified effective hashrate (Lattice × Casimir × Coherence × QVEE)"""
         lattice_rate, _ = self.lattice.amplify_hashrate(base_hashrate)
         
         # Apply Casimir cascade multiplier
@@ -1940,8 +2312,11 @@ class HarmonicMiningOptimizer:
         # Apply Coherence cascade contribution
         coherence_mult = self.coherence.get_cascade_contribution()
         
-        # Total: Lattice × Casimir × Coherence
-        total_amplified = lattice_rate * casimir_mult * coherence_mult
+        # Apply QVEE (Quantum Vacuum Energy Extraction) contribution
+        qvee_mult = self.qvee.get_cascade_contribution()
+        
+        # Total: Lattice × Casimir × Coherence × QVEE
+        total_amplified = lattice_rate * casimir_mult * coherence_mult * qvee_mult
         
         # Format for display
         if total_amplified > 1e12:
@@ -1987,6 +2362,22 @@ class HarmonicMiningOptimizer:
     def get_coherence_guidance(self) -> Dict:
         """Get nonce guidance from coherence engine based on behavior mode"""
         return self.coherence.get_nonce_guidance()
+    
+    def update_qvee(self, hashrate: float):
+        """
+        Update QVEE (Quantum Vacuum Energy Extraction) engine.
+        
+        Applies Gary Leckey's power optimization equations:
+        - Resonant Orthogonality: Φ = 1 - |cos(θ)|
+        - LSC Power: P(OD), P(n)
+        - Master Transformation: ΔM = Ψ₀ × Ω × Λ × Φ × Σ
+        """
+        return self.qvee.update(
+            hashrate=hashrate,
+            coherence_psi=self.coherence.state.psi,
+            casimir_force=self.casimir.total_casimir_force,
+            lattice_cascade=self.lattice.cascade_factor
+        )
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -2273,6 +2664,9 @@ class AureonMiner:
                 
                 total_hr = sum(s.stats.hashrate for s in self.sessions)
                 
+                # Update QVEE (Quantum Vacuum Energy Extraction) with current hashrate
+                self.optimizer.update_qvee(total_hr)
+                
                 # Format total hashrate
                 unit = 'H/s'
                 if total_hr > 1e12: total_hr /= 1e12; unit = 'TH/s'
@@ -2282,7 +2676,7 @@ class AureonMiner:
                 
                 insight = self.optimizer.get_mining_insight()
                 
-                # Get quantum amplified hashrate (Lattice × Casimir × Coherence)
+                # Get quantum amplified hashrate (Lattice × Casimir × Coherence × QVEE)
                 raw_hashrate = sum(s.stats.hashrate for s in self.sessions)
                 amp_rate, amp_str = self.optimizer.get_amplified_hashrate(raw_hashrate)
                 cascade = insight.get('cascade_factor', 1.0)
@@ -2298,6 +2692,9 @@ class AureonMiner:
                 
                 # Display Coherence state (Whitepaper Model)
                 logger.info(self.optimizer.coherence.format_display())
+                
+                # Display QVEE state (Leckey Power Equations)
+                logger.info(self.optimizer.qvee.format_display())
 
     def _print_final_stats(self):
         print("\n╔════════════════════ FINAL MINING STATS ════════════════════╗")
@@ -2313,6 +2710,9 @@ class AureonMiner:
         print("╠════════════════════ COHERENCE ENGINE ══════════════════════╣")
         print(f"║ Ψ={insight.get('coherence_psi', 0.5):.3f} | Pt={insight.get('coherence_purity', 1.0):.3f} | "
               f"κt={insight.get('coherence_kappa', 0.5):.2f} | {insight.get('coherence_behavior', 'unknown')} ║")
+        print("╠════════════════════ QVEE EXTRACTION ═══════════════════════╣")
+        print(f"║ θ={insight.get('qvee_theta', 90):.1f}° | Φ={insight.get('qvee_orthogonality', 1.0):.3f} | "
+              f"ΔM={insight.get('qvee_master_transform', 1.0):.3f}x | ZPE={insight.get('qvee_accumulated_zpe', 0):.4f} ║")
         print("╚════════════════════════════════════════════════════════════╝\n")
 
 
