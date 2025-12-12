@@ -21,6 +21,7 @@ import os
 import json
 import time
 import logging
+import tempfile
 from datetime import datetime
 from typing import Dict, List, Optional, Any
 from dataclasses import dataclass, asdict, field
@@ -31,7 +32,11 @@ from collections import defaultdict
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s [%(levelname)s] %(message)s'
+    format='%(asctime)s [%(levelname)s] %(message)s',
+    handlers=[
+        logging.StreamHandler(),
+        logging.FileHandler('trade_logger.log', encoding='utf-8')
+    ]
 )
 logger = logging.getLogger(__name__)
 
@@ -105,7 +110,9 @@ class MarketSweepRecord:
 class TradeLogger:
     """Comprehensive trade logging system"""
     
-    def __init__(self, output_dir: str = '/tmp/aureon_trade_logs'):
+    def __init__(self, output_dir: Optional[str] = None):
+        if output_dir is None:
+            output_dir = os.path.join(tempfile.gettempdir(), 'aureon_trade_logs')
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(parents=True, exist_ok=True)
         
@@ -155,7 +162,7 @@ class TradeLogger:
             self.active_trades[trade_id] = asdict(entry)
         
         # Write to file
-        with open(self.trades_file, 'a') as f:
+        with open(self.trades_file, 'a', encoding='utf-8') as f:
             f.write(json.dumps({
                 'trade_id': trade_id,
                 **asdict(entry)
@@ -184,7 +191,7 @@ class TradeLogger:
         )
         
         # Write to file
-        with open(self.exits_file, 'a') as f:
+        with open(self.exits_file, 'a', encoding='utf-8') as f:
             f.write(json.dumps(asdict(exit_record)) + '\n')
         
         # Remove from active trades
@@ -212,7 +219,7 @@ class TradeLogger:
         )
         
         # Write to file
-        with open(self.validations_file, 'a') as f:
+        with open(self.validations_file, 'a', encoding='utf-8') as f:
             f.write(json.dumps(asdict(validation)) + '\n')
         
         accuracy = "✅" if (validation.predicted_action == 'BUY' and validation.actual_outcome == 'WIN') else "❌"
@@ -234,7 +241,7 @@ class TradeLogger:
         )
         
         # Write to file
-        with open(self.market_sweep_file, 'a') as f:
+        with open(self.market_sweep_file, 'a', encoding='utf-8') as f:
             f.write(json.dumps(asdict(sweep)) + '\n')
         
         logger.info(f"🌍 Market Sweep: Found {sweep.total_opportunities_found} opp | Entered {sweep.opportunities_entered} | Γ_avg={sweep.average_coherence:.2f} | Flux: {sweep.system_flux}")
@@ -242,9 +249,9 @@ class TradeLogger:
     def get_trade_summary(self) -> Dict[str, Any]:
         """Get summary statistics of logged trades"""
         # Count files
-        trade_count = sum(1 for line in open(self.trades_file))
-        exit_count = sum(1 for line in open(self.exits_file)) if self.exits_file.exists() else 0
-        validation_count = sum(1 for line in open(self.validations_file)) if self.validations_file.exists() else 0
+        trade_count = sum(1 for line in open(self.trades_file, encoding='utf-8'))
+        exit_count = sum(1 for line in open(self.exits_file, encoding='utf-8')) if self.exits_file.exists() else 0
+        validation_count = sum(1 for line in open(self.validations_file, encoding='utf-8')) if self.validations_file.exists() else 0
         
         return {
             'total_trades_entered': trade_count,
@@ -266,10 +273,10 @@ class TradeLogger:
         training_records = []
         
         try:
-            with open(self.trades_file) as f:
+            with open(self.trades_file, encoding='utf-8') as f:
                 trades = [json.loads(line) for line in f]
             
-            with open(self.exits_file) as f:
+            with open(self.exits_file, encoding='utf-8') as f:
                 exits = {line['trade_id']: json.loads(line) for line in f if 'trade_id' in line}
         except:
             trades = []

@@ -83,7 +83,9 @@ if not logger.handlers:
     handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
     logger.addHandler(handler)
 
-sys.path.insert(0, '/workspaces/aureon-trading')
+# Add current directory to path
+ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, ROOT_DIR)
 try:
     from unified_exchange_client import UnifiedExchangeClient, MultiExchangeClient
 except ImportError as e:
@@ -2871,7 +2873,7 @@ class UnifiedStateAggregator:
         if not filepath:
             return None
         try:
-            full_path = os.path.join('/workspaces/aureon-trading', filepath)
+            full_path = os.path.join(ROOT_DIR, filepath)
             if os.path.exists(full_path):
                 with open(full_path, 'r') as f:
                     return json.load(f)
@@ -3059,7 +3061,7 @@ class UnifiedStateAggregator:
     def save_aggregated_state(self):
         """Save multi-exchange learning state for persistence."""
         try:
-            filepath = os.path.join('/workspaces/aureon-trading', self.STATE_FILES['multi_exchange_learning'])
+            filepath = os.path.join(ROOT_DIR, self.STATE_FILES['multi_exchange_learning'])
             with open(filepath, 'w') as f:
                 json.dump({
                     'by_exchange': self.aggregated_state.get('exchange_performance', {}),
@@ -8877,7 +8879,7 @@ class AureonKrakenEcosystem:
                                         "id": i+1
                                     }
                                     await ws.send(json.dumps(subscribe_msg))
-                                    await asyncio.sleep(0.1)
+                                    await asyncio.sleep(0.5)
                                     
                             elif exchange_name == 'alpaca':
                                 # Alpaca subscription
@@ -11074,6 +11076,11 @@ class AureonKrakenEcosystem:
                 if status in ['FILLED', 'ACCEPTED', 'OPEN', 'CLOSED']:
                     success = True
                     logger.info(f"Trade confirmed: {pos.exchange}/{symbol} -> {order_id}")
+                elif status == 'REJECTED' and confirmation.get('pre_flight'):
+                    print(f"   🗑️ Dust detected for {symbol}: {confirmation.get('error')}. Removing from active tracking.")
+                    # Remove from active positions to stop infinite loop
+                    self.positions.pop(symbol, None)
+                    return
                 else:
                     print(f"   ⚠️ Sell failed for {symbol}: {status}. Retrying next cycle.")
                     return # Don't remove position, try again later

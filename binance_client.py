@@ -256,7 +256,17 @@ class BinanceClient:
         
         params = {"symbol": symbol, "side": side.upper(), "type": "MARKET", "newOrderRespType": "FULL"}
         if quantity:
-            params["quantity"] = self._format_order_value(quantity)
+            # Adjust quantity to match symbol's lot size and precision
+            adjusted_qty = self.adjust_quantity(symbol, float(quantity))
+            if adjusted_qty <= 0:
+                return {
+                    "rejected": True,
+                    "symbol": symbol,
+                    "side": side,
+                    "reason": f"Quantity {quantity} adjusts to {adjusted_qty} (below min qty)",
+                    "uk_restricted": False
+                }
+            params["quantity"] = self._format_order_value(adjusted_qty)
         elif quote_qty:
             # Adjust quote quantity to match symbol's quote precision
             adjusted_quote = self.adjust_quote_qty(symbol, float(quote_qty))

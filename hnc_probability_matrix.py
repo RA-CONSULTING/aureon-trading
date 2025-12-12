@@ -306,7 +306,7 @@ class TemporalFrequencyAnalyzer:
         """
         now = datetime.now()
         window = HourlyProbabilityWindow(
-            hour_offset=day_offset,
+            day_offset=day_offset,
             start_time=now + timedelta(days=day_offset),
             end_time=now + timedelta(days=day_offset) + timedelta(days=1),
         )
@@ -388,7 +388,7 @@ class TemporalFrequencyAnalyzer:
         """Compute current state (Day 0) as calibration point."""
         now = datetime.now()
         window = HourlyProbabilityWindow(
-            hour_offset=0,
+            day_offset=0,
             start_time=now - timedelta(hours=12),
             end_time=now + timedelta(hours=12),
         )
@@ -424,7 +424,7 @@ class TemporalFrequencyAnalyzer:
         """
         now = datetime.now()
         window = HourlyProbabilityWindow(
-            hour_offset=1,
+            day_offset=1,
             start_time=now,
             end_time=now + timedelta(days=1),
         )
@@ -498,7 +498,7 @@ class TemporalFrequencyAnalyzer:
         """
         now = datetime.now()
         window = HourlyProbabilityWindow(
-            hour_offset=3,
+            day_offset=3,
             start_time=now + timedelta(days=1),
             end_time=now + timedelta(days=3),
         )
@@ -542,7 +542,7 @@ class TemporalFrequencyAnalyzer:
         """
         now = datetime.now()
         window = HourlyProbabilityWindow(
-            hour_offset=7,
+            day_offset=7,
             start_time=now + timedelta(days=3),
             end_time=now + timedelta(days=7),
         )

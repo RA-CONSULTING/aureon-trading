@@ -32,8 +32,14 @@ class MarketPulse:
         arb_opps = self._find_arbitrage(tickers)
 
         # 3. Top Movers
-        top_gainers = sorted(tickers, key=lambda x: x.get('priceChangePercent', 0), reverse=True)[:5]
-        top_losers = sorted(tickers, key=lambda x: x.get('priceChangePercent', 0))[:5]
+        def safe_pct(t):
+            try:
+                return float(t.get('priceChangePercent', 0))
+            except (ValueError, TypeError):
+                return 0.0
+
+        top_gainers = sorted(tickers, key=safe_pct, reverse=True)[:5]
+        top_losers = sorted(tickers, key=safe_pct)[:5]
 
         return {
             "crypto_sentiment": crypto_sentiment,
