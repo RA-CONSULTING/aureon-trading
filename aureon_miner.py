@@ -24,6 +24,7 @@ import threading
 import time
 import logging
 import os
+from datetime import datetime
 from dataclasses import dataclass, field
 from typing import Optional, Dict, Any, Callable, List, Tuple
 from collections import deque
@@ -58,10 +59,78 @@ KNOWN_POOLS = {
     'kano': {'host': 'stratum.kano.is', 'port': 3333, 'desc': 'KanoPool'},
     'ckpool': {'host': 'solo.ckpool.org', 'port': 3333, 'desc': 'Solo CKPool (Solo Mining)'},
     'luxor': {'host': 'btc.global.luxor.tech', 'port': 700, 'desc': 'Luxor Mining'},
-    # Binance Pool - Multiple endpoints for redundancy
-    'binance': {'host': 'sha256.poolbinance.com', 'port': 443, 'desc': 'Binance Pool (Primary)'},
-    'binance2': {'host': 'btc.poolbinance.com', 'port': 1800, 'desc': 'Binance Pool (Backup 1)'},
-    'binance3': {'host': 'bs.poolbinance.com', 'port': 3333, 'desc': 'Binance Pool (Backup 2)'},
+    # Binance Pool - BTC
+    'binance': {'host': 'sha256.poolbinance.com', 'port': 443, 'desc': 'Binance Pool - BTC Primary'},
+    'binance2': {'host': 'btc.poolbinance.com', 'port': 1800, 'desc': 'Binance Pool - BTC Backup 1'},
+    'binance3': {'host': 'bs.poolbinance.com', 'port': 3333, 'desc': 'Binance Pool - BTC Backup 2'},
+    # Binance Pool - BCH
+    'binance-bch': {'host': 'bch.poolbinance.com', 'port': 443, 'desc': 'Binance Pool - BCH Primary'},
+    'binance-bch2': {'host': 'bch.poolbinance.com', 'port': 1800, 'desc': 'Binance Pool - BCH Backup 1'},
+    'binance-bch3': {'host': 'bch.poolbinance.com', 'port': 3333, 'desc': 'Binance Pool - BCH Backup 2'},
+    # Binance Pool - ETHW
+    'binance-ethw': {'host': 'ethw.poolbinance.com', 'port': 1800, 'desc': 'Binance Pool - ETHW Primary'},
+    'binance-ethw2': {'host': 'ethw.poolbinance.com', 'port': 25, 'desc': 'Binance Pool - ETHW Backup 1'},
+    'binance-ethw3': {'host': 'ethw.poolbinance.com', 'port': 443, 'desc': 'Binance Pool - ETHW Backup 2'},
+    # Binance Pool - ZEC
+    'binance-zec': {'host': 'zec.poolbinance.com', 'port': 5300, 'desc': 'Binance Pool - ZEC Primary'},
+    'binance-zec2': {'host': 'zec.poolbinance.com', 'port': 5400, 'desc': 'Binance Pool - ZEC Backup 1'},
+    'binance-zec3': {'host': 'zec.poolbinance.com', 'port': 5500, 'desc': 'Binance Pool - ZEC Backup 2'},
+    # Binance Pool - ETC
+    'binance-etc': {'host': 'etc.poolbinance.com', 'port': 1800, 'desc': 'Binance Pool - ETC Primary'},
+    'binance-etc2': {'host': 'etc.poolbinance.com', 'port': 25, 'desc': 'Binance Pool - ETC Backup 1'},
+    'binance-etc3': {'host': 'etc.poolbinance.com', 'port': 443, 'desc': 'Binance Pool - ETC Backup 2'},
+    # Binance Pool - DASH
+    'binance-dash': {'host': 'dash.poolbinance.com', 'port': 443, 'desc': 'Binance Pool - DASH Primary'},
+    'binance-dash2': {'host': 'dash.poolbinance.com', 'port': 1800, 'desc': 'Binance Pool - DASH Backup 1'},
+    'binance-dash3': {'host': 'dash.poolbinance.com', 'port': 3333, 'desc': 'Binance Pool - DASH Backup 2'},
+    # Binance Pool - KAS
+    'binance-kas': {'host': 'kas.poolbinance.com', 'port': 443, 'desc': 'Binance Pool - KAS Primary'},
+    'binance-kas2': {'host': 'kas.poolbinance.com', 'port': 1800, 'desc': 'Binance Pool - KAS Backup 1'},
+    'binance-kas3': {'host': 'kas.poolbinance.com', 'port': 3333, 'desc': 'Binance Pool - KAS Backup 2'},
+    # Foundry USA
+    'foundry-btc': {'host': 'btc.foundryusa.com', 'port': 3333, 'desc': 'Foundry USA Pool - BTC'},
+    # Poolin
+    'poolin-btc': {'host': 'btc.ss.poolin.com', 'port': 443, 'desc': 'Poolin - BTC'},
+    'poolin-bch': {'host': 'bch.ss.poolin.com', 'port': 443, 'desc': 'Poolin - BCH'},
+    'poolin-ltc': {'host': 'ltc.ss.poolin.com', 'port': 443, 'desc': 'Poolin - LTC'},
+    'poolin-zec': {'host': 'zec.ss.poolin.com', 'port': 443, 'desc': 'Poolin - ZEC'},
+    'poolin-dash': {'host': 'dash.ss.poolin.com', 'port': 443, 'desc': 'Poolin - DASH'},
+    'poolin-ckb': {'host': 'ckb.ss.poolin.com', 'port': 443, 'desc': 'Poolin - CKB'},
+    # SBI Crypto
+    'sbi-btc': {'host': 'stratum.sbicrypto.com', 'port': 3333, 'desc': 'SBI Crypto - BTC'},
+    # MARA Pool
+    'mara-btc': {'host': 'stratum.mara.com', 'port': 3333, 'desc': 'MARA Pool - BTC'},
+    # SpiderPool
+    'spider-btc': {'host': 'btc.spiderpool.com', 'port': 3333, 'desc': 'SpiderPool - BTC'},
+    'spider-ethw': {'host': 'ethw.spiderpool.com', 'port': 3333, 'desc': 'SpiderPool - ETHW'},
+    # UltimusPool
+    'ultimus-btc': {'host': 'btc.ultimuspool.com', 'port': 3333, 'desc': 'UltimusPool - BTC'},
+    # 2Miners
+    '2miners-ethw': {'host': 'ethw.2miners.com', 'port': 2020, 'desc': '2Miners - ETHW'},
+    '2miners-etc': {'host': 'etc.2miners.com', 'port': 1010, 'desc': '2Miners - ETC'},
+    '2miners-rvn': {'host': 'rvn.2miners.com', 'port': 6060, 'desc': '2Miners - RVN'},
+    '2miners-kas': {'host': 'kas.2miners.com', 'port': 2020, 'desc': '2Miners - KAS'},
+    '2miners-erg': {'host': 'erg.2miners.com', 'port': 8888, 'desc': '2Miners - ERG'},
+    # Nanopool
+    'nanopool-ethw': {'host': 'ethw.nanopool.org', 'port': 15555, 'desc': 'Nanopool - ETHW'},
+    'nanopool-etc': {'host': 'etc.nanopool.org', 'port': 19999, 'desc': 'Nanopool - ETC'},
+    'nanopool-rvn': {'host': 'rvn.nanopool.org', 'port': 12222, 'desc': 'Nanopool - RVN'},
+    'nanopool-erg': {'host': 'ergo.nanopool.org', 'port': 11111, 'desc': 'Nanopool - ERG'},
+    'nanopool-zec': {'host': 'zec.nanopool.org', 'port': 6666, 'desc': 'Nanopool - ZEC'},
+    'nanopool-xmr': {'host': 'xmr.nanopool.org', 'port': 14444, 'desc': 'Nanopool - XMR'},
+    # Herominers
+    'herominers-kas': {'host': 'de.kaspa.herominers.com', 'port': 1206, 'desc': 'Herominers - KAS'},
+    'herominers-erg': {'host': 'de.ergo.herominers.com', 'port': 1180, 'desc': 'Herominers - ERG'},
+    'herominers-rvn': {'host': 'de.ravencoin.herominers.com', 'port': 1240, 'desc': 'Herominers - RVN'},
+    'herominers-xmr': {'host': 'de.monero.herominers.com', 'port': 10191, 'desc': 'Herominers - XMR'},
+    # WoolyPooly
+    'wooly-kas': {'host': 'pool.woolypooly.com', 'port': 3112, 'desc': 'WoolyPooly - KAS'},
+    'wooly-erg': {'host': 'pool.woolypooly.com', 'port': 3100, 'desc': 'WoolyPooly - ERG'},
+    'wooly-rvn': {'host': 'pool.woolypooly.com', 'port': 55555, 'desc': 'WoolyPooly - RVN'},
+    # Unmineable
+    'unmineable': {'host': 'kp.unmineable.com', 'port': 3333, 'desc': 'Unmineable - General'},
+    # Prohashing
+    'prohashing': {'host': 'prohashing.com', 'port': 3333, 'desc': 'Prohashing - General'},
 }
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -80,7 +149,7 @@ BINANCE_COINS = {
     'BCH': {
         'algorithm': 'SHA256',
         'host': 'bch.poolbinance.com',
-        'port': 3333,
+        'port': 443,
         'desc': 'Bitcoin Cash - SHA256',
         'merge_with': None,
         'casimir_coupling': 0.95,  # Same algo = high coupling
@@ -104,7 +173,7 @@ BINANCE_COINS = {
     'ETC': {
         'algorithm': 'Etchash',
         'host': 'etc.poolbinance.com',
-        'port': 3333,
+        'port': 1800,
         'desc': 'Ethereum Classic - Etchash',
         'merge_with': None,
         'casimir_coupling': 0.382,  # 1-Phi - memory intensive
@@ -120,10 +189,34 @@ BINANCE_COINS = {
     'ZEC': {
         'algorithm': 'Equihash',
         'host': 'zec.poolbinance.com',
-        'port': 3333,
+        'port': 5300,
         'desc': 'Zcash - Equihash',
         'merge_with': None,
         'casimir_coupling': 0.5,
+    },
+    'ETHW': {
+        'algorithm': 'Ethash',
+        'host': 'ethw.poolbinance.com',
+        'port': 1800,
+        'desc': 'EthereumPoW - Ethash',
+        'merge_with': None,
+        'casimir_coupling': 0.4,
+    },
+    'DASH': {
+        'algorithm': 'X11',
+        'host': 'dash.poolbinance.com',
+        'port': 443,
+        'desc': 'Dash - X11',
+        'merge_with': None,
+        'casimir_coupling': 0.45,
+    },
+    'KAS': {
+        'algorithm': 'kHeavyHash',
+        'host': 'kas.poolbinance.com',
+        'port': 443,
+        'desc': 'Kaspa - kHeavyHash',
+        'merge_with': None,
+        'casimir_coupling': 0.55,
     },
 }
 
@@ -243,6 +336,10 @@ class HarmonicMiningState:
     ping_pong_phase: float = 0.0  # Current phase in ping-pong cycle
     quantum_entanglement: float = 0.0  # Cross-thread coherence
     harmonic_cascade: float = 1.0  # Cascade multiplier
+    probability: float = 0.5  # Probability matrix signal
+    probability_confidence: float = 0.0  # Confidence of probability matrix
+    probability_direction: str = "NEUTRAL"  # LONG/SHORT/NEUTRAL
+    probability_intensity: float = 1.0  # Mining intensity multiplier from probability
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -3845,6 +3942,8 @@ class HarmonicMiningOptimizer:
         self._probability_matrix = None
         self._earth_engine = None
         self._imperial_engine = None
+        self._enhancement_layer = None
+        self._last_prediction = None  # Cache latest probability nexus prediction
         self._load_aureon_hooks()
     
     def _load_aureon_hooks(self):
@@ -3869,6 +3968,13 @@ class HarmonicMiningOptimizer:
             logger.info("🌌 Imperial Engine: CONNECTED to miner")
         except ImportError:
             logger.debug("Imperial Engine not available for mining")
+
+        try:
+            from aureon_enhancements import EnhancementLayer
+            self._enhancement_layer = EnhancementLayer()
+            logger.info("🌈 Enhancement Layer: CONNECTED to miner")
+        except ImportError:
+            logger.debug("Enhancement Layer not available for mining")
     
     def update_state(self, solar_data: Optional[dict] = None, 
                      planetary_data: Optional[dict] = None):
@@ -3901,13 +4007,35 @@ class HarmonicMiningOptimizer:
         if planetary_data:
             self.state.planetary_alignment = planetary_data.get('coherence', self.state.planetary_alignment)
         
+        # Update from Enhancement Layer if available
+        enhancement_mod = 1.0
+        if self._enhancement_layer:
+            try:
+                # Use current state to get unified modifier
+                result = self._enhancement_layer.get_unified_modifier(
+                    lambda_value=self.state.phi_phase,
+                    coherence=self.state.coherence,
+                    price=1.0,  # Placeholder
+                    volume=1.0
+                )
+                enhancement_mod = result.trading_modifier
+                
+                # Update coherence if grid coherence is available
+                if result.grid_coherence > 0:
+                    self.state.coherence = (self.state.coherence + result.grid_coherence) / 2
+            except Exception:
+                pass
+
         # Compute intensity multiplier based on harmonic state
         # Higher coherence = more aggressive mining
         self.state.intensity_multiplier = (
             0.5 +  # Base 50%
             0.3 * self.state.coherence +  # Up to 30% from coherence
             0.2 * self.state.planetary_alignment  # Up to 20% from planetary
-        ) * self.state.solar_forcing
+        ) * self.state.solar_forcing * enhancement_mod
+
+        # Apply probability matrix influence (boost or damp mining aggression)
+        self.state.intensity_multiplier *= getattr(self.state, 'probability_intensity', 1.0)
         
         # Clamp to reasonable range
         self.state.intensity_multiplier = max(0.1, min(2.0, self.state.intensity_multiplier))
@@ -3921,6 +4049,42 @@ class HarmonicMiningOptimizer:
                 'intensity': self.state.intensity_multiplier
             }
         })
+
+    def update_probability_signal(self, hashrate: float = 0.0, difficulty: float = 1.0):
+        """
+        Refresh probability matrix using current mining context.
+        Uses pseudo-candle built from mining difficulty and hashrate to keep
+        the matrix learning and produce a bias for nonce selection and
+        mining intensity.
+        """
+        if not self._probability_matrix:
+            return None
+        try:
+            now = datetime.utcnow()
+            pseudo_price = max(0.0001, difficulty)
+            candle = {
+                'timestamp': now,
+                'open': pseudo_price,
+                'high': pseudo_price * 1.01,
+                'low': pseudo_price * 0.99,
+                'close': pseudo_price,
+                'volume': max(hashrate, 1.0)
+            }
+            self._probability_matrix.update_history(candle)
+            pred = self._probability_matrix.predict()
+            self._last_prediction = pred
+            self.state.probability = pred.probability
+            self.state.probability_confidence = pred.confidence
+            self.state.probability_direction = pred.direction
+            edge = abs(pred.probability - 0.5)
+            prob_intensity = 0.9 + min(0.3, edge * 0.6)  # 0.9-1.2 base
+            if pred.direction == 'SHORT':
+                prob_intensity *= 0.85  # Reduce intensity when matrix is bearish
+            self.state.probability_intensity = max(0.5, min(1.5, prob_intensity))
+            return pred
+        except Exception as e:
+            logger.debug(f"Probability matrix update failed: {e}")
+            return None
     
     def get_nonce_bias(self) -> int:
         """
@@ -3928,18 +4092,23 @@ class HarmonicMiningOptimizer:
         Uses Fibonacci/Prime patterns from Aureon's coherence logic.
         """
         # Use probability prediction if available
-        if self._probability_matrix:
+        if self._last_prediction:
             try:
-                pred = self._probability_matrix.get_next_prediction()
-                if pred and pred.get('probability', 0) > 0.6:
-                    # High confidence - use prime-aligned offset
-                    prob = pred['probability']
+                pred = self._last_prediction
+                if pred.confidence >= 0.05:
+                    prob = pred.probability
                     prime_idx = int(prob * len(PRIMES))
                     bias = PRIMES[prime_idx % len(PRIMES)] * 1_000_000
-                    logger.debug(f"🔮 Probability-guided nonce bias: {bias}")
+                    if pred.direction == 'SHORT':
+                        # Invert bias for bearish signal to decorrelate
+                        bias = (MAX_NONCE - bias) % MAX_NONCE
+                    logger.debug(
+                        f"🔮 Probability-guided nonce bias: {bias} "
+                        f"(dir={pred.direction}, p={prob:.3f}, conf={pred.confidence:.3f})"
+                    )
                     return bias
-            except:
-                pass
+            except Exception as e:
+                logger.debug(f"Nonce bias prediction fallback: {e}")
         
         # Analyze previous successful nonces for patterns
         if len(self.share_nonces) >= 3:
@@ -3959,6 +4128,13 @@ class HarmonicMiningOptimizer:
         Determine if conditions are favorable for mining.
         Always True for now, but could gate on extreme conditions.
         """
+        pred = self._last_prediction
+        if pred:
+            # If matrix is confidently neutral/short, pause to save energy
+            if pred.direction == 'NEUTRAL' and pred.confidence >= 0.10:
+                return False
+            if pred.direction == 'SHORT' and pred.confidence >= 0.15:
+                return False
         return True
     
     def get_batch_size(self) -> int:
@@ -4045,6 +4221,9 @@ class HarmonicMiningOptimizer:
             'successful_shares': len(self.share_nonces),
             'schumann': self.state.schumann_resonance,
             'phi_phase': self.state.phi_phase,
+            'probability': self.state.probability,
+            'probability_confidence': self.state.probability_confidence,
+            'probability_direction': self.state.probability_direction,
             # Quantum Lattice stats
             'lattice_resonance': lattice_stats['resonance'],
             'cascade_factor': lattice_stats['cascade'],
@@ -4543,6 +4722,9 @@ class AureonMiner:
                 
                 # Update QVEE (Quantum Vacuum Energy Extraction) with current hashrate
                 self.optimizer.update_qvee(total_hr)
+
+                # Update Probability Matrix using mining context (hashrate + difficulty)
+                self.optimizer.update_probability_signal(total_hr, max(1.0, avg_difficulty))
                 
                 # Format total hashrate
                 unit = 'H/s'
@@ -4557,6 +4739,9 @@ class AureonMiner:
                 raw_hashrate = sum(s.stats.hashrate for s in self.sessions)
                 amp_rate, amp_str = self.optimizer.get_amplified_hashrate(raw_hashrate)
                 cascade = insight.get('cascade_factor', 1.0)
+                prob_dir = insight.get('probability_direction', 'NEUTRAL')
+                prob_val = insight.get('probability', 0.5)
+                prob_conf = insight.get('probability_confidence', 0.0)
                 
                 # Display with quantum lattice info
                 logger.info(
@@ -4564,7 +4749,8 @@ class AureonMiner:
                     f"⚛️ QUANTUM: {amp_str} | "
                     f"Pools: {len(self.sessions)} | "
                     f"Shares: {total_shares} | "
-                    f"Cascade: {cascade:.2f}x"
+                    f"Cascade: {cascade:.2f}x | "
+                    f"Prob: {prob_dir} {prob_val:.2f} (conf {prob_conf:.2f})"
                 )
                 
                 # Display Coherence state (Whitepaper Model)
