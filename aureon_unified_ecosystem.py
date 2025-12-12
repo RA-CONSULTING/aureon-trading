@@ -2679,7 +2679,7 @@ class UnifiedStateAggregator:
             self.aggregated_state['sources_loaded'].append(f"probability:{report}")
 
             # Freshness tracking
-            generated_ts = data.get('generated') if isinstance(data, dict) else None
+            generated_ts = data.get('generated') or data.get('generated_at') if isinstance(data, dict) else None
             if generated_ts:
                 try:
                     gen_dt = datetime.fromisoformat(generated_ts)
