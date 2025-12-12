@@ -1841,8 +1841,12 @@ class AureonKrakenEcosystem:
 
             # Get Lattice Modifiers
             lattice_state = self.lattice.get_state()
-            target_tp = CONFIG['TAKE_PROFIT_PCT'] * lattice_state.tp_mod
-            target_sl = CONFIG['STOP_LOSS_PCT'] * lattice_state.sl_mod
+            # Handle lattice_state as dict or object
+            tp_mod = lattice_state.get('tp_mod') if isinstance(lattice_state, dict) else getattr(lattice_state, 'tp_mod', 1.0)
+            sl_mod = lattice_state.get('sl_mod') if isinstance(lattice_state, dict) else getattr(lattice_state, 'sl_mod', 1.0)
+            
+            target_tp = CONFIG['TAKE_PROFIT_PCT'] * tp_mod
+            target_sl = CONFIG['STOP_LOSS_PCT'] * sl_mod
 
             # Check TP
             if change_pct >= target_tp:

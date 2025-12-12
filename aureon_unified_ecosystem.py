@@ -10860,18 +10860,22 @@ class AureonKrakenEcosystem:
             lattice_state = self.lattice.get_state()
             
             # 🧠 USE LEARNED TP/SL IF AVAILABLE (from probability matrix recommendations)
+            # Handle lattice_state as dict or object
+            tp_mod = lattice_state.get('tp_mod') if isinstance(lattice_state, dict) else getattr(lattice_state, 'tp_mod', 1.0)
+            sl_mod = lattice_state.get('sl_mod') if isinstance(lattice_state, dict) else getattr(lattice_state, 'sl_mod', 1.0)
+            
             if pos.learned_confidence in ('high', 'medium') and pos.learned_tp_pct is not None:
                 # Use learned parameters with lattice modifier
-                target_tp = (pos.learned_tp_pct * 100) * lattice_state.tp_mod  # Convert from decimal to %
-                target_sl = (pos.learned_sl_pct * 100) * lattice_state.sl_mod if pos.learned_sl_pct else CONFIG['STOP_LOSS_PCT'] * lattice_state.sl_mod
+                target_tp = (pos.learned_tp_pct * 100) * tp_mod  # Convert from decimal to %
+                target_sl = (pos.learned_sl_pct * 100) * sl_mod if pos.learned_sl_pct else CONFIG['STOP_LOSS_PCT'] * sl_mod
                 min_hold = pos.learned_hold_cycles if pos.learned_hold_cycles else CONFIG['MIN_HOLD_CYCLES']
                 
                 if pos.cycles % 20 == 0:
                     logger.info(f"   🧠 {symbol}: Using LEARNED params - TP {target_tp:.1f}% / SL {target_sl:.1f}% / Hold {min_hold} (ExpWR: {pos.learned_win_rate*100:.0f}%)")
             else:
                 # Use global CONFIG values
-                target_tp = CONFIG['TAKE_PROFIT_PCT'] * lattice_state.tp_mod
-                target_sl = CONFIG['STOP_LOSS_PCT'] * lattice_state.sl_mod
+                target_tp = CONFIG['TAKE_PROFIT_PCT'] * tp_mod
+                target_sl = CONFIG['STOP_LOSS_PCT'] * sl_mod
                 min_hold = CONFIG['MIN_HOLD_CYCLES']
             
             # 🌍✨ Apply Earth Resonance exit urgency to TP ✨🌍

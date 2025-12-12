@@ -82,8 +82,25 @@
         "entry_coherence": 0.65,
         "win": false
       }
+    ],
+    "ETHUSDC": [
+      {
+        "timestamp": 1765544746.7703507,
+        "platform_timestamp": 1765544746.7703447,
+        "symbol": "ETHUSDC",
+        "exit_price": 3246.5,
+        "realized_pnl": 0.2551711037695983,
+        "exit_reason": "TP",
+        "entry_price": 3196.6600000000003,
+        "entry_time": 1765544028.096731,
+        "hold_duration_mins": 11.963181149959563,
+        "was_historical": false,
+        "entry_momentum": 1.5591273391602387,
+        "entry_coherence": 0.5,
+        "win": true
+      }
     ]
   },
-  "last_updated": 1765491697.1054444,
-  "total_trades": 5
+  "last_updated": 1765544746.7703626,
+  "total_trades": 6
 }

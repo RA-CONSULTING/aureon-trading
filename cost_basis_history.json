@@ -11,20 +11,21 @@
       "trade_count": 2,
       "first_trade": 1765272735453,
       "last_trade": 1765313222888,
-      "synced_at": 1765530315.3399374
+      "synced_at": 1765547193.5325594
     },
     "LTCUSDC": {
       "exchange": "binance",
       "asset": "LTC",
       "quote": "USDC",
-      "avg_entry_price": 84.54019169329074,
-      "total_quantity": 0.002000000000000335,
-      "total_cost": 0.16908038338660977,
-      "total_fees": 0.00136834,
-      "trade_count": 7,
-      "first_trade": 1764381009760,
-      "last_trade": 1764386919879,
-      "synced_at": 1765530315.573098
+      "avg_entry_price": 84.04,
+      "total_quantity": 0.096,
+      "total_cost": 8.06784,
+      "total_fees": 0.007664448000000001,
+      "trade_count": 1,
+      "first_trade": 1765547374593,
+      "last_trade": 1765547374593,
+      "synced_at": 1765547374.5930877,
+      "source": "manual"
     },
     "ETHEUR": {
       "exchange": "binance",
@@ -37,7 +38,7 @@
       "trade_count": 2,
       "first_trade": 1765314200635,
       "last_trade": 1765316101600,
-      "synced_at": 1765530316.3744965
+      "synced_at": 1765547194.456134
     },
     "BNBUSDC": {
       "exchange": "binance",
@@ -50,7 +51,7 @@
       "trade_count": 85,
       "first_trade": 1763574948009,
       "last_trade": 1764387192671,
-      "synced_at": 1765530317.1250243
+      "synced_at": 1765547194.6886084
     },
     "FUNUSDC": {
       "exchange": "binance",
@@ -63,34 +64,34 @@
       "trade_count": 12,
       "first_trade": 1764384315973,
       "last_trade": 1764391266425,
-      "synced_at": 1765530317.3506007
+      "synced_at": 1765547194.915231
     },
     "LINKUSDC": {
       "exchange": "binance",
       "asset": "LINK",
       "quote": "USDC",
-      "avg_entry_price": 13.990000000000002,
-      "total_quantity": 0.58,
-      "total_cost": 8.1142,
-      "total_fees": 0.007708489999999999,
+      "avg_entry_price": 14.34,
+      "total_quantity": 0.56,
+      "total_cost": 8.0304,
+      "total_fees": 0.00762888,
       "trade_count": 1,
-      "first_trade": 1765530491862,
-      "last_trade": 1765530491862,
-      "synced_at": 1765530491.8623793,
+      "first_trade": 1765547371410,
+      "last_trade": 1765547371410,
+      "synced_at": 1765547371.4109905,
       "source": "manual"
     },
     "ZECUSDC": {
       "exchange": "binance",
       "asset": "ZEC",
       "quote": "USDC",
-      "avg_entry_price": 453.57,
+      "avg_entry_price": 459.48,
       "total_quantity": 0.017,
-      "total_cost": 7.7106900000000005,
-      "total_fees": 0.0073251555,
+      "total_cost": 7.811160000000001,
+      "total_fees": 0.007420602,
       "trade_count": 1,
-      "first_trade": 1765530488444,
-      "last_trade": 1765530488444,
-      "synced_at": 1765530488.4448102,
+      "first_trade": 1765547372541,
+      "last_trade": 1765547372541,
+      "synced_at": 1765547372.5419238,
       "source": "manual"
     },
     "DASHUSDC": {
@@ -104,33 +105,35 @@
       "trade_count": 11,
       "first_trade": 1764381043950,
       "last_trade": 1764388832432,
-      "synced_at": 1765530318.5179183
+      "synced_at": 1765547195.6418483
     },
     "XRPUSDC": {
       "exchange": "binance",
       "asset": "XRP",
       "quote": "USDC",
-      "avg_entry_price": 2.0217774250569,
-      "total_quantity": 0.20000000000000107,
-      "total_cost": 0.4043554850113822,
-      "total_fees": 0.17327687000000003,
-      "trade_count": 44,
-      "first_trade": 1763911372554,
-      "last_trade": 1765451807831,
-      "synced_at": 1765530318.7879071
+      "avg_entry_price": 2.0413,
+      "total_quantity": 3.9,
+      "total_cost": 7.96107,
+      "total_fees": 0.0075630165,
+      "trade_count": 1,
+      "first_trade": 1765547368433,
+      "last_trade": 1765547368433,
+      "synced_at": 1765547368.4335873,
+      "source": "manual"
     },
     "ADAUSDC": {
       "exchange": "binance",
       "asset": "ADA",
       "quote": "USDC",
-      "avg_entry_price": 4.092006034921466,
-      "total_quantity": 16.700000000000017,
-      "total_cost": 68.33650078318855,
-      "total_fees": 0.16511018,
-      "trade_count": 36,
-      "first_trade": 1763911470004,
-      "last_trade": 1765495835890,
-      "synced_at": 1765530319.0299988
+      "avg_entry_price": 0.4257000000000001,
+      "total_quantity": 19.1,
+      "total_cost": 8.130870000000002,
+      "total_fees": 0.007724326500000001,
+      "trade_count": 1,
+      "first_trade": 1765547375723,
+      "last_trade": 1765547375723,
+      "synced_at": 1765547375.7232778,
+      "source": "manual"
     },
     "XLMUSDC": {
       "exchange": "binance",
@@ -143,7 +146,7 @@
       "trade_count": 3,
       "first_trade": 1764388670400,
       "last_trade": 1764762781893,
-      "synced_at": 1765530319.2635374
+      "synced_at": 1765547196.8019917
     },
     "ZENUSDC": {
       "exchange": "binance",
@@ -156,7 +159,7 @@
       "trade_count": 9,
       "first_trade": 1764381052649,
       "last_trade": 1764389166730,
-      "synced_at": 1765530319.4985642
+      "synced_at": 1765547197.0312717
     },
     "FETUSDC": {
       "exchange": "binance",
@@ -169,7 +172,7 @@
       "trade_count": 14,
       "first_trade": 1764381005831,
       "last_trade": 1764395095986,
-      "synced_at": 1765530319.7309756
+      "synced_at": 1765547197.269318
     },
     "CHZUSDC": {
       "exchange": "binance",
@@ -182,20 +185,20 @@
       "trade_count": 6,
       "first_trade": 1764385388497,
       "last_trade": 1764389167386,
-      "synced_at": 1765530319.9612586
+      "synced_at": 1765547197.4936666
     },
     "DOGEUSDC": {
       "exchange": "binance",
       "asset": "DOGE",
       "quote": "USDC",
-      "avg_entry_price": 0.14035999999999998,
+      "avg_entry_price": 0.14113,
       "total_quantity": 57.0,
-      "total_cost": 8.00052,
-      "total_fees": 0.007600494,
+      "total_cost": 8.044410000000001,
+      "total_fees": 0.0076421894999999995,
       "trade_count": 1,
-      "first_trade": 1765530490732,
-      "last_trade": 1765530490732,
-      "synced_at": 1765530490.7321432,
+      "first_trade": 1765547369356,
+      "last_trade": 1765547369356,
+      "synced_at": 1765547369.3560286,
       "source": "manual"
     },
     "WINEUR": {
@@ -209,7 +212,7 @@
       "trade_count": 5,
       "first_trade": 1765266742089,
       "last_trade": 1765272399520,
-      "synced_at": 1765530320.9242477
+      "synced_at": 1765547198.4032528
     },
     "HBARUSDC": {
       "exchange": "binance",
@@ -222,7 +225,7 @@
       "trade_count": 4,
       "first_trade": 1764379848085,
       "last_trade": 1764387817509,
-      "synced_at": 1765530321.1505024
+      "synced_at": 1765547198.6285577
     },
     "BCHUSDC": {
       "exchange": "binance",
@@ -235,20 +238,20 @@
       "trade_count": 4,
       "first_trade": 1764387918842,
       "last_trade": 1765270159458,
-      "synced_at": 1765530321.3855217
+      "synced_at": 1765547198.8601906
     },
     "SOLUSDC": {
       "exchange": "binance",
       "asset": "SOL",
       "quote": "USDC",
-      "avg_entry_price": 138.00999999999996,
+      "avg_entry_price": 139.14,
       "total_quantity": 0.058,
-      "total_cost": 8.004579999999999,
-      "total_fees": 0.007604351,
+      "total_cost": 8.07012,
+      "total_fees": 0.007666613999999999,
       "trade_count": 1,
-      "first_trade": 1765530484678,
-      "last_trade": 1765530484678,
-      "synced_at": 1765530484.678475,
+      "first_trade": 1765547363888,
+      "last_trade": 1765547363888,
+      "synced_at": 1765547363.8882148,
       "source": "manual"
     },
     "COMPUSDC": {
@@ -262,7 +265,7 @@
       "trade_count": 5,
       "first_trade": 1764385590658,
       "last_trade": 1764391347169,
-      "synced_at": 1765530321.932499
+      "synced_at": 1765547199.4024568
     },
     "DOTUSDC": {
       "exchange": "binance",
@@ -275,7 +278,7 @@
       "trade_count": 19,
       "first_trade": 1763911055317,
       "last_trade": 1764386012650,
-      "synced_at": 1765530322.1616364
+      "synced_at": 1765547199.6257718
     },
     "RUNEUSDC": {
       "exchange": "binance",
@@ -288,7 +291,7 @@
       "trade_count": 1,
       "first_trade": 1764388718941,
       "last_trade": 1764388796444,
-      "synced_at": 1765530322.3839588
+      "synced_at": 1765547199.8518703
     },
     "TRBUSDC": {
       "exchange": "binance",
@@ -301,7 +304,7 @@
       "trade_count": 1,
       "first_trade": 1764386055225,
       "last_trade": 1764386092710,
-      "synced_at": 1765530323.262285
+      "synced_at": 1765547200.0748646
     },
     "EGLDUSDC": {
       "exchange": "binance",
@@ -314,7 +317,7 @@
       "trade_count": 1,
       "first_trade": 1764388672269,
       "last_trade": 1764388674835,
-      "synced_at": 1765530323.4884372
+      "synced_at": 1765547200.2977173
     },
     "UNIUSDC": {
       "exchange": "binance",
@@ -327,20 +330,21 @@
       "trade_count": 1,
       "first_trade": 1764388897031,
       "last_trade": 1764389110659,
-      "synced_at": 1765530323.716178
+      "synced_at": 1765547200.5250707
     },
     "AAVEUSDC": {
       "exchange": "binance",
       "asset": "AAVE",
       "quote": "USDC",
-      "avg_entry_price": 184.38000000000002,
-      "total_quantity": 0.0009999999999999966,
-      "total_cost": 0.18437999999999938,
-      "total_fees": 4.275e-05,
+      "avg_entry_price": 204.55,
+      "total_quantity": 0.039,
+      "total_cost": 7.97745,
+      "total_fees": 0.0075785775,
       "trade_count": 1,
-      "first_trade": 1764389199259,
-      "last_trade": 1764389416939,
-      "synced_at": 1765530324.6205554
+      "first_trade": 1765547373461,
+      "last_trade": 1765547373461,
+      "synced_at": 1765547373.4610176,
+      "source": "manual"
     },
     "FILUSDC": {
       "exchange": "binance",
@@ -353,7 +357,7 @@
       "trade_count": 1,
       "first_trade": 1764386038532,
       "last_trade": 1764386257121,
-      "synced_at": 1765530324.8468976
+      "synced_at": 1765547201.6722336
     },
     "INJUSDC": {
       "exchange": "binance",
@@ -366,7 +370,7 @@
       "trade_count": 3,
       "first_trade": 1764385877761,
       "last_trade": 1764389193645,
-      "synced_at": 1765530325.0778787
+      "synced_at": 1765547201.9034095
     },
     "CKBUSDC": {
       "exchange": "binance",
@@ -379,7 +383,7 @@
       "trade_count": 5,
       "first_trade": 1764385653608,
       "last_trade": 1764389453732,
-      "synced_at": 1765530325.3055642
+      "synced_at": 1765547202.1333058
     },
     "AUCTIONUSDC": {
       "exchange": "binance",
@@ -392,7 +396,7 @@
       "trade_count": 4,
       "first_trade": 1764385585927,
       "last_trade": 1764389206099,
-      "synced_at": 1765530325.5303144
+      "synced_at": 1765547202.3652802
     },
     "ARUSDC": {
       "exchange": "binance",
@@ -405,7 +409,7 @@
       "trade_count": 1,
       "first_trade": 1764385897719,
       "last_trade": 1764385918803,
-      "synced_at": 1765530325.749605
+      "synced_at": 1765547202.593168
     },
     "ICPUSDC": {
       "exchange": "binance",
@@ -418,7 +422,7 @@
       "trade_count": 10,
       "first_trade": 1764384074737,
       "last_trade": 1764391272676,
-      "synced_at": 1765530325.977959
+      "synced_at": 1765547202.8226094
     },
     "QNTUSDC": {
       "exchange": "binance",
@@ -431,7 +435,7 @@
       "trade_count": 5,
       "first_trade": 1764380971443,
       "last_trade": 1764385734863,
-      "synced_at": 1765530326.2047033
+      "synced_at": 1765547203.0453012
     },
     "OPUSDC": {
       "exchange": "binance",
@@ -444,7 +448,7 @@
       "trade_count": 3,
       "first_trade": 1764377436329,
       "last_trade": 1764389113449,
-      "synced_at": 1765530326.438182
+      "synced_at": 1765547203.2724566
     },
     "ARBUSDC": {
       "exchange": "binance",
@@ -457,20 +461,20 @@
       "trade_count": 1,
       "first_trade": 1764388825577,
       "last_trade": 1764389113878,
-      "synced_at": 1765530326.6694086
+      "synced_at": 1765547203.4980009
     },
     "SUIUSDC": {
       "exchange": "binance",
       "asset": "SUI",
       "quote": "USDC",
-      "avg_entry_price": 1.6381,
+      "avg_entry_price": 1.657,
       "total_quantity": 4.9,
-      "total_cost": 8.02669,
-      "total_fees": 0.0076253555,
+      "total_cost": 8.1193,
+      "total_fees": 0.007713335000000001,
       "trade_count": 1,
-      "first_trade": 1765530487326,
-      "last_trade": 1765530487326,
-      "synced_at": 1765530487.326847,
+      "first_trade": 1765547366829,
+      "last_trade": 1765547366829,
+      "synced_at": 1765547366.8299694,
       "source": "manual"
     },
     "PEPEUSDC": {
@@ -484,7 +488,7 @@
       "trade_count": 8,
       "first_trade": 1764385656484,
       "last_trade": 1764392505055,
-      "synced_at": 1765530327.1365604
+      "synced_at": 1765547203.959671
     },
     "MEMEUSDC": {
       "exchange": "binance",
@@ -497,7 +501,7 @@
       "trade_count": 3,
       "first_trade": 1764385699227,
       "last_trade": 1764389420195,
-      "synced_at": 1765530328.0381484
+      "synced_at": 1765547205.0711715
     },
     "TIAUSDC": {
       "exchange": "binance",
@@ -510,7 +514,7 @@
       "trade_count": 1,
       "first_trade": 1764391096127,
       "last_trade": 1764391275045,
-      "synced_at": 1765530328.2642736
+      "synced_at": 1765547205.3000216
     },
     "ALTUSDC": {
       "exchange": "binance",
@@ -523,7 +527,7 @@
       "trade_count": 10,
       "first_trade": 1764381022154,
       "last_trade": 1764395870139,
-      "synced_at": 1765530328.4974446
+      "synced_at": 1765547205.5312362
     },
     "STRKUSDC": {
       "exchange": "binance",
@@ -536,7 +540,7 @@
       "trade_count": 2,
       "first_trade": 1764380084768,
       "last_trade": 1764380424943,
-      "synced_at": 1765530329.1514335
+      "synced_at": 1765547205.754055
     },
     "WIFUSDC": {
       "exchange": "binance",
@@ -549,7 +553,7 @@
       "trade_count": 1,
       "first_trade": 1764388636728,
       "last_trade": 1764388692531,
-      "synced_at": 1765530329.37672
+      "synced_at": 1765547205.9750109
     },
     "ENAUSDC": {
       "exchange": "binance",
@@ -562,34 +566,33 @@
       "trade_count": 7,
       "first_trade": 1764381029131,
       "last_trade": 1764392507631,
-      "synced_at": 1765530329.614269
+      "synced_at": 1765547206.1969373
     },
     "TAOUSDC": {
       "exchange": "binance",
       "asset": "TAO",
       "quote": "USDC",
-      "avg_entry_price": 300.8,
-      "total_quantity": 0.027,
-      "total_cost": 8.1216,
-      "total_fees": 0.00771552,
-      "trade_count": 1,
-      "first_trade": 1765530489590,
-      "last_trade": 1765530489590,
-      "synced_at": 1765530489.5909133,
-      "source": "manual"
+      "avg_entry_price": 301.020268201647,
+      "total_quantity": 0.0275,
+      "total_cost": 8.278057375545293,
+      "total_fees": 0.00038596,
+      "trade_count": 14,
+      "first_trade": 1764385565467,
+      "last_trade": 1765544179051,
+      "synced_at": 1765547206.423291
     },
     "TNSRUSDC": {
       "exchange": "binance",
       "asset": "TNSR",
       "quote": "USDC",
-      "avg_entry_price": 0.12048511865652677,
-      "total_quantity": 1.0000000000000568,
-      "total_cost": 0.12048511865653362,
-      "total_fees": 0.9969012600000001,
-      "trade_count": 12,
+      "avg_entry_price": 0.09341119453018783,
+      "total_quantity": 1.1000000000000512,
+      "total_cost": 0.10275231398321139,
+      "total_fees": 1.0795512600000001,
+      "trade_count": 13,
       "first_trade": 1764381016713,
-      "last_trade": 1764549076036,
-      "synced_at": 1765530330.0805025
+      "last_trade": 1765541491831,
+      "synced_at": 1765547206.6510317
     },
     "BBUSDC": {
       "exchange": "binance",
@@ -602,7 +605,7 @@
       "trade_count": 8,
       "first_trade": 1764385122719,
       "last_trade": 1764392508705,
-      "synced_at": 1765530330.3088863
+      "synced_at": 1765547206.8792725
     },
     "BANANAUSDC": {
       "exchange": "binance",
@@ -615,7 +618,7 @@
       "trade_count": 13,
       "first_trade": 1764380967128,
       "last_trade": 1764549076681,
-      "synced_at": 1765530330.5412714
+      "synced_at": 1765547207.1075084
     },
     "DOGSUSDC": {
       "exchange": "binance",
@@ -628,7 +631,7 @@
       "trade_count": 4,
       "first_trade": 1764385682667,
       "last_trade": 1764389146457,
-      "synced_at": 1765530330.7672956
+      "synced_at": 1765547207.3285172
     },
     "HMSTRUSDC": {
       "exchange": "binance",
@@ -641,7 +644,7 @@
       "trade_count": 1,
       "first_trade": 1764388855464,
       "last_trade": 1764389116665,
-      "synced_at": 1765530330.9934397
+      "synced_at": 1765547207.5489814
     },
     "NEIROUSDC": {
       "exchange": "binance",
@@ -654,7 +657,7 @@
       "trade_count": 13,
       "first_trade": 1764375423593,
       "last_trade": 1764392509793,
-      "synced_at": 1765530331.2275915
+      "synced_at": 1765547207.7835233
     },
     "TURBOUSDC": {
       "exchange": "binance",
@@ -667,7 +670,7 @@
       "trade_count": 15,
       "first_trade": 1764380444336,
       "last_trade": 1764549077753,
-      "synced_at": 1765530331.4711473
+      "synced_at": 1765547208.0051196
     },
     "PNUTUSDC": {
       "exchange": "binance",
@@ -680,20 +683,20 @@
       "trade_count": 2,
       "first_trade": 1764385997876,
       "last_trade": 1764388694695,
-      "synced_at": 1765530331.6955175
+      "synced_at": 1765547208.2286842
     },
     "PENGUUSDC": {
       "exchange": "binance",
       "asset": "PENGU",
       "quote": "USDC",
-      "avg_entry_price": 0.011213773631479768,
-      "total_quantity": 725.0,
-      "total_cost": 8.129985882822831,
-      "total_fees": 3.9700755,
-      "trade_count": 12,
+      "avg_entry_price": 0.011404932075730444,
+      "total_quantity": 720.0,
+      "total_cost": 8.21155109452592,
+      "total_fees": 4.6502755,
+      "trade_count": 13,
       "first_trade": 1764384354254,
-      "last_trade": 1765495839689,
-      "synced_at": 1765530331.9193332
+      "last_trade": 1765544181963,
+      "synced_at": 1765547208.4576426
     },
     "SOLVUSDC": {
       "exchange": "binance",
@@ -706,7 +709,7 @@
       "trade_count": 1,
       "first_trade": 1764388597106,
       "last_trade": 1764388612996,
-      "synced_at": 1765530332.1354704
+      "synced_at": 1765547208.6767182
     },
     "TRUMPUSDC": {
       "exchange": "binance",
@@ -719,7 +722,7 @@
       "trade_count": 3,
       "first_trade": 1764388667052,
       "last_trade": 1764388695573,
-      "synced_at": 1765530332.7833622
+      "synced_at": 1765547208.8991501
     },
     "BERAUSDC": {
       "exchange": "binance",
@@ -732,7 +735,7 @@
       "trade_count": 1,
       "first_trade": 1764385837928,
       "last_trade": 1764392511319,
-      "synced_at": 1765530333.0096714
+      "synced_at": 1765547209.1203988
     },
     "EPICUSDC": {
       "exchange": "binance",
@@ -745,7 +748,7 @@
       "trade_count": 10,
       "first_trade": 1764385633471,
       "last_trade": 1764385651524,
-      "synced_at": 1765530333.6642873
+      "synced_at": 1765547209.3396535
     },
     "PARTIUSDC": {
       "exchange": "binance",
@@ -758,7 +761,7 @@
       "trade_count": 6,
       "first_trade": 1764385413144,
       "last_trade": 1764391295590,
-      "synced_at": 1765530333.8886516
+      "synced_at": 1765547209.5613787
     },
     "BANANAS31USDC": {
       "exchange": "binance",
@@ -771,7 +774,7 @@
       "trade_count": 12,
       "first_trade": 1764380964831,
       "last_trade": 1764390866132,
-      "synced_at": 1765530334.5426576
+      "synced_at": 1765547209.7887735
     },
     "PLUMEUSDC": {
       "exchange": "binance",
@@ -784,7 +787,7 @@
       "trade_count": 1,
       "first_trade": 1764385961648,
       "last_trade": 1764385981889,
-      "synced_at": 1765530334.76792
+      "synced_at": 1765547210.0121264
     },
     "SYRUPUSDC": {
       "exchange": "binance",
@@ -797,7 +800,7 @@
       "trade_count": 4,
       "first_trade": 1764381049195,
       "last_trade": 1764390842483,
-      "synced_at": 1765530334.9951134
+      "synced_at": 1765547210.4547064
     },
     "RESOLVUSDC": {
       "exchange": "binance",
@@ -810,7 +813,7 @@
       "trade_count": 2,
       "first_trade": 1764380089835,
       "last_trade": 1764388824692,
-      "synced_at": 1765530335.217141
+      "synced_at": 1765547210.6767828
     },
     "SAHARAUSDC": {
       "exchange": "binance",
@@ -823,7 +826,7 @@
       "trade_count": 6,
       "first_trade": 1764384054160,
       "last_trade": 1764389120095,
-      "synced_at": 1765530335.4415295
+      "synced_at": 1765547210.8971004
     },
     "WLFIUSDC": {
       "exchange": "binance",
@@ -836,7 +839,7 @@
       "trade_count": 1,
       "first_trade": 1764385880280,
       "last_trade": 1764385935710,
-      "synced_at": 1765530335.6644945
+      "synced_at": 1765547211.1147318
     },
     "LINEAUSDC": {
       "exchange": "binance",
@@ -849,7 +852,7 @@
       "trade_count": 1,
       "first_trade": 1764379850755,
       "last_trade": 1764380077046,
-      "synced_at": 1765530335.8875623
+      "synced_at": 1765547211.3346782
     },
     "PUMPUSDC": {
       "exchange": "binance",
@@ -862,7 +865,7 @@
       "trade_count": 5,
       "first_trade": 1764385545680,
       "last_trade": 1764388848882,
-      "synced_at": 1765530336.1074922
+      "synced_at": 1765547211.555191
     },
     "AVNTUSDC": {
       "exchange": "binance",
@@ -875,7 +878,7 @@
       "trade_count": 2,
       "first_trade": 1764388829488,
       "last_trade": 1764388890880,
-      "synced_at": 1765530336.9993954
+      "synced_at": 1765547212.4359915
     },
     "ASTERUSDC": {
       "exchange": "binance",
@@ -888,7 +891,7 @@
       "trade_count": 11,
       "first_trade": 1764382703627,
       "last_trade": 1764391075944,
-      "synced_at": 1765530337.4576023
+      "synced_at": 1765547212.8795738
     },
     "FFUSDC": {
       "exchange": "binance",
@@ -901,7 +904,7 @@
       "trade_count": 1,
       "first_trade": 1764389209923,
       "last_trade": 1764389213591,
-      "synced_at": 1765530337.679064
+      "synced_at": 1765547213.1005964
     },
     "2ZUSDC": {
       "exchange": "binance",
@@ -914,7 +917,7 @@
       "trade_count": 4,
       "first_trade": 1764386077737,
       "last_trade": 1764386268704,
-      "synced_at": 1765530337.9038892
+      "synced_at": 1765547213.31999
     },
     "YBUSDC": {
       "exchange": "binance",
@@ -927,7 +930,7 @@
       "trade_count": 1,
       "first_trade": 1764389206980,
       "last_trade": 1764389354609,
-      "synced_at": 1765530338.5482175
+      "synced_at": 1765547213.5388598
     },
     "TURTLEUSDC": {
       "exchange": "binance",
@@ -940,7 +943,7 @@
       "trade_count": 1,
       "first_trade": 1764385874522,
       "last_trade": 1764385895414,
-      "synced_at": 1765530338.768576
+      "synced_at": 1765547213.7568212
     },
     "GIGGLEUSDC": {
       "exchange": "binance",
@@ -953,7 +956,7 @@
       "trade_count": 10,
       "first_trade": 1764384050339,
       "last_trade": 1764388665214,
-      "synced_at": 1765530338.9899642
+      "synced_at": 1765547213.980899
     },
     "MMTUSDC": {
       "exchange": "binance",
@@ -966,7 +969,7 @@
       "trade_count": 1,
       "first_trade": 1764385994853,
       "last_trade": 1764386269568,
-      "synced_at": 1765530339.2108488
+      "synced_at": 1765547214.2021327
     },
     "SAPIENUSDC": {
       "exchange": "binance",
@@ -979,7 +982,7 @@
       "trade_count": 5,
       "first_trade": 1764389214464,
       "last_trade": 1765477280636,
-      "synced_at": 1765530339.4376733
+      "synced_at": 1765547214.428429
     },
     "METUSDC": {
       "exchange": "binance",
@@ -992,33 +995,34 @@
       "trade_count": 3,
       "first_trade": 1764380086195,
       "last_trade": 1764385984274,
-      "synced_at": 1765530339.6591852
+      "synced_at": 1765547214.6472917
     },
     "ATUSDC": {
       "exchange": "binance",
       "asset": "AT",
       "quote": "USDC",
-      "avg_entry_price": 0.10580960168198746,
-      "total_quantity": 77.0,
-      "total_cost": 8.147339329513034,
-      "total_fees": 0.58922976,
-      "trade_count": 13,
-      "first_trade": 1764380978605,
-      "last_trade": 1765495834432,
-      "synced_at": 1765530339.8928695
+      "avg_entry_price": 0.112,
+      "total_quantity": 72.7,
+      "total_cost": 8.1424,
+      "total_fees": 0.007735280000000001,
+      "trade_count": 1,
+      "first_trade": 1765547370494,
+      "last_trade": 1765547370494,
+      "synced_at": 1765547370.4944036,
+      "source": "manual"
     },
     "BTUSDC": {
       "exchange": "kraken",
       "asset": "BTU",
       "quote": "SDC",
-      "avg_entry_price": 92021.21659365935,
-      "total_quantity": 0.0009369700000000001,
-      "total_cost": 86.22111931176102,
-      "total_fees": 0.56628,
-      "trade_count": 5,
-      "first_trade": 1765292587323,
+      "avg_entry_price": 91527.07384699731,
+      "total_quantity": 0.0002780099999999999,
+      "total_cost": 25.445441800203717,
+      "total_fees": 0.32223999999999997,
+      "trade_count": 3,
+      "first_trade": 1765316078203,
       "last_trade": 1765486004435,
-      "synced_at": 1765530340.0257332
+      "synced_at": 1765542485.3514056
     },
     "APEUSDT": {
       "exchange": "kraken",
@@ -1063,14 +1067,14 @@
       "exchange": "kraken",
       "asset": "USDC",
       "quote": "GBP",
-      "avg_entry_price": 0.7468910553245622,
-      "total_quantity": 59.27161211,
-      "total_cost": 44.269436919626,
-      "total_fees": 0.08853887999999999,
-      "trade_count": 3,
-      "first_trade": 1765415880374,
+      "avg_entry_price": 0.7466,
+      "total_quantity": 16.14331636,
+      "total_cost": 12.052599994376001,
+      "total_fees": 0.0241052,
+      "trade_count": 1,
+      "first_trade": 1765486288370,
       "last_trade": 1765486288370,
-      "synced_at": 1765530340.0257227
+      "synced_at": 1765547214.9980035
     },
     "BTGBP": {
       "exchange": "kraken",
@@ -1122,7 +1126,7 @@
       "trade_count": 1,
       "first_trade": 1765415598486,
       "last_trade": 1765415598486,
-      "synced_at": 1765530340.0257483
+      "synced_at": 1765542485.3514206
     },
     "XDGUSDC": {
       "exchange": "kraken",
@@ -1142,14 +1146,14 @@
       "exchange": "kraken",
       "asset": "FARTCOIN",
       "quote": "USDC",
-      "avg_entry_price": 0.3854,
-      "total_quantity": 21.11870843048891,
-      "total_cost": 8.139150229110426,
-      "total_fees": 0.032556600916441705,
+      "avg_entry_price": 0.3863,
+      "total_quantity": 21.097203406471515,
+      "total_cost": 8.149849675919945,
+      "total_fees": 0.03259939870367978,
       "trade_count": 1,
-      "first_trade": 1765530485084,
-      "last_trade": 1765530485084,
-      "synced_at": 1765530485.084022,
+      "first_trade": 1765547364248,
+      "last_trade": 1765547364248,
+      "synced_at": 1765547364.2482638,
       "source": "manual"
     },
     "SUIGBP": {
@@ -1163,20 +1167,20 @@
       "trade_count": 1,
       "first_trade": 1765415890005,
       "last_trade": 1765415890005,
-      "synced_at": 1765530340.0257432
+      "synced_at": 1765544025.9955065
     },
     "ETHUSDC": {
       "exchange": "binance",
       "asset": "ETH",
       "quote": "USDC",
-      "avg_entry_price": 3196.6600000000003,
-      "total_quantity": 0.007499999999999999,
-      "total_cost": 23.97495,
-      "total_fees": 0.023974950000000002,
+      "avg_entry_price": 3244.1299999999997,
+      "total_quantity": 0.0025,
+      "total_cost": 8.110325,
+      "total_fees": 0.007721029400000001,
       "trade_count": 1,
-      "first_trade": 1765451837239,
-      "last_trade": 1765451837239,
-      "synced_at": 1765451837.2398498,
+      "first_trade": 1765547365382,
+      "last_trade": 1765547365382,
+      "synced_at": 1765547365.382228,
       "source": "manual"
     },
     "BARDUSDC": {
@@ -1190,7 +1194,7 @@
       "trade_count": 2,
       "first_trade": 1765474878418,
       "last_trade": 1765477277480,
-      "synced_at": 1765530337.2224643
+      "synced_at": 1765547212.6540573
     },
     "XBTUSDC": {
       "exchange": "kraken",
@@ -1217,47 +1221,47 @@
       "trade_count": 1,
       "first_trade": 1765484983864,
       "last_trade": 1765484983864,
-      "synced_at": 1765530340.0257378
+      "synced_at": 1765547214.998013
     },
     "XDCUSDC": {
       "exchange": "kraken",
       "asset": "XDC",
       "quote": "USDC",
-      "avg_entry_price": 0.05045,
-      "total_quantity": 161.3310253540223,
-      "total_cost": 8.139150229110426,
-      "total_fees": 0.032556600916441705,
+      "avg_entry_price": 0.05159,
+      "total_quantity": 157.97343818414316,
+      "total_cost": 8.149849675919945,
+      "total_fees": 0.03259939870367978,
       "trade_count": 1,
-      "first_trade": 1765530486194,
-      "last_trade": 1765530486194,
-      "synced_at": 1765530486.1945672,
+      "first_trade": 1765547365915,
+      "last_trade": 1765547365915,
+      "synced_at": 1765547365.915076,
       "source": "manual"
     },
     "DGUSDC": {
       "exchange": "kraken",
       "asset": "DGU",
       "quote": "SDC",
-      "avg_entry_price": 0.25825439601357847,
+      "avg_entry_price": 0.1400169109305711,
       "total_quantity": 241.62694775,
-      "total_cost": 62.401221451780735,
-      "total_fees": 0.24960488500000003,
-      "trade_count": 3,
-      "first_trade": 1765415881667,
+      "total_cost": 33.8318588215375,
+      "total_fees": 0.135327435,
+      "trade_count": 2,
+      "first_trade": 1765486042823,
       "last_trade": 1765495834866,
-      "synced_at": 1765530340.0256624
+      "synced_at": 1765547214.9979973
     },
     "DCUSDC": {
       "exchange": "kraken",
       "asset": "DCU",
       "quote": "SDC",
-      "avg_entry_price": 0.3452462833026851,
-      "total_quantity": 165.91943,
-      "total_cost": 57.28306653520003,
-      "total_fees": 0.53341,
-      "trade_count": 6,
+      "avg_entry_price": 0.7244442242711876,
+      "total_quantity": 157.97241000000002,
+      "total_cost": 114.44220001870002,
+      "total_fees": 0.7620300000000001,
+      "trade_count": 13,
       "first_trade": 1765486033959,
-      "last_trade": 1765495832368,
-      "synced_at": 1765530340.025715
+      "last_trade": 1765544174803,
+      "synced_at": 1765547214.9979522
     },
     "AVAXUSDC": {
       "exchange": "binance",
@@ -1272,8 +1276,174 @@
       "last_trade": 1765495838662,
       "synced_at": 1765495838.6622252,
       "source": "manual"
+    },
+    "ORDIUSDC": {
+      "exchange": "binance",
+      "asset": "ORDI",
+      "quote": "USDC",
+      "avg_entry_price": 4.211,
+      "total_quantity": 0.010000000000000009,
+      "total_cost": 0.04211000000000004,
+      "total_fees": 0.001824,
+      "trade_count": 1,
+      "first_trade": 1765532135285,
+      "last_trade": 1765541489151,
+      "synced_at": 1765547204.847839
+    },
+    "MORPHOUSDC": {
+      "exchange": "binance",
+      "asset": "MORPHO",
+      "quote": "USDC",
+      "avg_entry_price": 1.25,
+      "total_quantity": 0.010000000000000675,
+      "total_cost": 0.012500000000000844,
+      "total_fees": 0.0062035,
+      "trade_count": 1,
+      "first_trade": 1765542856124,
+      "last_trade": 1765544163891,
+      "synced_at": 1765547210.2305577
+    },
+    "SOLUSD": {
+      "exchange": "kraken",
+      "asset": "SOL",
+      "quote": "USD",
+      "avg_entry_price": 139.4,
+      "total_quantity": 8.96700143472023,
+      "total_cost": 1250.0,
+      "total_fees": 5.0,
+      "trade_count": 1,
+      "first_trade": 1765545951606,
+      "last_trade": 1765545951606,
+      "synced_at": 1765545951.6063066,
+      "source": "manual"
+    },
+    "BTCFDUSD": {
+      "exchange": "binance",
+      "asset": "BTCFD",
+      "quote": "USD",
+      "avg_entry_price": 92515.59,
+      "total_quantity": 0.02026685448366054,
+      "total_cost": 1875.0,
+      "total_fees": 1.8750000000000002,
+      "trade_count": 1,
+      "first_trade": 1765545953171,
+      "last_trade": 1765545953171,
+      "synced_at": 1765545953.1716504,
+      "source": "manual"
+    },
+    "NIGHTUSD": {
+      "exchange": "kraken",
+      "asset": "NIGHT",
+      "quote": "USD",
+      "avg_entry_price": 0.05017,
+      "total_quantity": 62288.2200518238,
+      "total_cost": 3125.0,
+      "total_fees": 12.5,
+      "trade_count": 1,
+      "first_trade": 1765545953446,
+      "last_trade": 1765545953446,
+      "synced_at": 1765545953.4468195,
+      "source": "manual"
+    },
+    "SOLFDUSD": {
+      "exchange": "binance",
+      "asset": "SOLFD",
+      "quote": "USD",
+      "avg_entry_price": 139.5,
+      "total_quantity": 3.5842293906810037,
+      "total_cost": 500.0,
+      "total_fees": 0.5,
+      "trade_count": 1,
+      "first_trade": 1765545955864,
+      "last_trade": 1765545955864,
+      "synced_at": 1765545955.8645904,
+      "source": "manual"
+    },
+    "ZECUSD": {
+      "exchange": "kraken",
+      "asset": "ZEC",
+      "quote": "USD",
+      "avg_entry_price": 460.19,
+      "total_quantity": 1.0865077468002347,
+      "total_cost": 500.0,
+      "total_fees": 2.0,
+      "trade_count": 1,
+      "first_trade": 1765545956124,
+      "last_trade": 1765545956124,
+      "synced_at": 1765545956.1241615,
+      "source": "manual"
+    },
+    "ETHFDUSD": {
+      "exchange": "binance",
+      "asset": "ETHFD",
+      "quote": "USD",
+      "avg_entry_price": 3252.8,
+      "total_quantity": 0.15371372356123955,
+      "total_cost": 500.00000000000006,
+      "total_fees": 0.5,
+      "trade_count": 1,
+      "first_trade": 1765545957672,
+      "last_trade": 1765545957672,
+      "synced_at": 1765545957.6725419,
+      "source": "manual"
+    },
+    "FARTCOINUSD": {
+      "exchange": "kraken",
+      "asset": "FARTCOIN",
+      "quote": "USD",
+      "avg_entry_price": 0.3873,
+      "total_quantity": 1290.9888974954815,
+      "total_cost": 499.99999999999994,
+      "total_fees": 2.0,
+      "trade_count": 1,
+      "first_trade": 1765545957928,
+      "last_trade": 1765545957928,
+      "synced_at": 1765545957.9286075,
+      "source": "manual"
+    },
+    "BNBFDUSD": {
+      "exchange": "binance",
+      "asset": "BNBFD",
+      "quote": "USD",
+      "avg_entry_price": 888.85,
+      "total_quantity": 0.5625246104517072,
+      "total_cost": 499.99999999999994,
+      "total_fees": 0.5,
+      "trade_count": 1,
+      "first_trade": 1765545959485,
+      "last_trade": 1765545959485,
+      "synced_at": 1765545959.4854589,
+      "source": "manual"
+    },
+    "SUIUSD": {
+      "exchange": "kraken",
+      "asset": "SUI",
+      "quote": "USD",
+      "avg_entry_price": 1.6553,
+      "total_quantity": 302.0600495378481,
+      "total_cost": 499.99999999999994,
+      "total_fees": 2.0,
+      "trade_count": 1,
+      "first_trade": 1765545959743,
+      "last_trade": 1765545959743,
+      "synced_at": 1765545959.7435718,
+      "source": "manual"
+    },
+    "XCNUSD": {
+      "exchange": "kraken",
+      "asset": "XCN",
+      "quote": "USD",
+      "avg_entry_price": 0.00545,
+      "total_quantity": 45871.55963302752,
+      "total_cost": 250.0,
+      "total_fees": 1.0,
+      "trade_count": 1,
+      "first_trade": 1765545960699,
+      "last_trade": 1765545960699,
+      "synced_at": 1765545960.6997545,
+      "source": "manual"
     }
   },
-  "last_sync": 1765530339.8929298,
-  "updated_at": "2025-12-12T09:08:11.862386"
+  "last_sync": 1765547214.8705506,
+  "updated_at": "2025-12-12T13:49:35.723283"
 }
