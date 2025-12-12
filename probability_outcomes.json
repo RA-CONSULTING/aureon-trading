@@ -15,6 +15,21 @@
         "entry_momentum": 1.85561032183242,
         "entry_coherence": 0.65,
         "win": true
+      },
+      {
+        "timestamp": 1765491697.1054296,
+        "platform_timestamp": 1765491697.1054244,
+        "symbol": "FARTCOINUSDC",
+        "exit_price": 0.3567,
+        "realized_pnl": -0.8764357244203087,
+        "exit_reason": "SL",
+        "entry_price": 0.3658,
+        "entry_time": 1765487487.668407,
+        "hold_duration_mins": 70.13591845432917,
+        "was_historical": false,
+        "entry_momentum": -2.4876981957353737,
+        "entry_coherence": 0.65,
+        "win": false
       }
     ],
     "SOLUSDC": [
@@ -69,6 +84,6 @@
       }
     ]
   },
-  "last_updated": 1765423873.9069247,
-  "total_trades": 4
+  "last_updated": 1765491697.1054444,
+  "total_trades": 5
 }

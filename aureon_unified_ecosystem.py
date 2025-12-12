@@ -473,9 +473,9 @@ CONFIG = {
     'TAKE_PROFIT_PCT': 1.8,         # 1.8% profit target (was 1.5% - need more room to cover fees + slippage)
     'STOP_LOSS_PCT': 1.5,           # 1.5% stop loss (was 0.8% - give trades room to breathe)
     'MAX_POSITIONS': 30,            # 🔥 BEAST MODE: 30 positions - TRADE EVERYTHING!
-    'MIN_TRADE_USD': 5.0,           # Minimum trade notional in base currency
+    'MIN_TRADE_USD': 1.44,          # Minimum trade notional in base currency
     'BINANCE_MIN_NOTIONAL': 1.0,    # Refuse sells if notional < $1 to avoid LOT_SIZE noise
-    'KRAKEN_MIN_NOTIONAL': 5.0,     # Kraken enforces ~$5 minimum notional on spot
+    'KRAKEN_MIN_NOTIONAL': 5.25,    # Kraken enforces ~$5 minimum notional on spot
     'CAPITAL_MIN_NOTIONAL': 10.0,   # 💼 Capital.com CFD minimum ~$10 (varies by instrument)
     'ALPACA_MIN_NOTIONAL': 1.0,     # 🦙 Alpaca crypto ~$1 min, stocks $1
     'PORTFOLIO_RISK_BUDGET': 3.00,  # 300% - allow significant positions for existing portfolio holders
@@ -514,7 +514,7 @@ CONFIG = {
     # Kelly Criterion & Risk Management
     'USE_KELLY_SIZING': True,       # Use Kelly instead of fixed %
     'KELLY_SAFETY_FACTOR': 0.5,     # Half-Kelly for safety
-    'BASE_POSITION_SIZE': 0.10,     # Base size when Kelly disabled
+    'BASE_POSITION_SIZE': 0.04,     # Base size when Kelly disabled (reduced for smaller trades)
     'MAX_POSITION_SIZE': 0.25,      # Hard cap per trade
     'MAX_SYMBOL_EXPOSURE': 0.30,    # Max 30% in one symbol
     'MAX_DRAWDOWN_PCT': 50.0,       # Circuit breaker at 50% DD - raised to allow recovery trades
@@ -10410,9 +10410,9 @@ class AureonKrakenEcosystem:
         
         lattice_state = self.lattice.get_state()
         
-        # 🚀 Force scouts use fixed sizing for reliability
+        # 🚀 Force scouts use fixed sizing for reliability (smaller to enable low-capital trading)
         if is_force_scout:
-            size_fraction = 0.15  # Fixed 15% position size for forced scouts
+            size_fraction = 0.05  # 5% position size for forced scouts
         else:
             size_fraction = self.tracker.calculate_position_size(
                 opp['coherence'], symbol, hnc_modifier, imperial_modifier

@@ -101,3 +101,24 @@
 {"ts": "2025-12-11T21:11:26.190240", "type": "hunt", "symbol": "ZECUSDC", "volume": 23114538.74576, "change": 14.625}
 {"ts": "2025-12-11T21:11:27.680736", "type": "hunt", "symbol": "FARTCOINUSDC", "volume": 146352.40793194802, "change": 2.364199268224041}
 {"ts": "2025-12-11T21:11:29.292950", "type": "hunt", "symbol": "ATUSDC", "volume": 13970580.4562, "change": -13.662}
+{"ts": "2025-12-11T22:21:37.123810", "type": "result", "symbol": "FARTCOINUSDC", "profit": -0.8764357244203087}
+{"ts": "2025-12-11T22:54:24.693176", "type": "hunt", "symbol": "ZECUSDC", "volume": 23580366.80856, "change": 13.285}
+{"ts": "2025-12-11T22:54:26.118923", "type": "hunt", "symbol": "XDCUSDC", "volume": 93075.8585366691, "change": -2.99222022740874}
+{"ts": "2025-12-11T22:54:27.238898", "type": "hunt", "symbol": "SOLUSDC", "volume": 170359851.43658, "change": -1.2}
+{"ts": "2025-12-11T23:30:32.012646", "type": "hunt", "symbol": "ZECUSDC", "volume": 23518648.34574, "change": 13.331}
+{"ts": "2025-12-11T23:30:32.374641", "type": "hunt", "symbol": "XDCUSDC", "volume": 94125.5989221456, "change": -2.99222022740874}
+{"ts": "2025-12-11T23:30:33.414527", "type": "hunt", "symbol": "FARTCOINUSDC", "volume": 154234.74798, "change": 1.3228257810301103}
+{"ts": "2025-12-11T23:30:34.541134", "type": "hunt", "symbol": "ATUSDC", "volume": 14639286.09859, "change": -11.676}
+{"ts": "2025-12-11T23:30:34.871865", "type": "hunt", "symbol": "XDGUSDC", "volume": 76888.30574938854, "change": -2.1804249390456434}
+{"ts": "2025-12-11T23:30:36.002592", "type": "hunt", "symbol": "ADAUSDC", "volume": 20846864.8544, "change": -7.005}
+{"ts": "2025-12-11T23:30:37.531736", "type": "hunt", "symbol": "DOGEUSDC", "volume": 48560739.20778, "change": -2.546}
+{"ts": "2025-12-11T23:30:38.665783", "type": "hunt", "symbol": "AVAXUSDC", "volume": 11508367.4513, "change": -5.563}
+{"ts": "2025-12-11T23:30:39.799206", "type": "hunt", "symbol": "PENGUUSDC", "volume": 11208415.815451, "change": -5.316}
+{"ts": "2025-12-12T09:08:04.682644", "type": "hunt", "symbol": "SOLUSDC", "volume": 134678511.93708, "change": 5.262}
+{"ts": "2025-12-12T09:08:05.087843", "type": "hunt", "symbol": "FARTCOINUSDC", "volume": 137483.32150078, "change": 5.9178082191780845}
+{"ts": "2025-12-12T09:08:06.199078", "type": "hunt", "symbol": "XDCUSDC", "volume": 112291.31710079289, "change": 3.1525076765609006}
+{"ts": "2025-12-12T09:08:07.329951", "type": "hunt", "symbol": "SUIUSDC", "volume": 41254162.05678, "change": 6.075}
+{"ts": "2025-12-12T09:08:08.454391", "type": "hunt", "symbol": "ZECUSDC", "volume": 23307899.7618, "change": 9.345}
+{"ts": "2025-12-12T09:08:09.595095", "type": "hunt", "symbol": "TAOUSDC", "volume": 12989022.64743, "change": 6.327}
+{"ts": "2025-12-12T09:08:10.735201", "type": "hunt", "symbol": "DOGEUSDC", "volume": 43447780.10902, "change": 1.813}
+{"ts": "2025-12-12T09:08:11.865401", "type": "hunt", "symbol": "LINKUSDC", "volume": 17088508.7471, "change": 3.474}

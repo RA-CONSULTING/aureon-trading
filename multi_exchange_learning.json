@@ -13,7 +13,7 @@
       "wins": 0
     },
     "mid": {
-      "trades": 22,
+      "trades": 0,
       "wins": 0
     },
     "high": {
@@ -815,7 +815,7 @@
       "source": "probability_data.json"
     }
   },
-  "total_historical_trades": 45,
-  "combined_win_rate": 31.11111111111111,
-  "updated_at": "2025-12-11T21:20:02.030375"
+  "total_historical_trades": 23,
+  "combined_win_rate": 60.86956521739131,
+  "updated_at": "2025-12-12T09:18:28.263470"
 }

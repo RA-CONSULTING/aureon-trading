@@ -1,10 +1,10 @@
 {
-  "balance": 118.94698968630182,
+  "balance": 111.70039102204713,
   "peak_balance": 155.69962862831332,
-  "total_trades": 4,
+  "total_trades": 5,
   "wins": 1,
-  "losses": 3,
-  "total_fees": 1.155382622439937,
+  "losses": 4,
+  "total_fees": 1.81754676829796,
   "compounded": 0.0,
   "harvested": 0.0,
   "max_drawdown": 50.42967033293107,
@@ -16,20 +16,20 @@
       "entry_value": 11.552547084,
       "momentum": 0.0,
       "coherence": 0.5,
-      "entry_time": 1765487342.1898632,
+      "entry_time": 1765530341.4437048,
       "dominant_node": "Portfolio",
-      "cycles": 7
+      "cycles": 14
     },
     "BTCUSDC": {
-      "entry_price": 92242.975,
+      "entry_price": 92294.445,
       "quantity": 6.74e-06,
-      "entry_fee": 0.0006217176515,
-      "entry_value": 0.6217176515,
+      "entry_fee": 0.0006220645593000001,
+      "entry_value": 0.6220645593,
       "momentum": 0.0,
       "coherence": 0.5,
-      "entry_time": 1765487342.453479,
+      "entry_time": 1765530341.7399077,
       "dominant_node": "Portfolio",
-      "cycles": 7
+      "cycles": 14
     },
     "ETHUSDC": {
       "entry_price": 3196.6600000000003,
@@ -38,9 +38,9 @@
       "entry_value": 24.2352859904,
       "momentum": 0.0,
       "coherence": 0.5,
-      "entry_time": 1765487342.887208,
+      "entry_time": 1765530342.1777618,
       "dominant_node": "Portfolio",
-      "cycles": 7
+      "cycles": 14
     },
     "XLMUSDC": {
       "entry_price": 0.2575421875,
@@ -49,44 +49,99 @@
       "entry_value": 1.013776189765625,
       "momentum": 0.0,
       "coherence": 0.5,
-      "entry_time": 1765487347.473345,
+      "entry_time": 1765530347.2033434,
       "dominant_node": "Portfolio",
-      "cycles": 7
+      "cycles": 14
     },
-    "ZECUSDC": {
-      "entry_price": 464.2523076923077,
-      "quantity": 0.052000000000000005,
-      "entry_fee": 0.022934064,
-      "entry_value": 24.14112,
-      "momentum": 14.625,
+    "SOLUSDC": {
+      "entry_price": 138.00999999999996,
+      "quantity": 0.058,
+      "entry_fee": 0.007604351,
+      "entry_value": 8.004579999999999,
+      "momentum": 5.262,
       "coherence": 0.65,
-      "entry_time": 1765487486.1852212,
+      "entry_time": 1765530484.6777794,
       "dominant_node": "ForceScout",
-      "cycles": 7
+      "cycles": 14
     },
     "FARTCOINUSDC": {
-      "entry_price": 0.3658,
-      "quantity": 67.10771631985264,
-      "entry_fee": 0.0981920105192084,
-      "entry_value": 24.5480026298021,
-      "momentum": 2.364199268224041,
+      "entry_price": 0.3854,
+      "quantity": 21.11870843048891,
+      "entry_fee": 0.032556600916441705,
+      "entry_value": 8.139150229110426,
+      "momentum": 5.9178082191780845,
       "coherence": 0.65,
-      "entry_time": 1765487487.668407,
+      "entry_time": 1765530485.0834367,
       "dominant_node": "ForceScout",
-      "cycles": 7
+      "cycles": 14
     },
-    "ATUSDC": {
-      "entry_price": 0.1069,
-      "quantity": 229.6,
-      "entry_fee": 0.023317028,
-      "entry_value": 24.54424,
-      "momentum": -13.662,
+    "XDCUSDC": {
+      "entry_price": 0.05045,
+      "quantity": 161.3310253540223,
+      "entry_fee": 0.032556600916441705,
+      "entry_value": 8.139150229110426,
+      "momentum": 3.1525076765609006,
       "coherence": 0.65,
-      "entry_time": 1765487489.2887993,
+      "entry_time": 1765530486.1942127,
       "dominant_node": "ForceScout",
-      "cycles": 7
+      "cycles": 14
+    },
+    "SUIUSDC": {
+      "entry_price": 1.6381,
+      "quantity": 4.9,
+      "entry_fee": 0.0076253555,
+      "entry_value": 8.02669,
+      "momentum": 6.075,
+      "coherence": 0.65,
+      "entry_time": 1765530487.3261714,
+      "dominant_node": "ForceScout",
+      "cycles": 14
+    },
+    "ZECUSDC": {
+      "entry_price": 453.57,
+      "quantity": 0.017,
+      "entry_fee": 0.0073251555,
+      "entry_value": 7.7106900000000005,
+      "momentum": 9.345,
+      "coherence": 0.65,
+      "entry_time": 1765530488.4435039,
+      "dominant_node": "ForceScout",
+      "cycles": 14
+    },
+    "TAOUSDC": {
+      "entry_price": 300.8,
+      "quantity": 0.027,
+      "entry_fee": 0.00771552,
+      "entry_value": 8.1216,
+      "momentum": 6.327,
+      "coherence": 0.65,
+      "entry_time": 1765530489.5905178,
+      "dominant_node": "ForceScout",
+      "cycles": 14
+    },
+    "DOGEUSDC": {
+      "entry_price": 0.14035999999999998,
+      "quantity": 57.0,
+      "entry_fee": 0.007600494,
+      "entry_value": 8.00052,
+      "momentum": 1.813,
+      "coherence": 0.65,
+      "entry_time": 1765530490.7317593,
+      "dominant_node": "ForceScout",
+      "cycles": 14
+    },
+    "LINKUSDC": {
+      "entry_price": 13.990000000000002,
+      "quantity": 0.58,
+      "entry_fee": 0.007708489999999999,
+      "entry_value": 8.1142,
+      "momentum": 3.474,
+      "coherence": 0.65,
+      "entry_time": 1765530491.8617482,
+      "dominant_node": "ForceScout",
+      "cycles": 14
     }
   },
-  "timestamp": 1765488002.029148,
-  "iteration": 7
+  "timestamp": 1765531108.2620633,
+  "iteration": 14
 }
