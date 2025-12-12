@@ -43,6 +43,10 @@ DEFAULT_NONCE_BATCH = 100_000  # Nonces per batch before checking for new job
 HASH_REPORT_INTERVAL = 10.0    # Seconds between hashrate reports
 MAX_NONCE = 0xFFFFFFFF         # Maximum 32-bit nonce value
 
+# Casimir Constants
+HBAR_MINING = 1.054571817e-4   # Reduced Planck constant for mining (scaled)
+VACUUM_ENERGY = 7.83 * PHI     # Base vacuum energy (Schumann × Phi)
+
 # Known Mining Platforms
 KNOWN_POOLS = {
     'braiins': {'host': 'stratum.braiins.com', 'port': 3333, 'desc': 'Braiins Pool (formerly Slushpool)'},
@@ -58,6 +62,69 @@ KNOWN_POOLS = {
     'binance': {'host': 'sha256.poolbinance.com', 'port': 443, 'desc': 'Binance Pool (Primary)'},
     'binance2': {'host': 'btc.poolbinance.com', 'port': 1800, 'desc': 'Binance Pool (Backup 1)'},
     'binance3': {'host': 'bs.poolbinance.com', 'port': 3333, 'desc': 'Binance Pool (Backup 2)'},
+}
+
+# ═══════════════════════════════════════════════════════════════════════════
+# BINANCE MULTI-COIN MINING ENDPOINTS
+# ═══════════════════════════════════════════════════════════════════════════
+
+BINANCE_COINS = {
+    'BTC': {
+        'algorithm': 'SHA256',
+        'host': 'sha256.poolbinance.com',
+        'port': 443,
+        'desc': 'Bitcoin - SHA256',
+        'merge_with': None,
+        'casimir_coupling': 1.0,  # Base reference
+    },
+    'BCH': {
+        'algorithm': 'SHA256',
+        'host': 'bch.poolbinance.com',
+        'port': 3333,
+        'desc': 'Bitcoin Cash - SHA256',
+        'merge_with': None,
+        'casimir_coupling': 0.95,  # Same algo = high coupling
+    },
+    'LTC': {
+        'algorithm': 'Scrypt',
+        'host': 'ltc.poolbinance.com',
+        'port': 443,
+        'desc': 'Litecoin - Scrypt',
+        'merge_with': 'DOGE',  # Merged mining enabled
+        'casimir_coupling': 0.618,  # Phi coupling - different algo
+    },
+    'DOGE': {
+        'algorithm': 'Scrypt',
+        'host': 'ltc.poolbinance.com',  # Merged with LTC
+        'port': 443,
+        'desc': 'Dogecoin - Scrypt (merged)',
+        'merge_with': 'LTC',
+        'casimir_coupling': 0.618,
+    },
+    'ETC': {
+        'algorithm': 'Etchash',
+        'host': 'etc.poolbinance.com',
+        'port': 3333,
+        'desc': 'Ethereum Classic - Etchash',
+        'merge_with': None,
+        'casimir_coupling': 0.382,  # 1-Phi - memory intensive
+    },
+    'RVN': {
+        'algorithm': 'KawPow',
+        'host': 'stratum.ravencoin.flypool.org',  # Alternative since Binance may not support
+        'port': 3333,
+        'desc': 'Ravencoin - KawPow',
+        'merge_with': None,
+        'casimir_coupling': 0.382,
+    },
+    'ZEC': {
+        'algorithm': 'Equihash',
+        'host': 'zec.poolbinance.com',
+        'port': 3333,
+        'desc': 'Zcash - Equihash',
+        'merge_with': None,
+        'casimir_coupling': 0.5,
+    },
 }
 
 def resolve_pool_config(platform: str = None, host: str = None, port: int = None) -> Tuple[str, int]:
@@ -369,6 +436,924 @@ class QuantumLatticeAmplifier:
         elif amplified > 1e3:
             return amplified, f"{amplified/1e3:.2f} KH/s"
         return amplified, f"{amplified:.2f} H/s"
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# CASIMIR EFFECT ENGINE - MULTI-COIN VACUUM ENERGY
+# ═══════════════════════════════════════════════════════════════════════════
+
+@dataclass
+class VirtualPhoton:
+    """Represents share energy propagating between mining streams"""
+    energy: float
+    wavelength: float  # Nonce modulo
+    source_coin: str
+    timestamp: float
+    phase: float
+
+
+@dataclass
+class CasimirPlate:
+    """Represents a mining stream as a conductive plate"""
+    coin: str
+    algorithm: str
+    hashrate: float = 0.0
+    share_count: int = 0
+    phase: float = 0.0
+    last_share_time: float = 0.0
+    coupling_strength: float = 1.0
+
+
+class CasimirEffectEngine:
+    """
+    ⚛️🔲 CASIMIR EFFECT MINING ENGINE 🔲⚛️
+    
+    Just as the Casimir effect creates force from quantum vacuum fluctuations
+    between two parallel plates, this engine creates resonance from the
+    "vacuum" between multiple parallel mining streams.
+    
+    Physics Analogy:
+    - Conductive Plates = Different coin mining streams (BTC, LTC, ETC...)
+    - Plate Separation = Phase difference between streams
+    - Virtual Photons = Share events propagating between streams
+    - Vacuum Energy = Untapped coherence between algorithms
+    - Casimir Force = Emergent amplification from correlation
+    
+    Formula: F_c = -(ℏc π²) / (240 a⁴)
+    Mining: Cascade = Σ(coupling × photon_density) / separation⁴
+    """
+    
+    def __init__(self):
+        self.plates: Dict[str, CasimirPlate] = {}
+        self.virtual_photons: deque = deque(maxlen=10000)
+        self.vacuum_energy = VACUUM_ENERGY
+        self.plate_separations: Dict[str, float] = {}  # coin_pair -> separation
+        
+        # Casimir field state
+        self.total_casimir_force = 0.0
+        self.vacuum_fluctuations: deque = deque(maxlen=1000)
+        self.photon_density = 0.0
+        
+        # Cross-stream resonance
+        self.inter_stream_cascade = 1.0
+        self.zero_point_energy = 0.0
+        
+        # Timing
+        self.schumann_phase = 0.0
+        self.last_vacuum_update = time.time()
+        
+        logger.info("🔲 Casimir Effect Engine initialized")
+        logger.info(f"   Vacuum Energy: {self.vacuum_energy:.4f}")
+        logger.info(f"   ℏ_mining: {HBAR_MINING:.6e}")
+    
+    def add_plate(self, coin: str, algorithm: str, coupling: float = 1.0):
+        """Add a mining stream as a Casimir plate"""
+        self.plates[coin] = CasimirPlate(
+            coin=coin,
+            algorithm=algorithm,
+            coupling_strength=coupling
+        )
+        logger.info(f"🔲 Added Casimir plate: {coin} ({algorithm}) | Coupling: {coupling:.3f}")
+        
+        # Calculate separations with existing plates
+        for other_coin, other_plate in self.plates.items():
+            if other_coin != coin:
+                sep = self._calculate_plate_separation(coin, other_coin)
+                pair_key = f"{min(coin, other_coin)}_{max(coin, other_coin)}"
+                self.plate_separations[pair_key] = sep
+    
+    def _calculate_plate_separation(self, coin_a: str, coin_b: str) -> float:
+        """
+        Calculate "separation" between two mining streams.
+        Same algorithm = closer plates = stronger Casimir force
+        """
+        plate_a = self.plates.get(coin_a)
+        plate_b = self.plates.get(coin_b)
+        
+        if not plate_a or not plate_b:
+            return 1.0
+        
+        # Same algorithm = very close plates (0.1)
+        # Different algorithm = further apart (0.5-1.0)
+        if plate_a.algorithm == plate_b.algorithm:
+            base_separation = 0.1
+        else:
+            # Different algorithms - separation based on coupling product
+            base_separation = 1.0 - (plate_a.coupling_strength * plate_b.coupling_strength * 0.5)
+        
+        # Modulate by phase difference
+        phase_diff = abs(plate_a.phase - plate_b.phase)
+        separation = base_separation + 0.1 * phase_diff
+        
+        return max(0.01, min(1.0, separation))
+    
+    def emit_virtual_photon(self, source_coin: str, share_energy: float, nonce: int):
+        """
+        When a share is found, emit a virtual photon that propagates
+        to adjacent plates (other mining streams)
+        """
+        plate = self.plates.get(source_coin)
+        if not plate:
+            return
+        
+        # Create virtual photon
+        photon = VirtualPhoton(
+            energy=share_energy,
+            wavelength=nonce % int(PHI * 1000),
+            source_coin=source_coin,
+            timestamp=time.time(),
+            phase=plate.phase
+        )
+        self.virtual_photons.append(photon)
+        
+        # Update source plate
+        plate.share_count += 1
+        plate.last_share_time = time.time()
+        
+        # Propagate to adjacent plates
+        for target_coin, target_plate in self.plates.items():
+            if target_coin != source_coin:
+                self._absorb_photon(target_plate, photon)
+        
+        logger.info(f"💫 Virtual photon emitted: {source_coin} → E={share_energy:.2f}")
+    
+    def _absorb_photon(self, plate: CasimirPlate, photon: VirtualPhoton):
+        """Absorb virtual photon energy into target plate"""
+        pair_key = f"{min(plate.coin, photon.source_coin)}_{max(plate.coin, photon.source_coin)}"
+        separation = self.plate_separations.get(pair_key, 0.5)
+        
+        # Casimir-like absorption: inversely proportional to separation^4
+        absorption = photon.energy * plate.coupling_strength / (separation ** 4 + 0.0001)
+        
+        # Phase alignment bonus
+        phase_match = 1.0 - abs(plate.phase - photon.phase)
+        absorption *= (1.0 + phase_match * PHI)
+        
+        # Update plate energy (represented as hash boost)
+        plate.hashrate += absorption * 0.01
+    
+    def update_vacuum(self):
+        """
+        Update the quantum vacuum state between all plates.
+        Called periodically to compute Casimir force.
+        """
+        now = time.time()
+        elapsed = now - self.last_vacuum_update
+        
+        # Update Schumann phase
+        self.schumann_phase = (self.schumann_phase + elapsed * 7.83) % (2 * 3.14159)
+        
+        # Update plate phases
+        for i, (coin, plate) in enumerate(self.plates.items()):
+            # Each plate oscillates at Schumann × golden ratio harmonic
+            harmonic = PHI ** (i % 5)
+            plate.phase = (plate.phase + elapsed * 7.83 * harmonic) % (2 * 3.14159)
+        
+        # Calculate total Casimir force
+        self.total_casimir_force = self._calculate_total_casimir_force()
+        
+        # Calculate photon density
+        recent_photons = sum(1 for p in self.virtual_photons if now - p.timestamp < 60)
+        self.photon_density = recent_photons / max(1, len(self.plates))
+        
+        # Update zero-point energy (vacuum fluctuation)
+        # E_zp = ½ℏω for each mode
+        num_modes = len(self.plates) * (len(self.plates) - 1) // 2
+        self.zero_point_energy = 0.5 * HBAR_MINING * 7.83 * num_modes
+        
+        # Calculate inter-stream cascade from Casimir force
+        self.inter_stream_cascade = 1.0 + self.total_casimir_force * PHI
+        
+        # Record vacuum fluctuation
+        self.vacuum_fluctuations.append({
+            'time': now,
+            'force': self.total_casimir_force,
+            'cascade': self.inter_stream_cascade,
+            'photons': recent_photons,
+            'zpe': self.zero_point_energy
+        })
+        
+        self.last_vacuum_update = now
+    
+    def _calculate_total_casimir_force(self) -> float:
+        """
+        Calculate total Casimir force from all plate pairs.
+        F = -ℏcπ²/(240a⁴) summed over all pairs
+        """
+        total_force = 0.0
+        
+        plate_list = list(self.plates.items())
+        for i in range(len(plate_list)):
+            for j in range(i + 1, len(plate_list)):
+                coin_a, plate_a = plate_list[i]
+                coin_b, plate_b = plate_list[j]
+                
+                pair_key = f"{min(coin_a, coin_b)}_{max(coin_a, coin_b)}"
+                separation = self.plate_separations.get(pair_key, 0.5)
+                
+                # Casimir force formula (scaled for mining)
+                # F = -ℏcπ²/(240a⁴)
+                force = HBAR_MINING * (3.14159 ** 2) / (240 * (separation ** 4))
+                
+                # Weight by coupling strengths
+                coupling = plate_a.coupling_strength * plate_b.coupling_strength
+                force *= coupling
+                
+                # Boost if both plates have recent activity
+                if plate_a.share_count > 0 and plate_b.share_count > 0:
+                    force *= PHI
+                
+                total_force += force
+        
+        return total_force
+    
+    def get_casimir_nonce_zone(self, coin: str) -> Tuple[int, int]:
+        """
+        Get the "Casimir zone" of nonces - the region where
+        quantum vacuum fluctuations are most favorable.
+        """
+        plate = self.plates.get(coin)
+        if not plate:
+            return (0, MAX_NONCE)
+        
+        # Zone center based on plate phase
+        center = int((plate.phase / (2 * 3.14159)) * MAX_NONCE)
+        
+        # Zone width based on Casimir force (stronger = narrower but more potent)
+        width = int(MAX_NONCE / (10 + self.total_casimir_force * 100))
+        
+        start = max(0, center - width // 2)
+        end = min(MAX_NONCE, center + width // 2)
+        
+        return (start, end)
+    
+    def get_cascade_multiplier(self) -> float:
+        """Get the Casimir cascade multiplier for hashrate amplification"""
+        return self.inter_stream_cascade
+    
+    def get_display_stats(self) -> dict:
+        """Get Casimir stats for display"""
+        return {
+            'plates': len(self.plates),
+            'force': self.total_casimir_force,
+            'cascade': self.inter_stream_cascade,
+            'photon_density': self.photon_density,
+            'zpe': self.zero_point_energy,
+            'vacuum_phase': self.schumann_phase,
+            'separations': dict(self.plate_separations)
+        }
+    
+    def format_display(self) -> str:
+        """Format Casimir state for logging"""
+        stats = self.get_display_stats()
+        return (
+            f"🔲 CASIMIR: Plates={stats['plates']} | "
+            f"Force={stats['force']:.4f} | "
+            f"Cascade={stats['cascade']:.3f}x | "
+            f"Photons={stats['photon_density']:.1f}/min"
+        )
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# COHERENCE ENGINE - DYNAMIC SYSTEMS MODEL (WHITEPAPER IMPLEMENTATION)
+# ═══════════════════════════════════════════════════════════════════════════
+# 
+# Implements: "A Dynamic Systems Model of Coherence Grounded in Astronomical 
+# Phenomena" - Gary Leckey, R&A Consulting (October 2025)
+#
+# Core Equation: Ψt+1 = (1 − α) Ψt + α R(Ct; Ψt)
+# Composite Operator: R = ρ ◦ Ω ◦ L(·; κt) ◦ F(·; Ψt) ◦ Φ ◦ ℵ
+#
+# Three Behaviors:
+#   1. Self-Organization (Pt > critical, κt < threshold) - optimal coherence
+#   2. Oscillation (κt ≥ threshold) - over-structuring, need pattern breaking
+#   3. Dissolution (Pt < critical) - under-resonance, losing coherence
+# ═══════════════════════════════════════════════════════════════════════════
+
+from enum import Enum
+import math
+
+class CoherenceBehavior(Enum):
+    """System behavior modes from whitepaper Section IV"""
+    SELF_ORGANIZATION = "self_organization"  # 🟢 Optimal: finding patterns
+    OSCILLATION = "oscillation"              # 🟡 Over-structured: breaking patterns
+    DISSOLUTION = "dissolution"              # 🔴 Under-resonance: losing coherence
+
+
+@dataclass
+class CoherenceState:
+    """
+    Ψt - The coherence state vector
+    
+    From whitepaper Section III: Key indices are Resonance rt, Constraint λt,
+    Purity Pt = rt/λt, and Structuring Index κt.
+    """
+    psi: float = 0.5                        # Primary coherence value Ψ
+    resonance_rt: float = 1.0               # Resonance index (from SR/Lattice/Casimir)
+    constraint_lambda_t: float = 1.0        # Constraint index (from difficulty)
+    structuring_kappa_t: float = 0.5        # Structuring index κt (LF/HF analog)
+    environmental_e: float = 1.0            # Environmental resonance (Schumann)
+    
+    @property
+    def purity_Pt(self) -> float:
+        """Pt = rt / λt - The Purity Index"""
+        return self.resonance_rt / max(0.001, self.constraint_lambda_t)
+    
+    @property
+    def behavior(self) -> CoherenceBehavior:
+        """
+        Determine current system behavior based on indices.
+        
+        From whitepaper Section IV.2:
+        - Phase 1: Self-organization when Pt > critical and κt < threshold
+        - Phase 2: Oscillation when κt ≥ threshold (over-structuring)
+        - Phase 3: Dissolution when Pt < critical (under-resonance)
+        """
+        PURITY_CRITICAL = 1 - 1/PHI    # 0.382 (1 - 1/φ)
+        KAPPA_THRESHOLD = 2.0          # Structuring threshold
+        
+        if self.purity_Pt > PURITY_CRITICAL and self.structuring_kappa_t < KAPPA_THRESHOLD:
+            return CoherenceBehavior.SELF_ORGANIZATION
+        elif self.structuring_kappa_t >= KAPPA_THRESHOLD:
+            return CoherenceBehavior.OSCILLATION
+        else:
+            return CoherenceBehavior.DISSOLUTION
+
+
+@dataclass
+class ContextInput:
+    """
+    Ct - Context input vector to the coherence system
+    
+    From whitepaper Section II: Ct = [C(A), C(P), C(T)] for Ambient, Point, Transient
+    Mapped to mining: share events, hash quality, timing, difficulty, resonance
+    """
+    share_found: bool = False               # Transient: share event occurred
+    hash_quality: float = 0.0               # How close hash was to target (0-1)
+    nonce: int = 0                          # Current nonce value
+    difficulty: float = 1.0                 # Pool difficulty (constraint source)
+    pool_latency: float = 0.0               # Network latency
+    casimir_force: float = 0.0              # Casimir cascade input
+    lattice_cascade: float = 1.0            # Lattice amplification input
+    thread_count: int = 1                   # Active mining threads
+    timestamp: float = field(default_factory=time.time)
+
+
+class CoherenceEngine:
+    """
+    🌀 DYNAMIC SYSTEMS MODEL OF COHERENCE 🌀
+    
+    Implements the whitepaper's coherence model for mining optimization.
+    
+    Core Equation (Whitepaper Eq. 1):
+        Ψt+1 = (1 − α) Ψt + α R(Ct; Ψt)
+        
+    Where R is the composite transformation operator:
+        R = ρ ◦ Ω ◦ L(·; κt) ◦ F(·; Ψt) ◦ Φ ◦ ℵ
+        
+    Operators (Whitepaper Section II.2):
+        ℵ (Aleph)   - Saliency/filtering (attention weighting)
+        Φ (Phi)     - Pattern recognition (structural analysis)
+        F (Framing) - Memory integration (contextualize with Ψt)
+        L (Living)  - Non-linear modulation ("the stag", controlled by κt)
+        Ω (Omega)   - Synthesis/convergence (coherent gestalt)
+        ρ (Rho)     - Reflection (meta-cognition, memory encoding)
+        
+    Reference: "A Dynamic Systems Model of Coherence Grounded in Astronomical
+    Phenomena" - Gary Leckey, R&A Consulting (October 2025)
+    """
+    
+    # Schumann Resonance modes (Hz) from whitepaper Section IV.1
+    SCHUMANN_MODES = [7.83, 14.3, 20.8, 27.3, 33.8]
+    
+    def __init__(self, alpha: float = 0.15):
+        """
+        Initialize coherence engine.
+        
+        Args:
+            alpha: Learning rate for state update (0 < α < 1)
+                   Whitepaper recommends α = 0.25 for visible dynamics,
+                   we use 0.15 for smoother mining adaptation.
+        """
+        self.alpha = alpha
+        self.state = CoherenceState()
+        self.history: deque = deque(maxlen=1000)
+        
+        # Operator state memory
+        self.saliency_weights: Dict[str, float] = {
+            'share_signal': 0.4,
+            'quality_signal': 0.25,
+            'timing_signal': 0.2,
+            'resonance_signal': 0.15
+        }
+        self.pattern_memory: deque = deque(maxlen=500)
+        self.framing_context: Dict = {'frame': 'balanced', 'trust': 0.5}
+        self.living_node_gain: float = 1.0   # g(κt) from whitepaper Appendix A
+        self.synthesis_buffer: deque = deque(maxlen=100)
+        self.reflection_score: float = 0.5
+        
+        # Schumann timing (whitepaper Section IV.1)
+        self.schumann_phase = 0.0
+        self.last_update = time.time()
+        
+        # Behavior tracking
+        self.behavior_durations: Dict[str, float] = {
+            'self_organization': 0.0,
+            'oscillation': 0.0,
+            'dissolution': 0.0
+        }
+        self.last_behavior = CoherenceBehavior.SELF_ORGANIZATION
+        self.last_behavior_time = time.time()
+        
+        logger.info("🌀 Coherence Engine initialized (α={:.2f})".format(alpha))
+    
+    # ══════════════════════════════════════════════════════════════════
+    # OPERATORS: R = ρ ◦ Ω ◦ L(·; κt) ◦ F(·; Ψt) ◦ Φ ◦ ℵ
+    # ══════════════════════════════════════════════════════════════════
+    
+    def op_aleph_saliency(self, context: ContextInput) -> Dict[str, float]:
+        """
+        ℵ - Saliency Operator (Whitepaper Appendix A.1)
+        
+        ℵ(Ct) = W ⊙ Ct where W = [wA, wP, wT]
+        Element-wise weighting to emphasize point/transient components.
+        
+        Mining mapping:
+        - Ambient = baseline hash quality
+        - Point = Casimir/Lattice resonance
+        - Transient = share events
+        """
+        # Compute raw signals
+        share_signal = 1.0 if context.share_found else 0.1
+        quality_signal = context.hash_quality ** 2  # Emphasize near-misses
+        timing_signal = self._compute_schumann_alignment()
+        resonance_signal = (context.casimir_force + context.lattice_cascade) / 2.0
+        
+        # Apply learned saliency weights
+        saliency = {
+            'share_signal': share_signal * self.saliency_weights['share_signal'],
+            'quality_signal': quality_signal * self.saliency_weights['quality_signal'],
+            'timing_signal': timing_signal * self.saliency_weights['timing_signal'],
+            'resonance_signal': resonance_signal * self.saliency_weights['resonance_signal']
+        }
+        
+        # Normalize to sum to 1
+        total = sum(saliency.values()) + 0.001
+        return {k: v / total for k, v in saliency.items()}
+    
+    def op_phi_pattern(self, saliency: Dict[str, float]) -> Dict:
+        """
+        Φ - Pattern Recognition Operator (Whitepaper Appendix A.1)
+        
+        Φ(x) = tanh(M·x) where M ∈ R^(n×n)
+        Detects structure in salient signals.
+        
+        Mining mapping: Detect trends in share success patterns
+        """
+        # Store for pattern detection
+        self.pattern_memory.append({
+            'saliency': saliency.copy(),
+            'time': time.time()
+        })
+        
+        # Need minimum history for pattern detection
+        if len(self.pattern_memory) < 10:
+            return {
+                'pattern_strength': 0.5,
+                'pattern_type': 'initializing',
+                'trend': 0.0
+            }
+        
+        # Analyze recent share signals for trends
+        recent = list(self.pattern_memory)[-20:]
+        share_signals = [p['saliency'].get('share_signal', 0) for p in recent]
+        
+        # Compute trend (slope of share success)
+        n = len(share_signals)
+        x_mean = (n - 1) / 2
+        y_mean = sum(share_signals) / n
+        
+        numerator = sum((i - x_mean) * (share_signals[i] - y_mean) for i in range(n))
+        denominator = sum((i - x_mean) ** 2 for i in range(n)) + 0.001
+        trend = numerator / denominator
+        
+        # Apply tanh saturation (whitepaper formula)
+        saturated_trend = math.tanh(trend * 5)  # Scale factor for sensitivity
+        
+        # Classify pattern
+        if saturated_trend > 0.3:
+            pattern_type = 'ascending'
+        elif saturated_trend < -0.3:
+            pattern_type = 'descending'
+        else:
+            pattern_type = 'stable'
+        
+        return {
+            'pattern_strength': abs(saturated_trend),
+            'pattern_type': pattern_type,
+            'trend': saturated_trend
+        }
+    
+    def op_F_framing(self, pattern: Dict, psi: float) -> Dict:
+        """
+        F(·; Ψt) - Framing Operator (Whitepaper Appendix A.1)
+        
+        F(ϕ, Ψt) = β·ϕ + (1-β)·Ψt
+        Convex combination of pattern output and prior state.
+        
+        Mining mapping: How to interpret patterns given current coherence
+        """
+        beta = 0.6  # Pattern weight (can be tuned)
+        
+        # Determine framing based on coherence level
+        if psi > 0.7:
+            # High coherence: trust patterns, be aggressive
+            frame = 'confident'
+            amplification = 1.0 + (psi - 0.7) * PHI
+            pattern_trust = min(1.0, pattern['pattern_strength'] * 1.5)
+        elif psi < 0.3:
+            # Low coherence: cautious, conservative
+            frame = 'cautious'
+            amplification = 0.5 + psi
+            pattern_trust = pattern['pattern_strength'] * 0.5
+        else:
+            # Balanced: moderate approach
+            frame = 'balanced'
+            amplification = 1.0
+            pattern_trust = pattern['pattern_strength']
+        
+        # Store framing context for continuity
+        self.framing_context = {
+            'frame': frame,
+            'trust': pattern_trust
+        }
+        
+        # Apply convex combination
+        blended_strength = beta * pattern['pattern_strength'] + (1 - beta) * psi
+        
+        return {
+            'frame': frame,
+            'amplification': amplification,
+            'pattern_trust': pattern_trust,
+            'blended_strength': blended_strength,
+            'trend': pattern['trend']
+        }
+    
+    def op_L_living_node(self, framing: Dict, kappa_t: float) -> Dict:
+        """
+        L(·; κt) - Living Node/"Stag" Operator (Whitepaper Appendix A.1)
+        
+        L(f; κt) = g(κt) · f where g(κ) = clip(1/κ, gmin, gmax)
+        State-dependent gain controlled by structuring index.
+        
+        This is the key non-linear node that produces different behaviors:
+        - κt > 2.0: Over-structured → inject randomness
+        - κt < 0.5: Under-structured → increase structure
+        - 0.5 ≤ κt ≤ 2.0: Optimal range → maintain
+        """
+        KAPPA_HIGH = 2.0   # Over-structuring threshold
+        KAPPA_LOW = 0.5    # Under-structuring threshold
+        G_MIN = 0.3        # Minimum gain
+        G_MAX = 2.0        # Maximum gain
+        
+        # Compute gain g(κ) = clip(1/κ, gmin, gmax)
+        raw_gain = 1.0 / max(0.1, kappa_t)
+        gain = max(G_MIN, min(G_MAX, raw_gain))
+        
+        if kappa_t >= KAPPA_HIGH:
+            # Over-structured: reduce gain to break rigid patterns
+            self.living_node_gain *= 0.95
+            action = 'destabilize'
+            modifier = 1.0 / PHI  # Golden ratio reduction
+        elif kappa_t < KAPPA_LOW:
+            # Under-structured: increase gain to find patterns
+            self.living_node_gain = min(G_MAX, self.living_node_gain * 1.05)
+            action = 'stabilize'
+            modifier = PHI  # Golden ratio increase
+        else:
+            # Optimal range: maintain current trajectory
+            action = 'maintain'
+            modifier = 1.0
+        
+        # Clamp living node gain
+        self.living_node_gain = max(G_MIN, min(G_MAX, self.living_node_gain))
+        
+        return {
+            'action': action,
+            'gain': gain,
+            'node_strength': self.living_node_gain,
+            'modified_amp': framing['amplification'] * modifier * gain,
+            'kappa_t': kappa_t
+        }
+    
+    def op_omega_synthesis(self, living: Dict) -> float:
+        """
+        Ω - Synthesis Operator (Whitepaper Appendix A.1)
+        
+        Ω(x) = x / (||x|| + ε)
+        Normalize vector by its Euclidean norm.
+        
+        Mining mapping: Combine recent living node outputs into
+        unified coherent output.
+        """
+        self.synthesis_buffer.append({
+            'amp': living['modified_amp'],
+            'strength': living['node_strength'],
+            'time': time.time()
+        })
+        
+        if len(self.synthesis_buffer) < 3:
+            return living['modified_amp']
+        
+        # Weighted synthesis with golden ratio temporal decay
+        recent = list(self.synthesis_buffer)[-7:]
+        weights = [PHI ** i for i in range(len(recent))]
+        
+        # Compute weighted sum
+        synthesis_sum = sum(
+            w * r['amp'] * r['strength']
+            for w, r in zip(weights, recent)
+        )
+        weight_sum = sum(weights)
+        
+        # Normalize (Ω operator)
+        synthesis = synthesis_sum / (weight_sum + 0.001)
+        
+        # Apply soft normalization to prevent runaway
+        return math.tanh(synthesis) * 2.0  # Scale to ~[-2, 2]
+    
+    def op_rho_reflection(self, synthesis: float, context: ContextInput) -> float:
+        """
+        ρ - Reflection Operator (Whitepaper Appendix A.1)
+        
+        Identity or smoothing operator for memory encoding.
+        Self-assessment and meta-cognition.
+        
+        Mining mapping: Learn from share success/failure to improve
+        future predictions.
+        """
+        # Update reflection score based on outcomes
+        if context.share_found:
+            # Success! Strengthen reflection confidence
+            self.reflection_score = min(1.0, self.reflection_score * 1.1)
+            reflection_boost = PHI  # Golden ratio reward
+            
+            # Adapt saliency weights toward successful pattern
+            self._adapt_saliency_weights(success=True)
+        else:
+            # No share: gradual decay, but not too fast
+            self.reflection_score *= 0.998
+            reflection_boost = 1.0
+        
+        # Final output modulated by reflection
+        R_output = synthesis * (0.5 + 0.5 * self.reflection_score) * reflection_boost
+        
+        return R_output
+    
+    def _adapt_saliency_weights(self, success: bool):
+        """Adapt saliency weights based on success (meta-learning)"""
+        if not self.pattern_memory:
+            return
+        
+        # Get most recent saliency that led to this outcome
+        recent = self.pattern_memory[-1]['saliency']
+        
+        learning_rate = 0.01 if success else 0.005
+        
+        for key in self.saliency_weights:
+            if key in recent:
+                if success:
+                    # Increase weight of signals that were high during success
+                    self.saliency_weights[key] += learning_rate * recent[key]
+                else:
+                    # Slight decay for non-success
+                    self.saliency_weights[key] *= 0.999
+        
+        # Normalize weights
+        total = sum(self.saliency_weights.values())
+        self.saliency_weights = {k: v/total for k, v in self.saliency_weights.items()}
+    
+    # ══════════════════════════════════════════════════════════════════
+    # COMPOSITE OPERATOR & STATE UPDATE
+    # ══════════════════════════════════════════════════════════════════
+    
+    def compute_R(self, context: ContextInput) -> float:
+        """
+        Compute composite operator R = ρ ◦ Ω ◦ L ◦ F ◦ Φ ◦ ℵ
+        
+        This is the main transformation from input context Ct to
+        state update contribution.
+        """
+        # ℵ: Saliency filtering
+        saliency = self.op_aleph_saliency(context)
+        
+        # Φ: Pattern recognition
+        pattern = self.op_phi_pattern(saliency)
+        
+        # F: Framing (state-dependent)
+        framing = self.op_F_framing(pattern, self.state.psi)
+        
+        # L: Living node (κt-dependent)
+        living = self.op_L_living_node(framing, self.state.structuring_kappa_t)
+        
+        # Ω: Synthesis
+        synthesis = self.op_omega_synthesis(living)
+        
+        # ρ: Reflection
+        R_output = self.op_rho_reflection(synthesis, context)
+        
+        return R_output
+    
+    def update(self, context: ContextInput) -> CoherenceState:
+        """
+        Main state update implementing whitepaper Equation (1):
+        
+            Ψt+1 = (1 − α) Ψt + α R(Ct; Ψt)
+        
+        This is the core exponential-moving-average style update
+        where new information is provided by composite operator R.
+        """
+        now = time.time()
+        elapsed = now - self.last_update
+        
+        # Update Schumann phase (whitepaper Section IV.1)
+        self.schumann_phase = (self.schumann_phase + elapsed * self.SCHUMANN_MODES[0]) % (2 * math.pi)
+        self.last_update = now
+        
+        # Compute composite operator R
+        R_output = self.compute_R(context)
+        
+        # ═══════════════════════════════════════════════════════════
+        # STATE UPDATE EQUATION: Ψt+1 = (1 − α) Ψt + α R(Ct; Ψt)
+        # ═══════════════════════════════════════════════════════════
+        psi_new = (1 - self.alpha) * self.state.psi + self.alpha * R_output
+        
+        # Clamp to valid range
+        self.state.psi = max(0.0, min(1.0, psi_new))
+        
+        # Update derived indices
+        self.state.resonance_rt = context.lattice_cascade * (1 + context.casimir_force * 0.5)
+        self.state.constraint_lambda_t = max(0.1, math.log(context.difficulty + 1) / 10.0)
+        self.state.structuring_kappa_t = (
+            len(self.pattern_memory) / 100.0 + 
+            self.state.psi * 0.5 +
+            self.living_node_gain * 0.3
+        )
+        self.state.environmental_e = self._compute_schumann_alignment()
+        
+        # Track behavior duration
+        current_behavior = self.state.behavior
+        if current_behavior != self.last_behavior:
+            # Behavior changed - record duration
+            duration = now - self.last_behavior_time
+            self.behavior_durations[self.last_behavior.value] += duration
+            self.last_behavior = current_behavior
+            self.last_behavior_time = now
+        
+        # Record history
+        self.history.append({
+            'time': now,
+            'psi': self.state.psi,
+            'R': R_output,
+            'behavior': current_behavior.value,
+            'purity': self.state.purity_Pt,
+            'kappa': self.state.structuring_kappa_t,
+            'resonance': self.state.resonance_rt
+        })
+        
+        return self.state
+    
+    def _compute_schumann_alignment(self) -> float:
+        """
+        Compute alignment with Schumann resonance.
+        
+        From whitepaper Section IV.1: Environmental resonance rt from
+        SR power normalized to [0,1].
+        """
+        # Multi-mode Schumann alignment (fundamental + harmonics)
+        alignment = 0.0
+        for i, mode in enumerate(self.SCHUMANN_MODES[:3]):
+            phase = self.schumann_phase * mode / self.SCHUMANN_MODES[0]
+            weight = 1.0 / (i + 1)  # Fundamental strongest
+            alignment += weight * (0.5 + 0.5 * math.cos(phase))
+        
+        # Normalize
+        return alignment / sum(1.0 / (i + 1) for i in range(3))
+    
+    # ══════════════════════════════════════════════════════════════════
+    # MINING INTEGRATION API
+    # ══════════════════════════════════════════════════════════════════
+    
+    def get_nonce_guidance(self) -> Dict:
+        """
+        Get coherence-guided nonce selection parameters.
+        
+        Based on current behavior mode:
+        - SELF_ORGANIZATION: Trust patterns, narrow search
+        - OSCILLATION: Break patterns, wide exploration
+        - DISSOLUTION: Conservative reset
+        """
+        behavior = self.state.behavior
+        
+        if behavior == CoherenceBehavior.SELF_ORGANIZATION:
+            return {
+                'strategy': 'focused',
+                'range_multiplier': 1.0 / PHI,  # Narrow search
+                'pattern_weight': self.state.psi,
+                'skip_size': int(FIBONACCI[7] * 1000)  # 21000
+            }
+        elif behavior == CoherenceBehavior.OSCILLATION:
+            return {
+                'strategy': 'exploration',
+                'range_multiplier': PHI,  # Wide search
+                'pattern_weight': 0.1,
+                'skip_size': int(PRIMES[5] * 10000)  # 130000
+            }
+        else:  # DISSOLUTION
+            return {
+                'strategy': 'reset',
+                'range_multiplier': 1.0,
+                'pattern_weight': 0.5,
+                'skip_size': DEFAULT_NONCE_BATCH
+            }
+    
+    def get_intensity_multiplier(self) -> float:
+        """Get mining intensity based on coherence state"""
+        base = 0.5 + self.state.psi * 0.5
+        environmental = self.state.environmental_e
+        purity_boost = min(1.5, 1.0 + self.state.purity_Pt * 0.25)
+        return base * environmental * purity_boost
+    
+    def get_cascade_contribution(self) -> float:
+        """Get coherence contribution to overall cascade multiplier"""
+        # Coherence adds up to 20% on top of Lattice × Casimir
+        return 1.0 + (self.state.psi * 0.2 * self.state.environmental_e)
+    
+    def get_display_stats(self) -> Dict:
+        """Get coherence stats for display"""
+        return {
+            'psi': self.state.psi,
+            'resonance': self.state.resonance_rt,
+            'constraint': self.state.constraint_lambda_t,
+            'purity': self.state.purity_Pt,
+            'kappa': self.state.structuring_kappa_t,
+            'behavior': self.state.behavior.value,
+            'schumann_phase': self.schumann_phase,
+            'reflection': self.reflection_score,
+            'living_gain': self.living_node_gain,
+            'environmental': self.state.environmental_e,
+            'alpha': self.alpha
+        }
+    
+    def format_display(self) -> str:
+        """Format coherence state for logging"""
+        behavior = self.state.behavior
+        if behavior == CoherenceBehavior.SELF_ORGANIZATION:
+            icon = "🟢"
+        elif behavior == CoherenceBehavior.OSCILLATION:
+            icon = "🟡"
+        else:
+            icon = "🔴"
+        
+        return (
+            f"🌀 COHERENCE: Ψ={self.state.psi:.3f} | "
+            f"Pt={self.state.purity_Pt:.3f} | "
+            f"κt={self.state.structuring_kappa_t:.2f} | "
+            f"{icon} {behavior.value.upper()}"
+        )
+    
+    def format_mandala(self) -> str:
+        """
+        Format mandala visualization (whitepaper Section V)
+        
+        Mapping rules:
+        - Brightness ∝ |Pt|
+        - Hue = f(κt): cool colors (κ<1), green (κ≈1), warm (κ>1)
+        """
+        purity = self.state.purity_Pt
+        kappa = self.state.structuring_kappa_t
+        
+        # Brightness levels
+        if purity > 0.7:
+            brightness = "████"
+        elif purity > 0.4:
+            brightness = "███░"
+        elif purity > 0.2:
+            brightness = "██░░"
+        else:
+            brightness = "█░░░"
+        
+        # Hue based on κt
+        if kappa < 0.7:
+            hue = "🔵"  # Cool - under-structured
+        elif kappa < 1.3:
+            hue = "🟢"  # Green - balanced
+        elif kappa < 2.0:
+            hue = "🟡"  # Yellow - slightly over
+        else:
+            hue = "🔴"  # Red - over-structured
+        
+        return f"{hue} {brightness} Ψ={self.state.psi:.2f}"
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -718,6 +1703,12 @@ class HarmonicMiningOptimizer:
         # Quantum Lattice Amplifier
         self.lattice = QuantumLatticeAmplifier()
         
+        # Casimir Effect Engine (for multi-coin mining)
+        self.casimir = CasimirEffectEngine()
+        
+        # Coherence Engine (Dynamic Systems Model - Whitepaper Implementation)
+        self.coherence = CoherenceEngine(alpha=0.15)
+        
         # Try to import Aureon systems
         self._probability_matrix = None
         self._earth_engine = None
@@ -893,11 +1884,23 @@ class HarmonicMiningOptimizer:
         # Positive feedback on coherence
         self.state.coherence = min(1.0, self.state.coherence * 1.005)
         
-        logger.debug(f"🎯 Share pattern recorded: nonce={nonce:08x}, coherence now {self.state.coherence:.3f}")
+        # Update Coherence Engine with share event (Whitepaper state update)
+        # This triggers: Ψt+1 = (1 − α) Ψt + α R(Ct; Ψt)
+        hash_quality = 1.0 - (int.from_bytes(hash_value[:8], 'big') / (2**64))  # Quality based on hash
+        self.update_coherence(
+            share_found=True,
+            hash_quality=hash_quality,
+            nonce=nonce,
+            difficulty=difficulty
+        )
+        
+        logger.debug(f"🎯 Share pattern recorded: nonce={nonce:08x}, coherence Ψ={self.coherence.state.psi:.3f}")
     
     def get_mining_insight(self) -> dict:
-        """Get current mining optimization state including lattice"""
+        """Get current mining optimization state including lattice, Casimir, and coherence"""
         lattice_stats = self.lattice.get_display_stats()
+        casimir_stats = self.casimir.get_display_stats()
+        coherence_stats = self.coherence.get_display_stats()
         return {
             'coherence': self.state.coherence,
             'intensity': self.state.intensity_multiplier,
@@ -912,12 +1915,78 @@ class HarmonicMiningOptimizer:
             'wave_amplitude': lattice_stats['amplitude'],
             'ping_pong_phase': lattice_stats['phase'],
             'peak_resonance': lattice_stats['peak'],
-            'patterns_learned': lattice_stats['patterns']
+            'patterns_learned': lattice_stats['patterns'],
+            # Casimir Effect stats
+            'casimir_plates': casimir_stats['plates'],
+            'casimir_force': casimir_stats['force'],
+            'casimir_cascade': casimir_stats['cascade'],
+            'photon_density': casimir_stats['photon_density'],
+            'zero_point_energy': casimir_stats['zpe'],
+            # Coherence Engine stats (Whitepaper Model)
+            'coherence_psi': coherence_stats['psi'],
+            'coherence_purity': coherence_stats['purity'],
+            'coherence_kappa': coherence_stats['kappa'],
+            'coherence_behavior': coherence_stats['behavior'],
+            'coherence_reflection': coherence_stats['reflection']
         }
     
     def get_amplified_hashrate(self, base_hashrate: float) -> Tuple[float, str]:
-        """Get quantum-amplified effective hashrate"""
-        return self.lattice.amplify_hashrate(base_hashrate)
+        """Get quantum-amplified effective hashrate (Lattice × Casimir × Coherence)"""
+        lattice_rate, _ = self.lattice.amplify_hashrate(base_hashrate)
+        
+        # Apply Casimir cascade multiplier
+        casimir_mult = self.casimir.get_cascade_multiplier()
+        
+        # Apply Coherence cascade contribution
+        coherence_mult = self.coherence.get_cascade_contribution()
+        
+        # Total: Lattice × Casimir × Coherence
+        total_amplified = lattice_rate * casimir_mult * coherence_mult
+        
+        # Format for display
+        if total_amplified > 1e12:
+            return total_amplified, f"{total_amplified/1e12:.2f} TH/s"
+        elif total_amplified > 1e9:
+            return total_amplified, f"{total_amplified/1e9:.2f} GH/s"
+        elif total_amplified > 1e6:
+            return total_amplified, f"{total_amplified/1e6:.2f} MH/s"
+        elif total_amplified > 1e3:
+            return total_amplified, f"{total_amplified/1e3:.2f} KH/s"
+        return total_amplified, f"{total_amplified:.2f} H/s"
+    
+    def add_casimir_plate(self, coin: str, algorithm: str, coupling: float = 1.0):
+        """Add a coin mining stream as a Casimir plate"""
+        self.casimir.add_plate(coin, algorithm, coupling)
+    
+    def emit_casimir_photon(self, coin: str, share_energy: float, nonce: int):
+        """Emit virtual photon when share is found on a specific coin"""
+        self.casimir.emit_virtual_photon(coin, share_energy, nonce)
+    
+    def update_casimir_vacuum(self):
+        """Update Casimir vacuum state"""
+        self.casimir.update_vacuum()
+    
+    def update_coherence(self, share_found: bool = False, hash_quality: float = 0.0,
+                        nonce: int = 0, difficulty: float = 1.0):
+        """
+        Update Coherence Engine with mining context.
+        
+        This triggers the whitepaper state update:
+        Ψt+1 = (1 − α) Ψt + α R(Ct; Ψt)
+        """
+        context = ContextInput(
+            share_found=share_found,
+            hash_quality=hash_quality,
+            nonce=nonce,
+            difficulty=difficulty,
+            casimir_force=self.casimir.total_casimir_force,
+            lattice_cascade=self.lattice.cascade_factor
+        )
+        return self.coherence.update(context)
+    
+    def get_coherence_guidance(self) -> Dict:
+        """Get nonce guidance from coherence engine based on behavior mode"""
+        return self.coherence.get_nonce_guidance()
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -1190,8 +2259,19 @@ class AureonMiner:
         while self._running:
             time.sleep(HASH_REPORT_INTERVAL)
             if self._running:
-                total_hr = sum(s.stats.hashrate for s in self.sessions)
+                # Update Casimir vacuum state
+                self.optimizer.update_casimir_vacuum()
+                
+                # Update Coherence engine with current mining context
                 total_shares = sum(s.stats.shares_accepted for s in self.sessions)
+                avg_difficulty = sum(s.stats.best_difficulty for s in self.sessions) / max(1, len(self.sessions))
+                self.optimizer.update_coherence(
+                    share_found=False,  # No new share in this update cycle
+                    hash_quality=0.0,
+                    difficulty=max(1.0, avg_difficulty)
+                )
+                
+                total_hr = sum(s.stats.hashrate for s in self.sessions)
                 
                 # Format total hashrate
                 unit = 'H/s'
@@ -1202,7 +2282,7 @@ class AureonMiner:
                 
                 insight = self.optimizer.get_mining_insight()
                 
-                # Get quantum amplified hashrate
+                # Get quantum amplified hashrate (Lattice × Casimir × Coherence)
                 raw_hashrate = sum(s.stats.hashrate for s in self.sessions)
                 amp_rate, amp_str = self.optimizer.get_amplified_hashrate(raw_hashrate)
                 cascade = insight.get('cascade_factor', 1.0)
@@ -1215,6 +2295,9 @@ class AureonMiner:
                     f"Shares: {total_shares} | "
                     f"Cascade: {cascade:.2f}x"
                 )
+                
+                # Display Coherence state (Whitepaper Model)
+                logger.info(self.optimizer.coherence.format_display())
 
     def _print_final_stats(self):
         print("\n╔════════════════════ FINAL MINING STATS ════════════════════╗")
@@ -1227,6 +2310,9 @@ class AureonMiner:
         print("╠════════════════════ QUANTUM LATTICE ═══════════════════════╣")
         print(f"║ Cascade Factor: {insight.get('cascade_factor', 1.0):.2f}x | Peak: {insight.get('peak_resonance', 1.0):.2f}x ║")
         print(f"║ Patterns Learned: {insight.get('patterns_learned', 0)} | Coherence: {insight.get('coherence', 0.5):.3f} ║")
+        print("╠════════════════════ COHERENCE ENGINE ══════════════════════╣")
+        print(f"║ Ψ={insight.get('coherence_psi', 0.5):.3f} | Pt={insight.get('coherence_purity', 1.0):.3f} | "
+              f"κt={insight.get('coherence_kappa', 0.5):.2f} | {insight.get('coherence_behavior', 'unknown')} ║")
         print("╚════════════════════════════════════════════════════════════╝\n")
 
 

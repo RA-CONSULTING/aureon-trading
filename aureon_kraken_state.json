@@ -1,5 +1,5 @@
 {
-  "balance": 110.78128638843472,
+  "balance": 110.27466358016841,
   "peak_balance": 155.69962862831332,
   "total_trades": 6,
   "wins": 2,
@@ -18,7 +18,7 @@
       "coherence": 0.5,
       "entry_time": 1765547216.27201,
       "dominant_node": "Portfolio",
-      "cycles": 277
+      "cycles": 317
     },
     "BTCUSDC": {
       "entry_price": 92330.38500000001,
@@ -29,7 +29,7 @@
       "coherence": 0.5,
       "entry_time": 1765547216.5435598,
       "dominant_node": "Portfolio",
-      "cycles": 277
+      "cycles": 317
     },
     "SOLUSDC": {
       "entry_price": 139.14,
@@ -40,7 +40,7 @@
       "coherence": 0.65,
       "entry_time": 1765547363.885186,
       "dominant_node": "ForceScout",
-      "cycles": 277
+      "cycles": 317
     },
     "FARTCOINUSDC": {
       "entry_price": 0.3863,
@@ -51,7 +51,7 @@
       "coherence": 0.65,
       "entry_time": 1765547364.2477276,
       "dominant_node": "ForceScout",
-      "cycles": 277
+      "cycles": 317
     },
     "ETHUSDC": {
       "entry_price": 3244.1299999999997,
@@ -62,7 +62,7 @@
       "coherence": 0.65,
       "entry_time": 1765547365.381565,
       "dominant_node": "ForceScout",
-      "cycles": 277
+      "cycles": 317
     },
     "XDCUSDC": {
       "entry_price": 0.05159,
@@ -73,7 +73,7 @@
       "coherence": 0.65,
       "entry_time": 1765547365.9145555,
       "dominant_node": "ForceScout",
-      "cycles": 277
+      "cycles": 317
     },
     "SUIUSDC": {
       "entry_price": 1.657,
@@ -84,7 +84,7 @@
       "coherence": 0.65,
       "entry_time": 1765547366.829318,
       "dominant_node": "ForceScout",
-      "cycles": 277
+      "cycles": 317
     },
     "XRPUSDC": {
       "entry_price": 2.0413,
@@ -95,7 +95,7 @@
       "coherence": 0.65,
       "entry_time": 1765547368.4320235,
       "dominant_node": "ForceScout",
-      "cycles": 277
+      "cycles": 317
     },
     "DOGEUSDC": {
       "entry_price": 0.14113,
@@ -106,7 +106,7 @@
       "coherence": 0.65,
       "entry_time": 1765547369.3552454,
       "dominant_node": "ForceScout",
-      "cycles": 277
+      "cycles": 317
     },
     "ATUSDC": {
       "entry_price": 0.112,
@@ -117,7 +117,7 @@
       "coherence": 0.65,
       "entry_time": 1765547370.4905498,
       "dominant_node": "ForceScout",
-      "cycles": 277
+      "cycles": 317
     },
     "LINKUSDC": {
       "entry_price": 14.34,
@@ -128,7 +128,7 @@
       "coherence": 0.65,
       "entry_time": 1765547371.410363,
       "dominant_node": "ForceScout",
-      "cycles": 277
+      "cycles": 317
     },
     "AAVEUSDC": {
       "entry_price": 204.55,
@@ -139,7 +139,7 @@
       "coherence": 0.65,
       "entry_time": 1765547373.4604092,
       "dominant_node": "ForceScout",
-      "cycles": 277
+      "cycles": 317
     },
     "LTCUSDC": {
       "entry_price": 84.04,
@@ -150,7 +150,7 @@
       "coherence": 0.65,
       "entry_time": 1765547374.5901606,
       "dominant_node": "ForceScout",
-      "cycles": 277
+      "cycles": 317
     },
     "ADAUSDC": {
       "entry_price": 0.4257000000000001,
@@ -161,9 +161,9 @@
       "coherence": 0.65,
       "entry_time": 1765547375.7225845,
       "dominant_node": "ForceScout",
-      "cycles": 277
+      "cycles": 317
     }
   },
-  "timestamp": 1765551725.581482,
-  "iteration": 277
+  "timestamp": 1765552298.2913795,
+  "iteration": 317
 }
