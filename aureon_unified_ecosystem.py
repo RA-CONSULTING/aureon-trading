@@ -926,11 +926,8 @@ class CrossExchangeArbitrageScanner:
             # Get prices from each exchange
             for exchange in exchanges:
                 try:
-                    # Normalize symbol
-                    ex_symbol = symbol
-                    if exchange == 'binance':
-                        ex_symbol = symbol.replace('USD', 'USDT')
-                    
+                    # Normalize canonical symbol to exchange-specific
+                    ex_symbol = self.client.normalize_symbol(exchange, symbol)
                     ticker = self.client.get_ticker(exchange, ex_symbol)
                     if ticker and ticker.get('bid', 0) > 0:
                         prices[exchange] = {

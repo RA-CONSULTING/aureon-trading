@@ -82,6 +82,45 @@ class MultiExchangeClient:
             all_tickers.extend(tickers)
         return all_tickers
 
+    def normalize_symbol(self, exchange: str, symbol: str) -> str:
+        """Normalize a canonical symbol to an exchange-specific one."""
+        exchange = exchange.lower()
+        s = symbol.upper().replace('/', '')
+        base, quote = None, None
+        # Split by common quotes
+        for q in ["USDT", "USDC", "USD", "EUR", "GBP", "BTC", "XBT"]:
+            if s.endswith(q):
+                base = s[:-len(q)]
+                quote = q
+                break
+        if not base or not quote:
+            # Fallback try two-part with slash
+            if '/' in symbol:
+                base, quote = symbol.upper().split('/')
+            else:
+                return s
+
+        if exchange == 'kraken':
+            # BTC is XBT, prefer USD/USDC/USDT availability
+            kbase = 'XBT' if base == 'BTC' else base
+            kquote = quote
+            if kquote == 'BTC': kquote = 'XBT'
+            # Prefer USD first, then USDC, then USDT
+            for q in [kquote, 'USD', 'USDC', 'USDT']:
+                alt = f"{kbase}{q}"
+                return alt
+        if exchange == 'binance':
+            # Binance mostly uses USDT; map USD to USDT
+            bquote = 'USDT' if quote in ['USD', 'USDC'] else quote
+            return f"{base}{bquote}"
+        if exchange == 'alpaca':
+            return f"{base}/{quote}"
+        if exchange == 'capital':
+            # Capital uses simple epics like BTCUSD
+            cquote = 'USD' if quote in ['USDT', 'USDC'] else quote
+            return f"{base}{cquote}"
+        return s
+
     def place_market_order(self, exchange: str, symbol: str, side: str, quantity=None, quote_qty=None) -> Dict[str, Any]:
         if exchange not in self.clients:
             logger.error(f"Unknown exchange: {exchange}")
@@ -124,6 +163,11 @@ class UnifiedExchangeClient:
             raise ValueError(f"Unsupported exchange: {exchange_id}")
             
         logger.info(f"Initialized UnifiedExchangeClient for {self.exchange_id} (Dry Run: {self.dry_run})")
+
+    def normalize(self, symbol: str) -> str:
+        """Normalize a canonical symbol to this client's exchange format."""
+        mec = MultiExchangeClient()
+        return mec.normalize_symbol(self.exchange_id, symbol)
 
     def get_balance(self, asset: str) -> float:
         """Get free balance for a specific asset."""
@@ -281,6 +325,37 @@ class UnifiedExchangeClient:
             except:
                 pass
             return 0.0
+
+    def get_24h_tickers(self) -> List[Dict[str, Any]]:
+        """Proxy to client, ensuring symbols are returned in canonical form when possible."""
+        if hasattr(self.client, 'get_24h_tickers'):
+            tks = self.client.get_24h_tickers()
+            # Attempt minimal canonicalization: map XBT->BTC and wsname-derived quotes
+            out = []
+            for t in tks:
+                sym = t.get('symbol') or t.get('wsname') or ''
+                symu = str(sym).upper()
+                if symu.startswith('XBT'):
+                    symu = 'BTC' + symu[3:]
+                t['symbol'] = symu
+                out.append(t)
+            return out
+        return []
+
+    def get_ticker(self, symbol: str) -> Dict[str, float]:
+        """Get ticker with normalization applied for this exchange."""
+        norm = self.normalize(symbol)
+        if hasattr(self.client, 'get_ticker'):
+            return self.client.get_ticker(norm)
+        # Fallback using 24h ticker
+        if hasattr(self.client, 'get_24h_ticker'):
+            t = self.client.get_24h_ticker(norm)
+            try:
+                last = float(t.get('lastPrice', 0) or 0)
+            except Exception:
+                last = 0.0
+            return {'price': last, 'bid': last, 'ask': last}
+        return {'price': 0.0, 'bid': 0.0, 'ask': 0.0}
 
         if self.exchange_id == 'capital':
             asset = asset.upper()
