@@ -74,11 +74,26 @@ class SafeStreamHandler(logging.StreamHandler):
 # This ensures ALL subsequent loggers (including those from imported modules)
 # use this safe handler and don't crash on Windows when printing emojis.
 root_logger = logging.getLogger()
-if not root_logger.handlers:
+
+# 🧹 AGGRESSIVE CLEANUP: Remove any existing StreamHandlers that are not SafeStreamHandler
+# This handles cases where basicConfig was called by an import, environment, or debugger
+handlers_removed = 0
+for h in list(root_logger.handlers):
+    if isinstance(h, logging.StreamHandler) and not isinstance(h, SafeStreamHandler):
+        root_logger.removeHandler(h)
+        handlers_removed += 1
+
+# Add SafeStreamHandler if missing
+has_safe_handler = any(isinstance(h, SafeStreamHandler) for h in root_logger.handlers)
+if not has_safe_handler:
     safe_handler = SafeStreamHandler(sys.stdout)
     safe_handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
     root_logger.addHandler(safe_handler)
     root_logger.setLevel(logging.INFO)
+
+if sys.platform == 'win32':
+    print(f"🛡️  Windows Unicode Protection Active: Root logger sanitized ({handlers_removed} unsafe handlers removed).")
+
 
 
 # Load environment variables from .env file FIRST before any other imports
