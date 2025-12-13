@@ -6327,6 +6327,37 @@ class HarmonicMiningOptimizer:
         self._enhancement_layer = None
         self._last_prediction = None  # Cache latest probability nexus prediction
         self._load_aureon_hooks()
+
+        # Prime the brain + ecosystem on startup so downstream traders see a live state
+        # even before the first mining loop tick runs.
+        self._bootstrap_ecosystem_sync()
+
+    def _bootstrap_ecosystem_sync(self):
+        """Initialize brain + ecosystem state immediately on startup."""
+        try:
+            # Pull a fresh probability signal using difficulty as pseudo-price context
+            self.update_probability_signal(hashrate=1.0, difficulty=1.0)
+
+            # Sync harmonic/astronomical state once
+            self.update_state()
+
+            # Apply adaptive learning gains (probability + planetary coherence)
+            self.apply_adaptive_learning_feedback()
+
+            # Run a full brain compute with ecosystem hooks and broadcast the snapshot
+            self.brain.compute_with_ecosystem(
+                probability_matrix=self._probability_matrix,
+                platypus=self.platypus,
+                coherence=self.coherence,
+                lattice=self.lattice,
+                casimir=self.casimir,
+                qvee=self.qvee,
+                lumina=self.lumina,
+                mirrors=self.mirror_array
+            )
+            self.brain.broadcast_state()
+        except Exception as e:
+            logger.debug(f"Bootstrap ecosystem sync skipped: {e}")
     
     def _load_aureon_hooks(self):
         """Load Aureon probability/harmonic systems if available"""
@@ -6338,7 +6369,7 @@ class HarmonicMiningOptimizer:
             logger.debug("Probability Matrix not available for mining")
         
         try:
-            from hnc_earth_resonance import EarthResonanceEngine
+            from hnc_earth_resonance import EarthResonanceEngine  # type: ignore[import-not-found]
             self._earth_engine = EarthResonanceEngine()
             logger.info("🌍 Earth Resonance Engine: CONNECTED to miner")
         except ImportError:
