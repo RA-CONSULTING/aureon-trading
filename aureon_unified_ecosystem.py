@@ -8660,8 +8660,12 @@ class AureonKrakenEcosystem:
                 pnl = opp['pnl_state']
                 if pnl:
                     if pnl.get('net_profit', 0) < 0 and recommendation['confidence'] == 'low':
-                        logger.warning(f"⏸️ Skipping {symbol}: Net P&L negative and low-confidence signal")
-                        return False
+                        # Exception: If the expected win rate is extremely high (>80%), take the risk even if confidence is low
+                        if recommendation['expected_win_rate'] >= 0.80:
+                            logger.info(f"⚡ TAKING RISK on {symbol}: Low confidence but high expected WR ({recommendation['expected_win_rate']*100:.0f}%)")
+                        else:
+                            logger.warning(f"⏸️ Skipping {symbol}: Net P&L negative and low-confidence signal")
+                            return False
                     if pnl.get('drawdown_pct', 0) >= CONFIG.get('MAX_DRAWDOWN_PCT', 20) * 0.5 and recommendation['expected_win_rate'] < 0.5:
                         logger.warning(f"⏸️ Skipping {symbol}: Drawdown {pnl.get('drawdown_pct', 0):.1f}% and weak edge ({recommendation['expected_win_rate']*100:.0f}% WR)")
                         return False
