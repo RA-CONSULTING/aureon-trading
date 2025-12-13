@@ -98,6 +98,40 @@ class KrakenClient:
             self._int_to_alt[internal] = alt
         return pairs
 
+    def _normalize_symbol(self, symbol: str) -> List[str]:
+        """
+        Generate Kraken-compatible alternative altnames for a given symbol.
+        Handles BTC/XBT aliasing and quote currency fallbacks.
+        """
+        s = symbol.upper()
+        alts: List[str] = [s]
+        # BTC vs XBT
+        if s.startswith("BTC"):
+            alts.append("XBT" + s[3:])
+        if s.startswith("XBT"):
+            alts.append("BTC" + s[3:])
+        # USDT/USDC/USD fallbacks
+        for q in ["USDT", "USDC", "USD"]:
+            if s.endswith(q):
+                base = s[:-len(q)]
+                for alt_q in ["USD", "USDC", "USDT"]:
+                    alts.append(base + alt_q)
+                break
+        # EUR/GBP alt quotes
+        for q in ["EUR", "GBP"]:
+            if s.endswith(q):
+                base = s[:-len(q)]
+                alts.extend([base + "USD", base + "USDC", base + "USDT"])  # try USD family too
+                break
+        # Deduplicate order-preserving
+        seen = set()
+        out: List[str] = []
+        for a in alts:
+            if a not in seen:
+                out.append(a)
+                seen.add(a)
+        return out
+
     def exchange_info(self, symbol: str | None = None) -> Dict[str, Any]:
         """
         Return a Binance-like exchangeInfo structure using Kraken AssetPairs.
@@ -181,7 +215,23 @@ class KrakenClient:
         data = r.json()
         if data.get("error"):
             raise RuntimeError(f"Kraken Ticker error: {data['error']}")
-        return data.get("result", {})
+        result = data.get("result", {})
+        # If empty result, try normalized alternatives once
+        if not result and len(altnames) == 1:
+            alts = self._normalize_symbol(altnames[0])
+            internal_names = []
+            for a in alts:
+                if a in self._alt_to_int:
+                    internal_names.append(self._alt_to_int[a])
+            if internal_names:
+                pairs_param = ",".join(internal_names)
+                r = self.session.get(f"{self.base}/0/public/Ticker", params={"pair": pairs_param}, timeout=20)
+                r.raise_for_status()
+                data = r.json()
+                if data.get("error"):
+                    raise RuntimeError(f"Kraken Ticker error: {data['error']}")
+                result = data.get("result", {})
+        return result
 
     def get_24h_tickers(self) -> list:
         """
@@ -227,8 +277,16 @@ class KrakenClient:
         return out
 
     def get_24h_ticker(self, symbol: str) -> Dict[str, Any]:
-        res = self._ticker([symbol])
+        # Try symbol and normalized aliases
+        candidates = self._normalize_symbol(symbol)
+        res = self._ticker([candidates[0]])
         # Only one expected
+        if not res:
+            # Try other candidates
+            for alt in candidates[1:]:
+                res = self._ticker([alt])
+                if res:
+                    break
         if not res:
             return {}
         internal, t = next(iter(res.items()))

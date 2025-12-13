@@ -57,7 +57,7 @@ class CapitalClient:
         }
         
         try:
-            response = requests.post(url, json=payload, headers=headers)
+            response = requests.post(url, json=payload, headers=headers, timeout=20)
             if response.status_code == 200:
                 self.cst = response.headers.get('CST')
                 self.x_security_token = response.headers.get('X-SECURITY-TOKEN')
@@ -69,6 +69,42 @@ class CapitalClient:
         except Exception as e:
             logger.error(f"Capital.com connection error: {e}")
             self.enabled = False
+
+    def _session_is_expired(self) -> bool:
+        """Capital.com sessions can expire; refresh after 55 minutes or when tokens missing."""
+        if not self.cst or not self.x_security_token:
+            return True
+        # Refresh after ~55 minutes proactively
+        return (time.time() - self.session_start_time) > (55 * 60)
+
+    def _request(self, method: str, path: str, *, params: Optional[Dict[str, Any]] = None, json_body: Optional[Dict[str, Any]] = None) -> requests.Response:
+        """
+        Perform an API request with automatic session refresh and one retry on
+        invalid session token or HTTP 401.
+        """
+        if not self.enabled:
+            raise RuntimeError("Capital.com client disabled")
+
+        # Proactive refresh
+        if self._session_is_expired():
+            logger.debug("Capital.com session expired; refreshing")
+            self._create_session()
+
+        url = f"{self.base_url}{path}"
+        headers = self._get_headers()
+        try:
+            resp = requests.request(method.upper(), url, headers=headers, params=params, json=json_body, timeout=20)
+        except Exception as e:
+            logger.error(f"Capital.com request error ({method} {path}): {e}")
+            raise
+
+        # Handle invalid session
+        if resp.status_code in (401, 403) or ('error.invalid.session.token' in (resp.text or '').lower()):
+            logger.warning("Capital.com session invalid; attempting re-login and retry")
+            self._create_session()
+            headers = self._get_headers()
+            resp = requests.request(method.upper(), url, headers=headers, params=params, json=json_body, timeout=20)
+        return resp
 
     def _get_headers(self):
         """Get headers for authenticated requests."""
@@ -95,9 +131,8 @@ class CapitalClient:
         # The API sometimes incorrectly reports 'USD' as the currency label
         account_currency = os.getenv('CAPITAL_ACCOUNT_CURRENCY', 'GBP').upper()
             
-        url = f"{self.base_url}/accounts"
         try:
-            response = requests.get(url, headers=self._get_headers())
+            response = self._request('GET', '/accounts')
             if response.status_code == 200:
                 data = response.json()
                 # Capital.com returns a list of accounts. We'll sum them up or take the main one.
@@ -127,7 +162,7 @@ class CapitalClient:
         params = {'searchTerm': symbol}
         
         try:
-            response = requests.get(url, headers=self._get_headers(), params=params)
+            response = self._request('GET', '/markets', params=params)
             if response.status_code == 200:
                 data = response.json()
                 markets = data.get('markets', [])
@@ -162,12 +197,11 @@ class CapitalClient:
         # or just return a few hardcoded ones if we can't discover them easily.
         # Let's try searching for "USD" to get major pairs.
         
-        url = f"{self.base_url}/markets"
-        params = {'searchTerm': 'USD', 'limit': 50} # Search for USD pairs
+        params = {'searchTerm': 'USD', 'limit': 50}  # Search for USD pairs
         
         tickers = []
         try:
-            response = requests.get(url, headers=self._get_headers(), params=params)
+            response = self._request('GET', '/markets', params=params)
             if response.status_code == 200:
                 data = response.json()
                 for m in data.get('markets', []):
@@ -200,7 +234,7 @@ class CapitalClient:
             logger.info(f"[DRY RUN] Capital.com {side} {quantity} {symbol}")
             return {'id': 'dry_run_id', 'status': 'filled'}
 
-        url = f"{self.base_url}/positions"
+        path = '/positions'
         direction = "BUY" if side.upper() == "BUY" else "SELL"
         
         payload = {
@@ -214,7 +248,7 @@ class CapitalClient:
         }
         
         try:
-            response = requests.post(url, json=payload, headers=self._get_headers())
+            response = self._request('POST', path, json_body=payload)
             if response.status_code == 200:
                 return response.json()
             else:
@@ -232,9 +266,8 @@ class CapitalClient:
         if not deal_reference:
             return {'error': 'Missing deal reference'}
 
-        url = f"{self.base_url}/confirms/{deal_reference}"
         try:
-            response = requests.get(url, headers=self._get_headers())
+            response = self._request('GET', f'/confirms/{deal_reference}')
             if response.status_code == 200:
                 return response.json()
             else:
@@ -249,9 +282,8 @@ class CapitalClient:
         if not self.enabled:
             return []
             
-        url = f"{self.base_url}/positions"
         try:
-            response = requests.get(url, headers=self._get_headers())
+            response = self._request('GET', '/positions')
             if response.status_code == 200:
                 data = response.json()
                 return data.get('positions', [])
@@ -265,13 +297,13 @@ class CapitalClient:
         if not self.enabled:
             return []
             
-        url = f"{self.base_url}/history/activity"
+        path = '/history/activity'
         params = {}
         if from_date:
             params['from'] = from_date
             
         try:
-            response = requests.get(url, headers=self._get_headers(), params=params)
+            response = self._request('GET', path, params=params)
             if response.status_code == 200:
                 data = response.json()
                 return data.get('activities', [])
