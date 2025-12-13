@@ -24,6 +24,8 @@ import {
   Calendar
 } from 'lucide-react';
 import { format } from 'date-fns';
+import PredictionAccuracyPanel from '@/components/PredictionAccuracyPanel';
+import AnomalyAlertsPanel from '@/components/AnomalyAlertsPanel';
 
 interface TradeExecution {
   id: string;
@@ -214,12 +216,14 @@ export default function FullPortfolioDisplay() {
       </div>
 
       <Tabs defaultValue="balances" className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-7">
           <TabsTrigger value="balances">Balances</TabsTrigger>
           <TabsTrigger value="positions">Positions</TabsTrigger>
           <TabsTrigger value="executions">Executions</TabsTrigger>
           <TabsTrigger value="audit">Audit Log</TabsTrigger>
           <TabsTrigger value="consolidated">Portfolio</TabsTrigger>
+          <TabsTrigger value="predictions">Predictions</TabsTrigger>
+          <TabsTrigger value="anomalies">Anomalies</TabsTrigger>
         </TabsList>
 
         {/* BALANCES TAB */}
@@ -382,6 +386,15 @@ export default function FullPortfolioDisplay() {
         {/* CONSOLIDATED PORTFOLIO TAB */}
         <TabsContent value="consolidated">
           <ConsolidatedPortfolio balances={balances} />
+        </TabsContent>
+        {/* PREDICTIONS TAB */}
+        <TabsContent value="predictions">
+          <PredictionAccuracyPanel />
+        </TabsContent>
+
+        {/* ANOMALIES TAB */}
+        <TabsContent value="anomalies">
+          <AnomalyAlertsPanel />
         </TabsContent>
       </Tabs>
     </div>

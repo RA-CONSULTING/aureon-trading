@@ -12,6 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import PlatypusCoherencePanel from '@/components/PlatypusCoherencePanel';
+import AnomalyAlertsPanel from '@/components/AnomalyAlertsPanel';
 import { 
   Activity, 
   TrendingUp, 
@@ -160,6 +161,9 @@ export default function LiveDataDashboard() {
 
           {/* 🦆🪐 Platypus Planetary Coherence Panel */}
           <PlatypusCoherencePanel />
+
+          {/* 🔍 Anomaly Detection Panel */}
+          <AnomalyAlertsPanel />
         </div>
 
         {/* Center-Left: Account Balances */}

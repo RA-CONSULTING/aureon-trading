@@ -40,6 +40,19 @@ export interface TradeLogEntry {
   isForced?: boolean;
 }
 
+export interface PredictionRecord {
+  id: string;
+  symbol: string;
+  predictedDirection: 'UP' | 'DOWN' | 'HOLD';
+  actualDirection?: 'UP' | 'DOWN';
+  predictedAt: number;
+  verifiedAt?: number;
+  priceAtPrediction: number;
+  priceAtVerification?: number;
+  wasCorrect?: boolean;
+  confidenceAtPrediction: number;
+}
+
 export interface CalibrationData {
   totalTrades: number;
   winRate: number;
@@ -49,11 +62,20 @@ export interface CalibrationData {
   tierPerformance: Record<1 | 2 | 3, { trades: number; winRate: number; avgPnl: number }>;
   optimalCoherenceRange: { min: number; max: number };
   bestHours: number[];
+  // New: Prediction accuracy tracking
+  predictionAccuracy: {
+    total: number;
+    correct: number;
+    accuracy: number;
+    byConfidence: Record<string, { total: number; correct: number }>;
+  };
 }
 
 class TradeLogger {
   private logBuffer: TradeLogEntry[] = [];
   private openPositions: Map<string, TradeLogEntry> = new Map();
+  private predictions: PredictionRecord[] = [];
+  private pendingPredictions: Map<string, PredictionRecord> = new Map();
 
   /**
    * Classify frequency into Solfeggio band
@@ -195,6 +217,7 @@ class TradeLogger {
         tierPerformance: { 1: { trades: 0, winRate: 0, avgPnl: 0 }, 2: { trades: 0, winRate: 0, avgPnl: 0 }, 3: { trades: 0, winRate: 0, avgPnl: 0 } },
         optimalCoherenceRange: { min: 0.7, max: 1.0 },
         bestHours: [],
+        predictionAccuracy: { total: 0, correct: 0, accuracy: 0, byConfidence: {} },
       };
     }
 
@@ -256,6 +279,17 @@ class TradeLogger {
       .map(([h]) => parseInt(h))
       .sort((a, b) => a - b);
 
+    // Prediction accuracy
+    const verifiedPredictions = this.predictions.filter(p => p.wasCorrect !== undefined);
+    const correctPredictions = verifiedPredictions.filter(p => p.wasCorrect);
+    const byConfidence: Record<string, { total: number; correct: number }> = {};
+    for (const pred of verifiedPredictions) {
+      const bucket = pred.confidenceAtPrediction >= 0.8 ? 'high' : pred.confidenceAtPrediction >= 0.6 ? 'medium' : 'low';
+      if (!byConfidence[bucket]) byConfidence[bucket] = { total: 0, correct: 0 };
+      byConfidence[bucket].total++;
+      if (pred.wasCorrect) byConfidence[bucket].correct++;
+    }
+
     return {
       totalTrades: closedTrades.length,
       winRate: wins.length / closedTrades.length,
@@ -265,6 +299,12 @@ class TradeLogger {
       tierPerformance,
       optimalCoherenceRange,
       bestHours,
+      predictionAccuracy: {
+        total: verifiedPredictions.length,
+        correct: correctPredictions.length,
+        accuracy: verifiedPredictions.length > 0 ? correctPredictions.length / verifiedPredictions.length : 0,
+        byConfidence,
+      },
     };
   }
 
