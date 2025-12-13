@@ -40,8 +40,14 @@ import tempfile
 # 🪟 WINDOWS COMPATIBILITY: Force UTF-8 encoding for console output
 # This prevents "UnicodeEncodeError: 'charmap' codec can't encode character" crashes
 if sys.platform == 'win32':
-    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
-    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
+    # Reconfigure stdout/stderr to use utf-8 if possible (Python 3.7+)
+    try:
+        sys.stdout.reconfigure(encoding='utf-8')
+        sys.stderr.reconfigure(encoding='utf-8')
+    except AttributeError:
+        # Fallback for older Python versions or if reconfigure is not available
+        sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
+        sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
 
 # Load environment variables from .env file FIRST before any other imports
 try:

@@ -33,15 +33,14 @@ from collections import defaultdict
 class SafeUTF8Formatter(logging.Formatter):
     def format(self, record: logging.LogRecord) -> str:
         msg = super().format(record)
-        try:
-            # Try UTF-8 first
-            _ = msg.encode('utf-8')
-            return msg
-        except Exception:
-            # Fallback: replace non-encodable chars
-            return msg.encode('utf-8', errors='replace').decode('ascii', errors='replace')
+        # On Windows, if stdout is not UTF-8, we might still crash when printing
+        # even if we return a string here. The crash happens in stream.write().
+        # So we should try to ensure the stream handles it, or strip chars if needed.
+        return msg
 
-stream_handler = logging.StreamHandler()
+# Use sys.stdout explicitly which should be wrapped by now if running from main
+import sys
+stream_handler = logging.StreamHandler(sys.stdout)
 stream_handler.setFormatter(SafeUTF8Formatter('%(asctime)s [%(levelname)s] %(message)s'))
 
 logging.basicConfig(
