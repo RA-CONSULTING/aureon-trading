@@ -1,0 +1,203 @@
+{
+  "predictions": [
+    {
+      "timestamp": "2025-12-13T17:45:59.723845",
+      "validation_time": "2025-12-13T19:45:59.723852",
+      "btc_price_at_call": 90083.06,
+      "consensus": "INCONCLUSIVE",
+      "manipulation_probability": 0.1,
+      "fear_greed": 23,
+      "predicted_direction": "BULLISH",
+      "confidence": 0.5638297872340425,
+      "validated": true,
+      "was_correct": false,
+      "actual_outcome": {
+        "price_at_validation": 90200.53,
+        "price_change_pct": 0.1304018757799759,
+        "direction": "UP"
+      }
+    },
+    {
+      "timestamp": "2025-12-13T17:50:47.824081",
+      "validation_time": "2025-12-13T19:50:47.824088",
+      "btc_price_at_call": 90063.49,
+      "consensus": "INCONCLUSIVE",
+      "manipulation_probability": 0.1,
+      "fear_greed": 23,
+      "predicted_direction": "BULLISH",
+      "confidence": 0.5638297872340425,
+      "validated": true,
+      "was_correct": false,
+      "actual_outcome": {
+        "price_at_validation": 90200.53,
+        "price_change_pct": 0.15215932671495808,
+        "direction": "UP"
+      }
+    },
+    {
+      "timestamp": "2025-12-13T18:42:34.923968",
+      "validation_time": "2025-12-13T20:42:34.923975",
+      "btc_price_at_call": 90162.01,
+      "consensus": "INCONCLUSIVE",
+      "manipulation_probability": 0.1,
+      "fear_greed": 23,
+      "predicted_direction": "BULLISH",
+      "confidence": 0.5638297872340425,
+      "validated": false,
+      "was_correct": null,
+      "actual_outcome": null
+    },
+    {
+      "timestamp": "2025-12-13T18:47:30.462008",
+      "validation_time": "2025-12-13T20:47:30.462014",
+      "btc_price_at_call": 90140.01,
+      "consensus": "INCONCLUSIVE",
+      "manipulation_probability": 0.1,
+      "fear_greed": 23,
+      "predicted_direction": "BULLISH",
+      "confidence": 0.5638297872340425,
+      "validated": false,
+      "was_correct": null,
+      "actual_outcome": null
+    },
+    {
+      "timestamp": "2025-12-13T18:54:52.125473",
+      "validation_time": "2025-12-13T20:54:52.125480",
+      "btc_price_at_call": 90104.5,
+      "consensus": "INCONCLUSIVE",
+      "manipulation_probability": 0.1,
+      "fear_greed": 23,
+      "predicted_direction": "BULLISH",
+      "confidence": 0.5638297872340425,
+      "validated": false,
+      "was_correct": null,
+      "actual_outcome": null
+    },
+    {
+      "timestamp": "2025-12-13T19:02:49.076199",
+      "validation_time": "2025-12-13T21:02:49.076207",
+      "btc_price_at_call": 90109.62,
+      "consensus": "INCONCLUSIVE",
+      "manipulation_probability": 0.1,
+      "fear_greed": 23,
+      "predicted_direction": "BULLISH",
+      "confidence": 0.5638297872340425,
+      "validated": false,
+      "was_correct": null,
+      "actual_outcome": null
+    },
+    {
+      "timestamp": "2025-12-13T19:11:24.063235",
+      "validation_time": "2025-12-13T21:11:24.063240",
+      "btc_price_at_call": 90146.25,
+      "consensus": "INCONCLUSIVE",
+      "manipulation_probability": 0.1,
+      "fear_greed": 23,
+      "predicted_direction": "BULLISH",
+      "confidence": 0.5638297872340425,
+      "validated": false,
+      "was_correct": null,
+      "actual_outcome": null
+    },
+    {
+      "timestamp": "2025-12-13T19:19:00.180041",
+      "validation_time": "2025-12-13T21:19:00.180046",
+      "btc_price_at_call": 90148.23,
+      "consensus": "INCONCLUSIVE",
+      "manipulation_probability": 0.1,
+      "fear_greed": 23,
+      "predicted_direction": "BULLISH",
+      "confidence": 0.5638297872340425,
+      "validated": false,
+      "was_correct": null,
+      "actual_outcome": null
+    },
+    {
+      "timestamp": "2025-12-13T19:26:45.565107",
+      "validation_time": "2025-12-13T21:26:45.565113",
+      "btc_price_at_call": 90170.97,
+      "consensus": "INCONCLUSIVE",
+      "manipulation_probability": 0.1,
+      "fear_greed": 23,
+      "predicted_direction": "BULLISH",
+      "confidence": 0.5638297872340425,
+      "validated": false,
+      "was_correct": null,
+      "actual_outcome": null
+    },
+    {
+      "timestamp": "2025-12-13T19:32:38.816040",
+      "validation_time": "2025-12-13T21:32:38.816043",
+      "btc_price_at_call": 90130.41,
+      "consensus": "INCONCLUSIVE",
+      "manipulation_probability": 0.1,
+      "fear_greed": 23,
+      "predicted_direction": "BULLISH",
+      "confidence": 0.5638297872340425,
+      "validated": false,
+      "was_correct": null,
+      "actual_outcome": null
+    },
+    {
+      "timestamp": "2025-12-13T19:33:34.624169",
+      "validation_time": "2025-12-13T21:33:34.624173",
+      "btc_price_at_call": 90196.61,
+      "consensus": "INCONCLUSIVE",
+      "manipulation_probability": 0.1,
+      "fear_greed": 23,
+      "predicted_direction": "BULLISH",
+      "confidence": 0.5638297872340425,
+      "validated": false,
+      "was_correct": null,
+      "actual_outcome": null
+    },
+    {
+      "timestamp": "2025-12-13T19:42:58.365837",
+      "validation_time": "2025-12-13T21:42:58.365843",
+      "btc_price_at_call": 90190.94,
+      "consensus": "INCONCLUSIVE",
+      "manipulation_probability": 0.1,
+      "fear_greed": 23,
+      "predicted_direction": "BULLISH",
+      "confidence": 0.5638297872340425,
+      "validated": false,
+      "was_correct": null,
+      "actual_outcome": null
+    },
+    {
+      "timestamp": "2025-12-13T19:51:31.711144",
+      "validation_time": "2025-12-13T21:51:31.711148",
+      "btc_price_at_call": 90180.0,
+      "consensus": "INCONCLUSIVE",
+      "manipulation_probability": 0.1,
+      "fear_greed": 23,
+      "predicted_direction": "BULLISH",
+      "confidence": 0.5638297872340425,
+      "validated": false,
+      "was_correct": null,
+      "actual_outcome": null
+    },
+    {
+      "timestamp": "2025-12-13T20:00:33.696439",
+      "validation_time": "2025-12-13T22:00:33.696446",
+      "btc_price_at_call": 90200.52,
+      "consensus": "INCONCLUSIVE",
+      "manipulation_probability": 0.1,
+      "fear_greed": 23,
+      "predicted_direction": "BULLISH",
+      "confidence": 0.5638297872340425,
+      "validated": false,
+      "was_correct": null,
+      "actual_outcome": null
+    }
+  ],
+  "bias_tracker": {
+    "bullish_calls": 2,
+    "bullish_correct": 0,
+    "bearish_calls": 0,
+    "bearish_correct": 0,
+    "neutral_calls": 0,
+    "neutral_correct": 0
+  },
+  "last_updated": "2025-12-13T20:00:33.696548"
+}

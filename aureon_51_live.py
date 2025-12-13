@@ -26,6 +26,14 @@ from threading import Thread, Lock
 sys.path.insert(0, '/workspaces/aureon-trading')
 from kraken_client import KrakenClient
 
+# 🧠 MINER BRAIN INTEGRATION
+try:
+    from aureon_miner_brain import MinerBrain
+    BRAIN_AVAILABLE = True
+except ImportError:
+    BRAIN_AVAILABLE = False
+    print("⚠️ Miner Brain not available")
+
 # ═══════════════════════════════════════════════════════════════
 # STRATEGY PARAMETERS
 # ═══════════════════════════════════════════════════════════════
@@ -238,6 +246,18 @@ class Aureon51Live:
         # Symbol mapping (REST API name -> WebSocket name)
         self.symbol_to_ws: Dict[str, str] = {}
         self.ws_to_symbol: Dict[str, str] = {}
+        
+        # 🧠 Initialize Brain
+        self.brain_permission = True
+        if BRAIN_AVAILABLE:
+            try:
+                self.brain = MinerBrain()
+                print("🧠 Miner Brain initialized")
+            except Exception as e:
+                print(f"⚠️ Brain init failed: {e}")
+                self.brain = None
+        else:
+            self.brain = None
         
     def banner(self):
         mode = "🧪 PAPER" if self.dry_run else "💰 LIVE"
@@ -598,6 +618,29 @@ class Aureon51Live:
                 print(f"🔄 Cycle {self.iteration} - {now}")
                 print(f"{'━'*70}")
                 
+                # 🧠 BRAIN CYCLE
+                if self.brain and self.iteration % 10 == 1:
+                    try:
+                        print("\n🧠 Consulting Miner Brain...")
+                        self.brain.run_cycle()
+                        pred = self.brain.get_latest_prediction()
+                        if pred:
+                            print(f"   Brain says: {pred['direction']} (Conf: {pred['confidence']}%)")
+                            if pred['direction'] == 'BEARISH' and pred['confidence'] > 70:
+                                print("   🛑 Brain VETO: Market too bearish")
+                                self.brain_permission = False
+                            else:
+                                self.brain_permission = True
+                            
+                            if hasattr(self.brain, 'dream_engine'):
+                                dream = self.brain.dream_engine.get_prepared_response()
+                                if dream:
+                                    print(f"   💭 Dream: {dream['action']}")
+                                    if dream['action'] in ['EXIT_NOW', 'WAIT_FOR_CLARITY']:
+                                        self.brain_permission = False
+                    except Exception as e:
+                        print(f"   ⚠️ Brain error: {e}")
+                
                 # Refresh REST API data
                 self.refresh_tickers()
                 
@@ -605,7 +648,7 @@ class Aureon51Live:
                 self.check_positions()
                 
                 # Find and open new positions
-                if len(self.positions) < MAX_POSITIONS:
+                if len(self.positions) < MAX_POSITIONS and self.brain_permission:
                     opps = self.find_opportunities()
                     if opps:
                         print(f"\n   🔮 Opportunities:")

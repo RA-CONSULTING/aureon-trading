@@ -30,6 +30,15 @@ from dataclasses import dataclass, field
 from typing import Optional, Dict, Any, Callable, List, Tuple
 from collections import deque
 
+# Import Miner Brain - Unified Wisdom Cognition Engine
+try:
+    from aureon_miner_brain import MinerBrain
+    BRAIN_AVAILABLE = True
+except ImportError:
+    logger.warning("Could not import aureon_miner_brain. Brain functions disabled.")
+    MinerBrain = None
+    BRAIN_AVAILABLE = False
+
 # Load environment variables
 try:
     from dotenv import load_dotenv
@@ -4269,6 +4278,34 @@ class QuantumBrainState:
     
     total_dimensions: int = 13            # Total integrated dimensions (now +1 for Piano)
     ecosystem_sync: float = 0.5           # How synchronized all systems are
+    
+    # ═══════════════════════════════════════════════════════════════
+    # 🧠🌍 MINER BRAIN (7 CIVILIZATIONS) FIELDS (v5)
+    # ═══════════════════════════════════════════════════════════════
+    
+    # 7 Civilizations Wisdom State
+    miner_brain_consensus: str = "NEUTRAL"     # BULLISH/BEARISH/NEUTRAL
+    miner_brain_action: str = "HOLD"           # ACCUMULATE/HOLD/REDUCE
+    miner_brain_confidence: float = 0.5        # 0-1 confidence
+    
+    # Individual Civilization Signals
+    celtic_signal: str = "HOLD"                # ☘️ Celtic Wisdom
+    aztec_signal: str = "HOLD"                 # 🦅 Aztec Wisdom
+    mogollon_signal: str = "HOLD"              # 🏺 Mogollon Wisdom
+    plantagenet_signal: str = "HOLD"           # 👑 Plantagenet Wisdom
+    egyptian_signal: str = "HOLD"              # ☥ Egyptian Wisdom
+    pythagorean_signal: str = "HOLD"           # 🔢 Pythagorean Wisdom
+    warfare_signal: str = "HOLD"               # ⚔️ Warfare Wisdom
+    
+    # Market Intelligence from Brain
+    brain_fear_greed: int = 50                 # Fear & Greed Index
+    brain_btc_price: float = 0.0               # BTC price from brain
+    brain_market_pulse: str = "NEUTRAL"        # MILD_BULL/MILD_BEAR/etc.
+    brain_manipulation_risk: float = 0.0       # Manipulation probability
+    
+    # Bidirectional Sync
+    brain_sync_timestamp: float = 0.0          # Last sync time
+    brain_quantum_feedback: float = 0.5        # Quantum->Brain feedback
     multiverse_cascade: float = 1.0       # Combined cascade from all systems
     consciousness_level: str = "ATOM"     # Current consciousness ladder
 
@@ -7249,6 +7286,15 @@ class AureonMiner:
         self._earnings_this_session = 0.0
         self._load_binance_pool()
         
+        # Brain Cycle - Unified Wisdom Cognition
+        self.last_brain_cycle = 0
+        self.brain_cycle_interval = 1  # Run brain EVERY SECOND - autonomous cognition
+        self._miner_brain = None
+        self._brain_wisdom = None  # Latest brain wisdom output
+        self._brain_consensus = None  # Latest consensus (BULLISH/BEARISH/NEUTRAL)
+        self._brain_confidence = 0.5  # Brain confidence level
+        self._load_miner_brain()
+        
         # Backward compatibility: if host/port provided in init, add as first pool
         if pool_host and pool_port and worker:
             self.add_pool(pool_host, pool_port, worker, password, "default")
@@ -7277,6 +7323,102 @@ class AureonMiner:
             logger.debug("Binance client not available for pool tracking")
         except Exception as e:
             logger.warning(f"Binance Pool connection failed: {e}")
+    
+    def _load_miner_brain(self):
+        """Load the Unified Wisdom Cognition Brain"""
+        if not BRAIN_AVAILABLE or MinerBrain is None:
+            logger.info("🧠 Miner Brain: NOT AVAILABLE (import failed)")
+            return
+        
+        try:
+            self._miner_brain = MinerBrain()
+            logger.info("🧠 Miner Brain v5.4: LOADED")
+            logger.info("   ⚔️ Strategic Warfare (Sun Tzu + IRA)")
+            logger.info("   ☘️ Celtic Wisdom (Druids, Moon, Frequencies)")
+            logger.info("   🦅 Aztec Wisdom (Tonalpohualli, Teotl)")
+            logger.info("   🏺 Mogollon Wisdom (Mimbres, Pueblo)")
+            logger.info("   👑 Plantagenet Wisdom (Medieval Strategy)")
+            logger.info("   ☥ Egyptian Wisdom (Kemetic, Ma'at, Netjeru)")
+            logger.info("   🔢 Pythagorean Wisdom (Musica Universalis)")
+            logger.info("   🌍 Unified Cognition Engine (7 Civilizations)")
+        except Exception as e:
+            logger.error(f"🧠 Miner Brain failed to load: {e}")
+            self._miner_brain = None
+    
+    def run_brain_cycle(self, force: bool = False) -> Optional[Dict[str, Any]]:
+        """
+        Run a full brain wisdom cycle with bidirectional quantum brain sync.
+        Returns the brain output with consensus, predictions, and wisdom.
+        """
+        if not self._miner_brain:
+            return None
+        
+        # Check if it's time for a new cycle
+        now = time.time()
+        if not force and (now - self.last_brain_cycle) < self.brain_cycle_interval:
+            return self._brain_wisdom  # Return cached wisdom
+        
+        try:
+            logger.info("🧠⚡ Triggering Miner Brain Wisdom Cycle...")
+            
+            # ═══════════════════════════════════════════════════════════════
+            # QUANTUM BRAIN → MINER BRAIN (Pre-cycle intelligence sharing)
+            # ═══════════════════════════════════════════════════════════════
+            quantum_context = None
+            if hasattr(self.optimizer, 'brain') and self.optimizer.brain:
+                qbrain = self.optimizer.brain
+                quantum_context = {
+                    'quantum_coherence': qbrain.state.unified_coherence,
+                    'planetary_gamma': qbrain.state.planetary_gamma,
+                    'probability_edge': qbrain.state.probability_edge,
+                    'cascade_multiplier': qbrain.state.cascade_multiplier,
+                    'is_lighthouse': qbrain.state.is_optimal_window,
+                    'piano_lambda': qbrain.state.piano_lambda,
+                    'harmonic_signal': qbrain.state.harmonic_signal,
+                    'signal_confidence': qbrain.state.signal_confidence,
+                }
+                logger.info(f"🔗 Quantum→Wisdom: Ψ={qbrain.state.unified_coherence:.3f} Γ={qbrain.state.planetary_gamma:.3f} cascade={qbrain.state.cascade_multiplier:.1f}x")
+            
+            # Run the full brain cycle with quantum context
+            result = self._miner_brain.run_cycle(quantum_context=quantum_context)
+            
+            if result:
+                self._brain_wisdom = result
+                self.last_brain_cycle = now
+                
+                # Extract UNIFIED consensus from 7 civilizations (prefer this over council)
+                unified_consensus = result.get('unified_consensus', None)
+                if unified_consensus:
+                    self._brain_consensus = unified_consensus
+                    self._brain_action = result.get('unified_action', 'HOLD')
+                    # Unified confidence comes as percentage
+                    self._brain_confidence = result.get('unified_confidence', 50) / 100
+                else:
+                    # Fallback to council result
+                    consensus = result.get('consensus', 'NEUTRAL')
+                    self._brain_consensus = consensus
+                    prediction = result.get('prediction', {})
+                    if prediction:
+                        self._brain_confidence = prediction.get('confidence', 50) / 100
+                
+                logger.info(f"🧠🌍 Brain Cycle Complete: {self._brain_consensus} | Action: {getattr(self, '_brain_action', 'N/A')} (conf: {self._brain_confidence:.0%})")
+                
+            return result
+            
+        except Exception as e:
+            logger.error(f"🧠 Brain Cycle Error: {e}")
+            return None
+    
+    def get_brain_wisdom_summary(self) -> Dict[str, Any]:
+        """Get a summary of the brain's current wisdom state"""
+        return {
+            'available': self._miner_brain is not None,
+            'last_cycle': self.last_brain_cycle,
+            'consensus': self._brain_consensus or 'UNKNOWN',
+            'confidence': self._brain_confidence,
+            'wisdom': self._brain_wisdom is not None,
+            'next_cycle_in': max(0, self.brain_cycle_interval - (time.time() - self.last_brain_cycle))
+        }
     
     def get_binance_earnings(self) -> Dict[str, Any]:
         """Get current Binance Pool earnings"""
@@ -7410,6 +7552,148 @@ class AureonMiner:
         
     def update_harmonic_state(self, solar_data: dict = None, planetary_data: dict = None):
         self.optimizer.update_state(solar_data, planetary_data)
+        
+        # Run Brain Wisdom Cycle (manages its own interval)
+        brain_result = self.run_brain_cycle()
+        
+        # If brain has new wisdom, apply it to mining intensity
+        if brain_result and self._brain_consensus:
+            self._apply_brain_wisdom_to_mining()
+    
+    def _apply_brain_wisdom_to_mining(self):
+        """
+        Apply the brain's unified wisdom to influence mining behavior.
+        
+        The 7 civilizations speak with one voice - we listen.
+        """
+        if not self._brain_consensus:
+            return
+        
+        consensus = self._brain_consensus.upper()
+        confidence = self._brain_confidence
+        
+        # Extract unified wisdom action from brain if available
+        unified_action = None
+        if self._brain_wisdom:
+            # The wisdom engine provides unified action
+            live_pulse = self._brain_wisdom.get('live_pulse', {})
+            fear_greed = live_pulse.get('fear_greed', 50)
+        else:
+            fear_greed = 50
+        
+        # Apply brain consensus to optimizer learning rate
+        # BULLISH + High Confidence = More aggressive learning
+        # BEARISH + High Confidence = More conservative
+        # NEUTRAL = Balanced
+        
+        if consensus in ['BULLISH', 'POSITIVE', 'OPPORTUNITY']:
+            # 7 civilizations say accumulate - increase mining intensity multiplier
+            intensity_mult = 1.0 + (confidence * 0.3)  # Up to 1.3x
+            behavior = "AGGRESSIVE_ACCUMULATION"
+        elif consensus in ['BEARISH', 'NEGATIVE', 'CAUTION']:
+            # 7 civilizations say caution - maintain but don't over-extend
+            intensity_mult = 1.0 - (confidence * 0.1)  # Down to 0.9x
+            behavior = "CONSERVATIVE_HOLD"
+        else:
+            intensity_mult = 1.0
+            behavior = "BALANCED"
+        
+        # Apply to optimizer brain if available - FULL BIDIRECTIONAL SYNC
+        if hasattr(self.optimizer, 'brain') and self.optimizer.brain:
+            qbrain = self.optimizer.brain
+            
+            # ═══════════════════════════════════════════════════════════════
+            # MINER BRAIN → QUANTUM BRAIN (Wisdom flows to computation)
+            # ═══════════════════════════════════════════════════════════════
+            qbrain.state.confidence_level = confidence
+            qbrain.state.miner_brain_consensus = consensus
+            qbrain.state.miner_brain_action = getattr(self, '_brain_action', 'HOLD')
+            qbrain.state.miner_brain_confidence = confidence
+            
+            # Extract individual civilization signals from wisdom
+            if self._brain_wisdom:
+                civilizations = self._brain_wisdom.get('civilization_actions', {})
+                qbrain.state.celtic_signal = civilizations.get('Celtic', 'HOLD')
+                qbrain.state.aztec_signal = civilizations.get('Aztec', 'HOLD')
+                qbrain.state.mogollon_signal = civilizations.get('Mogollon', 'HOLD')
+                qbrain.state.plantagenet_signal = civilizations.get('Plantagenet', 'HOLD')
+                qbrain.state.egyptian_signal = civilizations.get('Egyptian', 'HOLD')
+                qbrain.state.pythagorean_signal = civilizations.get('Pythagorean', 'HOLD')
+                qbrain.state.warfare_signal = civilizations.get('Warfare', 'HOLD')
+                
+                # Market intelligence
+                live_pulse = self._brain_wisdom.get('live_pulse', {})
+                qbrain.state.brain_fear_greed = live_pulse.get('fear_greed', 50)
+                qbrain.state.brain_btc_price = live_pulse.get('btc_price', 0.0)
+                qbrain.state.brain_market_pulse = live_pulse.get('pulse', 'NEUTRAL')
+                qbrain.state.brain_manipulation_risk = self._brain_wisdom.get('manipulation_probability', 0.0)
+            
+            qbrain.state.brain_sync_timestamp = time.time()
+            
+            # ═══════════════════════════════════════════════════════════════
+            # QUANTUM BRAIN → MINER BRAIN (Computation informs wisdom)
+            # ═══════════════════════════════════════════════════════════════
+            # Send quantum state back to influence future wisdom cycles
+            quantum_feedback = {
+                'unified_coherence': qbrain.state.unified_coherence,
+                'probability_edge': qbrain.state.probability_edge,
+                'planetary_gamma': qbrain.state.planetary_gamma,
+                'cascade_multiplier': qbrain.state.cascade_multiplier,
+                'is_optimal_window': qbrain.state.is_optimal_window,
+                'harmonic_signal': qbrain.state.harmonic_signal,
+                'piano_lambda': qbrain.state.piano_lambda,
+                'ecosystem_sync': qbrain.state.ecosystem_sync,
+            }
+            
+            # Store feedback for MinerBrain's next cycle
+            self._quantum_feedback_for_brain = quantum_feedback
+            qbrain.state.brain_quantum_feedback = qbrain.state.unified_coherence
+            
+            logger.info(f"🔗 Brain Sync: MinerBrain→QuantumBrain (consensus={consensus}, conf={confidence:.0%})")
+            logger.info(f"🔗 Brain Sync: QuantumBrain→MinerBrain (Ψ={qbrain.state.unified_coherence:.3f}, Γ={qbrain.state.planetary_gamma:.3f})")
+        
+        # Log the wisdom application
+        logger.info(f"🧠🌍 Brain Wisdom Applied: {consensus} → {behavior} (conf: {confidence:.0%}, mult: {intensity_mult:.2f}x)")
+        
+        # Store for stats display
+        self._brain_behavior = behavior
+        self._brain_intensity_mult = intensity_mult
+    
+    def _display_brain_wisdom_state(self):
+        """Display the current state of the Miner Brain's unified wisdom."""
+        if not self._miner_brain:
+            return
+        
+        # Get brain summary
+        summary = self.get_brain_wisdom_summary()
+        
+        # Calculate time until next cycle
+        next_cycle = summary.get('next_cycle_in', 0)
+        next_mins = int(next_cycle // 60)
+        next_secs = int(next_cycle % 60)
+        
+        consensus = summary.get('consensus', 'UNKNOWN')
+        confidence = summary.get('confidence', 0.5)
+        
+        # Get behavior if set
+        behavior = getattr(self, '_brain_behavior', 'INITIALIZING')
+        intensity = getattr(self, '_brain_intensity_mult', 1.0)
+        
+        # Consensus icons
+        if consensus in ['BULLISH', 'POSITIVE', 'OPPORTUNITY']:
+            icon = "📈"
+        elif consensus in ['BEARISH', 'NEGATIVE', 'CAUTION']:
+            icon = "📉"
+        else:
+            icon = "⚖️"
+        
+        logger.info(
+            f"🧠🌍 WISDOM: {icon} {consensus} | "
+            f"Conf: {confidence:.0%} | "
+            f"Mode: {behavior} | "
+            f"Mult: {intensity:.2f}x | "
+            f"Next: {next_mins}m{next_secs}s"
+        )
 
     def _stats_loop(self):
         while self._running:
@@ -7488,6 +7772,9 @@ class AureonMiner:
                 # Display Platypus state (Song of the Sphaerae - Planetary Coherence)
                 logger.info(self.optimizer.platypus.format_display())
                 
+                # Display Miner Brain Wisdom State (7 Civilizations)
+                self._display_brain_wisdom_state()
+                
                 # Display earnings from Binance Pool sessions
                 for session in self.sessions:
                     if session._is_binance_pool and session._binance_pool_api:
@@ -7554,6 +7841,26 @@ class AureonMiner:
         print(f"║ Γ={platypus_stats.get('Gamma', 0.5):.3f} | Q={platypus_stats.get('Q', 0.5):.3f} | "
               f"Λ={platypus_stats.get('Lambda', 0.5):.3f} | cascade={platypus_stats.get('cascade', 1.0):.2f}x | "
               f"{lighthouse_icon} {ephemeris_icon} ║")
+        
+        # Show Miner Brain Wisdom State (7 Civilizations)
+        if self._miner_brain:
+            print("╠═══════════════ MINER BRAIN WISDOM ════════════════════════╣")
+            consensus = self._brain_consensus or 'UNKNOWN'
+            confidence = self._brain_confidence
+            behavior = getattr(self, '_brain_behavior', 'UNKNOWN')
+            intensity = getattr(self, '_brain_intensity_mult', 1.0)
+            
+            # Consensus icon
+            if consensus in ['BULLISH', 'POSITIVE', 'OPPORTUNITY']:
+                c_icon = "📈"
+            elif consensus in ['BEARISH', 'NEGATIVE', 'CAUTION']:
+                c_icon = "📉"
+            else:
+                c_icon = "⚖️"
+            
+            print(f"║ 7 Civilizations: {c_icon} {consensus:<12} | Conf: {confidence:.0%}      ║")
+            print(f"║ Mode: {behavior:<22} | Mult: {intensity:.2f}x          ║")
+            print(f"║ ☘️Celtic ⚔️Warfare 🦅Aztec 🏺Mogollon 👑Plantagenet ☥Egyptian 🔢Pythagorean ║")
         
         # Show Binance Pool session earnings for each pool
         binance_sessions = [s for s in self.sessions if s._is_binance_pool and s._binance_pool_api]

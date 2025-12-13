@@ -14,6 +14,14 @@ from datetime import datetime
 import json
 import math
 
+# 🧠 MINER BRAIN INTEGRATION
+try:
+    from aureon_miner_brain import MinerBrain
+    BRAIN_AVAILABLE = True
+except ImportError:
+    BRAIN_AVAILABLE = False
+    print("⚠️ Miner Brain not available")
+
 # API Configuration
 API_KEY = '92nqB9iH4JLDCNY9tGZEW3OuEcM9L9oknJJGRlJH03WIkkO8TkvbYRzoyFUbJdfL'
 API_SECRET = 'KgaBXEmUV4xKTREww0W5vfNoAYHfNwBryUInzTQZHqjfsEIcFMquzANchTreKEWH'
@@ -304,6 +312,15 @@ def run_trader():
     print("🚀 AUREON LIVE TRADER - Starting")
     print("="*60)
     
+    # Initialize Brain
+    brain = None
+    if BRAIN_AVAILABLE:
+        try:
+            brain = MinerBrain()
+            print("🧠 Miner Brain initialized and wired in!")
+        except Exception as e:
+            print(f"⚠️ Failed to start brain: {e}")
+
     cycle = 0
     
     while True:
@@ -311,6 +328,30 @@ def run_trader():
         print(f"\n{'='*60}")
         print(f"📊 CYCLE {cycle} - {datetime.now().strftime('%H:%M:%S')}")
         print("="*60)
+        
+        # 🧠 BRAIN CYCLE
+        brain_permission = True
+        if brain and cycle % 2 == 1:  # Run brain every other cycle
+            try:
+                print("\n🧠 Consulting Miner Brain...")
+                brain.run_cycle()
+                pred = brain.get_latest_prediction()
+                if pred:
+                    print(f"   Brain says: {pred['direction']} (Conf: {pred['confidence']}%)")
+                    if pred['direction'] == 'BEARISH' and pred['confidence'] > 70:
+                        print("   🛑 Brain VETO: Market too bearish for longs")
+                        brain_permission = False
+                    
+                    # Dream check
+                    if hasattr(brain, 'dream_engine'):
+                        dream = brain.dream_engine.get_prepared_response()
+                        if dream:
+                            print(f"   💭 Dream: {dream['action']}")
+                            if dream['action'] in ['EXIT_NOW', 'WAIT_FOR_CLARITY']:
+                                print("   🛑 Dream VETO: " + dream['reasoning'])
+                                brain_permission = False
+            except Exception as e:
+                print(f"   ⚠️ Brain error: {e}")
         
         try:
             # Get current data
@@ -340,7 +381,7 @@ def run_trader():
                     print(f"   {sym}: {pos['quantity']} @ {pos['entry_price']:.8f} ({pnl:+.2f}%)")
             
             # Look for new opportunities if we have room
-            if open_count < MAX_POSITIONS and btc_balance >= MIN_TRADE_BTC:
+            if open_count < MAX_POSITIONS and btc_balance >= MIN_TRADE_BTC and brain_permission:
                 print(f"\n🔍 Scanning for opportunities...")
                 
                 opportunities = find_opportunities(prices, tickers, btc_balance)

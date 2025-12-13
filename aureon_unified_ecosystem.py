@@ -222,6 +222,15 @@ except ImportError:
     NEXUS_PREDICTOR_AVAILABLE = False
     print("⚠️  Nexus Predictor not available")
 
+# 🧠 MINER BRAIN - COGNITIVE TRADING INTELLIGENCE 🧠
+try:
+    from aureon_miner_brain import MinerBrain
+    BRAIN_AVAILABLE = True
+    print("🧠 Miner Brain loaded - Cognitive Intelligence Active!")
+except ImportError:
+    BRAIN_AVAILABLE = False
+    print("⚠️  Miner Brain not available")
+
 # 🌍⚡ HNC FREQUENCY INTEGRATION ⚡🌍
 try:
     from hnc_master_protocol import HarmonicNexusCore, HNCTradingBridge, LiveMarketFrequencyFeed
@@ -802,6 +811,292 @@ def get_brain_multiplier() -> float:
         mult *= rainbow_boost[rainbow_state]
 
     return mult
+
+
+# ═══════════════════════════════════════════════════════════════
+# 🧠🌍 ECOSYSTEM BRAIN BRIDGE - UNIFIED INTELLIGENCE HUB
+# ═══════════════════════════════════════════════════════════════
+
+class EcosystemBrainBridge:
+    """
+    🧠🌍 ECOSYSTEM BRAIN BRIDGE 🌍🧠
+    
+    The central intelligence hub that connects:
+    - MinerBrain (7 Civilizations Wisdom) → Trading Decisions
+    - QuantumProcessingBrain (Miner Optimizer) → Cascade Amplification
+    - AdaptiveLearningEngine → Brain Feedback Loop
+    - CascadeAmplifier → Brain-Guided Signal Boost
+    
+    This bridge ensures ALL trading decisions are informed by:
+    1. Ancient wisdom (Celtic, Aztec, Egyptian, Pythagorean, etc.)
+    2. Quantum coherence from the mining optimizer
+    3. Adaptive learning from past trades
+    4. Cascade amplification from win streaks
+    """
+    
+    def __init__(self):
+        # Brain state cache
+        self._brain_wisdom: Dict[str, Any] = {}
+        self._brain_consensus: str = "NEUTRAL"
+        self._brain_confidence: float = 0.5
+        self._brain_action: str = "HOLD"
+        self._civilization_signals: Dict[str, str] = {}
+        
+        # Quantum state from miner (if available)
+        self._quantum_coherence: float = 0.5
+        self._planetary_gamma: float = 0.5
+        self._cascade_multiplier: float = 1.0
+        self._is_lighthouse: bool = False
+        
+        # Market intelligence from brain
+        self._fear_greed: int = 50
+        self._btc_price: float = 0.0
+        self._market_pulse: str = "NEUTRAL"
+        self._manipulation_risk: float = 0.0
+        
+        # Timing - Brain runs EVERY SECOND for autonomous cognition
+        self._last_cycle_time: float = 0.0
+        self._cycle_interval: float = 1.0  # Run brain EVERY SECOND
+        
+        logger.info("🧠🌍 Ecosystem Brain Bridge initialized - AUTONOMOUS MODE (1s cycles)")
+        
+    def run_wisdom_cycle(self, brain: 'MinerBrain', quantum_context: Dict = None) -> Dict[str, Any]:
+        """
+        Run a full wisdom cycle with bidirectional brain sync.
+        
+        Args:
+            brain: MinerBrain instance
+            quantum_context: Optional quantum state from miner optimizer
+        
+        Returns:
+            Full wisdom result with trading recommendations
+        """
+        if not brain:
+            return {}
+        
+        now = time.time()
+        if (now - self._last_cycle_time) < self._cycle_interval:
+            return self._brain_wisdom  # Return cached
+        
+        try:
+            logger.info("🧠⚡ Ecosystem Brain Cycle starting...")
+            
+            # Build quantum context if not provided
+            if not quantum_context:
+                quantum_context = {
+                    'quantum_coherence': self._quantum_coherence,
+                    'planetary_gamma': self._planetary_gamma,
+                    'cascade_multiplier': self._cascade_multiplier,
+                    'is_lighthouse': self._is_lighthouse,
+                    'piano_lambda': load_brain_state().get('piano_lambda', 1.0),
+                    'harmonic_signal': 'HOLD',
+                    'signal_confidence': 0.5,
+                }
+            
+            # Run brain cycle with quantum context
+            result = brain.run_cycle(quantum_context=quantum_context)
+            
+            if result:
+                self._brain_wisdom = result
+                self._last_cycle_time = now
+                
+                # Extract unified consensus
+                self._brain_consensus = result.get('unified_consensus', 'NEUTRAL')
+                self._brain_confidence = result.get('unified_confidence', 50) / 100
+                self._brain_action = result.get('unified_action', 'HOLD')
+                
+                # Extract civilization signals
+                self._civilization_signals = result.get('civilization_actions', {})
+                
+                # Extract market intelligence
+                live_pulse = result.get('live_pulse', {})
+                self._fear_greed = live_pulse.get('fear_greed', 50)
+                self._btc_price = live_pulse.get('btc_price', 0.0)
+                self._market_pulse = live_pulse.get('pulse', 'NEUTRAL')
+                self._manipulation_risk = result.get('manipulation_probability', 0.0)
+                
+                # Update CascadeAmplifier with brain state
+                self._update_cascade_amplifier()
+                
+                # Update AdaptiveLearner with brain insights
+                self._update_adaptive_learner()
+                
+                logger.info(f"🧠🌍 Brain Cycle Complete: {self._brain_consensus} | Conf: {self._brain_confidence:.0%}")
+                
+            return result
+            
+        except Exception as e:
+            logger.error(f"🧠 Brain Cycle Error: {e}")
+            return {}
+    
+    def _update_cascade_amplifier(self):
+        """Update CascadeAmplifier with brain wisdom."""
+        try:
+            # Update lighthouse gamma from brain's planetary awareness
+            CASCADE_AMPLIFIER.update_lighthouse(self._planetary_gamma)
+            
+            # If brain says BULLISH with high confidence, boost cascade
+            if self._brain_consensus == 'BULLISH' and self._brain_confidence > 0.7:
+                # Simulate a "wisdom win" - the brain's confidence is a positive signal
+                CASCADE_AMPLIFIER.mirror_coherence = min(1.0, CASCADE_AMPLIFIER.mirror_coherence + 0.05)
+                
+            # If brain says BEARISH with high confidence, decay cascade slightly
+            elif self._brain_consensus == 'BEARISH' and self._brain_confidence > 0.7:
+                CASCADE_AMPLIFIER.mirror_coherence = max(0.3, CASCADE_AMPLIFIER.mirror_coherence - 0.02)
+                
+        except Exception as e:
+            logger.debug(f"Cascade update failed: {e}")
+    
+    def _update_adaptive_learner(self):
+        """Feed brain insights to AdaptiveLearningEngine."""
+        try:
+            # Store brain consensus as a feature for learning
+            brain_feature = {
+                'brain_consensus': self._brain_consensus,
+                'brain_confidence': self._brain_confidence,
+                'fear_greed': self._fear_greed,
+                'manipulation_risk': self._manipulation_risk,
+                'civilization_agreement': sum(1 for s in self._civilization_signals.values() 
+                                               if 'ACCUMULATE' in s or 'BUY' in s or 'ATTACK' in s) / 7,
+            }
+            
+            # The adaptive learner can use this to correlate brain states with trade outcomes
+            if hasattr(ADAPTIVE_LEARNER, 'record_brain_state'):
+                ADAPTIVE_LEARNER.record_brain_state(brain_feature)
+                
+        except Exception as e:
+            logger.debug(f"Adaptive learner update failed: {e}")
+    
+    def update_quantum_state(self, coherence: float, gamma: float, cascade: float, lighthouse: bool):
+        """Update quantum state from miner optimizer."""
+        self._quantum_coherence = coherence
+        self._planetary_gamma = gamma
+        self._cascade_multiplier = cascade
+        self._is_lighthouse = lighthouse
+    
+    def get_trading_recommendation(self) -> Dict[str, Any]:
+        """
+        Get trading recommendation based on brain wisdom.
+        
+        Returns dict with:
+        - action: BUY/HOLD/SELL
+        - confidence: 0-1
+        - position_multiplier: scaling factor for position size
+        - reasoning: list of reasons
+        """
+        # Default neutral recommendation
+        rec = {
+            'action': 'HOLD',
+            'confidence': 0.5,
+            'position_multiplier': 1.0,
+            'reasoning': [],
+            'civilizations_bullish': 0,
+            'civilizations_bearish': 0,
+        }
+        
+        if not self._brain_wisdom:
+            rec['reasoning'].append("No brain wisdom available")
+            return rec
+        
+        # Count civilization votes
+        bullish_signals = ['ACCUMULATE', 'ATTACK', 'BUY', 'PLANT_SEEDS', 'RESURRECTION_BUY', 
+                          'DECISIVE_ACTION', 'BUILD', 'GROW', 'RIDE_THE_SUN']
+        bearish_signals = ['RETREAT', 'PROTECT', 'CAUTION', 'RELEASE', 'EXIT']
+        
+        bullish_count = sum(1 for s in self._civilization_signals.values() 
+                          if any(b in s.upper() for b in bullish_signals))
+        bearish_count = sum(1 for s in self._civilization_signals.values() 
+                          if any(b in s.upper() for b in bearish_signals))
+        
+        rec['civilizations_bullish'] = bullish_count
+        rec['civilizations_bearish'] = bearish_count
+        
+        # Determine action based on consensus
+        if self._brain_consensus == 'BULLISH':
+            rec['action'] = 'BUY'
+            rec['confidence'] = self._brain_confidence
+            rec['position_multiplier'] = 1.0 + (self._brain_confidence * 0.5)  # Up to 1.5x
+            rec['reasoning'].append(f"7 Civilizations: {bullish_count}/7 bullish")
+            rec['reasoning'].append(f"Unified Consensus: {self._brain_consensus}")
+            
+            # Extra boost if fear is extreme
+            if self._fear_greed < 25:
+                rec['position_multiplier'] *= 1.2
+                rec['reasoning'].append(f"Extreme Fear ({self._fear_greed}) = Contrarian Opportunity")
+                
+        elif self._brain_consensus == 'BEARISH':
+            rec['action'] = 'REDUCE'
+            rec['confidence'] = self._brain_confidence
+            rec['position_multiplier'] = max(0.5, 1.0 - (self._brain_confidence * 0.3))  # Down to 0.7x
+            rec['reasoning'].append(f"7 Civilizations: {bearish_count}/7 bearish")
+            rec['reasoning'].append(f"Unified Consensus: {self._brain_consensus}")
+            
+            # Extra caution if manipulation risk is high
+            if self._manipulation_risk > 0.3:
+                rec['position_multiplier'] *= 0.8
+                rec['reasoning'].append(f"High Manipulation Risk ({self._manipulation_risk:.0%})")
+                
+        else:
+            rec['action'] = 'HOLD'
+            rec['confidence'] = 0.5
+            rec['reasoning'].append("Civilizations divided - waiting for clarity")
+        
+        # Lighthouse bonus
+        if self._is_lighthouse:
+            rec['position_multiplier'] *= 1.15
+            rec['reasoning'].append("🗼 Lighthouse Window Active")
+        
+        return rec
+    
+    def get_signal_boost(self, base_score: float) -> float:
+        """
+        Get brain-boosted signal score for trading decisions.
+        
+        Applies 7-civilization wisdom to amplify or dampen signals.
+        """
+        boost = 1.0
+        
+        # Brain consensus boost
+        if self._brain_consensus == 'BULLISH':
+            boost *= 1.0 + (self._brain_confidence * 0.2)  # Up to +20%
+        elif self._brain_consensus == 'BEARISH':
+            boost *= 1.0 - (self._brain_confidence * 0.1)  # Down to -10%
+        
+        # Quantum coherence boost
+        if self._quantum_coherence > 0.7:
+            boost *= 1.0 + (self._quantum_coherence - 0.7) * 0.33  # Up to +10%
+        
+        # Planetary alignment boost
+        if self._planetary_gamma > 0.8:
+            boost *= 1.1  # +10% during strong alignment
+        
+        # Fear/Greed contrarian adjustment
+        if self._fear_greed < 25:  # Extreme fear
+            boost *= 1.15  # +15% contrarian
+        elif self._fear_greed > 75:  # Extreme greed
+            boost *= 0.90  # -10% caution
+        
+        return base_score * boost
+    
+    def display_status(self):
+        """Display current brain bridge status."""
+        if not self._brain_wisdom:
+            print("   🧠🌍 BRAIN: Awaiting first cycle...")
+            return
+        
+        consensus_icon = "📈" if self._brain_consensus == "BULLISH" else "📉" if self._brain_consensus == "BEARISH" else "⚖️"
+        bullish = sum(1 for s in self._civilization_signals.values() 
+                     if 'ACCUMULATE' in s or 'BUY' in s or 'ATTACK' in s or 'BUILD' in s)
+        
+        print(f"   🧠🌍 BRAIN: {consensus_icon} {self._brain_consensus} | "
+              f"Conf: {self._brain_confidence:.0%} | "
+              f"Votes: {bullish}/7 📈 | "
+              f"F&G: {self._fear_greed} | "
+              f"Γ: {self._planetary_gamma:.2f}")
+
+
+# Global Ecosystem Brain Bridge instance
+ECOSYSTEM_BRAIN = EcosystemBrainBridge()
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -3829,6 +4124,81 @@ class AdaptiveLearningEngine:
         lines.append(f"  💡 Suggested: TP {recommendation['suggested_take_profit']*100:.1f}% / SL {recommendation['suggested_stop_loss']*100:.1f}% / Hold {recommendation['suggested_hold_cycles']} cycles")
         
         return "\n".join(lines)
+    
+    def record_brain_state(self, brain_feature: Dict):
+        """
+        🧠 Record brain state for correlation with trade outcomes.
+        
+        Called by EcosystemBrainBridge after each wisdom cycle.
+        Allows learning correlation between brain signals and trade success.
+        
+        Args:
+            brain_feature: Dict with keys like:
+                - brain_consensus (BULLISH/BEARISH/NEUTRAL)
+                - brain_confidence (0-1)
+                - fear_greed (0-100)
+                - manipulation_risk (0-1)
+                - civilization_agreement (0-1)
+        """
+        if not hasattr(self, 'brain_state_history'):
+            self.brain_state_history = []
+            
+        # Add timestamp
+        brain_feature['timestamp'] = time.time()
+        
+        self.brain_state_history.append(brain_feature)
+        
+        # Keep last 100 brain states
+        if len(self.brain_state_history) > 100:
+            self.brain_state_history = self.brain_state_history[-100:]
+        
+        # Log significant brain states
+        if brain_feature.get('brain_confidence', 0) > 0.8:
+            logger.debug(f"🧠 High confidence brain state: {brain_feature['brain_consensus']} ({brain_feature['brain_confidence']:.0%})")
+    
+    def get_brain_correlation(self) -> Dict:
+        """
+        Analyze correlation between brain states and trade outcomes.
+        
+        Returns insights about which brain states lead to winning trades.
+        """
+        if not hasattr(self, 'brain_state_history') or not self.brain_state_history:
+            return {'status': 'no_data'}
+        
+        # Match brain states to trades by timestamp
+        correlations = {
+            'bullish_win_rate': 0.0,
+            'bearish_win_rate': 0.0,
+            'high_confidence_win_rate': 0.0,
+            'extreme_fear_win_rate': 0.0,
+            'samples': 0
+        }
+        
+        bullish_trades = [t for t in self.trade_history 
+                        if self._brain_at_time(t.get('entry_time', 0)) == 'BULLISH']
+        bearish_trades = [t for t in self.trade_history 
+                        if self._brain_at_time(t.get('entry_time', 0)) == 'BEARISH']
+        
+        if bullish_trades:
+            wins = sum(1 for t in bullish_trades if t.get('pnl', 0) > 0)
+            correlations['bullish_win_rate'] = wins / len(bullish_trades)
+            
+        if bearish_trades:
+            wins = sum(1 for t in bearish_trades if t.get('pnl', 0) > 0)
+            correlations['bearish_win_rate'] = wins / len(bearish_trades)
+            
+        correlations['samples'] = len(self.brain_state_history)
+        
+        return correlations
+    
+    def _brain_at_time(self, timestamp: float) -> str:
+        """Find brain consensus closest to a given timestamp."""
+        if not hasattr(self, 'brain_state_history') or not self.brain_state_history:
+            return 'NEUTRAL'
+        
+        closest = min(self.brain_state_history, 
+                     key=lambda x: abs(x.get('timestamp', 0) - timestamp))
+        return closest.get('brain_consensus', 'NEUTRAL')
 
 
 # Global adaptive learning instance
@@ -5991,9 +6361,44 @@ class AurisEngine:
         except Exception as e:
             return True, f"Earth check failed ({e}) - trading allowed"
     
+    def should_trade_brain(self) -> Tuple[bool, str]:
+        """
+        🧠 BRAIN GATE: 7 Civilizations + Quantum Brain must approve trades.
+        Returns (should_trade, reason).
+        """
+        if not hasattr(self, 'brain_bridge') or not self.brain_bridge:
+            return True, "Brain Bridge not initialized - trading allowed"
+        
+        try:
+            # Get brain recommendation
+            rec = self.brain_bridge.get_trading_recommendation()
+            action = rec.get('action', 'HOLD')
+            civs_bullish = rec.get('civilizations_bullish', 0)
+            civs_total = rec.get('civilizations_total', 7)
+            confidence = rec.get('confidence', 0.5)
+            reasoning = rec.get('reasoning', [])
+            
+            # HARD BLOCK: If brain says REDUCE with high confidence
+            if action == 'REDUCE' and confidence > 0.65:
+                return False, f"Brain says REDUCE (conf={confidence:.0%}, {civs_bullish}/{civs_total} bullish)"
+            
+            # SOFT GATE: If BEARISH with moderate confidence
+            consensus = self._brain_consensus
+            if consensus == 'BEARISH' and confidence > 0.6:
+                return False, f"Brain BEARISH (conf={confidence:.0%}) - waiting for bullish signal"
+            
+            # APPROVED
+            if action == 'BUY':
+                return True, f"Brain APPROVED: {civs_bullish}/{civs_total} civilizations BULLISH"
+            
+            return True, f"Brain neutral - {consensus} (conf={confidence:.0%})"
+            
+        except Exception as e:
+            return True, f"Brain check error ({e}) - trading allowed"
+    
     def should_trade_all_gates(self) -> Tuple[bool, str]:
         """
-        Combined gate check: Imperial + HNC + Earth Resonance.
+        Combined gate check: Imperial + HNC + Earth Resonance + BRAIN.
         Returns (should_trade, reason).
         """
         reasons = []
@@ -6013,6 +6418,11 @@ class AurisEngine:
             freq = getattr(self, 'hnc_current_frequency', 432)
             if 438 <= freq <= 442:  # Distortion zone
                 reasons.append(f"HNC: Distortion frequency {freq}Hz blocked")
+        
+        # 🧠 Check Brain gate (NEW)
+        brain_ok, brain_reason = self.should_trade_brain()
+        if not brain_ok:
+            reasons.append(f"Brain: {brain_reason}")
         
         if reasons:
             return False, " | ".join(reasons)
@@ -6103,8 +6513,12 @@ class AurisEngine:
         earth_ok, earth_reason = self.should_trade_earth()
         all_ok, all_reason = self.should_trade_all_gates()
         
+        # Check Brain gate
+        brain_ok, brain_reason = self.should_trade_brain()
+        
         report['gates']['imperial'] = {'open': imperial_ok, 'reason': imperial_reason}
         report['gates']['earth'] = {'open': earth_ok, 'reason': earth_reason}
+        report['gates']['brain'] = {'open': brain_ok, 'reason': brain_reason}
         report['gates']['all'] = {'open': all_ok, 'reason': all_reason}
         
         # DATA FRESHNESS & SIGNALS
@@ -7219,6 +7633,17 @@ class AureonKrakenEcosystem:
             print("   🔮 Nexus Predictor initialized (79.6% validated)")
         else:
             self.nexus_predictor = None
+            
+        # 🧠 MINER BRAIN - COGNITIVE INTELLIGENCE 🧠
+        if BRAIN_AVAILABLE:
+            self.brain = MinerBrain()
+            print("   🧠 Miner Brain initialized (Cognitive Circle Active)")
+        else:
+            self.brain = None
+        
+        # 🧠🌍 ECOSYSTEM BRAIN BRIDGE - Unified Intelligence Hub 🌍🧠
+        self.brain_bridge = ECOSYSTEM_BRAIN
+        print("   🧠🌍 Ecosystem Brain Bridge: CONNECTED")
         
         # Initialize capital pool
         self.capital_pool.update_equity(initial_balance)
@@ -7247,6 +7672,11 @@ class AureonKrakenEcosystem:
         
         # 📊 UNIFIED STATE AGGREGATOR - All JSON Feeds Into Ecosystem 📊
         self.state_aggregator = STATE_AGGREGATOR
+        
+        # 🎛️ DYNAMIC PARAMETERS
+        self.position_size_multiplier = 1.0
+        self.min_entry_gamma = 0.5  # Default gamma threshold
+
         
         # 🔥 WAR-READY ENHANCEMENTS 🔥
         self.atr_calculator = ATRCalculator(period=14)
@@ -7691,12 +8121,17 @@ class AureonKrakenEcosystem:
         if self.dry_run:
             return
         
-        # 💰 SYNC REAL COST BASIS FROM EXCHANGES
+        # 💰 Always get cost tracker instance (for price lookups)
         cost_tracker = get_cost_basis_tracker()
-        print("\n   💰 Syncing real purchase prices from exchange history...")
-        synced = cost_tracker.sync_from_exchanges()
-        if synced > 0:
-            print(f"   ✅ Found real cost basis for {synced} positions")
+        
+        # SYNC REAL COST BASIS FROM EXCHANGES (can be skipped with env var)
+        if os.getenv('SKIP_COST_SYNC', '0') != '1':
+            print("\n   💰 Syncing real purchase prices from exchange history...")
+            synced = cost_tracker.sync_from_exchanges()
+            if synced > 0:
+                print(f"   ✅ Found real cost basis for {synced} positions")
+        else:
+            print("\n   ⏭️ Skipping cost basis sync (SKIP_COST_SYNC=1)")
             
         base = CONFIG['BASE_CURRENCY']
         try:
@@ -8570,6 +9005,27 @@ class AureonKrakenEcosystem:
             return False
             
         symbol = opp.get('symbol', 'UNKNOWN')
+        
+        # ═══════════════════════════════════════════════════════════════
+        # 🧠🌍 BRAIN GATE CHECK - 7 CIVILIZATIONS + QUANTUM BRAIN
+        # ═══════════════════════════════════════════════════════════════
+        brain_ok, brain_reason = self.should_trade_brain()
+        if not brain_ok:
+            logger.info(f"🧠🚫 {symbol}: BRAIN GATE CLOSED - {brain_reason}")
+            return False
+        
+        brain_consensus = opp.get('brain_consensus', ECOSYSTEM_BRAIN._brain_consensus)
+        brain_confidence = opp.get('brain_confidence', ECOSYSTEM_BRAIN._brain_confidence)
+        brain_rec = ECOSYSTEM_BRAIN.get_trading_recommendation()
+        
+        # If brain says REDUCE/BEARISH with high confidence, reject new entries
+        if brain_rec['action'] == 'REDUCE' and brain_confidence > 0.7:
+            logger.info(f"🧠📉 {symbol}: Brain says REDUCE (conf={brain_confidence:.0%}) - SKIPPING NEW ENTRY")
+            return False
+        
+        # If brain is very bullish, log approval
+        if brain_rec['action'] == 'BUY' and brain_confidence > 0.7:
+            logger.info(f"🧠📈 {symbol}: Brain APPROVED (7 Civs: {brain_rec['civilizations_bullish']}/7 bullish)")
         
         # ═══════════════════════════════════════════════════════════════
         # 🔮 PROBABILITY MATRIX DECISION - THE CORE BRAIN 🔮
@@ -10157,6 +10613,14 @@ class AureonKrakenEcosystem:
             if cascade_mult > 1.0:
                 score = int(score * cascade_mult)
             
+            # 🧠🌍 BRAIN WISDOM BOOST - Apply 7-civilization signal amplification
+            try:
+                brain_boosted_score = ECOSYSTEM_BRAIN.get_signal_boost(score)
+                if brain_boosted_score != score:
+                    score = int(brain_boosted_score)
+            except Exception:
+                pass  # Brain boost is optional enhancement
+            
             # 🧠 Use adaptive learning score threshold
             min_score = learned.get('min_score', CONFIG['MIN_SCORE'])
             
@@ -10202,6 +10666,10 @@ class AureonKrakenEcosystem:
                     'nexus_prob': nexus_pred_prob,
                     'nexus_edge': nexus_pred_edge,
                     'nexus_patterns': nexus_pred_patterns,
+                    # 🧠🌍 BRAIN WISDOM fields
+                    'brain_consensus': ECOSYSTEM_BRAIN._brain_consensus,
+                    'brain_confidence': ECOSYSTEM_BRAIN._brain_confidence,
+                    'brain_fear_greed': ECOSYSTEM_BRAIN._fear_greed,
                 })
                 
                 # 🔮 LOG PREDICTION FOR VALIDATION 🔮
@@ -11965,6 +12433,67 @@ class AureonKrakenEcosystem:
                     except Exception:
                         pass
                 
+                # 🧠🌍 UNIFIED BRAIN WISDOM CYCLE (via Brain Bridge)
+                # Brain runs EVERY cycle - autonomous cognition always active
+                if self.brain:
+                    try:
+                        # Only print header every 10 cycles to reduce noise
+                        if self.iteration % 10 == 1:
+                            print("\n   🧠🌍 UNIFIED BRAIN WISDOM CYCLE...")
+                        
+                        # Build quantum context from available sources
+                        quantum_ctx = None
+                        if hasattr(self, 'miner_optimizer') and self.miner_optimizer:
+                            qbrain = getattr(self.miner_optimizer, 'brain', None)
+                            if qbrain:
+                                quantum_ctx = {
+                                    'quantum_coherence': qbrain.state.unified_coherence,
+                                    'planetary_gamma': qbrain.state.planetary_gamma,
+                                    'cascade_multiplier': qbrain.state.cascade_multiplier,
+                                    'is_lighthouse': qbrain.state.is_optimal_window,
+                                    'piano_lambda': qbrain.state.piano_lambda,
+                                    'harmonic_signal': qbrain.state.harmonic_signal,
+                                    'signal_confidence': qbrain.state.signal_confidence,
+                                }
+                        
+                        # Run brain cycle through the bridge (handles bidirectional sync)
+                        result = self.brain_bridge.run_wisdom_cycle(self.brain, quantum_ctx)
+                        
+                        # Get trading recommendation from brain
+                        brain_rec = self.brain_bridge.get_trading_recommendation()
+                        
+                        if result:
+                            # Display unified status
+                            self.brain_bridge.display_status()
+                            
+                            # Apply brain recommendation to position sizing
+                            brain_mult = brain_rec.get('position_multiplier', 1.0)
+                            brain_action = brain_rec.get('action', 'HOLD')
+                            
+                            if brain_action == 'BUY':
+                                self.position_size_multiplier = max(self.position_size_multiplier, brain_mult)
+                                print(f"   🧠📈 BRAIN BOOST: Position sizing = {self.position_size_multiplier:.2f}x")
+                            elif brain_action == 'REDUCE':
+                                self.position_size_multiplier = min(self.position_size_multiplier, brain_mult)
+                                print(f"   🧠📉 BRAIN CAUTION: Position sizing = {self.position_size_multiplier:.2f}x")
+                            
+                            # Update cascade amplifier with brain gamma
+                            CASCADE_AMPLIFIER.update_lighthouse(self.brain_bridge._planetary_gamma)
+                            
+                            # Legacy prediction display
+                            prediction = self.brain.get_latest_prediction()
+                            if prediction:
+                                print(f"   🧠 PREDICTION: {prediction['direction']} (Conf: {prediction['confidence']}%)")
+                            
+                            # Dream insights (preserved)
+                            if hasattr(self.brain, 'dream_engine'):
+                                dream_response = self.brain.dream_engine.get_prepared_response()
+                                if dream_response:
+                                    print(f"   💭 DREAM: {dream_response['action']}")
+                                    
+                    except Exception as e:
+                        print(f"   ⚠️ Brain cycle error: {e}")
+
                 # 🌉 Sync with Bridge
                 if self.bridge_enabled:
                     self.sync_bridge()
