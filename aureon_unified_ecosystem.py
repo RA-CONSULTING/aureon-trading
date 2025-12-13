@@ -35,6 +35,7 @@ import math
 import random
 import asyncio
 import io
+import tempfile
 
 # 🪟 WINDOWS COMPATIBILITY: Force UTF-8 encoding for console output
 # This prevents "UnicodeEncodeError: 'charmap' codec can't encode character" crashes
@@ -675,7 +676,7 @@ PHI = (1 + math.sqrt(5)) / 2  # Golden Ratio = 1.618
 # 🎹 QUANTUM BRAIN / PIANO STATE BRIDGE
 # ═══════════════════════════════════════════════════════════════
 
-BRAIN_STATE_PATH = "/tmp/aureon_multidimensional_brain_output.json"
+BRAIN_STATE_PATH = os.path.join(tempfile.gettempdir(), "aureon_multidimensional_brain_output.json")
 _BRAIN_CACHE: Dict[str, Any] = {}
 _BRAIN_CACHE_TIME: float = 0.0
 

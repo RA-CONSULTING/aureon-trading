@@ -24,6 +24,7 @@ import threading
 import time
 import logging
 import os
+import tempfile
 from datetime import datetime
 from dataclasses import dataclass, field
 from typing import Optional, Dict, Any, Callable, List, Tuple
@@ -4814,7 +4815,8 @@ class QuantumProcessingBrain:
                 json.dump(brain_data, f, indent=2)
                 
             # 🎹 Write to shared system path for Unified Ecosystem 🎹
-            with open('/tmp/aureon_multidimensional_brain_output.json', 'w') as f:
+            brain_path = os.path.join(tempfile.gettempdir(), 'aureon_multidimensional_brain_output.json')
+            with open(brain_path, 'w') as f:
                 json.dump(brain_data, f, indent=2)
             
             self.state.broadcast_count += 1
