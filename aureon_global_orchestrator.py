@@ -25,15 +25,21 @@ if sys.stdout and hasattr(sys.stdout, 'reconfigure'):
     except:
         pass
 
-# Configure logger with UTF-8 handling
+# Configure logger with UTF-8/ASCII-safe handling
 logger = logging.getLogger("AureonOrchestrator")
 logger.setLevel(logging.INFO)
 if not logger.handlers:
+    class SafeUTF8Formatter(logging.Formatter):
+        def format(self, record: logging.LogRecord) -> str:
+            msg = super().format(record)
+            try:
+                _ = msg.encode('utf-8')
+                return msg
+            except Exception:
+                return msg.encode('utf-8', errors='replace').decode('ascii', errors='replace')
+
     handler = logging.StreamHandler(sys.stdout)
-    # Ensure UTF-8 encoding in handler
-    if hasattr(handler, 'setEncoding'):
-        handler.setEncoding('utf-8')
-    formatter = logging.Formatter('[%(asctime)s] %(message)s')
+    formatter = SafeUTF8Formatter('[%(asctime)s] %(message)s')
     handler.setFormatter(formatter)
     logger.addHandler(handler)
 

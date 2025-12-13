@@ -29,9 +29,20 @@ from pathlib import Path
 import threading
 from collections import defaultdict
 
-# Configure logging with UTF-8 encoding for all handlers
+# Configure logging with safe UTF-8/ASCII handling
+class SafeUTF8Formatter(logging.Formatter):
+    def format(self, record: logging.LogRecord) -> str:
+        msg = super().format(record)
+        try:
+            # Try UTF-8 first
+            _ = msg.encode('utf-8')
+            return msg
+        except Exception:
+            # Fallback: replace non-encodable chars
+            return msg.encode('utf-8', errors='replace').decode('ascii', errors='replace')
+
 stream_handler = logging.StreamHandler()
-stream_handler.setFormatter(logging.Formatter('%(asctime)s [%(levelname)s] %(message)s'))
+stream_handler.setFormatter(SafeUTF8Formatter('%(asctime)s [%(levelname)s] %(message)s'))
 
 logging.basicConfig(
     level=logging.INFO,

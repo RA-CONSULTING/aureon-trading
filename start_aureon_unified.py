@@ -43,13 +43,20 @@ def main():
     """
     
     print("\n" + "="*70)
-    print("🌍 AUREON UNIFIED STARTUP 🌍")
+    # ASCII-safe banner (emojis may be replaced on Windows consoles)
+    try:
+        print("🌍 AUREON UNIFIED STARTUP 🌍")
+    except Exception:
+        print("AUREON UNIFIED STARTUP")
     print("="*70)
     print("\nInitializing complete ecosystem:")
     print("  1️⃣  Quantum Processing Brain")
     print("  2️⃣  Harmonic Mining Optimizer")
     print("  3️⃣  Aureon Kraken Trading Ecosystem")
-    print("\n🔗 All systems linked and synchronized")
+    try:
+        print("\n🔗 All systems linked and synchronized")
+    except Exception:
+        print("\nAll systems linked and synchronized")
     print("="*70 + "\n")
     
     # Create orchestrator with default balance (£1000)
