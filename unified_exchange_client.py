@@ -593,6 +593,11 @@ class UnifiedExchangeClient:
                         price = 0.0
                     return {'price': price, 'bid': price, 'ask': price}
 
+                # Handle "Invalid symbol" gracefully
+                if isinstance(res, dict) and res.get('code') == -1121:
+                    logger.debug(f"Binance symbol not found: {symbol}")
+                    return {'price': 0.0, 'bid': 0.0, 'ask': 0.0}
+
                 logger.error(f"Binance ticker unexpected payload for {symbol}: {res}")
                 return {'price': 0.0, 'bid': 0.0, 'ask': 0.0}
             except Exception as e:
