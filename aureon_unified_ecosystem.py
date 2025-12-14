@@ -912,12 +912,13 @@ class EcosystemBrainBridge:
             
             # Build quantum context if not provided
             if not quantum_context:
+                brain_state = load_brain_state()
                 quantum_context = {
-                    'quantum_coherence': self._quantum_coherence,
-                    'planetary_gamma': self._planetary_gamma,
-                    'cascade_multiplier': self._cascade_multiplier,
+                    'quantum_coherence': self._quantum_coherence or 0.5,
+                    'planetary_gamma': self._planetary_gamma or 0.5,
+                    'cascade_multiplier': self._cascade_multiplier or 1.0,
                     'is_lighthouse': self._is_lighthouse,
-                    'piano_lambda': load_brain_state().get('piano_lambda', 1.0),
+                    'piano_lambda': brain_state.get('piano_lambda') or 1.0,
                     'harmonic_signal': 'HOLD',
                     'signal_confidence': 0.5,
                 }
@@ -13677,13 +13678,11 @@ class AureonKrakenEcosystem:
             # Calculate quantity based on your position sizing logic if needed, 
             # but here we take qty from intent.
             
-            result = self.submit_order(
+            result = self.trade_confirmation.submit_order(
                 exchange=exchange,
                 symbol=symbol,
                 side=side.upper(),  # 'buy' -> 'BUY'
-                order_type='market',
-                quantity=qty,
-                price=None
+                quantity=qty
             )
             
             return result

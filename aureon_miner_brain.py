@@ -4572,13 +4572,13 @@ class MinerBrain:
             print("🔮" * 35 + "\n")
             
             print("🔮 **QUANTUM BRAIN SPEAKS**")
-            print(f"   Unified Coherence (Ψ): {quantum_context.get('quantum_coherence', 0):.3f}")
-            print(f"   Planetary Gamma (Γ): {quantum_context.get('planetary_gamma', 0):.3f}")
-            print(f"   Probability Edge: {quantum_context.get('probability_edge', 0):.3f}")
-            print(f"   Cascade Multiplier: {quantum_context.get('cascade_multiplier', 1):.2f}x")
+            print(f"   Unified Coherence (Ψ): {(quantum_context.get('quantum_coherence') or 0.5):.3f}")
+            print(f"   Planetary Gamma (Γ): {(quantum_context.get('planetary_gamma') or 0.5):.3f}")
+            print(f"   Probability Edge: {(quantum_context.get('probability_edge') or 0.0):.3f}")
+            print(f"   Cascade Multiplier: {(quantum_context.get('cascade_multiplier') or 1.0):.2f}x")
             print(f"   Lighthouse Window: {'🌟 ACTIVE' if quantum_context.get('is_lighthouse') else '⬜ Inactive'}")
-            print(f"   Piano Lambda (Λ): {quantum_context.get('piano_lambda', 1):.3f}")
-            print(f"   Harmonic Signal: {quantum_context.get('harmonic_signal', 'N/A')}")
+            print(f"   Piano Lambda (Λ): {(quantum_context.get('piano_lambda') or 1.0):.3f}")
+            print(f"   Harmonic Signal: {quantum_context.get('harmonic_signal') or 'N/A'}")
             
             # Interpret quantum state for wisdom consideration
             qc = quantum_context.get('quantum_coherence', 0.5)
