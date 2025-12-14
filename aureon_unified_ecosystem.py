@@ -729,6 +729,7 @@ CONFIG = {
     
     # 🌍⚡ HNC Probability Matrix (2-Hour Window) ⚡🌍
     'ENABLE_PROB_MATRIX': os.getenv('ENABLE_PROB_MATRIX', '1') == '1',
+    'ENABLE_PROBABILITY_GENERATOR': os.getenv('ENABLE_PROBABILITY_GENERATOR', '1') == '1',  # Auto-regenerate every 15s
     'PROB_MIN_CONFIDENCE': 0.45,     # Lowered to admit more entries
     'PROB_HIGH_THRESHOLD': 0.65,     # High probability threshold for boost
     'PROB_LOW_THRESHOLD': 0.40,      # Low probability threshold for reduction
@@ -4921,6 +4922,399 @@ ADAPTIVE_LEARNER = AdaptiveLearningEngine()
 
 
 # ═══════════════════════════════════════════════════════════════
+# 📊 PROBABILITY REPORT GENERATOR - Auto-Regenerates Every 15 Seconds
+# ═══════════════════════════════════════════════════════════════
+
+class ProbabilityReportGenerator:
+    """
+    Automatic probability report generator that runs in background thread.
+    
+    Features:
+    - Generates fresh probability reports every 15 seconds
+    - Supports multiple exchanges (Binance, Kraken, Alpaca)
+    - Feeds into AdaptiveLearningEngine for continuous learning
+    - Updates JSON files consumed by ProbabilityLoader
+    - Lightweight - uses cached tickers to minimize API calls
+    """
+    
+    # Symbols to analyze per exchange
+    BINANCE_SYMBOLS = [
+        'BTCUSDC', 'ETHUSDC', 'SOLUSDC', 'XRPUSDC', 'ADAUSDC', 'AVAXUSDC', 'DOGEUSDC', 'LINKUSDC',
+        'MATICUSDC', 'DOTUSDC', 'ATOMUSDC', 'FILUSDC', 'LTCUSDC', 'SUIUSDC', 'APTUSDC', 'ARBUSDC',
+        'OPUSDC', 'NEARUSDC', 'UNIUSDC', 'INJUSDC', 'BNBUSDC', 'FETUSDC', 'PEPEUSDC', 'SHIBUSDC'
+    ]
+    
+    KRAKEN_SYMBOLS = [
+        'XXBTZUSD', 'XETHZUSD', 'SOLUSD', 'XRPUSD', 'ADAUSD', 'AVAXUSD', 'DOGEUSD', 'LINKUSD',
+        'MATICUSD', 'DOTUSD', 'ATOMUSD', 'FILUSD', 'LTCUSD', 'SUIUSD', 'APTUSD', 'ARBUSD',
+        'OPUSD', 'NEARUSD', 'UNIUSD', 'INJUSD', 'FETUSD', 'PEPEUSD', 'SHIBUSD', 'AABOROW'
+    ]
+    
+    def __init__(self, report_dir: str = '.', interval_seconds: float = 15.0):
+        self.report_dir = report_dir
+        self.interval = interval_seconds
+        self._running = False
+        self._thread: Optional[threading.Thread] = None
+        self._lock = threading.Lock()
+        
+        # Initialize HNC integration if available
+        self.hnc_integration = None
+        if PROB_MATRIX_AVAILABLE:
+            try:
+                self.hnc_integration = HNCProbabilityIntegration()
+            except Exception as e:
+                logger.warning(f"Could not initialize HNC integration: {e}")
+        
+        # Price cache for momentum calculations
+        self._price_history: Dict[str, List[Tuple[float, float]]] = {}  # symbol -> [(timestamp, price), ...]
+        self._max_price_history = 10  # Keep last 10 prices for momentum
+        
+        # Generation stats
+        self.last_generation = 0.0
+        self.generation_count = 0
+        self.last_results: Dict[str, List[Dict]] = {}
+        
+        logger.info(f"📊 ProbabilityReportGenerator initialized (interval={interval_seconds}s)")
+    
+    def start(self, ecosystem: 'AureonKrakenEcosystem' = None):
+        """Start background probability generation."""
+        if self._running:
+            return
+        
+        self._running = True
+        self._ecosystem = ecosystem
+        self._thread = threading.Thread(target=self._generation_loop, daemon=True)
+        self._thread.start()
+        logger.info("📊 Probability Report Generator STARTED (background thread)")
+    
+    def stop(self):
+        """Stop background generation."""
+        self._running = False
+        if self._thread:
+            self._thread.join(timeout=5.0)
+        logger.info("📊 Probability Report Generator STOPPED")
+    
+    def _generation_loop(self):
+        """Main generation loop - runs every interval_seconds."""
+        while self._running:
+            try:
+                self._generate_all_reports()
+            except Exception as e:
+                logger.error(f"Probability generation error: {e}")
+            
+            # Sleep in small chunks to allow quick shutdown
+            for _ in range(int(self.interval * 2)):
+                if not self._running:
+                    break
+                time.sleep(0.5)
+    
+    def _generate_all_reports(self):
+        """Generate probability reports for all exchanges."""
+        start_time = time.time()
+        all_results = []
+        
+        # Get tickers from ecosystem cache if available
+        ticker_cache = {}
+        if hasattr(self, '_ecosystem') and self._ecosystem:
+            ticker_cache = getattr(self._ecosystem, 'ticker_cache', {})
+        
+        # Generate for Binance symbols
+        binance_results = self._generate_exchange_report('binance', self.BINANCE_SYMBOLS, ticker_cache)
+        all_results.extend(binance_results)
+        
+        # Generate for Kraken symbols  
+        kraken_results = self._generate_exchange_report('kraken', self.KRAKEN_SYMBOLS, ticker_cache)
+        all_results.extend(kraken_results)
+        
+        # Sort by probability
+        all_results.sort(key=lambda r: (r.get('probability', 0), r.get('confidence', 0)), reverse=True)
+        
+        # Save combined report
+        report = {
+            'generated_at': datetime.now().isoformat(),
+            'generator': 'ProbabilityReportGenerator',
+            'interval_seconds': self.interval,
+            'generation_count': self.generation_count + 1,
+            'count': len(all_results),
+            'top_10': all_results[:10],
+            'high_conviction': [r for r in all_results if r.get('probability', 0) >= 0.75],
+            'all': all_results,
+        }
+        
+        # Write to files
+        with self._lock:
+            try:
+                # Main batch report (consumed by ecosystem)
+                batch_path = os.path.join(self.report_dir, 'probability_batch_report.json')
+                with open(batch_path, 'w') as f:
+                    json.dump(report, f, indent=2)
+                
+                # Also update kraken report for backward compatibility
+                kraken_report = {
+                    'generated_at': report['generated_at'],
+                    'count': len(kraken_results),
+                    'all': kraken_results,
+                }
+                kraken_path = os.path.join(self.report_dir, 'probability_kraken_report.json')
+                with open(kraken_path, 'w') as f:
+                    json.dump(kraken_report, f, indent=2)
+                
+                # Combined all-exchanges report
+                combined_path = os.path.join(self.report_dir, 'probability_all_exchanges_report.json')
+                with open(combined_path, 'w') as f:
+                    json.dump(report, f, indent=2)
+                    
+            except Exception as e:
+                logger.error(f"Failed to write probability report: {e}")
+        
+        # Update stats
+        self.last_generation = time.time()
+        self.generation_count += 1
+        self.last_results = {'all': all_results, 'binance': binance_results, 'kraken': kraken_results}
+        
+        # Feed top signals to AdaptiveLearningEngine
+        self._feed_to_adaptive_learning(all_results[:10])
+        
+        # Notify ecosystem to reload
+        if hasattr(self, '_ecosystem') and self._ecosystem:
+            loader = getattr(self._ecosystem, 'probability_loader', None)
+            if loader:
+                try:
+                    loader.load_all_reports()
+                except Exception:
+                    pass
+        
+        elapsed = time.time() - start_time
+        if self.generation_count % 4 == 0:  # Log every minute (4 * 15s)
+            logger.info(f"📊 Probability reports regenerated #{self.generation_count} ({len(all_results)} signals, {elapsed:.2f}s)")
+    
+    def _generate_exchange_report(self, exchange: str, symbols: List[str], ticker_cache: Dict) -> List[Dict]:
+        """Generate probability report for a specific exchange."""
+        results = []
+        
+        for symbol in symbols:
+            try:
+                # Try to get price from cache first
+                price = 0.0
+                if symbol in ticker_cache:
+                    cached = ticker_cache[symbol]
+                    if isinstance(cached, dict):
+                        price = float(cached.get('last', cached.get('c', cached.get('price', 0))))
+                    else:
+                        price = float(cached)
+                
+                if price <= 0:
+                    continue  # Skip symbols without prices
+                
+                # Update price history for momentum calculation
+                self._update_price_history(symbol, price)
+                
+                # Calculate momentum from price history
+                momentum = self._calculate_momentum(symbol)
+                
+                # Calculate frequency and coherence (HNC physics)
+                freq, coherence, is_harmonic = self._calculate_frequency_metrics(symbol, price, momentum)
+                
+                # Use HNC integration if available
+                if self.hnc_integration:
+                    try:
+                        matrix = self.hnc_integration.update_and_analyze(
+                            symbol, price, freq, momentum, coherence, is_harmonic
+                        )
+                        signal = self.hnc_integration.get_trading_signal(symbol)
+                        
+                        results.append({
+                            'symbol': symbol,
+                            'exchange': exchange,
+                            'price': price,
+                            'probability': float(signal.get('probability', 0.5)),
+                            'confidence': float(signal.get('confidence', 0.5)),
+                            'action': signal.get('action', 'HOLD'),
+                            'modifier': signal.get('modifier', 1.0),
+                            'reason': signal.get('reason', ''),
+                            'frequency': float(matrix.hour_plus_1.avg_frequency) if matrix else freq,
+                            'state': matrix.hour_plus_1.state.value if matrix else 'NEUTRAL',
+                            'momentum': momentum,
+                            'coherence': coherence,
+                            'is_harmonic': is_harmonic,
+                        })
+                    except Exception as e:
+                        logger.debug(f"HNC analysis failed for {symbol}: {e}")
+                        # Fallback to simple calculation
+                        prob, action = self._simple_probability(momentum, coherence, is_harmonic)
+                        results.append({
+                            'symbol': symbol,
+                            'exchange': exchange,
+                            'price': price,
+                            'probability': prob,
+                            'confidence': coherence,
+                            'action': action,
+                            'modifier': 1.0,
+                            'reason': 'simple_calc',
+                            'frequency': freq,
+                            'state': 'NEUTRAL',
+                            'momentum': momentum,
+                            'coherence': coherence,
+                            'is_harmonic': is_harmonic,
+                        })
+                else:
+                    # Simple probability calculation without HNC
+                    prob, action = self._simple_probability(momentum, coherence, is_harmonic)
+                    results.append({
+                        'symbol': symbol,
+                        'exchange': exchange,
+                        'price': price,
+                        'probability': prob,
+                        'confidence': coherence,
+                        'action': action,
+                        'modifier': 1.0,
+                        'reason': 'simple_calc',
+                        'frequency': freq,
+                        'state': 'NEUTRAL',
+                        'momentum': momentum,
+                        'coherence': coherence,
+                        'is_harmonic': is_harmonic,
+                    })
+                    
+            except Exception as e:
+                logger.debug(f"Error generating probability for {symbol}: {e}")
+                continue
+        
+        return results
+    
+    def _update_price_history(self, symbol: str, price: float):
+        """Update price history for momentum calculation."""
+        now = time.time()
+        if symbol not in self._price_history:
+            self._price_history[symbol] = []
+        
+        self._price_history[symbol].append((now, price))
+        
+        # Keep only recent prices
+        if len(self._price_history[symbol]) > self._max_price_history:
+            self._price_history[symbol] = self._price_history[symbol][-self._max_price_history:]
+    
+    def _calculate_momentum(self, symbol: str) -> float:
+        """Calculate price momentum from history."""
+        history = self._price_history.get(symbol, [])
+        if len(history) < 2:
+            return 0.0
+        
+        start_price = history[0][1]
+        end_price = history[-1][1]
+        
+        if start_price <= 0:
+            return 0.0
+        
+        return ((end_price - start_price) / start_price) * 100
+    
+    def _calculate_frequency_metrics(self, symbol: str, price: float, momentum: float) -> Tuple[float, float, bool]:
+        """Calculate HNC frequency metrics."""
+        import numpy as np
+        
+        # PHI-based frequency calculation
+        phi = (1 + 5 ** 0.5) / 2
+        
+        # Base frequency from price ratio (normalized)
+        history = self._price_history.get(symbol, [])
+        if len(history) >= 2:
+            ratio = price / history[0][1] if history[0][1] > 0 else 1.0
+            freq = max(256.0, min(963.0, 432.0 * (ratio ** phi)))
+        else:
+            freq = 432.0  # Default natural frequency
+        
+        # Coherence from price stability
+        if len(history) >= 3:
+            prices = [p[1] for p in history]
+            std = float(np.std(prices)) if prices else 0
+            coherence = max(0.2, min(0.95, 1.0 / (1.0 + std / max(1.0, price))))
+        else:
+            coherence = 0.5
+        
+        # Harmonic check (near 432Hz or 528Hz)
+        is_harmonic = abs(freq - 432) < 25 or abs(freq - 528) < 25
+        
+        return freq, coherence, is_harmonic
+    
+    def _simple_probability(self, momentum: float, coherence: float, is_harmonic: bool) -> Tuple[float, str]:
+        """Simple probability calculation without full HNC."""
+        # Base probability
+        prob = 0.5
+        
+        # Momentum contribution
+        if momentum > 1.0:
+            prob += min(0.15, momentum * 0.05)
+        elif momentum < -1.0:
+            prob -= min(0.15, abs(momentum) * 0.05)
+        
+        # Coherence contribution  
+        prob += (coherence - 0.5) * 0.2
+        
+        # Harmonic bonus
+        if is_harmonic:
+            prob += 0.05
+        
+        # Clamp to valid range
+        prob = max(0.3, min(0.8, prob))
+        
+        # Determine action
+        if prob >= 0.65:
+            action = 'BUY' if momentum > 0 else 'HOLD'
+        elif prob <= 0.35:
+            action = 'SELL' if momentum < 0 else 'HOLD'
+        else:
+            action = 'HOLD'
+        
+        return prob, action
+    
+    def _feed_to_adaptive_learning(self, top_signals: List[Dict]):
+        """Feed top signals to AdaptiveLearningEngine for continuous learning."""
+        try:
+            for signal in top_signals:
+                if signal.get('probability', 0) >= 0.70:
+                    # Create a learning record
+                    learning_record = {
+                        'symbol': signal['symbol'],
+                        'exchange': signal.get('exchange', 'unknown'),
+                        'probability': signal['probability'],
+                        'frequency': signal.get('frequency', 432),
+                        'coherence': signal.get('coherence', 0.5),
+                        'is_harmonic': signal.get('is_harmonic', False),
+                        'action': signal.get('action', 'HOLD'),
+                        'timestamp': datetime.now().isoformat(),
+                    }
+                    
+                    # Feed to adaptive learner for frequency band analysis
+                    freq_band = ADAPTIVE_LEARNER._get_frequency_band(signal.get('frequency', 432))
+                    if freq_band not in ADAPTIVE_LEARNER.metrics_by_frequency:
+                        ADAPTIVE_LEARNER.metrics_by_frequency[freq_band] = {
+                            'signals': 0, 'wins': 0, 'losses': 0
+                        }
+                    ADAPTIVE_LEARNER.metrics_by_frequency[freq_band]['signals'] = \
+                        ADAPTIVE_LEARNER.metrics_by_frequency[freq_band].get('signals', 0) + 1
+                    
+        except Exception as e:
+            logger.debug(f"Could not feed to adaptive learning: {e}")
+    
+    def get_top_signals(self, min_probability: float = 0.70, limit: int = 10) -> List[Dict]:
+        """Get current top signals above threshold."""
+        with self._lock:
+            all_results = self.last_results.get('all', [])
+            filtered = [r for r in all_results if r.get('probability', 0) >= min_probability]
+            return filtered[:limit]
+    
+    def get_freshness_minutes(self) -> float:
+        """Get minutes since last generation."""
+        if self.last_generation == 0:
+            return float('inf')
+        return (time.time() - self.last_generation) / 60.0
+
+
+# Global probability report generator instance
+PROBABILITY_GENERATOR: Optional[ProbabilityReportGenerator] = None
+
+
+# ═══════════════════════════════════════════════════════════════
 # 🌊 CASCADE AMPLIFIER - 546x Miner-Validated Signal Amplification
 # ═══════════════════════════════════════════════════════════════
 
@@ -8624,6 +9018,20 @@ class AureonKrakenEcosystem:
                 print("   📊 Probability Matrix (Position Learning) ACTIVE")
             except Exception as e:
                 print(f"   ⚠️ Probability Matrix init failed: {e}")
+        
+        # 📊 PROBABILITY REPORT GENERATOR - Auto-regenerates every 15 seconds
+        global PROBABILITY_GENERATOR
+        self.probability_generator = None
+        if CONFIG.get('ENABLE_PROBABILITY_GENERATOR', True):
+            try:
+                self.probability_generator = ProbabilityReportGenerator(
+                    report_dir=os.environ.get('AUREON_REPORT_DIR', '.'),
+                    interval_seconds=float(os.environ.get('PROBABILITY_INTERVAL', '15'))
+                )
+                PROBABILITY_GENERATOR = self.probability_generator
+                print(f"   📊 Probability Generator initialized (15s interval)")
+            except Exception as e:
+                print(f"   ⚠️ Probability Generator init failed: {e}")
         
         # 🌍⚡ GLOBAL FINANCIAL ECOSYSTEM FEED ⚡🌍
         self.global_feed = None
@@ -13462,7 +13870,12 @@ class AureonKrakenEcosystem:
         initial_equity = self.total_equity_gbp
         start_ts = time.time()
 
-        # 🚀 Force deploy scouts before entering the loop (guarantees first shot)
+        # � START PROBABILITY GENERATOR - Auto-regenerates every 15 seconds
+        if self.probability_generator:
+            self.probability_generator.start(ecosystem=self)
+            print("   📊 Probability Report Generator STARTED (background thread - 15s cycles)")
+
+        # �🚀 Force deploy scouts before entering the loop (guarantees first shot)
         if not self.scouts_deployed and CONFIG['DEPLOY_SCOUTS_IMMEDIATELY']:
             self._deploy_scouts()
 
@@ -14031,10 +14444,20 @@ class AureonKrakenEcosystem:
                 
         except KeyboardInterrupt:
             print("\n\n🐙 Shutting down ecosystem...")
+            # Stop probability generator
+            if self.probability_generator:
+                self.probability_generator.stop()
+                print("   📊 Probability Generator stopped")
             self.save_state()
             print("   💾 State saved for recovery")
             self.final_report()
         finally:
+            # Ensure generator is stopped on any exit
+            if self.probability_generator:
+                try:
+                    self.probability_generator.stop()
+                except Exception:
+                    pass
             if target_profit_gbp is not None or max_minutes is not None:
                 # Compact goal session summary
                 final_net = self.total_equity_gbp - initial_equity
