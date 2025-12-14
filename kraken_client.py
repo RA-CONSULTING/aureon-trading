@@ -191,6 +191,50 @@ class KrakenClient:
             })
         return {"symbols": symbols}
 
+    def get_symbol_filters(self, symbol: str) -> Dict[str, float]:
+        """
+        Get trading filters for a symbol (ordermin, lot_decimals, costmin).
+        Returns dict with: min_qty, step_size, min_notional
+        """
+        pairs = self._load_asset_pairs()
+        
+        # Try to find the pair by altname first
+        pair_info = None
+        for internal, info in pairs.items():
+            if info.get("altname") == symbol or internal == symbol:
+                pair_info = info
+                break
+        
+        # Also try the _alt_to_int mapping
+        if pair_info is None and symbol in self._alt_to_int:
+            internal = self._alt_to_int[symbol]
+            pair_info = pairs.get(internal, {})
+        
+        if not pair_info:
+            return {}
+        
+        lot_decimals = int(pair_info.get("lot_decimals", 8))
+        step_size = 10 ** (-lot_decimals)
+        
+        ordermin = pair_info.get("ordermin")
+        try:
+            min_qty = float(ordermin) if ordermin is not None else step_size
+        except Exception:
+            min_qty = step_size
+        
+        costmin = pair_info.get("costmin")
+        try:
+            min_notional = float(costmin) if costmin is not None else 0.5
+        except Exception:
+            min_notional = 0.5
+        
+        return {
+            "min_qty": min_qty,
+            "step_size": step_size,
+            "min_notional": min_notional,
+            "lot_decimals": lot_decimals
+        }
+
     def _ticker(self, altnames: List[str]) -> Dict[str, Any]:
         if not altnames:
             return {}
@@ -388,9 +432,22 @@ class KrakenClient:
         if self.dry_run:
             return {"dryRun": True, "symbol": symbol, "side": side, "quantity": quantity, "quoteQty": quote_qty}
         
-        # Resolve pair
-        self._load_asset_pairs()
+        # Resolve pair and get pair info for validation
+        pairs = self._load_asset_pairs()
         pair = self._alt_to_int.get(symbol, symbol)
+        
+        # Get pair info for ordermin and lot_decimals
+        pair_info = pairs.get(pair, {})
+        if not pair_info:
+            # Try to find by altname
+            for internal, info in pairs.items():
+                if info.get("altname") == symbol:
+                    pair_info = info
+                    pair = internal
+                    break
+        
+        ordermin = float(pair_info.get("ordermin", 0.0001))
+        lot_decimals = int(pair_info.get("lot_decimals", 8))
         
         params = {
             "pair": pair,
@@ -399,7 +456,7 @@ class KrakenClient:
         }
         
         if quantity:
-            params["volume"] = self._format_order_value(quantity)
+            vol = float(quantity) if not isinstance(quantity, float) else quantity
         elif quote_qty:
             # Estimate volume from quote quantity
             price_info = self.best_price(symbol)
@@ -407,9 +464,18 @@ class KrakenClient:
             if price <= 0:
                 raise RuntimeError(f"Cannot estimate volume for quote_qty: price is {price}")
             vol = float(quote_qty) / price
-            params["volume"] = self._format_order_value(vol)
         else:
             raise ValueError("Must provide quantity or quote_qty")
+        
+        # Round to lot_decimals
+        vol = round(vol, lot_decimals)
+        
+        # Validate volume meets minimum
+        if vol < ordermin:
+            print(f"   ⚠️ Kraken volume {vol:.8f} < min {ordermin} for {symbol}, need larger trade")
+            return {"error": "volume_minimum", "symbol": symbol, "volume": vol, "ordermin": ordermin}
+        
+        params["volume"] = self._format_order_value(vol)
 
         res = self._private("/0/private/AddOrder", params)
         txid = res.get("txid", ["unknown"])[0]

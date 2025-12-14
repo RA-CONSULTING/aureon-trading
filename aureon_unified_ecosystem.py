@@ -4166,10 +4166,11 @@ class CognitiveImmuneSystem:
     # Event ingestion
     # ------------------------------------------------------------------
     def _on_fault_thought(self, thought: Thought) -> None:
+        payload = thought.payload if isinstance(thought.payload, dict) else {}
         fault = {
             'ts': thought.ts,
-            'source': thought.payload.get('while_handling_topic', thought.topic),
-            'error': thought.payload.get('error', 'unknown fault'),
+            'source': payload.get('while_handling_topic', thought.topic),
+            'error': payload.get('error', 'unknown fault'),
             'trace_id': thought.trace_id,
         }
         self.fault_memory.append(fault)
@@ -13151,6 +13152,28 @@ class AureonKrakenEcosystem:
         entry_fee = pos_size * get_platform_fee(exchange, 'taker')
         quantity = pos_size / price
         
+        # 🔧 KRAKEN VOLUME MINIMUM CHECK: Ensure order quantity meets pair's ordermin
+        if exchange == 'kraken' and not self.dry_run:
+            try:
+                exchange_client = self.client.clients.get('kraken')
+                if exchange_client and hasattr(exchange_client, 'get_symbol_filters'):
+                    filters = exchange_client.get_symbol_filters(symbol)
+                    min_qty = filters.get('min_qty', 0)
+                    if min_qty > 0 and quantity < min_qty:
+                        # Calculate minimum notional needed to meet volume requirement
+                        min_notional_for_vol = min_qty * price * 1.02  # 2% buffer
+                        if min_notional_for_vol > quote_amount_needed:
+                            if min_notional_for_vol <= cash_available:
+                                print(f"   📈 Kraken {symbol}: bumping order from ${quote_amount_needed:.2f} to ${min_notional_for_vol:.2f} (min vol: {min_qty})")
+                                quote_amount_needed = min_notional_for_vol
+                                pos_size = min_notional_for_vol
+                                quantity = pos_size / price
+                            else:
+                                print(f"   ⚪ Skipping {symbol}: need ${min_notional_for_vol:.2f} for min volume {min_qty}, only ${cash_available:.2f} available")
+                                return None
+            except Exception as e:
+                print(f"   ⚠️ Kraken filter check failed for {symbol}: {e}")
+        
         if not self.dry_run:
             try:
                 res = self.client.place_market_order(exchange, symbol, 'BUY', quote_qty=quote_amount_needed)
@@ -13162,6 +13185,11 @@ class AureonKrakenEcosystem:
                 if res.get('rejected'):
                     reason = res.get('reason') or 'exchange rejected order'
                     print(f"   ⚠️ Order rejected for {symbol}: {reason}")
+                    return
+                
+                # Handle Kraken volume minimum error
+                if res.get('error') == 'volume_minimum':
+                    print(f"   ⚠️ Kraken volume minimum not met for {symbol} (need {res.get('ordermin')} units)")
                     return
 
                 if res.get('dryRun'):

@@ -4655,21 +4655,21 @@ class MinerBrain:
         
     def _on_execution_thought(self, thought):
         """Hear what the hands are doing (trading)."""
-        self.external_context['last_trade'] = thought.payload
+        self.external_context['last_trade'] = thought.payload if isinstance(thought.payload, dict) else {}
         logger.info(f"🧠 Brain heard execution: {thought.topic}")
         
     def _on_nexus_thought(self, thought):
         """Hear what the nervous system feels (coherence)."""
-        self.external_context['nexus_state'] = thought.payload
+        self.external_context['nexus_state'] = thought.payload if isinstance(thought.payload, dict) else {}
         
     def _on_bridge_thought(self, thought):
         """Hear commands from the bridge."""
-        self.external_context['bridge_command'] = thought.payload
+        self.external_context['bridge_command'] = thought.payload if isinstance(thought.payload, dict) else {}
         logger.info(f"🧠 Brain heard bridge command: {thought.topic}")
         
     def _on_market_thought(self, thought):
         """Hear raw market data."""
-        self.external_context['market_pulse'] = thought.payload
+        self.external_context['market_pulse'] = thought.payload if isinstance(thought.payload, dict) else {}
 
     def run_cycle(self, quantum_context: dict = None):
         """
