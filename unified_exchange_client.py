@@ -202,6 +202,51 @@ class MultiExchangeClient:
             return 0.0
         return self.clients[exchange].convert_to_quote(asset, amount, quote)
 
+    # ══════════════════════════════════════════════════════════════════════
+    # CRYPTO CONVERSION - Convert between assets on any exchange
+    # ══════════════════════════════════════════════════════════════════════
+
+    def get_available_pairs(self, exchange: str, base: str = None, quote: str = None) -> List[Dict[str, Any]]:
+        """Get available trading pairs on an exchange."""
+        if exchange not in self.clients:
+            return []
+        if hasattr(self.clients[exchange], 'get_available_pairs'):
+            return self.clients[exchange].get_available_pairs(base, quote)
+        return []
+
+    def find_conversion_path(self, exchange: str, from_asset: str, to_asset: str) -> List[Dict[str, Any]]:
+        """Find the conversion path between two assets."""
+        if exchange not in self.clients:
+            return []
+        if hasattr(self.clients[exchange], 'find_conversion_path'):
+            return self.clients[exchange].find_conversion_path(from_asset, to_asset)
+        return []
+
+    def convert_crypto(self, exchange: str, from_asset: str, to_asset: str, amount: float) -> Dict[str, Any]:
+        """Convert one crypto asset to another on the specified exchange."""
+        if exchange not in self.clients:
+            return {"error": f"Unknown exchange: {exchange}"}
+        if hasattr(self.clients[exchange], 'convert_crypto'):
+            return self.clients[exchange].convert_crypto(from_asset, to_asset, amount)
+        return {"error": f"Exchange {exchange} doesn't support crypto conversion"}
+
+    def get_convertible_assets(self, exchange: str) -> Dict[str, List[str]]:
+        """Get all assets that can be converted on an exchange."""
+        if exchange not in self.clients:
+            return {}
+        if hasattr(self.clients[exchange], 'get_convertible_assets'):
+            return self.clients[exchange].get_convertible_assets()
+        return {}
+
+    def get_all_convertible_assets(self) -> Dict[str, Dict[str, List[str]]]:
+        """Get convertible assets across all exchanges."""
+        result = {}
+        for exchange in self.clients:
+            assets = self.get_convertible_assets(exchange)
+            if assets:
+                result[exchange] = assets
+        return result
+
         def normalize_symbol(self, exchange: str, symbol: str) -> str:
             """Normalize canonical symbols to exchange-specific formats.
             - Kraken: BTC→XBT, prefer USD/USDC/USDT variants

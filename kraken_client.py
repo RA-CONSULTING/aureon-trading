@@ -1105,3 +1105,274 @@ class KrakenClient:
             "newOrderId": result.get("txid", order_id),
             "status": "EDITED"
         }
+
+    # ══════════════════════════════════════════════════════════════════════
+    # CRYPTO CONVERSION - Convert between crypto assets internally
+    # ══════════════════════════════════════════════════════════════════════
+
+    def get_available_pairs(self, base: str = None, quote: str = None) -> List[Dict[str, Any]]:
+        """
+        Get available trading pairs, optionally filtered by base or quote asset.
+        
+        Args:
+            base: Filter by base asset (e.g., 'BTC', 'ETH')
+            quote: Filter by quote asset (e.g., 'USD', 'ETH')
+            
+        Returns:
+            List of pairs with base, quote, and pair name
+        """
+        pairs = self._load_asset_pairs()
+        results = []
+        
+        for internal, info in pairs.items():
+            alt = info.get("altname") or internal
+            wsname = info.get("wsname", "")
+            pair_base = info.get("base", "")
+            pair_quote = info.get("quote", "")
+            
+            # Normalize asset names (Kraken uses X prefix for crypto, Z for fiat)
+            pair_base_clean = pair_base.lstrip("XZ")
+            pair_quote_clean = pair_quote.lstrip("XZ")
+            
+            # Also handle altname parsing (e.g., ETHBTC -> ETH, BTC)
+            if not pair_base_clean and len(alt) >= 6:
+                # Try to parse from altname
+                for q in ['USD', 'USDC', 'USDT', 'EUR', 'GBP', 'BTC', 'XBT', 'ETH']:
+                    if alt.endswith(q):
+                        pair_base_clean = alt[:-len(q)]
+                        pair_quote_clean = q
+                        break
+            
+            # Normalize XBT to BTC
+            if pair_base_clean == 'XBT':
+                pair_base_clean = 'BTC'
+            if pair_quote_clean == 'XBT':
+                pair_quote_clean = 'BTC'
+            
+            # Apply filters
+            if base and pair_base_clean.upper() != base.upper():
+                continue
+            if quote and pair_quote_clean.upper() != quote.upper():
+                continue
+            
+            results.append({
+                "pair": alt,
+                "internal": internal,
+                "base": pair_base_clean,
+                "quote": pair_quote_clean,
+                "wsname": wsname
+            })
+        
+        return results
+
+    def find_conversion_path(self, from_asset: str, to_asset: str) -> List[Dict[str, Any]]:
+        """
+        Find the best path to convert from one asset to another.
+        
+        Returns list of trades to execute:
+        - Single trade if direct pair exists
+        - Two trades via USD/USDC if no direct pair
+        
+        Args:
+            from_asset: Source asset (e.g., 'BTC')
+            to_asset: Target asset (e.g., 'ETH')
+            
+        Returns:
+            List of {pair, side, description} for each trade needed
+        """
+        from_asset = from_asset.upper()
+        to_asset = to_asset.upper()
+        
+        if from_asset == to_asset:
+            return []
+        
+        # Normalize BTC/XBT
+        from_norm = 'XBT' if from_asset == 'BTC' else from_asset
+        to_norm = 'XBT' if to_asset == 'BTC' else to_asset
+        
+        pairs = self._load_asset_pairs()
+        
+        # Try direct pair: from_asset/to_asset (sell from, get to)
+        for internal, info in pairs.items():
+            alt = info.get("altname", internal)
+            base = info.get("base", "").lstrip("XZ")
+            quote = info.get("quote", "").lstrip("XZ")
+            
+            # Normalize XBT
+            if base == 'XBT': base = 'BTC'
+            if quote == 'XBT': quote = 'BTC'
+            
+            # Direct: from_asset is base, to_asset is quote -> SELL from_asset for to_asset
+            if base.upper() == from_asset and quote.upper() == to_asset:
+                return [{
+                    "pair": alt,
+                    "side": "sell",
+                    "description": f"Sell {from_asset} for {to_asset}",
+                    "from": from_asset,
+                    "to": to_asset
+                }]
+            
+            # Inverse: to_asset is base, from_asset is quote -> BUY to_asset with from_asset
+            if base.upper() == to_asset and quote.upper() == from_asset:
+                return [{
+                    "pair": alt,
+                    "side": "buy",
+                    "description": f"Buy {to_asset} with {from_asset}",
+                    "from": from_asset,
+                    "to": to_asset
+                }]
+        
+        # No direct pair - route through intermediary (USD, USDC, USDT, EUR)
+        for intermediate in ['USD', 'USDC', 'USDT', 'EUR']:
+            path1 = self.find_conversion_path(from_asset, intermediate)
+            path2 = self.find_conversion_path(intermediate, to_asset)
+            
+            if path1 and path2 and len(path1) == 1 and len(path2) == 1:
+                return path1 + path2
+        
+        return []  # No path found
+
+    def convert_crypto(
+        self,
+        from_asset: str,
+        to_asset: str,
+        amount: float,
+        use_quote_amount: bool = False
+    ) -> Dict[str, Any]:
+        """
+        Convert one crypto asset to another within Kraken.
+        
+        Automatically finds the best path:
+        - Direct pair if available (e.g., ETH/BTC)
+        - Via USD/USDC if no direct pair
+        
+        Args:
+            from_asset: Source asset (e.g., 'BTC', 'ETH')
+            to_asset: Target asset (e.g., 'ETH', 'SOL')
+            amount: Amount of from_asset to convert
+            use_quote_amount: If True, amount is in to_asset terms
+            
+        Returns:
+            Conversion result with executed trades
+        """
+        from_asset = from_asset.upper()
+        to_asset = to_asset.upper()
+        
+        if from_asset == to_asset:
+            return {"error": "Cannot convert to same asset", "from": from_asset, "to": to_asset}
+        
+        # Find conversion path
+        path = self.find_conversion_path(from_asset, to_asset)
+        
+        if not path:
+            return {"error": f"No conversion path found from {from_asset} to {to_asset}"}
+        
+        if self.dry_run:
+            return {
+                "dryRun": True,
+                "from_asset": from_asset,
+                "to_asset": to_asset,
+                "amount": amount,
+                "path": path,
+                "trades": len(path)
+            }
+        
+        # Execute trades
+        results = []
+        remaining_amount = amount
+        
+        for trade in path:
+            pair = trade["pair"]
+            side = trade["side"]
+            
+            try:
+                if side == "sell":
+                    # Selling from_asset
+                    result = self.place_market_order(pair, "sell", quantity=remaining_amount)
+                else:
+                    # Buying to_asset - need to estimate quantity from current price
+                    if use_quote_amount and len(path) == 1:
+                        # User specified amount in target terms
+                        result = self.place_market_order(pair, "buy", quantity=amount)
+                    else:
+                        # Use quote_qty to spend remaining_amount of from_asset
+                        result = self.place_market_order(pair, "buy", quote_qty=remaining_amount)
+                
+                results.append({
+                    "trade": trade,
+                    "result": result,
+                    "status": "success"
+                })
+                
+                # Update remaining amount for next trade in chain
+                if side == "sell":
+                    # Estimate received amount
+                    price = float(self.best_price(pair).get("price", 0))
+                    if price > 0:
+                        remaining_amount = remaining_amount * price
+                else:
+                    # We spent remaining_amount, received the bought asset
+                    exec_qty = float(result.get("executedQty", 0))
+                    remaining_amount = exec_qty
+                    
+            except Exception as e:
+                results.append({
+                    "trade": trade,
+                    "error": str(e),
+                    "status": "failed"
+                })
+                return {
+                    "error": f"Trade failed: {e}",
+                    "from_asset": from_asset,
+                    "to_asset": to_asset,
+                    "partial_results": results
+                }
+        
+        return {
+            "success": True,
+            "from_asset": from_asset,
+            "to_asset": to_asset,
+            "original_amount": amount,
+            "path": path,
+            "trades": results,
+            "trade_count": len(results)
+        }
+
+    def get_convertible_assets(self) -> Dict[str, List[str]]:
+        """
+        Get all assets that can be converted to/from.
+        
+        Returns:
+            Dict mapping each asset to list of assets it can convert to
+        """
+        pairs = self._load_asset_pairs()
+        
+        # Build conversion map
+        conversions = {}
+        
+        for internal, info in pairs.items():
+            base = info.get("base", "").lstrip("XZ")
+            quote = info.get("quote", "").lstrip("XZ")
+            
+            # Normalize XBT -> BTC
+            if base == 'XBT': base = 'BTC'
+            if quote == 'XBT': quote = 'BTC'
+            
+            if not base or not quote:
+                continue
+            
+            base = base.upper()
+            quote = quote.upper()
+            
+            # Base can convert to quote (by selling)
+            if base not in conversions:
+                conversions[base] = set()
+            conversions[base].add(quote)
+            
+            # Quote can convert to base (by buying)
+            if quote not in conversions:
+                conversions[quote] = set()
+            conversions[quote].add(base)
+        
+        # Convert sets to sorted lists
+        return {k: sorted(v) for k, v in conversions.items()}

@@ -913,6 +913,284 @@ class BinancePoolClient:
             f"   Wallet:    {balance:.8f} {coin}"
         )
 
+    # ══════════════════════════════════════════════════════════════════════
+    # CRYPTO CONVERSION - Convert between crypto assets internally
+    # ══════════════════════════════════════════════════════════════════════
+
+    def get_available_pairs(self, base: str = None, quote: str = None) -> List[Dict[str, Any]]:
+        """
+        Get available trading pairs, optionally filtered by base or quote asset.
+        
+        Args:
+            base: Filter by base asset (e.g., 'BTC', 'ETH')
+            quote: Filter by quote asset (e.g., 'USDT', 'ETH')
+            
+        Returns:
+            List of pairs with base, quote, and pair name
+        """
+        try:
+            info = self._request("GET", "/api/v3/exchangeInfo")
+            symbols = info.get("symbols", [])
+            results = []
+            
+            for sym in symbols:
+                if sym.get("status") != "TRADING":
+                    continue
+                
+                pair_base = sym.get("baseAsset", "")
+                pair_quote = sym.get("quoteAsset", "")
+                
+                # Apply filters
+                if base and pair_base.upper() != base.upper():
+                    continue
+                if quote and pair_quote.upper() != quote.upper():
+                    continue
+                
+                results.append({
+                    "pair": sym.get("symbol"),
+                    "base": pair_base,
+                    "quote": pair_quote,
+                    "minNotional": self._get_min_notional(sym),
+                    "minQty": self._get_min_qty(sym)
+                })
+            
+            return results
+        except Exception as e:
+            print(f"Error getting pairs: {e}")
+            return []
+    
+    def _get_min_notional(self, sym_info: Dict) -> float:
+        """Extract minimum notional from symbol filters"""
+        for f in sym_info.get("filters", []):
+            if f.get("filterType") == "NOTIONAL":
+                return float(f.get("minNotional", 0))
+            if f.get("filterType") == "MIN_NOTIONAL":
+                return float(f.get("minNotional", 0))
+        return 0.0
+    
+    def _get_min_qty(self, sym_info: Dict) -> float:
+        """Extract minimum quantity from symbol filters"""
+        for f in sym_info.get("filters", []):
+            if f.get("filterType") == "LOT_SIZE":
+                return float(f.get("minQty", 0))
+        return 0.0
+
+    def find_conversion_path(self, from_asset: str, to_asset: str) -> List[Dict[str, Any]]:
+        """
+        Find the best path to convert from one asset to another.
+        
+        Returns list of trades to execute:
+        - Single trade if direct pair exists
+        - Two trades via USDT/BTC if no direct pair
+        
+        Args:
+            from_asset: Source asset (e.g., 'BTC')
+            to_asset: Target asset (e.g., 'ETH')
+            
+        Returns:
+            List of {pair, side, description} for each trade needed
+        """
+        from_asset = from_asset.upper()
+        to_asset = to_asset.upper()
+        
+        if from_asset == to_asset:
+            return []
+        
+        # Get all trading pairs
+        pairs = self.get_available_pairs()
+        pair_map = {p["pair"]: p for p in pairs}
+        
+        # Try direct pair: from_asset + to_asset
+        direct_pair = f"{from_asset}{to_asset}"
+        if direct_pair in pair_map:
+            return [{
+                "pair": direct_pair,
+                "side": "sell",
+                "description": f"Sell {from_asset} for {to_asset}",
+                "from": from_asset,
+                "to": to_asset
+            }]
+        
+        # Try inverse pair: to_asset + from_asset
+        inverse_pair = f"{to_asset}{from_asset}"
+        if inverse_pair in pair_map:
+            return [{
+                "pair": inverse_pair,
+                "side": "buy",
+                "description": f"Buy {to_asset} with {from_asset}",
+                "from": from_asset,
+                "to": to_asset
+            }]
+        
+        # No direct pair - route through intermediary (USDT, USDC, BTC, BNB)
+        for intermediate in ['USDT', 'USDC', 'BTC', 'BNB', 'EUR']:
+            if intermediate == from_asset or intermediate == to_asset:
+                continue
+            
+            # Check if we can go from_asset -> intermediate
+            path1 = None
+            p1_direct = f"{from_asset}{intermediate}"
+            p1_inverse = f"{intermediate}{from_asset}"
+            
+            if p1_direct in pair_map:
+                path1 = {"pair": p1_direct, "side": "sell", "from": from_asset, "to": intermediate,
+                         "description": f"Sell {from_asset} for {intermediate}"}
+            elif p1_inverse in pair_map:
+                path1 = {"pair": p1_inverse, "side": "buy", "from": from_asset, "to": intermediate,
+                         "description": f"Buy {intermediate} with {from_asset}"}
+            
+            if not path1:
+                continue
+            
+            # Check if we can go intermediate -> to_asset
+            path2 = None
+            p2_direct = f"{intermediate}{to_asset}"
+            p2_inverse = f"{to_asset}{intermediate}"
+            
+            if p2_direct in pair_map:
+                path2 = {"pair": p2_direct, "side": "sell", "from": intermediate, "to": to_asset,
+                         "description": f"Sell {intermediate} for {to_asset}"}
+            elif p2_inverse in pair_map:
+                path2 = {"pair": p2_inverse, "side": "buy", "from": intermediate, "to": to_asset,
+                         "description": f"Buy {to_asset} with {intermediate}"}
+            
+            if path2:
+                return [path1, path2]
+        
+        return []  # No path found
+
+    def convert_crypto(
+        self,
+        from_asset: str,
+        to_asset: str,
+        amount: float,
+        use_quote_amount: bool = False
+    ) -> Dict[str, Any]:
+        """
+        Convert one crypto asset to another within Binance.
+        
+        Automatically finds the best path:
+        - Direct pair if available (e.g., ETHBTC)
+        - Via USDT/BTC if no direct pair
+        
+        Args:
+            from_asset: Source asset (e.g., 'BTC', 'ETH')
+            to_asset: Target asset (e.g., 'ETH', 'SOL')
+            amount: Amount of from_asset to convert
+            use_quote_amount: If True, amount is in to_asset terms
+            
+        Returns:
+            Conversion result with executed trades
+        """
+        from_asset = from_asset.upper()
+        to_asset = to_asset.upper()
+        
+        if from_asset == to_asset:
+            return {"error": "Cannot convert to same asset", "from": from_asset, "to": to_asset}
+        
+        # Find conversion path
+        path = self.find_conversion_path(from_asset, to_asset)
+        
+        if not path:
+            return {"error": f"No conversion path found from {from_asset} to {to_asset}"}
+        
+        if self.dry_run:
+            return {
+                "dryRun": True,
+                "from_asset": from_asset,
+                "to_asset": to_asset,
+                "amount": amount,
+                "path": path,
+                "trades": len(path)
+            }
+        
+        # Execute trades
+        results = []
+        remaining_amount = amount
+        
+        for trade in path:
+            pair = trade["pair"]
+            side = trade["side"]
+            
+            try:
+                if side == "sell":
+                    # Selling base asset
+                    result = self.place_market_order(pair, "SELL", quantity=remaining_amount)
+                else:
+                    # Buying base asset with quote
+                    # Use quoteOrderQty to spend exact amount
+                    result = self.place_market_order(pair, "BUY", quote_qty=remaining_amount)
+                
+                results.append({
+                    "trade": trade,
+                    "result": result,
+                    "status": "success"
+                })
+                
+                # Update remaining amount for next trade
+                exec_qty = float(result.get("executedQty", 0))
+                cumm_quote = float(result.get("cummulativeQuoteQty", 0))
+                
+                if side == "sell":
+                    # We sold, received quote currency
+                    remaining_amount = cumm_quote
+                else:
+                    # We bought, received base currency
+                    remaining_amount = exec_qty
+                    
+            except Exception as e:
+                results.append({
+                    "trade": trade,
+                    "error": str(e),
+                    "status": "failed"
+                })
+                return {
+                    "error": f"Trade failed: {e}",
+                    "from_asset": from_asset,
+                    "to_asset": to_asset,
+                    "partial_results": results
+                }
+        
+        return {
+            "success": True,
+            "from_asset": from_asset,
+            "to_asset": to_asset,
+            "original_amount": amount,
+            "final_amount": remaining_amount,
+            "path": path,
+            "trades": results,
+            "trade_count": len(results)
+        }
+
+    def get_convertible_assets(self) -> Dict[str, List[str]]:
+        """
+        Get all assets that can be converted to/from.
+        
+        Returns:
+            Dict mapping each asset to list of assets it can convert to
+        """
+        pairs = self.get_available_pairs()
+        
+        # Build conversion map
+        conversions = {}
+        
+        for p in pairs:
+            base = p["base"].upper()
+            quote = p["quote"].upper()
+            
+            # Base can convert to quote (by selling)
+            if base not in conversions:
+                conversions[base] = set()
+            conversions[base].add(quote)
+            
+            # Quote can convert to base (by buying)
+            if quote not in conversions:
+                conversions[quote] = set()
+            conversions[quote].add(base)
+        
+        # Convert sets to sorted lists
+        return {k: sorted(v) for k, v in conversions.items()}
+
 
 def safe_trade(symbol: str = None, side: str = "BUY") -> Dict[str, Any]:
     symbol = symbol or os.getenv("BINANCE_SYMBOL", "BTCUSDT")

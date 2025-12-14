@@ -954,3 +954,261 @@ class AlpacaClient:
         except:
             pass
         return 0.0
+
+    # ══════════════════════════════════════════════════════════════════════
+    # CRYPTO CONVERSION - Convert between crypto assets via USD
+    # ══════════════════════════════════════════════════════════════════════
+
+    def get_available_pairs(self, base: str = None, quote: str = None) -> List[Dict[str, Any]]:
+        """
+        Get available trading pairs, optionally filtered by base or quote asset.
+        
+        Note: Alpaca crypto only supports USD pairs currently.
+        
+        Args:
+            base: Filter by base asset (e.g., 'BTC', 'ETH')
+            quote: Filter by quote asset (e.g., 'USD')
+            
+        Returns:
+            List of pairs with base, quote, and pair name
+        """
+        try:
+            assets = self.get_assets(status='active', asset_class='crypto')
+            results = []
+            
+            for asset in assets:
+                if not asset.get('tradable'):
+                    continue
+                
+                symbol = asset.get('symbol', '')
+                if '/' not in symbol:
+                    continue
+                
+                parts = symbol.split('/')
+                if len(parts) != 2:
+                    continue
+                
+                pair_base = parts[0]
+                pair_quote = parts[1]
+                
+                # Apply filters
+                if base and pair_base.upper() != base.upper():
+                    continue
+                if quote and pair_quote.upper() != quote.upper():
+                    continue
+                
+                results.append({
+                    "pair": symbol,
+                    "base": pair_base,
+                    "quote": pair_quote,
+                    "min_qty": float(asset.get('min_order_size', 0)),
+                    "min_notional": float(asset.get('min_trade_increment', 0))
+                })
+            
+            return results
+        except Exception as e:
+            logger.error(f"Error getting Alpaca pairs: {e}")
+            return []
+
+    def find_conversion_path(self, from_asset: str, to_asset: str) -> List[Dict[str, Any]]:
+        """
+        Find the best path to convert from one asset to another.
+        
+        Note: Alpaca only supports USD pairs, so all conversions go through USD.
+        
+        Args:
+            from_asset: Source asset (e.g., 'BTC')
+            to_asset: Target asset (e.g., 'ETH')
+            
+        Returns:
+            List of {pair, side, description} for each trade needed
+        """
+        from_asset = from_asset.upper()
+        to_asset = to_asset.upper()
+        
+        if from_asset == to_asset:
+            return []
+        
+        # Alpaca crypto only supports USD pairs
+        # Path is always: from_asset -> USD -> to_asset
+        
+        pairs = self.get_available_pairs()
+        pair_bases = {p["base"].upper() for p in pairs}
+        
+        # If converting to/from USD, single trade
+        if from_asset == 'USD':
+            if to_asset in pair_bases:
+                return [{
+                    "pair": f"{to_asset}/USD",
+                    "side": "buy",
+                    "description": f"Buy {to_asset} with USD",
+                    "from": "USD",
+                    "to": to_asset
+                }]
+            return []
+        
+        if to_asset == 'USD':
+            if from_asset in pair_bases:
+                return [{
+                    "pair": f"{from_asset}/USD",
+                    "side": "sell",
+                    "description": f"Sell {from_asset} for USD",
+                    "from": from_asset,
+                    "to": "USD"
+                }]
+            return []
+        
+        # Both are crypto - need to go through USD
+        if from_asset not in pair_bases:
+            return []  # Can't trade from_asset
+        if to_asset not in pair_bases:
+            return []  # Can't trade to_asset
+        
+        return [
+            {
+                "pair": f"{from_asset}/USD",
+                "side": "sell",
+                "description": f"Sell {from_asset} for USD",
+                "from": from_asset,
+                "to": "USD"
+            },
+            {
+                "pair": f"{to_asset}/USD",
+                "side": "buy",
+                "description": f"Buy {to_asset} with USD",
+                "from": "USD",
+                "to": to_asset
+            }
+        ]
+
+    def convert_crypto(
+        self,
+        from_asset: str,
+        to_asset: str,
+        amount: float,
+        use_quote_amount: bool = False
+    ) -> Dict[str, Any]:
+        """
+        Convert one crypto asset to another within Alpaca.
+        
+        Note: Alpaca only supports USD pairs, so conversions go through USD.
+        
+        Args:
+            from_asset: Source asset (e.g., 'BTC', 'ETH')
+            to_asset: Target asset (e.g., 'ETH', 'SOL')
+            amount: Amount of from_asset to convert
+            use_quote_amount: If True, amount is in to_asset terms
+            
+        Returns:
+            Conversion result with executed trades
+        """
+        from_asset = from_asset.upper()
+        to_asset = to_asset.upper()
+        
+        if from_asset == to_asset:
+            return {"error": "Cannot convert to same asset", "from": from_asset, "to": to_asset}
+        
+        # Find conversion path
+        path = self.find_conversion_path(from_asset, to_asset)
+        
+        if not path:
+            return {"error": f"No conversion path found from {from_asset} to {to_asset}"}
+        
+        if self.dry_run:
+            return {
+                "dryRun": True,
+                "from_asset": from_asset,
+                "to_asset": to_asset,
+                "amount": amount,
+                "path": path,
+                "trades": len(path)
+            }
+        
+        # Execute trades
+        results = []
+        remaining_amount = amount
+        
+        for trade in path:
+            pair = trade["pair"]
+            side = trade["side"]
+            
+            try:
+                if side == "sell":
+                    # Selling crypto for USD
+                    result = self.place_market_order(pair, "sell", quantity=remaining_amount)
+                else:
+                    # Buying crypto with USD
+                    result = self.place_market_order(pair, "buy", quote_qty=remaining_amount)
+                
+                results.append({
+                    "trade": trade,
+                    "result": result,
+                    "status": "success"
+                })
+                
+                # Update remaining amount for next trade
+                if side == "sell":
+                    # Estimate USD received
+                    exec_qty = float(result.get("qty", result.get("executedQty", 0)))
+                    price = float(result.get("filled_avg_price", 0))
+                    if price > 0 and exec_qty > 0:
+                        remaining_amount = exec_qty * price
+                    else:
+                        # Fallback: estimate from current price
+                        quote_data = self.get_latest_crypto_quotes([pair])
+                        if pair in quote_data:
+                            mid = (float(quote_data[pair].get('bp', 0)) + float(quote_data[pair].get('ap', 0))) / 2
+                            remaining_amount = amount * mid
+                else:
+                    # We bought crypto
+                    exec_qty = float(result.get("qty", result.get("executedQty", 0)))
+                    remaining_amount = exec_qty
+                    
+            except Exception as e:
+                results.append({
+                    "trade": trade,
+                    "error": str(e),
+                    "status": "failed"
+                })
+                return {
+                    "error": f"Trade failed: {e}",
+                    "from_asset": from_asset,
+                    "to_asset": to_asset,
+                    "partial_results": results
+                }
+        
+        return {
+            "success": True,
+            "from_asset": from_asset,
+            "to_asset": to_asset,
+            "original_amount": amount,
+            "final_amount": remaining_amount,
+            "path": path,
+            "trades": results,
+            "trade_count": len(results)
+        }
+
+    def get_convertible_assets(self) -> Dict[str, List[str]]:
+        """
+        Get all crypto assets that can be converted.
+        
+        Note: Alpaca only supports USD pairs, so all conversions go through USD.
+        
+        Returns:
+            Dict mapping each asset to list of assets it can convert to
+        """
+        pairs = self.get_available_pairs()
+        
+        # All crypto can convert to USD and to each other (via USD)
+        crypto_assets = set()
+        for p in pairs:
+            crypto_assets.add(p["base"].upper())
+        
+        conversions = {"USD": sorted(crypto_assets)}
+        
+        for asset in crypto_assets:
+            # Can convert to USD directly, or to any other crypto via USD
+            targets = {"USD"} | (crypto_assets - {asset})
+            conversions[asset] = sorted(targets)
+        
+        return conversions
