@@ -1,22 +1,10 @@
 {
-  "generated": "2025-12-03T19:50:31.858792",
-  "exchanges": {
-    "binance": {
-      "pairs": 1282,
-      "bullish": 334
-    },
-    "kraken": {
-      "pairs": 1341,
-      "bullish": 369
-    },
-    "alpaca": {
-      "pairs": 0,
-      "results": []
-    },
-    "capital": {
-      "pairs": 0,
-      "results": []
-    }
-  },
-  "total_pairs": 2623
+  "generated_at": "2025-12-14T13:00:26.007927",
+  "generator": "ProbabilityReportGenerator",
+  "interval_seconds": 15.0,
+  "generation_count": 79,
+  "count": 0,
+  "top_10": [],
+  "high_conviction": [],
+  "all": []
 }

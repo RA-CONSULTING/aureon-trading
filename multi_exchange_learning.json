@@ -13,7 +13,7 @@
       "wins": 8
     },
     "mid": {
-      "trades": 15,
+      "trades": 16,
       "wins": 5
     },
     "high": {
@@ -233,10 +233,10 @@
       "source": "probability_all_markets_report.json"
     },
     "BCHUSDC": {
-      "probability": 0.7756737348521106,
+      "probability": 0.6936784836778443,
       "state": "\ud83d\ude80 EXTREME BULLISH",
-      "change": 9.948712292505379,
-      "source": "probability_kraken_report.json"
+      "change": 7.71,
+      "source": "probability_all_markets_report.json"
     },
     "BCHUSDT": {
       "probability": 0.6929869673804613,
@@ -442,270 +442,6 @@
       "change": -25.685,
       "source": "probability_all_markets_report.json"
     },
-    "AURAEUR": {
-      "probability": 0.8396498508849123,
-      "state": "\ud83d\ude80 EXTREME BULLISH",
-      "change": 17.021276595744688,
-      "source": "probability_kraken_report.json"
-    },
-    "B2USD": {
-      "probability": 0.8384920285909517,
-      "state": "\ud83d\ude80 EXTREME BULLISH",
-      "change": 30.395935529081992,
-      "source": "probability_kraken_report.json"
-    },
-    "FWOGEUR": {
-      "probability": 0.8382109827552122,
-      "state": "\ud83d\ude80 EXTREME BULLISH",
-      "change": 29.539295392953935,
-      "source": "probability_kraken_report.json"
-    },
-    "B2EUR": {
-      "probability": 0.8380917412895781,
-      "state": "\ud83d\ude80 EXTREME BULLISH",
-      "change": 29.215765948801298,
-      "source": "probability_kraken_report.json"
-    },
-    "FWOGUSD": {
-      "probability": 0.8378755707433085,
-      "state": "\ud83d\ude80 EXTREME BULLISH",
-      "change": 28.67756315007429,
-      "source": "probability_kraken_report.json"
-    },
-    "LAYERUSD": {
-      "probability": 0.8367583864400341,
-      "state": "\ud83d\ude80 EXTREME BULLISH",
-      "change": 26.556224899598398,
-      "source": "probability_kraken_report.json"
-    },
-    "PEAQUSD": {
-      "probability": 0.8333681253543651,
-      "state": "\ud83d\ude80 EXTREME BULLISH",
-      "change": 22.951265995099373,
-      "source": "probability_kraken_report.json"
-    },
-    "TEEREUR": {
-      "probability": 0.8326639552755003,
-      "state": "\ud83d\ude80 EXTREME BULLISH",
-      "change": 15.662650602409627,
-      "source": "probability_kraken_report.json"
-    },
-    "TOKEUSD": {
-      "probability": 0.8326482815045961,
-      "state": "\ud83d\ude80 EXTREME BULLISH",
-      "change": 15.659955257270685,
-      "source": "probability_kraken_report.json"
-    },
-    "BATUSD": {
-      "probability": 0.8260743823887422,
-      "state": "\ud83d\ude80 EXTREME BULLISH",
-      "change": 14.632218339157932,
-      "source": "probability_kraken_report.json"
-    },
-    "BATEUR": {
-      "probability": 0.8254445200598405,
-      "state": "\ud83d\ude80 EXTREME BULLISH",
-      "change": 14.543077146593056,
-      "source": "probability_kraken_report.json"
-    },
-    "KOBANEUR": {
-      "probability": 0.8243280750277571,
-      "state": "\ud83d\ude80 EXTREME BULLISH",
-      "change": 14.388489208633093,
-      "source": "probability_kraken_report.json"
-    },
-    "BOBUSD": {
-      "probability": 0.8099999999891027,
-      "state": "\ud83d\ude80 EXTREME BULLISH",
-      "change": 124.1349480968858,
-      "source": "probability_kraken_report.json"
-    },
-    "BOBEUR": {
-      "probability": 0.8099999999869467,
-      "state": "\ud83d\ude80 EXTREME BULLISH",
-      "change": 123.23232323232322,
-      "source": "probability_kraken_report.json"
-    },
-    "ARTUSD": {
-      "probability": 0.8099993315694655,
-      "state": "\ud83d\ude80 EXTREME BULLISH",
-      "change": 69.01408450704224,
-      "source": "probability_kraken_report.json"
-    },
-    "SAPIENEUR": {
-      "probability": 0.8098486364667778,
-      "state": "\ud83d\ude80 EXTREME BULLISH",
-      "change": 41.90040650406504,
-      "source": "probability_kraken_report.json"
-    },
-    "SAPIENUSD": {
-      "probability": 0.809802901407047,
-      "state": "\ud83d\ude80 EXTREME BULLISH",
-      "change": 40.57996179892343,
-      "source": "probability_kraken_report.json"
-    },
-    "LAYEREUR": {
-      "probability": 0.8093583062690834,
-      "state": "\ud83d\ude80 EXTREME BULLISH",
-      "change": 34.674556213017745,
-      "source": "probability_kraken_report.json"
-    },
-    "PEAQUSDC": {
-      "probability": 0.8029459410840623,
-      "state": "\ud83d\ude80 EXTREME BULLISH",
-      "change": 22.63945578231293,
-      "source": "probability_kraken_report.json"
-    },
-    "MOCAUSD": {
-      "probability": 0.8018580865881415,
-      "state": "\ud83d\ude80 EXTREME BULLISH",
-      "change": 21.914008321775317,
-      "source": "probability_kraken_report.json"
-    },
-    "PEAQEUR": {
-      "probability": 0.8015811225946392,
-      "state": "\ud83d\ude80 EXTREME BULLISH",
-      "change": 21.74462705436156,
-      "source": "probability_kraken_report.json"
-    },
-    "XZECZUSD": {
-      "probability": 0.7961761940194718,
-      "state": "\ud83d\ude80 EXTREME BULLISH",
-      "change": 19.223400178822324,
-      "source": "probability_kraken_report.json"
-    },
-    "XZECZEUR": {
-      "probability": 0.7959678729530137,
-      "state": "\ud83d\ude80 EXTREME BULLISH",
-      "change": 19.14700140298263,
-      "source": "probability_kraken_report.json"
-    },
-    "CLANKERUSD": {
-      "probability": 0.795487593952918,
-      "state": "\ud83d\ude80 EXTREME BULLISH",
-      "change": 18.97501058873359,
-      "source": "probability_kraken_report.json"
-    },
-    "TRACUSD": {
-      "probability": 0.7927480780691128,
-      "state": "\ud83d\ude80 EXTREME BULLISH",
-      "change": 18.08914651209275,
-      "source": "probability_kraken_report.json"
-    },
-    "TRACEUR": {
-      "probability": 0.7910582021301488,
-      "state": "\ud83d\ude80 EXTREME BULLISH",
-      "change": 17.608746220051184,
-      "source": "probability_kraken_report.json"
-    },
-    "CLANKEREUR": {
-      "probability": 0.7893743195927894,
-      "state": "\ud83d\ude80 EXTREME BULLISH",
-      "change": 17.16976575706353,
-      "source": "probability_kraken_report.json"
-    },
-    "DASHEUR": {
-      "probability": 0.7759380994625671,
-      "state": "\ud83d\ude80 EXTREME BULLISH",
-      "change": 9.96594106323115,
-      "source": "probability_kraken_report.json"
-    },
-    "WCTEUR": {
-      "probability": 0.7747905719274789,
-      "state": "\ud83d\ude80 EXTREME BULLISH",
-      "change": 9.891480603717092,
-      "source": "probability_kraken_report.json"
-    },
-    "HOUSEEUR": {
-      "probability": 0.22933707472772175,
-      "state": "\ud83d\udca5 EXTREME BEARISH",
-      "change": -13.793103448275861,
-      "source": "probability_kraken_report.json"
-    },
-    "RLSUSD": {
-      "probability": 0.22553954320160755,
-      "state": "\ud83d\udca5 EXTREME BEARISH",
-      "change": -14.331210191082807,
-      "source": "probability_kraken_report.json"
-    },
-    "KINEUR": {
-      "probability": 0.2190330753621139,
-      "state": "\ud83d\udca5 EXTREME BEARISH",
-      "change": -15.394088669950733,
-      "source": "probability_kraken_report.json"
-    },
-    "KEYUSD": {
-      "probability": 0.21777790042430847,
-      "state": "\ud83d\udca5 EXTREME BEARISH",
-      "change": -15.624999999999996,
-      "source": "probability_kraken_report.json"
-    },
-    "PTBEUR": {
-      "probability": 0.21634242701761416,
-      "state": "\ud83d\udca5 EXTREME BEARISH",
-      "change": -15.9016393442623,
-      "source": "probability_kraken_report.json"
-    },
-    "KEYEUR": {
-      "probability": 0.21066568988968534,
-      "state": "\ud83d\udca5 EXTREME BEARISH",
-      "change": -17.15976331360947,
-      "source": "probability_kraken_report.json"
-    },
-    "CHECKUSD": {
-      "probability": 0.6617647058823529,
-      "state": null,
-      "change": 0,
-      "source": "probability_data.json"
-    },
-    "HUSD": {
-      "probability": 0.1960759944532763,
-      "state": "\ud83d\udca5 EXTREME BEARISH",
-      "change": -23.393227366966144,
-      "source": "probability_kraken_report.json"
-    },
-    "HEUR": {
-      "probability": 0.19562681355270856,
-      "state": "\ud83d\udca5 EXTREME BEARISH",
-      "change": -23.780672523477733,
-      "source": "probability_kraken_report.json"
-    },
-    "LITEUR": {
-      "probability": 0.19475262476236418,
-      "state": "\ud83d\udca5 EXTREME BEARISH",
-      "change": -24.631578947368425,
-      "source": "probability_kraken_report.json"
-    },
-    "LITUSD": {
-      "probability": 0.19404356370008463,
-      "state": "\ud83d\udca5 EXTREME BEARISH",
-      "change": -25.444839857651246,
-      "source": "probability_kraken_report.json"
-    },
-    "OMNIEUR": {
-      "probability": 0.19069712014550874,
-      "state": "\ud83d\udca5 EXTREME BEARISH",
-      "change": -34.259902710215435,
-      "source": "probability_kraken_report.json"
-    },
-    "BDXNUSD": {
-      "probability": 0.19014995719562863,
-      "state": "\ud83d\udca5 EXTREME BEARISH",
-      "change": -41.94708994708995,
-      "source": "probability_kraken_report.json"
-    },
-    "BDXNEUR": {
-      "probability": 0.1900801960790485,
-      "state": "\ud83d\udca5 EXTREME BEARISH",
-      "change": -45.07699486700887,
-      "source": "probability_kraken_report.json"
-    },
-    "BRL1USD": {
-      "probability": 0.19006439528381702,
-      "state": "\ud83d\udca5 EXTREME BEARISH",
-      "change": -46.17428571428571,
-      "source": "probability_kraken_report.json"
-    },
     "BABYUSDC": {
       "probability": 0.6780322725063685,
       "state": "\ud83d\udcc8 BULLISH",
@@ -802,6 +538,12 @@
       "change": 0,
       "source": "probability_data.json"
     },
+    "CHECKUSD": {
+      "probability": 0.6617647058823529,
+      "state": null,
+      "change": 0,
+      "source": "probability_data.json"
+    },
     "ACAUSD": {
       "probability": 0.5540540540540541,
       "state": null,
@@ -815,7 +557,7 @@
       "source": "probability_data.json"
     }
   },
-  "total_historical_trades": 52,
-  "combined_win_rate": 65.38461538461539,
-  "updated_at": "2025-12-13T13:43:14.864327"
+  "total_historical_trades": 53,
+  "combined_win_rate": 64.15094339622641,
+  "updated_at": "2025-12-14T13:00:31.520578"
 }
