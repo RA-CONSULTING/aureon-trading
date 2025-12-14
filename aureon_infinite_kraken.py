@@ -413,7 +413,8 @@ class AureonInfiniteKraken:
                                 self.brain_permission = True
                             
                             if hasattr(self.brain, 'dream_engine'):
-                                dream = self.brain.dream_engine.get_prepared_response()
+                                # Pass default values: 0.0 change, 50 F&G
+                                dream = self.brain.dream_engine.get_prepared_response(0.0, 50)
                                 if dream:
                                     print(f"   💭 Dream: {dream['action']}")
                                     if dream['action'] in ['EXIT_NOW', 'WAIT_FOR_CLARITY']:

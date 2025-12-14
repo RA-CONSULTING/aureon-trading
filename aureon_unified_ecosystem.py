@@ -14196,7 +14196,10 @@ class AureonKrakenEcosystem:
                             
                             # Dream insights (preserved)
                             if hasattr(self.brain, 'dream_engine'):
-                                dream_response = self.brain.dream_engine.get_prepared_response()
+                                # Get F&G from brain bridge, default change to 0
+                                current_fng = getattr(self.brain_bridge, '_fear_greed', 50)
+                                current_change = 0.0  # Default - actual change computed in brain cycle
+                                dream_response = self.brain.dream_engine.get_prepared_response(current_change, current_fng)
                                 if dream_response:
                                     print(f"   💭 DREAM: {dream_response['action']}")
                                     

@@ -344,7 +344,8 @@ def run_trader():
                     
                     # Dream check
                     if hasattr(brain, 'dream_engine'):
-                        dream = brain.dream_engine.get_prepared_response()
+                        # Pass default values: 0.0 change, 50 F&G
+                        dream = brain.dream_engine.get_prepared_response(0.0, 50)
                         if dream:
                             print(f"   💭 Dream: {dream['action']}")
                             if dream['action'] in ['EXIT_NOW', 'WAIT_FOR_CLARITY']:

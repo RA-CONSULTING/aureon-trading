@@ -4750,12 +4750,12 @@ class MinerBrain:
         
         validated = self.cognitive.validate_past_predictions(current_btc)
         if not validated:
-            print("[PRED] No predictions ready for validation yet.")
+            print("🔮 No predictions ready for validation yet.")
         else:
             for v in validated:
-                is_correct = v.get('correct', False)
-                icon = "[OK]" if is_correct else "[X]"
-                print(f"   {icon} Prediction Validated: {v.get('direction', 'N/A')} (Actual: {v.get('actual_outcome', 'N/A')})")
+                is_correct = v.get('was_correct', False)  # Use 'was_correct' not 'correct'
+                icon = "✅" if is_correct else "❌"
+                print(f"   {icon} Prediction Validated: {v.get('predicted_direction', 'N/A')} (Actual: {v.get('actual_outcome', {}).get('direction', 'N/A')})")
 
         # ═══════════════════════════════════════════════════════════
         # PHASE 6: SELF-CRITIQUE & LEARNING
