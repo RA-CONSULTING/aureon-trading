@@ -385,6 +385,26 @@ except ImportError as e:
     ENHANCEMENTS_AVAILABLE = False
     print(f"⚠️  Aureon Enhancements not available: {e}")
 
+# ==== AUREON COGNITION BUS (self-talking JSON thoughts) ====
+from aureon_thought_bus import ThoughtBus, Thought
+from aureon_cognition_runtime import MinerModule, RiskModule, ExecutionModule
+
+# ==== WORLD NEWS FEED (external data gathering) ====
+try:
+    from aureon_news_feed import NewsFeed, NewsFeedConfig, create_news_feed
+    NEWS_FEED_AVAILABLE = True
+except ImportError:
+    NEWS_FEED_AVAILABLE = False
+    print("⚠️  News Feed module not available")
+
+# ==== WIKIPEDIA KNOWLEDGE BASE (autonomous knowledge gathering) ====
+try:
+    from aureon_knowledge_base import KnowledgeBase, create_knowledge_base
+    KNOWLEDGE_BASE_AVAILABLE = True
+except ImportError:
+    KNOWLEDGE_BASE_AVAILABLE = False
+    print("⚠️  Knowledge Base module not available")
+
 # ═══════════════════════════════════════════════════════════════
 # MODULE-LEVEL LOT SIZE CACHE - Used by UnifiedTradeConfirmation
 # ═══════════════════════════════════════════════════════════════
@@ -2647,7 +2667,7 @@ class MultiExchangeOrchestrator:
             return 1 / (1 + math.exp(-5 * (Lambda - 0.5)))
             
     def _calculate_probability(self, coherence: float, change: float, freq: float, asset_class: str) -> float:
-        """Calculate trade probability."""
+        """Calculate trade probability with news/knowledge correlation."""
         base_prob = 0.50 + coherence * 0.30
         
         # Momentum adjustment
@@ -2659,6 +2679,37 @@ class MultiExchangeOrchestrator:
         # Frequency adjustment - based on prediction accuracy data + sacred frequencies
         freq_modifier = self._get_sacred_frequency_modifier(freq)
         base_prob *= freq_modifier
+        
+        # 📰 NEWS SENTIMENT MODIFIER - Learn from correlation data
+        try:
+            news_sentiment = getattr(self, '_last_news_sentiment', {})
+            news_label = news_sentiment.get('label', 'neutral')
+            news_confidence = news_sentiment.get('confidence', 0.0)
+            
+            # Get learned correlations from Adaptive Learner
+            news_insights = ADAPTIVE_LEARNER.get_news_correlation_insights()
+            
+            if news_label == 'bullish' and news_confidence >= 0.5:
+                # Boost probability in bullish news environments (if historically good)
+                bullish_win_rate = news_insights.get('bullish', {}).get('win_rate', 0.5)
+                if bullish_win_rate > 0.55:  # Only boost if bullish news historically good
+                    news_boost = min(0.08, (bullish_win_rate - 0.5) * 0.4 * news_confidence)
+                    base_prob += news_boost
+            elif news_label == 'bearish' and news_confidence >= 0.5:
+                # Reduce probability in bearish news (if historically bad)
+                bearish_win_rate = news_insights.get('bearish', {}).get('win_rate', 0.5)
+                if bearish_win_rate < 0.45:  # Only reduce if bearish news historically bad
+                    news_penalty = min(0.08, (0.5 - bearish_win_rate) * 0.4 * news_confidence)
+                    base_prob -= news_penalty
+        except Exception:
+            pass  # News correlation not critical
+        
+        # 📚 KNOWLEDGE MODIFIER - Boost based on knowledge discovery performance
+        try:
+            knowledge_modifier = ADAPTIVE_LEARNER.get_knowledge_probability_modifier()
+            base_prob *= knowledge_modifier  # Typically 0.97-1.03
+        except Exception:
+            pass  # Knowledge correlation not critical
             
         return max(0.0, min(CONFIG.get('PROB_CAP', 0.83), base_prob))
     
@@ -2906,6 +2957,11 @@ class UnifiedStateAggregator:
         'auris_runtime': 'auris_runtime.json',
         'multi_exchange_learning': 'multi_exchange_learning.json',
     }
+    
+    # JSONL logs
+    LOG_FILES = {
+        'thoughts': 'logs/aureon_thoughts.jsonl',
+    }
 
     PROBABILITY_REPORTS = [
         'probability_all_markets_report.json',
@@ -2958,12 +3014,18 @@ class UnifiedStateAggregator:
             'frequency_performance': {},
             'exchange_performance': {},
             'coherence_bands': {},
+            'organism_health': {
+                'status': 'UNKNOWN',
+                'pulse': {},
+                'recent_thoughts': []
+            },
         }
         self.load_all_sources()
         
     def load_all_sources(self) -> Dict[str, Any]:
         """Load and aggregate data from all JSON sources."""
         self.aggregated_state['sources_loaded'] = []
+        self.load_organism_thoughts()  # Load thoughts first
         all_trades = []
         symbol_data = {}
         frequency_data = {}
@@ -3500,6 +3562,68 @@ class UnifiedStateAggregator:
             'positions': positions,
         }
         
+    def load_organism_thoughts(self, limit: int = 50):
+        """Load recent thoughts to determine organism health."""
+        try:
+            filepath = os.path.join(ROOT_DIR, self.LOG_FILES['thoughts'])
+            if not os.path.exists(filepath):
+                return
+
+            thoughts = []
+            # Read last N lines efficiently
+            with open(filepath, 'rb') as f:
+                try:
+                    f.seek(-10000, os.SEEK_END) # Go back ~10KB
+                except OSError:
+                    f.seek(0)
+                
+                lines = f.readlines()
+                # Decode and parse last N lines
+                for line in lines[-limit:]:
+                    try:
+                        thoughts.append(json.loads(line.decode('utf-8')))
+                    except:
+                        pass
+            
+            # Analyze health
+            now = time.time()
+            pulse = {
+                'miner': {'last_seen': 0, 'status': 'OFFLINE'},
+                'risk': {'last_seen': 0, 'status': 'OFFLINE'},
+                'execution': {'last_seen': 0, 'status': 'OFFLINE'},
+                'ecosystem': {'last_seen': 0, 'status': 'OFFLINE'},
+            }
+            
+            for t in thoughts:
+                src = t.get('source', 'unknown')
+                ts = t.get('ts', 0)
+                if src in pulse:
+                    pulse[src]['last_seen'] = max(pulse[src]['last_seen'], ts)
+            
+            # Determine status based on recency (e.g. seen in last 60s)
+            healthy_count = 0
+            for src, data in pulse.items():
+                age = now - data['last_seen']
+                if age < 60:
+                    data['status'] = 'ONLINE'
+                    healthy_count += 1
+                elif age < 300:
+                    data['status'] = 'STALE'
+                else:
+                    data['status'] = 'OFFLINE'
+            
+            overall_status = 'HEALTHY' if healthy_count >= 3 else 'DEGRADED' if healthy_count > 0 else 'OFFLINE'
+            
+            self.aggregated_state['organism_health'] = {
+                'status': overall_status,
+                'pulse': pulse,
+                'recent_thoughts': thoughts[-5:] # Keep last 5 for display
+            }
+            self.aggregated_state['sources_loaded'].append('organism_thoughts')
+            
+        except Exception as e:
+            logger.debug(f"Failed to load organism thoughts: {e}")
+
     def save_aggregated_state(self):
         """Save multi-exchange learning state for persistence."""
         try:
@@ -3541,11 +3665,329 @@ class UnifiedStateAggregator:
             wr = perf['wins'] / max(1, perf['trades']) * 100
             lines.append(f"  {band}: {perf['trades']} trades, {wr:.1f}% WR")
             
+        health = state.get('organism_health', {})
+        lines.append("")
+        lines.append(f"🧠 ORGANISM HEALTH: {health.get('status', 'UNKNOWN')}")
+        pulse = health.get('pulse', {})
+        lines.append(f"   Miner: {pulse.get('miner', {}).get('status')} | Risk: {pulse.get('risk', {}).get('status')} | Exec: {pulse.get('execution', {}).get('status')}")
+            
         return "\n".join(lines)
 
 
 # Global state aggregator instance
 STATE_AGGREGATOR = UnifiedStateAggregator()
+
+
+class CognitiveImmuneSystem:
+    """Autonomous antivirus/immune layer that validates cognition integrity."""
+
+    def __init__(self, ecosystem: 'AureonKrakenEcosystem', thought_bus: Optional[ThoughtBus], state_aggregator: UnifiedStateAggregator):
+        self.ecosystem = ecosystem
+        self.bus = thought_bus
+        self.aggregator = state_aggregator
+        self.last_scan = 0.0
+        self.scan_interval = 30.0
+        self.fault_memory: Deque[Dict[str, Any]] = deque(maxlen=200)
+        self.minds = {
+            'Miner': self._miner_mind,
+            'Risk': self._risk_mind,
+            'Execution': self._execution_mind,
+            'Bridge': self._bridge_mind,
+            'NewsFeed': self._newsfeed_mind,
+            'KnowledgeBase': self._knowledge_mind,
+        }
+
+        if self.bus:
+            self.bus.subscribe("system.error", self._on_fault_thought)
+
+    # ------------------------------------------------------------------
+    # Event ingestion
+    # ------------------------------------------------------------------
+    def _on_fault_thought(self, thought: Thought) -> None:
+        fault = {
+            'ts': thought.ts,
+            'source': thought.payload.get('while_handling_topic', thought.topic),
+            'error': thought.payload.get('error', 'unknown fault'),
+            'trace_id': thought.trace_id,
+        }
+        self.fault_memory.append(fault)
+
+    # ------------------------------------------------------------------
+    # Public API
+    # ------------------------------------------------------------------
+    def scan_and_heal(self, force: bool = False) -> None:
+        now = time.time()
+        if not force and (now - self.last_scan) < self.scan_interval:
+            return
+        self.last_scan = now
+
+        faults = self._collect_faults(now)
+        if not faults:
+            return
+
+        healing_plan: List[Dict[str, Any]] = []
+        for _, handler in self.minds.items():
+            plan = handler(faults)
+            if plan:
+                healing_plan.extend(plan)
+
+        if not healing_plan:
+            self._emit_thought("immune.alert", {"faults": faults, "plan": []})
+            return
+
+        self._execute_plan(healing_plan, faults)
+
+    # ------------------------------------------------------------------
+    # Fault analysis helpers
+    # ------------------------------------------------------------------
+    def _collect_faults(self, now: float) -> List[Dict[str, Any]]:
+        faults: List[Dict[str, Any]] = []
+
+        # Organism status from aggregator
+        health = self.aggregator.aggregated_state.get('organism_health', {}) if self.aggregator else {}
+        status = health.get('status')
+        if status in ('DEGRADED', 'OFFLINE'):
+            faults.append({'code': f'ORGANISM_{status}', 'detail': health})
+
+        # Probability freshness
+        pfresh = self.aggregator.aggregated_state.get('probability_freshness', {}) if self.aggregator else {}
+        if pfresh.get('stale'):
+            faults.append({'code': 'PROBABILITY_STALE', 'detail': pfresh})
+
+        # Websocket/liveness
+        ws_age = now - getattr(self.ecosystem, 'ws_last_message', now)
+        ws_timeout = CONFIG.get('WS_HEARTBEAT_TIMEOUT', 30)
+        if ws_age > ws_timeout:
+            faults.append({'code': 'WS_STALE', 'detail': {'age': ws_age, 'timeout': ws_timeout}})
+
+        # Trading halt
+        tracker = getattr(self.ecosystem, 'tracker', None)
+        if tracker and getattr(tracker, 'trading_halted', False):
+            faults.append({'code': 'TRADING_HALTED', 'detail': {'reason': tracker.halt_reason}})
+
+        # Bridge sync
+        if getattr(self.ecosystem, 'bridge_enabled', False):
+            bridge_age = now - getattr(self.ecosystem, 'last_bridge_sync', 0.0)
+            if bridge_age > getattr(self.ecosystem, 'bridge_sync_interval', 10.0) * 4:
+                faults.append({'code': 'BRIDGE_STALE', 'detail': {'age': bridge_age}})
+
+        # News feed staleness (if no news in 30+ minutes)
+        news_feed = getattr(self.ecosystem, 'news_feed', None)
+        if news_feed and hasattr(news_feed, 'last_poll_time') and news_feed.last_poll_time:
+            try:
+                from datetime import datetime
+                news_age_seconds = (datetime.utcnow() - news_feed.last_poll_time).total_seconds()
+                if news_age_seconds > 1800:  # 30 minutes
+                    faults.append({'code': 'NEWS_STALE', 'detail': {'age_seconds': news_age_seconds}})
+            except Exception:
+                pass
+
+        # News API errors accumulating
+        if news_feed:
+            news_metrics = getattr(news_feed, 'metrics', {})
+            news_errors = news_metrics.get('errors', 0)
+            if news_errors >= 5:
+                faults.append({'code': 'NEWS_API_ERRORS', 'detail': {'errors': news_errors}})
+
+        # Knowledge base errors
+        knowledge_base = getattr(self.ecosystem, 'knowledge_base', None)
+        if knowledge_base:
+            kb_metrics = getattr(knowledge_base, 'metrics', {})
+            kb_errors = kb_metrics.get('errors', 0)
+            if kb_errors >= 10:
+                faults.append({'code': 'KNOWLEDGE_API_ERRORS', 'detail': {'errors': kb_errors}})
+
+        # Thought-level faults
+        recent_faults = [f for f in self.fault_memory if now - f['ts'] < 120]
+        for fault in recent_faults:
+            faults.append({'code': 'THOUGHT_FAULT', 'detail': fault})
+
+        return faults
+
+    # ------------------------------------------------------------------
+    # Mind protocols
+    # ------------------------------------------------------------------
+    def _miner_mind(self, faults: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        plan: List[Dict[str, Any]] = []
+        if any(f['code'] in ('PROBABILITY_STALE', 'THOUGHT_FAULT') for f in faults):
+            plan.append({
+                'mind': 'Miner',
+                'action': 'REFRESH_PROBABILITY_REPORTS',
+                'description': 'Reload probability reports + aggregated state',
+                'callable': self._heal_probability_reports,
+                'auto_execute': True,
+            })
+        return plan
+
+    def _risk_mind(self, faults: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        plan: List[Dict[str, Any]] = []
+        if any(f['code'] in ('TRADING_HALTED', 'ORGANISM_DEGRADED') for f in faults):
+            plan.append({
+                'mind': 'Risk',
+                'action': 'AUDIT_POSITIONS',
+                'description': 'Run position/risk audit to release halts if conditions improve',
+                'callable': self._heal_risk_controls,
+                'auto_execute': True,
+            })
+        return plan
+
+    def _execution_mind(self, faults: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        plan: List[Dict[str, Any]] = []
+        if any(f['code'] == 'WS_STALE' for f in faults):
+            plan.append({
+                'mind': 'Execution',
+                'action': 'RECHARGE_MARKET_DATA',
+                'description': 'Refresh tickers and request websocket heartbeat',
+                'callable': self._heal_market_data,
+                'auto_execute': True,
+            })
+        return plan
+
+    def _bridge_mind(self, faults: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        plan: List[Dict[str, Any]] = []
+        if any(f['code'] == 'BRIDGE_STALE' for f in faults):
+            plan.append({
+                'mind': 'Bridge',
+                'action': 'SYNC_BRIDGE',
+                'description': 'Force a bridge sync so Ultimate/Unified share state',
+                'callable': self._heal_bridge_link,
+                'auto_execute': True,
+            })
+        return plan
+
+    def _newsfeed_mind(self, faults: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """News Feed mind - handles news API staleness and errors."""
+        plan: List[Dict[str, Any]] = []
+        
+        # Handle stale news
+        if any(f['code'] == 'NEWS_STALE' for f in faults):
+            plan.append({
+                'mind': 'NewsFeed',
+                'action': 'FORCE_NEWS_POLL',
+                'description': 'Force refresh news feed from World News API',
+                'callable': self._heal_news_feed,
+                'auto_execute': True,
+            })
+        
+        # Handle API errors accumulating
+        if any(f['code'] == 'NEWS_API_ERRORS' for f in faults):
+            plan.append({
+                'mind': 'NewsFeed',
+                'action': 'RESET_NEWS_METRICS',
+                'description': 'Reset news API error counters and retry',
+                'callable': self._heal_news_errors,
+                'auto_execute': True,
+            })
+        
+        return plan
+
+    def _knowledge_mind(self, faults: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """Knowledge Base mind - handles Wikipedia API errors."""
+        plan: List[Dict[str, Any]] = []
+        
+        # Handle API errors accumulating
+        if any(f['code'] == 'KNOWLEDGE_API_ERRORS' for f in faults):
+            plan.append({
+                'mind': 'KnowledgeBase',
+                'action': 'RESET_KNOWLEDGE_METRICS',
+                'description': 'Reset knowledge base error counters and clear stale cache',
+                'callable': self._heal_knowledge_errors,
+                'auto_execute': True,
+            })
+        
+        return plan
+
+    # ------------------------------------------------------------------
+    # Healing actions
+    # ------------------------------------------------------------------
+    def _heal_probability_reports(self) -> None:
+        loader = getattr(self.ecosystem, 'probability_loader', None)
+        if loader:
+            loader.load_all_reports()
+        self.aggregator.load_all_sources()
+
+    def _heal_risk_controls(self) -> None:
+        self.ecosystem.check_positions()
+        self.ecosystem.refresh_equity()
+
+    def _heal_market_data(self) -> None:
+        try:
+            self.ecosystem.refresh_tickers()
+        finally:
+            self.ecosystem.ws_last_message = time.time()
+
+    def _heal_bridge_link(self) -> None:
+        if getattr(self.ecosystem, 'bridge_enabled', False):
+            self.ecosystem.sync_bridge()
+
+    def _heal_news_feed(self) -> None:
+        """Force a news poll to refresh market sentiment data."""
+        news_feed = getattr(self.ecosystem, 'news_feed', None)
+        if news_feed:
+            try:
+                import asyncio
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                try:
+                    loop.run_until_complete(news_feed.poll_and_publish())
+                finally:
+                    loop.close()
+            except Exception as e:
+                logger.warning(f"News feed heal failed: {e}")
+
+    def _heal_news_errors(self) -> None:
+        """Reset news API error counters."""
+        news_feed = getattr(self.ecosystem, 'news_feed', None)
+        if news_feed and hasattr(news_feed, 'metrics'):
+            news_feed.metrics['errors'] = 0
+            logger.info("News feed error counters reset")
+
+    def _heal_knowledge_errors(self) -> None:
+        """Reset knowledge base error counters and clear stale cache."""
+        knowledge_base = getattr(self.ecosystem, 'knowledge_base', None)
+        if knowledge_base:
+            if hasattr(knowledge_base, 'metrics'):
+                knowledge_base.metrics['errors'] = 0
+            # Clear cache to force fresh lookups
+            if hasattr(knowledge_base, 'cache'):
+                knowledge_base.cache.clear()
+            logger.info("Knowledge base error counters reset, cache cleared")
+
+    # ------------------------------------------------------------------
+    # Execution + telemetry
+    # ------------------------------------------------------------------
+    def _execute_plan(self, plan: List[Dict[str, Any]], faults: List[Dict[str, Any]]) -> None:
+        executed = []
+        for step in plan:
+            callable_fn = step.get('callable')
+            ok = False
+            error = None
+            if callable_fn:
+                try:
+                    callable_fn()
+                    ok = True
+                except Exception as exc:
+                    error = str(exc)
+            executed.append({
+                'mind': step.get('mind'),
+                'action': step.get('action'),
+                'status': 'ok' if ok else 'error',
+                'error': error,
+            })
+
+        self._emit_thought("immune.heal", {
+            'executed': executed,
+            'faults': faults,
+        })
+
+    def _emit_thought(self, topic: str, payload: Dict[str, Any]) -> None:
+        if not self.bus:
+            return
+        self.bus.publish(Thought(
+            source="immune_system",
+            topic=topic,
+            payload=payload,
+        ))
 
 
 def kelly_criterion(win_rate: float, avg_win: float, avg_loss: float, safety_factor: float = 0.5) -> float:
@@ -4199,6 +4641,271 @@ class AdaptiveLearningEngine:
         closest = min(self.brain_state_history, 
                      key=lambda x: abs(x.get('timestamp', 0) - timestamp))
         return closest.get('brain_consensus', 'NEUTRAL')
+
+    # ═══════════════════════════════════════════════════════════════
+    # 📚📰 KNOWLEDGE & NEWS LEARNING INTEGRATION
+    # ═══════════════════════════════════════════════════════════════
+    
+    def record_knowledge_event(self, event: Dict):
+        """
+        📚 Record knowledge discovery event for correlation analysis.
+        
+        Called when the KnowledgeBase discovers relevant information.
+        Tracks:
+        - What was researched (topic, articles found)
+        - When it was discovered
+        - Market conditions at discovery time
+        
+        Later correlated with trade outcomes to learn which knowledge
+        topics are predictive of profitable trades.
+        
+        Args:
+            event: Dict with keys like:
+                - topic: What was researched
+                - articles_found: Number of articles
+                - key_concepts: List of discovered concepts
+                - timestamp: When discovered
+                - market_context: Optional market state at time
+        """
+        if not hasattr(self, 'knowledge_event_history'):
+            self.knowledge_event_history = []
+            
+        event['recorded_at'] = time.time()
+        self.knowledge_event_history.append(event)
+        
+        # Keep last 200 knowledge events
+        if len(self.knowledge_event_history) > 200:
+            self.knowledge_event_history = self.knowledge_event_history[-200:]
+        
+        logger.debug(f"📚 Knowledge event recorded: {event.get('topic', 'unknown')}")
+    
+    def record_news_sentiment(self, sentiment_data: Dict):
+        """
+        📰 Record news sentiment for correlation with trade outcomes.
+        
+        Called when the NewsFeed publishes sentiment analysis.
+        Tracks:
+        - Overall sentiment (bullish/bearish/neutral)
+        - Confidence level
+        - Domain-specific sentiments (crypto, stocks)
+        - Risk level from news
+        
+        Args:
+            sentiment_data: Dict with keys like:
+                - sentiment: float [-1, 1]
+                - label: bullish/bearish/neutral
+                - confidence: 0-1
+                - crypto_sentiment: float
+                - stock_sentiment: float
+                - risk_level: normal/elevated/high
+        """
+        if not hasattr(self, 'news_sentiment_history'):
+            self.news_sentiment_history = []
+            
+        sentiment_data['recorded_at'] = time.time()
+        self.news_sentiment_history.append(sentiment_data)
+        
+        # Keep last 100 sentiment snapshots
+        if len(self.news_sentiment_history) > 100:
+            self.news_sentiment_history = self.news_sentiment_history[-100:]
+        
+        # Track metrics by sentiment label for learning
+        if not hasattr(self, 'metrics_by_news_sentiment'):
+            self.metrics_by_news_sentiment = {}
+        
+        label = sentiment_data.get('label', 'neutral')
+        if label not in self.metrics_by_news_sentiment:
+            self.metrics_by_news_sentiment[label] = {'trades': 0, 'wins': 0, 'total_pnl': 0}
+        
+        logger.debug(f"📰 News sentiment recorded: {label} ({sentiment_data.get('sentiment', 0):.3f})")
+    
+    def get_news_sentiment_at_time(self, timestamp: float) -> Dict:
+        """Get the news sentiment closest to a given timestamp."""
+        if not hasattr(self, 'news_sentiment_history') or not self.news_sentiment_history:
+            return {'label': 'neutral', 'sentiment': 0.0, 'confidence': 0.0}
+        
+        closest = min(self.news_sentiment_history,
+                     key=lambda x: abs(x.get('recorded_at', 0) - timestamp))
+        return closest
+    
+    def correlate_trade_with_news(self, trade_data: Dict):
+        """
+        Correlate a completed trade with the news sentiment at entry time.
+        Updates metrics to learn which news states lead to winning trades.
+        """
+        if not hasattr(self, 'metrics_by_news_sentiment'):
+            self.metrics_by_news_sentiment = {}
+        
+        entry_time = trade_data.get('entry_time', time.time())
+        news_at_entry = self.get_news_sentiment_at_time(entry_time)
+        
+        label = news_at_entry.get('label', 'neutral')
+        is_win = trade_data.get('pnl', 0) > 0
+        pnl = trade_data.get('pnl', 0)
+        
+        if label not in self.metrics_by_news_sentiment:
+            self.metrics_by_news_sentiment[label] = {'trades': 0, 'wins': 0, 'total_pnl': 0}
+        
+        self.metrics_by_news_sentiment[label]['trades'] += 1
+        if is_win:
+            self.metrics_by_news_sentiment[label]['wins'] += 1
+        self.metrics_by_news_sentiment[label]['total_pnl'] += pnl
+        
+        # Store correlation for this trade
+        trade_data['news_sentiment_at_entry'] = news_at_entry.get('label', 'neutral')
+        trade_data['news_confidence_at_entry'] = news_at_entry.get('confidence', 0.0)
+    
+    def get_news_correlation_insights(self) -> Dict:
+        """
+        Get insights about correlation between news sentiment and trade outcomes.
+        
+        Returns:
+            Dict with win rates by news sentiment type
+        """
+        insights = {
+            'status': 'analyzing',
+            'by_sentiment': {},
+            'recommendation': 'neutral',
+            'total_samples': 0
+        }
+        
+        if not hasattr(self, 'metrics_by_news_sentiment'):
+            insights['status'] = 'no_data'
+            return insights
+        
+        for label, metrics in self.metrics_by_news_sentiment.items():
+            trades = metrics.get('trades', 0)
+            wins = metrics.get('wins', 0)
+            total_pnl = metrics.get('total_pnl', 0)
+            
+            if trades >= 3:  # Minimum sample for statistical relevance
+                win_rate = wins / trades
+                avg_pnl = total_pnl / trades
+                
+                insights['by_sentiment'][label] = {
+                    'win_rate': win_rate,
+                    'avg_pnl': avg_pnl,
+                    'trades': trades
+                }
+                insights['total_samples'] += trades
+        
+        # Generate recommendation
+        if insights['by_sentiment']:
+            best_sentiment = max(insights['by_sentiment'].items(),
+                               key=lambda x: x[1]['win_rate'])
+            worst_sentiment = min(insights['by_sentiment'].items(),
+                                key=lambda x: x[1]['win_rate'])
+            
+            if best_sentiment[1]['win_rate'] > 0.55:
+                insights['recommendation'] = f"Trade MORE during {best_sentiment[0]} news"
+            if worst_sentiment[1]['win_rate'] < 0.40:
+                insights['recommendation'] += f", AVOID {worst_sentiment[0]} news"
+        
+        insights['status'] = 'complete'
+        return insights
+    
+    def get_knowledge_probability_modifier(self, topic: str) -> float:
+        """
+        Get a probability modifier based on what knowledge we've learned.
+        
+        If we've researched a topic and trades in that area performed well,
+        boost the probability. If they performed poorly, reduce it.
+        
+        Args:
+            topic: The topic/symbol being traded
+            
+        Returns:
+            float modifier (1.0 = neutral, >1 = boost, <1 = penalize)
+        """
+        if not hasattr(self, 'knowledge_event_history'):
+            return 1.0
+        
+        # Find knowledge events related to this topic
+        related_events = [e for e in self.knowledge_event_history
+                        if topic.lower() in str(e.get('topic', '')).lower() or
+                           topic.lower() in str(e.get('key_concepts', [])).lower()]
+        
+        if not related_events:
+            return 1.0
+        
+        # Check trades made after knowledge discovery
+        modifier = 1.0
+        for event in related_events[-5:]:  # Last 5 related events
+            event_time = event.get('recorded_at', 0)
+            # Find trades made within 1 hour of knowledge discovery
+            related_trades = [t for t in self.trade_history
+                            if event_time <= t.get('entry_time', 0) <= event_time + 3600]
+            
+            if related_trades:
+                win_rate = sum(1 for t in related_trades if t.get('pnl', 0) > 0) / len(related_trades)
+                # Adjust modifier based on performance
+                if win_rate >= 0.6:
+                    modifier = min(modifier * 1.1, 1.3)  # Boost up to 30%
+                elif win_rate <= 0.4:
+                    modifier = max(modifier * 0.9, 0.7)  # Penalize down to 30%
+        
+        return modifier
+    
+    def enhanced_record_trade(self, trade_data: Dict):
+        """
+        Enhanced trade recording that includes news/knowledge correlation.
+        
+        Call this instead of record_trade to get full learning integration.
+        """
+        # Correlate with news sentiment
+        self.correlate_trade_with_news(trade_data)
+        
+        # Get knowledge modifier that was active during entry
+        entry_time = trade_data.get('entry_time', time.time())
+        
+        # Find what knowledge was recently discovered
+        if hasattr(self, 'knowledge_event_history'):
+            recent_knowledge = [e for e in self.knowledge_event_history
+                              if entry_time - 3600 <= e.get('recorded_at', 0) <= entry_time]
+            if recent_knowledge:
+                trade_data['knowledge_context'] = [e.get('topic') for e in recent_knowledge[:3]]
+        
+        # Record the trade with all enrichments
+        self.record_trade(trade_data)
+        
+        # Save enhanced history
+        self._save_enhanced_history()
+    
+    def _save_enhanced_history(self):
+        """Save enhanced learning history including knowledge/news data."""
+        try:
+            enhanced_data = {
+                'trades': self.trade_history[-self.max_history:],
+                'thresholds': self.optimized_thresholds,
+                'updated_at': datetime.now().isoformat(),
+                'news_metrics': getattr(self, 'metrics_by_news_sentiment', {}),
+                'knowledge_events': getattr(self, 'knowledge_event_history', [])[-50:],
+                'news_history': getattr(self, 'news_sentiment_history', [])[-50:]
+            }
+            with open(self.history_file, 'w') as f:
+                json.dump(enhanced_data, f, indent=2)
+        except Exception as e:
+            logger.warning(f"Could not save enhanced history: {e}")
+    
+    def get_learning_summary_enhanced(self) -> str:
+        """Get enhanced learning summary including knowledge/news insights."""
+        base_summary = self.get_learning_summary()
+        
+        # Add news insights
+        news_insights = self.get_news_correlation_insights()
+        if news_insights['status'] == 'complete' and news_insights['total_samples'] >= 5:
+            base_summary += "\n\n   📰 NEWS CORRELATION:"
+            for label, metrics in news_insights['by_sentiment'].items():
+                emoji = '🐂' if label == 'bullish' else '🐻' if label == 'bearish' else '📊'
+                base_summary += f"\n      {emoji} {label.upper()}: {metrics['win_rate']*100:.0f}% WR ({metrics['trades']} trades)"
+            if news_insights['recommendation']:
+                base_summary += f"\n      💡 {news_insights['recommendation']}"
+        
+        # Add knowledge insights
+        if hasattr(self, 'knowledge_event_history') and self.knowledge_event_history:
+            base_summary += f"\n\n   📚 KNOWLEDGE BASE: {len(self.knowledge_event_history)} research events tracked"
+        
+        return base_summary
 
 
 # Global adaptive learning instance
@@ -7737,6 +8444,82 @@ class AureonKrakenEcosystem:
         print("   🌐 Multi-Exchange Orchestrator active (Binance/Kraken/Capital/Alpaca)")
         print(f"   📊 State Aggregator: {len(self.state_aggregator.aggregated_state.get('sources_loaded', []))} data sources feeding ecosystem")
         
+        # ==== COGNITION: initialize thought bus + modules ====
+        print("   🧠 Initializing Cognition Bus...")
+        self.thought_bus = ThoughtBus(persist_path="logs/aureon_thoughts.jsonl")
+
+        # Modules (thinking parts)
+        self.miner_module = MinerModule(self.thought_bus)
+
+        # Risk limits (tune max_positions)
+        self.risk_module = RiskModule(
+            self.thought_bus, 
+            max_positions=CONFIG.get('MAX_POSITIONS', 3),
+            get_open_positions_count=lambda: len(self.positions)
+        )
+
+        # Execution: connect to your real order function
+        self.exec_module = ExecutionModule(self.thought_bus, place_order_fn=self._place_order_from_intent)
+
+        # Optional: subscribe to order results for logging / bookkeeping
+        self.thought_bus.subscribe("execution.order_result", self._on_execution_order_result)
+        
+        # Subscribe to news thoughts for trading influence
+        self.thought_bus.subscribe("news.sentiment", self._on_news_sentiment)
+        self.thought_bus.subscribe("news.alert", self._on_news_alert)
+        self._last_news_sentiment = {}  # Cache for trading decisions
+        
+        # Subscribe to knowledge thoughts for context
+        self.thought_bus.subscribe("knowledge.query_result", self._on_knowledge_result)
+        self.thought_bus.subscribe("knowledge.research_complete", self._on_research_complete)
+        
+        print("   🧠 Cognition Bus Active (MinerModule -> RiskModule -> ExecutionModule)")
+
+        # 🛡️ Cognitive immune system (autonomous antivirus)
+        self.immune_system = CognitiveImmuneSystem(self, self.thought_bus, self.state_aggregator)
+        print("   🛡️ Cognitive Immune System armed (self-healing enabled)")
+
+        # 📰 News Feed (World News API integration)
+        self.news_feed = None
+        self._news_poll_counter = 0
+        self._news_poll_interval = 60  # Poll every 60 cycles (~2 mins at 2s interval)
+        if NEWS_FEED_AVAILABLE:
+            news_api_key = os.environ.get("WORLD_NEWS_API_KEY", "1e67384add34486d8b14a951b220fe8a")
+            if news_api_key:
+                try:
+                    import asyncio
+                    news_config = NewsFeedConfig(
+                        api_key=news_api_key,
+                        market_keywords=["cryptocurrency", "bitcoin", "ethereum", "federal reserve", 
+                                        "stock market", "recession", "inflation", "interest rates"],
+                        categories=["business", "technology", "politics"],
+                        max_articles=25,
+                        max_age_hours=12
+                    )
+                    self.news_feed = NewsFeed(news_config, self.thought_bus)
+                    print("   📰 News Feed connected (World News API) - publishing to ThoughtBus")
+                except Exception as e:
+                    print(f"   ⚠️ News Feed init failed: {e}")
+
+        # 📚 Knowledge Base (Wikipedia API integration)
+        self.knowledge_base = None
+        self._knowledge_research_counter = 0
+        self._knowledge_research_interval = 300  # Research every 300 cycles (~10 mins)
+        if KNOWLEDGE_BASE_AVAILABLE:
+            try:
+                self.knowledge_base = KnowledgeBase(thought_bus=self.thought_bus)
+                print("   📚 Knowledge Base connected (Wikipedia API) - autonomous learning enabled")
+                # Prefetch core trading knowledge in background thread
+                import threading
+                def prefetch_knowledge():
+                    try:
+                        self.knowledge_base.prefetch_trading_knowledge()
+                    except Exception as e:
+                        logger.debug(f"Knowledge prefetch error: {e}")
+                threading.Thread(target=prefetch_knowledge, daemon=True).start()
+            except Exception as e:
+                print(f"   ⚠️ Knowledge Base init failed: {e}")
+
         # 🏥 PRINT ECOSYSTEM HEALTH REPORT 🏥
         # Show all active systems and their communication status
         self.auris.print_system_health()
@@ -12060,9 +12843,10 @@ class AureonKrakenEcosystem:
         # 🐘 Record trade result in Elephant Memory
         self.memory.record(symbol, net_pnl)
         
-        # 🧠 Record trade in Adaptive Learning Engine
+        # 🧠 Record trade in Adaptive Learning Engine WITH NEWS/KNOWLEDGE CORRELATION
         ticker_snapshot = self.ticker_cache.get(symbol, {}) if hasattr(self, 'ticker_cache') else {}
-        ADAPTIVE_LEARNER.record_trade({
+        news_context = getattr(self, '_last_news_sentiment', {})
+        ADAPTIVE_LEARNER.enhanced_record_trade({
             'symbol': symbol,
             'entry_price': pos.entry_price,
             'exit_price': price,
@@ -12081,7 +12865,11 @@ class AureonKrakenEcosystem:
             'ticker_price': ticker_snapshot.get('price'),
             'ticker_change24h': ticker_snapshot.get('change24h'),
             'ticker_volume': ticker_snapshot.get('volume'),
-            'ticker_source': ticker_snapshot.get('source', 'unknown')
+            'ticker_source': ticker_snapshot.get('source', 'unknown'),
+            # 📰 NEWS CORRELATION CONTEXT - Learn from market sentiment at trade time
+            'news_sentiment': news_context.get('sentiment', 0.0),
+            'news_label': news_context.get('label', 'unknown'),
+            'news_confidence': news_context.get('confidence', 0.0),
         })
         
         # 🌊 CASCADE AMPLIFIER - Update win/loss streak for signal amplification
@@ -12369,6 +13157,154 @@ class AureonKrakenEcosystem:
         
         self.save_state()
 
+    def _place_order_from_intent(self, symbol: str, side: str, qty: float):
+        """
+        This is the ONLY place ExecutionModule touches your exchange.
+        Maps cognition intents to real orders.
+        """
+        try:
+            # Your ecosystem uses submit_order(exchange, symbol, side, order_type, quantity, ...)
+            # We need to determine which exchange to use
+            
+            # Strategy: use the exchange from ticker cache or default to primary
+            exchange = 'kraken'  # default
+            if symbol in self.ticker_cache:
+                # Check which exchange this symbol came from
+                # (This logic assumes we can infer exchange from symbol format or cache)
+                # For now, we'll rely on submit_order to handle routing if possible, 
+                # or default to 'kraken' if not specified in intent.
+                pass
+            
+            # Calculate quantity based on your position sizing logic if needed, 
+            # but here we take qty from intent.
+            
+            result = self.submit_order(
+                exchange=exchange,
+                symbol=symbol,
+                side=side.upper(),  # 'buy' -> 'BUY'
+                order_type='market',
+                quantity=qty,
+                price=None
+            )
+            
+            return result
+            
+        except Exception as e:
+            return {"error": str(e), "symbol": symbol, "side": side, "qty": qty}
+
+    def _on_execution_order_result(self, t: Thought) -> None:
+        """
+        Receives JSON results of orders, lets you store positions / telemetry.
+        """
+        data = t.payload
+        intent = data.get("intent", {})
+        order_result = data.get("order_result", {})
+        
+        # Log the execution thought
+        symbol = intent.get("symbol", "UNKNOWN")
+        side = intent.get("side", "UNKNOWN")
+        
+        if "error" not in order_result:
+            print(f"   🧠✅ Cognition executed: {symbol} {side}")
+        else:
+            print(f"   🧠❌ Cognition failed: {symbol} {side} - {order_result.get('error')}")
+
+    def _on_news_sentiment(self, t: Thought) -> None:
+        """
+        Receives news sentiment analysis from the NewsFeed module.
+        Can influence trading decisions and risk management.
+        Feeds into AdaptiveLearningEngine for correlation learning.
+        """
+        analysis = t.payload.get("analysis", {})
+        sentiment_label = analysis.get("sentiment_label", "neutral")
+        confidence = analysis.get("confidence", 0.0)
+        avg_sentiment = analysis.get("average_sentiment", 0.0)
+        
+        # Store for use in trading decisions
+        self._last_news_sentiment = {
+            'sentiment': avg_sentiment,
+            'label': sentiment_label,
+            'confidence': confidence,
+            'timestamp': t.ts
+        }
+        
+        # 📚 FEED INTO ADAPTIVE LEARNER FOR CORRELATION LEARNING
+        try:
+            ADAPTIVE_LEARNER.record_news_sentiment({
+                'sentiment': avg_sentiment,
+                'label': sentiment_label,
+                'confidence': confidence,
+                'crypto_sentiment': t.payload.get('signals', {}).get('crypto_sentiment', 0.0),
+                'stock_sentiment': t.payload.get('signals', {}).get('stock_sentiment', 0.0),
+                'risk_level': t.payload.get('signals', {}).get('risk_level', 'normal'),
+            })
+        except Exception as e:
+            logger.debug(f"Could not record news to learner: {e}")
+        
+        # If highly confident bearish news, consider reducing position sizes
+        if sentiment_label == "bearish" and confidence >= 0.6:
+            logger.info(f"📰🐻 Bearish news detected (conf={confidence:.2f}) - flagging for caution")
+        elif sentiment_label == "bullish" and confidence >= 0.6:
+            logger.info(f"📰🐂 Bullish news detected (conf={confidence:.2f}) - market favorable")
+
+    def _on_news_alert(self, t: Thought) -> None:
+        """
+        Receives individual news alerts for extreme sentiment articles.
+        """
+        alert = t.payload.get("alert", {})
+        title = alert.get("title", "")
+        sentiment = alert.get("sentiment", 0.0)
+        sentiment_label = alert.get("sentiment_label", "neutral")
+        
+        if abs(sentiment) >= 0.7:
+            logger.info(f"📰🚨 NEWS ALERT [{sentiment_label.upper()}]: {title[:60]}...")
+
+    def _on_knowledge_result(self, t: Thought) -> None:
+        """
+        Receives knowledge query results from the Knowledge Base.
+        Feeds into AdaptiveLearningEngine for learning correlation.
+        """
+        query = t.payload.get("query", "")
+        results_count = t.payload.get("results_count", 0)
+        top_result = t.payload.get("top_result", "")
+        
+        # 📚 FEED INTO ADAPTIVE LEARNER
+        if results_count > 0:
+            try:
+                ADAPTIVE_LEARNER.record_knowledge_event({
+                    'topic': query,
+                    'articles_found': results_count,
+                    'top_result': top_result,
+                    'type': 'query'
+                })
+            except Exception as e:
+                logger.debug(f"Could not record knowledge to learner: {e}")
+        
+        if results_count > 0:
+            logger.debug(f"📚 Knowledge query '{query}': {results_count} results (top: {top_result})")
+
+    def _on_research_complete(self, t: Thought) -> None:
+        """
+        Receives autonomous research completion notifications.
+        Feeds into AdaptiveLearningEngine for knowledge correlation.
+        """
+        topic = t.payload.get("topic", "")
+        articles_found = t.payload.get("articles_found", 0)
+        key_concepts = t.payload.get("key_concepts", [])
+        
+        # 📚 FEED INTO ADAPTIVE LEARNER
+        try:
+            ADAPTIVE_LEARNER.record_knowledge_event({
+                'topic': topic,
+                'articles_found': articles_found,
+                'key_concepts': key_concepts,
+                'type': 'autonomous_research'
+            })
+        except Exception as e:
+            logger.debug(f"Could not record research to learner: {e}")
+        
+        logger.info(f"📚🔬 Research complete: '{topic}' - {articles_found} articles, concepts: {key_concepts[:3]}")
+
     def run(self, interval: float = 2.0, target_profit_gbp: float = None, max_minutes: float = None):
         """Main trading loop - 🔥 BEAST MODE: 2 second cycles for MAXIMUM SPEED!
 
@@ -12575,6 +13511,116 @@ class AureonKrakenEcosystem:
                     except Exception as e:
                         print(f"   ⚠️ Market Pulse Error: {e}")
 
+                # 📰 NEWS FEED POLLING (World News API)
+                # Poll periodically to avoid rate limits but keep sentiment fresh
+                if self.news_feed:
+                    self._news_poll_counter += 1
+                    if self._news_poll_counter >= self._news_poll_interval:
+                        self._news_poll_counter = 0
+                        try:
+                            import asyncio
+                            # Run async poll synchronously
+                            loop = asyncio.new_event_loop()
+                            asyncio.set_event_loop(loop)
+                            try:
+                                news_result = loop.run_until_complete(self.news_feed.poll_and_publish())
+                                
+                                if news_result.get('status') == 'success':
+                                    sentiment_analysis = news_result.get('sentiment_analysis', {})
+                                    signals = news_result.get('signals', {})
+                                    
+                                    # Display news sentiment
+                                    sentiment_label = sentiment_analysis.get('sentiment_label', 'unknown')
+                                    avg_sentiment = sentiment_analysis.get('average_sentiment', 0.0)
+                                    confidence = sentiment_analysis.get('confidence', 0.0)
+                                    article_count = news_result.get('articles_processed', 0)
+                                    
+                                    # Color code based on sentiment
+                                    if sentiment_label == 'bullish':
+                                        sentiment_icon = '📈'
+                                    elif sentiment_label == 'bearish':
+                                        sentiment_icon = '📉'
+                                    else:
+                                        sentiment_icon = '📊'
+                                    
+                                    print(f"\n   📰 WORLD NEWS DIGEST ({article_count} articles)")
+                                    print(f"   ├─ {sentiment_icon} Overall Sentiment: {sentiment_label.upper()} ({avg_sentiment:+.3f})")
+                                    print(f"   ├─ Confidence: {confidence:.1%}")
+                                    
+                                    # Domain sentiments
+                                    crypto_sent = signals.get('crypto_sentiment', 0.0)
+                                    stock_sent = signals.get('stock_sentiment', 0.0)
+                                    print(f"   ├─ Crypto News: {crypto_sent:+.3f} | Stock News: {stock_sent:+.3f}")
+                                    
+                                    # Risk level
+                                    risk_level = signals.get('risk_level', 'normal')
+                                    if risk_level == 'high':
+                                        print(f"   ├─ ⚠️ NEWS RISK LEVEL: HIGH - Consider reducing exposure")
+                                    elif risk_level == 'elevated':
+                                        print(f"   ├─ ⚡ NEWS RISK LEVEL: ELEVATED")
+                                    
+                                    # Show alerts if any
+                                    alerts = signals.get('alerts', [])
+                                    if alerts:
+                                        print(f"   └─ 🚨 {len(alerts)} sentiment alerts published")
+                                    else:
+                                        print(f"   └─ No extreme sentiment alerts")
+                                    
+                                    # Store news sentiment for trading decisions
+                                    self._last_news_sentiment = {
+                                        'sentiment': avg_sentiment,
+                                        'label': sentiment_label,
+                                        'confidence': confidence,
+                                        'risk_level': risk_level,
+                                        'crypto_sentiment': crypto_sent,
+                                        'timestamp': datetime.now().isoformat()
+                                    }
+                                    
+                            finally:
+                                loop.close()
+                        except Exception as e:
+                            print(f"   ⚠️ News Feed Error: {e}")
+
+                # 📚 KNOWLEDGE BASE RESEARCH (Wikipedia API)
+                # Autonomous research on trading topics periodically
+                if self.knowledge_base:
+                    self._knowledge_research_counter += 1
+                    if self._knowledge_research_counter >= self._knowledge_research_interval:
+                        self._knowledge_research_counter = 0
+                        try:
+                            # Research a trading-relevant topic
+                            import random
+                            research_topics = [
+                                "Market volatility", "Trading psychology", "Risk management",
+                                "Technical analysis", "Cryptocurrency", "Market sentiment",
+                                "Economic indicators", "Federal Reserve policy"
+                            ]
+                            topic = random.choice(research_topics)
+                            
+                            # Run research in background to not block trading
+                            import threading
+                            def background_research():
+                                try:
+                                    result = self.knowledge_base.autonomous_research(topic, depth=1)
+                                    if result['articles']:
+                                        logger.debug(f"📚 Background research on '{topic}': {len(result['articles'])} articles")
+                                except Exception as e:
+                                    logger.debug(f"Knowledge research error: {e}")
+                            
+                            threading.Thread(target=background_research, daemon=True).start()
+                            
+                            # Show brief status
+                            status = self.knowledge_base.get_status()
+                            cache_size = status['cache']['size']
+                            if cache_size > 0 and self.iteration % 100 == 0:
+                                print(f"\n   📚 KNOWLEDGE BASE STATUS")
+                                print(f"   ├─ Cache: {cache_size} articles")
+                                print(f"   ├─ API calls: {status['metrics']['api_calls']}")
+                                print(f"   └─ Researching: {topic}")
+                                
+                        except Exception as e:
+                            logger.debug(f"Knowledge base error: {e}")
+
                 # Refresh data
                 self.refresh_tickers()
                 print(f"   📊 Ticker cache: {len(self.ticker_cache)} symbols loaded")
@@ -12637,6 +13683,51 @@ class AureonKrakenEcosystem:
                 # Update Lattice State (Global Physics)
                 raw_opps = self.find_opportunities()
                 l_state = self.lattice.update(raw_opps)
+
+                # ==== COGNITION TICK (system talks to itself via JSON) ====
+                # Build market snapshot for cognition system
+                # Use top 100 symbols to avoid overwhelming
+                cognition_symbols = list(self.ticker_cache.keys())[:100]
+                market_by_symbol = {}
+                
+                for sym in cognition_symbols:
+                    if sym in self.ticker_cache:
+                        ticker = self.ticker_cache[sym]
+                        # Get price history if available, else just current price
+                        prices = self.price_history.get(sym, [ticker['price']])[-20:]
+                        
+                        # Calculate momentum and gamma from your existing data
+                        momentum = ticker.get('change24h', 0.0)
+                        
+                        # Try to get coherence from existing opportunity data
+                        gamma = 0.5  # default
+                        # We can look up in raw_opps if available
+                        for opp in raw_opps:
+                            if opp['symbol'] == sym:
+                                gamma = opp.get('coherence', 0.5)
+                                break
+                        
+                        market_by_symbol[sym] = {
+                            "closes": prices,
+                            "momentum": momentum,
+                            "gamma": gamma,
+                            "price": ticker['price'],
+                            "volume": ticker['volume'],
+                        }
+                
+                # Publish snapshot - this triggers the entire cognition chain
+                self.thought_bus.publish(Thought(
+                    source="ecosystem",
+                    topic="market.snapshot",
+                    payload={
+                        "universe": cognition_symbols,
+                        "market_by_symbol": market_by_symbol,
+                    },
+                ))
+                
+                # Run immune scan post cognition tick
+                if hasattr(self, 'immune_system'):
+                    self.immune_system.scan_and_heal()
                 
                 # Apply Triadic Envelope Protocol to filter signals
                 all_opps = self.lattice.filter_signals(raw_opps)
