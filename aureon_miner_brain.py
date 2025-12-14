@@ -4737,20 +4737,23 @@ class MinerBrain:
             
             # Check each external context item (values can be None even if key exists)
             trade = self.external_context.get('last_trade')
-            if trade:
-                action = trade.get('action', 'UNKNOWN')
-                symbol = trade.get('symbol', 'UNKNOWN')
-                pnl = trade.get('pnl', 0.0)
-                print(f"   🛒 LAST TRADE: {action} {symbol} (PnL: ${pnl:.2f})")
+            if trade and isinstance(trade, dict):
+                action = trade.get('action', 'UNKNOWN') or 'UNKNOWN'
+                symbol = trade.get('symbol', 'UNKNOWN') or 'UNKNOWN'
+                pnl = trade.get('pnl') or 0.0
+                try:
+                    print(f"   🛒 LAST TRADE: {action} {symbol} (PnL: ${float(pnl):.2f})")
+                except (TypeError, ValueError):
+                    print(f"   🛒 LAST TRADE: {action} {symbol} (PnL: $0.00)")
                 
             nexus = self.external_context.get('nexus_state')
-            if nexus:
-                state = nexus.get('state', 'UNKNOWN')
+            if nexus and isinstance(nexus, dict):
+                state = nexus.get('state', 'UNKNOWN') or 'UNKNOWN'
                 print(f"   🌐 NEXUS STATE: {state}")
                 
             cmd = self.external_context.get('bridge_command')
-            if cmd:
-                print(f"   🌉 BRIDGE COMMAND: {cmd.get('command', 'UNKNOWN')}")
+            if cmd and isinstance(cmd, dict):
+                print(f"   🌉 BRIDGE COMMAND: {cmd.get('command', 'UNKNOWN') or 'UNKNOWN'}")
                 
             # Clear transient events so we don't react to them forever
             # But keep stateful things like nexus_state

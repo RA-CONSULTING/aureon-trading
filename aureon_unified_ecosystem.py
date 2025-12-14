@@ -1406,7 +1406,9 @@ class EcosystemBrainBridge:
             return result
             
         except Exception as e:
+            import traceback
             logger.error(f"🧠 Brain Cycle Error: {e}")
+            logger.error(f"🧠 Traceback: {traceback.format_exc()}")
             return {}
     
     def _update_cascade_amplifier(self):
