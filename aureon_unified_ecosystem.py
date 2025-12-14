@@ -607,6 +607,14 @@ CONFIG = {
     'USE_ATR_TRAILING': True,               # Use ATR for dynamic trailing
     'ATR_TRAIL_MULTIPLIER': 1.5,            # Trail at 1.5x ATR below peak
     
+    # 🚀 KRAKEN ADVANCED ORDERS - Server-Side TP/SL (executes even if bot offline!)
+    'USE_SERVER_SIDE_ORDERS': os.getenv('USE_SERVER_SIDE_ORDERS', '1') == '1',  # Enable Kraken native TP/SL
+    'PREFER_LIMIT_ORDERS': os.getenv('PREFER_LIMIT_ORDERS', '0') == '1',        # Use limit orders for maker fees
+    'USE_TRAILING_STOP_ORDERS': os.getenv('USE_TRAILING_STOP_ORDERS', '0') == '1',  # Native trailing stops
+    'SERVER_SIDE_TP_PCT': 1.8,              # Take profit % for server-side orders
+    'SERVER_SIDE_SL_PCT': 1.5,              # Stop loss % for server-side orders
+    'SERVER_TRAILING_PCT': 2.0,             # Trailing stop distance % for native trailing
+    
     # Dynamic Portfolio Rebalancing
     'ENABLE_REBALANCING': True,     # Sell underperformers to buy better opportunities
     'REBALANCE_THRESHOLD': -50.0,   # 🔥 Sell big losers (>50% loss) to free capital for better opportunities
@@ -7747,6 +7755,11 @@ class Position:
     nexus_edge: float = 0.0  # Nexus edge at entry
     nexus_patterns: List[str] = field(default_factory=list)  # Patterns triggered at entry
     
+    # 🚀 SERVER-SIDE ORDER IDs (Kraken native TP/SL - execute even if bot offline)
+    server_sl_order_id: Optional[str] = None  # Kraken stop-loss order ID
+    server_tp_order_id: Optional[str] = None  # Kraken take-profit order ID
+    server_trailing_order_id: Optional[str] = None  # Kraken trailing stop order ID
+    
     # Generate unique ID for position
     id: str = field(default_factory=lambda: f"pos_{int(time.time()*1000)}_{random.randint(1000,9999)}")
     
@@ -12317,6 +12330,45 @@ class AureonKrakenEcosystem:
         except Exception as e:
             logger.warning(f"Failed to log cost basis for {symbol}: {e}")
         
+        # 🚀 PLACE SERVER-SIDE TP/SL ORDERS (Kraken only - executes even if bot offline!)
+        if CONFIG.get('USE_SERVER_SIDE_ORDERS', True) and exchange.lower() == 'kraken' and not self.dry_run:
+            try:
+                # Calculate TP/SL prices
+                tp_pct = learned_rec.get('suggested_take_profit') or CONFIG.get('SERVER_SIDE_TP_PCT', 1.8) / 100
+                sl_pct = learned_rec.get('suggested_stop_loss') or CONFIG.get('SERVER_SIDE_SL_PCT', 1.5) / 100
+                
+                take_profit_price = price * (1 + tp_pct)
+                stop_loss_price = price * (1 - sl_pct)
+                
+                # Use trailing stop if configured
+                if CONFIG.get('USE_TRAILING_STOP_ORDERS', False):
+                    trailing_pct = CONFIG.get('SERVER_TRAILING_PCT', 2.0)
+                    trail_res = self.client.place_trailing_stop_order(
+                        exchange, symbol, 'sell', quantity, trailing_pct, 'percent'
+                    )
+                    if trail_res and not trail_res.get('error'):
+                        print(f"   🎯 Server trailing stop: {trailing_pct}% below peak")
+                        self.positions[symbol].server_trailing_order_id = trail_res.get('orderId')
+                else:
+                    # Place stop-loss order (server-side)
+                    sl_res = self.client.place_stop_loss_order(
+                        exchange, symbol, 'sell', quantity, stop_loss_price
+                    )
+                    if sl_res and not sl_res.get('error'):
+                        self.positions[symbol].server_sl_order_id = sl_res.get('orderId')
+                        print(f"   🛡️ Server stop-loss @ ${stop_loss_price:.6f} (-{sl_pct*100:.1f}%)")
+                    
+                    # Place take-profit order (server-side)  
+                    tp_res = self.client.place_take_profit_order(
+                        exchange, symbol, 'sell', quantity, take_profit_price
+                    )
+                    if tp_res and not tp_res.get('error'):
+                        self.positions[symbol].server_tp_order_id = tp_res.get('orderId')
+                        print(f"   💰 Server take-profit @ ${take_profit_price:.6f} (+{tp_pct*100:.1f}%)")
+                        
+            except Exception as e:
+                logger.warning(f"Failed to place server-side TP/SL for {symbol}: {e}")
+        
         # 🌟 Allocate capital in pool
         self.capital_pool.allocate(symbol, pos_size)
         
@@ -12647,6 +12699,26 @@ class AureonKrakenEcosystem:
             return
             
         pos = self.positions[symbol]
+        
+        # 🚀 CANCEL SERVER-SIDE ORDERS (Kraken native TP/SL) before manual close
+        if not self.dry_run and pos.exchange.lower() == 'kraken':
+            try:
+                # Cancel stop-loss order if exists
+                if pos.server_sl_order_id:
+                    self.client.cancel_order(pos.exchange, pos.server_sl_order_id)
+                    logger.info(f"Cancelled server SL order {pos.server_sl_order_id} for {symbol}")
+                
+                # Cancel take-profit order if exists
+                if pos.server_tp_order_id:
+                    self.client.cancel_order(pos.exchange, pos.server_tp_order_id)
+                    logger.info(f"Cancelled server TP order {pos.server_tp_order_id} for {symbol}")
+                
+                # Cancel trailing stop order if exists
+                if pos.server_trailing_order_id:
+                    self.client.cancel_order(pos.exchange, pos.server_trailing_order_id)
+                    logger.info(f"Cancelled server trailing order {pos.server_trailing_order_id} for {symbol}")
+            except Exception as e:
+                logger.warning(f"Failed to cancel server orders for {symbol}: {e}")
         
         # 🌟 CHECK EXIT GATE: Only sell if profitable
         if not self.should_exit_trade(pos, price, reason):

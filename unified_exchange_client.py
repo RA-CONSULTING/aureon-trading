@@ -127,6 +127,71 @@ class MultiExchangeClient:
             return {}
         return self.clients[exchange].place_market_order(symbol, side, quantity, quote_qty)
 
+    # ══════════════════════════════════════════════════════════════════════
+    # ADVANCED ORDER TYPES - Limit, Stop-Loss, Take-Profit, Trailing Stop
+    # ══════════════════════════════════════════════════════════════════════
+
+    def place_limit_order(self, exchange: str, symbol: str, side: str, quantity, price, 
+                          post_only: bool = False, time_in_force: str = "GTC") -> Dict[str, Any]:
+        """Place a limit order on the specified exchange."""
+        if exchange not in self.clients:
+            logger.error(f"Unknown exchange: {exchange}")
+            return {}
+        return self.clients[exchange].place_limit_order(symbol, side, quantity, price, post_only, time_in_force)
+
+    def place_stop_loss_order(self, exchange: str, symbol: str, side: str, quantity, 
+                              stop_price, limit_price=None) -> Dict[str, Any]:
+        """Place a stop-loss order (server-side - executes even if bot offline)."""
+        if exchange not in self.clients:
+            logger.error(f"Unknown exchange: {exchange}")
+            return {}
+        return self.clients[exchange].place_stop_loss_order(symbol, side, quantity, stop_price, limit_price)
+
+    def place_take_profit_order(self, exchange: str, symbol: str, side: str, quantity,
+                                take_profit_price, limit_price=None) -> Dict[str, Any]:
+        """Place a take-profit order (server-side - executes even if bot offline)."""
+        if exchange not in self.clients:
+            logger.error(f"Unknown exchange: {exchange}")
+            return {}
+        return self.clients[exchange].place_take_profit_order(symbol, side, quantity, take_profit_price, limit_price)
+
+    def place_trailing_stop_order(self, exchange: str, symbol: str, side: str, quantity,
+                                  trailing_offset, offset_type: str = "percent") -> Dict[str, Any]:
+        """Place a trailing stop order (auto-adjusts as price moves)."""
+        if exchange not in self.clients:
+            logger.error(f"Unknown exchange: {exchange}")
+            return {}
+        return self.clients[exchange].place_trailing_stop_order(symbol, side, quantity, trailing_offset, offset_type)
+
+    def place_order_with_tp_sl(self, exchange: str, symbol: str, side: str, quantity,
+                               order_type: str = "market", price=None,
+                               take_profit=None, stop_loss=None) -> Dict[str, Any]:
+        """Place an order with attached Take-Profit and/or Stop-Loss (conditional close)."""
+        if exchange not in self.clients:
+            logger.error(f"Unknown exchange: {exchange}")
+            return {}
+        return self.clients[exchange].place_order_with_tp_sl(
+            symbol, side, quantity, order_type, price, take_profit, stop_loss
+        )
+
+    def get_open_orders(self, exchange: str, symbol: str = None) -> List[Dict[str, Any]]:
+        """Get all open orders on the specified exchange."""
+        if exchange not in self.clients:
+            return []
+        return self.clients[exchange].get_open_orders(symbol)
+
+    def cancel_order(self, exchange: str, order_id: str) -> Dict[str, Any]:
+        """Cancel a specific order."""
+        if exchange not in self.clients:
+            return {}
+        return self.clients[exchange].cancel_order(order_id)
+
+    def cancel_all_orders(self, exchange: str, symbol: str = None) -> Dict[str, Any]:
+        """Cancel all open orders, optionally filtered by symbol."""
+        if exchange not in self.clients:
+            return {}
+        return self.clients[exchange].cancel_all_orders(symbol)
+
     def get_ticker(self, exchange: str, symbol: str) -> Dict[str, float]:
         if exchange not in self.clients:
             return {'price': 0.0, 'bid': 0.0, 'ask': 0.0}
@@ -680,6 +745,137 @@ class UnifiedExchangeClient:
                 logger.error(f"Error placing Capital.com order: {e}")
                 return {}
 
+        return {}
+
+    # ══════════════════════════════════════════════════════════════════════
+    # ADVANCED ORDER TYPES - Limit, Stop-Loss, Take-Profit, Trailing Stop
+    # ══════════════════════════════════════════════════════════════════════
+
+    def place_limit_order(self, symbol: str, side: str, quantity, price,
+                          post_only: bool = False, time_in_force: str = "GTC") -> Dict[str, Any]:
+        """Place a limit order. Uses maker fees (0.16% on Kraken vs 0.26% taker)."""
+        side = side.lower()
+        
+        if self.exchange_id == "kraken":
+            if hasattr(self.client, 'place_limit_order'):
+                try:
+                    return self.client.place_limit_order(symbol, side, quantity, price, post_only, time_in_force)
+                except Exception as e:
+                    logger.error(f"Error placing Kraken limit order: {e}")
+                    return {}
+        
+        # Fallback to market order for exchanges without limit order support
+        logger.warning(f"{self.exchange_id} doesn't support limit orders, using market")
+        return self.place_market_order(symbol, side, quantity=quantity)
+
+    def place_stop_loss_order(self, symbol: str, side: str, quantity,
+                              stop_price, limit_price=None) -> Dict[str, Any]:
+        """Place server-side stop-loss order (executes even if bot offline)."""
+        side = side.lower()
+        
+        if self.exchange_id == "kraken":
+            if hasattr(self.client, 'place_stop_loss_order'):
+                try:
+                    return self.client.place_stop_loss_order(symbol, side, quantity, stop_price, limit_price)
+                except Exception as e:
+                    logger.error(f"Error placing Kraken stop-loss: {e}")
+                    return {}
+        
+        logger.warning(f"{self.exchange_id} doesn't support native stop-loss orders")
+        return {'error': 'Not supported', 'exchange': self.exchange_id}
+
+    def place_take_profit_order(self, symbol: str, side: str, quantity,
+                                take_profit_price, limit_price=None) -> Dict[str, Any]:
+        """Place server-side take-profit order (executes even if bot offline)."""
+        side = side.lower()
+        
+        if self.exchange_id == "kraken":
+            if hasattr(self.client, 'place_take_profit_order'):
+                try:
+                    return self.client.place_take_profit_order(symbol, side, quantity, take_profit_price, limit_price)
+                except Exception as e:
+                    logger.error(f"Error placing Kraken take-profit: {e}")
+                    return {}
+        
+        logger.warning(f"{self.exchange_id} doesn't support native take-profit orders")
+        return {'error': 'Not supported', 'exchange': self.exchange_id}
+
+    def place_trailing_stop_order(self, symbol: str, side: str, quantity,
+                                  trailing_offset, offset_type: str = "percent") -> Dict[str, Any]:
+        """Place trailing stop order (auto-adjusts as price moves)."""
+        side = side.lower()
+        
+        if self.exchange_id == "kraken":
+            if hasattr(self.client, 'place_trailing_stop_order'):
+                try:
+                    return self.client.place_trailing_stop_order(symbol, side, quantity, trailing_offset, offset_type)
+                except Exception as e:
+                    logger.error(f"Error placing Kraken trailing stop: {e}")
+                    return {}
+        
+        logger.warning(f"{self.exchange_id} doesn't support trailing stop orders")
+        return {'error': 'Not supported', 'exchange': self.exchange_id}
+
+    def place_order_with_tp_sl(self, symbol: str, side: str, quantity,
+                               order_type: str = "market", price=None,
+                               take_profit=None, stop_loss=None) -> Dict[str, Any]:
+        """Place order with attached Take-Profit and/or Stop-Loss (conditional close)."""
+        side = side.lower()
+        
+        if self.exchange_id == "kraken":
+            if hasattr(self.client, 'place_order_with_tp_sl'):
+                try:
+                    return self.client.place_order_with_tp_sl(
+                        symbol, side, quantity, order_type, price, take_profit, stop_loss
+                    )
+                except Exception as e:
+                    logger.error(f"Error placing Kraken order with TP/SL: {e}")
+                    return {}
+        
+        # Fallback: place entry order, then place separate TP/SL orders
+        logger.info(f"{self.exchange_id}: Placing entry + separate TP/SL orders")
+        entry_result = self.place_market_order(symbol, side, quantity=quantity)
+        
+        if entry_result and not entry_result.get('error'):
+            close_side = 'sell' if side == 'buy' else 'buy'
+            if stop_loss:
+                self.place_stop_loss_order(symbol, close_side, quantity, stop_loss)
+            if take_profit:
+                self.place_take_profit_order(symbol, close_side, quantity, take_profit)
+        
+        return entry_result
+
+    def get_open_orders(self, symbol: str = None) -> List[Dict[str, Any]]:
+        """Get all open orders."""
+        if self.exchange_id == "kraken":
+            if hasattr(self.client, 'get_open_orders'):
+                try:
+                    return self.client.get_open_orders(symbol)
+                except Exception as e:
+                    logger.error(f"Error getting Kraken open orders: {e}")
+                    return []
+        return []
+
+    def cancel_order(self, order_id: str) -> Dict[str, Any]:
+        """Cancel a specific order."""
+        if self.exchange_id == "kraken":
+            if hasattr(self.client, 'cancel_order'):
+                try:
+                    return self.client.cancel_order(order_id)
+                except Exception as e:
+                    logger.error(f"Error cancelling Kraken order: {e}")
+                    return {}
+        return {}
+
+    def cancel_all_orders(self, symbol: str = None) -> Dict[str, Any]:
+        """Cancel all open orders."""
+        if self.exchange_id == "kraken":
+            if hasattr(self.client, 'cancel_all_orders'):
+                try:
+                    return self.client.cancel_all_orders(symbol)
+                except Exception as e:
+                    logger.error(f"Error cancelling all Kraken orders: {e}")
+                    return {}
         return {}
 
     def get_standardized_pair(self, base: str, quote: str) -> str:

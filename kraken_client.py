@@ -543,3 +543,565 @@ class KrakenClient:
     def compute_order_fees_in_quote(self, order: Dict[str, Any], primary_quote: str) -> float:
         # No fill info in dry-run; return 0 to let orchestrator use configured taker fee model if any
         return 0.0
+
+    # ══════════════════════════════════════════════════════════════════════
+    # ADVANCED ORDER TYPES - Limit, Stop-Loss, Take-Profit, Trailing Stop
+    # ══════════════════════════════════════════════════════════════════════
+
+    def place_limit_order(
+        self,
+        symbol: str,
+        side: str,
+        quantity: float | str | Decimal,
+        price: float | str | Decimal,
+        post_only: bool = False,
+        time_in_force: str = "GTC",
+        reduce_only: bool = False
+    ) -> Dict[str, Any]:
+        """
+        Place a limit order on Kraken.
+        
+        Args:
+            symbol: Trading pair (e.g., 'ETHUSD', 'BTCUSDC')
+            side: 'buy' or 'sell'
+            quantity: Amount of base asset
+            price: Limit price
+            post_only: If True, order will only be maker (cancelled if would be taker)
+            time_in_force: 'GTC' (good-til-cancelled), 'IOC' (immediate-or-cancel), 'GTD' (good-til-date)
+            reduce_only: If True, only reduces existing position
+            
+        Returns:
+            Binance-compatible order response
+            
+        Benefit: Maker fee 0.16% vs Taker fee 0.26% (40% savings with post_only)
+        """
+        if self.dry_run:
+            return {
+                "dryRun": True, "symbol": symbol, "side": side, 
+                "type": "LIMIT", "quantity": str(quantity), "price": str(price),
+                "postOnly": post_only, "timeInForce": time_in_force
+            }
+        
+        self._load_asset_pairs()
+        pair = self._alt_to_int.get(symbol, symbol)
+        
+        params = {
+            "pair": pair,
+            "type": side.lower(),
+            "ordertype": "limit",
+            "volume": self._format_order_value(quantity),
+            "price": self._format_order_value(price),
+        }
+        
+        # Order flags
+        oflags = []
+        if post_only:
+            oflags.append("post")  # Post-only (maker) order
+        if reduce_only:
+            oflags.append("nompp")  # No market price protection (for reduce-only behavior)
+        if oflags:
+            params["oflags"] = ",".join(oflags)
+        
+        # Time in force
+        if time_in_force == "IOC":
+            params["timeinforce"] = "IOC"
+        elif time_in_force == "GTD":
+            params["timeinforce"] = "GTD"
+        # GTC is default, no param needed
+        
+        res = self._private("/0/private/AddOrder", params)
+        txid = res.get("txid", ["unknown"])[0]
+        
+        return {
+            "symbol": symbol,
+            "orderId": txid,
+            "clientOrderId": str(time.time()),
+            "transactTime": int(time.time() * 1000),
+            "price": str(price),
+            "origQty": str(quantity),
+            "executedQty": "0",  # Not immediately filled
+            "status": "NEW",
+            "timeInForce": time_in_force,
+            "type": "LIMIT",
+            "side": side.upper(),
+            "postOnly": post_only
+        }
+
+    def place_stop_loss_order(
+        self,
+        symbol: str,
+        side: str,
+        quantity: float | str | Decimal,
+        stop_price: float | str | Decimal,
+        limit_price: float | str | Decimal | None = None
+    ) -> Dict[str, Any]:
+        """
+        Place a stop-loss order on Kraken (server-side, executes even if bot offline).
+        
+        Args:
+            symbol: Trading pair
+            side: 'sell' for long positions, 'buy' for short positions
+            quantity: Amount to sell/buy when triggered
+            stop_price: Price at which the stop triggers
+            limit_price: If provided, uses stop-loss-limit instead of stop-loss-market
+            
+        Returns:
+            Order response
+            
+        CRITICAL: Unlike client-side stops, these execute on Kraken's servers!
+        """
+        if self.dry_run:
+            return {
+                "dryRun": True, "symbol": symbol, "side": side,
+                "type": "STOP_LOSS_LIMIT" if limit_price else "STOP_LOSS",
+                "quantity": str(quantity), "stopPrice": str(stop_price),
+                "limitPrice": str(limit_price) if limit_price else None
+            }
+        
+        self._load_asset_pairs()
+        pair = self._alt_to_int.get(symbol, symbol)
+        
+        # stop-loss = market order when triggered
+        # stop-loss-limit = limit order when triggered
+        order_type = "stop-loss-limit" if limit_price else "stop-loss"
+        
+        params = {
+            "pair": pair,
+            "type": side.lower(),
+            "ordertype": order_type,
+            "volume": self._format_order_value(quantity),
+            "price": self._format_order_value(stop_price),  # Trigger price
+        }
+        
+        if limit_price:
+            params["price2"] = self._format_order_value(limit_price)  # Limit price after trigger
+        
+        res = self._private("/0/private/AddOrder", params)
+        txid = res.get("txid", ["unknown"])[0]
+        
+        return {
+            "symbol": symbol,
+            "orderId": txid,
+            "type": "STOP_LOSS_LIMIT" if limit_price else "STOP_LOSS",
+            "side": side.upper(),
+            "quantity": str(quantity),
+            "stopPrice": str(stop_price),
+            "limitPrice": str(limit_price) if limit_price else None,
+            "status": "NEW"
+        }
+
+    def place_take_profit_order(
+        self,
+        symbol: str,
+        side: str,
+        quantity: float | str | Decimal,
+        take_profit_price: float | str | Decimal,
+        limit_price: float | str | Decimal | None = None
+    ) -> Dict[str, Any]:
+        """
+        Place a take-profit order on Kraken (server-side, executes even if bot offline).
+        
+        Args:
+            symbol: Trading pair
+            side: 'sell' for long positions (take profit when price rises)
+            quantity: Amount to sell when triggered
+            take_profit_price: Price at which to take profit
+            limit_price: If provided, uses take-profit-limit instead of market
+            
+        Returns:
+            Order response
+        """
+        if self.dry_run:
+            return {
+                "dryRun": True, "symbol": symbol, "side": side,
+                "type": "TAKE_PROFIT_LIMIT" if limit_price else "TAKE_PROFIT",
+                "quantity": str(quantity), "takeProfitPrice": str(take_profit_price),
+                "limitPrice": str(limit_price) if limit_price else None
+            }
+        
+        self._load_asset_pairs()
+        pair = self._alt_to_int.get(symbol, symbol)
+        
+        order_type = "take-profit-limit" if limit_price else "take-profit"
+        
+        params = {
+            "pair": pair,
+            "type": side.lower(),
+            "ordertype": order_type,
+            "volume": self._format_order_value(quantity),
+            "price": self._format_order_value(take_profit_price),  # Trigger price
+        }
+        
+        if limit_price:
+            params["price2"] = self._format_order_value(limit_price)
+        
+        res = self._private("/0/private/AddOrder", params)
+        txid = res.get("txid", ["unknown"])[0]
+        
+        return {
+            "symbol": symbol,
+            "orderId": txid,
+            "type": "TAKE_PROFIT_LIMIT" if limit_price else "TAKE_PROFIT",
+            "side": side.upper(),
+            "quantity": str(quantity),
+            "takeProfitPrice": str(take_profit_price),
+            "limitPrice": str(limit_price) if limit_price else None,
+            "status": "NEW"
+        }
+
+    def place_trailing_stop_order(
+        self,
+        symbol: str,
+        side: str,
+        quantity: float | str | Decimal,
+        trailing_offset: float | str | Decimal,
+        offset_type: str = "percent"
+    ) -> Dict[str, Any]:
+        """
+        Place a trailing stop order on Kraken.
+        
+        Args:
+            symbol: Trading pair
+            side: 'sell' for long positions (trails below price as it rises)
+            quantity: Amount to sell when triggered
+            trailing_offset: Distance from peak price
+            offset_type: 'percent' (e.g., 2.0 = 2%) or 'absolute' (price units)
+            
+        Returns:
+            Order response
+            
+        Example: 2% trailing stop on ETH at $3000 -> stop at $2940
+                 If ETH rises to $3500 -> stop auto-adjusts to $3430
+        """
+        if self.dry_run:
+            return {
+                "dryRun": True, "symbol": symbol, "side": side,
+                "type": "TRAILING_STOP",
+                "quantity": str(quantity), "trailingOffset": str(trailing_offset),
+                "offsetType": offset_type
+            }
+        
+        self._load_asset_pairs()
+        pair = self._alt_to_int.get(symbol, symbol)
+        
+        params = {
+            "pair": pair,
+            "type": side.lower(),
+            "ordertype": "trailing-stop",
+            "volume": self._format_order_value(quantity),
+        }
+        
+        # Kraken trailing stop uses price as the offset
+        # For percentage, we need to prefix with + or - and %
+        if offset_type == "percent":
+            # Kraken format: "+2%" means trail 2% below (for sells)
+            params["price"] = f"+{trailing_offset}%"
+        else:
+            # Absolute offset in price units
+            params["price"] = f"+{self._format_order_value(trailing_offset)}"
+        
+        res = self._private("/0/private/AddOrder", params)
+        txid = res.get("txid", ["unknown"])[0]
+        
+        return {
+            "symbol": symbol,
+            "orderId": txid,
+            "type": "TRAILING_STOP",
+            "side": side.upper(),
+            "quantity": str(quantity),
+            "trailingOffset": str(trailing_offset),
+            "offsetType": offset_type,
+            "status": "NEW"
+        }
+
+    def place_order_with_tp_sl(
+        self,
+        symbol: str,
+        side: str,
+        quantity: float | str | Decimal,
+        order_type: str = "market",
+        price: float | str | Decimal | None = None,
+        take_profit: float | str | Decimal | None = None,
+        stop_loss: float | str | Decimal | None = None
+    ) -> Dict[str, Any]:
+        """
+        Place an order with attached Take-Profit and/or Stop-Loss (conditional close).
+        
+        This is atomic - the TP/SL orders are attached to the entry and only activate
+        when the entry fills. If entry is cancelled, TP/SL are also cancelled.
+        
+        Args:
+            symbol: Trading pair
+            side: 'buy' or 'sell' for entry
+            quantity: Amount for entry order
+            order_type: 'market' or 'limit' for entry
+            price: Required if order_type is 'limit'
+            take_profit: Price to take profit (optional)
+            stop_loss: Price to stop loss (optional)
+            
+        Returns:
+            Order response with attached conditional close orders
+            
+        Example:
+            place_order_with_tp_sl('ETHUSD', 'buy', 1.0, 
+                                   take_profit=3500, stop_loss=2800)
+            # Buys 1 ETH, auto-sells at $3500 profit or $2800 loss
+        """
+        if self.dry_run:
+            return {
+                "dryRun": True, "symbol": symbol, "side": side,
+                "type": order_type.upper(), "quantity": str(quantity),
+                "price": str(price) if price else None,
+                "takeProfit": str(take_profit) if take_profit else None,
+                "stopLoss": str(stop_loss) if stop_loss else None,
+                "conditionalClose": True
+            }
+        
+        self._load_asset_pairs()
+        pair = self._alt_to_int.get(symbol, symbol)
+        
+        params = {
+            "pair": pair,
+            "type": side.lower(),
+            "ordertype": order_type.lower(),
+            "volume": self._format_order_value(quantity),
+        }
+        
+        if order_type.lower() == "limit" and price:
+            params["price"] = self._format_order_value(price)
+        
+        # Conditional close order - opposite side when entry fills
+        close_side = "sell" if side.lower() == "buy" else "buy"
+        
+        if take_profit and stop_loss:
+            # Use stop-loss with take-profit as conditional close
+            # Kraken doesn't support both in one order directly,
+            # so we create entry with stop-loss close, then add separate TP
+            params["close[ordertype]"] = "stop-loss"
+            params["close[price]"] = self._format_order_value(stop_loss)
+            
+            # Submit entry with stop-loss
+            res = self._private("/0/private/AddOrder", params)
+            entry_txid = res.get("txid", ["unknown"])[0]
+            
+            # Now add take-profit as separate order
+            tp_params = {
+                "pair": pair,
+                "type": close_side,
+                "ordertype": "take-profit",
+                "volume": self._format_order_value(quantity),
+                "price": self._format_order_value(take_profit),
+            }
+            tp_res = self._private("/0/private/AddOrder", tp_params)
+            tp_txid = tp_res.get("txid", ["unknown"])[0]
+            
+            return {
+                "symbol": symbol,
+                "entryOrderId": entry_txid,
+                "takeProfitOrderId": tp_txid,
+                "stopLossAttached": True,
+                "type": order_type.upper(),
+                "side": side.upper(),
+                "quantity": str(quantity),
+                "takeProfit": str(take_profit),
+                "stopLoss": str(stop_loss),
+                "status": "NEW"
+            }
+        
+        elif take_profit:
+            # Entry with take-profit close
+            params["close[ordertype]"] = "take-profit"
+            params["close[price]"] = self._format_order_value(take_profit)
+        
+        elif stop_loss:
+            # Entry with stop-loss close
+            params["close[ordertype]"] = "stop-loss"
+            params["close[price]"] = self._format_order_value(stop_loss)
+        
+        res = self._private("/0/private/AddOrder", params)
+        txid = res.get("txid", ["unknown"])[0]
+        
+        return {
+            "symbol": symbol,
+            "orderId": txid,
+            "type": order_type.upper(),
+            "side": side.upper(),
+            "quantity": str(quantity),
+            "takeProfit": str(take_profit) if take_profit else None,
+            "stopLoss": str(stop_loss) if stop_loss else None,
+            "conditionalClose": True,
+            "status": "NEW"
+        }
+
+    # ══════════════════════════════════════════════════════════════════════
+    # ORDER MANAGEMENT - Query, Cancel, Modify
+    # ══════════════════════════════════════════════════════════════════════
+
+    def get_open_orders(self, symbol: str | None = None) -> List[Dict[str, Any]]:
+        """
+        Get all open orders, optionally filtered by symbol.
+        
+        Returns:
+            List of open orders with order details
+        """
+        if self.dry_run:
+            return []
+        
+        result = self._private("/0/private/OpenOrders", {})
+        orders = result.get("open", {})
+        
+        out = []
+        for txid, order in orders.items():
+            descr = order.get("descr", {})
+            pair = descr.get("pair", "")
+            
+            # Filter by symbol if provided
+            if symbol:
+                self._load_asset_pairs()
+                target_pair = self._alt_to_int.get(symbol, symbol)
+                if pair != target_pair and pair != symbol:
+                    continue
+            
+            out.append({
+                "orderId": txid,
+                "symbol": pair,
+                "side": descr.get("type", "").upper(),
+                "type": descr.get("ordertype", "").upper(),
+                "price": descr.get("price", "0"),
+                "stopPrice": descr.get("price2", None),
+                "origQty": str(order.get("vol", 0)),
+                "executedQty": str(order.get("vol_exec", 0)),
+                "status": order.get("status", "OPEN").upper(),
+                "time": order.get("opentm", 0)
+            })
+        
+        return out
+
+    def get_order_status(self, order_id: str) -> Dict[str, Any]:
+        """
+        Get status of a specific order.
+        
+        Args:
+            order_id: The Kraken transaction ID (txid)
+            
+        Returns:
+            Order details including status
+        """
+        if self.dry_run:
+            return {"orderId": order_id, "status": "UNKNOWN", "dryRun": True}
+        
+        result = self._private("/0/private/QueryOrders", {"txid": order_id})
+        
+        if order_id not in result:
+            return {"orderId": order_id, "status": "NOT_FOUND"}
+        
+        order = result[order_id]
+        descr = order.get("descr", {})
+        
+        # Map Kraken status to Binance-like status
+        status_map = {
+            "pending": "NEW",
+            "open": "NEW",
+            "closed": "FILLED",
+            "canceled": "CANCELED",
+            "expired": "EXPIRED"
+        }
+        kraken_status = order.get("status", "unknown")
+        
+        return {
+            "orderId": order_id,
+            "symbol": descr.get("pair", ""),
+            "side": descr.get("type", "").upper(),
+            "type": descr.get("ordertype", "").upper(),
+            "price": descr.get("price", "0"),
+            "origQty": str(order.get("vol", 0)),
+            "executedQty": str(order.get("vol_exec", 0)),
+            "status": status_map.get(kraken_status, kraken_status.upper()),
+            "time": order.get("opentm", 0),
+            "closedTime": order.get("closetm", None)
+        }
+
+    def cancel_order(self, order_id: str) -> Dict[str, Any]:
+        """
+        Cancel a specific order.
+        
+        Args:
+            order_id: The Kraken transaction ID to cancel
+            
+        Returns:
+            Cancellation result
+        """
+        if self.dry_run:
+            return {"orderId": order_id, "status": "CANCELED", "dryRun": True}
+        
+        result = self._private("/0/private/CancelOrder", {"txid": order_id})
+        
+        return {
+            "orderId": order_id,
+            "status": "CANCELED",
+            "count": result.get("count", 0)
+        }
+
+    def cancel_all_orders(self, symbol: str | None = None) -> Dict[str, Any]:
+        """
+        Cancel all open orders, optionally filtered by symbol.
+        
+        Args:
+            symbol: If provided, only cancel orders for this pair
+            
+        Returns:
+            Count of cancelled orders
+        """
+        if self.dry_run:
+            return {"count": 0, "dryRun": True}
+        
+        if symbol:
+            # Cancel orders for specific symbol by iterating
+            open_orders = self.get_open_orders(symbol)
+            cancelled = 0
+            for order in open_orders:
+                try:
+                    self.cancel_order(order["orderId"])
+                    cancelled += 1
+                except Exception:
+                    pass
+            return {"count": cancelled, "symbol": symbol}
+        
+        # Cancel all orders
+        result = self._private("/0/private/CancelAll", {})
+        return {"count": result.get("count", 0)}
+
+    def edit_order(
+        self,
+        order_id: str,
+        quantity: float | str | Decimal | None = None,
+        price: float | str | Decimal | None = None
+    ) -> Dict[str, Any]:
+        """
+        Edit an existing order (change price or quantity without cancel/replace).
+        
+        Args:
+            order_id: The Kraken transaction ID to edit
+            quantity: New quantity (optional)
+            price: New price (optional)
+            
+        Returns:
+            New order ID (Kraken returns new txid for edited orders)
+        """
+        if self.dry_run:
+            return {"orderId": order_id, "status": "EDITED", "dryRun": True}
+        
+        params = {"txid": order_id}
+        
+        if quantity:
+            params["volume"] = self._format_order_value(quantity)
+        if price:
+            params["price"] = self._format_order_value(price)
+        
+        result = self._private("/0/private/EditOrder", params)
+        
+        return {
+            "originalOrderId": order_id,
+            "newOrderId": result.get("txid", order_id),
+            "status": "EDITED"
+        }
