@@ -2028,6 +2028,42 @@ export type Database = {
         }
         Relationships: []
       }
+      local_system_logs: {
+        Row: {
+          batch_id: string | null
+          created_at: string
+          id: string
+          level: string
+          log_type: string
+          message: string
+          module: string
+          parsed_data: Json | null
+          timestamp: string
+        }
+        Insert: {
+          batch_id?: string | null
+          created_at?: string
+          id?: string
+          level?: string
+          log_type?: string
+          message: string
+          module?: string
+          parsed_data?: Json | null
+          timestamp?: string
+        }
+        Update: {
+          batch_id?: string | null
+          created_at?: string
+          id?: string
+          level?: string
+          log_type?: string
+          message?: string
+          module?: string
+          parsed_data?: Json | null
+          timestamp?: string
+        }
+        Relationships: []
+      }
       master_equation_field_history: {
         Row: {
           coherence: number
@@ -4082,6 +4118,7 @@ export type Database = {
       }
     }
     Functions: {
+      cleanup_old_logs: { Args: never; Returns: undefined }
       get_latest_harmonic_state: {
         Args: { p_temporal_id: string }
         Returns: {
