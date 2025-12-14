@@ -286,6 +286,8 @@ class UnifiedExchangeClient:
     def __init__(self, exchange_id: str = "kraken"):
         self.exchange_id = exchange_id.lower()
         self.dry_run = False
+        # Kraken has per-pair minimums; apply a conservative global floor to avoid spam errors
+        self.kraken_min_notional = float(os.getenv("KRAKEN_MIN_NOTIONAL", "5"))
         
         if self.exchange_id == "kraken":
             self.client = KrakenClient()
@@ -744,6 +746,21 @@ class UnifiedExchangeClient:
         quote_qty: amount of quote asset (e.g. USD)
         """
         side = side.lower()
+
+        # Prevent Kraken "volume minimum not met" by enforcing a notional floor
+        if self.exchange_id == "kraken":
+            # If quote_qty given, it's already notional
+            if quote_qty is not None and quote_qty < self.kraken_min_notional:
+                logger.warning(f"Kraken order blocked: notional {quote_qty:.2f} below min {self.kraken_min_notional:.2f}")
+                return {'error': 'min_notional', 'exchange': self.exchange_id}
+            # If only quantity provided, estimate notional using latest price
+            if quote_qty is None and quantity is not None:
+                ticker = self.get_ticker(symbol)
+                price = ticker.get('price', 0) or 0
+                est_notional = price * quantity
+                if est_notional < self.kraken_min_notional:
+                    logger.warning(f"Kraken order blocked: est notional {est_notional:.2f} below min {self.kraken_min_notional:.2f} for {symbol}")
+                    return {'error': 'min_notional', 'exchange': self.exchange_id}
         
         if self.exchange_id == "kraken":
             # Use KrakenClient's place_market_order which returns Binance-compatible format
@@ -800,6 +817,13 @@ class UnifiedExchangeClient:
                           post_only: bool = False, time_in_force: str = "GTC") -> Dict[str, Any]:
         """Place a limit order. Uses maker fees (0.16% on Kraken vs 0.26% taker)."""
         side = side.lower()
+
+        # Apply the same notional floor for Kraken limit orders
+        if self.exchange_id == "kraken":
+            notional = (price or 0) * (quantity or 0)
+            if notional < self.kraken_min_notional:
+                logger.warning(f"Kraken limit order blocked: notional {notional:.2f} below min {self.kraken_min_notional:.2f} for {symbol}")
+                return {'error': 'min_notional', 'exchange': self.exchange_id}
         
         if self.exchange_id == "kraken":
             if hasattr(self.client, 'place_limit_order'):

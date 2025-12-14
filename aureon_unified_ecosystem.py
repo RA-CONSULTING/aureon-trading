@@ -9544,8 +9544,11 @@ class AureonKrakenEcosystem:
             self.tracker.halt_reason = ""
             print(f"   📊 Baseline reset to real portfolio: £{self.total_equity_gbp:.2f}")
         
-        # Enable circuit breaker now that baselines are properly set
-        self.tracker.circuit_breaker_enabled = True
+        # User directive: disable drawdown circuit breaker to allow penny-profit harvesting
+        self.tracker.circuit_breaker_enabled = False
+        # Ensure no stale halt state carries over between runs
+        self.tracker.trading_halted = False
+        self.tracker.halt_reason = ""
         
         # 🔧 ALWAYS import existing holdings as managed positions on startup
         # This ensures any assets on exchanges are tracked properly
