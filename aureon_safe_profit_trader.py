@@ -40,9 +40,9 @@ class SafeProfitTrader:
     def __init__(self, dry_run: bool = True):
         self.dry_run = dry_run
         self.client = BinanceClient()
-        self.fee_pct = 0.002  # 0.2% round-trip
-        self.take_profit_pct = 0.004  # 0.4% take profit
-        self.stop_loss_pct = 0.003  # 0.3% stop loss
+        self.fee_pct = 0.004  # 0.4% round-trip (0.2% each side for taker)
+        self.take_profit_pct = 0.012  # 1.2% take profit (must beat fees!)
+        self.stop_loss_pct = 0.008  # 0.8% stop loss
         self.trade_size_usd = 10.0
         self.max_positions = 3
         self.positions = {}

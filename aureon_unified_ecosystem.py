@@ -616,8 +616,11 @@ CONFIG = {
     
     # 🚀 KRAKEN ADVANCED ORDERS - Server-Side TP/SL (executes even if bot offline!)
     'USE_SERVER_SIDE_ORDERS': os.getenv('USE_SERVER_SIDE_ORDERS', '1') == '1',  # Enable Kraken native TP/SL
-    'PREFER_LIMIT_ORDERS': os.getenv('PREFER_LIMIT_ORDERS', '0') == '1',        # Use limit orders for maker fees
+    'PREFER_LIMIT_ORDERS': os.getenv('PREFER_LIMIT_ORDERS', '1') == '1',        # 💰 USE LIMIT ORDERS for maker fees (0.1% vs 0.2%!)
     'USE_TRAILING_STOP_ORDERS': os.getenv('USE_TRAILING_STOP_ORDERS', '0') == '1',  # Native trailing stops
+    
+    # 💰 PROFIT GATES - Don't exit unless profit overcomes fees!
+    'MIN_NET_PROFIT_PCT': 0.008,    # 0.8% minimum NET profit required to exit (overcomes ~0.4% round-trip fees)
     'SERVER_SIDE_TP_PCT': 1.8,              # Take profit % for server-side orders
     'SERVER_SIDE_SL_PCT': 1.5,              # Stop loss % for server-side orders
     'SERVER_TRAILING_PCT': 2.0,             # Trailing stop distance % for native trailing
@@ -10905,9 +10908,9 @@ class AureonKrakenEcosystem:
         gross_pnl = exit_value - pos.entry_value
         net_pnl = gross_pnl - total_expenses
         
-        # Calculate minimum required profit (0.5% buffer above breakeven for real profit)
-        # With 0.4% entry + 0.4% exit fees = 0.8% round-trip, we need >0.8% gross gain
-        min_profit_buffer = pos.entry_value * 0.005  # 0.5% minimum NET profit after fees
+        # Calculate minimum required profit using CONFIG
+        # CRITICAL: Don't exit unless profit overcomes all fees!
+        min_profit_buffer = pos.entry_value * CONFIG['MIN_NET_PROFIT_PCT']  # From config
         min_net_profit = min_profit_buffer
         
         # TAKE PROFIT: Only if we're making REAL profit (covering all fees + buffer)
@@ -13299,10 +13302,10 @@ class AureonKrakenEcosystem:
                 gross_pnl = exit_value - pos.entry_value
                 net_pnl = gross_pnl - total_expenses
                 
-                # Minimum profit buffer (0.5% net profit after all fees)
-                min_profit = pos.entry_value * 0.005
+                # 💰 PROFIT GATE: Use CONFIG minimum NET profit!
+                min_profit = pos.entry_value * CONFIG['MIN_NET_PROFIT_PCT']
                 
-                # 🌾 If we're net profitable, harvest it!
+                # 🌾 If we're REALLY net profitable (not just breakeven), harvest it!
                 if net_pnl >= min_profit:
                     net_pnl_pct = (net_pnl / pos.entry_value * 100) if pos.entry_value > 0 else 0
                     print(f"   🌾 HARVEST OPPORTUNITY: {symbol} net profit ${net_pnl:.4f} ({net_pnl_pct:.2f}%)")

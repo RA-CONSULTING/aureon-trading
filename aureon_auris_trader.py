@@ -49,7 +49,7 @@ TRADE_INTERVAL_MS = 500
 RISK_PERCENT = 10.0  # 10% per trade
 ENTRY_COHERENCE = 0.938
 EXIT_COHERENCE = 0.934
-MIN_PROFIT_PCT = 0.2  # Net profit target
+MIN_PROFIT_PCT = 0.8  # 0.8% Net profit target (was 0.2% - need to beat fees!)
 
 # Pairs to scan (High liquidity for CargoShip)
 PAIRS = ['SOLUSDC', 'XRPUSDC', 'ADAUSDC', 'DOGEUSDC', 'AVAXUSDC', 'BTCUSDC', 'ETHUSDC']

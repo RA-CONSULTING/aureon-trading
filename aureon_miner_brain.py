@@ -220,20 +220,23 @@ class CognitiveCircle:
                 
             price_change_pct = ((current_btc_price - price_at_call) / price_at_call) * 100
             
-            # Determine if prediction was correct
+            # Determine if prediction was correct - DIRECTION MATCH, not magnitude!
+            # BULLISH + UP = correct, BEARISH + DOWN = correct
             predicted = pred['predicted_direction']
+            actual_direction = "UP" if price_change_pct > 0 else "DOWN" if price_change_pct < 0 else "FLAT"
+            
             if predicted == "BULLISH":
-                was_correct = price_change_pct > 0.5  # > 0.5% move up
+                was_correct = price_change_pct > 0  # Any move up = correct
                 self.bias_tracker['bullish_calls'] += 1
                 if was_correct:
                     self.bias_tracker['bullish_correct'] += 1
             elif predicted == "BEARISH":
-                was_correct = price_change_pct < -0.5  # > 0.5% move down
+                was_correct = price_change_pct < 0  # Any move down = correct
                 self.bias_tracker['bearish_calls'] += 1
                 if was_correct:
                     self.bias_tracker['bearish_correct'] += 1
             else:
-                was_correct = abs(price_change_pct) < 1.0  # Stayed flat
+                was_correct = abs(price_change_pct) < 0.5  # Stayed relatively flat
                 self.bias_tracker['neutral_calls'] += 1
                 if was_correct:
                     self.bias_tracker['neutral_correct'] += 1
