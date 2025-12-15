@@ -22,6 +22,12 @@ import os, sys, time, math, json, logging, tempfile
 from datetime import datetime
 from typing import Dict, List, Optional, Tuple
 from decimal import Decimal, ROUND_DOWN
+
+# Windows Unicode Fix
+if sys.platform == 'win32':
+    sys.stdout.reconfigure(encoding='utf-8')
+    sys.stderr.reconfigure(encoding='utf-8')
+
 from binance_client import BinanceClient
 from hnc_probability_matrix import HNCProbabilityIntegration
 
@@ -941,7 +947,8 @@ class AureonUnifiedLive:
             logger.info(f"\n👀 WATCH LIST ({len(watch)} near-miss):")
             for w in watch[:5]:
                 freq_status = "⚡OPTIMAL" if w['in_optimal'] else ("⛔AVOID" if w['in_avoid'] else "OK")
-                logger.info(f"  {w['symbol']}: Γ={w['coherence']:.2f} | {w['freq']:.0f}Hz ({freq_status}) | {w['change']:+.1f}% | {w['passes']}/5 filters")
+                # Use 'G' instead of Gamma symbol for Windows compatibility
+                logger.info(f"  {w['symbol']}: G={w['coherence']:.2f} | {w['freq']:.0f}Hz ({freq_status}) | {w['change']:+.1f}% | {w['passes']}/5 filters")
 
 if __name__ == "__main__":
     trader = AureonUnifiedLive()
