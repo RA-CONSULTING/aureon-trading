@@ -385,3 +385,12 @@ The Samuel Harmonic Trading Entity stands on the shoulders of giants:
 **Copyright © 2025 Gary Leckey & R&A Consulting**
 **The Samuel Harmonic Trading Entity (SHTE) - Where Ancient Wisdom Meets Modern Markets**
 **Free Ireland**
+
+---
+
+## 🖥️ Local Launcher & Dashboard (New)
+- Run the guided setup: `python -m cli.setup_wizard`
+- Start trading + dashboard: `python -m cli.launcher --start`
+- Dashboard lives at `http://127.0.0.1:8000` with Start/Stop controls.
+- Auto-start is opt-in: `python -m cli.launcher --register-autostart` (Windows scheduled task or cross-platform shortcut note).
+- Config is encrypted by default (`config.json.enc` + `config.key`); use `--dev-plaintext` only for local testing.

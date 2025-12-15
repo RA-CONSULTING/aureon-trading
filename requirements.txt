@@ -6,3 +6,5 @@ skyfield
 astroquery
 astropy
 scipy
+cryptography
+flask
