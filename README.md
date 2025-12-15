@@ -1,7 +1,7 @@
 # 🎵🌌 THE SAMUEL HARMONIC TRADING ENTITY (SHTE)
 
 > **"The market is not just numbers. It is a frequency. We trade in harmony with 11 civilizations of ancient wisdom."**
-> — *Gary Leckey, Prime Sentinel*
+> — *Gary Leckey, Research Director-R&A Consulting
 
 [![System Status](https://img.shields.io/badge/System-OPERATIONAL-green)]()
 [![Civilizations](https://img.shields.io/badge/Civilizations-11-gold)]()
@@ -384,4 +384,4 @@ The Samuel Harmonic Trading Entity stands on the shoulders of giants:
 
 **Copyright © 2025 Gary Leckey & R&A Consulting**
 **The Samuel Harmonic Trading Entity (SHTE) - Where Ancient Wisdom Meets Modern Markets**
-**United Kingdom 🇬🇧**
+**Free Ireland**
