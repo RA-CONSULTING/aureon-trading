@@ -143,9 +143,17 @@ if ($ecosystemProcess.Id) {
     exit 1
 }
 
-# 4. Start the Unified Live Trader
-Write-Host "[>>] Launching Unified Live Trader (v6)..." -ForegroundColor Cyan
-Write-Host "===================================================" -ForegroundColor Cyan
+# 4. Give Ecosystem time to initialize
+Write-Host "[..] Waiting for Ecosystem initialization (5s)..." -ForegroundColor Yellow
+Start-Sleep -Seconds 5
+Write-Host "   [OK] Ecosystem ready" -ForegroundColor Green
+
+# 5. Start the Unified Live Trader
+Write-Host ""
+Write-Host "===================================================" -ForegroundColor Green
+Write-Host "[>>] Launching Unified Live Trader (v6)..." -ForegroundColor Green
+Write-Host "===================================================" -ForegroundColor Green
+Write-Host ""
 
 try {
     python aureon_unified_live.py

@@ -691,13 +691,13 @@ class AureonUnifiedLive:
             return False
         
         logger.info(f"""
-╔════════════════════════════════════════════════════════════════╗
-║ 🎯 ENTERING {symbol}
-║ HNC Prob: {opp.get('probability', 0):.0%} | Action: {opp.get('action', 'N/A')}
-║ Coherence: Γ={coherence:.3f} | Freq: {opp.get('frequency', 0):.0f}Hz
-║ Size: {size_pct*100:.0f}% = ${notional:.2f} ({qty_str} @ ${opp['price']:.4f})
-║ Band: {opp.get('freq_band', 'STANDARD')} | Range: {opp.get('range_pct', 0)*100:.0f}%
-╚════════════════════════════════════════════════════════════════╝
++================================================================+
+| [ENTRY] {symbol}
+| HNC Prob: {opp.get('probability', 0):.0%} | Action: {opp.get('action', 'N/A')}
+| Coherence: G={coherence:.3f} | Freq: {opp.get('frequency', 0):.0f}Hz
+| Size: {size_pct*100:.0f}% = ${notional:.2f} ({qty_str} @ ${opp['price']:.4f})
+| Band: {opp.get('freq_band', 'STANDARD')} | Range: {opp.get('range_pct', 0)*100:.0f}%
++================================================================+
 """)
         
         try:
@@ -709,11 +709,11 @@ class AureonUnifiedLive:
                 'notional': notional,
                 'peak_price': opp['price'],  # v6: Track peak for trailing stop
             }
-            logger.info(f"✅ Filled: Order #{result.get('orderId')}")
+            logger.info(f"[OK] Filled: Order #{result.get('orderId')}")
             self.trades += 1
             return True
         except Exception as e:
-            logger.error(f"❌ Buy failed: {e}")
+            logger.error(f"[FAIL] Buy failed: {e}")
             return False
     
     def check_exits(self):
@@ -748,19 +748,19 @@ class AureonUnifiedLive:
                     
                     if price <= trail_price:
                         should_exit = True
-                        reason = f"📈 TRAILING STOP (Peak: ${peak:.4f}, Trail: ${trail_price:.4f})"
+                        reason = f"[TRAIL] TRAILING STOP (Peak: ${peak:.4f}, Trail: ${trail_price:.4f})"
             
             # Standard exits (only if trailing didn't trigger)
             if not should_exit:
                 if pnl_pct >= CONFIG['TAKE_PROFIT_PCT']:
                     should_exit = True
-                    reason = "💰 TAKE PROFIT"
+                    reason = "[TP] TAKE PROFIT"
                 elif pnl_pct <= -CONFIG['STOP_LOSS_PCT']:
                     should_exit = True
-                    reason = "🛑 STOP LOSS"
+                    reason = "[SL] STOP LOSS"
                 elif time.time() - pos['entry_time'] > CONFIG['TIMEOUT_SEC']:  # v4: Configurable timeout
                     should_exit = True
-                    reason = "⏰ TIMEOUT"
+                    reason = "[TIME] TIMEOUT"
             
             if should_exit:
                 # v4 FIX: Get actual balance from exchange for sells
@@ -775,22 +775,22 @@ class AureonUnifiedLive:
                 # Verify notional is above minimum
                 sell_notional = float(qty_str) * price
                 if sell_notional < 5.0:  # Binance minimum
-                    logger.warning(f"⚠️ {symbol} notional ${sell_notional:.2f} below $5 minimum - skipping sell")
+                    logger.warning(f"[WARN] {symbol} notional ${sell_notional:.2f} below $5 minimum - skipping sell")
                     continue
                 
                 logger.info(f"""
-╔════════════════════════════════════════════════════════════════╗
-║ ⚡ EXITING {symbol}
-║ Reason: {reason}
-║ Entry: ${entry:.4f} | Exit: ${price:.4f}
-║ Qty: {qty_str} (Balance: {actual_balance:.4f})
-║ P&L:   {pnl_pct*100:+.2f}% (${pnl_usd:+.2f})
-╚════════════════════════════════════════════════════════════════╝
++================================================================+
+| [EXIT] {symbol}
+| Reason: {reason}
+| Entry: ${entry:.4f} | Exit: ${price:.4f}
+| Qty: {qty_str} (Balance: {actual_balance:.4f})
+| P&L:   {pnl_pct*100:+.2f}% (${pnl_usd:+.2f})
++================================================================+
 """)
                 
                 try:
                     result = self.client.place_market_order(symbol, 'SELL', quantity=float(qty_str))
-                    logger.info(f"✅ Sold: Order #{result.get('orderId')}")
+                    logger.info(f"[OK] Sold: Order #{result.get('orderId')}")
                     
                     # Record trade with sell price for re-entry protection
                     self.memory.record(symbol, pnl_usd, sell_price=price)
@@ -804,7 +804,7 @@ class AureonUnifiedLive:
                     
                     del self.positions[symbol]
                 except Exception as e:
-                    logger.error(f"❌ Sell failed: {e}")
+                    logger.error(f"[FAIL] Sell failed: {e}")
     
     def display_status(self, cycle: int):
         usdc = self.get_usdc_balance()
