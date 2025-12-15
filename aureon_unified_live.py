@@ -821,37 +821,37 @@ class AureonUnifiedLive:
             curr = float(self.ticker_cache.get(sym, {}).get('lastPrice', pos['entry']))
             peak_pnl = (peak - pos['entry']) / pos['entry'] * 100
             curr_pnl = (curr - pos['entry']) / pos['entry'] * 100
-            trail_info += f"\n║   {sym}: Entry ${pos['entry']:.4f} | Peak +{peak_pnl:.2f}% | Now {curr_pnl:+.2f}%"
+            trail_info += f"\n|   {sym}: Entry ${pos['entry']:.4f} | Peak +{peak_pnl:.2f}% | Now {curr_pnl:+.2f}%"
         
         logger.info(f"""
-╔════════════════════════════════════════════════════════════════╗
-║ 🌌 AUREON UNIFIED v6 | Cycle {cycle:3d}
-║────────────────────────────────────────────────────────────────
-║ 💵 USDC:      ${usdc:.2f}
-║ 💼 Positions: ${pos_value:.2f} ({len(self.positions)}){trail_info}
-║ 📊 Total:     ${total:.2f}
-║────────────────────────────────────────────────────────────────
-║ 🏆 Trades: {self.trades} | Wins: {self.wins} | WR: {win_rate:.1f}%
-║ 💰 Profit: ${self.total_profit_usd:+.2f}
-║ 🚫 Rejections: {len(self.rejections)} (last cycle)
-╚════════════════════════════════════════════════════════════════╝
++================================================================+
+| * AUREON UNIFIED v6 | Cycle {cycle:3d}
+|----------------------------------------------------------------
+| [USDC] USDC:      ${usdc:.2f}
+| [POS]  Positions: ${pos_value:.2f} ({len(self.positions)}){trail_info}
+| [TOT]  Total:     ${total:.2f}
+|----------------------------------------------------------------
+| [TRD]  Trades: {self.trades} | Wins: {self.wins} | WR: {win_rate:.1f}%
+| [P&L]  Profit: ${self.total_profit_usd:+.2f}
+| [REJ]  Rejections: {len(self.rejections)} (last cycle)
++================================================================+
 """)
     
     def run(self, duration_sec: int = 3600):
         logger.info("""
-╔════════════════════════════════════════════════════════════════╗
-║        🌌 AUREON UNIFIED LIVE TRADER v6.1 🌌
-║
-║  ALL SYSTEMS INTEGRATED:
-║    ✨ HNC Probability Matrix
-║    ✨ Solfeggio Frequency Mapping (750-963Hz optimal)
-║    ✨ Tiered Coherence (0.70 base, 0.88 optimal)
-║    ✨ Elephant Memory (Symbol learning)
-║    ✨ Trailing Stops (Lock in +0.8% gains)
-║    ✨ Spike Detection (Avoid pump entries)
-║    ✨ Near-Miss Monitoring (Watch list)
-║
-╚════════════════════════════════════════════════════════════════╝
++================================================================+
+|        * AUREON UNIFIED LIVE TRADER v6.1 *
+|
+|  ALL SYSTEMS INTEGRATED:
+|    * HNC Probability Matrix
+|    * Solfeggio Frequency Mapping (750-963Hz optimal)
+|    * Tiered Coherence (0.70 base, 0.88 optimal)
+|    * Elephant Memory (Symbol learning)
+|    * Trailing Stops (Lock in +0.8% gains)
+|    * Spike Detection (Avoid pump entries)
+|    * Near-Miss Monitoring (Watch list)
+|
++================================================================+
 """)
         
         start = time.time()
@@ -871,10 +871,10 @@ class AureonUnifiedLive:
                 opps = self.scan_opportunities()
                 
                 if opps:
-                    logger.info(f"\n🔍 Top 3 HNC Opportunities:")
+                    logger.info(f"\n[SCAN] Top 3 HNC Opportunities:")
                     for i, opp in enumerate(opps[:3]):
-                        harmonic = "🎵" if opp.get('is_harmonic') else ""
-                        logger.info(f"  {i+1}. {opp['symbol']}: P={opp['probability']:.0%} | Γ={opp['coherence']:.3f} | {opp['action']} {harmonic}")
+                        harmonic = "[H]" if opp.get('is_harmonic') else ""
+                        logger.info(f"  {i+1}. {opp['symbol']}: P={opp['probability']:.0%} | G={opp['coherence']:.3f} | {opp['action']} {harmonic}")
                     
                     usdc = self.get_usdc_balance()
                     if usdc >= CONFIG['MIN_TRADE_USD']:
@@ -886,11 +886,11 @@ class AureonUnifiedLive:
             time.sleep(10)
         
         logger.info(f"""
-╔════════════════════════════════════════════════════════════════╗
-║ 🏁 SESSION COMPLETE
-║ Trades: {self.trades} | Wins: {self.wins} | WR: {self.wins/max(1,self.trades)*100:.1f}%
-║ Total P&L: ${self.total_profit_usd:+.2f}
-╚════════════════════════════════════════════════════════════════╝
++================================================================+
+| [FIN] SESSION COMPLETE
+| Trades: {self.trades} | Wins: {self.wins} | WR: {self.wins/max(1,self.trades)*100:.1f}%
+| Total P&L: ${self.total_profit_usd:+.2f}
++================================================================+
 """)
     
     def show_watch_list(self):
@@ -944,9 +944,9 @@ class AureonUnifiedLive:
         
         if watch:
             watch.sort(key=lambda x: (-x['passes'], -x['coherence']))
-            logger.info(f"\n👀 WATCH LIST ({len(watch)} near-miss):")
+            logger.info(f"\n[WATCH] WATCH LIST ({len(watch)} near-miss):")
             for w in watch[:5]:
-                freq_status = "⚡OPTIMAL" if w['in_optimal'] else ("⛔AVOID" if w['in_avoid'] else "OK")
+                freq_status = "[!]OPTIMAL" if w['in_optimal'] else ("[X]AVOID" if w['in_avoid'] else "OK")
                 # Use 'G' instead of Gamma symbol for Windows compatibility
                 logger.info(f"  {w['symbol']}: G={w['coherence']:.2f} | {w['freq']:.0f}Hz ({freq_status}) | {w['change']:+.1f}% | {w['passes']}/5 filters")
 
