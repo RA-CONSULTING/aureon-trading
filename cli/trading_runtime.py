@@ -67,6 +67,8 @@ class TradingService:
 
             # Occasionally open or adjust a position
             if random.random() > 0.75:
+                # Defensive check: trade_size is validated as positive in setup_wizard.py (lines 52-53),
+                # but this check is necessary in case the config is modified externally.
                 if self.config.trade_size <= 0:
                     self.state.logs.append("Trade size must be positive; adjust config to resume trading.")
                 else:
