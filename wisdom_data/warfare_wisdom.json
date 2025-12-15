@@ -1,6 +1,6 @@
 {
   "civilization": "Strategic Warfare",
-  "last_updated": "2025-12-15T10:24:05.918145",
+  "last_updated": "2025-12-15T10:37:52.970653",
   "version": "1.0.0",
   "sources": [
     "hardcoded",
@@ -91,6 +91,48 @@
         "Wikipedia",
         "Sacred-Texts"
       ]
+    }
+  ],
+  "learned_lessons": [
+    {
+      "name": "Trading Lesson - 20251215_103749",
+      "content": "In times of market chaos, the bold who act with conviction find opportunity.",
+      "trading_insight": "In times of market chaos, the bold who act with conviction find opportunity.",
+      "source": "Samuel Trading Experience",
+      "relevance_score": 0.9,
+      "learned_at": "2025-12-15T10:37:49.410184"
+    },
+    {
+      "name": "Trading Lesson - 20251215_103749",
+      "content": "Even strong trends pause to breathe; timing is the essence of wisdom.",
+      "trading_insight": "Even strong trends pause to breathe; timing is the essence of wisdom.",
+      "source": "Samuel Trading Experience",
+      "relevance_score": 0.7,
+      "learned_at": "2025-12-15T10:37:49.940741"
+    },
+    {
+      "name": "Trading Lesson - 20251215_103750",
+      "content": "Fighting the tide exhausts even the strongest swimmer.",
+      "trading_insight": "Fighting the tide exhausts even the strongest swimmer.",
+      "source": "Samuel Trading Experience",
+      "relevance_score": 0.7,
+      "learned_at": "2025-12-15T10:37:50.951479"
+    },
+    {
+      "name": "Trading Lesson - 20251215_103752",
+      "content": "Counter-trend victory comes only to those who see the hidden reversal.",
+      "trading_insight": "Counter-trend victory comes only to those who see the hidden reversal.",
+      "source": "Samuel Trading Experience",
+      "relevance_score": 0.9,
+      "learned_at": "2025-12-15T10:37:52.458302"
+    },
+    {
+      "name": "Trading Lesson - 20251215_103752",
+      "content": "In times of market chaos, the bold who act with conviction find opportunity.",
+      "trading_insight": "In times of market chaos, the bold who act with conviction find opportunity.",
+      "source": "Samuel Trading Experience",
+      "relevance_score": 0.9,
+      "learned_at": "2025-12-15T10:37:52.970438"
     }
   ]
 }
