@@ -75,10 +75,23 @@ def run_setup_wizard(force_plaintext: bool = False) -> TradingConfig:
     base_asset = (input("Base asset (default=BTC): ").strip() or "BTC").upper()
     quote_asset = (input("Quote asset (default=USDT): ").strip() or "USDT").upper()
 
+    retry_count = 0
+    max_retries = 3
     while base_asset == quote_asset:
         print("Base and quote assets must differ.")
+        print("Enter 'q' to abort setup.")
         base_asset = (input("Base asset (default=BTC): ").strip() or "BTC").upper()
+        if base_asset.lower() == "q":
+            print("Setup aborted by user.")
+            sys.exit(1)
         quote_asset = (input("Quote asset (default=USDT): ").strip() or "USDT").upper()
+        if quote_asset.lower() == "q":
+            print("Setup aborted by user.")
+            sys.exit(1)
+        retry_count += 1
+        if retry_count >= max_retries and base_asset == quote_asset:
+            print("Too many failed attempts. Setup aborted.")
+            sys.exit(1)
 
     trade_size = _prompt_trade_size()
 
