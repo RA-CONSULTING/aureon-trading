@@ -131,7 +131,19 @@ while (-not (Test-Path $brainFile)) {
 Write-Host ""
 Write-Host "[OK] Brain State Detected!" -ForegroundColor Green
 
-# 3. Start the Unified Trader
+# 3. Start the Unified Ecosystem Engine
+Write-Host "[>>] Launching Unified Ecosystem Engine..." -ForegroundColor Yellow
+$ecosystemProcess = Start-Process -FilePath "python" -ArgumentList "aureon_unified_ecosystem.py" -PassThru -WindowStyle Minimized
+
+if ($ecosystemProcess.Id) {
+    Write-Host "   [OK] Ecosystem Engine started with PID: $($ecosystemProcess.Id)" -ForegroundColor Green
+} else {
+    Write-Error "   [FAIL] Failed to start Ecosystem Engine."
+    Stop-Process -Id $minerProcess.Id -ErrorAction SilentlyContinue
+    exit 1
+}
+
+# 4. Start the Unified Live Trader
 Write-Host "[>>] Launching Unified Live Trader (v6)..." -ForegroundColor Cyan
 Write-Host "===================================================" -ForegroundColor Cyan
 
@@ -142,6 +154,14 @@ finally {
     # Cleanup on exit
     Write-Host ""
     Write-Host "[XX] Shutting down ecosystem..." -ForegroundColor Yellow
-    Stop-Process -Id $minerProcess.Id -ErrorAction SilentlyContinue
-    Write-Host "   [OK] Miner stopped." -ForegroundColor Green
+    
+    if ($minerProcess) {
+        Stop-Process -Id $minerProcess.Id -ErrorAction SilentlyContinue
+        Write-Host "   [OK] Miner stopped." -ForegroundColor Green
+    }
+    
+    if ($ecosystemProcess) {
+        Stop-Process -Id $ecosystemProcess.Id -ErrorAction SilentlyContinue
+        Write-Host "   [OK] Ecosystem Engine stopped." -ForegroundColor Green
+    }
 }
