@@ -47,9 +47,16 @@ def _register_autostart(script_path: Path, config: TradingConfig) -> None:
 
     if os.name == "nt":
         task_name = "AureonAutoStart"
-        command = f'schtasks /Create /SC ONLOGON /TN {task_name} /TR "{sys.executable} {script_path} --start" /F'
+        command = [
+            "schtasks",
+            "/Create",
+            "/SC", "ONLOGON",
+            "/TN", task_name,
+            "/TR", f'"{sys.executable}" "{script_path}" --start',
+            "/F"
+        ]
         try:
-            subprocess.run(command, check=True, shell=True)
+            subprocess.run(command, check=True)
             print(f"Registered Windows scheduled task: {task_name}")
         except subprocess.CalledProcessError as exc:
             print(f"Failed to register scheduled task: {exc}")
