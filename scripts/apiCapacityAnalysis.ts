@@ -197,7 +197,7 @@ function analyzeApiCapacity() {
   🔑 KEYS REQUIRED:
      • Minimum keys:        ${keysNeeded} ${singleKeyOk ? '✅ (1 key sufficient!)' : '⚠️'}
      • Bottleneck:          ${bottleneck}
-     • Max keys/account:    ${spec.apiKeyLimit}
+     • Max keys/account:    [REDACTED]
      • Accounts needed:     ${accountsNeeded}
 `);
   }
