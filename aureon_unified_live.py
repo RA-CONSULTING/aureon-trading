@@ -18,7 +18,7 @@ ONE SYSTEM. ALL THE POWER.
 Gary Leckey | November 2025
 """
 
-import os, sys, time, math, json, logging
+import os, sys, time, math, json, logging, tempfile
 from datetime import datetime
 from typing import Dict, List, Optional, Tuple
 from decimal import Decimal, ROUND_DOWN
@@ -282,7 +282,7 @@ class AureonUnifiedLive:
         self.rejections = []
 
         # 🎹 Brain/Piano resonance cache
-        self.brain_state_path = "/tmp/aureon_multidimensional_brain_output.json"
+        self.brain_state_path = os.path.join(tempfile.gettempdir(), "aureon_multidimensional_brain_output.json")
         self.brain_cache = {}
         self.brain_cache_time = 0
 
