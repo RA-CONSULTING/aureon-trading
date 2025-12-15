@@ -1,0 +1,89 @@
+{
+  "civilization": "Pythagorean",
+  "last_updated": "2025-12-15T00:00:00Z",
+  "version": "1.0.0",
+  "sources": ["hardcoded", "wikipedia"],
+  "core_principles": {
+    "all_is_number": {
+      "description": "The universe is fundamentally mathematical - numbers are the essence of reality",
+      "trading_application": "Quantitative analysis as path to market truth",
+      "confidence": 0.95
+    },
+    "harmonia": {
+      "description": "Mathematical ratios create harmony in music, cosmos, and soul",
+      "trading_application": "Harmonic patterns, Fibonacci relationships",
+      "confidence": 0.90
+    },
+    "tetraktys": {
+      "description": "Sacred triangular figure of 10 dots (1+2+3+4) representing cosmic order",
+      "trading_application": "Layered analysis: point, line, plane, solid",
+      "confidence": 0.85
+    },
+    "metempsychosis": {
+      "description": "Transmigration of souls - eternal cycles of existence",
+      "trading_application": "Market patterns eternally recurring in new forms",
+      "confidence": 0.75
+    }
+  },
+  "sacred_mathematics": {
+    "ratios": {
+      "octave": {"ratio": "2:1", "description": "Perfect doubling, fundamental harmony"},
+      "fifth": {"ratio": "3:2", "description": "Strong consonance, stability"},
+      "fourth": {"ratio": "4:3", "description": "Pure harmony, balance"}
+    },
+    "fibonacci_sequence": {
+      "sequence": [1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233, 377, 610],
+      "golden_ratio": 1.618033988749,
+      "trading_levels": [0.236, 0.382, 0.5, 0.618, 0.786, 1.0, 1.272, 1.618, 2.618]
+    },
+    "perfect_numbers": {
+      "values": [6, 28, 496, 8128],
+      "property": "Sum of proper divisors equals the number",
+      "significance": "Divine perfection in mathematics"
+    },
+    "triangular_numbers": {
+      "sequence": [1, 3, 6, 10, 15, 21, 28, 36, 45, 55],
+      "formula": "n(n+1)/2"
+    }
+  },
+  "number_meanings": {
+    "1": {"name": "Monad", "meaning": "Unity, source, the One"},
+    "2": {"name": "Dyad", "meaning": "Duality, opposition, division"},
+    "3": {"name": "Triad", "meaning": "Harmony, completion, first odd prime"},
+    "4": {"name": "Tetrad", "meaning": "Stability, square, material world"},
+    "5": {"name": "Pentad", "meaning": "Life, health, marriage of 2+3"},
+    "6": {"name": "Hexad", "meaning": "First perfect number, creation"},
+    "7": {"name": "Heptad", "meaning": "Fortune, wisdom, Virgin number"},
+    "8": {"name": "Ogdoad", "meaning": "Justice, first cube"},
+    "9": {"name": "Ennead", "meaning": "Completion, first odd square"},
+    "10": {"name": "Decad", "meaning": "Tetraktys sum, universe, perfection"}
+  },
+  "geometric_principles": {
+    "platonic_solids": {
+      "tetrahedron": {"faces": 4, "element": "Fire", "market": "Volatility"},
+      "cube": {"faces": 6, "element": "Earth", "market": "Stability"},
+      "octahedron": {"faces": 8, "element": "Air", "market": "Movement"},
+      "dodecahedron": {"faces": 12, "element": "Aether", "market": "Higher order"},
+      "icosahedron": {"faces": 20, "element": "Water", "market": "Flow"}
+    },
+    "golden_spiral": "Fibonacci spiral approaching golden ratio - nature's growth pattern"
+  },
+  "musical_harmony": {
+    "description": "Music of the spheres - planetary movements create cosmic harmony",
+    "application": "Market cycles as harmonic oscillations"
+  },
+  "wikipedia_topics": [
+    "Pythagoreanism",
+    "Pythagorean theorem",
+    "Golden ratio",
+    "Fibonacci sequence",
+    "Tetraktys",
+    "Musica universalis",
+    "Pythagorean tuning",
+    "Sacred geometry",
+    "Platonic solid",
+    "Perfect number"
+  ],
+  "learned_insights": [],
+  "scan_history": []
+}

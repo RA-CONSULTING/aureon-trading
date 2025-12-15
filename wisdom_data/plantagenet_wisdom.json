@@ -1,0 +1,95 @@
+{
+  "civilization": "Plantagenet",
+  "last_updated": "2025-12-15T00:00:00Z",
+  "version": "1.0.0",
+  "sources": ["hardcoded", "wikipedia"],
+  "core_principles": {
+    "feudal_hierarchy": {
+      "description": "Structured power relationships with clear chains of authority and obligation",
+      "trading_application": "Understanding market power structures, institutional flows",
+      "confidence": 0.85
+    },
+    "magna_carta": {
+      "description": "Rule of law constraining even sovereign power - foundational constitutional principles",
+      "trading_application": "Regulatory frameworks, compliance as market structure",
+      "confidence": 0.90
+    },
+    "crusader_logistics": {
+      "description": "Complex supply chains and resource management across vast distances",
+      "trading_application": "Global market connectivity, supply chain analysis",
+      "confidence": 0.80
+    },
+    "dynastic_succession": {
+      "description": "Power transfer through bloodlines, legitimacy, and strategic marriage",
+      "trading_application": "Leadership transitions, corporate succession events",
+      "confidence": 0.75
+    }
+  },
+  "economic_wisdom": {
+    "guild_system": {
+      "description": "Craft guilds controlling quality, training, and market access",
+      "trading_insight": "Professional networks, barriers to entry, quality control"
+    },
+    "fair_courts": {
+      "description": "Merchant courts at fairs resolving disputes quickly for trade continuity",
+      "trading_insight": "Dispute resolution mechanisms, market integrity"
+    },
+    "wool_trade": {
+      "description": "English wool as medieval Europe's most valuable commodity",
+      "trading_insight": "Commodity cycles, export dependencies"
+    },
+    "coinage": {
+      "description": "Sterling silver standard establishing trusted currency",
+      "trading_insight": "Currency stability, monetary policy importance"
+    }
+  },
+  "military_strategy": {
+    "longbow_doctrine": {
+      "description": "English longbow dominance through training, discipline, massed fire",
+      "trading_application": "Concentrated force at key moments, range advantage"
+    },
+    "castle_defense": {
+      "description": "Concentric defenses, multiple fallback positions",
+      "trading_application": "Layered risk management, stop-loss levels"
+    },
+    "chevauchee": {
+      "description": "Rapid mounted raids destroying enemy economic capacity",
+      "trading_application": "Aggressive position-taking, exploiting weakness"
+    }
+  },
+  "governance_principles": {
+    "common_law": {
+      "description": "Precedent-based legal system evolving through judicial decisions",
+      "trading_insight": "Historical patterns as guides, case-based reasoning"
+    },
+    "parliament": {
+      "description": "Representative assembly constraining royal power, controlling taxation",
+      "trading_insight": "Collective decision-making, stakeholder management"
+    },
+    "exchequer": {
+      "description": "Sophisticated royal treasury and accounting system",
+      "trading_insight": "Financial tracking, audit trails, accountability"
+    }
+  },
+  "key_figures": {
+    "henry_ii": "Legal reformer, common law architect, Angevin Empire builder",
+    "richard_i": "Crusader king, chivalric ideal, military excellence",
+    "john_i": "Magna Carta catalyst, administrative innovation through crisis",
+    "edward_i": "Lawgiver, Welsh conquest, parliamentary development",
+    "edward_iii": "Hundred Years' War initiator, Order of the Garter"
+  },
+  "wikipedia_topics": [
+    "House of Plantagenet",
+    "Magna Carta",
+    "English common law",
+    "Crusades",
+    "Hundred Years War",
+    "English longbow",
+    "Medieval English wool trade",
+    "Parliament of England",
+    "Feudalism",
+    "Angevin Empire"
+  ],
+  "learned_insights": [],
+  "scan_history": []
+}

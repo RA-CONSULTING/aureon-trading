@@ -1,0 +1,83 @@
+{
+  "civilization": "Aztec",
+  "last_updated": "2025-12-15T00:00:00Z",
+  "version": "1.0.0",
+  "sources": ["hardcoded", "wikipedia"],
+  "core_principles": {
+    "tonalpohualli": {
+      "description": "260-day sacred calendar with 20 day-signs and 13 numbers",
+      "trading_application": "Short-term cycle timing aligned with sacred mathematics",
+      "confidence": 0.85
+    },
+    "xiuhpohualli": {
+      "description": "365-day solar calendar tracking agricultural and ceremonial cycles",
+      "trading_application": "Annual market cycle alignment",
+      "confidence": 0.80
+    },
+    "five_suns": {
+      "description": "Five world ages each destroyed and reborn, current is Fifth Sun",
+      "trading_application": "Market regime recognition, paradigm shifts",
+      "confidence": 0.75
+    },
+    "teotl": {
+      "description": "Sacred force permeating all existence, dynamic and transformative",
+      "trading_application": "Understanding market energy and momentum",
+      "confidence": 0.70
+    }
+  },
+  "calendar_mathematics": {
+    "sacred_numbers": [13, 20, 52, 260, 365],
+    "calendar_round": {
+      "period_days": 18980,
+      "years": 52,
+      "meaning": "Complete cycle before patterns repeat"
+    },
+    "venus_cycle": {
+      "synodic_period": 584,
+      "relation": "5 Venus cycles = 8 solar years = 2920 days",
+      "trading_insight": "Multi-year correlation patterns"
+    }
+  },
+  "day_signs": {
+    "cipactli": {"meaning": "Crocodile", "energy": "Beginnings, primordial"},
+    "ehecatl": {"meaning": "Wind", "energy": "Change, communication"},
+    "calli": {"meaning": "House", "energy": "Shelter, introspection"},
+    "cuetzpalin": {"meaning": "Lizard", "energy": "Agility, survival"},
+    "coatl": {"meaning": "Serpent", "energy": "Power, transformation"},
+    "miquiztli": {"meaning": "Death", "energy": "Endings, rebirth"},
+    "mazatl": {"meaning": "Deer", "energy": "Grace, hunt"},
+    "tochtli": {"meaning": "Rabbit", "energy": "Abundance, multiplication"},
+    "atl": {"meaning": "Water", "energy": "Flow, emotion"},
+    "itzcuintli": {"meaning": "Dog", "energy": "Loyalty, guidance"},
+    "ozomatli": {"meaning": "Monkey", "energy": "Play, creativity"},
+    "malinalli": {"meaning": "Grass", "energy": "Resilience, tenacity"},
+    "acatl": {"meaning": "Reed", "energy": "Authority, judgment"},
+    "ocelotl": {"meaning": "Jaguar", "energy": "Stealth, inner power"},
+    "cuauhtli": {"meaning": "Eagle", "energy": "Vision, freedom"},
+    "cozcacuauhtli": {"meaning": "Vulture", "energy": "Wisdom, purification"},
+    "ollin": {"meaning": "Movement", "energy": "Change, earthquake"},
+    "tecpatl": {"meaning": "Flint", "energy": "Sacrifice, truth"},
+    "quiahuitl": {"meaning": "Rain", "energy": "Cleansing, fertility"},
+    "xochitl": {"meaning": "Flower", "energy": "Beauty, art, completion"}
+  },
+  "deities_and_forces": {
+    "quetzalcoatl": "Feathered Serpent - wisdom, wind, learning",
+    "tezcatlipoca": "Smoking Mirror - fate, night, change",
+    "huitzilopochtli": "Hummingbird of South - will, war, sun",
+    "tlaloc": "Rain God - nourishment, storms, agriculture"
+  },
+  "wikipedia_topics": [
+    "Aztec calendar",
+    "Tonalpohualli",
+    "Xiuhpohualli",
+    "Aztec mythology",
+    "Quetzalcoatl",
+    "Tezcatlipoca",
+    "Five Suns",
+    "Aztec numerals",
+    "Mesoamerican Long Count calendar",
+    "Aztec philosophy"
+  ],
+  "learned_insights": [],
+  "scan_history": []
+}

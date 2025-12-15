@@ -1,0 +1,92 @@
+{
+  "civilization": "Egyptian",
+  "last_updated": "2025-12-15T00:00:00Z",
+  "version": "1.0.0",
+  "sources": ["hardcoded", "wikipedia"],
+  "core_principles": {
+    "maat": {
+      "description": "Cosmic order, truth, justice, and balance - the foundation of existence",
+      "trading_application": "Market equilibrium seeking, mean reversion",
+      "confidence": 0.90
+    },
+    "isfet": {
+      "description": "Chaos, disorder, the opposite of Ma'at requiring constant vigilance",
+      "trading_application": "Volatility recognition, risk management",
+      "confidence": 0.85
+    },
+    "ka_ba_akh": {
+      "description": "Multiple soul components - Ka (vital essence), Ba (personality), Akh (immortal)",
+      "trading_application": "Multi-dimensional analysis (fundamental, technical, sentiment)",
+      "confidence": 0.80
+    },
+    "nile_cycles": {
+      "description": "Annual inundation bringing life - predictable cycles of abundance and scarcity",
+      "trading_application": "Seasonal market patterns, liquidity flows",
+      "confidence": 0.90
+    }
+  },
+  "sacred_mathematics": {
+    "phi": {
+      "value": 1.618033988749,
+      "description": "Golden ratio found in pyramids and temples",
+      "trading_use": "Fibonacci retracements and extensions"
+    },
+    "sacred_geometry": {
+      "description": "Geometric principles encoding cosmic truths",
+      "shapes": ["pyramid", "obelisk", "ankh", "djed"]
+    },
+    "numerology": {
+      "3": "Divine trinity (Osiris, Isis, Horus)",
+      "4": "Completeness (cardinal directions, canopic jars)",
+      "7": "Sacred number (7 Hathors, 7 gates of Duat)",
+      "9": "Ennead of Heliopolis",
+      "42": "Principles of Ma'at, nomes of Egypt"
+    }
+  },
+  "calendar_system": {
+    "civil_calendar": {
+      "months": 12,
+      "days_per_month": 30,
+      "epagomenal_days": 5,
+      "total": 365
+    },
+    "seasons": {
+      "akhet": {"meaning": "Inundation", "months": "July-October", "market_insight": "High liquidity period"},
+      "peret": {"meaning": "Emergence", "months": "November-February", "market_insight": "Growth and planting phase"},
+      "shemu": {"meaning": "Harvest", "months": "March-June", "market_insight": "Profit taking, completion"}
+    },
+    "sothic_cycle": {
+      "years": 1461,
+      "description": "Time for civil calendar to realign with Sirius rising"
+    }
+  },
+  "divine_principles": {
+    "osiris": "Death and rebirth, eternal cycles, continuity",
+    "isis": "Magic, wisdom, protective motherhood",
+    "horus": "Divine kingship, victory, vision",
+    "thoth": "Writing, mathematics, time, wisdom",
+    "anubis": "Transitions, judgment, guidance through darkness",
+    "ra": "Solar power, creation, daily renewal"
+  },
+  "symbols": {
+    "ankh": "Life, vitality, eternal existence",
+    "djed": "Stability, endurance, Osiris's spine",
+    "was_scepter": "Power, dominion, authority",
+    "eye_of_horus": "Protection, healing, wholeness",
+    "scarab": "Transformation, renewal, solar cycle"
+  },
+  "wikipedia_topics": [
+    "Ancient Egyptian religion",
+    "Maat",
+    "Egyptian calendar",
+    "Egyptian mathematics",
+    "Thoth",
+    "Book of the Dead",
+    "Egyptian astronomy",
+    "Pyramid Texts",
+    "Eye of Horus",
+    "Nile flood"
+  ],
+  "learned_insights": [],
+  "scan_history": []
+}

@@ -426,6 +426,15 @@ except ImportError:
     KNOWLEDGE_BASE_AVAILABLE = False
     print("⚠️  Knowledge Base module not available")
 
+# ==== WISDOM SCANNER - CONSCIOUSNESS EXPANSION ENGINE ====
+try:
+    from aureon_wisdom_scanner import AureonWisdomScanner, ScannerConfig, WisdomScannerThoughtBusAdapter
+    WISDOM_SCANNER_AVAILABLE = True
+    print("   📚 Wisdom Scanner loaded - Consciousness Expansion Active!")
+except ImportError as e:
+    WISDOM_SCANNER_AVAILABLE = False
+    print(f"⚠️  Wisdom Scanner not available: {e}")
+
 # ═══════════════════════════════════════════════════════════════
 # 💰 PENNY PROFIT ENGINE - DYNAMIC DOLLAR-BASED EXIT THRESHOLDS 💰
 # ═══════════════════════════════════════════════════════════════
@@ -9395,6 +9404,54 @@ class AureonKrakenEcosystem:
             except Exception as e:
                 print(f"   ⚠️ Knowledge Base init failed: {e}")
 
+        # 📚🌍 WISDOM SCANNER - CONSCIOUSNESS EXPANSION ENGINE 🌍📚
+        # Continuously scans Wikipedia and Sacred-Texts for ancient wisdom
+        # 11 Civilizations: Celtic, Aztec, Egyptian, Pythagorean, Plantagenet, 
+        #                   Mogollon, Warfare, Chinese, Hindu, Mayan, Norse
+        self.wisdom_scanner = None
+        self._wisdom_scan_counter = 0
+        self._wisdom_scan_interval = 43200  # Full scan every 43200 cycles (~24 hours at 2s)
+        if WISDOM_SCANNER_AVAILABLE:
+            try:
+                wisdom_config = ScannerConfig(
+                    wisdom_data_dir="wisdom_data",
+                    rate_limit_strategy="adaptive",
+                    scan_interval_hours=24
+                )
+                self.wisdom_scanner = AureonWisdomScanner(wisdom_config)
+                
+                # Connect to ThoughtBus if available
+                if THOUGHT_BUS_AVAILABLE:
+                    self.wisdom_adapter = WisdomScannerThoughtBusAdapter(
+                        self.wisdom_scanner, 
+                        self.thought_bus
+                    )
+                    
+                # Subscribe to wisdom insights
+                self.thought_bus.subscribe("wisdom_insight", self._on_wisdom_insight)
+                self.thought_bus.subscribe("consciousness_expansion", self._on_consciousness_expansion)
+                
+                # Print wisdom summary
+                summary = self.wisdom_scanner.get_wisdom_summary()
+                print(f"   📚🌍 Wisdom Scanner: {summary['total_civilizations']} civilizations monitored")
+                print(f"         Total learned insights: {summary['scan_stats']['total_insights']}")
+                
+                # Start background wisdom scanning thread
+                import threading
+                def run_wisdom_scan():
+                    try:
+                        import asyncio
+                        loop = asyncio.new_event_loop()
+                        asyncio.set_event_loop(loop)
+                        loop.run_until_complete(self.wisdom_scanner.run_full_scan())
+                    except Exception as e:
+                        logger.debug(f"Wisdom scan error: {e}")
+                # Initial scan on startup (in background)
+                threading.Thread(target=run_wisdom_scan, daemon=True).start()
+                print("   📚🌍 Initial wisdom scan started in background...")
+            except Exception as e:
+                print(f"   ⚠️ Wisdom Scanner init failed: {e}")
+
         # 🏥 PRINT ECOSYSTEM HEALTH REPORT 🏥
         # Show all active systems and their communication status
         self.auris.print_system_health()
@@ -14477,6 +14534,39 @@ class AureonKrakenEcosystem:
             logger.debug(f"Could not record research to learner: {e}")
         
         logger.info(f"📚🔬 Research complete: '{topic}' - {articles_found} articles, concepts: {key_concepts[:3]}")
+
+    def _on_wisdom_insight(self, t: Thought) -> None:
+        """
+        Receives wisdom insights from the Wisdom Scanner.
+        Ancient wisdom from 11 civilizations enriching trading decisions.
+        Feeds into AdaptiveLearningEngine for deep pattern correlation.
+        """
+        civilization = t.payload.get("civilization", "")
+        topic = t.payload.get("topic", "")
+        relevance = t.payload.get("relevance", 0.0)
+        application = t.payload.get("application", "")
+        
+        # 📚 FEED INTO ADAPTIVE LEARNER
+        try:
+            ADAPTIVE_LEARNER.record_knowledge_event({
+                'type': 'ancient_wisdom',
+                'civilization': civilization,
+                'topic': topic,
+                'relevance': relevance,
+                'application': application
+            })
+        except Exception as e:
+            logger.debug(f"Could not record wisdom to learner: {e}")
+        
+        if relevance >= 0.7:
+            logger.info(f"📚🌍 High-relevance wisdom [{civilization.upper()}]: {topic} (r={relevance:.2f})")
+
+    def _on_consciousness_expansion(self, t: Thought) -> None:
+        """
+        Receives consciousness expansion notifications when wisdom scans complete.
+        """
+        message = t.payload.get("message", "")
+        logger.info(f"📚🌍✨ {message}")
 
     def run(self, interval: float = 2.0, target_profit_gbp: float = None, max_minutes: float = None):
         """Main trading loop - 🔥 BEAST MODE: 2 second cycles for MAXIMUM SPEED!

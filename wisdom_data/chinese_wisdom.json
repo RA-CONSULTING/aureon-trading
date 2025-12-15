@@ -1,0 +1,159 @@
+{
+  "civilization": "Chinese I Ching",
+  "last_updated": "2025-12-15T00:00:00Z",
+  "version": "1.0.0",
+  "sources": ["hardcoded", "wikipedia"],
+  "topics": [
+    {
+      "name": "Yin Yang Balance",
+      "content": "Complementary opposites in dynamic balance - light/dark, expansion/contraction",
+      "trading_insight": "Market cycles between bull/bear, greed/fear. When one extreme is reached, reversal begins.",
+      "source": "hardcoded",
+      "relevance_score": 0.95
+    },
+    {
+      "name": "Constant Change (Yi)",
+      "content": "The only constant is change - yi means change itself",
+      "trading_insight": "Expect regime changes, nothing lasts forever. The trend will end - prepare for transformation.",
+      "source": "hardcoded",
+      "relevance_score": 0.95
+    },
+    {
+      "name": "Wu Wei - Effortless Action",
+      "content": "Action through non-action - aligning with natural flow rather than forcing",
+      "trading_insight": "Trade with the trend, don't fight the market. Let the trade come to you.",
+      "source": "hardcoded",
+      "relevance_score": 0.90
+    },
+    {
+      "name": "Timing Mastery",
+      "content": "Right action at right time - understanding cycles and moments",
+      "trading_insight": "Entry/exit timing is everything. Patience for setup completion.",
+      "source": "hardcoded",
+      "relevance_score": 0.90
+    },
+    {
+      "name": "Hexagram 1: The Creative (Qian)",
+      "content": "Heaven over Heaven - Supreme success, furthering through perseverance",
+      "trading_insight": "Strong uptrend, maintain long positions. Dragon energy ascending.",
+      "source": "hardcoded",
+      "relevance_score": 0.85
+    },
+    {
+      "name": "Hexagram 2: The Receptive (Kun)",
+      "content": "Earth over Earth - Supreme success through mare's perseverance",
+      "trading_insight": "Follow the leader, don't initiate. Yield to market direction.",
+      "source": "hardcoded",
+      "relevance_score": 0.85
+    },
+    {
+      "name": "Hexagram 11: Peace (Tai)",
+      "content": "Earth over Heaven - Small departs, great approaches",
+      "trading_insight": "Harmony in markets, prosperity phase. Good time for accumulation.",
+      "source": "hardcoded",
+      "relevance_score": 0.85
+    },
+    {
+      "name": "Five Elements Cycle",
+      "content": "Wood feeds Fire, Fire creates Earth, Earth bears Metal, Metal carries Water, Water nourishes Wood",
+      "trading_insight": "Sector rotation follows cycles. What rises must feed the next phase.",
+      "source": "hardcoded",
+      "relevance_score": 0.80
+    }
+  ],
+  "core_principles": {
+    "yin_yang": {
+      "description": "Complementary opposites in dynamic balance - light/dark, expansion/contraction",
+      "trading_application": "Market cycles between bull/bear, greed/fear",
+      "confidence": 0.95
+    },
+    "constant_change": {
+      "description": "The only constant is change - yi means change",
+      "trading_application": "Expect regime changes, nothing lasts forever",
+      "confidence": 0.95
+    },
+    "wu_wei": {
+      "description": "Action through non-action - aligning with natural flow rather than forcing",
+      "trading_application": "Trade with the trend, don't fight the market",
+      "confidence": 0.90
+    },
+    "timing": {
+      "description": "Right action at right time - understanding cycles and moments",
+      "trading_application": "Entry/exit timing, patience for setup completion",
+      "confidence": 0.90
+    }
+  },
+  "trigrams": {
+    "qian": {"symbol": "☰", "meaning": "Heaven", "attribute": "Creative", "element": "Strong"},
+    "kun": {"symbol": "☷", "meaning": "Earth", "attribute": "Receptive", "element": "Yielding"},
+    "zhen": {"symbol": "☳", "meaning": "Thunder", "attribute": "Arousing", "element": "Movement"},
+    "kan": {"symbol": "☵", "meaning": "Water", "attribute": "Abysmal", "element": "Danger"},
+    "gen": {"symbol": "☶", "meaning": "Mountain", "attribute": "Stillness", "element": "Stopping"},
+    "xun": {"symbol": "☴", "meaning": "Wind", "attribute": "Gentle", "element": "Penetrating"},
+    "li": {"symbol": "☲", "meaning": "Fire", "attribute": "Clinging", "element": "Clarity"},
+    "dui": {"symbol": "☱", "meaning": "Lake", "attribute": "Joyous", "element": "Pleasure"}
+  },
+  "key_hexagrams": {
+    "1_qian": {
+      "name": "The Creative",
+      "judgment": "Supreme success, furthering through perseverance",
+      "trading": "Strong uptrend, maintain long positions"
+    },
+    "2_kun": {
+      "name": "The Receptive",
+      "judgment": "Supreme success through mare's perseverance",
+      "trading": "Follow the leader, don't initiate"
+    },
+    "11_tai": {
+      "name": "Peace",
+      "judgment": "Small goes, great comes - good fortune",
+      "trading": "Harmony period, balanced growth"
+    },
+    "12_pi": {
+      "name": "Standstill",
+      "judgment": "Great goes, small comes - standstill",
+      "trading": "Stagnation, reduce exposure"
+    },
+    "63_jiji": {
+      "name": "After Completion",
+      "judgment": "Success in small matters, perseverance",
+      "trading": "Peak reached, prepare for reversal"
+    },
+    "64_weiji": {
+      "name": "Before Completion",
+      "judgment": "Success, but nearly finished",
+      "trading": "Transition imminent, new cycle starting"
+    }
+  },
+  "five_elements": {
+    "wood": {"season": "Spring", "direction": "East", "energy": "Growth", "market": "Expansion"},
+    "fire": {"season": "Summer", "direction": "South", "energy": "Peak", "market": "Euphoria"},
+    "earth": {"season": "Transition", "direction": "Center", "energy": "Balance", "market": "Consolidation"},
+    "metal": {"season": "Autumn", "direction": "West", "energy": "Decline", "market": "Correction"},
+    "water": {"season": "Winter", "direction": "North", "energy": "Storage", "market": "Accumulation"}
+  },
+  "element_cycles": {
+    "generating": ["Wood feeds Fire", "Fire creates Earth", "Earth bears Metal", "Metal collects Water", "Water nourishes Wood"],
+    "overcoming": ["Wood parts Earth", "Earth dams Water", "Water extinguishes Fire", "Fire melts Metal", "Metal chops Wood"]
+  },
+  "tao_principles": {
+    "tao_te_ching": "The Tao that can be spoken is not the eternal Tao",
+    "emptiness": "Emptiness is the source of all potential",
+    "softness": "The soft overcomes the hard, water wears away stone",
+    "simplicity": "Return to uncarved block, embrace simplicity"
+  },
+  "wikipedia_topics": [
+    "I Ching",
+    "Yin and yang",
+    "Taoism",
+    "Tao Te Ching",
+    "Wu wei",
+    "Five elements (Chinese philosophy)",
+    "Bagua",
+    "Chinese astrology",
+    "Feng shui",
+    "Chinese numerology"
+  ],
+  "learned_insights": [],
+  "scan_history": []
+}

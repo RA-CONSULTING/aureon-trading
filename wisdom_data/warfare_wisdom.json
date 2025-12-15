@@ -1,0 +1,84 @@
+{
+  "civilization": "Strategic Warfare",
+  "last_updated": "2025-12-15T00:00:00Z",
+  "version": "1.0.0",
+  "sources": ["hardcoded", "wikipedia"],
+  "core_principles": {
+    "sun_tzu": {
+      "description": "Know yourself, know your enemy - victory through superior intelligence",
+      "trading_application": "Self-awareness of biases, thorough market research",
+      "confidence": 0.95
+    },
+    "clausewitz_friction": {
+      "description": "Fog of war - uncertainty, confusion, and chance in all conflict",
+      "trading_application": "Expect the unexpected, build in margins for error",
+      "confidence": 0.90
+    },
+    "boyd_ooda": {
+      "description": "Observe-Orient-Decide-Act loop - faster cycles defeat slower opponents",
+      "trading_application": "Rapid decision cycles, information processing speed",
+      "confidence": 0.90
+    },
+    "indirect_approach": {
+      "description": "Liddell Hart's strategy - attack weakness, avoid strength",
+      "trading_application": "Find market inefficiencies, avoid crowded trades",
+      "confidence": 0.85
+    }
+  },
+  "sun_tzu_art_of_war": {
+    "supreme_excellence": "Winning without fighting - profits without excessive risk",
+    "know_terrain": "Understand market structure before engaging",
+    "deception": "All warfare is based on deception - markets deceive",
+    "water_strategy": "Be formless like water, adapt to circumstances",
+    "nine_situations": "Different market conditions require different strategies",
+    "use_of_spies": "Intelligence gathering is paramount"
+  },
+  "clausewitz_on_war": {
+    "center_of_gravity": "Identify the decisive point for maximum effect",
+    "culminating_point": "Know when to stop advancing, consolidate gains",
+    "moral_forces": "Will, leadership, and sentiment often decide outcomes",
+    "trinity": "Violence, chance, and reason - the three forces at play"
+  },
+  "modern_doctrine": {
+    "maneuver_warfare": {
+      "description": "Rapid movement, bypass strongpoints, attack decision-making",
+      "trading_application": "Quick repositioning, avoid fighting the tape"
+    },
+    "mission_command": {
+      "description": "Decentralized execution, clear intent, initiative",
+      "trading_application": "Rule-based systems with adaptive execution"
+    },
+    "combined_arms": {
+      "description": "Synergistic use of different capabilities",
+      "trading_application": "Multiple uncorrelated strategies working together"
+    }
+  },
+  "intelligence_principles": {
+    "sigint": "Signals intelligence - reading market data flows",
+    "humint": "Human intelligence - sentiment, social analysis",
+    "osint": "Open source intelligence - public information advantage",
+    "analysis": "Raw data means nothing without interpretation"
+  },
+  "historical_strategists": {
+    "sun_tzu": "Chinese general, Art of War author (~500 BCE)",
+    "clausewitz": "Prussian general, On War author (1780-1831)",
+    "jomini": "Swiss military theorist, geometric strategy (1779-1869)",
+    "mahan": "American naval strategist, sea power theory (1840-1914)",
+    "boyd": "American fighter pilot, OODA loop creator (1927-1997)",
+    "liddell_hart": "British strategist, indirect approach (1895-1970)"
+  },
+  "wikipedia_topics": [
+    "The Art of War",
+    "Sun Tzu",
+    "Carl von Clausewitz",
+    "On War",
+    "OODA loop",
+    "John Boyd (military strategist)",
+    "Military strategy",
+    "Liddell Hart",
+    "Principles of war",
+    "Maneuver warfare"
+  ],
+  "learned_insights": [],
+  "scan_history": []
+}

@@ -1,0 +1,160 @@
+{
+  "civilization": "Norse",
+  "last_updated": "2025-12-15T00:00:00Z",
+  "version": "1.0.0",
+  "sources": ["hardcoded", "wikipedia"],
+  "topics": [
+    {
+      "name": "Wyrd - Web of Fate",
+      "content": "Fate woven by the Norns - past actions shape present possibilities through the web of wyrd",
+      "trading_insight": "Historical patterns constrain future outcomes. Your past trades weave your trading fate.",
+      "source": "hardcoded",
+      "relevance_score": 0.90
+    },
+    {
+      "name": "Ragnarok - Twilight and Rebirth",
+      "content": "Inevitable destruction and renewal - twilight of gods preceding new creation",
+      "trading_insight": "Market cycles include crashes and rebirths. After Ragnarok comes new world. Buy the rebirth.",
+      "source": "hardcoded",
+      "relevance_score": 0.85
+    },
+    {
+      "name": "Nine Worlds of Yggdrasil",
+      "content": "Multiverse connected by the World Tree - different realms of existence interlinked",
+      "trading_insight": "Multiple markets interconnected. Stocks, crypto, forex - all branches of the same tree.",
+      "source": "hardcoded",
+      "relevance_score": 0.80
+    },
+    {
+      "name": "Fehu Rune - Wealth",
+      "content": "Cattle/Wealth - mobile wealth, prosperity that must be cared for",
+      "trading_insight": "Liquid assets need attention. Cash flow is your cattle. Protect and grow your herd.",
+      "source": "hardcoded",
+      "relevance_score": 0.85
+    },
+    {
+      "name": "Hagalaz Rune - Hail",
+      "content": "Destructive hail that transforms the landscape",
+      "trading_insight": "Black swan events. When Hagalaz appears, expect disruption. Have contingency plans.",
+      "source": "hardcoded",
+      "relevance_score": 0.90
+    },
+    {
+      "name": "Isa Rune - Ice",
+      "content": "Ice, stasis, waiting for the thaw",
+      "trading_insight": "Consolidation phase. Patience required. The ice will melt - wait for the thaw.",
+      "source": "hardcoded",
+      "relevance_score": 0.85
+    },
+    {
+      "name": "Jera Rune - Harvest",
+      "content": "Year/Harvest - cycles of sowing and reaping",
+      "trading_insight": "Annual cycles bring harvest. What you planted in Q1 you reap in Q4. Honor the cycle.",
+      "source": "hardcoded",
+      "relevance_score": 0.85
+    },
+    {
+      "name": "Odin's Sacrifice",
+      "content": "Odin hung on Yggdrasil for nine nights to gain the runes - sacrifice for wisdom",
+      "trading_insight": "Knowledge requires sacrifice. Losses teach. Odin paid the price - so must you.",
+      "source": "hardcoded",
+      "relevance_score": 0.80
+    }
+  ],
+  "core_principles": {
+    "wyrd": {
+      "description": "Fate woven by the Norns - past actions shape present possibilities",
+      "trading_application": "Historical patterns constrain future outcomes",
+      "confidence": 0.90
+    },
+    "ragnarok": {
+      "description": "Inevitable destruction and renewal - twilight of gods",
+      "trading_application": "Market cycles include crashes and rebirths",
+      "confidence": 0.85
+    },
+    "nine_worlds": {
+      "description": "Multiverse connected by Yggdrasil - different realms of existence",
+      "trading_application": "Multiple markets interconnected, correlation awareness",
+      "confidence": 0.80
+    },
+    "honor_glory": {
+      "description": "Actions live on in reputation - immortality through deeds",
+      "trading_application": "Track record matters, consistency over time",
+      "confidence": 0.85
+    }
+  },
+  "runes_elder_futhark": {
+    "fehu": {"meaning": "Cattle/Wealth", "symbolism": "Mobile wealth, prosperity", "trading": "Liquid assets, cash flow"},
+    "uruz": {"meaning": "Aurochs", "symbolism": "Strength, vitality", "trading": "Strong momentum"},
+    "thurisaz": {"meaning": "Giant/Thorn", "symbolism": "Defense, chaos", "trading": "Volatility, protection"},
+    "ansuz": {"meaning": "God/Odin", "symbolism": "Wisdom, communication", "trading": "Information advantage"},
+    "raido": {"meaning": "Journey", "symbolism": "Travel, rhythm", "trading": "Trend following"},
+    "kenaz": {"meaning": "Torch", "symbolism": "Knowledge, illumination", "trading": "Clarity, insight"},
+    "gebo": {"meaning": "Gift", "symbolism": "Exchange, balance", "trading": "Fair value, reciprocity"},
+    "wunjo": {"meaning": "Joy", "symbolism": "Success, harmony", "trading": "Profitable period"},
+    "hagalaz": {"meaning": "Hail", "symbolism": "Disruption, transformation", "trading": "Black swan events"},
+    "nauthiz": {"meaning": "Need", "symbolism": "Constraint, necessity", "trading": "Scarcity, forced decisions"},
+    "isa": {"meaning": "Ice", "symbolism": "Stasis, waiting", "trading": "Consolidation, patience"},
+    "jera": {"meaning": "Year/Harvest", "symbolism": "Cycles, reward", "trading": "Annual cycles, harvest gains"},
+    "eihwaz": {"meaning": "Yew", "symbolism": "Endurance, death/rebirth", "trading": "Long-term holding"},
+    "perthro": {"meaning": "Dice Cup", "symbolism": "Fate, chance", "trading": "Probability, risk"},
+    "algiz": {"meaning": "Elk/Protection", "symbolism": "Defense, sanctuary", "trading": "Risk management"},
+    "sowilo": {"meaning": "Sun", "symbolism": "Victory, energy", "trading": "Bull market, success"},
+    "tiwaz": {"meaning": "Tyr/Victory", "symbolism": "Justice, sacrifice", "trading": "Discipline, cutting losses"},
+    "berkano": {"meaning": "Birch", "symbolism": "Growth, beginnings", "trading": "New positions, fresh starts"},
+    "ehwaz": {"meaning": "Horse", "symbolism": "Movement, partnership", "trading": "Velocity, teamwork"},
+    "mannaz": {"meaning": "Human", "symbolism": "Self, humanity", "trading": "Self-awareness, psychology"},
+    "laguz": {"meaning": "Water/Lake", "symbolism": "Flow, intuition", "trading": "Liquidity, gut feeling"},
+    "ingwaz": {"meaning": "Ing/Fertility", "symbolism": "Potential, gestation", "trading": "Accumulation phase"},
+    "dagaz": {"meaning": "Day", "symbolism": "Breakthrough, dawn", "trading": "Breakout, new trend"},
+    "othala": {"meaning": "Heritage", "symbolism": "Inheritance, home", "trading": "Legacy positions, core holdings"}
+  },
+  "nine_worlds": {
+    "asgard": {"realm": "Gods (Aesir)", "market_analog": "Blue chips, institutional"},
+    "midgard": {"realm": "Humans", "market_analog": "Retail, main markets"},
+    "vanaheim": {"realm": "Gods (Vanir)", "market_analog": "Commodities, agriculture"},
+    "alfheim": {"realm": "Light Elves", "market_analog": "Tech, innovation"},
+    "svartalfheim": {"realm": "Dark Elves/Dwarves", "market_analog": "Manufacturing, crafts"},
+    "jotunheim": {"realm": "Giants", "market_analog": "Large caps, macro forces"},
+    "niflheim": {"realm": "Ice/Mist", "market_analog": "Frozen markets, no liquidity"},
+    "muspelheim": {"realm": "Fire", "market_analog": "Hot sectors, speculation"},
+    "helheim": {"realm": "Dead", "market_analog": "Delisted, bankruptcies"}
+  },
+  "mythological_wisdom": {
+    "odin": {
+      "aspect": "Wisdom seeker, sacrificed eye for knowledge",
+      "trading_lesson": "Pay the price for superior information"
+    },
+    "thor": {
+      "aspect": "Protector, strength in chaos",
+      "trading_lesson": "Defend portfolio in volatile times"
+    },
+    "loki": {
+      "aspect": "Trickster, agent of change",
+      "trading_lesson": "Market deception, unexpected disruption"
+    },
+    "freya": {
+      "aspect": "Love, beauty, wealth",
+      "trading_lesson": "Value appreciation, desirable assets"
+    }
+  },
+  "norns_fate_weavers": {
+    "urd": {"meaning": "What has been", "time": "Past", "trading": "Historical analysis"},
+    "verdandi": {"meaning": "What is becoming", "time": "Present", "trading": "Current conditions"},
+    "skuld": {"meaning": "What shall be", "time": "Future", "trading": "Projections, forecasts"}
+  },
+  "wikipedia_topics": [
+    "Norse mythology",
+    "Runes",
+    "Elder Futhark",
+    "Yggdrasil",
+    "Ragnarok",
+    "Odin",
+    "Norse cosmology",
+    "Poetic Edda",
+    "Prose Edda",
+    "Viking Age"
+  ],
+  "learned_insights": [],
+  "scan_history": []
+}

@@ -1,0 +1,127 @@
+{
+  "civilization": "Celtic",
+  "last_updated": "2025-12-15T00:00:00Z",
+  "version": "1.0.0",
+  "sources": ["hardcoded", "wikipedia"],
+  "topics": [
+    {
+      "name": "Druidic Cycles",
+      "content": "Ancient druids tracked 19-year Metonic cycles aligning lunar and solar calendars",
+      "trading_insight": "Long-term cycle recognition in market patterns. The Celts knew that patterns repeat - apply this to market cycles.",
+      "source": "hardcoded",
+      "relevance_score": 0.85
+    },
+    {
+      "name": "Ogham Patterns",
+      "content": "Tree alphabet encoding natural wisdom and seasonal rhythms through symbolic representation",
+      "trading_insight": "Pattern recognition through symbolic interpretation. Each symbol tells a story - so does each candlestick.",
+      "source": "hardcoded",
+      "relevance_score": 0.80
+    },
+    {
+      "name": "Triad Wisdom",
+      "content": "Celtic triads - three interconnected truths creating balanced understanding",
+      "trading_insight": "Multi-factor analysis requiring three confirming signals. Never trade on one signal alone.",
+      "source": "hardcoded",
+      "relevance_score": 0.90
+    },
+    {
+      "name": "Otherworld Thresholds",
+      "content": "Liminal spaces between worlds where transformation occurs at sacred boundaries",
+      "trading_insight": "Support/resistance zones as transition thresholds. Price transforms at these liminal levels.",
+      "source": "hardcoded",
+      "relevance_score": 0.75
+    },
+    {
+      "name": "Samhain Wisdom",
+      "content": "October 31 - End of harvest, beginning of dark half, veil between worlds thins",
+      "trading_insight": "Year-end positioning, defensive strategies. Prepare for Q4 volatility.",
+      "source": "hardcoded",
+      "relevance_score": 0.85
+    },
+    {
+      "name": "Imbolc Renewal",
+      "content": "February 1 - First stirrings of spring, Brigid's fire lights the way forward",
+      "trading_insight": "Early trend detection, new cycle emergence. Watch for January Effect reversals.",
+      "source": "hardcoded",
+      "relevance_score": 0.80
+    },
+    {
+      "name": "Beltane Growth",
+      "content": "May 1 - Peak fertility, summer's beginning, fire festivals mark expansion",
+      "trading_insight": "Growth phase positioning, sell in May consideration. Celtic wisdom says to celebrate but also prepare.",
+      "source": "hardcoded",
+      "relevance_score": 0.85
+    },
+    {
+      "name": "Lughnasadh Harvest",
+      "content": "August 1 - First harvest, Lugh's games, reaping what was sown",
+      "trading_insight": "Taking profits, harvest gains before autumn volatility arrives.",
+      "source": "hardcoded",
+      "relevance_score": 0.85
+    }
+  ],
+  "core_principles": {
+    "druidic_cycles": {
+      "description": "Ancient druids tracked 19-year Metonic cycles aligning lunar and solar calendars",
+      "trading_application": "Long-term cycle recognition in market patterns",
+      "confidence": 0.85
+    },
+    "ogham_patterns": {
+      "description": "Tree alphabet encoding natural wisdom and seasonal rhythms",
+      "trading_application": "Pattern recognition through symbolic interpretation",
+      "confidence": 0.80
+    },
+    "triad_wisdom": {
+      "description": "Celtic triads - three interconnected truths creating balanced understanding",
+      "trading_application": "Multi-factor analysis requiring three confirming signals",
+      "confidence": 0.90
+    },
+    "otherworld_thresholds": {
+      "description": "Liminal spaces between worlds where transformation occurs",
+      "trading_application": "Support/resistance zones as transition thresholds",
+      "confidence": 0.75
+    }
+  },
+  "seasonal_wisdom": {
+    "samhain": {
+      "period": "October 31 - November 1",
+      "meaning": "End of harvest, beginning of dark half",
+      "market_insight": "Year-end positioning, defensive strategies"
+    },
+    "imbolc": {
+      "period": "February 1",
+      "meaning": "First stirrings of spring, Brigid's fire",
+      "market_insight": "Early trend detection, new cycle emergence"
+    },
+    "beltane": {
+      "period": "May 1",
+      "meaning": "Peak fertility, summer's beginning",
+      "market_insight": "Growth phase positioning, sell in May consideration"
+    },
+    "lughnasadh": {
+      "period": "August 1",
+      "meaning": "First harvest, Lugh's games",
+      "market_insight": "Taking profits, harvest gains before autumn"
+    }
+  },
+  "symbols": {
+    "triskelion": "Triple spiral representing cycles within cycles",
+    "celtic_cross": "Union of circle (cycles) and cross (cardinal directions)",
+    "tree_of_life": "Interconnection of all things, root to crown"
+  },
+  "wikipedia_topics": [
+    "Celtic mythology",
+    "Druids",
+    "Celtic calendar",
+    "Ogham",
+    "Celtic polytheism",
+    "Insular Celtic religion",
+    "Celtic sacred trees",
+    "Brehon Law",
+    "Celtic astrology",
+    "Metonic cycle"
+  ],
+  "learned_insights": [],
+  "scan_history": []
+}

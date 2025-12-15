@@ -1,0 +1,175 @@
+{
+  "civilization": "Hindu Vedic",
+  "last_updated": "2025-12-15T00:00:00Z",
+  "version": "1.0.0",
+  "sources": ["hardcoded", "wikipedia"],
+  "topics": [
+    {
+      "name": "Karma - Action and Consequence",
+      "content": "Every action creates future results - the law of cause and effect governing existence",
+      "trading_insight": "Position consequences compound. Every trade creates future karma - good entries lead to good outcomes.",
+      "source": "hardcoded",
+      "relevance_score": 0.95
+    },
+    {
+      "name": "Dharma - Righteous Path",
+      "content": "Cosmic order, proper action aligned with purpose and duty",
+      "trading_insight": "Following your system is your dharma. Discipline over impulse. Honor your trading plan.",
+      "source": "hardcoded",
+      "relevance_score": 0.90
+    },
+    {
+      "name": "Maya - Seeing Through Illusion",
+      "content": "The world of appearances obscuring deeper reality",
+      "trading_insight": "Market deception is maya. See through noise to signal. Headlines are illusion.",
+      "source": "hardcoded",
+      "relevance_score": 0.85
+    },
+    {
+      "name": "Kalachakra - Wheel of Time",
+      "content": "Cycles within cycles at all scales - time's eternal wheel turning",
+      "trading_insight": "Multiple timeframe analysis reveals nested cycles. Daily within weekly within monthly.",
+      "source": "hardcoded",
+      "relevance_score": 0.90
+    },
+    {
+      "name": "Satya Yuga - Golden Age",
+      "content": "Age of truth and virtue, maximum dharma, prosperity reigns",
+      "trading_insight": "Bull market, high trust, growth phase. Accumulate and ride the trend.",
+      "source": "hardcoded",
+      "relevance_score": 0.80
+    },
+    {
+      "name": "Kali Yuga - Dark Age",
+      "content": "Age of strife and discord, minimum virtue, destruction before renewal",
+      "trading_insight": "Bear market, fear dominates. But the Vedas say: This too shall pass. Accumulate quality.",
+      "source": "hardcoded",
+      "relevance_score": 0.85
+    },
+    {
+      "name": "Chakra Energy Centers",
+      "content": "Seven energy centers from root to crown, representing different levels of consciousness",
+      "trading_insight": "Market has chakras too: Root (fundamentals), Heart (sentiment), Crown (institutional flow).",
+      "source": "hardcoded",
+      "relevance_score": 0.75
+    },
+    {
+      "name": "Prana - Life Force",
+      "content": "Vital energy flowing through all living things, breath of life",
+      "trading_insight": "Volume is market prana. Without volume, price movement is false. Follow the breath.",
+      "source": "hardcoded",
+      "relevance_score": 0.80
+    }
+  ],
+  "core_principles": {
+    "karma": {
+      "description": "Action and consequence - every action creates future results",
+      "trading_application": "Position consequences, compound effects of decisions",
+      "confidence": 0.95
+    },
+    "dharma": {
+      "description": "Righteous duty, cosmic order, proper action aligned with purpose",
+      "trading_application": "Following your system, discipline over impulse",
+      "confidence": 0.90
+    },
+    "maya": {
+      "description": "Illusion - the world of appearances obscuring deeper reality",
+      "trading_application": "Market deception, seeing through noise to signal",
+      "confidence": 0.85
+    },
+    "kalachakra": {
+      "description": "Wheel of time - cycles within cycles at all scales",
+      "trading_application": "Multiple timeframe analysis, nested cycles",
+      "confidence": 0.90
+    }
+  },
+  "yugas_world_ages": {
+    "satya_yuga": {
+      "duration": 1728000,
+      "virtue_percentage": 100,
+      "description": "Golden age of truth and virtue",
+      "market_analog": "Bull market, high trust"
+    },
+    "treta_yuga": {
+      "duration": 1296000,
+      "virtue_percentage": 75,
+      "description": "Silver age, virtue diminishes",
+      "market_analog": "Late cycle, deterioration begins"
+    },
+    "dvapara_yuga": {
+      "duration": 864000,
+      "virtue_percentage": 50,
+      "description": "Bronze age, equal virtue and vice",
+      "market_analog": "Volatile transition, uncertainty"
+    },
+    "kali_yuga": {
+      "duration": 432000,
+      "virtue_percentage": 25,
+      "description": "Iron age, strife and degradation",
+      "market_analog": "Bear market, fear dominates"
+    }
+  },
+  "vedic_mathematics": {
+    "sacred_numbers": {
+      "0": "Shunya - void, potential, infinity",
+      "1": "Brahman - unity, source",
+      "3": "Trimurti (Brahma, Vishnu, Shiva)",
+      "7": "Sacred number (chakras, rishis, days)",
+      "9": "Completeness, Durga's days",
+      "108": "Sacred number (mala beads, names of gods)"
+    },
+    "vedic_squares": {
+      "description": "Patterns in number multiplication revealing cosmic order",
+      "application": "Pattern recognition in price data"
+    }
+  },
+  "cosmic_structure": {
+    "trimurti": {
+      "brahma": {"role": "Creator", "market": "New trends, IPOs, innovation"},
+      "vishnu": {"role": "Preserver", "market": "Trend continuation, stability"},
+      "shiva": {"role": "Destroyer", "market": "Crashes, regime change, transformation"}
+    },
+    "gunas": {
+      "sattva": {"quality": "Purity, harmony", "market": "Balanced, trending"},
+      "rajas": {"quality": "Activity, passion", "market": "Volatile, active"},
+      "tamas": {"quality": "Inertia, darkness", "market": "Stagnant, consolidation"}
+    }
+  },
+  "jyotish_astrology": {
+    "navagrahas": {
+      "surya": "Sun - authority, government",
+      "chandra": "Moon - mind, emotions, public",
+      "mangala": "Mars - energy, conflict, metals",
+      "budha": "Mercury - communication, trade",
+      "guru": "Jupiter - expansion, wisdom, banking",
+      "shukra": "Venus - luxury, arts, pleasure",
+      "shani": "Saturn - discipline, restriction, time",
+      "rahu": "North Node - obsession, innovation",
+      "ketu": "South Node - spirituality, release"
+    },
+    "dashas": {
+      "description": "Planetary periods governing life phases",
+      "application": "Long-term cycle timing"
+    }
+  },
+  "philosophical_texts": {
+    "bhagavad_gita": "Duty without attachment to results",
+    "upanishads": "Ultimate reality beyond appearances",
+    "rigveda": "Cosmic order through sacrifice and hymns",
+    "arthashastra": "Ancient treatise on economics and statecraft"
+  },
+  "wikipedia_topics": [
+    "Vedas",
+    "Hinduism",
+    "Karma",
+    "Dharma",
+    "Yuga",
+    "Hindu astrology",
+    "Bhagavad Gita",
+    "Upanishads",
+    "Hindu cosmology",
+    "Arthashastra"
+  ],
+  "learned_insights": [],
+  "scan_history": []
+}

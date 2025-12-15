@@ -1,0 +1,94 @@
+{
+  "civilization": "Mogollon",
+  "last_updated": "2025-12-15T00:00:00Z",
+  "version": "1.0.0",
+  "sources": ["hardcoded", "wikipedia"],
+  "core_principles": {
+    "earth_connection": {
+      "description": "Deep reciprocal relationship with land - humans as stewards, not owners",
+      "trading_application": "Long-term sustainable strategies over short-term extraction",
+      "confidence": 0.85
+    },
+    "water_wisdom": {
+      "description": "Sophisticated water management in arid environment - canals, reservoirs, timing",
+      "trading_application": "Resource allocation, liquidity management, scarcity awareness",
+      "confidence": 0.90
+    },
+    "community_resilience": {
+      "description": "Collective survival through cooperation, shared resources, mutual aid",
+      "trading_application": "Diversification, portfolio resilience, community intelligence",
+      "confidence": 0.85
+    },
+    "adaptive_migration": {
+      "description": "Strategic relocation following resources and climate shifts",
+      "trading_application": "Sector rotation, following opportunity flows",
+      "confidence": 0.80
+    }
+  },
+  "environmental_wisdom": {
+    "desert_agriculture": {
+      "description": "Dry farming techniques, flood irrigation, crop selection for arid conditions",
+      "trading_insight": "Adapting strategies to market conditions"
+    },
+    "seasonal_rounds": {
+      "description": "Cyclical movement patterns following resource availability",
+      "trading_insight": "Seasonal trading patterns, rotation strategies"
+    },
+    "fire_management": {
+      "description": "Controlled burning to manage landscapes and encourage growth",
+      "trading_insight": "Controlled volatility, creative destruction"
+    }
+  },
+  "cultural_practices": {
+    "pit_houses": {
+      "description": "Semi-subterranean dwellings using earth for insulation",
+      "trading_insight": "Protection strategies, defensive positioning"
+    },
+    "pottery_tradition": {
+      "description": "Distinctive Mimbres pottery with cosmic imagery and life-death symbolism",
+      "trading_insight": "Craftsmanship, quality over quantity"
+    },
+    "trade_networks": {
+      "description": "Extensive networks connecting to Mesoamerica, Pacific Coast, Plains",
+      "trading_insight": "Multi-market connectivity, arbitrage opportunities"
+    }
+  },
+  "astronomical_knowledge": {
+    "solstice_markers": {
+      "description": "Architectural alignments marking seasonal transitions",
+      "trading_insight": "Key calendar dates, seasonal turning points"
+    },
+    "lunar_tracking": {
+      "description": "Moon phase observation for planting and ceremonial timing",
+      "trading_insight": "Short-term cycle awareness"
+    }
+  },
+  "survival_principles": {
+    "storage_wisdom": {
+      "description": "Food storage for lean times, surplus management",
+      "trading_application": "Capital preservation, reserve maintenance"
+    },
+    "risk_distribution": {
+      "description": "Planting multiple locations to ensure some harvest succeeds",
+      "trading_application": "Position diversification, non-correlated assets"
+    },
+    "patience": {
+      "description": "Waiting for right conditions rather than forcing action",
+      "trading_application": "Selective entry, avoiding overtrading"
+    }
+  },
+  "wikipedia_topics": [
+    "Mogollon culture",
+    "Mimbres culture",
+    "Ancestral Puebloans",
+    "Casas Grandes",
+    "Southwestern archaeology",
+    "Gila Cliff Dwellings",
+    "Prehistoric Southwestern cultural divisions",
+    "Chaco Canyon",
+    "Mesoamerican trade",
+    "Ancient Pueblo peoples"
+  ],
+  "learned_insights": [],
+  "scan_history": []
+}

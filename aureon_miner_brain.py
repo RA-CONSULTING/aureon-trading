@@ -115,6 +115,177 @@ PHI = (1 + math.sqrt(5)) / 2  # Golden Ratio
 # Adaptive Learning Integration
 ADAPTIVE_LEARNING_FILE = "adaptive_learning_history.json"
 BRAIN_PREDICTIONS_FILE = "brain_predictions_history.json"
+WISDOM_DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "wisdom_data")
+
+
+# ═══════════════════════════════════════════════════════════════
+# 📚 WISDOM JSON LOADER - Dynamic Cultural Knowledge Enrichment
+# ═══════════════════════════════════════════════════════════════
+
+class WisdomJSONLoader:
+    """
+    Loads wisdom from external JSON files scanned by the WisdomScanner.
+    This allows the Brain to continuously enrich its cultural knowledge
+    from Wikipedia and other metadata sources.
+    
+    The loader provides:
+    - Dynamic wisdom loading from JSON files
+    - Fallback to hardcoded wisdom if JSON unavailable
+    - Topic relevance filtering for market context
+    - Cross-civilization pattern synthesis
+    """
+    
+    # Mapping civilization names to JSON filenames
+    CIVILIZATION_FILES = {
+        "celtic": "celtic_wisdom.json",
+        "aztec": "aztec_wisdom.json",
+        "egyptian": "egyptian_wisdom.json",
+        "pythagorean": "pythagorean_wisdom.json",
+        "plantagenet": "plantagenet_wisdom.json",
+        "mogollon": "mogollon_wisdom.json",
+        "warfare": "warfare_wisdom.json",
+        "chinese": "chinese_wisdom.json",
+        "hindu": "hindu_wisdom.json",
+        "mayan": "mayan_wisdom.json",
+        "norse": "norse_wisdom.json",
+    }
+    
+    def __init__(self):
+        self.wisdom_cache: Dict[str, Dict] = {}
+        self.last_load_time: Dict[str, datetime] = {}
+        self.cache_duration = timedelta(minutes=5)  # Reload every 5 minutes
+        self._load_all_wisdom()
+    
+    def _load_all_wisdom(self):
+        """Load all civilization wisdom files."""
+        if not os.path.exists(WISDOM_DATA_DIR):
+            logger.warning(f"Wisdom data directory not found: {WISDOM_DATA_DIR}")
+            return
+        
+        for civ_name, filename in self.CIVILIZATION_FILES.items():
+            self._load_civilization_wisdom(civ_name, filename)
+    
+    def _load_civilization_wisdom(self, civ_name: str, filename: str):
+        """Load wisdom for a specific civilization."""
+        filepath = os.path.join(WISDOM_DATA_DIR, filename)
+        try:
+            if os.path.exists(filepath):
+                with open(filepath, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                    self.wisdom_cache[civ_name] = data
+                    self.last_load_time[civ_name] = datetime.now()
+                    topic_count = len(data.get('topics', []))
+                    logger.debug(f"[WISDOM] Loaded {topic_count} topics for {civ_name}")
+        except Exception as e:
+            logger.warning(f"[WISDOM] Could not load {filename}: {e}")
+    
+    def get_wisdom(self, civilization: str) -> Dict:
+        """
+        Get wisdom for a civilization, reloading if cache expired.
+        Returns empty dict if not available.
+        """
+        civ_lower = civilization.lower()
+        
+        # Check if cache expired
+        if civ_lower in self.last_load_time:
+            if datetime.now() - self.last_load_time[civ_lower] > self.cache_duration:
+                filename = self.CIVILIZATION_FILES.get(civ_lower)
+                if filename:
+                    self._load_civilization_wisdom(civ_lower, filename)
+        
+        return self.wisdom_cache.get(civ_lower, {})
+    
+    def get_relevant_wisdom(self, civilization: str, market_context: str = "") -> List[Dict]:
+        """
+        Get wisdom topics relevant to current market context.
+        
+        Args:
+            civilization: The civilization to query
+            market_context: Keywords like "volatile", "trending", "consolidating"
+        
+        Returns:
+            List of relevant wisdom topic dictionaries
+        """
+        wisdom = self.get_wisdom(civilization)
+        topics = wisdom.get('topics', [])
+        
+        if not market_context or not topics:
+            return topics
+        
+        # Filter by relevance to market context
+        context_lower = market_context.lower()
+        relevant = []
+        
+        for topic in topics:
+            # Check if topic relates to market context
+            topic_text = f"{topic.get('name', '')} {topic.get('content', '')} {topic.get('trading_insight', '')}".lower()
+            
+            # Keyword matching for relevance
+            relevance_keywords = {
+                "volatile": ["change", "storm", "war", "chaos", "transformation", "destruction"],
+                "trending": ["flow", "path", "cycle", "momentum", "growth", "rise"],
+                "consolidating": ["wait", "patience", "rest", "balance", "foundation", "prepare"],
+                "bullish": ["growth", "rise", "victory", "harvest", "abundance", "expansion"],
+                "bearish": ["decline", "caution", "winter", "retreat", "preservation", "defense"],
+            }
+            
+            keywords = relevance_keywords.get(context_lower, [])
+            if any(kw in topic_text for kw in keywords):
+                relevant.append(topic)
+        
+        return relevant if relevant else topics[:5]  # Return first 5 if no matches
+    
+    def get_all_trading_insights(self, civilization: str) -> List[str]:
+        """Get all trading insights from a civilization's wisdom."""
+        wisdom = self.get_wisdom(civilization)
+        insights = []
+        
+        for topic in wisdom.get('topics', []):
+            if 'trading_insight' in topic and topic['trading_insight']:
+                insights.append(topic['trading_insight'])
+        
+        return insights
+    
+    def get_cross_civilization_patterns(self, pattern_type: str) -> Dict[str, List[str]]:
+        """
+        Find similar patterns across multiple civilizations.
+        Useful for finding universal truths.
+        
+        Args:
+            pattern_type: e.g., "cycles", "numbers", "seasons"
+        
+        Returns:
+            Dict mapping civilization to relevant insights
+        """
+        patterns = {}
+        
+        for civ_name in self.CIVILIZATION_FILES.keys():
+            relevant = self.get_relevant_wisdom(civ_name, pattern_type)
+            if relevant:
+                patterns[civ_name] = [
+                    t.get('trading_insight', t.get('content', ''))[:200]
+                    for t in relevant[:3]
+                ]
+        
+        return patterns
+    
+    def reload_all(self):
+        """Force reload all wisdom files."""
+        self.wisdom_cache.clear()
+        self.last_load_time.clear()
+        self._load_all_wisdom()
+        logger.info("[WISDOM] Reloaded all civilization wisdom files")
+
+
+# Global wisdom loader instance
+_wisdom_loader: Optional[WisdomJSONLoader] = None
+
+def get_wisdom_loader() -> WisdomJSONLoader:
+    """Get or create the global wisdom loader instance."""
+    global _wisdom_loader
+    if _wisdom_loader is None:
+        _wisdom_loader = WisdomJSONLoader()
+    return _wisdom_loader
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -1672,6 +1843,12 @@ class WisdomCognitionEngine:
     - EgyptianWisdomLibrary (Netjeru, Ma'at, Pyramids)
     - PythagoreanWisdomLibrary (Sacred Numbers, Musica Universalis)
     
+    NEW: Now also loads dynamic wisdom from JSON files scanned by WisdomScanner
+    - Chinese (I Ching, Taoism, Five Elements)
+    - Hindu (Vedic Astrology, Yoga, Chakras)
+    - Mayan (Tzolkin, Haab, Long Count)
+    - Norse (Runes, Wyrd, Nine Worlds)
+    
     "From the stars to the numbers, all is one." - The Unified Mind
     """
     
@@ -1685,15 +1862,26 @@ class WisdomCognitionEngine:
         self.egyptian = EgyptianWisdomLibrary()
         self.pythagorean = PythagoreanWisdomLibrary()
         
-        # Civilizations represented
+        # Dynamic wisdom loader for scanned content
+        self.json_wisdom = get_wisdom_loader()
+        
+        # Civilizations represented (original 7)
         self.civilizations = [
-            {"name": "Celtic", "era": "800 BCE - 400 CE", "region": "Europe", "glyph": "☘️"},
-            {"name": "Aztec", "era": "1300 - 1521 CE", "region": "Mesoamerica", "glyph": "🦅"},
-            {"name": "Mogollon", "era": "200 - 1450 CE", "region": "North America", "glyph": "🏺"},
-            {"name": "Plantagenet", "era": "1154 - 1485 CE", "region": "England", "glyph": "👑"},
-            {"name": "Egyptian", "era": "3100 - 30 BCE", "region": "North Africa", "glyph": "☥"},
-            {"name": "Pythagorean", "era": "570 - 495 BCE", "region": "Greece/Italy", "glyph": "🔢"},
-            {"name": "Chinese (Sun Tzu)", "era": "544 - 496 BCE", "region": "China", "glyph": "📜"},
+            {"name": "Celtic", "era": "800 BCE - 400 CE", "region": "Europe", "glyph": "shamrock"},
+            {"name": "Aztec", "era": "1300 - 1521 CE", "region": "Mesoamerica", "glyph": "eagle"},
+            {"name": "Mogollon", "era": "200 - 1450 CE", "region": "North America", "glyph": "pottery"},
+            {"name": "Plantagenet", "era": "1154 - 1485 CE", "region": "England", "glyph": "crown"},
+            {"name": "Egyptian", "era": "3100 - 30 BCE", "region": "North Africa", "glyph": "ankh"},
+            {"name": "Pythagorean", "era": "570 - 495 BCE", "region": "Greece/Italy", "glyph": "numbers"},
+            {"name": "Chinese (Sun Tzu)", "era": "544 - 496 BCE", "region": "China", "glyph": "scroll"},
+        ]
+        
+        # NEW: Extended civilizations from JSON scanner
+        self.extended_civilizations = [
+            {"name": "Chinese", "era": "2000 BCE - present", "region": "East Asia", "glyph": "yin_yang", "source": "json"},
+            {"name": "Hindu", "era": "1500 BCE - present", "region": "South Asia", "glyph": "om", "source": "json"},
+            {"name": "Mayan", "era": "2000 BCE - 1500 CE", "region": "Mesoamerica", "glyph": "calendar", "source": "json"},
+            {"name": "Norse", "era": "800 - 1100 CE", "region": "Scandinavia", "glyph": "rune", "source": "json"},
         ]
         
         # Total wisdom metrics
@@ -1740,8 +1928,64 @@ class WisdomCognitionEngine:
                 len(self.pythagorean.PLANETARY_HARMONICS) +
                 len(self.pythagorean.PLATONIC_SOLIDS) +
                 len(self.pythagorean.MAXIMS)
-            )
+            ),
+            # Dynamic JSON wisdom counts
+            "json_wisdom_topics": self._count_json_wisdom_topics()
         }
+    
+    def _count_json_wisdom_topics(self) -> int:
+        """Count total topics from JSON wisdom files."""
+        total = 0
+        for civ_name in self.json_wisdom.CIVILIZATION_FILES.keys():
+            wisdom = self.json_wisdom.get_wisdom(civ_name)
+            total += len(wisdom.get('topics', []))
+        return total
+    
+    def get_dynamic_wisdom(self, market_context: str = "") -> Dict[str, List[Dict]]:
+        """
+        Get dynamic wisdom from JSON files for all extended civilizations.
+        
+        Args:
+            market_context: Market state like "volatile", "trending", "bullish"
+        
+        Returns:
+            Dict mapping civilization name to relevant wisdom topics
+        """
+        dynamic = {}
+        
+        for civ in self.extended_civilizations:
+            civ_name = civ["name"].lower()
+            relevant = self.json_wisdom.get_relevant_wisdom(civ_name, market_context)
+            if relevant:
+                dynamic[civ["name"]] = relevant
+        
+        return dynamic
+    
+    def get_cross_cultural_pattern(self, pattern: str) -> str:
+        """
+        Find a universal pattern across multiple civilizations.
+        Useful for identifying consensus wisdom.
+        
+        Args:
+            pattern: Pattern type like "cycles", "balance", "transformation"
+        
+        Returns:
+            Synthesized insight from multiple civilizations
+        """
+        patterns = self.json_wisdom.get_cross_civilization_patterns(pattern)
+        
+        if not patterns:
+            return f"No cross-cultural patterns found for '{pattern}'"
+        
+        # Synthesize insights
+        insights = []
+        for civ, civ_insights in patterns.items():
+            if civ_insights:
+                insights.append(f"{civ.title()}: {civ_insights[0][:100]}...")
+        
+        if len(insights) >= 2:
+            return f"UNIVERSAL PATTERN ({pattern}): " + " | ".join(insights[:3])
+        return insights[0] if insights else "No pattern found"
     
     def get_unified_reading(self, fear_greed: int, btc_price: float, btc_change: float) -> Dict:
         """
@@ -1783,6 +2027,14 @@ class WisdomCognitionEngine:
             "Warfare": actions.get("warfare", "HOLD"),
         }
         
+        # Get dynamic wisdom from JSON files based on market context
+        market_context = self._determine_market_context(fear_greed, btc_change)
+        dynamic_wisdom = self.get_dynamic_wisdom(market_context)
+        
+        # Get cross-cultural pattern for current conditions
+        pattern_type = "volatile" if abs(btc_change) > 3 else "cycles"
+        cross_pattern = self.get_cross_cultural_pattern(pattern_type)
+        
         return {
             "celtic": celtic_reading,
             "aztec": aztec_reading,
@@ -1795,8 +2047,27 @@ class WisdomCognitionEngine:
             "actions": actions,
             "civilization_actions": civilization_actions,  # For Quantum Brain bridge
             "synthesis": synthesis,
-            "stats": self.wisdom_stats
+            "stats": self.wisdom_stats,
+            # NEW: Dynamic wisdom from JSON scanner
+            "dynamic_wisdom": dynamic_wisdom,
+            "cross_cultural_pattern": cross_pattern,
+            "extended_civilizations_active": len(dynamic_wisdom)
         }
+    
+    def _determine_market_context(self, fear_greed: int, btc_change: float) -> str:
+        """Determine market context for wisdom filtering."""
+        if abs(btc_change) > 5:
+            return "volatile"
+        elif btc_change > 2:
+            return "bullish"
+        elif btc_change < -2:
+            return "bearish"
+        elif fear_greed < 30:
+            return "fearful"
+        elif fear_greed > 70:
+            return "greedy"
+        else:
+            return "consolidating"
     
     def _collect_actions(self, celtic, aztec, mogollon, plantagenet, egyptian, pythagorean, warfare, fng) -> Dict:
         """Collect action recommendations from all sources."""

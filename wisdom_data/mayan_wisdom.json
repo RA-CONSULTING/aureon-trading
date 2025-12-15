@@ -1,0 +1,183 @@
+{
+  "civilization": "Mayan",
+  "last_updated": "2025-12-15T00:00:00Z",
+  "version": "1.0.0",
+  "sources": ["hardcoded", "wikipedia"],
+  "topics": [
+    {
+      "name": "Cyclical Time",
+      "content": "Time is not linear but cyclical - events repeat in patterns through the Long Count",
+      "trading_insight": "Historical patterns repeat. Cycle analysis is the Mayan edge. What happened before will happen again.",
+      "source": "hardcoded",
+      "relevance_score": 0.95
+    },
+    {
+      "name": "Cosmic Order",
+      "content": "Human affairs mirror celestial movements - as above, so below",
+      "trading_insight": "Macro influences micro. Fed decisions move BTC. Understand the cosmos (macro) to predict earth (price).",
+      "source": "hardcoded",
+      "relevance_score": 0.85
+    },
+    {
+      "name": "Balance of Forces",
+      "content": "Maintaining balance between opposing forces - light and dark, creation and destruction",
+      "trading_insight": "Risk/reward balance. Portfolio equilibrium. The Mayans knew: Excess invites correction.",
+      "source": "hardcoded",
+      "relevance_score": 0.90
+    },
+    {
+      "name": "Tzolkin Sacred Calendar",
+      "content": "260-day cycle of 20 day names and 13 numbers for sacred timing",
+      "trading_insight": "Short-term cycle timing. Some days are auspicious for trading, others for rest.",
+      "source": "hardcoded",
+      "relevance_score": 0.85
+    },
+    {
+      "name": "Haab Solar Calendar",
+      "content": "365-day solar calendar with 18 months of 20 days plus 5 Wayeb unlucky days",
+      "trading_insight": "Annual cycle alignment. Respect the Wayeb - dangerous days require caution (like FOMC weeks).",
+      "source": "hardcoded",
+      "relevance_score": 0.85
+    },
+    {
+      "name": "Long Count Prophecy",
+      "content": "The Great Cycle of 5,125 years enabling long-term pattern recognition",
+      "trading_insight": "Super-cycles exist. The Mayans tracked them. Bitcoin's halving is a Long Count event.",
+      "source": "hardcoded",
+      "relevance_score": 0.80
+    },
+    {
+      "name": "Kukulkan's Descent",
+      "content": "At equinox, the feathered serpent descends the pyramid of Chichen Itza",
+      "trading_insight": "Equinox moments in markets - balance points before directional moves. Watch for the serpent.",
+      "source": "hardcoded",
+      "relevance_score": 0.80
+    },
+    {
+      "name": "Cenote Depths",
+      "content": "Sacred cenotes as portals to the underworld, places of offering and revelation",
+      "trading_insight": "Drawdowns are cenote journeys. Descend with offerings (stop losses), emerge with wisdom.",
+      "source": "hardcoded",
+      "relevance_score": 0.75
+    }
+  ],
+  "core_principles": {
+    "cyclical_time": {
+      "description": "Time is not linear but cyclical - events repeat in patterns",
+      "trading_application": "Historical patterns repeat, cycle analysis",
+      "confidence": 0.95
+    },
+    "cosmic_order": {
+      "description": "Human affairs mirror celestial movements",
+      "trading_application": "Macro influences on micro events",
+      "confidence": 0.85
+    },
+    "balance": {
+      "description": "Maintaining balance between opposing forces",
+      "trading_application": "Risk/reward balance, portfolio equilibrium",
+      "confidence": 0.90
+    },
+    "prophecy": {
+      "description": "Understanding cycles enables prediction",
+      "trading_application": "Pattern-based forecasting",
+      "confidence": 0.80
+    }
+  },
+  "calendar_systems": {
+    "tzolkin": {
+      "days": 260,
+      "structure": "20 day names × 13 numbers",
+      "purpose": "Sacred/ritual calendar",
+      "trading_use": "Short-term cycle timing"
+    },
+    "haab": {
+      "days": 365,
+      "structure": "18 months × 20 days + 5 Wayeb days",
+      "purpose": "Solar/agricultural calendar",
+      "trading_use": "Annual cycle alignment"
+    },
+    "calendar_round": {
+      "days": 18980,
+      "years": 52,
+      "description": "Tzolkin and Haab alignment cycle",
+      "trading_use": "Major cycle turning points"
+    },
+    "long_count": {
+      "description": "Linear count from mythological creation date",
+      "units": {
+        "kin": 1,
+        "uinal": 20,
+        "tun": 360,
+        "katun": 7200,
+        "baktun": 144000
+      },
+      "trading_use": "Long-term epoch analysis"
+    }
+  },
+  "sacred_numbers": {
+    "0": "First civilization to use zero - nothingness as concept",
+    "9": "Lords of the Night, underworld levels",
+    "13": "Sky levels, cosmic layers",
+    "20": "Base of counting system (vigesimal)",
+    "52": "Calendar Round years",
+    "260": "Tzolkin days (13 × 20)",
+    "365": "Haab days (solar year)"
+  },
+  "astronomical_knowledge": {
+    "venus_cycle": {
+      "synodic_period": 584,
+      "importance": "War, transformation, death/rebirth",
+      "trading_insight": "Major turning points, volatility"
+    },
+    "eclipse_prediction": {
+      "description": "Sophisticated eclipse tables",
+      "trading_insight": "Black swan preparation"
+    },
+    "mars_cycle": {
+      "synodic_period": 780,
+      "significance": "Conflict, energy, action"
+    }
+  },
+  "day_signs": {
+    "imix": {"meaning": "Crocodile/Water Lily", "energy": "Primordial, beginning"},
+    "ik": {"meaning": "Wind/Breath", "energy": "Spirit, communication"},
+    "akbal": {"meaning": "Night/House", "energy": "Darkness, introspection"},
+    "kan": {"meaning": "Maize/Seed", "energy": "Growth, abundance"},
+    "chicchan": {"meaning": "Serpent", "energy": "Kundalini, transformation"},
+    "cimi": {"meaning": "Death", "energy": "Ending, transition"},
+    "manik": {"meaning": "Hand/Deer", "energy": "Skill, hunt"},
+    "lamat": {"meaning": "Star/Venus", "energy": "Harmony, beauty"},
+    "muluc": {"meaning": "Water/Moon", "energy": "Emotion, purification"},
+    "oc": {"meaning": "Dog", "energy": "Loyalty, guidance"},
+    "chuen": {"meaning": "Monkey", "energy": "Art, play, creativity"},
+    "eb": {"meaning": "Road/Grass", "energy": "Journey, path"},
+    "ben": {"meaning": "Reed/Staff", "energy": "Authority, pillar"},
+    "ix": {"meaning": "Jaguar", "energy": "Magic, night, feminine"},
+    "men": {"meaning": "Eagle", "energy": "Vision, freedom"},
+    "cib": {"meaning": "Owl/Vulture", "energy": "Ancient wisdom, forgiveness"},
+    "caban": {"meaning": "Earth/Earthquake", "energy": "Movement, evolution"},
+    "etznab": {"meaning": "Flint/Mirror", "energy": "Truth, reflection"},
+    "cauac": {"meaning": "Storm/Rain", "energy": "Cleansing, energy"},
+    "ahau": {"meaning": "Sun/Lord", "energy": "Enlightenment, completion"}
+  },
+  "cosmology": {
+    "xibalba": "Underworld - place of trials and transformation",
+    "middleworld": "Earth - human realm of action",
+    "upperworld": "Heavens - realm of gods and ancestors",
+    "world_tree": "Axis mundi connecting all realms"
+  },
+  "wikipedia_topics": [
+    "Maya calendar",
+    "Tzolkin",
+    "Haab",
+    "Mesoamerican Long Count calendar",
+    "Maya astronomy",
+    "Maya civilization",
+    "Maya numerals",
+    "Popol Vuh",
+    "Maya mythology",
+    "Dresden Codex"
+  ],
+  "learned_insights": [],
+  "scan_history": []
+}
