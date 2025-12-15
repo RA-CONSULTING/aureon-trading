@@ -132,11 +132,11 @@ Write-Host ""
 Write-Host "[OK] Brain State Detected!" -ForegroundColor Green
 
 # 3. Start the Unified Trader
-Write-Host "[>>] Launching Unified Ecosystem Trader..." -ForegroundColor Cyan
+Write-Host "[>>] Launching Unified Live Trader (v6)..." -ForegroundColor Cyan
 Write-Host "===================================================" -ForegroundColor Cyan
 
 try {
-    python aureon_unified_ecosystem.py
+    python aureon_unified_live.py
 }
 finally {
     # Cleanup on exit
