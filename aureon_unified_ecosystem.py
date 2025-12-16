@@ -4544,6 +4544,17 @@ class AdaptiveLearningEngine:
         self.history_file = history_file
         self.trade_history: List[Dict] = []
         self.max_history = 500  # Keep last 500 trades for analysis
+
+        # Keep a pristine copy of defaults for easy reset when data is stale
+        self.default_thresholds = {
+            'min_coherence': CONFIG.get('ENTRY_COHERENCE', 0.45),
+            'min_score': CONFIG.get('MIN_SCORE', 65),
+            'min_probability': CONFIG.get('PROB_MIN_CONFIDENCE', 0.50),
+            'harmonic_bonus': CONFIG.get('HNC_HARMONIC_BONUS', 1.15),
+            'distortion_penalty': CONFIG.get('HNC_DISTORTION_PENALTY', 0.70),
+        }
+        self.optimized_thresholds = self.default_thresholds.copy()
+        self.recency_window_days = 10  # Ignore trades older than this to avoid stale fear
         
         # Performance metrics by category
         self.metrics_by_frequency: Dict[str, Dict] = {}  # freq_band -> {wins, losses, total_pnl}
@@ -4551,15 +4562,6 @@ class AdaptiveLearningEngine:
         self.metrics_by_score: Dict[str, Dict] = {}      # score_range -> {wins, losses}
         self.metrics_by_hour: Dict[int, Dict] = {}       # hour -> {wins, losses}
         self.metrics_by_action: Dict[str, Dict] = {}     # HNC action -> {wins, losses}
-        
-        # Optimized thresholds (start with defaults, learn over time)
-        self.optimized_thresholds = {
-            'min_coherence': CONFIG.get('ENTRY_COHERENCE', 0.45),
-            'min_score': CONFIG.get('MIN_SCORE', 65),
-            'min_probability': CONFIG.get('PROB_MIN_CONFIDENCE', 0.50),
-            'harmonic_bonus': CONFIG.get('HNC_HARMONIC_BONUS', 1.15),
-            'distortion_penalty': CONFIG.get('HNC_DISTORTION_PENALTY', 0.70),
-        }
         
         # Learning parameters
         self.learning_rate = 0.05  # How quickly to adapt
@@ -4576,10 +4578,21 @@ class AdaptiveLearningEngine:
                     data = json.load(f)
                     self.trade_history = data.get('trades', [])[-self.max_history:]
                     self.optimized_thresholds = {
-                        **self.optimized_thresholds,
+                        **self.default_thresholds,
                         **data.get('thresholds', {})
                     }
+
+                    stale_removed = self._filter_recent_trades()
+                    if stale_removed:
+                        logger.info(f"Adaptive Learning: dropped {stale_removed} stale trades (> {self.recency_window_days}d) to stay active")
+
+                    self._clamp_thresholds()
                     self._rebuild_metrics()
+                    
+                    if not self.trade_history:
+                        # If everything was stale, reset to defaults so the system will trade
+                        self.optimized_thresholds = self.default_thresholds.copy()
+                        logger.info("Adaptive Learning: no recent trades found, resetting thresholds to defaults")
         except Exception as e:
             logger.warning(f"Could not load learning history: {e}")
             
@@ -4739,7 +4752,31 @@ class AdaptiveLearningEngine:
         # 4. Optimize probability threshold
         self._optimize_probability_threshold()
         
+        # Make sure nothing drifts into over-cautious territory
+        self._clamp_thresholds()
+
         logger.info(f"🧠 Adaptive Learning: Thresholds updated based on {total_trades} trades")
+
+    def _filter_recent_trades(self) -> int:
+        """Drop trades older than the recency window to avoid stale fear."""
+        cutoff = time.time() - self.recency_window_days * 86400
+        recent = [t for t in self.trade_history if t.get('entry_time', cutoff) >= cutoff]
+        removed = len(self.trade_history) - len(recent)
+        self.trade_history = recent
+        return removed
+
+    def _clamp_thresholds(self):
+        """Clamp thresholds to sane ranges so stale data cannot freeze trading."""
+        bounds = {
+            'min_coherence': (0.30, 0.75),
+            'min_score': (45, 75),
+            'min_probability': (0.40, 0.65),
+            'harmonic_bonus': (1.00, 1.30),
+            'distortion_penalty': (0.50, 0.90),
+        }
+        for key, (low, high) in bounds.items():
+            val = self.optimized_thresholds.get(key, self.default_thresholds.get(key, low))
+            self.optimized_thresholds[key] = max(low, min(high, val))
         
     def _optimize_coherence_threshold(self):
         """Find optimal coherence threshold based on win rates."""
