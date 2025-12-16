@@ -509,6 +509,7 @@ def run_simulation():
         optimizer.lattice.pong(0, False, 1.0)
         optimizer.update_coherence(share_found=False, hash_quality=0.5)
         optimizer.update_qvee(BASE_HASHRATE_TH * 1e12)
+        optimizer.update_lumina(BASE_HASHRATE_TH * 1e9)  # Update Lumina (TH -> KH)
         
         # 🪐 Update Platypus
         optimizer.platypus.update()
@@ -636,6 +637,7 @@ def run_simulation():
         # Display progress at key intervals
         if sim_time in [1, 5, 10, 15, 30, 45, 60, 90, 120, 180, 240, 300]:
             lighthouse_icon = "🔦" if platypus_state.is_lighthouse else "  "
+            lumina_icon = "💎" if optimizer.lumina.above_threshold else "⚫"
             strategy_icons = {"focused": "🎯", "exploration": "🔍", "balanced": "⚖️"}
             strategy_icon = strategy_icons.get(brain_state.search_strategy, "⚖️")
             wave_icons = {"CRYSTALLINE": "💎", "RESONANT": "🔊", "CONVERGENT": "🎯", "BALANCED": "⚖️", "DIVERGENT": "🔀", "CHAOTIC": "🌀"}
@@ -646,6 +648,7 @@ def run_simulation():
             print(f"⏱️  T+{int(sim_time):3d}s | "
                   f"🧠 ψ={brain_state.unified_coherence:.2f} {strategy_icon} | "
                   f"🌌 {wave_icon}{brain_state.wave_state[:4]} | "
+                  f"💎 {lumina_icon} | "
                   f"🌍 {brain_state.stargate_active_node[:4]} {brain_state.stargate_frequency:.1f}Hz | "
                   f"{cons_icon} L{brain_state.ladder_level} | "
                   f"CASCADE: {total_cascade:5.2f}x | "
