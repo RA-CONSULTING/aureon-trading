@@ -4705,13 +4705,14 @@ class QuantumProcessingBrain:
         
         # Neural-like weight learning
         self.weights = {
-            'probability': 0.25,
-            'planetary': 0.20,
-            'harmonic': 0.15,
-            'temporal': 0.15,
-            'casimir': 0.10,
+            'probability': 0.22,
+            'planetary': 0.18,
+            'harmonic': 0.13,
+            'temporal': 0.12,
+            'casimir': 0.08,
             'coherence': 0.10,
             'memory': 0.05,
+            'diamond': 0.12,  # 🔷 SACRED GEOMETRY BOOST
         }
         
         # Success feedback for weight adaptation
@@ -4729,7 +4730,8 @@ class QuantumProcessingBrain:
                               casimir: Optional[CasimirEffectEngine] = None,
                               qvee: Optional[QVEEEngine] = None,
                               lumina: Optional[LuminaCellEngine] = None,
-                              mirrors: Optional[QuantumMirrorArray] = None) -> QuantumBrainState:
+                              mirrors: Optional[QuantumMirrorArray] = None,
+                              diamond: Optional['DiamondLatticeEngine'] = None) -> QuantumBrainState:
         """
         Compute unified brain state from all subsystem inputs.
         
@@ -4822,6 +4824,18 @@ class QuantumProcessingBrain:
             except:
                 pass
         
+        # 🔷 DIAMOND LATTICE - SACRED GEOMETRY COMPUTATIONAL POWER
+        diamond_coherence = 0.5
+        diamond_boost = 1.0
+        diamond_zpe = 0.0
+        if diamond:
+            try:
+                diamond_coherence = diamond.state.central_coherence
+                diamond_boost = diamond.state.hash_boost
+                diamond_zpe = diamond.state.total_zpe
+            except:
+                pass
+        
         # ═══════════════════════════════════════════════════════════════
         # PHASE 2: COMPUTE UNIFIED COHERENCE (Weighted Sum)
         # ═══════════════════════════════════════════════════════════════
@@ -4833,17 +4847,24 @@ class QuantumProcessingBrain:
             self.weights['temporal'] * self._get_temporal_factor() +
             self.weights['casimir'] * min(1.0, casimir_force / 10.0) +
             self.weights['coherence'] * psi +
-            self.weights['memory'] * self.state.unified_coherence  # Memory term
+            self.weights['memory'] * self.state.unified_coherence +  # Memory term
+            self.weights['diamond'] * diamond_coherence  # 🔷 SACRED GEOMETRY POWER
         )
+        
+        # 🔷 DIAMOND COMPUTATIONAL BOOST - Amplify unified coherence!
+        # The diamond's hash boost directly enhances brain power
+        unified = min(1.0, unified * (1.0 + (diamond_boost - 1.0) * 0.3))
         
         # ═══════════════════════════════════════════════════════════════
         # PHASE 3: COMPUTE OPTIMAL NONCE REGION
         # ═══════════════════════════════════════════════════════════════
         
-        # Strategy selection based on coherence
-        if gamma > 0.75 and prob_edge > 0.15:
+        # Strategy selection based on coherence + diamond boost
+        diamond_focused = diamond_coherence > 0.7 and diamond_boost > 1.5
+        
+        if (gamma > 0.75 and prob_edge > 0.15) or diamond_focused:
             strategy = "focused"
-            # High alignment + strong probability = narrow Fibonacci search
+            # High alignment + strong probability OR diamond resonance = narrow Fibonacci search
             fib_idx = int(unified * len(self.FIBONACCI_EXTENDED))
             primary_bias = self.FIBONACCI_EXTENDED[fib_idx % len(self.FIBONACCI_EXTENDED)] * 1_000_000
         elif gamma < 0.3 or psi < 0.3:
@@ -4878,15 +4899,14 @@ class QuantumProcessingBrain:
         # PHASE 5: COMPUTE TOTAL CASCADE MULTIPLIER
         # ═══════════════════════════════════════════════════════════════
         
-        # 🔷 Update Diamond Lattice and get its contribution
-        diamond_result = self.diamond.update(
-            hashrate=hashrate,
-            lumina_coherence=lumina_mult,
-            qvee_zpe=qvee_zpe,
-            qim_entanglement=self.lumina.qim_reflector.entanglement_factor,
-            sacred_frequency=432.0  # Sacred healing frequency
-        )
-        diamond_boost = diamond_result.get('hash_boost', 1.0)
+        # 🔷 Diamond boost from passed parameter (already extracted above)
+        diamond_cascade_boost = 1.0 + (diamond_boost - 1.0) * 0.5
+        
+        # 🔷 Cache Diamond state for broadcast to trading brain
+        self._diamond_coherence = diamond_coherence
+        self._diamond_boost = diamond_boost
+        self._diamond_phi_alignment = diamond.state.phi_alignment if diamond else 0.0
+        self._diamond_zpe = diamond.state.total_zpe if diamond else 0.0
         
         # All multipliers compound (now including Diamond!)
         total_cascade = (
@@ -4896,7 +4916,7 @@ class QuantumProcessingBrain:
             lumina_mult *                  # LuminaCell
             mirror_cascade *               # Mirror array
             (1.0 + gamma * 0.25) *        # Planetary up to 25%
-            diamond_boost                  # 🔷 DIAMOND LATTICE
+            diamond_cascade_boost          # 🔷 DIAMOND LATTICE
         )
         
         # Lighthouse bonus (extra 10% during optimal windows)
@@ -5196,6 +5216,11 @@ class QuantumProcessingBrain:
                 'piano_lambda': getattr(self.state, 'piano_lambda', 0.0),
                 'piano_coherence': getattr(self.state, 'piano_coherence', 0.0),
                 'rainbow_state': getattr(self.state, 'rainbow_state', 'UNKNOWN'),
+                # 🔷 DIAMOND LATTICE STATE 🔷
+                'diamond_coherence': getattr(self, '_diamond_coherence', 0.5),
+                'diamond_boost': getattr(self, '_diamond_boost', 1.0),
+                'diamond_phi_alignment': getattr(self, '_diamond_phi_alignment', 0.0),
+                'diamond_zpe': getattr(self, '_diamond_zpe', 0.0),
             }
             
             # Write to bridge data directory IF bridge exists
@@ -6970,7 +6995,8 @@ class HarmonicMiningOptimizer:
             casimir=self.casimir,
             qvee=self.qvee,
             lumina=self.lumina,
-            mirrors=self.mirror_array
+            mirrors=self.mirror_array,
+            diamond=self.diamond  # 🔷 SACRED GEOMETRY COMPUTATIONAL POWER
         )
         
         # Apply brain guidance to nonce bias

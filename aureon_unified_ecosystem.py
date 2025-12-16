@@ -1306,6 +1306,7 @@ class EcosystemBrainBridge:
     2. Quantum coherence from the mining optimizer
     3. Adaptive learning from past trades
     4. Cascade amplification from win streaks
+    5. 🔷 Diamond Lattice sacred geometry ZPE boost
     """
     
     def __init__(self):
@@ -1321,6 +1322,12 @@ class EcosystemBrainBridge:
         self._planetary_gamma: float = 0.5
         self._cascade_multiplier: float = 1.0
         self._is_lighthouse: bool = False
+        
+        # 🔷 DIAMOND LATTICE - Sacred Geometry Computational Boost
+        self._diamond_coherence: float = 0.5
+        self._diamond_boost: float = 1.0
+        self._diamond_phi_alignment: float = 0.0
+        self._diamond_zpe: float = 0.0
         
         # Market intelligence from brain
         self._fear_greed: int = 50
@@ -1376,8 +1383,15 @@ class EcosystemBrainBridge:
                     self._cascade_multiplier = miner_context['cascade_multiplier']
                     self._is_lighthouse = miner_context['is_lighthouse']
                     
+                    # 🔷 Extract Diamond Lattice state if available
+                    self._diamond_coherence = miner_context.get('diamond_coherence', 0.5)
+                    self._diamond_boost = miner_context.get('diamond_boost', 1.0)
+                    self._diamond_phi_alignment = miner_context.get('diamond_phi_alignment', 0.0)
+                    self._diamond_zpe = miner_context.get('diamond_zpe', 0.0)
+                    
                     logger.info(f"🔗🌟 Live miner data: Ψ={self._quantum_coherence:.3f} | "
-                              f"Γ={self._planetary_gamma:.3f} | Cascade={self._cascade_multiplier:.2f}x")
+                              f"Γ={self._planetary_gamma:.3f} | Cascade={self._cascade_multiplier:.2f}x"
+                              f" | 🔷Diamond={self._diamond_boost:.2f}x")
                 else:
                     # Fallback to stored brain state
                     brain_state = load_brain_state()
@@ -1475,6 +1489,26 @@ class EcosystemBrainBridge:
         self._cascade_multiplier = cascade
         self._is_lighthouse = lighthouse
     
+    def update_diamond_state(self, diamond_coherence: float, diamond_boost: float, 
+                             phi_alignment: float, zpe: float):
+        """
+        🔷 Update Diamond Lattice state from miner.
+        
+        The Diamond provides sacred geometry computational boost:
+        - Central coherence (Ψ) from octahedron center
+        - Hash boost from golden ratio alignment
+        - φ alignment (how perfect the geometry is)
+        - ZPE extraction rate
+        """
+        self._diamond_coherence = diamond_coherence
+        self._diamond_boost = diamond_boost
+        self._diamond_phi_alignment = phi_alignment
+        self._diamond_zpe = zpe
+        
+        # Diamond boost amplifies cascade multiplier!
+        if diamond_boost > 1.5:
+            logger.info(f"🔷⚡ Diamond Boost Active: {diamond_boost:.2f}x | φ={phi_alignment:.3f}")
+    
     def get_trading_recommendation(self) -> Dict[str, Any]:
         """
         Get trading recommendation based on brain wisdom.
@@ -1546,6 +1580,17 @@ class EcosystemBrainBridge:
         if self._is_lighthouse:
             rec['position_multiplier'] *= 1.15
             rec['reasoning'].append("🗼 Lighthouse Window Active")
+        
+        # 🔷 DIAMOND LATTICE BOOST - Sacred Geometry Amplification
+        if self._diamond_boost > 1.3:
+            diamond_mult = 1.0 + (self._diamond_boost - 1.0) * 0.2  # Up to 1.28x extra
+            rec['position_multiplier'] *= diamond_mult
+            rec['reasoning'].append(f"🔷 Diamond Boost: {self._diamond_boost:.2f}x (φ={self._diamond_phi_alignment:.2f})")
+            
+            # If diamond coherence is very high, boost confidence too
+            if self._diamond_coherence > 0.8:
+                rec['confidence'] = min(1.0, rec['confidence'] + 0.1)
+                rec['reasoning'].append(f"🔷 Diamond Coherence Peak: Ψ={self._diamond_coherence:.2f}")
         
         return rec
     
