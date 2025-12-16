@@ -8,8 +8,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { globalSystemsManager } from "@/core/globalSystemsManager";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
-import WarRoom from "./pages/WarRoom";
-import Systems from "./pages/Systems";
+import TradeDashboard from "./pages/TradeDashboard";
 import Settings from "./pages/Settings";
 import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
@@ -65,9 +64,8 @@ const App = () => {
         <Sonner />
         <BrowserRouter>
           <Routes>
-            {/* Main 2 Pages */}
-            <Route path="/" element={<WarRoom />} />
-            <Route path="/systems" element={<Systems />} />
+            {/* Main Dashboard */}
+            <Route path="/" element={<TradeDashboard />} />
             
             {/* Auth & Settings */}
             <Route path="/auth" element={<Auth />} />
@@ -79,13 +77,14 @@ const App = () => {
             
             {/* Redirects for old routes */}
             <Route path="/war-room" element={<Navigate to="/" replace />} />
-            <Route path="/quantum" element={<Navigate to="/systems" replace />} />
-            <Route path="/prism" element={<Navigate to="/systems" replace />} />
-            <Route path="/rainbow" element={<Navigate to="/systems" replace />} />
-            <Route path="/earth" element={<Navigate to="/systems" replace />} />
+            <Route path="/systems" element={<Navigate to="/" replace />} />
+            <Route path="/quantum" element={<Navigate to="/" replace />} />
+            <Route path="/prism" element={<Navigate to="/" replace />} />
+            <Route path="/rainbow" element={<Navigate to="/" replace />} />
+            <Route path="/earth" element={<Navigate to="/" replace />} />
             <Route path="/analytics" element={<Navigate to="/" replace />} />
             <Route path="/portfolio" element={<Navigate to="/" replace />} />
-            <Route path="/backtest" element={<Navigate to="/systems" replace />} />
+            <Route path="/backtest" element={<Navigate to="/" replace />} />
             
             <Route path="*" element={<NotFound />} />
           </Routes>

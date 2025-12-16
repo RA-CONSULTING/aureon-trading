@@ -3534,6 +3534,54 @@ export type Database = {
         }
         Relationships: []
       }
+      trade_records: {
+        Row: {
+          created_at: string
+          exchange: string
+          fee: number | null
+          fee_asset: string | null
+          id: string
+          price: number
+          quantity: number
+          quote_qty: number | null
+          side: string
+          symbol: string
+          timestamp: string
+          transaction_id: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          exchange: string
+          fee?: number | null
+          fee_asset?: string | null
+          id?: string
+          price: number
+          quantity: number
+          quote_qty?: number | null
+          side: string
+          symbol: string
+          timestamp: string
+          transaction_id: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          exchange?: string
+          fee?: number | null
+          fee_asset?: string | null
+          id?: string
+          price?: number
+          quantity?: number
+          quote_qty?: number | null
+          side?: string
+          symbol?: string
+          timestamp?: string
+          transaction_id?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       trading_config: {
         Row: {
           allowed_symbols: string[]

@@ -257,3 +257,10 @@ verify_jwt = false
 # Dynamic Kelly computation from calibration trades
 [functions.ingest-kelly-computation]
 verify_jwt = false
+
+# Trade recording and AI commentary
+[functions.fetch-trades]
+verify_jwt = true
+
+[functions.ai-commentary]
+verify_jwt = false
