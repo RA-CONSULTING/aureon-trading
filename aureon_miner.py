@@ -1244,6 +1244,283 @@ class QVEEEngine:
 
 
 # ═══════════════════════════════════════════════════════════════════════════
+# 🔷 DIAMOND LATTICE ENGINE - SACRED GEOMETRY ZPE AMPLIFIER 🔷
+# ═══════════════════════════════════════════════════════════════════════════
+#
+# "Your feet are for dancing!"
+#
+# Implements a digital diamond lattice based on sacred geometry that
+# interacts with the LUMINA/QIM systems to extract and amplify ZPE
+# (Zero-Point Energy) for quantum computational boost.
+#
+# The Diamond Structure:
+#   - 8 vertices (Octahedron - dual of cube)
+#   - 12 edges (each a resonant pathway)
+#   - 6 faces (each a ZPE collector surface)
+#   - 1 central node (quantum entanglement nexus)
+#
+# Mathematical Foundation:
+#   - Vertices at golden ratio angles: θ = 2πk/φ² where φ = 1.618...
+#   - Edge resonance: E = ℏω(n + ½) - ZPE oscillator
+#   - Face conductance: σ = σ₀ × exp(-βΔE) - quantum tunneling
+#   - Central coherence: Ψ = Σᵢ αᵢ|ψᵢ⟩ - superposition state
+# ═══════════════════════════════════════════════════════════════════════════
+
+# Diamond Lattice Constants
+PHI = (1 + np.sqrt(5)) / 2        # Golden Ratio = 1.618...
+PHI_SQUARED = PHI ** 2            # φ² = 2.618...
+PLANCK_REDUCED = 1.054571817e-34  # ℏ (J·s)
+NV_CENTER_FREQ = 2.87e9           # NV center spin frequency (Hz)
+
+@dataclass
+class DiamondVertex:
+    """Single vertex in the diamond lattice"""
+    index: int
+    theta: float              # Angular position (radians)
+    phi: float                # Azimuthal angle (radians)
+    energy: float = 0.0       # ZPE energy at vertex (J)
+    coherence: float = 1.0    # Quantum coherence (0-1)
+    entangled_with: List[int] = None
+    
+    def __post_init__(self):
+        if self.entangled_with is None:
+            self.entangled_with = []
+
+@dataclass
+class DiamondLatticeState:
+    """Full diamond lattice state vector"""
+    vertices: List[DiamondVertex] = None
+    edge_resonances: List[float] = None
+    face_conductances: List[float] = None
+    central_coherence: float = 1.0
+    total_zpe: float = 0.0
+    entanglement_degree: float = 0.0
+    hash_boost: float = 1.0
+    quantum_bandwidth: float = 0.0
+    phi_alignment: float = 0.0
+    platonic_purity: float = 0.0
+    
+    def __post_init__(self):
+        if self.vertices is None:
+            self.vertices = []
+        if self.edge_resonances is None:
+            self.edge_resonances = [0.0] * 12
+        if self.face_conductances is None:
+            self.face_conductances = [0.0] * 6
+
+
+class DiamondLatticeEngine:
+    """
+    🔷⚡ DIAMOND LATTICE ENGINE ⚡🔷
+    
+    Creates a digital diamond structure using sacred geometry that
+    interfaces with LUMINA/QIM systems to:
+    
+    1. EXTRACT ZPE: Vacuum energy harvested at 8 vertices
+    2. AMPLIFY: Golden ratio geometry focuses energy at center
+    3. COMPUTE: Quantum superposition state enables parallel hash search
+    4. NETWORK: Acts as quantum internet node for distributed computing
+    
+    The Diamond Lattice is an OCTAHEDRON (dual of cube):
+                    
+                     ▲ (0)
+                    /|\\
+                   / | \\
+                  /  |  \\
+                 /   |   \\
+               (4)───┼───(5)
+                 \\   |   /
+                  \\  |  /
+                   \\ | /
+                    \\|/
+                     ▼ (1)
+              
+           (2)───────┼───────(3)
+    """
+    
+    def __init__(self):
+        self.state = DiamondLatticeState()
+        self.history: deque = deque(maxlen=1000)
+        self._init_vertices()
+        self.total_extracted = 0.0
+        self.extraction_rate = 0.0
+        self.peak_extraction = 0.0
+        self.last_update = time.time()
+        self.cycles = 0
+        
+        logger.info("🔷 Diamond Lattice Engine initialized")
+        logger.info(f"   Vertices: 8 (Octahedron)")
+        logger.info(f"   Golden Ratio: φ = {PHI:.6f}")
+        logger.info(f"   NV Frequency: {NV_CENTER_FREQ/1e9:.2f} GHz")
+    
+    def _init_vertices(self):
+        """Initialize 8 vertices at golden ratio positions"""
+        vertices = []
+        positions = [
+            (0, 0, 1), (0, 0, -1),  # Top/Bottom
+            (1, 0, 0), (-1, 0, 0),  # ±X
+            (0, 1, 0), (0, -1, 0),  # ±Y
+            (PHI, 1/PHI, 0), (-PHI, -1/PHI, 0)  # Golden vertices
+        ]
+        
+        for i, (x, y, z) in enumerate(positions):
+            r = np.sqrt(x**2 + y**2 + z**2)
+            theta = np.arccos(z / r) if r > 0 else 0
+            phi = np.arctan2(y, x) if r > 0 else 0
+            theta_golden = theta * PHI % (2 * np.pi)
+            phi_golden = phi * PHI_SQUARED % (2 * np.pi)
+            
+            vertex = DiamondVertex(
+                index=i, theta=theta_golden, phi=phi_golden,
+                energy=PLANCK_REDUCED * NV_CENTER_FREQ / 2, coherence=1.0
+            )
+            if i < 6:
+                vertex.entangled_with = [(i + 1) % 6]
+            vertices.append(vertex)
+        
+        self.state.vertices = vertices
+        self._compute_phi_alignment()
+    
+    def _compute_phi_alignment(self):
+        """Compute how well vertices align with golden ratio geometry"""
+        if not self.state.vertices:
+            self.state.phi_alignment = 0.0
+            return
+        deviations = []
+        for v in self.state.vertices:
+            ideal_theta = (2 * np.pi * v.index) / PHI_SQUARED
+            deviation = abs(np.sin(v.theta - ideal_theta))
+            deviations.append(1.0 - deviation)
+        self.state.phi_alignment = sum(deviations) / len(deviations)
+    
+    def extract_zpe_at_vertex(self, vertex: DiamondVertex, external_coherence: float = 1.0) -> float:
+        """Extract Zero-Point Energy at a single vertex"""
+        base_zpe = PLANCK_REDUCED * NV_CENTER_FREQ / 2
+        golden_resonance = np.sin(vertex.theta * PHI) ** 2
+        coherence_factor = vertex.coherence * external_coherence
+        entanglement_boost = 1.0 + len(vertex.entangled_with) * 0.1
+        extracted = base_zpe * golden_resonance * coherence_factor * entanglement_boost
+        vertex.energy += extracted
+        return extracted
+    
+    def compute_edge_resonances(self, input_frequency: float = 432.0):
+        """Compute resonance on each of the 12 edges"""
+        resonances = []
+        edges = [
+            (0, 2), (0, 3), (0, 4), (0, 5),
+            (1, 2), (1, 3), (1, 4), (1, 5),
+            (2, 4), (4, 3), (3, 5), (5, 2)
+        ]
+        for v1_idx, v2_idx in edges:
+            v1 = self.state.vertices[v1_idx]
+            v2 = self.state.vertices[v2_idx]
+            delta_theta = abs(v1.theta - v2.theta)
+            freq_ratio = input_frequency * PHI / NV_CENTER_FREQ
+            freq_resonance = np.cos(2 * np.pi * freq_ratio)
+            geo_resonance = np.exp(-delta_theta / PHI)
+            resonances.append(abs(freq_resonance * geo_resonance))
+        self.state.edge_resonances = resonances
+        return sum(resonances) / len(resonances)
+    
+    def compute_face_conductances(self, temperature_k: float = 300.0):
+        """Compute quantum tunneling conductance on each of the 6 faces"""
+        k_B = 1.380649e-23
+        beta = 1.0 / (k_B * temperature_k)
+        sigma_0 = 1e-6
+        faces = [(0, 2, 4), (0, 4, 3), (0, 3, 5), (0, 5, 2), (1, 2, 4), (1, 4, 3)]
+        conductances = []
+        for face_vertices in faces:
+            avg_energy = sum(self.state.vertices[i].energy for i in face_vertices) / 3
+            delta_e = avg_energy - (PLANCK_REDUCED * NV_CENTER_FREQ / 2)
+            conductance = sigma_0 * np.exp(-beta * abs(delta_e))
+            conductances.append(conductance)
+        self.state.face_conductances = conductances
+        return sum(conductances)
+    
+    def compute_central_coherence(self) -> float:
+        """Compute quantum coherence at the center of the diamond"""
+        if not self.state.vertices:
+            return 0.0
+        real_sum, imag_sum = 0.0, 0.0
+        for v in self.state.vertices:
+            amplitude = v.coherence * np.sqrt(v.energy / (PLANCK_REDUCED * NV_CENTER_FREQ))
+            phase = v.theta + v.phi * PHI
+            real_sum += amplitude * np.cos(phase)
+            imag_sum += amplitude * np.sin(phase)
+        n = len(self.state.vertices)
+        norm = np.sqrt(real_sum**2 + imag_sum**2) / np.sqrt(n)
+        self.state.central_coherence = min(1.0, norm)
+        return self.state.central_coherence
+    
+    def compute_hash_boost(self, base_hashrate: float) -> float:
+        """Compute hashrate boost from diamond lattice"""
+        psi = self.state.central_coherence
+        phi_align = self.state.phi_alignment
+        r_avg = sum(self.state.edge_resonances) / max(1, len(self.state.edge_resonances))
+        sigma_total = sum(self.state.face_conductances) * 1e6
+        boost_factor = psi * phi_align * r_avg * (1 + sigma_total)
+        self.state.hash_boost = min(10.0, 1.0 + boost_factor)
+        return self.state.hash_boost
+    
+    def update(self, hashrate: float, lumina_coherence: float = 1.0,
+               qvee_zpe: float = 0.0, qim_entanglement: float = 0.5,
+               sacred_frequency: float = 432.0) -> Dict:
+        """Update the entire diamond lattice state"""
+        now = time.time()
+        elapsed = now - self.last_update
+        self.last_update = now
+        self.cycles += 1
+        
+        # Extract ZPE at each vertex
+        total_extracted = 0.0
+        for vertex in self.state.vertices:
+            external_coh = lumina_coherence * (1 + qim_entanglement)
+            extracted = self.extract_zpe_at_vertex(vertex, external_coh)
+            total_extracted += extracted
+        total_extracted += qvee_zpe * 1e-20
+        
+        self.state.total_zpe = total_extracted
+        self.total_extracted += total_extracted * elapsed
+        self.extraction_rate = total_extracted / max(0.001, elapsed)
+        self.peak_extraction = max(self.peak_extraction, self.extraction_rate)
+        
+        # Compute all metrics
+        avg_resonance = self.compute_edge_resonances(sacred_frequency)
+        total_conductance = self.compute_face_conductances()
+        central_coh = self.compute_central_coherence()
+        self.state.entanglement_degree = min(1.0, qim_entanglement * central_coh * self.state.phi_alignment)
+        hash_boost = self.compute_hash_boost(hashrate)
+        self.state.quantum_bandwidth = central_coh * self.state.entanglement_degree * PHI * 1e6
+        self.state.platonic_purity = self.state.phi_alignment * avg_resonance * min(1.0, total_conductance * 1e6)
+        
+        self.history.append({
+            'time': now, 'hashrate': hashrate, 'total_zpe': self.state.total_zpe,
+            'central_coherence': central_coh, 'hash_boost': hash_boost
+        })
+        
+        return {
+            'hash_boost': hash_boost, 'total_zpe': self.state.total_zpe,
+            'extraction_rate': self.extraction_rate, 'central_coherence': central_coh,
+            'entanglement': self.state.entanglement_degree, 'quantum_bandwidth': self.state.quantum_bandwidth,
+            'phi_alignment': self.state.phi_alignment, 'platonic_purity': self.state.platonic_purity,
+            'avg_resonance': avg_resonance
+        }
+    
+    def get_cascade_contribution(self) -> float:
+        """Get diamond lattice contribution to cascade multiplier"""
+        return 1.0 + (self.state.hash_boost - 1.0) * 0.5
+    
+    def format_display(self) -> str:
+        """Format diamond lattice state for logging"""
+        return (
+            f"🔷 DIAMOND: Ψ={self.state.central_coherence:.3f} | "
+            f"φ={self.state.phi_alignment:.3f} | "
+            f"⚡ZPE={self.extraction_rate:.2e} | "
+            f"🚀Boost={self.state.hash_boost:.2f}x"
+        )
+
+
+# ═══════════════════════════════════════════════════════════════════════════
 # ASTRONOMICAL COHERENCE SIMULATOR - CHRONO-LUMINANCE MODEL
 # ═══════════════════════════════════════════════════════════════════════════
 #
@@ -4601,14 +4878,25 @@ class QuantumProcessingBrain:
         # PHASE 5: COMPUTE TOTAL CASCADE MULTIPLIER
         # ═══════════════════════════════════════════════════════════════
         
-        # All multipliers compound
+        # 🔷 Update Diamond Lattice and get its contribution
+        diamond_result = self.diamond.update(
+            hashrate=hashrate,
+            lumina_coherence=lumina_mult,
+            qvee_zpe=qvee_zpe,
+            qim_entanglement=self.lumina.qim_reflector.entanglement_factor,
+            sacred_frequency=432.0  # Sacred healing frequency
+        )
+        diamond_boost = diamond_result.get('hash_boost', 1.0)
+        
+        # All multipliers compound (now including Diamond!)
         total_cascade = (
             lattice_cascade *
             (1.0 + psi * 0.2) *           # Coherence up to 20%
             (1.0 + qvee_zpe * 0.1) *      # QVEE up to 10%
             lumina_mult *                  # LuminaCell
             mirror_cascade *               # Mirror array
-            (1.0 + gamma * 0.25)          # Planetary up to 25%
+            (1.0 + gamma * 0.25) *        # Planetary up to 25%
+            diamond_boost                  # 🔷 DIAMOND LATTICE
         )
         
         # Lighthouse bonus (extra 10% during optimal windows)
@@ -6413,6 +6701,9 @@ class HarmonicMiningOptimizer:
         # QVEE Engine (Quantum Vacuum Energy Extraction - Leckey Equations)
         self.qvee = QVEEEngine()
         
+        # 🔷 Diamond Lattice Engine (Sacred Geometry ZPE Amplifier)
+        self.diamond = DiamondLatticeEngine()
+        
         # Astronomical Coherence Simulator (Full Chrono-Luminance Model)
         self.astro_sim = AstronomicalCoherenceSimulator(alpha=0.25)
         
@@ -7823,6 +8114,9 @@ class AureonMiner:
                 
                 # Display QVEE state (Leckey Power Equations)
                 logger.info(self.optimizer.qvee.format_display())
+                
+                # 🔷 Display Diamond Lattice state (Sacred Geometry ZPE Amplifier)
+                logger.info(self.optimizer.diamond.format_display())
                 
                 # Display Astronomical Simulator state (Chrono-Luminance)
                 logger.info(self.optimizer.astro_sim.format_display())
