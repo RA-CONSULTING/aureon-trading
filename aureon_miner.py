@@ -7777,6 +7777,9 @@ class AureonMiner:
                 # Update QVEE (Quantum Vacuum Energy Extraction) with current hashrate
                 self.optimizer.update_qvee(total_hr)
 
+                # Update LuminaCell v2 with current hashrate (converted to KH/s)
+                self.optimizer.update_lumina(total_hr / 1000.0)
+
                 # Update Probability Matrix using mining context (hashrate + difficulty)
                 self.optimizer.update_probability_signal(total_hr, max(1.0, avg_difficulty))
                 # Fuse probability + planetary coherence for adaptive learning
