@@ -1961,6 +1961,16 @@ class UnifiedTradeConfirmation:
         
         if not result:
             return {'status': 'FAILED', 'error': 'No response'}
+        
+        # ⚠️ Check for error response BEFORE normalizing (e.g., min_notional blocked)
+        if 'error' in result:
+            return {
+                'status': 'BLOCKED',
+                'error': result['error'],
+                'exchange': result.get('exchange', exchange),
+                'symbol': symbol,
+                'side': side
+            }
             
         # Normalize confirmation based on exchange
         exchange = exchange.lower()
@@ -14768,28 +14778,42 @@ class AureonKrakenEcosystem:
         """
         This is the ONLY place ExecutionModule touches your exchange.
         Maps cognition intents to real orders.
+        
+        ⚠️ IMPORTANT: Uses quote_qty (notional value) instead of base qty to ensure
+        we meet minimum order requirements ($5 on Kraken).
         """
         try:
-            # Your ecosystem uses submit_order(exchange, symbol, side, order_type, quantity, ...)
-            # We need to determine which exchange to use
-            
             # Strategy: use the exchange from ticker cache or default to primary
             exchange = 'kraken'  # default
-            if symbol in self.ticker_cache:
-                # Check which exchange this symbol came from
-                # (This logic assumes we can infer exchange from symbol format or cache)
-                # For now, we'll rely on submit_order to handle routing if possible, 
-                # or default to 'kraken' if not specified in intent.
-                pass
             
-            # Calculate quantity based on your position sizing logic if needed, 
-            # but here we take qty from intent.
+            # Calculate proper position size based on available capital
+            # Default to minimum viable order size ($6 to exceed Kraken's $5 min)
+            min_order_usd = 6.0  # Just above Kraken's $5 minimum
             
+            # Get available balance and calculate proper size
+            try:
+                balances = getattr(self, 'cached_balances', {})
+                kraken_bal = balances.get('kraken', {})
+                usd_available = float(kraken_bal.get('USD', {}).get('free', 0) or 
+                                     kraken_bal.get('ZUSD', {}).get('free', 0) or 
+                                     kraken_bal.get('GBP', {}).get('free', 0) or 0)
+                
+                # Use 2% of available balance per trade, minimum $6
+                position_size_usd = max(min_order_usd, usd_available * 0.02)
+                
+                # Cap at reasonable amount
+                position_size_usd = min(position_size_usd, 50.0)
+                
+            except Exception:
+                position_size_usd = min_order_usd
+            
+            # Use quote_qty (notional) instead of base quantity
+            # This ensures we meet minimum notional requirements
             result = self.trade_confirmation.submit_order(
                 exchange=exchange,
                 symbol=symbol,
                 side=side.upper(),  # 'buy' -> 'BUY'
-                quantity=qty
+                quote_qty=position_size_usd  # Use notional value, not base qty
             )
             
             return result
