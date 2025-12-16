@@ -11446,6 +11446,95 @@ class AureonKrakenEcosystem:
             
         except Exception as e:
             print(f"   ⚠️ State load error: {e}")
+
+    def sync_positions_with_exchange(self):
+        """
+        🔄 POSITION SYNC: Reconcile stored positions with actual exchange balances.
+        
+        This fixes the state drift problem where positions are sold on exchange
+        but the local state file still shows them as active.
+        """
+        if self.dry_run:
+            print("   🔄 Position sync skipped (dry run mode)")
+            return
+            
+        print("\n   🔄 SYNCING POSITIONS WITH EXCHANGE BALANCES...")
+        
+        try:
+            # Get real balances from all exchanges
+            all_balances = self.client.get_all_balances()
+            kraken_balances = all_balances.get('kraken', {})
+            binance_balances = all_balances.get('binance', {})
+            
+            # Kraken uses different asset names
+            kraken_asset_map = {
+                'BTC': 'XXBT', 'XBT': 'XXBT', 'DOGE': 'XXDG', 'XLM': 'XXLM', 
+                'ZEC': 'XZEC', 'ETH': 'XETH', 'LTC': 'XLTC', 'XRP': 'XXRP'
+            }
+            
+            positions_to_remove = []
+            positions_adjusted = 0
+            
+            for symbol, pos in list(self.positions.items()):
+                # Extract base asset from symbol
+                base_asset = symbol
+                for suffix in sorted(CONFIG['QUOTE_CURRENCIES'], key=len, reverse=True):
+                    if symbol.endswith(suffix):
+                        base_asset = symbol[:-len(suffix)]
+                        break
+                
+                # Determine which exchange and get balance
+                exchange = getattr(pos, 'exchange', 'kraken').lower()
+                real_qty = 0.0
+                
+                if exchange == 'kraken':
+                    kraken_key = kraken_asset_map.get(base_asset, base_asset)
+                    real_qty = kraken_balances.get(kraken_key, 0.0)
+                    # Also try without mapping
+                    if real_qty == 0:
+                        real_qty = kraken_balances.get(base_asset, 0.0)
+                elif exchange == 'binance':
+                    real_qty = binance_balances.get(base_asset, 0.0)
+                else:
+                    # Try both
+                    real_qty = binance_balances.get(base_asset, 0.0)
+                    if real_qty == 0:
+                        kraken_key = kraken_asset_map.get(base_asset, base_asset)
+                        real_qty = kraken_balances.get(kraken_key, 0.0)
+                
+                stored_qty = pos.quantity
+                
+                # Check for significant discrepancy
+                if real_qty < stored_qty * 0.1:  # Less than 10% of stored = position closed
+                    positions_to_remove.append(symbol)
+                    print(f"   ❌ {symbol}: CLOSED (stored={stored_qty:.6f}, actual={real_qty:.6f})")
+                elif abs(real_qty - stored_qty) > stored_qty * 0.05:  # More than 5% diff
+                    # Adjust quantity to match reality
+                    old_qty = pos.quantity
+                    pos.quantity = real_qty
+                    positions_adjusted += 1
+                    print(f"   🔧 {symbol}: ADJUSTED qty {old_qty:.6f} -> {real_qty:.6f}")
+            
+            # Remove closed positions
+            for symbol in positions_to_remove:
+                pos = self.positions.pop(symbol, None)
+                if pos:
+                    # Record as a loss (conservative - we don't know actual exit price)
+                    self.tracker.losses += 1
+                    self.tracker.total_trades += 1
+                    print(f"   🗑️ Removed stale position: {symbol}")
+            
+            # Summary
+            if positions_to_remove or positions_adjusted:
+                print(f"\n   ✅ SYNC COMPLETE: Removed {len(positions_to_remove)}, Adjusted {positions_adjusted}")
+                self.save_state()  # Save immediately after sync
+            else:
+                print(f"   ✅ All {len(self.positions)} positions verified OK")
+                
+        except Exception as e:
+            print(f"   ⚠️ Position sync error: {e}")
+            import traceback
+            traceback.print_exc()
         
     def banner(self):
         mode = "🧪 PAPER" if self.dry_run else "💰 LIVE"
@@ -13978,6 +14067,7 @@ class AureonKrakenEcosystem:
                     print(f"   🗑️ Dust detected for {symbol}: {confirmation.get('error')}. Removing from active tracking.")
                     # Remove from active positions to stop infinite loop
                     self.positions.pop(symbol, None)
+                    self.save_state()  # 🔄 Save state after dust removal
                     return
                 else:
                     print(f"   ⚠️ Sell failed for {symbol}: {status}. Retrying next cycle.")
@@ -13991,6 +14081,12 @@ class AureonKrakenEcosystem:
         # Only remove if successful
         if success:
             self.positions.pop(symbol)
+            # 🔄 IMMEDIATE STATE SAVE: Persist position removal right away!
+            try:
+                self.save_state()
+                logger.info(f"💾 State saved after closing {symbol}")
+            except Exception as e:
+                logger.warning(f"State save failed after close: {e}")
         
         # Calculate P&L with platform-specific fees (Pessimistic Accounting)
         # We assume slippage AND spread cost on exit price for conservative P&L
@@ -14656,6 +14752,11 @@ class AureonKrakenEcosystem:
         # 🌾 STARTUP HARVESTER: Sell existing assets if profitable
         if not self.dry_run and CONFIG.get('HARVEST_ON_STARTUP', True):
             self.harvest_existing_assets()
+        
+        # 🔄 POSITION SYNC: Reconcile stored positions with actual exchange balances
+        # This fixes state drift where positions are sold but state file is stale
+        if not self.dry_run:
+            self.sync_positions_with_exchange()
         
         # Find initial opportunities for WebSocket
         initial_opps = self.find_opportunities()
