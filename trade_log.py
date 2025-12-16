@@ -3,10 +3,13 @@
 AUREON TRADING - COMPLETE TRADE LOG GENERATOR
 Shows journey from losses to gains with timestamps
 Run this on Windows: python trade_log.py
+
+Also saves trade data in brain-compatible format for adaptive learning.
 """
 
 import krakenex
 import os
+import json
 from datetime import datetime
 from dotenv import load_dotenv
 
@@ -156,7 +159,72 @@ def generate_trade_log():
         f.write(f"Starting: £{starting_capital:.2f} | Trades: {len(trade_list)} | Wins: {wins} | Losses: {losses}\n")
         f.write(f"Cash P&L: £{final_cash_pnl:+.2f}\n")
     
+    # 🧠 SAVE BRAIN-COMPATIBLE FORMAT for adaptive learning
+    brain_trades = []
+    pair_holdings_copy = {}
+    
+    for trade in trade_list:
+        pair = trade.get('pair', '')
+        side = trade.get('type', '').upper()
+        price = float(trade.get('price', 0))
+        vol = float(trade.get('vol', 0))
+        cost = float(trade.get('cost', 0))
+        fee = float(trade.get('fee', 0))
+        trade_time = float(trade.get('time', 0))
+        
+        if side == 'BUY':
+            if pair not in pair_holdings_copy:
+                pair_holdings_copy[pair] = {'qty': 0, 'cost_basis': 0, 'entry_time': trade_time}
+            pair_holdings_copy[pair]['qty'] += vol
+            pair_holdings_copy[pair]['cost_basis'] += cost + fee
+            pair_holdings_copy[pair]['entry_time'] = trade_time
+            
+        elif side == 'SELL':
+            realized_pnl = 0
+            cost_of_sold = 0
+            if pair in pair_holdings_copy and pair_holdings_copy[pair]['qty'] > 0:
+                avg_cost = pair_holdings_copy[pair]['cost_basis'] / pair_holdings_copy[pair]['qty']
+                cost_of_sold = avg_cost * vol
+                proceeds = cost - fee
+                realized_pnl = proceeds - cost_of_sold
+                
+                pair_holdings_copy[pair]['qty'] -= vol
+                pair_holdings_copy[pair]['cost_basis'] -= cost_of_sold
+            
+            brain_trades.append({
+                'symbol': pair,
+                'entry_price': avg_cost / vol if vol > 0 else price,
+                'exit_price': price,
+                'pnl': realized_pnl,
+                'pnl_pct': (realized_pnl / cost_of_sold * 100) if cost_of_sold > 0 else 0,
+                'entry_time': pair_holdings_copy.get(pair, {}).get('entry_time', trade_time),
+                'exit_time': trade_time,
+                'quantity': vol,
+                'frequency': 432,
+                'coherence': 0.5,
+                'score': 70,
+                'probability': 0.6,
+                'hnc_action': 'HOLD',
+                'source': 'kraken_log'
+            })
+    
+    # Save brain-compatible format
+    with open('adaptive_learning_history.json', 'w') as f:
+        json.dump({
+            'trades': brain_trades,
+            'thresholds': {
+                'min_coherence': 0.45,
+                'min_score': 65,
+                'min_probability': 0.50,
+                'harmonic_bonus': 1.15,
+                'distortion_penalty': 0.70
+            },
+            'updated_at': datetime.now().isoformat(),
+            'synced_from': 'kraken_trade_log'
+        }, f, indent=2)
+    
     print(f"\n💾 Log saved to trade_log_output.txt")
+    print(f"🧠 Brain data saved to adaptive_learning_history.json ({len(brain_trades)} trades)")
 
 if __name__ == "__main__":
     generate_trade_log()

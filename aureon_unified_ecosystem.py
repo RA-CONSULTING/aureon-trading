@@ -5414,6 +5414,136 @@ class AdaptiveLearningEngine:
 ADAPTIVE_LEARNER = AdaptiveLearningEngine()
 
 
+def sync_exchange_trades_to_brain():
+    """
+    🧠📈 SYNC EXCHANGE TRADE HISTORY TO ADAPTIVE LEARNER
+    
+    Pulls real trade history from Kraken and feeds it to the brain
+    so it can learn from actual wins/losses.
+    
+    This provides:
+    - Real P&L data from actual trades
+    - Entry/exit timestamps for time-of-day analysis
+    - Pair performance tracking
+    - Running balance history for drawdown analysis
+    """
+    try:
+        import krakenex
+        from datetime import datetime
+        
+        # Load API keys
+        kraken = krakenex.API()
+        kraken.key = os.getenv('KRAKEN_API_KEY')
+        kraken.secret = os.getenv('KRAKEN_API_SECRET')
+        
+        if not kraken.key or not kraken.secret:
+            logger.warning("🧠 Cannot sync trades - Kraken API keys not configured")
+            return {'status': 'no_api_keys', 'trades_synced': 0}
+        
+        # Get trade history from Kraken
+        result = kraken.query_private('TradesHistory', {'trades': True})
+        
+        if result.get('error'):
+            logger.warning(f"🧠 Kraken API error: {result['error']}")
+            return {'status': 'api_error', 'error': result['error'], 'trades_synced': 0}
+        
+        trades = result.get('result', {}).get('trades', {})
+        
+        if not trades:
+            logger.info("🧠 No trades found in Kraken history")
+            return {'status': 'no_trades', 'trades_synced': 0}
+        
+        # Sort by time
+        trade_list = sorted(trades.values(), key=lambda x: float(x.get('time', 0)))
+        
+        # Track buys to calculate P&L on sells
+        pair_holdings = {}
+        synced_count = 0
+        wins = 0
+        losses = 0
+        
+        for trade in trade_list:
+            pair = trade.get('pair', '')
+            side = trade.get('type', '').upper()
+            price = float(trade.get('price', 0))
+            vol = float(trade.get('vol', 0))
+            cost = float(trade.get('cost', 0))
+            fee = float(trade.get('fee', 0))
+            trade_time = float(trade.get('time', 0))
+            
+            if side == 'BUY':
+                # Record buy for later P&L calculation
+                if pair not in pair_holdings:
+                    pair_holdings[pair] = {'qty': 0, 'cost_basis': 0, 'entry_time': trade_time}
+                pair_holdings[pair]['qty'] += vol
+                pair_holdings[pair]['cost_basis'] += cost + fee
+                pair_holdings[pair]['entry_time'] = trade_time
+                
+            elif side == 'SELL':
+                # Calculate realized P&L
+                realized_pnl = 0
+                if pair in pair_holdings and pair_holdings[pair]['qty'] > 0:
+                    avg_cost = pair_holdings[pair]['cost_basis'] / pair_holdings[pair]['qty']
+                    cost_of_sold = avg_cost * vol
+                    proceeds = cost - fee
+                    realized_pnl = proceeds - cost_of_sold
+                    
+                    # Update holdings
+                    pair_holdings[pair]['qty'] -= vol
+                    pair_holdings[pair]['cost_basis'] -= cost_of_sold
+                
+                # Create trade record for brain learning
+                trade_record = {
+                    'symbol': pair,
+                    'entry_price': avg_cost / vol if vol > 0 else price,
+                    'exit_price': price,
+                    'pnl': realized_pnl,
+                    'pnl_pct': (realized_pnl / cost_of_sold * 100) if cost_of_sold > 0 else 0,
+                    'entry_time': pair_holdings.get(pair, {}).get('entry_time', trade_time),
+                    'exit_time': trade_time,
+                    'quantity': vol,
+                    # Default values for harmonic fields (not available from exchange)
+                    'frequency': 432,  # Assume natural frequency
+                    'coherence': 0.5,
+                    'score': 70,
+                    'probability': 0.6,
+                    'hnc_action': 'HOLD',
+                    'source': 'kraken_sync'
+                }
+                
+                # Feed to adaptive learner
+                ADAPTIVE_LEARNER.record_trade(trade_record)
+                synced_count += 1
+                
+                if realized_pnl > 0:
+                    wins += 1
+                else:
+                    losses += 1
+        
+        # Save updated learning history
+        ADAPTIVE_LEARNER._save_history()
+        
+        # Log summary
+        total = wins + losses
+        win_rate = (wins / total * 100) if total > 0 else 0
+        
+        logger.info(f"🧠📈 Synced {synced_count} trades to brain | Wins: {wins} | Losses: {losses} | WR: {win_rate:.1f}%")
+        
+        return {
+            'status': 'success',
+            'trades_synced': synced_count,
+            'wins': wins,
+            'losses': losses,
+            'win_rate': win_rate
+        }
+        
+    except Exception as e:
+        logger.error(f"🧠 Trade sync error: {e}")
+        import traceback
+        logger.error(traceback.format_exc())
+        return {'status': 'error', 'error': str(e), 'trades_synced': 0}
+
+
 # ═══════════════════════════════════════════════════════════════
 # 📊 PROBABILITY REPORT GENERATOR - Auto-Regenerates Every 15 Seconds
 # ═══════════════════════════════════════════════════════════════
@@ -14748,6 +14878,15 @@ class AureonKrakenEcosystem:
         
         pair_count = self.refresh_tickers()
         print(f"✅ Connected! {pair_count} pairs loaded")
+        
+        # 🧠📈 BRAIN SYNC: Load historical trades from exchange for learning
+        if not self.dry_run:
+            try:
+                sync_result = sync_exchange_trades_to_brain()
+                if sync_result.get('status') == 'success':
+                    logger.info(f"🧠 Brain synced with {sync_result['trades_synced']} historical trades (WR: {sync_result['win_rate']:.1f}%)")
+            except Exception as e:
+                logger.warning(f"🧠 Brain sync skipped: {e}")
         
         # 🌾 STARTUP HARVESTER: Sell existing assets if profitable
         if not self.dry_run and CONFIG.get('HARVEST_ON_STARTUP', True):
