@@ -12520,10 +12520,31 @@ class AureonKrakenEcosystem:
             available_quotes = set()
             for symbol in self.positions.keys():
                 # Extract quote currency from position symbols
-                for curr in ['GBP', 'USD', 'EUR', 'USDT', 'BTC', 'ETH']:
+                for curr in ['GBP', 'USD', 'EUR', 'USDT', 'USDC', 'BTC', 'ETH']:  # Added USDC!
                     if symbol.endswith(curr):
                         available_quotes.add(curr)
                         break
+            
+            # 🔥 CHECK ACTUAL EXCHANGE BALANCES for available quote currencies!
+            try:
+                all_balances = self.client.get_all_balances()
+                for exchange_name, balances in all_balances.items():
+                    if not isinstance(balances, dict):
+                        continue
+                    for asset, bal in balances.items():
+                        try:
+                            bal_float = float(bal)
+                        except:
+                            continue
+                        # If we have meaningful balance in a quote currency, add it!
+                        asset_upper = asset.upper().replace('Z', '')  # ZUSD -> USD
+                        if asset_upper in ['USD', 'USDC', 'USDT', 'EUR', 'GBP', 'BTC', 'ETH'] and bal_float > 1.0:
+                            available_quotes.add(asset_upper)
+                            if bal_float > 10:  # Log significant balances
+                                logger.debug(f"Found {bal_float:.2f} {asset_upper} on {exchange_name}")
+            except Exception as e:
+                logger.debug(f"Could not check exchange balances: {e}")
+            
             # Also add base currency if we have cash
             if self.cash_balance_gbp > CONFIG['MIN_TRADE_USD']:
                 available_quotes.add(CONFIG['BASE_CURRENCY'])
@@ -12531,6 +12552,7 @@ class AureonKrakenEcosystem:
                 available_quotes.update({'USDC', 'USDT'})
             
             quote_currencies = list(available_quotes) if available_quotes else [CONFIG['BASE_CURRENCY']]
+            logger.info(f"🔍 Available quote currencies: {quote_currencies}")
         else:
             quote_currencies = CONFIG.get('QUOTE_CURRENCIES', self.tradeable_currencies)
         
