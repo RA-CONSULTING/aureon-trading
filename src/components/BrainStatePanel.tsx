@@ -109,10 +109,26 @@ export function BrainStatePanel() {
   }
 
   const {
+    // Market
     fear_greed,
     fear_greed_class,
     btc_price,
     btc_change_24h,
+
+    // Live Pulse
+    live_pulse,
+
+    // Quantum
+    quantum_coherence,
+    planetary_gamma,
+    lambda_field,
+    cascade_multiplier,
+    is_lighthouse,
+    probability_edge,
+    harmonic_signal,
+    hnc_probability,
+
+    // Council / prediction / accuracy
     manipulation_probability,
     red_flags,
     green_flags,
@@ -125,16 +141,50 @@ export function BrainStatePanel() {
     prediction_confidence,
     overall_accuracy,
     total_predictions,
+
+    // Extended
+    dreams,
+    sandbox_generation,
+    sandbox_win_rate,
+    should_trade,
+    entry_filter_reason,
+    exit_targets,
+    position_size_pct,
+    piano_lambda,
+    piano_coherence,
+    rainbow_state,
+    diamond_coherence,
+    diamond_phi_alignment,
+    reflection,
+
+    // Wisdom
     speculations,
     wisdom_consensus,
-    timestamp,
   } = brainState;
 
-  const manipulationPct = Math.round(manipulation_probability * 100);
-  const truthPct = Math.round(truth_score * 100);
-  const spoofPct = Math.round(spoof_score * 100);
-  const accuracyPct = Math.round(overall_accuracy * 100);
-  const predConfPct = Math.round(prediction_confidence * 100);
+  const btcPriceSafe = typeof btc_price === "number" && btc_price > 0 ? btc_price : null;
+  const btcChangeSafe = typeof btc_change_24h === "number" ? btc_change_24h : 0;
+
+  const manipulationPct = Math.round((manipulation_probability || 0) * 100);
+  const truthPct = Math.round((truth_score || 0) * 100);
+  const spoofPct = Math.round((spoof_score || 0) * 100);
+  const accuracyPct = Math.round((overall_accuracy || 0) * 100);
+  const predConfPct = Math.round((prediction_confidence || 0) * 100);
+
+  const coherencePct =
+    quantum_coherence == null
+      ? null
+      : quantum_coherence <= 1
+        ? quantum_coherence * 100
+        : quantum_coherence;
+
+  const gammaSafe = planetary_gamma == null ? null : Number(planetary_gamma);
+  const lambdaSafe = lambda_field == null ? null : Number(lambda_field);
+
+  const dreamScenarios = dreams?.scenarios_dreamed ?? [];
+  const dreamInsights = dreams?.key_insights ?? [];
+  const blindSpots = reflection?.blind_spots ?? [];
+  const selfCritique = reflection?.self_critique ?? [];
 
   return (
     <Card className="md:col-span-2 border-primary/30 bg-gradient-to-br from-background to-primary/5">
@@ -151,7 +201,84 @@ export function BrainStatePanel() {
           )}
         </div>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-5">
+        {/* Row 0: Quantum State + Live Pulse */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <section className="p-3 rounded-lg bg-muted/30" aria-label="Quantum state">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-medium text-muted-foreground">Quantum State</span>
+              <Badge variant={is_lighthouse ? "default" : "secondary"}>{is_lighthouse ? "Lighthouse" : "Scanning"}</Badge>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <div className="text-xs text-muted-foreground">Coherence Ψ</div>
+                <div className="text-lg font-semibold">
+                  {coherencePct == null ? "---" : `${coherencePct.toFixed(1)}%`}
+                </div>
+              </div>
+              <div>
+                <div className="text-xs text-muted-foreground">Lambda Λ</div>
+                <div className="text-lg font-semibold font-mono">
+                  {lambdaSafe == null
+                    ? "---"
+                    : lambdaSafe >= 1e6
+                      ? `${(lambdaSafe / 1e6).toFixed(2)}M`
+                      : lambdaSafe.toFixed(0)}
+                </div>
+              </div>
+              <div>
+                <div className="text-xs text-muted-foreground">Prism</div>
+                <div className="text-sm font-medium">{rainbow_state || "---"}</div>
+              </div>
+              <div>
+                <div className="text-xs text-muted-foreground">Cascade</div>
+                <div className="text-sm font-medium">{cascade_multiplier == null ? "---" : Number(cascade_multiplier).toFixed(2)}</div>
+              </div>
+            </div>
+
+            {(probability_edge != null || harmonic_signal != null || hnc_probability != null || gammaSafe != null) && (
+              <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-muted-foreground">
+                <div>Γ: {gammaSafe == null ? "---" : gammaSafe.toFixed(3)}</div>
+                <div>Edge: {probability_edge == null ? "---" : Number(probability_edge).toFixed(3)}</div>
+                <div>H: {harmonic_signal == null ? "---" : Number(harmonic_signal).toFixed(2)}</div>
+                <div>HNC: {hnc_probability == null ? "---" : `${(Number(hnc_probability) * 100).toFixed(0)}%`}</div>
+              </div>
+            )}
+          </section>
+
+          <section className="p-3 rounded-lg bg-muted/30" aria-label="Live pulse">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-medium text-muted-foreground">Live Pulse</span>
+              <Badge variant={live_pulse?.pulse ? "outline" : "secondary"}>
+                {live_pulse?.pulse || "AWAITING_DATA"}
+              </Badge>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <div className="text-xs text-muted-foreground">Strength</div>
+                <div className="text-lg font-semibold">
+                  {live_pulse?.strength == null ? "---" : Number(live_pulse.strength).toFixed(2)}
+                </div>
+              </div>
+              <div>
+                <div className="text-xs text-muted-foreground">Avg 24h Δ</div>
+                <div className="text-lg font-semibold">
+                  {live_pulse?.avg_change_24h == null ? "---" : `${Number(live_pulse.avg_change_24h).toFixed(2)}%`}
+                </div>
+              </div>
+              <div className="col-span-2">
+                <div className="text-xs text-muted-foreground">BTC (pulse)</div>
+                <div className="text-sm font-mono">
+                  {live_pulse?.btc_price == null
+                    ? "---"
+                    : `$${Number(live_pulse.btc_price).toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+
         {/* Row 1: Fear & Greed + Market */}
         <div className="grid grid-cols-2 gap-4">
           <div className={`p-3 rounded-lg ${getFearGreedBg(fear_greed)}`}>
@@ -167,13 +294,15 @@ export function BrainStatePanel() {
           <div className="p-3 rounded-lg bg-muted/50">
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs font-medium text-muted-foreground">BTC Price</span>
-              <DirectionIcon direction={btc_change_24h >= 0 ? "BULLISH" : "BEARISH"} />
+              <DirectionIcon direction={btcChangeSafe >= 0 ? "BULLISH" : "BEARISH"} />
             </div>
             <div className="text-2xl font-bold font-mono">
-              ${btc_price.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+              {btcPriceSafe == null
+                ? "---"
+                : `$${btcPriceSafe.toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
             </div>
-            <div className={`text-sm ${btc_change_24h >= 0 ? "text-green-500" : "text-red-500"}`}>
-              {btc_change_24h >= 0 ? "+" : ""}{btc_change_24h.toFixed(2)}%
+            <div className={`text-sm ${btcChangeSafe >= 0 ? "text-green-500" : "text-red-500"}`}>
+              {btcPriceSafe == null ? "---" : `${btcChangeSafe >= 0 ? "+" : ""}${btcChangeSafe.toFixed(2)}%`}
             </div>
           </div>
         </div>
@@ -185,9 +314,7 @@ export function BrainStatePanel() {
               <AlertTriangle className={`w-4 h-4 ${manipulationPct > 50 ? "text-red-500" : "text-green-500"}`} />
               <span className="text-sm font-medium">Manipulation Detection</span>
             </div>
-            <Badge variant={manipulationPct > 50 ? "destructive" : "secondary"}>
-              {manipulationPct}%
-            </Badge>
+            <Badge variant={manipulationPct > 50 ? "destructive" : "secondary"}>{manipulationPct}%</Badge>
           </div>
           <Progress value={manipulationPct} className="h-2 mb-2" />
           <div className="grid grid-cols-2 gap-2 text-xs">
@@ -255,16 +382,19 @@ export function BrainStatePanel() {
             </div>
             <div className="flex items-center gap-2">
               <DirectionIcon direction={prediction_direction} />
-              <span className={`font-bold ${
-                prediction_direction === "BULLISH" ? "text-green-500" : 
-                prediction_direction === "BEARISH" ? "text-red-500" : "text-muted-foreground"
-              }`}>
+              <span
+                className={`font-bold ${
+                  prediction_direction === "BULLISH"
+                    ? "text-green-500"
+                    : prediction_direction === "BEARISH"
+                      ? "text-red-500"
+                      : "text-muted-foreground"
+                }`}
+              >
                 {prediction_direction}
               </span>
             </div>
-            <div className="text-xs text-muted-foreground mt-1">
-              {predConfPct}% confidence
-            </div>
+            <div className="text-xs text-muted-foreground mt-1">{predConfPct}% confidence</div>
           </div>
 
           <div className="p-3 rounded-lg bg-muted/30">
@@ -273,13 +403,114 @@ export function BrainStatePanel() {
               <span className="text-sm font-medium">Brain Accuracy</span>
             </div>
             <div className="text-2xl font-bold">{accuracyPct}%</div>
-            <div className="text-xs text-muted-foreground">
-              {total_predictions} predictions
+            <div className="text-xs text-muted-foreground">{total_predictions} predictions</div>
+          </div>
+        </div>
+
+        {/* Row 5: Sandbox Evolution */}
+        <div className="p-3 rounded-lg bg-muted/30">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-medium">Sandbox Evolution</span>
+            <Badge variant={should_trade ? "default" : "secondary"}>{should_trade ? "ENTER" : "SKIP"}</Badge>
+          </div>
+          <div className="grid grid-cols-2 gap-3 text-sm">
+            <div>
+              <div className="text-xs text-muted-foreground">Generation</div>
+              <div className="font-semibold">{sandbox_generation || "---"}</div>
+            </div>
+            <div>
+              <div className="text-xs text-muted-foreground">Win Rate</div>
+              <div className="font-semibold">
+                {sandbox_win_rate ? `${Number(sandbox_win_rate).toFixed(1)}%` : "---"}
+              </div>
+            </div>
+            <div>
+              <div className="text-xs text-muted-foreground">Position Size</div>
+              <div className="font-semibold">
+                {position_size_pct == null ? "---" : `${Number(position_size_pct).toFixed(2)}%`}
+              </div>
+            </div>
+            <div>
+              <div className="text-xs text-muted-foreground">Exit Targets</div>
+              <div className="font-semibold">
+                {exit_targets?.take_profit_pct != null || exit_targets?.stop_loss_pct != null
+                  ? `TP ${exit_targets?.take_profit_pct ?? "-"}% / SL ${exit_targets?.stop_loss_pct ?? "-"}%`
+                  : "---"}
+              </div>
+            </div>
+          </div>
+          {entry_filter_reason && (
+            <div className="mt-2 text-xs text-muted-foreground">Reason: {entry_filter_reason}</div>
+          )}
+        </div>
+
+        {/* Row 6: Harmonic Lattice (Piano/Diamond) */}
+        <div className="p-3 rounded-lg bg-muted/30">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-sm font-medium">Piano / Diamond Harmony</span>
+          </div>
+          <div className="grid grid-cols-2 gap-3 text-sm">
+            <div>
+              <div className="text-xs text-muted-foreground">Piano Λ</div>
+              <div className="font-semibold font-mono">
+                {piano_lambda == null ? "---" : Number(piano_lambda).toFixed(2)}
+              </div>
+            </div>
+            <div>
+              <div className="text-xs text-muted-foreground">Piano Ψ</div>
+              <div className="font-semibold">
+                {piano_coherence == null
+                  ? "---"
+                  : `${(Number(piano_coherence) <= 1 ? Number(piano_coherence) * 100 : Number(piano_coherence)).toFixed(1)}%`}
+              </div>
+            </div>
+            <div>
+              <div className="text-xs text-muted-foreground">Diamond Ψ</div>
+              <div className="font-semibold">
+                {diamond_coherence == null
+                  ? "---"
+                  : `${Number(diamond_coherence).toFixed(3)}`}
+              </div>
+            </div>
+            <div>
+              <div className="text-xs text-muted-foreground">Φ Alignment</div>
+              <div className="font-semibold">
+                {diamond_phi_alignment == null ? "---" : Number(diamond_phi_alignment).toFixed(3)}
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Row 5: Wisdom Consensus */}
+        {/* Row 7: Dream Engine */}
+        <div className="p-3 rounded-lg bg-muted/30">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-sm font-medium">Dream Engine</span>
+          </div>
+          {dreamScenarios.length === 0 && dreamInsights.length === 0 ? (
+            <span className="text-muted-foreground text-xs">Awaiting dream output...</span>
+          ) : (
+            <div className="space-y-2">
+              {dreamScenarios.length > 0 && (
+                <div className="space-y-1">
+                  {dreamScenarios.slice(0, 3).map((s, idx) => (
+                    <div key={idx} className="text-xs">
+                      <span className="text-muted-foreground">Scenario:</span> {s.scenario} — <span className="font-medium">{s.decision}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {dreamInsights.length > 0 && (
+                <ul className="list-disc pl-4 text-xs text-muted-foreground space-y-1">
+                  {dreamInsights.slice(0, 3).map((i, idx) => (
+                    <li key={idx}>{i}</li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Row 8: Wisdom Consensus */}
         <div className="p-3 rounded-lg bg-muted/30">
           <div className="flex items-center gap-2 mb-2">
             <Globe className="w-4 h-4 text-primary" />
@@ -288,7 +519,36 @@ export function BrainStatePanel() {
           <WisdomConsensusDisplay wisdom={wisdom_consensus} />
         </div>
 
-        {/* Row 6: Brain Directive */}
+        {/* Row 9: Self-Reflection */}
+        <div className="p-3 rounded-lg bg-muted/20">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-sm font-medium">Self-Reflection</span>
+          </div>
+          {blindSpots.length === 0 && selfCritique.length === 0 ? (
+            <span className="text-muted-foreground text-xs">Awaiting reflection...</span>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <div className="text-xs text-muted-foreground mb-1">Blind Spots</div>
+                <ul className="space-y-1 text-xs">
+                  {(blindSpots.length ? blindSpots : ["---"]).slice(0, 3).map((b, i) => (
+                    <li key={i} className="text-muted-foreground">• {b}</li>
+                  ))}
+                </ul>
+              </div>
+              <div>
+                <div className="text-xs text-muted-foreground mb-1">Self-Critique</div>
+                <ul className="space-y-1 text-xs">
+                  {(selfCritique.length ? selfCritique : ["---"]).slice(0, 3).map((c, i) => (
+                    <li key={i} className="text-muted-foreground">• {c}</li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Row 10: Brain Directive */}
         {brain_directive && (
           <div className="p-3 rounded-lg bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/30">
             <div className="flex items-center gap-2 mb-1">
@@ -299,7 +559,7 @@ export function BrainStatePanel() {
           </div>
         )}
 
-        {/* Row 7: Speculations (if any) */}
+        {/* Row 11: Speculations (if any) */}
         {speculations.length > 0 && (
           <div className="p-3 rounded-lg bg-muted/20">
             <div className="flex items-center gap-2 mb-2">

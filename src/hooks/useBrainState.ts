@@ -168,31 +168,68 @@ export function useBrainState(enabled: boolean = true, intervalMs: number = 1000
 
   const fetchBrainState = useCallback(async () => {
     try {
-      const { data, error } = await supabase
-        .from("brain_states")
-        .select("*")
-        .eq("user_id", LIVE_FEED_USER_ID)
-        .order("timestamp", { ascending: false })
-        .limit(1)
-        .single();
+      const [brainRes, sessionRes] = await Promise.all([
+        supabase
+          .from("brain_states")
+          .select("*")
+          .eq("user_id", LIVE_FEED_USER_ID)
+          .order("timestamp", { ascending: false })
+          .limit(1)
+          .maybeSingle(),
+        supabase
+          .from("aureon_user_sessions")
+          .select(
+            "current_coherence,current_lambda,current_lighthouse_signal,dominant_node,prism_state,is_trading_active"
+          )
+          .eq("user_id", LIVE_FEED_USER_ID)
+          .maybeSingle(),
+      ]);
 
-      if (error) {
-        if (error.code !== "PGRST116") {
-          console.error("[useBrainState] Error fetching:", error);
-        }
-        return;
+      const brainData = brainRes.data as any;
+      const brainError = brainRes.error;
+      const sessionData = sessionRes.data as any;
+
+      if (brainError && brainError.code !== "PGRST116") {
+        console.error("[useBrainState] Error fetching brain_states:", brainError);
       }
 
-      if (data) {
+      const sessionOverrides: Partial<BrainState> = sessionData
+        ? {
+            quantum_coherence: sessionData.current_coherence ?? null,
+            lambda_field: sessionData.current_lambda ?? null,
+            is_lighthouse: (sessionData.current_lighthouse_signal ?? 0) > 1.0,
+            rainbow_state: sessionData.prism_state ?? null,
+            piano_coherence: sessionData.current_coherence ?? null,
+            council_consensus:
+              !brainData?.council_consensus && sessionData.dominant_node
+                ? `${sessionData.dominant_node} DOMINANT`
+                : undefined,
+            council_action:
+              !brainData?.council_action && sessionData.is_trading_active != null
+                ? sessionData.is_trading_active
+                  ? "ACTIVE"
+                  : "HOLD"
+                : undefined,
+          }
+        : {};
+
+      if (brainData) {
         setBrainState({
           ...DEFAULT_BRAIN_STATE,
-          ...data,
-          live_pulse: (data.live_pulse as LivePulse) || {},
-          wisdom_consensus: (data.wisdom_consensus as WisdomConsensus) || {},
-          civilization_actions: (data.civilization_actions as Record<string, string>) || {},
-          dreams: (data.dreams as Dreams) || {},
-          exit_targets: (data.exit_targets as ExitTargets) || {},
-          reflection: (data.reflection as Reflection) || {},
+          ...brainData,
+          ...sessionOverrides,
+          live_pulse: (brainData.live_pulse as LivePulse) || {},
+          wisdom_consensus: (brainData.wisdom_consensus as WisdomConsensus) || {},
+          civilization_actions: (brainData.civilization_actions as Record<string, string>) || {},
+          dreams: (brainData.dreams as Dreams) || {},
+          exit_targets: (brainData.exit_targets as ExitTargets) || {},
+          reflection: (brainData.reflection as Reflection) || {},
+        });
+        setLastUpdated(new Date());
+      } else if (sessionData) {
+        setBrainState({
+          ...DEFAULT_BRAIN_STATE,
+          ...sessionOverrides,
         });
         setLastUpdated(new Date());
       }
