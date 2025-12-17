@@ -11,6 +11,7 @@ import { LivePriceTicker } from "@/components/LivePriceTicker";
 import { MarketMetricsPanel } from "@/components/MarketMetricsPanel";
 import { PortfolioSummaryPanel } from "@/components/PortfolioSummaryPanel";
 import { ActiveTradePositions } from "@/components/ActiveTradePositions";
+import { LivePnLTable } from "@/components/LivePnLTable";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -304,8 +305,11 @@ function TradeFeed() {
             )}
           </div>
 
-          {/* Active Positions (real Binance spot balances) */}
+          {/* Active Positions (real Binance/Kraken spot balances) */}
           <ActiveTradePositions />
+
+          {/* Live P&L Tracker - shows open positions with live profit/loss */}
+          <LivePnLTable />
 
           {/* Trade List */}
           <Card>

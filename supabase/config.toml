@@ -264,3 +264,15 @@ verify_jwt = true
 
 [functions.ai-commentary]
 verify_jwt = false
+
+# Fetch open positions
+[functions.fetch-open-positions]
+verify_jwt = true
+
+# Fetch positions with live P&L
+[functions.fetch-positions-pnl]
+verify_jwt = true
+
+# Backfill trades to DB
+[functions.backfill-trades]
+verify_jwt = true
