@@ -273,7 +273,7 @@ serve(async (req) => {
 
       // === NETWORK FAIL-SAFE: Timeout and retry logic ===
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5s timeout
+      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout for exchange APIs during high load
 
       try {
         const binanceResponse = await fetch(
