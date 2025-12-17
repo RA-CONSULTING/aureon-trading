@@ -1037,6 +1037,33 @@ export type Database = {
         }
         Relationships: []
       }
+      exchange_balance_cache: {
+        Row: {
+          balance_data: Json
+          cached_at: string
+          created_at: string
+          exchange: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          balance_data: Json
+          cached_at?: string
+          created_at?: string
+          exchange: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          balance_data?: Json
+          cached_at?: string
+          created_at?: string
+          exchange?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       exchange_learning_states: {
         Row: {
           avg_latency_ms: number | null

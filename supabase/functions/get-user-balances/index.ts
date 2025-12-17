@@ -9,43 +9,84 @@ const corsHeaders = {
 // Rate limit configuration per exchange (in milliseconds)
 const RATE_LIMITS = {
   binance: 10000,    // 10 seconds between calls
-  kraken: 60000,     // 60 seconds (Kraken is very strict - 15 req/min for private API)
+  kraken: 120000,    // 2 MINUTES (Kraken is VERY strict - increase to avoid rate limit)
   alpaca: 15000,     // 15 seconds
   capital: 60000,    // 60 seconds (Capital.com is strict)
 };
 
-// In-memory cache for rate limiting and balance caching
-interface CachedBalance {
-  data: ExchangeBalance;
-  timestamp: number;
+// Database-backed cache table name
+const BALANCE_CACHE_TABLE = 'exchange_balance_cache';
+
+interface CachedBalanceData {
+  exchange: string;
+  user_id: string;
+  balance_data: ExchangeBalance;
+  cached_at: string;
 }
 
-const balanceCache = new Map<string, CachedBalance>();
-
-function canFetchExchange(exchange: string): boolean {
-  const cached = balanceCache.get(exchange);
-  if (!cached) return true;
-  
-  const rateLimit = RATE_LIMITS[exchange as keyof typeof RATE_LIMITS] || 30000;
-  const elapsed = Date.now() - cached.timestamp;
-  return elapsed >= rateLimit;
-}
-
-function getCachedBalance(exchange: string): ExchangeBalance | null {
-  const cached = balanceCache.get(exchange);
-  if (!cached) return null;
-  
-  // Return cached data if within cache window (2x rate limit for staleness)
-  const rateLimit = RATE_LIMITS[exchange as keyof typeof RATE_LIMITS] || 30000;
-  const elapsed = Date.now() - cached.timestamp;
-  if (elapsed < rateLimit * 2) {
-    return { ...cached.data, error: elapsed >= rateLimit ? 'Using cached data (rate limited)' : undefined };
+// Check database cache for exchange balance
+async function getDbCachedBalance(
+  supabase: any, 
+  userId: string, 
+  exchange: string
+): Promise<{ data: ExchangeBalance | null; canFetch: boolean }> {
+  try {
+    const { data, error } = await supabase
+      .from(BALANCE_CACHE_TABLE)
+      .select('*')
+      .eq('user_id', userId)
+      .eq('exchange', exchange)
+      .single();
+    
+    if (error || !data) {
+      return { data: null, canFetch: true };
+    }
+    
+    const cachedAt = new Date(data.cached_at).getTime();
+    const elapsed = Date.now() - cachedAt;
+    const rateLimit = RATE_LIMITS[exchange as keyof typeof RATE_LIMITS] || 30000;
+    
+    // Can fetch if rate limit has passed
+    const canFetch = elapsed >= rateLimit;
+    
+    // Return cached data if not too stale (5 minutes max)
+    if (elapsed < 300000 && data.balance_data) {
+      return { 
+        data: { 
+          ...data.balance_data, 
+          error: canFetch ? undefined : `Cached ${Math.round(elapsed/1000)}s ago (rate limited)`
+        }, 
+        canFetch 
+      };
+    }
+    
+    return { data: null, canFetch: true };
+  } catch {
+    return { data: null, canFetch: true };
   }
-  return null;
 }
 
-function setCachedBalance(exchange: string, data: ExchangeBalance): void {
-  balanceCache.set(exchange, { data, timestamp: Date.now() });
+// Save balance to database cache
+async function setDbCachedBalance(
+  supabase: any, 
+  userId: string, 
+  exchange: string, 
+  balanceData: ExchangeBalance
+): Promise<void> {
+  try {
+    await supabase
+      .from(BALANCE_CACHE_TABLE)
+      .upsert({
+        user_id: userId,
+        exchange: exchange,
+        balance_data: balanceData,
+        cached_at: new Date().toISOString()
+      }, { 
+        onConflict: 'user_id,exchange' 
+      });
+  } catch (e) {
+    console.error(`[get-user-balances] Failed to cache ${exchange} balance:`, e);
+  }
 }
 
 // Move interface before cache functions that reference it
@@ -571,73 +612,84 @@ serve(async (req) => {
       capital: !!userCreds.capital.apiKey,
     });
 
-    // Fetch Binance balances with rate limiting
+    // Fetch Binance balances with database-backed rate limiting
     if (userCreds.binance.apiKey && userCreds.binance.apiSecret) {
-      if (canFetchExchange('binance')) {
+      const binanceCache = await getDbCachedBalance(supabase, user.id, 'binance');
+      if (binanceCache.canFetch) {
         fetchPromises.push(
           fetchBinanceBalances(userCreds.binance.apiKey, userCreds.binance.apiSecret)
-            .then(result => { setCachedBalance('binance', result); return result; })
+            .then(async (result) => { 
+              await setDbCachedBalance(supabase, user.id, 'binance', result); 
+              return result; 
+            })
         );
+      } else if (binanceCache.data) {
+        balances.push(binanceCache.data);
       } else {
-        const cached = getCachedBalance('binance');
-        if (cached) balances.push(cached);
-        else balances.push({ exchange: 'binance', connected: false, assets: [], totalUsd: 0, error: 'Rate limited, no cache' });
+        balances.push({ exchange: 'binance', connected: false, assets: [], totalUsd: 0, error: 'Rate limited, no cache' });
       }
     } else {
       balances.push({ exchange: 'binance', connected: false, assets: [], totalUsd: 0, error: 'Not configured' });
     }
 
-    // Fetch Kraken balances with rate limiting (60s minimum between calls)
+    // Fetch Kraken balances with database-backed rate limiting (2 MINUTES to avoid rate limit)
     if (userCreds.kraken.apiKey && userCreds.kraken.apiSecret) {
-      if (canFetchExchange('kraken')) {
+      const krakenCache = await getDbCachedBalance(supabase, user.id, 'kraken');
+      if (krakenCache.canFetch) {
+        console.log('[get-user-balances] Kraken: fetching fresh data');
         fetchPromises.push(
           fetchKrakenBalances(userCreds.kraken.apiKey, userCreds.kraken.apiSecret)
-            .then(result => { setCachedBalance('kraken', result); return result; })
+            .then(async (result) => { 
+              await setDbCachedBalance(supabase, user.id, 'kraken', result); 
+              return result; 
+            })
         );
+      } else if (krakenCache.data) {
+        console.log('[get-user-balances] Kraken: using cached data (rate limited)');
+        balances.push(krakenCache.data);
       } else {
-        const cached = getCachedBalance('kraken');
-        if (cached) {
-          console.log('[get-user-balances] Kraken: using cached data (rate limited)');
-          balances.push(cached);
-        } else {
-          balances.push({ exchange: 'kraken', connected: false, assets: [], totalUsd: 0, error: 'Rate limited, no cache' });
-        }
+        balances.push({ exchange: 'kraken', connected: false, assets: [], totalUsd: 0, error: 'Rate limited, no cache' });
       }
     } else {
       balances.push({ exchange: 'kraken', connected: false, assets: [], totalUsd: 0, error: 'Not configured' });
     }
 
-    // Fetch Alpaca balances with rate limiting
+    // Fetch Alpaca balances with database-backed rate limiting
     if (userCreds.alpaca.apiKey && userCreds.alpaca.apiSecret) {
-      if (canFetchExchange('alpaca')) {
+      const alpacaCache = await getDbCachedBalance(supabase, user.id, 'alpaca');
+      if (alpacaCache.canFetch) {
         fetchPromises.push(
           fetchAlpacaBalances(userCreds.alpaca.apiKey, userCreds.alpaca.apiSecret)
-            .then(result => { setCachedBalance('alpaca', result); return result; })
+            .then(async (result) => { 
+              await setDbCachedBalance(supabase, user.id, 'alpaca', result); 
+              return result; 
+            })
         );
+      } else if (alpacaCache.data) {
+        balances.push(alpacaCache.data);
       } else {
-        const cached = getCachedBalance('alpaca');
-        if (cached) balances.push(cached);
-        else balances.push({ exchange: 'alpaca', connected: false, assets: [], totalUsd: 0, error: 'Rate limited, no cache' });
+        balances.push({ exchange: 'alpaca', connected: false, assets: [], totalUsd: 0, error: 'Rate limited, no cache' });
       }
     } else {
       balances.push({ exchange: 'alpaca', connected: false, assets: [], totalUsd: 0, error: 'Not configured' });
     }
 
-    // Fetch Capital.com balances with rate limiting (60s minimum)
+    // Fetch Capital.com balances with database-backed rate limiting (60s minimum)
     if (userCreds.capital.apiKey && userCreds.capital.password && userCreds.capital.identifier) {
-      if (canFetchExchange('capital')) {
+      const capitalCache = await getDbCachedBalance(supabase, user.id, 'capital');
+      if (capitalCache.canFetch) {
         fetchPromises.push(
           fetchCapitalBalances(userCreds.capital.apiKey, userCreds.capital.password, userCreds.capital.identifier)
-            .then(result => { setCachedBalance('capital', result); return result; })
+            .then(async (result) => { 
+              await setDbCachedBalance(supabase, user.id, 'capital', result); 
+              return result; 
+            })
         );
+      } else if (capitalCache.data) {
+        console.log('[get-user-balances] Capital.com: using cached data (rate limited)');
+        balances.push(capitalCache.data);
       } else {
-        const cached = getCachedBalance('capital');
-        if (cached) {
-          console.log('[get-user-balances] Capital.com: using cached data (rate limited)');
-          balances.push(cached);
-        } else {
-          balances.push({ exchange: 'capital', connected: false, assets: [], totalUsd: 0, error: 'Rate limited, no cache' });
-        }
+        balances.push({ exchange: 'capital', connected: false, assets: [], totalUsd: 0, error: 'Rate limited, no cache' });
       }
     } else {
       balances.push({ exchange: 'capital', connected: false, assets: [], totalUsd: 0, error: 'Not configured' });
