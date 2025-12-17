@@ -439,24 +439,47 @@ export type Database = {
           btc_dominance: number | null
           btc_price: number | null
           bullish_accuracy: number | null
+          cascade_multiplier: number | null
+          civilization_actions: Json | null
           council_action: string | null
           council_arguments: string[] | null
           council_consensus: string | null
           created_at: string | null
+          diamond_coherence: number | null
+          diamond_phi_alignment: number | null
+          dreams: Json | null
+          entry_filter_reason: string | null
           evolved_generation: number | null
           evolved_win_rate: number | null
+          exit_targets: Json | null
           fear_greed: number | null
           fear_greed_class: string | null
           full_state: Json | null
           green_flags: string[] | null
+          harmonic_signal: number | null
+          hnc_probability: number | null
           id: string
+          is_lighthouse: boolean | null
+          lambda_field: number | null
           learning_directive: string | null
+          live_pulse: Json | null
           manipulation_probability: number | null
           overall_accuracy: number | null
+          piano_coherence: number | null
+          piano_lambda: number | null
+          planetary_gamma: number | null
+          position_size_pct: number | null
           prediction_confidence: number | null
           prediction_direction: string | null
+          probability_edge: number | null
+          quantum_coherence: number | null
+          rainbow_state: string | null
           red_flags: string[] | null
+          reflection: Json | null
+          sandbox_generation: number | null
+          sandbox_win_rate: number | null
           self_critique: string[] | null
+          should_trade: boolean | null
           speculations: string[] | null
           spoof_score: number | null
           timestamp: string | null
@@ -472,24 +495,47 @@ export type Database = {
           btc_dominance?: number | null
           btc_price?: number | null
           bullish_accuracy?: number | null
+          cascade_multiplier?: number | null
+          civilization_actions?: Json | null
           council_action?: string | null
           council_arguments?: string[] | null
           council_consensus?: string | null
           created_at?: string | null
+          diamond_coherence?: number | null
+          diamond_phi_alignment?: number | null
+          dreams?: Json | null
+          entry_filter_reason?: string | null
           evolved_generation?: number | null
           evolved_win_rate?: number | null
+          exit_targets?: Json | null
           fear_greed?: number | null
           fear_greed_class?: string | null
           full_state?: Json | null
           green_flags?: string[] | null
+          harmonic_signal?: number | null
+          hnc_probability?: number | null
           id?: string
+          is_lighthouse?: boolean | null
+          lambda_field?: number | null
           learning_directive?: string | null
+          live_pulse?: Json | null
           manipulation_probability?: number | null
           overall_accuracy?: number | null
+          piano_coherence?: number | null
+          piano_lambda?: number | null
+          planetary_gamma?: number | null
+          position_size_pct?: number | null
           prediction_confidence?: number | null
           prediction_direction?: string | null
+          probability_edge?: number | null
+          quantum_coherence?: number | null
+          rainbow_state?: string | null
           red_flags?: string[] | null
+          reflection?: Json | null
+          sandbox_generation?: number | null
+          sandbox_win_rate?: number | null
           self_critique?: string[] | null
+          should_trade?: boolean | null
           speculations?: string[] | null
           spoof_score?: number | null
           timestamp?: string | null
@@ -505,24 +551,47 @@ export type Database = {
           btc_dominance?: number | null
           btc_price?: number | null
           bullish_accuracy?: number | null
+          cascade_multiplier?: number | null
+          civilization_actions?: Json | null
           council_action?: string | null
           council_arguments?: string[] | null
           council_consensus?: string | null
           created_at?: string | null
+          diamond_coherence?: number | null
+          diamond_phi_alignment?: number | null
+          dreams?: Json | null
+          entry_filter_reason?: string | null
           evolved_generation?: number | null
           evolved_win_rate?: number | null
+          exit_targets?: Json | null
           fear_greed?: number | null
           fear_greed_class?: string | null
           full_state?: Json | null
           green_flags?: string[] | null
+          harmonic_signal?: number | null
+          hnc_probability?: number | null
           id?: string
+          is_lighthouse?: boolean | null
+          lambda_field?: number | null
           learning_directive?: string | null
+          live_pulse?: Json | null
           manipulation_probability?: number | null
           overall_accuracy?: number | null
+          piano_coherence?: number | null
+          piano_lambda?: number | null
+          planetary_gamma?: number | null
+          position_size_pct?: number | null
           prediction_confidence?: number | null
           prediction_direction?: string | null
+          probability_edge?: number | null
+          quantum_coherence?: number | null
+          rainbow_state?: string | null
           red_flags?: string[] | null
+          reflection?: Json | null
+          sandbox_generation?: number | null
+          sandbox_win_rate?: number | null
           self_critique?: string[] | null
+          should_trade?: boolean | null
           speculations?: string[] | null
           spoof_score?: number | null
           timestamp?: string | null
