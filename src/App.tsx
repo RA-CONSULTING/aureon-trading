@@ -304,8 +304,8 @@ function TradeFeed() {
             )}
           </div>
 
-          {/* Active Positions (inferred from trade history) */}
-          <ActiveTradePositions trades={trades} />
+          {/* Active Positions (real Binance spot balances) */}
+          <ActiveTradePositions />
 
           {/* Trade List */}
           <Card>
