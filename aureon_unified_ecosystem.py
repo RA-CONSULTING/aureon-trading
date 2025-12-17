@@ -10575,6 +10575,65 @@ class AureonKrakenEcosystem:
                         print(f"   ✅ Imported Capital.com CFD positions")
         except Exception as cap_err:
             logger.debug(f"Capital.com position import skipped: {cap_err}")
+        
+        # 🦙 ALPACA POSITIONS - Import crypto and stock positions with real entry prices
+        try:
+            alpaca_client = self.client.clients.get('alpaca')
+            if alpaca_client and hasattr(alpaca_client.client, 'get_positions'):
+                alpaca_positions = alpaca_client.client.get_positions()
+                if alpaca_positions:
+                    print(f"\n   🦙 Importing {len(alpaca_positions)} Alpaca positions...")
+                    for alp_pos in alpaca_positions:
+                        try:
+                            # Alpaca position structure
+                            symbol_raw = alp_pos.get('symbol', '')
+                            # Convert BTC/USD -> BTCUSD
+                            symbol = symbol_raw.replace('/', '')
+                            qty = float(alp_pos.get('qty', 0))
+                            avg_entry = float(alp_pos.get('avg_entry_price', 0))
+                            current_price = float(alp_pos.get('current_price', 0))
+                            market_value = float(alp_pos.get('market_value', 0))
+                            unrealized_pl = float(alp_pos.get('unrealized_pl', 0))
+                            side = alp_pos.get('side', 'long')
+                            asset_class = alp_pos.get('asset_class', 'crypto')
+                            
+                            if not symbol or qty <= 0:
+                                continue
+                            
+                            # Skip if already tracked
+                            if symbol in self.positions:
+                                continue
+                            
+                            # Create position
+                            self.positions[symbol] = Position(
+                                symbol=symbol,
+                                entry_price=avg_entry,
+                                quantity=qty if side == 'long' else -qty,
+                                entry_fee=market_value * CONFIG.get('ALPACA_FEE', 0.0025),
+                                entry_value=qty * avg_entry,
+                                momentum=0.0,
+                                coherence=0.5,
+                                entry_time=time.time(),
+                                dominant_node='Alpaca',
+                                exchange='alpaca',
+                                is_historical=False  # Alpaca has real entry prices
+                            )
+                            imported += 1
+                            
+                            pnl_pct = ((current_price - avg_entry) / avg_entry * 100) if avg_entry > 0 else 0
+                            if side == 'short':
+                                pnl_pct = -pnl_pct
+                            pnl_icon = "🟢" if pnl_pct >= 0 else "🔴"
+                            asset_icon = "🪙" if asset_class == 'crypto' else "📊"
+                            print(f"   🦙 {asset_icon} {symbol}: {qty} @ ${avg_entry:.4f} → ${current_price:.4f} {pnl_icon} {pnl_pct:+.2f}% (${unrealized_pl:+.2f})")
+                            
+                        except Exception as pos_err:
+                            logger.debug(f"Could not import Alpaca position: {pos_err}")
+                            
+                    if imported > 0:
+                        print(f"   ✅ Imported Alpaca positions")
+        except Exception as alp_err:
+            logger.debug(f"Alpaca position import skipped: {alp_err}")
     
     def _liquidate_historical_for_opportunity(self, needed_cash: float, target_exchange: str, target_symbol: str) -> float:
         """🔄 Liquidate historical assets OR big losers to free up cash for better opportunities.
@@ -12179,6 +12238,23 @@ class AureonKrakenEcosystem:
                                 epic = cfd_pos.get('market', {}).get('epic') or cfd_pos.get('epic', '')
                                 if epic == symbol:
                                     real_qty = float(cfd_pos.get('position', {}).get('size') or cfd_pos.get('size', 0))
+                                    break
+                    except Exception:
+                        pass
+                elif exchange == 'alpaca':
+                    # 🦙 ALPACA positions - check via API for both crypto and stocks
+                    try:
+                        alpaca_client = self.client.clients.get('alpaca')
+                        if alpaca_client:
+                            alpaca_positions = alpaca_client.client.get_positions()
+                            for alp_pos in alpaca_positions:
+                                pos_symbol = getattr(alp_pos, 'symbol', str(alp_pos))
+                                if pos_symbol == symbol or pos_symbol == base_asset:
+                                    real_qty = float(getattr(alp_pos, 'qty', 0))
+                                    # Handle short positions (negative quantity)
+                                    side = getattr(alp_pos, 'side', 'long')
+                                    if side == 'short':
+                                        real_qty = -abs(real_qty)
                                     break
                     except Exception:
                         pass
