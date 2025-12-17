@@ -816,6 +816,7 @@ CONFIG = {
     'TAKE_PROFIT_PCT': 1.8,         # FALLBACK: 1.8% (penny profit uses dollar thresholds instead)
     'STOP_LOSS_PCT': 1.5,           # FALLBACK: 1.5% (penny profit uses dollar thresholds instead)
     'MAX_POSITIONS': 30,            # 🔥 BEAST MODE: 30 positions - TRADE EVERYTHING!
+    'TARGET_FILL_RATE': 0.33,       # 🎯 TARGET: Keep 1/3 of positions filled (10 of 30)
     'MIN_TRADE_USD': 1.44,          # Minimum trade notional in base currency
     'BINANCE_MIN_NOTIONAL': 1.0,    # Refuse sells if notional < $1 to avoid LOT_SIZE noise
     'KRAKEN_MIN_NOTIONAL': 5.25,    # Kraken enforces ~$5 minimum notional on spot
@@ -15007,12 +15008,26 @@ class AureonKrakenEcosystem:
 
         # Find opportunities
         if len(self.positions) < CONFIG['MAX_POSITIONS'] and not self.tracker.trading_halted and not trading_paused:
+            # 🎯 TARGET FILL RATE: Actively try to maintain 1/3 positions filled
+            target_positions = int(CONFIG['MAX_POSITIONS'] * CONFIG.get('TARGET_FILL_RATE', 0.33))
+            current_positions = len(self.positions)
+            under_target = current_positions < target_positions
+            
             if all_opps:
+                if under_target:
+                    print(f"\\n   🎯 FILLING MODE: {current_positions}/{target_positions} target ({current_positions}/{CONFIG['MAX_POSITIONS']} max)")
+                    print(f"   🔍 Actively seeking {target_positions - current_positions} more positions...")
                 print(f"\\n   🔮 Top Opportunities: {len(all_opps)} found")
                 for opp in all_opps[:5]:
                     print(f"      {opp['symbol']:12s} +{opp['change24h']:5.1f}% | Γ={opp['coherence']:.2f} | Score: {opp['score']}")
             
-            for opp in all_opps[:CONFIG['MAX_POSITIONS'] - len(self.positions)]:
+            # If under target, be more aggressive - take more opportunities per cycle
+            if under_target:
+                slots_to_fill = min(target_positions - current_positions, 3)  # Fill up to 3 per cycle
+            else:
+                slots_to_fill = 1  # Normal mode: 1 at a time
+            
+            for opp in all_opps[:min(slots_to_fill, CONFIG['MAX_POSITIONS'] - current_positions)]:
                 self.open_position(opp)
                 
         # Show positions
