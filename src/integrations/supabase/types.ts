@@ -431,6 +431,108 @@ export type Database = {
         }
         Relationships: []
       }
+      brain_states: {
+        Row: {
+          bearish_accuracy: number | null
+          brain_directive: string | null
+          btc_change_24h: number | null
+          btc_dominance: number | null
+          btc_price: number | null
+          bullish_accuracy: number | null
+          council_action: string | null
+          council_arguments: string[] | null
+          council_consensus: string | null
+          created_at: string | null
+          evolved_generation: number | null
+          evolved_win_rate: number | null
+          fear_greed: number | null
+          fear_greed_class: string | null
+          full_state: Json | null
+          green_flags: string[] | null
+          id: string
+          learning_directive: string | null
+          manipulation_probability: number | null
+          overall_accuracy: number | null
+          prediction_confidence: number | null
+          prediction_direction: string | null
+          red_flags: string[] | null
+          self_critique: string[] | null
+          speculations: string[] | null
+          spoof_score: number | null
+          timestamp: string | null
+          total_predictions: number | null
+          truth_score: number | null
+          user_id: string
+          wisdom_consensus: Json | null
+        }
+        Insert: {
+          bearish_accuracy?: number | null
+          brain_directive?: string | null
+          btc_change_24h?: number | null
+          btc_dominance?: number | null
+          btc_price?: number | null
+          bullish_accuracy?: number | null
+          council_action?: string | null
+          council_arguments?: string[] | null
+          council_consensus?: string | null
+          created_at?: string | null
+          evolved_generation?: number | null
+          evolved_win_rate?: number | null
+          fear_greed?: number | null
+          fear_greed_class?: string | null
+          full_state?: Json | null
+          green_flags?: string[] | null
+          id?: string
+          learning_directive?: string | null
+          manipulation_probability?: number | null
+          overall_accuracy?: number | null
+          prediction_confidence?: number | null
+          prediction_direction?: string | null
+          red_flags?: string[] | null
+          self_critique?: string[] | null
+          speculations?: string[] | null
+          spoof_score?: number | null
+          timestamp?: string | null
+          total_predictions?: number | null
+          truth_score?: number | null
+          user_id: string
+          wisdom_consensus?: Json | null
+        }
+        Update: {
+          bearish_accuracy?: number | null
+          brain_directive?: string | null
+          btc_change_24h?: number | null
+          btc_dominance?: number | null
+          btc_price?: number | null
+          bullish_accuracy?: number | null
+          council_action?: string | null
+          council_arguments?: string[] | null
+          council_consensus?: string | null
+          created_at?: string | null
+          evolved_generation?: number | null
+          evolved_win_rate?: number | null
+          fear_greed?: number | null
+          fear_greed_class?: string | null
+          full_state?: Json | null
+          green_flags?: string[] | null
+          id?: string
+          learning_directive?: string | null
+          manipulation_probability?: number | null
+          overall_accuracy?: number | null
+          prediction_confidence?: number | null
+          prediction_direction?: string | null
+          red_flags?: string[] | null
+          self_critique?: string[] | null
+          speculations?: string[] | null
+          spoof_score?: number | null
+          timestamp?: string | null
+          total_predictions?: number | null
+          truth_score?: number | null
+          user_id?: string
+          wisdom_consensus?: Json | null
+        }
+        Relationships: []
+      }
       calibration_trades: {
         Row: {
           coherence_at_entry: number

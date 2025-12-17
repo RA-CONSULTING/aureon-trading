@@ -284,3 +284,7 @@ verify_jwt = false
 # Comprehensive terminal state ingestion from Python
 [functions.ingest-terminal-state]
 verify_jwt = false
+
+# Brain cognitive state ingestion from Python (public for easy integration)
+[functions.ingest-brain-state]
+verify_jwt = false

@@ -12,11 +12,11 @@ import { PortfolioSummaryPanel } from "@/components/PortfolioSummaryPanel";
 import { ActiveTradePositions } from "@/components/ActiveTradePositions";
 import { LivePnLTable } from "@/components/LivePnLTable";
 import { LiveTerminalStats } from "@/components/LiveTerminalStats";
+import { BrainStatePanel } from "@/components/BrainStatePanel";
 import { useTerminalSync } from "@/hooks/useTerminalSync";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { Brain, TrendingUp, TrendingDown, Sparkles } from "lucide-react";
+import { TrendingUp, TrendingDown, Sparkles } from "lucide-react";
 import { format } from "date-fns";
 
 const queryClient = new QueryClient();
@@ -40,8 +40,6 @@ interface Trade {
 
 function TradeFeed() {
   const [trades, setTrades] = useState<Trade[]>([]);
-  const [commentary, setCommentary] = useState<string>("");
-  const [commentaryLoading, setCommentaryLoading] = useState(false);
   const { toast } = useToast();
   
   // Always sync terminal data (public feed)
@@ -88,36 +86,6 @@ function TradeFeed() {
     }
   };
 
-  const getAICommentary = async () => {
-    if (trades.length === 0) {
-      toast({
-        title: "No Trades",
-        description: "Waiting for trades from the live feed",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setCommentaryLoading(true);
-    try {
-      const { data, error } = await supabase.functions.invoke("ai-commentary", {
-        body: { trades: trades.slice(0, 20) },
-      });
-
-      if (error) throw error;
-
-      setCommentary(data.commentary);
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to get AI commentary",
-        variant: "destructive",
-      });
-    } finally {
-      setCommentaryLoading(false);
-    }
-  };
-
   const totalBuys = trades.filter(t => t.side === "BUY").length;
   const totalSells = trades.filter(t => t.side === "SELL").length;
 
@@ -140,10 +108,6 @@ function TradeFeed() {
               <span className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
               LIVE
             </div>
-            <Button onClick={getAICommentary} disabled={commentaryLoading} variant="secondary" size="sm">
-              <Brain className={`w-4 h-4 mr-2 ${commentaryLoading ? "animate-pulse" : ""}`} />
-              Brain
-            </Button>
             <SettingsDrawer />
           </div>
         </div>
@@ -183,38 +147,10 @@ function TradeFeed() {
             <MarketMetricsPanel />
           </div>
 
-          {/* Portfolio */}
+          {/* Portfolio + Brain State Panel */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <PortfolioSummaryPanel />
-
-            {/* AI Commentary */}
-            {commentary ? (
-              <Card className="border-primary/50 bg-primary/5 md:col-span-2">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Brain className="w-5 h-5 text-primary" />
-                    AI Commentary
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-foreground leading-relaxed">{commentary}</p>
-                </CardContent>
-              </Card>
-            ) : (
-              <Card className="md:col-span-2">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Brain className="w-5 h-5 text-primary" />
-                    AI Brain
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground">
-                    Click "Brain" to generate commentary on the most recent trades.
-                  </p>
-                </CardContent>
-              </Card>
-            )}
+            <BrainStatePanel />
           </div>
 
           {/* Terminal Stats Mirror - Live system metrics */}
