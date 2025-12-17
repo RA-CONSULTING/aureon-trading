@@ -7,7 +7,7 @@ import { Label } from './ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Badge } from './ui/badge';
 import { Separator } from './ui/separator';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 
 type Category = 'yes_no' | 'timing' | 'angel_message';
 type ApiCard = { name: string; category: Category; oracle_summary: string; yes_no_value?: string; time_window?: string; border_color?: string; };
