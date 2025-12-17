@@ -22,11 +22,49 @@ async function decryptCredential(encryptedB64: string, cryptoKey: CryptoKey, iv:
 }
 
 async function getCryptoKey(): Promise<CryptoKey> {
-  // Must match create-aureon-session and update-user-credentials
   const encryptionKey = 'aureon-default-key-32chars!!';
   const encoder = new TextEncoder();
   const keyData = encoder.encode(encryptionKey.padEnd(32, '0').slice(0, 32));
   return crypto.subtle.importKey('raw', keyData, { name: 'AES-GCM' }, false, ['decrypt']);
+}
+
+const DEFAULT_SYMBOLS = ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'XRPUSDT', 'BNBUSDT', 'ADAUSDT', 'DOGEUSDT'];
+const EXCLUDED_ASSETS = new Set(['USDT', 'USDC', 'BUSD', 'TUSD', 'FDUSD', 'USDP', 'DAI', 'EUR', 'GBP', 'USD']);
+
+const normalizeSymbols = (input: string[]) =>
+  Array.from(new Set((input || []).map((s) => String(s).toUpperCase().trim()))).filter(Boolean);
+
+async function deriveSymbolsFromBalances(apiKey: string, apiSecret: string, maxSymbols = 25): Promise<string[]> {
+  try {
+    console.log('[fetch-trades] Discovering symbols from balances...');
+    const timestamp = Date.now();
+    const queryString = `timestamp=${timestamp}`;
+    const signature = createHmac('sha256', apiSecret).update(queryString).digest('hex');
+
+    const resp = await fetch(`https://api.binance.com/api/v3/account?${queryString}&signature=${signature}`, {
+      headers: { 'X-MBX-APIKEY': apiKey },
+    });
+
+    if (!resp.ok) {
+      const t = await resp.text();
+      console.log('[fetch-trades] Balance discovery failed:', resp.status, t);
+      return [];
+    }
+
+    const data = await resp.json();
+    const assets: string[] = (data?.balances || [])
+      .map((b: any) => ({ asset: String(b.asset || ''), total: Number(b.free || 0) + Number(b.locked || 0) }))
+      .filter((b: any) => b.asset && b.total > 0)
+      .map((b: any) => b.asset)
+      .filter((a: string) => !EXCLUDED_ASSETS.has(a));
+
+    const candidates = assets.slice(0, maxSymbols).map((a) => `${a}USDT`);
+    console.log('[fetch-trades] Discovered symbols:', candidates);
+    return normalizeSymbols(candidates);
+  } catch (e) {
+    console.log('[fetch-trades] Balance discovery error:', e);
+    return [];
+  }
 }
 
 serve(async (req) => {
@@ -60,62 +98,13 @@ serve(async (req) => {
       });
     }
 
+    console.log('[fetch-trades] Request from user:', user.id);
+
     const body = await req.json().catch(() => ({} as any));
     const symbolsRaw = Array.isArray(body?.symbols) ? (body.symbols as string[]) : undefined;
     const limitRaw = Number(body?.limit ?? 50);
 
-    const DEFAULT_SYMBOLS = ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'XRPUSDT', 'BNBUSDT', 'ADAUSDT', 'DOGEUSDT'];
-    const EXCLUDED_ASSETS = new Set(['USDT', 'USDC', 'BUSD', 'TUSD', 'FDUSD', 'USDP', 'DAI', 'EUR', 'GBP', 'USD']);
-
-    const normalizeSymbols = (input: string[]) =>
-      Array.from(new Set((input || []).map((s) => String(s).toUpperCase().trim()))).filter(Boolean);
-
-    async function deriveSymbolsFromBalances(maxSymbols = 25): Promise<string[]> {
-      try {
-        const timestamp = Date.now();
-        const queryString = `timestamp=${timestamp}`;
-        const signature = createHmac('sha256', apiSecret).update(queryString).digest('hex');
-
-        const resp = await fetch(`https://api.binance.com/api/v3/account?${queryString}&signature=${signature}`, {
-          headers: { 'X-MBX-APIKEY': apiKey },
-        });
-
-        if (!resp.ok) {
-          const t = await resp.text();
-          console.log('[fetch-trades] balance-based symbol discovery failed:', resp.status, t);
-          return [];
-        }
-
-        const data = await resp.json();
-        const assets: string[] = (data?.balances || [])
-          .map((b: any) => ({ asset: String(b.asset || ''), total: Number(b.free || 0) + Number(b.locked || 0) }))
-          .filter((b: any) => b.asset && b.total > 0)
-          .map((b: any) => b.asset)
-          .filter((a: string) => !EXCLUDED_ASSETS.has(a));
-
-        // Prefer assets the user actually holds; map to common USDT pairs.
-        // NOTE: Binance requires symbol param for /myTrades.
-        const candidates = assets.slice(0, maxSymbols).map((a) => `${a}USDT`);
-        return normalizeSymbols(candidates);
-      } catch (e) {
-        console.log('[fetch-trades] balance-based symbol discovery error:', e);
-        return [];
-      }
-    }
-
-    // If user didn't provide symbols (or they provided an empty list), auto-discover from balances.
-    let symbols = symbolsRaw && symbolsRaw.length > 0 ? normalizeSymbols(symbolsRaw) : [];
-    if (symbols.length === 0) {
-      const discovered = await deriveSymbolsFromBalances();
-      symbols = discovered.length > 0 ? discovered : DEFAULT_SYMBOLS;
-    }
-
-    const limit = Number.isFinite(limitRaw) ? Math.min(500, Math.max(1, limitRaw)) : 50;
-
-    const uniqueSymbols = symbols;
-    const perSymbolLimit = Math.min(50, Math.max(1, Math.ceil(limit / Math.max(1, uniqueSymbols.length))));
-
-    // Load and decrypt THIS USER'S Binance credentials
+    // FIRST: Load and decrypt credentials BEFORE using them
     const service = createClient(supabaseUrl, supabaseServiceKey);
     const { data: session, error: sessionError } = await service
       .from('aureon_user_sessions')
@@ -124,6 +113,7 @@ serve(async (req) => {
       .single();
 
     if (sessionError || !session) {
+      console.log('[fetch-trades] No session found for user:', user.id);
       return new Response(JSON.stringify({ error: 'No trading session found. Please re-login.' }), {
         status: 404,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -131,25 +121,37 @@ serve(async (req) => {
     }
 
     if (!session.binance_api_key_encrypted || !session.binance_api_secret_encrypted || !session.binance_iv) {
+      console.log('[fetch-trades] Missing Binance credentials for user:', user.id);
       return new Response(JSON.stringify({ error: 'No Binance credentials saved. Add them in Settings → API Credentials.' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
+    // Decrypt credentials FIRST
     const cryptoKey = await getCryptoKey();
     const iv = decodeIv(session.binance_iv);
     const apiKey = await decryptCredential(session.binance_api_key_encrypted, cryptoKey, iv);
     const apiSecret = await decryptCredential(session.binance_api_secret_encrypted, cryptoKey, iv);
+    console.log('[fetch-trades] Credentials decrypted successfully');
 
-    console.log('[fetch-trades] Fetching trades for user:', user.id);
-    console.log('[fetch-trades] Symbols:', uniqueSymbols);
+    // NOW derive symbols using the decrypted credentials
+    let symbols = symbolsRaw && symbolsRaw.length > 0 ? normalizeSymbols(symbolsRaw) : [];
+    if (symbols.length === 0) {
+      const discovered = await deriveSymbolsFromBalances(apiKey, apiSecret, 25);
+      symbols = discovered.length > 0 ? discovered : DEFAULT_SYMBOLS;
+    }
+
+    const limit = Number.isFinite(limitRaw) ? Math.min(500, Math.max(1, limitRaw)) : 50;
+    const perSymbolLimit = Math.min(50, Math.max(1, Math.ceil(limit / Math.max(1, symbols.length))));
+
+    console.log('[fetch-trades] Fetching trades for symbols:', symbols);
     console.log('[fetch-trades] Per-symbol limit:', perSymbolLimit);
 
     // Fetch trades from multiple symbols
     const allTrades: any[] = [];
     
-    for (const symbol of uniqueSymbols) {
+    for (const symbol of symbols) {
       try {
         const timestamp = Date.now();
         const queryString = `symbol=${symbol}&limit=${perSymbolLimit}&timestamp=${timestamp}`;
@@ -157,25 +159,23 @@ serve(async (req) => {
 
         const response = await fetch(
           `https://api.binance.com/api/v3/myTrades?${queryString}&signature=${signature}`,
-          {
-            headers: { 'X-MBX-APIKEY': apiKey },
-          }
+          { headers: { 'X-MBX-APIKEY': apiKey } }
         );
 
         if (response.ok) {
           const trades = await response.json();
-          console.log(`Found ${trades.length} trades for ${symbol}`);
+          console.log(`[fetch-trades] ${symbol}: ${trades.length} trades`);
           allTrades.push(...trades);
         } else {
           const errorText = await response.text();
-          console.log(`No trades for ${symbol}: ${errorText}`);
+          console.log(`[fetch-trades] ${symbol}: no trades (${errorText})`);
         }
       } catch (err) {
-        console.error(`Error fetching ${symbol}:`, err);
+        console.error(`[fetch-trades] Error fetching ${symbol}:`, err);
       }
     }
 
-    console.log(`Total trades found: ${allTrades.length}`);
+    console.log(`[fetch-trades] Total trades fetched: ${allTrades.length}`);
     
     // Sort by time descending
     const trades = allTrades.sort((a, b) => b.time - a.time).slice(0, limit);
@@ -196,18 +196,23 @@ serve(async (req) => {
     }));
 
     // Upsert trades (avoid duplicates)
+    let upsertedCount = 0;
     for (const record of tradeRecords) {
-      await supabaseClient
+      const { error: upsertError } = await supabaseClient
         .from('trade_records')
-        .upsert(record, { onConflict: 'transaction_id' })
-        .select();
+        .upsert(record, { onConflict: 'transaction_id' });
+      
+      if (!upsertError) upsertedCount++;
+      else console.log('[fetch-trades] Upsert error:', upsertError.message);
     }
+
+    console.log(`[fetch-trades] Upserted ${upsertedCount}/${tradeRecords.length} trades to DB`);
 
     return new Response(JSON.stringify({ trades: tradeRecords, count: tradeRecords.length }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error: unknown) {
-    console.error('Error fetching trades:', error);
+    console.error('[fetch-trades] Error:', error);
     const message = error instanceof Error ? error.message : 'Unknown error';
     return new Response(JSON.stringify({ error: message }), {
       status: 500,
