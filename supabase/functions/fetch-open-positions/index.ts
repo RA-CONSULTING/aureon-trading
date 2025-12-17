@@ -22,17 +22,23 @@ serve(async (req) => {
     }
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
+    // Verify user with anon client
+    const anonSupabase = createClient(supabaseUrl, supabaseAnonKey);
     const token = authHeader.replace("Bearer ", "");
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    const { data: { user }, error: authError } = await anonSupabase.auth.getUser(token);
+    
     if (authError || !user) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
+    // Use service role for database access
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Get user's Binance credentials
     const { data: session } = await supabase
@@ -41,31 +47,41 @@ serve(async (req) => {
       .eq("user_id", user.id)
       .single();
 
-    if (!session?.binance_api_key_encrypted || !session?.binance_api_secret_encrypted) {
+    if (!session?.binance_api_key_encrypted || !session?.binance_api_secret_encrypted || !session?.binance_iv) {
       return new Response(JSON.stringify({ error: "No Binance credentials configured" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Decrypt credentials
-    const encryptionKey = Deno.env.get("MASTER_ENCRYPTION_KEY") || "default-key-32-chars-long!!!!!";
-    const keyBuffer = new TextEncoder().encode(encryptionKey.slice(0, 32).padEnd(32, "0"));
-    const iv = session.binance_iv ? Uint8Array.from(atob(session.binance_iv), c => c.charCodeAt(0)) : new Uint8Array(12);
+    // Use consistent text-padded encryption key (matches get-user-balances)
+    const encryptionKey = 'aureon-default-key-32chars!!';
+    const encoder = new TextEncoder();
+    const keyData = encoder.encode(encryptionKey.padEnd(32, '0').slice(0, 32));
+    
+    const cryptoKey = await crypto.subtle.importKey(
+      'raw',
+      keyData,
+      { name: 'AES-GCM' },
+      false,
+      ['decrypt']
+    );
 
-    async function decrypt(encrypted: string): Promise<string> {
-      try {
-        const encryptedBytes = Uint8Array.from(atob(encrypted), c => c.charCodeAt(0));
-        const cryptoKey = await crypto.subtle.importKey("raw", keyBuffer, { name: "AES-GCM" }, false, ["decrypt"]);
-        const decrypted = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, cryptoKey, encryptedBytes);
-        return new TextDecoder().decode(decrypted);
-      } catch {
-        return atob(encrypted);
-      }
+    const decodeIvFromB64 = (ivB64: string) => Uint8Array.from(atob(ivB64), c => c.charCodeAt(0));
+
+    async function decrypt(encrypted: string, iv: Uint8Array): Promise<string> {
+      const encryptedBytes = Uint8Array.from(atob(encrypted), c => c.charCodeAt(0));
+      const decrypted = await crypto.subtle.decrypt(
+        { name: 'AES-GCM', iv: iv as unknown as BufferSource },
+        cryptoKey,
+        encryptedBytes
+      );
+      return new TextDecoder().decode(decrypted);
     }
 
-    const apiKey = await decrypt(session.binance_api_key_encrypted);
-    const apiSecret = await decrypt(session.binance_api_secret_encrypted);
+    const iv = decodeIvFromB64(session.binance_iv);
+    const apiKey = await decrypt(session.binance_api_key_encrypted, iv);
+    const apiSecret = await decrypt(session.binance_api_secret_encrypted, iv);
 
     // Fetch account info from Binance
     const timestamp = Date.now();
