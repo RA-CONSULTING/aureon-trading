@@ -10,6 +10,7 @@ import { SettingsDrawer } from "@/components/SettingsDrawer";
 import { LivePriceTicker } from "@/components/LivePriceTicker";
 import { MarketMetricsPanel } from "@/components/MarketMetricsPanel";
 import { PortfolioSummaryPanel } from "@/components/PortfolioSummaryPanel";
+import { ActiveTradePositions } from "@/components/ActiveTradePositions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,7 +26,7 @@ interface Trade {
   transaction_id: string;
   exchange: string;
   symbol: string;
-  side: string;
+  side: "BUY" | "SELL";
   price: number;
   quantity: number;
   quote_qty: number;
@@ -218,7 +219,7 @@ function TradeFeed() {
               <Input
                 value={symbolInput}
                 onChange={(e) => setSymbolInput(e.target.value)}
-                placeholder="Symbols (e.g. BTCUSDT, ETHUSDT)"
+                placeholder="Symbols (optional). Leave blank = auto-detect from balances"
                 className="w-72"
               />
             </div>
@@ -302,6 +303,9 @@ function TradeFeed() {
               </Card>
             )}
           </div>
+
+          {/* Active Positions (inferred from trade history) */}
+          <ActiveTradePositions trades={trades} />
 
           {/* Trade List */}
           <Card>
