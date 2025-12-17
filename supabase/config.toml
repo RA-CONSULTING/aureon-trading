@@ -276,3 +276,7 @@ verify_jwt = true
 # Backfill trades to DB
 [functions.backfill-trades]
 verify_jwt = true
+
+# Ingest trades from Python terminal (public for easy integration)
+[functions.ingest-trades]
+verify_jwt = false

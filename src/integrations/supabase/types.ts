@@ -3688,6 +3688,8 @@ export type Database = {
           fee: number | null
           fee_asset: string | null
           id: string
+          is_win: boolean | null
+          pnl: number | null
           price: number
           quantity: number
           quote_qty: number | null
@@ -3703,6 +3705,8 @@ export type Database = {
           fee?: number | null
           fee_asset?: string | null
           id?: string
+          is_win?: boolean | null
+          pnl?: number | null
           price: number
           quantity: number
           quote_qty?: number | null
@@ -3718,6 +3722,8 @@ export type Database = {
           fee?: number | null
           fee_asset?: string | null
           id?: string
+          is_win?: boolean | null
+          pnl?: number | null
           price?: number
           quantity?: number
           quote_qty?: number | null
