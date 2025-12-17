@@ -850,6 +850,13 @@ class GlobalSystemsManager {
   }
   
   /**
+   * Public method to update state from external hooks (e.g., useTerminalSync)
+   */
+  setPartialState(partial: Partial<GlobalState>): void {
+    this.updateState(partial);
+  }
+  
+  /**
    * Cleanup (only call on app unmount, which basically never happens in SPA)
    */
   destroy(): void {

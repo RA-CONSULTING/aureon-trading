@@ -13,11 +13,12 @@ import { PortfolioSummaryPanel } from "@/components/PortfolioSummaryPanel";
 import { ActiveTradePositions } from "@/components/ActiveTradePositions";
 import { LivePnLTable } from "@/components/LivePnLTable";
 import { LiveTerminalStats } from "@/components/LiveTerminalStats";
+import { useTerminalSync } from "@/hooks/useTerminalSync";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { RefreshCw, Brain, TrendingUp, TrendingDown, Sparkles, Terminal } from "lucide-react";
+import { RefreshCw, Brain, TrendingUp, TrendingDown, Sparkles } from "lucide-react";
 import { format } from "date-fns";
 import type { User } from "@supabase/supabase-js";
 
@@ -52,6 +53,9 @@ function TradeFeed() {
     }
   });
   const { toast } = useToast();
+  
+  // Sync real terminal data from exchanges
+  useTerminalSync(!!user, 10000);
 
   useEffect(() => {
     try {
