@@ -7,6 +7,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ThemeProvider } from "@/components/theme-provider";
 import { AuthForm } from "@/components/AuthForm";
 import { SettingsDrawer } from "@/components/SettingsDrawer";
+import { LivePriceTicker } from "@/components/LivePriceTicker";
+import { MarketMetricsPanel } from "@/components/MarketMetricsPanel";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -203,10 +205,13 @@ function TradeFeed() {
         </div>
       </header>
 
+      {/* Live Price Ticker Bar */}
+      <LivePriceTicker />
+
       <main className="p-6">
         <div className="max-w-6xl mx-auto space-y-6">
-          {/* Stats Row */}
-          <div className="grid grid-cols-3 gap-4">
+          {/* Top Row: Stats + Market Metrics */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <Card>
               <CardContent className="pt-6">
                 <div className="text-2xl font-bold">{trades.length}</div>
@@ -231,6 +236,7 @@ function TradeFeed() {
                 </div>
               </CardContent>
             </Card>
+            <MarketMetricsPanel />
           </div>
 
           {/* AI Commentary */}
