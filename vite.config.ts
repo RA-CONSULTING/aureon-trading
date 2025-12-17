@@ -14,7 +14,7 @@ export default defineConfig(({ mode }) => ({
     alias: [
       {
         find: /^@\/integrations\/supabase\/client$/,
-        replacement: path.resolve(__dirname, "./src/lib/supabase.ts"),
+        replacement: path.resolve(__dirname, "./src/integrations/supabase/client.ts"),
       },
       {
         find: "@",
