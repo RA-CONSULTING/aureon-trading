@@ -11952,27 +11952,27 @@ class AureonKrakenEcosystem:
                         result = self.client.place_market_order(
                             exchange_name, symbol, 'SELL', quantity=sell_qty
                         )
-                            
-                            if result and not result.get('rejected') and not result.get('error'):
-                                # Extract actual fill value
-                                fills = result.get('fills', [])
-                                if fills:
-                                    actual_value = sum(float(f.get('qty', 0)) * float(f.get('price', 0)) for f in fills)
-                                else:
-                                    actual_value = float(result.get('cummulativeQuoteQty', net_value))
-                                
-                                harvested_total += actual_value
-                                harvested_count += 1
-                                print(f"   ✅ SOLD: {asset} → {quote} for ${actual_value:.2f}")
-                                
-                                # Clear the position from tracking
-                                self.positions.pop(symbol, None)
-                                self._clear_symbol_dust(symbol)
+                        
+                        if result and not result.get('rejected') and not result.get('error'):
+                            # Extract actual fill value
+                            fills = result.get('fills', [])
+                            if fills:
+                                actual_value = sum(float(f.get('qty', 0)) * float(f.get('price', 0)) for f in fills)
                             else:
-                                reason = result.get('reason', 'Unknown error') if result else 'No response'
-                                print(f"   ⚠️ Failed to sell {asset}: {reason}")
-                        except Exception as e:
-                            print(f"   ⚠️ Error selling {asset}: {e}")
+                                actual_value = float(result.get('cummulativeQuoteQty', net_value))
+                            
+                            harvested_total += actual_value
+                            harvested_count += 1
+                            print(f"   ✅ SOLD: {asset} → {quote} for ${actual_value:.2f}")
+                            
+                            # Clear the position from tracking
+                            self.positions.pop(symbol, None)
+                            self._clear_symbol_dust(symbol)
+                        else:
+                            reason = result.get('reason', 'Unknown error') if result else 'No response'
+                            print(f"   ⚠️ Failed to sell {asset}: {reason}")
+                    except Exception as e:
+                        print(f"   ⚠️ Error selling {asset}: {e}")
                     
                     break  # Found a pair, move to next asset
         
