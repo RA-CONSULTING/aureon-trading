@@ -167,73 +167,44 @@ serve(async (req) => {
     }
 
     // ========== KRAKEN ==========
-    if (session.kraken_api_key_encrypted && session.kraken_api_secret_encrypted && session.kraken_iv) {
+    // IMPORTANT: Avoid hammering Kraken private endpoints.
+    // We reuse the existing database-backed cache populated by the portfolio balance fetch.
+    // This prevents concurrent Balance calls (which can instantly trigger Kraken rate limits).
+    {
       try {
-        const krakenIv = decodeIvFromB64(session.kraken_iv);
-        const krakenApiKey = (await decryptCredential(session.kraken_api_key_encrypted, krakenIv)).trim();
-        const krakenApiSecret = (await decryptCredential(session.kraken_api_secret_encrypted, krakenIv)).trim();
+        const { data: cachedRow } = await supabase
+          .from("exchange_balance_cache")
+          .select("balance_data, cached_at")
+          .eq("user_id", user.id)
+          .eq("exchange", "kraken")
+          .single();
 
-        if (isPrintableAscii(krakenApiKey) && krakenApiKey.length >= 10) {
-          const nonce = Date.now().toString();
-          const postData = `nonce=${nonce}`;
-          const path = "/0/private/Balance";
+        const cachedAt = cachedRow?.cached_at ? new Date(cachedRow.cached_at).getTime() : 0;
+        const isFresh = cachedAt > 0 && Date.now() - cachedAt < 5 * 60 * 1000; // 5 minutes
+        const cachedBalance = cachedRow?.balance_data as any;
 
-          // Kraken signature
-          const sha256Hash = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(nonce + postData));
-          const pathBytes = new TextEncoder().encode(path);
-          const message = new Uint8Array(pathBytes.length + sha256Hash.byteLength);
-          message.set(pathBytes, 0);
-          message.set(new Uint8Array(sha256Hash), pathBytes.length);
-
-          const secretBytes = Uint8Array.from(atob(krakenApiSecret), (c) => c.charCodeAt(0));
-          const hmacKey = await crypto.subtle.importKey("raw", secretBytes, { name: "HMAC", hash: "SHA-512" }, false, ["sign"]);
-          const signatureBytes = await crypto.subtle.sign("HMAC", hmacKey, message);
-          const signature = btoa(String.fromCharCode(...new Uint8Array(signatureBytes)));
-
-          const krakenRes = await fetch("https://api.kraken.com/0/private/Balance", {
-            method: "POST",
-            headers: {
-              "API-Key": krakenApiKey,
-              "API-Sign": signature,
-              "Content-Type": "application/x-www-form-urlencoded",
-            },
-            body: postData,
-          });
-
-          if (krakenRes.ok) {
-            const krakenData = await krakenRes.json();
-            if (krakenData.error && krakenData.error.length > 0) {
-              errors.push(`Kraken: ${krakenData.error.join(", ")}`);
-            } else if (krakenData.result) {
-              // Kraken asset mapping (e.g., XXBT -> BTC, ZUSD -> USD)
-              const assetMap: Record<string, string> = {
-                XXBT: "BTC", XBT: "BTC", XETH: "ETH", XXRP: "XRP", XLTC: "LTC",
-                ZUSD: "USD", ZEUR: "EUR", ZGBP: "GBP", USDT: "USDT", DOT: "DOT", SOL: "SOL",
-              };
-
-              for (const [krakenAsset, balance] of Object.entries(krakenData.result)) {
-                const total = parseFloat(balance as string);
-                if (total > 0) {
-                  const asset = assetMap[krakenAsset] || krakenAsset.replace(/^[XZ]/, "");
-                  allPositions.push({
-                    asset,
-                    free: total,
-                    locked: 0,
-                    total,
-                    usdValue: getUsdValue(asset, total),
-                    exchange: "kraken",
-                  });
-                }
-              }
+        if (isFresh && cachedBalance?.assets && Array.isArray(cachedBalance.assets)) {
+          for (const a of cachedBalance.assets) {
+            const free = parseFloat(String(a.free ?? 0));
+            const locked = parseFloat(String(a.locked ?? 0));
+            const total = free + locked;
+            if (total > 0) {
+              allPositions.push({
+                asset: String(a.asset),
+                free,
+                locked,
+                total,
+                usdValue: parseFloat(String(a.usdValue ?? 0)) || 0,
+                exchange: "kraken",
+              });
             }
-          } else {
-            errors.push(`Kraken: ${krakenRes.status}`);
           }
         } else {
-          errors.push("Kraken: Invalid credentials");
+          // Don’t call Kraken here; portfolio sync will populate the cache.
+          errors.push("Kraken: Waiting for portfolio sync (rate-limit protection)");
         }
       } catch (e: any) {
-        errors.push(`Kraken: ${e.message}`);
+        errors.push(`Kraken: ${e?.message || "Cache read failed"}`);
       }
     }
 

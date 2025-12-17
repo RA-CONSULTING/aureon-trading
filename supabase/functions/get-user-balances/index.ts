@@ -9,7 +9,7 @@ const corsHeaders = {
 // Rate limit configuration per exchange (in milliseconds)
 const RATE_LIMITS = {
   binance: 10000,    // 10 seconds between calls
-  kraken: 120000,    // 2 MINUTES (Kraken is VERY strict - increase to avoid rate limit)
+  kraken: 300000,    // 5 MINUTES (Kraken is strict; avoid "EAPI:Rate limit exceeded")
   alpaca: 15000,     // 15 seconds
   capital: 60000,    // 60 seconds (Capital.com is strict)
 };
