@@ -5,7 +5,6 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ThemeProvider } from "@/components/theme-provider";
-import { AuthForm } from "@/components/AuthForm";
 import { SettingsDrawer } from "@/components/SettingsDrawer";
 import { LivePriceTicker } from "@/components/LivePriceTicker";
 import { MarketMetricsPanel } from "@/components/MarketMetricsPanel";
@@ -16,13 +15,14 @@ import { LiveTerminalStats } from "@/components/LiveTerminalStats";
 import { useTerminalSync } from "@/hooks/useTerminalSync";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { RefreshCw, Brain, TrendingUp, TrendingDown, Sparkles } from "lucide-react";
+import { Brain, TrendingUp, TrendingDown, Sparkles } from "lucide-react";
 import { format } from "date-fns";
-import type { User } from "@supabase/supabase-js";
 
 const queryClient = new QueryClient();
+
+// Public live feed user ID - data pushed from Python terminal
+const LIVE_FEED_USER_ID = "69e5567f-7ad1-42af-860f-3709ef1f5935";
 
 interface Trade {
   id: string;
@@ -39,56 +39,23 @@ interface Trade {
 }
 
 function TradeFeed() {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
   const [trades, setTrades] = useState<Trade[]>([]);
   const [commentary, setCommentary] = useState<string>("");
-  const [syncLoading, setSyncLoading] = useState(false);
   const [commentaryLoading, setCommentaryLoading] = useState(false);
-  const [symbolInput, setSymbolInput] = useState<string>(() => {
-    try {
-      return localStorage.getItem('aureon_sync_symbols') ?? 'BTCUSDT,ETHUSDT,SOLUSDT,XRPUSDT,BNBUSDT';
-    } catch {
-      return 'BTCUSDT,ETHUSDT,SOLUSDT,XRPUSDT,BNBUSDT';
-    }
-  });
   const { toast } = useToast();
   
-  // Sync real terminal data from exchanges
-  useTerminalSync(!!user, 10000);
+  // Always sync terminal data (public feed)
+  useTerminalSync(true, 10000);
 
+  // Subscribe to realtime trade updates for the live feed user
   useEffect(() => {
-    try {
-      localStorage.setItem('aureon_sync_symbols', symbolInput);
-    } catch {
-      // ignore
-    }
-  }, [symbolInput]);
-
-  useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
-
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  // Subscribe to realtime trade updates
-  useEffect(() => {
-    if (!user) return;
-
     const channel = supabase
       .channel("trade-records")
       .on("postgres_changes", {
         event: "INSERT",
         schema: "public",
         table: "trade_records",
+        filter: `user_id=eq.${LIVE_FEED_USER_ID}`,
       }, (payload) => {
         setTrades(prev => [payload.new as Trade, ...prev]);
         toast({
@@ -101,17 +68,18 @@ function TradeFeed() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user, toast]);
+  }, [toast]);
 
-  // Load existing trades
+  // Load existing trades on mount
   useEffect(() => {
-    if (user) loadTrades();
-  }, [user]);
+    loadTrades();
+  }, []);
 
   const loadTrades = async () => {
     const { data, error } = await supabase
       .from("trade_records")
       .select("*")
+      .eq("user_id", LIVE_FEED_USER_ID)
       .order("timestamp", { ascending: false })
       .limit(100);
 
@@ -120,42 +88,11 @@ function TradeFeed() {
     }
   };
 
-  const fetchNewTrades = async () => {
-    setSyncLoading(true);
-    try {
-      const symbols = symbolInput
-        .split(/[,\s]+/)
-        .map(s => s.trim().toUpperCase())
-        .filter(Boolean);
-
-      const { data, error } = await supabase.functions.invoke("fetch-trades", {
-        body: { symbols, limit: 200 },
-      });
-
-      if (error) throw error;
-
-      toast({
-        title: "Trades Synced",
-        description: `Found ${data.count} trades (${symbols.slice(0, 6).join(', ')}${symbols.length > 6 ? ', …' : ''})`,
-      });
-
-      await loadTrades();
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to fetch trades",
-        variant: "destructive",
-      });
-    } finally {
-      setSyncLoading(false);
-    }
-  };
-
   const getAICommentary = async () => {
     if (trades.length === 0) {
       toast({
         title: "No Trades",
-        description: "Sync some trades first",
+        description: "Waiting for trades from the live feed",
         variant: "destructive",
       });
       return;
@@ -181,31 +118,6 @@ function TradeFeed() {
     }
   };
 
-  const handleLogout = () => {
-    setUser(null);
-    setTrades([]);
-    setCommentary("");
-  };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <div className="h-10 w-10 rounded-full border-2 border-primary border-t-transparent animate-spin" />
-          <p className="text-sm text-muted-foreground">Loading…</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!user) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <AuthForm onSuccess={() => {}} />
-      </div>
-    );
-  }
-
   const totalBuys = trades.filter(t => t.side === "BUY").length;
   const totalSells = trades.filter(t => t.side === "SELL").length;
 
@@ -218,26 +130,21 @@ function TradeFeed() {
             <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
               <Sparkles className="h-4 w-4 text-primary-foreground" />
             </div>
-            <h1 className="text-xl font-bold text-foreground">AUREON Trade Feed</h1>
+            <div>
+              <h1 className="text-xl font-bold text-foreground">AUREON Live Feed</h1>
+              <p className="text-xs text-muted-foreground">Public Trading Dashboard</p>
+            </div>
           </div>
           <div className="flex items-center gap-2">
-            <div className="hidden md:block">
-              <Input
-                value={symbolInput}
-                onChange={(e) => setSymbolInput(e.target.value)}
-                placeholder="Symbols (optional). Leave blank = auto-detect from balances"
-                className="w-72"
-              />
+            <div className="px-3 py-1 rounded-full bg-green-500/20 text-green-500 text-xs font-medium flex items-center gap-1">
+              <span className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
+              LIVE
             </div>
-            <Button onClick={fetchNewTrades} disabled={syncLoading} size="sm">
-              <RefreshCw className={`w-4 h-4 mr-2 ${syncLoading ? "animate-spin" : ""}`} />
-              Sync
-            </Button>
             <Button onClick={getAICommentary} disabled={commentaryLoading} variant="secondary" size="sm">
               <Brain className={`w-4 h-4 mr-2 ${commentaryLoading ? "animate-pulse" : ""}`} />
               Brain
             </Button>
-            <SettingsDrawer onLogout={handleLogout} />
+            <SettingsDrawer />
           </div>
         </div>
       </header>
@@ -303,7 +210,7 @@ function TradeFeed() {
                 </CardHeader>
                 <CardContent>
                   <p className="text-sm text-muted-foreground">
-                    Click "Brain" to generate commentary on your most recent trades.
+                    Click "Brain" to generate commentary on the most recent trades.
                   </p>
                 </CardContent>
               </Card>
@@ -329,7 +236,7 @@ function TradeFeed() {
             <CardContent>
               {trades.length === 0 ? (
                 <p className="text-muted-foreground text-center py-8">
-                  No trades yet. Click "Sync" to fetch from Binance.
+                  Waiting for trades from the Python terminal...
                 </p>
               ) : (
                 <div className="space-y-2 max-h-[500px] overflow-y-auto">

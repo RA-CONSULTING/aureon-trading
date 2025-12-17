@@ -4,11 +4,16 @@
  * 
  * Reads REAL data from database tables populated by Python terminal
  * via ingest-terminal-state endpoint
+ * 
+ * PUBLIC LIVE FEED - No authentication required
  */
 
 import { useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { globalSystemsManager } from '@/core/globalSystemsManager';
+
+// Public live feed user ID - data pushed from Python terminal
+const LIVE_FEED_USER_ID = '69e5567f-7ad1-42af-860f-3709ef1f5935';
 
 interface RuntimeStats {
   runtime_minutes: number;
@@ -40,13 +45,10 @@ export function useTerminalSync(enabled: boolean = true, intervalMs: number = 50
   // Fetch session data from aureon_user_sessions (populated by Python)
   const fetchSessionData = useCallback(async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return null;
-
       const { data, error } = await supabase
         .from('aureon_user_sessions')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('user_id', LIVE_FEED_USER_ID)
         .single();
 
       if (error && error.code !== 'PGRST116') {
@@ -84,16 +86,13 @@ export function useTerminalSync(enabled: boolean = true, intervalMs: number = 50
   // Fetch trade statistics from trade_records (populated by Python)
   const fetchTradeStats = useCallback(async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return { total: 0, wins: 0, winRate: 0 };
-
       const { data: trades, error } = await supabase
         .from('trade_records')
         .select('id, is_win, pnl')
-        .eq('user_id', user.id);
+        .eq('user_id', LIVE_FEED_USER_ID);
 
       if (error || !trades) {
-        return { total: 0, wins: 0, winRate: 0 };
+        return { total: 0, wins: 0, winRate: 0, totalPnl: 0 };
       }
 
       const total = trades.length;
@@ -110,13 +109,10 @@ export function useTerminalSync(enabled: boolean = true, intervalMs: number = 50
   // Fetch open positions (populated by Python)
   const fetchPositions = useCallback(async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return [];
-
       const { data, error } = await supabase
         .from('trading_positions')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('user_id', LIVE_FEED_USER_ID)
         .eq('status', 'open');
 
       if (error) return [];
@@ -129,9 +125,6 @@ export function useTerminalSync(enabled: boolean = true, intervalMs: number = 50
   // Fetch latest runtime stats from local_system_logs
   const fetchRuntimeStats = useCallback(async (): Promise<RuntimeStats | null> => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return null;
-
       const { data, error } = await supabase
         .from('local_system_logs')
         .select('parsed_data')
