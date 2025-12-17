@@ -10355,16 +10355,37 @@ class AureonKrakenEcosystem:
                 if amount <= 0:
                     continue
                     
-                asset_clean = asset_raw.replace('Z', '').upper()  # Keep X prefix for XBT, XLM, etc
+                # 🔧 KRAKEN ASSET NORMALIZATION: Remove Z/X prefixes and map XBT→BTC
+                # Kraken uses: XXBT for Bitcoin, XETH for Ethereum, ZUSD for USD, etc.
+                asset_clean = asset_raw.upper()
+                
+                # Remove Kraken's Z prefix (fiat currencies)
+                if asset_clean.startswith('Z') and len(asset_clean) > 1:
+                    asset_clean = asset_clean[1:]
+                
+                # Remove Kraken's X prefix (crypto) - but handle XRP, XLM, XDG correctly
+                # Only strip X if it's a double-letter prefix (XX) or known X-prefixed crypto
+                if asset_clean.startswith('XX'):  # XXBT, XXDG, XXLM, etc.
+                    asset_clean = asset_clean[1:]  # XXBT → XBT
+                elif asset_clean.startswith('X') and asset_clean not in ['XRP', 'XLM', 'XMR', 'XTZ']:
+                    # Check if this is Kraken's X prefix vs actual coin name
+                    # Kraken prefixes: XETH, XLTC, etc. Actual coins: XRP, XLM
+                    if len(asset_clean) > 3:  # XETH (4), XLTC (4) - likely Kraken prefix
+                        asset_clean = asset_clean[1:]  # XETH → ETH
+                
+                # Map Kraken's XBT to standard BTC
+                if asset_clean == 'XBT':
+                    asset_clean = 'BTC'
+                elif asset_clean == 'XDG':
+                    asset_clean = 'DOGE'
                 
                 # Skip base currency (that's cash, not a position)
                 if asset_clean in ['GBP', 'EUR', 'USD', 'USDT', 'USDC']:
                     continue
                     
                 # Build the trading pair symbol
-                # For Binance: BTCUSDT
-                # For Kraken: XXBTZUSD (or similar)
-                # We need to reconstruct the likely pair symbol
+                # For Binance: BTCUSDT  
+                # For Kraken: BTCUSDC, ETHUSDC, etc. (after normalization)
                 # Try multiple quote currencies since we might have positions in different pairs
                 
                 symbol = None
@@ -11895,10 +11916,33 @@ class AureonKrakenEcosystem:
             
             print(f"   📊 Restored TRUE starting balance: £{self.tracker.first_start_balance:.2f} (from {time.strftime('%Y-%m-%d %H:%M', time.localtime(self.tracker.first_start_time))})")
             
-            # Restore positions (optional - might be stale)
+            # 🔧 RESTORE POSITIONS from saved state
             saved_positions = state.get('positions', {})
             if saved_positions:
-                print(f"   💾 Loaded state: {len(saved_positions)} positions from previous session")
+                for symbol, pos_data in saved_positions.items():
+                    try:
+                        # Reconstruct Position object from saved dict
+                        self.positions[symbol] = Position(
+                            symbol=pos_data.get('symbol', symbol),
+                            entry_price=pos_data.get('entry_price', 0.0),
+                            quantity=pos_data.get('quantity', 0.0),
+                            entry_fee=pos_data.get('entry_fee', 0.0),
+                            entry_value=pos_data.get('entry_value', 0.0),
+                            momentum=pos_data.get('momentum', 0.0),
+                            coherence=pos_data.get('coherence', 0.5),
+                            entry_time=pos_data.get('entry_time', time.time()),
+                            dominant_node=pos_data.get('dominant_node', 'Restored'),
+                            exchange=pos_data.get('exchange', 'kraken'),
+                            is_historical=pos_data.get('is_historical', False),
+                            generation=pos_data.get('generation', 0),
+                            is_scout=pos_data.get('is_scout', False),
+                            highest_price=pos_data.get('highest_price', 0.0),
+                            trailing_stop_active=pos_data.get('trailing_stop_active', False),
+                            trailing_stop_price=pos_data.get('trailing_stop_price', 0.0),
+                        )
+                    except Exception as pos_err:
+                        print(f"   ⚠️ Could not restore position {symbol}: {pos_err}")
+                print(f"   💾 Restored {len(self.positions)} positions from previous session")
             
         except Exception as e:
             print(f"   ⚠️ State load error: {e}")
@@ -11922,11 +11966,36 @@ class AureonKrakenEcosystem:
             kraken_balances = all_balances.get('kraken', {})
             binance_balances = all_balances.get('binance', {})
             
-            # Kraken uses different asset names
-            kraken_asset_map = {
-                'BTC': 'XXBT', 'XBT': 'XXBT', 'DOGE': 'XXDG', 'XLM': 'XXLM', 
-                'ZEC': 'XZEC', 'ETH': 'XETH', 'LTC': 'XLTC', 'XRP': 'XXRP'
+            # 🔧 KRAKEN ASSET MAPPING: Standard name → Kraken names to try
+            # Kraken returns normalized names from get_account_balance (BTC, ETH, etc.)
+            # but sometimes uses XXBT, XETH internally
+            kraken_asset_variants = {
+                'BTC': ['BTC', 'XBT', 'XXBT'],
+                'ETH': ['ETH', 'XETH'],
+                'DOGE': ['DOGE', 'XDG', 'XXDG'],
+                'XLM': ['XLM', 'XXLM'],
+                'XRP': ['XRP', 'XXRP'],
+                'LTC': ['LTC', 'XLTC'],
+                'ZEC': ['ZEC', 'XZEC'],
+                'ADA': ['ADA'],
+                'SOL': ['SOL'],
+                'DOT': ['DOT'],
+                'AVAX': ['AVAX'],
+                'LINK': ['LINK'],
+                'MATIC': ['MATIC'],
+                'SHIB': ['SHIB'],
+                'UNI': ['UNI'],
             }
+            
+            def get_kraken_balance(asset: str) -> float:
+                """Try multiple Kraken asset name variants."""
+                variants = kraken_asset_variants.get(asset, [asset])
+                for var in variants:
+                    bal = kraken_balances.get(var, 0.0)
+                    if bal > 0:
+                        return float(bal)
+                # Also try raw asset name
+                return float(kraken_balances.get(asset, 0.0))
             
             positions_to_remove = []
             positions_adjusted = 0
@@ -11944,19 +12013,14 @@ class AureonKrakenEcosystem:
                 real_qty = 0.0
                 
                 if exchange == 'kraken':
-                    kraken_key = kraken_asset_map.get(base_asset, base_asset)
-                    real_qty = kraken_balances.get(kraken_key, 0.0)
-                    # Also try without mapping
-                    if real_qty == 0:
-                        real_qty = kraken_balances.get(base_asset, 0.0)
+                    real_qty = get_kraken_balance(base_asset)
                 elif exchange == 'binance':
-                    real_qty = binance_balances.get(base_asset, 0.0)
+                    real_qty = float(binance_balances.get(base_asset, 0.0))
                 else:
-                    # Try both
-                    real_qty = binance_balances.get(base_asset, 0.0)
+                    # Try both exchanges
+                    real_qty = float(binance_balances.get(base_asset, 0.0))
                     if real_qty == 0:
-                        kraken_key = kraken_asset_map.get(base_asset, base_asset)
-                        real_qty = kraken_balances.get(kraken_key, 0.0)
+                        real_qty = get_kraken_balance(base_asset)
                 
                 stored_qty = pos.quantity
                 
