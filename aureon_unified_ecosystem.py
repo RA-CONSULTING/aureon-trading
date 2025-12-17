@@ -5751,16 +5751,31 @@ class ProbabilityReportGenerator:
     """
     
     # Symbols to analyze per exchange
+    # 🤑 EXPANDED LIST - includes many altcoins and meme coins!
     BINANCE_SYMBOLS = [
-        'BTCUSDC', 'ETHUSDC', 'SOLUSDC', 'XRPUSDC', 'ADAUSDC', 'AVAXUSDC', 'DOGEUSDC', 'LINKUSDC',
+        # Major coins
+        'BTCUSDC', 'ETHUSDC', 'BNBUSDC', 'SOLUSDC', 'XRPUSDC', 'ADAUSDC', 'AVAXUSDC', 'DOGEUSDC', 'LINKUSDC',
         'MATICUSDC', 'DOTUSDC', 'ATOMUSDC', 'FILUSDC', 'LTCUSDC', 'SUIUSDC', 'APTUSDC', 'ARBUSDC',
-        'OPUSDC', 'NEARUSDC', 'UNIUSDC', 'INJUSDC', 'BNBUSDC', 'FETUSDC', 'PEPEUSDC', 'SHIBUSDC'
+        'OPUSDC', 'NEARUSDC', 'UNIUSDC', 'INJUSDC', 'FETUSDC', 'PEPEUSDC', 'SHIBUSDC',
+        # Additional altcoins you hold
+        'XLMUSDC', 'TWTUSDC', 'HMSTRUSDC', 'PENGUUSDC', 'ALTUSDC', 'HBARUSDC', 'CHZUSDC',
+        'TURBOUSDC', 'MEMEUSDC', 'DOGSUSDC', 'WLDUSDC', 'SEIUSDC', 'TIAUSDC', 'WIFUSDC',
+        'RAYUSDC', 'RUNEUSDC', 'ENAENAUSDC', 'ORDIUSDC', 'ICPUSDC', 'STRKUSDC', 'RENDERUSDC',
+        'ARUSDC', 'MOVEUSDC', 'BERABERUSDC', 'TRUMPUSDC',
+        # Also try USDT pairs for more liquidity
+        'BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'SOLUSDT', 'XRPUSDT', 'ADAUSDT', 'AVAXUSDT', 'DOGEUSDT',
+        'XLMUSDT', 'TWTUSDT', 'HMSTRUSDT', 'PENGUUSDT', 'HBARUSDT', 'CHZUSDT', 'PEPEUSDT',
+        'SHIBUSDT', 'TURBOUSDT', 'MEMEUSDT', 'WLDUSDT', 'NEARUSDT', 'SUIUSDT', 'APTUSDT',
+        'ARBUSDT', 'OPUSDT', 'INJUSDT', 'FETUSDT', 'LINKUSDT', 'DOTUSDT', 'ATOMUSDT',
     ]
     
     KRAKEN_SYMBOLS = [
         'XXBTZUSD', 'XETHZUSD', 'SOLUSD', 'XRPUSD', 'ADAUSD', 'AVAXUSD', 'DOGEUSD', 'LINKUSD',
         'MATICUSD', 'DOTUSD', 'ATOMUSD', 'FILUSD', 'LTCUSD', 'SUIUSD', 'APTUSD', 'ARBUSD',
-        'OPUSD', 'NEARUSD', 'UNIUSD', 'INJUSD', 'FETUSD', 'PEPEUSD', 'SHIBUSD', 'AABOROW'
+        'OPUSD', 'NEARUSD', 'UNIUSD', 'INJUSD', 'FETUSD', 'PEPEUSD', 'SHIBUSD',
+        # Additional Kraken pairs
+        'XLMUSD', 'ZECUSD', 'SHIBUSD', 'WLDUSD', 'SEIUSD', 'TIAUSD', 'RENDERUSD',
+        'XXBTUSDC', 'XETHUSDC', 'SOLUSDC', 'DOGEUSDC', 'XLMUSDC',  # USDC pairs
     ]
     
     def __init__(self, report_dir: str = '.', interval_seconds: float = 15.0):
