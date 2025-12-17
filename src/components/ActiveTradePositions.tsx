@@ -98,13 +98,57 @@ export function ActiveTradePositions() {
     fetchPositions();
   }, []);
 
+  const binancePositions = positions.filter(p => p.exchange === "binance");
+  const krakenPositions = positions.filter(p => p.exchange === "kraken");
+  const binanceTotal = binancePositions.reduce((sum, p) => sum + p.usdValue, 0);
+  const krakenTotal = krakenPositions.reduce((sum, p) => sum + p.usdValue, 0);
+
+  const renderPositionList = (items: SpotPosition[], exchange: string, emoji: string, total: number) => (
+    <div className="flex-1 min-w-0">
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-2">
+          <span className="text-lg">{emoji}</span>
+          <span className="font-semibold capitalize">{exchange}</span>
+          <Badge variant="outline" className="text-xs">{items.length}</Badge>
+        </div>
+        <span className="text-sm font-mono text-muted-foreground">${total.toFixed(2)}</span>
+      </div>
+      <ScrollArea className="h-64 rounded-lg border border-border/50 bg-muted/20 p-2">
+        {items.length === 0 ? (
+          <div className="text-xs text-muted-foreground text-center py-8">
+            No {exchange} positions
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {items.map((p, i) => (
+              <div
+                key={`${p.asset}-${i}`}
+                className="flex items-center justify-between rounded-md border border-border/30 bg-background/50 p-2"
+              >
+                <div>
+                  <span className="font-semibold text-sm">{p.asset}</span>
+                  <div className="text-xs text-muted-foreground">
+                    {p.total.toFixed(6)}
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="font-mono text-sm">${p.usdValue.toFixed(2)}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </ScrollArea>
+    </div>
+  );
+
   return (
     <Card>
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center justify-between">
           <span>Real Spot Positions</span>
           <div className="flex items-center gap-2">
-            <Badge variant="outline">{positions.length} assets</Badge>
+            <Badge variant="outline">${totalUsd.toFixed(2)} total</Badge>
             <Button
               variant="ghost"
               size="sm"
@@ -134,51 +178,11 @@ export function ActiveTradePositions() {
           <div className="flex items-center justify-center py-8">
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
           </div>
-        ) : positions.length === 0 ? (
-          <div className="text-sm text-muted-foreground text-center py-4">
-            No spot positions found. Configure Binance or Kraken credentials in Settings.
-          </div>
         ) : (
-          <>
-            <ScrollArea className="h-64">
-              <div className="space-y-2">
-                {positions.map((p, i) => (
-                  <div
-                    key={`${p.exchange}-${p.asset}-${i}`}
-                    className="flex items-center justify-between rounded-lg border border-border/50 bg-muted/30 p-3"
-                  >
-                    <div className="flex items-center gap-2">
-                      <Badge
-                        variant={p.exchange === "binance" ? "default" : "secondary"}
-                        className="text-xs"
-                      >
-                        {p.exchange === "binance" ? "🟡" : "🐙"} {p.exchange}
-                      </Badge>
-                      <div>
-                        <span className="font-semibold">{p.asset}</span>
-                        <div className="text-xs text-muted-foreground">
-                          Free: {p.free.toFixed(6)} · Locked: {p.locked.toFixed(6)}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="font-mono text-sm">
-                        {p.total.toFixed(6)}
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        ≈ ${p.usdValue.toFixed(2)}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </ScrollArea>
-
-            <div className="mt-3 flex items-center justify-between border-t border-border/50 pt-3 text-sm">
-              <span className="text-muted-foreground">Total Portfolio Value</span>
-              <span className="font-mono font-semibold">${totalUsd.toFixed(2)}</span>
-            </div>
-          </>
+          <div className="flex gap-4">
+            {renderPositionList(binancePositions, "binance", "🟡", binanceTotal)}
+            {renderPositionList(krakenPositions, "kraken", "🐙", krakenTotal)}
+          </div>
         )}
       </CardContent>
     </Card>
