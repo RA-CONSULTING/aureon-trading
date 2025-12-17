@@ -1,4 +1,4 @@
-import os, time, json, math, hmac, hashlib, base64
+import os, time, json, math, hmac, hashlib, base64, threading
 from typing import Dict, Any, List, Tuple
 from decimal import Decimal
 
@@ -41,6 +41,11 @@ class KrakenClient:
         # Map altname -> internal pair key used by ticker results
         self._alt_to_int: Dict[str, str] = {}
         self._int_to_alt: Dict[str, str] = {}
+        
+        # Rate limiting to prevent nonce errors
+        self._last_private_call: float = 0.0
+        self._private_lock = threading.Lock()
+        self._min_call_interval: float = 0.5  # 500ms between private API calls
 
     # ──────────────────────────────────────────────────────────────────────
     # Private signing helpers (only if we later enable non-dry-run)
@@ -60,20 +65,33 @@ class KrakenClient:
             raise RuntimeError("Private Kraken endpoint used in dry-run. Provide balances via env or disable dry-run.")
         if not self.api_key or not self.api_secret:
             raise RuntimeError("Missing KRAKEN_API_KEY / KRAKEN_API_SECRET")
-        data = dict(data)
-        # Use microseconds for nonce to avoid "invalid nonce" errors
-        data["nonce"] = str(int(time.time() * 1000000))
-        headers = {
-            "API-Key": self.api_key,
-            "API-Sign": self._kraken_sign(path, data)
-        }
-        url = f"{self.base}{path}"
-        r = self.session.post(url, data=data, headers=headers, timeout=15)
-        r.raise_for_status()
-        res = r.json()
-        if res.get("error"):
-            raise RuntimeError(f"Kraken error: {res['error']}")
-        return res.get("result", {})
+        
+        # Thread-safe rate limiting to prevent nonce errors
+        with self._private_lock:
+            # Ensure minimum interval between calls
+            now = time.time()
+            elapsed = now - self._last_private_call
+            if elapsed < self._min_call_interval:
+                time.sleep(self._min_call_interval - elapsed)
+            
+            data = dict(data)
+            # Use microseconds for nonce to avoid "invalid nonce" errors
+            data["nonce"] = str(int(time.time() * 1000000))
+            headers = {
+                "API-Key": self.api_key,
+                "API-Sign": self._kraken_sign(path, data)
+            }
+            url = f"{self.base}{path}"
+            
+            # Update last call time before making request
+            self._last_private_call = time.time()
+            
+            r = self.session.post(url, data=data, headers=headers, timeout=15)
+            r.raise_for_status()
+            res = r.json()
+            if res.get("error"):
+                raise RuntimeError(f"Kraken error: {res['error']}")
+            return res.get("result", {})
 
     # ──────────────────────────────────────────────────────────────────────
     # Public helpers and Binance-like interface
