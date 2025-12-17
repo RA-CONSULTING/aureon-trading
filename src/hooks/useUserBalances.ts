@@ -42,14 +42,12 @@ export function useUserBalances(autoRefresh: boolean = true, refreshInterval: nu
     lastUpdated: null
   });
 
-  // Keep a stable counter without re-creating the fetch function (prevents runaway loops)
   const fetchCountRef = useRef(0);
 
   const fetchBalances = useCallback(async () => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
-        // Not authenticated - silently skip without error
         setState(prev => ({ ...prev, isLoading: false }));
         return;
       }
@@ -93,7 +91,6 @@ export function useUserBalances(autoRefresh: boolean = true, refreshInterval: nu
     }
   }, []);
 
-  // Initial fetch and auto-refresh
   useEffect(() => {
     fetchBalances();
 
@@ -103,7 +100,6 @@ export function useUserBalances(autoRefresh: boolean = true, refreshInterval: nu
     }
   }, [fetchBalances, autoRefresh, refreshInterval]);
 
-  // Get consolidated assets across all exchanges
   const getConsolidatedAssets = useCallback(() => {
     const assetMap = new Map<string, { free: number; locked: number; usdValue: number; exchanges: string[] }>();
 
