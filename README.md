@@ -39,6 +39,43 @@ cp .env.example .env
 # 3. Run both terminals!
 ```
 
+### 🌐 LIVE DASHBOARD - aureoninstitute.com
+
+**Open alongside your terminals for real-time visual analytics:**
+
+🔗 **[https://aureoninstitute.com](https://aureoninstitute.com)**
+
+| Dashboard Feature | Description |
+|-------------------|-------------|
+| 🌊 **Global Harmonic Field** | Live Γ coherence from 768+ assets |
+| 📊 **Portfolio Analytics** | Your holdings, P&L, frequency bands |
+| 🎵 **Frequency Bands** | HARMONY / LIBERATION / TRANSFORMATION / DISTORTION |
+| ⚠️ **Distortion Alerts** | Assets in 440Hz danger zone |
+| 💧🔥🌍💨✨ **Platonic Elements** | Water, Fire, Earth, Air, Ether distribution |
+| 📈 **Fear & Greed Index** | Live market sentiment |
+| 🌍 **Schumann Sync** | Earth resonance alignment % |
+| 🎵 **Harmonic Pairs** | Correlated assets by frequency |
+
+```
+┌────────────────────────────────────────────────────────────────────┐
+│  RECOMMENDED SETUP                                                  │
+├────────────────────────────────────────────────────────────────────┤
+│                                                                     │
+│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────────┐ │
+│  │ Terminal 1      │  │ Terminal 2      │  │ Browser             │ │
+│  │ 🧠 Brain        │  │ 💰 Trader       │  │ 🌐 Dashboard        │ │
+│  │                 │  │                 │  │                     │ │
+│  │ aureon_miner.py │  │ aureon_unified_ │  │ aureoninstitute.com │ │
+│  │                 │  │ ecosystem.py    │  │                     │ │
+│  │ 11 Civilizations│  │ Penny Profit    │  │ Live Portfolio      │ │
+│  │ Quantum State   │  │ Trade Execution │  │ Harmonic Field Γ    │ │
+│  └─────────────────┘  └─────────────────┘  └─────────────────────┘ │
+│                                                                     │
+└────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
 ### 🌐 The Global Harmonic Field (Ω)
 When both processes run together, the system computes a **Global Harmonic Field** from 8 layers:
 
