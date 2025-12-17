@@ -75,8 +75,9 @@ class KrakenClient:
                 time.sleep(self._min_call_interval - elapsed)
             
             data = dict(data)
-            # Use microseconds for nonce to avoid "invalid nonce" errors
-            data["nonce"] = str(int(time.time() * 1000000))
+            # Use NANOSECONDS for nonce to avoid "invalid nonce" errors
+            # Microseconds (1000000) was not high enough - needs 1000000000
+            data["nonce"] = str(int(time.time() * 1000000000))
             headers = {
                 "API-Key": self.api_key,
                 "API-Sign": self._kraken_sign(path, data)
