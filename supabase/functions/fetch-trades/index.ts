@@ -27,39 +27,54 @@ serve(async (req) => {
       });
     }
 
-    const { symbol = 'BTCUSDT', limit = 50 } = await req.json().catch(() => ({}));
+    const { symbols = ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'XRPUSDT', 'BNBUSDT', 'ADAUSDT', 'DOGEUSDT'], limit = 50 } = await req.json().catch(() => ({}));
 
     const apiKey = Deno.env.get('BINANCE_API_KEY');
     const apiSecret = Deno.env.get('BINANCE_API_SECRET');
 
     if (!apiKey || !apiSecret) {
+      console.error('Missing Binance credentials');
       return new Response(JSON.stringify({ error: 'Binance credentials not configured' }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    const timestamp = Date.now();
-    const queryString = `symbol=${symbol}&limit=${limit}&timestamp=${timestamp}`;
-    const signature = createHmac('sha256', apiSecret).update(queryString).digest('hex');
+    console.log('Fetching trades for symbols:', symbols);
 
-    const response = await fetch(
-      `https://api.binance.com/api/v3/myTrades?${queryString}&signature=${signature}`,
-      {
-        headers: { 'X-MBX-APIKEY': apiKey },
+    // Fetch trades from multiple symbols
+    const allTrades: any[] = [];
+    
+    for (const symbol of symbols) {
+      try {
+        const timestamp = Date.now();
+        const queryString = `symbol=${symbol}&limit=${limit}&timestamp=${timestamp}`;
+        const signature = createHmac('sha256', apiSecret).update(queryString).digest('hex');
+
+        const response = await fetch(
+          `https://api.binance.com/api/v3/myTrades?${queryString}&signature=${signature}`,
+          {
+            headers: { 'X-MBX-APIKEY': apiKey },
+          }
+        );
+
+        if (response.ok) {
+          const trades = await response.json();
+          console.log(`Found ${trades.length} trades for ${symbol}`);
+          allTrades.push(...trades);
+        } else {
+          const errorText = await response.text();
+          console.log(`No trades for ${symbol}: ${errorText}`);
+        }
+      } catch (err) {
+        console.error(`Error fetching ${symbol}:`, err);
       }
-    );
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Binance API error:', errorText);
-      return new Response(JSON.stringify({ error: 'Failed to fetch trades', details: errorText }), {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
     }
 
-    const trades = await response.json();
+    console.log(`Total trades found: ${allTrades.length}`);
+    
+    // Sort by time descending
+    const trades = allTrades.sort((a, b) => b.time - a.time).slice(0, limit);
 
     // Store new trades in database
     const tradeRecords = trades.map((t: any) => ({

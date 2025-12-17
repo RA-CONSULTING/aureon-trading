@@ -100,14 +100,14 @@ function TradeFeed() {
     setSyncLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke("fetch-trades", {
-        body: { symbol: "BTCUSDT", limit: 50 },
+        body: { limit: 100 }, // Fetches from multiple symbols now
       });
 
       if (error) throw error;
 
       toast({
         title: "Trades Synced",
-        description: `Found ${data.count} trades from Binance`,
+        description: `Found ${data.count} trades from Binance (BTC, ETH, SOL, XRP, BNB, ADA, DOGE)`,
       });
 
       await loadTrades();
