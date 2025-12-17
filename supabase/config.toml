@@ -280,3 +280,7 @@ verify_jwt = true
 # Ingest trades from Python terminal (public for easy integration)
 [functions.ingest-trades]
 verify_jwt = false
+
+# Comprehensive terminal state ingestion from Python
+[functions.ingest-terminal-state]
+verify_jwt = false

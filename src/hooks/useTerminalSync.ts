@@ -1,160 +1,43 @@
+/**
+ * Terminal Sync Hook
+ * Prime Sentinel: GARY LECKEY 02111991
+ * 
+ * Reads REAL data from database tables populated by Python terminal
+ * via ingest-terminal-state endpoint
+ */
+
 import { useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { globalSystemsManager } from '@/core/globalSystemsManager';
-import { calculateDrawdown, calculateGaiaState, calculateHncFrequency, calculateHncMarketState } from './useTerminalMetrics';
 
-interface BalanceData {
-  totalEquityUsd: number;
-  exchanges: Record<string, { totalUsd: number; assets: Record<string, { free: number; locked: number; usdValue: number }> }>;
+interface RuntimeStats {
+  runtime_minutes: number;
+  peak_equity: number;
+  current_drawdown: number;
+  max_drawdown: number;
+  mycelium_hives: number;
+  mycelium_agents: number;
+  mycelium_generation: number;
+  max_generation: number;
+  queen_state: string;
+  queen_pnl: number;
+  scout_count: number;
+  split_count: number;
+  entry_threshold: number;
+  exit_threshold: number;
+  risk_multiplier: number;
+  tp_multiplier: number;
+  ws_connected: boolean;
+  ws_message_count: number;
+  gaia_purity: number;
+  gaia_carrier_phi: number;
 }
 
-interface TradeRecord {
-  id: string;
-  side: string;
-  price: number;
-  quantity: number;
-  symbol: string;
-  timestamp: string;
-  quote_qty: number;
-  fee: number;
-}
-
-export function useTerminalSync(enabled: boolean = true, intervalMs: number = 10000) {
-  const peakEquityRef = useRef<number>(0);
-  const sessionStartRef = useRef<number>(Date.now());
+export function useTerminalSync(enabled: boolean = true, intervalMs: number = 5000) {
   const lastSyncRef = useRef<number>(0);
-  const tradeSyncedRef = useRef<boolean>(false);
+  const sessionStartRef = useRef<number>(Date.now());
 
-  // Fetch REAL balances from exchanges via edge function
-  const fetchBalances = useCallback(async (): Promise<BalanceData | null> => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return null;
-
-      const { data, error } = await supabase.functions.invoke('get-user-balances', {
-        body: { userId: user.id }
-      });
-
-      if (error) {
-        console.error('[TerminalSync] Balance fetch error:', error);
-        return null;
-      }
-
-      console.log('[TerminalSync] Real balances:', data);
-      return data;
-    } catch (err) {
-      console.error('[TerminalSync] Balance fetch failed:', err);
-      return null;
-    }
-  }, []);
-
-  // Sync REAL trades from Binance API via edge function, then query DB
-  const syncAndFetchTrades = useCallback(async (): Promise<TradeRecord[]> => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return [];
-
-      // First, sync trades from Binance (only once per session to avoid rate limits)
-      if (!tradeSyncedRef.current) {
-        console.log('[TerminalSync] Syncing trades from Binance...');
-        const { data: syncResult, error: syncError } = await supabase.functions.invoke('fetch-trades', {
-          body: { limit: 200 }  // Auto-detect symbols from balances
-        });
-
-        if (syncError) {
-          console.error('[TerminalSync] Trade sync error:', syncError);
-        } else {
-          console.log('[TerminalSync] Synced trades from Binance:', syncResult?.count);
-          tradeSyncedRef.current = true;
-        }
-      }
-
-      // Now fetch from database
-      const { data: trades, error } = await supabase
-        .from('trade_records')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('timestamp', { ascending: false })
-        .limit(500);
-
-      if (error) {
-        console.error('[TerminalSync] Trade fetch error:', error);
-        return [];
-      }
-
-      return (trades || []) as TradeRecord[];
-    } catch (err) {
-      console.error('[TerminalSync] Trade sync failed:', err);
-      return [];
-    }
-  }, []);
-
-  // Calculate trade statistics from real trade history
-  const calculateTradeStats = useCallback((trades: TradeRecord[]) => {
-    if (!trades || trades.length === 0) {
-      return { totalTrades: 0, wins: 0, winRate: 0, cyclePnl: 0, avgHoldTime: 0 };
-    }
-
-    const buyTrades = trades.filter(t => t.side === 'BUY');
-    const sellTrades = trades.filter(t => t.side === 'SELL');
-    
-    // FIFO matching for P&L calculation
-    let totalPnl = 0;
-    let wins = 0;
-    let totalHoldTime = 0;
-    let matchedTrades = 0;
-
-    const symbolBuys: Record<string, TradeRecord[]> = {};
-    buyTrades.forEach(t => {
-      if (!symbolBuys[t.symbol]) symbolBuys[t.symbol] = [];
-      symbolBuys[t.symbol].push(t);
-    });
-
-    sellTrades.forEach(sell => {
-      const buys = symbolBuys[sell.symbol];
-      if (buys && buys.length > 0) {
-        const buy = buys.shift()!;
-        const qty = Math.min(sell.quantity, buy.quantity);
-        const pnl = (sell.price - buy.price) * qty;
-        totalPnl += pnl;
-        if (pnl > 0) wins++;
-        matchedTrades++;
-        
-        const holdTime = new Date(sell.timestamp).getTime() - new Date(buy.timestamp).getTime();
-        totalHoldTime += holdTime;
-      }
-    });
-
-    const totalTrades = trades.length;
-    const winRate = matchedTrades > 0 ? (wins / matchedTrades) * 100 : 0;
-    const avgHoldTime = matchedTrades > 0 ? (totalHoldTime / matchedTrades) / 60000 : 0;
-
-    return { totalTrades, wins, winRate, cyclePnl: totalPnl, avgHoldTime };
-  }, []);
-
-  const fetchOpenPositions = useCallback(async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return [];
-
-      const { data, error } = await supabase
-        .from('trading_positions')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('status', 'open');
-
-      if (error) {
-        console.error('[TerminalSync] Positions fetch error:', error);
-        return [];
-      }
-
-      return data || [];
-    } catch (err) {
-      console.error('[TerminalSync] Positions failed:', err);
-      return [];
-    }
-  }, []);
-
+  // Fetch session data from aureon_user_sessions (populated by Python)
   const fetchSessionData = useCallback(async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -178,38 +61,118 @@ export function useTerminalSync(enabled: boolean = true, intervalMs: number = 10
     }
   }, []);
 
+  // Fetch latest HNC state (populated by Python)
+  const fetchHncState = useCallback(async () => {
+    try {
+      const { data, error } = await supabase
+        .from('hnc_detection_states')
+        .select('*')
+        .order('timestamp', { ascending: false })
+        .limit(1)
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
+        return null;
+      }
+
+      return data;
+    } catch (err) {
+      return null;
+    }
+  }, []);
+
+  // Fetch trade statistics from trade_records (populated by Python)
+  const fetchTradeStats = useCallback(async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return { total: 0, wins: 0, winRate: 0 };
+
+      const { data: trades, error } = await supabase
+        .from('trade_records')
+        .select('id, is_win, pnl')
+        .eq('user_id', user.id);
+
+      if (error || !trades) {
+        return { total: 0, wins: 0, winRate: 0 };
+      }
+
+      const total = trades.length;
+      const wins = trades.filter(t => t.is_win === true).length;
+      const winRate = total > 0 ? (wins / total) * 100 : 0;
+      const totalPnl = trades.reduce((sum, t) => sum + (t.pnl || 0), 0);
+
+      return { total, wins, winRate, totalPnl };
+    } catch (err) {
+      return { total: 0, wins: 0, winRate: 0, totalPnl: 0 };
+    }
+  }, []);
+
+  // Fetch open positions (populated by Python)
+  const fetchPositions = useCallback(async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return [];
+
+      const { data, error } = await supabase
+        .from('trading_positions')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('status', 'open');
+
+      if (error) return [];
+      return data || [];
+    } catch (err) {
+      return [];
+    }
+  }, []);
+
+  // Fetch latest runtime stats from local_system_logs
+  const fetchRuntimeStats = useCallback(async (): Promise<RuntimeStats | null> => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return null;
+
+      const { data, error } = await supabase
+        .from('local_system_logs')
+        .select('parsed_data')
+        .eq('module', 'terminal_state')
+        .eq('log_type', 'runtime_stats')
+        .order('timestamp', { ascending: false })
+        .limit(1)
+        .single();
+
+      if (error || !data?.parsed_data) return null;
+      
+      const stats = data.parsed_data as unknown as RuntimeStats;
+      if (stats && typeof stats.runtime_minutes === 'number') {
+        return stats;
+      }
+      return null;
+    } catch (err) {
+      return null;
+    }
+  }, []);
+
   const syncTerminalData = useCallback(async () => {
     const now = Date.now();
-    if (now - lastSyncRef.current < 5000) return; // Throttle to 5s minimum
+    if (now - lastSyncRef.current < 3000) return; // Throttle to 3s minimum
     lastSyncRef.current = now;
 
-    console.log('[TerminalSync] Syncing REAL terminal data...');
-
-    // Fetch all data in parallel
-    const [balances, trades, positions, session] = await Promise.all([
-      fetchBalances(),
-      syncAndFetchTrades(),
-      fetchOpenPositions(),
-      fetchSessionData()
+    // Fetch all data in parallel from DB (populated by Python)
+    const [session, hncState, tradeStats, positions, runtimeStats] = await Promise.all([
+      fetchSessionData(),
+      fetchHncState(),
+      fetchTradeStats(),
+      fetchPositions(),
+      fetchRuntimeStats(),
     ]);
 
-    // Calculate trade stats from REAL trade history
-    const tradeStats = calculateTradeStats(trades);
-
-    // Calculate equity and drawdown from REAL balances
-    const currentEquity = balances?.totalEquityUsd || 0;
-    if (currentEquity > peakEquityRef.current) {
-      peakEquityRef.current = currentEquity;
+    if (!session) {
+      console.log('[TerminalSync] No session data - waiting for Python to push...');
+      return;
     }
-    const drawdown = calculateDrawdown(currentEquity, peakEquityRef.current);
 
-    // Calculate Gaia/HNC state
-    const coherence = session?.current_coherence || 0;
-    const gaiaState = calculateGaiaState(coherence > 0.5 ? 528 : 440);
-    const hncFreq = calculateHncFrequency(0, 0.02);
-    const hncMarketState = calculateHncMarketState(coherence, 0.02, 0);
-
-    // Map positions
+    // Map positions to display format
     const mappedPositions = positions.map(p => ({
       symbol: p.symbol,
       entryPrice: Number(p.entry_price),
@@ -220,53 +183,85 @@ export function useTerminalSync(enabled: boolean = true, intervalMs: number = 10
       side: (p.side === 'BUY' ? 'LONG' : 'SHORT') as 'LONG' | 'SHORT',
     }));
 
-    // Update global state with REAL data
+    // Determine Gaia state from HNC data
+    const gaiaState = hncState?.distortion_power > 0 ? 'DISTORTION' : 
+                      (session.current_coherence || 0) > 0.45 ? 'COHERENT' : 'NEUTRAL';
+
+    // Update global state with REAL data from Python
     globalSystemsManager.setPartialState({
-      // Portfolio metrics from REAL exchange balances
-      totalEquity: currentEquity,
-      peakEquity: peakEquityRef.current,
-      currentDrawdownPercent: drawdown,
-      maxDrawdownPercent: Math.max(globalSystemsManager.getState().maxDrawdownPercent, drawdown),
+      // Portfolio from session (pushed by Python)
+      totalEquity: session.total_equity_usdt || 0,
+      peakEquity: runtimeStats?.peak_equity || session.total_equity_usdt || 0,
+      currentDrawdownPercent: runtimeStats?.current_drawdown || 0,
+      maxDrawdownPercent: runtimeStats?.max_drawdown || 0,
       
-      // Trade stats from REAL Binance trade history
-      totalTrades: tradeStats.totalTrades,
-      winningTrades: tradeStats.wins,
-      cyclePnl: tradeStats.cyclePnl,
-      cyclePnlPercent: currentEquity > 0 ? (tradeStats.cyclePnl / currentEquity) * 100 : 0,
-      avgHoldTimeMinutes: tradeStats.avgHoldTime,
+      // Trade stats from trade_records (pushed by Python)
+      totalTrades: session.total_trades || tradeStats.total,
+      winningTrades: session.winning_trades || tradeStats.wins,
+      cyclePnl: tradeStats.totalPnl || session.total_pnl_usdt || 0,
+      cyclePnlPercent: session.total_equity_usdt > 0 
+        ? ((tradeStats.totalPnl || 0) / session.total_equity_usdt) * 100 
+        : 0,
       
-      // Positions
+      // Positions from trading_positions (pushed by Python)
       activePositions: mappedPositions,
       
       // Session timing
       sessionStartTime: sessionStartRef.current,
       
-      // Coherence/Lambda from user session
-      coherence: session?.current_coherence || 0,
-      lambda: session?.current_lambda || 0,
+      // Coherence/Lambda from session
+      coherence: session.current_coherence || 0,
+      lambda: session.current_lambda || 0,
       
-      // Gaia/HNC state
-      gaiaLatticeState: gaiaState,
-      gaiaFrequency: coherence > 0.5 ? 432 : 440,
-      hncFrequency: hncFreq,
-      hncMarketState: hncMarketState,
-      hncCoherencePercent: coherence * 100,
+      // Gaia state
+      gaiaLatticeState: gaiaState as 'COHERENT' | 'DISTORTION' | 'NEUTRAL',
+      gaiaFrequency: hncState?.schumann_power || (session.prism_level || 440),
+      purityPercent: runtimeStats?.gaia_purity || 0,
+      carrierWavePhi: runtimeStats?.gaia_carrier_phi || 0,
+      harmonicLock432: hncState?.love_power || 0,
       
-      // Capital from session
-      compoundedCapital: session?.total_pnl_usdt || 0,
-      harvestedCapital: session?.gas_tank_balance || 0,
-      poolAvailable: session?.available_balance_usdt || 0,
+      // HNC state
+      hncFrequency: session.current_lighthouse_signal || 318,
+      hncMarketState: (hncState?.bridge_status || 'CONSOLIDATION') as 'CONSOLIDATION' | 'TRENDING' | 'VOLATILE' | 'BREAKOUT',
+      hncCoherencePercent: hncState?.harmonic_fidelity || (session.current_coherence || 0) * 100,
+      hncModifier: hncState?.imperial_yield || 0.8,
+      
+      // Trading mode
+      tradingMode: (session.trading_mode || 'BALANCED') as 'AGGRESSIVE' | 'CONSERVATIVE' | 'BALANCED',
+      entryCoherenceThreshold: runtimeStats?.entry_threshold || 0.2,
+      exitCoherenceThreshold: runtimeStats?.exit_threshold || 0.15,
+      riskMultiplier: runtimeStats?.risk_multiplier || 0.5,
+      takeProfitMultiplier: runtimeStats?.tp_multiplier || 0.8,
+      
+      // Mycelium swarm
+      myceliumHives: runtimeStats?.mycelium_hives || 1,
+      myceliumAgents: runtimeStats?.mycelium_agents || 5,
+      myceliumGeneration: runtimeStats?.mycelium_generation || 0,
+      maxGeneration: runtimeStats?.max_generation || 0,
+      queenState: (runtimeStats?.queen_state || session.dominant_node || 'HOLD') as 'HOLD' | 'BUY' | 'SELL',
+      queenPnl: runtimeStats?.queen_pnl || 0,
+      
+      // Capital
+      compoundedCapital: session.total_pnl_usdt || 0,
+      harvestedCapital: session.gas_tank_balance || 0,
+      poolAvailable: session.available_balance_usdt || 0,
+      scoutCount: runtimeStats?.scout_count || 0,
+      splitCount: runtimeStats?.split_count || 0,
+      
+      // WebSocket (from runtime stats)
+      wsConnected: runtimeStats?.ws_connected || false,
+      wsMessageCount: runtimeStats?.ws_message_count || 0,
     });
 
-    console.log('[TerminalSync] REAL data synced:', { 
-      equity: currentEquity.toFixed(2),
-      trades: tradeStats.totalTrades,
-      wins: tradeStats.wins,
-      winRate: tradeStats.winRate.toFixed(1) + '%',
-      pnl: tradeStats.cyclePnl.toFixed(2),
-      coherence: (coherence * 100).toFixed(1) + '%'
+    console.log('[TerminalSync] DB data synced:', { 
+      equity: (session.total_equity_usdt || 0).toFixed(2),
+      trades: session.total_trades || tradeStats.total,
+      wins: session.winning_trades || tradeStats.wins,
+      winRate: ((session.winning_trades || tradeStats.wins) / Math.max(1, session.total_trades || tradeStats.total) * 100).toFixed(1) + '%',
+      coherence: ((session.current_coherence || 0) * 100).toFixed(1) + '%',
+      positions: positions.length,
     });
-  }, [fetchBalances, syncAndFetchTrades, fetchOpenPositions, fetchSessionData, calculateTradeStats]);
+  }, [fetchSessionData, fetchHncState, fetchTradeStats, fetchPositions, fetchRuntimeStats]);
 
   useEffect(() => {
     if (!enabled) return;
