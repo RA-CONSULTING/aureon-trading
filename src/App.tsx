@@ -12,6 +12,7 @@ import { MarketMetricsPanel } from "@/components/MarketMetricsPanel";
 import { PortfolioSummaryPanel } from "@/components/PortfolioSummaryPanel";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { RefreshCw, Brain, TrendingUp, TrendingDown, Sparkles } from "lucide-react";
 import { format } from "date-fns";
@@ -40,7 +41,22 @@ function TradeFeed() {
   const [commentary, setCommentary] = useState<string>("");
   const [syncLoading, setSyncLoading] = useState(false);
   const [commentaryLoading, setCommentaryLoading] = useState(false);
+  const [symbolInput, setSymbolInput] = useState<string>(() => {
+    try {
+      return localStorage.getItem('aureon_sync_symbols') ?? 'BTCUSDT,ETHUSDT,SOLUSDT,XRPUSDT,BNBUSDT';
+    } catch {
+      return 'BTCUSDT,ETHUSDT,SOLUSDT,XRPUSDT,BNBUSDT';
+    }
+  });
   const { toast } = useToast();
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('aureon_sync_symbols', symbolInput);
+    } catch {
+      // ignore
+    }
+  }, [symbolInput]);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
@@ -100,15 +116,20 @@ function TradeFeed() {
   const fetchNewTrades = async () => {
     setSyncLoading(true);
     try {
+      const symbols = symbolInput
+        .split(/[,\s]+/)
+        .map(s => s.trim().toUpperCase())
+        .filter(Boolean);
+
       const { data, error } = await supabase.functions.invoke("fetch-trades", {
-        body: { limit: 100 }, // Fetches from multiple symbols now
+        body: { symbols, limit: 200 },
       });
 
       if (error) throw error;
 
       toast({
         title: "Trades Synced",
-        description: `Found ${data.count} trades from Binance (BTC, ETH, SOL, XRP, BNB, ADA, DOGE)`,
+        description: `Found ${data.count} trades (${symbols.slice(0, 6).join(', ')}${symbols.length > 6 ? ', …' : ''})`,
       });
 
       await loadTrades();
@@ -193,6 +214,14 @@ function TradeFeed() {
             <h1 className="text-xl font-bold text-foreground">AUREON Trade Feed</h1>
           </div>
           <div className="flex items-center gap-2">
+            <div className="hidden md:block">
+              <Input
+                value={symbolInput}
+                onChange={(e) => setSymbolInput(e.target.value)}
+                placeholder="Symbols (e.g. BTCUSDT, ETHUSDT)"
+                className="w-72"
+              />
+            </div>
             <Button onClick={fetchNewTrades} disabled={syncLoading} size="sm">
               <RefreshCw className={`w-4 h-4 mr-2 ${syncLoading ? "animate-spin" : ""}`} />
               Sync

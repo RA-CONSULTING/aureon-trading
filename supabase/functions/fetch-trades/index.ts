@@ -62,6 +62,9 @@ serve(async (req) => {
 
     const { symbols = ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'XRPUSDT', 'BNBUSDT', 'ADAUSDT', 'DOGEUSDT'], limit = 50 } = await req.json().catch(() => ({}));
 
+    const uniqueSymbols = Array.from(new Set((symbols || []).map((s: string) => String(s).toUpperCase()))).filter(Boolean);
+    const perSymbolLimit = Math.min(50, Math.max(1, Math.ceil(Number(limit || 50) / Math.max(1, uniqueSymbols.length))));
+
     // Load and decrypt THIS USER'S Binance credentials
     const service = createClient(supabaseUrl, supabaseServiceKey);
     const { data: session, error: sessionError } = await service
@@ -90,15 +93,16 @@ serve(async (req) => {
     const apiSecret = await decryptCredential(session.binance_api_secret_encrypted, cryptoKey, iv);
 
     console.log('[fetch-trades] Fetching trades for user:', user.id);
-    console.log('[fetch-trades] Symbols:', symbols);
+    console.log('[fetch-trades] Symbols:', uniqueSymbols);
+    console.log('[fetch-trades] Per-symbol limit:', perSymbolLimit);
 
     // Fetch trades from multiple symbols
     const allTrades: any[] = [];
     
-    for (const symbol of symbols) {
+    for (const symbol of uniqueSymbols) {
       try {
         const timestamp = Date.now();
-        const queryString = `symbol=${symbol}&limit=${limit}&timestamp=${timestamp}`;
+        const queryString = `symbol=${symbol}&limit=${perSymbolLimit}&timestamp=${timestamp}`;
         const signature = createHmac('sha256', apiSecret).update(queryString).digest('hex');
 
         const response = await fetch(
