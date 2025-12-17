@@ -26,8 +26,8 @@ interface CachedBalanceData {
 
 // Check database cache for exchange balance
 async function getDbCachedBalance(
-  supabase: any, 
-  userId: string, 
+  supabase: any,
+  userId: string,
   exchange: string
 ): Promise<{ data: ExchangeBalance | null; canFetch: boolean }> {
   try {
@@ -37,29 +37,60 @@ async function getDbCachedBalance(
       .eq('user_id', userId)
       .eq('exchange', exchange)
       .single();
-    
+
     if (error || !data) {
       return { data: null, canFetch: true };
     }
-    
+
     const cachedAt = new Date(data.cached_at).getTime();
     const elapsed = Date.now() - cachedAt;
     const rateLimit = RATE_LIMITS[exchange as keyof typeof RATE_LIMITS] || 30000;
-    
-    // Can fetch if rate limit has passed
-    const canFetch = elapsed >= rateLimit;
-    
-    // Return cached data if not too stale (5 minutes max)
-    if (elapsed < 300000 && data.balance_data) {
-      return { 
-        data: { 
-          ...data.balance_data, 
-          error: canFetch ? undefined : `Cached ${Math.round(elapsed/1000)}s ago (rate limited)`
-        }, 
-        canFetch 
+
+    const balanceData = data.balance_data as ExchangeBalance | null;
+
+    // If the cached payload is an error/offline result, avoid hammering the exchange.
+    // We allow quicker retry for "Invalid nonce" (fixable), but respect strict backoff for rate limits.
+    const isErrorPayload =
+      !balanceData ||
+      balanceData.connected === false ||
+      !Array.isArray(balanceData.assets);
+
+    if (isErrorPayload) {
+      const errorText = typeof balanceData?.error === 'string' ? balanceData.error : '';
+      const isRateLimit = /rate limit exceeded/i.test(errorText);
+      const isInvalidNonce = /invalid nonce/i.test(errorText);
+
+      const backoffMs = isRateLimit ? rateLimit : isInvalidNonce ? 15000 : 60000;
+      const canFetch = elapsed >= backoffMs;
+
+      return {
+        data:
+          elapsed < 300000 && balanceData
+            ? {
+                ...balanceData,
+                error: canFetch
+                  ? balanceData.error
+                  : `${balanceData.error || 'Cached error'} (retry in ${Math.max(0, Math.ceil((backoffMs - elapsed) / 1000))}s)`,
+              }
+            : null,
+        canFetch,
       };
     }
-    
+
+    // Can fetch if rate limit has passed
+    const canFetch = elapsed >= rateLimit;
+
+    // Return cached data if not too stale (5 minutes max)
+    if (elapsed < 300000 && balanceData) {
+      return {
+        data: {
+          ...balanceData,
+          error: canFetch ? undefined : `Cached ${Math.round(elapsed / 1000)}s ago (rate limited)`,
+        },
+        canFetch,
+      };
+    }
+
     return { data: null, canFetch: true };
   } catch {
     return { data: null, canFetch: true };
@@ -300,16 +331,18 @@ function cleanKrakenAsset(krakenName: string): string {
 
 async function fetchKrakenBalances(apiKey: string, apiSecret: string): Promise<ExchangeBalance> {
   try {
-    const nonce = Date.now() * 1000;
+    // Kraken requires a strictly increasing integer nonce.
+    // Using nanosecond-scale BigInt reduces collision risk under concurrent calls.
+    const nonce = (BigInt(Date.now()) * 1000000n).toString();
     const path = '/0/private/Balance';
     const postData = `nonce=${nonce}`;
-    
+
     const encoder = new TextEncoder();
     const secretDecoded = Uint8Array.from(atob(apiSecret), c => c.charCodeAt(0));
-    
+
     const sha256Hash = await crypto.subtle.digest('SHA-256', encoder.encode(nonce + postData));
     const message = new Uint8Array([...encoder.encode(path), ...new Uint8Array(sha256Hash)]);
-    
+
     const hmacKey = await crypto.subtle.importKey('raw', secretDecoded, { name: 'HMAC', hash: 'SHA-512' }, false, ['sign']);
     const signature = await crypto.subtle.sign('HMAC', hmacKey, message);
     const signatureB64 = btoa(String.fromCharCode(...new Uint8Array(signature)));

@@ -5,7 +5,7 @@
  * Fetches real user balances from all connected exchanges
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 
 export interface AssetBalance {
@@ -41,7 +41,9 @@ export function useUserBalances(autoRefresh: boolean = true, refreshInterval: nu
     error: null,
     lastUpdated: null
   });
-  const [fetchCount, setFetchCount] = useState(0);
+
+  // Keep a stable counter without re-creating the fetch function (prevents runaway loops)
+  const fetchCountRef = useRef(0);
 
   const fetchBalances = useCallback(async () => {
     try {
@@ -51,7 +53,7 @@ export function useUserBalances(autoRefresh: boolean = true, refreshInterval: nu
         setState(prev => ({ ...prev, isLoading: false }));
         return;
       }
-      
+
       setState(prev => ({ ...prev, isLoading: true, error: null }));
 
       const { data, error } = await supabase.functions.invoke('get-user-balances', {
@@ -65,9 +67,11 @@ export function useUserBalances(autoRefresh: boolean = true, refreshInterval: nu
       }
 
       if (data?.success) {
-        setFetchCount(c => c + 1);
-        console.log(`[useUserBalances] Fetch #${fetchCount + 1}: $${data.totalEquityUsd?.toFixed(2)} from ${data.connectedExchanges?.length || 0} exchanges`);
-        
+        fetchCountRef.current += 1;
+        console.log(
+          `[useUserBalances] Fetch #${fetchCountRef.current}: $${data.totalEquityUsd?.toFixed(2)} from ${data.connectedExchanges?.length || 0} exchanges`
+        );
+
         setState({
           balances: data.balances || [],
           totalEquityUsd: data.totalEquityUsd || 0,
@@ -87,7 +91,7 @@ export function useUserBalances(autoRefresh: boolean = true, refreshInterval: nu
         error: err instanceof Error ? err.message : 'Unknown error'
       }));
     }
-  }, [fetchCount]);
+  }, []);
 
   // Initial fetch and auto-refresh
   useEffect(() => {
@@ -98,6 +102,43 @@ export function useUserBalances(autoRefresh: boolean = true, refreshInterval: nu
       return () => clearInterval(interval);
     }
   }, [fetchBalances, autoRefresh, refreshInterval]);
+
+  // Get consolidated assets across all exchanges
+  const getConsolidatedAssets = useCallback(() => {
+    const assetMap = new Map<string, { free: number; locked: number; usdValue: number; exchanges: string[] }>();
+
+    for (const exchange of state.balances) {
+      if (!exchange.connected) continue;
+
+      for (const asset of exchange.assets) {
+        const existing = assetMap.get(asset.asset);
+        if (existing) {
+          existing.free += asset.free;
+          existing.locked += asset.locked;
+          existing.usdValue += asset.usdValue;
+          existing.exchanges.push(exchange.exchange);
+        } else {
+          assetMap.set(asset.asset, {
+            free: asset.free,
+            locked: asset.locked,
+            usdValue: asset.usdValue,
+            exchanges: [exchange.exchange]
+          });
+        }
+      }
+    }
+
+    return Array.from(assetMap.entries())
+      .map(([asset, data]) => ({ asset, ...data }))
+      .sort((a, b) => b.usdValue - a.usdValue);
+  }, [state.balances]);
+
+  return {
+    ...state,
+    refresh: fetchBalances,
+    getConsolidatedAssets
+  };
+}
 
   // Get consolidated assets across all exchanges
   const getConsolidatedAssets = useCallback(() => {
