@@ -48,7 +48,13 @@ except ImportError:
 # ═══════════════════════════════════════════════════════════════
 # STRATEGY PARAMETERS
 # ═══════════════════════════════════════════════════════════════
-KRAKEN_FEE = 0.0026          # 0.26% per trade
+# 💰 FEE MODEL: Must match penny profit formula r = ((1 + P/A) / (1-f)²) - 1
+# where f = fee + slippage + spread per leg
+KRAKEN_FEE = 0.0040          # 0.40% taker fee (CORRECT Kraken rate)
+SLIPPAGE_PCT = 0.0020        # 0.20% estimated slippage
+SPREAD_COST_PCT = 0.0010     # 0.10% estimated spread
+# Combined rate per leg = 0.70% total
+TOTAL_FEE_RATE = KRAKEN_FEE + SLIPPAGE_PCT + SPREAD_COST_PCT
 
 TAKE_PROFIT_PCT = 2.0        # 2.0% profit target
 STOP_LOSS_PCT = 0.8          # 0.8% stop loss
@@ -508,8 +514,9 @@ class Aureon51Live:
         pos_size = self.balance * POSITION_SIZE_PCT
         if pos_size < MIN_TRADE_USD:
             return
-            
-        entry_fee = pos_size * KRAKEN_FEE
+        
+        # Entry fee uses combined rate (fee + slippage + spread) to match penny profit formula
+        entry_fee = pos_size * TOTAL_FEE_RATE
         quantity = pos_size / price
         
         ws_pair = self.convert_symbol_to_ws(symbol)
@@ -577,11 +584,15 @@ class Aureon51Live:
         """Close a position"""
         pos = self.positions.pop(symbol)
         
-        # Calculate P&L
+        # Calculate P&L using combined rate (fee + slippage + spread)
+        # This matches the penny profit formula: r = ((1 + P/A) / (1-f)²) - 1
         exit_value = pos.quantity * price
-        exit_fee = exit_value * KRAKEN_FEE
+        exit_fee = exit_value * TOTAL_FEE_RATE
         gross_pnl = exit_value - pos.entry_value
-        net_pnl = gross_pnl - pos.entry_fee - exit_fee
+        
+        # Total expenses = entry_fee + exit_fee (both use combined rate)
+        total_expenses = pos.entry_fee + exit_fee
+        net_pnl = gross_pnl - total_expenses
         
         self.total_fees += exit_fee
         self.balance += net_pnl

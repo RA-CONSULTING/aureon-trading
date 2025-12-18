@@ -1820,7 +1820,12 @@ class AureonKrakenEcosystem:
             return
         
         actual_fraction = (pos_size / self.tracker.balance) if self.tracker.balance > 0 else 0.0
-        entry_fee = pos_size * CONFIG['KRAKEN_FEE']
+        # Use combined rate (fee + slippage + spread) to match penny profit formula
+        fee_rate = CONFIG.get('KRAKEN_FEE_TAKER', CONFIG['KRAKEN_FEE'])
+        slippage = CONFIG.get('SLIPPAGE_PCT', 0.002)
+        spread = CONFIG.get('SPREAD_COST_PCT', 0.001)
+        total_rate = fee_rate + slippage + spread
+        entry_fee = pos_size * total_rate
         quantity = pos_size / price
         
         if not self.dry_run:
@@ -1840,7 +1845,7 @@ class AureonKrakenEcosystem:
             pos_size *= prime_multiplier
             pos_size = min(pos_size, available_risk, cash_available)
             quantity = pos_size / price
-            entry_fee = pos_size * CONFIG['KRAKEN_FEE']
+            entry_fee = pos_size * total_rate  # Use combined rate
         
         # Create position with swarm enhancements
         is_scout = len(self.positions) == 0  # First position becomes scout

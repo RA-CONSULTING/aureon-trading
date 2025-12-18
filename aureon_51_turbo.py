@@ -20,7 +20,14 @@ from typing import Dict, List
 # ═══════════════════════════════════════════════════════════════
 # STRATEGY PARAMETERS
 # ═══════════════════════════════════════════════════════════════
-KRAKEN_FEE = 0.0026          # 0.26% per trade
+# 💰 FEE MODEL: Must match penny profit formula r = ((1 + P/A) / (1-f)²) - 1
+# where f = fee + slippage + spread per leg
+KRAKEN_FEE = 0.0040          # 0.40% taker fee (CORRECT Kraken rate)
+SLIPPAGE_PCT = 0.0020        # 0.20% estimated slippage
+SPREAD_COST_PCT = 0.0010     # 0.10% estimated spread
+# Combined rate per leg = 0.70% total
+TOTAL_FEE_RATE = KRAKEN_FEE + SLIPPAGE_PCT + SPREAD_COST_PCT
+
 TAKE_PROFIT_PCT = 2.0        # 2.0% profit target
 STOP_LOSS_PCT = 0.8          # 0.8% stop loss
 POSITION_SIZE_PCT = 0.15     # 15% of balance per trade
@@ -143,7 +150,8 @@ class Aureon51Turbo:
             return
             
         price = self.prices.get(symbol, 0.01)
-        entry_fee = pos_size * KRAKEN_FEE
+        # Entry fee uses combined rate to match penny profit formula
+        entry_fee = pos_size * TOTAL_FEE_RATE
         quantity = pos_size / price
         
         self.positions[symbol] = Position(
@@ -184,10 +192,11 @@ class Aureon51Turbo:
         """Close a position"""
         pos = self.positions.pop(symbol)
         
-        # Calculate P&L
+        # Calculate P&L using combined rate (fee + slippage + spread)
         exit_value = pos.quantity * price
-        exit_fee = exit_value * KRAKEN_FEE
+        exit_fee = exit_value * TOTAL_FEE_RATE
         gross_pnl = exit_value - pos.entry_value
+        # Total expenses = entry_fee + exit_fee (both include slippage/spread)
         net_pnl = gross_pnl - pos.entry_fee - exit_fee
         
         self.total_fees += exit_fee

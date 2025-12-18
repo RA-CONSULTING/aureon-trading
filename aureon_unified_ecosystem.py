@@ -10752,12 +10752,18 @@ class AureonKrakenEcosystem:
                             # Calculate value
                             position_value = size * current_price
                             
+                            # Use combined rate (fee + slippage + spread) to match penny profit formula
+                            capital_fee = CONFIG.get('CAPITAL_FEE', 0.001)
+                            slippage = CONFIG.get('SLIPPAGE_PCT', 0.002)
+                            spread = CONFIG.get('SPREAD_COST_PCT', 0.001)
+                            total_rate = capital_fee + slippage + spread
+                            
                             # Create position
                             self.positions[epic] = Position(
                                 symbol=epic,
                                 entry_price=open_level,
                                 quantity=size if direction == 'BUY' else -size,  # Negative for shorts
-                                entry_fee=position_value * CONFIG.get('CAPITAL_FEE', 0.001),
+                                entry_fee=position_value * total_rate,
                                 entry_value=position_value,
                                 momentum=0.0,
                                 coherence=0.5,
@@ -10811,13 +10817,20 @@ class AureonKrakenEcosystem:
                             if symbol in self.positions:
                                 continue
                             
+                            # Use combined rate (fee + slippage + spread) to match penny profit formula
+                            alpaca_fee = CONFIG.get('ALPACA_FEE', 0.0025)
+                            slippage = CONFIG.get('SLIPPAGE_PCT', 0.002)
+                            spread = CONFIG.get('SPREAD_COST_PCT', 0.001)
+                            total_rate = alpaca_fee + slippage + spread
+                            entry_value = qty * avg_entry
+                            
                             # Create position
                             self.positions[symbol] = Position(
                                 symbol=symbol,
                                 entry_price=avg_entry,
                                 quantity=qty if side == 'long' else -qty,
-                                entry_fee=market_value * CONFIG.get('ALPACA_FEE', 0.0025),
-                                entry_value=qty * avg_entry,
+                                entry_fee=entry_value * total_rate,
+                                entry_value=entry_value,
                                 momentum=0.0,
                                 coherence=0.5,
                                 entry_time=time.time(),
@@ -12045,16 +12058,18 @@ class AureonKrakenEcosystem:
                         mem_data = self.memory.get_symbol_data(symbol) or self.memory.get_symbol_data(f"{base_asset}USDC") or self.memory.get_symbol_data(f"{base_asset}USD")
                         if mem_data and mem_data.get('last_entry_price'):
                             # Create a pseudo-position for calculation
+                            # Use combined rate (fee + slippage + spread) to match penny profit formula
+                            combined_rate = fee_rate + CONFIG.get('SLIPPAGE_PCT', 0.002) + CONFIG.get('SPREAD_COST_PCT', 0.001)
                             class PseudoPos:
-                                def __init__(self, entry_price, entry_value, entry_fee, exchange):
+                                def __init__(self, entry_price, entry_value, combined_rate, exchange):
                                     self.entry_price = entry_price
                                     self.entry_value = entry_value
-                                    self.entry_fee = entry_value * get_platform_fee(exchange, 'taker')
+                                    self.entry_fee = entry_value * combined_rate  # Uses combined rate!
                                     self.exchange = exchange
                             position_entry = PseudoPos(
                                 mem_data.get('last_entry_price', price),
                                 mem_data.get('last_entry_value', gross_value),
-                                gross_value * fee_rate,
+                                combined_rate,
                                 exchange_name
                             )
                     
@@ -12063,14 +12078,18 @@ class AureonKrakenEcosystem:
                         entry_value = getattr(position_entry, 'entry_value', gross_value)
                         entry_fee = getattr(position_entry, 'entry_fee', 0)
                         
-                        # Calculate true P&L
-                        exit_fee = gross_value * fee_rate
-                        slippage = gross_value * CONFIG.get('SLIPPAGE_PCT', 0.002)
-                        spread = gross_value * CONFIG.get('SPREAD_COST_PCT', 0.001)
+                        # Calculate true P&L using combined rate
+                        # entry_fee should already include slippage+spread if from PseudoPos
+                        # For real positions, entry_fee was set with combined rate at open_position
+                        slippage = CONFIG.get('SLIPPAGE_PCT', 0.002)
+                        spread = CONFIG.get('SPREAD_COST_PCT', 0.001)
+                        combined_rate = fee_rate + slippage + spread
+                        exit_fee = gross_value * combined_rate
                         
                         gross_pnl = gross_value - entry_value
-                        total_fees = entry_fee + exit_fee + slippage + spread
-                        net_pnl = gross_pnl - total_fees
+                        # Total expenses = entry_fee + exit_fee (both use combined rate)
+                        total_expenses = entry_fee + exit_fee
+                        net_pnl = gross_pnl - total_expenses
                         
                         # 💰 Only harvest if NET PROFIT is positive (penny profit!)
                         if net_pnl < 0.01:  # Need at least 1 cent net profit
