@@ -1184,6 +1184,258 @@ class MonteCarloETASimulator:
 MC_SIMULATOR = MonteCarloETASimulator(num_simulations=100)
 
 
+class DominoEffectEngine:
+    """
+    🎲🎯 DOMINO EFFECT ENGINE - Chain Reaction Probability Boost
+    
+    When one position hits penny profit gate, it can trigger a cascade:
+    - Related assets (same sector/correlation) get probability boost
+    - Win momentum ripples through the portfolio
+    - Identifies which positions are likely to "fall" next
+    
+    Only enhances if domino effect improves prediction.
+    "When the first domino falls, calculate which ones follow."
+    
+    Math:
+    - Track correlation between position movements
+    - When position A profits, boost probability for correlated positions
+    - Decay effect over time if no follow-through
+    """
+    
+    def __init__(self):
+        # Correlation tracking
+        self.correlation_matrix: Dict[str, Dict[str, float]] = {}  # symbol -> {other_symbol: correlation}
+        self.recent_kills: List[Dict] = []  # Recent successful exits
+        self.kill_chain_decay = 0.9  # Decay per cycle without kill
+        self.kill_chain_boost = 1.25  # Boost multiplier per kill in chain
+        
+        # Domino state per symbol
+        self.domino_boost: Dict[str, float] = {}  # symbol -> current domino boost
+        self.domino_active: Dict[str, bool] = {}  # symbol -> is domino effect active
+        
+        # Asset groupings (for correlation inference)
+        self.asset_groups = {
+            'btc_ecosystem': ['BTC', 'WBTC', 'RBTC'],
+            'eth_ecosystem': ['ETH', 'WETH', 'STETH', 'RETH'],
+            'defi': ['UNI', 'AAVE', 'LINK', 'MKR', 'COMP', 'CRV', 'SNX'],
+            'layer2': ['MATIC', 'ARB', 'OP', 'IMX', 'STRK'],
+            'memes': ['DOGE', 'SHIB', 'PEPE', 'FLOKI', 'BONK'],
+            'ai': ['FET', 'OCEAN', 'AGIX', 'RNDR', 'TAO'],
+            'gaming': ['AXS', 'SAND', 'MANA', 'ENJ', 'GALA', 'IMX'],
+            'stable_pairs': ['USDT', 'USDC', 'DAI', 'TUSD'],
+        }
+        
+        # Kill history for pattern learning
+        self.kill_sequence: List[Tuple[str, float, float]] = []  # (symbol, timestamp, pnl)
+        
+    def _get_base_symbol(self, symbol: str) -> str:
+        """Extract base asset from trading pair."""
+        for suffix in ['USD', 'USDT', 'USDC', 'EUR', 'GBP', 'BTC', 'ETH']:
+            if symbol.endswith(suffix):
+                return symbol[:-len(suffix)]
+        return symbol[:4]  # Fallback
+    
+    def _get_asset_group(self, symbol: str) -> str:
+        """Find which group an asset belongs to."""
+        base = self._get_base_symbol(symbol)
+        for group_name, assets in self.asset_groups.items():
+            if base in assets:
+                return group_name
+        return 'other'
+    
+    def _calculate_correlation(self, symbol1: str, symbol2: str) -> float:
+        """
+        Calculate implied correlation between two symbols.
+        Based on asset group membership and historical co-movement.
+        """
+        base1 = self._get_base_symbol(symbol1)
+        base2 = self._get_base_symbol(symbol2)
+        
+        # Same base asset = perfect correlation
+        if base1 == base2:
+            return 1.0
+        
+        # Same group = high correlation
+        group1 = self._get_asset_group(symbol1)
+        group2 = self._get_asset_group(symbol2)
+        
+        if group1 == group2 and group1 != 'other':
+            return 0.7  # 70% correlation for same-group assets
+        
+        # Cross-group correlations
+        cross_correlations = {
+            ('btc_ecosystem', 'eth_ecosystem'): 0.5,
+            ('btc_ecosystem', 'defi'): 0.4,
+            ('eth_ecosystem', 'defi'): 0.6,
+            ('eth_ecosystem', 'layer2'): 0.65,
+            ('defi', 'layer2'): 0.5,
+            ('memes', 'memes'): 0.8,
+            ('ai', 'ai'): 0.6,
+        }
+        
+        pair = tuple(sorted([group1, group2]))
+        if pair in cross_correlations:
+            return cross_correlations[pair]
+        
+        # Default low correlation
+        return 0.2
+    
+    def record_kill(self, symbol: str, pnl: float, exchange: str = 'kraken'):
+        """
+        Record a successful kill - triggers domino effect for correlated positions.
+        """
+        now = time.time()
+        
+        # Store kill in sequence
+        self.kill_sequence.append((symbol, now, pnl))
+        if len(self.kill_sequence) > 50:
+            self.kill_sequence.pop(0)
+        
+        # Add to recent kills
+        self.recent_kills.append({
+            'symbol': symbol,
+            'exchange': exchange,
+            'pnl': pnl,
+            'timestamp': now
+        })
+        if len(self.recent_kills) > 10:
+            self.recent_kills.pop(0)
+        
+        # Calculate domino boost for all other symbols
+        base = self._get_base_symbol(symbol)
+        for stored_symbol in list(self.domino_boost.keys()):
+            if stored_symbol != symbol:
+                correlation = self._calculate_correlation(symbol, stored_symbol)
+                # Boost = base boost * correlation * (1 + pnl factor)
+                pnl_factor = min(1.0, max(0.1, pnl / 0.01))  # Scale by profit size
+                boost = self.kill_chain_boost * correlation * pnl_factor
+                
+                if boost > 1.05:  # Only apply meaningful boosts
+                    current = self.domino_boost.get(stored_symbol, 1.0)
+                    self.domino_boost[stored_symbol] = min(2.0, current * boost)
+                    self.domino_active[stored_symbol] = True
+        
+        # Debug logging (silent by default)
+        # print(f"🎲 DOMINO: Kill on {symbol} triggers chain reaction")
+    
+    def get_domino_boost(self, symbol: str) -> Tuple[float, bool]:
+        """
+        Get current domino boost for a symbol.
+        
+        Returns:
+            (boost_multiplier, is_enhanced)
+        """
+        # Initialize if not tracked
+        if symbol not in self.domino_boost:
+            self.domino_boost[symbol] = 1.0
+            self.domino_active[symbol] = False
+        
+        boost = self.domino_boost.get(symbol, 1.0)
+        active = self.domino_active.get(symbol, False)
+        
+        # Check if there's a recent kill chain
+        recent_kill_boost = self._calculate_recent_kill_chain_boost(symbol)
+        if recent_kill_boost > boost:
+            boost = recent_kill_boost
+            active = True
+        
+        # Only return enhanced if boost is meaningful
+        return (boost, active and boost > 1.05)
+    
+    def _calculate_recent_kill_chain_boost(self, symbol: str) -> float:
+        """Calculate boost from recent kill chain."""
+        if not self.recent_kills:
+            return 1.0
+        
+        now = time.time()
+        boost = 1.0
+        
+        for kill in self.recent_kills:
+            age = now - kill['timestamp']
+            if age > 300:  # 5 minute window
+                continue
+            
+            # Time decay
+            time_factor = 1.0 - (age / 300)
+            
+            # Correlation with killed symbol
+            correlation = self._calculate_correlation(symbol, kill['symbol'])
+            
+            # Boost contribution
+            kill_boost = 1.0 + (self.kill_chain_boost - 1.0) * correlation * time_factor
+            boost *= kill_boost
+        
+        return min(2.0, boost)  # Cap at 2x
+    
+    def decay_all(self):
+        """Apply decay to all domino boosts - call each cycle."""
+        for symbol in list(self.domino_boost.keys()):
+            current = self.domino_boost[symbol]
+            if current > 1.0:
+                self.domino_boost[symbol] = max(1.0, current * self.kill_chain_decay)
+                if self.domino_boost[symbol] <= 1.02:
+                    self.domino_active[symbol] = False
+    
+    def get_chain_probability(self, symbols: List[str]) -> Dict[str, float]:
+        """
+        Get chain reaction probability for multiple positions.
+        Identifies which positions are likely to "fall" next after a kill.
+        """
+        probs = {}
+        
+        for symbol in symbols:
+            boost, active = self.get_domino_boost(symbol)
+            if active:
+                # Convert boost to probability increase
+                prob_boost = (boost - 1.0) * 0.2  # 2x boost = +20% probability
+                probs[symbol] = min(0.3, prob_boost)  # Cap at +30%
+            else:
+                probs[symbol] = 0.0
+        
+        return probs
+    
+    def get_next_domino(self, positions: Dict[str, float]) -> Optional[str]:
+        """
+        Predict which position is most likely to hit penny profit next based on domino effect.
+        
+        Args:
+            positions: Dict of symbol -> current probability of kill
+            
+        Returns:
+            Symbol most likely to fall next, or None
+        """
+        if not positions:
+            return None
+        
+        best_symbol = None
+        best_combined = 0.0
+        
+        for symbol, base_prob in positions.items():
+            boost, active = self.get_domino_boost(symbol)
+            combined = base_prob * boost
+            
+            if combined > best_combined:
+                best_combined = combined
+                best_symbol = symbol
+        
+        return best_symbol
+    
+    def display_chain_status(self):
+        """Display current domino chain status."""
+        active_count = sum(1 for v in self.domino_active.values() if v)
+        if active_count == 0:
+            return
+        
+        print(f"   🎲 DOMINO CHAIN: {active_count} positions with boost")
+        for symbol, boost in sorted(self.domino_boost.items(), key=lambda x: -x[1])[:3]:
+            if boost > 1.05:
+                print(f"      → {symbol}: {boost:.2f}x boost")
+
+
+# Global Domino Effect engine instance
+DOMINO_ENGINE = DominoEffectEngine()
+
+
 class ActiveKillScanner:
     """
     🎯⚡ ACTIVE KILL SCANNER - The Intelligent Hunting System ⚡🎯
@@ -1564,6 +1816,15 @@ class ActiveKillScanner:
             # Weighted average: 60% MC, 40% base (MC is typically more accurate)
             base_probability = 0.6 * target.mc_probability + 0.4 * base_probability
         
+        # 🎲🔗 DOMINO EFFECT BOOST - Chain reactions between correlated positions
+        domino_boost, domino_active = DOMINO_ENGINE.get_domino_boost(target.symbol)
+        if domino_active and domino_boost > 1.0:
+            # Domino provides probability lift when correlated assets are winning
+            base_probability = min(0.99, base_probability * domino_boost)
+            target.domino_boost = domino_boost
+        else:
+            target.domino_boost = 1.0
+        
         # 🧠 ADAPTIVE LEARNING BOOST - Based on historical patterns
         learned_boost = self._get_learned_probability_boost(target)
         
@@ -1605,10 +1866,16 @@ class ActiveKillScanner:
             'mc_eta_median': target.mc_eta_median if mc_enhanced else float('inf'),
             'mc_eta_p10': target.mc_eta_p10 if mc_enhanced else float('inf'),
             'mc_eta_p90': target.mc_eta_p90 if mc_enhanced else float('inf'),
+            # 🎲🔗 Domino Effect metrics
+            'domino_boost': getattr(target, 'domino_boost', 1.0),
+            'domino_active': domino_active,
+            'domino_chain_length': len(DOMINO_ENGINE.kill_chain),
         }
         
         # 🎯 CHECK FOR KILL - The moment of truth!
         if target.current_pnl >= target.win_threshold:
+            # 🎲🔗 Record kill in domino chain for cascade effect
+            DOMINO_ENGINE.record_kill(target.symbol, target.current_pnl)
             verdict = f"🎯⚡ KILL READY! {target.symbol} | P&L: ${target.current_pnl:.4f} >= ${target.win_threshold:.4f} | CASCADE: {cascade_mult:.2f}x"
             return (True, verdict, metrics)
         

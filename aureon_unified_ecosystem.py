@@ -17995,6 +17995,15 @@ class AureonKrakenEcosystem:
                         except:
                             pass
                         
+                        # 🔗 Domino chain indicator
+                        try:
+                            from ira_sniper_mode import DOMINO_ENGINE
+                            domino_boost, domino_active = DOMINO_ENGINE.get_domino_boost(symbol)
+                            if domino_active and domino_boost > 1.0:
+                                ladders.append(f'🔗↑')  # Domino chain boost active
+                        except:
+                            pass
+                        
                         # P&L color indicator
                         pnl_icon = "🟢" if pnl_val > 0 else "🔴" if pnl_val < 0 else "⚪"
                         
@@ -18008,7 +18017,7 @@ class AureonKrakenEcosystem:
                         print(f"      {icon}{asset:6s} │ {exch:3s} │ ${entry_val:>9.2f} │ {pnl_icon}${pnl_val:>+9.4f} │ {hold_str:>5s} │ {eta_full:>10s} │ {ladder_str}")
                     
                     print(f"   {'─'*95}")
-                    print(f"   🪜 Ladders: 🧠Brain 🔮Matrix 🎵HNC 📈Momentum 🎲MonteCarlo  (↑)=faster (↓)=slower")
+                    print(f"   🪜 Ladders: 🧠Brain 🔮Matrix 🎵HNC 📈Momentum 🎲MonteCarlo 🔗Domino  (↑)=faster (↓)=slower")
                         
                 # Stats
                 rt_count = len(self.realtime_prices)
