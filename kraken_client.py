@@ -151,6 +151,25 @@ class KrakenClient:
                 seen.add(a)
         return out
 
+    def _resolve_pair(self, symbol: str) -> Tuple[str | None, Dict[str, Any] | None]:
+        """
+        Try to resolve a human-friendly symbol (e.g., 'PEPEUSD', 'ada/usdt')
+        to Kraken's internal pair code and return the associated pair info.
+        """
+        pairs = self._load_asset_pairs()
+        normalized = symbol.replace("/", "").upper()
+        candidates = [normalized, *self._normalize_symbol(normalized)]
+
+        # Include Kraken-style prefixed forms that sometimes appear in configs
+        if normalized in self._int_to_alt:
+            candidates.append(normalized)
+
+        for cand in candidates:
+            internal = self._alt_to_int.get(cand) or (cand if cand in pairs else None)
+            if internal and internal in pairs:
+                return internal, pairs[internal]
+        return None, None
+
     def exchange_info(self, symbol: str | None = None) -> Dict[str, Any]:
         """
         Return a Binance-like exchangeInfo structure using Kraken AssetPairs.
@@ -216,19 +235,7 @@ class KrakenClient:
         Returns dict with: min_qty, step_size, min_notional
         """
         pairs = self._load_asset_pairs()
-        
-        # Try to find the pair by altname first
-        pair_info = None
-        for internal, info in pairs.items():
-            if info.get("altname") == symbol or internal == symbol:
-                pair_info = info
-                break
-        
-        # Also try the _alt_to_int mapping
-        if pair_info is None and symbol in self._alt_to_int:
-            internal = self._alt_to_int[symbol]
-            pair_info = pairs.get(internal, {})
-        
+        pair, pair_info = self._resolve_pair(symbol)
         if not pair_info:
             return {}
         
@@ -262,10 +269,9 @@ class KrakenClient:
         
         internal_names = []
         for a in altnames:
-            if a in self._alt_to_int:
-                internal_names.append(self._alt_to_int[a])
-            elif a in self._int_to_alt:
-                internal_names.append(a)
+            pair, _ = self._resolve_pair(a)
+            if pair:
+                internal_names.append(pair)
             # Else skip unknown pair to prevent API error
             
         if not internal_names:
@@ -303,19 +309,8 @@ class KrakenClient:
         - lastPrice, priceChangePercent, quoteVolume
         """
         pairs = self._load_asset_pairs()
-        # Focus on common quote assets
-        alts: List[str] = []
-        for internal, info in pairs.items():
-            alt = info.get("altname") or internal
-            wsname = info.get("wsname", "")
-            # Prefer quotes that align with Aureon config
-            # Expanded to include more Kraken pairs if needed, but keeping focus on liquid quotes
-            if any(alt.endswith(q) for q in ["USDC", "USDT", "USD", "EUR", "BTC", "XBT", "ETH", "GBP", "AUD", "CAD", "JPY"]):
-                alts.append(alt)
-            elif "/" in wsname and wsname.split("/")[-1] in ["USDC", "USDT", "USD", "EUR", "BTC", "XBT", "ETH", "GBP", "AUD", "CAD", "JPY"]:
-                alts.append(alt)
-        # De-duplicate and trim overly large lists to be kind to Kraken API
-        alts = sorted(set(alts))
+        # Include *all* listed asset pairs to cover every Kraken market, including alt coins
+        alts = sorted({info.get("altname") or internal for internal, info in pairs.items()})
         out = []
         # Batch in chunks of 40
         for i in range(0, len(alts), 40):
@@ -451,26 +446,10 @@ class KrakenClient:
         if self.dry_run:
             return {"dryRun": True, "symbol": symbol, "side": side, "quantity": quantity, "quoteQty": quote_qty}
         
-        # Resolve pair and get pair info for validation
-        pairs = self._load_asset_pairs()
-        
-        # 🔧 BTC→XBT normalization for Kraken (they use XBT not BTC!)
-        sym_upper = symbol.upper()
-        if sym_upper.startswith('BTC'):
-            xbt_symbol = 'XBT' + sym_upper[3:]
-            pair = self._alt_to_int.get(xbt_symbol) or self._alt_to_int.get(sym_upper, sym_upper)
-        else:
-            pair = self._alt_to_int.get(sym_upper, sym_upper)
-        
-        # Get pair info for ordermin and lot_decimals
-        pair_info = pairs.get(pair, {})
-        if not pair_info:
-            # Try to find by altname
-            for internal, info in pairs.items():
-                if info.get("altname") == symbol:
-                    pair_info = info
-                    pair = internal
-                    break
+        # Resolve pair and get pair info for validation across *all* Kraken markets
+        pair, pair_info = self._resolve_pair(symbol)
+        if not pair or not pair_info:
+            raise RuntimeError(f"Unknown Kraken trading pair: {symbol}")
         
         ordermin = float(pair_info.get("ordermin", 0.0001))
         lot_decimals = int(pair_info.get("lot_decimals", 8))
