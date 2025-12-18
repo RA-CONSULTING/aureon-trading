@@ -214,6 +214,10 @@ from ira_sniper_mode import (
     # 🧠⛏️ LEARNING & MINER INTEGRATION
     sync_scanner_with_cascade,
     get_scanner_learning_stats,
+    # 🍄 MYCELIUM STATE AGGREGATOR - Unified Intelligence Network
+    get_mycelium_aggregator,
+    mycelium_sync,
+    register_to_mycelium,
 )
 
 try:
@@ -5687,6 +5691,12 @@ class AdaptiveLearningEngine:
 # Global adaptive learning instance
 ADAPTIVE_LEARNER = AdaptiveLearningEngine()
 
+# 🍄 Register ADAPTIVE_LEARNER with Mycelium Network
+try:
+    register_to_mycelium('learner', ADAPTIVE_LEARNER)
+except Exception as e:
+    print(f"   ⚠️ Could not register learner to mycelium: {e}")
+
 
 def sync_exchange_trades_to_brain():
     """
@@ -6643,6 +6653,12 @@ class CascadeAmplifier:
 
 # Global cascade amplifier instance
 CASCADE_AMPLIFIER = CascadeAmplifier()
+
+# 🍄 Register CASCADE_AMPLIFIER with Mycelium Network
+try:
+    register_to_mycelium('cascade', CASCADE_AMPLIFIER)
+except Exception as e:
+    print(f"   ⚠️ Could not register cascade to mycelium: {e}")
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -10543,6 +10559,11 @@ class AureonKrakenEcosystem:
             try:
                 self.patriot_deployer = PatriotScoutDeployer(ecosystem=self)
                 print("   🇮🇪 Irish Patriot Scout Deployer ACTIVE")
+                # 🍄 Register Patriots with Mycelium Network
+                try:
+                    register_to_mycelium('patriots', self.patriot_deployer.network)
+                except Exception:
+                    pass  # Mycelium resilient
             except Exception as e:
                 print(f"   ⚠️ Patriot Deployer init failed: {e}")
         
@@ -10552,6 +10573,11 @@ class AureonKrakenEcosystem:
             try:
                 self.celtic_sniper = IraCelticSniper(dry_run=self.dry_run)
                 print("   🎯 IRA Celtic Sniper ACTIVE (Zero Loss Mode)")
+                # 🍄 Register Celtic Sniper with Mycelium Network
+                try:
+                    register_to_mycelium('warfare', self.celtic_sniper)
+                except Exception:
+                    pass  # Mycelium resilient
             except Exception as e:
                 print(f"   ⚠️ Celtic Sniper init failed: {e}")
         
@@ -10571,6 +10597,18 @@ class AureonKrakenEcosystem:
                     print(f"   📜 \"{wisdom}\"")
                 except:
                     pass
+        
+        # 🍄 MYCELIUM STATE AGGREGATOR - Unified Intelligence Flow
+        try:
+            mycelium = get_mycelium_aggregator()
+            mycelium_systems = len(mycelium.systems)
+            mycelium_synapses = len(mycelium.synapses)
+            if mycelium_systems > 0:
+                print(f"   🍄 MYCELIUM NETWORK: {mycelium_systems} systems connected via {mycelium_synapses} synapses")
+                # Initial sync to establish connections
+                mycelium_sync()
+        except Exception:
+            pass  # Mycelium loads silently
         
         # 🌐⚡ GLOBAL HARMONIC FIELD - 42 Sources → 7 Layers → Ω ⚡🌐
         # The Ultimate Unified Field that ties ALL data sources together
@@ -15607,6 +15645,12 @@ class AureonKrakenEcosystem:
                     )
                 except Exception:
                     pass  # CASCADE_AMPLIFIER might not be initialized yet
+                
+                # 🍄 MYCELIUM NETWORK PULSE - Unified Intelligence Flow
+                try:
+                    mycelium_sync()  # Synchronize all systems through the fungal network
+                except Exception:
+                    pass  # Mycelium resilient - continues if any system offline
                 
                 scan_results = scan_sniper_targets(price_getter)
                 

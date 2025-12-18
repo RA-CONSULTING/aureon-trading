@@ -88,6 +88,431 @@ except ImportError:
     PATRIOTS_WIRED = False
     PatriotScoutNetwork = None
 
+# Wire Mycelium Network
+try:
+    from aureon_mycelium import MyceliumNetwork, Synapse, Neuron
+    MYCELIUM_WIRED = True
+except ImportError:
+    MYCELIUM_WIRED = False
+    MyceliumNetwork = None
+
+
+# =============================================================================
+# 🍄 MYCELIUM STATE AGGREGATOR - UNIFIED INTELLIGENCE NETWORK 🍄
+# =============================================================================
+"""
+The Mycelium State Aggregator connects all trading systems like fungal networks
+connect trees in a forest. Information flows bidirectionally through synapses,
+ensuring that every system benefits from the collective intelligence.
+
+ARCHITECTURE:
+═══════════════════════════════════════════════════════════════════════════════
+
+                    ┌─────────────────────────────────────────┐
+                    │    🍄 MYCELIUM STATE AGGREGATOR 🍄      │
+                    │     (Central Intelligence Hub)          │
+                    └─────────────────┬───────────────────────┘
+                                      │
+        ┌─────────────────────────────┼─────────────────────────────┐
+        │                             │                             │
+        │    SYNAPSES (Bidirectional Data Flow)                     │
+        │                             │                             │
+   ┌────▼────┐   ┌────▼────┐    ┌────▼────┐    ┌────▼────┐   ┌────▼────┐
+   │ SCANNER │   │PATRIOTS │    │LEARNER  │    │CASCADE  │   │WARFARE  │
+   │ Kill    │◄──►Irish    │◄──►Adaptive │◄──►Amplifier│◄──►Celtic   │
+   │ Scanner │   │ Scouts  │    │Learning │    │  ⛏️     │   │Systems  │
+   └────┬────┘   └────┬────┘    └────┬────┘    └────┬────┘   └────┬────┘
+        │             │              │              │              │
+        └─────────────┴──────────────┴──────────────┴──────────────┘
+                                      │
+                    ┌─────────────────▼───────────────────────┐
+                    │       UNIFIED STATE OUTPUT              │
+                    │  (Cascade × κt × Lighthouse × Learning) │
+                    └─────────────────────────────────────────┘
+
+SYNAPSE TYPES:
+- Kill Scanner → Patriots: Share velocity/momentum predictions
+- Patriots → Scanner: Feed back successful kill patterns
+- Learner → All: Distribute learned thresholds
+- Cascade → All: Amplification factors propagate
+- Warfare → All: Celtic tactical intelligence
+
+UNITY PRINCIPLE: "What one knows, all know. What one learns, all learn."
+"""
+
+@dataclass
+class MyceliumSynapse:
+    """
+    A synapse in the Mycelium network - carries intelligence between systems.
+    """
+    source: str          # Source system name
+    target: str          # Target system name
+    weight: float = 1.0  # Signal strength (learned)
+    plasticity: float = 0.1  # Learning rate
+    last_signal: Any = None  # Last transmitted data
+    transmissions: int = 0   # Total transmissions
+    
+    def transmit(self, data: Any) -> Any:
+        """Transmit data through synapse with weight modulation."""
+        self.last_signal = data
+        self.transmissions += 1
+        # For numeric data, apply weight
+        if isinstance(data, (int, float)):
+            return data * self.weight
+        return data
+    
+    def strengthen(self, reward: float = 0.1):
+        """Strengthen synapse after successful intelligence use."""
+        self.weight = min(2.0, self.weight + self.plasticity * reward)
+    
+    def weaken(self, penalty: float = 0.05):
+        """Weaken synapse after failed intelligence use."""
+        self.weight = max(0.1, self.weight - self.plasticity * penalty)
+
+
+class MyceliumStateAggregator:
+    """
+    🍄 MYCELIUM STATE AGGREGATOR 🍄
+    
+    The underground network where ALL intelligence connects.
+    Ensures unified data flow between all Celtic warfare systems.
+    
+    CONNECTED SYSTEMS:
+    - Active Kill Scanner (P&L velocity, momentum, ETA)
+    - Irish Patriot Scouts (Celtic warriors, coordinated strikes)
+    - Adaptive Learning Engine (historical patterns, threshold optimization)
+    - Cascade Amplifier (miner's 546x power)
+    - Celtic Warfare (guerrilla, preemptive, multi-battlefront)
+    """
+    
+    def __init__(self):
+        # Registered systems
+        self.systems: Dict[str, Any] = {}
+        
+        # Synapses between systems
+        self.synapses: Dict[str, MyceliumSynapse] = {}
+        
+        # Unified state (aggregated from all systems)
+        self.unified_state: Dict[str, Any] = {
+            # 🎯 Kill Scanner State
+            'kills_executed': 0,
+            'total_pnl': 0.0,
+            'avg_kill_time': 30.0,
+            'avg_kill_velocity': 0.002,
+            'active_targets': 0,
+            
+            # ☘️ Irish Patriots State
+            'patriots_deployed': 0,
+            'patriot_kills': 0,
+            'patriot_profit': 0.0,
+            
+            # 🧠 Adaptive Learning State
+            'momentum_success_rate': {},
+            'learned_thresholds': {},
+            'trade_history_count': 0,
+            
+            # ⛏️ Cascade Amplifier State
+            'cascade_factor': 1.0,
+            'kappa_t': 1.0,
+            'lighthouse_gamma': 0.5,
+            'consecutive_kills': 0,
+            
+            # ⚔️ Celtic Warfare State
+            'battlefronts_active': 0,
+            'guerrilla_mode': 'STANDARD',
+            'preemptive_signals': 0,
+            'war_strategy_go': True,
+            
+            # 🍄 Mycelium Meta
+            'last_sync': 0.0,
+            'sync_count': 0,
+            'systems_connected': 0,
+        }
+        
+        # Initialize standard synapses
+        self._create_standard_synapses()
+        
+    def _create_standard_synapses(self):
+        """Create the standard synapse network between systems."""
+        # Define all system connections (bidirectional)
+        connections = [
+            ('scanner', 'patriots'),
+            ('scanner', 'learner'),
+            ('scanner', 'cascade'),
+            ('patriots', 'learner'),
+            ('patriots', 'cascade'),
+            ('patriots', 'warfare'),
+            ('learner', 'cascade'),
+            ('warfare', 'scanner'),
+            ('warfare', 'learner'),
+            ('cascade', 'warfare'),
+        ]
+        
+        for source, target in connections:
+            # Create bidirectional synapses
+            key_forward = f"{source}->{target}"
+            key_reverse = f"{target}->{source}"
+            
+            self.synapses[key_forward] = MyceliumSynapse(source=source, target=target)
+            self.synapses[key_reverse] = MyceliumSynapse(source=target, target=source)
+    
+    def register_system(self, name: str, system: Any):
+        """Register a system to the mycelium network."""
+        self.systems[name] = system
+        self.unified_state['systems_connected'] = len(self.systems)
+        print(f"   🍄 Mycelium: {name} connected to network")
+    
+    def transmit(self, source: str, target: str, data: Any) -> Any:
+        """Transmit data through a synapse between systems."""
+        key = f"{source}->{target}"
+        if key in self.synapses:
+            return self.synapses[key].transmit(data)
+        return data
+    
+    def strengthen_synapse(self, source: str, target: str, reward: float = 0.1):
+        """Strengthen a synapse after successful intelligence use."""
+        key = f"{source}->{target}"
+        if key in self.synapses:
+            self.synapses[key].strengthen(reward)
+    
+    def sync_all(self):
+        """
+        🍄 FULL MYCELIUM SYNC 🍄
+        
+        Pull state from all connected systems and aggregate.
+        Then push unified state back to all systems.
+        
+        This is the heartbeat of the network.
+        """
+        now = time.time()
+        
+        # ═══════════════════════════════════════════════════════════════════
+        # PHASE 1: COLLECT - Pull from all systems
+        # ═══════════════════════════════════════════════════════════════════
+        
+        # Collect from Kill Scanner
+        if 'scanner' in self.systems:
+            scanner = self.systems['scanner']
+            self.unified_state['kills_executed'] = getattr(scanner, 'kills_executed', 0)
+            self.unified_state['total_pnl'] = getattr(scanner, 'total_pnl', 0.0)
+            self.unified_state['avg_kill_time'] = getattr(scanner, 'avg_kill_time', 30.0)
+            self.unified_state['avg_kill_velocity'] = getattr(scanner, 'avg_kill_velocity', 0.002)
+            self.unified_state['active_targets'] = len(getattr(scanner, 'targets', {}))
+            
+            # Get cascade state from scanner
+            scanner_cascade = getattr(scanner, 'cascade_factor', 1.0)
+            scanner_kappa = getattr(scanner, 'kappa_t', 1.0)
+            if scanner_cascade > self.unified_state['cascade_factor']:
+                self.unified_state['cascade_factor'] = scanner_cascade
+            if scanner_kappa > self.unified_state['kappa_t']:
+                self.unified_state['kappa_t'] = scanner_kappa
+        
+        # Collect from Patriots
+        if 'patriots' in self.systems:
+            patriots = self.systems['patriots']
+            self.unified_state['patriots_deployed'] = len(getattr(patriots, 'scouts', {}))
+            self.unified_state['patriot_kills'] = getattr(patriots, 'total_kills', 0)
+            self.unified_state['patriot_profit'] = getattr(patriots, 'total_profit', 0.0)
+            
+            # Patriots may have their own cascade state
+            patriot_cascade = getattr(patriots, 'cascade_factor', 1.0)
+            patriot_kappa = getattr(patriots, 'kappa_t', 1.0)
+            if patriot_cascade > self.unified_state['cascade_factor']:
+                self.unified_state['cascade_factor'] = patriot_cascade
+            if patriot_kappa > self.unified_state['kappa_t']:
+                self.unified_state['kappa_t'] = patriot_kappa
+        
+        # Collect from Learner
+        if 'learner' in self.systems:
+            learner = self.systems['learner']
+            self.unified_state['momentum_success_rate'] = getattr(learner, 'momentum_success_rate', {})
+            self.unified_state['learned_thresholds'] = getattr(learner, 'optimized_thresholds', {})
+            self.unified_state['trade_history_count'] = len(getattr(learner, 'trade_history', []))
+        
+        # Collect from Cascade Amplifier
+        if 'cascade' in self.systems:
+            cascade = self.systems['cascade']
+            self.unified_state['cascade_factor'] = max(
+                self.unified_state['cascade_factor'],
+                getattr(cascade, 'cascade_factor', 1.0)
+            )
+            self.unified_state['kappa_t'] = max(
+                self.unified_state['kappa_t'],
+                getattr(cascade, 'kappa_t', 1.0)
+            )
+            self.unified_state['lighthouse_gamma'] = getattr(cascade, 'lighthouse_gamma', 0.5)
+            self.unified_state['consecutive_kills'] = max(
+                self.unified_state['consecutive_kills'],
+                getattr(cascade, 'consecutive_kills', 0)
+            )
+        
+        # Collect from Celtic Warfare systems
+        if 'warfare' in self.systems:
+            warfare = self.systems['warfare']
+            if hasattr(warfare, 'get_status'):
+                status = warfare.get_status()
+                self.unified_state['battlefronts_active'] = status.get('battlefronts', 0)
+                self.unified_state['guerrilla_mode'] = status.get('mode', 'STANDARD')
+        
+        # ═══════════════════════════════════════════════════════════════════
+        # PHASE 2: AGGREGATE - Compute unified metrics
+        # ═══════════════════════════════════════════════════════════════════
+        
+        # Combined kill count
+        total_kills = self.unified_state['kills_executed'] + self.unified_state['patriot_kills']
+        
+        # Combined profit
+        total_profit = self.unified_state['total_pnl'] + self.unified_state['patriot_profit']
+        
+        # Unified cascade multiplier (maximum across all systems)
+        # This ensures all systems benefit from the highest amplification
+        
+        # ═══════════════════════════════════════════════════════════════════
+        # PHASE 3: DISTRIBUTE - Push unified state back to all systems
+        # ═══════════════════════════════════════════════════════════════════
+        
+        # Push cascade state to Scanner
+        if 'scanner' in self.systems:
+            scanner = self.systems['scanner']
+            if hasattr(scanner, 'sync_from_cascade_amplifier'):
+                scanner.sync_from_cascade_amplifier(
+                    self.unified_state['cascade_factor'],
+                    self.unified_state['kappa_t'],
+                    self.unified_state['lighthouse_gamma']
+                )
+        
+        # Push cascade state to Patriots
+        if 'patriots' in self.systems:
+            patriots = self.systems['patriots']
+            if hasattr(patriots, 'sync_from_ecosystem'):
+                patriots.sync_from_ecosystem(
+                    self.unified_state['cascade_factor'],
+                    self.unified_state['kappa_t'],
+                    self.unified_state['lighthouse_gamma']
+                )
+        
+        # Push learned thresholds to Learner
+        if 'learner' in self.systems and self.unified_state['momentum_success_rate']:
+            learner = self.systems['learner']
+            # Merge scanner/patriot learning back
+            if hasattr(learner, 'optimized_thresholds'):
+                learner.optimized_thresholds['mycelium_cascade'] = self.unified_state['cascade_factor']
+                learner.optimized_thresholds['mycelium_kappa'] = self.unified_state['kappa_t']
+        
+        # Update meta
+        self.unified_state['last_sync'] = now
+        self.unified_state['sync_count'] += 1
+        
+        return self.unified_state
+    
+    def get_unified_multiplier(self) -> float:
+        """
+        Get the unified cascade multiplier for probability calculations.
+        
+        Formula: CASCADE × κt × Lighthouse × Learning_Boost
+        """
+        cascade = self.unified_state['cascade_factor']
+        kappa = self.unified_state['kappa_t']
+        lighthouse = self.unified_state['lighthouse_gamma']
+        
+        # Base multiplier from cascade
+        mult = 1.0 + (cascade - 1.0) * 0.3
+        
+        # κt contribution
+        mult *= 1.0 + (kappa - 1.0) * 0.2
+        
+        # Lighthouse contribution when high
+        if lighthouse >= 0.75:
+            mult *= 1.0 + (lighthouse - 0.75) * 0.4
+        
+        # Learning boost from success rates
+        if self.unified_state['momentum_success_rate']:
+            avg_success = sum(self.unified_state['momentum_success_rate'].values()) / len(self.unified_state['momentum_success_rate'])
+            if avg_success > 0.6:
+                mult *= 1.0 + (avg_success - 0.6) * 0.5
+        
+        return min(5.0, mult)  # Cap at 5x
+    
+    def get_status_report(self) -> str:
+        """Generate a status report of the mycelium network."""
+        state = self.unified_state
+        mult = self.get_unified_multiplier()
+        
+        report = f"""
+🍄═══════════════════════════════════════════════════════════════════════🍄
+                    MYCELIUM STATE AGGREGATOR STATUS
+🍄═══════════════════════════════════════════════════════════════════════🍄
+
+   📡 SYSTEMS CONNECTED: {state['systems_connected']}
+   🔄 SYNC COUNT: {state['sync_count']}
+
+   🎯 KILL SCANNER:
+      • Kills: {state['kills_executed']} | Targets: {state['active_targets']}
+      • Avg Time: {state['avg_kill_time']:.0f}s | Velocity: ${state['avg_kill_velocity']:.4f}/s
+
+   ☘️ IRISH PATRIOTS:
+      • Deployed: {state['patriots_deployed']} | Kills: {state['patriot_kills']}
+      • Profit: ${state['patriot_profit']:.4f}
+
+   ⛏️ CASCADE AMPLIFIER:
+      • CASCADE: {state['cascade_factor']:.1f}x | κt: {state['kappa_t']:.2f}
+      • Lighthouse Γ: {state['lighthouse_gamma']:.2f} | Streak: 🔥{state['consecutive_kills']}
+
+   🧠 ADAPTIVE LEARNING:
+      • Trade History: {state['trade_history_count']} trades
+      • Momentum Bands: {len(state['momentum_success_rate'])}
+
+   🌐 UNIFIED MULTIPLIER: {mult:.2f}x
+
+🍄═══════════════════════════════════════════════════════════════════════🍄
+"""
+        return report
+    
+    def pulse(self) -> Dict[str, Any]:
+        """
+        🍄 MYCELIUM PULSE 🍄
+        
+        Send a pulse through the network - quick sync and return key metrics.
+        Called frequently during trading cycles.
+        """
+        # Quick sync
+        self.sync_all()
+        
+        # Return key metrics for trading decisions
+        return {
+            'cascade': self.unified_state['cascade_factor'],
+            'kappa': self.unified_state['kappa_t'],
+            'lighthouse': self.unified_state['lighthouse_gamma'],
+            'multiplier': self.get_unified_multiplier(),
+            'kills': self.unified_state['kills_executed'] + self.unified_state['patriot_kills'],
+            'profit': self.unified_state['total_pnl'] + self.unified_state['patriot_profit'],
+            'streak': self.unified_state['consecutive_kills'],
+            'targets': self.unified_state['active_targets'] + self.unified_state['patriots_deployed'],
+        }
+
+
+# Global Mycelium instance
+MYCELIUM_AGGREGATOR: Optional[MyceliumStateAggregator] = None
+
+
+def get_mycelium_aggregator() -> MyceliumStateAggregator:
+    """Get or create the global Mycelium State Aggregator."""
+    global MYCELIUM_AGGREGATOR
+    if MYCELIUM_AGGREGATOR is None:
+        MYCELIUM_AGGREGATOR = MyceliumStateAggregator()
+    return MYCELIUM_AGGREGATOR
+
+
+def mycelium_sync() -> Dict[str, Any]:
+    """Quick function to pulse the mycelium network and get unified state."""
+    return get_mycelium_aggregator().pulse()
+
+
+def register_to_mycelium(name: str, system: Any):
+    """Register a system to the mycelium network."""
+    get_mycelium_aggregator().register_system(name, system)
+
+
 # =============================================================================
 # 🇮🇪 SNIPER MODE CONFIGURATION - ZERO LOSS 🇮🇪
 # =============================================================================
@@ -1018,6 +1443,8 @@ def get_active_scanner() -> ActiveKillScanner:
     global _active_scanner
     if _active_scanner is None:
         _active_scanner = ActiveKillScanner()
+        # 🍄 Register with Mycelium Network
+        register_to_mycelium('scanner', _active_scanner)
     return _active_scanner
 
 
