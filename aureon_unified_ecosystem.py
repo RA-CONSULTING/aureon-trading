@@ -14969,6 +14969,21 @@ class AureonKrakenEcosystem:
     def check_positions(self):
         """Check all positions for TP/SL with HNC frequency optimization and Earth Resonance"""
         to_close = []
+
+        def get_effective_entry_price(position: Position, fallback_price: Optional[float] = None) -> Optional[float]:
+            """Return a usable entry price, reconstructing from entry value if needed."""
+            entry_price = position.entry_price or 0.0
+
+            if entry_price <= 0 and getattr(position, "quantity", 0) > 0 and getattr(position, "entry_value", 0) > 0:
+                try:
+                    entry_price = position.entry_value / position.quantity
+                except Exception:
+                    entry_price = 0.0
+
+            if entry_price <= 0 and fallback_price:
+                entry_price = fallback_price
+
+            return entry_price if entry_price > 0 else None
         
         # 🌍✨ Get Earth Resonance exit urgency once per cycle ✨🌍
         earth_exit_urgency = 0.0
@@ -15004,7 +15019,15 @@ class AureonKrakenEcosystem:
                             
                             # Exit if frequency shifted from harmonic to distortion
                             if entry_freq in [256, 512, 528, 639, 963] and current_freq == 440:
-                                change_pct = (current_price - pos.entry_price) / pos.entry_price * 100
+                                entry_price = get_effective_entry_price(pos, current_price)
+                                if not entry_price:
+                                    logger.warning(f"Skipping HNC exit check for {symbol}: missing valid entry price")
+                                    continue
+
+                                if pos.entry_price <= 0:
+                                    pos.entry_price = entry_price
+
+                                change_pct = (current_price - entry_price) / entry_price * 100
                                 print(f"   🔴 HNC EXIT {symbol}: Frequency shift {entry_freq:.0f}Hz→440Hz (distortion)")
                                 to_close.append((symbol, "HNC_FREQ_SHIFT", change_pct, current_price))
                                 continue
@@ -15056,7 +15079,18 @@ class AureonKrakenEcosystem:
                 current_price = pos.entry_price
                 source = "ENTRY (STALE)"
 
-            change_pct = (current_price - pos.entry_price) / pos.entry_price * 100
+            entry_price = get_effective_entry_price(pos, current_price)
+            if not entry_price:
+                if not getattr(pos, "_invalid_entry_price_warned", False):
+                    logger.warning(f"Skipping position {symbol}: missing valid entry price (entry={pos.entry_price}, value={pos.entry_value}, qty={pos.quantity})")
+                    pos._invalid_entry_price_warned = True
+                continue
+
+            if pos.entry_price <= 0:
+                pos.entry_price = entry_price
+                pos._invalid_entry_price_warned = False
+
+            change_pct = (current_price - entry_price) / entry_price * 100
             
             # 📊 FEED POSITION DATA TO PROBABILITY MATRIX
             # This allows the matrix to validate predictions against real positions
