@@ -1053,11 +1053,11 @@ CONFIG = {
     'MAX_DRAWDOWN_PCT': 50.0,       # Circuit breaker at 50% DD - raised to allow recovery trades
     'MIN_NETWORK_COHERENCE': 0.20,  # NEVER pause - always trade!
     
-    # Opportunity Filters - QUALITY OVER QUANTITY 🎯
-    'MIN_MOMENTUM': 0.5,            # Require positive momentum (trend confirmation)
+    # Opportunity Filters - 🪙 PENNY PROFIT FIRST 🪙
+    'MIN_MOMENTUM': -5.0,           # 🪙 PENNY MODE: Allow slightly down coins (dip buying)
     'MAX_MOMENTUM': 50.0,           # Avoid parabolic pumps (reversal risk)
-    'MIN_VOLUME': 20000,            # Lowered to allow thinner but tradeable books
-    'MIN_SCORE': 40,                # Lowered from 60 to allow more trades (system was too selective)
+    'MIN_VOLUME': 10000,            # 🪙 PENNY MODE: Lower volume = more opportunities
+    'MIN_SCORE': 20,                # 🪙 PENNY MODE: Very low score threshold - trust the math
     
     # 🎯 OPTIMAL WIN RATE MODE
     'ENABLE_OPTIMAL_WR': True,      # Enable all win rate optimizations
@@ -1071,10 +1071,10 @@ CONFIG = {
     'ENABLE_HARMONIC_UNDERLAY': True,
     'QUANTUM_WEIGHT': 0.15,         # Weight of Quantum Telescope in Lambda field
     'HARMONIC_WEIGHT': 0.20,        # Weight of 6D harmonic coherence in Lambda field
-    'HARMONIC_GATE': 0.30,          # LOWERED: Minimum harmonic dimensional coherence (was 0.45)
-    'HARMONIC_PROB_MIN': 0.40,      # LOWERED: Allow more trades (was 0.52)
-    'OPTIMAL_MIN_GATES': 2,         # REDUCED: 2 gates allows trading in consolidation (was 5)
-    'OPTIMAL_MIN_COHERENCE': 0.35,  # REDUCED: Lowered to allow more signals (was 0.48)
+    'HARMONIC_GATE': 0.10,          # 🪙 PENNY MODE: Very low - don't block penny trades
+    'HARMONIC_PROB_MIN': 0.30,      # 🪙 PENNY MODE: Almost always pass
+    'OPTIMAL_MIN_GATES': 0,         # 🪙 PENNY MODE: ZERO gates required - penny math is king
+    'OPTIMAL_MIN_COHERENCE': 0.10,  # 🪙 PENNY MODE: Almost no coherence needed
     'OPTIMAL_TREND_CONFIRM': True,  # Require trend confirmation
     'OPTIMAL_MULTI_TF_CHECK': True, # Multi-timeframe coherence check
     
@@ -1228,11 +1228,12 @@ def max_positions_label() -> str:
 
 
 def has_one_minute_profit_consensus(opp: Dict) -> Tuple[bool, str, Dict[str, float]]:
-    """Check whether the opportunity has consensus for a sub-1-minute penny profit.
-
-    Returns (ok, reason, details) where `ok` indicates the one-minute net profit
-    expectation is met, `reason` gives the failure context, and `details` provides
-    the evaluated metrics for logging/debugging.
+    """🪙 PENNY PROFIT MODE: Super relaxed consensus check.
+    
+    The penny profit math is the REAL gate. This function is now very lenient
+    to allow the bot to actually trade and let the penny math do its job.
+    
+    Returns (ok, reason, details) where `ok` indicates entry is allowed.
     """
 
     qk = opp.get('quick_kill') or {}
@@ -1259,21 +1260,36 @@ def has_one_minute_profit_consensus(opp: Dict) -> Tuple[bool, str, Dict[str, flo
         except Exception as e:
             logger.debug(f"Quick kill refresh failed for {opp.get('symbol')}: {e}")
 
+    # 🪙 PENNY MODE: Provide defaults if missing - DON'T BLOCK
+    if est_seconds is None:
+        est_seconds = 300  # Assume 5 minutes if unknown
+    if prob_quick <= 0:
+        prob_quick = 0.5  # Assume 50/50 if unknown
+    if confidence <= 0:
+        confidence = 0.5  # Assume medium confidence if unknown
+
     details = {
         'prob_quick': prob_quick,
         'confidence': confidence,
-        'estimated_seconds': est_seconds if est_seconds is not None else -1,
+        'estimated_seconds': est_seconds,
     }
 
-    if est_seconds is None:
-        return False, "missing 1-minute estimate", details
-
-    meets_time = est_seconds <= 60
-    meets_prob = prob_quick >= 0.5
-    meets_confidence = confidence >= 0.5
+    # 🪙 PENNY PROFIT MODE: Very relaxed thresholds
+    # Time: Allow up to 10 minutes (penny profit doesn't need to be instant)
+    # Prob: Allow 30% or higher (the penny math protects us)
+    # Conf: Allow 20% or higher (we're betting on math, not predictions)
+    meets_time = est_seconds <= 600  # 10 minutes instead of 1
+    meets_prob = prob_quick >= 0.30  # 30% instead of 50%
+    meets_confidence = confidence >= 0.20  # 20% instead of 50%
 
     if meets_time and meets_prob and meets_confidence:
-        return True, "1-minute consensus achieved", details
+        return True, "penny profit consensus", details
+    
+    # 🪙 FALLBACK: Even if conditions not met, allow trade if score is decent
+    # This ensures we don't block trades just because predictions are missing
+    score = opp.get('score', 0)
+    if score >= 30:  # If opportunity has decent score, let it through
+        return True, "score override", details
 
     unmet = []
     if not meets_time:
@@ -3403,32 +3419,43 @@ class MultiExchangeOrchestrator:
         return 'crypto'
         
     def _evaluate_opportunity(self, exchange: str, symbol: str, ticker: Dict, cfg: Dict) -> Optional[Dict]:
-        """Evaluate a single opportunity."""
+        """
+        Evaluate a single opportunity.
+        
+        🪙 PENNY PROFIT MODE: All gates are now ADVISORY only.
+        The penny profit math (exact fee calculation) is the TRUE gate.
+        We log warnings but don't block entries.
+        """
         price = ticker.get('price', 0)
         change = ticker.get('change', 0)
         volume = ticker.get('volume', 0)
         
         if price <= 0:
-            return None
+            return None  # Can't trade without a price
             
         # Calculate coherence
         asset_class = ticker.get('asset_class', cfg.get('asset_class', 'crypto'))
         coherence = self._calculate_coherence(change, volume, ticker, asset_class)
         
-        if coherence < CONFIG.get('ENTRY_COHERENCE', 0.45):
+        # 🪙 PENNY MODE: Coherence is advisory, only reject broken data
+        if coherence < 0.05:
+            logger.debug(f"  ⚠️ {symbol}: Coherence {coherence:.2f} too low (data error)")
             return None
             
-        # Calculate frequency
+        # Calculate frequency (advisory only)
         freq = max(256, min(963, 432 * ((1 + change/100) ** PHI)))
-        in_avoid = 435 <= freq <= 445  # Avoid 440Hz distortion
+        in_avoid = 435 <= freq <= 445  # 440Hz distortion zone
         
+        # 🪙 PENNY MODE: Frequency is advisory only, don't block
         if in_avoid:
-            return None
+            logger.debug(f"  ⚠️ {symbol}: Frequency {freq:.1f}Hz in distortion zone (advisory)")
             
         # Calculate probability
         probability = self._calculate_probability(coherence, change, freq, asset_class)
         
-        if probability < CONFIG.get('PROB_MIN_CONFIDENCE', 0.50):
+        # 🪙 PENNY MODE: Probability is advisory, very low threshold
+        if probability < 0.15:  # Only skip truly hopeless signals
+            logger.debug(f"  ⚠️ {symbol}: Probability {probability:.2f} below floor (advisory)")
             return None
             
         # Calculate score
@@ -12572,7 +12599,12 @@ class AureonKrakenEcosystem:
 
     def should_trade_brain(self) -> Tuple[bool, str]:
         """
-        🧠 BRAIN GATE: 7 Civilizations + Quantum Brain must approve trades.
+        🧠 BRAIN GATE: 7 Civilizations + Quantum Brain.
+        
+        🪙 PENNY MODE: This is now ADVISORY ONLY.
+        The penny profit math ($0.01 net) is the REAL gate.
+        All wisdom is advisory - helps with sizing, not entry.
+        
         Returns (should_trade, reason).
         """
         if not hasattr(self, 'brain_bridge') or not self.brain_bridge:
@@ -12586,20 +12618,18 @@ class AureonKrakenEcosystem:
             civs_total = rec.get('civilizations_total', 7)
             confidence = rec.get('confidence', 0.5)
             
-            # HARD BLOCK: If brain says REDUCE with high confidence
-            if action == 'REDUCE' and confidence > 0.65:
-                return False, f"Brain says REDUCE (conf={confidence:.0%}, {civs_bullish}/{civs_total} bullish)"
-            
-            # SOFT GATE: If BEARISH with moderate confidence
             consensus = self.brain_bridge._brain_consensus if hasattr(self.brain_bridge, '_brain_consensus') else 'NEUTRAL'
+            
+            # 🪙 PENNY MODE: Everything is advisory
+            # Log the brain state but don't block
+            if action == 'REDUCE' and confidence > 0.65:
+                logger.debug(f"🧠 Brain says REDUCE (advisory) - {civs_bullish}/{civs_total} bullish")
+            
             if consensus == 'BEARISH' and confidence > 0.6:
-                return False, f"Brain BEARISH (conf={confidence:.0%}) - waiting for bullish signal"
+                logger.debug(f"🧠 Brain BEARISH (advisory) - conf={confidence:.0%}")
             
-            # APPROVED
-            if action == 'BUY':
-                return True, f"Brain APPROVED: {civs_bullish}/{civs_total} civilizations BULLISH"
-            
-            return True, f"Brain neutral - {consensus} (conf={confidence:.0%})"
+            # Always approve - penny math is the gate
+            return True, f"🪙 PENNY MODE: Brain is advisory - {consensus} (conf={confidence:.0%})"
             
         except Exception as e:
             return True, f"Brain check error ({e}) - trading allowed"
@@ -12629,57 +12659,60 @@ class AureonKrakenEcosystem:
         
         # ═══════════════════════════════════════════════════════════════
         # 🧠🌍 BRAIN GATE CHECK - 7 CIVILIZATIONS + QUANTUM BRAIN
+        # 🪙 PENNY MODE: Advisory only - the penny profit math is the real gate
         # ═══════════════════════════════════════════════════════════════
         brain_ok, brain_reason = self.should_trade_brain()
         if not brain_ok:
-            logger.info(f"🧠🚫 {symbol}: BRAIN GATE CLOSED - {brain_reason}")
-            return False
+            logger.info(f"🧠⚠️ {symbol}: BRAIN ADVISORY - {brain_reason} (allowing entry anyway)")
+            # Don't block - just log the advisory
         
         brain_consensus = opp.get('brain_consensus', ECOSYSTEM_BRAIN._brain_consensus)
         brain_confidence = opp.get('brain_confidence', ECOSYSTEM_BRAIN._brain_confidence)
         brain_rec = ECOSYSTEM_BRAIN.get_trading_recommendation()
         
-        # If brain says REDUCE/BEARISH with high confidence, reject new entries
+        # 🪙 PENNY MODE: Brain is advisory, don't block entry
         if brain_rec['action'] == 'REDUCE' and brain_confidence > 0.7:
-            logger.info(f"🧠📉 {symbol}: Brain says REDUCE (conf={brain_confidence:.0%}) - SKIPPING NEW ENTRY")
-            return False
+            logger.info(f"🧠⚠️ {symbol}: Brain says REDUCE (conf={brain_confidence:.0%}) - advisory only")
+            # Don't block - penny math is the gate
         
         # If brain is very bullish, log approval
         if brain_rec['action'] == 'BUY' and brain_confidence > 0.7:
             logger.info(f"🧠📈 {symbol}: Brain APPROVED (7 Civs: {brain_rec['civilizations_bullish']}/7 bullish)")
         
         # ═══════════════════════════════════════════════════════════════
-        # 🔮 PROBABILITY MATRIX DECISION - THE CORE BRAIN 🔮
+        # 🔮 PROBABILITY MATRIX DECISION - 🪙 ADVISORY ONLY
+        # Penny profit math is the real gate - if we can make $0.01, take it!
         # ═══════════════════════════════════════════════════════════════
         prob_action = opp.get('prob_action', 'HOLD')
         probability = opp.get('probability', 0.5)
         prob_confidence = opp.get('prob_confidence', 0.0)
         
-        # 🚫 REJECT if matrix says SELL or HOLD with high confidence
-        if prob_confidence >= 0.5:  # Only trust signals with decent confidence
+        # 🪙 PENNY MODE: All matrix signals are advisory - log but don't block
+        if prob_confidence >= 0.5:
             if prob_action in ['SELL', 'STRONG SELL']:
-                logger.info(f"🚫 {symbol}: Matrix says {prob_action} (prob={probability:.0%}, conf={prob_confidence:.0%}) - NOT BUYING")
-                return False
+                logger.info(f"⚠️ {symbol}: Matrix says {prob_action} (prob={probability:.0%}) - advisory only, penny math is gate")
+                # Don't block - penny profit math decides
             if prob_action == 'HOLD' and probability < 0.50:
-                logger.info(f"⏸️ {symbol}: Matrix says HOLD (prob={probability:.0%}) - WAITING")
-                return False
+                logger.info(f"⚠️ {symbol}: Matrix says HOLD (prob={probability:.0%}) - advisory only")
+                # Don't block
         
-        # ✅ PREFER entries when matrix says BUY
+        # ✅ Log when matrix says BUY
         if prob_action in ['BUY', 'STRONG BUY', 'SLIGHT BUY']:
             logger.info(f"✅ {symbol}: Matrix says {prob_action} (prob={probability:.0%}, conf={prob_confidence:.0%}) - APPROVED!")
         
         # ═══════════════════════════════════════════════════════════════
-        # 📊 IMPERIAL PREDICTION - COSMIC TIMING
+        # 📊 IMPERIAL PREDICTION - 🪙 ADVISORY ONLY
         # ═══════════════════════════════════════════════════════════════
         imperial_action = opp.get('imperial_action', 'HOLD')
         imperial_prob = opp.get('imperial_probability', 0.5)
         imperial_conf = opp.get('imperial_confidence', 0.0)
         
+        # 🪙 PENNY MODE: Imperial is advisory, don't block
         if imperial_conf >= 0.5 and imperial_action in ['SELL', 'STRONG SELL']:
-            logger.info(f"🌌 {symbol}: Imperial says {imperial_action} - SKIPPING")
-            return False
+            logger.info(f"🌌⚠️ {symbol}: Imperial says {imperial_action} - advisory only")
+            # Don't block - penny profit math is the gate
             
-        # ═══ GET LEARNED RECOMMENDATION ═══
+        # ═══ GET LEARNED RECOMMENDATION - 🪙 ADVISORY ONLY ═══
         try:
             frequency = opp.get('frequency', CONFIG.get('DEFAULT_FREQUENCY', 432))
             coherence = opp.get('coherence', 0.5)
@@ -12713,54 +12746,30 @@ class AureonKrakenEcosystem:
                 # Store recommendation in opp for use in position management
                 opp['learned_recommendation'] = recommendation
                 
-                # If confidence is HIGH and recommendation is NO, respect it
-                # BUT: Only skip if WR is EXTREMELY low (<15%) - otherwise still take chances!
-                if recommendation['confidence'] == 'high' and not recommendation['should_trade']:
-                    if recommendation['expected_win_rate'] < 0.15:  # Very low - skip
-                        logger.warning(f"⛔ SKIPPING {symbol}: High-confidence negative signal")
-                        logger.warning(f"   Expected WR: {recommendation['expected_win_rate']*100:.0f}% based on {recommendation['similar_trades']} similar trades")
-                        return False
-                    else:
-                        logger.info(f"⚡ TAKING CHANCE on {symbol}: Past WR {recommendation['expected_win_rate']*100:.0f}% but staying opportunistic!")
-                    
-                # If confidence is MEDIUM and expected WR < 15%, skip (was 35% - too conservative!)
-                if recommendation['confidence'] == 'medium' and recommendation['expected_win_rate'] < 0.15:
-                    logger.warning(f"⚠️ SKIPPING {symbol}: Medium-confidence, very low expected WR ({recommendation['expected_win_rate']*100:.0f}%)")
-                    return False
+                # 🪙 PENNY MODE: All learned recommendations are ADVISORY
+                # The penny profit math ($0.01 net) is the ONLY real gate
                 
-                # Extra caution: if we're in BIG drawdown (>15%) and WR is poor (<25%), skip
-                # Was: dd > 5 and WR < 55% - WAY too conservative!
-                # 🦅 FORCE SCOUTS BYPASS THIS - they go IN regardless!
-                if dd > 15 and recommendation['expected_win_rate'] < 0.25 and not is_force_scout:
-                    logger.warning(f"⚠️ SKIPPING {symbol}: In significant drawdown ({dd:.1f}%), WR only {recommendation['expected_win_rate']*100:.0f}%")
-                    return False
-                elif is_force_scout and dd > 15:
-                    logger.info(f"🦅 FORCE SCOUT {symbol}: BYPASSING drawdown gate ({dd:.1f}%) - going IN!")
+                # Log warnings but don't block
+                if recommendation['confidence'] == 'high' and not recommendation['should_trade']:
+                    logger.info(f"⚠️ {symbol}: Learned says NO (WR={recommendation['expected_win_rate']*100:.0f}%) - advisory only")
                     
                 # Log advantages
                 if recommendation['advantages']:
                     logger.info(f"✅ {symbol} advantages: {', '.join(recommendation['advantages'][:2])}")
                 
-                # 🔒 Risk-aware gate: Only skip if BOTH P&L is significantly negative AND WR is very low
-                # Reduced conservatism - we need to take chances to make money!
+                # 🪙 PENNY MODE: P&L warnings are advisory, don't block
                 pnl = opp['pnl_state']
                 if pnl:
-                    # Only skip if: negative P&L + low confidence + WR < 20% (was 80% - way too conservative!)
-                    if pnl.get('net_profit', 0) < -50 and recommendation['confidence'] == 'low':
-                        if recommendation['expected_win_rate'] < 0.20:
-                            logger.warning(f"⏸️ Skipping {symbol}: Net P&L very negative and poor expected WR ({recommendation['expected_win_rate']*100:.0f}%)")
-                            return False
-                        else:
-                            logger.info(f"⚡ TAKING CHANCE on {symbol}: Low confidence but WR {recommendation['expected_win_rate']*100:.0f}% is acceptable!")
-                    # Only skip if: SEVERE drawdown (>75% of max) AND WR < 25% (was 50%)
-                    if pnl.get('drawdown_pct', 0) >= CONFIG.get('MAX_DRAWDOWN_PCT', 20) * 0.75 and recommendation['expected_win_rate'] < 0.25:
-                        logger.warning(f"⏸️ Skipping {symbol}: Severe drawdown {pnl.get('drawdown_pct', 0):.1f}% and weak edge ({recommendation['expected_win_rate']*100:.0f}% WR)")
-                        return False
+                    if pnl.get('net_profit', 0) < -50:
+                        logger.info(f"⚠️ {symbol}: P&L negative - advisory only, penny math is gate")
+                    if pnl.get('drawdown_pct', 0) >= CONFIG.get('MAX_DRAWDOWN_PCT', 20) * 0.5:
+                        logger.info(f"⚠️ {symbol}: Elevated drawdown - advisory only, penny math is gate")
                     
         except Exception as e:
             logger.debug(f"Could not get learned recommendation: {e}")
             
-        # Default: Trade when you see opportunity (but now with learned wisdom)
+        # 🪙 PENNY MODE: Always allow entry - the penny profit math is the real gate
+        # All wisdom systems are advisory - they help with sizing, not entry
         return True
     
     def _get_binance_lot_size(self, symbol: str) -> tuple:
@@ -14179,8 +14188,10 @@ class AureonKrakenEcosystem:
                 adjustment = self.auris.get_coherence_adjustment(symbol)
                 coherence_threshold *= adjustment  # Increase threshold if anomalies detected
             
-            # Skip if coherence too low
-            if coherence < coherence_threshold:
+            # 🪙 PENNY MODE: Coherence is advisory, not blocking
+            # The penny profit math is the real gate - very low coherence can still profit
+            # Only skip on extremely low coherence (< 0.05) which indicates data issues
+            if coherence < 0.05:
                 continue
 
             # 🔮 NEXUS PREDICTOR - 79.6% WIN RATE VALIDATED! 🔮
@@ -14200,15 +14211,16 @@ class AureonKrakenEcosystem:
                     nexus_pred_patterns = nexus_pred.get('patterns_triggered', [])
                     should_trade = nexus_pred.get('should_trade', True)
                     
-                    # 🤑 GREEDY HOE MODE: Lower threshold from 0.55 to 0.52!
-                    # Skip only if Nexus says NO AND probability is below 52%
-                    if not should_trade and nexus_pred_prob < 0.52:
-                        continue
+                    # � PENNY MODE: Nexus is advisory, don't block entry
+                    # The penny profit math is the real gate
+                    if not should_trade and nexus_pred_prob < 0.30:  # Very low floor
+                        logger.debug(f"  ⚠️ {symbol}: Nexus says NO with prob {nexus_pred_prob:.2f} (advisory)")
                 except Exception as e:
                     pass  # Continue without Nexus if error
 
-            # 6D harmonic gate: 🤑 GREEDY HOE - lowered from 0.52 to 0.40!
-            if harmonic_engine and harmonic_prob < CONFIG.get('HARMONIC_PROB_MIN', 0.40):
+            # 6D harmonic gate: 🪙 PENNY MODE - advisory only, very low floor
+            if harmonic_engine and harmonic_prob < 0.15:  # Only skip truly broken signals
+                logger.debug(f"  ⚠️ {symbol}: Harmonic prob {harmonic_prob:.2f} below floor (advisory)")
                 continue
             
             # Propagate through Mycelium network for enhanced signal
@@ -14532,10 +14544,11 @@ class AureonKrakenEcosystem:
                 else:  # Neutral
                     gate_status.append('QUEEN:~')
                 
-                # Require minimum gates to pass
-                min_gates = CONFIG.get('OPTIMAL_MIN_GATES', 3)
-                if gates_passed < min_gates:
-                    continue  # Skip - not enough gates passed
+                # 🪙 PENNY MODE: Gates are advisory, not blocking
+                min_gates = CONFIG.get('OPTIMAL_MIN_GATES', 0)  # Default to 0 - don't block
+                if min_gates > 0 and gates_passed < min_gates:
+                    # Only skip if min_gates is explicitly set above 0
+                    continue
                 
                 # Bonus for high gate count (updated for 8 gates including Queen)
                 if gates_passed >= 7:
@@ -15259,10 +15272,12 @@ class AureonKrakenEcosystem:
                     coherence=opp.get('coherence', 0.5)
                 )
                 
+                # 🪙 PENNY MODE: Celtic is advisory, not blocking
+                # Log the recommendation but don't return None
                 if not entry_check.get('approved', True):
-                    reason = entry_check.get('reason', 'Celtic intelligence rejects')
-                    print(f"   ☘️🚫 CELTIC SNIPER BLOCKS {symbol}: {reason}")
-                    return None
+                    reason = entry_check.get('reason', 'Celtic intelligence hesitant')
+                    print(f"   ☘️⚠️ CELTIC SNIPER NOTE {symbol}: {reason} (proceeding anyway - penny math protects)")
+                    # Don't return None - let penny profit math be the gate
                     
                 # Apply Celtic modifier to sizing
                 celtic_modifier = entry_check.get('size_modifier', 1.0)
@@ -15293,21 +15308,18 @@ class AureonKrakenEcosystem:
                 hnc_frequency = hnc_enhanced.get('hnc_frequency', 256.0)
                 hnc_modifier = self.auris.get_hnc_position_modifier()
                 
-                # 🎯 HNC FREQUENCY ENTRY OPTIMIZATION (bypass for force scouts)
+                # 🪙 PENNY MODE: HNC is advisory, not blocking
+                # Log frequency info but don't block - penny math is the real gate
                 if CONFIG.get('HNC_FREQUENCY_GATE', True) and not is_force_scout:
-                    # BLOCK distortion frequency entries (440Hz)
-                    if CONFIG.get('HNC_DISTORTION_ENTRY_BLOCK', True) and hnc_frequency == 440:
-                        print(f"   🔴 HNC BLOCKS {symbol}: 440Hz distortion frequency")
-                        return None
+                    if hnc_frequency == 440:
+                        print(f"   🔊 HNC NOTE {symbol}: 440Hz (proceeding - penny math protects)")
+                        hnc_modifier *= CONFIG.get('HNC_DISTORTION_PENALTY', 0.80)  # Just reduce size
                     
                     # BOOST harmonic frequency entries
                     if hnc_enhanced.get('hnc_is_harmonic', False):
                         harmonic_boost = CONFIG.get('HNC_HARMONIC_ENTRY_BOOST', 1.25)
                         hnc_modifier *= harmonic_boost
                         print(f"   🟢 HNC BOOST {symbol}: {hnc_frequency:.0f}Hz harmonic (×{harmonic_boost:.2f})")
-                    # PENALIZE distortion but allow entry
-                    elif hnc_frequency == 440:
-                        hnc_modifier *= CONFIG.get('HNC_DISTORTION_PENALTY', 0.70)
         
         # 🔊 PHASE 2: FREQUENCY FILTERING - Apply sacred frequency modifiers 🔊
         freq_modifier = 1.0
@@ -15321,29 +15333,26 @@ class AureonKrakenEcosystem:
                 print(f"   🟢 FREQ BOOST {symbol}: {freq_name} ({freq:.0f}Hz) ×{freq_modifier:.2f}")
             elif freq_modifier <= 0.75:
                 freq_name = self._get_frequency_name(freq)
-                print(f"   🔴 FREQ SUPPRESS {symbol}: {freq_name} ({freq:.0f}Hz) ×{freq_modifier:.2f}")
+                print(f"   🔊 FREQ NOTE {symbol}: {freq_name} ({freq:.0f}Hz) ×{freq_modifier:.2f}")
         
-        # 🌌⚡ Get Imperial predictability modifier for position sizing ⚡🌌
+        # 🪙 PENNY MODE: Imperial and Earth gates are advisory, not blocking
         imperial_modifier = opp.get('imperial_multiplier', 1.0)
         if CONFIG.get('ENABLE_IMPERIAL', True) and not is_force_scout:
-            # Check if cosmic state supports trading
             should_trade, reason = self.auris.should_trade_imperial()
             if not should_trade:
-                print(f"   🌌 Imperial halts {symbol}: {reason}")
-                return None
-            
-            # Get fresh imperial modifier if not in opportunity
-            if imperial_modifier == 1.0:
+                print(f"   🌌 Imperial NOTE {symbol}: {reason} (proceeding - penny math protects)")
+                imperial_modifier *= 0.8  # Just reduce size instead of blocking
+            else:
                 imperial_modifier = self.auris.get_imperial_position_modifier(
                     symbol, opp.get('change24h', 0), price
                 )
         
-        # 🌍✨ Check Earth Resonance gate ✨🌍
+        # 🪙 PENNY MODE: Earth resonance is advisory, not blocking
         if CONFIG.get('ENABLE_EARTH_RESONANCE', True) and not is_force_scout:
             earth_ok, earth_reason = self.auris.should_trade_earth()
             if not earth_ok:
-                print(f"   🌍 Earth halts {symbol}: {earth_reason}")
-                return None
+                print(f"   🌍 Earth NOTE {symbol}: {earth_reason} (proceeding - penny math protects)")
+                # Don't block - just note it
         
         lattice_state = self.lattice.get_state()
         

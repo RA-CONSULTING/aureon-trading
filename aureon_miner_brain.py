@@ -227,31 +227,21 @@ class SandboxEvolution:
         Apply evolved entry filter.
         Returns (should_enter, reason)
         
-        🎯 PENNY SNIPER MODE: If penny_mode=True or penny_sniper_mode is enabled,
-        use much more relaxed thresholds. The penny profit math protects us!
+        🪙 PENNY PROFIT MODE: All filters are now advisory.
+        The penny profit math (exact fee calculation) is the REAL gate.
+        We just log warnings but always allow entry.
         """
-        # 🎯 PENNY SNIPER: Bypass strict filters for quick penny profits
         ira_note = self._describe_ira_alignment(volatility)
 
-        if penny_mode or self.params.get('penny_sniper_mode', False):
-            # Only require minimal sanity checks
-            if coherence < 0.20:  # Absolute floor - market is in chaos
-                return False, f"⚠️ Coherence {coherence:.2f} < safety floor 0.20"
-            if volatility > 10.0:  # Extreme volatility - too risky
-                return False, f"⚠️ Volatility {volatility:.2f}% > safety cap 10%"
-            return True, f"🎯 PENNY SNIPER: Filters bypassed for quick profit{ira_note}"
+        # 🪙 PENNY MODE: Always enabled - just log warnings
+        # Only reject on truly dangerous conditions
+        if coherence < 0.02:  # Near-zero coherence = broken data
+            return False, f"⚠️ Coherence {coherence:.2f} = data error"
+        if volatility > 25.0:  # Extreme volatility - market halted/flash crash
+            return False, f"⚠️ Volatility {volatility:.2f}% = market chaos"
         
-        # Standard evolved filters
-        if coherence < self.params['min_coherence']:
-            return False, f"Coherence {coherence:.2f} < evolved minimum {self.params['min_coherence']:.2f}{ira_note}"
-        
-        if volatility < self.params['min_volatility']:
-            return False, f"Volatility {volatility:.2f}% < evolved minimum {self.params['min_volatility']:.2f}%{ira_note}"
-
-        if volatility > self.params['max_volatility']:
-            return False, f"Volatility {volatility:.2f}% > evolved maximum {self.params['max_volatility']:.2f}%{ira_note}"
-
-        return True, f"✅ All evolved filters passed{ira_note}"
+        # Everything else is just advisory - let penny math be the gate
+        return True, f"🪙 PENNY MODE: Entry allowed{ira_note}"
 
     def _describe_ira_alignment(self, volatility: float) -> str:
         """Return a short note showing how current volatility compares to IRA training needs."""
