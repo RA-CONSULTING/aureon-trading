@@ -489,6 +489,109 @@ class MyceliumStateAggregator:
             'streak': self.unified_state['consecutive_kills'],
             'targets': self.unified_state['active_targets'] + self.unified_state['patriots_deployed'],
         }
+    
+    def hunt_quickest_exit(self, price_getter=None) -> Optional[Dict]:
+        """
+        🍄🎯 UNIFIED EXIT HUNTER - Coordinates Scanner + Patriots for FASTEST exit 🎯🍄
+        
+        Both the Kill Scanner and Irish Patriots proactively hunt for the
+        quickest path to net profit. This method coordinates them through
+        the Mycelium Network.
+        
+        Args:
+            price_getter: Function(exchange, symbol) -> price
+        
+        Returns:
+            Dict with the absolute quickest exit across ALL systems
+        """
+        quickest_exit = None
+        quickest_eta = float('inf')
+        ready_exits = []
+        
+        # 🎯 Hunt from Kill Scanner
+        if 'scanner' in self.systems:
+            scanner = self.systems['scanner']
+            if hasattr(scanner, 'hunt_quickest_exit'):
+                try:
+                    scanner_exit = scanner.hunt_quickest_exit(price_getter)
+                    if scanner_exit:
+                        scanner_exit['source'] = 'scanner'
+                        if scanner_exit.get('status') == 'KILL_NOW':
+                            ready_exits.append(scanner_exit)
+                        elif scanner_exit.get('eta', float('inf')) < quickest_eta:
+                            quickest_eta = scanner_exit['eta']
+                            quickest_exit = scanner_exit
+                except Exception:
+                    pass
+        
+        # 🇮🇪 Hunt from Irish Patriots
+        if 'patriots' in self.systems:
+            patriots = self.systems['patriots']
+            if hasattr(patriots, 'hunt_quickest_exit'):
+                try:
+                    patriot_exit = patriots.hunt_quickest_exit(price_getter)
+                    if patriot_exit:
+                        patriot_exit['source'] = 'patriots'
+                        if patriot_exit.get('status') == 'KILL_NOW':
+                            ready_exits.append(patriot_exit)
+                        elif patriot_exit.get('eta', float('inf')) < quickest_eta:
+                            quickest_eta = patriot_exit['eta']
+                            quickest_exit = patriot_exit
+                except Exception:
+                    pass
+        
+        # Return ready exits first (sorted by P&L)
+        if ready_exits:
+            ready_exits.sort(key=lambda x: x.get('pnl', 0), reverse=True)
+            best = ready_exits[0]
+            best['total_ready'] = len(ready_exits)
+            return best
+        
+        return quickest_exit
+    
+    def get_unified_leaderboard(self) -> List[Dict]:
+        """
+        📊 UNIFIED EXIT LEADERBOARD - All positions from all systems ranked
+        
+        Combines Kill Scanner targets and Patriot scouts into one
+        ranked leaderboard for exit priority.
+        """
+        leaderboard = []
+        
+        # Get from Scanner
+        if 'scanner' in self.systems:
+            scanner = self.systems['scanner']
+            if hasattr(scanner, 'get_exit_leaderboard'):
+                try:
+                    for entry in scanner.get_exit_leaderboard():
+                        entry['source'] = 'scanner'
+                        leaderboard.append(entry)
+                except Exception:
+                    pass
+        
+        # Get from Patriots
+        if 'patriots' in self.systems:
+            patriots = self.systems['patriots']
+            if hasattr(patriots, 'get_exit_leaderboard'):
+                try:
+                    for entry in patriots.get_exit_leaderboard():
+                        entry['source'] = 'patriots'
+                        leaderboard.append(entry)
+                except Exception:
+                    pass
+        
+        # Re-sort unified leaderboard
+        leaderboard.sort(key=lambda x: (
+            not x.get('is_ready', False),
+            x.get('eta', float('inf')) if x.get('eta', float('inf')) < float('inf') else 999999,
+            -x.get('probability', 0),
+        ))
+        
+        # Re-assign unified ranks
+        for i, entry in enumerate(leaderboard):
+            entry['unified_rank'] = i + 1
+        
+        return leaderboard
 
 
 # Global Mycelium instance
@@ -511,6 +614,34 @@ def mycelium_sync() -> Dict[str, Any]:
 def register_to_mycelium(name: str, system: Any):
     """Register a system to the mycelium network."""
     get_mycelium_aggregator().register_system(name, system)
+
+
+def hunt_quickest_exit(price_getter=None) -> Optional[Dict]:
+    """
+    🎯⚡ PROACTIVE EXIT HUNTER - Find the FASTEST path to net profit ⚡🎯
+    
+    Both Scanner and Patriots hunt together through the Mycelium Network.
+    Returns the absolute quickest exit opportunity across ALL systems.
+    
+    Usage:
+        exit_opp = hunt_quickest_exit(price_getter_func)
+        if exit_opp and exit_opp['status'] == 'KILL_NOW':
+            # Execute kill immediately!
+            print(f"KILL {exit_opp['symbol']} for ${exit_opp['pnl']:.4f}")
+    """
+    return get_mycelium_aggregator().hunt_quickest_exit(price_getter)
+
+
+def get_exit_leaderboard() -> List[Dict]:
+    """
+    📊 UNIFIED EXIT LEADERBOARD - All positions ranked by exit readiness
+    
+    Returns list of all positions from Scanner + Patriots, ranked by:
+    1. Kill-ready first (P&L >= threshold)
+    2. ETA (soonest first)
+    3. Probability (highest first)
+    """
+    return get_mycelium_aggregator().get_unified_leaderboard()
 
 
 # =============================================================================
@@ -1432,6 +1563,129 @@ class ActiveKillScanner:
             reverse=True
         )
         return sorted_targets[:top_n]
+    
+    def hunt_quickest_exit(self, price_getter) -> Optional[Dict]:
+        """
+        🎯⚡ PROACTIVE EXIT HUNTER - Seeks the FASTEST path to net profit ⚡🎯
+        
+        Scans all positions and identifies the one that can exit SOONEST
+        with net profit. Returns the quickest exit opportunity.
+        
+        Returns:
+            Dict with quickest exit details, or None if no exits ready
+        """
+        if not self.targets:
+            return None
+        
+        # First, update all target metrics
+        quickest_kill = None
+        quickest_eta = float('inf')
+        ready_kills = []
+        
+        for key, target in self.targets.items():
+            try:
+                # Get current price
+                current_price = price_getter(target.exchange, target.symbol)
+                if not current_price:
+                    continue
+                
+                # Update target with current price
+                target.current_price = current_price
+                exit_value = target.quantity * current_price
+                target.current_pnl = exit_value - target.entry_value
+                
+                # Check if KILL READY NOW
+                if target.current_pnl >= target.win_threshold:
+                    ready_kills.append({
+                        'key': key,
+                        'symbol': target.symbol,
+                        'exchange': target.exchange,
+                        'pnl': target.current_pnl,
+                        'threshold': target.win_threshold,
+                        'eta': 0,
+                        'probability': 1.0,
+                        'status': 'KILL_NOW',
+                        'hold_time': time.time() - target.entry_time,
+                    })
+                    continue
+                
+                # Track quickest ETA
+                if target.eta_to_kill < quickest_eta and target.eta_to_kill > 0:
+                    quickest_eta = target.eta_to_kill
+                    quickest_kill = {
+                        'key': key,
+                        'symbol': target.symbol,
+                        'exchange': target.exchange,
+                        'pnl': target.current_pnl,
+                        'threshold': target.win_threshold,
+                        'eta': target.eta_to_kill,
+                        'probability': target.probability_of_kill,
+                        'velocity': target.pnl_velocity,
+                        'momentum': target.momentum_score,
+                        'status': 'TRACKING',
+                        'gap': target.win_threshold - target.current_pnl,
+                        'hold_time': time.time() - target.entry_time,
+                    }
+            except Exception:
+                continue
+        
+        # Return ready kills first (sorted by P&L - highest first)
+        if ready_kills:
+            ready_kills.sort(key=lambda x: x['pnl'], reverse=True)
+            best_kill = ready_kills[0]
+            best_kill['all_ready'] = len(ready_kills)
+            return best_kill
+        
+        # Return quickest tracking opportunity
+        return quickest_kill
+    
+    def get_exit_leaderboard(self) -> List[Dict]:
+        """
+        📊 EXIT LEADERBOARD - Ranks all positions by exit readiness
+        
+        Returns list sorted by:
+        1. Kill-ready positions first (P&L >= threshold)
+        2. Then by ETA (soonest first)
+        3. Then by probability (highest first)
+        """
+        leaderboard = []
+        
+        for key, target in self.targets.items():
+            hold_time = time.time() - target.entry_time
+            gap = target.win_threshold - target.current_pnl
+            proximity_pct = (target.current_pnl / target.win_threshold * 100) if target.win_threshold > 0 else 0
+            
+            entry = {
+                'rank': 0,  # Will be set after sorting
+                'key': key,
+                'symbol': target.symbol,
+                'exchange': target.exchange,
+                'pnl': target.current_pnl,
+                'threshold': target.win_threshold,
+                'gap': gap,
+                'proximity_pct': proximity_pct,
+                'eta': target.eta_to_kill,
+                'probability': target.probability_of_kill,
+                'velocity': target.pnl_velocity,
+                'momentum': target.momentum_score,
+                'hold_time': hold_time,
+                'scans': target.scans,
+                'is_ready': target.current_pnl >= target.win_threshold,
+            }
+            leaderboard.append(entry)
+        
+        # Sort: ready first, then by ETA, then by probability
+        leaderboard.sort(key=lambda x: (
+            not x['is_ready'],  # Ready positions first
+            x['eta'] if x['eta'] < float('inf') else 999999,  # Soonest ETA
+            -x['probability'],  # Highest probability
+        ))
+        
+        # Assign ranks
+        for i, entry in enumerate(leaderboard):
+            entry['rank'] = i + 1
+        
+        return leaderboard
 
 
 # Global scanner instance

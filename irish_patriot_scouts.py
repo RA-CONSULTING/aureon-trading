@@ -934,6 +934,136 @@ class PatriotScoutNetwork:
             'consecutive_kills': self.consecutive_kills,
         }
     
+    def hunt_quickest_exit(self, price_getter=None) -> Optional[Dict]:
+        """
+        🎯⚡ PROACTIVE EXIT HUNTER - Patriots seek FASTEST net profit exit ⚡🎯
+        
+        Scans all deployed scouts and identifies the one that can exit SOONEST
+        with net profit. Works in tandem with Kill Scanner via Mycelium.
+        
+        Args:
+            price_getter: Optional function(exchange, symbol) -> price
+        
+        Returns:
+            Dict with quickest exit details, or None if no exits ready
+        """
+        if not self.scouts:
+            return None
+        
+        quickest_kill = None
+        quickest_eta = float('inf')
+        ready_kills = []
+        
+        for scout_id, scout in self.scouts.items():
+            if scout.status != 'deployed':
+                continue
+            
+            try:
+                # Update price if getter provided
+                if price_getter and scout.symbol:
+                    price = price_getter(scout.exchange, scout.symbol)
+                    if price:
+                        scout.update_price(price)
+                
+                # Check if KILL READY NOW
+                if scout.unrealized_pnl >= scout.target_profit_usd:
+                    ready_kills.append({
+                        'scout_id': scout_id,
+                        'codename': scout.codename,
+                        'symbol': scout.symbol,
+                        'exchange': scout.exchange,
+                        'pnl': scout.unrealized_pnl,
+                        'threshold': scout.target_profit_usd,
+                        'eta': 0,
+                        'probability': scout.probability_of_kill,
+                        'status': 'KILL_NOW',
+                        'hold_time': time.time() - scout.entry_time if scout.entry_time > 0 else 0,
+                        'war_cry': scout.generate_victory_cry(),
+                    })
+                    continue
+                
+                # Track quickest ETA
+                if scout.eta_to_kill < quickest_eta and scout.eta_to_kill > 0:
+                    quickest_eta = scout.eta_to_kill
+                    quickest_kill = {
+                        'scout_id': scout_id,
+                        'codename': scout.codename,
+                        'symbol': scout.symbol,
+                        'exchange': scout.exchange,
+                        'pnl': scout.unrealized_pnl,
+                        'threshold': scout.target_profit_usd,
+                        'eta': scout.eta_to_kill,
+                        'probability': scout.probability_of_kill,
+                        'velocity': scout.pnl_velocity,
+                        'momentum': scout.momentum_score,
+                        'status': 'TRACKING',
+                        'gap': scout.target_profit_usd - scout.unrealized_pnl,
+                        'hold_time': time.time() - scout.entry_time if scout.entry_time > 0 else 0,
+                    }
+            except Exception:
+                continue
+        
+        # Return ready kills first (sorted by P&L - highest first)
+        if ready_kills:
+            ready_kills.sort(key=lambda x: x['pnl'], reverse=True)
+            best_kill = ready_kills[0]
+            best_kill['all_ready'] = len(ready_kills)
+            return best_kill
+        
+        return quickest_kill
+    
+    def get_exit_leaderboard(self) -> List[Dict]:
+        """
+        📊 PATRIOT EXIT LEADERBOARD - Ranks all scouts by exit readiness
+        
+        Returns list sorted by:
+        1. Kill-ready scouts first (P&L >= threshold)
+        2. Then by ETA (soonest first)
+        3. Then by probability (highest first)
+        """
+        leaderboard = []
+        
+        for scout_id, scout in self.scouts.items():
+            if scout.status != 'deployed':
+                continue
+            
+            hold_time = time.time() - scout.entry_time if scout.entry_time > 0 else 0
+            gap = scout.target_profit_usd - scout.unrealized_pnl
+            proximity_pct = (scout.unrealized_pnl / scout.target_profit_usd * 100) if scout.target_profit_usd > 0 else 0
+            
+            entry = {
+                'rank': 0,
+                'scout_id': scout_id,
+                'codename': scout.codename,
+                'symbol': scout.symbol,
+                'exchange': scout.exchange,
+                'pnl': scout.unrealized_pnl,
+                'threshold': scout.target_profit_usd,
+                'gap': gap,
+                'proximity_pct': proximity_pct,
+                'eta': scout.eta_to_kill,
+                'probability': scout.probability_of_kill,
+                'velocity': scout.pnl_velocity,
+                'momentum': scout.momentum_score,
+                'hold_time': hold_time,
+                'scans': scout.scans,
+                'is_ready': scout.unrealized_pnl >= scout.target_profit_usd,
+            }
+            leaderboard.append(entry)
+        
+        # Sort: ready first, then by ETA, then by probability
+        leaderboard.sort(key=lambda x: (
+            not x['is_ready'],
+            x['eta'] if x['eta'] < float('inf') else 999999,
+            -x['probability'],
+        ))
+        
+        # Assign ranks
+        for i, entry in enumerate(leaderboard):
+            entry['rank'] = i + 1
+        
+        return leaderboard
+    
     def print_status(self):
         """Print beautiful status display with learning/cascade stats"""
         status = self.get_network_status()
