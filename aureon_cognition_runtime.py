@@ -103,7 +103,7 @@ class RiskModule:
             return
 
         for c in sorted(candidates, key=lambda x: x.get("expected_edge", 0.0), reverse=True):
-            if open_positions >= self.max_positions:
+            if self.max_positions and self.max_positions > 0 and open_positions >= self.max_positions:
                 rejected.append({**c, "reason": "max_positions"})
                 continue
             if c.get("expected_edge", 0.0) <= 0:

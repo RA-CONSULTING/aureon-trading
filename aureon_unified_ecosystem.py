@@ -990,7 +990,8 @@ CONFIG = {
     'SPREAD_COST_PCT': 0.0010,      # 0.10% estimated spread cost (increased for safety)
     'TAKE_PROFIT_PCT': 1.8,         # FALLBACK: 1.8% (penny profit uses dollar thresholds instead)
     'STOP_LOSS_PCT': 1.5,           # FALLBACK: 1.5% (penny profit uses dollar thresholds instead)
-    'MAX_POSITIONS': 30,            # 🔥 BEAST MODE: 30 positions - TRADE EVERYTHING!
+    'MAX_POSITIONS': 30,            # 🔥 Legacy cap (unused when UNLIMITED_POSITIONS is enabled)
+    'UNLIMITED_POSITIONS': True,    # 🪙 Penny-unity mode: no limit to active positions
     'TARGET_FILL_RATE': 0.33,       # 🎯 TARGET: Keep 1/3 of positions filled (10 of 30)
     'MIN_TRADE_USD': 1.44,          # Minimum trade notional in base currency
     'BINANCE_MIN_NOTIONAL': 1.0,    # Refuse sells if notional < $1 to avoid LOT_SIZE noise
@@ -1204,6 +1205,85 @@ CONFIG = {
     'FLUX_SPAN': 30,              # Number of assets to analyze for flux
     'FLUX_THRESHOLD': 0.80,       # Raised from 0.60 - only override in VERY strong bearish/bullish
 }
+
+
+def get_max_positions_limit() -> Optional[int]:
+    """Return the active position cap or None for unlimited trading."""
+    if CONFIG.get('UNLIMITED_POSITIONS'):
+        return None
+
+    max_positions = CONFIG.get('MAX_POSITIONS')
+    try:
+        max_positions_int = int(max_positions)
+    except Exception:
+        return None
+
+    return max_positions_int if max_positions_int > 0 else None
+
+
+def max_positions_label() -> str:
+    """Human-readable label for max position status."""
+    limit = get_max_positions_limit()
+    return "unlimited" if limit is None else str(limit)
+
+
+def has_one_minute_profit_consensus(opp: Dict) -> Tuple[bool, str, Dict[str, float]]:
+    """Check whether the opportunity has consensus for a sub-1-minute penny profit.
+
+    Returns (ok, reason, details) where `ok` indicates the one-minute net profit
+    expectation is met, `reason` gives the failure context, and `details` provides
+    the evaluated metrics for logging/debugging.
+    """
+
+    qk = opp.get('quick_kill') or {}
+
+    # Pull estimates from opportunity
+    prob_quick = qk.get('prob_quick_kill') or qk.get('prob_penny_profit', 0.0)
+    confidence = qk.get('confidence', 0.0) if isinstance(qk.get('confidence'), (int, float)) else 0.0
+    est_seconds = qk.get('estimated_seconds')
+    if est_seconds is None and isinstance(qk.get('estimated_minutes'), (int, float)):
+        est_seconds = qk['estimated_minutes'] * 60
+
+    # Refresh estimate from War Strategy if missing/weak
+    if (est_seconds is None or prob_quick <= 0) and WAR_STRATEGY_AVAILABLE:
+        try:
+            estimate = get_quick_kill_estimate(
+                opp.get('symbol'),
+                opp.get('exchange', 'unknown'),
+                opp.get('prices'),
+            )
+            est_seconds = estimate.estimated_seconds
+            prob_quick = max(prob_quick, estimate.prob_quick_kill)
+            confidence = max(confidence, estimate.confidence)
+            opp['quick_kill'] = {**estimate.to_dict(), **qk}
+        except Exception as e:
+            logger.debug(f"Quick kill refresh failed for {opp.get('symbol')}: {e}")
+
+    details = {
+        'prob_quick': prob_quick,
+        'confidence': confidence,
+        'estimated_seconds': est_seconds if est_seconds is not None else -1,
+    }
+
+    if est_seconds is None:
+        return False, "missing 1-minute estimate", details
+
+    meets_time = est_seconds <= 60
+    meets_prob = prob_quick >= 0.5
+    meets_confidence = confidence >= 0.5
+
+    if meets_time and meets_prob and meets_confidence:
+        return True, "1-minute consensus achieved", details
+
+    unmet = []
+    if not meets_time:
+        unmet.append(f"time {est_seconds/60:.1f}m")
+    if not meets_prob:
+        unmet.append(f"prob {prob_quick:.2f}")
+    if not meets_confidence:
+        unmet.append(f"conf {confidence:.2f}")
+
+    return False, ", ".join(unmet), details
 
 PHI = (1 + math.sqrt(5)) / 2  # Golden Ratio = 1.618
 
@@ -10315,8 +10395,8 @@ class AureonKrakenEcosystem:
 
         # Risk limits (tune max_positions) - now with capital awareness!
         self.risk_module = RiskModule(
-            self.thought_bus, 
-            max_positions=CONFIG.get('MAX_POSITIONS', 3),
+            self.thought_bus,
+            max_positions=get_max_positions_limit() or 0,
             get_open_positions_count=lambda: len(self.positions),
             get_available_capital=lambda: self.capital_pool.get_available() if hasattr(self, 'capital_pool') else 0.0,
             min_order_size=6.0  # Kraken minimum ~$5, use $6 for safety
@@ -12147,10 +12227,11 @@ class AureonKrakenEcosystem:
         
         # FORCE deploy scouts - don't stop until we hit the target!
         deployed_per_quote: Dict[str, int] = {}
+        max_positions = get_max_positions_limit() or 10**9
         for candidate in all_candidates:
             if scouts_deployed >= target_scouts:
                 break
-            if len(self.positions) >= CONFIG['MAX_POSITIONS']:
+            if len(self.positions) >= max_positions:
                 break
             if candidate['symbol'] in self.positions:
                 continue
@@ -14655,7 +14736,11 @@ class AureonKrakenEcosystem:
                 print(ln)
         
         # 🌉 Publish top opportunities to bridge for Ultimate
-        top_opportunities = opportunities[:min(CONFIG['MAX_POSITIONS'] * 2, CONFIG['MAX_POSITIONS'] - len(self.positions) + 5)]
+        max_positions = get_max_positions_limit()
+        if max_positions is None:
+            top_opportunities = opportunities
+        else:
+            top_opportunities = opportunities[:min(max_positions * 2, max_positions - len(self.positions) + 5)]
         self.publish_opportunities_to_bridge(top_opportunities)
         
         return top_opportunities
@@ -15139,11 +15224,29 @@ class AureonKrakenEcosystem:
         # Match: 'ForceScout', 'PatriotScout', or any 'Patriot_xxx' pattern
         dominant_node = opp.get('dominant_node', '')
         is_force_scout = (
-            dominant_node in ('ForceScout', 'PatriotScout') or 
+            dominant_node in ('ForceScout', 'PatriotScout') or
             dominant_node.startswith('Patriot_') or  # 🇮🇪 Irish Patriot naming
             CONFIG.get('FORCE_TRADE', False)
         )
-        
+
+        # ⏱️ 1-minute penny-profit consensus gate (unlimited entries need this)
+        consensus_ok, consensus_reason, consensus_details = has_one_minute_profit_consensus(opp)
+        if not consensus_ok and not is_force_scout:
+            print(
+                f"   ⏱️❌ SKIP {symbol}: lacks 1-minute penny consensus "
+                f"({consensus_reason}) [p={consensus_details['prob_quick']:.2f}, "
+                f"conf={consensus_details['confidence']:.2f}, "
+                f"eta={consensus_details['estimated_seconds']/60:.2f}m]"
+            )
+            return None
+        elif consensus_ok:
+            print(
+                f"   ⏱️✅ 1-minute penny consensus for {symbol} "
+                f"(p={consensus_details['prob_quick']:.2f}, "
+                f"conf={consensus_details['confidence']:.2f}, "
+                f"eta={consensus_details['estimated_seconds']/60:.2f}m)"
+            )
+
         # ☘️ CELTIC SNIPER ENTRY VALIDATION
         # Use Celtic intelligence to validate entry quality
         if hasattr(self, 'celtic_sniper') and self.celtic_sniper is not None and not is_force_scout:
@@ -16851,6 +16954,9 @@ class AureonKrakenEcosystem:
         
         # Check positions
         self.check_positions()
+
+        # Determine position capacity (None = unlimited)
+        max_positions = get_max_positions_limit() or 10**9
         
         # Check network coherence
         network_coherence = self.mycelium.get_network_coherence()
@@ -16872,20 +16978,20 @@ class AureonKrakenEcosystem:
         all_opps = self.lattice.filter_signals(raw_opps)
         
         # Rebalance
-        if all_opps and len(self.positions) >= CONFIG['MAX_POSITIONS'] // 2:
+        if all_opps and max_positions < 10**9 and len(self.positions) >= max_positions // 2:
             freed = self.rebalance_portfolio(all_opps)
             if freed > 0: self.refresh_equity()
 
         # Find opportunities
-        if len(self.positions) < CONFIG['MAX_POSITIONS'] and not self.tracker.trading_halted and not trading_paused:
+        if len(self.positions) < max_positions and not self.tracker.trading_halted and not trading_paused:
             # 🎯 TARGET FILL RATE: Actively try to maintain 1/3 positions filled
-            target_positions = int(CONFIG['MAX_POSITIONS'] * CONFIG.get('TARGET_FILL_RATE', 0.33))
+            target_positions = int(max_positions * CONFIG.get('TARGET_FILL_RATE', 0.33))
             current_positions = len(self.positions)
             under_target = current_positions < target_positions
             
             if all_opps:
                 if under_target:
-                    print(f"\\n   🎯 FILLING MODE: {current_positions}/{target_positions} target ({current_positions}/{CONFIG['MAX_POSITIONS']} max)")
+                    print(f"\\n   🎯 FILLING MODE: {current_positions}/{target_positions} target ({current_positions}/{max_positions_label()} max)")
                     print(f"   🔍 Actively seeking {target_positions - current_positions} more positions...")
                 print(f"\\n   🔮 Top Opportunities: {len(all_opps)} found")
                 for opp in all_opps[:5]:
@@ -16897,12 +17003,12 @@ class AureonKrakenEcosystem:
             else:
                 slots_to_fill = 1  # Normal mode: 1 at a time
             
-            for opp in all_opps[:min(slots_to_fill, CONFIG['MAX_POSITIONS'] - current_positions)]:
+            for opp in all_opps[:min(slots_to_fill, max_positions - current_positions)]:
                 self.open_position(opp)
                 
         # Show positions - ENHANCED with full details
         if self.positions:
-            print(f"\\n   📊 ACTIVE POSITIONS ({len(self.positions)}/{CONFIG['MAX_POSITIONS']}):")
+            print(f"\\n   📊 ACTIVE POSITIONS ({len(self.positions)}/{max_positions_label()}):")
             print(f"   {'─'*70}")
             for symbol, pos in self.positions.items():
                 rt = self.get_realtime_price(symbol)
@@ -17641,20 +17747,21 @@ class AureonKrakenEcosystem:
                 
                 # Apply Triadic Envelope Protocol to filter signals
                 all_opps = self.lattice.filter_signals(raw_opps)
-                
+
                 # Dynamic Portfolio Rebalancing - sell underperformers if better opportunities exist
                 freed_capital = 0.0
-                if all_opps and len(self.positions) >= CONFIG['MAX_POSITIONS'] // 2:
+                max_positions = get_max_positions_limit() or 10**9
+                if all_opps and max_positions < 10**9 and len(self.positions) >= max_positions // 2:
                     freed_capital = self.rebalance_portfolio(all_opps)
                     if freed_capital > 0:
                         self.refresh_equity()  # Update cash after rebalancing
 
                 # Find opportunities (if not halted or paused)
-                if len(self.positions) < CONFIG['MAX_POSITIONS'] and not self.tracker.trading_halted and not trading_paused:
+                if len(self.positions) < max_positions and not self.tracker.trading_halted and not trading_paused:
                     # 📊 LOG MARKET SWEEP FOR FULL COVERAGE VALIDATION 📊
                     if TRADE_LOGGER_AVAILABLE and trade_logger:
                         try:
-                            opportunities_entered = min(len(all_opps), CONFIG['MAX_POSITIONS'] - len(self.positions))
+                            opportunities_entered = min(len(all_opps), max_positions - len(self.positions))
                             opportunities_rejected = len(raw_opps) - len(all_opps)
                             
                             # Count rejection reasons
@@ -17707,7 +17814,7 @@ class AureonKrakenEcosystem:
                             print(f"      {icon} {opp['symbol']:12s} +{opp['change24h']:5.1f}% | Γ={opp['coherence']:.2f} | Score: {opp['score']} {nexus_info} {lock}")
                     
                     # During lighthouse, increase position size and allow more entries using available capital
-                    for opp in all_opps[:CONFIG['MAX_POSITIONS'] - len(self.positions)]:
+                    for opp in all_opps[:max_positions - len(self.positions)]:
                         if lighthouse_active:
                             try:
                                 # Use up to 50% of available cash per new entry burst, scaled by κt boost
@@ -17724,7 +17831,7 @@ class AureonKrakenEcosystem:
                         
                 # Show positions - ENHANCED FULL DETAILS TABLE
                 if self.positions:
-                    print(f"\n   📊 ACTIVE POSITIONS ({len(self.positions)}/{CONFIG['MAX_POSITIONS']}):")
+                    print(f"\n   📊 ACTIVE POSITIONS ({len(self.positions)}/{max_positions_label()}):")
                     print(f"   {'─'*80}")
                     print(f"      {'ASSET':6s} │ {'EX':3s} │ {'ENTRY $':>10s} │ {'ENTRY PRICE':>14s} │ {'P&L':>12s} │ {'HOLD':>5s} │ {'EXIT ETA':>12s}")
                     print(f"   {'─'*80}")
@@ -17897,7 +18004,7 @@ class AureonKrakenEcosystem:
                 except Exception:
                     pass
                 
-                print(f"   ⏱️ Runtime: {runtime:.1f} min | Positions: {len(self.positions)}/{CONFIG['MAX_POSITIONS']} | Max Gen: {max_gen}")
+                print(f"   ⏱️ Runtime: {runtime:.1f} min | Positions: {len(self.positions)}/{max_positions_label()} | Max Gen: {max_gen}")
                 
                 if self.tracker.trading_halted:
                     print(f"   🛑 TRADING HALTED: {self.tracker.halt_reason}")
