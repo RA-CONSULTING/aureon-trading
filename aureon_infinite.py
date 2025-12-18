@@ -71,6 +71,15 @@ class PerformanceTracker:
         self.start_capital = 0.0
         self.current_capital = 0.0
         
+    # 🇮🇪 IRA SNIPER - Famous Irish Republican Quotes
+    IRA_SNIPER_QUOTES = [
+        "Our revenge will be the laughter of our children. - Bobby Sands 🍀",
+        "Tiocfaidh ár lá! - Our day will come!",
+        "They have nothing in their whole imperial arsenal that can break the spirit of one Irishman.",
+        "The Republic still lives! - Bobby Sands",
+        "Financial freedom IS freedom. Penny by penny, we rise! 💰",
+    ]
+    
     def record_trade(self, profit_btc: float, btc_usd: float):
         """Record a trade result"""
         self.total_trades += 1
@@ -84,6 +93,15 @@ class PerformanceTracker:
             harvest = profit_btc * HARVEST_PCT
             self.compounded_btc += compound
             self.harvested_btc += harvest
+            
+            # 🇮🇪 IRA SNIPER CELEBRATION!
+            import random
+            quote = random.choice(self.IRA_SNIPER_QUOTES)
+            profit_usd = profit_btc * btc_usd
+            print(f"\n🇮🇪🇮🇪🇮🇪 IRA SNIPER WIN! 🇮🇪🇮🇪🇮🇪")
+            print(f"    💰 +${profit_usd:.2f} BINANCE")
+            print(f"    📜 \"{quote}\"")
+            print(f"🇮🇪🇮🇪🇮🇪🇮🇪🇮🇪🇮🇪🇮🇪🇮🇪🇮🇪🇮🇪🇮🇪🇮🇪🇮🇪🇮🇪🇮🇪\n")
             
             print(f"      💰 Profit: {profit_btc:.8f} BTC (${profit_btc * btc_usd:.2f})")
             print(f"      🔄 Compound: {compound:.8f} BTC | 🌱 Harvest: {harvest:.8f} BTC")

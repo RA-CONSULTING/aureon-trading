@@ -796,6 +796,18 @@ class PerformanceTracker:
         self.cycle_equity_start = initial_balance
         self.equity_baseline = initial_balance
         
+    # 🇮🇪 IRA SNIPER - Famous Irish Republican Quotes
+    IRA_SNIPER_QUOTES = [
+        "Our revenge will be the laughter of our children. - Bobby Sands 🍀",
+        "Our revenge will be the laughter of our children. - Bobby Sands 🍀",
+        "Tiocfaidh ár lá! - Our day will come!",
+        "They have nothing in their whole imperial arsenal that can break the spirit of one Irishman.",
+        "The Republic still lives! - Bobby Sands",
+        "Ireland unfree shall never be at peace. - Patrick Pearse",
+        "We serve neither King nor Kaiser, but Ireland!",
+        "Financial freedom IS freedom. Penny by penny, we rise! 💰",
+    ]
+    
     def record_trade(self, net_pnl: float, fees: float, symbol: str, reason: str, hold_time_sec: float = 0):
         """Record a completed trade"""
         self.total_trades += 1
@@ -803,6 +815,13 @@ class PerformanceTracker:
         result = 'WIN' if net_pnl > 0 else 'LOSS'
         if net_pnl > 0:
             self.wins += 1
+            # 🇮🇪 IRA SNIPER CELEBRATION!
+            import random
+            quote = random.choice(self.IRA_SNIPER_QUOTES)
+            print(f"\n🇮🇪🇮🇪🇮🇪 IRA SNIPER WIN! 🇮🇪🇮🇪🇮🇪")
+            print(f"    💰 +${net_pnl:.4f} on {symbol}")
+            print(f"    📜 \"{quote}\"")
+            print(f"🇮🇪🇮🇪🇮🇪🇮🇪🇮🇪🇮🇪🇮🇪🇮🇪🇮🇪🇮🇪🇮🇪🇮🇪🇮🇪🇮🇪🇮🇪\n")
         else:
             self.losses += 1
         

@@ -594,6 +594,19 @@ class Aureon51Live:
         if net_pnl > 0:
             self.wins += 1
             icon = "✅"
+            # 🇮🇪 IRA SNIPER CELEBRATION!
+            import random
+            IRA_QUOTES = [
+                "Our revenge will be the laughter of our children. - Bobby Sands 🍀",
+                "Tiocfaidh ár lá! - Our day will come!",
+                "The Republic still lives! - Bobby Sands",
+                "Financial freedom IS freedom. Penny by penny, we rise! 💰",
+            ]
+            quote = random.choice(IRA_QUOTES)
+            print(f"\n🇮🇪🇮🇪🇮🇪 IRA SNIPER WIN! 🇮🇪🇮🇪🇮🇪")
+            print(f"    💰 +${net_pnl:.4f} on {symbol}")
+            print(f"    📜 \"{quote}\"")
+            print(f"🇮🇪🇮🇪🇮🇪🇮🇪🇮🇪🇮🇪🇮🇪🇮🇪🇮🇪🇮🇪🇮🇪🇮🇪🇮🇪🇮🇪🇮🇪\n")
         else:
             self.losses += 1
             icon = "❌"

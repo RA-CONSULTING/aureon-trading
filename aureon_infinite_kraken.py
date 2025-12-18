@@ -74,6 +74,15 @@ class PerformanceTracker:
         self.current_capital = 0.0
         self.total_fees = 0.0
         
+    # 🇮🇪 IRA SNIPER - Famous Irish Republican Quotes
+    IRA_SNIPER_QUOTES = [
+        "Our revenge will be the laughter of our children. - Bobby Sands 🍀",
+        "Tiocfaidh ár lá! - Our day will come!",
+        "They have nothing in their whole imperial arsenal that can break the spirit of one Irishman.",
+        "The Republic still lives! - Bobby Sands",
+        "Financial freedom IS freedom. Penny by penny, we rise! 💰",
+    ]
+    
     def record_trade(self, profit_usd: float, fees: float):
         """Record a trade result"""
         self.total_trades += 1
@@ -89,6 +98,14 @@ class PerformanceTracker:
             harvest = net_profit * HARVEST_PCT
             self.compounded_usd += compound
             self.harvested_usd += harvest
+            
+            # 🇮🇪 IRA SNIPER CELEBRATION!
+            import random
+            quote = random.choice(self.IRA_SNIPER_QUOTES)
+            print(f"\n🇮🇪🇮🇪🇮🇪 IRA SNIPER WIN! 🇮🇪🇮🇪🇮🇪")
+            print(f"    💰 +${net_profit:.2f} KRAKEN")
+            print(f"    📜 \"{quote}\"")
+            print(f"🇮🇪🇮🇪🇮🇪🇮🇪🇮🇪🇮🇪🇮🇪🇮🇪🇮🇪🇮🇪🇮🇪🇮🇪🇮🇪🇮🇪🇮🇪\n")
             
             print(f"      💰 Gross: ${profit_usd:.2f} | Fees: ${fees:.2f} | Net: ${net_profit:.2f}")
             print(f"      🔄 Compound: ${compound:.2f} | 🌱 Harvest: ${harvest:.2f}")

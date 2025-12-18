@@ -666,6 +666,21 @@ class AureonBTCv2:
                 
                 if pnl_btc >= 0:
                     self.wins += 1
+                    # 🇮🇪 IRA SNIPER CELEBRATION!
+                    import random
+                    IRA_QUOTES = [
+                        "Our revenge will be the laughter of our children. - Bobby Sands 🍀",
+                        "Tiocfaidh ár lá! - Our day will come!",
+                        "The Republic still lives! - Bobby Sands",
+                        "Financial freedom IS freedom. Penny by penny, we rise! 💰",
+                    ]
+                    btc_price = self.get_btc_price()
+                    pnl_usd = pnl_btc * btc_price
+                    quote = random.choice(IRA_QUOTES)
+                    print(f"\n🇮🇪🇮🇪🇮🇪 IRA SNIPER WIN! 🇮🇪🇮🇪🇮🇪")
+                    print(f"    💰 +${pnl_usd:.4f} on {symbol} [BTC PAIRS]")
+                    print(f"    📜 \"{quote}\"")
+                    print(f"🇮🇪🇮🇪🇮🇪🇮🇪🇮🇪🇮🇪🇮🇪🇮🇪🇮🇪🇮🇪🇮🇪🇮🇪🇮🇪🇮🇪🇮🇪\n")
                 else:
                     self.losses += 1
                 

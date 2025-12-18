@@ -1021,6 +1021,19 @@ class AureonMultiExchangeTrader:
                     self.total_profit += pnl_usd
                     if pnl_usd >= 0:
                         self.wins += 1
+                        # 🇮🇪 IRA SNIPER CELEBRATION!
+                        import random
+                        IRA_QUOTES = [
+                            "Our revenge will be the laughter of our children. - Bobby Sands 🍀",
+                            "Tiocfaidh ár lá! - Our day will come!",
+                            "The Republic still lives! - Bobby Sands",
+                            "Financial freedom IS freedom. Penny by penny, we rise! 💰",
+                        ]
+                        quote = random.choice(IRA_QUOTES)
+                        print(f"\n🇮🇪🇮🇪🇮🇪 IRA SNIPER WIN! 🇮🇪🇮🇪🇮🇪")
+                        print(f"    💰 +${pnl_usd:.4f} on {symbol} [{exchange.upper()}]")
+                        print(f"    📜 \"{quote}\"")
+                        print(f"🇮🇪🇮🇪🇮🇪🇮🇪🇮🇪🇮🇪🇮🇪🇮🇪🇮🇪🇮🇪🇮🇪🇮🇪🇮🇪🇮🇪🇮🇪\n")
                     
                     if key in self.peak_prices:
                         del self.peak_prices[key]
