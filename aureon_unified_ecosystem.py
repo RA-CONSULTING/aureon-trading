@@ -11599,8 +11599,29 @@ class AureonKrakenEcosystem:
                 deployed = self.patriot_deployer.deploy_patriots(all_candidates, target_count=target_scouts)
                 
                 if deployed:
-                    print(f"\n   ☘️ IRISH PATRIOTS DEPLOYED: {len(deployed)} warriors in the field!")
+                    # 🔥 ACTUALLY PLACE THE ORDERS - Patriots need real positions!
+                    real_positions = 0
+                    for scout in deployed:
+                        # Build opportunity dict for open_position
+                        opp = {
+                            'symbol': scout.symbol,
+                            'price': scout.entry_price,
+                            'score': 75,  # Force high score
+                            'coherence': 0.65,
+                            'dominant_node': f'Patriot_{scout.codename}',
+                            'source': scout.exchange,
+                            'quote_currency': self._get_quote_asset(scout.symbol)
+                        }
+                        result = self.open_position(opp)
+                        if result:
+                            real_positions += 1
+                            print(f"   💰 {scout.codename} position LIVE on {scout.exchange}!")
+                        else:
+                            print(f"   ⚠️ {scout.codename} order rejected - check balance/filters")
+                    
+                    print(f"\n   ☘️ IRISH PATRIOTS: {real_positions}/{len(deployed)} actually in the field!")
                     self.scouts_deployed = True
+                    self._sync_sniper_bridge("patriots")
                     return
             
             # Fall through to regular deployment if patriot deployer fails
