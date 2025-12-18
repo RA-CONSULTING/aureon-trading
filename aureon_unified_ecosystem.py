@@ -5837,8 +5837,9 @@ class ProbabilityReportGenerator:
         # === EMERGING & SPECULATIVE ===
         'APEUSD', 'CHZUSD', 'MASKUSD', 'JASMYUSD', 'ZRXUSD',
         
-        # === USDC PAIRS (for stablecoin rotation) ===
-        'XXBTUSDC', 'XETHUSDC', 'SOLUSDC', 'DOGEUSDC', 'XLMUSDC', 'ADAUSDC', 'XRPUSDC',
+        # === USDC PAIRS (Kraken has limited USDC support - using USD pairs instead) ===
+        # NOTE: DOGEUSDC is NOT available on Kraken - use DOGEUSD instead
+        'XXBTUSDC', 'XETHUSDC', 'SOLUSDC', 'XLMUSDC', 'ADAUSDC', 'XRPUSDC',
     ]
     
     def __init__(self, report_dir: str = '.', interval_seconds: float = 15.0):
