@@ -1,5 +1,7 @@
 requests>=2.32.0
 python-dotenv>=1.0.0
+python-binance>=1.0.19
+krakenex>=2.1.0
 numpy
 pandas
 skyfield
