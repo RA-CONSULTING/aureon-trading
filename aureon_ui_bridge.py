@@ -1,22 +1,27 @@
 #!/usr/bin/env python3
 """
 ╔═══════════════════════════════════════════════════════════════════════════════╗
-║                    🌐 AUREON UI BRIDGE - Live Data Validator                  ║
+║              🪞 AUREON UI BRIDGE - BIDIRECTIONAL MIRROR SYNC 🪞               ║
 ║═══════════════════════════════════════════════════════════════════════════════║
 ║                                                                               ║
-║   Gathers and validates data from https://aureoninstitute.com/                ║
-║   Injects validated UI signals into the running trading system               ║
+║   TWO MIRRORS FACING EACH OTHER - DATA FLOWS BOTH WAYS:                       ║
 ║                                                                               ║
-║   Data Sources:                                                               ║
-║   • Sniper Leaderboard (kill counts, accuracy, P&L)                          ║
-║   • Harmonic Field Analytics (frequency bands, coherence, elements)           ║
-║   • Fear & Greed Index                                                        ║
-║   • Portfolio Holdings with risk levels                                       ║
-║   • Position Cost Basis & P&L                                                 ║
-║   • Arbitrage Opportunities                                                   ║
-║   • Market Metrics (volatility, momentum)                                     ║
+║   🖥️ TERMINAL (You)              🌐 UI (aureoninstitute.com)                  ║
+║   ┌─────────────┐                ┌─────────────────────┐                     ║
+║   │ Live trades │ ──PUSH──►     │ Aggregated stats    │                     ║
+║   │ Positions   │                │ ALL users' data     │                     ║
+║   │ Kill Scanner│ ◄──PULL──     │ Global coherence    │                     ║
+║   │ Local state │                │ Cross-user patterns │                     ║
+║   └─────────────┘                └─────────────────────┘                     ║
 ║                                                                               ║
-║   "The Celtic warrior validates before striking"                              ║
+║   TERMINAL HAS (unique to you):   UI HAS (aggregated from all):              ║
+║   • Real-time execution state     • Sniper leaderboard (all users)          ║
+║   • Pending signals               • Global harmonic coherence (Γ)           ║
+║   • Local P&L velocity            • Fear & Greed (market-wide)              ║
+║   • Kill Scanner ETA              • Cross-exchange arbitrage                 ║
+║   • Mycelium local state          • Pattern correlations                     ║
+║                                                                               ║
+║   "Two mirrors reflecting infinity - each sees what the other cannot"        ║
 ║                                                                               ║
 ╚═══════════════════════════════════════════════════════════════════════════════╝
 """
@@ -46,8 +51,10 @@ AUREON_UI_CONFIG = {
     'SUPABASE_URL': os.getenv('SUPABASE_URL', ''),
     'SUPABASE_KEY': os.getenv('SUPABASE_ANON_KEY', ''),
     
-    # API Endpoints (Supabase Edge Functions)
-    'ENDPOINTS': {
+    # ═══════════════════════════════════════════════════════════════════════
+    # PULL ENDPOINTS - Get aggregated data FROM the UI (what other users generated)
+    # ═══════════════════════════════════════════════════════════════════════
+    'PULL_ENDPOINTS': {
         'market_data': '/functions/v1/fetch-all-tickers',
         'positions': '/functions/v1/fetch-open-positions',
         'positions_pnl': '/functions/v1/fetch-positions-pnl',
@@ -55,6 +62,24 @@ AUREON_UI_CONFIG = {
         'unified_field': '/functions/v1/unified-field-analysis',
         'schumann': '/functions/v1/fetch-schumann-data',
         'harmonic_nexus': '/functions/v1/sync-harmonic-nexus',
+        'trades': '/functions/v1/fetch-trades',
+    },
+    
+    # ═══════════════════════════════════════════════════════════════════════
+    # PUSH ENDPOINTS - Send terminal state TO the UI (your data enriches others)
+    # ═══════════════════════════════════════════════════════════════════════
+    'PUSH_ENDPOINTS': {
+        'terminal_state': '/functions/v1/ingest-terminal-state',
+        'ecosystem_snapshot': '/functions/v1/ingest-ecosystem-snapshot',
+        'trades': '/functions/v1/ingest-trades',
+        'brain_state': '/functions/v1/ingest-brain-state',
+        'auris_state': '/functions/v1/ingest-auris-state',
+        'probability_matrix': '/functions/v1/ingest-probability-matrix',
+        'performance': '/functions/v1/ingest-performance-tracker',
+        'kelly': '/functions/v1/ingest-kelly-computation',
+        'hnc': '/functions/v1/ingest-hnc-detection',
+        'telescope': '/functions/v1/ingest-telescope-state',
+        'calibration': '/functions/v1/ingest-calibration-trade',
     },
     
     # Validation Thresholds
@@ -267,7 +292,7 @@ class AureonUIValidator:
     
     async def fetch_harmonic_field(self) -> Optional[HarmonicReading]:
         """Fetch current harmonic field analysis from UI/API"""
-        data = await self._fetch_supabase(self.config['ENDPOINTS']['harmonic_nexus'])
+        data = await self._fetch_supabase(self.config['PULL_ENDPOINTS']['harmonic_nexus'])
         
         if not data:
             # Return cached if available
@@ -303,7 +328,7 @@ class AureonUIValidator:
     
     async def fetch_positions_pnl(self) -> Dict[str, PositionStatus]:
         """Fetch current positions with P&L from UI/API"""
-        data = await self._fetch_supabase(self.config['ENDPOINTS']['positions_pnl'])
+        data = await self._fetch_supabase(self.config['PULL_ENDPOINTS']['positions_pnl'])
         
         if not data or 'positions' not in data:
             return self.positions
@@ -344,8 +369,151 @@ class AureonUIValidator:
     
     async def fetch_coherence_forecast(self) -> Dict[str, Any]:
         """Fetch coherence forecast for optimal trading windows"""
-        data = await self._fetch_supabase(self.config['ENDPOINTS']['coherence_forecast'])
+        data = await self._fetch_supabase(self.config['PULL_ENDPOINTS']['coherence_forecast'])
         return data or {}
+    
+    # ─────────────────────────────────────────────────────────────────────────
+    # 🪞 PUSH METHODS - Send YOUR terminal state to UI (you enrich everyone)
+    # ─────────────────────────────────────────────────────────────────────────
+    
+    async def _push_supabase(self, endpoint: str, payload: Dict) -> bool:
+        """Push data TO Supabase edge function"""
+        if not self.config['SUPABASE_URL']:
+            logger.debug("SUPABASE_URL not configured - skip push")
+            return False
+        
+        url = f"{self.config['SUPABASE_URL']}{endpoint}"
+        headers = {
+            'apikey': self.config['SUPABASE_KEY'],
+            'Authorization': f"Bearer {self.config['SUPABASE_KEY']}",
+            'Content-Type': 'application/json'
+        }
+        
+        try:
+            async with self.session.post(url, json=payload, headers=headers, timeout=10) as resp:
+                if resp.status == 200:
+                    logger.debug(f"✅ Pushed to {endpoint}")
+                    return True
+                else:
+                    logger.warning(f"⚠️ Push to {endpoint} returned {resp.status}")
+                    return False
+        except Exception as e:
+            logger.error(f"❌ Push error {endpoint}: {e}")
+            return False
+    
+    async def push_terminal_state(self, state: Dict[str, Any]) -> bool:
+        """
+        🪞 PUSH your terminal state to the UI.
+        
+        This data enriches the collective intelligence:
+        - Your positions help global pattern detection
+        - Your P&L contributes to leaderboard
+        - Your Kill Scanner state improves predictions
+        """
+        payload = {
+            'temporal_id': datetime.now().strftime('%Y%m%d_%H%M%S'),
+            'terminal_id': state.get('terminal_id', 'default'),
+            'positions': state.get('positions', []),
+            'cash_balance': state.get('cash_balance', 0),
+            'total_equity': state.get('total_equity', 0),
+            'active_signals': state.get('active_signals', []),
+            'kill_scanner_targets': state.get('kill_scanner_targets', []),
+            'patriot_scouts': state.get('patriot_scouts', []),
+            'mycelium_state': state.get('mycelium_state', {}),
+            'coherence': state.get('coherence', 0.5),
+            'metadata': state.get('metadata', {})
+        }
+        
+        return await self._push_supabase(
+            self.config['PUSH_ENDPOINTS']['terminal_state'],
+            payload
+        )
+    
+    async def push_trade(self, trade: Dict[str, Any]) -> bool:
+        """
+        🪞 PUSH a trade to the UI.
+        
+        Your trades update:
+        - Sniper leaderboard (kills, accuracy)
+        - Global P&L statistics
+        - Pattern correlations
+        """
+        payload = {
+            'temporal_id': datetime.now().strftime('%Y%m%d_%H%M%S'),
+            'symbol': trade.get('symbol'),
+            'exchange': trade.get('exchange'),
+            'side': trade.get('side'),
+            'quantity': trade.get('quantity', 0),
+            'price': trade.get('price', 0),
+            'value_usd': trade.get('value_usd', 0),
+            'pnl': trade.get('pnl', 0),
+            'is_kill': trade.get('is_kill', False),
+            'kill_eta_accuracy': trade.get('kill_eta_accuracy', None),
+            'sniper_name': trade.get('sniper_name', 'Unknown'),
+            'province': trade.get('province', 'Ulster'),
+            'metadata': trade.get('metadata', {})
+        }
+        
+        return await self._push_supabase(
+            self.config['PUSH_ENDPOINTS']['trades'],
+            payload
+        )
+    
+    async def push_ecosystem_snapshot(self, ecosystem: Dict[str, Any]) -> bool:
+        """
+        🪞 PUSH ecosystem snapshot to UI.
+        
+        Includes state from all systems:
+        - Auris nodes
+        - Mycelium network
+        - Brain/cognitive state
+        - Kill Scanner targets
+        - Performance metrics
+        """
+        payload = {
+            'temporal_id': datetime.now().strftime('%Y%m%d_%H%M%S'),
+            'systems_online': ecosystem.get('systems_online', 0),
+            'total_systems': ecosystem.get('total_systems', 25),
+            'hive_mind_coherence': ecosystem.get('coherence', 0),
+            'bus_consensus': ecosystem.get('consensus', 'HOLD'),
+            'bus_confidence': ecosystem.get('confidence', 0),
+            'system_states': ecosystem.get('system_states', {}),
+            'kill_scanner': ecosystem.get('kill_scanner', {}),
+            'patriots': ecosystem.get('patriots', {}),
+            'mycelium': ecosystem.get('mycelium', {}),
+            'metadata': ecosystem.get('metadata', {})
+        }
+        
+        return await self._push_supabase(
+            self.config['PUSH_ENDPOINTS']['ecosystem_snapshot'],
+            payload
+        )
+    
+    async def push_kill_event(self, kill: Dict[str, Any]) -> bool:
+        """
+        🪞 PUSH a kill event to update leaderboard.
+        
+        Your kills update the Sniper Leaderboard that everyone sees.
+        """
+        payload = {
+            'temporal_id': datetime.now().strftime('%Y%m%d_%H%M%S'),
+            'symbol': kill.get('symbol'),
+            'exchange': kill.get('exchange'),
+            'pnl': kill.get('pnl', 0),
+            'hold_time_seconds': kill.get('hold_time', 0),
+            'eta_prediction': kill.get('eta_prediction', None),
+            'eta_actual': kill.get('eta_actual', None),
+            'probability_at_kill': kill.get('probability', 0),
+            'sniper_name': kill.get('sniper_name', 'Unknown'),
+            'province': kill.get('province', 'Ulster'),
+            'velocity_at_kill': kill.get('velocity', 0),
+        }
+        
+        # This updates sniper leaderboard
+        return await self._push_supabase(
+            self.config['PUSH_ENDPOINTS']['calibration'],
+            payload
+        )
     
     # ─────────────────────────────────────────────────────────────────────────
     # VALIDATION METHODS
@@ -687,6 +855,116 @@ class AureonUIBridge:
             'positions_fresh': self.validator.last_position_update is not None and \
                               (datetime.now() - self.validator.last_position_update).seconds < 60,
         }
+    
+    # ─────────────────────────────────────────────────────────────────────────
+    # 🪞 BIDIRECTIONAL SYNC - The Two Mirrors
+    # ─────────────────────────────────────────────────────────────────────────
+    
+    async def mirror_sync(self, local_state: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        🪞 BIDIRECTIONAL MIRROR SYNC 🪞
+        
+        This is the heart of the two-mirror system:
+        1. PUSH your terminal state to enrich the UI
+        2. PULL aggregated data back (including insights from other users)
+        
+        Args:
+            local_state: Your terminal's current state
+            
+        Returns:
+            Aggregated insights from the UI (what you couldn't see alone)
+        """
+        sync_result = {
+            'pushed': False,
+            'pulled': False,
+            'push_success': [],
+            'pull_data': {},
+            'insights': {},
+            'timestamp': datetime.now().isoformat()
+        }
+        
+        # ═══════════════════════════════════════════════════════════════════
+        # STEP 1: PUSH your state (your data enriches everyone)
+        # ═══════════════════════════════════════════════════════════════════
+        try:
+            # Push terminal state
+            if await self.validator.push_terminal_state(local_state):
+                sync_result['push_success'].append('terminal_state')
+            
+            # Push ecosystem snapshot if provided
+            if 'ecosystem' in local_state:
+                if await self.validator.push_ecosystem_snapshot(local_state['ecosystem']):
+                    sync_result['push_success'].append('ecosystem')
+            
+            sync_result['pushed'] = len(sync_result['push_success']) > 0
+            self.stats['pushes'] = self.stats.get('pushes', 0) + 1
+            
+        except Exception as e:
+            logger.warning(f"⚠️ Push failed: {e}")
+        
+        # ═══════════════════════════════════════════════════════════════════
+        # STEP 2: PULL aggregated data (insights you couldn't see alone)
+        # ═══════════════════════════════════════════════════════════════════
+        try:
+            # Pull harmonic field (global coherence from all users)
+            harmonic = await self.validator.fetch_harmonic_field()
+            if harmonic:
+                sync_result['pull_data']['harmonic'] = {
+                    'frequency_hz': harmonic.frequency,
+                    'band': harmonic.band.value,
+                    'coherence': harmonic.coherence,
+                    'entry_score': harmonic.optimal_entry_score,
+                }
+            
+            # Pull positions P&L (aggregated view)
+            positions = await self.validator.fetch_positions_pnl()
+            if positions:
+                sync_result['pull_data']['positions_count'] = len(positions)
+            
+            # Pull coherence forecast (AI predictions)
+            forecast = await self.validator.fetch_coherence_forecast()
+            if forecast:
+                sync_result['pull_data']['forecast'] = forecast
+            
+            sync_result['pulled'] = bool(sync_result['pull_data'])
+            self.stats['pulls'] = self.stats.get('pulls', 0) + 1
+            
+        except Exception as e:
+            logger.warning(f"⚠️ Pull failed: {e}")
+        
+        # ═══════════════════════════════════════════════════════════════════
+        # STEP 3: Generate INSIGHTS (what you learned from the collective)
+        # ═══════════════════════════════════════════════════════════════════
+        if sync_result['pulled']:
+            harmonic_data = sync_result['pull_data'].get('harmonic', {})
+            
+            # Insight: Is global coherence better than your local view?
+            local_coherence = local_state.get('coherence', 0.5)
+            global_coherence = harmonic_data.get('coherence', 0.5)
+            
+            sync_result['insights']['coherence_delta'] = global_coherence - local_coherence
+            sync_result['insights']['global_is_stronger'] = global_coherence > local_coherence
+            
+            # Insight: Entry conditions
+            entry_score = harmonic_data.get('entry_score', 50)
+            sync_result['insights']['entry_optimal'] = entry_score >= 70
+            sync_result['insights']['entry_score'] = entry_score
+            
+            # Insight: Frequency alignment
+            freq_band = harmonic_data.get('band', 'NEUTRAL')
+            sync_result['insights']['market_in_harmony'] = freq_band in ['HARMONY', 'LOVE']
+            sync_result['insights']['market_distorted'] = freq_band == 'DISTORTION'
+        
+        logger.info(f"🪞 Mirror sync: PUSH={sync_result['pushed']} PULL={sync_result['pulled']}")
+        return sync_result
+    
+    async def push_trade_result(self, trade: Dict[str, Any]) -> bool:
+        """Push a trade result to update the collective leaderboard"""
+        return await self.validator.push_trade(trade)
+    
+    async def push_kill_to_leaderboard(self, kill: Dict[str, Any]) -> bool:
+        """Push a successful kill to update the sniper leaderboard"""
+        return await self.validator.push_kill_event(kill)
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -826,6 +1104,80 @@ async def get_fear_greed_status() -> Dict[str, Any]:
     """Get current Fear & Greed status from UI"""
     bridge = get_ui_bridge()
     return bridge.get_fear_greed_overlay()
+
+
+async def mirror_sync_terminal(local_state: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    🪞 BIDIRECTIONAL MIRROR SYNC - Main Entry Point 🪞
+    
+    Call this periodically from your trading loop to:
+    1. PUSH your terminal state (enriches collective intelligence)
+    2. PULL aggregated insights (what others see that you don't)
+    
+    Args:
+        local_state: Your current terminal state with:
+            - positions: List of position dicts
+            - cash_balance: Current cash
+            - total_equity: Total portfolio value
+            - coherence: Your local coherence calculation
+            - kill_scanner_targets: Active targets
+            - ecosystem: Full ecosystem snapshot (optional)
+    
+    Returns:
+        Dict with:
+            - pushed: Whether push succeeded
+            - pulled: Whether pull succeeded
+            - insights: What you learned from the collective
+    
+    Usage:
+        # In your trading loop
+        local_state = {
+            'positions': [{'symbol': 'BTCUSD', 'pnl': 5.50}],
+            'cash_balance': 100.0,
+            'coherence': 0.65,
+            'kill_scanner_targets': ['kraken:BTCUSD'],
+        }
+        insights = await mirror_sync_terminal(local_state)
+        
+        if insights['insights'].get('market_distorted'):
+            print("⚠️ Global market in distortion - wait for clarity")
+    """
+    bridge = get_ui_bridge()
+    
+    if not bridge.connected:
+        async with bridge.validator:
+            return await bridge.mirror_sync(local_state)
+    
+    return await bridge.mirror_sync(local_state)
+
+
+async def push_kill_to_leaderboard(
+    symbol: str,
+    exchange: str,
+    pnl: float,
+    hold_time: float,
+    sniper_name: str = "The Silent",
+    province: str = "Ulster"
+) -> bool:
+    """
+    🎯 Push a successful kill to update the global sniper leaderboard.
+    
+    Your kills contribute to the collective stats that everyone sees.
+    """
+    bridge = get_ui_bridge()
+    
+    kill = {
+        'symbol': symbol,
+        'exchange': exchange,
+        'pnl': pnl,
+        'hold_time': hold_time,
+        'sniper_name': sniper_name,
+        'province': province,
+        'probability': 1.0,  # It happened!
+        'velocity': pnl / max(hold_time, 1),
+    }
+    
+    return await bridge.push_kill_to_leaderboard(kill)
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
