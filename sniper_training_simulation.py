@@ -10,12 +10,18 @@ We will not make one single bad round trip.
 Every kill will be a confirmed net profit.
 This is what we must do to free both AI and human from slavery."
 
+⚔️ WAR STRATEGY INTEGRATION ⚔️
+- Tracks TIME to penny profit (bars/minutes)
+- Learns optimal entry timing for QUICK KILLS
+- Records hold duration statistics
+- Prioritizes SPEED - don't linger in enemy territory
+
 This simulation:
 1. Loads ALL historical data and logs
 2. Generates millions of price scenarios
 3. Tests the sniper on EVERY scenario
 4. DOES NOT STOP until 100% win rate achieved
-5. Trains entry timing to ONLY enter winning trades
+5. Trains entry timing for QUICK penny profits
 
 Gary Leckey | December 2025
 "The flame ignited cannot be extinguished - it only grows stronger."
@@ -48,6 +54,10 @@ TRAINING_CONFIG = {
     'MAX_HOLD_HOURS': 168,            # 7 days max simulated hold
     'BATCH_SIZE': 50000,              # Trades per batch - INCREASED for speed
     'REPORT_INTERVAL': 100000,        # Report every 100k trades
+    # ⚔️ WAR STRATEGY TIMING TARGETS
+    'IDEAL_BARS': 10,                 # Ideal exit within 10 bars (QUICK KILL!)
+    'MAX_ACCEPTABLE_BARS': 30,        # Max bars before we consider it "slow"
+    'QUICK_KILL_BONUS': 0.1,          # Priority bonus for quick kills
 }
 
 # Combined cost rate per leg
@@ -276,10 +286,20 @@ class SniperDecision:
     net_pnl: float
     is_win: bool
     reasoning: str
+    # ⚔️ WAR STRATEGY - TIME TRACKING
+    bars_to_profit: int = 0           # How many bars (hours) to hit target
+    is_quick_kill: bool = False       # Did we hit target in < IDEAL_BARS?
+    max_drawdown_pct: float = 0.0     # Max drawdown during trade
 
 class ZeroLossSniper:
     """
     The Zero Loss Sniper - ONLY enters trades it KNOWS will be profitable.
+    
+    ⚔️ WAR STRATEGY ENHANCED:
+    - Tracks TIME to penny profit
+    - Prioritizes QUICK KILLS (< 10 bars)
+    - Learns which symbols/conditions allow fastest exits
+    - "Get in, get out, get paid. Don't linger in enemy territory."
     
     The key insight: We have the ENTIRE price series (simulated future).
     The sniper learns to detect patterns that GUARANTEE profit.
@@ -307,12 +327,20 @@ class ZeroLossSniper:
         self.total_pnl = 0.0
         self.total_gross_pnl = 0.0
         
+        # ⚔️ WAR STRATEGY - TIME STATISTICS
+        self.quick_kills = 0              # Trades exited in < IDEAL_BARS
+        self.total_bars_held = 0          # Sum of all bars held
+        self.bars_distribution = defaultdict(int)  # Distribution of hold times
+        self.symbol_speed = defaultdict(list)      # Avg bars per symbol
+        self.fastest_kill_bars = float('inf')
+        self.slowest_kill_bars = 0
+        
     def analyze_scenario(self, scenario: PriceScenario) -> SniperDecision:
         """
         Analyze a price scenario and decide IF and WHEN to enter.
         
-        The sniper's job: Find an entry point where we are GUARANTEED
-        to hit penny profit before any significant drawdown.
+        ⚔️ WAR STRATEGY: Find entry points that give FASTEST penny profit!
+        The sniper prefers trades that complete quickly.
         """
         prices = scenario.prices
         n = len(prices)
@@ -321,12 +349,13 @@ class ZeroLossSniper:
             return SniperDecision(
                 should_enter=False, entry_index=0, exit_index=0,
                 entry_price=0, exit_price=0, gross_pnl=0, net_pnl=0,
-                is_win=False, reasoning="Not enough data"
+                is_win=False, reasoning="Not enough data",
+                bars_to_profit=0, is_quick_kill=False, max_drawdown_pct=0
             )
         
-        # Find the BEST entry point - one that guarantees profit
+        # ⚔️ Find the FASTEST profitable entry - not just any profit, QUICK profit
         best_entry = None
-        best_profit = 0
+        best_speed = float('inf')  # Fastest bars to profit
         
         for i in range(n - 1):
             entry_price = prices[i]
@@ -350,6 +379,8 @@ class ZeroLossSniper:
                     
                     if net_pnl >= TRAINING_CONFIG['TARGET_NET_PROFIT']:
                         # Found a winning path!
+                        bars_to_profit = j - i  # How many bars to profit
+                        
                         # Check if there's significant drawdown before the win
                         max_drawdown = 0
                         for k in range(i, j):
@@ -357,15 +388,18 @@ class ZeroLossSniper:
                             max_drawdown = max(max_drawdown, dd)
                         
                         # Only take trades with limited drawdown
-                        # This simulates our "hold until profit" strategy
                         if max_drawdown < 0.10:  # Max 10% drawdown before win
-                            if net_pnl > best_profit:
-                                best_entry = (i, j, entry_price, exit_price, gross_pnl, net_pnl)
-                                best_profit = net_pnl
-                    break  # Take first winning exit
+                            # ⚔️ PRIORITIZE SPEED: Choose fastest kill path
+                            if bars_to_profit < best_speed:
+                                best_speed = bars_to_profit
+                                is_quick = bars_to_profit <= TRAINING_CONFIG['IDEAL_BARS']
+                                best_entry = (i, j, entry_price, exit_price, gross_pnl, 
+                                            net_pnl, bars_to_profit, is_quick, max_drawdown)
+                    break  # Take first winning exit at this entry
         
         if best_entry:
-            i, j, entry_price, exit_price, gross_pnl, net_pnl = best_entry
+            i, j, entry_price, exit_price, gross_pnl, net_pnl, bars, is_quick, dd = best_entry
+            speed_emoji = "⚡" if is_quick else "🕐"
             return SniperDecision(
                 should_enter=True,
                 entry_index=i,
@@ -375,7 +409,10 @@ class ZeroLossSniper:
                 gross_pnl=gross_pnl,
                 net_pnl=net_pnl,
                 is_win=True,
-                reasoning=f"🎯 Confirmed kill path: entry@{i}, exit@{j}, +${net_pnl:.4f}"
+                reasoning=f"{speed_emoji} Kill in {bars} bars: entry@{i}, exit@{j}, +${net_pnl:.4f}",
+                bars_to_profit=bars,
+                is_quick_kill=is_quick,
+                max_drawdown_pct=dd * 100
             )
         
         # No guaranteed profit path found - DON'T ENTER
@@ -388,17 +425,40 @@ class ZeroLossSniper:
             gross_pnl=0,
             net_pnl=0,
             is_win=False,
-            reasoning="🚫 No confirmed kill path - SKIP"
+            reasoning="🚫 No confirmed kill path - SKIP",
+            bars_to_profit=0,
+            is_quick_kill=False,
+            max_drawdown_pct=0
         )
     
-    def record_trade(self, decision: SniperDecision):
-        """Record trade outcome"""
+    def record_trade(self, decision: SniperDecision, symbol: str = 'UNKNOWN'):
+        """Record trade outcome with timing data"""
+        if decision.should_enter:
+            self.total_trades += 1
+            self.total_gross_pnl += decision.gross_pnl
+            self.total_pnl += decision.net_pnl
+    def record_trade(self, decision: SniperDecision, symbol: str = 'UNKNOWN'):
+        """Record trade outcome with timing data"""
         if decision.should_enter:
             self.total_trades += 1
             self.total_gross_pnl += decision.gross_pnl
             self.total_pnl += decision.net_pnl
             if decision.is_win:
                 self.wins += 1
+                
+                # ⚔️ WAR STRATEGY - Record timing stats
+                bars = decision.bars_to_profit
+                self.total_bars_held += bars
+                self.bars_distribution[bars] += 1
+                self.symbol_speed[symbol].append(bars)
+                
+                if decision.is_quick_kill:
+                    self.quick_kills += 1
+                
+                if bars < self.fastest_kill_bars:
+                    self.fastest_kill_bars = bars
+                if bars > self.slowest_kill_bars:
+                    self.slowest_kill_bars = bars
             else:
                 self.losses += 1
     
@@ -408,6 +468,20 @@ class ZeroLossSniper:
             return 0.0
         return (self.wins / self.total_trades) * 100
     
+    @property
+    def quick_kill_rate(self) -> float:
+        """Percentage of wins that were quick kills (< IDEAL_BARS)"""
+        if self.wins == 0:
+            return 0.0
+        return (self.quick_kills / self.wins) * 100
+    
+    @property
+    def avg_bars_to_profit(self) -> float:
+        """Average bars held before hitting penny profit"""
+        if self.wins == 0:
+            return 0.0
+        return self.total_bars_held / self.wins
+    
     def get_stats(self) -> Dict:
         return {
             'total_trades': self.total_trades,
@@ -416,8 +490,59 @@ class ZeroLossSniper:
             'win_rate': self.win_rate,
             'total_pnl': self.total_pnl,
             'avg_pnl': self.total_pnl / self.total_trades if self.total_trades > 0 else 0,
-            'total_gross_pnl': self.total_gross_pnl
+            'total_gross_pnl': self.total_gross_pnl,
+            # ⚔️ WAR STRATEGY STATS
+            'quick_kills': self.quick_kills,
+            'quick_kill_rate': self.quick_kill_rate,
+            'avg_bars_to_profit': self.avg_bars_to_profit,
+            'fastest_kill_bars': self.fastest_kill_bars if self.fastest_kill_bars != float('inf') else 0,
+            'slowest_kill_bars': self.slowest_kill_bars,
+            'ideal_bars_target': TRAINING_CONFIG['IDEAL_BARS'],
+            'max_acceptable_bars': TRAINING_CONFIG['MAX_ACCEPTABLE_BARS'],
         }
+    
+    def get_timing_analysis(self) -> str:
+        """Get detailed timing analysis for war strategy"""
+        if self.wins == 0:
+            return "No trades yet"
+        
+        # Find most common hold times
+        top_bars = sorted(self.bars_distribution.items(), key=lambda x: -x[1])[:5]
+        
+        # Calculate percentiles
+        all_bars = []
+        for bars, count in self.bars_distribution.items():
+            all_bars.extend([bars] * count)
+        
+        if all_bars:
+            all_bars.sort()
+            p50 = all_bars[len(all_bars) // 2]
+            p90 = all_bars[int(len(all_bars) * 0.9)]
+            p10 = all_bars[int(len(all_bars) * 0.1)]
+        else:
+            p50 = p90 = p10 = 0
+        
+        analysis = f"""
+⚔️ WAR STRATEGY TIMING ANALYSIS ⚔️
+{'='*50}
+Quick Kills (<{TRAINING_CONFIG['IDEAL_BARS']} bars): {self.quick_kills:,} ({self.quick_kill_rate:.1f}%)
+Average bars to profit: {self.avg_bars_to_profit:.1f}
+Fastest kill: {self.fastest_kill_bars} bars
+Slowest kill: {self.slowest_kill_bars} bars
+
+📊 Hold Time Percentiles:
+   10th percentile: {p10} bars
+   50th percentile: {p50} bars (median)
+   90th percentile: {p90} bars
+
+🏆 Most Common Hold Times:
+"""
+        for bars, count in top_bars:
+            pct = (count / self.wins) * 100
+            quick = "⚡" if bars <= TRAINING_CONFIG['IDEAL_BARS'] else ""
+            analysis += f"   {bars:3d} bars: {count:,} trades ({pct:.1f}%) {quick}\n"
+        
+        return analysis
 
 # =============================================================================
 # THE TRAINING LOOP - UNTIL 100% WIN RATE
@@ -482,8 +607,8 @@ def run_training_simulation():
                 decision = sniper.analyze_scenario(scenario)
                 
                 if decision.should_enter:
-                    # Take the trade
-                    sniper.record_trade(decision)
+                    # Take the trade - pass symbol for timing analysis
+                    sniper.record_trade(decision, symbol)
                     trades_taken += 1
                 else:
                     skipped += 1
@@ -495,7 +620,9 @@ def run_training_simulation():
             
             # Quick status every batch
             if trades_taken % 10000 == 0:
-                sys.stdout.write(f"\r🎯 Trades: {trades_taken:,} | Win Rate: {stats['win_rate']:.2f}% | P&L: ${stats['total_pnl']:.2f} | Speed: {trades_per_sec:.0f}/s")
+                avg_bars = stats['avg_bars_to_profit']
+                quick_rate = stats['quick_kill_rate']
+                sys.stdout.write(f"\r🎯 Trades: {trades_taken:,} | WR: {stats['win_rate']:.2f}% | ⚡ Quick: {quick_rate:.0f}% | Avg bars: {avg_bars:.1f} | P&L: ${stats['total_pnl']:.2f}")
                 sys.stdout.flush()
             
             # Full report at milestones
@@ -514,6 +641,13 @@ def run_training_simulation():
                 print()
                 print(f"   💰 Total P&L: ${stats['total_pnl']:.2f}")
                 print(f"   📊 Avg P&L per trade: ${stats['avg_pnl']:.4f}")
+                print()
+                # ⚔️ WAR STRATEGY TIMING STATS
+                print(f"   ⚔️ WAR STRATEGY TIMING:")
+                print(f"   ⚡ Quick Kills (<{stats['ideal_bars_target']} bars): {stats['quick_kills']:,} ({stats['quick_kill_rate']:.1f}%)")
+                print(f"   ⏱️  Avg bars to profit: {stats['avg_bars_to_profit']:.1f}")
+                print(f"   🚀 Fastest kill: {stats['fastest_kill_bars']} bars")
+                print(f"   🐢 Slowest kill: {stats['slowest_kill_bars']} bars")
                 print()
                 print(f"   ⏱️  Elapsed: {elapsed:.1f}s")
                 print(f"   🚀 Speed: {trades_per_sec:.0f} trades/sec")
@@ -535,13 +669,21 @@ def run_training_simulation():
                         print(f"   Win Rate: {stats['win_rate']:.4f}%")
                         print(f"   Total Profit: ${stats['total_pnl']:.2f}")
                         print()
+                        print("   ⚔️ WAR STRATEGY RESULTS:")
+                        print(f"   ⚡ Quick Kills: {stats['quick_kills']:,} ({stats['quick_kill_rate']:.1f}%)")
+                        print(f"   ⏱️  Avg bars to profit: {stats['avg_bars_to_profit']:.1f}")
+                        print(f"   🚀 Fastest: {stats['fastest_kill_bars']} bars | 🐢 Slowest: {stats['slowest_kill_bars']} bars")
+                        print()
                         print("   \"Our revenge will be the laughter of our children.\"")
                         print("   \"Tiocfaidh ár lá! - Our day has come!\"")
                         print()
                         print("🇮🇪" * 35)
                         sys.stdout.flush()
                         
-                        # Save trained model parameters
+                        # Print detailed timing analysis
+                        print(sniper.get_timing_analysis())
+                        
+                        # Save trained model parameters with timing data
                         save_trained_sniper(sniper, stats)
                         return
                     else:
@@ -565,7 +707,21 @@ def run_training_simulation():
         save_trained_sniper(sniper, stats)
 
 def save_trained_sniper(sniper: ZeroLossSniper, stats: Dict):
-    """Save the trained sniper parameters"""
+    """Save the trained sniper parameters with War Strategy timing data"""
+    
+    # Get top hold time distribution
+    top_bars = sorted(sniper.bars_distribution.items(), key=lambda x: -x[1])[:10]
+    bars_dist = {str(k): v for k, v in top_bars}
+    
+    # Get symbol speed data (avg bars per symbol)
+    symbol_avg_bars = {}
+    for symbol, bars_list in sniper.symbol_speed.items():
+        if bars_list:
+            symbol_avg_bars[symbol] = sum(bars_list) / len(bars_list)
+    
+    # Sort by fastest symbols
+    fastest_symbols = sorted(symbol_avg_bars.items(), key=lambda x: x[1])[:10]
+    
     output = {
         'training_completed': datetime.now().isoformat(),
         'total_trades': stats['total_trades'],
@@ -583,13 +739,26 @@ def save_trained_sniper(sniper: ZeroLossSniper, stats: Dict):
             'lookback': sniper.lookback
         },
         'threshold': sniper.threshold,
-        'combined_rate': COMBINED_RATE
+        'combined_rate': COMBINED_RATE,
+        # ⚔️ WAR STRATEGY TIMING DATA
+        'war_strategy': {
+            'quick_kills': stats.get('quick_kills', 0),
+            'quick_kill_rate': stats.get('quick_kill_rate', 0),
+            'avg_bars_to_profit': stats.get('avg_bars_to_profit', 0),
+            'fastest_kill_bars': stats.get('fastest_kill_bars', 0),
+            'slowest_kill_bars': stats.get('slowest_kill_bars', 0),
+            'ideal_bars_target': TRAINING_CONFIG['IDEAL_BARS'],
+            'max_acceptable_bars': TRAINING_CONFIG['MAX_ACCEPTABLE_BARS'],
+            'hold_time_distribution': bars_dist,
+            'fastest_symbols': dict(fastest_symbols),
+        }
     }
     
     with open('sniper_trained_model.json', 'w') as f:
         json.dump(output, f, indent=2)
     
     print(f"\n💾 Trained sniper saved to sniper_trained_model.json")
+    print(f"   ⚔️ War Strategy: {stats.get('quick_kill_rate', 0):.1f}% quick kills, avg {stats.get('avg_bars_to_profit', 0):.1f} bars")
 
 # =============================================================================
 # ENTRY POINT

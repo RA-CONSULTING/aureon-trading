@@ -1,11 +1,11 @@
 {
-  "training_completed": "2025-12-18T14:12:01.932888",
-  "total_trades": 77429,
-  "wins": 77429,
+  "training_completed": "2025-12-18T15:29:36.710753",
+  "total_trades": 9334,
+  "wins": 9334,
   "losses": 0,
   "win_rate": 100.0,
-  "total_pnl": 46495.47616713697,
-  "avg_pnl": 0.6004917558942641,
+  "total_pnl": 1902.9971470287842,
+  "avg_pnl": 0.20387798875388732,
   "parameters": {
     "position_size": 10.0,
     "required_r": 0.021324354657688005,
@@ -21,5 +21,38 @@
     "position_size": 10.0,
     "target_net": 0.01
   },
-  "combined_rate": 0.010000000000000002
+  "combined_rate": 0.010000000000000002,
+  "war_strategy": {
+    "quick_kills": 9278,
+    "quick_kill_rate": 99.40004285408185,
+    "avg_bars_to_profit": 1.348725091064924,
+    "fastest_kill_bars": 1,
+    "slowest_kill_bars": 24,
+    "ideal_bars_target": 10,
+    "max_acceptable_bars": 30,
+    "hold_time_distribution": {
+      "1": 8222,
+      "2": 511,
+      "3": 215,
+      "4": 117,
+      "5": 65,
+      "6": 54,
+      "7": 33,
+      "8": 24,
+      "10": 22,
+      "9": 15
+    },
+    "fastest_symbols": {
+      "INJUSD": 1.2093862815884477,
+      "ATOMUSD": 1.2094594594594594,
+      "AVAXUSD": 1.2250922509225093,
+      "DOGEUSD": 1.2452107279693487,
+      "XRPUSDC": 1.2454873646209386,
+      "DOGEUSDC": 1.2629757785467128,
+      "SOLUSD": 1.264367816091954,
+      "TIAUSD": 1.2653061224489797,
+      "SEIUSD": 1.2701754385964912,
+      "APTUSD": 1.271604938271605
+    }
+  }
 }
