@@ -212,6 +212,8 @@ class WikipediaSource(WisdomSource):
     def name(self) -> str:
         return "Wikipedia"
     
+    _wikipedia_warned = False  # Class variable to track if we've warned already
+    
     def __init__(self, config: ScannerConfig):
         super().__init__(config)
         if WIKIPEDIA_AVAILABLE:
@@ -220,7 +222,10 @@ class WikipediaSource(WisdomSource):
     async def fetch_content(self, topic: str) -> Optional[str]:
         """Fetch Wikipedia article content"""
         if not WIKIPEDIA_AVAILABLE:
-            logger.warning("Wikipedia API not available")
+            # Only warn once per session to reduce log spam
+            if not WikipediaScanner._wikipedia_warned:
+                logger.warning("Wikipedia API not available - install with: pip install wikipedia")
+                WikipediaScanner._wikipedia_warned = True
             return None
         
         try:
