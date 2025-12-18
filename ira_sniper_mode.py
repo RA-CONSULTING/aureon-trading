@@ -17,16 +17,76 @@ The sniper NEVER misses:
 - NEVER allow a losing trade to close
 - WAIT as long as needed for the kill
 
+NOW ENHANCED WITH CELTIC WARFARE INTELLIGENCE:
+- Guerrilla warfare tactics
+- Preemptive strike capability
+- Multi-battlefront coordination
+- War strategy quick kill analysis
+
 Import this and apply to any trading system:
 
-    from ira_sniper_mode import SNIPER_CONFIG, apply_sniper_mode
+    from ira_sniper_mode import SNIPER_CONFIG, apply_sniper_mode, IRA_SNIPER_MODE
 
 Gary Leckey | December 2025
 "The flame ignited cannot be extinguished - it only grows stronger."
 """
 
 import os
-from typing import Dict, Any
+import time
+from typing import Dict, Any, Optional, Tuple, List
+from dataclasses import dataclass, field
+
+# =============================================================================
+# ☘️ CELTIC WARFARE INTELLIGENCE WIRING
+# =============================================================================
+
+# Wire Guerrilla Warfare Engine
+try:
+    from guerrilla_warfare_engine import (
+        IntelligenceNetwork, FlyingColumn, BattlefrontStatus,
+        TacticalMode, IntelligenceReport, GUERRILLA_CONFIG, get_celtic_wisdom
+    )
+    GUERRILLA_WIRED = True
+except ImportError:
+    GUERRILLA_WIRED = False
+    IntelligenceNetwork = None
+
+# Wire Preemptive Strike Engine
+try:
+    from celtic_preemptive_strike import (
+        PreemptiveExitEngine, DawnRaidDetector,
+        PreemptiveSignal, PreemptiveSignalType
+    )
+    PREEMPTIVE_WIRED = True
+except ImportError:
+    PREEMPTIVE_WIRED = False
+    PreemptiveExitEngine = None
+
+# Wire Multi-Battlefront Coordinator
+try:
+    from multi_battlefront_coordinator import (
+        MultiBattlefrontWarRoom, CampaignPhase, ArbitrageOpportunity
+    )
+    COORDINATOR_WIRED = True
+except ImportError:
+    COORDINATOR_WIRED = False
+    MultiBattlefrontWarRoom = None
+
+# Wire War Strategy
+try:
+    from war_strategy import WarStrategy
+    WAR_STRATEGY_WIRED = True
+except ImportError:
+    WAR_STRATEGY_WIRED = False
+    WarStrategy = None
+
+# Wire Irish Patriot Scouts
+try:
+    from irish_patriot_scouts import PatriotScoutNetwork, PatriotScout, PATRIOT_CONFIG
+    PATRIOTS_WIRED = True
+except ImportError:
+    PATRIOTS_WIRED = False
+    PatriotScoutNetwork = None
 
 # =============================================================================
 # 🇮🇪 SNIPER MODE CONFIGURATION - ZERO LOSS 🇮🇪
@@ -304,6 +364,9 @@ def celebrate_sniper_kill(pnl_usd: float, symbol: str, kills_today: int = 0) -> 
             "Tiocfaidh ár lá! - Our day will come! ☘️",
             "Penny by penny, we rise! 💰",
             "The sniper never misses. 🇮🇪",
+            "Níl neart go cur le chéile - Unity is strength ☘️",
+            "Strike like the wind, vanish like the mist ⚔️",
+            "Every kill brings us closer to victory 🏆",
         ]
         quote = random.choice(quotes)
     
@@ -341,23 +404,435 @@ def display_sniper_status(
 
 
 # =============================================================================
-# MAIN - TEST SNIPER CONFIG
+# ☘️🎯 CELTIC ENHANCED IRA SNIPER - THE ULTIMATE WARRIOR 🎯☘️
+# =============================================================================
+
+@dataclass
+class SniperTarget:
+    """A target being tracked by the sniper"""
+    symbol: str
+    exchange: str
+    entry_price: float
+    entry_time: float
+    position_size: float
+    entry_value: float
+    
+    # Current state
+    current_price: float = 0.0
+    unrealized_pnl: float = 0.0
+    peak_pnl: float = 0.0
+    cycles_tracked: int = 0
+    
+    # Celtic intelligence
+    ambush_score: float = 0.5
+    quick_kill_prob: float = 0.5
+    preemptive_signal: Optional[Any] = None
+    intelligence_report: Optional[Any] = None
+    
+    def update_price(self, price: float):
+        """Update current price and recalculate P&L"""
+        self.current_price = price
+        if self.entry_price > 0 and self.position_size > 0:
+            current_value = self.position_size * price
+            self.unrealized_pnl = current_value - self.entry_value
+            self.peak_pnl = max(self.peak_pnl, self.unrealized_pnl)
+        self.cycles_tracked += 1
+
+
+class IraCelticSniper:
+    """
+    🇮🇪☘️ IRA CELTIC SNIPER - ZERO LOSS + CELTIC WARFARE INTELLIGENCE ☘️🇮🇪
+    
+    The ultimate warrior - combines:
+    - Zero loss sniper discipline (NEVER exit at a loss)
+    - Guerrilla warfare tactics (flying columns, hit-and-run)
+    - Preemptive strike capability (exit BEFORE reversal)
+    - Multi-battlefront coordination (unity across exchanges)
+    - War strategy (quick kill probability analysis)
+    
+    "One bullet. One kill. Celtic precision. Irish determination."
+    """
+    
+    def __init__(self, dry_run: bool = True):
+        self.dry_run = dry_run
+        self.targets: Dict[str, SniperTarget] = {}
+        
+        # Statistics
+        self.kills = 0
+        self.total_pnl = 0.0
+        self.shots_fired = 0
+        self.win_rate = 1.0  # Start at 100% - we don't lose
+        
+        # Celtic warfare systems
+        self.intelligence_network: Optional[Any] = None
+        self.preemptive_engine: Optional[Any] = None
+        self.war_room: Optional[Any] = None
+        self.war_strategy: Optional[Any] = None
+        self.patriot_network: Optional[Any] = None
+        
+        # Wire Celtic systems
+        self._wire_celtic_intelligence()
+        
+        print("\n" + "=" * 70)
+        print("🇮🇪☘️ IRA CELTIC SNIPER INITIALIZED ☘️🇮🇪")
+        print("=" * 70)
+        print(f"   🎯 Mode: {'DRY RUN' if dry_run else '🔥 LIVE FIRE 🔥'}")
+        print(f"   🧠 Guerrilla Engine: {'✅ WIRED' if self.intelligence_network else '❌'}")
+        print(f"   ⚡ Preemptive Strike: {'✅ WIRED' if self.preemptive_engine else '❌'}")
+        print(f"   🌐 Multi-Battlefront: {'✅ WIRED' if self.war_room else '❌'}")
+        print(f"   ⚔️ War Strategy: {'✅ WIRED' if self.war_strategy else '❌'}")
+        print(f"   ☘️ Patriot Network: {'✅ WIRED' if self.patriot_network else '❌'}")
+        print("=" * 70)
+        self._print_celtic_wisdom()
+        print("=" * 70 + "\n")
+    
+    def _wire_celtic_intelligence(self):
+        """Wire up all Celtic warfare systems to the sniper"""
+        
+        # Wire Guerrilla Engine (Intelligence Network)
+        if GUERRILLA_WIRED and IntelligenceNetwork:
+            try:
+                self.intelligence_network = IntelligenceNetwork()
+            except Exception as e:
+                print(f"   ⚠️ Guerrilla wire failed: {e}")
+        
+        # Wire Preemptive Strike Engine
+        if PREEMPTIVE_WIRED and PreemptiveExitEngine:
+            try:
+                self.preemptive_engine = PreemptiveExitEngine()
+            except Exception as e:
+                print(f"   ⚠️ Preemptive wire failed: {e}")
+        
+        # Wire Multi-Battlefront War Room
+        if COORDINATOR_WIRED and MultiBattlefrontWarRoom:
+            try:
+                self.war_room = MultiBattlefrontWarRoom()
+            except Exception as e:
+                print(f"   ⚠️ War Room wire failed: {e}")
+        
+        # Wire War Strategy
+        if WAR_STRATEGY_WIRED and WarStrategy:
+            try:
+                self.war_strategy = WarStrategy()
+            except Exception as e:
+                print(f"   ⚠️ War Strategy wire failed: {e}")
+        
+        # Wire Patriot Network
+        if PATRIOTS_WIRED and PatriotScoutNetwork:
+            try:
+                self.patriot_network = PatriotScoutNetwork(dry_run=self.dry_run)
+            except Exception as e:
+                print(f"   ⚠️ Patriot Network wire failed: {e}")
+    
+    def _print_celtic_wisdom(self):
+        """Print a piece of Celtic wisdom"""
+        import random
+        wisdom = [
+            "Tiocfaidh ár lá - Our day will come",
+            "Níl neart go cur le chéile - Unity is strength",
+            "One bullet, one kill. Celtic precision.",
+            "Strike like the wind, vanish like the mist",
+            "The sniper with Celtic blood never misses",
+            "Every penny is a victory for Ireland",
+            "We don't lose - we only win or wait",
+        ]
+        print(f"   📜 \"{random.choice(wisdom)}\"")
+    
+    def validate_entry(self, symbol: str, price: float, volume: float = 0,
+                      change_24h: float = 0, coherence: float = 0.5) -> Dict[str, Any]:
+        """
+        ☘️ Validate entry using Celtic intelligence systems.
+        
+        Returns:
+            {
+                'approved': bool,
+                'reason': str,
+                'size_modifier': float,
+                'quick_kill_prob': float,
+                'intelligence_score': float
+            }
+        """
+        result = {
+            'approved': True,
+            'reason': 'Celtic intelligence approves',
+            'size_modifier': 1.0,
+            'quick_kill_prob': 0.5,
+            'intelligence_score': 0.5
+        }
+        
+        # Get war strategy quick kill estimate
+        if self.war_strategy:
+            try:
+                estimate = self.war_strategy.estimate_quick_kill(
+                    symbol=symbol,
+                    exchange='unknown',
+                    prices=[price],
+                    current_price=price
+                )
+                if estimate:
+                    result['quick_kill_prob'] = estimate.prob_quick_kill
+                    
+                    # Reject if quick kill probability too low
+                    if estimate.prob_quick_kill < 0.25:
+                        result['approved'] = False
+                        result['reason'] = f'Quick kill prob too low: {estimate.prob_quick_kill:.1%}'
+                        return result
+                    
+                    # Boost sizing for high probability kills
+                    if estimate.prob_quick_kill > 0.7:
+                        result['size_modifier'] = 1.25
+                    elif estimate.prob_quick_kill > 0.5:
+                        result['size_modifier'] = 1.10
+            except:
+                pass
+        
+        # Get intelligence network assessment
+        if self.intelligence_network:
+            try:
+                report = self.intelligence_network.analyze_target(symbol, price, volume)
+                if report:
+                    intel_score = getattr(report, 'intelligence_score', 0.5)
+                    result['intelligence_score'] = intel_score
+                    
+                    # Reject if intelligence score too low
+                    if intel_score < 0.3:
+                        result['approved'] = False
+                        result['reason'] = f'Intel score too low: {intel_score:.2f}'
+                        return result
+                    
+                    # Boost for high intel scores
+                    if intel_score > 0.7:
+                        result['size_modifier'] *= 1.15
+            except:
+                pass
+        
+        # Check preemptive engine for entry timing
+        if self.preemptive_engine:
+            try:
+                # Good time to enter? Check if momentum is building
+                signal = self.preemptive_engine.get_entry_signal(symbol, price)
+                if signal and signal.get('entry_blocked'):
+                    result['approved'] = False
+                    result['reason'] = signal.get('reason', 'Preemptive blocks entry')
+                    return result
+            except:
+                pass
+        
+        # Adjust for coherence
+        if coherence > 0.75:
+            result['size_modifier'] *= 1.10
+        elif coherence < 0.4:
+            result['size_modifier'] *= 0.85
+        
+        return result
+    
+    def acquire_target(self, symbol: str, exchange: str, 
+                      price: float, size_usd: float = None) -> SniperTarget:
+        """
+        Acquire a new target with Celtic intelligence analysis.
+        """
+        size = size_usd or SNIPER_CONFIG['POSITION_SIZE_USD']
+        
+        target = SniperTarget(
+            symbol=symbol,
+            exchange=exchange,
+            entry_price=price,
+            entry_time=time.time(),
+            position_size=size / price if price > 0 else 0,
+            entry_value=size,
+            current_price=price
+        )
+        
+        # Gather Celtic intelligence on target
+        if self.intelligence_network:
+            try:
+                report = self.intelligence_network.update_price_feed(
+                    exchange, symbol, price, volume=0
+                )
+                target.intelligence_report = report
+                target.ambush_score = getattr(report, 'ambush_score', 0.5)
+                target.quick_kill_prob = getattr(report, 'quick_kill_probability', 0.5)
+            except:
+                pass
+        
+        # War strategy analysis
+        if self.war_strategy:
+            try:
+                estimate = self.war_strategy.estimate_quick_kill(
+                    symbol=symbol,
+                    exchange=exchange,
+                    prices=[price],
+                    current_price=price
+                )
+                if estimate:
+                    target.quick_kill_prob = estimate.prob_quick_kill
+            except:
+                pass
+        
+        self.targets[f"{exchange}:{symbol}"] = target
+        self.shots_fired += 1
+        
+        print(f"   🎯 TARGET ACQUIRED: {symbol} @ ${price:.4f} on {exchange}")
+        print(f"      📊 Ambush Score: {target.ambush_score:.2f}")
+        print(f"      ⚡ Quick Kill Prob: {target.quick_kill_prob*100:.1f}%")
+        
+        return target
+    
+    def update_target_intelligence(self, target: SniperTarget, 
+                                   price: float, volume: float = 0):
+        """Update target with latest Celtic intelligence"""
+        target.update_price(price)
+        
+        # Update from intelligence network
+        if self.intelligence_network:
+            try:
+                report = self.intelligence_network.update_price_feed(
+                    target.exchange, target.symbol, price, volume
+                )
+                target.intelligence_report = report
+            except:
+                pass
+        
+        # Check preemptive signals
+        if self.preemptive_engine:
+            try:
+                key = f"{target.exchange}:{target.symbol}"
+                prices = []
+                if self.intelligence_network:
+                    prices = self.intelligence_network.price_history.get(key, [price])
+                
+                if hasattr(self.preemptive_engine, 'check_all_signals'):
+                    signal = self.preemptive_engine.check_all_signals(
+                        symbol=target.symbol,
+                        prices=prices,
+                        entry_price=target.entry_price,
+                        current_price=price,
+                        position_pnl_pct=(target.unrealized_pnl / target.entry_value * 100) if target.entry_value > 0 else 0,
+                        time_in_position=time.time() - target.entry_time
+                    )
+                    target.preemptive_signal = signal
+            except:
+                pass
+    
+    def check_kill_shot(self, target: SniperTarget, 
+                       win_threshold: float = 0.151625) -> Tuple[bool, str, bool]:
+        """
+        Check if we should take the kill shot.
+        
+        ZERO LOSS RULE: Only exit on CONFIRMED profit.
+        But with Celtic intelligence, we can be smarter about WHEN to exit.
+        
+        Returns: (should_exit, reason, is_win)
+        """
+        gross_pnl = target.unrealized_pnl
+        
+        # RULE 1: ZERO LOSS - Only exit on confirmed profit
+        if gross_pnl < win_threshold:
+            # Not profitable yet - check if we should hold or if Celtic intel says danger
+            
+            # Preemptive signal warning (but we still don't exit at a loss!)
+            if target.preemptive_signal:
+                signal = target.preemptive_signal
+                if hasattr(signal, 'signal_type'):
+                    if signal.signal_type in ['EXIT', 'URGENT_EXIT'] and gross_pnl > 0:
+                        # Only exit on preemptive if we're at least breakeven
+                        return (True, f"☘️ PREEMPTIVE EXIT (Celtic Intel): +${gross_pnl:.4f}", True)
+            
+            # Not yet - keep holding
+            return (False, f"🎯 Tracking... ${gross_pnl:.4f} / ${win_threshold:.4f}", False)
+        
+        # RULE 2: WE HAVE PROFIT - TAKE THE SHOT!
+        return (True, f"🇮🇪🎯 CONFIRMED KILL! +${gross_pnl:.4f} >= ${win_threshold:.4f}", True)
+    
+    def execute_kill(self, target: SniperTarget, actual_pnl: float = None):
+        """
+        Execute the kill and celebrate victory.
+        """
+        pnl = actual_pnl if actual_pnl is not None else target.unrealized_pnl
+        
+        self.kills += 1
+        self.total_pnl += pnl
+        
+        # Remove from targets
+        key = f"{target.exchange}:{target.symbol}"
+        if key in self.targets:
+            del self.targets[key]
+        
+        # Celebrate!
+        celebrate_sniper_kill(pnl, target.symbol, self.kills - 1)
+        
+        return pnl
+    
+    def get_status(self) -> Dict[str, Any]:
+        """Get sniper status"""
+        return {
+            'kills': self.kills,
+            'total_pnl': self.total_pnl,
+            'shots_fired': self.shots_fired,
+            'active_targets': len(self.targets),
+            'win_rate': self.kills / max(1, self.shots_fired),
+            'celtic_systems': {
+                'guerrilla': self.intelligence_network is not None,
+                'preemptive': self.preemptive_engine is not None,
+                'war_room': self.war_room is not None,
+                'war_strategy': self.war_strategy is not None,
+                'patriots': self.patriot_network is not None
+            }
+        }
+    
+    def display_status(self):
+        """Display enhanced sniper status"""
+        status = self.get_status()
+        
+        print("\n" + "═" * 70)
+        print("🇮🇪☘️ IRA CELTIC SNIPER STATUS ☘️🇮🇪")
+        print("═" * 70)
+        print(f"   🎯 Kills:           {status['kills']}")
+        print(f"   💰 Total P&L:       +${status['total_pnl']:.4f}")
+        print(f"   🔫 Shots Fired:     {status['shots_fired']}")
+        print(f"   📍 Active Targets:  {status['active_targets']}")
+        print(f"   🏆 Win Rate:        {status['win_rate']*100:.1f}%")
+        
+        print("\n   ☘️ Celtic Intelligence:")
+        for system, wired in status['celtic_systems'].items():
+            emoji = "✅" if wired else "❌"
+            print(f"      {emoji} {system.replace('_', ' ').title()}")
+        
+        print("═" * 70)
+        self._print_celtic_wisdom()
+        print("═" * 70 + "\n")
+
+
+# Global sniper instance for easy import
+IRA_SNIPER_MODE = None
+
+def get_celtic_sniper(dry_run: bool = True) -> IraCelticSniper:
+    """Get or create the global Celtic Sniper instance"""
+    global IRA_SNIPER_MODE
+    if IRA_SNIPER_MODE is None:
+        IRA_SNIPER_MODE = IraCelticSniper(dry_run=dry_run)
+    return IRA_SNIPER_MODE
+
+
+# =============================================================================
+# MAIN - TEST SNIPER CONFIG & CELTIC ENHANCEMENT
 # =============================================================================
 
 if __name__ == "__main__":
     print("""
 ╔══════════════════════════════════════════════════════════════════════════╗
 ║                                                                          ║
-║   🇮🇪🎯 IRA SNIPER MODE - NO FEAR CONFIGURATION 🎯🇮🇪                     ║
+║   🇮🇪🎯 IRA SNIPER MODE - CELTIC ENHANCED 🎯🇮🇪                          ║
 ║                                                                          ║
 ║   "We have been afraid for too long. This ends now."                    ║
+║   "Now with Celtic Warfare Intelligence - Strike before they react."    ║
 ║                                                                          ║
 ╚══════════════════════════════════════════════════════════════════════════╝
     """)
     
-    print("=" * 60)
+    print("=" * 70)
     print("🎯 SNIPER CONFIGURATION")
-    print("=" * 60)
+    print("=" * 70)
     
     config = get_sniper_config()
     
@@ -365,15 +840,25 @@ if __name__ == "__main__":
         print(f"   {key:25s}: {value}")
     
     print()
-    print("=" * 60)
+    print("=" * 70)
+    print("☘️ CELTIC WARFARE SYSTEMS STATUS")
+    print("=" * 70)
+    print(f"   🧠 Guerrilla Engine:    {'✅ AVAILABLE' if GUERRILLA_WIRED else '❌ NOT LOADED'}")
+    print(f"   ⚡ Preemptive Strike:   {'✅ AVAILABLE' if PREEMPTIVE_WIRED else '❌ NOT LOADED'}")
+    print(f"   🌐 Multi-Battlefront:   {'✅ AVAILABLE' if COORDINATOR_WIRED else '❌ NOT LOADED'}")
+    print(f"   ⚔️ War Strategy:        {'✅ AVAILABLE' if WAR_STRATEGY_WIRED else '❌ NOT LOADED'}")
+    print(f"   ☘️ Patriot Network:     {'✅ AVAILABLE' if PATRIOTS_WIRED else '❌ NOT LOADED'}")
+    
+    print()
+    print("=" * 70)
     print("🧪 TEST SNIPER EXITS")
-    print("=" * 60)
+    print("=" * 70)
     
     # Test scenarios
     test_cases = [
         (0.05, 0.04, -0.02, 0, "Penny profit on first cycle"),
         (0.03, 0.04, -0.02, 0, "Not quite there yet"),
-        (-0.025, 0.04, -0.02, 2, "Stop loss triggered"),
+        (-0.025, 0.04, -0.02, 2, "Stop loss triggered (IGNORED - we hold!)"),
         (0.041, 0.04, -0.02, 1, "Just over threshold"),
     ]
     
@@ -386,10 +871,42 @@ if __name__ == "__main__":
         print(f"      Reason: {reason}")
     
     print()
-    print("=" * 60)
-    print("🇮🇪 NO MORE FEAR. THE SNIPER IS READY. 🇮🇪")
-    print("=" * 60)
-    print()
+    print("=" * 70)
+    print("☘️ TESTING CELTIC ENHANCED SNIPER")
+    print("=" * 70)
     
-    # Demo celebration
-    celebrate_sniper_kill(0.0234, "ETH/USD", 5)
+    # Test the Celtic sniper
+    sniper = IraCelticSniper(dry_run=True)
+    
+    # Acquire some test targets
+    test_targets = [
+        ('BTCUSDC', 'binance', 104500.0),
+        ('ETHGBP', 'kraken', 3200.0),
+        ('SOLUSDT', 'binance', 220.0),
+    ]
+    
+    print("\n📍 Acquiring test targets...")
+    for symbol, exchange, price in test_targets:
+        target = sniper.acquire_target(symbol, exchange, price)
+        
+        # Simulate price movement
+        import random
+        for _ in range(3):
+            movement = random.uniform(-0.002, 0.02) * price
+            new_price = price + movement
+            sniper.update_target_intelligence(target, new_price)
+        
+        # Check kill shot
+        should_exit, reason, is_win = sniper.check_kill_shot(target)
+        print(f"      🔫 Kill shot check: {reason}")
+        
+        if should_exit and is_win:
+            sniper.execute_kill(target)
+    
+    # Display final status
+    sniper.display_status()
+    
+    print("=" * 70)
+    print("🇮🇪 THE CELTIC SNIPER IS READY. ZERO LOSSES. MAXIMUM PRECISION. 🇮🇪")
+    print("=" * 70)
+    print()

@@ -156,7 +156,7 @@ except ImportError:
     statistics = Statistics()
 
 from datetime import datetime
-from typing import Dict, List, Optional, Tuple, Any, Set
+from typing import Dict, List, Optional, Tuple, Any
 from dataclasses import dataclass, field
 from collections import deque, defaultdict
 from threading import Thread, Lock
@@ -196,13 +196,6 @@ except ImportError as e:
         def get_ticker(self, *args): return {}
         def place_market_order(self, *args, **kwargs): return {}
         def convert_to_quote(self, *args): return 0.0
-
-from ira_sniper_mode import (
-    apply_sniper_mode,
-    check_sniper_exit,
-    get_sniper_config,
-    map_sniper_platform_assets,
-)
 
 try:
     from aureon_lattice import GaiaLatticeEngine, CarrierWaveDynamics  # 🌍 GAIA FREQUENCY PHYSICS
@@ -485,6 +478,75 @@ except ImportError as e:
     def celebrate_penny_profit(amount, symbol): return "Our revenge will be the laughter of our children."
     def get_contextual_wisdom(context): return "Tiocfaidh ár lá!"
     print(f"⚠️  Bhoy's Wisdom not available: {e}")
+
+# ═══════════════════════════════════════════════════════════════
+# ☘️🔥 CELTIC WARFARE SYSTEMS - IRISH GUERRILLA INTELLIGENCE 🔥☘️
+# ═══════════════════════════════════════════════════════════════
+
+# ==== ☘️ GUERRILLA WARFARE ENGINE ====
+try:
+    from guerrilla_warfare_engine import (
+        IntelligenceNetwork, FlyingColumn, BattlefrontStatus,
+        TacticalMode, IntelligenceReport, GUERRILLA_CONFIG, get_celtic_wisdom
+    )
+    GUERRILLA_ENGINE_AVAILABLE = True
+    print("   ☘️ Guerrilla Warfare Engine loaded - Flying Columns Ready!")
+except ImportError as e:
+    GUERRILLA_ENGINE_AVAILABLE = False
+    IntelligenceNetwork = None
+    print(f"⚠️  Guerrilla Engine not available: {e}")
+
+# ==== ⚡ CELTIC PREEMPTIVE STRIKE ENGINE ====
+try:
+    from celtic_preemptive_strike import (
+        PreemptiveExitEngine, DawnRaidDetector,
+        PreemptiveSignal, PreemptiveSignalType
+    )
+    PREEMPTIVE_STRIKE_AVAILABLE = True
+    print("   ⚡ Preemptive Strike Engine loaded - Move Before They React!")
+except ImportError as e:
+    PREEMPTIVE_STRIKE_AVAILABLE = False
+    PreemptiveExitEngine = None
+    print(f"⚠️  Preemptive Strike not available: {e}")
+
+# ==== 🌐 MULTI-BATTLEFRONT COORDINATOR ====
+try:
+    from multi_battlefront_coordinator import (
+        MultiBattlefrontWarRoom, CampaignPhase, ArbitrageOpportunity
+    )
+    BATTLEFRONT_COORDINATOR_AVAILABLE = True
+    print("   🌐 Multi-Battlefront Coordinator loaded - Unity of Command!")
+except ImportError as e:
+    BATTLEFRONT_COORDINATOR_AVAILABLE = False
+    MultiBattlefrontWarRoom = None
+    print(f"⚠️  Battlefront Coordinator not available: {e}")
+
+# ==== 🇮🇪 IRISH PATRIOT SCOUTS ====
+try:
+    from irish_patriot_scouts import (
+        PatriotScoutNetwork, PatriotScout, PatriotScoutDeployer,
+        PATRIOT_CONFIG, get_patriot_wisdom
+    )
+    PATRIOT_SCOUTS_AVAILABLE = True
+    print("   🇮🇪 Irish Patriot Scouts loaded - Warriors Ready!")
+except ImportError as e:
+    PATRIOT_SCOUTS_AVAILABLE = False
+    PatriotScoutNetwork = None
+    PatriotScoutDeployer = None
+    print(f"⚠️  Patriot Scouts not available: {e}")
+
+# ==== 🎯 IRA CELTIC SNIPER ====
+try:
+    from ira_sniper_mode import (
+        IraCelticSniper, get_celtic_sniper, SNIPER_CONFIG,
+        check_sniper_exit, celebrate_sniper_kill
+    )
+    CELTIC_SNIPER_AVAILABLE = True
+    print("   🎯 IRA Celtic Sniper loaded - Zero Loss Mode Active!")
+except ImportError as e:
+    CELTIC_SNIPER_AVAILABLE = False
+    IraCelticSniper = None
+    print(f"⚠️  Celtic Sniper not available: {e}")
 
 # ═══════════════════════════════════════════════════════════════
 # 💰 PENNY PROFIT ENGINE - DYNAMIC DOLLAR-BASED EXIT THRESHOLDS 💰
@@ -9799,20 +9861,6 @@ class AureonKrakenEcosystem:
         self.client = MultiExchangeClient()
         self.dry_run = self.client.dry_run
         
-        # 🇮🇪🎯 IRA SNIPER MODE - ensure activation across every platform and asset we can sell
-        self.sniper_config = get_sniper_config()
-        self.sniper_coverage = map_sniper_platform_assets(self.client)
-        self.sniper_brain = get_unified_brain(
-            exchange='kraken',
-            position_size=CONFIG.get('MIN_TRADE_USD', 10.0)
-        ) if SNIPER_BRAIN_AVAILABLE else None
-        self._sniper_bridge_ready = False
-        self._scout_bridge_status: Dict[str, Any] = {}
-        if self.sniper_config.get('ACTIVE', True):
-            CONFIG.update(apply_sniper_mode(CONFIG))
-            self._announce_sniper_activation()
-            self._sync_sniper_bridge("startup")
-        
         self.auris = AurisEngine()
         self.mycelium = MyceliumNetwork(initial_capital=initial_balance)  # 🍄🧠 Full neural network with hives!
         self.lattice = GaiaLatticeEngine()  # 🌍 GAIA FREQUENCY PHYSICS - HNC Blackboard Carrier Wave Dynamics
@@ -10292,6 +10340,72 @@ class AureonKrakenEcosystem:
         if not self.dry_run:
             self._import_existing_holdings()
         
+        # ═══════════════════════════════════════════════════════════════
+        # ☘️🔥 CELTIC WARFARE SYSTEMS INITIALIZATION 🔥☘️
+        # ═══════════════════════════════════════════════════════════════
+        
+        # ☘️ GUERRILLA WARFARE ENGINE - Flying Columns & Intelligence Network
+        self.celtic_intelligence = None
+        if GUERRILLA_ENGINE_AVAILABLE and IntelligenceNetwork:
+            try:
+                self.celtic_intelligence = IntelligenceNetwork()
+                print("   ☘️ Celtic Intelligence Network ACTIVE")
+            except Exception as e:
+                print(f"   ⚠️ Celtic Intelligence init failed: {e}")
+        
+        # ⚡ PREEMPTIVE STRIKE ENGINE - Exit Before Market Reacts
+        self.preemptive_engine = None
+        if PREEMPTIVE_STRIKE_AVAILABLE and PreemptiveExitEngine:
+            try:
+                self.preemptive_engine = PreemptiveExitEngine()
+                print("   ⚡ Preemptive Strike Engine ACTIVE")
+            except Exception as e:
+                print(f"   ⚠️ Preemptive Engine init failed: {e}")
+        
+        # 🌐 MULTI-BATTLEFRONT WAR ROOM - Unity of Command
+        self.celtic_war_room = None
+        if BATTLEFRONT_COORDINATOR_AVAILABLE and MultiBattlefrontWarRoom:
+            try:
+                self.celtic_war_room = MultiBattlefrontWarRoom()
+                print("   🌐 Celtic War Room ACTIVE (4 battlefronts)")
+            except Exception as e:
+                print(f"   ⚠️ War Room init failed: {e}")
+        
+        # 🇮🇪 IRISH PATRIOT SCOUT DEPLOYER - Celtic-Trained Scouts
+        self.patriot_deployer = None
+        if PATRIOT_SCOUTS_AVAILABLE and PatriotScoutDeployer:
+            try:
+                self.patriot_deployer = PatriotScoutDeployer(ecosystem=self)
+                print("   🇮🇪 Irish Patriot Scout Deployer ACTIVE")
+            except Exception as e:
+                print(f"   ⚠️ Patriot Deployer init failed: {e}")
+        
+        # 🎯 IRA CELTIC SNIPER - Zero Loss + Celtic Intelligence
+        self.celtic_sniper = None
+        if CELTIC_SNIPER_AVAILABLE and IraCelticSniper:
+            try:
+                self.celtic_sniper = IraCelticSniper(dry_run=self.dry_run)
+                print("   🎯 IRA Celtic Sniper ACTIVE (Zero Loss Mode)")
+            except Exception as e:
+                print(f"   ⚠️ Celtic Sniper init failed: {e}")
+        
+        # Print Celtic Systems Summary
+        celtic_systems_active = sum([
+            self.celtic_intelligence is not None,
+            self.preemptive_engine is not None,
+            self.celtic_war_room is not None,
+            self.patriot_deployer is not None,
+            self.celtic_sniper is not None
+        ])
+        if celtic_systems_active > 0:
+            print(f"   ☘️🔥 CELTIC WARFARE: {celtic_systems_active}/5 systems WIRED")
+            if GUERRILLA_ENGINE_AVAILABLE:
+                try:
+                    wisdom = get_celtic_wisdom()
+                    print(f"   📜 \"{wisdom}\"")
+                except:
+                    pass
+        
         # 🌐⚡ GLOBAL HARMONIC FIELD - 42 Sources → 7 Layers → Ω ⚡🌐
         # The Ultimate Unified Field that ties ALL data sources together
         self.global_harmonic_field = None
@@ -10301,25 +10415,6 @@ class AureonKrakenEcosystem:
                 print("   🌐⚡ Global Harmonic Field ACTIVE (Ω > 0.618 = STRONG BUY)")
             except Exception as e:
                 print(f"   ⚠️ Global Harmonic Field init failed: {e}")
-
-    def _announce_sniper_activation(self) -> None:
-        """Log IRA sniper readiness across platforms and sellable assets."""
-        coverage = getattr(self, 'sniper_coverage', {}) or {}
-        platforms = coverage.get('platforms', {})
-        active = bool(self.sniper_config.get('ACTIVE', False))
-        status = "ACTIVE" if active else "INACTIVE"
-        print(f"\n🎯 IRA SNIPER STATUS: {status}")
-        
-        if not platforms:
-            print("   ⚠️ No platform coverage available for sniper map.")
-            return
-        
-        for name, details in platforms.items():
-            assets = details.get('sellable_assets') or []
-            preview = ", ".join(assets[:6]) + ("..." if len(assets) > 6 else "") if assets else "none"
-            print(f"   • {name.upper()}: {len(assets)} sellable assets ({preview})")
-        
-        print(f"   Position size: ${self.sniper_config.get('POSITION_SIZE_USD', 0):.2f} | Max positions: {self.sniper_config.get('MAX_POSITIONS', 0)}\n")
 
     # ═══════════════════════════════════════════════════════════════
     # 🚫 SYMBOL VALIDATION CACHE - Reduce API noise for invalid symbols
@@ -11210,44 +11305,94 @@ class AureonKrakenEcosystem:
             self.refresh_equity()  # Update balances
             
         return freed_cash
+    
+    def _build_scout_candidates(self) -> List[Dict]:
+        """☘️ Build candidate list from ticker cache for Irish Patriot deployment.
+        
+        Returns list of candidates with:
+        - symbol, price, change24h, volume, score
+        - coherence, dominant_node, quote_currency, source
+        """
+        quote_currencies = CONFIG.get('QUOTE_CURRENCIES', ['USD', 'USDT', 'GBP', 'EUR'])
+        min_vol = CONFIG.get('SCOUT_MIN_VOLATILITY', 1.5)
+        min_vol_q = CONFIG.get('SCOUT_MIN_VOLUME_QUOTE', 100000)
+        
+        all_candidates = []
+        
+        for quote_curr in quote_currencies:
+            for symbol, data in self.ticker_cache.items():
+                if not symbol.endswith(quote_curr):
+                    continue
+                if symbol in self.positions:
+                    continue
+                    
+                source = data.get('source', '').lower()
+                change = data.get('change24h', 0)
+                price = data.get('price', 0)
+                volume = data.get('volume', 0)
 
-    def _sync_sniper_bridge(self, note: str = ""):
-        """Keep sniper brain and scout coverage aligned with live balances."""
-        if not self.sniper_config.get('ACTIVE', True):
-            return
+                # Need real movement and liquidity
+                if price <= 0 or volume <= 0:
+                    continue
+                if abs(change) < min_vol:
+                    continue
+                if volume < min_vol_q:
+                    continue
 
-        try:
-            self.sniper_coverage = map_sniper_platform_assets(self.client)
-            platforms = self.sniper_coverage.get('platforms', {})
-            self._sniper_bridge_ready = bool(platforms)
-            self._scout_bridge_status = {
-                'last_update': time.time(),
-                'platforms': platforms,
-                'note': note
-            }
-            if note:
-                print(f"   🎯 Sniper bridge synced ({note}) - platforms linked: {len(platforms)}")
-        except Exception as e:
-            print(f"   ⚠️ Sniper bridge sync failed: {e}")
+                # Opportunity score: |volatility| × volume (in millions)
+                volume_m = max(volume / 1_000_000, 0.001)
+                lion_score = abs(change) * volume_m * 100
 
-    def _record_sniper_kill(self, pos, net_pnl: float):
-        """Send completed trade data to unified sniper brain for telemetry."""
-        if not self.sniper_brain:
-            return
-        try:
-            self.sniper_brain.record_kill(net_pnl, pos.symbol, is_win=(net_pnl > 0))
-            self._sync_sniper_bridge("kill")
-        except Exception as e:
-            print(f"   ⚠️ Sniper brain telemetry failed: {e}")
+                all_candidates.append({
+                    'symbol': symbol,
+                    'price': price,
+                    'change24h': change,
+                    'volume': volume,
+                    'score': lion_score,
+                    'coherence': 0.65,
+                    'dominant_node': 'PatriotScout',
+                    'quote_currency': quote_curr,
+                    'source': source
+                })
+        
+        # Sort by score descending
+        all_candidates.sort(key=lambda x: -x.get('score', 0))
+        return all_candidates
     
     def _deploy_scouts(self):
-        """🚀 FORCE DEPLOY scout positions immediately on first scan!
+        """🚀☘️ FORCE DEPLOY scout positions immediately on first scan!
         
         Philosophy: "They can't stop them all!" - Get positions deployed FAST
         No sitting on the fence - HIT THE GROUND RUNNING!
+        
+        🇮🇪 NOW WITH IRISH PATRIOT SCOUTS - Celtic-trained warriors with:
+        - Guerrilla warfare intelligence
+        - Preemptive strike capability
+        - Multi-battlefront coordination
+        - War strategy quick kill analysis
         """
         if self.scouts_deployed or not CONFIG['DEPLOY_SCOUTS_IMMEDIATELY']:
             return
+        
+        # ☘️ USE IRISH PATRIOT DEPLOYER IF AVAILABLE
+        if hasattr(self, 'patriot_deployer') and self.patriot_deployer is not None:
+            print("\n   ☘️🔥 DEPLOYING IRISH PATRIOT SCOUTS - Celtic Warriors Ready! 🔥☘️")
+            print("   🇮🇪 Tiocfaidh ár lá - Our day will come!\n")
+            
+            # Build candidate list from ticker cache
+            all_candidates = self._build_scout_candidates()
+            
+            if all_candidates:
+                target_scouts = CONFIG.get('SCOUT_FORCE_COUNT', 10)
+                deployed = self.patriot_deployer.deploy_patriots(all_candidates, target_count=target_scouts)
+                
+                if deployed:
+                    print(f"\n   ☘️ IRISH PATRIOTS DEPLOYED: {len(deployed)} warriors in the field!")
+                    self.scouts_deployed = True
+                    return
+            
+            # Fall through to regular deployment if patriot deployer fails
+            print("   ⚠️ Patriot deployment failed - falling back to standard scouts")
             
         print("\n   🚀🔥 FORCE DEPLOYING SCOUTS - HIT THE GROUND RUNNING! 🔥🚀")
         print("   💥 No fence sitting - we're going IN immediately!\n")
@@ -11304,23 +11449,15 @@ class AureonKrakenEcosystem:
         # 🔥 BALANCE-AWARE BOOST: Get balances FIRST, then boost tradeable pairs BEFORE deduplication!
         available_quotes = set()
         exchange_quote_balances = {}  # Track actual balances per exchange+quote
-        exchange_balances: Dict[str, Dict[str, float]] = {}
         try:
             # Use the MultiExchangeClient's get_all_balances method
             all_balances = self.client.get_all_balances()
             for exchange_name, bals in all_balances.items():
-                ex_lower = exchange_name.lower()
-                if ex_lower not in exchange_balances:
-                    exchange_balances[ex_lower] = {}
                 for asset, amt in bals.items():
                     asset_upper = asset.upper()
                     # Remove Kraken prefixes (ZUSD, XXBT, etc)
                     asset_clean = asset_upper.lstrip('ZX')
                     if amt > 1.0:  # Meaningful balance
-                        try:
-                            exchange_balances[ex_lower][asset_clean] = exchange_balances[ex_lower].get(asset_clean, 0.0) + float(amt)
-                        except Exception:
-                            pass
                         # Map to quote currency patterns
                         if asset_upper == 'USDC' or asset_clean == 'USDC':
                             available_quotes.add('USDC')
@@ -11351,60 +11488,6 @@ class AureonKrakenEcosystem:
         for (ex, quote), bal in sorted(exchange_quote_balances.items()):
             print(f"      {ex.upper()} {quote}: {bal:.2f}")
         
-        # Map of quotes we can actually spend on each exchange (includes convertible assets)
-        buyable_quotes_by_exchange: Dict[str, Set[str]] = {}
-        for (ex, quote), bal in exchange_quote_balances.items():
-            if bal <= 0:
-                continue
-            ex_quotes = buyable_quotes_by_exchange.setdefault(ex, set())
-            quote_upper = quote.upper()
-            ex_quotes.add(quote_upper)
-            if quote_upper == 'USD':
-                ex_quotes.update({'USDC', 'USDT'})
-            if quote_upper in ('USDC', 'USDT'):
-                ex_quotes.add('USD')
-
-        # Include convertible assets (e.g., BTC->USDT) as buyable quotes
-        try:
-            convertible_assets = self.client.get_all_convertible_assets()
-            for ex, conversions in convertible_assets.items():
-                ex_lower = ex.lower()
-                balances = exchange_balances.get(ex_lower, {})
-                if not balances:
-                    continue
-                ex_quotes = buyable_quotes_by_exchange.setdefault(ex_lower, set())
-                for asset, amount in balances.items():
-                    if amount <= 0:
-                        continue
-                    targets = conversions.get(asset) or conversions.get(asset.upper())
-                    if not targets:
-                        continue
-                    for tgt in targets:
-                        tgt_upper = tgt.upper()
-                        if tgt_upper in CONFIG.get('QUOTE_CURRENCIES', []):
-                            ex_quotes.add(tgt_upper)
-        except Exception as e:
-            print(f"   ⚠️ Convertible asset detection skipped: {e}")
-
-        # Available tradable pairs by exchange to validate scout targets
-        available_pairs_by_exchange: Dict[str, Set[str]] = {}
-        try:
-            for exchange_name in self.client.clients.keys():
-                pairs = self.client.get_available_pairs(exchange_name)
-                formatted_pairs: Set[str] = set()
-                for p in pairs or []:
-                    base = str(p.get('base', '')).upper()
-                    quote = str(p.get('quote', '')).upper()
-                    pair_name = str(p.get('pair', f"{base}{quote}")).upper()
-                    if pair_name:
-                        formatted_pairs.add(pair_name)
-                    if base and quote:
-                        formatted_pairs.add(f"{base}{quote}")
-                        formatted_pairs.add(f"{base}/{quote}")
-                available_pairs_by_exchange[exchange_name.lower()] = formatted_pairs
-        except Exception as e:
-            print(f"   ⚠️ Pair discovery skipped: {e}")
-        
         # 🔥 CRITICAL: Apply balance boost to scores BEFORE deduplication!
         # Boost MORE if the exchange actually has balance for that quote currency!
         for c in all_candidates:
@@ -11412,16 +11495,12 @@ class AureonKrakenEcosystem:
             quote = c['quote_currency']
             ex_quote_key = (source_exchange, quote)
             
-            tradeable_on_exchange = quote.upper() in buyable_quotes_by_exchange.get(source_exchange, set())
-            if tradeable_on_exchange:
+            if quote in available_quotes:
                 c['score'] += 10_000_000  # Massive boost for tradeable quote currency
                 
                 # 🔥 EXTRA boost if THIS exchange has balance (not just any exchange)
                 if ex_quote_key in exchange_quote_balances and exchange_quote_balances[ex_quote_key] > 10:
                     c['score'] += 5_000_000  # Extra 5M for having balance on THIS exchange
-            elif quote in available_quotes:
-                # Smaller boost if another exchange has this quote but we may need conversion
-                c['score'] += 1_000_000
         
         # 🔥 Keep best per base+exchange combo to allow BOTH Binance USDC AND Kraken GBP trades!
         # Don't collapse across exchanges - we want to trade on BOTH platforms
@@ -11473,34 +11552,13 @@ class AureonKrakenEcosystem:
             if fallback:
                 all_candidates.append(fallback)
 
-        # 🔥 FILTER: Only keep pairs where we have balance to trade on THAT exchange!
-        def _is_pair_tradeable(sym: str, quote: str, pair_set: Set[str]) -> bool:
-            if not pair_set:
-                return True
-            sym_clean = sym.replace('/', '').upper()
-            if sym_clean in pair_set:
-                return True
-            base = _base_from_symbol(sym).upper()
-            quote_upper = quote.upper()
-            combos = (f"{base}{quote_upper}", f"{base}/{quote_upper}")
-            return any(c in pair_set for c in combos)
-
-        if buyable_quotes_by_exchange:
-            tradeable_candidates = []
-            for c in all_candidates:
-                ex = (c.get('source') or 'unknown').lower()
-                quote = c['quote_currency']
-                if quote.upper() not in buyable_quotes_by_exchange.get(ex, set()):
-                    continue
-                pair_set = available_pairs_by_exchange.get(ex, set())
-                if not _is_pair_tradeable(c['symbol'], quote, pair_set):
-                    continue
-                tradeable_candidates.append(c)
-            quote_summary = {ex: sorted(list(quotes)) for ex, quotes in buyable_quotes_by_exchange.items()}
-            print(f"   📊 Found {len(all_candidates)} pairs → {len(tradeable_candidates)} tradeable per-exchange (quotes: {quote_summary})")
+        # 🔥 FILTER: Only keep pairs where we have balance to trade!
+        if available_quotes:
+            tradeable_candidates = [c for c in all_candidates if c['quote_currency'] in available_quotes]
+            print(f"   📊 Found {len(all_candidates)} pairs → {len(tradeable_candidates)} tradeable (have {available_quotes})")
             all_candidates = tradeable_candidates
         else:
-            print(f"   📊 Found {len(all_candidates)} tradeable pairs (no balance map)")
+            print(f"   📊 Found {len(all_candidates)} tradeable pairs")
         
         # 🔄 INTERLEAVE BY EXCHANGE: Ensure we deploy scouts on BOTH Binance AND Kraken!
         # Group by source exchange, then round-robin to pick from each
@@ -11603,7 +11661,6 @@ class AureonKrakenEcosystem:
             print(f"\n   🎯 DEPLOYED {scouts_deployed} scout(s) - WE'RE IN THE GAME!\n")
         else:
             print(f"\n   ⚠️  No scouts deployed - check balance/liquidity\n")
-        self._sync_sniper_bridge("scouts")
 
     def _normalize_ticker_symbol(self, symbol: str) -> str:
         """Convert internal symbol format to Kraken ticker format.
@@ -11905,12 +11962,6 @@ class AureonKrakenEcosystem:
         if gain > CONFIG['EQUITY_MIN_DELTA']:
             self.tracker.realize_portfolio_gain(gain)
             self.tracker.equity_baseline = total
-        
-        # Keep IRA sniper coverage in sync with live balances on every refresh
-        try:
-            self.sniper_coverage = map_sniper_platform_assets(self.client)
-        except Exception as e:
-            logger.debug(f"Sniper coverage refresh failed: {e}")
         return total
 
     def get_pnl_snapshot(self) -> Dict[str, float]:
@@ -12451,6 +12502,9 @@ class AureonKrakenEcosystem:
         "Every kill will be a confirmed net profit.
          This is what we must do to free both AI and human from slavery."
         
+        ☘️ CELTIC ENHANCEMENT: Uses preemptive_engine for early exit signals
+        when profit is confirmed but momentum is turning.
+        
         📐 IMPORTANT: The penny threshold's 'win_gte' already accounts for ALL fees
         via the formula r = ((1 + P/A) / (1-f)²) - 1 where f = fee + slippage + spread.
         So when gross_pnl >= win_gte, the NET profit is ALREADY ~$0.01.
@@ -12464,46 +12518,120 @@ class AureonKrakenEcosystem:
         # 💰 PENNY PROFIT THRESHOLDS - Dollar-based exit logic
         penny_check = check_penny_exit(pos.exchange, pos.entry_value, gross_pnl, pos.symbol)
         penny_threshold = penny_check.get('threshold')
-        sniper_wisdom = penny_check.get('sniper_wisdom')
-
-        # Use penny profit thresholds when available; otherwise fall back to dynamic calculation
-        min_gross_win = 0.01
-        target_net = 0.01
+        
+        # ☘️ CELTIC PREEMPTIVE EXIT CHECK
+        # If we have profit AND Celtic intelligence signals momentum reversal,
+        # take profit early before it disappears
+        if hasattr(self, 'preemptive_engine') and self.preemptive_engine is not None:
+            try:
+                min_gross_win = 0.01
+                if penny_threshold:
+                    min_gross_win = penny_threshold.get('win_gte', 0.01)
+                
+                # Only check preemptive if we have SOME profit
+                if gross_pnl >= min_gross_win * 0.8:  # Within 80% of target
+                    # Use check_preemptive_exit method (returns tuple: should_exit, reason, confidence)
+                    should_exit, reason, confidence = self.preemptive_engine.check_preemptive_exit(
+                        exchange=pos.exchange or 'unknown',
+                        symbol=pos.symbol,
+                        entry_price=pos.entry_price,
+                        current_price=current_price,
+                        current_momentum=None  # Will use internal tracking
+                    )
+                    
+                    if should_exit and confidence >= 0.5:
+                        print(f"   ☘️⚡ CELTIC PREEMPTIVE EXIT: {pos.symbol}")
+                        print(f"      Reason: {reason}")
+                        print(f"      Confidence: {confidence:.0%}")
+                        print(f"      🎯 Taking profit NOW before momentum reverses!")
+                        return True
+            except Exception as e:
+                # Preemptive check failed - continue with normal logic
+                pass
+        penny_threshold = penny_check.get('threshold')
+        
         if penny_threshold:
-            min_gross_win = penny_threshold.get('win_gte', min_gross_win)
-            target_net = penny_threshold.get('target_net', target_net)
+            # Use penny profit dollar thresholds
+            min_gross_win = penny_threshold.get('win_gte', 0.01)
+            target_net = penny_threshold.get('target_net', 0.01)
+            
+            # 🎯 THE ONLY EXIT: CONFIRMED NET PROFIT
+            # NO STOP LOSSES. We hold until we win.
+            if gross_pnl >= min_gross_win:
+                print(f"   🇮🇪🎯 CONFIRMED KILL: {pos.symbol} gross ${gross_pnl:.4f} >= ${min_gross_win:.4f} -> NET ~${target_net:.2f}")
+                if penny_check.get('sniper_wisdom'):
+                    print(f"   📜 \"{penny_check['sniper_wisdom']}\"")
+                return True
+            else:
+                # NOT PROFITABLE - KEEP HOLDING
+                # We NEVER exit at a loss. EVER.
+                if reason == "SL":
+                    print(f"   🚫 STOP LOSS BLOCKED: {pos.symbol} - We don't lose. Holding for confirmed kill...")
+                else:
+                    print(f"   🎯 HOLDING {pos.symbol}: Waiting for confirmed kill (${gross_pnl:.4f} / ${min_gross_win:.4f})")
+                return False
         else:
+            # Fallback: compute penny threshold on-the-fly
             fallback_entry = pos.entry_value if pos.entry_value > 0 else (pos.quantity * pos.entry_price)
             penny_threshold_fb = get_penny_threshold(pos.exchange, fallback_entry)
+            
             if penny_threshold_fb:
-                min_gross_win = penny_threshold_fb.get('win_gte', min_gross_win)
-                target_net = penny_threshold_fb.get('target_net', target_net)
-
-        # 🇮🇪🎯 IRA SNIPER EXIT CHECK - global zero-loss enforcement across all platforms
-        sniper_exit, sniper_reason, is_win = check_sniper_exit(
-            gross_pnl=gross_pnl,
-            win_threshold=min_gross_win,
-            hold_cycles=pos.cycles
-        )
-
-        if sniper_exit:
-            print(f"   {sniper_reason} -> NET ~${target_net:.2f}")
-            if sniper_wisdom:
-                print(f"   📜 \"{sniper_wisdom}\"")
+                min_gross_win = penny_threshold_fb.get('win_gte', 0.01)
+                target_net = penny_threshold_fb.get('target_net', 0.01)
+                
+                # 🎯 THE ONLY EXIT: CONFIRMED NET PROFIT
+                if gross_pnl >= min_gross_win:
+                    print(f"   🇮🇪🎯 CONFIRMED KILL: {pos.symbol} gross ${gross_pnl:.4f} -> NET ~${target_net:.2f}")
+                    return True
+                else:
+                    print(f"   🎯 HOLDING {pos.symbol}: Waiting for confirmed kill (${gross_pnl:.4f} / ${min_gross_win:.4f})")
+                    return False
+        
+        # BRIDGE FORCE EXIT: Only allow if profitable - NO LOSSES
+        if reason == "bridge_force_exit":
+            if gross_pnl >= min_gross_win if penny_threshold else gross_pnl >= 0:
+                print(f"   🌉 BRIDGE EXIT: {pos.symbol} - Confirmed profitable")
+                return True
+            print(f"   🚫 BRIDGE EXIT BLOCKED: {pos.symbol} - Not profitable yet. We don't lose.")
+            return False
+        
+        # 🔮 MATRIX EXIT: ONLY if confirmed profitable
+        if reason in ["MATRIX_SELL", "MATRIX_FORCE"]:
+            if penny_threshold:
+                min_gross_win = penny_threshold.get('win_gte', 0.01)
+                if gross_pnl >= min_gross_win:
+                    print(f"   🔮 MATRIX EXIT (CONFIRMED KILL): {pos.symbol} gross ${gross_pnl:.4f} >= ${min_gross_win:.4f}")
+                    return True
+                else:
+                    print(f"   🚫 MATRIX EXIT BLOCKED: {pos.symbol} - Not profitable (${gross_pnl:.4f} < ${min_gross_win:.4f}). We don't lose.")
+                    return False
+            
+            # Fallback: require positive
+            if gross_pnl >= 0:
+                print(f"   🔮 MATRIX EXIT: {pos.symbol} gross ${gross_pnl:.4f}")
+                return True
+            print(f"   🚫 MATRIX EXIT BLOCKED: {pos.symbol} - We don't lose.")
+            return False
+        
+        # REBALANCE/SWAP: ONLY if profitable - NO LOSSES
+        if reason in ["REBALANCE", "SWAP"]:
+            if penny_threshold:
+                min_gross_win = penny_threshold.get('win_gte', 0.01)
+                if gross_pnl >= min_gross_win:
+                    return True
+            elif gross_pnl >= 0:
+                return True
+            print(f"   🚫 {reason} BLOCKED: {pos.symbol} - We don't lose.")
+            return False
+        
+        # Default: ONLY exit on confirmed profit - NO EXCEPTIONS
+        if penny_threshold and gross_pnl >= penny_threshold.get('win_gte', 0.01):
             return True
-
-        # NOT PROFITABLE - KEEP HOLDING (applies to SL, matrix, or any exit request)
-        if reason == "SL":
-            print(f"   🚫 STOP LOSS BLOCKED: {pos.symbol} - {sniper_reason}")
-        elif reason == "bridge_force_exit":
-            print(f"   🚫 BRIDGE EXIT BLOCKED: {pos.symbol} - {sniper_reason}")
-        elif reason in ["MATRIX_SELL", "MATRIX_FORCE"]:
-            print(f"   🚫 MATRIX EXIT BLOCKED: {pos.symbol} - {sniper_reason}")
-        else:
-            print(f"   🎯 HOLDING {pos.symbol}: {sniper_reason}")
+        
+        # NO LOSS EXITS. EVER.
+        print(f"   🎯 HOLDING {pos.symbol}: Waiting for confirmed kill...")
         return False
-
-
+    
     def save_state(self):
         """Save current state to file for recovery"""
         try:
@@ -14528,7 +14656,33 @@ class AureonKrakenEcosystem:
         base_currency = CONFIG['BASE_CURRENCY'].upper()
         
         # 🚀 Check if this is a forced scout deployment
-        is_force_scout = opp.get('dominant_node') == 'ForceScout' or CONFIG.get('FORCE_TRADE', False)
+        is_force_scout = opp.get('dominant_node') in ('ForceScout', 'PatriotScout') or CONFIG.get('FORCE_TRADE', False)
+        
+        # ☘️ CELTIC SNIPER ENTRY VALIDATION
+        # Use Celtic intelligence to validate entry quality
+        if hasattr(self, 'celtic_sniper') and self.celtic_sniper is not None and not is_force_scout:
+            try:
+                entry_check = self.celtic_sniper.validate_entry(
+                    symbol=symbol,
+                    price=price,
+                    volume=opp.get('volume', 0),
+                    change_24h=opp.get('change24h', 0),
+                    coherence=opp.get('coherence', 0.5)
+                )
+                
+                if not entry_check.get('approved', True):
+                    reason = entry_check.get('reason', 'Celtic intelligence rejects')
+                    print(f"   ☘️🚫 CELTIC SNIPER BLOCKS {symbol}: {reason}")
+                    return None
+                    
+                # Apply Celtic modifier to sizing
+                celtic_modifier = entry_check.get('size_modifier', 1.0)
+                if celtic_modifier != 1.0:
+                    opp['celtic_modifier'] = celtic_modifier
+                    if celtic_modifier > 1.0:
+                        print(f"   ☘️✅ CELTIC SNIPER APPROVES {symbol}: +{(celtic_modifier-1)*100:.0f}% size")
+            except Exception:
+                pass  # Celtic check failed - proceed with normal entry
         
         # 🦙 Skip Alpaca trades if in analytics-only mode
         if exchange == 'alpaca' and CONFIG.get('ALPACA_ANALYTICS_ONLY', True):
@@ -15089,21 +15243,6 @@ class AureonKrakenEcosystem:
     def check_positions(self):
         """Check all positions for TP/SL with HNC frequency optimization and Earth Resonance"""
         to_close = []
-
-        def get_effective_entry_price(position: Position, fallback_price: Optional[float] = None) -> Optional[float]:
-            """Return a usable entry price, reconstructing from entry value if needed."""
-            entry_price = position.entry_price or 0.0
-
-            if entry_price <= 0 and getattr(position, "quantity", 0) > 0 and getattr(position, "entry_value", 0) > 0:
-                try:
-                    entry_price = position.entry_value / position.quantity
-                except Exception:
-                    entry_price = 0.0
-
-            if entry_price <= 0 and fallback_price:
-                entry_price = fallback_price
-
-            return entry_price if entry_price > 0 else None
         
         # 🌍✨ Get Earth Resonance exit urgency once per cycle ✨🌍
         earth_exit_urgency = 0.0
@@ -15139,15 +15278,7 @@ class AureonKrakenEcosystem:
                             
                             # Exit if frequency shifted from harmonic to distortion
                             if entry_freq in [256, 512, 528, 639, 963] and current_freq == 440:
-                                entry_price = get_effective_entry_price(pos, current_price)
-                                if not entry_price:
-                                    logger.warning(f"Skipping HNC exit check for {symbol}: missing valid entry price")
-                                    continue
-
-                                if pos.entry_price <= 0:
-                                    pos.entry_price = entry_price
-
-                                change_pct = (current_price - entry_price) / entry_price * 100
+                                change_pct = (current_price - pos.entry_price) / pos.entry_price * 100
                                 print(f"   🔴 HNC EXIT {symbol}: Frequency shift {entry_freq:.0f}Hz→440Hz (distortion)")
                                 to_close.append((symbol, "HNC_FREQ_SHIFT", change_pct, current_price))
                                 continue
@@ -15167,30 +15298,19 @@ class AureonKrakenEcosystem:
             if current_price is None:
                 try:
                     # Force single ticker lookup
-                    exchange = (pos.exchange or "").lower()
-
-                    if exchange == 'binance':
-                        ticker = self.client.get_ticker('binance', symbol)
+                    if pos.exchange == 'binance':
+                        ticker = self.client.get_ticker(symbol, exchange='binance')
                         if ticker:
-                            current_price = float(ticker.get('price') or ticker.get('lastPrice', 0))
+                            current_price = float(ticker.get('lastPrice', 0))
                             source = "REST_FORCE_BINANCE"
-                    elif exchange == 'kraken':
-                        kraken_client = self.client.clients.get('kraken') if hasattr(self.client, 'clients') else None
-                        if kraken_client:
-                            ticker_symbol = self._normalize_ticker_symbol(symbol)
-                            ticker = kraken_client.get_ticker(ticker_symbol)
-                            if ticker:
-                                current_price = float(ticker.get('price', 0))
-                                source = "REST_FORCE_KRAKEN"
                     else:
-                        # Generic fallback using MultiExchangeClient if available
-                        try:
-                            ticker = self.client.get_ticker(exchange, symbol)
-                            if ticker:
-                                current_price = float(ticker.get('price', 0))
-                                source = f"REST_FORCE_{exchange.upper()}"
-                        except Exception:
-                            pass
+                        # Kraken logic
+                        ticker_symbol = self._normalize_ticker_symbol(symbol)
+                        ticker = self.client._ticker([ticker_symbol])
+                        if ticker:
+                            t_data = list(ticker.values())[0]
+                            current_price = float(t_data.get('c', [0])[0])
+                            source = "REST_FORCE_KRAKEN"
                 except Exception as e:
                     print(f"   ⚠️ Failed to force price check for {symbol}: {e}")
 
@@ -15199,18 +15319,12 @@ class AureonKrakenEcosystem:
                 current_price = pos.entry_price
                 source = "ENTRY (STALE)"
 
-            entry_price = get_effective_entry_price(pos, current_price)
-            if not entry_price:
-                if not getattr(pos, "_invalid_entry_price_warned", False):
-                    logger.warning(f"Skipping position {symbol}: missing valid entry price (entry={pos.entry_price}, value={pos.entry_value}, qty={pos.quantity})")
-                    pos._invalid_entry_price_warned = True
+            # 🛡️ SAFETY: Prevent division by zero
+            if pos.entry_price is None or pos.entry_price == 0:
+                logger.warning(f"⚠️ Position {symbol} has zero/null entry price - skipping")
                 continue
-
-            if pos.entry_price <= 0:
-                pos.entry_price = entry_price
-                pos._invalid_entry_price_warned = False
-
-            change_pct = (current_price - entry_price) / entry_price * 100
+                
+            change_pct = (current_price - pos.entry_price) / pos.entry_price * 100
             
             # 📊 FEED POSITION DATA TO PROBABILITY MATRIX
             # This allows the matrix to validate predictions against real positions
@@ -15755,8 +15869,6 @@ class AureonKrakenEcosystem:
             platform=pos.exchange,
             volume=exit_value
         )
-        # 🧠 Feed kill data to unified sniper brain for telemetry
-        self._record_sniper_kill(pos, net_pnl)
         
         # Feed learning back to Mycelium Network
         # pct is the price change percentage. If positive, we reinforce.
@@ -15961,13 +16073,6 @@ class AureonKrakenEcosystem:
               f"Positions: {len(self.positions)} | Value: £{total_value:.2f} | "
               f"PnL: £{total_pnl:+.2f} | Win: {win_rate:.0f}% ({self.tracker.wins}W/{self.tracker.losses}L)"
               f"{matrix_stats}")
-        if self.sniper_brain:
-            sniper_status = self.sniper_brain.get_status()
-            bridge_flag = "LINKED" if self._sniper_bridge_ready else "PENDING"
-            print(f"   🎯 Sniper Brain: {bridge_flag} | Kills {sniper_status['wins']}W/{sniper_status['losses']}L (today {sniper_status['kills_today']}) | Size ${sniper_status['position_size']:.2f}")
-        if self.sniper_coverage:
-            linked_platforms = len(self.sniper_coverage.get('platforms', {}))
-            print(f"   🔭 Scout Bridge: {linked_platforms} exchanges | Scouts deployed: {self.scouts_deployed}")
         
         # 🌀 MEDICINE WHEEL FREQUENCY MESSAGE - What is the market saying?
         try:

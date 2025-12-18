@@ -1,0 +1,12 @@
+{
+  "timestamp": 1766080306.894744,
+  "total_capital": 10000.0,
+  "available_capital": 8000.0,
+  "stats": {
+    "total_realized_pnl": 0.0,
+    "total_kills": 0,
+    "kills_by_front": {},
+    "current_phase": "skirmish"
+  },
+  "positions": {}
+}
