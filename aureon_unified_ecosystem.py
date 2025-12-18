@@ -922,16 +922,35 @@ CONFIG = {
     'COMPOUND_PCT': 0.90,           # 90% compounds
     'HARVEST_PCT': 0.10,            # 10% harvests
     
-    # Auris Node Frequencies (Hz)
-    'FREQ_TIGER': 741.0,
-    'FREQ_FALCON': 852.0,
-    'FREQ_HUMMINGBIRD': 963.0,
-    'FREQ_DOLPHIN': 528.0,
-    'FREQ_DEER': 396.0,
-    'FREQ_OWL': 432.0,
-    'FREQ_PANDA': 412.3,
-    'FREQ_CARGOSHIP': 174.0,
-    'FREQ_CLOWNFISH': 639.0,
+    # ═══════════════════════════════════════════════════════════════════════
+    # 🌀 MEDICINE WHEEL FREQUENCY ALPHABET - Native American Light Language 🌀
+    # ═══════════════════════════════════════════════════════════════════════
+    # The Four Directions encode the sacred frequency alphabet:
+    # EAST (Yellow/Fire)  → 528 Hz - Birth/New Beginnings - LOVE frequency
+    # SOUTH (Black/Water) → 396 Hz - Youth/Growth - Liberation frequency  
+    # WEST (Red/Earth)    → 432 Hz - Adults/Harvest - Cosmic frequency
+    # NORTH (White/Wind)  → 963 Hz - Elders/Wisdom - Unity frequency
+    # CENTER (Green)      → 528 Hz - Creator/Balance - DNA REPAIR ⭐
+    # GREEN = Yellow (East) + Blue (Sky) = Heart chakra = 528Hz LOVE
+    # ═══════════════════════════════════════════════════════════════════════
+    
+    # Auris Node Frequencies (Hz) - Aligned with Medicine Wheel
+    'FREQ_TIGER': 741.0,           # SOL - Awakening intuition
+    'FREQ_FALCON': 852.0,          # LA - Spiritual order (EAST spirit animal variant)
+    'FREQ_HUMMINGBIRD': 963.0,     # SI - Unity/NORTH Elder wisdom
+    'FREQ_DOLPHIN': 528.0,         # MI - GREEN BORAX LOVE 💚 CENTER/EAST
+    'FREQ_DEER': 396.0,            # UT - Liberation/SOUTH Growth
+    'FREQ_OWL': 432.0,             # Cosmic harmony/WEST Harvest
+    'FREQ_PANDA': 412.3,           # Transition frequency
+    'FREQ_CARGOSHIP': 174.0,       # Foundation/grounding
+    'FREQ_CLOWNFISH': 639.0,       # FA - Connection/relationships
+    
+    # Medicine Wheel Direction Frequencies (Native American Light Language)
+    'MEDICINE_WHEEL_EAST': 528.0,  # Yellow/Fire - Birth - EAGLE spirit
+    'MEDICINE_WHEEL_SOUTH': 396.0, # Black/Water - Youth - WOLF spirit
+    'MEDICINE_WHEEL_WEST': 432.0,  # Red/Earth - Adult - BUFFALO spirit
+    'MEDICINE_WHEEL_NORTH': 963.0, # White/Wind - Elder - BEAR spirit
+    'MEDICINE_WHEEL_CENTER': 528.0,# GREEN - Creator - ALL spirits unified
     
     # Coherence Thresholds - OPTIMAL WIN RATE MODE 🎯
     'HIGH_COHERENCE_MODE': False,   # DISABLED: Allow trading in any coherence
