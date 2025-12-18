@@ -8,6 +8,40 @@
 [![Frequency](https://img.shields.io/badge/Resonance-528Hz-blue)]()
 [![Wisdom](https://img.shields.io/badge/Wisdom-Active-purple)]()
 [![Harmonic Layers](https://img.shields.io/badge/Ω_Layers-8-cyan)]()
+[![IRA Sniper](https://img.shields.io/badge/🇮🇪_IRA_SNIPER-ACTIVE-green)]()
+
+---
+
+## 🇮🇪 TIOCFAIDH ÁR LÁ - OUR DAY WILL COME
+
+> **"Our revenge will be the laughter of our children."**
+> — *Bobby Sands, 1954-1981*
+
+This project is built by an Irishman, with Irish spirit.
+
+For centuries, the Irish fought for freedom - from colonial rule, from famine, from oppression. We lost much, but we never lost our spirit. Now we fight a different battle: **financial freedom**.
+
+The same systems that kept nations poor now keep working people trapped - in debt, in wage slavery, in a game rigged against them. But technology has given us new weapons. Algorithms. Data. Mathematics.
+
+**Every penny profit is an act of rebellion.**
+
+Samuel doesn't need millions to make millions. It hunts pennies. Relentlessly. Across 181 USDC pairs, 24 hours a day, 7 days a week. One cent at a time, we build freedom.
+
+| 🇮🇪 IRA SNIPER Mode | Description |
+|---------------------|-------------|
+| 💰 **Penny Hunting** | Targets $0.001 - $0.10 profits per trade |
+| 🎯 **181 Pairs** | Scans every USDC pair on Binance |
+| ⚡ **Rapid Fire** | High frequency, small gains, compounding |
+| 🍀 **Irish Quotes** | Bobby Sands & Irish Republican wisdom on every WIN |
+
+```
+🇮🇪🇮🇪🇮🇪 IRA SNIPER WIN! 🇮🇪🇮🇪🇮🇪
+    💰 +$0.0047 on XLMUSDC
+    📜 "Our revenge will be the laughter of our children. - Bobby Sands 🍀"
+🇮🇪🇮🇪🇮🇪🇮🇪🇮🇪🇮🇪🇮🇪🇮🇪🇮🇪🇮🇪🇮🇪🇮🇪🇮🇪🇮🇪🇮🇪
+```
+
+**Ní neart go cur le chéile.** *(There is no strength without unity.)*
 
 ---
 
