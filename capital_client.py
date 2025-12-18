@@ -33,6 +33,10 @@ class CapitalClient:
         self.x_security_token = None
         self.session_start_time = 0
         self.dry_run = False  # ALWAYS LIVE
+        self.market_cache: List[Dict[str, Any]] = []
+        self.market_index: Dict[str, Dict[str, Any]] = {}
+        self.market_cache_time = 0.0
+        self.market_cache_ttl = int(os.getenv('CAPITAL_MARKET_CACHE_TTL', '900'))  # 15 minutes
         
         if not self.api_key or not self.identifier or not self.password:
             logger.warning("Capital.com credentials not fully set. Client will be disabled.")
@@ -118,6 +122,124 @@ class CapitalClient:
             "Content-Type": "application/json"
         }
 
+    @staticmethod
+    def _canonicalize(value: Optional[str]) -> str:
+        """Normalize symbols/epics for robust matching."""
+        if not value:
+            return ""
+        return "".join(ch for ch in str(value).upper() if ch.isalnum())
+
+    def _update_market_index(self, markets: List[Dict[str, Any]]):
+        """Build fast lookup index for epic/instrument names."""
+        index: Dict[str, Dict[str, Any]] = {}
+        for m in markets:
+            for key in (
+                self._canonicalize(m.get('epic')),
+                self._canonicalize(m.get('instrumentName')),
+                self._canonicalize(m.get('symbol')),
+                self._canonicalize(m.get('marketId')),
+            ):
+                if key and key not in index:
+                    index[key] = m
+        self.market_index = index
+
+    def get_all_markets(self, force_refresh: bool = False) -> List[Dict[str, Any]]:
+        """
+        Discover all available Capital.com markets by traversing the market navigation tree.
+        This ensures we can trade any listed epic instead of a small search subset.
+        """
+        if not self.enabled:
+            return []
+
+        if (
+            not force_refresh
+            and self.market_cache
+            and (time.time() - self.market_cache_time) < self.market_cache_ttl
+        ):
+            return self.market_cache
+
+        markets: List[Dict[str, Any]] = []
+        queue: List[Optional[str]] = [None]
+        visited: set = set()
+
+        while queue:
+            node_id = queue.pop(0)
+            path = '/marketnavigation' if not node_id else f'/marketnavigation/{node_id}'
+            try:
+                response = self._request('GET', path)
+                if response.status_code != 200:
+                    logger.warning(f"Capital.com marketnavigation failed for {node_id}: {response.text}")
+                    continue
+
+                data = response.json() or {}
+                node_markets = data.get('markets', [])
+                if node_markets:
+                    markets.extend(node_markets)
+
+                for node in data.get('nodes', []):
+                    nid = node.get('id') or node.get('nodeId') or node.get('identifier') or node.get('name')
+                    if not nid:
+                        continue
+                    if nid in visited:
+                        continue
+                    visited.add(nid)
+                    queue.append(nid)
+            except Exception as e:
+                logger.error(f"Capital.com navigation error at node {node_id}: {e}")
+                continue
+
+        self.market_cache = markets
+        self.market_cache_time = time.time()
+        self._update_market_index(markets)
+        logger.info(f"Capital.com market catalogue loaded ({len(markets)} markets)")
+        return markets
+
+    def _resolve_market(self, symbol: str) -> Optional[Dict[str, Any]]:
+        """
+        Map a user-facing symbol (e.g., BTCUSD, TSLA) to the corresponding Capital.com market entry.
+        Falls back to the search endpoint if the market isn't in cache yet.
+        """
+        if not symbol:
+            return None
+
+        canonical = self._canonicalize(symbol)
+        markets = self.get_all_markets()
+        if canonical in self.market_index:
+            return self.market_index[canonical]
+
+        # Partial match on epic or instrument name
+        for m in markets:
+            if canonical in self._canonicalize(m.get('epic')) or canonical in self._canonicalize(m.get('instrumentName')):
+                return m
+
+        # Fallback: use search endpoint to pull the market and refresh cache
+        try:
+            search_resp = self._request('GET', '/markets', params={'searchTerm': symbol, 'pageSize': 50})
+            if search_resp.status_code == 200:
+                data = search_resp.json() or {}
+                found = data.get('markets', [])
+                if found:
+                    markets.extend(found)
+                    self._update_market_index(markets)
+                    self.market_cache = markets
+                    self.market_cache_time = time.time()
+                    return found[0]
+        except Exception as e:
+            logger.error(f"Capital.com search failed for {symbol}: {e}")
+
+        return None
+
+    def _get_market_snapshot(self, epic: str) -> Optional[Dict[str, Any]]:
+        """Fetch detailed market info (including bid/ask) for a specific epic."""
+        try:
+            response = self._request('GET', f'/markets/{epic}')
+            if response.status_code == 200:
+                return response.json()
+            logger.error(f"Capital.com market snapshot failed for {epic}: {response.text}")
+        except Exception as e:
+            logger.error(f"Capital.com market snapshot error for {epic}: {e}")
+        return None
+
     def get_account_balance(self) -> Dict[str, float]:
         """Get account balances.
         
@@ -155,26 +277,18 @@ class CapitalClient:
         """Get current price for a symbol."""
         if not self.enabled:
             return {'price': 0.0, 'bid': 0.0, 'ask': 0.0}
-            
-        # Capital.com uses 'epic' for symbols (e.g., 'BTCUSD', 'AAPL')
-        # We might need a mapping or search. For now, assume symbol is the epic.
-        url = f"{self.base_url}/markets"
-        params = {'searchTerm': symbol}
-        
+
         try:
-            response = self._request('GET', '/markets', params=params)
-            if response.status_code == 200:
-                data = response.json()
-                markets = data.get('markets', [])
-                if markets:
-                    # Find exact match or first
-                    market = markets[0]
-                    # Try to get bid/ask from top level or snapshot
-                    bid = float(market.get('bid') or market.get('snapshot', {}).get('bid', 0))
-                    ask = float(market.get('offer') or market.get('snapshot', {}).get('offer', 0))
-                    price = (bid + ask) / 2
-                    return {'price': price, 'bid': bid, 'ask': ask}
-            return {'price': 0.0, 'bid': 0.0, 'ask': 0.0}
+            market = self._resolve_market(symbol) or {}
+            epic = market.get('epic') or symbol
+            snapshot = self._get_market_snapshot(epic) or {}
+            snap = snapshot.get('snapshot', {})
+
+            bid = float(snap.get('bid') or market.get('bid') or market.get('snapshot', {}).get('bid') or 0)
+            ask = float(snap.get('offer') or market.get('offer') or market.get('snapshot', {}).get('offer') or 0)
+            price = (bid + ask) / 2 if bid and ask else (bid or ask or float(snap.get('midOpen', 0) or 0))
+
+            return {'price': price, 'bid': bid, 'ask': ask, 'epic': epic}
         except Exception as e:
             logger.error(f"Error fetching Capital.com ticker for {symbol}: {e}")
             return {'price': 0.0, 'bid': 0.0, 'ask': 0.0}
@@ -190,39 +304,38 @@ class CapitalClient:
         if not self.enabled:
             return []
             
-        # Fetching top crypto markets
-        # This is a simplification. In a real scenario, we'd iterate categories.
-        # /markets?categoryId=...
-        # For now, we'll skip bulk fetching to avoid API limits or complexity, 
-        # or just return a few hardcoded ones if we can't discover them easily.
-        # Let's try searching for "USD" to get major pairs.
-        
-        params = {'searchTerm': 'USD', 'limit': 50}  # Search for USD pairs
-        
-        tickers = []
+        max_snapshots = int(os.getenv('CAPITAL_MAX_TICKER_SNAPSHOTS', '400'))
+        tickers: List[Dict[str, Any]] = []
+        markets = self.get_all_markets()
+
         try:
-            response = self._request('GET', '/markets', params=params)
-            if response.status_code == 200:
-                data = response.json()
-                for m in data.get('markets', []):
-                    snapshot = m.get('snapshot', {})
-                    bid = float(m.get('bid') or snapshot.get('bid', 0))
-                    ask = float(m.get('offer') or snapshot.get('offer', 0))
-                    price = (bid + ask) / 2
-                    change_pct = float(m.get('percentageChange') or snapshot.get('percentageChange', 0))
-                    
-                    tickers.append({
-                        'symbol': m.get('epic'),
-                        'price': price,
-                        'bid': bid,
-                        'ask': ask,
-                        'priceChangePercent': change_pct,
-                        'volume': 0.0, # Not always available
-                        'source': 'capital'
-                    })
+            for idx, m in enumerate(markets):
+                epic = m.get('epic')
+                if not epic:
+                    continue
+
+                bid = ask = price = change_pct = 0.0
+                if idx < max_snapshots:
+                    snap = self._get_market_snapshot(epic) or {}
+                    snapshot = snap.get('snapshot', {})
+                    bid = float(snapshot.get('bid', 0) or 0)
+                    ask = float(snapshot.get('offer', 0) or 0)
+                    price = (bid + ask) / 2 if bid and ask else float(snapshot.get('midOpen', 0) or 0)
+                    change_pct = float(snapshot.get('percentageChange', 0) or 0)
+
+                tickers.append({
+                    'symbol': epic,
+                    'instrumentName': m.get('instrumentName'),
+                    'price': price,
+                    'bid': bid,
+                    'ask': ask,
+                    'priceChangePercent': change_pct,
+                    'volume': 0.0,
+                    'source': 'capital'
+                })
         except Exception as e:
             logger.error(f"Error fetching Capital.com tickers: {e}")
-            
+
         return tickers
 
     def place_market_order(self, symbol: str, side: str, quantity: float) -> Dict[str, Any]:
@@ -236,9 +349,12 @@ class CapitalClient:
 
         path = '/positions'
         direction = "BUY" if side.upper() == "BUY" else "SELL"
-        
+
+        market = self._resolve_market(symbol) or {}
+        epic = market.get('epic') or symbol
+
         payload = {
-            "epic": symbol,
+            "epic": epic,
             "direction": direction,
             "size": quantity,
             "orderType": "MARKET",
@@ -446,4 +562,3 @@ class CapitalClient:
             "avg_cost": avg_cost,
             "trades": trade_count
         }
-
