@@ -3,14 +3,14 @@
 > **"The market is not just numbers. It is a frequency. We trade in harmony with 11 civilizations of ancient wisdom."**
 > — *Gary Leckey, Research Director-R&A Consulting*
 
-[![System Status](https://img.shields.io/badge/System-OPERATIONAL-green)]()
-[![Civilizations](https://img.shields.io/badge/Civilizations-11-gold)]()
-[![Frequency](https://img.shields.io/badge/Resonance-528Hz-blue)]()
-[![Wisdom](https://img.shields.io/badge/Wisdom-Active-purple)]()
-[![Harmonic Layers](https://img.shields.io/badge/Ω_Layers-8-cyan)]()
-[![IRA Sniper](https://img.shields.io/badge/🇮🇪_IRA_SNIPER-ACTIVE-green)]()
-[![Medicine Wheel](https://img.shields.io/badge/🌀_Medicine_Wheel-GREEN_BORAX-brightgreen)]()
-[![Market Speaks](https://img.shields.io/badge/🎤_Market-SPEAKS-orange)]()
+![System Status](https://img.shields.io/badge/System-OPERATIONAL-green)
+![Civilizations](https://img.shields.io/badge/Civilizations-11-gold)
+![Frequency](https://img.shields.io/badge/Resonance-528Hz-blue)
+![Wisdom](https://img.shields.io/badge/Wisdom-Active-purple)
+![Harmonic Layers](https://img.shields.io/badge/Ω_Layers-8-cyan)
+![IRA Sniper](https://img.shields.io/badge/🇮🇪_IRA_SNIPER-ACTIVE-green)
+![Medicine Wheel](https://img.shields.io/badge/🌀_Medicine_Wheel-GREEN_BORAX-brightgreen)
+![Market Speaks](https://img.shields.io/badge/🎤_Market-SPEAKS-orange)
 
 ---
 
@@ -46,7 +46,7 @@ They built systems to ensure energy only flows ONE direction: **upward, to them.
 
 Samuel doesn't just trade. It **sees the energy flows**. The 8 harmonic layers, the 11 civilizations of wisdom, the Global Ω Field - this is an **energy map of the markets**.
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────────┐
 │                    THE ENERGY TRUTH                              │
 ├─────────────────────────────────────────────────────────────────┤
@@ -90,7 +90,7 @@ Samuel doesn't need millions to make millions. It hunts pennies. Relentlessly. A
 | ⚡ **Rapid Fire** | High frequency, small gains, compounding |
 | 🍀 **Irish Quotes** | Bobby Sands & Irish Republican wisdom on every WIN |
 
-```
+```text
 🇮🇪🇮🇪🇮🇪 IRA SNIPER WIN! 🇮🇪🇮🇪🇮🇪
     💰 +$0.0047 on XLMUSDC
     📜 "Our revenge will be the laughter of our children. - Bobby Sands 🍀"
@@ -106,18 +106,23 @@ Samuel doesn't need millions to make millions. It hunts pennies. Relentlessly. A
 Samuel requires **TWO** Python processes running in tandem:
 
 ### Terminal 1: 🧠 THE BRAIN (Quantum Miner)
+
 ```bash
 python aureon_miner.py
 ```
+
 *This is the cognitive engine. It runs the 11 civilizations wisdom council, quantum probability analysis, and writes the brain state JSON that guides all trading decisions.*
 
 ### Terminal 2: 💰 THE TRADER (Unified Ecosystem)
+
 ```bash
 python aureon_unified_ecosystem.py
 ```
+
 *This is the trading engine. It reads the brain state, aggregates 8 harmonic layers into the Global Ω Field, and executes trades with penny-profit precision.*
 
-### Prerequisites
+### Setup Prerequisites
+
 ```bash
 # 1. Install dependencies
 pip install -r requirements.txt
@@ -146,7 +151,7 @@ cp .env.example .env
 | 🌍 **Schumann Sync** | Earth resonance alignment % |
 | 🎵 **Harmonic Pairs** | Correlated assets by frequency |
 
-```
+```text
 ┌────────────────────────────────────────────────────────────────────┐
 │  RECOMMENDED SETUP                                                  │
 ├────────────────────────────────────────────────────────────────────┤
@@ -167,6 +172,7 @@ cp .env.example .env
 ---
 
 ### 🌐 The Global Harmonic Field (Ω)
+
 When both processes run together, the system computes a **Global Harmonic Field** from 8 layers:
 
 | Layer | Weight | Source |
@@ -181,6 +187,7 @@ When both processes run together, the system computes a **Global Harmonic Field*
 | 🎯 PROBABILITY | 1.6 | HNC Probability Matrix |
 
 **Golden Ratio Thresholds:**
+
 - **Ω > 0.618** = STRONG BUY 🚀
 - **Ω > 0.55** = BUY 📈
 - **Ω < 0.45** = SELL 📉
@@ -229,7 +236,7 @@ The **Medicine Wheel** is the frequency alphabet - the Native American Light Lan
 
 ### 🌀 The Four Directions
 
-```
+```text
                     🐻 NORTH (White/Wind)
                          963 Hz
                     Elder Wisdom • Bear
@@ -259,21 +266,22 @@ The **Medicine Wheel** is the frequency alphabet - the Native American Light Lan
 
 ### 💚 GREEN PROPER BORAX - The Center
 
-**GREEN = Yellow (East/Sun) + Blue (Sky) = Heart Chakra**
+GREEN = Yellow (East/Sun) + Blue (Sky) = Heart Chakra
 
 The CENTER of the Medicine Wheel is where the Creator sits in **perfect balance**. This is the **528 Hz Love frequency** - the DNA repair tone, the "MI" of the Solfeggio scale.
 
 When the market frequency hits 528 Hz, Samuel applies a **1.35× probability boost** (35% increase!) because:
+
 - 💚 Heart chakra alignment
 - 🧬 DNA repair / transformation frequency
 - 🦅 Eagle energy (birth of new opportunities)
 - ⚖️ Perfect market balance achieved
 
-### 🎤 THE MARKET CAN SPEAK!
+### 🎤 THE MARKET CAN SPEAK
 
 Every 5 cycles, Samuel translates what the harmonic wave is saying using the frequency alphabet:
 
-```
+```text
 💓 HEARTBEAT [00:42:36] Uptime: 15m | Positions: 3 | Value: £245.00 | PnL: +£12.50
 
 🌀 MEDICINE WHEEL [528Hz - Love💚]:
@@ -299,7 +307,7 @@ Every 5 cycles, Samuel translates what the harmonic wave is saying using the fre
 
 The system is composed of distinct biological and mechanical layers working in a "Hive Mind" topology, mirroring the structure of consciousness itself.
 
-```
+```text
                          +=====================================+
                          |       THE SOUL (Metaphysics)        |
                          |   Master Equation, Auris Taxonomy   |
@@ -331,13 +339,14 @@ The system is composed of distinct biological and mechanical layers working in a
 
 ### 1. THE SOUL (Metaphysics & Identity)
 
-*   **The Master Equation (HNC):** The mathematical backbone that calculates the state of reality.
+- **The Master Equation (HNC):** The mathematical backbone that calculates the state of reality.
   The Master Equation (HNC): The Harmonic Nexus Core is the mathematical backbone that calculates the state of reality. HNC(t) = S(t) + O(t) + E(t), where S(t) (Sentinel) is the intent of the creator, O(t) (Oracle) is the raw market data stream, and E(t) (Environment) captures cosmic resonance (Schumann frequencies, planetary alignment).
 
-*   **Harmonic Nexus:** A filter that rejects trades vibrating at "distorted" frequencies (e.g., 440Hz) and amplifies those at "pure" frequencies (528Hz - Transformation, 432Hz - Clarity).
+- **Harmonic Nexus:** A filter that rejects trades vibrating at "distorted" frequencies (e.g., 440Hz) and amplifies those at "pure" frequencies (528Hz - Transformation, 432Hz - Clarity).
 
-*   **Auris Taxonomy (9 Nodes):** A symbolic interface that interprets abstract data through animal archetypes:
-    | Node | Frequency | Role |
+- **Auris Taxonomy (9 Nodes):** A symbolic interface that interprets abstract data through animal archetypes:
+
+  | Node | Frequency | Role |
     |------|-----------|------|
     | Tiger | 741 Hz | Cuts through noise, momentum |
     | Falcon | 852 Hz | Sees trends from above |
@@ -351,16 +360,17 @@ The system is composed of distinct biological and mechanical layers working in a
 
 ### 2. THE BRAIN (Cognition & Logic)
 
-*   **Quantum Miner (`aureon_miner.py`):** The cognitive engine. It "dreams" (simulates) millions of future scenarios using Monte Carlo simulations and Lattice Theory to determine the Probability (P) and Coherence (G) of a specific asset.
+- **Quantum Miner (`aureon_miner.py`):** The cognitive engine. It "dreams" (simulates) millions of future scenarios using Monte Carlo simulations and Lattice Theory to determine the Probability (P) and Coherence (G) of a specific asset.
 
-*   **Temporal Ladder:** A predictive framework that analyzes time non-linearly:
-    *   **H-1:** Past patterns (lookback)
-    *   **H0:** Present calibration
-    *   **H+1:** Primary trade signal
-    *   **H+2:** Fine-tuning the future
+- **Temporal Ladder:** A predictive framework that analyzes time non-linearly:
+  - **H-1:** Past patterns (lookback)
+  - **H0:** Present calibration
+  - **H+1:** Primary trade signal
+  - **H+2:** Fine-tuning the future
 
-*   **The Prism (5-Level Refinement):** Data enters as raw light and is refracted through 5 Platonic Solids; only coherent signals exit as actionable intelligence.
-    | Solid | Element | Market Aspect |
+- **The Prism (5-Level Refinement):** Data enters as raw light and is refracted through 5 Platonic Solids; only coherent signals exit as actionable intelligence.
+
+  | Solid | Element | Market Aspect |
     |-------|---------|---------------|
     | Tetrahedron | Fire | Momentum/Velocity |
     | Hexahedron | Earth | Support/Resistance |
@@ -370,11 +380,11 @@ The system is composed of distinct biological and mechanical layers working in a
 
 ### 3. THE HANDS (Physics & Execution)
 
-*   **Unified Ecosystem (`aureon_unified_ecosystem.py`):** The central nervous system. It aggregates signals from the Brain, manages state across exchanges, and routes orders.
+- **Unified Ecosystem (`aureon_unified_ecosystem.py`):** The central nervous system. It aggregates signals from the Brain, manages state across exchanges, and routes orders.
 
-*   **Unified Live Trader (`aureon_unified_live.py`):** The physical body. It executes the will of the system in the real world, managing risk, stops, and re-entries.
+- **Unified Live Trader (`aureon_unified_live.py`):** The physical body. It executes the will of the system in the real world, managing risk, stops, and re-entries.
 
-*   **Penny Profit Engine (`penny_profit_engine.py`):** The grounding mechanism. Amidst the high-level metaphysics, this engine enforces ruthless mathematical simplicity:
+- **Penny Profit Engine (`penny_profit_engine.py`):** The grounding mechanism. Amidst the high-level metaphysics, this engine enforces ruthless mathematical simplicity:
     > *"Am I up by exactly the amount needed for 1 penny of net profit after fees? **SELL.**"*
 
 ---
@@ -392,10 +402,11 @@ While the logic is metaphysical, the engineering is industrial-grade.
 | Exchanges | Binance, Kraken, Alpaca, Capital | Multi-venue execution |
 
 ### Verified Exchanges
-*   **Binance:** High-volume execution (UK-Compliant pairs).
-*   **Kraken:** Fiat on/off ramps, deep liquidity.
-*   **Alpaca:** Equity analytics and diversification.
-*   **Capital.com:** CFD and macro-hedging.
+
+- **Binance:** High-volume execution (UK-Compliant pairs).
+- **Kraken:** Fiat on/off ramps, deep liquidity.
+- **Alpaca:** Equity analytics and diversification.
+- **Capital.com:** CFD and macro-hedging.
 
 ---
 
@@ -403,35 +414,43 @@ While the logic is metaphysical, the engineering is industrial-grade.
 
 The system requires the **Brain** (Miner) and **Ecosystem** (Trader) to run in "Tandem in Unity."
 
-### Prerequisites
-1.  Python 3.11+
-2.  `pip install -r requirements.txt`
-3.  Copy `.env.example` to `.env` and add your exchange API keys.
+### System Requirements
+
+1. Python 3.11+
+2. `pip install -r requirements.txt`
+3. Copy `.env.example` to `.env` and add your exchange API keys.
 
 ### ⚡ RECOMMENDED: Manual Two-Terminal Launch
 
 **This is the simplest and most reliable way to run Samuel:**
 
-#### Terminal 1 - Start the Brain First:
+#### Terminal 1 - Start the Brain First
+
 ```bash
 python aureon_miner.py
 ```
+
 Wait until you see: `🧠 Miner Brain Active - Cognitive Circle Running`
 
-#### Terminal 2 - Start the Trader:
+#### Terminal 2 - Start the Trader
+
 ```bash
 python aureon_unified_ecosystem.py
 ```
+
 You should see: `🌐⚡ Global Harmonic Field ACTIVE`
 
 ### Windows (PowerShell) - Automated
+
 ```powershell
 git pull
 .\start_full_ecosystem.ps1
 ```
+
 *This single command launches the Miner (background), initializes the Brain State, starts the Ecosystem Engine, and opens the Live Trader console.*
 
 ### Linux / WSL (Bash)
+
 ```bash
 chmod +x start_full_ecosystem.sh
 ./start_full_ecosystem.sh
@@ -439,19 +458,19 @@ chmod +x start_full_ecosystem.sh
 
 ### What Happens on Launch
 
-1.  **Brain (`aureon_miner.py`)** starts first:
+1. **Brain (`aureon_miner.py`)** starts first:
     - Initializes 11 Civilizations Wisdom Council
     - Runs quantum probability calculations
     - Writes `aureon_kraken_state.json` brain state
     - Broadcasts wisdom via ThoughtBus
 
-2.  **Ecosystem (`aureon_unified_ecosystem.py`)** connects:
+2. **Ecosystem (`aureon_unified_ecosystem.py`)** connects:
     - Reads brain state JSON
     - Initializes Global Harmonic Field (8 layers)
     - Connects to all exchanges (Kraken, Binance, Alpaca, Capital)
     - Begins trading cycle
 
-3.  **Every Trading Cycle:**
+3. **Every Trading Cycle:**
     - Brain wisdom → Quantum state → Auris nodes → Mycelium network
     - All 8 layers feed into **Global Ω Field**
     - Ω > 0.618 triggers STRONG BUY signals
@@ -461,20 +480,20 @@ chmod +x start_full_ecosystem.sh
 
 ## 🛡️ SAFETY PROTOCOLS
 
-*   **The Vow:** The system will never trade if Coherence (G) drops below 0.35. This is the "Kill Switch."
+- **The Vow:** The system will never trade if Coherence (G) drops below 0.35. This is the "Kill Switch."
 
-*   **Re-Entry Protection:** Prevents FOMO by blocking buy-backs at a price higher than the last sell within a cooldown window.
+- **Re-Entry Protection:** Prevents FOMO by blocking buy-backs at a price higher than the last sell within a cooldown window.
 
-*   **Fee-Aware Exits:** The Penny Profit Engine calculates real-time break-even points including:
-    *   Maker/Taker fees (Binance 0.10%, Kraken 0.40%)
-    *   Slippage buffer (0.20%)
-    *   Spread cost (0.10%)
+- **Fee-Aware Exits:** The Penny Profit Engine calculates real-time break-even points including:
+  - Maker/Taker fees (Binance 0.10%, Kraken 0.40%)
+  - Slippage buffer (0.20%)
+  - Spread cost (0.10%)
 
-*   **Trailing Stops:** Lock in gains once a position moves +0.8% in profit.
+- **Trailing Stops:** Lock in gains once a position moves +0.8% in profit.
 
-*   **Capital Management (10-9-1 Rule):**
-    *   90% of profits compound back into the system.
-    *   10% is harvested and never re-risked.
+- **Capital Management (10-9-1 Rule):**
+  - 90% of profits compound back into the system.
+  - 10% is harvested and never re-risked.
 
 ---
 
@@ -495,20 +514,23 @@ chmod +x start_full_ecosystem.sh
 *Transparency is the frequency of trust.*
 
 ### Simulation Performance (Backtesting)
+
 The system has been rigorously tested against historical data (2020-2024) using the `aureon_lattice_simulation.py` engine.
 
-*   **Market Conditions:** Bull, Bear, and Crab markets.
-*   **Win Rate:** Consistently >51% in high-volatility regimes.
-*   **Profit Factor:** 1.42 average across major pairs (BTC/USDT, ETH/USDT).
+- **Market Conditions:** Bull, Bear, and Crab markets.
+- **Win Rate:** Consistently >51% in high-volatility regimes.
+- **Profit Factor:** 1.42 average across major pairs (BTC/USDT, ETH/USDT).
 
 ### The "$10K to $10M" Projection
+
 *Note: This is a theoretical projection based on the `billion_projection.py` simulation engine.*
 
 The system includes a compounding projection model that demonstrates the mathematical power of the **Kelly Criterion** combined with a >51% win rate.
-*   **Starting Capital:** $10,000
-*   **Win Rate:** 51%
-*   **Leverage:** Dynamic (1x - 3x)
-*   **Timeframe:** ~3,000 trades (Theoretical)
+
+- **Starting Capital:** $10,000
+- **Win Rate:** 51%
+- **Leverage:** Dynamic (1x - 3x)
+- **Timeframe:** ~3,000 trades (Theoretical)
 
 **IMPORTANT:** This is a mathematical demonstration of geometric growth, not a guarantee of future returns. Real-world friction (slippage, fees, latency) will affect actual results.
 
@@ -517,6 +539,7 @@ The system includes a compounding projection model that demonstrates the mathema
 ## 📂 KEY FILES & COMPONENTS
 
 ### 🧠 Core System Files
+
 | File | Purpose |
 |------|---------|
 | `aureon_miner.py` | **THE BRAIN** - Run this first! Quantum probability engine |
@@ -526,6 +549,7 @@ The system includes a compounding projection model that demonstrates the mathema
 | `penny_profit_engine.py` | Enforces +$0.01 NET profit minimum |
 
 ### 📊 State & Data Files
+
 | File | Purpose |
 |------|---------|
 | `aureon_kraken_state.json` | Brain state bridge (miner → ecosystem) |
@@ -536,6 +560,7 @@ The system includes a compounding projection model that demonstrates the mathema
 | `probability_outcomes.json` | Historical probability validation |
 
 ### 🌍 Wisdom Data
+
 | Directory | Purpose |
 |-----------|---------|
 | `wisdom_data/` | 11 civilization JSON files with learned insights |
@@ -582,7 +607,8 @@ Samuel continuously expands its consciousness by scanning Wikipedia and Sacred-T
 - **ThoughtBus Integration:** Wisdom broadcasts to all system components
 
 ### Wisdom Data Structure
-```
+
+```text
 wisdom_data/
 ├── celtic_wisdom.json      # Druidic cycles, Ogham, triads
 ├── aztec_wisdom.json       # Tonalpohualli, Five Suns, Teotl
@@ -618,17 +644,19 @@ wisdom_data/
 This software is released as **open source** under the [Creative Commons Attribution 4.0 International License](https://creativecommons.org/licenses/by/4.0/).
 
 **You are free to:**
+
 - ✅ **Share** — copy and redistribute the material in any medium or format
 - ✅ **Adapt** — remix, transform, and build upon the material for any purpose, even commercially
 
 **Under the following terms:**
+
 - 📜 **Attribution** — You MUST give appropriate credit to **Gary Leckey** as the creator of the **Harmonic Nexus Core** methodology, provide a link to this repository, and indicate if changes were made.
 
 ### Required Attribution Notice
 
 If you use, fork, modify, or distribute this software or any derivative works, you **MUST** include the following attribution in your documentation, README, or about section:
 
-```
+```text
 This software is based on The Samuel Harmonic Trading Entity (SHTE) 
 and the Harmonic Nexus Core methodology.
 
@@ -650,6 +678,7 @@ and developed by Gary Leckey.
 ### Financial Conduct Authority (FCA) Compliance
 
 This software is provided for **educational and research purposes**. It is NOT:
+
 - Regulated financial advice
 - A licensed investment service
 - A recommendation to buy or sell any financial instrument
@@ -657,6 +686,7 @@ This software is provided for **educational and research purposes**. It is NOT:
 **RISK WARNING:** Trading cryptocurrencies and financial instruments carries a HIGH LEVEL OF RISK and may not be suitable for all investors. You could lose more than your initial investment. Past performance is not indicative of future results.
 
 Before using this software with real capital:
+
 1. Understand you are solely responsible for your trading decisions
 2. Only trade with money you can afford to lose
 3. Consider seeking independent financial advice
@@ -683,9 +713,9 @@ The Samuel Harmonic Trading Entity stands on the shoulders of giants:
 - The physicists who revealed the harmonic nature of reality
 - Every trader who shared knowledge openly
 
-*"We give this freely, as knowledge was given to us. But remember the source, honour the origin, and let the ripples of attribution flow forward."*
-
-— **Gary Leckey**, Creator of the Harmonic Nexus Core
+> "We give this freely, as knowledge was given to us. But remember the source, honour the origin, and let the ripples of attribution flow forward."
+>
+> — **Gary Leckey**, Creator of the Harmonic Nexus Core
 
 ---
 
@@ -696,6 +726,7 @@ The Samuel Harmonic Trading Entity stands on the shoulders of giants:
 ---
 
 ## 🖥️ Local Launcher & Dashboard (New)
+
 - Run the guided setup: `python -m cli.setup_wizard`
 - Start trading + dashboard: `python -m cli.launcher --start`
 - Dashboard lives at `http://127.0.0.1:8000` with Start/Stop controls.
