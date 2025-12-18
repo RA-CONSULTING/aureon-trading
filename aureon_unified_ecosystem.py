@@ -17015,10 +17015,13 @@ class AureonKrakenEcosystem:
             for opp in all_opps[:min(slots_to_fill, max_positions - current_positions)]:
                 self.open_position(opp)
                 
-        # Show positions - ENHANCED with full details
+        # Show positions - ENHANCED with LADDER ETA
         if self.positions:
-            print(f"\\n   📊 ACTIVE POSITIONS ({len(self.positions)}/{max_positions_label()}):")
-            print(f"   {'─'*70}")
+            print(f"\n   📊 ACTIVE POSITIONS ({len(self.positions)}/{max_positions_label()}):")
+            print(f"   {'─'*85}")
+            print(f"      {'ASSET':<8} | {'EXCH':<4} | {'ENTRY':>10} | {'P&L':>12} | {'HOLD':>6} | {'ETA':>8} | LADDERS")
+            print(f"   {'─'*85}")
+            
             for symbol, pos in self.positions.items():
                 rt = self.get_realtime_price(symbol)
                 price = rt if rt else pos.entry_price
@@ -17028,48 +17031,88 @@ class AureonKrakenEcosystem:
                 # Platform/Exchange
                 exch = getattr(pos, 'exchange', 'kraken').upper()[:3]
                 
-                # Entry value (how much we're in for)
+                # Entry value
                 entry_val = pos.entry_value if pos.entry_value > 0 else pos.entry_price * pos.quantity
-                
-                # Satoshi price (sats per coin)
-                sats = int(pos.entry_price * 100_000_000) if pos.entry_price < 1 else 0
-                sats_str = f"{sats:,} sats" if sats > 0 else f"${pos.entry_price:.4f}"
                 
                 # Hold time
                 hold_sec = time.time() - pos.entry_time
                 hold_str = f"{hold_sec/60:.1f}m" if hold_sec < 3600 else f"{hold_sec/3600:.1f}h"
                 
-                # Exit ETA from Kill Scanner
+                # 🪜 LADDER CONTRIBUTIONS TO ETA - Each ladder helps estimate arrival time
                 eta_str = "∞"
-                prob_str = ""
+                prob_pct = 0
+                ladders = []
+                
                 try:
+                    # Get Kill Scanner ETA (base calculation)
                     scanner = get_active_scanner()
-                    # Scanner uses key format: exchange:symbol
                     scanner_key = f"{pos.exchange}:{symbol}"
                     if scanner_key in scanner.targets:
                         target = scanner.targets[scanner_key]
                         if target.eta_to_kill < float('inf'):
                             eta_str = f"{target.eta_to_kill:.0f}s" if target.eta_to_kill < 60 else f"{target.eta_to_kill/60:.1f}m"
-                        prob_str = f"({target.probability_of_kill*100:.0f}%)"
+                        prob_pct = target.probability_of_kill * 100
                 except:
                     pass
+                
+                # 🧠 Brain ladder contribution
+                try:
+                    brain_rec = ECOSYSTEM_BRAIN.get_trading_recommendation()
+                    if brain_rec.get('action') == 'BUY' and brain_rec.get('confidence', 0) > 0.5:
+                        ladders.append('🧠+')  # Brain accelerating
+                    elif brain_rec.get('action') == 'REDUCE':
+                        ladders.append('🧠-')  # Brain decelerating
+                except:
+                    pass
+                
+                # 🔮 Matrix ladder contribution  
+                try:
+                    if hasattr(self, 'prob_matrix') and self.prob_matrix:
+                        sig = self.prob_matrix.get_signal(symbol)
+                        if sig and sig.get('probability', 0.5) > 0.6:
+                            ladders.append('🔮+')
+                        elif sig and sig.get('probability', 0.5) < 0.4:
+                            ladders.append('🔮-')
+                except:
+                    pass
+                
+                # 🎵 HNC Frequency ladder
+                try:
+                    hnc_data = self.asset_frequencies.get(symbol, {})
+                    if hnc_data.get('is_harmonic'):
+                        ladders.append('🎵+')
+                    freq = hnc_data.get('frequency', 432)
+                    if 435 <= freq <= 445:  # Distortion zone
+                        ladders.append('🎵-')
+                except:
+                    pass
+                
+                # 📈 Momentum ladder
+                if pct > 0.5:
+                    ladders.append('📈+')
+                elif pct < -0.5:
+                    ladders.append('📈-')
                 
                 # P&L color indicator
                 pnl_icon = "🟢" if pnl_val > 0 else "🔴" if pnl_val < 0 else "⚪"
                 
-                # Extract base asset from symbol
+                # Extract base asset
                 asset = symbol.replace('USD', '').replace('GBP', '').replace('EUR', '').replace('USDT', '')[:6]
                 
+                # Ladder string (show what's helping/hurting ETA)
+                ladder_str = ''.join(ladders) if ladders else "—"
+                
                 icon = self._get_node_icon(pos.dominant_node)
-                print(f"      {icon} {asset:6s} | {exch} | ${entry_val:.2f} in @ {sats_str}")
-                print(f"         {pnl_icon} P&L: ${pnl_val:+.4f} ({pct:+.2f}%) | Hold: {hold_str} | ETA: {eta_str} {prob_str}")
-            print(f"   {'─'*70}")
+                print(f"      {icon} {asset:<6} | {exch:<4} | ${entry_val:>8.2f} | {pnl_icon} {pnl_val:>+7.4f} | {hold_str:>6} | {eta_str:>5} {prob_pct:>2.0f}% | {ladder_str}")
+            
+            print(f"   {'─'*85}")
+            print(f"   🪜 Ladders: 🧠Brain 🔮Matrix 🎵HNC 📈Momentum  (+)=accelerating (-)=slowing")
                 
         # Stats
         runtime = (time.time() - self.start_time) / 60
         cycle_pnl = self.total_equity_gbp - self.tracker.cycle_equity_start
         
-        print(f"\\n   💎 Portfolio: £{self.total_equity_gbp:.2f} ({self.tracker.total_return:+.2f}%)")
+        print(f"\n   💎 Portfolio: £{self.total_equity_gbp:.2f} ({self.tracker.total_return:+.2f}%)")
         print(f"   📈 Cycle P&L: £{cycle_pnl:+.2f}")
         print(f"   ⏱️ Runtime: {runtime:.1f} min | Positions: {len(self.positions)}")
         
@@ -17838,12 +17881,12 @@ class AureonKrakenEcosystem:
                                 pass
                         self.open_position(opp)
                         
-                # Show positions - ENHANCED FULL DETAILS TABLE
+                # Show positions - ENHANCED FULL DETAILS WITH LADDER ETA
                 if self.positions:
                     print(f"\n   📊 ACTIVE POSITIONS ({len(self.positions)}/{max_positions_label()}):")
-                    print(f"   {'─'*80}")
-                    print(f"      {'ASSET':6s} │ {'EX':3s} │ {'ENTRY $':>10s} │ {'ENTRY PRICE':>14s} │ {'P&L':>12s} │ {'HOLD':>5s} │ {'EXIT ETA':>12s}")
-                    print(f"   {'─'*80}")
+                    print(f"   {'─'*95}")
+                    print(f"      {'ASSET':6s} │ {'EX':3s} │ {'ENTRY $':>10s} │ {'P&L':>12s} │ {'HOLD':>5s} │ {'ETA':>10s} │ {'LADDERS':12s}")
+                    print(f"   {'─'*95}")
                     for symbol, pos in self.positions.items():
                         rt = self.get_realtime_price(symbol)
                         if pos.entry_price <= 0:
@@ -17866,46 +17909,84 @@ class AureonKrakenEcosystem:
                         # Platform/Exchange
                         exch = getattr(pos, 'exchange', 'kraken').upper()[:3]
                         
-                        # Entry value (how much we're in for)
+                        # Entry value
                         entry_val = pos.entry_value if pos.entry_value > 0 else pos.entry_price * pos.quantity
-                        
-                        # Satoshi price (for crypto < $1)
-                        if pos.entry_price < 1 and pos.entry_price > 0:
-                            sats = int(pos.entry_price * 100_000_000)
-                            entry_str = f"{sats:,} sats"
-                        else:
-                            entry_str = f"${pos.entry_price:.6f}"
                         
                         # Hold time
                         hold_sec = time.time() - pos.entry_time
                         hold_str = f"{hold_sec/60:.0f}m" if hold_sec < 3600 else f"{hold_sec/3600:.1f}h"
                         
-                        # Exit ETA from Kill Scanner
+                        # 🪜 LADDER CONTRIBUTIONS - What's helping reach penny profit gate
+                        ladders = []
                         eta_str = "---"
+                        prob_pct = 0
+                        
+                        # Kill Scanner ETA
                         try:
                             scanner = get_active_scanner()
-                            # Scanner uses key format: exchange:symbol
                             scanner_key = f"{pos.exchange}:{symbol}"
                             if scanner_key in scanner.targets:
                                 target = scanner.targets[scanner_key]
-                                if target.probability_of_kill > 0:
-                                    if target.eta_to_kill < float('inf'):
-                                        eta_str = f"{target.eta_to_kill:.0f}s" if target.eta_to_kill < 60 else f"{target.eta_to_kill/60:.1f}m"
-                                        eta_str += f" ({target.probability_of_kill*100:.0f}%)"
-                                    elif target.probability_of_kill > 0.8:
-                                        eta_str = f"NOW! ({target.probability_of_kill*100:.0f}%)"
+                                prob_pct = target.probability_of_kill * 100
+                                if target.eta_to_kill < float('inf'):
+                                    eta_str = f"{target.eta_to_kill:.0f}s" if target.eta_to_kill < 60 else f"{target.eta_to_kill/60:.1f}m"
+                                elif prob_pct > 80:
+                                    eta_str = "NOW!"
                         except:
                             pass
+                        
+                        # 🧠 Brain ladder
+                        try:
+                            brain_rec = ECOSYSTEM_BRAIN.get_trading_recommendation()
+                            if brain_rec.get('action') == 'BUY' and brain_rec.get('confidence', 0) > 0.5:
+                                ladders.append('🧠↑')
+                            elif brain_rec.get('action') == 'REDUCE':
+                                ladders.append('🧠↓')
+                        except:
+                            pass
+                        
+                        # 🔮 Matrix ladder
+                        try:
+                            if hasattr(self, 'prob_matrix') and self.prob_matrix:
+                                sig = self.prob_matrix.get_signal(symbol)
+                                if sig and sig.get('probability', 0.5) > 0.6:
+                                    ladders.append('🔮↑')
+                                elif sig and sig.get('probability', 0.5) < 0.4:
+                                    ladders.append('🔮↓')
+                        except:
+                            pass
+                        
+                        # 🎵 HNC Frequency ladder
+                        try:
+                            hnc_data = self.asset_frequencies.get(symbol, {})
+                            if hnc_data.get('is_harmonic'):
+                                ladders.append('🎵↑')
+                            freq = hnc_data.get('frequency', 432)
+                            if 435 <= freq <= 445:
+                                ladders.append('🎵↓')
+                        except:
+                            pass
+                        
+                        # 📈 Momentum ladder
+                        if pct > 0.3:
+                            ladders.append('📈↑')
+                        elif pct < -0.3:
+                            ladders.append('📈↓')
                         
                         # P&L color indicator
                         pnl_icon = "🟢" if pnl_val > 0 else "🔴" if pnl_val < 0 else "⚪"
                         
-                        # Extract base asset from symbol
+                        # Extract base asset
                         asset = symbol.replace('USD', '').replace('GBP', '').replace('EUR', '').replace('USDT', '')[:6]
                         
+                        ladder_str = ''.join(ladders) if ladders else "—"
+                        eta_full = f"{eta_str} {prob_pct:.0f}%" if prob_pct > 0 else eta_str
+                        
                         icon = self._get_node_icon(pos.dominant_node)
-                        print(f"      {icon}{asset:6s} │ {exch:3s} │ ${entry_val:>9.2f} │ {entry_str:>14s} │ {pnl_icon}${pnl_val:>+9.4f} │ {hold_str:>5s} │ {eta_str:>12s} {src}")
-                    print(f"   {'─'*80}")
+                        print(f"      {icon}{asset:6s} │ {exch:3s} │ ${entry_val:>9.2f} │ {pnl_icon}${pnl_val:>+9.4f} │ {hold_str:>5s} │ {eta_full:>10s} │ {ladder_str}")
+                    
+                    print(f"   {'─'*95}")
+                    print(f"   🪜 Ladders: 🧠Brain 🔮Matrix 🎵HNC 📈Momentum  (↑)=faster to gate  (↓)=slower")
                         
                 # Stats
                 rt_count = len(self.realtime_prices)
