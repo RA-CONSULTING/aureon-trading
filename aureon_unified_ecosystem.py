@@ -11728,7 +11728,7 @@ class AureonKrakenEcosystem:
         except Exception as e:
             return True, f"Brain check error ({e}) - trading allowed"
 
-    def should_enter_trade(self, opp: Dict, pos_size: float, lattice_state) -> bool:
+    def should_enter_trade(self, opp: Dict, pos_size: float, lattice_state, is_force_scout: bool = False) -> bool:
         """
         🎯 PROBABILITY-MATRIX-DRIVEN entry decision.
         
@@ -11737,12 +11737,19 @@ class AureonKrakenEcosystem:
         
         Buy BTC at this price, sell at this time, take profit, buy ETH, sell, etc.
         Snowballing profits through intelligent timing.
+        
+        If is_force_scout=True, bypass most gates - we're going IN!
         """
         # Minimal sanity checks
         if pos_size <= 0 or self.total_equity_gbp <= 0:
             return False
             
         symbol = opp.get('symbol', 'UNKNOWN')
+        
+        # 🦅 FORCE SCOUTS BYPASS MOST GATES - they're going IN!
+        if is_force_scout:
+            logger.info(f"🦅 FORCE SCOUT {symbol}: BYPASSING brain/matrix/imperial gates - EXECUTING!")
+            return True  # Force scouts just go!
         
         # ═══════════════════════════════════════════════════════════════
         # 🧠🌍 BRAIN GATE CHECK - 7 CIVILIZATIONS + QUANTUM BRAIN
@@ -11847,9 +11854,12 @@ class AureonKrakenEcosystem:
                 
                 # Extra caution: if we're in BIG drawdown (>15%) and WR is poor (<25%), skip
                 # Was: dd > 5 and WR < 55% - WAY too conservative!
-                if dd > 15 and recommendation['expected_win_rate'] < 0.25:
+                # 🦅 FORCE SCOUTS BYPASS THIS - they go IN regardless!
+                if dd > 15 and recommendation['expected_win_rate'] < 0.25 and not is_force_scout:
                     logger.warning(f"⚠️ SKIPPING {symbol}: In significant drawdown ({dd:.1f}%), WR only {recommendation['expected_win_rate']*100:.0f}%")
                     return False
+                elif is_force_scout and dd > 15:
+                    logger.info(f"🦅 FORCE SCOUT {symbol}: BYPASSING drawdown gate ({dd:.1f}%) - going IN!")
                     
                 # Log advantages
                 if recommendation['advantages']:
@@ -14561,7 +14571,7 @@ class AureonKrakenEcosystem:
         if pos_size < CONFIG['MIN_TRADE_USD']:
             return None
 
-        if not self.should_enter_trade(opp, pos_size, lattice_state):
+        if not self.should_enter_trade(opp, pos_size, lattice_state, is_force_scout=is_force_scout):
             print(f"   ⚪ Skipping {symbol}: portfolio gate rejected entry")
             return None
         
