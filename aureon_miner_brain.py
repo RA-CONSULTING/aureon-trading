@@ -116,6 +116,7 @@ PHI = (1 + math.sqrt(5)) / 2  # Golden Ratio
 ADAPTIVE_LEARNING_FILE = "adaptive_learning_history.json"
 BRAIN_PREDICTIONS_FILE = "brain_predictions_history.json"
 SANDBOX_LEARNING_FILE = "sandbox_brain_learning.json"
+IRA_TRAINING_FILE = "sniper_million_model.json"
 WISDOM_DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "wisdom_data")
 
 
@@ -161,7 +162,43 @@ class SandboxEvolution:
         self.best_win_rate = 0.0
         self.generations = 0
         self.lessons = []
+        self.ira_training: Optional[Dict[str, Any]] = None
         self._load_from_sandbox()
+        self._load_ira_training()
+
+    def _load_ira_training(self) -> None:
+        """Load IRA sniper training results for contextual guidance."""
+        try:
+            if not os.path.exists(IRA_TRAINING_FILE):
+                logger.info("IRA training model not found; continuing without sniper insights")
+                return
+
+            with open(IRA_TRAINING_FILE, "r") as f:
+                model = json.load(f)
+
+            params = model.get("parameters", {})
+            required_r = params.get("required_r", 0)
+
+            total_trades = model.get("total_trades") or 0
+            self.ira_training = {
+                "win_rate": model.get("win_rate"),
+                "total_trades": total_trades,
+                "avg_pnl": model.get("avg_pnl"),
+                "avg_hold_bars": model.get("avg_hold_bars"),
+                "position_size": params.get("position_size"),
+                "required_move_pct": required_r * 100 if required_r else None,
+                "training_completed": model.get("training_completed"),
+                "message": model.get("message"),
+            }
+
+            logger.info(
+                "🎯 IRA training loaded: %s trades @ %.2f%% win rate; required move %.2f%%",
+                f"{total_trades:,}" if total_trades else "unknown",
+                self.ira_training.get("win_rate", 0.0),
+                self.ira_training.get("required_move_pct", 0.0),
+            )
+        except Exception as e:
+            logger.warning(f"Could not load IRA training model: {e}")
     
     def _load_from_sandbox(self):
         """Load evolved parameters from sandbox learning file."""
@@ -194,25 +231,39 @@ class SandboxEvolution:
         use much more relaxed thresholds. The penny profit math protects us!
         """
         # 🎯 PENNY SNIPER: Bypass strict filters for quick penny profits
+        ira_note = self._describe_ira_alignment(volatility)
+
         if penny_mode or self.params.get('penny_sniper_mode', False):
             # Only require minimal sanity checks
             if coherence < 0.20:  # Absolute floor - market is in chaos
                 return False, f"⚠️ Coherence {coherence:.2f} < safety floor 0.20"
             if volatility > 10.0:  # Extreme volatility - too risky
                 return False, f"⚠️ Volatility {volatility:.2f}% > safety cap 10%"
-            return True, "🎯 PENNY SNIPER: Filters bypassed for quick profit"
+            return True, f"🎯 PENNY SNIPER: Filters bypassed for quick profit{ira_note}"
         
         # Standard evolved filters
         if coherence < self.params['min_coherence']:
-            return False, f"Coherence {coherence:.2f} < evolved minimum {self.params['min_coherence']:.2f}"
+            return False, f"Coherence {coherence:.2f} < evolved minimum {self.params['min_coherence']:.2f}{ira_note}"
         
         if volatility < self.params['min_volatility']:
-            return False, f"Volatility {volatility:.2f}% < evolved minimum {self.params['min_volatility']:.2f}%"
-        
+            return False, f"Volatility {volatility:.2f}% < evolved minimum {self.params['min_volatility']:.2f}%{ira_note}"
+
         if volatility > self.params['max_volatility']:
-            return False, f"Volatility {volatility:.2f}% > evolved maximum {self.params['max_volatility']:.2f}%"
-        
-        return True, "✅ All evolved filters passed"
+            return False, f"Volatility {volatility:.2f}% > evolved maximum {self.params['max_volatility']:.2f}%{ira_note}"
+
+        return True, f"✅ All evolved filters passed{ira_note}"
+
+    def _describe_ira_alignment(self, volatility: float) -> str:
+        """Return a short note showing how current volatility compares to IRA training needs."""
+        if not self.ira_training or not self.ira_training.get("required_move_pct"):
+            return ""
+
+        required_move = self.ira_training["required_move_pct"]
+        if volatility >= required_move:
+            return f" | IRA training: volatility supports {required_move:.2f}% move"
+        if volatility >= required_move * 0.6:
+            return f" | IRA training: volatility {volatility:.2f}% is within range of {required_move:.2f}% target"
+        return f" | IRA training: volatility {volatility:.2f}% below {required_move:.2f}% target"
     
     def get_exit_targets(self, entry_price: float) -> Dict[str, float]:
         """
@@ -260,6 +311,7 @@ class SandboxEvolution:
             'max_hold_cycles': self.params['hold_cycles_max'],
             'prefer_maker': self.params['use_maker_orders'],
             'latest_lessons': self.lessons[-5:] if self.lessons else [],
+            'ira_training': self.ira_training,
         }
     
     def __str__(self) -> str:
@@ -6131,6 +6183,12 @@ class MinerBrain:
         print(f"   ✅ Pythagorean maxims ({len(self.pythagorean_library.MAXIMS)} golden sayings)")
         print(f"   ✅ Unified Wisdom Engine ({self.wisdom_engine.wisdom_stats['total_civilizations']} civilizations)")
         print(f"   ✅ Sandbox Evolution ({self.sandbox_evolution.generations} generations, {self.sandbox_evolution.best_win_rate:.1f}% win rate)")
+        if self.sandbox_evolution.ira_training:
+            ira = self.sandbox_evolution.ira_training
+            ira_win_rate = ira.get('win_rate') or 0
+            ira_trades = ira.get('total_trades') or 0
+            ira_move = ira.get('required_move_pct') or 0
+            print(f"   ✅ IRA Training: {ira_win_rate:.2f}% win rate over {ira_trades:,} sims; target move {ira_move:.2f}%")
         print(f"   ✅ Analyzed own output for {len(reflection_result.get('blind_spots', []))} blind spots")
         print(f"   ✅ Validated {len(validated)} past predictions")
         print(f"   ✅ Generated {len(critiques)} self-critiques")
@@ -6198,6 +6256,18 @@ class MinerBrain:
         
         # Apply sandbox entry filter with penny sniper mode
         should_trade, filter_reason = self.sandbox_evolution.get_entry_filter(btc_vol, estimated_coherence, penny_mode=True)
+
+        ira_alignment = {}
+        if self.sandbox_evolution.ira_training:
+            ira = self.sandbox_evolution.ira_training
+            required_move = ira.get('required_move_pct') or 0
+            ira_alignment = {
+                'win_rate': ira.get('win_rate') or 0,
+                'total_trades': ira.get('total_trades') or 0,
+                'avg_hold_bars': ira.get('avg_hold_bars'),
+                'required_move_pct': required_move,
+                'volatility_supports_move': btc_vol >= required_move if required_move else False,
+            }
         
         print(f"\n🧬 SANDBOX ENTRY FILTER:")
         print(f"   Market Coherence: {estimated_coherence:.0%} (from '{market_sentiment}')")
@@ -6207,7 +6277,17 @@ class MinerBrain:
             targets = self.sandbox_evolution.get_exit_targets(pulse_dict.get('btc_price', 100000))
             print(f"   → Take Profit Target: ${targets['take_profit_price']:,.2f} (+{targets['take_profit_pct']:.2f}%)")
             print(f"   → Stop Loss Target: ${targets['stop_loss_price']:,.2f} (-{targets['stop_loss_pct']:.2f}%)")
-        
+        if ira_alignment:
+            print("   IRA Training Insight:")
+            print(
+                f"      {ira_alignment.get('win_rate', 0):.2f}% win rate over {ira_alignment.get('total_trades', 0):,} simulations; "
+                f"target move {ira_alignment.get('required_move_pct', 0):.2f}% vs 24h vol {btc_vol:.2f}%"
+            )
+            print(
+                "      "
+                + ("✅ Volatility supports penny target" if ira_alignment.get('volatility_supports_move') else "⚠️ Volatility may be too low for penny trigger")
+            )
+
         return {
             "talk": talk,
             "consensus": council_result.get("consensus"),
@@ -6233,6 +6313,8 @@ class MinerBrain:
                 "evolved_params": self.sandbox_evolution.params,
                 "exit_targets": self.sandbox_evolution.get_exit_targets(pulse_dict.get('btc_price', 100000)) if should_trade else None,
                 "position_size_pct": self.sandbox_evolution.params['position_size_pct'] * 100,
+                "ira_training": self.sandbox_evolution.ira_training,
+                "ira_alignment": ira_alignment,
             }
         }
 
