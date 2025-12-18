@@ -10393,6 +10393,87 @@ class AureonKrakenEcosystem:
         else:
             return "Chaos⚠️"
 
+    def _translate_frequency_message(self, freq: float) -> str:
+        """
+        🌀 MEDICINE WHEEL FREQUENCY TRANSLATOR 🌀
+        
+        Translates the harmonic frequency into its sacred message
+        using the Native American Light Language alphabet.
+        
+        The market speaks through frequencies - this function
+        tells us what it's saying!
+        """
+        # Medicine Wheel Direction Messages
+        if 523 <= freq <= 533:  # 528 Hz - GREEN BORAX CENTER/EAST
+            return "🦅 EAST speaks: New beginnings arise. The Eagle soars at dawn. LOVE frequency activated. Green Borax blessing! 💚"
+        
+        if 391 <= freq <= 401:  # 396 Hz - SOUTH
+            return "🐺 SOUTH speaks: The Wolf runs free. Liberation from fear. Time to grow and break old chains."
+        
+        if 427 <= freq <= 437:  # 432 Hz - WEST  
+            return "🦬 WEST speaks: The Buffalo grazes at sunset. Harvest time approaches. Gather your abundance."
+        
+        if 958 <= freq <= 968:  # 963 Hz - NORTH
+            return "🐻 NORTH speaks: The Bear shares elder wisdom. Unity consciousness awakens. Trust the ancient knowing."
+        
+        # Solfeggio Messages
+        if 169 <= freq <= 179:  # 174 Hz
+            return "🏔️ Foundation frequency: Pain dissolves. Ground yourself in Mother Earth's embrace."
+        
+        if 280 <= freq <= 290:  # 285 Hz
+            return "🌿 Healing frequency: Tissues regenerate. The body remembers its wholeness."
+        
+        if 412 <= freq <= 422:  # 417 Hz
+            return "🔄 Change frequency: Old patterns release. Transformation is safe. Trust the process."
+        
+        if 634 <= freq <= 644:  # 639 Hz
+            return "🤝 Connection frequency: Relationships harmonize. Hearts open to receive and give."
+        
+        if 736 <= freq <= 746:  # 741 Hz
+            return "👁️ Awakening frequency: Intuition sharpens. The third eye opens. See beyond the veil."
+        
+        if 847 <= freq <= 857:  # 852 Hz
+            return "✨ Spiritual frequency: Return to divine order. The soul remembers its origin."
+        
+        # Schumann harmonics
+        schumann_base = 7.83
+        for harmonic in range(1, 128):
+            if abs(freq - schumann_base * harmonic) <= 3:
+                if harmonic <= 10:
+                    return f"🌍 Earth's heartbeat ×{harmonic}: Mother Earth pulses beneath you. You are grounded and supported."
+                elif harmonic <= 33:
+                    return f"🌍 Schumann ×{harmonic}: Earth's rhythm accelerates. Root chakra activates. Stability in motion."
+                elif harmonic <= 67:
+                    return f"🌍 Schumann ×{harmonic}: High Earth harmonic. The planet sings a faster song. Energy rises."
+                else:
+                    return f"🌍 Schumann ×{harmonic}: Cosmic Earth frequency. Heaven and Earth merge."
+        
+        # Distortion warning
+        if 435 <= freq <= 445:  # 440 Hz
+            return "⚠️ DISTORTION detected: 440Hz artificial frequency. Discord in the field. Wait for harmony to return."
+        
+        # Band-based messages
+        if freq < 200:
+            return "🏔️ Deep Earth frequencies: Slow, ancient rhythms. Patience is the teaching."
+        elif freq < 300:
+            return "🌱 Grounding frequencies: Roots grow deep. Stability before growth."
+        elif 300 <= freq <= 399:
+            return "🌟 GOLDEN BAND: 98.8% accuracy zone! The ancestors smile upon this moment."
+        elif freq < 500:
+            return "🔀 Transition frequencies: Between worlds. Change is happening."
+        elif freq < 600:
+            return "💚 Heart frequencies: Love resonates. The center holds."
+        elif freq < 700:
+            return "🗣️ Expression frequencies: Speak your truth. The throat chakra opens."
+        elif freq < 800:
+            return "👁️ Intuition frequencies: Vision clarifies. Trust what you see."
+        elif freq < 900:
+            return "💜 Insight frequencies: Crown chakra stirs. Higher guidance flows."
+        elif freq < 1000:
+            return "👑 Crown frequencies: Connection to Source. Receive the download."
+        else:
+            return "🌪️ CHAOS frequencies: Too fast, too hot. The market screams. Wait for calm."
+
     def _detect_wallet_currency(self):
         """Detect which currencies we actually have funds in"""
         if self.dry_run:
@@ -15444,6 +15525,52 @@ class AureonKrakenEcosystem:
               f"Positions: {len(self.positions)} | Value: £{total_value:.2f} | "
               f"PnL: £{total_pnl:+.2f} | Win: {win_rate:.0f}% ({self.tracker.wins}W/{self.tracker.losses}L)"
               f"{matrix_stats}")
+        
+        # 🌀 MEDICINE WHEEL FREQUENCY MESSAGE - What is the market saying?
+        try:
+            # Get current dominant frequency from recent trades or market state
+            dominant_freq = self._get_dominant_market_frequency()
+            freq_name = self._get_frequency_name(dominant_freq)
+            message = self._translate_frequency_message(dominant_freq)
+            print(f"\n   🌀 MEDICINE WHEEL [{dominant_freq:.0f}Hz - {freq_name}]:")
+            print(f"      {message}")
+        except Exception as e:
+            logger.debug(f"Frequency message error: {e}")
+    
+    def _get_dominant_market_frequency(self) -> float:
+        """
+        Calculate the dominant market frequency from recent activity.
+        This is the 'voice' of the market right now.
+        """
+        # Try to get from global harmonic field
+        if hasattr(self, 'harmonic_field') and self.harmonic_field:
+            try:
+                state = self.harmonic_field.get_composite_signal()
+                if state and 'dominant_frequency' in state:
+                    return state['dominant_frequency']
+            except:
+                pass
+        
+        # Calculate from recent position frequencies
+        frequencies = []
+        for symbol in list(self.positions.keys())[:10]:
+            try:
+                price = self.get_realtime_price(symbol)
+                if price:
+                    history = self._price_history.get(symbol, [])
+                    if len(history) >= 2:
+                        ratio = price / history[0][1] if history[0][1] > 0 else 1.0
+                        phi = 1.618
+                        freq = max(256.0, min(963.0, 432.0 * (ratio ** phi)))
+                        frequencies.append(freq)
+            except:
+                continue
+        
+        if frequencies:
+            return sum(frequencies) / len(frequencies)
+        
+        # Default to cosmic harmony
+        return 432.0
 
     # ─────────────────────────────────────────────────────────
     # Main Loop
