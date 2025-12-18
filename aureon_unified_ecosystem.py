@@ -14436,23 +14436,59 @@ class AureonKrakenEcosystem:
             print(f"   🔴 DEBUG {symbol}: size_fraction={size_fraction:.4f}")
             return None
 
-        deploy_cap = self.total_equity_gbp * CONFIG['PORTFOLIO_RISK_BUDGET']
         deployed = sum(pos.entry_value for pos in self.positions.values())
-        available_risk = max(0.0, deploy_cap - deployed)
+        
+        # 🔥 FORCE SCOUT FIX: Use actual cash for forced scouts, not portfolio risk budget
+        # When total_equity_gbp is 0 or stale, use real cash balances directly
+        if is_force_scout:
+            # Get actual cash available from exchanges for this quote currency
+            quote_asset = opp.get('quote', CONFIG['BASE_CURRENCY'])
+            actual_cash = 0.0
+            try:
+                all_balances = self.client.get_all_balances()
+                for exchange, balances in all_balances.items():
+                    for asset, amount in balances.items():
+                        asset_clean = asset.replace('Z', '').upper()
+                        if asset_clean in [quote_asset, 'USD', 'USDC', 'USDT', 'EUR', 'GBP']:
+                            try:
+                                actual_cash += float(amount)
+                            except:
+                                pass
+            except:
+                actual_cash = self.cash_balance_gbp
+            
+            # Force scouts use 100% of available risk budget (go all in on good opportunities)
+            available_risk = max(actual_cash, self.cash_balance_gbp, self.total_equity_gbp) - deployed
+            available_risk = max(0.0, available_risk)
+            
+            if available_risk < CONFIG['MIN_TRADE_USD']:
+                # Last resort: just use 5% of whatever cash we can find
+                available_risk = actual_cash * 0.5  # Use 50% of actual cash for scouts
+                
+            print(f"   🦅 FORCE SCOUT {symbol}: actual_cash={actual_cash:.2f}, available_risk={available_risk:.2f}")
+        else:
+            deploy_cap = self.total_equity_gbp * CONFIG['PORTFOLIO_RISK_BUDGET']
+            available_risk = max(0.0, deploy_cap - deployed)
+            
         if available_risk < CONFIG['MIN_TRADE_USD']:
             print(f"   🔴 DEBUG {symbol}: available_risk={available_risk:.2f} < MIN_TRADE_USD={CONFIG['MIN_TRADE_USD']}")
             return None
 
         pos_size = self.capital_pool.get_recommended_position_size(size_fraction)
         if pos_size <= 0:
-            print(f"   🔴 DEBUG {symbol}: pos_size={pos_size:.2f}")
-            return None
+            # 🔥 FORCE SCOUT: Override with minimum viable position
+            if is_force_scout and available_risk >= CONFIG['MIN_TRADE_USD']:
+                pos_size = min(available_risk, CONFIG['MIN_TRADE_USD'] * 2)
+                print(f"   🦅 FORCE SCOUT {symbol}: overriding pos_size to {pos_size:.2f}")
+            else:
+                print(f"   🔴 DEBUG {symbol}: pos_size={pos_size:.2f}")
+                return None
         pos_size = min(pos_size, available_risk)
 
         if self.dry_run:
             cash_available = max(0.0, self.tracker.balance - deployed)
         else:
-            cash_available = max(0.0, self.cash_balance_gbp)
+            cash_available = max(0.0, self.cash_balance_gbp, available_risk)  # 🔥 Include available_risk
         
         # DYNAMIC CAPITAL ALLOCATION: If no cash but this is a better opportunity,
         # sell the worst-performing position to free up capital
