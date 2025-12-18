@@ -669,10 +669,28 @@ class AureonBTCv2:
                     # 🇮🇪 IRA SNIPER CELEBRATION!
                     import random
                     IRA_QUOTES = [
+                        # Bobby Sands - Hunger Striker & Symbol of Resistance
                         "Our revenge will be the laughter of our children. - Bobby Sands 🍀",
-                        "Tiocfaidh ár lá! - Our day will come!",
                         "The Republic still lives! - Bobby Sands",
-                        "Financial freedom IS freedom. Penny by penny, we rise! 💰",
+                        "Everyone has their own particular part to play. - Bobby Sands",
+                        
+                        # Traditional Irish Republican
+                        "Tiocfaidh ár lá! - Our day will come! ☘️",
+                        "Ní neart go cur le chéile - There is no strength without unity",
+                        
+                        # From 'Through a Bhoy's Eyes' - Strategic Wisdom
+                        "Every penny is a battle won, every trade a step towards freedom. 💰",
+                        "The flame ignited cannot be extinguished - it only grows stronger.",
+                        "Move quietly, strike precisely, like shadows through Belfast streets.",
+                        "Patience is the weapon of the wise - wait for the right moment.",
+                        "Small victories compound into liberation. Penny by penny, we rise!",
+                        "The weight of history guides our resolve. We fight for those who came before.",
+                        "In the chaos, find your purpose. In the struggle, find your strength.",
+                        
+                        # Financial Freedom
+                        "Financial freedom IS freedom. The markets are our battlefield now. 🎯",
+                        "They took our land, but they cannot take our determination.",
+                        "Every successful trade honours those who sacrificed for us.",
                     ]
                     btc_price = self.get_btc_price()
                     pnl_usd = pnl_btc * btc_price
