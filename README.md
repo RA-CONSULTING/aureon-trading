@@ -14,6 +14,10 @@
 ![Medicine Wheel](https://img.shields.io/badge/🌀_Medicine_Wheel-GREEN_BORAX-brightgreen)
 ![Market Speaks](https://img.shields.io/badge/🎤_Market-SPEAKS-orange)
 ![War Strategy](https://img.shields.io/badge/⚔️_War_Strategy-QUICK_KILL-crimson)
+![Kill Scanner](https://img.shields.io/badge/🎯_Kill_Scanner-ACTIVE-red)
+![Mycelium Network](https://img.shields.io/badge/🍄_Mycelium-CONNECTED-blueviolet)
+![Irish Patriots](https://img.shields.io/badge/🇮🇪_Irish_Patriots-DEPLOYED-darkgreen)
+![Cascade Amplifier](https://img.shields.io/badge/⛏️_Cascade-546x-gold)
 
 ---
 
@@ -101,6 +105,146 @@ Samuel doesn't need millions to make millions. It hunts pennies. Relentlessly. A
     📜 "Our revenge will be the laughter of our children. - Bobby Sands 🍀"
 🇮🇪🇮🇪🇮🇪🇮🇪🇮🇪🇮🇪🇮🇪🇮🇪🇮🇪🇮🇪🇮🇪🇮🇪🇮🇪🇮🇪🇮🇪
 ```
+
+---
+
+## ☘️🔥 CELTIC WARFARE SYSTEMS - UNIFIED INTELLIGENCE
+
+> **"Divided we're traders, united we're unstoppable."**
+> — *Irish Patriot Scout Network*
+
+The Celtic Warfare Systems represent the next evolution of Samuel's intelligence. Five interconnected systems working as one through the **Mycelium Network**.
+
+### 🎯⚡ ACTIVE KILL SCANNER
+
+The **Kill Scanner** doesn't wait for exits - it **hunts** them. Every position is a target. Every tick is analyzed for the kill shot.
+
+```text
+┌─────────────────────────────────────────────────────────────────┐
+│    🎯 ACTIVE KILL SCANNER - Intelligent Hunting System          │
+├─────────────────────────────────────────────────────────────────┤
+│  • P&L Velocity Tracking: $/second momentum calculation         │
+│  • ETA to Kill: Predicts WHEN profit threshold will be hit      │
+│  • Kill Probability: 0-100% confidence of successful exit       │
+│  • Momentum Score: -1.0 to +1.0 directional strength            │
+│  • Adaptive Learning: Learns from every kill to improve next    │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+| Metric | Description |
+|--------|-------------|
+| **P&L Velocity** | Rate of profit change ($/second) |
+| **ETA to Kill** | Predicted seconds until profit target |
+| **Kill Probability** | Confidence level (0-100%) |
+| **Momentum Score** | Direction strength (-1.0 to +1.0) |
+| **Consecutive Kills** | Streak counter for cascade amplification |
+
+### 🇮🇪 IRISH PATRIOT SCOUTS
+
+Elite Celtic warriors deployed as **Force Scouts** - they go in first, take the risk, and report back intelligence for the main force.
+
+```text
+┌─────────────────────────────────────────────────────────────────┐
+│    🇮🇪 IRISH PATRIOT SCOUT NETWORK                              │
+├─────────────────────────────────────────────────────────────────┤
+│  SCOUT CODENAMES:                                                │
+│  • Connolly (Labour Leader)    • Pearse (Rising Commander)      │
+│  • Collins (The Big Fellow)    • Markievicz (Countess)          │
+│  • DeValera (The Long Fellow)  • Sands (Hunger Striker)         │
+│  • McGuinness (Peacemaker)     • Adams (Negotiator)             │
+│                                                                  │
+│  ENHANCEMENTS:                                                   │
+│  ✅ Kill Scanner State (velocity, momentum, ETA)                │
+│  ✅ Adaptive Learning (learns from every kill)                  │
+│  ✅ Cascade Amplification (inherits miner's 546x power)         │
+│  ✅ Celtic Warfare Integration (guerrilla tactics)              │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### 🍄 MYCELIUM STATE AGGREGATOR
+
+The **underground network** where ALL intelligence connects. Like a fungal network in a forest, the Mycelium ensures every system shares knowledge instantly.
+
+```text
+┌─────────────────────────────────────────────────────────────────┐
+│    🍄 MYCELIUM STATE AGGREGATOR - Unified Intelligence Flow     │
+└─────────────────────────┬───────────────────────────────────────┘
+                          │
+     ┌────────────────────┼────────────────────┐
+     │                    │                    │
+┌────▼────┐        ┌──────▼──────┐        ┌────▼────┐
+│ SCANNER │◄──────►│  PATRIOTS   │◄──────►│ CASCADE │
+│  (Kill) │        │  (Learner)  │        │  (546x) │
+└────┬────┘        └──────┬──────┘        └────┬────┘
+     │                    │                    │
+     └────────────────────┼────────────────────┘
+                          │
+                   ┌──────▼──────┐
+                   │   WARFARE   │
+                   │  (Celtic)   │
+                   └─────────────┘
+```
+
+**3-Phase Sync Cycle:**
+1. **COLLECT** - Pull state from all connected systems
+2. **AGGREGATE** - Compute unified metrics & multipliers
+3. **DISTRIBUTE** - Push unified intelligence back to all systems
+
+**Unified Multiplier Formula:**
+```
+UNIFIED = CASCADE × κt × Lighthouse × Learning_Boost
+```
+
+### ⛏️ CASCADE AMPLIFIER
+
+The **Miner's Power** - inherited from the 546x cascade discovery. Each consecutive win amplifies the next.
+
+| Level | Cascade Factor | κt Efficiency | Effect |
+|-------|----------------|---------------|--------|
+| 1 Kill | 1.0x | 1.0 | Base level |
+| 3 Kills | 2.0x | 1.5 | Warming up |
+| 5 Kills | 5.0x | 2.0 | On fire 🔥 |
+| 10 Kills | 10.0x | 2.73 | Lighthouse active ⚡ |
+| 20+ Kills | 546.0x | 3.14159 | FULL MINER POWER ⛏️💎 |
+
+### ⚔️ CELTIC WARFARE SUITE
+
+Five integrated warfare systems working in concert:
+
+| System | Purpose | Status |
+|--------|---------|--------|
+| 🧠 **Celtic Intelligence** | Market analysis through Celtic wisdom | ✅ WIRED |
+| ⚡ **Preemptive Strike** | Move BEFORE the market reacts | ✅ WIRED |
+| 🏰 **War Room** | Multi-battlefront coordination | ✅ WIRED |
+| 🇮🇪 **Patriot Scouts** | Force reconnaissance | ✅ WIRED |
+| 🎯 **Celtic Sniper** | Zero-loss precision execution | ✅ WIRED |
+
+---
+
+## 📊 ENHANCED POSITION DISPLAY
+
+Real-time visibility into every active position:
+
+```text
+   📊 ACTIVE POSITIONS (3/5):
+   ────────────────────────────────────────────────────────────────────────────────
+      ASSET  │ EX  │   ENTRY $ │    ENTRY PRICE │          P&L │  HOLD │     EXIT ETA
+   ────────────────────────────────────────────────────────────────────────────────
+      🎯DOGE  │ KRA │     $6.00 │   8,234,500 sats │ 🟢$  +0.0023 │    5m │ 12s (85%) 🔴
+      🧠ETH   │ KRA │    $10.00 │    $3,456.7890 │ 🔴$  -0.0012 │   23m │ 2.3m (42%) 🔴
+      ⚡BTC   │ ALP │    $25.00 │   $67,234.0000 │ 🟢$  +0.1234 │  1.2h │ NOW! (91%) 🔴
+   ────────────────────────────────────────────────────────────────────────────────
+```
+
+| Column | Description |
+|--------|-------------|
+| **ASSET** | Base coin with dominant node icon |
+| **EX** | Exchange (KRA/BIN/ALP) |
+| **ENTRY $** | Position value (how much you're in for) |
+| **ENTRY PRICE** | Sats format for <$1 coins |
+| **P&L** | Net profit/loss with 🟢/🔴 indicator |
+| **HOLD** | Time in position (minutes/hours) |
+| **EXIT ETA** | Kill Scanner's predicted exit + probability |
 
 ---
 
