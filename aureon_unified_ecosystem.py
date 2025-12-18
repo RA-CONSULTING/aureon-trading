@@ -16809,8 +16809,10 @@ class AureonKrakenEcosystem:
                 prob_str = ""
                 try:
                     scanner = get_active_scanner()
-                    if symbol in scanner.targets:
-                        target = scanner.targets[symbol]
+                    # Scanner uses key format: exchange:symbol
+                    scanner_key = f"{pos.exchange}:{symbol}"
+                    if scanner_key in scanner.targets:
+                        target = scanner.targets[scanner_key]
                         if target.eta_to_kill < float('inf'):
                             eta_str = f"{target.eta_to_kill:.0f}s" if target.eta_to_kill < 60 else f"{target.eta_to_kill/60:.1f}m"
                         prob_str = f"({target.probability_of_kill*100:.0f}%)"
@@ -17646,8 +17648,10 @@ class AureonKrakenEcosystem:
                         eta_str = "---"
                         try:
                             scanner = get_active_scanner()
-                            if symbol in scanner.targets:
-                                target = scanner.targets[symbol]
+                            # Scanner uses key format: exchange:symbol
+                            scanner_key = f"{pos.exchange}:{symbol}"
+                            if scanner_key in scanner.targets:
+                                target = scanner.targets[scanner_key]
                                 if target.probability_of_kill > 0:
                                     if target.eta_to_kill < float('inf'):
                                         eta_str = f"{target.eta_to_kill:.0f}s" if target.eta_to_kill < 60 else f"{target.eta_to_kill/60:.1f}m"
