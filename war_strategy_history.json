@@ -1,0 +1,15 @@
+{
+  "symbol_stats": {
+    "BTCUSD": {
+      "trades": 1,
+      "wins": 1,
+      "quick_kills": 1,
+      "total_bars": 8,
+      "total_pnl": 0.09106429499999884,
+      "win_rate": 1.0,
+      "quick_kill_rate": 1.0,
+      "avg_bars_to_profit": 8.0
+    }
+  },
+  "last_updated": 1766071135.1002624
+}

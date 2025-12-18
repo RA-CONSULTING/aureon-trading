@@ -454,6 +454,20 @@ except ImportError as e:
     UnifiedSniperBrain = None
     print(f"⚠️  Sniper Brain not available: {e}")
 
+# ==== ⚔️ WAR STRATEGY - QUICK KILL PROBABILITY ENGINE ====
+try:
+    from war_strategy import (
+        WAR_STRATEGIST, get_quick_kill_estimate, should_attack, 
+        start_raid, complete_raid, get_raid_status, get_war_briefing,
+        REQUIRED_R, WIN_THRESHOLD, NET_PENNY_TARGET, IDEAL_BARS, MAX_ACCEPTABLE_BARS
+    )
+    WAR_STRATEGY_AVAILABLE = True
+    print("   ⚔️ WAR STRATEGY LOADED - Quick Kill Probability Active!")
+except ImportError as e:
+    WAR_STRATEGY_AVAILABLE = False
+    WAR_STRATEGIST = None
+    print(f"⚠️  War Strategy not available: {e}")
+
 # ==== 🇮🇪 BHOY'S WISDOM - STRATEGIC QUOTES ====
 try:
     from bhoys_wisdom import celebrate_penny_profit, get_contextual_wisdom
@@ -11357,6 +11371,52 @@ class AureonKrakenEcosystem:
         all_candidates = interleaved
         print(f"   🔄 Interleaved {len(exchanges)} exchanges: {', '.join(exchanges)}")
         
+        # ⚔️ WAR STRATEGY: Rank candidates by QUICK KILL PROBABILITY ⚔️
+        # Goal: Enter coins where we can make 1 penny profit FASTEST
+        if WAR_STRATEGY_AVAILABLE and WAR_STRATEGIST:
+            print(f"\n   ⚔️ WAR STRATEGY: Analyzing {len(all_candidates)} targets for quick kill probability...")
+            
+            # Get recent price data for volatility analysis
+            for c in all_candidates:
+                symbol = c.get('symbol', '')
+                prices = []
+                
+                # Try to get price history from ticker cache
+                if symbol in self.ticker_cache:
+                    ticker = self.ticker_cache[symbol]
+                    current_price = ticker.get('price', 0)
+                    high24h = ticker.get('high', current_price)
+                    low24h = ticker.get('low', current_price)
+                    
+                    # Synthesize rough price range from 24h data
+                    if current_price > 0 and high24h > 0 and low24h > 0:
+                        # Create synthetic price history from 24h high/low
+                        prices = [low24h, (low24h + current_price) / 2, current_price, 
+                                  (high24h + current_price) / 2, high24h, current_price]
+                    else:
+                        prices = [current_price] * 2
+                
+                c['prices'] = prices
+                c['exchange'] = (c.get('source') or 'unknown').lower()
+            
+            # Rank targets using War Strategy
+            ranked_candidates = WAR_STRATEGIST.rank_targets(all_candidates)
+            
+            # Filter to only GO signals, then sort by priority + estimated bars
+            go_targets = [c for c in ranked_candidates if c.get('war_go', False)]
+            no_go_targets = [c for c in ranked_candidates if not c.get('war_go', False)]
+            
+            print(f"   ✅ GO signals: {len(go_targets)} | ⚠️ NO-GO: {len(no_go_targets)}")
+            
+            # Show top 5 war recommendations
+            for i, c in enumerate(go_targets[:5]):
+                qk = c.get('quick_kill', {})
+                print(f"      {i+1}. {c['symbol']}: {qk.get('prob_quick_kill', 0)*100:.0f}% quick kill, "
+                      f"~{qk.get('estimated_bars', 99):.0f} bars ({qk.get('estimated_minutes', 99):.1f}min)")
+            
+            # Prioritize GO signals but keep some no-go as fallback
+            all_candidates = go_targets + no_go_targets[:3]
+        
         # FORCE deploy scouts - don't stop until we hit the target!
         deployed_per_quote: Dict[str, int] = {}
         for candidate in all_candidates:
@@ -14803,6 +14863,17 @@ class AureonKrakenEcosystem:
             except Exception as e:
                 logger.warning(f"Failed to publish open thought: {e}")
         
+        # ⚔️ WAR STRATEGY: START RAID TRACKING ⚔️
+        # Track entry time for quick kill analysis
+        if WAR_STRATEGY_AVAILABLE and WAR_STRATEGIST:
+            try:
+                qk = opp.get('quick_kill', {})
+                raid = start_raid(symbol, exchange, price)
+                print(f"   ⚔️ RAID STARTED: Targeting penny profit in ~{qk.get('estimated_bars', 20):.0f} bars ({qk.get('estimated_minutes', 20):.1f}min)")
+                print(f"   🎯 Required move: {REQUIRED_R*100:.2f}% | Quick kill chance: {qk.get('prob_quick_kill', 0.5)*100:.0f}%")
+            except Exception as e:
+                logger.warning(f"War Strategy raid start error: {e}")
+        
         # 🚀 PLACE SERVER-SIDE TP/SL ORDERS (Kraken & Alpaca - executes even if bot offline!)
         if CONFIG.get('USE_SERVER_SIDE_ORDERS', True) and exchange.lower() in ['kraken', 'alpaca'] and not self.dry_run:
             try:
@@ -15358,6 +15429,25 @@ class AureonKrakenEcosystem:
                 logger.info(f"💾 State saved after closing {symbol}")
             except Exception as e:
                 logger.warning(f"State save failed after close: {e}")
+            
+            # ⚔️ WAR STRATEGY: COMPLETE RAID TRACKING ⚔️
+            # Record how long we held and if we hit penny profit target
+            if WAR_STRATEGY_AVAILABLE and WAR_STRATEGIST:
+                try:
+                    # Calculate bars held (assuming 1-min bars)
+                    bars_held = int((time.time() - pos.entry_time) / 60)
+                    exit_value = pos.quantity * price
+                    
+                    completed_raid = complete_raid(symbol, price, exit_value, bars_held)
+                    if completed_raid:
+                        if completed_raid.was_quick_kill:
+                            print(f"   ⚡ QUICK KILL SUCCESS! {bars_held} bars - Penny profit achieved!")
+                        elif completed_raid.was_penny_profit:
+                            print(f"   💰 PENNY PROFIT! Took {bars_held} bars ({bars_held/60:.1f}min)")
+                        else:
+                            print(f"   ⏱️ Raid duration: {bars_held} bars ({bars_held/60:.1f}min) - No penny profit")
+                except Exception as e:
+                    logger.warning(f"War Strategy raid complete error: {e}")
         
         # 📐 Calculate P&L using the same model as penny profit threshold formula
         # The formula r = ((1 + P/A) / (1-f)²) - 1 treats fees as multiplicative factors
