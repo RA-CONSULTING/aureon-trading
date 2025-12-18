@@ -156,7 +156,7 @@ except ImportError:
     statistics = Statistics()
 
 from datetime import datetime
-from typing import Dict, List, Optional, Tuple, Any
+from typing import Dict, List, Optional, Tuple, Any, Set
 from dataclasses import dataclass, field
 from collections import deque, defaultdict
 from threading import Thread, Lock
@@ -11529,15 +11529,23 @@ class AureonKrakenEcosystem:
         # 🔥 BALANCE-AWARE BOOST: Get balances FIRST, then boost tradeable pairs BEFORE deduplication!
         available_quotes = set()
         exchange_quote_balances = {}  # Track actual balances per exchange+quote
+        exchange_balances: Dict[str, Dict[str, float]] = {}
         try:
             # Use the MultiExchangeClient's get_all_balances method
             all_balances = self.client.get_all_balances()
             for exchange_name, bals in all_balances.items():
+                ex_lower = exchange_name.lower()
+                if ex_lower not in exchange_balances:
+                    exchange_balances[ex_lower] = {}
                 for asset, amt in bals.items():
                     asset_upper = asset.upper()
                     # Remove Kraken prefixes (ZUSD, XXBT, etc)
                     asset_clean = asset_upper.lstrip('ZX')
                     if amt > 1.0:  # Meaningful balance
+                        try:
+                            exchange_balances[ex_lower][asset_clean] = exchange_balances[ex_lower].get(asset_clean, 0.0) + float(amt)
+                        except Exception:
+                            pass
                         # Map to quote currency patterns
                         if asset_upper == 'USDC' or asset_clean == 'USDC':
                             available_quotes.add('USDC')
@@ -11568,6 +11576,60 @@ class AureonKrakenEcosystem:
         for (ex, quote), bal in sorted(exchange_quote_balances.items()):
             print(f"      {ex.upper()} {quote}: {bal:.2f}")
         
+        # Map of quotes we can actually spend on each exchange (includes convertible assets)
+        buyable_quotes_by_exchange: Dict[str, Set[str]] = {}
+        for (ex, quote), bal in exchange_quote_balances.items():
+            if bal <= 0:
+                continue
+            ex_quotes = buyable_quotes_by_exchange.setdefault(ex, set())
+            quote_upper = quote.upper()
+            ex_quotes.add(quote_upper)
+            if quote_upper == 'USD':
+                ex_quotes.update({'USDC', 'USDT'})
+            if quote_upper in ('USDC', 'USDT'):
+                ex_quotes.add('USD')
+
+        # Include convertible assets (e.g., BTC->USDT) as buyable quotes
+        try:
+            convertible_assets = self.client.get_all_convertible_assets()
+            for ex, conversions in convertible_assets.items():
+                ex_lower = ex.lower()
+                balances = exchange_balances.get(ex_lower, {})
+                if not balances:
+                    continue
+                ex_quotes = buyable_quotes_by_exchange.setdefault(ex_lower, set())
+                for asset, amount in balances.items():
+                    if amount <= 0:
+                        continue
+                    targets = conversions.get(asset) or conversions.get(asset.upper())
+                    if not targets:
+                        continue
+                    for tgt in targets:
+                        tgt_upper = tgt.upper()
+                        if tgt_upper in CONFIG.get('QUOTE_CURRENCIES', []):
+                            ex_quotes.add(tgt_upper)
+        except Exception as e:
+            print(f"   ⚠️ Convertible asset detection skipped: {e}")
+
+        # Available tradable pairs by exchange to validate scout targets
+        available_pairs_by_exchange: Dict[str, Set[str]] = {}
+        try:
+            for exchange_name in self.client.clients.keys():
+                pairs = self.client.get_available_pairs(exchange_name)
+                formatted_pairs: Set[str] = set()
+                for p in pairs or []:
+                    base = str(p.get('base', '')).upper()
+                    quote = str(p.get('quote', '')).upper()
+                    pair_name = str(p.get('pair', f"{base}{quote}")).upper()
+                    if pair_name:
+                        formatted_pairs.add(pair_name)
+                    if base and quote:
+                        formatted_pairs.add(f"{base}{quote}")
+                        formatted_pairs.add(f"{base}/{quote}")
+                available_pairs_by_exchange[exchange_name.lower()] = formatted_pairs
+        except Exception as e:
+            print(f"   ⚠️ Pair discovery skipped: {e}")
+        
         # 🔥 CRITICAL: Apply balance boost to scores BEFORE deduplication!
         # Boost MORE if the exchange actually has balance for that quote currency!
         for c in all_candidates:
@@ -11575,12 +11637,16 @@ class AureonKrakenEcosystem:
             quote = c['quote_currency']
             ex_quote_key = (source_exchange, quote)
             
-            if quote in available_quotes:
+            tradeable_on_exchange = quote.upper() in buyable_quotes_by_exchange.get(source_exchange, set())
+            if tradeable_on_exchange:
                 c['score'] += 10_000_000  # Massive boost for tradeable quote currency
                 
                 # 🔥 EXTRA boost if THIS exchange has balance (not just any exchange)
                 if ex_quote_key in exchange_quote_balances and exchange_quote_balances[ex_quote_key] > 10:
                     c['score'] += 5_000_000  # Extra 5M for having balance on THIS exchange
+            elif quote in available_quotes:
+                # Smaller boost if another exchange has this quote but we may need conversion
+                c['score'] += 1_000_000
         
         # 🔥 Keep best per base+exchange combo to allow BOTH Binance USDC AND Kraken GBP trades!
         # Don't collapse across exchanges - we want to trade on BOTH platforms
@@ -11632,13 +11698,34 @@ class AureonKrakenEcosystem:
             if fallback:
                 all_candidates.append(fallback)
 
-        # 🔥 FILTER: Only keep pairs where we have balance to trade!
-        if available_quotes:
-            tradeable_candidates = [c for c in all_candidates if c['quote_currency'] in available_quotes]
-            print(f"   📊 Found {len(all_candidates)} pairs → {len(tradeable_candidates)} tradeable (have {available_quotes})")
+        # 🔥 FILTER: Only keep pairs where we have balance to trade on THAT exchange!
+        def _is_pair_tradeable(sym: str, quote: str, pair_set: Set[str]) -> bool:
+            if not pair_set:
+                return True
+            sym_clean = sym.replace('/', '').upper()
+            if sym_clean in pair_set:
+                return True
+            base = _base_from_symbol(sym).upper()
+            quote_upper = quote.upper()
+            combos = (f"{base}{quote_upper}", f"{base}/{quote_upper}")
+            return any(c in pair_set for c in combos)
+
+        if buyable_quotes_by_exchange:
+            tradeable_candidates = []
+            for c in all_candidates:
+                ex = (c.get('source') or 'unknown').lower()
+                quote = c['quote_currency']
+                if quote.upper() not in buyable_quotes_by_exchange.get(ex, set()):
+                    continue
+                pair_set = available_pairs_by_exchange.get(ex, set())
+                if not _is_pair_tradeable(c['symbol'], quote, pair_set):
+                    continue
+                tradeable_candidates.append(c)
+            quote_summary = {ex: sorted(list(quotes)) for ex, quotes in buyable_quotes_by_exchange.items()}
+            print(f"   📊 Found {len(all_candidates)} pairs → {len(tradeable_candidates)} tradeable per-exchange (quotes: {quote_summary})")
             all_candidates = tradeable_candidates
         else:
-            print(f"   📊 Found {len(all_candidates)} tradeable pairs")
+            print(f"   📊 Found {len(all_candidates)} tradeable pairs (no balance map)")
         
         # 🔄 INTERLEAVE BY EXCHANGE: Ensure we deploy scouts on BOTH Binance AND Kraken!
         # Group by source exchange, then round-robin to pick from each
