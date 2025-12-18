@@ -560,17 +560,24 @@ class BinanceClient:
             params["network"] = network
         return self._signed_request("GET", "/sapi/v1/capital/deposit/address", params)
 
-    def get_my_trades(self, symbol: str, limit: int = 500) -> list:
+    def get_my_trades(self, symbol: str, limit: int = 500, silent: bool = False) -> list:
         """Get trade history for a symbol.
         
         Returns list of trades with entry prices, quantities, fees etc.
         Used to calculate real cost basis for positions.
+        
+        Args:
+            symbol: Trading pair symbol
+            limit: Max trades to return
+            silent: If True, suppress error messages for invalid symbols
         """
         params = {"symbol": symbol, "limit": limit}
         try:
             return self._signed_request("GET", "/api/v3/myTrades", params)
         except Exception as e:
-            print(f"⚠️ Failed to get trade history for {symbol}: {e}")
+            # Only print errors if not silent and not an "Invalid symbol" error
+            if not silent and 'Invalid symbol' not in str(e):
+                print(f"⚠️ Failed to get trade history for {symbol}: {e}")
             return []
     
     def get_all_my_trades(self, symbols: list = None, limit_per_symbol: int = 100) -> Dict[str, list]:
@@ -619,7 +626,7 @@ class BinanceClient:
         all_trades = {}
         for symbol in symbols:
             try:
-                trades = self.get_my_trades(symbol, limit_per_symbol)
+                trades = self.get_my_trades(symbol, limit_per_symbol, silent=True)
                 if trades:
                     all_trades[symbol] = trades
             except:

@@ -97,11 +97,17 @@ class CostBasisTracker:
                 continue
             
             # Skip stablecoins and Binance Earn (LD) assets
-            if asset in ['USDC', 'USDT', 'USD', 'EUR', 'GBP', 'BUSD'] or asset.startswith('LD'):
+            if asset in ['USDC', 'USDT', 'USD', 'EUR', 'GBP', 'BUSD', 'FDUSD', 'TUSD'] or asset.startswith('LD'):
                 continue
             
+            # 🔧 Only try EUR for major coins that Binance actually supports
+            BINANCE_EUR_SUPPORTED = {'BTC', 'ETH', 'BNB', 'XRP', 'ADA', 'SOL', 'DOT', 'DOGE', 'SHIB', 'MATIC', 'LTC', 'AVAX', 'LINK', 'ATOM'}
+            quote_options = ['USDC', 'USDT']
+            if asset in BINANCE_EUR_SUPPORTED:
+                quote_options.append('EUR')
+            
             # Try different quote currencies
-            for quote in ['USDC', 'USDT', 'EUR']:
+            for quote in quote_options:
                 symbol = f"{asset}{quote}"
                 try:
                     cost_basis = client.calculate_cost_basis(symbol)
