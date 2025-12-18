@@ -9220,6 +9220,25 @@ class PerformanceTracker:
             'capital': {'trades': 0, 'wins': 0, 'fees': 0.0, 'pnl': 0.0, 'volume': 0.0},
         }
         
+    # 🇮🇪 IRA SNIPER - Famous Irish Republican Quotes
+    IRA_SNIPER_QUOTES = [
+        "Tiocfaidh ár lá! - Our day will come!",
+        "They may kill the revolutionary but never the revolution.",
+        "Unfree ourselves, we shall never rest until we make Ireland free.",
+        "Ireland unfree shall never be at peace. - Patrick Pearse",
+        "The fools! The fools! They have left us our Fenian dead!",
+        "We serve neither King nor Kaiser, but Ireland!",
+        "I have made up my mind to die rather than live a slave.",
+        "Life springs from death, and from the graves of patriot men and women spring living nations.",
+        "The Republic still lives! - Bobby Sands",
+        "They have nothing in their whole imperial arsenal that can break the spirit of one Irishman.",
+        "Our revenge will be the laughter of our children. - Bobby Sands",
+        "Everyone, Republican or otherwise, has their own particular part to play.",
+        "Beir bua! - Take victory!",
+        "Ní saoirse go saoirse na hÉireann! - No freedom until Ireland is free!",
+        "Up the Republic! Penny by penny, we rise!",
+    ]
+    
     def record_trade(self, net_pnl: float, fees: float, symbol: str, reason: str, 
                      hold_time_sec: float = 0, platform: str = 'kraken', volume: float = 0.0):
         """Record a completed trade with platform attribution"""
@@ -9228,6 +9247,13 @@ class PerformanceTracker:
         result = 'WIN' if net_pnl > 0 else 'LOSS'
         if net_pnl > 0:
             self.wins += 1
+            # 🇮🇪 IRA SNIPER CELEBRATION - Penny profit win!
+            import random
+            quote = random.choice(self.IRA_SNIPER_QUOTES)
+            print(f"\n🇮🇪🇮🇪🇮🇪 IRA SNIPER WIN! 🇮🇪🇮🇪🇮🇪")
+            print(f"    💰 +${net_pnl:.4f} on {symbol}")
+            print(f"    📜 \"{quote}\"")
+            print(f"🇮🇪🇮🇪🇮🇪🇮🇪🇮🇪🇮🇪🇮🇪🇮🇪🇮🇪🇮🇪🇮🇪🇮🇪🇮🇪🇮🇪🇮🇪\n")
         else:
             self.losses += 1
         
