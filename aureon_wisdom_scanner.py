@@ -223,9 +223,9 @@ class WikipediaSource(WisdomSource):
         """Fetch Wikipedia article content"""
         if not WIKIPEDIA_AVAILABLE:
             # Only warn once per session to reduce log spam
-            if not WikipediaScanner._wikipedia_warned:
+            if not WikipediaSource._wikipedia_warned:
                 logger.warning("Wikipedia API not available - install with: pip install wikipedia")
-                WikipediaScanner._wikipedia_warned = True
+                WikipediaSource._wikipedia_warned = True
             return None
         
         try:
