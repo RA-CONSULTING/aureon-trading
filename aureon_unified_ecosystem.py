@@ -197,6 +197,14 @@ except ImportError as e:
         def place_market_order(self, *args, **kwargs): return {}
         def convert_to_quote(self, *args): return 0.0
 
+# 🇮🇪🎯 IRA SNIPER MODE - Core imports (top-level for reliability)
+from ira_sniper_mode import (
+    apply_sniper_mode,
+    check_sniper_exit,
+    get_sniper_config,
+    map_sniper_platform_assets,
+)
+
 try:
     from aureon_lattice import GaiaLatticeEngine, CarrierWaveDynamics  # 🌍 GAIA FREQUENCY PHYSICS
     LATTICE_AVAILABLE = True
@@ -10492,9 +10500,26 @@ class AureonKrakenEcosystem:
     # � SNIPER BRIDGE - GPT CODEX TELEMETRY INTEGRATION 🎯
     # ═══════════════════════════════════════════════════════════════
 
-    def _announce_sniper_activation(self):
-        """Announce IRA sniper mode activation."""
-        print("\n   🇮🇪🎯 IRA SNIPER MODE ACTIVATED!")
+    def _announce_sniper_activation(self) -> None:
+        """Log IRA sniper readiness across platforms and sellable assets."""
+        coverage = getattr(self, 'sniper_coverage', {}) or {}
+        platforms = coverage.get('platforms', {})
+        active = bool(self.sniper_config.get('ACTIVE', False))
+        status = "ACTIVE" if active else "INACTIVE"
+        print(f"\n🎯 IRA SNIPER STATUS: {status}")
+        
+        if not platforms:
+            print("   ⚠️ No platform coverage available for sniper map.")
+            print("   🎯 Zero Loss Policy: We NEVER lose. Every trade is a confirmed kill.")
+            print("   ☘️ Celtic intelligence guiding all entry decisions.\n")
+            return
+        
+        for name, details in platforms.items():
+            assets = details.get('sellable_assets') or []
+            preview = ", ".join(assets[:6]) + ("..." if len(assets) > 6 else "") if assets else "none"
+            print(f"   • {name.upper()}: {len(assets)} sellable assets ({preview})")
+        
+        print(f"   Position size: ${self.sniper_config.get('POSITION_SIZE_USD', 0):.2f} | Max positions: {self.sniper_config.get('MAX_POSITIONS', 0)}")
         print("   🎯 Zero Loss Policy: We NEVER lose. Every trade is a confirmed kill.")
         print("   ☘️ Celtic intelligence guiding all entry decisions.\n")
 
@@ -12018,6 +12043,12 @@ class AureonKrakenEcosystem:
         if gain > CONFIG['EQUITY_MIN_DELTA']:
             self.tracker.realize_portfolio_gain(gain)
             self.tracker.equity_baseline = total
+        
+        # Keep IRA sniper coverage in sync with live balances on every refresh
+        try:
+            self.sniper_coverage = map_sniper_platform_assets(self.client)
+        except Exception as e:
+            logger.debug(f"Sniper coverage refresh failed: {e}")
         return total
 
     def get_pnl_snapshot(self) -> Dict[str, float]:
@@ -12574,6 +12605,7 @@ class AureonKrakenEcosystem:
         # 💰 PENNY PROFIT THRESHOLDS - Dollar-based exit logic
         penny_check = check_penny_exit(pos.exchange, pos.entry_value, gross_pnl, pos.symbol)
         penny_threshold = penny_check.get('threshold')
+        sniper_wisdom = penny_check.get('sniper_wisdom')
         
         # ☘️ CELTIC PREEMPTIVE EXIT CHECK
         # If we have profit AND Celtic intelligence signals momentum reversal,
@@ -12587,7 +12619,7 @@ class AureonKrakenEcosystem:
                 # Only check preemptive if we have SOME profit
                 if gross_pnl >= min_gross_win * 0.8:  # Within 80% of target
                     # Use check_preemptive_exit method (returns tuple: should_exit, reason, confidence)
-                    should_exit, reason, confidence = self.preemptive_engine.check_preemptive_exit(
+                    preempt_exit, preempt_reason, confidence = self.preemptive_engine.check_preemptive_exit(
                         exchange=pos.exchange or 'unknown',
                         symbol=pos.symbol,
                         entry_price=pos.entry_price,
@@ -12595,97 +12627,53 @@ class AureonKrakenEcosystem:
                         current_momentum=None  # Will use internal tracking
                     )
                     
-                    if should_exit and confidence >= 0.5:
+                    if preempt_exit and confidence >= 0.5:
                         print(f"   ☘️⚡ CELTIC PREEMPTIVE EXIT: {pos.symbol}")
-                        print(f"      Reason: {reason}")
+                        print(f"      Reason: {preempt_reason}")
                         print(f"      Confidence: {confidence:.0%}")
                         print(f"      🎯 Taking profit NOW before momentum reverses!")
                         return True
             except Exception as e:
                 # Preemptive check failed - continue with normal logic
                 pass
-        penny_threshold = penny_check.get('threshold')
         
+        # Use penny profit thresholds when available; otherwise fall back to dynamic calculation
+        min_gross_win = 0.01
+        target_net = 0.01
         if penny_threshold:
-            # Use penny profit dollar thresholds
-            min_gross_win = penny_threshold.get('win_gte', 0.01)
-            target_net = penny_threshold.get('target_net', 0.01)
-            
-            # 🎯 THE ONLY EXIT: CONFIRMED NET PROFIT
-            # NO STOP LOSSES. We hold until we win.
-            if gross_pnl >= min_gross_win:
-                print(f"   🇮🇪🎯 CONFIRMED KILL: {pos.symbol} gross ${gross_pnl:.4f} >= ${min_gross_win:.4f} -> NET ~${target_net:.2f}")
-                if penny_check.get('sniper_wisdom'):
-                    print(f"   📜 \"{penny_check['sniper_wisdom']}\"")
-                return True
-            else:
-                # NOT PROFITABLE - KEEP HOLDING
-                # We NEVER exit at a loss. EVER.
-                if reason == "SL":
-                    print(f"   🚫 STOP LOSS BLOCKED: {pos.symbol} - We don't lose. Holding for confirmed kill...")
-                else:
-                    print(f"   🎯 HOLDING {pos.symbol}: Waiting for confirmed kill (${gross_pnl:.4f} / ${min_gross_win:.4f})")
-                return False
+            min_gross_win = penny_threshold.get('win_gte', min_gross_win)
+            target_net = penny_threshold.get('target_net', target_net)
         else:
-            # Fallback: compute penny threshold on-the-fly
             fallback_entry = pos.entry_value if pos.entry_value > 0 else (pos.quantity * pos.entry_price)
             penny_threshold_fb = get_penny_threshold(pos.exchange, fallback_entry)
-            
             if penny_threshold_fb:
-                min_gross_win = penny_threshold_fb.get('win_gte', 0.01)
-                target_net = penny_threshold_fb.get('target_net', 0.01)
-                
-                # 🎯 THE ONLY EXIT: CONFIRMED NET PROFIT
-                if gross_pnl >= min_gross_win:
-                    print(f"   🇮🇪🎯 CONFIRMED KILL: {pos.symbol} gross ${gross_pnl:.4f} -> NET ~${target_net:.2f}")
-                    return True
-                else:
-                    print(f"   🎯 HOLDING {pos.symbol}: Waiting for confirmed kill (${gross_pnl:.4f} / ${min_gross_win:.4f})")
-                    return False
-        
-        # BRIDGE FORCE EXIT: Only allow if profitable - NO LOSSES
-        if reason == "bridge_force_exit":
-            if gross_pnl >= min_gross_win if penny_threshold else gross_pnl >= 0:
-                print(f"   🌉 BRIDGE EXIT: {pos.symbol} - Confirmed profitable")
-                return True
-            print(f"   🚫 BRIDGE EXIT BLOCKED: {pos.symbol} - Not profitable yet. We don't lose.")
-            return False
-        
-        # 🔮 MATRIX EXIT: ONLY if confirmed profitable
-        if reason in ["MATRIX_SELL", "MATRIX_FORCE"]:
-            if penny_threshold:
-                min_gross_win = penny_threshold.get('win_gte', 0.01)
-                if gross_pnl >= min_gross_win:
-                    print(f"   🔮 MATRIX EXIT (CONFIRMED KILL): {pos.symbol} gross ${gross_pnl:.4f} >= ${min_gross_win:.4f}")
-                    return True
-                else:
-                    print(f"   🚫 MATRIX EXIT BLOCKED: {pos.symbol} - Not profitable (${gross_pnl:.4f} < ${min_gross_win:.4f}). We don't lose.")
-                    return False
-            
-            # Fallback: require positive
-            if gross_pnl >= 0:
-                print(f"   🔮 MATRIX EXIT: {pos.symbol} gross ${gross_pnl:.4f}")
-                return True
-            print(f"   🚫 MATRIX EXIT BLOCKED: {pos.symbol} - We don't lose.")
-            return False
-        
-        # REBALANCE/SWAP: ONLY if profitable - NO LOSSES
-        if reason in ["REBALANCE", "SWAP"]:
-            if penny_threshold:
-                min_gross_win = penny_threshold.get('win_gte', 0.01)
-                if gross_pnl >= min_gross_win:
-                    return True
-            elif gross_pnl >= 0:
-                return True
-            print(f"   🚫 {reason} BLOCKED: {pos.symbol} - We don't lose.")
-            return False
-        
-        # Default: ONLY exit on confirmed profit - NO EXCEPTIONS
-        if penny_threshold and gross_pnl >= penny_threshold.get('win_gte', 0.01):
+                min_gross_win = penny_threshold_fb.get('win_gte', min_gross_win)
+                target_net = penny_threshold_fb.get('target_net', target_net)
+
+        # 🇮🇪🎯 IRA SNIPER EXIT CHECK - global zero-loss enforcement across all platforms
+        sniper_exit, sniper_reason, is_win = check_sniper_exit(
+            gross_pnl=gross_pnl,
+            win_threshold=min_gross_win,
+            hold_cycles=pos.cycles
+        )
+
+        if sniper_exit:
+            print(f"   {sniper_reason} -> NET ~${target_net:.2f}")
+            if sniper_wisdom:
+                print(f"   📜 \"{sniper_wisdom}\"")
             return True
-        
-        # NO LOSS EXITS. EVER.
-        print(f"   🎯 HOLDING {pos.symbol}: Waiting for confirmed kill...")
+
+        # NOT PROFITABLE - KEEP HOLDING (applies to SL, matrix, or any exit request)
+        if reason == "SL":
+            print(f"   🚫 STOP LOSS BLOCKED: {pos.symbol} - {sniper_reason}")
+        elif reason == "bridge_force_exit":
+            print(f"   🚫 BRIDGE EXIT BLOCKED: {pos.symbol} - {sniper_reason}")
+        elif reason in ["MATRIX_SELL", "MATRIX_FORCE"]:
+            print(f"   🚫 MATRIX EXIT BLOCKED: {pos.symbol} - {sniper_reason}")
+        elif reason in ["REBALANCE", "SWAP"]:
+            print(f"   🚫 {reason} BLOCKED: {pos.symbol} - {sniper_reason}")
+        else:
+            print(f"   🎯 HOLDING {pos.symbol}: {sniper_reason}")
         return False
     
     def save_state(self):
