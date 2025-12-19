@@ -12501,15 +12501,18 @@ class AureonKrakenEcosystem:
                 if is_cash:
                     # Convert stable coins to base currency value
                     if conversion_asset != base and asset_clean != base:
+                        converted = 0.0
                         try:
                             converted = self.client.convert_to_quote(exchange, conversion_asset, amount, base)
-                            if converted > 0:
-                                cash_balance += converted
-                                total_equity += converted
-                                holdings_value[asset_clean] = holdings_value.get(asset_clean, 0.0) + converted
-                                continue
                         except Exception:
-                            # Fallback: treat 1:1 for stablecoins
+                            converted = 0.0
+                        if converted > 0:
+                            cash_balance += converted
+                            total_equity += converted
+                            holdings_value[asset_clean] = holdings_value.get(asset_clean, 0.0) + converted
+                            continue
+                        # Fallback: treat USD stables as 1:1 to avoid missing cash when pricing data is unavailable
+                        if base.upper() == 'USD' and conversion_asset in {'USD', 'USDC', 'USDT'}:
                             cash_balance += amount
                             total_equity += amount
                             holdings_value[asset_clean] = holdings_value.get(asset_clean, 0.0) + amount

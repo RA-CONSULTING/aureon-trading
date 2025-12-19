@@ -1233,7 +1233,8 @@ class AureonKrakenEcosystem:
         except Exception as e:
             print(f"   ⚠️ Equity refresh error: {e}")
             return self.total_equity_gbp, self.cash_balance_gbp, self.holdings_gbp
-        
+
+        stable_coins = {'USD', 'USDC', 'USDT', 'EUR', 'GBP', 'ZUSD', 'ZEUR', 'ZGBP'}
         for bal in balances:
             asset_raw = bal.get('asset', '')
             if not asset_raw:
@@ -1247,12 +1248,31 @@ class AureonKrakenEcosystem:
             asset_clean = asset_raw.replace('Z', '').upper()  # Keep X prefix (XXBT stays XXBT)
             # For conversion, strip first X only (XXBT->XBT, XETH->ETH)
             conversion_asset = asset_clean[1:] if asset_clean.startswith('X') and len(asset_clean) > 3 else asset_clean
-            # Check if this is the base currency
-            if conversion_asset == base or asset_clean == base:
-                cash_balance += amount
-                total_equity += amount
-                holdings_value[asset_clean] = holdings_value.get(asset_clean, 0.0) + amount
+
+            # Treat USD/EUR/GBP stables as cash equivalents
+            is_cash = (
+                conversion_asset == base or asset_clean == base or
+                conversion_asset in stable_coins or asset_clean in stable_coins
+            )
+            if is_cash:
+                converted = amount
+                if conversion_asset != base and asset_clean != base:
+                    try:
+                        converted = self.client.convert_to_quote(conversion_asset, amount, base)
+                    except Exception:
+                        converted = 0.0
+                    # Fallback: assume 1:1 for USD stables to avoid zero cash reporting
+                    if converted <= 0 and base.upper() == 'USD' and conversion_asset in {'USD', 'USDC', 'USDT'}:
+                        converted = amount
+
+                if converted > 0:
+                    cash_balance += converted
+                    total_equity += converted
+                    holdings_value[asset_clean] = holdings_value.get(asset_clean, 0.0) + converted
+                else:
+                    holdings_value[asset_clean] = holdings_value.get(asset_clean, 0.0) + amount
                 continue
+
             try:
                 converted = self.client.convert_to_quote(conversion_asset, amount, base)
             except Exception:

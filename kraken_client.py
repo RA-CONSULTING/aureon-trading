@@ -503,10 +503,19 @@ class KrakenClient:
         }
 
     def convert_to_quote(self, asset: str, amount: float, quote: str) -> float:
-        if asset.upper() == quote.upper():
+        asset_up = asset.upper()
+        quote_up = quote.upper()
+
+        if asset_up == quote_up:
             return amount
-        pair = f"{asset.upper()}{quote.upper()}"
-        inv_pair = f"{quote.upper()}{asset.upper()}"
+
+        # Treat USD stables as 1:1 to avoid false "insufficient funds" from missing pairs
+        stable_usd = {"USD", "USDC", "USDT"}
+        if asset_up in stable_usd and quote_up in stable_usd:
+            return amount
+
+        pair = f"{asset_up}{quote_up}"
+        inv_pair = f"{quote_up}{asset_up}"
         try:
             price_info = self.best_price(pair)
             price = float(price_info.get("price", 0))
