@@ -595,6 +595,9 @@ PENNY_PROFIT_CONFIG = {}  # Optional overrides from JSON
 PENNY_PROFIT_ENABLED = True  # Always enabled - dynamic calculation works without config
 PENNY_TARGET_NET = 0.01  # Default target: $0.01 net profit per trade
 
+# Binance must always capture between $0.01 and $0.03 NET after all fees
+BINANCE_NET_PROFIT_RANGE = (0.01, 0.03)
+
 # Default fee rates by exchange (can be overridden by CONFIG or JSON)
 DEFAULT_FEE_RATES = {
     'binance': 0.001,    # 0.10% taker
@@ -625,6 +628,21 @@ def load_penny_profit_config():
         print(f"💰 Penny Profit Engine - DYNAMIC MODE (target: +${PENNY_TARGET_NET:.2f} net)")
     
     PENNY_PROFIT_ENABLED = True  # Always enabled with dynamic calculation
+
+
+def clamp_target_net_for_exchange(exchange: str, target_net: float) -> Tuple[float, bool]:
+    """
+    Apply exchange-specific clamping to the desired net target.
+    
+    For Binance we must guarantee that every full trade cycle nets between
+    $0.01 and $0.03 after *all* costs (fees, slippage, spread).
+    """
+    ex_lower = (exchange or 'binance').lower()
+    if ex_lower == 'binance':
+        min_net, max_net = BINANCE_NET_PROFIT_RANGE
+        clamped = max(min_net, min(max_net, target_net))
+        return clamped, clamped != target_net
+    return target_net, False
 
 
 def get_exchange_fee_rate(exchange: str) -> float:
@@ -716,8 +734,10 @@ def get_penny_threshold(exchange: str, trade_size: float) -> dict:
     if trade_size <= 0:
         trade_size = 1.0  # Fallback to $1 minimum
     
-    fee_rate = get_exchange_fee_rate(exchange)
-    target_net = PENNY_TARGET_NET
+    exchange_name = (exchange or 'binance').lower()
+    
+    fee_rate = get_exchange_fee_rate(exchange_name)
+    target_net, was_clamped = clamp_target_net_for_exchange(exchange_name, PENNY_TARGET_NET)
     
     # Add safety margins for slippage and spread (from CONFIG)
     # This ensures we account for ALL costs, not just exchange fees.
@@ -731,6 +751,15 @@ def get_penny_threshold(exchange: str, trade_size: float) -> dict:
     # We use total_rate to ensure the price increase covers ALL costs
     r = required_price_increase(trade_size, total_rate, target_net)
     
+    # Calculate the realized net after both legs to confirm it meets the target
+    net_after_costs = trade_size * ((1 - total_rate) ** 2 * (1 + r) - 1)
+
+    # Safety: if rounding left us below Binance minimum, bump to the floor
+    if exchange_name == 'binance' and net_after_costs < BINANCE_NET_PROFIT_RANGE[0]:
+        target_net = BINANCE_NET_PROFIT_RANGE[0]
+        r = required_price_increase(trade_size, total_rate, target_net)
+        net_after_costs = trade_size * ((1 - total_rate) ** 2 * (1 + r) - 1)
+
     # win_gte is the gross P&L needed (price increase × position)
     # Since gross_pnl = exit_value - entry_value = entry_value × r
     win_gte = trade_size * r
@@ -753,6 +782,10 @@ def get_penny_threshold(exchange: str, trade_size: float) -> dict:
         'fee_rate': fee_rate,
         'trade_size': trade_size,
         'target_net': target_net,
+        'target_net_requested': PENNY_TARGET_NET,
+        'target_net_clamped': was_clamped,
+        'binance_net_range': BINANCE_NET_PROFIT_RANGE if exchange_name == 'binance' else None,
+        'expected_net_after_costs': round(net_after_costs, 6),
         'is_dynamic': True
     }
 
