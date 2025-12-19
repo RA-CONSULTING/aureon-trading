@@ -94,6 +94,7 @@ CONFIG = {
     'KRAKEN_FEE': 0.0026,           # Legacy field (uses taker)
     'SLIPPAGE_PCT': 0.0010,         # 0.10% estimated slippage per trade
     'SPREAD_COST_PCT': 0.0005,      # 0.05% estimated spread cost
+    'MIN_NET_PROFIT': 0.03,         # Enforce ≥$0.03 net on all platforms
     
     # 🧬 SANDBOX EVOLVED EXITS (454 Generations of Learning)
     'TAKE_PROFIT_PCT': _EVOLVED_TP,   # Evolved: 1.82% (was 0.8%)
@@ -1360,10 +1361,22 @@ class AureonKrakenEcosystem:
         # Calculate gross P&L (threshold handles fee math)
         exit_value = pos.quantity * current_price
         gross_pnl = exit_value - pos.entry_value
+
+        # Estimate net P&L after both legs' costs (fee + slippage + spread)
+        fee_rate = CONFIG.get('KRAKEN_FEE_TAKER', CONFIG['KRAKEN_FEE'])
+        slippage = CONFIG.get('SLIPPAGE_PCT', 0.002)
+        spread = CONFIG.get('SPREAD_COST_PCT', 0.001)
+        total_rate = fee_rate + slippage + spread
+        exit_fee = exit_value * total_rate
+        net_pnl = gross_pnl - (pos.entry_fee + exit_fee)
+        min_net = CONFIG.get('MIN_NET_PROFIT', 0.03)
         
         # 🪙 PENNY PROFIT TAKE PROFIT: Always allow - the engine calculated this correctly
-        if reason in ["TP", "PENNY_TP"] and gross_pnl > 0:
-            return True
+        if reason in ["TP", "PENNY_TP"]:
+            if net_pnl >= min_net:
+                return True
+            print(f"   🛑 HOLDING {pos.symbol}: Net {net_pnl:+.4f} below target {min_net:.2f}")
+            return False
         
         # 🪙 PENNY PROFIT STOP LOSS: Trust the penny profit engine's calculation
         if reason in ["SL", "PENNY_SL"]:
