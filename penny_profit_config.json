@@ -1,7 +1,7 @@
 {
   "version": "2.0",
   "strategy": "PENNY_PROFIT",
-  "target_net_win": 0.01,
+  "target_net_win": 0.03,
   "description": "Penny profit with scaled stops. TP when gross >= win_gte, SL when gross <= stop_lte",
   "exchanges": {
     "binance": {
@@ -44,32 +44,32 @@
       "thresholds": {
         "5.0": {
           "cost": 0.041,
-          "win_gte": 0.051,
+          "win_gte": 0.071,
           "stop_lte": -0.025
         },
         "7.5": {
           "cost": 0.062,
-          "win_gte": 0.072,
+          "win_gte": 0.092,
           "stop_lte": -0.035
         },
         "10.0": {
           "cost": 0.082,
-          "win_gte": 0.092,
+          "win_gte": 0.112,
           "stop_lte": -0.045
         },
         "15.0": {
           "cost": 0.123,
-          "win_gte": 0.133,
+          "win_gte": 0.153,
           "stop_lte": -0.06
         },
         "20.0": {
           "cost": 0.164,
-          "win_gte": 0.174,
+          "win_gte": 0.194,
           "stop_lte": -0.08
         },
         "50.0": {
           "cost": 0.41,
-          "win_gte": 0.42,
+          "win_gte": 0.44,
           "stop_lte": -0.18
         }
       }
