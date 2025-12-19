@@ -23,6 +23,7 @@ import hashlib
 import logging
 import asyncio
 import threading
+import warnings
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Dict, List, Optional, Any, Tuple
@@ -43,7 +44,9 @@ except ImportError:
 try:
     import requests
     from bs4 import BeautifulSoup
+    from bs4 import GuessedAtParserWarning
     SCRAPING_AVAILABLE = True
+    warnings.filterwarnings("ignore", category=GuessedAtParserWarning)
 except ImportError:
     SCRAPING_AVAILABLE = False
     print("[WISDOM SCANNER] requests/beautifulsoup4 not installed")
@@ -89,6 +92,7 @@ class ScannerConfig:
     scan_interval_hours: int = 24
     articles_per_civilization: int = 50
     max_article_length: int = 10000
+    wikipedia_timeout_seconds: float = 20.0
     
     # Sources
     enable_wikipedia: bool = True
@@ -218,7 +222,7 @@ class WikipediaSource(WisdomSource):
         super().__init__(config)
         if WIKIPEDIA_AVAILABLE:
             wikipedia.set_lang("en")
-    
+
     async def fetch_content(self, topic: str) -> Optional[str]:
         """Fetch Wikipedia article content"""
         if not WIKIPEDIA_AVAILABLE:
@@ -227,13 +231,17 @@ class WikipediaSource(WisdomSource):
                 logger.warning("Wikipedia API not available - install with: pip install wikipedia")
                 WikipediaSource._wikipedia_warned = True
             return None
-        
+
+        loop = asyncio.get_event_loop()
+
         try:
             # Run synchronous wikipedia call in thread pool
-            loop = asyncio.get_event_loop()
-            page = await loop.run_in_executor(
-                None, 
-                lambda: wikipedia.page(topic, auto_suggest=True)
+            page = await asyncio.wait_for(
+                loop.run_in_executor(
+                    None,
+                    lambda: wikipedia.page(topic, auto_suggest=True)
+                ),
+                timeout=self.config.wikipedia_timeout_seconds
             )
             
             content = page.content[:self.config.max_article_length]
@@ -244,9 +252,12 @@ class WikipediaSource(WisdomSource):
             # Try first option
             if e.options:
                 try:
-                    page = await loop.run_in_executor(
-                        None,
-                        lambda: wikipedia.page(e.options[0])
+                    page = await asyncio.wait_for(
+                        loop.run_in_executor(
+                            None,
+                            lambda: wikipedia.page(e.options[0])
+                        ),
+                        timeout=self.config.wikipedia_timeout_seconds
                     )
                     self.record_request(True)
                     return page.content[:self.config.max_article_length]
@@ -254,12 +265,19 @@ class WikipediaSource(WisdomSource):
                     pass
             self.record_request(False)
             return None
-            
+
         except wikipedia.exceptions.PageError:
             logger.debug(f"Wikipedia page not found: {topic}")
             self.record_request(False)
             return None
-            
+
+        except asyncio.TimeoutError:
+            logger.warning(
+                f"Wikipedia fetch timed out for {topic} after {self.config.wikipedia_timeout_seconds} seconds"
+            )
+            self.record_request(False)
+            return None
+
         except Exception as e:
             logger.error(f"Wikipedia fetch error for {topic}: {e}")
             self.record_request(False)
