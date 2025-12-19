@@ -205,6 +205,10 @@ class MyceliumStateAggregator:
             'patriots_deployed': 0,
             'patriot_kills': 0,
             'patriot_profit': 0.0,
+            'patriot_ready_exits': 0,
+            'patriot_ready_symbols': [],
+            'scout_net_profit_signals': [],
+            'patriot_status': {},
             
             # 🧠 Adaptive Learning State
             'momentum_success_rate': {},
@@ -313,6 +317,24 @@ class MyceliumStateAggregator:
             self.unified_state['patriots_deployed'] = len(getattr(patriots, 'scouts', {}))
             self.unified_state['patriot_kills'] = getattr(patriots, 'total_kills', 0)
             self.unified_state['patriot_profit'] = getattr(patriots, 'total_profit', 0.0)
+            self.unified_state['patriot_ready_exits'] = 0
+            self.unified_state['patriot_ready_symbols'] = []
+            self.unified_state['scout_net_profit_signals'] = []
+            if hasattr(patriots, 'get_net_profit_ready_positions'):
+                try:
+                    ready_signals = patriots.get_net_profit_ready_positions()
+                    self.unified_state['patriot_ready_exits'] = len(ready_signals)
+                    self.unified_state['patriot_ready_symbols'] = [
+                        s.get('symbol') for s in ready_signals if s.get('symbol')
+                    ]
+                    self.unified_state['scout_net_profit_signals'] = ready_signals
+                except Exception:
+                    pass
+            if hasattr(patriots, 'get_network_status'):
+                try:
+                    self.unified_state['patriot_status'] = patriots.get_network_status()
+                except Exception:
+                    self.unified_state['patriot_status'] = {}
             
             # Patriots may have their own cascade state
             patriot_cascade = getattr(patriots, 'cascade_factor', 1.0)
@@ -379,6 +401,11 @@ class MyceliumStateAggregator:
                     self.unified_state['cascade_factor'],
                     self.unified_state['kappa_t'],
                     self.unified_state['lighthouse_gamma']
+                )
+            if hasattr(scanner, 'sync_from_scouts'):
+                scanner.sync_from_scouts(
+                    self.unified_state.get('scout_net_profit_signals', []),
+                    self.unified_state.get('patriot_status', {})
                 )
         
         # Push cascade state to Patriots
@@ -453,6 +480,7 @@ class MyceliumStateAggregator:
    ☘️ IRISH PATRIOTS:
       • Deployed: {state['patriots_deployed']} | Kills: {state['patriot_kills']}
       • Profit: ${state['patriot_profit']:.4f}
+      • Net-ready exits: {state['patriot_ready_exits']} | Symbols: {', '.join(state.get('patriot_ready_symbols', [])[:3])}
 
    ⛏️ CASCADE AMPLIFIER:
       • CASCADE: {state['cascade_factor']:.1f}x | κt: {state['kappa_t']:.2f}
@@ -488,6 +516,9 @@ class MyceliumStateAggregator:
             'profit': self.unified_state['total_pnl'] + self.unified_state['patriot_profit'],
             'streak': self.unified_state['consecutive_kills'],
             'targets': self.unified_state['active_targets'] + self.unified_state['patriots_deployed'],
+            'patriot_ready_exits': self.unified_state.get('patriot_ready_exits', 0),
+            'patriot_ready_symbols': self.unified_state.get('patriot_ready_symbols', []),
+            'scout_net_profit_signals': self.unified_state.get('scout_net_profit_signals', []),
         }
     
     def hunt_quickest_exit(self, price_getter=None) -> Optional[Dict]:
@@ -507,6 +538,7 @@ class MyceliumStateAggregator:
         quickest_exit = None
         quickest_eta = float('inf')
         ready_exits = []
+        ready_keys = set()
         
         # 🎯 Hunt from Kill Scanner
         if 'scanner' in self.systems:
@@ -527,13 +559,42 @@ class MyceliumStateAggregator:
         # 🇮🇪 Hunt from Irish Patriots
         if 'patriots' in self.systems:
             patriots = self.systems['patriots']
+            ready_signals = []
+            if hasattr(patriots, 'get_net_profit_ready_positions'):
+                try:
+                    ready_signals = patriots.get_net_profit_ready_positions(price_getter=price_getter)
+                    if ready_signals:
+                        self.unified_state['patriot_ready_exits'] = len(ready_signals)
+                        self.unified_state['patriot_ready_symbols'] = [
+                            s.get('symbol') for s in ready_signals if s.get('symbol')
+                        ]
+                        self.unified_state['scout_net_profit_signals'] = ready_signals
+                        for signal in ready_signals:
+                            if signal.get('scout_id') is not None:
+                                ready_keys.add(('patriots', signal['scout_id']))
+                            ready_exits.append({
+                                **signal,
+                                'source': 'patriots',
+                                'status': 'KILL_NOW',
+                                'eta': signal.get('eta', 0),
+                            })
+                    else:
+                        self.unified_state['patriot_ready_exits'] = 0
+                        self.unified_state['patriot_ready_symbols'] = []
+                        self.unified_state['scout_net_profit_signals'] = []
+                except Exception:
+                    ready_signals = []
             if hasattr(patriots, 'hunt_quickest_exit'):
                 try:
                     patriot_exit = patriots.hunt_quickest_exit(price_getter)
                     if patriot_exit:
                         patriot_exit['source'] = 'patriots'
                         if patriot_exit.get('status') == 'KILL_NOW':
-                            ready_exits.append(patriot_exit)
+                            exit_key = patriot_exit.get('scout_id')
+                            if ('patriots', exit_key) not in ready_keys:
+                                ready_exits.append(patriot_exit)
+                                if exit_key is not None:
+                                    ready_keys.add(('patriots', exit_key))
                         elif patriot_exit.get('eta', float('inf')) < quickest_eta:
                             quickest_eta = patriot_exit['eta']
                             quickest_exit = patriot_exit
@@ -1479,7 +1540,9 @@ class ActiveKillScanner:
         self.kappa_t: float = 1.0  # Efficiency factor
         self.lighthouse_gamma: float = 0.5  # Planetary coherence
         self.consecutive_kills: int = 0  # Kill streak
-        
+        self.scout_ready_signals: List[Dict[str, Any]] = []  # Ready exits from scouts
+        self.scout_network_status: Dict[str, Any] = {}
+
         # Load learned parameters
         self._load_learned_state()
         
@@ -1543,6 +1606,16 @@ class ActiveKillScanner:
                 
         except Exception as e:
             pass  # Silent fail on save
+
+    def sync_from_scouts(
+        self,
+        ready_signals: List[Dict[str, Any]],
+        status: Optional[Dict[str, Any]] = None
+    ) -> None:
+        """Ingest scout exit signals so the sniper acts on their metrics."""
+        self.scout_ready_signals = ready_signals or []
+        if status is not None:
+            self.scout_network_status = status
     
     def sync_from_cascade_amplifier(self, cascade_factor: float, kappa_t: float, 
                                      lighthouse_gamma: float):
@@ -1975,6 +2048,17 @@ class ActiveKillScanner:
             f"║  ⛏️ {kappa_str} | 🔥 {streak_str} | 🧠 Avg Kill: {self.avg_kill_time:.0f}s              ║",
             "╠══════════════════════════════════════════════════════════════════════════╣",
         ]
+
+        # Surface scout intelligence about ready exits
+        if self.scout_ready_signals:
+            scout_symbols = [
+                f"{s.get('symbol', '?')}@{s.get('exchange', '?')}" for s in self.scout_ready_signals[:3]
+            ]
+            summary = ", ".join(scout_symbols)
+            lines.append(
+                f"║  🤝 Scouts ready exits: {len(self.scout_ready_signals):<3} | {summary[:42]:<42}║"
+            )
+            lines.append("╠══════════════════════════════════════════════════════════════════════════╣")
         
         # Sort by probability (highest first)
         sorted_targets = sorted(

@@ -933,7 +933,50 @@ class PatriotScoutNetwork:
             'kappa_t': self.kappa_t,
             'consecutive_kills': self.consecutive_kills,
         }
-    
+
+    def get_net_profit_ready_positions(self, price_getter: Optional[Callable] = None) -> List[Dict[str, Any]]:
+        """
+        Return scouts that already meet the penny profit (net after fees) threshold.
+
+        If a price_getter is provided, refresh each scout's P&L first so the
+        sniper acts on the latest metrics from the field.
+        """
+        ready: List[Dict[str, Any]] = []
+
+        for scout_id, scout in self.scouts.items():
+            if scout.status not in ["deployed", "engaged"]:
+                continue
+
+            try:
+                if price_getter and scout.symbol:
+                    price = price_getter(scout.exchange, scout.symbol)
+                    if price:
+                        scout.update_price(price)
+            except Exception:
+                # If we cannot refresh price, fall back to last known metrics
+                pass
+
+            if scout.target_profit_usd <= 0:
+                continue
+
+            if scout.unrealized_pnl >= scout.target_profit_usd:
+                hold_time = time.time() - scout.entry_time if scout.entry_time > 0 else 0
+                ready.append({
+                    'scout_id': scout_id,
+                    'symbol': scout.symbol,
+                    'exchange': scout.exchange,
+                    'pnl': scout.unrealized_pnl,
+                    'threshold': scout.target_profit_usd,
+                    'net_after_fees': True,
+                    'eta': 0,
+                    'probability': scout.probability_of_kill,
+                    'cycles': scout.cycles_held,
+                    'hold_time': hold_time,
+                })
+
+        ready.sort(key=lambda x: x.get('pnl', 0), reverse=True)
+        return ready
+
     def hunt_quickest_exit(self, price_getter=None) -> Optional[Dict]:
         """
         🎯⚡ PROACTIVE EXIT HUNTER - Patriots seek FASTEST net profit exit ⚡🎯
@@ -953,9 +996,19 @@ class PatriotScoutNetwork:
         quickest_kill = None
         quickest_eta = float('inf')
         ready_kills = []
-        
+
+        # First, pull any scouts already at net profit (after fees)
+        ready_signals = self.get_net_profit_ready_positions(price_getter=price_getter)
+        ready_by_id = {signal['scout_id'] for signal in ready_signals}
+        for signal in ready_signals:
+            ready_kills.append({**signal, 'status': 'KILL_NOW'})
+
         for scout_id, scout in self.scouts.items():
             if scout.status != 'deployed':
+                continue
+
+            # Already accounted for via ready_signals
+            if scout_id in ready_by_id:
                 continue
             
             try:
