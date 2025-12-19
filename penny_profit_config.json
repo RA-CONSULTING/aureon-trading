@@ -9,32 +9,32 @@
       "thresholds": {
         "5.0": {
           "cost": 0.025,
-          "win_gte": 0.035,
+          "win_gte": 0.055,
           "stop_lte": -0.015
         },
         "7.5": {
           "cost": 0.038,
-          "win_gte": 0.048,
+          "win_gte": 0.068,
           "stop_lte": -0.02
         },
         "10.0": {
           "cost": 0.05,
-          "win_gte": 0.06,
+          "win_gte": 0.08,
           "stop_lte": -0.025
         },
         "15.0": {
           "cost": 0.075,
-          "win_gte": 0.085,
+          "win_gte": 0.105,
           "stop_lte": -0.035
         },
         "20.0": {
           "cost": 0.1,
-          "win_gte": 0.11,
+          "win_gte": 0.13,
           "stop_lte": -0.045
         },
         "50.0": {
           "cost": 0.25,
-          "win_gte": 0.26,
+          "win_gte": 0.28,
           "stop_lte": -0.1
         }
       }
@@ -79,22 +79,22 @@
       "thresholds": {
         "10.0": {
           "cost": 0.044,
-          "win_gte": 0.054,
+          "win_gte": 0.074,
           "stop_lte": -0.025
         },
         "15.0": {
           "cost": 0.066,
-          "win_gte": 0.076,
+          "win_gte": 0.096,
           "stop_lte": -0.035
         },
         "20.0": {
           "cost": 0.088,
-          "win_gte": 0.098,
+          "win_gte": 0.118,
           "stop_lte": -0.045
         },
         "50.0": {
           "cost": 0.22,
-          "win_gte": 0.23,
+          "win_gte": 0.25,
           "stop_lte": -0.1
         }
       }
@@ -104,27 +104,27 @@
       "thresholds": {
         "5.0": {
           "cost": 0.035,
-          "win_gte": 0.045,
+          "win_gte": 0.065,
           "stop_lte": -0.02
         },
         "7.5": {
           "cost": 0.053,
-          "win_gte": 0.063,
+          "win_gte": 0.083,
           "stop_lte": -0.03
         },
         "10.0": {
           "cost": 0.07,
-          "win_gte": 0.08,
+          "win_gte": 0.1,
           "stop_lte": -0.04
         },
         "20.0": {
           "cost": 0.14,
-          "win_gte": 0.15,
+          "win_gte": 0.17,
           "stop_lte": -0.07
         },
         "50.0": {
           "cost": 0.35,
-          "win_gte": 0.36,
+          "win_gte": 0.38,
           "stop_lte": -0.16
         }
       }
