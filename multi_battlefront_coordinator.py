@@ -127,13 +127,22 @@ except ImportError:
     PENNY_AVAILABLE = False
 
 
+# Configure logging with fallback for Windows file locking
+handlers = [logging.StreamHandler(sys.stdout)]
+try:
+    handlers.append(logging.FileHandler('multi_battlefront.log'))
+except PermissionError:
+    # If file is locked (common on Windows), try a unique name
+    import os
+    pid = os.getpid()
+    handlers.append(logging.FileHandler(f'multi_battlefront_{pid}.log'))
+except Exception as e:
+    print(f"⚠️  Could not setup file logging: {e}")
+
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s [%(levelname)s] %(message)s',
-    handlers=[
-        logging.FileHandler('multi_battlefront.log'),
-        logging.StreamHandler(sys.stdout)
-    ]
+    handlers=handlers
 )
 logger = logging.getLogger(__name__)
 
