@@ -12755,6 +12755,77 @@ class AureonKrakenEcosystem:
     # ─────────────────────────────────────────────────────────
     # Equity Management
     # ─────────────────────────────────────────────────────────
+    
+    def _get_exchange_cash_balance(self, exchange: str) -> float:
+        """
+        ⚔️ MULTI-BATTLEFIELD: Get available cash balance for a specific exchange.
+        
+        Returns the liquid cash available for trading (not crypto holdings).
+        This is critical for preventing "Insufficient funds" spam on exchanges
+        that have been drained.
+        """
+        try:
+            # Cache check - don't hammer APIs
+            cache_key = f"cash_{exchange}"
+            cache_ttl = 30  # 30 second cache
+            
+            if hasattr(self, '_exchange_cash_cache'):
+                cached = self._exchange_cash_cache.get(cache_key, {})
+                if cached and time.time() - cached.get('ts', 0) < cache_ttl:
+                    return cached.get('balance', 0.0)
+            else:
+                self._exchange_cash_cache = {}
+            
+            cash_balance = 0.0
+            base = CONFIG.get('BASE_CURRENCY', 'GBP')
+            stable_coins = {'USD', 'USDC', 'USDT', 'EUR', 'GBP', 'ZUSD', 'ZEUR', 'ZGBP', 'FDUSD', 'BUSD'}
+            
+            # Get balances for this specific exchange
+            try:
+                if exchange == 'kraken':
+                    balances = self.client.kraken.get_balance() if self.client.kraken else {}
+                elif exchange == 'binance':
+                    balances = self.client.binance.get_balance() if self.client.binance else {}
+                elif exchange == 'capital':
+                    balances = self.client.capital.get_balance() if self.client.capital else {}
+                elif exchange == 'alpaca':
+                    balances = self.client.alpaca.get_balance() if self.client.alpaca else {}
+                else:
+                    balances = {}
+            except Exception as e:
+                logger.debug(f"Could not get {exchange} balance: {e}")
+                balances = {}
+            
+            # Sum up stable coins / cash equivalents
+            for asset, amount in balances.items():
+                try:
+                    amount = float(amount)
+                except:
+                    continue
+                if amount <= 0:
+                    continue
+                    
+                asset_upper = asset.upper().replace('Z', '').lstrip('X')
+                if asset_upper in stable_coins:
+                    # Convert to base currency if needed
+                    if asset_upper != base:
+                        try:
+                            converted = self.client.convert_to_quote(exchange, asset_upper, amount, base)
+                            cash_balance += converted if converted > 0 else amount
+                        except:
+                            # Fallback: assume roughly 1:1 for stable coins
+                            cash_balance += amount
+                    else:
+                        cash_balance += amount
+            
+            # Cache the result
+            self._exchange_cash_cache[cache_key] = {'balance': cash_balance, 'ts': time.time()}
+            
+            return cash_balance
+            
+        except Exception as e:
+            logger.debug(f"Error getting {exchange} cash balance: {e}")
+            return 0.0
 
     def compute_total_equity(self) -> Tuple[float, float, Dict[str, float]]:
         """Return (total_equity, cash_in_base, holdings_map)
@@ -17531,54 +17602,76 @@ class AureonKrakenEcosystem:
         
         🔒 FIXED: Now properly checks CASH BALANCE (liquid funds) not total equity.
         Total equity includes value of crypto holdings - you can't use that to buy more!
+        
+        ⚔️ MULTI-BATTLEFIELD: Routes to exchange with funds using smart detection.
+        Will try alternate exchanges if primary has no funds.
         """
         try:
-            # Strategy: use the exchange from ticker cache or default to primary
-            exchange = 'kraken'  # default
+            # ⚔️ MULTI-BATTLEFIELD: Detect correct exchange for this symbol
+            primary_exchange = self._detect_exchange_for_symbol(symbol, None)
             
-            # Calculate proper position size based on available capital
-            # Default to minimum viable order size ($6 to exceed Kraken's $5 min)
-            min_order_usd = 6.0  # Just above Kraken's $5 minimum
+            # ⚔️ Get battlefield config
+            battlefields = CONFIG.get('BATTLEFIELDS', {})
             
-            # 🔒 FIX: Use CASH BALANCE (actual liquid GBP) not capital_pool.get_available()
-            # capital_pool includes value of crypto holdings, but you can't spend that!
-            available_capital = 0.0
-            try:
-                # Use actual cash balance - this is what you can actually spend
-                available_capital = getattr(self, 'cash_balance_gbp', 0.0) or 0.0
-                # Fallback: if cash balance seems stale, refresh from exchange
-                if available_capital <= 0:
-                    _, cash, _ = self.compute_total_equity()
-                    available_capital = cash
-            except Exception:
-                available_capital = 0.0
+            # Build list of exchanges to try (primary first, then fallbacks)
+            exchanges_to_try = [primary_exchange]
             
-            # 🛑 BLOCK orders if insufficient funds - don't spam Kraken with doomed requests
-            if side.lower() == 'buy' and available_capital < min_order_usd:
-                logger.debug(f"Blocking {symbol} buy - insufficient CASH: £{available_capital:.2f} < £{min_order_usd:.2f} min")
-                return {"error": "insufficient_funds", "symbol": symbol, "side": side, "available": available_capital}
+            # Add fallback exchanges that could support this symbol
+            symbol_upper = symbol.upper()
+            is_crypto = not any(p in symbol_upper for p in ['US500', 'US100', 'UK100', 'DE40', 'OIL', 'GOLD'])
             
-            # Use 2% of available capital per trade, minimum $6
-            position_size_usd = max(min_order_usd, available_capital * 0.02)
+            if is_crypto:
+                # Crypto can go to Binance, Kraken, or Alpaca
+                for ex in ['binance', 'kraken', 'alpaca']:
+                    if ex != primary_exchange and battlefields.get(ex, {}).get('enabled', False):
+                        exchanges_to_try.append(ex)
+            else:
+                # CFDs go to Capital.com only
+                if 'capital' not in exchanges_to_try:
+                    exchanges_to_try.append('capital')
             
-            # Cap at reasonable amount and what's actually available
-            position_size_usd = min(position_size_usd, 50.0, available_capital * 0.95)
+            # Try each exchange until one works
+            for exchange in exchanges_to_try:
+                bf_config = battlefields.get(exchange, {})
+                
+                if not bf_config.get('enabled', True):
+                    continue
+                
+                # Get exchange-specific minimum from config
+                min_order_usd = bf_config.get('min_trade_usd', 6.0)
+                
+                # 🔒 Get CASH BALANCE for this specific exchange
+                available_capital = self._get_exchange_cash_balance(exchange)
+                
+                # Skip this exchange if insufficient funds for BUY
+                if side.lower() == 'buy' and available_capital < min_order_usd:
+                    logger.debug(f"Skipping {exchange} for {symbol} - insufficient funds: £{available_capital:.2f}")
+                    continue
+                
+                # Use 2% of available capital per trade, minimum $6
+                position_size_usd = max(min_order_usd, available_capital * 0.02)
+                
+                # Cap at reasonable amount and what's actually available
+                position_size_usd = min(position_size_usd, 50.0, available_capital * 0.95)
+                
+                # Skip if we can't meet minimums
+                if side.lower() == 'buy' and position_size_usd < min_order_usd:
+                    continue
+                
+                # 🎯 Found an exchange with funds - place order
+                logger.debug(f"Routing {symbol} to {exchange} (£{available_capital:.2f} available)")
+                
+                result = self.trade_confirmation.submit_order(
+                    exchange=exchange,
+                    symbol=symbol,
+                    side=side.upper(),
+                    quote_qty=position_size_usd
+                )
+                
+                return result
             
-            # 🛑 Final sanity check - don't proceed if we can't meet minimums
-            if side.lower() == 'buy' and position_size_usd < min_order_usd:
-                logger.debug(f"Blocking {symbol} buy - position size {position_size_usd:.2f} below minimum {min_order_usd:.2f}")
-                return {"error": "insufficient_funds", "symbol": symbol, "side": side, "available": available_capital}
-            
-            # Use quote_qty (notional) instead of base quantity
-            # This ensures we meet minimum notional requirements
-            result = self.trade_confirmation.submit_order(
-                exchange=exchange,
-                symbol=symbol,
-                side=side.upper(),  # 'buy' -> 'BUY'
-                quote_qty=position_size_usd  # Use notional value, not base qty
-            )
-            
-            return result
+            # No exchange had sufficient funds
+            return {"error": "insufficient_funds", "symbol": symbol, "side": side, "available": 0, "tried": exchanges_to_try}
             
         except Exception as e:
             return {"error": str(e), "symbol": symbol, "side": side, "qty": qty}
