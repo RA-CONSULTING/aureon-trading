@@ -623,13 +623,23 @@ class MyceliumNetwork:
         """
         Simple decision: Does this trade grow net profit?
         If yes → TAKE IT. If no → SKIP IT.
+        
+        THE LOGIC:
+        - Below $0.03 target → NEVER take (not worth fees)
+        - At $0.03 → Need 70% confidence
+        - At $0.05 → Need 60% confidence (profit justifies risk)
+        - At $0.10+ → Need only 50% confidence (big profit = GO!)
         """
         # Must meet minimum profit target
         if expected_net_profit < self.MIN_PROFIT_TARGET:
             return False
         
-        # Higher profit = lower confidence needed
-        required_confidence = 0.7 - (expected_net_profit * 0.1)
+        # Higher profit = lower confidence needed (more aggressive scaling)
+        # Every $0.01 above min target reduces required confidence by 5%
+        profit_above_min = expected_net_profit - self.MIN_PROFIT_TARGET
+        confidence_reduction = profit_above_min * 5  # 5% per $0.01
+        
+        required_confidence = 0.7 - confidence_reduction
         required_confidence = max(required_confidence, 0.5)  # Never go below 50%
         
         return confidence >= required_confidence
