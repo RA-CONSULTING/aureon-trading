@@ -18281,6 +18281,19 @@ class AureonKrakenEcosystem:
                 self.save_state()
                 logger.debug(f"State saved at iteration {self.iteration}")
                 
+                # 🐕 WATCHDOG HEARTBEAT: Write timestamp file for external monitoring
+                try:
+                    with open('.aureon_heartbeat', 'w') as hb:
+                        hb.write(json.dumps({
+                            'timestamp': time.time(),
+                            'iteration': self.iteration,
+                            'positions': len(self.positions),
+                            'equity': self.total_equity_gbp,
+                            'status': 'RUNNING'
+                        }))
+                except Exception:
+                    pass  # Non-critical
+                
                 time.sleep(interval)
                 
         except KeyboardInterrupt:
