@@ -1796,6 +1796,14 @@ class EcosystemBrainBridge:
                         'miner_connected': False,
                     }
             
+            # 🌐 INJECT UNIVERSAL MARKET INTELLIGENCE INTO BRAIN CONTEXT
+            if UNIVERSAL_MARKET_INTEL:
+                universal_context = UNIVERSAL_MARKET_INTEL.get_brain_context()
+                quantum_context['universal_market'] = universal_context
+                quantum_context['market_sentiment'] = universal_context.get('market_sentiment', 0.5)
+                quantum_context['total_assets_scanned'] = universal_context.get('universal_market_scanned', 0)
+                quantum_context['sector_trends'] = universal_context.get('sector_trends', {})
+            
             # Run brain cycle with quantum context
             result = brain.run_cycle(quantum_context=quantum_context)
             
@@ -7655,7 +7663,258 @@ class PortfolioHeatManager:
 
 
 # ═══════════════════════════════════════════════════════════════
-# 🎛️ ADAPTIVE FILTER THRESHOLDS
+# � UNIVERSAL MARKET INTELLIGENCE - SCANS ALL ASSETS
+# ═══════════════════════════════════════════════════════════════
+
+class UniversalMarketIntelligence:
+    """
+    🌐 Scans ALL trading assets across ALL exchanges and feeds aggregated
+    intelligence back to the brain for decision-making.
+    
+    Unlike the opportunity scanner which filters aggressively, this
+    component analyzes EVERY asset to build a complete market picture.
+    
+    Feeds to Brain:
+    - Sector momentum (which sectors are moving)
+    - Exchange health (which exchanges have most activity)
+    - Correlation clusters (which assets move together)
+    - Liquidity distribution (where the money is flowing)
+    - Anomaly detection (unusual patterns across all assets)
+    - Global sentiment (aggregate bullish/bearish across market)
+    """
+    
+    UNIVERSAL_AVAILABLE = True  # Flag for system interconnection
+    
+    def __init__(self, thought_bus: Optional['ThoughtBus'] = None):
+        self.bus = thought_bus
+        self.last_scan_time = 0.0
+        self.scan_interval = 30.0  # Full scan every 30 seconds
+        
+        # Aggregated market intelligence
+        self.market_intelligence: Dict[str, Any] = {
+            'total_assets_scanned': 0,
+            'exchange_health': {},
+            'sector_momentum': {},
+            'liquidity_distribution': {},
+            'global_sentiment': 0.5,  # 0=bearish, 1=bullish
+            'correlation_clusters': [],
+            'anomalies_detected': [],
+            'top_movers': [],
+            'bottom_movers': [],
+            'volume_leaders': [],
+            'timestamp': 0,
+        }
+        
+        # Connect to thought bus
+        if self.bus:
+            self.bus.register_node('universal_intel', self._on_thought)
+            
+        logger.info("🌐 Universal Market Intelligence initialized - Scans ALL assets")
+        
+    def _on_thought(self, thought: Dict[str, Any]):
+        """Receive thoughts from other components."""
+        pass  # We mainly emit, don't need to receive
+        
+    def scan_all_assets(self, ticker_cache: Dict[str, Dict]) -> Dict[str, Any]:
+        """
+        Scan ALL assets in the ticker cache without filtering.
+        
+        Args:
+            ticker_cache: Complete ticker cache from all exchanges
+            
+        Returns:
+            Comprehensive market intelligence dict
+        """
+        now = time.time()
+        if (now - self.last_scan_time) < self.scan_interval and self.market_intelligence['total_assets_scanned'] > 0:
+            return self.market_intelligence  # Return cached
+            
+        self.last_scan_time = now
+        
+        if not ticker_cache:
+            return self.market_intelligence
+            
+        # Reset counters
+        exchange_counts: Dict[str, int] = {}
+        exchange_volumes: Dict[str, float] = {}
+        exchange_avg_change: Dict[str, List[float]] = {}
+        
+        all_changes: List[float] = []
+        all_volumes: List[Tuple[str, float]] = []
+        all_movers: List[Tuple[str, float]] = []
+        
+        # Sector detection (by symbol suffix)
+        sector_momentum: Dict[str, List[float]] = {
+            'USD_PAIRS': [],    # Pairs ending in USD/USDT/USDC
+            'BTC_PAIRS': [],    # Pairs ending in BTC
+            'ETH_PAIRS': [],    # Pairs ending in ETH
+            'FOREX': [],        # GBP, EUR, JPY pairs
+            'STOCKS': [],       # From Capital.com/Alpaca
+            'OTHER': [],
+        }
+        
+        bullish_count = 0
+        bearish_count = 0
+        anomalies = []
+        
+        # Scan EVERY asset
+        for symbol, data in ticker_cache.items():
+            try:
+                source = data.get('source', 'unknown')
+                change = float(data.get('change24h', 0))
+                volume = float(data.get('volume', 0))
+                price = float(data.get('price', 0))
+                
+                # Track per exchange
+                exchange_counts[source] = exchange_counts.get(source, 0) + 1
+                exchange_volumes[source] = exchange_volumes.get(source, 0) + volume
+                if source not in exchange_avg_change:
+                    exchange_avg_change[source] = []
+                exchange_avg_change[source].append(change)
+                
+                # Track overall
+                all_changes.append(change)
+                all_volumes.append((symbol, volume))
+                all_movers.append((symbol, change))
+                
+                # Categorize by sector
+                if any(symbol.endswith(s) for s in ['USD', 'USDT', 'USDC', 'FDUSD', 'BUSD', 'TUSD']):
+                    sector_momentum['USD_PAIRS'].append(change)
+                elif symbol.endswith('BTC'):
+                    sector_momentum['BTC_PAIRS'].append(change)
+                elif symbol.endswith('ETH'):
+                    sector_momentum['ETH_PAIRS'].append(change)
+                elif any(symbol.endswith(s) for s in ['GBP', 'EUR', 'JPY', 'CHF', 'AUD', 'CAD']):
+                    sector_momentum['FOREX'].append(change)
+                elif source in ['capital', 'alpaca']:
+                    sector_momentum['STOCKS'].append(change)
+                else:
+                    sector_momentum['OTHER'].append(change)
+                    
+                # Sentiment tracking
+                if change > 0.5:
+                    bullish_count += 1
+                elif change < -0.5:
+                    bearish_count += 1
+                    
+                # Anomaly detection (extreme moves)
+                if abs(change) > 15:
+                    anomalies.append({
+                        'symbol': symbol,
+                        'change': change,
+                        'source': source,
+                        'type': 'extreme_move'
+                    })
+                    
+            except Exception:
+                continue
+                
+        # Calculate aggregates
+        total_scanned = len(ticker_cache)
+        
+        # Exchange health
+        exchange_health = {}
+        for ex in exchange_counts:
+            avg_ch = sum(exchange_avg_change.get(ex, [0])) / max(1, len(exchange_avg_change.get(ex, [1])))
+            exchange_health[ex] = {
+                'count': exchange_counts.get(ex, 0),
+                'total_volume': exchange_volumes.get(ex, 0),
+                'avg_change': round(avg_ch, 2),
+                'health': 'ACTIVE' if exchange_counts.get(ex, 0) > 100 else 'LIMITED'
+            }
+            
+        # Sector momentum aggregates
+        sector_agg = {}
+        for sector, changes in sector_momentum.items():
+            if changes:
+                sector_agg[sector] = {
+                    'count': len(changes),
+                    'avg_change': round(sum(changes) / len(changes), 2),
+                    'trend': 'BULLISH' if sum(changes) / len(changes) > 0.5 else 'BEARISH' if sum(changes) / len(changes) < -0.5 else 'NEUTRAL'
+                }
+                
+        # Global sentiment (0-1 scale)
+        total_with_sentiment = bullish_count + bearish_count
+        global_sentiment = bullish_count / max(1, total_with_sentiment)
+        
+        # Top/Bottom movers
+        sorted_movers = sorted(all_movers, key=lambda x: x[1], reverse=True)
+        top_movers = sorted_movers[:10]
+        bottom_movers = sorted_movers[-10:]
+        
+        # Volume leaders
+        sorted_volumes = sorted(all_volumes, key=lambda x: x[1], reverse=True)
+        volume_leaders = sorted_volumes[:10]
+        
+        # Liquidity distribution
+        total_vol = sum(v for _, v in all_volumes)
+        liquidity_dist = {}
+        for ex in exchange_volumes:
+            liquidity_dist[ex] = round(exchange_volumes[ex] / max(1, total_vol) * 100, 1)
+            
+        # Update market intelligence
+        self.market_intelligence = {
+            'total_assets_scanned': total_scanned,
+            'exchange_health': exchange_health,
+            'sector_momentum': sector_agg,
+            'liquidity_distribution': liquidity_dist,
+            'global_sentiment': round(global_sentiment, 3),
+            'sentiment_label': 'BULLISH' if global_sentiment > 0.55 else 'BEARISH' if global_sentiment < 0.45 else 'NEUTRAL',
+            'anomalies_detected': anomalies[:5],  # Top 5 anomalies
+            'top_movers': [{'symbol': s, 'change': round(c, 2)} for s, c in top_movers],
+            'bottom_movers': [{'symbol': s, 'change': round(c, 2)} for s, c in bottom_movers],
+            'volume_leaders': [{'symbol': s, 'volume': round(v, 2)} for s, v in volume_leaders],
+            'timestamp': now,
+        }
+        
+        # Emit to thought bus
+        if self.bus:
+            self.bus.emit('universal_intel', 'universal_scan_complete', {
+                'total_assets': total_scanned,
+                'sentiment': self.market_intelligence['sentiment_label'],
+                'anomalies': len(anomalies)
+            })
+            
+        return self.market_intelligence
+        
+    def get_brain_context(self) -> Dict[str, Any]:
+        """
+        Get market intelligence formatted for brain consumption.
+        
+        Returns:
+            Dict with brain-ready market context
+        """
+        intel = self.market_intelligence
+        
+        return {
+            'universal_market_scanned': intel['total_assets_scanned'],
+            'market_sentiment': intel.get('global_sentiment', 0.5),
+            'market_sentiment_label': intel.get('sentiment_label', 'NEUTRAL'),
+            'dominant_exchange': max(intel.get('exchange_health', {}).items(), key=lambda x: x[1].get('count', 0), default=('none', {}))[0],
+            'liquidity_concentration': intel.get('liquidity_distribution', {}),
+            'sector_trends': {k: v.get('trend', 'NEUTRAL') for k, v in intel.get('sector_momentum', {}).items()},
+            'anomaly_count': len(intel.get('anomalies_detected', [])),
+            'top_mover': intel.get('top_movers', [{}])[0].get('symbol', 'N/A'),
+            'scan_fresh': (time.time() - intel.get('timestamp', 0)) < 60,
+        }
+        
+    def get_status(self) -> Dict[str, Any]:
+        """Get current scanner status."""
+        return {
+            'available': self.UNIVERSAL_AVAILABLE,
+            'last_scan': self.last_scan_time,
+            'total_scanned': self.market_intelligence['total_assets_scanned'],
+            'sentiment': self.market_intelligence.get('sentiment_label', 'UNKNOWN'),
+            'exchanges_active': list(self.market_intelligence.get('exchange_health', {}).keys()),
+        }
+
+
+# Global instance
+UNIVERSAL_MARKET_INTEL: Optional[UniversalMarketIntelligence] = None
+
+
+# ═══════════════════════════════════════════════════════════════
+# �🎛️ ADAPTIVE FILTER THRESHOLDS
 # ═══════════════════════════════════════════════════════════════
 
 class AdaptiveFilterThresholds:
@@ -11111,6 +11370,12 @@ class AureonKrakenEcosystem:
         # 🛡️ Cognitive immune system (autonomous antivirus)
         self.immune_system = CognitiveImmuneSystem(self, self.thought_bus, self.state_aggregator)
         print("   🛡️ Cognitive Immune System armed (self-healing enabled)")
+
+        # 🌐 Universal Market Intelligence - Scans ALL assets without filtering
+        global UNIVERSAL_MARKET_INTEL
+        self.universal_intel = UniversalMarketIntelligence(self.thought_bus)
+        UNIVERSAL_MARKET_INTEL = self.universal_intel
+        print("   🌐 Universal Market Intelligence active (scans ALL assets → brain)")
 
         # 📰 News Feed (World News API integration)
         self.news_feed = None
@@ -14740,6 +15005,14 @@ class AureonKrakenEcosystem:
                     self.mycelium.add_signal(symbol, max(0, min(1, signal)))
                 except:
                     continue
+            
+            # 🌐 UNIVERSAL MARKET INTELLIGENCE: Scan ALL assets and feed to brain
+            if hasattr(self, 'universal_intel') and self.universal_intel:
+                market_intel = self.universal_intel.scan_all_assets(self.ticker_cache)
+                if market_intel.get('total_assets_scanned', 0) > 0:
+                    logger.info(f"🌐 Universal Intel: Scanned {market_intel['total_assets_scanned']} assets | "
+                              f"Sentiment: {market_intel.get('sentiment_label', 'N/A')} | "
+                              f"Anomalies: {len(market_intel.get('anomalies_detected', []))}")
                     
             return len(self.ticker_cache)
         except Exception as e:
