@@ -4950,6 +4950,9 @@ def kelly_criterion(win_rate: float, avg_win: float, avg_loss: float, safety_fac
         b = win/loss ratio (avg_win / avg_loss)
     
     Returns: Position size as fraction of balance (with safety factor applied)
+    
+    🔧 FIX: Returns minimum viable size (2%) when Kelly is negative/zero
+    to prevent complete trading halt during losing streaks.
     """
     if avg_loss <= 0 or win_rate <= 0 or win_rate >= 1:
         return 0.10  # Fallback to 10%
@@ -4959,6 +4962,12 @@ def kelly_criterion(win_rate: float, avg_win: float, avg_loss: float, safety_fac
     
     # Apply safety factor and bounds
     kelly_fraction = max(0, kelly_fraction) * safety_factor
+    
+    # 🔧 FIX: When Kelly says "don't trade" (win rate too low), use minimum viable size
+    # This prevents complete trading halt - let penny math be the final gate
+    if kelly_fraction <= 0.01:  # Kelly essentially says stop
+        kelly_fraction = 0.02   # 2% minimum - tiny positions to recover
+        
     return min(kelly_fraction, CONFIG['MAX_POSITION_SIZE'])
 
 
@@ -9979,7 +9988,13 @@ class PerformanceTracker:
         
         # Apply κt efficiency safely: trade as if larger but risk base sizing
         final_size = min(scaled_size * KT_EFFICIENCY, available_exposure, CONFIG['MAX_POSITION_SIZE'])
-        return max(0, final_size)
+        
+        # 🔧 FIX: Never return 0 - minimum viable size of 1% to keep trading
+        # Let other gates (penny math, available capital) be the actual blockers
+        if final_size < 0.01:
+            final_size = 0.01  # 1% minimum
+            
+        return max(0.01, final_size)
 
     def get_platform_summary(self) -> str:
         """Generate a summary of metrics by platform."""
