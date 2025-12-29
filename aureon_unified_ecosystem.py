@@ -4710,6 +4710,10 @@ class CognitiveImmuneSystem:
         self.predictions_made = 0
         self.predictions_correct = 0
         
+        # 🍄 MYCELIUM CONNECTION - Neural network for immune signals
+        self.mycelium = getattr(ecosystem, 'mycelium', None)
+        self._mycelium_signal_strength = 1.0  # How strongly immune affects mycelium
+        
         self.minds = {
             'Miner': self._miner_mind,
             'Risk': self._risk_mind,
@@ -4717,10 +4721,14 @@ class CognitiveImmuneSystem:
             'Bridge': self._bridge_mind,
             'NewsFeed': self._newsfeed_mind,
             'KnowledgeBase': self._knowledge_mind,
+            'Mycelium': self._mycelium_mind,  # 🍄 NEW: Mycelium neural network mind
         }
 
         if self.bus:
             self.bus.subscribe("system.error", self._on_fault_thought)
+            # 🍄 Subscribe to mycelium signals
+            self.bus.subscribe("mycelium.coherence", self._on_mycelium_signal)
+            self.bus.subscribe("mycelium.queen_decision", self._on_queen_decision)
 
     # ------------------------------------------------------------------
     # Event ingestion
@@ -4734,6 +4742,74 @@ class CognitiveImmuneSystem:
             'trace_id': thought.trace_id,
         }
         self.fault_memory.append(fault)
+
+    # ------------------------------------------------------------------
+    # 🍄 MYCELIUM SIGNAL HANDLERS - Neural network communication
+    # ------------------------------------------------------------------
+    def _on_mycelium_signal(self, thought: Thought) -> None:
+        """Receive coherence signals from mycelium network."""
+        payload = thought.payload if isinstance(thought.payload, dict) else {}
+        coherence = payload.get('coherence', 0.5)
+        
+        # Low coherence might indicate network instability
+        if coherence < 0.3:
+            self.fault_memory.append({
+                'ts': thought.ts,
+                'source': 'mycelium',
+                'error': f'Low network coherence: {coherence:.2f}',
+                'trace_id': thought.trace_id,
+            })
+    
+    def _on_queen_decision(self, thought: Thought) -> None:
+        """Receive Queen Neuron decisions from mycelium."""
+        payload = thought.payload if isinstance(thought.payload, dict) else {}
+        queen_signal = payload.get('signal', 0.0)
+        
+        # Strong negative queen signal might indicate systemic risk
+        if queen_signal < -0.7:
+            self.fault_memory.append({
+                'ts': thought.ts,
+                'source': 'mycelium_queen',
+                'error': f'Queen Neuron bearish alert: {queen_signal:.2f}',
+                'trace_id': thought.trace_id,
+            })
+    
+    def _broadcast_health_to_mycelium(self, health_score: float, status: str) -> None:
+        """
+        🍄 Send immune health signals INTO the mycelium network.
+        This allows the neural network to factor system health into trading decisions.
+        """
+        if not self.mycelium:
+            return
+        
+        try:
+            # Convert health to signal strength (-1 to 1)
+            # 100% health = +1.0 signal, 0% health = -1.0 signal
+            health_signal = (health_score - 50) / 50  # Maps 0-100 to -1 to +1
+            
+            # Add immune signal to mycelium network
+            self.mycelium.add_signal('IMMUNE_HEALTH', (health_signal + 1) / 2)  # Convert to 0-1
+            
+            # If we have full network, also notify hives
+            if hasattr(self.mycelium, 'full_network') and self.mycelium.full_network:
+                # Store immune state for queen neuron consideration
+                self.mycelium.full_network.immune_health = health_score
+                self.mycelium.full_network.immune_status = status
+            
+            # Publish to thought bus for other systems
+            if self.bus:
+                self.bus.publish(Thought(
+                    source="immune_system",
+                    topic="immune.health_broadcast",
+                    payload={
+                        'health_score': health_score,
+                        'status': status,
+                        'signal_strength': health_signal,
+                        'trend': self.health_trend,
+                    },
+                ))
+        except Exception as e:
+            logger.debug(f"Mycelium health broadcast error: {e}")
 
     # ------------------------------------------------------------------
     # 🧬 PROBABILITY MATRIX - Health Prediction Engine
@@ -4808,9 +4884,39 @@ class CognitiveImmuneSystem:
         knowledge_base = getattr(self.ecosystem, 'knowledge_base', None)
         scores['knowledge_base_healthy'] = 100 if knowledge_base else 50
         
-        # Calculate weighted average
-        total_weight = sum(self.HEALTH_WEIGHTS.values())
-        weighted_sum = sum(scores.get(k, 50) * w for k, w in self.HEALTH_WEIGHTS.items())
+        # 🍄 MYCELIUM NETWORK health - Neural coherence is critical!
+        if self.mycelium:
+            try:
+                network_coherence = self.mycelium.get_network_coherence()
+                scores['mycelium_coherence'] = network_coherence * 100  # 0-1 to 0-100
+                
+                # Queen neuron health (if available)
+                queen_signal = getattr(self.mycelium, 'queen_signal', 0.0)
+                # Extreme signals (-1 or +1) are fine, but erratic swings are bad
+                # For now, just check if queen exists and is responding
+                scores['queen_neuron_health'] = 100 if abs(queen_signal) <= 1.0 else 50
+                
+                # Hive count - more hives = healthier network
+                hive_count = getattr(self.mycelium, 'hive_count', 1)
+                scores['hive_vitality'] = min(100, hive_count * 33)  # 3 hives = 100
+            except Exception:
+                scores['mycelium_coherence'] = 50
+                scores['queen_neuron_health'] = 50
+                scores['hive_vitality'] = 50
+        else:
+            scores['mycelium_coherence'] = 0
+            scores['queen_neuron_health'] = 0
+            scores['hive_vitality'] = 0
+        
+        # Calculate weighted average (add mycelium weights)
+        mycelium_weights = {
+            'mycelium_coherence': 1.618,  # PHI - neural coherence is vital
+            'queen_neuron_health': 1.0,
+            'hive_vitality': 0.618,
+        }
+        all_weights = {**self.HEALTH_WEIGHTS, **mycelium_weights}
+        total_weight = sum(all_weights.values())
+        weighted_sum = sum(scores.get(k, 50) * w for k, w in all_weights.items())
         overall = weighted_sum / total_weight if total_weight > 0 else 50
         
         return overall, scores
@@ -4949,6 +5055,10 @@ class CognitiveImmuneSystem:
                     'status': status,
                     'faults': faults,
                 })
+        
+        # 🍄 STEP 4: Broadcast health to mycelium network (every scan)
+        # This allows the neural network to factor system health into trading
+        self._broadcast_health_to_mycelium(health_score, status)
 
     # ------------------------------------------------------------------
     # Fault analysis helpers
@@ -5009,6 +5119,34 @@ class CognitiveImmuneSystem:
             kb_errors = kb_metrics.get('errors', 0)
             if kb_errors >= 10:
                 faults.append({'code': 'KNOWLEDGE_API_ERRORS', 'detail': {'errors': kb_errors}})
+
+        # 🍄 MYCELIUM NETWORK health checks
+        if self.mycelium:
+            try:
+                # Network coherence check
+                coherence = self.mycelium.get_network_coherence()
+                if coherence < 0.3:
+                    faults.append({'code': 'LOW_MYCELIUM_COHERENCE', 'detail': {'coherence': coherence}})
+                
+                # Queen neuron stability check
+                queen_signal = getattr(self.mycelium, 'queen_signal', 0.0)
+                # Check if queen is giving extreme or erratic signals
+                if hasattr(self, '_last_queen_signal'):
+                    signal_change = abs(queen_signal - self._last_queen_signal)
+                    if signal_change > 1.5:  # Too much swing in one cycle
+                        faults.append({'code': 'QUEEN_NEURON_UNSTABLE', 'detail': {
+                            'current': queen_signal,
+                            'previous': self._last_queen_signal,
+                            'change': signal_change
+                        }})
+                self._last_queen_signal = queen_signal
+                
+                # Hive count check - if hives died, network is sick
+                hive_count = getattr(self.mycelium, 'hive_count', 1)
+                if hive_count == 0:
+                    faults.append({'code': 'MYCELIUM_NO_HIVES', 'detail': {'hive_count': 0}})
+            except Exception as e:
+                logger.debug(f"Mycelium health check error: {e}")
 
         # Thought-level faults
         recent_faults = [f for f in self.fault_memory if now - f['ts'] < 120]
@@ -5110,6 +5248,39 @@ class CognitiveImmuneSystem:
         
         return plan
 
+    def _mycelium_mind(self, faults: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """
+        🍄 Mycelium Neural Network mind - handles network coherence issues.
+        
+        The mycelium is the neural backbone of Aureon. When it's unhealthy,
+        trading decisions become unreliable.
+        """
+        plan: List[Dict[str, Any]] = []
+        
+        # Handle low network coherence
+        low_coherence_faults = [f for f in faults if 'coherence' in f.get('error', '').lower()]
+        if low_coherence_faults or any(f['code'] == 'LOW_MYCELIUM_COHERENCE' for f in faults):
+            plan.append({
+                'mind': 'Mycelium',
+                'action': 'STRENGTHEN_SYNAPSES',
+                'description': 'Reinforce mycelium neural connections to restore coherence',
+                'callable': self._heal_mycelium_coherence,
+                'auto_execute': True,
+            })
+        
+        # Handle queen neuron issues
+        queen_faults = [f for f in faults if 'queen' in f.get('source', '').lower()]
+        if queen_faults or any(f['code'] == 'QUEEN_NEURON_UNSTABLE' for f in faults):
+            plan.append({
+                'mind': 'Mycelium',
+                'action': 'STABILIZE_QUEEN',
+                'description': 'Reset queen neuron bias to restore collective decision making',
+                'callable': self._heal_queen_neuron,
+                'auto_execute': True,
+            })
+        
+        return plan
+
     # ------------------------------------------------------------------
     # Healing actions
     # ------------------------------------------------------------------
@@ -5165,6 +5336,70 @@ class CognitiveImmuneSystem:
             if hasattr(knowledge_base, 'cache'):
                 knowledge_base.cache.clear()
             logger.info("Knowledge base error counters reset, cache cleared")
+
+    def _heal_mycelium_coherence(self) -> None:
+        """
+        🍄 Strengthen mycelium neural connections to restore coherence.
+        
+        When the network becomes fragmented, we reinforce all synapses
+        with a small positive signal to rebuild connectivity.
+        """
+        if not self.mycelium:
+            return
+        
+        try:
+            # Strengthen all synapses with a small positive signal
+            for symbol, synapses in self.mycelium.synapses.items():
+                for synapse in synapses:
+                    synapse.strengthen(0.05)  # Small positive reinforcement
+            
+            # If full network exists, also strengthen hive synapses
+            if hasattr(self.mycelium, 'full_network') and self.mycelium.full_network:
+                for synapse in self.mycelium.full_network.hive_synapses:
+                    synapse.strengthen(0.05)
+            
+            logger.info("🍄 Mycelium synapses strengthened - coherence healing applied")
+            
+            # Broadcast healing to thought bus
+            if self.bus:
+                self.bus.publish(Thought(
+                    source="immune_system",
+                    topic="mycelium.healed",
+                    payload={'action': 'STRENGTHEN_SYNAPSES', 'strength': 0.05},
+                ))
+        except Exception as e:
+            logger.warning(f"Mycelium healing error: {e}")
+
+    def _heal_queen_neuron(self) -> None:
+        """
+        🍄👑 Stabilize the Queen Neuron's collective decision making.
+        
+        When the queen becomes erratic, we reset her bias toward neutral
+        to allow the hive to re-establish consensus.
+        """
+        if not self.mycelium:
+            return
+        
+        try:
+            if hasattr(self.mycelium, 'full_network') and self.mycelium.full_network:
+                # Reset queen's aggregated signal toward neutral
+                self.mycelium.queen_signal = 0.0
+                
+                # If the full network has a queen neuron, reset its bias
+                if hasattr(self.mycelium.full_network, 'queen') and self.mycelium.full_network.queen:
+                    self.mycelium.full_network.queen.bias = 0.0
+                
+                logger.info("🍄👑 Queen Neuron stabilized - bias reset to neutral")
+                
+                # Broadcast healing
+                if self.bus:
+                    self.bus.publish(Thought(
+                        source="immune_system",
+                        topic="mycelium.queen_healed",
+                        payload={'action': 'STABILIZE_QUEEN', 'new_bias': 0.0},
+                    ))
+        except Exception as e:
+            logger.warning(f"Queen neuron healing error: {e}")
 
     # ------------------------------------------------------------------
     # Execution + telemetry
