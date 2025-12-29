@@ -278,6 +278,12 @@ class CapitalClient:
         if not self.enabled:
             return {'price': 0.0, 'bid': 0.0, 'ask': 0.0}
 
+        # 🔥 Skip crypto symbols - Capital.com doesn't have them
+        CRYPTO_PATTERNS = ('USDT', 'USDC', 'BTC', 'ETH', 'XBT', 'SOL', 'ADA', 'XRP', 
+                           'DOGE', 'SHIB', 'AVAX', 'DOT', 'LINK', 'MATIC', 'UNI')
+        if any(p in symbol.upper() for p in CRYPTO_PATTERNS):
+            return {'price': 0.0, 'bid': 0.0, 'ask': 0.0}
+
         try:
             market = self._resolve_market(symbol) or {}
             epic = market.get('epic') or symbol
@@ -342,6 +348,16 @@ class CapitalClient:
         """Place a market order."""
         if not self.enabled:
             return {'error': 'Client disabled'}
+        
+        # 🔥 CRYPTO GUARD: Capital.com does NOT support direct crypto trading!
+        # Only CFDs (forex, indices, commodities, stocks) are supported
+        CRYPTO_PATTERNS = ('USDT', 'USDC', 'BTC', 'ETH', 'XBT', 'SOL', 'ADA', 'XRP', 
+                           'DOGE', 'SHIB', 'AVAX', 'DOT', 'LINK', 'MATIC', 'UNI',
+                           'ATOM', 'LTC', 'BCH', 'ETC', 'XLM', 'ALGO', 'FIL', 'VET')
+        symbol_upper = symbol.upper()
+        if any(pattern in symbol_upper for pattern in CRYPTO_PATTERNS):
+            logger.warning(f"Capital.com BLOCKED crypto order for {symbol} - use Binance/Kraken instead")
+            return {'error': 'Crypto not supported on Capital.com', 'rejected': True, 'reason': 'CRYPTO_NOT_SUPPORTED'}
         
         if self.dry_run:
             logger.info(f"[DRY RUN] Capital.com {side} {quantity} {symbol}")
