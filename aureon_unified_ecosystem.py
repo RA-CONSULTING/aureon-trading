@@ -2,6 +2,9 @@
 """
 🐙🌌 AUREON  ECOSYSTEM - THE UNIFIED TRADING ENGINE 🌌🐙
 ================================================================
+
+Version: 0.9.0-beta
+================================================================
 ONE DYNAMIC PYTHON FOR THE ENTIRE KRAKEN ECOSYSTEM
 
 Combines ALL the best from:
