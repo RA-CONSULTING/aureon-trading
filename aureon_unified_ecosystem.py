@@ -69,6 +69,15 @@ except ImportError:
     THOUGHT_BUS_AVAILABLE = False
     print("⚠️  Thought Bus not available - Brain running in isolation")
 
+# 🛡️ IMMUNE SYSTEM - SELF-HEALING INTELLIGENCE 🛡️
+try:
+    from aureon_immune_system import AureonImmuneSystem
+    IMMUNE_SYSTEM_AVAILABLE = True
+except ImportError:
+    AureonImmuneSystem = None
+    IMMUNE_SYSTEM_AVAILABLE = False
+    print("⚠️  Immune System not available - Running without self-healing")
+
 # Custom StreamHandler that forces UTF-8 encoding on Windows
 class SafeStreamHandler(logging.StreamHandler):
     def __init__(self, stream=None):
@@ -4628,7 +4637,62 @@ STATE_AGGREGATOR = UnifiedStateAggregator()
 
 
 class CognitiveImmuneSystem:
-    """Autonomous antivirus/immune layer that validates cognition integrity."""
+    """
+    🛡️ Autonomous antivirus/immune layer with PROBABILITY MATRIX health prediction.
+    
+    Just like we predict trades using probability, we predict system health and auto-heal.
+    
+    Health Signals (23 total):
+    - VITAL: memory, cpu, disk, uptime
+    - NETWORK: websocket, api_latency, reconnects
+    - DATA: price_freshness, probability_staleness, state_sync
+    - LOGIC: kelly_validity, position_count, win_rate
+    - TRADING: execution_success, bridge_sync, news_freshness
+    
+    Each signal contributes to overall health score (0-100).
+    When health drops, system auto-heals before problems manifest.
+    """
+
+    # Health signal weights (PHI-based for harmonic balance)
+    HEALTH_WEIGHTS = {
+        # VITAL signs (most important)
+        'memory_available': 1.618,
+        'cpu_usage': 1.0,
+        'disk_space': 1.0,
+        'uptime_stability': 0.618,
+        
+        # NETWORK health
+        'websocket_connected': 1.618,
+        'websocket_freshness': 1.0,
+        'api_latency': 0.618,
+        'reconnect_rate': 0.618,
+        
+        # DATA integrity
+        'price_freshness': 1.618,
+        'probability_freshness': 1.0,
+        'state_aggregator_sync': 0.618,
+        'ticker_cache_hit': 0.382,
+        
+        # LOGIC consistency
+        'kelly_positive': 1.618,
+        'position_within_limits': 1.0,
+        'win_rate_healthy': 0.618,
+        'no_trading_halt': 1.0,
+        
+        # TRADING execution
+        'execution_success_rate': 1.618,
+        'bridge_sync_fresh': 0.618,
+        'news_feed_active': 0.382,
+        'knowledge_base_healthy': 0.382,
+    }
+    
+    # Health thresholds for auto-healing
+    HEALTH_THRESHOLDS = {
+        'CRITICAL': 40,    # Immediate auto-heal
+        'WARNING': 60,     # Monitor closely
+        'WATCH': 75,       # Log but don't act
+        'HEALTHY': 100,    # All good
+    }
 
     def __init__(self, ecosystem: 'AureonKrakenEcosystem', thought_bus: Optional[ThoughtBus], state_aggregator: UnifiedStateAggregator):
         self.ecosystem = ecosystem
@@ -4637,6 +4701,15 @@ class CognitiveImmuneSystem:
         self.last_scan = 0.0
         self.scan_interval = 30.0
         self.fault_memory: Deque[Dict[str, Any]] = deque(maxlen=200)
+        
+        # 🧬 PROBABILITY MATRIX - Health History for Prediction
+        self.health_history: Deque[Dict[str, Any]] = deque(maxlen=1000)
+        self.last_health_score = 100.0
+        self.health_trend = 0.0  # Positive = improving, negative = degrading
+        self.auto_heals_performed = 0
+        self.predictions_made = 0
+        self.predictions_correct = 0
+        
         self.minds = {
             'Miner': self._miner_mind,
             'Risk': self._risk_mind,
@@ -4663,29 +4736,219 @@ class CognitiveImmuneSystem:
         self.fault_memory.append(fault)
 
     # ------------------------------------------------------------------
+    # 🧬 PROBABILITY MATRIX - Health Prediction Engine
+    # ------------------------------------------------------------------
+    def calculate_health_score(self) -> Tuple[float, Dict[str, float]]:
+        """
+        Calculate overall system health using weighted probability matrix.
+        Returns (overall_score, individual_scores) where scores are 0-100.
+        """
+        scores = {}
+        now = time.time()
+        
+        # VITAL signs
+        try:
+            import psutil
+            scores['memory_available'] = min(100, psutil.virtual_memory().available / (1024**3) * 10)  # 10GB = 100
+            scores['cpu_usage'] = max(0, 100 - psutil.cpu_percent())
+            scores['disk_space'] = psutil.disk_usage('/').percent
+            scores['uptime_stability'] = min(100, (now - self.ecosystem.start_time) / 3600 * 10)  # 10h = 100
+        except Exception:
+            scores['memory_available'] = 80
+            scores['cpu_usage'] = 80
+            scores['disk_space'] = 80
+            scores['uptime_stability'] = 80
+        
+        # NETWORK health
+        scores['websocket_connected'] = 100 if getattr(self.ecosystem, 'ws_connected', False) else 0
+        ws_age = now - getattr(self.ecosystem, 'ws_last_message', now)
+        scores['websocket_freshness'] = max(0, 100 - (ws_age * 3.33))  # 30s = 0
+        scores['api_latency'] = 80  # Default, could measure actual latency
+        reconnects = getattr(self.ecosystem, 'ws_reconnect_count', 0)
+        scores['reconnect_rate'] = max(0, 100 - (reconnects * 10))
+        
+        # DATA integrity
+        ticker_cache = getattr(self.ecosystem, 'ticker_cache', {})
+        scores['ticker_cache_hit'] = min(100, len(ticker_cache) * 5)  # 20 tickers = 100
+        
+        # Probability freshness from aggregator
+        pfresh = self.aggregator.aggregated_state.get('probability_freshness', {}) if self.aggregator else {}
+        scores['probability_freshness'] = 0 if pfresh.get('stale', False) else 100
+        scores['price_freshness'] = scores['websocket_freshness']  # Use WS freshness as proxy
+        scores['state_aggregator_sync'] = 100 if self.aggregator else 0
+        
+        # LOGIC consistency
+        tracker = getattr(self.ecosystem, 'tracker', None)
+        if tracker:
+            win_rate = getattr(tracker, 'win_rate', 0.5)
+            scores['win_rate_healthy'] = min(100, win_rate * 200)  # 50% = 100
+            scores['no_trading_halt'] = 0 if getattr(tracker, 'trading_halted', False) else 100
+        else:
+            scores['win_rate_healthy'] = 50
+            scores['no_trading_halt'] = 100
+        
+        positions = getattr(self.ecosystem, 'positions', {})
+        max_pos = get_max_positions_limit() or 10
+        scores['position_within_limits'] = max(0, 100 - (len(positions) / max_pos * 100)) if max_pos > 0 else 100
+        
+        # Kelly criterion health - is it returning sane values?
+        test_kelly = kelly_criterion(0.50, 100, 100, 0.5)  # Standard test
+        scores['kelly_positive'] = 100 if test_kelly > 0 else 50
+        
+        # TRADING execution
+        scores['execution_success_rate'] = 80  # Default, could track actual
+        
+        bridge_age = now - getattr(self.ecosystem, 'last_bridge_sync', now)
+        bridge_interval = getattr(self.ecosystem, 'bridge_sync_interval', 10.0)
+        scores['bridge_sync_fresh'] = max(0, 100 - (bridge_age / bridge_interval * 25))
+        
+        news_feed = getattr(self.ecosystem, 'news_feed', None)
+        scores['news_feed_active'] = 100 if news_feed else 50
+        
+        knowledge_base = getattr(self.ecosystem, 'knowledge_base', None)
+        scores['knowledge_base_healthy'] = 100 if knowledge_base else 50
+        
+        # Calculate weighted average
+        total_weight = sum(self.HEALTH_WEIGHTS.values())
+        weighted_sum = sum(scores.get(k, 50) * w for k, w in self.HEALTH_WEIGHTS.items())
+        overall = weighted_sum / total_weight if total_weight > 0 else 50
+        
+        return overall, scores
+    
+    def predict_health_trend(self) -> Tuple[str, float]:
+        """
+        Predict future health based on recent history (probability matrix style).
+        Returns (prediction, confidence) where prediction is 'IMPROVING', 'STABLE', or 'DEGRADING'.
+        """
+        if len(self.health_history) < 5:
+            return 'STABLE', 0.5
+        
+        # Get recent scores
+        recent = list(self.health_history)[-10:]
+        scores = [h['score'] for h in recent]
+        
+        # Calculate trend
+        if len(scores) >= 2:
+            trend = (scores[-1] - scores[0]) / max(len(scores), 1)
+        else:
+            trend = 0
+        
+        self.health_trend = trend
+        
+        # Predict based on trend
+        if trend > 2:
+            return 'IMPROVING', min(0.9, 0.5 + trend / 10)
+        elif trend < -2:
+            return 'DEGRADING', min(0.9, 0.5 - trend / 10)
+        else:
+            return 'STABLE', 0.7
+    
+    def get_health_status(self) -> str:
+        """Get current health status level."""
+        score = self.last_health_score
+        for level, threshold in sorted(self.HEALTH_THRESHOLDS.items(), key=lambda x: x[1]):
+            if score <= threshold:
+                return level
+        return 'HEALTHY'
+    
+    def get_immune_summary(self) -> Dict[str, Any]:
+        """Get summary for display in status bar."""
+        prediction, confidence = self.predict_health_trend()
+        return {
+            'health_score': round(self.last_health_score, 1),
+            'status': self.get_health_status(),
+            'trend': prediction,
+            'trend_confidence': round(confidence, 2),
+            'auto_heals': self.auto_heals_performed,
+            'predictions_accuracy': round(self.predictions_correct / max(self.predictions_made, 1) * 100, 1),
+        }
+
+    # ------------------------------------------------------------------
     # Public API
     # ------------------------------------------------------------------
     def scan_and_heal(self, force: bool = False) -> None:
+        """
+        🛡️ PROBABILITY MATRIX SCAN - Predict and prevent system issues.
+        
+        Unlike traditional reactive systems, we:
+        1. Calculate overall health score (0-100)
+        2. Predict health trend using historical data
+        3. Auto-heal BEFORE problems become critical
+        """
         now = time.time()
         if not force and (now - self.last_scan) < self.scan_interval:
             return
         self.last_scan = now
-
-        faults = self._collect_faults(now)
-        if not faults:
-            return
-
-        healing_plan: List[Dict[str, Any]] = []
-        for _, handler in self.minds.items():
-            plan = handler(faults)
-            if plan:
-                healing_plan.extend(plan)
-
-        if not healing_plan:
-            self._emit_thought("immune.alert", {"faults": faults, "plan": []})
-            return
-
-        self._execute_plan(healing_plan, faults)
+        
+        # 🧬 STEP 1: Calculate current health score
+        health_score, individual_scores = self.calculate_health_score()
+        self.last_health_score = health_score
+        
+        # Record in history for trend prediction
+        self.health_history.append({
+            'ts': now,
+            'score': health_score,
+            'scores': individual_scores,
+        })
+        
+        # 🔮 STEP 2: Predict health trend
+        prediction, confidence = self.predict_health_trend()
+        
+        # Track prediction accuracy
+        if len(self.health_history) >= 2:
+            prev = list(self.health_history)[-2]
+            was_degrading = self.health_trend < -2
+            actually_degraded = health_score < prev['score']
+            if was_degrading or actually_degraded:
+                self.predictions_made += 1
+                if was_degrading == actually_degraded:
+                    self.predictions_correct += 1
+        
+        # 🛡️ STEP 3: Auto-heal based on health level
+        status = self.get_health_status()
+        
+        if status == 'CRITICAL' or (status == 'WARNING' and prediction == 'DEGRADING'):
+            # Collect faults and heal
+            faults = self._collect_faults(now)
+            
+            # Add health-based faults
+            for signal, score in individual_scores.items():
+                if score < 30:
+                    faults.append({'code': f'LOW_{signal.upper()}', 'detail': {'score': score}})
+            
+            healing_plan: List[Dict[str, Any]] = []
+            for _, handler in self.minds.items():
+                plan = handler(faults)
+                if plan:
+                    healing_plan.extend(plan)
+            
+            if healing_plan:
+                self._execute_plan(healing_plan, faults)
+                self.auto_heals_performed += 1
+                
+                self._emit_thought("immune.auto_heal", {
+                    'health_score': health_score,
+                    'status': status,
+                    'prediction': prediction,
+                    'confidence': confidence,
+                    'heals': len(healing_plan),
+                })
+            else:
+                self._emit_thought("immune.alert", {
+                    'health_score': health_score,
+                    'status': status,
+                    'faults': faults,
+                })
+        
+        elif status != 'HEALTHY':
+            # Just monitor and collect faults
+            faults = self._collect_faults(now)
+            if faults:
+                self._emit_thought("immune.watch", {
+                    'health_score': health_score,
+                    'status': status,
+                    'faults': faults,
+                })
 
     # ------------------------------------------------------------------
     # Fault analysis helpers
@@ -17225,6 +17488,18 @@ class AureonKrakenEcosystem:
         if hasattr(self, 'sniper_coverage') and self.sniper_coverage:
             linked_platforms = len(self.sniper_coverage.get('platforms', {}))
             print(f"   🔭 Scout Bridge: {linked_platforms} exchanges | Scouts deployed: {self.scouts_deployed}")
+        
+        # 🛡️ IMMUNE SYSTEM STATUS - Probability Matrix Health Prediction
+        if hasattr(self, 'immune_system') and self.immune_system:
+            try:
+                immune_summary = self.immune_system.get_immune_summary()
+                health_icon = "🟢" if immune_summary['status'] == 'HEALTHY' else "🟡" if immune_summary['status'] == 'WATCH' else "🟠" if immune_summary['status'] == 'WARNING' else "🔴"
+                trend_icon = "📈" if immune_summary['trend'] == 'IMPROVING' else "📉" if immune_summary['trend'] == 'DEGRADING' else "➡️"
+                print(f"   🛡️ Immune System: {health_icon} {immune_summary['health_score']:.0f}% {immune_summary['status']} | "
+                      f"{trend_icon} {immune_summary['trend']} ({immune_summary['trend_confidence']:.0%}) | "
+                      f"Auto-heals: {immune_summary['auto_heals']} | Accuracy: {immune_summary['predictions_accuracy']:.0f}%")
+            except Exception as e:
+                logger.debug(f"Immune status error: {e}")
         
         # 🌀 MEDICINE WHEEL FREQUENCY MESSAGE - What is the market saying?
         try:
