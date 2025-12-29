@@ -1279,10 +1279,49 @@ class PatriotScoutDeployer:
             c['celtic_score'] = celtic_score
             analyzed.append(c)
         
-        # Sort by Celtic score
+        # 🏴⚔️ MULTI-BATTLEFIELD DISTRIBUTION: Ensure scouts spread across ALL exchanges!
+        # Don't let all scouts go to one exchange - we fight on ALL fronts!
         analyzed.sort(key=lambda x: x.get('celtic_score', 0), reverse=True)
         
-        return analyzed
+        # Group by exchange and round-robin select to ensure distribution
+        by_exchange = {}
+        for c in analyzed:
+            ex = c.get('source', c.get('exchange', 'binance')).lower()
+            if ex not in by_exchange:
+                by_exchange[ex] = []
+            by_exchange[ex].append(c)
+        
+        # Round-robin selection across exchanges
+        distributed = []
+        exchange_list = list(by_exchange.keys())
+        exchange_indices = {ex: 0 for ex in exchange_list}
+        
+        # Target per exchange based on config (default: spread evenly)
+        max_per_exchange = PATRIOT_CONFIG.get('MAX_SCOUTS_PER_EXCHANGE', 5)
+        exchange_counts = {ex: 0 for ex in exchange_list}
+        
+        while len(distributed) < len(analyzed):
+            added_this_round = False
+            for ex in exchange_list:
+                if exchange_counts[ex] >= max_per_exchange:
+                    continue
+                idx = exchange_indices[ex]
+                if idx < len(by_exchange[ex]):
+                    distributed.append(by_exchange[ex][idx])
+                    exchange_indices[ex] += 1
+                    exchange_counts[ex] += 1
+                    added_this_round = True
+            if not added_this_round:
+                break
+        
+        # Log distribution
+        final_counts = {}
+        for c in distributed[:20]:  # Top 20
+            ex = c.get('source', c.get('exchange', 'unknown')).lower()
+            final_counts[ex] = final_counts.get(ex, 0) + 1
+        print(f"   ⚔️ Scout distribution across battlefronts: {final_counts}")
+        
+        return distributed
     
     def check_and_exit_patriots(self) -> List[Tuple[PatriotScout, float]]:
         """
