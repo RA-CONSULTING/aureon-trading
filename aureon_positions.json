@@ -1,0 +1,38 @@
+{
+  "ADAUSD": {
+    "symbol": "ADAUSD",
+    "exchange": "kraken",
+    "quantity": 21.66377816,
+    "entry_price": 0.364,
+    "entry_value": 7.88561525024,
+    "entry_fee": 0.03154246100096,
+    "entry_time": "2025-12-29T13:39:56.103755",
+    "side": "BUY",
+    "status": "OPEN",
+    "registered_from_existing": true
+  },
+  "ANKRUSD": {
+    "symbol": "ANKRUSD",
+    "exchange": "kraken",
+    "quantity": 899.55022489,
+    "entry_price": 0.0064,
+    "entry_value": 5.757121439296,
+    "entry_fee": 0.023028485757184,
+    "entry_time": "2025-12-29T13:39:56.103755",
+    "side": "BUY",
+    "status": "OPEN",
+    "registered_from_existing": true
+  },
+  "PAXGUSD": {
+    "symbol": "PAXGUSD",
+    "exchange": "kraken",
+    "quantity": 0.00685849,
+    "entry_price": 4466.31,
+    "entry_value": 30.632142471900003,
+    "entry_fee": 0.12252856988760001,
+    "entry_time": "2025-12-29T13:39:56.103755",
+    "side": "BUY",
+    "status": "OPEN",
+    "registered_from_existing": true
+  }
+}
