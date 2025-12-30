@@ -13445,6 +13445,11 @@ class AureonKrakenEcosystem:
                 )
                 coherence, dominant_node = self.auris.compute_coherence(state)
                 
+                # 🍄 WIRE TO MYCELIUM: Inject signal into the network!
+                # This ensures the Mycelium is aware of this elite opportunity
+                if self.mycelium:
+                    self.mycelium.add_signal(symbol, coherence)
+                
                 elite_opp = {
                     'symbol': symbol,
                     'price': price,
