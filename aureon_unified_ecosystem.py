@@ -1148,6 +1148,15 @@ CONFIG = {
     'BASE_POSITION_SIZE': 0.04,     # Base size when Kelly disabled (reduced for smaller trades)
     'MAX_POSITION_SIZE': 0.25,      # Hard cap per trade
     'MAX_SYMBOL_EXPOSURE': 0.30,    # Max 30% in one symbol
+    
+    # 🎵 FREQUENCY-BASED TRADING (Historical Data Shows Clear Patterns!)
+    # 256_ROOT = 100% win rate (9/9), 432_NATURAL = 18% (3/17)
+    # Hour 14-15 = 90%+ WR, Hour 16-17 = 8% WR
+    'DEFAULT_FREQUENCY': 256,       # Default to 256 (ROOT) which wins, NOT 432 which loses!
+    'WINNING_FREQUENCIES': ['256_ROOT', '174_FOUNDATION', '528_LOVE'],  # Trade these
+    'LOSING_FREQUENCIES': ['432_NATURAL', '440_DISTORTION'],            # Avoid these
+    'WINNING_HOURS': [14, 15, 19, 0],  # Historical winners
+    'LOSING_HOURS': [16, 17, 23, 1],   # Historical losers - BLOCK!
     'MAX_DRAWDOWN_PCT': 50.0,       # Circuit breaker at 50% DD - raised to allow recovery trades
     'MIN_NETWORK_COHERENCE': 0.20,  # NEVER pause - always trade!
     
@@ -6081,13 +6090,33 @@ class AdaptiveLearningEngine:
             recommendation['confidence'] = 'low'
             
         # ═══ DETERMINE TRADE RECOMMENDATION ═══
-        # Only flag as "don't trade" if MULTIPLE warnings AND very low WR
-        if len(recommendation['warnings']) >= 3:  # Was 2 - be less cautious
+        # CRITICAL: Use the actual historical data to make decisions!
+        # Historical evidence: 256_ROOT = 100% WR, 432_NATURAL = 18% WR
+        # Historical evidence: Hour 14-15 = 90%+ WR, Hour 16-17 = 8% WR
+        
+        # Hard block on proven losing patterns
+        if band == '432_NATURAL' and freq_total >= 5:
+            freq_wr = freq_metrics.get('wins', 0) / freq_total
+            if freq_wr < 0.30:  # 432 historically loses - BLOCK
+                recommendation['should_trade'] = False
+                recommendation['warnings'].append(f"❌ BLOCKED: {band} = {freq_wr*100:.0f}% WR historically")
+                
+        # Hard block on losing hours
+        if hour_total >= 3:
+            hour_wr = hour_metrics.get('wins', 0) / hour_total
+            if hour_wr < 0.25:  # This hour loses - BLOCK
+                recommendation['should_trade'] = False
+                recommendation['warnings'].append(f"❌ BLOCKED: Hour {current_hour}:00 = {hour_wr*100:.0f}% WR")
+                
+        # Block on very low expected win rate (with confidence)
+        if recommendation['expected_win_rate'] < 0.40 and recommendation['confidence'] in ['high', 'medium']:
             recommendation['should_trade'] = False
-            recommendation['warnings'].append("❌ Multiple red flags - consider skipping")
-        elif recommendation['expected_win_rate'] < 0.15 and recommendation['confidence'] == 'high':  # Was 35% - way too conservative!
+            recommendation['warnings'].append(f"❌ Expected WR {recommendation['expected_win_rate']*100:.0f}% too low")
+            
+        # Block on multiple warnings
+        if len([w for w in recommendation['warnings'] if '❌' in w]) >= 2:
             recommendation['should_trade'] = False
-            recommendation['warnings'].append(f"❌ Expected WR {recommendation['expected_win_rate']*100:.0f}% very low")
+            recommendation['warnings'].append("❌ Multiple blocking factors")
             
         # ═══ HOLD TIME SUGGESTION ═══
         # If frequency band has high variance, suggest longer hold
@@ -14235,7 +14264,9 @@ class AureonKrakenEcosystem:
             
         # ═══ GET LEARNED RECOMMENDATION - 🪙 ADVISORY ONLY ═══
         try:
-            frequency = opp.get('frequency', CONFIG.get('DEFAULT_FREQUENCY', 432))
+            # CRITICAL: Historical data shows 256_ROOT = 100% WR, 432_NATURAL = 18% WR
+            # Default to 256 (ROOT) which historically wins, NOT 432 which loses!
+            frequency = opp.get('frequency', CONFIG.get('DEFAULT_FREQUENCY', 256))
             coherence = opp.get('coherence', 0.5)
             score = opp.get('score', 50)
             pnl_snapshot = self.get_pnl_snapshot()
@@ -14289,8 +14320,18 @@ class AureonKrakenEcosystem:
         except Exception as e:
             logger.debug(f"Could not get learned recommendation: {e}")
             
-        # 🪙 PENNY MODE: Always allow entry - the penny profit math is the real gate
-        # All wisdom systems are advisory - they help with sizing, not entry
+        # 🎯 SMART ENTRY: Combine penny math WITH historical learning
+        # Don't enter trades that historically lose - that's not advisory, that's data!
+        try:
+            if recommendation and not recommendation.get('should_trade', True):
+                expected_wr = recommendation.get('expected_win_rate', 0.5)
+                if expected_wr < 0.40:  # Historical WR too low
+                    logger.info(f"🚫 {symbol}: BLOCKED by historical data (WR={expected_wr*100:.0f}%)")
+                    return False
+        except Exception:
+            pass
+            
+        # Penny math is still the final gate for sizing, but we don't enter losing trades
         return True
     
     def _get_binance_lot_size(self, symbol: str) -> tuple:
