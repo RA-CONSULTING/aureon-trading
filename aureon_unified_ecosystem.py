@@ -13352,6 +13352,7 @@ class AureonKrakenEcosystem:
         winning_hours = CONFIG.get('WINNING_HOURS', [14, 15, 19, 0])
         losing_hours = CONFIG.get('LOSING_HOURS', [16, 17, 23, 1])
         winning_freqs = CONFIG.get('WINNING_FREQUENCIES', ['256_ROOT', '174_FOUNDATION', '528_LOVE'])
+        losing_freqs = CONFIG.get('LOSING_FREQUENCIES', ['432_NATURAL', '440_DISTORTION'])
         
         is_winning_hour = current_hour in winning_hours
         is_losing_hour = current_hour in losing_hours
@@ -13365,6 +13366,18 @@ class AureonKrakenEcosystem:
         if is_losing_hour and hour_total >= 3 and hour_wr < 0.35:
             print(f"   🚫 TURBO HUNT: Hour {current_hour}:00 is a loser ({hour_wr*100:.0f}% WR) - WAITING")
             return []
+        
+        # Known default win rates from historical data analysis:
+        # 256_ROOT = 100% (9/9), 432_NATURAL = 18% (3/17)
+        DEFAULT_FREQ_WR = {
+            '256_ROOT': 0.95,        # Known winner!
+            '174_FOUNDATION': 0.85,  # Sacred frequency
+            '528_LOVE': 0.85,        # Love frequency
+            '396_LIBERATION': 0.70,  # Good
+            '639_CONNECTION': 0.65,  # Decent
+            '432_NATURAL': 0.20,     # Known LOSER
+            '440_DISTORTION': 0.15,  # Worst
+        }
         
         # 🎯 HUNTING MODE - Look for elite setups
         if not self.ticker_cache:
@@ -13392,24 +13405,29 @@ class AureonKrakenEcosystem:
             hnc_freq = self.asset_frequencies.get(symbol, {}).get('frequency', 256)
             freq_band = ADAPTIVE_LEARNER._get_frequency_band(hnc_freq)
             
-            # Check frequency band win rate
+            # Check frequency band win rate - USE KNOWN DEFAULTS if no data!
             freq_metrics = ADAPTIVE_LEARNER.metrics_by_frequency.get(freq_band, {})
             freq_total = freq_metrics.get('wins', 0) + freq_metrics.get('losses', 0)
-            freq_wr = freq_metrics.get('wins', 0) / freq_total if freq_total > 0 else 0.6
+            if freq_total >= 3:
+                freq_wr = freq_metrics.get('wins', 0) / freq_total
+            else:
+                # Use known defaults from historical analysis
+                freq_wr = DEFAULT_FREQ_WR.get(freq_band, 0.50)
             
-            # 🚫 Skip losing frequencies
-            if freq_band in ['432_NATURAL', '440_DISTORTION'] and freq_total >= 3 and freq_wr < 0.35:
+            # 🚫 Skip KNOWN losing frequencies immediately
+            if freq_band in losing_freqs:
                 continue
                 
             # Calculate expected win rate
-            expected_wr = 0.5
-            if is_winning_hour and freq_band in winning_freqs:
-                # JACKPOT: Winning hour + Winning frequency
-                expected_wr = max(hour_wr, freq_wr) * 1.05  # 5% bonus for combo
-            elif freq_band in winning_freqs and freq_total >= 3:
-                expected_wr = freq_wr
-            elif is_winning_hour and hour_total >= 3:
-                expected_wr = hour_wr
+            expected_wr = freq_wr  # Start with frequency WR
+            
+            # BOOST for winning hour
+            if is_winning_hour:
+                expected_wr = min(0.99, expected_wr * 1.10)  # 10% boost in winning hours
+                
+            # BOOST for winning frequency
+            if freq_band in winning_freqs:
+                expected_wr = min(0.99, expected_wr * 1.05)  # 5% boost for known winners
                 
             # 🎯 ELITE THRESHOLD: Only take 85%+ expected WR
             min_hunt_wr = CONFIG.get('TURBO_HUNT_MIN_WR', 0.85)
