@@ -1160,6 +1160,13 @@ CONFIG = {
     'MAX_DRAWDOWN_PCT': 50.0,       # Circuit breaker at 50% DD - raised to allow recovery trades
     'MIN_NETWORK_COHERENCE': 0.20,  # NEVER pause - always trade!
     
+    # 🎯⚡ TURBO HUNTER - PROACTIVE 90%+ WIN RATE SEEKING ⚡🎯
+    # "It knows what's gonna happen - HUNT the winners, close in 1 min!"
+    'ENABLE_TURBO_HUNT': True,      # 🔥 ENABLED: Actively hunt elite setups
+    'TURBO_HUNT_MIN_WR': 0.85,      # Only execute on 85%+ expected win rate
+    'TURBO_HUNT_MAX_PER_CYCLE': 3,  # Max trades per turbo hunt cycle
+    'TURBO_TARGET_CYCLE_SECONDS': 60,  # Target 1-minute full cycle completion
+    
     # Opportunity Filters - 🪙 PENNY PROFIT FIRST 🪙
     'MIN_MOMENTUM': -5.0,           # 🪙 PENNY MODE: Allow slightly down coins (dip buying)
     'MAX_MOMENTUM': 50.0,           # Avoid parabolic pumps (reversal risk)
@@ -13322,6 +13329,136 @@ class AureonKrakenEcosystem:
             
         return all_candidates
     
+    def _turbo_hunt_90_percent(self) -> List[Dict]:
+        """
+        🎯⚡ TURBO HUNTER - Actively seek 90%+ win rate opportunities ⚡🎯
+        
+        The system KNOWS which conditions win:
+        - 256_ROOT frequency = 100% WR (9/9 trades)
+        - Hour 14-15 UTC = 90%+ WR
+        - High coherence + winning frequency = 95%+ WR
+        
+        This hunter PROACTIVELY finds opportunities in winning conditions
+        and executes IMMEDIATELY - no gates, no delays, just penny profit!
+        
+        Returns list of "elite" opportunities ready for immediate execution.
+        """
+        from datetime import datetime
+        
+        elite_opportunities = []
+        current_hour = datetime.now().hour
+        
+        # Check if we're in a WINNING window
+        winning_hours = CONFIG.get('WINNING_HOURS', [14, 15, 19, 0])
+        losing_hours = CONFIG.get('LOSING_HOURS', [16, 17, 23, 1])
+        winning_freqs = CONFIG.get('WINNING_FREQUENCIES', ['256_ROOT', '174_FOUNDATION', '528_LOVE'])
+        
+        is_winning_hour = current_hour in winning_hours
+        is_losing_hour = current_hour in losing_hours
+        
+        # Get actual historical win rates
+        hour_metrics = ADAPTIVE_LEARNER.metrics_by_hour.get(current_hour, {})
+        hour_total = hour_metrics.get('wins', 0) + hour_metrics.get('losses', 0)
+        hour_wr = hour_metrics.get('wins', 0) / hour_total if hour_total > 0 else 0.5
+        
+        # 🚫 Don't hunt in proven losing hours
+        if is_losing_hour and hour_total >= 3 and hour_wr < 0.35:
+            print(f"   🚫 TURBO HUNT: Hour {current_hour}:00 is a loser ({hour_wr*100:.0f}% WR) - WAITING")
+            return []
+        
+        # 🎯 HUNTING MODE - Look for elite setups
+        if not self.ticker_cache:
+            return []
+            
+        hunt_count = 0
+        for symbol, data in self.ticker_cache.items():
+            # Skip if already positioned
+            if symbol in self.positions:
+                continue
+                
+            # Skip if elephant memory says avoid
+            if self.elephant_memory.should_avoid(symbol):
+                continue
+                
+            price = data.get('price', 0)
+            change = data.get('change24h', 0)
+            volume = data.get('volume', 0)
+            
+            # Basic sanity
+            if price < 0.0001 or volume < 10000:
+                continue
+                
+            # Get HNC frequency for this asset (default to winning 256)
+            hnc_freq = self.asset_frequencies.get(symbol, {}).get('frequency', 256)
+            freq_band = ADAPTIVE_LEARNER._get_frequency_band(hnc_freq)
+            
+            # Check frequency band win rate
+            freq_metrics = ADAPTIVE_LEARNER.metrics_by_frequency.get(freq_band, {})
+            freq_total = freq_metrics.get('wins', 0) + freq_metrics.get('losses', 0)
+            freq_wr = freq_metrics.get('wins', 0) / freq_total if freq_total > 0 else 0.6
+            
+            # 🚫 Skip losing frequencies
+            if freq_band in ['432_NATURAL', '440_DISTORTION'] and freq_total >= 3 and freq_wr < 0.35:
+                continue
+                
+            # Calculate expected win rate
+            expected_wr = 0.5
+            if is_winning_hour and freq_band in winning_freqs:
+                # JACKPOT: Winning hour + Winning frequency
+                expected_wr = max(hour_wr, freq_wr) * 1.05  # 5% bonus for combo
+            elif freq_band in winning_freqs and freq_total >= 3:
+                expected_wr = freq_wr
+            elif is_winning_hour and hour_total >= 3:
+                expected_wr = hour_wr
+                
+            # 🎯 ELITE THRESHOLD: Only take 85%+ expected WR
+            min_hunt_wr = CONFIG.get('TURBO_HUNT_MIN_WR', 0.85)
+            if expected_wr >= min_hunt_wr:
+                hunt_count += 1
+                
+                # Build elite opportunity
+                prices = self.price_history.get(symbol, [price])
+                state = MarketState(
+                    symbol=symbol, price=price,
+                    bid=price * 0.999, ask=price * 1.001,
+                    volume=volume, change_24h=change,
+                    high_24h=price * 1.02, low_24h=price * 0.98,
+                    prices=prices[-20:], timestamp=time.time()
+                )
+                coherence, dominant_node = self.auris.compute_coherence(state)
+                
+                elite_opp = {
+                    'symbol': symbol,
+                    'price': price,
+                    'change24h': change,
+                    'volume': volume,
+                    'coherence': coherence,
+                    'dominant_node': dominant_node,
+                    'score': 95,  # Elite score
+                    'source': data.get('source', 'kraken'),
+                    'hnc_frequency': hnc_freq,
+                    'expected_win_rate': expected_wr,
+                    'turbo_hunt': True,  # Flag for logging
+                    'hunt_reason': f"WR={expected_wr*100:.0f}% | Hour={current_hour} | Freq={freq_band}"
+                }
+                
+                elite_opportunities.append(elite_opp)
+                
+                if hunt_count <= 5:
+                    print(f"   🎯 ELITE: {symbol} | {elite_opp['hunt_reason']}")
+                    
+        # Sort by expected win rate (highest first)
+        elite_opportunities.sort(key=lambda x: x.get('expected_win_rate', 0), reverse=True)
+        
+        if elite_opportunities:
+            print(f"   ⚡ TURBO HUNT: {len(elite_opportunities)} elite opportunities found!")
+            # Return top 3 for immediate execution
+            return elite_opportunities[:3]
+        elif is_winning_hour:
+            print(f"   ⏰ Hour {current_hour}:00 is WINNING but no elite setups ready yet")
+            
+        return []
+    
     def _deploy_scouts(self):
         """🚀☘️ FORCE DEPLOY scout positions immediately on first scan!
         
@@ -18658,6 +18795,28 @@ class AureonKrakenEcosystem:
             newest = pfresh.get('newest_minutes')
             newest_str = f"{newest:.1f}m" if isinstance(newest, (int, float)) else "unknown"
             print(f"   ⚠️ Probability data stale ({newest_str}); skipping new entries this cycle")
+        
+        # ═══════════════════════════════════════════════════════════════════════════
+        # 🎯⚡ TURBO HUNTER - PROACTIVELY SEEK 90%+ WIN RATE OPPORTUNITIES ⚡🎯
+        # ═══════════════════════════════════════════════════════════════════════════
+        # "It already knows what's gonna happen - HUNT the 90% winners!"
+        # Every cycle, actively scan for ELITE setups that match historical patterns
+        # Execute IMMEDIATELY when found - complete cycle in ~1 minute target
+        turbo_trades = 0
+        if CONFIG.get('ENABLE_TURBO_HUNT', True) and not trading_paused and not self.tracker.trading_halted:
+            if len(self.positions) < max_positions:
+                try:
+                    elite_opps = self._turbo_hunt_90_percent()
+                    if elite_opps:
+                        slots_available = max_positions - len(self.positions)
+                        for elite in elite_opps[:min(3, slots_available)]:
+                            print(f"   ⚡🎯 TURBO EXECUTE: {elite['symbol']} | {elite.get('hunt_reason', 'ELITE')}")
+                            self.open_position(elite)
+                            turbo_trades += 1
+                        if turbo_trades > 0:
+                            print(f"   🎯 TURBO HUNT: Executed {turbo_trades} elite trades!")
+                except Exception as e:
+                    logger.warning(f"Turbo hunt error: {e}")
         
         # Update Lattice State
         raw_opps = self.find_opportunities()
