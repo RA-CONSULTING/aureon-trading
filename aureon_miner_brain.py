@@ -132,7 +132,7 @@ class SandboxEvolution:
     454 generations of learning discovered:
     - Optimal coherence thresholds
     - Position sizing
-    - Profit taking & stop loss levels
+    - Profit taking & loss-guard thresholds
     - Market volatility sweet spots
     
     These parameters are LIVE LOADED from the sandbox learning file,
@@ -151,7 +151,7 @@ class SandboxEvolution:
         "max_volatility": 3.00,          # 🎯 RAISED: Allow more volatile markets
         "position_size_pct": 0.122,      # 12.2% of capital per trade
         "take_profit_pct": 1.82,         # Let winners run to 1.82%
-        "stop_loss_pct": 1.43,           # Wide stop at 1.43%
+        "stop_loss_pct": 1.43,           # Loss-guard threshold reference (not a forced-loss exit)
         "hold_cycles_max": 64,           # Patience - hold up to 64 cycles
         "use_maker_orders": False,       # Taker orders (evolved preference)
         "penny_sniper_mode": True,       # 🎯 NEW: Bypass filters for penny profits
@@ -334,7 +334,7 @@ class SandboxEvolution:
                 f"   Volatility: {self.params['min_volatility']:.2f}%-{self.params['max_volatility']:.2f}%\n"
                 f"   Position: {self.params['position_size_pct']:.1%}\n"
                 f"   Take Profit: {self.params['take_profit_pct']:.2f}%\n"
-                f"   Stop Loss: {self.params['stop_loss_pct']:.2f}%")
+                f"   Loss Guard: {self.params['stop_loss_pct']:.2f}%")
 
 
 # Global sandbox evolution instance
@@ -2759,7 +2759,7 @@ class StrategicWarfareLibrary:
         {"text": "The general who wins makes many calculations before the battle.", "trading": "Do your analysis BEFORE the trade. Emotion during execution = death."},
         
         # Chapter 2: Waging War
-        {"text": "There is no instance of a country having benefited from prolonged warfare.", "trading": "Quick trades, tight stops. Don't marry your positions."},
+        {"text": "There is no instance of a country having benefited from prolonged warfare.", "trading": "Quick trades, tight filters. Don't chase; take only net-profitable exits."},
         {"text": "In war, then, let your great object be victory, not lengthy campaigns.", "trading": "Take profits. The goal is NET profit, not being right."},
         
         # Chapter 3: Attack by Stratagem
@@ -2822,7 +2822,7 @@ class StrategicWarfareLibrary:
         
         # Survival
         {"text": "The first duty is to survive. Dead guerrillas win no wars.", "trading": "CAPITAL PRESERVATION. You can't trade if you're blown up."},
-        {"text": "Retreat is not defeat. Live to fight another day.", "trading": "Stop losses are survival. Accept small losses to avoid catastrophic ones."},
+        {"text": "Retreat is not defeat. Live to fight another day.", "trading": "Survival is sizing + selectivity. Use loss thresholds as warnings, not automatic exits; prefer net-penny wins and avoid forced-loss sells."},
         {"text": "The movement that cannot adapt will die.", "trading": "Markets change. Your strategy must evolve or perish."},
         
         # Morale & Psychology
@@ -5191,16 +5191,18 @@ class NarrativeEngine:
             talk.append(f"   ✅ Environment: {fng_class.upper()}")
         else:
             talk.append("   🤔 Insufficient data for strong conviction.")
-            talk.append("   🤔 Recommend: Smaller position sizes, tight stops.")
+            talk.append("   🤔 Posture: Reduce size, raise entry standards.")
+            talk.append("   🤔 Execute only when net-after-costs penny objective is viable and approved.")
         
         # Learning directive
         talk.append("\n📚 **LEARNING DIRECTIVE**")
         if fng < 30:
-            talk.append("   → Prioritize CONTRARIAN strategies (buy fear)")
+            talk.append("   → Prioritize CONTRARIAN setups that still clear net-penny-after-costs viability")
+            talk.append("   → Require probability matrix approval; avoid forced-loss exits")
         elif fng > 70:
-            talk.append("   → Prioritize DEFENSIVE strategies (take profits)")
+            talk.append("   → Prioritize DEFENSIVE harvesting (take net pennies quickly; avoid chasing)")
         else:
-            talk.append("   → Prioritize MOMENTUM strategies (follow trend)")
+            talk.append("   → Prioritize high-probability penny hits (trend-following only when net-penny viable)")
         
         talk.append("\n" + "=" * 70)
         talk.append("🧠 \"Don't believe the hype. Question everything. Trade the truth.\"")
@@ -5395,7 +5397,7 @@ class MinerBrain:
         print(f"   Volatility Sweet Spot: {guidance['volatility_range'][0]:.2f}% - {guidance['volatility_range'][1]:.2f}%")
         print(f"   Position Size: {guidance['position_size_pct']:.1f}% of capital")
         print(f"   Take Profit Target: {guidance['take_profit_pct']:.2f}%")
-        print(f"   Stop Loss Limit: {guidance['stop_loss_pct']:.2f}%")
+        print(f"   Loss Guard Reference: {guidance['stop_loss_pct']:.2f}% (not forced)")
         print(f"   Max Hold Cycles: {guidance['max_hold_cycles']}")
         print(f"   Prefer Maker Orders: {'Yes' if guidance['prefer_maker'] else 'No'}")
         
@@ -5579,10 +5581,10 @@ class MinerBrain:
         for insight in dreams['key_insights']:
             print(f"      {insight}")
             
-        # Get prepared response for current conditions (0% change since we're at live price)
+        # Prepared response lookup for the current Fear & Greed at a 0% change baseline.
         prepared = self.dream_engine.get_prepared_response(0.0, current_fng)
         if prepared:
-            print(f"\n   🎯 PRE-COMPUTED RESPONSE FOR CURRENT CONDITIONS:")
+            print(f"\n   🎯 PRE-COMPUTED RESPONSE (BASELINE 0% CHANGE):")
             print(f"      Action: {prepared['action']}")
             print(f"      Reasoning: {prepared['reasoning']}")
 
@@ -6294,7 +6296,7 @@ class MinerBrain:
                 print(f"   → Penny TP Target: ${targets['take_profit_price']:,.2f} (+{targets['take_profit_pct']:.3f}%)")
             else:
                 print(f"   → Take Profit Target: ${targets['take_profit_price']:,.2f} (+{targets['take_profit_pct']:.2f}%)")
-                print(f"   → Stop Loss Target: ${targets['stop_loss_price']:,.2f} (-{targets['stop_loss_pct']:.2f}%)")
+                print(f"   → Loss Guard Reference: ${targets['stop_loss_price']:,.2f} (-{targets['stop_loss_pct']:.2f}%)")
         if ira_alignment:
             print("   IRA Training Insight:")
             print(
