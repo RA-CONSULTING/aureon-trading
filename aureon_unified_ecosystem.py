@@ -13475,6 +13475,34 @@ class AureonKrakenEcosystem:
         
         if elite_opportunities:
             print(f"   ⚡ TURBO HUNT: {len(elite_opportunities)} elite opportunities found!")
+            
+            # 🍄 MYCELIUM INJECTION: Tell the network about these elite finds!
+            # This ensures Harvester, Sniper, and Brain are all aware
+            try:
+                if self.mycelium:
+                    for elite in elite_opportunities[:3]:
+                        self.mycelium.add_signal(elite['symbol'], elite['coherence'])
+                        # Propagate high probability to wake up the hive
+                        self.mycelium.propagate({elite['symbol']: 0.95})
+                        print(f"   🍄 Mycelium notified: {elite['symbol']} is a TURBO TARGET")
+            except Exception as e:
+                logger.warning(f"Mycelium injection failed: {e}")
+                
+            # 🧠 BRAIN INJECTION: Publish thought to wake up consciousness
+            try:
+                if THOUGHT_BUS_AVAILABLE and THOUGHT_BUS:
+                    THOUGHT_BUS.publish(Thought(
+                        source="turbo_hunter",
+                        topic="opportunity.elite_found",
+                        payload={
+                            "count": len(elite_opportunities),
+                            "top_symbol": elite_opportunities[0]['symbol'],
+                            "win_rate": elite_opportunities[0]['expected_win_rate']
+                        }
+                    ))
+            except Exception:
+                pass
+
             # Return top 3 for immediate execution
             return elite_opportunities[:3]
         elif is_winning_hour:
