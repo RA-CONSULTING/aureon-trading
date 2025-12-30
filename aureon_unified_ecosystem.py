@@ -1103,6 +1103,18 @@ CONFIG = {
     'TRAILING_ACTIVATION_PCT': 0.8,         # Activate at 0.8% profit (was 0.5% - lock in more profit first)
     'TRAILING_DISTANCE_PCT': 0.5,           # Trail 0.5% behind peak (was 0.3% - less whipsaw)
     'USE_ATR_TRAILING': True,               # Use ATR for dynamic trailing
+
+    # 🦾 ONE GOAL AGGRESSION MODE
+    # When enabled, entry gating is heavily biased toward TAKING any opportunity
+    # that can plausibly hit the net penny target, using additive sizing based on
+    # available funds and continuing nonstop.
+    'AGGRESSIVE_ONE_GOAL': os.getenv('AGGRESSIVE_ONE_GOAL', '1') == '1',
+    'AGGRESSIVE_MIN_PROB': float(os.getenv('AGGRESSIVE_MIN_PROB', '0.30') or 0.30),
+    'AGGRESSIVE_BLOCK_ONLY_STRONG_SELL': os.getenv('AGGRESSIVE_BLOCK_ONLY_STRONG_SELL', '1') == '1',
+    'AGGRESSIVE_STRONG_SELL_CONF': float(os.getenv('AGGRESSIVE_STRONG_SELL_CONF', '0.80') or 0.80),
+    'AGGRESSIVE_IGNORE_MATRIX_HOLD': os.getenv('AGGRESSIVE_IGNORE_MATRIX_HOLD', '1') == '1',
+    'AGGRESSIVE_IGNORE_BRAIN_REDUCE': os.getenv('AGGRESSIVE_IGNORE_BRAIN_REDUCE', '1') == '1',
+    'AGGRESSIVE_IGNORE_IMPERIAL_SELL': os.getenv('AGGRESSIVE_IGNORE_IMPERIAL_SELL', '1') == '1',
     'ATR_TRAIL_MULTIPLIER': 1.5,            # Trail at 1.5x ATR below peak
     
     # 🚀 KRAKEN ADVANCED ORDERS - Server-Side TP/SL (executes even if bot offline!)
@@ -1404,6 +1416,15 @@ def has_one_minute_profit_consensus(opp: Dict) -> Tuple[bool, str, Dict[str, flo
     
     Returns (ok, reason, details) where `ok` indicates entry is allowed.
     """
+
+    # 🦾 AGGRESSIVE ONE-GOAL: never block entries here.
+    if CONFIG.get('AGGRESSIVE_ONE_GOAL', False):
+        details = {
+            'prob_quick': float((opp.get('quick_kill') or {}).get('prob_quick_kill', 0.5) or 0.5),
+            'confidence': float((opp.get('quick_kill') or {}).get('confidence', 0.5) or 0.5),
+            'estimated_seconds': float((opp.get('quick_kill') or {}).get('estimated_seconds', 300) or 300),
+        }
+        return True, "aggressive override", details
 
     qk = opp.get('quick_kill') or {}
 
@@ -2125,15 +2146,22 @@ class SmartOrderRouter:
     Compares quotes across Binance, Kraken, and Capital.com in real-time.
     """
     
-    def __init__(self, multi_client):
+    def __init__(self, multi_client, get_cash_balance=None, battlefields: Optional[Dict[str, Any]] = None,
+                 default_min_order_usd: float = 10.0):
         self.client = multi_client
+        # Optional callback for liquid cash on a specific venue.
+        # Signature: fn(exchange: str) -> float
+        self.get_cash_balance = get_cash_balance
+        self.battlefields = battlefields or {}
+        self.default_min_order_usd = float(default_min_order_usd or 10.0)
         self.exchange_fees = {
             'binance': 0.001,   # 0.10% taker
             'kraken': 0.0026,   # 0.26% taker
             'capital': 0.001,   # ~0.1% spread
             'alpaca': 0.0       # Commission-free
         }
-        self.exchange_priority = ['binance', 'capital', 'alpaca']
+        # Prefer crypto-native venues first, but still consider all.
+        self.exchange_priority = ['binance', 'kraken', 'alpaca', 'capital']
         self.route_history: List[Dict] = []
         
     def get_best_quote(self, symbol: str, side: str, quantity: float = None) -> Dict[str, Any]:
@@ -2144,17 +2172,12 @@ class SmartOrderRouter:
         quotes = []
         base_symbol = symbol.replace('/', '').upper()
         
-        # Normalize symbol for each exchange
-        symbol_map = {
-            'binance': base_symbol,
-            'kraken': base_symbol,
-            'capital': base_symbol[:6] if len(base_symbol) > 6 else base_symbol,
-            'alpaca': f"{base_symbol[:3]}/{base_symbol[3:]}" if len(base_symbol) >= 6 else symbol
-        }
-        
         for exchange in self.exchange_priority:
             try:
-                ex_symbol = symbol_map.get(exchange, base_symbol)
+                # Normalize canonical symbol to exchange-specific if supported
+                ex_symbol = base_symbol
+                if hasattr(self.client, 'normalize_symbol'):
+                    ex_symbol = self.client.normalize_symbol(exchange, symbol)
                 ticker = self.client.get_ticker(exchange, ex_symbol)
                 if not ticker or ticker.get('price', 0) <= 0:
                     continue
@@ -2230,6 +2253,44 @@ class SmartOrderRouter:
         # Execute order
         exchange = best['exchange']
         ex_symbol = best['symbol']
+
+        # 💰 ADDITIVE BUYING (SMART ROUTER): scale to available cash on the routed venue.
+        if side.upper() == 'BUY' and callable(self.get_cash_balance):
+            bf = (self.battlefields.get(exchange) or {})
+            min_order = float(bf.get('min_trade_usd', self.default_min_order_usd) or self.default_min_order_usd)
+            try:
+                available_cash = float(self.get_cash_balance(exchange))
+            except Exception:
+                available_cash = 0.0
+
+            available_cash *= 0.995
+
+            if available_cash < min_order:
+                # Try alternatives in order (already sorted by best effective price)
+                for alt in best.get('alternatives', []):
+                    alt_ex = alt.get('exchange')
+                    if not alt_ex:
+                        continue
+                    bf = (self.battlefields.get(alt_ex) or {})
+                    alt_min = float(bf.get('min_trade_usd', self.default_min_order_usd) or self.default_min_order_usd)
+                    try:
+                        alt_cash = float(self.get_cash_balance(alt_ex)) * 0.995
+                    except Exception:
+                        alt_cash = 0.0
+                    if alt_cash >= alt_min:
+                        exchange = alt_ex
+                        ex_symbol = alt.get('symbol', ex_symbol)
+                        best = alt
+                        available_cash = alt_cash
+                        min_order = alt_min
+                        break
+
+            if available_cash >= min_order and quote_qty is not None:
+                try:
+                    if float(quote_qty) > available_cash:
+                        quote_qty = available_cash
+                except Exception:
+                    pass
         
         try:
             result = self.client.place_market_order(
@@ -2239,6 +2300,7 @@ class SmartOrderRouter:
             
             # Add routing metadata
             result['routed_to'] = exchange
+            result['symbol'] = ex_symbol
             result['effective_price'] = best['effective_price']
             result['savings_pct'] = best.get('savings_pct', 0)
             
@@ -2409,7 +2471,7 @@ class CrossExchangeArbitrageScanner:
         
         try:
             # Execute buy
-            buy_symbol = symbol if buy_ex != 'binance' else symbol.replace('USD', 'USDT')
+            buy_symbol = self.client.normalize_symbol(buy_ex, symbol)
             buy_result = self.client.place_market_order(buy_ex, buy_symbol, 'BUY', quantity=quantity)
             results['buy'] = buy_result
             
@@ -2417,8 +2479,8 @@ class CrossExchangeArbitrageScanner:
                 return results
                 
             # Execute sell
-            sell_symbol = symbol if sell_ex != 'binance' else symbol.replace('USD', 'USDT')
-            sell_result = self.client.place_market_order(sell_ex, sell_symbol, 'SELL', quantity=quantity)
+                sell_symbol = self.client.normalize_symbol(sell_ex, symbol)
+                sell_result = self.client.place_market_order(sell_ex, sell_symbol, 'SELL', quantity=quantity)
             results['sell'] = sell_result
             
             if sell_result and not sell_result.get('error'):
@@ -2445,6 +2507,51 @@ class UnifiedTradeConfirmation:
         self.client = multi_client
         self.pending_confirmations: Dict[str, Dict] = {}
         self.confirmed_trades: List[Dict] = []
+
+    def normalize_order_result(self, exchange: str, symbol: str, side: str,
+                               quantity: float, quote_qty: float,
+                               result: Dict[str, Any]) -> Dict[str, Any]:
+        """Normalize an already-executed order response into a unified confirmation."""
+        if not result:
+            return {'status': 'FAILED', 'error': 'No response'}
+
+        # ⚠️ Check for error response BEFORE normalizing (e.g., min_notional blocked)
+        if isinstance(result, dict) and ('error' in result):
+            return {
+                'status': 'BLOCKED',
+                'error': result.get('error'),
+                'exchange': result.get('exchange', exchange),
+                'symbol': symbol,
+                'side': side,
+            }
+
+        exchange_l = (exchange or '').lower()
+        confirmation = {
+            'exchange': exchange_l,
+            'symbol': symbol,
+            'side': side,
+            'quantity': quantity,
+            'quote_qty': quote_qty,
+            'timestamp': time.time(),
+            'raw_response': result,
+        }
+
+        if exchange_l == 'binance':
+            confirmation.update(self._parse_binance_response(result))
+        elif exchange_l == 'kraken':
+            confirmation.update(self._parse_kraken_response(result))
+        elif exchange_l == 'capital':
+            confirmation.update(self._parse_capital_response(result))
+        elif exchange_l == 'alpaca':
+            confirmation.update(self._parse_alpaca_response(result))
+        else:
+            confirmation['status'] = 'UNKNOWN'
+            confirmation['order_id'] = str(result.get('orderId', result.get('id', 'unknown')))
+
+        if confirmation.get('status') in ['FILLED', 'ACCEPTED', 'OPEN', 'NEW', 'PENDING_NEW']:
+            self.confirmed_trades.append(confirmation)
+
+        return confirmation
         
     def submit_order(self, exchange: str, symbol: str, side: str, 
                     quantity: float = None, quote_qty: float = None) -> Dict[str, Any]:
@@ -2452,6 +2559,17 @@ class UnifiedTradeConfirmation:
         Submit order and return unified confirmation.
         Validates lot sizes and minimum notional before submission.
         """
+        # Normalize symbol per exchange to ensure BUY/SELL works across venues
+        # (e.g. BTCUSD → BTCUSDT on Binance, BTC/USD on Alpaca, XBTUSD on Kraken).
+        original_symbol = symbol
+        try:
+            if hasattr(self.client, 'normalize_symbol'):
+                normalized = self.client.normalize_symbol(exchange, symbol)
+                if isinstance(normalized, str) and normalized.strip():
+                    symbol = normalized.strip()
+        except Exception:
+            symbol = original_symbol
+
         # Validate quantity for SELL orders (lot size + notional)
         if side.upper() == 'SELL' and quantity is not None:
             # Get current price for notional check
@@ -2469,53 +2587,23 @@ class UnifiedTradeConfirmation:
                 return {'status': 'REJECTED', 'error': error, 'pre_flight': True}
             quantity = adjusted_qty
             
+        # Safety: never submit an order with no size.
+        if (quantity is None or float(quantity) <= 0.0) and (quote_qty is None or float(quote_qty) <= 0.0):
+            return {
+                'status': 'REJECTED',
+                'error': 'Must provide quantity or quote_qty',
+                'exchange': exchange,
+                'symbol': symbol,
+                'side': side,
+                'pre_flight': True
+            }
+
         result = self.client.place_market_order(
             exchange, symbol, side,
             quantity=quantity, quote_qty=quote_qty
         )
-        
-        if not result:
-            return {'status': 'FAILED', 'error': 'No response'}
-        
-        # ⚠️ Check for error response BEFORE normalizing (e.g., min_notional blocked)
-        if 'error' in result:
-            return {
-                'status': 'BLOCKED',
-                'error': result['error'],
-                'exchange': result.get('exchange', exchange),
-                'symbol': symbol,
-                'side': side
-            }
-            
-        # Normalize confirmation based on exchange
-        exchange = exchange.lower()
-        confirmation = {
-            'exchange': exchange,
-            'symbol': symbol,
-            'side': side,
-            'quantity': quantity,
-            'quote_qty': quote_qty,
-            'timestamp': time.time(),
-            'raw_response': result
-        }
-        
-        if exchange == 'binance':
-            confirmation.update(self._parse_binance_response(result))
-        elif exchange == 'kraken':
-            confirmation.update(self._parse_kraken_response(result))
-        elif exchange == 'capital':
-            confirmation.update(self._parse_capital_response(result))
-        elif exchange == 'alpaca':
-            confirmation.update(self._parse_alpaca_response(result))
-        else:
-            confirmation['status'] = 'UNKNOWN'
-            confirmation['order_id'] = str(result.get('orderId', result.get('id', 'unknown')))
-            
-        # Store confirmed trade
-        if confirmation.get('status') in ['FILLED', 'ACCEPTED', 'OPEN', 'NEW', 'PENDING_NEW']:
-            self.confirmed_trades.append(confirmation)
-            
-        return confirmation
+
+        return self.normalize_order_result(exchange, symbol, side, quantity, quote_qty, result)
         
     def _parse_binance_response(self, result: Dict) -> Dict:
         """Parse Binance order response."""
@@ -11583,7 +11671,14 @@ class AureonKrakenEcosystem:
                 self.ui_bridge_enabled = False
         
         # 🚀 ENHANCED TRADING COMPONENTS 🚀
-        self.smart_router = SmartOrderRouter(self.client)
+        # Provide the router with per-exchange liquid cash so BUY routing/sizing
+        # can be additive based on available funds.
+        self.smart_router = SmartOrderRouter(
+            self.client,
+            get_cash_balance=self._get_exchange_cash_balance,
+            battlefields=(CONFIG.get('BATTLEFIELDS', {}) or {}),
+            default_min_order_usd=float(CONFIG.get('MIN_TRADE_USD', 10.0) or 10.0),
+        )
         self.arb_scanner = CrossExchangeArbitrageScanner(self.client)
         self.trade_confirmation = UnifiedTradeConfirmation(self.client)
         self.rebalancer = PortfolioRebalancer(self.client)
@@ -14511,8 +14606,10 @@ class AureonKrakenEcosystem:
             return False
             
         symbol = opp.get('symbol', 'UNKNOWN')
-        exchange = opp.get('source', 'binance')
+        # Prefer explicit routing decision if present.
+        exchange = opp.get('exchange') or opp.get('source', 'binance')
         price = opp.get('price', 0)
+        aggressive = bool(CONFIG.get('AGGRESSIVE_ONE_GOAL', False))
         
         # ═══════════════════════════════════════════════════════════════
         # 🪙 STEP 1: Calculate the EXACT penny profit threshold
@@ -14554,16 +14651,20 @@ class AureonKrakenEcosystem:
         brain_rec = ECOSYSTEM_BRAIN.get_trading_recommendation()
         brain_confidence = opp.get('brain_confidence', ECOSYSTEM_BRAIN._brain_confidence)
         
-        # Brain must believe in UPWARD movement
-        if brain_rec['action'] == 'REDUCE':
-            logger.info(f"⛔ {symbol}: Brain says REDUCE - Price won't move +{required_move_pct:.3f}% | NO PENNY")
-            opp['entry_reject_reason'] = 'brain: REDUCE'
-            return False
-            
-        if brain_rec['action'] == 'HOLD' and brain_confidence > 0.6:
-            logger.info(f"⛔ {symbol}: Brain says HOLD (conf={brain_confidence:.0%}) - Not enough movement for penny | NO PENNY")
-            opp['entry_reject_reason'] = f"brain: HOLD (conf={brain_confidence:.2f})"
-            return False
+        # Brain is advisory in penny mode; in aggressive mode, never block on Brain.
+        if (not aggressive) or (not CONFIG.get('AGGRESSIVE_IGNORE_BRAIN_REDUCE', True)):
+            if brain_rec['action'] == 'REDUCE':
+                logger.info(f"⛔ {symbol}: Brain says REDUCE - Price won't move +{required_move_pct:.3f}% | NO PENNY")
+                opp['entry_reject_reason'] = 'brain: REDUCE'
+                return False
+
+            if brain_rec['action'] == 'HOLD' and brain_confidence > 0.6:
+                logger.info(f"⛔ {symbol}: Brain says HOLD (conf={brain_confidence:.0%}) - Not enough movement for penny | NO PENNY")
+                opp['entry_reject_reason'] = f"brain: HOLD (conf={brain_confidence:.2f})"
+                return False
+        else:
+            if brain_rec.get('action') in ('REDUCE', 'HOLD'):
+                opp['brain_note'] = f"{brain_rec.get('action')} (conf={brain_confidence:.2f})"
             
         if brain_rec['action'] == 'BUY' and brain_confidence > 0.5:
             logger.info(f"✅ {symbol}: Brain says BUY (conf={brain_confidence:.0%}) - Expects +{required_move_pct:.3f}% movement")
@@ -14575,11 +14676,15 @@ class AureonKrakenEcosystem:
         imperial_action = opp.get('imperial_action', 'HOLD')
         imperial_conf = opp.get('imperial_confidence', 0.0)
         
-        # Imperial veto only if HIGHLY confident in SELL
-        if imperial_conf >= 0.7 and imperial_action in ['SELL', 'STRONG SELL']:
-            logger.info(f"⛔ {symbol}: Imperial says {imperial_action} (conf={imperial_conf:.0%}) - Cosmic timing wrong | NO PENNY")
-            opp['entry_reject_reason'] = f"imperial: {imperial_action} (conf={imperial_conf:.2f})"
-            return False
+        # Imperial veto only if HIGHLY confident in SELL (ignored in aggressive mode by default)
+        if (not aggressive) or (not CONFIG.get('AGGRESSIVE_IGNORE_IMPERIAL_SELL', True)):
+            if imperial_conf >= 0.7 and imperial_action in ['SELL', 'STRONG SELL']:
+                logger.info(f"⛔ {symbol}: Imperial says {imperial_action} (conf={imperial_conf:.0%}) - Cosmic timing wrong | NO PENNY")
+                opp['entry_reject_reason'] = f"imperial: {imperial_action} (conf={imperial_conf:.2f})"
+                return False
+        else:
+            if imperial_action in ['SELL', 'STRONG SELL']:
+                opp['imperial_note'] = f"{imperial_action} (conf={imperial_conf:.2f})"
         
         # If brain is very bullish, log approval
         if brain_rec['action'] == 'BUY' and brain_confidence > 0.7:
@@ -14593,23 +14698,45 @@ class AureonKrakenEcosystem:
         probability = opp.get('probability', 0.5)
         prob_confidence = opp.get('prob_confidence', 0.0)
         
-        # 🛡️ VALIDATION LOCK: Reject weak signals
-        if prob_action in ['SELL', 'STRONG SELL']:
-            logger.info(f"⛔ {symbol}: Matrix says {prob_action} (prob={probability:.0%}) - Won't hit +{required_move_pct:.3f}% | NO PENNY")
-            opp['entry_reject_reason'] = f"matrix: {prob_action} (prob={probability:.2f})"
-            return False
-            
-        if prob_action == 'HOLD' and probability < 0.60:
-            logger.info(f"⛔ {symbol}: Matrix says HOLD (prob={probability:.0%}) - Won't hit +{required_move_pct:.3f}% | NO PENNY")
-            opp['entry_reject_reason'] = f"matrix: HOLD (prob={probability:.2f})"
-            return False
-            
-        # 🛡️ VALIDATION LOCK: Reject SLIGHT BUY if confidence is low
-        # User wants 99.99% WR - we can't take "SLIGHT" risks without high probability
-        if prob_action == 'SLIGHT BUY' and probability < 0.75:
-            logger.info(f"⛔ {symbol}: Matrix says SLIGHT BUY (prob={probability:.0%}) - Need ≥75% to justify +{required_move_pct:.3f}% | NO PENNY")
-            opp['entry_reject_reason'] = f"matrix: SLIGHT BUY (prob={probability:.2f})"
-            return False
+        if aggressive:
+            # 🦾 AGGRESSIVE ONE-GOAL: only block when the matrix is strongly bearish with high confidence,
+            # otherwise keep trading and let the penny-profit exits manage the loop.
+            min_prob = float(CONFIG.get('AGGRESSIVE_MIN_PROB', 0.30) or 0.30)
+            strong_conf = float(CONFIG.get('AGGRESSIVE_STRONG_SELL_CONF', 0.80) or 0.80)
+            block_only_strong = bool(CONFIG.get('AGGRESSIVE_BLOCK_ONLY_STRONG_SELL', True))
+
+            if probability < min_prob:
+                opp['entry_reject_reason'] = f"aggressive: prob too low ({probability:.2f} < {min_prob:.2f})"
+                return False
+
+            if prob_action in ['SELL', 'STRONG SELL']:
+                if (not block_only_strong) or (prob_confidence >= strong_conf) or (prob_action == 'STRONG SELL'):
+                    logger.info(
+                        f"⛔ {symbol}: Matrix says {prob_action} (prob={probability:.0%}, conf={prob_confidence:.0%}) - bearish veto"
+                    )
+                    opp['entry_reject_reason'] = f"matrix: {prob_action} (prob={probability:.2f}, conf={prob_confidence:.2f})"
+                    return False
+
+            if prob_action == 'HOLD' and not CONFIG.get('AGGRESSIVE_IGNORE_MATRIX_HOLD', True):
+                opp['entry_reject_reason'] = f"matrix: HOLD (prob={probability:.2f})"
+                return False
+        else:
+            # 🛡️ VALIDATION LOCK: Reject weak signals
+            if prob_action in ['SELL', 'STRONG SELL']:
+                logger.info(f"⛔ {symbol}: Matrix says {prob_action} (prob={probability:.0%}) - Won't hit +{required_move_pct:.3f}% | NO PENNY")
+                opp['entry_reject_reason'] = f"matrix: {prob_action} (prob={probability:.2f})"
+                return False
+
+            if prob_action == 'HOLD' and probability < 0.60:
+                logger.info(f"⛔ {symbol}: Matrix says HOLD (prob={probability:.0%}) - Won't hit +{required_move_pct:.3f}% | NO PENNY")
+                opp['entry_reject_reason'] = f"matrix: HOLD (prob={probability:.2f})"
+                return False
+
+            # 🛡️ VALIDATION LOCK: Reject SLIGHT BUY if confidence is low
+            if prob_action == 'SLIGHT BUY' and probability < 0.75:
+                logger.info(f"⛔ {symbol}: Matrix says SLIGHT BUY (prob={probability:.0%}) - Need ≥75% to justify +{required_move_pct:.3f}% | NO PENNY")
+                opp['entry_reject_reason'] = f"matrix: SLIGHT BUY (prob={probability:.2f})"
+                return False
         
         # ✅ Log when matrix says BUY
         if prob_action in ['BUY', 'STRONG BUY', 'SLIGHT BUY']:
@@ -14853,9 +14980,14 @@ class AureonKrakenEcosystem:
         for exchange_name, balances in all_balances.items():
             if not isinstance(balances, dict):
                 continue
-                
-            if exchange_name not in ('binance', 'kraken'):
+
+            bf_cfg = (CONFIG.get('BATTLEFIELDS', {}) or {}).get(exchange_name, {}) or {}
+            if not bf_cfg.get('enabled', False) or not bf_cfg.get('harvester_active', False):
                 continue
+
+            if isinstance(self.client, MultiExchangeClient):
+                if exchange_name not in (getattr(self.client, 'clients', {}) or {}):
+                    continue
                 
             print(f"\n   📍 Scanning {exchange_name.upper()}...")
             
@@ -14872,8 +15004,17 @@ class AureonKrakenEcosystem:
                     continue
                 
                 # Try to find a trading pair for this asset
-                # Priority: USDC > EUR > USDT
-                quote_priority = ['USDC', 'EUR', 'USDT'] if exchange_name == 'binance' else ['USDC', 'USD', 'EUR']
+                # Priority differs by exchange
+                if exchange_name == 'binance':
+                    quote_priority = ['USDC', 'EUR', 'USDT']
+                elif exchange_name == 'kraken':
+                    quote_priority = ['USDC', 'USD', 'EUR']
+                elif exchange_name == 'alpaca':
+                    quote_priority = ['USD']
+                elif exchange_name == 'capital':
+                    quote_priority = ['USD', 'GBP', 'EUR']
+                else:
+                    quote_priority = ['USD', 'USDC', 'EUR', 'USDT']
                 
                 # Kraken uses special naming for some assets
                 kraken_asset_map = {
@@ -14892,7 +15033,13 @@ class AureonKrakenEcosystem:
                     base_asset = asset
                 
                 for quote in quote_priority:
-                    symbol = f"{base_asset}{quote}"
+                    canonical = f"{base_asset}{quote}"
+                    symbol = canonical
+                    if isinstance(self.client, MultiExchangeClient):
+                        try:
+                            symbol = self.client.normalize_symbol(exchange_name, canonical)
+                        except Exception:
+                            symbol = canonical
                     
                     # Check if we can get a price for this pair
                     try:
@@ -14929,7 +15076,12 @@ class AureonKrakenEcosystem:
                     
                     # Also check elephant memory for historical entry data
                     if not position_entry and hasattr(self, 'elephant_memory'):
-                        mem_data = self.elephant_memory.get_symbol_data(symbol) or self.elephant_memory.get_symbol_data(f"{base_asset}USDC") or self.elephant_memory.get_symbol_data(f"{base_asset}USD")
+                        mem_data = (
+                            self.elephant_memory.get_symbol_data(canonical)
+                            or self.elephant_memory.get_symbol_data(symbol)
+                            or self.elephant_memory.get_symbol_data(f"{base_asset}USDC")
+                            or self.elephant_memory.get_symbol_data(f"{base_asset}USD")
+                        )
                         if mem_data and mem_data.get('last_entry_price'):
                             # Create a pseudo-position for calculation
                             # Use combined rate (fee + slippage + spread) to match penny profit formula
@@ -15172,6 +15324,8 @@ class AureonKrakenEcosystem:
                 'max_drawdown': self.tracker.max_drawdown,
                 'positions': {
                     sym: {
+                        'symbol': pos.symbol,
+                        'exchange': getattr(pos, 'exchange', 'kraken'),
                         'entry_price': pos.entry_price,
                         'quantity': pos.quantity,
                         'entry_fee': pos.entry_fee,
@@ -15180,7 +15334,13 @@ class AureonKrakenEcosystem:
                         'coherence': pos.coherence,
                         'entry_time': pos.entry_time,
                         'dominant_node': pos.dominant_node,
-                        'cycles': pos.cycles
+                        'cycles': pos.cycles,
+                        'is_historical': getattr(pos, 'is_historical', False),
+                        'generation': getattr(pos, 'generation', 0),
+                        'is_scout': getattr(pos, 'is_scout', False),
+                        'highest_price': getattr(pos, 'highest_price', 0.0),
+                        'trailing_stop_active': getattr(pos, 'trailing_stop_active', False),
+                        'trailing_stop_price': getattr(pos, 'trailing_stop_price', 0.0),
                     }
                     for sym, pos in self.positions.items()
                 },
@@ -16745,11 +16905,17 @@ class AureonKrakenEcosystem:
             symbol, side, quantity, quote_qty, preferred_exchange
         )
         
-        # Track in confirmation system
+        # Track in confirmation system (do NOT place a second order)
         if result and not result.get('error'):
-            confirmation = self.trade_confirmation.submit_order(
-                result.get('routed_to', 'unknown'),
-                symbol, side, quantity, quote_qty
+            routed_exchange = result.get('routed_to', 'unknown')
+            routed_symbol = result.get('symbol', symbol)
+            confirmation = self.trade_confirmation.normalize_order_result(
+                routed_exchange,
+                routed_symbol,
+                side,
+                quantity,
+                quote_qty,
+                result,
             )
             result['confirmation'] = confirmation
             
@@ -17273,6 +17439,37 @@ class AureonKrakenEcosystem:
         hint_source = opp.get('source')
         exchange = self._detect_exchange_for_symbol(symbol, hint_source)
         exchange_marker = exchange.upper()
+
+        # Ensure downstream entry logic (penny threshold) uses the routed exchange.
+        opp['exchange'] = exchange
+
+        # 🧭 MULTI-PLATFORM BUY SAFETY:
+        # Normalize symbols BEFORE we derive quote asset / liquidity / sizing.
+        # This prevents cases like BTCUSD routed to Binance (needs BTCUSDT) or
+        # BTCUSD routed to Kraken (often XBTUSD), and keeps quote asset aligned.
+        canonical_symbol = symbol
+        try:
+            if hasattr(self.client, 'normalize_symbol'):
+                normalized = self.client.normalize_symbol(exchange, symbol)
+                if isinstance(normalized, str) and normalized.strip():
+                    symbol = normalized.strip()
+                    opp['symbol'] = symbol
+        except Exception:
+            symbol = canonical_symbol
+
+        # If normalization changed the symbol (or price is missing/invalid),
+        # refresh the price from the routed exchange to keep sizing accurate.
+        if symbol != canonical_symbol or not price or float(price) <= 0:
+            try:
+                ticker = self.client.get_ticker(exchange, symbol)
+                if ticker:
+                    t_price = float(ticker.get('price', 0) or 0)
+                    if t_price > 0:
+                        price = t_price
+                        opp['price'] = price
+            except Exception:
+                pass
+
         quote_asset = self._get_quote_asset(symbol)
         # Some callers (notably force-scout deployment) provide a quote hint.
         # Prefer it when present to keep liquidity checks and sizing consistent.
@@ -17280,6 +17477,10 @@ class AureonKrakenEcosystem:
         if isinstance(opp_quote_hint, str) and opp_quote_hint.strip():
             quote_asset = opp_quote_hint.strip().upper()
         base_currency = CONFIG['BASE_CURRENCY'].upper()
+
+        # Exchange-specific minimum order size (some venues allow smaller, e.g. Alpaca fractional)
+        bf_config = (CONFIG.get('BATTLEFIELDS', {}) or {}).get(exchange, {})
+        min_order_usd = float(bf_config.get('min_trade_usd', CONFIG.get('MIN_TRADE_USD', 10.0)) or CONFIG.get('MIN_TRADE_USD', 10.0))
         
         # 🍄 MYCELIUM: Check for cross-exchange duplicates FIRST
         if self._is_duplicate_across_exchanges(symbol, exchange):
@@ -17465,8 +17666,8 @@ class AureonKrakenEcosystem:
             deploy_cap = self.total_equity_gbp * CONFIG['PORTFOLIO_RISK_BUDGET']
             available_risk = max(0.0, deploy_cap - deployed)
             
-        if available_risk < CONFIG['MIN_TRADE_USD']:
-            print(f"   🔴 DEBUG {symbol}: available_risk={available_risk:.2f} < MIN_TRADE_USD={CONFIG['MIN_TRADE_USD']}")
+        if available_risk < min_order_usd:
+            print(f"   🔴 DEBUG {symbol}: available_risk={available_risk:.2f} < min_order_usd={min_order_usd:.2f}")
             return None
 
         pos_size = self.capital_pool.get_recommended_position_size(size_fraction)
@@ -17483,11 +17684,83 @@ class AureonKrakenEcosystem:
         if self.dry_run:
             cash_available = max(0.0, self.tracker.balance - deployed)
         else:
-            cash_available = max(0.0, self.cash_balance_gbp, available_risk)  # 🔥 Include available_risk
+            # ⚔️ MULTI-PLATFORM: Use exchange-specific liquid cash for sizing.
+            # Global cash/equity may exist elsewhere but isn't spendable on this venue.
+            try:
+                cash_available = float(self._get_exchange_cash_balance(exchange))
+            except Exception:
+                cash_available = float(max(0.0, self.cash_balance_gbp, available_risk))  # fallback
+
+            # 🔁 EXCHANGE FALLBACK FOR BUYING:
+            # If the routed venue is underfunded, try other enabled venues that support the symbol.
+            if cash_available < min_order_usd and CONFIG.get('ENABLE_MULTI_EXCHANGE_ENTRY_FALLBACK', True):
+                battlefields = CONFIG.get('BATTLEFIELDS', {}) or {}
+                symbol_upper = canonical_symbol.upper()
+                is_crypto = not any(p in symbol_upper for p in ['US500', 'US100', 'UK100', 'DE40', 'OIL', 'GOLD'])
+
+                exchanges_to_try = [exchange]
+                if is_crypto:
+                    for ex in ['binance', 'kraken', 'alpaca']:
+                        if ex != exchange and battlefields.get(ex, {}).get('enabled', False):
+                            exchanges_to_try.append(ex)
+                else:
+                    if battlefields.get('capital', {}).get('enabled', False) and 'capital' not in exchanges_to_try:
+                        exchanges_to_try.append('capital')
+
+                for alt_ex in exchanges_to_try:
+                    if alt_ex == exchange:
+                        continue
+                    if alt_ex == 'alpaca' and CONFIG.get('ALPACA_ANALYTICS_ONLY', True):
+                        continue
+
+                    alt_cfg = battlefields.get(alt_ex, {})
+                    alt_min = float(alt_cfg.get('min_trade_usd', CONFIG.get('MIN_TRADE_USD', 10.0)) or CONFIG.get('MIN_TRADE_USD', 10.0))
+
+                    try:
+                        alt_cash = float(self._get_exchange_cash_balance(alt_ex))
+                    except Exception:
+                        alt_cash = 0.0
+
+                    if alt_cash < alt_min:
+                        continue
+
+                    alt_symbol = canonical_symbol
+                    try:
+                        if hasattr(self.client, 'normalize_symbol'):
+                            alt_symbol = self.client.normalize_symbol(alt_ex, canonical_symbol)
+                    except Exception:
+                        alt_symbol = canonical_symbol
+
+                    try:
+                        t = self.client.get_ticker(alt_ex, alt_symbol)
+                        t_price = float(t.get('price', 0) or 0) if t else 0.0
+                        if t_price <= 0:
+                            continue
+                    except Exception:
+                        continue
+
+                    print(
+                        f"   💰 Fallback venue for {canonical_symbol}: {exchange_marker} underfunded "
+                        f"(£{cash_available:.2f} < {min_order_usd:.2f}); switching to {alt_ex.upper()} "
+                        f"(£{alt_cash:.2f} available)"
+                    )
+
+                    exchange = alt_ex
+                    exchange_marker = exchange.upper()
+                    symbol = alt_symbol
+                    opp['symbol'] = symbol
+                    opp['exchange'] = exchange
+                    price = t_price
+                    opp['price'] = price
+                    cash_available = alt_cash
+                    bf_config = (battlefields.get(exchange, {}) or {})
+                    min_order_usd = float(bf_config.get('min_trade_usd', CONFIG.get('MIN_TRADE_USD', 10.0)) or CONFIG.get('MIN_TRADE_USD', 10.0))
+                    quote_asset = self._get_quote_asset(symbol)
+                    break
         
         # DYNAMIC CAPITAL ALLOCATION: If no cash but this is a better opportunity,
         # sell the worst-performing position to free up capital
-        if cash_available < CONFIG['MIN_TRADE_USD'] and CONFIG['ENABLE_REBALANCING'] and self.positions:
+        if cash_available < min_order_usd and CONFIG['ENABLE_REBALANCING'] and self.positions:
             worst_pos = None
             worst_pct = 0
             
@@ -17524,22 +17797,25 @@ class AureonKrakenEcosystem:
                 print(f"   🔥 AGGRESSIVE SWAP: Selling {pos_symbol} ({pct:+.2f}%) to buy {symbol}")
                 self.close_position(pos_symbol, "SWAP", pct, curr_price)
                 self.refresh_equity()
-                cash_available = max(0.0, self.cash_balance_gbp)
+                try:
+                    cash_available = float(self._get_exchange_cash_balance(exchange))
+                except Exception:
+                    cash_available = max(0.0, self.cash_balance_gbp)
         
-        if cash_available < CONFIG['MIN_TRADE_USD']:
+        if cash_available < min_order_usd:
             # 🔄 TRY TO LIQUIDATE HISTORICAL ASSETS FOR CASH
             # Historical assets = imported holdings with no known entry price
             # They're effectively "available capital" - sell them for better opportunities!
             # 🔥 LOWERED threshold to 30 score - we need to MOVE!
             if opp.get('score', 0) > 30 or opp.get('coherence', 0) > 0.4 or is_force_scout:
-                needed = max(CONFIG['MIN_TRADE_USD'], pos_size) - cash_available
+                needed = max(min_order_usd, pos_size) - cash_available
                 freed = self._liquidate_historical_for_opportunity(needed, exchange, symbol)
                 if freed > 0:
                     cash_available += freed
                     print(f"   💰 Freed £{freed:.2f} from historical assets - continuing trade!")
             
             # Still not enough? Skip
-            if cash_available < CONFIG['MIN_TRADE_USD']:
+            if cash_available < min_order_usd:
                 if not hasattr(self, '_skip_logged'):
                     self._skip_logged = set()
                 if symbol not in self._skip_logged:
@@ -17551,9 +17827,17 @@ class AureonKrakenEcosystem:
         if hasattr(self, '_skip_logged'):
             self._skip_logged.clear()
             
-        pos_size = min(pos_size, cash_available)
+        # 🧩 ADDITIVE BUYING: scale entry down to whatever cash is actually available.
+        # Keep a small buffer to reduce 'insufficient funds' rejects from fees/rounding.
+        if not self.dry_run and cash_available > 0:
+            cash_available = max(0.0, cash_available * 0.995)
 
-        if pos_size < CONFIG['MIN_TRADE_USD']:
+        scaled_size = min(pos_size, cash_available)
+        if scaled_size < pos_size:
+            print(f"   💰 Additive sizing {symbol} on {exchange_marker}: £{pos_size:.2f} → £{scaled_size:.2f} (available)")
+        pos_size = scaled_size
+
+        if pos_size < min_order_usd:
             return None
 
         if not self.should_enter_trade(opp, pos_size, lattice_state, is_force_scout=is_force_scout):
