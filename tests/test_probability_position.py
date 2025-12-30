@@ -133,6 +133,30 @@ class TestPositionClose:
         
         assert 'ADAUSDC' not in self.integration.position_data
 
+    def test_feed_position_close_requires_penny_target(self):
+        """Positive P&L below target_net should not count as a win."""
+        self.integration.feed_position_data(
+            symbol='XRPUSDC',
+            exchange='binance',
+            entry_price=0.5,
+            entry_time=time.time() - 120,
+            quantity=1000.0,
+            entry_value=500.0,
+            current_price=0.5001,
+        )
+
+        with patch.object(self.integration, '_persist_outcomes'):
+            self.integration.feed_position_close(
+                symbol='XRPUSDC',
+                exit_price=0.5001,
+                realized_pnl=0.005,  # Positive but below $0.01
+                exit_reason='MANUAL',
+            )
+
+        outcomes = self.integration.position_outcomes['XRPUSDC']
+        assert outcomes[0]['win'] is False
+        assert outcomes[0]['penny_hit'] is False
+
 
 class TestWinRateCalculation:
     """Test win rate statistics."""

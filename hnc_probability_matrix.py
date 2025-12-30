@@ -873,6 +873,8 @@ class PositionData:
     hold_duration_mins: float = 0.0
     trailing_stop_active: bool = False
     highest_price: float = 0.0
+    # Whether this position exceeded the configured timebox without reaching penny profit
+    timebox_expired: bool = False
     
     def to_dict(self) -> Dict:
         return {
@@ -891,6 +893,7 @@ class PositionData:
             'hold_duration_mins': self.hold_duration_mins,
             'trailing_stop_active': self.trailing_stop_active,
             'highest_price': self.highest_price,
+            'timebox_expired': self.timebox_expired,
         }
 
 
@@ -953,7 +956,7 @@ class HNCProbabilityIntegration:
                            current_price: float = 0.0, platform_timestamp: float = 0.0,
                            is_historical: bool = False, momentum: float = 0.0,
                            coherence: float = 0.0, trailing_stop_active: bool = False,
-                           highest_price: float = 0.0) -> None:
+                           highest_price: float = 0.0, timebox_expired: bool = False) -> None:
         """
         Feed position data from trading platform to improve probability matrix accuracy.
         This allows the matrix to validate predictions against actual outcomes.
@@ -998,6 +1001,7 @@ class HNCProbabilityIntegration:
             hold_duration_mins=hold_duration_mins,
             trailing_stop_active=trailing_stop_active,
             highest_price=highest_price,
+            timebox_expired=bool(timebox_expired),
         )
         
         # Store/update position
@@ -1015,9 +1019,20 @@ class HNCProbabilityIntegration:
             'hold_mins': hold_duration_mins,
         })
     
-    def feed_position_close(self, symbol: str, exit_price: float, 
-                            realized_pnl: float, exit_reason: str,
-                            platform_timestamp: float = 0.0) -> None:
+    def feed_position_close(
+        self,
+        symbol: str,
+        exit_price: float,
+        realized_pnl: float,
+        exit_reason: str,
+        platform_timestamp: float = 0.0,
+        target_net: Optional[float] = None,
+        penny_hit: Optional[bool] = None,
+        quick_kill: Optional[bool] = None,
+        max_hold_minutes: Optional[float] = None,
+        hold_duration_mins: Optional[float] = None,
+        timebox_expired: Optional[bool] = None,
+    ) -> None:
         """
         Record a position close for probability validation.
         Helps the matrix learn from actual outcomes.
@@ -1033,6 +1048,32 @@ class HNCProbabilityIntegration:
         
         # Get entry data if we have it
         entry_data = self.position_data.get(symbol)
+
+        # Derive hold duration (allow caller override for accuracy)
+        derived_hold_mins = 0.0
+        if hold_duration_mins is not None:
+            derived_hold_mins = float(hold_duration_mins)
+        elif entry_data:
+            derived_hold_mins = float(entry_data.hold_duration_mins)
+
+        # Penny objective: a "win" is ONLY a net penny+ after all costs
+        # Default target is $0.01 unless the caller provides a clamped/validated target.
+        derived_target_net = 0.01 if target_net is None else float(target_net)
+        derived_penny_hit = (realized_pnl >= derived_target_net) if penny_hit is None else bool(penny_hit)
+
+        # Quick-kill: penny hit within the configured timebox (default 5 minutes)
+        derived_max_hold = 5.0 if max_hold_minutes is None else float(max_hold_minutes)
+        derived_quick_kill = (
+            (derived_penny_hit and derived_hold_mins > 0 and derived_hold_mins <= derived_max_hold)
+            if quick_kill is None
+            else bool(quick_kill)
+        )
+
+        derived_timebox_expired = (
+            bool(timebox_expired)
+            if timebox_expired is not None
+            else bool(getattr(entry_data, 'timebox_expired', False)) if entry_data else False
+        )
         
         outcome = {
             'timestamp': now,
@@ -1043,11 +1084,19 @@ class HNCProbabilityIntegration:
             'exit_reason': exit_reason,
             'entry_price': entry_data.entry_price if entry_data else 0.0,
             'entry_time': entry_data.entry_time if entry_data else 0.0,
-            'hold_duration_mins': entry_data.hold_duration_mins if entry_data else 0.0,
+            'hold_duration_mins': derived_hold_mins,
             'was_historical': entry_data.is_historical if entry_data else False,
             'entry_momentum': entry_data.momentum if entry_data else 0.0,
             'entry_coherence': entry_data.coherence if entry_data else 0.0,
-            'win': realized_pnl > 0,
+            # Core metrics (net pennies + timebox viability)
+            'target_net': derived_target_net,
+            'penny_hit': derived_penny_hit,
+            'quick_kill': derived_quick_kill,
+            'max_hold_minutes': derived_max_hold,
+            'timebox_expired': derived_timebox_expired,
+            # Canonical win definition for learning:
+            # A win == net penny objective achieved (not just >0)
+            'win': derived_penny_hit,
         }
         
         # Store outcome for learning
@@ -1063,7 +1112,12 @@ class HNCProbabilityIntegration:
             'price': exit_price,
             'pnl': realized_pnl,
             'reason': exit_reason,
-            'win': realized_pnl > 0,
+            'target_net': derived_target_net,
+            'penny_hit': derived_penny_hit,
+            'quick_kill': derived_quick_kill,
+            'max_hold_minutes': derived_max_hold,
+            'timebox_expired': derived_timebox_expired,
+            'win': derived_penny_hit,
         })
         
         # Remove from active positions
@@ -1083,12 +1137,18 @@ class HNCProbabilityIntegration:
             if not outcomes:
                 return {'symbol': symbol, 'trades': 0, 'win_rate': 0.5}
             wins = sum(1 for o in outcomes if o.get('win', False))
+            quick = sum(1 for o in outcomes if o.get('quick_kill', False))
+            expired = sum(1 for o in outcomes if o.get('timebox_expired', False))
             return {
                 'symbol': symbol,
                 'trades': len(outcomes),
                 'wins': wins,
                 'losses': len(outcomes) - wins,
                 'win_rate': wins / len(outcomes) if outcomes else 0.5,
+                'quick_kills': quick,
+                'quick_kill_rate': quick / len(outcomes) if outcomes else 0.0,
+                'timebox_expired': expired,
+                'timebox_expired_rate': expired / len(outcomes) if outcomes else 0.0,
                 'avg_hold_mins': np.mean([o.get('hold_duration_mins', 0) for o in outcomes]),
             }
         else:
@@ -1099,11 +1159,17 @@ class HNCProbabilityIntegration:
             if not all_outcomes:
                 return {'trades': 0, 'win_rate': 0.5}
             wins = sum(1 for o in all_outcomes if o.get('win', False))
+            quick = sum(1 for o in all_outcomes if o.get('quick_kill', False))
+            expired = sum(1 for o in all_outcomes if o.get('timebox_expired', False))
             return {
                 'trades': len(all_outcomes),
                 'wins': wins,
                 'losses': len(all_outcomes) - wins,
                 'win_rate': wins / len(all_outcomes) if all_outcomes else 0.5,
+                'quick_kills': quick,
+                'quick_kill_rate': quick / len(all_outcomes) if all_outcomes else 0.0,
+                'timebox_expired': expired,
+                'timebox_expired_rate': expired / len(all_outcomes) if all_outcomes else 0.0,
             }
     
     def validate_and_learn(self, symbol: str, predicted_direction: str, 
@@ -1395,6 +1461,21 @@ class HNCProbabilityIntegration:
             elif win_rate < 0.35:
                 adj -= 0.03
                 reasons.append(f"winrate {win_rate:.0%}↓")
+
+            # Prefer symbols that reliably hit the penny objective quickly
+            quick_rate = win_stats.get('quick_kill_rate', 0.0)
+            if quick_rate > 0.60:
+                adj += 0.02
+                reasons.append(f"quick {quick_rate:.0%}↑")
+            elif quick_rate < 0.25:
+                adj -= 0.02
+                reasons.append(f"quick {quick_rate:.0%}↓")
+
+            # Penalize setups that frequently exceed the timebox without a penny kill
+            expired_rate = win_stats.get('timebox_expired_rate', 0.0)
+            if expired_rate > 0.50:
+                adj -= 0.02
+                reasons.append(f"timebox {expired_rate:.0%}↓")
         
         # Check if we have an active position
         if symbol in self.position_data:
@@ -1412,6 +1493,11 @@ class HNCProbabilityIntegration:
             if pos.hold_duration_mins > 30 and pos.unrealized_pnl_pct > 0:
                 adj += 0.01
                 reasons.append(f"hold {pos.hold_duration_mins:.0f}m+profit")
+
+            # If we've already exceeded the timebox, treat it as a negative signal.
+            if getattr(pos, 'timebox_expired', False):
+                adj -= 0.01
+                reasons.append("timebox_expired")
         
         adj = max(-0.10, min(0.10, adj))
         reason = ", ".join(reasons) if reasons else "no pos data"

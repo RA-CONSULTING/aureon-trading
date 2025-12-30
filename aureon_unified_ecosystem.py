@@ -1122,6 +1122,14 @@ CONFIG = {
     'ENABLE_REBALANCING': True,     # Sell underperformers to buy better opportunities
     'REBALANCE_THRESHOLD': -50.0,   # 🔥 Sell big losers (>50% loss) to free capital for better opportunities
     'MIN_HOLD_CYCLES': 10,          # Hold at least 10 cycles (~10 mins) before rebalance (was 3)
+
+    # ⏱️ TIMEBOXED HOLDING (Momentum-preserving penny scalps)
+    # If a position cannot secure net penny profit quickly, it is not a good setup.
+    'MAX_HOLD_MINUTES': float(os.getenv('MAX_HOLD_MINUTES', '5')),          # Hard max hold per position
+    'ENABLE_TIMEBOX_EXIT': os.getenv('ENABLE_TIMEBOX_EXIT', '1') == '1',    # Force-close when max hold exceeded
+
+    # 🚫 NO-LOSS DEFAULT: force scouts should not bypass the quick-profit gates unless explicitly allowed
+    'ALLOW_FORCE_SCOUT_BYPASS_CONSENSUS': os.getenv('ALLOW_FORCE_SCOUT_BYPASS_CONSENSUS', '0') == '1',
     # 🤑 GREEDY HOE MODE: ALL THE QUOTE CURRENCIES!
     'QUOTE_CURRENCIES': ['USDC', 'USDT', 'USD', 'GBP', 'EUR', 'BTC', 'ETH', 'BNB', 'FDUSD', 'TUSD', 'BUSD'],
     
@@ -5657,6 +5665,11 @@ class AdaptiveLearningEngine:
 
         cfg = auto_reset_config()
         if not cfg.get('enabled'):
+            # Make it explicit in logs when auto-reset isn't active.
+            # This is especially helpful on Windows when `.env` loading can vary.
+            logger.info(
+                "Adaptive Learning: startup auto-reset disabled (set AUREON_AUTO_RESET_LEARNED_ANALYTICS=1 to enable)"
+            )
             return
 
         result = reset_learned_analytics_if_needed(
@@ -15038,7 +15051,7 @@ class AureonKrakenEcosystem:
         """
         change_pct = (current_price - pos.entry_price) / pos.entry_price if pos.entry_price > 0 else 0.0
         
-        # Calculate gross P&L (before fees - the threshold handles fee math)
+        # Calculate gross P&L and an estimated NET P&L (after all costs)
         exit_value = pos.quantity * current_price
         gross_pnl = exit_value - pos.entry_value
         
@@ -15090,6 +15103,24 @@ class AureonKrakenEcosystem:
                 min_gross_win = penny_threshold_fb.get('win_gte', min_gross_win)
                 target_net = penny_threshold_fb.get('target_net', target_net)
 
+        # Estimate net P&L after fees + slippage + spread using the same assumptions
+        # as the rest of the penny-profit accounting.
+        fee_rate = get_exchange_fee_rate(pos.exchange)
+        slippage = CONFIG.get('SLIPPAGE_PCT', 0.0020)
+        spread = CONFIG.get('SPREAD_COST_PCT', 0.0010)
+        total_rate = fee_rate + slippage + spread
+
+        entry_fee = getattr(pos, 'entry_fee', 0.0) or 0.0
+        if entry_fee <= 0 and pos.entry_value > 0:
+            entry_fee = pos.entry_value * total_rate
+        exit_fee = exit_value * total_rate
+        net_pnl_est = gross_pnl - (entry_fee + exit_fee)
+
+        # ⏱️ TIMEBOX PROFIT: if the deadline is reached and net penny is secured, exit immediately.
+        # NO-LOSS ETHOS: never authorize TIMEBOX exits that realize a loss by default.
+        if reason == "TIMEBOX_PROFIT" and CONFIG.get('ENABLE_TIMEBOX_EXIT', True) and net_pnl_est >= target_net:
+            return True
+
         # ═══════════════════════════════════════════════════════════════════════
         # 🇮🇪🎯 SNIPER ABSOLUTE KILL AUTHORITY - THE SNIPER'S WORD IS LAW 🎯🇮🇪
         # ═══════════════════════════════════════════════════════════════════════
@@ -15105,13 +15136,18 @@ class AureonKrakenEcosystem:
             current_value=exit_value
         )
 
-        if authorized:
+        if authorized and net_pnl_est >= target_net:
             # 🎯 SNIPER AUTHORIZES THE KILL - Execute with honor
             print(f"   {sniper_verdict}")
             print(f"   💰 NET PROFIT: ~${target_net:.2f}")
             if sniper_wisdom:
                 print(f"   📜 \"{sniper_wisdom}\"")
             return True
+
+        if authorized and net_pnl_est < target_net:
+            # Gross target met, but after-costs net isn't secured yet.
+            print(f"   🛡️ HOLD {pos.symbol}: gross ${gross_pnl:.4f} but net ${net_pnl_est:.4f} < ${target_net:.4f} (after costs)")
+            return False
 
         # 🛡️ SNIPER DENIES EXIT - The sniper's decision is ABSOLUTE
         # No algorithm, no panic, no signal can override this.
@@ -17255,7 +17291,8 @@ class AureonKrakenEcosystem:
 
         # ⏱️ 1-minute penny-profit consensus gate (unlimited entries need this)
         consensus_ok, consensus_reason, consensus_details = has_one_minute_profit_consensus(opp)
-        if not consensus_ok and not is_force_scout:
+        allow_force_bypass = CONFIG.get('ALLOW_FORCE_SCOUT_BYPASS_CONSENSUS', False)
+        if not consensus_ok and (not is_force_scout or not allow_force_bypass):
             print(
                 f"   ⏱️❌ SKIP {symbol}: lacks 1-minute penny consensus "
                 f"({consensus_reason}) [p={consensus_details['prob_quick']:.2f}, "
@@ -17586,6 +17623,16 @@ class AureonKrakenEcosystem:
         
         if not self.dry_run:
             try:
+                # Safety: never submit a BUY without a positive size.
+                # Some upstream sizing paths (especially force scouts) can produce 0/None
+                # when env/config overrides are mis-set; exchanges reject such orders.
+                if quote_amount_needed is None or float(quote_amount_needed) <= 0.0:
+                    fallback_quote = float(max(CONFIG.get('MIN_TRADE_USD', 1.0), 1.0))
+                    logger.warning(
+                        f"{symbol}: computed non-positive quote_qty={quote_amount_needed}; "
+                        f"falling back to {fallback_quote:.2f}"
+                    )
+                    quote_amount_needed = fallback_quote
                 res = self.client.place_market_order(exchange, symbol, 'BUY', quote_qty=quote_amount_needed)
             except Exception as e:
                 print(f"   ⚠️ Execution error for {symbol}: {e}")
@@ -18019,6 +18066,90 @@ class AureonKrakenEcosystem:
                 continue
                 
             change_pct = (current_price - pos.entry_price) / pos.entry_price * 100
+
+            # 🍄 MYCELIUM FEEDBACK LOOP: feed live position state into the network
+            # Previously the mycelium only learned on close() which can be hours/days.
+            # This allows the network to reflect current momentum/coherence in real time.
+            try:
+                if hasattr(self, 'mycelium') and self.mycelium is not None and hasattr(self.mycelium, 'add_signal'):
+                    # Map position state to a [0,1] activation signal.
+                    # Neutral=0.5, positive momentum pushes up, negative pushes down.
+                    momentum_signal = 0.5
+                    try:
+                        momentum_signal = 0.5 + max(-0.5, min(0.5, (change_pct / 10.0)))
+                    except Exception:
+                        momentum_signal = 0.5
+
+                    coherence_signal = pos.coherence if getattr(pos, 'coherence', None) is not None else 0.5
+                    coherence_signal = max(0.0, min(1.0, coherence_signal))
+
+                    # Blend coherence + momentum into one activation
+                    activation = max(0.0, min(1.0, coherence_signal * 0.6 + momentum_signal * 0.4))
+                    self.mycelium.add_signal(symbol, activation)
+            except Exception:
+                pass
+
+            # ⏱️ TIMEBOX: penny scalps must secure net profit quickly
+            # NO-LOSS ETHOS: we NEVER force-close at a loss by default.
+            # After the timebox, we only close if net penny profit is secured; otherwise we mark
+            # the position as timebox-expired (bad setup) and penalize learning, but we keep holding.
+            if CONFIG.get('ENABLE_TIMEBOX_EXIT', True):
+                try:
+                    max_hold_min = float(CONFIG.get('MAX_HOLD_MINUTES', 5) or 5)
+                except Exception:
+                    max_hold_min = 5.0
+
+                if max_hold_min > 0:
+                    hold_min = (time.time() - pos.entry_time) / 60.0
+                    if hold_min >= max_hold_min:
+                        exit_value = pos.quantity * current_price
+                        gross_pnl = exit_value - pos.entry_value
+
+                        # Determine penny target for this position
+                        penny_threshold = None
+                        penny_check = check_penny_exit(pos.exchange, pos.entry_value, gross_pnl, symbol)
+                        penny_threshold = penny_check.get('threshold') if isinstance(penny_check, dict) else None
+                        target_net = 0.01
+                        if penny_threshold:
+                            target_net = penny_threshold.get('target_net', target_net)
+                        else:
+                            fb = get_penny_threshold(pos.exchange, pos.entry_value)
+                            if fb:
+                                target_net = fb.get('target_net', target_net)
+
+                        # Estimate net after costs
+                        fee_rate = get_exchange_fee_rate(pos.exchange)
+                        slippage = CONFIG.get('SLIPPAGE_PCT', 0.0020)
+                        spread = CONFIG.get('SPREAD_COST_PCT', 0.0010)
+                        total_rate = fee_rate + slippage + spread
+                        entry_fee = getattr(pos, 'entry_fee', 0.0) or 0.0
+                        if entry_fee <= 0 and pos.entry_value > 0:
+                            entry_fee = pos.entry_value * total_rate
+                        exit_fee = exit_value * total_rate
+                        net_pnl_est = gross_pnl - (entry_fee + exit_fee)
+
+                        if net_pnl_est >= target_net:
+                            # Deadline reached and net is secured -> take it immediately.
+                            to_close.append((symbol, "TIMEBOX_PROFIT", change_pct, current_price))
+                            continue
+
+                        # Deadline reached but net is NOT secured -> HOLD (no-loss default)
+                        try:
+                            if not hasattr(pos, 'metadata') or pos.metadata is None:
+                                pos.metadata = {}
+                            pos.metadata['timebox_expired'] = True
+                            pos.metadata['timebox_expired_at'] = time.time()
+                        except Exception:
+                            pass
+                        print(f"   ⏱️ TIMEBOX EXPIRED (HOLD): {symbol} held {hold_min:.1f}m (net ${net_pnl_est:.4f} < ${target_net:.4f})")
+
+                        # Penalize the network so we stop selecting similar setups.
+                        try:
+                            if hasattr(self, 'mycelium') and self.mycelium is not None and hasattr(self.mycelium, 'learn'):
+                                # Negative reinforcement (small) for failing the timebox.
+                                self.mycelium.learn(symbol, -0.5)
+                        except Exception:
+                            pass
             
             # 📊 FEED POSITION DATA TO PROBABILITY MATRIX
             # This allows the matrix to validate predictions against real positions
@@ -18038,6 +18169,7 @@ class AureonKrakenEcosystem:
                         coherence=pos.coherence,
                         trailing_stop_active=pos.trailing_stop_active,
                         highest_price=pos.highest_price,
+                        timebox_expired=bool(getattr(pos, 'metadata', {}) and pos.metadata.get('timebox_expired', False)),
                     )
                 except Exception as e:
                     logger.warning(f"Matrix position feed error for {symbol}: {e}")
@@ -18135,9 +18267,22 @@ class AureonKrakenEcosystem:
                             min_gross_win = penny_threshold.get('win_gte', 0.01)
                             target_net = penny_threshold.get('target_net', 0.01)
                             if gross_pnl >= min_gross_win:
-                                print(f"   🔮 MATRIX EXIT (PENNY SECURED): {symbol} {prob_action} (prob={prob_probability:.0%}, conf={prob_confidence:.0%}) Gross: ${gross_pnl:.4f} >= ${min_gross_win:.4f} -> NET ~${target_net:.2f}")
-                                to_close.append((symbol, "MATRIX_SELL", change_pct, current_price))
-                                prob_exit_triggered = True
+                                fee_rate = get_exchange_fee_rate(pos.exchange)
+                                slippage = CONFIG.get('SLIPPAGE_PCT', 0.0020)
+                                spread = CONFIG.get('SPREAD_COST_PCT', 0.0010)
+                                total_rate = fee_rate + slippage + spread
+                                entry_fee = getattr(pos, 'entry_fee', 0.0) or 0.0
+                                if entry_fee <= 0 and pos.entry_value > 0:
+                                    entry_fee = pos.entry_value * total_rate
+                                exit_fee = exit_value * total_rate
+                                net_pnl_est = gross_pnl - (entry_fee + exit_fee)
+
+                                if net_pnl_est >= target_net:
+                                    print(f"   🔮 MATRIX EXIT (PENNY SECURED): {symbol} {prob_action} (prob={prob_probability:.0%}, conf={prob_confidence:.0%}) Net: ${net_pnl_est:.4f} >= ${target_net:.4f}")
+                                    to_close.append((symbol, "MATRIX_SELL", change_pct, current_price))
+                                    prob_exit_triggered = True
+                                else:
+                                    print(f"   🛑 HOLDING {symbol}: Matrix exit blocked - net ${net_pnl_est:.4f} < ${target_net:.4f} (after costs)")
                             elif prob_action == 'STRONG SELL' and prob_confidence >= 0.7 and gross_pnl > -pos.entry_value * 0.01:
                                 # Allow small loss (<1%) on STRONG SELL signals only
                                 print(f"   🚨 MATRIX FORCE EXIT: {symbol} STRONG SELL (conf={prob_confidence:.0%}) - Small loss ${gross_pnl:.2f}")
@@ -18179,10 +18324,25 @@ class AureonKrakenEcosystem:
             if penny_threshold:
                 # 💰 PENNY PROFIT MODE - Use dollar thresholds
                 if penny_check['should_tp']:
-                    # 🇮🇪🎯 SNIPER KILL! Hit penny profit - INSTANT EXIT
-                    if sniper_wisdom:
-                        print(f"   🎯 SNIPER LOCKED: {symbol} - \"{sniper_wisdom}\"")
-                    to_close.append((symbol, "TP", change_pct, current_price))
+                    # 🇮🇪🎯 SNIPER KILL! Only when NET profit after costs is secured.
+                    min_gross_win = penny_threshold.get('win_gte', 0.01)
+                    target_net = penny_threshold.get('target_net', 0.01)
+                    fee_rate = get_exchange_fee_rate(pos.exchange)
+                    slippage = CONFIG.get('SLIPPAGE_PCT', 0.0020)
+                    spread = CONFIG.get('SPREAD_COST_PCT', 0.0010)
+                    total_rate = fee_rate + slippage + spread
+                    entry_fee = getattr(pos, 'entry_fee', 0.0) or 0.0
+                    if entry_fee <= 0 and pos.entry_value > 0:
+                        entry_fee = pos.entry_value * total_rate
+                    exit_fee = exit_value * total_rate
+                    net_pnl_est = gross_pnl - (entry_fee + exit_fee)
+
+                    if net_pnl_est >= target_net and gross_pnl >= min_gross_win:
+                        if sniper_wisdom:
+                            print(f"   🎯 SNIPER LOCKED: {symbol} - \"{sniper_wisdom}\"")
+                        to_close.append((symbol, "TP", change_pct, current_price))
+                    else:
+                        print(f"   🛡️ HOLD {symbol}: net ${net_pnl_est:.4f} < ${target_net:.4f} (after costs)")
                 elif penny_check['should_sl']:
                     # 🛡️ STOP LOSS - Quick exit to protect capital
                     # 🇮🇪 SNIPER MODE: Only 1 cycle minimum (was 5)
@@ -18195,8 +18355,22 @@ class AureonKrakenEcosystem:
                     # Check if we're at penny harvest level
                     min_gross_win = penny_threshold.get('win_gte', 0.01)
                     if gross_pnl >= min_gross_win:
-                        print(f"   🌾 PENNY HARVEST: {symbol} gross ${gross_pnl:.4f} >= ${min_gross_win:.4f}")
-                        to_close.append((symbol, "HARVEST", change_pct, current_price))
+                        target_net = penny_threshold.get('target_net', 0.01)
+                        fee_rate = get_exchange_fee_rate(pos.exchange)
+                        slippage = CONFIG.get('SLIPPAGE_PCT', 0.0020)
+                        spread = CONFIG.get('SPREAD_COST_PCT', 0.0010)
+                        total_rate = fee_rate + slippage + spread
+                        entry_fee = getattr(pos, 'entry_fee', 0.0) or 0.0
+                        if entry_fee <= 0 and pos.entry_value > 0:
+                            entry_fee = pos.entry_value * total_rate
+                        exit_fee = exit_value * total_rate
+                        net_pnl_est = gross_pnl - (entry_fee + exit_fee)
+
+                        if net_pnl_est >= target_net:
+                            print(f"   🌾 PENNY HARVEST: {symbol} net ${net_pnl_est:.4f} >= ${target_net:.4f}")
+                            to_close.append((symbol, "HARVEST", change_pct, current_price))
+                        else:
+                            print(f"   🛡️ HOLD {symbol}: harvest blocked - net ${net_pnl_est:.4f} < ${target_net:.4f} (after costs)")
             else:
                 # Fallback to percentage-based TP/SL
                 # 🔧 FIX: Don't use fallback % stops - ALWAYS compute penny threshold
@@ -18460,7 +18634,13 @@ class AureonKrakenEcosystem:
         # 💰 PENNY PROFIT OVERRIDE: If we have a penny profit, we take it regardless of time!
         is_penny_profitable = net_pnl >= 0.01
         
-        if hold_time_min < MIN_HOLD_MINUTES and not is_penny_profitable:
+        # TIMEBOXED MODE: never block exits with resonance holding.
+        try:
+            max_hold_min = float(CONFIG.get('MAX_HOLD_MINUTES', 5) or 5)
+        except Exception:
+            max_hold_min = 5.0
+
+        if hold_time_min < MIN_HOLD_MINUTES and hold_time_min < max_hold_min and not is_penny_profitable and reason not in ['TIMEBOX', 'TIMEBOX_PROFIT']:
             pnl_pct = ((price - pos.entry_price) / pos.entry_price * 100) if pos.entry_price > 0 else 0
             # Only exit early on stops (-5%) or massive gains (+20%)
             if reason not in ['STOP_LOSS', 'CIRCUIT_BREAKER'] and abs(pnl_pct) < 20:
@@ -18471,12 +18651,44 @@ class AureonKrakenEcosystem:
         # This helps the matrix validate predictions and learn from outcomes
         if self.prob_matrix and hasattr(self.prob_matrix, 'feed_position_close'):
             try:
+                # Align matrix outcome metrics with penny-profit ethos.
+                penny_threshold = None
+                try:
+                    penny_threshold = get_penny_threshold(pos.exchange, pos.entry_value)
+                except Exception:
+                    penny_threshold = None
+
+                target_net = 0.01
+                if isinstance(penny_threshold, dict):
+                    target_net = float(penny_threshold.get('target_net', target_net))
+
+                penny_hit = bool(net_pnl >= target_net)
+
+                try:
+                    max_hold_min_for_matrix = float(CONFIG.get('MAX_HOLD_MINUTES', 5) or 5)
+                except Exception:
+                    max_hold_min_for_matrix = 5.0
+
+                quick_kill = bool(penny_hit and hold_time_min > 0 and hold_time_min <= max_hold_min_for_matrix)
+
+                timebox_expired = False
+                try:
+                    timebox_expired = bool(getattr(pos, 'metadata', {}) and pos.metadata.get('timebox_expired', False))
+                except Exception:
+                    timebox_expired = False
+
                 self.prob_matrix.feed_position_close(
                     symbol=symbol,
                     exit_price=price,
                     realized_pnl=net_pnl,
                     exit_reason=reason,
                     platform_timestamp=exit_time,
+                    target_net=target_net,
+                    penny_hit=penny_hit,
+                    quick_kill=quick_kill,
+                    max_hold_minutes=max_hold_min_for_matrix,
+                    hold_duration_mins=hold_time_min,
+                    timebox_expired=timebox_expired,
                 )
                 logger.info(f"Matrix outcome recorded: {symbol} PnL={net_pnl:.2f} reason={reason}")
                 
@@ -18569,8 +18781,13 @@ class AureonKrakenEcosystem:
         self._record_sniper_kill(pos, net_pnl)
         
         # Feed learning back to Mycelium Network
-        # pct is the price change percentage. If positive, we reinforce.
-        self.mycelium.learn(symbol, pct)
+        # Learn on REALIZED NET outcome (after costs), not raw price-change %.
+        # This aligns the network with the ethos: net pennies and no-loss by default.
+        try:
+            net_pct_for_mycelium = (net_pnl / pos.entry_value * 100) if pos.entry_value > 0 else 0.0
+        except Exception:
+            net_pct_for_mycelium = 0.0
+        self.mycelium.learn(symbol, net_pct_for_mycelium)
         
         # 🐘 Record trade result in Elephant Memory
         self.elephant_memory.record(symbol, net_pnl)
@@ -20138,7 +20355,7 @@ class AureonKrakenEcosystem:
                         # Kill Scanner ETA
                         try:
                             scanner = get_active_scanner()
-                            scanner_key = f"{pos.exchange}:{symbol}"
+                            scanner_key = f"{(pos.exchange or '').lower()}:{symbol}"
                             if scanner_key in scanner.targets:
                                 target = scanner.targets[scanner_key]
                                 prob_pct = target.probability_of_kill * 100
@@ -20146,6 +20363,28 @@ class AureonKrakenEcosystem:
                                     eta_str = f"{target.eta_to_kill:.0f}s" if target.eta_to_kill < 60 else f"{target.eta_to_kill/60:.1f}m"
                                 elif prob_pct > 80:
                                     eta_str = "NOW!"
+                        except:
+                            pass
+
+                        # 🍄 Mycelium ladder (Queen + per-symbol activation)
+                        try:
+                            if hasattr(self, 'mycelium') and self.mycelium is not None:
+                                queen = self.mycelium.get_queen_signal() if hasattr(self.mycelium, 'get_queen_signal') else 0.0
+                                activation = None
+                                if hasattr(self.mycelium, 'activations') and isinstance(self.mycelium.activations, dict):
+                                    activation = self.mycelium.activations.get(symbol)
+
+                                # Prefer per-symbol activation when available; otherwise fall back to queen bias.
+                                if activation is not None:
+                                    if activation >= 0.60:
+                                        ladders.append('🍄↑')
+                                    elif activation <= 0.40:
+                                        ladders.append('🍄↓')
+                                else:
+                                    if queen >= 0.30:
+                                        ladders.append('🍄↑')
+                                    elif queen <= -0.30:
+                                        ladders.append('🍄↓')
                         except:
                             pass
                         
@@ -20220,7 +20459,7 @@ class AureonKrakenEcosystem:
                         print(f"      {icon}{asset:6s} │ {exch:3s} │ ${entry_val:>9.2f} │ {pnl_icon}${pnl_val:>+9.4f} │ {hold_str:>5s} │ {eta_full:>10s} │ {ladder_str}")
                     
                     print(f"   {'─'*95}")
-                    print(f"   🪜 Ladders: 🧠Brain 🔮Matrix 🎵HNC 📈Momentum 🎲MonteCarlo 🔗Domino  (↑)=faster (↓)=slower")
+                    print(f"   🪜 Ladders: 🍄Mycelium 🧠Brain 🔮Matrix 🎵HNC 📈Momentum 🎲MonteCarlo 🔗Domino  (↑)=faster (↓)=slower")
                         
                 # Stats
                 rt_count = len(self.realtime_prices)
