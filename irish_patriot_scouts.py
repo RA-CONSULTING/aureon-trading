@@ -176,9 +176,10 @@ PATRIOT_CONFIG = {
     'COORDINATE_RETREAT': True,           # All scouts retreat together
     
     # ═══════════════════════════════════════════════════════════════════════
-    # 🎖️ VICTORY CONDITIONS
+    # 🎖️ VICTORY CONDITIONS - 🪙 SHARED GOAL: Net Penny Profit After Fees
     # ═══════════════════════════════════════════════════════════════════════
-    'PENNY_PROFIT_TARGET': 0.151625,      # Trained penny threshold
+    'PENNY_PROFIT_TARGET': 0.01,          # 🪙 SHARED GOAL: +$0.01 NET (dynamic calc overrides)
+    'USE_DYNAMIC_PENNY_MATH': True,       # 🪙 Use ecosystem penny threshold
     'INSTANT_VICTORY_EXIT': True,         # Exit immediately on penny
     'CELEBRATE_KILLS': True,              # Celebrate like Irish
 }
@@ -423,14 +424,24 @@ class PatriotScout:
         """
         Determine if scout should exit position.
         Uses ALL Celtic warfare intelligence.
+        🪙 SHARED GOAL: Only exit on NET PENNY PROFIT after fees.
         """
         reasons = []
         
-        # 1. PENNY PROFIT VICTORY
+        # 1. 🪙 SHARED GOAL: PENNY PROFIT VICTORY (Dynamic calculation)
         if PATRIOT_CONFIG['INSTANT_VICTORY_EXIT']:
-            target = PATRIOT_CONFIG.get('PENNY_PROFIT_TARGET', 0.15)
+            # Try to get dynamic penny threshold from ecosystem
+            target = PATRIOT_CONFIG.get('PENNY_PROFIT_TARGET', 0.01)
+            if PATRIOT_CONFIG.get('USE_DYNAMIC_PENNY_MATH', True):
+                try:
+                    from aureon_unified_ecosystem import get_penny_threshold
+                    penny = get_penny_threshold('binance', self.entry_value_usd)
+                    if penny:
+                        target = penny['win_gte']  # Use exact calculated threshold
+                except ImportError:
+                    pass  # Use fallback
             if self.unrealized_pnl >= target:
-                return True, f"PENNY PROFIT! +${self.unrealized_pnl:.4f} >= ${target}"
+                return True, f"🪙 SHARED GOAL! +${self.unrealized_pnl:.4f} >= ${target:.4f} net"
         
         # 2. PREEMPTIVE EXIT SIGNAL
         if self.preemptive_signal and PATRIOT_CONFIG['PREEMPTIVE_EXIT_ENABLED']:

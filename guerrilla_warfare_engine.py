@@ -756,10 +756,19 @@ class FlyingColumnCommander:
         column.cycles_held += 1
         
         # ═══════════════════════════════════════════════════════════════
-        # 🎯 EXIT CHECK 1: PENNY PROFIT ACHIEVED - INSTANT EXIT
+        # 🪙 SHARED GOAL: PENNY PROFIT ACHIEVED - INSTANT EXIT
         # ═══════════════════════════════════════════════════════════════
-        if net_pnl >= column.target_profit:
-            return True, f"🎯 PENNY PROFIT! Net: ${net_pnl:.4f}", net_pnl
+        # Try to get dynamic penny threshold
+        penny_target = column.target_profit
+        try:
+            from aureon_unified_ecosystem import get_penny_threshold
+            penny = get_penny_threshold(column.exchange, column.entry_value)
+            if penny:
+                penny_target = penny['win_gte']
+        except ImportError:
+            pass
+        if net_pnl >= penny_target:
+            return True, f"🪙 SHARED GOAL! Net: ${net_pnl:.4f} >= ${penny_target:.4f}", net_pnl
         
         # ═══════════════════════════════════════════════════════════════
         # 🏃 EXIT CHECK 2: PREEMPTIVE MOMENTUM REVERSAL

@@ -34,13 +34,25 @@ from datetime import datetime
 import math
 
 # ═══════════════════════════════════════════════════════════════
-# 🎯 PENNY PROFIT CONSTANTS (from sniper training)
+# 🪙 SHARED GOAL: PENNY PROFIT CONSTANTS
+# These are FALLBACK values - use get_penny_threshold() for dynamic calc
 # ═══════════════════════════════════════════════════════════════
 POSITION_SIZE = 10.0  # $10 per trade
 COMBINED_FEE_RATE = 0.007  # 0.70% round-trip
 REQUIRED_R = 0.015163  # 1.5163% move needed
 WIN_THRESHOLD = 0.151625  # $0.151625 gross profit minimum
-NET_PENNY_TARGET = 0.01  # $0.01 net profit goal
+NET_PENNY_TARGET = 0.01  # $0.01 net profit goal (🪙 SHARED GOAL)
+
+def get_dynamic_penny_threshold(exchange: str = 'binance', trade_size: float = 10.0) -> float:
+    """🪙 SHARED GOAL: Get dynamic penny threshold from ecosystem."""
+    try:
+        from aureon_unified_ecosystem import get_penny_threshold
+        penny = get_penny_threshold(exchange, trade_size)
+        if penny:
+            return penny['win_gte']
+    except ImportError:
+        pass
+    return WIN_THRESHOLD  # Fallback
 
 # Time constants
 SECONDS_PER_BAR = 60  # Assume 1-minute bars for crypto
