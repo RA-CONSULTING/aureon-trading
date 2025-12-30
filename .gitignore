@@ -42,3 +42,6 @@ __pycache__/
 .packages
 build/
 de440.bsp
+
+# Local runtime state (do not commit)
+aureon_memory_spiral.json

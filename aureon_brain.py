@@ -18,7 +18,7 @@ from typing import Dict, Optional, Sequence
 import time
 import math
 import numpy as np
-
+from aureon_memory_core import memory  # 🧠 MEMORY CORE INTEGRATION
 
 @dataclass(frozen=True)
 class BrainParams:
@@ -44,7 +44,14 @@ class AureonBrain:
         self.p = params or BrainParams()
 
     def cascade(self, base_score: float) -> float:
-        return float(base_score) * float(self.p.cascade_factor)
+        """
+        Apply CASCADE amplification.
+        If in a SURGE WINDOW, amplification is doubled.
+        """
+        factor = float(self.p.cascade_factor)
+        if memory.is_surge_window_active():
+            factor *= 2.0  # 🌊 SURGE BOOST
+        return float(base_score) * factor
 
     def coherence(self, features: Dict[str, float]) -> float:
         """

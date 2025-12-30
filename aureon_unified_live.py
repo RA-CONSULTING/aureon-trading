@@ -30,6 +30,7 @@ if sys.platform == 'win32':
 
 from binance_client import BinanceClient
 from hnc_probability_matrix import HNCProbabilityIntegration
+from aureon_memory_core import memory as spiral_memory
 
 logging.basicConfig(
     level=logging.INFO,
@@ -268,6 +269,7 @@ class AureonUnifiedLive:
         self.client = BinanceClient()
         self.lot_mgr = LotSizeManager(self.client)
         self.memory = ElephantMemory()
+        self.spiral = spiral_memory  # 🌀 SPIRAL MEMORY INTEGRATION
         self.hnc = HNCProbabilityIntegration()  # HNC Probability Matrix
         
         self.positions = {}
@@ -461,6 +463,20 @@ class AureonUnifiedLive:
     
     def get_usdc_balance(self) -> float:
         return self.client.get_free_balance('USDC')
+
+    def get_all_balances(self) -> Dict[str, float]:
+        """Get all non-zero balances for reconciliation"""
+        try:
+            acc = self.client.account()
+            balances = {}
+            for b in acc.get('balances', []):
+                total = float(b['free']) + float(b['locked'])
+                if total > 0:
+                    balances[b['asset']] = total
+            return balances
+        except Exception as e:
+            logger.error(f"Failed to get balances: {e}")
+            return {}
     
     def scan_opportunities(self) -> List[Dict]:
         """v4 Enhanced opportunity scanner with learned frequency filters"""
@@ -702,6 +718,16 @@ class AureonUnifiedLive:
         
         try:
             result = self.client.place_market_order(symbol, 'BUY', quantity=float(qty_str))
+            
+            # 🌀 SPIRAL MEMORY: Remember this moment
+            self.spiral.remember_trade(
+                symbol=symbol,
+                exchange='Binance',
+                entry_price=opp['price'],
+                quantity=float(qty_str),
+                side='BUY'
+            )
+            
             self.positions[symbol] = {
                 'entry': opp['price'],
                 'qty': float(qty_str),
@@ -723,6 +749,13 @@ class AureonUnifiedLive:
             if not ticker: continue
             
             price = float(ticker['lastPrice'])
+            
+            # 🌀 SPIRAL MEMORY: Update reality
+            self.spiral.update_position(symbol, price)
+            if self.spiral.get_spiral_check_needed(symbol):
+                logger.info(f"🌀 Spiral Checkpoint reached for {symbol}. Validating probability matrix...")
+                # TODO: Trigger deep HNC re-validation here if needed
+            
             entry = pos['entry']
             pnl_pct = (price - entry) / entry
             pnl_usd = pos['qty'] * price * pnl_pct
@@ -795,6 +828,9 @@ class AureonUnifiedLive:
                     # Record trade with sell price for re-entry protection
                     self.memory.record(symbol, pnl_usd, sell_price=price)
                     
+                    # 🌀 SPIRAL MEMORY: Close the loop
+                    self.spiral.close_position(symbol, price, reason)
+                    
                     self.total_profit_usd += pnl_usd
                     if pnl_usd >= 0:
                         self.wins += 1
@@ -851,6 +887,29 @@ class AureonUnifiedLive:
 +================================================================+
 """)
     
+    def _fetch_origin_trade(self, asset: str) -> Optional[Dict]:
+        """Callback for Spiral Memory to find trade origin"""
+        # Try common pairs
+        for quote in ['USDC', 'USDT']:
+            symbol = f"{asset}{quote}"
+            try:
+                trades = self.client.get_my_trades(symbol)
+                if trades:
+                    # Find last buy
+                    buys = [t for t in trades if t['isBuyer']]
+                    if buys:
+                        last_buy = buys[-1]
+                        return {
+                            'symbol': symbol,
+                            'exchange': 'Binance',
+                            'price': float(last_buy['price']),
+                            'date': datetime.fromtimestamp(last_buy['time']/1000).strftime('%Y-%m-%d %H:%M:%S'),
+                            'timestamp': last_buy['time']/1000
+                        }
+            except:
+                pass
+        return None
+
     def run(self, duration_sec: int = 3600):
         logger.info("""
 +================================================================+
@@ -861,6 +920,7 @@ class AureonUnifiedLive:
 |    * Solfeggio Frequency Mapping (750-963Hz optimal)
 |    * Tiered Coherence (0.70 base, 0.88 optimal)
 |    * Elephant Memory (Symbol learning)
+|    * Spiral Memory (State persistence) 🌀
 |    * Trailing Stops (Lock in +0.8% gains)
 |    * Spike Detection (Avoid pump entries)
 |    * Near-Miss Monitoring (Watch list)
@@ -868,6 +928,25 @@ class AureonUnifiedLive:
 +================================================================+
 """)
         
+        # 🌀 SPIRAL RECONCILIATION
+        logger.info("🌀 Synchronizing with Spiral Memory...")
+        self.spiral.reconcile_with_reality(
+            self.get_all_balances(),
+            self._fetch_origin_trade
+        )
+        
+        # Load reconciled positions into local state
+        for sym, pos in self.spiral.positions.items():
+            if sym not in self.positions and pos['status'] == 'OPEN':
+                self.positions[sym] = {
+                    'entry': pos['entry_price'],
+                    'qty': pos['quantity'],
+                    'entry_time': pos['entry_time'],
+                    'notional': pos['entry_price'] * pos['quantity'],
+                    'peak_price': pos.get('highest_price', pos['entry_price'])
+                }
+                logger.info(f"🌀 Restored {sym} from Spiral Memory (Entry: ${pos['entry_price']:.4f})")
+
         start = time.time()
         cycle = 0
         

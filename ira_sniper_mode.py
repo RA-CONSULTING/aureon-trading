@@ -231,10 +231,47 @@ class MyceliumStateAggregator:
             'last_sync': 0.0,
             'sync_count': 0,
             'systems_connected': 0,
+
+            # 📡 Event channel (lightweight pub/sub snapshot)
+            # Any subsystem can publish a named event payload here.
+            'events': {},
         }
         
         # Initialize standard synapses
         self._create_standard_synapses()
+
+    def ingest_event(self, event: str, data: Any) -> None:
+        """Store a named event payload in the unified state.
+
+        This is intentionally lightweight: it enables subsystems that don't
+        participate in the structured sync graph (scanner/patriots/learner/etc.)
+        to still publish status/telemetry into the shared mycelium state.
+        """
+        try:
+            events = self.unified_state.get('events')
+            if not isinstance(events, dict):
+                events = {}
+                self.unified_state['events'] = events
+            events[event] = {
+                'data': data,
+                'timestamp': time.time(),
+            }
+
+            # Persist into ThoughtBus (if connected) for durable, append-only memory.
+            tb = self.systems.get('thought_bus') if isinstance(getattr(self, 'systems', None), dict) else None
+            if tb is not None and hasattr(tb, 'publish'):
+                try:
+                    from aureon_thought_bus import Thought
+                    tb.publish(Thought(
+                        source='mycelium_state',
+                        topic=f'mycelium_state.event.{event}',
+                        payload={'event': event, 'data': data},
+                    ))
+                except Exception:
+                    pass
+        except Exception:
+            # Mycelium must never crash the trading loop
+            pass
         
     def _create_standard_synapses(self):
         """Create the standard synapse network between systems."""
@@ -667,9 +704,18 @@ def get_mycelium_aggregator() -> MyceliumStateAggregator:
     return MYCELIUM_AGGREGATOR
 
 
-def mycelium_sync() -> Dict[str, Any]:
-    """Quick function to pulse the mycelium network and get unified state."""
-    return get_mycelium_aggregator().pulse()
+def mycelium_sync(event: Optional[str] = None, data: Any = None) -> Dict[str, Any]:
+    """Pulse the mycelium network and return unified state.
+
+    Backward compatible with the original no-arg signature.
+
+    If `event` is provided, the payload is stored into the shared mycelium
+    state under `unified_state['events'][event]` before pulsing.
+    """
+    aggregator = get_mycelium_aggregator()
+    if event is not None:
+        aggregator.ingest_event(str(event), data)
+    return aggregator.pulse()
 
 
 def register_to_mycelium(name: str, system: Any):

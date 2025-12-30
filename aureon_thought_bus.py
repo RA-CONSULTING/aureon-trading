@@ -91,6 +91,36 @@ class ThoughtBus:
             items = [t for t in items if t.topic.startswith(topic_prefix)]
         return [t.to_json() for t in items[-limit:]]
 
+    def load_history_to_memory(self, jsonl_path: Optional[str] = None, topic_prefix: Optional[str] = None) -> int:
+        """Hydrate the in-memory ring buffer from a persisted JSONL log.
+
+        Unlike `replay()`, this does NOT call `publish()` and does NOT re-persist.
+        It is safe to use at startup to restore context without triggering handlers
+        or creating duplicate log lines.
+        """
+        path = jsonl_path or self._persist_path
+        if not path or not os.path.exists(path):
+            return 0
+
+        loaded = 0
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                for line in f:
+                    line = line.strip()
+                    if not line:
+                        continue
+                    data = json.loads(line)
+                    t = Thought(**data)
+                    if topic_prefix and not t.topic.startswith(topic_prefix):
+                        continue
+                    with self._lock:
+                        self._memory.append(t)
+                    loaded += 1
+        except Exception:
+            return loaded
+
+        return loaded
+
     def replay(self, jsonl_path: Optional[str] = None, topic_prefix: Optional[str] = None) -> int:
         path = jsonl_path or self._persist_path
         if not path or not os.path.exists(path):

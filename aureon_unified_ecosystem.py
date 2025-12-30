@@ -58,6 +58,7 @@ import random
 import asyncio
 import tempfile
 import logging
+from aureon_memory_core import memory as spiral_memory  # 🧠 MEMORY CORE INTEGRATION
 
 # 🧠 THOUGHT BUS - UNITY CONSCIOUSNESS 🧠
 try:
@@ -10513,7 +10514,7 @@ class MyceliumNetwork:
         for symbol in self.activations:
             self.activations[symbol] = self.activations[symbol] * 0.9 + 0.5 * 0.1
         
-    def propagate(self) -> Dict[str, float]:
+    def propagate(self, probability_map: Dict[str, float] = None) -> Dict[str, float]:
         """Propagate signals through the network"""
         new_activations = {}
         for symbol, activation in self.activations.items():
@@ -10544,7 +10545,7 @@ class MyceliumNetwork:
                 }
                 
                 # Step the full network - all hives process and Queen decides
-                result = self.full_network.step(market_data)
+                result = self.full_network.step(market_data, probability_map=probability_map)
                 
                 # 🧠 QUEEN NEURON SIGNAL - This is the collective intelligence!
                 self.queen_signal = result.get("queen_signal", 0.0)
@@ -11148,6 +11149,24 @@ class ElephantMemory:
             pass
         
         self.save()
+
+    def record_event(self, event_type: str, payload: Dict[str, Any]):
+        """Record a non-symbol event to JSONL history.
+
+        This provides durable operator/debug memory without affecting
+        symbol-level cooldown/blacklist logic.
+        """
+        try:
+            with open(self.history_path, 'a') as f:
+                record = {
+                    'ts': datetime.now().isoformat(),
+                    'type': 'event',
+                    'event_type': event_type,
+                    'payload': payload,
+                }
+                f.write(json.dumps(record) + '\n')
+        except Exception:
+            pass
     
     def should_avoid(self, symbol: str) -> bool:
         # Check local memory
@@ -11494,6 +11513,12 @@ class AureonKrakenEcosystem:
         # ==== COGNITION: initialize thought bus + modules ====
         print("   🧠 Initializing Cognition Bus...")
         self.thought_bus = ThoughtBus(persist_path="logs/aureon_thoughts.jsonl")
+
+        # 🧠🕰️ Restore recent Mycelium nerve history (without replay/persist duplication)
+        try:
+            self.thought_bus.load_history_to_memory(topic_prefix='mycelium_state.')
+        except Exception:
+            pass
 
         # Modules (thinking parts)
         self.miner_module = MinerModule(self.thought_bus)
@@ -11902,6 +11927,109 @@ class AureonKrakenEcosystem:
                 print("   🌐⚡ Global Harmonic Field ACTIVE (Ω > 0.618 = STRONG BUY)")
             except Exception as e:
                 print(f"   ⚠️ Global Harmonic Field init failed: {e}")
+
+        # 🍄 FINAL WIRING: connect all major subsystems to Mycelium aggregator
+        # This makes scouts/sniper/scanner/immune/cognition share one state channel.
+        self._wire_all_systems_to_mycelium()
+
+        # 🍄 Mycelium heartbeat state (prevents micro-loops)
+        self._mycelium_last_heartbeat_ts = 0.0
+        self._mycelium_heartbeat_interval = float(CONFIG.get('MYCELIUM_HEARTBEAT_SECONDS', 2.0))
+
+    def _wire_all_systems_to_mycelium(self) -> None:
+        """Register key subsystems into the MyceliumStateAggregator and publish a snapshot."""
+        def _safe_register(name: str, obj: Any) -> None:
+            if obj is None:
+                return
+            try:
+                register_to_mycelium(name, obj)
+            except Exception:
+                pass
+
+        try:
+            # Core IRA graph participants
+            _safe_register('scanner', get_active_scanner() if callable(get_active_scanner) else None)
+            _safe_register('patriots', getattr(getattr(self, 'patriot_deployer', None), 'network', None))
+            _safe_register('warfare', getattr(self, 'celtic_sniper', None))
+            _safe_register('learner', globals().get('ADAPTIVE_LEARNER'))
+
+            # Additional unified ecosystem subsystems (event/telemetry consumers)
+            _safe_register('immune', getattr(self, 'immune_system', None))
+            _safe_register('thought_bus', getattr(self, 'thought_bus', None))
+            _safe_register('mycelium_network', getattr(self, 'mycelium', None))
+            _safe_register('universal_intel', getattr(self, 'universal_intel', None))
+
+            # Publish a single snapshot event so all connected systems can “see” startup state
+            try:
+                mycelium_sync('ecosystem_startup', {
+                    'timestamp': time.time(),
+                    'dry_run': bool(getattr(self, 'dry_run', False)),
+                    'positions': len(getattr(self, 'positions', {}) or {}),
+                    'battlefields': CONFIG.get('BATTLEFIELDS', {}),
+                    'sniper_active': bool(getattr(self, 'sniper_config', {}).get('ACTIVE', False)),
+                })
+            except Exception:
+                pass
+        except Exception:
+            # Never let wiring failure break startup
+            pass
+
+    def _mycelium_heartbeat(self, note: str = "cycle") -> None:
+        """Constant nerve-system pulse: sync + persist snapshot without micro-loops."""
+        now_ts = time.time()
+        try:
+            if now_ts - float(getattr(self, '_mycelium_last_heartbeat_ts', 0.0)) < float(getattr(self, '_mycelium_heartbeat_interval', 2.0)):
+                return
+        except Exception:
+            # If timestamps are corrupted, default to allowing a pulse
+            pass
+
+        snapshot = {
+            'timestamp': now_ts,
+            'note': note,
+            'iteration': int(getattr(self, 'iteration', 0) or 0),
+            'dry_run': bool(getattr(self, 'dry_run', False)),
+            'positions': len(getattr(self, 'positions', {}) or {}),
+            'trading_halted': bool(getattr(getattr(self, 'tracker', None), 'trading_halted', False)),
+            'halt_reason': getattr(getattr(self, 'tracker', None), 'halt_reason', ''),
+            'queen_signal': float(getattr(getattr(self, 'mycelium', None), 'queen_signal', 0.0) or 0.0),
+            'cascade': (CASCADE_AMPLIFIER.get_stats() if 'CASCADE_AMPLIFIER' in globals() else {}),
+            'sniper_bridge_ready': bool(getattr(self, '_sniper_bridge_ready', False)),
+        }
+
+        # 🍄 Pulse the aggregator (also persists into ThoughtBus via ira_sniper_mode ingest_event)
+        try:
+            mycelium_sync('heartbeat', snapshot)
+        except Exception:
+            pass
+
+        # 🐘 Append to elephant history as a second durable channel
+        try:
+            if hasattr(self, 'memory') and self.memory:
+                self.memory.record_event('mycelium_heartbeat', snapshot)
+        except Exception:
+            pass
+
+        self._mycelium_last_heartbeat_ts = now_ts
+
+    def _fetch_origin_trade(self, symbol: str) -> Optional[Dict]:
+        """
+        🕵️‍♂️ ORIGIN TRACER: Fetches the original trade data for a zombie position.
+        Used by the Memory Core to reconstruct lost history.
+        """
+        try:
+            # Try to find the last buy order for this symbol
+            # This is a simplified implementation - in a real scenario, we'd query the exchange's closed orders
+            # For now, we'll return None to trigger the fallback estimation logic in Memory Core
+            # or implement a basic lookup if the client supports it.
+            
+            # If we had a robust order history in the client, we would use it here.
+            # For now, returning None allows the Memory Core to use its "Current Price" fallback,
+            # which is safer than guessing wrong.
+            return None
+        except Exception as e:
+            logger.error(f"Failed to trace origin for {symbol}: {e}")
+            return None
 
     # ═══════════════════════════════════════════════════════════════
     # 🚫 SYMBOL VALIDATION CACHE - Reduce API noise for invalid symbols
@@ -15505,6 +15633,17 @@ class AureonKrakenEcosystem:
         else:
             quote_currencies = CONFIG.get('QUOTE_CURRENCIES', self.tradeable_currencies)
         
+        # 🎯 ONE GOAL: Fetch validated probabilities for Mycelium injection
+        prob_map = {}
+        if self.probability_loader:
+            try:
+                reports = self.probability_loader.load_all_reports()
+                for s, data in reports.items():
+                    if isinstance(data, dict):
+                        prob_map[s] = data.get('probability', 0.5)
+            except Exception:
+                pass
+
         for symbol, data in self.ticker_cache.items():
             # 🌐 Check anomaly blacklist (CoinAPI)
             if CONFIG.get('ENABLE_COINAPI', False):
@@ -15621,7 +15760,7 @@ class AureonKrakenEcosystem:
             
             # Propagate through Mycelium network for enhanced signal
             self.mycelium.add_signal(symbol, coherence)
-            network_activations = self.mycelium.propagate()
+            network_activations = self.mycelium.propagate(probability_map=prob_map)
             
             # Adjust coherence based on network activation
             if symbol in network_activations:
@@ -16094,6 +16233,8 @@ class AureonKrakenEcosystem:
                     'omega': omega_value,
                     'omega_direction': omega_direction,
                     'omega_boost': omega_boost,
+                    # 🧠 QUEEN NEURON SIGNAL - SCALPER MODE
+                    'queen_signal': self.mycelium.queen_signal if hasattr(self.mycelium, 'queen_signal') else 0.0,
                 })
                 
                 # 🔮 LOG PREDICTION FOR VALIDATION 🔮
@@ -17121,6 +17262,17 @@ class AureonKrakenEcosystem:
         # 🧠 GET LEARNED PARAMETERS FROM RECOMMENDATION
         learned_rec = opp.get('learned_recommendation', {})
         
+        # 🎯 SCALPER MODE: If Queen is urgent, tighten targets!
+        queen_signal = opp.get('queen_signal', 0.0)
+        tp_pct = learned_rec.get('suggested_take_profit')
+        sl_pct = learned_rec.get('suggested_stop_loss')
+        
+        if queen_signal > 0.8:
+            # Hyper-Scalping: In and out in seconds!
+            tp_pct = 0.005  # 0.5% profit target
+            sl_pct = 0.002  # 0.2% stop loss
+            print(f"   ⚡ SCALPER MODE ACTIVE for {symbol}: Queen Signal {queen_signal:.2f} -> TP 0.5% / SL 0.2%")
+        
         self.positions[symbol] = Position(
             symbol=symbol,
             entry_price=price,
@@ -17136,8 +17288,8 @@ class AureonKrakenEcosystem:
             prime_size_multiplier=prime_multiplier,
             exchange=exchange,
             # 🧠 Apply learned parameters from probability matrix
-            learned_tp_pct=learned_rec.get('suggested_take_profit'),
-            learned_sl_pct=learned_rec.get('suggested_stop_loss'),
+            learned_tp_pct=tp_pct,
+            learned_sl_pct=sl_pct,
             learned_hold_cycles=learned_rec.get('suggested_hold_cycles'),
             learned_win_rate=learned_rec.get('expected_win_rate'),
             learned_confidence=learned_rec.get('confidence', 'low'),
@@ -18980,6 +19132,15 @@ class AureonKrakenEcosystem:
         if not self.dry_run:
             self.sync_positions_with_exchange()
         
+        # 🐘 MEMORY RECONCILIATION: Cure "System Amnesia"
+        # Reconstructs lost trade history using the Memory Core
+        if not self.dry_run:
+            print("   🐘 Reconciling memory with reality...")
+            self.memory.reconcile_with_reality(
+                current_positions=self.positions,
+                fetch_origin_fn=self._fetch_origin_trade
+            )
+
         # Find initial opportunities for WebSocket
         initial_opps = self.find_opportunities()
         # 🔥 UNLEASHED: Watch 200 pairs instead of 15 - MAXIMUM SIGNAL CAPTURE!
@@ -19039,9 +19200,16 @@ class AureonKrakenEcosystem:
             while True:
                 self.iteration += 1
                 now = datetime.now().strftime("%H:%M:%S")
+
+                # 🍄 Constant nerve-system pulse (state shared + persisted)
+                self._mycelium_heartbeat(note='cycle')
+                
+                # 🌊 SURGE WINDOW CHECK: Synchronize with Zero Point Field
+                is_surge = self.memory.is_surge_window_active()
+                surge_status = "🌊 SURGE ACTIVE" if is_surge else "Waiting for Surge"
                 
                 print(f"\n{'━'*70}")
-                print(f"🔄 Cycle {self.iteration} - {now} [{self.scan_direction}]")
+                print(f"🔄 Cycle {self.iteration} - {now} [{self.scan_direction}] - {surge_status}")
                 print(f"{'━'*70}")
 
                 # 🔦 Miner Lighthouse hook: if miner Γ is firing, override thresholds aggressively

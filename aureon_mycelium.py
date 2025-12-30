@@ -65,6 +65,7 @@ import logging
 from typing import Dict, List, Optional, Tuple, Any
 from dataclasses import dataclass, field
 from collections import deque
+from aureon_memory_core import memory  # 🧠 MEMORY CORE INTEGRATION
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # CONSTANTS
@@ -161,7 +162,7 @@ class Agent:
     def __post_init__(self):
         self.prime_idx = self.id % len(PRIMES)
     
-    def compute_signal(self, market_data: Dict[str, float]) -> float:
+    def compute_signal(self, market_data: Dict[str, float], probability_bias: float = 0.0) -> float:
         """
         Compute trading signal based on market data.
         Returns value in [-1, 1]: negative = SELL, positive = BUY
@@ -177,8 +178,14 @@ class Agent:
         # Unique bias per agent
         bias = math.sin(prime * 0.1) * 0.3
         
-        # Combine factors
+        # Combine factors - NOW WITH PROBABILITY BIAS!
+        # If probability is high, we trust momentum more and ignore volatility
         signal = momentum * 0.4 + trend * 0.3 + bias + (1 - volatility) * 0.2
+        
+        # 🎯 ONE GOAL INJECTION: If probability is validated, boost signal!
+        if probability_bias != 0:
+            signal += probability_bias * 0.5
+            
         self.last_signal = max(-1, min(1, signal))
         
         return self.last_signal
@@ -274,7 +281,7 @@ class Hive:
             )
             self.synapses.append(synapse)
     
-    def step(self, market_data: Dict[str, float]) -> Dict[str, Any]:
+    def step(self, market_data: Dict[str, float], probability_bias: float = 0.0) -> Dict[str, Any]:
         """
         Execute one trading step for all agents.
         """
@@ -284,7 +291,7 @@ class Hive:
         signals = []
         for agent in self.agents:
             if agent.equity > 0:
-                signal = agent.compute_signal(market_data)
+                signal = agent.compute_signal(market_data, probability_bias)
                 signals.append(signal)
         
         # Transmit through synapses
@@ -481,33 +488,58 @@ class MyceliumNetwork:
         
         return hive
     
-    def step(self, market_data: Dict[str, float]) -> Dict[str, Any]:
+    def step(self, market_data: Dict[str, float], probability_map: Dict[str, float] = None) -> Dict[str, Any]:
         """
         Execute one step of the mycelium network.
         All hives process market data and contribute to collective decision.
         """
         self.step_count += 1
         
+        # 🌊 SURGE WINDOW CHECK
+        # If we are in a surge window, we boost the signal transmission
+        surge_active = memory.is_surge_window_active()
+        
+        # Extract probability bias from map (average of all validated signals)
+        prob_bias = 0.0
+        if probability_map:
+            # Use the average probability of high-confidence signals as a global bias
+            high_conf_probs = [p for p in probability_map.values() if p > 0.7]
+            if high_conf_probs:
+                prob_bias = (sum(high_conf_probs) / len(high_conf_probs)) * 2 - 1 # Map [0.7, 1.0] to [0.4, 1.0] approx
+        
         # Step all hives and collect signals
         hive_signals = []
         all_results = []
         
         for hive in self.hives:
-            result = hive.step(market_data)
-            hive_signals.append(result["hive_signal"])
+            result = hive.step(market_data, probability_bias=prob_bias)
+            signal = result["hive_signal"]
+            
+            # Boost signal during surge
+            if surge_active:
+                signal *= 1.5
+                
+            hive_signals.append(signal)
             all_results.append(result)
         
         # Transmit through hive synapses to queen
         transmitted = []
         for i, synapse in enumerate(self.hive_synapses):
             if i < len(hive_signals):
+                # Synapses learn faster during surge
+                if surge_active:
+                    synapse.plasticity = 0.2 # Double learning rate
+                else:
+                    synapse.plasticity = 0.1
+                    
                 transmitted.append(synapse.transmit(hive_signals[i]))
         
         # Queen neuron makes final decision
         queen_signal = self.queen_neuron.activate(transmitted)
         
-        # Check for hive splitting
-        self._check_splits()
+        # Check for hive splitting (ONLY during surge or high profit)
+        if surge_active or self.get_profit_multiplier() > 1.1:
+            self._check_splits()
         
         # Periodic harvesting
         if self.step_count % 10 == 0:
@@ -519,7 +551,8 @@ class MyceliumNetwork:
             "hive_count": len(self.hives),
             "total_equity": self.get_total_equity(),
             "generation": self.generation,
-            "results": all_results
+            "results": all_results,
+            "surge_active": surge_active
         }
     
     def _check_splits(self):
