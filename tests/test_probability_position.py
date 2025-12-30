@@ -277,6 +277,25 @@ class TestPositionAdjustment:
         adj, reason = self.integration._compute_position_adjustment('ADAUSDC')
         
         assert adj < 0, "Losing position should give negative adjustment"
+
+    def test_gross_green_but_net_red_reduces(self):
+        """If costs make net P&L negative, adjustment should be negative."""
+        self.integration.feed_position_data(
+            symbol='DOTUSDC',
+            exchange='binance',
+            entry_price=10.0,
+            entry_time=time.time() - 600,
+            quantity=100.0,
+            entry_value=1000.0,
+            current_price=10.01,  # +$1 gross
+            # Provide cost context: 0.3% per leg => ~$6 costs total => net negative
+            target_net=0.01,
+            total_rate=0.003,
+        )
+
+        adj, reason = self.integration._compute_position_adjustment('DOTUSDC')
+        assert adj < 0, "Net-negative position should reduce probability"
+        assert 'net' in reason.lower()
     
     def test_no_data_neutral_adjustment(self):
         """Test that no position data gives neutral adjustment."""

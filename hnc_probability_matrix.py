@@ -875,6 +875,13 @@ class PositionData:
     highest_price: float = 0.0
     # Whether this position exceeded the configured timebox without reaching penny profit
     timebox_expired: bool = False
+
+    # Net-after-costs context for live (pre-close) evaluation
+    target_net: float = 0.01
+    total_rate: Optional[float] = None  # fee+slippage+spread per leg
+    net_unrealized_pnl: Optional[float] = None
+    net_unrealized_pnl_pct: Optional[float] = None
+    net_penny_distance: Optional[float] = None  # target_net - net_unrealized_pnl
     
     def to_dict(self) -> Dict:
         return {
@@ -894,6 +901,11 @@ class PositionData:
             'trailing_stop_active': self.trailing_stop_active,
             'highest_price': self.highest_price,
             'timebox_expired': self.timebox_expired,
+            'target_net': self.target_net,
+            'total_rate': self.total_rate,
+            'net_unrealized_pnl': self.net_unrealized_pnl,
+            'net_unrealized_pnl_pct': self.net_unrealized_pnl_pct,
+            'net_penny_distance': self.net_penny_distance,
         }
 
 
@@ -956,7 +968,10 @@ class HNCProbabilityIntegration:
                            current_price: float = 0.0, platform_timestamp: float = 0.0,
                            is_historical: bool = False, momentum: float = 0.0,
                            coherence: float = 0.0, trailing_stop_active: bool = False,
-                           highest_price: float = 0.0, timebox_expired: bool = False) -> None:
+                           highest_price: float = 0.0, timebox_expired: bool = False,
+                           target_net: Optional[float] = None,
+                           total_rate: Optional[float] = None,
+                           entry_fee: Optional[float] = None) -> None:
         """
         Feed position data from trading platform to improve probability matrix accuracy.
         This allows the matrix to validate predictions against actual outcomes.
@@ -982,6 +997,22 @@ class HNCProbabilityIntegration:
         current_value = quantity * current_price if current_price > 0 else entry_value
         unrealized_pnl = current_value - entry_value
         unrealized_pnl_pct = (unrealized_pnl / entry_value * 100) if entry_value > 0 else 0
+
+        # Net-after-costs estimate (live): align in-flight logic with penny ethos.
+        # If the caller supplies total_rate (fee+slippage+spread per leg), we compute:
+        # net_est = gross_pnl - (entry_fee + exit_fee)
+        # where entry_fee defaults to entry_value * total_rate when not provided.
+        derived_target_net = 0.01 if target_net is None else float(target_net)
+        net_unrealized_pnl = None
+        net_unrealized_pnl_pct = None
+        net_penny_distance = None
+        derived_total_rate = float(total_rate) if total_rate is not None else None
+        if derived_total_rate is not None and entry_value > 0:
+            derived_entry_fee = float(entry_fee) if entry_fee is not None else (entry_value * derived_total_rate)
+            exit_fee = current_value * derived_total_rate
+            net_unrealized_pnl = unrealized_pnl - (derived_entry_fee + exit_fee)
+            net_unrealized_pnl_pct = (net_unrealized_pnl / entry_value * 100) if entry_value > 0 else 0.0
+            net_penny_distance = derived_target_net - net_unrealized_pnl
         
         pos_data = PositionData(
             symbol=symbol,
@@ -1002,6 +1033,11 @@ class HNCProbabilityIntegration:
             trailing_stop_active=trailing_stop_active,
             highest_price=highest_price,
             timebox_expired=bool(timebox_expired),
+            target_net=derived_target_net,
+            total_rate=derived_total_rate,
+            net_unrealized_pnl=net_unrealized_pnl,
+            net_unrealized_pnl_pct=net_unrealized_pnl_pct,
+            net_penny_distance=net_penny_distance,
         )
         
         # Store/update position
@@ -1480,24 +1516,48 @@ class HNCProbabilityIntegration:
         # Check if we have an active position
         if symbol in self.position_data:
             pos = self.position_data[symbol]
-            
-            # If position is in profit, current direction is validated
-            if pos.unrealized_pnl_pct > 1.0:
-                adj += 0.02
-                reasons.append(f"pos +{pos.unrealized_pnl_pct:.1f}%")
-            elif pos.unrealized_pnl_pct < -2.0:
-                adj -= 0.02
-                reasons.append(f"pos {pos.unrealized_pnl_pct:.1f}%")
+
+            # Prefer net-after-costs signals when available (aligns to penny ethos)
+            used_net = False
+            if pos.net_unrealized_pnl is not None and pos.total_rate is not None:
+                used_net = True
+                # If net already clears the penny target, that's a strong positive validation.
+                if pos.net_unrealized_pnl >= (pos.target_net or 0.01):
+                    adj += 0.02
+                    reasons.append("net_penny_ready")
+                # If net is meaningfully negative after costs, that's a risk signal.
+                elif pos.net_unrealized_pnl <= -(pos.target_net or 0.01):
+                    adj -= 0.02
+                    reasons.append("net_negative")
+                # Otherwise, mild net-positive/negative shaping.
+                elif pos.net_unrealized_pnl > 0:
+                    adj += 0.01
+                    reasons.append("net+")
+                elif pos.net_unrealized_pnl < 0:
+                    adj -= 0.01
+                    reasons.append("net-")
+
+            # Fallback to gross % only when we don't have cost context.
+            if not used_net:
+                # If position is in profit, current direction is validated
+                if pos.unrealized_pnl_pct > 1.0:
+                    adj += 0.02
+                    reasons.append(f"pos +{pos.unrealized_pnl_pct:.1f}%")
+                elif pos.unrealized_pnl_pct < -2.0:
+                    adj -= 0.02
+                    reasons.append(f"pos {pos.unrealized_pnl_pct:.1f}%")
             
             # Long hold times with profit = stable trend
-            if pos.hold_duration_mins > 30 and pos.unrealized_pnl_pct > 0:
+            if pos.hold_duration_mins > 30 and ((pos.net_unrealized_pnl is not None and pos.net_unrealized_pnl > 0) or (pos.net_unrealized_pnl is None and pos.unrealized_pnl_pct > 0)):
                 adj += 0.01
                 reasons.append(f"hold {pos.hold_duration_mins:.0f}m+profit")
 
             # If we've already exceeded the timebox, treat it as a negative signal.
             if getattr(pos, 'timebox_expired', False):
-                adj -= 0.01
-                reasons.append("timebox_expired")
+                # If we've exceeded the timebox and we're not net-penny-ready, penalize.
+                if not (pos.net_unrealized_pnl is not None and pos.net_unrealized_pnl >= (pos.target_net or 0.01)):
+                    adj -= 0.01
+                    reasons.append("timebox_expired")
         
         adj = max(-0.10, min(0.10, adj))
         reason = ", ".join(reasons) if reasons else "no pos data"

@@ -18155,6 +18155,23 @@ class AureonKrakenEcosystem:
             # This allows the matrix to validate predictions against real positions
             if self.prob_matrix and hasattr(self.prob_matrix, 'feed_position_data'):
                 try:
+                    # Provide net-after-costs context so the matrix can reason about
+                    # "distance to penny" and timebox viability pre-close.
+                    penny_threshold = None
+                    try:
+                        penny_threshold = get_penny_threshold(pos.exchange, pos.entry_value)
+                    except Exception:
+                        penny_threshold = None
+
+                    target_net = 0.01
+                    if isinstance(penny_threshold, dict):
+                        target_net = float(penny_threshold.get('target_net', target_net))
+
+                    fee_rate = get_exchange_fee_rate(pos.exchange)
+                    slippage = CONFIG.get('SLIPPAGE_PCT', 0.0020)
+                    spread = CONFIG.get('SPREAD_COST_PCT', 0.0010)
+                    total_rate = fee_rate + slippage + spread
+
                     self.prob_matrix.feed_position_data(
                         symbol=symbol,
                         exchange=pos.exchange,
@@ -18170,6 +18187,9 @@ class AureonKrakenEcosystem:
                         trailing_stop_active=pos.trailing_stop_active,
                         highest_price=pos.highest_price,
                         timebox_expired=bool(getattr(pos, 'metadata', {}) and pos.metadata.get('timebox_expired', False)),
+                        target_net=target_net,
+                        total_rate=total_rate,
+                        entry_fee=getattr(pos, 'entry_fee', 0.0) or None,
                     )
                 except Exception as e:
                     logger.warning(f"Matrix position feed error for {symbol}: {e}")
