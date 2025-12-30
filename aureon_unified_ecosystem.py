@@ -14527,6 +14527,8 @@ class AureonKrakenEcosystem:
         
         # ✅ Log when matrix says BUY
         if prob_action in ['BUY', 'STRONG BUY', 'SLIGHT BUY']:
+            logger.info(f"✅ {symbol}: Matrix says {prob_action} (prob={probability:.0%}) - APPROVED!")
+            
         # ═══════════════════════════════════════════════════════════════
         # 📚 STEP 5: Ask Learned - "Historically, do trades like this hit penny?"
         # The Learned system validates based on REAL HISTORICAL DATA
