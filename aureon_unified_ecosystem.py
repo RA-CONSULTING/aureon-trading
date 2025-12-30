@@ -13384,6 +13384,10 @@ class AureonKrakenEcosystem:
         if not self.ticker_cache:
             return []
             
+        # 💓 HEARTBEAT: Prove we are hunting (Log once per minute roughly)
+        if int(time.time()) % 60 < 5:
+             print(f"   ⚡ TURBO HUNTER: Scanning {len(self.ticker_cache)} assets for 90%+ setups...")
+
         hunt_count = 0
         for symbol, data in self.ticker_cache.items():
             # Skip if already positioned
