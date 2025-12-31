@@ -10634,6 +10634,17 @@ class MyceliumNetwork:
             except Exception as e:
                 logger.warning(f"⚠️ Could not initialize full Mycelium: {e}")
                 self.full_network = None
+
+    def acknowledge_war_band(self):
+        """Connect the Apache War Band to the full mycelium network if present."""
+        if self.full_network and hasattr(self.full_network, 'acknowledge_war_band'):
+            try:
+                self.full_network.acknowledge_war_band()
+                logger.info("🍄 Mycelium: Apache War Band connected to full network")
+            except Exception as e:
+                logger.warning(f"⚠️ Failed to connect War Band to Mycelium: {e}")
+        else:
+            logger.info("🍄 Mycelium: War Band link skipped (full network unavailable)")
     
     def _on_thought_wrapper(self, thought):
         """Wrapper to handle Thought objects from the bus."""
