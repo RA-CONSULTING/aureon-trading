@@ -77,7 +77,9 @@ try:
 except ImportError:
     AureonImmuneSystem = None
     IMMUNE_SYSTEM_AVAILABLE = False
-    print("⚠️  Immune System not available - Running without self-healing")
+    # Note: the Unified Ecosystem also has an internal CognitiveImmuneSystem.
+    # This flag refers only to the optional external module `aureon_immune_system`.
+    print("⚠️  External Immune System module (aureon_immune_system) not available")
 
 # 💎 PROBABILITY ULTIMATE INTELLIGENCE - 95% Accuracy Pattern Learning 💎
 try:
@@ -310,8 +312,17 @@ except ImportError:
         def __init__(self): pass
         def get_unified_modifier(self, *args, **kwargs): return type('obj', (object,), {'trading_modifier': 1.0, 'confidence': 0.5, 'reasons': []})()
         def display_status(self): return "✨ ENHANCEMENTS | Disabled"
-    class CarrierWaveDynamics:
-        pass
+
+# Optional helper functions from `aureon_enhancements` (do not override ENHANCEMENTS_AVAILABLE)
+try:
+    from aureon_enhancements import apply_enhancement_to_signal, get_emotional_color
+    ENHANCEMENT_HELPERS_AVAILABLE = True
+except ImportError:
+    ENHANCEMENT_HELPERS_AVAILABLE = False
+    def apply_enhancement_to_signal(signal, *args, **kwargs):
+        return signal
+    def get_emotional_color(*args, **kwargs):
+        return None
 
 # 🔱 PRIME SENTINEL DECREE - Gary Leckey | 02.11.1991 | KEEPER OF THE FLAME
 try:
@@ -550,13 +561,7 @@ except ImportError as e:
         def print_dashboard(self): pass
     def get_validator(): return ProbabilityValidator()
 
-# 🌈✨ AUREON ENHANCEMENTS - RAINBOW BRIDGE, SYNCHRONICITY, STARGATE ✨🌈
-try:
-    from aureon_enhancements import EnhancementLayer, apply_enhancement_to_signal, get_emotional_color
-    ENHANCEMENTS_AVAILABLE = True
-except ImportError as e:
-    ENHANCEMENTS_AVAILABLE = False
-    print(f"⚠️  Aureon Enhancements not available: {e}")
+
 
 # ==== AUREON COGNITION BUS (self-talking JSON thoughts) ====
 from aureon_thought_bus import ThoughtBus, Thought
@@ -11716,7 +11721,7 @@ class AureonKrakenEcosystem:
     - 51%+ win rate strategy
     """
     
-    def __init__(self, initial_balance: float = 1000.0, dry_run: bool = False):
+    def __init__(self, initial_balance: float = 1000.0, dry_run: bool = False, target_equity_gbp: Optional[float] = 100000.0):
         # Initialize Multi-Exchange Client
         self.client = MultiExchangeClient()
         self.dry_run = self.client.dry_run
@@ -11764,6 +11769,14 @@ class AureonKrakenEcosystem:
         self.cash_balance_gbp = initial_balance
         self.holdings_gbp: Dict[str, float] = {}
         self.quote_currency_suffixes: List[str] = sorted(CONFIG['QUOTE_CURRENCIES'], key=len, reverse=True)
+
+        # 🎯 100K target (or custom): when reached, block NEW BUY orders (sells are still allowed).
+        self.target_equity_gbp: Optional[float] = None
+        try:
+            if target_equity_gbp is not None and float(target_equity_gbp) > 0:
+                self.target_equity_gbp = float(target_equity_gbp)
+        except Exception:
+            self.target_equity_gbp = None
         
         # Market data
         self.ticker_cache: Dict[str, Dict] = {}
@@ -11956,6 +11969,35 @@ class AureonKrakenEcosystem:
                 self.enhancement_layer = EnhancementLayer()
                 active_count = sum(1 for v in self.enhancement_layer.modules_active.values() if v)
                 print(f"   🌈 Enhancement Layer active ({active_count}/3 modules)")
+
+                # Explicit transfer verification: prove the modifier is callable and returns a structured result.
+                try:
+                    sample = self.enhancement_layer.get_unified_modifier(
+                        lambda_value=0.25,
+                        coherence=0.80,
+                        price=1.0,
+                        volume=1.0,
+                        volatility=0.10,
+                        exchange="UNIFIED",
+                    )
+                    self._enhancement_transfer_check = {
+                        "ok": True,
+                        "modifier": float(getattr(sample, "trading_modifier", 1.0)),
+                        "confidence": float(getattr(sample, "confidence", 0.0)),
+                        "state": str(getattr(sample, "emotional_state", "")),
+                        "phase": str(getattr(sample, "cycle_phase", "")),
+                        "active_modules": dict(getattr(self.enhancement_layer, "modules_active", {})),
+                    }
+                    print(
+                        "   ✅ Enhancement Transfer Check: PASS | "
+                        f"modifier={self._enhancement_transfer_check['modifier']:.3f} "
+                        f"conf={self._enhancement_transfer_check['confidence']:.2f} "
+                        f"state={self._enhancement_transfer_check['state']} "
+                        f"phase={self._enhancement_transfer_check['phase']}"
+                    )
+                except Exception as e:
+                    self._enhancement_transfer_check = {"ok": False, "error": str(e)}
+                    print(f"   ⚠️ Enhancement Transfer Check: FAILED ({e})")
             except Exception as e:
                 print(f"   ⚠️ Enhancement Layer initialization failed: {e}")
         
@@ -12021,6 +12063,36 @@ class AureonKrakenEcosystem:
             self.thought_bus.subscribe("brain.*", self.mycelium._on_thought_wrapper)
             self.thought_bus.subscribe("immune.*", self.mycelium._on_thought_wrapper)
             print("   🍄 Mycelium connected to ThoughtBus - info flows UP↑ DOWN↓ LEFT← RIGHT→")
+
+            # 🎯 GOAL TRANSFER: ensure Mycelium + all bus listeners know the target equity
+            try:
+                if getattr(self, 'target_equity_gbp', None):
+                    if hasattr(self.mycelium, 'set_target_equity'):
+                        self.mycelium.set_target_equity(getattr(self, 'target_equity_gbp'))
+                    else:
+                        self.mycelium.target_equity = float(getattr(self, 'target_equity_gbp'))
+            except Exception:
+                pass
+
+            # Publish goal into the unified consciousness (scouts/sniper/harvester can consume this)
+            try:
+                self.thought_bus.publish(Thought(
+                    source="ecosystem",
+                    topic="goal.target_equity",
+                    payload={
+                        "target_equity_gbp": float(getattr(self, 'target_equity_gbp', 0.0) or 0.0),
+                        "current_equity_gbp": float(getattr(self, 'total_equity_gbp', 0.0) or 0.0),
+                    },
+                ))
+            except Exception:
+                pass
+
+            # Also store goal in the shared aggregator state for non-bus consumers
+            try:
+                if hasattr(self, 'state_aggregator') and self.state_aggregator:
+                    self.state_aggregator.aggregated_state['target_equity_gbp'] = getattr(self, 'target_equity_gbp', None)
+            except Exception:
+                pass
 
         # 📰 News Feed (World News API integration)
         self.news_feed = None
@@ -17762,6 +17834,17 @@ class AureonKrakenEcosystem:
 
         # ⏱️ 1-minute penny-profit consensus gate (unlimited entries need this)
         consensus_ok, consensus_reason, consensus_details = has_one_minute_profit_consensus(opp)
+        # Persist the "why" so downstream systems (sniper/scanner/thoughtbus) share the same intent.
+        try:
+            opp['entry_consensus'] = {
+                'ok': bool(consensus_ok),
+                'reason': str(consensus_reason),
+                'prob_quick': float(consensus_details.get('prob_quick', 0.0) or 0.0),
+                'confidence': float(consensus_details.get('confidence', 0.0) or 0.0),
+                'estimated_seconds': float(consensus_details.get('estimated_seconds', 0.0) or 0.0),
+            }
+        except Exception:
+            pass
         allow_force_bypass = CONFIG.get('ALLOW_FORCE_SCOUT_BYPASS_CONSENSUS', False)
         if not consensus_ok and (not is_force_scout or not allow_force_bypass):
             print(
@@ -18360,6 +18443,18 @@ class AureonKrakenEcosystem:
             # Calculate win threshold using penny profit formula
             penny_threshold = get_penny_threshold(exchange, pos_size)
             win_threshold = penny_threshold.get('win_gte', 0.04) if penny_threshold else 0.04
+
+            # Seed sniper scanner with the entry ETA/prob/conf so it can act immediately.
+            entry_consensus = opp.get('entry_consensus') or {}
+            seed_eta_seconds = None
+            seed_probability = None
+            seed_confidence = None
+            try:
+                seed_eta_seconds = entry_consensus.get('estimated_seconds')
+                seed_probability = entry_consensus.get('prob_quick')
+                seed_confidence = entry_consensus.get('confidence')
+            except Exception:
+                pass
             
             register_sniper_target(
                 symbol=symbol,
@@ -18367,15 +18462,25 @@ class AureonKrakenEcosystem:
                 entry_price=price,
                 entry_value=pos_size,
                 quantity=quantity,
-                win_threshold=win_threshold
+                win_threshold=win_threshold,
+                seed_eta_seconds=seed_eta_seconds,
+                seed_probability=seed_probability,
+                seed_confidence=seed_confidence,
+                seed_source="entry_consensus"
             )
-            print(f"   🎯⚡ SCANNER LOCKED: {symbol} | Target: ${win_threshold:.4f} gross for 1p net")
+            eta_m = (float(seed_eta_seconds) / 60.0) if isinstance(seed_eta_seconds, (int, float)) and float(seed_eta_seconds) > 0 else None
+            eta_tag = f" | ETA~{eta_m:.2f}m" if eta_m is not None else ""
+            pc_tag = ""
+            if isinstance(seed_probability, (int, float)) and isinstance(seed_confidence, (int, float)):
+                pc_tag = f" | p={float(seed_probability):.2f} conf={float(seed_confidence):.2f}"
+            print(f"   🎯⚡ SCANNER LOCKED: {symbol} | Target: ${win_threshold:.4f} gross for 1p net{eta_tag}{pc_tag}")
         except Exception as e:
             logger.warning(f"Failed to register with kill scanner: {e}")
             
         # 🧠 PUBLISH THOUGHT: TRADE OPENED 🧠
         if THOUGHT_BUS_AVAILABLE and THOUGHT_BUS:
             try:
+                entry_consensus = opp.get('entry_consensus') or {}
                 THOUGHT_BUS.publish(Thought(
                     source="unified_ecosystem",
                     topic="execution.order.open",
@@ -18387,7 +18492,12 @@ class AureonKrakenEcosystem:
                         "value": pos_size,
                         "exchange": exchange,
                         "coherence": opp.get('coherence', 0),
-                        "score": opp.get('score', 0)
+                        "score": opp.get('score', 0),
+                        "entry_reason": entry_consensus.get('reason'),
+                        "entry_eta_seconds": entry_consensus.get('estimated_seconds'),
+                        "entry_prob_quick": entry_consensus.get('prob_quick'),
+                        "entry_confidence": entry_consensus.get('confidence'),
+                        "gates_passed": opp.get('gates_passed', 0),
                     }
                 ))
             except Exception as e:
@@ -20007,6 +20117,24 @@ class AureonKrakenEcosystem:
         Will try alternate exchanges if primary has no funds.
         """
         try:
+            # 🎯 TARGET GUARD: stop opening new buys once target equity is reached
+            try:
+                if (
+                    side.lower() == 'buy'
+                    and getattr(self, 'target_equity_gbp', None)
+                    and getattr(self, 'total_equity_gbp', 0.0) >= float(self.target_equity_gbp)
+                ):
+                    return {
+                        'ok': False,
+                        'reason': 'target_reached',
+                        'target_equity_gbp': float(self.target_equity_gbp),
+                        'equity_gbp': float(getattr(self, 'total_equity_gbp', 0.0)),
+                        'symbol': symbol,
+                        'side': side,
+                    }
+            except Exception:
+                pass
+
             # ⚔️ MULTI-BATTLEFIELD: Detect correct exchange for this symbol
             primary_exchange = self._detect_exchange_for_symbol(symbol, None)
             
@@ -21397,9 +21525,22 @@ def main():
             print(f"    ❌ Mining setup error: {e}")
     
     try:
+        # 🎯 100K target wiring (defaults to 100000 GBP unless explicitly disabled)
+        raw_target = os.getenv('TARGET_GBP', os.getenv('AUREON_TARGET_GBP'))
+        if raw_target is None or str(raw_target).strip() == '':
+            target_equity_gbp = 100000.0
+        else:
+            try:
+                target_equity_gbp = float(str(raw_target).strip())
+                if target_equity_gbp <= 0:
+                    target_equity_gbp = None
+            except Exception:
+                target_equity_gbp = 100000.0
+
         ecosystem = AureonKrakenEcosystem(
             initial_balance=balance,
-            dry_run=dry_run
+            dry_run=dry_run,
+            target_equity_gbp=target_equity_gbp,
         )
         
         ecosystem.run(interval=interval)

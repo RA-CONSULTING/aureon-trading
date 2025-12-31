@@ -1904,7 +1904,11 @@ class ActiveKillScanner:
         entry_price: float,
         entry_value: float,
         quantity: float,
-        win_threshold: float
+        win_threshold: float,
+        seed_eta_seconds: Optional[float] = None,
+        seed_probability: Optional[float] = None,
+        seed_confidence: Optional[float] = None,
+        seed_source: str = "ecosystem"
     ) -> ActiveTarget:
         """
         Register a new target for active tracking.
@@ -1922,6 +1926,25 @@ class ActiveKillScanner:
             current_price=entry_price,
             last_update=time.time()
         )
+
+        # Seed early intelligence so the Sniper has timing immediately.
+        # This gets refined quickly once pnl_history builds up.
+        try:
+            if seed_eta_seconds is not None:
+                seed_eta_seconds_f = float(seed_eta_seconds)
+                if 0 < seed_eta_seconds_f < float('inf'):
+                    target.eta_to_kill = seed_eta_seconds_f
+                    target.eta_model = f"seed:{seed_source}" if seed_source else "seed"
+                    target.eta_conservative = seed_eta_seconds_f * 1.25
+                    target.eta_optimistic = seed_eta_seconds_f * 0.75
+            if seed_probability is not None:
+                p = max(0.0, min(1.0, float(seed_probability)))
+                target.probability_of_kill = p
+            if seed_confidence is not None:
+                c = max(0.0, min(1.0, float(seed_confidence)))
+                target.eta_confidence = max(target.eta_confidence, c)
+        except Exception:
+            pass
         
         key = f"{exchange}:{symbol}"
         self.targets[key] = target
@@ -2230,7 +2253,7 @@ class ActiveKillScanner:
             # 🎲🔗 Domino Effect metrics
             'domino_boost': getattr(target, 'domino_boost', 1.0),
             'domino_active': domino_active,
-            'domino_chain_length': len(DOMINO_ENGINE.kill_chain),
+            'domino_chain_length': len(getattr(DOMINO_ENGINE, 'kill_sequence', []) or []),
         }
         
         # 🎯 CHECK FOR KILL - The moment of truth!
@@ -2633,7 +2656,11 @@ def register_sniper_target(
     entry_price: float,
     entry_value: float,
     quantity: float,
-    win_threshold: float
+    win_threshold: float,
+    seed_eta_seconds: Optional[float] = None,
+    seed_probability: Optional[float] = None,
+    seed_confidence: Optional[float] = None,
+    seed_source: str = "ecosystem"
 ) -> ActiveTarget:
     """Register a new target with the Active Kill Scanner."""
     scanner = get_active_scanner()
@@ -2643,7 +2670,11 @@ def register_sniper_target(
         entry_price=entry_price,
         entry_value=entry_value,
         quantity=quantity,
-        win_threshold=win_threshold
+        win_threshold=win_threshold,
+        seed_eta_seconds=seed_eta_seconds,
+        seed_probability=seed_probability,
+        seed_confidence=seed_confidence,
+        seed_source=seed_source
     )
 
 

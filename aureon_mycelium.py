@@ -460,7 +460,8 @@ class MyceliumNetwork:
     MIN_PROFIT_TARGET = 0.03 # Minimum $0.03 net profit per trade
     
     def __init__(self, initial_capital: float, agents_per_hive: int = 5,
-                 target_multiplier: float = 2.0, leverage: float = 1.0):
+                 target_multiplier: float = 2.0, leverage: float = 1.0,
+                 target_equity: float | None = None):
         self.initial_capital = initial_capital
         self.agents_per_hive = agents_per_hive
         self.target_multiplier = target_multiplier
@@ -471,6 +472,14 @@ class MyceliumNetwork:
         self.net_profit_total = 0.0
         self.profit_rate_per_hour = 0.0
         self.start_time = time.time()
+
+        # 🎯 OPTIONAL ABSOLUTE TARGET (e.g. 100K)
+        self.target_equity: float | None = None
+        try:
+            if target_equity is not None and float(target_equity) > 0:
+                self.target_equity = float(target_equity)
+        except Exception:
+            self.target_equity = None
         
         # Network state
         self.hives: List[Hive] = []
@@ -511,6 +520,17 @@ class MyceliumNetwork:
         
         logger.info(f"🍄 Mycelium Network initialized with ${initial_capital:.2f}")
         logger.info(f"🎯 ONE GOAL ACTIVE: {self.ONE_GOAL} | Aggression: {self.GROWTH_AGGRESSION*100}%")
+
+    def set_target_equity(self, target_equity: float | None) -> None:
+        """Set/override an absolute network goal (optional)."""
+        try:
+            if target_equity is None:
+                self.target_equity = None
+            else:
+                v = float(target_equity)
+                self.target_equity = v if v > 0 else None
+        except Exception:
+            self.target_equity = None
     
     def _spawn_hive(self, capital: float, parent_generation: int = -1) -> Hive:
         """Spawn a new hive with given capital"""
@@ -687,6 +707,7 @@ class MyceliumNetwork:
             "one_goal": self.ONE_GOAL,
             "starting_equity": self.starting_equity,
             "current_equity": current_equity,
+            "target_equity": self.target_equity,
             "net_profit_total": self.net_profit_total,
             "profit_rate_per_hour": self.profit_rate_per_hour,
             "profit_rate_per_day": self.profit_rate_per_hour * 24,
