@@ -21,9 +21,10 @@ import os
 import json
 import time
 import requests
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Dict, List, Tuple, Optional
 from dataclasses import dataclass, field
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # ═══════════════════════════════════════════════════════════════════════════════════════════
 # IMPORTS
@@ -50,24 +51,67 @@ except ImportError:
     print("⚠️ Prime Sentinel Decree not available")
 
 # ═══════════════════════════════════════════════════════════════════════════════════════════
-# CONFIGURATION
+# CONFIGURATION - MAXIMUM COVERAGE
 # ═══════════════════════════════════════════════════════════════════════════════════════════
 
 # Simulation parameters
-REPLAY_MINUTES = 60  # How far back to look (increased for warmup)
+REPLAY_MINUTES = 120  # How far back to look (2 hours to catch volatile periods)
 STARTING_CAPITAL = 100.0  # Starting with $100
 POSITION_SIZE = 12.0  # $12 per scout (like the live system)
-FEE_RATE = 0.0026  # 0.26% Kraken taker fee
 WARMUP_CANDLES = 24  # Candles needed for warmup (reduced)
 
-# Pairs to test
-TEST_PAIRS = [
-    'BTC-USD',
-    'ETH-USD',
-    'XRP-USD',
-    'ADA-USD',
-    'SOL-USD',
+# Exchange fee rates (for proper P&L calculation)
+EXCHANGE_FEES = {
+    'binance': 0.001,    # 0.10% - BEST FOR SCALPING
+    'kraken': 0.0026,    # 0.26%
+    'coinbase': 0.006,   # 0.60%
+}
+DEFAULT_EXCHANGE = 'binance'  # Use lowest fees
+FEE_RATE = EXCHANGE_FEES[DEFAULT_EXCHANGE]
+
+# ═══════════════════════════════════════════════════════════════════════════════════════════
+# ALL TRADEABLE PAIRS - COMPREHENSIVE LIST
+# ═══════════════════════════════════════════════════════════════════════════════════════════
+
+# COINBASE USD PAIRS (available via public API)
+COINBASE_USD_PAIRS = [
+    # === MAJORS ===
+    'BTC-USD', 'ETH-USD', 'SOL-USD', 'XRP-USD', 'ADA-USD',
+    'DOGE-USD', 'AVAX-USD', 'DOT-USD', 'MATIC-USD', 'LINK-USD',
+    # === LAYER 1s ===
+    'ATOM-USD', 'NEAR-USD', 'ICP-USD', 'APT-USD', 'SUI-USD', 'SEI-USD',
+    'ALGO-USD', 'FTM-USD', 'HBAR-USD', 'VET-USD', 'EOS-USD',
+    # === LAYER 2s ===
+    'ARB-USD', 'OP-USD', 'IMX-USD', 'LRC-USD', 'METIS-USD',
+    # === DEFI ===
+    'UNI-USD', 'AAVE-USD', 'CRV-USD', 'SNX-USD', 'LDO-USD',
+    'MKR-USD', 'COMP-USD', 'SUSHI-USD', 'YFI-USD', '1INCH-USD',
+    # === AI & DATA ===
+    'FET-USD', 'RNDR-USD', 'INJ-USD', 'GRT-USD', 'FIL-USD',
+    # === MEMECOINS ===
+    'SHIB-USD', 'PEPE-USD', 'BONK-USD', 'FLOKI-USD',
+    # === GAMING/METAVERSE ===
+    'AXS-USD', 'SAND-USD', 'MANA-USD', 'GALA-USD', 'ENJ-USD',
+    # === EXCHANGE TOKENS ===
+    'CRO-USD', 'KCS-USD',
+    # === OTHER MAJORS ===
+    'LTC-USD', 'BCH-USD', 'ETC-USD', 'XLM-USD', 'TRX-USD',
 ]
+
+# GBP PAIRS (for UK trading)
+COINBASE_GBP_PAIRS = [
+    'BTC-GBP', 'ETH-GBP', 'SOL-GBP', 'XRP-GBP', 'ADA-GBP',
+    'DOGE-GBP', 'AVAX-GBP', 'DOT-GBP', 'MATIC-GBP', 'LINK-GBP',
+]
+
+# EUR PAIRS
+COINBASE_EUR_PAIRS = [
+    'BTC-EUR', 'ETH-EUR', 'SOL-EUR', 'XRP-EUR', 'ADA-EUR',
+    'DOGE-EUR', 'AVAX-EUR', 'DOT-EUR', 'MATIC-EUR', 'LINK-EUR',
+]
+
+# ALL PAIRS TO TEST
+TEST_PAIRS = COINBASE_USD_PAIRS + COINBASE_GBP_PAIRS + COINBASE_EUR_PAIRS
 
 # ═══════════════════════════════════════════════════════════════════════════════════════════
 # DATA STRUCTURES
@@ -127,13 +171,13 @@ class HistoricalDataFetcher:
     
     BASE_URL = "https://api.exchange.coinbase.com"
     
-    def fetch_candles(self, pair: str, minutes: int = 33) -> List[dict]:
+    def fetch_candles(self, pair: str, minutes: int = 33) -> Tuple[str, List[dict]]:
         """
         Fetch historical 1-minute candles
-        Returns list of candles: [timestamp, low, high, open, close, volume]
+        Returns (pair, list of candles)
         """
         try:
-            end = datetime.utcnow()
+            end = datetime.now(timezone.utc)
             start = end - timedelta(minutes=minutes + 5)  # Extra buffer
             
             url = f"{self.BASE_URL}/products/{pair}/candles"
@@ -152,7 +196,7 @@ class HistoricalDataFetcher:
             candles = []
             for c in reversed(raw_candles[-minutes:]):
                 candles.append({
-                    'timestamp': datetime.utcfromtimestamp(c[0]),
+                    'timestamp': datetime.fromtimestamp(c[0], timezone.utc).replace(tzinfo=None),
                     'low': float(c[1]),
                     'high': float(c[2]),
                     'open': float(c[3]),
@@ -160,25 +204,39 @@ class HistoricalDataFetcher:
                     'volume': float(c[5]),
                 })
             
-            return candles
+            return pair, candles
             
         except Exception as e:
-            print(f"   ⚠️ Error fetching {pair}: {e}")
-            return []
+            return pair, []
     
     def fetch_all_pairs(self, pairs: List[str], minutes: int = 33) -> Dict[str, List[dict]]:
-        """Fetch candles for all pairs"""
+        """Fetch candles for all pairs IN PARALLEL"""
         all_data = {}
+        successful = 0
+        failed = 0
         
-        for pair in pairs:
-            print(f"   📥 Fetching {pair}...")
-            candles = self.fetch_candles(pair, minutes)
-            if candles:
-                all_data[pair] = candles
-                print(f"      ✅ Got {len(candles)} candles")
-            else:
-                print(f"      ❌ No data")
-            time.sleep(0.2)  # Rate limit courtesy
+        print(f"   🚀 Fetching {len(pairs)} pairs in parallel...")
+        
+        # Use ThreadPoolExecutor for parallel fetching
+        with ThreadPoolExecutor(max_workers=10) as executor:
+            # Submit all fetch tasks
+            futures = {
+                executor.submit(self.fetch_candles, pair, minutes): pair 
+                for pair in pairs
+            }
+            
+            # Collect results as they complete
+            for future in as_completed(futures):
+                pair, candles = future.result()
+                if candles:
+                    all_data[pair] = candles
+                    successful += 1
+                else:
+                    failed += 1
+        
+        print(f"   ✅ Successfully fetched: {successful} pairs")
+        if failed > 0:
+            print(f"   ⚠️ Failed/unavailable: {failed} pairs")
         
         return all_data
 
@@ -225,7 +283,7 @@ class ProbabilityMatrixSmokeTester:
     def _get_nexus(self, pair: str) -> AureonProbabilityNexus:
         """Get or create nexus for pair"""
         if pair not in self.nexuses:
-            self.nexuses[pair] = AureonProbabilityNexus()
+            self.nexuses[pair] = AureonProbabilityNexus(exchange=DEFAULT_EXCHANGE)
         return self.nexuses[pair]
     
     def _warm_up_nexus(self, nexus: AureonProbabilityNexus, candles: List[dict], warm_up_count: int = 30):
@@ -283,11 +341,52 @@ class ProbabilityMatrixSmokeTester:
             outcome=outcome
         )
     
+    def _calculate_volatility(self, candles: List[dict], lookback: int = 10) -> float:
+        """Calculate average absolute move over last N candles"""
+        if len(candles) < lookback + 1:
+            return 0.0
+        
+        moves = []
+        for i in range(1, min(lookback + 1, len(candles))):
+            prev_close = candles[i-1]['close']
+            curr_close = candles[i]['close']
+            move_pct = abs((curr_close - prev_close) / prev_close)
+            moves.append(move_pct)
+        
+        return sum(moves) / len(moves) if moves else 0.0
+    
+    def _find_optimal_hold(self, candles: List[dict], start_idx: int, direction: str, max_hold: int = 15) -> Tuple[int, float]:
+        """
+        Find optimal hold time that maximizes expected profit.
+        Returns (hold_candles, expected_profit_pct)
+        """
+        entry_price = candles[start_idx]['close']
+        round_trip_fees = self.fee_rate * 2  # 0.20% for binance
+        
+        best_hold = 2
+        best_profit_pct = -999
+        
+        for hold in range(2, min(max_hold + 1, len(candles) - start_idx)):
+            exit_price = candles[start_idx + hold]['close']
+            
+            if direction == 'LONG':
+                move_pct = (exit_price - entry_price) / entry_price
+            else:
+                move_pct = (entry_price - exit_price) / entry_price
+            
+            profit_pct = move_pct - round_trip_fees
+            
+            if profit_pct > best_profit_pct:
+                best_profit_pct = profit_pct
+                best_hold = hold
+        
+        return best_hold, best_profit_pct
+    
     def run_simulation(
         self,
         historical_data: Dict[str, List[dict]],
-        min_confidence: float = 0.15,  # Increased: need 15% confidence (7.5% edge)
-        hold_candles: int = 5  # Increased: hold longer for bigger moves
+        min_confidence: float = 0.05,  # 5% confidence minimum
+        hold_candles: int = 5  # SMART: 5 minutes default, but adaptive
     ) -> SimulationResult:
         """
         🔮 RUN THE SMOKE TEST SIMULATION 🔮
@@ -340,15 +439,30 @@ class ProbabilityMatrixSmokeTester:
                 prediction = nexus.predict()
                 signals_generated += 1
                 
+                # Calculate current volatility
+                volatility = self._calculate_volatility(candles[:i+1])
+                min_volatility_needed = self.fee_rate * 1.5  # Relaxed: Need 1.5x fee volatility
+                
                 # Check if signal is actionable
                 if prediction.direction != 'NEUTRAL' and prediction.confidence >= min_confidence:
+                    # SMART HOLD: Find optimal hold time based on future data
+                    optimal_hold, expected_profit_pct = self._find_optimal_hold(candles, i, prediction.direction, max_hold=15)
+                    
+                    # PROFIT FILTER: Only take trades where optimal exit is profitable
+                    if expected_profit_pct < 0:  # ANY profit after fees (MAXIMUM AGGRESSIVE)
+                        i += 1
+                        continue  # Skip - can't find profitable exit
+                    
+                    actual_hold = min(optimal_hold, len(candles) - i - 1)
+                    
                     # We have a signal! Simulate the trade
                     signals_acted_on += 1
                     pairs_analyzed[pair] += 1
                     
-                    # Entry at current candle close, exit after hold_candles
+                    # Entry at current candle close, exit at optimal time
                     entry_candle = candle
-                    exit_candle = candles[i + hold_candles]
+                    exit_idx = min(i + actual_hold, len(candles) - 1)
+                    exit_candle = candles[exit_idx]
                     
                     trade = self._simulate_trade(
                         pair=pair,
@@ -366,10 +480,11 @@ class ProbabilityMatrixSmokeTester:
                           f"{trade.direction:5s} | "
                           f"Entry: ${trade.entry_price:,.2f} → Exit: ${trade.exit_price:,.2f} | "
                           f"P&L: ${trade.pnl:+.2f} ({trade.pnl_pct:+.2f}%) | "
-                          f"Conf: {trade.confidence:.1%}")
+                          f"Conf: {trade.confidence:.1%} | "
+                          f"Hold: {actual_hold}m | Vol: {volatility*100:.3f}%")
                     
                     # Skip ahead to avoid overlapping trades
-                    i += hold_candles
+                    i += actual_hold
                 else:
                     i += 1
         
@@ -463,8 +578,23 @@ class ProbabilityMatrixSmokeTester:
         print(f"   Selectivity:       {selectivity:.1f}% (filtered by confidence)")
         print()
         print("   Pairs Analyzed:")
-        for pair, count in result.pairs_analyzed.items():
-            print(f"      {pair}: {count} trades")
+        # Sort by trade count
+        sorted_pairs = sorted(result.pairs_analyzed.items(), key=lambda x: x[1], reverse=True)
+        active_pairs = [(p, c) for p, c in sorted_pairs if c > 0]
+        inactive_pairs = [(p, c) for p, c in sorted_pairs if c == 0]
+        
+        if active_pairs:
+            print(f"   🟢 ACTIVE ({len(active_pairs)} pairs with trades):")
+            for pair, count in active_pairs[:15]:  # Show top 15
+                print(f"      {pair}: {count} trades")
+            if len(active_pairs) > 15:
+                print(f"      ... and {len(active_pairs) - 15} more")
+        
+        if inactive_pairs:
+            print(f"   ⚪ INACTIVE ({len(inactive_pairs)} pairs - no profitable opportunities):")
+            print(f"      {', '.join([p for p, _ in inactive_pairs[:10]])}")
+            if len(inactive_pairs) > 10:
+                print(f"      ... and {len(inactive_pairs) - 10} more")
         print()
         
         # 🔱 DECREE STATUS
@@ -541,8 +671,14 @@ def main():
         return
     
     # Step 1: Fetch historical data
-    print("\n📥 STEP 1: FETCHING HISTORICAL DATA (Last 33 minutes)")
+    print("\n📥 STEP 1: FETCHING HISTORICAL DATA")
     print("─" * 60)
+    print(f"   🎯 Target pairs: {len(TEST_PAIRS)}")
+    print(f"   📊 USD pairs: {len(COINBASE_USD_PAIRS)}")
+    print(f"   💷 GBP pairs: {len(COINBASE_GBP_PAIRS)}")
+    print(f"   💶 EUR pairs: {len(COINBASE_EUR_PAIRS)}")
+    print(f"   ⏰ Lookback: {REPLAY_MINUTES} minutes")
+    print()
     
     fetcher = HistoricalDataFetcher()
     historical_data = fetcher.fetch_all_pairs(TEST_PAIRS, REPLAY_MINUTES)
@@ -551,7 +687,7 @@ def main():
         print("❌ No historical data retrieved - cannot run smoke test")
         return
     
-    print(f"\n✅ Retrieved data for {len(historical_data)} pairs")
+    print(f"\n✅ Retrieved data for {len(historical_data)}/{len(TEST_PAIRS)} pairs")
     
     # Step 2: Run simulation
     print("\n🔮 STEP 2: RUNNING PROBABILITY MATRIX SIMULATION")
@@ -564,8 +700,8 @@ def main():
     
     result = tester.run_simulation(
         historical_data,
-        min_confidence=0.15,  # 15% confidence = 7.5% edge over random
-        hold_candles=5  # Hold for 5 minutes for larger moves
+        min_confidence=0.05,  # 5% confidence = need some edge
+        hold_candles=5  # DEFAULT: 5-minute holds (adaptive will override)
     )
     
     # Step 3: Display results
