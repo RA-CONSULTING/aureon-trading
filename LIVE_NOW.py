@@ -460,7 +460,13 @@ def monitor_positions():
                         except:
                             pass
                     
-                    pUNIFIED ECOSYSTEM status"""
+                    print(f"  💰 New Capital: £{capital:.2f} (+{(capital/76-1)*100:.1f}%)")
+            except Exception as e:
+                print(f"  ⚠️ Sniper error: {e}")
+
+
+def print_status():
+    """Print UNIFIED ECOSYSTEM status"""
     global iteration, capital, target, stats, trades_today
     
     total_trades = stats['wins'] + stats['losses']
@@ -487,57 +493,7 @@ def monitor_positions():
     if capital >= 2000:
         print(f"   🎉 MARGIN UNLOCKED! 4x leverage available")
     if capital >= 25000:
-        print(f"   ct = (current_price / pos['entry_price'] - 1)
-        
-        # Kill for any profit > £0.50
-        if profit > 0.50:
-            print(f"  🎯 KILL: {pos['symbol']} +£{profit:.2f} ({profit_pct*100:.2f}%)")
-            
-            # Close position
-            pos['status'] = 'closed'
-            pos['exit_price'] = current_price
-            pos['profit'] = profit
-            pos['profit_pct'] = profit_pct
-            
-            # Update capital
-            capital += profit
-            
-            if profit > 0:
-                stats['wins'] += 1
-            else:
-                stats['losses'] += 1
-            
-            stats['profit'] += profit
-            stats['kills'] += 1
-            
-            print(f"  💰 New Capital: £{capital:.2f} (+{(capital/76-1)*100:.1f}%)")
-
-
-def print_status():
-    """Print current status"""
-    global iteration, capital, target, stats, trades_today
-    
-    total_trades = stats['wins'] + stats['losses']
-    win_rate = (stats['wins'] / max(total_trades, 1)) * 100
-    
-    print("\n" + "="*80)
-    print(f"💎 ITERATION {iteration} STATUS - {datetime.now().strftime('%H:%M:%S')}")
-    print("="*80)
-    print(f"💰 Capital: £{capital:.2f} / £{target:,.2f} ({capital/target*100:.2f}%)")
-    print(f"📊 Growth: +{(capital/76-1)*100:.1f}% from £76 start")
-    print(f"📈 Trades: {stats['wins']}W / {stats['losses']}L ({win_rate:.1f}% win rate)")
-    print(f"💵 Profit: £{stats['profit']:.2f}")
-    print(f"🔮 Patterns Detected: {stats['patterns_detected']}")
-    print(f"💰 Trades Executed: {stats['trades_executed']}")
-    print(f"🎯 Sniper Kills: {stats['kills']}")
-    print(f"🏹 Day Trades Used: {trades_today}/{pdt_limit}")
-    print(f"📈 Open Positions: {len([p for p in positions if p['status'] == 'open'])}")
-    
-    # Milestone checks
-    if capital >= 2000:
-        print(f"🎉 MARGIN UNLOCKED! 4x leverage available")
-    if capital >= 25000:
-        print(f"🎉 PDT UNLOCKED! Unlimited day trades")
+        print(f"   🎉 PDT UNLOCKED! Unlimited day trades")
     
     print("="*80 + "\n")
 
