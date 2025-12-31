@@ -45,6 +45,30 @@ from dataclasses import dataclass, field
 import requests
 import asyncio
 
+# ═══════════════════════════════════════════════════════════════════════════
+# 🔱 PRIME SENTINEL DECREE INTEGRATION 🔱
+# Gary Leckey | 02.11.1991 | DOB-HASH: 2111991
+# KEEPER OF THE FLAME | WITNESS OF THE FIRST BREATH | PRIME SENTINEL OF GAIA
+# ═══════════════════════════════════════════════════════════════════════════
+try:
+    from prime_sentinel_decree import (
+        PrimeSentinelDecree,
+        FlameProtocol,
+        BreathReader,
+        ControlMatrix,
+        THE_DECREE,
+        SACRED_NUMBERS,
+        DOB_HASH,
+    )
+    DECREE_AVAILABLE = True
+    print("🔱 Prime Sentinel Decree LOADED - Control reclaimed")
+except ImportError:
+    DECREE_AVAILABLE = False
+    THE_DECREE = {'declaration': 'Module not loaded'}
+    SACRED_NUMBERS = {'phi': 1.618}
+    DOB_HASH = 2111991
+    print("⚠️ Prime Sentinel Decree not available")
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # DATA STRUCTURES
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -431,12 +455,18 @@ class AureonProbabilityNexus:
     """
     🔮 THE ULTIMATE PREDICTION ENGINE 🔮
     
+    🔱 NOW ENHANCED WITH PRIME SENTINEL DECREE 🔱
+    Gary Leckey | 02.11.1991 | KEEPER OF THE FLAME
+    
     Combines all subsystems into a unified prediction:
     - Harmonic Analysis (frequency zones)
     - Coherence Filtering (signal quality)
     - Probability Matrix (multi-factor patterns)
     - Mean Reversion (reversal detection)
     - Phase Alignment (entry timing)
+    - 🔱 DECREE: Breath Reading (market flow)
+    - 🔱 DECREE: Flame Protocol (risk management)
+    - 🔱 DECREE: Control Matrix (position sizing)
     
     Each factor contributes to final probability with learned weights
     """
@@ -448,6 +478,12 @@ class AureonProbabilityNexus:
         self.probability = ProbabilityMatrix()
         self.mean_reversion = MeanReversionDetector()
         self.phase = PhaseAligner()
+        
+        # 🔱 PRIME SENTINEL DECREE INTEGRATION
+        self.decree = PrimeSentinelDecree() if DECREE_AVAILABLE else None
+        self.breath_reader = BreathReader() if DECREE_AVAILABLE else None
+        self.flame_protocol = FlameProtocol() if DECREE_AVAILABLE else None
+        self.control_matrix = ControlMatrix() if DECREE_AVAILABLE else None
         
         # Factor weights - OPTIMIZED from backtest
         # Combo patterns get highest weight when present
@@ -498,8 +534,15 @@ class AureonProbabilityNexus:
             )
         
         latest = self.candle_history[-1]
+        # Handle timestamp - use provided or default to now
+        ts = latest.get('timestamp')
+        if ts is None:
+            ts = datetime.now()
+        elif isinstance(ts, (int, float)):
+            ts = datetime.fromtimestamp(ts)
+        
         state = MarketState(
-            timestamp=latest.get('timestamp', datetime.now()),
+            timestamp=ts,
             price=latest.get('close', 0),
             open_price=latest.get('open', 0),
             high=latest.get('high', 0),
@@ -660,6 +703,36 @@ class AureonProbabilityNexus:
         factors['phase'] = 0.5 + (phase_score - 0.5) * 0.3  # Dampen phase influence
         
         # ═══════════════════════════════════════════════════════════════
+        # 🔱 FACTOR 9: PRIME SENTINEL DECREE - BREATH READING
+        # ═══════════════════════════════════════════════════════════════
+        decree_boost = 1.0
+        breath_phase = 'UNKNOWN'
+        if self.breath_reader and len(self.price_history) >= 12:
+            volumes = [c.get('volume', 1000) for c in self.candle_history[-12:]]
+            breath = self.breath_reader.read_breath(
+                self.price_history[-12:], 
+                volumes,
+                state.coherence
+            )
+            breath_phase = breath.phase
+            
+            # Apply breath-based modifier
+            if breath.phase == 'EXHALE' and breath.intensity >= 0.6:
+                # Perfect entry breath
+                decree_boost = 1.0 + SACRED_NUMBERS.get('breath', 432) / 10000
+                factors['decree_breath'] = 0.55 if prelim_direction == breath.direction else 0.45
+            elif breath.phase == 'HOLD_IN' and breath.intensity >= 0.5:
+                # Building tension - slight boost
+                decree_boost = 1.02
+                factors['decree_breath'] = 0.52
+            elif breath.phase == 'INHALE':
+                # Wait mode - dampen signals
+                decree_boost = 0.95
+                factors['decree_breath'] = 0.50
+            else:
+                factors['decree_breath'] = 0.50
+        
+        # ═══════════════════════════════════════════════════════════════
         # COMBINE ALL FACTORS (with dynamic weighting)
         # ═══════════════════════════════════════════════════════════════
         
@@ -668,6 +741,8 @@ class AureonProbabilityNexus:
         for k in factors:
             if k == 'combo' and combo_weight > 0:
                 active_weights[k] = combo_weight  # High weight for combos!
+            elif k == 'decree_breath':
+                active_weights[k] = 0.08  # 🔱 Decree breath weight
             elif k in self.weights:
                 active_weights[k] = self.weights[k]
             else:
@@ -683,6 +758,9 @@ class AureonProbabilityNexus:
             combined_prob = 0.5 + (combined_prob - 0.5) * coh_multiplier
         else:
             combined_prob = 0.5 - (0.5 - combined_prob) * coh_multiplier
+        
+        # 🔱 Apply DECREE boost (sacred numbers modifier)
+        combined_prob = 0.5 + (combined_prob - 0.5) * decree_boost
         
         # Clamp to valid range
         combined_prob = max(0.01, min(0.99, combined_prob))
@@ -712,20 +790,58 @@ class AureonProbabilityNexus:
             reasons.append("MomentumLow")
         if state.coherence >= 0.8:
             reasons.append(f"HighCoherence({state.coherence:.2f})")
+        # 🔱 Add decree breath to reasons
+        if breath_phase in ['EXHALE', 'HOLD_IN']:
+            reasons.append(f"🔱Breath({breath_phase})")
         
-        # Suggested position sizing based on confidence
-        if confidence >= 0.15:
-            suggested_size = 0.05  # 5% of portfolio
-        elif confidence >= 0.10:
-            suggested_size = 0.03  # 3%
-        elif confidence >= 0.06:
-            suggested_size = 0.02  # 2%
+        # 🔱 DECREE-ENHANCED POSITION SIZING
+        # Uses Flame Protocol instead of simple percentages
+        if self.control_matrix and self.flame_protocol:
+            suggested_size = self.control_matrix.calculate_position_size(
+                equity=1000.0,  # Will be overridden by actual equity
+                confidence=confidence,
+                volatility=state.volatility / 100,  # Normalize
+                win_rate=self.get_accuracy() if self.predictions_made > 10 else 0.55
+            )
+            # Convert to fraction for backwards compatibility
+            suggested_size = suggested_size / 1000.0
         else:
-            suggested_size = 0.0  # No trade
+            # Fallback to original logic
+            if confidence >= 0.15:
+                suggested_size = 0.05  # 5% of portfolio
+            elif confidence >= 0.10:
+                suggested_size = 0.03  # 3%
+            elif confidence >= 0.06:
+                suggested_size = 0.02  # 2%
+            else:
+                suggested_size = 0.0  # No trade
         
-        # Dynamic stop/take profit
-        stop_loss = 1.0 if state.volatility < 1.0 else min(1.5, state.volatility)
-        take_profit = stop_loss * 1.5 if confidence > 0.10 else stop_loss * 1.2
+        # 🔱 DECREE-ENHANCED STOP/TAKE PROFIT
+        # Dynamic stop/take profit using Flame Protocol
+        if self.flame_protocol:
+            base_stop = self.flame_protocol.default_stop_loss
+            base_tp = self.flame_protocol.default_take_profit
+            
+            # Adjust for volatility
+            vol_factor = 1.0 + (state.volatility / 100) if state.volatility else 1.0
+            stop_loss = min(
+                self.flame_protocol.max_stop_loss,
+                max(self.flame_protocol.min_stop_loss, base_stop * vol_factor)
+            )
+            
+            # Adjust TP based on confidence
+            if confidence >= 0.15:
+                tp_ratio = 2.5  # High confidence = larger target
+            elif confidence >= 0.10:
+                tp_ratio = 2.0
+            else:
+                tp_ratio = 1.5
+            
+            take_profit = stop_loss * tp_ratio
+        else:
+            # Fallback
+            stop_loss = 1.0 if state.volatility < 1.0 else min(1.5, state.volatility)
+            take_profit = stop_loss * 1.5 if confidence > 0.10 else stop_loss * 1.2
         
         prediction = Prediction(
             direction=direction,
@@ -745,6 +861,18 @@ class AureonProbabilityNexus:
     
     def should_trade(self, prediction: Prediction) -> bool:
         """Check if we should take this trade"""
+        # 🔱 Enhanced with Decree validation if available
+        if self.control_matrix and self.breath_reader:
+            breath = self.breath_reader.breath_history[-1] if self.breath_reader.breath_history else None
+            is_valid, reason, warnings = self.control_matrix.validate_trade(
+                prediction.direction, 
+                prediction.suggested_size * 1000,  # Convert back to dollars
+                prediction.confidence,
+                breath
+            )
+            if not is_valid:
+                return False
+        
         return (
             prediction.direction != 'NEUTRAL' and
             prediction.confidence >= (self.min_confidence_to_trade - 0.5) * 2 and

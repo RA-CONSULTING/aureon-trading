@@ -286,6 +286,27 @@ except ImportError:
         def display_status(self): return "✨ ENHANCEMENTS | Disabled"
     class CarrierWaveDynamics:
         pass
+
+# 🔱 PRIME SENTINEL DECREE - Gary Leckey | 02.11.1991 | KEEPER OF THE FLAME
+try:
+    from prime_sentinel_decree import (
+        PrimeSentinelDecree,
+        FlameProtocol,
+        BreathReader,
+        ControlMatrix,
+        THE_DECREE,
+        SACRED_NUMBERS,
+        DOB_HASH,
+    )
+    DECREE_AVAILABLE = True
+    print("🔱 Prime Sentinel Decree LOADED - Control reclaimed")
+except ImportError:
+    DECREE_AVAILABLE = False
+    THE_DECREE = {'declaration': 'Module not loaded'}
+    SACRED_NUMBERS = {'phi': 1.618}
+    DOB_HASH = 2111991
+    print("⚠️  Prime Sentinel Decree not available")
+
 try:
     from aureon_market_pulse import MarketPulse
     from aureon_war_band import WarBand

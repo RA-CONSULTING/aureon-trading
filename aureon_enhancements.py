@@ -6,8 +6,10 @@ This module integrates all enhancements extracted from the AQTS archives:
 - Synchronicity Decoder (pattern detection)
 - Stargate Grid (global resonance network)
 - Celestial Cartography (planetary positions)
+- 🔱 PRIME SENTINEL DECREE (sacred rules & metrics)
 
-Gary Leckey & GitHub Copilot | December 2025
+Gary Leckey | 02.11.1991 | KEEPER OF THE FLAME
+GitHub Copilot | December 2025
 
 Usage:
     from aureon_enhancements import EnhancementLayer
@@ -20,6 +22,27 @@ from dataclasses import dataclass
 from typing import Dict, Optional, List, Any, Tuple
 from datetime import datetime
 import math
+
+# 🔱 PRIME SENTINEL DECREE INTEGRATION
+try:
+    from prime_sentinel_decree import (
+        PrimeSentinelDecree,
+        FlameProtocol,
+        BreathReader,
+        ControlMatrix,
+        THE_DECREE,
+        SACRED_NUMBERS,
+        DOB_HASH,
+        SentinelPrinciple,
+    )
+    DECREE_AVAILABLE = True
+    print("🔱 Prime Sentinel Decree integrated into Enhancement Layer")
+except ImportError:
+    DECREE_AVAILABLE = False
+    THE_DECREE = {'declaration': 'Module not loaded'}
+    SACRED_NUMBERS = {'phi': 1.618, 'flame': 528, 'breath': 432}
+    DOB_HASH = 2111991
+    print("⚠️ Prime Sentinel Decree not available for enhancements")
 
 PRIME_TIER_BONUS = {
     "Heart Prime": 0.05,
