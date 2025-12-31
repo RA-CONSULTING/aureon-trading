@@ -75,11 +75,15 @@ class MultiExchangeClient:
         """Get tickers from all exchanges, tagged with source."""
         all_tickers = []
         for name, client in self.clients.items():
-            tickers = client.get_24h_tickers()
-            for t in tickers:
-                t['source'] = name
-                # Ensure symbol is unique or tagged if needed, but 'source' handles it.
-            all_tickers.extend(tickers)
+            try:
+                tickers = client.get_24h_tickers()
+                for t in tickers:
+                    t['source'] = name
+                    # Ensure symbol is unique or tagged if needed, but 'source' handles it.
+                all_tickers.extend(tickers)
+            except Exception as e:
+                # Log error but continue with other exchanges
+                print(f"⚠️ Error getting tickers from {name}: {str(e)[:50]}")
         return all_tickers
 
     def normalize_symbol(self, exchange: str, symbol: str) -> str:

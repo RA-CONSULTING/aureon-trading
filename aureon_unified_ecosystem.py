@@ -288,11 +288,15 @@ except ImportError:
         pass
 try:
     from aureon_market_pulse import MarketPulse
+    from aureon_war_band import WarBand
 except ImportError:
-    print("⚠️  Market Pulse not available: Running in degraded mode")
+    print("⚠️  Market Pulse/War Band not available: Running in degraded mode")
     class MarketPulse:
         def __init__(self, client): pass
         def analyze_market(self): return {}
+    class WarBand:
+        def __init__(self, client, pulse): pass
+        def update(self): pass
 
 # 🔮 NEXUS PREDICTOR - 79.6% Win Rate Validated Over 11 Years!
 try:
@@ -11553,9 +11557,11 @@ class AureonKrakenEcosystem:
         
         self.auris = AurisEngine()
         self.mycelium = MyceliumNetwork(initial_capital=initial_balance)  # 🍄🧠 Full neural network with hives!
+        self.mycelium.acknowledge_war_band() # 🍄🏹 Connect War Band to Mycelium
         self.lattice = GaiaLatticeEngine()  # 🌍 GAIA FREQUENCY PHYSICS - HNC Blackboard Carrier Wave Dynamics
         self.enhancements = EnhancementLayer() if ENHANCEMENTS_AVAILABLE else None  # 🔯 CODEX INTEGRATION
         self.market_pulse = MarketPulse(self.client) # Initialize Market Pulse
+        self.war_band = WarBand(self.client, self.market_pulse) # 🏹⚔️ Initialize Apache War Band
         self.tracker = PerformanceTracker(initial_balance)
         # Two distinct memories:
         # - ElephantMemory: symbol-level cooldown/blacklist + JSONL event trail
@@ -20188,7 +20194,11 @@ class AureonKrakenEcosystem:
                 # 🍄 Constant nerve-system pulse (state shared + persisted)
                 self._mycelium_heartbeat(note='cycle')
                 
-                # 🌊 SURGE WINDOW CHECK: Synchronize with Zero Point Field
+                # �⚔️ WAR BAND UPDATE: Autonomous Scout & Sniper ⚔️🏹
+                if hasattr(self, 'war_band'):
+                    self.war_band.update()
+                
+                # �🌊 SURGE WINDOW CHECK: Synchronize with Zero Point Field
                 is_surge = self.memory.is_surge_window_active()
                 surge_status = "🌊 SURGE ACTIVE" if is_surge else "Waiting for Surge"
                 

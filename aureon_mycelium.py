@@ -418,6 +418,15 @@ class MyceliumNetwork:
     # 🎯 THE ONE GOAL - ENCODED INTO EVERY FIBER
     # ═══════════════════════════════════════════════════════════════════════════════
     ONE_GOAL = "GROW_NET_PROFIT_FAST"
+
+    def acknowledge_war_band(self):
+        """
+        Connects the Apache War Band to the Mycelium Network.
+        The War Band acts as an autonomous special forces unit.
+        """
+        logger.info("🍄 Mycelium Network: Connected to Apache War Band (Autonomous Unit)")
+        # The War Band operates as a specialized hunter-killer node
+        # It feeds profit back into the ecosystem, fueling the mycelial growth.
     GROWTH_AGGRESSION = 0.9  # 90% aggressive growth mode
     COMPOUND_RATE = 0.95     # 95% of profits compound back
     MIN_PROFIT_TARGET = 0.03 # Minimum $0.03 net profit per trade
