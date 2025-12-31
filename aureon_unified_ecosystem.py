@@ -14351,18 +14351,11 @@ class AureonKrakenEcosystem:
             base = CONFIG.get('BASE_CURRENCY', 'GBP')
             stable_coins = {'USD', 'USDC', 'USDT', 'EUR', 'GBP', 'ZUSD', 'ZEUR', 'ZGBP', 'FDUSD', 'BUSD'}
             
-            # Get balances for this specific exchange
+            # Get balances for this specific exchange via MultiExchangeClient
             try:
-                if exchange == 'kraken':
-                    balances = self.client.kraken.get_balance() if self.client.kraken else {}
-                elif exchange == 'binance':
-                    balances = self.client.binance.get_balance() if self.client.binance else {}
-                elif exchange == 'capital':
-                    balances = self.client.capital.get_balance() if self.client.capital else {}
-                elif exchange == 'alpaca':
-                    balances = self.client.alpaca.get_balance() if self.client.alpaca else {}
-                else:
-                    balances = {}
+                # Use get_all_balances and filter by exchange
+                all_balances = self.client.get_all_balances()
+                balances = all_balances.get(exchange, {})
             except Exception as e:
                 logger.debug(f"Could not get {exchange} balance: {e}")
                 balances = {}
@@ -14370,7 +14363,11 @@ class AureonKrakenEcosystem:
             # Sum up stable coins / cash equivalents
             for asset, amount in balances.items():
                 try:
-                    amount = float(amount)
+                    # Handle dict format {'free': x, 'locked': y}
+                    if isinstance(amount, dict):
+                        amount = float(amount.get('free', 0))
+                    else:
+                        amount = float(amount)
                 except:
                     continue
                 if amount <= 0:
