@@ -1,6 +1,6 @@
 {
   "civilization": "Hindu Vedic",
-  "last_updated": "2025-12-27T16:55:19.294076",
+  "last_updated": "2026-01-01T15:13:47.660139",
   "version": "1.0.0",
   "sources": [
     "hardcoded",
@@ -481,6 +481,16 @@
       "trading_application": "Quantitative analysis and Fibonacci relationships",
       "timestamp": "2025-12-25T19:52:41.776106",
       "content_hash": "98bb61471d4c013d16fac896fcbcb886"
+    },
+    {
+      "source": "Wikipedia",
+      "civilization": "hindu",
+      "topic": "Arthashastra",
+      "content": "Kautilya's Arthashastra (Sanskrit: कौतिलियम् अर्थशास्त्रम्, IAST: Kautiliyam Arthaśāstram; transl. Kautilya's compendium on worldly affairs) is an Ancient Indian Sanskrit treatise on statecraft, politics, economic policy and military strategy. The text is likely the work of several authors over centuries, starting as a compilation of Arthashastras, texts which according to Olivelle date from the 2nd c. BCE to the 1st c. CE. However, there is not yet enough evidence to completely abandon the idea",
+      "relevance_score": 0.6,
+      "trading_application": "Strategic positioning and tactical execution",
+      "timestamp": "2026-01-01T15:13:43.655498",
+      "content_hash": "60c69d8f4834d2d8f049df55bf34a193"
     }
   ],
   "scan_history": [
@@ -535,6 +545,14 @@
     {
       "timestamp": "2025-12-27T16:55:19.294055",
       "insights_found": 0,
+      "sources_used": [
+        "Wikipedia",
+        "Sacred-Texts"
+      ]
+    },
+    {
+      "timestamp": "2026-01-01T15:13:47.660095",
+      "insights_found": 1,
       "sources_used": [
         "Wikipedia",
         "Sacred-Texts"

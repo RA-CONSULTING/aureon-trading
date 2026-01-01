@@ -1092,6 +1092,29 @@ class AlpacaClient:
             logger.error(f"Error getting Alpaca tickers: {e}")
             return []
 
+    def get_ticker(self, symbol: str) -> Dict[str, Any]:
+        """Return latest bid/ask/last for a crypto symbol."""
+        try:
+            norm = self._resolve_symbol(symbol)
+            quotes = self.get_latest_crypto_quotes([norm]) or {}
+            q = quotes.get(norm, {})
+            bid = float(q.get('bp', 0) or 0.0)
+            ask = float(q.get('ap', 0) or 0.0)
+            # Use mid if both available, otherwise fall back to bid/ask
+            if bid > 0 and ask > 0:
+                price = (bid + ask) / 2
+            else:
+                price = bid or ask or 0.0
+            return {
+                'symbol': norm,
+                'price': price,
+                'bid': bid,
+                'ask': ask,
+            }
+        except Exception as e:
+            logger.error(f"Error getting Alpaca ticker for {symbol}: {e}")
+            return {'symbol': symbol, 'price': 0.0, 'bid': 0.0, 'ask': 0.0}
+
     def convert_to_quote(self, asset: str, amount: float, quote: str) -> float:
         """
         Convert asset amount to quote currency (Kraken-compatible interface).

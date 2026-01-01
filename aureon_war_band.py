@@ -18,12 +18,17 @@ class WarBand:
     Components:
     - SCOUT (The Hunter): Finds targets based on metrics and deploys capital.
     - SNIPER (The Killer): Watches positions and executes kills for profit.
+    
+    🧬 ENHANCED: Consumes Mycelium neural outputs for smarter target selection.
     """
     
     def __init__(self, client: MultiExchangeClient, market_pulse: MarketPulse):
         self.client = client
         self.pulse = market_pulse
         self.state_file = 'aureon_kraken_state.json'
+        self.external_intel: Dict[str, Dict[str, Any]] = {}
+        # Mycelium reference (set by ecosystem wiring)
+        self._mycelium = None
         
         # Configuration
         self.scout_size_usd = 12.0
@@ -39,6 +44,46 @@ class WarBand:
         }
         
         print("   🏹 War Band Assembled: Scouts & Snipers Ready")
+
+    def set_mycelium(self, mycelium) -> None:
+        """Wire Mycelium reference for neural-guided targeting."""
+        self._mycelium = mycelium
+
+    def _neural_target_score(self, symbol: str, exchange: str) -> float:
+        """Get neural score for a target (higher = better)."""
+        if self._mycelium is None:
+            return 1.0
+        try:
+            mem = self._mycelium.get_symbol_memory(symbol)
+            friction = self._mycelium.get_exchange_friction(exchange)
+            queen = self._mycelium.get_queen_signal()
+            coherence = self._mycelium.get_network_coherence()
+            
+            wr = float(mem.get('win_rate', 0.5))
+            act = float(mem.get('activation', 0.5))
+            # Penalize exchanges with high recent rejections
+            friction_penalty = 1.0 - min(0.5, friction.get('reject_count', 0) * 0.05)
+            # Bullish queen + high coherence = boost
+            queen_factor = 1.0 + 0.15 * queen
+            coh_factor = 0.6 + 0.4 * coherence
+            
+            return wr * act * friction_penalty * queen_factor * coh_factor
+        except Exception:
+            return 1.0
+
+    def ingest_intel(self, symbol: str, exchange: str, eta_seconds: float = None,
+                     probability: float = None, confidence: float = None,
+                     mycelium_coherence: float = None, queen_signal: float = None):
+        """Record external sniper/mycelium intel so the band has situational awareness."""
+        key = f"{exchange}:{symbol}"
+        self.external_intel[key] = {
+            'ts': time.time(),
+            'eta_seconds': eta_seconds,
+            'probability': probability,
+            'confidence': confidence,
+            'mycelium_coherence': mycelium_coherence,
+            'queen_signal': queen_signal,
+        }
 
     def get_state(self) -> Dict:
         try:
@@ -59,6 +104,11 @@ class WarBand:
         
         # Run Sniper (Every update)
         self._run_sniper()
+
+        # Light-touch intel decay to keep the cache fresh
+        stale = [k for k, v in self.external_intel.items() if current_time - v.get('ts', 0) > 900]
+        for k in stale:
+            self.external_intel.pop(k, None)
         
         # Run Scout (Interval based)
         if current_time - self.last_scan_time > self.scan_interval:
@@ -157,9 +207,23 @@ class WarBand:
                 
                 if cash >= self.min_cash_required:
                     target, reason = self._select_target(exchange, held_symbols, top_gainers, arb_opps)
+
+                    # Prefer externally-intel'd targets if available and not held
+                    ext_key = None
+                    for k in sorted(self.external_intel.keys()):
+                        if k.startswith(f"{exchange}:"):
+                            sym = k.split(":", 1)[1]
+                            if sym not in held_symbols:
+                                target = sym
+                                intel = self.external_intel[k]
+                                reason = f"External intel p={intel.get('probability', 'na')} eta={intel.get('eta_seconds', 'na')}"
+                                ext_key = k
+                                break
                     
                     if target:
                         self._deploy_scout(exchange, target, reason, state)
+                        if ext_key:
+                            self.external_intel.pop(ext_key, None)
                     
         except Exception as e:
             print(f"   ⚠️ Scout Patrol Error: {e}")
@@ -178,21 +242,26 @@ class WarBand:
         return 0.0
 
     def _select_target(self, exchange, held_symbols, top_gainers, arb_opps):
-        # 1. Arbitrage
-        for arb in arb_opps:
-            if arb['buy_at']['source'] == exchange and arb['buy_at']['symbol'] not in held_symbols:
-                return arb['buy_at']['symbol'], f"Arbitrage (+{arb['spread_pct']:.2f}%)"
+        # 1. Arbitrage (score-weighted if multiple)
+        arb_candidates = [arb for arb in arb_opps if arb['buy_at']['source'] == exchange and arb['buy_at']['symbol'] not in held_symbols]
+        if arb_candidates:
+            # Pick the one with best neural score
+            arb_candidates.sort(key=lambda a: self._neural_target_score(a['buy_at']['symbol'], exchange), reverse=True)
+            best = arb_candidates[0]
+            return best['buy_at']['symbol'], f"Arbitrage (+{best['spread_pct']:.2f}%)"
         
-        # 2. Momentum
+        # 2. Momentum (score-weighted)
         exch_gainers = [t for t in top_gainers if t.get('source') == exchange and t.get('symbol') not in held_symbols]
         if exch_gainers:
+            exch_gainers.sort(key=lambda t: self._neural_target_score(t.get('symbol', ''), exchange), reverse=True)
             best = exch_gainers[0]
             return best.get('symbol'), f"Top Gainer (+{best.get('priceChangePercent', 0)}%)"
             
-        # 3. Fallback
+        # 3. Fallback (score-weighted)
         available = [t for t in self.fallback_targets.get(exchange, []) if t not in held_symbols]
         if available:
-            return random.choice(available), "Standard Patrol"
+            available.sort(key=lambda t: self._neural_target_score(t, exchange), reverse=True)
+            return available[0], "Neural Patrol"
             
         return None, None
 

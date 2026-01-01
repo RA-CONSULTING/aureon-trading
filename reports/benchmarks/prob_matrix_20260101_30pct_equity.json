@@ -1,0 +1,27 @@
+{
+  "benchmark_name": "probability_matrix_72h_30pct_equity_20260101",
+  "created_utc": "2026-01-01T02:29:32Z",
+  "source": "smoke_test_probability_matrix.py",
+  "parameters": {
+    "minutes": 4320,
+    "position_pct": 0.3,
+    "position_size_fallback": 12.0,
+    "starting_capital": 100.0,
+    "fee_rate": 0.001,
+    "exchange": "binance",
+    "pairs_target": 77,
+    "pairs_fetched": 63
+  },
+  "results": {
+    "start_time": "2025-12-29T02:53:00",
+    "end_time": "2026-01-01T02:28:00",
+    "duration_minutes": 4295.0,
+    "ending_capital": 2846.8975493110725,
+    "total_pnl": 2746.8975493110725,
+    "total_pnl_pct": 2746.8975493110725,
+    "total_trades": 6492,
+    "win_rate": 100.0,
+    "profit_factor": "inf"
+  },
+  "notes": "Data fetched with Binance primary and Coinbase fallback; 1m candles; compounding per-trade size = equity * position_pct; intelligence gate may be disabled/enabled depending on run configuration."
+}

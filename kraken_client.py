@@ -360,6 +360,26 @@ class KrakenClient:
             "quoteVolume": str(quote_vol)
         }
 
+    def get_ticker(self, symbol: str) -> Dict[str, Any]:
+        """Return bid/ask/last for a symbol in a Binance-like shape."""
+        try:
+            res = self._ticker([symbol]) or self._ticker(self._normalize_symbol(symbol))
+            if not res:
+                return {"symbol": symbol, "price": 0.0, "bid": 0.0, "ask": 0.0}
+
+            _, t = next(iter(res.items()))
+            last = float(t.get("c", [0])[0] or 0.0)
+            bid = float(t.get("b", [last])[0] or last)
+            ask = float(t.get("a", [last])[0] or last)
+            return {
+                "symbol": symbol,
+                "price": last,
+                "bid": bid,
+                "ask": ask,
+            }
+        except Exception:
+            return {"symbol": symbol, "price": 0.0, "bid": 0.0, "ask": 0.0}
+
     def best_price(self, symbol: str) -> Dict[str, Any]:
         t = self.get_24h_ticker(symbol)
         return {"symbol": t.get("symbol", symbol), "price": t.get("lastPrice", "0")}

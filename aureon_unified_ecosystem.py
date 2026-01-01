@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """
-🐙🌌 AUREON  ECOSYSTEM - THE UNIFIED TRADING ENGINE 🌌🐙
+================================================================
+AUREON UNIFIED ECOSYSTEM - ONE BRAIN TO RULE THEM ALL
 ================================================================
 
 Version: 0.9.0-beta
@@ -313,6 +314,15 @@ from ira_sniper_mode import (
     register_to_mycelium,
 )
 
+# ⚔️ WAR STRATEGY - QUICK KILL ENGINE
+try:
+    from war_strategy import QuickKillEngine, get_war_strategy
+    WAR_ENGINE_AVAILABLE = True
+except ImportError:
+    WAR_ENGINE_AVAILABLE = False
+    QuickKillEngine = None
+    get_war_strategy = lambda: None
+
 try:
     from aureon_lattice import GaiaLatticeEngine, CarrierWaveDynamics  # 🌍 GAIA FREQUENCY PHYSICS
     LATTICE_AVAILABLE = True
@@ -585,6 +595,17 @@ except ImportError as e:
         def print_dashboard(self): pass
     def get_validator(): return ProbabilityValidator()
 
+# 🌅 LIGHTHOUSE PROTOCOL METRICS (spectral coherence/distortion)
+try:
+    from lighthouse_metrics import LighthouseMetricsEngine
+    LIGHTHOUSE_AVAILABLE = True
+    LIGHTHOUSE_ENGINE = LighthouseMetricsEngine()
+    print("   🌅 Lighthouse Metrics ACTIVE")
+except Exception as e:
+    LIGHTHOUSE_AVAILABLE = False
+    LIGHTHOUSE_ENGINE = None
+    print(f"⚠️  Lighthouse Metrics not available: {e}")
+
 
 
 # ==== AUREON COGNITION BUS (self-talking JSON thoughts) ====
@@ -813,13 +834,13 @@ def get_exchange_fee_rate(exchange: str) -> float:
     # Priority 1: Check global CONFIG for actual observed fees
     try:
         if ex_lower == 'kraken':
-            return CONFIG.get('KRAKEN_FEE_TAKER', DEFAULT_FEE_RATES['kraken'])
+              return CONFIG.get('KRAKEN_FEE_TAKER', DEFAULT_FEE_RATES['kraken']) or 0.0026
         elif ex_lower == 'binance':
-            return CONFIG.get('BINANCE_FEE_TAKER', DEFAULT_FEE_RATES['binance'])
+              return CONFIG.get('BINANCE_FEE_TAKER', DEFAULT_FEE_RATES['binance']) or 0.001
         elif ex_lower == 'alpaca':
-            return CONFIG.get('ALPACA_FEE_TAKER', DEFAULT_FEE_RATES['alpaca'])
+              return CONFIG.get('ALPACA_FEE_TAKER', DEFAULT_FEE_RATES['alpaca']) or 0.0025
         elif ex_lower == 'capital':
-            return CONFIG.get('CAPITAL_FEE', DEFAULT_FEE_RATES['capital'])
+              return CONFIG.get('CAPITAL_FEE', DEFAULT_FEE_RATES['capital']) or 0.0012
     except (NameError, KeyError):
         pass  # CONFIG not loaded yet
     
@@ -858,6 +879,17 @@ def required_price_increase(initial_usd: float, fee_rate: float, target_profit: 
     # Exact formula accounting for compounding fees
     r = ((1 + target_profit / initial_usd) / ((1 - fee_rate) ** 2)) - 1
     return r
+
+
+def _log_penny_calc(exchange: str, trade_size: float, total_rate: float, fee_rate: float,
+                    slippage: float, spread: float, r: float, net_after_costs: float,
+                    approx_fees: float, target_net: float, was_clamped: bool) -> None:
+    """Debug helper to trace penny threshold inputs/outputs."""
+    if logger.isEnabledFor(logging.DEBUG):
+        logger.debug(
+            "penny_threshold calc | ex=%s size=%.4f fee=%.5f slip=%.5f spread=%.5f total=%.5f r=%.6f net=%.6f approx_fees=%.6f target=%.4f clamped=%s",
+            exchange, trade_size, fee_rate, slippage, spread, total_rate, r, net_after_costs, approx_fees, target_net, was_clamped
+        )
 
 
 def get_penny_threshold(exchange: str, trade_size: float) -> dict:
@@ -914,9 +946,28 @@ def get_penny_threshold(exchange: str, trade_size: float) -> dict:
     
     # Add safety margins for slippage and spread (from CONFIG)
     # This ensures we account for ALL costs, not just exchange fees.
-    slippage = CONFIG.get('SLIPPAGE_PCT', 0.0020)
-    spread = CONFIG.get('SPREAD_COST_PCT', 0.0010)
+    slippage = CONFIG.get('SLIPPAGE_PCT', 0.0003)
     
+    # ⏰ DYNAMIC SPREAD: Adjust for time-of-day liquidity
+    base_spread = CONFIG.get('SPREAD_COST_PCT', 0.00015)
+    try:
+        hour = datetime.utcnow().hour
+        day = datetime.utcnow().weekday()
+        spread_mult = 1.0
+        
+        if day >= 5: # Weekend
+            spread_mult = CONFIG.get('WEEKEND_SPREAD_MULT', 1.8)
+        elif 0 <= hour < 8: # Asian Session
+            spread_mult = CONFIG.get('ASIAN_SESSION_SPREAD_MULT', 1.4)
+        elif 8 <= hour < 16: # London Session
+            spread_mult = CONFIG.get('LONDON_SESSION_SPREAD_MULT', 0.85)
+        elif 13 <= hour < 21: # US Session (overlap)
+            spread_mult = CONFIG.get('US_SESSION_SPREAD_MULT', 0.75)
+            
+        spread = base_spread * spread_mult
+    except Exception:
+        spread = base_spread
+
     # Total effective rate per leg (Fee + Slippage + Spread)
     total_rate = fee_rate + slippage + spread
     
@@ -940,6 +991,20 @@ def get_penny_threshold(exchange: str, trade_size: float) -> dict:
     # Approximate fee cost for reference (linear estimate)
     # This is just for display/logging - the real math is in 'r'
     approx_fees = 2 * total_rate * trade_size
+
+    _log_penny_calc(
+        exchange_name,
+        trade_size,
+        total_rate,
+        fee_rate,
+        slippage,
+        spread,
+        r,
+        net_after_costs,
+        approx_fees,
+        target_net,
+        was_clamped,
+    )
     
     # Stop Loss: Risk ~3x the win target (gives ~25% breakeven win rate)
     # 🔧 FIX: 1.5x was too tight - normal volatility triggered stops before profits!
@@ -960,11 +1025,18 @@ def get_penny_threshold(exchange: str, trade_size: float) -> dict:
         'binance_net_range': BINANCE_NET_PROFIT_RANGE if exchange_name == 'binance' else None,
         'expected_net_after_costs': round(net_after_costs, 6),
         'is_dynamic': True,
-        'adaptive_gate_used': False  # Mark that legacy was used
+        'adaptive_gate_used': False,  # Mark that legacy was used
+        'calc_details': {
+            'total_rate_assumed': total_rate,
+            'slippage_assumed': slippage,
+            'spread_assumed': spread,
+            'approx_fees_assumed': approx_fees,
+        },
     }
 
 
-def check_penny_exit(exchange: str, entry_value: float, gross_pnl: float, symbol: str = None) -> dict:
+def check_penny_exit(exchange: str, entry_value: float, gross_pnl: float, symbol: str = None,
+                     actual_fee_paid: float = None) -> dict:
     """�🇪🎯 ZERO LOSS SNIPER - ONLY exit on CONFIRMED NET PROFIT.
     
     The sniper NEVER misses. We hold until we have guaranteed profit.
@@ -979,12 +1051,21 @@ def check_penny_exit(exchange: str, entry_value: float, gross_pnl: float, symbol
         symbol: Trading symbol for wisdom quotes
     
     Returns:
-        {'should_tp': bool, 'should_sl': bool, 'threshold': dict, 'gross_pnl': float, 'sniper_active': bool}
+        {'should_tp': bool, 'should_sl': bool, 'threshold': dict, 'gross_pnl': float,
+         'sniper_active': bool, 'realized_net_ok': Optional[bool], 'realized_net': Optional[float]}
     """
     threshold = get_penny_threshold(exchange, entry_value)
     
     if not threshold:
-        return {'should_tp': False, 'should_sl': False, 'threshold': None, 'gross_pnl': gross_pnl, 'sniper_active': False}
+        return {
+            'should_tp': False,
+            'should_sl': False,
+            'threshold': None,
+            'gross_pnl': gross_pnl,
+            'sniper_active': False,
+            'realized_net_ok': None,
+            'realized_net': None,
+        }
     
     # 🎯 ZERO LOSS MODE: ONLY exit on CONFIRMED NET PROFIT
     # Check Take Profit: gross P&L >= win threshold
@@ -1000,6 +1081,13 @@ def check_penny_exit(exchange: str, entry_value: float, gross_pnl: float, symbol
         # Calculate approximate net profit
         net_profit = gross_pnl - threshold.get('cost', 0)
         sniper_wisdom = celebrate_penny_profit(net_profit, symbol or 'UNKNOWN')
+
+    # 🧮 Post-fill sanity: if caller passes actual fees, compute realized net and whether target met
+    realized_net = None
+    realized_net_ok = None
+    if actual_fee_paid is not None:
+        realized_net = gross_pnl - actual_fee_paid
+        realized_net_ok = realized_net >= threshold.get('target_net', PENNY_TARGET_NET)
     
     return {
         'should_tp': should_tp,
@@ -1008,7 +1096,9 @@ def check_penny_exit(exchange: str, entry_value: float, gross_pnl: float, symbol
         'gross_pnl': gross_pnl,
         'sniper_active': True,
         'zero_loss_mode': True,
-        'sniper_wisdom': sniper_wisdom
+        'sniper_wisdom': sniper_wisdom,
+        'realized_net_ok': realized_net_ok,
+        'realized_net': realized_net,
     }
 
 
@@ -1168,17 +1258,17 @@ CONFIG = {
     # Trading Parameters
     'BASE_CURRENCY': os.getenv('BASE_CURRENCY', 'USD'),  # USD or GBP
     
-    # Platform-Specific Fees (as decimals)
+    # Platform-Specific Fees (as decimals) - UPDATED FROM LIVE METRICS
     # ══════════════════════════════════════════════════════════
-    # 🐙 KRAKEN (Actual observed: ~0.40% per trade on small volume)
-    'KRAKEN_FEE_MAKER': 0.0026,     # 0.26% maker fee 
-    'KRAKEN_FEE_TAKER': 0.0040,     # 0.40% taker fee (actual observed)
-    'KRAKEN_FEE': 0.0040,           # Legacy field (uses taker)
+    # 🐙 KRAKEN
+    'KRAKEN_FEE_MAKER': 0.0016,     # 0.16% maker fee (Verified)
+    'KRAKEN_FEE_TAKER': 0.0026,     # 0.26% taker fee (Verified)
+    'KRAKEN_FEE': 0.0026,           # Legacy field (uses taker)
     
     # 🟡 BINANCE (UK Account - Spot only)
-    'BINANCE_FEE_MAKER': 0.0010,    # 0.10% maker (with BNB discount: 0.075%)
-    'BINANCE_FEE_TAKER': 0.0010,    # 0.10% taker (with BNB discount: 0.075%)
-    'BINANCE_FEE': 0.0010,          # Default taker
+    'BINANCE_FEE_MAKER': 0.00075,   # 0.075% maker (with BNB discount)
+    'BINANCE_FEE_TAKER': 0.00075,   # 0.075% taker (with BNB discount)
+    'BINANCE_FEE': 0.00075,         # Default taker
     
     # 🦙 ALPACA (Crypto)
     'ALPACA_FEE_MAKER': 0.0015,     # 0.15% maker (crypto)
@@ -1188,13 +1278,31 @@ CONFIG = {
     'ALPACA_ANALYTICS_ONLY': False, # 🦙 ALPACA TRADING ENABLED! Battlefield open!
     
     # 💼 CAPITAL.COM (CFD/Spread Betting)
-    'CAPITAL_FEE_SPREAD': 0.0010,   # ~0.1% avg spread cost (varies by instrument)
+    'CAPITAL_FEE_SPREAD': 0.0008,   # 0.08% avg spread cost (Verified)
     'CAPITAL_FEE_OVERNIGHT': 0.0001,# Daily overnight financing (annualized ~2.5%)
-    'CAPITAL_FEE': 0.0010,          # Default spread cost
+    'CAPITAL_FEE': 0.0008,          # Default spread cost
     
-    # General
-    'SLIPPAGE_PCT': 0.0020,         # 0.20% estimated slippage per trade (increased for safety)
-    'SPREAD_COST_PCT': 0.0010,      # 0.10% estimated spread cost (increased for safety)
+    # ═══════════════════════════════════════════════════════════════
+    # 💰 LIVE METRICS - REAL WORLD EXECUTION PARAMETERS
+    # ═══════════════════════════════════════════════════════════════
+    # Derived from "Race to 100k" Simulation & Real-World Analysis
+    
+    # Execution Costs
+    'SLIPPAGE_PCT': 0.0003,           # 0.03% slippage (market orders)
+    'SLIPPAGE_LIMIT_PCT': 0.0001,     # 0.01% slippage (limit orders)
+    'SPREAD_COST_PCT': 0.00015,       # 0.015% spread (avg)
+    'SPREAD_MAJOR_PCT': 0.00005,      # 0.005% spread (BTC, ETH)
+    'SPREAD_ALT_PCT': 0.0003,         # 0.03% spread (Alts)
+    
+    # Time-of-Day Multipliers (UTC)
+    'ASIAN_SESSION_SPREAD_MULT': 1.4,   # 00:00-08:00 UTC
+    'LONDON_SESSION_SPREAD_MULT': 0.85, # 08:00-16:00 UTC
+    'US_SESSION_SPREAD_MULT': 0.75,     # 13:00-21:00 UTC
+    'WEEKEND_SPREAD_MULT': 1.8,         # Weekends
+    
+    # Network Factors
+    'API_TIMEOUT_CHANCE': 0.002,
+    'WEBSOCKET_DISCONNECT_CHANCE': 0.003,
     'TAKE_PROFIT_PCT': 1.8,         # FALLBACK: 1.8% (penny profit uses dollar thresholds instead)
     'STOP_LOSS_PCT': 1.5,           # FALLBACK: 1.5% (penny profit uses dollar thresholds instead)
     'MAX_POSITIONS': 30,            # 🔥 Legacy cap (unused when UNLIMITED_POSITIONS is enabled)
@@ -1243,6 +1351,23 @@ CONFIG = {
     'SERVER_SIDE_TP_PCT': 1.8,              # Take profit % for server-side orders (fallback)
     'SERVER_SIDE_SL_PCT': 1.5,              # Stop loss % for server-side orders (fallback)
     'SERVER_TRAILING_PCT': 2.0,             # Trailing stop distance % for native trailing
+
+    # 🔮 PROBABILITY MATRIX ENTRY GATE - Only enter when matrix says the penny is reachable
+    'PROB_MATRIX_PENNY_GATE': os.getenv('PROB_MATRIX_PENNY_GATE', '1') == '1',
+    'PROB_MATRIX_MIN_BUY_PROB': float(os.getenv('PROB_MATRIX_MIN_BUY_PROB', '0.68') or 0.68),
+    'PROB_MATRIX_MIN_CONF': float(os.getenv('PROB_MATRIX_MIN_CONF', '0.50') or 0.50),
+    # 100k/day push: looser matrix thresholds to maximize flow when explicitly enabled
+    'ENABLE_100K_MODE': os.getenv('ENABLE_100K_MODE', '0') == '1',
+    'PROB_MATRIX_MIN_BUY_PROB_100K': float(os.getenv('PROB_MATRIX_MIN_BUY_PROB_100K', '0.45') or 0.45),
+    'PROB_MATRIX_MIN_CONF_100K': float(os.getenv('PROB_MATRIX_MIN_CONF_100K', '0.15') or 0.15),
+
+    # 🌅 LIGHTHOUSE PROTOCOL GATE (spectral coherence/distortion)
+    'ENABLE_LIGHTHOUSE_GATE': os.getenv('ENABLE_LIGHTHOUSE_GATE', '0') == '1',
+    'LIGHTHOUSE_MIN_COHERENCE': float(os.getenv('LIGHTHOUSE_MIN_COHERENCE', '0.55') or 0.55),
+    'LIGHTHOUSE_MAX_DISTORTION': float(os.getenv('LIGHTHOUSE_MAX_DISTORTION', '0.35') or 0.35),
+    'LIGHTHOUSE_GAMMA_SPIKE': float(os.getenv('LIGHTHOUSE_GAMMA_SPIKE', '0.25') or 0.25),
+    'LIGHTHOUSE_GAMMA_PENALTY': float(os.getenv('LIGHTHOUSE_GAMMA_PENALTY', '0.20') or 0.20),
+    'LIGHTHOUSE_MIN_POINTS': int(os.getenv('LIGHTHOUSE_MIN_POINTS', '24') or 24),
     
     # Dynamic Portfolio Rebalancing
     'ENABLE_REBALANCING': True,     # Sell underperformers to buy better opportunities
@@ -1251,7 +1376,7 @@ CONFIG = {
 
     # ⏱️ TIMEBOXED HOLDING (Momentum-preserving penny scalps)
     # If a position cannot secure net penny profit quickly, it is not a good setup.
-    'MAX_HOLD_MINUTES': float(os.getenv('MAX_HOLD_MINUTES', '5')),          # Hard max hold per position
+    'MAX_HOLD_MINUTES': float(os.getenv('MAX_HOLD_MINUTES', '3')),          # Hard max hold per position (tightened)
     'ENABLE_TIMEBOX_EXIT': os.getenv('ENABLE_TIMEBOX_EXIT', '1') == '1',    # Force-close when max hold exceeded
 
     # 🚫 NO-LOSS DEFAULT: force scouts should not bypass the quick-profit gates unless explicitly allowed
@@ -2877,6 +3002,8 @@ class PortfolioRebalancer:
     """
     Unified portfolio rebalancing across Binance, Kraken, and Capital.com.
     Optimizes asset allocation and can shift funds between exchanges.
+    
+    🧬 ENHANCED: Consumes Mycelium coherence + queen signal to prioritize rebalance actions.
     """
     
     def __init__(self, multi_client):
@@ -2886,6 +3013,29 @@ class PortfolioRebalancer:
         self.min_trade_value = 5.0  # Minimum $5 to avoid dust trades
         self.last_rebalance = 0
         self.rebalance_history: List[Dict] = []
+        # Mycelium reference (set by ecosystem wiring)
+        self._mycelium: Optional['MyceliumNetwork'] = None
+
+    def set_mycelium(self, mycelium: 'MyceliumNetwork') -> None:
+        """Wire Mycelium reference for neural-guided rebalancing."""
+        self._mycelium = mycelium
+
+    def _get_neural_priority(self, asset: str) -> float:
+        """Get neural-derived priority modifier for a rebalance trade."""
+        if self._mycelium is None:
+            return 1.0
+        try:
+            mem = self._mycelium.get_symbol_memory(asset)
+            queen = self._mycelium.get_queen_signal()
+            coherence = self._mycelium.get_network_coherence()
+            # Higher priority if: good win-rate, bullish queen, high coherence
+            wr = float(mem.get('win_rate', 0.5))
+            act = float(mem.get('activation', 0.5))
+            queen_factor = 1.0 + 0.2 * queen  # queen in [-1,1]
+            coh_factor = 0.5 + 0.5 * coherence  # coherence in [0,1]
+            return wr * act * queen_factor * coh_factor
+        except Exception:
+            return 1.0
         
     def set_target_allocation(self, allocations: Dict[str, float]):
         """
@@ -3013,8 +3163,10 @@ class PortfolioRebalancer:
                 
             trades.append(trade)
             
-        # Sort: SELL first (to free up capital), then BUY
-        trades.sort(key=lambda t: 0 if t['action'] == 'SELL' else 1)
+        # Sort: SELL first (to free up capital), then BUY, then by neural priority
+        for t in trades:
+            t['neural_priority'] = self._get_neural_priority(t['asset'])
+        trades.sort(key=lambda t: (0 if t['action'] == 'SELL' else 1, -t.get('neural_priority', 1.0)))
         
         return trades
         
@@ -3763,8 +3915,17 @@ class MultiExchangeOrchestrator:
         try:
             if exchange == 'binance':
                 raw = client.client.session.get(f"{client.client.base}/api/v3/ticker/24hr", timeout=10).json()
+                # 🇬🇧 If UK mode, filter to allowed trade groups to avoid restricted pairs
+                allowed_pairs = set()
+                try:
+                    if getattr(client.client, 'uk_mode', False):
+                        allowed_pairs = client.client.get_allowed_pairs_uk() or set()
+                except Exception:
+                    allowed_pairs = set()
                 for t in raw:
                     sym = t['symbol']
+                    if allowed_pairs and sym not in allowed_pairs:
+                        continue
                     for q in quote_currencies:
                         if sym.endswith(q):
                             tickers[sym] = {
@@ -3781,6 +3942,31 @@ class MultiExchangeOrchestrator:
             elif exchange == 'kraken':
                 # Use existing Kraken ticker logic
                 tickers = self._get_kraken_tickers(client, quote_currencies)
+
+            elif exchange == 'alpaca':
+                # Alpaca crypto tickers (converted to Binance-like structure)
+                try:
+                    if hasattr(client.client, 'get_24h_tickers'):
+                        raw = client.client.get_24h_tickers() or []
+                        for t in raw:
+                            sym = t.get('symbol', '')
+                            for q in quote_currencies:
+                                if sym.endswith(q):
+                                    price = float(t.get('lastPrice', 0) or 0)
+                                    change = float(t.get('priceChangePercent', 0) or 0)
+                                    volume = float(t.get('quoteVolume', 0) or 0)
+                                    tickers[sym] = {
+                                        'price': price,
+                                        'change': change,
+                                        'volume': volume,
+                                        'high': price,  # Alpaca 24h high/low not provided here; use price as placeholder
+                                        'low': price,
+                                        'exchange': 'alpaca',
+                                        'quote': q,
+                                    }
+                                    break
+                except Exception as e:
+                    logger.debug(f"Alpaca ticker error: {e}")
                 
             elif exchange == 'capital':
                 # CFD markets - simplified
@@ -3796,17 +3982,22 @@ class MultiExchangeOrchestrator:
         tickers = {}
         try:
             if hasattr(client.client, 'get_24h_tickers'):
-                raw_tickers = client.client.get_24h_tickers()
+                raw_tickers = client.client.get_24h_tickers() or []
                 for t in raw_tickers:
                     sym = t.get('symbol', '')
+                    if not sym:
+                        continue
                     for q in quote_currencies:
                         if sym.endswith(q):
+                            price = float(t.get('lastPrice', t.get('price', 0)) or 0)
+                            change = float(t.get('priceChangePercent', t.get('change24h', 0)) or 0)
+                            volume = float(t.get('quoteVolume', t.get('volume', 0)) or 0)
                             tickers[sym] = {
-                                'price': float(t.get('price', 0)),
-                                'change': float(t.get('change24h', 0)),
-                                'volume': float(t.get('volume', 0)),
-                                'high': float(t.get('high', t.get('price', 0))),
-                                'low': float(t.get('low', t.get('price', 0))),
+                                'price': price,
+                                'change': change,
+                                'volume': volume,
+                                'high': price,  # Kraken 24h endpoint here doesn’t return high/low; keep price to avoid zeroes
+                                'low': price,
                                 'exchange': 'kraken',
                                 'quote': q,
                             }
@@ -10840,6 +11031,16 @@ class MyceliumNetwork:
         self.hive_count = 0
         self.total_agents = 0
         self.generation = 0
+
+        # ─────────────────────────────────────────────────────────
+        # 🧬 INTERNAL PATTERN MEMORY (kept inside neural system)
+        # ─────────────────────────────────────────────────────────
+        # This is the bridge from live execution telemetry → neural updates.
+        # Trading logic reads outputs (queen/coherence), but recognition lives here.
+        self.open_positions: Dict[str, Dict[str, Any]] = {}
+        self.symbol_stats: Dict[str, Dict[str, Any]] = {}
+        self.exchange_rejects: Dict[str, Dict[str, Any]] = {}
+        self.last_link_event_ts: float = 0.0
         
         if FULL_MYCELIUM_AVAILABLE:
             try:
@@ -10924,6 +11125,24 @@ class MyceliumNetwork:
         """
         topic = thought.get('topic', '')
         data = thought.get('data', {})
+
+        # Normalize payload to dict
+        if not isinstance(data, dict):
+            try:
+                data = dict(data)
+            except Exception:
+                data = {}
+
+        # ─────────────────────────────────────────────────────────
+        # 🍄 MYCELIUM LINK EVENTS (unified cross-system vocabulary)
+        # ─────────────────────────────────────────────────────────
+        # These are emitted by the ecosystem via _emit_mycelium_event.
+        if topic.startswith('mycelium.link.'):
+            try:
+                self._ingest_link_event(topic=topic, payload=data)
+            except Exception:
+                pass
+            return
         
         # 🌐 RECEIVE: Universal Market Intelligence updates
         if 'universal_scan_complete' in topic:
@@ -10956,6 +11175,196 @@ class MyceliumNetwork:
             if health < 50:
                 # System stressed - reduce mycelium activity
                 self._reduce_activity()
+
+        # ─────────────────────────────────────────────────────────
+        # 🔁 ALSO LEARN FROM NON-LINK LIFECYCLE EVENTS (backwards compatible)
+        # ─────────────────────────────────────────────────────────
+        # Some producers emit execution/position events directly.
+        elif topic.startswith('execution.') or topic.startswith('position.') or topic.startswith('scout.') or topic.startswith('sniper.'):
+            try:
+                self._ingest_legacy_event(topic=topic, payload=data)
+            except Exception:
+                pass
+
+    def _ingest_link_event(self, topic: str, payload: Dict[str, Any]) -> None:
+        """Ingest normalized Mycelium link events and update neural state."""
+        self.last_link_event_ts = time.time()
+        event = topic.replace('mycelium.link.', '', 1)
+
+        symbol = str(payload.get('symbol') or '').strip()
+        exchange = str(payload.get('exchange') or '').strip().lower()
+
+        if event == 'position.opened':
+            if symbol:
+                self.open_positions[symbol] = {
+                    'exchange': exchange,
+                    'entry_price': payload.get('entry_price'),
+                    'entry_value': payload.get('entry_value'),
+                    'quantity': payload.get('quantity'),
+                    'dominant_node': payload.get('dominant_node'),
+                    'opened_ts': payload.get('timestamp', time.time()),
+                }
+                # Seed activation from coherence if present, else mild buy bias.
+                coh = payload.get('coherence')
+                try:
+                    coh_f = float(coh) if coh is not None else None
+                except Exception:
+                    coh_f = None
+                seed = 0.55
+                if isinstance(coh_f, (int, float)):
+                    seed = max(0.45, min(0.85, 0.45 + 0.5 * coh_f))
+                self.add_signal(symbol, float(seed))
+
+        elif event == 'position.close_requested':
+            # Soft note: closing intent reduces confidence slightly (prevents over-anchoring)
+            if symbol and symbol in self.activations:
+                self.activations[symbol] = self.activations[symbol] * 0.98 + 0.5 * 0.02
+
+        elif event == 'position.closed':
+            if symbol:
+                entry_value = payload.get('entry_value')
+                net_pnl = payload.get('net_pnl')
+                hold_min = payload.get('hold_time_min')
+
+                try:
+                    entry_value_f = float(entry_value) if entry_value is not None else 0.0
+                except Exception:
+                    entry_value_f = 0.0
+                try:
+                    net_pnl_f = float(net_pnl) if net_pnl is not None else 0.0
+                except Exception:
+                    net_pnl_f = 0.0
+
+                # Update per-symbol memory
+                st = self.symbol_stats.setdefault(symbol, {
+                    'wins': 0,
+                    'losses': 0,
+                    'net_pnl': 0.0,
+                    'trades': 0,
+                    'last_ts': 0.0,
+                    'avg_hold_min': None,
+                })
+                st['trades'] = int(st.get('trades', 0) or 0) + 1
+                st['net_pnl'] = float(st.get('net_pnl', 0.0) or 0.0) + net_pnl_f
+                st['last_ts'] = time.time()
+                if net_pnl_f > 0:
+                    st['wins'] = int(st.get('wins', 0) or 0) + 1
+                else:
+                    st['losses'] = int(st.get('losses', 0) or 0) + 1
+
+                # Track hold duration trend (EWMA)
+                try:
+                    hm = float(hold_min) if hold_min is not None else None
+                except Exception:
+                    hm = None
+                if isinstance(hm, (int, float)) and hm >= 0:
+                    prev = st.get('avg_hold_min')
+                    if prev is None:
+                        st['avg_hold_min'] = hm
+                    else:
+                        st['avg_hold_min'] = float(prev) * 0.8 + hm * 0.2
+
+                # Reward signal for mycelium learn() uses profit pct.
+                profit_pct = 0.0
+                if entry_value_f > 0:
+                    profit_pct = (net_pnl_f / entry_value_f) * 100.0
+                self.learn(symbol, profit_pct)
+
+                # Update activation toward outcome (wins pull up, losses pull down)
+                if symbol in self.activations:
+                    if net_pnl_f > 0:
+                        self.activations[symbol] = min(1.0, self.activations[symbol] + 0.05)
+                    elif net_pnl_f < 0:
+                        self.activations[symbol] = max(0.0, self.activations[symbol] - 0.05)
+
+                # Feed the full hive network (kept inside Mycelium)
+                if self.full_network and isinstance(net_pnl_f, (int, float)):
+                    try:
+                        self.full_network.record_trade_profit(net_pnl_f, {
+                            'symbol': symbol,
+                            'exchange': exchange,
+                            'entry_value': entry_value_f,
+                            'hold_min': hm,
+                            'penny_hit': bool(payload.get('penny_hit', False)),
+                        })
+                    except Exception:
+                        # Some versions may not accept trade_data
+                        try:
+                            self.full_network.record_trade_profit(net_pnl_f)
+                        except Exception:
+                            pass
+
+                # Clear open state
+                self.open_positions.pop(symbol, None)
+
+                # Slightly adjust network bias based on realized outcomes
+                try:
+                    # Keep it subtle to avoid destabilizing trading.
+                    bias_step = 0.01 if net_pnl_f > 0 else (-0.01 if net_pnl_f < 0 else 0.0)
+                    if bias_step != 0.0:
+                        self._adjust_network_bias(bias_step)
+                except Exception:
+                    pass
+
+        elif event in ('entry.rejected', 'order.rejected', 'entry.blocked_duplicate'):
+            # Rejections are valuable pattern info: dampen symbol + track exchange friction.
+            if symbol and symbol in self.activations:
+                self.activations[symbol] = self.activations[symbol] * 0.97 + 0.5 * 0.03
+
+            if exchange:
+                ex = self.exchange_rejects.setdefault(exchange, {'count': 0, 'last_ts': 0.0})
+                ex['count'] = int(ex.get('count', 0) or 0) + 1
+                ex['last_ts'] = time.time()
+                # If an exchange is rejecting frequently, slightly reduce global bias.
+                if ex['count'] % 10 == 0:
+                    self._adjust_network_bias(-0.01)
+
+        elif event.startswith('scout.'):
+            # Scouts are weak priors: bump activation slightly for deployed symbols.
+            if symbol and event == 'scout.deployed':
+                if symbol not in self.activations:
+                    self.add_signal(symbol, 0.55)
+                else:
+                    self.activations[symbol] = min(1.0, self.activations[symbol] + 0.02)
+
+        elif event == 'sniper.kill_recorded':
+            # High-confidence reinforcement: kills are ground-truth positive outcomes.
+            if symbol:
+                if symbol not in self.activations:
+                    self.add_signal(symbol, 0.6)
+                else:
+                    self.activations[symbol] = min(1.0, self.activations[symbol] + 0.03)
+
+    def _ingest_legacy_event(self, topic: str, payload: Dict[str, Any]) -> None:
+        """Best-effort ingestion for direct execution/position topics (non-link)."""
+        # Map legacy events onto link semantics where possible.
+        if topic == 'execution.order.open':
+            sym = str(payload.get('symbol') or '').strip()
+            ex = str(payload.get('exchange') or '').strip().lower()
+            if sym:
+                self._ingest_link_event('mycelium.link.position.opened', {
+                    'symbol': sym,
+                    'exchange': ex,
+                    'entry_price': payload.get('price'),
+                    'entry_value': payload.get('value'),
+                    'quantity': payload.get('quantity'),
+                    'coherence': payload.get('coherence'),
+                    'timestamp': time.time(),
+                })
+        elif topic == 'execution.order.close':
+            sym = str(payload.get('symbol') or '').strip()
+            ex = str(payload.get('exchange') or '').strip().lower()
+            if sym:
+                self._ingest_link_event('mycelium.link.position.closed', {
+                    'symbol': sym,
+                    'exchange': ex,
+                    'exit_price': payload.get('price'),
+                    'net_pnl': payload.get('pnl'),
+                    'hold_time_min': payload.get('hold_time_min'),
+                    'entry_value': (self.open_positions.get(sym, {}) or {}).get('entry_value'),
+                    'timestamp': time.time(),
+                })
+        # Other topics are informational and can be added later without changing trade logic.
     
     def _adjust_network_bias(self, bias: float):
         """Adjust network bias based on external signals."""
@@ -11083,6 +11492,41 @@ class MyceliumNetwork:
         """Get the Queen Neuron's collective decision signal [-1, 1]"""
         return self.queen_signal
     
+    # ─────────────────────────────────────────────────────────
+    # 🧬 SUBSYSTEM QUERY INTERFACE (neural outputs only)
+    # ─────────────────────────────────────────────────────────
+    def get_symbol_memory(self, symbol: str) -> Dict[str, Any]:
+        """Return learned memory for a symbol (read-only query)."""
+        stats = self.symbol_stats.get(symbol)
+        if stats:
+            trades = int(stats.get('trades', 0) or 0)
+            wins = int(stats.get('wins', 0) or 0)
+            wr = (wins / trades) if trades > 0 else 0.5
+            return {
+                'trades': trades,
+                'wins': wins,
+                'losses': int(stats.get('losses', 0) or 0),
+                'win_rate': wr,
+                'net_pnl': float(stats.get('net_pnl', 0.0) or 0.0),
+                'avg_hold_min': stats.get('avg_hold_min'),
+                'activation': self.activations.get(symbol, 0.5),
+            }
+        return {'trades': 0, 'win_rate': 0.5, 'activation': self.activations.get(symbol, 0.5)}
+
+    def get_exchange_friction(self, exchange: str) -> Dict[str, Any]:
+        """Return rejection stats for an exchange (read-only query)."""
+        ex = self.exchange_rejects.get(exchange.lower())
+        if ex:
+            return {'reject_count': int(ex.get('count', 0) or 0), 'last_reject_ts': ex.get('last_ts', 0.0)}
+        return {'reject_count': 0, 'last_reject_ts': 0.0}
+
+    def rank_symbols_by_memory(self, symbols: List[str], ascending: bool = False) -> List[str]:
+        """Return symbols sorted by learned win-rate * activation (descending by default)."""
+        def _score(sym: str) -> float:
+            mem = self.get_symbol_memory(sym)
+            return float(mem.get('win_rate', 0.5)) * float(mem.get('activation', 0.5))
+        return sorted(symbols, key=_score, reverse=(not ascending))
+
     def get_network_state(self) -> Dict[str, Any]:
         """Get full neural network state for display"""
         state = {
@@ -11803,6 +12247,9 @@ class AureonKrakenEcosystem:
         self.enhancements = EnhancementLayer() if ENHANCEMENTS_AVAILABLE else None  # 🔯 CODEX INTEGRATION
         self.market_pulse = MarketPulse(self.client) # Initialize Market Pulse
         self.war_band = WarBand(self.client, self.market_pulse) # 🏹⚔️ Initialize Apache War Band
+        # 🧬 Wire Mycelium into War Band for neural-guided targeting
+        if hasattr(self.war_band, 'set_mycelium'):
+            self.war_band.set_mycelium(self.mycelium)
         self.tracker = PerformanceTracker(initial_balance)
         # Two distinct memories:
         # - ElephantMemory: symbol-level cooldown/blacklist + JSONL event trail
@@ -11937,6 +12384,9 @@ class AureonKrakenEcosystem:
         self.arb_scanner = CrossExchangeArbitrageScanner(self.client)
         self.trade_confirmation = UnifiedTradeConfirmation(self.client)
         self.rebalancer = PortfolioRebalancer(self.client)
+        # 🧬 Wire Mycelium into Harvester (Rebalancer) for neural-guided rebalancing
+        if hasattr(self, 'mycelium') and self.mycelium:
+            self.rebalancer.set_mycelium(self.mycelium)
         
         # 🌐 MULTI-EXCHANGE ORCHESTRATOR - All Systems Talk To Each Other 🌐
         self.multi_exchange = MultiExchangeOrchestrator(self.client)
@@ -12115,6 +12565,12 @@ class AureonKrakenEcosystem:
             self.thought_bus.subscribe("universal_intel.*", self.mycelium._on_thought_wrapper)
             self.thought_bus.subscribe("brain.*", self.mycelium._on_thought_wrapper)
             self.thought_bus.subscribe("immune.*", self.mycelium._on_thought_wrapper)
+            # Trading lifecycle events (scout → entry → execution → sniper/harvest → learning)
+            self.thought_bus.subscribe("execution.*", self.mycelium._on_thought_wrapper)
+            self.thought_bus.subscribe("position.*", self.mycelium._on_thought_wrapper)
+            self.thought_bus.subscribe("opportunity.*", self.mycelium._on_thought_wrapper)
+            self.thought_bus.subscribe("scout.*", self.mycelium._on_thought_wrapper)
+            self.thought_bus.subscribe("sniper.*", self.mycelium._on_thought_wrapper)
             print("   🍄 Mycelium connected to ThoughtBus - info flows UP↑ DOWN↓ LEFT← RIGHT→")
 
             # 🎯 GOAL TRANSFER: ensure Mycelium + all bus listeners know the target equity
@@ -12439,6 +12895,15 @@ class AureonKrakenEcosystem:
             except Exception as e:
                 print(f"   ⚠️ War Room init failed: {e}")
         
+        # ⚔️ WAR STRATEGY ENGINE - Quick Kill Probability
+        self.war_strategy = None
+        if WAR_ENGINE_AVAILABLE and get_war_strategy:
+            try:
+                self.war_strategy = get_war_strategy()
+                print("   ⚔️ War Strategy Engine ACTIVE (Quick Kill)")
+            except Exception as e:
+                print(f"   ⚠️ War Strategy init failed: {e}")
+        
         # 🇮🇪 IRISH PATRIOT SCOUT DEPLOYER - Celtic-Trained Scouts
         self.patriot_deployer = None
         if PATRIOT_SCOUTS_AVAILABLE and PatriotScoutDeployer:
@@ -12531,11 +12996,58 @@ class AureonKrakenEcosystem:
             _safe_register('warfare', getattr(self, 'celtic_sniper', None))
             _safe_register('learner', globals().get('ADAPTIVE_LEARNER'))
 
+            # Market/strategy subsystems that must share state via Mycelium
+            _safe_register('probability_matrix', getattr(self, 'prob_matrix', None))
+            _safe_register('probability_loader', getattr(self, 'probability_loader', None))
+            _safe_register('war_band', getattr(self, 'war_band', None))
+            _safe_register('market_pulse', getattr(self, 'market_pulse', None))
+            _safe_register('war_strategy', getattr(self, 'war_strategy', None))
+
+            # Execution/routing/portfolio subsystems
+            _safe_register('router', getattr(self, 'smart_router', None))
+            _safe_register('trade_confirmation', getattr(self, 'trade_confirmation', None))
+            _safe_register('arb_scanner', getattr(self, 'arb_scanner', None))
+            _safe_register('harvester', getattr(self, 'rebalancer', None))
+            _safe_register('capital_pool', getattr(self, 'capital_pool', None))
+
+            # Sniper/scout telemetry
+            _safe_register('sniper_brain', getattr(self, 'sniper_brain', None))
+
             # Additional unified ecosystem subsystems (event/telemetry consumers)
             _safe_register('immune', getattr(self, 'immune_system', None))
             _safe_register('thought_bus', getattr(self, 'thought_bus', None))
             _safe_register('mycelium_network', getattr(self, 'mycelium', None))
             _safe_register('universal_intel', getattr(self, 'universal_intel', None))
+
+            # Snapshot of what was actually wired (for debugging / live deployment)
+            try:
+                wired = {
+                    'scanner': bool(get_active_scanner() if callable(get_active_scanner) else None),
+                    'patriots': bool(getattr(getattr(self, 'patriot_deployer', None), 'network', None)),
+                    'warfare': bool(getattr(self, 'celtic_sniper', None)),
+                    'learner': bool(globals().get('ADAPTIVE_LEARNER')),
+                    'probability_matrix': bool(getattr(self, 'prob_matrix', None)),
+                    'probability_loader': bool(getattr(self, 'probability_loader', None)),
+                    'war_band': bool(getattr(self, 'war_band', None)),
+                    'market_pulse': bool(getattr(self, 'market_pulse', None)),
+                    'war_strategy': bool(getattr(self, 'war_strategy', None)),
+                    'router': bool(getattr(self, 'smart_router', None)),
+                    'trade_confirmation': bool(getattr(self, 'trade_confirmation', None)),
+                    'arb_scanner': bool(getattr(self, 'arb_scanner', None)),
+                    'harvester': bool(getattr(self, 'rebalancer', None)),
+                    'capital_pool': bool(getattr(self, 'capital_pool', None)),
+                    'sniper_brain': bool(getattr(self, 'sniper_brain', None)),
+                    'immune': bool(getattr(self, 'immune_system', None)),
+                    'thought_bus': bool(getattr(self, 'thought_bus', None)),
+                    'mycelium_network': bool(getattr(self, 'mycelium', None)),
+                    'universal_intel': bool(getattr(self, 'universal_intel', None)),
+                }
+                mycelium_sync('ecosystem_wiring', {
+                    'timestamp': time.time(),
+                    'wired': wired,
+                })
+            except Exception:
+                pass
 
             # Publish a single snapshot event so all connected systems can “see” startup state
             try:
@@ -12550,6 +13062,37 @@ class AureonKrakenEcosystem:
                 pass
         except Exception:
             # Never let wiring failure break startup
+            pass
+
+    def _emit_mycelium_event(self, event: str, payload: Optional[Dict[str, Any]] = None) -> None:
+        """Emit a normalized event into the MyceliumStateAggregator and ThoughtBus.
+
+        This is the "link layer" between subsystems (probability matrix, learner,
+        sniper/scout/harvester, war band) during live deployment.
+        """
+        safe_payload: Dict[str, Any] = {}
+        if isinstance(payload, dict):
+            safe_payload = dict(payload)
+
+        safe_payload.setdefault('timestamp', time.time())
+        safe_payload.setdefault('iteration', int(getattr(self, 'iteration', 0) or 0))
+        safe_payload.setdefault('dry_run', bool(getattr(self, 'dry_run', False)))
+
+        # 1) Mycelium aggregator (fast shared-state channel)
+        try:
+            mycelium_sync(f'link.{event}', safe_payload)
+        except Exception:
+            pass
+
+        # 2) ThoughtBus (durable append-only channel)
+        try:
+            if getattr(self, 'thought_bus', None):
+                self.thought_bus.publish(Thought(
+                    source='mycelium_link',
+                    topic=f'mycelium.link.{event}',
+                    payload=safe_payload,
+                ))
+        except Exception:
             pass
 
     def _mycelium_heartbeat(self, note: str = "cycle") -> None:
@@ -12803,6 +13346,17 @@ class AureonKrakenEcosystem:
                 pass
         except Exception as e:
             logger.debug(f"Kill scanner record error: {e}")
+
+        # Broadcast kill telemetry into the shared Mycelium channel
+        try:
+            self._emit_mycelium_event('sniper.kill_recorded', {
+                'symbol': getattr(pos, 'symbol', None),
+                'exchange': getattr(pos, 'exchange', None),
+                'net_pnl': float(net_pnl or 0.0),
+                'is_win': bool(net_pnl > 0),
+            })
+        except Exception:
+            pass
         
         if not hasattr(self, 'sniper_brain') or not self.sniper_brain:
             return
@@ -14112,8 +14666,24 @@ class AureonKrakenEcosystem:
                             bf = scout.exchange.lower()
                             positions_by_battlefield[bf] = positions_by_battlefield.get(bf, 0) + 1
                             print(f"   💰 {scout.codename} position LIVE on {scout.exchange.upper()}!")
+
+                            self._emit_mycelium_event('scout.deployed', {
+                                'symbol': scout.symbol,
+                                'exchange': scout.exchange,
+                                'price': scout.entry_price,
+                                'dominant_node': 'PatriotScout',
+                                'codename': scout.codename,
+                            })
                         else:
                             print(f"   ⚠️ {scout.codename} order rejected - check balance/filters")
+
+                            self._emit_mycelium_event('scout.rejected', {
+                                'symbol': scout.symbol,
+                                'exchange': scout.exchange,
+                                'price': scout.entry_price,
+                                'dominant_node': 'PatriotScout',
+                                'codename': scout.codename,
+                            })
                     
                     # 🏴 Report battlefield deployment
                     print(f"\n   ☘️ IRISH PATRIOTS: {real_positions}/{len(deployed)} actually in the field!")
@@ -14130,6 +14700,12 @@ class AureonKrakenEcosystem:
                         })
                     except Exception:
                         pass
+
+                    self._emit_mycelium_event('scout.batch_deployed', {
+                        'mode': 'patriot',
+                        'total': real_positions,
+                        'by_exchange': positions_by_battlefield,
+                    })
                     return
             
             # Fall through to regular deployment if patriot deployer fails
@@ -14480,11 +15056,37 @@ class AureonKrakenEcosystem:
                 scouts_deployed += 1
                 deployed_per_quote[candidate['quote_currency']] = deployed_per_quote.get(candidate['quote_currency'], 0) + 1
                 print(f"   ✅ Scout #{scouts_deployed} DEPLOYED!")
+
+                self._emit_mycelium_event('scout.deployed', {
+                    'symbol': candidate.get('symbol'),
+                    'exchange': (candidate.get('source') or candidate.get('exchange') or 'unknown'),
+                    'price': candidate.get('price'),
+                    'quote_currency': candidate.get('quote_currency'),
+                    'dominant_node': candidate.get('dominant_node'),
+                    'change24h': candidate.get('change24h'),
+                    'score': candidate.get('score'),
+                })
             else:
                 print(f"   ⚠️  Scout {candidate['symbol']} skipped - trying next...")
+
+                self._emit_mycelium_event('scout.rejected', {
+                    'symbol': candidate.get('symbol'),
+                    'exchange': (candidate.get('source') or candidate.get('exchange') or 'unknown'),
+                    'price': candidate.get('price'),
+                    'quote_currency': candidate.get('quote_currency'),
+                    'dominant_node': candidate.get('dominant_node'),
+                    'change24h': candidate.get('change24h'),
+                    'score': candidate.get('score'),
+                })
             time.sleep(0.25)  # small pause to avoid hammering exchange balance endpoints
                 
         self.scouts_deployed = True
+
+        self._emit_mycelium_event('scout.batch_deployed', {
+            'mode': 'standard',
+            'total': scouts_deployed,
+            'target': target_scouts,
+        })
         
         if scouts_deployed > 0:
             print(f"\n   🎯 DEPLOYED {scouts_deployed} scout(s) - WE'RE IN THE GAME!\n")
@@ -15003,6 +15605,39 @@ class AureonKrakenEcosystem:
         
         logger.info(f"🪙 {symbol}: SHARED GOAL = +${target_net:.2f} net | Need +{required_move_pct:.3f}% (${price:.4f} → ${required_price:.4f})")
         
+        # ═══════════════════════════════════════════════════════════════
+        # ⚔️ STEP 1.5: Ask War Strategy - "Is this a QUICK KILL?"
+        # ═══════════════════════════════════════════════════════════════
+        if hasattr(self, 'war_strategy') and self.war_strategy and not is_force_scout:
+            try:
+                qk_est = self.war_strategy.estimate_quick_kill(symbol, exchange, price)
+                if qk_est and not qk_est.go_signal:
+                     # Only block if confidence is high that it's NOT a quick kill
+                     if qk_est.confidence > 0.7:
+                        logger.info(f"⛔ {symbol}: War Strategy says NO GO (conf={qk_est.confidence:.2f}) - Too slow for penny profit")
+                        opp['entry_reject_reason'] = f"war_strategy: slow (est={qk_est.estimated_bars_to_profit:.1f} bars)"
+                        return False
+                elif qk_est and qk_est.go_signal:
+                    logger.info(f"⚔️ {symbol}: War Strategy ATTACK - Quick Kill probable ({qk_est.prob_penny_profit:.0%})")
+                    opp['quick_kill_boost'] = True
+            except Exception as e:
+                logger.debug(f"War strategy check failed: {e}")
+
+        # ═══════════════════════════════════════════════════════════════
+        # 🍄 STEP 1.6: Ask Mycelium - "What does the collective know?"
+        # ═══════════════════════════════════════════════════════════════
+        if hasattr(self, 'mycelium') and self.mycelium:
+            try:
+                # Check if other exchanges are already heavy on this asset
+                if hasattr(self.mycelium, 'check_entry_consensus'):
+                    mycelium_check = self.mycelium.check_entry_consensus(symbol)
+                    if mycelium_check and mycelium_check.get('status') == 'BLOCK':
+                        logger.info(f"⛔ {symbol}: Mycelium BLOCKED - {mycelium_check.get('reason')}")
+                        opp['entry_reject_reason'] = f"mycelium: {mycelium_check.get('reason')}"
+                        return False
+            except Exception:
+                pass
+
         # 🦅 FORCE SCOUTS: Verify they can ACTUALLY hit penny profit
         if is_force_scout:
             # Even force scouts must have a CHANCE at penny profit
@@ -15068,6 +15703,51 @@ class AureonKrakenEcosystem:
         prob_action = opp.get('prob_action', 'HOLD')
         probability = opp.get('probability', 0.5)
         prob_confidence = opp.get('prob_confidence', 0.0)
+
+        # 🌅 LIGHTHOUSE PROTOCOL GATE - spectral coherence/distortion filter
+        if CONFIG.get('ENABLE_LIGHTHOUSE_GATE', False) and LIGHTHOUSE_AVAILABLE and LIGHTHOUSE_ENGINE:
+            prices = opp.get('recent_prices') or opp.get('price_series')
+            times = opp.get('recent_timestamps') or opp.get('price_timestamps')
+            min_points = int(CONFIG.get('LIGHTHOUSE_MIN_POINTS', 24) or 24)
+
+            if prices is not None and times is not None:
+                try:
+                    if len(prices) >= min_points and len(times) == len(prices):
+                        metrics = LIGHTHOUSE_ENGINE.analyze_series(times, prices)
+                        coherence = metrics.get('coherence_score', 0.0)
+                        distortion = metrics.get('distortion_index', 1.0)
+                        gamma_ratio = metrics.get('gamma_ratio', 0.0)
+
+                        opp['lighthouse_metrics'] = {
+                            'coherence': coherence,
+                            'distortion': distortion,
+                            'gamma_ratio': gamma_ratio,
+                        }
+
+                        min_coh = float(CONFIG.get('LIGHTHOUSE_MIN_COHERENCE', 0.55) or 0.55)
+                        max_dist = float(CONFIG.get('LIGHTHOUSE_MAX_DISTORTION', 0.35) or 0.35)
+                        gamma_spike = float(CONFIG.get('LIGHTHOUSE_GAMMA_SPIKE', 0.25) or 0.25)
+                        gamma_penalty = float(CONFIG.get('LIGHTHOUSE_GAMMA_PENALTY', 0.20) or 0.20)
+
+                        if coherence < min_coh or distortion > max_dist:
+                            opp['entry_reject_reason'] = (
+                                f"lighthouse: coherence/distortion gate ({coherence:.2f}/{distortion:.2f} "
+                                f"vs {min_coh:.2f}/{max_dist:.2f})"
+                            )
+                            logger.info(
+                                f"⛔ {symbol}: Lighthouse gate blocked (coh={coherence:.2f} < {min_coh:.2f} or dist={distortion:.2f} > {max_dist:.2f})"
+                            )
+                            return False
+
+                        if gamma_ratio > gamma_spike:
+                            probability *= max(0.0, 1.0 - gamma_penalty)
+                            opp['probability'] = probability
+                            opp['lighthouse_gamma_penalty'] = gamma_ratio
+                    else:
+                        opp['lighthouse_note'] = 'insufficient_points'
+                except Exception as e:
+                    opp['lighthouse_note'] = f"error:{e}"
+                    logger.info(f"⚠️ {symbol}: Lighthouse analysis failed ({e}) - continuing without gate")
         
         if aggressive:
             # 🦾 AGGRESSIVE ONE-GOAL: only block when the matrix is strongly bearish with high confidence,
@@ -15112,6 +15792,103 @@ class AureonKrakenEcosystem:
         # ✅ Log when matrix says BUY
         if prob_action in ['BUY', 'STRONG BUY', 'SLIGHT BUY']:
             logger.info(f"✅ {symbol}: Matrix says {prob_action} (prob={probability:.0%}) - APPROVED for +{required_move_pct:.3f}%")
+
+        # ═══════════════════════════════════════════════════════════════
+        # 🌅 LIGHTHOUSE GATE (spectral coherence/distortion) - optional hard filter
+        # Uses recent price microstructure to reject chaotic/dissonant setups and
+        # down-weight probability on gamma spikes.
+        # ═══════════════════════════════════════════════════════════════
+        if CONFIG.get('ENABLE_LIGHTHOUSE_GATE', False) and LIGHTHOUSE_AVAILABLE and not is_force_scout:
+            prices = opp.get('recent_prices') or opp.get('prices') or []
+            timestamps = opp.get('recent_timestamps') or opp.get('timestamps') or list(range(len(prices)))
+            min_points = int(CONFIG.get('LIGHTHOUSE_MIN_POINTS', 24) or 24)
+
+            if len(prices) >= min_points and len(timestamps) >= min_points:
+                try:
+                    metrics = LIGHTHOUSE_ENGINE.analyze_series(timestamps, prices)
+                    coherence_score = float(metrics.get('coherence_score', 0.0))
+                    distortion_index = float(metrics.get('distortion_index', 1.0))
+                    gamma_ratio = float(metrics.get('gamma_ratio', 0.0))
+
+                    opp['lighthouse'] = {
+                        'coherence': coherence_score,
+                        'distortion': distortion_index,
+                        'gamma_ratio': gamma_ratio,
+                        'maker_bias': metrics.get('maker_bias'),
+                        'emotion': metrics.get('emotion'),
+                        'emotion_color': metrics.get('emotion_color'),
+                    }
+
+                    min_coh = float(CONFIG.get('LIGHTHOUSE_MIN_COHERENCE', 0.55) or 0.55)
+                    max_dist = float(CONFIG.get('LIGHTHOUSE_MAX_DISTORTION', 0.35) or 0.35)
+                    gamma_spike = float(CONFIG.get('LIGHTHOUSE_GAMMA_SPIKE', 0.25) or 0.25)
+                    gamma_penalty = float(CONFIG.get('LIGHTHOUSE_GAMMA_PENALTY', 0.20) or 0.20)
+
+                    if coherence_score < min_coh:
+                        opp['entry_reject_reason'] = f"lighthouse: coherence {coherence_score:.2f} < {min_coh:.2f}"
+                        logger.info(f"⛔ {symbol}: Lighthouse coherence {coherence_score:.2f} below {min_coh:.2f} | NO TRADE")
+                        return False
+
+                    if distortion_index > max_dist:
+                        opp['entry_reject_reason'] = f"lighthouse: distortion {distortion_index:.2f} > {max_dist:.2f}"
+                        logger.info(f"⛔ {symbol}: Lighthouse distortion {distortion_index:.2f} above {max_dist:.2f} | NO TRADE")
+                        return False
+
+                    if gamma_ratio > gamma_spike:
+                        adj_before = probability
+                        probability = max(0.0, min(1.0, probability * (1.0 - gamma_penalty)))
+                        opp['lighthouse_gamma_penalty'] = {
+                            'gamma_ratio': gamma_ratio,
+                            'penalty': gamma_penalty,
+                            'prob_before': adj_before,
+                            'prob_after': probability,
+                        }
+                        logger.info(f"⚡ {symbol}: Lighthouse gamma spike {gamma_ratio:.2f} > {gamma_spike:.2f}; probability penalized {adj_before:.2f}→{probability:.2f}")
+                except Exception as e:
+                    logger.warning(f"⚠️ {symbol}: Lighthouse analysis failed ({e}); continuing without gate")
+            else:
+                opp['lighthouse'] = {'skipped': True, 'reason': f'not enough points ({len(prices)})'}
+
+        # ═══════════════════════════════════════════════════════════════
+        # 🔮 PENNY-GATED PROBABILITY CHECK - HARD WIRE TO NET PROFIT
+        # Enforce that the matrix explicitly supports hitting the penny target.
+        # ═══════════════════════════════════════════════════════════════
+        if CONFIG.get('PROB_MATRIX_PENNY_GATE', True) and not is_force_scout:
+            # Select thresholds based on mode: strict default, aggressive, or explicit 100k-mode loosening.
+            base_min_prob = float(CONFIG.get('PROB_MATRIX_MIN_BUY_PROB', 0.68) or 0.68)
+            base_min_conf = float(CONFIG.get('PROB_MATRIX_MIN_CONF', 0.50) or 0.50)
+
+            if CONFIG.get('ENABLE_100K_MODE', False):
+                min_prob = float(CONFIG.get('PROB_MATRIX_MIN_BUY_PROB_100K', 0.45) or 0.45)
+                min_conf = float(CONFIG.get('PROB_MATRIX_MIN_CONF_100K', 0.15) or 0.15)
+            elif aggressive:
+                min_prob = min(base_min_prob, float(CONFIG.get('AGGRESSIVE_MIN_PROB', 0.30) or 0.30))
+                min_conf = min(base_min_conf, 0.35)
+            else:
+                min_prob = base_min_prob
+                min_conf = base_min_conf
+
+            allowed_actions = ('BUY', 'STRONG BUY', 'SLIGHT BUY')
+
+            if prob_action not in allowed_actions:
+                opp['entry_reject_reason'] = f"matrix: action {prob_action} not buy-capable"
+                logger.info(
+                    f"⛔ {symbol}: Matrix action {prob_action} cannot guarantee +${target_net:.2f} net (need one of {allowed_actions})"
+                )
+                return False
+
+            # Confidence floor is advisory when aggressive/100k mode and the model provides no confidence.
+            if prob_confidence > 0:
+                conf_ok = prob_confidence >= min_conf
+            else:
+                conf_ok = aggressive or CONFIG.get('ENABLE_100K_MODE', False)
+
+            if probability < min_prob or not conf_ok:
+                opp['entry_reject_reason'] = f"matrix: prob/conf too low ({probability:.2f}/{prob_confidence:.2f} < {min_prob:.2f}/{min_conf:.2f})"
+                logger.info(
+                    f"⛔ {symbol}: Matrix below penny gate (prob={probability:.0%}, conf={prob_confidence:.0%}) for +${target_net:.2f} net; need ≥{min_prob:.0%}/≥{min_conf:.0%}"
+                )
+                return False
             
         # ═══════════════════════════════════════════════════════════════
         # 📚 STEP 5: Ask Learned - "Historically, do trades like this hit penny?"
@@ -17874,6 +18651,10 @@ class AureonKrakenEcosystem:
         
         # 🍄 MYCELIUM: Check for cross-exchange duplicates FIRST
         if self._is_duplicate_across_exchanges(symbol, exchange):
+            self._emit_mycelium_event('entry.blocked_duplicate', {
+                'symbol': symbol,
+                'exchange': exchange,
+            })
             return None
         
         # 🚀 Check if this is a forced scout deployment
@@ -17900,6 +18681,13 @@ class AureonKrakenEcosystem:
             pass
         allow_force_bypass = CONFIG.get('ALLOW_FORCE_SCOUT_BYPASS_CONSENSUS', False)
         if not consensus_ok and (not is_force_scout or not allow_force_bypass):
+            self._emit_mycelium_event('entry.rejected', {
+                'symbol': symbol,
+                'exchange': exchange,
+                'reason': 'consensus',
+                'entry_consensus': opp.get('entry_consensus'),
+                'dominant_node': dominant_node,
+            })
             print(
                 f"   ⏱️❌ SKIP {symbol}: lacks 1-minute penny consensus "
                 f"({consensus_reason}) [p={consensus_details['prob_quick']:.2f}, "
@@ -18243,6 +19031,15 @@ class AureonKrakenEcosystem:
 
         if not self.should_enter_trade(opp, pos_size, lattice_state, is_force_scout=is_force_scout):
             reason = opp.get('entry_reject_reason') or 'portfolio gate rejected entry'
+            self._emit_mycelium_event('entry.rejected', {
+                'symbol': symbol,
+                'exchange': exchange,
+                'reason': reason,
+                'dominant_node': dominant_node,
+                'pos_size': float(pos_size or 0.0),
+                'price': float(price or 0.0),
+                'is_force_scout': bool(is_force_scout),
+            })
             print(f"   ⚪ Skipping {symbol}: {reason}")
             return None
         
@@ -18339,6 +19136,12 @@ class AureonKrakenEcosystem:
                 if res.get('rejected'):
                     reason = res.get('reason') or 'exchange rejected order'
                     print(f"   ⚠️ Order rejected for {symbol}: {reason}")
+                    self._emit_mycelium_event('order.rejected', {
+                        'symbol': symbol,
+                        'exchange': exchange,
+                        'side': 'BUY',
+                        'reason': reason,
+                    })
                     return
                 
                 # Handle Kraken volume minimum error
@@ -18454,6 +19257,20 @@ class AureonKrakenEcosystem:
             nexus_edge=opp.get('nexus_edge', 0.0),
             nexus_patterns=opp.get('nexus_patterns', []),
         )
+
+        self._emit_mycelium_event('position.opened', {
+            'symbol': symbol,
+            'exchange': exchange,
+            'entry_price': float(price or 0.0),
+            'entry_value': float(pos_size or 0.0),
+            'quantity': float(quantity or 0.0),
+            'dominant_node': opp.get('dominant_node'),
+            'is_scout': bool(is_scout),
+            'is_force_scout': bool(is_force_scout),
+            'score': opp.get('score'),
+            'coherence': opp.get('coherence'),
+            'entry_consensus': opp.get('entry_consensus'),
+        })
         
         # Log learned parameters if available
         if learned_rec and learned_rec.get('confidence') != 'low':
@@ -18508,6 +19325,66 @@ class AureonKrakenEcosystem:
                 seed_confidence = entry_consensus.get('confidence')
             except Exception:
                 pass
+
+            # 🍄 Feed mycelium coherence/queen signal into sniper seed to refine ETA
+            try:
+                myc_hint = None
+                if hasattr(self, 'mycelium') and self.mycelium:
+                    coherence = None
+                    queen_sig = None
+                    eta_hint = None
+                    try:
+                        if hasattr(self.mycelium, 'get_network_coherence'):
+                            coherence = self.mycelium.get_network_coherence()
+                    except Exception:
+                        coherence = None
+                    try:
+                        queen_sig = getattr(self.mycelium, 'queen_signal', None)
+                    except Exception:
+                        queen_sig = None
+
+                    # Derive an ETA hint: high coherence => faster kill; bearish queen => slower
+                    if isinstance(coherence, (int, float)) and coherence > 0:
+                        eta_hint = 600.0 / max(0.2, min(coherence, 1.0))  # cap between ~10m and ~120s
+                    if isinstance(queen_sig, (int, float)):
+                        if eta_hint is None:
+                            eta_hint = 300.0
+                        if queen_sig > 0.5:
+                            eta_hint *= 0.7  # bullish queen speeds up
+                        elif queen_sig < -0.3:
+                            eta_hint *= 1.25  # bearish queen slows down
+
+                    if eta_hint is not None:
+                        eta_hint = max(90.0, min(900.0, eta_hint))  # clamp between 1.5m and 15m
+                    myc_hint = {
+                        'eta_seconds': eta_hint,
+                        'coherence': coherence,
+                        'queen_signal': queen_sig,
+                    }
+
+                if myc_hint:
+                    # Persist on the opportunity for downstream consumers
+                    entry_consensus['mycelium_eta_seconds'] = myc_hint.get('eta_seconds')
+                    entry_consensus['mycelium_coherence'] = myc_hint.get('coherence')
+                    if entry_consensus.get('queen_signal') is None and myc_hint.get('queen_signal') is not None:
+                        entry_consensus['queen_signal'] = myc_hint.get('queen_signal')
+
+                    # Use the tighter ETA if we have one
+                    if isinstance(myc_hint.get('eta_seconds'), (int, float)):
+                        if seed_eta_seconds is None:
+                            seed_eta_seconds = myc_hint['eta_seconds']
+                        else:
+                            seed_eta_seconds = min(seed_eta_seconds, myc_hint['eta_seconds'])
+
+                    # Derive probability/confidence hints when missing
+                    if seed_probability is None and isinstance(myc_hint.get('coherence'), (int, float)):
+                        seed_probability = max(0.1, min(0.9, 0.4 + 0.4 * myc_hint['coherence']))
+                    if seed_confidence is None and isinstance(myc_hint.get('queen_signal'), (int, float)):
+                        seed_confidence = max(0.1, min(0.9, 0.5 + 0.3 * myc_hint['queen_signal']))
+
+                    opp['entry_consensus'] = entry_consensus
+            except Exception as e:
+                logger.debug(f"Mycelium sniper seed error for {symbol}: {e}")
             
             register_sniper_target(
                 symbol=symbol,
@@ -18519,14 +19396,41 @@ class AureonKrakenEcosystem:
                 seed_eta_seconds=seed_eta_seconds,
                 seed_probability=seed_probability,
                 seed_confidence=seed_confidence,
-                seed_source="entry_consensus"
+                seed_source="entry_consensus",
+                mycelium_eta_seconds=(entry_consensus.get('mycelium_eta_seconds') if isinstance(entry_consensus, dict) else None),
+                mycelium_coherence=(entry_consensus.get('mycelium_coherence') if isinstance(entry_consensus, dict) else None),
+                mycelium_queen_signal=(entry_consensus.get('queen_signal') if isinstance(entry_consensus, dict) else None),
             )
+
+            # 🏹 Notify War Band of intel so scouts can prioritize aligned targets
+            try:
+                if hasattr(self, 'war_band') and self.war_band:
+                    self.war_band.ingest_intel(
+                        symbol=symbol,
+                        exchange=exchange,
+                        eta_seconds=seed_eta_seconds,
+                        probability=seed_probability,
+                        confidence=seed_confidence,
+                        mycelium_coherence=entry_consensus.get('mycelium_coherence') if isinstance(entry_consensus, dict) else None,
+                        queen_signal=entry_consensus.get('queen_signal') if isinstance(entry_consensus, dict) else None,
+                    )
+            except Exception:
+                pass
             eta_m = (float(seed_eta_seconds) / 60.0) if isinstance(seed_eta_seconds, (int, float)) and float(seed_eta_seconds) > 0 else None
             eta_tag = f" | ETA~{eta_m:.2f}m" if eta_m is not None else ""
             pc_tag = ""
             if isinstance(seed_probability, (int, float)) and isinstance(seed_confidence, (int, float)):
                 pc_tag = f" | p={float(seed_probability):.2f} conf={float(seed_confidence):.2f}"
-            print(f"   🎯⚡ SCANNER LOCKED: {symbol} | Target: ${win_threshold:.4f} gross for 1p net{eta_tag}{pc_tag}")
+
+            myc_tag = ""
+            if isinstance(entry_consensus.get('mycelium_eta_seconds'), (int, float)):
+                myc_tag = f" | myc_eta~{entry_consensus['mycelium_eta_seconds']/60:.2f}m"
+            if isinstance(entry_consensus.get('mycelium_coherence'), (int, float)):
+                myc_tag += f" coh={entry_consensus['mycelium_coherence']:.2f}"
+            if isinstance(entry_consensus.get('queen_signal'), (int, float)):
+                myc_tag += f" queen={entry_consensus['queen_signal']:.2f}"
+
+            print(f"   🎯⚡ SCANNER LOCKED: {symbol} | Target: ${win_threshold:.4f} gross for 1p net{eta_tag}{pc_tag}{myc_tag}")
         except Exception as e:
             logger.warning(f"Failed to register with kill scanner: {e}")
             
@@ -19229,6 +20133,15 @@ class AureonKrakenEcosystem:
             return
             
         pos = self.positions[symbol]
+
+        self._emit_mycelium_event('position.close_requested', {
+            'symbol': symbol,
+            'exchange': getattr(pos, 'exchange', None),
+            'reason': reason,
+            'pct': float(pct or 0.0),
+            'price': float(price or 0.0),
+            'entry_value': float(getattr(pos, 'entry_value', 0.0) or 0.0),
+        })
         
         # � SMART EXCHANGE CORRECTION: If position has wrong exchange, fix it!
         # This prevents errors like trying to sell DOGEUSDC on Kraken
@@ -19638,6 +20551,21 @@ class AureonKrakenEcosystem:
         curr_sym = "£" if CONFIG['BASE_CURRENCY'] == 'GBP' else "€" if CONFIG['BASE_CURRENCY'] == 'EUR' else "$"
         gen_marker = f" [G{pos.generation}]" if pos.generation > 0 else ""
         print(f"   {icon} CLOSE {symbol:12s}{gen_marker} | {reason} {pct:+.2f}% | Net: {curr_sym}{net_pnl:+.2f} | Pool: {curr_sym}{self.capital_pool.total_profits:+.2f} | WR: {self.tracker.win_rate:.1f}%")
+
+        self._emit_mycelium_event('position.closed', {
+            'symbol': symbol,
+            'exchange': getattr(pos, 'exchange', None),
+            'reason': reason,
+            'pct': float(pct or 0.0),
+            'exit_price': float(price or 0.0),
+            'entry_price': float(getattr(pos, 'entry_price', 0.0) or 0.0),
+            'entry_value': float(getattr(pos, 'entry_value', 0.0) or 0.0),
+            'exit_value': float(exit_value or 0.0),
+            'gross_pnl': float(gross_pnl or 0.0),
+            'net_pnl': float(net_pnl or 0.0),
+            'hold_time_min': float(hold_time_min or 0.0),
+            'penny_hit': bool(net_pnl >= 0.01),
+        })
         # Refresh equity to keep tracker in sync with realised trade
         self.refresh_equity()
         
@@ -20189,6 +21117,11 @@ class AureonKrakenEcosystem:
         Will try alternate exchanges if primary has no funds.
         """
         try:
+            self._emit_mycelium_event('cognition.intent', {
+                'symbol': symbol,
+                'side': side,
+                'qty': qty,
+            })
             # 🎯 TARGET GUARD: stop opening new buys once target equity is reached
             try:
                 if (
@@ -20220,11 +21153,35 @@ class AureonKrakenEcosystem:
             symbol_upper = symbol.upper()
             is_crypto = not any(p in symbol_upper for p in ['US500', 'US100', 'UK100', 'DE40', 'OIL', 'GOLD'])
             
+            # 🔧 FIX: Determine quote currency for proper exchange routing
+            is_eur_pair = symbol_upper.endswith(('EUR', 'ZEUR'))
+            is_gbp_pair = symbol_upper.endswith(('GBP', 'ZGBP'))
+            is_usd_pair = symbol_upper.endswith(('USD', 'ZUSD')) and not symbol_upper.endswith(('USDT', 'USDC', 'BUSD', 'FDUSD'))
+            is_stable_pair = symbol_upper.endswith(('USDT', 'USDC', 'BUSD', 'FDUSD'))
+            
             if is_crypto:
-                # Crypto can go to Binance, Kraken, or Alpaca
-                for ex in ['binance', 'kraken', 'alpaca']:
-                    if ex != primary_exchange and battlefields.get(ex, {}).get('enabled', False):
-                        exchanges_to_try.append(ex)
+                # 🔧 FIX: EUR/GBP pairs -> Kraken only, NOT Alpaca!
+                # Alpaca only supports USD pairs for crypto
+                if is_eur_pair or is_gbp_pair:
+                    # EUR/GBP crypto = Kraken only
+                    for ex in ['kraken']:
+                        if ex != primary_exchange and battlefields.get(ex, {}).get('enabled', False):
+                            exchanges_to_try.append(ex)
+                elif is_stable_pair:
+                    # USDT/USDC = Binance only
+                    for ex in ['binance']:
+                        if ex != primary_exchange and battlefields.get(ex, {}).get('enabled', False):
+                            exchanges_to_try.append(ex)
+                elif is_usd_pair:
+                    # USD pairs = Kraken or Alpaca
+                    for ex in ['kraken', 'alpaca']:
+                        if ex != primary_exchange and battlefields.get(ex, {}).get('enabled', False):
+                            exchanges_to_try.append(ex)
+                else:
+                    # Other crypto = Binance or Kraken, NOT Alpaca
+                    for ex in ['binance', 'kraken']:
+                        if ex != primary_exchange and battlefields.get(ex, {}).get('enabled', False):
+                            exchanges_to_try.append(ex)
             else:
                 # CFDs go to Capital.com only
                 if 'capital' not in exchanges_to_try:
@@ -20236,6 +21193,18 @@ class AureonKrakenEcosystem:
                 
                 if not bf_config.get('enabled', True):
                     continue
+                
+                # 🔧 FIX: Validate symbol is compatible with this exchange BEFORE trying
+                # Alpaca only supports USD pairs (BTC/USD, ETH/USD, not EUR/GBP)
+                # Capital.com only supports CFDs (no crypto)
+                if exchange == 'alpaca':
+                    if is_eur_pair or is_gbp_pair or is_stable_pair:
+                        logger.debug(f"Skipping {exchange} for {symbol} - not a USD pair")
+                        continue
+                elif exchange == 'capital':
+                    if is_crypto:
+                        logger.debug(f"Skipping {exchange} for {symbol} - Capital.com doesn't support crypto")
+                        continue
                 
                 # Get exchange-specific minimum from config
                 min_order_usd = bf_config.get('min_trade_usd', 6.0)
@@ -20287,10 +21256,25 @@ class AureonKrakenEcosystem:
                     side=side.upper(),
                     quote_qty=position_size_usd
                 )
+
+                self._emit_mycelium_event('cognition.routed', {
+                    'symbol': symbol,
+                    'side': side,
+                    'exchange': exchange,
+                    'quote_qty': float(position_size_usd or 0.0),
+                    'available_capital': float(available_capital or 0.0),
+                    'order_result': result,
+                })
                 
                 return result
             
             # No exchange had sufficient funds
+            self._emit_mycelium_event('cognition.blocked', {
+                'symbol': symbol,
+                'side': side,
+                'reason': 'insufficient_funds',
+                'tried': exchanges_to_try,
+            })
             return {"error": "insufficient_funds", "symbol": symbol, "side": side, "available": 0, "tried": exchanges_to_try}
             
         except Exception as e:
@@ -20310,6 +21294,12 @@ class AureonKrakenEcosystem:
         
         if "error" not in order_result:
             print(f"   🧠✅ Cognition executed: {symbol} {side}")
+            self._emit_mycelium_event('cognition.order_result', {
+                'symbol': symbol,
+                'side': side,
+                'ok': True,
+                'order_result': order_result,
+            })
         else:
             error = order_result.get('error', 'Unknown')
             # Don't spam logs for insufficient funds - this is expected when capital is low
@@ -20319,8 +21309,23 @@ class AureonKrakenEcosystem:
                     available = order_result.get('available', 0)
                     print(f"   🧠💰 Cognition paused: Insufficient capital (£{available:.2f} available)")
                     self._last_insufficient_warn = time.time()
+
+                self._emit_mycelium_event('cognition.order_result', {
+                    'symbol': symbol,
+                    'side': side,
+                    'ok': False,
+                    'error': error,
+                    'order_result': order_result,
+                })
             else:
                 print(f"   🧠❌ Cognition failed: {symbol} {side} - {error}")
+                self._emit_mycelium_event('cognition.order_result', {
+                    'symbol': symbol,
+                    'side': side,
+                    'ok': False,
+                    'error': error,
+                    'order_result': order_result,
+                })
 
     def _on_news_sentiment(self, t: Thought) -> None:
         """

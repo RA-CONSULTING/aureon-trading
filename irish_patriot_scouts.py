@@ -1486,17 +1486,51 @@ class PatriotScoutDeployer:
     """
     Integrates Patriot Scouts into the Aureon Unified Ecosystem.
     Replaces basic _deploy_scouts with Celtic-trained patriots.
+    
+    🧬 ENHANCED: Consumes Mycelium coherence + symbol memory for smarter deployment ordering.
     """
     
     def __init__(self, ecosystem=None):
         self.ecosystem = ecosystem
         self.network = PatriotScoutNetwork(dry_run=True)
+        # Mycelium reference (set by ecosystem wiring or via ecosystem attr)
+        self._mycelium = None
+        if ecosystem and hasattr(ecosystem, 'mycelium'):
+            self._mycelium = ecosystem.mycelium
         
         # Track pending deployments
         self.pending_deployments: List[Dict] = []
         self.deployment_lock = threading.Lock()
         
         print("\n   🔌 PatriotScoutDeployer initialized - Ready to deploy Irish warriors!\n")
+
+    def set_mycelium(self, mycelium) -> None:
+        """Wire Mycelium reference for neural-guided deployment."""
+        self._mycelium = mycelium
+
+    def _neural_candidate_score(self, candidate: Dict) -> float:
+        """Compute neural score for a candidate (higher = deploy first)."""
+        if self._mycelium is None:
+            return candidate.get('celtic_score', 0.0)
+        try:
+            symbol = candidate.get('symbol', '')
+            exchange = candidate.get('source', candidate.get('exchange', 'kraken'))
+            mem = self._mycelium.get_symbol_memory(symbol)
+            friction = self._mycelium.get_exchange_friction(exchange)
+            queen = self._mycelium.get_queen_signal()
+            coherence = self._mycelium.get_network_coherence()
+            
+            wr = float(mem.get('win_rate', 0.5))
+            act = float(mem.get('activation', 0.5))
+            friction_penalty = 1.0 - min(0.5, friction.get('reject_count', 0) * 0.05)
+            queen_factor = 1.0 + 0.1 * queen
+            coh_factor = 0.7 + 0.3 * coherence
+            
+            base = candidate.get('celtic_score', 0.0)
+            neural_bonus = wr * act * friction_penalty * queen_factor * coh_factor * 50
+            return base + neural_bonus
+        except Exception:
+            return candidate.get('celtic_score', 0.0)
     
     def deploy_patriots(self, candidates: List[Dict], 
                        target_count: int = 10) -> List[PatriotScout]:
@@ -1597,6 +1631,9 @@ class PatriotScoutDeployer:
             c['quick_kill_prob'] = quick_kill_prob
             c['celtic_score'] = celtic_score
             analyzed.append(c)
+        
+        # 🧬 Sort by neural-enhanced score (higher = deploy first)
+        analyzed.sort(key=lambda c: self._neural_candidate_score(c), reverse=True)
         
         # 🏴⚔️ MULTI-BATTLEFIELD DISTRIBUTION: Ensure scouts spread across ALL exchanges!
         # Don't let all scouts go to one exchange - we fight on ALL fronts!

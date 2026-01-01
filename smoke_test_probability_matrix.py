@@ -20,11 +20,13 @@ import sys
 import os
 import json
 import time
+import argparse
 import requests
 from datetime import datetime, timedelta, timezone
-from typing import Dict, List, Tuple, Optional
+from typing import Dict, List, Tuple, Optional, Iterable
 from dataclasses import dataclass, field
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from urllib.parse import urlencode
 
 # ═══════════════════════════════════════════════════════════════════════════════════════════
 # IMPORTS
@@ -36,6 +38,13 @@ try:
 except ImportError as e:
     print(f"⚠️ Probability Nexus not available: {e}")
     NEXUS_AVAILABLE = False
+
+try:
+    from probability_intelligence_matrix import ProbabilityIntelligenceMatrix
+    INTEL_MATRIX_AVAILABLE = True
+except ImportError as e:
+    print(f"⚠️ Probability Intelligence Matrix not available: {e}")
+    INTEL_MATRIX_AVAILABLE = False
 
 try:
     from prime_sentinel_decree import (
@@ -68,6 +77,9 @@ EXCHANGE_FEES = {
 }
 DEFAULT_EXCHANGE = 'binance'  # Use lowest fees
 FEE_RATE = EXCHANGE_FEES[DEFAULT_EXCHANGE]
+
+# Preferred data sources for historical candles (ordered by priority)
+DATA_SOURCE_ORDER = ['binance', 'coinbase']
 
 # ═══════════════════════════════════════════════════════════════════════════════════════════
 # ALL TRADEABLE PAIRS - COMPREHENSIVE LIST
@@ -167,65 +179,142 @@ class SimulationResult:
 # ═══════════════════════════════════════════════════════════════════════════════════════════
 
 class HistoricalDataFetcher:
-    """Fetches historical 1-minute candle data from Coinbase"""
+    """Fetches historical 1-minute candle data with multi-source fallback"""
     
-    BASE_URL = "https://api.exchange.coinbase.com"
-    
-    def fetch_candles(self, pair: str, minutes: int = 33) -> Tuple[str, List[dict]]:
-        """
-        Fetch historical 1-minute candles
-        Returns (pair, list of candles)
-        """
-        try:
-            end = datetime.now(timezone.utc)
-            start = end - timedelta(minutes=minutes + 5)  # Extra buffer
-            
-            url = f"{self.BASE_URL}/products/{pair}/candles"
-            params = {
-                'granularity': 60,  # 1-minute candles
-                'start': start.isoformat(),
-                'end': end.isoformat(),
-            }
-            
-            response = requests.get(url, params=params, timeout=10)
-            response.raise_for_status()
-            
-            raw_candles = response.json()
-            
-            # Convert to our format (API returns newest first)
-            candles = []
-            for c in reversed(raw_candles[-minutes:]):
-                candles.append({
-                    'timestamp': datetime.fromtimestamp(c[0], timezone.utc).replace(tzinfo=None),
-                    'low': float(c[1]),
-                    'high': float(c[2]),
-                    'open': float(c[3]),
-                    'close': float(c[4]),
-                    'volume': float(c[5]),
-                })
-            
-            return pair, candles
-            
-        except Exception as e:
-            return pair, []
+    COINBASE_BASE_URL = "https://api.exchange.coinbase.com"
+    COINBASE_MAX_CANDLES_PER_REQUEST = 300  # Coinbase hard limit
+    BINANCE_BASE_URL = "https://api.binance.com/api/v3/klines"
+    BINANCE_MAX_CANDLES_PER_REQUEST = 1000  # Binance limit per request
+    DEFAULT_GRANULARITY = 60
+
+    def _pair_to_binance_symbol(self, pair: str) -> Optional[str]:
+        """Convert Coinbase-style pair (e.g., BTC-USD) to Binance symbol (e.g., BTCUSDT)."""
+        if '-' not in pair:
+            return None
+        base, quote = pair.split('-')
+        quote = 'USDT' if quote == 'USD' else quote  # map USD -> USDT
+        return f"{base}{quote}"
+
+    def _fetch_coinbase_window(self, pair: str, start: datetime, end: datetime, granularity: int) -> List[dict]:
+        url = f"{self.COINBASE_BASE_URL}/products/{pair}/candles"
+        params = {
+            'granularity': granularity,
+            'start': start.isoformat(),
+            'end': end.isoformat(),
+        }
+        response = requests.get(url, params=params, timeout=10)
+        response.raise_for_status()
+        raw_candles = response.json()
+        candles = []
+        for c in reversed(raw_candles):  # oldest first
+            candles.append({
+                'timestamp': datetime.fromtimestamp(c[0], timezone.utc).replace(tzinfo=None),
+                'low': float(c[1]),
+                'high': float(c[2]),
+                'open': float(c[3]),
+                'close': float(c[4]),
+                'volume': float(c[5]),
+            })
+        return candles
+
+    def _fetch_binance_window(self, symbol: str, start_ms: int, end_ms: int, interval: str = '1m') -> List[dict]:
+        params = {
+            'symbol': symbol,
+            'interval': interval,
+            'startTime': start_ms,
+            'endTime': end_ms,
+            'limit': self.BINANCE_MAX_CANDLES_PER_REQUEST,
+        }
+        response = requests.get(f"{self.BINANCE_BASE_URL}?{urlencode(params)}", timeout=10)
+        response.raise_for_status()
+        raw_candles = response.json()
+        candles = []
+        for c in raw_candles:
+            ts = datetime.fromtimestamp(c[0] / 1000, timezone.utc).replace(tzinfo=None)
+            candles.append({
+                'timestamp': ts,
+                'low': float(c[3]),
+                'high': float(c[2]),
+                'open': float(c[1]),
+                'close': float(c[4]),
+                'volume': float(c[5]),
+            })
+        return candles
+
+    def fetch_candles_chunked(self, pair: str, minutes: int, granularity: int = DEFAULT_GRANULARITY) -> Tuple[str, List[dict]]:
+        """Fetch candles across multiple requests to honor API limits (multi-source)."""
+        now = datetime.now(timezone.utc)
+        for source in DATA_SOURCE_ORDER:
+            try:
+                if source == 'binance':
+                    symbol = self._pair_to_binance_symbol(pair)
+                    if not symbol:
+                        raise ValueError("pair not convertible to Binance symbol")
+                    remaining_minutes = minutes
+                    end = now
+                    all_candles: List[dict] = []
+                    overlap = 5
+                    max_minutes_per_request = self.BINANCE_MAX_CANDLES_PER_REQUEST
+
+                    while remaining_minutes > 0:
+                        window_minutes = min(max_minutes_per_request - overlap, remaining_minutes)
+                        start = end - timedelta(minutes=window_minutes + overlap)
+                        candles = self._fetch_binance_window(
+                            symbol,
+                            int(start.timestamp() * 1000),
+                            int(end.timestamp() * 1000),
+                        )
+                        all_candles.extend(candles)
+                        remaining_minutes -= window_minutes
+                        end = start
+
+                else:  # coinbase
+                    remaining_minutes = minutes
+                    end = now
+                    all_candles = []
+                    overlap = 5
+                    max_minutes_per_request = int(self.COINBASE_MAX_CANDLES_PER_REQUEST * (granularity / 60))
+
+                    while remaining_minutes > 0:
+                        window_minutes = min(max_minutes_per_request - overlap, remaining_minutes)
+                        start = end - timedelta(minutes=window_minutes + overlap)
+                        candles = self._fetch_coinbase_window(pair, start, end, granularity)
+                        all_candles.extend(candles)
+                        remaining_minutes -= window_minutes
+                        end = start
+
+                # Deduplicate by timestamp and sort ascending
+                seen = set()
+                deduped: List[dict] = []
+                for c in sorted(all_candles, key=lambda x: x['timestamp']):
+                    if c['timestamp'] in seen:
+                        continue
+                    seen.add(c['timestamp'])
+                    deduped.append(c)
+
+                if deduped:
+                    cutoff = deduped[-1]['timestamp'] - timedelta(minutes=minutes - 1)
+                    deduped = [c for c in deduped if c['timestamp'] >= cutoff]
+
+                if deduped:
+                    return pair, deduped
+            except Exception:
+                continue
+        return pair, []
     
     def fetch_all_pairs(self, pairs: List[str], minutes: int = 33) -> Dict[str, List[dict]]:
-        """Fetch candles for all pairs IN PARALLEL"""
+        """Fetch candles for all pairs IN PARALLEL with chunking"""
         all_data = {}
         successful = 0
         failed = 0
         
         print(f"   🚀 Fetching {len(pairs)} pairs in parallel...")
         
-        # Use ThreadPoolExecutor for parallel fetching
         with ThreadPoolExecutor(max_workers=10) as executor:
-            # Submit all fetch tasks
             futures = {
-                executor.submit(self.fetch_candles, pair, minutes): pair 
+                executor.submit(self.fetch_candles_chunked, pair, minutes): pair
                 for pair in pairs
             }
-            
-            # Collect results as they complete
             for future in as_completed(futures):
                 pair, candles = future.result()
                 if candles:
@@ -253,13 +342,15 @@ class ProbabilityMatrixSmokeTester:
     what trades would have been made and their results.
     """
     
-    def __init__(self, starting_capital: float = 100.0, position_size: float = 12.0):
+    def __init__(self, starting_capital: float = 100.0, position_size: float = 12.0, position_pct: Optional[float] = None):
         self.starting_capital = starting_capital
         self.position_size = position_size
+        self.position_pct = position_pct
         self.fee_rate = FEE_RATE
         
         # Initialize nexus for each pair (separate state)
         self.nexuses: Dict[str, AureonProbabilityNexus] = {}
+        self.intel_matrix = ProbabilityIntelligenceMatrix() if INTEL_MATRIX_AVAILABLE else None
         
         # Initialize decree if available
         self.decree = PrimeSentinelDecree() if DECREE_AVAILABLE else None
@@ -274,7 +365,10 @@ class ProbabilityMatrixSmokeTester:
         print("🔮 PROBABILITY MATRIX SMOKE TESTER INITIALIZED 🔮")
         print("=" * 80)
         print(f"   Starting Capital: ${starting_capital:.2f}")
-        print(f"   Position Size: ${position_size:.2f}")
+        if self.position_pct is not None:
+            print(f"   Position Size: {self.position_pct*100:.2f}% of equity")
+        else:
+            print(f"   Position Size: ${position_size:.2f}")
         print(f"   Fee Rate: {self.fee_rate * 100:.2f}%")
         if DECREE_AVAILABLE:
             print(f"   🔱 Prime Sentinel Decree: ACTIVE")
@@ -297,7 +391,8 @@ class ProbabilityMatrixSmokeTester:
         direction: str,
         entry_candle: dict,
         exit_candle: dict,
-        prediction: Prediction
+        prediction: Prediction,
+        trade_size: float,
     ) -> SimulatedTrade:
         """
         Simulate a single trade from entry to exit
@@ -312,10 +407,10 @@ class ProbabilityMatrixSmokeTester:
             pnl_pct = (entry_price - exit_price) / entry_price * 100
         
         # Calculate fees (entry + exit)
-        fees = self.position_size * self.fee_rate * 2
+        fees = trade_size * self.fee_rate * 2
         
         # Calculate actual P&L in dollars
-        gross_pnl = self.position_size * (pnl_pct / 100)
+        gross_pnl = trade_size * (pnl_pct / 100)
         net_pnl = gross_pnl - fees
         
         # Determine outcome
@@ -330,7 +425,7 @@ class ProbabilityMatrixSmokeTester:
             direction=direction,
             entry_price=entry_price,
             exit_price=exit_price,
-            size_usd=self.position_size,
+            size_usd=trade_size,
             pnl=net_pnl,
             pnl_pct=pnl_pct,
             fees=fees,
@@ -452,6 +547,37 @@ class ProbabilityMatrixSmokeTester:
                     if expected_profit_pct < 0:  # ANY profit after fees (MAXIMUM AGGRESSIVE)
                         i += 1
                         continue  # Skip - can't find profitable exit
+
+                    # Intelligence gating: penalize noisy/fragile setups.
+                    # Previous logic blocked everything when adj_prob was 0 (low-confidence noise).
+                    # Keep only a hard block on explicit DANGER; allow low adj_prob through so we can act
+                    # when profit filter already says there's money on the table.
+                    if self.intel_matrix:
+                        pnl_history = []
+                        start_idx = max(1, i - 30)
+                        for j in range(start_idx, i + 1):
+                            prev_close = candles[j - 1]['close']
+                            curr_close = candles[j]['close']
+                            pnl_history.append((candles[j]['timestamp'].timestamp(), (curr_close - prev_close) / prev_close))
+
+                        momentum_score = max(-1.0, min(1.0, prediction.confidence * 2 - 1))
+                        cascade_factor = 1.0 + max(0.0, prediction.probability - 0.5) * 0.5
+                        lighthouse_gamma = max(0.0, min(1.0, 1 - min(1.0, volatility * 10)))
+
+                        intel = self.intel_matrix.calculate_intelligent_probability(
+                            current_pnl=0.0,
+                            target_pnl=expected_profit_pct,
+                            pnl_history=pnl_history,
+                            momentum_score=momentum_score,
+                            cascade_factor=cascade_factor,
+                            kappa_t=1.0,
+                            lighthouse_gamma=lighthouse_gamma,
+                        )
+
+                        if intel.action == "DANGER":
+                            print(f"   ⚠️ Intelligence filter skipped: adj_prob={intel.adjusted_probability:.2f}, action={intel.action}, risks={intel.risk_flags}")
+                            i += 1
+                            continue
                     
                     actual_hold = min(optimal_hold, len(candles) - i - 1)
                     
@@ -463,14 +589,20 @@ class ProbabilityMatrixSmokeTester:
                     entry_candle = candle
                     exit_idx = min(i + actual_hold, len(candles) - 1)
                     exit_candle = candles[exit_idx]
+
+                    trade_size = self.capital * self.position_pct if self.position_pct is not None else self.position_size
                     
                     trade = self._simulate_trade(
                         pair=pair,
                         direction=prediction.direction,
                         entry_candle=entry_candle,
                         exit_candle=exit_candle,
-                        prediction=prediction
+                        prediction=prediction,
+                        trade_size=trade_size,
                     )
+
+                    # Update capital for compounding runs
+                    self.capital += trade.pnl
                     
                     all_trades.append(trade)
                     
@@ -653,7 +785,9 @@ class ProbabilityMatrixSmokeTester:
 # MAIN - RUN THE SMOKE TEST
 # ═══════════════════════════════════════════════════════════════════════════════════════════
 
-def main():
+def main(minutes: int = REPLAY_MINUTES, starting_capital: float = STARTING_CAPITAL,
+         position_size: float = POSITION_SIZE, position_pct: Optional[float] = None,
+         pairs: Optional[Iterable[str]] = None):
     print()
     print("🔮" * 40)
     print()
@@ -670,32 +804,35 @@ def main():
         print("❌ Cannot run smoke test - Probability Nexus not available")
         return
     
+    target_pairs = list(pairs) if pairs else TEST_PAIRS
+    
     # Step 1: Fetch historical data
     print("\n📥 STEP 1: FETCHING HISTORICAL DATA")
     print("─" * 60)
-    print(f"   🎯 Target pairs: {len(TEST_PAIRS)}")
+    print(f"   🎯 Target pairs: {len(target_pairs)}")
     print(f"   📊 USD pairs: {len(COINBASE_USD_PAIRS)}")
     print(f"   💷 GBP pairs: {len(COINBASE_GBP_PAIRS)}")
     print(f"   💶 EUR pairs: {len(COINBASE_EUR_PAIRS)}")
-    print(f"   ⏰ Lookback: {REPLAY_MINUTES} minutes")
+    print(f"   ⏰ Lookback: {minutes} minutes")
     print()
     
     fetcher = HistoricalDataFetcher()
-    historical_data = fetcher.fetch_all_pairs(TEST_PAIRS, REPLAY_MINUTES)
+    historical_data = fetcher.fetch_all_pairs(target_pairs, minutes)
     
     if not historical_data:
         print("❌ No historical data retrieved - cannot run smoke test")
         return
     
-    print(f"\n✅ Retrieved data for {len(historical_data)}/{len(TEST_PAIRS)} pairs")
+    print(f"\n✅ Retrieved data for {len(historical_data)}/{len(target_pairs)} pairs")
     
     # Step 2: Run simulation
     print("\n🔮 STEP 2: RUNNING PROBABILITY MATRIX SIMULATION")
     print("─" * 60)
     
     tester = ProbabilityMatrixSmokeTester(
-        starting_capital=STARTING_CAPITAL,
-        position_size=POSITION_SIZE
+        starting_capital=starting_capital,
+        position_size=position_size,
+        position_pct=position_pct,
     )
     
     result = tester.run_simulation(
@@ -748,4 +885,15 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(description="Probability Matrix historical smoke test")
+    parser.add_argument("--minutes", type=int, default=REPLAY_MINUTES, help="Lookback window in minutes")
+    parser.add_argument("--starting-capital", type=float, default=STARTING_CAPITAL, help="Starting capital")
+    parser.add_argument("--position-size", type=float, default=POSITION_SIZE, help="Position size per trade")
+    parser.add_argument("--position-pct", type=float, default=None, help="Position size as fraction of equity (e.g., 0.1 for 10%)")
+    parser.add_argument("--pairs", type=str, default=",")
+    args = parser.parse_args()
+
+    pairs_arg = [p.strip() for p in args.pairs.split(',') if p.strip()] if args.pairs != "," else None
+    main(minutes=args.minutes, starting_capital=args.starting_capital,
+         position_size=args.position_size, position_pct=args.position_pct,
+         pairs=pairs_arg)

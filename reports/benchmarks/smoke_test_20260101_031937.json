@@ -1,0 +1,464 @@
+{
+  "start_time": "2026-01-01T01:44:00",
+  "end_time": "2026-01-01T03:19:00",
+  "duration_minutes": 95.0,
+  "starting_capital": 100.0,
+  "ending_capital": 100.6331861094374,
+  "total_pnl": 0.6331861094374054,
+  "total_pnl_pct": 0.6331861094374054,
+  "total_trades": 45,
+  "win_rate": 100.0,
+  "profit_factor": Infinity,
+  "trades": [
+    {
+      "timestamp": "2026-01-01T01:44:00",
+      "pair": "DOGE-USD",
+      "direction": "LONG",
+      "entry_price": 0.11836,
+      "exit_price": 0.11866,
+      "pnl": 0.0064156809733012556,
+      "confidence": 0.2202550200803215,
+      "outcome": "WIN"
+    },
+    {
+      "timestamp": "2026-01-01T02:59:00",
+      "pair": "DOGE-USD",
+      "direction": "SHORT",
+      "entry_price": 0.11856,
+      "exit_price": 0.11819,
+      "pnl": 0.013449392712550134,
+      "confidence": 0.5650058528428095,
+      "outcome": "WIN"
+    },
+    {
+      "timestamp": "2026-01-01T01:44:00",
+      "pair": "ICP-USD",
+      "direction": "LONG",
+      "entry_price": 2.915,
+      "exit_price": 2.931,
+      "pnl": 0.041866209262435734,
+      "confidence": 0.24052253815261082,
+      "outcome": "WIN"
+    },
+    {
+      "timestamp": "2026-01-01T01:59:00",
+      "pair": "ICP-USD",
+      "direction": "LONG",
+      "entry_price": 2.931,
+      "exit_price": 2.947,
+      "pnl": 0.041506653019447344,
+      "confidence": 0.12505102040816318,
+      "outcome": "WIN"
+    },
+    {
+      "timestamp": "2026-01-01T02:07:00",
+      "pair": "ICP-USD",
+      "direction": "LONG",
+      "entry_price": 2.947,
+      "exit_price": 2.958,
+      "pnl": 0.020791313199864755,
+      "confidence": 0.12039795918367346,
+      "outcome": "WIN"
+    },
+    {
+      "timestamp": "2026-01-01T02:20:00",
+      "pair": "ICP-USD",
+      "direction": "LONG",
+      "entry_price": 2.958,
+      "exit_price": 2.979,
+      "pnl": 0.0611926977687623,
+      "confidence": 0.2202550200803215,
+      "outcome": "WIN"
+    },
+    {
+      "timestamp": "2026-01-01T02:42:00",
+      "pair": "ICP-USD",
+      "direction": "SHORT",
+      "entry_price": 2.915,
+      "exit_price": 2.888,
+      "pnl": 0.08714922813036075,
+      "confidence": 0.07968367346938787,
+      "outcome": "WIN"
+    },
+    {
+      "timestamp": "2026-01-01T02:50:00",
+      "pair": "ICP-USD",
+      "direction": "SHORT",
+      "entry_price": 2.894,
+      "exit_price": 2.888,
+      "pnl": 0.0008790601243962443,
+      "confidence": 0.18443734939759027,
+      "outcome": "WIN"
+    },
+    {
+      "timestamp": "2026-01-01T02:54:00",
+      "pair": "ICP-USD",
+      "direction": "SHORT",
+      "entry_price": 2.9,
+      "exit_price": 2.89,
+      "pnl": 0.017379310344826697,
+      "confidence": 0.18443734939759027,
+      "outcome": "WIN"
+    },
+    {
+      "timestamp": "2026-01-01T03:06:00",
+      "pair": "ICP-USD",
+      "direction": "SHORT",
+      "entry_price": 2.901,
+      "exit_price": 2.887,
+      "pnl": 0.03391106514994743,
+      "confidence": 0.08945510204081641,
+      "outcome": "WIN"
+    },
+    {
+      "timestamp": "2026-01-01T01:49:00",
+      "pair": "NEAR-USD",
+      "direction": "SHORT",
+      "entry_price": 1.516,
+      "exit_price": 1.509,
+      "pnl": 0.031408970976254225,
+      "confidence": 0.09416326530612251,
+      "outcome": "WIN"
+    },
+    {
+      "timestamp": "2026-01-01T02:57:00",
+      "pair": "NEAR-USD",
+      "direction": "SHORT",
+      "entry_price": 1.513,
+      "exit_price": 1.509,
+      "pnl": 0.007725049570389983,
+      "confidence": 0.09320510204081622,
+      "outcome": "WIN"
+    },
+    {
+      "timestamp": "2026-01-01T02:04:00",
+      "pair": "HBAR-USD",
+      "direction": "LONG",
+      "entry_price": 0.1068,
+      "exit_price": 0.10715,
+      "pnl": 0.015325842696627998,
+      "confidence": 0.3657876923076926,
+      "outcome": "WIN"
+    },
+    {
+      "timestamp": "2026-01-01T02:17:00",
+      "pair": "HBAR-USD",
+      "direction": "LONG",
+      "entry_price": 0.10715,
+      "exit_price": 0.10751,
+      "pnl": 0.016317312179187964,
+      "confidence": 0.13193387755102037,
+      "outcome": "WIN"
+    },
+    {
+      "timestamp": "2026-01-01T01:44:00",
+      "pair": "LRC-USD",
+      "direction": "SHORT",
+      "entry_price": 0.0496,
+      "exit_price": 0.0495,
+      "pnl": 0.0001935483870957877,
+      "confidence": 0.18443734939759027,
+      "outcome": "WIN"
+    },
+    {
+      "timestamp": "2026-01-01T03:01:00",
+      "pair": "CRV-USD",
+      "direction": "SHORT",
+      "entry_price": 0.3603,
+      "exit_price": 0.3595,
+      "pnl": 0.0026444629475444736,
+      "confidence": 0.07897959183673486,
+      "outcome": "WIN"
+    },
+    {
+      "timestamp": "2026-01-01T02:04:00",
+      "pair": "ARB-USD",
+      "direction": "LONG",
+      "entry_price": 0.1871,
+      "exit_price": 0.1875,
+      "pnl": 0.0016547300908612388,
+      "confidence": 0.37696989966555194,
+      "outcome": "WIN"
+    },
+    {
+      "timestamp": "2026-01-01T02:26:00",
+      "pair": "ARB-USD",
+      "direction": "LONG",
+      "entry_price": 0.1873,
+      "exit_price": 0.1877,
+      "pnl": 0.001627335824880602,
+      "confidence": 0.34027792642140486,
+      "outcome": "WIN"
+    },
+    {
+      "timestamp": "2026-01-01T02:46:00",
+      "pair": "ARB-USD",
+      "direction": "SHORT",
+      "entry_price": 0.187,
+      "exit_price": 0.1866,
+      "pnl": 0.0016684491978616947,
+      "confidence": 0.22863905622489944,
+      "outcome": "WIN"
+    },
+    {
+      "timestamp": "2026-01-01T02:22:00",
+      "pair": "UNI-USD",
+      "direction": "SHORT",
+      "entry_price": 5.681,
+      "exit_price": 5.665,
+      "pnl": 0.009796866748811861,
+      "confidence": 0.15440816326530626,
+      "outcome": "WIN"
+    },
+    {
+      "timestamp": "2026-01-01T03:10:00",
+      "pair": "UNI-USD",
+      "direction": "LONG",
+      "entry_price": 5.664,
+      "exit_price": 5.677,
+      "pnl": 0.0035423728813557265,
+      "confidence": 0.4220443143812713,
+      "outcome": "WIN"
+    },
+    {
+      "timestamp": "2026-01-01T02:41:00",
+      "pair": "OP-USD",
+      "direction": "SHORT",
+      "entry_price": 0.2671,
+      "exit_price": 0.2662,
+      "pnl": 0.01643429427180884,
+      "confidence": 0.18431325301204815,
+      "outcome": "WIN"
+    },
+    {
+      "timestamp": "2026-01-01T02:55:00",
+      "pair": "SNX-USD",
+      "direction": "LONG",
+      "entry_price": 0.41,
+      "exit_price": 0.411,
+      "pnl": 0.005268292682926855,
+      "confidence": 0.38494595317725744,
+      "outcome": "WIN"
+    },
+    {
+      "timestamp": "2026-01-01T03:10:00",
+      "pair": "SNX-USD",
+      "direction": "LONG",
+      "entry_price": 0.411,
+      "exit_price": 0.412,
+      "pnl": 0.005197080291970829,
+      "confidence": 0.4044593227424751,
+      "outcome": "WIN"
+    },
+    {
+      "timestamp": "2026-01-01T02:05:00",
+      "pair": "LDO-USD",
+      "direction": "LONG",
+      "entry_price": 0.5795,
+      "exit_price": 0.5823,
+      "pnl": 0.03398101811906867,
+      "confidence": 0.1267346938775511,
+      "outcome": "WIN"
+    },
+    {
+      "timestamp": "2026-01-01T02:00:00",
+      "pair": "COMP-USD",
+      "direction": "LONG",
+      "entry_price": 24.62,
+      "exit_price": 24.67,
+      "pnl": 0.00037043054427329455,
+      "confidence": 0.12505102040816318,
+      "outcome": "WIN"
+    },
+    {
+      "timestamp": "2026-01-01T02:17:00",
+      "pair": "COMP-USD",
+      "direction": "LONG",
+      "entry_price": 24.65,
+      "exit_price": 24.72,
+      "pnl": 0.010077079107505209,
+      "confidence": 0.35987290969899677,
+      "outcome": "WIN"
+    },
+    {
+      "timestamp": "2026-01-01T01:47:00",
+      "pair": "IMX-USD",
+      "direction": "SHORT",
+      "entry_price": 0.217,
+      "exit_price": 0.216,
+      "pnl": 0.031299539170506964,
+      "confidence": 0.19414457831325294,
+      "outcome": "WIN"
+    },
+    {
+      "timestamp": "2026-01-01T02:35:00",
+      "pair": "YFI-USD",
+      "direction": "SHORT",
+      "entry_price": 3264.0,
+      "exit_price": 3257.0,
+      "pnl": 0.0017352941176470606,
+      "confidence": 0.19414457831325294,
+      "outcome": "WIN"
+    },
+    {
+      "timestamp": "2026-01-01T01:50:00",
+      "pair": "1INCH-USD",
+      "direction": "LONG",
+      "entry_price": 0.1409,
+      "exit_price": 0.1413,
+      "pnl": 0.010066713981548174,
+      "confidence": 0.3777725752508363,
+      "outcome": "WIN"
+    },
+    {
+      "timestamp": "2026-01-01T02:25:00",
+      "pair": "1INCH-USD",
+      "direction": "SHORT",
+      "entry_price": 0.141,
+      "exit_price": 0.1406,
+      "pnl": 0.010042553191487981,
+      "confidence": 0.08289061224489791,
+      "outcome": "WIN"
+    },
+    {
+      "timestamp": "2026-01-01T03:06:00",
+      "pair": "1INCH-USD",
+      "direction": "LONG",
+      "entry_price": 0.1406,
+      "exit_price": 0.141,
+      "pnl": 0.010139402560453807,
+      "confidence": 0.48186471571906386,
+      "outcome": "WIN"
+    },
+    {
+      "timestamp": "2026-01-01T02:48:00",
+      "pair": "INJ-USD",
+      "direction": "SHORT",
+      "entry_price": 4.208,
+      "exit_price": 4.199,
+      "pnl": 0.0016653992395447015,
+      "confidence": 0.19396310240963854,
+      "outcome": "WIN"
+    },
+    {
+      "timestamp": "2026-01-01T02:37:00",
+      "pair": "GRT-USD",
+      "direction": "SHORT",
+      "entry_price": 0.03345,
+      "exit_price": 0.03337,
+      "pnl": 0.004699551569508045,
+      "confidence": 0.1013418367346941,
+      "outcome": "WIN"
+    },
+    {
+      "timestamp": "2026-01-01T01:45:00",
+      "pair": "FIL-USD",
+      "direction": "SHORT",
+      "entry_price": 1.293,
+      "exit_price": 1.29,
+      "pnl": 0.0038422273781892474,
+      "confidence": 0.07968367346938787,
+      "outcome": "WIN"
+    },
+    {
+      "timestamp": "2026-01-01T02:28:00",
+      "pair": "FIL-USD",
+      "direction": "SHORT",
+      "entry_price": 1.29,
+      "exit_price": 1.287,
+      "pnl": 0.0039069767441871,
+      "confidence": 0.08387755102040828,
+      "outcome": "WIN"
+    },
+    {
+      "timestamp": "2026-01-01T02:18:00",
+      "pair": "PEPE-USD",
+      "direction": "LONG",
+      "entry_price": 4.06e-06,
+      "exit_price": 4.07e-06,
+      "pnl": 0.005556650246305132,
+      "confidence": 0.23184738955823314,
+      "outcome": "WIN"
+    },
+    {
+      "timestamp": "2026-01-01T02:35:00",
+      "pair": "MANA-USD",
+      "direction": "SHORT",
+      "entry_price": 0.1208,
+      "exit_price": 0.1205,
+      "pnl": 0.005801324503312111,
+      "confidence": 0.18443734939759027,
+      "outcome": "WIN"
+    },
+    {
+      "timestamp": "2026-01-01T02:16:00",
+      "pair": "ENJ-USD",
+      "direction": "SHORT",
+      "entry_price": 0.02759,
+      "exit_price": 0.02753,
+      "pnl": 0.002096411743385731,
+      "confidence": 0.18541060240963847,
+      "outcome": "WIN"
+    },
+    {
+      "timestamp": "2026-01-01T03:01:00",
+      "pair": "BCH-USD",
+      "direction": "SHORT",
+      "entry_price": 600.3,
+      "exit_price": 598.9,
+      "pnl": 0.003986006996501298,
+      "confidence": 0.1013418367346941,
+      "outcome": "WIN"
+    },
+    {
+      "timestamp": "2026-01-01T01:46:00",
+      "pair": "XLM-USD",
+      "direction": "LONG",
+      "entry_price": 0.2037,
+      "exit_price": 0.2044,
+      "pnl": 0.017237113402062222,
+      "confidence": 0.34027792642140486,
+      "outcome": "WIN"
+    },
+    {
+      "timestamp": "2026-01-01T02:12:00",
+      "pair": "CRO-USD",
+      "direction": "SHORT",
+      "entry_price": 0.09047,
+      "exit_price": 0.09019,
+      "pnl": 0.01313938322095571,
+      "confidence": 0.15982775510204084,
+      "outcome": "WIN"
+    },
+    {
+      "timestamp": "2026-01-01T02:35:00",
+      "pair": "CRO-USD",
+      "direction": "SHORT",
+      "entry_price": 0.09019,
+      "exit_price": 0.08999,
+      "pnl": 0.0026104889677355456,
+      "confidence": 0.1863602409638554,
+      "outcome": "WIN"
+    },
+    {
+      "timestamp": "2026-01-01T01:44:00",
+      "pair": "FLOKI-USD",
+      "direction": "LONG",
+      "entry_price": 3.966e-05,
+      "exit_price": 3.979e-05,
+      "pnl": 0.015334341906200803,
+      "confidence": 0.3760869565217393,
+      "outcome": "WIN"
+    },
+    {
+      "timestamp": "2026-01-01T02:56:00",
+      "pair": "DOGE-EUR",
+      "direction": "SHORT",
+      "entry_price": 0.10056,
+      "exit_price": 0.10034,
+      "pnl": 0.0022529832935558464,
+      "confidence": 0.21750903614457817,
+      "outcome": "WIN"
+    }
+  ]
+}

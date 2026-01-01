@@ -1,6 +1,6 @@
 {
   "civilization": "Pythagorean",
-  "last_updated": "2025-12-30T18:18:09.211287",
+  "last_updated": "2026-01-01T15:09:40.834094",
   "version": "1.0.0",
   "sources": [
     "hardcoded",
@@ -1273,6 +1273,14 @@
     },
     {
       "timestamp": "2025-12-30T18:18:09.211262",
+      "insights_found": 0,
+      "sources_used": [
+        "Wikipedia",
+        "Sacred-Texts"
+      ]
+    },
+    {
+      "timestamp": "2026-01-01T15:09:40.834077",
       "insights_found": 0,
       "sources_used": [
         "Wikipedia",

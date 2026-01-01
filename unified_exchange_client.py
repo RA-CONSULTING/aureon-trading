@@ -114,29 +114,40 @@ class MultiExchangeClient:
                 alt = f"{kbase}{q}"
                 return alt
         if exchange == 'binance':
-            # 🔧 FIX: Check what quote currency user actually HAS before normalizing
-            # If user has USDC, prefer USDC pairs. If they have USDT, prefer USDT.
+            # 🔧 Prefer a quote the user actually holds; UK accounts often hold GBP/EUR
             binance_client = self.clients.get('binance')
-            usdc_bal = 0.0
-            usdt_bal = 0.0
+            usdc_bal = usdt_bal = gbp_bal = eur_bal = 0.0
             if binance_client:
+                # Assign to real variables (locals() doesn't reliably set new names inside functions)
                 try:
                     usdc_bal = float(binance_client.get_balance('USDC') or 0)
-                except:
+                except Exception:
                     usdc_bal = 0.0
                 try:
                     usdt_bal = float(binance_client.get_balance('USDT') or 0)
-                except:
+                except Exception:
                     usdt_bal = 0.0
-            
-            # Prefer the quote currency the user actually has
-            if quote in ['USD', 'USDC', 'USDT']:
-                if usdc_bal > usdt_bal and usdc_bal > 1:
-                    bquote = 'USDC'  # User has more USDC
+                try:
+                    gbp_bal = float(binance_client.get_balance('GBP') or 0)
+                except Exception:
+                    gbp_bal = 0.0
+                try:
+                    eur_bal = float(binance_client.get_balance('EUR') or 0)
+                except Exception:
+                    eur_bal = 0.0
+
+            if quote in ['USD', 'USDC', 'USDT', 'GBP', 'EUR']:
+                # Priority: GBP (if held), EUR, USDC, USDT, fallback to original quote
+                if gbp_bal > 1:
+                    bquote = 'GBP'
+                elif eur_bal > 1:
+                    bquote = 'EUR'
+                elif usdc_bal > usdt_bal and usdc_bal > 1:
+                    bquote = 'USDC'
                 elif usdt_bal > 1:
-                    bquote = 'USDT'  # User has more USDT
+                    bquote = 'USDT'
                 else:
-                    bquote = 'USDT'  # Default to USDT if neither
+                    bquote = quote if quote in ['GBP', 'EUR'] else 'USDT'
             else:
                 bquote = quote
             return f"{base}{bquote}"

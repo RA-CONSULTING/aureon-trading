@@ -1908,7 +1908,10 @@ class ActiveKillScanner:
         seed_eta_seconds: Optional[float] = None,
         seed_probability: Optional[float] = None,
         seed_confidence: Optional[float] = None,
-        seed_source: str = "ecosystem"
+        seed_source: str = "ecosystem",
+        mycelium_eta_seconds: Optional[float] = None,
+        mycelium_coherence: Optional[float] = None,
+        mycelium_queen_signal: Optional[float] = None,
     ) -> ActiveTarget:
         """
         Register a new target for active tracking.
@@ -1927,6 +1930,11 @@ class ActiveKillScanner:
             last_update=time.time()
         )
 
+        # Persist mycelium metadata for telemetry/learning
+        target.mycelium_eta_hint = mycelium_eta_seconds
+        target.mycelium_coherence = mycelium_coherence
+        target.mycelium_queen_signal = mycelium_queen_signal
+
         # Seed early intelligence so the Sniper has timing immediately.
         # This gets refined quickly once pnl_history builds up.
         try:
@@ -1937,12 +1945,37 @@ class ActiveKillScanner:
                     target.eta_model = f"seed:{seed_source}" if seed_source else "seed"
                     target.eta_conservative = seed_eta_seconds_f * 1.25
                     target.eta_optimistic = seed_eta_seconds_f * 0.75
+            # If mycelium provides a tighter ETA, use it
+            if mycelium_eta_seconds is not None:
+                try:
+                    myc_eta = float(mycelium_eta_seconds)
+                    if 0 < myc_eta < float('inf'):
+                        if target.eta_to_kill == float('inf') or myc_eta < target.eta_to_kill:
+                            target.eta_to_kill = myc_eta
+                            target.eta_model = f"seed:{seed_source or 'mycelium'}"
+                            target.eta_conservative = myc_eta * 1.25
+                            target.eta_optimistic = myc_eta * 0.75
+                except Exception:
+                    pass
             if seed_probability is not None:
                 p = max(0.0, min(1.0, float(seed_probability)))
                 target.probability_of_kill = p
             if seed_confidence is not None:
                 c = max(0.0, min(1.0, float(seed_confidence)))
                 target.eta_confidence = max(target.eta_confidence, c)
+            # Use mycelium coherence/queen to boost seeds when missing
+            if target.probability_of_kill == 0.0 and mycelium_coherence is not None:
+                try:
+                    coh = float(mycelium_coherence)
+                    target.probability_of_kill = max(0.0, min(1.0, 0.4 + 0.4 * coh))
+                except Exception:
+                    pass
+            if target.eta_confidence == 0.0 and mycelium_queen_signal is not None:
+                try:
+                    qs = float(mycelium_queen_signal)
+                    target.eta_confidence = max(0.0, min(1.0, 0.5 + 0.3 * qs))
+                except Exception:
+                    pass
         except Exception:
             pass
         
@@ -2660,7 +2693,10 @@ def register_sniper_target(
     seed_eta_seconds: Optional[float] = None,
     seed_probability: Optional[float] = None,
     seed_confidence: Optional[float] = None,
-    seed_source: str = "ecosystem"
+    seed_source: str = "ecosystem",
+    mycelium_eta_seconds: Optional[float] = None,
+    mycelium_coherence: Optional[float] = None,
+    mycelium_queen_signal: Optional[float] = None,
 ) -> ActiveTarget:
     """Register a new target with the Active Kill Scanner."""
     scanner = get_active_scanner()
@@ -2674,7 +2710,10 @@ def register_sniper_target(
         seed_eta_seconds=seed_eta_seconds,
         seed_probability=seed_probability,
         seed_confidence=seed_confidence,
-        seed_source=seed_source
+        seed_source=seed_source,
+        mycelium_eta_seconds=mycelium_eta_seconds,
+        mycelium_coherence=mycelium_coherence,
+        mycelium_queen_signal=mycelium_queen_signal,
     )
 
 
