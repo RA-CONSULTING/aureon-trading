@@ -588,5 +588,15 @@
     "last_time": 1766851390.0758398,
     "streak": 0,
     "blacklisted": false
+  },
+  "MONUSD": {
+    "hunts": 1,
+    "trades": 0,
+    "wins": 0,
+    "losses": 0,
+    "profit": 0,
+    "last_time": 1767350965.7184098,
+    "streak": 0,
+    "blacklisted": false
   }
 }

@@ -498,6 +498,18 @@ except ImportError as e:
     QUANTUM_AVAILABLE = False
     print(f"⚠️  Quantum Telescope/Harmonic Engine not available: {e}")
 
+# 🌊 HARMONIC WAVE FUSION - 7-DAY SEED + LIVE GROWTH + LIGHTHOUSE 🌊
+try:
+    from aureon_harmonic_fusion import (
+        HarmonicWaveFusion, HarmonicFusionConfig, get_harmonic_fusion,
+        initialize_harmonic_fusion
+    )
+    HARMONIC_FUSION_AVAILABLE = True
+    print("🌊 Harmonic Wave Fusion loaded - 7-day seed + live growth + Lighthouse!")
+except ImportError as e:
+    HARMONIC_FUSION_AVAILABLE = False
+    print(f"⚠️  Harmonic Wave Fusion not available: {e}")
+
 # 🌍⚡ EARTH RESONANCE ENGINE ⚡🌍
 try:
     from earth_resonance_engine import EarthResonanceEngine, get_earth_engine
@@ -4085,6 +4097,30 @@ class MultiExchangeOrchestrator:
         # Apply cross-exchange learning boost
         score = self._apply_learning_boost(score, exchange, asset_class, freq)
         
+        # 🌊 HARMONIC WAVE FUSION BOOST - Global market coherence
+        harmonic_boost = 1.0
+        harmonic_state = {}
+        if hasattr(self, 'harmonic_fusion') and self.harmonic_fusion:
+            try:
+                harmonic_state = self.harmonic_fusion.get_harmonic_state()
+                global_coherence = harmonic_state.get('global_coherence', 0.5)
+                schumann_bias = harmonic_state.get('schumann_bias', 1.0)
+                phase_alignment = harmonic_state.get('phase_alignment', 0.5)
+                
+                # Check if this symbol is in harmonic convergence
+                symbol_phase = self.harmonic_fusion.get_symbol_phase(symbol)
+                if symbol_phase:
+                    # Boost if symbol aligns with global dominant frequency
+                    if abs(symbol_phase.get('phase', 0) - harmonic_state.get('dominant_phase', 0)) < 0.3:
+                        harmonic_boost = 1.0 + (global_coherence * 0.15)  # Up to 15% boost
+                
+                # Apply Schumann baseline bias
+                harmonic_boost *= (0.9 + schumann_bias * 0.2)  # 90-110% range
+            except Exception:
+                pass  # Harmonic fusion is advisory
+        
+        score *= harmonic_boost
+        
         return {
             'exchange': exchange,
             'symbol': symbol,
@@ -4095,6 +4131,8 @@ class MultiExchangeOrchestrator:
             'frequency': freq,
             'probability': probability,
             'score': score,
+            'harmonic_boost': harmonic_boost,
+            'harmonic_state': harmonic_state,
             'asset_class': asset_class,
             'quote': ticker.get('quote', 'USD'),
             'timestamp': time.time()
@@ -12250,6 +12288,28 @@ class AureonKrakenEcosystem:
         # 🧬 Wire Mycelium into War Band for neural-guided targeting
         if hasattr(self.war_band, 'set_mycelium'):
             self.war_band.set_mycelium(self.mycelium)
+        
+        # 🌊 HARMONIC WAVE FUSION - Global Market Harmonic System
+        self.harmonic_fusion = None
+        if HARMONIC_FUSION_AVAILABLE:
+            try:
+                self.harmonic_fusion = get_harmonic_fusion(mycelium=self.mycelium)
+                # Wire lighthouse alerts to WarBand
+                if hasattr(self.harmonic_fusion, 'lighthouse') and self.harmonic_fusion.lighthouse:
+                    def on_lighthouse_alert(event):
+                        if hasattr(self, 'war_band') and self.war_band:
+                            self.war_band.ingest_intel({
+                                'source': 'lighthouse',
+                                'type': event.event_type.value,
+                                'severity': event.severity,
+                                'symbols': event.affected_symbols,
+                                'description': event.description
+                            })
+                    self.harmonic_fusion.lighthouse.subscribe(on_lighthouse_alert)
+                print("🌊🏹 Harmonic Fusion connected to WarBand + Mycelium")
+            except Exception as e:
+                print(f"⚠️  Harmonic Fusion init failed: {e}")
+                self.harmonic_fusion = None
         self.tracker = PerformanceTracker(initial_balance)
         # Two distinct memories:
         # - ElephantMemory: symbol-level cooldown/blacklist + JSONL event trail
@@ -21678,16 +21738,32 @@ class AureonKrakenEcosystem:
                 # 🍄 Constant nerve-system pulse (state shared + persisted)
                 self._mycelium_heartbeat(note='cycle')
                 
-                # �⚔️ WAR BAND UPDATE: Autonomous Scout & Sniper ⚔️🏹
+                # ⚔️ WAR BAND UPDATE: Autonomous Scout & Sniper ⚔️🏹
                 if hasattr(self, 'war_band'):
                     self.war_band.update()
                 
-                # �🌊 SURGE WINDOW CHECK: Synchronize with Zero Point Field
+                # 🌊 HARMONIC WAVE FUSION UPDATE: Feed live data & check patterns
+                harmonic_status = ""
+                if hasattr(self, 'harmonic_fusion') and self.harmonic_fusion:
+                    try:
+                        h_state = self.harmonic_fusion.get_harmonic_state()
+                        h_bias = self.harmonic_fusion.get_trading_bias() if hasattr(self.harmonic_fusion, 'get_trading_bias') else {}
+                        harmonic_status = f" | 🌊 H:{h_state.get('global_coherence', 0):.2f}"
+                        
+                        # Check for lighthouse alerts this cycle
+                        alerts = self.harmonic_fusion.get_lighthouse_alerts() if hasattr(self.harmonic_fusion, 'get_lighthouse_alerts') else []
+                        if alerts:
+                            for alert in alerts[:2]:
+                                print(f"   🔦 LIGHTHOUSE: {alert.get('type', 'alert')} - {str(alert.get('message', ''))[:50]}")
+                    except Exception as e:
+                        logger.debug(f"Harmonic fusion update: {e}")
+                
+                # 🌊 SURGE WINDOW CHECK: Synchronize with Zero Point Field
                 is_surge = self.memory.is_surge_window_active()
                 surge_status = "🌊 SURGE ACTIVE" if is_surge else "Waiting for Surge"
                 
                 print(f"\n{'━'*70}")
-                print(f"🔄 Cycle {self.iteration} - {now} [{self.scan_direction}] - {surge_status}")
+                print(f"🔄 Cycle {self.iteration} - {now} [{self.scan_direction}] - {surge_status}{harmonic_status}")
                 print(f"{'━'*70}")
 
                 # 🔦 Miner Lighthouse hook: if miner Γ is firing, override thresholds aggressively

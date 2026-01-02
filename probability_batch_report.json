@@ -1,101 +1,16 @@
 {
-  "generated_at": "2026-01-01T15:45:16.848219",
+  "generated_at": "2026-01-02T11:01:08.061641",
   "generator": "ProbabilityReportGenerator",
   "interval_seconds": 15.0,
-  "generation_count": 145,
+  "generation_count": 49,
   "count": 151,
   "celtic_aligned_count": 0,
   "sniper_boosted_count": 151,
   "top_10": [
     {
-      "symbol": "SOLUSD",
-      "exchange": "kraken",
-      "price": 124.46,
-      "probability": 0.53,
-      "confidence": 0.43604999999999994,
-      "action": "HOLD",
-      "modifier": 0.5,
-      "reason": "D+3 shows momentum decay",
-      "frequency": 432.0,
-      "state": "\u2197\ufe0f SLIGHT BULLISH",
-      "momentum": 0.0,
-      "coherence": 0.95,
-      "is_harmonic": true,
-      "sniper_boost": 0.1,
-      "celtic_aligned": false
-    },
-    {
-      "symbol": "ADAUSD",
-      "exchange": "kraken",
-      "price": 0.342936,
-      "probability": 0.53,
-      "confidence": 0.43604999999999994,
-      "action": "HOLD",
-      "modifier": 0.5,
-      "reason": "D+3 shows momentum decay",
-      "frequency": 432.0,
-      "state": "\u2197\ufe0f SLIGHT BULLISH",
-      "momentum": 0.0,
-      "coherence": 0.95,
-      "is_harmonic": true,
-      "sniper_boost": 0.1,
-      "celtic_aligned": false
-    },
-    {
-      "symbol": "DOTUSD",
-      "exchange": "kraken",
-      "price": 1.8644,
-      "probability": 0.53,
-      "confidence": 0.43604999999999994,
-      "action": "HOLD",
-      "modifier": 0.5,
-      "reason": "D+3 shows momentum decay",
-      "frequency": 432.0,
-      "state": "\u2197\ufe0f SLIGHT BULLISH",
-      "momentum": 0.0,
-      "coherence": 0.95,
-      "is_harmonic": true,
-      "sniper_boost": 0.1,
-      "celtic_aligned": false
-    },
-    {
-      "symbol": "LINKUSD",
-      "exchange": "kraken",
-      "price": 12.27167,
-      "probability": 0.53,
-      "confidence": 0.43604999999999994,
-      "action": "HOLD",
-      "modifier": 0.5,
-      "reason": "D+3 shows momentum decay",
-      "frequency": 432.0,
-      "state": "\u2197\ufe0f SLIGHT BULLISH",
-      "momentum": 0.0,
-      "coherence": 0.95,
-      "is_harmonic": true,
-      "sniper_boost": 0.1,
-      "celtic_aligned": false
-    },
-    {
-      "symbol": "APEUSD",
-      "exchange": "kraken",
-      "price": 0.2039,
-      "probability": 0.53,
-      "confidence": 0.43604999999999994,
-      "action": "HOLD",
-      "modifier": 0.5,
-      "reason": "D+3 shows momentum decay",
-      "frequency": 432.0,
-      "state": "\u2197\ufe0f SLIGHT BULLISH",
-      "momentum": 0.0,
-      "coherence": 0.95,
-      "is_harmonic": true,
-      "sniper_boost": 0.1,
-      "celtic_aligned": false
-    },
-    {
       "symbol": "BTCUSDC",
       "exchange": "binance",
-      "price": 87842.01,
+      "price": 89650.9615,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -112,7 +27,7 @@
     {
       "symbol": "ETHUSDC",
       "exchange": "binance",
-      "price": 2978.25,
+      "price": 3058.46,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -129,7 +44,7 @@
     {
       "symbol": "BNBUSDC",
       "exchange": "binance",
-      "price": 855.93,
+      "price": 871.72,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -146,7 +61,7 @@
     {
       "symbol": "SOLUSDC",
       "exchange": "binance",
-      "price": 124.5,
+      "price": 129.1,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -163,7 +78,92 @@
     {
       "symbol": "XRPUSDC",
       "exchange": "binance",
-      "price": 1.8547,
+      "price": 1.8977,
+      "probability": 0.53,
+      "confidence": 0.43604999999999994,
+      "action": "HOLD",
+      "modifier": 0.5,
+      "reason": "D+3 shows momentum decay",
+      "frequency": 432.0,
+      "state": "\u2197\ufe0f SLIGHT BULLISH",
+      "momentum": 0.0,
+      "coherence": 0.95,
+      "is_harmonic": true,
+      "sniper_boost": 0.05,
+      "celtic_aligned": false
+    },
+    {
+      "symbol": "ADAUSDC",
+      "exchange": "binance",
+      "price": 0.3647,
+      "probability": 0.53,
+      "confidence": 0.43604999999999994,
+      "action": "HOLD",
+      "modifier": 0.5,
+      "reason": "D+3 shows momentum decay",
+      "frequency": 432.0,
+      "state": "\u2197\ufe0f SLIGHT BULLISH",
+      "momentum": 0.0,
+      "coherence": 0.95,
+      "is_harmonic": true,
+      "sniper_boost": 0.05,
+      "celtic_aligned": false
+    },
+    {
+      "symbol": "AVAXUSDC",
+      "exchange": "binance",
+      "price": 13.54,
+      "probability": 0.53,
+      "confidence": 0.43604999999999994,
+      "action": "HOLD",
+      "modifier": 0.5,
+      "reason": "D+3 shows momentum decay",
+      "frequency": 432.0,
+      "state": "\u2197\ufe0f SLIGHT BULLISH",
+      "momentum": 0.0,
+      "coherence": 0.95,
+      "is_harmonic": true,
+      "sniper_boost": 0.05,
+      "celtic_aligned": false
+    },
+    {
+      "symbol": "DOGEUSDC",
+      "exchange": "binance",
+      "price": 0.13287,
+      "probability": 0.53,
+      "confidence": 0.43604999999999994,
+      "action": "HOLD",
+      "modifier": 0.5,
+      "reason": "D+3 shows momentum decay",
+      "frequency": 432.0,
+      "state": "\u2197\ufe0f SLIGHT BULLISH",
+      "momentum": 0.0,
+      "coherence": 0.95,
+      "is_harmonic": true,
+      "sniper_boost": 0.05,
+      "celtic_aligned": false
+    },
+    {
+      "symbol": "LINKUSDC",
+      "exchange": "binance",
+      "price": 13.04,
+      "probability": 0.53,
+      "confidence": 0.43604999999999994,
+      "action": "HOLD",
+      "modifier": 0.5,
+      "reason": "D+3 shows momentum decay",
+      "frequency": 432.0,
+      "state": "\u2197\ufe0f SLIGHT BULLISH",
+      "momentum": 0.0,
+      "coherence": 0.95,
+      "is_harmonic": true,
+      "sniper_boost": 0.05,
+      "celtic_aligned": false
+    },
+    {
+      "symbol": "MATICUSDC",
+      "exchange": "binance",
+      "price": 0.3791,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -182,94 +182,9 @@
   "celtic_picks": [],
   "all": [
     {
-      "symbol": "SOLUSD",
-      "exchange": "kraken",
-      "price": 124.46,
-      "probability": 0.53,
-      "confidence": 0.43604999999999994,
-      "action": "HOLD",
-      "modifier": 0.5,
-      "reason": "D+3 shows momentum decay",
-      "frequency": 432.0,
-      "state": "\u2197\ufe0f SLIGHT BULLISH",
-      "momentum": 0.0,
-      "coherence": 0.95,
-      "is_harmonic": true,
-      "sniper_boost": 0.1,
-      "celtic_aligned": false
-    },
-    {
-      "symbol": "ADAUSD",
-      "exchange": "kraken",
-      "price": 0.342936,
-      "probability": 0.53,
-      "confidence": 0.43604999999999994,
-      "action": "HOLD",
-      "modifier": 0.5,
-      "reason": "D+3 shows momentum decay",
-      "frequency": 432.0,
-      "state": "\u2197\ufe0f SLIGHT BULLISH",
-      "momentum": 0.0,
-      "coherence": 0.95,
-      "is_harmonic": true,
-      "sniper_boost": 0.1,
-      "celtic_aligned": false
-    },
-    {
-      "symbol": "DOTUSD",
-      "exchange": "kraken",
-      "price": 1.8644,
-      "probability": 0.53,
-      "confidence": 0.43604999999999994,
-      "action": "HOLD",
-      "modifier": 0.5,
-      "reason": "D+3 shows momentum decay",
-      "frequency": 432.0,
-      "state": "\u2197\ufe0f SLIGHT BULLISH",
-      "momentum": 0.0,
-      "coherence": 0.95,
-      "is_harmonic": true,
-      "sniper_boost": 0.1,
-      "celtic_aligned": false
-    },
-    {
-      "symbol": "LINKUSD",
-      "exchange": "kraken",
-      "price": 12.27167,
-      "probability": 0.53,
-      "confidence": 0.43604999999999994,
-      "action": "HOLD",
-      "modifier": 0.5,
-      "reason": "D+3 shows momentum decay",
-      "frequency": 432.0,
-      "state": "\u2197\ufe0f SLIGHT BULLISH",
-      "momentum": 0.0,
-      "coherence": 0.95,
-      "is_harmonic": true,
-      "sniper_boost": 0.1,
-      "celtic_aligned": false
-    },
-    {
-      "symbol": "APEUSD",
-      "exchange": "kraken",
-      "price": 0.2039,
-      "probability": 0.53,
-      "confidence": 0.43604999999999994,
-      "action": "HOLD",
-      "modifier": 0.5,
-      "reason": "D+3 shows momentum decay",
-      "frequency": 432.0,
-      "state": "\u2197\ufe0f SLIGHT BULLISH",
-      "momentum": 0.0,
-      "coherence": 0.95,
-      "is_harmonic": true,
-      "sniper_boost": 0.1,
-      "celtic_aligned": false
-    },
-    {
       "symbol": "BTCUSDC",
       "exchange": "binance",
-      "price": 87842.01,
+      "price": 89650.9615,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -286,7 +201,7 @@
     {
       "symbol": "ETHUSDC",
       "exchange": "binance",
-      "price": 2978.25,
+      "price": 3058.46,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -303,7 +218,7 @@
     {
       "symbol": "BNBUSDC",
       "exchange": "binance",
-      "price": 855.93,
+      "price": 871.72,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -320,7 +235,7 @@
     {
       "symbol": "SOLUSDC",
       "exchange": "binance",
-      "price": 124.5,
+      "price": 129.1,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -337,7 +252,7 @@
     {
       "symbol": "XRPUSDC",
       "exchange": "binance",
-      "price": 1.8547,
+      "price": 1.8977,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -354,7 +269,7 @@
     {
       "symbol": "ADAUSDC",
       "exchange": "binance",
-      "price": 0.343,
+      "price": 0.3647,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -371,7 +286,7 @@
     {
       "symbol": "AVAXUSDC",
       "exchange": "binance",
-      "price": 12.41,
+      "price": 13.54,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -388,7 +303,7 @@
     {
       "symbol": "DOGEUSDC",
       "exchange": "binance",
-      "price": 0.12069,
+      "price": 0.13287,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -405,7 +320,7 @@
     {
       "symbol": "LINKUSDC",
       "exchange": "binance",
-      "price": 12.28,
+      "price": 13.04,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -439,7 +354,7 @@
     {
       "symbol": "DOTUSDC",
       "exchange": "binance",
-      "price": 1.863,
+      "price": 1.996,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -456,7 +371,7 @@
     {
       "symbol": "ATOMUSDC",
       "exchange": "binance",
-      "price": 1.989,
+      "price": 2.112,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -473,7 +388,7 @@
     {
       "symbol": "FILUSDC",
       "exchange": "binance",
-      "price": 1.481,
+      "price": 1.458,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -490,7 +405,7 @@
     {
       "symbol": "LTCUSDC",
       "exchange": "binance",
-      "price": 78.06,
+      "price": 80.08,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -507,7 +422,7 @@
     {
       "symbol": "SUIUSDC",
       "exchange": "binance",
-      "price": 1.4161,
+      "price": 1.5213,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -524,7 +439,7 @@
     {
       "symbol": "APTUSDC",
       "exchange": "binance",
-      "price": 1.754,
+      "price": 1.866,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -541,7 +456,7 @@
     {
       "symbol": "ARBUSDC",
       "exchange": "binance",
-      "price": 0.1919,
+      "price": 0.2034,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -558,7 +473,7 @@
     {
       "symbol": "OPUSDC",
       "exchange": "binance",
-      "price": 0.2779,
+      "price": 0.2984,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -575,7 +490,7 @@
     {
       "symbol": "NEARUSDC",
       "exchange": "binance",
-      "price": 1.551,
+      "price": 1.648,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -592,7 +507,7 @@
     {
       "symbol": "UNIUSDC",
       "exchange": "binance",
-      "price": 5.694,
+      "price": 5.87,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -609,7 +524,7 @@
     {
       "symbol": "INJUSDC",
       "exchange": "binance",
-      "price": 4.337,
+      "price": 4.615,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -626,7 +541,7 @@
     {
       "symbol": "FETUSDC",
       "exchange": "binance",
-      "price": 0.2065,
+      "price": 0.2183,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -643,7 +558,7 @@
     {
       "symbol": "PEPEUSDC",
       "exchange": "binance",
-      "price": 4.17e-06,
+      "price": 5.27e-06,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -660,7 +575,7 @@
     {
       "symbol": "SHIBUSDC",
       "exchange": "binance",
-      "price": 7.07e-06,
+      "price": 7.63e-06,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -677,7 +592,7 @@
     {
       "symbol": "XLMUSDC",
       "exchange": "binance",
-      "price": 0.2051,
+      "price": 0.2122,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -694,7 +609,7 @@
     {
       "symbol": "TWTUSDC",
       "exchange": "binance",
-      "price": 0.8788,
+      "price": 0.8765,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -711,7 +626,7 @@
     {
       "symbol": "HMSTRUSDC",
       "exchange": "binance",
-      "price": 0.0002195,
+      "price": 0.0002192,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -728,7 +643,7 @@
     {
       "symbol": "PENGUUSDC",
       "exchange": "binance",
-      "price": 0.008837,
+      "price": 0.010149,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -745,7 +660,7 @@
     {
       "symbol": "ALTUSDC",
       "exchange": "binance",
-      "price": 0.01218,
+      "price": 0.01255,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -762,7 +677,7 @@
     {
       "symbol": "HBARUSDC",
       "exchange": "binance",
-      "price": 0.10838,
+      "price": 0.11952,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -779,7 +694,7 @@
     {
       "symbol": "CHZUSDC",
       "exchange": "binance",
-      "price": 0.04181,
+      "price": 0.0443,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -796,7 +711,7 @@
     {
       "symbol": "TURBOUSDC",
       "exchange": "binance",
-      "price": 0.001638,
+      "price": 0.001844,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -813,7 +728,7 @@
     {
       "symbol": "MEMEUSDC",
       "exchange": "binance",
-      "price": 0.001042,
+      "price": 0.00109,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -830,7 +745,7 @@
     {
       "symbol": "DOGSUSDC",
       "exchange": "binance",
-      "price": 4.11e-05,
+      "price": 4.21e-05,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -847,7 +762,7 @@
     {
       "symbol": "WLDUSDC",
       "exchange": "binance",
-      "price": 0.501,
+      "price": 0.5296,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -864,7 +779,7 @@
     {
       "symbol": "SEIUSDC",
       "exchange": "binance",
-      "price": 0.114,
+      "price": 0.1174,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -881,7 +796,7 @@
     {
       "symbol": "TIAUSDC",
       "exchange": "binance",
-      "price": 0.4825,
+      "price": 0.5029,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -898,7 +813,7 @@
     {
       "symbol": "WIFUSDC",
       "exchange": "binance",
-      "price": 0.276,
+      "price": 0.302,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -915,7 +830,7 @@
     {
       "symbol": "RAYUSDC",
       "exchange": "binance",
-      "price": 0.918,
+      "price": 1.015,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -932,7 +847,7 @@
     {
       "symbol": "RUNEUSDC",
       "exchange": "binance",
-      "price": 0.56,
+      "price": 0.577,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -949,7 +864,7 @@
     {
       "symbol": "ORDIUSDC",
       "exchange": "binance",
-      "price": 4.396,
+      "price": 4.525,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -966,7 +881,7 @@
     {
       "symbol": "ICPUSDC",
       "exchange": "binance",
-      "price": 2.95,
+      "price": 3.014,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -983,7 +898,7 @@
     {
       "symbol": "STRKUSDC",
       "exchange": "binance",
-      "price": 0.0803,
+      "price": 0.0831,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -1000,7 +915,7 @@
     {
       "symbol": "RENDERUSDC",
       "exchange": "binance",
-      "price": 1.316,
+      "price": 1.505,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -1017,7 +932,7 @@
     {
       "symbol": "ARUSDC",
       "exchange": "binance",
-      "price": 3.66,
+      "price": 3.73,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -1034,7 +949,7 @@
     {
       "symbol": "MOVEUSDC",
       "exchange": "binance",
-      "price": 0.0345,
+      "price": 0.0353,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -1051,7 +966,7 @@
     {
       "symbol": "TRUMPUSDC",
       "exchange": "binance",
-      "price": 4.739,
+      "price": 4.961,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -1068,7 +983,7 @@
     {
       "symbol": "BTCUSDT",
       "exchange": "binance",
-      "price": 87935.56,
+      "price": 89754.99,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -1085,7 +1000,7 @@
     {
       "symbol": "ETHUSDT",
       "exchange": "binance",
-      "price": 2981.31,
+      "price": 3061.13,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -1102,7 +1017,7 @@
     {
       "symbol": "BNBUSDT",
       "exchange": "binance",
-      "price": 857.02,
+      "price": 872.48,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -1119,7 +1034,7 @@
     {
       "symbol": "SOLUSDT",
       "exchange": "binance",
-      "price": 124.62,
+      "price": 129.22,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -1136,7 +1051,7 @@
     {
       "symbol": "XRPUSDT",
       "exchange": "binance",
-      "price": 1.8567,
+      "price": 1.8995,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -1153,7 +1068,7 @@
     {
       "symbol": "ADAUSDT",
       "exchange": "binance",
-      "price": 0.3434,
+      "price": 0.365,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -1170,7 +1085,7 @@
     {
       "symbol": "AVAXUSDT",
       "exchange": "binance",
-      "price": 12.43,
+      "price": 13.55,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -1187,7 +1102,7 @@
     {
       "symbol": "DOGEUSDT",
       "exchange": "binance",
-      "price": 0.12083,
+      "price": 0.13302,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -1204,7 +1119,7 @@
     {
       "symbol": "XLMUSDT",
       "exchange": "binance",
-      "price": 0.2053,
+      "price": 0.2124,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -1221,7 +1136,7 @@
     {
       "symbol": "TWTUSDT",
       "exchange": "binance",
-      "price": 0.8807,
+      "price": 0.877,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -1238,7 +1153,7 @@
     {
       "symbol": "HMSTRUSDT",
       "exchange": "binance",
-      "price": 0.0002192,
+      "price": 0.0002202,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -1255,7 +1170,7 @@
     {
       "symbol": "PENGUUSDT",
       "exchange": "binance",
-      "price": 0.008845,
+      "price": 0.010158,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -1272,7 +1187,7 @@
     {
       "symbol": "HBARUSDT",
       "exchange": "binance",
-      "price": 0.10849,
+      "price": 0.11965,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -1289,7 +1204,7 @@
     {
       "symbol": "CHZUSDT",
       "exchange": "binance",
-      "price": 0.0418,
+      "price": 0.04431,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -1306,7 +1221,7 @@
     {
       "symbol": "PEPEUSDT",
       "exchange": "binance",
-      "price": 4.17e-06,
+      "price": 5.28e-06,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -1323,7 +1238,7 @@
     {
       "symbol": "SHIBUSDT",
       "exchange": "binance",
-      "price": 7.08e-06,
+      "price": 7.64e-06,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -1340,7 +1255,7 @@
     {
       "symbol": "TURBOUSDT",
       "exchange": "binance",
-      "price": 0.00164,
+      "price": 0.001846,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -1357,7 +1272,7 @@
     {
       "symbol": "MEMEUSDT",
       "exchange": "binance",
-      "price": 0.001042,
+      "price": 0.00109,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -1374,7 +1289,7 @@
     {
       "symbol": "WLDUSDT",
       "exchange": "binance",
-      "price": 0.501,
+      "price": 0.53,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -1391,7 +1306,7 @@
     {
       "symbol": "NEARUSDT",
       "exchange": "binance",
-      "price": 1.552,
+      "price": 1.65,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -1408,7 +1323,7 @@
     {
       "symbol": "SUIUSDT",
       "exchange": "binance",
-      "price": 1.4176,
+      "price": 1.5229,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -1425,7 +1340,7 @@
     {
       "symbol": "APTUSDT",
       "exchange": "binance",
-      "price": 1.755,
+      "price": 1.866,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -1442,7 +1357,7 @@
     {
       "symbol": "ARBUSDT",
       "exchange": "binance",
-      "price": 0.1921,
+      "price": 0.2037,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -1459,7 +1374,7 @@
     {
       "symbol": "OPUSDT",
       "exchange": "binance",
-      "price": 0.278,
+      "price": 0.2986,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -1476,7 +1391,7 @@
     {
       "symbol": "INJUSDT",
       "exchange": "binance",
-      "price": 4.343,
+      "price": 4.62,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -1493,7 +1408,7 @@
     {
       "symbol": "FETUSDT",
       "exchange": "binance",
-      "price": 0.2069,
+      "price": 0.2188,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -1510,7 +1425,7 @@
     {
       "symbol": "LINKUSDT",
       "exchange": "binance",
-      "price": 12.29,
+      "price": 13.04,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -1527,7 +1442,7 @@
     {
       "symbol": "DOTUSDT",
       "exchange": "binance",
-      "price": 1.865,
+      "price": 1.997,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -1544,7 +1459,24 @@
     {
       "symbol": "ATOMUSDT",
       "exchange": "binance",
-      "price": 1.989,
+      "price": 2.114,
+      "probability": 0.53,
+      "confidence": 0.43604999999999994,
+      "action": "HOLD",
+      "modifier": 0.5,
+      "reason": "D+3 shows momentum decay",
+      "frequency": 432.0,
+      "state": "\u2197\ufe0f SLIGHT BULLISH",
+      "momentum": 0.0,
+      "coherence": 0.95,
+      "is_harmonic": true,
+      "sniper_boost": 0.05,
+      "celtic_aligned": false
+    },
+    {
+      "symbol": "SOLUSD",
+      "exchange": "kraken",
+      "price": 129.07,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -1561,7 +1493,24 @@
     {
       "symbol": "XRPUSD",
       "exchange": "kraken",
-      "price": 1.85426,
+      "price": 1.89744,
+      "probability": 0.53,
+      "confidence": 0.43604999999999994,
+      "action": "HOLD",
+      "modifier": 0.5,
+      "reason": "D+3 shows momentum decay",
+      "frequency": 432.0,
+      "state": "\u2197\ufe0f SLIGHT BULLISH",
+      "momentum": 0.0,
+      "coherence": 0.95,
+      "is_harmonic": true,
+      "sniper_boost": 0.05,
+      "celtic_aligned": false
+    },
+    {
+      "symbol": "ADAUSD",
+      "exchange": "kraken",
+      "price": 0.364105,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -1578,7 +1527,24 @@
     {
       "symbol": "AVAXUSD",
       "exchange": "kraken",
-      "price": 12.42,
+      "price": 13.53,
+      "probability": 0.53,
+      "confidence": 0.43604999999999994,
+      "action": "HOLD",
+      "modifier": 0.5,
+      "reason": "D+3 shows momentum decay",
+      "frequency": 432.0,
+      "state": "\u2197\ufe0f SLIGHT BULLISH",
+      "momentum": 0.0,
+      "coherence": 0.95,
+      "is_harmonic": true,
+      "sniper_boost": 0.05,
+      "celtic_aligned": false
+    },
+    {
+      "symbol": "DOTUSD",
+      "exchange": "kraken",
+      "price": 1.9962,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -1595,7 +1561,7 @@
     {
       "symbol": "ATOMUSD",
       "exchange": "kraken",
-      "price": 1.9885,
+      "price": 2.1094,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -1612,7 +1578,7 @@
     {
       "symbol": "NEARUSD",
       "exchange": "kraken",
-      "price": 1.55,
+      "price": 1.649,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -1629,7 +1595,7 @@
     {
       "symbol": "ICPUSD",
       "exchange": "kraken",
-      "price": 2.947,
+      "price": 3.015,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -1646,7 +1612,7 @@
     {
       "symbol": "APTUSD",
       "exchange": "kraken",
-      "price": 1.7547,
+      "price": 1.8628,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -1663,7 +1629,7 @@
     {
       "symbol": "SUIUSD",
       "exchange": "kraken",
-      "price": 1.4161,
+      "price": 1.5205,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -1680,7 +1646,7 @@
     {
       "symbol": "SEIUSD",
       "exchange": "kraken",
-      "price": 0.11404,
+      "price": 0.11727,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -1697,7 +1663,7 @@
     {
       "symbol": "TIAUSD",
       "exchange": "kraken",
-      "price": 0.4822,
+      "price": 0.5026,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -1731,7 +1697,7 @@
     {
       "symbol": "OPUSD",
       "exchange": "kraken",
-      "price": 0.278,
+      "price": 0.2979,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -1748,7 +1714,7 @@
     {
       "symbol": "STXUSD",
       "exchange": "kraken",
-      "price": 0.2516,
+      "price": 0.2674,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -1765,7 +1731,7 @@
     {
       "symbol": "IMXUSD",
       "exchange": "kraken",
-      "price": 0.2323,
+      "price": 0.2513,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -1782,7 +1748,7 @@
     {
       "symbol": "LPTUSD",
       "exchange": "kraken",
-      "price": 2.99,
+      "price": 3.037,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -1799,7 +1765,7 @@
     {
       "symbol": "UNIUSD",
       "exchange": "kraken",
-      "price": 5.693,
+      "price": 5.848,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -1816,7 +1782,24 @@
     {
       "symbol": "AAVEUSD",
       "exchange": "kraken",
-      "price": 145.25,
+      "price": 151.64,
+      "probability": 0.53,
+      "confidence": 0.43604999999999994,
+      "action": "HOLD",
+      "modifier": 0.5,
+      "reason": "D+3 shows momentum decay",
+      "frequency": 432.0,
+      "state": "\u2197\ufe0f SLIGHT BULLISH",
+      "momentum": 0.0,
+      "coherence": 0.95,
+      "is_harmonic": true,
+      "sniper_boost": 0.05,
+      "celtic_aligned": false
+    },
+    {
+      "symbol": "LINKUSD",
+      "exchange": "kraken",
+      "price": 13.03129,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -1833,7 +1816,7 @@
     {
       "symbol": "CRVUSD",
       "exchange": "kraken",
-      "price": 0.378,
+      "price": 0.4013,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -1850,7 +1833,7 @@
     {
       "symbol": "COMPUSD",
       "exchange": "kraken",
-      "price": 25.05,
+      "price": 25.49,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -1867,7 +1850,7 @@
     {
       "symbol": "SNXUSD",
       "exchange": "kraken",
-      "price": 0.434,
+      "price": 0.446,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -1884,7 +1867,7 @@
     {
       "symbol": "SUSHIUSD",
       "exchange": "kraken",
-      "price": 0.282,
+      "price": 0.311,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -1901,7 +1884,7 @@
     {
       "symbol": "YFIUSD",
       "exchange": "kraken",
-      "price": 3257.0,
+      "price": 3408.0,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -1918,7 +1901,7 @@
     {
       "symbol": "DYDXUSD",
       "exchange": "kraken",
-      "price": 0.1809,
+      "price": 0.1828,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -1935,7 +1918,7 @@
     {
       "symbol": "GRTUSD",
       "exchange": "kraken",
-      "price": 0.03494,
+      "price": 0.03635,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -1952,7 +1935,7 @@
     {
       "symbol": "ENSUSD",
       "exchange": "kraken",
-      "price": 9.55,
+      "price": 9.93,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -1969,7 +1952,7 @@
     {
       "symbol": "LDOUSD",
       "exchange": "kraken",
-      "price": 0.591,
+      "price": 0.615,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -1986,7 +1969,7 @@
     {
       "symbol": "PENDLEUSD",
       "exchange": "kraken",
-      "price": 1.938,
+      "price": 2.135,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -2003,7 +1986,7 @@
     {
       "symbol": "FETUSD",
       "exchange": "kraken",
-      "price": 0.2065,
+      "price": 0.2183,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -2020,7 +2003,7 @@
     {
       "symbol": "RENDERUSD",
       "exchange": "kraken",
-      "price": 1.317,
+      "price": 1.503,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -2037,7 +2020,7 @@
     {
       "symbol": "INJUSD",
       "exchange": "kraken",
-      "price": 4.335,
+      "price": 4.619,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -2054,7 +2037,7 @@
     {
       "symbol": "WLDUSD",
       "exchange": "kraken",
-      "price": 0.499,
+      "price": 0.529,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -2071,7 +2054,7 @@
     {
       "symbol": "PYTHUSD",
       "exchange": "kraken",
-      "price": 0.05916,
+      "price": 0.06202,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -2088,7 +2071,7 @@
     {
       "symbol": "JTOUSD",
       "exchange": "kraken",
-      "price": 0.39985,
+      "price": 0.43505,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -2105,7 +2088,7 @@
     {
       "symbol": "ONDOUSD",
       "exchange": "kraken",
-      "price": 0.37018,
+      "price": 0.40423,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -2122,7 +2105,7 @@
     {
       "symbol": "AXSUSD",
       "exchange": "kraken",
-      "price": 0.828,
+      "price": 0.897,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -2139,7 +2122,7 @@
     {
       "symbol": "MANAUSD",
       "exchange": "kraken",
-      "price": 0.12565,
+      "price": 0.13071,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -2156,7 +2139,7 @@
     {
       "symbol": "SANDUSD",
       "exchange": "kraken",
-      "price": 0.1112,
+      "price": 0.1177,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -2173,7 +2156,7 @@
     {
       "symbol": "GALAUSD",
       "exchange": "kraken",
-      "price": 0.00602,
+      "price": 0.0064,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -2190,7 +2173,7 @@
     {
       "symbol": "FLOWUSD",
       "exchange": "kraken",
-      "price": 0.1246,
+      "price": 0.1113,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -2207,7 +2190,7 @@
     {
       "symbol": "GMTUSD",
       "exchange": "kraken",
-      "price": 0.01504,
+      "price": 0.01524,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -2224,7 +2207,7 @@
     {
       "symbol": "ORCAUSD",
       "exchange": "kraken",
-      "price": 1.087,
+      "price": 1.105,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -2241,7 +2224,7 @@
     {
       "symbol": "SHIBUSD",
       "exchange": "kraken",
-      "price": 7.07e-06,
+      "price": 7.63e-06,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -2258,7 +2241,7 @@
     {
       "symbol": "PEPEUSD",
       "exchange": "kraken",
-      "price": 4.167e-06,
+      "price": 5.263e-06,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -2275,7 +2258,7 @@
     {
       "symbol": "BONKUSD",
       "exchange": "kraken",
-      "price": 7.709e-06,
+      "price": 8.71e-06,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -2292,7 +2275,7 @@
     {
       "symbol": "FLOKIUSD",
       "exchange": "kraken",
-      "price": 4.002e-05,
+      "price": 4.593e-05,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -2309,7 +2292,7 @@
     {
       "symbol": "WIFUSD",
       "exchange": "kraken",
-      "price": 0.2757,
+      "price": 0.3013,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -2326,7 +2309,7 @@
     {
       "symbol": "MOGUSD",
       "exchange": "kraken",
-      "price": 2.278e-07,
+      "price": 2.789e-07,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -2343,7 +2326,7 @@
     {
       "symbol": "PENGUUSD",
       "exchange": "kraken",
-      "price": 0.008849,
+      "price": 0.010151,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -2360,7 +2343,7 @@
     {
       "symbol": "TRUMPUSD",
       "exchange": "kraken",
-      "price": 4.744,
+      "price": 4.961,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -2377,7 +2360,7 @@
     {
       "symbol": "MELANIAUSD",
       "exchange": "kraken",
-      "price": 0.1159,
+      "price": 0.1178,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -2394,7 +2377,7 @@
     {
       "symbol": "WENUSD",
       "exchange": "kraken",
-      "price": 8.16e-06,
+      "price": 1.109e-05,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -2411,7 +2394,7 @@
     {
       "symbol": "LTCUSD",
       "exchange": "kraken",
-      "price": 78.05,
+      "price": 80.08,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -2428,7 +2411,7 @@
     {
       "symbol": "ETCUSD",
       "exchange": "kraken",
-      "price": 11.724,
+      "price": 12.235,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -2445,7 +2428,7 @@
     {
       "symbol": "FILUSD",
       "exchange": "kraken",
-      "price": 1.478,
+      "price": 1.459,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -2462,7 +2445,7 @@
     {
       "symbol": "ALGOUSD",
       "exchange": "kraken",
-      "price": 0.11494,
+      "price": 0.1243,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -2479,7 +2462,7 @@
     {
       "symbol": "XLMUSD",
       "exchange": "kraken",
-      "price": 0.205105,
+      "price": 0.212104,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -2496,7 +2479,7 @@
     {
       "symbol": "ZECUSD",
       "exchange": "kraken",
-      "price": 528.78,
+      "price": 510.03,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -2513,7 +2496,7 @@
     {
       "symbol": "TRXUSD",
       "exchange": "kraken",
-      "price": 0.283689,
+      "price": 0.284569,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -2530,7 +2513,7 @@
     {
       "symbol": "HBARUSD",
       "exchange": "kraken",
-      "price": 0.10836,
+      "price": 0.11937,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -2547,7 +2530,7 @@
     {
       "symbol": "QNTUSD",
       "exchange": "kraken",
-      "price": 71.99,
+      "price": 76.61,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -2564,7 +2547,7 @@
     {
       "symbol": "KAVAUSD",
       "exchange": "kraken",
-      "price": 0.0761,
+      "price": 0.0793,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -2581,7 +2564,7 @@
     {
       "symbol": "RUNEUSD",
       "exchange": "kraken",
-      "price": 0.561,
+      "price": 0.578,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -2598,7 +2581,24 @@
     {
       "symbol": "JUPUSD",
       "exchange": "kraken",
-      "price": 0.19049,
+      "price": 0.20459,
+      "probability": 0.53,
+      "confidence": 0.43604999999999994,
+      "action": "HOLD",
+      "modifier": 0.5,
+      "reason": "D+3 shows momentum decay",
+      "frequency": 432.0,
+      "state": "\u2197\ufe0f SLIGHT BULLISH",
+      "momentum": 0.0,
+      "coherence": 0.95,
+      "is_harmonic": true,
+      "sniper_boost": 0.05,
+      "celtic_aligned": false
+    },
+    {
+      "symbol": "APEUSD",
+      "exchange": "kraken",
+      "price": 0.2133,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -2615,7 +2615,7 @@
     {
       "symbol": "CHZUSD",
       "exchange": "kraken",
-      "price": 0.04183,
+      "price": 0.04432,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -2632,7 +2632,7 @@
     {
       "symbol": "MASKUSD",
       "exchange": "kraken",
-      "price": 0.612,
+      "price": 0.627,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -2649,7 +2649,7 @@
     {
       "symbol": "JASMYUSD",
       "exchange": "kraken",
-      "price": 0.00574,
+      "price": 0.00611,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -2666,7 +2666,7 @@
     {
       "symbol": "ZRXUSD",
       "exchange": "kraken",
-      "price": 0.1366,
+      "price": 0.1413,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -2683,7 +2683,7 @@
     {
       "symbol": "SOLUSDC",
       "exchange": "kraken",
-      "price": 124.5,
+      "price": 129.1,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -2700,7 +2700,7 @@
     {
       "symbol": "XLMUSDC",
       "exchange": "kraken",
-      "price": 0.2051,
+      "price": 0.2122,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -2717,7 +2717,7 @@
     {
       "symbol": "ADAUSDC",
       "exchange": "kraken",
-      "price": 0.343,
+      "price": 0.3647,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -2734,7 +2734,7 @@
     {
       "symbol": "XRPUSDC",
       "exchange": "kraken",
-      "price": 1.8547,
+      "price": 1.8977,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",

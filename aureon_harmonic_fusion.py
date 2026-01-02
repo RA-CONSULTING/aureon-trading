@@ -313,6 +313,39 @@ class HarmonicWaveFusion:
         """Get current global harmonic state"""
         return self.state
     
+    def get_harmonic_state(self) -> Dict[str, Any]:
+        """Get simplified harmonic state dict for trading integration"""
+        if not self.state:
+            return {
+                "global_coherence": 0.5,
+                "dominant_frequency": 0.0,
+                "dominant_phase": 0.0,
+                "phase_alignment": 0.5,
+                "schumann_bias": 1.0,
+                "market_regime": "neutral"
+            }
+        return {
+            "global_coherence": self.state.global_coherence,
+            "dominant_frequency": self.state.dominant_frequency,
+            "dominant_phase": self.state.global_phase,
+            "phase_alignment": self.state.schumann_alignment,
+            "schumann_bias": 0.9 + self.schumann.get_bias() * 0.2,
+            "market_regime": self.state.market_regime
+        }
+    
+    def get_symbol_phase(self, symbol: str) -> Optional[Dict[str, float]]:
+        """Get phase info for a specific symbol"""
+        state = self.get_symbol_state(symbol)
+        if not state:
+            return None
+        return {
+            "phase": state.phase,
+            "amplitude": state.amplitude,
+            "frequency": state.frequency,
+            "coherence": state.coherence,
+            "stability": state.stability
+        }
+    
     def get_symbol_state(self, symbol: str) -> Optional[SymbolWaveState]:
         """Get wave state for a specific symbol"""
         if not self.state:
@@ -389,6 +422,20 @@ class HarmonicWaveFusion:
             "global_coherence": self.state.global_coherence,
             "schumann_alignment": self.state.schumann_alignment
         }
+    
+    def get_lighthouse_alerts(self, limit: int = 10) -> List[Dict[str, Any]]:
+        """Get recent lighthouse alerts for the trading loop"""
+        events = self.lighthouse.get_recent_events(limit=limit)
+        return [
+            {
+                "type": e.event_type.value,
+                "severity": e.severity,
+                "message": e.message,
+                "symbols": e.affected_symbols[:5] if e.affected_symbols else [],
+                "timestamp": e.timestamp
+            }
+            for e in events
+        ]
     
     def get_metrics(self) -> Dict[str, Any]:
         """Get system metrics"""
