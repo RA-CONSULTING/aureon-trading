@@ -1,88 +1,5 @@
 [
   {
-    "timestamp": "2025-12-27T17:37:58.138999",
-    "talk": "======================================================================\n\ud83e\udde0 AUREON MINER BRAIN - CRITICAL ANALYSIS REPORT\n\ud83d\udcc5 2025-12-27 17:37:58\n======================================================================\n\n\ud83d\udcca **RAW DATA INGESTION**\n   Fear & Greed Index: 23 (Extreme Fear)\n   24h Market Cap Change: +0.00%\n   BTC Dominance: 50.0%\n   BTC Price: $87,541.77\n\n\ud83d\udd0d **SKEPTICAL ANALYSIS (BS DETECTION)**\n   Manipulation Probability: 10%\n   \ud83d\udea9 Weekend trading - lower liquidity, easier to manipulate\n   \u2705 Market cap stable - organic movement\n\n\ud83c\udfad **TRUTH COUNCIL VERDICT**\n   Consensus: INCONCLUSIVE\n   Action: GATHER_MORE_DATA\n   Truth Score: 57%\n   Spoof Score: 0%\n   [The Skeptic] (PLAUSIBLE, 50%): Data appears consistent, but remain vigilant.\n   [The Bull] (OPPORTUNITY, 80%): Extreme fear (23) = blood in streets. Time to be greedy!\n   [The Bear] (CAUTIOUS, 50%): Stay defensive.\n   [The Oracle] (BALANCED, 50%): Fear/Greed at 23 suggests equilibrium. Watch for catalyst.\n   [The Harvester] (ACCUMULATE_VALUE, 60%): Conditions stable. Seek value, but be ready to harvest at $0.01 profit.\n\n\ud83d\udcad **SPECULATIVE INSIGHTS**\n   \ud83d\udcad SPECULATION: Extreme fear (23) often marks bottoms. If manipulation probability is 10%, this could be genuine capitulation.\n   \ud83d\udcad CONTRARIAN VIEW: Whatever the crowd believes (it's going to zero), consider the opposite. The market rewards independent thinking.\n\n\ud83c\udfaf **BRAIN SYNTHESIS**\n   \ud83e\udd14 Insufficient data for strong conviction.\n   \ud83e\udd14 Recommend: Smaller position sizes, tight stops.\n\n\ud83d\udcda **LEARNING DIRECTIVE**\n   \u2192 Prioritize CONTRARIAN strategies (buy fear)\n\n======================================================================\n\ud83e\udde0 \"Don't believe the hype. Question everything. Trade the truth.\"\n======================================================================",
-    "processed_data": {
-      "fear_greed": 23,
-      "fng_class": "Extreme Fear",
-      "mcap_change": 0,
-      "btc_dominance": 50,
-      "eth_dominance": 15,
-      "btc_price": 87541.77,
-      "eth_price": 2925.72
-    },
-    "skeptic_analysis": {
-      "anomalies": [],
-      "red_flags": [
-        "Weekend trading - lower liquidity, easier to manipulate"
-      ],
-      "green_flags": [
-        "Market cap stable - organic movement"
-      ],
-      "manipulation_probability": 0.1
-    },
-    "council_verdict": {
-      "consensus": "INCONCLUSIVE",
-      "action": "GATHER_MORE_DATA",
-      "truth_score": 0.5721311475409836,
-      "spoof_score": 0,
-      "votes": [
-        {
-          "advisor": "The Skeptic",
-          "role": "Chief BS Detector",
-          "verdict": "PLAUSIBLE",
-          "confidence": 0.5,
-          "reasoning": "Data appears consistent, but remain vigilant.",
-          "weight": 1.5
-        },
-        {
-          "advisor": "The Bull",
-          "role": "Opportunity Finder",
-          "verdict": "OPPORTUNITY",
-          "confidence": 0.8,
-          "reasoning": "Extreme fear (23) = blood in streets. Time to be greedy!",
-          "weight": 1.0
-        },
-        {
-          "advisor": "The Bear",
-          "role": "Risk Manager",
-          "verdict": "CAUTIOUS",
-          "confidence": 0.5,
-          "reasoning": "Stay defensive.",
-          "weight": 1.0
-        },
-        {
-          "advisor": "The Oracle",
-          "role": "Pattern Reader",
-          "verdict": "BALANCED",
-          "confidence": 0.5,
-          "reasoning": "Fear/Greed at 23 suggests equilibrium. Watch for catalyst.",
-          "weight": 1.2
-        },
-        {
-          "advisor": "The Harvester",
-          "role": "Profit Reaper",
-          "verdict": "ACCUMULATE_VALUE",
-          "confidence": 0.6,
-          "reasoning": "Conditions stable. Seek value, but be ready to harvest at $0.01 profit.",
-          "weight": 1.4
-        }
-      ],
-      "arguments": [
-        "   [The Skeptic] (PLAUSIBLE, 50%): Data appears consistent, but remain vigilant.",
-        "   [The Bull] (OPPORTUNITY, 80%): Extreme fear (23) = blood in streets. Time to be greedy!",
-        "   [The Bear] (CAUTIOUS, 50%): Stay defensive.",
-        "   [The Oracle] (BALANCED, 50%): Fear/Greed at 23 suggests equilibrium. Watch for catalyst.",
-        "   [The Harvester] (ACCUMULATE_VALUE, 60%): Conditions stable. Seek value, but be ready to harvest at $0.01 profit."
-      ],
-      "timestamp": "2025-12-27T17:37:58.133588"
-    },
-    "speculations": [
-      "\ud83d\udcad SPECULATION: Extreme fear (23) often marks bottoms. If manipulation probability is 10%, this could be genuine capitulation.",
-      "\ud83d\udcad CONTRARIAN VIEW: Whatever the crowd believes (it's going to zero), consider the opposite. The market rewards independent thinking."
-    ]
-  },
-  {
     "timestamp": "2025-12-27T17:38:00.409164",
     "talk": "======================================================================\n\ud83e\udde0 AUREON MINER BRAIN - CRITICAL ANALYSIS REPORT\n\ud83d\udcc5 2025-12-27 17:38:00\n======================================================================\n\n\ud83d\udcca **RAW DATA INGESTION**\n   Fear & Greed Index: 23 (Extreme Fear)\n   24h Market Cap Change: +0.49%\n   BTC Dominance: 57.4%\n   BTC Price: $87,541.76\n\n\ud83d\udd0d **SKEPTICAL ANALYSIS (BS DETECTION)**\n   Manipulation Probability: 10%\n   \ud83d\udea9 Weekend trading - lower liquidity, easier to manipulate\n   \u2705 Market cap stable - organic movement\n\n\ud83c\udfad **TRUTH COUNCIL VERDICT**\n   Consensus: INCONCLUSIVE\n   Action: GATHER_MORE_DATA\n   Truth Score: 57%\n   Spoof Score: 0%\n   [The Skeptic] (PLAUSIBLE, 50%): Data appears consistent, but remain vigilant.\n   [The Bull] (OPPORTUNITY, 80%): Extreme fear (23) = blood in streets. Time to be greedy!\n   [The Bear] (CAUTIOUS, 50%): Stay defensive.\n   [The Oracle] (BALANCED, 50%): Fear/Greed at 23 suggests equilibrium. Watch for catalyst.\n   [The Harvester] (ACCUMULATE_VALUE, 60%): Conditions stable. Seek value, but be ready to harvest at $0.01 profit.\n\n\ud83d\udcad **SPECULATIVE INSIGHTS**\n   \ud83d\udcad SPECULATION: Extreme fear (23) often marks bottoms. If manipulation probability is 10%, this could be genuine capitulation.\n   \ud83d\udcad SPECULATION: BTC dominance at 57.4% - capital fleeing to safety OR coiling for alt season explosion?\n   \ud83d\udcad CONTRARIAN VIEW: Whatever the crowd believes (it's going to zero), consider the opposite. The market rewards independent thinking.\n\n\ud83c\udfaf **BRAIN SYNTHESIS**\n   \ud83e\udd14 Insufficient data for strong conviction.\n   \ud83e\udd14 Recommend: Smaller position sizes, tight stops.\n\n\ud83d\udcda **LEARNING DIRECTIVE**\n   \u2192 Prioritize CONTRARIAN strategies (buy fear)\n\n======================================================================\n\ud83e\udde0 \"Don't believe the hype. Question everything. Trade the truth.\"\n======================================================================",
     "processed_data": {
@@ -8334,6 +8251,87 @@
         "   [The Harvester] (ACCUMULATE_VALUE, 60%): Conditions stable. Seek value, but be ready to harvest at $0.01 profit."
       ],
       "timestamp": "2026-01-02T10:50:21.335178"
+    },
+    "speculations": [
+      "\ud83d\udcad SPECULATION: BTC dominance at 57.3% - capital fleeing to safety OR coiling for alt season explosion?",
+      "\ud83d\udcad CONTRARIAN VIEW: Whatever the crowd believes (it's going to zero), consider the opposite. The market rewards independent thinking."
+    ]
+  },
+  {
+    "timestamp": "2026-01-02T14:08:34.578314",
+    "talk": "======================================================================\n\ud83e\udde0 AUREON MINER BRAIN - CRITICAL ANALYSIS REPORT\n\ud83d\udcc5 2026-01-02 14:08:34\n======================================================================\n\n\ud83d\udcca **RAW DATA INGESTION**\n   Fear & Greed Index: 28 (Fear)\n   24h Market Cap Change: +1.74%\n   BTC Dominance: 57.3%\n   BTC Price: $89,316.67\n\n\ud83d\udd0d **SKEPTICAL ANALYSIS (BS DETECTION)**\n   Manipulation Probability: 0%\n   \u2705 Market cap stable - organic movement\n\n\ud83c\udfad **TRUTH COUNCIL VERDICT**\n   Consensus: INCONCLUSIVE\n   Action: GATHER_MORE_DATA\n   Truth Score: 52%\n   Spoof Score: 0%\n   [The Skeptic] (PLAUSIBLE, 50%): Data appears consistent, but remain vigilant.\n   [The Bull] (NEUTRAL, 40%): No clear bullish signal yet.\n   [The Bear] (CAUTIOUS, 50%): Stay defensive.\n   [The Oracle] (BALANCED, 50%): Fear/Greed at 28 suggests equilibrium. Watch for catalyst.\n   [The Harvester] (ACCUMULATE_VALUE, 60%): Conditions stable. Seek value, but be ready to harvest at $0.01 profit.\n\n\ud83d\udcad **SPECULATIVE INSIGHTS**\n   \ud83d\udcad SPECULATION: BTC dominance at 57.3% - capital fleeing to safety OR coiling for alt season explosion?\n   \ud83d\udcad CONTRARIAN VIEW: Whatever the crowd believes (it's going to zero), consider the opposite. The market rewards independent thinking.\n\n\ud83c\udfaf **BRAIN SYNTHESIS**\n   \ud83e\udd14 Insufficient data for strong conviction.\n   \ud83e\udd14 Posture: Reduce size, raise entry standards.\n   \ud83e\udd14 Execute only when net-after-costs penny objective is viable and approved.\n\n\ud83d\udcda **LEARNING DIRECTIVE**\n   \u2192 Prioritize CONTRARIAN setups that still clear net-penny-after-costs viability\n   \u2192 Require probability matrix approval; avoid forced-loss exits\n\n======================================================================\n\ud83e\udde0 \"Don't believe the hype. Question everything. Trade the truth.\"\n======================================================================",
+    "processed_data": {
+      "fear_greed": 28,
+      "fng_class": "Fear",
+      "mcap_change": 1.7386428381265473,
+      "btc_dominance": 57.26358508473215,
+      "eth_dominance": 11.822791581093496,
+      "btc_price": 89316.67,
+      "eth_price": 3051.82
+    },
+    "skeptic_analysis": {
+      "anomalies": [],
+      "red_flags": [],
+      "green_flags": [
+        "Market cap stable - organic movement"
+      ],
+      "manipulation_probability": 0.0
+    },
+    "council_verdict": {
+      "consensus": "INCONCLUSIVE",
+      "action": "GATHER_MORE_DATA",
+      "truth_score": 0.5229508196721311,
+      "spoof_score": 0,
+      "votes": [
+        {
+          "advisor": "The Skeptic",
+          "role": "Chief BS Detector",
+          "verdict": "PLAUSIBLE",
+          "confidence": 0.5,
+          "reasoning": "Data appears consistent, but remain vigilant.",
+          "weight": 1.5
+        },
+        {
+          "advisor": "The Bull",
+          "role": "Opportunity Finder",
+          "verdict": "NEUTRAL",
+          "confidence": 0.4,
+          "reasoning": "No clear bullish signal yet.",
+          "weight": 1.0
+        },
+        {
+          "advisor": "The Bear",
+          "role": "Risk Manager",
+          "verdict": "CAUTIOUS",
+          "confidence": 0.5,
+          "reasoning": "Stay defensive.",
+          "weight": 1.0
+        },
+        {
+          "advisor": "The Oracle",
+          "role": "Pattern Reader",
+          "verdict": "BALANCED",
+          "confidence": 0.5,
+          "reasoning": "Fear/Greed at 28 suggests equilibrium. Watch for catalyst.",
+          "weight": 1.2
+        },
+        {
+          "advisor": "The Harvester",
+          "role": "Profit Reaper",
+          "verdict": "ACCUMULATE_VALUE",
+          "confidence": 0.6,
+          "reasoning": "Conditions stable. Seek value, but be ready to harvest at $0.01 profit.",
+          "weight": 1.4
+        }
+      ],
+      "arguments": [
+        "   [The Skeptic] (PLAUSIBLE, 50%): Data appears consistent, but remain vigilant.",
+        "   [The Bull] (NEUTRAL, 40%): No clear bullish signal yet.",
+        "   [The Bear] (CAUTIOUS, 50%): Stay defensive.",
+        "   [The Oracle] (BALANCED, 50%): Fear/Greed at 28 suggests equilibrium. Watch for catalyst.",
+        "   [The Harvester] (ACCUMULATE_VALUE, 60%): Conditions stable. Seek value, but be ready to harvest at $0.01 profit."
+      ],
+      "timestamp": "2026-01-02T14:08:34.548330"
     },
     "speculations": [
       "\ud83d\udcad SPECULATION: BTC dominance at 57.3% - capital fleeing to safety OR coiling for alt season explosion?",

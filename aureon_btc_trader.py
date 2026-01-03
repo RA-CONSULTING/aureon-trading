@@ -71,7 +71,7 @@ CONFIG = {
 # LOT SIZE MANAGER
 # ═══════════════════════════════════════════════════════════════════════════
 
-class LotSizeManager:
+python3 s5_intelligent_dance.pypython3 s5_intelligent_dance.pyclass LotSizeManager:
     def __init__(self, client: BinanceClient):
         self.client = client
         self.symbol_info = {}
@@ -105,6 +105,9 @@ class LotSizeManager:
     def can_trade(self, symbol: str) -> bool:
         self.update()
         info = self.symbol_info.get(symbol, {})
+        # If permission sets are missing, allow BTC quote symbols by default for this account group
+        if 'can_trade' not in info:
+            return info.get('quote') == 'BTC' and info.get('status') == 'TRADING'
         return info.get('can_trade', False) and info.get('status') == 'TRADING'
     
     def get_step_size(self, symbol: str) -> float:
@@ -160,6 +163,8 @@ class AureonBTCTrader:
             logger.error(f"❌ Ticker update failed: {e}")
     
     def get_btc_price(self) -> float:
+        if 'BTCUSDT' not in self.ticker_cache:
+            self.update_tickers()
         ticker = self.ticker_cache.get('BTCUSDT', {})
         return float(ticker.get('lastPrice', 91000))
     
@@ -283,13 +288,16 @@ class AureonBTCTrader:
             symbol = p['symbol']
             if symbol in self.positions:
                 continue
+
+            # Skip if the exchange flags the symbol as untradeable for this account
+            if not self.lot_mgr.can_trade(symbol):
+                continue
             
             # Entry logic: Strong momentum (positive OR negative for scalping)
             if abs(p['change']) > 5.0 and p['volume'] > 2.0:  # >5% move, >2 BTC volume
                 size_btc = btc_balance * 0.25  # 25% of BTC per trade
                 if size_btc < CONFIG['MIN_BTC_VALUE']:
-                    size_btc = min(btc_balance * 0.9, CONFIG['MIN_BTC_VALUE'] * 1.5)  # Use most of balance
-                    continue
+                    size_btc = min(btc_balance * 0.9, CONFIG['MIN_BTC_VALUE'] * 1.5)
                 
                 # Calculate quantity
                 base = symbol.replace('BTC', '')
@@ -305,6 +313,7 @@ class AureonBTCTrader:
                         'qty': float(qty_str),
                         'entry_time': time.time(),
                     }
+                    btc_balance -= size_btc  # Simulate capital usage
                 else:
                     try:
                         result = self.client.place_market_order(symbol, 'BUY', quantity=float(qty_str))

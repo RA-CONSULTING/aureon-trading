@@ -1,11 +1,11 @@
 {
-  "generated_at": "2026-01-02T11:01:08.061641",
+  "generated_at": "2026-01-02T14:22:41.912061",
   "count": 75,
   "all": [
     {
       "symbol": "SOLUSD",
       "exchange": "kraken",
-      "price": 129.07,
+      "price": 128.37,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -22,7 +22,7 @@
     {
       "symbol": "XRPUSD",
       "exchange": "kraken",
-      "price": 1.89744,
+      "price": 1.89729,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -39,7 +39,7 @@
     {
       "symbol": "ADAUSD",
       "exchange": "kraken",
-      "price": 0.364105,
+      "price": 0.365096,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -56,7 +56,7 @@
     {
       "symbol": "AVAXUSD",
       "exchange": "kraken",
-      "price": 13.53,
+      "price": 13.3566,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -73,7 +73,7 @@
     {
       "symbol": "DOTUSD",
       "exchange": "kraken",
-      "price": 1.9962,
+      "price": 1.9927,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -90,7 +90,7 @@
     {
       "symbol": "ATOMUSD",
       "exchange": "kraken",
-      "price": 2.1094,
+      "price": 2.1156,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -101,13 +101,13 @@
       "momentum": 0.0,
       "coherence": 0.95,
       "is_harmonic": true,
-      "sniper_boost": 0.05,
+      "sniper_boost": 0.1,
       "celtic_aligned": false
     },
     {
       "symbol": "NEARUSD",
       "exchange": "kraken",
-      "price": 1.649,
+      "price": 1.639,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -124,7 +124,7 @@
     {
       "symbol": "ICPUSD",
       "exchange": "kraken",
-      "price": 3.015,
+      "price": 3.008,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -141,7 +141,7 @@
     {
       "symbol": "APTUSD",
       "exchange": "kraken",
-      "price": 1.8628,
+      "price": 1.8407,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -158,7 +158,7 @@
     {
       "symbol": "SUIUSD",
       "exchange": "kraken",
-      "price": 1.5205,
+      "price": 1.5236,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -175,7 +175,7 @@
     {
       "symbol": "SEIUSD",
       "exchange": "kraken",
-      "price": 0.11727,
+      "price": 0.1169,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -192,7 +192,7 @@
     {
       "symbol": "TIAUSD",
       "exchange": "kraken",
-      "price": 0.5026,
+      "price": 0.501,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -226,7 +226,7 @@
     {
       "symbol": "OPUSD",
       "exchange": "kraken",
-      "price": 0.2979,
+      "price": 0.3,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -243,7 +243,7 @@
     {
       "symbol": "STXUSD",
       "exchange": "kraken",
-      "price": 0.2674,
+      "price": 0.2651,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -260,7 +260,7 @@
     {
       "symbol": "IMXUSD",
       "exchange": "kraken",
-      "price": 0.2513,
+      "price": 0.2517,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -277,7 +277,7 @@
     {
       "symbol": "LPTUSD",
       "exchange": "kraken",
-      "price": 3.037,
+      "price": 3.031,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -294,7 +294,7 @@
     {
       "symbol": "UNIUSD",
       "exchange": "kraken",
-      "price": 5.848,
+      "price": 5.824,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -311,7 +311,7 @@
     {
       "symbol": "AAVEUSD",
       "exchange": "kraken",
-      "price": 151.64,
+      "price": 151.455,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -328,7 +328,7 @@
     {
       "symbol": "LINKUSD",
       "exchange": "kraken",
-      "price": 13.03129,
+      "price": 13.00923,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -345,7 +345,7 @@
     {
       "symbol": "CRVUSD",
       "exchange": "kraken",
-      "price": 0.4013,
+      "price": 0.401,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -396,7 +396,7 @@
     {
       "symbol": "SUSHIUSD",
       "exchange": "kraken",
-      "price": 0.311,
+      "price": 0.3112,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -413,7 +413,7 @@
     {
       "symbol": "YFIUSD",
       "exchange": "kraken",
-      "price": 3408.0,
+      "price": 3415.0,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -430,7 +430,7 @@
     {
       "symbol": "DYDXUSD",
       "exchange": "kraken",
-      "price": 0.1828,
+      "price": 0.1827,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -447,7 +447,7 @@
     {
       "symbol": "GRTUSD",
       "exchange": "kraken",
-      "price": 0.03635,
+      "price": 0.03612,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -464,7 +464,7 @@
     {
       "symbol": "ENSUSD",
       "exchange": "kraken",
-      "price": 9.93,
+      "price": 9.89,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -498,7 +498,7 @@
     {
       "symbol": "PENDLEUSD",
       "exchange": "kraken",
-      "price": 2.135,
+      "price": 2.134,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -515,7 +515,7 @@
     {
       "symbol": "FETUSD",
       "exchange": "kraken",
-      "price": 0.2183,
+      "price": 0.2188,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -532,7 +532,7 @@
     {
       "symbol": "RENDERUSD",
       "exchange": "kraken",
-      "price": 1.503,
+      "price": 1.501,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -549,7 +549,7 @@
     {
       "symbol": "INJUSD",
       "exchange": "kraken",
-      "price": 4.619,
+      "price": 4.62,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -566,7 +566,7 @@
     {
       "symbol": "WLDUSD",
       "exchange": "kraken",
-      "price": 0.529,
+      "price": 0.533,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -583,7 +583,7 @@
     {
       "symbol": "PYTHUSD",
       "exchange": "kraken",
-      "price": 0.06202,
+      "price": 0.06183,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -600,7 +600,7 @@
     {
       "symbol": "JTOUSD",
       "exchange": "kraken",
-      "price": 0.43505,
+      "price": 0.433,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -617,7 +617,7 @@
     {
       "symbol": "ONDOUSD",
       "exchange": "kraken",
-      "price": 0.40423,
+      "price": 0.40382,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -634,7 +634,7 @@
     {
       "symbol": "AXSUSD",
       "exchange": "kraken",
-      "price": 0.897,
+      "price": 0.902,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -651,7 +651,7 @@
     {
       "symbol": "MANAUSD",
       "exchange": "kraken",
-      "price": 0.13071,
+      "price": 0.1301,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -668,7 +668,7 @@
     {
       "symbol": "SANDUSD",
       "exchange": "kraken",
-      "price": 0.1177,
+      "price": 0.1167,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -685,7 +685,7 @@
     {
       "symbol": "GALAUSD",
       "exchange": "kraken",
-      "price": 0.0064,
+      "price": 0.00639,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -702,7 +702,7 @@
     {
       "symbol": "FLOWUSD",
       "exchange": "kraken",
-      "price": 0.1113,
+      "price": 0.1157,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -719,7 +719,7 @@
     {
       "symbol": "GMTUSD",
       "exchange": "kraken",
-      "price": 0.01524,
+      "price": 0.01541,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -736,7 +736,7 @@
     {
       "symbol": "ORCAUSD",
       "exchange": "kraken",
-      "price": 1.105,
+      "price": 1.114,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -753,7 +753,7 @@
     {
       "symbol": "SHIBUSD",
       "exchange": "kraken",
-      "price": 7.63e-06,
+      "price": 7.72e-06,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -770,7 +770,7 @@
     {
       "symbol": "PEPEUSD",
       "exchange": "kraken",
-      "price": 5.263e-06,
+      "price": 5.57e-06,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -787,7 +787,7 @@
     {
       "symbol": "BONKUSD",
       "exchange": "kraken",
-      "price": 8.71e-06,
+      "price": 8.784e-06,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -804,7 +804,7 @@
     {
       "symbol": "FLOKIUSD",
       "exchange": "kraken",
-      "price": 4.593e-05,
+      "price": 4.736e-05,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -821,7 +821,7 @@
     {
       "symbol": "WIFUSD",
       "exchange": "kraken",
-      "price": 0.3013,
+      "price": 0.3005,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -838,7 +838,7 @@
     {
       "symbol": "MOGUSD",
       "exchange": "kraken",
-      "price": 2.789e-07,
+      "price": 2.749e-07,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -855,7 +855,7 @@
     {
       "symbol": "PENGUUSD",
       "exchange": "kraken",
-      "price": 0.010151,
+      "price": 0.01015,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -872,7 +872,7 @@
     {
       "symbol": "TRUMPUSD",
       "exchange": "kraken",
-      "price": 4.961,
+      "price": 4.971,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -889,7 +889,7 @@
     {
       "symbol": "MELANIAUSD",
       "exchange": "kraken",
-      "price": 0.1178,
+      "price": 0.1199,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -906,7 +906,7 @@
     {
       "symbol": "WENUSD",
       "exchange": "kraken",
-      "price": 1.109e-05,
+      "price": 1.084e-05,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -923,7 +923,7 @@
     {
       "symbol": "LTCUSD",
       "exchange": "kraken",
-      "price": 80.08,
+      "price": 80.01,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -940,7 +940,7 @@
     {
       "symbol": "ETCUSD",
       "exchange": "kraken",
-      "price": 12.235,
+      "price": 12.195,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -957,7 +957,7 @@
     {
       "symbol": "FILUSD",
       "exchange": "kraken",
-      "price": 1.459,
+      "price": 1.431,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -974,7 +974,7 @@
     {
       "symbol": "ALGOUSD",
       "exchange": "kraken",
-      "price": 0.1243,
+      "price": 0.12408,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -991,7 +991,7 @@
     {
       "symbol": "XLMUSD",
       "exchange": "kraken",
-      "price": 0.212104,
+      "price": 0.211402,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -1008,7 +1008,7 @@
     {
       "symbol": "ZECUSD",
       "exchange": "kraken",
-      "price": 510.03,
+      "price": 486.45,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -1025,7 +1025,7 @@
     {
       "symbol": "TRXUSD",
       "exchange": "kraken",
-      "price": 0.284569,
+      "price": 0.28516,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -1042,7 +1042,7 @@
     {
       "symbol": "HBARUSD",
       "exchange": "kraken",
-      "price": 0.11937,
+      "price": 0.11971,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -1059,7 +1059,7 @@
     {
       "symbol": "QNTUSD",
       "exchange": "kraken",
-      "price": 76.61,
+      "price": 76.6,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -1093,7 +1093,7 @@
     {
       "symbol": "RUNEUSD",
       "exchange": "kraken",
-      "price": 0.578,
+      "price": 0.573,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -1110,7 +1110,7 @@
     {
       "symbol": "JUPUSD",
       "exchange": "kraken",
-      "price": 0.20459,
+      "price": 0.2041,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -1127,7 +1127,7 @@
     {
       "symbol": "APEUSD",
       "exchange": "kraken",
-      "price": 0.2133,
+      "price": 0.2129,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -1144,7 +1144,7 @@
     {
       "symbol": "CHZUSD",
       "exchange": "kraken",
-      "price": 0.04432,
+      "price": 0.04367,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -1161,7 +1161,7 @@
     {
       "symbol": "MASKUSD",
       "exchange": "kraken",
-      "price": 0.627,
+      "price": 0.626,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -1178,7 +1178,7 @@
     {
       "symbol": "JASMYUSD",
       "exchange": "kraken",
-      "price": 0.00611,
+      "price": 0.00608,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -1195,7 +1195,7 @@
     {
       "symbol": "ZRXUSD",
       "exchange": "kraken",
-      "price": 0.1413,
+      "price": 0.139,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -1212,7 +1212,7 @@
     {
       "symbol": "SOLUSDC",
       "exchange": "kraken",
-      "price": 129.1,
+      "price": 128.38,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -1229,7 +1229,7 @@
     {
       "symbol": "XLMUSDC",
       "exchange": "kraken",
-      "price": 0.2122,
+      "price": 0.2114,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -1246,7 +1246,7 @@
     {
       "symbol": "ADAUSDC",
       "exchange": "kraken",
-      "price": 0.3647,
+      "price": 0.365,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",
@@ -1263,7 +1263,7 @@
     {
       "symbol": "XRPUSDC",
       "exchange": "kraken",
-      "price": 1.8977,
+      "price": 1.8979,
       "probability": 0.53,
       "confidence": 0.43604999999999994,
       "action": "HOLD",

@@ -132,6 +132,24 @@ except ImportError as e:
     _gate_integrations = {}
     print(f"⚠️ Adaptive Prime Profit Gate not available: {e}")
 
+# 🌌✨ INTERNAL MULTIVERSE - 10-9-1-10 Many Worlds Architecture ✨🌌
+try:
+    from aureon_internal_multiverse import (
+        get_multiverse, multiverse_predict, multiverse_record_outcome,
+        InternalMultiverse, World, OmegaConverter, ConsensusEngine
+    )
+    INTERNAL_MULTIVERSE_AVAILABLE = True
+    _internal_multiverse = get_multiverse(initial_equity=100.0)
+    print("🌌✨ Internal Multiverse ONLINE! (10-9-1-10 many worlds)")
+    print("   └─ 10 Mycelium-mapped ecosystem worlds")
+    print("   └─ 9 Processing worlds (cascade adaptation)")
+    print("   └─ 1 Fixed Omega Converter (instant profit sweep)")
+    print("   └─ 10 All together (unified consensus)")
+except ImportError as e:
+    INTERNAL_MULTIVERSE_AVAILABLE = False
+    _internal_multiverse = None
+    print(f"⚠️ Internal Multiverse not available: {e}")
+
 # Custom StreamHandler that forces UTF-8 encoding on Windows
 class SafeStreamHandler(logging.StreamHandler):
     def __init__(self, stream=None):
@@ -250,7 +268,7 @@ except ImportError:
     statistics = Statistics()
 
 from datetime import datetime
-from typing import Dict, List, Optional, Tuple, Any, Set
+from typing import Dict, List, Optional, Tuple, Any, Set, Deque
 from dataclasses import dataclass, field
 from collections import deque, defaultdict
 from threading import Thread, Lock
@@ -509,6 +527,24 @@ try:
 except ImportError as e:
     HARMONIC_FUSION_AVAILABLE = False
     print(f"⚠️  Harmonic Wave Fusion not available: {e}")
+
+# 🪜 CONVERSION LADDER - Capital Momentum Builder (Mycelium-directed) 🪜
+try:
+    from aureon_conversion_ladder import ConversionLadder
+    CONVERSION_LADDER_AVAILABLE = True
+    print("🪜 Conversion Ladder loaded - capital momentum builder")
+except ImportError as e:
+    CONVERSION_LADDER_AVAILABLE = False
+    print(f"⚠️  Conversion Ladder not available: {e}")
+
+# 🦅⚔️ ADAPTIVE CONVERSION COMMANDO - 1885 CAPM Game ⚔️🦅
+try:
+    from aureon_conversion_commando import AdaptiveConversionCommando
+    CONVERSION_COMMANDO_AVAILABLE = True
+    print("🦅⚔️ Adaptive Conversion Commando loaded - 1885 CAPM Game")
+except ImportError as e:
+    CONVERSION_COMMANDO_AVAILABLE = False
+    print(f"⚠️  Conversion Commando not available: {e}")
 
 # 🌍⚡ EARTH RESONANCE ENGINE ⚡🌍
 try:
@@ -2730,8 +2766,8 @@ class CrossExchangeArbitrageScanner:
                 return results
                 
             # Execute sell
-                sell_symbol = self.client.normalize_symbol(sell_ex, symbol)
-                sell_result = self.client.place_market_order(sell_ex, sell_symbol, 'SELL', quantity=quantity)
+            sell_symbol = self.client.normalize_symbol(sell_ex, symbol)
+            sell_result = self.client.place_market_order(sell_ex, sell_symbol, 'SELL', quantity=quantity)
             results['sell'] = sell_result
             
             if sell_result and not sell_result.get('error'):
@@ -12311,6 +12347,34 @@ class AureonKrakenEcosystem:
                 print(f"⚠️  Harmonic Fusion init failed: {e}")
                 self.harmonic_fusion = None
         self.tracker = PerformanceTracker(initial_balance)
+
+        # 🪜 CONVERSION LADDER - staged capital rotation (disabled by default)
+        self.conversion_ladder = None
+        if CONVERSION_LADDER_AVAILABLE:
+            try:
+                self.conversion_ladder = ConversionLadder(
+                    bus=(THOUGHT_BUS if THOUGHT_BUS_AVAILABLE else None),
+                    mycelium=self.mycelium,
+                    client=self.client,
+                )
+            except Exception as e:
+                print(f"⚠️  Conversion Ladder init failed: {e}")
+                self.conversion_ladder = None
+
+        # 🦅⚔️ ADAPTIVE CONVERSION COMMANDO - 1885 CAPM Game (wraps ladder with commando logic)
+        self.conversion_commando = None
+        if CONVERSION_COMMANDO_AVAILABLE and self.conversion_ladder:
+            try:
+                self.conversion_commando = AdaptiveConversionCommando(
+                    bus=(THOUGHT_BUS if THOUGHT_BUS_AVAILABLE else None),
+                    mycelium=self.mycelium,
+                    client=self.client,
+                    ladder=self.conversion_ladder,
+                )
+                print("🦅⚔️ Conversion Commando deployed (Falcon/Tortoise/Chameleon/Bee)")
+            except Exception as e:
+                print(f"⚠️  Conversion Commando init failed: {e}")
+                self.conversion_commando = None
         # Two distinct memories:
         # - ElephantMemory: symbol-level cooldown/blacklist + JSONL event trail
         # - Memory Core (spiral_memory): durable position memory + surge windows + reconciliation
@@ -15664,6 +15728,61 @@ class AureonKrakenEcosystem:
         opp['required_price'] = required_price
         
         logger.info(f"🪙 {symbol}: SHARED GOAL = +${target_net:.2f} net | Need +{required_move_pct:.3f}% (${price:.4f} → ${required_price:.4f})")
+
+        # ═══════════════════════════════════════════════════════════════
+        # 🤝 UNITY GATE: Align BUY/SELL/CONVERT under one net-profit goal
+        # Conversions already realign capital when net profit is below dynamic floor.
+        # Here we apply the same floor to NEW BUY entries (unless force scout).
+        # Penny is the minimum; dynamic scaling can be enabled via env.
+        # ═══════════════════════════════════════════════════════════════
+        if not is_force_scout:
+            try:
+                unity_on = str(os.getenv('AUREON_UNITY_NET_PROFIT_GATE', '1')).strip().lower() in ('1', 'true', 'yes', 'on')
+            except Exception:
+                unity_on = True
+            if unity_on and hasattr(self, 'tracker'):
+                try:
+                    penny_min = float(os.getenv('AUREON_LADDER_PENNY_MIN_NET', '0.01') or 0.01)
+                except Exception:
+                    penny_min = 0.01
+                try:
+                    abs_floor = float(os.getenv('AUREON_LADDER_NET_PROFIT_FLOOR', '0') or 0.0)
+                except Exception:
+                    abs_floor = 0.0
+                try:
+                    pct = float(os.getenv('AUREON_LADDER_NET_PROFIT_PCT', '0') or 0.0)
+                except Exception:
+                    pct = 0.0
+
+                required_net = max(penny_min, abs_floor)
+                try:
+                    eq = float(getattr(self.tracker, 'portfolio_equity', 0.0) or 0.0)
+                    if pct > 0 and eq > 0:
+                        required_net = max(required_net, eq * pct)
+                except Exception:
+                    pass
+
+                try:
+                    np = float(getattr(self.tracker, 'net_profit', 0.0) or 0.0)
+                except Exception:
+                    np = 0.0
+
+                opp['unity_required_net'] = required_net
+                opp['unity_net_profit'] = np
+
+                if np < required_net:
+                    opp['entry_reject_reason'] = f"unity: net profit ${np:.2f} < required ${required_net:.2f}"
+                    # Bootstrap: if we're at a fresh baseline (no trades, no open positions) and not negative,
+                    # allow initial entries so the system can start compounding.
+                    try:
+                        fresh = (getattr(self.tracker, 'total_trades', 0) == 0) and (len(getattr(self, 'positions', {}) or {}) == 0)
+                    except Exception:
+                        fresh = False
+                    if fresh and np >= 0:
+                        logger.info(f"✅ {symbol}: UNITY bootstrap allows first entries (net ${np:.2f} < req ${required_net:.2f})")
+                    else:
+                        logger.info(f"⛔ {symbol}: UNITY gate holds fire (net ${np:.2f} < req ${required_net:.2f})")
+                        return False
         
         # ═══════════════════════════════════════════════════════════════
         # ⚔️ STEP 1.5: Ask War Strategy - "Is this a QUICK KILL?"
@@ -21757,6 +21876,8 @@ class AureonKrakenEcosystem:
                                 print(f"   🔦 LIGHTHOUSE: {alert.get('type', 'alert')} - {str(alert.get('message', ''))[:50]}")
                     except Exception as e:
                         logger.debug(f"Harmonic fusion update: {e}")
+
+                # Conversion commando executes post-opportunity scan for full unity.
                 
                 # 🌊 SURGE WINDOW CHECK: Synchronize with Zero Point Field
                 is_surge = self.memory.is_surge_window_active()
@@ -22067,52 +22188,172 @@ class AureonKrakenEcosystem:
                 
                 # Update Lattice State (Global Physics)
                 raw_opps = self.find_opportunities()
+
+                # 🤝 UNITY CONSENSUS: publish a single state that conversions/buys/sells can follow.
+                try:
+                    penny_min = float(os.getenv('AUREON_LADDER_PENNY_MIN_NET', '0.01') or 0.01)
+                except Exception:
+                    penny_min = 0.01
+                try:
+                    abs_floor = float(os.getenv('AUREON_LADDER_NET_PROFIT_FLOOR', '0') or 0.0)
+                except Exception:
+                    abs_floor = 0.0
+                try:
+                    pct = float(os.getenv('AUREON_LADDER_NET_PROFIT_PCT', '0') or 0.0)
+                except Exception:
+                    pct = 0.0
+
+                required_net = max(penny_min, abs_floor)
+                try:
+                    eq = float(getattr(self.tracker, 'portfolio_equity', 0.0) or 0.0)
+                    if pct > 0 and eq > 0:
+                        required_net = max(required_net, eq * pct)
+                except Exception:
+                    eq = float(getattr(self.tracker, 'portfolio_equity', 0.0) or 0.0)
+
+                try:
+                    np = float(getattr(self.tracker, 'net_profit', 0.0) or 0.0)
+                except Exception:
+                    np = 0.0
+                try:
+                    dd = float(getattr(self.tracker, 'current_drawdown', 0.0) or 0.0)
+                except Exception:
+                    dd = 0.0
+                try:
+                    queen = float(self.mycelium.get_queen_signal()) if self.mycelium else 0.0
+                except Exception:
+                    queen = 0.0
+                try:
+                    coh = float(self.mycelium.get_network_coherence()) if self.mycelium else 0.5
+                except Exception:
+                    coh = 0.5
+
+                unity_mode = 'ADVANCE' if (np >= required_net and coh >= 0.5) else 'HOLD_LINE'
+                self.unity_state = {
+                    'timestamp': time.time(),
+                    'mode': unity_mode,
+                    'net_profit': np,
+                    'required_net': required_net,
+                    'portfolio_equity': eq,
+                    'drawdown_pct': dd,
+                    'queen_signal': queen,
+                    'coherence': coh,
+                }
+
+                # Emit on thought bus for system-wide consensus.
+                try:
+                    if hasattr(self, 'thought_bus') and self.thought_bus:
+                        self.thought_bus.publish(Thought(
+                            source='ecosystem',
+                            topic='unity.consensus',
+                            payload=self.unity_state,
+                        ))
+                except Exception:
+                    pass
+
+                # 🦅⚔️ Adaptive Conversion Commando: act AFTER opportunity scan so it aligns with buy targets.
+                if hasattr(self, 'conversion_commando') and self.conversion_commando:
+                    try:
+                        # Preferred assets come from the current opportunity set.
+                        preferred_assets = []
+                        try:
+                            for opp in (raw_opps or [])[:50]:
+                                sym = str(opp.get('symbol') or '').upper()
+                                if not sym:
+                                    continue
+                                q = self._get_quote_asset(sym)
+                                if q and sym.endswith(q) and len(sym) > len(q):
+                                    base = sym[:-len(q)]
+                                    if base and base not in preferred_assets:
+                                        preferred_assets.append(base)
+                        except Exception:
+                            preferred_assets = []
+
+                        # Locked assets are those involved in open positions (don’t convert them away).
+                        locked_assets = set()
+                        try:
+                            for psym, pos in (self.positions or {}).items():
+                                s = str(psym or '').upper()
+                                if not s:
+                                    continue
+                                q = self._get_quote_asset(s)
+                                if q and s.endswith(q) and len(s) > len(q):
+                                    # Only lock the base asset; quote (often USDT) must remain usable.
+                                    locked_assets.add(s[:-len(q)])
+                        except Exception:
+                            locked_assets = set()
+
+                        mission = self.conversion_commando.step(
+                            ticker_cache=self.ticker_cache,
+                            scan_direction=self.scan_direction,
+                            net_profit=np,
+                            portfolio_equity=eq,
+                            preferred_assets=preferred_assets,
+                            locked_assets=sorted(locked_assets),
+                        )
+                        if mission:
+                            emoji = {"falcon": "🦅", "tortoise": "🐢", "chameleon": "🦎", "bee": "🐝"}.get(mission.commando, "🪜")
+                            print(
+                                f"   {emoji} {mission.commando.upper()}[{mission.direction}] {mission.exchange}: "
+                                f"{mission.from_asset}->{mission.to_asset} amt={mission.amount:.6f}"
+                            )
+                    except Exception as e:
+                        logger.debug(f"Conversion commando post-scan: {e}")
                 l_state = self.lattice.update(raw_opps)
 
                 # ==== COGNITION TICK (system talks to itself via JSON) ====
                 # Build market snapshot for cognition system
                 # Use top 100 symbols to avoid overwhelming
-                cognition_symbols = list(self.ticker_cache.keys())[:100]
-                market_by_symbol = {}
-                
-                for sym in cognition_symbols:
-                    if sym in self.ticker_cache:
-                        ticker = self.ticker_cache[sym]
-                        # Get price history if available, else just current price
-                        prices = self.price_history.get(sym, [ticker['price']])[-20:]
-                        
-                        # Calculate momentum and gamma from your existing data
-                        momentum = ticker.get('change24h', 0.0)
-                        
-                        # Try to get coherence from existing opportunity data
-                        gamma = 0.5  # default
-                        # We can look up in raw_opps if available
-                        for opp in raw_opps:
-                            if opp['symbol'] == sym:
-                                gamma = opp.get('coherence', 0.5)
-                                break
-                        
-                        market_by_symbol[sym] = {
-                            "closes": prices,
-                            "momentum": momentum,
-                            "gamma": gamma,
-                            "price": ticker['price'],
-                            "volume": ticker['volume'],
-                        }
-                
-                # Publish snapshot - this triggers the entire cognition chain
-                self.thought_bus.publish(Thought(
-                    source="ecosystem",
-                    topic="market.snapshot",
-                    payload={
-                        "universe": cognition_symbols,
-                        "market_by_symbol": market_by_symbol,
-                    },
-                ))
-                
-                # Run immune scan post cognition tick
-                if hasattr(self, 'immune_system'):
-                    self.immune_system.scan_and_heal()
+                try:
+                    fast_mode = str(os.getenv('AUREON_FAST_MODE', '0')).strip().lower() in ('1', 'true', 'yes', 'on')
+                except Exception:
+                    fast_mode = False
+
+                if not fast_mode:
+                    cognition_symbols = list(self.ticker_cache.keys())[:100]
+                    market_by_symbol = {}
+
+                    # Speed: avoid scanning raw_opps for each symbol.
+                    opp_coh = {}
+                    try:
+                        for opp in (raw_opps or []):
+                            sym = opp.get('symbol')
+                            if sym:
+                                opp_coh[sym] = opp.get('coherence', 0.5)
+                    except Exception:
+                        opp_coh = {}
+
+                    for sym in cognition_symbols:
+                        if sym in self.ticker_cache:
+                            ticker = self.ticker_cache[sym]
+                            # Get price history if available, else just current price
+                            prices = self.price_history.get(sym, [ticker['price']])[-20:]
+
+                            # Calculate momentum and gamma from your existing data
+                            momentum = ticker.get('change24h', 0.0)
+                            gamma = float(opp_coh.get(sym, 0.5) or 0.5)
+
+                            market_by_symbol[sym] = {
+                                "closes": prices,
+                                "momentum": momentum,
+                                "gamma": gamma,
+                                "price": ticker['price'],
+                                "volume": ticker['volume'],
+                            }
+
+                    # Publish snapshot - this triggers the entire cognition chain
+                    self.thought_bus.publish(Thought(
+                        source="ecosystem",
+                        topic="market.snapshot",
+                        payload={
+                            "universe": cognition_symbols,
+                            "market_by_symbol": market_by_symbol,
+                        },
+                    ))
+
+                    # Run immune scan post cognition tick
+                    if hasattr(self, 'immune_system'):
+                        self.immune_system.scan_and_heal()
                 
                 # Apply Triadic Envelope Protocol to filter signals
                 all_opps = self.lattice.filter_signals(raw_opps)

@@ -210,6 +210,35 @@ class AlpacaClient:
 
         return all_quotes
 
+    def get_last_quote(self, symbol: str) -> Dict[str, Any]:
+        """
+        Compatibility helper used by some Aureon engines.
+
+        Returns a dict shaped like:
+          {"last": {"price": <mid>}, "raw": <api_response>}
+
+        For stocks, uses Alpaca data API latest quote.
+        """
+        sym = (symbol or "").upper().strip()
+        if not sym:
+            return {}
+        try:
+            # Alpaca stocks latest quote endpoint (data API)
+            resp = self._request(
+                "GET",
+                f"/v2/stocks/{sym}/quotes/latest",
+                base_url=self.data_url,
+            )
+            q = {}
+            if isinstance(resp, dict):
+                q = resp.get("quote") or resp.get("quotes", {}).get(sym) or resp
+            bp = float(q.get("bp", 0) or 0.0)
+            ap = float(q.get("ap", 0) or 0.0)
+            last = (bp + ap) / 2 if (bp > 0 and ap > 0) else (bp or ap or 0.0)
+            return {"last": {"price": last}, "raw": resp}
+        except Exception:
+            return {}
+
     def get_tradable_crypto_symbols(self, quote_filter: Optional[str] = None) -> List[str]:
         """
         Return all tradable crypto symbols in normalized Alpaca format.

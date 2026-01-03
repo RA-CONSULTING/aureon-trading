@@ -446,6 +446,7 @@ class MyceliumNetwork:
     # 🎯 THE ONE GOAL - ENCODED INTO EVERY FIBER
     # ═══════════════════════════════════════════════════════════════════════════════
     ONE_GOAL = "GROW_NET_PROFIT_FAST"
+    TARGET_EQUITY = 1_000_000.0  # 🎯 THE MILLION
 
     def acknowledge_war_band(self):
         """
@@ -455,9 +456,26 @@ class MyceliumNetwork:
         logger.info("🍄 Mycelium Network: Connected to Apache War Band (Autonomous Unit)")
         # The War Band operates as a specialized hunter-killer node
         # It feeds profit back into the ecosystem, fueling the mycelial growth.
-    GROWTH_AGGRESSION = 0.9  # 90% aggressive growth mode
-    COMPOUND_RATE = 0.95     # 95% of profits compound back
-    MIN_PROFIT_TARGET = 0.03 # Minimum $0.03 net profit per trade
+    
+    # ═══════════════════════════════════════════════════════════════════════════════
+    # 🎯 S5 MATHEMATICAL CONSTANTS - THE PATH TO $1,000,000
+    # ═══════════════════════════════════════════════════════════════════════════════
+    # S5 = Speed × Scale × Smart × Systematic × Sustainable
+    TARGET_MILLION = 1_000_000.0
+    GROWTH_AGGRESSION = 0.9999  # 99.99% MAXIMUM AGGRESSION - SPEED TO MILLION
+    COMPOUND_RATE = 0.995      # 99.5% of profits compound back (aggressive!)
+    MIN_PROFIT_TARGET = 0.001  # Minimum $0.001 net profit per conversion (micro profits)
+    
+    # S5 Velocity Constants
+    S5_VELOCITY_THRESHOLD = 100.0  # $/hour threshold for acceleration
+    S5_ACCELERATION_MULTIPLIER = 1.5  # Boost factor when velocity is high
+    S5_OPTIMAL_CONVERSIONS_PER_HOUR = 1000  # Target conversion frequency
+    S5_KELLY_FRACTION = 0.25  # Kelly criterion fraction for sizing
+    
+    # ⚡ SPEED OPTIMIZATION CONSTANTS
+    S5_CACHE_TTL = 60  # Cache TTL in seconds (1 minute)
+    S5_BATCH_SIZE = 100  # Batch size for bulk operations
+    S5_HOT_PATH_THRESHOLD = 10  # Executions to mark path as "hot"
     
     def __init__(self, initial_capital: float, agents_per_hive: int = 5,
                  target_multiplier: float = 2.0, leverage: float = 1.0,
@@ -481,12 +499,76 @@ class MyceliumNetwork:
         except Exception:
             self.target_equity = None
         
+        # ═══════════════════════════════════════════════════════════════════════════════
+        # 🔄 CONVERSION PROFIT METRICS - Track every conversion's net profit
+        # ═══════════════════════════════════════════════════════════════════════════════
+        self.conversion_metrics = {
+            'total_conversions': 0,
+            'successful_conversions': 0,
+            'failed_conversions': 0,
+            'total_conversion_profit': 0.0,
+            'total_conversion_fees': 0.0,
+            'net_conversion_profit': 0.0,
+            'conversion_profit_rate_per_hour': 0.0,
+            'best_path': None,
+            'best_path_profit': 0.0,
+            'worst_path': None,
+            'worst_path_loss': 0.0,
+            'path_performance': {},  # path_key -> {profit, count, avg_profit}
+            'asset_performance': {},  # asset -> {profit, conversions}
+            'exchange_performance': {},  # exchange -> {profit, conversions}
+            # S5 VELOCITY METRICS
+            'velocity_per_hour': 0.0,
+            'acceleration': 0.0,
+            'time_to_million': float('inf'),
+            'conversions_per_hour': 0.0,
+        }
+        self.conversion_history: deque = deque(maxlen=10000)  # 10K for velocity analysis
+        
+        # ═══════════════════════════════════════════════════════════════════════════════
+        # 🎯 S5 AGGRESSIVE CONVERSION GOALS - PATH TO $1,000,000
+        # ═══════════════════════════════════════════════════════════════════════════════
+        self.conversion_goals = {
+            'target_net_profit': self.TARGET_MILLION,  # $1,000,000 target
+            'min_profit_per_conversion': 0.0001,  # Minimum $0.0001 (micro profits add up!)
+            'target_daily_conversions': 10000,  # 10K conversions/day
+            'target_hourly_conversions': 500,  # ~500/hour
+            'target_daily_profit': 1000.0,  # Target $1000/day (365 days = $365K)
+            'target_hourly_profit': 50.0,  # Target $50/hour
+            'max_single_hop_fee_pct': 0.001,  # 0.1% max fee per hop (aggressive)
+            'velocity_target': 100.0,  # $/hour velocity target
+            'acceleration_target': 10.0,  # $/hour² acceleration target
+        }
+        
+        # S5 Adaptive State
+        self.s5_state = {
+            'phase': 'BOOTSTRAP',  # BOOTSTRAP -> GROWTH -> SCALE -> COMPOUND -> MILLION
+            'velocity_history': deque(maxlen=100),
+            'acceleration_history': deque(maxlen=100),
+            'phase_transitions': [],
+            'optimal_paths_cache': {},  # Cached optimal paths
+            'path_velocity': {},  # Velocity per path
+        }
+        
+        # ⚡ S5 SPEED CACHES - Hot path optimization
+        self._s5_score_cache = {}  # path_key -> (score, timestamp)
+        self._s5_hot_paths = set()  # Frequently used paths
+        self._s5_last_batch_time = time.time()
+        self._s5_pending_updates = []  # Batch updates queue
+        
         # Network state
         self.hives: List[Hive] = []
         self.generation = 0
         self.total_harvested = 0.0
         self.split_events: List[Dict] = []
         self.step_count = 0
+
+        # Ecosystem connectivity map (populated by orchestrators like MultiverseLiveEngine)
+        self.connection_map: Dict[str, Any] = {}
+
+        # Governing metrics (profit/portfolio health) pushed by orchestrators
+        self.governing_metrics: Dict[str, Any] = {}
+        self.metrics_history: deque = deque(maxlen=240)  # ~240 cycles worth of snapshots
         
         # Queen neuron - final decision aggregator
         self.queen_neuron = Neuron(id="queen", bias=0.0)
@@ -520,6 +602,100 @@ class MyceliumNetwork:
         
         logger.info(f"🍄 Mycelium Network initialized with ${initial_capital:.2f}")
         logger.info(f"🎯 ONE GOAL ACTIVE: {self.ONE_GOAL} | Aggression: {self.GROWTH_AGGRESSION*100}%")
+
+    def update_connection_map(self, connection_map: Dict[str, Any]) -> None:
+        """Store latest ecosystem connectivity graph so Mycelium can reason over all connections."""
+        if isinstance(connection_map, dict):
+            self.connection_map = connection_map
+
+    def update_governing_metrics(self, metrics: Dict[str, Any]) -> None:
+        """Ingest governing metrics (net profit, win rate, drawdown, cash/positions) from the live engine."""
+        if not isinstance(metrics, dict):
+            return
+        self.governing_metrics = metrics
+        self.metrics_history.append(metrics)
+
+    def get_growth_governor(self) -> Dict[str, Any]:
+        """Convert governing metrics into a growth/portfolio governor for the ONE GOAL."""
+        m = self.governing_metrics or {}
+
+        def _f(key: str, default: float = 0.0) -> float:
+            try:
+                return float(m.get(key, default) or default)
+            except Exception:
+                return float(default)
+
+        total_equity = _f("total_equity", 0.0)
+        total_cash = _f("total_cash", 0.0)
+        realized_pnl_total = _f("realized_pnl_total", 0.0)
+        win_rate = _f("win_rate", 0.0)
+        drawdown_pct = _f("drawdown_pct", 0.0)
+        positions_count = int(m.get("positions_count", 0) or 0)
+
+        # Baseline defaults: conservative but active
+        governor: Dict[str, Any] = {
+            "allow_entries": True,
+            "entry_budget_scale": 1.0,
+            "entry_confidence_floor": 0.4,
+            "max_entries_per_cycle": 3,
+            "max_positions_total": 12,
+            "reason": "baseline",
+        }
+
+        # Hard constraint: if basically no cash, don’t try to expand
+        if total_cash < 1.0:
+            governor.update({
+                "allow_entries": False,
+                "entry_budget_scale": 0.0,
+                "max_entries_per_cycle": 0,
+                "reason": "cash_low",
+            })
+            return governor
+
+        # Risk control: if drawdown is material, tighten up
+        if drawdown_pct >= 10.0:
+            governor.update({
+                "allow_entries": True,
+                "entry_budget_scale": 0.3,
+                "entry_confidence_floor": 0.8,
+                "max_entries_per_cycle": 1,
+                "max_positions_total": max(4, min(positions_count, 8)),
+                "reason": "drawdown_control",
+            })
+            return governor
+
+        # Profit expansion: if we’re net-positive and winning, expand portfolio pressure
+        if realized_pnl_total > 0 and win_rate >= 0.55:
+            # Scale with equity: larger equity can support more positions
+            max_pos = 12
+            if total_equity >= 250:
+                max_pos = 18
+            if total_equity >= 1000:
+                max_pos = 25
+
+            governor.update({
+                "allow_entries": True,
+                "entry_budget_scale": 1.25,
+                "entry_confidence_floor": 0.35,
+                "max_entries_per_cycle": 5,
+                "max_positions_total": max_pos,
+                "reason": "expand_profitable",
+            })
+            return governor
+
+        # If win-rate is low, tighten entries until the system proves itself
+        if win_rate > 0 and win_rate < 0.45:
+            governor.update({
+                "allow_entries": True,
+                "entry_budget_scale": 0.5,
+                "entry_confidence_floor": 0.75,
+                "max_entries_per_cycle": 1,
+                "max_positions_total": 8,
+                "reason": "winrate_low",
+            })
+            return governor
+
+        return governor
 
     def set_target_equity(self, target_equity: float | None) -> None:
         """Set/override an absolute network goal (optional)."""
@@ -695,6 +871,697 @@ class MyceliumNetwork:
         
         logger.info(f"🎯 NET PROFIT: ${net_profit:+.4f} | Total: ${self.net_profit_total:.2f} | Rate: ${self.profit_rate_per_hour:.2f}/hr")
     
+    # ═══════════════════════════════════════════════════════════════════════════════
+    # 🔄 CONVERSION PROFIT TRACKING - The Labyrinth's Profit Map
+    # ═══════════════════════════════════════════════════════════════════════════════
+    
+    def record_conversion_profit(self, conversion_data: Dict[str, Any]) -> None:
+        """
+        Record profit from a conversion - CRITICAL FOR LABYRINTH LEARNING!
+        
+        Args:
+            conversion_data: {
+                'from_asset': str,
+                'to_asset': str,
+                'exchange': str,
+                'path': List[Dict],  # The conversion path used
+                'input_amount': float,
+                'output_amount': float,
+                'input_value_usd': float,
+                'output_value_usd': float,
+                'fees': float,
+                'net_profit': float,
+                'success': bool,
+                'hops': int,
+            }
+        """
+        from_asset = conversion_data.get('from_asset', '')
+        to_asset = conversion_data.get('to_asset', '')
+        exchange = conversion_data.get('exchange', '')
+        path = conversion_data.get('path', [])
+        net_profit = float(conversion_data.get('net_profit', 0) or 0)
+        fees = float(conversion_data.get('fees', 0) or 0)
+        success = conversion_data.get('success', False)
+        hops = conversion_data.get('hops', 1)
+        
+        # Update basic metrics
+        self.conversion_metrics['total_conversions'] += 1
+        if success:
+            self.conversion_metrics['successful_conversions'] += 1
+        else:
+            self.conversion_metrics['failed_conversions'] += 1
+        
+        self.conversion_metrics['total_conversion_profit'] += max(net_profit, 0)
+        self.conversion_metrics['total_conversion_fees'] += fees
+        self.conversion_metrics['net_conversion_profit'] += net_profit
+        
+        # Update profit rate
+        elapsed_hours = max((time.time() - self.start_time) / 3600, 0.001)
+        self.conversion_metrics['conversion_profit_rate_per_hour'] = \
+            self.conversion_metrics['net_conversion_profit'] / elapsed_hours
+        
+        # Track path performance (key = "FROM→TO" or "FROM→INTER→TO")
+        path_key = f"{from_asset}→{to_asset}"
+        if path and len(path) > 1:
+            intermediates = [step.get('to', '') for step in path[:-1]]
+            path_key = f"{from_asset}→{'→'.join(intermediates)}→{to_asset}"
+        
+        if path_key not in self.conversion_metrics['path_performance']:
+            self.conversion_metrics['path_performance'][path_key] = {
+                'profit': 0.0, 'count': 0, 'avg_profit': 0.0, 'wins': 0, 'losses': 0
+            }
+        
+        pm = self.conversion_metrics['path_performance'][path_key]
+        pm['profit'] += net_profit
+        pm['count'] += 1
+        pm['avg_profit'] = pm['profit'] / pm['count'] if pm['count'] > 0 else 0
+        if net_profit > 0:
+            pm['wins'] += 1
+        else:
+            pm['losses'] += 1
+        
+        # Track best/worst paths
+        if net_profit > self.conversion_metrics['best_path_profit']:
+            self.conversion_metrics['best_path_profit'] = net_profit
+            self.conversion_metrics['best_path'] = path_key
+        if net_profit < self.conversion_metrics['worst_path_loss']:
+            self.conversion_metrics['worst_path_loss'] = net_profit
+            self.conversion_metrics['worst_path'] = path_key
+        
+        # Track asset performance
+        for asset in [from_asset, to_asset]:
+            if asset not in self.conversion_metrics['asset_performance']:
+                self.conversion_metrics['asset_performance'][asset] = {'profit': 0.0, 'conversions': 0}
+            self.conversion_metrics['asset_performance'][asset]['profit'] += net_profit / 2
+            self.conversion_metrics['asset_performance'][asset]['conversions'] += 1
+        
+        # Track exchange performance
+        if exchange not in self.conversion_metrics['exchange_performance']:
+            self.conversion_metrics['exchange_performance'][exchange] = {'profit': 0.0, 'conversions': 0}
+        self.conversion_metrics['exchange_performance'][exchange]['profit'] += net_profit
+        self.conversion_metrics['exchange_performance'][exchange]['conversions'] += 1
+        
+        # Store in history
+        self.conversion_history.append({
+            'timestamp': time.time(),
+            **conversion_data,
+            'path_key': path_key,
+        })
+        
+        # ═══════════════════════════════════════════════════════════════════════════════
+        # 🚀 S5 VELOCITY & ACCELERATION TRACKING - THE MATH TO $1,000,000
+        # ═══════════════════════════════════════════════════════════════════════════════
+        self._update_s5_velocity(net_profit, path_key)
+        
+        # Also record to main profit tracker (conversions are profits too!)
+        if success and net_profit > 0:
+            self.record_trade_profit(net_profit, {
+                'source': 'conversion',
+                'from': from_asset,
+                'to': to_asset,
+                'exchange': exchange,
+                'hops': hops,
+            })
+        
+        # Log with S5 metrics
+        status = "✅" if success and net_profit >= 0 else "⚠️"
+        velocity = self.conversion_metrics.get('velocity_per_hour', 0)
+        ttm = self.conversion_metrics.get('time_to_million', float('inf'))
+        ttm_str = f"{ttm:.1f}h" if ttm < 10000 else "∞"
+        
+        logger.info(
+            f"🔄 CONVERSION: {status} {path_key} | "
+            f"Net: ${net_profit:+.4f} | Total: ${self.conversion_metrics['net_conversion_profit']:.2f} | "
+            f"V: ${velocity:.2f}/hr | TTM: {ttm_str}"
+        )
+    
+    def _update_s5_velocity(self, net_profit: float, path_key: str) -> None:
+        """
+        S5 VELOCITY ENGINE - Track profit velocity and acceleration for $1M path.
+        
+        The Math:
+        - Velocity (v) = Δprofit / Δtime ($/hour)
+        - Acceleration (a) = Δvelocity / Δtime ($/hour²)
+        - Time to Million = (TARGET - current) / velocity
+        
+        S5 Logic:
+        1. Speed: Maximize conversion frequency
+        2. Scale: Increase position sizes on winning paths
+        3. Smart: Route to highest-velocity paths
+        4. Systematic: Phase transitions at milestones
+        5. Sustainable: Compound aggressively while managing risk
+        """
+        now = time.time()
+        elapsed_hours = max((now - self.start_time) / 3600, 0.001)
+        
+        # Current velocity
+        current_profit = self.conversion_metrics['net_conversion_profit']
+        current_velocity = current_profit / elapsed_hours
+        self.conversion_metrics['velocity_per_hour'] = current_velocity
+        
+        # Conversion frequency
+        total_conv = self.conversion_metrics['total_conversions']
+        self.conversion_metrics['conversions_per_hour'] = total_conv / elapsed_hours
+        
+        # Track velocity history for acceleration
+        self.s5_state['velocity_history'].append({
+            'ts': now,
+            'velocity': current_velocity,
+            'profit': current_profit,
+        })
+        
+        # Calculate acceleration (change in velocity)
+        if len(self.s5_state['velocity_history']) >= 2:
+            recent = list(self.s5_state['velocity_history'])[-10:]  # Last 10 readings
+            if len(recent) >= 2:
+                v1 = recent[0]['velocity']
+                v2 = recent[-1]['velocity']
+                t1 = recent[0]['ts']
+                t2 = recent[-1]['ts']
+                dt = max((t2 - t1) / 3600, 0.001)  # Hours
+                acceleration = (v2 - v1) / dt
+                self.conversion_metrics['acceleration'] = acceleration
+                self.s5_state['acceleration_history'].append({
+                    'ts': now,
+                    'acceleration': acceleration,
+                })
+        
+        # Time to Million calculation
+        remaining = self.TARGET_MILLION - current_profit
+        if current_velocity > 0:
+            ttm_hours = remaining / current_velocity
+            self.conversion_metrics['time_to_million'] = ttm_hours
+        else:
+            self.conversion_metrics['time_to_million'] = float('inf')
+        
+        # Track path-specific velocity
+        if path_key not in self.s5_state['path_velocity']:
+            self.s5_state['path_velocity'][path_key] = {
+                'profit': 0.0, 'count': 0, 'first_ts': now, 'velocity': 0.0
+            }
+        pv = self.s5_state['path_velocity'][path_key]
+        pv['profit'] += net_profit
+        pv['count'] += 1
+        path_hours = max((now - pv['first_ts']) / 3600, 0.001)
+        pv['velocity'] = pv['profit'] / path_hours
+        
+        # S5 Phase Transitions
+        self._check_s5_phase_transition(current_profit, current_velocity)
+    
+    def _check_s5_phase_transition(self, profit: float, velocity: float) -> None:
+        """
+        S5 Phase Management - Automatic scaling based on progress.
+        
+        Phases:
+        - BOOTSTRAP: $0 - $100 (learning paths)
+        - GROWTH: $100 - $10,000 (optimizing velocity)
+        - SCALE: $10,000 - $100,000 (parallel execution)
+        - COMPOUND: $100,000 - $500,000 (aggressive compounding)
+        - MILLION: $500,000 - $1,000,000 (final push)
+        """
+        old_phase = self.s5_state['phase']
+        new_phase = old_phase
+        
+        if profit < 100:
+            new_phase = 'BOOTSTRAP'
+        elif profit < 10_000:
+            new_phase = 'GROWTH'
+        elif profit < 100_000:
+            new_phase = 'SCALE'
+        elif profit < 500_000:
+            new_phase = 'COMPOUND'
+        else:
+            new_phase = 'MILLION'
+        
+        if new_phase != old_phase:
+            self.s5_state['phase'] = new_phase
+            self.s5_state['phase_transitions'].append({
+                'from': old_phase,
+                'to': new_phase,
+                'profit': profit,
+                'velocity': velocity,
+                'ts': time.time(),
+            })
+            logger.info(f"🚀 S5 PHASE TRANSITION: {old_phase} → {new_phase} | Profit: ${profit:.2f} | Velocity: ${velocity:.2f}/hr")
+    
+    def get_conversion_stats(self) -> Dict[str, Any]:
+        """Get detailed conversion statistics for monitoring."""
+        elapsed_hours = max((time.time() - self.start_time) / 3600, 0.001)
+        elapsed_days = elapsed_hours / 24
+        
+        total = self.conversion_metrics['total_conversions']
+        success = self.conversion_metrics['successful_conversions']
+        
+        # Calculate daily rate
+        daily_conversions = total / elapsed_days if elapsed_days > 0 else 0
+        daily_profit = self.conversion_metrics['net_conversion_profit'] / elapsed_days if elapsed_days > 0 else 0
+        
+        # Get top performing paths
+        path_perf = self.conversion_metrics['path_performance']
+        top_paths = sorted(
+            [(k, v) for k, v in path_perf.items()],
+            key=lambda x: x[1]['avg_profit'],
+            reverse=True
+        )[:5]
+        
+        # Get top performing assets
+        asset_perf = self.conversion_metrics['asset_performance']
+        top_assets = sorted(
+            [(k, v) for k, v in asset_perf.items()],
+            key=lambda x: x[1]['profit'],
+            reverse=True
+        )[:10]
+        
+        return {
+            'total_conversions': total,
+            'successful_conversions': success,
+            'failed_conversions': self.conversion_metrics['failed_conversions'],
+            'success_rate': success / total if total > 0 else 0,
+            'net_conversion_profit': self.conversion_metrics['net_conversion_profit'],
+            'total_fees': self.conversion_metrics['total_conversion_fees'],
+            'profit_rate_per_hour': self.conversion_metrics['conversion_profit_rate_per_hour'],
+            'profit_rate_per_day': self.conversion_metrics['conversion_profit_rate_per_hour'] * 24,
+            'daily_conversions': daily_conversions,
+            'daily_profit': daily_profit,
+            'best_path': self.conversion_metrics['best_path'],
+            'best_path_profit': self.conversion_metrics['best_path_profit'],
+            'worst_path': self.conversion_metrics['worst_path'],
+            'worst_path_loss': self.conversion_metrics['worst_path_loss'],
+            'top_paths': top_paths,
+            'top_assets': top_assets,
+            'goals': self.conversion_goals,
+            'goal_progress': {
+                'daily_conversions': daily_conversions / self.conversion_goals['target_daily_conversions'],
+                'daily_profit': daily_profit / self.conversion_goals['target_daily_profit'],
+                'to_million': self.conversion_metrics['net_conversion_profit'] / self.TARGET_MILLION,
+            },
+            # S5 METRICS
+            's5': {
+                'phase': self.s5_state['phase'],
+                'velocity': self.conversion_metrics.get('velocity_per_hour', 0),
+                'acceleration': self.conversion_metrics.get('acceleration', 0),
+                'time_to_million': self.conversion_metrics.get('time_to_million', float('inf')),
+                'conversions_per_hour': self.conversion_metrics.get('conversions_per_hour', 0),
+                'phase_transitions': len(self.s5_state.get('phase_transitions', [])),
+                'top_velocity_paths': self._get_top_velocity_paths(5),
+            },
+        }
+    
+    def _get_top_velocity_paths(self, n: int = 5) -> List[Dict]:
+        """Get the N highest velocity paths."""
+        pv = self.s5_state.get('path_velocity', {})
+        sorted_paths = sorted(
+            [(k, v) for k, v in pv.items()],
+            key=lambda x: x[1]['velocity'],
+            reverse=True
+        )[:n]
+        return [
+            {'path': p[0], 'velocity': p[1]['velocity'], 'count': p[1]['count'], 'profit': p[1]['profit']}
+            for p in sorted_paths
+        ]
+    
+    # ═══════════════════════════════════════════════════════════════════════════════
+    # 🔥🔥🔥 S5 AGGRESSIVE OPTIMIZATION ENGINE 🔥🔥🔥
+    # Speed × Scale × Smart × Systematic × Sustainable = $1,000,000
+    # ═══════════════════════════════════════════════════════════════════════════════
+    
+    def s5_calculate_optimal_size(self, estimated_profit: float, confidence: float, 
+                                   available_balance: float) -> float:
+        """
+        S5 Kelly-based position sizing for aggressive compounding.
+        
+        Kelly Formula: f* = (bp - q) / b
+        Where:
+            b = net odds (estimated_profit / risk)
+            p = probability of winning (confidence)
+            q = probability of losing (1 - p)
+            f* = fraction of bankroll to bet
+        
+        We use fractional Kelly (S5_KELLY_FRACTION) for safety while still being aggressive.
+        """
+        if estimated_profit <= 0 or confidence <= 0:
+            return 0.0
+        
+        # Calculate Kelly fraction
+        # Assume risk = potential loss (conservative estimate: 2x the profit we expect)
+        risk = max(estimated_profit * 2, 0.001)
+        b = estimated_profit / risk  # Net odds
+        p = confidence
+        q = 1 - p
+        
+        kelly_fraction = (b * p - q) / b if b > 0 else 0
+        kelly_fraction = max(0, kelly_fraction)  # Can't be negative
+        
+        # Apply S5 Kelly fraction (conservative Kelly)
+        optimal_fraction = kelly_fraction * self.S5_KELLY_FRACTION
+        
+        # S5 Phase-based scaling
+        phase_multipliers = {
+            'BOOTSTRAP': 0.5,   # Conservative in early phase
+            'GROWTH': 0.8,      # Building momentum
+            'SCALE': 1.0,       # Full speed
+            'COMPOUND': 1.2,    # Aggressive compounding
+            'MILLION': 1.5      # Maximum aggression
+        }
+        phase_mult = phase_multipliers.get(self.s5_state['phase'], 1.0)
+        optimal_fraction *= phase_mult
+        
+        # Velocity boost: if we're making money fast, size up
+        velocity = self.conversion_metrics.get('velocity_per_hour', 0)
+        if velocity > self.S5_VELOCITY_THRESHOLD:
+            velocity_boost = min(velocity / self.S5_VELOCITY_THRESHOLD, 2.0)
+            optimal_fraction *= (1 + (velocity_boost - 1) * 0.3)  # 30% of velocity boost
+        
+        # Cap at reasonable limits
+        optimal_fraction = min(optimal_fraction, 0.15)  # Max 15% per trade
+        
+        # Calculate actual size
+        optimal_size = available_balance * optimal_fraction
+        
+        return round(optimal_size, 8)
+    
+    def s5_adaptive_labyrinth_score(self, path_key: str, base_profit: float) -> float:
+        """
+        Score a labyrinth path based on S5 metrics.
+        Higher scores = prioritize this path.
+        
+        ⚡ SPEED OPTIMIZED: Uses caching for hot paths.
+        
+        Factors:
+        - Historical velocity on this path
+        - Win rate on this path
+        - Recent acceleration
+        - Phase-appropriate scaling
+        """
+        # ⚡ Check cache first
+        now = time.time()
+        cached = self._s5_score_cache.get(path_key)
+        if cached and (now - cached[1]) < self.S5_CACHE_TTL:
+            # Use cached score, adjust for new base_profit
+            cached_base = cached[2] if len(cached) > 2 else 1.0
+            if cached_base > 0:
+                return cached[0] * (base_profit / cached_base)
+        
+        score = base_profit * 1000  # Base score from profit
+        
+        # Path velocity bonus
+        path_data = self.s5_state['path_velocity'].get(path_key, {})
+        path_velocity = path_data.get('velocity', 0)
+        if path_velocity > 0:
+            score += path_velocity * 10  # Velocity bonus
+        
+        # Win rate bonus from path_performance
+        path_perf = self.conversion_metrics['path_performance'].get(path_key, {})
+        if path_perf:
+            total = path_perf.get('wins', 0) + path_perf.get('losses', 0)
+            if total >= 3:
+                win_rate = path_perf.get('wins', 0) / total
+                score *= (0.5 + win_rate)  # 50%-150% based on win rate
+            
+            # ⚡ Mark hot paths
+            if total >= self.S5_HOT_PATH_THRESHOLD:
+                self._s5_hot_paths.add(path_key)
+        
+        # Acceleration bonus: reward paths that are accelerating
+        acceleration = self.conversion_metrics.get('acceleration', 0)
+        if acceleration > 0:
+            score *= (1 + acceleration * 0.01)  # 1% per $/hour² acceleration
+        
+        # Phase multiplier
+        phase_scores = {
+            'BOOTSTRAP': 0.8,
+            'GROWTH': 1.0,
+            'SCALE': 1.2,
+            'COMPOUND': 1.5,
+            'MILLION': 2.0
+        }
+        score *= phase_scores.get(self.s5_state['phase'], 1.0)
+        
+        # ⚡ Cache the score
+        self._s5_score_cache[path_key] = (score, now, base_profit)
+        
+        return score
+    
+    def s5_flush_batch_updates(self):
+        """⚡ Flush pending batch updates for speed optimization."""
+        if not self._s5_pending_updates:
+            return
+        
+        # Process all pending updates in one batch
+        for update in self._s5_pending_updates:
+            path_key = update['path_key']
+            profit = update['profit']
+            success = update['success']
+            self.s5_update_labyrinth_cache(path_key, profit, success)
+        
+        self._s5_pending_updates.clear()
+        self._s5_last_batch_time = time.time()
+        
+    def s5_queue_update(self, path_key: str, profit: float, success: bool):
+        """⚡ Queue an update for batch processing."""
+        self._s5_pending_updates.append({
+            'path_key': path_key,
+            'profit': profit,
+            'success': success
+        })
+        
+        # Auto-flush if batch is full or time threshold reached
+        if (len(self._s5_pending_updates) >= self.S5_BATCH_SIZE or 
+            time.time() - self._s5_last_batch_time > 5):  # 5 second max wait
+            self.s5_flush_batch_updates()
+    
+    def s5_get_hot_paths(self) -> List[str]:
+        """⚡ Get list of hot (frequently used) paths."""
+        return list(self._s5_hot_paths)
+    
+    def s5_rank_conversion_paths(self, paths: List[Dict]) -> List[Dict]:
+        """
+        Rank conversion paths by S5 adaptive score.
+        Input: List of dicts with 'from', 'to', 'estimated_profit', etc.
+        Output: Sorted list with 's5_score' added, highest first.
+        """
+        scored = []
+        for path in paths:
+            path_key = f"{path.get('from', '?')}→{path.get('to', '?')}"
+            estimated_profit = path.get('estimated_profit', 0)
+            
+            s5_score = self.s5_adaptive_labyrinth_score(path_key, estimated_profit)
+            path_copy = dict(path)
+            path_copy['s5_score'] = s5_score
+            path_copy['path_key'] = path_key
+            scored.append(path_copy)
+        
+        # Sort by S5 score descending
+        scored.sort(key=lambda x: x['s5_score'], reverse=True)
+        return scored
+    
+    def s5_get_optimal_conversions(self, available_paths: List[Dict], 
+                                    max_conversions: int = 10) -> List[Dict]:
+        """
+        Get the optimal set of conversions to execute based on S5 math.
+        
+        This is the BRAIN of S5 - it decides WHAT to convert and HOW MUCH.
+        """
+        if not available_paths:
+            return []
+        
+        # Rank all paths
+        ranked = self.s5_rank_conversion_paths(available_paths)
+        
+        # Filter paths that meet minimum thresholds
+        min_profit = self.conversion_goals['min_profit_per_conversion']
+        viable = [p for p in ranked if p.get('estimated_profit', 0) >= min_profit]
+        
+        # Select top N paths
+        selected = viable[:max_conversions]
+        
+        # Log S5 selection
+        if selected:
+            logger.info(f"🔥 S5 OPTIMAL: Selected {len(selected)} conversions, "
+                       f"top score={selected[0]['s5_score']:.2f}, "
+                       f"phase={self.s5_state['phase']}")
+        
+        return selected
+    
+    def s5_update_labyrinth_cache(self, path_key: str, profit: float, success: bool):
+        """
+        Update the adaptive labyrinth cache with new performance data.
+        This makes the labyrinth LEARN and ADAPT.
+        """
+        cache = self.s5_state['optimal_paths_cache']
+        
+        if path_key not in cache:
+            cache[path_key] = {
+                'total_profit': 0.0,
+                'executions': 0,
+                'successes': 0,
+                'failures': 0,
+                'avg_profit': 0.0,
+                'score': 0.0,
+                'last_used': time.time()
+            }
+        
+        cache[path_key]['executions'] += 1
+        cache[path_key]['total_profit'] += profit
+        cache[path_key]['last_used'] = time.time()
+        
+        if success:
+            cache[path_key]['successes'] += 1
+        else:
+            cache[path_key]['failures'] += 1
+        
+        # Update averages
+        cache[path_key]['avg_profit'] = (
+            cache[path_key]['total_profit'] / cache[path_key]['executions']
+        )
+        
+        # Update score
+        win_rate = cache[path_key]['successes'] / max(cache[path_key]['executions'], 1)
+        cache[path_key]['score'] = cache[path_key]['avg_profit'] * win_rate
+        
+        # Prune old/bad paths from cache (keep cache efficient)
+        if len(cache) > 500:  # Max 500 cached paths
+            # Remove paths with negative avg profit or not used in 24h
+            cutoff = time.time() - 86400
+            to_remove = [
+                k for k, v in cache.items()
+                if v['avg_profit'] < 0 or v['last_used'] < cutoff
+            ]
+            for k in to_remove[:100]:  # Remove up to 100 bad paths
+                del cache[k]
+    
+    def s5_get_time_to_million(self) -> Dict[str, Any]:
+        """
+        Calculate detailed time-to-million metrics.
+        """
+        current_profit = self.conversion_metrics['net_conversion_profit']
+        velocity = self.conversion_metrics.get('velocity_per_hour', 0)
+        acceleration = self.conversion_metrics.get('acceleration', 0)
+        
+        remaining = self.TARGET_MILLION - current_profit
+        
+        # Linear estimate
+        ttm_linear = remaining / velocity if velocity > 0 else float('inf')
+        
+        # Accelerated estimate (with current acceleration continuing)
+        # Using: distance = v*t + 0.5*a*t^2, solve for t
+        # t = (-v + sqrt(v^2 + 2*a*remaining)) / a
+        ttm_accelerated = float('inf')
+        if acceleration > 0:
+            discriminant = velocity**2 + 2 * acceleration * remaining
+            if discriminant >= 0:
+                ttm_accelerated = (-velocity + discriminant**0.5) / acceleration
+                ttm_accelerated = max(0, ttm_accelerated)
+        
+        # Progress percentage
+        progress_pct = (current_profit / self.TARGET_MILLION) * 100
+        
+        return {
+            'current_profit': current_profit,
+            'target': self.TARGET_MILLION,
+            'remaining': remaining,
+            'progress_pct': progress_pct,
+            'velocity_per_hour': velocity,
+            'acceleration': acceleration,
+            'ttm_hours_linear': ttm_linear,
+            'ttm_days_linear': ttm_linear / 24 if ttm_linear != float('inf') else float('inf'),
+            'ttm_hours_accelerated': ttm_accelerated,
+            'ttm_days_accelerated': ttm_accelerated / 24 if ttm_accelerated != float('inf') else float('inf'),
+            'phase': self.s5_state['phase'],
+        }
+    
+    def s5_summary(self) -> str:
+        """
+        Get a human-readable S5 progress summary.
+        """
+        ttm = self.s5_get_time_to_million()
+        
+        phase_emoji = {
+            'BOOTSTRAP': '🌱',
+            'GROWTH': '🌿',
+            'SCALE': '🌳',
+            'COMPOUND': '🔥',
+            'MILLION': '💎'
+        }
+        emoji = phase_emoji.get(ttm['phase'], '📊')
+        
+        summary = f"""
+{emoji} S5 MILLION DOLLAR TRACKER {emoji}
+═══════════════════════════════════════
+💰 Current:    ${ttm['current_profit']:,.2f}
+🎯 Target:     ${ttm['target']:,.0f}
+📊 Progress:   {ttm['progress_pct']:.4f}%
+🚀 Velocity:   ${ttm['velocity_per_hour']:.2f}/hour
+⚡ Accel:      ${ttm['acceleration']:.4f}/hour²
+⏱️ TTM:        {ttm['ttm_days_linear']:.1f} days (linear)
+🔥 TTM Accel:  {ttm['ttm_days_accelerated']:.1f} days (accelerated)
+📈 Phase:      {ttm['phase']}
+═══════════════════════════════════════
+"""
+        return summary
+    
+    def should_convert(self, from_asset: str, to_asset: str, estimated_profit: float, hops: int = 1) -> bool:
+        """
+        Decide if a conversion is worth making based on profit potential.
+        Uses historical performance data to make intelligent decisions.
+        """
+        # Must meet minimum profit threshold
+        min_profit = self.conversion_goals['min_profit_per_conversion']
+        if estimated_profit < min_profit:
+            return False
+        
+        # Check path performance history
+        path_key = f"{from_asset}→{to_asset}"
+        path_perf = self.conversion_metrics['path_performance'].get(path_key)
+        
+        if path_perf:
+            # If this path has historically lost money, require higher profit estimate
+            if path_perf['avg_profit'] < 0:
+                required_profit = min_profit * 3  # 3x threshold for historically bad paths
+                if estimated_profit < required_profit:
+                    return False
+            
+            # If win rate is low, require higher confidence
+            total = path_perf['wins'] + path_perf['losses']
+            if total >= 5:  # Enough history
+                win_rate = path_perf['wins'] / total
+                if win_rate < 0.5 and estimated_profit < min_profit * 2:
+                    return False
+        
+        # Multi-hop penalty: each additional hop increases fee risk
+        max_fee_per_hop = self.conversion_goals['max_single_hop_fee_pct']
+        estimated_total_fee = max_fee_per_hop * hops
+        if estimated_total_fee > estimated_profit * 0.5:  # Fees would eat >50% of profit
+            return False
+        
+        return True
+    
+    def get_best_conversion_path(self, from_asset: str, available_targets: List[str]) -> Optional[str]:
+        """
+        Recommend the best conversion target based on historical performance.
+        """
+        best_target = None
+        best_score = float('-inf')
+        
+        for target in available_targets:
+            path_key = f"{from_asset}→{target}"
+            path_perf = self.conversion_metrics['path_performance'].get(path_key)
+            
+            if path_perf and path_perf['count'] >= 3:
+                # Score = avg_profit * win_rate
+                total = path_perf['wins'] + path_perf['losses']
+                win_rate = path_perf['wins'] / total if total > 0 else 0.5
+                score = path_perf['avg_profit'] * win_rate
+            else:
+                # Unknown path: neutral score
+                score = 0.0
+            
+            if score > best_score:
+                best_score = score
+                best_target = target
+        
+        return best_target
+
     def get_growth_stats(self) -> Dict[str, Any]:
         """
         Get growth statistics - how fast are we achieving THE GOAL?
@@ -866,8 +1733,9 @@ class MyceliumNetwork:
             logger.info(f"🔱 Enhanced Nexus synced to balance: ${actual_balance:,.2f}")
     
     def get_state(self) -> Dict[str, Any]:
-        """Get full network state - INCLUDING THE GOAL METRICS!"""
+        """Get full network state - INCLUDING THE GOAL METRICS AND CONVERSION STATS!"""
         growth = self.get_growth_stats()
+        conversion_stats = self.get_conversion_stats()
         return {
             "timestamp": time.time(),
             "step": self.step_count,
@@ -881,7 +1749,16 @@ class MyceliumNetwork:
             "total_harvested": self.total_harvested,
             "generation": self.generation,
             "hives": [hive.get_metrics() for hive in self.hives],
-            "split_events": self.split_events[-10:]  # Last 10 splits
+            "split_events": self.split_events[-10:],  # Last 10 splits
+            # 🔄 CONVERSION METRICS
+            "conversion_stats": {
+                "total_conversions": conversion_stats["total_conversions"],
+                "success_rate": conversion_stats["success_rate"],
+                "net_conversion_profit": conversion_stats["net_conversion_profit"],
+                "profit_rate_per_day": conversion_stats["profit_rate_per_day"],
+                "best_path": conversion_stats["best_path"],
+                "goal_progress": conversion_stats["goal_progress"],
+            },
         }
     
     def display(self):

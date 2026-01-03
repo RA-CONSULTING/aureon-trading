@@ -1,0 +1,68 @@
+{
+  "timestamp": "2026-01-02T23:57:14.750120",
+  "total_steps": 4,
+  "total_profit": 0.000186820171875,
+  "snowball": 1.0080240320159999,
+  "learning_multiplier": 0.9166666666666666,
+  "consensus_accuracy": 0.25,
+  "stones": [
+    {
+      "exchange": "kraken",
+      "asset": "DASH",
+      "action": "sell",
+      "amount": 0.14566875,
+      "profit": 0.000186820171875,
+      "momentum": 0.01,
+      "probability": 0.7,
+      "mycelium_consensus": "NEUTRAL",
+      "time": "2026-01-02T23:56:45.501350"
+    },
+    {
+      "exchange": "kraken",
+      "asset": "ATOM",
+      "action": "sell",
+      "amount": 0.81063272,
+      "profit": 0.0,
+      "momentum": 0.0,
+      "probability": 0.6,
+      "mycelium_consensus": "NEUTRAL",
+      "time": "2026-01-02T23:56:59.964629"
+    },
+    {
+      "exchange": "kraken",
+      "asset": "DASH",
+      "action": "sell",
+      "amount": 0.072834375,
+      "profit": 0.0,
+      "momentum": 0.0,
+      "probability": 0.6325,
+      "mycelium_consensus": "NEUTRAL",
+      "time": "2026-01-02T23:57:04.917580"
+    },
+    {
+      "exchange": "kraken",
+      "asset": "DASH",
+      "action": "sell",
+      "amount": 0.0364171875,
+      "profit": 0.0,
+      "momentum": 0.0,
+      "probability": 0.6,
+      "mycelium_consensus": "NEUTRAL",
+      "time": "2026-01-02T23:57:07.371548"
+    }
+  ],
+  "rhythms": {
+    "ATOM": {
+      "trades": 1,
+      "wins": 0,
+      "win_rate": 0.0,
+      "total_profit": 0.0
+    },
+    "DASH": {
+      "trades": 4,
+      "wins": 1,
+      "win_rate": 0.25,
+      "total_profit": 0.000186820171875
+    }
+  }
+}
