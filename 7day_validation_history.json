@@ -4590,5 +4590,37 @@
     "actual_edge": 0.0,
     "direction_correct": true,
     "timing_score": 0.5
+  },
+  {
+    "validation_id": "TST_20260105_103145",
+    "symbol": "TST",
+    "entry_price": 0.01763,
+    "entry_time": "2026-01-05T10:31:45.775370",
+    "predicted_edge": 0,
+    "predicted_confidence": 0.5,
+    "hour": 10,
+    "day_of_week": 0,
+    "status": "validated",
+    "exit_price": 0.01763,
+    "exit_time": "2026-01-05T10:31:45.776677",
+    "actual_edge": 0.0,
+    "direction_correct": true,
+    "timing_score": 0.5
+  },
+  {
+    "validation_id": "VIRTUAL_20260105_103156",
+    "symbol": "VIRTUAL",
+    "entry_price": 1.055,
+    "entry_time": "2026-01-05T10:31:56.797457",
+    "predicted_edge": 0,
+    "predicted_confidence": 0.5,
+    "hour": 10,
+    "day_of_week": 0,
+    "status": "validated",
+    "exit_price": 1.055,
+    "exit_time": "2026-01-05T10:31:56.798755",
+    "actual_edge": 0.0,
+    "direction_correct": true,
+    "timing_score": 0.5
   }
 ]

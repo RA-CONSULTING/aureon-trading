@@ -222,5 +222,13 @@
   "AIXBT->BANANAS31": {
     "wins": 0.0,
     "losses": 1.0
+  },
+  "BROCCOLI714->TST": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "TST->VIRTUAL": {
+    "wins": 1.0,
+    "losses": 0.0
   }
 }

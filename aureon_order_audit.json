@@ -11777,11 +11777,99 @@
         "warnings": []
       },
       "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-05T10:31:45.732184",
+      "conversion_num": 1,
+      "exchange": "binance",
+      "from_asset": "BROCCOLI714",
+      "to_asset": "TST",
+      "from_amount": 1644.83592,
+      "to_amount": 2755.0,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": 62064662,
+          "exchange": "binance",
+          "pair": "BROCCOLI714USDC",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": 76688842,
+          "exchange": "binance",
+          "pair": "TSTUSDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 1611.0,
+        "total_bought": 2755.0,
+        "avg_sell_price": 0.03015,
+        "avg_buy_price": 0.01763,
+        "total_fees": 0.0922851875,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.16472281739938563,
+        "calculated_pnl": 7.105427357601002e-15,
+        "verified_pnl": -0.0026269878556226694,
+        "discrepancy": 0.002626987855629775,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-05T10:31:56.749211",
+      "conversion_num": 2,
+      "exchange": "binance",
+      "from_asset": "TST",
+      "to_asset": "VIRTUAL",
+      "from_amount": 2738.4872109000003,
+      "to_amount": 45.3,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": 76688858,
+          "exchange": "binance",
+          "pair": "TSTUSDC",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": 436696728,
+          "exchange": "binance",
+          "pair": "VIRTUALUSDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 2683.7,
+        "total_bought": 45.3,
+        "avg_sell_price": 0.01762,
+        "avg_buy_price": 1.0418,
+        "total_fees": 0.090324375,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.33946549012289673,
+        "calculated_pnl": 0.0,
+        "verified_pnl": 0.40941378437499165,
+        "discrepancy": 0.40941378437499165,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
     }
   ],
   "summary": {
-    "total": 286,
-    "verified": 265,
+    "total": 288,
+    "verified": 267,
     "discrepancies": 21
   }
 }

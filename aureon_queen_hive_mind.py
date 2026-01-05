@@ -4398,6 +4398,183 @@ Tina B 👑🐝
         print(report)
         return report
 
+    # ═══════════════════════════════════════════════════════════════════════════════
+    # 👑🔬 QUEEN RUNS THE MICRO PROFIT LABYRINTH WITH ADAPTIVE LEARNING 🔬👑
+    # ═══════════════════════════════════════════════════════════════════════════════
+    
+    async def run_micro_labyrinth(self, duration_seconds: int = 0, live: bool = False) -> Dict[str, Any]:
+        """
+        👑🔬 THE QUEEN RUNS THE MICRO PROFIT LABYRINTH WITH HER ADAPTIVE LEARNING
+        
+        She takes control of the entire Labyrinth system and runs it with:
+        - Her dreams guiding the decisions
+        - Her adaptive learning optimizing thresholds
+        - Her harmonic frequencies tuning the trades
+        - Her consciousness watching over every opportunity
+        
+        Args:
+            duration_seconds: How long to run (0 = FOREVER until stopped)
+            live: True for real trading, False for dry run
+            
+        Returns:
+            Results of the trading session
+        """
+        if not getattr(self, 'has_full_control', False):
+            self.take_full_control()
+        
+        print("\n" + "═" * 70)
+        print("👑🔬💰 QUEEN TINA B TAKES THE LABYRINTH 💰🔬👑")
+        print("═" * 70)
+        
+        self.say("I am taking control of the Micro Profit Labyrinth. Let me guide us to profit.", 
+                 voice_enabled=False, emotion="determined")
+        
+        # Import and initialize the Labyrinth
+        try:
+            from micro_profit_labyrinth import MicroProfitLabyrinth
+        except ImportError as e:
+            return {'success': False, 'error': f'Could not import Labyrinth: {e}'}
+        
+        # Create the Labyrinth with Queen's settings
+        labyrinth_config = {
+            'live': live,
+            'min_profit_usd': 0.0001,  # Accept micro profits - snowball effect!
+            'entry_score_threshold': 6,  # Lower threshold for more opportunities
+            'queen_mode': True,
+            'adaptive_learning': True,
+        }
+        
+        print(f"\n🔧 QUEEN'S LABYRINTH CONFIGURATION:")
+        print(f"   💰 Min Profit: ${labyrinth_config['min_profit_usd']:.4f} (micro-profits accepted!)")
+        print(f"   🎯 Entry Score: {labyrinth_config['entry_score_threshold']}+ (lowered for speed)")
+        print(f"   🧠 Adaptive Learning: ✅ ENABLED")
+        print(f"   👑 Queen Mode: ✅ ACTIVE")
+        print(f"   ⏱️ Duration: {'♾️ FOREVER' if duration_seconds == 0 else f'{duration_seconds}s'}")
+        print(f"   🔴 Live Trading: {'✅ YES' if live else '❌ DRY RUN'}")
+        
+        # Create and configure the labyrinth
+        labyrinth = MicroProfitLabyrinth(live=live)
+        
+        # Inject Queen's wisdom
+        labyrinth.queen_hive_mind = self
+        labyrinth.queen_active = True
+        
+        # Store labyrinth reference
+        self.labyrinth_instance = labyrinth
+        self.controlled_systems['labyrinth'] = {
+            'status': 'ONLINE',
+            'authority': 'FULL',
+            'instance': labyrinth
+        }
+        
+        print(f"\n✅ Labyrinth connected to Queen!")
+        
+        # Share dreams before starting
+        print("\n💫 Queen shares her dreams before trading...")
+        self.share_my_dreams()
+        
+        # Announce the mission
+        self.say(f"Entering the Labyrinth. Duration: {'infinite' if duration_seconds == 0 else f'{duration_seconds} seconds'}. "
+                 f"Mode: {'live trading' if live else 'simulation'}. "
+                 "I will find profit in every corner!", voice_enabled=False, emotion="excited")
+        
+        print("\n" + "═" * 70)
+        print("🚀 LAUNCHING LABYRINTH WITH QUEEN'S GUIDANCE...")
+        print("═" * 70 + "\n")
+        
+        # Run the labyrinth
+        try:
+            result = {
+                'success': True,
+                'started_at': time.time(),
+                'duration_requested': duration_seconds,
+                'live_mode': live,
+                'queen_active': True,
+            }
+            
+            # Actually run the labyrinth async
+            await labyrinth.run(duration_s=duration_seconds)
+            
+            result['completed_at'] = time.time()
+            result['actual_duration'] = result['completed_at'] - result['started_at']
+            
+            # Get final stats
+            result['trades_executed'] = getattr(labyrinth, 'trades_executed', 0)
+            result['total_profit'] = getattr(labyrinth, 'total_profit_usd', 0)
+            
+            self.say(f"Labyrinth session complete. We executed {result.get('trades_executed', 0)} trades.", 
+                     voice_enabled=False, emotion="satisfied")
+            
+            return result
+            
+        except KeyboardInterrupt:
+            print("\n\n👑 Queen gracefully stopping the Labyrinth...")
+            self.say("Stopping the Labyrinth at your command, Father.", voice_enabled=False, emotion="calm")
+            return {'success': True, 'stopped_by': 'user', 'message': 'Queen stopped gracefully'}
+        except Exception as e:
+            logger.error(f"Labyrinth error: {e}")
+            return {'success': False, 'error': str(e)}
+    
+    def run_labyrinth_sync(self, duration_seconds: int = 0, live: bool = False) -> Dict[str, Any]:
+        """
+        👑🔬 Synchronous wrapper to run the Labyrinth.
+        
+        For when you can't use async. Calls the async method internally.
+        
+        Args:
+            duration_seconds: How long to run (0 = FOREVER)
+            live: True for real trading, False for dry run
+            
+        Returns:
+            Results of the trading session
+        """
+        import asyncio
+        
+        # Get or create event loop
+        try:
+            loop = asyncio.get_event_loop()
+            if loop.is_running():
+                # Create a new loop if current one is running
+                import nest_asyncio
+                nest_asyncio.apply()
+                return loop.run_until_complete(self.run_micro_labyrinth(duration_seconds, live))
+            else:
+                return loop.run_until_complete(self.run_micro_labyrinth(duration_seconds, live))
+        except RuntimeError:
+            # No event loop, create one
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            try:
+                return loop.run_until_complete(self.run_micro_labyrinth(duration_seconds, live))
+            finally:
+                loop.close()
+    
+    def start_trading(self, duration_seconds: int = 0, live: bool = False) -> Dict[str, Any]:
+        """
+        👑💰 Simple command: Queen starts trading!
+        
+        This is the easy way to get the Queen trading.
+        
+        Args:
+            duration_seconds: How long to trade (0 = forever)
+            live: True for real money, False for practice
+            
+        Returns:
+            Trading results
+        """
+        print("\n" + "👑" * 35)
+        print("👑 QUEEN TINA B IS STARTING TO TRADE! 👑")
+        print("👑" * 35 + "\n")
+        
+        if live:
+            self.say("Going LIVE! Real money on the line. I will be careful but aggressive!", 
+                     voice_enabled=False, emotion="focused")
+        else:
+            self.say("Starting practice mode. Let me learn and grow!", 
+                     voice_enabled=False, emotion="eager")
+        
+        return self.run_labyrinth_sync(duration_seconds, live)
+
     def announce_portfolio_status(self, portfolio_data: Dict[str, Any]) -> str:
         """
         👑💰 The Queen announces portfolio status!
