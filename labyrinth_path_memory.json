@@ -125,7 +125,7 @@
   },
   "VIRTUAL->BROCCOLI714": {
     "wins": 2.0,
-    "losses": 2.0
+    "losses": 4.0
   },
   "DAI->USDT": {
     "wins": 0.0,
@@ -193,7 +193,7 @@
   },
   "ADA->USDC": {
     "wins": 0.0,
-    "losses": 1.0
+    "losses": 2.0
   },
   "USDC->ETH": {
     "wins": 1.0,
@@ -217,7 +217,7 @@
   },
   "USDC->AIXBT": {
     "wins": 0.0,
-    "losses": 3.0
+    "losses": 4.0
   },
   "AIXBT->BANANAS31": {
     "wins": 0.0,
@@ -225,17 +225,57 @@
   },
   "BROCCOLI714->TST": {
     "wins": 1.0,
-    "losses": 3.0
+    "losses": 5.0
   },
   "TST->VIRTUAL": {
     "wins": 2.0,
-    "losses": 2.0
+    "losses": 3.0
   },
   "USD->AIXBT": {
-    "wins": 1.0,
+    "wins": 3.0,
     "losses": 0.0
   },
   "AIXBT->USDC": {
+    "wins": 0.0,
+    "losses": 3.0
+  },
+  "USD->ADA": {
+    "wins": 1.0,
+    "losses": 0.0
+  },
+  "TST->BROCCOLI714": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "BROCCOLI714->BANANAS31": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "BANANAS31->AIXBT": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "AIXBT->TST": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "TST->BANANAS31": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USD->ATOM": {
+    "wins": 1.0,
+    "losses": 0.0
+  },
+  "BANANAS31->VIRTUAL": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "ATOM->USDC": {
+    "wins": 1.0,
+    "losses": 0.0
+  },
+  "VIRTUAL->AIXBT": {
     "wins": 0.0,
     "losses": 1.0
   }

@@ -97,6 +97,16 @@ except ImportError:
     create_trading_education_system = None
     EDUCATION_AVAILABLE = False
 
+# 🐘👑 ELEPHANT MEMORY - NEVER FORGETS 🐘👑
+try:
+    from aureon_elephant_learning import ElephantMemory, QueenElephantBrain, HistoricalLearner
+    ELEPHANT_AVAILABLE = True
+except ImportError:
+    ElephantMemory = None
+    QueenElephantBrain = None
+    HistoricalLearner = None
+    ELEPHANT_AVAILABLE = False
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # LOGGING
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -421,6 +431,20 @@ class QueenHiveMind:
             except Exception as e:
                 logger.warning(f"📚⚠️ Could not initialize education system: {e}")
         
+
+        # 🐘👑 ELEPHANT MEMORY - NEVER FORGETS 🐘👑
+        # Queen learns from historical data and remembers EVERYTHING
+        self.elephant_brain = None
+        if ELEPHANT_AVAILABLE:
+            try:
+                self.elephant_brain = QueenElephantBrain()
+                logger.info("🐘👑 Elephant Memory connected - Queen NEVER forgets!")
+                logger.info(f"   📊 Patterns in memory: {len(self.elephant_brain.elephant.patterns)}")
+                logger.info(f"   🚫 Blocked paths: {len(self.elephant_brain.elephant.blocked_paths)}")
+                logger.info(f"   ⭐ Golden paths: {len(self.elephant_brain.elephant.golden_paths)}")
+            except Exception as e:
+                logger.warning(f"🐘⚠️ Could not initialize elephant memory: {e}")
+
         # �🗺️ LABYRINTH NAVIGATION STATE
         self.labyrinth_path: List[Dict] = []  # Current navigation path
         self.labyrinth_position = {"level": 0, "chamber": "ENTRANCE"}
@@ -3812,7 +3836,84 @@ into my trading harmonics. Let's use this to WIN! 🐝💰
         return study_results
 
     # ═══════════════════════════════════════════════════════════════════════════════
-    # 👑🧠 THE QUEEN'S AUTONOMOUS MIND - She Thinks For Herself 🧠👑
+    # �👑 ELEPHANT MEMORY METHODS - QUEEN NEVER FORGETS 🐘👑
+    # ═══════════════════════════════════════════════════════════════════════════════
+    
+    def learn_from_history(self, days: int = 30, voice_enabled: bool = True) -> Dict[str, Any]:
+        """
+        🐘📚 LEARN FROM HISTORICAL DATA
+        
+        Queen studies years of market data and remembers EVERYTHING.
+        An elephant NEVER forgets!
+        """
+        if not self.elephant_brain:
+            return {'success': False, 'reason': 'Elephant memory not available'}
+        
+        self.say(f"My elephant memory is studying {days} days of market history...", 
+                 voice_enabled=voice_enabled, emotion="thinking")
+        
+        results = self.elephant_brain.learn_before_trading(days=days)
+        
+        self.say(f"I learned {results['patterns_learned']} patterns from {results['trades_analyzed']} historical trades! "
+                 f"Average win rate: {results['avg_win_rate']:.1f}%. I will NEVER forget!", 
+                 voice_enabled=voice_enabled, emotion="excited")
+        
+        return results
+    
+    def elephant_should_trade(self, from_asset: str, to_asset: str, 
+                              price_change: float = 0, volume_change: float = 0) -> Dict[str, Any]:
+        """
+        🐘🤔 ASK ELEPHANT MEMORY IF THIS TRADE IS GOOD
+        
+        Returns wisdom from historical patterns.
+        """
+        if not self.elephant_brain:
+            return {'should_trade': True, 'confidence': 50, 'reason': 'No elephant memory'}
+        
+        return self.elephant_brain.should_trade(from_asset, to_asset, price_change, volume_change)
+    
+    def elephant_record_trade(self, from_asset: str, to_asset: str, 
+                              profit: float, was_profitable: bool):
+        """
+        🐘📝 RECORD A TRADE IN ELEPHANT MEMORY
+        
+        Queen remembers this trade FOREVER.
+        """
+        if not self.elephant_brain:
+            return
+        
+        self.elephant_brain.record_trade_result(from_asset, to_asset, profit, was_profitable)
+        
+        if not was_profitable:
+            logger.info(f"🐘 Elephant remembers: {from_asset}→{to_asset} lost ${abs(profit):.4f}")
+    
+    def elephant_summary(self) -> str:
+        """🐘📊 Get elephant memory summary"""
+        if not self.elephant_brain:
+            return "Elephant memory not available"
+        return self.elephant_brain.elephant.summarize()
+    
+    def is_path_safe(self, from_asset: str, to_asset: str) -> Tuple[bool, str]:
+        """
+        🐘🛡️ CHECK IF A PATH IS SAFE ACCORDING TO ELEPHANT MEMORY
+        """
+        if not self.elephant_brain:
+            return True, "No elephant memory"
+        
+        # Check blocked paths
+        is_blocked, reason = self.elephant_brain.elephant.is_path_blocked(from_asset, to_asset)
+        if is_blocked:
+            return False, f"🐘🚫 BLOCKED: {reason}"
+        
+        # Check golden paths
+        is_golden, win_rate = self.elephant_brain.elephant.is_golden_path(from_asset, to_asset)
+        if is_golden:
+            return True, f"🐘⭐ GOLDEN PATH: {win_rate:.1f}% win rate!"
+        
+        return True, "🐘✅ Path is clear"
+
+    # ═══════════════════════════════════════════════════════════════════════════════
+    # �👑🧠 THE QUEEN'S AUTONOMOUS MIND - She Thinks For Herself 🧠👑
     # ═══════════════════════════════════════════════════════════════════════════════
     
     def think_autonomously(self, context: str = None) -> Dict[str, Any]:
