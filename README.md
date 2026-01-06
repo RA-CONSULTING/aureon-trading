@@ -1,156 +1,163 @@
-# 🎵🌌 THE SAMUEL HARMONIC TRADING ENTITY (SHTE)
+# AUREON TRADING SYSTEM
 
-> **Technical Overview & Quick Start**
->
-> This repository includes a practical, modular trading orchestrator and companion "brain" process.
->
-> - **[Technical Overview](docs/Technical-Overview.md)** — Capabilities, architecture, and quick start.
-> - **[Operations Runbook](docs/Operations.md)** — Dry-run/live procedures and monitoring.
-> - **[Troubleshooting](docs/Troubleshooting.md)** — Common issues and fixes.
-> - **[Philosophy & Lore](docs/Philosophy.md)** — The metaphysical narrative behind the system.
->
-> **Safety Note:** Losses are possible. Always run in dry-run/testnet mode first.
+> **Multi-exchange algorithmic trading platform with adaptive profit gates, neural decision-making, and self-repairing architecture.**
 
----
-
-## 🎯 What Is A "Harmonic Algorithmic Pattern Probability Trading Platform"?
-
-This system combines **three pillars** to find high-probability trades across **four battlefronts**:
-
-| Pillar | What It Does | Code Module |
-|--------|--------------|-------------|
-| **Harmonic** | Fibonacci retracements, wave patterns, price rhythm detection | `aureon_harmonic_underlay.py` |
-| **Algorithmic** | ML ensemble (XGBoost, LightGBM, Neural Nets), pattern recognition | `aureon_brain.py`, `aureon_miner_brain.py` |
-| **Probability** | Bayesian inference, confidence scoring, risk-adjusted position sizing | `aureon_probability_nexus.py` |
-
-### Signal Combination Example
-```
-Harmonic Score:     0.78 (Fibonacci 61.8% retracement detected)
-Pattern Score:      0.82 (Bullish engulfing + volume spike)
-ML Prediction:      0.71 (Ensemble agrees: UP)
-─────────────────────────────────
-Combined Signal:    0.77 → SCOUT DEPLOYED
-```
-
-### 🌍 Four Battlefronts (Multi-Exchange Architecture)
-
-The system operates as **one unified army** across four trading platforms:
-
-| Exchange | Asset Types | Role | Config Key |
-|----------|-------------|------|------------|
-| **Binance** | Crypto (USDT/USDC pairs) | Primary crypto battlefield | `BATTLEFIELDS["binance"]` |
-| **Kraken** | Crypto | Secondary crypto, arbitrage | `BATTLEFIELDS["kraken"]` |
-| **Capital.com** | CFDs (Forex, Indices, Commodities) | Traditional markets | `BATTLEFIELDS["capital"]` |
-| **Alpaca** | US Stocks + Crypto | Equity exposure | `BATTLEFIELDS["alpaca"]` |
-
-### 🎖️ The Scout → Sniper → Harvester Model
+## Architecture Overview
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                    AUREON UNIFIED ECOSYSTEM                      │
-├─────────────────────────────────────────────────────────────────┤
-│  SCOUTS (irish_patriot_scouts.py)                               │
-│  ├── Scan ALL 4 exchanges for opportunities                     │
-│  ├── Round-robin distribution prevents exchange clustering      │
-│  └── Deploy when combined_signal > 0.65                         │
-│                           ↓                                      │
-│  SNIPERS (ira_sniper_mode.py)                                   │
-│  ├── High-precision entries on confirmed setups                 │
-│  ├── Wait for optimal entry (limit orders, not market)          │
-│  └── Risk-adjusted position sizing per battlefield              │
-│                           ↓                                      │
-│  HARVESTERS (aureon_unified_ecosystem.py)                       │
-│  ├── Monitor open positions across all exchanges                │
-│  ├── Trail stops, scale out at targets                          │
-│  └── Feed profits back to compound growth                       │
-└─────────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                          QUEEN HIVE MIND (Tina B)                           │
+│  Central neural controller with 12 connected neurons + self-repair          │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  ┌─────────────┐   ┌─────────────┐   ┌─────────────┐   ┌─────────────┐    │
+│  │   Kraken    │   │   Binance   │   │   Alpaca    │   │  Capital.com│    │
+│  │   (Crypto)  │   │   (Crypto)  │   │(Stocks+Cry)│   │    (CFDs)   │    │
+│  └──────┬──────┘   └──────┬──────┘   └──────┬──────┘   └──────┬──────┘    │
+│         │                 │                 │                 │            │
+│         └─────────────────┼─────────────────┼─────────────────┘            │
+│                           ▼                                                 │
+│              ┌─────────────────────────────┐                               │
+│              │   MICRO PROFIT LABYRINTH    │                               │
+│              │  Turn-based execution loop  │                               │
+│              └─────────────┬───────────────┘                               │
+│                            ▼                                                │
+│              ┌─────────────────────────────┐                               │
+│              │ ADAPTIVE PRIME PROFIT GATE  │                               │
+│              │  r = (V+G+P)/[V×(1-c)²] - 1 │                               │
+│              └─────────────────────────────┘                               │
+└─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### 🍄 Mycelium Network (Cross-Exchange Intelligence)
+## Core Components
 
-The `aureon_mycelium.py` module acts as the nervous system:
-- **Prevents duplicate positions** across exchanges (`_is_duplicate_across_exchanges()`)
-- **Shares intelligence** between battlefronts
-- **Coordinates entries** so we don't fight ourselves
+### 1. Adaptive Prime Profit Gate (`adaptive_prime_profit_gate.py`)
+Calculates exact price movements required for profit after all costs.
 
-### 🔄 Core Algorithm Flow
-
+**Master Equation:**
 ```
-Market Data → Harmonic Analysis → Pattern Detection → ML Ensemble
-                                                          ↓
-                                              Probability Score
-                                                          ↓
-                              ┌─────────────────────────────────────┐
-                              │  Score > 0.65? → Deploy Scout       │
-                              │  Score > 0.75? → Sniper Mode        │
-                              │  Score > 0.85? → Full Send          │
-                              └─────────────────────────────────────┘
+r_min(P) = (V + G + P) / [V × (1 - f - s - c)²] - 1
+
+Where:
+  r = required price increase (fraction)
+  V = trade notional (USD)
+  G = fixed costs (gas/withdrawal)
+  P = target net profit
+  f = trading fee rate
+  s = slippage rate  
+  c = spread cost rate
 ```
 
-### ⚙️ Key Configuration
+**Three Gates:**
+| Gate | Description | Use Case |
+|------|-------------|----------|
+| `r_breakeven` | Net profit ≥ $0 | Minimum viable trade |
+| `r_prime` | Net profit ≥ prime target | Standard profit target |
+| `r_prime_buffer` | Net profit ≥ prime + buffer | Safe mode with margin |
 
+### 2. Queen Hive Mind (`aureon_queen_hive_mind.py`)
+Central neural decision controller with:
+- 12 connected neurons (Dream, Harmonic, Mycelium, etc.)
+- `handle_runtime_error()` for self-repair
+- Dynamic learning from trade outcomes
+- Per-asset guidance generation
+
+### 3. Micro Profit Labyrinth (`micro_profit_labyrinth.py`)
+Turn-based execution engine:
+- Round-robin exchange rotation
+- Pre-flight min_qty validation
+- Barter matrix path memory
+- Dynamic minimum learning
+
+### 4. Exchange Clients
+| Client | File | Features |
+|--------|------|----------|
+| Kraken | `kraken_client.py` | Multi-hop conversion paths, symbol filters |
+| Binance | `binance_client.py` | UK restriction handling, tiered fees |
+| Alpaca | `alpaca_client.py` | Stocks + crypto, fractional shares |
+
+## Execution Flow
+
+```
+1. find_opportunities_for_exchange()
+   └─> Check min_qty filters (dynamic + static)
+   └─> Check source blocking (barter_matrix)
+   └─> Score opportunities (v14, hub, bus, luck, enigma)
+
+2. ask_queen_will_we_win()
+   └─> Gather signals from all neurons
+   └─> Calculate combined confidence
+   └─> Apply profit ladder thresholds
+
+3. execute_conversion()
+   └─> Route to exchange client
+   └─> Validate min_notional
+   └─> Execute with slippage protection
+
+4. Record outcome
+   └─> Update barter_matrix history
+   └─> Feed Queen neural learning
+   └─> Adjust dynamic_min_qty if failed
+```
+
+## Configuration
+
+### Environment Variables
+```bash
+# Exchange API Keys
+KRAKEN_API_KEY=
+KRAKEN_API_SECRET=
+BINANCE_API_KEY=
+BINANCE_API_SECRET=
+ALPACA_API_KEY=
+ALPACA_SECRET_KEY=
+
+# Risk Settings
+BINANCE_RISK_MAX_ORDER_USDT=100
+DEFAULT_PRIME_TARGET=0.02
+```
+
+### Fee Profiles (auto-updated)
 ```python
-# aureon_unified_ecosystem.py
-BATTLEFIELDS = {
-    "binance":  {"enabled": True, "scouts": True, "sniper": True, "harvester": True},
-    "kraken":   {"enabled": True, "scouts": True, "sniper": True, "harvester": True},
-    "capital":  {"enabled": True, "scouts": True, "sniper": True, "harvester": True},
-    "alpaca":   {"enabled": True, "scouts": True, "sniper": True, "harvester": True},
+DEFAULT_FEE_PROFILES = {
+    'binance': {'maker': 0.10%, 'taker': 0.10%, 'spread': 0.05%},
+    'kraken':  {'maker': 0.25%, 'taker': 0.40%, 'spread': 0.08%},
+    'alpaca':  {'maker': 0.15%, 'taker': 0.25%, 'spread': 0.08%},
 }
-MULTI_BATTLEFIELD_MODE = True
-PREVENT_DUPLICATE_POSITIONS = True
 ```
 
----
+## Quick Start
 
-## 🚀 Quick Start
+```bash
+# Install
+python3 -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
 
-1.  **Install Dependencies:**
-    ```bash
-    python3 -m venv .venv
-    source .venv/bin/activate
-    pip install -r requirements.txt
-    ```
+# Configure
+cp .env.example .env  # Edit with API keys
 
-2.  **Configure Environment:**
-    ```bash
-    cp .env.example .env
-    # Edit .env with your API keys and risk settings
-    ```
+# Run (dry-run mode)
+python micro_profit_labyrinth.py --dry-run
+```
 
-3.  **Run the System (Dry-Run):**
-    ```bash
-    # Terminal 1: The Brain
-    python aureon_miner.py
+## Key Files
 
-    # Terminal 2: The Ecosystem
-    python aureon_unified_ecosystem.py
-    ```
+| File | Purpose |
+|------|---------|
+| `micro_profit_labyrinth.py` | Main execution loop |
+| `aureon_queen_hive_mind.py` | Neural decision controller |
+| `adaptive_prime_profit_gate.py` | Profit threshold calculator |
+| `kraken_client.py` | Kraken API wrapper |
+| `aureon_mycelium.py` | Cross-system intelligence network |
+| `aureon_barter_navigator.py` | Path memory & blocking |
 
----
+## Safety
 
-## 📂 Key Components
+- **Dry-run default**: System won't execute live trades without explicit flag
+- **Self-repair**: Queen auto-fixes type errors and learns from failures  
+- **Min-qty pre-filter**: Rejects trades below exchange minimums before execution
+- **Dynamic blocking**: Repeatedly failing paths get temporarily blocked
 
--   **Orchestrator:** `aureon_unified_ecosystem.py` - Manages strategy, risk, and execution.
--   **Brain:** `aureon_miner.py` - Generates probability signals and wisdom state.
--   **Simulation:** `aureon_51_sim.py` - Tests logic without placing orders.
+## License
 
-## 🛡️ Safety & Compliance
-
--   **Risk Management:** Use `BINANCE_RISK_MAX_ORDER_USDT` to cap exposure.
--   **Dry-Run Default:** The system defaults to dry-run mode unless explicitly enabled.
--   **No Guarantees:** Past performance (or simulation) does not guarantee future results.
-
-## 🤝 Contributing
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for code style and PR guidelines.
-See [SECURITY.md](SECURITY.md) for vulnerability reporting.
-
-## 📄 License
-
--   **Code:** MIT License
--   **Documentation/Media:** CC BY 4.0
-
----
-
-*For the story of the Duck Commandos, the 11 Civilizations, and the Harmonic Nexus Core, see [docs/Philosophy.md](docs/Philosophy.md).*
+Proprietary - RA-CONSULTING

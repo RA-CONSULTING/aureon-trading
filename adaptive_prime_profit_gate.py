@@ -1,16 +1,12 @@
 #!/usr/bin/env python3
 """
-🌍💰 ADAPTIVE PRIME PROFIT GATE - WORLD DOMINATION MODE 💰🌍
+ADAPTIVE PRIME PROFIT GATE - Dynamic Profit Threshold Calculator
 ═══════════════════════════════════════════════════════════════════════════════
 
-Dynamic break-even & prime-profit threshold calculator that adapts to:
-- Real-time exchange fees (tiered, maker/taker)
-- Current slippage estimates (volatility-aware)
-- Spread costs (bid-ask)
-- Network/withdrawal gas (if applicable)
+Calculates exact price movements required for profitable trades after all costs.
 
-The MASTER EQUATION:
-    r_min(P) = (V + G + P) / [V × (1 - f_b - s_b - c_b) × (1 - f_s - s_s - c_s)] - 1
+MASTER EQUATION:
+    r_min(P) = (V + G + P) / [V × (1 - f - s - c)²] - 1
 
 Where:
     r = required price increase (fraction)
@@ -26,9 +22,14 @@ THREE GATES:
     2. Prime-profit gate (rₚ): Net profit ≥ prime target (e.g. $0.02)
     3. Prime + buffer gate (r_{p+b}): Net profit ≥ prime + safety buffer
 
-"The math is the sniper's scope. Perfect aim, every time."
+FEATURES:
+    - Real-time exchange fee profiles (tiered, maker/taker)
+    - Volatility-aware slippage estimation
+    - Dynamic spread cost tracking
+    - Integration with Queen Hive Mind for decision routing
+    - Mycelium network goal propagation
 
-Gary Leckey & GitHub Copilot | December 2025
+Gary Leckey & GitHub Copilot | 2025-2026
 ═══════════════════════════════════════════════════════════════════════════════
 """
 
@@ -507,10 +508,84 @@ class AdaptivePrimeProfitGate:
             'default_buffer': self.default_buffer,
             'use_maker_fees': self.use_maker_fees,
         }
+    
+    def adjust_slippage_for_volatility(self, exchange: str, volatility_pct: float):
+        """
+        Dynamically adjust slippage based on current market volatility.
+        
+        Args:
+            exchange: Exchange name
+            volatility_pct: Current volatility as percentage (e.g., 2.5 for 2.5%)
+        """
+        ex = exchange.lower()
+        if ex not in self.fee_profiles:
+            return
+        
+        profile = self.fee_profiles[ex]
+        base_slippage = 0.0005  # 0.05% base
+        
+        # Scale slippage with volatility: higher vol = more slippage
+        # volatility 1% → slippage 0.05%, volatility 5% → slippage 0.25%
+        vol_multiplier = max(1.0, volatility_pct / 1.0)
+        adjusted = base_slippage * vol_multiplier
+        
+        # Cap at 1% max slippage
+        profile.slippage_estimate = min(adjusted, 0.01)
+        profile.last_updated = time.time()
+        
+        self._invalidate_cache(ex)
+        logger.debug(f"Adjusted {ex} slippage to {profile.slippage_estimate*100:.3f}% (vol: {volatility_pct}%)")
+    
+    def get_queen_gate_signal(self, exchange: str, trade_value: float, expected_r: float) -> dict:
+        """
+        Generate gate signal for Queen decision routing.
+        
+        Args:
+            exchange: Exchange name
+            trade_value: Trade notional value
+            expected_r: Expected price move from opportunity scoring
+        
+        Returns:
+            Dict with gate status and confidence adjustment
+        """
+        result = self.calculate_gates(exchange, trade_value)
+        
+        # Determine which gate we're likely to hit
+        if expected_r >= result.r_prime_buffer:
+            gate_status = 'PRIME_BUFFER'
+            confidence_boost = 0.15  # Strong confidence boost
+            recommendation = 'EXECUTE'
+        elif expected_r >= result.r_prime:
+            gate_status = 'PRIME'
+            confidence_boost = 0.10
+            recommendation = 'EXECUTE'
+        elif expected_r >= result.r_breakeven:
+            gate_status = 'BREAKEVEN'
+            confidence_boost = 0.0
+            recommendation = 'CAUTION'
+        else:
+            gate_status = 'BELOW_BREAKEVEN'
+            # Negative adjustment proportional to shortfall
+            shortfall = result.r_breakeven - expected_r
+            confidence_boost = -0.1 - (shortfall * 10)  # Penalty scales with gap
+            recommendation = 'REJECT'
+        
+        return {
+            'gate_status': gate_status,
+            'confidence_boost': confidence_boost,
+            'recommendation': recommendation,
+            'expected_r': expected_r,
+            'r_breakeven': result.r_breakeven,
+            'r_prime': result.r_prime,
+            'r_prime_buffer': result.r_prime_buffer,
+            'margin_to_prime': expected_r - result.r_prime,
+            'trade_value': trade_value,
+            'exchange': exchange,
+        }
 
 
 # ═══════════════════════════════════════════════════════════════
-# 🌍 SINGLETON INSTANCE
+# SINGLETON INSTANCE
 # ═══════════════════════════════════════════════════════════════
 
 _adaptive_gate: Optional[AdaptivePrimeProfitGate] = None
@@ -526,7 +601,7 @@ def get_adaptive_gate() -> AdaptivePrimeProfitGate:
 
 def get_adaptive_threshold(exchange: str, trade_value: float, gate_level: str = 'prime') -> dict:
     """
-    🎯 Quick access to adaptive threshold.
+    Quick access to adaptive threshold.
     
     Drop-in replacement for get_penny_threshold() with adaptive math.
     """
@@ -553,6 +628,16 @@ def update_exchange_fees(
         slippage=slippage,
         spread=spread,
     )
+
+
+def get_queen_gate_signal(exchange: str, trade_value: float, expected_r: float) -> dict:
+    """Get gate signal for Queen decision routing."""
+    return get_adaptive_gate().get_queen_gate_signal(exchange, trade_value, expected_r)
+
+
+def adjust_for_volatility(exchange: str, volatility_pct: float):
+    """Adjust slippage estimates based on current volatility."""
+    get_adaptive_gate().adjust_slippage_for_volatility(exchange, volatility_pct)
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -789,29 +874,49 @@ def wire_all_integrations(goal_target: float = 100000.0):
 
 
 # ═══════════════════════════════════════════════════════════════
-# �🧪 TEST / DEMO
+# TEST / DEMO
 # ═══════════════════════════════════════════════════════════════
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(message)s')
     
     gate = get_adaptive_gate()
+    
+    print("\n" + "=" * 70)
+    print("ADAPTIVE PRIME PROFIT GATE - Test Suite")
+    print("=" * 70)
     
     # Print summary for $10 trade
     gate.print_gate_summary(trade_value=10.0)
     
     # Test individual calculation
-    print("\n🧪 Testing $7.50 trade on Kraken:")
+    print("\n[TEST] $7.50 trade on Kraken:")
     result = gate.calculate_gates('kraken', 7.50)
-    print(json.dumps(result.to_dict(), indent=2))
+    print(f"  Break-even: {result.r_breakeven*100:.4f}%")
+    print(f"  Prime:      {result.r_prime*100:.4f}%")
+    print(f"  +Buffer:    {result.r_prime_buffer*100:.4f}%")
+    print(f"  Win >= ${result.win_gte_prime:.4f} for prime profit")
+    
+    # Test Queen signal
+    print("\n[TEST] Queen gate signal (expected 0.5% move):")
+    signal = get_queen_gate_signal('kraken', 10.0, 0.005)
+    print(f"  Status: {signal['gate_status']}")
+    print(f"  Recommendation: {signal['recommendation']}")
+    print(f"  Confidence boost: {signal['confidence_boost']:+.2f}")
+    
+    # Test volatility adjustment
+    print("\n[TEST] Volatility adjustment:")
+    print(f"  Before: slippage = {gate.fee_profiles['binance'].slippage_estimate*100:.3f}%")
+    adjust_for_volatility('binance', 3.5)  # 3.5% volatility
+    print(f"  After (3.5% vol): slippage = {gate.fee_profiles['binance'].slippage_estimate*100:.3f}%")
     
     # Test compatible threshold format
-    print("\n🧪 Compatible threshold format (like penny profit engine):")
+    print("\n[TEST] Penny-profit-engine compatible format:")
     threshold = get_adaptive_threshold('binance', 10.0, 'prime')
-    print(json.dumps(threshold, indent=2))
+    print(f"  Required: {threshold['required_pct']:.4f}%")
+    print(f"  Win >= ${threshold['win_gte']:.4f}")
+    print(f"  Stop <= ${threshold['stop_lte']:.4f}")
     
-    # Test all exchanges
-    print("\n🧪 All exchange gates for $15 trade:")
-    all_gates = gate.get_all_exchange_gates(15.0)
-    for ex, res in all_gates.items():
-        print(f"   {ex.upper()}: r_prime={res.r_prime*100:.3f}% | win_gte=${res.win_gte_prime:.4f}")
+    print("\n" + "=" * 70)
+    print("All tests complete.")
+    print("=" * 70)
