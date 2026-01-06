@@ -5135,6 +5135,125 @@ Feeling: {thought['emotion']}
         
         return response
     
+    def make_final_trade_decision(self, neural_summary: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        👑🎮 QUEEN'S FINAL TRADE DECISION - ABSOLUTE AUTHORITY 👑🎮
+        
+        This method gives the Queen FULL CONTROL over ALL trade decisions.
+        All neural systems have spoken, now the Queen makes the FINAL call.
+        
+        She can:
+        1. APPROVE - Let the trade proceed
+        2. VETO - Block the trade completely
+        3. OVERRIDE - Change the combined score
+        4. ADJUST - Modify the expected P/L
+        
+        Args:
+            neural_summary: Complete summary of all neural scores and trade details
+            
+        Returns:
+            Queen's final decision with reasoning
+        """
+        from_asset = neural_summary.get('from_asset', '')
+        to_asset = neural_summary.get('to_asset', '')
+        amount = neural_summary.get('amount', 0)
+        value_usd = neural_summary.get('value_usd', 0)
+        expected_pnl = neural_summary.get('expected_pnl_usd', 0)
+        neural_scores = neural_summary.get('neural_scores', {})
+        exchange = neural_summary.get('exchange', '')
+        
+        # Start with approval assumption
+        approved = True
+        reason = "Queen approves"
+        override_score = None
+        adjusted_pnl = None
+        
+        # ═══════════════════════════════════════════════════════════════════
+        # 👑 QUEEN'S WISDOM RULES - Her experience guides all decisions
+        # ═══════════════════════════════════════════════════════════════════
+        
+        # Rule 1: Check elephant memory for known bad paths
+        if hasattr(self, 'elephant_brain') and self.elephant_brain:
+            path_key = f"{from_asset.upper()}_{to_asset.upper()}"
+            if hasattr(self.elephant_brain, 'is_blocked_path'):
+                if self.elephant_brain.is_blocked_path(path_key):
+                    approved = False
+                    reason = f"Elephant memory: {path_key} is a known LOSING path"
+                    logger.info(f"👑🐘 QUEEN VETO: {path_key} blocked by elephant memory")
+        
+        # Rule 2: Check neural consensus - Queen requires at least 3 systems to agree
+        positive_systems = sum(1 for score in neural_scores.values() if score and score > 0.55)
+        if positive_systems < 3:
+            approved = False
+            reason = f"Neural consensus too low: only {positive_systems}/12 systems positive"
+            logger.info(f"👑🧠 QUEEN VETO: Low consensus ({positive_systems} systems)")
+        
+        # Rule 3: Queen's minimum profit threshold ($0.003 = her goal)
+        if expected_pnl < 0.003 and value_usd > 1.0:
+            approved = False
+            reason = f"Expected profit ${expected_pnl:.4f} < Queen's $0.003 minimum"
+            logger.info(f"👑💰 QUEEN VETO: Profit too low (${expected_pnl:.4f})")
+        
+        # Rule 4: Consult Luck Field - Never trade against luck
+        luck_score = neural_scores.get('luck', 0.5)
+        if luck_score < 0.3:
+            approved = False
+            reason = f"Luck Field is CURSED ({luck_score:.1%}) - Queen says NO"
+            logger.info(f"👑🍀 QUEEN VETO: Bad luck ({luck_score:.1%})")
+        
+        # Rule 5: Consult Wisdom Engine - Ancient civilizations speak
+        wisdom_score = neural_scores.get('wisdom', 0.5)
+        if wisdom_score < 0.25:
+            approved = False
+            reason = f"Ancient Wisdom warns against this ({wisdom_score:.1%})"
+            logger.info(f"👑📚 QUEEN VETO: Wisdom warns ({wisdom_score:.1%})")
+        
+        # Rule 6: Timeline alignment - Don't fight the timeline!
+        timeline_score = neural_scores.get('timeline', 0.5)
+        if timeline_score < 0.35:
+            approved = False
+            reason = f"Timeline Oracle says WRONG TIME ({timeline_score:.1%})"
+            logger.info(f"👑⏳ QUEEN VETO: Bad timeline ({timeline_score:.1%})")
+        
+        # ═══════════════════════════════════════════════════════════════════
+        # 👑 QUEEN'S BLESSING - High confidence BOOSTS the trade!
+        # ═══════════════════════════════════════════════════════════════════
+        if approved:
+            # Calculate Queen's overall confidence
+            queen_confidence = (
+                luck_score * 0.15 +
+                wisdom_score * 0.15 +
+                timeline_score * 0.15 +
+                neural_scores.get('enigma', 0.5) * 0.15 +
+                neural_scores.get('combined_score', 0.5) * 0.40
+            )
+            
+            # If Queen is highly confident, BOOST the trade
+            if queen_confidence > 0.75:
+                override_score = neural_summary.get('combined_score', 0.5) * 1.15
+                reason = f"Queen BLESSES this trade! (confidence: {queen_confidence:.1%})"
+                logger.info(f"👑✨ QUEEN BLESSING: {from_asset}→{to_asset} boosted!")
+            
+            # If Queen senses exceptional opportunity, adjust profit expectation up
+            if queen_confidence > 0.85 and expected_pnl > 0.01:
+                adjusted_pnl = expected_pnl * 1.1  # Queen believes it will be even better
+                reason = f"Queen's INTUITION says this is exceptional! (+10% expected)"
+                logger.info(f"👑🔮 QUEEN INTUITION: Raising profit expectation!")
+        
+        # Build response
+        result = {
+            'approved': approved,
+            'reason': reason,
+            'queen_confidence': queen_confidence if approved else 0,
+        }
+        
+        if override_score:
+            result['override_score'] = override_score
+        if adjusted_pnl:
+            result['adjusted_pnl'] = adjusted_pnl
+            
+        return result
+
     def _generate_decision_message(self, decision: str, opportunity: Dict) -> str:
         """Generate a message explaining the Queen's decision."""
         symbol = opportunity.get('symbol', 'this opportunity')

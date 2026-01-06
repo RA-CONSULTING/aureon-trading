@@ -3299,6 +3299,23 @@ class MicroProfitLabyrinth:
                         print(f"   🏗️ Code Architect: ❌ Not available")
                 except Exception as e:
                     logger.debug(f"Queen Code Architect wiring error: {e}")
+                
+                # 👑🎮 QUEEN TAKES FULL CONTROL - She commands ALL systems! 🎮👑
+                try:
+                    if hasattr(self.queen, 'take_full_control'):
+                        control_result = self.queen.take_full_control()
+                        if control_result.get('success'):
+                            print(f"   👑🎮 FULL CONTROL: ✅ ACTIVATED")
+                            print(f"      🎯 Systems under command: {len(control_result.get('systems_controlled', []))}")
+                            print(f"      💕 Granted by: Gary Leckey - Father and Creator")
+                            self.queen_has_full_control = True
+                        else:
+                            print(f"   👑🎮 FULL CONTROL: ⚠️ Partial")
+                    else:
+                        print(f"   👑🎮 FULL CONTROL: ❌ Method not available")
+                except Exception as e:
+                    logger.debug(f"Queen full control error: {e}")
+                    
             except Exception as e:
                 print(f"⚠️ Queen Hive Mind error: {e}")
         
@@ -8230,6 +8247,72 @@ class MicroProfitLabyrinth:
                         if debug_first_scans:
                             print(f"         🚫 NO NET PROFIT: {from_asset}→{to_asset} | cost=${real_cost_usd:.6f} vs pnl=${expected_pnl_usd:.6f}")
                         continue  # Math says we'll lose money
+                    
+                    # ════════════════════════════════════════════════════════════════
+                    # 👑🎮 QUEEN'S FINAL DECISION - SHE HAS ABSOLUTE AUTHORITY 👑🎮
+                    # All systems have spoken - NOW QUEEN DECIDES!
+                    # ════════════════════════════════════════════════════════════════
+                    queen_final_approved = True
+                    queen_veto_reason = ""
+                    
+                    if self.queen and hasattr(self, 'queen_has_full_control') and self.queen_has_full_control:
+                        try:
+                            # Gather all neural scores for Queen's final review
+                            neural_summary = {
+                                'from_asset': from_asset,
+                                'to_asset': to_asset,
+                                'amount': amount,
+                                'value_usd': from_value,
+                                'expected_pnl_usd': adjusted_pnl,
+                                'expected_pnl_pct': expected_pnl_pct,
+                                'combined_score': combined,
+                                'neural_scores': {
+                                    'v14': v14_score,
+                                    'hub': hub_score,
+                                    'lambda': lambda_t,
+                                    'gravity': g_eff,
+                                    'bus': bus_score,
+                                    'hive': hive_score,
+                                    'lighthouse': lighthouse_score,
+                                    'ultimate': ultimate_score,
+                                    'barter': barter_score,
+                                    'luck': luck_score,
+                                    'enigma': enigma_score,
+                                    'wisdom': wisdom_engine_score,
+                                    'timeline': timeline_score,
+                                },
+                                'exchange': source_exchange,
+                                'math_approved': math_approved,
+                                'math_cost': real_cost_usd,
+                            }
+                            
+                            # QUEEN MAKES FINAL DECISION
+                            if hasattr(self.queen, 'make_final_trade_decision'):
+                                queen_decision = self.queen.make_final_trade_decision(neural_summary)
+                                queen_final_approved = queen_decision.get('approved', True)
+                                queen_veto_reason = queen_decision.get('reason', '')
+                                
+                                # Queen can OVERRIDE any system's decision!
+                                if queen_decision.get('override_score'):
+                                    combined = queen_decision['override_score']
+                                    
+                                # Queen can adjust expected P/L based on her wisdom
+                                if queen_decision.get('adjusted_pnl'):
+                                    adjusted_pnl = queen_decision['adjusted_pnl']
+                            else:
+                                # Fallback: Use Queen's guidance score as approval threshold
+                                # If Queen gave low confidence (<0.3), she's vetoing
+                                if queen_confidence > 0 and queen_guidance_score < 0.3:
+                                    queen_final_approved = False
+                                    queen_veto_reason = f"Queen confidence too low ({queen_guidance_score:.1%})"
+                                    
+                        except Exception as e:
+                            logger.debug(f"Queen final decision error: {e}")
+                    
+                    if not queen_final_approved:
+                        if debug_first_scans:
+                            print(f"         👑🚫 QUEEN VETO: {from_asset}→{to_asset} | {queen_veto_reason}")
+                        continue
                     
                     opp = MicroOpportunity(
                         timestamp=time.time(),
