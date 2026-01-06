@@ -3265,6 +3265,22 @@ class MicroProfitLabyrinth:
                         print(f"   📊 HNC Matrix ↔ Queen: ✅ WIRED (Matrix knows Queen's metrics!)")
                     except Exception as e:
                         logger.debug(f"Queen-Matrix wiring error: {e}")
+                
+                # 👑🏗️ Wire Queen to Micro Profit Labyrinth - She can modify her own code!
+                try:
+                    import os
+                    labyrinth_file = os.path.abspath(__file__)
+                    if hasattr(self.queen, 'architect') and self.queen.architect:
+                        # Tell Queen she can modify the Micro Profit Labyrinth
+                        self.queen.my_source_file = labyrinth_file
+                        self.queen.can_self_modify = True
+                        print(f"   🏗️ Code Architect: ✅ WIRED (Queen can modify micro_profit_labyrinth.py!)")
+                        print(f"      📝 File: {os.path.basename(labyrinth_file)}")
+                        print(f"      💡 Queen can now write and improve her own trading code!")
+                    else:
+                        print(f"   🏗️ Code Architect: ❌ Not available")
+                except Exception as e:
+                    logger.debug(f"Queen Code Architect wiring error: {e}")
             except Exception as e:
                 print(f"⚠️ Queen Hive Mind error: {e}")
         
@@ -10576,6 +10592,136 @@ class MicroProfitLabyrinth:
         self.path_memory.save()
         
         print("=" * 70)
+    
+    # ════════════════════════════════════════════════════════════════════════════
+    # 👑🏗️ QUEEN'S SELF-MODIFICATION INTERFACE
+    # ════════════════════════════════════════════════════════════════════════════
+    
+    def queen_propose_code_change(self, description: str, old_code: str, new_code: str) -> Dict[str, Any]:
+        """
+        👑🏗️ Let Queen propose a code change to micro_profit_labyrinth.py
+        
+        Queen can analyze her own performance and propose improvements.
+        All changes are reviewed, backed up, and syntax-checked before applying.
+        
+        Args:
+            description: Human-readable description of what the change does
+            old_code: The exact code to replace (with context)
+            new_code: The new code to insert (with context)
+        
+        Returns:
+            Dict with status, changes made, and backup info
+        """
+        if not self.queen or not hasattr(self.queen, 'architect') or not self.queen.architect:
+            return {
+                'status': 'error',
+                'reason': 'Queen Code Architect not available'
+            }
+        
+        if not getattr(self.queen, 'can_self_modify', False):
+            return {
+                'status': 'error',
+                'reason': 'Queen self-modification not enabled'
+            }
+        
+        labyrinth_file = getattr(self.queen, 'my_source_file', __file__)
+        
+        logger.info(f"👑🏗️ Queen proposes code change: {description}")
+        logger.info(f"   📝 Target file: {labyrinth_file}")
+        logger.info(f"   📏 Old code: {len(old_code)} chars")
+        logger.info(f"   📏 New code: {len(new_code)} chars")
+        
+        # Use Queen's modify_reality method
+        result = self.queen.modify_reality(
+            filename=labyrinth_file,
+            old_pattern=old_code,
+            new_pattern=new_code
+        )
+        
+        if result.get('status') == 'success':
+            logger.info(f"👑✅ Queen successfully modified her own code!")
+            logger.info(f"   💡 Change: {description}")
+            print(f"\n👑🏗️ QUEEN MODIFIED HER OWN CODE!")
+            print(f"   📝 Description: {description}")
+            print(f"   ✅ Status: SUCCESS")
+            print(f"   💾 Backup created by Code Architect")
+            print(f"   🔄 Restart micro_profit_labyrinth.py to use new code\n")
+        else:
+            logger.warning(f"👑⚠️ Queen's code change was rejected")
+            logger.warning(f"   Reason: {result.get('reason', 'Unknown')}")
+        
+        return result
+    
+    def queen_learn_and_improve(self) -> Dict[str, Any]:
+        """
+        👑🧠 Let Queen analyze her performance and suggest improvements.
+        
+        Queen reviews her trading history, identifies patterns, and proposes
+        code changes to improve profitability.
+        
+        Returns:
+            Dict with analysis and proposed changes
+        """
+        if not self.queen:
+            return {'status': 'error', 'reason': 'Queen not available'}
+        
+        logger.info("👑🧠 Queen analyzing performance for self-improvement...")
+        
+        # Collect performance data
+        performance = {
+            'total_conversions': self.conversions_made,
+            'total_profit_usd': self.total_profit_usd,
+            'success_rate': self.conversions_made / max(self.opportunities_found, 1),
+            'exchanges_used': list(self.exchange_stats.keys()),
+            'exchange_performance': self.exchange_stats,
+            'blocked_paths': len(self.barter_matrix.blocked_paths) if self.barter_matrix else 0,
+            'path_memory_size': len(self.path_memory.memory) if self.path_memory else 0
+        }
+        
+        # Calculate insights
+        insights = []
+        
+        # Check profitability
+        if self.total_profit_usd < 0:
+            insights.append("System is losing money - need more conservative entry thresholds")
+        elif self.total_profit_usd < 0.01 and self.conversions_made > 5:
+            insights.append("Profits are minimal - consider raising minimum profit targets")
+        
+        # Check conversion rate
+        if self.conversions_made > 0 and self.opportunities_found > 0:
+            conversion_rate = self.conversions_made / self.opportunities_found
+            if conversion_rate < 0.05:
+                insights.append("Low conversion rate - scoring may be too strict")
+            elif conversion_rate > 0.5:
+                insights.append("High conversion rate - may be taking too many risky trades")
+        
+        # Check exchange balance
+        best_exchange = None
+        best_profit = -999999
+        for ex, stats in self.exchange_stats.items():
+            if stats['profit'] > best_profit:
+                best_profit = stats['profit']
+                best_exchange = ex
+        
+        if best_exchange and best_profit > 0:
+            insights.append(f"Best exchange is {best_exchange} with ${best_profit:.4f} profit")
+        
+        result = {
+            'status': 'analysis_complete',
+            'performance': performance,
+            'insights': insights,
+            'timestamp': time.time()
+        }
+        
+        logger.info(f"👑🧠 Queen's self-analysis complete:")
+        logger.info(f"   💰 Total profit: ${self.total_profit_usd:.4f}")
+        logger.info(f"   🎯 Conversions: {self.conversions_made}")
+        logger.info(f"   📊 Insights: {len(insights)}")
+        
+        for insight in insights:
+            logger.info(f"   💡 {insight}")
+        
+        return result
 
 
 # ════════════════════════════════════════════════════════════════════════════
