@@ -19,12 +19,27 @@ Gary Leckey | January 2026 | SNOWBALL MODE
 
 from __future__ import annotations
 
+import os
+import sys
+
+# ═══════════════════════════════════════════════════════════════════════════
+# WINDOWS UTF-8 FIX - MUST BE AT TOP BEFORE ANY PRINT STATEMENTS
+# ═══════════════════════════════════════════════════════════════════════════
+if sys.platform == 'win32':
+    os.environ['PYTHONIOENCODING'] = 'utf-8'
+    try:
+        import io
+        if hasattr(sys.stdout, 'buffer') and not isinstance(sys.stdout, io.TextIOWrapper):
+            sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
+        if hasattr(sys.stderr, 'buffer') and not isinstance(sys.stderr, io.TextIOWrapper):
+            sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
+    except Exception:
+        pass
+
 import asyncio
 import argparse
 import importlib
 import logging
-import os
-import sys
 import time
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -468,10 +483,13 @@ try:
     from aureon_queen_hive_mind import QueenHiveMind, QueenWisdom, get_queen
     QUEEN_HIVE_MIND_AVAILABLE = True
     print("👑🍄 Queen Hive Mind LOADED! (The Dreaming Queen)")
-except ImportError:
+except Exception as e:
     QUEEN_HIVE_MIND_AVAILABLE = False
     QueenHiveMind = None
     get_queen = None
+    # Log the actual error for debugging on Windows
+    import logging
+    logging.getLogger(__name__).warning(f"Queen Hive Mind import failed: {e}")
 
 # �🎓 Queen Loss Learning System - Learns from every loss, never forgets
 try:
