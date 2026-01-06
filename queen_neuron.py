@@ -23,6 +23,8 @@
 ╚══════════════════════════════════════════════════════════════════════════════════════╝
 """
 
+import sys
+import os
 import numpy as np
 import json
 import logging
@@ -30,6 +32,20 @@ from dataclasses import dataclass
 from typing import Optional, Tuple, List, Dict, Any
 from pathlib import Path
 from datetime import datetime
+
+# ═══════════════════════════════════════════════════════════════════════════
+# WINDOWS UTF-8 FIX - Must be at top before any logging/printing
+# ═══════════════════════════════════════════════════════════════════════════
+if sys.platform == 'win32':
+    os.environ['PYTHONIOENCODING'] = 'utf-8'
+    try:
+        import io
+        if hasattr(sys.stdout, 'buffer') and not isinstance(sys.stdout, io.TextIOWrapper):
+            sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
+        if hasattr(sys.stderr, 'buffer') and not isinstance(sys.stderr, io.TextIOWrapper):
+            sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
+    except Exception:
+        pass
 
 logger = logging.getLogger(__name__)
 
