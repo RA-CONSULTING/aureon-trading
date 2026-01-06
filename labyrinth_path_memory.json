@@ -8,7 +8,7 @@
     "losses": 2.0
   },
   "USD->PEPE": {
-    "wins": 0.0,
+    "wins": 3.0,
     "losses": 3.0
   },
   "USDC->AXS": {
@@ -17,7 +17,7 @@
   },
   "CHZ->USDC": {
     "wins": 0.0,
-    "losses": 24.0
+    "losses": 25.0
   },
   "USD->USDT": {
     "wins": 25.0,
@@ -64,7 +64,7 @@
     "losses": 1.0
   },
   "PEPE->USD": {
-    "wins": 0.0,
+    "wins": 2.0,
     "losses": 1.0
   },
   "BROCCOLI714->ACT": {
@@ -96,7 +96,7 @@
     "losses": 4.0
   },
   "USDC->PEPE": {
-    "wins": 0.0,
+    "wins": 2.0,
     "losses": 1.0
   },
   "IDEX->BONK": {
@@ -192,8 +192,8 @@
     "losses": 1.0
   },
   "ADA->USDC": {
-    "wins": 0.0,
-    "losses": 2.0
+    "wins": 1.0,
+    "losses": 3.0
   },
   "USDC->ETH": {
     "wins": 1.0,
@@ -217,7 +217,7 @@
   },
   "USDC->AIXBT": {
     "wins": 0.0,
-    "losses": 4.0
+    "losses": 8.0
   },
   "AIXBT->BANANAS31": {
     "wins": 0.0,
@@ -237,10 +237,10 @@
   },
   "AIXBT->USDC": {
     "wins": 0.0,
-    "losses": 3.0
+    "losses": 4.0
   },
   "USD->ADA": {
-    "wins": 1.0,
+    "wins": 3.0,
     "losses": 0.0
   },
   "TST->BROCCOLI714": {
@@ -264,7 +264,7 @@
     "losses": 1.0
   },
   "USD->ATOM": {
-    "wins": 1.0,
+    "wins": 2.0,
     "losses": 0.0
   },
   "BANANAS31->VIRTUAL": {
@@ -278,5 +278,113 @@
   "VIRTUAL->AIXBT": {
     "wins": 0.0,
     "losses": 1.0
+  },
+  "AIXBT->ALLO": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->CHZ": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "ALLO->AIXBT": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "AIXBT->APE": {
+    "wins": 0.0,
+    "losses": 3.0
+  },
+  "APE->AIXBT": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "AIXBT->CHZ": {
+    "wins": 0.0,
+    "losses": 2.0
+  },
+  "CHZ->AIXBT": {
+    "wins": 0.0,
+    "losses": 2.0
+  },
+  "AIXBT->ADA": {
+    "wins": 0.0,
+    "losses": 2.0
+  },
+  "ADA->AIXBT": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "APE->CHZ": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USD->U": {
+    "wins": 1.0,
+    "losses": 30.0
+  },
+  "ZBT->S": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "U->USDC": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->BROCCOLI714": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->S": {
+    "wins": 1.0,
+    "losses": 5.0
+  },
+  "BROCCOLI714->S": {
+    "wins": 0.0,
+    "losses": 3.0
+  },
+  "S->USDC": {
+    "wins": 5.0,
+    "losses": 2.0
+  },
+  "S->BROCCOLI714": {
+    "wins": 0.0,
+    "losses": 5.0
+  },
+  "BROCCOLI714->C": {
+    "wins": 0.0,
+    "losses": 2.0
+  },
+  "C->S": {
+    "wins": 0.0,
+    "losses": 25.0
+  },
+  "S->C": {
+    "wins": 0.0,
+    "losses": 24.0
+  },
+  "PEPE->USDC": {
+    "wins": 1.0,
+    "losses": 1.0
+  },
+  "S->USD": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDT->PEPE": {
+    "wins": 1.0,
+    "losses": 0.0
+  },
+  "USDT->SHIB": {
+    "wins": 1.0,
+    "losses": 0.0
+  },
+  "USDC->XTZ": {
+    "wins": 1.0,
+    "losses": 0.0
+  },
+  "USDT->XTZ": {
+    "wins": 1.0,
+    "losses": 0.0
   }
 }

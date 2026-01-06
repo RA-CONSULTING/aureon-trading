@@ -214,6 +214,10 @@ class BinanceClient:
         r = self.session.get(f"{self.base}/api/v3/exchangeInfo", params=params)
         return r.json()
 
+    # Compatibility alias for callers expecting get_exchange_info
+    def get_exchange_info(self, symbol: str = None) -> Dict[str, Any]:
+        return self.exchange_info(symbol)
+
     def account(self) -> Dict[str, Any]:
         return self._signed_request("GET", "/api/v3/account", {})
 

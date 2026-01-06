@@ -43,30 +43,30 @@ logger = logging.getLogger(__name__)
 
 
 class UltraAggressionConfig:
-    """Ultra-aggressive trading configuration"""
+    """Ultra-aggressive trading configuration - 🚀 COMPOUND MODE!"""
     
-    # AGGRESSIVE THRESHOLDS
-    MIN_PROFIT_PCT = 0.003       # 0.3% minimum (was 1.5%)
-    ENTRY_CONFIDENCE = 0.50      # 50% confidence (was 75%)
-    SCAN_INTERVAL_SEC = 1        # 1 second scans (was 60s)
+    # 🚀 COMPOUND MODE - ZERO THRESHOLDS!
+    MIN_PROFIT_PCT = 0.0          # 🚀 COMPOUND MODE: 0% minimum - take ANY profit!
+    ENTRY_CONFIDENCE = 0.30      # 30% confidence (lowered for more trades)
+    SCAN_INTERVAL_SEC = 0.5      # 0.5 second scans (faster!)
     
     # POSITION MANAGEMENT
-    MAX_CONCURRENT_POSITIONS = 20  # 20 at once (was 5)
-    POSITION_SIZE_PCT = 0.15       # 15% of capital per trade (was 10%)
-    MAX_POSITION_TIME_SEC = 300    # 5 minute max hold (was unlimited)
+    MAX_CONCURRENT_POSITIONS = 30  # 30 at once (more compounding!)
+    POSITION_SIZE_PCT = 0.20       # 20% of capital per trade (compound faster!)
+    MAX_POSITION_TIME_SEC = 180    # 3 minute max hold (faster turnover)
     
-    # PROFIT TARGETS
-    TAKE_PROFIT_PCT = 0.008       # 0.8% TP (quick wins)
-    STOP_LOSS_PCT = 0.005         # 0.5% SL (tight stops)
-    TRAILING_STOP_PCT = 0.003     # 0.3% trailing
+    # PROFIT TARGETS - 🚀 COMPOUND MODE!
+    TAKE_PROFIT_PCT = 0.005       # 0.5% TP (quicker wins, faster compounding)
+    STOP_LOSS_PCT = 0.003         # 0.3% SL (tight stops)
+    TRAILING_STOP_PCT = 0.002     # 0.2% trailing (lock in gains fast)
     
-    # COMPOUNDING
-    COMPOUND_ENABLED = True       # Reinvest ALL profits
-    TARGET_DAILY_RETURN = 0.05    # 5% per day target
+    # COMPOUNDING - THE KEY!
+    COMPOUND_ENABLED = True       # 🚀 COMPOUND MODE: Reinvest EVERYTHING!
+    TARGET_DAILY_RETURN = 0.10    # 10% per day target (ambitious!)
     
     # RISK MANAGEMENT (still have SOME limits)
-    MAX_DAILY_LOSS_PCT = 0.10     # 10% max daily loss
-    CIRCUIT_BREAKER_LOSS = 0.15   # 15% total loss = STOP
+    MAX_DAILY_LOSS_PCT = 0.15     # 15% max daily loss (allow more swings)
+    CIRCUIT_BREAKER_LOSS = 0.20   # 20% total loss = STOP
     
     # BYPASS FLAGS
     BYPASS_FEAR_GREED = True      # Ignore fear/greed index

@@ -195,8 +195,8 @@ class AdaptivePrimeProfitGate:
     
     def __init__(
         self,
-        default_prime: float = 0.02,      # Default: 2 cents net profit
-        default_buffer: float = 0.01,     # Default: 1 cent buffer
+        default_prime: float = 0.0,       # 🚀 COMPOUND MODE: $0 minimum - take ANY profit!
+        default_buffer: float = 0.0,      # 🚀 COMPOUND MODE: $0 buffer - compound everything!
         use_maker_fees: bool = True,      # Assume limit orders
     ):
         self.default_prime = default_prime

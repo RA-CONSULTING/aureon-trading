@@ -6,6 +6,7 @@ numpy
 pandas
 aiohttp>=3.9.0
 beautifulsoup4>=4.12.0
+wikipedia>=1.4.0
 wikipedia-api>=0.6.0
 skyfield
 astroquery

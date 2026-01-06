@@ -46,10 +46,10 @@ class QueenVolumeHunter:
     BEST_HOURS = [1, 12, 13, 14, 15, 16]  # 1am, 12pm-4pm
     WORST_HOURS = [19, 20, 21, 22]  # 7pm-10pm - AVOID
     
-    # Thresholds from learning
-    VOLUME_BREAKOUT_THRESHOLD = 2.5  # 2.5x normal volume = breakout
-    MIN_PRICE_MOVE = 0.003  # 0.3% minimum price move
-    MIN_PROFIT_TARGET = 0.01  # 1% profit target
+    # 🚀 COMPOUND MODE - Zero thresholds!
+    VOLUME_BREAKOUT_THRESHOLD = 2.0  # 2x normal volume = breakout (lowered from 2.5x)
+    MIN_PRICE_MOVE = 0.001  # 0.1% minimum price move (lowered from 0.3%)
+    MIN_PROFIT_TARGET = 0.0  # 🚀 COMPOUND MODE: $0 minimum - take ANY profit!
     
     def __init__(self, live_mode: bool = True):
         self.live_mode = live_mode

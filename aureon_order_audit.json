@@ -13052,11 +13052,7095 @@
         "warnings": []
       },
       "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-05T11:59:28.820340",
+      "conversion_num": 1,
+      "exchange": "binance",
+      "from_asset": "USDC",
+      "to_asset": "AIXBT",
+      "from_amount": 45.795380380400005,
+      "to_amount": 1068.5,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": 131500110,
+          "exchange": "binance",
+          "pair": "AIXBTUSDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.0,
+        "total_bought": 1068.5,
+        "avg_sell_price": 0.0,
+        "avg_buy_price": 0.042,
+        "total_fees": 0.04222711999999999,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.20277745868867156,
+        "calculated_pnl": -7.105427357601002e-15,
+        "verified_pnl": -0.9743461145141199,
+        "discrepancy": 0.9743461145141128,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-05T11:59:39.443656",
+      "conversion_num": 2,
+      "exchange": "binance",
+      "from_asset": "AIXBT",
+      "to_asset": "ALLO",
+      "from_amount": 1046.1352265,
+      "to_amount": 356.4,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": 131500118,
+          "exchange": "binance",
+          "pair": "AIXBTUSDC",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": 24202002,
+          "exchange": "binance",
+          "pair": "ALLOUSDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 1025.2,
+        "total_bought": 356.4,
+        "avg_sell_price": 0.0419,
+        "avg_buy_price": 0.1205,
+        "total_fees": 0.082182566,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.3075864425290954,
+        "calculated_pnl": 0.0,
+        "verified_pnl": -0.09186256600000302,
+        "discrepancy": 0.09186256600000302,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-05T11:59:43.980043",
+      "conversion_num": 3,
+      "exchange": "kraken",
+      "from_asset": "USDC",
+      "to_asset": "CHZ",
+      "from_amount": 16.88445157965,
+      "to_amount": 376.68793226,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "O4BBJI-ZIAZZ-UF5DNH",
+          "exchange": "kraken",
+          "pair": "USDCUSD",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": "O3W55P-OZ7IW-YTSGQN",
+          "exchange": "kraken",
+          "pair": "CHZUSD",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 16.88445158,
+        "total_bought": 376.68793226,
+        "avg_sell_price": 0,
+        "avg_buy_price": 0.0448099999998816,
+        "total_fees": 0.0,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.18459647884620337,
+        "calculated_pnl": -0.010130670553294863,
+        "verified_pnl": -0.01013067059789563,
+        "discrepancy": 4.460076752366149e-11,
+        "discrepancy_pct": 4.4025484087186803e-07,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-05T11:59:51.913061",
+      "conversion_num": 4,
+      "exchange": "binance",
+      "from_asset": "ALLO",
+      "to_asset": "AIXBT",
+      "from_amount": 348.9401916,
+      "to_amount": 977.7,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": 24202003,
+          "exchange": "binance",
+          "pair": "ALLOUSDC",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": 131500122,
+          "exchange": "binance",
+          "pair": "AIXBTUSDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 341.9,
+        "total_bought": 977.7,
+        "avg_sell_price": 0.12040000000000001,
+        "avg_buy_price": 0.0421,
+        "total_fees": 0.077745224,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.4829688313164001,
+        "calculated_pnl": 0.0,
+        "verified_pnl": -0.08133522400000265,
+        "discrepancy": 0.08133522400000265,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-05T12:00:05.574312",
+      "conversion_num": 5,
+      "exchange": "binance",
+      "from_asset": "AIXBT",
+      "to_asset": "APE",
+      "from_amount": 998.6749877999999,
+      "to_amount": 186.37,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": 131500138,
+          "exchange": "binance",
+          "pair": "AIXBTUSDC",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": 110316803,
+          "exchange": "binance",
+          "pair": "APEUSDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 978.7,
+        "total_bought": 186.37,
+        "avg_sell_price": 0.041800000000000004,
+        "avg_buy_price": 0.21949999999999997,
+        "total_fees": 0.07744370184999999,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.43664516201279996,
+        "calculated_pnl": 0.0,
+        "verified_pnl": -0.0788887018500039,
+        "discrepancy": 0.0788887018500039,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-05T12:00:11.472445",
+      "conversion_num": 6,
+      "exchange": "kraken",
+      "from_asset": "USD",
+      "to_asset": "ADA",
+      "from_amount": 18.096065,
+      "to_amount": 45.27944242,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "OT4ILA-PALYU-TZ6IOS",
+          "exchange": "kraken",
+          "pair": "ADAUSD",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.0,
+        "total_bought": 45.27944242,
+        "avg_sell_price": 0.0,
+        "avg_buy_price": 0.3996529999673083,
+        "total_fees": 0.0,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.182324675,
+        "calculated_pnl": -0.0034412361436579886,
+        "verified_pnl": 0.0,
+        "discrepancy": 0.0034412361436579886,
+        "discrepancy_pct": 100.0,
+        "math_valid": false,
+        "warnings": [
+          "P&L discrepancy: calculated $-0.0034 vs verified $0.0000 (100.0%)"
+        ]
+      },
+      "final_status": "NEEDS_REVIEW"
+    },
+    {
+      "timestamp": "2026-01-05T12:00:20.488867",
+      "conversion_num": 7,
+      "exchange": "binance",
+      "from_asset": "APE",
+      "to_asset": "AIXBT",
+      "from_amount": 182.46908953,
+      "to_amount": 934.4,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": 110316822,
+          "exchange": "binance",
+          "pair": "APEUSDC",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": 131500169,
+          "exchange": "binance",
+          "pair": "AIXBTUSDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 178.81,
+        "total_bought": 934.4,
+        "avg_sell_price": 0.2195,
+        "avg_buy_price": 0.041999999999999996,
+        "total_fees": 0.074213848,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.44222873391183504,
+        "calculated_pnl": 0.0,
+        "verified_pnl": -0.0782088480000033,
+        "discrepancy": 0.0782088480000033,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-05T12:00:24.918438",
+      "conversion_num": 8,
+      "exchange": "kraken",
+      "from_asset": "ADA",
+      "to_asset": "USDC",
+      "from_amount": 45.2744930646,
+      "to_amount": 0,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "OE4A5R-GASXN-XR3C4A",
+          "exchange": "kraken",
+          "pair": "ADAUSDC",
+          "side": "sell"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 45.27449306,
+        "total_bought": 0,
+        "avg_sell_price": 0,
+        "avg_buy_price": 0.0,
+        "total_fees": 0.0,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.1232040158151202,
+        "calculated_pnl": -0.07278531423350287,
+        "verified_pnl": -0.07278531423350287,
+        "discrepancy": 0.0,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-05T12:10:12.358169",
+      "conversion_num": 1,
+      "exchange": "binance",
+      "from_asset": "AIXBT",
+      "to_asset": "APE",
+      "from_amount": 954.3910614,
+      "to_amount": 177.34,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": 131500796,
+          "exchange": "binance",
+          "pair": "AIXBTUSDC",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": 110318281,
+          "exchange": "binance",
+          "pair": "APEUSDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 935.3,
+        "total_bought": 177.34,
+        "avg_sell_price": 0.0416,
+        "avg_buy_price": 0.2194,
+        "total_fees": 0.07367332670000001,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.2826563876622848,
+        "calculated_pnl": 0.0,
+        "verified_pnl": -0.07375732669999399,
+        "discrepancy": 0.07375732669999399,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-05T12:10:24.524923",
+      "conversion_num": 2,
+      "exchange": "binance",
+      "from_asset": "APE",
+      "to_asset": "AIXBT",
+      "from_amount": 180.86338598999998,
+      "to_amount": 928.6,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": 110318350,
+          "exchange": "binance",
+          "pair": "APEUSDC",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": 131500802,
+          "exchange": "binance",
+          "pair": "AIXBTUSDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 177.24,
+        "total_bought": 928.6,
+        "avg_sell_price": 0.21899999999999997,
+        "avg_buy_price": 0.0418,
+        "total_fees": 0.073661269,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.43833718030480495,
+        "calculated_pnl": 0.0,
+        "verified_pnl": -0.07374126899999697,
+        "discrepancy": 0.07374126899999697,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-05T12:10:29.234949",
+      "conversion_num": 3,
+      "exchange": "kraken",
+      "from_asset": "USD",
+      "to_asset": "ADA",
+      "from_amount": 17.896965499999997,
+      "to_amount": 44.84499668,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "OP42FV-CERG3-2OF6HB",
+          "exchange": "kraken",
+          "pair": "ADAUSD",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.0,
+        "total_bought": 44.84499668,
+        "avg_sell_price": 0.0,
+        "avg_buy_price": 0.39908499999915703,
+        "total_fees": 0.0,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.18031867249999997,
+        "calculated_pnl": 0.03605537736852327,
+        "verified_pnl": 0.0,
+        "discrepancy": 0.03605537736852327,
+        "discrepancy_pct": 100.0,
+        "math_valid": false,
+        "warnings": [
+          "P&L discrepancy: calculated $0.0361 vs verified $0.0000 (100.0%)"
+        ]
+      },
+      "final_status": "NEEDS_REVIEW"
+    },
+    {
+      "timestamp": "2026-01-05T12:10:36.722168",
+      "conversion_num": 4,
+      "exchange": "binance",
+      "from_asset": "AIXBT",
+      "to_asset": "CHZ",
+      "from_amount": 946.9605348,
+      "to_amount": 860.0,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": 131500818,
+          "exchange": "binance",
+          "pair": "AIXBTUSDC",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": 64041781,
+          "exchange": "binance",
+          "pair": "CHZUSDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 928.0,
+        "total_bought": 860.0,
+        "avg_sell_price": 0.0416,
+        "avg_buy_price": 0.04484,
+        "total_fees": 0.0732925,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.41502961153260004,
+        "calculated_pnl": 0.0,
+        "verified_pnl": -0.11569250000000066,
+        "discrepancy": 0.11569250000000066,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-05T12:10:40.959508",
+      "conversion_num": 5,
+      "exchange": "kraken",
+      "from_asset": "ADA",
+      "to_asset": "USDC",
+      "from_amount": 44.8471441665,
+      "to_amount": 0,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "OQYZFU-PQ26S-HWPNZS",
+          "exchange": "kraken",
+          "pair": "ADAUSDC",
+          "side": "sell"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 44.84714417,
+        "total_bought": 0,
+        "avg_sell_price": 0,
+        "avg_buy_price": 0.0,
+        "total_fees": 0.0,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.21493619560869393,
+        "calculated_pnl": -0.03225787669471103,
+        "verified_pnl": -0.03225787669471103,
+        "discrepancy": 0.0,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-05T12:10:48.456185",
+      "conversion_num": 6,
+      "exchange": "binance",
+      "from_asset": "CHZ",
+      "to_asset": "AIXBT",
+      "from_amount": 841.99934,
+      "to_amount": 883.6,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": 64041784,
+          "exchange": "binance",
+          "pair": "CHZUSDC",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": 131500828,
+          "exchange": "binance",
+          "pair": "AIXBTUSDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 825.0,
+        "total_bought": 883.6,
+        "avg_sell_price": 0.044770000000000004,
+        "avg_buy_price": 0.0418,
+        "total_fees": 0.070092304,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.41974354445400003,
+        "calculated_pnl": 0.0,
+        "verified_pnl": -0.07086230400000282,
+        "discrepancy": 0.07086230400000282,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-05T12:11:00.766042",
+      "conversion_num": 7,
+      "exchange": "binance",
+      "from_asset": "AIXBT",
+      "to_asset": "ADA",
+      "from_amount": 902.6259031999999,
+      "to_amount": 91.9,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": 131500861,
+          "exchange": "binance",
+          "pair": "AIXBTUSDC",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": 1454482877,
+          "exchange": "binance",
+          "pair": "ADAUSDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 884.5,
+        "total_bought": 91.9,
+        "avg_sell_price": 0.0415,
+        "avg_buy_price": 0.3992,
+        "total_fees": 0.069783719145,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.38983768026419996,
+        "calculated_pnl": 0.0,
+        "verified_pnl": -0.09005371914499646,
+        "discrepancy": 0.09005371914499646,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-05T12:11:04.712933",
+      "conversion_num": 8,
+      "exchange": "kraken",
+      "from_asset": "USD",
+      "to_asset": "ATOM",
+      "from_amount": 17.7101045,
+      "to_amount": 7.76690839,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "OOW5KC-GCWLD-RVH6AC",
+          "exchange": "kraken",
+          "pair": "ATOMUSD",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.0,
+        "total_bought": 7.76690839,
+        "avg_sell_price": 0.0,
+        "avg_buy_price": 2.280199998599443,
+        "total_fees": 0.0,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.16056016301947665,
+        "calculated_pnl": -0.017087187579999608,
+        "verified_pnl": 0.0,
+        "discrepancy": 0.017087187579999608,
+        "discrepancy_pct": 100.0,
+        "math_valid": false,
+        "warnings": [
+          "P&L discrepancy: calculated $-0.0171 vs verified $0.0000 (100.0%)"
+        ]
+      },
+      "final_status": "NEEDS_REVIEW"
+    },
+    {
+      "timestamp": "2026-01-05T12:11:12.852774",
+      "conversion_num": 9,
+      "exchange": "binance",
+      "from_asset": "ADA",
+      "to_asset": "AIXBT",
+      "from_amount": 89.9764411,
+      "to_amount": 841.3,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": 1454483056,
+          "exchange": "binance",
+          "pair": "ADAUSDC",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": 131500872,
+          "exchange": "binance",
+          "pair": "AIXBTUSDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 88.1,
+        "total_bought": 841.3,
+        "avg_sell_price": 0.3992,
+        "avg_buy_price": 0.0418,
+        "total_fees": 0.0667391395,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.19129856264269168,
+        "calculated_pnl": 0.0,
+        "verified_pnl": -0.06991913950000041,
+        "discrepancy": 0.06991913950000041,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-05T12:11:16.864352",
+      "conversion_num": 10,
+      "exchange": "kraken",
+      "from_asset": "ATOM",
+      "to_asset": "USDC",
+      "from_amount": 7.766126707650001,
+      "to_amount": 0,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "O2PND2-OJECP-R2UI7J",
+          "exchange": "kraken",
+          "pair": "ATOMUSDC",
+          "side": "sell"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 7.76612671,
+        "total_bought": 0,
+        "avg_sell_price": 0,
+        "avg_buy_price": 0.0,
+        "total_fees": 0.0,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.18506869052183827,
+        "calculated_pnl": -0.1189879284212978,
+        "verified_pnl": -0.1189879284212978,
+        "discrepancy": 0.0,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-05T12:22:52.815749",
+      "conversion_num": 1,
+      "exchange": "binance",
+      "from_asset": "AIXBT",
+      "to_asset": "CHZ",
+      "from_amount": 859.5066529,
+      "to_amount": 780.0,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": 131501259,
+          "exchange": "binance",
+          "pair": "AIXBTUSDC",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": 64042312,
+          "exchange": "binance",
+          "pair": "CHZUSDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 842.3,
+        "total_bought": 780.0,
+        "avg_sell_price": 0.0415,
+        "avg_buy_price": 0.044759999999999994,
+        "total_fees": 0.06637484,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.2544729191182577,
+        "calculated_pnl": 0.0,
+        "verified_pnl": -0.10902484000000186,
+        "discrepancy": 0.10902484000000186,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-05T12:22:56.912788",
+      "conversion_num": 2,
+      "exchange": "kraken",
+      "from_asset": "USDC",
+      "to_asset": "AIXBT",
+      "from_amount": 17.60609435405,
+      "to_amount": 422.03961,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "OCGKUU-MC6IP-BS4UII",
+          "exchange": "kraken",
+          "pair": "USDCUSD",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": "OQNITK-6ZUSI-LOQWKG",
+          "exchange": "kraken",
+          "pair": "AIXBTUSD",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 17.60609435,
+        "total_bought": 422.03961,
+        "avg_sell_price": 0,
+        "avg_buy_price": 0.04170000041526908,
+        "total_fees": 0.0,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.1925053895585265,
+        "calculated_pnl": -0.014085054791621587,
+        "verified_pnl": -0.014084879531623073,
+        "discrepancy": 1.7525999851386587e-07,
+        "discrepancy_pct": 0.0012442975984595975,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-05T12:23:04.569018",
+      "conversion_num": 3,
+      "exchange": "binance",
+      "from_asset": "CHZ",
+      "to_asset": "AIXBT",
+      "from_amount": 797.1731599999999,
+      "to_amount": 839.5,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": 64042317,
+          "exchange": "binance",
+          "pair": "CHZUSDC",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": 131501262,
+          "exchange": "binance",
+          "pair": "AIXBTUSDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 781.0,
+        "total_bought": 839.5,
+        "avg_sell_price": 0.044719999999999996,
+        "avg_buy_price": 0.041600000000000005,
+        "total_fees": 0.06635704,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.396865336728,
+        "calculated_pnl": 0.0,
+        "verified_pnl": -0.06947703999999558,
+        "discrepancy": 0.06947703999999558,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-05T12:23:16.514425",
+      "conversion_num": 4,
+      "exchange": "binance",
+      "from_asset": "AIXBT",
+      "to_asset": "ADA",
+      "from_amount": 855.9810783999999,
+      "to_amount": 87.0,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": 131501266,
+          "exchange": "binance",
+          "pair": "AIXBTUSDC",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": 1454491198,
+          "exchange": "binance",
+          "pair": "ADAUSDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 838.8,
+        "total_bought": 87.0,
+        "avg_sell_price": 0.041400000000000006,
+        "avg_buy_price": 0.399,
+        "total_fees": 0.0660531407,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.367919009948,
+        "calculated_pnl": 0.0,
+        "verified_pnl": -0.07937314070000022,
+        "discrepancy": 0.07937314070000022,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-05T12:23:21.508175",
+      "conversion_num": 5,
+      "exchange": "kraken",
+      "from_asset": "USD",
+      "to_asset": "ADA",
+      "from_amount": 17.328024499999998,
+      "to_amount": 43.48170449,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "OXVDTL-RF7HT-COJWB6",
+          "exchange": "kraken",
+          "pair": "ADAUSD",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.0,
+        "total_bought": 43.48170449,
+        "avg_sell_price": 0.0,
+        "avg_buy_price": 0.398512999967265,
+        "total_fees": 0.0,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.17458637749999997,
+        "calculated_pnl": 0.06630960077062298,
+        "verified_pnl": 0.0,
+        "discrepancy": 0.06630960077062298,
+        "discrepancy_pct": 100.0,
+        "math_valid": false,
+        "warnings": [
+          "P&L discrepancy: calculated $0.0663 vs verified $0.0000 (100.0%)"
+        ]
+      },
+      "final_status": "NEEDS_REVIEW"
+    },
+    {
+      "timestamp": "2026-01-05T12:23:30.778609",
+      "conversion_num": 6,
+      "exchange": "binance",
+      "from_asset": "ADA",
+      "to_asset": "AIXBT",
+      "from_amount": 88.81744409999999,
+      "to_amount": 833.8,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": 1454491510,
+          "exchange": "binance",
+          "pair": "ADAUSDC",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": 131501277,
+          "exchange": "binance",
+          "pair": "AIXBTUSDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 87.0,
+        "total_bought": 833.8,
+        "avg_sell_price": 0.3987,
+        "avg_buy_price": 0.0416,
+        "total_fees": 0.065825125,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.37524403109669846,
+        "calculated_pnl": 0.0,
+        "verified_pnl": -0.06664512500000448,
+        "discrepancy": 0.06664512500000448,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-05T12:23:43.652137",
+      "conversion_num": 7,
+      "exchange": "binance",
+      "from_asset": "AIXBT",
+      "to_asset": "APE",
+      "from_amount": 850.3048106,
+      "to_amount": 158.25,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": 131501285,
+          "exchange": "binance",
+          "pair": "AIXBTUSDC",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": 110319333,
+          "exchange": "binance",
+          "pair": "APEUSDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 833.2,
+        "total_bought": 158.25,
+        "avg_sell_price": 0.0415,
+        "avg_buy_price": 0.21849999999999997,
+        "total_fees": 0.06560745125,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.36367883812550006,
+        "calculated_pnl": 0.0,
+        "verified_pnl": -0.06578245125000581,
+        "discrepancy": 0.06578245125000581,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-05T12:23:48.028756",
+      "conversion_num": 8,
+      "exchange": "kraken",
+      "from_asset": "ADA",
+      "to_asset": "USDC",
+      "from_amount": 43.488531684899996,
+      "to_amount": 0,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "OXEGJ2-WQXTY-OVIFNR",
+          "exchange": "kraken",
+          "pair": "ADAUSDC",
+          "side": "sell"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 43.48853168,
+        "total_bought": 0,
+        "avg_sell_price": 0,
+        "avg_buy_price": 0.0,
+        "total_fees": 0.0,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.12203172527557304,
+        "calculated_pnl": 0.0036791974062921895,
+        "verified_pnl": 0.0036791974062921895,
+        "discrepancy": 0.0,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-05T12:23:55.832006",
+      "conversion_num": 9,
+      "exchange": "binance",
+      "from_asset": "APE",
+      "to_asset": "CHZ",
+      "from_amount": 162.10585524,
+      "to_amount": 774.0,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": 110319349,
+          "exchange": "binance",
+          "pair": "APEUSDC",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": 64042410,
+          "exchange": "binance",
+          "pair": "CHZUSDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 158.86,
+        "total_bought": 774.0,
+        "avg_sell_price": 0.2183,
+        "avg_buy_price": 0.04475,
+        "total_fees": 0.06579838399999999,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.11746379165811197,
+        "calculated_pnl": 0.0,
+        "verified_pnl": -0.10843638400000372,
+        "discrepancy": 0.10843638400000372,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-05T14:04:00.424383",
+      "conversion_num": 1,
+      "exchange": "binance",
+      "from_asset": "CHZ",
+      "to_asset": "AIXBT",
+      "from_amount": 789.5925659999999,
+      "to_amount": 834.8,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": 64048569,
+          "exchange": "binance",
+          "pair": "CHZUSDC",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": 131505861,
+          "exchange": "binance",
+          "pair": "AIXBTUSDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 773.0,
+        "total_bought": 834.8,
+        "avg_sell_price": 0.044930000000000005,
+        "avg_buy_price": 0.041600000000000005,
+        "total_fees": 0.065668422,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.11725915549568827,
+        "calculated_pnl": 0.0,
+        "verified_pnl": -0.06887842200000283,
+        "discrepancy": 0.06887842200000283,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-05T14:04:15.435636",
+      "conversion_num": 2,
+      "exchange": "binance",
+      "from_asset": "AIXBT",
+      "to_asset": "APE",
+      "from_amount": 851.0956118,
+      "to_amount": 157.37,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": 131505873,
+          "exchange": "binance",
+          "pair": "AIXBTUSDC",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": 110329891,
+          "exchange": "binance",
+          "pair": "APEUSDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 834.0,
+        "total_bought": 157.37,
+        "avg_sell_price": 0.0414,
+        "avg_buy_price": 0.21939999999999998,
+        "total_fees": 0.06546729775,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.3405702115766565,
+        "calculated_pnl": 0.0,
+        "verified_pnl": -0.0660892977499999,
+        "discrepancy": 0.0660892977499999,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-05T14:04:20.055696",
+      "conversion_num": 3,
+      "exchange": "kraken",
+      "from_asset": "USD",
+      "to_asset": "ADA",
+      "from_amount": 17.180068000000002,
+      "to_amount": 43.10134798,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "OELB3Y-5FITU-NSFHUL",
+          "exchange": "kraken",
+          "pair": "ADAUSD",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.0,
+        "total_bought": 43.10134798,
+        "avg_sell_price": 0.0,
+        "avg_buy_price": 0.398596999981809,
+        "total_fees": 0.0,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.17309565999999998,
+        "calculated_pnl": 0.0029739937946793304,
+        "verified_pnl": 0.0,
+        "discrepancy": 0.0029739937946793304,
+        "discrepancy_pct": 100.0,
+        "math_valid": false,
+        "warnings": [
+          "P&L discrepancy: calculated $0.0030 vs verified $0.0000 (100.0%)"
+        ]
+      },
+      "final_status": "NEEDS_REVIEW"
+    },
+    {
+      "timestamp": "2026-01-05T14:22:48.333906",
+      "conversion_num": 1,
+      "exchange": "binance",
+      "from_asset": "APE",
+      "to_asset": "CHZ",
+      "from_amount": 160.49914377000002,
+      "to_amount": 766.0,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": 110332022,
+          "exchange": "binance",
+          "pair": "APEUSDC",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": 64049833,
+          "exchange": "binance",
+          "pair": "CHZUSDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 157.28,
+        "total_bought": 766.0,
+        "avg_sell_price": 0.2198,
+        "avg_buy_price": 0.04508,
+        "total_fees": 0.06553720099999999,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.24967565545021303,
+        "calculated_pnl": 0.0,
+        "verified_pnl": -0.10440120099999667,
+        "discrepancy": 0.10440120099999667,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-05T14:22:52.063872",
+      "conversion_num": 2,
+      "exchange": "kraken",
+      "from_asset": "ADA",
+      "to_asset": "USDC",
+      "from_amount": 43.103283903400005,
+      "to_amount": 0,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "OCZOPA-DVW4Z-VRKWZX",
+          "exchange": "kraken",
+          "pair": "ADAUSDC",
+          "side": "sell"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 43.1032839,
+        "total_bought": 0,
+        "avg_sell_price": 0,
+        "avg_buy_price": 0.0,
+        "total_fees": 0.0,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.1386452127043858,
+        "calculated_pnl": -0.09994566331702615,
+        "verified_pnl": -0.09994566331702615,
+        "discrepancy": 0.0,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-05T14:23:03.374028",
+      "conversion_num": 3,
+      "exchange": "binance",
+      "from_asset": "CHZ",
+      "to_asset": "AIXBT",
+      "from_amount": 782.0194200000001,
+      "to_amount": 828.7,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": 64049854,
+          "exchange": "binance",
+          "pair": "CHZUSDC",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": 131506689,
+          "exchange": "binance",
+          "pair": "AIXBTUSDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 766.0,
+        "total_bought": 828.7,
+        "avg_sell_price": 0.04501,
+        "avg_buy_price": 0.0416,
+        "total_fees": 0.06526782450000002,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.38362920222900004,
+        "calculated_pnl": 0.0,
+        "verified_pnl": -0.06900782450000054,
+        "discrepancy": 0.06900782450000054,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-05T14:23:17.082705",
+      "conversion_num": 4,
+      "exchange": "binance",
+      "from_asset": "AIXBT",
+      "to_asset": "APE",
+      "from_amount": 845.1300921000001,
+      "to_amount": 155.99,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": 131506693,
+          "exchange": "binance",
+          "pair": "AIXBTUSDC",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": 110332094,
+          "exchange": "binance",
+          "pair": "APEUSDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 828.2,
+        "total_bought": 155.99,
+        "avg_sell_price": 0.0414,
+        "avg_buy_price": 0.2198,
+        "total_fees": 0.06495273425,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.36684682640655003,
+        "calculated_pnl": 0.0,
+        "verified_pnl": -0.06583073425000016,
+        "discrepancy": 0.06583073425000016,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-05T14:23:25.288720",
+      "conversion_num": 5,
+      "exchange": "alpaca",
+      "from_asset": "USDT",
+      "to_asset": "BTC",
+      "from_amount": 10.23263764433,
+      "to_amount": 0,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "7795ab9a-9597-4550-b0b8-9e1e305cb3c6",
+          "exchange": "alpaca",
+          "pair": "USDT/USD",
+          "side": "sell"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.0,
+        "total_bought": 0,
+        "avg_sell_price": 0.0,
+        "avg_buy_price": 0.0,
+        "total_fees": 0.0,
+        "errors": [
+          "Step 1: Zero executed quantity",
+          "Step 2: Zero executed quantity"
+        ]
+      },
+      "profit_verification": {
+        "expected_pnl": 0.10226395735366958,
+        "calculated_pnl": 0.05138892329330069,
+        "verified_pnl": 0.05138892329330069,
+        "discrepancy": 0.0,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-05T14:23:29.568748",
+      "conversion_num": 6,
+      "exchange": "binance",
+      "from_asset": "APE",
+      "to_asset": "AIXBT",
+      "from_amount": 159.08971707999999,
+      "to_amount": 822.5,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": 110332121,
+          "exchange": "binance",
+          "pair": "APEUSDC",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": 131506699,
+          "exchange": "binance",
+          "pair": "AIXBTUSDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 155.9,
+        "total_bought": 822.5,
+        "avg_sell_price": 0.2195,
+        "avg_buy_price": 0.0416,
+        "total_fees": 0.06477983749999999,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.37953449392570004,
+        "calculated_pnl": 0.0,
+        "verified_pnl": -0.06882983749999944,
+        "discrepancy": 0.06882983749999944,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-05T14:23:33.023389",
+      "conversion_num": 7,
+      "exchange": "kraken",
+      "from_asset": "USD",
+      "to_asset": "ADA",
+      "from_amount": 17.0259425,
+      "to_amount": 42.67174898,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "OEMRRS-3KK7P-D36K5I",
+          "exchange": "kraken",
+          "pair": "ADAUSD",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.0,
+        "total_bought": 42.67174898,
+        "avg_sell_price": 0.0,
+        "avg_buy_price": 0.3989980000112009,
+        "total_fees": 0.0,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.1715427875,
+        "calculated_pnl": 0.04036747405712049,
+        "verified_pnl": 0.0,
+        "discrepancy": 0.04036747405712049,
+        "discrepancy_pct": 100.0,
+        "math_valid": false,
+        "warnings": [
+          "P&L discrepancy: calculated $0.0404 vs verified $0.0000 (100.0%)"
+        ]
+      },
+      "final_status": "NEEDS_REVIEW"
+    },
+    {
+      "timestamp": "2026-01-05T14:36:19.826962",
+      "conversion_num": 1,
+      "exchange": "binance",
+      "from_asset": "AIXBT",
+      "to_asset": "LUNA",
+      "from_amount": 838.7783446,
+      "to_amount": 357.09,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": 131507470,
+          "exchange": "binance",
+          "pair": "AIXBTUSDC",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": 298320,
+          "exchange": "binance",
+          "pair": "LUNAUSDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 822.0,
+        "total_bought": 357.09,
+        "avg_sell_price": 0.0414,
+        "avg_buy_price": 0.0953,
+        "total_fees": 0.0323440506678,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.11928531950218277,
+        "calculated_pnl": 0.0,
+        "verified_pnl": -0.032467050667802096,
+        "discrepancy": 0.032467050667802096,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-05T14:36:24.393548",
+      "conversion_num": 2,
+      "exchange": "kraken",
+      "from_asset": "ADA",
+      "to_asset": "USDC",
+      "from_amount": 42.673906658,
+      "to_amount": 0,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "OYJZX2-HXYYJ-VJAP3D",
+          "exchange": "kraken",
+          "pair": "ADAUSDC",
+          "side": "sell"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 42.67390666,
+        "total_bought": 0,
+        "avg_sell_price": 0,
+        "avg_buy_price": 0.0,
+        "total_fees": 0.0,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.13936849845529778,
+        "calculated_pnl": -0.008183190212093905,
+        "verified_pnl": -0.008183190212093905,
+        "discrepancy": 0.0,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-05T14:36:48.684051",
+      "conversion_num": 3,
+      "exchange": "kraken",
+      "from_asset": "USD",
+      "to_asset": "ADA",
+      "from_amount": 16.870324500000002,
+      "to_amount": 42.26573159,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "OV344X-PLPLS-3IFL4L",
+          "exchange": "kraken",
+          "pair": "ADAUSD",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.0,
+        "total_bought": 42.26573159,
+        "avg_sell_price": 0.0,
+        "avg_buy_price": 0.3991490000374557,
+        "total_fees": 0.0,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.1699748775,
+        "calculated_pnl": 0.09797196424252874,
+        "verified_pnl": 0.0,
+        "discrepancy": 0.09797196424252874,
+        "discrepancy_pct": 100.0,
+        "math_valid": false,
+        "warnings": [
+          "P&L discrepancy: calculated $0.0980 vs verified $0.0000 (100.0%)"
+        ]
+      },
+      "final_status": "NEEDS_REVIEW"
+    },
+    {
+      "timestamp": "2026-01-05T14:36:58.855597",
+      "conversion_num": 4,
+      "exchange": "kraken",
+      "from_asset": "ADA",
+      "to_asset": "USD",
+      "from_amount": 42.099554012199995,
+      "to_amount": 0,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "OSXE4S-ZQCGA-6SYHIS",
+          "exchange": "kraken",
+          "pair": "ADAUSD",
+          "side": "sell"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 42.09955401,
+        "total_bought": 0,
+        "avg_sell_price": 0,
+        "avg_buy_price": 0.0,
+        "total_fees": 0.0,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.20044086781634934,
+        "calculated_pnl": -0.05018266926314752,
+        "verified_pnl": -0.05018266926314752,
+        "discrepancy": 0.0,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-05T14:37:09.523120",
+      "conversion_num": 5,
+      "exchange": "kraken",
+      "from_asset": "USD",
+      "to_asset": "AIXBT",
+      "from_amount": 16.7447555,
+      "to_amount": 400.59224,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "OWDDE2-JFYDX-A3I27K",
+          "exchange": "kraken",
+          "pair": "AIXBTUSD",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.0,
+        "total_bought": 400.59224,
+        "avg_sell_price": 0.0,
+        "avg_buy_price": 0.04179999967048788,
+        "total_fees": 0.0,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.16744755500000003,
+        "calculated_pnl": 1.3200000026358794e-07,
+        "verified_pnl": 0.0,
+        "discrepancy": 1.3200000026358794e-07,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-05T14:56:11.281534",
+      "conversion_num": 1,
+      "exchange": "kraken",
+      "from_asset": "USD",
+      "to_asset": "ADA",
+      "from_amount": 17.410111999999998,
+      "to_amount": 42.94699866,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "O2G6C2-IRPTM-AETZKO",
+          "exchange": "kraken",
+          "pair": "ADAUSD",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.0,
+        "total_bought": 42.94699866,
+        "avg_sell_price": 0.0,
+        "avg_buy_price": 0.4053860000283428,
+        "total_fees": 0.0,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.17541343999999998,
+        "calculated_pnl": -0.007988142967999323,
+        "verified_pnl": 0.0,
+        "discrepancy": 0.007988142967999323,
+        "discrepancy_pct": 100.0,
+        "math_valid": false,
+        "warnings": [
+          "P&L discrepancy: calculated $-0.0080 vs verified $0.0000 (100.0%)"
+        ]
+      },
+      "final_status": "NEEDS_REVIEW"
+    },
+    {
+      "timestamp": "2026-01-05T14:56:23.634396",
+      "conversion_num": 2,
+      "exchange": "kraken",
+      "from_asset": "ADA",
+      "to_asset": "USDC",
+      "from_amount": 42.94276143895,
+      "to_amount": 0,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "OJVPDN-LGBYS-JHOH5Y",
+          "exchange": "kraken",
+          "pair": "ADAUSDC",
+          "side": "sell"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 42.94276144,
+        "total_bought": 0,
+        "avg_sell_price": 0,
+        "avg_buy_price": 0.0,
+        "total_fees": 0.0,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.2085425655282621,
+        "calculated_pnl": -0.010157998141998803,
+        "verified_pnl": -0.010157998141998803,
+        "discrepancy": 0.0,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-05T14:56:46.499683",
+      "conversion_num": 3,
+      "exchange": "kraken",
+      "from_asset": "USD",
+      "to_asset": "ATOM",
+      "from_amount": 17.208126999999998,
+      "to_amount": 7.36302554,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "OSUKF4-DEYH2-7HAXFZ",
+          "exchange": "kraken",
+          "pair": "ATOMUSD",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.0,
+        "total_bought": 7.36302554,
+        "avg_sell_price": 0.0,
+        "avg_buy_price": 2.3371000014214265,
+        "total_fees": 0.0,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.17337836499999998,
+        "calculated_pnl": -0.04123295348999889,
+        "verified_pnl": 0.0,
+        "discrepancy": 0.04123295348999889,
+        "discrepancy_pct": 100.0,
+        "math_valid": false,
+        "warnings": [
+          "P&L discrepancy: calculated $-0.0412 vs verified $0.0000 (100.0%)"
+        ]
+      },
+      "final_status": "NEEDS_REVIEW"
+    },
+    {
+      "timestamp": "2026-01-05T14:56:58.689539",
+      "conversion_num": 4,
+      "exchange": "kraken",
+      "from_asset": "ATOM",
+      "to_asset": "USDC",
+      "from_amount": 7.3650410435,
+      "to_amount": 0,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "OVXXP4-F4IPM-WJCYMF",
+          "exchange": "kraken",
+          "pair": "ATOMUSDC",
+          "side": "sell"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 7.36504104,
+        "total_bought": 0,
+        "avg_sell_price": 0,
+        "avg_buy_price": 0.0,
+        "total_fees": 0.0,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.21356629724863127,
+        "calculated_pnl": -0.1657687430184609,
+        "verified_pnl": -0.1657687430184609,
+        "discrepancy": 0.0,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-05T14:57:22.807575",
+      "conversion_num": 5,
+      "exchange": "kraken",
+      "from_asset": "USD",
+      "to_asset": "AIXBT",
+      "from_amount": 17.009325999999998,
+      "to_amount": 389.22943,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "OO6NTW-XIMCP-TSHFEV",
+          "exchange": "kraken",
+          "pair": "AIXBTUSD",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.0,
+        "total_bought": 389.22943,
+        "avg_sell_price": 0.0,
+        "avg_buy_price": 0.04369999976620473,
+        "total_fees": 0.0,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.17009326,
+        "calculated_pnl": 9.100000397666008e-08,
+        "verified_pnl": 0.0,
+        "discrepancy": 9.100000397666008e-08,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-06T13:03:49.415105",
+      "conversion_num": 1,
+      "exchange": "kraken",
+      "from_asset": "USD",
+      "to_asset": "U",
+      "from_amount": 15.634435,
+      "to_amount": 4082.09791,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "OKUAIR-3DWBK-2VSBGH",
+          "exchange": "kraken",
+          "pair": "UUSD",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.0,
+        "total_bought": 4082.09791,
+        "avg_sell_price": 0.0,
+        "avg_buy_price": 0.0038300000011513686,
+        "total_fees": 0.0,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.05760055000000002,
+        "calculated_pnl": -4.700000388879744e-09,
+        "verified_pnl": 0.0,
+        "discrepancy": 4.700000388879744e-09,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-06T13:04:07.568467",
+      "conversion_num": 2,
+      "exchange": "kraken",
+      "from_asset": "U",
+      "to_asset": "USDC",
+      "from_amount": 3877.993005,
+      "to_amount": 14.97354504,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "O7YMKW-4PM2F-DOEGIJ",
+          "exchange": "kraken",
+          "pair": "UUSD",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": "OXGUEX-L5SRR-EQDXVM",
+          "exchange": "kraken",
+          "pair": "USDCUSD",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 3877.993,
+        "total_bought": 14.97354504,
+        "avg_sell_price": 0,
+        "avg_buy_price": 0.9997000002345471,
+        "total_fees": 0.0,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.08729321433276001,
+        "calculated_pnl": 0.005989395203998882,
+        "verified_pnl": -1.929999982053232e-08,
+        "discrepancy": 0.005989414503998702,
+        "discrepancy_pct": 100.0003222362052,
+        "math_valid": false,
+        "warnings": [
+          "P&L discrepancy: calculated $0.0060 vs verified $-0.0000 (100.0%)"
+        ]
+      },
+      "final_status": "NEEDS_REVIEW"
+    },
+    {
+      "timestamp": "2026-01-06T13:04:16.709809",
+      "conversion_num": 3,
+      "exchange": "binance",
+      "from_asset": "USDC",
+      "to_asset": "BROCCOLI714",
+      "from_amount": 7.2588860974,
+      "to_amount": 171.0,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": 63210423,
+          "exchange": "binance",
+          "pair": "BROCCOLI714USDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.0,
+        "total_bought": 171.0,
+        "avg_sell_price": 0.0,
+        "avg_buy_price": 0.04154,
+        "total_fees": 0.006753046500000001,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.03829815710986772,
+        "calculated_pnl": 0.0,
+        "verified_pnl": -0.16302503250973902,
+        "discrepancy": 0.16302503250973902,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-06T13:04:22.878237",
+      "conversion_num": 4,
+      "exchange": "kraken",
+      "from_asset": "USDC",
+      "to_asset": "S",
+      "from_amount": 14.306544418,
+      "to_amount": 143.06544,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "OPGUHP-XRGHL-UVXNSE",
+          "exchange": "kraken",
+          "pair": "SUSDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.0,
+        "total_bought": 143.06544,
+        "avg_sell_price": 0.0,
+        "avg_buy_price": 0.10000000292173987,
+        "total_fees": 0.0,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.06084654662385776,
+        "calculated_pnl": -0.23033577644179992,
+        "verified_pnl": -0.0014306544417994616,
+        "discrepancy": 0.22890512200000046,
+        "discrepancy_pct": 99.37888309671209,
+        "math_valid": false,
+        "warnings": [
+          "P&L discrepancy: calculated $-0.2303 vs verified $-0.0014 (99.4%)"
+        ]
+      },
+      "final_status": "NEEDS_REVIEW"
+    },
+    {
+      "timestamp": "2026-01-06T13:04:31.939846",
+      "conversion_num": 5,
+      "exchange": "binance",
+      "from_asset": "BROCCOLI714",
+      "to_asset": "S",
+      "from_amount": 167.420799,
+      "to_amount": 68.6,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": 63210761,
+          "exchange": "binance",
+          "pair": "BROCCOLI714USDC",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": 262113025,
+          "exchange": "binance",
+          "pair": "SUSDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 164.0,
+        "total_bought": 68.6,
+        "avg_sell_price": 0.041249999999999995,
+        "avg_buy_price": 0.09850000000000002,
+        "total_fees": 0.012839478000000001,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.025203048736320004,
+        "calculated_pnl": -8.881784197001252e-16,
+        "verified_pnl": -0.020739477999998465,
+        "discrepancy": 0.020739477999997577,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-06T13:04:38.365278",
+      "conversion_num": 6,
+      "exchange": "kraken",
+      "from_asset": "S",
+      "to_asset": "USDC",
+      "from_amount": 135.91216799999998,
+      "to_amount": 0,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "O3APLN-TECJZ-WN7X6H",
+          "exchange": "kraken",
+          "pair": "SUSDC",
+          "side": "sell"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 135.91217,
+        "total_bought": 0,
+        "avg_sell_price": 0,
+        "avg_buy_price": 0.0,
+        "total_fees": 0.0,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.0710920784448,
+        "calculated_pnl": 0.02852272479620055,
+        "verified_pnl": 0.02852272479620055,
+        "discrepancy": 0.0,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-06T13:04:53.006706",
+      "conversion_num": 7,
+      "exchange": "kraken",
+      "from_asset": "USDC",
+      "to_asset": "S",
+      "from_amount": 13.454802917999999,
+      "to_amount": 137.29391,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "OZOGDI-RHJ6J-XPMRLJ",
+          "exchange": "kraken",
+          "pair": "SUSDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.0,
+        "total_bought": 137.29391,
+        "avg_sell_price": 0.0,
+        "avg_buy_price": 0.09799999809168518,
+        "total_fees": 0.0,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.056657466940176,
+        "calculated_pnl": 0.05357234570820246,
+        "verified_pnl": -0.001345480291801593,
+        "discrepancy": 0.054917826000004055,
+        "discrepancy_pct": 102.51152021442209,
+        "math_valid": false,
+        "warnings": [
+          "P&L discrepancy: calculated $0.0536 vs verified $-0.0013 (102.5%)"
+        ]
+      },
+      "final_status": "NEEDS_REVIEW"
+    },
+    {
+      "timestamp": "2026-01-06T13:05:01.452553",
+      "conversion_num": 8,
+      "exchange": "binance",
+      "from_asset": "S",
+      "to_asset": "BROCCOLI714",
+      "from_amount": 67.1641334,
+      "to_amount": 156.0,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": 262113199,
+          "exchange": "binance",
+          "pair": "SUSDC",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": 63211687,
+          "exchange": "binance",
+          "pair": "BROCCOLI714USDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 65.8,
+        "total_bought": 156.0,
+        "avg_sell_price": 0.0983,
+        "avg_buy_price": 0.04145,
+        "total_fees": 0.012287619999999999,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.025491667088160003,
+        "calculated_pnl": 0.0,
+        "verified_pnl": -0.014227620000000274,
+        "discrepancy": 0.014227620000000274,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-06T13:05:08.588094",
+      "conversion_num": 9,
+      "exchange": "kraken",
+      "from_asset": "S",
+      "to_asset": "USDC",
+      "from_amount": 137.224821,
+      "to_amount": 0,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "ONEEAU-HSD75-V6XHPM",
+          "exchange": "kraken",
+          "pair": "SUSDC",
+          "side": "sell"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 137.22482,
+        "total_bought": 0,
+        "avg_sell_price": 0,
+        "avg_buy_price": 0.0,
+        "total_fees": 0.0,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.07547422933872001,
+        "calculated_pnl": 0.03015093905039734,
+        "verified_pnl": 0.03015093905039734,
+        "discrepancy": 0.0,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-06T13:05:19.448368",
+      "conversion_num": 10,
+      "exchange": "binance",
+      "from_asset": "BROCCOLI714",
+      "to_asset": "C",
+      "from_amount": 159.43556299999997,
+      "to_amount": 65.6,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": 63212355,
+          "exchange": "binance",
+          "pair": "BROCCOLI714USDC",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": 42169836,
+          "exchange": "binance",
+          "pair": "CUSDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 156.0,
+        "total_bought": 65.6,
+        "avg_sell_price": 0.04128,
+        "avg_buy_price": 0.0981,
+        "total_fees": 0.012256220000000002,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.022917576935384997,
+        "calculated_pnl": -8.881784197001252e-16,
+        "verified_pnl": -0.016576219999998993,
+        "discrepancy": 0.016576219999998105,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-06T13:05:25.547071",
+      "conversion_num": 11,
+      "exchange": "kraken",
+      "from_asset": "USDC",
+      "to_asset": "S",
+      "from_amount": 13.306517418,
+      "to_amount": 135.3664,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "OROQRC-4HAOE-EADW3F",
+          "exchange": "kraken",
+          "pair": "SUSDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.0,
+        "total_bought": 135.3664,
+        "avg_sell_price": 0.0,
+        "avg_buy_price": 0.09830000220143256,
+        "total_fees": 0.0,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.056038647248352,
+        "calculated_pnl": 0.010875038516401148,
+        "verified_pnl": -0.0026613034835989424,
+        "discrepancy": 0.01353634200000009,
+        "discrepancy_pct": 124.47166949878208,
+        "math_valid": false,
+        "warnings": [
+          "P&L discrepancy: calculated $0.0109 vs verified $-0.0027 (124.5%)"
+        ]
+      },
+      "final_status": "NEEDS_REVIEW"
+    },
+    {
+      "timestamp": "2026-01-06T13:05:34.740279",
+      "conversion_num": 12,
+      "exchange": "binance",
+      "from_asset": "C",
+      "to_asset": "S",
+      "from_amount": 64.2269264,
+      "to_amount": 62.7,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": 42169847,
+          "exchange": "binance",
+          "pair": "CUSDC",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": 262113461,
+          "exchange": "binance",
+          "pair": "SUSDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 62.9,
+        "total_bought": 62.7,
+        "avg_sell_price": 0.098,
+        "avg_buy_price": 0.0983,
+        "total_fees": 0.011717186000000001,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.02841726912335999,
+        "calculated_pnl": 0.0,
+        "verified_pnl": -0.012507186000000291,
+        "discrepancy": 0.012507186000000291,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-06T13:05:41.210284",
+      "conversion_num": 13,
+      "exchange": "kraken",
+      "from_asset": "S",
+      "to_asset": "USDC",
+      "from_amount": 135.45932200000001,
+      "to_amount": 0,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "OUAFYF-PAB7G-VX4IKK",
+          "exchange": "kraken",
+          "pair": "SUSDC",
+          "side": "sell"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 135.45932,
+        "total_bought": 0,
+        "avg_sell_price": 0,
+        "avg_buy_price": 0.0,
+        "total_fees": 0.0,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.07450319745504001,
+        "calculated_pnl": 0.04331156617679888,
+        "verified_pnl": 0.04331156617679888,
+        "discrepancy": 0.0,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-06T13:05:56.008865",
+      "conversion_num": 14,
+      "exchange": "kraken",
+      "from_asset": "USDC",
+      "to_asset": "S",
+      "from_amount": 13.158953917999998,
+      "to_amount": 134.00157,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "OGFNJT-A6G5F-M64VFW",
+          "exchange": "kraken",
+          "pair": "SUSDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.0,
+        "total_bought": 134.00157,
+        "avg_sell_price": 0.0,
+        "avg_buy_price": 0.09819999808957462,
+        "total_fees": 0.0,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.027708601492175997,
+        "calculated_pnl": 0.02416877921640115,
+        "verified_pnl": -0.0026317907835995413,
+        "discrepancy": 0.02680057000000069,
+        "discrepancy_pct": 110.88921686956196,
+        "math_valid": false,
+        "warnings": [
+          "P&L discrepancy: calculated $0.0242 vs verified $-0.0026 (110.9%)"
+        ]
+      },
+      "final_status": "NEEDS_REVIEW"
+    },
+    {
+      "timestamp": "2026-01-06T13:06:08.301625",
+      "conversion_num": 15,
+      "exchange": "binance",
+      "from_asset": "S",
+      "to_asset": "C",
+      "from_amount": 64.0677597,
+      "to_amount": 62.8,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": 262113567,
+          "exchange": "binance",
+          "pair": "SUSDC",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": 42169867,
+          "exchange": "binance",
+          "pair": "CUSDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 62.7,
+        "total_bought": 62.8,
+        "avg_sell_price": 0.09839999999999999,
+        "avg_buy_price": 0.09820000000000001,
+        "total_fees": 0.01170788,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.023994814263480005,
+        "calculated_pnl": 0.0,
+        "verified_pnl": -0.014427879999999168,
+        "discrepancy": 0.014427879999999168,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-06T13:06:15.563852",
+      "conversion_num": 16,
+      "exchange": "kraken",
+      "from_asset": "S",
+      "to_asset": "USDC",
+      "from_amount": 134.0744595,
+      "to_amount": 0,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "OPSPVU-THLBF-6PGKXR",
+          "exchange": "kraken",
+          "pair": "SUSDC",
+          "side": "sell"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 134.07446,
+        "total_bought": 0,
+        "avg_sell_price": 0,
+        "avg_buy_price": 0.0,
+        "total_fees": 0.0,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.07374151724904002,
+        "calculated_pnl": 0.02945888955119713,
+        "verified_pnl": 0.02945888955119713,
+        "discrepancy": 0.0,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-06T13:06:26.844835",
+      "conversion_num": 17,
+      "exchange": "binance",
+      "from_asset": "C",
+      "to_asset": "S",
+      "from_amount": 64.0704596,
+      "to_amount": 62.3,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": 42169888,
+          "exchange": "binance",
+          "pair": "CUSDC",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": 262113623,
+          "exchange": "binance",
+          "pair": "SUSDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 62.7,
+        "total_bought": 62.3,
+        "avg_sell_price": 0.09799999999999999,
+        "avg_buy_price": 0.0985,
+        "total_fees": 0.011661174,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.02683610813752,
+        "calculated_pnl": 0.0,
+        "verified_pnl": -0.01971117399999989,
+        "discrepancy": 0.01971117399999989,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-06T13:06:33.524727",
+      "conversion_num": 18,
+      "exchange": "kraken",
+      "from_asset": "USDC",
+      "to_asset": "S",
+      "from_amount": 13.027283917999998,
+      "to_amount": 132.52578,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "OYZAWR-OHBSV-57KCBP",
+          "exchange": "kraken",
+          "pair": "SUSDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.0,
+        "total_bought": 132.52578,
+        "avg_sell_price": 0.0,
+        "avg_buy_price": 0.09829999806830036,
+        "total_fees": 0.0,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.027431346052176,
+        "calculated_pnl": 0.010647377216400855,
+        "verified_pnl": -0.0026054567836002462,
+        "discrepancy": 0.013252834000001101,
+        "discrepancy_pct": 124.47040929090865,
+        "math_valid": false,
+        "warnings": [
+          "P&L discrepancy: calculated $0.0106 vs verified $-0.0026 (124.5%)"
+        ]
+      },
+      "final_status": "NEEDS_REVIEW"
+    },
+    {
+      "timestamp": "2026-01-06T13:07:08.424219",
+      "conversion_num": 19,
+      "exchange": "kraken",
+      "from_asset": "S",
+      "to_asset": "USDC",
+      "from_amount": 132.6032135,
+      "to_amount": 0,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "OC4ANV-5BZNM-BYDV5U",
+          "exchange": "kraken",
+          "pair": "SUSDC",
+          "side": "sell"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 132.60321,
+        "total_bought": 0,
+        "avg_sell_price": 0,
+        "avg_buy_price": 0.0,
+        "total_fees": 0.0,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.07293232575432002,
+        "calculated_pnl": 0.04108941228269636,
+        "verified_pnl": 0.04108941228269636,
+        "discrepancy": 0.0,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-06T13:07:27.852371",
+      "conversion_num": 20,
+      "exchange": "kraken",
+      "from_asset": "USDC",
+      "to_asset": "S",
+      "from_amount": 12.892621418,
+      "to_amount": 131.15586,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "OGUTSE-U5F2S-NARSZR",
+          "exchange": "kraken",
+          "pair": "SUSDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.0,
+        "total_bought": 131.15586,
+        "avg_sell_price": 0.0,
+        "avg_buy_price": 0.09830000289731622,
+        "total_fees": 0.0,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.02741652586724888,
+        "calculated_pnl": 0.01182594385820046,
+        "verified_pnl": -0.0012892621417996963,
+        "discrepancy": 0.013115206000000157,
+        "discrepancy_pct": 110.90198090958874,
+        "math_valid": false,
+        "warnings": [
+          "P&L discrepancy: calculated $0.0118 vs verified $-0.0013 (110.9%)"
+        ]
+      },
+      "final_status": "NEEDS_REVIEW"
+    },
+    {
+      "timestamp": "2026-01-06T13:07:37.004526",
+      "conversion_num": 21,
+      "exchange": "binance",
+      "from_asset": "S",
+      "to_asset": "BROCCOLI714",
+      "from_amount": 63.61775839999999,
+      "to_amount": 147.0,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": 262113951,
+          "exchange": "binance",
+          "pair": "SUSDC",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": 63217882,
+          "exchange": "binance",
+          "pair": "BROCCOLI714USDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 62.3,
+        "total_bought": 147.0,
+        "avg_sell_price": 0.0984,
+        "avg_buy_price": 0.04145,
+        "total_fees": 0.01160531,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.02261260764288001,
+        "calculated_pnl": -8.881784197001252e-16,
+        "verified_pnl": -0.048775309999999704,
+        "discrepancy": 0.048775309999998816,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-06T13:07:44.898270",
+      "conversion_num": 22,
+      "exchange": "kraken",
+      "from_asset": "S",
+      "to_asset": "USDC",
+      "from_amount": 131.228231,
+      "to_amount": 0,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "O3I3FT-5ZE24-2HBESL",
+          "exchange": "kraken",
+          "pair": "SUSDC",
+          "side": "sell"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 131.22823,
+        "total_bought": 0,
+        "avg_sell_price": 0,
+        "avg_buy_price": 0.0,
+        "total_fees": 0.0,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.07271977887120001,
+        "calculated_pnl": 0.027539457947797885,
+        "verified_pnl": 0.027539457947797885,
+        "discrepancy": 0.0,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-06T13:07:54.079283",
+      "conversion_num": 23,
+      "exchange": "binance",
+      "from_asset": "BROCCOLI714",
+      "to_asset": "S",
+      "from_amount": 150.478706,
+      "to_amount": 61.6,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": 63218690,
+          "exchange": "binance",
+          "pair": "BROCCOLI714USDC",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": 262113992,
+          "exchange": "binance",
+          "pair": "SUSDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 147.0,
+        "total_bought": 61.6,
+        "avg_sell_price": 0.04135,
+        "avg_buy_price": 0.0986,
+        "total_fees": 0.011532898,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.02104392496512,
+        "calculated_pnl": 0.0,
+        "verified_pnl": -0.016222898000000083,
+        "discrepancy": 0.016222898000000083,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-06T13:17:36.614477",
+      "conversion_num": 1,
+      "exchange": "kraken",
+      "from_asset": "USDC",
+      "to_asset": "S",
+      "from_amount": 12.776255917999999,
+      "to_amount": 129.84,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "OUEN52-E2APQ-4YU6QX",
+          "exchange": "kraken",
+          "pair": "SUSDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.0,
+        "total_bought": 129.84,
+        "avg_sell_price": 0.0,
+        "avg_buy_price": 0.09870001540357363,
+        "total_fees": 0.0333195408,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.05433814264853776,
+        "calculated_pnl": -0.0012775435917991018,
+        "verified_pnl": 0.004356915608201277,
+        "discrepancy": 0.005634459200000379,
+        "discrepancy_pct": 441.0385082880536,
+        "math_valid": false,
+        "warnings": [
+          "P&L discrepancy: calculated $-0.0013 vs verified $0.0044 (441.0%)"
+        ]
+      },
+      "final_status": "NEEDS_REVIEW"
+    },
+    {
+      "timestamp": "2026-01-06T13:17:40.303650",
+      "conversion_num": 2,
+      "exchange": "alpaca",
+      "from_asset": "USD",
+      "to_asset": "PEPE",
+      "from_amount": 9.433499999999999,
+      "to_amount": 0,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "8bebc743-08cf-4931-bc0c-8ca8728385c2",
+          "exchange": "alpaca",
+          "pair": "PEPE/USD",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.0,
+        "total_bought": 0,
+        "avg_sell_price": 0.0,
+        "avg_buy_price": 0.0,
+        "total_fees": 0.0,
+        "errors": [
+          "Step 1: Zero executed quantity"
+        ]
+      },
+      "profit_verification": {
+        "expected_pnl": 0.020058599999999992,
+        "calculated_pnl": 0.03165142231947016,
+        "verified_pnl": 0.03165142231947016,
+        "discrepancy": 0.0,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-06T13:23:28.047582",
+      "conversion_num": 1,
+      "exchange": "kraken",
+      "from_asset": "S",
+      "to_asset": "USDC",
+      "from_amount": 129.90941249999997,
+      "to_amount": 12.7701,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "OMKM4U-NBBLS-LX4QCZ",
+          "exchange": "kraken",
+          "pair": "SUSDC",
+          "side": "sell"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 129.90941,
+        "total_bought": 12.7701,
+        "avg_sell_price": 0.0983000384652659,
+        "avg_buy_price": 0.0,
+        "total_fees": 0.0332022470078,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.06795219501000001,
+        "calculated_pnl": -0.0627942879999992,
+        "verified_pnl": -0.03192523700780098,
+        "discrepancy": 0.03086905099219822,
+        "discrepancy_pct": 49.159011074699364,
+        "math_valid": false,
+        "warnings": [
+          "P&L discrepancy: calculated $-0.0628 vs verified $-0.0319 (49.2%)"
+        ]
+      },
+      "final_status": "NEEDS_REVIEW"
+    },
+    {
+      "timestamp": "2026-01-06T13:23:32.601549",
+      "conversion_num": 2,
+      "exchange": "alpaca",
+      "from_asset": "PEPE",
+      "to_asset": "USDC",
+      "from_amount": 1304073.0032822741,
+      "to_amount": 0,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "37eb1012-4269-4c5d-a357-a4793ea22f6c",
+          "exchange": "alpaca",
+          "pair": "PEPE/USD",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": "7c0a3f9c-1718-41c6-9986-93af05d9fc43",
+          "exchange": "alpaca",
+          "pair": "USDC/USD",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.0,
+        "total_bought": 0,
+        "avg_sell_price": 0.0,
+        "avg_buy_price": 0.0,
+        "total_fees": 0.0,
+        "errors": [
+          "Step 1: Zero executed quantity",
+          "Step 2: Zero executed quantity"
+        ]
+      },
+      "profit_verification": {
+        "expected_pnl": 0.04856711041329316,
+        "calculated_pnl": 0.007206559607075391,
+        "verified_pnl": 0.007206559607075391,
+        "discrepancy": 0.0,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-06T13:23:45.432234",
+      "conversion_num": 3,
+      "exchange": "kraken",
+      "from_asset": "USDC",
+      "to_asset": "S",
+      "from_amount": 12.636178418,
+      "to_amount": 128.54708,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "ORRMPS-GKWTJ-NG6GA2",
+          "exchange": "kraken",
+          "pair": "SUSDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.0,
+        "total_bought": 128.54708,
+        "avg_sell_price": 0.0,
+        "avg_buy_price": 0.09859998375692393,
+        "total_fees": 0.032920907188,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.05374238507873776,
+        "calculated_pnl": 0.011590636158198109,
+        "verified_pnl": 0.004377056970199196,
+        "discrepancy": 0.007213579187998913,
+        "discrepancy_pct": 62.23626632345556,
+        "math_valid": false,
+        "warnings": [
+          "P&L discrepancy: calculated $0.0116 vs verified $0.0044 (62.2%)"
+        ]
+      },
+      "final_status": "NEEDS_REVIEW"
+    },
+    {
+      "timestamp": "2026-01-06T13:23:59.255147",
+      "conversion_num": 4,
+      "exchange": "kraken",
+      "from_asset": "S",
+      "to_asset": "USD",
+      "from_amount": 64.15756,
+      "to_amount": 6.31952,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "O2KXJ6-XPROE-F7ZLKO",
+          "exchange": "kraken",
+          "pair": "SUSD",
+          "side": "sell"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 64.15756,
+        "total_bought": 6.31952,
+        "avg_sell_price": 0.0985000052994534,
+        "avg_buy_price": 0.0,
+        "total_fees": 0.016430751116,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.03118673328576,
+        "calculated_pnl": -0.01886390400000071,
+        "verified_pnl": -0.016430751116,
+        "discrepancy": 0.002433152884000707,
+        "discrepancy_pct": 12.89845879199033,
+        "math_valid": false,
+        "warnings": [
+          "P&L discrepancy: calculated $-0.0189 vs verified $-0.0164 (12.9%)"
+        ]
+      },
+      "final_status": "NEEDS_REVIEW"
+    },
+    {
+      "timestamp": "2026-01-06T13:24:11.397099",
+      "conversion_num": 5,
+      "exchange": "alpaca",
+      "from_asset": "USDC",
+      "to_asset": "PEPE",
+      "from_amount": 8.504541088299998,
+      "to_amount": 0,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "b47cd8a7-9ec3-4653-883b-7a6f6022efbe",
+          "exchange": "alpaca",
+          "pair": "USDC/USD",
+          "side": "sell"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.0,
+        "total_bought": 0,
+        "avg_sell_price": 0.0,
+        "avg_buy_price": 0.0,
+        "total_fees": 0.0,
+        "errors": [
+          "Step 1: Zero executed quantity",
+          "Step 2: Zero executed quantity"
+        ]
+      },
+      "profit_verification": {
+        "expected_pnl": 0.01808514833227982,
+        "calculated_pnl": 0.0,
+        "verified_pnl": 0.0,
+        "discrepancy": 0.0,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-06T13:24:19.999622",
+      "conversion_num": 6,
+      "exchange": "kraken",
+      "from_asset": "S",
+      "to_asset": "USDC",
+      "from_amount": 64.15756,
+      "to_amount": 6.3131,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "OVHSKG-GLEHZ-74EQMH",
+          "exchange": "kraken",
+          "pair": "SUSDC",
+          "side": "sell"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 64.15756,
+        "total_bought": 6.3131,
+        "avg_sell_price": 0.09839993914980558,
+        "avg_buy_price": 0.0,
+        "total_fees": 0.0163973891848,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.03036602977824,
+        "calculated_pnl": -0.02462511899999953,
+        "verified_pnl": -0.015766079184799837,
+        "discrepancy": 0.008859039815199692,
+        "discrepancy_pct": 35.97562235211883,
+        "math_valid": false,
+        "warnings": [
+          "P&L discrepancy: calculated $-0.0246 vs verified $-0.0158 (36.0%)"
+        ]
+      },
+      "final_status": "NEEDS_REVIEW"
+    },
+    {
+      "timestamp": "2026-01-06T13:24:35.952940",
+      "conversion_num": 7,
+      "exchange": "binance",
+      "from_asset": "S",
+      "to_asset": "BROCCOLI714",
+      "from_amount": 62.874408800000005,
+      "to_amount": 145.0,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": 262118257,
+          "exchange": "binance",
+          "pair": "SUSDC",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": 63259203,
+          "exchange": "binance",
+          "pair": "BROCCOLI714USDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 61.6,
+        "total_bought": 145.0,
+        "avg_sell_price": 0.09849999999999999,
+        "avg_buy_price": 0.04165,
+        "total_fees": 0.0114932425,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.023863532757120002,
+        "calculated_pnl": 0.0,
+        "verified_pnl": -0.039843242499999654,
+        "discrepancy": 0.039843242499999654,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-06T13:24:50.063833",
+      "conversion_num": 8,
+      "exchange": "binance",
+      "from_asset": "BROCCOLI714",
+      "to_asset": "S",
+      "from_amount": 148.38371099999998,
+      "to_amount": 61.1,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": 63259527,
+          "exchange": "binance",
+          "pair": "BROCCOLI714USDC",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": 262118343,
+          "exchange": "binance",
+          "pair": "SUSDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 145.0,
+        "total_bought": 61.1,
+        "avg_sell_price": 0.04156,
+        "avg_buy_price": 0.09849999999999999,
+        "total_fees": 0.011436518,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.022423504147200003,
+        "calculated_pnl": 0.0,
+        "verified_pnl": -0.019286518000000356,
+        "discrepancy": 0.019286518000000356,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-06T13:25:02.315952",
+      "conversion_num": 9,
+      "exchange": "binance",
+      "from_asset": "S",
+      "to_asset": "C",
+      "from_amount": 62.3275247,
+      "to_amount": 61.1,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": 262118375,
+          "exchange": "binance",
+          "pair": "SUSDC",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": 42170315,
+          "exchange": "binance",
+          "pair": "CUSDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 61.0,
+        "total_bought": 61.1,
+        "avg_sell_price": 0.0983,
+        "avg_buy_price": 0.098,
+        "total_fees": 0.0113790955,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.023343057189480005,
+        "calculated_pnl": 0.0,
+        "verified_pnl": -0.01987909549999973,
+        "discrepancy": 0.01987909549999973,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-06T13:25:14.390935",
+      "conversion_num": 10,
+      "exchange": "binance",
+      "from_asset": "C",
+      "to_asset": "S",
+      "from_amount": 62.4455755,
+      "to_amount": 60.6,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": 42170323,
+          "exchange": "binance",
+          "pair": "CUSDC",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": 262118429,
+          "exchange": "binance",
+          "pair": "SUSDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 61.1,
+        "total_bought": 60.6,
+        "avg_sell_price": 0.0978,
+        "avg_buy_price": 0.0985,
+        "total_fees": 0.011341688,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.026601815162999996,
+        "calculated_pnl": 0.0,
+        "verified_pnl": -0.017821687999999822,
+        "discrepancy": 0.017821687999999822,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-06T13:25:21.031569",
+      "conversion_num": 11,
+      "exchange": "alpaca",
+      "from_asset": "USDC",
+      "to_asset": "PEPE",
+      "from_amount": 8.0869590883,
+      "to_amount": 0,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "7e0b5235-8dfb-440b-a623-7842ea7a1583",
+          "exchange": "alpaca",
+          "pair": "USDC/USD",
+          "side": "sell"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.0,
+        "total_bought": 0,
+        "avg_sell_price": 0.0,
+        "avg_buy_price": 0.0,
+        "total_fees": 0.0,
+        "errors": [
+          "Step 1: Zero executed quantity",
+          "Step 2: Zero executed quantity"
+        ]
+      },
+      "profit_verification": {
+        "expected_pnl": 0.016856610750245766,
+        "calculated_pnl": 0.0,
+        "verified_pnl": 0.0,
+        "discrepancy": 0.0,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-06T13:25:41.596699",
+      "conversion_num": 12,
+      "exchange": "binance",
+      "from_asset": "S",
+      "to_asset": "BROCCOLI714",
+      "from_amount": 61.8791061,
+      "to_amount": 144.0,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": 262118525,
+          "exchange": "binance",
+          "pair": "SUSDC",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": 63262097,
+          "exchange": "binance",
+          "pair": "BROCCOLI714USDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 60.6,
+        "total_bought": 144.0,
+        "avg_sell_price": 0.0985,
+        "avg_buy_price": 0.041440000000000005,
+        "total_fees": 0.011317754,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.02199461255352001,
+        "calculated_pnl": 0.0,
+        "verified_pnl": -0.013057753999998964,
+        "discrepancy": 0.013057753999998964,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-06T13:25:55.572522",
+      "conversion_num": 13,
+      "exchange": "binance",
+      "from_asset": "BROCCOLI714",
+      "to_asset": "C",
+      "from_amount": 147.269647,
+      "to_amount": 60.6,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": 63262614,
+          "exchange": "binance",
+          "pair": "BROCCOLI714USDC",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": 42170332,
+          "exchange": "binance",
+          "pair": "CUSDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 144.0,
+        "total_bought": 60.6,
+        "avg_sell_price": 0.041280000000000004,
+        "avg_buy_price": 0.09799999999999999,
+        "total_fees": 0.011277446,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.021235441556559997,
+        "calculated_pnl": 0.0,
+        "verified_pnl": -0.016797446000000636,
+        "discrepancy": 0.016797446000000636,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-06T13:26:23.218346",
+      "conversion_num": 14,
+      "exchange": "binance",
+      "from_asset": "C",
+      "to_asset": "S",
+      "from_amount": 61.8991569,
+      "to_amount": 60.2,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": 42170344,
+          "exchange": "binance",
+          "pair": "CUSDC",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": 262118657,
+          "exchange": "binance",
+          "pair": "SUSDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 60.6,
+        "total_bought": 60.2,
+        "avg_sell_price": 0.0979,
+        "avg_buy_price": 0.0985,
+        "total_fees": 0.011263596,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.024883461073800007,
+        "calculated_pnl": 0.0,
+        "verified_pnl": -0.014303595999999488,
+        "discrepancy": 0.014303595999999488,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-06T13:30:03.852599",
+      "conversion_num": 15,
+      "exchange": "binance",
+      "from_asset": "S",
+      "to_asset": "BROCCOLI714",
+      "from_amount": 61.4310599,
+      "to_amount": 141.0,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": 262119519,
+          "exchange": "binance",
+          "pair": "SUSDC",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": 63269271,
+          "exchange": "binance",
+          "pair": "BROCCOLI714USDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 60.2,
+        "total_bought": 141.0,
+        "avg_sell_price": 0.0985,
+        "avg_buy_price": 0.04186,
+        "total_fees": 0.011210898,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.02183535681768001,
+        "calculated_pnl": 0.0,
+        "verified_pnl": -0.03865089800000035,
+        "discrepancy": 0.03865089800000035,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-06T13:32:00.909512",
+      "conversion_num": 16,
+      "exchange": "binance",
+      "from_asset": "BROCCOLI714",
+      "to_asset": "S",
+      "from_amount": 144.198376,
+      "to_amount": 59.3,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": 63271143,
+          "exchange": "binance",
+          "pair": "BROCCOLI714USDC",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": 262119875,
+          "exchange": "binance",
+          "pair": "SUSDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 141.0,
+        "total_bought": 59.3,
+        "avg_sell_price": 0.041550000000000004,
+        "avg_buy_price": 0.0987,
+        "total_fees": 0.011108984,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.02035616102928,
+        "calculated_pnl": 0.0,
+        "verified_pnl": -0.016748984000000536,
+        "discrepancy": 0.016748984000000536,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-06T13:52:27.364179",
+      "conversion_num": 1,
+      "exchange": "binance",
+      "from_asset": "S",
+      "to_asset": "BROCCOLI714",
+      "from_amount": 60.4938516,
+      "to_amount": 155.0,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": 262137237,
+          "exchange": "binance",
+          "pair": "SUSDC",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": 63331395,
+          "exchange": "binance",
+          "pair": "BROCCOLI714USDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 59.2,
+        "total_bought": 155.0,
+        "avg_sell_price": 0.10099999999999999,
+        "avg_buy_price": 0.03833,
+        "total_fees": 0.0113331675,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.023520009502080004,
+        "calculated_pnl": 0.0,
+        "verified_pnl": -0.04938316749999925,
+        "discrepancy": 0.04938316749999925,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-06T13:52:40.660271",
+      "conversion_num": 2,
+      "exchange": "binance",
+      "from_asset": "BROCCOLI714",
+      "to_asset": "S",
+      "from_amount": 157.77407100000002,
+      "to_amount": 58.8,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": 63332152,
+          "exchange": "binance",
+          "pair": "BROCCOLI714USDC",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": 262137983,
+          "exchange": "binance",
+          "pair": "SUSDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 154.0,
+        "total_bought": 58.8,
+        "avg_sell_price": 0.03845,
+        "avg_buy_price": 0.10070000000000001,
+        "total_fees": 0.011255928,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.02197986001770001,
+        "calculated_pnl": 0.0,
+        "verified_pnl": -0.011395927999999141,
+        "discrepancy": 0.011395927999999141,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-06T13:52:54.292125",
+      "conversion_num": 3,
+      "exchange": "binance",
+      "from_asset": "S",
+      "to_asset": "C",
+      "from_amount": 60.0471088,
+      "to_amount": 60.1,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": 262138300,
+          "exchange": "binance",
+          "pair": "SUSDC",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": 42171167,
+          "exchange": "binance",
+          "pair": "CUSDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 58.8,
+        "total_bought": 60.1,
+        "avg_sell_price": 0.10060000000000001,
+        "avg_buy_price": 0.0984,
+        "total_fees": 0.011237668,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.023037502199040005,
+        "calculated_pnl": 0.0,
+        "verified_pnl": -0.012677667999999663,
+        "discrepancy": 0.012677667999999663,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-06T13:53:09.369686",
+      "conversion_num": 4,
+      "exchange": "binance",
+      "from_asset": "C",
+      "to_asset": "S",
+      "from_amount": 61.3532038,
+      "to_amount": 58.7,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": 42171186,
+          "exchange": "binance",
+          "pair": "CUSDC",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": 262138609,
+          "exchange": "binance",
+          "pair": "SUSDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 60.1,
+        "total_bought": 58.7,
+        "avg_sell_price": 0.0983,
+        "avg_buy_price": 0.10049999999999999,
+        "total_fees": 0.011233552,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.025231818089299998,
+        "calculated_pnl": 0.0,
+        "verified_pnl": -0.0197135519999996,
+        "discrepancy": 0.0197135519999996,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-06T15:06:44.614695",
+      "conversion_num": 1,
+      "exchange": "binance",
+      "from_asset": "S",
+      "to_asset": "C",
+      "from_amount": 59.8944591,
+      "to_amount": 59.9,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": 262191488,
+          "exchange": "binance",
+          "pair": "SUSDC",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": 42176141,
+          "exchange": "binance",
+          "pair": "CUSDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 58.6,
+        "total_bought": 59.9,
+        "avg_sell_price": 0.1003,
+        "avg_buy_price": 0.09799999999999999,
+        "total_fees": 0.011137628,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.022750971405930003,
+        "calculated_pnl": 0.0,
+        "verified_pnl": -0.018517628000000386,
+        "discrepancy": 0.018517628000000386,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-06T15:06:56.955668",
+      "conversion_num": 2,
+      "exchange": "binance",
+      "from_asset": "C",
+      "to_asset": "S",
+      "from_amount": 61.101436899999996,
+      "to_amount": 58.1,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": 42176171,
+          "exchange": "binance",
+          "pair": "CUSDC",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": 262191634,
+          "exchange": "binance",
+          "pair": "SUSDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 59.8,
+        "total_bought": 58.1,
+        "avg_sell_price": 0.09780000000000001,
+        "avg_buy_price": 0.1005,
+        "total_fees": 0.011064481000000001,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.025026026282949997,
+        "calculated_pnl": 0.0,
+        "verified_pnl": -0.02045448099999979,
+        "discrepancy": 0.02045448099999979,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-06T15:07:09.775570",
+      "conversion_num": 3,
+      "exchange": "binance",
+      "from_asset": "S",
+      "to_asset": "C",
+      "from_amount": 59.350367999999996,
+      "to_amount": 59.5,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": 262191742,
+          "exchange": "binance",
+          "pair": "SUSDC",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": 42176184,
+          "exchange": "binance",
+          "pair": "CUSDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 58.1,
+        "total_bought": 59.5,
+        "avg_sell_price": 0.1005,
+        "avg_buy_price": 0.098,
+        "total_fees": 0.011075245000000001,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.0210937264032,
+        "calculated_pnl": 0.0,
+        "verified_pnl": -0.01912524499999989,
+        "discrepancy": 0.01912524499999989,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-06T15:07:21.927177",
+      "conversion_num": 4,
+      "exchange": "binance",
+      "from_asset": "C",
+      "to_asset": "S",
+      "from_amount": 60.7520424,
+      "to_amount": 57.8,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": 42176199,
+          "exchange": "binance",
+          "pair": "CUSDC",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": 262191843,
+          "exchange": "binance",
+          "pair": "SUSDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 59.5,
+        "total_bought": 57.8,
+        "avg_sell_price": 0.0978,
+        "avg_buy_price": 0.10060000000000001,
+        "total_fees": 0.011008167999999999,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.023426359500720004,
+        "calculated_pnl": 0.0,
+        "verified_pnl": -0.015428167999999645,
+        "discrepancy": 0.015428167999999645,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-06T15:07:33.745924",
+      "conversion_num": 5,
+      "exchange": "binance",
+      "from_asset": "S",
+      "to_asset": "C",
+      "from_amount": 59.0025562,
+      "to_amount": 59.3,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": 262191888,
+          "exchange": "binance",
+          "pair": "SUSDC",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": 42176209,
+          "exchange": "binance",
+          "pair": "CUSDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 57.8,
+        "total_bought": 59.3,
+        "avg_sell_price": 0.1005,
+        "avg_buy_price": 0.0979,
+        "total_fees": 0.011028023000000001,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.02097011054038,
+        "calculated_pnl": 0.0,
+        "verified_pnl": -0.014458023000000712,
+        "discrepancy": 0.014458023000000712,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-06T15:07:46.634746",
+      "conversion_num": 6,
+      "exchange": "binance",
+      "from_asset": "C",
+      "to_asset": "S",
+      "from_amount": 60.5008341,
+      "to_amount": 57.5,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": 42176217,
+          "exchange": "binance",
+          "pair": "CUSDC",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": 262191944,
+          "exchange": "binance",
+          "pair": "SUSDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 59.2,
+        "total_bought": 57.5,
+        "avg_sell_price": 0.0978,
+        "avg_buy_price": 0.10060000000000001,
+        "total_fees": 0.010951845,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.023329492042230005,
+        "calculated_pnl": 0.0,
+        "verified_pnl": -0.016211844999999822,
+        "discrepancy": 0.016211844999999822,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-06T15:07:59.415353",
+      "conversion_num": 7,
+      "exchange": "binance",
+      "from_asset": "S",
+      "to_asset": "C",
+      "from_amount": 58.6550237,
+      "to_amount": 58.9,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": 262192082,
+          "exchange": "binance",
+          "pair": "SUSDC",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": 42176232,
+          "exchange": "binance",
+          "pair": "CUSDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 57.4,
+        "total_bought": 58.9,
+        "avg_sell_price": 0.10039999999999999,
+        "avg_buy_price": 0.0978,
+        "total_fees": 0.010947209,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.010423296971815,
+        "calculated_pnl": 0.0,
+        "verified_pnl": -0.013487208999999764,
+        "discrepancy": 0.013487208999999764,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-06T15:08:11.255177",
+      "conversion_num": 8,
+      "exchange": "binance",
+      "from_asset": "C",
+      "to_asset": "S",
+      "from_amount": 60.1519982,
+      "to_amount": 57.2,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": 42176249,
+          "exchange": "binance",
+          "pair": "CUSDC",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": 262192194,
+          "exchange": "binance",
+          "pair": "SUSDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 58.9,
+        "total_bought": 57.2,
+        "avg_sell_price": 0.0977,
+        "avg_buy_price": 0.1006,
+        "total_fees": 0.010889932000000001,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.011585643130860001,
+        "calculated_pnl": 0.0,
+        "verified_pnl": -0.011099932000000045,
+        "discrepancy": 0.011099932000000045,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-06T15:08:22.941858",
+      "conversion_num": 9,
+      "exchange": "binance",
+      "from_asset": "S",
+      "to_asset": "C",
+      "from_amount": 58.405770499999996,
+      "to_amount": 58.6,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": 262192440,
+          "exchange": "binance",
+          "pair": "SUSDC",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": 42176255,
+          "exchange": "binance",
+          "pair": "CUSDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 57.2,
+        "total_bought": 58.6,
+        "avg_sell_price": 0.1004,
+        "avg_buy_price": 0.09789999999999999,
+        "total_fees": 0.010894698999999999,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.010379003406475,
+        "calculated_pnl": 0.0,
+        "verified_pnl": -0.016834699000000723,
+        "discrepancy": 0.016834699000000723,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-06T15:08:35.223530",
+      "conversion_num": 10,
+      "exchange": "binance",
+      "from_asset": "C",
+      "to_asset": "S",
+      "from_amount": 59.8034416,
+      "to_amount": 57.0,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": 42176260,
+          "exchange": "binance",
+          "pair": "CUSDC",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": 262192502,
+          "exchange": "binance",
+          "pair": "SUSDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 58.6,
+        "total_bought": 57.0,
+        "avg_sell_price": 0.0978,
+        "avg_buy_price": 0.1005,
+        "total_fees": 0.0108487,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.01153028661224,
+        "calculated_pnl": 0.0,
+        "verified_pnl": -0.013428700000000026,
+        "discrepancy": 0.013428700000000026,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-06T15:08:46.771679",
+      "conversion_num": 11,
+      "exchange": "binance",
+      "from_asset": "S",
+      "to_asset": "C",
+      "from_amount": 58.1567035,
+      "to_amount": 58.3,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": 262192549,
+          "exchange": "binance",
+          "pair": "SUSDC",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": 42176270,
+          "exchange": "binance",
+          "pair": "CUSDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 56.9,
+        "total_bought": 58.3,
+        "avg_sell_price": 0.1004,
+        "avg_buy_price": 0.0979,
+        "total_fees": 0.010843773,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.010453192705525001,
+        "calculated_pnl": 0.0,
+        "verified_pnl": -0.016033773000000695,
+        "discrepancy": 0.016033773000000695,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-06T15:08:58.595598",
+      "conversion_num": 12,
+      "exchange": "binance",
+      "from_asset": "C",
+      "to_asset": "S",
+      "from_amount": 59.4551643,
+      "to_amount": 56.6,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": 42176304,
+          "exchange": "binance",
+          "pair": "CUSDC",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": 262192683,
+          "exchange": "binance",
+          "pair": "SUSDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 58.2,
+        "total_bought": 56.6,
+        "avg_sell_price": 0.0977,
+        "avg_buy_price": 0.1003,
+        "total_fees": 0.010768076,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.01157009630985,
+        "calculated_pnl": 0.0,
+        "verified_pnl": -0.019928075999999614,
+        "discrepancy": 0.019928075999999614,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-06T15:09:10.246340",
+      "conversion_num": 13,
+      "exchange": "binance",
+      "from_asset": "S",
+      "to_asset": "C",
+      "from_amount": 57.81000889999999,
+      "to_amount": 57.9,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": 262192821,
+          "exchange": "binance",
+          "pair": "SUSDC",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": 42176308,
+          "exchange": "binance",
+          "pair": "CUSDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 56.6,
+        "total_bought": 57.9,
+        "avg_sell_price": 0.1001,
+        "avg_buy_price": 0.09780000000000001,
+        "total_fees": 0.010756368499999999,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.010390877181334999,
+        "calculated_pnl": 0.0,
+        "verified_pnl": -0.013796368499999486,
+        "discrepancy": 0.013796368499999486,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-06T15:09:22.180011",
+      "conversion_num": 14,
+      "exchange": "binance",
+      "from_asset": "C",
+      "to_asset": "S",
+      "from_amount": 59.1072594,
+      "to_amount": 56.5,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": 42176346,
+          "exchange": "binance",
+          "pair": "CUSDC",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": 262193002,
+          "exchange": "binance",
+          "pair": "SUSDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 57.9,
+        "total_bought": 56.5,
+        "avg_sell_price": 0.0979,
+        "avg_buy_price": 0.1003,
+        "total_fees": 0.010741755,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.011561198998050002,
+        "calculated_pnl": 0.0,
+        "verified_pnl": -0.012201754999999795,
+        "discrepancy": 0.012201754999999795,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-06T15:09:33.937651",
+      "conversion_num": 15,
+      "exchange": "binance",
+      "from_asset": "S",
+      "to_asset": "C",
+      "from_amount": 57.6594074,
+      "to_amount": 57.7,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": 262193058,
+          "exchange": "binance",
+          "pair": "SUSDC",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": 42176361,
+          "exchange": "binance",
+          "pair": "CUSDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 56.5,
+        "total_bought": 57.7,
+        "avg_sell_price": 0.1002,
+        "avg_buy_price": 0.0981,
+        "total_fees": 0.0107446285,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.01036380779111,
+        "calculated_pnl": 0.0,
+        "verified_pnl": -0.011674628499999432,
+        "discrepancy": 0.011674628499999432,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-06T15:09:46.009589",
+      "conversion_num": 16,
+      "exchange": "binance",
+      "from_asset": "C",
+      "to_asset": "S",
+      "from_amount": 58.8575407,
+      "to_amount": 56.2,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": 42176370,
+          "exchange": "binance",
+          "pair": "CUSDC",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": 262193176,
+          "exchange": "binance",
+          "pair": "SUSDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 57.6,
+        "total_bought": 56.2,
+        "avg_sell_price": 0.09789999999999999,
+        "avg_buy_price": 0.1003,
+        "total_fees": 0.010685412,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.011488931885925003,
+        "calculated_pnl": 0.0,
+        "verified_pnl": -0.012865411999999183,
+        "discrepancy": 0.012865411999999183,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-06T15:09:57.710249",
+      "conversion_num": 17,
+      "exchange": "binance",
+      "from_asset": "S",
+      "to_asset": "C",
+      "from_amount": 57.313085199999996,
+      "to_amount": 57.3,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": 262193214,
+          "exchange": "binance",
+          "pair": "SUSDC",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": 42176374,
+          "exchange": "binance",
+          "pair": "CUSDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 56.1,
+        "total_bought": 57.3,
+        "avg_sell_price": 0.1002,
+        "avg_buy_price": 0.0981,
+        "total_fees": 0.0106693465,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.010301559202780001,
+        "calculated_pnl": 0.0,
+        "verified_pnl": -0.010759346500000145,
+        "discrepancy": 0.010759346500000145,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-06T15:10:09.620910",
+      "conversion_num": 18,
+      "exchange": "binance",
+      "from_asset": "C",
+      "to_asset": "S",
+      "from_amount": 58.510194399999996,
+      "to_amount": 55.8,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": 42176385,
+          "exchange": "binance",
+          "pair": "CUSDC",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": 262193287,
+          "exchange": "binance",
+          "pair": "SUSDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 57.3,
+        "total_bought": 55.8,
+        "avg_sell_price": 0.09790000000000001,
+        "avg_buy_price": 0.1004,
+        "total_fees": 0.010619588,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.011397845573400001,
+        "calculated_pnl": 0.0,
+        "verified_pnl": -0.017969588000000633,
+        "discrepancy": 0.017969588000000633,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-06T15:10:21.618102",
+      "conversion_num": 19,
+      "exchange": "binance",
+      "from_asset": "S",
+      "to_asset": "C",
+      "from_amount": 56.967135400000004,
+      "to_amount": 56.9,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": 262193391,
+          "exchange": "binance",
+          "pair": "SUSDC",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": 42176391,
+          "exchange": "binance",
+          "pair": "CUSDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 55.8,
+        "total_bought": 56.9,
+        "avg_sell_price": 0.10020000000000001,
+        "avg_buy_price": 0.09809999999999999,
+        "total_fees": 0.010603584499999999,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.01023937755031,
+        "calculated_pnl": 0.0,
+        "verified_pnl": -0.019873584500000777,
+        "discrepancy": 0.019873584500000777,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-06T15:10:34.203179",
+      "conversion_num": 20,
+      "exchange": "binance",
+      "from_asset": "C",
+      "to_asset": "S",
+      "from_amount": 58.0652205,
+      "to_amount": 55.5,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": 42176410,
+          "exchange": "binance",
+          "pair": "CUSDC",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": 262193648,
+          "exchange": "binance",
+          "pair": "SUSDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 56.9,
+        "total_bought": 55.5,
+        "avg_sell_price": 0.0978,
+        "avg_buy_price": 0.10010000000000001,
+        "total_fees": 0.010548535000000001,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.011311164203625003,
+        "calculated_pnl": 0.0,
+        "verified_pnl": -0.01981853499999989,
+        "discrepancy": 0.01981853499999989,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-06T15:10:46.100426",
+      "conversion_num": 21,
+      "exchange": "binance",
+      "from_asset": "S",
+      "to_asset": "C",
+      "from_amount": 56.6214649,
+      "to_amount": 56.7,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": 262193763,
+          "exchange": "binance",
+          "pair": "SUSDC",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": 42176417,
+          "exchange": "binance",
+          "pair": "CUSDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 55.4,
+        "total_bought": 56.7,
+        "avg_sell_price": 0.1002,
+        "avg_buy_price": 0.0979,
+        "total_fees": 0.010541527,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.010350230452704999,
+        "calculated_pnl": 0.0,
+        "verified_pnl": -0.01069152699999965,
+        "discrepancy": 0.01069152699999965,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-06T15:10:57.338441",
+      "conversion_num": 22,
+      "exchange": "binance",
+      "from_asset": "C",
+      "to_asset": "S",
+      "from_amount": 57.8164328,
+      "to_amount": 55.2,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": 42176429,
+          "exchange": "binance",
+          "pair": "CUSDC",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": 262193950,
+          "exchange": "binance",
+          "pair": "SUSDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 56.6,
+        "total_bought": 55.2,
+        "avg_sell_price": 0.0978,
+        "avg_buy_price": 0.1001,
+        "total_fees": 0.010492221999999999,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.01143597241512,
+        "calculated_pnl": 0.0,
+        "verified_pnl": -0.020452221999999524,
+        "discrepancy": 0.020452221999999524,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-06T15:11:09.925787",
+      "conversion_num": 23,
+      "exchange": "binance",
+      "from_asset": "S",
+      "to_asset": "C",
+      "from_amount": 56.374073700000004,
+      "to_amount": 56.3,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": 262194152,
+          "exchange": "binance",
+          "pair": "SUSDC",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": 42176448,
+          "exchange": "binance",
+          "pair": "CUSDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 55.2,
+        "total_bought": 56.3,
+        "avg_sell_price": 0.0998,
+        "avg_buy_price": 0.09780000000000001,
+        "total_fees": 0.010458994499999999,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.010305008098664999,
+        "calculated_pnl": 0.0,
+        "verified_pnl": -0.013278994499999822,
+        "discrepancy": 0.013278994499999822,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-06T15:11:22.106920",
+      "conversion_num": 24,
+      "exchange": "binance",
+      "from_asset": "C",
+      "to_asset": "S",
+      "from_amount": 57.4700175,
+      "to_amount": 55.0,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": 42176465,
+          "exchange": "binance",
+          "pair": "CUSDC",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": 262194280,
+          "exchange": "binance",
+          "pair": "SUSDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 56.3,
+        "total_bought": 55.0,
+        "avg_sell_price": 0.09770000000000001,
+        "avg_buy_price": 0.1,
+        "total_fees": 0.01044003,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.0113558408865,
+        "calculated_pnl": 0.0,
+        "verified_pnl": -0.010950030000000232,
+        "discrepancy": 0.010950030000000232,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-06T15:11:35.002823",
+      "conversion_num": 25,
+      "exchange": "binance",
+      "from_asset": "S",
+      "to_asset": "C",
+      "from_amount": 56.126868699999996,
+      "to_amount": 56.2,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": 262194329,
+          "exchange": "binance",
+          "pair": "SUSDC",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": 42176479,
+          "exchange": "binance",
+          "pair": "CUSDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 55.0,
+        "total_bought": 56.2,
+        "avg_sell_price": 0.1,
+        "avg_buy_price": 0.0978,
+        "total_fees": 0.010441203,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.010259819781414999,
+        "calculated_pnl": 0.0,
+        "verified_pnl": -0.014081202999999865,
+        "discrepancy": 0.014081202999999865,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-06T15:11:47.853392",
+      "conversion_num": 26,
+      "exchange": "binance",
+      "from_asset": "C",
+      "to_asset": "S",
+      "from_amount": 57.3196953,
+      "to_amount": 54.7,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": 42176481,
+          "exchange": "binance",
+          "pair": "CUSDC",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": 262194498,
+          "exchange": "binance",
+          "pair": "SUSDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 56.1,
+        "total_bought": 54.7,
+        "avg_sell_price": 0.0977,
+        "avg_buy_price": 0.1001,
+        "total_fees": 0.010393026999999999,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.011326137833340001,
+        "calculated_pnl": 0.0,
+        "verified_pnl": -0.015893027000000504,
+        "discrepancy": 0.015893027000000504,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-06T15:12:00.669377",
+      "conversion_num": 27,
+      "exchange": "binance",
+      "from_asset": "S",
+      "to_asset": "C",
+      "from_amount": 55.781943,
+      "to_amount": 55.8,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": 262194652,
+          "exchange": "binance",
+          "pair": "SUSDC",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": 42176493,
+          "exchange": "binance",
+          "pair": "CUSDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 54.6,
+        "total_bought": 55.8,
+        "avg_sell_price": 0.09999999999999999,
+        "avg_buy_price": 0.0978,
+        "total_fees": 0.010366077,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.010196768419349998,
+        "calculated_pnl": 0.0,
+        "verified_pnl": -0.013126077000000317,
+        "discrepancy": 0.013126077000000317,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-06T15:12:14.086836",
+      "conversion_num": 28,
+      "exchange": "binance",
+      "from_asset": "C",
+      "to_asset": "S",
+      "from_amount": 56.9737455,
+      "to_amount": 54.5,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": 42176502,
+          "exchange": "binance",
+          "pair": "CUSDC",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": 262194748,
+          "exchange": "binance",
+          "pair": "SUSDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 55.8,
+        "total_bought": 54.5,
+        "avg_sell_price": 0.0978,
+        "avg_buy_price": 0.1001,
+        "total_fees": 0.010351525,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.011257779564899999,
+        "calculated_pnl": 0.0,
+        "verified_pnl": -0.012141524999999737,
+        "discrepancy": 0.012141524999999737,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-06T15:12:27.530900",
+      "conversion_num": 29,
+      "exchange": "binance",
+      "from_asset": "S",
+      "to_asset": "C",
+      "from_amount": 55.6332035,
+      "to_amount": 55.6,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": 262194843,
+          "exchange": "binance",
+          "pair": "SUSDC",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": 42176510,
+          "exchange": "binance",
+          "pair": "CUSDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 54.5,
+        "total_bought": 55.6,
+        "avg_sell_price": 0.1,
+        "avg_buy_price": 0.0979,
+        "total_fees": 0.010343295999999998,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.010169579294074997,
+        "calculated_pnl": 0.0,
+        "verified_pnl": -0.017103295999999876,
+        "discrepancy": 0.017103295999999876,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-06T15:12:40.240068",
+      "conversion_num": 30,
+      "exchange": "binance",
+      "from_asset": "C",
+      "to_asset": "S",
+      "from_amount": 56.725981899999994,
+      "to_amount": 54.2,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": 42176516,
+          "exchange": "binance",
+          "pair": "CUSDC",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": 262195004,
+          "exchange": "binance",
+          "pair": "SUSDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 55.5,
+        "total_bought": 54.2,
+        "avg_sell_price": 0.0977,
+        "avg_buy_price": 0.09999999999999999,
+        "total_fees": 0.010289932,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.01122028345251,
+        "calculated_pnl": 0.0,
+        "verified_pnl": -0.012639931999999852,
+        "discrepancy": 0.012639931999999852,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-06T15:12:52.852499",
+      "conversion_num": 31,
+      "exchange": "binance",
+      "from_asset": "S",
+      "to_asset": "C",
+      "from_amount": 55.2887433,
+      "to_amount": 55.2,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": 262195129,
+          "exchange": "binance",
+          "pair": "SUSDC",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": 42176530,
+          "exchange": "binance",
+          "pair": "CUSDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 54.1,
+        "total_bought": 55.2,
+        "avg_sell_price": 0.09989999999999999,
+        "avg_buy_price": 0.0978,
+        "total_fees": 0.010257748,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.010106613023984998,
+        "calculated_pnl": 0.0,
+        "verified_pnl": -0.01628774799999998,
+        "discrepancy": 0.01628774799999998,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-06T15:22:47.359028",
+      "conversion_num": 1,
+      "exchange": "binance",
+      "from_asset": "C",
+      "to_asset": "S",
+      "from_amount": 56.3805907,
+      "to_amount": 53.5,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": 42177003,
+          "exchange": "binance",
+          "pair": "CUSDC",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": 262199639,
+          "exchange": "binance",
+          "pair": "SUSDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 55.2,
+        "total_bought": 53.5,
+        "avg_sell_price": 0.0978,
+        "avg_buy_price": 0.1008,
+        "total_fees": 0.010200965,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.0230688665907,
+        "calculated_pnl": 0.0,
+        "verified_pnl": -0.015960964999999543,
+        "discrepancy": 0.015960964999999543,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-06T15:22:59.862821",
+      "conversion_num": 2,
+      "exchange": "binance",
+      "from_asset": "S",
+      "to_asset": "C",
+      "from_amount": 54.6509348,
+      "to_amount": 55.0,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": 262199859,
+          "exchange": "binance",
+          "pair": "SUSDC",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": 42177008,
+          "exchange": "binance",
+          "pair": "CUSDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 53.5,
+        "total_bought": 55.0,
+        "avg_sell_price": 0.1009,
+        "avg_buy_price": 0.09799999999999999,
+        "total_fees": 0.01023829,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.020759213350040006,
+        "calculated_pnl": 0.0,
+        "verified_pnl": -0.018388290000000546,
+        "discrepancy": 0.018388290000000546,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-06T15:23:13.096530",
+      "conversion_num": 3,
+      "exchange": "binance",
+      "from_asset": "C",
+      "to_asset": "S",
+      "from_amount": 56.1333857,
+      "to_amount": 53.2,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": 42177014,
+          "exchange": "binance",
+          "pair": "CUSDC",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": 262200090,
+          "exchange": "binance",
+          "pair": "SUSDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 55.0,
+        "total_bought": 53.2,
+        "avg_sell_price": 0.0978,
+        "avg_buy_price": 0.10099999999999999,
+        "total_fees": 0.010153942000000001,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.021667486880200003,
+        "calculated_pnl": 0.0,
+        "verified_pnl": -0.015953941999999804,
+        "discrepancy": 0.015953941999999804,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-06T15:23:24.849291",
+      "conversion_num": 4,
+      "exchange": "binance",
+      "from_asset": "S",
+      "to_asset": "C",
+      "from_amount": 54.3074056,
+      "to_amount": 54.8,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": 262200145,
+          "exchange": "binance",
+          "pair": "SUSDC",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": 42177024,
+          "exchange": "binance",
+          "pair": "CUSDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 53.2,
+        "total_bought": 54.8,
+        "avg_sell_price": 0.1009,
+        "avg_buy_price": 0.0979,
+        "total_fees": 0.010190958,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.019301406107439998,
+        "calculated_pnl": 0.0,
+        "verified_pnl": -0.01315095800000074,
+        "discrepancy": 0.01315095800000074,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-06T15:23:42.847379",
+      "conversion_num": 5,
+      "exchange": "binance",
+      "from_asset": "C",
+      "to_asset": "S",
+      "from_amount": 55.8863669,
+      "to_amount": 52.9,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": 42177050,
+          "exchange": "binance",
+          "pair": "CUSDC",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": 262200234,
+          "exchange": "binance",
+          "pair": "SUSDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 54.7,
+        "total_bought": 52.9,
+        "avg_sell_price": 0.0977,
+        "avg_buy_price": 0.101,
+        "total_fees": 0.010092429,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.02155012523807,
+        "calculated_pnl": 0.0,
+        "verified_pnl": -0.011382429000000013,
+        "discrepancy": 0.011382429000000013,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-06T15:23:55.365360",
+      "conversion_num": 6,
+      "exchange": "binance",
+      "from_asset": "S",
+      "to_asset": "C",
+      "from_amount": 53.9641557,
+      "to_amount": 54.2,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": 262200423,
+          "exchange": "binance",
+          "pair": "SUSDC",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": 42177058,
+          "exchange": "binance",
+          "pair": "CUSDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 52.8,
+        "total_bought": 54.2,
+        "avg_sell_price": 0.1008,
+        "avg_buy_price": 0.0981,
+        "total_fees": 0.010086702999999999,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.01917941159043,
+        "calculated_pnl": 0.0,
+        "verified_pnl": -0.015306702999999557,
+        "discrepancy": 0.015306702999999557,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-06T15:24:07.560567",
+      "conversion_num": 7,
+      "exchange": "binance",
+      "from_asset": "C",
+      "to_asset": "S",
+      "from_amount": 55.3459067,
+      "to_amount": 52.5,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": 42177104,
+          "exchange": "binance",
+          "pair": "CUSDC",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": 262200565,
+          "exchange": "binance",
+          "pair": "SUSDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 54.2,
+        "total_bought": 52.5,
+        "avg_sell_price": 0.0977,
+        "avg_buy_price": 0.1008,
+        "total_fees": 0.010008095,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.010659960482910001,
+        "calculated_pnl": 0.0,
+        "verified_pnl": -0.013348095000000565,
+        "discrepancy": 0.013348095000000565,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-06T15:24:19.302871",
+      "conversion_num": 8,
+      "exchange": "binance",
+      "from_asset": "S",
+      "to_asset": "C",
+      "from_amount": 53.6212782,
+      "to_amount": 54.0,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": 262200670,
+          "exchange": "binance",
+          "pair": "SUSDC",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": 42177116,
+          "exchange": "binance",
+          "pair": "CUSDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 52.5,
+        "total_bought": 54.0,
+        "avg_sell_price": 0.1007,
+        "avg_buy_price": 0.0979,
+        "total_fees": 0.010034419999999999,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.00952877471409,
+        "calculated_pnl": 0.0,
+        "verified_pnl": -0.01018441999999965,
+        "discrepancy": 0.01018441999999965,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-06T15:24:32.835488",
+      "conversion_num": 9,
+      "exchange": "binance",
+      "from_asset": "C",
+      "to_asset": "S",
+      "from_amount": 55.099632699999994,
+      "to_amount": 52.3,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": 42177131,
+          "exchange": "binance",
+          "pair": "CUSDC",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": 262200732,
+          "exchange": "binance",
+          "pair": "SUSDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 53.9,
+        "total_bought": 52.3,
+        "avg_sell_price": 0.0979,
+        "avg_buy_price": 0.1008,
+        "total_fees": 0.009971533000000001,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.010623377856905002,
+        "calculated_pnl": 0.0,
+        "verified_pnl": -0.014941533000000142,
+        "discrepancy": 0.014941533000000142,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-06T15:24:48.980189",
+      "conversion_num": 10,
+      "exchange": "binance",
+      "from_asset": "S",
+      "to_asset": "C",
+      "from_amount": 53.3765869,
+      "to_amount": 53.5,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": 262200879,
+          "exchange": "binance",
+          "pair": "SUSDC",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": 42177188,
+          "exchange": "binance",
+          "pair": "CUSDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 52.3,
+        "total_bought": 53.5,
+        "avg_sell_price": 0.10070000000000001,
+        "avg_buy_price": 0.0983,
+        "total_fees": 0.009979047500000001,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.009485291821655,
+        "calculated_pnl": 0.0,
+        "verified_pnl": -0.01753904749999979,
+        "discrepancy": 0.01753904749999979,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-06T15:25:00.840768",
+      "conversion_num": 11,
+      "exchange": "binance",
+      "from_asset": "C",
+      "to_asset": "S",
+      "from_amount": 54.6578242,
+      "to_amount": 52.0,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": 42177209,
+          "exchange": "binance",
+          "pair": "CUSDC",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": 262200946,
+          "exchange": "binance",
+          "pair": "SUSDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 53.5,
+        "total_bought": 52.0,
+        "avg_sell_price": 0.0981,
+        "avg_buy_price": 0.1009,
+        "total_fees": 0.00991605,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.010680027302100001,
+        "calculated_pnl": 0.0,
+        "verified_pnl": -0.01146604999999994,
+        "discrepancy": 0.01146604999999994,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-06T15:25:12.827454",
+      "conversion_num": 12,
+      "exchange": "binance",
+      "from_asset": "S",
+      "to_asset": "C",
+      "from_amount": 53.0341749,
+      "to_amount": 53.1,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": 262201048,
+          "exchange": "binance",
+          "pair": "SUSDC",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": 42177225,
+          "exchange": "binance",
+          "pair": "CUSDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 51.9,
+        "total_bought": 53.1,
+        "avg_sell_price": 0.1007,
+        "avg_buy_price": 0.0983,
+        "total_fees": 0.009918709,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.009532460006235,
+        "calculated_pnl": 0.0,
+        "verified_pnl": -0.016518708999999715,
+        "discrepancy": 0.016518708999999715,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-06T15:25:26.800426",
+      "conversion_num": 13,
+      "exchange": "binance",
+      "from_asset": "C",
+      "to_asset": "S",
+      "from_amount": 54.2163881,
+      "to_amount": 51.6,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": 42177232,
+          "exchange": "binance",
+          "pair": "CUSDC",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": 262201100,
+          "exchange": "binance",
+          "pair": "SUSDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 53.1,
+        "total_bought": 51.6,
+        "avg_sell_price": 0.09809999999999999,
+        "avg_buy_price": 0.10079999999999999,
+        "total_fees": 0.009840846,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.010604559543825002,
+        "calculated_pnl": 0.0,
+        "verified_pnl": -0.017670846000000226,
+        "discrepancy": 0.017670846000000226,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-06T15:25:39.997552",
+      "conversion_num": 14,
+      "exchange": "binance",
+      "from_asset": "S",
+      "to_asset": "C",
+      "from_amount": 52.6921353,
+      "to_amount": 53.0,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": 262201162,
+          "exchange": "binance",
+          "pair": "SUSDC",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": 42177249,
+          "exchange": "binance",
+          "pair": "CUSDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 51.6,
+        "total_bought": 53.0,
+        "avg_sell_price": 0.10079999999999999,
+        "avg_buy_price": 0.0981,
+        "total_fees": 0.009880555000000001,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.009470981180295001,
+        "calculated_pnl": 0.0,
+        "verified_pnl": -0.01186055499999965,
+        "discrepancy": 0.01186055499999965,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-06T15:25:56.924767",
+      "conversion_num": 15,
+      "exchange": "binance",
+      "from_asset": "C",
+      "to_asset": "S",
+      "from_amount": 54.0690451,
+      "to_amount": 51.4,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": 42177254,
+          "exchange": "binance",
+          "pair": "CUSDC",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": 262201307,
+          "exchange": "binance",
+          "pair": "SUSDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 52.9,
+        "total_bought": 51.4,
+        "avg_sell_price": 0.098,
+        "avg_buy_price": 0.1007,
+        "total_fees": 0.009798224,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.010554222431025002,
+        "calculated_pnl": 0.0,
+        "verified_pnl": -0.018018223999999673,
+        "discrepancy": 0.018018223999999673,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-06T15:26:09.210286",
+      "conversion_num": 16,
+      "exchange": "binance",
+      "from_asset": "S",
+      "to_asset": "C",
+      "from_amount": 52.448281900000005,
+      "to_amount": 52.6,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": 262201352,
+          "exchange": "binance",
+          "pair": "SUSDC",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": 42177259,
+          "exchange": "binance",
+          "pair": "CUSDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 51.3,
+        "total_bought": 52.6,
+        "avg_sell_price": 0.10070000000000001,
+        "avg_buy_price": 0.09820000000000001,
+        "total_fees": 0.00980467,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.009427150522285,
+        "calculated_pnl": 0.0,
+        "verified_pnl": -0.010394669999999868,
+        "discrepancy": 0.010394669999999868,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-06T15:26:21.726986",
+      "conversion_num": 17,
+      "exchange": "binance",
+      "from_asset": "C",
+      "to_asset": "S",
+      "from_amount": 53.726074499999996,
+      "to_amount": 51.1,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": 42177264,
+          "exchange": "binance",
+          "pair": "CUSDC",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": 262201401,
+          "exchange": "binance",
+          "pair": "SUSDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 52.6,
+        "total_bought": 51.1,
+        "avg_sell_price": 0.09799999999999999,
+        "avg_buy_price": 0.1008,
+        "total_fees": 0.009741851,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.010497965312250002,
+        "calculated_pnl": 0.0,
+        "verified_pnl": -0.013661850999999923,
+        "discrepancy": 0.013661850999999923,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-06T15:26:33.987076",
+      "conversion_num": 18,
+      "exchange": "binance",
+      "from_asset": "S",
+      "to_asset": "C",
+      "from_amount": 52.2047078,
+      "to_amount": 52.3,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": 262201504,
+          "exchange": "binance",
+          "pair": "SUSDC",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": 42177266,
+          "exchange": "binance",
+          "pair": "CUSDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 51.1,
+        "total_bought": 52.3,
+        "avg_sell_price": 0.1006,
+        "avg_buy_price": 0.09820000000000001,
+        "total_fees": 0.00975276,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.00938337006617,
+        "calculated_pnl": 0.0,
+        "verified_pnl": -0.01455275999999947,
+        "discrepancy": 0.01455275999999947,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-06T15:26:46.419757",
+      "conversion_num": 19,
+      "exchange": "binance",
+      "from_asset": "C",
+      "to_asset": "S",
+      "from_amount": 53.3833832,
+      "to_amount": 50.8,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": 42177272,
+          "exchange": "binance",
+          "pair": "CUSDC",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": 262201574,
+          "exchange": "binance",
+          "pair": "SUSDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 52.3,
+        "total_bought": 50.8,
+        "avg_sell_price": 0.098,
+        "avg_buy_price": 0.1008,
+        "total_fees": 0.009685478,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.0104310041316,
+        "calculated_pnl": 0.0,
+        "verified_pnl": -0.014445478000000098,
+        "discrepancy": 0.014445478000000098,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-06T15:33:26.220346",
+      "conversion_num": 1,
+      "exchange": "binance",
+      "from_asset": "S",
+      "to_asset": "C",
+      "from_amount": 51.863413,
+      "to_amount": 52.0,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": 262204044,
+          "exchange": "binance",
+          "pair": "SUSDC",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": 42177603,
+          "exchange": "binance",
+          "pair": "CUSDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 50.8,
+        "total_bought": 52.0,
+        "avg_sell_price": 0.10050000000000002,
+        "avg_buy_price": 0.0981,
+        "total_fees": 0.009691330000000001,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.019878029000350003,
+        "calculated_pnl": 0.0,
+        "verified_pnl": -0.013891329999999983,
+        "discrepancy": 0.013891329999999983,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-06T15:33:39.289377",
+      "conversion_num": 2,
+      "exchange": "binance",
+      "from_asset": "C",
+      "to_asset": "FLOKI",
+      "from_amount": 53.0409712,
+      "to_amount": 86750.0,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": 42177632,
+          "exchange": "binance",
+          "pair": "CUSDC",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": 580294247,
+          "exchange": "binance",
+          "pair": "FLOKIUSDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 51.9,
+        "total_bought": 86750.0,
+        "avg_sell_price": 0.098,
+        "avg_buy_price": 5.863e-05,
+        "total_fees": 0.0096619401,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.013379963849279999,
+        "calculated_pnl": 0.0,
+        "verified_pnl": -0.009709440099999979,
+        "discrepancy": 0.009709440099999979,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-06T15:51:39.940355",
+      "conversion_num": 1,
+      "exchange": "alpaca",
+      "from_asset": "USD",
+      "to_asset": "PEPE",
+      "from_amount": 1.6435,
+      "to_amount": 0,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "a19b1be1-0995-4851-985d-51eaecde2e69",
+          "exchange": "alpaca",
+          "pair": "PEPE/USD",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.0,
+        "total_bought": 0,
+        "avg_sell_price": 0.0,
+        "avg_buy_price": 0.0,
+        "total_fees": 0.0,
+        "errors": [
+          "Step 1: Zero executed quantity"
+        ]
+      },
+      "profit_verification": {
+        "expected_pnl": 0.0034945999999999987,
+        "calculated_pnl": 0.002212640239339647,
+        "verified_pnl": 0.002212640239339647,
+        "discrepancy": 0.0,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-06T15:51:51.326498",
+      "conversion_num": 2,
+      "exchange": "alpaca",
+      "from_asset": "PEPE",
+      "to_asset": "USDC",
+      "from_amount": 299415.09805126284,
+      "to_amount": 0,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "14a18a5c-4234-4bf4-8763-957bb318f04f",
+          "exchange": "alpaca",
+          "pair": "PEPE/USD",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": "1cd270f4-87a3-4af3-8e90-5fabf9390ef9",
+          "exchange": "alpaca",
+          "pair": "USDC/USD",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.0,
+        "total_bought": 0,
+        "avg_sell_price": 0.0,
+        "avg_buy_price": 0.0,
+        "total_fees": 0.0,
+        "errors": [
+          "Step 1: Zero executed quantity",
+          "Step 2: Zero executed quantity"
+        ]
+      },
+      "profit_verification": {
+        "expected_pnl": 0.011825320504087774,
+        "calculated_pnl": -0.0072888877024612775,
+        "verified_pnl": -0.0072888877024612775,
+        "discrepancy": 0.0,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-06T15:52:02.687946",
+      "conversion_num": 3,
+      "exchange": "alpaca",
+      "from_asset": "USDT",
+      "to_asset": "PEPE",
+      "from_amount": 5.0435860373,
+      "to_amount": 0,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "e294848c-bd18-4895-aab4-2aa76ef9d9b9",
+          "exchange": "alpaca",
+          "pair": "USDT/USD",
+          "side": "sell"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.0,
+        "total_bought": 0,
+        "avg_sell_price": 0.0,
+        "avg_buy_price": 0.0,
+        "total_fees": 0.0,
+        "errors": [
+          "Step 1: Zero executed quantity",
+          "Step 2: Zero executed quantity"
+        ]
+      },
+      "profit_verification": {
+        "expected_pnl": 0.005254002854064774,
+        "calculated_pnl": 0.0,
+        "verified_pnl": 0.0,
+        "discrepancy": 0.0,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-06T15:52:54.125105",
+      "conversion_num": 1,
+      "exchange": "alpaca",
+      "from_asset": "USDC",
+      "to_asset": "PEPE",
+      "from_amount": 9.155201719899999,
+      "to_amount": 0,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "ea56c207-7403-49b8-b7c7-d3aea1f0b247",
+          "exchange": "alpaca",
+          "pair": "USDC/USD",
+          "side": "sell"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.0,
+        "total_bought": 0,
+        "avg_sell_price": 0.0,
+        "avg_buy_price": 0.0,
+        "total_fees": 0.0,
+        "errors": [
+          "Step 1: Zero executed quantity",
+          "Step 2: Zero executed quantity"
+        ]
+      },
+      "profit_verification": {
+        "expected_pnl": 0.015133201509034789,
+        "calculated_pnl": 0.0,
+        "verified_pnl": 0.0,
+        "discrepancy": 0.0,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-06T15:53:05.202351",
+      "conversion_num": 2,
+      "exchange": "alpaca",
+      "from_asset": "USDT",
+      "to_asset": "PEPE",
+      "from_amount": 4.977152537299999,
+      "to_amount": 0,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "fa7aafb3-fd1e-4568-8f3c-169db10604fd",
+          "exchange": "alpaca",
+          "pair": "USDT/USD",
+          "side": "sell"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.0,
+        "total_bought": 0,
+        "avg_sell_price": 0.0,
+        "avg_buy_price": 0.0,
+        "total_fees": 0.0,
+        "errors": [
+          "Step 1: Zero executed quantity",
+          "Step 2: Zero executed quantity"
+        ]
+      },
+      "profit_verification": {
+        "expected_pnl": 0.005184745902255226,
+        "calculated_pnl": 0.0,
+        "verified_pnl": 0.0,
+        "discrepancy": 0.0,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-06T16:01:47.952829",
+      "conversion_num": 3,
+      "exchange": "alpaca",
+      "from_asset": "USDC",
+      "to_asset": "GRT",
+      "from_amount": 9.0318252199,
+      "to_amount": 0,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "c12e95f9-182d-430c-99ba-2fc10bdf6923",
+          "exchange": "alpaca",
+          "pair": "USDC/USD",
+          "side": "sell"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.0,
+        "total_bought": 0,
+        "avg_sell_price": 0.0,
+        "avg_buy_price": 0.0,
+        "total_fees": 0.0,
+        "errors": [
+          "Step 1: Zero executed quantity",
+          "Step 2: Zero executed quantity"
+        ]
+      },
+      "profit_verification": {
+        "expected_pnl": 0.005134392986639873,
+        "calculated_pnl": 0.0,
+        "verified_pnl": 0.0,
+        "discrepancy": 0.0,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-06T16:01:58.279442",
+      "conversion_num": 4,
+      "exchange": "alpaca",
+      "from_asset": "USDT",
+      "to_asset": "GRT",
+      "from_amount": 4.7398900372999995,
+      "to_amount": 0,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "3ba9a69d-97d3-4767-85da-3aedd82def83",
+          "exchange": "alpaca",
+          "pair": "USDT/USD",
+          "side": "sell"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.0,
+        "total_bought": 0,
+        "avg_sell_price": 0.0,
+        "avg_buy_price": 0.0,
+        "total_fees": 0.0,
+        "errors": [
+          "Step 1: Zero executed quantity",
+          "Step 2: Zero executed quantity"
+        ]
+      },
+      "profit_verification": {
+        "expected_pnl": 0.0026932564106447896,
+        "calculated_pnl": 0.0,
+        "verified_pnl": 0.0,
+        "discrepancy": 0.0,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-06T16:05:39.986006",
+      "conversion_num": 5,
+      "exchange": "alpaca",
+      "from_asset": "USD",
+      "to_asset": "PEPE",
+      "from_amount": 1.8335,
+      "to_amount": 0,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "f5896770-cf4f-4e9b-a2ba-adce3183357a",
+          "exchange": "alpaca",
+          "pair": "PEPE/USD",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.0,
+        "total_bought": 0,
+        "avg_sell_price": 0.0,
+        "avg_buy_price": 0.0,
+        "total_fees": 0.0,
+        "errors": [
+          "Step 1: Zero executed quantity"
+        ]
+      },
+      "profit_verification": {
+        "expected_pnl": 0.0038985999999999986,
+        "calculated_pnl": -0.0041326070623630695,
+        "verified_pnl": -0.0041326070623630695,
+        "discrepancy": 0.0,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-06T16:11:17.042774",
+      "conversion_num": 1,
+      "exchange": "alpaca",
+      "from_asset": "PEPE",
+      "to_asset": "USDC",
+      "from_amount": 276332.65041024936,
+      "to_amount": 0,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "85c5dddc-3913-4045-a8b4-bd773f4e7920",
+          "exchange": "alpaca",
+          "pair": "PEPE/USD",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": "ddb89f5c-5242-4bb2-9df6-85aa95f81ad5",
+          "exchange": "alpaca",
+          "pair": "USDC/USD",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.0,
+        "total_bought": 0,
+        "avg_sell_price": 0.0,
+        "avg_buy_price": 0.0,
+        "total_fees": 0.0,
+        "errors": [
+          "Step 1: Zero executed quantity",
+          "Step 2: Zero executed quantity"
+        ]
+      },
+      "profit_verification": {
+        "expected_pnl": 0.010587903657824293,
+        "calculated_pnl": -0.00945256656582072,
+        "verified_pnl": -0.00945256656582072,
+        "discrepancy": 0.0,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-06T16:11:27.046058",
+      "conversion_num": 2,
+      "exchange": "alpaca",
+      "from_asset": "USDT",
+      "to_asset": "PEPE",
+      "from_amount": 3.8193115373,
+      "to_amount": 0,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "441680eb-4c65-4420-af9e-fa0028cfd920",
+          "exchange": "alpaca",
+          "pair": "USDT/USD",
+          "side": "sell"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.0,
+        "total_bought": 0,
+        "avg_sell_price": 0.0,
+        "avg_buy_price": 0.0,
+        "total_fees": 0.0,
+        "errors": [
+          "Step 1: Zero executed quantity",
+          "Step 2: Zero executed quantity"
+        ]
+      },
+      "profit_verification": {
+        "expected_pnl": 0.003978652008537774,
+        "calculated_pnl": 0.0,
+        "verified_pnl": 0.0,
+        "discrepancy": 0.0,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-06T16:11:39.181532",
+      "conversion_num": 3,
+      "exchange": "alpaca",
+      "from_asset": "USDT",
+      "to_asset": "SHIB",
+      "from_amount": 3.7433875373,
+      "to_amount": 0,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "3a8068bf-fe7e-4351-93ef-4edd629faac4",
+          "exchange": "alpaca",
+          "pair": "USDT/USD",
+          "side": "sell"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.0,
+        "total_bought": 0,
+        "avg_sell_price": 0.0,
+        "avg_buy_price": 0.0,
+        "total_fees": 0.0,
+        "errors": [
+          "Step 1: Zero executed quantity",
+          "Step 2: Zero executed quantity"
+        ]
+      },
+      "profit_verification": {
+        "expected_pnl": 0.0026390700879200053,
+        "calculated_pnl": 0.0,
+        "verified_pnl": 0.0,
+        "discrepancy": 0.0,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-06T16:13:30.714558",
+      "conversion_num": 4,
+      "exchange": "alpaca",
+      "from_asset": "USDC",
+      "to_asset": "XTZ",
+      "from_amount": 10.2597521659,
+      "to_amount": 0,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "becf85b3-b8f7-4a9d-8141-a821014838df",
+          "exchange": "alpaca",
+          "pair": "USDC/USD",
+          "side": "sell"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.0,
+        "total_bought": 0,
+        "avg_sell_price": 0.0,
+        "avg_buy_price": 0.0,
+        "total_fees": 0.0,
+        "errors": [
+          "Step 1: Zero executed quantity",
+          "Step 2: Zero executed quantity"
+        ]
+      },
+      "profit_verification": {
+        "expected_pnl": 0.005832442311792594,
+        "calculated_pnl": 0.0,
+        "verified_pnl": 0.0,
+        "discrepancy": 0.0,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-06T16:13:41.354042",
+      "conversion_num": 5,
+      "exchange": "alpaca",
+      "from_asset": "USDT",
+      "to_asset": "XTZ",
+      "from_amount": 3.60103003825,
+      "to_amount": 0,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "4e8900c6-3c5c-4f76-85ea-23c6c08668b1",
+          "exchange": "alpaca",
+          "pair": "USDT/USD",
+          "side": "sell"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.0,
+        "total_bought": 0,
+        "avg_sell_price": 0.0,
+        "avg_buy_price": 0.0,
+        "total_fees": 0.0,
+        "errors": [
+          "Step 1: Zero executed quantity",
+          "Step 2: Zero executed quantity"
+        ]
+      },
+      "profit_verification": {
+        "expected_pnl": 0.002046143931424589,
+        "calculated_pnl": 0.0,
+        "verified_pnl": 0.0,
+        "discrepancy": 0.0,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-06T16:14:39.930124",
+      "conversion_num": 6,
+      "exchange": "alpaca",
+      "from_asset": "USD",
+      "to_asset": "PEPE",
+      "from_amount": 1.0735,
+      "to_amount": 0,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "e13b61c7-4e86-4ab5-9ae5-981f9cc7058c",
+          "exchange": "alpaca",
+          "pair": "PEPE/USD",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.0,
+        "total_bought": 0,
+        "avg_sell_price": 0.0,
+        "avg_buy_price": 0.0,
+        "total_fees": 0.0,
+        "errors": [
+          "Step 1: Zero executed quantity"
+        ]
+      },
+      "profit_verification": {
+        "expected_pnl": 0.0022825999999999988,
+        "calculated_pnl": 0.002494577846624546,
+        "verified_pnl": 0.002494577846624546,
+        "discrepancy": 0.0,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-06T16:14:49.675236",
+      "conversion_num": 7,
+      "exchange": "alpaca",
+      "from_asset": "PEPE",
+      "to_asset": "USD",
+      "from_amount": 171674.10399928395,
+      "to_amount": 0,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "ce112851-4e49-4d32-a0ca-b95643b7324a",
+          "exchange": "alpaca",
+          "pair": "PEPE/USD",
+          "side": "sell"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.0,
+        "total_bought": 0,
+        "avg_sell_price": 0.0,
+        "avg_buy_price": 0.0,
+        "total_fees": 0.0,
+        "errors": [
+          "Step 1: Zero executed quantity"
+        ]
+      },
+      "profit_verification": {
+        "expected_pnl": 0.005845955015133511,
+        "calculated_pnl": 171501.31916383113,
+        "verified_pnl": 171501.31916383113,
+        "discrepancy": 0.0,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-06T16:18:43.314082",
+      "conversion_num": 8,
+      "exchange": "alpaca",
+      "from_asset": "USD",
+      "to_asset": "PEPE",
+      "from_amount": 1.083,
+      "to_amount": 0,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "7142f1a0-b2c6-47b4-a1b4-4e2849925a9c",
+          "exchange": "alpaca",
+          "pair": "PEPE/USD",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.0,
+        "total_bought": 0,
+        "avg_sell_price": 0.0,
+        "avg_buy_price": 0.0,
+        "total_fees": 0.0,
+        "errors": [
+          "Step 1: Zero executed quantity"
+        ]
+      },
+      "profit_verification": {
+        "expected_pnl": 0.0038645999999999984,
+        "calculated_pnl": 0.0033425925925885114,
+        "verified_pnl": 0.0033425925925885114,
+        "discrepancy": 0.0,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-06T16:18:52.794333",
+      "conversion_num": 9,
+      "exchange": "alpaca",
+      "from_asset": "PEPE",
+      "to_asset": "USD",
+      "from_amount": 167123.01087654044,
+      "to_amount": 0,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "eed251e8-b189-4c2b-973b-602408ed2a49",
+          "exchange": "alpaca",
+          "pair": "PEPE/USD",
+          "side": "sell"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.0,
+        "total_bought": 0,
+        "avg_sell_price": 0.0,
+        "avg_buy_price": 0.0,
+        "total_fees": 0.0,
+        "errors": [
+          "Step 1: Zero executed quantity"
+        ]
+      },
+      "profit_verification": {
+        "expected_pnl": 0.006005415864733487,
+        "calculated_pnl": 166954.80323732243,
+        "verified_pnl": 166954.80323732243,
+        "discrepancy": 0.0,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-06T16:19:41.028721",
+      "conversion_num": 10,
+      "exchange": "alpaca",
+      "from_asset": "USD",
+      "to_asset": "PEPE",
+      "from_amount": 1.0735,
+      "to_amount": 0,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "1a7309be-fa73-425f-aeb9-a1338e6b436d",
+          "exchange": "alpaca",
+          "pair": "PEPE/USD",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.0,
+        "total_bought": 0,
+        "avg_sell_price": 0.0,
+        "avg_buy_price": 0.0,
+        "total_fees": 0.0,
+        "errors": [
+          "Step 1: Zero executed quantity"
+        ]
+      },
+      "profit_verification": {
+        "expected_pnl": 0.0024181999999999993,
+        "calculated_pnl": 0.0016566358024654448,
+        "verified_pnl": 0.0016566358024654448,
+        "discrepancy": 0.0,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-06T16:19:51.965909",
+      "conversion_num": 11,
+      "exchange": "alpaca",
+      "from_asset": "PEPE",
+      "to_asset": "USD",
+      "from_amount": 165501.86763564084,
+      "to_amount": 0,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "321b4e48-55d2-4946-a041-77c2af30ac44",
+          "exchange": "alpaca",
+          "pair": "PEPE/USD",
+          "side": "sell"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.0,
+        "total_bought": 0,
+        "avg_sell_price": 0.0,
+        "avg_buy_price": 0.0,
+        "total_fees": 0.0,
+        "errors": [
+          "Step 1: Zero executed quantity"
+        ]
+      },
+      "profit_verification": {
+        "expected_pnl": 0.005947161532868344,
+        "calculated_pnl": 165335.29166088405,
+        "verified_pnl": 165335.29166088405,
+        "discrepancy": 0.0,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-06T16:20:30.429526",
+      "conversion_num": 12,
+      "exchange": "alpaca",
+      "from_asset": "USD",
+      "to_asset": "PEPE",
+      "from_amount": 1.0545,
+      "to_amount": 0,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "4b73cd6f-7263-4f4d-852f-fcb00ea53436",
+          "exchange": "alpaca",
+          "pair": "PEPE/USD",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.0,
+        "total_bought": 0,
+        "avg_sell_price": 0.0,
+        "avg_buy_price": 0.0,
+        "total_fees": 0.0,
+        "errors": [
+          "Step 1: Zero executed quantity"
+        ]
+      },
+      "profit_verification": {
+        "expected_pnl": 0.0023753999999999997,
+        "calculated_pnl": -4.440892098500626e-16,
+        "verified_pnl": -4.440892098500626e-16,
+        "discrepancy": 0.0,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-06T16:20:43.097125",
+      "conversion_num": 13,
+      "exchange": "alpaca",
+      "from_asset": "PEPE",
+      "to_asset": "USD",
+      "from_amount": 163118.1657442705,
+      "to_amount": 0,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "d2ea9878-e035-406b-b1e8-b58f2ee16413",
+          "exchange": "alpaca",
+          "pair": "PEPE/USD",
+          "side": "sell"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.0,
+        "total_bought": 0,
+        "avg_sell_price": 0.0,
+        "avg_buy_price": 0.0,
+        "total_fees": 0.0,
+        "errors": [
+          "Step 1: Zero executed quantity"
+        ]
+      },
+      "profit_verification": {
+        "expected_pnl": 0.005843442147623329,
+        "calculated_pnl": 162953.99220399364,
+        "verified_pnl": 162953.99220399364,
+        "discrepancy": 0.0,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-06T16:26:26.329561",
+      "conversion_num": 14,
+      "exchange": "alpaca",
+      "from_asset": "USD",
+      "to_asset": "PEPE",
+      "from_amount": 1.0355,
+      "to_amount": 0,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "20d47ba1-c3b5-465c-966a-229ee71bd4f8",
+          "exchange": "alpaca",
+          "pair": "PEPE/USD",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.0,
+        "total_bought": 0,
+        "avg_sell_price": 0.0,
+        "avg_buy_price": 0.0,
+        "total_fees": 0.0,
+        "errors": [
+          "Step 1: Zero executed quantity"
+        ]
+      },
+      "profit_verification": {
+        "expected_pnl": 0.0023325999999999998,
+        "calculated_pnl": 0.005649649259547029,
+        "verified_pnl": 0.005649649259547029,
+        "discrepancy": 0.0,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-06T16:26:36.493654",
+      "conversion_num": 15,
+      "exchange": "alpaca",
+      "from_asset": "PEPE",
+      "to_asset": "USD",
+      "from_amount": 161275.124246931,
+      "to_amount": 0,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "f637e441-e995-4734-ae3a-0197cbc1e358",
+          "exchange": "alpaca",
+          "pair": "PEPE/USD",
+          "side": "sell"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.0,
+        "total_bought": 0,
+        "avg_sell_price": 0.0,
+        "avg_buy_price": 0.0,
+        "total_fees": 0.0,
+        "errors": [
+          "Step 1: Zero executed quantity"
+        ]
+      },
+      "profit_verification": {
+        "expected_pnl": 0.00574169999711037,
+        "calculated_pnl": 161112.8121236351,
+        "verified_pnl": 161112.8121236351,
+        "discrepancy": 0.0,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-06T16:28:21.593556",
+      "conversion_num": 16,
+      "exchange": "alpaca",
+      "from_asset": "USD",
+      "to_asset": "PEPE",
+      "from_amount": 1.0165,
+      "to_amount": 0,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "a50c8c93-a8ae-4dda-b249-da441fb5a1fb",
+          "exchange": "alpaca",
+          "pair": "PEPE/USD",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.0,
+        "total_bought": 0,
+        "avg_sell_price": 0.0,
+        "avg_buy_price": 0.0,
+        "total_fees": 0.0,
+        "errors": [
+          "Step 1: Zero executed quantity"
+        ]
+      },
+      "profit_verification": {
+        "expected_pnl": 0.0023325999999999998,
+        "calculated_pnl": 0.005563330727125004,
+        "verified_pnl": 0.005563330727125004,
+        "discrepancy": 0.0,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-06T16:28:32.109602",
+      "conversion_num": 17,
+      "exchange": "alpaca",
+      "from_asset": "PEPE",
+      "to_asset": "USD",
+      "from_amount": 158844.14701744018,
+      "to_amount": 0,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "b4d5c00f-4ec1-4792-ad73-11c0e11d4753",
+          "exchange": "alpaca",
+          "pair": "PEPE/USD",
+          "side": "sell"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.0,
+        "total_bought": 0,
+        "avg_sell_price": 0.0,
+        "avg_buy_price": 0.0,
+        "total_fees": 0.0,
+        "errors": [
+          "Step 1: Zero executed quantity"
+        ]
+      },
+      "profit_verification": {
+        "expected_pnl": 0.005680433901708944,
+        "calculated_pnl": 158684.28467943962,
+        "verified_pnl": 158684.28467943962,
+        "discrepancy": 0.0,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
     }
   ],
   "summary": {
-    "total": 316,
-    "verified": 293,
-    "discrepancies": 23
+    "total": 485,
+    "verified": 441,
+    "discrepancies": 44
   }
 }

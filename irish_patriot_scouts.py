@@ -285,11 +285,11 @@ PATRIOT_CONFIG = {
     'COORDINATE_RETREAT': True,           # All scouts retreat together
     
     # ═══════════════════════════════════════════════════════════════════════
-    # 🎖️ VICTORY CONDITIONS - 🪙 SHARED GOAL: Net Penny Profit After Fees
+    # 🎖️ VICTORY CONDITIONS - 🚀 COMPOUND MODE: ANY PROFIT COMPOUNDS!
     # ═══════════════════════════════════════════════════════════════════════
-    'PENNY_PROFIT_TARGET': 0.01,          # 🪙 SHARED GOAL: +$0.01 NET (dynamic calc overrides)
-    'USE_DYNAMIC_PENNY_MATH': True,       # 🪙 Use ecosystem penny threshold
-    'INSTANT_VICTORY_EXIT': True,         # Exit immediately on penny
+    'PENNY_PROFIT_TARGET': 0.0,           # 🚀 COMPOUND MODE: $0 minimum - take ANY profit!
+    'USE_DYNAMIC_PENNY_MATH': True,       # 🚀 Use ecosystem penny threshold
+    'INSTANT_VICTORY_EXIT': True,         # Exit immediately on ANY profit
     'CELEBRATE_KILLS': True,              # Celebrate like Irish
 }
 

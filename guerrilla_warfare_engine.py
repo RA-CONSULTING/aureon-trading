@@ -227,10 +227,10 @@ GUERRILLA_CONFIG = {
     'VOLATILITY_LOOKBACK_BARS': 20,        # Bars for volatility calculation
     
     # ═══════════════════════════════════════════════════════════════════════
-    # 🎖️ VICTORY CONDITIONS
+    # 🎖️ VICTORY CONDITIONS - 🚀 COMPOUND MODE!
     # ═══════════════════════════════════════════════════════════════════════
-    'PENNY_PROFIT_TARGET': 0.01,           # $0.01 minimum net profit
-    'INSTANT_VICTORY_EXIT': True,          # Exit immediately on penny profit
+    'PENNY_PROFIT_TARGET': 0.0,            # 🚀 COMPOUND MODE: $0 minimum - take ANY profit!
+    'INSTANT_VICTORY_EXIT': True,          # Exit immediately on ANY profit
     'CELEBRATE_KILLS': True,               # Log kills with celebration
     'TRACK_ALL_KILLS': True,               # Keep detailed kill records
 }

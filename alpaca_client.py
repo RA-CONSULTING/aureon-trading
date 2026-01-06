@@ -155,6 +155,12 @@ class AlpacaClient:
         symbol = self._resolve_symbol(symbol)
         return self._request("GET", f"/v2/positions/{symbol}")
 
+    def list_assets(self, status: str = "active", asset_class: str = "crypto") -> List[Dict[str, Any]]:
+        """List assets (compatibility helper for wave scanner)."""
+        params = {"status": status, "asset_class": asset_class}
+        resp = self._request("GET", "/v2/assets", params=params)
+        return resp if isinstance(resp, list) else resp.get("assets", []) if isinstance(resp, dict) else []
+
     def get_clock(self) -> Dict[str, Any]:
         """Get market clock."""
         return self._request("GET", "/v2/clock")
@@ -173,7 +179,44 @@ class AlpacaClient:
             "type": type,
             "time_in_force": time_in_force
         }
-        return self._request("POST", "/v2/orders", data=data)
+        result = self._request("POST", "/v2/orders", data=data)
+        
+        # 🔧 FIX: For market orders, wait and query for actual fill data
+        # Alpaca's initial response may not have filled_avg_price yet
+        if type == "market" and result.get("id"):
+            order_id = result["id"]
+            import time as time_module
+            
+            # Poll for fill status (market orders should fill quickly)
+            for attempt in range(5):  # Try up to 5 times
+                time_module.sleep(0.3)  # Wait 300ms between checks
+                try:
+                    order_status = self._request("GET", f"/v2/orders/{order_id}")
+                    status = order_status.get("status", "")
+                    
+                    if status == "filled":
+                        # Got actual fill data!
+                        filled_qty = float(order_status.get("filled_qty", 0) or 0)
+                        filled_price = float(order_status.get("filled_avg_price", 0) or 0)
+                        if filled_price > 0:
+                            logger.info(f"   📊 Alpaca ACTUAL fill: price={filled_price:.6f}, qty={filled_qty:.6f}")
+                        return order_status
+                    elif status in ("canceled", "expired", "rejected"):
+                        logger.warning(f"   ⚠️ Alpaca order {order_id} {status}")
+                        return order_status
+                    # else: still pending, keep polling
+                except Exception as e:
+                    logger.warning(f"   ⚠️ Could not query Alpaca order {order_id}: {e}")
+            
+            # Return last known status after polling
+            return result
+        
+        return result
+
+    # Compatibility alias for older code (create_order -> place_order)
+    def create_order(self, symbol: str, qty: float, side: str, type: str = "market", time_in_force: str = "gtc") -> Dict[str, Any]:
+        """Backwards-compatible wrapper so older callers can use `create_order`."""
+        return self.place_order(symbol=symbol, qty=qty, side=side, type=type, time_in_force=time_in_force)
 
     def get_crypto_bars(self, symbols: List[str], timeframe: str = "1Min", limit: int = 100) -> Dict[str, Any]:
         """Get crypto bars for one or more symbols with chunking support."""
@@ -1400,21 +1443,18 @@ class AlpacaClient:
                     # Buying crypto with USD
                     result = self.place_market_order(pair, "buy", quote_qty=remaining_amount)
                 
-                results.append({
-                    "trade": trade,
-                    "result": result,
-                    "status": "success"
-                })
+                # 🔧 FIX: Extract ACTUAL execution data from the filled order
+                exec_qty_raw = result.get("filled_qty", result.get("qty", result.get("executedQty", 0)))
+                exec_qty = float(exec_qty_raw) if exec_qty_raw is not None else 0.0
+                filled_price = float(result.get("filled_avg_price", 0) or 0)
                 
-                # Update remaining amount for next trade
+                # Calculate actual received amount
+                received_amount = 0.0
                 if side == "sell":
-                    # Estimate USD received
-                    exec_qty_raw = result.get("qty", result.get("executedQty", result.get("filled_qty", 0)))
-                    exec_qty = float(exec_qty_raw) if exec_qty_raw is not None else 0.0
-                    price_raw = result.get("filled_avg_price", result.get("avg_price", 0))
-                    price = float(price_raw) if price_raw is not None else 0.0
-                    if price > 0 and exec_qty > 0:
-                        remaining_amount = exec_qty * price
+                    # SELL: We received USD (filled_qty * filled_avg_price)
+                    if filled_price > 0 and exec_qty > 0:
+                        received_amount = exec_qty * filled_price
+                        logger.info(f"   💰 Alpaca SELL: received=${received_amount:.6f} (qty={exec_qty:.6f} @ ${filled_price:.6f})")
                     else:
                         # Fallback: estimate from current price
                         try:
@@ -1424,15 +1464,27 @@ class AlpacaClient:
                                 ap = quote_data[pair].get('ap', 0)
                                 mid = (float(bp or 0) + float(ap or 0)) / 2
                                 if mid > 0:
-                                    remaining_amount = amount * mid
+                                    received_amount = remaining_amount * mid
                         except Exception:
                             pass
                 else:
-                    # We bought crypto
-                    exec_qty_raw = result.get("qty", result.get("executedQty", result.get("filled_qty", 0)))
-                    exec_qty = float(exec_qty_raw) if exec_qty_raw is not None else 0.0
-                    if exec_qty > 0:
-                        remaining_amount = exec_qty
+                    # BUY: We received crypto (filled_qty)
+                    received_amount = exec_qty
+                    if filled_price > 0:
+                        logger.info(f"   💰 Alpaca BUY: received={exec_qty:.6f} (spent=${remaining_amount:.6f} @ ${filled_price:.6f})")
+                
+                # Store received amount in result for validation
+                result['receivedQty'] = received_amount
+                
+                results.append({
+                    "trade": trade,
+                    "result": result,
+                    "status": "success",
+                    "receivedQty": received_amount
+                })
+                
+                # Update remaining amount for next trade using ACTUAL received amount
+                remaining_amount = received_amount if received_amount > 0 else remaining_amount
                     
             except Exception as e:
                 results.append({

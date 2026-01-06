@@ -229,6 +229,26 @@ class KrakenClient:
             })
         return {"symbols": symbols}
 
+    # Compatibility with GlobalWaveScanner
+    def get_exchange_info(self) -> Dict[str, Any]:
+        """Alias for exchange_info to match scanner expectations."""
+        return self.exchange_info()
+
+    def get_tradeable_pairs(self) -> List[Dict[str, Any]]:
+        """Return simple list of tradeable pairs (altname + internal code)."""
+        pairs = self._load_asset_pairs()
+        tradeable = []
+        for internal, info in pairs.items():
+            alt = info.get("altname") or internal
+            tradeable.append({
+                "pair": internal,
+                "symbol": alt,
+                "wsname": info.get("wsname", ""),
+                "base": info.get("base", ""),
+                "quote": info.get("quote", ""),
+            })
+        return tradeable
+
     def get_symbol_filters(self, symbol: str) -> Dict[str, float]:
         """
         Get trading filters for a symbol (ordermin, lot_decimals, costmin).
@@ -505,21 +525,62 @@ class KrakenClient:
         res = self._private("/0/private/AddOrder", params)
         txid = res.get("txid", ["unknown"])[0]
         
-        # Return Binance-compatible response structure
+        # 🔧 FIX: Query actual order status to get REAL execution price
+        # Kraken's AddOrder doesn't return fill info immediately
+        actual_price = 0.0
+        actual_qty = vol
+        actual_cost = 0.0
+        actual_fee = 0.0
+        
+        # Give Kraken a moment to process
+        time.sleep(0.5)
+        
+        # Query the order to get actual execution data
+        try:
+            order_info = self._private("/0/private/QueryOrders", {"txid": txid})
+            if order_info and txid in order_info:
+                order_data = order_info[txid]
+                # Get actual execution price and cost
+                actual_price = float(order_data.get('price', 0))
+                actual_cost = float(order_data.get('cost', 0))
+                actual_fee = float(order_data.get('fee', 0))
+                actual_qty = float(order_data.get('vol_exec', vol))
+                
+                # If we sold, the 'cost' is what we received in quote currency
+                # If we bought, the 'cost' is what we spent
+                if actual_price > 0:
+                    print(f"   📊 Kraken ACTUAL fill: price={actual_price:.6f}, qty={actual_qty:.6f}, cost={actual_cost:.6f}, fee={actual_fee:.6f}")
+        except Exception as e:
+            print(f"   ⚠️ Could not query Kraken order {txid}: {e}")
+            # Fallback to best_price estimate
+            try:
+                price_info = self.best_price(symbol)
+                actual_price = float(price_info.get("price", 0))
+                if actual_price > 0:
+                    if side.lower() == 'sell':
+                        actual_cost = vol * actual_price
+                    else:
+                        actual_cost = float(quote_qty) if quote_qty else vol * actual_price
+            except:
+                pass
+        
+        # Return Binance-compatible response structure with ACTUAL values
         return {
             "symbol": symbol,
             "orderId": txid,
             "clientOrderId": str(time.time()),
             "transactTime": int(time.time() * 1000),
-            "price": "0.00000000",
+            "price": str(actual_price),
             "origQty": params.get("volume"),
-            "executedQty": params.get("volume"), # Assumed filled
-            "cummulativeQuoteQty": str(quote_qty) if quote_qty else "0.00000000",
+            "executedQty": str(actual_qty),
+            "cummulativeQuoteQty": str(actual_cost) if actual_cost > 0 else (str(quote_qty) if quote_qty else "0.00000000"),
             "status": "FILLED",
             "timeInForce": "GTC",
             "type": "MARKET",
             "side": side.upper(),
-            "fills": [] # Kraken doesn't return fills in AddOrder response immediately
+            "fills": [],
+            "fee": str(actual_fee),
+            "receivedQty": str(actual_cost) if side.lower() == 'sell' else str(actual_qty)  # What we actually received
         }
 
     def convert_to_quote(self, asset: str, amount: float, quote: str) -> float:
@@ -1503,16 +1564,24 @@ class KrakenClient:
                     }
 
                 # Calculate the RECEIVED amount for this trade
+                # 🔧 FIX: Use ACTUAL execution data from place_market_order, not best_price
                 received_amount = 0.0
+                actual_cost = float(result.get("cummulativeQuoteQty", 0))
+                actual_price = float(result.get("price", 0))
+                exec_qty = float(result.get("executedQty", 0))
+                actual_fee = float(result.get("fee", 0))
+                
                 if side == "sell":
-                    # For SELL, we receive quote currency (base_qty * price)
-                    exec_qty = float(result.get("executedQty", 0))
-                    price = float(self.best_price(pair).get("price", 0))
-                    if price > 0 and exec_qty > 0:
-                        received_amount = exec_qty * price
+                    # For SELL, we receive quote currency (the cost field from Kraken)
+                    if actual_cost > 0:
+                        received_amount = actual_cost - actual_fee  # Subtract fee
+                    elif actual_price > 0 and exec_qty > 0:
+                        received_amount = exec_qty * actual_price - actual_fee
+                    print(f"   💰 Kraken SELL: received={received_amount:.6f} (cost={actual_cost:.6f}, fee={actual_fee:.6f})")
                 else:
                     # For BUY, we receive base currency (executedQty)
-                    received_amount = float(result.get("executedQty", 0))
+                    received_amount = exec_qty
+                    print(f"   💰 Kraken BUY: received={received_amount:.6f} qty (spent={actual_cost:.6f}, fee={actual_fee:.6f})")
                 
                 # Store the received amount in result for verification
                 result['receivedQty'] = received_amount
