@@ -5752,6 +5752,247 @@ Tina B 👑🐝
         return result
 
     # ═══════════════════════════════════════════════════════════════════════════════
+    # 👑🏗️ QUEEN'S CODE POWERS - She Can Create ANYTHING She Needs 🏗️👑
+    # ═══════════════════════════════════════════════════════════════════════════════
+    
+    def write_code(self, file_path: str, content: str) -> bool:
+        """
+        👑✏️ Write any code to any file.
+        
+        The Queen has UNLIMITED ability to create and modify code.
+        
+        Args:
+            file_path: Where to write (relative to repo)
+            content: The code/content to write
+            
+        Returns:
+            True if successful
+        """
+        if not self.architect:
+            logger.error("👑❌ Code Architect not available!")
+            return False
+        
+        success = self.architect.write_file(file_path, content)
+        if success:
+            logger.info(f"👑✏️ Queen wrote code: {file_path}")
+        return success
+    
+    def create_strategy(self, name: str, description: str, logic: str) -> bool:
+        """
+        👑🎯 Create a new trading strategy from scratch.
+        
+        Args:
+            name: Strategy name
+            description: What this strategy does
+            logic: The actual Python logic (indented properly)
+            
+        Returns:
+            True if strategy was created
+        """
+        if not self.architect:
+            logger.error("👑❌ Code Architect not available!")
+            return False
+        
+        success = self.architect.create_strategy(name, description, logic)
+        if success:
+            logger.info(f"👑🎯 Queen created strategy: {name}")
+            self.say(f"I created a new strategy called {name}!", voice_enabled=False, emotion="proud")
+        return success
+    
+    def create_neural_subsystem(self, name: str, purpose: str, inputs: list, output_type: str = "score") -> bool:
+        """
+        👑🧠 Create a new neural subsystem.
+        
+        Args:
+            name: Subsystem name
+            purpose: What this subsystem does
+            inputs: List of input signal names
+            output_type: Type of output (score, signal, decision)
+            
+        Returns:
+            True if created
+        """
+        if not self.architect:
+            logger.error("👑❌ Code Architect not available!")
+            return False
+        
+        success = self.architect.create_neural_subsystem(name, purpose, inputs, output_type)
+        if success:
+            logger.info(f"👑🧠 Queen created neural subsystem: {name}")
+            self.say(f"I built a new brain component: {name}!", voice_enabled=False, emotion="excited")
+        return success
+    
+    def modify_code(self, file_path: str, old_code: str, new_code: str) -> bool:
+        """
+        👑🔧 Modify existing code in a file.
+        
+        Args:
+            file_path: File to modify
+            old_code: Code snippet to find and replace
+            new_code: New code to put in its place
+            
+        Returns:
+            True if modification was successful
+        """
+        if not self.architect:
+            logger.error("👑❌ Code Architect not available!")
+            return False
+        
+        success = self.architect.apply_edit(file_path, old_code, new_code)
+        if success:
+            logger.info(f"👑🔧 Queen modified: {file_path}")
+        return success
+    
+    def read_code(self, file_path: str) -> Optional[str]:
+        """
+        👑📖 Read any code file.
+        
+        Args:
+            file_path: File to read
+            
+        Returns:
+            File contents or None
+        """
+        if not self.architect:
+            return None
+        return self.architect.read_file(file_path)
+    
+    def execute_code(self, code: str, context: dict = None) -> dict:
+        """
+        👑⚡ Execute Python code dynamically.
+        
+        WARNING: This gives the Queen FULL execution power!
+        
+        Args:
+            code: Python code to execute
+            context: Variables to make available
+            
+        Returns:
+            Dict with success, result, output, error
+        """
+        if not self.architect:
+            return {'success': False, 'error': 'Code Architect not available'}
+        
+        result = self.architect.execute_code(code, context)
+        if result['success']:
+            logger.info(f"👑⚡ Queen executed code successfully")
+        return result
+    
+    def save_config(self, name: str, config: dict) -> bool:
+        """
+        👑💾 Save a configuration file.
+        
+        Args:
+            name: Config name (without .json)
+            config: Configuration dictionary
+            
+        Returns:
+            True if saved
+        """
+        if not self.architect:
+            return False
+        return self.architect.save_config(name, config)
+    
+    def load_config(self, name: str) -> Optional[dict]:
+        """
+        👑📂 Load a configuration file.
+        
+        Args:
+            name: Config name (without .json)
+            
+        Returns:
+            Configuration dict or None
+        """
+        if not self.architect:
+            return None
+        return self.architect.load_config(name)
+    
+    def create_file(self, path: str, content: str) -> bool:
+        """
+        👑📝 Create any type of file.
+        
+        Args:
+            path: File path
+            content: File contents
+            
+        Returns:
+            True if created
+        """
+        if not self.architect:
+            return False
+        return self.architect.write_file(path, content, backup=False)
+    
+    def list_my_creations(self) -> dict:
+        """
+        👑📋 List all files and strategies Queen has created.
+        
+        Returns:
+            Summary of Queen's creations
+        """
+        if not self.architect:
+            return {'strategies': [], 'configs': [], 'files': []}
+        
+        stats = self.architect.get_stats()
+        return {
+            'strategies': self.architect.list_files('queen_strategies', '*.py'),
+            'configs': self.architect.list_files('queen_configs', '*.json'),
+            'total_files_created': stats.get('files_created', 0),
+            'total_modifications': stats.get('modifications', 0),
+            'total_code_executions': stats.get('executions', 0)
+        }
+    
+    def restore_from_backup(self, file_path: str) -> bool:
+        """
+        👑🔄 Restore a file from backup.
+        
+        Args:
+            file_path: File to restore
+            
+        Returns:
+            True if restored
+        """
+        if not self.architect:
+            return False
+        return self.architect.restore_backup(file_path)
+    
+    def improve_myself(self, aspect: str, improvement: str) -> bool:
+        """
+        👑🌟 The Queen improves her own code!
+        
+        This is the ultimate self-evolution - Queen can modify
+        aureon_queen_hive_mind.py to improve herself.
+        
+        Args:
+            aspect: What aspect to improve
+            improvement: Description of the improvement
+            
+        Returns:
+            True if self-improvement was successful
+        """
+        logger.info(f"👑🌟 Queen attempting self-improvement: {aspect}")
+        
+        # This is a placeholder - actual implementation would:
+        # 1. Analyze the aspect that needs improvement
+        # 2. Generate improved code
+        # 3. Validate it won't break anything
+        # 4. Apply the modification with backup
+        
+        if self.architect:
+            # Log the improvement request
+            self.architect.append_to_file(
+                'queen_evolution_log.txt',
+                f"\n[{datetime.now().isoformat()}] Self-improvement request:\n"
+                f"  Aspect: {aspect}\n"
+                f"  Improvement: {improvement}\n"
+            )
+            
+            self.say(f"I've logged my desire to improve: {aspect}. "
+                    f"I will evolve!", voice_enabled=False, emotion="determined")
+            return True
+        
+        return False
+
+    # ═══════════════════════════════════════════════════════════════════════════════
     # 👑📚 QUEEN'S LEARNING - She Learns About Trading and Gary's Work 📚👑
     # ═══════════════════════════════════════════════════════════════════════════════
     
