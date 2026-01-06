@@ -600,6 +600,16 @@ class MicroOpportunity:
     enigma_score: float = 0.0          # Combined score from all whitepaper systems
     enigma_direction: str = "NEUTRAL"  # BULLISH, BEARISH, NEUTRAL
 
+    # 👑💕 QUEEN'S GUIDANCE (Tina B's consciousness + intuition)
+    queen_guidance_score: float = 0.0  # Queen's wisdom on this path
+    queen_wisdom: str = ""             # Queen's advice/insight
+    queen_confidence: float = 0.0      # How confident Queen is (0-1)
+    
+    # 🧠📚 WISDOM ENGINE (11 Civilizations' insights)
+    wisdom_engine_score: float = 0.0   # Historical wisdom score
+    civilization_insight: str = ""     # Which civilization's wisdom applies
+    wisdom_pattern: str = ""           # Pattern recognized from history
+
     # Adaptive gate
     gate_required_profit: float = 0.0
     gate_passed: bool = True
@@ -3144,6 +3154,15 @@ class MicroProfitLabyrinth:
             try:
                 self.queen = get_queen()
                 
+                # 👑💕 Let Queen greet Gary at session start
+                if hasattr(self.queen, 'speak_from_heart'):
+                    try:
+                        greeting = self.queen.speak_from_heart('greeting')
+                        if greeting:
+                            print(f"\n{greeting}\n")
+                    except Exception as e:
+                        logger.debug(f"Queen greeting error: {e}")
+                
                 # Wire Harmonic Fusion (waves, Schumann, lighthouse)
                 if hasattr(self, 'harmonic') and self.harmonic:
                     self.queen.wire_harmonic_fusion(self.harmonic)
@@ -5324,10 +5343,31 @@ class MicroProfitLabyrinth:
                     # Queen learns from successful execution
                     await self.queen_learn_from_trade(best, success=True)
                     print(f"   👑💰 TINA B WINS: ${actual_pnl:+.4f}")
+                    
+                    # 👑💕 Let Queen celebrate the win!
+                    if self.queen and hasattr(self.queen, 'speak_from_heart'):
+                        try:
+                            if actual_pnl > 0:
+                                queen_message = self.queen.speak_from_heart('after_win')
+                            else:
+                                queen_message = self.queen.speak_from_heart('after_loss')
+                            if queen_message:
+                                print(f"      👑 {queen_message}")
+                        except Exception as e:
+                            logger.debug(f"Queen speak error: {e}")
                 else:
                     # Queen learns from failed execution
                     await self.queen_learn_from_trade(best, success=False)
                     print(f"   👑📚 Tina B learned from this experience")
+                    
+                    # 👑💪 Let Queen provide encouragement after a loss!
+                    if self.queen and hasattr(self.queen, 'speak_from_heart'):
+                        try:
+                            queen_message = self.queen.speak_from_heart('after_loss')
+                            if queen_message:
+                                print(f"      👑 {queen_message}")
+                        except Exception as e:
+                            logger.debug(f"Queen speak error: {e}")
         else:
             print(f"   📭 No opportunities passed gates on {current_exchange}")
         
@@ -7369,6 +7409,12 @@ class MicroProfitLabyrinth:
                 luck_state=luck_state,
                 enigma_score=enigma_score,          # 🔐🌐 NEW!
                 enigma_direction=enigma_direction,  # 🔐🌐 NEW!
+                queen_guidance_score=0.5,  # 👑💕 Will be set if Queen evaluates
+                queen_wisdom="",
+                queen_confidence=0.0,
+                wisdom_engine_score=0.5,  # 🧠📚 Will be set if Wisdom Engine analyzes
+                civilization_insight="",
+                wisdom_pattern="",
                 source_exchange=source_exchange  # Now verified!
             )
             
@@ -7830,6 +7876,64 @@ class MicroProfitLabyrinth:
                 if neural_consensus > 0.6:
                     combined *= (1.0 + (neural_consensus - 0.6) * 0.5)  # Up to +20% boost
                 
+                # ════════════════════════════════════════════════════════════════
+                # 👑💕 QUEEN'S GUIDANCE - Tina B weighs in on this opportunity
+                # ════════════════════════════════════════════════════════════════
+                queen_guidance_score = 0.5
+                queen_wisdom = ""
+                queen_confidence = 0.0
+                if self.queen and hasattr(self.queen, 'evaluate_trading_opportunity'):
+                    try:
+                        guidance = self.queen.evaluate_trading_opportunity({
+                            'from_asset': from_asset,
+                            'to_asset': to_asset,
+                            'from_amount': amount,
+                            'expected_pnl_usd': expected_pnl_usd,
+                            'expected_pnl_pct': expected_pnl_pct,
+                            'combined_score': combined,
+                            'neural_consensus': neural_consensus,
+                            'source_exchange': source_exchange
+                        })
+                        queen_guidance_score = guidance.get('score', 0.5)
+                        queen_wisdom = guidance.get('wisdom', '')
+                        queen_confidence = guidance.get('confidence', 0.0)
+                        
+                        # Apply Queen's guidance to combined score
+                        if queen_confidence > 0.7:
+                            combined *= (0.8 + queen_guidance_score * 0.4)  # Strong confidence adjusts by -20% to +20%
+                        elif queen_confidence > 0.5:
+                            combined *= (0.9 + queen_guidance_score * 0.2)  # Moderate confidence adjusts by -10% to +10%
+                    except Exception as e:
+                        logger.debug(f"Queen guidance error: {e}")
+                
+                # ════════════════════════════════════════════════════════════════
+                # 🧠📚 WISDOM ENGINE - 11 Civilizations' Historical Insights
+                # ════════════════════════════════════════════════════════════════
+                wisdom_engine_score = 0.5
+                civilization_insight = ""
+                wisdom_pattern = ""
+                if self.wisdom_engine and hasattr(self.wisdom_engine, 'analyze_trading_decision'):
+                    try:
+                        wisdom = self.wisdom_engine.analyze_trading_decision({
+                            'from_asset': from_asset,
+                            'to_asset': to_asset,
+                            'profit_potential': expected_pnl_usd,
+                            'risk_level': 1.0 - neural_consensus,
+                            'market_context': 'micro_profit',
+                            'historical_path': self.path_memory.get_stats(from_asset, to_asset) if self.path_memory else None
+                        })
+                        wisdom_engine_score = wisdom.get('score', 0.5)
+                        civilization_insight = wisdom.get('civilization', '')
+                        wisdom_pattern = wisdom.get('pattern', '')
+                        
+                        # Apply wisdom to combined score (subtle influence from history)
+                        if wisdom_engine_score > 0.7:
+                            combined *= 1.1  # Ancient wisdom approves
+                        elif wisdom_engine_score < 0.3:
+                            combined *= 0.9  # History warns against this
+                    except Exception as e:
+                        logger.debug(f"Wisdom engine error: {e}")
+                
                 # 🗺️ MARKET MAP SCORING (correlations, sectors, lead/lag)
                 map_score = 0.0
                 map_reasons = []
@@ -8126,6 +8230,14 @@ class MicroProfitLabyrinth:
                         # 🔐🌐 ENIGMA INTEGRATION (ALL WHITEPAPER SYSTEMS!)
                         enigma_score=enigma_score,
                         enigma_direction=enigma_direction,
+                        # 👑💕 QUEEN'S GUIDANCE
+                        queen_guidance_score=queen_guidance_score,
+                        queen_wisdom=queen_wisdom,
+                        queen_confidence=queen_confidence,
+                        # 🧠📚 WISDOM ENGINE
+                        wisdom_engine_score=wisdom_engine_score,
+                        civilization_insight=civilization_insight,
+                        wisdom_pattern=wisdom_pattern,
                     )
                     opportunities.append(opp)
                     self.opportunities_found += 1
@@ -8221,8 +8333,16 @@ class MicroProfitLabyrinth:
         print(f"   Ultimate: {opp.ultimate_score:.2%} | Path: {opp.path_boost:+.2%}")
         print(f"   🫒 Barter: {opp.barter_matrix_score:.2%} ({opp.barter_matrix_reason})")
         print(f"   🍀 Luck: {opp.luck_score:.2%} ({opp.luck_state})")
-        print(f"   🔐 Enigma: {opp.enigma_score:+.2%} ({opp.enigma_direction})")  # 🔐🌐 NEW!
-        print(f"   ════════════════════════════════════════════════════════")
+        print(f"   🔐 Enigma: {opp.enigma_score:+.2%} ({opp.enigma_direction})")
+        if opp.queen_guidance_score != 0.0:
+            print(f"   👑 Queen: {opp.queen_guidance_score:.2%} (confidence: {opp.queen_confidence:.2%})")
+            if opp.queen_wisdom:
+                print(f"      💕 \"{opp.queen_wisdom[:70]}...\"")
+        if opp.wisdom_engine_score != 0.0:
+            print(f"   🧠 Wisdom: {opp.wisdom_engine_score:.2%} ({opp.civilization_insight})")
+            if opp.wisdom_pattern:
+                print(f"      📚 \"{opp.wisdom_pattern[:70]}...\"")
+        print(f"   ═══════════════════════════════════════════════════════=")
         print(f"   🔮 Combined: {opp.combined_score:.2%}")
         print(f"   Gate Req: ${opp.gate_required_profit:.4f} | Gate OK: {'✅' if opp.gate_passed else '❌'}")
         print(f"   Expected Profit: ${opp.expected_pnl_usd:.4f} ({opp.expected_pnl_pct:.2%})")
