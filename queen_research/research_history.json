@@ -1,0 +1,57 @@
+{
+  "findings": [
+    {
+      "topic": "trending_coins",
+      "source": "coingecko",
+      "title": "Trending Coins Pattern",
+      "content": "Currently trending: LIT, BREV, BTC, MON, SUI",
+      "relevance_score": 0.7,
+      "discovered_at": "2026-01-07T10:06:41.735292",
+      "applied": true
+    },
+    {
+      "topic": "market_sentiment",
+      "source": "coingecko",
+      "title": "Global Market Sentiment",
+      "content": "BTC Dominance: 56.6%, 24h Change: -1.69%",
+      "relevance_score": 0.8,
+      "discovered_at": "2026-01-07T10:06:41.943466",
+      "applied": true
+    },
+    {
+      "topic": "momentum_leaders",
+      "source": "binance",
+      "title": "Top Momentum Leaders",
+      "content": "Top gainers: {'BREV': 629.333, 'CREAM': 65.354, 'PNT': 45.228, 'RAD': 18.033, 'KDA': 17.647}",
+      "relevance_score": 0.85,
+      "discovered_at": "2026-01-07T10:06:42.676728",
+      "applied": true
+    },
+    {
+      "topic": "volatility_analysis",
+      "source": "kraken",
+      "title": "Volatility Patterns",
+      "content": "24h volatility: XETHZUSD: 3.99%, SOLUSD: 5.35%, XXBTZUSD: 3.48%",
+      "relevance_score": 0.75,
+      "discovered_at": "2026-01-07T10:06:42.744850",
+      "applied": true
+    }
+  ],
+  "enhancements": [
+    {
+      "name": "queen_research_enhancement",
+      "description": "Auto-generated from 4 research findings",
+      "source_research": [
+        "Top Momentum Leaders",
+        "Global Market Sentiment",
+        "Volatility Patterns",
+        "Trending Coins Pattern"
+      ],
+      "generated_at": "2026-01-07T10:06:42.747383",
+      "applied": true,
+      "measured_revenue": 0.0
+    }
+  ],
+  "total_revenue": 0.0,
+  "last_updated": "2026-01-07T10:06:42.752170"
+}

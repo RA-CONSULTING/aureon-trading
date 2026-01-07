@@ -64,7 +64,7 @@
     "losses": 1.0
   },
   "PEPE->USD": {
-    "wins": 2.0,
+    "wins": 3.0,
     "losses": 1.0
   },
   "BROCCOLI714->ACT": {
@@ -386,5 +386,25 @@
   "USDT->XTZ": {
     "wins": 1.0,
     "losses": 0.0
+  },
+  "A->1000SATS": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "BONK->1000SATS": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "1000SATS->PEPE": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "T->PEPE": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "PEPE->FLOKI": {
+    "wins": 0.0,
+    "losses": 1.0
   }
 }

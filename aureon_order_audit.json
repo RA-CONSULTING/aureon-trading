@@ -20136,11 +20136,733 @@
         "warnings": []
       },
       "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-07T09:04:08.864647",
+      "conversion_num": 1,
+      "exchange": "alpaca",
+      "from_asset": "PEPE",
+      "to_asset": "USD",
+      "from_amount": 185760.96492356504,
+      "to_amount": 0,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "649991ba-f9c9-41e1-a82b-2f16bdae162b",
+          "exchange": "alpaca",
+          "pair": "PEPE/USD",
+          "side": "sell"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.0,
+        "total_bought": 0,
+        "avg_sell_price": 0.0,
+        "avg_buy_price": 0.0,
+        "total_fees": 0.0,
+        "errors": [
+          "Step 1: Zero executed quantity"
+        ]
+      },
+      "profit_verification": {
+        "expected_pnl": 0.006746056094592625,
+        "calculated_pnl": 185573.92220798304,
+        "verified_pnl": 185573.92220798304,
+        "discrepancy": 0.0,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-07T09:04:13.740801",
+      "conversion_num": 2,
+      "exchange": "alpaca",
+      "from_asset": "USDC",
+      "to_asset": "PEPE",
+      "from_amount": 9.25541151,
+      "to_amount": 0,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "18a137bf-9646-42b4-b4ba-4a316b162063",
+          "exchange": "alpaca",
+          "pair": "USDC/USD",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": "3e610671-e1ea-4434-b1c6-e5353d5897e8",
+          "exchange": "alpaca",
+          "pair": "PEPE/USD",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.0,
+        "total_bought": 0,
+        "avg_sell_price": 0.0,
+        "avg_buy_price": 0.0,
+        "total_fees": 0.0,
+        "errors": [
+          "Step 1: Zero executed quantity",
+          "Step 2: Zero executed quantity"
+        ]
+      },
+      "profit_verification": {
+        "expected_pnl": 0.009064076279676921,
+        "calculated_pnl": -6.7797337007615965,
+        "verified_pnl": -6.7797337007615965,
+        "discrepancy": 0.0,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-07T09:04:23.485654",
+      "conversion_num": 3,
+      "exchange": "alpaca",
+      "from_asset": "PEPE",
+      "to_asset": "USD",
+      "from_amount": 354603.950479394,
+      "to_amount": 0,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "d91e1dcb-2eda-4b9b-8377-b9bba6fefd29",
+          "exchange": "alpaca",
+          "pair": "PEPE/USD",
+          "side": "sell"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.0,
+        "total_bought": 0,
+        "avg_sell_price": 0.0,
+        "avg_buy_price": 0.0,
+        "total_fees": 0.0,
+        "errors": [
+          "Step 1: Zero executed quantity"
+        ]
+      },
+      "profit_verification": {
+        "expected_pnl": 0.013429560812555611,
+        "calculated_pnl": 354246.9210378927,
+        "verified_pnl": 354246.9210378927,
+        "discrepancy": 0.0,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-07T09:14:33.365016",
+      "conversion_num": 1,
+      "exchange": "alpaca",
+      "from_asset": "USDC",
+      "to_asset": "PEPE",
+      "from_amount": 8.98651096565,
+      "to_amount": 0,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "fd9225aa-bd70-4ca8-a1bc-d3e8a8567562",
+          "exchange": "alpaca",
+          "pair": "USDC/USD",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": "78214835-751c-4b1e-8a00-78aec43ea879",
+          "exchange": "alpaca",
+          "pair": "PEPE/USD",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.0,
+        "total_bought": 0,
+        "avg_sell_price": 0.0,
+        "avg_buy_price": 0.0,
+        "total_fees": 0.0,
+        "errors": [
+          "Step 1: Zero executed quantity",
+          "Step 2: Zero executed quantity"
+        ]
+      },
+      "profit_verification": {
+        "expected_pnl": 0.023376610974945335,
+        "calculated_pnl": -4.108542484126205,
+        "verified_pnl": -4.108542484126205,
+        "discrepancy": 0.0,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-07T09:14:47.236740",
+      "conversion_num": 2,
+      "exchange": "alpaca",
+      "from_asset": "PEPE",
+      "to_asset": "USD",
+      "from_amount": 697471.3008703019,
+      "to_amount": 0,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "4ce885b5-1d46-4e21-8cbc-027c1bb72be9",
+          "exchange": "alpaca",
+          "pair": "PEPE/USD",
+          "side": "sell"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.0,
+        "total_bought": 0,
+        "avg_sell_price": 0.0,
+        "avg_buy_price": 0.0,
+        "total_fees": 0.0,
+        "errors": [
+          "Step 1: Zero executed quantity"
+        ]
+      },
+      "profit_verification": {
+        "expected_pnl": 0.02499883978382503,
+        "calculated_pnl": 696769.079789872,
+        "verified_pnl": 696769.079789872,
+        "discrepancy": 0.0,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-07T09:14:54.364936",
+      "conversion_num": 3,
+      "exchange": "binance",
+      "from_asset": "USDC",
+      "to_asset": "1000SATS",
+      "from_amount": 9.0703032798,
+      "to_amount": 490286.0,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": 107335098,
+          "exchange": "binance",
+          "pair": "1000SATSUSDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.0,
+        "total_bought": 490286.0,
+        "avg_sell_price": 0.0,
+        "avg_buy_price": 1.813e-05,
+        "total_fees": 0.0084257793,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.03583635176497185,
+        "calculated_pnl": 0.0,
+        "verified_pnl": -0.19437903073989782,
+        "discrepancy": 0.19437903073989782,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-07T09:15:00.775808",
+      "conversion_num": 4,
+      "exchange": "alpaca",
+      "from_asset": "USD",
+      "to_asset": "PEPE",
+      "from_amount": 9.0725,
+      "to_amount": 0,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "f10bc55e-4db4-4cbc-96ae-26f1f7b0c753",
+          "exchange": "alpaca",
+          "pair": "PEPE/USD",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.0,
+        "total_bought": 0,
+        "avg_sell_price": 0.0,
+        "avg_buy_price": 0.0,
+        "total_fees": 0.0,
+        "errors": [
+          "Step 1: Zero executed quantity"
+        ]
+      },
+      "profit_verification": {
+        "expected_pnl": 0.016491421543065213,
+        "calculated_pnl": -0.02002759381898578,
+        "verified_pnl": -0.02002759381898578,
+        "discrepancy": 0.0,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-07T09:15:07.847345",
+      "conversion_num": 5,
+      "exchange": "binance",
+      "from_asset": "T",
+      "to_asset": "1000SATS",
+      "from_amount": 975.7016219999999,
+      "to_amount": 506269.0,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": 32005734,
+          "exchange": "binance",
+          "pair": "TUSDC",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": 107335120,
+          "exchange": "binance",
+          "pair": "1000SATSUSDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 956.1,
+        "total_bought": 506269.0,
+        "avg_sell_price": 0.00961,
+        "avg_buy_price": 1.8148678034799682e-05,
+        "total_fees": 0.017429095500000002,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.03164379570648,
+        "calculated_pnl": 0.0,
+        "verified_pnl": -0.01743701549999983,
+        "discrepancy": 0.01743701549999983,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-07T09:15:25.481699",
+      "conversion_num": 6,
+      "exchange": "binance",
+      "from_asset": "1000SATS",
+      "to_asset": "PEPE",
+      "from_amount": 515566.30859999993,
+      "to_amount": 1342248.0,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": 107335144,
+          "exchange": "binance",
+          "pair": "1000SATSUSDC",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": 530422116,
+          "exchange": "binance",
+          "pair": "PEPEUSDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 505254.0,
+        "total_bought": 1342248.0,
+        "avg_sell_price": 1.8091324620883753e-05,
+        "avg_buy_price": 6.81e-06,
+        "total_fees": 0.0173673834,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.02224800143626499,
+        "calculated_pnl": 0.0,
+        "verified_pnl": -0.017372633399999178,
+        "discrepancy": 0.017372633399999178,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-07T09:15:59.440073",
+      "conversion_num": 7,
+      "exchange": "binance",
+      "from_asset": "1000SATS",
+      "to_asset": "DOGS",
+      "from_amount": 513031.0584,
+      "to_amount": 183753.0,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": 107335187,
+          "exchange": "binance",
+          "pair": "1000SATSUSDC",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": 161549406,
+          "exchange": "binance",
+          "pair": "DOGSUSDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 502770.0,
+        "total_bought": 183753.0,
+        "avg_sell_price": 1.8091331165343995e-05,
+        "avg_buy_price": 4.95e-05,
+        "total_fees": 0.017334576,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.014773409878032,
+        "calculated_pnl": 0.0,
+        "verified_pnl": -0.017339646000000274,
+        "discrepancy": 0.017339646000000274,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-07T09:16:15.441644",
+      "conversion_num": 8,
+      "exchange": "binance",
+      "from_asset": "1000SATS",
+      "to_asset": "BONK",
+      "from_amount": 538920.4926,
+      "to_amount": 803984.0,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": 107335213,
+          "exchange": "binance",
+          "pair": "1000SATSUSDC",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": 413852430,
+          "exchange": "binance",
+          "pair": "BONKUSDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 528142.0,
+        "total_bought": 803984.0,
+        "avg_sell_price": 1.81e-05,
+        "avg_buy_price": 1.189e-05,
+        "total_fees": 0.018145941040000002,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.015270972060464993,
+        "calculated_pnl": 0.0,
+        "verified_pnl": -0.01814638104000088,
+        "discrepancy": 0.01814638104000088,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-07T09:19:57.353658",
+      "conversion_num": 1,
+      "exchange": "alpaca",
+      "from_asset": "PEPE",
+      "to_asset": "USD",
+      "from_amount": 1300779.40229369,
+      "to_amount": 0,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "ba9fea6e-25fa-4321-b853-1c480a1aba49",
+          "exchange": "alpaca",
+          "pair": "PEPE/USD",
+          "side": "sell"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.0,
+        "total_bought": 0,
+        "avg_sell_price": 0.0,
+        "avg_buy_price": 0.0,
+        "total_fees": 0.0,
+        "errors": [
+          "Step 1: Zero executed quantity"
+        ]
+      },
+      "profit_verification": {
+        "expected_pnl": 0.04662267226115804,
+        "calculated_pnl": 1299469.7645836663,
+        "verified_pnl": 1299469.7645836663,
+        "discrepancy": 0.0,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-07T09:20:04.989640",
+      "conversion_num": 2,
+      "exchange": "binance",
+      "from_asset": "A",
+      "to_asset": "1000SATS",
+      "from_amount": 48.8090862,
+      "to_amount": 483284.0,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": 37935360,
+          "exchange": "binance",
+          "pair": "AUSDC",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": 107335611,
+          "exchange": "binance",
+          "pair": "1000SATSUSDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 47.8,
+        "total_bought": 483284.0,
+        "avg_sell_price": 0.18290000000000003,
+        "avg_buy_price": 1.8089999999999998e-05,
+        "total_fees": 0.016588014800000002,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.033198098011315756,
+        "calculated_pnl": 0.0,
+        "verified_pnl": -0.01660045480000078,
+        "discrepancy": 0.01660045480000078,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-07T09:20:20.201079",
+      "conversion_num": 3,
+      "exchange": "binance",
+      "from_asset": "BONK",
+      "to_asset": "1000SATS",
+      "from_amount": 753412.7692,
+      "to_amount": 482433.0,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": 413853984,
+          "exchange": "binance",
+          "pair": "BONKUSDC",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": 107335635,
+          "exchange": "binance",
+          "pair": "1000SATSUSDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 738344.0,
+        "total_bought": 482433.0,
+        "avg_sell_price": 1.1819999999999999e-05,
+        "avg_buy_price": 1.809e-05,
+        "total_fees": 0.0165633555,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.03130096604896172,
+        "calculated_pnl": 0.0,
+        "verified_pnl": -0.016576465499999374,
+        "discrepancy": 0.016576465499999374,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-07T09:20:36.290854",
+      "conversion_num": 4,
+      "exchange": "binance",
+      "from_asset": "1000SATS",
+      "to_asset": "PEPE",
+      "from_amount": 491847.9174,
+      "to_amount": 1278744.0,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": 107335655,
+          "exchange": "binance",
+          "pair": "1000SATSUSDC",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": 530424816,
+          "exchange": "binance",
+          "pair": "PEPEUSDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 482010.0,
+        "total_bought": 1278744.0,
+        "avg_sell_price": 1.804e-05,
+        "avg_buy_price": 6.8e-06,
+        "total_fees": 0.0164849537,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.017038140174718743,
+        "calculated_pnl": 0.0,
+        "verified_pnl": -0.01648615369999981,
+        "discrepancy": 0.01648615369999981,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-07T09:52:48.072223",
+      "conversion_num": 1,
+      "exchange": "binance",
+      "from_asset": "T",
+      "to_asset": "PEPE",
+      "from_amount": 912.8598472,
+      "to_amount": 1252440.0,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": 32007523,
+          "exchange": "binance",
+          "pair": "TUSDC",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": 530451094,
+          "exchange": "binance",
+          "pair": "PEPEUSDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 894.6,
+        "total_bought": 1252440.0,
+        "avg_sell_price": 0.00945,
+        "avg_buy_price": 6.75e-06,
+        "total_fees": 0.0160863514,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.031369031414568004,
+        "calculated_pnl": 0.0,
+        "verified_pnl": -0.0160863514,
+        "discrepancy": 0.0160863514,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-07T09:53:03.776999",
+      "conversion_num": 2,
+      "exchange": "binance",
+      "from_asset": "PEPE",
+      "to_asset": "FLOKI",
+      "from_amount": 1274872.102,
+      "to_amount": 148855.0,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": 530451169,
+          "exchange": "binance",
+          "pair": "PEPEUSDC",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": 580656651,
+          "exchange": "binance",
+          "pair": "FLOKIUSDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 1249374.0,
+        "total_bought": 148855.0,
+        "avg_sell_price": 6.74e-06,
+        "avg_buy_price": 5.657e-05,
+        "total_fees": 0.0159809204,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.010920710532520006,
+        "calculated_pnl": 0.0,
+        "verified_pnl": -0.01603433039999959,
+        "discrepancy": 0.01603433039999959,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
     }
   ],
   "summary": {
-    "total": 485,
-    "verified": 441,
+    "total": 502,
+    "verified": 458,
     "discrepancies": 44
   }
 }

@@ -237,7 +237,12 @@ class GlobalWaveScanner:
             try:
                 assets = self.alpaca.list_assets(status='active', asset_class='crypto')
                 for asset in assets:
-                    symbol = f"{asset.symbol}/USD"
+                    base_symbol = getattr(asset, 'symbol', None)
+                    if base_symbol is None and isinstance(asset, dict):
+                        base_symbol = asset.get('symbol')
+                    if not base_symbol:
+                        continue
+                    symbol = f"{base_symbol}/USD"
                     self.universe['alpaca'].add(symbol)
                     all_symbols.append((symbol, 'alpaca'))
                 logger.info(f"   🦙 Alpaca: {len(self.universe['alpaca'])} symbols")

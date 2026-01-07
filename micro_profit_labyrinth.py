@@ -43,6 +43,7 @@ import logging
 import time
 from dataclasses import dataclass, field
 from datetime import datetime
+from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Tuple, TYPE_CHECKING
 
 
@@ -1980,8 +1981,23 @@ class LiveBarterMatrix:
         👑 QUEEN'S MANDATE: Track wins/losses to block losing paths!
         """
         # Calculate realized P/L
-        profit_usd = to_usd - from_usd
-        profit_pct = (profit_usd / from_usd * 100) if from_usd > 0 else 0
+        profit_usd_raw = to_usd - from_usd
+        profit_pct_raw = (profit_usd_raw / from_usd * 100) if from_usd > 0 else 0
+
+        # 🔧 FIX GHOST PROFIT: Sanity check BEFORE we update history/signals.
+        # If profit is wildly outside expected bounds, treat as an outlier so it
+        # doesn't corrupt path stats, win-rate, or portfolio reporting.
+        MAX_REASONABLE_PROFIT = 500.0  # Max profit per conversion (given small balances)
+        MIN_REASONABLE_LOSS = -200.0   # Max loss per conversion
+        is_outlier = profit_usd_raw > MAX_REASONABLE_PROFIT or profit_usd_raw < MIN_REASONABLE_LOSS
+        if is_outlier:
+            logger.warning(
+                f"👑⚠️ REJECTING OUTLIER PROFIT/LOSS: ${profit_usd_raw:.2f} (from ${from_usd:.2f} to ${to_usd:.2f})"
+            )
+            logger.warning("      This suggests a price data error or bad execution value.")
+
+        profit_usd = 0.0 if is_outlier else profit_usd_raw
+        profit_pct = 0.0 if is_outlier else profit_pct_raw
         is_win = profit_usd > 0
         
         # Calculate actual slippage vs expected
@@ -2002,9 +2018,17 @@ class LiveBarterMatrix:
         alpha = 0.3  # Weight for new data
         history['avg_slippage'] = alpha * actual_slippage + (1 - alpha) * history['avg_slippage']
         history['total_profit'] = history.get('total_profit', 0) + profit_usd
+
+        # Track outliers without treating them as wins/losses
+        if is_outlier:
+            history['outliers'] = history.get('outliers', 0) + 1
+            history['last_outlier_time'] = time.time()
         
         # 👑 QUEEN'S WIN/LOSS TRACKING WITH IMMEDIATE LEARNING
-        if is_win:
+        # Outliers are treated as neutral so they don't block/unblock paths.
+        if is_outlier or profit_usd == 0:
+            pass
+        elif is_win:
             history['wins'] = history.get('wins', 0) + 1
             history['consecutive_losses'] = 0  # Reset on win
             history['last_win_time'] = time.time()  # Remember when we last won
@@ -2057,12 +2081,12 @@ class LiveBarterMatrix:
                 # Slippage much higher than expected - warn
                 logger.warning(f"👑⚠️ HIGH SLIPPAGE: {from_asset}→{to_asset} had {actual_slippage:.2f}% vs avg {history['avg_slippage']:.2f}%")
         
-        # Record in ledger
+        # Record in ledger (sanitized)
         self.profit_ledger.append((
             time.time(), from_asset, to_asset, from_usd, to_usd, profit_usd
         ))
-        
-        # Update running totals
+            
+        # Update running totals with sanitized profit
         self.total_realized_profit += profit_usd
         self.conversion_count += 1
         
@@ -5228,11 +5252,18 @@ class MicroProfitLabyrinth:
                 # Get Queen's trading guidance
                 if hasattr(self.queen, 'get_trading_guidance'):
                     guidance = self.queen.get_trading_guidance()
-                    portfolio_data['queen_guidance'] = guidance
-                    
-                    # Apply guidance to position sizing
-                    self.queen_position_multiplier = guidance.get('recommended_position_size', 1.0)
-                    print(f"   👑 Queen's Position Multiplier: {self.queen_position_multiplier:.1f}x")
+                    if isinstance(guidance, dict):
+                        portfolio_data['queen_guidance'] = guidance
+
+                        # Apply guidance to position sizing
+                        self.queen_position_multiplier = guidance.get('recommended_position_size', 1.0)
+                        print(f"   👑 Queen's Position Multiplier: {self.queen_position_multiplier:.1f}x")
+                    else:
+                        # Defensive: some implementations may return a list/tuple/None
+                        portfolio_data['queen_guidance'] = {}
+                        logger.warning(
+                            f"Queen trading guidance was {type(guidance).__name__}, expected dict; ignoring"
+                        )
                 
                 # Review each exchange
                 if hasattr(self.queen, 'review_exchange_performance'):
@@ -9740,6 +9771,19 @@ class MicroProfitLabyrinth:
             bought_value = buy_amount * to_price
         
         actual_pnl = bought_value - sold_value
+        
+        # 👑 TINA B FIX: Sanitity Check for Outlier Profits
+        # This catches "Ghost Profit" bugs where bad data creates impossible PnL
+        MAX_REASONABLE_PROFIT = 500.0   # $500 max profit per trade (realistic for small balances)
+        MIN_REASONABLE_LOSS = -200.0    # -$200 max loss per trade
+        
+        if actual_pnl > MAX_REASONABLE_PROFIT or actual_pnl < MIN_REASONABLE_LOSS:
+            logger.warning(
+                f"👑⚠️ REJECTING OUTLIER PROFIT/LOSS in record: ${actual_pnl:.2f} (from ${sold_value:.2f} to ${bought_value:.2f})"
+            )
+            logger.warning("      This suggests a price data error or bad execution value. Clamping to 0.0")
+            actual_pnl = 0.0
+
         opp.actual_pnl_usd = actual_pnl
         
         # ═══════════════════════════════════════════════════════════════════
@@ -9749,6 +9793,14 @@ class MicroProfitLabyrinth:
             # Use verified P&L if available (most accurate)
             if verification and verification.get('verified_pnl') is not None:
                 actual_pnl = verification['verified_pnl']
+
+                # Re-apply outlier clamp to verified P&L too (prevents ghost-profit override)
+                if actual_pnl > MAX_REASONABLE_PROFIT or actual_pnl < MIN_REASONABLE_LOSS:
+                    logger.warning(
+                        f"👑⚠️ REJECTING OUTLIER VERIFIED P/L: ${actual_pnl:.2f} (clamping to 0.0)"
+                    )
+                    actual_pnl = 0.0
+
                 opp.actual_pnl_usd = actual_pnl
                 # Update bought_value to reflect actual P&L (don't reset sold_value!)
                 # sold_value already has correct value from execution data above
@@ -10308,8 +10360,27 @@ class MicroProfitLabyrinth:
             last_wave_scan_time = 0  # Track last wave scanner update
             wave_scan_interval = 60  # Run full A-Z sweep every 60 seconds
             
+            # 👑🌐 QUEEN'S ONLINE RESEARCH - Every 5 minutes, she learns and enhances herself
+            last_research_time = 0
+            research_interval = 300  # Research every 5 minutes
+            
             while duration_s == 0 or time.time() - start_time < duration_s:
                 elapsed = time.time() - start_time
+                
+                # 👑🌐 QUEEN'S PERIODIC ONLINE RESEARCH & SELF-ENHANCEMENT
+                if (time.time() - last_research_time) >= research_interval:
+                    try:
+                        print(f"\n👑🌐 Queen initiating online research & self-enhancement...")
+                        research_result = await self.queen_research_online_and_enhance()
+                        last_research_time = time.time()
+                        
+                        if research_result.get('status') == 'success':
+                            print(f"   ✅ Queen applied enhancement: {research_result.get('enhancement_applied')}")
+                        elif research_result.get('findings', 0) > 0:
+                            print(f"   📚 Queen found {research_result['findings']} insights (processing...)")
+                    except Exception as e:
+                        logger.debug(f"Queen research error: {e}")
+                        last_research_time = time.time()  # Don't spam on errors
                 
                 # Refresh prices (shared across all exchanges)
                 await self.fetch_prices()
@@ -10899,6 +10970,145 @@ class MicroProfitLabyrinth:
             logger.info(f"   💡 {insight}")
         
         return result
+    
+    async def queen_research_online_and_enhance(self) -> Dict[str, Any]:
+        """
+        👑🌐🏗️ Queen searches online for trading improvements, writes new code, and applies it.
+        
+        This is the FULL CYCLE:
+        1. Search online (market data APIs, trends, patterns)
+        2. Generate enhanced code based on research
+        3. Apply the enhancements to the codebase
+        4. Track revenue impact
+        
+        The Queen becomes smarter by learning from the internet!
+        """
+        try:
+            from queen_online_researcher import get_online_researcher, queen_research_and_enhance
+            from queen_code_architect import get_code_architect
+        except ImportError as e:
+            logger.warning(f"👑⚠️ Online researcher not available: {e}")
+            return {'status': 'error', 'reason': str(e)}
+        
+        logger.info("=" * 70)
+        logger.info("👑🌐 QUEEN INITIATING ONLINE RESEARCH & SELF-ENHANCEMENT")
+        logger.info("=" * 70)
+        
+        researcher = get_online_researcher()
+        architect = get_code_architect()
+        
+        result = {
+            'status': 'started',
+            'findings': 0,
+            'enhancement_applied': None,
+            'timestamp': time.time()
+        }
+        
+        try:
+            # Step 1: Research online
+            logger.info("👑🔍 Step 1: Researching online for trading insights...")
+            findings = await researcher.research_trading_strategies()
+            result['findings'] = len(findings)
+            
+            for f in findings[:5]:
+                logger.info(f"   📚 {f.source}: {f.title} (relevance: {f.relevance_score:.0%})")
+            
+            # Step 2: Generate enhancement from research
+            logger.info("👑🏗️ Step 2: Generating code enhancement from research...")
+            enhancement = researcher.generate_enhancement_from_research()
+            
+            if enhancement:
+                logger.info(f"   🎯 Generated: {enhancement.name}")
+                logger.info(f"   📝 Based on: {', '.join(enhancement.source_research[:3])}")
+                
+                # Step 3: Apply enhancement
+                logger.info("👑📝 Step 3: Applying enhancement to codebase...")
+                apply_result = researcher.apply_enhancement(enhancement, architect)
+                
+                if apply_result['status'] == 'success':
+                    result['enhancement_applied'] = apply_result['file']
+                    result['status'] = 'success'
+                    logger.info(f"   ✅ Enhancement applied: {apply_result['file']}")
+                    
+                    # Step 4: Try to load and use the enhancement
+                    logger.info("👑⚡ Step 4: Loading generated enhancement for immediate use...")
+                    try:
+                        self._load_queen_research_enhancement(apply_result['file'])
+                        logger.info("   ✅ Enhancement loaded and active!")
+                    except Exception as e:
+                        logger.warning(f"   ⚠️ Could not load enhancement (will use on next restart): {e}")
+                else:
+                    result['status'] = 'partial'
+                    logger.warning(f"   ⚠️ Enhancement apply failed: {apply_result.get('reason')}")
+            else:
+                result['status'] = 'no_enhancement'
+                logger.info("   ℹ️ No new enhancement generated (may need more research)")
+            
+            # Get stats
+            stats = researcher.get_stats()
+            result['stats'] = stats
+            
+            logger.info(f"👑📊 Research Stats:")
+            logger.info(f"   Total findings: {stats['total_findings']}")
+            logger.info(f"   Applied: {stats['applied_findings']}")
+            logger.info(f"   Revenue generated: ${stats['total_revenue_generated']:.4f}")
+            
+        except Exception as e:
+            logger.error(f"👑❌ Online research error: {e}")
+            result['status'] = 'error'
+            result['error'] = str(e)
+        
+        logger.info("=" * 70)
+        logger.info("👑 'I search, I learn, I evolve, I profit.'")
+        logger.info("=" * 70)
+        
+        return result
+    
+    def _load_queen_research_enhancement(self, filepath: str):
+        """
+        👑⚡ Dynamically load Queen's generated enhancement.
+        """
+        import importlib.util
+        
+        full_path = Path(filepath)
+        if not full_path.is_absolute():
+            full_path = Path.cwd() / filepath
+        
+        if not full_path.exists():
+            raise FileNotFoundError(f"Enhancement file not found: {full_path}")
+        
+        spec = importlib.util.spec_from_file_location("queen_enhancement", full_path)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        
+        # Store reference to enhancement functions
+        if hasattr(module, 'queen_research_score'):
+            self._queen_research_scorer = module.queen_research_score
+            logger.info("   📊 Loaded queen_research_score function")
+        
+        if hasattr(module, 'queen_evaluate_trade'):
+            self._queen_trade_evaluator = module.queen_evaluate_trade
+            logger.info("   📊 Loaded queen_evaluate_trade function")
+        
+        return True
+    
+    def queen_apply_research_to_trade(self, symbol: str, price: float, volume: float, 
+                                      price_change: float = 0, high_24h: float = 0, 
+                                      low_24h: float = 0) -> Tuple[float, List[str]]:
+        """
+        👑 Apply Queen's research-based scoring to a trade opportunity.
+        
+        Returns:
+            (score 0-100, list of reasons)
+        """
+        if hasattr(self, '_queen_research_scorer') and self._queen_research_scorer:
+            try:
+                return self._queen_research_scorer(symbol, price, volume, price_change, high_24h, low_24h)
+            except Exception as e:
+                logger.warning(f"👑⚠️ Research scorer error: {e}")
+        
+        # Default fallback scoring
+        return 50.0, ["No research enhancement loaded"]
 
 
 # ════════════════════════════════════════════════════════════════════════════

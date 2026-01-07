@@ -1,0 +1,61 @@
+{
+  "losses": [
+    {
+      "timestamp": 1767777344.9249544,
+      "exchange": "binance",
+      "from_asset": "PEPE",
+      "to_asset": "FLOKI",
+      "from_amount": 1379742.0097999999,
+      "from_value_usd": 9.396043086737999,
+      "executed_price": 5.734e-05,
+      "expected_price": 5.734e-05,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.05637625852042799,
+      "loss_amount": 0.011888870844444007,
+      "loss_pct": 0.12653061224489806,
+      "market_data": {},
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 3.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.5840000000000001,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.52
+      },
+      "combined_score": 0.5840000000000001,
+      "expected_profit": 0.011888870844444007,
+      "cause_identified": "Fees ate most of expected profit",
+      "lessons_learned": [
+        "Fees ($0.0564) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": []
+    }
+  ],
+  "patterns": {
+    "PEPE\u2192FLOKI_binance": {
+      "losses": 1,
+      "total_loss": 0.011888870844444007,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Fees ate most of expected profit"
+      ],
+      "first_seen": 1767777344.9249544,
+      "last_seen": 1767777344.9249544
+    }
+  },
+  "stats": {
+    "total_losses_analyzed": 1,
+    "patterns_identified": 0,
+    "tactics_learned": 0,
+    "wikipedia_researches": 0,
+    "lessons_broadcast": 1,
+    "money_saved_by_learning": 0.0
+  },
+  "last_saved": "2026-01-07T09:15:44.925136"
+}
