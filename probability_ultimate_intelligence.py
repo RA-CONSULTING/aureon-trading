@@ -8,16 +8,18 @@ This module learns from every trade to build pattern recognition
 that approaches perfect prediction.
 
 Key innovations:
-1. Multi-dimensional pattern keys (scenario × risk × proximity × momentum)
+1. Multi-dimensional pattern keys (scenario × risk × proximity × momentum × clownfish)
 2. Historical win rate tracking per pattern
 3. Guaranteed win/loss pattern identification
 4. Adaptive threshold based on pattern history
+5. 🐠 Clownfish micro-change integration for 12-factor analysis
 
 Pattern dimensions:
 - Scenario: strong, dying, volatile, reversal, sideways (detected via acceleration)
 - Risk Level: none, low (1 flag), high (2+ flags)
 - Proximity: far (<20% to target), mid (20-50%), close (>50%)
 - Momentum: down (<-0.1), flat (-0.1 to 0.3), up (>0.3)
+- Clownfish: danger (<0.35), weak (0.35-0.55), neutral (0.55-0.75), strong (>0.75)
 """
 
 import json
@@ -30,6 +32,15 @@ from probability_intelligence_matrix import (
     get_probability_matrix,
     ProbabilityIntelligence
 )
+
+# 🐠 CLOWNFISH INTEGRATION - Import for micro-change detection
+try:
+    from aureon_unified_ecosystem import ClownfishNode, MarketState
+    CLOWNFISH_AVAILABLE = True
+except ImportError:
+    CLOWNFISH_AVAILABLE = False
+    ClownfishNode = None
+    MarketState = None
 
 STATE_FILE = os.path.join(os.path.dirname(__file__), "probability_ultimate_state.json")
 
@@ -77,8 +88,8 @@ class UltimatePrediction:
     # Base probability from matrix
     base_probability: float
     
-    # Pattern-based adjustment
-    pattern_key: Tuple[str, str, str, str]
+    # Pattern-based adjustment (now 5D with clownfish)
+    pattern_key: Tuple[str, str, str, str, str]
     pattern_win_rate: float
     pattern_confidence: float
     pattern_samples: int
@@ -94,6 +105,9 @@ class UltimatePrediction:
     is_guaranteed_win: bool = False
     is_guaranteed_loss: bool = False
     
+    # 🐠 Clownfish micro-change signal
+    clownfish_signal: float = 0.5
+    
     # Reasoning
     reasoning: str = ""
 
@@ -102,13 +116,26 @@ class ProbabilityUltimateIntelligence:
     """
     The ultimate probability system that learns from every trade.
     Achieved 95% accuracy in backtesting.
+    
+    🐠 Enhanced with Clownfish v2.0 micro-change detection for 5D pattern keys.
     """
     
     def __init__(self):
         self.matrix = get_probability_matrix()
-        self.patterns: Dict[Tuple[str, str, str, str], PatternStats] = {}
+        # Pattern keys are now 5-dimensional (includes clownfish)
+        self.patterns: Dict[Tuple[str, str, str, str, str], PatternStats] = {}
         self.total_predictions = 0
         self.correct_predictions = 0
+        
+        # 🐠 Initialize ClownfishNode for micro-change detection
+        self.clownfish = None
+        if CLOWNFISH_AVAILABLE and ClownfishNode is not None:
+            try:
+                self.clownfish = ClownfishNode()
+                print("🐠 ClownfishNode v2.0 initialized for pattern learning")
+            except Exception as e:
+                print(f"⚠️ ClownfishNode init failed: {e}")
+        
         self._load_state()
     
     def _load_state(self):
@@ -239,9 +266,10 @@ class ProbabilityUltimateIntelligence:
         risk_flags: List[str],
         current_pnl: float,
         target_pnl: float,
-        momentum: float
-    ) -> Tuple[str, str, str, str]:
-        """Build the multi-dimensional pattern key."""
+        momentum: float,
+        clownfish_signal: float = 0.5
+    ) -> Tuple[str, str, str, str, str]:
+        """Build the multi-dimensional pattern key (now 5D with clownfish)."""
         
         # Risk level
         if len(risk_flags) == 0:
@@ -272,19 +300,65 @@ class ProbabilityUltimateIntelligence:
         else:
             mom_cat = "down"
         
-        return (scenario, risk_level, prox_cat, mom_cat)
+        # 🐠 Clownfish micro-change category (5th dimension)
+        if clownfish_signal > 0.75:
+            cf_cat = "strong"
+        elif clownfish_signal > 0.55:
+            cf_cat = "neutral"
+        elif clownfish_signal > 0.35:
+            cf_cat = "weak"
+        else:
+            cf_cat = "danger"
+        
+        return (scenario, risk_level, prox_cat, mom_cat, cf_cat)
     
     def predict(
         self,
         current_pnl: float,
         target_pnl: float,
         pnl_history: List[Tuple[float, float]],
-        momentum_score: float = 0.0
+        momentum_score: float = 0.0,
+        market_state: Optional[any] = None
     ) -> UltimatePrediction:
         """
         Generate the ultimate prediction combining matrix intelligence
         with learned pattern recognition.
+        
+        🐠 Now includes 5th dimension: Clownfish micro-change analysis.
+        
+        Args:
+            current_pnl: Current profit/loss
+            target_pnl: Target profit/loss
+            pnl_history: List of (timestamp, pnl) tuples
+            momentum_score: Current momentum (0-1)
+            market_state: Optional MarketState for Clownfish analysis
         """
+        
+        # 🐠 Compute Clownfish signal if available
+        clownfish_signal = 0.5  # Default neutral
+        clownfish_boost = 1.0
+        
+        if self.clownfish is not None and market_state is not None:
+            try:
+                cf_result = self.clownfish.compute(market_state)
+                clownfish_signal = cf_result.get('signal', 0.5)
+                micro_signals = cf_result.get('micro_signals', {})
+                
+                # Count strong/danger signals
+                strong_count = sum(1 for v in micro_signals.values() if v > 0.7)
+                danger_count = sum(1 for v in micro_signals.values() if v < 0.3)
+                
+                # Calculate boost/penalty
+                if strong_count >= 4:
+                    clownfish_boost = 1.12  # Strong micro-change support
+                elif strong_count >= 3:
+                    clownfish_boost = 1.06
+                elif danger_count >= 3:
+                    clownfish_boost = 0.88  # Micro-change danger
+                elif danger_count >= 2:
+                    clownfish_boost = 0.94
+            except Exception as e:
+                print(f"⚠️ Clownfish compute error: {e}")
         
         # Get base intelligence from matrix
         matrix_intel = self.matrix.calculate_intelligent_probability(
@@ -297,13 +371,14 @@ class ProbabilityUltimateIntelligence:
         # Detect scenario from history
         scenario = self._detect_scenario(pnl_history, momentum_score)
         
-        # Build pattern key
+        # Build pattern key (now 5D with clownfish)
         pattern_key = self._build_pattern_key(
             scenario=scenario,
             risk_flags=matrix_intel.risk_flags,
             current_pnl=current_pnl,
             target_pnl=target_pnl,
-            momentum=momentum_score
+            momentum=momentum_score,
+            clownfish_signal=clownfish_signal
         )
         
         # Get pattern stats if we have them
@@ -346,6 +421,15 @@ class ProbabilityUltimateIntelligence:
             final_probability = matrix_intel.adjusted_probability
             reasoning = f"Limited pattern data ({pattern_samples} samples), using matrix intelligence"
         
+        # 🐠 Apply Clownfish boost/penalty to final probability
+        if clownfish_boost != 1.0:
+            final_probability = 0.5 + (final_probability - 0.5) * clownfish_boost
+            final_probability = max(0.01, min(0.99, final_probability))
+            if clownfish_boost > 1.0:
+                reasoning += f" 🐠+{(clownfish_boost-1)*100:.0f}%"
+            else:
+                reasoning += f" 🐠{(clownfish_boost-1)*100:.0f}%"
+        
         # Final decision
         # Use 0.50 threshold for patterns we know, 0.45 for unknown
         threshold = 0.50 if pattern_confidence > 0.5 else 0.45
@@ -354,6 +438,11 @@ class ProbabilityUltimateIntelligence:
         # Override: Never trade guaranteed losses
         if is_guaranteed_loss:
             should_trade = False
+        
+        # 🐠 Override: Block trade if clownfish shows strong danger
+        if clownfish_signal < 0.25 and not is_guaranteed_win:
+            should_trade = False
+            reasoning += " [🐠BLOCKED:danger]"
         
         # Override: Always consider guaranteed wins (but still check matrix action)
         if is_guaranteed_win and matrix_intel.action != "DANGER":
@@ -370,18 +459,23 @@ class ProbabilityUltimateIntelligence:
             matrix_intel=matrix_intel,
             is_guaranteed_win=is_guaranteed_win,
             is_guaranteed_loss=is_guaranteed_loss,
+            clownfish_signal=clownfish_signal,
             reasoning=reasoning
         )
     
     def record_outcome(
         self,
-        pattern_key: Tuple[str, str, str, str],
+        pattern_key: Tuple[str, str, str, str, str],
         won: bool,
         probability: float,
         momentum: float,
-        predicted: bool
+        predicted: bool,
+        clownfish_signal: float = 0.5
     ):
-        """Record the outcome of a trade for learning."""
+        """Record the outcome of a trade for learning.
+        
+        🐠 Pattern key is now 5D: (scenario, risk, proximity, momentum, clownfish)
+        """
         
         # Update pattern stats
         if pattern_key not in self.patterns:
@@ -405,9 +499,17 @@ class ProbabilityUltimateIntelligence:
         if predicted == won:
             self.correct_predictions += 1
         
+        # 🐠 Feed outcome to Clownfish for neural learning
+        if self.clownfish is not None and hasattr(self.clownfish, 'record_signal_outcome'):
+            try:
+                self.clownfish.record_signal_outcome(won, clownfish_signal)
+            except Exception:
+                pass
+        
         # Log learning
         accuracy = self.correct_predictions / self.total_predictions * 100 if self.total_predictions > 0 else 0
-        print(f"💎 Pattern {pattern_key}: {stats.wins}/{stats.total} wins ({stats.win_rate*100:.1f}%)")
+        cf_dim = pattern_key[4] if len(pattern_key) > 4 else "n/a"
+        print(f"💎 Pattern {pattern_key[:4]}|🐠{cf_dim}: {stats.wins}/{stats.total} wins ({stats.win_rate*100:.1f}%)")
         print(f"   Overall accuracy: {accuracy:.1f}% ({self.correct_predictions}/{self.total_predictions})")
         
         # Save every 10 outcomes

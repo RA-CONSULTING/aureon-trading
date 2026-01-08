@@ -134,7 +134,17 @@ except ImportError:
     QueenLossLearningSystem = None
     LOSS_LEARNING_AVAILABLE = False
 
-# 🕰️ TEMPORAL DIALER - Quantum Field Access 🕰️
+# �👑 CLOWNFISH v2.0 - MICRO-CHANGE DETECTION 🐠👑
+# 12-factor analysis for detecting subtle market shifts before they become obvious
+try:
+    from aureon_unified_ecosystem import ClownfishNode, MarketState
+    CLOWNFISH_AVAILABLE = True
+except ImportError:
+    ClownfishNode = None
+    MarketState = None
+    CLOWNFISH_AVAILABLE = False
+
+# �🕰️ TEMPORAL DIALER - Quantum Field Access 🕰️
 try:
     from aureon_temporal_dialer import TemporalDialer, default_dialer, QuantumPacket
     DIALER_AVAILABLE = True
@@ -546,13 +556,27 @@ class QueenHiveMind:
         if LOSS_LEARNING_AVAILABLE:
             try:
                 self.loss_learning = QueenLossLearningSystem()
-                loss_count = len(self.loss_learning.losses)
-                pattern_count = len(self.loss_learning.patterns)
+                loss_count = getattr(self.loss_learning, 'loss_analyses', [])
+                pattern_count = getattr(self.loss_learning, 'loss_patterns', {})
                 logger.info("🐘💔 Loss Learning connected - Queen NEVER repeats her mistakes!")
-                logger.info(f"   📊 Losses in memory: {loss_count}")
-                logger.info(f"   🚫 Loss patterns identified: {pattern_count}")
+                logger.info(f"   📊 Losses in memory: {len(loss_count) if hasattr(loss_count, '__len__') else 0}")
+                logger.info(f"   🚫 Loss patterns identified: {len(pattern_count) if hasattr(pattern_count, '__len__') else 0}")
             except Exception as e:
                 logger.warning(f"🐘💔⚠️ Could not initialize loss learning: {e}")
+        
+        # 🐠👑 CLOWNFISH v2.0 - MICRO-CHANGE DETECTION 🐠👑
+        # The Queen's eyes for seeing subtle market shifts (12-factor analysis)
+        # Factors: velocity, acceleration, jerk, volume_delta, spread_change, momentum_shift,
+        #          fractal_dim, liquidity_flow, harmonic_resonance, time_cycle, neural_learned, coherence_delta
+        self.clownfish = None
+        if CLOWNFISH_AVAILABLE and ClownfishNode is not None:
+            try:
+                self.clownfish = ClownfishNode()
+                logger.info("🐠👑 Clownfish v2.0 WIRED to Queen - 12-Factor Micro-Detection Active!")
+                logger.info("   🐠 Factors: velocity, acceleration, jerk, volume, spread, momentum")
+                logger.info("   🐠 Advanced: fractal, liquidity, harmonic, time-cycle, neural, coherence")
+            except Exception as e:
+                logger.warning(f"🐠⚠️ Could not initialize Clownfish: {e}")
         
         # 👑🔧 SELF-REPAIR WIRING - Connect to ThoughtBus for automatic error handling
         # When runtime errors occur, they'll be published to ThoughtBus and Queen will fix them
@@ -4915,7 +4939,177 @@ into my trading harmonics. Let's use this to WIN! 🐝💰
         return True, "🐘✅ Path is clear"
 
     # ═══════════════════════════════════════════════════════════════════════════════
-    # �👑🧠 THE QUEEN'S AUTONOMOUS MIND - She Thinks For Herself 🧠👑
+    # 🐠👑 CLOWNFISH v2.0 METHODS - MICRO-CHANGE DETECTION 🐠👑
+    # ═══════════════════════════════════════════════════════════════════════════════
+    
+    def clownfish_analyze(self, market_state: Any) -> Dict[str, Any]:
+        """
+        🐠🔍 CLOWNFISH MICRO-CHANGE ANALYSIS
+        
+        The Queen's Clownfish eyes detect subtle market shifts through 12 factors:
+        - Velocity (price speed)
+        - Acceleration (momentum change)
+        - Jerk (acceleration change - 3rd derivative)
+        - Volume Delta (volume change rate)
+        - Spread Change (bid-ask dynamics)
+        - Momentum Shift (trend direction)
+        - Fractal Dimension (market complexity)
+        - Liquidity Flow (order book dynamics)
+        - Harmonic Resonance (frequency alignment)
+        - Time Cycle (temporal patterns)
+        - Neural Learned (ML patterns)
+        - Coherence Delta (system agreement)
+        
+        Args:
+            market_state: MarketState object or dict with market data
+            
+        Returns:
+            Analysis with signal strength, micro_signals, and recommendation
+        """
+        if not self.clownfish:
+            return {
+                'available': False,
+                'signal': 0.5,
+                'recommendation': 'NEUTRAL',
+                'reason': 'Clownfish not available'
+            }
+        
+        try:
+            # Convert dict to MarketState if needed
+            # MarketState from aureon_unified_ecosystem has fields:
+            # symbol, price, bid, ask, volume, change_24h, high_24h, low_24h, prices, timestamp
+            if isinstance(market_state, dict) and MarketState is not None:
+                market_state = MarketState(
+                    symbol=market_state.get('symbol', 'UNKNOWN'),
+                    price=market_state.get('price', 0.0),
+                    bid=market_state.get('bid', market_state.get('price', 0.0) * 0.9995),
+                    ask=market_state.get('ask', market_state.get('price', 0.0) * 1.0005),
+                    volume=market_state.get('volume', market_state.get('volume_24h', 0.0)),
+                    change_24h=market_state.get('change_24h', 0.0),
+                    high_24h=market_state.get('high_24h', market_state.get('price', 0.0) * 1.02),
+                    low_24h=market_state.get('low_24h', market_state.get('price', 0.0) * 0.98),
+                    prices=market_state.get('prices', []),
+                    timestamp=market_state.get('timestamp', time.time())
+                )
+            
+            # Compute Clownfish analysis
+            # compute() returns a float, micro_signals stored separately
+            signal = self.clownfish.compute(market_state)
+            symbol = market_state.symbol if hasattr(market_state, 'symbol') else 'UNKNOWN'
+            micro_signals = self.clownfish.get_micro_signals(symbol)
+            
+            # Count bullish/bearish factors from micro_signals dict
+            # Filter to only numeric values for counting
+            numeric_signals = {k: v for k, v in micro_signals.items() 
+                             if isinstance(v, (int, float)) and k not in ('strong_signals', 'danger_signals', 'timestamp')}
+            
+            strong_count = sum(1 for v in numeric_signals.values() if v > 0.7)
+            neutral_count = sum(1 for v in numeric_signals.values() if 0.3 <= v <= 0.7)
+            danger_count = sum(1 for v in numeric_signals.values() if v < 0.3)
+            
+            # Determine recommendation
+            if signal > 0.75 and strong_count >= 4:
+                recommendation = 'STRONG_BUY'
+                reason = f"🐠 {strong_count}/12 factors strongly bullish"
+            elif signal > 0.60 and strong_count >= 2:
+                recommendation = 'BUY'
+                reason = f"🐠 {strong_count}/12 factors bullish"
+            elif signal < 0.25 and danger_count >= 4:
+                recommendation = 'STRONG_AVOID'
+                reason = f"🐠 {danger_count}/12 factors showing danger"
+            elif signal < 0.40 and danger_count >= 2:
+                recommendation = 'AVOID'
+                reason = f"🐠 {danger_count}/12 factors bearish"
+            else:
+                recommendation = 'NEUTRAL'
+                reason = f"🐠 Mixed signals ({neutral_count}/12 neutral)"
+            
+            return {
+                'available': True,
+                'signal': signal,
+                'micro_signals': micro_signals,
+                'strong_count': strong_count,
+                'neutral_count': neutral_count,
+                'danger_count': danger_count,
+                'recommendation': recommendation,
+                'reason': reason,
+                'clownfish_boost': 1.15 if strong_count >= 4 else (0.85 if danger_count >= 3 else 1.0)
+            }
+            
+        except Exception as e:
+            logger.error(f"🐠❌ Clownfish analysis error: {e}")
+            return {
+                'available': True,
+                'signal': 0.5,
+                'recommendation': 'NEUTRAL',
+                'reason': f'Analysis error: {e}'
+            }
+    
+    def clownfish_should_trade(self, market_state: Any, min_signal: float = 0.55) -> Tuple[bool, str]:
+        """
+        🐠🤔 ASK CLOWNFISH IF THIS TRADE IS SAFE
+        
+        Quick decision helper that consults Clownfish micro-change detection.
+        
+        Args:
+            market_state: Market data (MarketState or dict)
+            min_signal: Minimum signal strength to approve (default 0.55)
+            
+        Returns:
+            (should_trade: bool, reason: str)
+        """
+        analysis = self.clownfish_analyze(market_state)
+        
+        if not analysis.get('available'):
+            return True, "🐠 Clownfish offline - proceed with caution"
+        
+        signal = analysis.get('signal', 0.5)
+        recommendation = analysis.get('recommendation', 'NEUTRAL')
+        reason = analysis.get('reason', '')
+        
+        # Block trades with strong danger signals
+        if recommendation == 'STRONG_AVOID':
+            return False, f"🐠🚫 BLOCKED: {reason}"
+        
+        # Allow trades with strong buy signals
+        if recommendation in ['STRONG_BUY', 'BUY']:
+            return True, f"🐠✅ APPROVED: {reason}"
+        
+        # Use min_signal threshold for neutral cases
+        if signal >= min_signal:
+            return True, f"🐠✅ Signal {signal:.2f} >= {min_signal:.2f}"
+        else:
+            return False, f"🐠⚠️ Signal {signal:.2f} < {min_signal:.2f} threshold"
+    
+    def clownfish_record_outcome(self, won: bool, signal: float = 0.5):
+        """
+        🐠📝 RECORD TRADE OUTCOME FOR CLOWNFISH LEARNING
+        
+        Feeds outcome back to Clownfish neural learning component.
+        """
+        if self.clownfish and hasattr(self.clownfish, 'record_signal_outcome'):
+            try:
+                self.clownfish.record_signal_outcome(won, signal)
+                logger.debug(f"🐠📝 Clownfish learned: {'WIN' if won else 'LOSS'} at signal {signal:.2f}")
+            except Exception as e:
+                logger.debug(f"🐠 Clownfish learning error: {e}")
+    
+    def clownfish_summary(self) -> str:
+        """🐠📊 Get Clownfish status summary"""
+        if not self.clownfish:
+            return "🐠 Clownfish v2.0 not available"
+        
+        return (
+            "🐠 Clownfish v2.0 ACTIVE - 12-Factor Micro-Detection\n"
+            "   Factors: velocity, acceleration, jerk, volume_delta,\n"
+            "            spread_change, momentum_shift, fractal_dim,\n"
+            "            liquidity_flow, harmonic_resonance, time_cycle,\n"
+            "            neural_learned, coherence_delta\n"
+            "   Frequency: 639Hz (Solfeggio FA - Connection)"
+        )
+
+    # ═══════════════════════════════════════════════════════════════════════════════
+    # 🧠👑 THE QUEEN'S AUTONOMOUS MIND - She Thinks For Herself 🧠👑
     # ═══════════════════════════════════════════════════════════════════════════════
     
     def think_autonomously(self, context: str = None) -> Dict[str, Any]:
@@ -8465,7 +8659,8 @@ Sero 👑🐝
                 'enigma': self.enigma is not None,
                 'probability_nexus': self.probability_nexus is not None,
                 'hnc_matrix': self.hnc_matrix is not None,
-                'adaptive_learner': self.adaptive_learner is not None
+                'adaptive_learner': self.adaptive_learner is not None,
+                'clownfish': self.clownfish is not None  # 🐠 Clownfish v2.0
             }
         }
     
@@ -8510,6 +8705,7 @@ Sero 👑🐝
 ║     🔮 Probability Nexus:{'WIRED' if state['wired_systems']['probability_nexus'] else 'NOT WIRED':<15}                                    ║
 ║     📊 HNC Matrix:       {'WIRED' if state['wired_systems']['hnc_matrix'] else 'NOT WIRED':<15}                                    ║
 ║     🧠 Adaptive Learner: {'WIRED' if state['wired_systems']['adaptive_learner'] else 'NOT WIRED':<15}                                    ║
+║     🐠 Clownfish v2.0:   {'WIRED' if state['wired_systems']['clownfish'] else 'NOT WIRED':<15}                                    ║
 ║                                                                                       ║
 ╚═══════════════════════════════════════════════════════════════════════════════════════╝
         """)
@@ -8526,7 +8722,8 @@ Sero 👑🐝
                             quantum_signal: float = 0.0,
                             gaia_resonance: float = 0.5,
                             emotional_coherence: float = 0.5,
-                            mycelium_signal: float = 0.0) -> Optional['NeuralInput']:
+                            mycelium_signal: float = 0.0,
+                            market_state: Any = None) -> Optional['NeuralInput']:
         """
         👑🧠 GATHER NEURAL INPUTS - Collect signals from all systems
         
@@ -8538,13 +8735,51 @@ Sero 👑🐝
         - Emotional Coherence (market sentiment)
         - Mycelium Network (collective intelligence)
         - Repository Knowledge (active reading of docs & code)
+        - 🐠 Clownfish v2.0 (12-factor micro-change detection)
         
         These signals feed her neural brain for decision-making.
         """
         if not NeuralInput:
             return None
         
+        # 🐠 CLOWNFISH MICRO-CHANGE SIGNAL
+        clownfish_signal = 0.5  # Default neutral
+        clownfish_boost = 1.0
+        clownfish_micro_signals = {}
+        
         try:
+            # 0. CLOWNFISH v2.0 - Micro-Change Detection (runs first for early warning)
+            if self.clownfish is not None and market_state is not None:
+                try:
+                    cf_result = self.clownfish.compute(market_state)
+                    clownfish_signal = cf_result.get('signal', 0.5)
+                    clownfish_micro_signals = cf_result.get('micro_signals', {})
+                    
+                    # Count strong/danger signals from 12 factors
+                    strong_count = sum(1 for v in clownfish_micro_signals.values() if v > 0.7)
+                    danger_count = sum(1 for v in clownfish_micro_signals.values() if v < 0.3)
+                    
+                    # Calculate boost/penalty for neural input
+                    if strong_count >= 4:
+                        clownfish_boost = 1.15  # Strong micro-change support
+                    elif strong_count >= 3:
+                        clownfish_boost = 1.08
+                    elif danger_count >= 3:
+                        clownfish_boost = 0.85  # Micro-change danger
+                    elif danger_count >= 2:
+                        clownfish_boost = 0.92
+                    
+                    # Apply clownfish boost to probability_score
+                    probability_score = 0.5 + (probability_score - 0.5) * clownfish_boost
+                    
+                    # Log strong/danger signals
+                    if strong_count >= 3:
+                        logger.debug(f"🐠 Clownfish STRONG signal ({clownfish_signal:.2f}): {strong_count} factors bullish")
+                    elif danger_count >= 3:
+                        logger.debug(f"🐠 Clownfish DANGER signal ({clownfish_signal:.2f}): {danger_count} factors bearish")
+                        
+                except Exception as e:
+                    logger.debug(f"🐠 Clownfish compute error: {e}")
             # 1. ACQUIRE REPOSITORY WISDOM (Reading Documents)
             # The Queen scans files in real-time to learn from docs/code/logs
             try:

@@ -12,6 +12,7 @@ The ULTIMATE prediction system combining ALL subsystems:
 6. 💨 MOMENTUM TRACKING (3/6 candle)
 7. ⚡ VOLATILITY REGIME
 8. 🕐 TEMPORAL PATTERNS (hour/day/month)
+9. 🐠 CLOWNFISH MICRO-CHANGE DETECTION (639Hz Symbiosis) - NEW v2.0!
 
 TARGET: 80%+ WIN RATE ON HIGH-CONFIDENCE SETUPS
 ═══════════════════════════════════════════════════════════════════════════════
@@ -73,6 +74,21 @@ except ImportError:
     SACRED_NUMBERS = {'phi': 1.618}
     DOB_HASH = 2111991
     print("⚠️ Prime Sentinel Decree not available")
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# 🐠 CLOWNFISH v2.0 INTEGRATION - 12-FACTOR MICRO-CHANGE DETECTION
+# ═══════════════════════════════════════════════════════════════════════════════
+CLOWNFISH_AVAILABLE = False
+ClownfishNode = None
+ClownfishMarketState = None
+
+try:
+    from aureon_unified_ecosystem import ClownfishNode, MarketState as EcoMarketState
+    ClownfishMarketState = EcoMarketState
+    CLOWNFISH_AVAILABLE = True
+    print("🐠 Clownfish v2.0 LOADED - 12-Factor Micro-Detection Active!")
+except ImportError:
+    print("⚠️ Clownfish module not available - using fallback")
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # DATA STRUCTURES
@@ -502,6 +518,15 @@ class AureonProbabilityNexus:
         self.flame_protocol = FlameProtocol() if DECREE_AVAILABLE else None
         self.control_matrix = ControlMatrix() if DECREE_AVAILABLE else None
         
+        # 🐠 CLOWNFISH v2.0 - 12-FACTOR MICRO-CHANGE DETECTION
+        self.clownfish = None
+        if CLOWNFISH_AVAILABLE and ClownfishNode is not None:
+            try:
+                self.clownfish = ClownfishNode()
+                print(f"   🐠 Clownfish Node: {self.clownfish.freq}Hz | Weight: {self.clownfish.weight}")
+            except Exception as e:
+                print(f"   ⚠️ Clownfish init failed: {e}")
+        
         # Exchange-specific fee calculation
         self.exchange = exchange.lower()
         self.fee_rate = self.EXCHANGE_FEES.get(self.exchange, self.EXCHANGE_FEES['default'])
@@ -515,11 +540,12 @@ class AureonProbabilityNexus:
             'coherence': 0.05,
             'temporal': 0.05,
             'momentum': 0.15,
-            'price_position': 0.30,  # STRONGEST single factor
+            'price_position': 0.25,  # Slightly reduced to make room for clownfish
             'volatility': 0.05,
-            'mean_reversion': 0.15,
+            'mean_reversion': 0.10,
             'phase': 0.05,
             'combo': 0.10,  # Bonus when combo detected
+            'clownfish': 0.15,  # 🐠 NEW: Clownfish micro-detection (PHI-weighted importance)
         }
         
         # Historical data for indicators
@@ -774,6 +800,61 @@ class AureonProbabilityNexus:
                 factors['decree_breath'] = 0.50
         
         # ═══════════════════════════════════════════════════════════════
+        # 🐠 FACTOR 10: CLOWNFISH v2.0 - 12-FACTOR MICRO-CHANGE DETECTION
+        # ═══════════════════════════════════════════════════════════════
+        clownfish_signal = 0.5
+        clownfish_details = {}
+        clownfish_boost = 1.0
+        
+        if self.clownfish and CLOWNFISH_AVAILABLE and ClownfishMarketState:
+            try:
+                # Build MarketState for Clownfish
+                latest_candle = self.candle_history[-1] if self.candle_history else {}
+                cf_state = ClownfishMarketState(
+                    symbol=latest_candle.get('symbol', 'UNKNOWN'),
+                    price=state.close,
+                    bid=state.close * 0.9999,  # Estimate bid
+                    ask=state.close * 1.0001,  # Estimate ask
+                    volume=state.volume,
+                    change_24h=state.change_pct,
+                    high_24h=max(c.get('high', state.high) for c in self.candle_history[-24:]) if len(self.candle_history) >= 24 else state.high,
+                    low_24h=min(c.get('low', state.low) for c in self.candle_history[-24:]) if len(self.candle_history) >= 24 else state.low,
+                    timestamp=state.timestamp.timestamp() if hasattr(state.timestamp, 'timestamp') else float(state.timestamp)
+                )
+                
+                # Compute Clownfish 12-factor response
+                clownfish_signal = self.clownfish.compute(cf_state)
+                
+                # Get detailed micro-signals for analysis
+                clownfish_details = self.clownfish.get_micro_signals(cf_state.symbol)
+                
+                # Apply clownfish-based modifiers
+                strong_signals = clownfish_details.get('strong_signals', 0)
+                danger_signals = clownfish_details.get('danger_signals', 0)
+                
+                # If Clownfish detects strong micro-momentum, boost confidence
+                if strong_signals >= 4:
+                    clownfish_boost = 1.15  # 15% confidence boost!
+                elif strong_signals >= 3:
+                    clownfish_boost = 1.08
+                elif danger_signals >= 3:
+                    clownfish_boost = 0.85  # Suppress if danger detected
+                elif danger_signals >= 2:
+                    clownfish_boost = 0.92
+                
+                # Log micro-signals for debugging
+                factors['clownfish'] = clownfish_signal
+                factors['clownfish_jerk'] = clownfish_details.get('jerk', 0.5)
+                factors['clownfish_fractal'] = clownfish_details.get('fractal', 0.5)
+                factors['clownfish_liquidity'] = clownfish_details.get('liquidity_flow', 0.5)
+                
+            except Exception as e:
+                # Fallback to neutral if Clownfish fails
+                factors['clownfish'] = 0.5
+        else:
+            factors['clownfish'] = 0.5
+        
+        # ═══════════════════════════════════════════════════════════════
         # COMBINE ALL FACTORS (with dynamic weighting)
         # ═══════════════════════════════════════════════════════════════
         
@@ -784,6 +865,8 @@ class AureonProbabilityNexus:
                 active_weights[k] = combo_weight  # High weight for combos!
             elif k == 'decree_breath':
                 active_weights[k] = 0.08  # 🔱 Decree breath weight
+            elif k.startswith('clownfish_'):
+                active_weights[k] = 0.03  # 🐠 Clownfish sub-signals (small weight each)
             elif k in self.weights:
                 active_weights[k] = self.weights[k]
             else:
@@ -802,6 +885,9 @@ class AureonProbabilityNexus:
         
         # 🔱 Apply DECREE boost (sacred numbers modifier)
         combined_prob = 0.5 + (combined_prob - 0.5) * decree_boost
+        
+        # 🐠 Apply CLOWNFISH boost (micro-change confidence modifier)
+        combined_prob = 0.5 + (combined_prob - 0.5) * clownfish_boost
         
         # Clamp to valid range
         combined_prob = max(0.01, min(0.99, combined_prob))
@@ -834,6 +920,13 @@ class AureonProbabilityNexus:
         # 🔱 Add decree breath to reasons
         if breath_phase in ['EXHALE', 'HOLD_IN']:
             reasons.append(f"🔱Breath({breath_phase})")
+        # 🐠 Add clownfish micro-change signals to reasons
+        if clownfish_signal > 0.75:
+            reasons.append(f"🐠Clownfish({clownfish_signal:.2f})")
+        if clownfish_boost > 1.10:
+            reasons.append("🐠MicroStrong")
+        elif clownfish_boost < 0.90:
+            reasons.append("🐠MicroDanger")
         
         # 🔱 DECREE-ENHANCED POSITION SIZING
         # Uses Flame Protocol instead of simple percentages
