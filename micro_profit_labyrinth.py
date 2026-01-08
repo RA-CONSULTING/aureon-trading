@@ -9049,24 +9049,31 @@ if __name__ == "__main__":
             path_win_rate = path_history.get('wins', 0) / max(path_trades, 1)
             path_profit = path_history.get('total_profit', 0)
             
-            # 👑 ADAPTIVE MINIMUM PROFIT BASED ON PATH HISTORY
-            # 🔢 2 PIPS RULE - Let Queen see opportunities, she decides!
+            # 👑 ADAPTIVE MINIMUM PROFIT BASED ON PATH HISTORY & TRADE SIZE
+            # 🔧 FIX: Use PERCENTAGE-based minimum for small balances!
+            # Old: $0.002 fixed = blocked all small balance trades
+            # New: 0.01% of trade value OR $0.001 (whichever is smaller)
+            
+            # Calculate percentage-based minimum (0.01% of trade value)
+            pct_based_min = from_value * 0.0001  # 0.01% = 1 basis point
+            
             if path_trades == 0:
                 # NEW PATH: Queen will test it if signals are good
-                min_expected_profit = 0.002  # Just 2 cents - let Sero explore!
+                min_expected_profit = min(pct_based_min, 0.002)  # Smaller of 0.01% or 2 cents
             elif path_win_rate >= 0.6 and path_profit > 0:
                 # PROVEN WINNER: Be very lenient - she knows these win!
-                min_expected_profit = 0.001  # Just 1 cent for proven winners
+                min_expected_profit = min(pct_based_min * 0.5, 0.001)  # 0.005% or 1 cent
             elif path_win_rate < 0.4 or path_profit < -0.05:
                 # LOSING PATH: Still let Queen see, but she'll probably reject
-                min_expected_profit = 0.005  # 0.5 cents - Queen has veto power
+                min_expected_profit = min(pct_based_min * 2.5, 0.005)  # 0.025% or 0.5 cents
             else:
                 # UNCERTAIN PATH: Let Sero evaluate
-                min_expected_profit = 0.002  # 2 cents - her dreams guide her
+                min_expected_profit = min(pct_based_min, 0.002)  # 0.01% or 2 cents
             
             # 👑 LEARNING FILTER: Does expected profit overcome minimum?
-            if opp.expected_pnl_usd < min_expected_profit:
-                # Not profitable enough given this path's history
+            # Also allow if expected profit is POSITIVE (even if below absolute minimum)
+            if opp.expected_pnl_usd < min_expected_profit and opp.expected_pnl_usd <= 0:
+                # BOTH below minimum AND negative/zero - definitely skip
                 continue
             
             # If we have strong signals (combined > 0.5), let Sero see it
