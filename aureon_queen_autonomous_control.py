@@ -325,7 +325,7 @@ class QueenAutonomousControl:
         # Autonomous loop control
         self.autonomous_active = False
         self.autonomous_thread: Optional[threading.Thread] = None
-        self.loop_interval = 1.0  # Seconds between autonomous cycles
+        self.loop_interval = 0.1  # ⚡ TURBO: 100ms between autonomous cycles (was 1.0)
         
         # Real-time perception
         self.current_quantum_data: Optional[QuantumPacket] = None

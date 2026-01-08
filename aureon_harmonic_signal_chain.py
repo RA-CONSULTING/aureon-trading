@@ -131,11 +131,6 @@ class SignalDirection(Enum):
     UP = "up"      # Responses flow up (Whale → Queen)
 
 
-# Forward declaration alias for backward compatibility
-# HarmonicSignal is now ChainSignal - alias defined after ChainSignal class
-    UP = "up"      # Responses flow up (Whale → Queen)
-
-
 @dataclass
 class ChainSignal:
     """
@@ -269,6 +264,10 @@ class ChainNode:
         # Signal buffer
         self.signal_buffer: deque = deque(maxlen=100)
         
+        # Track processed signal IDs to prevent infinite loops
+        self._processed_signal_ids: set = set()
+        self._max_processed_cache = 1000  # Limit memory usage
+        
         # Callbacks
         self.on_signal_received: Optional[Callable[[ChainSignal], None]] = None
         self.on_signal_processed: Optional[Callable[[ChainSignal], None]] = None
@@ -284,6 +283,21 @@ class ChainNode:
             payload = thought.payload
             if 'chain_signal' in payload:
                 signal = ChainSignal.from_dict(payload['chain_signal'])
+                
+                # DEDUPLICATION: Skip already-processed signals to prevent infinite loops
+                signal_key = f"{signal.id}_{signal.hop_count}"
+                if signal_key in self._processed_signal_ids:
+                    logger.debug(f"[{self.node_id}] Skipping already-processed signal {signal.id}")
+                    return
+                
+                # Add to processed set (with cache limit)
+                self._processed_signal_ids.add(signal_key)
+                if len(self._processed_signal_ids) > self._max_processed_cache:
+                    # Remove oldest entries (convert to list, remove first half)
+                    to_remove = list(self._processed_signal_ids)[:self._max_processed_cache // 2]
+                    for key in to_remove:
+                        self._processed_signal_ids.discard(key)
+                
                 self.receive_signal(signal)
         except Exception as e:
             logger.warning(f"[{self.node_id}] Failed to handle chain thought: {e}")
@@ -293,7 +307,7 @@ class ChainNode:
         Receive a signal from the chain.
         Override in subclasses for custom processing.
         """
-        logger.info(f"🔗 [{self.node_id.upper()}] Received signal: '{signal.current_content[:50]}...' (dir={signal.direction.value})")
+        logger.debug(f"🔗 [{self.node_id.upper()}] Received signal: '{signal.current_content[:50]}...' (dir={signal.direction.value})")
         
         # Record in buffer
         self.signal_buffer.append(signal)
@@ -346,7 +360,7 @@ class ChainNode:
         next_node = self.downstream if signal.direction == SignalDirection.DOWN else self.upstream
         
         if next_node is None:
-            logger.info(f"🔗 [{self.node_id.upper()}] End of chain reached")
+            logger.debug(f"🔗 [{self.node_id.upper()}] End of chain reached")
             return signal
         
         # Encode to harmonics for transmission
@@ -456,7 +470,7 @@ class QueenNode(ChainNode):
         )
         signal.encode_to_harmonics()
         
-        logger.info(f"👑 QUEEN: Initiating signal: '{message}'")
+        logger.debug(f"👑 QUEEN: Initiating signal: '{message}'")
         
         # Store pending
         self.pending_requests[signal.id] = signal
@@ -496,7 +510,7 @@ class QueenNode(ChainNode):
             if signal.id in self.pending_requests:
                 del self.pending_requests[signal.id]
             
-            logger.info(f"👑 QUEEN: Signal journey complete! Final content: '{signal.current_content}'")
+            logger.debug(f"👑 QUEEN: Signal journey complete! Final content: '{signal.current_content}'")
             
             # Publish completion
             if self.thought_bus and THOUGHT_BUS_AVAILABLE:
@@ -526,9 +540,19 @@ class EnigmaNode(ChainNode):
     
     def __init__(self, thought_bus: Optional[ThoughtBus] = None):
         super().__init__("enigma", thought_bus)
-        self.enigma = AureonEnigma() if ENIGMA_AVAILABLE else None
+        self.enigma = None
         self.contribution_word = "HARMONIC"
         self.decoded_count = 0
+        
+        # Wire up Enigma if available
+        if ENIGMA_AVAILABLE and AureonEnigma:
+            try:
+                self.enigma = AureonEnigma()
+                logger.info("🔐 ENIGMA NODE: Connected to AureonEnigma successfully!")
+            except Exception as e:
+                logger.warning(f"🔐⚠️ ENIGMA NODE: Failed to initialize AureonEnigma: {e}")
+        else:
+            logger.warning("🔐⚠️ ENIGMA NODE: AureonEnigma not available - running without decoding")
         
     def process_signal(self, signal: ChainSignal) -> ChainSignal:
         """Enigma decodes/validates the signal through rotors."""
@@ -538,7 +562,7 @@ class EnigmaNode(ChainNode):
         if self.enigma and signal.harmonics:
             # Decode harmonics
             decoded = signal.decode_from_harmonics()
-            logger.info(f"🔐 ENIGMA: Decoded harmonics → '{decoded}'")
+            logger.debug(f"🔐 ENIGMA: Decoded harmonics → '{decoded}'")
             signal.current_content = decoded
             self.decoded_count += 1
         
@@ -583,7 +607,7 @@ class ScannerNode(ChainNode):
         signal.coherence_scores["scanner_validation"] = validation_coherence
         
         self.validation_passes += 1
-        logger.info(f"🔍 SCANNER: Validation passes [p1={p1:.2f}, p2={p2:.2f}, p3={p3:.2f}] → coherence={validation_coherence:.2f}")
+        logger.debug(f"🔍 SCANNER: Validation passes [p1={p1:.2f}, p2={p2:.2f}, p3={p3:.2f}] → coherence={validation_coherence:.2f}")
         
         # Add contribution on UP direction
         if signal.direction == SignalDirection.UP:
@@ -657,7 +681,7 @@ class EcosystemNode(ChainNode):
         grounding_score = self._compute_grounding(signal)
         signal.coherence_scores["ecosystem_grounding"] = grounding_score
         
-        logger.info(f"🌍 ECOSYSTEM: Grounding score = {grounding_score:.2f}")
+        logger.debug(f"🌍 ECOSYSTEM: Grounding score = {grounding_score:.2f}")
         
         # Add contribution on UP direction
         if signal.direction == SignalDirection.UP:
@@ -707,7 +731,7 @@ class WhaleNode(ChainNode):
         
         if signal.direction == SignalDirection.DOWN:
             # TURNAROUND POINT - Whale starts the response
-            logger.info(f"🐋 WHALE: Signal reached the depths! Turning around...")
+            logger.debug(f"🐋 WHALE: Signal reached the depths! Turning around...")
             
             signal.direction = SignalDirection.UP
             self.songs_sung += 1
@@ -793,24 +817,31 @@ class HarmonicSignalChain:
         # Signal history
         self.signal_history: deque = deque(maxlen=100)
         
-        logger.info("🔗 Harmonic Signal Chain initialized with all nodes wired")
+        # Log connection status
+        logger.info("🔗 Harmonic Signal Chain initialized:")
+        logger.info(f"   👑 Queen Node: CONNECTED")
+        logger.info(f"   🔐 Enigma Node: {'CONNECTED (Enigma: ' + ('✅' if self.enigma.enigma else '⚠️ None') + ')' if self.enigma else '❌ MISSING'}")
+        logger.info(f"   🔍 Scanner Node: CONNECTED")
+        logger.info(f"   🌍 Ecosystem Node: CONNECTED")
+        logger.info(f"   🐋 Whale Node: CONNECTED")
+        logger.info(f"   🔗 Chain wiring: Queen ↔ Enigma ↔ Scanner ↔ Ecosystem ↔ Whale")
     
     def send_signal(self, message: str) -> ChainSignal:
         """
         Send a signal from Queen through the entire chain and back.
         Returns the completed signal with all contributions.
         """
-        logger.info("\n" + "═" * 80)
-        logger.info("🔗 HARMONIC SIGNAL CHAIN - Starting transmission")
-        logger.info("═" * 80 + "\n")
+        logger.debug("\n" + "═" * 80)
+        logger.debug("🔗 HARMONIC SIGNAL CHAIN - Starting transmission")
+        logger.debug("═" * 80 + "\n")
         
         # Queen initiates
         signal = self.queen.initiate_signal(message)
         
         # ═══ PHASE 1: DOWN ═══
-        logger.info("┌" + "─" * 40 + "┐")
-        logger.info("│      ⬇️ PHASE 1: DESCENT      │")
-        logger.info("└" + "─" * 40 + "┘")
+        logger.debug("┌" + "─" * 40 + "┐")
+        logger.debug("│      ⬇️ PHASE 1: DESCENT      │")
+        logger.debug("└" + "─" * 40 + "┘")
         
         signal = self.queen.process_signal(signal)
         signal = self.queen.forward_signal(signal)  # → Enigma
@@ -819,9 +850,9 @@ class HarmonicSignalChain:
         signal = self.ecosystem.forward_signal(signal)  # → Whale (turnaround)
         
         # ═══ PHASE 2: UP ═══
-        logger.info("\n┌" + "─" * 40 + "┐")
-        logger.info("│       ⬆️ PHASE 2: ASCENT       │")
-        logger.info("└" + "─" * 40 + "┘")
+        logger.debug("\n┌" + "─" * 40 + "┐")
+        logger.debug("│       ⬆️ PHASE 2: ASCENT       │")
+        logger.debug("└" + "─" * 40 + "┘")
         
         signal = self.whale.forward_signal(signal)  # → Ecosystem
         signal = self.ecosystem.forward_signal(signal)  # → Scanner

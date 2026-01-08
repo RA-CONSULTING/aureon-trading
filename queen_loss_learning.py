@@ -1045,20 +1045,35 @@ class QueenLossLearningSystem:
         """
         Check if Queen's learnings suggest avoiding this trade
         
+        👑🐘 QUEEN'S DREAM WISDOM: 
+        - MUST have expected_profit > typical fees ($0.05-0.06)
+        - Block paths that have had ANY loss due to fees eating profit
+        
         Returns:
             (should_avoid, reason)
         """
         pattern_key = f"{from_asset}→{to_asset}_{exchange}"
         
-        # Check loss patterns
+        # 👑� SURVIVAL MODE! Lower floor to $0.01 - we MUST execute trades!
+        MIN_EXPECTED_PROFIT = 0.01  # $0.01 - SURVIVAL MODE: ANY PROFIT OR DIE!
+        if expected_profit < MIN_EXPECTED_PROFIT:
+            return True, f"👑💀 SURVIVAL: Expected ${expected_profit:.4f} < ${MIN_EXPECTED_PROFIT} - too risky!"
+        
+        # Check loss patterns - but SURVIVAL MODE is more forgiving!
         if pattern_key in self.loss_patterns:
             pattern = self.loss_patterns[pattern_key]
             
-            if pattern['losses'] >= 3:
-                return True, f"🐘 Elephant remembers: {pattern['losses']} losses on this path"
+            # 👑💀💀 STARVATION: Only block after 20 losses (was 10) - must keep trying!
+            if pattern['losses'] >= 20:
+                return True, f"🐘💀💀 Elephant remembers: {pattern['losses']} losses on this path"
             
-            if pattern['total_loss'] > 0.50:  # >$0.50 total losses
-                return True, f"🐘 Total losses (${pattern['total_loss']:.2f}) too high for this path"
+            # 👑💀💀 STARVATION: Block only after $10.00 total loss (was $5) - desperate!
+            if pattern['total_loss'] > 10.00:
+                return True, f"🐘💀💀 Total losses (${pattern['total_loss']:.4f}) - would starve to death!"
+            
+            # Check if cause was "fees ate profit" - SURVIVAL MODE: Still try!
+            # if any('fees' in cause.lower() for cause in pattern.get('causes', [])):
+                return True, f"🐘 Queen remembers: Fees ate profit on this path before!"
             
             if pattern['avg_slippage'] > 2.0:  # >2% avg slippage
                 if expected_profit < pattern['avg_slippage'] / 100 * 1.5:

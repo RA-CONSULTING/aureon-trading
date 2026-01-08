@@ -124,6 +124,14 @@ except ImportError:
     HistoricalLearner = None
     ELEPHANT_AVAILABLE = False
 
+# 🐘💔 LOSS LEARNING - NEVER REPEAT MISTAKES 💔🐘
+try:
+    from queen_loss_learning import QueenLossLearningSystem
+    LOSS_LEARNING_AVAILABLE = True
+except ImportError:
+    QueenLossLearningSystem = None
+    LOSS_LEARNING_AVAILABLE = False
+
 # 🕰️ TEMPORAL DIALER - Quantum Field Access 🕰️
 try:
     from aureon_temporal_dialer import TemporalDialer, default_dialer, QuantumPacket
@@ -525,6 +533,20 @@ class QueenHiveMind:
                 logger.info(f"   ⭐ Golden paths: {len(self.elephant_brain.elephant.golden_paths)}")
             except Exception as e:
                 logger.warning(f"🐘⚠️ Could not initialize elephant memory: {e}")
+        
+        # 🐘💔 LOSS LEARNING - NEVER REPEAT MISTAKES 💔🐘
+        # Queen learns from every loss and NEVER makes the same mistake twice
+        self.loss_learning = None
+        if LOSS_LEARNING_AVAILABLE:
+            try:
+                self.loss_learning = QueenLossLearningSystem()
+                loss_count = len(self.loss_learning.losses)
+                pattern_count = len(self.loss_learning.patterns)
+                logger.info("🐘💔 Loss Learning connected - Queen NEVER repeats her mistakes!")
+                logger.info(f"   📊 Losses in memory: {loss_count}")
+                logger.info(f"   🚫 Loss patterns identified: {pattern_count}")
+            except Exception as e:
+                logger.warning(f"🐘💔⚠️ Could not initialize loss learning: {e}")
         
         # 👑🔧 SELF-REPAIR WIRING - Connect to ThoughtBus for automatic error handling
         # When runtime errors occur, they'll be published to ThoughtBus and Queen will fix them
@@ -3255,6 +3277,54 @@ class QueenHiveMind:
         dream_vision['metrics']['path_score'] = path_score
         
         # ════════════════════════════════════════════════════════════════════
+        # 🐘 SIGNAL 13: LOSS LEARNING WISDOM (Queen's Dream Lessons!)
+        # ════════════════════════════════════════════════════════════════════
+        loss_learning_score = 0.5
+        loss_learning_detail = "Loss Learning not wired"
+        loss_learning_veto = False  # NEW: Can veto the entire trade!
+        
+        if hasattr(self, 'loss_learning') and self.loss_learning:
+            try:
+                from_asset = opportunity.get('from_asset', opportunity.get('base_currency', '')).upper()
+                to_asset = opportunity.get('to_asset', opportunity.get('quote_currency', '')).upper()
+                exchange = opportunity.get('exchange', opportunity.get('source_exchange', 'unknown'))
+                expected_profit = opportunity.get('expected_profit', opportunity.get('profit', 0.01))
+                
+                if from_asset and to_asset:
+                    # Ask Queen's loss learning if we should avoid
+                    avoid, reason = self.loss_learning.should_avoid_trade(
+                        from_asset, to_asset, exchange, expected_profit
+                    )
+                    
+                    if avoid:
+                        loss_learning_score = 0.0  # ABSOLUTE VETO!
+                        loss_learning_veto = True
+                        loss_learning_detail = f"🐘💔 QUEEN'S DREAM SAYS NO: {reason}"
+                        dream_vision['signals'].append({
+                            'source': '🐘💭 Loss Learning',
+                            'value': loss_learning_score,
+                            'detail': loss_learning_detail
+                        })
+                        total_signals += 1
+                        # Negative signals!
+                        weight = 0.30  # HIGHEST weight - this is LEARNED wisdom!
+                        signal_weights += weight
+                        weighted_sum += loss_learning_score * weight
+                    else:
+                        loss_learning_score = 0.6  # No history of loss = OK
+                        loss_learning_detail = f"✅ No loss history for {from_asset}→{to_asset}"
+                    
+                    dream_vision['metrics']['loss_learning'] = {
+                        'should_avoid': avoid,
+                        'reason': reason if avoid else 'No loss patterns detected',
+                        'score': loss_learning_score,
+                        'has_veto': loss_learning_veto
+                    }
+            except Exception as e:
+                logger.debug(f"Loss Learning dream error: {e}")
+        dream_vision['metrics']['loss_learning_score'] = loss_learning_score
+        
+        # ════════════════════════════════════════════════════════════════════
         # 🎯 FINAL CALCULATION: The Winning Timeline
         # ════════════════════════════════════════════════════════════════════
         
@@ -3276,8 +3346,16 @@ class QueenHiveMind:
         # Path score has VETO power if it's a known losing path
         path_has_veto = path_score < 0.25  # Blocked or AVOID paths
         
+        # 🐘 Loss Learning VETO - Queen NEVER repeats her mistakes!
+        loss_has_veto = loss_learning_veto  # Set by Signal 13
+        
         # Determine timeline with enhanced logic
-        if path_has_veto:
+        if loss_has_veto:
+            # 🐘💔 LOSS LEARNING VETO - Queen NEVER repeats her losses!
+            dream_vision['timeline'] = "🐘⛔ LOSS MEMORY VETO"
+            dream_vision['will_win'] = False
+            dream_vision['message'] = f"🐘💔 Tina B REFUSES - Her loss learning REMEMBERS! {loss_learning_detail}"
+        elif path_has_veto:
             # 🚫 PATH MEMORY VETO - Queen NEVER ignores her memory!
             dream_vision['timeline'] = "⛔ BLOCKED TIMELINE"
             dream_vision['will_win'] = False

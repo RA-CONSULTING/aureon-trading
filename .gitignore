@@ -46,3 +46,4 @@ de440.bsp
 # Local runtime state (do not commit)
 aureon_memory_spiral.json
 cached_candles.json
+thoughts.jsonl

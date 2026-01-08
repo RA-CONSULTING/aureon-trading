@@ -16735,6 +16735,44 @@ class AureonKrakenEcosystem:
         self.refresh_equity()
         return harvested_total
     
+    def _check_eta_oracle_exit(self, pos: 'Position', current_price: float, reason: str) -> Optional[bool]:
+        """
+        🔮 ETA ORACLE - SIMPLE BREAKEVEN CHECK
+        
+        Exit only when profit exceeds breakeven (fees covered + tiny margin).
+        
+        Returns:
+            True: Profit > breakeven, OK to exit
+            False: Still below breakeven, hold
+            None: Can't calculate, use standard logic
+        """
+        try:
+            # Calculate breakeven threshold
+            entry_value = pos.entry_value if pos.entry_value > 0 else (pos.quantity * pos.entry_price)
+            current_value = pos.quantity * current_price
+            gross_pnl = current_value - entry_value
+            
+            # Get fee rate for this exchange
+            fee_rate = get_exchange_fee_rate(pos.exchange if hasattr(pos, 'exchange') else 'kraken')
+            slippage = CONFIG.get('SLIPPAGE_PCT', 0.002)
+            spread = CONFIG.get('SPREAD_COST_PCT', 0.001)
+            total_cost_rate = fee_rate + slippage + spread
+            
+            # Breakeven = both legs of fees + tiny cushion (0.1%)
+            breakeven_threshold = entry_value * (total_cost_rate * 2 + 0.001)
+            
+            # Only allow exit if gross profit exceeds breakeven
+            if gross_pnl > breakeven_threshold:
+                logger.info(f"   ✅ ABOVE BREAKEVEN: {pos.symbol} gross=${gross_pnl:.4f} > threshold=${breakeven_threshold:.4f}")
+                return True  # Exit approved
+            else:
+                # Still below breakeven
+                return False
+            
+        except Exception as e:
+            logger.debug(f"Breakeven check failed: {e}")
+            return None
+    
     def should_exit_trade(self, pos: 'Position', current_price: float, reason: str) -> bool:
         """
         🇮🇪🎯 ZERO LOSS GATE - ONLY exit on CONFIRMED NET PROFIT.
@@ -16751,7 +16789,15 @@ class AureonKrakenEcosystem:
         📐 IMPORTANT: The penny threshold's 'win_gte' already accounts for ALL fees
         via the formula r = ((1 + P/A) / (1-f)²) - 1 where f = fee + slippage + spread.
         So when gross_pnl >= win_gte, the NET profit is ALREADY ~$0.01.
+        
+        ⏱️ ETA ORACLE INTEGRATION: Uses improved_eta_calculator + timeline_oracle
+        to determine WHEN to exit based on predicted price movement patterns
         """
+        # 🔮 CHECK ETA ORACLE - Query predicted exit time from Timeline Oracle
+        exit_ready = self._check_eta_oracle_exit(pos, current_price, reason)
+        if exit_ready is False:  # Explicitly False means not ready (None means check other logic)
+            return False
+        
         change_pct = (current_price - pos.entry_price) / pos.entry_price if pos.entry_price > 0 else 0.0
         
         # Calculate gross P&L and an estimated NET P&L (after all costs)

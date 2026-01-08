@@ -93,8 +93,8 @@ class TemporalDialer:
     def calibrate(self):
         """Calibrates the dialer to the Prime Sentinel frequency."""
         logger.info("   🔧 Calibrating Temporal Dialer...")
-        # Simulate calibration delay
-        time.sleep(0.5)
+        # ⚡ TURBO: Minimal calibration delay (was 0.5)
+        time.sleep(0.05)
         self.calibration_offset = (random.random() - 0.5) * 0.01
         self.state.frequency = SCHUMANN_RESONANCE
         self.state.mode = DialMode.STANDBY

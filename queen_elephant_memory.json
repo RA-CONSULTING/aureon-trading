@@ -938,7 +938,26 @@
     }
   },
   "wisdom": {},
-  "blocked_paths": {},
+  "blocked_paths": {
+    "USD\u2192USDC": {
+      "from": "USD",
+      "to": "USDC",
+      "reason": "Only 0.0% win rate after 318 trades",
+      "loss_count": 318,
+      "total_loss": 0.0,
+      "blocked_at": "2026-01-08T06:20:31.546515",
+      "permanent": true
+    },
+    "PEPE\u2192FLOKI": {
+      "from": "PEPE",
+      "to": "FLOKI",
+      "reason": "Only 1.7% win rate after 238 trades",
+      "loss_count": 234,
+      "total_loss": 0.0,
+      "blocked_at": "2026-01-08T06:20:14.031537",
+      "permanent": true
+    }
+  },
   "golden_paths": {},
   "total_historical_trades": 3178,
   "total_historical_profit": -1097.4563543686431,
@@ -1100,7 +1119,151 @@
       "total_profit": -92.49069765229973,
       "profit_factor": 0.6844760904656969,
       "last_analyzed": "2026-01-05T11:19:28.842777"
+    },
+    "USDC\u2192PEPE": {
+      "trades": 4,
+      "wins": 4,
+      "losses": 0,
+      "total_profit": -1.1714794701551996,
+      "total_loss": 0,
+      "win_rate": 100.0
+    },
+    "PEPE\u2192LUNC": {
+      "trades": 1,
+      "wins": 1,
+      "losses": 0,
+      "total_profit": -0.014002740351169635,
+      "total_loss": 0,
+      "win_rate": 100.0
+    },
+    "LUNC\u2192BONK": {
+      "trades": 1,
+      "wins": 1,
+      "losses": 0,
+      "total_profit": -0.013982722799999358,
+      "total_loss": 0,
+      "win_rate": 100.0
+    },
+    "BONK\u2192PEPE": {
+      "trades": 3,
+      "wins": 3,
+      "losses": 0,
+      "total_profit": -0.07758777416000014,
+      "total_loss": 0,
+      "win_rate": 100.0
+    },
+    "PEPE\u2192FLOKI": {
+      "trades": 238,
+      "wins": 4,
+      "losses": 234,
+      "total_profit": -0.13642246169999644,
+      "total_loss": 0.0,
+      "win_rate": 1.680672268907563
+    },
+    "FLOKI\u21921000SATS": {
+      "trades": 2,
+      "wins": 2,
+      "losses": 0,
+      "total_profit": -0.06840215619999453,
+      "total_loss": 0,
+      "win_rate": 100.0
+    },
+    "PEPE\u2192DOGS": {
+      "trades": 1,
+      "wins": 1,
+      "losses": 0,
+      "total_profit": -0.013884788000000361,
+      "total_loss": 0,
+      "win_rate": 100.0
+    },
+    "DOGS\u2192FLOKI": {
+      "trades": 1,
+      "wins": 1,
+      "losses": 0,
+      "total_profit": -0.013843649999999985,
+      "total_loss": 0,
+      "win_rate": 100.0
+    },
+    "FLOKI\u2192BONK": {
+      "trades": 2,
+      "wins": 2,
+      "losses": 0,
+      "total_profit": -0.0658154883700007,
+      "total_loss": 0,
+      "win_rate": 100.0
+    },
+    "PEPE\u21921000SATS": {
+      "trades": 4,
+      "wins": 3,
+      "losses": 1,
+      "total_profit": -0.07934716009999906,
+      "total_loss": 0.0,
+      "win_rate": 75.0
+    },
+    "1000SATS\u2192BONK": {
+      "trades": 1,
+      "wins": 1,
+      "losses": 0,
+      "total_profit": -0.013142411659999832,
+      "total_loss": 0,
+      "win_rate": 100.0
+    },
+    "BONK\u2192DOGS": {
+      "trades": 1,
+      "wins": 1,
+      "losses": 0,
+      "total_profit": -0.013218449999999915,
+      "total_loss": 0,
+      "win_rate": 100.0
+    },
+    "DOGS\u21921000SATS": {
+      "trades": 1,
+      "wins": 1,
+      "losses": 0,
+      "total_profit": -0.01318156639999945,
+      "total_loss": 0,
+      "win_rate": 100.0
+    },
+    "FLOKI\u2192PEPE": {
+      "trades": 3,
+      "wins": 3,
+      "losses": 0,
+      "total_profit": -0.07876004003999933,
+      "total_loss": 0,
+      "win_rate": 100.0
+    },
+    "1000SATS\u2192FLOKI": {
+      "trades": 2,
+      "wins": 2,
+      "losses": 0,
+      "total_profit": -0.06499181359999943,
+      "total_loss": 0,
+      "win_rate": 100.0
+    },
+    "PEPE\u2192BONK": {
+      "trades": 1,
+      "wins": 1,
+      "losses": 0,
+      "total_profit": -0.012844566000000716,
+      "total_loss": 0,
+      "win_rate": 100.0
+    },
+    "USD\u2192USDC": {
+      "trades": 318,
+      "wins": 0,
+      "losses": 318,
+      "total_profit": 0,
+      "total_loss": 0.0,
+      "win_rate": 0.0
+    },
+    "1000SATS\u2192PEPE": {
+      "trades": 1,
+      "wins": 1,
+      "losses": 0,
+      "total_profit": -0.052149051399998134,
+      "total_loss": 0,
+      "win_rate": 100.0
     }
   },
-  "last_saved": "2026-01-05T11:19:28.843426"
+  "last_saved": "2026-01-08T06:20:31.550857"
 }

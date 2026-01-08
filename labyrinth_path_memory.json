@@ -85,7 +85,7 @@
   },
   "USD->USDC": {
     "wins": 5.0,
-    "losses": 3.0
+    "losses": 13.0
   },
   "USD->DAI": {
     "wins": 4.0,
@@ -97,7 +97,7 @@
   },
   "USDC->PEPE": {
     "wins": 2.0,
-    "losses": 1.0
+    "losses": 4.0
   },
   "IDEX->BONK": {
     "wins": 1.0,
@@ -405,11 +405,11 @@
   },
   "PEPE->FLOKI": {
     "wins": 0.0,
-    "losses": 2.0
+    "losses": 5.0
   },
   "FLOKI->PEPE": {
     "wins": 0.0,
-    "losses": 1.0
+    "losses": 3.0
   },
   "PEPE->LUNC": {
     "wins": 0.0,
@@ -421,7 +421,7 @@
   },
   "BONK->PEPE": {
     "wins": 0.0,
-    "losses": 2.0
+    "losses": 3.0
   },
   "USDC->1000SATS": {
     "wins": 0.0,
@@ -429,7 +429,7 @@
   },
   "PEPE->DOGS": {
     "wins": 0.0,
-    "losses": 1.0
+    "losses": 2.0
   },
   "DOGS->BONK": {
     "wins": 0.0,
@@ -453,7 +453,7 @@
   },
   "1000SATS->BONK": {
     "wins": 0.0,
-    "losses": 1.0
+    "losses": 2.0
   },
   "BONK->FLOKI": {
     "wins": 0.0,
@@ -461,7 +461,7 @@
   },
   "FLOKI->1000SATS": {
     "wins": 0.0,
-    "losses": 1.0
+    "losses": 2.0
   },
   "1000SATS->NEIRO": {
     "wins": 0.0,
@@ -500,6 +500,26 @@
     "losses": 1.0
   },
   "PUMP->PEPE": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "DOGS->FLOKI": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "FLOKI->BONK": {
+    "wins": 0.0,
+    "losses": 2.0
+  },
+  "PEPE->1000SATS": {
+    "wins": 0.0,
+    "losses": 2.0
+  },
+  "PEPE->BONK": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "1000SATS->FLOKI": {
     "wins": 0.0,
     "losses": 1.0
   }
