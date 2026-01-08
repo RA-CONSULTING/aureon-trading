@@ -942,10 +942,10 @@
     "USD\u2192USDC": {
       "from": "USD",
       "to": "USDC",
-      "reason": "Only 0.0% win rate after 584 trades",
-      "loss_count": 584,
+      "reason": "Only 0.0% win rate after 610 trades",
+      "loss_count": 610,
       "total_loss": 0.0,
-      "blocked_at": "2026-01-08T17:34:46.202697",
+      "blocked_at": "2026-01-08T18:05:46.813831",
       "permanent": true
     },
     "PEPE\u2192FLOKI": {
@@ -991,6 +991,24 @@
       "loss_count": 57,
       "total_loss": 0.0,
       "blocked_at": "2026-01-08T16:44:41.117674",
+      "permanent": true
+    },
+    "BONK\u21921000SATS": {
+      "from": "BONK",
+      "to": "1000SATS",
+      "reason": "Only 0.0% win rate after 16 trades",
+      "loss_count": 16,
+      "total_loss": 0.0,
+      "blocked_at": "2026-01-08T18:06:09.341866",
+      "permanent": true
+    },
+    "BONK\u2192FLOKI": {
+      "from": "BONK",
+      "to": "FLOKI",
+      "reason": "Only 0.0% win rate after 9 trades",
+      "loss_count": 9,
+      "total_loss": 0.0,
+      "blocked_at": "2026-01-08T18:02:14.918378",
       "permanent": true
     }
   },
@@ -1181,12 +1199,12 @@
       "win_rate": 100.0
     },
     "BONK\u2192PEPE": {
-      "trades": 4,
+      "trades": 5,
       "wins": 3,
-      "losses": 1,
+      "losses": 2,
       "total_profit": -0.07758777416000014,
       "total_loss": 0.0,
-      "win_rate": 75.0
+      "win_rate": 60.0
     },
     "PEPE\u2192FLOKI": {
       "trades": 298,
@@ -1285,9 +1303,9 @@
       "win_rate": 100.0
     },
     "USD\u2192USDC": {
-      "trades": 584,
+      "trades": 610,
       "wins": 0,
-      "losses": 584,
+      "losses": 610,
       "total_profit": 0,
       "total_loss": 0.0,
       "win_rate": 0.0
@@ -1341,13 +1359,21 @@
       "win_rate": 0.0
     },
     "BONK\u21921000SATS": {
-      "trades": 2,
+      "trades": 16,
       "wins": 0,
-      "losses": 2,
+      "losses": 16,
+      "total_profit": 0,
+      "total_loss": 0.0,
+      "win_rate": 0.0
+    },
+    "BONK\u2192FLOKI": {
+      "trades": 9,
+      "wins": 0,
+      "losses": 9,
       "total_profit": 0,
       "total_loss": 0.0,
       "win_rate": 0.0
     }
   },
-  "last_saved": "2026-01-08T17:34:46.207403"
+  "last_saved": "2026-01-08T18:06:09.346406"
 }

@@ -10019,20 +10019,720 @@ class CargoShipNode(AurisNode):
 
 
 class ClownfishNode(AurisNode):
-    """🐠 Symbiosis - Market connection"""
+    """🐠 Symbiosis - ULTIMATE Micro-Change Detection & Market Connection (v2.0)
+    
+    The Clownfish operates at 639Hz (FA frequency - Connection/Relationships).
+    It detects micro-movements BEFORE they become visible to other indicators.
+    
+    ═══════════════════════════════════════════════════════════════════════════
+    🐠 ENHANCED v2.0 - 12-FACTOR MICRO-CHANGE DETECTION 🐠
+    ═══════════════════════════════════════════════════════════════════════════
+    
+    ORIGINAL 6 FACTORS:
+    1. Tick Velocity: Rate of price change acceleration
+    2. Spread Compression: Tightening spread signals imminent move
+    3. Volume Micro-Bursts: Small volume spikes precede breakouts
+    4. Bid-Ask Imbalance: Order flow direction detection
+    5. Symbiotic Correlation: Connection to market leaders (BTC)
+    6. Micro-Momentum Divergence: Price vs volume divergence
+    
+    NEW ADVANCED FACTORS (v2.0):
+    7. Jerk Detection: 3rd derivative (rate of acceleration change)
+    8. Fractal Pattern: Self-similar patterns at multiple timeframes
+    9. Liquidity Flow: Money flow direction indicator
+    10. Harmonic Resonance: 639Hz frequency alignment
+    11. Time-Cycle Sync: Schumann-aligned time windows
+    12. Neural Pattern: Learning from past micro-signals
+    
+    DETECTION PHILOSOPHY:
+    "The Clownfish hides in the anemone, sensing subtle currents others miss.
+     It detects the predator BEFORE the predator knows it's hunting."
+    """
+    
+    # Sacred frequencies for harmonic analysis
+    CLOWNFISH_FREQ = 639.0  # FA - Connection frequency
+    SCHUMANN_BASE = 7.83    # Earth's heartbeat
+    PHI = 1.618033988749895  # Golden ratio
+    
     def __init__(self):
-        super().__init__("Clownfish", CONFIG['FREQ_CLOWNFISH'], 0.9)
+        super().__init__("Clownfish", CONFIG['FREQ_CLOWNFISH'], 1.25)  # BOOSTED weight for v2.0
+        
+        # === ORIGINAL MEMORY STRUCTURES ===
+        self.price_ticks: Dict[str, deque] = {}       # Per-symbol tick history
+        self.spread_history: Dict[str, deque] = {}    # Per-symbol spread history
+        self.volume_ticks: Dict[str, deque] = {}      # Per-symbol volume micro-bursts
+        self.velocity_history: Dict[str, deque] = {}  # Price velocity (1st derivative)
+        self.acceleration_history: Dict[str, deque] = {}  # Price acceleration (2nd derivative)
+        self.btc_correlation: Dict[str, float] = {}   # Symbiotic correlation with BTC
+        self.last_btc_change: float = 0.0             # Track BTC movement for correlation
+        self.micro_signals: Dict[str, Dict] = {}      # Detected micro-signals per symbol
+        
+        # === NEW v2.0 MEMORY STRUCTURES ===
+        self.jerk_history: Dict[str, deque] = {}      # 3rd derivative (jerk)
+        self.fractal_patterns: Dict[str, deque] = {}  # Multi-timeframe patterns
+        self.liquidity_flow: Dict[str, deque] = {}    # Money flow tracking
+        self.harmonic_phase: Dict[str, float] = {}    # 639Hz phase alignment
+        self.signal_success: Dict[str, deque] = {}    # Neural learning - past signal outcomes
+        self.pattern_library: Dict[str, List] = {}    # Learned successful patterns
+        
+        # === NEURAL LEARNING STATE ===
+        self.total_signals_emitted = 0
+        self.successful_signals = 0
+        self.pattern_confidence: Dict[str, float] = {}  # Learned pattern confidences
+        
+        # === TIME-CYCLE STATE ===
+        self._last_schumann_sync = 0.0
+        self._schumann_phase = 0.0
+        
+    def _ensure_symbol_memory(self, symbol: str):
+        """Initialize memory structures for a symbol"""
+        if symbol not in self.price_ticks:
+            self.price_ticks[symbol] = deque(maxlen=100)  # Increased for fractal analysis
+            self.spread_history[symbol] = deque(maxlen=50)
+            self.volume_ticks[symbol] = deque(maxlen=50)
+            self.velocity_history[symbol] = deque(maxlen=30)
+            self.acceleration_history[symbol] = deque(maxlen=20)
+            self.jerk_history[symbol] = deque(maxlen=15)  # NEW: 3rd derivative
+            self.fractal_patterns[symbol] = deque(maxlen=20)  # NEW: fractal storage
+            self.liquidity_flow[symbol] = deque(maxlen=30)  # NEW: money flow
+            self.signal_success[symbol] = deque(maxlen=100)  # NEW: learning history
+            self.micro_signals[symbol] = {}
+            self.harmonic_phase[symbol] = 0.0
+            self.pattern_confidence[symbol] = 0.5  # Start neutral
+    
+    # ═══════════════════════════════════════════════════════════════════════════
+    # ORIGINAL 6 FACTORS (Enhanced)
+    # ═══════════════════════════════════════════════════════════════════════════
+    
+    def _compute_tick_velocity(self, symbol: str, prices: List[float]) -> float:
+        """Compute price velocity (1st derivative) - rate of change"""
+        if len(prices) < 2:
+            return 0.0
+        velocity = (prices[-1] - prices[-2]) / prices[-2] if prices[-2] > 0 else 0
+        self.velocity_history[symbol].append(velocity)
+        return velocity
+    
+    def _compute_acceleration(self, symbol: str) -> float:
+        """Compute price acceleration (2nd derivative) - change in velocity"""
+        velocities = list(self.velocity_history[symbol])
+        if len(velocities) < 2:
+            return 0.0
+        accel = velocities[-1] - velocities[-2]
+        self.acceleration_history[symbol].append(accel)
+        return accel
+    
+    def _detect_spread_compression(self, state: MarketState) -> float:
+        """Detect spread tightening - signals imminent breakout"""
+        symbol = state.symbol
+        if state.bid <= 0 or state.ask <= 0 or state.price <= 0:
+            return 0.5
+        
+        current_spread = (state.ask - state.bid) / state.price
+        self.spread_history[symbol].append(current_spread)
+        
+        spreads = list(self.spread_history[symbol])
+        if len(spreads) < 5:
+            return 0.5
+        
+        avg_spread = sum(spreads[:-1]) / len(spreads[:-1])
+        if avg_spread <= 0:
+            return 0.5
+        
+        compression = current_spread / avg_spread
+        
+        # Enhanced compression detection with multiple zones
+        if compression < 0.5:
+            return 0.95  # EXTREME compression - major breakout imminent!
+        elif compression < 0.7:
+            return 0.9   # Strong compression
+        elif compression < 0.85:
+            return 0.75  # Moderate compression
+        elif compression > 1.5:
+            return 0.2   # Major spread widening - danger
+        elif compression > 1.3:
+            return 0.3   # Spread widening - uncertainty
+        return 0.5
+    
+    def _detect_volume_micro_burst(self, state: MarketState) -> float:
+        """Detect small volume spikes that precede price moves"""
+        symbol = state.symbol
+        self.volume_ticks[symbol].append(state.volume)
+        
+        volumes = list(self.volume_ticks[symbol])
+        if len(volumes) < 5:
+            return 0.5
+        
+        recent_vol = volumes[-1]
+        avg_vol = sum(volumes[:-1]) / len(volumes[:-1])
+        
+        if avg_vol <= 0:
+            return 0.5
+        
+        vol_ratio = recent_vol / avg_vol
+        
+        # Enhanced volume detection with more granularity
+        if 1.15 <= vol_ratio <= 1.3:
+            return 0.85  # Sweet spot - subtle accumulation
+        elif 1.3 < vol_ratio <= 1.5:
+            return 0.8   # Healthy micro-burst
+        elif 1.5 < vol_ratio <= 2.0:
+            return 0.7   # Moderate burst
+        elif 2.0 < vol_ratio <= 3.0:
+            return 0.55  # Could be distribution
+        elif vol_ratio > 3.0:
+            return 0.4   # Too high - likely noise/manipulation
+        elif vol_ratio < 0.3:
+            return 0.2   # Volume dead - avoid
+        elif vol_ratio < 0.5:
+            return 0.3   # Volume dying
+        return 0.55
+    
+    def _compute_bid_ask_imbalance(self, state: MarketState) -> float:
+        """Detect order flow imbalance from bid-ask positioning"""
+        if state.bid <= 0 or state.ask <= 0 or state.price <= 0:
+            return 0.5
+        
+        mid_price = (state.bid + state.ask) / 2
+        spread = state.ask - state.bid
+        
+        if spread <= 0:
+            return 0.5
+        
+        # Enhanced: also consider where price sits in day's range
+        price_position = (state.price - mid_price) / spread
+        
+        # Add range context if available
+        range_position = 0.5
+        if state.high_24h > state.low_24h:
+            range_position = (state.price - state.low_24h) / (state.high_24h - state.low_24h)
+        
+        # Combine bid-ask position with range position
+        combined = (price_position * 0.6 + (range_position - 0.5) * 0.4)
+        imbalance_signal = 0.5 + (combined * 0.4)
+        
+        return max(0.15, min(0.85, imbalance_signal))
+    
+    def _compute_momentum_divergence(self, state: MarketState) -> float:
+        """Detect divergence between price momentum and volume"""
+        symbol = state.symbol
+        prices = list(self.price_ticks[symbol])
+        volumes = list(self.volume_ticks[symbol])
+        
+        if len(prices) < 5 or len(volumes) < 5:
+            return 0.5
+        
+        price_trend = (prices[-1] - prices[0]) / prices[0] if prices[0] > 0 else 0
+        vol_trend = (volumes[-1] - volumes[0]) / volumes[0] if volumes[0] > 0 else 0
+        
+        # Bullish divergence: price flat/down but volume increasing
+        if price_trend <= 0.001 and vol_trend > 0.15:
+            return 0.85  # Strong accumulation signal
+        elif price_trend <= 0.001 and vol_trend > 0.1:
+            return 0.8   # Accumulation signal
+        
+        # Bearish divergence: price up but volume decreasing
+        if price_trend > 0.015 and vol_trend < -0.15:
+            return 0.2   # Strong distribution warning
+        elif price_trend > 0.01 and vol_trend < -0.1:
+            return 0.3   # Distribution warning
+        
+        # Confirmation: price and volume aligned (bullish)
+        if price_trend > 0.005 and vol_trend > 0.05:
+            return 0.75
+        
+        # Anti-confirmation: both falling (bearish)
+        if price_trend < -0.005 and vol_trend < -0.05:
+            return 0.25
+        
+        return 0.5
+    
+    def _compute_micro_momentum_score(self, symbol: str) -> float:
+        """Combine velocity and acceleration for micro-momentum signal"""
+        velocities = list(self.velocity_history[symbol])
+        accelerations = list(self.acceleration_history[symbol])
+        
+        if len(velocities) < 3 or len(accelerations) < 2:
+            return 0.5
+        
+        avg_velocity = sum(velocities[-5:]) / min(5, len(velocities))
+        avg_accel = sum(accelerations[-3:]) / min(3, len(accelerations))
+        
+        # Strong micro-momentum: positive velocity AND positive acceleration
+        if avg_velocity > 0.001 and avg_accel > 0.0001:
+            return min(0.95, 0.65 + avg_velocity * 150 + avg_accel * 1000)
+        elif avg_velocity > 0.0005 and avg_accel > 0:
+            return min(0.9, 0.6 + avg_velocity * 100 + avg_accel * 500)
+        
+        # Decelerating rise: still up but slowing
+        if avg_velocity > 0 and avg_accel < 0:
+            return 0.55
+        
+        # Accelerating fall: bad
+        if avg_velocity < -0.001 and avg_accel < -0.0001:
+            return 0.15  # Strong bearish
+        elif avg_velocity < 0 and avg_accel < 0:
+            return 0.25
+        
+        # Decelerating fall: potential reversal (bottoming)
+        if avg_velocity < 0 and avg_accel > 0:
+            return 0.65  # Could be bottoming
+        
+        return 0.5
+    
+    # ═══════════════════════════════════════════════════════════════════════════
+    # NEW v2.0 FACTORS
+    # ═══════════════════════════════════════════════════════════════════════════
+    
+    def _compute_jerk(self, symbol: str) -> float:
+        """
+        Factor 7: JERK DETECTION (3rd derivative)
+        
+        Jerk = rate of change of acceleration
+        Sudden jerk changes often precede major moves by 1-2 ticks.
+        "The market's nervous twitch before a big move."
+        """
+        accelerations = list(self.acceleration_history[symbol])
+        if len(accelerations) < 2:
+            return 0.5
+        
+        jerk = accelerations[-1] - accelerations[-2]
+        self.jerk_history[symbol].append(jerk)
+        
+        jerks = list(self.jerk_history[symbol])
+        if len(jerks) < 3:
+            return 0.5
+        
+        avg_jerk = sum(jerks[-3:]) / 3
+        
+        # Positive jerk = acceleration is INCREASING (about to explode up)
+        if avg_jerk > 0.00005:
+            return 0.85  # Strong positive jerk - explosive move coming
+        elif avg_jerk > 0.00001:
+            return 0.7   # Moderate positive jerk
+        
+        # Negative jerk = acceleration is DECREASING
+        if avg_jerk < -0.00005:
+            return 0.2   # Strong negative jerk - crash coming
+        elif avg_jerk < -0.00001:
+            return 0.35  # Moderate negative jerk
+        
+        return 0.5
+    
+    def _detect_fractal_pattern(self, symbol: str) -> float:
+        """
+        Factor 8: FRACTAL PATTERN DETECTION
+        
+        Markets are self-similar at different timeframes.
+        If the same pattern appears at 3 timeframes, it's significant.
+        "What happens in seconds, happens in minutes, happens in hours."
+        """
+        prices = list(self.price_ticks[symbol])
+        if len(prices) < 20:
+            return 0.5
+        
+        # Check 3 timeframes: 5-tick, 10-tick, 20-tick windows
+        patterns = []
+        
+        for window in [5, 10, 20]:
+            if len(prices) >= window:
+                subset = prices[-window:]
+                # Compute simple pattern: UP, DOWN, or FLAT
+                start_price = subset[0]
+                end_price = subset[-1]
+                mid_price = subset[len(subset)//2]
+                
+                if end_price > start_price * 1.001:
+                    if mid_price < (start_price + end_price) / 2:
+                        pattern = "V"  # V-bottom
+                    else:
+                        pattern = "UP"
+                elif end_price < start_price * 0.999:
+                    if mid_price > (start_price + end_price) / 2:
+                        pattern = "A"  # A-top (inverted V)
+                    else:
+                        pattern = "DOWN"
+                else:
+                    pattern = "FLAT"
+                patterns.append(pattern)
+        
+        # Store pattern for learning
+        self.fractal_patterns[symbol].append(tuple(patterns))
+        
+        # Check for fractal alignment
+        if len(patterns) == 3:
+            if patterns[0] == patterns[1] == patterns[2]:
+                if patterns[0] == "UP" or patterns[0] == "V":
+                    return 0.9  # Strong bullish fractal alignment!
+                elif patterns[0] == "DOWN" or patterns[0] == "A":
+                    return 0.1  # Strong bearish fractal alignment
+            
+            # Partial alignment (2 of 3)
+            if patterns.count("UP") + patterns.count("V") >= 2:
+                return 0.7
+            elif patterns.count("DOWN") + patterns.count("A") >= 2:
+                return 0.3
+        
+        return 0.5
+    
+    def _compute_liquidity_flow(self, state: MarketState) -> float:
+        """
+        Factor 9: LIQUIDITY FLOW INDICATOR
+        
+        Money Flow = Price × Volume direction
+        Tracks whether money is flowing IN (buying) or OUT (selling).
+        "Follow the smart money - it moves before the price."
+        """
+        symbol = state.symbol
+        prices = list(self.price_ticks[symbol])
+        volumes = list(self.volume_ticks[symbol])
+        
+        if len(prices) < 2 or len(volumes) < 1:
+            return 0.5
+        
+        # Compute money flow for this tick
+        price_change = prices[-1] - prices[-2] if len(prices) >= 2 else 0
+        current_volume = volumes[-1] if volumes else 0
+        
+        # Money flow = direction × volume
+        if price_change > 0:
+            flow = current_volume  # Positive flow (buying)
+        elif price_change < 0:
+            flow = -current_volume  # Negative flow (selling)
+        else:
+            flow = 0
+        
+        self.liquidity_flow[symbol].append(flow)
+        
+        flows = list(self.liquidity_flow[symbol])
+        if len(flows) < 5:
+            return 0.5
+        
+        # Net flow over recent ticks
+        net_flow = sum(flows[-10:])
+        avg_volume = sum(volumes) / len(volumes) if volumes else 1
+        
+        # Normalize by average volume
+        flow_ratio = net_flow / (avg_volume * 10) if avg_volume > 0 else 0
+        
+        # Strong inflow = bullish
+        if flow_ratio > 0.5:
+            return 0.9
+        elif flow_ratio > 0.2:
+            return 0.75
+        elif flow_ratio > 0.05:
+            return 0.6
+        
+        # Strong outflow = bearish
+        if flow_ratio < -0.5:
+            return 0.1
+        elif flow_ratio < -0.2:
+            return 0.25
+        elif flow_ratio < -0.05:
+            return 0.4
+        
+        return 0.5
+    
+    def _compute_harmonic_resonance(self, state: MarketState) -> float:
+        """
+        Factor 10: HARMONIC RESONANCE (639Hz Alignment)
+        
+        The Clownfish resonates at 639Hz (FA - Connection frequency).
+        When market micro-structure aligns with this frequency, signals are stronger.
+        "Trade in harmony with the universe's frequency."
+        """
+        symbol = state.symbol
+        
+        # Compute phase from price oscillation
+        prices = list(self.price_ticks[symbol])
+        if len(prices) < 10:
+            return 0.5
+        
+        # Extract micro-oscillation period
+        oscillations = 0
+        for i in range(1, len(prices)):
+            if (prices[i] > prices[i-1]) != (prices[i-1] > prices[i-2] if i >= 2 else True):
+                oscillations += 1
+        
+        # Compute "frequency" of micro-oscillations
+        ticks_per_oscillation = len(prices) / max(oscillations, 1)
+        
+        # Map to 639Hz alignment (0 = misaligned, 1 = perfect alignment)
+        # Using golden ratio relationship
+        target_period = self.CLOWNFISH_FREQ / 100  # Normalized target
+        actual_period = ticks_per_oscillation
+        
+        alignment = 1.0 - min(1.0, abs(actual_period - target_period) / target_period)
+        
+        # Apply PHI modulation
+        phi_modulated = alignment ** (1 / self.PHI)
+        
+        # Store for tracking
+        self.harmonic_phase[symbol] = phi_modulated
+        
+        # Convert to signal
+        if phi_modulated > 0.8:
+            return 0.85  # Strong harmonic alignment
+        elif phi_modulated > 0.6:
+            return 0.7   # Good alignment
+        elif phi_modulated < 0.3:
+            return 0.35  # Poor alignment - signals less reliable
+        
+        return 0.5
+    
+    def _compute_time_cycle_sync(self) -> float:
+        """
+        Factor 11: TIME-CYCLE SYNC (Schumann Alignment)
+        
+        The Earth pulses at 7.83Hz (Schumann Resonance).
+        Trading in sync with this rhythm improves outcomes.
+        "The Earth breathes, and the market breathes with her."
+        """
+        import time as time_module
+        now = time_module.time()
+        
+        # Schumann cycle period = 1/7.83 ≈ 0.1277 seconds
+        schumann_period = 1.0 / self.SCHUMANN_BASE
+        
+        # Where are we in the Schumann cycle? (0.0 to 1.0)
+        self._schumann_phase = (now % schumann_period) / schumann_period
+        
+        # Also consider hour-of-day patterns
+        import datetime
+        hour = datetime.datetime.now().hour
+        
+        # Peak trading hours (overlap sessions)
+        # 8-10 London open, 13-16 NY open, 1-3 Asian session
+        peak_hours = [8, 9, 10, 13, 14, 15, 16, 1, 2, 3]
+        hour_boost = 1.2 if hour in peak_hours else 1.0
+        
+        # Combine Schumann phase with hour boost
+        # Peak of Schumann cycle (around 0.5 phase) is theoretically optimal
+        schumann_alignment = 1.0 - abs(self._schumann_phase - 0.5) * 2
+        
+        time_signal = 0.5 + (schumann_alignment * 0.2 * hour_boost)
+        
+        return max(0.4, min(0.7, time_signal))
+    
+    def _compute_neural_pattern_score(self, symbol: str) -> float:
+        """
+        Factor 12: NEURAL PATTERN LEARNING
+        
+        Learn from past signal outcomes to improve future predictions.
+        "The Clownfish remembers which currents led to food."
+        """
+        # Get success history for this symbol
+        successes = list(self.signal_success[symbol])
+        if len(successes) < 5:
+            return 0.5  # Not enough data to learn
+        
+        # Compute recent success rate
+        recent = successes[-20:] if len(successes) >= 20 else successes
+        success_rate = sum(1 for s in recent if s > 0) / len(recent)
+        
+        # Update pattern confidence
+        old_conf = self.pattern_confidence.get(symbol, 0.5)
+        learning_rate = 0.1
+        new_conf = old_conf + learning_rate * (success_rate - old_conf)
+        self.pattern_confidence[symbol] = new_conf
+        
+        # Return confidence as signal modifier
+        if new_conf > 0.7:
+            return 0.8  # High confidence from past success
+        elif new_conf > 0.6:
+            return 0.65
+        elif new_conf < 0.3:
+            return 0.3  # Low confidence - be careful
+        elif new_conf < 0.4:
+            return 0.4
+        
+        return 0.5
+    
+    def record_signal_outcome(self, symbol: str, was_successful: bool):
+        """
+        Record whether a signal led to profit (for neural learning).
+        Call this after trade completes to improve future predictions.
+        """
+        self._ensure_symbol_memory(symbol)
+        self.signal_success[symbol].append(1.0 if was_successful else -1.0)
+        self.total_signals_emitted += 1
+        if was_successful:
+            self.successful_signals += 1
+    
+    def get_learning_stats(self) -> Dict:
+        """Get neural learning statistics"""
+        overall_rate = self.successful_signals / max(self.total_signals_emitted, 1)
+        return {
+            'total_signals': self.total_signals_emitted,
+            'successful': self.successful_signals,
+            'overall_success_rate': overall_rate,
+            'pattern_confidences': dict(self.pattern_confidence),
+            'learning_active': self.total_signals_emitted > 10
+        }
+    
+    # ═══════════════════════════════════════════════════════════════════════════
+    # MAIN COMPUTE - 12-FACTOR ANALYSIS
+    # ═══════════════════════════════════════════════════════════════════════════
         
     def compute(self, state: MarketState) -> float:
-        # Connection = how well this coin moves with market sentiment
-        # Positive momentum with good volume = connected
+        """
+        🐠 ULTIMATE 12-FACTOR MICRO-CHANGE DETECTION v2.0
+        
+        Combines all factors with sacred-geometry-inspired weighting.
+        """
+        symbol = state.symbol
+        self._ensure_symbol_memory(symbol)
+        
+        # Store current price tick
+        if state.price > 0:
+            self.price_ticks[symbol].append(state.price)
+        
+        # Compute derivatives
+        velocity = self._compute_tick_velocity(symbol, list(self.price_ticks[symbol]))
+        acceleration = self._compute_acceleration(symbol)
+        
+        # === 12-FACTOR MICRO-CHANGE ANALYSIS ===
+        
+        # ORIGINAL 6 FACTORS
+        f1_spread = self._detect_spread_compression(state)
+        f2_volume = self._detect_volume_micro_burst(state)
+        f3_imbalance = self._compute_bid_ask_imbalance(state)
+        f4_divergence = self._compute_momentum_divergence(state)
+        f5_momentum = self._compute_micro_momentum_score(symbol)
+        
+        # Connection (original legacy)
         if state.change_24h > 0 and state.volume > 100000:
-            self.response = 0.7 + min(0.3, state.change_24h / 30)
+            f6_connection = 0.7 + min(0.3, state.change_24h / 30)
         elif state.change_24h > 0:
-            self.response = 0.5 + min(0.2, state.change_24h / 20)
+            f6_connection = 0.5 + min(0.2, state.change_24h / 20)
         else:
-            self.response = 0.4
+            f6_connection = 0.4
+        
+        # NEW v2.0 FACTORS
+        f7_jerk = self._compute_jerk(symbol)
+        f8_fractal = self._detect_fractal_pattern(symbol)
+        f9_liquidity = self._compute_liquidity_flow(state)
+        f10_harmonic = self._compute_harmonic_resonance(state)
+        f11_timecycle = self._compute_time_cycle_sync()
+        f12_neural = self._compute_neural_pattern_score(symbol)
+        
+        # === SACRED GEOMETRY WEIGHTING ===
+        # Based on PHI (Golden Ratio) and Fibonacci
+        PHI = self.PHI
+        weights = {
+            # Core Predictive (PHI-weighted)
+            'spread': PHI,           # 1.618 - Most predictive
+            'volume': PHI,           # 1.618 - Core signal
+            'momentum': PHI,         # 1.618 - Core signal
+            
+            # Supporting (PHI^-1 weighted)
+            'imbalance': 1.0,        # 1.000 - Supporting
+            'divergence': 1.0,       # 1.000 - Supporting  
+            'jerk': 1.0,             # 1.000 - NEW: Early warning
+            
+            # Confirming (PHI^-2 weighted)
+            'fractal': 1.0 / PHI,    # 0.618 - Confirming
+            'liquidity': 1.0 / PHI,  # 0.618 - Confirming
+            'harmonic': 1.0 / PHI,   # 0.618 - Confirming
+            
+            # Modulating (smaller weights)
+            'connection': 0.5,       # 0.500 - Legacy
+            'timecycle': 0.382,      # 0.382 - PHI^-2 modulator
+            'neural': 0.618,         # 0.618 - Learning boost
+        }
+        total_weight = sum(weights.values())
+        
+        # Weighted combination
+        weighted_sum = (
+            f1_spread * weights['spread'] +
+            f2_volume * weights['volume'] +
+            f3_imbalance * weights['imbalance'] +
+            f4_divergence * weights['divergence'] +
+            f5_momentum * weights['momentum'] +
+            f6_connection * weights['connection'] +
+            f7_jerk * weights['jerk'] +
+            f8_fractal * weights['fractal'] +
+            f9_liquidity * weights['liquidity'] +
+            f10_harmonic * weights['harmonic'] +
+            f11_timecycle * weights['timecycle'] +
+            f12_neural * weights['neural']
+        )
+        
+        self.response = weighted_sum / total_weight
+        
+        # === CONFIDENCE BOOST ===
+        # If multiple strong signals align, boost confidence
+        strong_signals = sum(1 for f in [f1_spread, f2_volume, f5_momentum, f7_jerk, f8_fractal, f9_liquidity] 
+                           if f > 0.75)
+        if strong_signals >= 4:
+            self.response = min(0.98, self.response * 1.1)  # 10% boost
+        elif strong_signals >= 3:
+            self.response = min(0.95, self.response * 1.05)  # 5% boost
+        
+        # === DANGER DETECTION ===
+        # If multiple bearish signals, suppress
+        danger_signals = sum(1 for f in [f1_spread, f4_divergence, f7_jerk, f8_fractal, f9_liquidity]
+                           if f < 0.3)
+        if danger_signals >= 3:
+            self.response = max(0.1, self.response * 0.8)  # 20% suppression
+        
+        # Store detailed micro-signals for analysis
+        self.micro_signals[symbol] = {
+            # Original factors
+            'spread_compression': f1_spread,
+            'volume_burst': f2_volume,
+            'bid_ask_imbalance': f3_imbalance,
+            'momentum_divergence': f4_divergence,
+            'micro_momentum': f5_momentum,
+            'connection': f6_connection,
+            # New v2.0 factors
+            'jerk': f7_jerk,
+            'fractal': f8_fractal,
+            'liquidity_flow': f9_liquidity,
+            'harmonic_resonance': f10_harmonic,
+            'time_cycle': f11_timecycle,
+            'neural_pattern': f12_neural,
+            # Meta
+            'velocity': velocity,
+            'acceleration': acceleration,
+            'strong_signals': strong_signals,
+            'danger_signals': danger_signals,
+            'final_response': self.response,
+            'timestamp': state.timestamp
+        }
+        
+        # Clamp to valid range
+        self.response = max(0.0, min(1.0, self.response))
         return self.response
+    
+    def get_micro_signals(self, symbol: str) -> Dict:
+        """Return detailed micro-signals for a symbol"""
+        return self.micro_signals.get(symbol, {})
+    
+    def get_signal_strength(self, symbol: str) -> str:
+        """Get human-readable signal strength"""
+        signals = self.micro_signals.get(symbol, {})
+        response = signals.get('final_response', 0.5)
+        strong = signals.get('strong_signals', 0)
+        danger = signals.get('danger_signals', 0)
+        
+        if response >= 0.85 and strong >= 3:
+            return "🐠🔥 EXTREME BULLISH - Multiple confirmations!"
+        elif response >= 0.75:
+            return "🐠✨ STRONG BULLISH - Good entry signal"
+        elif response >= 0.65:
+            return "🐠📈 MODERATE BULLISH - Consider entry"
+        elif response >= 0.55:
+            return "🐠➡️ SLIGHT BULLISH - Watch closely"
+        elif response >= 0.45:
+            return "🐠⚖️ NEUTRAL - No clear signal"
+        elif response >= 0.35:
+            return "🐠📉 SLIGHT BEARISH - Caution"
+        elif response >= 0.25:
+            return "🐠⚠️ MODERATE BEARISH - Avoid entry"
+        elif danger >= 2:
+            return "🐠🚨 DANGER DETECTED - Stay away!"
+        else:
+            return "🐠❄️ STRONG BEARISH - Avoid"
 
 
 class AurisEngine:

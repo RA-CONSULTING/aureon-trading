@@ -1351,8 +1351,8 @@ class LiveBarterMatrix:
         # 🚫 PRE-EXECUTION REJECTION TRACKER - Stop wasting turns on impossible trades!
         # Tracks paths that fail due to min_qty/min_notional/insufficient balance
         self.preexec_rejections: Dict[Tuple[str, str], Dict] = {}  # path -> {count, last_value, reason}
-        self.PREEXEC_MAX_REJECTIONS = 3  # Block after 3 pre-execution failures
-        self.PREEXEC_COOLDOWN_TURNS = 50  # Try again after 50 turns
+        self.PREEXEC_MAX_REJECTIONS = 1  # ⚡ IMMEDIATE BLOCK - don't retry losing trades!
+        self.PREEXEC_COOLDOWN_TURNS = 5  # ⚡ Quick retry - just 5 turns cooldown
         
         # 🚫 SOURCE ASSET BLOCKING - Block assets with insufficient balance on specific exchange
         # When an asset repeatedly fails due to size, block it as a source until balance increases
@@ -10049,9 +10049,13 @@ if __name__ == "__main__":
                 print(f"   └── Reason: Trade would LOSE money even without market movement")
                 print(f"   ⛔ TRADE REJECTED - Protecting your capital!")
                 
-                # Track rejection for learning
-                if hasattr(self, '_record_preexec_rejection'):
-                    self._record_preexec_rejection(opp.from_asset, opp.to_asset, 'conservative_pnl_negative')
+                # Track rejection for learning - BLOCK THIS PAIR immediately!
+                self.barter_matrix.record_preexec_rejection(
+                    opp.from_asset, opp.to_asset,
+                    f'cost_exceeds_profit: ${total_cost_usd:.4f} > edge',
+                    opp.from_value_usd
+                )
+                print(f"   🚫 Path {opp.from_asset}→{opp.to_asset} BLOCKED - will try others!")
                 
                 return False
             else:

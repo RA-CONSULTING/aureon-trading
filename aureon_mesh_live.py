@@ -68,6 +68,323 @@ class AurisNode:
 
 def create_auris_nodes():
     import math
+    
+    # Enhanced Clownfish v2.0 micro-change state tracking (12 factors)
+    _clownfish_state = {
+        'price_ticks': {},
+        'spread_history': {},
+        'volume_ticks': {},
+        'velocity_history': {},
+        'acceleration_history': {},
+        'jerk_history': {},
+        'liquidity_flow': {},
+        'signal_success': {},
+        'pattern_confidence': {}
+    }
+    
+    def clownfish_micro_detect(d):
+        """🐠 Enhanced Clownfish v2.0 - 12-Factor Micro-Change Detection for Mesh
+        
+        FACTORS:
+        1-6: Original (momentum, volume, spread, imbalance, divergence, connection)
+        7-12: NEW (jerk, fractal, liquidity, harmonic, time-cycle, neural)
+        """
+        symbol = d.get('symbol', 'unknown')
+        PHI = 1.618033988749895  # Golden ratio
+        
+        # Initialize per-symbol tracking
+        if symbol not in _clownfish_state['price_ticks']:
+            _clownfish_state['price_ticks'][symbol] = []
+            _clownfish_state['spread_history'][symbol] = []
+            _clownfish_state['volume_ticks'][symbol] = []
+            _clownfish_state['velocity_history'][symbol] = []
+            _clownfish_state['acceleration_history'][symbol] = []
+            _clownfish_state['jerk_history'][symbol] = []
+            _clownfish_state['liquidity_flow'][symbol] = []
+            _clownfish_state['signal_success'][symbol] = []
+            _clownfish_state['pattern_confidence'][symbol] = 0.5
+        
+        # Store tick data (keep last 100 for fractal analysis)
+        _clownfish_state['price_ticks'][symbol].append(d['price'])
+        _clownfish_state['volume_ticks'][symbol].append(d.get('volume', 0))
+        if len(_clownfish_state['price_ticks'][symbol]) > 100:
+            _clownfish_state['price_ticks'][symbol] = _clownfish_state['price_ticks'][symbol][-100:]
+            _clownfish_state['volume_ticks'][symbol] = _clownfish_state['volume_ticks'][symbol][-100:]
+        
+        prices = _clownfish_state['price_ticks'][symbol]
+        volumes = _clownfish_state['volume_ticks'][symbol]
+        
+        # ═══════════════════════════════════════════════════════════════
+        # FACTOR 1-2: Micro-momentum (velocity + acceleration)
+        # ═══════════════════════════════════════════════════════════════
+        f1_momentum = 0.5
+        velocity = 0
+        accel = 0
+        if len(prices) >= 3:
+            vel1 = (prices[-1] - prices[-2]) / prices[-2] if prices[-2] > 0 else 0
+            vel2 = (prices[-2] - prices[-3]) / prices[-3] if prices[-3] > 0 else 0
+            velocity = vel1
+            accel = vel1 - vel2
+            _clownfish_state['velocity_history'][symbol].append(velocity)
+            _clownfish_state['acceleration_history'][symbol].append(accel)
+            if len(_clownfish_state['velocity_history'][symbol]) > 30:
+                _clownfish_state['velocity_history'][symbol] = _clownfish_state['velocity_history'][symbol][-30:]
+                _clownfish_state['acceleration_history'][symbol] = _clownfish_state['acceleration_history'][symbol][-20:]
+            
+            if velocity > 0.001 and accel > 0.0001:
+                f1_momentum = min(0.95, 0.65 + velocity * 150 + accel * 1000)
+            elif velocity > 0.0005 and accel > 0:
+                f1_momentum = min(0.9, 0.6 + velocity * 100)
+            elif velocity > 0 and accel < 0:
+                f1_momentum = 0.55
+            elif velocity < -0.001 and accel < -0.0001:
+                f1_momentum = 0.15
+            elif velocity < 0 and accel > 0:
+                f1_momentum = 0.65  # Potential reversal
+        
+        # ═══════════════════════════════════════════════════════════════
+        # FACTOR 3: Volume micro-burst detection
+        # ═══════════════════════════════════════════════════════════════
+        f2_volume = 0.5
+        if len(volumes) >= 5:
+            recent_vol = volumes[-1]
+            avg_vol = sum(volumes[:-1]) / len(volumes[:-1]) if volumes[:-1] else 1
+            vol_ratio = recent_vol / avg_vol if avg_vol > 0 else 1
+            if 1.15 <= vol_ratio <= 1.3:
+                f2_volume = 0.85  # Sweet spot accumulation
+            elif 1.3 < vol_ratio <= 1.5:
+                f2_volume = 0.8
+            elif 1.5 < vol_ratio <= 2.0:
+                f2_volume = 0.7
+            elif vol_ratio > 3.0:
+                f2_volume = 0.4  # Too high - manipulation
+            elif vol_ratio < 0.3:
+                f2_volume = 0.2  # Volume dead
+            elif vol_ratio < 0.5:
+                f2_volume = 0.3
+        
+        # ═══════════════════════════════════════════════════════════════
+        # FACTOR 4: Price position (bid-ask imbalance proxy)
+        # ═══════════════════════════════════════════════════════════════
+        f3_position = 0.5
+        if d['price'] > d.get('open', d['price']):
+            f3_position = 0.6 + min(0.2, d.get('change', 0) / 10)
+        else:
+            f3_position = 0.4 - min(0.1, abs(d.get('change', 0)) / 20)
+        f3_position = max(0.2, min(0.8, f3_position))
+        
+        # ═══════════════════════════════════════════════════════════════
+        # FACTOR 5: Momentum-Volume Divergence
+        # ═══════════════════════════════════════════════════════════════
+        f4_divergence = 0.5
+        if len(prices) >= 5 and len(volumes) >= 5:
+            price_trend = (prices[-1] - prices[0]) / prices[0] if prices[0] > 0 else 0
+            vol_trend = (volumes[-1] - volumes[0]) / volumes[0] if volumes[0] > 0 else 0
+            # Bullish divergence: price flat/down but volume up
+            if price_trend <= 0.001 and vol_trend > 0.15:
+                f4_divergence = 0.85
+            elif price_trend <= 0.001 and vol_trend > 0.1:
+                f4_divergence = 0.8
+            # Bearish divergence: price up but volume down
+            elif price_trend > 0.015 and vol_trend < -0.15:
+                f4_divergence = 0.2
+            elif price_trend > 0.01 and vol_trend < -0.1:
+                f4_divergence = 0.3
+        
+        # ═══════════════════════════════════════════════════════════════
+        # FACTOR 6: Connection (original)
+        # ═══════════════════════════════════════════════════════════════
+        change = d.get('change', 0)
+        volume = d.get('volume', 0)
+        f5_connection = 0.4
+        if change > 0 and volume > 100000:
+            f5_connection = 0.7 + min(0.3, change / 30)
+        elif change > 0:
+            f5_connection = 0.5 + min(0.2, change / 20)
+        
+        # ═══════════════════════════════════════════════════════════════
+        # FACTOR 7: JERK (3rd derivative) - NEW v2.0
+        # ═══════════════════════════════════════════════════════════════
+        f6_jerk = 0.5
+        accels = _clownfish_state['acceleration_history'][symbol]
+        if len(accels) >= 2:
+            jerk = accels[-1] - accels[-2]
+            _clownfish_state['jerk_history'][symbol].append(jerk)
+            if len(_clownfish_state['jerk_history'][symbol]) > 15:
+                _clownfish_state['jerk_history'][symbol] = _clownfish_state['jerk_history'][symbol][-15:]
+            
+            jerks = _clownfish_state['jerk_history'][symbol]
+            if len(jerks) >= 3:
+                avg_jerk = sum(jerks[-3:]) / 3
+                if avg_jerk > 0.00005:
+                    f6_jerk = 0.85
+                elif avg_jerk > 0.00001:
+                    f6_jerk = 0.7
+                elif avg_jerk < -0.00005:
+                    f6_jerk = 0.2
+                elif avg_jerk < -0.00001:
+                    f6_jerk = 0.35
+        
+        # ═══════════════════════════════════════════════════════════════
+        # FACTOR 8: FRACTAL PATTERN - NEW v2.0
+        # ═══════════════════════════════════════════════════════════════
+        f7_fractal = 0.5
+        if len(prices) >= 20:
+            patterns = []
+            for window in [5, 10, 20]:
+                subset = prices[-window:]
+                start_p, end_p = subset[0], subset[-1]
+                mid_p = subset[len(subset)//2]
+                if end_p > start_p * 1.001:
+                    pattern = "V" if mid_p < (start_p + end_p) / 2 else "UP"
+                elif end_p < start_p * 0.999:
+                    pattern = "A" if mid_p > (start_p + end_p) / 2 else "DOWN"
+                else:
+                    pattern = "FLAT"
+                patterns.append(pattern)
+            
+            # Check for fractal alignment
+            if patterns[0] == patterns[1] == patterns[2]:
+                if patterns[0] in ("UP", "V"):
+                    f7_fractal = 0.9
+                elif patterns[0] in ("DOWN", "A"):
+                    f7_fractal = 0.1
+            elif patterns.count("UP") + patterns.count("V") >= 2:
+                f7_fractal = 0.7
+            elif patterns.count("DOWN") + patterns.count("A") >= 2:
+                f7_fractal = 0.3
+        
+        # ═══════════════════════════════════════════════════════════════
+        # FACTOR 9: LIQUIDITY FLOW - NEW v2.0
+        # ═══════════════════════════════════════════════════════════════
+        f8_liquidity = 0.5
+        if len(prices) >= 2 and len(volumes) >= 1:
+            price_change = prices[-1] - prices[-2]
+            current_vol = volumes[-1]
+            flow = current_vol if price_change > 0 else (-current_vol if price_change < 0 else 0)
+            _clownfish_state['liquidity_flow'][symbol].append(flow)
+            if len(_clownfish_state['liquidity_flow'][symbol]) > 30:
+                _clownfish_state['liquidity_flow'][symbol] = _clownfish_state['liquidity_flow'][symbol][-30:]
+            
+            flows = _clownfish_state['liquidity_flow'][symbol]
+            if len(flows) >= 5:
+                net_flow = sum(flows[-10:])
+                avg_vol = sum(volumes) / len(volumes) if volumes else 1
+                flow_ratio = net_flow / (avg_vol * 10) if avg_vol > 0 else 0
+                if flow_ratio > 0.5:
+                    f8_liquidity = 0.9
+                elif flow_ratio > 0.2:
+                    f8_liquidity = 0.75
+                elif flow_ratio > 0.05:
+                    f8_liquidity = 0.6
+                elif flow_ratio < -0.5:
+                    f8_liquidity = 0.1
+                elif flow_ratio < -0.2:
+                    f8_liquidity = 0.25
+        
+        # ═══════════════════════════════════════════════════════════════
+        # FACTOR 10: HARMONIC RESONANCE (639Hz) - NEW v2.0
+        # ═══════════════════════════════════════════════════════════════
+        f9_harmonic = 0.5
+        if len(prices) >= 10:
+            oscillations = 0
+            for i in range(2, len(prices)):
+                if (prices[i] > prices[i-1]) != (prices[i-1] > prices[i-2]):
+                    oscillations += 1
+            ticks_per_osc = len(prices) / max(oscillations, 1)
+            target_period = 639.0 / 100  # Normalized
+            alignment = 1.0 - min(1.0, abs(ticks_per_osc - target_period) / target_period)
+            phi_mod = alignment ** (1 / PHI)
+            if phi_mod > 0.8:
+                f9_harmonic = 0.85
+            elif phi_mod > 0.6:
+                f9_harmonic = 0.7
+            elif phi_mod < 0.3:
+                f9_harmonic = 0.35
+        
+        # ═══════════════════════════════════════════════════════════════
+        # FACTOR 11: TIME-CYCLE SYNC (Schumann) - NEW v2.0
+        # ═══════════════════════════════════════════════════════════════
+        f10_timecycle = 0.5
+        import datetime
+        hour = datetime.datetime.now().hour
+        peak_hours = [8, 9, 10, 13, 14, 15, 16, 1, 2, 3]
+        if hour in peak_hours:
+            f10_timecycle = 0.6
+        schumann_period = 1.0 / 7.83
+        schumann_phase = (time.time() % schumann_period) / schumann_period
+        schumann_alignment = 1.0 - abs(schumann_phase - 0.5) * 2
+        f10_timecycle += schumann_alignment * 0.1
+        f10_timecycle = max(0.4, min(0.7, f10_timecycle))
+        
+        # ═══════════════════════════════════════════════════════════════
+        # FACTOR 12: NEURAL PATTERN LEARNING - NEW v2.0
+        # ═══════════════════════════════════════════════════════════════
+        f11_neural = 0.5
+        successes = _clownfish_state['signal_success'][symbol]
+        if len(successes) >= 5:
+            recent = successes[-20:] if len(successes) >= 20 else successes
+            success_rate = sum(1 for s in recent if s > 0) / len(recent)
+            old_conf = _clownfish_state['pattern_confidence'][symbol]
+            new_conf = old_conf + 0.1 * (success_rate - old_conf)
+            _clownfish_state['pattern_confidence'][symbol] = new_conf
+            if new_conf > 0.7:
+                f11_neural = 0.8
+            elif new_conf > 0.6:
+                f11_neural = 0.65
+            elif new_conf < 0.3:
+                f11_neural = 0.3
+            elif new_conf < 0.4:
+                f11_neural = 0.4
+        
+        # ═══════════════════════════════════════════════════════════════
+        # SACRED GEOMETRY WEIGHTED COMBINATION (12 factors)
+        # ═══════════════════════════════════════════════════════════════
+        weights = {
+            'momentum': PHI,      # 1.618
+            'volume': PHI,        # 1.618
+            'position': 1.0,      # 1.000
+            'divergence': 1.0,    # 1.000
+            'connection': 0.5,    # 0.500
+            'jerk': 1.0,          # 1.000
+            'fractal': 1/PHI,     # 0.618
+            'liquidity': 1/PHI,   # 0.618
+            'harmonic': 1/PHI,    # 0.618
+            'timecycle': 0.382,   # PHI^-2
+            'neural': 0.618,      # 0.618
+        }
+        total_w = sum(weights.values())
+        
+        weighted_sum = (
+            f1_momentum * weights['momentum'] +
+            f2_volume * weights['volume'] +
+            f3_position * weights['position'] +
+            f4_divergence * weights['divergence'] +
+            f5_connection * weights['connection'] +
+            f6_jerk * weights['jerk'] +
+            f7_fractal * weights['fractal'] +
+            f8_liquidity * weights['liquidity'] +
+            f9_harmonic * weights['harmonic'] +
+            f10_timecycle * weights['timecycle'] +
+            f11_neural * weights['neural']
+        )
+        
+        response = weighted_sum / total_w
+        
+        # Confidence boost if multiple strong signals
+        strong = sum(1 for f in [f1_momentum, f2_volume, f6_jerk, f7_fractal, f8_liquidity] if f > 0.75)
+        if strong >= 4:
+            response = min(0.98, response * 1.1)
+        elif strong >= 3:
+            response = min(0.95, response * 1.05)
+        
+        # Danger suppression
+        danger = sum(1 for f in [f4_divergence, f6_jerk, f7_fractal, f8_liquidity] if f < 0.3)
+        if danger >= 3:
+            response = max(0.1, response * 0.8)
+        
+        return max(0.0, min(1.0, response))
+    
     nodes = {
         'tiger': AurisNode('tiger', 
             lambda d: ((d['high'] - d['low']) / d['price']) * 100 + (0.2 if d['volume'] > 1000000 else 0), 1.2),
@@ -86,7 +403,7 @@ def create_auris_nodes():
         'cargoship': AurisNode('cargoship',
             lambda d: 0.8 if d['volume'] > 5000000 else (0.5 if d['volume'] > 1000000 else 0.3), 1.0),
         'clownfish': AurisNode('clownfish',
-            lambda d: abs(d['price'] - d['open']) / d['price'] * 100, 0.7),
+            clownfish_micro_detect, 1.25),  # 🐠 v2.0 12-factor enhanced with boosted weight
     }
     return nodes
 
