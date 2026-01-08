@@ -41,6 +41,14 @@ from dataclasses import dataclass, field
 from collections import deque
 import logging
 
+try:
+    from aureon_thought_bus import ThoughtBus, Thought
+    THOUGHT_BUS_AVAILABLE = True
+except ImportError:
+    ThoughtBus = None
+    Thought = None
+    THOUGHT_BUS_AVAILABLE = False
+
 logger = logging.getLogger(__name__)
 
 # ═══════════════════════════════════════════════════════════════
@@ -192,6 +200,16 @@ class GlobalFinancialFeed:
         
         # Data file for persistence
         self.data_file = "global_financial_state.json"
+        
+        # Thought Bus for broadcasting checks
+        self.bus = None
+        if THOUGHT_BUS_AVAILABLE:
+            try:
+                self.bus = ThoughtBus(persist_path="thoughts.jsonl")
+            except Exception:
+                pass
+                
+        self.last_broadcast = 0.0
         self._load_state()
         
     def _load_state(self):
@@ -527,6 +545,34 @@ class GlobalFinancialFeed:
             'snapshot': snapshot.to_dict(),
         }
     
+    def _broadcast_to_hive(self, snapshot: MacroSnapshot):
+        """Broadcast macro snapshot to the Thought Bus."""
+        if not self.bus or not THOUGHT_BUS_AVAILABLE:
+            return
+            
+        now = time.time()
+        # Rate limit broadcasts (don't spam every call)
+        if now - self.last_broadcast < 10.0:  # 10s throttle
+            return
+            
+        try:
+            payload = snapshot.to_dict()
+            # Enriched payload for easier consumption
+            payload['source'] = 'global_financial_feed'
+            payload['type'] = 'macro_snapshot'
+            payload['risk_sentiment'] = snapshot.risk_on_off
+            
+            thought = Thought(
+                topic="market.macro.global",
+                payload=payload,
+                source="global_financial_feed"
+            )
+            self.bus.publish(thought)
+            self.last_broadcast = now
+            logger.info(f"🌍 Broadcasted global macro snapshot (Risk: {snapshot.risk_on_off})")
+        except Exception as e:
+            logger.warning(f"Failed to broadcast macro snapshot: {e}")
+
     def get_snapshot(self) -> MacroSnapshot:
         """
         Get current global macro snapshot.
@@ -536,6 +582,8 @@ class GlobalFinancialFeed:
         if self.last_snapshot:
             age = (datetime.now() - self.last_snapshot.timestamp).total_seconds()
             if age < self.cache_ttl:
+                # Still try to broadcast if it's been a while (e.g. called from another loop)
+                self._broadcast_to_hive(self.last_snapshot)
                 return self.last_snapshot
         
         print("\n🌍 Fetching Global Financial Data...")
@@ -597,6 +645,9 @@ class GlobalFinancialFeed:
         self.last_snapshot = snapshot
         self.history.append(snapshot)
         self._save_state()
+        
+        # Broadcast to Thought Bus (The Queen is listening)
+        self._broadcast_to_hive(snapshot)
         
         # Log summary
         print(f"   😱 Fear/Greed: {snapshot.crypto_fear_greed} ({snapshot.crypto_fg_classification})")

@@ -29,8 +29,8 @@ try:
     from global_harmonic_field import GlobalHarmonicField, GlobalHarmonicFieldState
     GLOBAL_FIELD_AVAILABLE = True
 except ImportError:
-    GlobalHarmonicField = None
-    GlobalHarmonicFieldState = None
+    GlobalHarmonicField = Any
+    GlobalHarmonicFieldState = Any
     GLOBAL_FIELD_AVAILABLE = False
 
 # Setup logging
@@ -125,9 +125,9 @@ class TemporalDialer:
         
         if resonance > 0.8:
             self.state.mode = DialMode.LOCKED
-            logger.info(f"   🔒 LOCKED Signal at {frequency_hz}Hz (Resonance: {resonance:.2f})")
+            logger.debug(f"   🔒 LOCKED Signal at {frequency_hz}Hz (Resonance: {resonance:.2f})")
         else:
-            logger.info(f"   📡 Scanning {frequency_hz}Hz... (Resonance: {resonance:.2f})")
+            logger.debug(f"   📡 Scanning {frequency_hz}Hz... (Resonance: {resonance:.2f})")
             
         return resonance
 

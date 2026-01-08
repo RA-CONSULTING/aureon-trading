@@ -1,0 +1,221 @@
+{
+  "packets": [
+    {
+      "packet_id": "2a120c2cf1c4b401",
+      "source": "cia_stargate",
+      "title": "Pattern Recognition Enhancement",
+      "date": "1970-2000",
+      "summary": "Remote viewing research showed humans can detect patterns in seemingly random data when in relaxed, focused states. Application: Meditation before trading sessions may improve pattern recognition.",
+      "full_text": "Remote viewing research showed humans can detect patterns in seemingly random data when in relaxed, focused states. Application: Meditation before trading sessions may improve pattern recognition.",
+      "original_classification": "DECLASSIFIED",
+      "declassified_date": "Various",
+      "trust_level": "public_domain",
+      "trading_relevance": 0.65,
+      "market_patterns": [
+        "Intuitive pattern detection improves with reduced stress"
+      ],
+      "psychological_insights": [],
+      "economic_indicators": [],
+      "url": "https://www.cia.gov/readingroom/",
+      "checksum": "f265b273c3bd23c9f5ee67deb0de34a5",
+      "processed_at": "2026-01-08T12:59:31.929116",
+      "word_count": 26
+    },
+    {
+      "packet_id": "becd862b3b725838",
+      "source": "cia_stargate",
+      "title": "Associative Remote Viewing for Predictions",
+      "date": "1970-2000",
+      "summary": "ARV protocols showed above-chance prediction rates for binary outcomes. The key was emotional detachment from results. Application: Emotional detachment improves trading decisions.",
+      "full_text": "ARV protocols showed above-chance prediction rates for binary outcomes. The key was emotional detachment from results. Application: Emotional detachment improves trading decisions.",
+      "original_classification": "DECLASSIFIED",
+      "declassified_date": "Various",
+      "trust_level": "public_domain",
+      "trading_relevance": 0.6,
+      "market_patterns": [
+        "Emotional detachment correlates with better predictions"
+      ],
+      "psychological_insights": [],
+      "economic_indicators": [],
+      "url": "https://www.cia.gov/readingroom/",
+      "checksum": "974ef1cb030301363264061c7786df4b",
+      "processed_at": "2026-01-08T12:59:31.929145",
+      "word_count": 22
+    },
+    {
+      "packet_id": "555c94e169f0ea5b",
+      "source": "cia_economic_warfare",
+      "title": "Currency Attack Patterns",
+      "date": "1970-2000",
+      "summary": "Historical currency attacks follow predictable patterns: 1) Accumulate short positions, 2) Spread negative sentiment, 3) Trigger panic selling, 4) Cover shorts during crash. Defense: Monitor unusual o",
+      "full_text": "Historical currency attacks follow predictable patterns: 1) Accumulate short positions, 2) Spread negative sentiment, 3) Trigger panic selling, 4) Cover shorts during crash. Defense: Monitor unusual options activity.",
+      "original_classification": "DECLASSIFIED",
+      "declassified_date": "Various",
+      "trust_level": "public_domain",
+      "trading_relevance": 0.85,
+      "market_patterns": [
+        "Coordinated attacks show early warning in options markets"
+      ],
+      "psychological_insights": [],
+      "economic_indicators": [],
+      "url": "https://www.cia.gov/readingroom/",
+      "checksum": "b02348ee1c477e821e428d31153a875c",
+      "processed_at": "2026-01-08T12:59:31.929163",
+      "word_count": 28
+    },
+    {
+      "packet_id": "9e9c072cafcb6b7f",
+      "source": "cia_economic_warfare",
+      "title": "Commodity Market Manipulation",
+      "date": "1970-2000",
+      "summary": "Governments historically manipulated commodity markets through: strategic reserves, export controls, and coordinated buying/selling. Key indicator: Unusual government stockpile movements.",
+      "full_text": "Governments historically manipulated commodity markets through: strategic reserves, export controls, and coordinated buying/selling. Key indicator: Unusual government stockpile movements.",
+      "original_classification": "DECLASSIFIED",
+      "declassified_date": "Various",
+      "trust_level": "public_domain",
+      "trading_relevance": 0.8,
+      "market_patterns": [
+        "Government stockpile changes precede price moves"
+      ],
+      "psychological_insights": [],
+      "economic_indicators": [],
+      "url": "https://www.cia.gov/readingroom/",
+      "checksum": "058b458398e7a12799821eff674eaa47",
+      "processed_at": "2026-01-08T12:59:31.929177",
+      "word_count": 19
+    },
+    {
+      "packet_id": "e59a50d64de3b035",
+      "source": "cia_psychological_operations",
+      "title": "Mass Panic Indicators",
+      "date": "1970-2000",
+      "summary": "Declassified PSYOP manuals identify panic triggers: 1) Uncertainty about basic needs, 2) Loss of trust in institutions, 3) Rapid information spread. Trading: These same triggers cause market panics.",
+      "full_text": "Declassified PSYOP manuals identify panic triggers: 1) Uncertainty about basic needs, 2) Loss of trust in institutions, 3) Rapid information spread. Trading: These same triggers cause market panics.",
+      "original_classification": "DECLASSIFIED",
+      "declassified_date": "Various",
+      "trust_level": "public_domain",
+      "trading_relevance": 0.75,
+      "market_patterns": [
+        "Institutional trust metrics predict volatility"
+      ],
+      "psychological_insights": [],
+      "economic_indicators": [],
+      "url": "https://www.cia.gov/readingroom/",
+      "checksum": "04294d8e2bf0406d430768433903f42f",
+      "processed_at": "2026-01-08T12:59:31.929190",
+      "word_count": 28
+    },
+    {
+      "packet_id": "9ba9a58287dc28db",
+      "source": "cia_psychological_operations",
+      "title": "Crowd Psychology Exploitation",
+      "date": "1970-2000",
+      "summary": "PSYOP research identified that crowds follow the \"3-10-30\" rule: 3% lead, 10% follow quickly, 30% follow slowly, rest resist. Application: Early adopter metrics predict trend strength.",
+      "full_text": "PSYOP research identified that crowds follow the \"3-10-30\" rule: 3% lead, 10% follow quickly, 30% follow slowly, rest resist. Application: Early adopter metrics predict trend strength.",
+      "original_classification": "DECLASSIFIED",
+      "declassified_date": "Various",
+      "trust_level": "public_domain",
+      "trading_relevance": 0.7,
+      "market_patterns": [
+        "3-10-30 adoption curve applies to market trends"
+      ],
+      "psychological_insights": [],
+      "economic_indicators": [],
+      "url": "https://www.cia.gov/readingroom/",
+      "checksum": "772232c8090644f3fce870cf3e41c496",
+      "processed_at": "2026-01-08T12:59:31.929204",
+      "word_count": 26
+    },
+    {
+      "packet_id": "2ed45484f11885ea",
+      "source": "cia_cold_war_economics",
+      "title": "Economic Collapse Indicators",
+      "date": "1970-2000",
+      "summary": "CIA analysts identified key indicators before Soviet economic collapse: 1) Hidden debt accumulation, 2) Productivity-wage disconnect, 3) Resource misallocation, 4) Confidence gap between officials and",
+      "full_text": "CIA analysts identified key indicators before Soviet economic collapse: 1) Hidden debt accumulation, 2) Productivity-wage disconnect, 3) Resource misallocation, 4) Confidence gap between officials and public.",
+      "original_classification": "DECLASSIFIED",
+      "declassified_date": "Various",
+      "trust_level": "public_domain",
+      "trading_relevance": 0.85,
+      "market_patterns": [
+        "Productivity-wage divergence signals systemic risk"
+      ],
+      "psychological_insights": [],
+      "economic_indicators": [],
+      "url": "https://www.cia.gov/readingroom/",
+      "checksum": "7e0346a130f93ed61bc6d2b317670a20",
+      "processed_at": "2026-01-08T12:59:31.929218",
+      "word_count": 26
+    },
+    {
+      "packet_id": "9f5f848b386add8c",
+      "source": "cia_cold_war_economics",
+      "title": "Sanctions Impact Patterns",
+      "date": "1970-2000",
+      "summary": "Historical sanctions analysis showed: Initial market overreaction (2-4 weeks), followed by adaptation period, then new equilibrium. Smart money buys the overreaction.",
+      "full_text": "Historical sanctions analysis showed: Initial market overreaction (2-4 weeks), followed by adaptation period, then new equilibrium. Smart money buys the overreaction.",
+      "original_classification": "DECLASSIFIED",
+      "declassified_date": "Various",
+      "trust_level": "public_domain",
+      "trading_relevance": 0.8,
+      "market_patterns": [
+        "Sanctions cause predictable overreaction-recovery cycle"
+      ],
+      "psychological_insights": [],
+      "economic_indicators": [],
+      "url": "https://www.cia.gov/readingroom/",
+      "checksum": "71c6ef0d60b849d6e48f3feebb28d8f3",
+      "processed_at": "2026-01-08T12:59:31.929225",
+      "word_count": 21
+    },
+    {
+      "packet_id": "c007246aa348b355",
+      "source": "cia_economic_warfare",
+      "title": "Market Confidence Operations",
+      "date": "1970-2000",
+      "summary": "Declassified documents reveal \"confidence operations\" where coordinated positive messaging preceded market interventions. Monitor: Unusual coordination in official statements.",
+      "full_text": "Declassified documents reveal \"confidence operations\" where coordinated positive messaging preceded market interventions. Monitor: Unusual coordination in official statements.",
+      "original_classification": "DECLASSIFIED",
+      "declassified_date": "Various",
+      "trust_level": "public_domain",
+      "trading_relevance": 0.75,
+      "market_patterns": [
+        "Coordinated official optimism often precedes intervention"
+      ],
+      "psychological_insights": [],
+      "economic_indicators": [],
+      "url": "https://www.cia.gov/readingroom/",
+      "checksum": "a315a5dee5fe718478ed83c9740cb156",
+      "processed_at": "2026-01-08T12:59:31.929238",
+      "word_count": 18
+    },
+    {
+      "packet_id": "383d5af0a59e8035",
+      "source": "cia_stargate",
+      "title": "Temporal Anomalies in Decision-Making",
+      "date": "1970-2000",
+      "summary": "Stargate research suggested decision-making processes may be influenced by future outcomes (retrocausality hypothesis). Practical: Trust strong intuitions even without clear rationale.",
+      "full_text": "Stargate research suggested decision-making processes may be influenced by future outcomes (retrocausality hypothesis). Practical: Trust strong intuitions even without clear rationale.",
+      "original_classification": "DECLASSIFIED",
+      "declassified_date": "Various",
+      "trust_level": "public_domain",
+      "trading_relevance": 0.55,
+      "market_patterns": [
+        "Strong intuition may reflect subconscious pattern recognition"
+      ],
+      "psychological_insights": [],
+      "economic_indicators": [],
+      "url": "https://www.cia.gov/readingroom/",
+      "checksum": "5ff66534a71f23b022940d999b67664a",
+      "processed_at": "2026-01-08T12:59:31.929245",
+      "word_count": 21
+    }
+  ],
+  "stats": {
+    "documents_processed": 230,
+    "packets_created": 10,
+    "total_words": 235,
+    "high_relevance_count": 7,
+    "last_sync": "2026-01-08T14:46:32.185966"
+  }
+}

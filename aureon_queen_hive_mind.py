@@ -1118,6 +1118,31 @@ class QueenHiveMind:
         
         return coherence, status
     
+    # ═══════════════════════════════════════════════════════════════════════════════
+    # 🌍 GLOBAL FINANCIAL PERCEPTION (Stocks, Forex, Macro) 🌍
+    # ═══════════════════════════════════════════════════════════════════════════════
+    def receive_macro_snapshot(self, snapshot: Dict[str, Any]) -> None:
+        """
+        🌍 Receive GLOBAL FINANCIAL DATA (Stocks, Forex, Macro).
+        "Is the Queen getting all the global financial data?" -> YES.
+        
+        This input allows the Queen to sense the broader market regime:
+        - Risk On/Off
+        - VIX (Fear)
+        - DXY (Dollar Strength)
+        - Gold/Oil (Commodities)
+        """
+        self.macro_state = snapshot
+        
+        # Log the reception
+        regime = snapshot.get('regime', 'UNKNOWN')
+        vix = snapshot.get('vix', 0.0)
+        dxy = snapshot.get('indices', {}).get('DXY', {}).get('price', 0.0)
+        
+        emoji = "🟢" if regime == "RISK_ON" else "🔴"
+        # We use a distinct icon for Global Macro thoughts
+        logger.info(f"👑🌍 Queen received MACRO INSIGHT: {emoji} {regime} | VIX: {vix:.2f} | DXY: {dxy:.2f}")
+
     def get_auris_emotional_reading(self, market_data: Dict[str, float] = None) -> Dict:
         """
         🐬💖 Get the complete Auris + Emotional reading.

@@ -1,7 +1,12 @@
 
 import os
 import asyncio
-from dotenv import load_dotenv
+
+try:
+    from dotenv import load_dotenv
+except ImportError:  # Fallback when python-dotenv is not installed
+    def load_dotenv(*args, **kwargs):  # type: ignore[unused-arg]
+        return None
 
 # Load env vars
 load_dotenv()
