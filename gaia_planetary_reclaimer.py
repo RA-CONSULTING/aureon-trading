@@ -316,10 +316,18 @@ class PlanetaryReclaimer:
                 key = f'bin_{asset}'
                 if key not in self.entries:
                     self.entries[key] = price
+                    self.log(f"📍 BINANCE {asset}: Entry recorded @ ${price:.2f} (${value:.2f})")
                     continue
                 
                 entry = self.entries[key]
                 pnl_pct = (price - entry) / entry * 100
+                
+                # Log position status periodically
+                if hasattr(self, '_last_bin_log') and time.time() - self._last_bin_log.get(asset, 0) > 60:
+                    self.log(f"📊 BINANCE {asset}: ${value:.2f} | Entry ${entry:.2f} → ${price:.2f} ({pnl_pct:+.2f}%)")
+                    self._last_bin_log[asset] = time.time()
+                elif not hasattr(self, '_last_bin_log'):
+                    self._last_bin_log = {}
                 
                 if pnl_pct > 0.01:
                     self.log(f"🔥 BINANCE SELL {asset}: ${value:.2f} ({pnl_pct:+.2f}%)")
@@ -335,6 +343,8 @@ class PlanetaryReclaimer:
                         del self.entries[key]
                         time.sleep(0.2)
                         self._binance_buy_best()
+                    else:
+                        self.log(f"   ⚠️ Order failed: {result}")
                         
             # Deploy idle USDC
             usdc = self.binance.get_free_balance('USDC')
@@ -342,7 +352,7 @@ class PlanetaryReclaimer:
                 self._binance_buy_best()
                 
         except Exception as e:
-            pass
+            self.log(f"⚠️ Binance error: {e}")
     
     def _binance_buy_best(self):
         usdc = self.binance.get_free_balance('USDC')
@@ -508,10 +518,18 @@ class PlanetaryReclaimer:
                 key = f'krk_{asset}_{quote}'
                 if key not in self.entries:
                     self.entries[key] = price
+                    self.log(f"📍 KRAKEN {asset}/{quote}: Entry recorded @ ${price:.2f} (${value:.2f})")
                     continue
                 
                 entry = self.entries[key]
                 pnl_pct = (price - entry) / entry * 100
+                
+                # Log position status periodically
+                if hasattr(self, '_last_krk_log') and time.time() - self._last_krk_log.get(asset, 0) > 60:
+                    self.log(f"📊 KRAKEN {asset}: ${value:.2f} | Entry ${entry:.2f} → ${price:.2f} ({pnl_pct:+.2f}%)")
+                    self._last_krk_log[asset] = time.time()
+                elif not hasattr(self, '_last_krk_log'):
+                    self._last_krk_log = {}
                 
                 if pnl_pct > 0.01:
                     self.log(f"🔥 KRAKEN SELL {asset}/{quote}: ${value:.2f} ({pnl_pct:+.2f}%)")
@@ -527,6 +545,8 @@ class PlanetaryReclaimer:
                         self.record_verified_trade('kraken', f'{asset}/{quote}', 'SELL', value, profit_usd)
                         del self.entries[key]
                         time.sleep(0.3)
+                    else:
+                        self.log(f"   ⚠️ Order failed: {result}")
             
             # Deploy USD
             if usd_bal > 2:
