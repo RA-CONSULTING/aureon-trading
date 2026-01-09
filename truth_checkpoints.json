@@ -247,5 +247,101 @@
       }
     },
     "grand_total": 39.17
+  },
+  {
+    "timestamp": "2026-01-09T18:36:12.348028",
+    "binance": {
+      "total": 13.44,
+      "details": {
+        "BTC": 0.7712,
+        "USDC": 10.5816,
+        "SOL": 0.0282,
+        "LDUSDC": 1.9208,
+        "AVAX": 0.1399
+      }
+    },
+    "alpaca": {
+      "total": 10.55,
+      "details": {
+        "USD": 0.54,
+        "SOL": 10.0144
+      }
+    },
+    "kraken": {
+      "total": 15.18,
+      "details": {
+        "ATOM": 2.4493,
+        "DAI": 0.0617,
+        "TUSD": 11.8016,
+        "USDC": 0.7278,
+        "USDT": 0.0254,
+        "ZUSD": 0.1184
+      }
+    },
+    "grand_total": 39.17
+  },
+  {
+    "timestamp": "2026-01-09T18:38:00.326937",
+    "binance": {
+      "total": 13.44,
+      "details": {
+        "BTC": 0.771,
+        "USDC": 10.5816,
+        "SOL": 0.0282,
+        "LDUSDC": 1.9208,
+        "AVAX": 0.1396
+      }
+    },
+    "alpaca": {
+      "total": 10.55,
+      "details": {
+        "USD": 0.54,
+        "SOL": 10.0144
+      }
+    },
+    "kraken": {
+      "total": 15.18,
+      "details": {
+        "ATOM": 2.4439,
+        "DAI": 0.0617,
+        "TUSD": 11.8016,
+        "USDC": 0.7278,
+        "USDT": 0.0254,
+        "ZUSD": 0.1184
+      }
+    },
+    "grand_total": 39.17
+  },
+  {
+    "timestamp": "2026-01-09T18:38:50.848003",
+    "binance": {
+      "total": 13.44,
+      "details": {
+        "BTC": 0.771,
+        "USDC": 10.5816,
+        "SOL": 0.0282,
+        "LDUSDC": 1.9208,
+        "AVAX": 0.1396
+      }
+    },
+    "alpaca": {
+      "total": 10.55,
+      "details": {
+        "USD": 0.54,
+        "SOL": 10.0144
+      }
+    },
+    "kraken": {
+      "total": 15.18,
+      "details": {
+        "ATOM": 2.4439,
+        "DAI": 0.0617,
+        "TUSD": 11.8016,
+        "USDC": 0.7278,
+        "USDT": 0.0254,
+        "ZUSD": 0.1184
+      }
+    },
+    "grand_total": 39.17
   }
 ]

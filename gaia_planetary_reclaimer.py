@@ -88,12 +88,22 @@ except ImportError:
 # ═══════════════════════════════════════════════════════════════════════════════
 
 MYCELIUM_AVAILABLE = False
-try:
-    from aureon_mycelium import MyceliumNetwork, get_mycelium
-    MYCELIUM_AVAILABLE = True
-except ImportError:
-    MyceliumNetwork = None
-    get_mycelium = None
+MyceliumNetwork = None
+get_mycelium = None
+
+def _lazy_import_mycelium():
+    """Lazy import to avoid circular dependency"""
+    global MYCELIUM_AVAILABLE, MyceliumNetwork, get_mycelium
+    if MyceliumNetwork is not None:
+        return True
+    try:
+        from aureon_mycelium import MyceliumNetwork as MN, get_mycelium as gm
+        MyceliumNetwork = MN
+        get_mycelium = gm
+        MYCELIUM_AVAILABLE = True
+        return True
+    except (ImportError, Exception):
+        return False
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # 🧭 LABYRINTH NAVIGATION - Path Memory & Market Intelligence
@@ -774,9 +784,9 @@ class PlanetaryReclaimer:
             except Exception as e:
                 print(f"⚠️ AURIS - Offline ({e})")
         
-        # 🍄 MYCELIUM NEURAL NETWORK - Wire All Systems Together
+        # 🍄 MYCELIUM NEURAL NETWORK - Wire All Systems Together (lazy import)
         self.mycelium = None
-        if MYCELIUM_AVAILABLE:
+        if _lazy_import_mycelium():
             try:
                 self.mycelium = get_mycelium() if get_mycelium else MyceliumNetwork(initial_capital=25.0)
                 self._wire_mycelium_mesh()
