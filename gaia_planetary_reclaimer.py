@@ -348,6 +348,31 @@ def _lazy_import_mycelium():
         return False
 
 # ═══════════════════════════════════════════════════════════════════════════════
+# 💰 PORTFOLIO GROWTH VALIDATOR - Queen Knows She's Winning!
+# ═══════════════════════════════════════════════════════════════════════════════
+
+REVENUE_BOARD_AVAILABLE = False
+SNIPER_VALIDATOR_AVAILABLE = False
+try:
+    from aureon_revenue_board import RevenueBoard
+    REVENUE_BOARD_AVAILABLE = True
+except ImportError:
+    RevenueBoard = None
+
+try:
+    from sniper_kill_validator import SniperKillValidator
+    SNIPER_VALIDATOR_AVAILABLE = True
+except ImportError:
+    SniperKillValidator = None
+
+try:
+    from truth_verify import verify_truth
+    TRUTH_VERIFY_AVAILABLE = True
+except ImportError:
+    verify_truth = None
+    TRUTH_VERIFY_AVAILABLE = False
+
+# ═══════════════════════════════════════════════════════════════════════════════
 # 🧭 LABYRINTH NAVIGATION - Path Memory & Market Intelligence
 # ═══════════════════════════════════════════════════════════════════════════════
 
@@ -509,6 +534,15 @@ class QueenVerifier:
         self.pattern_win_rate = 0.0     # Current pattern's historical win rate
         self.pnl_history = []           # For ultimate intelligence predictions
         
+        # 💰 PORTFOLIO GROWTH VALIDATION - Queen knows she's winning!
+        self.revenue_board = None       # Real-time portfolio tracking
+        self.sniper_validator = None    # Kill shot validation
+        self.growth_rate = 0.0          # Current growth %
+        self.baseline_equity = 0.0      # Starting equity
+        self.current_equity = 0.0       # Live equity
+        self.growth_validated = False   # True when growing
+        self.growth_streak = 0          # Consecutive growth validations
+        
         self._init_queen_systems()
     
     def _init_queen_systems(self):
@@ -576,6 +610,23 @@ class QueenVerifier:
                 print("   🧠 MinerBrain: ONLINE (11 civilizations wisdom)")
             except Exception as e:
                 print(f"   ⚠️ MinerBrain: Offline ({e})")
+        
+        # 💰 Portfolio Growth Validator - Queen tracks her growth!
+        if REVENUE_BOARD_AVAILABLE and RevenueBoard:
+            try:
+                self.revenue_board = RevenueBoard()
+                self.baseline_equity = self.revenue_board.initial_equity
+                print(f"   💰 RevenueBoard: ONLINE (baseline ${self.baseline_equity:.2f})")
+            except Exception as e:
+                print(f"   ⚠️ RevenueBoard: Offline ({e})")
+        
+        # 🎯 Sniper Kill Validator - Precise profit validation
+        if SNIPER_VALIDATOR_AVAILABLE and SniperKillValidator:
+            try:
+                self.sniper_validator = SniperKillValidator(min_net=0.001)
+                print("   🎯 SniperValidator: ONLINE (profit validation)")
+            except Exception as e:
+                print(f"   ⚠️ SniperValidator: Offline ({e})")
     
     def _build_neural_input(self) -> 'NeuralInput':
         """Build NeuralInput from current reclaimer metrics"""
@@ -952,6 +1003,114 @@ class QueenVerifier:
 ╠══════════════════════════════════════════════════════════════╣
 ║  {status['message']:<56} ║
 ╚══════════════════════════════════════════════════════════════╝"""
+    
+    def validate_portfolio_growth(self) -> dict:
+        """
+        💰👑 PORTFOLIO GROWTH VALIDATOR - Queen knows she's winning!
+        
+        Validates real portfolio growth from exchange balances.
+        Returns growth status for Queen's confidence.
+        """
+        result = {
+            'validated': False,
+            'growing': False,
+            'growth_rate': 0.0,
+            'baseline': 0.0,
+            'current': 0.0,
+            'profit': 0.0,
+            'message': "Awaiting validation..."
+        }
+        
+        try:
+            # Method 1: Revenue Board (real-time tracking)
+            if self.revenue_board:
+                snapshot = self.revenue_board.compute_equity()
+                self.current_equity = snapshot.total_equity
+                if self.baseline_equity > 0:
+                    self.growth_rate = ((self.current_equity / self.baseline_equity) - 1) * 100
+                    result['growth_rate'] = self.growth_rate
+                    result['baseline'] = self.baseline_equity
+                    result['current'] = self.current_equity
+                    result['profit'] = self.current_equity - self.baseline_equity
+                    result['validated'] = True
+                    result['growing'] = self.current_equity >= self.baseline_equity
+                    
+                    if result['growing']:
+                        self.growth_streak += 1
+                        self.growth_validated = True
+                        result['message'] = f"👑💰 GROWING! +{self.growth_rate:.4f}% | Streak: {self.growth_streak}"
+                    else:
+                        self.growth_streak = 0
+                        self.growth_validated = False
+                        result['message'] = f"⚠️ Drawdown {self.growth_rate:.4f}% - Queen adjusting"
+                    return result
+            
+            # Method 2: Truth Verify (if revenue board not available)
+            if TRUTH_VERIFY_AVAILABLE and verify_truth:
+                checkpoint, stats = verify_truth(verbose=False)
+                current = checkpoint.get('grand_total', 0)
+                growth = stats.get('all_time_growth', 0)
+                growth_pct = stats.get('all_time_pct', 0)
+                
+                self.current_equity = current
+                self.growth_rate = growth_pct
+                result['current'] = current
+                result['growth_rate'] = growth_pct
+                result['profit'] = growth
+                result['validated'] = True
+                result['growing'] = growth >= 0
+                
+                if result['growing']:
+                    self.growth_streak += 1
+                    self.growth_validated = True
+                    result['message'] = f"💎 TRUTH: +${growth:.4f} ({growth_pct:+.2f}%) | Streak: {self.growth_streak}"
+                else:
+                    self.growth_streak = 0
+                    self.growth_validated = False
+                    result['message'] = f"⚠️ TRUTH: ${growth:.4f} drawdown"
+                return result
+            
+            # Method 3: Internal tracking (fallback)
+            result['current'] = self.energy_reclaimed
+            result['growing'] = self.energy_reclaimed > 0
+            result['validated'] = True
+            result['profit'] = self.energy_reclaimed
+            if self.energy_reclaimed > 0:
+                self.growth_validated = True
+                self.growth_streak += 1
+                result['message'] = f"👑 Energy: +${self.energy_reclaimed:.4f} | Streak: {self.growth_streak}"
+            else:
+                result['message'] = "⏳ Building energy..."
+            
+        except Exception as e:
+            result['message'] = f"Validation error: {e}"
+        
+        return result
+    
+    def get_growth_status_for_queen(self) -> str:
+        """Get formatted growth status for Queen display"""
+        gv = self.validate_portfolio_growth()
+        
+        if gv['validated']:
+            arrow = "📈" if gv['growing'] else "📉"
+            status = "✅ GROWING" if gv['growing'] else "⚠️ HOLDING"
+            return f"""
+╔════════════════════════════════════════════════════════════╗
+║     💰 PORTFOLIO GROWTH VALIDATION - QUEEN KNOWS! 💰        ║
+╠════════════════════════════════════════════════════════════╣
+║  Status: {status:12} {arrow}                              ║
+║  Growth Rate: {gv['growth_rate']:+.4f}%                              ║
+║  Current: ${gv['current']:.2f} | Profit: ${gv['profit']:+.4f}        ║
+║  Growth Streak: {self.growth_streak} validations                     ║
+╠════════════════════════════════════════════════════════════╣
+║  {gv['message']:<54} ║
+╚════════════════════════════════════════════════════════════╝"""
+        else:
+            return f"""
+╔════════════════════════════════════════════════════════════╗
+║     💰 PORTFOLIO GROWTH - AWAITING DATA                    ║
+║     {gv['message']:<52} ║
+╚════════════════════════════════════════════════════════════╝"""
 
 
 class PlanetaryReclaimer:
@@ -1076,6 +1235,14 @@ class PlanetaryReclaimer:
         # 👑 Feed Queen for timeline verification + labyrinth path learning
         won = profit > 0
         self.queen.record_trade(platform, profit, won, asset=symbol)
+        
+        # 💰👑 VALIDATE PORTFOLIO GROWTH - Queen knows she's winning!
+        growth_status = self.queen.validate_portfolio_growth()
+        if growth_status['validated']:
+            if growth_status['growing']:
+                self.log(f"👑💰 GROWTH VALIDATED: +{growth_status['growth_rate']:.4f}% | Streak: {self.queen.growth_streak}")
+            else:
+                self.log(f"👑⚠️ Growth check: {growth_status['message']}")
         
         # 🍄 Broadcast to Mycelium mesh for collective learning
         boost, indicators = self._get_combined_confidence_boost()
@@ -1702,6 +1869,22 @@ class PlanetaryReclaimer:
                 print(line.ljust(61) + "║")
         else:
             print("║  Waiting for first verified trade...".ljust(61) + "║")
+        
+        # 💰👑 QUEEN GROWTH VALIDATION
+        print("╠" + "═" * 60 + "╣")
+        print("║" + " 💰 QUEEN GROWTH VALIDATION 💰 ".center(60, "─") + "║")
+        gv = self.queen.validate_portfolio_growth()
+        if gv['validated']:
+            status_icon = "📈 GROWING" if gv['growing'] else "📉 HOLDING"
+            streak_icon = "🔥" if self.queen.growth_streak >= 3 else "✓"
+            print(f"║  Status: {status_icon} | Growth: {gv['growth_rate']:+.4f}%".ljust(61) + "║")
+            print(f"║  Streak: {self.queen.growth_streak} {streak_icon} | Profit: ${gv['profit']:+.4f}".ljust(61) + "║")
+            if self.queen.growth_validated:
+                print("║  👑 QUEEN KNOWS: SHE IS WINNING! 👑".ljust(61) + "║")
+            else:
+                print("║  👑 Queen adjusting frequencies...".ljust(61) + "║")
+        else:
+            print("║  Awaiting growth validation...".ljust(61) + "║")
         
         print("╚" + "═" * 60 + "╝")
         print()
