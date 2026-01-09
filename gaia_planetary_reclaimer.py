@@ -113,6 +113,24 @@ class PlanetaryReclaimer:
         self.platform_stats[platform]['verified'] += 1
         self.platform_stats[platform]['last_trade'] = trade
 
+    def _get_best_momentum(self):
+        """Get the asset with best 24h momentum"""
+        try:
+            pairs = ['SOLUSDC', 'BTCUSDC', 'ETHUSDC', 'AVAXUSDC', 'DOGEUSDC', 'XRPUSDC']
+            best_asset, best_mom = None, -999
+            for pair in pairs:
+                try:
+                    t = self.binance.get_24h_ticker(pair)
+                    mom = float(t.get('priceChangePercent', 0))
+                    if mom > best_mom:
+                        best_asset = pair.replace('USDC', '')
+                        best_mom = mom
+                except:
+                    pass
+            return (best_asset, best_mom) if best_asset else None
+        except:
+            return None
+
     # ═══════════════════════════════════════════════════════════════
     # PORTFOLIO TRACKER - ROAD TO $1 BILLION
     # ═══════════════════════════════════════════════════════════════
@@ -329,8 +347,14 @@ class PlanetaryReclaimer:
                 elif not hasattr(self, '_last_bin_log'):
                     self._last_bin_log = {}
                 
-                if pnl_pct > 0.01:
-                    self.log(f"🔥 BINANCE SELL {asset}: ${value:.2f} ({pnl_pct:+.2f}%)")
+                # TURBO MODE: Take profit at 0.005% OR rotate to better momentum
+                best_mom = self._get_best_momentum()
+                should_sell = pnl_pct > 0.005  # Lower threshold
+                should_rotate = best_mom and best_mom[0] != asset and best_mom[1] > 1.0  # Better opportunity
+                
+                if should_sell or should_rotate:
+                    reason = f"{pnl_pct:+.2f}%" if should_sell else f"ROTATE→{best_mom[0]}"
+                    self.log(f"🔥 BINANCE SELL {asset}: ${value:.2f} ({reason})")
                     
                     result = self.binance.place_market_order(pair, 'SELL', quantity=bal * 0.999)
                     
@@ -428,7 +452,8 @@ class PlanetaryReclaimer:
                 elif not hasattr(self, '_last_alp_log'):
                     self._last_alp_log = {}
                 
-                if pnl_pct > 0.01:
+                # TURBO MODE: Lower threshold
+                if pnl_pct > 0.005:
                     self.log(f"🔥 ALPACA SELL {asset}: ${value:.2f} ({pnl_pct:+.2f}%)")
                     
                     result = self.alpaca.place_order(sym, qty, 'sell', 'market', 'ioc')
@@ -557,7 +582,8 @@ class PlanetaryReclaimer:
                 elif not hasattr(self, '_last_krk_log'):
                     self._last_krk_log = {}
                 
-                if pnl_pct > 0.01:
+                # TURBO MODE: Lower threshold
+                if pnl_pct > 0.005:
                     self.log(f"🔥 KRAKEN SELL {asset}/{quote}: ${value:.2f} ({pnl_pct:+.2f}%)")
                     
                     result = self.kraken.place_market_order(f'{asset}{quote}', 'sell', quantity=free * 0.999)
@@ -641,9 +667,11 @@ class PlanetaryReclaimer:
             ex.submit(self.kraken_scan_and_trade)
     
     def run(self):
-        print("⚡ MODE: AGGRESSIVE - 0.01% profit threshold")
+        print("🔥 MODE: TURBO V3 - MAXIMUM SPEED")
+        print("⚡ PROFIT THRESHOLD: 0.005% (hyper-sensitive)")
+        print("⚡ CYCLE SPEED: 0.3 seconds")
         print("⚡ KRAKEN: USD + EUR pairs enabled")
-        print("⚡ GOAL: $1,000,000,000")
+        print("🎯 GOAL: $1,000,000,000")
         print()
         
         # Get starting equity
@@ -657,12 +685,12 @@ class PlanetaryReclaimer:
                 self.run_cycle()
                 cycle += 1
                 
-                # Print tracker every 10 cycles
-                if cycle % 10 == 0:
+                # Print tracker every 15 cycles (faster updates)
+                if cycle % 15 == 0:
                     portfolio = self.get_total_portfolio()
                     self.print_billion_tracker(portfolio)
                 
-                time.sleep(1)
+                time.sleep(0.3)  # TURBO SPEED
                 
             except KeyboardInterrupt:
                 print()
