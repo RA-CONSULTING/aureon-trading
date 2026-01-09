@@ -401,10 +401,34 @@ class PlanetaryReclaimer:
                 if value < 0.5:
                     continue
                 
+                # Check for stablecoins FIRST before modifying symbol
+                # Symbols: USDCUSD, USDTUSD
+                if sym in ['USDCUSD', 'USDTUSD', 'USDC/USD', 'USDT/USD']:
+                    if value > 2:  # Worth converting
+                        asset_name = 'USDC' if 'USDC' in sym else 'USDT'
+                        self.log(f"💱 ALPACA CONVERT {asset_name}: ${value:.2f} → Cash")
+                        result = self.alpaca.place_order(sym, qty, 'sell', 'market', 'ioc')
+                        if result and result.get('status') in ['filled', 'accepted', 'new']:
+                            self.log(f"   ✅ Converted to cash")
+                            time.sleep(0.5)
+                            self._alpaca_buy_best()
+                        else:
+                            self.log(f"   ⚠️ Convert failed: {result}")
+                    continue
+                
+                # Extract asset name for non-stablecoins
+                asset = sym.replace('/USD', '').replace('USD', '')
+                
                 pnl_pct = (current - entry) / entry * 100 if entry > 0 else 0
                 
+                # Log position status periodically
+                if hasattr(self, '_last_alp_log') and time.time() - self._last_alp_log.get(asset, 0) > 60:
+                    self.log(f"📊 ALPACA {asset}: ${value:.2f} | Entry ${entry:.2f} → ${current:.2f} ({pnl_pct:+.2f}%)")
+                    self._last_alp_log[asset] = time.time()
+                elif not hasattr(self, '_last_alp_log'):
+                    self._last_alp_log = {}
+                
                 if pnl_pct > 0.01:
-                    asset = sym.replace('USD', '').replace('/', '')
                     self.log(f"🔥 ALPACA SELL {asset}: ${value:.2f} ({pnl_pct:+.2f}%)")
                     
                     result = self.alpaca.place_order(sym, qty, 'sell', 'market', 'ioc')
@@ -417,14 +441,16 @@ class PlanetaryReclaimer:
                         self.record_verified_trade('alpaca', asset, 'SELL', value, profit_usd)
                         time.sleep(0.3)
                         self._alpaca_buy_best()
+                    else:
+                        self.log(f"   ⚠️ Order failed: {result}")
             
             acc = self.alpaca.get_account()
             cash = float(acc.get('cash', 0))
             if cash > 2:
                 self._alpaca_buy_best()
                 
-        except:
-            pass
+        except Exception as e:
+            self.log(f"⚠️ Alpaca error: {e}")
     
     def _alpaca_buy_best(self):
         try:
