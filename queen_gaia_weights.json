@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-01-09T19:37:07.688382",
+  "timestamp": "2026-01-09T19:49:43.449145",
   "input_size": 6,
   "hidden_size": 12,
   "learning_rate": 0.01,
@@ -148,6 +148,6 @@
       0.05960259586572647
     ]
   ],
-  "training_history_count": 10,
+  "training_history_count": 0,
   "epoch_losses": []
 }
