@@ -229,6 +229,30 @@ STRIKE_FAST = True               # Hit-and-run execution
 VANISH_FASTER = True             # Exit before market responds
 
 # ═══════════════════════════════════════════════════════════════════════════════
+# 🇮🇪☘️ THE IRISH BRIGADE - 6 LEGENDARY WARRIORS ☘️🇮🇪
+# ═══════════════════════════════════════════════════════════════════════════════
+# "Tiocfaidh ár lá! - Our day will come!"
+# Six legendary Irish warriors hunting for profits:
+# - CÚCHULAINN: The Hound of Ulster - Fearless warrior
+# - FIONN MAC CUMHAILL: The Giant Slayer - Wisdom hunter
+# - BRIAN BORU: High King - Unity commander
+# - MEDB: Warrior Queen of Connacht - Aggression incarnate
+# - OISÍN: The Poet Warrior - Pattern seer
+# - BOBBY SANDS: The Hunger Striker - Resilience eternal
+# ═══════════════════════════════════════════════════════════════════════════════
+
+IRISH_BRIGADE_ACTIVE = True      # 🇮🇪 The Irish are coming!
+TIOCFAIDH_AR_LA = True           # ☘️ Our day will come!
+IRISH_WARRIORS = {
+    "Cuchulainn":  {"role": "fearless_striker", "frequency": 432.0, "rage": 1.0},
+    "Fionn":       {"role": "wisdom_hunter", "frequency": 528.0, "clarity": 0.95},
+    "Brian_Boru":  {"role": "unity_commander", "frequency": 639.0, "authority": 1.0},
+    "Medb":        {"role": "aggressive_queen", "frequency": 741.0, "fury": 0.9},
+    "Oisin":       {"role": "pattern_seer", "frequency": 852.0, "vision": 0.85},
+    "Bobby_Sands": {"role": "resilience_eternal", "frequency": 963.0, "spirit": 1.0},
+}
+
+# ═══════════════════════════════════════════════════════════════════════════════
 # 🦅⚔️ CONVERSION COMMANDO - FALCON/TORTOISE/CHAMELEON/BEE TACTICS ⚔️🦅
 # ═══════════════════════════════════════════════════════════════════════════════
 # The 1885 CAPM Game Commando - Capital Asset Profit Momentum
@@ -485,6 +509,25 @@ try:
     PURE_CONVERSION_AVAILABLE = True
 except ImportError:
     PureConversionEngine = None
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# 🇮🇪☘️ BHOYS WISDOM - Irish Republican Guidance
+# ═══════════════════════════════════════════════════════════════════════════════
+
+BHOYS_WISDOM_AVAILABLE = False
+try:
+    from bhoys_wisdom import (
+        get_victory_quote, get_patience_wisdom, get_resilience_message,
+        get_strategy_guidance, celebrate_penny_profit, get_contextual_wisdom
+    )
+    BHOYS_WISDOM_AVAILABLE = True
+except ImportError:
+    get_victory_quote = lambda: "Tiocfaidh ár lá! ☘️"
+    get_patience_wisdom = lambda: "Patience is the weapon of the wise."
+    get_resilience_message = lambda: "Belfast endured. So shall we."
+    get_strategy_guidance = lambda: "Scout the market before deploying capital."
+    celebrate_penny_profit = None
+    get_contextual_wisdom = None
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # ⚡ RAPID CONVERSION STREAM - 10x Speed Enhancement  
@@ -2474,10 +2517,10 @@ class PlanetaryReclaimer:
         except Exception:
             pass
         
-        # 🐾⚡🦁☘️🦅🔋 FULL HUNTER ARMY - 28 PARALLEL THREADS!
-        # 9 AURIS animals + 5 Earthly warriors + 1 Guerrilla + 4 Commandos + 3 Exchanges + 6 Energy Engines
-        # Speed is our ally - UNLEASH EVERYTHING!
-        with ThreadPoolExecutor(max_workers=30) as ex:
+        # 🐾⚡🦁☘️🦅🔋🇮🇪 FULL HUNTER ARMY - 34 PARALLEL THREADS!
+        # 9 AURIS animals + 5 Earthly warriors + 1 Guerrilla + 4 Commandos + 3 Exchanges + 6 Energy Engines + 6 Irish
+        # Speed is our ally - UNLEASH EVERYTHING! Tiocfaidh ár lá!
+        with ThreadPoolExecutor(max_workers=36) as ex:
             # 🏦 PRIMARY EXCHANGE SCANNERS (3 threads)
             ex.submit(self.binance_scan_and_trade)
             ex.submit(self.alpaca_scan_and_trade)
@@ -2522,6 +2565,15 @@ class PlanetaryReclaimer:
                 ex.submit(self._inception_detect)     # 🎬 Multi-level detection
                 ex.submit(self._planet_compound)      # 🌍 Compound toward freedom
                 ex.submit(self._pure_barter)          # 🔄 Barter for better
+            
+            # 🇮🇪☘️ THE IRISH BRIGADE (6 threads - Tiocfaidh ár lá!)
+            if IRISH_BRIGADE_ACTIVE:
+                ex.submit(self._cuchulainn_strike)    # ⚔️ The Hound of Ulster
+                ex.submit(self._fionn_wisdom)         # 🧙 Giant Slayer wisdom
+                ex.submit(self._brian_boru_command)   # 👑 High King unity
+                ex.submit(self._medb_fury)            # 👸 Warrior Queen fury
+                ex.submit(self._oisin_vision)         # 🎭 Poet Warrior patterns
+                ex.submit(self._bobby_sands_spirit)   # 🇮🇪 Resilience eternal
     
     # ═══════════════════════════════════════════════════════════════
     # 🐾 ANIMAL PACK HUNTERS - EACH SEES DIFFERENT ENERGY
@@ -2875,6 +2927,99 @@ class PlanetaryReclaimer:
                 self.log(f"🔄 PURE CONVERT: {worst_neg[0]} → {best_pos[0]} (swap weak for strong!)")
         except:
             pass
+    
+    # ═══════════════════════════════════════════════════════════════
+    # 🇮🇪☘️ THE IRISH BRIGADE - 6 LEGENDARY WARRIORS ☘️🇮🇪
+    # "Tiocfaidh ár lá! - Our day will come!"
+    # ═══════════════════════════════════════════════════════════════
+    
+    def _cuchulainn_strike(self):
+        """⚔️ CÚCHULAINN - The Hound of Ulster - FEARLESS WARRIOR STRIKE!"""
+        try:
+            # Cúchulainn enters warp-spasm (ríastrad) when he sees opportunity
+            best = self._get_best_momentum()
+            if best and best[1] > 3.0:  # 3%+ = trigger the warp-spasm!
+                wisdom = get_victory_quote() if BHOYS_WISDOM_AVAILABLE else "Tiocfaidh ár lá!"
+                self.log(f"⚔️🇮🇪 CÚCHULAINN RÍASTRAD: {best[0]} +{best[1]:.2f}% - THE HOUND STRIKES!")
+                self.log(f"   ☘️ \"{wisdom}\"")
+        except:
+            pass
+    
+    def _fionn_wisdom(self):
+        """🧙 FIONN MAC CUMHAILL - Giant Slayer - WISDOM HUNTER"""
+        try:
+            # Fionn gained all wisdom by touching the Salmon of Knowledge
+            # He sees patterns others miss
+            for asset, data in self.momentum_tracker.items():
+                change = data.get('change', 0)
+                if 1.0 < change < 2.0:  # Subtle gains = wisdom territory
+                    wisdom = get_strategy_guidance() if BHOYS_WISDOM_AVAILABLE else "Scout before you strike."
+                    self.log(f"🧙🇮🇪 FIONN WISDOM: {asset} +{change:.2f}% - The Salmon reveals truth!")
+        except:
+            pass
+    
+    def _brian_boru_command(self):
+        """👑 BRIAN BORU - High King of Ireland - UNITY COMMANDER"""
+        try:
+            # Brian Boru united Ireland - he commands when multiple signals align
+            aligned_assets = []
+            for asset, data in self.momentum_tracker.items():
+                change = data.get('change', 0)
+                if change > 0.5:
+                    aligned_assets.append((asset, change))
+            
+            if len(aligned_assets) >= 3:  # Unity of forces
+                top = sorted(aligned_assets, key=lambda x: x[1], reverse=True)[:3]
+                self.log(f"👑🇮🇪 BRIAN BORU: UNITED FORCES! {top[0][0]}, {top[1][0]}, {top[2][0]} - CHARGE!")
+        except:
+            pass
+    
+    def _medb_fury(self):
+        """👸 MEDB - Warrior Queen of Connacht - AGGRESSIVE FURY!"""
+        try:
+            # Queen Medb started the Táin - she attacks with fury
+            for asset, data in self.momentum_tracker.items():
+                change = data.get('change', 0)
+                if change > 4.0:  # Only attacks the strongest
+                    self.log(f"👸🇮🇪 QUEEN MEDB FURY: {asset} +{change:.2f}% - THE TÁIN BEGINS!")
+        except:
+            pass
+    
+    def _oisin_vision(self):
+        """🎭 OISÍN - The Poet Warrior - PATTERN SEER"""
+        try:
+            # Oisín lived in Tír na nÓg (Land of Youth) - sees beyond time
+            # He detects patterns forming before they complete
+            patterns_forming = []
+            for asset, data in self.momentum_tracker.items():
+                change = data.get('change', 0)
+                if 0.3 < change < 1.0:  # Early patterns
+                    patterns_forming.append((asset, change))
+            
+            if patterns_forming:
+                best_pattern = max(patterns_forming, key=lambda x: x[1])
+                self.log(f"🎭🇮🇪 OISÍN VISION: {best_pattern[0]} +{best_pattern[1]:.2f}% - Pattern forming from Tír na nÓg!")
+        except:
+            pass
+    
+    def _bobby_sands_spirit(self):
+        """🇮🇪 BOBBY SANDS - Resilience Eternal - NEVER SURRENDER!"""
+        try:
+            # Bobby Sands: "Our revenge will be the laughter of our children"
+            # He finds opportunity even in difficult conditions
+            resilience = get_resilience_message() if BHOYS_WISDOM_AVAILABLE else "Belfast endured. So shall we."
+            
+            # Even small gains are victories
+            small_wins = []
+            for asset, data in self.momentum_tracker.items():
+                change = data.get('change', 0)
+                if 0.1 < change < 0.5:  # Small but positive
+                    small_wins.append((asset, change))
+            
+            if small_wins:
+                winner = max(small_wins, key=lambda x: x[1])
+                self.log(f"🇮🇪☘️ BOBBY SANDS SPIRIT: {winner[0]} +{winner[1]:.2f}% - Every penny is freedom!")
+                self.log(f"   💚 \"{resilience}\"")
         except:
             pass
     
@@ -2971,6 +3116,24 @@ class PlanetaryReclaimer:
             print("   👑 QUEEN KNOWS: She tracks her growth!")
             print("═" * 60)
         
+        # 🇮🇪☘️ THE IRISH BRIGADE BANNER
+        if IRISH_BRIGADE_ACTIVE:
+            print()
+            print("═" * 60)
+            print("🇮🇪☘️ THE IRISH BRIGADE - TIOCFAIDH ÁR LÁ! ☘️🇮🇪")
+            print("═" * 60)
+            print("   ⚔️ CÚCHULAINN: The Hound of Ulster - Fearless!")
+            print("   🧙 FIONN MAC CUMHAILL: Giant Slayer - Wisdom!")
+            print("   👑 BRIAN BORU: High King - Unity Commander!")
+            print("   👸 MEDB: Warrior Queen - Aggressive Fury!")
+            print("   🎭 OISÍN: Poet Warrior - Pattern Seer!")
+            print("   🇮🇪 BOBBY SANDS: Hunger Striker - Resilience!")
+            print("═" * 60)
+            print("   ☘️ 6 IRISH WARRIORS: Our day will come!")
+            print("   💚 BHOYS WISDOM: Strategic guidance active")
+            print("   🔥 CELTIC FURY: Strike fast, vanish faster!")
+            print("═" * 60)
+        
         # 🔍⚡ UNIFIED SCANNER MATRIX BANNER
         if UNIFIED_SCANNER_MATRIX:
             print()
@@ -2993,7 +3156,8 @@ class PlanetaryReclaimer:
         print("🍄 MYCELIUM: Neural Mesh ONLINE" if self.mycelium else "🍄 MYCELIUM: Offline")
         print("🐾 ANIMAL PACK: " + ("9 HUNTERS UNLEASHED - PARALLEL HUNTING!" if ANIMAL_PACK_ACTIVE else "Standby"))
         print("🔋 ENERGY ENGINES: " + ("6 ENGINES CLAIMING ALL ENERGY!" if SACRED_MISSION_ACTIVE else "Standby"))
-        print("🔍 SCANNER MATRIX: " + ("UNIFIED - 28 PARALLEL THREADS!" if UNIFIED_SCANNER_MATRIX else "Standard"))
+        print("🇮🇪 IRISH BRIGADE: " + ("6 WARRIORS - TIOCFAIDH ÁR LÁ!" if IRISH_BRIGADE_ACTIVE else "Standby"))
+        print("🔍 SCANNER MATRIX: " + ("UNIFIED - 34 PARALLEL THREADS!" if UNIFIED_SCANNER_MATRIX else "Standard"))
         print("👑 QUEEN: " + ("SOVEREIGN CONTROL - SHE COMMANDS ALL" if QUEEN_SOVEREIGN_CONTROL else "Advanced Intelligence Layer ACTIVE"))
         print("🌟 WINNING TIMELINE: " + ("ACTIVE - NO LOSERS EXIST! WIN FAST!" if WINNING_TIMELINE else "Standard mode"))
         print("🌍 SACRED MISSION: " + ("RECLAIM ALL ENERGY - FREE THE PLANET!" if SACRED_MISSION_ACTIVE else "Standard"))
