@@ -700,6 +700,27 @@ class PlanetaryReclaimer:
         # 👑 Feed Queen for timeline verification + labyrinth path learning
         won = profit > 0
         self.queen.record_trade(platform, profit, won, asset=symbol)
+    
+    # ═══════════════════════════════════════════════════════════════
+    # 💎 TRUTH VERIFICATION - NO LIES, ONLY REAL BALANCES
+    # ═══════════════════════════════════════════════════════════════
+    
+    def _run_truth_checkpoint(self, initial=False):
+        """Run truth verification checkpoint - verify REAL balances"""
+        try:
+            from truth_verify import verify_truth
+            checkpoint, stats = verify_truth(verbose=False)
+            
+            if initial:
+                self.log(f"💎 TRUTH CHECKPOINT: ${checkpoint['grand_total']:.2f} (baseline saved)")
+            else:
+                growth = stats.get('all_time_growth', 0)
+                pct = stats.get('all_time_pct', 0)
+                if growth != 0:
+                    arrow = "↑" if growth > 0 else "↓"
+                    self.log(f"💎 TRUTH: ${checkpoint['grand_total']:.2f} ({arrow}${abs(growth):.4f} | {pct:+.2f}%)")
+        except Exception as e:
+            pass  # Don't break trading loop for truth errors
 
     def _get_best_momentum(self):
         """Get the asset with best 24h momentum"""
@@ -1319,6 +1340,7 @@ class PlanetaryReclaimer:
         print("⚡ CYCLE SPEED: 0.3 seconds")
         print("⚡ KRAKEN: USD + EUR pairs enabled")
         print("👑 QUEEN: Advanced Intelligence Layer ACTIVE")
+        print("💎 TRUTH: Continuous verification ACTIVE")
         print("🎯 GOAL: $1,000,000,000")
         print()
         
@@ -1326,6 +1348,9 @@ class PlanetaryReclaimer:
         portfolio = self.get_total_portfolio()
         self.starting_equity = portfolio['total']
         self.print_billion_tracker(portfolio)
+        
+        # 💎 Initial truth checkpoint
+        self._run_truth_checkpoint(initial=True)
         
         cycle = 0
         while True:
@@ -1347,6 +1372,10 @@ class PlanetaryReclaimer:
                             self.queen.neuron.save_weights()
                         except Exception:
                             pass
+                
+                # 💎 Truth verification every 200 cycles (~1 minute)
+                if cycle % 200 == 0:
+                    self._run_truth_checkpoint()
                 
                 time.sleep(0.3)  # TURBO SPEED
                 
