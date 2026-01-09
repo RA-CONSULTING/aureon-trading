@@ -48,6 +48,42 @@ LOVE_FREQ = 528
 GOAL = 1_000_000_000  # $1 BILLION
 
 # ═══════════════════════════════════════════════════════════════════════════════
+# 👑 QUEEN SYSTEMS INTEGRATION - Advanced Intelligence Layer
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# Import Queen subsystems (graceful fallback if not available)
+QUEEN_NEURON_AVAILABLE = False
+QUEEN_HIVE_AVAILABLE = False
+QUEEN_LOSS_LEARNING_AVAILABLE = False
+THOUGHT_BUS_AVAILABLE = False
+
+try:
+    from queen_neuron import QueenNeuron, NeuralInput
+    QUEEN_NEURON_AVAILABLE = True
+except ImportError:
+    QueenNeuron = None
+    NeuralInput = None
+
+try:
+    from aureon_queen_hive_mind import QueenHiveMind
+    QUEEN_HIVE_AVAILABLE = True
+except ImportError:
+    QueenHiveMind = None
+
+try:
+    from queen_loss_learning import QueenLossLearningSystem
+    QUEEN_LOSS_LEARNING_AVAILABLE = True
+except ImportError:
+    QueenLossLearningSystem = None
+
+try:
+    from aureon_thought_bus import get_thought_bus, Thought
+    THOUGHT_BUS_AVAILABLE = True
+except ImportError:
+    get_thought_bus = None
+    Thought = None
+
+# ═══════════════════════════════════════════════════════════════════════════════
 # 👑 QUEEN VERIFICATION SYSTEM - Timeline Energy Reclamation 
 # ═══════════════════════════════════════════════════════════════════════════════
 
@@ -56,11 +92,19 @@ class QueenVerifier:
     👑 The Queen constantly verifies we're on the right timeline
     by tracking energy flow (profit) and coherence (win rate).
     
+    NOW INTEGRATED WITH:
+    - QueenNeuron: Neural learning from every trade
+    - QueenHiveMind: Gaia alignment & collective signals
+    - QueenLossLearning: Wisdom from losses (elephant memory)
+    - ThoughtBus: Real-time event broadcasting
+    
     Metrics tracked:
     - Energy Reclaimed: Total profit
     - Timeline Coherence: Win rate (should be > 50%)
     - Planetary Alignment: All 3 exchanges in profit
     - Golden Ratio Harmony: Profit follows PHI patterns
+    - Neural Confidence: Queen's learned confidence
+    - Gaia Resonance: Earth/market alignment
     """
     
     def __init__(self):
@@ -72,12 +116,113 @@ class QueenVerifier:
         self.last_verification = time.time()
         self.timeline_stable = True
         self.coherence_history = []  # Last 100 win/loss
+        self.consecutive_wins = 0
+        self.consecutive_losses = 0
         
+        # 👑 Advanced Queen Systems
+        self.neuron = None
+        self.hive_mind = None
+        self.loss_learner = None
+        self.thought_bus = None
+        self.neural_confidence = 0.5  # Default neutral
+        self.gaia_resonance = 0.5     # Default neutral
+        self.love_frequency_active = False
+        
+        self._init_queen_systems()
+    
+    def _init_queen_systems(self):
+        """Initialize advanced Queen subsystems"""
+        # Neural Learning Brain
+        if QUEEN_NEURON_AVAILABLE and QueenNeuron:
+            try:
+                self.neuron = QueenNeuron(
+                    input_size=6,
+                    hidden_size=12,
+                    learning_rate=0.01,
+                    weights_path="queen_gaia_weights.json"
+                )
+                print("   🧠 Queen Neuron: ONLINE (learning from trades)")
+            except Exception as e:
+                print(f"   ⚠️ Queen Neuron: Offline ({e})")
+        
+        # Hive Mind Collective Intelligence
+        if QUEEN_HIVE_AVAILABLE and QueenHiveMind:
+            try:
+                self.hive_mind = QueenHiveMind()
+                print("   🐝 Queen Hive Mind: ONLINE (collective signals)")
+            except Exception as e:
+                print(f"   ⚠️ Queen Hive Mind: Offline ({e})")
+        
+        # Loss Learning (Elephant Memory)
+        if QUEEN_LOSS_LEARNING_AVAILABLE and QueenLossLearningSystem:
+            try:
+                self.loss_learner = QueenLossLearningSystem()
+                print("   🐘 Queen Loss Learning: ONLINE (elephant memory)")
+            except Exception as e:
+                print(f"   ⚠️ Queen Loss Learning: Offline ({e})")
+        
+        # ThoughtBus Broadcasting
+        if THOUGHT_BUS_AVAILABLE and get_thought_bus:
+            try:
+                self.thought_bus = get_thought_bus()
+                print("   📡 ThoughtBus: ONLINE (broadcasting)")
+            except Exception as e:
+                print(f"   ⚠️ ThoughtBus: Offline ({e})")
+    
+    def _build_neural_input(self) -> 'NeuralInput':
+        """Build NeuralInput from current reclaimer metrics"""
+        if not NeuralInput:
+            return None
+        
+        # probability_score: Rolling win rate (0-1)
+        prob = self.get_coherence()
+        
+        # wisdom_score: Planetary alignment (0-1)
+        wisdom = self.get_planetary_alignment()
+        
+        # quantum_signal: Momentum direction (-1 to 1)
+        # Derived from recent trade streak
+        if self.consecutive_wins > 0:
+            quantum = min(1.0, self.consecutive_wins / 5.0)
+        elif self.consecutive_losses > 0:
+            quantum = max(-1.0, -self.consecutive_losses / 5.0)
+        else:
+            quantum = 0.0
+        
+        # gaia_resonance: Golden ratio harmony (0-1)
+        gaia = self.get_golden_harmony()
+        
+        # emotional_coherence: Trade confidence from streak (0-1)
+        emotional = 0.5 + (self.consecutive_wins - self.consecutive_losses) / 10.0
+        emotional = max(0.0, min(1.0, emotional))
+        
+        # mycelium_signal: Session profit direction (-1 to 1)
+        if self.energy_reclaimed > 0:
+            mycelium = min(1.0, self.energy_reclaimed / 0.1)  # Scale to $0.10
+        elif self.energy_reclaimed < 0:
+            mycelium = max(-1.0, self.energy_reclaimed / 0.1)
+        else:
+            mycelium = 0.0
+        
+        return NeuralInput(
+            probability_score=prob,
+            wisdom_score=wisdom,
+            quantum_signal=quantum,
+            gaia_resonance=gaia,
+            emotional_coherence=emotional,
+            mycelium_signal=mycelium
+        )
+    
     def record_trade(self, exchange: str, profit: float, won: bool):
-        """Record a trade outcome for Queen's verification"""
+        """Record a trade outcome for Queen's verification + learning"""
         self.trades_total += 1
         if won:
             self.trades_won += 1
+            self.consecutive_wins += 1
+            self.consecutive_losses = 0
+        else:
+            self.consecutive_losses += 1
+            self.consecutive_wins = 0
         self.energy_reclaimed += profit
         self.exchange_energy[exchange] = self.exchange_energy.get(exchange, 0) + profit
         
@@ -85,6 +230,79 @@ class QueenVerifier:
         self.coherence_history.append(1 if won else 0)
         if len(self.coherence_history) > 100:
             self.coherence_history.pop(0)
+        
+        # 👑 QUEEN NEURAL LEARNING - Train on every trade
+        if self.neuron and NeuralInput:
+            try:
+                neural_input = self._build_neural_input()
+                if neural_input:
+                    loss = self.neuron.train_on_example(neural_input, won)
+                    self.neural_confidence = self.neuron.predict(neural_input)
+            except Exception:
+                pass
+        
+        # 👑 QUEEN LOSS LEARNING - Build elephant memory
+        if not won and self.loss_learner and profit < 0:
+            try:
+                self.loss_learner.process_loss_event(
+                    exchange=exchange,
+                    from_asset='USDC',
+                    to_asset='CRYPTO',
+                    loss_amount=abs(profit),
+                    loss_pct=abs(profit) / max(0.01, self.energy_reclaimed + abs(profit)) * 100,
+                    market_data={},
+                    signals_at_entry={}
+                )
+            except Exception:
+                pass
+        
+        # 👑 THOUGHTBUS - Broadcast trade event
+        if self.thought_bus and Thought:
+            try:
+                self.thought_bus.publish(Thought(
+                    id=f"gaia_{self.trades_total}",
+                    ts=time.time(),
+                    source="gaia_reclaimer",
+                    topic="gaia.trade.executed",
+                    payload={
+                        'exchange': exchange,
+                        'profit': profit,
+                        'won': won,
+                        'total_trades': self.trades_total,
+                        'energy_reclaimed': self.energy_reclaimed
+                    },
+                    trace_id="gaia_timeline"
+                ))
+            except Exception:
+                pass
+    
+    def update_queen_metrics(self):
+        """Update Queen metrics from hive mind (call every cycle)"""
+        # 👑 GAIA RESONANCE from Hive Mind
+        if self.hive_mind:
+            try:
+                gaia_result = self.hive_mind.get_gaia_alignment()
+                if gaia_result and len(gaia_result) >= 2:
+                    self.gaia_resonance = gaia_result[0]
+            except Exception:
+                pass
+            
+            # Check 528 Hz love frequency
+            try:
+                love_check = self.hive_mind.is_at_love_frequency()
+                if love_check and len(love_check) >= 1:
+                    self.love_frequency_active = love_check[0]
+            except Exception:
+                pass
+        
+        # 👑 NEURAL CONFIDENCE update
+        if self.neuron and self.trades_total > 0:
+            try:
+                neural_input = self._build_neural_input()
+                if neural_input:
+                    self.neural_confidence = self.neuron.predict(neural_input)
+            except Exception:
+                pass
     
     def get_coherence(self) -> float:
         """Get timeline coherence (rolling win rate)"""
@@ -118,12 +336,22 @@ class QueenVerifier:
         self.verification_count += 1
         self.last_verification = time.time()
         
+        # Update Queen metrics from hive mind
+        self.update_queen_metrics()
+        
         coherence = self.get_coherence()
         alignment = self.get_planetary_alignment()
         harmony = self.get_golden_harmony()
         
-        # Overall timeline score
-        timeline_score = (coherence * 0.4 + alignment * 0.3 + harmony * 0.3)
+        # Enhanced timeline score with Queen systems
+        # Include neural confidence and gaia resonance
+        timeline_score = (
+            coherence * 0.25 + 
+            alignment * 0.20 + 
+            harmony * 0.20 +
+            self.neural_confidence * 0.20 +
+            self.gaia_resonance * 0.15
+        )
         
         # Determine timeline stability
         self.timeline_stable = timeline_score > 0.4
@@ -133,6 +361,9 @@ class QueenVerifier:
             'coherence': coherence,
             'alignment': alignment,
             'harmony': harmony,
+            'neural_confidence': self.neural_confidence,
+            'gaia_resonance': self.gaia_resonance,
+            'love_frequency': self.love_frequency_active,
             'energy_reclaimed': self.energy_reclaimed,
             'trades': self.trades_total,
             'wins': self.trades_won,
@@ -144,31 +375,41 @@ class QueenVerifier:
     
     def _get_queen_message(self, score: float, coherence: float) -> str:
         """Queen's guidance based on timeline state"""
+        love_indicator = "💜 528Hz ACTIVE " if self.love_frequency_active else ""
         if score > 0.7:
-            return "👑 GOLDEN TIMELINE - Energy flowing beautifully"
+            return f"{love_indicator}👑 GOLDEN TIMELINE - Energy flowing beautifully"
         elif score > 0.5:
-            return "👑 STABLE TIMELINE - Keep reclaiming energy"
+            return f"{love_indicator}👑 STABLE TIMELINE - Keep reclaiming energy"
         elif score > 0.3:
-            return "⚠️ TIMELINE WAVERING - Hold steady, coherence building"
+            return f"⚠️ TIMELINE WAVERING - Hold steady, coherence building"
         else:
-            return "🔄 TIMELINE SHIFT NEEDED - Adjusting frequencies"
+            return f"🔄 TIMELINE SHIFT - Queen adjusting frequencies"
     
     def get_status_display(self) -> str:
-        """Get formatted status for display"""
+        """Get formatted status for display with Queen intelligence"""
         status = self.verify_timeline()
         win_rate = (self.trades_won / max(1, self.trades_total)) * 100
         
         bars = int(status['timeline_score'] * 20)
         bar_str = "█" * bars + "░" * (20 - bars)
         
+        # Queen systems status indicators
+        neuron_status = "🧠" if self.neuron else "○"
+        hive_status = "🐝" if self.hive_mind else "○"
+        loss_status = "🐘" if self.loss_learner else "○"
+        bus_status = "📡" if self.thought_bus else "○"
+        love_hz = "💜" if self.love_frequency_active else "○"
+        
         return f"""
 ╔══════════════════════════════════════════════════════════════╗
 ║           👑 QUEEN VERIFICATION - TIMELINE STATUS 👑          ║
 ╠══════════════════════════════════════════════════════════════╣
 ║  Timeline: [{bar_str}] {status['timeline_score']*100:.1f}%   ║
-║  Coherence: {status['coherence']*100:.1f}% | Win Rate: {win_rate:.1f}%                    ║
+║  Coherence: {status['coherence']*100:.1f}% | Win Rate: {win_rate:.1f}% | Streak: {'+' + str(self.consecutive_wins) if self.consecutive_wins else '-' + str(self.consecutive_losses)}          ║
 ║  Energy Reclaimed: ${status['energy_reclaimed']:.4f}                      ║
-║  Planetary Alignment: {status['alignment']*100:.0f}% | Harmony: {status['harmony']*100:.0f}%         ║
+╠══════════════════════════════════════════════════════════════╣
+║  🧠 Neural: {status['neural_confidence']*100:.0f}% | 🌍 Gaia: {status['gaia_resonance']*100:.0f}% | φ Harmony: {status['harmony']*100:.0f}%    ║
+║  Alignment: {status['alignment']*100:.0f}% | Systems: {neuron_status}{hive_status}{loss_status}{bus_status}{love_hz}                       ║
 ╠══════════════════════════════════════════════════════════════╣
 ║  {status['message']:<56} ║
 ╚══════════════════════════════════════════════════════════════╝"""
@@ -812,6 +1053,12 @@ class PlanetaryReclaimer:
     # ═══════════════════════════════════════════════════════════════
     
     def run_cycle(self):
+        # 👑 QUEEN: Update metrics every cycle (observation layer)
+        try:
+            self.queen.update_queen_metrics()
+        except Exception:
+            pass
+        
         with ThreadPoolExecutor(max_workers=3) as ex:
             ex.submit(self.binance_scan_and_trade)
             ex.submit(self.alpaca_scan_and_trade)
@@ -822,7 +1069,7 @@ class PlanetaryReclaimer:
         print("⚡ PROFIT THRESHOLD: 0.01% (stable)")
         print("⚡ CYCLE SPEED: 0.3 seconds")
         print("⚡ KRAKEN: USD + EUR pairs enabled")
-        print("👑 QUEEN: Timeline Verification ACTIVE")
+        print("👑 QUEEN: Advanced Intelligence Layer ACTIVE")
         print("🎯 GOAL: $1,000,000,000")
         print()
         
@@ -845,6 +1092,12 @@ class PlanetaryReclaimer:
                 # 👑 Queen verification every 50 cycles (~15 seconds)
                 if cycle % 50 == 0 and self.queen.trades_total > 0:
                     print(self.queen.get_status_display())
+                    # Save neural weights periodically
+                    if self.queen.neuron:
+                        try:
+                            self.queen.neuron.save_weights()
+                        except Exception:
+                            pass
                 
                 time.sleep(0.3)  # TURBO SPEED
                 
@@ -855,6 +1108,13 @@ class PlanetaryReclaimer:
                 self.print_billion_tracker(portfolio)
                 if self.queen.trades_total > 0:
                     print(self.queen.get_status_display())
+                # Save Queen's learned weights on exit
+                if self.queen.neuron:
+                    try:
+                        self.queen.neuron.save_weights()
+                        self.log("💾 Queen neural weights saved")
+                    except Exception:
+                        pass
                 break
             except Exception as e:
                 self.log(f"⚠️ Error: {e}")
