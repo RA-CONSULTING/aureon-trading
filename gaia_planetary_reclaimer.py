@@ -146,34 +146,68 @@ class PlanetaryReclaimer:
         except:
             pass
         
-        # KRAKEN (USD + EUR)
-        try:
-            acct = self.kraken.account()
-            for bal in acct.get('balances', []):
-                asset = bal.get('asset', '')
-                free = float(bal.get('free', 0))
-                if free <= 0:
-                    continue
+        # KRAKEN (USD + EUR) - with retry for reliability
+        kraken_retries = 3
+        for attempt in range(kraken_retries):
+            try:
+                acct = self.kraken.account()
+                balances = acct.get('balances', [])
                 
-                if asset in ['USD', 'USDC', 'ZUSD']:
-                    breakdown['kraken'] += free
-                elif asset in ['EUR', 'ZEUR']:
-                    breakdown['kraken'] += free * self.eur_usd
-                elif asset not in ['USDT']:
-                    # Try to get price
-                    try:
-                        ticker = self.kraken.get_ticker(f'{asset}USD')
-                        price = float(ticker.get('price', 0))
-                        breakdown['kraken'] += free * price
-                    except:
+                # If empty, try direct asset fetch as fallback
+                if not balances:
+                    # Direct method fallback
+                    for asset in ['ZUSD', 'USD', 'USDC', 'ZEUR', 'EUR', 'SOL', 'ETH', 'BTC']:
                         try:
-                            ticker = self.kraken.get_ticker(f'{asset}EUR')
-                            price = float(ticker.get('price', 0))
-                            breakdown['kraken'] += free * price * self.eur_usd
+                            bal = self.kraken.get_free_balance(asset)
+                            if bal > 0:
+                                if asset in ['USD', 'USDC', 'ZUSD']:
+                                    breakdown['kraken'] += bal
+                                elif asset in ['EUR', 'ZEUR']:
+                                    breakdown['kraken'] += bal * self.eur_usd
+                                else:
+                                    try:
+                                        ticker = self.kraken.get_ticker(f'{asset}USD')
+                                        price = float(ticker.get('price', 0))
+                                        breakdown['kraken'] += bal * price
+                                    except:
+                                        pass
                         except:
                             pass
-        except:
-            pass
+                    if breakdown['kraken'] > 0:
+                        break
+                    continue  # Retry if still 0
+                
+                # Process balances array
+                for bal in balances:
+                    asset = bal.get('asset', '')
+                    free = float(bal.get('free', 0))
+                    if free <= 0:
+                        continue
+                    
+                    if asset in ['USD', 'USDC', 'ZUSD']:
+                        breakdown['kraken'] += free
+                    elif asset in ['EUR', 'ZEUR']:
+                        breakdown['kraken'] += free * self.eur_usd
+                    elif asset not in ['USDT']:
+                        # Try to get price
+                        try:
+                            ticker = self.kraken.get_ticker(f'{asset}USD')
+                            price = float(ticker.get('price', 0))
+                            breakdown['kraken'] += free * price
+                        except:
+                            try:
+                                ticker = self.kraken.get_ticker(f'{asset}EUR')
+                                price = float(ticker.get('price', 0))
+                                breakdown['kraken'] += free * price * self.eur_usd
+                            except:
+                                pass
+                
+                if breakdown['kraken'] > 0:
+                    break  # Success, exit retry loop
+            except Exception as e:
+                if attempt < kraken_retries - 1:
+                    time.sleep(0.5)  # Brief pause before retry
+                continue
         
         total = sum(breakdown.values())
         return {'total': total, 'breakdown': breakdown}
