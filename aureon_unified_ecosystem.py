@@ -4987,6 +4987,9 @@ class CognitiveImmuneSystem:
                 'trace_id': thought.trace_id,
             })
         
+        if self.mycelium and hasattr(self.mycelium, "update_external_state"):
+            self.mycelium.update_external_state(coherence=coherence, source="immune_system")
+        
         self._record_mycelium_event(
             event_type="coherence",
             data={
@@ -5053,6 +5056,9 @@ class CognitiveImmuneSystem:
                 ))
         except Exception as e:
             logger.debug(f"Mycelium health broadcast error: {e}")
+        
+        if hasattr(self.mycelium, "update_external_state"):
+            self.mycelium.update_external_state(immune_health=health_score, source="immune_system")
         
         self._record_mycelium_event(
             event_type="immune_health",
@@ -10794,11 +10800,31 @@ class MyceliumNetwork:
                 self._amplify_sell_signals()
                 
         # 🛡️ RECEIVE: Immune system health (info flows from peer systems)
-        elif topic == 'immune_health':
-            health = data.get('health', 100)
+        elif topic in {'immune_health', 'immune.health_broadcast'}:
+            health = data.get('health', data.get('health_score', 100))
             if health < 50:
                 # System stressed - reduce mycelium activity
                 self._reduce_activity()
+            self.update_external_state(immune_health=health, source="thought_bus")
+    
+    def update_external_state(
+        self,
+        immune_health: Optional[float] = None,
+        coherence: Optional[float] = None,
+        risk_bias: Optional[float] = None,
+        source: str = "system",
+    ) -> None:
+        """Forward external signals to the Queen decision system if available."""
+        if self.full_network and hasattr(self.full_network, "update_external_state"):
+            try:
+                self.full_network.update_external_state(
+                    immune_health=immune_health,
+                    coherence=coherence,
+                    risk_bias=risk_bias,
+                    source=source,
+                )
+            except Exception:
+                pass
     
     def _adjust_network_bias(self, bias: float):
         """Adjust network bias based on external signals."""
