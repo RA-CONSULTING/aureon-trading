@@ -36,6 +36,7 @@ Gary Leckey & GitHub Copilot | November 2025
 import os
 import sys
 import io
+import importlib
 
 if sys.platform == 'win32':
     # Set environment variable for Python's default encoding
@@ -287,6 +288,14 @@ except ImportError:
         def display_status(self): return "✨ ENHANCEMENTS | Disabled"
     class CarrierWaveDynamics:
         pass
+
+# 🌍🛰️ GAIA PLANETARY RECLAIMER (external extension if present)
+GAIA_RECLAIMER_SPEC = importlib.util.find_spec("gaia_planetary_reclaimer")
+if GAIA_RECLAIMER_SPEC:
+    gaia_planetary_reclaimer = importlib.import_module("gaia_planetary_reclaimer")
+    GaiaPlanetaryReclaimer = getattr(gaia_planetary_reclaimer, "GaiaPlanetaryReclaimer", None)
+else:
+    GaiaPlanetaryReclaimer = None
 try:
     from aureon_market_pulse import MarketPulse
     from aureon_war_band import WarBand
@@ -11717,6 +11726,7 @@ class AureonKrakenEcosystem:
         self.mycelium = MyceliumNetwork(initial_capital=initial_balance)  # 🍄🧠 Full neural network with hives!
         self.mycelium.acknowledge_war_band() # 🍄🏹 Connect War Band to Mycelium
         self.lattice = GaiaLatticeEngine()  # 🌍 GAIA FREQUENCY PHYSICS - HNC Blackboard Carrier Wave Dynamics
+        self.gaia_reclaimer = GaiaPlanetaryReclaimer() if GaiaPlanetaryReclaimer else None
         self.enhancements = EnhancementLayer() if ENHANCEMENTS_AVAILABLE else None  # 🔯 CODEX INTEGRATION
         self.market_pulse = MarketPulse(self.client) # Initialize Market Pulse
         self.war_band = WarBand(self.client, self.market_pulse) # 🏹⚔️ Initialize Apache War Band
@@ -13886,6 +13896,28 @@ class AureonKrakenEcosystem:
             
         return []
     
+    def _get_gaia_reclaimer_signal(self) -> Dict[str, Optional[float]]:
+        """Extract coherence/bias from Gaia Planetary Reclaimer if available."""
+        if not self.gaia_reclaimer:
+            return {"coherence": None, "risk_bias": None}
+        state = None
+        for method_name in ("get_state", "get_status", "get_signal", "get_metrics"):
+            if hasattr(self.gaia_reclaimer, method_name):
+                try:
+                    state = getattr(self.gaia_reclaimer, method_name)()
+                except Exception:
+                    state = None
+                break
+        if not isinstance(state, dict):
+            return {"coherence": None, "risk_bias": None}
+        coherence = state.get("coherence")
+        if coherence is None:
+            coherence = state.get("gaia_coherence", state.get("signal_coherence"))
+        risk_bias = state.get("risk_bias")
+        if risk_bias is None:
+            risk_bias = state.get("signal_bias", state.get("frequency_bias"))
+        return {"coherence": coherence, "risk_bias": risk_bias}
+
     def _sync_queen_external_state(self, lattice_state: Any) -> None:
         """Propagate lattice/HNC/pulse signals into the Queen decision system."""
         if not self.mycelium:
@@ -13941,6 +13973,12 @@ class AureonKrakenEcosystem:
         combined_bias = max(-0.5, min(0.5, lattice_bias + frequency_bias + pulse_bias))
         combined_coherence = max(0.0, min(1.0, (field_purity + hnc_coherence) / 2))
 
+        reclaimer_signal = self._get_gaia_reclaimer_signal()
+        if reclaimer_signal.get("risk_bias") is not None:
+            combined_bias = max(-0.5, min(0.5, combined_bias + float(reclaimer_signal["risk_bias"])))
+        if reclaimer_signal.get("coherence") is not None:
+            combined_coherence = max(0.0, min(1.0, (combined_coherence + float(reclaimer_signal["coherence"])) / 2))
+
         self.mycelium.update_external_state(
             coherence=combined_coherence,
             risk_bias=combined_bias,
@@ -13959,6 +13997,8 @@ class AureonKrakenEcosystem:
                         "hnc_frequency": hnc_frequency,
                         "hnc_coherence": hnc_coherence,
                         "field_purity": field_purity,
+                        "reclaimer_coherence": reclaimer_signal.get("coherence"),
+                        "reclaimer_bias": reclaimer_signal.get("risk_bias"),
                     },
                 ))
             except Exception:
