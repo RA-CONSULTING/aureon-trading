@@ -179,7 +179,6 @@ class ProbabilityCollector:
             
         try:
             output_path = self._current_output_file()
-            output_path.parent.mkdir(parents=True, exist_ok=True)
             with open(output_path, 'a') as f:
                 for dp in self.data_buffer:
                     f.write(json.dumps(asdict(dp)) + "\n")
