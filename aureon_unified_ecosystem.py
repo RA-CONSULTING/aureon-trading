@@ -197,10 +197,11 @@ except ImportError:
     statistics = Statistics()
 
 from datetime import datetime
-from typing import Dict, List, Optional, Tuple, Any, Set
+from typing import Dict, List, Optional, Tuple, Any, Set, Deque
 from dataclasses import dataclass, field
 from collections import deque, defaultdict
 from threading import Thread, Lock
+from pathlib import Path
 
 # Set up logger for this module
 logger = logging.getLogger(__name__)
@@ -286,6 +287,8 @@ except ImportError:
         def display_status(self): return "✨ ENHANCEMENTS | Disabled"
     class CarrierWaveDynamics:
         pass
+
+from gaia_planetary_reclaimer import GaiaPlanetaryReclaimer
 try:
     from aureon_market_pulse import MarketPulse
     from aureon_war_band import WarBand
@@ -4924,6 +4927,9 @@ class CognitiveImmuneSystem:
         self.last_scan = 0.0
         self.scan_interval = 30.0
         self.fault_memory: Deque[Dict[str, Any]] = deque(maxlen=200)
+        self.mycelium_event_dir = Path("data/mycelium_snapshots")
+        self.mycelium_event_dir.mkdir(parents=True, exist_ok=True)
+        self._mycelium_event_buffer: Deque[Dict[str, Any]] = deque(maxlen=200)
         
         # 🧬 PROBABILITY MATRIX - Health History for Prediction
         self.health_history: Deque[Dict[str, Any]] = deque(maxlen=1000)
@@ -4982,6 +4988,22 @@ class CognitiveImmuneSystem:
                 'error': f'Low network coherence: {coherence:.2f}',
                 'trace_id': thought.trace_id,
             })
+        
+        if self.mycelium and hasattr(self.mycelium, "update_external_state"):
+            self.mycelium.update_external_state(coherence=coherence, source="immune_system")
+        if getattr(self.ecosystem, "gaia_reclaimer", None):
+            self.ecosystem.gaia_reclaimer.update_signal(
+                source="mycelium",
+                coherence=coherence,
+            )
+        
+        self._record_mycelium_event(
+            event_type="coherence",
+            data={
+                "coherence": coherence,
+                "trace_id": getattr(thought, "trace_id", None)
+            }
+        )
     
     def _on_queen_decision(self, thought: Thought) -> None:
         """Receive Queen Neuron decisions from mycelium."""
@@ -4996,6 +5018,14 @@ class CognitiveImmuneSystem:
                 'error': f'Queen Neuron bearish alert: {queen_signal:.2f}',
                 'trace_id': thought.trace_id,
             })
+        
+        self._record_mycelium_event(
+            event_type="queen_decision",
+            data={
+                "queen_signal": queen_signal,
+                "trace_id": getattr(thought, "trace_id", None)
+            }
+        )
     
     def _broadcast_health_to_mycelium(self, health_score: float, status: str) -> None:
         """
@@ -5033,6 +5063,55 @@ class CognitiveImmuneSystem:
                 ))
         except Exception as e:
             logger.debug(f"Mycelium health broadcast error: {e}")
+        
+        if hasattr(self.mycelium, "update_external_state"):
+            self.mycelium.update_external_state(immune_health=health_score, source="immune_system")
+        if getattr(self.ecosystem, "gaia_reclaimer", None):
+            self.ecosystem.gaia_reclaimer.update_signal(
+                source="immune_health",
+                coherence=(health_signal + 1) / 2,
+                risk_bias=health_signal * 0.1,
+                payload={"status": status},
+            )
+        
+        self._record_mycelium_event(
+            event_type="immune_health",
+            data={
+                "health_score": health_score,
+                "status": status,
+                "signal_strength": (health_score - 50) / 50
+            }
+        )
+    
+    def _record_mycelium_event(self, event_type: str, data: Dict[str, Any]) -> None:
+        """Persist mycelium event telemetry to JSONL for downstream analysis."""
+        try:
+            snapshot = {
+                "schema_version": "1.0",
+                "timestamp": datetime.utcnow().isoformat(),
+                "event_type": event_type,
+                "data": data,
+            }
+            self._mycelium_event_buffer.append(snapshot)
+            
+            if len(self._mycelium_event_buffer) >= 10:
+                self._flush_mycelium_events()
+        except Exception as e:
+            logger.debug(f"Mycelium event record error: {e}")
+    
+    def _flush_mycelium_events(self) -> None:
+        """Flush buffered mycelium events to dated JSONL file."""
+        if not self._mycelium_event_buffer:
+            return
+        try:
+            date_str = datetime.utcnow().strftime("%Y-%m-%d")
+            event_path = self.mycelium_event_dir / f"mycelium_events_{date_str}.jsonl"
+            with event_path.open("a", encoding="utf-8") as f:
+                for event in self._mycelium_event_buffer:
+                    f.write(json.dumps(event) + "\n")
+            self._mycelium_event_buffer.clear()
+        except Exception as e:
+            logger.debug(f"Mycelium event flush error: {e}")
 
     # ------------------------------------------------------------------
     # 🧬 PROBABILITY MATRIX - Health Prediction Engine
@@ -10600,6 +10679,10 @@ class MyceliumNetwork:
         # Simple pattern network (always available)
         self.synapses: Dict[str, List[Synapse]] = {}
         self.activations: Dict[str, float] = {}
+        self.telemetry_dir = Path("data/mycelium_snapshots")
+        self.telemetry_dir.mkdir(parents=True, exist_ok=True)
+        self.telemetry_buffer: Deque[Dict[str, Any]] = deque(maxlen=200)
+        self.telemetry_schema = "1.0"
         
         # 🌐 THOUGHT BUS CONNECTION - Pass info up/down/left/right!
         self.bus = thought_bus
@@ -10731,11 +10814,31 @@ class MyceliumNetwork:
                 self._amplify_sell_signals()
                 
         # 🛡️ RECEIVE: Immune system health (info flows from peer systems)
-        elif topic == 'immune_health':
-            health = data.get('health', 100)
+        elif topic in {'immune_health', 'immune.health_broadcast'}:
+            health = data.get('health', data.get('health_score', 100))
             if health < 50:
                 # System stressed - reduce mycelium activity
                 self._reduce_activity()
+            self.update_external_state(immune_health=health, source="thought_bus")
+    
+    def update_external_state(
+        self,
+        immune_health: Optional[float] = None,
+        coherence: Optional[float] = None,
+        risk_bias: Optional[float] = None,
+        source: str = "system",
+    ) -> None:
+        """Forward external signals to the Queen decision system if available."""
+        if self.full_network and hasattr(self.full_network, "update_external_state"):
+            try:
+                self.full_network.update_external_state(
+                    immune_health=immune_health,
+                    coherence=coherence,
+                    risk_bias=risk_bias,
+                    source=source,
+                )
+            except Exception:
+                pass
     
     def _adjust_network_bias(self, bias: float):
         """Adjust network bias based on external signals."""
@@ -10799,6 +10902,15 @@ class MyceliumNetwork:
                 self.hive_count = result.get("hive_count", 1)
                 self.generation = result.get("generation", 0)
                 self.total_agents = self.full_network.get_total_agents()
+                self._capture_telemetry({
+                    "step": result.get("step"),
+                    "queen_signal": self.queen_signal,
+                    "hive_count": self.hive_count,
+                    "generation": self.generation,
+                    "total_equity": result.get("total_equity"),
+                    "surge_active": result.get("surge_active", False),
+                    "split_events": len(getattr(self.full_network, "split_events", [])),
+                })
                 
                 # 🌐 BROADCAST UP: Send Queen's decision to brain via thought bus
                 if abs(self.queen_signal) > 0.3:
@@ -10814,6 +10926,55 @@ class MyceliumNetwork:
                 logger.debug(f"Mycelium step error: {e}")
         
         return new_activations
+    
+    def _telemetry_path(self) -> Path:
+        date_str = datetime.utcnow().strftime("%Y-%m-%d")
+        return self.telemetry_dir / f"mycelium_snapshot_{date_str}.jsonl"
+    
+    def _capture_telemetry(self, state: Dict[str, Any]) -> None:
+        """Persist lightweight mycelium telemetry for ecosystem observability."""
+        try:
+            snapshot: Dict[str, Any] = {
+                "schema_version": self.telemetry_schema,
+                "timestamp": datetime.utcnow().isoformat(),
+                "step": state.get("step"),
+                "queen_signal": state.get("queen_signal", 0.0),
+                "hive_count": state.get("hive_count", 0),
+                "generation": state.get("generation", 0),
+                "total_equity": state.get("total_equity", 0.0),
+                "surge_active": state.get("surge_active", False),
+                "split_events": state.get("split_events", 0),
+            }
+            if self.full_network and hasattr(self.full_network, "get_growth_stats"):
+                try:
+                    growth = self.full_network.get_growth_stats()
+                    snapshot["growth"] = {
+                        "net_profit_total": growth.get("net_profit_total"),
+                        "profit_rate_per_day": growth.get("profit_rate_per_day"),
+                        "growth_percentage": growth.get("growth_percentage"),
+                    }
+                except Exception:
+                    pass
+            
+            self.telemetry_buffer.append(snapshot)
+            if len(self.telemetry_buffer) >= 20:
+                self._flush_telemetry()
+        except Exception as e:
+            logger.debug(f"Mycelium telemetry capture error: {e}")
+    
+    def _flush_telemetry(self) -> None:
+        """Flush buffered telemetry to disk."""
+        if not self.telemetry_buffer:
+            return
+        try:
+            path = self._telemetry_path()
+            path.parent.mkdir(parents=True, exist_ok=True)
+            with path.open("a", encoding="utf-8") as f:
+                for row in self.telemetry_buffer:
+                    f.write(json.dumps(row) + "\n")
+            self.telemetry_buffer.clear()
+        except Exception as e:
+            logger.debug(f"Mycelium telemetry flush error: {e}")
 
     def learn(self, symbol: str, profit_pct: float):
         """Reinforce connections that led to profit"""
@@ -11570,6 +11731,7 @@ class AureonKrakenEcosystem:
         self.mycelium = MyceliumNetwork(initial_capital=initial_balance)  # 🍄🧠 Full neural network with hives!
         self.mycelium.acknowledge_war_band() # 🍄🏹 Connect War Band to Mycelium
         self.lattice = GaiaLatticeEngine()  # 🌍 GAIA FREQUENCY PHYSICS - HNC Blackboard Carrier Wave Dynamics
+        self.gaia_reclaimer = GaiaPlanetaryReclaimer()
         self.enhancements = EnhancementLayer() if ENHANCEMENTS_AVAILABLE else None  # 🔯 CODEX INTEGRATION
         self.market_pulse = MarketPulse(self.client) # Initialize Market Pulse
         self.war_band = WarBand(self.client, self.market_pulse) # 🏹⚔️ Initialize Apache War Band
@@ -11580,6 +11742,10 @@ class AureonKrakenEcosystem:
         self.elephant_memory = ElephantMemory()  # 🐘 Symbol intelligence + event trail
         self.memory = spiral_memory  # 🌀 Durable memory core
         self.flux_predictor = SystemFluxPredictor() # 🔮 Initialize Flux Predictor
+        self._queen_sync_last = 0.0
+        self._queen_sync_interval = 15.0
+        self._last_pulse_snapshot: Dict[str, Any] = {}
+        self._last_pulse_ts = 0.0
 
         # Mirror harmonic engine reference for convenience
         self.harmonic_engine = getattr(self.auris, 'harmonic_engine', None)
@@ -13735,6 +13901,126 @@ class AureonKrakenEcosystem:
             
         return []
     
+    def _get_gaia_reclaimer_signal(self) -> Dict[str, Optional[float]]:
+        """Extract coherence/bias from Gaia Planetary Reclaimer if available."""
+        try:
+            state = self.gaia_reclaimer.get_state()
+        except Exception:
+            return {"coherence": None, "risk_bias": None}
+        coherence = state.get("coherence")
+        if coherence is None:
+            coherence = state.get("gaia_coherence", state.get("signal_coherence"))
+        risk_bias = state.get("risk_bias")
+        if risk_bias is None:
+            risk_bias = state.get("signal_bias", state.get("frequency_bias"))
+        return {"coherence": coherence, "risk_bias": risk_bias}
+
+    def _sync_queen_external_state(self, lattice_state: Any) -> None:
+        """Propagate lattice/HNC/pulse signals into the Queen decision system."""
+        if not self.mycelium:
+            return
+        now = time.time()
+        if (now - self._queen_sync_last) < self._queen_sync_interval:
+            return
+
+        # Gaia lattice metrics
+        risk_mod = 1.0
+        field_purity = 0.5
+        try:
+            metrics = self.lattice.get_gaia_metrics()
+            risk_mod = float(metrics.get("risk_mod", 1.0))
+            field_purity = float(metrics.get("field_purity", 0.5))
+        except Exception:
+            try:
+                risk_mod = lattice_state.get("risk_mod", 1.0) if isinstance(lattice_state, dict) else getattr(lattice_state, "risk_mod", 1.0)
+                field_purity = lattice_state.get("field_purity", 0.5) if isinstance(lattice_state, dict) else getattr(lattice_state, "field_purity", 0.5)
+            except Exception:
+                risk_mod = 1.0
+                field_purity = 0.5
+
+        lattice_bias = max(-0.4, min(0.4, (risk_mod - 1.0) * 0.5))
+
+        # HNC frequency + coherence
+        hnc_frequency = getattr(self.auris, "hnc_frequency", 256.0)
+        hnc_coherence = getattr(self.auris, "hnc_coherence", 0.5)
+        hnc_is_harmonic = getattr(self.auris, "hnc_is_harmonic", False)
+
+        frequency_bias = 0.0
+        if 435 <= hnc_frequency <= 445:
+            frequency_bias -= 0.2
+        elif hnc_is_harmonic:
+            frequency_bias += 0.1
+
+        # Market pulse sentiment
+        pulse_bias = 0.0
+        sentiment_label = "Neutral"
+        try:
+            if (now - self._last_pulse_ts) > 60:
+                self._last_pulse_snapshot = self.market_pulse.analyze_market()
+                self._last_pulse_ts = now
+            sentiment_label = self._last_pulse_snapshot.get("crypto_sentiment", {}).get("label", "Neutral")
+            pulse_bias = {
+                "Very Bullish": 0.15,
+                "Bullish": 0.08,
+                "Bearish": -0.08,
+                "Very Bearish": -0.15,
+            }.get(sentiment_label, 0.0)
+        except Exception:
+            pulse_bias = 0.0
+
+        combined_bias = max(-0.5, min(0.5, lattice_bias + frequency_bias + pulse_bias))
+        combined_coherence = max(0.0, min(1.0, (field_purity + hnc_coherence) / 2))
+
+        self.gaia_reclaimer.update_signal(
+            source="lattice",
+            coherence=field_purity,
+            risk_bias=lattice_bias,
+            payload={"risk_mod": risk_mod},
+        )
+        self.gaia_reclaimer.update_signal(
+            source="hnc",
+            coherence=hnc_coherence,
+            risk_bias=frequency_bias,
+            payload={"frequency": hnc_frequency, "is_harmonic": hnc_is_harmonic},
+        )
+        self.gaia_reclaimer.update_signal(
+            source="market_pulse",
+            coherence=combined_coherence,
+            risk_bias=pulse_bias,
+            payload={"sentiment_label": sentiment_label},
+        )
+
+        reclaimer_signal = self._get_gaia_reclaimer_signal()
+        if reclaimer_signal.get("risk_bias") is not None:
+            combined_bias = max(-0.5, min(0.5, combined_bias + float(reclaimer_signal["risk_bias"])))
+        if reclaimer_signal.get("coherence") is not None:
+            combined_coherence = max(0.0, min(1.0, (combined_coherence + float(reclaimer_signal["coherence"])) / 2))
+
+        self.mycelium.update_external_state(
+            coherence=combined_coherence,
+            risk_bias=combined_bias,
+            source="lattice_hnc",
+        )
+        self._queen_sync_last = now
+
+        if THOUGHT_BUS_AVAILABLE and THOUGHT_BUS:
+            try:
+                THOUGHT_BUS.publish(Thought(
+                    source="queen_sync",
+                    topic="mycelium.external_state",
+                    payload={
+                        "coherence": combined_coherence,
+                        "risk_bias": combined_bias,
+                        "hnc_frequency": hnc_frequency,
+                        "hnc_coherence": hnc_coherence,
+                        "field_purity": field_purity,
+                        "reclaimer_coherence": reclaimer_signal.get("coherence"),
+                        "reclaimer_bias": reclaimer_signal.get("risk_bias"),
+                    },
+                ))
+            except Exception:
+                pass
+
     def _deploy_scouts(self):
         """🚀☘️ FORCE DEPLOY scout positions immediately on first scan!
         
@@ -19597,6 +19883,7 @@ class AureonKrakenEcosystem:
         # Update Lattice State
         raw_opps = self.find_opportunities()
         l_state = self.lattice.update(raw_opps)
+        self._sync_queen_external_state(l_state)
         
         # Apply Triadic Envelope Protocol
         all_opps = self.lattice.filter_signals(raw_opps)
