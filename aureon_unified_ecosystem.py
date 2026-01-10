@@ -275,6 +275,7 @@ from typing import Dict, List, Optional, Tuple, Any, Set, Deque
 from dataclasses import dataclass, field
 from collections import deque, defaultdict
 from threading import Thread, Lock
+from pathlib import Path
 
 # Set up logger for this module
 logger = logging.getLogger(__name__)
@@ -5304,6 +5305,9 @@ class CognitiveImmuneSystem:
         self.last_scan = 0.0
         self.scan_interval = 30.0
         self.fault_memory: Deque[Dict[str, Any]] = deque(maxlen=200)
+        self.mycelium_event_dir = Path("data/mycelium_snapshots")
+        self.mycelium_event_dir.mkdir(parents=True, exist_ok=True)
+        self._mycelium_event_buffer: Deque[Dict[str, Any]] = deque(maxlen=200)
         
         # 🧬 PROBABILITY MATRIX - Health History for Prediction
         self.health_history: Deque[Dict[str, Any]] = deque(maxlen=1000)
@@ -5362,6 +5366,14 @@ class CognitiveImmuneSystem:
                 'error': f'Low network coherence: {coherence:.2f}',
                 'trace_id': thought.trace_id,
             })
+        
+        self._record_mycelium_event(
+            event_type="coherence",
+            data={
+                "coherence": coherence,
+                "trace_id": getattr(thought, "trace_id", None)
+            }
+        )
     
     def _on_queen_decision(self, thought: Thought) -> None:
         """Receive Queen Neuron decisions from mycelium."""
@@ -5376,6 +5388,14 @@ class CognitiveImmuneSystem:
                 'error': f'Queen Neuron bearish alert: {queen_signal:.2f}',
                 'trace_id': thought.trace_id,
             })
+        
+        self._record_mycelium_event(
+            event_type="queen_decision",
+            data={
+                "queen_signal": queen_signal,
+                "trace_id": getattr(thought, "trace_id", None)
+            }
+        )
     
     def _broadcast_health_to_mycelium(self, health_score: float, status: str) -> None:
         """
@@ -5413,6 +5433,45 @@ class CognitiveImmuneSystem:
                 ))
         except Exception as e:
             logger.debug(f"Mycelium health broadcast error: {e}")
+        
+        self._record_mycelium_event(
+            event_type="immune_health",
+            data={
+                "health_score": health_score,
+                "status": status,
+                "signal_strength": (health_score - 50) / 50
+            }
+        )
+    
+    def _record_mycelium_event(self, event_type: str, data: Dict[str, Any]) -> None:
+        """Persist mycelium event telemetry to JSONL for downstream analysis."""
+        try:
+            snapshot = {
+                "schema_version": "1.0",
+                "timestamp": datetime.utcnow().isoformat(),
+                "event_type": event_type,
+                "data": data,
+            }
+            self._mycelium_event_buffer.append(snapshot)
+            
+            if len(self._mycelium_event_buffer) >= 10:
+                self._flush_mycelium_events()
+        except Exception as e:
+            logger.debug(f"Mycelium event record error: {e}")
+    
+    def _flush_mycelium_events(self) -> None:
+        """Flush buffered mycelium events to dated JSONL file."""
+        if not self._mycelium_event_buffer:
+            return
+        try:
+            date_str = datetime.utcnow().strftime("%Y-%m-%d")
+            event_path = self.mycelium_event_dir / f"mycelium_events_{date_str}.jsonl"
+            with event_path.open("a", encoding="utf-8") as f:
+                for event in self._mycelium_event_buffer:
+                    f.write(json.dumps(event) + "\n")
+            self._mycelium_event_buffer.clear()
+        except Exception as e:
+            logger.debug(f"Mycelium event flush error: {e}")
 
     # ------------------------------------------------------------------
     # 🧬 PROBABILITY MATRIX - Health Prediction Engine
@@ -12013,6 +12072,10 @@ class MyceliumNetwork:
         # Simple pattern network (always available)
         self.synapses: Dict[str, List[Synapse]] = {}
         self.activations: Dict[str, float] = {}
+        self.telemetry_dir = Path("data/mycelium_snapshots")
+        self.telemetry_dir.mkdir(parents=True, exist_ok=True)
+        self.telemetry_buffer: Deque[Dict[str, Any]] = deque(maxlen=200)
+        self.telemetry_schema = "1.0"
         
         # 🌐 THOUGHT BUS CONNECTION - Pass info up/down/left/right!
         self.bus = thought_bus
@@ -12430,6 +12493,15 @@ class MyceliumNetwork:
                 self.hive_count = result.get("hive_count", 1)
                 self.generation = result.get("generation", 0)
                 self.total_agents = self.full_network.get_total_agents()
+                self._capture_telemetry({
+                    "step": result.get("step"),
+                    "queen_signal": self.queen_signal,
+                    "hive_count": self.hive_count,
+                    "generation": self.generation,
+                    "total_equity": result.get("total_equity"),
+                    "surge_active": result.get("surge_active", False),
+                    "split_events": len(getattr(self.full_network, "split_events", [])),
+                })
                 
                 # 🌐 BROADCAST UP: Send Queen's decision to brain via thought bus
                 if abs(self.queen_signal) > 0.3:
@@ -12445,6 +12517,55 @@ class MyceliumNetwork:
                 logger.debug(f"Mycelium step error: {e}")
         
         return new_activations
+    
+    def _telemetry_path(self) -> Path:
+        date_str = datetime.utcnow().strftime("%Y-%m-%d")
+        return self.telemetry_dir / f"mycelium_snapshot_{date_str}.jsonl"
+    
+    def _capture_telemetry(self, state: Dict[str, Any]) -> None:
+        """Persist lightweight mycelium telemetry for ecosystem observability."""
+        try:
+            snapshot: Dict[str, Any] = {
+                "schema_version": self.telemetry_schema,
+                "timestamp": datetime.utcnow().isoformat(),
+                "step": state.get("step"),
+                "queen_signal": state.get("queen_signal", 0.0),
+                "hive_count": state.get("hive_count", 0),
+                "generation": state.get("generation", 0),
+                "total_equity": state.get("total_equity", 0.0),
+                "surge_active": state.get("surge_active", False),
+                "split_events": state.get("split_events", 0),
+            }
+            if self.full_network and hasattr(self.full_network, "get_growth_stats"):
+                try:
+                    growth = self.full_network.get_growth_stats()
+                    snapshot["growth"] = {
+                        "net_profit_total": growth.get("net_profit_total"),
+                        "profit_rate_per_day": growth.get("profit_rate_per_day"),
+                        "growth_percentage": growth.get("growth_percentage"),
+                    }
+                except Exception:
+                    pass
+            
+            self.telemetry_buffer.append(snapshot)
+            if len(self.telemetry_buffer) >= 20:
+                self._flush_telemetry()
+        except Exception as e:
+            logger.debug(f"Mycelium telemetry capture error: {e}")
+    
+    def _flush_telemetry(self) -> None:
+        """Flush buffered telemetry to disk."""
+        if not self.telemetry_buffer:
+            return
+        try:
+            path = self._telemetry_path()
+            path.parent.mkdir(parents=True, exist_ok=True)
+            with path.open("a", encoding="utf-8") as f:
+                for row in self.telemetry_buffer:
+                    f.write(json.dumps(row) + "\n")
+            self.telemetry_buffer.clear()
+        except Exception as e:
+            logger.debug(f"Mycelium telemetry flush error: {e}")
 
     def learn(self, symbol: str, profit_pct: float):
         """Reinforce connections that led to profit"""
