@@ -73,6 +73,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Tuple, TYPE_CHECKING
 # Import Adaptive Prime Profit Gate
 from adaptive_prime_profit_gate import AdaptivePrimeProfitGate
+from cost_basis_tracker import CostBasisTracker
 
 
 if TYPE_CHECKING:
@@ -3018,6 +3019,9 @@ class MicroProfitLabyrinth:
         
         # 💰 LIVE BARTER MATRIX - Adaptive coin-to-coin value tracking
         self.barter_matrix = LiveBarterMatrix()
+
+        # 📊 COST BASIS TRACKER - Realized profit guardrails
+        self.cost_basis_tracker = CostBasisTracker()
         
         # 💧🔀 LIQUIDITY ENGINE - Dynamic Asset Aggregation ("Top-Up" Mechanism)
         # When we need funds for a trade, liquidate low-performers to fund it!
@@ -3638,6 +3642,22 @@ class MicroProfitLabyrinth:
                     self.queen.wire_barter_matrix(self.barter_matrix)
                 except Exception as e:
                     logger.debug(f"Barter Matrix wiring not available: {e}")
+
+                # 💱 Wire Exchange Clients (execution-aware pricing)
+                try:
+                    self.queen.wire_exchange_clients({
+                        'kraken': self.kraken,
+                        'binance': self.binance,
+                        'alpaca': self.alpaca,
+                    })
+                except Exception as e:
+                    logger.debug(f"Exchange client wiring not available: {e}")
+
+                # 📊 Wire Cost Basis Tracker (realized profit guard)
+                try:
+                    self.queen.wire_cost_basis_tracker(self.cost_basis_tracker)
+                except Exception as e:
+                    logger.debug(f"Cost basis wiring not available: {e}")
                 
                 # 📚🧠 Wire Path Memory to Queen (learned trading paths!)
                 try:
