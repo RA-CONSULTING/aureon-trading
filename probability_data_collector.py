@@ -87,8 +87,6 @@ class DataPoint:
     probability_score: float
     source_latency_ms: float
     data_quality: str
-    outcome_1m: Optional[float] = None
-    outcome_5m: Optional[float] = None
 
 class ProbabilityCollector:
     def __init__(self):
