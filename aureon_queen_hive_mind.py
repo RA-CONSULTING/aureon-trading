@@ -88,6 +88,7 @@ from collections import deque
 from datetime import datetime
 from enum import Enum, auto
 from pathlib import Path
+from cost_basis_tracker import CostBasisTracker
 
 # ═══════════════════════════════════════════════════════════════════════════
 # WINDOWS UTF-8 FIX - Must be at top before any logging/printing
@@ -467,6 +468,10 @@ class QueenHiveMind:
             'dream_percentage': 0.0,  # Percentage complete
             'milestones_hit': [],  # Milestones achieved on the way
         }
+
+        # 📈 Execution context (exchange clients + cost basis tracker)
+        self.exchange_clients: Dict[str, Any] = {}
+        self.cost_basis_tracker = CostBasisTracker()
         
         # 💰👑 SERO'S DREAM MILESTONES 💰👑
         self.dream_milestones = [
@@ -1808,6 +1813,95 @@ class QueenHiveMind:
         except Exception as e:
             logger.error(f"Failed to wire Barter Matrix: {e}")
             return False
+
+    def wire_exchange_clients(self, exchange_clients: Dict[str, Any]) -> bool:
+        """Wire exchange clients for execution-aware decisioning."""
+        try:
+            self.exchange_clients = exchange_clients or {}
+            logger.info(f"👑💱 Exchange clients wired: {', '.join(self.exchange_clients.keys())}")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to wire exchange clients: {e}")
+            return False
+
+    def wire_cost_basis_tracker(self, tracker: CostBasisTracker) -> bool:
+        """Wire cost basis tracker for realized profit checks."""
+        try:
+            self.cost_basis_tracker = tracker
+            logger.info("👑📊 Cost Basis Tracker WIRED to Queen Hive Mind")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to wire Cost Basis Tracker: {e}")
+            return False
+
+    def _resolve_cost_basis_symbol(self, asset: str, quote_candidates: List[str]) -> Optional[str]:
+        if not self.cost_basis_tracker or not getattr(self.cost_basis_tracker, 'positions', None):
+            return None
+        positions = self.cost_basis_tracker.positions
+        asset_upper = asset.upper()
+        for quote in quote_candidates:
+            quote_upper = quote.upper()
+            for symbol in (f"{asset_upper}{quote_upper}", f"{asset_upper}/{quote_upper}"):
+                if symbol in positions:
+                    return symbol
+        return None
+
+    def _get_execution_quote(self, exchange: str, base_asset: str, quote_asset: str) -> Dict[str, Any]:
+        """Fetch bid/ask for the exact execution venue if possible."""
+        client = self.exchange_clients.get(exchange) if hasattr(self, 'exchange_clients') else None
+        if not client:
+            return {}
+
+        base = (base_asset or "").upper()
+        quote = (quote_asset or "").upper()
+        if not base or not quote:
+            return {}
+
+        try:
+            if exchange == "kraken" and hasattr(client, 'get_ticker'):
+                symbol = f"{base}{quote}"
+                quote_data = client.get_ticker(symbol) or {}
+                return {
+                    'exchange': exchange,
+                    'symbol': quote_data.get('symbol', symbol),
+                    'base': base,
+                    'quote': quote,
+                    'bid': float(quote_data.get('bid', 0) or 0),
+                    'ask': float(quote_data.get('ask', 0) or 0),
+                }
+            if exchange == "binance" and hasattr(client, 'session'):
+                symbol = f"{base}{quote}"
+                res = client.session.get(f"{client.base}/api/v3/ticker/bookTicker", params={"symbol": symbol}).json()
+                if isinstance(res, dict) and res.get('code') == -1121:
+                    return {}
+                bid = float(res.get('bidPrice', 0) or 0)
+                ask = float(res.get('askPrice', 0) or 0)
+                return {
+                    'exchange': exchange,
+                    'symbol': symbol,
+                    'base': base,
+                    'quote': quote,
+                    'bid': bid,
+                    'ask': ask,
+                }
+            if exchange == "alpaca" and hasattr(client, 'get_latest_crypto_quotes'):
+                symbol = f"{base}/{quote}"
+                quotes = client.get_latest_crypto_quotes([symbol]) or {}
+                quote_data = quotes.get(symbol) or next(iter(quotes.values()), {})
+                bid = float(quote_data.get('bp', 0) or 0)
+                ask = float(quote_data.get('ap', 0) or 0)
+                return {
+                    'exchange': exchange,
+                    'symbol': symbol,
+                    'base': base,
+                    'quote': quote,
+                    'bid': bid,
+                    'ask': ask,
+                }
+        except Exception as e:
+            logger.debug(f"Execution quote unavailable for {exchange}:{base}/{quote}: {e}")
+
+        return {}
     
     def get_sector_pulse(self, opportunity: Dict = None) -> Dict[str, Any]:
         """
@@ -7396,6 +7490,57 @@ Feeling: {thought['emotion']}
             approved = False
             reason = f"Expected profit ${expected_pnl:.4f} < Queen's $0.003 minimum"
             logger.info(f"👑💰 QUEEN VETO: Profit too low (${expected_pnl:.4f})")
+
+        # Rule 3.5: Execution-aware pricing & cost basis guard (realized profit check)
+        stablecoins = set()
+        if hasattr(self, 'barter_matrix') and self.barter_matrix:
+            stablecoins = set(getattr(self.barter_matrix, 'STABLECOINS', set()))
+        if not stablecoins:
+            stablecoins = {"USD", "USDT", "USDC"}
+
+        execution_quote = {}
+        if approved:
+            execution_quote = self._get_execution_quote(exchange, from_asset, to_asset)
+            bid_price = float(execution_quote.get('bid', 0) or 0)
+            if bid_price > 0 and amount > 0 and (to_asset.upper() in stablecoins or execution_quote.get('quote') in stablecoins):
+                from_price = (value_usd / amount) if amount else 0.0
+                if from_price > 0:
+                    execution_slippage = max(0.0, from_price - bid_price) * amount
+                    execution_adjusted_pnl = expected_pnl - execution_slippage
+                    if execution_adjusted_pnl < 0.003 and value_usd > 1.0:
+                        approved = False
+                        reason = (
+                            f"Execution bid reduces net to ${execution_adjusted_pnl:.4f} "
+                            f"(bid ${bid_price:.6f} < mid ${from_price:.6f})"
+                        )
+                        logger.info(f"👑📉 QUEEN VETO: Execution pricing erases edge ({execution_adjusted_pnl:.4f})")
+                    else:
+                        adjusted_pnl = execution_adjusted_pnl
+
+        if approved and self.cost_basis_tracker and amount > 0 and (to_asset.upper() in stablecoins):
+            quote_candidates = [execution_quote.get('quote'), to_asset, 'USD', 'USDT', 'USDC']
+            quote_candidates = [q for q in quote_candidates if q]
+            cost_symbol = self._resolve_cost_basis_symbol(from_asset, quote_candidates)
+            price_for_check = float(execution_quote.get('bid', 0) or 0) if execution_quote else 0.0
+            if price_for_check <= 0 and value_usd > 0:
+                price_for_check = value_usd / amount
+            if cost_symbol and price_for_check > 0:
+                fee_pct = 0.001
+                if hasattr(self, 'barter_matrix') and self.barter_matrix:
+                    fee_pct = self.barter_matrix.EXCHANGE_FEES.get(exchange, fee_pct)
+                can_sell, info = self.cost_basis_tracker.can_sell_profitably(
+                    cost_symbol,
+                    current_price=price_for_check,
+                    quantity=amount,
+                    fee_pct=fee_pct,
+                )
+                if not can_sell:
+                    approved = False
+                    reason = (
+                        f"Cost basis guard: {cost_symbol} net "
+                        f"${info.get('net_profit', 0):+.4f} ({info.get('recommendation', 'HOLD')})"
+                    )
+                    logger.info(f"👑📊 QUEEN VETO: Cost basis loss detected for {cost_symbol}")
         
         # Rule 4: Consult Luck Field - Never trade against luck
         luck_score = neural_scores.get('luck', 0.5)
