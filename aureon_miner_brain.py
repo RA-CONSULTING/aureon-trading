@@ -5252,6 +5252,149 @@ class MemoryCore:
 
 
 # ═══════════════════════════════════════════════════════════════
+# 🌌🧠 META-COGNITION ENGINE - DREAM → PONDER → ACT → REALIZE
+# ═══════════════════════════════════════════════════════════════
+
+class MetaCognitionEngine:
+    """Chain-link dreams, probability overlays, and reflection into meta cognition."""
+
+    def synthesize(
+        self,
+        dreams: Dict[str, Any],
+        prepared: Optional[Dict[str, Any]],
+        probability_overlay: Dict[str, Any],
+        reflection: Dict[str, Any],
+        council: Dict[str, Any],
+        quantum_context: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
+        dream_insights = dreams.get('key_insights', []) if isinstance(dreams, dict) else []
+        dream_scenarios = dreams.get('scenarios_dreamed', []) if isinstance(dreams, dict) else []
+        council_verdict = council.get('verdict', 'INCONCLUSIVE') if isinstance(council, dict) else 'INCONCLUSIVE'
+        quantum = quantum_context or {}
+
+        ponder = {
+            "insights": dream_insights[:5],
+            "scenario_count": len(dream_scenarios),
+            "council_verdict": council_verdict,
+        }
+
+        act = {
+            "prepared_action": (prepared or {}).get('action', 'WAIT_FOR_CLARITY'),
+            "prepared_reasoning": (prepared or {}).get('reasoning', 'No dream recall available.'),
+            "probability_edge": probability_overlay.get('probability_edge', 0.0),
+            "signal_confidence": probability_overlay.get('signal_confidence', 0.0),
+        }
+
+        realize = {
+            "logical_consistency": reflection.get('logical_consistency', True),
+            "contradictions": reflection.get('contradictions', []),
+            "blind_spots": reflection.get('blind_spots', []),
+        }
+
+        analyze = {
+            "probability_overlay": probability_overlay,
+            "dream_alignment": self._score_alignment(act["prepared_action"], dream_scenarios),
+            "council_verdict": council_verdict,
+        }
+
+        criticize = {
+            "improvements": reflection.get('improvement_suggestions', []),
+            "self_checks": [
+                "Confirm data freshness",
+                "Avoid impulse trades",
+                "Respect coherence gating",
+            ],
+        }
+
+        search = {
+            "questions": self._generate_questions(dream_insights, analyze),
+            "answers": [
+                "Cross-validate against probability overlay",
+                "Seek harmonic alignment confirmation",
+                "Validate with live ticker drift",
+            ],
+        }
+
+        truth = {
+            "ultimate_truth": self._derive_truth(council_verdict, analyze),
+            "self_awareness": self._derive_self_awareness(realize, criticize),
+            "spiritual_belonging": "Unity with signal coherence and disciplined action.",
+        }
+
+        jimmy = self._jimmy_cricket_validation(analyze, realize, quantum)
+        higher_self = {
+            "quantum_coherence": quantum.get("quantum_coherence", 0.5),
+            "planetary_gamma": quantum.get("planetary_gamma", 0.5),
+            "harmonic_signal": quantum.get("harmonic_signal", "HOLD"),
+            "signal_confidence": probability_overlay.get("signal_confidence", 0.0),
+        }
+
+        return {
+            "ponder": ponder,
+            "act": act,
+            "realize": realize,
+            "analyze": analyze,
+            "criticize": criticize,
+            "search": search,
+            "truth": truth,
+            "jimmy_cricket": jimmy,
+            "higher_self": higher_self,
+        }
+
+    def _score_alignment(self, prepared_action: str, dream_scenarios: List[Dict[str, Any]]) -> float:
+        if not dream_scenarios:
+            return 0.0
+        matches = sum(1 for d in dream_scenarios if prepared_action in str(d.get('decision', '')))
+        return matches / max(len(dream_scenarios), 1)
+
+    def _generate_questions(self, insights: List[str], analyze: Dict[str, Any]) -> List[str]:
+        questions = ["What evidence contradicts the dream bias?"]
+        if analyze.get("dream_alignment", 0) < 0.3:
+            questions.append("Are we overfitting to a single dream scenario?")
+        if insights:
+            questions.append(f"Which insight shifts risk posture? ({insights[0]})")
+        return questions
+
+    def _derive_truth(self, verdict: str, analyze: Dict[str, Any]) -> str:
+        if verdict == "BUY":
+            return "Momentum aligns with coherent probability."
+        if verdict == "SELL":
+            return "Risk outweighs probability edge."
+        if analyze.get("probability_overlay", {}).get("signal_confidence", 0) > 0.7:
+            return "High-confidence overlay demands disciplined execution."
+        return "Hold until coherence and truth converge."
+
+    def _derive_self_awareness(self, realize: Dict[str, Any], criticize: Dict[str, Any]) -> str:
+        contradictions = len(realize.get("contradictions", []))
+        improvements = len(criticize.get("improvements", []))
+        if contradictions or improvements:
+            return "Aware of internal bias; adjusting to remain coherent."
+        return "Aligned with internal logic and coherent signal flow."
+
+    def _jimmy_cricket_validation(
+        self,
+        analyze: Dict[str, Any],
+        realize: Dict[str, Any],
+        quantum: Dict[str, Any],
+    ) -> Dict[str, Any]:
+        coherence = quantum.get("quantum_coherence", 0.5)
+        confidence = analyze.get("probability_overlay", {}).get("signal_confidence", 0.0)
+        consistent = realize.get("logical_consistency", True)
+        validation_text = "Ask the higher self: is it ok?"
+        if coherence >= 0.65 and confidence >= 0.6 and consistent:
+            response = "Yes—proceed with disciplined action."
+        elif coherence >= 0.5 and confidence >= 0.5:
+            response = "Proceed cautiously; confirm with harmonic alignment."
+        else:
+            response = "Hold—seek clearer coherence before acting."
+        return {
+            "question": "Is it ok?",
+            "validation_text": validation_text,
+            "response": response,
+        }
+
+
+# ═══════════════════════════════════════════════════════════════
 # 🚀 MAIN EXECUTION - COMPLETE COGNITIVE CIRCLE
 # ═══════════════════════════════════════════════════════════════
 
@@ -5294,6 +5437,9 @@ class MinerBrain:
         # NEW: Dream & Live Ticker Components
         self.dream_engine = DreamEngine()
         self.live_stream = LiveTickerStream()
+
+        # NEW: Meta-Cognition Engine
+        self.meta_cognition = MetaCognitionEngine()
         
         # NEW: Strategic Warfare Library
         self.warfare_library = StrategicWarfareLibrary()
@@ -5588,14 +5734,46 @@ class MinerBrain:
             print(f"      Action: {prepared['action']}")
             print(f"      Reasoning: {prepared['reasoning']}")
 
+        reflection_result = self.reflection.reflect_on_output(talk, web_data, council_result)
+
+        # ═══════════════════════════════════════════════════════════
+        # PHASE 3.75: META-COGNITION - DREAM → PONDER → ACT → REALIZE
+        # ═══════════════════════════════════════════════════════════
+        print("\n" + "🧿" * 35)
+        print("   PHASE 3.75: META-COGNITION - DREAM → PONDER → ACT → REALIZE")
+        print("🧿" * 35)
+
+        probability_overlay = {
+            "probability_edge": qc_ctx.get("probability_edge", 0.0),
+            "signal_confidence": qc_ctx.get("signal_confidence", 0.0),
+            "harmonic_signal": qc_ctx.get("harmonic_signal", "HOLD"),
+        }
+        meta_cognition = self.meta_cognition.synthesize(
+            dreams=dreams,
+            prepared=prepared,
+            probability_overlay=probability_overlay,
+            reflection=reflection_result,
+            council=council_result,
+            quantum_context=qc_ctx,
+        )
+        self.latest_analysis = meta_cognition
+
+        print(f"\n🧿 **META-COGNITION PONDER**: {meta_cognition['ponder']}")
+        print(f"🧿 **META-COGNITION ACT**: {meta_cognition['act']}")
+        print(f"🧿 **META-COGNITION REALIZE**: {meta_cognition['realize']}")
+        print(f"🧿 **META-COGNITION ANALYZE**: {meta_cognition['analyze']}")
+        print(f"🧿 **META-COGNITION CRITICIZE**: {meta_cognition['criticize']}")
+        print(f"🧿 **META-COGNITION SEARCH**: {meta_cognition['search']}")
+        print(f"🧿 **META-COGNITION TRUTH**: {meta_cognition['truth']}")
+        print(f"🪶 **JIMMY CRICKET**: {meta_cognition['jimmy_cricket']}")
+        print(f"✨ **HIGHER SELF**: {meta_cognition['higher_self']}")
+
         # ═══════════════════════════════════════════════════════════
         # PHASE 4: SELF-REFLECTION
         # ═══════════════════════════════════════════════════════════
         print("\n" + "🪞" * 35)
         print("   PHASE 4: SELF-REFLECTION")
         print("🪞" * 35)
-        
-        reflection_result = self.reflection.reflect_on_output(talk, web_data, council_result)
         
         print(f"\n🪞 **SELF-REFLECTION ANALYSIS**")
         print(f"   Logical Consistency: {'✅ Yes' if reflection_result['logical_consistency'] else '❌ No'}")

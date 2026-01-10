@@ -454,6 +454,12 @@ class MyceliumNetwork:
         # Queen neuron - final decision aggregator
         self.queen_neuron = Neuron(id="queen", bias=0.0)
         self.hive_synapses: List[Synapse] = []
+        self.external_state: Dict[str, float] = {
+            "immune_health": 100.0,
+            "coherence": 0.5,
+            "risk_bias": 0.0,
+        }
+        self.last_external_update = 0.0
         
         # Create root hive
         self._spawn_hive(initial_capital)
@@ -545,6 +551,7 @@ class MyceliumNetwork:
         
         # Queen neuron makes final decision
         queen_signal = self.queen_neuron.activate(transmitted)
+        queen_signal = self._apply_external_bias(queen_signal)
         
         # Check for hive splitting (ONLY during surge or high profit)
         if surge_active or self.get_profit_multiplier() > 1.1:
@@ -561,8 +568,43 @@ class MyceliumNetwork:
             "total_equity": self.get_total_equity(),
             "generation": self.generation,
             "results": all_results,
-            "surge_active": surge_active
+            "surge_active": surge_active,
+            "external_bias": self.external_state.get("risk_bias", 0.0),
+            "coherence": self.external_state.get("coherence", 0.5),
+            "immune_health": self.external_state.get("immune_health", 100.0),
         }
+
+    def update_external_state(
+        self,
+        immune_health: Optional[float] = None,
+        coherence: Optional[float] = None,
+        risk_bias: Optional[float] = None,
+        source: str = "system",
+    ) -> None:
+        """Update external signals that inform the Queen's decision logic."""
+        if immune_health is not None:
+            self.external_state["immune_health"] = max(0.0, min(100.0, immune_health))
+        if coherence is not None:
+            self.external_state["coherence"] = max(0.0, min(1.0, coherence))
+        if risk_bias is not None:
+            self.external_state["risk_bias"] = max(-0.5, min(0.5, risk_bias))
+        self.last_external_update = time.time()
+        logger.debug(
+            "🍄 External state updated by %s: %s",
+            source,
+            self.external_state,
+        )
+
+    def _apply_external_bias(self, queen_signal: float) -> float:
+        """Apply immune/coherence/risk bias to the Queen's final signal."""
+        immune_health = self.external_state.get("immune_health", 100.0)
+        coherence = self.external_state.get("coherence", 0.5)
+        risk_bias = self.external_state.get("risk_bias", 0.0)
+
+        immune_factor = (immune_health - 50.0) / 50.0
+        coherence_factor = (coherence - 0.5) * 2.0
+        bias = (immune_factor * 0.15) + (coherence_factor * 0.1) + risk_bias
+        return max(-1.0, min(1.0, queen_signal + bias))
     
     def _check_splits(self):
         """Check if any hives are ready to split"""
