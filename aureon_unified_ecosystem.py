@@ -11727,6 +11727,10 @@ class AureonKrakenEcosystem:
         self.elephant_memory = ElephantMemory()  # 🐘 Symbol intelligence + event trail
         self.memory = spiral_memory  # 🌀 Durable memory core
         self.flux_predictor = SystemFluxPredictor() # 🔮 Initialize Flux Predictor
+        self._queen_sync_last = 0.0
+        self._queen_sync_interval = 15.0
+        self._last_pulse_snapshot: Dict[str, Any] = {}
+        self._last_pulse_ts = 0.0
 
         # Mirror harmonic engine reference for convenience
         self.harmonic_engine = getattr(self.auris, 'harmonic_engine', None)
@@ -13882,6 +13886,84 @@ class AureonKrakenEcosystem:
             
         return []
     
+    def _sync_queen_external_state(self, lattice_state: Any) -> None:
+        """Propagate lattice/HNC/pulse signals into the Queen decision system."""
+        if not self.mycelium:
+            return
+        now = time.time()
+        if (now - self._queen_sync_last) < self._queen_sync_interval:
+            return
+
+        # Gaia lattice metrics
+        risk_mod = 1.0
+        field_purity = 0.5
+        try:
+            metrics = self.lattice.get_gaia_metrics()
+            risk_mod = float(metrics.get("risk_mod", 1.0))
+            field_purity = float(metrics.get("field_purity", 0.5))
+        except Exception:
+            try:
+                risk_mod = lattice_state.get("risk_mod", 1.0) if isinstance(lattice_state, dict) else getattr(lattice_state, "risk_mod", 1.0)
+                field_purity = lattice_state.get("field_purity", 0.5) if isinstance(lattice_state, dict) else getattr(lattice_state, "field_purity", 0.5)
+            except Exception:
+                risk_mod = 1.0
+                field_purity = 0.5
+
+        lattice_bias = max(-0.4, min(0.4, (risk_mod - 1.0) * 0.5))
+
+        # HNC frequency + coherence
+        hnc_frequency = getattr(self.auris, "hnc_frequency", 256.0)
+        hnc_coherence = getattr(self.auris, "hnc_coherence", 0.5)
+        hnc_is_harmonic = getattr(self.auris, "hnc_is_harmonic", False)
+
+        frequency_bias = 0.0
+        if 435 <= hnc_frequency <= 445:
+            frequency_bias -= 0.2
+        elif hnc_is_harmonic:
+            frequency_bias += 0.1
+
+        # Market pulse sentiment
+        pulse_bias = 0.0
+        try:
+            if (now - self._last_pulse_ts) > 60:
+                self._last_pulse_snapshot = self.market_pulse.analyze_market()
+                self._last_pulse_ts = now
+            sentiment_label = self._last_pulse_snapshot.get("crypto_sentiment", {}).get("label", "Neutral")
+            pulse_bias = {
+                "Very Bullish": 0.15,
+                "Bullish": 0.08,
+                "Bearish": -0.08,
+                "Very Bearish": -0.15,
+            }.get(sentiment_label, 0.0)
+        except Exception:
+            pulse_bias = 0.0
+
+        combined_bias = max(-0.5, min(0.5, lattice_bias + frequency_bias + pulse_bias))
+        combined_coherence = max(0.0, min(1.0, (field_purity + hnc_coherence) / 2))
+
+        self.mycelium.update_external_state(
+            coherence=combined_coherence,
+            risk_bias=combined_bias,
+            source="lattice_hnc",
+        )
+        self._queen_sync_last = now
+
+        if THOUGHT_BUS_AVAILABLE and THOUGHT_BUS:
+            try:
+                THOUGHT_BUS.publish(Thought(
+                    source="queen_sync",
+                    topic="mycelium.external_state",
+                    payload={
+                        "coherence": combined_coherence,
+                        "risk_bias": combined_bias,
+                        "hnc_frequency": hnc_frequency,
+                        "hnc_coherence": hnc_coherence,
+                        "field_purity": field_purity,
+                    },
+                ))
+            except Exception:
+                pass
+
     def _deploy_scouts(self):
         """🚀☘️ FORCE DEPLOY scout positions immediately on first scan!
         
@@ -19744,6 +19826,7 @@ class AureonKrakenEcosystem:
         # Update Lattice State
         raw_opps = self.find_opportunities()
         l_state = self.lattice.update(raw_opps)
+        self._sync_queen_external_state(l_state)
         
         # Apply Triadic Envelope Protocol
         all_opps = self.lattice.filter_signals(raw_opps)
