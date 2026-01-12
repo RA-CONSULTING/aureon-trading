@@ -782,6 +782,13 @@ class MicroOpportunity:
     # Profit estimate (required)
     expected_pnl_usd: float
     expected_pnl_pct: float
+
+    # Alpaca cost metrics (computed at execution time when applicable)
+    alpaca_fee_pct: float = 0.0
+    alpaca_slippage_pct: float = 0.0
+    alpaca_spread_pct: float = 0.0
+    alpaca_total_cost_pct: float = 0.0
+    alpaca_net_expected_usd: float = 0.0
     
     # ═══ ALL DEFAULTS BELOW THIS LINE ═══
     
@@ -3155,6 +3162,13 @@ class MicroProfitLabyrinth:
         
         # 👑 Queen's guidance on position sizing (fed from portfolio reviews)
         self.queen_position_multiplier = 1.0  # Adjusted by Queen based on performance
+
+        # 🦙 Alpaca cost model (percentages)
+        self.alpaca_fee_pct = float(os.getenv("ALPACA_FEE_PCT", "0.25"))
+        self.alpaca_slippage_pct = float(os.getenv("ALPACA_SLIPPAGE_PCT", "0.02"))
+        self.alpaca_fee_buffer_pct = float(os.getenv("ALPACA_FEE_BUFFER_PCT", "0.01"))
+        self.alpaca_min_net_profit_pct = float(os.getenv("ALPACA_MIN_NET_PROFIT_PCT", "0.01"))
+        self.alpaca_min_net_profit_usd = float(os.getenv("ALPACA_MIN_NET_PROFIT_USD", str(EPSILON_PROFIT_USD)))
     
     # ════════════════════════════════════════════════════════════════════════
     # 🏆 WINNERS ONLY MODE - Verbose printing control
@@ -3190,6 +3204,57 @@ class MicroProfitLabyrinth:
         else:
             # Silent logging for Queen's learning
             logger.info(f"[REJECTED] {message}")
+
+    def _alpaca_format_symbol(self, symbol: str) -> str:
+        if not symbol:
+            return symbol
+        if "/" in symbol:
+            return symbol
+        if symbol.endswith("USD"):
+            return f"{symbol[:-3]}/USD"
+        if symbol.endswith("USDC"):
+            return f"{symbol[:-4]}/USDC"
+        return symbol
+
+    def _alpaca_get_spread_pct(self, symbol: str) -> float:
+        if not self.alpaca:
+            return 0.0
+        try:
+            alpaca_symbol = self._alpaca_format_symbol(symbol)
+            quotes = self.alpaca.get_latest_crypto_quotes([alpaca_symbol])
+            quote = quotes.get(alpaca_symbol, {}) or quotes.get(symbol, {}) or {}
+            bid = float(quote.get("bp", 0) or 0)
+            ask = float(quote.get("ap", 0) or 0)
+            mid = (bid + ask) / 2 if bid and ask else 0
+            if mid <= 0:
+                return 0.0
+            return ((ask - bid) / mid) * 100
+        except Exception:
+            return 0.0
+
+    def _alpaca_estimate_conversion_costs(self, from_asset: str, to_asset: str) -> Dict[str, float]:
+        from_symbol = self._alpaca_format_symbol(f"{from_asset}USD")
+        to_symbol = self._alpaca_format_symbol(f"{to_asset}USD")
+        spread_from = self._alpaca_get_spread_pct(from_symbol)
+        spread_to = self._alpaca_get_spread_pct(to_symbol)
+        fee_pct = self.alpaca_fee_pct
+        slippage_pct = self.alpaca_slippage_pct
+        total_pct = (
+            fee_pct * 2
+            + slippage_pct * 2
+            + spread_from
+            + spread_to
+            + self.alpaca_fee_buffer_pct
+        )
+        return {
+            "fee_pct": fee_pct,
+            "slippage_pct": slippage_pct,
+            "spread_from_pct": spread_from,
+            "spread_to_pct": spread_to,
+            "spread_pct": spread_from + spread_to,
+            "fee_buffer_pct": self.alpaca_fee_buffer_pct,
+            "total_pct": total_pct,
+        }
     
     def _load_uk_allowed_pairs(self):
         """Load UK-allowed Binance pairs from cached JSON file."""
@@ -11535,6 +11600,33 @@ if __name__ == "__main__":
                     print(f"   🌍⚠️ PLANET SAVER: Clamped value ${opp.from_value_usd:.2f} < ${PLANET_SAVER_MIN_ALPACA} minimum")
                     print(f"      Small trades get eaten by fees. Protecting our liberation fund!")
                     return False
+
+            # 🦙 Alpaca cost metrics (fee + slippage + spread) to avoid negative net profit
+            cost_metrics = self._alpaca_estimate_conversion_costs(opp.from_asset, opp.to_asset)
+            total_cost_pct = cost_metrics.get("total_pct", 0.0)
+            net_expected_usd = opp.expected_pnl_usd - (opp.from_value_usd * total_cost_pct / 100)
+            net_expected_pct = (opp.expected_pnl_pct * 100) - total_cost_pct
+
+            opp.alpaca_fee_pct = cost_metrics.get("fee_pct", 0.0)
+            opp.alpaca_slippage_pct = cost_metrics.get("slippage_pct", 0.0)
+            opp.alpaca_spread_pct = cost_metrics.get("spread_pct", 0.0)
+            opp.alpaca_total_cost_pct = total_cost_pct
+            opp.alpaca_net_expected_usd = net_expected_usd
+
+            print(
+                "   🦙 Alpaca cost check: "
+                f"fees {opp.alpaca_fee_pct*2:.2f}% | slip {opp.alpaca_slippage_pct*2:.2f}% | "
+                f"spread {opp.alpaca_spread_pct:.2f}% | total {total_cost_pct:.2f}% | "
+                f"net est ${net_expected_usd:+.4f} ({net_expected_pct:+.2f}%)"
+            )
+
+            if net_expected_usd < self.alpaca_min_net_profit_usd or net_expected_pct < self.alpaca_min_net_profit_pct:
+                print(
+                    f"   🚫 Alpaca net profit too low: ${net_expected_usd:+.4f} "
+                    f"(< ${self.alpaca_min_net_profit_usd:.4f} or {net_expected_pct:+.2f}% "
+                    f"< {self.alpaca_min_net_profit_pct:.2f}%)"
+                )
+                return False
             
             # First check if a path exists
             path = self.alpaca.find_conversion_path(opp.from_asset, opp.to_asset)
