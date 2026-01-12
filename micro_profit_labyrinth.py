@@ -4521,6 +4521,9 @@ class MicroProfitLabyrinth:
                 if hasattr(self.alpaca, 'get_latest_crypto_quotes'):
                     symbols = sorted(set(self.alpaca_pairs.values()))
                     if not symbols and hasattr(self.alpaca, 'get_tradable_crypto_symbols'):
+                        symbols = self.alpaca.get_tradable_crypto_symbols() or []
+                    if symbols:
+                        quotes = self.alpaca.get_latest_crypto_quotes(symbols) or {}
 
                         for symbol, quote in quotes.items():
                             if not isinstance(quote, dict):
@@ -4530,7 +4533,16 @@ class MicroProfitLabyrinth:
                             price = (bid + ask) / 2 if bid and ask else (bid or ask or 0)
                             if price <= 0:
                                 continue
-
+                            if '/' in symbol:
+                                base, quote_asset = symbol.split('/', 1)
+                            else:
+                                base, quote_asset = symbol, 'USD'
+                            ticker_entry = {
+                                'price': price,
+                                'change24h': 0,
+                                'volume': 0,
+                                'base': base,
+                                'quote': quote_asset,
                                 'exchange': 'alpaca',
                                 'pair': symbol,
                             }
