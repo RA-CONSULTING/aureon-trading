@@ -4520,6 +4520,7 @@ class MicroProfitLabyrinth:
 
                     if symbols:
                         quotes = self.alpaca.get_latest_crypto_quotes(symbols) or {}
+
                         for symbol, quote in quotes.items():
                             if not isinstance(quote, dict):
                                 continue
@@ -4532,6 +4533,7 @@ class MicroProfitLabyrinth:
                             base = symbol.replace('/USD', '').replace('USD', '')
                             if base and base not in prices:
                                 prices[base] = price
+
 
                             ticker_entry = {
                                 'price': price,
@@ -9617,17 +9619,24 @@ if __name__ == "__main__":
             turbo_adjustment = 1.0
             if self.penny_turbo:
                 try:
+                    symbol_for_turbo = f"{from_asset}/{to_asset}"
+                    if is_stablecoin_source:
+                        quote_asset = from_asset.upper()
+                        if source_exchange == 'alpaca' and quote_asset == 'USD':
+                            quote_asset = 'USD'
+                        symbol_for_turbo = f"{to_asset}/{quote_asset}"
+
                     # Get turbo-enhanced threshold - uses real spread & fee tier
                     turbo_threshold = self.penny_turbo.get_enhanced_threshold(
                         exchange=source_exchange,
-                        symbol=f"{from_asset}/{to_asset}",
+                        symbol=symbol_for_turbo,
                         value_usd=from_value
                     )
                     
                     # Check for flash profit opportunity (momentum spike)
                     flash_signal = self.penny_turbo.get_flash_signal(
                         exchange=source_exchange,
-                        symbol=f"{from_asset}/{to_asset}"
+                        symbol=symbol_for_turbo
                     )
                     if flash_signal and flash_signal.get('is_flash', False):
                         # Flash detected - boost expected profit by flash strength
