@@ -242,7 +242,12 @@ class GlobalWaveScanner:
                         base_symbol = asset.get('symbol')
                     if not base_symbol:
                         continue
-                    symbol = f"{base_symbol}/USD"
+                    normalized = None
+                    if hasattr(self.alpaca, "_normalize_pair_symbol"):
+                        normalized = self.alpaca._normalize_pair_symbol(base_symbol)
+                    symbol = normalized or base_symbol
+                    if not symbol:
+                        continue
                     self.universe['alpaca'].add(symbol)
                     all_symbols.append((symbol, 'alpaca'))
                 logger.info(f"   🦙 Alpaca: {len(self.universe['alpaca'])} symbols")
@@ -589,8 +594,59 @@ class GlobalWaveScanner:
             elif exchange == 'binance' and self.binance:
                 return self.binance.get_ticker(symbol=symbol)
             elif exchange == 'alpaca' and self.alpaca:
-                # Alpaca needs different handling
-                pass
+                resolved = symbol
+                if hasattr(self.alpaca, "_resolve_symbol"):
+                    resolved = self.alpaca._resolve_symbol(symbol)
+
+                def bar_field(bar: Dict[str, Any], key: str, fallback: float = 0.0) -> float:
+                    for candidate in (key, key[0], key.lower(), key.upper()):
+                        if candidate in bar:
+                            try:
+                                return float(bar.get(candidate) or 0.0)
+                            except (TypeError, ValueError):
+                                return fallback
+                    return fallback
+
+                bars_resp = self.alpaca.get_crypto_bars([resolved], timeframe="1H", limit=24) or {}
+                bars = []
+                if isinstance(bars_resp, dict):
+                    bars = bars_resp.get("bars", {}).get(resolved, []) or []
+
+                price = 0.0
+                change_24h = 0.0
+                volume = 0.0
+                high = 0.0
+                low = 0.0
+
+                if bars:
+                    first = bars[0]
+                    last = bars[-1]
+                    first_price = bar_field(first, "o") or bar_field(first, "c")
+                    last_close = bar_field(last, "c") or bar_field(last, "o")
+                    price = last_close
+                    if first_price > 0:
+                        change_24h = ((last_close - first_price) / first_price) * 100
+                    volume = sum(bar_field(b, "v") for b in bars)
+                    high = max(bar_field(b, "h") for b in bars)
+                    low = min(bar_field(b, "l") for b in bars) if bars else 0.0
+                else:
+                    quotes = self.alpaca.get_latest_crypto_quotes([resolved]) or {}
+                    quote = quotes.get(resolved, {})
+                    bid = float(quote.get("bp", 0) or 0.0)
+                    ask = float(quote.get("ap", 0) or 0.0)
+                    if bid > 0 and ask > 0:
+                        price = (bid + ask) / 2
+
+                if price <= 0:
+                    return None
+
+                return {
+                    "price": price,
+                    "change24h": change_24h,
+                    "volume": volume,
+                    "high": high,
+                    "low": low,
+                }
         except Exception as e:
             logger.debug(f"Fetch ticker error {symbol}@{exchange}: {e}")
         return None
@@ -703,6 +759,28 @@ class GlobalWaveScanner:
                         }
                         for k in klines
                     ]
+            elif exchange == 'alpaca' and self.alpaca:
+                resolved = symbol
+                if hasattr(self.alpaca, "_resolve_symbol"):
+                    resolved = self.alpaca._resolve_symbol(symbol)
+                bars_resp = self.alpaca.get_crypto_bars([resolved], timeframe="1Min", limit=limit) or {}
+                bars = []
+                if isinstance(bars_resp, dict):
+                    bars = bars_resp.get("bars", {}).get(resolved, []) or []
+                if bars:
+                    candles = []
+                    for b in bars:
+                        candles.append(
+                            {
+                                "timestamp": b.get("t") or b.get("timestamp"),
+                                "open": float(b.get("o", b.get("open", 0)) or 0),
+                                "high": float(b.get("h", b.get("high", 0)) or 0),
+                                "low": float(b.get("l", b.get("low", 0)) or 0),
+                                "close": float(b.get("c", b.get("close", 0)) or 0),
+                                "volume": float(b.get("v", b.get("volume", 0)) or 0),
+                            }
+                        )
+                    return candles
         except Exception as e:
             logger.debug(f"Fetch candles error: {e}")
         

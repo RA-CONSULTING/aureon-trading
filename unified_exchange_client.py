@@ -698,9 +698,9 @@ class UnifiedExchangeClient:
         
         elif self.exchange_id == "alpaca":
             try:
-                quotes = self.client.get_latest_crypto_quotes([symbol])
-                if symbol in quotes:
-                    q = quotes[symbol]
+                quotes = self.client.get_latest_crypto_quotes([norm])
+                if norm in quotes:
+                    q = quotes[norm]
                     bid = float(q.get('bp', 0))
                     ask = float(q.get('ap', 0))
                     price = (bid + ask) / 2
@@ -777,6 +777,7 @@ class UnifiedExchangeClient:
             
         elif self.exchange_id == "alpaca":
             try:
+                symbol = self.normalize(symbol)
                 # Route through AlpacaClient's Kraken-compatible helper which:
                 # - converts quote_qty -> qty
                 # - clamps SELL qty to qty_available (fee-safe)

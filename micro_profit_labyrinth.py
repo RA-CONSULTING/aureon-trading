@@ -4309,11 +4309,17 @@ class MicroProfitLabyrinth:
                 if hasattr(self.alpaca, 'get_tradable_crypto_symbols'):
                     symbols = self.alpaca.get_tradable_crypto_symbols() or []
                     for symbol in symbols:
+                        normalized = None
+                        if hasattr(self.alpaca, "_normalize_pair_symbol"):
+                            normalized = self.alpaca._normalize_pair_symbol(symbol)
+                        pair_symbol = normalized or symbol
+                        if not pair_symbol:
+                            continue
                         # Alpaca returns like 'BTC/USD'
-                        self.alpaca_pairs[symbol] = symbol
+                        self.alpaca_pairs[pair_symbol] = pair_symbol
                         # Also store without slash
-                        clean = symbol.replace('/', '')
-                        self.alpaca_pairs[clean] = symbol
+                        clean = pair_symbol.replace('/', '')
+                        self.alpaca_pairs[clean] = pair_symbol
                         alpaca_pair_names.append(clean)
                 else:
                     # Fallback - get assets directly
@@ -4322,11 +4328,17 @@ class MicroProfitLabyrinth:
                         if asset.get('tradable'):
                             symbol = asset.get('symbol', '')
                             if symbol:
-                                self.alpaca_pairs[symbol] = symbol
+                                normalized = None
+                                if hasattr(self.alpaca, "_normalize_pair_symbol"):
+                                    normalized = self.alpaca._normalize_pair_symbol(symbol)
+                                pair_symbol = normalized or symbol
+                                if not pair_symbol:
+                                    continue
+                                self.alpaca_pairs[pair_symbol] = pair_symbol
                                 # Add normalized version
-                                if '/' in symbol:
-                                    clean = symbol.replace('/', '')
-                                    self.alpaca_pairs[clean] = symbol
+                                if '/' in pair_symbol:
+                                    clean = pair_symbol.replace('/', '')
+                                    self.alpaca_pairs[clean] = pair_symbol
                                     alpaca_pair_names.append(clean)
                 
                 # 🗺️ REGISTER WITH BARTER MATRIX
@@ -4523,7 +4535,32 @@ class MicroProfitLabyrinth:
                     if not symbols and hasattr(self.alpaca, 'get_tradable_crypto_symbols'):
                         symbols = self.alpaca.get_tradable_crypto_symbols() or []
                     if symbols:
-                        quotes = self.alpaca.get_latest_crypto_quotes(symbols) or {}
+                        normalized_symbols = []
+                        symbol_map = {}
+                        for symbol in symbols:
+                            resolved = symbol
+                            if hasattr(self.alpaca, "_resolve_symbol"):
+                                resolved = self.alpaca._resolve_symbol(symbol)
+                            if not resolved:
+                                continue
+                            symbol_map[resolved] = symbol
+                            normalized_symbols.append(resolved)
+
+                        def bar_field(bar: Dict[str, Any], key: str, fallback: float = 0.0) -> float:
+                            for candidate in (key, key[0], key.lower(), key.upper()):
+                                if candidate in bar:
+                                    try:
+                                        return float(bar.get(candidate) or 0.0)
+                                    except (TypeError, ValueError):
+                                        return fallback
+                            return fallback
+
+                        bars_resp = self.alpaca.get_crypto_bars(normalized_symbols, timeframe="1H", limit=24) or {}
+                        bars_by_symbol = {}
+                        if isinstance(bars_resp, dict):
+                            bars_by_symbol = bars_resp.get("bars", {}) or {}
+
+                        quotes = self.alpaca.get_latest_crypto_quotes(normalized_symbols) or {}
 
                         for symbol, quote in quotes.items():
                             if not isinstance(quote, dict):
@@ -4531,16 +4568,46 @@ class MicroProfitLabyrinth:
                             bid = float(quote.get('bp', 0) or quote.get('bid_price', 0) or 0)
                             ask = float(quote.get('ap', 0) or quote.get('ask_price', 0) or 0)
                             price = (bid + ask) / 2 if bid and ask else (bid or ask or 0)
+                            bars = bars_by_symbol.get(symbol, []) or []
+                            change_24h = 0.0
+                            volume = 0.0
+                            high = 0.0
+                            low = 0.0
+                            if bars:
+                                first = bars[0]
+                                last = bars[-1]
+                                first_price = bar_field(first, "o") or bar_field(first, "c")
+                                last_close = bar_field(last, "c") or bar_field(last, "o")
+                                if last_close > 0:
+                                    price = last_close
+                                if first_price > 0 and last_close > 0:
+                                    change_24h = ((last_close - first_price) / first_price) * 100
+                                volume = sum(bar_field(b, "v") for b in bars)
+                                high = max(bar_field(b, "h") for b in bars)
+                                low = min(bar_field(b, "l") for b in bars) if bars else 0.0
+
                             if price <= 0:
                                 continue
                             if '/' in symbol:
                                 base, quote_asset = symbol.split('/', 1)
                             else:
-                                base, quote_asset = symbol, 'USD'
+                                base = symbol
+                                quote_asset = 'USD'
+                                for quote_hint in ('USDT', 'USDC', 'USD', 'BTC'):
+                                    if symbol.endswith(quote_hint) and len(symbol) > len(quote_hint):
+                                        base = symbol[:-len(quote_hint)]
+                                        quote_asset = quote_hint
+                                        break
+
+                            if base and base not in prices:
+                                prices[base] = price
+
                             ticker_entry = {
                                 'price': price,
-                                'change24h': 0,
-                                'volume': 0,
+                                'change24h': change_24h,
+                                'volume': volume,
+                                'high': high,
+                                'low': low,
                                 'base': base,
                                 'quote': quote_asset,
                                 'exchange': 'alpaca',
@@ -4550,7 +4617,8 @@ class MicroProfitLabyrinth:
                             ticker_cache[symbol] = ticker_entry
 
                             self.alpaca_pairs[symbol] = symbol
-                            self.alpaca_pairs[symbol.replace('/', '')] = symbol
+                            if '/' in symbol:
+                                self.alpaca_pairs[symbol.replace('/', '')] = symbol
                 
                 print(f"   🦙 Alpaca: {alpaca_count} positions loaded")
             except Exception as e:
@@ -11892,8 +11960,11 @@ if __name__ == "__main__":
                 continue
             
             # Validate fill data
-            executed_qty = float(result.get('executedQty', 0))
-            cumm_quote_qty = float(result.get('cummulativeQuoteQty', 0))
+            executed_qty, cumm_quote_qty, exec_price = self._extract_execution_values(
+                result,
+                exchange,
+                trade_info.get('side', 'buy'),
+            )
             
             side = trade_info.get('side', 'buy')
             
@@ -11937,6 +12008,30 @@ if __name__ == "__main__":
             validation['final_amount'] = 0
         
         return validation
+
+    def _extract_execution_values(self, result: Dict, exchange: str, side: str) -> Tuple[float, float, float]:
+        """Extract executed quantity, quote value, and price from exchange results."""
+        executed_qty = 0.0
+        quote_qty = 0.0
+        exec_price = 0.0
+
+        if not result:
+            return executed_qty, quote_qty, exec_price
+
+        if exchange == 'alpaca':
+            executed_qty = float(result.get('filled_qty', 0) or result.get('qty', 0) or 0)
+            exec_price = float(result.get('filled_avg_price', 0) or result.get('avg_price', 0) or result.get('price', 0) or 0)
+            quote_qty = float(result.get('filled_notional', 0) or 0)
+            if quote_qty <= 0 and executed_qty > 0 and exec_price > 0:
+                quote_qty = executed_qty * exec_price
+        else:
+            executed_qty = float(result.get('executedQty', 0) or result.get('filledQty', 0) or 0)
+            quote_qty = float(result.get('cummulativeQuoteQty', 0) or result.get('quoteQty', 0) or 0)
+            exec_price = float(result.get('avgPrice', 0) or result.get('price', 0) or 0)
+            if quote_qty <= 0 and executed_qty > 0 and exec_price > 0:
+                quote_qty = executed_qty * exec_price
+
+        return executed_qty, quote_qty, exec_price
     
     def _extract_order_id(self, result: Dict, exchange: str) -> Optional[str]:
         """Extract order ID from trade result based on exchange format."""
@@ -11992,6 +12087,10 @@ if __name__ == "__main__":
         elif exchange == 'alpaca':
             # Alpaca includes fees differently
             total_fees = float(result.get('commission', 0) or result.get('fee', 0) or 0)
+            if total_fees <= 0:
+                filled_notional = float(result.get('filled_notional', 0) or 0)
+                if filled_notional > 0:
+                    total_fees = filled_notional * 0.0025
         
         return total_fees
     
