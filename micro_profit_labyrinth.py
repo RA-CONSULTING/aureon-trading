@@ -4520,9 +4520,7 @@ class MicroProfitLabyrinth:
 
                     if symbols:
                         quotes = self.alpaca.get_latest_crypto_quotes(symbols) or {}
-                        bars = {}
-                        if hasattr(self.alpaca, 'get_crypto_bars'):
-                            bars = self.alpaca.get_crypto_bars(symbols, timeframe="1Min", limit=2).get('bars', {}) or {}
+
                         for symbol, quote in quotes.items():
                             if not isinstance(quote, dict):
                                 continue
@@ -4536,16 +4534,7 @@ class MicroProfitLabyrinth:
                             if base and base not in prices:
                                 prices[base] = price
 
-                            if base and bars.get(symbol):
-                                bar_series = bars.get(symbol, [])
-                                if len(bar_series) >= 2:
-                                    first_bar = bar_series[0]
-                                    last_bar = bar_series[-1]
-                                    first_price = float(first_bar.get('o', 0) or 0)
-                                    last_price = float(last_bar.get('c', 0) or 0)
-                                    if first_price > 0:
-                                        momentum_per_min = (last_price - first_price) / first_price
-                                        self.asset_momentum[base] = momentum_per_min
+
 
                             ticker_entry = {
                                 'price': price,
