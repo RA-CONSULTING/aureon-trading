@@ -2998,6 +2998,9 @@ class MicroProfitLabyrinth:
     def __init__(self, live: bool = False):
         self.live = live or LIVE_MODE  # Check .env LIVE flag too
         self.config = MICRO_CONFIG.copy()
+
+        # 🦙 Alpaca-only mode (disable Binance/Kraken trading)
+        self.alpaca_only = os.getenv("ALPACA_ONLY", "true").lower() == "true"
         
         # Initialize existing systems
         self.hub = None
@@ -3124,7 +3127,7 @@ class MicroProfitLabyrinth:
         # Turn-based OR First-Past-The-Post (FPTP)
         # FPTP = Scan ALL exchanges, execute FIRST profitable opportunity!
         # ════════════════════════════════════════════════════════════════
-        self.exchange_order = ['kraken', 'alpaca', 'binance']  # Turn order
+        self.exchange_order = ['alpaca'] if self.alpaca_only else ['kraken', 'alpaca', 'binance']  # Turn order
         self.current_exchange_index = 0  # Which exchange's turn
         self.turns_completed = 0  # Total turns completed
         self.fptp_mode = True  # 🏁 First Past The Post mode - capture profit IMMEDIATELY! (Default: True)
@@ -3313,7 +3316,9 @@ class MicroProfitLabyrinth:
         # ════════════════════════════════════════════════════════════════
         # 🐙 KRAKEN CLIENT - PRIMARY EXCHANGE
         # ════════════════════════════════════════════════════════════════
-        if get_kraken_client:
+        if self.alpaca_only:
+            print("🐙 Kraken Client: DISABLED (Alpaca-only mode)")
+        elif get_kraken_client:
             self.kraken = get_kraken_client()
             if self.kraken and KRAKEN_API_KEY:
                 # Gary: Explicitly show if we are using Real or Fake data
@@ -3326,7 +3331,9 @@ class MicroProfitLabyrinth:
         # ════════════════════════════════════════════════════════════════
         # 🟡 BINANCE CLIENT - CRYPTO EXCHANGE
         # ════════════════════════════════════════════════════════════════
-        if BINANCE_AVAILABLE and BinanceClient and BINANCE_API_KEY:
+        if self.alpaca_only:
+            print("🟡 Binance Client: DISABLED (Alpaca-only mode)")
+        elif BINANCE_AVAILABLE and BinanceClient and BINANCE_API_KEY:
             try:
                 self.binance = BinanceClient()
                 print("🟡 Binance Client: WIRED (API Key loaded)")
@@ -3342,6 +3349,13 @@ class MicroProfitLabyrinth:
             try:
                 self.alpaca = AlpacaClient()
                 print("🦙 Alpaca Client: WIRED (API Key loaded)")
+                account = self.alpaca.get_account()
+                if account and account.get("id"):
+                    mode = "PAPER" if getattr(self.alpaca, "use_paper", False) else "LIVE"
+                    print(f"   🦙 Alpaca API: ✅ Connected ({mode})")
+                else:
+                    last_error = getattr(self.alpaca, "last_error", None)
+                    print(f"   🦙 Alpaca API: ⚠️ Connection check failed ({last_error})")
             except Exception as e:
                 print(f"⚠️ Alpaca Client error: {e}")
         else:
