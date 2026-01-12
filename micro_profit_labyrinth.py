@@ -4521,14 +4521,7 @@ class MicroProfitLabyrinth:
                 if hasattr(self.alpaca, 'get_latest_crypto_quotes'):
                     symbols = sorted(set(self.alpaca_pairs.values()))
                     if not symbols and hasattr(self.alpaca, 'get_tradable_crypto_symbols'):
-                        symbols = self.alpaca.get_tradable_crypto_symbols() or []
 
-                    if symbols:
-                        quotes = self.alpaca.get_latest_crypto_quotes(symbols) or {}
-                        bars = {}
-                        if hasattr(self.alpaca, 'get_crypto_bars'):
-                            bars = self.alpaca.get_crypto_bars(symbols, timeframe="1Min", limit=2).get('bars', {}) or {}
-                        mid_prices = {}
                         for symbol, quote in quotes.items():
                             if not isinstance(quote, dict):
                                 continue
@@ -4537,45 +4530,13 @@ class MicroProfitLabyrinth:
                             price = (bid + ask) / 2 if bid and ask else (bid or ask or 0)
                             if price <= 0:
                                 continue
-                            mid_prices[symbol] = price
 
-                        for symbol, price in mid_prices.items():
-                            parts = symbol.split('/')
-                            base = parts[0]
-                            quote = parts[1] if len(parts) > 1 else 'USD'
-                            quote_price = 1.0
-                            if quote == 'BTC':
-                                quote_price = mid_prices.get('BTC/USD', prices.get('BTC', 0) or 0)
-                            elif quote in ('USDT', 'USDC'):
-                                quote_price = 1.0
-
-                            base_price = price if quote == 'USD' else price * quote_price if quote_price else 0
-                            if base and base_price > 0 and base not in prices:
-                                prices[base] = base_price
-
-                            if base and bars.get(symbol):
-                                bar_series = bars.get(symbol, [])
-                                if len(bar_series) >= 2:
-                                    first_bar = bar_series[0]
-                                    last_bar = bar_series[-1]
-                                    first_price = float(first_bar.get('o', 0) or 0)
-                                    last_price = float(last_bar.get('c', 0) or 0)
-                                    if first_price > 0:
-                                        momentum_per_min = (last_price - first_price) / first_price
-                                        self.asset_momentum[base] = momentum_per_min
-
-                            ticker_entry = {
-                                'price': base_price or price,
-                                'change24h': 0.0,
-                                'volume': 0,
-                                'base': base,
-                                'quote': quote,
                                 'exchange': 'alpaca',
                                 'pair': symbol,
                             }
                             ticker_cache[f"alpaca:{symbol}"] = ticker_entry
                             ticker_cache[symbol] = ticker_entry
-                            ticker_cache[f"{base}/{quote}"] = ticker_entry
+
                             self.alpaca_pairs[symbol] = symbol
                             self.alpaca_pairs[symbol.replace('/', '')] = symbol
                 
