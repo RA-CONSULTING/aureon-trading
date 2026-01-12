@@ -49,6 +49,16 @@ class AlpacaClient:
         # Default to LIVE trading
         self.use_paper = os.getenv('ALPACA_PAPER', 'false').lower() == 'true'
         self.dry_run = os.getenv('ALPACA_DRY_RUN', 'false').lower() == 'true'
+        self.timeout_seconds = 10.0
+        try:
+            self.timeout_seconds = float(os.getenv("ALPACA_TIMEOUT", "10") or 10)
+        except (TypeError, ValueError):
+            self.timeout_seconds = 10.0
+        self.max_retries = 1
+        try:
+            self.max_retries = max(0, int(os.getenv("ALPACA_RETRY_COUNT", "1") or 1))
+        except (TypeError, ValueError):
+            self.max_retries = 1
 
         if self.use_paper:
             self.base_url = "https://paper-api.alpaca.markets"
@@ -70,25 +80,33 @@ class AlpacaClient:
 
     def _request(self, method: str, endpoint: str, params: Dict = None, data: Dict = None, base_url: str = None) -> Any:
         url = f"{base_url or self.base_url}{endpoint}"
-        try:
-            resp = self.session.request(method, url, params=params, json=data, timeout=10)
-            if not resp.ok:
-                body_text = (resp.text or "").strip()
-                logger.error(f"Alpaca API Error {resp.status_code}: {body_text}")
-                self.last_error = {
-                    "status_code": resp.status_code,
-                    "body": body_text[:2000],
-                    "endpoint": endpoint,
-                    "url": url,
-                }
-                return {}
+        for attempt in range(self.max_retries + 1):
+            try:
+                resp = self.session.request(method, url, params=params, json=data, timeout=self.timeout_seconds)
+                if not resp.ok:
+                    body_text = (resp.text or "").strip()
+                    logger.error(f"Alpaca API Error {resp.status_code}: {body_text}")
+                    self.last_error = {
+                        "status_code": resp.status_code,
+                        "body": body_text[:2000],
+                        "endpoint": endpoint,
+                        "url": url,
+                    }
+                    return {}
 
-            self.last_error = None
-            return resp.json()
-        except Exception as e:
-            logger.error(f"Alpaca Request Failed: {e}")
-            self.last_error = {"exception": str(e), "endpoint": endpoint, "url": url}
-            return {}
+                self.last_error = None
+                return resp.json()
+            except requests.exceptions.Timeout as e:
+                if attempt < self.max_retries:
+                    time.sleep(0.5 * (attempt + 1))
+                    continue
+                logger.error(f"Alpaca Request Failed: {e}")
+                self.last_error = {"exception": str(e), "endpoint": endpoint, "url": url}
+                return {}
+            except Exception as e:
+                logger.error(f"Alpaca Request Failed: {e}")
+                self.last_error = {"exception": str(e), "endpoint": endpoint, "url": url}
+                return {}
 
     # ═════════════════════════════════════════════════════════════════════=
     # INTERNAL HELPERS
