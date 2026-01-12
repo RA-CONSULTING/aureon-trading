@@ -11960,8 +11960,11 @@ if __name__ == "__main__":
                 continue
             
             # Validate fill data
-            executed_qty = float(result.get('executedQty', 0))
-            cumm_quote_qty = float(result.get('cummulativeQuoteQty', 0))
+            executed_qty, cumm_quote_qty, exec_price = self._extract_execution_values(
+                result,
+                exchange,
+                trade_info.get('side', 'buy'),
+            )
             
             side = trade_info.get('side', 'buy')
             
@@ -12005,6 +12008,30 @@ if __name__ == "__main__":
             validation['final_amount'] = 0
         
         return validation
+
+    def _extract_execution_values(self, result: Dict, exchange: str, side: str) -> Tuple[float, float, float]:
+        """Extract executed quantity, quote value, and price from exchange results."""
+        executed_qty = 0.0
+        quote_qty = 0.0
+        exec_price = 0.0
+
+        if not result:
+            return executed_qty, quote_qty, exec_price
+
+        if exchange == 'alpaca':
+            executed_qty = float(result.get('filled_qty', 0) or result.get('qty', 0) or 0)
+            exec_price = float(result.get('filled_avg_price', 0) or result.get('avg_price', 0) or result.get('price', 0) or 0)
+            quote_qty = float(result.get('filled_notional', 0) or 0)
+            if quote_qty <= 0 and executed_qty > 0 and exec_price > 0:
+                quote_qty = executed_qty * exec_price
+        else:
+            executed_qty = float(result.get('executedQty', 0) or result.get('filledQty', 0) or 0)
+            quote_qty = float(result.get('cummulativeQuoteQty', 0) or result.get('quoteQty', 0) or 0)
+            exec_price = float(result.get('avgPrice', 0) or result.get('price', 0) or 0)
+            if quote_qty <= 0 and executed_qty > 0 and exec_price > 0:
+                quote_qty = executed_qty * exec_price
+
+        return executed_qty, quote_qty, exec_price
     
     def _extract_order_id(self, result: Dict, exchange: str) -> Optional[str]:
         """Extract order ID from trade result based on exchange format."""
@@ -12060,6 +12087,10 @@ if __name__ == "__main__":
         elif exchange == 'alpaca':
             # Alpaca includes fees differently
             total_fees = float(result.get('commission', 0) or result.get('fee', 0) or 0)
+            if total_fees <= 0:
+                filled_notional = float(result.get('filled_notional', 0) or 0)
+                if filled_notional > 0:
+                    total_fees = filled_notional * 0.0025
         
         return total_fees
     
