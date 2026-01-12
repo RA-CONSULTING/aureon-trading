@@ -4489,7 +4489,12 @@ class MicroProfitLabyrinth:
                         price = float(pos.get('current_price', 0))
                         if price > 0 and symbol:
                             # Extract base asset from symbol like "BTCUSD" or "BTC/USD"
-                            base = symbol.replace('/USD', '').replace('USD', '')
+                            if '/' in symbol:
+                                base = symbol.split('/')[0]
+                            elif symbol.endswith('BTC'):
+                                base = symbol[:-3]
+                            else:
+                                base = symbol.replace('USD', '')
                             if base and len(base) > 1:
                                 prices[base] = price
                                 change = float(pos.get('change_today', 0)) * 100
@@ -4511,6 +4516,68 @@ class MicroProfitLabyrinth:
                                 self.alpaca_pairs[f"{base}USD"] = f"{base}/USD"
                                 self.alpaca_pairs[f"{base}/USD"] = f"{base}/USD"
                                 alpaca_count += 1
+
+                # Pull prices for tradeable crypto pairs even if we have no positions.
+                if hasattr(self.alpaca, 'get_latest_crypto_quotes'):
+                    symbols = sorted(set(self.alpaca_pairs.values()))
+                    if not symbols and hasattr(self.alpaca, 'get_tradable_crypto_symbols'):
+                        symbols = self.alpaca.get_tradable_crypto_symbols() or []
+
+                    if symbols:
+                        quotes = self.alpaca.get_latest_crypto_quotes(symbols) or {}
+                        bars = {}
+                        if hasattr(self.alpaca, 'get_crypto_bars'):
+                            bars = self.alpaca.get_crypto_bars(symbols, timeframe="1Min", limit=2).get('bars', {}) or {}
+                        mid_prices = {}
+                        for symbol, quote in quotes.items():
+                            if not isinstance(quote, dict):
+                                continue
+                            bid = float(quote.get('bp', 0) or quote.get('bid_price', 0) or 0)
+                            ask = float(quote.get('ap', 0) or quote.get('ask_price', 0) or 0)
+                            price = (bid + ask) / 2 if bid and ask else (bid or ask or 0)
+                            if price <= 0:
+                                continue
+                            mid_prices[symbol] = price
+
+                        for symbol, price in mid_prices.items():
+                            parts = symbol.split('/')
+                            base = parts[0]
+                            quote = parts[1] if len(parts) > 1 else 'USD'
+                            quote_price = 1.0
+                            if quote == 'BTC':
+                                quote_price = mid_prices.get('BTC/USD', prices.get('BTC', 0) or 0)
+                            elif quote in ('USDT', 'USDC'):
+                                quote_price = 1.0
+
+                            base_price = price if quote == 'USD' else price * quote_price if quote_price else 0
+                            if base and base_price > 0 and base not in prices:
+                                prices[base] = base_price
+
+                            if base and bars.get(symbol):
+                                bar_series = bars.get(symbol, [])
+                                if len(bar_series) >= 2:
+                                    first_bar = bar_series[0]
+                                    last_bar = bar_series[-1]
+                                    first_price = float(first_bar.get('o', 0) or 0)
+                                    last_price = float(last_bar.get('c', 0) or 0)
+                                    if first_price > 0:
+                                        momentum_per_min = (last_price - first_price) / first_price
+                                        self.asset_momentum[base] = momentum_per_min
+
+                            ticker_entry = {
+                                'price': base_price or price,
+                                'change24h': 0.0,
+                                'volume': 0,
+                                'base': base,
+                                'quote': quote,
+                                'exchange': 'alpaca',
+                                'pair': symbol,
+                            }
+                            ticker_cache[f"alpaca:{symbol}"] = ticker_entry
+                            ticker_cache[symbol] = ticker_entry
+                            ticker_cache[f"{base}/{quote}"] = ticker_entry
+                            self.alpaca_pairs[symbol] = symbol
+                            self.alpaca_pairs[symbol.replace('/', '')] = symbol
                 
                 print(f"   🦙 Alpaca: {alpaca_count} positions loaded")
             except Exception as e:
@@ -9242,6 +9309,11 @@ if __name__ == "__main__":
                         to_pair = self._find_exchange_pair(to_asset, "USDC", source_exchange)
                     if not to_pair:
                         to_pair = self._find_exchange_pair(to_asset, "USDT", source_exchange)
+                if not to_pair and source_exchange == 'alpaca':
+                    btc_pair = self._find_exchange_pair(to_asset, "BTC", source_exchange)
+                    btc_usd = self._find_exchange_pair("BTC", "USD", source_exchange)
+                    if btc_pair and btc_usd:
+                        to_pair = btc_pair
             else:
                 from_pair = self._find_exchange_pair(from_asset, "USD", source_exchange)
                 to_pair = self._find_exchange_pair(to_asset, "USD", source_exchange)
@@ -9258,6 +9330,13 @@ if __name__ == "__main__":
                         from_pair = self._find_exchange_pair(from_asset, "USDT", source_exchange)
                     if not to_pair:
                         to_pair = self._find_exchange_pair(to_asset, "USDT", source_exchange)
+                if source_exchange == 'alpaca' and (not from_pair or not to_pair):
+                    if from_asset.upper() == 'BTC':
+                        to_pair = to_pair or self._find_exchange_pair(to_asset, "BTC", source_exchange)
+                        from_pair = from_pair or to_pair
+                    elif to_asset.upper() == 'BTC':
+                        from_pair = from_pair or self._find_exchange_pair(from_asset, "BTC", source_exchange)
+                        to_pair = to_pair or from_pair
             
             if not from_pair or not to_pair:
                 # 🔬 DEBUG: Log why high-momentum targets are being skipped
@@ -9493,8 +9572,9 @@ if __name__ == "__main__":
             STABLECOINS = {'USD', 'USDT', 'USDC', 'ZUSD', 'TUSD', 'DAI', 'BUSD', 'GUSD', 'EUR', 'ZEUR', 'GBP', 'ZGBP'}
             is_stable_to_stable = from_asset.upper() in STABLECOINS and to_asset.upper() in STABLECOINS
             
-            # Get momentum for target asset (needed for both paths)
+            # Get momentum for target asset (fractional change per minute)
             real_momentum = self.get_momentum(to_asset) if not is_stable_to_stable else 0.0
+            momentum_pct = real_momentum * 100.0
             
             if is_stable_to_stable:
                 # Stablecoin→Stablecoin = ALWAYS LOSES FEES! No momentum edge possible.
@@ -9509,22 +9589,22 @@ if __name__ == "__main__":
                 # - Normal momentum (<1%/min): 10% capture rate
                 # - High momentum (1-5%/min): 15% capture rate  
                 # - MASSIVE momentum (>5%/min): 20% capture rate (rare opportunity!)
-                if abs(real_momentum) > 5.0:
+                if abs(momentum_pct) > 5.0:
                     capture_rate = 0.20  # 20% for massive momentum spikes!
-                elif abs(real_momentum) > 1.0:
+                elif abs(momentum_pct) > 1.0:
                     capture_rate = 0.15  # 15% for high momentum
                 else:
                     capture_rate = 0.10  # 10% for normal conditions
                 
-                momentum_edge = real_momentum / 100.0 * capture_rate
+                momentum_edge = real_momentum * capture_rate
                 
                 # 🔮 QUANTUM MIRROR: Dynamic cap based on momentum strength
                 # - Normal: 0.5% max
                 # - High momentum: 1% max
                 # - MASSIVE momentum: 2% max (to beat higher fees)
-                if abs(real_momentum) > 10.0:
+                if abs(momentum_pct) > 10.0:
                     max_mom_edge = 0.02  # 2% max for extreme spikes
-                elif abs(real_momentum) > 2.0:
+                elif abs(momentum_pct) > 2.0:
                     max_mom_edge = 0.01  # 1% max for high momentum
                 else:
                     max_mom_edge = 0.005  # 0.5% max normally
@@ -9561,14 +9641,14 @@ if __name__ == "__main__":
                 expected_pnl_usd = from_value * expected_pnl_pct
                 
                 # 🔬 DEBUG: Log high-momentum opportunities to understand calculation
-                if abs(real_momentum) > 100:  # >100%/min momentum
-                    print(f"      🔬 DEBUG: {from_asset}→{to_asset} mom={real_momentum:.1f}%/min cap_rate={capture_rate:.0%} edge={momentum_edge:.4f} cost={total_cost_pct:.4f} profit%={expected_pnl_pct:.4f} profit$={expected_pnl_usd:.4f}")
+                if abs(momentum_pct) > 100:  # >100%/min momentum
+                    print(f"      🔬 DEBUG: {from_asset}→{to_asset} mom={momentum_pct:.1f}%/min cap_rate={capture_rate:.0%} edge={momentum_edge:.4f} cost={total_cost_pct:.4f} profit%={expected_pnl_pct:.4f} profit$={expected_pnl_usd:.4f}")
             
             # 🌍✨ PLANET SAVER SANITY CHECK: Cap expected profit at realistic maximum
             # Scale cap with momentum - high momentum = higher possible profit
-            if abs(real_momentum) > 10.0:
+            if abs(momentum_pct) > 10.0:
                 MAX_REALISTIC_PROFIT_PCT = 0.02  # 2% max for extreme momentum
-            elif abs(real_momentum) > 2.0:
+            elif abs(momentum_pct) > 2.0:
                 MAX_REALISTIC_PROFIT_PCT = 0.01  # 1% max for high momentum
             else:
                 MAX_REALISTIC_PROFIT_PCT = 0.005  # 0.5% max normally
@@ -9581,17 +9661,24 @@ if __name__ == "__main__":
             turbo_adjustment = 1.0
             if self.penny_turbo:
                 try:
+                    symbol_for_turbo = f"{from_asset}/{to_asset}"
+                    if is_stablecoin_source:
+                        quote_asset = from_asset.upper()
+                        if source_exchange == 'alpaca' and quote_asset == 'USD':
+                            quote_asset = 'USD'
+                        symbol_for_turbo = f"{to_asset}/{quote_asset}"
+
                     # Get turbo-enhanced threshold - uses real spread & fee tier
                     turbo_threshold = self.penny_turbo.get_enhanced_threshold(
                         exchange=source_exchange,
-                        symbol=f"{from_asset}/{to_asset}",
+                        symbol=symbol_for_turbo,
                         value_usd=from_value
                     )
                     
                     # Check for flash profit opportunity (momentum spike)
                     flash_signal = self.penny_turbo.get_flash_signal(
                         exchange=source_exchange,
-                        symbol=f"{from_asset}/{to_asset}"
+                        symbol=symbol_for_turbo
                     )
                     if flash_signal and flash_signal.get('is_flash', False):
                         # Flash detected - boost expected profit by flash strength
@@ -12617,6 +12704,12 @@ if __name__ == "__main__":
             candidates = [
                 f"{asset_upper}/USD",
                 f"{asset_upper}USD",
+                f"{asset_upper}/BTC",
+                f"{asset_upper}BTC",
+                f"{asset_upper}/USDT",
+                f"{asset_upper}USDT",
+                f"{asset_upper}/USDC",
+                f"{asset_upper}USDC",
                 asset_upper,
             ]
             for candidate in candidates:

@@ -1273,7 +1273,7 @@ class AlpacaClient:
         """
         Find the best path to convert from one asset to another.
         
-        Note: Alpaca only supports USD pairs, so all conversions go through USD.
+        Note: Alpaca supports USD pairs and select BTC-quoted pairs.
         
         Args:
             from_asset: Source asset (e.g., 'BTC')
@@ -1288,15 +1288,13 @@ class AlpacaClient:
         if from_asset == to_asset:
             return []
         
-        # Alpaca crypto only supports USD pairs
-        # Path is always: from_asset -> USD -> to_asset
-        
         pairs = self.get_available_pairs()
         pair_bases = {p["base"].upper() for p in pairs}
+        pair_quotes = {(p["base"].upper(), p["quote"].upper()) for p in pairs}
         
         # If converting to/from USD, single trade
         if from_asset == 'USD':
-            if to_asset in pair_bases:
+            if (to_asset, 'USD') in pair_quotes:
                 return [{
                     "pair": f"{to_asset}/USD",
                     "side": "buy",
@@ -1307,7 +1305,7 @@ class AlpacaClient:
             return []
         
         if to_asset == 'USD':
-            if from_asset in pair_bases:
+            if (from_asset, 'USD') in pair_quotes:
                 return [{
                     "pair": f"{from_asset}/USD",
                     "side": "sell",
@@ -1316,29 +1314,70 @@ class AlpacaClient:
                     "to": "USD"
                 }]
             return []
-        
-        # Both are crypto - need to go through USD
-        if from_asset not in pair_bases:
-            return []  # Can't trade from_asset
-        if to_asset not in pair_bases:
-            return []  # Can't trade to_asset
-        
-        return [
-            {
-                "pair": f"{from_asset}/USD",
-                "side": "sell",
-                "description": f"Sell {from_asset} for USD",
-                "from": from_asset,
-                "to": "USD"
-            },
-            {
-                "pair": f"{to_asset}/USD",
+
+        # BTC-quoted direct pairs
+        if from_asset == 'BTC' and (to_asset, 'BTC') in pair_quotes:
+            return [{
+                "pair": f"{to_asset}/BTC",
                 "side": "buy",
-                "description": f"Buy {to_asset} with USD",
-                "from": "USD",
+                "description": f"Buy {to_asset} with BTC",
+                "from": "BTC",
                 "to": to_asset
-            }
-        ]
+            }]
+
+        if to_asset == 'BTC' and (from_asset, 'BTC') in pair_quotes:
+            return [{
+                "pair": f"{from_asset}/BTC",
+                "side": "sell",
+                "description": f"Sell {from_asset} for BTC",
+                "from": from_asset,
+                "to": "BTC"
+            }]
+        
+        # Both are crypto - prefer USD bridge
+        if (from_asset, 'USD') in pair_quotes and (to_asset, 'USD') in pair_quotes:
+            return [
+                {
+                    "pair": f"{from_asset}/USD",
+                    "side": "sell",
+                    "description": f"Sell {from_asset} for USD",
+                    "from": from_asset,
+                    "to": "USD"
+                },
+                {
+                    "pair": f"{to_asset}/USD",
+                    "side": "buy",
+                    "description": f"Buy {to_asset} with USD",
+                    "from": "USD",
+                    "to": to_asset
+                }
+            ]
+
+        # Fallback: USD -> BTC -> asset when BTC-quote exists
+        if (from_asset, 'USD') in pair_quotes and (to_asset, 'BTC') in pair_quotes and ('BTC', 'USD') in pair_quotes:
+            return [
+                {
+                    "pair": f"{from_asset}/USD",
+                    "side": "sell",
+                    "description": f"Sell {from_asset} for USD",
+                    "from": from_asset,
+                    "to": "USD"
+                },
+                {
+                    "pair": "BTC/USD",
+                    "side": "buy",
+                    "description": "Buy BTC with USD",
+                    "from": "USD",
+                    "to": "BTC"
+                },
+                {
+                    "pair": f"{to_asset}/BTC",
+                    "side": "buy",
+                    "description": f"Buy {to_asset} with BTC",
+                    "from": "BTC",
+                    "to": to_asset
+                }
+            ]
 
     def convert_crypto(
         self,
@@ -1350,7 +1389,7 @@ class AlpacaClient:
         """
         Convert one crypto asset to another within Alpaca.
         
-        Note: Alpaca only supports USD pairs, so conversions go through USD.
+        Note: Alpaca supports USD pairs and select BTC-quoted pairs.
         
         Args:
             from_asset: Source asset (e.g., 'BTC', 'ETH')
