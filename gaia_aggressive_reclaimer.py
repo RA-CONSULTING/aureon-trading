@@ -39,9 +39,16 @@ class AggressiveReclaimer:
         
         self.trades = 0
         self.profit = 0.0
+        self.net_profit = 0.0
         
         # Track our entry prices PER ASSET
         self.entries = {}
+
+        # Alpaca cost model (percentages)
+        self.alpaca_fee_pct = float(os.getenv("ALPACA_FEE_PCT", "0.25"))
+        self.alpaca_slippage_pct = float(os.getenv("ALPACA_SLIPPAGE_PCT", "0.02"))
+        self.alpaca_fee_buffer_pct = float(os.getenv("ALPACA_FEE_BUFFER_PCT", "0.01"))
+        self.alpaca_min_net_profit_pct = float(os.getenv("ALPACA_MIN_NET_PROFIT_PCT", "0.01"))
         
         print("✅ BINANCE | ALPACA | KRAKEN - ALL CONNECTED")
         print()
@@ -49,6 +56,43 @@ class AggressiveReclaimer:
     def log(self, msg):
         ts = datetime.now().strftime("%H:%M:%S")
         print(f"[{ts}] {msg}", flush=True)
+
+    def _alpaca_format_symbol(self, symbol: str) -> str:
+        if not symbol:
+            return symbol
+        if "/" in symbol:
+            return symbol
+        if symbol.endswith("USD"):
+            return f"{symbol[:-3]}/USD"
+        if symbol.endswith("USDC"):
+            return f"{symbol[:-4]}/USDC"
+        return symbol
+
+    def _alpaca_get_spread_pct(self, symbol: str) -> float:
+        try:
+            alpaca_symbol = self._alpaca_format_symbol(symbol)
+            quotes = self.alpaca.get_latest_crypto_quotes([alpaca_symbol])
+            quote = quotes.get(alpaca_symbol, {}) or quotes.get(symbol, {}) or {}
+            bid = float(quote.get("bp", 0) or 0)
+            ask = float(quote.get("ap", 0) or 0)
+            mid = (bid + ask) / 2 if bid and ask else 0
+            if mid <= 0:
+                return 0.0
+            return ((ask - bid) / mid) * 100
+        except Exception:
+            return 0.0
+
+    def _alpaca_estimate_exit_costs(self, symbol: str) -> dict:
+        spread_pct = self._alpaca_get_spread_pct(symbol)
+        fee_pct = self.alpaca_fee_pct
+        total_pct = fee_pct + self.alpaca_slippage_pct + spread_pct + self.alpaca_fee_buffer_pct
+        return {
+            "fee_pct": fee_pct,
+            "slippage_pct": self.alpaca_slippage_pct,
+            "spread_pct": spread_pct,
+            "fee_buffer_pct": self.alpaca_fee_buffer_pct,
+            "total_pct": total_pct,
+        }
 
     # ═══════════════════════════════════════════════════════════════
     # BINANCE - FAST EXECUTION
@@ -168,24 +212,37 @@ class AggressiveReclaimer:
                     continue
                 
                 pnl_pct = (current - entry) / entry * 100 if entry > 0 else 0
+                cost_metrics = self._alpaca_estimate_exit_costs(sym)
+                net_pnl_pct = pnl_pct - cost_metrics["total_pct"]
                 
-                # ANY PROFIT = SELL
-                if pnl_pct > 0.01:
+                # Only sell if NET profit clears fees/slippage/spread
+                if net_pnl_pct > self.alpaca_min_net_profit_pct:
                     asset = sym.replace('USD', '').replace('/', '')
-                    self.log(f"🔥 ALPACA SELL {asset}: ${value:.2f} ({pnl_pct:+.2f}%)")
+                    self.log(
+                        f"🔥 ALPACA SELL {asset}: ${value:.2f} "
+                        f"(gross {pnl_pct:+.2f}%, net {net_pnl_pct:+.2f}%, "
+                        f"fees {cost_metrics['total_pct']:.2f}%)"
+                    )
                     
                     result = self.alpaca.place_order(sym, qty, 'sell', 'market', 'ioc')
                     
                     if result and result.get('status') in ['filled', 'accepted', 'new']:
                         profit_usd = value * (pnl_pct / 100)
+                        net_profit_usd = value * (net_pnl_pct / 100)
                         self.profit += profit_usd
+                        self.net_profit += net_profit_usd
                         self.trades += 1
-                        self.log(f"   ✅ SOLD! +${profit_usd:.4f}")
+                        self.log(f"   ✅ SOLD! +${net_profit_usd:.4f} net (${profit_usd:.4f} gross)")
                         
                         time.sleep(0.5)
                         self._alpaca_buy_best()
                     else:
                         self.log(f"   ⚠️ Sell failed: {result}")
+                else:
+                    self.log(
+                        f"⏸️ ALPACA HOLD {sym}: gross {pnl_pct:+.2f}% "
+                        f"< fees {cost_metrics['total_pct']:.2f}% (net {net_pnl_pct:+.2f}%)"
+                    )
             
             # Deploy cash
             acc = self.alpaca.get_account()
@@ -365,7 +422,10 @@ class AggressiveReclaimer:
     
     def print_status(self):
         """Quick status"""
-        self.log(f"═══ TRADES: {self.trades} | PROFIT: ${self.profit:.4f} | ENTRIES: {len(self.entries)} ═══")
+        self.log(
+            f"═══ TRADES: {self.trades} | GROSS: ${self.profit:.4f} | "
+            f"NET: ${self.net_profit:.4f} | ENTRIES: {len(self.entries)} ═══"
+        )
     
     def run(self):
         """RUN FOREVER - TAKE EVERYTHING"""
