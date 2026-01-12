@@ -69,8 +69,8 @@ DATA_SOURCES = {
     # Yahoo Finance (via public endpoint)
     'YAHOO_QUOTE': 'https://query1.finance.yahoo.com/v7/finance/quote?symbols=',
     
-    # DXY, VIX, S&P500, Gold, Oil via Yahoo
-    'MACRO_SYMBOLS': '^DXY,^VIX,^GSPC,^DJI,^IXIC,GC=F,CL=F,^TNX,^FVX',
+    # DXY, VIX, S&P500, Gold, Oil via Yahoo (UUP is a DXY proxy fallback)
+    'MACRO_SYMBOLS': '^DXY,UUP,^VIX,^GSPC,^DJI,^IXIC,GC=F,CL=F,^TNX,^FVX',
     
     # Economic Calendar (investing.com scrape fallback)
     'ECON_CALENDAR': 'https://www.investing.com/economic-calendar/',
@@ -327,10 +327,13 @@ class GlobalFinancialFeed:
         symbols = DATA_SOURCES['MACRO_SYMBOLS']
         quotes = self.fetch_yahoo_quotes(symbols)
         
+        dxy_quote = quotes.get('^DXY') or quotes.get('UUP') or {}
         return {
-            # Note: DXY may not be available via Yahoo, use UUP ETF as proxy
             'vix': quotes.get('^VIX', {}).get('price', 20.0),
             'vix_change': quotes.get('^VIX', {}).get('change_pct', 0),
+
+            'dxy': dxy_quote.get('price', 100.0),
+            'dxy_change': dxy_quote.get('change_pct', 0),
             
             'spx': quotes.get('^GSPC', {}).get('price', 5000),
             'spx_change': quotes.get('^GSPC', {}).get('change_pct', 0),
@@ -607,8 +610,8 @@ class GlobalFinancialFeed:
             vix_change=macro.get('vix_change', 0),
             
             # Dollar (use proxy if needed)
-            dxy=100.0,  # May need DXY proxy
-            dxy_change=0.0,
+            dxy=macro.get('dxy', 100.0),
+            dxy_change=macro.get('dxy_change', 0.0),
             
             # Yields
             us_10y_yield=macro.get('us_10y', 4.5),
