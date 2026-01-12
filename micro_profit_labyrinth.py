@@ -4535,6 +4535,7 @@ class MicroProfitLabyrinth:
                                 prices[base] = price
 
 
+
                             ticker_entry = {
                                 'price': price,
                                 'change24h': 0.0,
@@ -9531,8 +9532,9 @@ if __name__ == "__main__":
             STABLECOINS = {'USD', 'USDT', 'USDC', 'ZUSD', 'TUSD', 'DAI', 'BUSD', 'GUSD', 'EUR', 'ZEUR', 'GBP', 'ZGBP'}
             is_stable_to_stable = from_asset.upper() in STABLECOINS and to_asset.upper() in STABLECOINS
             
-            # Get momentum for target asset (needed for both paths)
+            # Get momentum for target asset (fractional change per minute)
             real_momentum = self.get_momentum(to_asset) if not is_stable_to_stable else 0.0
+            momentum_pct = real_momentum * 100.0
             
             if is_stable_to_stable:
                 # Stablecoin→Stablecoin = ALWAYS LOSES FEES! No momentum edge possible.
@@ -9547,22 +9549,22 @@ if __name__ == "__main__":
                 # - Normal momentum (<1%/min): 10% capture rate
                 # - High momentum (1-5%/min): 15% capture rate  
                 # - MASSIVE momentum (>5%/min): 20% capture rate (rare opportunity!)
-                if abs(real_momentum) > 5.0:
+                if abs(momentum_pct) > 5.0:
                     capture_rate = 0.20  # 20% for massive momentum spikes!
-                elif abs(real_momentum) > 1.0:
+                elif abs(momentum_pct) > 1.0:
                     capture_rate = 0.15  # 15% for high momentum
                 else:
                     capture_rate = 0.10  # 10% for normal conditions
                 
-                momentum_edge = real_momentum / 100.0 * capture_rate
+                momentum_edge = real_momentum * capture_rate
                 
                 # 🔮 QUANTUM MIRROR: Dynamic cap based on momentum strength
                 # - Normal: 0.5% max
                 # - High momentum: 1% max
                 # - MASSIVE momentum: 2% max (to beat higher fees)
-                if abs(real_momentum) > 10.0:
+                if abs(momentum_pct) > 10.0:
                     max_mom_edge = 0.02  # 2% max for extreme spikes
-                elif abs(real_momentum) > 2.0:
+                elif abs(momentum_pct) > 2.0:
                     max_mom_edge = 0.01  # 1% max for high momentum
                 else:
                     max_mom_edge = 0.005  # 0.5% max normally
@@ -9599,14 +9601,14 @@ if __name__ == "__main__":
                 expected_pnl_usd = from_value * expected_pnl_pct
                 
                 # 🔬 DEBUG: Log high-momentum opportunities to understand calculation
-                if abs(real_momentum) > 100:  # >100%/min momentum
-                    print(f"      🔬 DEBUG: {from_asset}→{to_asset} mom={real_momentum:.1f}%/min cap_rate={capture_rate:.0%} edge={momentum_edge:.4f} cost={total_cost_pct:.4f} profit%={expected_pnl_pct:.4f} profit$={expected_pnl_usd:.4f}")
+                if abs(momentum_pct) > 100:  # >100%/min momentum
+                    print(f"      🔬 DEBUG: {from_asset}→{to_asset} mom={momentum_pct:.1f}%/min cap_rate={capture_rate:.0%} edge={momentum_edge:.4f} cost={total_cost_pct:.4f} profit%={expected_pnl_pct:.4f} profit$={expected_pnl_usd:.4f}")
             
             # 🌍✨ PLANET SAVER SANITY CHECK: Cap expected profit at realistic maximum
             # Scale cap with momentum - high momentum = higher possible profit
-            if abs(real_momentum) > 10.0:
+            if abs(momentum_pct) > 10.0:
                 MAX_REALISTIC_PROFIT_PCT = 0.02  # 2% max for extreme momentum
-            elif abs(real_momentum) > 2.0:
+            elif abs(momentum_pct) > 2.0:
                 MAX_REALISTIC_PROFIT_PCT = 0.01  # 1% max for high momentum
             else:
                 MAX_REALISTIC_PROFIT_PCT = 0.005  # 0.5% max normally
