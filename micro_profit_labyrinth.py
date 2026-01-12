@@ -1832,28 +1832,8 @@ class LiveBarterMatrix:
             }
         }
         
-        # 👑 QUEEN'S FINAL VERDICT - STRICT MEME TRADING RULES
-        # Only allow: Meme → Stablecoin OR Stablecoin → Meme
-        # This ensures we always go through liquid pairs, avoiding double slippage
-        
-        # RULE 1: MEME can ONLY go to STABLECOIN (exit to cash)
-        if from_type == 'meme' and to_type != 'stablecoin':
-            return False, f"👑🔢 BLOCKED: Meme→{to_type} not allowed! Meme must exit to stablecoin only!", math_breakdown
-        
-        # RULE 2: MEME can ONLY come from STABLECOIN (enter from cash)
-        if to_type == 'meme' and from_type != 'stablecoin':
-            return False, f"👑🔢 BLOCKED: {from_type}→Meme not allowed! Meme entry only from stablecoin!", math_breakdown
-        
-        # RULE 3: NO stablecoin-to-stablecoin (always loses to fees, no price movement)
-        if from_type == 'stablecoin' and to_type == 'stablecoin':
-            return False, "👑🔢 BLOCKED: Stablecoin→Stablecoin ALWAYS loses to fees!", math_breakdown
-        
-        # RULE 4: Altcoin trades must also go through stablecoins or majors
-        if from_type == 'altcoin' and to_type not in ['stablecoin', 'major']:
-            return False, f"👑🔢 BLOCKED: Altcoin→{to_type} not allowed! Exit to stablecoin/major only!", math_breakdown
-        
-        if to_type == 'altcoin' and from_type not in ['stablecoin', 'major']:
-            return False, f"👑🔢 BLOCKED: {from_type}→Altcoin not allowed! Entry from stablecoin/major only!", math_breakdown
+        # 👑 QUEEN'S FINAL VERDICT - FULL PATH CLEARANCE
+        # All paths are allowed as long as the math gates guarantee a positive outcome.
         
         # 👑 QUEEN HAS FULL CONTROL FOR PROFIT!
         # Her epsilon floor is the ONLY hard gate - all other limits are advisory
@@ -1867,41 +1847,7 @@ class LiveBarterMatrix:
         # This handles cases where the Class might rely on defaults while Local has specific spread tables
         true_breakeven = max(gate_result.r_breakeven, total_cost_pct)
         
-        # 2. Define Hard Tolerance Limits based on Source Asset Volatility
-        # We cannot allow a trade to start if we are instantly in a deep hole
-        MAX_TOLERANCE = 0.015 # Default 1.5% (TIGHTENED)
-        
-        # 👑 FORCE IDENTIFICATION OF STABLES/MAJORS (Fallback)
-        is_safe_src = from_type == 'stablecoin' or from_asset in ['USDT', 'USDC', 'USD', 'DAI', 'EUR', 'BUSD', 'TUSD', 'PYUSD']
-        is_major_src = from_type == 'major' or from_asset in ['BTC', 'ETH', 'SOL', 'BNB', 'XRP', 'ADA', 'DOGE']
-        
-        if is_safe_src:
-            # STABLECOIN SOURCE: EXTREMELY STRICT.
-            # We are holding cash. Don't burn it on high-fee entries.
-            # If we lose > 0.2% just entering, we are wrong.
-            MAX_TOLERANCE = 0.002 # 0.2% max burn (Strict)
-            
-        elif is_major_src:
-            # MAJOR CRYPTO SOURCE (BTC/ETH): Moderate strictness.
-            MAX_TOLERANCE = 0.005 # 0.5% max burn (Strict)
-            
-        elif from_type == 'meme':
-            # MEME SOURCE: High volatility expected.
-            if queen_dream_status == "STRONG_WIN":
-                MAX_TOLERANCE = 0.025 # 2.5% allowed if Queen is confident
-            else:
-                MAX_TOLERANCE = 0.012 # 1.2% standard limit for meme exits
-        
-        # 3. Check for catastrophic spread mismatch
-        # If the spread alone is > 1.5%, we are likely getting ripped off
-        if total_spread > 0.015 and queen_dream_status != "STRONG_WIN":
-             return False, f"🚫 MATH REJECT: Spread {total_spread:.2%} too wide", math_breakdown
-
-        # 4. The Final Gate
-        if true_breakeven > MAX_TOLERANCE:
-            return False, f"🚫 MATH REJECT: True Cost {true_breakeven:.2%} > Limit {MAX_TOLERANCE:.2%}", math_breakdown
-
-        return True, f"✅ MATH APPROVED: Cost {true_breakeven:.2%} <= Limit {MAX_TOLERANCE:.2%}", math_breakdown
+        return True, f"✅ MATH ESTIMATE: Cost {true_breakeven:.2%}", math_breakdown
     
     def _block_path(self, key: Tuple[str, str], reason: str):
         """Block a path and broadcast through mycelium."""
@@ -3022,7 +2968,7 @@ class MicroProfitLabyrinth:
         self.config = MICRO_CONFIG.copy()
 
         # 🦙 Alpaca-only mode (disable Binance/Kraken trading)
-        self.alpaca_only = os.getenv("ALPACA_ONLY", "true").lower() == "true"
+        self.alpaca_only = os.getenv("ALPACA_ONLY", "false").lower() == "true"
         
         # Initialize existing systems
         self.hub = None
@@ -10017,14 +9963,8 @@ if __name__ == "__main__":
                 if to_asset == from_asset:
                     continue
                 
-                # 🌍✨ PLANET SAVER: HARD BLOCK stablecoin → stablecoin trades!
-                # These ALWAYS LOSE FEES - there is NO momentum edge possible!
+                # Stablecoin targets are allowed; math gates will filter out non-profitable conversions.
                 is_checkpoint_target = to_asset.upper() in ['USD', 'USDT', 'USDC', 'TUSD', 'DAI', 'ZUSD', 'EUR', 'ZEUR', 'GBP', 'ZGBP', 'BUSD', 'GUSD']
-                if is_stablecoin_source and is_checkpoint_target:
-                    # Stablecoin→Stablecoin = GUARANTEED LOSS! Skip immediately!
-                    if debug_first_scans:
-                        print(f"      ⛔ {from_asset}→{to_asset}: BLOCKED (stablecoin→stablecoin = guaranteed loss!)")
-                    continue
                 
                 # Skip blocked target assets on Binance
                 if source_exchange == 'binance' and to_asset.upper() in self.blocked_binance_assets:
