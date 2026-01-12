@@ -1166,9 +1166,9 @@ class QueenHiveMind:
         self.macro_state = snapshot
         
         # Log the reception
-        regime = snapshot.get('regime', 'UNKNOWN')
+        regime = snapshot.get('risk_on_off') or snapshot.get('regime', 'UNKNOWN')
         vix = snapshot.get('vix', 0.0)
-        dxy = snapshot.get('indices', {}).get('DXY', {}).get('price', 0.0)
+        dxy = snapshot.get('dxy', snapshot.get('indices', {}).get('DXY', {}).get('price', 0.0))
         
         emoji = "🟢" if regime == "RISK_ON" else "🔴"
         # We use a distinct icon for Global Macro thoughts

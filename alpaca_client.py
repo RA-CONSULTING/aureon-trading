@@ -183,7 +183,15 @@ class AlpacaClient:
         """Get market clock."""
         return self._request("GET", "/v2/clock")
 
-    def place_order(self, symbol: str, qty: float, side: str, type: str = "market", time_in_force: str = "gtc") -> Dict[str, Any]:
+    def place_order(
+        self,
+        symbol: str,
+        qty: float,
+        side: str,
+        type: str = "market",
+        time_in_force: str = "gtc",
+        position_intent: Optional[str] = None,
+    ) -> Dict[str, Any]:
         """Place an order."""
         symbol = self._resolve_symbol(symbol)
         if self.dry_run:
@@ -197,6 +205,8 @@ class AlpacaClient:
             "type": type,
             "time_in_force": time_in_force
         }
+        if position_intent:
+            data["position_intent"] = position_intent
         result = self._request("POST", "/v2/orders", data=data)
         
         # 🔧 FIX: For market orders, wait and query for actual fill data
@@ -232,9 +242,24 @@ class AlpacaClient:
         return result
 
     # Compatibility alias for older code (create_order -> place_order)
-    def create_order(self, symbol: str, qty: float, side: str, type: str = "market", time_in_force: str = "gtc") -> Dict[str, Any]:
+    def create_order(
+        self,
+        symbol: str,
+        qty: float,
+        side: str,
+        type: str = "market",
+        time_in_force: str = "gtc",
+        position_intent: Optional[str] = None,
+    ) -> Dict[str, Any]:
         """Backwards-compatible wrapper so older callers can use `create_order`."""
-        return self.place_order(symbol=symbol, qty=qty, side=side, type=type, time_in_force=time_in_force)
+        return self.place_order(
+            symbol=symbol,
+            qty=qty,
+            side=side,
+            type=type,
+            time_in_force=time_in_force,
+            position_intent=position_intent,
+        )
 
     def get_crypto_bars(self, symbols: List[str], timeframe: str = "1Min", limit: int = 100) -> Dict[str, Any]:
         """Get crypto bars for one or more symbols with chunking support."""
@@ -671,7 +696,8 @@ class AlpacaClient:
         take_profit_limit: float = None,
         stop_loss_stop: float = None,
         stop_loss_limit: float = None,
-        time_in_force: str = "gtc"
+        time_in_force: str = "gtc",
+        position_intent: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
         Place a bracket order (entry + take-profit + stop-loss) on Alpaca.
@@ -721,6 +747,8 @@ class AlpacaClient:
                 "stop_price": str(stop_loss_stop)
             }
         }
+        if position_intent:
+            data["position_intent"] = position_intent
         
         if entry_type == "limit" and entry_limit_price:
             data["limit_price"] = str(entry_limit_price)
@@ -793,7 +821,8 @@ class AlpacaClient:
         take_profit_limit: float = None,
         stop_loss_stop: float = None,
         stop_loss_limit: float = None,
-        time_in_force: str = "gtc"
+        time_in_force: str = "gtc",
+        position_intent: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
         Place an OTO (One-Triggers-Other) order on Alpaca.
@@ -832,6 +861,8 @@ class AlpacaClient:
             "time_in_force": time_in_force,
             "order_class": "oto"
         }
+        if position_intent:
+            data["position_intent"] = position_intent
         
         if entry_type == "limit" and entry_limit_price:
             data["limit_price"] = str(entry_limit_price)
@@ -939,7 +970,14 @@ class AlpacaClient:
     # CONVENIENCE METHODS - Kraken-compatible interface
     # ══════════════════════════════════════════════════════════════════════
 
-    def place_market_order(self, symbol: str, side: str, quantity: float = None, quote_qty: float = None) -> Dict[str, Any]:
+    def place_market_order(
+        self,
+        symbol: str,
+        side: str,
+        quantity: float = None,
+        quote_qty: float = None,
+        position_intent: Optional[str] = None,
+    ) -> Dict[str, Any]:
         """
         Place a market order (Kraken-compatible interface).
         
@@ -992,7 +1030,7 @@ class AlpacaClient:
         except Exception:
             pass
             
-        return self.place_order(symbol, quantity, side, type="market")
+        return self.place_order(symbol, quantity, side, type="market", position_intent=position_intent)
 
     def place_stop_loss_order(self, symbol: str, side: str, quantity: float, stop_price: float, limit_price: float = None) -> Dict[str, Any]:
         """
@@ -1047,7 +1085,8 @@ class AlpacaClient:
         order_type: str = "market",
         price: float = None,
         take_profit: float = None,
-        stop_loss: float = None
+        stop_loss: float = None,
+        position_intent: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
         Place an order with attached Take-Profit and/or Stop-Loss (Kraken-compatible).
@@ -1073,7 +1112,8 @@ class AlpacaClient:
                 entry_type=order_type,
                 entry_limit_price=price,
                 take_profit_limit=take_profit,
-                stop_loss_stop=stop_loss
+                stop_loss_stop=stop_loss,
+                position_intent=position_intent,
             )
         elif take_profit or stop_loss:
             # Single exit -> use OTO order
@@ -1082,14 +1122,74 @@ class AlpacaClient:
                 entry_type=order_type,
                 entry_limit_price=price,
                 take_profit_limit=take_profit,
-                stop_loss_stop=stop_loss
+                stop_loss_stop=stop_loss,
+                position_intent=position_intent,
             )
         else:
             # No exits -> regular order
             if order_type == "limit" and price:
                 return self.place_limit_order(symbol, quantity, side, price)
-            else:
-                return self.place_order(symbol, quantity, side)
+            return self.place_order(symbol, quantity, side, position_intent=position_intent)
+
+    def get_asset(self, symbol: str) -> Dict[str, Any]:
+        """Fetch asset metadata (shortable, marginable, etc.)."""
+        symbol = self._resolve_symbol(symbol)
+        return self._request("GET", f"/v2/assets/{symbol}")
+
+    def is_shortable(self, symbol: str) -> bool:
+        """Return True if asset is shortable for the account."""
+        try:
+            asset = self.get_asset(symbol) or {}
+            return bool(asset.get("shortable"))
+        except Exception:
+            return False
+
+    def open_position_with_tp_sl(
+        self,
+        symbol: str,
+        side: str,
+        quantity: float,
+        take_profit_pct: float = None,
+        stop_loss_pct: float = None,
+        entry_price: float = None,
+        position_intent: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """Open a long/short with optional TP/SL based on current price."""
+        symbol = self._resolve_symbol(symbol)
+
+        if entry_price is None:
+            try:
+                quotes = self.get_latest_crypto_quotes([symbol]) or {}
+                quote = quotes.get(symbol, {})
+                bp = float(quote.get("bp") or 0)
+                ap = float(quote.get("ap") or 0)
+                if bp > 0 and ap > 0:
+                    entry_price = (bp + ap) / 2
+            except Exception:
+                entry_price = None
+
+        take_profit_price = None
+        stop_loss_price = None
+        if entry_price:
+            if take_profit_pct is not None:
+                if side == "buy":
+                    take_profit_price = entry_price * (1 + take_profit_pct / 100.0)
+                else:
+                    take_profit_price = entry_price * (1 - take_profit_pct / 100.0)
+            if stop_loss_pct is not None:
+                if side == "buy":
+                    stop_loss_price = entry_price * (1 - stop_loss_pct / 100.0)
+                else:
+                    stop_loss_price = entry_price * (1 + stop_loss_pct / 100.0)
+
+        return self.place_order_with_tp_sl(
+            symbol=symbol,
+            side=side,
+            quantity=quantity,
+            take_profit=take_profit_price,
+            stop_loss=stop_loss_price,
+            position_intent=position_intent,
+        )
 
     def get_free_balance(self, asset: str) -> float:
         """

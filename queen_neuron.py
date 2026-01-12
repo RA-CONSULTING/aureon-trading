@@ -251,6 +251,7 @@ class QueenNeuron:
             'timestamp': datetime.now().isoformat(),
             'outcome': outcome,
             'loss': float(loss),
+            'neural_input': neural_input,
             'inputs': {
                 'prob': float(neural_input.probability_score),
                 'wisdom': float(neural_input.wisdom_score),

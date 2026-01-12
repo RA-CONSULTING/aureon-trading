@@ -729,6 +729,8 @@ except ImportError as e:
 # Epsilon profit policy: any net-positive trade after real costs is acceptable.
 # Global epsilon (USD) used across gating.
 EPSILON_PROFIT_USD = 0.0001
+# Minimum net profit floor to avoid "death by a thousand cuts" in live execution
+MIN_NET_PROFIT_USD = float(os.getenv("MIN_NET_PROFIT_USD", "0.005"))
 
 # Speed is key - small gains compound fast!
 MICRO_CONFIG = {
@@ -2411,6 +2413,26 @@ class LiveBarterMatrix:
     # ════════════════════════════════════════════════════════════════════════
     # 🗺️ DYNAMIC ASSET DISCOVERY - Expand to see ENTIRE market!
     # ════════════════════════════════════════════════════════════════════════
+
+    def _register_discovered_asset(self, asset: str) -> int:
+        """Register an asset if new; returns 1 if added."""
+        if not asset:
+            return 0
+        asset = asset.upper()
+        if asset in self.DISCOVERED_ASSETS:
+            return 0
+        self.DISCOVERED_ASSETS.add(asset)
+        return 1
+
+    def register_exchange_pair(self, exchange: str, pair: str, base: str, quote: str) -> int:
+        """Register a pair + its base/quote assets for an exchange."""
+        exchange_lower = exchange.lower()
+        if pair:
+            self.EXCHANGE_PAIRS[exchange_lower].add(pair)
+        discovered = 0
+        discovered += self._register_discovered_asset(base)
+        discovered += self._register_discovered_asset(quote)
+        return discovered
     
     def discover_exchange_assets(self, exchange: str, pairs: List[str]) -> int:
         """
@@ -2423,7 +2445,10 @@ class LiveBarterMatrix:
         
         for pair in pairs:
             # Extract base and quote from pair name
-            for quote in ['USD', 'USDT', 'USDC', 'EUR', 'GBP', 'BTC', 'ETH', 'ZUSD', 'ZEUR']:
+            for quote in [
+                'USD', 'USDT', 'USDC', 'EUR', 'GBP', 'BTC', 'ETH',
+                'ZUSD', 'ZEUR', 'BUSD', 'USDP', 'PYUSD', 'FDUSD',
+            ]:
                 if pair.endswith(quote):
                     base = pair[:-len(quote)]
                     # Clean up Kraken naming (XXBT → BTC, XETH → ETH)
@@ -2433,10 +2458,7 @@ class LiveBarterMatrix:
                         base = 'BTC'
                     
                     if base and len(base) >= 2:
-                        # Register the asset
-                        self.DISCOVERED_ASSETS.add(base)
-                        self.EXCHANGE_PAIRS[exchange_lower].add(pair)
-                        discovered += 1
+                        discovered += self.register_exchange_pair(exchange_lower, pair, base, quote)
                     break
         
         return discovered
@@ -3172,6 +3194,9 @@ class MicroProfitLabyrinth:
         self.alpaca_fee_buffer_pct = float(os.getenv("ALPACA_FEE_BUFFER_PCT", "0.01"))
         self.alpaca_min_net_profit_pct = float(os.getenv("ALPACA_MIN_NET_PROFIT_PCT", "0.01"))
         self.alpaca_min_net_profit_usd = float(os.getenv("ALPACA_MIN_NET_PROFIT_USD", str(EPSILON_PROFIT_USD)))
+        self.alpaca_auto_exits = os.getenv("ALPACA_AUTO_EXITS", "false").lower() == "true"
+        self.alpaca_take_profit_pct = float(os.getenv("ALPACA_TAKE_PROFIT_PCT", "1.0"))
+        self.alpaca_stop_loss_pct = float(os.getenv("ALPACA_STOP_LOSS_PCT", "0.6"))
     
     # ════════════════════════════════════════════════════════════════════════
     # 🏆 WINNERS ONLY MODE - Verbose printing control
@@ -3258,6 +3283,47 @@ class MicroProfitLabyrinth:
             "fee_buffer_pct": self.alpaca_fee_buffer_pct,
             "total_pct": total_pct,
         }
+
+    def _alpaca_place_exit_orders(self, asset: str, qty: float) -> None:
+        """Optionally place Alpaca OCO exits to capture profit and cap downside."""
+        if not self.alpaca_auto_exits or not self.alpaca or not asset or qty <= 0:
+            return
+        if asset.upper() in self.barter_matrix.STABLECOINS:
+            return
+
+        symbol = self._alpaca_format_symbol(f"{asset}USD")
+        price = self.prices.get(asset.upper(), 0.0) or 0.0
+
+        try:
+            quotes = self.alpaca.get_latest_crypto_quotes([symbol]) or {}
+            quote = quotes.get(symbol, {}) or {}
+            bid = float(quote.get("bp", 0) or 0)
+            ask = float(quote.get("ap", 0) or 0)
+            if bid > 0 and ask > 0:
+                price = (bid + ask) / 2
+        except Exception:
+            pass
+
+        if price <= 0:
+            return
+
+        take_profit = price * (1 + self.alpaca_take_profit_pct / 100.0)
+        stop_loss = price * (1 - self.alpaca_stop_loss_pct / 100.0)
+
+        try:
+            result = self.alpaca.place_oco_order(
+                symbol=symbol,
+                qty=qty,
+                side="sell",
+                take_profit_limit=take_profit,
+                stop_loss_stop=stop_loss,
+            )
+            if result:
+                logger.info(
+                    f"🦙 Alpaca OCO exits placed for {asset}: TP {take_profit:.6f} | SL {stop_loss:.6f}"
+                )
+        except Exception as e:
+            logger.debug(f"Alpaca OCO placement failed for {asset}: {e}")
     
     def _load_uk_allowed_pairs(self):
         """Load UK-allowed Binance pairs from cached JSON file."""
@@ -4357,15 +4423,19 @@ class MicroProfitLabyrinth:
                 info = self.binance.exchange_info()
                 symbols = info.get('symbols', [])
                 binance_pair_names = []
+                discovered = 0
                 
                 for sym in symbols:
-                    if sym.get('status') == 'TRADING':
+                    if sym.get('status') == 'TRADING' and sym.get('isSpotTradingAllowed', True):
                         pair = sym.get('symbol', '')
+                        base = sym.get('baseAsset', '')
+                        quote = sym.get('quoteAsset', '')
                         binance_pair_names.append(pair)
                         self.binance_pairs.add(pair)
+                        discovered += self.barter_matrix.register_exchange_pair('binance', pair, base, quote)
                 
-                # 🗺️ REGISTER WITH BARTER MATRIX
-                discovered = self.barter_matrix.discover_exchange_assets('binance', binance_pair_names)
+                # 🗺️ REGISTER WITH BARTER MATRIX (fallback parse for any unknown formats)
+                discovered += self.barter_matrix.discover_exchange_assets('binance', binance_pair_names)
                 print(f"   🟡 Binance: {len(binance_pair_names)} tradeable pairs ({discovered} assets discovered)")
             except Exception as e:
                 logger.error(f"Binance pairs error: {e}")
@@ -5997,6 +6067,8 @@ class MicroProfitLabyrinth:
         total_cost_usd = opp.from_value_usd * total_cost_pct
         scanner_expected_pnl = float(getattr(opp, 'expected_pnl_usd', 0.0) or 0.0)
         conservative_pnl = scanner_expected_pnl - total_cost_usd
+        min_profit_floor = max(MIN_NET_PROFIT_USD, total_cost_usd * 0.10)
+        required_profit_usd = total_cost_usd + min_profit_floor
 
         # Apply the same simple history penalty used in the live pre-exec gate
         pair_key = (opp.from_asset.upper(), opp.to_asset.upper())
@@ -6026,14 +6098,18 @@ class MicroProfitLabyrinth:
             }
 
         # 🌍 PLANET SAVER: Scanner expects profit = GO FOR IT!
-        if conservative_pnl < -0.005:  # Only block if clearly losing > half a cent
+        if scanner_expected_pnl < required_profit_usd:
             return {
                 'ok': False,
-                'reason': f'cost_exceeds_profit: ${total_cost_usd:.4f} > ${scanner_expected_pnl:.4f}',
+                'reason': (
+                    f'cost_exceeds_profit: expected ${scanner_expected_pnl:.4f} '
+                    f'< required ${required_profit_usd:.4f}'
+                ),
                 'approved': approved,
                 'cost_breakdown': cost_breakdown,
                 'total_cost_usd': total_cost_usd,
                 'conservative_pnl_usd': conservative_pnl,
+                'required_profit_usd': required_profit_usd,
             }
 
         return {
@@ -6043,6 +6119,7 @@ class MicroProfitLabyrinth:
             'cost_breakdown': cost_breakdown,
             'total_cost_usd': total_cost_usd,
             'conservative_pnl_usd': conservative_pnl,
+            'required_profit_usd': required_profit_usd,
         }
 
     def _simulate_balance_after_trade(self, opp: 'MicroOpportunity', outcome: Dict[str, Any]):
@@ -9845,26 +9922,19 @@ if __name__ == "__main__":
             path_win_rate = path_history.get('wins', 0) / max(path_trades, 1)
             path_profit = path_history.get('total_profit', 0)
             
-            # Epsilon policy: allow ultra-micro positive opportunities through;
-            # conservative cost checks later decide if it truly doesn't bleed.
-            min_expected_profit = EPSILON_PROFIT_USD
+            # Enforce a minimum expected profit to avoid tiny losses compounding.
+            min_expected_profit = MIN_NET_PROFIT_USD
             
             # � DEBUG: See what expected PnL is calculated
             asset_momentum = self.asset_momentum.get(to_asset, 0)
             if abs(asset_momentum) > 1.0 or to_asset.upper() == 'GUN':  # >1%/min or GUN specifically
                 print(f"   🔬 DEBUG OPP: {from_asset}→{to_asset} | mom={asset_momentum:.2f}%/min | exp_pnl=${opp.expected_pnl_usd:.6f} | exp_pct={opp.expected_pnl_pct:.4%}")
             
-            # �👑 LEARNING FILTER: Does expected profit overcome minimum?
-            # Also allow if expected profit is POSITIVE (even if below absolute minimum)
-            if opp.expected_pnl_usd < min_expected_profit and opp.expected_pnl_usd <= 0:
-                # BOTH below minimum AND negative/zero - definitely skip
+            # 👑 LEARNING FILTER: Require expected profit to clear the minimum floor.
+            if opp.expected_pnl_usd < min_expected_profit:
                 continue
             
-            # If expected profit is positive (even tiny), let downstream gates decide.
-            if opp.expected_pnl_usd >= min_expected_profit:
-                opportunities.append(opp)
-            elif combined > 0.5:
-                opportunities.append(opp)
+            opportunities.append(opp)
         
         return opportunities
 
@@ -10661,6 +10731,14 @@ if __name__ == "__main__":
                         if debug_first_scans:
                             print(f"         👑🚫 QUEEN VETO: {from_asset}→{to_asset} | {queen_veto_reason}")
                         continue
+
+                    if adjusted_pnl < MIN_NET_PROFIT_USD:
+                        if debug_first_scans:
+                            print(
+                                f"         🚫 MIN PROFIT FILTER: {from_asset}→{to_asset} "
+                                f"adj_pnl=${adjusted_pnl:.6f} < ${MIN_NET_PROFIT_USD:.6f}"
+                            )
+                        continue
                     
                     opp = MicroOpportunity(
                         timestamp=time.time(),
@@ -10843,9 +10921,9 @@ if __name__ == "__main__":
             # The opportunity's expected_pnl_usd comes from the scanner (includes momentum, signals, etc.)
             scanner_expected_pnl = opp.expected_pnl_usd if hasattr(opp, 'expected_pnl_usd') else 0.0
             
-            # SIMPLE GATE: Does expected profit exceed real costs?
-            # Add a small buffer (25%) for safety
-            cost_with_buffer = total_cost_usd * 1.25
+            # SIMPLE GATE: Does expected profit exceed real costs + safety buffer?
+            min_profit_floor = max(MIN_NET_PROFIT_USD, total_cost_usd * 0.10)
+            required_profit_usd = total_cost_usd + min_profit_floor
             
             # Net profit after REAL costs
             conservative_pnl = scanner_expected_pnl - total_cost_usd
@@ -10893,10 +10971,12 @@ if __name__ == "__main__":
             # Allow trades if scanner expects profit - trust the quantum mirror!
             planet_saver_mode = hasattr(self, 'planet_saver') and self.planet_saver is not None
             
-            if conservative_pnl < -0.01 and not planet_saver_mode:  # Only block if clearly losing > $0.01
+            if scanner_expected_pnl < required_profit_usd and not planet_saver_mode:
                 self.rejection_print(f"\n   🛑 PRE-EXECUTION GATE BLOCKED!")
                 self.rejection_print(f"   ├── Scanner Expected: ${scanner_expected_pnl:+.4f}")
                 self.rejection_print(f"   ├── Total Costs: ${total_cost_usd:.4f} ({total_cost_pct*100:.2f}%)")
+                self.rejection_print(f"   ├── Min Net Profit Floor: ${min_profit_floor:.4f}")
+                self.rejection_print(f"   ├── Required Profit: ${required_profit_usd:.4f}")
                 self.rejection_print(f"   ├── Cost breakdown: fee={cost_breakdown.get('base_fee', 0):.2f}% spread={spread_pct:.2f}% slip={cost_breakdown.get('learned_slippage', 0):.2f}%")
                 self.rejection_print(f"   ├── Net P&L: ${conservative_pnl:+.4f}")
                 self.rejection_print(f"   └── Reason: Expected profit doesn't cover costs")
@@ -10928,6 +11008,8 @@ if __name__ == "__main__":
                 print(f"\n   ✅ PRE-EXECUTION GATE PASSED:")
                 print(f"   ├── Scanner Expected: ${scanner_expected_pnl:+.4f}")
                 print(f"   ├── Total Costs: ${total_cost_usd:.4f} ({total_cost_pct*100:.2f}%)")
+                print(f"   ├── Min Net Profit Floor: ${min_profit_floor:.4f}")
+                print(f"   ├── Required Profit: ${required_profit_usd:.4f}")
                 print(f"   ├── Net P&L: ${conservative_pnl:+.4f}")
                 print(f"   └── Proceeding with execution... 🚀")
         
@@ -11857,6 +11939,9 @@ if __name__ == "__main__":
                     
                     print(f"   ✅ Conversion complete! {success_count} trades executed. Bought {buy_amount:.6f} {opp.to_asset}")
                     
+                    # 🦙 Optional OCO exits to capture profit + protect downside
+                    self._alpaca_place_exit_orders(opp.to_asset, buy_amount)
+
                     # 🔍 VALIDATE ORDER EXECUTION
                     validation = self._validate_order_execution(trades, opp, 'alpaca')
                     verification = self._verify_profit_math(validation, opp, buy_amount)
@@ -12966,9 +13051,9 @@ if __name__ == "__main__":
             # Global Feed Update (every 60s)
             last_global_feed_time = 0
             
-            # 👑🌐 QUEEN'S ONLINE RESEARCH - Every 2 minutes, she learns and enhances herself
+            # 👑🌐 QUEEN'S ONLINE RESEARCH - Throttled to avoid constant code generation
             last_research_time = 0
-            research_interval = 60  # Research every 1 minute (TURBO - was 2 mins)
+            research_interval = 300  # Research every 5 minutes (was 1 min)
             print(f"\n👑🌐 Queen's Research Schedule: Every {research_interval}s (next in {research_interval}s)")
             
             while duration_s == 0 or time.time() - start_time < duration_s:
