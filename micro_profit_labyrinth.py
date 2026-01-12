@@ -4704,9 +4704,13 @@ class MicroProfitLabyrinth:
                         market_value = float(pos.get('market_value', 0))
                         
                         if qty > 0 and raw_symbol:
-                            # Convert Alpaca symbol format (BTCUSD -> BTC, USDTUSD -> USDT)
-                            if raw_symbol.endswith('USD'):
+                            # Convert Alpaca symbol format (BTCUSD -> BTC, BCH/BTC -> BCH)
+                            if '/' in raw_symbol:
+                                base_asset = raw_symbol.split('/')[0]
+                            elif raw_symbol.endswith('USD'):
                                 base_asset = raw_symbol[:-3]  # Remove USD suffix
+                            elif raw_symbol.endswith('BTC'):
+                                base_asset = raw_symbol[:-3]
                             else:
                                 base_asset = raw_symbol
                             
@@ -6196,7 +6200,11 @@ class MicroProfitLabyrinth:
                         raw_symbol = pos.get('symbol', '')
                         qty = float(pos.get('qty', 0))
                         if qty > 0 and raw_symbol:
-                            if raw_symbol.endswith('USD'):
+                            if '/' in raw_symbol:
+                                base_asset = raw_symbol.split('/')[0]
+                            elif raw_symbol.endswith('USD'):
+                                base_asset = raw_symbol[:-3]
+                            elif raw_symbol.endswith('BTC'):
                                 base_asset = raw_symbol[:-3]
                             else:
                                 base_asset = raw_symbol
