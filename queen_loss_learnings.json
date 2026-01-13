@@ -1168,6 +1168,87 @@
         "Fees ($0.0706) were >30% of expected profit - increase minimum"
       ],
       "tactics_applied": []
+    },
+    {
+      "timestamp": 1768300941.7251425,
+      "exchange": "alpaca",
+      "from_asset": "USD",
+      "to_asset": "UNI",
+      "from_amount": 5.709499999999999,
+      "from_value_usd": 5.709499999999999,
+      "executed_price": 5.406499999999999,
+      "expected_price": 5.406499999999999,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.034256999999999996,
+      "loss_amount": 0.8683969199999999,
+      "loss_pct": 15.209684210526317,
+      "market_data": {
+        "cash": 0.3,
+        "portfolio_value": 13.76
+      },
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 5.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.476,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.6300000000000001
+      },
+      "combined_score": 0.714,
+      "expected_profit": 0.8683969199999999,
+      "cause_identified": "Unknown - needs further analysis",
+      "lessons_learned": [
+        "Large loss on alpaca - review alpaca pair filters"
+      ],
+      "tactics_applied": [
+        "Asymmetric warfare"
+      ]
+    },
+    {
+      "timestamp": 1768301445.4712973,
+      "exchange": "alpaca",
+      "from_asset": "UNI",
+      "to_asset": "AAVE",
+      "from_amount": 0.9464763141499999,
+      "from_value_usd": 5.123181640862534,
+      "executed_price": 169.4785,
+      "expected_price": 169.4785,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.03073908984517521,
+      "loss_amount": 0.07628328533743861,
+      "loss_pct": 1.4889826417436105,
+      "market_data": {
+        "cash": 0.22,
+        "portfolio_value": 13.63
+      },
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 5.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.351,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.63
+      },
+      "combined_score": 0.47385,
+      "expected_profit": 0.07628328533743861,
+      "cause_identified": "Low confidence trade - should have waited",
+      "lessons_learned": [
+        "Score 0.47 was too low - require >= 0.6 for this pair",
+        "Fees ($0.0307) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": []
     }
   ],
   "patterns": {
@@ -1261,15 +1342,35 @@
       ],
       "first_seen": 1768253450.2877166,
       "last_seen": 1768253450.2877166
+    },
+    "USD\u2192UNI_alpaca": {
+      "losses": 1,
+      "total_loss": 0.8683969199999999,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Unknown - needs further analysis"
+      ],
+      "first_seen": 1768300941.7251425,
+      "last_seen": 1768300941.7251425
+    },
+    "UNI\u2192AAVE_alpaca": {
+      "losses": 1,
+      "total_loss": 0.07628328533743861,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Low confidence trade - should have waited"
+      ],
+      "first_seen": 1768301445.4712973,
+      "last_seen": 1768301445.4712973
     }
   },
   "stats": {
-    "total_losses_analyzed": 29,
+    "total_losses_analyzed": 31,
     "patterns_identified": 17,
     "tactics_learned": 0,
     "wikipedia_researches": 6,
-    "lessons_broadcast": 12,
+    "lessons_broadcast": 14,
     "money_saved_by_learning": 0.0
   },
-  "last_saved": "2026-01-13T09:40:40.054823"
+  "last_saved": "2026-01-13T12:36:49.584180"
 }

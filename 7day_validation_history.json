@@ -10910,5 +10910,37 @@
     "actual_edge": 0.0,
     "direction_correct": true,
     "timing_score": 0.5
+  },
+  {
+    "validation_id": "ETH_20260113_104229",
+    "symbol": "ETH",
+    "entry_price": 3131.3885,
+    "entry_time": "2026-01-13T10:42:29.509926",
+    "predicted_edge": 0,
+    "predicted_confidence": 0.5,
+    "hour": 10,
+    "day_of_week": 1,
+    "status": "validated",
+    "exit_price": 3131.3885,
+    "exit_time": "2026-01-13T10:42:29.510346",
+    "actual_edge": 0.0,
+    "direction_correct": true,
+    "timing_score": 0.5
+  },
+  {
+    "validation_id": "UNI_20260113_104231",
+    "symbol": "UNI",
+    "entry_price": 5.411,
+    "entry_time": "2026-01-13T10:42:31.788643",
+    "predicted_edge": 0,
+    "predicted_confidence": 0.5,
+    "hour": 10,
+    "day_of_week": 1,
+    "status": "validated",
+    "exit_price": 5.411,
+    "exit_time": "2026-01-13T10:42:31.789104",
+    "actual_edge": 0.0,
+    "direction_correct": true,
+    "timing_score": 0.5
   }
 ]
