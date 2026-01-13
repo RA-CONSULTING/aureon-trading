@@ -8,8 +8,8 @@
     "current_streak": 0,
     "best_streak": 33,
     "total_wins": 43,
-    "total_trades": 31654,
-    "win_rate": 0.135843811208694,
+    "total_trades": 31716,
+    "win_rate": 0.13557825703115145,
     "days_active": 0,
     "started_at": "2026-01-09T10:54:59.789105",
     "last_milestone": "\ud83c\udf33 Hundred - Taking root"
@@ -19,502 +19,6 @@
   "compounded_gains_usd": 13.759264633802323,
   "active_positions": {},
   "trade_history": [
-    {
-      "type": "LOSS",
-      "loss_usd": 0.0,
-      "symbol": "LTC/XTZ",
-      "exchange": "alpaca",
-      "timestamp": "2026-01-13T12:25:50.617424",
-      "metadata": {}
-    },
-    {
-      "type": "LOSS",
-      "loss_usd": 0.0,
-      "symbol": "LTC/SUSHI",
-      "exchange": "alpaca",
-      "timestamp": "2026-01-13T12:25:50.911534",
-      "metadata": {}
-    },
-    {
-      "type": "LOSS",
-      "loss_usd": 0.0,
-      "symbol": "LTC/XRP",
-      "exchange": "alpaca",
-      "timestamp": "2026-01-13T12:25:51.212725",
-      "metadata": {}
-    },
-    {
-      "type": "LOSS",
-      "loss_usd": 0.0,
-      "symbol": "LTC/SOL",
-      "exchange": "alpaca",
-      "timestamp": "2026-01-13T12:25:51.534681",
-      "metadata": {}
-    },
-    {
-      "type": "LOSS",
-      "loss_usd": 0.0,
-      "symbol": "LTC/BAT",
-      "exchange": "alpaca",
-      "timestamp": "2026-01-13T12:25:51.825343",
-      "metadata": {}
-    },
-    {
-      "type": "LOSS",
-      "loss_usd": 0.0,
-      "symbol": "LTC/TRUMP",
-      "exchange": "alpaca",
-      "timestamp": "2026-01-13T12:25:52.142188",
-      "metadata": {}
-    },
-    {
-      "type": "LOSS",
-      "loss_usd": 0.0,
-      "symbol": "LTC/SKY",
-      "exchange": "alpaca",
-      "timestamp": "2026-01-13T12:25:52.453530",
-      "metadata": {}
-    },
-    {
-      "type": "LOSS",
-      "loss_usd": 0.0,
-      "symbol": "LTC/USDG",
-      "exchange": "alpaca",
-      "timestamp": "2026-01-13T12:25:52.744240",
-      "metadata": {}
-    },
-    {
-      "type": "LOSS",
-      "loss_usd": 0.0,
-      "symbol": "USDT/AVAX",
-      "exchange": "alpaca",
-      "timestamp": "2026-01-13T12:25:53.086174",
-      "metadata": {}
-    },
-    {
-      "type": "LOSS",
-      "loss_usd": 0.0,
-      "symbol": "USDT/AAVE",
-      "exchange": "alpaca",
-      "timestamp": "2026-01-13T12:25:53.416765",
-      "metadata": {}
-    },
-    {
-      "type": "LOSS",
-      "loss_usd": 0.0,
-      "symbol": "USDT/BTC",
-      "exchange": "alpaca",
-      "timestamp": "2026-01-13T12:25:53.697014",
-      "metadata": {}
-    },
-    {
-      "type": "LOSS",
-      "loss_usd": 0.0,
-      "symbol": "USDT/BCH",
-      "exchange": "alpaca",
-      "timestamp": "2026-01-13T12:25:54.013523",
-      "metadata": {}
-    },
-    {
-      "type": "LOSS",
-      "loss_usd": 0.0,
-      "symbol": "USDT/LINK",
-      "exchange": "alpaca",
-      "timestamp": "2026-01-13T12:25:54.335557",
-      "metadata": {}
-    },
-    {
-      "type": "LOSS",
-      "loss_usd": 0.0,
-      "symbol": "USDT/LTC",
-      "exchange": "alpaca",
-      "timestamp": "2026-01-13T12:25:54.645414",
-      "metadata": {}
-    },
-    {
-      "type": "LOSS",
-      "loss_usd": 0.0,
-      "symbol": "USDT/CRV",
-      "exchange": "alpaca",
-      "timestamp": "2026-01-13T12:25:54.940030",
-      "metadata": {}
-    },
-    {
-      "type": "LOSS",
-      "loss_usd": 0.0,
-      "symbol": "USDT/GRT",
-      "exchange": "alpaca",
-      "timestamp": "2026-01-13T12:25:55.243327",
-      "metadata": {}
-    },
-    {
-      "type": "LOSS",
-      "loss_usd": 0.0,
-      "symbol": "USDT/UNI",
-      "exchange": "alpaca",
-      "timestamp": "2026-01-13T12:25:55.497756",
-      "metadata": {}
-    },
-    {
-      "type": "LOSS",
-      "loss_usd": 0.0,
-      "symbol": "USDT/XTZ",
-      "exchange": "alpaca",
-      "timestamp": "2026-01-13T12:25:55.742820",
-      "metadata": {}
-    },
-    {
-      "type": "LOSS",
-      "loss_usd": 0.0,
-      "symbol": "USDT/ETH",
-      "exchange": "alpaca",
-      "timestamp": "2026-01-13T12:25:55.984719",
-      "metadata": {}
-    },
-    {
-      "type": "LOSS",
-      "loss_usd": 0.0,
-      "symbol": "USDT/DOT",
-      "exchange": "alpaca",
-      "timestamp": "2026-01-13T12:25:56.391209",
-      "metadata": {}
-    },
-    {
-      "type": "LOSS",
-      "loss_usd": 0.0,
-      "symbol": "USDT/SUSHI",
-      "exchange": "alpaca",
-      "timestamp": "2026-01-13T12:25:57.133325",
-      "metadata": {}
-    },
-    {
-      "type": "LOSS",
-      "loss_usd": 0.0,
-      "symbol": "LTC/YFI",
-      "exchange": "alpaca",
-      "timestamp": "2026-01-13T12:25:57.421904",
-      "metadata": {}
-    },
-    {
-      "type": "LOSS",
-      "loss_usd": 0.0,
-      "symbol": "USDT/XRP",
-      "exchange": "alpaca",
-      "timestamp": "2026-01-13T12:25:57.710918",
-      "metadata": {}
-    },
-    {
-      "type": "LOSS",
-      "loss_usd": 0.0,
-      "symbol": "USDT/SOL",
-      "exchange": "alpaca",
-      "timestamp": "2026-01-13T12:25:58.057125",
-      "metadata": {}
-    },
-    {
-      "type": "LOSS",
-      "loss_usd": 0.0,
-      "symbol": "USDT/BAT",
-      "exchange": "alpaca",
-      "timestamp": "2026-01-13T12:25:58.387005",
-      "metadata": {}
-    },
-    {
-      "type": "LOSS",
-      "loss_usd": 0.0,
-      "symbol": "USDT/TRUMP",
-      "exchange": "alpaca",
-      "timestamp": "2026-01-13T12:25:58.787311",
-      "metadata": {}
-    },
-    {
-      "type": "LOSS",
-      "loss_usd": 0.0,
-      "symbol": "USDT/SKY",
-      "exchange": "alpaca",
-      "timestamp": "2026-01-13T12:25:59.101428",
-      "metadata": {}
-    },
-    {
-      "type": "LOSS",
-      "loss_usd": 0.0,
-      "symbol": "USDT/USDG",
-      "exchange": "alpaca",
-      "timestamp": "2026-01-13T12:25:59.440205",
-      "metadata": {}
-    },
-    {
-      "type": "LOSS",
-      "loss_usd": 0.0,
-      "symbol": "LTC/SHIB",
-      "exchange": "alpaca",
-      "timestamp": "2026-01-13T12:25:59.763063",
-      "metadata": {}
-    },
-    {
-      "type": "LOSS",
-      "loss_usd": 0.0,
-      "symbol": "LTC/PEPE",
-      "exchange": "alpaca",
-      "timestamp": "2026-01-13T12:26:00.024593",
-      "metadata": {}
-    },
-    {
-      "type": "LOSS",
-      "loss_usd": 0.0,
-      "symbol": "LTC/DOGE",
-      "exchange": "alpaca",
-      "timestamp": "2026-01-13T12:26:00.350491",
-      "metadata": {}
-    },
-    {
-      "type": "LOSS",
-      "loss_usd": 0.0,
-      "symbol": "USDT/YFI",
-      "exchange": "alpaca",
-      "timestamp": "2026-01-13T12:26:00.644285",
-      "metadata": {}
-    },
-    {
-      "type": "LOSS",
-      "loss_usd": 0.0,
-      "symbol": "USDT/SHIB",
-      "exchange": "alpaca",
-      "timestamp": "2026-01-13T12:26:00.979658",
-      "metadata": {}
-    },
-    {
-      "type": "LOSS",
-      "loss_usd": 0.0,
-      "symbol": "USDT/PEPE",
-      "exchange": "alpaca",
-      "timestamp": "2026-01-13T12:26:01.266907",
-      "metadata": {}
-    },
-    {
-      "type": "LOSS",
-      "loss_usd": 0.0,
-      "symbol": "USDT/DOGE",
-      "exchange": "alpaca",
-      "timestamp": "2026-01-13T12:26:01.562611",
-      "metadata": {}
-    },
-    {
-      "type": "LOSS",
-      "loss_usd": 0.0,
-      "symbol": "AAVE/AVAX",
-      "exchange": "alpaca",
-      "timestamp": "2026-01-13T12:26:18.205421",
-      "metadata": {}
-    },
-    {
-      "type": "LOSS",
-      "loss_usd": 0.0,
-      "symbol": "AAVE/USD",
-      "exchange": "alpaca",
-      "timestamp": "2026-01-13T12:26:18.902477",
-      "metadata": {}
-    },
-    {
-      "type": "LOSS",
-      "loss_usd": 0.0,
-      "symbol": "AAVE/USDT",
-      "exchange": "alpaca",
-      "timestamp": "2026-01-13T12:26:19.111501",
-      "metadata": {}
-    },
-    {
-      "type": "LOSS",
-      "loss_usd": 0.0,
-      "symbol": "AAVE/ZUSD",
-      "exchange": "alpaca",
-      "timestamp": "2026-01-13T12:26:19.876271",
-      "metadata": {}
-    },
-    {
-      "type": "LOSS",
-      "loss_usd": 0.0,
-      "symbol": "AAVE/TUSD",
-      "exchange": "alpaca",
-      "timestamp": "2026-01-13T12:26:20.596205",
-      "metadata": {}
-    },
-    {
-      "type": "LOSS",
-      "loss_usd": 0.0,
-      "symbol": "AAVE/DAI",
-      "exchange": "alpaca",
-      "timestamp": "2026-01-13T12:26:21.216248",
-      "metadata": {}
-    },
-    {
-      "type": "LOSS",
-      "loss_usd": 0.0,
-      "symbol": "AAVE/USDC",
-      "exchange": "alpaca",
-      "timestamp": "2026-01-13T12:26:21.453069",
-      "metadata": {}
-    },
-    {
-      "type": "LOSS",
-      "loss_usd": 0.0,
-      "symbol": "AAVE/BTC",
-      "exchange": "alpaca",
-      "timestamp": "2026-01-13T12:26:22.132933",
-      "metadata": {}
-    },
-    {
-      "type": "LOSS",
-      "loss_usd": 0.0,
-      "symbol": "AAVE/LINK",
-      "exchange": "alpaca",
-      "timestamp": "2026-01-13T12:26:22.789642",
-      "metadata": {}
-    },
-    {
-      "type": "LOSS",
-      "loss_usd": 0.0,
-      "symbol": "AAVE/LTC",
-      "exchange": "alpaca",
-      "timestamp": "2026-01-13T12:26:23.078194",
-      "metadata": {}
-    },
-    {
-      "type": "LOSS",
-      "loss_usd": 0.0,
-      "symbol": "AAVE/SOL",
-      "exchange": "alpaca",
-      "timestamp": "2026-01-13T12:26:23.848799",
-      "metadata": {}
-    },
-    {
-      "type": "LOSS",
-      "loss_usd": 0.0,
-      "symbol": "AAVE/BCH",
-      "exchange": "alpaca",
-      "timestamp": "2026-01-13T12:26:24.669383",
-      "metadata": {}
-    },
-    {
-      "type": "LOSS",
-      "loss_usd": 0.0,
-      "symbol": "AAVE/XRP",
-      "exchange": "alpaca",
-      "timestamp": "2026-01-13T12:26:25.623725",
-      "metadata": {}
-    },
-    {
-      "type": "LOSS",
-      "loss_usd": 0.0,
-      "symbol": "AAVE/GRT",
-      "exchange": "alpaca",
-      "timestamp": "2026-01-13T12:26:26.432447",
-      "metadata": {}
-    },
-    {
-      "type": "LOSS",
-      "loss_usd": 0.0,
-      "symbol": "AAVE/DOT",
-      "exchange": "alpaca",
-      "timestamp": "2026-01-13T12:26:27.407208",
-      "metadata": {}
-    },
-    {
-      "type": "LOSS",
-      "loss_usd": 0.0,
-      "symbol": "AAVE/UNI",
-      "exchange": "alpaca",
-      "timestamp": "2026-01-13T12:26:28.206153",
-      "metadata": {}
-    },
-    {
-      "type": "LOSS",
-      "loss_usd": 0.0,
-      "symbol": "AAVE/SUSHI",
-      "exchange": "alpaca",
-      "timestamp": "2026-01-13T12:26:28.639779",
-      "metadata": {}
-    },
-    {
-      "type": "LOSS",
-      "loss_usd": 0.0,
-      "symbol": "AAVE/XTZ",
-      "exchange": "alpaca",
-      "timestamp": "2026-01-13T12:26:29.493871",
-      "metadata": {}
-    },
-    {
-      "type": "LOSS",
-      "loss_usd": 0.0,
-      "symbol": "AAVE/ETH",
-      "exchange": "alpaca",
-      "timestamp": "2026-01-13T12:26:30.380151",
-      "metadata": {}
-    },
-    {
-      "type": "LOSS",
-      "loss_usd": 0.0,
-      "symbol": "AAVE/CRV",
-      "exchange": "alpaca",
-      "timestamp": "2026-01-13T12:26:31.097086",
-      "metadata": {}
-    },
-    {
-      "type": "LOSS",
-      "loss_usd": 0.0,
-      "symbol": "AAVE/BAT",
-      "exchange": "alpaca",
-      "timestamp": "2026-01-13T12:26:31.373240",
-      "metadata": {}
-    },
-    {
-      "type": "LOSS",
-      "loss_usd": 0.0,
-      "symbol": "AAVE/SKY",
-      "exchange": "alpaca",
-      "timestamp": "2026-01-13T12:26:32.075907",
-      "metadata": {}
-    },
-    {
-      "type": "LOSS",
-      "loss_usd": 0.0,
-      "symbol": "AAVE/USDG",
-      "exchange": "alpaca",
-      "timestamp": "2026-01-13T12:26:32.386159",
-      "metadata": {}
-    },
-    {
-      "type": "LOSS",
-      "loss_usd": 0.0,
-      "symbol": "AAVE/TRUMP",
-      "exchange": "alpaca",
-      "timestamp": "2026-01-13T12:26:32.735472",
-      "metadata": {}
-    },
-    {
-      "type": "LOSS",
-      "loss_usd": 0.0,
-      "symbol": "AAVE/YFI",
-      "exchange": "alpaca",
-      "timestamp": "2026-01-13T12:26:33.070622",
-      "metadata": {}
-    },
-    {
-      "type": "LOSS",
-      "loss_usd": 0.0,
-      "symbol": "AAVE/PEPE",
-      "exchange": "alpaca",
-      "timestamp": "2026-01-13T12:26:33.468202",
-      "metadata": {}
-    },
-    {
-      "type": "LOSS",
-      "loss_usd": 0.0,
-      "symbol": "AAVE/SHIB",
-      "exchange": "alpaca",
-      "timestamp": "2026-01-13T12:26:33.833604",
-      "metadata": {}
-    },
     {
       "type": "LOSS",
       "loss_usd": 0.0,
@@ -8018,6 +7522,502 @@
       "exchange": "alpaca",
       "timestamp": "2026-01-13T12:37:50.398285",
       "metadata": {}
+    },
+    {
+      "type": "LOSS",
+      "loss_usd": 0.0,
+      "symbol": "AAVE/ETH",
+      "exchange": "alpaca",
+      "timestamp": "2026-01-13T12:37:50.661277",
+      "metadata": {}
+    },
+    {
+      "type": "LOSS",
+      "loss_usd": 0.0,
+      "symbol": "AAVE/SOL",
+      "exchange": "alpaca",
+      "timestamp": "2026-01-13T12:37:50.919415",
+      "metadata": {}
+    },
+    {
+      "type": "LOSS",
+      "loss_usd": 0.0,
+      "symbol": "AAVE/CRV",
+      "exchange": "alpaca",
+      "timestamp": "2026-01-13T12:37:51.140552",
+      "metadata": {}
+    },
+    {
+      "type": "LOSS",
+      "loss_usd": 0.0,
+      "symbol": "AAVE/BAT",
+      "exchange": "alpaca",
+      "timestamp": "2026-01-13T12:37:51.358735",
+      "metadata": {}
+    },
+    {
+      "type": "LOSS",
+      "loss_usd": 0.0,
+      "symbol": "AAVE/SKY",
+      "exchange": "alpaca",
+      "timestamp": "2026-01-13T12:37:51.594282",
+      "metadata": {}
+    },
+    {
+      "type": "LOSS",
+      "loss_usd": 0.0,
+      "symbol": "AAVE/USDG",
+      "exchange": "alpaca",
+      "timestamp": "2026-01-13T12:37:51.833913",
+      "metadata": {}
+    },
+    {
+      "type": "LOSS",
+      "loss_usd": 0.0,
+      "symbol": "AAVE/TRUMP",
+      "exchange": "alpaca",
+      "timestamp": "2026-01-13T12:37:52.070926",
+      "metadata": {}
+    },
+    {
+      "type": "LOSS",
+      "loss_usd": 0.0,
+      "symbol": "AAVE/YFI",
+      "exchange": "alpaca",
+      "timestamp": "2026-01-13T12:37:52.315914",
+      "metadata": {}
+    },
+    {
+      "type": "LOSS",
+      "loss_usd": 0.0,
+      "symbol": "AAVE/SHIB",
+      "exchange": "alpaca",
+      "timestamp": "2026-01-13T12:37:52.569250",
+      "metadata": {}
+    },
+    {
+      "type": "LOSS",
+      "loss_usd": 0.0,
+      "symbol": "AAVE/DOGE",
+      "exchange": "alpaca",
+      "timestamp": "2026-01-13T12:37:52.820128",
+      "metadata": {}
+    },
+    {
+      "type": "LOSS",
+      "loss_usd": 0.0,
+      "symbol": "AAVE/PEPE",
+      "exchange": "alpaca",
+      "timestamp": "2026-01-13T12:37:53.053171",
+      "metadata": {}
+    },
+    {
+      "type": "LOSS",
+      "loss_usd": 0.0,
+      "symbol": "LTC/AVAX",
+      "exchange": "alpaca",
+      "timestamp": "2026-01-13T12:38:01.449288",
+      "metadata": {}
+    },
+    {
+      "type": "LOSS",
+      "loss_usd": 0.0,
+      "symbol": "LTC/USDT",
+      "exchange": "alpaca",
+      "timestamp": "2026-01-13T12:38:01.593188",
+      "metadata": {}
+    },
+    {
+      "type": "LOSS",
+      "loss_usd": 0.0,
+      "symbol": "LTC/USDC",
+      "exchange": "alpaca",
+      "timestamp": "2026-01-13T12:38:01.755768",
+      "metadata": {}
+    },
+    {
+      "type": "LOSS",
+      "loss_usd": 0.0,
+      "symbol": "LTC/USD",
+      "exchange": "alpaca",
+      "timestamp": "2026-01-13T12:38:01.898624",
+      "metadata": {}
+    },
+    {
+      "type": "LOSS",
+      "loss_usd": 0.0,
+      "symbol": "LTC/XTZ",
+      "exchange": "alpaca",
+      "timestamp": "2026-01-13T12:38:02.169615",
+      "metadata": {}
+    },
+    {
+      "type": "LOSS",
+      "loss_usd": 0.0,
+      "symbol": "LTC/ZUSD",
+      "exchange": "alpaca",
+      "timestamp": "2026-01-13T12:38:02.391410",
+      "metadata": {}
+    },
+    {
+      "type": "LOSS",
+      "loss_usd": 0.0,
+      "symbol": "LTC/TUSD",
+      "exchange": "alpaca",
+      "timestamp": "2026-01-13T12:38:02.632510",
+      "metadata": {}
+    },
+    {
+      "type": "LOSS",
+      "loss_usd": 0.0,
+      "symbol": "LTC/DAI",
+      "exchange": "alpaca",
+      "timestamp": "2026-01-13T12:38:02.874677",
+      "metadata": {}
+    },
+    {
+      "type": "LOSS",
+      "loss_usd": 0.0,
+      "symbol": "LTC/AAVE",
+      "exchange": "alpaca",
+      "timestamp": "2026-01-13T12:38:03.100834",
+      "metadata": {}
+    },
+    {
+      "type": "LOSS",
+      "loss_usd": 0.0,
+      "symbol": "LTC/BCH",
+      "exchange": "alpaca",
+      "timestamp": "2026-01-13T12:38:03.323176",
+      "metadata": {}
+    },
+    {
+      "type": "LOSS",
+      "loss_usd": 0.0,
+      "symbol": "LTC/LINK",
+      "exchange": "alpaca",
+      "timestamp": "2026-01-13T12:38:03.575550",
+      "metadata": {}
+    },
+    {
+      "type": "LOSS",
+      "loss_usd": 0.0,
+      "symbol": "LTC/BTC",
+      "exchange": "alpaca",
+      "timestamp": "2026-01-13T12:38:03.717293",
+      "metadata": {}
+    },
+    {
+      "type": "LOSS",
+      "loss_usd": 0.0,
+      "symbol": "LTC/UNI",
+      "exchange": "alpaca",
+      "timestamp": "2026-01-13T12:38:04.013236",
+      "metadata": {}
+    },
+    {
+      "type": "LOSS",
+      "loss_usd": 0.0,
+      "symbol": "LTC/SUSHI",
+      "exchange": "alpaca",
+      "timestamp": "2026-01-13T12:38:04.345402",
+      "metadata": {}
+    },
+    {
+      "type": "LOSS",
+      "loss_usd": 0.0,
+      "symbol": "LTC/ETH",
+      "exchange": "alpaca",
+      "timestamp": "2026-01-13T12:38:04.609173",
+      "metadata": {}
+    },
+    {
+      "type": "LOSS",
+      "loss_usd": 0.0,
+      "symbol": "LTC/DOT",
+      "exchange": "alpaca",
+      "timestamp": "2026-01-13T12:38:04.830370",
+      "metadata": {}
+    },
+    {
+      "type": "LOSS",
+      "loss_usd": 0.0,
+      "symbol": "LTC/GRT",
+      "exchange": "alpaca",
+      "timestamp": "2026-01-13T12:38:05.076594",
+      "metadata": {}
+    },
+    {
+      "type": "LOSS",
+      "loss_usd": 0.0,
+      "symbol": "LTC/XRP",
+      "exchange": "alpaca",
+      "timestamp": "2026-01-13T12:38:05.320031",
+      "metadata": {}
+    },
+    {
+      "type": "LOSS",
+      "loss_usd": 0.0,
+      "symbol": "LTC/SOL",
+      "exchange": "alpaca",
+      "timestamp": "2026-01-13T12:38:05.580222",
+      "metadata": {}
+    },
+    {
+      "type": "LOSS",
+      "loss_usd": 0.0,
+      "symbol": "LTC/CRV",
+      "exchange": "alpaca",
+      "timestamp": "2026-01-13T12:38:05.803078",
+      "metadata": {}
+    },
+    {
+      "type": "LOSS",
+      "loss_usd": 0.0,
+      "symbol": "LTC/BAT",
+      "exchange": "alpaca",
+      "timestamp": "2026-01-13T12:38:06.023581",
+      "metadata": {}
+    },
+    {
+      "type": "LOSS",
+      "loss_usd": 0.0,
+      "symbol": "LTC/SKY",
+      "exchange": "alpaca",
+      "timestamp": "2026-01-13T12:38:06.289977",
+      "metadata": {}
+    },
+    {
+      "type": "LOSS",
+      "loss_usd": 0.0,
+      "symbol": "LTC/USDG",
+      "exchange": "alpaca",
+      "timestamp": "2026-01-13T12:38:06.565750",
+      "metadata": {}
+    },
+    {
+      "type": "LOSS",
+      "loss_usd": 0.0,
+      "symbol": "LTC/TRUMP",
+      "exchange": "alpaca",
+      "timestamp": "2026-01-13T12:38:06.807294",
+      "metadata": {}
+    },
+    {
+      "type": "LOSS",
+      "loss_usd": 0.0,
+      "symbol": "USDT/AVAX",
+      "exchange": "alpaca",
+      "timestamp": "2026-01-13T12:38:07.059774",
+      "metadata": {}
+    },
+    {
+      "type": "LOSS",
+      "loss_usd": 0.0,
+      "symbol": "USDT/XTZ",
+      "exchange": "alpaca",
+      "timestamp": "2026-01-13T12:38:07.302867",
+      "metadata": {}
+    },
+    {
+      "type": "LOSS",
+      "loss_usd": 0.0,
+      "symbol": "USDT/AAVE",
+      "exchange": "alpaca",
+      "timestamp": "2026-01-13T12:38:07.543147",
+      "metadata": {}
+    },
+    {
+      "type": "LOSS",
+      "loss_usd": 0.0,
+      "symbol": "USDT/BCH",
+      "exchange": "alpaca",
+      "timestamp": "2026-01-13T12:38:07.771821",
+      "metadata": {}
+    },
+    {
+      "type": "LOSS",
+      "loss_usd": 0.0,
+      "symbol": "USDT/LINK",
+      "exchange": "alpaca",
+      "timestamp": "2026-01-13T12:38:07.996121",
+      "metadata": {}
+    },
+    {
+      "type": "LOSS",
+      "loss_usd": 0.0,
+      "symbol": "USDT/LTC",
+      "exchange": "alpaca",
+      "timestamp": "2026-01-13T12:38:08.218029",
+      "metadata": {}
+    },
+    {
+      "type": "LOSS",
+      "loss_usd": 0.0,
+      "symbol": "USDT/SUSHI",
+      "exchange": "alpaca",
+      "timestamp": "2026-01-13T12:38:08.443720",
+      "metadata": {}
+    },
+    {
+      "type": "LOSS",
+      "loss_usd": 0.0,
+      "symbol": "USDT/UNI",
+      "exchange": "alpaca",
+      "timestamp": "2026-01-13T12:38:08.699070",
+      "metadata": {}
+    },
+    {
+      "type": "LOSS",
+      "loss_usd": 0.0,
+      "symbol": "USDT/GRT",
+      "exchange": "alpaca",
+      "timestamp": "2026-01-13T12:38:08.949447",
+      "metadata": {}
+    },
+    {
+      "type": "LOSS",
+      "loss_usd": 0.0,
+      "symbol": "USDT/BTC",
+      "exchange": "alpaca",
+      "timestamp": "2026-01-13T12:38:09.188236",
+      "metadata": {}
+    },
+    {
+      "type": "LOSS",
+      "loss_usd": 0.0,
+      "symbol": "USDT/ETH",
+      "exchange": "alpaca",
+      "timestamp": "2026-01-13T12:38:09.420073",
+      "metadata": {}
+    },
+    {
+      "type": "LOSS",
+      "loss_usd": 0.0,
+      "symbol": "LTC/YFI",
+      "exchange": "alpaca",
+      "timestamp": "2026-01-13T12:38:09.636004",
+      "metadata": {}
+    },
+    {
+      "type": "LOSS",
+      "loss_usd": 0.0,
+      "symbol": "USDT/DOT",
+      "exchange": "alpaca",
+      "timestamp": "2026-01-13T12:38:09.859481",
+      "metadata": {}
+    },
+    {
+      "type": "LOSS",
+      "loss_usd": 0.0,
+      "symbol": "USDT/XRP",
+      "exchange": "alpaca",
+      "timestamp": "2026-01-13T12:38:10.100763",
+      "metadata": {}
+    },
+    {
+      "type": "LOSS",
+      "loss_usd": 0.0,
+      "symbol": "USDT/SOL",
+      "exchange": "alpaca",
+      "timestamp": "2026-01-13T12:38:11.413736",
+      "metadata": {}
+    },
+    {
+      "type": "LOSS",
+      "loss_usd": 0.0,
+      "symbol": "USDT/CRV",
+      "exchange": "alpaca",
+      "timestamp": "2026-01-13T12:38:11.649999",
+      "metadata": {}
+    },
+    {
+      "type": "LOSS",
+      "loss_usd": 0.0,
+      "symbol": "USDT/BAT",
+      "exchange": "alpaca",
+      "timestamp": "2026-01-13T12:38:12.983874",
+      "metadata": {}
+    },
+    {
+      "type": "LOSS",
+      "loss_usd": 0.0,
+      "symbol": "USDT/SKY",
+      "exchange": "alpaca",
+      "timestamp": "2026-01-13T12:38:13.227348",
+      "metadata": {}
+    },
+    {
+      "type": "LOSS",
+      "loss_usd": 0.0,
+      "symbol": "USDT/USDG",
+      "exchange": "alpaca",
+      "timestamp": "2026-01-13T12:38:14.551577",
+      "metadata": {}
+    },
+    {
+      "type": "LOSS",
+      "loss_usd": 0.0,
+      "symbol": "USDT/TRUMP",
+      "exchange": "alpaca",
+      "timestamp": "2026-01-13T12:38:14.790408",
+      "metadata": {}
+    },
+    {
+      "type": "LOSS",
+      "loss_usd": 0.0,
+      "symbol": "USDT/YFI",
+      "exchange": "alpaca",
+      "timestamp": "2026-01-13T12:38:15.010518",
+      "metadata": {}
+    },
+    {
+      "type": "LOSS",
+      "loss_usd": 0.0,
+      "symbol": "LTC/DOGE",
+      "exchange": "alpaca",
+      "timestamp": "2026-01-13T12:38:15.275327",
+      "metadata": {}
+    },
+    {
+      "type": "LOSS",
+      "loss_usd": 0.0,
+      "symbol": "LTC/SHIB",
+      "exchange": "alpaca",
+      "timestamp": "2026-01-13T12:38:16.722391",
+      "metadata": {}
+    },
+    {
+      "type": "LOSS",
+      "loss_usd": 0.0,
+      "symbol": "LTC/PEPE",
+      "exchange": "alpaca",
+      "timestamp": "2026-01-13T12:38:17.006097",
+      "metadata": {}
+    },
+    {
+      "type": "LOSS",
+      "loss_usd": 0.0,
+      "symbol": "USDT/DOGE",
+      "exchange": "alpaca",
+      "timestamp": "2026-01-13T12:38:17.300799",
+      "metadata": {}
+    },
+    {
+      "type": "LOSS",
+      "loss_usd": 0.0,
+      "symbol": "USDT/SHIB",
+      "exchange": "alpaca",
+      "timestamp": "2026-01-13T12:38:18.650461",
+      "metadata": {}
+    },
+    {
+      "type": "LOSS",
+      "loss_usd": 0.0,
+      "symbol": "USDT/PEPE",
+      "exchange": "alpaca",
+      "timestamp": "2026-01-13T12:38:18.893976",
+      "metadata": {}
     }
   ],
   "milestone_history": [
@@ -8044,6 +8044,6 @@
     }
   ],
   "created_at": "2026-01-09T10:54:59.789096",
-  "last_update": "2026-01-13T12:37:50.398294",
+  "last_update": "2026-01-13T12:38:18.893994",
   "last_win_at": "2026-01-13T10:42:29.689643"
 }
