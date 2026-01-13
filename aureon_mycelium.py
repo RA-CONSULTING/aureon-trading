@@ -108,28 +108,73 @@ except ImportError:
     ULTIMATE_INTELLIGENCE_AVAILABLE = False
     print("⚠️ Mycelium: Ultimate Intelligence not available")
 
-# ⏳🔮 TIMELINE ORACLE - 7-day future validation (branching timelines)
-try:
-    from aureon_timeline_oracle import (
-        TimelineOracle, TimelineBranch, TimelineAction,
-        timeline_select, timeline_validate, get_timeline_oracle
-    )
-    TIMELINE_ORACLE_AVAILABLE = True
-    print("⏳🔮 Mycelium: Timeline Oracle WIRED! (7-day vision)")
-except ImportError:
-    TIMELINE_ORACLE_AVAILABLE = False
-    TimelineOracle = None
-    timeline_select = None
+# ⏳🔮 TIMELINE ORACLE - Lazy load to avoid circular imports
+TIMELINE_ORACLE_AVAILABLE = False
+TimelineOracle = None
+TimelineBranch = None
+TimelineAction = None
+timeline_select = None
+timeline_validate = None
+get_timeline_oracle = None
+_timeline_oracle_loaded = False
 
-# 👑🍄 QUEEN HIVE MIND - The Dreaming Queen who guides all children
-try:
-    from aureon_queen_hive_mind import QueenHiveMind, QueenWisdom, get_queen
-    QUEEN_HIVE_MIND_AVAILABLE = True
-    print("👑🍄 Mycelium: Queen Hive Mind WIRED! (The Dreaming Queen)")
-except ImportError:
-    QUEEN_HIVE_MIND_AVAILABLE = False
-    QueenHiveMind = None
-    get_queen = None
+def _lazy_load_timeline_oracle():
+    """Lazy load timeline oracle to avoid circular imports with aureon_mycelium"""
+    global TIMELINE_ORACLE_AVAILABLE, TimelineOracle, TimelineBranch, TimelineAction
+    global timeline_select, timeline_validate, get_timeline_oracle, _timeline_oracle_loaded
+    if _timeline_oracle_loaded:
+        return TIMELINE_ORACLE_AVAILABLE
+    _timeline_oracle_loaded = True
+    try:
+        from aureon_timeline_oracle import (
+            TimelineOracle as _TimelineOracle,
+            TimelineBranch as _TimelineBranch,
+            TimelineAction as _TimelineAction,
+            timeline_select as _timeline_select,
+            timeline_validate as _timeline_validate,
+            get_timeline_oracle as _get_timeline_oracle
+        )
+        TimelineOracle = _TimelineOracle
+        TimelineBranch = _TimelineBranch
+        TimelineAction = _TimelineAction
+        timeline_select = _timeline_select
+        timeline_validate = _timeline_validate
+        get_timeline_oracle = _get_timeline_oracle
+        TIMELINE_ORACLE_AVAILABLE = True
+        print("⏳🔮 Mycelium: Timeline Oracle WIRED! (7-day vision)")
+        return True
+    except ImportError:
+        TIMELINE_ORACLE_AVAILABLE = False
+        return False
+
+# 👑🍄 QUEEN HIVE MIND - Lazy load to avoid circular imports
+QUEEN_HIVE_MIND_AVAILABLE = False
+QueenHiveMind = None
+QueenWisdom = None
+get_queen = None
+_queen_loaded = False
+
+def _lazy_load_queen():
+    """Lazy load Queen Hive Mind to avoid circular imports"""
+    global QUEEN_HIVE_MIND_AVAILABLE, QueenHiveMind, QueenWisdom, get_queen, _queen_loaded
+    if _queen_loaded:
+        return QUEEN_HIVE_MIND_AVAILABLE
+    _queen_loaded = True
+    try:
+        from aureon_queen_hive_mind import (
+            QueenHiveMind as _QueenHiveMind,
+            QueenWisdom as _QueenWisdom,
+            get_queen as _get_queen
+        )
+        QueenHiveMind = _QueenHiveMind
+        QueenWisdom = _QueenWisdom
+        get_queen = _get_queen
+        QUEEN_HIVE_MIND_AVAILABLE = True
+        print("👑🍄 Mycelium: Queen Hive Mind WIRED! (The Dreaming Queen)")
+        return True
+    except ImportError:
+        QUEEN_HIVE_MIND_AVAILABLE = False
+        return False
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # CONSTANTS

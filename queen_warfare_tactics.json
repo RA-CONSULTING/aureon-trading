@@ -9,7 +9,7 @@
       "times_applied": 0,
       "success_rate": 0.0,
       "total_saved": 0.0,
-      "learned_at": "2026-01-09T10:57:27.101766",
+      "learned_at": "2026-01-13T22:33:35.319156",
       "last_applied": ""
     },
     "ad97150b": {
@@ -21,7 +21,7 @@
       "times_applied": 0,
       "success_rate": 0.0,
       "total_saved": 0.0,
-      "learned_at": "2026-01-09T10:57:28.557840",
+      "learned_at": "2026-01-13T22:33:36.656054",
       "last_applied": ""
     },
     "db2d5a2f": {
@@ -33,7 +33,7 @@
       "times_applied": 0,
       "success_rate": 0.0,
       "total_saved": 0.0,
-      "learned_at": "2026-01-09T10:57:29.753990",
+      "learned_at": "2026-01-13T22:33:37.884460",
       "last_applied": ""
     },
     "7b51face": {
@@ -45,7 +45,7 @@
       "times_applied": 0,
       "success_rate": 0.0,
       "total_saved": 0.0,
-      "learned_at": "2026-01-09T10:57:31.066319",
+      "learned_at": "2026-01-13T22:33:39.201441",
       "last_applied": ""
     },
     "c5d8c916": {
@@ -57,7 +57,7 @@
       "times_applied": 0,
       "success_rate": 0.0,
       "total_saved": 0.0,
-      "learned_at": "2026-01-09T10:57:32.294150",
+      "learned_at": "2026-01-13T22:33:40.424250",
       "last_applied": ""
     },
     "26034109": {
@@ -69,9 +69,81 @@
       "times_applied": 0,
       "success_rate": 0.0,
       "total_saved": 0.0,
-      "learned_at": "2026-01-09T10:57:33.540969",
+      "learned_at": "2026-01-13T22:33:41.667030",
+      "last_applied": ""
+    },
+    "9717d57e": {
+      "tactic_id": "9717d57e",
+      "name": "Sun Tzu",
+      "source": "WAR_PSYCHOLOGY",
+      "description": "Sun Tzu (;traditional Chinese: \u5b6b\u5b50; simplified Chinese: \u5b59\u5b50; pinyin: S\u016bnz\u01d0) was a Chinese military general, strategist, philosopher, and writer who lived during the Eastern Zhou period (771\u2013256 BC). Sun Tzu is traditionally credited as the author of The Art of War, a Classical Chinese text on military strategy from the Warring States period, though the earliest parts of the work probably date to at least a century after him.\nSun Tzu is revered in Chinese and East Asian culture as a legendary histo",
+      "trading_application": "Know yourself and the market. Trade only when conditions favor you.",
+      "times_applied": 0,
+      "success_rate": 0.0,
+      "total_saved": 0.0,
+      "learned_at": "2026-01-13T22:38:18.932179",
+      "last_applied": ""
+    },
+    "6f5d2032": {
+      "tactic_id": "6f5d2032",
+      "name": "The Art of War",
+      "source": "WAR_PSYCHOLOGY",
+      "description": "The Art of War is an ancient Chinese military treatise dating from the late Spring and Autumn period (roughly 5th century BCE). The work, which is attributed to the ancient Chinese military strategist Sun Tzu (\"Master Sun\"), is composed of 13 chapters. Each chapter is devoted to a different set of skills or arts related to warfare, finance and how they apply to military strategy and tactics. For almost 1,500 years, it was the lead text in an anthology that was formalized as the Seven Military Cl",
+      "trading_application": "Know yourself and the market. Trade only when conditions favor you.",
+      "times_applied": 0,
+      "success_rate": 0.0,
+      "total_saved": 0.0,
+      "learned_at": "2026-01-13T22:38:20.545701",
+      "last_applied": ""
+    },
+    "49fc004d": {
+      "tactic_id": "49fc004d",
+      "name": "Tactical patience",
+      "source": "WAR_PSYCHOLOGY",
+      "description": "The main strategy and tactics of guerrilla warfare tend to involve the use of a small attacking, mobile force against a large, unwieldy force. The guerrilla force is largely or entirely organized in small units that are dependent on the support of the local population. Tactically, the guerrilla army makes the repetitive attacks far from the opponent's center of gravity with a view to keeping its own casualties to a minimum and imposing a constant debilitating strain on the enemy. This may provok",
+      "trading_application": "Small, quick trades. Hit profitable opportunities fast, exit before losses accumulate.",
+      "times_applied": 0,
+      "success_rate": 0.0,
+      "total_saved": 0.0,
+      "learned_at": "2026-01-13T22:38:21.829903",
+      "last_applied": ""
+    },
+    "953b77bf": {
+      "tactic_id": "953b77bf",
+      "name": "Strategic retreat",
+      "source": "WAR_PSYCHOLOGY",
+      "description": "The French invasion of Russia, also known as the Russian campaign, the Second Polish War, and in Russia as the Patriotic War of 1812, was initiated by Napoleon with the aim of forcing the Russian Empire  to comply with the continental blockade of the United Kingdom. Widely studied, Napoleon's incursion into Russia remains a focal point in military history, recognized as among the most devastating military endeavors to ever unfold. In a span of less than six months, the campaign exacted a stagger",
+      "trading_application": "Strategic retreat is not defeat. Cut losses early to fight another day.",
+      "times_applied": 0,
+      "success_rate": 0.0,
+      "total_saved": 0.0,
+      "learned_at": "2026-01-13T22:38:23.023806",
+      "last_applied": ""
+    },
+    "aa582343": {
+      "tactic_id": "aa582343",
+      "name": "Deception",
+      "source": "WAR_PSYCHOLOGY",
+      "description": "Deception is the act of convincing of one or many recipients of untrue information. The person creating the deception knows it to be false while the receiver of the information does not. It is often done for personal gain or advantage.\nDeceit and dishonesty can also form grounds for civil litigation in tort, or contract law (where it is known as misrepresentation or fraudulent misrepresentation if deliberate), or give rise to criminal prosecution for fraud.\n\n\n== Types ==\n\n\n=== Communication ===\n",
+      "trading_application": "Markets deceive. False breakouts, fake news, manipulation. Stay skeptical.",
+      "times_applied": 0,
+      "success_rate": 0.0,
+      "total_saved": 0.0,
+      "learned_at": "2026-01-13T22:38:24.262805",
+      "last_applied": ""
+    },
+    "9acb73ce": {
+      "tactic_id": "9acb73ce",
+      "name": "Misdirection",
+      "source": "WAR_PSYCHOLOGY",
+      "description": "In theatrical magic, misdirection is a form of deception in which the performer draws audience attention to one thing to distract it from another. Managing audience attention is the aim of all theater, and the foremost requirement of all magic acts. Whether the magic is of a \"pocket trick\" variety or a large stage production, misdirection is the central secret. The term describes either the effect (the observer's focus on an unimportant object) or the sleight of hand or patter (the magician's sp",
+      "trading_application": "Markets deceive. False breakouts, fake news, manipulation. Stay skeptical.",
+      "times_applied": 0,
+      "success_rate": 0.0,
+      "total_saved": 0.0,
+      "learned_at": "2026-01-13T22:38:26.361431",
       "last_applied": ""
     }
   },
-  "last_saved": "2026-01-09T10:57:34.041226"
+  "last_saved": "2026-01-13T22:39:20.563779"
 }

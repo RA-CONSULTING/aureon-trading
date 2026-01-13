@@ -100,6 +100,43 @@ def _lazy_load_clownfish():
 # This prevents circular import with aureon_unified_ecosystem
 
 # ═══════════════════════════════════════════════════════════════════════════════
+# 🪆 RUSSIAN DOLL ANALYTICS INTEGRATION
+# ═══════════════════════════════════════════════════════════════════════════════
+RUSSIAN_DOLL_NEXUS_AVAILABLE = False
+_nexus_analytics = None
+
+def _get_nexus_analytics():
+    """Get Russian Doll Analytics instance for validator recording."""
+    global RUSSIAN_DOLL_NEXUS_AVAILABLE, _nexus_analytics
+    if _nexus_analytics is not None:
+        return _nexus_analytics
+    try:
+        from aureon_russian_doll_analytics import get_analytics
+        _nexus_analytics = get_analytics()
+        RUSSIAN_DOLL_NEXUS_AVAILABLE = True
+        return _nexus_analytics
+    except ImportError:
+        return None
+
+
+def record_validator_pass(validator_id: str, validations: int, passes: int, avg_score: float):
+    """Record a validation pass in Russian Doll Analytics (Hive level)."""
+    analytics = _get_nexus_analytics()
+    if analytics:
+        try:
+            from aureon_russian_doll_analytics import HiveMetrics
+            hive = HiveMetrics(
+                hive_id=validator_id,
+                hive_type="validator",
+                validations_performed=validations,
+                pass_rate=(passes / validations * 100) if validations > 0 else 0,
+                avg_validation_score=avg_score
+            )
+            analytics.record_hive(hive)
+        except Exception:
+            pass
+
+# ═══════════════════════════════════════════════════════════════════════════════
 # DATA STRUCTURES
 # ═══════════════════════════════════════════════════════════════════════════════
 

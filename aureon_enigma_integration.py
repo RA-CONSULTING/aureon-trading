@@ -70,12 +70,36 @@ except ImportError:
     PROBABILITY_NEXUS_AVAILABLE = False
     logger.warning("⚠️ aureon_probability_nexus not available")
 
-try:
-    from aureon_mycelium import get_mycelium, MyceliumNetwork
-    MYCELIUM_AVAILABLE = True
-except ImportError:
-    MYCELIUM_AVAILABLE = False
-    logger.warning("⚠️ aureon_mycelium not available")
+# 🍄 MYCELIUM - Lazy load to avoid circular imports
+MYCELIUM_AVAILABLE = False
+_mycelium_module = None
+
+def _lazy_load_mycelium():
+    """Lazy load mycelium to avoid circular imports at module initialization."""
+    global MYCELIUM_AVAILABLE, _mycelium_module
+    if _mycelium_module is not None:
+        return MYCELIUM_AVAILABLE
+    try:
+        import aureon_mycelium as _mycelium_mod
+        _mycelium_module = _mycelium_mod
+        MYCELIUM_AVAILABLE = True
+        return True
+    except ImportError:
+        MYCELIUM_AVAILABLE = False
+        logger.warning("⚠️ aureon_mycelium not available (lazy load)")
+        return False
+
+def get_mycelium():
+    """Get mycelium singleton with lazy loading."""
+    if _lazy_load_mycelium() and hasattr(_mycelium_module, 'get_mycelium'):
+        return _mycelium_module.get_mycelium()
+    return None
+
+def get_mycelium_network_class():
+    """Get MyceliumNetwork class with lazy loading."""
+    if _lazy_load_mycelium() and hasattr(_mycelium_module, 'MyceliumNetwork'):
+        return _mycelium_module.MyceliumNetwork
+    return None
 
 try:
     from aureon_timeline_oracle import TimelineOracle

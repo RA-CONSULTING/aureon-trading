@@ -1,0 +1,88 @@
+{
+  "timestamp": 1768310874.2937868,
+  "datetime": "2026-01-13T13:27:54.293787",
+  "api_claims": {
+    "total_value": 12.646804,
+    "total_pl": -0.0073290000000000004,
+    "cash": 0.46,
+    "buying_power": 0.46,
+    "position_count": 5
+  },
+  "our_calculations": {
+    "total_value": 12.646804,
+    "total_pl": -0.007329661321400192
+  },
+  "verification": {
+    "value_matches": true,
+    "pl_matches": true,
+    "all_positions_match": true
+  },
+  "discrepancies": [],
+  "positions": [
+    {
+      "symbol": "BCHUSD",
+      "qty": 0.000957344,
+      "avg_entry_price": 611.94,
+      "current_price": 608.28,
+      "market_value": 0.582333,
+      "unrealized_pl": -0.003504,
+      "unrealized_plpc": -0.0059811858930044,
+      "cost_basis": 0.585837,
+      "timestamp": 1768310874.6960585,
+      "our_calculated_pl": -0.003503879040000078,
+      "pl_matches": true
+    },
+    {
+      "symbol": "ETHUSD",
+      "qty": 0.000176097,
+      "avg_entry_price": 3131.9,
+      "current_price": 3133.07,
+      "market_value": 0.551724,
+      "unrealized_pl": 0.000206,
+      "unrealized_plpc": 0.0003735145543754,
+      "cost_basis": 0.551518,
+      "timestamp": 1768310874.696072,
+      "our_calculated_pl": 0.0002060334900000128,
+      "pl_matches": true
+    },
+    {
+      "symbol": "LINKUSD",
+      "qty": 0.771410706,
+      "avg_entry_price": 13.28,
+      "current_price": 13.28,
+      "market_value": 10.244334,
+      "unrealized_pl": 0.0,
+      "unrealized_plpc": 0.0,
+      "cost_basis": 10.244334,
+      "timestamp": 1768310874.6960788,
+      "our_calculated_pl": 0.0,
+      "pl_matches": true
+    },
+    {
+      "symbol": "LTCUSD",
+      "qty": 0.008555638,
+      "avg_entry_price": 76.59,
+      "current_price": 76.1214,
+      "market_value": 0.651267,
+      "unrealized_pl": -0.004009,
+      "unrealized_plpc": -0.0061180327068289,
+      "cost_basis": 0.655276,
+      "timestamp": 1768310874.6960835,
+      "our_calculated_pl": -0.004009171966800079,
+      "pl_matches": true
+    },
+    {
+      "symbol": "UNIUSD",
+      "qty": 0.113219023,
+      "avg_entry_price": 5.4511,
+      "current_price": 5.4509,
+      "market_value": 0.617146,
+      "unrealized_pl": -2.2e-05,
+      "unrealized_plpc": -3.56466958754e-05,
+      "cost_basis": 0.617168,
+      "timestamp": 1768310874.6960876,
+      "our_calculated_pl": -2.2643804600047785e-05,
+      "pl_matches": true
+    }
+  ]
+}

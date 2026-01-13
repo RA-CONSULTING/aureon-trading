@@ -4135,6 +4135,13 @@ class MicroProfitLabyrinth:
         self.alpaca_take_profit_pct = float(os.getenv("ALPACA_TAKE_PROFIT_PCT", "1.0"))
         self.alpaca_stop_loss_pct = float(os.getenv("ALPACA_STOP_LOSS_PCT", "0.6"))
         
+        # ⏱️ MINIMUM HOLD TIME - Trust the prediction!
+        # If we predict profit at T+3min, don't panic-sell at T+10sec
+        # Keep validating but wait for the prediction window to complete
+        self.min_hold_time_seconds = float(os.getenv("MIN_HOLD_TIME_SECONDS", "120"))  # 2 minutes default
+        self.max_hold_time_seconds = float(os.getenv("MAX_HOLD_TIME_SECONDS", "300"))  # 5 minutes max
+        self.position_entry_times = {}  # Track when we bought each asset
+        
         # 🪆 RUSSIAN DOLL ANALYTICS - Fractal measurement system
         # Tracks metrics at three nested levels: Queen (macro) → Hive (system) → Bee (micro)
         self.russian_doll = get_analytics() if RUSSIAN_DOLL_AVAILABLE else None
@@ -4232,6 +4239,28 @@ class MicroProfitLabyrinth:
             return
         if asset.upper() in self.barter_matrix.STABLECOINS:
             return
+        
+        # ⏱️ MINIMUM HOLD TIME CHECK - Don't exit before prediction window
+        asset_upper = asset.upper()
+        if asset_upper in self.position_entry_times:
+            entry_time = self.position_entry_times[asset_upper]
+            hold_duration = time.time() - entry_time
+            
+            if hold_duration < self.min_hold_time_seconds:
+                remaining = self.min_hold_time_seconds - hold_duration
+                logger.info(
+                    f"⏱️ Holding {asset} - {hold_duration:.0f}s elapsed, "
+                    f"need {remaining:.0f}s more (min {self.min_hold_time_seconds:.0f}s)"
+                )
+                return  # Don't place exit orders yet - hold the position!
+            
+            # Check max hold time - force exit if held too long
+            if hold_duration > self.max_hold_time_seconds:
+                logger.warning(
+                    f"⏰ Max hold time exceeded for {asset} ({hold_duration:.0f}s > {self.max_hold_time_seconds:.0f}s) - "
+                    f"forcing exit!"
+                )
+                # Will place exit orders below to close position
 
         symbol = self._alpaca_format_symbol(f"{asset}USD")
         price = self.prices.get(asset.upper(), 0.0) or 0.0
@@ -11040,6 +11069,30 @@ if __name__ == "__main__":
             if amount <= 0:
                 continue
             
+            # ⏱️ MINIMUM HOLD TIME CHECK - Don't sell too early!
+            # Trust the original prediction - give it time to materialize
+            from_asset_upper = from_asset.upper()
+            if from_asset_upper in self.position_entry_times:
+                entry_time = self.position_entry_times[from_asset_upper]
+                hold_duration = time.time() - entry_time
+                
+                if hold_duration < self.min_hold_time_seconds:
+                    remaining = self.min_hold_time_seconds - hold_duration
+                    print(
+                        f"   ⏱️ {from_asset}: Holding position - "
+                        f"{hold_duration:.0f}s elapsed, need {remaining:.0f}s more "
+                        f"(min {self.min_hold_time_seconds:.0f}s)"
+                    )
+                    continue  # Don't consider selling yet!
+                
+                # Check if max hold time exceeded - MUST exit now
+                if hold_duration > self.max_hold_time_seconds:
+                    print(
+                        f"   ⏰ {from_asset}: MAX HOLD TIME EXCEEDED - "
+                        f"{hold_duration:.0f}s > {self.max_hold_time_seconds:.0f}s - FORCING EXIT"
+                    )
+                    # Will continue to evaluate exit opportunities below
+            
             from_price = self.prices.get(from_asset, 0)
             if not from_price:
                 print(f"   🔍 {from_asset}: No price data - skipping")
@@ -13994,6 +14047,10 @@ if __name__ == "__main__":
                              buy_amount = opp.from_value_usd / to_price
                     
                     print(f"   ✅ Conversion complete! {success_count} trades executed. Bought {buy_amount:.6f} {opp.to_asset}")
+                    
+                    # ⏱️ Record entry time for minimum hold enforcement
+                    self.position_entry_times[opp.to_asset.upper()] = time.time()
+                    print(f"   ⏱️ Position entered at {time.strftime('%H:%M:%S')} - will hold minimum {self.min_hold_time_seconds:.0f}s")
                     
                     # 🦙 Optional OCO exits to capture profit + protect downside
                     self._alpaca_place_exit_orders(opp.to_asset, buy_amount)

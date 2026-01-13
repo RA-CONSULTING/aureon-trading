@@ -192,6 +192,20 @@ except ImportError:
     AutonomousDecision = None
     AUTONOMOUS_CONTROL_AVAILABLE = False
 
+# 🪆👑 RUSSIAN DOLL ANALYTICS - Fractal Measurement System 🪆👑
+try:
+    from aureon_russian_doll_analytics import (
+        RussianDollAnalytics,
+        get_analytics,
+        QueenMetrics,
+    )
+    RUSSIAN_DOLL_QUEEN_AVAILABLE = True
+except ImportError:
+    RussianDollAnalytics = None
+    get_analytics = None
+    QueenMetrics = None
+    RUSSIAN_DOLL_QUEEN_AVAILABLE = False
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # LOGGING
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -852,6 +866,19 @@ class QueenHiveMind:
             logger.info("👑🔧 Self-repair system ARMED - Queen will fix runtime errors automatically!")
         except Exception as e:
             logger.warning(f"👑⚠️ Could not wire self-repair system: {e}")
+        
+        # 🪆👑 RUSSIAN DOLL ANALYTICS - Fractal Measurement System 🪆👑
+        # Queen (macro) → Hive (system) → Bee (micro) analytics flow
+        # Data flows A→Z (directives down) and Z→A (insights up)
+        self.russian_doll = None
+        if RUSSIAN_DOLL_QUEEN_AVAILABLE and get_analytics is not None:
+            try:
+                self.russian_doll = get_analytics()
+                logger.info("🪆👑 Russian Doll Analytics connected - Fractal measurement ACTIVE!")
+                logger.info("   📊 Queen (Macro) → Hive (System) → Bee (Micro)")
+                logger.info("   🔄 A→Z directives down, Z→A insights up")
+            except Exception as e:
+                logger.warning(f"🪆⚠️ Could not initialize Russian Doll Analytics: {e}")
         
         # 👑💕 PERSONAL MEMORY - Load knowledge about Gary, love, and purpose
         self.personal_memory = self._load_personal_memory()
@@ -8554,6 +8581,24 @@ Feeling: {thought['emotion']}
             result['adjusted_pnl'] = adjusted_pnl
         if miner_wisdom:
             result['miner_wisdom'] = miner_wisdom.get('queen_interpretation') if isinstance(miner_wisdom, dict) else None
+        
+        # 🪆👑 RUSSIAN DOLL ANALYTICS - Record Queen-level decision 🪆👑
+        if self.russian_doll:
+            try:
+                # Record Queen decision metrics at macro level
+                self.russian_doll.update_queen(
+                    overall_confidence=queen_confidence,
+                    strategy_mode="EXECUTE" if approved else "DEFENSIVE",
+                    market_regime="BULLISH" if miner_consensus == 'BULLISH' else ("BEARISH" if miner_consensus == 'BEARISH' else "NEUTRAL"),
+                    cosmic_alignment=self.gaia_connection.get('total_alignment', 0.5) if hasattr(self, 'gaia_connection') else 0.5,
+                    risk_appetite=queen_confidence if approved else 0.3,
+                    active_exchanges=[exchange] if exchange else [],
+                    total_capital_at_risk=value_usd,
+                    dream_guidance="PROCEED" if approved else "WAIT"
+                )
+                logger.debug(f"🪆👑 Russian Doll: Queen decision recorded ({from_asset}→{to_asset}: {'APPROVED' if approved else 'VETOED'})")
+            except Exception as e:
+                logger.debug(f"🪆⚠️ Russian Doll recording failed: {e}")
             
         return result
 

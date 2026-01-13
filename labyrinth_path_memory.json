@@ -1,7 +1,7 @@
 {
   "USD->AAVE": {
     "wins": 0.0,
-    "losses": 1.0
+    "losses": 2.0
   },
   "AAVE->USDC": {
     "wins": 0.0,
@@ -61,7 +61,7 @@
   },
   "LINK->USD": {
     "wins": 0.0,
-    "losses": 1.0
+    "losses": 2.0
   },
   "PEPE->USD": {
     "wins": 6.0,
@@ -572,7 +572,7 @@
     "losses": 1.0
   },
   "BCH->ETH": {
-    "wins": 2.0,
+    "wins": 3.0,
     "losses": 0.0
   },
   "ETH->BTC": {
@@ -646,5 +646,33 @@
   "LTC->USDT": {
     "wins": 1.0,
     "losses": 0.0
+  },
+  "USD->UNI": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "UNI->USD": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "AAVE->BCH": {
+    "wins": 1.0,
+    "losses": 0.0
+  },
+  "ETH->AAVE": {
+    "wins": 1.0,
+    "losses": 0.0
+  },
+  "AAVE->USD": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USD->LTC": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "LTC->LINK": {
+    "wins": 0.0,
+    "losses": 1.0
   }
 }

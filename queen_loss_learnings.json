@@ -1249,6 +1249,891 @@
         "Fees ($0.0307) were >30% of expected profit - increase minimum"
       ],
       "tactics_applied": []
+    },
+    {
+      "timestamp": 1768308646.0872593,
+      "exchange": "alpaca",
+      "from_asset": "USD",
+      "to_asset": "LTC",
+      "from_amount": 12.853499999999999,
+      "from_value_usd": 12.853499999999999,
+      "executed_price": 76.4191,
+      "expected_price": 76.4191,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.077121,
+      "loss_amount": 1.7594790839999999,
+      "loss_pct": 13.688715789473685,
+      "market_data": {
+        "cash": 0.64,
+        "portfolio_value": 13.5
+      },
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 5.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.476,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.6300000000000001
+      },
+      "combined_score": 0.6426000000000001,
+      "expected_profit": 1.7594790839999999,
+      "cause_identified": "Unknown - needs further analysis",
+      "lessons_learned": [
+        "Large loss on alpaca - review alpaca pair filters"
+      ],
+      "tactics_applied": [
+        "Asymmetric warfare"
+      ]
+    },
+    {
+      "timestamp": 1768308798.8172364,
+      "exchange": "alpaca",
+      "from_asset": "LTC",
+      "to_asset": "UNI",
+      "from_amount": 0.1595261204,
+      "from_value_usd": 12.218105561436001,
+      "executed_price": 5.445550000000001,
+      "expected_price": 5.445550000000001,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.07330863336861601,
+      "loss_amount": 1.851737495399994,
+      "loss_pct": 15.155684210526319,
+      "market_data": {
+        "cash": 0.59,
+        "portfolio_value": 13.35
+      },
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 6.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.362,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.61
+      },
+      "combined_score": 0.5429999999999999,
+      "expected_profit": 1.851737495399994,
+      "cause_identified": "Unknown - needs further analysis",
+      "lessons_learned": [
+        "Large loss on alpaca - review alpaca pair filters"
+      ],
+      "tactics_applied": [
+        "Asymmetric warfare"
+      ]
+    },
+    {
+      "timestamp": 1768308862.7132509,
+      "exchange": "alpaca",
+      "from_asset": "UNI",
+      "to_asset": "BCH",
+      "from_amount": 2.11105144805,
+      "from_value_usd": 11.507552548465355,
+      "executed_price": 610.2950000000001,
+      "expected_price": 610.2950000000001,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.06904531529079214,
+      "loss_amount": 1.7432306827141812,
+      "loss_pct": 15.148578947368424,
+      "market_data": {
+        "cash": 0.53,
+        "portfolio_value": 13.3
+      },
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 5.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.347,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.61
+      },
+      "combined_score": 0.5205,
+      "expected_profit": 1.7432306827141812,
+      "cause_identified": "Unknown - needs further analysis",
+      "lessons_learned": [
+        "Large loss on alpaca - review alpaca pair filters"
+      ],
+      "tactics_applied": [
+        "Asymmetric warfare"
+      ]
+    },
+    {
+      "timestamp": 1768309184.5583558,
+      "exchange": "alpaca",
+      "from_asset": "BCH",
+      "to_asset": "ETH",
+      "from_amount": 0.017850360349999997,
+      "from_value_usd": 10.923349512579,
+      "executed_price": 3130.5645,
+      "expected_price": 3130.5645,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.065540097075474,
+      "loss_amount": 1.4894452740038584,
+      "loss_pct": 13.635426315789475,
+      "market_data": {
+        "cash": 0.5,
+        "portfolio_value": 13.18
+      },
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 5.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.351,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.63
+      },
+      "combined_score": 0.47385,
+      "expected_profit": 1.4894452740038584,
+      "cause_identified": "Low confidence trade - should have waited",
+      "lessons_learned": [
+        "Score 0.47 was too low - require >= 0.6 for this pair",
+        "Large loss on alpaca - review alpaca pair filters"
+      ],
+      "tactics_applied": [
+        "Asymmetric warfare",
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768309315.179374,
+      "exchange": "alpaca",
+      "from_asset": "ETH",
+      "to_asset": "LINK",
+      "from_amount": 0.0032834441499999998,
+      "from_value_usd": 10.283418733385,
+      "executed_price": 13.279,
+      "expected_price": 13.279,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.06170051240031,
+      "loss_amount": 1.4020126247837703,
+      "loss_pct": 13.633721052631579,
+      "market_data": {
+        "cash": 0.46,
+        "portfolio_value": 13.11
+      },
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 5.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.347,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.61
+      },
+      "combined_score": 0.46845,
+      "expected_profit": 1.4020126247837703,
+      "cause_identified": "Low confidence trade - should have waited",
+      "lessons_learned": [
+        "Score 0.47 was too low - require >= 0.6 for this pair",
+        "Large loss on alpaca - review alpaca pair filters"
+      ],
+      "tactics_applied": [
+        "Asymmetric warfare",
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768311111.135442,
+      "exchange": "alpaca",
+      "from_asset": "USD",
+      "to_asset": "LINK",
+      "from_amount": 10.1935,
+      "from_value_usd": 10.1935,
+      "executed_price": 13.3189,
+      "expected_price": 13.3189,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.061161,
+      "loss_amount": 1.3955330700000002,
+      "loss_pct": 13.69042105263158,
+      "market_data": {
+        "cash": 0.52,
+        "portfolio_value": 13.11
+      },
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 5.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.48,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.6500000000000001
+      },
+      "combined_score": 0.648,
+      "expected_profit": 1.3955330700000002,
+      "cause_identified": "Unknown - needs further analysis",
+      "lessons_learned": [
+        "Large loss on alpaca - review alpaca pair filters"
+      ],
+      "tactics_applied": [
+        "Asymmetric warfare",
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768318266.6466906,
+      "exchange": "alpaca",
+      "from_asset": "USD",
+      "to_asset": "LINK",
+      "from_amount": 10.1935,
+      "from_value_usd": 10.1935,
+      "executed_price": 13.45,
+      "expected_price": 13.45,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.061161,
+      "loss_amount": 1.395359244,
+      "loss_pct": 13.688715789473685,
+      "market_data": {
+        "cash": 0.53,
+        "portfolio_value": 13.12
+      },
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 5.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.476,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.6300000000000001
+      },
+      "combined_score": 0.6426000000000001,
+      "expected_profit": 1.395359244,
+      "cause_identified": "Unknown - needs further analysis",
+      "lessons_learned": [
+        "Large loss on alpaca - review alpaca pair filters"
+      ],
+      "tactics_applied": [
+        "Asymmetric warfare",
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768318767.3340979,
+      "exchange": "alpaca",
+      "from_asset": "USD",
+      "to_asset": "LINK",
+      "from_amount": 10.706499999999998,
+      "from_value_usd": 10.706499999999998,
+      "executed_price": 13.52825,
+      "expected_price": 13.52825,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.06423899999999999,
+      "loss_amount": 1.4667690869999999,
+      "loss_pct": 13.699800000000002,
+      "market_data": {
+        "cash": 0.55,
+        "portfolio_value": 13.1
+      },
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 5.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.502,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.7600000000000001
+      },
+      "combined_score": 0.6777000000000001,
+      "expected_profit": 1.4667690869999999,
+      "cause_identified": "Unknown - needs further analysis",
+      "lessons_learned": [
+        "Large loss on alpaca - review alpaca pair filters"
+      ],
+      "tactics_applied": [
+        "Asymmetric warfare",
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768318886.0051687,
+      "exchange": "alpaca",
+      "from_asset": "LINK",
+      "to_asset": "ETH",
+      "from_amount": 0.75070270435,
+      "from_value_usd": 10.125703287084105,
+      "executed_price": 3162.507,
+      "expected_price": 3162.507,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.06075421972250464,
+      "loss_amount": 1.3809418154972748,
+      "loss_pct": 13.63798421052632,
+      "market_data": {
+        "cash": 0.51,
+        "portfolio_value": 13.02
+      },
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 5.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.357,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.66
+      },
+      "combined_score": 0.48195,
+      "expected_profit": 1.3809418154972748,
+      "cause_identified": "Low confidence trade - should have waited",
+      "lessons_learned": [
+        "Score 0.48 was too low - require >= 0.6 for this pair",
+        "Large loss on alpaca - review alpaca pair filters"
+      ],
+      "tactics_applied": [
+        "Asymmetric warfare",
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768321084.2562225,
+      "exchange": "alpaca",
+      "from_asset": "USD",
+      "to_asset": "UNI",
+      "from_amount": 11.305,
+      "from_value_usd": 11.305,
+      "executed_price": 5.578,
+      "expected_price": 5.578,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.06783,
+      "loss_amount": 1.7196690000000001,
+      "loss_pct": 15.211578947368423,
+      "market_data": {
+        "cash": 0.58,
+        "portfolio_value": 13.0
+      },
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 5.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.48,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.6500000000000001
+      },
+      "combined_score": 0.72,
+      "expected_profit": 1.7196690000000001,
+      "cause_identified": "Unknown - needs further analysis",
+      "lessons_learned": [
+        "Large loss on alpaca - review alpaca pair filters"
+      ],
+      "tactics_applied": [
+        "Asymmetric warfare",
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768321175.6051407,
+      "exchange": "alpaca",
+      "from_asset": "UNI",
+      "to_asset": "LTC",
+      "from_amount": 1.9205630369,
+      "from_value_usd": 10.7225034350127,
+      "executed_price": 77.03,
+      "expected_price": 77.03,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.06433502061007619,
+      "loss_amount": 1.4618762081884709,
+      "loss_pct": 13.63372105263158,
+      "market_data": {
+        "cash": 0.52,
+        "portfolio_value": 12.92
+      },
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 5.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.347,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.61
+      },
+      "combined_score": 0.46845,
+      "expected_profit": 1.4618762081884709,
+      "cause_identified": "Low confidence trade - should have waited",
+      "lessons_learned": [
+        "Score 0.47 was too low - require >= 0.6 for this pair",
+        "Large loss on alpaca - review alpaca pair filters"
+      ],
+      "tactics_applied": [
+        "Asymmetric warfare",
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768321311.0360842,
+      "exchange": "alpaca",
+      "from_asset": "LTC",
+      "to_asset": "ETH",
+      "from_amount": 0.13155043584999998,
+      "from_value_usd": 10.161324006274379,
+      "executed_price": 3182.7275,
+      "expected_price": 3182.7275,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.06096794403764627,
+      "loss_amount": 1.3853665702695368,
+      "loss_pct": 13.63372105263158,
+      "market_data": {
+        "cash": 0.49,
+        "portfolio_value": 12.85
+      },
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 5.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.347,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.61
+      },
+      "combined_score": 0.46845,
+      "expected_profit": 1.3853665702695368,
+      "cause_identified": "Low confidence trade - should have waited",
+      "lessons_learned": [
+        "Score 0.47 was too low - require >= 0.6 for this pair",
+        "Large loss on alpaca - review alpaca pair filters"
+      ],
+      "tactics_applied": [
+        "Asymmetric warfare",
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768334681.0779865,
+      "exchange": "alpaca",
+      "from_asset": "USD",
+      "to_asset": "AAVE",
+      "from_amount": 10.639999999999999,
+      "from_value_usd": 10.639999999999999,
+      "executed_price": 174.979536,
+      "expected_price": 174.979536,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.06384,
+      "loss_amount": 0.70047936,
+      "loss_pct": 6.5834526315789486,
+      "market_data": {
+        "cash": 0.55,
+        "portfolio_value": 12.87
+      },
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 5.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.476,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.6300000000000001
+      },
+      "combined_score": 0.6426000000000001,
+      "expected_profit": 0.70047936,
+      "cause_identified": "Unknown - needs further analysis",
+      "lessons_learned": [
+        "Large loss on alpaca - review alpaca pair filters"
+      ],
+      "tactics_applied": [
+        "Asymmetric warfare",
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768334870.0375812,
+      "exchange": "alpaca",
+      "from_asset": "AAVE",
+      "to_asset": "LINK",
+      "from_amount": 0.05756132745,
+      "from_value_usd": 10.0945299949065,
+      "executed_price": 13.735,
+      "expected_price": 13.735,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.060567179969439,
+      "loss_amount": 1.3758297153273624,
+      "loss_pct": 13.629457894736841,
+      "market_data": {
+        "cash": 0.51,
+        "portfolio_value": 12.78
+      },
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 3.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.33699999999999997,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.71
+      },
+      "combined_score": 0.45494999999999997,
+      "expected_profit": 1.3758297153273624,
+      "cause_identified": "Low confidence trade - should have waited",
+      "lessons_learned": [
+        "Score 0.45 was too low - require >= 0.6 for this pair",
+        "Large loss on alpaca - review alpaca pair filters"
+      ],
+      "tactics_applied": [
+        "Asymmetric warfare",
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768334983.5428457,
+      "exchange": "alpaca",
+      "from_asset": "LINK",
+      "to_asset": "ETH",
+      "from_amount": 0.69298323895,
+      "from_value_usd": 9.52228268641195,
+      "executed_price": 3214.935,
+      "expected_price": 3214.935,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.0571336961184717,
+      "loss_amount": 1.2982414593084382,
+      "loss_pct": 13.63372105263158,
+      "market_data": {
+        "cash": 0.48,
+        "portfolio_value": 12.72
+      },
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 5.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.347,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.61
+      },
+      "combined_score": 0.46845,
+      "expected_profit": 1.2982414593084382,
+      "cause_identified": "Low confidence trade - should have waited",
+      "lessons_learned": [
+        "Score 0.47 was too low - require >= 0.6 for this pair",
+        "Large loss on alpaca - review alpaca pair filters"
+      ],
+      "tactics_applied": [
+        "Asymmetric warfare",
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768343614.491912,
+      "exchange": "alpaca",
+      "from_asset": "USD",
+      "to_asset": "UNI",
+      "from_amount": 12.236,
+      "from_value_usd": 12.236,
+      "executed_price": 5.761615,
+      "expected_price": 5.761615,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.07341600000000001,
+      "loss_amount": 2.6082,
+      "loss_pct": 21.31578947368421,
+      "market_data": {
+        "cash": 0.63,
+        "portfolio_value": 12.85
+      },
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 5.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.508,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.79
+      },
+      "combined_score": 0.6858000000000001,
+      "expected_profit": 2.6082,
+      "cause_identified": "Unknown - needs further analysis",
+      "lessons_learned": [
+        "Large loss on alpaca - review alpaca pair filters"
+      ],
+      "tactics_applied": [
+        "Asymmetric warfare",
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768343695.3502374,
+      "exchange": "alpaca",
+      "from_asset": "USD",
+      "to_asset": "AAVE",
+      "from_amount": 11.580499999999999,
+      "from_value_usd": 11.580499999999999,
+      "executed_price": 178.85,
+      "expected_price": 178.85,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.06948299999999999,
+      "loss_amount": 1.6456500000000003,
+      "loss_pct": 14.210526315789476,
+      "market_data": {
+        "cash": 0.6,
+        "portfolio_value": 12.78
+      },
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 5.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.476,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.6300000000000001
+      },
+      "combined_score": 0.6426000000000001,
+      "expected_profit": 1.6456500000000003,
+      "cause_identified": "Unknown - needs further analysis",
+      "lessons_learned": [
+        "Large loss on alpaca - review alpaca pair filters"
+      ],
+      "tactics_applied": [
+        "Asymmetric warfare",
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768343779.439207,
+      "exchange": "alpaca",
+      "from_asset": "USD",
+      "to_asset": "LTC",
+      "from_amount": 9.6995,
+      "from_value_usd": 9.6995,
+      "executed_price": 78.81200000000001,
+      "expected_price": 78.81200000000001,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.058197000000000006,
+      "loss_amount": 2.0675250000000003,
+      "loss_pct": 21.315789473684212,
+      "market_data": {
+        "cash": 0.48,
+        "portfolio_value": 12.41
+      },
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 5.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.48,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.6500000000000001
+      },
+      "combined_score": 0.648,
+      "expected_profit": 2.0675250000000003,
+      "cause_identified": "Unknown - needs further analysis",
+      "lessons_learned": [
+        "Large loss on alpaca - review alpaca pair filters"
+      ],
+      "tactics_applied": [
+        "Asymmetric warfare",
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768343898.1282742,
+      "exchange": "alpaca",
+      "from_asset": "LTC",
+      "to_asset": "LINK",
+      "from_amount": 0.1167261352,
+      "from_value_usd": 9.1674955694052,
+      "executed_price": 14.10265,
+      "expected_price": 14.10265,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.055004973416431194,
+      "loss_amount": 1.95412405558374,
+      "loss_pct": 21.315789473684212,
+      "market_data": {
+        "cash": 0.44,
+        "portfolio_value": 12.31
+      },
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 5.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.347,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.61
+      },
+      "combined_score": 0.46845,
+      "expected_profit": 1.95412405558374,
+      "cause_identified": "Low confidence trade - should have waited",
+      "lessons_learned": [
+        "Score 0.47 was too low - require >= 0.6 for this pair",
+        "Large loss on alpaca - review alpaca pair filters"
+      ],
+      "tactics_applied": [
+        "Asymmetric warfare",
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768343960.5635047,
+      "exchange": "alpaca",
+      "from_asset": "LINK",
+      "to_asset": "USD",
+      "from_amount": 0.61593714265,
+      "from_value_usd": 8.698449109646095,
+      "executed_price": 1.0,
+      "expected_price": 1.0,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.05219069465787657,
+      "loss_amount": 0.10568615668220005,
+      "loss_pct": 1.2149999999999999,
+      "market_data": {
+        "cash": 9.08,
+        "portfolio_value": 12.26
+      },
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 5.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.513,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.69
+      },
+      "combined_score": 0.7695000000000001,
+      "expected_profit": 0.10568615668220005,
+      "cause_identified": "Unknown - needs further analysis",
+      "lessons_learned": [
+        "Fees ($0.0522) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768343977.7868464,
+      "exchange": "alpaca",
+      "from_asset": "USD",
+      "to_asset": "ETH",
+      "from_amount": 9.12,
+      "from_value_usd": 9.12,
+      "executed_price": 3323.762,
+      "expected_price": 3323.762,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.05472,
+      "loss_amount": 0.08882637274216625,
+      "loss_pct": 0.9739733853307703,
+      "market_data": {
+        "cash": 0.48,
+        "portfolio_value": 12.24
+      },
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 5.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.44763881377360626,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.6500000000000001
+      },
+      "combined_score": 0.6043123985943685,
+      "expected_profit": 0.08882637274216625,
+      "cause_identified": "Fees ate most of expected profit",
+      "lessons_learned": [
+        "Fees ($0.0547) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
     }
   ],
   "patterns": {
@@ -1344,14 +2229,14 @@
       "last_seen": 1768253450.2877166
     },
     "USD\u2192UNI_alpaca": {
-      "losses": 1,
-      "total_loss": 0.8683969199999999,
+      "losses": 3,
+      "total_loss": 5.19626592,
       "avg_slippage": 0.0,
       "causes": [
         "Unknown - needs further analysis"
       ],
       "first_seen": 1768300941.7251425,
-      "last_seen": 1768300941.7251425
+      "last_seen": 1768343614.491912
     },
     "UNI\u2192AAVE_alpaca": {
       "losses": 1,
@@ -1362,15 +2247,155 @@
       ],
       "first_seen": 1768301445.4712973,
       "last_seen": 1768301445.4712973
+    },
+    "USD\u2192LTC_alpaca": {
+      "losses": 2,
+      "total_loss": 3.8270040840000004,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Unknown - needs further analysis"
+      ],
+      "first_seen": 1768308646.0872593,
+      "last_seen": 1768343779.439207
+    },
+    "LTC\u2192UNI_alpaca": {
+      "losses": 1,
+      "total_loss": 1.851737495399994,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Unknown - needs further analysis"
+      ],
+      "first_seen": 1768308798.8172364,
+      "last_seen": 1768308798.8172364
+    },
+    "UNI\u2192BCH_alpaca": {
+      "losses": 1,
+      "total_loss": 1.7432306827141812,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Unknown - needs further analysis"
+      ],
+      "first_seen": 1768308862.7132509,
+      "last_seen": 1768308862.7132509
+    },
+    "BCH\u2192ETH_alpaca": {
+      "losses": 1,
+      "total_loss": 1.4894452740038584,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Low confidence trade - should have waited"
+      ],
+      "first_seen": 1768309184.5583558,
+      "last_seen": 1768309184.5583558
+    },
+    "ETH\u2192LINK_alpaca": {
+      "losses": 1,
+      "total_loss": 1.4020126247837703,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Low confidence trade - should have waited"
+      ],
+      "first_seen": 1768309315.179374,
+      "last_seen": 1768309315.179374
+    },
+    "USD\u2192LINK_alpaca": {
+      "losses": 3,
+      "total_loss": 4.257661401,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Unknown - needs further analysis"
+      ],
+      "first_seen": 1768311111.135442,
+      "last_seen": 1768318767.3340979
+    },
+    "LINK\u2192ETH_alpaca": {
+      "losses": 2,
+      "total_loss": 2.679183274805713,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Low confidence trade - should have waited"
+      ],
+      "first_seen": 1768318886.0051687,
+      "last_seen": 1768334983.5428457
+    },
+    "UNI\u2192LTC_alpaca": {
+      "losses": 1,
+      "total_loss": 1.4618762081884709,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Low confidence trade - should have waited"
+      ],
+      "first_seen": 1768321175.6051407,
+      "last_seen": 1768321175.6051407
+    },
+    "LTC\u2192ETH_alpaca": {
+      "losses": 1,
+      "total_loss": 1.3853665702695368,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Low confidence trade - should have waited"
+      ],
+      "first_seen": 1768321311.0360842,
+      "last_seen": 1768321311.0360842
+    },
+    "USD\u2192AAVE_alpaca": {
+      "losses": 2,
+      "total_loss": 2.3461293600000004,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Unknown - needs further analysis"
+      ],
+      "first_seen": 1768334681.0779865,
+      "last_seen": 1768343695.3502374
+    },
+    "AAVE\u2192LINK_alpaca": {
+      "losses": 1,
+      "total_loss": 1.3758297153273624,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Low confidence trade - should have waited"
+      ],
+      "first_seen": 1768334870.0375812,
+      "last_seen": 1768334870.0375812
+    },
+    "LTC\u2192LINK_alpaca": {
+      "losses": 1,
+      "total_loss": 1.95412405558374,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Low confidence trade - should have waited"
+      ],
+      "first_seen": 1768343898.1282742,
+      "last_seen": 1768343898.1282742
+    },
+    "LINK\u2192USD_alpaca": {
+      "losses": 1,
+      "total_loss": 0.10568615668220005,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Unknown - needs further analysis"
+      ],
+      "first_seen": 1768343960.5635047,
+      "last_seen": 1768343960.5635047
+    },
+    "USD\u2192ETH_alpaca": {
+      "losses": 1,
+      "total_loss": 0.08882637274216625,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Fees ate most of expected profit"
+      ],
+      "first_seen": 1768343977.7868464,
+      "last_seen": 1768343977.7868464
     }
   },
   "stats": {
-    "total_losses_analyzed": 31,
-    "patterns_identified": 17,
+    "total_losses_analyzed": 52,
+    "patterns_identified": 19,
     "tactics_learned": 0,
-    "wikipedia_researches": 6,
-    "lessons_broadcast": 14,
+    "wikipedia_researches": 66,
+    "lessons_broadcast": 33,
     "money_saved_by_learning": 0.0
   },
-  "last_saved": "2026-01-13T12:40:30.318123"
+  "last_saved": "2026-01-13T22:39:58.740845"
 }

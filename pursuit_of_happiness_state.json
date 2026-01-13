@@ -1,0 +1,82 @@
+{
+  "timestamp": "2026-01-13T15:19:41.328737",
+  "happiness": {
+    "dream_progress": 1.2630000000000001e-08,
+    "love_resonance": 0.92,
+    "gaia_alignment": 0.5,
+    "joy_frequency": 0.7330000000000001,
+    "purpose_clarity": 1.0,
+    "happiness_quotient": 0.552529787633726,
+    "peak_happiness": 0.5907263887587365,
+    "trades_for_joy": 4,
+    "moments_of_love": 1
+  },
+  "bias": {
+    "joy_multiplier": 1.0733,
+    "love_shield": 1.046,
+    "purpose_drive": 1.15,
+    "gaia_grounding": 1.025,
+    "dream_ambition": 1.0000112383272777,
+    "total_bias": 1.0576351600313691
+  },
+  "happiness_history": [
+    0.5002454823920726,
+    0.5624609039262286,
+    0.5684450381024804,
+    0.5773575783649827,
+    0.5837236785524844,
+    0.5907263887587365,
+    0.5487101275212249,
+    0.5487101275212249,
+    0.552529787633726
+  ],
+  "bias_history": [
+    1.0533887498103507,
+    1.0564567073730946,
+    1.0569341034207478,
+    1.0583358777167713,
+    1.0593326169843245,
+    1.0604247147859494,
+    1.0570432548978541,
+    1.0570432548978541,
+    1.0576351600313691
+  ],
+  "joy_moments": [
+    {
+      "timestamp": 1768316619.5788138,
+      "source": "Successful snipe",
+      "intensity": 0.7,
+      "context": {
+        "symbol": "BTC/USD"
+      },
+      "joy_after": 0.598
+    },
+    {
+      "timestamp": 1768316619.578859,
+      "source": "System working",
+      "intensity": 0.5,
+      "context": {
+        "milestone": "100 trades"
+      },
+      "joy_after": 0.648
+    },
+    {
+      "timestamp": 1768316629.754312,
+      "source": "trade_win",
+      "intensity": 0.55,
+      "context": {
+        "profit_usd": 5.5
+      },
+      "joy_after": 0.7030000000000001
+    },
+    {
+      "timestamp": 1768317581.328066,
+      "source": "telemetry_success",
+      "intensity": 0.3,
+      "context": {
+        "symbols_observed": 5
+      },
+      "joy_after": 0.7330000000000001
+    }
+  ]
+}
