@@ -498,6 +498,174 @@ def to_harmonics(text: str) -> List[HarmonicTone]:
 def from_harmonics(signals: List[Tuple[float, float]]) -> str:
     return _alphabet.decode_signal(signals)
 
+# ═══════════════════════════════════════════════════════════════════════════════
+# 🏆 WIN/LOSS HARMONIC ENCODING - Universal Outcome Frequencies
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# WIN = 528Hz (Joy/Love frequency - DNA repair, manifestation)
+# LOSS = 396Hz (Transformation/Liberation - learning, letting go)
+WIN_FREQUENCY_HZ = 528.0
+LOSS_FREQUENCY_HZ = 396.0
+WIN_THRESHOLD_USD = 0.01  # Penny profit = REALITY
+
+# WIN Signature: joy intent + falcon precision + gamma peak insight
+WIN_INTENT = 'joy'
+WIN_AURIS = 'falcon'  # Precision/momentum for winning trades
+WIN_BRAINWAVE = 'gamma'  # Peak insight state
+
+# LOSS Signature: transformation intent + owl wisdom + theta reflection
+LOSS_INTENT = 'transformation'
+LOSS_AURIS = 'owl'  # Wisdom/pattern recognition for learning
+LOSS_BRAINWAVE = 'theta'  # Deep reflection/meditation
+
+
+def encode_win(profit_usd: float = 0.01) -> List[HarmonicTone]:
+    """
+    🏆 Encode a WIN outcome as harmonic signal.
+    
+    WIN = 528Hz (Joy) + Falcon (precision) + Gamma (peak insight)
+    
+    Args:
+        profit_usd: The profit amount (for amplitude scaling)
+    
+    Returns:
+        List of HarmonicTones encoding "WIN" with joy/falcon/gamma modulation
+    """
+    # Scale amplitude by profit (higher profit = stronger signal)
+    amplitude_boost = min(2.0, 1.0 + (profit_usd / 0.10))  # Max 2x at 10 cents
+    
+    tones = _alphabet.auris_compile(
+        "WIN",
+        intent=WIN_INTENT,
+        auris_node=WIN_AURIS,
+        brainwave=WIN_BRAINWAVE
+    )
+    
+    # Boost amplitude for strong wins
+    for tone in tones:
+        tone.amplitude *= amplitude_boost
+        tone.metadata['outcome'] = 'WIN'
+        tone.metadata['profit_usd'] = profit_usd
+    
+    return tones
+
+
+def encode_loss(loss_usd: float = 0.01) -> List[HarmonicTone]:
+    """
+    📚 Encode a LOSS outcome as harmonic signal for learning.
+    
+    LOSS = 396Hz (Transformation) + Owl (wisdom) + Theta (reflection)
+    
+    Args:
+        loss_usd: The loss amount (for amplitude scaling)
+    
+    Returns:
+        List of HarmonicTones encoding "LOSS" with transformation/owl/theta modulation
+    """
+    tones = _alphabet.auris_compile(
+        "LOSS",
+        intent=LOSS_INTENT,
+        auris_node=LOSS_AURIS,
+        brainwave=LOSS_BRAINWAVE
+    )
+    
+    # Add learning metadata
+    for tone in tones:
+        tone.metadata['outcome'] = 'LOSS'
+        tone.metadata['loss_usd'] = abs(loss_usd)
+        tone.metadata['learning_mode'] = True
+    
+    return tones
+
+
+def encode_outcome(net_profit_usd: float) -> List[HarmonicTone]:
+    """
+    🎵 Encode trade outcome (WIN or LOSS) as harmonic signal.
+    
+    WIN = net_profit >= $0.01 (penny profit = REALITY)
+    LOSS = net_profit < $0.01
+    
+    Args:
+        net_profit_usd: Net profit in USD after fees
+    
+    Returns:
+        List of HarmonicTones with appropriate WIN/LOSS encoding
+    """
+    if net_profit_usd >= WIN_THRESHOLD_USD:
+        return encode_win(net_profit_usd)
+    else:
+        return encode_loss(net_profit_usd)
+
+
+def decode_outcome(tones: List[HarmonicTone]) -> Dict[str, Any]:
+    """
+    🔍 Decode harmonic signal to determine if it's a WIN or LOSS.
+    
+    Looks for 528Hz (WIN) or 396Hz (LOSS) carrier frequencies.
+    
+    Returns:
+        Dict with 'is_win', 'confidence', 'metadata'
+    """
+    if not tones:
+        return {'is_win': None, 'confidence': 0.0, 'metadata': {}}
+    
+    # Check dominant frequency
+    avg_freq = sum(t.frequency for t in tones if t.frequency > 0) / max(1, len([t for t in tones if t.frequency > 0]))
+    
+    # Check for WIN signature (528Hz zone)
+    win_distance = abs(avg_freq - WIN_FREQUENCY_HZ)
+    loss_distance = abs(avg_freq - LOSS_FREQUENCY_HZ)
+    
+    is_win = win_distance < loss_distance
+    confidence = 1.0 - (min(win_distance, loss_distance) / 200.0)  # Confidence based on frequency match
+    
+    # Extract metadata from first tone with outcome
+    metadata = {}
+    for tone in tones:
+        if 'outcome' in tone.metadata:
+            metadata = tone.metadata.copy()
+            break
+    
+    return {
+        'is_win': is_win,
+        'confidence': max(0.0, confidence),
+        'avg_frequency': avg_freq,
+        'metadata': metadata
+    }
+
+
+def get_outcome_whale_code(net_profit_usd: float) -> str:
+    """
+    🐋 Generate compact morse-like whale sonar code for outcome.
+    
+    W0-WF = WIN levels (0-15 based on profit: 0=penny, F=10 cents+)
+    L0-LF = LOSS levels (0-15 based on loss magnitude)
+    
+    Args:
+        net_profit_usd: Net profit in USD
+    
+    Returns:
+        2-char code like "W1", "WF", "L0", "L5"
+    """
+    if net_profit_usd >= WIN_THRESHOLD_USD:
+        # Scale to 0-15 (1 cent = W1, 10 cents = WA, 16+ cents = WF)
+        level = min(15, int(net_profit_usd * 100))
+        return f"W{level:X}"
+    else:
+        # Scale loss to 0-15
+        level = min(15, int(abs(net_profit_usd) * 100))
+        return f"L{level:X}"
+
+
+def is_win_frequency(freq: float, tolerance: float = 50.0) -> bool:
+    """Check if frequency is in WIN band (528Hz ± tolerance)"""
+    return abs(freq - WIN_FREQUENCY_HZ) <= tolerance
+
+
+def is_loss_frequency(freq: float, tolerance: float = 50.0) -> bool:
+    """Check if frequency is in LOSS band (396Hz ± tolerance)"""
+    return abs(freq - LOSS_FREQUENCY_HZ) <= tolerance
+
 if __name__ == "__main__":
     print("╔════════════════════════════════════════════════════════════════════════╗")
     print("║           AUREON HARMONIC ALPHABET - AURIS COMPILER TEST              ║")

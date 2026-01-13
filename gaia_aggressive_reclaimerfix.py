@@ -1558,7 +1558,8 @@ class AggressiveReclaimer:
             current_profit = self.profit
         if self.bridge:
             try:
-                self.bridge.record_trade(profit=profit_usd, fee=0.0, success=profit_usd > 0)
+                # Use penny-profit threshold for success (unify with QUEEN policy)
+                self.bridge.record_trade(profit=profit_usd, fee=0.0, success=(profit_usd >= 0.01))
             except Exception:
                 pass
         if self.mycelium and hasattr(self.mycelium, "record_trade_profit"):
@@ -3803,7 +3804,7 @@ class AggressiveReclaimer:
                                     except Exception:
                                         pass
                                 self.log(f"   [OK] SOLD! +${profit_usd:.4f}")
-                                if self.stop_on_first_profit and profit_usd > 0:
+                                if self.stop_on_first_profit and profit_usd >= 0.01:
                                     self._halt_after_profit = True
                                 self.last_buy.pop(pos_symbol, None)
                                 time.sleep(0.2)
@@ -3833,7 +3834,7 @@ class AggressiveReclaimer:
                             except Exception:
                                 pass
                         self.log(f"   [OK] SOLD! +${profit_usd:.4f}")
-                        if self.stop_on_first_profit and profit_usd > 0:
+                        if self.stop_on_first_profit and profit_usd >= 0.01:
                             self._halt_after_profit = True
                         time.sleep(0.2)
                         self._alpaca_buy_target()
@@ -3906,7 +3907,7 @@ class AggressiveReclaimer:
                         self.log(
                             f"[SELL EXECUTED] {pos_symbol} pnl {pnl_pct:+.2f}% profit ${profit_usd:.4f} order {order_id}"
                         )
-                        if self.stop_on_first_profit and profit_usd > 0:
+                        if self.stop_on_first_profit and profit_usd >= 0.01:
                             self._halt_after_profit = True
 
                         time.sleep(0.5)

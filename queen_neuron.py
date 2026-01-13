@@ -226,30 +226,56 @@ class QueenNeuron:
         
         return loss
     
-    def train_on_example(self, neural_input: NeuralInput, outcome: bool) -> float:
+    def train_on_example(self, neural_input: NeuralInput, outcome) -> float:
         """
         Train on a single example (win or loss).
-        
+
         Args:
             neural_input: Market state that led to trade
-            outcome: True = trade won, False = trade lost
-            
+            outcome: Either a bool (True=win, False=loss) or a dict/WinOutcome with outcome details
+
         Returns:
             Loss for this example
         """
+        # Normalize outcome to boolean if a dict/WinOutcome was passed
+        is_win = False
+        net_profit = None
+        try:
+            if isinstance(outcome, bool):
+                is_win = outcome
+            elif isinstance(outcome, dict):
+                # Look for canonical keys
+                if 'is_win' in outcome:
+                    is_win = bool(outcome.get('is_win'))
+                else:
+                    net_profit = outcome.get('net_profit_usd') or outcome.get('pnl') or outcome.get('profit_usd') or outcome.get('actual_pnl')
+                    try:
+                        is_win = float(net_profit) >= 0.01 if net_profit is not None else False
+                    except Exception:
+                        is_win = False
+            else:
+                # Unknown object type (e.g., WinOutcome dataclass), try attribute access
+                try:
+                    is_win = bool(getattr(outcome, 'is_win', False))
+                    net_profit = getattr(outcome, 'net_profit_usd', None)
+                except Exception:
+                    is_win = False
+        except Exception:
+            is_win = False
+
         X = neural_input.to_array()
-        y = np.array([[1.0 if outcome else 0.0]], dtype=np.float32)
-        
+        y = np.array([[1.0 if is_win else 0.0]], dtype=np.float32)
+
         # Forward pass
         self.forward(X)
-        
+
         # Backward pass
         loss = self.backward(X, y)
-        
-        # Record history
-        self.training_history.append({
+
+        # Record history with additional outcome metadata when available
+        hist_entry = {
             'timestamp': datetime.now().isoformat(),
-            'outcome': outcome,
+            'outcome': is_win,
             'loss': float(loss),
             'neural_input': neural_input,
             'inputs': {
@@ -260,8 +286,12 @@ class QueenNeuron:
                 'emotion': float(neural_input.emotional_coherence),
                 'mycelium': float(neural_input.mycelium_signal),
             }
-        })
-        
+        }
+        if net_profit is not None:
+            hist_entry['net_profit_usd'] = float(net_profit)
+
+        self.training_history.append(hist_entry)
+
         return loss
     
     def train_batch(self, neural_inputs: List[NeuralInput], outcomes: List[bool]) -> float:

@@ -248,7 +248,7 @@ class ProfitMeshTrader:
                 self.positions.pop(symbol)
                 self.total_profit += net_profit_usd
                 self.trade_count += 1
-                if net_profit_usd > 0:
+                if net_profit_usd >= 0.01:
                     self.win_count += 1
                 return net_profit_usd
             
@@ -259,7 +259,7 @@ class ProfitMeshTrader:
             self.positions.pop(symbol)
             self.total_profit += net_profit_usd
             self.trade_count += 1
-            if net_profit_usd > 0:
+            if net_profit_usd >= 0.01:
                 self.win_count += 1
             
             return net_profit_usd

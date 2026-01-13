@@ -2907,7 +2907,11 @@ class LiveBarterMatrix:
 
         profit_usd = 0.0 if is_outlier else profit_usd_raw
         profit_pct = 0.0 if is_outlier else profit_pct_raw
-        is_win = profit_usd > 0
+        
+        # 🏆 UNIVERSAL WIN DEFINITION: Penny Profit = REALITY
+        # WIN = net profit >= $0.01 (not just > 0, which catches dust)
+        WIN_THRESHOLD_USD = 0.01
+        is_win = profit_usd >= WIN_THRESHOLD_USD
         
         # Calculate actual slippage vs expected
         key = (from_asset.upper(), to_asset.upper())
@@ -2953,6 +2957,41 @@ class LiveBarterMatrix:
                 'timestamp': time.time()
             })
             logger.info(f"👑✅ PATH WIN: {from_asset}→{to_asset} +${profit_usd:.4f} (win rate: {history['wins']/history['trades']:.0%})")
+
+            # Broadcast a canonical WinOutcome and ThoughtBus message so all systems receive harmonically-encoded outcome
+            try:
+                from aureon_queen_hive_mind import WinOutcome
+                win = WinOutcome.from_trade(
+                    from_asset=from_asset,
+                    to_asset=to_asset,
+                    from_usd=from_usd,
+                    to_usd=to_usd,
+                    exchange=getattr(self, 'exchange_name', 'unknown'),
+                    signals={},
+                    coherence=0.5,
+                    confidence=history['wins'] / history['trades'] if history['trades'] else 0.5,
+                    strategy=getattr(self, 'active_strategy', 'UNKNOWN'),
+                    animals=getattr(self, 'last_animals', [])
+                )
+                # Broadcast via mycelium if available
+                if hasattr(self, 'mycelium_network') and self.mycelium_network and hasattr(self.mycelium_network, 'broadcast_signal'):
+                    try:
+                        self.mycelium_network.broadcast_signal({'type': 'TRADE_OUTCOME', 'win': win.to_dict()})
+                    except Exception:
+                        logger.exception('Failed to broadcast TRADE_OUTCOME via mycelium')
+
+                # Also publish to ThoughtBus if available
+                try:
+                    from aureon_thought_bus import Thought, get_thought_bus
+                    tb = get_thought_bus()
+                    if tb:
+                        t = Thought(source='micro_profit_labyrinth', topic=('outcome.win' if win.is_win else 'outcome.loss'), payload={'win': win.to_dict()})
+                        tb.publish(t)
+                except Exception:
+                    # Not fatal; ThoughtBus may not be available in all contexts
+                    logger.debug('ThoughtBus not available or failed to publish outcome')
+            except Exception:
+                logger.exception('Failed to construct or broadcast WinOutcome')
         else:
             history['losses'] = history.get('losses', 0) + 1
             history['consecutive_losses'] = history.get('consecutive_losses', 0) + 1
@@ -3695,7 +3734,182 @@ class LiquidityEngine:
 
 
 # ════════════════════════════════════════════════════════════════════════════
-# �🔬 MICRO PROFIT LABYRINTH ENGINE
+# 🌾💰 PROFIT HARVESTER - Proactive Portfolio Profit Realization
+# ════════════════════════════════════════════════════════════════════════════
+# Scans Alpaca positions for unrealized profits and harvests them for cash!
+# This is the KEY MISSING PIECE - we need to SELL profitable positions to get
+# cash for new trading opportunities.
+# ════════════════════════════════════════════════════════════════════════════
+
+@dataclass
+class HarvestCandidate:
+    """A position that can be harvested for profit."""
+    symbol: str
+    asset: str
+    qty: float
+    cost_basis: float
+    market_value: float
+    unrealized_pl: float
+    unrealized_plpc: float  # Percentage
+    current_price: float
+    priority: int  # Higher = better harvest candidate
+
+
+class ProfitHarvester:
+    """
+    🌾💰 PROFIT HARVESTER - Proactive Portfolio Profit Realization
+    
+    "Don't let profits sit unrealized - HARVEST them for new opportunities!"
+    
+    Key Principles:
+    1. Scan Alpaca positions for unrealized profit (unrealized_pl > 0)
+    2. Prioritize positions with highest profit % (unrealized_plpc)
+    3. Sell profitable positions to convert to USD cash
+    4. Cash becomes available for new opportunity buys
+    5. Apply minimum thresholds to avoid harvesting dust profits
+    """
+    
+    # Minimum profit to consider harvesting (ULTRA AGGRESSIVE for micro-profits!)
+    MIN_PROFIT_USD = 0.005      # At least $0.005 profit (half a penny!)
+    MIN_PROFIT_PCT = 0.3        # At least 0.3% profit (must cover 0.15% sell fee x 2 with buffer)
+    MIN_POSITION_VALUE = 0.40   # Position must be worth at least $0.40
+    
+    # Fee estimate for selling on Alpaca
+    ALPACA_SELL_FEE_PCT = 0.0015  # 0.15%
+    
+    # Cooldown to avoid harvesting same asset repeatedly
+    HARVEST_COOLDOWN = 120  # 2 minutes (faster for active trading)
+    
+    def __init__(self):
+        self.harvested_total = 0.0
+        self.harvest_count = 0
+        self.recent_harvests: Dict[str, float] = {}  # asset -> timestamp
+        
+    def find_harvest_candidates(
+        self, 
+        positions: List[Dict],
+        exclude_assets: Set[str] = None,
+    ) -> List[HarvestCandidate]:
+        """
+        🌾 Scan positions and find ones with harvestable profits.
+        
+        Args:
+            positions: List of position dicts from Alpaca get_positions()
+            exclude_assets: Assets to skip (e.g., ones we're about to buy)
+            
+        Returns:
+            List of HarvestCandidate sorted by priority (best first)
+        """
+        exclude_assets = exclude_assets or set()
+        candidates = []
+        current_time = time.time()
+        
+        for pos in positions:
+            try:
+                symbol = pos.get('symbol', '')
+                qty = float(pos.get('qty', 0) or 0)
+                market_value = float(pos.get('market_value', 0) or 0)
+                cost_basis = float(pos.get('cost_basis', 0) or 0)
+                unrealized_pl = float(pos.get('unrealized_pl', 0) or 0)
+                unrealized_plpc = float(pos.get('unrealized_plpc', 0) or 0) * 100  # Convert to %
+                current_price = float(pos.get('current_price', 0) or 0)
+                
+                # Extract base asset
+                if '/' in symbol:
+                    asset = symbol.split('/')[0]
+                elif symbol.endswith('USD'):
+                    asset = symbol[:-3]
+                else:
+                    asset = symbol
+                
+                # Skip excluded assets
+                if asset.upper() in exclude_assets or asset in exclude_assets:
+                    continue
+                    
+                # Skip if recently harvested
+                if asset in self.recent_harvests:
+                    if current_time - self.recent_harvests[asset] < self.HARVEST_COOLDOWN:
+                        continue
+                
+                # Skip if no profit
+                if unrealized_pl <= 0:
+                    continue
+                    
+                # Skip if profit too small (fees would eat it)
+                if unrealized_pl < self.MIN_PROFIT_USD:
+                    continue
+                    
+                # Skip if profit % too small
+                if unrealized_plpc < self.MIN_PROFIT_PCT:
+                    continue
+                    
+                # Skip if position too small
+                if market_value < self.MIN_POSITION_VALUE:
+                    continue
+                
+                # Calculate net profit after sell fee
+                sell_fee = market_value * self.ALPACA_SELL_FEE_PCT
+                net_profit = unrealized_pl - sell_fee
+                
+                # Only proceed if still profitable after fee
+                if net_profit <= 0:
+                    continue
+                
+                # Calculate priority (higher = better)
+                # Prioritize by: profit %, then absolute profit
+                priority = int(unrealized_plpc * 100) + int(unrealized_pl * 10)
+                
+                candidates.append(HarvestCandidate(
+                    symbol=symbol,
+                    asset=asset,
+                    qty=qty,
+                    cost_basis=cost_basis,
+                    market_value=market_value,
+                    unrealized_pl=unrealized_pl,
+                    unrealized_plpc=unrealized_plpc,
+                    current_price=current_price,
+                    priority=priority,
+                ))
+                
+            except Exception as e:
+                logger.debug(f"Error parsing position for harvest: {e}")
+                continue
+        
+        # Sort by priority (highest first)
+        candidates.sort(key=lambda x: x.priority, reverse=True)
+        
+        return candidates
+    
+    def record_harvest(self, asset: str, profit_usd: float):
+        """Record that we harvested an asset."""
+        self.recent_harvests[asset] = time.time()
+        self.harvested_total += profit_usd
+        self.harvest_count += 1
+        
+    def get_status(self) -> Dict:
+        """Get harvester status."""
+        return {
+            'harvested_total': self.harvested_total,
+            'harvest_count': self.harvest_count,
+            'recent_harvests': len(self.recent_harvests),
+        }
+    
+    def print_candidates(self, candidates: List[HarvestCandidate]) -> str:
+        """Pretty print harvest candidates."""
+        if not candidates:
+            return "   🌾 No harvest candidates found"
+        
+        lines = ["   🌾💰 HARVEST CANDIDATES (Profitable Positions):"]
+        for c in candidates[:5]:  # Show top 5
+            lines.append(
+                f"      {c.asset}: ${c.market_value:.2f} | "
+                f"P&L: ${c.unrealized_pl:+.2f} ({c.unrealized_plpc:+.1f}%)"
+            )
+        return "\n".join(lines)
+
+
+# ════════════════════════════════════════════════════════════════════════════
+# 🔬 MICRO PROFIT LABYRINTH ENGINE
 # ════════════════════════════════════════════════════════════════════════════
 
 class MicroProfitLabyrinth:
@@ -3748,6 +3962,12 @@ class MicroProfitLabyrinth:
         # 💧🔀 LIQUIDITY ENGINE - Dynamic Asset Aggregation ("Top-Up" Mechanism)
         # When we need funds for a trade, liquidate low-performers to fund it!
         self.liquidity_engine = LiquidityEngine(self.barter_matrix)
+        
+        # 🌾💰 PROFIT HARVESTER - Proactive Portfolio Profit Realization
+        # Scans positions for unrealized profits and harvests them for cash!
+        self.profit_harvester = ProfitHarvester()
+        self.harvest_interval = 1  # Run harvest check EVERY turn (aggressive)
+        self.turns_since_harvest = 0
         
         # 🧹 DUST CONVERTER - Sweep small balances (<£1) to stablecoins
         # Only sweeps if profitable after fees - never loses money!
@@ -4727,13 +4947,19 @@ class MicroProfitLabyrinth:
         print(f"🫒💰 Live Barter Matrix: WIRED (Adaptive coin-agnostic value system)")
         print(f"   ℹ️ Philosophy: ANY coin → ANY coin, learning which paths make money")
         
-        # �🔀 LIQUIDITY ENGINE - Dynamic Asset Aggregation
+        # 💧🔀 LIQUIDITY ENGINE - Dynamic Asset Aggregation
         print(f"💧🔀 Liquidity Engine: WIRED (Dynamic Asset Aggregation)")
         print(f"   ℹ️ Philosophy: Liquidate low-performers to fund winning trades!")
         print(f"   🎯 Min Victim Value: ${self.liquidity_engine.MIN_VICTIM_VALUE:.2f}")
         print(f"   ⏱️ Liquidation Cooldown: {self.liquidity_engine.LIQUIDATION_COOLDOWN}s")
         
-        # �🔐🌐 ENIGMA INTEGRATION - Universal Translator Bridge
+        # 🌾💰 PROFIT HARVESTER - Proactive Portfolio Profit Realization
+        print(f"🌾💰 Profit Harvester: WIRED (Proactive Profit Realization)")
+        print(f"   ℹ️ Philosophy: Sell profitable positions to get cash for new trades!")
+        print(f"   🎯 Min Profit: ${self.profit_harvester.MIN_PROFIT_USD:.2f} ({self.profit_harvester.MIN_PROFIT_PCT}%)")
+        print(f"   ⏱️ Harvest Interval: Every {self.harvest_interval} turns")
+        
+        # 🔐🌐 ENIGMA INTEGRATION - Universal Translator Bridge
         if ENIGMA_INTEGRATION_AVAILABLE and get_enigma_integration:
             try:
                 self.enigma_integration = get_enigma_integration()
@@ -6623,6 +6849,85 @@ class MicroProfitLabyrinth:
         """
         print(f"\n🏁 ═══ FPTP SCAN #{self.turns_completed + 1}: ALL EXCHANGES ═══")
         
+        # ═══════════════════════════════════════════════════════════════════════════
+        # 👑🧠 QUEEN DEEP THINK - Consult ALL 42+ systems before acting!
+        # ═══════════════════════════════════════════════════════════════════════════
+        deep_think_result = None
+        if hasattr(self, 'queen') and self.queen:
+            try:
+                # Gather portfolio positions from Alpaca
+                portfolio_positions = []
+                cash_available = 0.0
+                
+                if self.alpaca:
+                    try:
+                        positions = self.alpaca.list_positions()
+                        for pos in positions:
+                            portfolio_positions.append({
+                                'symbol': pos.symbol,
+                                'qty': float(pos.qty),
+                                'market_value': float(pos.market_value),
+                                'cost_basis': float(pos.cost_basis),
+                                'unrealized_pl': float(pos.unrealized_pl),
+                                'unrealized_plpc': float(pos.unrealized_plpc),
+                                'current_price': float(pos.current_price),
+                                'avg_entry_price': float(pos.avg_entry_price)
+                            })
+                        
+                        # Get cash
+                        account = self.alpaca.get_account()
+                        cash_available = float(account.cash)
+                    except Exception as e:
+                        logger.debug(f"Error getting Alpaca positions for Deep Think: {e}")
+                
+                # 🧠 THE QUEEN THINKS DEEPLY!
+                deep_think_result = self.queen.deep_think_portfolio(
+                    portfolio_positions=portfolio_positions,
+                    cash_available=cash_available,
+                    prices=self.prices
+                )
+                
+                # Print the Queen's wisdom
+                print(f"\n👑🧠 QUEEN'S DEEP THINK:")
+                print(f"   🌍 Cosmic: Gaia={deep_think_result.gaia_blessing:.0%}, λ={deep_think_result.luck_field:.0%}, Ω={deep_think_result.global_harmonic_omega:.0%}")
+                print(f"   📈 Market: P(Nexus)={deep_think_result.probability_nexus_score:.0%}, {deep_think_result.timeline_oracle_branch}")
+                print(f"   🦅 Strategy: {deep_think_result.selected_strategy} with {', '.join(deep_think_result.selected_animals[:3])}")
+                print(f"   👑 Decision: {deep_think_result.action} @ {deep_think_result.confidence:.0%}")
+                print(f"   💬 {deep_think_result.queen_message}")
+                
+                if deep_think_result.warnings:
+                    for warning in deep_think_result.warnings:
+                        print(f"   ⚠️ {warning}")
+                
+                # If Queen says WAIT and confidence is LOW, we can skip the scan
+                if deep_think_result.action == 'WAIT' and deep_think_result.confidence < 0.3:
+                    print(f"\n   👑 Queen says WAIT (confidence {deep_think_result.confidence:.0%} too low). Skipping scan.")
+                    self.turns_completed += 1
+                    return [], 0
+                    
+            except Exception as e:
+                logger.warning(f"Queen Deep Think error (non-fatal): {e}")
+                print(f"   ⚠️ Queen Deep Think unavailable: {e}")
+        
+        # 🌾💰 PROFIT HARVESTER - Harvest any profitable positions FIRST!
+        # This gives us cash to buy new opportunities!
+        self.turns_since_harvest += 1
+        print(f"   🌾 Harvest check: turns_since={self.turns_since_harvest}, interval={self.harvest_interval}, alpaca={'✅' if self.alpaca else '❌'}")
+        if self.alpaca and self.turns_since_harvest >= self.harvest_interval:
+            try:
+                print(f"   🌾 Running harvest scan...")
+                harvest_result = await self.harvest_profitable_positions()
+                if harvest_result.get('harvested'):
+                    print(f"   🌾✅ Harvested ${harvest_result['total_profit_harvested']:.2f} profit → ${harvest_result['cash_generated']:.2f} cash")
+                elif harvest_result.get('candidates_found', 0) > 0:
+                    print(f"   🌾 {harvest_result['candidates_found']} harvest candidates found (waiting for better profit)")
+                else:
+                    print(f"   🌾 No harvest candidates found (no positions in profit)")
+                self.turns_since_harvest = 0
+            except Exception as e:
+                print(f"   🌾❌ Harvest error: {e}")
+                logger.debug(f"Harvest check error: {e}")
+        
         connected_exchanges = [ex for ex in self.exchange_order 
                                if self.exchange_data.get(ex, {}).get('connected', False)]
         
@@ -6634,6 +6939,96 @@ class MicroProfitLabyrinth:
         refresh_tasks = [self.refresh_exchange_balances(ex) for ex in connected_exchanges]
         await asyncio.gather(*refresh_tasks, return_exceptions=True)
         
+        # 🔍 Scan ALL exchanges for opportunities in parallel
+        all_opportunities: List['MicroOpportunity'] = []
+        
+        scan_tasks = []
+        for exchange in connected_exchanges:
+            scan_tasks.append(self._scan_exchange_for_fptp(exchange))
+        
+        results = await asyncio.gather(*scan_tasks, return_exceptions=True)
+        
+        # Collect all opportunities from all exchanges
+        for i, result in enumerate(results):
+            if isinstance(result, Exception):
+                logger.debug(f"FPTP scan error for {connected_exchanges[i]}: {result}")
+                continue
+            if result:
+                all_opportunities.extend(result)
+        
+        # Sort by expected profit (highest first)
+        all_opportunities.sort(key=lambda x: x.expected_pnl_usd, reverse=True)
+        
+        if not all_opportunities:
+            print(f"   📭 No opportunities across {len(connected_exchanges)} exchanges")
+            self.turns_completed += 1
+            if hasattr(self, 'barter_matrix') and self.barter_matrix:
+                self.barter_matrix.current_turn = self.turns_completed
+            return [], 0
+        
+        # 🔮🔄 QUANTUM MIRROR SCANNER UPDATE - Feed opportunities into scanner!
+        # This is the CRITICAL integration that was MISSING before!
+        if hasattr(self, 'quantum_mirror_scanner') and self.quantum_mirror_scanner:
+            try:
+                mirror_result = self.quantum_mirror_scanner.update_from_market_data(
+                    opportunities=all_opportunities,
+                    prices=self.prices
+                )
+                if mirror_result.get('ready_count', 0) > 0:
+                    print(f"\n   🔮 QUANTUM MIRROR: {mirror_result['ready_count']} branches READY for 4th pass!")
+                    for rb in mirror_result.get('ready_branches', [])[:3]:
+                        print(f"      ⚡ {rb['branch_id']}: score={rb['score']:.3f}")
+                if mirror_result.get('convergences_detected', 0) > 0:
+                    print(f"   🌀 Timeline convergences detected: {mirror_result['convergences_detected']}")
+                    
+                # 🔮 BOOST TOP OPPORTUNITIES WITH QUANTUM COHERENCE!
+                for opp in all_opportunities:
+                    boost, reason = self.quantum_mirror_scanner.get_quantum_boost(
+                        opp.from_asset, opp.to_asset, opp.source_exchange
+                    )
+                    if boost > 0:
+                        # Apply quantum boost to expected PnL and combined score
+                        opp.expected_pnl_usd = opp.expected_pnl_usd * (1 + boost)
+                        opp.combined_score = min(2.0, opp.combined_score * (1 + boost))
+                        if boost > 0.2:  # Significant boost
+                            logger.info(f"🔮 Quantum boost +{boost:.0%} for {opp.from_asset}→{opp.to_asset}: {reason}")
+                            
+                # Re-sort after boost
+                all_opportunities.sort(key=lambda x: x.expected_pnl_usd, reverse=True)
+            except Exception as e:
+                logger.debug(f"Quantum Mirror update error: {e}")
+        
+        # 👑🧠 QUEEN DEEP THINK - Apply strategy filter based on Queen's decision
+        if deep_think_result and deep_think_result.action != 'WAIT':
+            strategy = deep_think_result.selected_strategy
+            aggression = deep_think_result.aggression_level
+            
+            # Apply Queen's strategy to filter/boost opportunities
+            if strategy == 'AGGRESSIVE' and aggression > 0.7:
+                # Boost ALL opportunities for aggressive mode
+                for opp in all_opportunities:
+                    opp.expected_pnl_usd *= 1.2  # 20% boost
+                    opp.combined_score = min(2.0, opp.combined_score * 1.15)
+                print(f"   👑 AGGRESSIVE MODE: All opportunities boosted +20%!")
+            
+            elif strategy == 'DEFENSIVE' and aggression < 0.3:
+                # Only keep high-confidence opportunities
+                original_count = len(all_opportunities)
+                all_opportunities = [opp for opp in all_opportunities 
+                                    if opp.combined_score >= 1.2]  # Higher threshold
+                filtered = original_count - len(all_opportunities)
+                if filtered > 0:
+                    print(f"   👑 DEFENSIVE MODE: Filtered {filtered} low-confidence opportunities")
+            
+            elif strategy == 'SNIPER':
+                # Only keep the absolute best opportunities
+                all_opportunities = all_opportunities[:3]  # Only top 3
+                print(f"   👑 SNIPER MODE: Focusing on top 3 opportunities only")
+            
+            # Re-sort after strategy adjustments
+            all_opportunities.sort(key=lambda x: x.expected_pnl_usd, reverse=True)
+        
+        # 
         # 🔍 Scan ALL exchanges for opportunities in parallel
         all_opportunities: List['MicroOpportunity'] = []
         
@@ -7336,6 +7731,112 @@ class MicroProfitLabyrinth:
             print(f"\n   ❌ AGGREGATION FAILED: No steps completed")
             return False
 
+    async def harvest_profitable_positions(self) -> Dict[str, Any]:
+        """
+        🌾💰 HARVEST PROFITABLE POSITIONS - Sell positions in profit to get cash!
+        
+        This is the KEY to proactive portfolio management:
+        1. Scan Alpaca positions for unrealized profits
+        2. Sell profitable positions to realize gains
+        3. Cash becomes available for new opportunity buys
+        
+        Returns:
+            Dict with harvest results
+        """
+        result = {
+            'harvested': False,
+            'positions_sold': 0,
+            'total_profit_harvested': 0.0,
+            'cash_generated': 0.0,
+            'candidates_found': 0,
+        }
+        
+        # Only works with Alpaca
+        if not self.alpaca:
+            return result
+            
+        try:
+            # Get current positions with P&L data
+            positions = self.alpaca.get_positions() or []
+            
+            if not positions:
+                return result
+            
+            # Find harvest candidates
+            candidates = self.profit_harvester.find_harvest_candidates(positions)
+            result['candidates_found'] = len(candidates)
+            
+            if not candidates:
+                return result
+            
+            print(f"\n{'='*60}")
+            print(f"🌾💰 PROFIT HARVESTER - Scanning Portfolio for Profits...")
+            print(f"{'='*60}")
+            print(self.profit_harvester.print_candidates(candidates))
+            
+            # Harvest top candidates (limit to 2 per cycle to avoid over-selling)
+            max_harvests = 2
+            harvests_done = 0
+            
+            for candidate in candidates[:max_harvests]:
+                print(f"\n   🌾 HARVESTING: {candidate.asset}")
+                print(f"      Position: {candidate.qty:.6f} @ ${candidate.current_price:.4f} = ${candidate.market_value:.2f}")
+                print(f"      Profit: ${candidate.unrealized_pl:+.2f} ({candidate.unrealized_plpc:+.1f}%)")
+                
+                # Sell the position
+                try:
+                    # Sell ALL of this position to realize full profit
+                    sell_result = self.alpaca.place_order(
+                        symbol=candidate.symbol if '/' in candidate.symbol else f"{candidate.asset}/USD",
+                        side='sell',
+                        qty=candidate.qty,
+                        type='market'
+                    )
+                    
+                    if sell_result:
+                        # Record the harvest
+                        self.profit_harvester.record_harvest(candidate.asset, candidate.unrealized_pl)
+                        
+                        result['positions_sold'] += 1
+                        result['total_profit_harvested'] += candidate.unrealized_pl
+                        result['cash_generated'] += candidate.market_value
+                        harvests_done += 1
+                        
+                        print(f"      ✅ SOLD! Profit: ${candidate.unrealized_pl:.2f} → Cash: ${candidate.market_value:.2f}")
+                        
+                        # Log to trading log
+                        logger.info(f"🌾💰 HARVESTED: {candidate.asset} | Profit: ${candidate.unrealized_pl:.2f} | Cash: ${candidate.market_value:.2f}")
+                        
+                        # Update local balance tracking
+                        if 'alpaca' in self.exchange_balances:
+                            self.exchange_balances['alpaca'].pop(candidate.asset, None)
+                            self.exchange_balances['alpaca']['USD'] = self.exchange_balances['alpaca'].get('USD', 0) + candidate.market_value
+                        
+                    else:
+                        print(f"      ❌ SELL failed - no result returned")
+                        
+                except Exception as e:
+                    print(f"      ❌ SELL failed: {e}")
+                    logger.error(f"Harvest sell failed for {candidate.asset}: {e}")
+                    continue
+            
+            if harvests_done > 0:
+                result['harvested'] = True
+                print(f"\n   🌾✅ HARVEST COMPLETE: {harvests_done} positions sold")
+                print(f"       Profit realized: ${result['total_profit_harvested']:.2f}")
+                print(f"       Cash generated: ${result['cash_generated']:.2f}")
+                
+                # Refresh balances after harvesting
+                await self.fetch_balances()
+            else:
+                print(f"\n   🌾 No positions harvested this cycle")
+                
+        except Exception as e:
+            logger.error(f"Profit harvester error: {e}")
+            print(f"   ❌ Harvest error: {e}")
+        
+        return result
+
     async def report_portfolio_to_queen(self, voice_enabled: bool = True) -> Dict[str, Any]:
         """
         👑💰 REPORT PORTFOLIO TO QUEEN - Feed her the revenue data!
@@ -7471,7 +7972,21 @@ class MicroProfitLabyrinth:
         
         print(f"\n🎯 ═══ TURN {self.turns_completed + 1}: {icon} {current_exchange.upper()} ═══")
         
-        # 🌊⚡ MOMENTUM WAVE CHECK - Look for wave jumping opportunities
+        # �💰 PROFIT HARVESTER - Check portfolio for harvestable profits!
+        # Run every N turns on Alpaca to realize gains and get trading cash
+        self.turns_since_harvest += 1
+        if current_exchange == 'alpaca' and self.turns_since_harvest >= self.harvest_interval:
+            try:
+                harvest_result = await self.harvest_profitable_positions()
+                if harvest_result.get('harvested'):
+                    print(f"   🌾✅ Harvested ${harvest_result['total_profit_harvested']:.2f} profit → ${harvest_result['cash_generated']:.2f} cash")
+                elif harvest_result.get('candidates_found', 0) > 0:
+                    print(f"   🌾 {harvest_result['candidates_found']} harvest candidates found (checking thresholds...)")
+                self.turns_since_harvest = 0
+            except Exception as e:
+                logger.debug(f"Harvest check error: {e}")
+        
+        # �🌊⚡ MOMENTUM WAVE CHECK - Look for wave jumping opportunities
         momentum_opp = self.find_momentum_opportunity()
         if momentum_opp:
             from_asset, to_asset, from_amount, net_adv, mom_diff = momentum_opp

@@ -88,7 +88,7 @@ class PerformanceTracker:
         self.total_trades += 1
         self.total_fees += fees
         
-        if profit_usd > 0:
+        if profit_usd >= 0.01:
             self.profitable_trades += 1
             net_profit = profit_usd - fees
             self.total_profit_usd += net_profit

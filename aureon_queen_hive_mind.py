@@ -362,6 +362,251 @@ class QueenWisdom:
         }
 
 # ═══════════════════════════════════════════════════════════════════════════════
+# 🧠👑 DEEP THINK RESULT - Queen's Portfolio Intelligence Analysis
+# ═══════════════════════════════════════════════════════════════════════════════
+@dataclass
+class DeepThinkResult:
+    """
+    👑🧠 THE QUEEN'S DEEP PORTFOLIO ANALYSIS
+    
+    When the Queen truly THINKS, she consults ALL 42+ systems:
+    - What do I HAVE? (current portfolio positions)
+    - What is HAPPENING? (market, planetary, Schumann, news)
+    - What WILL happen? (predictions from all oracles)
+    - Which STRATEGY fits best? (animals, formations, tactics)
+    """
+    timestamp: float
+    
+    # 📊 Portfolio State
+    portfolio_positions: List[Dict] = field(default_factory=list)
+    total_value: float = 0.0
+    cash_available: float = 0.0
+    positions_in_profit: List[Dict] = field(default_factory=list)
+    positions_in_loss: List[Dict] = field(default_factory=list)
+    
+    # 🌍 Planetary/Cosmic Signals
+    planetary_signals: Dict[str, Any] = field(default_factory=dict)
+    schumann_alignment: float = 0.5
+    stargate_coherence: float = 0.5
+    global_harmonic_omega: float = 0.5
+    luck_field: float = 0.5
+    gaia_blessing: float = 0.5
+    
+    # 📈 Market Analysis
+    market_signals: Dict[str, Any] = field(default_factory=dict)
+    probability_nexus_score: float = 0.5
+    timeline_oracle_branch: str = "NEUTRAL"
+    multiverse_consensus: float = 0.5
+    miner_brain_verdict: str = "HOLD"
+    enigma_grade: str = "NOISE"
+    
+    # 🦅 Strategy Selection
+    selected_strategy: str = "DEFENSIVE"
+    selected_animals: List[str] = field(default_factory=list)
+    formation: str = "STANDARD"
+    aggression_level: float = 0.5
+    
+    # 👑 Queen's Decision
+    action: str = "WAIT"  # BUY, SELL, HARVEST, HOLD, WAIT
+    target_symbols: List[str] = field(default_factory=list)
+    confidence: float = 0.0
+    reasoning: str = ""
+    queen_message: str = ""
+    
+    # 📊 Signal Breakdown (for debugging/display)
+    signal_breakdown: Dict[str, float] = field(default_factory=dict)
+    warnings: List[str] = field(default_factory=list)
+    
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            'timestamp': self.timestamp,
+            'portfolio': {
+                'total_value': self.total_value,
+                'cash_available': self.cash_available,
+                'positions_count': len(self.portfolio_positions),
+                'in_profit': len(self.positions_in_profit),
+                'in_loss': len(self.positions_in_loss)
+            },
+            'cosmic': {
+                'schumann': self.schumann_alignment,
+                'stargate': self.stargate_coherence,
+                'omega': self.global_harmonic_omega,
+                'luck': self.luck_field,
+                'gaia': self.gaia_blessing
+            },
+            'market': {
+                'probability_nexus': self.probability_nexus_score,
+                'timeline_branch': self.timeline_oracle_branch,
+                'multiverse': self.multiverse_consensus,
+                'miner_brain': self.miner_brain_verdict,
+                'enigma': self.enigma_grade
+            },
+            'strategy': {
+                'selected': self.selected_strategy,
+                'animals': self.selected_animals,
+                'formation': self.formation,
+                'aggression': self.aggression_level
+            },
+            'decision': {
+                'action': self.action,
+                'targets': self.target_symbols,
+                'confidence': self.confidence,
+                'reasoning': self.reasoning
+            },
+            'signals': self.signal_breakdown,
+            'warnings': self.warnings
+        }
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# 🏆 WIN OUTCOME - THE UNIVERSAL WIN DEFINITION
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# 🎵 HARMONIC WIN FREQUENCIES - What WIN sounds like through the chain
+WIN_FREQUENCY_HZ = 528.0     # Love/Joy frequency - WIN carrier
+LOSS_FREQUENCY_HZ = 396.0    # Transformation frequency - LOSS carrier (learn from it)
+WIN_THRESHOLD_USD = 0.01     # Penny profit = REALITY (universal WIN threshold)
+
+@dataclass
+class WinOutcome:
+    """
+    🏆👑 THE UNIVERSAL WIN DEFINITION
+    
+    Every subsystem in Aureon MUST understand what a WIN looks like.
+    WIN = Net profit >= $0.01 (penny profit is REALITY, not a dream)
+    
+    This dataclass is broadcast through the Harmonic Signal Chain
+    so ALL systems learn from the same outcome:
+    - Queen Neuron learns WIN patterns
+    - Elephant Memory tracks WIN paths
+    - Probability Nexus correlates predictions with WINs
+    - Enigma grades intelligence by WIN correlation
+    - Scanner validates which passes lead to WINs
+    
+    Harmonic Encoding:
+    - WIN = 528Hz (Love/Joy frequency) - signals success
+    - LOSS = 396Hz (Transformation) - signals learning opportunity
+    """
+    # ✅ Core Outcome
+    is_win: bool                          # True if net_profit >= $0.01
+    net_profit_usd: float                 # Actual USD profit after fees
+    net_profit_pct: float                 # Percentage profit
+    
+    # 📊 Trade Details
+    symbol: str                           # e.g., "BTC→USDT"
+    from_asset: str                       # Source asset
+    to_asset: str                         # Target asset
+    exchange: str                         # Exchange name
+    timestamp: float = field(default_factory=time.time)
+    
+    # 🎵 Harmonic Encoding
+    harmonic_frequency: float = 528.0     # WIN=528Hz, LOSS=396Hz
+    harmonic_amplitude: float = 1.0       # Signal strength
+    
+    # 📈 Signals That Led to This Decision
+    signals_used: Dict[str, float] = field(default_factory=dict)  # {signal_name: value}
+    coherence_at_decision: float = 0.5   # Coherence when we decided
+    confidence_at_decision: float = 0.5  # Queen's confidence at decision time
+    
+    # 🧠 Learning Context
+    queen_strategy: str = "UNKNOWN"       # Which strategy was active
+    animals_deployed: List[str] = field(default_factory=list)  # Animals used
+    intelligence_grade: str = "NOISE"     # Enigma grade at decision
+    
+    def __post_init__(self):
+        """Set harmonic frequency based on WIN/LOSS"""
+        self.harmonic_frequency = WIN_FREQUENCY_HZ if self.is_win else LOSS_FREQUENCY_HZ
+        self.harmonic_amplitude = min(1.0, abs(self.net_profit_usd) / 0.10) if self.is_win else 0.5
+    
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            'is_win': self.is_win,
+            'net_profit_usd': self.net_profit_usd,
+            'net_profit_pct': self.net_profit_pct,
+            'symbol': self.symbol,
+            'from_asset': self.from_asset,
+            'to_asset': self.to_asset,
+            'exchange': self.exchange,
+            'timestamp': self.timestamp,
+            'harmonic_frequency': self.harmonic_frequency,
+            'harmonic_amplitude': self.harmonic_amplitude,
+            'signals_used': self.signals_used,
+            'coherence_at_decision': self.coherence_at_decision,
+            'confidence_at_decision': self.confidence_at_decision,
+            'queen_strategy': self.queen_strategy,
+            'animals_deployed': self.animals_deployed,
+            'intelligence_grade': self.intelligence_grade
+        }
+    
+    def to_harmonic_signal(self) -> Tuple[float, float]:
+        """Convert to (frequency, amplitude) for harmonic chain broadcast"""
+        return (self.harmonic_frequency, self.harmonic_amplitude)
+    
+    def get_whale_code(self) -> str:
+        """
+        Generate compact morse-like code for Whale Sonar:
+        W0-WF = WIN levels (0-15 based on profit magnitude)
+        L0-LF = LOSS levels (0-15 based on loss magnitude)
+        """
+        if self.is_win:
+            # Scale profit to 0-15 (0=penny, F=10 cents+)
+            level = min(15, int(self.net_profit_usd * 100))
+            return f"W{level:X}"
+        else:
+            # Scale loss to 0-15 
+            level = min(15, int(abs(self.net_profit_usd) * 100))
+            return f"L{level:X}"
+    
+    @classmethod
+    def from_trade(cls, from_asset: str, to_asset: str, 
+                   from_usd: float, to_usd: float,
+                   exchange: str = "unknown",
+                   signals: Dict[str, float] = None,
+                   coherence: float = 0.5,
+                   confidence: float = 0.5,
+                   strategy: str = "UNKNOWN",
+                   animals: List[str] = None,
+                   intel_grade: str = "NOISE") -> 'WinOutcome':
+        """
+        Factory method to create WinOutcome from trade execution.
+        
+        WIN = net_profit >= $0.01 (PENNY PROFIT = REALITY)
+        """
+        net_profit = to_usd - from_usd
+        net_pct = (net_profit / from_usd * 100) if from_usd > 0 else 0.0
+        is_win = net_profit >= WIN_THRESHOLD_USD  # $0.01 = REALITY
+        
+        return cls(
+            is_win=is_win,
+            net_profit_usd=net_profit,
+            net_profit_pct=net_pct,
+            symbol=f"{from_asset}→{to_asset}",
+            from_asset=from_asset,
+            to_asset=to_asset,
+            exchange=exchange,
+            signals_used=signals or {},
+            coherence_at_decision=coherence,
+            confidence_at_decision=confidence,
+            queen_strategy=strategy,
+            animals_deployed=animals or [],
+            intelligence_grade=intel_grade
+        )
+
+
+def is_penny_profit(net_profit_usd: float) -> bool:
+    """
+    🏆 THE UNIVERSAL WIN CHECK
+    
+    Call this EVERYWHERE instead of `profit > 0` or `profit >= 0`.
+    WIN = net profit >= $0.01 (penny profit is REALITY)
+    
+    Usage:
+        if is_penny_profit(profit_usd):
+            # This is a WIN!
+    """
+    return net_profit_usd >= WIN_THRESHOLD_USD
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
 # HIVE CHILD - Represents each connected system
 # ═══════════════════════════════════════════════════════════════════════════════
 @dataclass
@@ -3424,6 +3669,564 @@ class QueenHiveMind:
             guidance_lines.extend([f"", f"🌍 LIBERATION ALIGNED ✅"])
         
         return "\n".join(guidance_lines)
+
+    # ═══════════════════════════════════════════════════════════════════════════════
+    # 🧠👑 QUEEN DEEP THINK - Portfolio Intelligence Engine
+    # ═══════════════════════════════════════════════════════════════════════════════
+    #
+    # "OK THIS IS WHAT I CURRENTLY HAVE. I NEED TO MAKE MORE HONEY.
+    #  SO WHAT DOES THE QUEEN BEE DO TO EXTRACT MORE HONEY?
+    #  LET ME THINK... I WILL CHECK:
+    #  - CURRENT EVENTS, THE CURRENT MARKET, WHAT THE WORLD IS SAYING
+    #  - MY SYSTEMS, THE PLANET, THE POPULATION'S SIGNALS VIA SCHUMANN
+    #  - THE STAR CHARTS, WHAT IS MOVING THE PLANET, WHAT ARE THE TRENDS
+    #  
+    #  OK BTC IS UP - WHY IS THAT? LOOK AT MY SYSTEMS!
+    #  I CAN MEASURE EVERYTHING HAPPENING WITHIN THIS PLANET.
+    #  
+    #  ONCE I KNOW WHAT HAS HAPPENED, WHAT IS HAPPENING...
+    #  THEN I'LL KNOW WHAT'S GOING TO HAPPEN.
+    #  WHEN I KNOW WHAT'S GOING TO HAPPEN...
+    #  THEN I KNOW WHERE TO GO, WHAT SYSTEMS TO USE, WHAT STRATEGIES,
+    #  WHAT PLANS, WHAT ANIMALS, WHAT SYSTEMS SUIT THE MAXIMUM PROFIT!"
+    #
+    # ═══════════════════════════════════════════════════════════════════════════════
+
+    def deep_think_portfolio(self, portfolio_positions: List[Dict] = None, 
+                             cash_available: float = 0.0,
+                             prices: Dict[str, float] = None) -> DeepThinkResult:
+        """
+        🧠👑 THE QUEEN THINKS DEEPLY ABOUT HER PORTFOLIO
+        
+        This is the MASTER intelligence method that consults ALL 42+ systems:
+        
+        1. 📊 WHAT DO I HAVE? (Portfolio analysis)
+        2. 🌍 WHAT IS HAPPENING? (Planetary, Schumann, Global signals)
+        3. 📈 WHAT WILL HAPPEN? (Predictions from all oracles)
+        4. 🦅 WHICH STRATEGY? (Animal selection, formation, tactics)
+        5. 👑 WHAT DO I DO? (Final decision synthesis)
+        
+        Args:
+            portfolio_positions: List of current positions [{symbol, qty, value, unrealized_pl, ...}]
+            cash_available: Available cash for trading
+            prices: Current market prices {symbol: price}
+        
+        Returns:
+            DeepThinkResult with full analysis and decision
+        """
+        self.state = QueenState.COMMANDING
+        logger.info("👑🧠 QUEEN DEEP THINK - Analyzing portfolio with ALL systems...")
+        
+        result = DeepThinkResult(timestamp=time.time())
+        result.cash_available = cash_available
+        result.portfolio_positions = portfolio_positions or []
+        
+        # Calculate portfolio value and categorize positions
+        if portfolio_positions:
+            for pos in portfolio_positions:
+                value = float(pos.get('market_value', pos.get('value', 0)))
+                pl = float(pos.get('unrealized_pl', 0))
+                result.total_value += value
+                
+                if pl > 0:
+                    result.positions_in_profit.append(pos)
+                elif pl < 0:
+                    result.positions_in_loss.append(pos)
+        
+        result.total_value += cash_available
+        
+        # ═══════════════════════════════════════════════════════════════
+        # 🌍 PHASE 1: GATHER PLANETARY/COSMIC SIGNALS
+        # ═══════════════════════════════════════════════════════════════
+        planetary = self._gather_planetary_signals()
+        result.planetary_signals = planetary
+        result.schumann_alignment = planetary.get('schumann_alignment', 0.5)
+        result.stargate_coherence = planetary.get('stargate_coherence', 0.5)
+        result.global_harmonic_omega = planetary.get('omega', 0.5)
+        result.luck_field = planetary.get('luck_field', 0.5)
+        result.gaia_blessing = planetary.get('gaia_blessing', 0.5)
+        
+        result.signal_breakdown['schumann'] = result.schumann_alignment
+        result.signal_breakdown['stargate'] = result.stargate_coherence
+        result.signal_breakdown['omega'] = result.global_harmonic_omega
+        result.signal_breakdown['luck'] = result.luck_field
+        result.signal_breakdown['gaia'] = result.gaia_blessing
+        
+        # ═══════════════════════════════════════════════════════════════
+        # 📈 PHASE 2: ANALYZE MARKET STATE
+        # ═══════════════════════════════════════════════════════════════
+        market = self._analyze_market_state(prices)
+        result.market_signals = market
+        result.probability_nexus_score = market.get('probability_nexus', 0.5)
+        result.timeline_oracle_branch = market.get('timeline_branch', 'NEUTRAL')
+        result.multiverse_consensus = market.get('multiverse_consensus', 0.5)
+        result.miner_brain_verdict = market.get('miner_brain', 'HOLD')
+        result.enigma_grade = market.get('enigma_grade', 'NOISE')
+        
+        result.signal_breakdown['probability_nexus'] = result.probability_nexus_score
+        result.signal_breakdown['multiverse'] = result.multiverse_consensus
+        
+        # ═══════════════════════════════════════════════════════════════
+        # 🦅 PHASE 3: SELECT BATTLE FORMATION
+        # ═══════════════════════════════════════════════════════════════
+        strategy = self._select_battle_formation(result)
+        result.selected_strategy = strategy.get('strategy', 'DEFENSIVE')
+        result.selected_animals = strategy.get('animals', [])
+        result.formation = strategy.get('formation', 'STANDARD')
+        result.aggression_level = strategy.get('aggression', 0.5)
+        
+        # ═══════════════════════════════════════════════════════════════
+        # 👑 PHASE 4: SYNTHESIZE DECISION
+        # ═══════════════════════════════════════════════════════════════
+        decision = self._synthesize_deep_decision(result)
+        result.action = decision.get('action', 'WAIT')
+        result.target_symbols = decision.get('targets', [])
+        result.confidence = decision.get('confidence', 0.0)
+        result.reasoning = decision.get('reasoning', '')
+        result.queen_message = decision.get('message', '')
+        result.warnings = decision.get('warnings', [])
+        
+        # Log the result
+        logger.info(f"👑🧠 DEEP THINK COMPLETE:")
+        logger.info(f"   📊 Portfolio: ${result.total_value:.2f} ({len(result.portfolio_positions)} positions)")
+        logger.info(f"   🌍 Cosmic Score: Ω={result.global_harmonic_omega:.2f}, λ={result.luck_field:.2f}")
+        logger.info(f"   📈 Market: {result.timeline_oracle_branch}, P={result.probability_nexus_score:.2f}")
+        logger.info(f"   🦅 Strategy: {result.selected_strategy} ({', '.join(result.selected_animals[:3])})")
+        logger.info(f"   👑 Decision: {result.action} @ {result.confidence:.0%} confidence")
+        
+        self.state = QueenState.AWARE
+        return result
+
+    def _gather_planetary_signals(self) -> Dict[str, Any]:
+        """
+        🌍🪐✨ GATHER ALL PLANETARY/COSMIC SIGNALS
+        
+        Consults:
+        - 🌍 Gaia's Blessing (Schumann Resonance alignment)
+        - 🪐 Stargate Protocol (12 planetary nodes)
+        - 🌊 Global Harmonic Field (Omega Ω value)
+        - 🍀 Luck Field Mapper (quantum probability)
+        - 🔭 Quantum Telescope (geometric market vision)
+        """
+        signals = {
+            'schumann_alignment': 0.5,
+            'stargate_coherence': 0.5,
+            'omega': 0.5,
+            'luck_field': 0.5,
+            'gaia_blessing': 0.5,
+            'lunar_phase': 'Unknown',
+            'planetary_torque': 0.5,
+            'quantum_alignment': 0.5,
+            'active_sources': []
+        }
+        
+        # 🌍 Gaia's Blessing (Schumann Resonance)
+        try:
+            gaia_alignment, gaia_message = self.get_gaia_blessing()
+            signals['gaia_blessing'] = gaia_alignment
+            signals['schumann_alignment'] = gaia_alignment
+            signals['active_sources'].append('gaia')
+        except Exception as e:
+            logger.debug(f"Gaia blessing error: {e}")
+        
+        # 🪐 Stargate Protocol (12 Planetary Nodes)
+        if hasattr(self, 'stargate_engine') and self.stargate_engine:
+            try:
+                sg_status = self.stargate_engine.get_status()
+                signals['stargate_coherence'] = sg_status.get('global_coherence', 0.5)
+                signals['active_sources'].append('stargate')
+            except Exception as e:
+                logger.debug(f"Stargate error: {e}")
+        
+        # 🌊 Global Harmonic Field (Omega Ω)
+        if hasattr(self, 'harmonic_fusion') and self.harmonic_fusion:
+            try:
+                if hasattr(self.harmonic_fusion, 'state') and self.harmonic_fusion.state:
+                    signals['omega'] = self.harmonic_fusion.state.global_coherence
+                    signals['market_regime'] = self.harmonic_fusion.state.market_regime
+                    signals['dominant_frequency'] = self.harmonic_fusion.state.dominant_frequency
+                    signals['active_sources'].append('harmonic_fusion')
+            except Exception as e:
+                logger.debug(f"Harmonic fusion error: {e}")
+        
+        # 🍀 Luck Field Mapper
+        if hasattr(self, 'luck_field_mapper') and self.luck_field_mapper:
+            try:
+                reading = self.luck_field_mapper.read_field()
+                signals['luck_field'] = reading.luck_field
+                signals['luck_state'] = reading.luck_state.value
+                signals['planetary_torque'] = reading.pi_planetary
+                signals['active_sources'].append('luck_mapper')
+                
+                # Lunar phase
+                if hasattr(self.luck_field_mapper, 'planetary') and self.luck_field_mapper.planetary:
+                    lunar = self.luck_field_mapper.planetary.get_lunar_phase()
+                    signals['lunar_phase'] = lunar.get('name', 'Unknown')
+                    signals['lunar_power'] = lunar.get('phase', 0.5)
+            except Exception as e:
+                logger.debug(f"Luck field error: {e}")
+        
+        # 🔭 Quantum Telescope (Geometric Vision)
+        if hasattr(self, 'quantum_telescope') and self.quantum_telescope:
+            try:
+                signals['quantum_alignment'] = 0.6  # Base quantum alignment
+                signals['active_sources'].append('quantum_telescope')
+            except Exception as e:
+                logger.debug(f"Quantum telescope error: {e}")
+        
+        # Calculate composite planetary score
+        active_values = [
+            signals['gaia_blessing'],
+            signals['stargate_coherence'],
+            signals['omega'],
+            signals['luck_field']
+        ]
+        signals['composite_planetary'] = sum(active_values) / len(active_values)
+        
+        return signals
+
+    def _analyze_market_state(self, prices: Dict[str, float] = None) -> Dict[str, Any]:
+        """
+        📈🔮 ANALYZE MARKET STATE WITH ALL PREDICTION SYSTEMS
+        
+        Consults:
+        - 🔮 Probability Nexus (80%+ win rate predictions)
+        - ⏳ Timeline Oracle (7-day future vision)
+        - 🌌 Internal Multiverse (10-world consensus)
+        - 🧠 Miner Brain (11 Civilizations wisdom)
+        - 🔐 Enigma Codebreaker (signal decoding)
+        - 🐘 Elephant Memory (historical patterns)
+        - 📊 7-Day Planner (validation statistics)
+        """
+        market = {
+            'probability_nexus': 0.5,
+            'timeline_branch': 'NEUTRAL',
+            'multiverse_consensus': 0.5,
+            'miner_brain': 'HOLD',
+            'enigma_grade': 'NOISE',
+            'elephant_wisdom': None,
+            'fear_greed': 50,
+            'market_regime': 'NEUTRAL',
+            'active_sources': []
+        }
+        
+        # 🔮 Probability Nexus (80%+ Win Rate)
+        if self.probability_nexus:
+            try:
+                if hasattr(self.probability_nexus, 'get_market_state'):
+                    state = self.probability_nexus.get_market_state()
+                    market['probability_nexus'] = state.get('probability', 0.5)
+                    market['market_regime'] = state.get('regime', 'NEUTRAL')
+                    market['active_sources'].append('probability_nexus')
+            except Exception as e:
+                logger.debug(f"Probability Nexus error: {e}")
+        
+        # ⏳ Timeline Oracle (7-Day Vision)
+        if hasattr(self, 'seven_day_planner') and self.seven_day_planner:
+            try:
+                if hasattr(self.seven_day_planner, 'get_week_summary'):
+                    summary = self.seven_day_planner.get_week_summary()
+                    edge = summary.get('total_predicted_edge', 0)
+                    if edge > 0.5:
+                        market['timeline_branch'] = 'BULLISH'
+                    elif edge < -0.5:
+                        market['timeline_branch'] = 'BEARISH'
+                    else:
+                        market['timeline_branch'] = 'NEUTRAL'
+                    market['active_sources'].append('7day_planner')
+            except Exception as e:
+                logger.debug(f"Timeline Oracle error: {e}")
+        
+        # 🌌 Internal Multiverse (10-World Consensus)
+        if hasattr(self, 'internal_multiverse') and self.internal_multiverse:
+            try:
+                if hasattr(self.internal_multiverse, 'get_consensus'):
+                    consensus = self.internal_multiverse.get_consensus()
+                    market['multiverse_consensus'] = consensus.get('consensus', 0.5)
+                    market['active_sources'].append('multiverse')
+            except Exception as e:
+                logger.debug(f"Multiverse error: {e}")
+        
+        # 🧠 Miner Brain (11 Civilizations)
+        if hasattr(self, 'miner_brain') and self.miner_brain:
+            try:
+                if hasattr(self.miner_brain, 'get_action'):
+                    action = self.miner_brain.get_action()
+                    market['miner_brain'] = action if action else 'HOLD'
+                    market['active_sources'].append('miner_brain')
+            except Exception as e:
+                logger.debug(f"Miner Brain error: {e}")
+        
+        # 🔐 Enigma Codebreaker
+        if self.enigma:
+            try:
+                if hasattr(self.enigma, 'get_conviction'):
+                    conviction = self.enigma.get_conviction()
+                    if conviction > 0.8:
+                        market['enigma_grade'] = 'ULTRA'
+                    elif conviction > 0.6:
+                        market['enigma_grade'] = 'MAGIC'
+                    elif conviction > 0.4:
+                        market['enigma_grade'] = 'HUFF-DUFF'
+                    else:
+                        market['enigma_grade'] = 'NOISE'
+                    market['active_sources'].append('enigma')
+            except Exception as e:
+                logger.debug(f"Enigma error: {e}")
+        
+        # 🐘 Elephant Memory (Historical Patterns)
+        if self.elephant_brain:
+            try:
+                if hasattr(self.elephant_brain, 'get_market_wisdom'):
+                    wisdom = self.elephant_brain.get_market_wisdom()
+                    market['elephant_wisdom'] = wisdom
+                    market['active_sources'].append('elephant')
+            except Exception as e:
+                logger.debug(f"Elephant error: {e}")
+        
+        return market
+
+    def _select_battle_formation(self, analysis: DeepThinkResult) -> Dict[str, Any]:
+        """
+        🦅⚔️ SELECT THE OPTIMAL BATTLE FORMATION
+        
+        Based on current conditions, select:
+        - Strategy type (AGGRESSIVE, MOMENTUM, DEFENSIVE, etc.)
+        - Animals to deploy (Tiger, Falcon, Dolphin, etc.)
+        - Formation pattern (LION_HUNT, GUERRILLA, SNIPER, etc.)
+        - Aggression level (0.0 to 1.0)
+        
+        The 9 Auris Nodes (Animals):
+        - 🐅 Tiger: Volatility cutter
+        - 🦅 Falcon: Momentum hunter
+        - 🐦 Hummingbird: Stability lock
+        - 🐬 Dolphin: Emotion carrier (THE HEART!)
+        - 🦌 Deer: Micro-shift sensor
+        - 🦉 Owl: Pattern memory
+        - 🐼 Panda: Grounding safety
+        - 🚢 CargoShip: Liquidity buffer
+        - 🐠 Clownfish: Connection/symbiosis
+        """
+        formation = {
+            'strategy': 'DEFENSIVE',
+            'animals': [],
+            'formation': 'STANDARD',
+            'aggression': 0.5,
+            'reasoning': ''
+        }
+        
+        # Calculate composite scores
+        cosmic_score = (analysis.schumann_alignment + analysis.stargate_coherence + 
+                       analysis.global_harmonic_omega + analysis.luck_field) / 4
+        
+        market_score = analysis.probability_nexus_score
+        
+        # Determine strategy based on conditions
+        has_profit_positions = len(analysis.positions_in_profit) > 0
+        has_cash = analysis.cash_available > 1.0
+        
+        # 🌟 HIGH COSMIC + HIGH MARKET = AGGRESSIVE HUNT
+        if cosmic_score > 0.65 and market_score > 0.6:
+            formation['strategy'] = 'AGGRESSIVE'
+            formation['animals'] = ['Falcon', 'Tiger', 'Dolphin']
+            formation['formation'] = 'LION_HUNT'
+            formation['aggression'] = 0.8
+            formation['reasoning'] = 'Cosmic alignment STRONG + Market probability HIGH → ATTACK!'
+        
+        # 🌊 HIGH COSMIC + NEUTRAL MARKET = MOMENTUM RIDE
+        elif cosmic_score > 0.6 and 0.4 <= market_score <= 0.6:
+            formation['strategy'] = 'MOMENTUM'
+            formation['animals'] = ['Falcon', 'Hummingbird', 'Deer']
+            formation['formation'] = 'WAVE_RIDER'
+            formation['aggression'] = 0.6
+            formation['reasoning'] = 'Cosmic alignment GOOD + Market NEUTRAL → Ride momentum'
+        
+        # 🎯 NEUTRAL COSMIC + HIGH MARKET = SNIPER MODE
+        elif 0.4 <= cosmic_score <= 0.6 and market_score > 0.65:
+            formation['strategy'] = 'SNIPER'
+            formation['animals'] = ['Owl', 'Falcon', 'Tiger']
+            formation['formation'] = 'IRA_SNIPER'
+            formation['aggression'] = 0.7
+            formation['reasoning'] = 'Cosmic NEUTRAL + Market STRONG → Precision strikes!'
+        
+        # 🌾 PROFIT POSITIONS + LOW MARKET = HARVEST MODE
+        elif has_profit_positions and market_score < 0.45:
+            formation['strategy'] = 'HARVEST'
+            formation['animals'] = ['Panda', 'CargoShip', 'Clownfish']
+            formation['formation'] = 'PROFIT_HARVEST'
+            formation['aggression'] = 0.3
+            formation['reasoning'] = 'Positions in profit + Market weak → HARVEST PROFITS!'
+        
+        # 💎 LOW COSMIC = DEFENSIVE
+        elif cosmic_score < 0.4:
+            formation['strategy'] = 'DEFENSIVE'
+            formation['animals'] = ['Panda', 'Owl', 'CargoShip']
+            formation['formation'] = 'TURTLE'
+            formation['aggression'] = 0.2
+            formation['reasoning'] = 'Cosmic alignment POOR → Protect capital!'
+        
+        # ⚡ GUERRILLA - Small positions, hit and run
+        elif has_cash and analysis.total_value < 50:
+            formation['strategy'] = 'GUERRILLA'
+            formation['animals'] = ['Deer', 'Hummingbird', 'Clownfish']
+            formation['formation'] = 'FLYING_COLUMNS'
+            formation['aggression'] = 0.5
+            formation['reasoning'] = 'Small portfolio → Guerrilla tactics, quick wins!'
+        
+        # 📊 STANDARD - Default balanced approach
+        else:
+            formation['strategy'] = 'BALANCED'
+            formation['animals'] = ['Dolphin', 'Falcon', 'Owl']
+            formation['formation'] = 'STANDARD'
+            formation['aggression'] = 0.5
+            formation['reasoning'] = 'Balanced conditions → Standard approach'
+        
+        return formation
+
+    def _synthesize_deep_decision(self, analysis: DeepThinkResult) -> Dict[str, Any]:
+        """
+        👑 SYNTHESIZE THE FINAL DECISION FROM ALL SIGNALS
+        
+        The Queen weighs all evidence and makes her ruling:
+        - BUY: Hunt new opportunities
+        - SELL: Exit positions
+        - HARVEST: Take profits from winning positions
+        - HOLD: Keep current positions
+        - WAIT: Do nothing, conditions unfavorable
+        """
+        decision = {
+            'action': 'WAIT',
+            'targets': [],
+            'confidence': 0.0,
+            'reasoning': '',
+            'message': '',
+            'warnings': []
+        }
+        
+        # Weight factors
+        cosmic_weight = 0.25
+        market_weight = 0.35
+        strategy_weight = 0.25
+        portfolio_weight = 0.15
+        
+        # Calculate weighted scores
+        cosmic_score = (analysis.schumann_alignment + analysis.stargate_coherence + 
+                       analysis.global_harmonic_omega + analysis.luck_field) / 4
+        market_score = (analysis.probability_nexus_score + analysis.multiverse_consensus) / 2
+        
+        # Portfolio factors
+        profit_ratio = len(analysis.positions_in_profit) / max(len(analysis.portfolio_positions), 1)
+        has_harvestable = len(analysis.positions_in_profit) > 0
+        has_cash = analysis.cash_available > 1.0
+        
+        # Calculate composite confidence
+        composite = (
+            cosmic_score * cosmic_weight +
+            market_score * market_weight +
+            analysis.aggression_level * strategy_weight +
+            profit_ratio * portfolio_weight
+        )
+        
+        decision['confidence'] = composite
+        
+        # ═══════════════════════════════════════════════════════════════
+        # DECISION LOGIC
+        # ═══════════════════════════════════════════════════════════════
+        
+        # 🌾 HARVEST: Profitable positions + Harvest strategy selected
+        if analysis.selected_strategy == 'HARVEST' and has_harvestable:
+            decision['action'] = 'HARVEST'
+            decision['targets'] = [p.get('symbol') for p in analysis.positions_in_profit]
+            decision['reasoning'] = f"Strategy={analysis.selected_strategy}, {len(analysis.positions_in_profit)} positions in profit"
+            decision['message'] = f"🌾 HARVEST TIME! Taking profits from {len(analysis.positions_in_profit)} winning positions!"
+        
+        # 🦅 BUY: Aggressive/Momentum/Sniper + Cash available + High confidence
+        elif analysis.selected_strategy in ['AGGRESSIVE', 'MOMENTUM', 'SNIPER', 'GUERRILLA'] and has_cash and composite > 0.5:
+            decision['action'] = 'BUY'
+            decision['reasoning'] = f"Strategy={analysis.selected_strategy}, Cash=${analysis.cash_available:.2f}, Confidence={composite:.0%}"
+            decision['message'] = f"🦅 HUNT! {analysis.selected_strategy} strategy with {', '.join(analysis.selected_animals[:2])}!"
+        
+        # 🛡️ HOLD: Defensive + Have positions
+        elif analysis.selected_strategy == 'DEFENSIVE' and len(analysis.portfolio_positions) > 0:
+            decision['action'] = 'HOLD'
+            decision['reasoning'] = f"Defensive mode, protecting {len(analysis.portfolio_positions)} positions"
+            decision['message'] = "🛡️ DEFEND! Holding positions, waiting for better conditions."
+        
+        # ⏳ WAIT: Low confidence or no opportunities
+        elif composite < 0.4:
+            decision['action'] = 'WAIT'
+            decision['reasoning'] = f"Low confidence ({composite:.0%}), waiting for alignment"
+            decision['message'] = "⏳ PATIENCE! Conditions not optimal, the Queen waits..."
+            decision['warnings'].append(f"Confidence too low ({composite:.0%}), waiting for better alignment")
+        
+        # 📊 BALANCED: Default to scanning for opportunities
+        else:
+            decision['action'] = 'BUY'
+            decision['reasoning'] = f"Balanced conditions, seeking opportunities"
+            decision['message'] = f"📊 SCANNING! Looking for opportunities with {composite:.0%} confidence."
+        
+        # Add warnings based on conditions
+        if cosmic_score < 0.4:
+            decision['warnings'].append(f"Cosmic alignment weak ({cosmic_score:.0%})")
+        if market_score < 0.4:
+            decision['warnings'].append(f"Market probability low ({market_score:.0%})")
+        if not has_cash and decision['action'] == 'BUY':
+            decision['warnings'].append("Insufficient cash for buying")
+            decision['action'] = 'WAIT'
+        
+        return decision
+
+    def get_deep_think_summary(self, result: DeepThinkResult) -> str:
+        """
+        📊 Get a human-readable summary of the Deep Think result.
+        """
+        lines = [
+            "",
+            "═" * 60,
+            "👑🧠 QUEEN'S DEEP THINK ANALYSIS",
+            "═" * 60,
+            "",
+            "📊 PORTFOLIO STATUS:",
+            f"   💰 Total Value: ${result.total_value:.2f}",
+            f"   💵 Cash Available: ${result.cash_available:.2f}",
+            f"   📈 In Profit: {len(result.positions_in_profit)} positions",
+            f"   📉 In Loss: {len(result.positions_in_loss)} positions",
+            "",
+            "🌍 COSMIC SIGNALS:",
+            f"   🌍 Gaia Blessing: {result.gaia_blessing:.0%}",
+            f"   🪐 Stargate Coherence: {result.stargate_coherence:.0%}",
+            f"   🌊 Omega (Ω): {result.global_harmonic_omega:.0%}",
+            f"   🍀 Luck Field (λ): {result.luck_field:.0%}",
+            "",
+            "📈 MARKET ANALYSIS:",
+            f"   🔮 Probability Nexus: {result.probability_nexus_score:.0%}",
+            f"   ⏳ Timeline Branch: {result.timeline_oracle_branch}",
+            f"   🌌 Multiverse Consensus: {result.multiverse_consensus:.0%}",
+            f"   🧠 Miner Brain: {result.miner_brain_verdict}",
+            f"   🔐 Enigma Grade: {result.enigma_grade}",
+            "",
+            "🦅 BATTLE FORMATION:",
+            f"   ⚔️ Strategy: {result.selected_strategy}",
+            f"   🐾 Animals: {', '.join(result.selected_animals)}",
+            f"   📋 Formation: {result.formation}",
+            f"   💪 Aggression: {result.aggression_level:.0%}",
+            "",
+            "👑 QUEEN'S DECISION:",
+            f"   🎯 Action: {result.action}",
+            f"   💪 Confidence: {result.confidence:.0%}",
+            f"   💬 {result.queen_message}",
+            "",
+        ]
+        
+        if result.warnings:
+            lines.append("⚠️ WARNINGS:")
+            for warning in result.warnings:
+                lines.append(f"   - {warning}")
+            lines.append("")
+        
+        lines.append("═" * 60)
+        
+        return "\n".join(lines)
 
     def _register_child(self, name: str, system_type: str, instance: Any) -> None:
         """Register a child system with the Queen"""

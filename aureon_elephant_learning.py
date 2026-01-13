@@ -941,6 +941,30 @@ class QueenElephantBrain:
         
         self.elephant._save_memory()
 
+    def record_trade_outcome(self, outcome: Any):
+        """Convenience method to accept WinOutcome dict or dataclass and record it."""
+        try:
+            if isinstance(outcome, dict):
+                from_asset = outcome.get('from_asset') or outcome.get('from') or ''
+                to_asset = outcome.get('to_asset') or outcome.get('to') or ''
+                profit = outcome.get('net_profit_usd') or outcome.get('pnl') or outcome.get('profit_usd') or 0.0
+                is_win = bool(outcome.get('is_win') or (profit is not None and float(profit) >= 0.01))
+            else:
+                # Dataclass-like object
+                from_asset = getattr(outcome, 'from_asset', '')
+                to_asset = getattr(outcome, 'to_asset', '')
+                profit = getattr(outcome, 'net_profit_usd', None) or getattr(outcome, 'pnl', None) or 0.0
+                is_win = bool(getattr(outcome, 'is_win', (profit is not None and float(profit) >= 0.01)))
+
+            # Fall back if empty
+            if not from_asset or not to_asset:
+                return False
+
+            self.record_trade_result(from_asset, to_asset, float(profit), is_win)
+            return True
+        except Exception:
+            logger.exception('Failed to record trade outcome in Elephant Memory')
+            return False
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # 🏃 MAIN - Test the elephant learning
