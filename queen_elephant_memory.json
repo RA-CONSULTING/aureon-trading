@@ -2062,28 +2062,28 @@
       "win_rate": 100.0
     },
     "LTC\u2192AAVE": {
-      "trades": 362,
+      "trades": 365,
       "wins": 1,
-      "losses": 361,
+      "losses": 364,
       "total_profit": 0.013553042075997723,
       "total_loss": 0.0,
-      "win_rate": 0.2762430939226519
+      "win_rate": 0.273972602739726
     },
     "AAVE\u2192ETH": {
-      "trades": 113,
+      "trades": 116,
       "wins": 1,
-      "losses": 112,
+      "losses": 115,
       "total_profit": 0.0056641540949993185,
       "total_loss": 0.0,
-      "win_rate": 0.8849557522123894
+      "win_rate": 0.8620689655172413
     },
     "LTC\u2192ETH": {
-      "trades": 365,
+      "trades": 368,
       "wins": 7,
-      "losses": 358,
+      "losses": 361,
       "total_profit": 0.036280594772000185,
       "total_loss": 0.0,
-      "win_rate": 1.9178082191780823
+      "win_rate": 1.9021739130434785
     },
     "ETH\u2192BCH": {
       "trades": 1,
@@ -2150,28 +2150,28 @@
       "win_rate": 0.41841004184100417
     },
     "LTC\u2192SOL": {
-      "trades": 361,
+      "trades": 364,
       "wins": 2,
-      "losses": 359,
+      "losses": 362,
       "total_profit": 0.015086224896000644,
       "total_loss": 0.0,
-      "win_rate": 0.554016620498615
+      "win_rate": 0.5494505494505495
     },
     "LTC\u2192USDT": {
-      "trades": 361,
+      "trades": 364,
       "wins": 1,
-      "losses": 360,
+      "losses": 363,
       "total_profit": 0.006098344930599353,
       "total_loss": 0.0,
-      "win_rate": 0.2770083102493075
+      "win_rate": 0.27472527472527475
     },
     "USDT\u2192SOL": {
-      "trades": 360,
+      "trades": 363,
       "wins": 3,
-      "losses": 357,
+      "losses": 360,
       "total_profit": 135.1207666015355,
       "total_loss": 0.0,
-      "win_rate": 0.8333333333333334
+      "win_rate": 0.8264462809917356
     },
     "USD\u2192SUSHI": {
       "trades": 198,
@@ -2286,46 +2286,118 @@
       "win_rate": 0.0
     },
     "USDT\u2192LTC": {
-      "trades": 358,
+      "trades": 361,
       "wins": 1,
-      "losses": 357,
+      "losses": 360,
       "total_profit": 0.0037816107599999427,
       "total_loss": 0.0,
-      "win_rate": 0.27932960893854747
+      "win_rate": 0.2770083102493075
     },
     "USDT\u2192AVAX": {
-      "trades": 357,
+      "trades": 360,
       "wins": 0,
-      "losses": 357,
+      "losses": 360,
       "total_profit": 0,
       "total_loss": 0.0,
       "win_rate": 0.0
     },
     "USDT\u2192ETH": {
-      "trades": 356,
+      "trades": 359,
       "wins": 0,
-      "losses": 356,
+      "losses": 359,
       "total_profit": 0,
       "total_loss": 0.0,
       "win_rate": 0.0
     },
     "USDT\u2192LINK": {
-      "trades": 357,
+      "trades": 360,
       "wins": 0,
-      "losses": 357,
+      "losses": 360,
       "total_profit": 0,
       "total_loss": 0.0,
       "win_rate": 0.0
     },
     "USDT\u2192GRT": {
-      "trades": 314,
+      "trades": 317,
       "wins": 0,
-      "losses": 314,
+      "losses": 317,
       "total_profit": 0,
       "total_loss": 0.0,
       "win_rate": 0.0
     },
     "USDT\u2192SUSHI": {
+      "trades": 317,
+      "wins": 0,
+      "losses": 317,
+      "total_profit": 0,
+      "total_loss": 0.0,
+      "win_rate": 0.0
+    },
+    "USDT\u2192XTZ": {
+      "trades": 316,
+      "wins": 0,
+      "losses": 316,
+      "total_profit": 0,
+      "total_loss": 0.0,
+      "win_rate": 0.0
+    },
+    "USDT\u2192CRV": {
+      "trades": 318,
+      "wins": 0,
+      "losses": 318,
+      "total_profit": 0,
+      "total_loss": 0.0,
+      "win_rate": 0.0
+    },
+    "USDT\u2192AAVE": {
+      "trades": 361,
+      "wins": 0,
+      "losses": 361,
+      "total_profit": 0,
+      "total_loss": 0.0,
+      "win_rate": 0.0
+    },
+    "USDT\u2192BCH": {
+      "trades": 360,
+      "wins": 0,
+      "losses": 360,
+      "total_profit": 0,
+      "total_loss": 0.0,
+      "win_rate": 0.0
+    },
+    "USDT\u2192BTC": {
+      "trades": 360,
+      "wins": 0,
+      "losses": 360,
+      "total_profit": 0,
+      "total_loss": 0.0,
+      "win_rate": 0.0
+    },
+    "USDT\u2192UNI": {
+      "trades": 359,
+      "wins": 0,
+      "losses": 359,
+      "total_profit": 0,
+      "total_loss": 0.0,
+      "win_rate": 0.0
+    },
+    "USDT\u2192DOT": {
+      "trades": 317,
+      "wins": 0,
+      "losses": 317,
+      "total_profit": 0,
+      "total_loss": 0.0,
+      "win_rate": 0.0
+    },
+    "USDT\u2192XRP": {
+      "trades": 316,
+      "wins": 0,
+      "losses": 316,
+      "total_profit": 0,
+      "total_loss": 0.0,
+      "win_rate": 0.0
+    },
+    "USDT\u2192BAT": {
       "trades": 314,
       "wins": 0,
       "losses": 314,
@@ -2333,15 +2405,7 @@
       "total_loss": 0.0,
       "win_rate": 0.0
     },
-    "USDT\u2192XTZ": {
-      "trades": 313,
-      "wins": 0,
-      "losses": 313,
-      "total_profit": 0,
-      "total_loss": 0.0,
-      "win_rate": 0.0
-    },
-    "USDT\u2192CRV": {
+    "USDT\u2192SKY": {
       "trades": 315,
       "wins": 0,
       "losses": 315,
@@ -2349,63 +2413,7 @@
       "total_loss": 0.0,
       "win_rate": 0.0
     },
-    "USDT\u2192AAVE": {
-      "trades": 358,
-      "wins": 0,
-      "losses": 358,
-      "total_profit": 0,
-      "total_loss": 0.0,
-      "win_rate": 0.0
-    },
-    "USDT\u2192BCH": {
-      "trades": 357,
-      "wins": 0,
-      "losses": 357,
-      "total_profit": 0,
-      "total_loss": 0.0,
-      "win_rate": 0.0
-    },
-    "USDT\u2192BTC": {
-      "trades": 357,
-      "wins": 0,
-      "losses": 357,
-      "total_profit": 0,
-      "total_loss": 0.0,
-      "win_rate": 0.0
-    },
-    "USDT\u2192UNI": {
-      "trades": 356,
-      "wins": 0,
-      "losses": 356,
-      "total_profit": 0,
-      "total_loss": 0.0,
-      "win_rate": 0.0
-    },
-    "USDT\u2192DOT": {
-      "trades": 314,
-      "wins": 0,
-      "losses": 314,
-      "total_profit": 0,
-      "total_loss": 0.0,
-      "win_rate": 0.0
-    },
-    "USDT\u2192XRP": {
-      "trades": 313,
-      "wins": 0,
-      "losses": 313,
-      "total_profit": 0,
-      "total_loss": 0.0,
-      "win_rate": 0.0
-    },
-    "USDT\u2192BAT": {
-      "trades": 311,
-      "wins": 0,
-      "losses": 311,
-      "total_profit": 0,
-      "total_loss": 0.0,
-      "win_rate": 0.0
-    },
-    "USDT\u2192SKY": {
+    "USDT\u2192USDG": {
       "trades": 312,
       "wins": 0,
       "losses": 312,
@@ -2413,18 +2421,10 @@
       "total_loss": 0.0,
       "win_rate": 0.0
     },
-    "USDT\u2192USDG": {
-      "trades": 309,
-      "wins": 0,
-      "losses": 309,
-      "total_profit": 0,
-      "total_loss": 0.0,
-      "win_rate": 0.0
-    },
     "USDT\u2192TRUMP": {
-      "trades": 311,
+      "trades": 314,
       "wins": 0,
-      "losses": 311,
+      "losses": 314,
       "total_profit": 0,
       "total_loss": 0.0,
       "win_rate": 0.0
@@ -2446,33 +2446,33 @@
       "win_rate": 0.0
     },
     "USDT\u2192YFI": {
-      "trades": 307,
+      "trades": 310,
       "wins": 0,
-      "losses": 307,
+      "losses": 310,
       "total_profit": 0,
       "total_loss": 0.0,
       "win_rate": 0.0
     },
     "USDT\u2192DOGE": {
-      "trades": 309,
+      "trades": 312,
       "wins": 0,
-      "losses": 309,
+      "losses": 312,
       "total_profit": 0,
       "total_loss": 0.0,
       "win_rate": 0.0
     },
     "USDT\u2192SHIB": {
-      "trades": 309,
+      "trades": 312,
       "wins": 0,
-      "losses": 309,
+      "losses": 312,
       "total_profit": 0,
       "total_loss": 0.0,
       "win_rate": 0.0
     },
     "USDT\u2192PEPE": {
-      "trades": 309,
+      "trades": 312,
       "wins": 0,
-      "losses": 309,
+      "losses": 312,
       "total_profit": 0,
       "total_loss": 0.0,
       "win_rate": 0.0
@@ -2686,118 +2686,86 @@
       "win_rate": 0.0
     },
     "LTC\u2192USDC": {
-      "trades": 360,
+      "trades": 363,
       "wins": 0,
-      "losses": 360,
+      "losses": 363,
       "total_profit": 0,
       "total_loss": 0.0,
       "win_rate": 0.0
     },
     "LTC\u2192USD": {
-      "trades": 360,
+      "trades": 363,
       "wins": 0,
-      "losses": 360,
+      "losses": 363,
       "total_profit": 0,
       "total_loss": 0.0,
       "win_rate": 0.0
     },
     "LTC\u2192ZUSD": {
-      "trades": 360,
+      "trades": 363,
       "wins": 0,
-      "losses": 360,
+      "losses": 363,
       "total_profit": 0,
       "total_loss": 0.0,
       "win_rate": 0.0
     },
     "LTC\u2192TUSD": {
-      "trades": 359,
+      "trades": 362,
       "wins": 0,
-      "losses": 359,
+      "losses": 362,
       "total_profit": 0,
       "total_loss": 0.0,
       "win_rate": 0.0
     },
     "LTC\u2192DAI": {
-      "trades": 359,
+      "trades": 362,
       "wins": 0,
-      "losses": 359,
+      "losses": 362,
       "total_profit": 0,
       "total_loss": 0.0,
       "win_rate": 0.0
     },
     "LTC\u2192AVAX": {
-      "trades": 361,
+      "trades": 364,
       "wins": 0,
-      "losses": 361,
+      "losses": 364,
       "total_profit": 0,
       "total_loss": 0.0,
       "win_rate": 0.0
     },
     "LTC\u2192LINK": {
-      "trades": 359,
+      "trades": 362,
       "wins": 0,
-      "losses": 359,
+      "losses": 362,
       "total_profit": 0,
       "total_loss": 0.0,
       "win_rate": 0.0
     },
     "LTC\u2192GRT": {
-      "trades": 316,
+      "trades": 319,
       "wins": 0,
-      "losses": 316,
+      "losses": 319,
       "total_profit": 0,
       "total_loss": 0.0,
       "win_rate": 0.0
     },
     "LTC\u2192CRV": {
-      "trades": 316,
+      "trades": 319,
       "wins": 0,
-      "losses": 316,
+      "losses": 319,
       "total_profit": 0,
       "total_loss": 0.0,
       "win_rate": 0.0
     },
     "LTC\u2192SUSHI": {
-      "trades": 316,
+      "trades": 319,
       "wins": 0,
-      "losses": 316,
+      "losses": 319,
       "total_profit": 0,
       "total_loss": 0.0,
       "win_rate": 0.0
     },
     "LTC\u2192XTZ": {
-      "trades": 313,
-      "wins": 0,
-      "losses": 313,
-      "total_profit": 0,
-      "total_loss": 0.0,
-      "win_rate": 0.0
-    },
-    "LTC\u2192BTC": {
-      "trades": 360,
-      "wins": 0,
-      "losses": 360,
-      "total_profit": 0,
-      "total_loss": 0.0,
-      "win_rate": 0.0
-    },
-    "LTC\u2192UNI": {
-      "trades": 359,
-      "wins": 0,
-      "losses": 359,
-      "total_profit": 0,
-      "total_loss": 0.0,
-      "win_rate": 0.0
-    },
-    "LTC\u2192BCH": {
-      "trades": 359,
-      "wins": 0,
-      "losses": 359,
-      "total_profit": 0,
-      "total_loss": 0.0,
-      "win_rate": 0.0
-    },
-    "LTC\u2192DOT": {
       "trades": 316,
       "wins": 0,
       "losses": 316,
@@ -2805,31 +2773,71 @@
       "total_loss": 0.0,
       "win_rate": 0.0
     },
-    "LTC\u2192XRP": {
-      "trades": 313,
+    "LTC\u2192BTC": {
+      "trades": 363,
       "wins": 0,
-      "losses": 313,
+      "losses": 363,
+      "total_profit": 0,
+      "total_loss": 0.0,
+      "win_rate": 0.0
+    },
+    "LTC\u2192UNI": {
+      "trades": 362,
+      "wins": 0,
+      "losses": 362,
+      "total_profit": 0,
+      "total_loss": 0.0,
+      "win_rate": 0.0
+    },
+    "LTC\u2192BCH": {
+      "trades": 362,
+      "wins": 0,
+      "losses": 362,
+      "total_profit": 0,
+      "total_loss": 0.0,
+      "win_rate": 0.0
+    },
+    "LTC\u2192DOT": {
+      "trades": 319,
+      "wins": 0,
+      "losses": 319,
+      "total_profit": 0,
+      "total_loss": 0.0,
+      "win_rate": 0.0
+    },
+    "LTC\u2192XRP": {
+      "trades": 316,
+      "wins": 0,
+      "losses": 316,
       "total_profit": 0,
       "total_loss": 0.0,
       "win_rate": 0.0
     },
     "LTC\u2192SKY": {
-      "trades": 314,
+      "trades": 317,
       "wins": 0,
-      "losses": 314,
+      "losses": 317,
       "total_profit": 0,
       "total_loss": 0.0,
       "win_rate": 0.0
     },
     "LTC\u2192TRUMP": {
-      "trades": 314,
+      "trades": 317,
       "wins": 0,
-      "losses": 314,
+      "losses": 317,
       "total_profit": 0,
       "total_loss": 0.0,
       "win_rate": 0.0
     },
     "LTC\u2192BAT": {
+      "trades": 317,
+      "wins": 0,
+      "losses": 317,
+      "total_profit": 0,
+      "total_loss": 0.0,
+      "win_rate": 0.0
+    },
+    "LTC\u2192USDG": {
       "trades": 314,
       "wins": 0,
       "losses": 314,
@@ -2837,42 +2845,34 @@
       "total_loss": 0.0,
       "win_rate": 0.0
     },
-    "LTC\u2192USDG": {
-      "trades": 311,
-      "wins": 0,
-      "losses": 311,
-      "total_profit": 0,
-      "total_loss": 0.0,
-      "win_rate": 0.0
-    },
     "LTC\u2192YFI": {
-      "trades": 311,
+      "trades": 314,
       "wins": 0,
-      "losses": 311,
+      "losses": 314,
       "total_profit": 0,
       "total_loss": 0.0,
       "win_rate": 0.0
     },
     "LTC\u2192DOGE": {
-      "trades": 309,
+      "trades": 312,
       "wins": 0,
-      "losses": 309,
+      "losses": 312,
       "total_profit": 0,
       "total_loss": 0.0,
       "win_rate": 0.0
     },
     "LTC\u2192PEPE": {
-      "trades": 308,
+      "trades": 311,
       "wins": 0,
-      "losses": 308,
+      "losses": 311,
       "total_profit": 0,
       "total_loss": 0.0,
       "win_rate": 0.0
     },
     "LTC\u2192SHIB": {
-      "trades": 309,
+      "trades": 312,
       "wins": 0,
-      "losses": 309,
+      "losses": 312,
       "total_profit": 0,
       "total_loss": 0.0,
       "win_rate": 0.0
@@ -3102,221 +3102,221 @@
       "win_rate": 0.0
     },
     "AAVE\u2192AVAX": {
-      "trades": 112,
+      "trades": 115,
       "wins": 0,
-      "losses": 112,
+      "losses": 115,
       "total_profit": 0,
       "total_loss": 0.0,
       "win_rate": 0.0
     },
     "AAVE\u2192GRT": {
-      "trades": 112,
+      "trades": 115,
       "wins": 0,
-      "losses": 112,
+      "losses": 115,
       "total_profit": 0,
       "total_loss": 0.0,
       "win_rate": 0.0
     },
     "AAVE\u2192USDT": {
-      "trades": 112,
+      "trades": 115,
       "wins": 0,
-      "losses": 112,
+      "losses": 115,
       "total_profit": 0,
       "total_loss": 0.0,
       "win_rate": 0.0
     },
     "AAVE\u2192SUSHI": {
-      "trades": 112,
+      "trades": 115,
       "wins": 0,
-      "losses": 112,
+      "losses": 115,
       "total_profit": 0,
       "total_loss": 0.0,
       "win_rate": 0.0
     },
     "AAVE\u2192USD": {
-      "trades": 112,
+      "trades": 115,
       "wins": 0,
-      "losses": 112,
+      "losses": 115,
       "total_profit": 0,
       "total_loss": 0.0,
       "win_rate": 0.0
     },
     "AAVE\u2192XTZ": {
-      "trades": 112,
+      "trades": 115,
       "wins": 0,
-      "losses": 112,
+      "losses": 115,
       "total_profit": 0,
       "total_loss": 0.0,
       "win_rate": 0.0
     },
     "AAVE\u2192ZUSD": {
-      "trades": 112,
+      "trades": 115,
       "wins": 0,
-      "losses": 112,
+      "losses": 115,
       "total_profit": 0,
       "total_loss": 0.0,
       "win_rate": 0.0
     },
     "AAVE\u2192TUSD": {
-      "trades": 112,
+      "trades": 115,
       "wins": 0,
-      "losses": 112,
+      "losses": 115,
       "total_profit": 0,
       "total_loss": 0.0,
       "win_rate": 0.0
     },
     "AAVE\u2192DAI": {
-      "trades": 112,
+      "trades": 115,
       "wins": 0,
-      "losses": 112,
+      "losses": 115,
       "total_profit": 0,
       "total_loss": 0.0,
       "win_rate": 0.0
     },
     "AAVE\u2192USDC": {
-      "trades": 112,
+      "trades": 115,
       "wins": 0,
-      "losses": 112,
+      "losses": 115,
       "total_profit": 0,
       "total_loss": 0.0,
       "win_rate": 0.0
     },
     "AAVE\u2192LINK": {
-      "trades": 112,
+      "trades": 115,
       "wins": 0,
-      "losses": 112,
+      "losses": 115,
       "total_profit": 0,
       "total_loss": 0.0,
       "win_rate": 0.0
     },
     "AAVE\u2192LTC": {
-      "trades": 112,
+      "trades": 115,
       "wins": 0,
-      "losses": 112,
+      "losses": 115,
       "total_profit": 0,
       "total_loss": 0.0,
       "win_rate": 0.0
     },
     "AAVE\u2192DOT": {
-      "trades": 112,
+      "trades": 115,
       "wins": 0,
-      "losses": 112,
+      "losses": 115,
       "total_profit": 0,
       "total_loss": 0.0,
       "win_rate": 0.0
     },
     "AAVE\u2192SOL": {
-      "trades": 112,
+      "trades": 115,
       "wins": 0,
-      "losses": 112,
+      "losses": 115,
       "total_profit": 0,
       "total_loss": 0.0,
       "win_rate": 0.0
     },
     "AAVE\u2192CRV": {
-      "trades": 112,
+      "trades": 115,
       "wins": 0,
-      "losses": 112,
+      "losses": 115,
       "total_profit": 0,
       "total_loss": 0.0,
       "win_rate": 0.0
     },
     "AAVE\u2192XRP": {
-      "trades": 112,
+      "trades": 115,
       "wins": 0,
-      "losses": 112,
+      "losses": 115,
       "total_profit": 0,
       "total_loss": 0.0,
       "win_rate": 0.0
     },
     "AAVE\u2192BTC": {
-      "trades": 112,
+      "trades": 115,
       "wins": 0,
-      "losses": 112,
+      "losses": 115,
       "total_profit": 0,
       "total_loss": 0.0,
       "win_rate": 0.0
     },
     "AAVE\u2192BCH": {
-      "trades": 112,
+      "trades": 115,
       "wins": 0,
-      "losses": 112,
+      "losses": 115,
       "total_profit": 0,
       "total_loss": 0.0,
       "win_rate": 0.0
     },
     "AAVE\u2192UNI": {
-      "trades": 112,
+      "trades": 115,
       "wins": 0,
-      "losses": 112,
+      "losses": 115,
       "total_profit": 0,
       "total_loss": 0.0,
       "win_rate": 0.0
     },
     "AAVE\u2192BAT": {
-      "trades": 112,
+      "trades": 115,
       "wins": 0,
-      "losses": 112,
+      "losses": 115,
       "total_profit": 0,
       "total_loss": 0.0,
       "win_rate": 0.0
     },
     "AAVE\u2192TRUMP": {
-      "trades": 112,
+      "trades": 115,
       "wins": 0,
-      "losses": 112,
+      "losses": 115,
       "total_profit": 0,
       "total_loss": 0.0,
       "win_rate": 0.0
     },
     "AAVE\u2192SKY": {
-      "trades": 112,
+      "trades": 115,
       "wins": 0,
-      "losses": 112,
+      "losses": 115,
       "total_profit": 0,
       "total_loss": 0.0,
       "win_rate": 0.0
     },
     "AAVE\u2192USDG": {
-      "trades": 112,
+      "trades": 115,
       "wins": 0,
-      "losses": 112,
+      "losses": 115,
       "total_profit": 0,
       "total_loss": 0.0,
       "win_rate": 0.0
     },
     "AAVE\u2192YFI": {
-      "trades": 112,
+      "trades": 115,
       "wins": 0,
-      "losses": 112,
+      "losses": 115,
       "total_profit": 0,
       "total_loss": 0.0,
       "win_rate": 0.0
     },
     "AAVE\u2192PEPE": {
-      "trades": 112,
+      "trades": 115,
       "wins": 0,
-      "losses": 112,
+      "losses": 115,
       "total_profit": 0,
       "total_loss": 0.0,
       "win_rate": 0.0
     },
     "AAVE\u2192DOGE": {
-      "trades": 112,
+      "trades": 115,
       "wins": 0,
-      "losses": 112,
+      "losses": 115,
       "total_profit": 0,
       "total_loss": 0.0,
       "win_rate": 0.0
     },
     "AAVE\u2192SHIB": {
-      "trades": 112,
+      "trades": 115,
       "wins": 0,
-      "losses": 112,
+      "losses": 115,
       "total_profit": 0,
       "total_loss": 0.0,
       "win_rate": 0.0
     }
   },
-  "last_saved": "2026-01-13T12:38:18.862432"
+  "last_saved": "2026-01-13T12:40:53.807071"
 }
