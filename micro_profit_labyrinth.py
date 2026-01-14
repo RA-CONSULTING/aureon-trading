@@ -5498,6 +5498,41 @@ class MicroProfitLabyrinth:
         """Fetch all asset prices from ALL exchanges."""
         prices = {}
         ticker_cache = {}
+
+        # ════════════════════════════════════════════════════════════════
+        # 📡 OPTIONAL WS CACHE (Production heavy-lifting)
+        # ════════════════════════════════════════════════════════════════
+        # This is OFF by default and does not change strategy/logic.
+        # If enabled, we pre-seed prices/tickers from a local cache written by
+        # `ws_market_data_feeder.py`, then fall back to existing REST fetches.
+        try:
+            ws_cache_path = os.getenv("WS_PRICE_CACHE_PATH", "").strip()
+            ws_cache_max_age_s = float(os.getenv("WS_PRICE_CACHE_MAX_AGE_S", "2.0"))
+            if ws_cache_path:
+                p = Path(ws_cache_path)
+                if p.exists():
+                    try:
+                        import json
+                        raw = p.read_text(encoding="utf-8")
+                        payload = json.loads(raw) if raw else {}
+                        ts = float(payload.get("generated_at", 0) or 0)
+                        if ts > 0 and (time.time() - ts) <= ws_cache_max_age_s:
+                            ws_prices = payload.get("prices") or {}
+                            ws_tickers = payload.get("ticker_cache") or {}
+                            if isinstance(ws_prices, dict):
+                                for k, v in ws_prices.items():
+                                    try:
+                                        prices[str(k)] = float(v)
+                                    except Exception:
+                                        continue
+                            if isinstance(ws_tickers, dict):
+                                for k, v in ws_tickers.items():
+                                    if isinstance(v, dict):
+                                        ticker_cache[str(k)] = v
+                    except Exception:
+                        pass
+        except Exception:
+            pass
         
         # ════════════════════════════════════════════════════════════════
         # 🐙 KRAKEN PRICES - Use get_24h_tickers (returns list of dicts)

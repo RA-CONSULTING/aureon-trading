@@ -5,6 +5,7 @@ krakenex>=2.1.0
 numpy
 pandas
 aiohttp>=3.9.0
+websockets>=12.0
 beautifulsoup4>=4.12.0
 wikipedia>=1.4.0
 wikipedia-api>=0.6.0

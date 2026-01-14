@@ -48,3 +48,11 @@ aureon_memory_spiral.json
 cached_candles.json
 thoughts.jsonl
 thoughts.jsonl
+
+# WebSocket feeder cache
+ws_cache/
+
+# Auto-generated queen artifacts (runtime output)
+queen_backups/
+queen_strategies/queen_learning_turn_*_*.py
+queen_strategies/queen_research_enhancement_*.py
