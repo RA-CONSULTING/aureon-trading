@@ -11250,6 +11250,20 @@ if __name__ == "__main__":
             # Get TOP rising coins - these are our HUNT targets!
             # 🌐 FULL MARKET: Scan 3000 rising coins (was 300) for 100% MARKET COVERAGE!
             rising_coins = self.get_strongest_rising(exclude={from_asset}, limit=3000)
+
+            # Exchange-aware targeting: when sourcing from Alpaca, only hunt assets
+            # that are actually tradeable on Alpaca (still 100% of Alpaca crypto universe).
+            alpaca_bases = None
+            if source_exchange == 'alpaca':
+                try:
+                    alpaca_bases = set()
+                    for sym in set(self.alpaca_pairs.values()):
+                        if isinstance(sym, str) and '/' in sym:
+                            base = sym.split('/', 1)[0].upper()
+                            if base:
+                                alpaca_bases.add(base)
+                except Exception:
+                    alpaca_bases = None
             # 🔬 DEBUG: Check if GUN is in rising_coins for Kraken USD
             if source_exchange == 'kraken' and from_asset == 'USD':
                 # 🫒🫒🫒 MEGA OLIVE: Show top 25 instead of 10 for better market visibility
@@ -11261,10 +11275,15 @@ if __name__ == "__main__":
                     print(f"   🔬 GUN momentum in asset_momentum: {gun_mom:.1f}%/min")
             for coin, momentum in rising_coins:
                 # 🫒🫒🫒 MEGA OLIVE: Lower threshold 0.05%→0.02% to catch EARLY EARLY movers!
-                if momentum > 0.0002:  # >0.02%/min momentum (was 0.05%)
+                if momentum > 0.0002:  # >0.02%/min momentum
+                    if alpaca_bases is not None and coin.upper() not in alpaca_bases:
+                        continue
                     lion_targets.append(coin)
             if lion_targets:
-                print(f"   🦁 LION HUNT: {from_asset} → Hunting {len(lion_targets)} rising coins (🫒🫒🫒 MEGA COVERAGE)")
+                if source_exchange == 'alpaca':
+                    print(f"   🦁 LION HUNT (ALPACA 100%): {from_asset} → Hunting {len(lion_targets)} rising Alpaca coins")
+                else:
+                    print(f"   🦁 LION HUNT: {from_asset} → Hunting {len(lion_targets)} rising coins")
         
         # Build target assets list
         checkpoint_stablecoins = {'USD': 1.0, 'USDT': 1.0, 'USDC': 1.0, 'ZUSD': 1.0}
