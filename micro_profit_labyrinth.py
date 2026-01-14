@@ -4074,6 +4074,23 @@ class MicroProfitLabyrinth:
     Even $0.01 profit per conversion will compound over time!
     """
     
+    def compute_mc_pwin(self, symbol: str, scanner_gross_pnl: float, notional_usd: float, n_samples: int = 1000) -> float:
+        """Compute Monte-Carlo probability that net profit > 0 for given gross P&L.
+
+        Returns a probability between 0.0 and 1.0. Uses the dynamic cost estimator
+        draws (percent units) and calculates net samples = gross - cost_usd.
+        """
+        if not hasattr(self, 'cost_estimator') or self.cost_estimator is None:
+            return 1.0  # conservative default: assume it's fine if no estimator
+        try:
+            draws_pct = self.cost_estimator.sample_total_cost_draws(symbol, 'buy', notional_usd, n_samples=n_samples)
+            net_samples = [scanner_gross_pnl - (d_pct / 100.0) * notional_usd for d_pct in draws_pct]
+            positive = sum(1 for v in net_samples if v > 0)
+            return positive / max(1, len(net_samples))
+        except Exception as e:
+            logger.debug(f"compute_mc_pwin failed: {e}")
+            return 0.0
+
     def __init__(self, live: bool = False, dry_run: bool = False):
         # --dry-run explicitly overrides LIVE env; otherwise allow env to enable live
         if dry_run:
@@ -14361,6 +14378,19 @@ if __name__ == "__main__":
             # Calculate NET profit conservatively using Monte Carlo worst-case cost (p90)
             conservative_pnl = scanner_gross_pnl - mc_cost_usd
             
+            # Monte-Carlo P(win) gating: compute probability that net profit > 0
+            p_win = None
+            if self.cost_estimator:
+                try:
+                    # Get raw draws (percent units) and transform to USD costs
+                    draws_pct = self.cost_estimator.sample_total_cost_draws(f"{from_upper}/{to_upper}", 'buy', opp.from_value_usd, n_samples=1000)
+                    net_samples = [scanner_gross_pnl - (d_pct/100.0) * opp.from_value_usd for d_pct in draws_pct]
+                    positive = sum(1 for v in net_samples if v > 0)
+                    p_win = positive / max(1, len(net_samples))
+                except Exception as e:
+                    logger.debug(f"Monte Carlo P(win) sampling failed: {e}")
+                    p_win = None
+
             # For required profit check, just need a small buffer above break-even
             min_profit_floor = max(MIN_NET_PROFIT_USD, 0.001)  # At least $0.001 net profit
             required_profit_usd = min_profit_floor  # Just needs to be positive!
@@ -14424,6 +14454,40 @@ if __name__ == "__main__":
             # 🌍✨ PLANET SAVER MODE: Past doesn't define future!
             # Allow trades if scanner expects profit - trust the quantum mirror!
             planet_saver_mode = hasattr(self, 'planet_saver') and self.planet_saver is not None
+
+            # Monte-Carlo P(win) gating: require a high probability of positive net P&L
+            try:
+                P_WIN_THRESHOLD = float(os.getenv('AUREON_MC_PWIN_THRESHOLD', '0.90'))
+            except Exception:
+                P_WIN_THRESHOLD = 0.90
+
+            if p_win is not None and p_win < P_WIN_THRESHOLD and not planet_saver_mode:
+                self.rejection_print(f"\n   🛑 PRE-EXECUTION GATE: LOW PROBABILITY OF WIN - P(win)={p_win:.2%} < {P_WIN_THRESHOLD:.0%}")
+                self.rejection_print(f"   ├── Scanner Expected: ${scanner_gross_pnl:+.4f}")
+                self.rejection_print(f"   └── Monte-Carlo P(win): {p_win:.2%} (threshold {P_WIN_THRESHOLD:.0%})")
+
+                self.barter_matrix.record_preexec_rejection(
+                    opp.from_asset, opp.to_asset,
+                    f'low_pwin: {p_win:.3f}',
+                    opp.from_value_usd
+                )
+
+                if self.russian_doll and record_scan:
+                    momentum = self.asset_momentum.get(opp.from_asset, 0)
+                    record_scan(
+                        symbol=f"{opp.from_asset}/{opp.to_asset}",
+                        exchange=opp.source_exchange or 'unknown',
+                        bid=opp.from_value_usd,
+                        ask=opp.from_value_usd * (1 + spread_pct/100),
+                        momentum=momentum,
+                        pip_score=getattr(opp, 'combined_score', 0),
+                        expected_pnl=scanner_gross_pnl,
+                        pass_scores=(0.0, 0.0, 0.0),
+                        action="REJECT",
+                        rejection_reason="low_pwin"
+                    )
+
+                return False
 
             # CRITICAL SAFETY: Never bleed, regardless of mode
             if conservative_pnl < 0:

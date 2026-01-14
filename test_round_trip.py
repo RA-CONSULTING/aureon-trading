@@ -110,5 +110,29 @@ class TestRoundTripAvailability(unittest.TestCase):
         self.assertTrue(ok)
         self.assertIn('Round-trip available', reason)
 
+    def test_compute_mc_pwin(self):
+        # Test compute of P(win) using mocked draws
+        class DummyEstimator:
+            def sample_total_cost_draws(self, symbol, side, notional_usd, n_samples=1000):
+                # Return percent draws where costs are small
+                return [1.0, 1.0, 1.0, 1.0]  # 1% costs each
+        self.lab.cost_estimator = DummyEstimator()
+        gross = 5.0
+        notional = 100.0
+        p_win = self.lab.compute_mc_pwin('USD/AAPL', gross, notional, n_samples=4)
+        # costs=1% -> cost USD=1.0 -> net samples = [4,4,4,4] so P(win)=1.0
+        self.assertAlmostEqual(p_win, 1.0)
+
+    def test_compute_mc_pwin_low(self):
+        class DummyEstimator2:
+            def sample_total_cost_draws(self, symbol, side, notional_usd, n_samples=1000):
+                # high costs so nets negative
+                return [50.0, 60.0, 40.0]
+        self.lab.cost_estimator = DummyEstimator2()
+        gross = 1.0
+        notional = 100.0
+        p_win = self.lab.compute_mc_pwin('USD/AAPL', gross, notional, n_samples=3)
+        self.assertAlmostEqual(p_win, 0.0)
+
 if __name__ == '__main__':
     unittest.main()

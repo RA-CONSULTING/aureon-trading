@@ -80,7 +80,7 @@ class DynamicCostEstimator:
     MIN_SPREAD_PCT = 0.05   # 5 bps (highly liquid pairs)
     MAX_SPREAD_PCT = 0.20   # 20 bps (less liquid pairs)
     MIN_SLIPPAGE_PCT = 0.01 # 1 bp (market orders on liquid pairs)
-    MAX_SLIPPAGE_PCT = 0.10 # 10 bps (max expected slippage)
+    MAX_SLIPPAGE_PCT = 0.65 # 65% (allow extreme slippage learning)
     
     # Fallback defaults (when no data available)
     DEFAULT_FEE_PCT = 0.20      # 20 bps (tier 3 average)
@@ -269,6 +269,48 @@ class DynamicCostEstimator:
         self._global_samples.clear()
         self._total_samples = 0
         logger.info("💰 Cost estimator reset - all samples cleared")
+
+    def _draw_total_costs(self, symbol: str, n_samples: int = 1000) -> List[float]:
+        """Internal: draw raw samples of total cost% from historical samples.
+
+        Returns a list of sampled total cost percentages (e.g., 0.30 == 0.30%).
+        """
+        import random
+        base = list(self._symbol_samples.get(symbol, []))
+        if not base:
+            base = list(self._global_samples)
+        if not base:
+            return [self.DEFAULT_TOTAL_PCT for _ in range(n_samples)]
+
+        draws = []
+        for _ in range(n_samples):
+            s = random.choice(base)
+            # sample with small gaussian noise proportional to observed total (5% stddev)
+            noise = random.gauss(0, max(1e-6, s.total_cost_pct * 0.05))
+            val = s.total_cost_pct + noise
+            # clamp to conservative bounds
+            min_total = self.MIN_FEE_PCT + self.MIN_SPREAD_PCT + self.MIN_SLIPPAGE_PCT
+            max_total = self.MAX_FEE_PCT + self.MAX_SPREAD_PCT + self.MAX_SLIPPAGE_PCT
+            val = max(min_total, min(max_total, val))
+            draws.append(val)
+        return draws
+
+    def sample_total_cost_distribution(self, symbol: str, side: str, notional_usd: float, n_samples: int = 1000) -> Dict[str, float]:
+        """Monte Carlo sampling of total cost% from historical samples.
+
+        Returns percentiles keyed by 'p5','p50','p90','p95' and a 'samples' list for debugging (truncated).
+        """
+        draws = self._draw_total_costs(symbol, n_samples=n_samples)
+        draws.sort()
+        def pct(p):
+            idx = max(0, min(len(draws)-1, int(len(draws)*p/100)))
+            return draws[idx]
+
+        return {'p5': pct(5), 'p50': pct(50), 'p90': pct(90), 'p95': pct(95), 'samples': draws[:10]}
+
+    def sample_total_cost_draws(self, symbol: str, side: str, notional_usd: float, n_samples: int = 1000) -> List[float]:
+        """Return raw Monte Carlo draws of total cost% (percent units) for further analysis."""
+        return self._draw_total_costs(symbol, n_samples=n_samples)
 
 
 # Singleton instance
