@@ -17013,24 +17013,206 @@
           }
         ]
       }
+    },
+    {
+      "timestamp": 1768367901.810264,
+      "timestamp_human": "2026-01-14T05:18:21.810266+00:00",
+      "queen": {
+        "market_regime": "QUIET",
+        "global_momentum": 0.0,
+        "global_coherence": 0.5,
+        "queen_confidence": 0.5,
+        "queen_strategy": "SNIPER",
+        "portfolio_value": 27.92,
+        "cash_available": 8.83,
+        "positions_held": 4,
+        "directives": {
+          "min_momentum_threshold": 0.1,
+          "min_coherence_threshold": 0.55,
+          "max_position_size": 0.8829464479753901,
+          "target_exchanges": [],
+          "queen_strategy": "SNIPER",
+          "queen_confidence": 0.5,
+          "market_regime": "QUIET"
+        }
+      },
+      "hive_cluster": {
+        "exchanges_active": 0,
+        "total_symbols": 0,
+        "validators_active": 0,
+        "validator_agreement": 0.0,
+        "market_sentiment": "NEUTRAL",
+        "opportunity_density": 0.0,
+        "recommended_action": "WAIT",
+        "system_fill_rate": 0.0,
+        "total_fees_paid": 0.0
+      },
+      "bee_swarm": {
+        "total_scanned": 1000,
+        "with_momentum": 0,
+        "rejected": 85,
+        "executed": 0,
+        "momentum_distribution": {
+          "up": 0,
+          "down": 0,
+          "flat": 1000
+        },
+        "avg_momentum": 0.0,
+        "max_momentum": 0.0,
+        "max_momentum_symbol": "USDC/XTZ",
+        "avg_pip_score": 0.3992,
+        "avg_coherence": 0.0,
+        "above_phi_threshold": 0,
+        "rejection_breakdown": {
+          "negative_pnl": 85
+        },
+        "top_opportunities": [
+          {
+            "symbol": "USDC/PEPE",
+            "exchange": "alpaca",
+            "pip_score": 1.2403262281055616,
+            "momentum": 0.0,
+            "coherence": 0.0
+          },
+          {
+            "symbol": "USD/PEPE",
+            "exchange": "alpaca",
+            "pip_score": 1.2403262281055616,
+            "momentum": 0.0,
+            "coherence": 0.0
+          },
+          {
+            "symbol": "USDC/PEPE",
+            "exchange": "alpaca",
+            "pip_score": 1.212,
+            "momentum": 0.0,
+            "coherence": 0.0
+          },
+          {
+            "symbol": "USD/PEPE",
+            "exchange": "alpaca",
+            "pip_score": 1.212,
+            "momentum": 0.0,
+            "coherence": 0.0
+          },
+          {
+            "symbol": "LINK/PEPE",
+            "exchange": "alpaca",
+            "pip_score": 1.1909999999999998,
+            "momentum": 0.0,
+            "coherence": 0.0
+          }
+        ]
+      }
+    },
+    {
+      "timestamp": 1768368432.9776263,
+      "timestamp_human": "2026-01-14T05:27:12.977629+00:00",
+      "queen": {
+        "market_regime": "QUIET",
+        "global_momentum": 0.0,
+        "global_coherence": 0.5,
+        "queen_confidence": 0.5,
+        "queen_strategy": "SNIPER",
+        "portfolio_value": 27.91,
+        "cash_available": 8.83,
+        "positions_held": 4,
+        "directives": {
+          "min_momentum_threshold": 0.1,
+          "min_coherence_threshold": 0.55,
+          "max_position_size": 0.8828857676261599,
+          "target_exchanges": [],
+          "queen_strategy": "SNIPER",
+          "queen_confidence": 0.5,
+          "market_regime": "QUIET"
+        }
+      },
+      "hive_cluster": {
+        "exchanges_active": 0,
+        "total_symbols": 0,
+        "validators_active": 0,
+        "validator_agreement": 0.0,
+        "market_sentiment": "NEUTRAL",
+        "opportunity_density": 0.0,
+        "recommended_action": "WAIT",
+        "system_fill_rate": 0.0,
+        "total_fees_paid": 0.0
+      },
+      "bee_swarm": {
+        "total_scanned": 1000,
+        "with_momentum": 0,
+        "rejected": 93,
+        "executed": 0,
+        "momentum_distribution": {
+          "up": 0,
+          "down": 0,
+          "flat": 1000
+        },
+        "avg_momentum": 0.0,
+        "max_momentum": 0.0,
+        "max_momentum_symbol": "USD/CRV",
+        "avg_pip_score": 0.4011,
+        "avg_coherence": 0.0,
+        "above_phi_threshold": 0,
+        "rejection_breakdown": {
+          "negative_pnl": 93
+        },
+        "top_opportunities": [
+          {
+            "symbol": "USDC/PEPE",
+            "exchange": "alpaca",
+            "pip_score": 1.212,
+            "momentum": 0.0,
+            "coherence": 0.0
+          },
+          {
+            "symbol": "USD/PEPE",
+            "exchange": "alpaca",
+            "pip_score": 1.212,
+            "momentum": 0.0,
+            "coherence": 0.0
+          },
+          {
+            "symbol": "USDC/PEPE",
+            "exchange": "alpaca",
+            "pip_score": 1.212,
+            "momentum": 0.0,
+            "coherence": 0.0
+          },
+          {
+            "symbol": "USD/PEPE",
+            "exchange": "alpaca",
+            "pip_score": 1.212,
+            "momentum": 0.0,
+            "coherence": 0.0
+          },
+          {
+            "symbol": "LINK/PEPE",
+            "exchange": "alpaca",
+            "pip_score": 1.1909999999999998,
+            "momentum": 0.0,
+            "coherence": 0.0
+          }
+        ]
+      }
     }
   ],
   "last_snapshot": {
-    "timestamp": 1768364488.852639,
-    "timestamp_human": "2026-01-14T04:21:28.852642+00:00",
+    "timestamp": 1768368432.9776263,
+    "timestamp_human": "2026-01-14T05:27:12.977629+00:00",
     "queen": {
       "market_regime": "QUIET",
       "global_momentum": 0.0,
       "global_coherence": 0.5,
       "queen_confidence": 0.5,
       "queen_strategy": "SNIPER",
-      "portfolio_value": 12.1,
-      "cash_available": 6.08,
-      "positions_held": 2,
+      "portfolio_value": 27.91,
+      "cash_available": 8.83,
+      "positions_held": 4,
       "directives": {
         "min_momentum_threshold": 0.1,
         "min_coherence_threshold": 0.55,
-        "max_position_size": 0.607968545910175,
+        "max_position_size": 0.8828857676261599,
         "target_exchanges": [],
         "queen_strategy": "SNIPER",
         "queen_confidence": 0.5,
@@ -17051,7 +17233,7 @@
     "bee_swarm": {
       "total_scanned": 1000,
       "with_momentum": 0,
-      "rejected": 83,
+      "rejected": 93,
       "executed": 0,
       "momentum_distribution": {
         "up": 0,
@@ -17060,46 +17242,46 @@
       },
       "avg_momentum": 0.0,
       "max_momentum": 0.0,
-      "max_momentum_symbol": "USD/BTC",
-      "avg_pip_score": 0.3907,
+      "max_momentum_symbol": "USD/CRV",
+      "avg_pip_score": 0.4011,
       "avg_coherence": 0.0,
       "above_phi_threshold": 0,
       "rejection_breakdown": {
-        "negative_pnl": 83
+        "negative_pnl": 93
       },
       "top_opportunities": [
         {
-          "symbol": "USDC/DOGE",
+          "symbol": "USDC/PEPE",
           "exchange": "alpaca",
-          "pip_score": 0.633060247335559,
-          "momentum": 0.0,
-          "coherence": 0.0
-        },
-        {
-          "symbol": "USD/SKY",
-          "exchange": "alpaca",
-          "pip_score": 0.5895,
-          "momentum": 0.0,
-          "coherence": 0.0
-        },
-        {
-          "symbol": "USD/SHIB",
-          "exchange": "alpaca",
-          "pip_score": 0.5895,
+          "pip_score": 1.212,
           "momentum": 0.0,
           "coherence": 0.0
         },
         {
           "symbol": "USD/PEPE",
           "exchange": "alpaca",
-          "pip_score": 0.5895,
+          "pip_score": 1.212,
           "momentum": 0.0,
           "coherence": 0.0
         },
         {
-          "symbol": "USD/BAT",
+          "symbol": "USDC/PEPE",
           "exchange": "alpaca",
-          "pip_score": 0.5895,
+          "pip_score": 1.212,
+          "momentum": 0.0,
+          "coherence": 0.0
+        },
+        {
+          "symbol": "USD/PEPE",
+          "exchange": "alpaca",
+          "pip_score": 1.212,
+          "momentum": 0.0,
+          "coherence": 0.0
+        },
+        {
+          "symbol": "LINK/PEPE",
+          "exchange": "alpaca",
+          "pip_score": 1.1909999999999998,
           "momentum": 0.0,
           "coherence": 0.0
         }

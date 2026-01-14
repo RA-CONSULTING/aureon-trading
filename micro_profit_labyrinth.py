@@ -5797,10 +5797,10 @@ class MicroProfitLabyrinth:
         # Show top movers if we have momentum data
         # 🫒 GREEN OLIVE EXPANSION: Show top 10 instead of 3 for FULL market picture
         if len(self.asset_momentum) > 10:
-            rising = self.get_strongest_rising(limit=10)
-            falling = self.get_weakest_falling(limit=10)
+            rising = self.get_strongest_rising(limit=25)  # 🫒🫒🫒 MEGA: Show top 25 movers!
+            falling = self.get_weakest_falling(limit=25)
             if rising:
-                top_rising = ', '.join([f"{a}:{m*100:+.2f}%/min" for a, m in rising[:10]])
+                top_rising = ', '.join([f"{a}:{m*100:+.2f}%/min" for a, m in rising[:25]])
                 print(f"   🌊 Rising (Top 10): {top_rising}")
             if falling:
                 top_falling = ', '.join([f"{a}:{m*100:+.2f}%/min" for a, m in falling[:10]])
@@ -7559,7 +7559,7 @@ class MicroProfitLabyrinth:
         # Sort by momentum score (best first)
         ocean_opportunities.sort(key=lambda x: getattr(x, 'momentum_score', x.combined_score), reverse=True)
         
-        return ocean_opportunities[:50]  # Top 50 ocean opportunities
+        return ocean_opportunities[:200]  # 🫒🫒🫒 MEGA: Top 200 ocean opportunities!
     
     async def _ocean_scan_kraken(self, cash_info: Dict) -> List['MicroOpportunity']:
         """Scan ALL Kraken pairs for opportunities."""
@@ -7592,9 +7592,10 @@ class MicroProfitLabyrinth:
         
         # Get tickers for momentum analysis (batch if possible)
         # For now, use our cached momentum data
-        rising_coins = self.get_strongest_rising(exclude={'USD', 'USDT', 'USDC'}, limit=50)
+        # 🫒🫒🫒 MEGA: Scan 200 rising (was 50) for ~30% Kraken coverage!
+        rising_coins = self.get_strongest_rising(exclude={'USD', 'USDT', 'USDC'}, limit=200)
         
-        for coin, momentum in rising_coins[:20]:  # Top 20 rising
+        for coin, momentum in rising_coins[:100]:  # 🫒🫒🫒 MEGA: Top 100 rising (was 20)
             if momentum < 0.01:  # Skip if momentum too low
                 continue
             
@@ -7662,9 +7663,10 @@ class MicroProfitLabyrinth:
         print(f"   🦙 Ocean scanning {len(symbols)} Alpaca symbols...")
         
         # Use momentum data to find rising coins
-        rising_coins = self.get_strongest_rising(exclude={'USD', 'USDT', 'USDC'}, limit=30)
+        # 🫒🫒🫒 MEGA: Scan 100 rising (was 30) = ~80% of Alpaca crypto universe!
+        rising_coins = self.get_strongest_rising(exclude={'USD', 'USDT', 'USDC'}, limit=100)
         
-        for coin, momentum in rising_coins[:15]:  # Top 15 rising
+        for coin, momentum in rising_coins[:50]:  # 🫒🫒🫒 MEGA: Top 50 rising (was 15)
             if momentum < 0.01:
                 continue
             
@@ -10416,8 +10418,8 @@ if __name__ == "__main__":
         """Get current momentum for asset (%/minute)"""
         return self.asset_momentum.get(asset, 0.0)
     
-    def get_strongest_rising(self, exclude: set = None, limit: int = 50) -> List[Tuple[str, float]]:
-        """🫒 GREEN OLIVE EXPANSION: Default limit increased from 10→50 for MAXIMUM market coverage"""
+    def get_strongest_rising(self, exclude: set = None, limit: int = 500) -> List[Tuple[str, float]]:
+        """🫒🫒🫒 MEGA OLIVE EXPANSION: Default limit 10→50→500 for 55% MARKET COVERAGE!"""
         """Get assets with strongest RISING momentum - for wave jumping"""
         exclude = exclude or set()
         items = [(a, m) for a, m in self.asset_momentum.items() 
@@ -11207,27 +11209,27 @@ if __name__ == "__main__":
         
         # 🦁 LION HUNT MODE - When holding stablecoins, HUNT rising coins!
         # "The lion scans his pride and hunts" - Gary Leckey
-        # 🫒 GREEN OLIVE EXPANSION: 3x MORE coverage (20→60 targets)
+        # 🫒🫒🫒 MEGA OLIVE EXPANSION: MAXIMUM COVERAGE (60→300 targets = 50% of market!)
         lion_targets = []  # Priority targets from momentum
         if is_stablecoin_source:
             # Get TOP rising coins - these are our HUNT targets!
-            # 🫒 EXPANDED: Scan 60 rising coins (was 20) for MAXIMUM market coverage
-            rising_coins = self.get_strongest_rising(exclude={from_asset}, limit=60)
+            # 🫒🫒🫒 MEGA EXPANDED: Scan 300 rising coins (was 60) for 50% MARKET COVERAGE!
+            rising_coins = self.get_strongest_rising(exclude={from_asset}, limit=300)
             # 🔬 DEBUG: Check if GUN is in rising_coins for Kraken USD
             if source_exchange == 'kraken' and from_asset == 'USD':
-                # 🫒 GREEN OLIVE: Show top 10 instead of 3-5 for better market visibility
-                top_10_rising = [(c, m) for c, m in rising_coins if m > 5][:10]
-                if top_10_rising:
-                    print(f"   🔬 TOP 10 RISING (>5%/min): {[(c, f'{m:.1f}%') for c, m in top_10_rising]}")
+                # 🫒🫒🫒 MEGA OLIVE: Show top 25 instead of 10 for better market visibility
+                top_25_rising = [(c, m) for c, m in rising_coins if m > 5][:25]
+                if top_25_rising:
+                    print(f"   🔬 TOP 25 RISING (>5%/min): {[(c, f'{m:.1f}%') for c, m in top_25_rising]}")
                 gun_mom = self.asset_momentum.get('GUN', 0)
                 if gun_mom > 0:
                     print(f"   🔬 GUN momentum in asset_momentum: {gun_mom:.1f}%/min")
             for coin, momentum in rising_coins:
-                # 🫒 GREEN OLIVE: Lower threshold 0.1%→0.05% to catch MORE early movers
-                if momentum > 0.0005:  # >0.05%/min momentum (was 0.1%)
+                # 🫒🫒🫒 MEGA OLIVE: Lower threshold 0.05%→0.02% to catch EARLY EARLY movers!
+                if momentum > 0.0002:  # >0.02%/min momentum (was 0.05%)
                     lion_targets.append(coin)
             if lion_targets:
-                print(f"   🦁 LION HUNT: {from_asset} → Hunting {len(lion_targets)} rising coins (🫒 EXPANDED COVERAGE)")
+                print(f"   🦁 LION HUNT: {from_asset} → Hunting {len(lion_targets)} rising coins (🫒🫒🫒 MEGA COVERAGE)")
         
         # Build target assets list
         checkpoint_stablecoins = {'USD': 1.0, 'USDT': 1.0, 'USDC': 1.0, 'ZUSD': 1.0}
