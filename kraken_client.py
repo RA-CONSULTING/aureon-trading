@@ -117,6 +117,13 @@ class KrakenClient:
             for attempt in range(self.max_retries + 1):
                 r = self.session.post(url, data=data, headers=headers, timeout=15)
                 if r.status_code == 429:
+                    # Metric: API 429
+                    try:
+                        from metrics import api_429_counter
+                        api_429_counter.inc(1, exchange='kraken', endpoint='private')
+                    except Exception:
+                        pass
+
                     retry_after = r.headers.get('Retry-After')
                     try:
                         wait_time = float(retry_after) if retry_after else 2 ** attempt
@@ -155,6 +162,13 @@ class KrakenClient:
         for attempt in range(self.max_retries + 1):
             r = self.session.get(url, timeout=20)
             if r.status_code == 429:
+                # Metric: API 429
+                try:
+                    from metrics import api_429_counter
+                    api_429_counter.inc(1, exchange='kraken', endpoint='assetpairs')
+                except Exception:
+                    pass
+
                 retry_after = r.headers.get('Retry-After')
                 try:
                     wait_time = float(retry_after) if retry_after else 2 ** attempt

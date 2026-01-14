@@ -113,6 +113,13 @@ class AlpacaClient:
 
                 # 🛡️ RATE LIMIT HANDLING - Respect Retry-After header if present
                 if resp.status_code == 429:
+                    # Metric: API 429
+                    try:
+                        from metrics import api_429_counter
+                        api_429_counter.inc(1, exchange='alpaca', endpoint=endpoint)
+                    except Exception:
+                        pass
+
                     retry_after = resp.headers.get('Retry-After')
                     if retry_after:
                         try:
@@ -123,6 +130,7 @@ class AlpacaClient:
                         wait_time = 2 ** attempt
 
                     # add jitter
+                    import random
                     jitter = min(1.0, wait_time * 0.1)
                     wait_time = wait_time + (jitter * (0.5 - random.random()))
 

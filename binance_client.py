@@ -209,6 +209,13 @@ class BinanceClient:
         for attempt in range(self.max_retries + 1):
             resp = self.session.request(method, url, params=params if method == 'GET' else None, data=data if method != 'GET' else None, timeout=timeout)
             if resp.status_code == 429:
+                # Metric: API 429
+                try:
+                    from metrics import api_429_counter
+                    api_429_counter.inc(1, exchange='binance', endpoint=path)
+                except Exception:
+                    pass
+
                 retry_after = resp.headers.get('Retry-After')
                 try:
                     wait_time = float(retry_after) if retry_after else 2 ** attempt
