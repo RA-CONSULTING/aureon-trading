@@ -7559,7 +7559,7 @@ class MicroProfitLabyrinth:
         # Sort by momentum score (best first)
         ocean_opportunities.sort(key=lambda x: getattr(x, 'momentum_score', x.combined_score), reverse=True)
         
-        return ocean_opportunities[:200]  # 🫒🫒🫒 MEGA: Top 200 ocean opportunities!
+        return ocean_opportunities[:3000]  # 🌐 FULL MARKET: 100% COVERAGE (Max 3000 opportunities)
     
     async def _ocean_scan_kraken(self, cash_info: Dict) -> List['MicroOpportunity']:
         """Scan ALL Kraken pairs for opportunities."""
@@ -7592,10 +7592,10 @@ class MicroProfitLabyrinth:
         
         # Get tickers for momentum analysis (batch if possible)
         # For now, use our cached momentum data
-        # 🫒🫒🫒 MEGA: Scan 200 rising (was 50) for ~30% Kraken coverage!
-        rising_coins = self.get_strongest_rising(exclude={'USD', 'USDT', 'USDC'}, limit=200)
+        # 🌐 FULL MARKET: Scan 3000 rising (was 200) for 100% Kraken coverage!
+        rising_coins = self.get_strongest_rising(exclude={'USD', 'USDT', 'USDC'}, limit=3000)
         
-        for coin, momentum in rising_coins[:100]:  # 🫒🫒🫒 MEGA: Top 100 rising (was 20)
+        for coin, momentum in rising_coins[:2000]:  # 🌐 FULL MARKET: Top 2000 rising
             if momentum < 0.01:  # Skip if momentum too low
                 continue
             
@@ -7663,10 +7663,10 @@ class MicroProfitLabyrinth:
         print(f"   🦙 Ocean scanning {len(symbols)} Alpaca symbols...")
         
         # Use momentum data to find rising coins
-        # 🫒🫒🫒 MEGA: Scan 100 rising (was 30) = ~80% of Alpaca crypto universe!
-        rising_coins = self.get_strongest_rising(exclude={'USD', 'USDT', 'USDC'}, limit=100)
+        # 🌐 FULL MARKET: Scan 3000 rising (was 100) for 100% Alpaca coverage!
+        rising_coins = self.get_strongest_rising(exclude={'USD', 'USDT', 'USDC'}, limit=3000)
         
-        for coin, momentum in rising_coins[:50]:  # 🫒🫒🫒 MEGA: Top 50 rising (was 15)
+        for coin, momentum in rising_coins[:2000]:  # 🌐 FULL MARKET: Top 2000 rising
             if momentum < 0.01:
                 continue
             
@@ -10418,8 +10418,8 @@ if __name__ == "__main__":
         """Get current momentum for asset (%/minute)"""
         return self.asset_momentum.get(asset, 0.0)
     
-    def get_strongest_rising(self, exclude: set = None, limit: int = 500) -> List[Tuple[str, float]]:
-        """🫒🫒🫒 MEGA OLIVE EXPANSION: Default limit 10→50→500 for 55% MARKET COVERAGE!"""
+    def get_strongest_rising(self, exclude: set = None, limit: int = 3000) -> List[Tuple[str, float]]:
+        """🌐 FULL MARKET EXPANSION: Default limit 500→3000 for 100% MARKET COVERAGE!"""
         """Get assets with strongest RISING momentum - for wave jumping"""
         exclude = exclude or set()
         items = [(a, m) for a, m in self.asset_momentum.items() 
@@ -11209,12 +11209,12 @@ if __name__ == "__main__":
         
         # 🦁 LION HUNT MODE - When holding stablecoins, HUNT rising coins!
         # "The lion scans his pride and hunts" - Gary Leckey
-        # 🫒🫒🫒 MEGA OLIVE EXPANSION: MAXIMUM COVERAGE (60→300 targets = 50% of market!)
+        # 🌐 FULL MARKET EXPANSION: MAXIMUM COVERAGE (300→3000 targets = 100% of market!)
         lion_targets = []  # Priority targets from momentum
         if is_stablecoin_source:
             # Get TOP rising coins - these are our HUNT targets!
-            # 🫒🫒🫒 MEGA EXPANDED: Scan 300 rising coins (was 60) for 50% MARKET COVERAGE!
-            rising_coins = self.get_strongest_rising(exclude={from_asset}, limit=300)
+            # 🌐 FULL MARKET: Scan 3000 rising coins (was 300) for 100% MARKET COVERAGE!
+            rising_coins = self.get_strongest_rising(exclude={from_asset}, limit=3000)
             # 🔬 DEBUG: Check if GUN is in rising_coins for Kraken USD
             if source_exchange == 'kraken' and from_asset == 'USD':
                 # 🫒🫒🫒 MEGA OLIVE: Show top 25 instead of 10 for better market visibility

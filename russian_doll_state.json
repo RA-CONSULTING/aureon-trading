@@ -17195,11 +17195,102 @@
           }
         ]
       }
+    },
+    {
+      "timestamp": 1768369250.3828251,
+      "timestamp_human": "2026-01-14T05:40:50.382827+00:00",
+      "queen": {
+        "market_regime": "QUIET",
+        "global_momentum": 0.0,
+        "global_coherence": 0.5,
+        "queen_confidence": 0.5,
+        "queen_strategy": "SNIPER",
+        "portfolio_value": 27.91,
+        "cash_available": 8.83,
+        "positions_held": 4,
+        "directives": {
+          "min_momentum_threshold": 0.1,
+          "min_coherence_threshold": 0.55,
+          "max_position_size": 0.88288579306339,
+          "target_exchanges": [],
+          "queen_strategy": "SNIPER",
+          "queen_confidence": 0.5,
+          "market_regime": "QUIET"
+        }
+      },
+      "hive_cluster": {
+        "exchanges_active": 0,
+        "total_symbols": 0,
+        "validators_active": 0,
+        "validator_agreement": 0.0,
+        "market_sentiment": "NEUTRAL",
+        "opportunity_density": 0.0,
+        "recommended_action": "WAIT",
+        "system_fill_rate": 0.0,
+        "total_fees_paid": 0.0
+      },
+      "bee_swarm": {
+        "total_scanned": 1000,
+        "with_momentum": 0,
+        "rejected": 110,
+        "executed": 0,
+        "momentum_distribution": {
+          "up": 0,
+          "down": 0,
+          "flat": 1000
+        },
+        "avg_momentum": 0.0,
+        "max_momentum": 0.0,
+        "max_momentum_symbol": "USD/XTZ",
+        "avg_pip_score": 0.4036,
+        "avg_coherence": 0.0,
+        "above_phi_threshold": 0,
+        "rejection_breakdown": {
+          "negative_pnl": 110
+        },
+        "top_opportunities": [
+          {
+            "symbol": "USDC/PEPE",
+            "exchange": "alpaca",
+            "pip_score": 1.091358293140095,
+            "momentum": 0.0,
+            "coherence": 0.0
+          },
+          {
+            "symbol": "USD/PEPE",
+            "exchange": "alpaca",
+            "pip_score": 1.091358293140095,
+            "momentum": 0.0,
+            "coherence": 0.0
+          },
+          {
+            "symbol": "USDC/PEPE",
+            "exchange": "alpaca",
+            "pip_score": 1.0148317112768948,
+            "momentum": 0.0,
+            "coherence": 0.0
+          },
+          {
+            "symbol": "USD/PEPE",
+            "exchange": "alpaca",
+            "pip_score": 1.0148317112768948,
+            "momentum": 0.0,
+            "coherence": 0.0
+          },
+          {
+            "symbol": "SUSHI/USDC",
+            "exchange": "alpaca",
+            "pip_score": 0.976,
+            "momentum": 0.0,
+            "coherence": -3.5
+          }
+        ]
+      }
     }
   ],
   "last_snapshot": {
-    "timestamp": 1768368432.9776263,
-    "timestamp_human": "2026-01-14T05:27:12.977629+00:00",
+    "timestamp": 1768369250.3828251,
+    "timestamp_human": "2026-01-14T05:40:50.382827+00:00",
     "queen": {
       "market_regime": "QUIET",
       "global_momentum": 0.0,
@@ -17212,7 +17303,7 @@
       "directives": {
         "min_momentum_threshold": 0.1,
         "min_coherence_threshold": 0.55,
-        "max_position_size": 0.8828857676261599,
+        "max_position_size": 0.88288579306339,
         "target_exchanges": [],
         "queen_strategy": "SNIPER",
         "queen_confidence": 0.5,
@@ -17233,7 +17324,7 @@
     "bee_swarm": {
       "total_scanned": 1000,
       "with_momentum": 0,
-      "rejected": 93,
+      "rejected": 110,
       "executed": 0,
       "momentum_distribution": {
         "up": 0,
@@ -17242,48 +17333,48 @@
       },
       "avg_momentum": 0.0,
       "max_momentum": 0.0,
-      "max_momentum_symbol": "USD/CRV",
-      "avg_pip_score": 0.4011,
+      "max_momentum_symbol": "USD/XTZ",
+      "avg_pip_score": 0.4036,
       "avg_coherence": 0.0,
       "above_phi_threshold": 0,
       "rejection_breakdown": {
-        "negative_pnl": 93
+        "negative_pnl": 110
       },
       "top_opportunities": [
         {
           "symbol": "USDC/PEPE",
           "exchange": "alpaca",
-          "pip_score": 1.212,
+          "pip_score": 1.091358293140095,
           "momentum": 0.0,
           "coherence": 0.0
         },
         {
           "symbol": "USD/PEPE",
           "exchange": "alpaca",
-          "pip_score": 1.212,
+          "pip_score": 1.091358293140095,
           "momentum": 0.0,
           "coherence": 0.0
         },
         {
           "symbol": "USDC/PEPE",
           "exchange": "alpaca",
-          "pip_score": 1.212,
+          "pip_score": 1.0148317112768948,
           "momentum": 0.0,
           "coherence": 0.0
         },
         {
           "symbol": "USD/PEPE",
           "exchange": "alpaca",
-          "pip_score": 1.212,
+          "pip_score": 1.0148317112768948,
           "momentum": 0.0,
           "coherence": 0.0
         },
         {
-          "symbol": "LINK/PEPE",
+          "symbol": "SUSHI/USDC",
           "exchange": "alpaca",
-          "pip_score": 1.1909999999999998,
+          "pip_score": 0.976,
           "momentum": 0.0,
-          "coherence": 0.0
+          "coherence": -3.5
         }
       ]
     }
