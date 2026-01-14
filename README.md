@@ -23,6 +23,13 @@ Notes
 - These constructs are research instruments, not literal directives. Phrases like “taking over” or “saving the planet” appear only as scenario prompts to test alignment, stability, and moral guard adherence.
 - The aim is to help the system “understand life” patterns via history, goals, and constraints—not to encourage harmful action. See Safety for operational guardrails.
 
+Further Reading
+- EMERGENT_COGNITION.md — research framing of agency, drift, and coherence
+- QUEEN_NEURAL_IMPLEMENTATION.md — Queen architecture and learning pathways
+- QUEEN_WISDOM_INTEGRATION.md — wisdom gating, veto logic, and safety
+- QUEEN_UNDERSTANDS_LOVE.md — benevolence motifs and long-horizon incentives
+- prime_sentinel_decree.py — code-level mission alignment primitives
+
 ## Architecture Overview
 
 ```
@@ -188,6 +195,13 @@ python micro_profit_labyrinth.py --dry-run
 - **Min-qty pre-filter**: Rejects trades below exchange minimums before execution
 - **Dynamic blocking**: Repeatedly failing paths get temporarily blocked
 - **Rate & Cadence**: Animal scanners automatically handle HTTP 429 rate limits with backoff; aggressive scanning may trigger API pauses.
+
+### Moral Guardrails
+- Human-in-the-loop for threshold changes (profit gates, risk caps, leverage).
+- Queen veto path active by default; emotional/contextual risk can cancel trades.
+- Capital preservation before growth; daily loss cap and per-trade SL required.
+- No market manipulation, unauthorized access, or unsafe automation behaviors.
+- Immutable audit logs for decisions, fills, rejects, and configuration changes.
 
 ## License
 
