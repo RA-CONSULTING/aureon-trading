@@ -280,6 +280,9 @@ class AlpacaScannerBridge:
             'start_time': None,
         }
         
+        # Volume tracking (from fee tracker)
+        self._current_volume_30d: float = 0.0
+        
         logger.info("🦙🌊 Alpaca Scanner Bridge initialized")
         logger.info(f"   📡 SSE Streaming: {'ENABLED' if enable_sse else 'DISABLED'}")
         logger.info(f"   📈 Stock Scanning: {'ENABLED' if enable_stocks else 'DISABLED'}")
@@ -513,7 +516,8 @@ class AlpacaScannerBridge:
             try:
                 tier_info = self.fee_tracker.get_fee_tier()
                 tier_num = tier_info.tier
-                logger.info(f"💰 Fee tier updated: Tier {tier_num} (30d vol: ${self.fee_tracker.volume_30d:,.2f})")
+                self._current_volume_30d = getattr(self.fee_tracker, 'volume_30d', 0.0)
+                logger.info(f"💰 Fee tier updated: Tier {tier_num} (30d vol: ${self._current_volume_30d:,.2f})")
             except Exception as e:
                 logger.warning(f"⚠️ Could not get fee tier: {e}")
         
@@ -525,6 +529,13 @@ class AlpacaScannerBridge:
         logger.info(f"      HOT (1m): >{self._cost_thresholds.tier_1_hot_threshold:.3f}%")
         logger.info(f"      STRONG (5m): >{self._cost_thresholds.tier_2_strong_threshold:.3f}%")
         logger.info(f"      VALID: >{self._cost_thresholds.tier_3_valid_threshold:.3f}%")
+        
+        return self._cost_thresholds
+    
+    @property
+    def current_volume_30d(self) -> float:
+        """Get current 30-day trading volume."""
+        return self._current_volume_30d
         
         return self._cost_thresholds
     
