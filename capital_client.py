@@ -3,6 +3,7 @@ import logging
 import requests
 import time
 from typing import Dict, Any, List, Optional
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # Load environment variables from .env file
 try:
@@ -294,10 +295,56 @@ class CapitalClient:
             ask = float(snap.get('offer') or market.get('offer') or market.get('snapshot', {}).get('offer') or 0)
             price = (bid + ask) / 2 if bid and ask else (bid or ask or float(snap.get('midOpen', 0) or 0))
 
-            return {'price': price, 'bid': bid, 'ask': ask, 'epic': epic}
+            change_pct = float(snap.get('percentageChange', 0) or 0)
+            return {
+                'price': price,
+                'bid': bid,
+                'ask': ask,
+                'epic': epic,
+                'change_pct': change_pct,
+            }
         except Exception as e:
             logger.error(f"Error fetching Capital.com ticker for {symbol}: {e}")
             return {'price': 0.0, 'bid': 0.0, 'ask': 0.0}
+
+    def get_tickers_for_symbols(self, symbols: List[str], *, max_workers: int = 8) -> Dict[str, Dict[str, float]]:
+        """Fetch tickers for many symbols concurrently (best-effort).
+
+        Returns: {symbol: {price,bid,ask,epic,change_pct}}
+        """
+        if not self.enabled:
+            return {}
+        if not symbols:
+            return {}
+
+        # Deduplicate while preserving a stable order
+        seen = set()
+        unique_symbols: List[str] = []
+        for s in symbols:
+            if not s:
+                continue
+            su = str(s).strip().upper()
+            if not su or su in seen:
+                continue
+            seen.add(su)
+            unique_symbols.append(su)
+
+        results: Dict[str, Dict[str, float]] = {}
+        max_workers = max(1, int(max_workers))
+
+        def _fetch(sym: str) -> Dict[str, float]:
+            return self.get_ticker(sym)
+
+        with ThreadPoolExecutor(max_workers=max_workers) as ex:
+            future_map = {ex.submit(_fetch, sym): sym for sym in unique_symbols}
+            for fut in as_completed(future_map):
+                sym = future_map[fut]
+                try:
+                    results[sym] = fut.result() or {'price': 0.0, 'bid': 0.0, 'ask': 0.0}
+                except Exception:
+                    results[sym] = {'price': 0.0, 'bid': 0.0, 'ask': 0.0}
+
+        return results
 
     def get_24h_tickers(self) -> List[Dict[str, Any]]:
         """
@@ -330,7 +377,11 @@ class CapitalClient:
                     change_pct = float(snapshot.get('percentageChange', 0) or 0)
 
                 tickers.append({
+                    # Keep 'symbol' as epic for backward-compat with existing code.
                     'symbol': epic,
+                    'epic': epic,
+                    # Where available, 'ticker' is the underlying instrument symbol (e.g., AAPL).
+                    'ticker': m.get('symbol') or '',
                     'instrumentName': m.get('instrumentName'),
                     'price': price,
                     'bid': bid,
@@ -343,6 +394,25 @@ class CapitalClient:
             logger.error(f"Error fetching Capital.com tickers: {e}")
 
         return tickers
+
+    def get_stock_snapshot_watchlist(self, symbols: List[str], *, max_workers: int = 8) -> List[Dict[str, Any]]:
+        """Convenience: returns a ticker-like list for a list of stock symbols."""
+        tmap = self.get_tickers_for_symbols(symbols, max_workers=max_workers)
+        out: List[Dict[str, Any]] = []
+        for sym, t in tmap.items():
+            out.append({
+                'symbol': t.get('epic', sym),
+                'epic': t.get('epic', sym),
+                'ticker': sym,
+                'instrumentName': '',
+                'price': float(t.get('price', 0) or 0),
+                'bid': float(t.get('bid', 0) or 0),
+                'ask': float(t.get('ask', 0) or 0),
+                'priceChangePercent': float(t.get('change_pct', 0) or 0),
+                'volume': 0.0,
+                'source': 'capital'
+            })
+        return out
 
     def place_market_order(self, symbol: str, side: str, quantity: float) -> Dict[str, Any]:
         """Place a market order."""

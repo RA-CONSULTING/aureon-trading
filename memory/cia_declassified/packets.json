@@ -212,10 +212,10 @@
     }
   ],
   "stats": {
-    "documents_processed": 2130,
+    "documents_processed": 2150,
     "packets_created": 10,
     "total_words": 235,
     "high_relevance_count": 7,
-    "last_sync": "2026-01-14T05:32:23.190438"
+    "last_sync": "2026-01-14T05:46:02.066996"
   }
 }

@@ -7678,55 +7678,216 @@ class MicroProfitLabyrinth:
         
         return opportunities
     
+    def _read_binance_ws_cache_for_alpaca(self) -> Optional[Dict[str, Any]]:
+        """Read Binance WS cache if fresh (for Alpaca heavy lifting)."""
+        try:
+            ws_cache_path = os.getenv("WS_PRICE_CACHE_PATH", "ws_cache/ws_prices.json").strip()
+            ws_cache_max_age_s = float(os.getenv("WS_PRICE_CACHE_MAX_AGE_S", "10"))
+            if not ws_cache_path:
+                return None
+            p = Path(ws_cache_path)
+            if not p.exists():
+                return None
+            raw = p.read_text(encoding="utf-8")
+            payload = json.loads(raw) if raw else {}
+            ts = float(payload.get("generated_at", 0) or 0)
+            if ts > 0 and (time.time() - ts) <= ws_cache_max_age_s:
+                return payload
+        except Exception:
+            pass
+        return None
+
     async def _ocean_scan_alpaca(self, cash_info: Dict) -> List['MicroOpportunity']:
-        """Scan ALL Alpaca symbols for opportunities."""
+        """
+        🦙🟡 Scan ALL Alpaca symbols using BINANCE for heavy lifting!
+        
+        Pattern:
+        1. Use FREE Binance WebSocket data (ws_cache) for full-market scanning
+        2. Find opportunities that exist on Alpaca
+        3. Only hit Alpaca API to VALIDATE the top candidates
+        4. Execute on Alpaca
+        
+        This keeps Alpaca API usage minimal while scanning the entire market!
+        """
         opportunities = []
         cash_amount = cash_info.get('amount', 0)
         
         if cash_amount < 1:  # Alpaca has low minimums
             return opportunities
         
-        # Get all tradeable crypto symbols
+        # Get Alpaca tradeable symbols
         try:
             if hasattr(self.alpaca, 'get_tradable_crypto_symbols'):
                 symbols = self.alpaca.get_tradable_crypto_symbols() or []
             else:
                 symbols = list(self.alpaca_pairs.keys())
-        except:
+        except Exception:
             symbols = list(self.alpaca_pairs.keys()) if self.alpaca_pairs else []
         
-        print(f"   🦙 Ocean scanning {len(symbols)} Alpaca symbols...")
+        # Build set of Alpaca-tradeable bases (BTC, ETH, etc)
+        alpaca_bases = set()
+        for s in symbols:
+            if '/' in s:
+                base = s.split('/')[0].upper()
+            else:
+                base = s.replace('USD', '').replace('USDT', '').replace('USDC', '').upper()
+            if base:
+                alpaca_bases.add(base)
+        for s in (self.alpaca_pairs or {}).keys():
+            if '/' in s:
+                base = s.split('/')[0].upper()
+            else:
+                base = s.replace('USD', '').replace('USDT', '').replace('USDC', '').upper()
+            if base:
+                alpaca_bases.add(base)
         
-        # Use momentum data to find rising coins
-        # 🌐 FULL MARKET: Scan 3000 rising (was 100) for 100% Alpaca coverage!
-        rising_coins = self.get_strongest_rising(exclude={'USD', 'USDT', 'USDC'}, limit=3000)
+        # ════════════════════════════════════════════════════════════════════════
+        # 🟡 BINANCE HEAVY LIFTING - Use WS cache for full-market data!
+        # ════════════════════════════════════════════════════════════════════════
+        binance_cache = self._read_binance_ws_cache_for_alpaca()
         
-        for coin, momentum in rising_coins[:2000]:  # 🌐 FULL MARKET: Top 2000 rising
-            if momentum < 0.01:
-                continue
+        candidates = []
+        
+        if binance_cache:
+            # Use Binance data for scanning (FREE and comprehensive!)
+            ticker_cache = binance_cache.get('ticker_cache', {})
+            prices_from_cache = binance_cache.get('prices', {})
+            
+            print(f"   🟡🦙 BINANCE→ALPACA: Using Binance WS cache ({len(ticker_cache)} tickers) for heavy lifting!")
+            
+            for key, ticker in ticker_cache.items():
+                if not isinstance(ticker, dict):
+                    continue
+                base = ticker.get('base', '').upper()
+                if not base or base not in alpaca_bases:
+                    continue  # Only consider Alpaca-tradeable
+                
+                price = float(ticker.get('price', 0) or 0)
+                change_24h = float(ticker.get('change24h', 0) or 0)
+                volume = float(ticker.get('volume', 0) or 0)
+                
+                if price <= 0:
+                    continue
+                
+                # Use Binance 24h change as momentum proxy
+                candidates.append({
+                    'base': base,
+                    'price': price,
+                    'change_pct': change_24h,
+                    'volume': volume,
+                    'source': 'binance_ws',
+                })
+        
+        # Fallback: try Binance REST if no cache
+        if not candidates and self.binance:
+            try:
+                print(f"   🟡🦙 BINANCE→ALPACA: WS cache unavailable, using Binance REST...")
+                binance_tickers = self.binance.get_24h_tickers() if hasattr(self.binance, 'get_24h_tickers') else []
+                for t in binance_tickers or []:
+                    symbol = str(t.get('symbol', '')).upper()
+                    # Extract base
+                    base = None
+                    for quote in ['USDT', 'USDC', 'USD', 'BUSD']:
+                        if symbol.endswith(quote):
+                            base = symbol[:-len(quote)]
+                            break
+                    if not base or base not in alpaca_bases:
+                        continue
+                    
+                    price = float(t.get('price', t.get('lastPrice', 0)) or 0)
+                    change_pct = float(t.get('priceChangePercent', 0) or 0)
+                    volume = float(t.get('volume', t.get('quoteVolume', 0)) or 0)
+                    
+                    if price <= 0:
+                        continue
+                    
+                    candidates.append({
+                        'base': base,
+                        'price': price,
+                        'change_pct': change_pct,
+                        'volume': volume,
+                        'source': 'binance_rest',
+                    })
+            except Exception as e:
+                logger.debug(f"Binance REST fallback error: {e}")
+        
+        # Second fallback: use existing momentum data
+        if not candidates:
+            print(f"   🦙 Ocean scanning {len(symbols)} Alpaca symbols (no Binance data)...")
+            rising_coins = self.get_strongest_rising(exclude={'USD', 'USDT', 'USDC'}, limit=3000)
+            for coin, momentum in rising_coins[:2000]:
+                if momentum < 0.01 or coin not in alpaca_bases:
+                    continue
+                coin_price = self.prices.get(coin, 0)
+                if coin_price > 0:
+                    candidates.append({
+                        'base': coin,
+                        'price': coin_price,
+                        'change_pct': momentum * 5,  # Rough conversion
+                        'volume': 0,
+                        'source': 'momentum',
+                    })
+        
+        # ════════════════════════════════════════════════════════════════════════
+        # 📊 SORT & SCORE CANDIDATES
+        # ════════════════════════════════════════════════════════════════════════
+        candidates.sort(key=lambda x: abs(x.get('change_pct', 0)), reverse=True)
+        
+        # ════════════════════════════════════════════════════════════════════════
+        # ✅ ALPACA VALIDATION - Only for TOP candidates (keeps API usage minimal!)
+        # ════════════════════════════════════════════════════════════════════════
+        validate_top_n = int(os.getenv('AUREON_ALPACA_CRYPTO_VALIDATE_TOP_N', '30'))
+        validated_count = 0
+        
+        for cand in candidates[:max(100, validate_top_n * 3)]:
+            base = cand['base']
+            price = cand['price']
+            change_pct = cand.get('change_pct', 0)
             
             # Check if tradeable on Alpaca
-            pair_symbol = f"{coin}/USD"
-            if pair_symbol not in self.alpaca_pairs and f"{coin}USD" not in self.alpaca_pairs:
-                # Try alternate formats
-                found = False
-                for s in symbols:
-                    if coin.upper() in s.upper():
-                        found = True
-                        break
+            pair_symbol = f"{base}/USD"
+            if pair_symbol not in self.alpaca_pairs and f"{base}USD" not in self.alpaca_pairs:
+                found = any(base.upper() in s.upper() for s in symbols)
                 if not found:
                     continue
             
-            coin_price = self.prices.get(coin, 0)
-            if not coin_price:
-                continue
+            # Validate top N with Alpaca quote (others use Binance price)
+            if validated_count < validate_top_n and self.alpaca:
+                try:
+                    if hasattr(self.alpaca, 'get_latest_quotes'):
+                        quotes = self.alpaca.get_latest_quotes([pair_symbol])
+                        if quotes and pair_symbol in quotes:
+                            q = quotes[pair_symbol]
+                            bid = float(getattr(q, 'bid_price', 0) or 0)
+                            ask = float(getattr(q, 'ask_price', 0) or 0)
+                            if bid > 0 and ask > 0:
+                                price = (bid + ask) / 2
+                                validated_count += 1
+                    elif hasattr(self.alpaca, 'get_crypto_quote'):
+                        q = self.alpaca.get_crypto_quote(pair_symbol) or {}
+                        bid = float(q.get('bp', q.get('bid', 0)) or 0)
+                        ask = float(q.get('ap', q.get('ask', 0)) or 0)
+                        if bid > 0 and ask > 0:
+                            price = (bid + ask) / 2
+                            validated_count += 1
+                except Exception:
+                    pass  # Use Binance price as fallback
             
-            # Calculate potential
+            # Update prices dict with best available price
+            if base not in self.prices or price > 0:
+                self.prices[base] = price
+            
+            # Convert 24h change to momentum-like score
+            momentum = abs(change_pct) / 100 / 24 / 60  # Rough %/min
+            if momentum < 0.001:
+                continue  # Skip if effectively no momentum
+            
+            # Calculate potential profit
             hold_minutes = 5
             expected_gain_pct = momentum * hold_minutes / 100
             expected_gain_usd = cash_amount * expected_gain_pct
             
-            # Alpaca fees are lower (~0.15%)
+            # Alpaca fees (~0.15%)
             fee_pct = 0.0015
             total_fees = cash_amount * fee_pct * 2
             net_profit = expected_gain_usd - total_fees
@@ -7734,9 +7895,9 @@ class MicroProfitLabyrinth:
             if net_profit > 0.01:
                 opp = MicroOpportunity(
                     from_asset='USD',
-                    to_asset=coin,
+                    to_asset=base,
                     from_amount=cash_amount,
-                    to_amount=cash_amount / coin_price,
+                    to_amount=cash_amount / price if price > 0 else 0,
                     expected_pnl_usd=net_profit,
                     combined_score=momentum / 10,
                     opportunity_type='ocean_momentum',
@@ -7744,7 +7905,10 @@ class MicroProfitLabyrinth:
                 )
                 opp.momentum_score = momentum
                 opp.ocean_mode = True
+                opp.binance_sourced = (cand.get('source', '') in ('binance_ws', 'binance_rest'))
                 opportunities.append(opp)
+        
+        print(f"   🟡🦙 Binance→Alpaca scan: {len(candidates)} candidates, {validated_count} Alpaca-validated, {len(opportunities)} opportunities")
         
         return opportunities
 

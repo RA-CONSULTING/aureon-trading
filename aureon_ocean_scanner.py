@@ -49,6 +49,12 @@ from datetime import datetime, timedelta
 import json
 import logging
 
+# Optional Capital.com stock feed (off by default)
+try:
+    from capital_client import CapitalClient
+except Exception:
+    CapitalClient = None
+
 # Sacred constants
 PHI = (1 + math.sqrt(5)) / 2  # 1.618 Golden ratio
 LOVE_FREQUENCY = 528
@@ -118,6 +124,25 @@ class OceanScanner:
     
     def __init__(self, exchanges: Dict = None):
         self.exchanges = exchanges or {}
+
+        # Optional stock scanning configuration
+        self.scan_alpaca_stocks = os.getenv('AUREON_SCAN_ALPACA_STOCKS', '0') == '1'
+        self.stock_data_provider = os.getenv('AUREON_STOCK_DATA_PROVIDER', 'capital').lower().strip() or 'capital'
+        self.capital_stock_cache_path = os.getenv('CAPITAL_STOCK_CACHE_PATH', 'ws_cache/capital_stocks.json')
+        self.capital_stock_cache_max_age_s = float(os.getenv('CAPITAL_STOCK_CACHE_MAX_AGE_S', '10'))
+        self.stock_validate_top_n = int(os.getenv('AUREON_STOCK_VALIDATE_TOP_N', '20'))
+        self.capital_client = None
+
+        # ═══════════════════════════════════════════════════════════════════
+        # 🟡 BINANCE → ALPACA CRYPTO SCANNING (use free Binance WS to scan,
+        #    then validate/execute on Alpaca; keeps Alpaca API usage minimal)
+        # ═══════════════════════════════════════════════════════════════════
+        self.scan_alpaca_crypto_via_binance = os.getenv('AUREON_SCAN_ALPACA_CRYPTO_VIA_BINANCE', '1') == '1'
+        self.binance_ws_cache_path = os.getenv('WS_PRICE_CACHE_PATH', 'ws_cache/ws_prices.json')
+        self.binance_ws_cache_max_age_s = float(os.getenv('WS_PRICE_CACHE_MAX_AGE_S', '10'))
+        self.alpaca_crypto_validate_top_n = int(os.getenv('AUREON_ALPACA_CRYPTO_VALIDATE_TOP_N', '30'))
+        # Mapping: Alpaca crypto base (BTC) -> Binance symbol (BTCUSDT)
+        self._alpaca_to_binance_map: Dict[str, str] = {}
         
         # Universe tracking
         self.kraken_universe: Set[str] = set()
@@ -274,13 +299,35 @@ class OceanScanner:
             )
             opportunities.extend(kraken_opps)
         
-        if self.alpaca_crypto_universe and 'alpaca' in self.exchanges:
+        # ═══════════════════════════════════════════════════════════════════
+        # 🟡 BINANCE-POWERED ALPACA CRYPTO SCANNING (heavy lifting via free WS)
+        # ═══════════════════════════════════════════════════════════════════
+        if (
+            self.scan_alpaca_crypto_via_binance
+            and self.alpaca_crypto_universe
+            and 'alpaca' in self.exchanges
+        ):
+            binance_alpaca_opps = await self._scan_alpaca_crypto_via_binance(limit=limit // 2)
+            opportunities.extend(binance_alpaca_opps)
+        elif self.alpaca_crypto_universe and 'alpaca' in self.exchanges:
+            # Fallback: direct Alpaca scan (original behavior)
             alpaca_opps = await self._scan_exchange_universe(
                 'alpaca',
                 self.alpaca_crypto_universe,
                 limit=limit // 4
             )
             opportunities.extend(alpaca_opps)
+
+        # Optional: scan Alpaca stock universe using Capital.com as market-data provider.
+        # This keeps Alpaca API usage low by only validating the best candidates.
+        if (
+            self.scan_alpaca_stocks
+            and self.stock_data_provider == 'capital'
+            and self.alpaca_stock_universe
+            and 'alpaca' in self.exchanges
+        ):
+            stock_opps = await self._scan_alpaca_stocks_via_capital(limit=limit // 2)
+            opportunities.extend(stock_opps)
         
         # Sort by ocean score
         opportunities.sort(key=lambda x: x.ocean_score, reverse=True)
@@ -295,6 +342,284 @@ class OceanScanner:
         print(f"\n🎯 OCEAN SCAN COMPLETE in {scan_duration:.2f}s")
         print(f"   Found {len(opportunities)} opportunities from {self.total_symbols_scanned:,} symbols")
         
+        return opportunities[:limit]
+
+    def _read_binance_ws_cache(self) -> Optional[Dict[str, Any]]:
+        """Read local Binance WS cache if present and fresh."""
+        path = self.binance_ws_cache_path
+        try:
+            if not path or not os.path.exists(path):
+                return None
+            with open(path, 'r', encoding='utf-8') as f:
+                data = json.load(f) or {}
+            generated_at = float(data.get('generated_at', 0) or 0)
+            if not generated_at:
+                return None
+            if (time.time() - generated_at) > self.binance_ws_cache_max_age_s:
+                return None
+            return data
+        except Exception:
+            return None
+
+    def _build_alpaca_binance_mapping(self) -> None:
+        """Build mapping from Alpaca crypto bases (BTC) to Binance symbols (BTCUSDT)."""
+        if self._alpaca_to_binance_map:
+            return  # Already built
+        # Alpaca crypto universe contains symbols like 'BTC/USD', 'ETH/USD'
+        # Binance has pairs like 'BTCUSDT', 'ETHUSDT'
+        quote_priority = ['USDT', 'USDC', 'BUSD', 'USD']
+        for alpaca_sym in self.alpaca_crypto_universe:
+            # Extract base: 'BTC/USD' -> 'BTC'
+            base = alpaca_sym.split('/')[0].upper() if '/' in alpaca_sym else alpaca_sym.upper()
+            if not base:
+                continue
+            # Try each quote
+            for quote in quote_priority:
+                binance_sym = f"{base}{quote}"
+                if binance_sym in self.binance_universe:
+                    self._alpaca_to_binance_map[base] = binance_sym
+                    break
+            # Also store without exchange check (we'll verify against cache later)
+            if base not in self._alpaca_to_binance_map:
+                self._alpaca_to_binance_map[base] = f"{base}USDT"
+
+    async def _scan_alpaca_crypto_via_binance(self, limit: int = 50) -> List[OceanOpportunity]:
+        """
+        🟡 BINANCE → ALPACA CRYPTO SCANNING
+        
+        Use FREE Binance WebSocket cache for heavy lifting market scanning.
+        Only validate top N candidates via Alpaca API.
+        Execute trades on Alpaca.
+        """
+        opportunities: List[OceanOpportunity] = []
+        
+        # Build mapping if needed
+        self._build_alpaca_binance_mapping()
+        
+        # 1) Read Binance WS cache (produced by ws_market_data_feeder.py)
+        cache = self._read_binance_ws_cache()
+        if not cache:
+            # Fallback: try direct Binance REST call
+            binance = self.exchanges.get('binance')
+            if binance and hasattr(binance, 'get_24h_tickers'):
+                try:
+                    tickers = binance.get_24h_tickers()
+                    ticker_cache = {}
+                    for t in tickers or []:
+                        sym = str(t.get('symbol', '')).upper()
+                        if sym:
+                            ticker_cache[sym] = {
+                                'price': float(t.get('price', t.get('lastPrice', 0)) or 0),
+                                'change24h': float(t.get('priceChangePercent', 0) or 0),
+                                'volume': float(t.get('volume', t.get('quoteVolume', 0)) or 0),
+                                'base': sym[:-4] if sym.endswith('USDT') else sym[:-3] if sym.endswith('USD') else sym,
+                                'quote': 'USDT' if sym.endswith('USDT') else 'USD' if sym.endswith('USD') else '',
+                                'exchange': 'binance',
+                            }
+                    cache = {'ticker_cache': ticker_cache, 'prices': {}}
+                except Exception:
+                    return opportunities
+            else:
+                return opportunities
+        
+        ticker_cache = cache.get('ticker_cache', {})
+        prices = cache.get('prices', {})
+        
+        # 2) Find Alpaca-tradeable cryptos in Binance data
+        candidates: List[tuple] = []
+        for base, binance_sym in self._alpaca_to_binance_map.items():
+            # Try multiple keys (with and without 'binance:' prefix)
+            ticker = ticker_cache.get(binance_sym) or ticker_cache.get(f"binance:{binance_sym}")
+            price = prices.get(base, 0)
+            
+            if not ticker and not price:
+                continue
+            
+            t_price = float(ticker.get('price', 0) or 0) if ticker else price
+            t_change = float(ticker.get('change24h', 0) or 0) if ticker else 0
+            t_volume = float(ticker.get('volume', 0) or 0) if ticker else 0
+            
+            if t_price <= 0:
+                continue
+            
+            candidates.append((base, {
+                'price': t_price,
+                'change_pct': t_change,
+                'volume': t_volume,
+                'binance_sym': binance_sym,
+            }))
+        
+        # 3) Sort by absolute 24h change (most active first)
+        candidates.sort(key=lambda x: abs(x[1].get('change_pct', 0)), reverse=True)
+        
+        # 4) Analyze and score
+        for base, data in candidates[:max(50, limit * 3)]:
+            price = data['price']
+            change_pct = data['change_pct']
+            volume = data['volume']
+            
+            # Reconstruct open price from change %
+            open_price = price / (1 + (change_pct / 100.0)) if (1 + (change_pct / 100.0)) != 0 else price
+            
+            ticker_data = {
+                'last': price,
+                'open': open_price,
+                'volume': volume,
+                'change_pct': change_pct,
+            }
+            
+            opp = self._analyze_symbol(base, ticker_data, 'alpaca_crypto_via_binance')
+            if opp:
+                opp.reason = f"Binance scan: {change_pct:+.1f}% | {opp.reason}" if opp.reason else f"Binance scan: {change_pct:+.1f}%"
+                opportunities.append(opp)
+        
+        # 5) Sort by score
+        opportunities.sort(key=lambda x: x.ocean_score, reverse=True)
+        
+        # 6) Validate TOP N via Alpaca API (keeps Alpaca usage minimal)
+        if self.alpaca_crypto_validate_top_n > 0:
+            to_validate = opportunities[:self.alpaca_crypto_validate_top_n]
+            alpaca = self.exchanges.get('alpaca')
+            if alpaca:
+                for opp in to_validate:
+                    try:
+                        # Try get_latest_quotes for crypto
+                        alpaca_sym = f"{opp.symbol}/USD"
+                        if hasattr(alpaca, 'get_latest_quotes'):
+                            quotes = alpaca.get_latest_quotes([alpaca_sym])
+                            if quotes and alpaca_sym in quotes:
+                                q = quotes[alpaca_sym]
+                                bid = float(getattr(q, 'bid_price', 0) or 0)
+                                ask = float(getattr(q, 'ask_price', 0) or 0)
+                                if bid > 0 and ask > 0:
+                                    opp.current_price = (bid + ask) / 2
+                                    opp.reason = f"{opp.reason} | Alpaca validated"
+                        elif hasattr(alpaca, 'get_crypto_quote'):
+                            q = alpaca.get_crypto_quote(alpaca_sym) or {}
+                            bid = float(q.get('bp', q.get('bid', 0)) or 0)
+                            ask = float(q.get('ap', q.get('ask', 0)) or 0)
+                            if bid > 0 and ask > 0:
+                                opp.current_price = (bid + ask) / 2
+                                opp.reason = f"{opp.reason} | Alpaca validated"
+                    except Exception:
+                        continue
+        
+        opportunities.sort(key=lambda x: x.ocean_score, reverse=True)
+        return opportunities[:limit]
+
+    def _read_capital_stock_cache(self) -> Optional[Dict[str, Any]]:
+        """Read local Capital stock cache if present and fresh."""
+        path = self.capital_stock_cache_path
+        try:
+            if not path or not os.path.exists(path):
+                return None
+            with open(path, 'r', encoding='utf-8') as f:
+                data = json.load(f) or {}
+            generated_at = float(data.get('generated_at', 0) or 0)
+            if not generated_at:
+                return None
+            if (time.time() - generated_at) > self.capital_stock_cache_max_age_s:
+                return None
+            return data
+        except Exception:
+            return None
+
+    def _ensure_capital_client(self) -> Optional[Any]:
+        if self.capital_client is not None:
+            return self.capital_client
+        if CapitalClient is None:
+            self.capital_client = None
+            return None
+        try:
+            client = CapitalClient()
+            self.capital_client = client if getattr(client, 'enabled', False) else None
+        except Exception:
+            self.capital_client = None
+        return self.capital_client
+
+    async def _scan_alpaca_stocks_via_capital(self, limit: int = 50) -> List[OceanOpportunity]:
+        """Scan a subset of Alpaca-tradeable stocks using Capital.com snapshots."""
+        opportunities: List[OceanOpportunity] = []
+
+        # 1) Prefer cache (produced by capital_stock_cache_feeder.py)
+        cache = self._read_capital_stock_cache()
+        ticker_map = (cache or {}).get('tickers', {}) if isinstance(cache, dict) else {}
+
+        # 2) If no cache, fall back to a lightweight Capital top-list pull.
+        if not ticker_map:
+            cap = self._ensure_capital_client()
+            if not cap:
+                return opportunities
+            try:
+                tickers = cap.get_24h_tickers()
+                for t in tickers or []:
+                    ticker = (t.get('ticker') or '').strip().upper()
+                    if not ticker:
+                        continue
+                    ticker_map[ticker] = {
+                        'price': float(t.get('price', 0) or 0),
+                        'bid': float(t.get('bid', 0) or 0),
+                        'ask': float(t.get('ask', 0) or 0),
+                        'change_pct': float(t.get('priceChangePercent', 0) or 0),
+                        'epic': t.get('epic') or t.get('symbol') or '',
+                    }
+            except Exception:
+                return opportunities
+
+        # Only consider symbols that Alpaca says are tradable.
+        candidates = []
+        for ticker, t in ticker_map.items():
+            if ticker in self.alpaca_stock_universe:
+                candidates.append((ticker, t))
+
+        # Sort by absolute 24h move (best-effort proxy).
+        candidates.sort(key=lambda x: abs(float(x[1].get('change_pct', 0) or 0)), reverse=True)
+
+        # Build pseudo-tickers for analysis.
+        tickers_for_analyze: Dict[str, Dict[str, Any]] = {}
+        for ticker, t in candidates[: max(10, limit * 5)]:
+            price = float(t.get('price', 0) or 0)
+            change_pct = float(t.get('change_pct', 0) or 0)
+            if price <= 0:
+                continue
+            # Reconstruct an approximate open from % change (so momentum scoring works).
+            open_price = price / (1 + (change_pct / 100.0)) if (1 + (change_pct / 100.0)) != 0 else price
+            tickers_for_analyze[ticker] = {
+                'last': price,
+                'open': open_price,
+                'bid': float(t.get('bid', 0) or 0),
+                'ask': float(t.get('ask', 0) or 0),
+                'change_pct': change_pct,
+                'epic': t.get('epic') or '',
+            }
+
+        for symbol, ticker in tickers_for_analyze.items():
+            try:
+                opp = self._analyze_symbol(symbol, ticker, 'alpaca_stocks')
+                if opp:
+                    opp.reason = (opp.reason + f" | Capital scan") if opp.reason else "Capital scan"
+                    opportunities.append(opp)
+            except Exception:
+                continue
+
+        # Validate only top N with Alpaca quotes (keeps Alpaca usage low).
+        opportunities.sort(key=lambda x: x.ocean_score, reverse=True)
+        if self.stock_validate_top_n > 0:
+            to_validate = opportunities[: self.stock_validate_top_n]
+            alpaca = self.exchanges.get('alpaca')
+            if alpaca and hasattr(alpaca, 'get_last_quote'):
+                for opp in to_validate:
+                    try:
+                        q = alpaca.get_last_quote(opp.symbol) or {}
+                        bid = float(q.get('bp', 0) or 0)
+                        ask = float(q.get('ap', 0) or 0)
+                        if bid > 0 and ask > 0:
+                            opp.current_price = (bid + ask) / 2
+                            opp.reason = (opp.reason + " | Alpaca validated") if opp.reason else "Alpaca validated"
+                    except Exception:
+                        continue
+
+        opportunities.sort(key=lambda x: x.ocean_score, reverse=True)
         return opportunities[:limit]
     
     async def _scan_exchange_universe(
@@ -348,7 +673,13 @@ class OceanScanner:
         volume = ticker.get('volume', ticker.get('v', 0))
         
         # 24h momentum
-        if open_price and open_price > 0:
+        change_pct = ticker.get('priceChangePercent', ticker.get('change_pct', None))
+        if change_pct is not None:
+            try:
+                momentum_24h = float(change_pct)
+            except Exception:
+                momentum_24h = 0
+        elif open_price and open_price > 0:
             momentum_24h = ((price - open_price) / open_price) * 100
         else:
             momentum_24h = 0
