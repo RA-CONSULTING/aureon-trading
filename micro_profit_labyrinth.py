@@ -5795,15 +5795,16 @@ class MicroProfitLabyrinth:
                 momentum_count += 1
         
         # Show top movers if we have momentum data
+        # 🫒 GREEN OLIVE EXPANSION: Show top 10 instead of 3 for FULL market picture
         if len(self.asset_momentum) > 10:
-            rising = self.get_strongest_rising(limit=3)
-            falling = self.get_weakest_falling(limit=3)
+            rising = self.get_strongest_rising(limit=10)
+            falling = self.get_weakest_falling(limit=10)
             if rising:
-                top_rising = ', '.join([f"{a}:{m*100:+.2f}%/min" for a, m in rising[:3]])
-                print(f"   🌊 Rising: {top_rising}")
+                top_rising = ', '.join([f"{a}:{m*100:+.2f}%/min" for a, m in rising[:10]])
+                print(f"   🌊 Rising (Top 10): {top_rising}")
             if falling:
-                top_falling = ', '.join([f"{a}:{m*100:+.2f}%/min" for a, m in falling[:3]])
-                print(f"   📉 Falling: {top_falling}")
+                top_falling = ', '.join([f"{a}:{m*100:+.2f}%/min" for a, m in falling[:10]])
+                print(f"   📉 Falling (Top 10): {top_falling}")
         
         print(f"   📊 Total: {len(prices)} unique assets, {len(ticker_cache)} tickers, {momentum_count} momentum tracked")
         print(f"   🐍 Medusa stablecoins: USD, USDT, USDC, ZUSD, TUSD, DAI injected")
@@ -10415,7 +10416,8 @@ if __name__ == "__main__":
         """Get current momentum for asset (%/minute)"""
         return self.asset_momentum.get(asset, 0.0)
     
-    def get_strongest_rising(self, exclude: set = None, limit: int = 10) -> List[Tuple[str, float]]:
+    def get_strongest_rising(self, exclude: set = None, limit: int = 50) -> List[Tuple[str, float]]:
+        """🫒 GREEN OLIVE EXPANSION: Default limit increased from 10→50 for MAXIMUM market coverage"""
         """Get assets with strongest RISING momentum - for wave jumping"""
         exclude = exclude or set()
         items = [(a, m) for a, m in self.asset_momentum.items() 
@@ -11205,23 +11207,27 @@ if __name__ == "__main__":
         
         # 🦁 LION HUNT MODE - When holding stablecoins, HUNT rising coins!
         # "The lion scans his pride and hunts" - Gary Leckey
+        # 🫒 GREEN OLIVE EXPANSION: 3x MORE coverage (20→60 targets)
         lion_targets = []  # Priority targets from momentum
         if is_stablecoin_source:
             # Get TOP rising coins - these are our HUNT targets!
-            rising_coins = self.get_strongest_rising(exclude={from_asset}, limit=20)
+            # 🫒 EXPANDED: Scan 60 rising coins (was 20) for MAXIMUM market coverage
+            rising_coins = self.get_strongest_rising(exclude={from_asset}, limit=60)
             # 🔬 DEBUG: Check if GUN is in rising_coins for Kraken USD
             if source_exchange == 'kraken' and from_asset == 'USD':
-                top_3_rising = [(c, m) for c, m in rising_coins if m > 10][:5]
-                if top_3_rising:
-                    print(f"   🔬 TOP RISING (>10%/min): {[(c, f'{m:.1f}%') for c, m in top_3_rising]}")
+                # 🫒 GREEN OLIVE: Show top 10 instead of 3-5 for better market visibility
+                top_10_rising = [(c, m) for c, m in rising_coins if m > 5][:10]
+                if top_10_rising:
+                    print(f"   🔬 TOP 10 RISING (>5%/min): {[(c, f'{m:.1f}%') for c, m in top_10_rising]}")
                 gun_mom = self.asset_momentum.get('GUN', 0)
                 if gun_mom > 0:
                     print(f"   🔬 GUN momentum in asset_momentum: {gun_mom:.1f}%/min")
             for coin, momentum in rising_coins:
-                if momentum > 0.001:  # >0.1%/min momentum
+                # 🫒 GREEN OLIVE: Lower threshold 0.1%→0.05% to catch MORE early movers
+                if momentum > 0.0005:  # >0.05%/min momentum (was 0.1%)
                     lion_targets.append(coin)
             if lion_targets:
-                print(f"   🦁 LION HUNT: {from_asset} → Hunting {len(lion_targets)} rising coins")
+                print(f"   🦁 LION HUNT: {from_asset} → Hunting {len(lion_targets)} rising coins (🫒 EXPANDED COVERAGE)")
         
         # Build target assets list
         checkpoint_stablecoins = {'USD': 1.0, 'USDT': 1.0, 'USDC': 1.0, 'ZUSD': 1.0}
@@ -11234,7 +11240,7 @@ if __name__ == "__main__":
             flowing_rivers = self.river_consciousness.get_flowing_rivers()
             if flowing_rivers:
                 # Include: Flowing Rivers + Stablecoins + Lion Targets
-                # This reduces the search space from ~500 to ~20-30 high-quality targets
+                # 🫒 GREEN OLIVE EXPANSION: Increased from ~20-30 to ~50-100 targets for MAXIMUM coverage
                 for asset, price in self.prices.items():
                     if (asset in flowing_rivers or 
                         asset in checkpoint_stablecoins or 
