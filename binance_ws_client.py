@@ -94,6 +94,17 @@ class WSBar:
     taker_buy_quote_volume: float
     source: str = "binance"
 
+@dataclass
+class WSOrderBook:
+    """Real-time order book update from WebSocket"""
+    symbol: str
+    bids: List[Tuple[float, float]]  # List of (price, qty)
+    asks: List[Tuple[float, float]]  # List of (price, qty)
+    timestamp: datetime
+    first_update_id: int
+    final_update_id: int
+    source: str = "binance"
+    
 class BinanceWebSocketClient:
     """
     Binance WebSocket Client for real-time market data.
@@ -127,17 +138,20 @@ class BinanceWebSocketClient:
         self.trade_queue = queue.Queue(maxsize=10000)
         self.ticker_queue = queue.Queue(maxsize=10000)
         self.bar_queue = queue.Queue(maxsize=1000)
+        self.depth_queue = queue.Queue(maxsize=1000)
         self.error_queue = queue.Queue(maxsize=100)
         
         # Latest Data Cache
         self.latest_trades: Dict[str, WSTrade] = {}
         self.latest_tickers: Dict[str, WSTicker] = {}
         self.latest_bars: Dict[str, WSBar] = {}
+        self.latest_depths: Dict[str, WSOrderBook] = {}
         
         # Callbacks
         self.on_trade: Optional[Callable[[WSTrade], None]] = None
         self.on_ticker: Optional[Callable[[WSTicker], None]] = None
         self.on_bar: Optional[Callable[[WSBar], None]] = None
+        self.on_depth: Optional[Callable[[WSOrderBook], None]] = None
         self.on_error: Optional[Callable[[str], None]] = None
         
         # Lock
@@ -272,6 +286,8 @@ class BinanceWebSocketClient:
                 self._process_ticker(payload)
             elif event_type == "kline":
                 self._process_kline(payload)
+            elif event_type == "depthUpdate":
+                self._process_depth(payload)
             elif "id" in payload:
                 # Response to subscribe
                 pass
@@ -383,6 +399,35 @@ class BinanceWebSocketClient:
         except Exception as e:
             logger.error(f"Bar parse error: {e}")
             
+    def _process_depth(self, data: Dict):
+        """Process depth update event."""
+        try:
+            depth = WSOrderBook(
+                symbol=data["s"],
+                bids=[(float(p), float(q)) for p, q in data["b"]],
+                asks=[(float(p), float(q)) for p, q in data["a"]],
+                timestamp=datetime.fromtimestamp(data["E"] / 1000.0),
+                first_update_id=data["U"],
+                final_update_id=data["u"]
+            )
+            
+            self.latest_depths[depth.symbol] = depth
+            
+            try:
+                self.depth_queue.put(depth, block=False)
+            except queue.Full:
+                try:
+                    self.depth_queue.get_nowait()
+                    self.depth_queue.put(depth, block=False)
+                except:
+                    pass
+
+            if self.on_depth:
+                self.on_depth(depth)
+                
+        except Exception as e:
+            logger.error(f"Depth parse error: {e}")
+
 # Self-test
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)

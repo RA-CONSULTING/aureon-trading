@@ -1,0 +1,487 @@
+{
+  "BTCUSDT": [
+    {
+      "bot_id": "BOT-BTCUSDT-167H",
+      "bot_name": "The Weekend Whale",
+      "symbol": "BTCUSDT",
+      "cycle_period_hours": 167.94,
+      "avg_hourly_volume_btc": 751.7371,
+      "peak_hours_utc": [
+        14,
+        15
+      ],
+      "volume_profile_type": "gaussian",
+      "likely_entity": "JANE_STREET",
+      "entity_confidence": 0.52,
+      "entity_description": "Jane Street - Quantitative Market Maker",
+      "geographic_hint": "US_EAST",
+      "aggression_score": 0.11,
+      "stealth_score": 0.0,
+      "detected_exchanges": [
+        "BINANCE"
+      ],
+      "evidence": [
+        "High confidence match (52%) to known entity pattern",
+        "Peak activity at UTC hours: [14, 15]",
+        "Volume profile: gaussian",
+        "Geographic signature: US_EAST"
+      ]
+    },
+    {
+      "bot_id": "BOT-BTCUSDT-23H",
+      "bot_name": "The Solar Clock Algorithm",
+      "symbol": "BTCUSDT",
+      "cycle_period_hours": 24.0,
+      "avg_hourly_volume_btc": 751.7371,
+      "peak_hours_utc": [
+        14,
+        15
+      ],
+      "volume_profile_type": "gaussian",
+      "likely_entity": "JANE_STREET",
+      "entity_confidence": 0.72,
+      "entity_description": "Jane Street - Quantitative Market Maker",
+      "geographic_hint": "US_EAST",
+      "aggression_score": 0.11,
+      "stealth_score": 0.0,
+      "detected_exchanges": [
+        "BINANCE"
+      ],
+      "evidence": [
+        "High confidence match (72%) to known entity pattern",
+        "Peak activity at UTC hours: [14, 15]",
+        "Volume profile: gaussian",
+        "Geographic signature: US_EAST"
+      ]
+    }
+  ],
+  "ETHUSDT": [
+    {
+      "bot_id": "BOT-ETHUSDT-167H",
+      "bot_name": "The Weekend Whale",
+      "symbol": "ETHUSDT",
+      "cycle_period_hours": 167.94,
+      "avg_hourly_volume_btc": 21261.3251,
+      "peak_hours_utc": [
+        14,
+        15,
+        16
+      ],
+      "volume_profile_type": "gaussian",
+      "likely_entity": "JANE_STREET",
+      "entity_confidence": 0.52,
+      "entity_description": "Jane Street - Quantitative Market Maker",
+      "geographic_hint": "US_EAST",
+      "aggression_score": 0.19,
+      "stealth_score": 0.01,
+      "detected_exchanges": [
+        "BINANCE"
+      ],
+      "evidence": [
+        "High confidence match (52%) to known entity pattern",
+        "Peak activity at UTC hours: [14, 15, 16]",
+        "Volume profile: gaussian",
+        "Geographic signature: US_EAST"
+      ]
+    },
+    {
+      "bot_id": "BOT-ETHUSDT-23H",
+      "bot_name": "The Solar Clock Algorithm",
+      "symbol": "ETHUSDT",
+      "cycle_period_hours": 24.0,
+      "avg_hourly_volume_btc": 21261.3251,
+      "peak_hours_utc": [
+        14,
+        15,
+        16
+      ],
+      "volume_profile_type": "gaussian",
+      "likely_entity": "JANE_STREET",
+      "entity_confidence": 0.72,
+      "entity_description": "Jane Street - Quantitative Market Maker",
+      "geographic_hint": "US_EAST",
+      "aggression_score": 0.19,
+      "stealth_score": 0.01,
+      "detected_exchanges": [
+        "BINANCE"
+      ],
+      "evidence": [
+        "High confidence match (72%) to known entity pattern",
+        "Peak activity at UTC hours: [14, 15, 16]",
+        "Volume profile: gaussian",
+        "Geographic signature: US_EAST"
+      ]
+    },
+    {
+      "bot_id": "BOT-ETHUSDT-83H",
+      "bot_name": "Cyclic Vector 83H",
+      "symbol": "ETHUSDT",
+      "cycle_period_hours": 83.97,
+      "avg_hourly_volume_btc": 21261.3251,
+      "peak_hours_utc": [
+        14,
+        15,
+        16
+      ],
+      "volume_profile_type": "gaussian",
+      "likely_entity": "JANE_STREET",
+      "entity_confidence": 0.32,
+      "entity_description": "Jane Street - Quantitative Market Maker",
+      "geographic_hint": "US_EAST",
+      "aggression_score": 0.19,
+      "stealth_score": 0.01,
+      "detected_exchanges": [
+        "BINANCE"
+      ],
+      "evidence": [
+        "Peak activity at UTC hours: [14, 15, 16]",
+        "Volume profile: gaussian",
+        "Geographic signature: US_EAST"
+      ]
+    }
+  ],
+  "SOLUSDT": [
+    {
+      "bot_id": "BOT-SOLUSDT-23H",
+      "bot_name": "The Solar Clock Algorithm",
+      "symbol": "SOLUSDT",
+      "cycle_period_hours": 23.99,
+      "avg_hourly_volume_btc": 162874.0679,
+      "peak_hours_utc": [
+        14,
+        15
+      ],
+      "volume_profile_type": "gaussian",
+      "likely_entity": "JANE_STREET",
+      "entity_confidence": 0.52,
+      "entity_description": "Jane Street - Quantitative Market Maker",
+      "geographic_hint": "US_EAST",
+      "aggression_score": 0.23,
+      "stealth_score": 0.11,
+      "detected_exchanges": [
+        "BINANCE"
+      ],
+      "evidence": [
+        "High confidence match (52%) to known entity pattern",
+        "Peak activity at UTC hours: [14, 15]",
+        "Volume profile: gaussian",
+        "Geographic signature: US_EAST"
+      ]
+    },
+    {
+      "bot_id": "BOT-SOLUSDT-168H",
+      "bot_name": "The Weekend Whale",
+      "symbol": "SOLUSDT",
+      "cycle_period_hours": 168.12,
+      "avg_hourly_volume_btc": 162874.0679,
+      "peak_hours_utc": [
+        14,
+        15
+      ],
+      "volume_profile_type": "gaussian",
+      "likely_entity": "JANE_STREET",
+      "entity_confidence": 0.52,
+      "entity_description": "Jane Street - Quantitative Market Maker",
+      "geographic_hint": "US_EAST",
+      "aggression_score": 0.23,
+      "stealth_score": 0.11,
+      "detected_exchanges": [
+        "BINANCE"
+      ],
+      "evidence": [
+        "High confidence match (52%) to known entity pattern",
+        "Peak activity at UTC hours: [14, 15]",
+        "Volume profile: gaussian",
+        "Geographic signature: US_EAST"
+      ]
+    },
+    {
+      "bot_id": "BOT-SOLUSDT-368H",
+      "bot_name": "Rapid Pulse 368H",
+      "symbol": "SOLUSDT",
+      "cycle_period_hours": 368.81,
+      "avg_hourly_volume_btc": 162874.0679,
+      "peak_hours_utc": [
+        14,
+        15
+      ],
+      "volume_profile_type": "gaussian",
+      "likely_entity": "JANE_STREET",
+      "entity_confidence": 0.32,
+      "entity_description": "Jane Street - Quantitative Market Maker",
+      "geographic_hint": "US_EAST",
+      "aggression_score": 0.23,
+      "stealth_score": 0.11,
+      "detected_exchanges": [
+        "BINANCE"
+      ],
+      "evidence": [
+        "Peak activity at UTC hours: [14, 15]",
+        "Volume profile: gaussian",
+        "Geographic signature: US_EAST"
+      ]
+    },
+    {
+      "bot_id": "BOT-SOLUSDT-11H",
+      "bot_name": "The Meridian Switcher",
+      "symbol": "SOLUSDT",
+      "cycle_period_hours": 12.0,
+      "avg_hourly_volume_btc": 162874.0679,
+      "peak_hours_utc": [
+        14,
+        15
+      ],
+      "volume_profile_type": "gaussian",
+      "likely_entity": "JUMP_TRADING",
+      "entity_confidence": 0.4,
+      "entity_description": "Jump Trading - HFT/Arbitrage Specialist",
+      "geographic_hint": "US_EAST",
+      "aggression_score": 0.23,
+      "stealth_score": 0.11,
+      "detected_exchanges": [
+        "BINANCE"
+      ],
+      "evidence": [
+        "Peak activity at UTC hours: [14, 15]",
+        "Volume profile: gaussian",
+        "Geographic signature: US_EAST"
+      ]
+    },
+    {
+      "bot_id": "BOT-SOLUSDT-517H",
+      "bot_name": "Deep Pulse 517H",
+      "symbol": "SOLUSDT",
+      "cycle_period_hours": 517.14,
+      "avg_hourly_volume_btc": 162874.0679,
+      "peak_hours_utc": [
+        14,
+        15
+      ],
+      "volume_profile_type": "gaussian",
+      "likely_entity": "JANE_STREET",
+      "entity_confidence": 0.32,
+      "entity_description": "Jane Street - Quantitative Market Maker",
+      "geographic_hint": "US_EAST",
+      "aggression_score": 0.23,
+      "stealth_score": 0.11,
+      "detected_exchanges": [
+        "BINANCE"
+      ],
+      "evidence": [
+        "Peak activity at UTC hours: [14, 15]",
+        "Volume profile: gaussian",
+        "Geographic signature: US_EAST"
+      ]
+    }
+  ],
+  "XRPUSDT": [
+    {
+      "bot_id": "BOT-XRPUSDT-167H",
+      "bot_name": "The Weekend Whale",
+      "symbol": "XRPUSDT",
+      "cycle_period_hours": 167.73,
+      "avg_hourly_volume_btc": 5793843.9428,
+      "peak_hours_utc": [
+        14
+      ],
+      "volume_profile_type": "gaussian",
+      "likely_entity": "JANE_STREET",
+      "entity_confidence": 0.46,
+      "entity_description": "Jane Street - Quantitative Market Maker",
+      "geographic_hint": "US_EAST",
+      "aggression_score": 0.21,
+      "stealth_score": 0.0,
+      "detected_exchanges": [
+        "BINANCE"
+      ],
+      "evidence": [
+        "Peak activity at UTC hours: [14]",
+        "Volume profile: gaussian",
+        "Geographic signature: US_EAST"
+      ]
+    },
+    {
+      "bot_id": "BOT-XRPUSDT-526H",
+      "bot_name": "Cyclic Sentinel 526H",
+      "symbol": "XRPUSDT",
+      "cycle_period_hours": 526.77,
+      "avg_hourly_volume_btc": 5793843.9428,
+      "peak_hours_utc": [
+        14
+      ],
+      "volume_profile_type": "gaussian",
+      "likely_entity": "JANE_STREET",
+      "entity_confidence": 0.26,
+      "entity_description": "Jane Street - Quantitative Market Maker",
+      "geographic_hint": "US_EAST",
+      "aggression_score": 0.21,
+      "stealth_score": 0.0,
+      "detected_exchanges": [
+        "BINANCE"
+      ],
+      "evidence": [
+        "Peak activity at UTC hours: [14]",
+        "Volume profile: gaussian",
+        "Geographic signature: US_EAST"
+      ]
+    },
+    {
+      "bot_id": "BOT-XRPUSDT-83H",
+      "bot_name": "Cyclic Vector 83H",
+      "symbol": "XRPUSDT",
+      "cycle_period_hours": 83.97,
+      "avg_hourly_volume_btc": 5793843.9428,
+      "peak_hours_utc": [
+        14
+      ],
+      "volume_profile_type": "gaussian",
+      "likely_entity": "JANE_STREET",
+      "entity_confidence": 0.26,
+      "entity_description": "Jane Street - Quantitative Market Maker",
+      "geographic_hint": "US_EAST",
+      "aggression_score": 0.21,
+      "stealth_score": 0.0,
+      "detected_exchanges": [
+        "BINANCE"
+      ],
+      "evidence": [
+        "Peak activity at UTC hours: [14]",
+        "Volume profile: gaussian",
+        "Geographic signature: US_EAST"
+      ]
+    },
+    {
+      "bot_id": "BOT-XRPUSDT-392H",
+      "bot_name": "Cyclic Prime 392H",
+      "symbol": "XRPUSDT",
+      "cycle_period_hours": 392.02,
+      "avg_hourly_volume_btc": 5793843.9428,
+      "peak_hours_utc": [
+        14
+      ],
+      "volume_profile_type": "gaussian",
+      "likely_entity": "JANE_STREET",
+      "entity_confidence": 0.26,
+      "entity_description": "Jane Street - Quantitative Market Maker",
+      "geographic_hint": "US_EAST",
+      "aggression_score": 0.21,
+      "stealth_score": 0.0,
+      "detected_exchanges": [
+        "BINANCE"
+      ],
+      "evidence": [
+        "Peak activity at UTC hours: [14]",
+        "Volume profile: gaussian",
+        "Geographic signature: US_EAST"
+      ]
+    }
+  ],
+  "ADAUSDT": [
+    {
+      "bot_id": "BOT-ADAUSDT-517H",
+      "bot_name": "Rapid Titan 517H",
+      "symbol": "ADAUSDT",
+      "cycle_period_hours": 517.85,
+      "avg_hourly_volume_btc": 6543022.6806,
+      "peak_hours_utc": [
+        14,
+        15
+      ],
+      "volume_profile_type": "gaussian",
+      "likely_entity": "JANE_STREET",
+      "entity_confidence": 0.32,
+      "entity_description": "Jane Street - Quantitative Market Maker",
+      "geographic_hint": "US_EAST",
+      "aggression_score": 0.26,
+      "stealth_score": 0.0,
+      "detected_exchanges": [
+        "BINANCE"
+      ],
+      "evidence": [
+        "Peak activity at UTC hours: [14, 15]",
+        "Volume profile: gaussian",
+        "Geographic signature: US_EAST"
+      ]
+    },
+    {
+      "bot_id": "BOT-ADAUSDT-464H",
+      "bot_name": "Silent Titan 464H",
+      "symbol": "ADAUSDT",
+      "cycle_period_hours": 464.65,
+      "avg_hourly_volume_btc": 6543022.6806,
+      "peak_hours_utc": [
+        14,
+        15
+      ],
+      "volume_profile_type": "gaussian",
+      "likely_entity": "JANE_STREET",
+      "entity_confidence": 0.32,
+      "entity_description": "Jane Street - Quantitative Market Maker",
+      "geographic_hint": "US_EAST",
+      "aggression_score": 0.26,
+      "stealth_score": 0.0,
+      "detected_exchanges": [
+        "BINANCE"
+      ],
+      "evidence": [
+        "Peak activity at UTC hours: [14, 15]",
+        "Volume profile: gaussian",
+        "Geographic signature: US_EAST"
+      ]
+    },
+    {
+      "bot_id": "BOT-ADAUSDT-167H",
+      "bot_name": "The Weekend Whale",
+      "symbol": "ADAUSDT",
+      "cycle_period_hours": 167.92,
+      "avg_hourly_volume_btc": 6543022.6806,
+      "peak_hours_utc": [
+        14,
+        15
+      ],
+      "volume_profile_type": "gaussian",
+      "likely_entity": "JANE_STREET",
+      "entity_confidence": 0.52,
+      "entity_description": "Jane Street - Quantitative Market Maker",
+      "geographic_hint": "US_EAST",
+      "aggression_score": 0.26,
+      "stealth_score": 0.0,
+      "detected_exchanges": [
+        "BINANCE"
+      ],
+      "evidence": [
+        "High confidence match (52%) to known entity pattern",
+        "Peak activity at UTC hours: [14, 15]",
+        "Volume profile: gaussian",
+        "Geographic signature: US_EAST"
+      ]
+    },
+    {
+      "bot_id": "BOT-ADAUSDT-23H",
+      "bot_name": "The Solar Clock Algorithm",
+      "symbol": "ADAUSDT",
+      "cycle_period_hours": 23.96,
+      "avg_hourly_volume_btc": 6543022.6806,
+      "peak_hours_utc": [
+        14,
+        15
+      ],
+      "volume_profile_type": "gaussian",
+      "likely_entity": "JANE_STREET",
+      "entity_confidence": 0.52,
+      "entity_description": "Jane Street - Quantitative Market Maker",
+      "geographic_hint": "US_EAST",
+      "aggression_score": 0.26,
+      "stealth_score": 0.0,
+      "detected_exchanges": [
+        "BINANCE"
+      ],
+      "evidence": [
+        "High confidence match (52%) to known entity pattern",
+        "Peak activity at UTC hours: [14, 15]",
+        "Volume profile: gaussian",
+        "Geographic signature: US_EAST"
+      ]
+    }
+  ]
+}
