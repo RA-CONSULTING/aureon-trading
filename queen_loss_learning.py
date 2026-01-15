@@ -1054,13 +1054,13 @@ class QueenLossLearningSystem:
         """
         pattern_key = f"{from_asset}→{to_asset}_{exchange}"
         
-        # �🔓🔓 FULL AUTONOMOUS MODE - NO EXPECTED PROFIT CHECK! 🔓🔓🔓
-        # User requested "ENSURE NO TRADEABLE ITEMS ARE BLOCKED" 
-        # We DISABLE the survival check to allow ALL trades to execute.
-        # Queen will LEARN from outcomes (wins AND losses) to evolve!
-        # Original: MIN_EXPECTED_PROFIT = 0.0001; if expected_profit < MIN_EXPECTED_PROFIT: return True, "too risky"
-        # NOW: ALWAYS return False (don't block) - Let the market teach us!
-        pass  # No longer blocking based on expected profit
+        # Reintroduce minimum expected profit guard to avoid tiny/ghost-profit trades
+        # We require a floor for expected profit to ensure net positive after fees/slippage.
+        MIN_EXPECTED_PROFIT = 0.02  # $0.02 minimum expected net profit
+        if expected_profit < MIN_EXPECTED_PROFIT:
+            return True, f"Expected profit ${expected_profit:.4f} < minimum ${MIN_EXPECTED_PROFIT:.4f}"  # Block tiny trades
+        
+        # Note: This is conservative — we can lower to $0.01 later if too restrictive.
         
         # Check loss patterns - but SURVIVAL MODE is more forgiving!
         if pattern_key in self.loss_patterns:
