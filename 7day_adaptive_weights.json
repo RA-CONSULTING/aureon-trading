@@ -4,8 +4,8 @@
   "symbol_weight": 1.0,
   "correlation_weight": 1.0,
   "momentum_weight": 1.0,
-  "validation_count": 751,
+  "validation_count": 764,
   "accuracy_7d": 1.0,
   "accuracy_30d": 0.5,
-  "last_updated": "2026-01-14T17:47:05.177831"
+  "last_updated": "2026-01-14T19:43:56.409509"
 }

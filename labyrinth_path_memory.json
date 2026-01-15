@@ -754,5 +754,9 @@
   "BCH->AAVE": {
     "wins": 0.0,
     "losses": 1.0
+  },
+  "USDT->UNI": {
+    "wins": 4.0,
+    "losses": 0.0
   }
 }

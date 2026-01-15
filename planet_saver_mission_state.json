@@ -1,32 +1,24 @@
 {
   "liberation": {
-    "total_profit_usd": 138.57432931871259,
-    "total_profit_gbp": 109.11364513284455,
-    "freedom_progress": 0.10911364513284455,
+    "total_profit_usd": 138.64203883871258,
+    "total_profit_gbp": 109.16695971552171,
+    "freedom_progress": 0.10916695971552172,
     "souls_theoretically_freed": 0,
-    "compound_multiplier": 3.847382743206782,
-    "current_streak": 28,
+    "compound_multiplier": 4.037050264200775,
+    "current_streak": 29,
     "best_streak": 33,
-    "total_wins": 94,
-    "total_trades": 76893,
-    "win_rate": 0.12224779888936575,
+    "total_wins": 95,
+    "total_trades": 76894,
+    "win_rate": 0.12354670065284677,
     "days_active": 0,
     "started_at": "2026-01-09T10:54:59.789105",
     "last_milestone": "\ud83c\udf33 Hundred - Taking root"
   },
-  "current_capital_usd": 124.71689638684138,
+  "current_capital_usd": 124.77783495484138,
   "reserved_capital_usd": 0.0,
-  "compounded_gains_usd": 13.85743293187126,
+  "compounded_gains_usd": 13.86420388387126,
   "active_positions": {},
   "trade_history": [
-    {
-      "type": "LOSS",
-      "loss_usd": 0.0,
-      "symbol": "USDT/BAT",
-      "exchange": "alpaca",
-      "timestamp": "2026-01-14T14:57:16.688859",
-      "metadata": {}
-    },
     {
       "type": "LOSS",
       "loss_usd": 0.0,
@@ -8088,6 +8080,16 @@
       "streak": 28,
       "total_progress": 0.10911364513284455,
       "metadata": {}
+    },
+    {
+      "type": "WIN",
+      "profit_usd": 0.06770952000000001,
+      "symbol": "USD/DOGE",
+      "exchange": "alpaca",
+      "timestamp": "2026-01-14T20:02:38.142530",
+      "streak": 29,
+      "total_progress": 0.10916695971552172,
+      "metadata": {}
     }
   ],
   "milestone_history": [
@@ -8114,6 +8116,6 @@
     }
   ],
   "created_at": "2026-01-09T10:54:59.789096",
-  "last_update": "2026-01-14T18:16:18.202140",
-  "last_win_at": "2026-01-14T18:16:18.201877"
+  "last_update": "2026-01-14T20:02:38.143085",
+  "last_win_at": "2026-01-14T20:02:38.142517"
 }

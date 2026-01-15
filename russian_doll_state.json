@@ -22652,40 +22652,315 @@
           }
         ]
       }
+    },
+    {
+      "timestamp": 1768419552.779437,
+      "timestamp_human": "2026-01-14T19:39:12.779439+00:00",
+      "queen": {
+        "market_regime": "VOLATILE",
+        "global_momentum": 0.0018,
+        "global_coherence": 0.5,
+        "queen_confidence": 0.5,
+        "queen_strategy": "SNIPER",
+        "portfolio_value": 9.88,
+        "cash_available": 7.73,
+        "positions_held": 1,
+        "directives": {
+          "min_momentum_threshold": 0.2,
+          "min_coherence_threshold": 0.7,
+          "max_position_size": 0.7727143931562516,
+          "target_exchanges": [
+            "alpaca"
+          ],
+          "queen_strategy": "SNIPER",
+          "queen_confidence": 0.5,
+          "market_regime": "VOLATILE"
+        }
+      },
+      "hive_cluster": {
+        "exchanges_active": 1,
+        "total_symbols": 4,
+        "validators_active": 0,
+        "validator_agreement": 0.0,
+        "market_sentiment": "NEUTRAL",
+        "opportunity_density": 0.0,
+        "recommended_action": "WAIT",
+        "system_fill_rate": 100.0,
+        "total_fees_paid": -0.0296
+      },
+      "bee_swarm": {
+        "total_scanned": 398,
+        "with_momentum": 28,
+        "rejected": 0,
+        "executed": 0,
+        "momentum_distribution": {
+          "up": 28,
+          "down": 0,
+          "flat": 370
+        },
+        "avg_momentum": 0.0018,
+        "max_momentum": 0.0114,
+        "max_momentum_symbol": "SHIB/UNI",
+        "avg_pip_score": 0.3893,
+        "avg_coherence": 0.0,
+        "above_phi_threshold": 0,
+        "rejection_breakdown": {},
+        "top_opportunities": [
+          {
+            "symbol": "USDT/UNI",
+            "exchange": "alpaca",
+            "pip_score": 0.587,
+            "momentum": 0.0009520658077916257,
+            "coherence": -4.5
+          },
+          {
+            "symbol": "USDT/UNI",
+            "exchange": "alpaca",
+            "pip_score": 0.563,
+            "momentum": 0.00026358770422098824,
+            "coherence": -4.5
+          },
+          {
+            "symbol": "USDT/UNI",
+            "exchange": "alpaca",
+            "pip_score": 0.548,
+            "momentum": 0.0006569937075404173,
+            "coherence": -3.5
+          },
+          {
+            "symbol": "USDT/UNI",
+            "exchange": "alpaca",
+            "pip_score": 0.548,
+            "momentum": -0.0002569029635103147,
+            "coherence": -3.5
+          },
+          {
+            "symbol": "DOT/USDC",
+            "exchange": "alpaca",
+            "pip_score": 0.537,
+            "momentum": 0.0037787906552303897,
+            "coherence": -3.5
+          }
+        ]
+      }
+    },
+    {
+      "timestamp": 1768419616.8454895,
+      "timestamp_human": "2026-01-14T19:40:16.845491+00:00",
+      "queen": {
+        "market_regime": "VOLATILE",
+        "global_momentum": 0.0002,
+        "global_coherence": 0.5,
+        "queen_confidence": 0.5,
+        "queen_strategy": "SNIPER",
+        "portfolio_value": 9.84,
+        "cash_available": 7.69,
+        "positions_held": 1,
+        "directives": {
+          "min_momentum_threshold": 0.2,
+          "min_coherence_threshold": 0.7,
+          "max_position_size": 0.76855865102714,
+          "target_exchanges": [
+            "alpaca"
+          ],
+          "queen_strategy": "SNIPER",
+          "queen_confidence": 0.5,
+          "market_regime": "VOLATILE"
+        }
+      },
+      "hive_cluster": {
+        "exchanges_active": 1,
+        "total_symbols": 4,
+        "validators_active": 0,
+        "validator_agreement": 0.0,
+        "market_sentiment": "NEUTRAL",
+        "opportunity_density": 0.0,
+        "recommended_action": "WAIT",
+        "system_fill_rate": 100.0,
+        "total_fees_paid": -0.0259
+      },
+      "bee_swarm": {
+        "total_scanned": 1000,
+        "with_momentum": 5,
+        "rejected": 0,
+        "executed": 0,
+        "momentum_distribution": {
+          "up": 5,
+          "down": 0,
+          "flat": 995
+        },
+        "avg_momentum": 0.0002,
+        "max_momentum": 0.0114,
+        "max_momentum_symbol": "SHIB/USDC",
+        "avg_pip_score": 0.3928,
+        "avg_coherence": 0.0,
+        "above_phi_threshold": 0,
+        "rejection_breakdown": {},
+        "top_opportunities": [
+          {
+            "symbol": "USDT/UNI",
+            "exchange": "alpaca",
+            "pip_score": 0.587,
+            "momentum": 0.0009520658077916257,
+            "coherence": -4.5
+          },
+          {
+            "symbol": "USD/UNI",
+            "exchange": "alpaca",
+            "pip_score": 0.5720000000000001,
+            "momentum": 0.0,
+            "coherence": -3.5
+          },
+          {
+            "symbol": "USD/UNI",
+            "exchange": "alpaca",
+            "pip_score": 0.5720000000000001,
+            "momentum": 0.0,
+            "coherence": -3.5
+          },
+          {
+            "symbol": "USDT/UNI",
+            "exchange": "alpaca",
+            "pip_score": 0.563,
+            "momentum": 0.00026358770422098824,
+            "coherence": -4.5
+          },
+          {
+            "symbol": "USDT/UNI",
+            "exchange": "alpaca",
+            "pip_score": 0.563,
+            "momentum": 4.098691149269996e-05,
+            "coherence": -4.5
+          }
+        ]
+      }
+    },
+    {
+      "timestamp": 1768419673.3322456,
+      "timestamp_human": "2026-01-14T19:41:13.332247+00:00",
+      "queen": {
+        "market_regime": "VOLATILE",
+        "global_momentum": -0.0001,
+        "global_coherence": 0.5,
+        "queen_confidence": 0.5,
+        "queen_strategy": "SNIPER",
+        "portfolio_value": 9.84,
+        "cash_available": 7.69,
+        "positions_held": 1,
+        "directives": {
+          "min_momentum_threshold": 0.2,
+          "min_coherence_threshold": 0.7,
+          "max_position_size": 0.76855865102714,
+          "target_exchanges": [
+            "alpaca"
+          ],
+          "queen_strategy": "SNIPER",
+          "queen_confidence": 0.5,
+          "market_regime": "VOLATILE"
+        }
+      },
+      "hive_cluster": {
+        "exchanges_active": 1,
+        "total_symbols": 4,
+        "validators_active": 0,
+        "validator_agreement": 0.0,
+        "market_sentiment": "NEUTRAL",
+        "opportunity_density": 0.0,
+        "recommended_action": "WAIT",
+        "system_fill_rate": 100.0,
+        "total_fees_paid": -0.0259
+      },
+      "bee_swarm": {
+        "total_scanned": 1000,
+        "with_momentum": 0,
+        "rejected": 0,
+        "executed": 0,
+        "momentum_distribution": {
+          "up": 0,
+          "down": 0,
+          "flat": 1000
+        },
+        "avg_momentum": -0.0001,
+        "max_momentum": -0.0017,
+        "max_momentum_symbol": "DOT/SKY",
+        "avg_pip_score": 0.3931,
+        "avg_coherence": 0.0,
+        "above_phi_threshold": 0,
+        "rejection_breakdown": {},
+        "top_opportunities": [
+          {
+            "symbol": "USD/UNI",
+            "exchange": "alpaca",
+            "pip_score": 0.5720000000000001,
+            "momentum": 0.0,
+            "coherence": -3.5
+          },
+          {
+            "symbol": "USDT/UNI",
+            "exchange": "alpaca",
+            "pip_score": 0.563,
+            "momentum": 4.098691149269996e-05,
+            "coherence": -4.5
+          },
+          {
+            "symbol": "USD/BCH",
+            "exchange": "alpaca",
+            "pip_score": 0.54,
+            "momentum": 0.0,
+            "coherence": -3.5
+          },
+          {
+            "symbol": "USD/LINK",
+            "exchange": "alpaca",
+            "pip_score": 0.54,
+            "momentum": 0.0,
+            "coherence": -3.5
+          },
+          {
+            "symbol": "USD/ETH",
+            "exchange": "alpaca",
+            "pip_score": 0.54,
+            "momentum": 0.0,
+            "coherence": -3.5
+          }
+        ]
+      }
     }
   ],
   "last_snapshot": {
-    "timestamp": 1768413282.902627,
-    "timestamp_human": "2026-01-14T17:54:42.902628+00:00",
+    "timestamp": 1768419673.3322456,
+    "timestamp_human": "2026-01-14T19:41:13.332247+00:00",
     "queen": {
-      "market_regime": "QUIET",
-      "global_momentum": -0.0014,
+      "market_regime": "VOLATILE",
+      "global_momentum": -0.0001,
       "global_coherence": 0.5,
       "queen_confidence": 0.5,
       "queen_strategy": "SNIPER",
-      "portfolio_value": 10.09,
-      "cash_available": 0.47,
+      "portfolio_value": 9.84,
+      "cash_available": 7.69,
       "positions_held": 1,
       "directives": {
-        "min_momentum_threshold": 0.1,
-        "min_coherence_threshold": 0.55,
-        "max_position_size": 0.047,
-        "target_exchanges": [],
+        "min_momentum_threshold": 0.2,
+        "min_coherence_threshold": 0.7,
+        "max_position_size": 0.76855865102714,
+        "target_exchanges": [
+          "alpaca"
+        ],
         "queen_strategy": "SNIPER",
         "queen_confidence": 0.5,
-        "market_regime": "QUIET"
+        "market_regime": "VOLATILE"
       }
     },
     "hive_cluster": {
-      "exchanges_active": 0,
-      "total_symbols": 0,
+      "exchanges_active": 1,
+      "total_symbols": 4,
       "validators_active": 0,
       "validator_agreement": 0.0,
       "market_sentiment": "NEUTRAL",
       "opportunity_density": 0.0,
       "recommended_action": "WAIT",
-      "system_fill_rate": 0.0,
-      "total_fees_paid": 0.0
+      "system_fill_rate": 100.0,
+      "total_fees_paid": -0.0259
     },
     "bee_swarm": {
       "total_scanned": 1000,
@@ -22697,47 +22972,47 @@
         "down": 0,
         "flat": 1000
       },
-      "avg_momentum": -0.0014,
-      "max_momentum": -0.0053,
-      "max_momentum_symbol": "UNI/DOGE",
-      "avg_pip_score": 0.3754,
+      "avg_momentum": -0.0001,
+      "max_momentum": -0.0017,
+      "max_momentum_symbol": "DOT/SKY",
+      "avg_pip_score": 0.3931,
       "avg_coherence": 0.0,
       "above_phi_threshold": 0,
       "rejection_breakdown": {},
       "top_opportunities": [
         {
-          "symbol": "UNI/USDC",
+          "symbol": "USD/UNI",
           "exchange": "alpaca",
-          "pip_score": 0.517,
-          "momentum": -0.005175694354934216,
+          "pip_score": 0.5720000000000001,
+          "momentum": 0.0,
           "coherence": -3.5
         },
         {
-          "symbol": "UNI/USDT",
+          "symbol": "USDT/UNI",
           "exchange": "alpaca",
-          "pip_score": 0.517,
-          "momentum": -0.005175694354934216,
+          "pip_score": 0.563,
+          "momentum": 4.098691149269996e-05,
+          "coherence": -4.5
+        },
+        {
+          "symbol": "USD/BCH",
+          "exchange": "alpaca",
+          "pip_score": 0.54,
+          "momentum": 0.0,
           "coherence": -3.5
         },
         {
-          "symbol": "UNI/USD",
+          "symbol": "USD/LINK",
           "exchange": "alpaca",
-          "pip_score": 0.517,
-          "momentum": -0.005175694354934216,
+          "pip_score": 0.54,
+          "momentum": 0.0,
           "coherence": -3.5
         },
         {
-          "symbol": "UNI/USDC",
+          "symbol": "USD/ETH",
           "exchange": "alpaca",
-          "pip_score": 0.517,
-          "momentum": -0.005175694354934216,
-          "coherence": -3.5
-        },
-        {
-          "symbol": "UNI/USDT",
-          "exchange": "alpaca",
-          "pip_score": 0.517,
-          "momentum": -0.005175694354934216,
+          "pip_score": 0.54,
+          "momentum": 0.0,
           "coherence": -3.5
         }
       ]
