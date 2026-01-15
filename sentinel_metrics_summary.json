@@ -1,0 +1,13 @@
+{
+  "BOT-XRPUSDT-526H": {
+    "id": "BOT-XRPUSDT-526H",
+    "name": "Cyclic Sentinel 526H",
+    "symbol": "XRPUSDT",
+    "period_h": 526.77,
+    "confidence": 0.17,
+    "sample_count": 144,
+    "avg_strength": 0.573,
+    "avg_daily_vol": 341467531.404,
+    "avg_est_moved": 200633415.405
+  }
+}

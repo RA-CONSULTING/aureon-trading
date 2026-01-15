@@ -1,0 +1,41 @@
+[
+  {
+    "entity_name": "MICROSTRATEGY_BOT",
+    "type": "Corporate Treasury",
+    "country": "USA",
+    "bots_controlled": [
+      "BOT-BTCUSDT-167H",
+      "BOT-BTCUSDT-23H",
+      "BOT-ETHUSDT-167H",
+      "BOT-ETHUSDT-23H",
+      "BOT-ETHUSDT-83H",
+      "BOT-SOLUSDT-23H",
+      "BOT-SOLUSDT-168H",
+      "BOT-SOLUSDT-368H",
+      "BOT-SOLUSDT-11H",
+      "BOT-SOLUSDT-517H",
+      "BOT-SOLUSDT-428H",
+      "BOT-SOLUSDT-642H",
+      "BOT-SOLUSDT-84H",
+      "BOT-SOLUSDT-330H",
+      "BOT-SOLUSDT-8H",
+      "BOT-XRPUSDT-167H",
+      "BOT-XRPUSDT-526H",
+      "BOT-XRPUSDT-83H",
+      "BOT-XRPUSDT-392H",
+      "BOT-ADAUSDT-517H",
+      "BOT-ADAUSDT-464H",
+      "BOT-ADAUSDT-167H",
+      "BOT-ADAUSDT-23H"
+    ],
+    "avg_confidence": 0.5500000000000002,
+    "symbols": [
+      "BTCUSDT",
+      "ETHUSDT",
+      "XRPUSDT",
+      "ADAUSDT",
+      "SOLUSDT"
+    ],
+    "total_bots": 23
+  }
+]

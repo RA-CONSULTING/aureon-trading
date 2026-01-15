@@ -69,34 +69,104 @@
         "symbol": "BTC/USD",
         "reason": "Stop loss hit during whale dump"
       }
+    },
+    {
+      "ceremony_type": "sunrise_invocation",
+      "timestamp": 1768478026.0455716,
+      "unix_time": 1768478026,
+      "moon_phase": 0.41314782109984094,
+      "spirits_invoked": [
+        "scout_ancestors"
+      ],
+      "frequencies_activated": [
+        852
+      ],
+      "intention": "Grant us vision to see manipulation clearly today",
+      "outcome": null,
+      "market_context": {
+        "market": "crypto",
+        "time": "open"
+      }
+    },
+    {
+      "ceremony_type": "battle_protection",
+      "timestamp": 1768478026.0465508,
+      "unix_time": 1768478026,
+      "moon_phase": 0.4131478214836264,
+      "spirits_invoked": [
+        "warrior_ancestors",
+        "scout_ancestors",
+        "medicine_people"
+      ],
+      "frequencies_activated": [
+        741,
+        852,
+        528
+      ],
+      "intention": "Protect our sacred fire from coordinated attack: CRITICAL",
+      "outcome": null,
+      "market_context": {
+        "threat_level": "CRITICAL",
+        "phase_difference": 0.0,
+        "coordinated_entities": [
+          "Fed Reserve",
+          "BlackRock",
+          "Jane Street"
+        ],
+        "symbols": [
+          "BTC/USD",
+          "ETH/USD"
+        ]
+      }
+    },
+    {
+      "ceremony_type": "loss_healing",
+      "timestamp": 1768478026.053187,
+      "unix_time": 1768478026,
+      "moon_phase": 0.41314782408461426,
+      "spirits_invoked": [
+        "medicine_people",
+        "grandmother_spirits"
+      ],
+      "frequencies_activated": [
+        528,
+        417
+      ],
+      "intention": "Heal the wound of loss ($150.00) and restore balance",
+      "outcome": null,
+      "market_context": {
+        "loss_amount": 150.0,
+        "symbol": "BTC/USD",
+        "reason": "Stop loss hit during whale dump"
+      }
     }
   ],
   "spirits": {
     "warrior_ancestors": {
-      "invocation_count": 1,
-      "last_invoked": 1768475098.7883382,
+      "invocation_count": 2,
+      "last_invoked": 1768478026.0465841,
       "wisdom_provided": [
         "\u2694\ufe0f Warrior Ancestors say: Protect the sacred fire (core capital). Strike only when the enemy is divided."
       ]
     },
     "grandmother_spirits": {
-      "invocation_count": 1,
-      "last_invoked": 1768475098.7961705,
+      "invocation_count": 2,
+      "last_invoked": 1768478026.05336,
       "wisdom_provided": [
         "\ud83c\udf3f Healing Grandmothers say: Patience heals all wounds. Do not rush - the market will still be here tomorrow."
       ]
     },
     "medicine_people": {
-      "invocation_count": 2,
-      "last_invoked": 1768475098.7955334,
+      "invocation_count": 4,
+      "last_invoked": 1768478026.0532248,
       "wisdom_provided": [
         "\ud83d\udc8a Medicine People say: Balance must be restored. Risk too much taken - reduce position size. Heal the system.",
         "\ud83d\udc8a Medicine People say: Balance must be restored. Risk too much taken - reduce position size. Heal the system."
       ]
     },
     "scout_ancestors": {
-      "invocation_count": 2,
-      "last_invoked": 1768475098.7891934,
+      "invocation_count": 4,
+      "last_invoked": 1768478026.046675,
       "wisdom_provided": [
         "\ud83e\udd85 Scout Ancestors say: See beyond what others see. The truth hides in the frequencies they don't want you to find.",
         "\ud83e\udd85 Scout Ancestors say: See beyond what others see. The truth hides in the frequencies they don't want you to find."
@@ -108,5 +178,5 @@
       "wisdom_provided": []
     }
   },
-  "last_updated": 1768475098.7985773
+  "last_updated": 1768478026.0535233
 }

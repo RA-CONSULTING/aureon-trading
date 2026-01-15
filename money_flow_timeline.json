@@ -1,0 +1,577 @@
+[
+  {
+    "event_id": "FED_CREATION_1913",
+    "date": "1913-12-23",
+    "event_name": "Federal Reserve Act",
+    "perpetrators": [
+      "Nelson Aldrich",
+      "Paul Warburg",
+      "JP Morgan",
+      "Rockefeller Family",
+      "Rothschild Banking"
+    ],
+    "beneficiaries": [
+      "Private Banking Cartel",
+      "Jekyll Island Conspirators"
+    ],
+    "victims": [
+      "American Citizens",
+      "Future Generations"
+    ],
+    "amount_extracted_usd": 0,
+    "extraction_method": "Legislative capture - private central bank creation",
+    "flow_direction": "public_to_private",
+    "source_location": "US Government (Treasury)",
+    "destination_location": "Federal Reserve System (Private Banks)",
+    "intermediaries": [
+      "Congress",
+      "Woodrow Wilson"
+    ],
+    "stated_reason": "Prevent bank panics, stabilize currency",
+    "actual_reason": "Transfer monetary control from government to private bankers",
+    "short_term_effects": [
+      "Banks gained money creation power",
+      "Gold standard weakened"
+    ],
+    "long_term_effects": [
+      "Dollar lost 98% value",
+      "Perpetual national debt",
+      "Banker control of economy"
+    ],
+    "planetary_effects": [
+      "debt_slavery",
+      "wealth_concentration"
+    ],
+    "evidence_sources": [
+      "Federal Reserve Act 1913",
+      "Vanderlip confession 1935",
+      "Wilson regret quote"
+    ],
+    "confidence": 0.99,
+    "correlated_bot_activity": [],
+    "correlated_events": []
+  },
+  {
+    "event_id": "CRASH_1929",
+    "date": "1929-10-29",
+    "event_name": "Black Tuesday - Stock Market Crash",
+    "perpetrators": [
+      "Federal Reserve",
+      "JP Morgan",
+      "Joseph Kennedy Sr.",
+      "Bernard Baruch"
+    ],
+    "beneficiaries": [
+      "Insiders who sold early",
+      "Depression-era asset buyers"
+    ],
+    "victims": [
+      "25 million unemployed",
+      "7,000 failed banks' depositors",
+      "Millions starved"
+    ],
+    "amount_extracted_usd": 30000000000,
+    "extraction_method": "Credit contraction after speculation pump",
+    "flow_direction": "retail_to_institution",
+    "source_location": "Retail investors and savers",
+    "destination_location": "Connected insiders, asset buyers at bottom",
+    "intermediaries": [
+      "Stock exchanges",
+      "Brokers offering margin"
+    ],
+    "stated_reason": "Market correction, speculation bubble",
+    "actual_reason": "Engineered crash to consolidate assets cheaply",
+    "short_term_effects": [
+      "25% unemployment",
+      "Bank failures",
+      "Suicide epidemic"
+    ],
+    "long_term_effects": [
+      "Rockefeller Center bought cheap",
+      "Concentration of ownership",
+      "Path to WWII"
+    ],
+    "planetary_effects": [
+      "economic_depression",
+      "war_financing"
+    ],
+    "evidence_sources": [
+      "Fed minutes 1928-1929",
+      "Kennedy memoirs",
+      "Baruch testimony"
+    ],
+    "confidence": 0.95,
+    "correlated_bot_activity": [],
+    "correlated_events": []
+  },
+  {
+    "event_id": "BRETTON_WOODS_1944",
+    "date": "1944-07-22",
+    "event_name": "Bretton Woods Agreement",
+    "perpetrators": [
+      "Harry Dexter White (Soviet spy)",
+      "US Treasury",
+      "Allied nations under pressure"
+    ],
+    "beneficiaries": [
+      "United States",
+      "US Banking System",
+      "Dollar holders"
+    ],
+    "victims": [
+      "All other nations",
+      "Non-dollar economies"
+    ],
+    "amount_extracted_usd": 0,
+    "extraction_method": "Post-war leverage to establish dollar hegemony",
+    "flow_direction": "public_to_private",
+    "source_location": "Global trade (all nations)",
+    "destination_location": "US Treasury / Federal Reserve",
+    "intermediaries": [
+      "IMF",
+      "World Bank"
+    ],
+    "stated_reason": "Stabilize post-war international monetary system",
+    "actual_reason": "Force world to hold dollars, enabling US to print wealth",
+    "short_term_effects": [
+      "Dollar becomes world reserve",
+      "Gold flows to US"
+    ],
+    "long_term_effects": [
+      "Exorbitant privilege",
+      "Global dollar dependency",
+      "US monetary imperialism"
+    ],
+    "planetary_effects": [
+      "wealth_concentration",
+      "debt_slavery"
+    ],
+    "evidence_sources": [
+      "Bretton Woods transcripts",
+      "Venona decrypts (White spy confirmation)"
+    ],
+    "confidence": 0.98,
+    "correlated_bot_activity": [],
+    "correlated_events": []
+  },
+  {
+    "event_id": "NIXON_SHOCK_1971",
+    "date": "1971-08-15",
+    "event_name": "Nixon Closes Gold Window",
+    "perpetrators": [
+      "Richard Nixon",
+      "John Connally",
+      "Paul Volcker",
+      "Arthur Burns"
+    ],
+    "beneficiaries": [
+      "US Government (unlimited spending)",
+      "Banks (unlimited lending)"
+    ],
+    "victims": [
+      "Savers worldwide",
+      "Fixed-income workers",
+      "Future generations"
+    ],
+    "amount_extracted_usd": 0,
+    "extraction_method": "Unilateral default on gold obligations",
+    "flow_direction": "future_to_present",
+    "source_location": "Future productivity (debt)",
+    "destination_location": "Present consumption and wars",
+    "intermediaries": [
+      "Treasury",
+      "Federal Reserve",
+      "Foreign central banks"
+    ],
+    "stated_reason": "Temporary measure to defend dollar",
+    "actual_reason": "Enable unlimited money printing without constraint",
+    "short_term_effects": [
+      "Dollar devalued",
+      "Inflation began",
+      "Gold price freed"
+    ],
+    "long_term_effects": [
+      "Dollar lost 98% purchasing power",
+      "Wages stagnant vs GDP",
+      "Financialization of economy"
+    ],
+    "planetary_effects": [
+      "debt_slavery",
+      "wealth_concentration",
+      "consciousness_suppression"
+    ],
+    "evidence_sources": [
+      "Camp David meeting records",
+      "Nixon tapes",
+      "Volcker memoirs"
+    ],
+    "confidence": 0.99,
+    "correlated_bot_activity": [],
+    "correlated_events": []
+  },
+  {
+    "event_id": "BLACK_MONDAY_1987",
+    "date": "1987-10-19",
+    "event_name": "Black Monday - 22.6% Drop",
+    "perpetrators": [
+      "Program trading algorithms",
+      "Portfolio insurance schemes"
+    ],
+    "beneficiaries": [
+      "Those with cash reserves",
+      "Short sellers"
+    ],
+    "victims": [
+      "Retail investors",
+      "Pension funds"
+    ],
+    "amount_extracted_usd": 500000000000,
+    "extraction_method": "Algorithmic cascade selling",
+    "flow_direction": "retail_to_institution",
+    "source_location": "Equity holders",
+    "destination_location": "Cash-rich institutions",
+    "intermediaries": [
+      "Stock exchanges",
+      "Clearing houses"
+    ],
+    "stated_reason": "Market mechanics failure",
+    "actual_reason": "First demonstration of algorithmic market manipulation",
+    "short_term_effects": [
+      "Largest single-day percentage drop",
+      "Circuit breakers introduced"
+    ],
+    "long_term_effects": [
+      "Fed Put established",
+      "Moral hazard institutionalized"
+    ],
+    "planetary_effects": [
+      "wealth_concentration"
+    ],
+    "evidence_sources": [
+      "Brady Commission Report",
+      "SEC analysis"
+    ],
+    "confidence": 0.9,
+    "correlated_bot_activity": [
+      "First evidence of algorithmic trading patterns"
+    ],
+    "correlated_events": []
+  },
+  {
+    "event_id": "GFC_2008",
+    "date": "2008-09-15",
+    "event_name": "Global Financial Crisis / Lehman Collapse",
+    "perpetrators": [
+      "Goldman Sachs",
+      "JP Morgan",
+      "Lehman Brothers",
+      "AIG",
+      "Rating Agencies",
+      "Fed"
+    ],
+    "beneficiaries": [
+      "Bank executives",
+      "Bailout recipients",
+      "Asset buyers at bottom"
+    ],
+    "victims": [
+      "10 million homeowners foreclosed",
+      "Global unemployment",
+      "Pension funds"
+    ],
+    "amount_extracted_usd": 22000000000000,
+    "extraction_method": "Fraudulent CDOs, predatory lending, then bailout",
+    "flow_direction": "retail_to_institution",
+    "source_location": "Homeowners, taxpayers, pension funds",
+    "destination_location": "Bank balance sheets, executive bonuses, offshore accounts",
+    "intermediaries": [
+      "Fannie Mae",
+      "Freddie Mac",
+      "Treasury",
+      "Fed"
+    ],
+    "stated_reason": "Housing bubble, market forces",
+    "actual_reason": "Engineered crisis to consolidate banking power and get public bailout",
+    "short_term_effects": [
+      "Bank bailouts",
+      "Foreclosure epidemic",
+      "Credit freeze"
+    ],
+    "long_term_effects": [
+      "Too Big To Fail codified",
+      "Quantitative Easing permanent",
+      "Wealth gap explosion"
+    ],
+    "planetary_effects": [
+      "wealth_concentration",
+      "economic_depression",
+      "social_division"
+    ],
+    "evidence_sources": [
+      "FCIC Report",
+      "Senate Permanent Subcommittee hearings",
+      "Leaked Goldman emails"
+    ],
+    "confidence": 0.98,
+    "correlated_bot_activity": [],
+    "correlated_events": []
+  },
+  {
+    "event_id": "FLASH_CRASH_2010",
+    "date": "2010-05-06",
+    "event_name": "Flash Crash - 1000 Point Drop in Minutes",
+    "perpetrators": [
+      "High-frequency trading firms",
+      "Navinder Sarao (scapegoat)"
+    ],
+    "beneficiaries": [
+      "HFT firms with fastest algorithms"
+    ],
+    "victims": [
+      "Retail investors with stop losses triggered"
+    ],
+    "amount_extracted_usd": 1000000000000,
+    "extraction_method": "Algorithmic spoofing and quote stuffing",
+    "flow_direction": "retail_to_institution",
+    "source_location": "Stop-loss orders triggered",
+    "destination_location": "HFT firms buying at flash-crash prices",
+    "intermediaries": [
+      "Dark pools",
+      "Stock exchanges"
+    ],
+    "stated_reason": "Fat finger trade, market malfunction",
+    "actual_reason": "HFT manipulation exposed but unpunished",
+    "short_term_effects": [
+      "Circuit breakers improved",
+      "One trader scapegoated"
+    ],
+    "long_term_effects": [
+      "HFT dominance cemented",
+      "Market structure favors speed over fairness"
+    ],
+    "planetary_effects": [
+      "wealth_concentration"
+    ],
+    "evidence_sources": [
+      "SEC/CFTC Report",
+      "Nanex analysis"
+    ],
+    "confidence": 0.92,
+    "correlated_bot_activity": [
+      "BOT-23H patterns correlate with HFT activity windows"
+    ],
+    "correlated_events": []
+  },
+  {
+    "event_id": "COVID_CRASH_2020",
+    "date": "2020-03-23",
+    "event_name": "COVID Crash and Fed Intervention",
+    "perpetrators": [
+      "Federal Reserve",
+      "US Treasury",
+      "Insider traders (senators)"
+    ],
+    "beneficiaries": [
+      "Asset owners",
+      "Stock buyback companies",
+      "Billionaires ($1T+ gain)"
+    ],
+    "victims": [
+      "Small businesses (30% closed)",
+      "Workers (22M unemployed)",
+      "Renters"
+    ],
+    "amount_extracted_usd": 5000000000000,
+    "extraction_method": "Unlimited QE, direct corporate bond buying, PPP fraud",
+    "flow_direction": "public_to_private",
+    "source_location": "Federal Reserve (money printing)",
+    "destination_location": "Corporate bonds, stock market, billionaire wealth",
+    "intermediaries": [
+      "BlackRock (hired to manage Fed purchases)",
+      "Banks"
+    ],
+    "stated_reason": "Emergency pandemic response",
+    "actual_reason": "Largest wealth transfer in history under emergency cover",
+    "short_term_effects": [
+      "V-shaped recovery for stocks",
+      "K-shaped for workers",
+      "PPP fraud rampant"
+    ],
+    "long_term_effects": [
+      "Inflation (40-year high)",
+      "Asset bubble",
+      "Fed captured by markets"
+    ],
+    "planetary_effects": [
+      "wealth_concentration",
+      "social_division",
+      "debt_slavery"
+    ],
+    "evidence_sources": [
+      "Fed balance sheet data",
+      "Senator trading records",
+      "PPP fraud prosecutions"
+    ],
+    "confidence": 0.97,
+    "correlated_bot_activity": [
+      "Weekend Whale strength peaked during COVID volatility"
+    ],
+    "correlated_events": []
+  },
+  {
+    "event_id": "GAMESTOP_2021",
+    "date": "2021-01-28",
+    "event_name": "GameStop Buy Button Removed",
+    "perpetrators": [
+      "Robinhood (Vlad Tenev)",
+      "Citadel (Ken Griffin)",
+      "DTCC"
+    ],
+    "beneficiaries": [
+      "Short sellers saved from squeeze",
+      "Citadel",
+      "Hedge funds"
+    ],
+    "victims": [
+      "Retail investors locked out",
+      "GME holders forced to sell"
+    ],
+    "amount_extracted_usd": 10000000000,
+    "extraction_method": "Buy button removal, forced liquidation",
+    "flow_direction": "retail_to_institution",
+    "source_location": "Retail investor accounts",
+    "destination_location": "Hedge fund survival, Citadel market making profits",
+    "intermediaries": [
+      "Robinhood",
+      "DTCC (raised collateral requirements)"
+    ],
+    "stated_reason": "Liquidity requirements, market stability",
+    "actual_reason": "Save short sellers from retail-driven squeeze",
+    "short_term_effects": [
+      "Price crashed from $483 to $40",
+      "Retail fury",
+      "Congressional hearing"
+    ],
+    "long_term_effects": [
+      "Trust in markets damaged",
+      "DRS movement began",
+      "Crypto adoption accelerated"
+    ],
+    "planetary_effects": [
+      "social_division",
+      "consciousness_suppression"
+    ],
+    "evidence_sources": [
+      "Congressional testimony",
+      "Robinhood internal messages",
+      "DTCC collateral data"
+    ],
+    "confidence": 0.96,
+    "correlated_bot_activity": [
+      "Coordinated selling algorithms detected during squeeze suppression"
+    ],
+    "correlated_events": []
+  },
+  {
+    "event_id": "FTX_COLLAPSE_2022",
+    "date": "2022-11-11",
+    "event_name": "FTX Bankruptcy - $8B Customer Funds Missing",
+    "perpetrators": [
+      "Sam Bankman-Fried",
+      "Caroline Ellison",
+      "Gary Wang",
+      "Nishad Singh"
+    ],
+    "beneficiaries": [
+      "SBF ($40M+ political donations)",
+      "Alameda traders",
+      "Early investors who exited"
+    ],
+    "victims": [
+      "1M+ FTX customers",
+      "Crypto industry reputation"
+    ],
+    "amount_extracted_usd": 8000000000,
+    "extraction_method": "Commingling customer funds, false accounting",
+    "flow_direction": "retail_to_institution",
+    "source_location": "FTX customer deposits",
+    "destination_location": "Alameda Research, political donations, real estate",
+    "intermediaries": [
+      "Alameda Research",
+      "FTX internal systems"
+    ],
+    "stated_reason": "Liquidity crisis",
+    "actual_reason": "Fraud and embezzlement from day one",
+    "short_term_effects": [
+      "FTX bankruptcy",
+      "Contagion to other crypto firms"
+    ],
+    "long_term_effects": [
+      "Regulatory crackdown",
+      "Crypto bear market extended"
+    ],
+    "planetary_effects": [
+      "wealth_concentration",
+      "social_division"
+    ],
+    "evidence_sources": [
+      "Bankruptcy filings",
+      "Court documents",
+      "SBF trial testimony"
+    ],
+    "confidence": 0.99,
+    "correlated_bot_activity": [
+      "Alameda bots detected in price manipulation patterns"
+    ],
+    "correlated_events": []
+  },
+  {
+    "event_id": "AI_NARRATIVE_2023",
+    "date": "2023-01-01",
+    "event_name": "AI Narrative Pump - Magnificent 7 Concentration",
+    "perpetrators": [
+      "Major asset managers",
+      "Tech company insiders"
+    ],
+    "beneficiaries": [
+      "Magnificent 7 shareholders",
+      "Index fund managers",
+      "Options sellers"
+    ],
+    "victims": [
+      "Diversified investors underperforming",
+      "Active managers"
+    ],
+    "amount_extracted_usd": 5000000000000,
+    "extraction_method": "Narrative control, index inclusion mechanics",
+    "flow_direction": "retail_to_institution",
+    "source_location": "Passive investors buying index",
+    "destination_location": "Concentrated tech stocks",
+    "intermediaries": [
+      "S&P Index Committee",
+      "ETF providers"
+    ],
+    "stated_reason": "AI revolution, productivity gains",
+    "actual_reason": "Narrative capture to drive flows into concentrated positions",
+    "short_term_effects": [
+      "S&P 500 up 24% in 2023",
+      "7 stocks = 30% of index"
+    ],
+    "long_term_effects": [
+      "Concentration risk extreme",
+      "Passive investing bubble"
+    ],
+    "planetary_effects": [
+      "wealth_concentration"
+    ],
+    "evidence_sources": [
+      "Index composition data",
+      "Flow tracking data"
+    ],
+    "confidence": 0.85,
+    "correlated_bot_activity": [
+      "Solar Clock Algorithm intensified during AI narrative"
+    ],
+    "correlated_events": []
+  }
+]
