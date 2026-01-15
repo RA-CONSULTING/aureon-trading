@@ -1,0 +1,707 @@
+{
+  "total_events": 12,
+  "year_range": "1913 - 2022",
+  "events_by_type": {
+    "regulatory_capture": [
+      "Federal Reserve Act",
+      "GameStop & Meme Stock Suppression"
+    ],
+    "market_crash": [
+      "Great Depression",
+      "Black Monday Crash",
+      "Global Financial Crisis",
+      "Flash Crash",
+      "COVID Crash & Recovery",
+      "FTX Collapse - Crypto Exchange Fraud"
+    ],
+    "currency_attack": [
+      "Bretton Woods Agreement",
+      "Nixon Shock - Gold Standard Abandoned",
+      "Asian Financial Crisis"
+    ],
+    "bubble_pump": [
+      "Dot-Com Bubble Burst"
+    ]
+  },
+  "entity_involvement": {
+    "US Federal Reserve": [
+      "1913: Federal Reserve Act",
+      "1944: Bretton Woods Agreement"
+    ],
+    "JP Morgan (precursor)": [
+      "1913: Federal Reserve Act"
+    ],
+    "Rockefeller interests": [
+      "1913: Federal Reserve Act"
+    ],
+    "Federal Reserve": [
+      "1929: Great Depression",
+      "1971: Nixon Shock - Gold Standard Abandoned",
+      "1987: Black Monday Crash",
+      "2008: Global Financial Crisis",
+      "2020: COVID Crash & Recovery"
+    ],
+    "Major banks (JPM, Goldman precursors)": [
+      "1929: Great Depression"
+    ],
+    "Wealthy industrialists": [
+      "1929: Great Depression"
+    ],
+    "US Treasury": [
+      "1944: Bretton Woods Agreement",
+      "1971: Nixon Shock - Gold Standard Abandoned",
+      "1997: Asian Financial Crisis"
+    ],
+    "International bankers": [
+      "1944: Bretton Woods Agreement"
+    ],
+    "Nixon administration": [
+      "1971: Nixon Shock - Gold Standard Abandoned"
+    ],
+    "Major investment banks": [
+      "1987: Black Monday Crash"
+    ],
+    "Renaissance Technologies (early HFT)": [
+      "1987: Black Monday Crash"
+    ],
+    "Hedge funds (Soros Quantum Fund)": [
+      "1997: Asian Financial Crisis"
+    ],
+    "IMF (enforced austerity)": [
+      "1997: Asian Financial Crisis"
+    ],
+    "Investment banks (Goldman, Morgan Stanley)": [
+      "2000: Dot-Com Bubble Burst"
+    ],
+    "Fed (easy money 1995-2000)": [
+      "2000: Dot-Com Bubble Burst"
+    ],
+    "VC firms": [
+      "2000: Dot-Com Bubble Burst",
+      "2022: FTX Collapse - Crypto Exchange Fraud"
+    ],
+    "Investment banks (Goldman, Lehman, etc.)": [
+      "2008: Global Financial Crisis"
+    ],
+    "Rating agencies (Moody's, S&P)": [
+      "2008: Global Financial Crisis"
+    ],
+    "Hedge funds": [
+      "2008: Global Financial Crisis"
+    ],
+    "HFT firms (Citadel, Jane Street, etc.)": [
+      "2010: Flash Crash"
+    ],
+    "SEC (useless)": [
+      "2010: Flash Crash"
+    ],
+    "Exchanges": [
+      "2010: Flash Crash"
+    ],
+    "BlackRock": [
+      "2020: COVID Crash & Recovery"
+    ],
+    "All major banks": [
+      "2020: COVID Crash & Recovery"
+    ],
+    "Big Tech": [
+      "2020: COVID Crash & Recovery"
+    ],
+    "Citadel": [
+      "2021: GameStop & Meme Stock Suppression"
+    ],
+    "Robinhood": [
+      "2021: GameStop & Meme Stock Suppression"
+    ],
+    "Melvin Capital": [
+      "2021: GameStop & Meme Stock Suppression"
+    ],
+    "SEC (protected shorts)": [
+      "2021: GameStop & Meme Stock Suppression"
+    ],
+    "FTX (Sam Bankman-Fried)": [
+      "2022: FTX Collapse - Crypto Exchange Fraud"
+    ],
+    "Alameda Research": [
+      "2022: FTX Collapse - Crypto Exchange Fraud"
+    ],
+    "Politicians (donations)": [
+      "2022: FTX Collapse - Crypto Exchange Fraud"
+    ]
+  },
+  "patterns_detected": {
+    "tactic": [
+      {
+        "year": 1913,
+        "event": "Federal Reserve Act",
+        "value": "Regulatory capture"
+      },
+      {
+        "year": 1929,
+        "event": "Great Depression",
+        "value": "Credit expansion \u2192 sudden contraction"
+      },
+      {
+        "year": 1944,
+        "event": "Bretton Woods Agreement",
+        "value": "Post-war financial architecture capture"
+      },
+      {
+        "year": 1971,
+        "event": "Nixon Shock - Gold Standard Abandoned",
+        "value": "Break promise, normalize theft"
+      },
+      {
+        "year": 1987,
+        "event": "Black Monday Crash",
+        "value": "Algorithmic cascade + Fed rescue"
+      },
+      {
+        "year": 1997,
+        "event": "Asian Financial Crisis",
+        "value": "Currency attack \u2192 IMF austerity \u2192 asset stripping"
+      },
+      {
+        "year": 2000,
+        "event": "Dot-Com Bubble Burst",
+        "value": "Easy money \u2192 pump \u2192 insider exit \u2192 crash"
+      },
+      {
+        "year": 2008,
+        "event": "Global Financial Crisis",
+        "value": "Fraud \u2192 crash \u2192 bailout \u2192 no consequences"
+      },
+      {
+        "year": 2010,
+        "event": "Flash Crash",
+        "value": "Algorithm cascade \u2192 liquidity removal \u2192 harvest stops \u2192 recover"
+      },
+      {
+        "year": 2020,
+        "event": "COVID Crash & Recovery",
+        "value": "Crisis \u2192 lockdown \u2192 print money \u2192 asset inflation"
+      },
+      {
+        "year": 2021,
+        "event": "GameStop & Meme Stock Suppression",
+        "value": "When losing, change rules mid-game"
+      },
+      {
+        "year": 2022,
+        "event": "FTX Collapse - Crypto Exchange Fraud",
+        "value": "Ponzi scheme \u2192 collapse \u2192 regulate (kill competition)"
+      }
+    ],
+    "stealth": [
+      {
+        "year": 1913,
+        "event": "Federal Reserve Act",
+        "value": 0.95
+      }
+    ],
+    "permanence": [
+      {
+        "year": 1913,
+        "event": "Federal Reserve Act",
+        "value": "Ongoing 113 years"
+      }
+    ],
+    "wealth_concentration": [
+      {
+        "year": 1929,
+        "event": "Great Depression",
+        "value": "Massive"
+      }
+    ],
+    "scope": [
+      {
+        "year": 1944,
+        "event": "Bretton Woods Agreement",
+        "value": "Global"
+      }
+    ],
+    "inflation_weapon": [
+      {
+        "year": 1971,
+        "event": "Nixon Shock - Gold Standard Abandoned",
+        "value": "Activated"
+      }
+    ],
+    "moral_hazard": [
+      {
+        "year": 1987,
+        "event": "Black Monday Crash",
+        "value": "Created"
+      }
+    ],
+    "colonial_pattern": [
+      {
+        "year": 1997,
+        "event": "Asian Financial Crisis",
+        "value": "Yes"
+      }
+    ],
+    "fraud": [
+      {
+        "year": 2000,
+        "event": "Dot-Com Bubble Burst",
+        "value": "Massive"
+      }
+    ],
+    "regulatory_capture": [
+      {
+        "year": 2008,
+        "event": "Global Financial Crisis",
+        "value": "Complete"
+      }
+    ],
+    "speed": [
+      {
+        "year": 2010,
+        "event": "Flash Crash",
+        "value": "Microseconds"
+      },
+      {
+        "year": 2020,
+        "event": "COVID Crash & Recovery",
+        "value": "6 months"
+      }
+    ],
+    "blatant": [
+      {
+        "year": 2021,
+        "event": "GameStop & Meme Stock Suppression",
+        "value": "Yes"
+      }
+    ],
+    "political_capture": [
+      {
+        "year": 2022,
+        "event": "FTX Collapse - Crypto Exchange Fraud",
+        "value": "Massive"
+      }
+    ]
+  },
+  "civilizational_damage": [],
+  "lessons_learned": [
+    {
+      "year": 1913,
+      "event": "Federal Reserve Act",
+      "lesson": "Create money-printing monopoly under guise of 'stability'"
+    },
+    {
+      "year": 1913,
+      "event": "Federal Reserve Act",
+      "lesson": "Pass controversial legislation when opposition is absent"
+    },
+    {
+      "year": 1913,
+      "event": "Federal Reserve Act",
+      "lesson": "Control money supply = control civilization"
+    },
+    {
+      "year": 1929,
+      "event": "Great Depression",
+      "lesson": "Inflate credit bubble for years"
+    },
+    {
+      "year": 1929,
+      "event": "Great Depression",
+      "lesson": "Pull liquidity suddenly to trigger crash"
+    },
+    {
+      "year": 1929,
+      "event": "Great Depression",
+      "lesson": "Buy assets at bottom with reserves"
+    },
+    {
+      "year": 1929,
+      "event": "Great Depression",
+      "lesson": "Blame 'capitalism' not the controllers"
+    },
+    {
+      "year": 1944,
+      "event": "Bretton Woods Agreement",
+      "lesson": "Use war victory to impose financial system"
+    },
+    {
+      "year": 1944,
+      "event": "Bretton Woods Agreement",
+      "lesson": "Control reserve currency = tax all trade"
+    },
+    {
+      "year": 1944,
+      "event": "Bretton Woods Agreement",
+      "lesson": "Promise gold backing (remove later)"
+    },
+    {
+      "year": 1971,
+      "event": "Nixon Shock - Gold Standard Abandoned",
+      "lesson": "Promise can be broken if powerful enough"
+    },
+    {
+      "year": 1971,
+      "event": "Nixon Shock - Gold Standard Abandoned",
+      "lesson": "Inflation = hidden tax on poor/middle class"
+    },
+    {
+      "year": 1971,
+      "event": "Nixon Shock - Gold Standard Abandoned",
+      "lesson": "Asset inflation makes rich richer"
+    },
+    {
+      "year": 1971,
+      "event": "Nixon Shock - Gold Standard Abandoned",
+      "lesson": "Fiat enables unlimited government/bank power"
+    },
+    {
+      "year": 1987,
+      "event": "Black Monday Crash",
+      "lesson": "Algorithms amplify crashes"
+    },
+    {
+      "year": 1987,
+      "event": "Black Monday Crash",
+      "lesson": "Create problem, offer solution (Fed Put)"
+    },
+    {
+      "year": 1987,
+      "event": "Black Monday Crash",
+      "lesson": "Moral hazard: Rich know they'll be rescued"
+    },
+    {
+      "year": 1987,
+      "event": "Black Monday Crash",
+      "lesson": "Crashes are buying opportunities for insiders"
+    },
+    {
+      "year": 1997,
+      "event": "Asian Financial Crisis",
+      "lesson": "Attack developing nation currencies"
+    },
+    {
+      "year": 1997,
+      "event": "Asian Financial Crisis",
+      "lesson": "Create panic via short selling"
+    },
+    {
+      "year": 1997,
+      "event": "Asian Financial Crisis",
+      "lesson": "IMF enforces austerity (makes crisis worse)"
+    },
+    {
+      "year": 1997,
+      "event": "Asian Financial Crisis",
+      "lesson": "Buy assets at fire sale prices"
+    },
+    {
+      "year": 1997,
+      "event": "Asian Financial Crisis",
+      "lesson": "Modern colonialism via finance"
+    },
+    {
+      "year": 2000,
+      "event": "Dot-Com Bubble Burst",
+      "lesson": "Create bubble with easy money"
+    },
+    {
+      "year": 2000,
+      "event": "Dot-Com Bubble Burst",
+      "lesson": "List fraudulent companies"
+    },
+    {
+      "year": 2000,
+      "event": "Dot-Com Bubble Burst",
+      "lesson": "Promote 'new paradigm' (this time is different)"
+    },
+    {
+      "year": 2000,
+      "event": "Dot-Com Bubble Burst",
+      "lesson": "Insiders sell at peak to retail"
+    },
+    {
+      "year": 2000,
+      "event": "Dot-Com Bubble Burst",
+      "lesson": "Pop bubble by raising rates"
+    },
+    {
+      "year": 2000,
+      "event": "Dot-Com Bubble Burst",
+      "lesson": "Blame 'irrational exuberance' not fraud"
+    },
+    {
+      "year": 2008,
+      "event": "Global Financial Crisis",
+      "lesson": "Create fraud pyramid (mortgages, CDOs)"
+    },
+    {
+      "year": 2008,
+      "event": "Global Financial Crisis",
+      "lesson": "Rating agencies will lie for fees"
+    },
+    {
+      "year": 2008,
+      "event": "Global Financial Crisis",
+      "lesson": "Regulators will ignore (revolving door)"
+    },
+    {
+      "year": 2008,
+      "event": "Global Financial Crisis",
+      "lesson": "When it blows up, government bails you out"
+    },
+    {
+      "year": 2008,
+      "event": "Global Financial Crisis",
+      "lesson": "Too big to fail = too big to jail"
+    },
+    {
+      "year": 2008,
+      "event": "Global Financial Crisis",
+      "lesson": "Privatize gains, socialize losses"
+    },
+    {
+      "year": 2010,
+      "event": "Flash Crash",
+      "lesson": "HFT algos coordinate crashes"
+    },
+    {
+      "year": 2010,
+      "event": "Flash Crash",
+      "lesson": "Liquidity is illusion (vanishes when needed)"
+    },
+    {
+      "year": 2010,
+      "event": "Flash Crash",
+      "lesson": "Scapegoat small player, protect cartel"
+    },
+    {
+      "year": 2010,
+      "event": "Flash Crash",
+      "lesson": "Microsecond advantage = god mode"
+    },
+    {
+      "year": 2010,
+      "event": "Flash Crash",
+      "lesson": "Markets no longer for humans"
+    },
+    {
+      "year": 2020,
+      "event": "COVID Crash & Recovery",
+      "lesson": "Any crisis can be weaponized"
+    },
+    {
+      "year": 2020,
+      "event": "COVID Crash & Recovery",
+      "lesson": "Print unlimited money for elites"
+    },
+    {
+      "year": 2020,
+      "event": "COVID Crash & Recovery",
+      "lesson": "Destroy small businesses (competition)"
+    },
+    {
+      "year": 2020,
+      "event": "COVID Crash & Recovery",
+      "lesson": "Inflate assets (rich own assets)"
+    },
+    {
+      "year": 2020,
+      "event": "COVID Crash & Recovery",
+      "lesson": "Poor get stimulus crumbs, rich get trillions"
+    },
+    {
+      "year": 2020,
+      "event": "COVID Crash & Recovery",
+      "lesson": "Largest wealth transfer in history"
+    },
+    {
+      "year": 2021,
+      "event": "GameStop & Meme Stock Suppression",
+      "lesson": "Naked short selling (fraud) is allowed for elites"
+    },
+    {
+      "year": 2021,
+      "event": "GameStop & Meme Stock Suppression",
+      "lesson": "When retail wins, shut down platforms"
+    },
+    {
+      "year": 2021,
+      "event": "GameStop & Meme Stock Suppression",
+      "lesson": "SEC protects hedge funds, not investors"
+    },
+    {
+      "year": 2021,
+      "event": "GameStop & Meme Stock Suppression",
+      "lesson": "System is rigged at infrastructure level"
+    },
+    {
+      "year": 2021,
+      "event": "GameStop & Meme Stock Suppression",
+      "lesson": "'Free market' is illusion"
+    },
+    {
+      "year": 2022,
+      "event": "FTX Collapse - Crypto Exchange Fraud",
+      "lesson": "Crypto can be controlled via exchanges"
+    },
+    {
+      "year": 2022,
+      "event": "FTX Collapse - Crypto Exchange Fraud",
+      "lesson": "Political donations buy immunity (temporarily)"
+    },
+    {
+      "year": 2022,
+      "event": "FTX Collapse - Crypto Exchange Fraud",
+      "lesson": "Let fraud run wild, then regulate industry to death"
+    },
+    {
+      "year": 2022,
+      "event": "FTX Collapse - Crypto Exchange Fraud",
+      "lesson": "Centralized exchanges = same old fraud"
+    },
+    {
+      "year": 2022,
+      "event": "FTX Collapse - Crypto Exchange Fraud",
+      "lesson": "Not your keys, not your crypto"
+    }
+  ],
+  "evidence": [
+    {
+      "year": 1913,
+      "event": "Federal Reserve Act",
+      "evidence": [
+        "Jekyll Island meeting (1910) - secret gathering of bankers",
+        "Passed during Christmas recess when opposition absent",
+        "Woodrow Wilson later regretted: 'I have unwittingly ruined my country'"
+      ],
+      "impact": "Transfer of monetary sovereignty from elected government to private bankers. Enabled unlimited debt creation."
+    },
+    {
+      "year": 1929,
+      "event": "Great Depression",
+      "evidence": [
+        "Fed raised interest rates in 1928-29 despite warning signs",
+        "Margin lending encouraged then suddenly restricted",
+        "Wealthy withdrew from market before crash (insider knowledge)",
+        "Fed refused to inject liquidity during crash (deliberate)"
+      ],
+      "impact": "25% unemployment, mass starvation, social breakdown. Led directly to WWII."
+    },
+    {
+      "year": 1944,
+      "event": "Bretton Woods Agreement",
+      "evidence": [
+        "44 nations agreed to peg currencies to dollar",
+        "Dollar 'as good as gold' at $35/oz",
+        "US accumulated majority of world's gold through war",
+        "Created IMF and World Bank (debt trap institutions)"
+      ],
+      "impact": "Dollar hegemony established. All international trade requires dollars."
+    },
+    {
+      "year": 1971,
+      "event": "Nixon Shock - Gold Standard Abandoned",
+      "evidence": [
+        "August 15, 1971 - unilateral announcement",
+        "Promised 'temporary' (never restored)",
+        "Foreign nations' gold claims invalidated",
+        "Freed Fed to print unlimited money"
+      ],
+      "impact": "Beginning of unlimited money printing. Purchasing power of dollar down 98% since. Wages stagnant despite GDP growth."
+    },
+    {
+      "year": 1987,
+      "event": "Black Monday Crash",
+      "evidence": [
+        "Program trading blamed (early algorithms)",
+        "Portfolio insurance created feedback loop",
+        "Insiders knew and positioned beforehand",
+        "Fed immediately cut rates (Greenspan Put established)"
+      ],
+      "impact": "Proved algorithms could create systemic crashes. Established 'Fed Put' (bailouts guaranteed)."
+    },
+    {
+      "year": 1997,
+      "event": "Asian Financial Crisis",
+      "evidence": [
+        "Thailand baht attacked first (July 1997)",
+        "Spread to Malaysia, Indonesia, South Korea",
+        "Short selling + rumors created panic",
+        "IMF imposed harsh austerity (fire sale of assets)"
+      ],
+      "impact": "Millions impoverished. Suicides spiked. Assets sold to Western firms at pennies."
+    },
+    {
+      "year": 2000,
+      "event": "Dot-Com Bubble Burst",
+      "evidence": [
+        "Fed kept rates at 1% (1992-1994), inflated bubble",
+        "Banks took garbage companies public (fraud)",
+        "Insiders sold at peak (2000)",
+        "Fed raised rates 1999-2000 (popped bubble)",
+        "Nasdaq dropped 78% (2000-2002)"
+      ],
+      "impact": "$5 trillion wealth destroyed. Retirement accounts devastated. Tech innovation set back years."
+    },
+    {
+      "year": 2008,
+      "event": "Global Financial Crisis",
+      "evidence": [
+        "Subprime mortgages packaged as AAA securities (fraud)",
+        "Banks knew mortgages were garbage (internal emails)",
+        "Rating agencies paid to give AAA ratings",
+        "Fed ignored warnings (2005-2007)",
+        "Goldman shorted same securities they sold (fraud)"
+      ],
+      "impact": "$16 trillion wealth destroyed. 10 million foreclosures. Greatest wealth transfer in history."
+    },
+    {
+      "year": 2010,
+      "event": "Flash Crash",
+      "evidence": [
+        "9:30 AM - market normal",
+        "2:45 PM - algorithms triggered cascade",
+        "Dow dropped 1000 points in 5 minutes",
+        "Recovered in 10 minutes (but damage done)",
+        "One trader scapegoated, HFT firms untouched"
+      ],
+      "impact": "Proved algos control markets. Retail confidence destroyed. Algos now run everything."
+    },
+    {
+      "year": 2020,
+      "event": "COVID Crash & Recovery",
+      "evidence": [
+        "Senators sold stocks in February (insider trading)",
+        "Market dumped -35% in March",
+        "Fed printed $6 trillion in 6 months",
+        "Assets: stocks, housing, crypto all exploded",
+        "BlackRock hired by Fed to buy assets (conflict of interest)"
+      ],
+      "impact": "Small businesses destroyed (lockdowns). Big corporations bailed out. Wealth gap largest in history."
+    },
+    {
+      "year": 2021,
+      "event": "GameStop & Meme Stock Suppression",
+      "evidence": [
+        "Short interest >100% (naked shorting = illegal)",
+        "Jan 28, 2021: Robinhood disabled buy button",
+        "Only allowed selling (crashed price)",
+        "Citadel bailed out Melvin $2.75B",
+        "SEC did nothing about naked shorts"
+      ],
+      "impact": "Proof that retail can never win. System rigged at infrastructure level. Rules don't apply to elites."
+    },
+    {
+      "year": 2022,
+      "event": "FTX Collapse - Crypto Exchange Fraud",
+      "evidence": [
+        "Customer funds used for Alameda trading (fraud)",
+        "$8B customer money missing",
+        "Backdoor in code to hide theft",
+        "SBF donated $40M to politicians (both parties)",
+        "Regulators ignored warnings"
+      ],
+      "impact": "Crypto industry set back years. Retail lost life savings. Calls for regulation (what they wanted)."
+    }
+  ]
+}

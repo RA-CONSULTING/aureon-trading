@@ -1,0 +1,232 @@
+{
+  "patterns_identified": {
+    "tactic": [
+      {
+        "year": 1913,
+        "event": "Federal Reserve Act",
+        "value": "Regulatory capture"
+      },
+      {
+        "year": 1929,
+        "event": "Great Depression",
+        "value": "Credit expansion \u2192 sudden contraction"
+      },
+      {
+        "year": 1944,
+        "event": "Bretton Woods Agreement",
+        "value": "Post-war financial architecture capture"
+      },
+      {
+        "year": 1971,
+        "event": "Nixon Shock - Gold Standard Abandoned",
+        "value": "Break promise, normalize theft"
+      },
+      {
+        "year": 1987,
+        "event": "Black Monday Crash",
+        "value": "Algorithmic cascade + Fed rescue"
+      },
+      {
+        "year": 1997,
+        "event": "Asian Financial Crisis",
+        "value": "Currency attack \u2192 IMF austerity \u2192 asset stripping"
+      },
+      {
+        "year": 2000,
+        "event": "Dot-Com Bubble Burst",
+        "value": "Easy money \u2192 pump \u2192 insider exit \u2192 crash"
+      },
+      {
+        "year": 2008,
+        "event": "Global Financial Crisis",
+        "value": "Fraud \u2192 crash \u2192 bailout \u2192 no consequences"
+      },
+      {
+        "year": 2010,
+        "event": "Flash Crash",
+        "value": "Algorithm cascade \u2192 liquidity removal \u2192 harvest stops \u2192 recover"
+      },
+      {
+        "year": 2020,
+        "event": "COVID Crash & Recovery",
+        "value": "Crisis \u2192 lockdown \u2192 print money \u2192 asset inflation"
+      },
+      {
+        "year": 2021,
+        "event": "GameStop & Meme Stock Suppression",
+        "value": "When losing, change rules mid-game"
+      },
+      {
+        "year": 2022,
+        "event": "FTX Collapse - Crypto Exchange Fraud",
+        "value": "Ponzi scheme \u2192 collapse \u2192 regulate (kill competition)"
+      }
+    ],
+    "stealth": [
+      {
+        "year": 1913,
+        "event": "Federal Reserve Act",
+        "value": 0.95
+      }
+    ],
+    "permanence": [
+      {
+        "year": 1913,
+        "event": "Federal Reserve Act",
+        "value": "Ongoing 113 years"
+      }
+    ],
+    "wealth_concentration": [
+      {
+        "year": 1929,
+        "event": "Great Depression",
+        "value": "Massive"
+      }
+    ],
+    "scope": [
+      {
+        "year": 1944,
+        "event": "Bretton Woods Agreement",
+        "value": "Global"
+      }
+    ],
+    "inflation_weapon": [
+      {
+        "year": 1971,
+        "event": "Nixon Shock - Gold Standard Abandoned",
+        "value": "Activated"
+      }
+    ],
+    "moral_hazard": [
+      {
+        "year": 1987,
+        "event": "Black Monday Crash",
+        "value": "Created"
+      }
+    ],
+    "colonial_pattern": [
+      {
+        "year": 1997,
+        "event": "Asian Financial Crisis",
+        "value": "Yes"
+      }
+    ],
+    "fraud": [
+      {
+        "year": 2000,
+        "event": "Dot-Com Bubble Burst",
+        "value": "Massive"
+      }
+    ],
+    "regulatory_capture": [
+      {
+        "year": 2008,
+        "event": "Global Financial Crisis",
+        "value": "Complete"
+      }
+    ],
+    "speed": [
+      {
+        "year": 2010,
+        "event": "Flash Crash",
+        "value": "Microseconds"
+      },
+      {
+        "year": 2020,
+        "event": "COVID Crash & Recovery",
+        "value": "6 months"
+      }
+    ],
+    "blatant": [
+      {
+        "year": 2021,
+        "event": "GameStop & Meme Stock Suppression",
+        "value": "Yes"
+      }
+    ],
+    "political_capture": [
+      {
+        "year": 2022,
+        "event": "FTX Collapse - Crypto Exchange Fraud",
+        "value": "Massive"
+      }
+    ]
+  },
+  "repeated_tactics": {
+    "Regulatory capture": [
+      {
+        "year": 1913,
+        "event": "Federal Reserve Act"
+      }
+    ],
+    "Credit expansion \u2192 sudden contraction": [
+      {
+        "year": 1929,
+        "event": "Great Depression"
+      }
+    ],
+    "Post-war financial architecture capture": [
+      {
+        "year": 1944,
+        "event": "Bretton Woods Agreement"
+      }
+    ],
+    "Break promise, normalize theft": [
+      {
+        "year": 1971,
+        "event": "Nixon Shock - Gold Standard Abandoned"
+      }
+    ],
+    "Algorithmic cascade + Fed rescue": [
+      {
+        "year": 1987,
+        "event": "Black Monday Crash"
+      }
+    ],
+    "Currency attack \u2192 IMF austerity \u2192 asset stripping": [
+      {
+        "year": 1997,
+        "event": "Asian Financial Crisis"
+      }
+    ],
+    "Easy money \u2192 pump \u2192 insider exit \u2192 crash": [
+      {
+        "year": 2000,
+        "event": "Dot-Com Bubble Burst"
+      }
+    ],
+    "Fraud \u2192 crash \u2192 bailout \u2192 no consequences": [
+      {
+        "year": 2008,
+        "event": "Global Financial Crisis"
+      }
+    ],
+    "Algorithm cascade \u2192 liquidity removal \u2192 harvest stops \u2192 recover": [
+      {
+        "year": 2010,
+        "event": "Flash Crash"
+      }
+    ],
+    "Crisis \u2192 lockdown \u2192 print money \u2192 asset inflation": [
+      {
+        "year": 2020,
+        "event": "COVID Crash & Recovery"
+      }
+    ],
+    "When losing, change rules mid-game": [
+      {
+        "year": 2021,
+        "event": "GameStop & Meme Stock Suppression"
+      }
+    ],
+    "Ponzi scheme \u2192 collapse \u2192 regulate (kill competition)": [
+      {
+        "year": 2022,
+        "event": "FTX Collapse - Crypto Exchange Fraud"
+      }
+    ]
+  },
+  "entity_specializations": {},
+  "acceleration_detected": true,
+  "timestamp": 1768475624.3475566
+}
