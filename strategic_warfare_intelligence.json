@@ -1,0 +1,2349 @@
+{
+  "metadata": {
+    "scan_timestamp": 1768474628.5801928,
+    "scan_date": "2026-01-15T10:57:08.580200+00:00",
+    "total_entities_analyzed": 25,
+    "methodology": "Sun Tzu + IRA + Apache warfare intelligence"
+  },
+  "intelligence_reports": [
+    {
+      "entity_name": "MICROSTRATEGY",
+      "entity_type": "Corporate Treasury",
+      "threat_level": "CRITICAL",
+      "strength_assessment": 0.8281833577311497,
+      "position_analysis": "defensive",
+      "terrain_control": [],
+      "movement_pattern": "hit-and-run",
+      "stealth_score": 0.6372931940050373,
+      "ambush_locations": [
+        [
+          "BTCUSDT",
+          14.0
+        ],
+        [
+          "BTCUSDT",
+          15.0
+        ],
+        [
+          "BTCUSDT",
+          16.0
+        ],
+        [
+          "BTCUSDT",
+          17.0
+        ],
+        [
+          "BTCUSDT",
+          22.0
+        ],
+        [
+          "ETHUSDT",
+          14.0
+        ],
+        [
+          "ETHUSDT",
+          15.0
+        ],
+        [
+          "ETHUSDT",
+          16.0
+        ],
+        [
+          "ETHUSDT",
+          22.0
+        ],
+        [
+          "SOLUSDT",
+          14.0
+        ]
+      ],
+      "patience_score": 0.96,
+      "terrain_knowledge": 1.0,
+      "survival_tactics": [
+        "diversification_across_terrain",
+        "tactical_patience"
+      ],
+      "coordination_partners": [
+        "TETHER_TREASURY",
+        "GRAYSCALE_TRUST",
+        "EUROPEAN_CENTRAL_BANK",
+        "ALAMEDA_RESEARCH",
+        "CITADEL_SECURITIES",
+        "SOVEREIGN_WEALTH_SINGAPORE",
+        "COINBASE_INTERNAL",
+        "JANE_STREET",
+        "MILLENNIUM_MANAGEMENT",
+        "BRIDGEWATER_ASSOCIATES"
+      ],
+      "coordination_strength": {
+        "JANE_STREET": 0.9999999999323677,
+        "CITADEL_SECURITIES": 0.9999999998580094,
+        "GRAYSCALE_TRUST": 0.9999999998562804,
+        "COINBASE_INTERNAL": 0.9999999994696988,
+        "TETHER_TREASURY": 0.9999999986790509,
+        "EUROPEAN_CENTRAL_BANK": 0.9999999983800838,
+        "MILLENNIUM_MANAGEMENT": 0.9999999978834069,
+        "BRIDGEWATER_ASSOCIATES": 0.9999999972787478,
+        "SOVEREIGN_WEALTH_SINGAPORE": 0.999999995861729,
+        "ALAMEDA_RESEARCH": 0.9999999958592312
+      },
+      "operation_frequency": 0.0252,
+      "weaknesses_identified": [],
+      "counter_strategy": "Avoid their ambush hours. Trade opposite schedule. Use limit orders to avoid their impact.",
+      "disruption_probability": 0.1,
+      "timestamp": 1768474576.3458712
+    },
+    {
+      "entity_name": "JANE_STREET",
+      "entity_type": "Market Maker / HFT",
+      "threat_level": "CRITICAL",
+      "strength_assessment": 0.8281833579328485,
+      "position_analysis": "defensive",
+      "terrain_control": [],
+      "movement_pattern": "hit-and-run",
+      "stealth_score": 0.6372949707924709,
+      "ambush_locations": [
+        [
+          "BTCUSDT",
+          14.0
+        ],
+        [
+          "BTCUSDT",
+          15.0
+        ],
+        [
+          "BTCUSDT",
+          16.0
+        ],
+        [
+          "BTCUSDT",
+          17.0
+        ],
+        [
+          "BTCUSDT",
+          22.0
+        ],
+        [
+          "ETHUSDT",
+          14.0
+        ],
+        [
+          "ETHUSDT",
+          15.0
+        ],
+        [
+          "ETHUSDT",
+          16.0
+        ],
+        [
+          "ETHUSDT",
+          22.0
+        ],
+        [
+          "SOLUSDT",
+          14.0
+        ]
+      ],
+      "patience_score": 0.96,
+      "terrain_knowledge": 1.0,
+      "survival_tactics": [
+        "diversification_across_terrain",
+        "tactical_patience"
+      ],
+      "coordination_partners": [
+        "TETHER_TREASURY",
+        "MICROSTRATEGY",
+        "GRAYSCALE_TRUST",
+        "EUROPEAN_CENTRAL_BANK",
+        "ALAMEDA_RESEARCH",
+        "CITADEL_SECURITIES",
+        "SOVEREIGN_WEALTH_SINGAPORE",
+        "COINBASE_INTERNAL",
+        "MILLENNIUM_MANAGEMENT",
+        "BRIDGEWATER_ASSOCIATES"
+      ],
+      "coordination_strength": {
+        "MICROSTRATEGY": 0.9999999999323677,
+        "CITADEL_SECURITIES": 0.9999999999256417,
+        "GRAYSCALE_TRUST": 0.9999999999239128,
+        "COINBASE_INTERNAL": 0.9999999995373311,
+        "TETHER_TREASURY": 0.9999999987466831,
+        "EUROPEAN_CENTRAL_BANK": 0.9999999984477161,
+        "MILLENNIUM_MANAGEMENT": 0.9999999979510392,
+        "BRIDGEWATER_ASSOCIATES": 0.9999999973463801,
+        "SOVEREIGN_WEALTH_SINGAPORE": 0.9999999959293613,
+        "ALAMEDA_RESEARCH": 0.9999999959268635
+      },
+      "operation_frequency": 0.0252,
+      "weaknesses_identified": [],
+      "counter_strategy": "Avoid their ambush hours. Trade opposite schedule. Use limit orders to avoid their impact.",
+      "disruption_probability": 0.1,
+      "timestamp": 1768474578.558526
+    },
+    {
+      "entity_name": "CITADEL_SECURITIES",
+      "entity_type": "Market Maker",
+      "threat_level": "CRITICAL",
+      "strength_assessment": 0.8281833608967336,
+      "position_analysis": "defensive",
+      "terrain_control": [],
+      "movement_pattern": "hit-and-run",
+      "stealth_score": 0.6372962378629392,
+      "ambush_locations": [
+        [
+          "BTCUSDT",
+          14.0
+        ],
+        [
+          "BTCUSDT",
+          15.0
+        ],
+        [
+          "BTCUSDT",
+          16.0
+        ],
+        [
+          "BTCUSDT",
+          17.0
+        ],
+        [
+          "BTCUSDT",
+          22.0
+        ],
+        [
+          "ETHUSDT",
+          14.0
+        ],
+        [
+          "ETHUSDT",
+          15.0
+        ],
+        [
+          "ETHUSDT",
+          16.0
+        ],
+        [
+          "ETHUSDT",
+          22.0
+        ],
+        [
+          "SOLUSDT",
+          14.0
+        ]
+      ],
+      "patience_score": 0.96,
+      "terrain_knowledge": 1.0,
+      "survival_tactics": [
+        "diversification_across_terrain",
+        "tactical_patience"
+      ],
+      "coordination_partners": [
+        "TETHER_TREASURY",
+        "MICROSTRATEGY",
+        "GRAYSCALE_TRUST",
+        "EUROPEAN_CENTRAL_BANK",
+        "ALAMEDA_RESEARCH",
+        "SOVEREIGN_WEALTH_SINGAPORE",
+        "COINBASE_INTERNAL",
+        "JANE_STREET",
+        "MILLENNIUM_MANAGEMENT",
+        "BRIDGEWATER_ASSOCIATES"
+      ],
+      "coordination_strength": {
+        "MICROSTRATEGY": 0.9999999998580094,
+        "JANE_STREET": 0.9999999999256417,
+        "GRAYSCALE_TRUST": 0.999999999998271,
+        "COINBASE_INTERNAL": 0.9999999996116894,
+        "TETHER_TREASURY": 0.9999999988210414,
+        "EUROPEAN_CENTRAL_BANK": 0.9999999985220744,
+        "MILLENNIUM_MANAGEMENT": 0.9999999980253975,
+        "BRIDGEWATER_ASSOCIATES": 0.9999999974207384,
+        "SOVEREIGN_WEALTH_SINGAPORE": 0.9999999960037196,
+        "ALAMEDA_RESEARCH": 0.9999999960012218
+      },
+      "operation_frequency": 0.0252,
+      "weaknesses_identified": [],
+      "counter_strategy": "Avoid their ambush hours. Trade opposite schedule. Use limit orders to avoid their impact.",
+      "disruption_probability": 0.1,
+      "timestamp": 1768474580.5581615
+    },
+    {
+      "entity_name": "GRAYSCALE_TRUST",
+      "entity_type": "Investment Trust",
+      "threat_level": "CRITICAL",
+      "strength_assessment": 0.8281834309293447,
+      "position_analysis": "defensive",
+      "terrain_control": [],
+      "movement_pattern": "hit-and-run",
+      "stealth_score": 0.637298028444479,
+      "ambush_locations": [
+        [
+          "BTCUSDT",
+          14.0
+        ],
+        [
+          "BTCUSDT",
+          15.0
+        ],
+        [
+          "BTCUSDT",
+          16.0
+        ],
+        [
+          "BTCUSDT",
+          17.0
+        ],
+        [
+          "BTCUSDT",
+          22.0
+        ],
+        [
+          "ETHUSDT",
+          14.0
+        ],
+        [
+          "ETHUSDT",
+          15.0
+        ],
+        [
+          "ETHUSDT",
+          16.0
+        ],
+        [
+          "ETHUSDT",
+          22.0
+        ],
+        [
+          "SOLUSDT",
+          14.0
+        ]
+      ],
+      "patience_score": 0.96,
+      "terrain_knowledge": 1.0,
+      "survival_tactics": [
+        "diversification_across_terrain",
+        "tactical_patience"
+      ],
+      "coordination_partners": [
+        "TETHER_TREASURY",
+        "MICROSTRATEGY",
+        "EUROPEAN_CENTRAL_BANK",
+        "ALAMEDA_RESEARCH",
+        "CITADEL_SECURITIES",
+        "SOVEREIGN_WEALTH_SINGAPORE",
+        "COINBASE_INTERNAL",
+        "JANE_STREET",
+        "MILLENNIUM_MANAGEMENT",
+        "BRIDGEWATER_ASSOCIATES"
+      ],
+      "coordination_strength": {
+        "MICROSTRATEGY": 0.9999999998562804,
+        "JANE_STREET": 0.9999999999239128,
+        "CITADEL_SECURITIES": 0.999999999998271,
+        "COINBASE_INTERNAL": 0.9999999996134183,
+        "TETHER_TREASURY": 0.9999999988227705,
+        "EUROPEAN_CENTRAL_BANK": 0.9999999985238034,
+        "MILLENNIUM_MANAGEMENT": 0.9999999980271265,
+        "BRIDGEWATER_ASSOCIATES": 0.9999999974224674,
+        "SOVEREIGN_WEALTH_SINGAPORE": 0.9999999960054485,
+        "ALAMEDA_RESEARCH": 0.9999999960029508
+      },
+      "operation_frequency": 0.0252,
+      "weaknesses_identified": [],
+      "counter_strategy": "Avoid their ambush hours. Trade opposite schedule. Use limit orders to avoid their impact.",
+      "disruption_probability": 0.1,
+      "timestamp": 1768474583.419262
+    },
+    {
+      "entity_name": "BLACKROCK_ISHARES",
+      "entity_type": "Asset Manager",
+      "threat_level": "CRITICAL",
+      "strength_assessment": 0.8281834610492431,
+      "position_analysis": "defensive",
+      "terrain_control": [],
+      "movement_pattern": "hit-and-run",
+      "stealth_score": 0.6372992238242157,
+      "ambush_locations": [
+        [
+          "BTCUSDT",
+          14.0
+        ],
+        [
+          "BTCUSDT",
+          15.0
+        ],
+        [
+          "BTCUSDT",
+          16.0
+        ],
+        [
+          "BTCUSDT",
+          17.0
+        ],
+        [
+          "BTCUSDT",
+          22.0
+        ],
+        [
+          "ETHUSDT",
+          14.0
+        ],
+        [
+          "ETHUSDT",
+          15.0
+        ],
+        [
+          "ETHUSDT",
+          16.0
+        ],
+        [
+          "ETHUSDT",
+          22.0
+        ],
+        [
+          "SOLUSDT",
+          14.0
+        ]
+      ],
+      "patience_score": 0.96,
+      "terrain_knowledge": 1.0,
+      "survival_tactics": [
+        "diversification_across_terrain",
+        "tactical_patience"
+      ],
+      "coordination_partners": [
+        "TETHER_TREASURY",
+        "MICROSTRATEGY",
+        "GRAYSCALE_TRUST",
+        "EUROPEAN_CENTRAL_BANK",
+        "ALAMEDA_RESEARCH",
+        "CITADEL_SECURITIES",
+        "SOVEREIGN_WEALTH_SINGAPORE",
+        "COINBASE_INTERNAL",
+        "JANE_STREET",
+        "MILLENNIUM_MANAGEMENT"
+      ],
+      "coordination_strength": {
+        "MICROSTRATEGY": 0.99999999969988,
+        "JANE_STREET": 0.9999999997675123,
+        "CITADEL_SECURITIES": 0.9999999998418706,
+        "GRAYSCALE_TRUST": 0.9999999998435996,
+        "COINBASE_INTERNAL": 0.9999999997698187,
+        "TETHER_TREASURY": 0.9999999989791708,
+        "EUROPEAN_CENTRAL_BANK": 0.9999999986802038,
+        "MILLENNIUM_MANAGEMENT": 0.9999999981835269,
+        "SOVEREIGN_WEALTH_SINGAPORE": 0.999999996161849,
+        "ALAMEDA_RESEARCH": 0.9999999961593512
+      },
+      "operation_frequency": 0.0252,
+      "weaknesses_identified": [],
+      "counter_strategy": "Avoid their ambush hours. Trade opposite schedule. Use limit orders to avoid their impact.",
+      "disruption_probability": 0.1,
+      "timestamp": 1768474585.9243789
+    },
+    {
+      "entity_name": "COINBASE_INTERNAL",
+      "entity_type": "Exchange / Market Maker",
+      "threat_level": "CRITICAL",
+      "strength_assessment": 0.8281838754801968,
+      "position_analysis": "defensive",
+      "terrain_control": [],
+      "movement_pattern": "hit-and-run",
+      "stealth_score": 0.6373100871721145,
+      "ambush_locations": [
+        [
+          "BTCUSDT",
+          14.0
+        ],
+        [
+          "BTCUSDT",
+          15.0
+        ],
+        [
+          "BTCUSDT",
+          16.0
+        ],
+        [
+          "BTCUSDT",
+          17.0
+        ],
+        [
+          "BTCUSDT",
+          22.0
+        ],
+        [
+          "ETHUSDT",
+          14.0
+        ],
+        [
+          "ETHUSDT",
+          15.0
+        ],
+        [
+          "ETHUSDT",
+          16.0
+        ],
+        [
+          "ETHUSDT",
+          22.0
+        ],
+        [
+          "SOLUSDT",
+          14.0
+        ]
+      ],
+      "patience_score": 0.96,
+      "terrain_knowledge": 1.0,
+      "survival_tactics": [
+        "diversification_across_terrain",
+        "tactical_patience"
+      ],
+      "coordination_partners": [
+        "TETHER_TREASURY",
+        "MICROSTRATEGY",
+        "GRAYSCALE_TRUST",
+        "EUROPEAN_CENTRAL_BANK",
+        "ALAMEDA_RESEARCH",
+        "CITADEL_SECURITIES",
+        "SOVEREIGN_WEALTH_SINGAPORE",
+        "JANE_STREET",
+        "MILLENNIUM_MANAGEMENT",
+        "BRIDGEWATER_ASSOCIATES"
+      ],
+      "coordination_strength": {
+        "MICROSTRATEGY": 0.9999999994696988,
+        "JANE_STREET": 0.9999999995373311,
+        "CITADEL_SECURITIES": 0.9999999996116894,
+        "GRAYSCALE_TRUST": 0.9999999996134183,
+        "TETHER_TREASURY": 0.9999999992093521,
+        "EUROPEAN_CENTRAL_BANK": 0.999999998910385,
+        "MILLENNIUM_MANAGEMENT": 0.9999999984137081,
+        "BRIDGEWATER_ASSOCIATES": 0.999999997809049,
+        "SOVEREIGN_WEALTH_SINGAPORE": 0.9999999963920303,
+        "ALAMEDA_RESEARCH": 0.9999999963895324
+      },
+      "operation_frequency": 0.0252,
+      "weaknesses_identified": [],
+      "counter_strategy": "Avoid their ambush hours. Trade opposite schedule. Use limit orders to avoid their impact.",
+      "disruption_probability": 0.1,
+      "timestamp": 1768474588.5382977
+    },
+    {
+      "entity_name": "US_FEDERAL_RESERVE",
+      "entity_type": "Central Bank",
+      "threat_level": "CRITICAL",
+      "strength_assessment": 0.8281838770009905,
+      "position_analysis": "defensive",
+      "terrain_control": [],
+      "movement_pattern": "hit-and-run",
+      "stealth_score": 0.6373105898473584,
+      "ambush_locations": [
+        [
+          "BTCUSDT",
+          14.0
+        ],
+        [
+          "BTCUSDT",
+          15.0
+        ],
+        [
+          "BTCUSDT",
+          16.0
+        ],
+        [
+          "BTCUSDT",
+          17.0
+        ],
+        [
+          "BTCUSDT",
+          22.0
+        ],
+        [
+          "ETHUSDT",
+          14.0
+        ],
+        [
+          "ETHUSDT",
+          15.0
+        ],
+        [
+          "ETHUSDT",
+          16.0
+        ],
+        [
+          "ETHUSDT",
+          22.0
+        ],
+        [
+          "SOLUSDT",
+          14.0
+        ]
+      ],
+      "patience_score": 0.96,
+      "terrain_knowledge": 1.0,
+      "survival_tactics": [
+        "diversification_across_terrain",
+        "tactical_patience"
+      ],
+      "coordination_partners": [
+        "TETHER_TREASURY",
+        "MICROSTRATEGY",
+        "GRAYSCALE_TRUST",
+        "EUROPEAN_CENTRAL_BANK",
+        "ALAMEDA_RESEARCH",
+        "CITADEL_SECURITIES",
+        "SOVEREIGN_WEALTH_SINGAPORE",
+        "JANE_STREET",
+        "COINBASE_INTERNAL",
+        "MILLENNIUM_MANAGEMENT"
+      ],
+      "coordination_strength": {
+        "MICROSTRATEGY": 0.9999999993207918,
+        "JANE_STREET": 0.999999999388424,
+        "CITADEL_SECURITIES": 0.9999999994627823,
+        "GRAYSCALE_TRUST": 0.9999999994645113,
+        "COINBASE_INTERNAL": 0.999999999851093,
+        "TETHER_TREASURY": 0.9999999993582591,
+        "EUROPEAN_CENTRAL_BANK": 0.9999999990592922,
+        "MILLENNIUM_MANAGEMENT": 0.9999999985626151,
+        "SOVEREIGN_WEALTH_SINGAPORE": 0.9999999965409373,
+        "ALAMEDA_RESEARCH": 0.9999999965384395
+      },
+      "operation_frequency": 0.0252,
+      "weaknesses_identified": [],
+      "counter_strategy": "Avoid their ambush hours. Trade opposite schedule. Use limit orders to avoid their impact.",
+      "disruption_probability": 0.1,
+      "timestamp": 1768474590.5301313
+    },
+    {
+      "entity_name": "JUMP_TRADING",
+      "entity_type": "HFT / Market Maker",
+      "threat_level": "CRITICAL",
+      "strength_assessment": 0.8281838822880009,
+      "position_analysis": "defensive",
+      "terrain_control": [],
+      "movement_pattern": "hit-and-run",
+      "stealth_score": 0.6373137439814631,
+      "ambush_locations": [
+        [
+          "BTCUSDT",
+          14.0
+        ],
+        [
+          "BTCUSDT",
+          15.0
+        ],
+        [
+          "BTCUSDT",
+          16.0
+        ],
+        [
+          "BTCUSDT",
+          17.0
+        ],
+        [
+          "BTCUSDT",
+          22.0
+        ],
+        [
+          "ETHUSDT",
+          14.0
+        ],
+        [
+          "ETHUSDT",
+          15.0
+        ],
+        [
+          "ETHUSDT",
+          16.0
+        ],
+        [
+          "ETHUSDT",
+          22.0
+        ],
+        [
+          "SOLUSDT",
+          14.0
+        ]
+      ],
+      "patience_score": 0.96,
+      "terrain_knowledge": 1.0,
+      "survival_tactics": [
+        "diversification_across_terrain",
+        "tactical_patience"
+      ],
+      "coordination_partners": [
+        "TETHER_TREASURY",
+        "MICROSTRATEGY",
+        "GRAYSCALE_TRUST",
+        "EUROPEAN_CENTRAL_BANK",
+        "ALAMEDA_RESEARCH",
+        "CITADEL_SECURITIES",
+        "SOVEREIGN_WEALTH_SINGAPORE",
+        "JANE_STREET",
+        "COINBASE_INTERNAL",
+        "MILLENNIUM_MANAGEMENT"
+      ],
+      "coordination_strength": {
+        "MICROSTRATEGY": 0.9999999992862068,
+        "JANE_STREET": 0.9999999993538391,
+        "CITADEL_SECURITIES": 0.9999999994281974,
+        "GRAYSCALE_TRUST": 0.9999999994299263,
+        "COINBASE_INTERNAL": 0.999999999816508,
+        "TETHER_TREASURY": 0.9999999993928441,
+        "EUROPEAN_CENTRAL_BANK": 0.999999999093877,
+        "MILLENNIUM_MANAGEMENT": 0.9999999985972001,
+        "SOVEREIGN_WEALTH_SINGAPORE": 0.9999999965755222,
+        "ALAMEDA_RESEARCH": 0.9999999965730244
+      },
+      "operation_frequency": 0.0252,
+      "weaknesses_identified": [],
+      "counter_strategy": "Avoid their ambush hours. Trade opposite schedule. Use limit orders to avoid their impact.",
+      "disruption_probability": 0.1,
+      "timestamp": 1768474592.5269907
+    },
+    {
+      "entity_name": "TWO_SIGMA",
+      "entity_type": "Hedge Fund",
+      "threat_level": "CRITICAL",
+      "strength_assessment": 0.8281838831043006,
+      "position_analysis": "defensive",
+      "terrain_control": [],
+      "movement_pattern": "hit-and-run",
+      "stealth_score": 0.6373139188875143,
+      "ambush_locations": [
+        [
+          "BTCUSDT",
+          14.0
+        ],
+        [
+          "BTCUSDT",
+          15.0
+        ],
+        [
+          "BTCUSDT",
+          16.0
+        ],
+        [
+          "BTCUSDT",
+          17.0
+        ],
+        [
+          "BTCUSDT",
+          22.0
+        ],
+        [
+          "ETHUSDT",
+          14.0
+        ],
+        [
+          "ETHUSDT",
+          15.0
+        ],
+        [
+          "ETHUSDT",
+          16.0
+        ],
+        [
+          "ETHUSDT",
+          22.0
+        ],
+        [
+          "SOLUSDT",
+          14.0
+        ]
+      ],
+      "patience_score": 0.96,
+      "terrain_knowledge": 1.0,
+      "survival_tactics": [
+        "diversification_across_terrain",
+        "tactical_patience"
+      ],
+      "coordination_partners": [
+        "TETHER_TREASURY",
+        "MICROSTRATEGY",
+        "GRAYSCALE_TRUST",
+        "EUROPEAN_CENTRAL_BANK",
+        "ALAMEDA_RESEARCH",
+        "CITADEL_SECURITIES",
+        "SOVEREIGN_WEALTH_SINGAPORE",
+        "JANE_STREET",
+        "COINBASE_INTERNAL",
+        "MILLENNIUM_MANAGEMENT"
+      ],
+      "coordination_strength": {
+        "MICROSTRATEGY": 0.9999999989536159,
+        "JANE_STREET": 0.9999999990212483,
+        "CITADEL_SECURITIES": 0.9999999990956066,
+        "GRAYSCALE_TRUST": 0.9999999990973355,
+        "COINBASE_INTERNAL": 0.9999999994839172,
+        "TETHER_TREASURY": 0.999999999725435,
+        "EUROPEAN_CENTRAL_BANK": 0.9999999994264679,
+        "MILLENNIUM_MANAGEMENT": 0.999999998929791,
+        "SOVEREIGN_WEALTH_SINGAPORE": 0.999999996908113,
+        "ALAMEDA_RESEARCH": 0.9999999969056153
+      },
+      "operation_frequency": 0.0252,
+      "weaknesses_identified": [],
+      "counter_strategy": "Avoid their ambush hours. Trade opposite schedule. Use limit orders to avoid their impact.",
+      "disruption_probability": 0.1,
+      "timestamp": 1768474595.1556473
+    },
+    {
+      "entity_name": "RENAISSANCE_TECHNOLOGIES",
+      "entity_type": "Hedge Fund",
+      "threat_level": "CRITICAL",
+      "strength_assessment": 0.8281839295125666,
+      "position_analysis": "defensive",
+      "terrain_control": [],
+      "movement_pattern": "hit-and-run",
+      "stealth_score": 0.6373162408235181,
+      "ambush_locations": [
+        [
+          "BTCUSDT",
+          14.0
+        ],
+        [
+          "BTCUSDT",
+          15.0
+        ],
+        [
+          "BTCUSDT",
+          16.0
+        ],
+        [
+          "BTCUSDT",
+          17.0
+        ],
+        [
+          "BTCUSDT",
+          22.0
+        ],
+        [
+          "ETHUSDT",
+          14.0
+        ],
+        [
+          "ETHUSDT",
+          15.0
+        ],
+        [
+          "ETHUSDT",
+          16.0
+        ],
+        [
+          "ETHUSDT",
+          22.0
+        ],
+        [
+          "SOLUSDT",
+          14.0
+        ]
+      ],
+      "patience_score": 0.96,
+      "terrain_knowledge": 1.0,
+      "survival_tactics": [
+        "diversification_across_terrain",
+        "tactical_patience"
+      ],
+      "coordination_partners": [
+        "TETHER_TREASURY",
+        "MICROSTRATEGY",
+        "GRAYSCALE_TRUST",
+        "EUROPEAN_CENTRAL_BANK",
+        "ALAMEDA_RESEARCH",
+        "CITADEL_SECURITIES",
+        "SOVEREIGN_WEALTH_SINGAPORE",
+        "JANE_STREET",
+        "COINBASE_INTERNAL",
+        "MILLENNIUM_MANAGEMENT"
+      ],
+      "coordination_strength": {
+        "MICROSTRATEGY": 0.9999999989130742,
+        "JANE_STREET": 0.9999999989807066,
+        "CITADEL_SECURITIES": 0.9999999990550649,
+        "GRAYSCALE_TRUST": 0.9999999990567938,
+        "COINBASE_INTERNAL": 0.9999999994433755,
+        "TETHER_TREASURY": 0.9999999997659766,
+        "EUROPEAN_CENTRAL_BANK": 0.9999999994670096,
+        "MILLENNIUM_MANAGEMENT": 0.9999999989703326,
+        "SOVEREIGN_WEALTH_SINGAPORE": 0.9999999969486547,
+        "ALAMEDA_RESEARCH": 0.9999999969461569
+      },
+      "operation_frequency": 0.0252,
+      "weaknesses_identified": [],
+      "counter_strategy": "Avoid their ambush hours. Trade opposite schedule. Use limit orders to avoid their impact.",
+      "disruption_probability": 0.1,
+      "timestamp": 1768474597.1411119
+    },
+    {
+      "entity_name": "BINANCE_INTERNAL",
+      "entity_type": "Exchange / Market Maker",
+      "threat_level": "CRITICAL",
+      "strength_assessment": 0.8281839296194962,
+      "position_analysis": "defensive",
+      "terrain_control": [],
+      "movement_pattern": "hit-and-run",
+      "stealth_score": 0.6373166838279131,
+      "ambush_locations": [
+        [
+          "BTCUSDT",
+          14.0
+        ],
+        [
+          "BTCUSDT",
+          15.0
+        ],
+        [
+          "BTCUSDT",
+          16.0
+        ],
+        [
+          "BTCUSDT",
+          17.0
+        ],
+        [
+          "BTCUSDT",
+          22.0
+        ],
+        [
+          "ETHUSDT",
+          14.0
+        ],
+        [
+          "ETHUSDT",
+          15.0
+        ],
+        [
+          "ETHUSDT",
+          16.0
+        ],
+        [
+          "ETHUSDT",
+          22.0
+        ],
+        [
+          "SOLUSDT",
+          14.0
+        ]
+      ],
+      "patience_score": 0.96,
+      "terrain_knowledge": 1.0,
+      "survival_tactics": [
+        "diversification_across_terrain",
+        "tactical_patience"
+      ],
+      "coordination_partners": [
+        "TETHER_TREASURY",
+        "MICROSTRATEGY",
+        "GRAYSCALE_TRUST",
+        "EUROPEAN_CENTRAL_BANK",
+        "ALAMEDA_RESEARCH",
+        "CITADEL_SECURITIES",
+        "SOVEREIGN_WEALTH_SINGAPORE",
+        "JANE_STREET",
+        "COINBASE_INTERNAL",
+        "MILLENNIUM_MANAGEMENT"
+      ],
+      "coordination_strength": {
+        "MICROSTRATEGY": 0.9999999986811635,
+        "JANE_STREET": 0.9999999987487959,
+        "CITADEL_SECURITIES": 0.9999999988231542,
+        "GRAYSCALE_TRUST": 0.9999999988248831,
+        "COINBASE_INTERNAL": 0.9999999992114648,
+        "TETHER_TREASURY": 0.9999999999978874,
+        "EUROPEAN_CENTRAL_BANK": 0.9999999996989203,
+        "MILLENNIUM_MANAGEMENT": 0.9999999992022434,
+        "SOVEREIGN_WEALTH_SINGAPORE": 0.9999999971805654,
+        "ALAMEDA_RESEARCH": 0.9999999971780676
+      },
+      "operation_frequency": 0.0252,
+      "weaknesses_identified": [],
+      "counter_strategy": "Avoid their ambush hours. Trade opposite schedule. Use limit orders to avoid their impact.",
+      "disruption_probability": 0.1,
+      "timestamp": 1768474599.3491554
+    },
+    {
+      "entity_name": "TETHER_TREASURY",
+      "entity_type": "Stablecoin Issuer",
+      "threat_level": "CRITICAL",
+      "strength_assessment": 0.8281839306825834,
+      "position_analysis": "defensive",
+      "terrain_control": [],
+      "movement_pattern": "hit-and-run",
+      "stealth_score": 0.6373168092981637,
+      "ambush_locations": [
+        [
+          "BTCUSDT",
+          14.0
+        ],
+        [
+          "BTCUSDT",
+          15.0
+        ],
+        [
+          "BTCUSDT",
+          16.0
+        ],
+        [
+          "BTCUSDT",
+          17.0
+        ],
+        [
+          "BTCUSDT",
+          22.0
+        ],
+        [
+          "ETHUSDT",
+          14.0
+        ],
+        [
+          "ETHUSDT",
+          15.0
+        ],
+        [
+          "ETHUSDT",
+          16.0
+        ],
+        [
+          "ETHUSDT",
+          22.0
+        ],
+        [
+          "SOLUSDT",
+          14.0
+        ]
+      ],
+      "patience_score": 0.96,
+      "terrain_knowledge": 1.0,
+      "survival_tactics": [
+        "diversification_across_terrain",
+        "tactical_patience"
+      ],
+      "coordination_partners": [
+        "MICROSTRATEGY",
+        "GRAYSCALE_TRUST",
+        "EUROPEAN_CENTRAL_BANK",
+        "ALAMEDA_RESEARCH",
+        "CITADEL_SECURITIES",
+        "SOVEREIGN_WEALTH_SINGAPORE",
+        "JANE_STREET",
+        "COINBASE_INTERNAL",
+        "MILLENNIUM_MANAGEMENT",
+        "BRIDGEWATER_ASSOCIATES"
+      ],
+      "coordination_strength": {
+        "MICROSTRATEGY": 0.9999999986790509,
+        "JANE_STREET": 0.9999999987466831,
+        "CITADEL_SECURITIES": 0.9999999988210414,
+        "GRAYSCALE_TRUST": 0.9999999988227705,
+        "COINBASE_INTERNAL": 0.9999999992093521,
+        "EUROPEAN_CENTRAL_BANK": 0.999999999701033,
+        "MILLENNIUM_MANAGEMENT": 0.999999999204356,
+        "BRIDGEWATER_ASSOCIATES": 0.9999999985996969,
+        "SOVEREIGN_WEALTH_SINGAPORE": 0.9999999971826782,
+        "ALAMEDA_RESEARCH": 0.9999999971801804
+      },
+      "operation_frequency": 0.0252,
+      "weaknesses_identified": [],
+      "counter_strategy": "Avoid their ambush hours. Trade opposite schedule. Use limit orders to avoid their impact.",
+      "disruption_probability": 0.1,
+      "timestamp": 1768474601.5559063
+    },
+    {
+      "entity_name": "CIRCLE_USDC",
+      "entity_type": "Stablecoin Issuer",
+      "threat_level": "CRITICAL",
+      "strength_assessment": 0.8281839307562538,
+      "position_analysis": "defensive",
+      "terrain_control": [],
+      "movement_pattern": "hit-and-run",
+      "stealth_score": 0.6373177835000213,
+      "ambush_locations": [
+        [
+          "BTCUSDT",
+          14.0
+        ],
+        [
+          "BTCUSDT",
+          15.0
+        ],
+        [
+          "BTCUSDT",
+          16.0
+        ],
+        [
+          "BTCUSDT",
+          17.0
+        ],
+        [
+          "BTCUSDT",
+          22.0
+        ],
+        [
+          "ETHUSDT",
+          14.0
+        ],
+        [
+          "ETHUSDT",
+          15.0
+        ],
+        [
+          "ETHUSDT",
+          16.0
+        ],
+        [
+          "ETHUSDT",
+          22.0
+        ],
+        [
+          "SOLUSDT",
+          14.0
+        ]
+      ],
+      "patience_score": 0.96,
+      "terrain_knowledge": 1.0,
+      "survival_tactics": [
+        "diversification_across_terrain",
+        "tactical_patience"
+      ],
+      "coordination_partners": [
+        "TETHER_TREASURY",
+        "MICROSTRATEGY",
+        "GRAYSCALE_TRUST",
+        "EUROPEAN_CENTRAL_BANK",
+        "CITADEL_SECURITIES",
+        "SOVEREIGN_WEALTH_SINGAPORE",
+        "JANE_STREET",
+        "COINBASE_INTERNAL",
+        "MILLENNIUM_MANAGEMENT",
+        "BRIDGEWATER_ASSOCIATES"
+      ],
+      "coordination_strength": {
+        "MICROSTRATEGY": 0.9999999986016183,
+        "JANE_STREET": 0.9999999986692506,
+        "CITADEL_SECURITIES": 0.9999999987436089,
+        "GRAYSCALE_TRUST": 0.9999999987453378,
+        "COINBASE_INTERNAL": 0.9999999991319195,
+        "TETHER_TREASURY": 0.9999999999225674,
+        "EUROPEAN_CENTRAL_BANK": 0.9999999997784655,
+        "MILLENNIUM_MANAGEMENT": 0.9999999992817886,
+        "BRIDGEWATER_ASSOCIATES": 0.9999999986771295,
+        "SOVEREIGN_WEALTH_SINGAPORE": 0.9999999972601107
+      },
+      "operation_frequency": 0.0252,
+      "weaknesses_identified": [],
+      "counter_strategy": "Avoid their ambush hours. Trade opposite schedule. Use limit orders to avoid their impact.",
+      "disruption_probability": 0.1,
+      "timestamp": 1768474603.5691483
+    },
+    {
+      "entity_name": "BANK_OF_JAPAN",
+      "entity_type": "Central Bank",
+      "threat_level": "CRITICAL",
+      "strength_assessment": 0.8281839322411346,
+      "position_analysis": "defensive",
+      "terrain_control": [],
+      "movement_pattern": "hit-and-run",
+      "stealth_score": 0.6373179703040053,
+      "ambush_locations": [
+        [
+          "BTCUSDT",
+          14.0
+        ],
+        [
+          "BTCUSDT",
+          15.0
+        ],
+        [
+          "BTCUSDT",
+          16.0
+        ],
+        [
+          "BTCUSDT",
+          17.0
+        ],
+        [
+          "BTCUSDT",
+          22.0
+        ],
+        [
+          "ETHUSDT",
+          14.0
+        ],
+        [
+          "ETHUSDT",
+          15.0
+        ],
+        [
+          "ETHUSDT",
+          16.0
+        ],
+        [
+          "ETHUSDT",
+          22.0
+        ],
+        [
+          "SOLUSDT",
+          14.0
+        ]
+      ],
+      "patience_score": 0.96,
+      "terrain_knowledge": 1.0,
+      "survival_tactics": [
+        "diversification_across_terrain",
+        "tactical_patience"
+      ],
+      "coordination_partners": [
+        "TETHER_TREASURY",
+        "MICROSTRATEGY",
+        "GRAYSCALE_TRUST",
+        "EUROPEAN_CENTRAL_BANK",
+        "ALAMEDA_RESEARCH",
+        "CITADEL_SECURITIES",
+        "SOVEREIGN_WEALTH_SINGAPORE",
+        "JANE_STREET",
+        "COINBASE_INTERNAL",
+        "MILLENNIUM_MANAGEMENT"
+      ],
+      "coordination_strength": {
+        "MICROSTRATEGY": 0.9999999984085197,
+        "JANE_STREET": 0.9999999984761521,
+        "CITADEL_SECURITIES": 0.9999999985505104,
+        "GRAYSCALE_TRUST": 0.9999999985522393,
+        "COINBASE_INTERNAL": 0.999999998938821,
+        "TETHER_TREASURY": 0.999999999729469,
+        "EUROPEAN_CENTRAL_BANK": 0.9999999999715641,
+        "MILLENNIUM_MANAGEMENT": 0.9999999994748872,
+        "SOVEREIGN_WEALTH_SINGAPORE": 0.9999999974532092,
+        "ALAMEDA_RESEARCH": 0.9999999974507114
+      },
+      "operation_frequency": 0.0252,
+      "weaknesses_identified": [],
+      "counter_strategy": "Avoid their ambush hours. Trade opposite schedule. Use limit orders to avoid their impact.",
+      "disruption_probability": 0.1,
+      "timestamp": 1768474605.5746262
+    },
+    {
+      "entity_name": "EUROPEAN_CENTRAL_BANK",
+      "entity_type": "Central Bank",
+      "threat_level": "CRITICAL",
+      "strength_assessment": 0.8281839372150371,
+      "position_analysis": "defensive",
+      "terrain_control": [],
+      "movement_pattern": "hit-and-run",
+      "stealth_score": 0.6373187534192232,
+      "ambush_locations": [
+        [
+          "BTCUSDT",
+          14.0
+        ],
+        [
+          "BTCUSDT",
+          15.0
+        ],
+        [
+          "BTCUSDT",
+          16.0
+        ],
+        [
+          "BTCUSDT",
+          17.0
+        ],
+        [
+          "BTCUSDT",
+          22.0
+        ],
+        [
+          "ETHUSDT",
+          14.0
+        ],
+        [
+          "ETHUSDT",
+          15.0
+        ],
+        [
+          "ETHUSDT",
+          16.0
+        ],
+        [
+          "ETHUSDT",
+          22.0
+        ],
+        [
+          "SOLUSDT",
+          14.0
+        ]
+      ],
+      "patience_score": 0.96,
+      "terrain_knowledge": 1.0,
+      "survival_tactics": [
+        "diversification_across_terrain",
+        "tactical_patience"
+      ],
+      "coordination_partners": [
+        "TETHER_TREASURY",
+        "MICROSTRATEGY",
+        "GRAYSCALE_TRUST",
+        "ALAMEDA_RESEARCH",
+        "CITADEL_SECURITIES",
+        "SOVEREIGN_WEALTH_SINGAPORE",
+        "JANE_STREET",
+        "COINBASE_INTERNAL",
+        "MILLENNIUM_MANAGEMENT",
+        "BRIDGEWATER_ASSOCIATES"
+      ],
+      "coordination_strength": {
+        "MICROSTRATEGY": 0.9999999983800838,
+        "JANE_STREET": 0.9999999984477161,
+        "CITADEL_SECURITIES": 0.9999999985220744,
+        "GRAYSCALE_TRUST": 0.9999999985238034,
+        "COINBASE_INTERNAL": 0.999999998910385,
+        "TETHER_TREASURY": 0.999999999701033,
+        "MILLENNIUM_MANAGEMENT": 0.9999999995033231,
+        "BRIDGEWATER_ASSOCIATES": 0.999999998898664,
+        "SOVEREIGN_WEALTH_SINGAPORE": 0.9999999974816451,
+        "ALAMEDA_RESEARCH": 0.9999999974791474
+      },
+      "operation_frequency": 0.0252,
+      "weaknesses_identified": [],
+      "counter_strategy": "Avoid their ambush hours. Trade opposite schedule. Use limit orders to avoid their impact.",
+      "disruption_probability": 0.1,
+      "timestamp": 1768474607.5647047
+    },
+    {
+      "entity_name": "PEOPLES_BANK_CHINA",
+      "entity_type": "Central Bank",
+      "threat_level": "CRITICAL",
+      "strength_assessment": 0.8281839380674055,
+      "position_analysis": "defensive",
+      "terrain_control": [],
+      "movement_pattern": "hit-and-run",
+      "stealth_score": 0.6373193489924251,
+      "ambush_locations": [
+        [
+          "BTCUSDT",
+          14.0
+        ],
+        [
+          "BTCUSDT",
+          15.0
+        ],
+        [
+          "BTCUSDT",
+          16.0
+        ],
+        [
+          "BTCUSDT",
+          17.0
+        ],
+        [
+          "BTCUSDT",
+          22.0
+        ],
+        [
+          "ETHUSDT",
+          14.0
+        ],
+        [
+          "ETHUSDT",
+          15.0
+        ],
+        [
+          "ETHUSDT",
+          16.0
+        ],
+        [
+          "ETHUSDT",
+          22.0
+        ],
+        [
+          "SOLUSDT",
+          14.0
+        ]
+      ],
+      "patience_score": 0.96,
+      "terrain_knowledge": 1.0,
+      "survival_tactics": [
+        "diversification_across_terrain",
+        "tactical_patience"
+      ],
+      "coordination_partners": [
+        "TETHER_TREASURY",
+        "MICROSTRATEGY",
+        "GRAYSCALE_TRUST",
+        "EUROPEAN_CENTRAL_BANK",
+        "ALAMEDA_RESEARCH",
+        "CITADEL_SECURITIES",
+        "SOVEREIGN_WEALTH_SINGAPORE",
+        "JANE_STREET",
+        "COINBASE_INTERNAL",
+        "MILLENNIUM_MANAGEMENT"
+      ],
+      "coordination_strength": {
+        "MICROSTRATEGY": 0.9999999983443464,
+        "JANE_STREET": 0.9999999984119786,
+        "CITADEL_SECURITIES": 0.9999999984863369,
+        "GRAYSCALE_TRUST": 0.999999998488066,
+        "COINBASE_INTERNAL": 0.9999999988746476,
+        "TETHER_TREASURY": 0.9999999996652955,
+        "EUROPEAN_CENTRAL_BANK": 0.9999999999642626,
+        "MILLENNIUM_MANAGEMENT": 0.9999999995390605,
+        "SOVEREIGN_WEALTH_SINGAPORE": 0.9999999975173827,
+        "ALAMEDA_RESEARCH": 0.9999999975148849
+      },
+      "operation_frequency": 0.0252,
+      "weaknesses_identified": [],
+      "counter_strategy": "Avoid their ambush hours. Trade opposite schedule. Use limit orders to avoid their impact.",
+      "disruption_probability": 0.1,
+      "timestamp": 1768474609.6099038
+    },
+    {
+      "entity_name": "FIDELITY_DIGITAL",
+      "entity_type": "Asset Manager",
+      "threat_level": "CRITICAL",
+      "strength_assessment": 0.8281839381165388,
+      "position_analysis": "defensive",
+      "terrain_control": [],
+      "movement_pattern": "hit-and-run",
+      "stealth_score": 0.6373197854945097,
+      "ambush_locations": [
+        [
+          "BTCUSDT",
+          14.0
+        ],
+        [
+          "BTCUSDT",
+          15.0
+        ],
+        [
+          "BTCUSDT",
+          16.0
+        ],
+        [
+          "BTCUSDT",
+          17.0
+        ],
+        [
+          "BTCUSDT",
+          22.0
+        ],
+        [
+          "ETHUSDT",
+          14.0
+        ],
+        [
+          "ETHUSDT",
+          15.0
+        ],
+        [
+          "ETHUSDT",
+          16.0
+        ],
+        [
+          "ETHUSDT",
+          22.0
+        ],
+        [
+          "SOLUSDT",
+          14.0
+        ]
+      ],
+      "patience_score": 0.96,
+      "terrain_knowledge": 1.0,
+      "survival_tactics": [
+        "diversification_across_terrain",
+        "tactical_patience"
+      ],
+      "coordination_partners": [
+        "TETHER_TREASURY",
+        "MICROSTRATEGY",
+        "GRAYSCALE_TRUST",
+        "EUROPEAN_CENTRAL_BANK",
+        "ALAMEDA_RESEARCH",
+        "CITADEL_SECURITIES",
+        "SOVEREIGN_WEALTH_SINGAPORE",
+        "JANE_STREET",
+        "COINBASE_INTERNAL",
+        "MILLENNIUM_MANAGEMENT"
+      ],
+      "coordination_strength": {
+        "MICROSTRATEGY": 0.9999999982880496,
+        "JANE_STREET": 0.9999999983556819,
+        "CITADEL_SECURITIES": 0.9999999984300402,
+        "GRAYSCALE_TRUST": 0.9999999984317692,
+        "COINBASE_INTERNAL": 0.9999999988183509,
+        "TETHER_TREASURY": 0.9999999996089988,
+        "EUROPEAN_CENTRAL_BANK": 0.9999999999079657,
+        "MILLENNIUM_MANAGEMENT": 0.9999999995953572,
+        "SOVEREIGN_WEALTH_SINGAPORE": 0.9999999975736794,
+        "ALAMEDA_RESEARCH": 0.9999999975711816
+      },
+      "operation_frequency": 0.0252,
+      "weaknesses_identified": [],
+      "counter_strategy": "Avoid their ambush hours. Trade opposite schedule. Use limit orders to avoid their impact.",
+      "disruption_probability": 0.1,
+      "timestamp": 1768474611.670902
+    },
+    {
+      "entity_name": "VANGUARD",
+      "entity_type": "Asset Manager",
+      "threat_level": "CRITICAL",
+      "strength_assessment": 0.8281839633127088,
+      "position_analysis": "defensive",
+      "terrain_control": [],
+      "movement_pattern": "hit-and-run",
+      "stealth_score": 0.6373206483726956,
+      "ambush_locations": [
+        [
+          "BTCUSDT",
+          14.0
+        ],
+        [
+          "BTCUSDT",
+          15.0
+        ],
+        [
+          "BTCUSDT",
+          16.0
+        ],
+        [
+          "BTCUSDT",
+          17.0
+        ],
+        [
+          "BTCUSDT",
+          22.0
+        ],
+        [
+          "ETHUSDT",
+          14.0
+        ],
+        [
+          "ETHUSDT",
+          15.0
+        ],
+        [
+          "ETHUSDT",
+          16.0
+        ],
+        [
+          "ETHUSDT",
+          22.0
+        ],
+        [
+          "SOLUSDT",
+          14.0
+        ]
+      ],
+      "patience_score": 0.96,
+      "terrain_knowledge": 1.0,
+      "survival_tactics": [
+        "diversification_across_terrain",
+        "tactical_patience"
+      ],
+      "coordination_partners": [
+        "TETHER_TREASURY",
+        "MICROSTRATEGY",
+        "GRAYSCALE_TRUST",
+        "EUROPEAN_CENTRAL_BANK",
+        "ALAMEDA_RESEARCH",
+        "CITADEL_SECURITIES",
+        "SOVEREIGN_WEALTH_SINGAPORE",
+        "JANE_STREET",
+        "COINBASE_INTERNAL",
+        "MILLENNIUM_MANAGEMENT"
+      ],
+      "coordination_strength": {
+        "MICROSTRATEGY": 0.9999999982375172,
+        "JANE_STREET": 0.9999999983051495,
+        "CITADEL_SECURITIES": 0.9999999983795078,
+        "GRAYSCALE_TRUST": 0.9999999983812368,
+        "COINBASE_INTERNAL": 0.9999999987678184,
+        "TETHER_TREASURY": 0.9999999995584664,
+        "EUROPEAN_CENTRAL_BANK": 0.9999999998574334,
+        "MILLENNIUM_MANAGEMENT": 0.9999999996458897,
+        "SOVEREIGN_WEALTH_SINGAPORE": 0.9999999976242118,
+        "ALAMEDA_RESEARCH": 0.999999997621714
+      },
+      "operation_frequency": 0.0252,
+      "weaknesses_identified": [],
+      "counter_strategy": "Avoid their ambush hours. Trade opposite schedule. Use limit orders to avoid their impact.",
+      "disruption_probability": 0.1,
+      "timestamp": 1768474613.6899014
+    },
+    {
+      "entity_name": "STATE_STREET",
+      "entity_type": "Asset Manager",
+      "threat_level": "CRITICAL",
+      "strength_assessment": 0.8281839633588671,
+      "position_analysis": "defensive",
+      "terrain_control": [],
+      "movement_pattern": "hit-and-run",
+      "stealth_score": 0.6373210097387713,
+      "ambush_locations": [
+        [
+          "BTCUSDT",
+          14.0
+        ],
+        [
+          "BTCUSDT",
+          15.0
+        ],
+        [
+          "BTCUSDT",
+          16.0
+        ],
+        [
+          "BTCUSDT",
+          17.0
+        ],
+        [
+          "BTCUSDT",
+          22.0
+        ],
+        [
+          "ETHUSDT",
+          14.0
+        ],
+        [
+          "ETHUSDT",
+          15.0
+        ],
+        [
+          "ETHUSDT",
+          16.0
+        ],
+        [
+          "ETHUSDT",
+          22.0
+        ],
+        [
+          "SOLUSDT",
+          14.0
+        ]
+      ],
+      "patience_score": 0.96,
+      "terrain_knowledge": 1.0,
+      "survival_tactics": [
+        "diversification_across_terrain",
+        "tactical_patience"
+      ],
+      "coordination_partners": [
+        "TETHER_TREASURY",
+        "MICROSTRATEGY",
+        "GRAYSCALE_TRUST",
+        "EUROPEAN_CENTRAL_BANK",
+        "ALAMEDA_RESEARCH",
+        "CITADEL_SECURITIES",
+        "SOVEREIGN_WEALTH_SINGAPORE",
+        "JANE_STREET",
+        "COINBASE_INTERNAL",
+        "MILLENNIUM_MANAGEMENT"
+      ],
+      "coordination_strength": {
+        "MICROSTRATEGY": 0.9999999979835105,
+        "JANE_STREET": 0.9999999980511428,
+        "CITADEL_SECURITIES": 0.9999999981255011,
+        "GRAYSCALE_TRUST": 0.9999999981272301,
+        "COINBASE_INTERNAL": 0.9999999985138117,
+        "TETHER_TREASURY": 0.9999999993044597,
+        "EUROPEAN_CENTRAL_BANK": 0.9999999996034267,
+        "MILLENNIUM_MANAGEMENT": 0.9999999998998964,
+        "SOVEREIGN_WEALTH_SINGAPORE": 0.9999999978782185,
+        "ALAMEDA_RESEARCH": 0.9999999978757207
+      },
+      "operation_frequency": 0.0252,
+      "weaknesses_identified": [],
+      "counter_strategy": "Avoid their ambush hours. Trade opposite schedule. Use limit orders to avoid their impact.",
+      "disruption_probability": 0.1,
+      "timestamp": 1768474615.7029388
+    },
+    {
+      "entity_name": "MILLENNIUM_MANAGEMENT",
+      "entity_type": "Hedge Fund",
+      "threat_level": "CRITICAL",
+      "strength_assessment": 0.8281839762392759,
+      "position_analysis": "defensive",
+      "terrain_control": [],
+      "movement_pattern": "hit-and-run",
+      "stealth_score": 0.6373217039944619,
+      "ambush_locations": [
+        [
+          "BTCUSDT",
+          14.0
+        ],
+        [
+          "BTCUSDT",
+          15.0
+        ],
+        [
+          "BTCUSDT",
+          16.0
+        ],
+        [
+          "BTCUSDT",
+          17.0
+        ],
+        [
+          "BTCUSDT",
+          22.0
+        ],
+        [
+          "ETHUSDT",
+          14.0
+        ],
+        [
+          "ETHUSDT",
+          15.0
+        ],
+        [
+          "ETHUSDT",
+          16.0
+        ],
+        [
+          "ETHUSDT",
+          22.0
+        ],
+        [
+          "SOLUSDT",
+          14.0
+        ]
+      ],
+      "patience_score": 0.96,
+      "terrain_knowledge": 1.0,
+      "survival_tactics": [
+        "diversification_across_terrain",
+        "tactical_patience"
+      ],
+      "coordination_partners": [
+        "TETHER_TREASURY",
+        "MICROSTRATEGY",
+        "GRAYSCALE_TRUST",
+        "EUROPEAN_CENTRAL_BANK",
+        "ALAMEDA_RESEARCH",
+        "CITADEL_SECURITIES",
+        "SOVEREIGN_WEALTH_SINGAPORE",
+        "JANE_STREET",
+        "COINBASE_INTERNAL",
+        "BRIDGEWATER_ASSOCIATES"
+      ],
+      "coordination_strength": {
+        "MICROSTRATEGY": 0.9999999978834069,
+        "JANE_STREET": 0.9999999979510392,
+        "CITADEL_SECURITIES": 0.9999999980253975,
+        "GRAYSCALE_TRUST": 0.9999999980271265,
+        "COINBASE_INTERNAL": 0.9999999984137081,
+        "TETHER_TREASURY": 0.999999999204356,
+        "EUROPEAN_CENTRAL_BANK": 0.9999999995033231,
+        "BRIDGEWATER_ASSOCIATES": 0.9999999993953409,
+        "SOVEREIGN_WEALTH_SINGAPORE": 0.9999999979783222,
+        "ALAMEDA_RESEARCH": 0.9999999979758243
+      },
+      "operation_frequency": 0.0252,
+      "weaknesses_identified": [],
+      "counter_strategy": "Avoid their ambush hours. Trade opposite schedule. Use limit orders to avoid their impact.",
+      "disruption_probability": 0.1,
+      "timestamp": 1768474617.918769
+    },
+    {
+      "entity_name": "BRIDGEWATER_ASSOCIATES",
+      "entity_type": "Hedge Fund",
+      "threat_level": "CRITICAL",
+      "strength_assessment": 0.8281839762441979,
+      "position_analysis": "defensive",
+      "terrain_control": [],
+      "movement_pattern": "hit-and-run",
+      "stealth_score": 0.6373217240276272,
+      "ambush_locations": [
+        [
+          "BTCUSDT",
+          14.0
+        ],
+        [
+          "BTCUSDT",
+          15.0
+        ],
+        [
+          "BTCUSDT",
+          16.0
+        ],
+        [
+          "BTCUSDT",
+          17.0
+        ],
+        [
+          "BTCUSDT",
+          22.0
+        ],
+        [
+          "ETHUSDT",
+          14.0
+        ],
+        [
+          "ETHUSDT",
+          15.0
+        ],
+        [
+          "ETHUSDT",
+          16.0
+        ],
+        [
+          "ETHUSDT",
+          22.0
+        ],
+        [
+          "SOLUSDT",
+          14.0
+        ]
+      ],
+      "patience_score": 0.96,
+      "terrain_knowledge": 1.0,
+      "survival_tactics": [
+        "diversification_across_terrain",
+        "tactical_patience"
+      ],
+      "coordination_partners": [
+        "TETHER_TREASURY",
+        "MICROSTRATEGY",
+        "GRAYSCALE_TRUST",
+        "EUROPEAN_CENTRAL_BANK",
+        "ALAMEDA_RESEARCH",
+        "CITADEL_SECURITIES",
+        "SOVEREIGN_WEALTH_SINGAPORE",
+        "JANE_STREET",
+        "COINBASE_INTERNAL",
+        "MILLENNIUM_MANAGEMENT"
+      ],
+      "coordination_strength": {
+        "MICROSTRATEGY": 0.9999999972787478,
+        "JANE_STREET": 0.9999999973463801,
+        "CITADEL_SECURITIES": 0.9999999974207384,
+        "GRAYSCALE_TRUST": 0.9999999974224674,
+        "COINBASE_INTERNAL": 0.999999997809049,
+        "TETHER_TREASURY": 0.9999999985996969,
+        "EUROPEAN_CENTRAL_BANK": 0.999999998898664,
+        "MILLENNIUM_MANAGEMENT": 0.9999999993953409,
+        "SOVEREIGN_WEALTH_SINGAPORE": 0.9999999985829812,
+        "ALAMEDA_RESEARCH": 0.9999999985804834
+      },
+      "operation_frequency": 0.0252,
+      "weaknesses_identified": [],
+      "counter_strategy": "Avoid their ambush hours. Trade opposite schedule. Use limit orders to avoid their impact.",
+      "disruption_probability": 0.1,
+      "timestamp": 1768474619.9265208
+    },
+    {
+      "entity_name": "SOVEREIGN_WEALTH_NORWAY",
+      "entity_type": "Sovereign Wealth Fund",
+      "threat_level": "CRITICAL",
+      "strength_assessment": 0.8281839803599879,
+      "position_analysis": "defensive",
+      "terrain_control": [],
+      "movement_pattern": "hit-and-run",
+      "stealth_score": 0.6373229235629287,
+      "ambush_locations": [
+        [
+          "BTCUSDT",
+          14.0
+        ],
+        [
+          "BTCUSDT",
+          15.0
+        ],
+        [
+          "BTCUSDT",
+          16.0
+        ],
+        [
+          "BTCUSDT",
+          17.0
+        ],
+        [
+          "BTCUSDT",
+          22.0
+        ],
+        [
+          "ETHUSDT",
+          14.0
+        ],
+        [
+          "ETHUSDT",
+          15.0
+        ],
+        [
+          "ETHUSDT",
+          16.0
+        ],
+        [
+          "ETHUSDT",
+          22.0
+        ],
+        [
+          "SOLUSDT",
+          14.0
+        ]
+      ],
+      "patience_score": 0.96,
+      "terrain_knowledge": 1.0,
+      "survival_tactics": [
+        "diversification_across_terrain",
+        "tactical_patience"
+      ],
+      "coordination_partners": [
+        "TETHER_TREASURY",
+        "MICROSTRATEGY",
+        "GRAYSCALE_TRUST",
+        "EUROPEAN_CENTRAL_BANK",
+        "ALAMEDA_RESEARCH",
+        "CITADEL_SECURITIES",
+        "SOVEREIGN_WEALTH_SINGAPORE",
+        "JANE_STREET",
+        "COINBASE_INTERNAL",
+        "MILLENNIUM_MANAGEMENT"
+      ],
+      "coordination_strength": {
+        "MICROSTRATEGY": 0.999999996514615,
+        "JANE_STREET": 0.9999999965822473,
+        "CITADEL_SECURITIES": 0.9999999966566055,
+        "GRAYSCALE_TRUST": 0.9999999966583346,
+        "COINBASE_INTERNAL": 0.9999999970449163,
+        "TETHER_TREASURY": 0.9999999978355641,
+        "EUROPEAN_CENTRAL_BANK": 0.9999999981345311,
+        "MILLENNIUM_MANAGEMENT": 0.9999999986312081,
+        "SOVEREIGN_WEALTH_SINGAPORE": 0.999999999347114,
+        "ALAMEDA_RESEARCH": 0.9999999993446163
+      },
+      "operation_frequency": 0.0252,
+      "weaknesses_identified": [],
+      "counter_strategy": "Avoid their ambush hours. Trade opposite schedule. Use limit orders to avoid their impact.",
+      "disruption_probability": 0.1,
+      "timestamp": 1768474621.9399538
+    },
+    {
+      "entity_name": "SOVEREIGN_WEALTH_SAUDI",
+      "entity_type": "Sovereign Wealth Fund",
+      "threat_level": "CRITICAL",
+      "strength_assessment": 0.8281839837029925,
+      "position_analysis": "defensive",
+      "terrain_control": [],
+      "movement_pattern": "hit-and-run",
+      "stealth_score": 0.6373311137435097,
+      "ambush_locations": [
+        [
+          "BTCUSDT",
+          14.0
+        ],
+        [
+          "BTCUSDT",
+          15.0
+        ],
+        [
+          "BTCUSDT",
+          16.0
+        ],
+        [
+          "BTCUSDT",
+          17.0
+        ],
+        [
+          "BTCUSDT",
+          22.0
+        ],
+        [
+          "ETHUSDT",
+          14.0
+        ],
+        [
+          "ETHUSDT",
+          15.0
+        ],
+        [
+          "ETHUSDT",
+          16.0
+        ],
+        [
+          "ETHUSDT",
+          22.0
+        ],
+        [
+          "SOLUSDT",
+          14.0
+        ]
+      ],
+      "patience_score": 0.96,
+      "terrain_knowledge": 1.0,
+      "survival_tactics": [
+        "diversification_across_terrain",
+        "tactical_patience"
+      ],
+      "coordination_partners": [
+        "TETHER_TREASURY",
+        "MICROSTRATEGY",
+        "GRAYSCALE_TRUST",
+        "EUROPEAN_CENTRAL_BANK",
+        "ALAMEDA_RESEARCH",
+        "CITADEL_SECURITIES",
+        "SOVEREIGN_WEALTH_SINGAPORE",
+        "JANE_STREET",
+        "COINBASE_INTERNAL",
+        "MILLENNIUM_MANAGEMENT"
+      ],
+      "coordination_strength": {
+        "MICROSTRATEGY": 0.9999999959391607,
+        "JANE_STREET": 0.9999999960067929,
+        "CITADEL_SECURITIES": 0.9999999960811512,
+        "GRAYSCALE_TRUST": 0.9999999960828803,
+        "COINBASE_INTERNAL": 0.9999999964694619,
+        "TETHER_TREASURY": 0.9999999972601098,
+        "EUROPEAN_CENTRAL_BANK": 0.9999999975590768,
+        "MILLENNIUM_MANAGEMENT": 0.9999999980557538,
+        "SOVEREIGN_WEALTH_SINGAPORE": 0.9999999999225684,
+        "ALAMEDA_RESEARCH": 0.9999999999200706
+      },
+      "operation_frequency": 0.0252,
+      "weaknesses_identified": [],
+      "counter_strategy": "Avoid their ambush hours. Trade opposite schedule. Use limit orders to avoid their impact.",
+      "disruption_probability": 0.1,
+      "timestamp": 1768474624.1635938
+    },
+    {
+      "entity_name": "SOVEREIGN_WEALTH_SINGAPORE",
+      "entity_type": "Sovereign Wealth Fund",
+      "threat_level": "CRITICAL",
+      "strength_assessment": 0.8281839839067654,
+      "position_analysis": "defensive",
+      "terrain_control": [],
+      "movement_pattern": "hit-and-run",
+      "stealth_score": 0.6373312496375867,
+      "ambush_locations": [
+        [
+          "BTCUSDT",
+          14.0
+        ],
+        [
+          "BTCUSDT",
+          15.0
+        ],
+        [
+          "BTCUSDT",
+          16.0
+        ],
+        [
+          "BTCUSDT",
+          17.0
+        ],
+        [
+          "BTCUSDT",
+          22.0
+        ],
+        [
+          "ETHUSDT",
+          14.0
+        ],
+        [
+          "ETHUSDT",
+          15.0
+        ],
+        [
+          "ETHUSDT",
+          16.0
+        ],
+        [
+          "ETHUSDT",
+          22.0
+        ],
+        [
+          "SOLUSDT",
+          14.0
+        ]
+      ],
+      "patience_score": 0.96,
+      "terrain_knowledge": 1.0,
+      "survival_tactics": [
+        "diversification_across_terrain",
+        "tactical_patience"
+      ],
+      "coordination_partners": [
+        "TETHER_TREASURY",
+        "MICROSTRATEGY",
+        "GRAYSCALE_TRUST",
+        "EUROPEAN_CENTRAL_BANK",
+        "ALAMEDA_RESEARCH",
+        "CITADEL_SECURITIES",
+        "JANE_STREET",
+        "COINBASE_INTERNAL",
+        "MILLENNIUM_MANAGEMENT",
+        "BRIDGEWATER_ASSOCIATES"
+      ],
+      "coordination_strength": {
+        "MICROSTRATEGY": 0.999999995861729,
+        "JANE_STREET": 0.9999999959293613,
+        "CITADEL_SECURITIES": 0.9999999960037196,
+        "GRAYSCALE_TRUST": 0.9999999960054485,
+        "COINBASE_INTERNAL": 0.9999999963920303,
+        "TETHER_TREASURY": 0.9999999971826782,
+        "EUROPEAN_CENTRAL_BANK": 0.9999999974816451,
+        "MILLENNIUM_MANAGEMENT": 0.9999999979783222,
+        "BRIDGEWATER_ASSOCIATES": 0.9999999985829812,
+        "ALAMEDA_RESEARCH": 0.9999999999975022
+      },
+      "operation_frequency": 0.0252,
+      "weaknesses_identified": [],
+      "counter_strategy": "Avoid their ambush hours. Trade opposite schedule. Use limit orders to avoid their impact.",
+      "disruption_probability": 0.1,
+      "timestamp": 1768474626.1770208
+    },
+    {
+      "entity_name": "ALAMEDA_RESEARCH",
+      "entity_type": "Trading Firm (Defunct)",
+      "threat_level": "CRITICAL",
+      "strength_assessment": 0.8281840206639326,
+      "position_analysis": "defensive",
+      "terrain_control": [],
+      "movement_pattern": "hit-and-run",
+      "stealth_score": 0.6373329827443646,
+      "ambush_locations": [
+        [
+          "BTCUSDT",
+          14.0
+        ],
+        [
+          "BTCUSDT",
+          15.0
+        ],
+        [
+          "BTCUSDT",
+          16.0
+        ],
+        [
+          "BTCUSDT",
+          17.0
+        ],
+        [
+          "BTCUSDT",
+          22.0
+        ],
+        [
+          "ETHUSDT",
+          14.0
+        ],
+        [
+          "ETHUSDT",
+          15.0
+        ],
+        [
+          "ETHUSDT",
+          16.0
+        ],
+        [
+          "ETHUSDT",
+          22.0
+        ],
+        [
+          "SOLUSDT",
+          14.0
+        ]
+      ],
+      "patience_score": 0.96,
+      "terrain_knowledge": 1.0,
+      "survival_tactics": [
+        "diversification_across_terrain",
+        "tactical_patience"
+      ],
+      "coordination_partners": [
+        "TETHER_TREASURY",
+        "MICROSTRATEGY",
+        "GRAYSCALE_TRUST",
+        "EUROPEAN_CENTRAL_BANK",
+        "CITADEL_SECURITIES",
+        "SOVEREIGN_WEALTH_SINGAPORE",
+        "JANE_STREET",
+        "COINBASE_INTERNAL",
+        "MILLENNIUM_MANAGEMENT",
+        "BRIDGEWATER_ASSOCIATES"
+      ],
+      "coordination_strength": {
+        "MICROSTRATEGY": 0.9999999958592312,
+        "JANE_STREET": 0.9999999959268635,
+        "CITADEL_SECURITIES": 0.9999999960012218,
+        "GRAYSCALE_TRUST": 0.9999999960029508,
+        "COINBASE_INTERNAL": 0.9999999963895324,
+        "TETHER_TREASURY": 0.9999999971801804,
+        "EUROPEAN_CENTRAL_BANK": 0.9999999974791474,
+        "MILLENNIUM_MANAGEMENT": 0.9999999979758243,
+        "BRIDGEWATER_ASSOCIATES": 0.9999999985804834,
+        "SOVEREIGN_WEALTH_SINGAPORE": 0.9999999999975022
+      },
+      "operation_frequency": 0.0252,
+      "weaknesses_identified": [],
+      "counter_strategy": "Avoid their ambush hours. Trade opposite schedule. Use limit orders to avoid their impact.",
+      "disruption_probability": 0.1,
+      "timestamp": 1768474628.3796415
+    }
+  ],
+  "threat_matrix": {
+    "CRITICAL": [
+      {
+        "entity": "MICROSTRATEGY",
+        "strength": 0.8281833577311497,
+        "coordination_partners": 10,
+        "stealth": 0.6372931940050373
+      },
+      {
+        "entity": "JANE_STREET",
+        "strength": 0.8281833579328485,
+        "coordination_partners": 10,
+        "stealth": 0.6372949707924709
+      },
+      {
+        "entity": "CITADEL_SECURITIES",
+        "strength": 0.8281833608967336,
+        "coordination_partners": 10,
+        "stealth": 0.6372962378629392
+      },
+      {
+        "entity": "GRAYSCALE_TRUST",
+        "strength": 0.8281834309293447,
+        "coordination_partners": 10,
+        "stealth": 0.637298028444479
+      },
+      {
+        "entity": "BLACKROCK_ISHARES",
+        "strength": 0.8281834610492431,
+        "coordination_partners": 10,
+        "stealth": 0.6372992238242157
+      },
+      {
+        "entity": "COINBASE_INTERNAL",
+        "strength": 0.8281838754801968,
+        "coordination_partners": 10,
+        "stealth": 0.6373100871721145
+      },
+      {
+        "entity": "US_FEDERAL_RESERVE",
+        "strength": 0.8281838770009905,
+        "coordination_partners": 10,
+        "stealth": 0.6373105898473584
+      },
+      {
+        "entity": "JUMP_TRADING",
+        "strength": 0.8281838822880009,
+        "coordination_partners": 10,
+        "stealth": 0.6373137439814631
+      },
+      {
+        "entity": "TWO_SIGMA",
+        "strength": 0.8281838831043006,
+        "coordination_partners": 10,
+        "stealth": 0.6373139188875143
+      },
+      {
+        "entity": "RENAISSANCE_TECHNOLOGIES",
+        "strength": 0.8281839295125666,
+        "coordination_partners": 10,
+        "stealth": 0.6373162408235181
+      },
+      {
+        "entity": "BINANCE_INTERNAL",
+        "strength": 0.8281839296194962,
+        "coordination_partners": 10,
+        "stealth": 0.6373166838279131
+      },
+      {
+        "entity": "TETHER_TREASURY",
+        "strength": 0.8281839306825834,
+        "coordination_partners": 10,
+        "stealth": 0.6373168092981637
+      },
+      {
+        "entity": "CIRCLE_USDC",
+        "strength": 0.8281839307562538,
+        "coordination_partners": 10,
+        "stealth": 0.6373177835000213
+      },
+      {
+        "entity": "BANK_OF_JAPAN",
+        "strength": 0.8281839322411346,
+        "coordination_partners": 10,
+        "stealth": 0.6373179703040053
+      },
+      {
+        "entity": "EUROPEAN_CENTRAL_BANK",
+        "strength": 0.8281839372150371,
+        "coordination_partners": 10,
+        "stealth": 0.6373187534192232
+      },
+      {
+        "entity": "PEOPLES_BANK_CHINA",
+        "strength": 0.8281839380674055,
+        "coordination_partners": 10,
+        "stealth": 0.6373193489924251
+      },
+      {
+        "entity": "FIDELITY_DIGITAL",
+        "strength": 0.8281839381165388,
+        "coordination_partners": 10,
+        "stealth": 0.6373197854945097
+      },
+      {
+        "entity": "VANGUARD",
+        "strength": 0.8281839633127088,
+        "coordination_partners": 10,
+        "stealth": 0.6373206483726956
+      },
+      {
+        "entity": "STATE_STREET",
+        "strength": 0.8281839633588671,
+        "coordination_partners": 10,
+        "stealth": 0.6373210097387713
+      },
+      {
+        "entity": "MILLENNIUM_MANAGEMENT",
+        "strength": 0.8281839762392759,
+        "coordination_partners": 10,
+        "stealth": 0.6373217039944619
+      },
+      {
+        "entity": "BRIDGEWATER_ASSOCIATES",
+        "strength": 0.8281839762441979,
+        "coordination_partners": 10,
+        "stealth": 0.6373217240276272
+      },
+      {
+        "entity": "SOVEREIGN_WEALTH_NORWAY",
+        "strength": 0.8281839803599879,
+        "coordination_partners": 10,
+        "stealth": 0.6373229235629287
+      },
+      {
+        "entity": "SOVEREIGN_WEALTH_SAUDI",
+        "strength": 0.8281839837029925,
+        "coordination_partners": 10,
+        "stealth": 0.6373311137435097
+      },
+      {
+        "entity": "SOVEREIGN_WEALTH_SINGAPORE",
+        "strength": 0.8281839839067654,
+        "coordination_partners": 10,
+        "stealth": 0.6373312496375867
+      },
+      {
+        "entity": "ALAMEDA_RESEARCH",
+        "strength": 0.8281840206639326,
+        "coordination_partners": 10,
+        "stealth": 0.6373329827443646
+      }
+    ],
+    "HIGH": [],
+    "MEDIUM": [],
+    "LOW": []
+  },
+  "tactical_recommendations": [
+    "\u26a0\ufe0f HIGH COORDINATION DETECTED: Avoid trading against synchronized whale movements. Wait for coordination breakdown.",
+    "\ud83c\udfaf MULTIPLE HIT-AND-RUN OPERATORS: Use limit orders, avoid market orders during their ambush hours.",
+    "\ud83c\udf96\ufe0f Sun Tzu: 'In the midst of chaos, there is also opportunity.' Trade when whales are fighting each other.",
+    "\ud83c\uddee\ud83c\uddea IRA: 'Hit and run. Small, precise strikes. Never overstay your welcome.'",
+    "\ud83e\udeb6 Apache: 'Patience. Know the terrain. Wait for the perfect moment.'"
+  ]
+}
