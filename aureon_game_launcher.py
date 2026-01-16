@@ -14,7 +14,7 @@ def safe_print(*args, **kwargs):
     """Safe print that ignores I/O errors on Windows exit."""
     try:
         import builtins
-        builtins.safe_print(*args, **kwargs)
+        builtins.print(*args, **kwargs)
     except (ValueError, OSError):
         pass
 
