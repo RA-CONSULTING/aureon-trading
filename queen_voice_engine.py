@@ -99,7 +99,7 @@ class QueenVoiceEngine:
         if self.enabled:
             self.worker_thread = threading.Thread(target=self._speech_worker, daemon=True)
             self.worker_thread.start()
-            print("👑 Queen Voice Engine ACTIVATED")
+            safe_print("👑 Queen Voice Engine ACTIVATED")
     
     def _load_all_wisdom(self) -> Dict[str, List[Dict]]:
         """Load all wisdom files into memory"""
@@ -108,14 +108,14 @@ class QueenVoiceEngine:
         if WISDOM_DIR.exists():
             for json_file in WISDOM_DIR.glob("*.json"):
                 try:
-                    with open(json_file, 'r') as f:
+                    with open(json_file, 'r', encoding='utf-8') as f:
                         data = json.load(f)
                         civ_name = data.get('civilization', json_file.stem)
                         wisdom[civ_name] = data.get('topics', [])
                 except Exception as e:
-                    print(f"Warning: Could not load {json_file}: {e}")
+                    safe_print(f"Warning: Could not load {json_file}: {e}")
         
-        print(f"📚 Loaded wisdom from {len(wisdom)} civilizations")
+        safe_print(f"📚 Loaded wisdom from {len(wisdom)} civilizations")
         return wisdom
     
     def _load_strategy_knowledge(self) -> Dict[str, Dict]:
@@ -176,7 +176,7 @@ class QueenVoiceEngine:
     def speak_now(self, text: str):
         """Speak immediately, bypassing queue"""
         # Always print what Queen would say
-        print(f"👑 QUEEN SPEAKS: {text}")
+        safe_print(f"👑 QUEEN SPEAKS: {text}")
         
         if not self.enabled or not PYGAME_AVAILABLE:
             return
@@ -202,7 +202,7 @@ class QueenVoiceEngine:
                 
                 time.sleep(0.1)
             except Exception as e:
-                print(f"Speech worker error: {e}")
+                safe_print(f"Speech worker error: {e}")
                 time.sleep(1)
     
     def _synthesize_and_play(self, text: str):
@@ -233,7 +233,7 @@ class QueenVoiceEngine:
             os.unlink(temp_path)
             
         except Exception as e:
-            print(f"TTS error: {e}")
+            safe_print(f"TTS error: {e}")
         finally:
             self.is_speaking = False
     
@@ -553,14 +553,14 @@ def status_update(bots: int, whales: int, volume: float):
 # ═══════════════════════════════════════════════════════════════════════════════
 
 if __name__ == "__main__":
-    print("\n" + "=" * 80)
-    print("👑 QUEEN SERO VOICE ENGINE - TEST MODE")
-    print("=" * 80 + "\n")
+    safe_print("\n" + "=" * 80)
+    safe_print("👑 QUEEN SERO VOICE ENGINE - TEST MODE")
+    safe_print("=" * 80 + "\n")
     
     # Test speeches
     queen = QueenVoiceEngine(enabled=True)
     
-    print("Testing Queen's voice...\n")
+    safe_print("Testing Queen's voice...\n")
     
     # Introduction
     queen.speak_now("Hello, I am Queen Sero. I am the omniscient intelligence watching over the markets. Let me tell you what I see.")
@@ -581,4 +581,4 @@ if __name__ == "__main__":
     # Status
     queen.give_status_update(156, 42, 15_000_000)
     
-    print("\n✅ Voice test complete!")
+    safe_print("\n✅ Voice test complete!")
