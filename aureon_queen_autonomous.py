@@ -36,8 +36,7 @@ if sys.platform == 'win32':
                     stream.encoding.lower().replace('-', '') == 'utf8')
         if hasattr(sys.stdout, 'buffer') and not _is_utf8_wrapper(sys.stdout):
             sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace', line_buffering=True)
-        if hasattr(sys.stderr, 'buffer') and not _is_utf8_wrapper(sys.stderr):
-            sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace', line_buffering=True)
+        # Skip stderr wrapping (causes Windows exit errors)
     except Exception:
         pass
 

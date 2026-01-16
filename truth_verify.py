@@ -21,7 +21,7 @@ if sys.platform == 'win32':
         if hasattr(sys.stdout, 'buffer'):
             sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace', line_buffering=True)
         if hasattr(sys.stderr, 'buffer'):
-            sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace', line_buffering=True)
+            # sys.stderr = io.TextIOWrapper(...)  # DISABLED - causes Windows exit errors
     except:
         pass
 
