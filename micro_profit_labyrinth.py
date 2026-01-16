@@ -10538,6 +10538,19 @@ class MicroProfitLabyrinth:
             reason_str = f"👑🚀 AUTONOMOUS LEARN: +${expected_profit:.4f} < ${QUEEN_MIN_PROFIT:.4f} BUT trading to learn! ({ladder_info}){dream_display}"
         
         # 🐝 HIVE STATE VOICE - Queen speaks her decision
+        # BEFORE we announce EXECUTE, consult Loss Learning to avoid cost-eaten trades
+        try:
+            if will_win and hasattr(self, 'loss_learning') and self.loss_learning:
+                avoid, avoid_reason = self.loss_learning.should_avoid_trade(
+                    from_asset, to_asset, exchange, expected_profit, from_value
+                )
+                if avoid:
+                    will_win = False
+                    reason_str = f"👑❌ SERO BLOCKS: {avoid_reason}"
+                    print(f"   👑❌ SERO SAYS NO: {reason_str}")
+        except Exception as e:
+            logger.debug(f"Loss learning guard error: {e}")
+
         if self.hive:
             try:
                 if will_win:
@@ -10548,7 +10561,7 @@ class MicroProfitLabyrinth:
                     self.hive.update(veto_reason=reason_str[:100])
             except Exception as e:
                 logger.debug(f"Hive voice error: {e}")
-        
+
         return will_win, avg_confidence, reason_str
     
     async def queen_learn_pattern(self, opportunity: 'MicroOpportunity', predicted_win: bool, reason: str):
