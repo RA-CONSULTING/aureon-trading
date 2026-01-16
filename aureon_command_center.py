@@ -5176,12 +5176,19 @@ async def handle_trading_toggle(request):
         TRADING_LIVE_ENABLED = False
     else:
         # Start trading engine in LIVE mode (no dry-run)
-        cmd = [sys.executable, "micro_profit_labyrinth.py", "--live", "--yes"]
+        cmd = [sys.executable, "-u", "micro_profit_labyrinth.py", "--live", "--yes", "--multi-exchange"]
+        env = dict(os.environ)
+        # Propagate debug flag if set in Command Center environment
+        if env.get("AUREON_DEBUG_STARTUP") == "1":
+            env["AUREON_DEBUG_STARTUP"] = "1"
+        # Force unbuffered output for reliable streaming
+        env["PYTHONUNBUFFERED"] = "1"
         TRADING_PROCESS = await asyncio.create_subprocess_exec(
             *cmd,
             cwd=str(Path(__file__).resolve().parent),
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.STDOUT,
+            env=env,
         )
         TRADING_LIVE_ENABLED = True
 
@@ -5790,12 +5797,19 @@ async def start_background_tasks(app):
     global TRADING_PROCESS, TRADING_LIVE_ENABLED
     safe_print("🚀💰 AUTO-STARTING TRADING ENGINE...")
     try:
-        cmd = [sys.executable, "-u", "micro_profit_labyrinth.py", "--live", "--yes"] # Added -u for unbuffered
+        cmd = [sys.executable, "-u", "micro_profit_labyrinth.py", "--live", "--yes", "--multi-exchange"] # Added -u for unbuffered
+        env = dict(os.environ)
+        # Propagate debug flag if set in Command Center environment
+        if env.get("AUREON_DEBUG_STARTUP") == "1":
+            env["AUREON_DEBUG_STARTUP"] = "1"
+        # Force unbuffered output for reliable streaming
+        env["PYTHONUNBUFFERED"] = "1"
         TRADING_PROCESS = await asyncio.create_subprocess_exec(
             *cmd,
             cwd=str(Path(__file__).resolve().parent),
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.STDOUT,
+            env=env,
         )
         TRADING_LIVE_ENABLED = True
         safe_print("✅💰 TRADING ENGINE STARTED - MAKING MONEY NOW!")
