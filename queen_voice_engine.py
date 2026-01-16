@@ -57,32 +57,34 @@ if sys.platform == 'win32':
 
 safe_print("🔊 [DEBUG] Now importing pygame...")
 
-# Import pygame but DON'T initialize it yet (lazy init)
-PYGAME_AVAILABLE = False
-_pygame_initialized = False
+safe_print("🔊 [DEBUG] pygame import will be deferred (lazy)")
 
-if not PYGAME_FORCE_DISABLED:
-    try:
-        import pygame
-        safe_print("🔊 [DEBUG] pygame imported (mixer init will be deferred)")
-        # Mark as available but not initialized
-        PYGAME_AVAILABLE = True
-    except Exception as e:
-        PYGAME_AVAILABLE = False
-        safe_print(f"⚠️ pygame import failed: {e}")
-else:
-    try:
-        import pygame  # Import but don't initialize
-        safe_print("🔊 [DEBUG] pygame imported (audio disabled)")
-    except Exception:
-        pass
+# pygame can crash/hang on import on some Windows setups.
+# We only import+init it if/when we actually need to play audio.
+pygame = None
+PYGAME_AVAILABLE = not PYGAME_FORCE_DISABLED
+_pygame_imported = False
+_pygame_initialized = False
 
 def _init_pygame_mixer():
     """Lazy initialization of pygame mixer - only called when actually needed."""
-    global _pygame_initialized, PYGAME_AVAILABLE
+    global _pygame_imported, _pygame_initialized, PYGAME_AVAILABLE, pygame
     
-    if _pygame_initialized or not PYGAME_AVAILABLE:
-        return _pygame_initialized
+    if _pygame_initialized:
+        return True
+    if not PYGAME_AVAILABLE:
+        return False
+
+    if not _pygame_imported:
+        try:
+            import importlib
+            pygame = importlib.import_module("pygame")
+            _pygame_imported = True
+            safe_print("🔊 [DEBUG] pygame imported (lazy)")
+        except Exception as e:
+            safe_print(f"⚠️ pygame import failed (lazy): {e}")
+            PYGAME_AVAILABLE = False
+            return False
     
     try:
         safe_print("🔊 [DEBUG] Initializing pygame mixer (lazy init)...")
@@ -99,7 +101,7 @@ def _init_pygame_mixer():
         PYGAME_AVAILABLE = False
         return False
 
-TTS_AVAILABLE = GTTS_AVAILABLE and PYGAME_AVAILABLE
+TTS_AVAILABLE = GTTS_AVAILABLE and (not PYGAME_FORCE_DISABLED)
 
 # Wisdom imports
 WISDOM_DIR = Path("wisdom_data")
@@ -231,7 +233,7 @@ class QueenVoiceEngine:
         # Always print what Queen would say
         safe_print(f"👑 QUEEN SPEAKS: {text}")
         
-        if not self.enabled or not PYGAME_AVAILABLE:
+        if not self.enabled:
             return
         
         self._synthesize_and_play(text)
