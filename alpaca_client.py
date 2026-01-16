@@ -1581,7 +1581,8 @@ class AlpacaClient:
         """Return snapshot for a stock symbol (latest/daily bars)."""
         try:
             sym = symbol.upper()
-            return self._request("GET", f"/v2/stocks/{sym}/snapshot") or {}
+            # Use data API endpoint for market data
+            return self._request("GET", f"/v2/stocks/{sym}/snapshot", base_url=self.data_url, request_type='data') or {}
         except Exception as e:
             logger.error(f"Error getting Alpaca stock snapshot for {symbol}: {e}")
             return {}
@@ -1599,7 +1600,8 @@ class AlpacaClient:
             for i in range(0, len(symbols), chunk_size):
                 chunk = symbols[i:i + chunk_size]
                 syms_str = ",".join([s.upper() for s in chunk])
-                resp = self._request("GET", "/v2/stocks/snapshots", params={"symbols": syms_str})
+                # Use data API endpoint for market data
+                resp = self._request("GET", "/v2/stocks/snapshots", params={"symbols": syms_str}, base_url=self.data_url, request_type='data')
                 if resp and isinstance(resp, dict):
                     results.update(resp)
             return results
