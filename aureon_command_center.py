@@ -5638,11 +5638,19 @@ def main():
     safe_print(f"=" * 80 + "\n")
     
     # Create and run app
+    safe_print("🔧 [DEBUG] Creating web app...")
     app = create_app()
+    safe_print("🔧 [DEBUG] Adding startup/cleanup handlers...")
     app.on_startup.append(start_background_tasks)
     app.on_cleanup.append(cleanup_background_tasks)
     
-    web.run_app(app, host='0.0.0.0', port=8888, print=None)
+    safe_print("🔧 [DEBUG] Starting web server on port 8888...")
+    try:
+        web.run_app(app, host='0.0.0.0', port=8888, print=None)
+    except Exception as e:
+        safe_print(f"❌ [DEBUG] Web server error: {e}")
+        import traceback
+        traceback.print_exc()
 
 if __name__ == '__main__':
     main()
