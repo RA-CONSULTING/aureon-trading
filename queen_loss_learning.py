@@ -1041,6 +1041,7 @@ class QueenLossLearningSystem:
         to_asset: str,
         exchange: str,
         expected_profit: float,
+        from_value_usd: float = 0.0,
     ) -> Tuple[bool, str]:
         """
         Check if Queen's learnings suggest avoiding this trade
@@ -1054,14 +1055,54 @@ class QueenLossLearningSystem:
         """
         pattern_key = f"{from_asset}→{to_asset}_{exchange}"
         
-        # Reintroduce minimum expected profit guard to avoid tiny/ghost-profit trades
-        # We require a floor for expected profit to ensure net positive after fees/slippage.
-        MIN_EXPECTED_PROFIT = 0.04  # $0.04 minimum expected net profit (raised from $0.02)
-        if expected_profit < MIN_EXPECTED_PROFIT:
-            return True, f"Expected profit ${expected_profit:.4f} < minimum ${MIN_EXPECTED_PROFIT:.4f}"  # Block tiny trades
-        
-        # Note: This is conservative — we can lower to $0.02 later if too restrictive.
-        
+        # Dynamic, cost-aware minimum expected profit guard
+        # Require expected_profit >= max(static_floor, fee_estimate*1.5, avg_slippage_usd)
+        STATIC_FLOOR = 0.04  # $0.04 base floor
+        fee_estimate = 0.0
+        avg_slippage_usd = 0.0
+
+        # Try to estimate fees in USD for this trade size if available
+        try:
+            if from_value_usd and from_value_usd > 0:
+                # Prefer a connected fee tracker if present
+                fee_tracker = getattr(self, 'fee_tracker', None)
+                if fee_tracker and hasattr(fee_tracker, 'estimate_trade_cost'):
+                    cost = fee_tracker.estimate_trade_cost(
+                        from_asset=from_asset, side='sell', quantity=from_value_usd
+                    )
+                    if isinstance(cost, dict):
+                        fee_estimate = cost.get('fee_usd', 0.0)
+                    else:
+                        fee_estimate = float(cost or 0.0)
+                else:
+                    # Fallback to exchange client estimates
+                    if exchange == 'alpaca' and self.alpaca and hasattr(self.alpaca, 'estimate_trade_cost'):
+                        cost = self.alpaca.estimate_trade_cost(from_asset, 'sell', from_value_usd)
+                        fee_estimate = cost.get('fee_usd', 0.0) if isinstance(cost, dict) else float(cost or 0.0)
+                    elif exchange == 'kraken' and self.kraken and hasattr(self.kraken, 'estimate_trade_cost'):
+                        cost = self.kraken.estimate_trade_cost(from_asset, 'sell', from_value_usd)
+                        fee_estimate = cost.get('fee_usd', 0.0) if isinstance(cost, dict) else float(cost or 0.0)
+                    elif exchange == 'binance' and self.binance and hasattr(self.binance, 'estimate_trade_cost'):
+                        cost = self.binance.estimate_trade_cost(from_asset, 'sell', from_value_usd)
+                        fee_estimate = cost.get('fee_usd', 0.0) if isinstance(cost, dict) else float(cost or 0.0)
+                    else:
+                        fee_estimate = from_value_usd * 0.002  # Default: 0.2% fee
+        except Exception as e:
+            logger.debug(f"Fee estimate failed: {e}")
+            fee_estimate = from_value_usd * 0.002 if from_value_usd else 0.0
+
+        # If we've seen historical slippage for this path, convert to USD
+        if pattern_key in self.loss_patterns:
+            pattern = self.loss_patterns[pattern_key]
+            if pattern.get('avg_slippage'):
+                avg_slippage_usd = (pattern['avg_slippage'] / 100.0) * (from_value_usd or 0.0)
+
+        required_min_profit = max(STATIC_FLOOR, fee_estimate * 1.5, avg_slippage_usd)
+        logger.debug(f"👑 Dynamic guard: exp=${expected_profit:.4f}, req_min=${required_min_profit:.4f} (fee=${fee_estimate:.4f}, slip_usd=${avg_slippage_usd:.4f})")
+
+        if expected_profit < required_min_profit:
+            return True, f"Expected profit ${expected_profit:.4f} < required ${required_min_profit:.4f} (fee=${fee_estimate:.4f}, slip=${avg_slippage_usd:.4f})"
+
         # Check loss patterns - but SURVIVAL MODE is more forgiving!
         if pattern_key in self.loss_patterns:
             pattern = self.loss_patterns[pattern_key]
@@ -1199,7 +1240,7 @@ async def main():
     
     # Check if should avoid
     print()
-    avoid, reason = system.should_avoid_trade('DAI', 'USD', 'kraken', 0.02)
+    avoid, reason = system.should_avoid_trade('DAI', 'USD', 'kraken', 0.02, from_value_usd=10.0)
     print(f"Should avoid DAI→USD? {avoid} - {reason}")
     
     # Final summary

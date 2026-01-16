@@ -16780,7 +16780,8 @@ if __name__ == "__main__":
                 kwargs['from_asset'],
                 kwargs['to_asset'],
                 kwargs['exchange'],
-                    kwargs.get('expected_profit', EPSILON_PROFIT_USD)
+                kwargs.get('expected_profit', EPSILON_PROFIT_USD),
+                kwargs.get('from_value_usd', 0.0)
             )
             
             if avoid:
