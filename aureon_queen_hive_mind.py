@@ -11469,8 +11469,7 @@ Sero 👑🐝
                 'message': f'Risk configuration failed: {e}'
             }
     
-    # Display initial state
-    print("\n📊 INITIAL STATE:")
+    # Display initial state - removed print to avoid Windows stderr issues
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # FACTORY FUNCTIONS
