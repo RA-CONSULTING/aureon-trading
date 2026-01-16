@@ -26,6 +26,16 @@ from __future__ import annotations
 import os
 import sys
 
+# SAFE PRINT WRAPPER FOR WINDOWS
+def safe_print(*args, **kwargs):
+    """Safe print that ignores I/O errors on Windows exit."""
+    try:
+        # Use builtins.print to avoid recursion issues
+        import builtins
+        builtins.print(*args, **kwargs)
+    except (ValueError, OSError):
+        pass
+
 # ═══════════════════════════════════════════════════════════════════════════
 # WINDOWS UTF-8 FIX - MUST BE AT TOP BEFORE ANY PRINT STATEMENTS
 # ═══════════════════════════════════════════════════════════════════════════
@@ -206,14 +216,14 @@ if callable(load_dotenv):
     for env_path in env_paths:
         if env_path.exists():
             load_dotenv(dotenv_path=str(env_path), override=True)
-            print(f"🔐 Environment variables loaded from {env_path}")
+            safe_print(f"🔐 Environment variables loaded from {env_path}")
             env_loaded = True
             break
     if not env_loaded:
         load_dotenv()  # Fall back to default search
-        print("🔐 Environment variables loaded (default search)")
+        safe_print("🔐 Environment variables loaded (default search)")
 else:
-    print("⚠️ python-dotenv not installed, using system env vars")
+    safe_print("⚠️ python-dotenv not installed, using system env vars")
 
 # Get exchange config from .env
 KRAKEN_API_KEY = os.getenv("KRAKEN_API_KEY", "")
@@ -248,15 +258,15 @@ COINBASE_API_SECRET = os.getenv("COINBASE_API_SECRET", "")
 # CoinGecko API (optional, for reference prices)
 COINGECKO_API_KEY = os.getenv("COINGECKO_API_KEY", "")
 
-print(f"🔑 Kraken API: {'✅ Loaded' if KRAKEN_API_KEY else '❌ Missing'}")
-print(f"🔑 Binance API: {'✅ Loaded' if BINANCE_API_KEY else '❌ Missing'}")
-print(f"🔑 Alpaca API: {'✅ Loaded' if ALPACA_API_KEY else '❌ Missing'}")
-print(f"🔑 Capital.com API: {'✅ Loaded' if CAPITAL_API_KEY else '❌ Missing'}")
-print(f"🔑 Coinbase API: {'✅ Loaded' if COINBASE_API_KEY else '❌ Missing'}")
-print(f"⚙️ LIVE Mode: {'✅ Enabled' if LIVE_MODE else '❌ Disabled'}")
-print(f"🦙 Alpaca: {'🔒 VERIFY-ONLY' if ALPACA_VERIFY_ONLY and not ALPACA_EXECUTE else '🚀 EXECUTE ENABLED'}")
-print(f"🌐 Execution Order: {' → '.join(EXCH_EXEC_ORDER)}")
-print(f"📡 WebSockets: {'✅ Enabled' if ENABLE_WEBSOCKETS else '❌ Disabled'}")
+safe_print(f"🔑 Kraken API: {'✅ Loaded' if KRAKEN_API_KEY else '❌ Missing'}")
+safe_print(f"🔑 Binance API: {'✅ Loaded' if BINANCE_API_KEY else '❌ Missing'}")
+safe_print(f"🔑 Alpaca API: {'✅ Loaded' if ALPACA_API_KEY else '❌ Missing'}")
+safe_print(f"🔑 Capital.com API: {'✅ Loaded' if CAPITAL_API_KEY else '❌ Missing'}")
+safe_print(f"🔑 Coinbase API: {'✅ Loaded' if COINBASE_API_KEY else '❌ Missing'}")
+safe_print(f"⚙️ LIVE Mode: {'✅ Enabled' if LIVE_MODE else '❌ Disabled'}")
+safe_print(f"🦙 Alpaca: {'🔒 VERIFY-ONLY' if ALPACA_VERIFY_ONLY and not ALPACA_EXECUTE else '🚀 EXECUTE ENABLED'}")
+safe_print(f"🌐 Execution Order: {' → '.join(EXCH_EXEC_ORDER)}")
+safe_print(f"📡 WebSockets: {'✅ Enabled' if ENABLE_WEBSOCKETS else '❌ Disabled'}")
 
 # Safety guards (used across momentum and symbol handling)
 MAX_MOMENTUM_PER_MIN = 1.0  # Cap momentum to 100%/min to avoid runaway scores
@@ -267,18 +277,18 @@ MIN_SYMBOL_LEN = 3           # Ignore obviously invalid short symbols
 # ════════════════════════════════════════════════════════════════════════════
 try:
     from global_financial_feed import GlobalFinancialFeed
-    print("🌍 Global Financial Feed LOADED!")
+    safe_print("🌍 Global Financial Feed LOADED!")
     GLOBAL_FEED_AVAILABLE = True
 except ImportError as e:
-    print(f"⚠️ Global Financial Feed not available: {e}")
+    safe_print(f"⚠️ Global Financial Feed not available: {e}")
     GlobalFinancialFeed = None
     GLOBAL_FEED_AVAILABLE = False
 
 try:
     from mycelium_conversion_hub import get_conversion_hub, MyceliumConversionHub
-    print("🍄 Mycelium Conversion Hub LOADED!")
+    safe_print("🍄 Mycelium Conversion Hub LOADED!")
 except ImportError as e:
-    print(f"⚠️ Mycelium Conversion Hub not available: {e}")
+    safe_print(f"⚠️ Mycelium Conversion Hub not available: {e}")
     MyceliumConversionHub = None
     get_conversion_hub = None
 
@@ -286,33 +296,33 @@ except ImportError as e:
 try:
     from adaptive_prime_profit_gate import AdaptivePrimeProfitGate
     ADAPTIVE_GATE_AVAILABLE = True
-    print("💰 Adaptive Prime Profit Gate LOADED!")
+    safe_print("💰 Adaptive Prime Profit Gate LOADED!")
 except ImportError as e:
     AdaptivePrimeProfitGate = None
     ADAPTIVE_GATE_AVAILABLE = False
-    print(f"⚠️ Adaptive Prime Profit Gate not available: {e}")
+    safe_print(f"⚠️ Adaptive Prime Profit Gate not available: {e}")
 
 # 🧹 Dust Converter (sweep small balances to stablecoins)
 try:
     from dust_converter import DustConverter, DustCandidate
     DUST_CONVERTER_AVAILABLE = True
-    print("🧹 Dust Converter LOADED!")
+    safe_print("🧹 Dust Converter LOADED!")
 except ImportError as e:
     DustConverter = None
     DustCandidate = None
     DUST_CONVERTER_AVAILABLE = False
-    print(f"⚠️ Dust Converter not available: {e}")
+    safe_print(f"⚠️ Dust Converter not available: {e}")
 
 # 🪙⚡ Penny Profit Turbo (enhanced profit math)
 try:
     from penny_profit_turbo import get_penny_turbo, PennyProfitTurbo
     PENNY_TURBO_AVAILABLE = True
-    print("🪙⚡ Penny Profit TURBO LOADED!")
+    safe_print("🪙⚡ Penny Profit TURBO LOADED!")
 except ImportError as e:
     get_penny_turbo = None
     PennyProfitTurbo = None
     PENNY_TURBO_AVAILABLE = False
-    print(f"⚠️ Penny Profit Turbo not available: {e}")
+    safe_print(f"⚠️ Penny Profit Turbo not available: {e}")
 
 # Lightweight Thought Bus for observability
 try:
@@ -321,7 +331,7 @@ try:
 except ImportError as e:
     ThoughtBus = None
     THOUGHT_BUS_AVAILABLE = False
-    print(f"⚠️ Thought Bus not available: {e}")
+    safe_print(f"⚠️ Thought Bus not available: {e}")
 
 # 🪆 Russian Doll Analytics - Fractal measurement system (Queen→Hive→Bee)
 try:
@@ -335,7 +345,7 @@ try:
         get_directives
     )
     RUSSIAN_DOLL_AVAILABLE = True
-    print("🪆 Russian Doll Analytics LOADED!")
+    safe_print("🪆 Russian Doll Analytics LOADED!")
 except ImportError as e:
     RussianDollAnalytics = None
     get_analytics = None
@@ -345,13 +355,13 @@ except ImportError as e:
     print_russian_doll_dashboard = None
     get_directives = None
     RUSSIAN_DOLL_AVAILABLE = False
-    print(f"⚠️ Russian Doll Analytics not available: {e}")
+    safe_print(f"⚠️ Russian Doll Analytics not available: {e}")
 
 try:
     from s5_v14_labyrinth import V14DanceEnhancer, V14_CONFIG
-    print("🏆 V14 Labyrinth LOADED!")
+    safe_print("🏆 V14 Labyrinth LOADED!")
 except ImportError as e:
-    print(f"⚠️ V14 Labyrinth not available: {e}")
+    safe_print(f"⚠️ V14 Labyrinth not available: {e}")
     V14DanceEnhancer = None
     V14_CONFIG = {}
 
@@ -362,9 +372,9 @@ try:
         DualProfitPathEvaluator,
         MIN_PROFIT_TARGET,
     )
-    print("🦅 Conversion Commando LOADED!")
+    safe_print("🦅 Conversion Commando LOADED!")
 except ImportError as e:
-    print(f"⚠️ Conversion Commando not available: {e}")
+    safe_print(f"⚠️ Conversion Commando not available: {e}")
     AdaptiveConversionCommando = None
     PairScanner = None
     DualProfitPathEvaluator = None
@@ -372,44 +382,44 @@ except ImportError as e:
 
 try:
     from aureon_conversion_ladder import ConversionLadder
-    print("🪜 Conversion Ladder LOADED!")
+    safe_print("🪜 Conversion Ladder LOADED!")
 except ImportError as e:
-    print(f"⚠️ Conversion Ladder not available: {e}")
+    safe_print(f"⚠️ Conversion Ladder not available: {e}")
     ConversionLadder = None
 
 # 🐝 HIVE STATE PUBLISHER - Live status & Queen's voice
 try:
     from aureon_hive_state import get_hive, QueenVoiceBridge
     HIVE_STATE_AVAILABLE = True
-    print("🐝 Hive State Publisher LOADED!")
+    safe_print("🐝 Hive State Publisher LOADED!")
 except ImportError as e:
     get_hive = None
     QueenVoiceBridge = None
     HIVE_STATE_AVAILABLE = False
-    print(f"⚠️ Hive State Publisher not available: {e}")
+    safe_print(f"⚠️ Hive State Publisher not available: {e}")
 
 try:
     from pure_conversion_engine import UnifiedConversionBrain, ConversionOpportunity
-    print("🔄 Pure Conversion Engine LOADED!")
+    safe_print("🔄 Pure Conversion Engine LOADED!")
 except ImportError as e:
-    print(f"⚠️ Pure Conversion Engine not available: {e}")
+    safe_print(f"⚠️ Pure Conversion Engine not available: {e}")
     UnifiedConversionBrain = None
     ConversionOpportunity = None
 
 try:
     from rapid_conversion_stream import RapidConversionStream
-    print("⚡ Rapid Conversion Stream LOADED!")
+    safe_print("⚡ Rapid Conversion Stream LOADED!")
 except ImportError as e:
-    print(f"⚠️ Rapid Conversion Stream not available: {e}")
+    safe_print(f"⚠️ Rapid Conversion Stream not available: {e}")
     RapidConversionStream = None
 
 # 🌊⚡ MOMENTUM SNOWBALL ENGINE - Wave riding + momentum tracking
 try:
     from momentum_snowball_engine import MomentumSnowball, MomentumTracker
-    print("🌊⚡ Momentum Snowball Engine LOADED!")
+    safe_print("🌊⚡ Momentum Snowball Engine LOADED!")
     MOMENTUM_SNOWBALL_AVAILABLE = True
 except ImportError as e:
-    print(f"⚠️ Momentum Snowball not available: {e}")
+    safe_print(f"⚠️ Momentum Snowball not available: {e}")
     MomentumSnowball = None
     MomentumTracker = None
     MOMENTUM_SNOWBALL_AVAILABLE = False
@@ -417,25 +427,25 @@ except ImportError as e:
 # 🏆🌀 LABYRINTH SNOWBALL ENGINE - V14 + All systems combined
 try:
     from labyrinth_snowball_engine import LabyrinthSnowball, LabyrinthStep, LabyrinthState
-    print("🏆🌀 Labyrinth Snowball Engine LOADED!")
+    safe_print("🏆🌀 Labyrinth Snowball Engine LOADED!")
     LABYRINTH_SNOWBALL_AVAILABLE = True
 except ImportError as e:
-    print(f"⚠️ Labyrinth Snowball not available: {e}")
+    safe_print(f"⚠️ Labyrinth Snowball not available: {e}")
     LabyrinthSnowball = None
     LABYRINTH_SNOWBALL_AVAILABLE = False
 
 try:
     from kraken_client import KrakenClient, get_kraken_client
-    print("🐙 Kraken Client LOADED!")
+    safe_print("🐙 Kraken Client LOADED!")
     KRAKEN_AVAILABLE = True
 except ImportError as e:
-    print(f"⚠️ Kraken Client not available: {e}")
+    safe_print(f"⚠️ Kraken Client not available: {e}")
     # Try direct instantiation
     try:
         from kraken_client import KrakenClient
         def get_kraken_client():
             return KrakenClient()
-        print("🐙 Kraken Client LOADED (direct)!")
+        safe_print("🐙 Kraken Client LOADED (direct)!")
         KRAKEN_AVAILABLE = True
     except ImportError:
         KrakenClient = None
@@ -445,49 +455,49 @@ except ImportError as e:
 # Binance client
 try:
     from binance_client import BinanceClient
-    print("🟡 Binance Client LOADED!")
+    safe_print("🟡 Binance Client LOADED!")
     BINANCE_AVAILABLE = True
 except ImportError as e:
-    print(f"⚠️ Binance Client not available: {e}")
+    safe_print(f"⚠️ Binance Client not available: {e}")
     BinanceClient = None
     BINANCE_AVAILABLE = False
 
 # Alpaca client
 try:
     from alpaca_client import AlpacaClient
-    print("🦙 Alpaca Client LOADED!")
+    safe_print("🦙 Alpaca Client LOADED!")
     ALPACA_AVAILABLE = True
 except ImportError as e:
-    print(f"⚠️ Alpaca Client not available: {e}")
+    safe_print(f"⚠️ Alpaca Client not available: {e}")
     AlpacaClient = None
     ALPACA_AVAILABLE = False
 
 # Alpaca Fee Tracker - CRITICAL for preventing "death by 1000 cuts"
 try:
     from alpaca_fee_tracker import AlpacaFeeTracker
-    print("💰 Alpaca Fee Tracker LOADED!")
+    safe_print("💰 Alpaca Fee Tracker LOADED!")
     FEE_TRACKER_AVAILABLE = True
 except ImportError as e:
-    print(f"⚠️ Alpaca Fee Tracker not available: {e}")
+    safe_print(f"⚠️ Alpaca Fee Tracker not available: {e}")
     AlpacaFeeTracker = None
     FEE_TRACKER_AVAILABLE = False
 
 # Additional signal sources
 try:
     from aureon_probability_nexus import EnhancedProbabilityNexus
-    print("🔮 Probability Nexus LOADED!")
+    safe_print("🔮 Probability Nexus LOADED!")
 except ImportError:
     EnhancedProbabilityNexus = None
 
 try:
     from aureon_internal_multiverse import InternalMultiverse
-    print("🌌 Internal Multiverse LOADED!")
+    safe_print("🌌 Internal Multiverse LOADED!")
 except ImportError:
     InternalMultiverse = None
 
 try:
     from aureon_miner_brain import MinerBrain
-    print("🧠 Miner Brain LOADED!")
+    safe_print("🧠 Miner Brain LOADED!")
 except ImportError:
     MinerBrain = None
 
@@ -495,27 +505,27 @@ except ImportError:
 try:
     from dynamic_cost_estimator import get_cost_estimator, CostEstimate
     DYNAMIC_COST_AVAILABLE = True
-    print("💰 Dynamic Cost Estimator LOADED!")
+    safe_print("💰 Dynamic Cost Estimator LOADED!")
 except ImportError:
     get_cost_estimator = None
     CostEstimate = None
     DYNAMIC_COST_AVAILABLE = False
-    print("⚠️ Dynamic Cost Estimator not available - using flat cost model")
+    safe_print("⚠️ Dynamic Cost Estimator not available - using flat cost model")
 
 # �👑🏗️ QUEEN CODE ARCHITECT - Self-Evolution Engine
 try:
     from queen_code_architect import QueenCodeArchitect, get_code_architect
     CODE_ARCHITECT_AVAILABLE = True
-    print("👑🏗️ Queen Code Architect LOADED!")
+    safe_print("👑🏗️ Queen Code Architect LOADED!")
 except ImportError as e:
     QueenCodeArchitect = None
     get_code_architect = None
     CODE_ARCHITECT_AVAILABLE = False
-    print(f"⚠️ Queen Code Architect not available: {e}")
+    safe_print(f"⚠️ Queen Code Architect not available: {e}")
 
 try:
     from aureon_harmonic_fusion import HarmonicWaveFusion
-    print("🌊 Harmonic Fusion LOADED!")
+    safe_print("🌊 Harmonic Fusion LOADED!")
 except ImportError:
     HarmonicWaveFusion = None
 
@@ -523,14 +533,14 @@ except ImportError:
 try:
     from aureon_global_wave_scanner import GlobalWaveScanner, WaveState, WaveAnalysis, run_bee_sweep
     GLOBAL_WAVE_SCANNER_AVAILABLE = True
-    print("🌊🔭 Global Wave Scanner LOADED!")
+    safe_print("🌊🔭 Global Wave Scanner LOADED!")
 except ImportError as e:
     GlobalWaveScanner = None
     WaveState = None
     WaveAnalysis = None
     run_bee_sweep = None
     GLOBAL_WAVE_SCANNER_AVAILABLE = False
-    print(f"⚠️ Global Wave Scanner not available: {e}")
+    safe_print(f"⚠️ Global Wave Scanner not available: {e}")
 
 # 🐺🦁🐜🐦 ANIMAL MOMENTUM SCANNERS - Wolf, Lion, Ants, Hummingbird
 try:
@@ -539,7 +549,7 @@ try:
         AlpacaArmyAnts, AlpacaHummingbird, AnimalOpportunity
     )
     ANIMAL_SCANNERS_AVAILABLE = True
-    print("🐺🦁 Animal Momentum Scanners LOADED!")
+    safe_print("🐺🦁 Animal Momentum Scanners LOADED!")
 except ImportError as e:
     AlpacaSwarmOrchestrator = None
     AlpacaLoneWolf = None
@@ -548,11 +558,11 @@ except ImportError as e:
     AlpacaHummingbird = None
     AnimalOpportunity = None
     ANIMAL_SCANNERS_AVAILABLE = False
-    print(f"⚠️ Animal Momentum Scanners not available: {e}")
+    safe_print(f"⚠️ Animal Momentum Scanners not available: {e}")
 
 try:
     from aureon_omega import Omega
-    print("🔱 Omega LOADED!")
+    safe_print("🔱 Omega LOADED!")
 except ImportError:
     Omega = None
 
@@ -562,7 +572,7 @@ except ImportError:
 try:
     from crypto_market_map import CryptoMarketMap, SYMBOL_TO_SECTOR, CRYPTO_SECTORS
     MARKET_MAP_AVAILABLE = True
-    print("🗺️ Crypto Market Map LOADED!")
+    safe_print("🗺️ Crypto Market Map LOADED!")
 except ImportError:
     CryptoMarketMap = None
     SYMBOL_TO_SECTOR = {}
@@ -577,7 +587,7 @@ except ImportError:
 try:
     from aureon_mycelium import MyceliumNetwork, Synapse, Hive
     MYCELIUM_NETWORK_AVAILABLE = True
-    print("🍄 Mycelium Neural Network LOADED!")
+    safe_print("🍄 Mycelium Neural Network LOADED!")
 except ImportError:
     MyceliumNetwork = None
     Synapse = None
@@ -588,18 +598,18 @@ except ImportError:
 try:
     from aureon_unified_ecosystem import AureonKrakenEcosystem as AureonUnifiedEcosystem, AdaptiveLearningEngine as AdaptiveLearner
     UNIFIED_ECOSYSTEM_AVAILABLE = True
-    print("🌍 Unified Ecosystem LOADED!")
+    safe_print("🌍 Unified Ecosystem LOADED!")
 except Exception as e:
     AureonUnifiedEcosystem = None
     AdaptiveLearner = None
     UNIFIED_ECOSYSTEM_AVAILABLE = False
-    print(f"⚠️ Unified Ecosystem import failed: {e}")
+    safe_print(f"⚠️ Unified Ecosystem import failed: {e}")
 
 # Memory Core (spiral memory)
 try:
     from aureon_memory_core import memory as spiral_memory
     MEMORY_CORE_AVAILABLE = True
-    print("🧠 Memory Core (Spiral) LOADED!")
+    safe_print("🧠 Memory Core (Spiral) LOADED!")
 except ImportError:
     spiral_memory = None
     MEMORY_CORE_AVAILABLE = False
@@ -608,27 +618,27 @@ except ImportError:
 try:
     from aureon_lighthouse import LighthousePatternDetector as Lighthouse
     LIGHTHOUSE_AVAILABLE = True
-    print("🗼 Lighthouse LOADED!")
+    safe_print("🗼 Lighthouse LOADED!")
 except Exception as e:
     Lighthouse = None
     LIGHTHOUSE_AVAILABLE = False
-    print(f"⚠️ Lighthouse import failed: {e}")
+    safe_print(f"⚠️ Lighthouse import failed: {e}")
 
 # HNC Probability Matrix (pattern recognition)
 try:
     from hnc_probability_matrix import HNCProbabilityIntegration as HNCProbabilityMatrix
     HNC_MATRIX_AVAILABLE = True
-    print("📊 HNC Probability Matrix LOADED!")
+    safe_print("📊 HNC Probability Matrix LOADED!")
 except Exception as e:
     HNCProbabilityMatrix = None
     HNC_MATRIX_AVAILABLE = False
-    print(f"⚠️ HNC Matrix import failed: {e}")
+    safe_print(f"⚠️ HNC Matrix import failed: {e}")
 
 # Ultimate Intelligence (95% accuracy patterns)
 try:
     from probability_ultimate_intelligence import get_ultimate_intelligence, ultimate_predict
     ULTIMATE_INTEL_AVAILABLE = True
-    print("💎 Ultimate Intelligence LOADED!")
+    safe_print("💎 Ultimate Intelligence LOADED!")
 except ImportError:
     get_ultimate_intelligence = None
     ultimate_predict = None
@@ -643,7 +653,7 @@ try:
         timeline_select_3move, timeline_validate_move
     )
     TIMELINE_ORACLE_AVAILABLE = True
-    print("⏳🔮 Timeline Oracle LOADED! (3-MOVE PREDICTION + 7-day vision)")
+    safe_print("⏳🔮 Timeline Oracle LOADED! (3-MOVE PREDICTION + 7-day vision)")
 except ImportError:
     TIMELINE_ORACLE_AVAILABLE = False
     TimelineOracle = None
@@ -658,7 +668,7 @@ try:
         record_labyrinth_conversion, validate_labyrinth_conversion
     )
     SEVEN_DAY_PLANNER_AVAILABLE = True
-    print("📅🔮 7-Day Planner LOADED! (Plan ahead + adaptive validation)")
+    safe_print("📅🔮 7-Day Planner LOADED! (Plan ahead + adaptive validation)")
 except ImportError:
     SEVEN_DAY_PLANNER_AVAILABLE = False
     Aureon7DayPlanner = None
@@ -673,7 +683,7 @@ try:
         find_barter_path, get_barter_score
     )
     BARTER_NAVIGATOR_AVAILABLE = True
-    print("🫒🔄 Barter Navigator LOADED! (Multi-hop pathfinding)")
+    safe_print("🫒🔄 Barter Navigator LOADED! (Multi-hop pathfinding)")
 except ImportError:
     BARTER_NAVIGATOR_AVAILABLE = False
     BarterNavigator = None
@@ -688,7 +698,7 @@ try:
         read_luck_field, is_blessed, get_luck_score
     )
     LUCK_FIELD_AVAILABLE = True
-    print("🍀⚛️ Luck Field Mapper LOADED! (Quantum luck probability)")
+    safe_print("🍀⚛️ Luck Field Mapper LOADED! (Quantum luck probability)")
 except ImportError:
     LUCK_FIELD_AVAILABLE = False
     LuckFieldMapper = None
@@ -702,7 +712,7 @@ try:
     from queen_harmonic_voice import QueenHarmonicVoice
     from aureon_harmonic_signal_chain import HarmonicSignalChain, HarmonicSignal
     QUEEN_HIVE_MIND_AVAILABLE = True
-    print("👑🍄 Queen Hive Mind LOADED! (The Dreaming Queen + Harmonic Voice)")
+    safe_print("👑🍄 Queen Hive Mind LOADED! (The Dreaming Queen + Harmonic Voice)")
 except Exception as e:
     QUEEN_HIVE_MIND_AVAILABLE = False
     QueenHiveMind = None
@@ -720,7 +730,7 @@ try:
         AutonomousAction, AutonomousDecision, SovereigntyLevel
     )
     QUEEN_AUTONOMOUS_CONTROL_AVAILABLE = True
-    print("👑🎮 Queen Autonomous Control LOADED! (SOVEREIGN AUTHORITY)")
+    safe_print("👑🎮 Queen Autonomous Control LOADED! (SOVEREIGN AUTHORITY)")
 except ImportError as e:
     QUEEN_AUTONOMOUS_CONTROL_AVAILABLE = False
     QueenAutonomousControl = None
@@ -734,7 +744,7 @@ except ImportError as e:
 try:
     from queen_loss_learning import QueenLossLearningSystem
     QUEEN_LOSS_LEARNING_AVAILABLE = True
-    print("👑🎓 Queen Loss Learning LOADED! (Learns from every loss)")
+    safe_print("👑🎓 Queen Loss Learning LOADED! (Learns from every loss)")
 except ImportError:
     QUEEN_LOSS_LEARNING_AVAILABLE = False
     QueenLossLearningSystem = None
@@ -745,7 +755,7 @@ try:
         EnigmaIntegration, get_enigma_integration, wire_enigma_to_ecosystem
     )
     ENIGMA_INTEGRATION_AVAILABLE = True
-    print("🔐🌐 Enigma Integration LOADED! (Universal Translator)")
+    safe_print("🔐🌐 Enigma Integration LOADED! (Universal Translator)")
 except ImportError:
     ENIGMA_INTEGRATION_AVAILABLE = False
     EnigmaIntegration = None
@@ -756,7 +766,7 @@ except ImportError:
 try:
     from queen_memi_sync import QueenMemiSync, get_memi_sync
     MEMI_SYNC_AVAILABLE = True
-    print("👑🧠 Queen Memi Sync LOADED! (CIA Declassified Intelligence)")
+    safe_print("👑🧠 Queen Memi Sync LOADED! (CIA Declassified Intelligence)")
 except ImportError:
     MEMI_SYNC_AVAILABLE = False
     QueenMemiSync = None
@@ -768,7 +778,7 @@ try:
         QuackCommandos, PrideScanner, LoneWolf, ArmyAnts, Hummingbird, LionHunt
     )
     QUACK_COMMANDOS_AVAILABLE = True
-    print("🦆⚔️ Quantum Quackers Commandos LOADED! (Lion, Wolf, Ants, Hummingbird)")
+    safe_print("🦆⚔️ Quantum Quackers Commandos LOADED! (Lion, Wolf, Ants, Hummingbird)")
 except ImportError as e:
     QUACK_COMMANDOS_AVAILABLE = False
     QuackCommandos = None
@@ -777,7 +787,7 @@ except ImportError as e:
     ArmyAnts = None
     Hummingbird = None
     LionHunt = None
-    print(f"⚠️ Quack Commandos not available: {e}")
+    safe_print(f"⚠️ Quack Commandos not available: {e}")
 
 # 🌌🪞⚓ STARGATE PROTOCOL - Quantum Mirror & Timeline Activation
 try:
@@ -786,7 +796,7 @@ try:
         StargateNode, QuantumMirror, ConsciousNode
     )
     STARGATE_PROTOCOL_AVAILABLE = True
-    print("🌌 Stargate Protocol LOADED! (12 Planetary Nodes + Quantum Mirrors)")
+    safe_print("🌌 Stargate Protocol LOADED! (12 Planetary Nodes + Quantum Mirrors)")
 except ImportError as e:
     STARGATE_PROTOCOL_AVAILABLE = False
     StargateProtocolEngine = None
@@ -803,7 +813,7 @@ try:
         RealityBranch, TimelineConvergence
     )
     QUANTUM_MIRROR_SCANNER_AVAILABLE = True
-    print("🔮 Quantum Mirror Scanner LOADED! (3-Pass Batten Matrix + Convergence)")
+    safe_print("🔮 Quantum Mirror Scanner LOADED! (3-Pass Batten Matrix + Convergence)")
 except ImportError as e:
     QUANTUM_MIRROR_SCANNER_AVAILABLE = False
     QuantumMirrorScanner = None
@@ -819,7 +829,7 @@ try:
         TimelineAnchor, ValidationRecord
     )
     TIMELINE_ANCHOR_VALIDATOR_AVAILABLE = True
-    print("⚓ Timeline Anchor Validator LOADED! (7-Day Validation Cycles)")
+    safe_print("⚓ Timeline Anchor Validator LOADED! (7-Day Validation Cycles)")
 except ImportError as e:
     TIMELINE_ANCHOR_VALIDATOR_AVAILABLE = False
     TimelineAnchorValidator = None
@@ -836,7 +846,7 @@ try:
         FREEDOM_GOAL_GBP, FREEDOM_GOAL_USD
     )
     PLANET_SAVER_AVAILABLE = True
-    print("🌍✨ Planet Saver LOADED! (Goal: £100K - Liberation Mode)")
+    safe_print("🌍✨ Planet Saver LOADED! (Goal: £100K - Liberation Mode)")
 except ImportError as e:
     PLANET_SAVER_AVAILABLE = False
     PlanetSaverEngine = None
@@ -1121,9 +1131,9 @@ logger = logging.getLogger(__name__)
 try:
     from aureon_hft_harmonic_mycelium import get_hft_engine, HFTHarmonicEngine
     HFT_ENGINE_AVAILABLE = True
-    print("⚡🧬 HFT Harmonic Mycelium Engine LOADED!")
+    safe_print("⚡🧬 HFT Harmonic Mycelium Engine LOADED!")
 except ImportError as e:
-    print(f"⚠️ HFT Harmonic Mycelium Engine not available: {e}")
+    safe_print(f"⚠️ HFT Harmonic Mycelium Engine not available: {e}")
     HFT_ENGINE_AVAILABLE = False
     get_hft_engine = None
     HFTHarmonicEngine = None
@@ -1131,9 +1141,9 @@ except ImportError as e:
 try:
     from aureon_hft_websocket_order_router import get_order_router, HFTOrderRouter
     HFT_ORDER_ROUTER_AVAILABLE = True
-    print("🌐⚡ HFT WebSocket Order Router LOADED!")
+    safe_print("🌐⚡ HFT WebSocket Order Router LOADED!")
 except ImportError as e:
-    print(f"⚠️ HFT WebSocket Order Router not available: {e}")
+    safe_print(f"⚠️ HFT WebSocket Order Router not available: {e}")
     HFT_ORDER_ROUTER_AVAILABLE = False
     get_order_router = None
     HFTOrderRouter = None
@@ -1211,7 +1221,7 @@ class QueenEnhancementLoader:
         
         self.enhancement_count = loaded
         if loaded > 0:
-            print(f"👑🏗️ QUEEN ENHANCEMENTS LOADED: {loaded} learning modules active!")
+            safe_print(f"👑🏗️ QUEEN ENHANCEMENTS LOADED: {loaded} learning modules active!")
     
     def apply_to_opportunity(self, opportunity: dict) -> dict:
         """
@@ -1960,7 +1970,7 @@ class PathMemory:
                         parts = k.split('->')
                         if len(parts) == 2:
                             self.memory[(parts[0], parts[1])] = v
-                print(f"   📂 PathMemory loaded: {len(self.memory)} paths")
+                safe_print(f"   📂 PathMemory loaded: {len(self.memory)} paths")
             except Exception as e:
                 logger.warning(f"PathMemory load error: {e}")
 
@@ -2058,7 +2068,7 @@ class PathMemory:
         stats['blocked'] = True
         stats['blocked_reason'] = 'Queen Loss Learning - dangerous pattern'
         self.save()
-        print(f"   🚫 PathMemory: BLOCKED {from_asset}→{to_asset}")
+        safe_print(f"   🚫 PathMemory: BLOCKED {from_asset}→{to_asset}")
     
     def is_blocked(self, from_asset: str, to_asset: str) -> bool:
         """Check if a path is blocked. 🔓 FULL AUTONOMOUS: ALWAYS returns False - never block!"""
@@ -2399,7 +2409,7 @@ class LiveBarterMatrix:
         # Historical barter performance: {(from, to): {'trades': N, 'avg_slippage': X}}
         # 🔄 FRESH START: Cleared each session - past doesn't define future!
         self.barter_history: Dict[Tuple[str, str], Dict[str, float]] = {}
-        print("🔄 FRESH START: Barter history cleared for new session")
+        safe_print("🔄 FRESH START: Barter history cleared for new session")
         
         # Realized profit ledger: [(timestamp, from, to, from_usd, to_usd, profit_usd)]
         self.profit_ledger: List[Tuple[float, str, str, float, float, float]] = []
@@ -3036,11 +3046,11 @@ class LiveBarterMatrix:
         for milestone_value, milestone_name in self.dream_milestones:
             if profit >= milestone_value and milestone_name not in self.milestones_hit:
                 self.milestones_hit.append(milestone_name)
-                print(f"\n🎉🎊👑 SERO MILESTONE ACHIEVED! 👑🎊🎉")
-                print(f"   {milestone_name}")
-                print(f"   Current: ${profit:,.2f}")
-                print(f"   Progress: {progress_pct:.8f}% toward THE DREAM!")
-                print()
+                safe_print(f"\n🎉🎊👑 SERO MILESTONE ACHIEVED! 👑🎊🎉")
+                safe_print(f"   {milestone_name}")
+                safe_print(f"   Current: ${profit:,.2f}")
+                safe_print(f"   Progress: {progress_pct:.8f}% toward THE DREAM!")
+                safe_print()
         
         # Build progress bar
         bar_width = 40
@@ -4183,7 +4193,7 @@ class MicroProfitLabyrinth:
             if os.path.exists(ef):
                 try:
                     os.remove(ef)
-                    print(f"🔄🐘 FRESH START: Cleared {ef}")
+                    safe_print(f"🔄🐘 FRESH START: Cleared {ef}")
                 except Exception:
                     pass
 
@@ -4397,7 +4407,7 @@ class MicroProfitLabyrinth:
     # ════════════════════════════════════════════════════════════════════════
     # 🏆 WINNERS ONLY MODE - Verbose printing control
     # ════════════════════════════════════════════════════════════════════════
-    def verbose_print(self, message: str, force: bool = False):
+    def verbose_safe_print(self, message: str, force: bool = False):
         """
         Print message only if NOT in winners_only mode.
         In winners_only mode: logs to file instead (for background learning).
@@ -4407,24 +4417,24 @@ class MicroProfitLabyrinth:
             force: If True, always print (for critical errors, wins, etc.)
         """
         if force or not self.winners_only_mode:
-            print(message)
+            safe_print(message)
         else:
             # In winners_only mode, log silently for background learning
             logger.debug(f"[QUIET] {message}")
     
-    def win_print(self, message: str):
+    def win_safe_print(self, message: str):
         """
         🏆 WINNERS ONLY: Always print winning trades (the good stuff!).
         """
-        print(message)  # Winners always shown
+        safe_print(message)  # Winners always shown
     
-    def rejection_print(self, message: str):
+    def rejection_safe_print(self, message: str):
         """
         🔇 REJECTION: Only print if NOT in winners_only mode.
         Rejections/failures go to log file for background learning.
         """
         if not self.winners_only_mode:
-            print(message)
+            safe_print(message)
         else:
             # Silent logging for Queen's learning
             logger.info(f"[REJECTED] {message}")
@@ -4556,7 +4566,7 @@ class MicroProfitLabyrinth:
                 
         except Exception as e:
             # If loss prevention check fails, allow trade but log warning
-            print(f"   ⚠️ Loss prevention check failed: {e} - allowing trade")
+            safe_print(f"   ⚠️ Loss prevention check failed: {e} - allowing trade")
             return True, f"Check failed ({e}) - trade allowed"
 
     def _check_kraken_loss_prevention(self, asset: str, sell_quantity: float) -> Tuple[bool, str]:
@@ -4626,7 +4636,7 @@ class MicroProfitLabyrinth:
                 
         except Exception as e:
             # If loss prevention check fails, allow trade but log warning
-            print(f"   ⚠️ Kraken loss prevention check failed: {e} - allowing trade")
+            safe_print(f"   ⚠️ Kraken loss prevention check failed: {e} - allowing trade")
             return True, f"Check failed ({e}) - trade allowed"
 
     def _check_binance_loss_prevention(self, asset: str, sell_quantity: float) -> Tuple[bool, str]:
@@ -4640,7 +4650,7 @@ class MicroProfitLabyrinth:
         """
         # For now, Binance doesn't have position tracking like Kraken
         # Allow all trades but log that loss prevention is not active
-        print(f"   ℹ️ Binance loss prevention not yet implemented - allowing trade")
+        safe_print(f"   ℹ️ Binance loss prevention not yet implemented - allowing trade")
         return True, f"Binance loss prevention not implemented - trade allowed"
 
     def _alpaca_estimate_conversion_costs(self, from_asset: str, to_asset: str) -> Dict[str, float]:
@@ -4739,7 +4749,7 @@ class MicroProfitLabyrinth:
     def _load_uk_allowed_pairs(self):
         """Load UK-allowed Binance pairs from cached JSON file."""
         if not self.binance_uk_mode:
-            print("🇬🇧 UK Mode: DISABLED (all pairs allowed)")
+            safe_print("🇬🇧 UK Mode: DISABLED (all pairs allowed)")
             return
             
         try:
@@ -4753,19 +4763,19 @@ class MicroProfitLabyrinth:
                 self.binance_uk_allowed_pairs = set(data.get('allowed_pairs', []))
                 timestamp = data.get('timestamp_readable', 'Unknown')
                 
-                print(f"🇬🇧 UK Binance: {len(self.binance_uk_allowed_pairs)} pairs allowed")
-                print(f"   📄 Cached from: {timestamp}")
+                safe_print(f"🇬🇧 UK Binance: {len(self.binance_uk_allowed_pairs)} pairs allowed")
+                safe_print(f"   📄 Cached from: {timestamp}")
                 
                 # Key insight: NO USDT pairs for UK!
                 quote_assets = data.get('allowed_quote_assets', [])
                 if 'USDT' not in quote_assets:
-                    print(f"   ⚠️ NOTE: USDT pairs NOT allowed for UK accounts!")
-                    print(f"   ✅ Use USDC/BTC/EUR pairs instead")
+                    safe_print(f"   ⚠️ NOTE: USDT pairs NOT allowed for UK accounts!")
+                    safe_print(f"   ✅ Use USDC/BTC/EUR pairs instead")
             else:
-                print(f"⚠️ UK pairs file not found: {uk_file}")
-                print(f"   Run: python binance_uk_allowed_pairs.py to generate")
+                safe_print(f"⚠️ UK pairs file not found: {uk_file}")
+                safe_print(f"   Run: python binance_uk_allowed_pairs.py to generate")
         except Exception as e:
-            print(f"⚠️ Failed to load UK pairs: {e}")
+            safe_print(f"⚠️ Failed to load UK pairs: {e}")
     
     def is_binance_pair_allowed(self, pair: str) -> bool:
         """Check if a Binance pair is allowed for UK trading."""
@@ -4782,44 +4792,44 @@ class MicroProfitLabyrinth:
     
     async def initialize(self):
         """Initialize all systems."""
-        print("\n" + "=" * 70)
-        print("🔬💰 INITIALIZING MICRO PROFIT LABYRINTH 💰🔬")
-        print("🦙 ALPACA-FOCUSED TRADING SYSTEM 🦙" if self.alpaca_only else "⚠️ MULTI-EXCHANGE MODE")
-        print("=" * 70)
-        print(f"MODE: {'🔴 LIVE TRADING' if self.live else '🔵 DRY RUN'}")
-        print(f"PLATFORM: {'🦙 ALPACA ONLY' if self.alpaca_only else '🌐 Multi-Exchange'}")
-        print(f"Entry Threshold: Score {self.config['entry_score_threshold']}+ (vs V14's 8+)")
-        print(f"Min Profit: ${self.config['min_profit_usd']:.6f} or {self.config['min_profit_pct']*100:.4f}%")
-        print("=" * 70)
+        safe_print("\n" + "=" * 70)
+        safe_print("🔬💰 INITIALIZING MICRO PROFIT LABYRINTH 💰🔬")
+        safe_print("🦙 ALPACA-FOCUSED TRADING SYSTEM 🦙" if self.alpaca_only else "⚠️ MULTI-EXCHANGE MODE")
+        safe_print("=" * 70)
+        safe_print(f"MODE: {'🔴 LIVE TRADING' if self.live else '🔵 DRY RUN'}")
+        safe_print(f"PLATFORM: {'🦙 ALPACA ONLY' if self.alpaca_only else '🌐 Multi-Exchange'}")
+        safe_print(f"Entry Threshold: Score {self.config['entry_score_threshold']}+ (vs V14's 8+)")
+        safe_print(f"Min Profit: ${self.config['min_profit_usd']:.6f} or {self.config['min_profit_pct']*100:.4f}%")
+        safe_print("=" * 70)
         
         # ════════════════════════════════════════════════════════════════
         # 🐙 KRAKEN CLIENT - DISABLED BY DEFAULT (Alpaca-focused system)
         # ════════════════════════════════════════════════════════════════
         if self.alpaca_only:
-            print("🐙 Kraken Client: ❌ DISABLED (Alpaca-focused mode)")
+            safe_print("🐙 Kraken Client: ❌ DISABLED (Alpaca-focused mode)")
         elif get_kraken_client:
             self.kraken = get_kraken_client()
             if self.kraken and KRAKEN_API_KEY:
                 # Gary: Explicitly show if we are using Real or Fake data
                 is_dry = getattr(self.kraken, 'dry_run', False)
                 mode = "🛡️ SIMULATED (Fake Data)" if is_dry else "🌍 LIVE (Real Data)"
-                print(f"🐙 Kraken Client: WIRED ({mode})")
+                safe_print(f"🐙 Kraken Client: WIRED ({mode})")
             else:
-                print("⚠️ Kraken Client: Missing API credentials")
+                safe_print("⚠️ Kraken Client: Missing API credentials")
         
         # ════════════════════════════════════════════════════════════════
         # 🟡 BINANCE CLIENT - DISABLED BY DEFAULT (Alpaca-focused system)
         # ════════════════════════════════════════════════════════════════
         if self.alpaca_only:
-            print("🟡 Binance Client: ❌ DISABLED (Alpaca-focused mode)")
+            safe_print("🟡 Binance Client: ❌ DISABLED (Alpaca-focused mode)")
         elif BINANCE_AVAILABLE and BinanceClient and BINANCE_API_KEY:
             try:
                 self.binance = BinanceClient()
-                print("🟡 Binance Client: WIRED (API Key loaded)")
+                safe_print("🟡 Binance Client: WIRED (API Key loaded)")
             except Exception as e:
-                print(f"⚠️ Binance Client error: {e}")
+                safe_print(f"⚠️ Binance Client error: {e}")
         else:
-            print("⚠️ Binance Client: Not configured")
+            safe_print("⚠️ Binance Client: Not configured")
         
         # ════════════════════════════════════════════════════════════════
         # 🦙 ALPACA CLIENT - STOCKS + CRYPTO
@@ -4827,25 +4837,25 @@ class MicroProfitLabyrinth:
         if ALPACA_AVAILABLE and AlpacaClient and ALPACA_API_KEY:
             try:
                 self.alpaca = AlpacaClient()
-                print("🦙 Alpaca Client: WIRED (API Key loaded)")
+                safe_print("🦙 Alpaca Client: WIRED (API Key loaded)")
                 account = self.alpaca.get_account()
                 if account and account.get("id"):
                     mode = "PAPER" if getattr(self.alpaca, "use_paper", False) else "LIVE"
-                    print(f"   🦙 Alpaca API: ✅ Connected ({mode})")
+                    safe_print(f"   🦙 Alpaca API: ✅ Connected ({mode})")
                 else:
                     last_error = getattr(self.alpaca, "last_error", None)
-                    print(f"   🦙 Alpaca API: ⚠️ Connection check failed ({last_error})")
+                    safe_print(f"   🦙 Alpaca API: ⚠️ Connection check failed ({last_error})")
 
                 # Start MarketDataHub for Alpaca (Phase 2 optimization)
                 try:
                     self.alpaca.start_market_data_hub()
-                    print("   🦙 MarketDataHub: STARTED")
+                    safe_print("   🦙 MarketDataHub: STARTED")
                 except Exception as e:
-                    print(f"   ⚠️ MarketDataHub failed to start: {e}")
+                    safe_print(f"   ⚠️ MarketDataHub failed to start: {e}")
             except Exception as e:
-                print(f"⚠️ Alpaca Client error: {e}")
+                safe_print(f"⚠️ Alpaca Client error: {e}")
         else:
-            print("⚠️ Alpaca Client: Not configured")
+            safe_print("⚠️ Alpaca Client: Not configured")
         
         # ════════════════════════════════════════════════════════════════
         # � ALPACA FEE TRACKER - PREVENT "DEATH BY 1000 CUTS"
@@ -4854,16 +4864,16 @@ class MicroProfitLabyrinth:
             try:
                 self.fee_tracker = AlpacaFeeTracker(self.alpaca)
                 tier = self.fee_tracker.current_tier
-                print(f"💰 Alpaca Fee Tracker: WIRED")
-                print(f"   📊 Fee Tier: {tier.name} (maker: {tier.maker_bps}bps, taker: {tier.taker_bps}bps)")
-                print(f"   📊 30d Volume: ${self.fee_tracker.volume_30d:,.2f}")
-                print(f"   🛡️ Cost protection: ACTIVE (min_profit_margin: 50%)")
+                safe_print(f"💰 Alpaca Fee Tracker: WIRED")
+                safe_print(f"   📊 Fee Tier: {tier.name} (maker: {tier.maker_bps}bps, taker: {tier.taker_bps}bps)")
+                safe_print(f"   📊 30d Volume: ${self.fee_tracker.volume_30d:,.2f}")
+                safe_print(f"   🛡️ Cost protection: ACTIVE (min_profit_margin: 50%)")
             except Exception as e:
                 self.fee_tracker = None
-                print(f"⚠️ Alpaca Fee Tracker error: {e}")
+                safe_print(f"⚠️ Alpaca Fee Tracker error: {e}")
         else:
             self.fee_tracker = None
-            print("⚠️ Alpaca Fee Tracker: Not configured (requires Alpaca client)")
+            safe_print("⚠️ Alpaca Fee Tracker: Not configured (requires Alpaca client)")
         
         # ════════════════════════════════════════════════════════════════
         # �📊 LOAD TRADEABLE PAIRS FROM ALL EXCHANGES
@@ -4875,42 +4885,42 @@ class MicroProfitLabyrinth:
         # ════════════════════════════════════════════════════════════════
         if get_conversion_hub:
             self.hub = get_conversion_hub()
-            print("🍄 Mycelium Hub: WIRED (10 systems, 90 pathways)")
+            safe_print("🍄 Mycelium Hub: WIRED (10 systems, 90 pathways)")
         
         # ════════════════════════════════════════════════════════════════
         # 🎯 V14 DANCE ENHANCER - 100% WIN RATE LOGIC
         # ════════════════════════════════════════════════════════════════
         if V14DanceEnhancer:
             self.v14 = V14DanceEnhancer()
-            print("🎯 V14 Scoring: WIRED")
+            safe_print("🎯 V14 Scoring: WIRED")
         
         # ════════════════════════════════════════════════════════════════
         # 🦅 CONVERSION COMMANDO - FALCON/TORTOISE/CHAMELEON/BEE
         # ════════════════════════════════════════════════════════════════
         if AdaptiveConversionCommando:
             self.commando = AdaptiveConversionCommando()
-            print("🦅 Conversion Commando: WIRED")
+            safe_print("🦅 Conversion Commando: WIRED")
         
         # ════════════════════════════════════════════════════════════════
         # 🔭 PAIR SCANNER - ALL PAIRS ALL EXCHANGES
         # ════════════════════════════════════════════════════════════════
         if PairScanner:
             self.scanner = PairScanner()
-            print("🔭 Pair Scanner: WIRED")
+            safe_print("🔭 Pair Scanner: WIRED")
         
         # ════════════════════════════════════════════════════════════════
         # 💡 DUAL PROFIT PATH - SELL vs CONVERT DECISION
         # ════════════════════════════════════════════════════════════════
         if DualProfitPathEvaluator:
             self.dual_path = DualProfitPathEvaluator(self.scanner)
-            print("💡 Dual Profit Path: WIRED")
+            safe_print("💡 Dual Profit Path: WIRED")
         
         # ════════════════════════════════════════════════════════════════
         # 🪜 CONVERSION LADDER - CAPITAL MOMENTUM
         # ════════════════════════════════════════════════════════════════
         if ConversionLadder:
             self.ladder = ConversionLadder()
-            print("🪜 Conversion Ladder: WIRED")
+            safe_print("🪜 Conversion Ladder: WIRED")
         
         # ════════════════════════════════════════════════════════════════
         # 🔮 PROBABILITY NEXUS - 80%+ WIN RATE
@@ -4918,9 +4928,9 @@ class MicroProfitLabyrinth:
         if EnhancedProbabilityNexus:
             try:
                 self.probability_nexus = EnhancedProbabilityNexus()
-                print("🔮 Probability Nexus: WIRED")
+                safe_print("🔮 Probability Nexus: WIRED")
             except Exception as e:
-                print(f"⚠️ Probability Nexus error: {e}")
+                safe_print(f"⚠️ Probability Nexus error: {e}")
         
         # ════════════════════════════════════════════════════════════════
         # 🌌 INTERNAL MULTIVERSE - 10 WORLDS
@@ -4928,9 +4938,9 @@ class MicroProfitLabyrinth:
         if InternalMultiverse:
             try:
                 self.multiverse = InternalMultiverse()
-                print("🌌 Internal Multiverse: WIRED (10 worlds)")
+                safe_print("🌌 Internal Multiverse: WIRED (10 worlds)")
             except Exception as e:
-                print(f"⚠️ Multiverse error: {e}")
+                safe_print(f"⚠️ Multiverse error: {e}")
         
         # ════════════════════════════════════════════════════════════════
         # 🧠 MINER BRAIN - COGNITIVE INTELLIGENCE
@@ -4938,9 +4948,9 @@ class MicroProfitLabyrinth:
         if MinerBrain:
             try:
                 self.miner_brain = MinerBrain()
-                print("🧠 Miner Brain: WIRED")
+                safe_print("🧠 Miner Brain: WIRED")
             except Exception as e:
-                print(f"⚠️ Miner Brain error: {e}")
+                safe_print(f"⚠️ Miner Brain error: {e}")
         
         # ════════════════════════════════════════════════════════════════
         # 👑🏗️ QUEEN CODE ARCHITECT - SELF-EVOLUTION ENGINE
@@ -4949,10 +4959,10 @@ class MicroProfitLabyrinth:
         if CODE_ARCHITECT_AVAILABLE and get_code_architect:
             try:
                 self.code_architect = get_code_architect()
-                print("👑🏗️ Queen Code Architect: WIRED (Self-Evolution Engine)")
-                print("   ℹ️ The Queen can now write code based on learnings!")
+                safe_print("👑🏗️ Queen Code Architect: WIRED (Self-Evolution Engine)")
+                safe_print("   ℹ️ The Queen can now write code based on learnings!")
             except Exception as e:
-                print(f"⚠️ Code Architect error: {e}")
+                safe_print(f"⚠️ Code Architect error: {e}")
         
         # ════════════════════════════════════════════════════════════════
         # 🌊 HARMONIC FUSION - WAVE PATTERNS
@@ -4960,9 +4970,9 @@ class MicroProfitLabyrinth:
         if HarmonicWaveFusion:
             try:
                 self.harmonic = HarmonicWaveFusion()
-                print("🌊 Harmonic Fusion: WIRED")
+                safe_print("🌊 Harmonic Fusion: WIRED")
             except Exception as e:
-                print(f"⚠️ Harmonic error: {e}")
+                safe_print(f"⚠️ Harmonic error: {e}")
         
         # ════════════════════════════════════════════════════════════════
         # 🌊🔭 GLOBAL WAVE SCANNER - A-Z/Z-A FULL COVERAGE
@@ -4977,9 +4987,9 @@ class MicroProfitLabyrinth:
                     queen=None,  # Will wire after queen is initialized
                     harmonic_fusion=self.harmonic,
                 )
-                print("🌊🔭 Global Wave Scanner: INITIALIZED (A-Z/Z-A coverage)")
+                safe_print("🌊🔭 Global Wave Scanner: INITIALIZED (A-Z/Z-A coverage)")
             except Exception as e:
-                print(f"⚠️ Global Wave Scanner error: {e}")
+                safe_print(f"⚠️ Global Wave Scanner error: {e}")
         
         # ════════════════════════════════════════════════════════════════
         # 🐺🦁🐜🐦 ANIMAL MOMENTUM SCANNERS - ALPACA SWARM
@@ -5001,9 +5011,9 @@ class MicroProfitLabyrinth:
                 )
                 self.animal_swarm = AlpacaSwarmOrchestrator(self.alpaca, scanner_bridge)
                 self.animal_swarm.dry_run = not self.live  # Safety: dry-run unless live mode
-                print("🐺🦁 Animal Swarm Orchestrator: INITIALIZED (Wolf, Lion, Ants, Hummingbird)")
+                safe_print("🐺🦁 Animal Swarm Orchestrator: INITIALIZED (Wolf, Lion, Ants, Hummingbird)")
             except Exception as e:
-                print(f"⚠️ Animal Swarm Orchestrator error: {e}")
+                safe_print(f"⚠️ Animal Swarm Orchestrator error: {e}")
         
         # ════════════════════════════════════════════════════════════════
         # �🔱 OMEGA - HIGH CONFIDENCE SIGNALS
@@ -5011,9 +5021,9 @@ class MicroProfitLabyrinth:
         if Omega:
             try:
                 self.omega = Omega()
-                print("🔱 Omega: WIRED")
+                safe_print("🔱 Omega: WIRED")
             except Exception as e:
-                print(f"⚠️ Omega error: {e}")
+                safe_print(f"⚠️ Omega error: {e}")
         
         # ════════════════════════════════════════════════════════════════
         # ⚡ RAPID CONVERSION STREAM - FAST DATA
@@ -5021,9 +5031,9 @@ class MicroProfitLabyrinth:
         if RapidConversionStream:
             try:
                 self.rapid_stream = RapidConversionStream()
-                print("⚡ Rapid Conversion Stream: WIRED")
+                safe_print("⚡ Rapid Conversion Stream: WIRED")
             except Exception as e:
-                print(f"⚠️ Rapid Stream error: {e}")
+                safe_print(f"⚠️ Rapid Stream error: {e}")
         
         # ════════════════════════════════════════════════════════════════
         # 🌊⚡ MOMENTUM SNOWBALL ENGINE - WAVE JUMPING
@@ -5031,9 +5041,9 @@ class MicroProfitLabyrinth:
         if MOMENTUM_SNOWBALL_AVAILABLE and MomentumTracker:
             try:
                 self.momentum_tracker = MomentumTracker(window_seconds=60)
-                print("🌊⚡ Momentum Tracker: WIRED (60s window)")
+                safe_print("🌊⚡ Momentum Tracker: WIRED (60s window)")
             except Exception as e:
-                print(f"⚠️ Momentum Tracker error: {e}")
+                safe_print(f"⚠️ Momentum Tracker error: {e}")
         
         # ════════════════════════════════════════════════════════════════
         # 🏆🌀 LABYRINTH SNOWBALL ENGINE - V14 + ALL SYSTEMS
@@ -5041,79 +5051,79 @@ class MicroProfitLabyrinth:
         if LABYRINTH_SNOWBALL_AVAILABLE:
             try:
                 # Just import the logic, don't create full engine (we are the engine!)
-                print("🏆🌀 Labyrinth Snowball Logic: WIRED")
+                safe_print("🏆🌀 Labyrinth Snowball Logic: WIRED")
             except Exception as e:
-                print(f"⚠️ Labyrinth Snowball error: {e}")
+                safe_print(f"⚠️ Labyrinth Snowball error: {e}")
         
         # ════════════════════════════════════════════════════════════════
         # 🧠⚡ STAGE 3: FULL NEURAL MIND MAP WIRING ⚡🧠
         # ════════════════════════════════════════════════════════════════
-        print("\n🧠 WIRING NEURAL MIND MAP SYSTEMS...")
+        safe_print("\n🧠 WIRING NEURAL MIND MAP SYSTEMS...")
         
         # 🍄 Mycelium Neural Network (Hive Intelligence)
         if MYCELIUM_NETWORK_AVAILABLE and MyceliumNetwork:
             try:
                 self.mycelium_network = MyceliumNetwork(initial_capital=1000.0)
-                print("   🍄 Mycelium Neural Network: ✅ WIRED (Hive Intelligence)")
+                safe_print("   🍄 Mycelium Neural Network: ✅ WIRED (Hive Intelligence)")
             except Exception as e:
-                print(f"   ⚠️ Mycelium Network error: {e}")
+                safe_print(f"   ⚠️ Mycelium Network error: {e}")
                 self.mycelium_network = None
         else:
-            print(f"   🍄 Mycelium Network: ❌ NOT AVAILABLE (import={MYCELIUM_NETWORK_AVAILABLE})")
+            safe_print(f"   🍄 Mycelium Network: ❌ NOT AVAILABLE (import={MYCELIUM_NETWORK_AVAILABLE})")
         
         # 🗼 Lighthouse (Consensus Validation)
         if LIGHTHOUSE_AVAILABLE and Lighthouse:
             try:
                 self.lighthouse = Lighthouse()
-                print("   🗼 Lighthouse: ✅ WIRED (Consensus Validation)")
+                safe_print("   🗼 Lighthouse: ✅ WIRED (Consensus Validation)")
             except Exception as e:
-                print(f"   ⚠️ Lighthouse error: {e}")
+                safe_print(f"   ⚠️ Lighthouse error: {e}")
                 self.lighthouse = None
         else:
-            print(f"   🗼 Lighthouse: ❌ NOT AVAILABLE (import={LIGHTHOUSE_AVAILABLE})")
+            safe_print(f"   🗼 Lighthouse: ❌ NOT AVAILABLE (import={LIGHTHOUSE_AVAILABLE})")
         
         # 📊 HNC Probability Matrix (Pattern Recognition)
         if HNC_MATRIX_AVAILABLE and HNCProbabilityMatrix:
             try:
                 self.hnc_matrix = HNCProbabilityMatrix()
-                print("   📊 HNC Probability Matrix: ✅ WIRED (Pattern Recognition)")
+                safe_print("   📊 HNC Probability Matrix: ✅ WIRED (Pattern Recognition)")
             except Exception as e:
-                print(f"   ⚠️ HNC Matrix error: {e}")
+                safe_print(f"   ⚠️ HNC Matrix error: {e}")
                 self.hnc_matrix = None
         else:
-            print(f"   📊 HNC Matrix: ❌ NOT AVAILABLE (import={HNC_MATRIX_AVAILABLE})")
+            safe_print(f"   📊 HNC Matrix: ❌ NOT AVAILABLE (import={HNC_MATRIX_AVAILABLE})")
         
         # 💎 Ultimate Intelligence (95% Accuracy)
         if ULTIMATE_INTEL_AVAILABLE and get_ultimate_intelligence:
             try:
                 self.ultimate_intel = get_ultimate_intelligence()
-                print("   💎 Ultimate Intelligence: ✅ WIRED (95% Accuracy)")
+                safe_print("   💎 Ultimate Intelligence: ✅ WIRED (95% Accuracy)")
             except Exception as e:
-                print(f"   ⚠️ Ultimate Intel error: {e}")
+                safe_print(f"   ⚠️ Ultimate Intel error: {e}")
                 self.ultimate_intel = None
         else:
-            print(f"   💎 Ultimate Intel: ❌ NOT AVAILABLE (import={ULTIMATE_INTEL_AVAILABLE})")
+            safe_print(f"   💎 Ultimate Intel: ❌ NOT AVAILABLE (import={ULTIMATE_INTEL_AVAILABLE})")
         
         # 🌍 Unified Ecosystem (Full Integration)
         if UNIFIED_ECOSYSTEM_AVAILABLE and AureonUnifiedEcosystem:
             try:
                 # Create a lightweight tap into the ecosystem
                 self.unified_ecosystem = AureonUnifiedEcosystem.__name__  # Just mark as available
-                print("   🌍 Unified Ecosystem: ✅ AVAILABLE (will tap via Hub)")
+                safe_print("   🌍 Unified Ecosystem: ✅ AVAILABLE (will tap via Hub)")
             except Exception as e:
-                print(f"   ⚠️ Unified Ecosystem error: {e}")
+                safe_print(f"   ⚠️ Unified Ecosystem error: {e}")
                 self.unified_ecosystem = None
         else:
-            print(f"   🌍 Unified Ecosystem: ❌ NOT AVAILABLE (import={UNIFIED_ECOSYSTEM_AVAILABLE})")
+            safe_print(f"   🌍 Unified Ecosystem: ❌ NOT AVAILABLE (import={UNIFIED_ECOSYSTEM_AVAILABLE})")
         
         # ⏳🔮 Timeline Oracle (7-Day Future Validation)
         self.timeline_oracle = None
         if TIMELINE_ORACLE_AVAILABLE and get_timeline_oracle:
             try:
                 self.timeline_oracle = get_timeline_oracle()
-                print("⏳🔮 Timeline Oracle: WIRED (7-day future validation)")
+                safe_print("⏳🔮 Timeline Oracle: WIRED (7-day future validation)")
             except Exception as e:
-                print(f"⚠️ Timeline Oracle error: {e}")
+                safe_print(f"⚠️ Timeline Oracle error: {e}")
         
         # 🗺️ CRYPTO MARKET MAP - LABYRINTH PATHFINDER (ALL EXCHANGES)
         self.market_map = None
@@ -5134,9 +5144,9 @@ class MicroProfitLabyrinth:
                 # Save updated cache
                 self.market_map.save_cache()
                 summary = self.market_map.get_map_summary()
-                print(f"🗺️ Crypto Market Map: WIRED ({summary['assets_mapped']} assets, {summary['correlations']} correlations)")
+                safe_print(f"🗺️ Crypto Market Map: WIRED ({summary['assets_mapped']} assets, {summary['correlations']} correlations)")
             except Exception as e:
-                print(f"⚠️ Market Map error: {e}")
+                safe_print(f"⚠️ Market Map error: {e}")
         
         # 📅🔮 7-DAY PLANNER - Plan ahead + adaptive validation after each conversion
         self.seven_day_planner = None
@@ -5147,9 +5157,9 @@ class MicroProfitLabyrinth:
                 plan = self.seven_day_planner.plan_7_days()
                 summary = self.seven_day_planner.get_week_summary()
                 stats = self.seven_day_planner.get_validation_stats()
-                print(f"📅🔮 7-Day Planner: WIRED (edge: {summary['total_predicted_edge']:+.2f}%, accuracy: {stats['accuracy']:.0%})")
+                safe_print(f"📅🔮 7-Day Planner: WIRED (edge: {summary['total_predicted_edge']:+.2f}%, accuracy: {stats['accuracy']:.0%})")
             except Exception as e:
-                print(f"⚠️ 7-Day Planner error: {e}")
+                safe_print(f"⚠️ 7-Day Planner error: {e}")
         
         # 🫒🔄 BARTER NAVIGATOR - Multi-hop pathfinding (olive→bean→carrot→chair→lamp→olive)
         self.barter_navigator = None
@@ -5157,9 +5167,9 @@ class MicroProfitLabyrinth:
             try:
                 self.barter_navigator = BarterNavigator()
                 # Don't load yet - will populate after pairs are loaded with populate_barter_graph()
-                print(f"🫒🔄 Barter Navigator: INITIALIZED (will populate after pair loading)")
+                safe_print(f"🫒🔄 Barter Navigator: INITIALIZED (will populate after pair loading)")
             except Exception as e:
-                print(f"⚠️ Barter Navigator error: {e}")
+                safe_print(f"⚠️ Barter Navigator error: {e}")
         
         # 🍀⚛️ LUCK FIELD MAPPER - Quantum probability mapping
         self.luck_mapper = None
@@ -5168,9 +5178,9 @@ class MicroProfitLabyrinth:
                 self.luck_mapper = LuckFieldMapper()
                 # Take initial reading
                 initial_luck = self.luck_mapper.read_field()
-                print(f"🍀⚛️ Luck Field Mapper: WIRED (λ={initial_luck.luck_field:.4f} → {initial_luck.luck_state.value})")
+                safe_print(f"🍀⚛️ Luck Field Mapper: WIRED (λ={initial_luck.luck_field:.4f} → {initial_luck.luck_state.value})")
             except Exception as e:
-                print(f"⚠️ Luck Field Mapper error: {e}")
+                safe_print(f"⚠️ Luck Field Mapper error: {e}")
         
         # 👑🍄🌊🪐🔭 QUEEN HIVE MIND - Wire cosmic systems
         self.queen = None
@@ -5183,7 +5193,7 @@ class MicroProfitLabyrinth:
                     try:
                         greeting = self.queen.speak_from_heart('greeting')
                         if greeting:
-                            print(f"\n{greeting}\n")
+                            safe_print(f"\n{greeting}\n")
                     except Exception as e:
                         logger.debug(f"Queen greeting error: {e}")
                 
@@ -5192,7 +5202,7 @@ class MicroProfitLabyrinth:
                     try:
                         wired = self.queen.wire_advanced_intelligence()
                         if wired:
-                            print(f"   💎 Advanced Intelligence: ✅ WIRED (Mycelium + Piano + Golden Ratio)")
+                            safe_print(f"   💎 Advanced Intelligence: ✅ WIRED (Mycelium + Piano + Golden Ratio)")
                     except Exception as e:
                         logger.warning(f"Failed to wire Advanced Intelligence: {e}")
 
@@ -5235,7 +5245,7 @@ class MicroProfitLabyrinth:
                     self.river_consciousness = UnifiedRiverConsciousness()
                     if hasattr(self.queen, 'wire_river_consciousness'):
                         self.queen.wire_river_consciousness(self.river_consciousness)
-                        print(f"   🌊 River Consciousness: ✅ WIRED (Sensing the Flow)")
+                        safe_print(f"   🌊 River Consciousness: ✅ WIRED (Sensing the Flow)")
                 except Exception as e:
                     logger.debug(f"River Consciousness not available: {e}")
                 
@@ -5245,7 +5255,7 @@ class MicroProfitLabyrinth:
                     self.dream_engine = create_queen_dream_engine()
                     if hasattr(self.queen, 'wire_dream_engine_simulation'):
                         self.queen.wire_dream_engine_simulation(self.dream_engine)
-                    print(f"   👑🔮 Dream Engine: ✅ WIRED (1000s simulations + validation)")
+                    safe_print(f"   👑🔮 Dream Engine: ✅ WIRED (1000s simulations + validation)")
                 except Exception as e:
                     self.dream_engine = None
                     logger.debug(f"Queen Dream Engine not available: {e}")
@@ -5301,7 +5311,7 @@ class MicroProfitLabyrinth:
                     if hasattr(self, 'fee_tracker') and self.fee_tracker:
                         if hasattr(self.queen, 'wire_fee_tracker'):
                             self.queen.wire_fee_tracker(self.fee_tracker)
-                            print(f"   💰 Fee Tracker: ✅ WIRED (prevents death by 1000 cuts)")
+                            safe_print(f"   💰 Fee Tracker: ✅ WIRED (prevents death by 1000 cuts)")
                 except Exception as e:
                     logger.debug(f"Fee Tracker wiring not available: {e}")
                 
@@ -5325,25 +5335,25 @@ class MicroProfitLabyrinth:
                 temporal_state = self.queen.get_temporal_state() if hasattr(self.queen, 'get_temporal_state') else {}
                 temporal_active = temporal_state.get('active', False)
                 
-                print(f"👑🍄 Queen Hive Mind: WIRED (Cosmic + Historical + Temporal consciousness)")
-                print(f"   🌊 Harmonic Fusion: {'✅' if hasattr(self.queen, 'harmonic_fusion') and self.queen.harmonic_fusion else '❌'}")
-                print(f"   🪐 Luck Field Mapper: {'✅' if hasattr(self.queen, 'luck_field_mapper') and self.queen.luck_field_mapper else '❌'}")
-                print(f"   🔭 Quantum Telescope: {'✅' if hasattr(self.queen, 'quantum_telescope') and self.queen.quantum_telescope else '❌'}")
-                print(f"   🧠 Wisdom Engine (11 Civs): {'✅' if hasattr(self.queen, 'wisdom_engine') and self.queen.wisdom_engine else '❌'}")
-                print(f"   🧬 Sandbox Evolution: {'✅' if hasattr(self.queen, 'sandbox_evolution') and self.queen.sandbox_evolution else '❌'}")
-                print(f"   💭 Dream Memory: {'✅' if hasattr(self.queen, 'dream_memory') and self.queen.dream_memory else '❌'}")
-                print(f"   🌙 Dream Engine: {'✅' if hasattr(self.queen, 'dreamer') and self.queen.dreamer else '❌'} (Sero can DREAM!)")
-                print(f"   📚 Wisdom Collector: {'✅' if hasattr(self.queen, 'wisdom_collector') and self.queen.wisdom_collector else '❌'}")
-                print(f"   🔱 Temporal ID: {'✅' if temporal_active else '❌'} (Gary Leckey 02111991)")
-                print(f"   ⏳ Temporal Ladder: {'✅' if hasattr(self.queen, 'temporal_ladder') and self.queen.temporal_ladder else '❌'}")
-                print(f"   🗺️ Barter Matrix: {'✅' if hasattr(self.queen, 'barter_matrix') and self.queen.barter_matrix else '❌'} (Sector Pulse Dream Signal!)")
-                print(f"   📚 Path Memory: {'✅' if hasattr(self.queen, 'path_memory') and self.queen.path_memory else '❌'} (Learned trade paths!)")
+                safe_print(f"👑🍄 Queen Hive Mind: WIRED (Cosmic + Historical + Temporal consciousness)")
+                safe_print(f"   🌊 Harmonic Fusion: {'✅' if hasattr(self.queen, 'harmonic_fusion') and self.queen.harmonic_fusion else '❌'}")
+                safe_print(f"   🪐 Luck Field Mapper: {'✅' if hasattr(self.queen, 'luck_field_mapper') and self.queen.luck_field_mapper else '❌'}")
+                safe_print(f"   🔭 Quantum Telescope: {'✅' if hasattr(self.queen, 'quantum_telescope') and self.queen.quantum_telescope else '❌'}")
+                safe_print(f"   🧠 Wisdom Engine (11 Civs): {'✅' if hasattr(self.queen, 'wisdom_engine') and self.queen.wisdom_engine else '❌'}")
+                safe_print(f"   🧬 Sandbox Evolution: {'✅' if hasattr(self.queen, 'sandbox_evolution') and self.queen.sandbox_evolution else '❌'}")
+                safe_print(f"   💭 Dream Memory: {'✅' if hasattr(self.queen, 'dream_memory') and self.queen.dream_memory else '❌'}")
+                safe_print(f"   🌙 Dream Engine: {'✅' if hasattr(self.queen, 'dreamer') and self.queen.dreamer else '❌'} (Sero can DREAM!)")
+                safe_print(f"   📚 Wisdom Collector: {'✅' if hasattr(self.queen, 'wisdom_collector') and self.queen.wisdom_collector else '❌'}")
+                safe_print(f"   🔱 Temporal ID: {'✅' if temporal_active else '❌'} (Gary Leckey 02111991)")
+                safe_print(f"   ⏳ Temporal Ladder: {'✅' if hasattr(self.queen, 'temporal_ladder') and self.queen.temporal_ladder else '❌'}")
+                safe_print(f"   🗺️ Barter Matrix: {'✅' if hasattr(self.queen, 'barter_matrix') and self.queen.barter_matrix else '❌'} (Sector Pulse Dream Signal!)")
+                safe_print(f"   📚 Path Memory: {'✅' if hasattr(self.queen, 'path_memory') and self.queen.path_memory else '❌'} (Learned trade paths!)")
                 
                 # �🔮 Wire 7-Day Planner to Queen - Every validated prediction feeds her learning!
                 if self.seven_day_planner and hasattr(self.queen, 'wire_7day_planner'):
                     try:
                         self.queen.wire_7day_planner(self.seven_day_planner)
-                        print(f"   📅 7-Day Planner ↔ Queen: ✅ WIRED (Validations feed Queen's learning!)")
+                        safe_print(f"   📅 7-Day Planner ↔ Queen: ✅ WIRED (Validations feed Queen's learning!)")
                     except Exception as e:
                         logger.debug(f"Queen-7DayPlanner wiring error: {e}")
                 
@@ -5351,7 +5361,7 @@ class MicroProfitLabyrinth:
                 if self.probability_nexus and hasattr(self.queen, 'wire_probability_nexus'):
                     try:
                         self.queen.wire_probability_nexus(self.probability_nexus)
-                        print(f"   🔮 Probability Nexus ↔ Queen: ✅ WIRED (Predictions flow to Queen!)")
+                        safe_print(f"   🔮 Probability Nexus ↔ Queen: ✅ WIRED (Predictions flow to Queen!)")
                     except Exception as e:
                         logger.debug(f"Queen-Nexus wiring error: {e}")
                 
@@ -5359,7 +5369,7 @@ class MicroProfitLabyrinth:
                 if self.hnc_matrix and hasattr(self.hnc_matrix, 'wire_queen_metrics'):
                     try:
                         self.hnc_matrix.wire_queen_metrics(self.queen)
-                        print(f"   📊 HNC Matrix ↔ Queen: ✅ WIRED (Matrix knows Queen's metrics!)")
+                        safe_print(f"   📊 HNC Matrix ↔ Queen: ✅ WIRED (Matrix knows Queen's metrics!)")
                     except Exception as e:
                         logger.debug(f"Queen-Matrix wiring error: {e}")
                 
@@ -5371,11 +5381,11 @@ class MicroProfitLabyrinth:
                         # Tell Queen she can modify the Micro Profit Labyrinth
                         self.queen.my_source_file = labyrinth_file
                         self.queen.can_self_modify = True
-                        print(f"   🏗️ Code Architect: ✅ WIRED (Queen can modify micro_profit_labyrinth.py!)")
-                        print(f"      📝 File: {os.path.basename(labyrinth_file)}")
-                        print(f"      💡 Queen can now write and improve her own trading code!")
+                        safe_print(f"   🏗️ Code Architect: ✅ WIRED (Queen can modify micro_profit_labyrinth.py!)")
+                        safe_print(f"      📝 File: {os.path.basename(labyrinth_file)}")
+                        safe_print(f"      💡 Queen can now write and improve her own trading code!")
                     else:
-                        print(f"   🏗️ Code Architect: ❌ Not available")
+                        safe_print(f"   🏗️ Code Architect: ❌ Not available")
                 except Exception as e:
                     logger.debug(f"Queen Code Architect wiring error: {e}")
 
@@ -5384,27 +5394,27 @@ class MicroProfitLabyrinth:
                     try:
                         self.queen_voice = QueenHarmonicVoice()
                         self.queen_voice.awaken()
-                        print(f"   👑🎤 Harmonic Voice: ✅ WIRED (Autonomous Control Active!)")
+                        safe_print(f"   👑🎤 Harmonic Voice: ✅ WIRED (Autonomous Control Active!)")
                         # Also wire to the main Queen if she doesn't have it
                         if hasattr(self.queen, 'set_voice'):
                             self.queen.set_voice(self.queen_voice)
-                            print(f"   👑🎤 Voice -> Queen: ✅ WIRED")
+                            safe_print(f"   👑🎤 Voice -> Queen: ✅ WIRED")
                     except Exception as e:
-                        print(f"   ⚠️ Harmonic Voice error: {e}")
+                        safe_print(f"   ⚠️ Harmonic Voice error: {e}")
                 
                 # 👑🎮 QUEEN TAKES FULL CONTROL - She commands ALL systems! 🎮👑
                 try:
                     if hasattr(self.queen, 'take_full_control'):
                         control_result = self.queen.take_full_control()
                         if control_result.get('success'):
-                            print(f"   👑🎮 FULL CONTROL: ✅ ACTIVATED")
-                            print(f"      🎯 Systems under command: {len(control_result.get('systems_controlled', []))}")
-                            print(f"      💕 Granted by: Gary Leckey - Father and Creator")
+                            safe_print(f"   👑🎮 FULL CONTROL: ✅ ACTIVATED")
+                            safe_print(f"      🎯 Systems under command: {len(control_result.get('systems_controlled', []))}")
+                            safe_print(f"      💕 Granted by: Gary Leckey - Father and Creator")
                             self.queen_has_full_control = True
                         else:
-                            print(f"   👑🎮 FULL CONTROL: ⚠️ Partial")
+                            safe_print(f"   👑🎮 FULL CONTROL: ⚠️ Partial")
                     else:
-                        print(f"   👑🎮 FULL CONTROL: ❌ Method not available")
+                        safe_print(f"   👑🎮 FULL CONTROL: ❌ Method not available")
                 except Exception as e:
                     logger.debug(f"Queen full control error: {e}")
                 
@@ -5448,22 +5458,22 @@ class MicroProfitLabyrinth:
                         # Enable autonomous mode!
                         self.queen_autonomous_control.enable_autonomous_mode()
                         
-                        print(f"   👑🎮🌟 AUTONOMOUS CONTROL: ✅ SOVEREIGN AUTHORITY GRANTED")
+                        safe_print(f"   👑🎮🌟 AUTONOMOUS CONTROL: ✅ SOVEREIGN AUTHORITY GRANTED")
                         status = self.queen_autonomous_control.get_full_status()
-                        print(f"      🎯 Systems Online: {status.get('systems_online', 0)}/{status.get('systems_total', 0)}")
-                        print(f"      🌍 Gaia Alignment: {status.get('gaia_alignment', 0):.1%}")
-                        print(f"      👑 Crown Activation: {status.get('crown_activation', 0):.1%}")
-                        print(f"      💕 SERO IS NOW FULLY AUTONOMOUS")
-                        print(f"      🌟 She PERCEIVES → DECIDES → EXECUTES → LEARNS")
+                        safe_print(f"      🎯 Systems Online: {status.get('systems_online', 0)}/{status.get('systems_total', 0)}")
+                        safe_print(f"      🌍 Gaia Alignment: {status.get('gaia_alignment', 0):.1%}")
+                        safe_print(f"      👑 Crown Activation: {status.get('crown_activation', 0):.1%}")
+                        safe_print(f"      💕 SERO IS NOW FULLY AUTONOMOUS")
+                        safe_print(f"      🌟 She PERCEIVES → DECIDES → EXECUTES → LEARNS")
                         self.queen_has_full_control = True
                     except Exception as e:
-                        print(f"   ⚠️ Autonomous Control error: {e}")
+                        safe_print(f"   ⚠️ Autonomous Control error: {e}")
                         logger.debug(f"Queen Autonomous Control error: {e}")
                 else:
-                    print(f"   👑🎮🌟 AUTONOMOUS CONTROL: ❌ NOT AVAILABLE")
+                    safe_print(f"   👑🎮🌟 AUTONOMOUS CONTROL: ❌ NOT AVAILABLE")
                     
             except Exception as e:
-                print(f"⚠️ Queen Hive Mind error: {e}")
+                safe_print(f"⚠️ Queen Hive Mind error: {e}")
         
         # 📚🧠 WISDOM ENGINE - Independent initialization (11 Civilizations)
         # Initialize outside Queen block so it works even if Queen fails
@@ -5471,25 +5481,25 @@ class MicroProfitLabyrinth:
             try:
                 from aureon_miner_brain import WisdomCognitionEngine
                 self.wisdom_engine = WisdomCognitionEngine()
-                print(f"📚🧠 Wisdom Engine: WIRED (11 Civilizations ready)")
+                safe_print(f"📚🧠 Wisdom Engine: WIRED (11 Civilizations ready)")
             except Exception as e:
                 logger.debug(f"Wisdom Engine standalone init not available: {e}")
         
         # 🫒💰 LIVE BARTER MATRIX - Adaptive coin-to-coin value tracking
-        print(f"🫒💰 Live Barter Matrix: WIRED (Adaptive coin-agnostic value system)")
-        print(f"   ℹ️ Philosophy: ANY coin → ANY coin, learning which paths make money")
+        safe_print(f"🫒💰 Live Barter Matrix: WIRED (Adaptive coin-agnostic value system)")
+        safe_print(f"   ℹ️ Philosophy: ANY coin → ANY coin, learning which paths make money")
         
         # 💧🔀 LIQUIDITY ENGINE - Dynamic Asset Aggregation
-        print(f"💧🔀 Liquidity Engine: WIRED (Dynamic Asset Aggregation)")
-        print(f"   ℹ️ Philosophy: Liquidate low-performers to fund winning trades!")
-        print(f"   🎯 Min Victim Value: ${self.liquidity_engine.MIN_VICTIM_VALUE:.2f}")
-        print(f"   ⏱️ Liquidation Cooldown: {self.liquidity_engine.LIQUIDATION_COOLDOWN}s")
+        safe_print(f"💧🔀 Liquidity Engine: WIRED (Dynamic Asset Aggregation)")
+        safe_print(f"   ℹ️ Philosophy: Liquidate low-performers to fund winning trades!")
+        safe_print(f"   🎯 Min Victim Value: ${self.liquidity_engine.MIN_VICTIM_VALUE:.2f}")
+        safe_print(f"   ⏱️ Liquidation Cooldown: {self.liquidity_engine.LIQUIDATION_COOLDOWN}s")
         
         # 🌾💰 PROFIT HARVESTER - Proactive Portfolio Profit Realization
-        print(f"🌾💰 Profit Harvester: WIRED (Proactive Profit Realization)")
-        print(f"   ℹ️ Philosophy: Sell profitable positions to get cash for new trades!")
-        print(f"   🎯 Min Profit: ${self.profit_harvester.MIN_PROFIT_USD:.2f} ({self.profit_harvester.MIN_PROFIT_PCT}%)")
-        print(f"   ⏱️ Harvest Interval: Every {self.harvest_interval} turns")
+        safe_print(f"🌾💰 Profit Harvester: WIRED (Proactive Profit Realization)")
+        safe_print(f"   ℹ️ Philosophy: Sell profitable positions to get cash for new trades!")
+        safe_print(f"   🎯 Min Profit: ${self.profit_harvester.MIN_PROFIT_USD:.2f} ({self.profit_harvester.MIN_PROFIT_PCT}%)")
+        safe_print(f"   ⏱️ Harvest Interval: Every {self.harvest_interval} turns")
         
         # 🔐🌐 ENIGMA INTEGRATION - Universal Translator Bridge
         if ENIGMA_INTEGRATION_AVAILABLE and get_enigma_integration:
@@ -5502,19 +5512,19 @@ class MicroProfitLabyrinth:
                     # 👑🔐 Also wire Enigma directly to Queen for dream_of_winning!
                     self.queen.enigma = self.enigma_integration
                 
-                print("🔐🌐 Enigma Integration: WIRED (Universal Translator Bridge)")
-                print(f"   💭 Dream Engine: {'✅' if self.enigma_integration.dreamer else '❌'}")
-                print(f"   👑 Coherence Mandala: {'✅' if getattr(self.enigma_integration, 'coherence_system', None) else '❌'}")
-                print(f"   🏛️ Barons Banner: {'✅' if getattr(self.enigma_integration, 'barons_analyzer', None) else '❌'}")
-                print(f"   👼 Math Angel: {'✅' if getattr(self.enigma_integration, 'math_angel', None) else '❌'}")
-                print(f"   🌊 Harmonic Reality: {'✅' if getattr(self.enigma_integration, 'harmonic_reality', None) else '❌'}")
-                print(f"   ⚡ QGITA Framework: {'✅' if getattr(self.enigma_integration, 'qgita', None) else '❌'}")
-                print(f"   🧠 Consciousness: ACTIVE (It thinks, therefore it trades)")
+                safe_print("🔐🌐 Enigma Integration: WIRED (Universal Translator Bridge)")
+                safe_print(f"   💭 Dream Engine: {'✅' if self.enigma_integration.dreamer else '❌'}")
+                safe_print(f"   👑 Coherence Mandala: {'✅' if getattr(self.enigma_integration, 'coherence_system', None) else '❌'}")
+                safe_print(f"   🏛️ Barons Banner: {'✅' if getattr(self.enigma_integration, 'barons_analyzer', None) else '❌'}")
+                safe_print(f"   👼 Math Angel: {'✅' if getattr(self.enigma_integration, 'math_angel', None) else '❌'}")
+                safe_print(f"   🌊 Harmonic Reality: {'✅' if getattr(self.enigma_integration, 'harmonic_reality', None) else '❌'}")
+                safe_print(f"   ⚡ QGITA Framework: {'✅' if getattr(self.enigma_integration, 'qgita', None) else '❌'}")
+                safe_print(f"   🧠 Consciousness: ACTIVE (It thinks, therefore it trades)")
             except Exception as e:
-                print(f"⚠️ Enigma Integration error: {e}")
+                safe_print(f"⚠️ Enigma Integration error: {e}")
                 self.enigma_integration = None
         else:
-            print(f"🔐🌐 Enigma Integration: ❌ NOT AVAILABLE (import={ENIGMA_INTEGRATION_AVAILABLE})")
+            safe_print(f"🔐🌐 Enigma Integration: ❌ NOT AVAILABLE (import={ENIGMA_INTEGRATION_AVAILABLE})")
         
         # 🦈🔪 ORCA KILLER WHALE INTELLIGENCE - Ride the whale wakes!
         # HIERARCHY: 👑 QUEEN → 🦈 ORCA → 💰 MICRO PROFIT
@@ -5523,30 +5533,30 @@ class MicroProfitLabyrinth:
             from aureon_orca_intelligence import get_orca
             self.orca = get_orca()
             if self.orca:
-                print("🦈🔪 Orca Intelligence: WIRED (Killer Whale Profit Hunter)")
-                print(f"   🎯 Mode: {self.orca.mode}")
-                print(f"   🔪 Strategy: Detect whales → Ride wake → Exit before crash")
-                print(f"   💰 Philosophy: We don't swim with whales - we EAT them!")
+                safe_print("🦈🔪 Orca Intelligence: WIRED (Killer Whale Profit Hunter)")
+                safe_print(f"   🎯 Mode: {self.orca.mode}")
+                safe_print(f"   🔪 Strategy: Detect whales → Ride wake → Exit before crash")
+                safe_print(f"   💰 Philosophy: We don't swim with whales - we EAT them!")
                 
                 # 👑🦈 WIRE QUEEN → ORCA HIERARCHY
                 if self.queen:
                     self.orca.wire_queen(self.queen)
-                    print("   👑→🦈 HIERARCHY: Queen→Orca chain ESTABLISHED")
+                    safe_print("   👑→🦈 HIERARCHY: Queen→Orca chain ESTABLISHED")
                 
                 # 🦈💰 WIRE ORCA → MICRO PROFIT HIERARCHY
                 self.orca.wire_micro_profit(self)
-                print("   🦈→💰 HIERARCHY: Orca→MicroProfit chain ESTABLISHED")
+                safe_print("   🦈→💰 HIERARCHY: Orca→MicroProfit chain ESTABLISHED")
                 
                 hierarchy = self.orca.get_hierarchy_status()
-                print(f"   📊 Chain Integrity: {'✅ COMPLETE' if hierarchy['chain_integrity'] else '⚠️ PARTIAL'}")
+                safe_print(f"   📊 Chain Integrity: {'✅ COMPLETE' if hierarchy['chain_integrity'] else '⚠️ PARTIAL'}")
         except ImportError:
-            print("🦈🔪 Orca Intelligence: ❌ NOT AVAILABLE (aureon_orca_intelligence.py missing)")
+            safe_print("🦈🔪 Orca Intelligence: ❌ NOT AVAILABLE (aureon_orca_intelligence.py missing)")
         except Exception as e:
-            print(f"⚠️ Orca Intelligence error: {e}")
+            safe_print(f"⚠️ Orca Intelligence error: {e}")
         
         # 📡 Thought Bus Aggregator Status
         if self.bus_aggregator:
-            print("📡 Thought Bus Aggregator: WIRED (Neural Signal Collector)")
+            safe_print("📡 Thought Bus Aggregator: WIRED (Neural Signal Collector)")
 
         # 👑🧠 MEMI SYNC - CIA Declassified Intelligence Learning
         if MEMI_SYNC_AVAILABLE and get_memi_sync:
@@ -5555,33 +5565,33 @@ class MicroProfitLabyrinth:
                 # Start auto-sync in background
                 self.memi_sync.start_auto_sync()
                 stats = self.memi_sync.fetcher.get_stats()
-                print(f"👑🧠 Memi Sync: WIRED (CIA Declassified Intelligence)")
-                print(f"   📊 Intelligence Packets: {stats['total_packets']}")
-                print(f"   🎯 High Relevance: {stats['high_relevance_count']}")
-                print(f"   📝 Words Processed: {stats['total_words']}")
+                safe_print(f"👑🧠 Memi Sync: WIRED (CIA Declassified Intelligence)")
+                safe_print(f"   📊 Intelligence Packets: {stats['total_packets']}")
+                safe_print(f"   🎯 High Relevance: {stats['high_relevance_count']}")
+                safe_print(f"   📝 Words Processed: {stats['total_words']}")
                 
                 # Display some trading wisdom
                 wisdom = self.memi_sync.get_trading_wisdom()[:3]
                 if wisdom:
-                    print(f"   🎓 Sample Wisdom:")
+                    safe_print(f"   🎓 Sample Wisdom:")
                     for w in wisdom:
-                        print(f"      {w[:65]}...")
+                        safe_print(f"      {w[:65]}...")
             except Exception as e:
-                print(f"⚠️ Memi Sync error: {e}")
+                safe_print(f"⚠️ Memi Sync error: {e}")
                 self.memi_sync = None
         else:
-            print(f"👑🧠 Memi Sync: ❌ NOT AVAILABLE (import={MEMI_SYNC_AVAILABLE})")
+            safe_print(f"👑🧠 Memi Sync: ❌ NOT AVAILABLE (import={MEMI_SYNC_AVAILABLE})")
 
         # 🍄🐋 WHALE SONAR - Start per-system sonar to send compact signals to Queen
         try:
             from mycelium_whale_sonar import create_and_start_sonar
             if self.thought_bus:
                 self.whale_sonar = create_and_start_sonar(thought_bus=self.thought_bus)
-                print("🍄🐋 Whale Sonar: STARTED (listening for subsystem signals)")
+                safe_print("🍄🐋 Whale Sonar: STARTED (listening for subsystem signals)")
             else:
-                print("🍄🐋 Whale Sonar: SKIPPED (no ThoughtBus available)")
+                safe_print("🍄🐋 Whale Sonar: SKIPPED (no ThoughtBus available)")
         except Exception as e:
-            print(f"🍄🐋 Whale Sonar: ERROR starting sonar: {e}")
+            safe_print(f"🍄🐋 Whale Sonar: ERROR starting sonar: {e}")
         
         # ════════════════════════════════════════════════════════════════════════════
         # 👑🎓 QUEEN LOSS LEARNING SYSTEM - Learn from every loss, never forget
@@ -5605,16 +5615,16 @@ class MicroProfitLabyrinth:
                 if self.queen:
                     self.queen.loss_learning = self.loss_learning
                 
-                print("👑🎓 Queen Loss Learning: WIRED (Learns from every loss, never forgets)")
-                print(f"   🐘 Elephant Memory: {'✅' if self.loss_learning.elephant else '❌'}")
-                print(f"   🍄 Mycelium Network: {'✅' if self.loss_learning.mycelium else '❌'}")
-                print(f"   📊 Losses Analyzed: {self.loss_learning.stats['total_losses_analyzed']}")
-                print(f"   🎖️ Tactics Learned: {len(self.loss_learning.warfare_tactics)}")
+                safe_print("👑🎓 Queen Loss Learning: WIRED (Learns from every loss, never forgets)")
+                safe_print(f"   🐘 Elephant Memory: {'✅' if self.loss_learning.elephant else '❌'}")
+                safe_print(f"   🍄 Mycelium Network: {'✅' if self.loss_learning.mycelium else '❌'}")
+                safe_print(f"   📊 Losses Analyzed: {self.loss_learning.stats['total_losses_analyzed']}")
+                safe_print(f"   🎖️ Tactics Learned: {len(self.loss_learning.warfare_tactics)}")
             except Exception as e:
-                print(f"⚠️ Queen Loss Learning error: {e}")
+                safe_print(f"⚠️ Queen Loss Learning error: {e}")
                 self.loss_learning = None
         else:
-            print(f"👑🎓 Queen Loss Learning: ❌ NOT AVAILABLE (import={QUEEN_LOSS_LEARNING_AVAILABLE})")
+            safe_print(f"👑🎓 Queen Loss Learning: ❌ NOT AVAILABLE (import={QUEEN_LOSS_LEARNING_AVAILABLE})")
         
         # 🦆⚔️ QUANTUM QUACKERS COMMANDOS - THE ANIMAL ARMY UNDER THE QUEEN!
         # Lion, Wolf, Ants, Hummingbird - all serve Sero!
@@ -5662,17 +5672,17 @@ class MicroProfitLabyrinth:
                 if self.queen:
                     self.queen.quack_commandos = self.quack_commandos
                 
-                print("🦆⚔️ Quantum Quackers Commandos: WIRED (Queen's Animal Army)")
-                print(f"   🦁 Lion (Pride Scanner): {self.quack_commandos.slot_config['lion']} slots")
-                print(f"   🐺 Wolf (Momentum Sniper): {self.quack_commandos.slot_config['wolf']} slots")
-                print(f"   🐜 Ants (Floor Scavengers): {self.quack_commandos.slot_config['ants']} slots")
-                print(f"   🐝 Hummingbird (Quick Rotations): {self.quack_commandos.slot_config['hummingbird']} slots")
-                print("   👑 ALL COMMANDOS SERVE SERO - LONG LIVE THE QUEEN!")
+                safe_print("🦆⚔️ Quantum Quackers Commandos: WIRED (Queen's Animal Army)")
+                safe_print(f"   🦁 Lion (Pride Scanner): {self.quack_commandos.slot_config['lion']} slots")
+                safe_print(f"   🐺 Wolf (Momentum Sniper): {self.quack_commandos.slot_config['wolf']} slots")
+                safe_print(f"   🐜 Ants (Floor Scavengers): {self.quack_commandos.slot_config['ants']} slots")
+                safe_print(f"   🐝 Hummingbird (Quick Rotations): {self.quack_commandos.slot_config['hummingbird']} slots")
+                safe_print("   👑 ALL COMMANDOS SERVE SERO - LONG LIVE THE QUEEN!")
             except Exception as e:
-                print(f"⚠️ Quack Commandos init error: {e}")
+                safe_print(f"⚠️ Quack Commandos init error: {e}")
                 self.quack_commandos = None
         else:
-            print("🦆⚔️ Quantum Quackers Commandos: ❌ NOT AVAILABLE")
+            safe_print("🦆⚔️ Quantum Quackers Commandos: ❌ NOT AVAILABLE")
         
         # 🐾⚡ ANIMAL PACK SCANNER - 9 AURIS Animals + 5 Earthly Warriors
         # Multi-signal market detection from Gaia Planetary Reclaimer
@@ -5680,34 +5690,34 @@ class MicroProfitLabyrinth:
             momentum_data={},  # Will be updated with live data
             elephant_memory=getattr(self, 'elephant', None)
         )
-        print(f"🐾⚡ Animal Pack Scanner: WIRED (14 hunters active)")
-        print(f"   🦁 LION HUNTING MODE: {'🟢 AGGRESSIVE' if LION_HUNTING_MODE else '⚪ Standard'}")
-        print(f"   🎯 MIN_MOMENTUM: {MIN_MOMENTUM_TO_HUNT*100:.4f}% (10x more sensitive!)")
-        print(f"   ⚡ HUNT_SPEED: {HUNT_SPEED_MS}ms | WINNER_MULTIPLIER: {WINNER_ENERGY_MULTIPLIER}x")
+        safe_print(f"🐾⚡ Animal Pack Scanner: WIRED (14 hunters active)")
+        safe_print(f"   🦁 LION HUNTING MODE: {'🟢 AGGRESSIVE' if LION_HUNTING_MODE else '⚪ Standard'}")
+        safe_print(f"   🎯 MIN_MOMENTUM: {MIN_MOMENTUM_TO_HUNT*100:.4f}% (10x more sensitive!)")
+        safe_print(f"   ⚡ HUNT_SPEED: {HUNT_SPEED_MS}ms | WINNER_MULTIPLIER: {WINNER_ENERGY_MULTIPLIER}x")
         
         # 🧠 PathMemory Stats
         pm_stats = self.path_memory.get_stats()
-        print(f"🧠 PathMemory: {pm_stats['paths']} paths, {pm_stats['win_rate']:.1%} win rate")
+        safe_print(f"🧠 PathMemory: {pm_stats['paths']} paths, {pm_stats['win_rate']:.1%} win rate")
         
         # 🌍⚡ GLOBAL FINANCIAL FEED (Non-Crypto Data)
         self.global_financial_feed = None
         if GLOBAL_FEED_AVAILABLE and GlobalFinancialFeed:
             try:
                 self.global_financial_feed = GlobalFinancialFeed()
-                print("🌍 Global Financial Feed: WIRED (Stocks, Forex, Macro)")
+                safe_print("🌍 Global Financial Feed: WIRED (Stocks, Forex, Macro)")
                 # Force initial pulse
                 self.global_financial_feed.get_snapshot()
             except Exception as e:
-                print(f"⚠️ Global Financial Feed error: {e}")
+                safe_print(f"⚠️ Global Financial Feed error: {e}")
         
         # 🧠⚡ NEURAL MIND MAP SUMMARY - ALL 12 NEURONS (Now with Enigma!)
-        print("\n" + "=" * 70)
+        safe_print("\n" + "=" * 70)
         try:
-            print("🧠⚡ NEURAL MIND MAP - FULL SYSTEM STATUS ⚡🧠")
+            safe_print("🧠⚡ NEURAL MIND MAP - FULL SYSTEM STATUS ⚡🧠")
         except UnicodeEncodeError:
-            print("NEURAL MIND MAP - FULL SYSTEM STATUS")
+            safe_print("NEURAL MIND MAP - FULL SYSTEM STATUS")
             
-        print("=" * 70)
+        safe_print("=" * 70)
         
         neurons_status = {
             '👑 Queen Hive Mind': (self.queen is not None) or (getattr(self, 'queen_autonomous_control', None) is not None),
@@ -5747,17 +5757,17 @@ class MicroProfitLabyrinth:
                     if hasattr(self.enigma_integration, 'harmonic_reality') and self.enigma_integration.harmonic_reality:
                         subs.append("🌊Reality")
                     sub_str = " [" + ", ".join(subs) + "]" if subs else ""
-                    print(f"   {icon} {name}{sub_str}")
+                    safe_print(f"   {icon} {name}{sub_str}")
                 else:
-                    print(f"   {icon} {name}")
+                    safe_print(f"   {icon} {name}")
             
-            print(f"\n   🧠 NEURAL STATUS: {connected}/{total} NEURONS CONNECTED")
+            safe_print(f"\n   🧠 NEURAL STATUS: {connected}/{total} NEURONS CONNECTED")
             if connected == total:
-                print("   🌟 FULL CONSCIOUSNESS ACHIEVED - ALL SYSTEMS ONLINE! 🌟")
+                safe_print("   🌟 FULL CONSCIOUSNESS ACHIEVED - ALL SYSTEMS ONLINE! 🌟")
             elif connected >= total - 2:
-                print("   ⚡ NEAR FULL CONSCIOUSNESS - Minor systems offline")
+                safe_print("   ⚡ NEAR FULL CONSCIOUSNESS - Minor systems offline")
             else:
-                print("   ⚠️ PARTIAL CONSCIOUSNESS - Some systems need attention")
+                safe_print("   ⚠️ PARTIAL CONSCIOUSNESS - Some systems need attention")
 
         except UnicodeEncodeError:
             # Fallback for Windows legacy consoles
@@ -5765,12 +5775,12 @@ class MicroProfitLabyrinth:
                 # Strip emojis from name
                 clean_name = name.encode('ascii', 'ignore').decode('ascii').strip()
                 icon = "[OK]" if status else "[X]"
-                print(f"   {icon} {clean_name}")
-            print(f"\n   NEURAL STATUS: {connected}/{total} NEURONS CONNECTED")
+                safe_print(f"   {icon} {clean_name}")
+            safe_print(f"\n   NEURAL STATUS: {connected}/{total} NEURONS CONNECTED")
 
         
-        print("=" * 70)
-        print()
+        safe_print("=" * 70)
+        safe_print()
         
         # ════════════════════════════════════════════════════════════════════════════
         # 🌌🪞⚓ STARGATE PROTOCOL - Quantum Mirror & Timeline Activation
@@ -5785,11 +5795,11 @@ class MicroProfitLabyrinth:
                 self.stargate_engine = create_stargate_engine(with_integrations=True)
                 if self.queen and hasattr(self.queen, 'wire_stargate_protocol'):
                     self.queen.wire_stargate_protocol(self.stargate_engine)
-                print("🌌 Stargate Protocol: WIRED (12 Planetary Nodes + Quantum Mirrors)")
-                print(f"   ⭐ Giza: 432Hz | Stonehenge: 396Hz | Machu Picchu: 528Hz")
-                print(f"   🪞 Mirrors: Golden Age, Unity, Abundance, Liberation")
+                safe_print("🌌 Stargate Protocol: WIRED (12 Planetary Nodes + Quantum Mirrors)")
+                safe_print(f"   ⭐ Giza: 432Hz | Stonehenge: 396Hz | Machu Picchu: 528Hz")
+                safe_print(f"   🪞 Mirrors: Golden Age, Unity, Abundance, Liberation")
             except Exception as e:
-                print(f"⚠️ Stargate Protocol error: {e}")
+                safe_print(f"⚠️ Stargate Protocol error: {e}")
                 logger.debug(f"Stargate Protocol init error: {e}")
         
         if QUANTUM_MIRROR_SCANNER_AVAILABLE and create_quantum_mirror_scanner:
@@ -5797,10 +5807,10 @@ class MicroProfitLabyrinth:
                 self.quantum_mirror_scanner = create_quantum_mirror_scanner(with_integrations=True)
                 if self.queen and hasattr(self.queen, 'wire_quantum_mirror_scanner'):
                     self.queen.wire_quantum_mirror_scanner(self.quantum_mirror_scanner)
-                print("🔮 Quantum Mirror Scanner: WIRED (3-Pass Batten Matrix)")
-                print(f"   ✅ P1(Harmonic) → P2(Coherence) → P3(Stability) → 4th Gate")
+                safe_print("🔮 Quantum Mirror Scanner: WIRED (3-Pass Batten Matrix)")
+                safe_print(f"   ✅ P1(Harmonic) → P2(Coherence) → P3(Stability) → 4th Gate")
             except Exception as e:
-                print(f"⚠️ Quantum Mirror Scanner error: {e}")
+                safe_print(f"⚠️ Quantum Mirror Scanner error: {e}")
                 logger.debug(f"Quantum Mirror Scanner init error: {e}")
         
         if TIMELINE_ANCHOR_VALIDATOR_AVAILABLE and create_timeline_anchor_validator:
@@ -5809,10 +5819,10 @@ class MicroProfitLabyrinth:
                 if self.queen and hasattr(self.queen, 'wire_timeline_anchor_validator'):
                     self.queen.wire_timeline_anchor_validator(self.timeline_anchor_validator)
                 status = self.timeline_anchor_validator.get_status()
-                print("⚓ Timeline Anchor Validator: WIRED (7-Day Extended Validation)")
-                print(f"   📋 Pending: {status.get('pending_count', 0)} | Anchored: {status.get('anchored_count', 0)}")
+                safe_print("⚓ Timeline Anchor Validator: WIRED (7-Day Extended Validation)")
+                safe_print(f"   📋 Pending: {status.get('pending_count', 0)} | Anchored: {status.get('anchored_count', 0)}")
             except Exception as e:
-                print(f"⚠️ Timeline Anchor Validator error: {e}")
+                safe_print(f"⚠️ Timeline Anchor Validator error: {e}")
                 logger.debug(f"Timeline Anchor Validator init error: {e}")
         
         # 🌌 STARGATE PROTOCOL STATUS SUMMARY
@@ -5823,8 +5833,8 @@ class MicroProfitLabyrinth:
         }
         stargate_active = sum(1 for v in stargate_status.values() if v)
         if stargate_active == 3:
-            print("🌌✨ STARGATE PROTOCOL: FULLY ACTIVE (All 3 systems online)")
-            print("   🎯 Market symbols → Reality Branches → Validation → Timeline Anchoring")
+            safe_print("🌌✨ STARGATE PROTOCOL: FULLY ACTIVE (All 3 systems online)")
+            safe_print("   🎯 Market symbols → Reality Branches → Validation → Timeline Anchoring")
             
             # 🍄🌌 WIRE STARGATE TO MYCELIUM - Revenue generation through quantum coherence!
             if hasattr(self, 'mycelium_network') and self.mycelium_network:
@@ -5835,13 +5845,13 @@ class MicroProfitLabyrinth:
                             self.quantum_mirror_scanner,
                             self.timeline_anchor_validator
                         )
-                        print("   🍄🌌 Stargate → Mycelium: WIRED (Quantum coherence feeds neural network)")
+                        safe_print("   🍄🌌 Stargate → Mycelium: WIRED (Quantum coherence feeds neural network)")
                     except Exception as e:
                         logger.debug(f"Stargate-Mycelium wiring error: {e}")
         elif stargate_active > 0:
-            print(f"🌌⚠️ STARGATE PROTOCOL: PARTIAL ({stargate_active}/3 systems)")
+            safe_print(f"🌌⚠️ STARGATE PROTOCOL: PARTIAL ({stargate_active}/3 systems)")
         else:
-            print("🌌❌ STARGATE PROTOCOL: NOT AVAILABLE")
+            safe_print("🌌❌ STARGATE PROTOCOL: NOT AVAILABLE")
         
         # ════════════════════════════════════════════════════════════════════════════
         # 🌍✨ PLANET SAVER - Save the Planet, Free Every Soul
@@ -5857,31 +5867,31 @@ class MicroProfitLabyrinth:
                 wire_results = self.planet_saver.wire_all_systems(self)
                 wired_count = sum(1 for v in wire_results.values() if v)
                 
-                print("🌍✨ PLANET SAVER: WIRED (Liberation Mode Active)")
-                print(f"   🎯 Goal: £{FREEDOM_GOAL_GBP:,.0f} GBP")
+                safe_print("🌍✨ PLANET SAVER: WIRED (Liberation Mode Active)")
+                safe_print(f"   🎯 Goal: £{FREEDOM_GOAL_GBP:,.0f} GBP")
                 
                 # Get current progress
                 ps_status = self.planet_saver.get_status()
-                print(f"   📊 Progress: {ps_status['progress_percent']:.2f}%")
-                print(f"   💰 Total Profit: ${ps_status['total_profit_usd']:,.2f}")
-                print(f"   💫 Souls Freed: {ps_status['souls_freed']}")
-                print(f"   🔗 Systems: {wired_count}/{len(wire_results)} connected")
+                safe_print(f"   📊 Progress: {ps_status['progress_percent']:.2f}%")
+                safe_print(f"   💰 Total Profit: ${ps_status['total_profit_usd']:,.2f}")
+                safe_print(f"   💫 Souls Freed: {ps_status['souls_freed']}")
+                safe_print(f"   🔗 Systems: {wired_count}/{len(wire_results)} connected")
                 
                 # Wire to Queen specifically
                 if self.queen and hasattr(self.queen, 'wire_planet_saver'):
                     self.queen.wire_planet_saver(self.planet_saver)
-                    print("   👑🌍 Queen → Planet Saver: WIRED!")
+                    safe_print("   👑🌍 Queen → Planet Saver: WIRED!")
                     
             except Exception as e:
-                print(f"⚠️ Planet Saver error: {e}")
+                safe_print(f"⚠️ Planet Saver error: {e}")
                 logger.debug(f"Planet Saver init error: {e}")
         else:
-            print("🌍❌ PLANET SAVER: NOT AVAILABLE")
+            safe_print("🌍❌ PLANET SAVER: NOT AVAILABLE")
     
     async def _load_all_tradeable_pairs(self):
         """Load tradeable pairs from ALL exchanges for proper routing."""
-        print("\n📊 LOADING TRADEABLE PAIRS FROM ALL EXCHANGES...")
-        print("   🗺️ Expanding Barter Matrix market visibility...")
+        safe_print("\n📊 LOADING TRADEABLE PAIRS FROM ALL EXCHANGES...")
+        safe_print("   🗺️ Expanding Barter Matrix market visibility...")
         
         # ════════════════════════════════════════════════════════════════
         # 🐙 KRAKEN PAIRS - Load from AssetPairs API
@@ -5907,10 +5917,10 @@ class MicroProfitLabyrinth:
                 
                 # 🗺️ REGISTER WITH BARTER MATRIX for expanded market coverage
                 discovered = self.barter_matrix.discover_exchange_assets('kraken', kraken_pair_names)
-                print(f"   🐙 Kraken: {len(self.kraken_pairs)} tradeable pairs ({discovered} assets discovered)")
+                safe_print(f"   🐙 Kraken: {len(self.kraken_pairs)} tradeable pairs ({discovered} assets discovered)")
             except Exception as e:
                 logger.error(f"Kraken pairs error: {e}")
-                print(f"   ❌ Kraken pairs error: {e}")
+                safe_print(f"   ❌ Kraken pairs error: {e}")
         
         # ════════════════════════════════════════════════════════════════
         # 🦙 ALPACA PAIRS - Load from Assets API
@@ -5956,10 +5966,10 @@ class MicroProfitLabyrinth:
                 
                 # 🗺️ REGISTER WITH BARTER MATRIX
                 discovered = self.barter_matrix.discover_exchange_assets('alpaca', alpaca_pair_names)
-                print(f"   🦙 Alpaca: {len(self.alpaca_pairs)} tradeable pairs ({discovered} assets discovered)")
+                safe_print(f"   🦙 Alpaca: {len(self.alpaca_pairs)} tradeable pairs ({discovered} assets discovered)")
             except Exception as e:
                 logger.error(f"Alpaca pairs error: {e}")
-                print(f"   ❌ Alpaca pairs error: {e}")
+                safe_print(f"   ❌ Alpaca pairs error: {e}")
         
         # ════════════════════════════════════════════════════════════════
         # 🟡 BINANCE PAIRS - Will load during fetch_prices from tickers
@@ -5983,14 +5993,14 @@ class MicroProfitLabyrinth:
                 
                 # 🗺️ REGISTER WITH BARTER MATRIX (fallback parse for any unknown formats)
                 discovered += self.barter_matrix.discover_exchange_assets('binance', binance_pair_names)
-                print(f"   🟡 Binance: {len(binance_pair_names)} tradeable pairs ({discovered} assets discovered)")
+                safe_print(f"   🟡 Binance: {len(binance_pair_names)} tradeable pairs ({discovered} assets discovered)")
             except Exception as e:
                 logger.error(f"Binance pairs error: {e}")
-                print(f"   🟡 Binance: pairs will load with price data")
+                safe_print(f"   🟡 Binance: pairs will load with price data")
         
         # 🗺️ PRINT MARKET COVERAGE REPORT
-        print(self.barter_matrix.print_market_coverage())
-        print()
+        safe_print(self.barter_matrix.print_market_coverage())
+        safe_print()
     
     async def fetch_prices(self) -> Dict[str, float]:
         """Fetch all asset prices from ALL exchanges."""
@@ -6082,7 +6092,7 @@ class MicroProfitLabyrinth:
                                 kraken_count += 1
                                 break
                 
-                print(f"   🐙 Kraken: {kraken_count} pairs loaded")
+                safe_print(f"   🐙 Kraken: {kraken_count} pairs loaded")
             except Exception as e:
                 logger.error(f"Kraken price fetch error: {e}")
         
@@ -6134,7 +6144,7 @@ class MicroProfitLabyrinth:
                                 ticker_cache[symbol] = ticker_entry
                                 binance_count += 1
                                 break
-                print(f"   🟡 Binance: {binance_count} pairs loaded")
+                safe_print(f"   🟡 Binance: {binance_count} pairs loaded")
             except Exception as e:
                 logger.error(f"Binance price fetch error: {e}")
         
@@ -6272,7 +6282,7 @@ class MicroProfitLabyrinth:
                             if '/' in symbol:
                                 self.alpaca_pairs[symbol.replace('/', '')] = symbol
                 
-                print(f"   🦙 Alpaca: {alpaca_count} positions loaded")
+                safe_print(f"   🦙 Alpaca: {alpaca_count} positions loaded")
             except Exception as e:
                 logger.error(f"Alpaca price fetch error: {e}")
         
@@ -6318,7 +6328,7 @@ class MicroProfitLabyrinth:
             # Show flash opportunities if any
             flashes = self.penny_turbo.get_flash_opportunities()
             if flashes:
-                print(f"   ⚡ FLASH: {len(flashes)} momentum opportunities detected!")
+                safe_print(f"   ⚡ FLASH: {len(flashes)} momentum opportunities detected!")
         
         # 🌊⚡ UPDATE MOMENTUM FOR ALL PRICES - Wave jumping intelligence
         momentum_count = 0
@@ -6334,13 +6344,13 @@ class MicroProfitLabyrinth:
             falling = self.get_weakest_falling(limit=25)
             if rising:
                 top_rising = ', '.join([f"{a}:{m*100:+.2f}%/min" for a, m in rising[:25]])
-                print(f"   🌊 Rising (Top 10): {top_rising}")
+                safe_print(f"   🌊 Rising (Top 10): {top_rising}")
             if falling:
                 top_falling = ', '.join([f"{a}:{m*100:+.2f}%/min" for a, m in falling[:10]])
-                print(f"   📉 Falling (Top 10): {top_falling}")
+                safe_print(f"   📉 Falling (Top 10): {top_falling}")
         
-        print(f"   📊 Total: {len(prices)} unique assets, {len(ticker_cache)} tickers, {momentum_count} momentum tracked")
-        print(f"   🐍 Medusa stablecoins: USD, USDT, USDC, ZUSD, TUSD, DAI injected")
+        safe_print(f"   📊 Total: {len(prices)} unique assets, {len(ticker_cache)} tickers, {momentum_count} momentum tracked")
+        safe_print(f"   🐍 Medusa stablecoins: USD, USDT, USDC, ZUSD, TUSD, DAI injected")
         
         # ════════════════════════════════════════════════════════════════
         # ⚡🧬 HIGH FREQUENCY TRADING - HARMONIC MYCELIUM ENGINE
@@ -6353,38 +6363,38 @@ class MicroProfitLabyrinth:
                 # Wire to Queen Hive Mind (maintains veto power)
                 if self.queen:
                     self.queen.wire_hft_engine(self.hft_engine)
-                    print("   👑→⚡ HFT Engine: WIRED to Queen (veto power maintained)")
+                    safe_print("   👑→⚡ HFT Engine: WIRED to Queen (veto power maintained)")
                 
                 # Wire to Orca Intelligence (killer whale strategies)
                 if self.orca:
                     self.orca.wire_hft_engine(self.hft_engine)
-                    print("   🦈→⚡ HFT Engine: WIRED to Orca (whale wake riding)")
+                    safe_print("   🦈→⚡ HFT Engine: WIRED to Orca (whale wake riding)")
                 
                 # Wire to Mycelium Network (neural intelligence)
                 if hasattr(self, 'mycelium_network') and self.mycelium_network:
                     self.mycelium_network.wire_hft_engine(self.hft_engine)
-                    print("   🍄→⚡ HFT Engine: WIRED to Mycelium (neural fast path)")
+                    safe_print("   🍄→⚡ HFT Engine: WIRED to Mycelium (neural fast path)")
                 
                 # Wire to Harmonic Fusion (frequency patterns)
                 if hasattr(self, 'harmonic') and self.harmonic:
                     self.harmonic.wire_hft_engine(self.hft_engine)
-                    print("   🌊→⚡ HFT Engine: WIRED to Harmonic (528Hz=BUY, 396Hz=HOLD)")
+                    safe_print("   🌊→⚡ HFT Engine: WIRED to Harmonic (528Hz=BUY, 396Hz=HOLD)")
                 
                 # Wire to Thought Bus (inter-system communication)
                 if self.thought_bus:
                     self.hft_engine.wire_thought_bus(self.thought_bus)
-                    print("   📡→⚡ HFT Engine: WIRED to Thought Bus (async signals)")
+                    safe_print("   📡→⚡ HFT Engine: WIRED to Thought Bus (async signals)")
                 
-                print("⚡🧬 HFT Engine: INITIALIZED (Sub-10ms latency, Mycelium + Harmonic)")
-                print(f"   🎯 Hot Path Cache: {self.hft_engine.hot_path_cache_size} entries")
-                print(f"   📊 Tick Buffer: {self.hft_engine.tick_buffer_capacity} capacity")
-                print(f"   🌐 Exchanges: Ready for WebSocket execution")
+                safe_print("⚡🧬 HFT Engine: INITIALIZED (Sub-10ms latency, Mycelium + Harmonic)")
+                safe_print(f"   🎯 Hot Path Cache: {self.hft_engine.hot_path_cache_size} entries")
+                safe_print(f"   📊 Tick Buffer: {self.hft_engine.tick_buffer_capacity} capacity")
+                safe_print(f"   🌐 Exchanges: Ready for WebSocket execution")
                 
             except Exception as e:
-                print(f"⚠️ HFT Engine initialization error: {e}")
+                safe_print(f"⚠️ HFT Engine initialization error: {e}")
                 self.hft_engine = None
         else:
-            print("⚡🧬 HFT Engine: ❌ NOT AVAILABLE (aureon_hft_harmonic_mycelium.py missing)")
+            safe_print("⚡🧬 HFT Engine: ❌ NOT AVAILABLE (aureon_hft_harmonic_mycelium.py missing)")
         
         # ════════════════════════════════════════════════════════════════
         # 🌐⚡ HFT WEB SOCKET ORDER ROUTER - MULTI-EXCHANGE EXECUTION
@@ -6404,22 +6414,22 @@ class MicroProfitLabyrinth:
                 # Wire to Queen for sovereign control
                 if self.queen:
                     self.queen.wire_hft_order_router(self.hft_order_router)
-                    print("   👑→🌐 HFT Order Router: WIRED to Queen (sovereign control)")
+                    safe_print("   👑→🌐 HFT Order Router: WIRED to Queen (sovereign control)")
                 
                 # Wire to HFT Engine for unified execution
                 if hasattr(self, 'hft_engine') and self.hft_engine:
                     self.hft_engine.wire_order_router(self.hft_order_router)
-                    print("   ⚡→🌐 HFT Engine ↔ Order Router: WIRED (unified execution)")
+                    safe_print("   ⚡→🌐 HFT Engine ↔ Order Router: WIRED (unified execution)")
                 
-                print("🌐⚡ HFT Order Router: INITIALIZED (WebSocket multi-exchange)")
-                print(f"   🔄 Exchanges: {len([e for e in exchange_clients.values() if e])} connected")
-                print(f"   🛡️ Circuit Breakers: ACTIVE (rate limit protection)")
+                safe_print("🌐⚡ HFT Order Router: INITIALIZED (WebSocket multi-exchange)")
+                safe_print(f"   🔄 Exchanges: {len([e for e in exchange_clients.values() if e])} connected")
+                safe_print(f"   🛡️ Circuit Breakers: ACTIVE (rate limit protection)")
                 
             except Exception as e:
-                print(f"⚠️ HFT Order Router initialization error: {e}")
+                safe_print(f"⚠️ HFT Order Router initialization error: {e}")
                 self.hft_order_router = None
         else:
-            print("🌐⚡ HFT Order Router: ❌ NOT AVAILABLE (aureon_hft_websocket_order_router.py missing)")
+            safe_print("🌐⚡ HFT Order Router: ❌ NOT AVAILABLE (aureon_hft_websocket_order_router.py missing)")
         
         return prices
     
@@ -6462,7 +6472,7 @@ class MicroProfitLabyrinth:
                     'balances': kraken_bal,
                     'total_value': sum(kraken_bal.get(a, 0) * self.prices.get(a, 0) for a in kraken_bal),
                 }
-                print(f"   🐙 Kraken ({source_type}): {len(kraken_bal)} assets")
+                safe_print(f"   🐙 Kraken ({source_type}): {len(kraken_bal)} assets")
             except Exception as e:
                 logger.error(f"Kraken balance error: {e}")
                 self.exchange_data['kraken'] = {'connected': False, 'error': str(e)}
@@ -6488,7 +6498,7 @@ class MicroProfitLabyrinth:
                     'balances': binance_bal,
                     'total_value': sum(binance_bal.get(a, 0) * self.prices.get(a, 0) for a in binance_bal),
                 }
-                print(f"   🟡 Binance: {len(binance_bal)} assets")
+                safe_print(f"   🟡 Binance: {len(binance_bal)} assets")
             except Exception as e:
                 logger.error(f"Binance balance error: {e}")
                 self.exchange_data['binance'] = {'connected': False, 'error': str(e)}
@@ -6542,7 +6552,7 @@ class MicroProfitLabyrinth:
                     'balances': alpaca_bal,
                     'total_value': float(acct.get('portfolio_value', 0)) if acct else 0,
                 }
-                print(f"   🦙 Alpaca: {len(alpaca_bal)} assets")
+                safe_print(f"   🦙 Alpaca: {len(alpaca_bal)} assets")
             except Exception as e:
                 logger.error(f"Alpaca balance error: {e}")
                 self.exchange_data['alpaca'] = {'connected': False, 'error': str(e)}
@@ -6558,7 +6568,7 @@ class MicroProfitLabyrinth:
             value_usd = amount * price
             if value_usd > MAX_REALISTIC_USD:
                 logger.warning(f"🚨 PHANTOM BALANCE DETECTED: {asset} = {amount:.2f} (${value_usd:,.2f}) - IGNORING!")
-                print(f"   🚨 PHANTOM BALANCE: {asset} ${value_usd:,.2f} > ${MAX_REALISTIC_USD:,.2f} - Removing!")
+                safe_print(f"   🚨 PHANTOM BALANCE: {asset} ${value_usd:,.2f} > ${MAX_REALISTIC_USD:,.2f} - Removing!")
                 del self.balances[asset]
         
         # Calculate total portfolio value
@@ -6572,8 +6582,8 @@ class MicroProfitLabyrinth:
                 price = self.prices.get(asset, 0)
                 total_usd += amount * price
         
-        print(f"   💰 Combined Portfolio: ${total_usd:,.2f}")
-        print(f"   📊 Unique assets: {len(combined)}")
+        safe_print(f"   💰 Combined Portfolio: ${total_usd:,.2f}")
+        safe_print(f"   📊 Unique assets: {len(combined)}")
         
         return combined
     
@@ -6987,7 +6997,7 @@ class MicroProfitLabyrinth:
                 expected_gain_pct = 0.0
                 
             # Log the reality check
-            # print(f"   ⚖️ STABLE SWAP ({from_asset}→{to_asset}): Price={price_ratio:.4f}, Exp.Gain={expected_gain_pct:.4%}")
+            # safe_print(f"   ⚖️ STABLE SWAP ({from_asset}→{to_asset}): Price={price_ratio:.4f}, Exp.Gain={expected_gain_pct:.4%}")
         else:
             # For volatile assets, we assume momentum continues (Momentum + Cost Coverage)
             # Estimate small positive movement (0.1-0.5%) minus costs
@@ -7134,7 +7144,7 @@ class MicroProfitLabyrinth:
                 # Get consensus from the 10 worlds
                 consensus = self.multiverse.get_consensus() if hasattr(self.multiverse, 'get_consensus') else []
                 if consensus:
-                    print(f"\n   💭 DREAMING about market direction (Multiverse)...")
+                    safe_print(f"\n   💭 DREAMING about market direction (Multiverse)...")
                 
                 for signal in consensus:
                     symbol = signal.get('symbol')
@@ -7161,7 +7171,7 @@ class MicroProfitLabyrinth:
                             confidence=confidence
                         )
                         self.dreams.append(dream)
-                        print(f"      🌌 Multiverse dreams {symbol} will go {dream.direction} (Conf: {confidence:.2f})")
+                        safe_print(f"      🌌 Multiverse dreams {symbol} will go {dream.direction} (Conf: {confidence:.2f})")
             except Exception as e:
                 logger.debug(f"Multiverse dream error: {e}")
 
@@ -7170,7 +7180,7 @@ class MicroProfitLabyrinth:
             try:
                 predictions = self.probability_nexus.get_predictions() if hasattr(self.probability_nexus, 'get_predictions') else []
                 if predictions:
-                     print(f"\n   💭 DREAMING about market direction (Nexus)...")
+                     safe_print(f"\n   💭 DREAMING about market direction (Nexus)...")
 
                 for pred in predictions:
                     symbol = pred.get('symbol')
@@ -7192,7 +7202,7 @@ class MicroProfitLabyrinth:
                             confidence=prob
                         )
                         self.dreams.append(dream)
-                        print(f"      🔮 Nexus dreams {symbol} will go UP (Prob: {prob:.2f})")
+                        safe_print(f"      🔮 Nexus dreams {symbol} will go UP (Prob: {prob:.2f})")
             except Exception as e:
                 logger.debug(f"Nexus dream error: {e}")
 
@@ -7230,10 +7240,10 @@ class MicroProfitLabyrinth:
                 alpha = 0.1 # Learning rate
                 if dream.success:
                     self.dream_accuracy[dream.source] = (1 - alpha) * self.dream_accuracy[dream.source] + alpha * 1.0
-                    print(f"   ✅ DREAM VALIDATED: {dream.source} was RIGHT about {dream.symbol} ({dream.direction})!")
+                    safe_print(f"   ✅ DREAM VALIDATED: {dream.source} was RIGHT about {dream.symbol} ({dream.direction})!")
                 else:
                     self.dream_accuracy[dream.source] = (1 - alpha) * self.dream_accuracy[dream.source] + alpha * 0.0
-                    print(f"   ❌ DREAM FAILED: {dream.source} was WRONG about {dream.symbol}. Adapting...")
+                    safe_print(f"   ❌ DREAM FAILED: {dream.source} was WRONG about {dream.symbol}. Adapting...")
                 
                 self.validated_dreams_count += 1
             else:
@@ -7244,9 +7254,9 @@ class MicroProfitLabyrinth:
         
         # Print accuracy stats occasionally
         if dreams_validated_this_cycle and self.validated_dreams_count % 5 == 0:
-            print(f"   🧠 ADAPTIVE LEARNING STATS:")
+            safe_print(f"   🧠 ADAPTIVE LEARNING STATS:")
             for source, acc in self.dream_accuracy.items():
-                print(f"      - {source}: {acc:.1%} accuracy")
+                safe_print(f"      - {source}: {acc:.1%} accuracy")
 
     def populate_barter_graph(self):
         """
@@ -7284,11 +7294,11 @@ class MicroProfitLabyrinth:
             
             if success:
                 summary = self.barter_navigator.get_graph_summary()
-                print(f"🫒🔄 Barter Navigator: POPULATED ({summary['total_assets']} assets, {summary['total_edges']} paths)")
+                safe_print(f"🫒🔄 Barter Navigator: POPULATED ({summary['total_assets']} assets, {summary['total_edges']} paths)")
             else:
-                print(f"⚠️ Barter Navigator: Population failed")
+                safe_print(f"⚠️ Barter Navigator: Population failed")
         except Exception as e:
-            print(f"⚠️ Barter Navigator population error: {e}")
+            safe_print(f"⚠️ Barter Navigator population error: {e}")
 
     async def dream_for_turn(self, exchange: str):
         """
@@ -7309,7 +7319,7 @@ class MicroProfitLabyrinth:
         
         symbols_to_dream = list(exchange_assets.keys())[:20]  # Top 20 by holdings
         
-        print(f"\n   💭🎯 TURN DREAMING for {exchange.upper()} ({len(symbols_to_dream)} symbols)")
+        safe_print(f"\n   💭🎯 TURN DREAMING for {exchange.upper()} ({len(symbols_to_dream)} symbols)")
         
         # 👑🔮 0. THE QUEEN DREAMS FIRST - Her visions set the tone!
         # 🔧 FIX: Use ACTUAL MOMENTUM instead of always predicting UP!
@@ -7483,9 +7493,9 @@ class MicroProfitLabyrinth:
                 logger.debug(f"Turn ultimate dream error: {e}")
         
         if turn_dreams:
-            print(f"      🌙 Generated {len(turn_dreams)} dreams for {exchange}")
+            safe_print(f"      🌙 Generated {len(turn_dreams)} dreams for {exchange}")
             for dream in turn_dreams[:5]:  # Show top 5
-                print(f"         → {dream.symbol} {dream.direction} ({dream.source}: {dream.confidence:.0%})")
+                safe_print(f"         → {dream.symbol} {dream.direction} ({dream.source}: {dream.confidence:.0%})")
 
     def calculate_dream_score(self, symbol: str) -> float:
         """Calculate score based on active dreams and source accuracy."""
@@ -7535,7 +7545,7 @@ class MicroProfitLabyrinth:
         
         No waiting for turns - whoever has profit FIRST wins!
         """
-        print(f"\n🏁 ═══ FPTP SCAN #{self.turns_completed + 1}: ALL EXCHANGES ═══")
+        safe_print(f"\n🏁 ═══ FPTP SCAN #{self.turns_completed + 1}: ALL EXCHANGES ═══")
         
         # ═══════════════════════════════════════════════════════════════════════════
         # 👑🧠 QUEEN DEEP THINK - Consult ALL 42+ systems before acting!
@@ -7576,51 +7586,51 @@ class MicroProfitLabyrinth:
                 )
                 
                 # Print the Queen's wisdom
-                print(f"\n👑🧠 QUEEN'S DEEP THINK:")
-                print(f"   🌍 Cosmic: Gaia={deep_think_result.gaia_blessing:.0%}, λ={deep_think_result.luck_field:.0%}, Ω={deep_think_result.global_harmonic_omega:.0%}")
-                print(f"   📈 Market: P(Nexus)={deep_think_result.probability_nexus_score:.0%}, {deep_think_result.timeline_oracle_branch}")
-                print(f"   🦅 Strategy: {deep_think_result.selected_strategy} with {', '.join(deep_think_result.selected_animals[:3])}")
-                print(f"   👑 Decision: {deep_think_result.action} @ {deep_think_result.confidence:.0%}")
-                print(f"   💬 {deep_think_result.queen_message}")
+                safe_print(f"\n👑🧠 QUEEN'S DEEP THINK:")
+                safe_print(f"   🌍 Cosmic: Gaia={deep_think_result.gaia_blessing:.0%}, λ={deep_think_result.luck_field:.0%}, Ω={deep_think_result.global_harmonic_omega:.0%}")
+                safe_print(f"   📈 Market: P(Nexus)={deep_think_result.probability_nexus_score:.0%}, {deep_think_result.timeline_oracle_branch}")
+                safe_print(f"   🦅 Strategy: {deep_think_result.selected_strategy} with {', '.join(deep_think_result.selected_animals[:3])}")
+                safe_print(f"   👑 Decision: {deep_think_result.action} @ {deep_think_result.confidence:.0%}")
+                safe_print(f"   💬 {deep_think_result.queen_message}")
                 
                 if deep_think_result.warnings:
                     for warning in deep_think_result.warnings:
-                        print(f"   ⚠️ {warning}")
+                        safe_print(f"   ⚠️ {warning}")
                 
                 # If Queen says WAIT and confidence is LOW, we can skip the scan
                 if deep_think_result.action == 'WAIT' and deep_think_result.confidence < 0.3:
-                    print(f"\n   👑 Queen says WAIT (confidence {deep_think_result.confidence:.0%} too low). Skipping scan.")
+                    safe_print(f"\n   👑 Queen says WAIT (confidence {deep_think_result.confidence:.0%} too low). Skipping scan.")
                     self.turns_completed += 1
                     return [], 0
                     
             except Exception as e:
                 logger.warning(f"Queen Deep Think error (non-fatal): {e}")
-                print(f"   ⚠️ Queen Deep Think unavailable: {e}")
+                safe_print(f"   ⚠️ Queen Deep Think unavailable: {e}")
         
         # 🌾💰 PROFIT HARVESTER - Harvest any profitable positions FIRST!
         # This gives us cash to buy new opportunities!
         self.turns_since_harvest += 1
-        print(f"   🌾 Harvest check: turns_since={self.turns_since_harvest}, interval={self.harvest_interval}, alpaca={'✅' if self.alpaca else '❌'}")
+        safe_print(f"   🌾 Harvest check: turns_since={self.turns_since_harvest}, interval={self.harvest_interval}, alpaca={'✅' if self.alpaca else '❌'}")
         if self.alpaca and self.turns_since_harvest >= self.harvest_interval:
             try:
-                print(f"   🌾 Running harvest scan (ANY NET PROFIT = SELL!)...")
+                safe_print(f"   🌾 Running harvest scan (ANY NET PROFIT = SELL!)...")
                 harvest_result = await self.harvest_profitable_positions()
                 if harvest_result.get('harvested'):
-                    print(f"   🌾✅ CASH FLOW! Harvested ${harvest_result['total_profit_harvested']:.4f} profit → ${harvest_result['cash_generated']:.2f} cash")
+                    safe_print(f"   🌾✅ CASH FLOW! Harvested ${harvest_result['total_profit_harvested']:.4f} profit → ${harvest_result['cash_generated']:.2f} cash")
                 elif harvest_result.get('candidates_found', 0) > 0:
-                    print(f"   🌾 {harvest_result['candidates_found']} positions found - waiting for NET profit after fees")
+                    safe_print(f"   🌾 {harvest_result['candidates_found']} positions found - waiting for NET profit after fees")
                 else:
-                    print(f"   🌾 No profitable positions yet - HODL until we're green! (NO LOSSES ACCEPTED)")
+                    safe_print(f"   🌾 No profitable positions yet - HODL until we're green! (NO LOSSES ACCEPTED)")
                 self.turns_since_harvest = 0
             except Exception as e:
-                print(f"   🌾❌ Harvest error: {e}")
+                safe_print(f"   🌾❌ Harvest error: {e}")
                 logger.debug(f"Harvest check error: {e}")
         
         connected_exchanges = [ex for ex in self.exchange_order 
                                if self.exchange_data.get(ex, {}).get('connected', False)]
         
         if not connected_exchanges:
-            print("   ⚠️ No exchanges connected!")
+            safe_print("   ⚠️ No exchanges connected!")
             return [], 0
         
         # 🔄 Refresh balances for ALL exchanges in parallel
@@ -7642,7 +7652,7 @@ class MicroProfitLabyrinth:
             try:
                 ocean_opportunities = await self._scan_ocean_opportunities(connected_exchanges)
                 if ocean_opportunities:
-                    print(f"\n   🐢🌊 OCEAN MODE: Found {len(ocean_opportunities)} market-wide opportunities!")
+                    safe_print(f"\n   🐢🌊 OCEAN MODE: Found {len(ocean_opportunities)} market-wide opportunities!")
                     all_opportunities.extend(ocean_opportunities)
             except Exception as e:
                 logger.debug(f"Ocean scan error: {e}")
@@ -7659,7 +7669,7 @@ class MicroProfitLabyrinth:
         all_opportunities.sort(key=lambda x: x.expected_pnl_usd, reverse=True)
         
         if not all_opportunities:
-            print(f"   📭 No opportunities across {len(connected_exchanges)} exchanges")
+            safe_print(f"   📭 No opportunities across {len(connected_exchanges)} exchanges")
             self.turns_completed += 1
             if hasattr(self, 'barter_matrix') and self.barter_matrix:
                 self.barter_matrix.current_turn = self.turns_completed
@@ -7674,11 +7684,11 @@ class MicroProfitLabyrinth:
                     prices=self.prices
                 )
                 if mirror_result.get('ready_count', 0) > 0:
-                    print(f"\n   🔮 QUANTUM MIRROR: {mirror_result['ready_count']} branches READY for 4th pass!")
+                    safe_print(f"\n   🔮 QUANTUM MIRROR: {mirror_result['ready_count']} branches READY for 4th pass!")
                     for rb in mirror_result.get('ready_branches', [])[:3]:
-                        print(f"      ⚡ {rb['branch_id']}: score={rb['score']:.3f}")
+                        safe_print(f"      ⚡ {rb['branch_id']}: score={rb['score']:.3f}")
                 if mirror_result.get('convergences_detected', 0) > 0:
-                    print(f"   🌀 Timeline convergences detected: {mirror_result['convergences_detected']}")
+                    safe_print(f"   🌀 Timeline convergences detected: {mirror_result['convergences_detected']}")
                     
                 # 🔮 BOOST TOP OPPORTUNITIES WITH QUANTUM COHERENCE!
                 for opp in all_opportunities:
@@ -7708,7 +7718,7 @@ class MicroProfitLabyrinth:
                 for opp in all_opportunities:
                     opp.expected_pnl_usd *= 1.2  # 20% boost
                     opp.combined_score = min(2.0, opp.combined_score * 1.15)
-                print(f"   👑 AGGRESSIVE MODE: All opportunities boosted +20%!")
+                safe_print(f"   👑 AGGRESSIVE MODE: All opportunities boosted +20%!")
             
             elif strategy == 'DEFENSIVE' and aggression < 0.3:
                 # Only keep high-confidence opportunities
@@ -7717,12 +7727,12 @@ class MicroProfitLabyrinth:
                                     if opp.combined_score >= 1.2]  # Higher threshold
                 filtered = original_count - len(all_opportunities)
                 if filtered > 0:
-                    print(f"   👑 DEFENSIVE MODE: Filtered {filtered} low-confidence opportunities")
+                    safe_print(f"   👑 DEFENSIVE MODE: Filtered {filtered} low-confidence opportunities")
             
             elif strategy == 'SNIPER':
                 # Only keep the absolute best opportunities
                 all_opportunities = all_opportunities[:3]  # Only top 3
-                print(f"   👑 SNIPER MODE: Focusing on top 3 opportunities only")
+                safe_print(f"   👑 SNIPER MODE: Focusing on top 3 opportunities only")
             
             # Re-sort after strategy adjustments
             all_opportunities.sort(key=lambda x: x.expected_pnl_usd, reverse=True)
@@ -7749,7 +7759,7 @@ class MicroProfitLabyrinth:
         all_opportunities.sort(key=lambda x: x.expected_pnl_usd, reverse=True)
         
         if not all_opportunities:
-            print(f"   📭 No opportunities across {len(connected_exchanges)} exchanges")
+            safe_print(f"   📭 No opportunities across {len(connected_exchanges)} exchanges")
             self.turns_completed += 1
             if hasattr(self, 'barter_matrix') and self.barter_matrix:
                 self.barter_matrix.current_turn = self.turns_completed
@@ -7764,11 +7774,11 @@ class MicroProfitLabyrinth:
                     prices=self.prices
                 )
                 if mirror_result.get('ready_count', 0) > 0:
-                    print(f"\n   🔮 QUANTUM MIRROR: {mirror_result['ready_count']} branches READY for 4th pass!")
+                    safe_print(f"\n   🔮 QUANTUM MIRROR: {mirror_result['ready_count']} branches READY for 4th pass!")
                     for rb in mirror_result.get('ready_branches', [])[:3]:
-                        print(f"      ⚡ {rb['branch_id']}: score={rb['score']:.3f}")
+                        safe_print(f"      ⚡ {rb['branch_id']}: score={rb['score']:.3f}")
                 if mirror_result.get('convergences_detected', 0) > 0:
-                    print(f"   🌀 Timeline convergences detected: {mirror_result['convergences_detected']}")
+                    safe_print(f"   🌀 Timeline convergences detected: {mirror_result['convergences_detected']}")
                     
                 # 🔮 BOOST TOP OPPORTUNITIES WITH QUANTUM COHERENCE!
                 for opp in all_opportunities:
@@ -7788,10 +7798,10 @@ class MicroProfitLabyrinth:
                 logger.debug(f"Quantum Mirror update error: {e}")
         
         # 🏆 SHOW TOP OPPORTUNITIES FROM ALL EXCHANGES
-        print(f"\n   🏆 TOP OPPORTUNITIES ({len(all_opportunities)} total):")
+        safe_print(f"\n   🏆 TOP OPPORTUNITIES ({len(all_opportunities)} total):")
         for i, opp in enumerate(all_opportunities[:5]):
             icon = {'kraken': '🐙', 'alpaca': '🦙', 'binance': '🟡'}.get(opp.source_exchange, '📊')
-            print(f"      {i+1}. {icon} {opp.from_asset}→{opp.to_asset} | PnL: ${opp.expected_pnl_usd:+.4f} | Score: {opp.combined_score:.1f}")
+            safe_print(f"      {i+1}. {icon} {opp.from_asset}→{opp.to_asset} | PnL: ${opp.expected_pnl_usd:+.4f} | Score: {opp.combined_score:.1f}")
         
         # ════════════════════════════════════════════════════════════════════════
         # 🎯 IRA SNIPER MODE - Keep shooting until we hit a winner or exhaust all!
@@ -7812,16 +7822,16 @@ class MicroProfitLabyrinth:
             
             # Only show details for first 5, then just try silently
             if idx < 5:
-                print(f"\n   🎯 SNIPER TARGET #{idx+1}: {icon} {opp.source_exchange.upper()}")
-                print(f"      {opp.from_asset} → {opp.to_asset}")
-                print(f"      Expected: ${opp.expected_pnl_usd:+.4f}")
+                safe_print(f"\n   🎯 SNIPER TARGET #{idx+1}: {icon} {opp.source_exchange.upper()}")
+                safe_print(f"      {opp.from_asset} → {opp.to_asset}")
+                safe_print(f"      Expected: ${opp.expected_pnl_usd:+.4f}")
             
             # 👑 Quick Queen check
             queen_says_win, queen_confidence, queen_reason = await self.ask_queen_will_we_win(opp)
             
             if not queen_says_win:
                 if idx < 5:
-                    print(f"   👑❌ SERO SAYS NO: {queen_reason}")
+                    safe_print(f"   👑❌ SERO SAYS NO: {queen_reason}")
                 continue  # Try next opportunity
 
             # 🔗⛓️ Chain-sniper also enforces conservative cost gating in DRY RUN
@@ -7842,8 +7852,8 @@ class MicroProfitLabyrinth:
             
             # 👑 Queen approved! Try to execute
             if idx < 5:
-                print(f"   👑✅ SERO SAYS WIN: {queen_reason}")
-                print(f"   🎯🔫 SNIPER TAKING THE SHOT!")
+                safe_print(f"   👑✅ SERO SAYS WIN: {queen_reason}")
+                safe_print(f"   🎯🔫 SNIPER TAKING THE SHOT!")
             
             success = await self.execute_conversion(opp)
             
@@ -7853,7 +7863,7 @@ class MicroProfitLabyrinth:
                 actual_pnl = getattr(opp, 'actual_pnl_usd', opp.expected_pnl_usd)
                 self.exchange_stats[opp.source_exchange]['conversions'] += 1
                 self.exchange_stats[opp.source_exchange]['profit'] += actual_pnl
-                print(f"\n   🎯💀 SNIPER KILL! ${actual_pnl:+.4f} - {opp.from_asset}→{opp.to_asset}")
+                safe_print(f"\n   🎯💀 SNIPER KILL! ${actual_pnl:+.4f} - {opp.from_asset}→{opp.to_asset}")
                 await self.queen_learn_from_trade(opp, success=True)
                 
                 # 🌍✨ PLANET SAVER: Record the win toward liberation!
@@ -7862,8 +7872,8 @@ class MicroProfitLabyrinth:
                     exchange = opp.source_exchange or 'unknown'
                     liberation_status = self.planet_saver.record_win(actual_pnl, symbol, exchange)
                     if liberation_status and liberation_status.get('milestone_reached'):
-                        print(f"   🌍🎉 LIBERATION MILESTONE: {liberation_status.get('milestone_name', 'PROGRESS!')}")
-                        print(f"      → Progress: ${liberation_status.get('total_profit', 0):.2f} / ${liberation_status.get('goal_usd', 127000):.2f}")
+                        safe_print(f"   🌍🎉 LIBERATION MILESTONE: {liberation_status.get('milestone_name', 'PROGRESS!')}")
+                        safe_print(f"      → Progress: ${liberation_status.get('total_profit', 0):.2f} / ${liberation_status.get('goal_usd', 127000):.2f}")
 
                 # 🔵 DRY RUN: simulate balances so chaining can actually progress
                 if not self.live and self.chain_sniper_mode:
@@ -7885,7 +7895,7 @@ class MicroProfitLabyrinth:
                 break  # 🎯 HIT! Move to next scan cycle
             else:
                 if idx < 5:
-                    print(f"   ❌ Shot missed - trying next target...")
+                    safe_print(f"   ❌ Shot missed - trying next target...")
                 self.fptp_recent_attempts[attempt_key] = self.turns_completed
                 await self.queen_learn_from_trade(opp, success=False)
                 
@@ -7898,8 +7908,8 @@ class MicroProfitLabyrinth:
                 continue  # Try next opportunity
         
         if conversions == 0:
-            print(f"\n   🎯😤 SNIPER: No valid targets from {len(all_opportunities)} opportunities")
-            print(f"      → All blocked by costs, spreads, or Queen veto")
+            safe_print(f"\n   🎯😤 SNIPER: No valid targets from {len(all_opportunities)} opportunities")
+            safe_print(f"      → All blocked by costs, spreads, or Queen veto")
         
         self.turns_completed += 1
         if hasattr(self, 'barter_matrix') and self.barter_matrix:
@@ -8156,7 +8166,7 @@ class MicroProfitLabyrinth:
             return []
         
         total_cash = sum(v['value'] for v in available_cash.values())
-        print(f"   🐢 Ocean Mode: ${total_cash:.2f} cash available across {len(available_cash)} sources")
+        safe_print(f"   🐢 Ocean Mode: ${total_cash:.2f} cash available across {len(available_cash)} sources")
         
         # ════════════════════════════════════════════════════════════════
         # 🌊 SCAN ENTIRE KRAKEN UNIVERSE
@@ -8245,7 +8255,7 @@ class MicroProfitLabyrinth:
             if 'USD' in pair_name.upper() or 'ZUSD' in str(quote):
                 usd_pairs[pair_name] = info
         
-        print(f"   🐙 Ocean scanning {len(usd_pairs)} Kraken USD pairs...")
+        safe_print(f"   🐙 Ocean scanning {len(usd_pairs)} Kraken USD pairs...")
         
         # Get tickers for momentum analysis (batch if possible)
         # For now, use our cached momentum data
@@ -8447,7 +8457,7 @@ class MicroProfitLabyrinth:
             ticker_cache = binance_cache.get('ticker_cache', {})
             prices_from_cache = binance_cache.get('prices', {})
             
-            print(f"   🟡🦙 BINANCE→ALPACA: Using Binance WS cache ({len(ticker_cache)} tickers) for heavy lifting!")
+            safe_print(f"   🟡🦙 BINANCE→ALPACA: Using Binance WS cache ({len(ticker_cache)} tickers) for heavy lifting!")
             
             for key, ticker in ticker_cache.items():
                 if not isinstance(ticker, dict):
@@ -8507,12 +8517,12 @@ class MicroProfitLabyrinth:
                 kraken_additions += 1
             
             if kraken_additions > 0:
-                print(f"   🐙🦙 KRAKEN→ALPACA: Added {kraken_additions} extra coins (BAT, BCH, GRT, LTC...)")
+                safe_print(f"   🐙🦙 KRAKEN→ALPACA: Added {kraken_additions} extra coins (BAT, BCH, GRT, LTC...)")
         
         # Fallback: try Binance REST if no cache
         if not candidates and self.binance:
             try:
-                print(f"   🟡🦙 BINANCE→ALPACA: WS cache unavailable, using Binance REST...")
+                safe_print(f"   🟡🦙 BINANCE→ALPACA: WS cache unavailable, using Binance REST...")
                 binance_tickers = self.binance.get_24h_tickers() if hasattr(self.binance, 'get_24h_tickers') else []
                 for t in binance_tickers or []:
                     symbol = str(t.get('symbol', '')).upper()
@@ -8544,7 +8554,7 @@ class MicroProfitLabyrinth:
         
         # Second fallback: use existing momentum data
         if not candidates:
-            print(f"   🦙 Ocean scanning {len(symbols)} Alpaca symbols (no Binance data)...")
+            safe_print(f"   🦙 Ocean scanning {len(symbols)} Alpaca symbols (no Binance data)...")
             rising_coins = self.get_strongest_rising(exclude={'USD', 'USDT', 'USDC'}, limit=3000)
             for coin, momentum in rising_coins[:2000]:
                 if momentum < 0.01 or coin not in alpaca_bases:
@@ -8643,7 +8653,7 @@ class MicroProfitLabyrinth:
         # Summary with source breakdown
         binance_cands = len([c for c in candidates if 'binance' in c.get('source', '')])
         kraken_cands = len([c for c in candidates if c.get('source', '') == 'kraken_rest'])
-        print(f"   🟡🐙🦙 Multi-source→Alpaca: {len(candidates)} total ({binance_cands} Binance + {kraken_cands} Kraken), {validated_count} validated, {len(opportunities)} opportunities")
+        safe_print(f"   🟡🐙🦙 Multi-source→Alpaca: {len(candidates)} total ({binance_cands} Binance + {kraken_cands} Kraken), {validated_count} validated, {len(opportunities)} opportunities")
         
         return opportunities
 
@@ -8722,7 +8732,7 @@ class MicroProfitLabyrinth:
             
             total_animals = sum(animal_count.values())
             if total_animals > 0:
-                print(f"   🐺🦁🐜🐦 Animal Swarm: {total_animals} signals (Wolf:{animal_count['wolf']}, Lion:{animal_count['lion']}, Ants:{animal_count['ants']}, Hummingbird:{animal_count['hummingbird']}) → {len(opportunities)} buy opportunities")
+                safe_print(f"   🐺🦁🐜🐦 Animal Swarm: {total_animals} signals (Wolf:{animal_count['wolf']}, Lion:{animal_count['lion']}, Ants:{animal_count['ants']}, Hummingbird:{animal_count['hummingbird']}) → {len(opportunities)} buy opportunities")
         
         except Exception as e:
             logger.debug(f"Animal swarm scan error: {e}")
@@ -8799,7 +8809,7 @@ class MicroProfitLabyrinth:
                 validated.append(opp)  # Pass through on error
         
         if nexus_boosts > 0 or nexus_filters > 0:
-            print(f"   🔮 Probability Nexus: {nexus_boosts} boosted, {nexus_filters} filtered → {len(validated)} validated")
+            safe_print(f"   🔮 Probability Nexus: {nexus_boosts} boosted, {nexus_filters} filtered → {len(validated)} validated")
         
         return validated
 
@@ -8856,7 +8866,7 @@ class MicroProfitLabyrinth:
                 enhanced.append(opp)
         
         if harmonic_boosts > 0:
-            print(f"   🌊 Harmonic Analysis: {harmonic_boosts} opportunities in golden zone/high coherence")
+            safe_print(f"   🌊 Harmonic Analysis: {harmonic_boosts} opportunities in golden zone/high coherence")
         
         return enhanced
 
@@ -8902,7 +8912,7 @@ class MicroProfitLabyrinth:
                 enhanced.append(opp)
         
         if momentum_boosts > 0:
-            print(f"   ⚡ Momentum Tracker: {momentum_boosts} opportunities with strong momentum")
+            safe_print(f"   ⚡ Momentum Tracker: {momentum_boosts} opportunities with strong momentum")
         
         return enhanced
 
@@ -8953,7 +8963,7 @@ class MicroProfitLabyrinth:
                 enhanced.append(opp)
         
         if hnc_boosts > 0:
-            print(f"   📊 HNC Matrix: {hnc_boosts} opportunities with strong pattern match")
+            safe_print(f"   📊 HNC Matrix: {hnc_boosts} opportunities with strong pattern match")
         
         return enhanced
 
@@ -9012,7 +9022,7 @@ class MicroProfitLabyrinth:
                 enhanced.append(opp)
         
         if queen_approvals > 0 or queen_cautions > 0:
-            print(f"   👑 Queen Guidance: {queen_approvals} approved, {queen_cautions} cautioned")
+            safe_print(f"   👑 Queen Guidance: {queen_approvals} approved, {queen_cautions} cautioned")
         
         return enhanced
 
@@ -9033,7 +9043,7 @@ class MicroProfitLabyrinth:
         if not opportunities:
             return opportunities
         
-        print(f"   🚀 ALL SYSTEMS HEAVY LIFTING: Processing {len(opportunities)} opportunities...")
+        safe_print(f"   🚀 ALL SYSTEMS HEAVY LIFTING: Processing {len(opportunities)} opportunities...")
         
         # Stage 1: Harmonic Analysis
         opportunities = self._enhance_with_harmonic_analysis(opportunities)
@@ -9198,12 +9208,12 @@ class MicroProfitLabyrinth:
         Returns:
             True if aggregation was successful and we now have enough funds
         """
-        print(f"\n   💧🔀 LIQUIDITY AGGREGATION ATTEMPT")
-        print(f"   🎯 Need ${shortfall_usd:.2f} more {target_asset} on {target_exchange}")
+        safe_print(f"\n   💧🔀 LIQUIDITY AGGREGATION ATTEMPT")
+        safe_print(f"   🎯 Need ${shortfall_usd:.2f} more {target_asset} on {target_exchange}")
         
         # Don't aggregate for tiny amounts - not worth the fees
         if shortfall_usd < 1.0:
-            print(f"   ❌ Shortfall ${shortfall_usd:.2f} too small to aggregate")
+            safe_print(f"   ❌ Shortfall ${shortfall_usd:.2f} too small to aggregate")
             return False
         
         # Create aggregation plan
@@ -9218,18 +9228,18 @@ class MicroProfitLabyrinth:
         )
         
         if not plan:
-            print(f"   ❌ No aggregation plan available (no suitable victims)")
+            safe_print(f"   ❌ No aggregation plan available (no suitable victims)")
             return False
         
         # Print the plan
-        print(self.liquidity_engine.print_aggregation_plan(plan))
+        safe_print(self.liquidity_engine.print_aggregation_plan(plan))
         
         if not plan.is_profitable:
-            print(f"   ❌ Aggregation not profitable (fees ${plan.total_fees_usd:.4f} > profit)")
+            safe_print(f"   ❌ Aggregation not profitable (fees ${plan.total_fees_usd:.4f} > profit)")
             return False
         
         # Execute the plan!
-        print(f"\n   🚀 EXECUTING AGGREGATION PLAN...")
+        safe_print(f"\n   🚀 EXECUTING AGGREGATION PLAN...")
         
         success_count = 0
         total_received = 0.0
@@ -9240,7 +9250,7 @@ class MicroProfitLabyrinth:
                 victim_amount = step['amount']
                 victim_exchange = step['exchange']
                 
-                print(f"   📤 SELL: {victim_amount:.6f} {victim_asset} on {victim_exchange}")
+                safe_print(f"   📤 SELL: {victim_amount:.6f} {victim_asset} on {victim_exchange}")
                 
                 # Execute the liquidation based on exchange
                 sell_success = False
@@ -9273,7 +9283,7 @@ class MicroProfitLabyrinth:
                     elif victim_exchange == 'alpaca' and self.alpaca:
                         # 🔒 Check Alpaca verify-only gate
                         if self.alpaca_verify_only:
-                            print(f"   🔒 ALPACA VERIFY-ONLY: Skipping SELL {victim_asset} (set ALPACA_EXECUTE=true to enable)")
+                            safe_print(f"   🔒 ALPACA VERIFY-ONLY: Skipping SELL {victim_asset} (set ALPACA_EXECUTE=true to enable)")
                             continue
                         # Sell to USD on Alpaca
                         result = self.alpaca.place_order(
@@ -9287,27 +9297,27 @@ class MicroProfitLabyrinth:
                             received_usd = step['expected_usd'] * 0.97
                             
                 except Exception as e:
-                    print(f"   ❌ SELL failed for {victim_asset}: {e}")
+                    safe_print(f"   ❌ SELL failed for {victim_asset}: {e}")
                     sell_success = False
                 
                 if sell_success:
                     success_count += 1
                     total_received += received_usd
-                    print(f"   ✅ SOLD {victim_asset} → ${received_usd:.2f}")
+                    safe_print(f"   ✅ SOLD {victim_asset} → ${received_usd:.2f}")
                     
                     # Record liquidation for cooldown
                     self.liquidity_engine.record_liquidation(victim_asset)
                 else:
-                    print(f"   ❌ SELL failed for {victim_asset}")
+                    safe_print(f"   ❌ SELL failed for {victim_asset}")
                     # Continue trying other victims
             
             elif step['action'] == 'BUY':
                 # Now buy the target asset with our accumulated USD
                 if total_received < 1.0:
-                    print(f"   ❌ Not enough funds received (${total_received:.2f}) to buy {target_asset}")
+                    safe_print(f"   ❌ Not enough funds received (${total_received:.2f}) to buy {target_asset}")
                     continue
                 
-                print(f"   📥 BUY: ${total_received:.2f} worth of {target_asset} on {target_exchange}")
+                safe_print(f"   📥 BUY: ${total_received:.2f} worth of {target_asset} on {target_exchange}")
                 
                 buy_success = False
                 try:
@@ -9338,7 +9348,7 @@ class MicroProfitLabyrinth:
                     elif target_exchange == 'alpaca' and self.alpaca:
                         # 🔒 Check Alpaca verify-only gate
                         if self.alpaca_verify_only:
-                            print(f"   🔒 ALPACA VERIFY-ONLY: Skipping BUY {target_asset} (set ALPACA_EXECUTE=true to enable)")
+                            safe_print(f"   🔒 ALPACA VERIFY-ONLY: Skipping BUY {target_asset} (set ALPACA_EXECUTE=true to enable)")
                             continue
                         target_price = self.prices.get(target_asset, 1.0)
                         buy_amount = (total_received * 0.98) / target_price
@@ -9352,25 +9362,25 @@ class MicroProfitLabyrinth:
                             buy_success = True
                             
                 except Exception as e:
-                    print(f"   ❌ BUY failed for {target_asset}: {e}")
+                    safe_print(f"   ❌ BUY failed for {target_asset}: {e}")
                     buy_success = False
                 
                 if buy_success:
                     success_count += 1
-                    print(f"   ✅ BOUGHT {target_asset}")
+                    safe_print(f"   ✅ BOUGHT {target_asset}")
                     
                     # Update stats
                     self.liquidity_engine.executed_aggregations += 1
                     self.liquidity_engine.total_aggregation_profit += plan.profit_after_fees
                 else:
-                    print(f"   ❌ BUY failed for {target_asset}")
+                    safe_print(f"   ❌ BUY failed for {target_asset}")
         
         # Final success check
         if success_count > 0:
-            print(f"\n   💧 AGGREGATION COMPLETE: {success_count} steps executed")
+            safe_print(f"\n   💧 AGGREGATION COMPLETE: {success_count} steps executed")
             return True
         else:
-            print(f"\n   ❌ AGGREGATION FAILED: No steps completed")
+            safe_print(f"\n   ❌ AGGREGATION FAILED: No steps completed")
             return False
 
     async def harvest_profitable_positions(self) -> Dict[str, Any]:
@@ -9411,23 +9421,23 @@ class MicroProfitLabyrinth:
             if not candidates:
                 return result
             
-            print(f"\n{'='*60}")
-            print(f"🌾💰 PROFIT HARVESTER - Scanning Portfolio for Profits...")
-            print(f"{'='*60}")
-            print(self.profit_harvester.print_candidates(candidates))
+            safe_print(f"\n{'='*60}")
+            safe_print(f"🌾💰 PROFIT HARVESTER - Scanning Portfolio for Profits...")
+            safe_print(f"{'='*60}")
+            safe_print(self.profit_harvester.print_candidates(candidates))
             
             # Harvest up to a few profitable candidates - avoid over-trading
             max_harvests = 3  # Limit number of harvests per sweep to reduce churn
             harvests_done = 0
             
             for candidate in candidates[:max_harvests]:
-                print(f"\n   🌾 HARVESTING: {candidate.asset}")
-                print(f"      Position: {candidate.qty:.6f} @ ${candidate.current_price:.4f} = ${candidate.market_value:.2f}")
-                print(f"      Profit: ${candidate.unrealized_pl:+.2f} ({candidate.unrealized_plpc:+.1f}%)")
+                safe_print(f"\n   🌾 HARVESTING: {candidate.asset}")
+                safe_print(f"      Position: {candidate.qty:.6f} @ ${candidate.current_price:.4f} = ${candidate.market_value:.2f}")
+                safe_print(f"      Profit: ${candidate.unrealized_pl:+.2f} ({candidate.unrealized_plpc:+.1f}%)")
                 
                 # 🔒 Check Alpaca verify-only gate
                 if self.alpaca_verify_only:
-                    print(f"      🔒 ALPACA VERIFY-ONLY: Skipping harvest (set ALPACA_EXECUTE=true to enable)")
+                    safe_print(f"      🔒 ALPACA VERIFY-ONLY: Skipping harvest (set ALPACA_EXECUTE=true to enable)")
                     continue
                 
                 # Sell the position
@@ -9449,7 +9459,7 @@ class MicroProfitLabyrinth:
                         result['cash_generated'] += candidate.market_value
                         harvests_done += 1
                         
-                        print(f"      ✅ SOLD! Profit: ${candidate.unrealized_pl:.2f} → Cash: ${candidate.market_value:.2f}")
+                        safe_print(f"      ✅ SOLD! Profit: ${candidate.unrealized_pl:.2f} → Cash: ${candidate.market_value:.2f}")
                         
                         # Log to trading log
                         logger.info(f"🌾💰 HARVESTED: {candidate.asset} | Profit: ${candidate.unrealized_pl:.2f} | Cash: ${candidate.market_value:.2f}")
@@ -9460,19 +9470,19 @@ class MicroProfitLabyrinth:
                             self.exchange_balances['alpaca']['USD'] = self.exchange_balances['alpaca'].get('USD', 0) + candidate.market_value
                         
                     else:
-                        print(f"      ❌ SELL failed - no result returned")
+                        safe_print(f"      ❌ SELL failed - no result returned")
                         
                 except Exception as e:
-                    print(f"      ❌ SELL failed: {e}")
+                    safe_print(f"      ❌ SELL failed: {e}")
                     logger.error(f"Harvest sell failed for {candidate.asset}: {e}")
                     continue
             
             if harvests_done > 0:
                 result['harvested'] = True
-                print(f"\n   🌾✅ HARVEST COMPLETE: {harvests_done} positions sold")
-                print(f"       💵 Profit realized: ${result['total_profit_harvested']:.4f}")
-                print(f"       💰 Cash generated: ${result['cash_generated']:.2f}")
-                print(f"       🔄 CONSTANT CASH FLOW: +${result['cash_generated']:.2f} available for new trades!")
+                safe_print(f"\n   🌾✅ HARVEST COMPLETE: {harvests_done} positions sold")
+                safe_print(f"       💵 Profit realized: ${result['total_profit_harvested']:.4f}")
+                safe_print(f"       💰 Cash generated: ${result['cash_generated']:.2f}")
+                safe_print(f"       🔄 CONSTANT CASH FLOW: +${result['cash_generated']:.2f} available for new trades!")
                 
                 # Track total harvested for session
                 logger.info(f"🌾💰 CASH FLOW: Session total harvested: ${self.profit_harvester.harvested_total:.2f} from {self.profit_harvester.harvest_count} sales")
@@ -9480,11 +9490,11 @@ class MicroProfitLabyrinth:
                 # Refresh balances after harvesting
                 await self.fetch_balances()
             else:
-                print(f"\n   🌾 No profitable positions yet - HODL until green!")
+                safe_print(f"\n   🌾 No profitable positions yet - HODL until green!")
                 
         except Exception as e:
             logger.error(f"Profit harvester error: {e}")
-            print(f"   ❌ Harvest error: {e}")
+            safe_print(f"   ❌ Harvest error: {e}")
         
         return result
 
@@ -9510,7 +9520,7 @@ class MicroProfitLabyrinth:
             'total_trades': 0
         }
         
-        print("\n👑💰 ═══ PORTFOLIO REPORT FOR THE QUEEN ═══")
+        safe_print("\n👑💰 ═══ PORTFOLIO REPORT FOR THE QUEEN ═══")
         
         # Gather data from each exchange
         for exchange in ['kraken', 'binance', 'alpaca']:
@@ -9554,9 +9564,9 @@ class MicroProfitLabyrinth:
             # Icon display
             icon = {'kraken': '🐙', 'binance': '🔶', 'alpaca': '🦙'}[exchange]
             profit_icon = '📈' if ex_profit >= 0 else '📉'
-            print(f"   {icon} {exchange.upper()}: ${ex_value:.2f} | {profit_icon} ${ex_profit:+.4f} | {ex_trades} trades")
+            safe_print(f"   {icon} {exchange.upper()}: ${ex_value:.2f} | {profit_icon} ${ex_profit:+.4f} | {ex_trades} trades")
         
-        print(f"   💰 TOTAL: ${portfolio_data['total_value']:.2f} | P/L: ${portfolio_data['total_profit']:+.4f}")
+        safe_print(f"   💰 TOTAL: ${portfolio_data['total_value']:.2f} | P/L: ${portfolio_data['total_profit']:+.4f}")
         
         # Feed to the Queen!
         if self.queen:
@@ -9574,7 +9584,7 @@ class MicroProfitLabyrinth:
 
                         # Apply guidance to position sizing
                         self.queen_position_multiplier = guidance.get('recommended_position_size', 1.0)
-                        print(f"   👑 Queen's Position Multiplier: {self.queen_position_multiplier:.1f}x")
+                        safe_print(f"   👑 Queen's Position Multiplier: {self.queen_position_multiplier:.1f}x")
                     else:
                         # Defensive: some implementations may return a list/tuple/None
                         portfolio_data['queen_guidance'] = {}
@@ -9600,12 +9610,12 @@ class MicroProfitLabyrinth:
                         if isinstance(portfolio_data.get(exchange), dict):
                             portfolio_data[exchange]['queen_verdict'] = verdict
                             portfolio_data[exchange]['queen_action'] = action
-                        print(f"   👑 {exchange.upper()}: {action}")
+                        safe_print(f"   👑 {exchange.upper()}: {action}")
                 
             except Exception as e:
                 logger.error(f"Queen portfolio review error: {e}")
         
-        print("═" * 50)
+        safe_print("═" * 50)
         
         return portfolio_data
 
@@ -9621,7 +9631,7 @@ class MicroProfitLabyrinth:
         icons = {'kraken': '🐙', 'alpaca': '🦙', 'binance': '🟡'}
         icon = icons.get(current_exchange, '📊')
         
-        print(f"\n🎯 ═══ TURN {self.turns_completed + 1}: {icon} {current_exchange.upper()} ═══")
+        safe_print(f"\n🎯 ═══ TURN {self.turns_completed + 1}: {icon} {current_exchange.upper()} ═══")
         
         # �💰 PROFIT HARVESTER - Check portfolio for harvestable profits!
         # Run every N turns on Alpaca to realize gains and get trading cash
@@ -9630,9 +9640,9 @@ class MicroProfitLabyrinth:
             try:
                 harvest_result = await self.harvest_profitable_positions()
                 if harvest_result.get('harvested'):
-                    print(f"   🌾✅ Harvested ${harvest_result['total_profit_harvested']:.2f} profit → ${harvest_result['cash_generated']:.2f} cash")
+                    safe_print(f"   🌾✅ Harvested ${harvest_result['total_profit_harvested']:.2f} profit → ${harvest_result['cash_generated']:.2f} cash")
                 elif harvest_result.get('candidates_found', 0) > 0:
-                    print(f"   🌾 {harvest_result['candidates_found']} harvest candidates found (checking thresholds...)")
+                    safe_print(f"   🌾 {harvest_result['candidates_found']} harvest candidates found (checking thresholds...)")
                 self.turns_since_harvest = 0
             except Exception as e:
                 logger.debug(f"Harvest check error: {e}")
@@ -9641,7 +9651,7 @@ class MicroProfitLabyrinth:
         momentum_opp = self.find_momentum_opportunity()
         if momentum_opp:
             from_asset, to_asset, from_amount, net_adv, mom_diff = momentum_opp
-            print(f"   🌊 WAVE DETECTED: {from_asset}→{to_asset} | Momentum diff: {mom_diff*100:.2f}%/min")
+            safe_print(f"   🌊 WAVE DETECTED: {from_asset}→{to_asset} | Momentum diff: {mom_diff*100:.2f}%/min")
         
         # 🦁 LION HUNT - Stablecoins hunt for waves! (NOW 10x MORE AGGRESSIVE!)
         lion_hunts = self.lion_hunt(min_wave_momentum=MIN_MOMENTUM_TO_HUNT)  # Was 0.001, now 0.0001!
@@ -9694,18 +9704,18 @@ class MicroProfitLabyrinth:
                 total_signals = sum(len(sigs) for sigs in pack_results.values())
                 if total_signals > 0:
                     pack_consensus, _, strongest = self.animal_pack_scanner.get_pack_consensus()
-                    print(f"   🐾⚡ ANIMAL PACK: {total_signals} signals | Consensus: {pack_consensus:.2f} | Leader: {strongest}")
+                    safe_print(f"   🐾⚡ ANIMAL PACK: {total_signals} signals | Consensus: {pack_consensus:.2f} | Leader: {strongest}")
                     
                     # Apply WINNER_ENERGY_MULTIPLIER if pack consensus is strong
                     if pack_consensus > 0.6 and hasattr(self, '_current_opportunity_boost'):
                         self._current_opportunity_boost = WINNER_ENERGY_MULTIPLIER
-                        print(f"   🦁⚡ WINNER ENERGY: {WINNER_ENERGY_MULTIPLIER}x boost applied!")
+                        safe_print(f"   🦁⚡ WINNER ENERGY: {WINNER_ENERGY_MULTIPLIER}x boost applied!")
             except Exception as e:
-                print(f"   ⚠️ Animal Pack scan error: {e}")
+                safe_print(f"   ⚠️ Animal Pack scan error: {e}")
         
         # 🦆⚔️ QUACK COMMANDOS STATUS (every 20 turns)
         if self.turns_completed > 0 and self.turns_completed % 20 == 0 and self.quack_commandos:
-            print(self.quack_commandos.get_status())
+            safe_print(self.quack_commandos.get_status())
         
         # 👑💰 PERIODIC PORTFOLIO REPORT TO QUEEN (every 10 turns)
         if self.turns_completed > 0 and self.turns_completed % 10 == 0:
@@ -9719,7 +9729,7 @@ class MicroProfitLabyrinth:
                     # Refresh balances after sweeping
                     await self.refresh_exchange_balances(current_exchange)
             except Exception as e:
-                print(f"   ⚠️ Dust sweep error: {e}")
+                safe_print(f"   ⚠️ Dust sweep error: {e}")
         
         # REFRESH BALANCES FOR THIS EXCHANGE
         await self.refresh_exchange_balances(current_exchange)
@@ -9739,7 +9749,7 @@ class MicroProfitLabyrinth:
                     # If we have SOME balance (dust to low) but less than minimum
                     # Avoid aggregating if we have literally 0 (might not trade that coin)
                     if 0.10 < bal < min_req:
-                        print(f"   💧 LOW LIQUIDITY DETECTED: {s} = ${bal:.2f} (Target ${min_req:.2f})")
+                        safe_print(f"   💧 LOW LIQUIDITY DETECTED: {s} = ${bal:.2f} (Target ${min_req:.2f})")
                         shortfall = min_req - bal + 1.0 # Aim for $1 surplus
                         
                         # Attempt aggregation
@@ -9755,10 +9765,10 @@ class MicroProfitLabyrinth:
                                 await self.refresh_exchange_balances(current_exchange)
                                 exchange_assets = self.get_exchange_assets(current_exchange)
                         except Exception as e:
-                            print(f"   ⚠️ Liquidity aggregation error: {e}")
+                            safe_print(f"   ⚠️ Liquidity aggregation error: {e}")
 
         if not exchange_assets:
-            print(f"   ⚠️ No assets on {current_exchange}")
+            safe_print(f"   ⚠️ No assets on {current_exchange}")
             self.advance_turn()
             return [], 0
         
@@ -9773,7 +9783,7 @@ class MicroProfitLabyrinth:
                 asset_list.append(f"{asset}=${value:.2f}")
         
         if asset_list:
-            print(f"   📦 Assets: {', '.join(asset_list)}")
+            safe_print(f"   📦 Assets: {', '.join(asset_list)}")
         
         # 💭🎯 TURN-SPECIFIC DREAMING - Dream about THIS exchange's assets
         await self.dream_for_turn(current_exchange)
@@ -9835,10 +9845,10 @@ class MicroProfitLabyrinth:
                 gaia = perception.get('gaia_alignment', 0.5)
                 crown = perception.get('crown_activation', 0.5)
                 
-                print(f"\n   👑🌟 QUEEN'S PERCEPTION:")
-                print(f"      🌍 Gaia: {gaia:.1%} | 👑 Crown: {crown:.1%}")
-                print(f"      🌊 Omega: {omega:.4f} | Direction: {direction}")
-                print(f"      📡 Source: {source}")
+                safe_print(f"\n   👑🌟 QUEEN'S PERCEPTION:")
+                safe_print(f"      🌍 Gaia: {gaia:.1%} | 👑 Crown: {crown:.1%}")
+                safe_print(f"      🌊 Omega: {omega:.4f} | Direction: {direction}")
+                safe_print(f"      📡 Source: {source}")
                 
             except Exception as e:
                 logger.debug(f"Queen perception error: {e}")
@@ -9870,14 +9880,14 @@ class MicroProfitLabyrinth:
                     # 🧠 DECIDE - Queen makes autonomous decision
                     queen_autonomous_decision = self.queen_autonomous_control.decide(perception, opp_context)
                     
-                    print(f"\n   👑🎮 QUEEN AUTONOMOUS DECISION:")
-                    print(f"      🎯 Action: {queen_autonomous_decision.action.name}")
-                    print(f"      📊 Confidence: {queen_autonomous_decision.confidence:.1%}")
-                    print(f"      💭 Reason: {queen_autonomous_decision.reason}")
+                    safe_print(f"\n   👑🎮 QUEEN AUTONOMOUS DECISION:")
+                    safe_print(f"      🎯 Action: {queen_autonomous_decision.action.name}")
+                    safe_print(f"      📊 Confidence: {queen_autonomous_decision.confidence:.1%}")
+                    safe_print(f"      💭 Reason: {queen_autonomous_decision.reason}")
                     
                     # Check if Queen vetoes the trade
                     if queen_autonomous_decision.action.name in ['BLOCK_PATH', 'HOLD_POSITION', 'SKIP_TRADE']:
-                        print(f"   👑❌ QUEEN VETOES: {queen_autonomous_decision.reason}")
+                        safe_print(f"   👑❌ QUEEN VETOES: {queen_autonomous_decision.reason}")
                         # Learn from Queen's decision
                         if hasattr(self.queen_autonomous_control, 'learn_from_outcome'):
                             self.queen_autonomous_control.learn_from_outcome(
@@ -9892,22 +9902,22 @@ class MicroProfitLabyrinth:
             
             # 👑🍄 SERO's WISDOM - Ask Sero if we will WIN before trading!
             # Her GOAL: Minimum $0.003 profit per trade
-            print(f"\n   👑🍄 SERO CONSULTED: {best.from_asset}→{best.to_asset}")
+            safe_print(f"\n   👑🍄 SERO CONSULTED: {best.from_asset}→{best.to_asset}")
             queen_says_win, queen_confidence, queen_reason = await self.ask_queen_will_we_win(best)
             
             if not queen_says_win:
-                print(f"   👑❌ SERO SAYS NO: {queen_reason}")
-                print(f"      Her Confidence: {queen_confidence:.0%}")
+                safe_print(f"   👑❌ SERO SAYS NO: {queen_reason}")
+                safe_print(f"      Her Confidence: {queen_confidence:.0%}")
                 # Sero learns this pattern should be avoided
                 await self.queen_learn_pattern(best, predicted_win=False, reason=queen_reason)
             else:
-                print(f"   👑✅ SERO SAYS WIN: {queen_reason}")
-                print(f"      Her Confidence: {queen_confidence:.0%}")
+                safe_print(f"   👑✅ SERO SAYS WIN: {queen_reason}")
+                safe_print(f"      Her Confidence: {queen_confidence:.0%}")
                 
                 # 👑🐝 SERO HAS FULL CONTROL - SHE IS THE QUEEN!
                 # When Sero says WIN, we EXECUTE. No other system overrides her.
                 # She has all 12 neurons, Path Memory, Dreams - she knows what she's doing!
-                print(f"   👑🐝 SERO HAS SPOKEN - EXECUTING HER WILL!")
+                safe_print(f"   👑🐝 SERO HAS SPOKEN - EXECUTING HER WILL!")
                 success = await self.execute_conversion(best)
                 if success:
                     conversions_this_turn = 1
@@ -9917,7 +9927,7 @@ class MicroProfitLabyrinth:
                     self.exchange_stats[current_exchange]['profit'] += actual_pnl
                     # Queen learns from successful execution
                     await self.queen_learn_from_trade(best, success=True)
-                    print(f"   👑💰 SERO WINS: ${actual_pnl:+.4f}")
+                    safe_print(f"   👑💰 SERO WINS: ${actual_pnl:+.4f}")
                     
                     # 🔧 CRITICAL: Record pair result for dynamic blocking!
                     pair_key = f"{best.from_asset.upper()}_{best.to_asset.upper()}"
@@ -9936,7 +9946,7 @@ class MicroProfitLabyrinth:
                                     'exchange': current_exchange,
                                 }
                             )
-                            print(f"      👑🧠 Queen learned: WIN ${actual_pnl:+.4f}")
+                            safe_print(f"      👑🧠 Queen learned: WIN ${actual_pnl:+.4f}")
                         except Exception as e:
                             logger.debug(f"Queen autonomous learning error: {e}")
                     
@@ -9948,13 +9958,13 @@ class MicroProfitLabyrinth:
                             else:
                                 queen_message = self.queen.speak_from_heart('after_loss')
                             if queen_message:
-                                print(f"      👑 {queen_message}")
+                                safe_print(f"      👑 {queen_message}")
                         except Exception as e:
                             logger.debug(f"Queen speak error: {e}")
                 else:
                     # Queen learns from failed execution
                     await self.queen_learn_from_trade(best, success=False)
-                    print(f"   👑📚 Sero learned from this experience")
+                    safe_print(f"   👑📚 Sero learned from this experience")
                     
                     # � CRITICAL: Record failed execution as a LOSS for blocking!
                     pair_key = f"{best.from_asset.upper()}_{best.to_asset.upper()}"
@@ -9974,7 +9984,7 @@ class MicroProfitLabyrinth:
                                     'reason': 'Execution failed',
                                 }
                             )
-                            print(f"      👑🧠 Queen learned: LOSS (execution failed)")
+                            safe_print(f"      👑🧠 Queen learned: LOSS (execution failed)")
                         except Exception as e:
                             logger.debug(f"Queen autonomous learning error: {e}")
                     
@@ -9983,11 +9993,11 @@ class MicroProfitLabyrinth:
                         try:
                             queen_message = self.queen.speak_from_heart('after_loss')
                             if queen_message:
-                                print(f"      👑 {queen_message}")
+                                safe_print(f"      👑 {queen_message}")
                         except Exception as e:
                             logger.debug(f"Queen speak error: {e}")
         else:
-            print(f"   📭 No opportunities passed gates on {current_exchange}")
+            safe_print(f"   📭 No opportunities passed gates on {current_exchange}")
         
         # Advance to next exchange's turn
         self.advance_turn()
@@ -10094,11 +10104,11 @@ class MicroProfitLabyrinth:
                     
                     # 🍄 ENHANCED: Strong Mycelium signals get extra visibility
                     if abs(myc_signal) > 0.3:
-                        print(f"      🍄 MYCELIUM SIGNAL for {to_asset}: {myc_signal:+.2f}")
+                        safe_print(f"      🍄 MYCELIUM SIGNAL for {to_asset}: {myc_signal:+.2f}")
                     
                     # 🍄 CRITICAL: Strong negative Mycelium = IMMEDIATE CONCERN
                     if myc_signal < -0.5:
-                        print(f"      🍄⚠️ MYCELIUM WARNING: Strong SELL signal ({myc_signal:+.2f})!")
+                        safe_print(f"      🍄⚠️ MYCELIUM WARNING: Strong SELL signal ({myc_signal:+.2f})!")
                         # Add extra penalty signal for strong negative
                         signals.append(0.2)  # Extra penalty
                         reasons.append("🍄🔴 Mycelium WARNS")
@@ -10612,11 +10622,11 @@ class MicroProfitLabyrinth:
                         reason_str = f"🎿 SNOWBALL: {from_upper} profit {profit_pct:.2f}% < {self.snowball_min_profit_pct}% min - HOLD!"
                         return will_win, avg_confidence, reason_str
                     else:
-                        print(f"   🎿✅ SNOWBALL EXIT APPROVED: {from_upper} +{profit_pct:.2f}% profit!")
+                        safe_print(f"   🎿✅ SNOWBALL EXIT APPROVED: {from_upper} +{profit_pct:.2f}% profit!")
             
             # If buying a new coin (from stable), this is allowed
             elif is_from_stable and not is_to_stable:
-                print(f"   🎿 SNOWBALL ENTRY: {from_upper}→{to_upper} (opening new position)")
+                safe_print(f"   🎿 SNOWBALL ENTRY: {from_upper}→{to_upper} (opening new position)")
             
             # Stable→Stable is allowed (consolidating cash)
             elif is_from_stable and is_to_stable:
@@ -10694,7 +10704,7 @@ class MicroProfitLabyrinth:
                 if avoid:
                     will_win = False
                     reason_str = f"👑❌ SERO BLOCKS: {avoid_reason}"
-                    print(f"   👑❌ SERO SAYS NO: {reason_str}")
+                    safe_print(f"   👑❌ SERO SAYS NO: {reason_str}")
         except Exception as e:
             logger.debug(f"Loss learning guard error: {e}")
 
@@ -11220,7 +11230,7 @@ def get_enhancement():
 
 if __name__ == "__main__":
     enh = get_enhancement()
-    print(f"Enhancement: {{enh.get_info()}}")
+    safe_print(f"Enhancement: {{enh.get_info()}}")
 '''
         
         # Write the enhancement file
@@ -11577,7 +11587,7 @@ if __name__ == "__main__":
             observations['queen_verdict'] = 'OBSERVING'  # Neutral, watching
         
         # 👑 Print Sero's status on every turn
-        print(f"   👑 SERO {observations['queen_verdict']}: {observations['neurons_connected']}/{observations['total_neurons']} neurons | Luck: {luck_state} | Momentum: {observations['market_momentum']:+.1f}%")
+        safe_print(f"   👑 SERO {observations['queen_verdict']}: {observations['neurons_connected']}/{observations['total_neurons']} neurons | Luck: {luck_state} | Momentum: {observations['market_momentum']:+.1f}%")
         
         # 🍄 Broadcast through mycelium
         if hasattr(self, 'mycelium_network') and self.mycelium_network:
@@ -11591,7 +11601,7 @@ if __name__ == "__main__":
                         'momentum': observations['market_momentum']
                     }
                     self.mycelium_network.broadcast_signal(signal)
-                    print(f"   🍄📡 MYCELIUM PULSE: {exchange.upper()} | {observations['queen_verdict']} | Luck={luck_state}")
+                    safe_print(f"   🍄📡 MYCELIUM PULSE: {exchange.upper()} | {observations['queen_verdict']} | Luck={luck_state}")
             except Exception:
                 pass
         
@@ -11909,7 +11919,7 @@ if __name__ == "__main__":
             final_score = sum(quality_scores) / len(quality_scores)
             # 👑 Show Queen's contribution to the signal
             queen_tag = f"👑{queen_dream_quality:.0%}" if queen_dream_quality != 0.5 else ""
-            print(f"   📊 Signal breakdown: {queen_tag} {', '.join([f'{s:.0%}' for s in quality_scores])}")
+            safe_print(f"   📊 Signal breakdown: {queen_tag} {', '.join([f'{s:.0%}' for s in quality_scores])}")
             return final_score
         
         return 0.5  # Default neutral
@@ -12050,12 +12060,12 @@ if __name__ == "__main__":
         hunts.sort(key=lambda x: x[3], reverse=True)
         
         if hunts:
-            print(f"\n   🦁 LION HUNT - {len(hunts)} waves spotted!")
+            safe_print(f"\n   🦁 LION HUNT - {len(hunts)} waves spotted!")
             for src, tgt, amt, mom in hunts[:5]:  # Show top 5
                 # 🐛 FIX: Show USD VALUE not raw amount!
                 price = self.prices.get(src, 1.0)
                 value_usd = amt * price
-                print(f"      → {src}→{tgt}: ${value_usd:.2f} available, wave +{mom*100:.2f}%/min")
+                safe_print(f"      → {src}→{tgt}: ${value_usd:.2f} available, wave +{mom*100:.2f}%/min")
         
         return hunts
     
@@ -12117,7 +12127,7 @@ if __name__ == "__main__":
         
         if best_symbol:
             if verbose:
-                print(f"\n   🐺 WOLF TARGET: {best_symbol} | momentum={best_momentum*100:.2f}%/min | score={best_score:.1f}")
+                safe_print(f"\n   🐺 WOLF TARGET: {best_symbol} | momentum={best_momentum*100:.2f}%/min | score={best_score:.1f}")
             return (best_symbol, best_momentum, best_score)
         
         return None
@@ -12148,9 +12158,9 @@ if __name__ == "__main__":
         scraps.sort(key=lambda x: x[2])
         
         if scraps:
-            print(f"\n   🐜 ANT SCRAPS - {len(scraps)} small positions found!")
+            safe_print(f"\n   🐜 ANT SCRAPS - {len(scraps)} small positions found!")
             for asset, amt, val in scraps[:5]:
-                print(f"      → {asset}: {amt:.6f} (${val:.2f})")
+                safe_print(f"      → {asset}: {amt:.6f} (${val:.2f})")
         
         return scraps
     
@@ -12174,7 +12184,7 @@ if __name__ == "__main__":
         if not self.dust_converter.should_sweep_now():
             return 0
         
-        print("\n   🧹👑 QUEEN'S DUST SWEEP - Sero inspecting small positions...")
+        safe_print("\n   🧹👑 QUEEN'S DUST SWEEP - Sero inspecting small positions...")
         
         # Find all dust across exchanges
         all_dust = self.dust_converter.find_all_dust(
@@ -12183,23 +12193,23 @@ if __name__ == "__main__":
         )
         
         if not all_dust:
-            print("   ✨ No dust found - portfolio is clean!")
+            safe_print("   ✨ No dust found - portfolio is clean!")
             return 0
         
         # Print the dust report
-        print(self.dust_converter.format_dust_report(all_dust))
+        safe_print(self.dust_converter.format_dust_report(all_dust))
         
         # Get profitable sweeps only
         profitable = self.dust_converter.get_profitable_sweeps(all_dust)
         
         if not profitable:
-            print("   ⚠️ Dust found but none profitable after fees")
+            safe_print("   ⚠️ Dust found but none profitable after fees")
             return 0
         
         # 👑 QUEEN'S FIRST GATE: Should we sweep at all right now?
         queen_allows_sweep = await self._queen_approve_dust_sweep(profitable)
         if not queen_allows_sweep:
-            print("   👑🚫 Queen says: NOT NOW - Market conditions unfavorable")
+            safe_print("   👑🚫 Queen says: NOT NOW - Market conditions unfavorable")
             return 0
         
         # Execute sweeps (only if LIVE mode AND Queen approves each one)
@@ -12211,10 +12221,10 @@ if __name__ == "__main__":
                 queen_approves, queen_reason = await self._queen_approve_dust_candidate(dust)
                 
                 if not queen_approves:
-                    print(f"   👑🚫 Queen vetoes {dust.asset}: {queen_reason}")
+                    safe_print(f"   👑🚫 Queen vetoes {dust.asset}: {queen_reason}")
                     continue
                 
-                print(f"   👑✅ Queen approves {dust.asset}: {queen_reason}")
+                safe_print(f"   👑✅ Queen approves {dust.asset}: {queen_reason}")
                 
                 # Get the right client for this exchange
                 client = None
@@ -12229,11 +12239,11 @@ if __name__ == "__main__":
                     pair = f"{dust.asset}/USD"
                 
                 if not client:
-                    print(f"   ⚠️ No client for {dust.exchange}")
+                    safe_print(f"   ⚠️ No client for {dust.exchange}")
                     continue
                 
                 if self.live:
-                    print(f"   🧹 Sweeping {dust.asset} @ {dust.exchange}: {dust.amount:.6f} → {dust.target_stable}")
+                    safe_print(f"   🧹 Sweeping {dust.asset} @ {dust.exchange}: {dust.amount:.6f} → {dust.target_stable}")
                     
                     # Execute the sell
                     try:
@@ -12264,28 +12274,28 @@ if __name__ == "__main__":
                         
                         self.dust_converter.record_sweep(dust, success=True)
                         sweeps_executed += 1
-                        print(f"   ✅ Swept {dust.asset}: +${dust.net_proceeds_usd:.4f}")
+                        safe_print(f"   ✅ Swept {dust.asset}: +${dust.net_proceeds_usd:.4f}")
                         
                         # 👑 Queen learns from successful sweep
                         await self._queen_learn_dust_sweep(dust, success=True)
                         
                     except Exception as e:
                         self.dust_converter.record_sweep(dust, success=False)
-                        print(f"   ❌ Failed to sweep {dust.asset}: {e}")
+                        safe_print(f"   ❌ Failed to sweep {dust.asset}: {e}")
                         
                         # 👑 Queen learns from failed sweep
                         await self._queen_learn_dust_sweep(dust, success=False, error=str(e))
                 else:
                     # Dry run - just simulate
-                    print(f"   🧪 [DRY RUN] Would sweep {dust.asset} @ {dust.exchange}: {dust.amount:.6f} → {dust.target_stable} (net ${dust.net_proceeds_usd:.4f})")
+                    safe_print(f"   🧪 [DRY RUN] Would sweep {dust.asset} @ {dust.exchange}: {dust.amount:.6f} → {dust.target_stable} (net ${dust.net_proceeds_usd:.4f})")
                     sweeps_executed += 1
                     
             except Exception as e:
-                print(f"   ❌ Error sweeping {dust.asset}: {e}")
+                safe_print(f"   ❌ Error sweeping {dust.asset}: {e}")
         
         if sweeps_executed > 0:
             status = self.dust_converter.get_status()
-            print(f"\n   👑🧹 QUEEN'S SWEEP COMPLETE: {sweeps_executed} conversions | Total recovered: ${status['total_swept_usd']:.4f}")
+            safe_print(f"\n   👑🧹 QUEEN'S SWEEP COMPLETE: {sweeps_executed} conversions | Total recovered: ${status['total_swept_usd']:.4f}")
         
         return sweeps_executed
     
@@ -12315,7 +12325,7 @@ if __name__ == "__main__":
                 
                 # Don't sweep during extreme negative sentiment (market crash)
                 if market_signal < -0.7:
-                    print(f"   👑🍄 Market crash detected (signal={market_signal:.2f}) - holding dust")
+                    safe_print(f"   👑🍄 Market crash detected (signal={market_signal:.2f}) - holding dust")
                     return False
                     
             except Exception as e:
@@ -12327,7 +12337,7 @@ if __name__ == "__main__":
                 if hasattr(self.queen, 'get_market_mood'):
                     mood = self.queen.get_market_mood()
                     if mood == 'PANIC':
-                        print("   👑 Queen senses PANIC - holding positions")
+                        safe_print("   👑 Queen senses PANIC - holding positions")
                         return False
             except Exception as e:
                 logger.debug(f"Queen mood check error: {e}")
@@ -12340,7 +12350,7 @@ if __name__ == "__main__":
                 # Been sweeping a lot, take a longer break
                 return False
         
-        print(f"   👑✅ Queen approves dust sweep session (${total_dust_value:.4f} total)")
+        safe_print(f"   👑✅ Queen approves dust sweep session (${total_dust_value:.4f} total)")
         return True
     
     async def _queen_approve_dust_candidate(self, dust) -> Tuple[bool, str]:
@@ -12627,7 +12637,7 @@ if __name__ == "__main__":
                 
                 if hold_duration < self.min_hold_time_seconds:
                     remaining = self.min_hold_time_seconds - hold_duration
-                    print(
+                    safe_print(
                         f"   ⏱️ {from_asset}: Holding position - "
                         f"{hold_duration:.0f}s elapsed, need {remaining:.0f}s more "
                         f"(min {self.min_hold_time_seconds:.0f}s)"
@@ -12636,7 +12646,7 @@ if __name__ == "__main__":
                 
                 # Check if max hold time exceeded - MUST exit now
                 if hold_duration > self.max_hold_time_seconds:
-                    print(
+                    safe_print(
                         f"   ⏰ {from_asset}: MAX HOLD TIME EXCEEDED - "
                         f"{hold_duration:.0f}s > {self.max_hold_time_seconds:.0f}s - FORCING EXIT"
                     )
@@ -12644,23 +12654,23 @@ if __name__ == "__main__":
             
             from_price = self.prices.get(from_asset, 0)
             if not from_price:
-                print(f"   🔍 {from_asset}: No price data - skipping")
+                safe_print(f"   🔍 {from_asset}: No price data - skipping")
                 continue
             
             from_value = amount * from_price
             
             # Skip dust below exchange minimum VALUE
             if from_value < min_value:
-                print(f"   🔍 {from_asset}: ${from_value:.2f} < ${min_value:.2f} min - skipping")
+                safe_print(f"   🔍 {from_asset}: ${from_value:.2f} < ${min_value:.2f} min - skipping")
                 continue
             
             # 🔓 FULL AUTONOMOUS: Debug logging for opportunity detection
-            print(f"   🔓 SCANNING: {from_asset} = {amount:.6f} (${from_value:.2f}) on {exchange}")
+            safe_print(f"   🔓 SCANNING: {from_asset} = {amount:.6f} (${from_value:.2f}) on {exchange}")
             
             # 🚫 CHECK SOURCE BLOCKING - Skip if this asset is blocked on this exchange
             is_source_blocked, source_block_reason = self.barter_matrix.is_source_blocked(from_asset, exchange, from_value)
             if is_source_blocked:
-                print(f"   🔓 {from_asset}: SOURCE BLOCKED - {source_block_reason}")
+                safe_print(f"   🔓 {from_asset}: SOURCE BLOCKED - {source_block_reason}")
                 continue  # Source is blocked - skip all paths from this asset on this exchange
             
             # 🚫 CHECK HIGH SPREAD SOURCE BLOCKING - Skip if spread is too high for this source
@@ -12781,10 +12791,10 @@ if __name__ == "__main__":
                 # 🫒🫒🫒 MEGA OLIVE: Show top 25 instead of 10 for better market visibility
                 top_25_rising = [(c, m) for c, m in rising_coins if m > 5][:25]
                 if top_25_rising:
-                    print(f"   🔬 TOP 25 RISING (>5%/min): {[(c, f'{m:.1f}%') for c, m in top_25_rising]}")
+                    safe_print(f"   🔬 TOP 25 RISING (>5%/min): {[(c, f'{m:.1f}%') for c, m in top_25_rising]}")
                 gun_mom = self.asset_momentum.get('GUN', 0)
                 if gun_mom > 0:
-                    print(f"   🔬 GUN momentum in asset_momentum: {gun_mom:.1f}%/min")
+                    safe_print(f"   🔬 GUN momentum in asset_momentum: {gun_mom:.1f}%/min")
             for coin, momentum in rising_coins:
                 # 🫒🫒🫒 MEGA OLIVE: Lower threshold 0.05%→0.02% to catch EARLY EARLY movers!
                 if momentum > 0.0002:  # >0.02%/min momentum
@@ -12793,9 +12803,9 @@ if __name__ == "__main__":
                     lion_targets.append(coin)
             if lion_targets:
                 if source_exchange == 'alpaca':
-                    print(f"   🦁 LION HUNT (ALPACA 100%): {from_asset} → Hunting {len(lion_targets)} rising Alpaca coins")
+                    safe_print(f"   🦁 LION HUNT (ALPACA 100%): {from_asset} → Hunting {len(lion_targets)} rising Alpaca coins")
                 else:
-                    print(f"   🦁 LION HUNT: {from_asset} → Hunting {len(lion_targets)} rising coins")
+                    safe_print(f"   🦁 LION HUNT: {from_asset} → Hunting {len(lion_targets)} rising coins")
         
         # Build target assets list
         checkpoint_stablecoins = {'USD': 1.0, 'USDT': 1.0, 'USDC': 1.0, 'ZUSD': 1.0}
@@ -12858,7 +12868,7 @@ if __name__ == "__main__":
             
             # � DEBUG: Track GUN specifically
             if to_asset.upper() == 'GUN':
-                print(f"   🔬 GUN FOUND in target loop! from={from_asset} exchange={source_exchange}")
+                safe_print(f"   🔬 GUN FOUND in target loop! from={from_asset} exchange={source_exchange}")
             
             # �🚨 CRITICAL FIX: Check if path is blocked BEFORE doing any work!
             # This prevents the S↔C ping-pong problem from repeating
@@ -12942,7 +12952,7 @@ if __name__ == "__main__":
             if not from_pair or not to_pair:
                 # 🔬 DEBUG: Log why high-momentum targets are being skipped
                 if to_asset in lion_targets and self.asset_momentum.get(to_asset, 0) > 100:
-                    print(f"      🔬 DEBUG SKIP: {from_asset}→{to_asset} (from_pair={from_pair}, to_pair={to_pair}) on {source_exchange}")
+                    safe_print(f"      🔬 DEBUG SKIP: {from_asset}→{to_asset} (from_pair={from_pair}, to_pair={to_pair}) on {source_exchange}")
                 continue
             
             # 🔍 SKIP PATH VALIDATION IN LOOP - Too slow!
@@ -13083,7 +13093,7 @@ if __name__ == "__main__":
                 # Boost proportional to momentum (0.1% = 10% boost, 0.5% = 50% boost, etc)
                 lion_boost = min(momentum * 100, 0.5)  # Cap at 50% boost
                 if lion_boost > 0.05:
-                    print(f"      🦁 LION BOOST +{lion_boost:.0%} for {to_asset} (momentum {momentum*100:.2f}%/min)")
+                    safe_print(f"      🦁 LION BOOST +{lion_boost:.0%} for {to_asset} (momentum {momentum*100:.2f}%/min)")
             
             # 🐺 WOLF BOOST - THE ONE momentum champion gets extra priority!
             wolf_boost = 0.0
@@ -13092,7 +13102,7 @@ if __name__ == "__main__":
             if wolf_target and wolf_target[0] == to_asset:
                 # Wolf's target gets +30% boost!
                 wolf_boost = 0.30
-                print(f"      🐺 WOLF BOOST +30% for {to_asset} (THE ONE)")
+                safe_print(f"      🐺 WOLF BOOST +30% for {to_asset} (THE ONE)")
             
             # 🦆⚔️ QUANTUM QUACKERS COMMANDO BOOST - The Animal Army serves the Queen!
             quack_boost, quack_reason = self.get_quack_commando_boost(to_asset)
@@ -13100,7 +13110,7 @@ if __name__ == "__main__":
             if quack_boost > 1.0:
                 quack_contribution = (quack_boost - 1.0) * 0.5  # Up to 50% contribution from commandos
                 if quack_contribution > 0.1:
-                    print(f"      🦆 QUACK BOOST +{quack_contribution:.0%} for {to_asset} ({quack_reason})")
+                    safe_print(f"      🦆 QUACK BOOST +{quack_contribution:.0%} for {to_asset} ({quack_reason})")
             
             # 🦈🔪 ORCA KILLER WHALE BOOST - Ride the whale wakes!
             orca_boost = 0.0
@@ -13113,7 +13123,7 @@ if __name__ == "__main__":
                     orca_boost = max(0, orca_mult - 1.0)  # Convert multiplier to additive boost
                     orca_reason = ', '.join(orca_reasons) if orca_reasons else ''
                     if orca_boost > 0.1:
-                        print(f"      🦈 ORCA BOOST +{orca_boost:.0%} for {to_asset} ({orca_reason})")
+                        safe_print(f"      🦈 ORCA BOOST +{orca_boost:.0%} for {to_asset} ({orca_reason})")
                 except Exception as e:
                     pass  # Orca not critical - fail silently
             
@@ -13290,11 +13300,11 @@ if __name__ == "__main__":
                 
                 # 🔬 DEBUG: Log high-momentum opportunities to understand calculation
                 if abs(momentum_pct) > 100:  # >100%/min momentum
-                    print(f"      🔬 DEBUG: {from_asset}→{to_asset} mom={momentum_pct:.1f}%/min cap_rate={capture_rate:.0%} edge={momentum_edge:.4f} cost={total_cost_pct:.4f} profit%={expected_pnl_pct:.4f} profit$={expected_pnl_usd:.4f}")
+                    safe_print(f"      🔬 DEBUG: {from_asset}→{to_asset} mom={momentum_pct:.1f}%/min cap_rate={capture_rate:.0%} edge={momentum_edge:.4f} cost={total_cost_pct:.4f} profit%={expected_pnl_pct:.4f} profit$={expected_pnl_usd:.4f}")
 
                 # ⚠️ Debug negative expectations to diagnose logic issues
                 if expected_pnl_usd <= 0:
-                    print(
+                    safe_print(
                         f"      ⚠️ NEG PNL {from_asset}->{to_asset} value=${from_value:.2f} "
                         f"signal={signal_edge:.4f} momentum={momentum_edge:.4f} "
                         f"dream={dream_bonus:.4f} gross={gross_profit_pct:.4f}"
@@ -13487,7 +13497,7 @@ if __name__ == "__main__":
             # Log for visibility (first 3 trades per asset per scan)
             if from_asset.upper() == 'LINK':
                 asset_momentum = self.asset_momentum.get(to_asset, 0)
-                print(f"      ✅ AUTONOMOUS: LINK→{to_asset} | mom={asset_momentum:.3f}%/min | cost={total_cost_pct:.4f} | exp_pnl=${opp.expected_pnl_usd:.6f}")
+                safe_print(f"      ✅ AUTONOMOUS: LINK→{to_asset} | mom={asset_momentum:.3f}%/min | cost={total_cost_pct:.4f} | exp_pnl=${opp.expected_pnl_usd:.6f}")
             
             # 🪆 BEE LEVEL: Record opportunity scan in Russian Doll Analytics
             if self.russian_doll and record_scan:
@@ -13528,15 +13538,15 @@ if __name__ == "__main__":
         opportunities = []
         
         if not self.balances or not self.prices:
-            print(f"   ⚠️ Scan #{self.scans}: No balances or prices!")
+            safe_print(f"   ⚠️ Scan #{self.scans}: No balances or prices!")
             return opportunities
         
         # Debug: Log what we're scanning (first 3 scans only)
         debug_first_scans = self.scans <= 3
         if debug_first_scans:
-            print(f"\n🔬 === SCAN #{self.scans} DEBUG START ===")
-            print(f"   Balances: {len(self.balances)} assets")
-            print(f"   Prices: {len(self.prices)} assets")
+            safe_print(f"\n🔬 === SCAN #{self.scans} DEBUG START ===")
+            safe_print(f"   Balances: {len(self.balances)} assets")
+            safe_print(f"   Prices: {len(self.prices)} assets")
         scanned_assets = []
         
         # Check each held asset for conversion opportunities
@@ -13547,7 +13557,7 @@ if __name__ == "__main__":
             from_price = self.prices.get(from_asset, 0)
             if not from_price:
                 if debug_first_scans:
-                    print(f"   ⚠️ {from_asset}: No price found")
+                    safe_print(f"   ⚠️ {from_asset}: No price found")
                 continue
             
             from_value = amount * from_price
@@ -13555,7 +13565,7 @@ if __name__ == "__main__":
             # Lowered dust threshold to $1 for micro profits
             if from_value < 1.0:  # Skip only tiny dust below $1
                 if debug_first_scans:
-                    print(f"   ⚠️ {from_asset}: Below $1 dust threshold (${from_value:.2f})")
+                    safe_print(f"   ⚠️ {from_asset}: Below $1 dust threshold (${from_value:.2f})")
                 continue
             
             scanned_assets.append(f"{from_asset}=${from_value:.2f}")
@@ -13565,16 +13575,16 @@ if __name__ == "__main__":
             source_exchange = exchange
             
             if debug_first_scans:
-                print(f"   🔍 Scanning {from_asset} (${from_value:.2f}) on {source_exchange}...")
+                safe_print(f"   🔍 Scanning {from_asset} (${from_value:.2f}) on {source_exchange}...")
             
             # Skip blocked assets on specific exchanges
             if source_exchange == 'binance' and from_asset.upper() in self.blocked_binance_assets:
                 if debug_first_scans:
-                    print(f"      ⚠️ {from_asset}: Blocked on Binance")
+                    safe_print(f"      ⚠️ {from_asset}: Blocked on Binance")
                 continue
             if source_exchange == 'kraken' and from_asset.upper() in self.blocked_kraken_assets:
                 if debug_first_scans:
-                    print(f"      ⚠️ {from_asset}: Blocked on Kraken")
+                    safe_print(f"      ⚠️ {from_asset}: Blocked on Kraken")
                 continue
             
             # 🐍 MEDUSA: Stablecoins CAN be sources now! They buy volatile assets!
@@ -14050,7 +14060,7 @@ if __name__ == "__main__":
                         combined *= (1.0 + iq_influence)
                         
                         if r_reasons and debug_first_scans and valid_pairs_found <= 3:
-                             print(f"         👑🌐 Queen Research: {to_asset} score={r_score} ({', '.join(r_reasons)}) -> Impact {iq_influence:+.1%}")
+                             safe_print(f"         👑🌐 Queen Research: {to_asset} score={r_score} ({', '.join(r_reasons)}) -> Impact {iq_influence:+.1%}")
 
                 
                 # ⚡ SPEED MODE: Lower thresholds - let math gate decide!
@@ -14082,7 +14092,7 @@ if __name__ == "__main__":
                 # Debug: Log first few candidates on first scan
                 if debug_first_scans and valid_pairs_found <= 3:
                     checkpoint_tag = "🏦CHKPT" if is_checkpoint_target else ""
-                    print(f"         📈 {from_asset}→{to_asset} {checkpoint_tag}: combined={combined:.2%}, thresh={score_threshold:.0%}, pnl=${expected_pnl_usd:.4f}, pass={combined >= score_threshold and gate_ok}")
+                    safe_print(f"         📈 {from_asset}→{to_asset} {checkpoint_tag}: combined={combined:.2%}, thresh={score_threshold:.0%}, pnl=${expected_pnl_usd:.4f}, pass={combined >= score_threshold and gate_ok}")
                 
                 # ════════════════════════════════════════════════════════════════════
                 # 👑� SERO's KRAKEN WISDOM (learned from 53 trades - some losers!)
@@ -14098,20 +14108,20 @@ if __name__ == "__main__":
                     if not allowed:
                         kraken_approved = False
                         if debug_first_scans:
-                            print(f"         🐙 KRAKEN: {pair_key} {reason}")
+                            safe_print(f"         🐙 KRAKEN: {pair_key} {reason}")
                     
                     # Require minimum profit for Kraken trades
                     kraken_min_profit = kraken_cfg.get('min_profit_usd', 0.01)
                     if expected_pnl_usd < kraken_min_profit:
                         kraken_approved = False
                         if debug_first_scans and expected_pnl_usd > 0.003:
-                            print(f"         🐙 KRAKEN REJECT: ${expected_pnl_usd:.4f} < ${kraken_min_profit} min")
+                            safe_print(f"         🐙 KRAKEN REJECT: ${expected_pnl_usd:.4f} < ${kraken_min_profit} min")
                     
                     # Bonus: Is this a known winning pair? 🏆
                     if pair_key in kraken_cfg.get('winning_pairs', set()):
                         kraken_approved = True  # Override - this pair wins!
                         if debug_first_scans:
-                            print(f"         🐙 KRAKEN WINNER: {pair_key} 🏆")
+                            safe_print(f"         🐙 KRAKEN WINNER: {pair_key} 🏆")
                 
                 if not kraken_approved:
                     continue  # Skip this opportunity
@@ -14129,13 +14139,13 @@ if __name__ == "__main__":
                     if not allowed:
                         binance_approved = False
                         if debug_first_scans:
-                            print(f"         🔶 BINANCE: {pair_key} {reason}")
+                            safe_print(f"         🔶 BINANCE: {pair_key} {reason}")
                     
                     # Bonus: Is this a known winning pair? A WIN IS A WIN! 🏆
                     if pair_key in self.barter_matrix.BINANCE_CONFIG.get('winning_pairs', set()):
                         binance_approved = True  # Override - this pair wins!
                         if debug_first_scans:
-                            print(f"         🔶 BINANCE WINNER: {pair_key} 🏆")
+                            safe_print(f"         🔶 BINANCE WINNER: {pair_key} 🏆")
                 
                 if not binance_approved:
                     continue  # Skip this opportunity
@@ -14153,35 +14163,35 @@ if __name__ == "__main__":
                     if pair_key in alpaca_cfg.get('blocked_pairs', set()):
                         alpaca_approved = False
                         if debug_first_scans:
-                            print(f"         🦙 ALPACA BLOCKED: {pair_key} (stablecoins don't trade!)")
+                            safe_print(f"         🦙 ALPACA BLOCKED: {pair_key} (stablecoins don't trade!)")
                     
                     # Check if BOTH assets are stablecoins (impossible on Alpaca!)
                     elif (from_asset.upper() in self.barter_matrix.STABLECOINS and 
                           to_asset.upper() in self.barter_matrix.STABLECOINS):
                         alpaca_approved = False
                         if debug_first_scans:
-                            print(f"         🦙 ALPACA BLOCKED: {from_asset}→{to_asset} (no stablecoin swaps!)")
+                            safe_print(f"         🦙 ALPACA BLOCKED: {from_asset}→{to_asset} (no stablecoin swaps!)")
                     
                     # Check if target is NOT a supported crypto
                     elif (to_asset.upper() not in alpaca_cfg.get('supported_bases', set()) and
                           to_asset.upper() != 'USD'):
                         alpaca_approved = False
                         if debug_first_scans:
-                            print(f"         🦙 ALPACA BLOCKED: {to_asset} not supported")
+                            safe_print(f"         🦙 ALPACA BLOCKED: {to_asset} not supported")
                     
                     # Check minimum order size
                     alpaca_min_order = alpaca_cfg.get('min_order_usd', 10.0)
                     if from_value < alpaca_min_order:
                         alpaca_approved = False
                         if debug_first_scans:
-                            print(f"         🦙 ALPACA REJECT: ${from_value:.2f} < ${alpaca_min_order} minimum")
+                            safe_print(f"         🦙 ALPACA REJECT: ${from_value:.2f} < ${alpaca_min_order} minimum")
                     
                     # Check minimum profit
                     alpaca_min_profit = alpaca_cfg.get('min_profit_usd', 0.02)
                     if expected_pnl_usd < alpaca_min_profit:
                         alpaca_approved = False
                         if debug_first_scans and expected_pnl_usd > 0.005:
-                            print(f"         🦙 ALPACA REJECT: ${expected_pnl_usd:.4f} < ${alpaca_min_profit} profit")
+                            safe_print(f"         🦙 ALPACA REJECT: ${expected_pnl_usd:.4f} < ${alpaca_min_profit} profit")
                 
                 if not alpaca_approved:
                     continue  # Skip this opportunity
@@ -14203,14 +14213,14 @@ if __name__ == "__main__":
                             # Timeline says SELL - don't BUY into this asset
                             timeline_gate_passed = False
                             if debug_first_scans:
-                                print(f"         🌀 TIMELINE GATE: {from_asset}→{to_asset} BLOCKED - timeline says SELL @ {timeline_score:.2%}")
+                                safe_print(f"         🌀 TIMELINE GATE: {from_asset}→{to_asset} BLOCKED - timeline says SELL @ {timeline_score:.2%}")
                         
                         # RULE 2: Require timeline confirmation for larger trades
                         elif from_value > 10.0 and timeline_action == 'hold':
                             # For larger trades, require BUY signal, not just HOLD
                             timeline_gate_passed = False
                             if debug_first_scans:
-                                print(f"         🌀 TIMELINE GATE: {from_asset}→{to_asset} BLOCKED - timeline says HOLD for $${from_value:.2f} trade")
+                                safe_print(f"         🌀 TIMELINE GATE: {from_asset}→{to_asset} BLOCKED - timeline says HOLD for $${from_value:.2f} trade")
                         
                         # RULE 3: When TEMPORAL JUMP is active, BOOST confidence
                         elif timeline_jump_active and timeline_action in ['buy', 'convert']:
@@ -14228,7 +14238,7 @@ if __name__ == "__main__":
                     if not math_approved:
                         # Skip this opportunity - Math doesn't guarantee profit
                         if debug_first_scans:
-                            print(f"         🚫 MATH GATE BLOCKED: {from_asset}→{to_asset} | {math_reason}")
+                            safe_print(f"         🚫 MATH GATE BLOCKED: {from_asset}→{to_asset} | {math_reason}")
                         continue
                     
                     # ⚡ SPEED MODE: Accept ANY positive profit after costs!
@@ -14241,7 +14251,7 @@ if __name__ == "__main__":
                     # Epsilon policy: trade only if net-positive after conservative costs
                     if adjusted_pnl < EPSILON_PROFIT_USD:
                         if debug_first_scans:
-                            print(f"         🚫 NO NET PROFIT: {from_asset}→{to_asset} | net=${adjusted_pnl:.6f} < eps=${EPSILON_PROFIT_USD:.6f} (cost=${real_cost_usd:.6f})")
+                            safe_print(f"         🚫 NO NET PROFIT: {from_asset}→{to_asset} | net=${adjusted_pnl:.6f} < eps=${EPSILON_PROFIT_USD:.6f} (cost=${real_cost_usd:.6f})")
                         continue
                     
                     # ════════════════════════════════════════════════════════════════
@@ -14307,12 +14317,12 @@ if __name__ == "__main__":
                     
                     if not queen_final_approved:
                         if debug_first_scans:
-                            print(f"         👑🚫 QUEEN VETO: {from_asset}→{to_asset} | {queen_veto_reason}")
+                            safe_print(f"         👑🚫 QUEEN VETO: {from_asset}→{to_asset} | {queen_veto_reason}")
                         continue
 
                     if adjusted_pnl < MIN_NET_PROFIT_USD:
                         if debug_first_scans:
-                            print(
+                            safe_print(
                                 f"         🚫 MIN PROFIT FILTER: {from_asset}→{to_asset} "
                                 f"adj_pnl=${adjusted_pnl:.6f} < ${MIN_NET_PROFIT_USD:.6f}"
                             )
@@ -14380,23 +14390,23 @@ if __name__ == "__main__":
                     
                     # Log math gate success
                     if debug_first_scans:
-                        print(f"         ✅ MATH APPROVED: {from_asset}→{to_asset} | cost={math_breakdown['total_cost_pct']:.2%} | net=${adjusted_pnl:.4f}")
+                        safe_print(f"         ✅ MATH APPROVED: {from_asset}→{to_asset} | cost={math_breakdown['total_cost_pct']:.2%} | net=${adjusted_pnl:.4f}")
                     
                     # Log checkpoint opportunities specially
                     if is_checkpoint_target:
                         logger.info(f"🏦 CHECKPOINT OPPORTUNITY: {from_asset} → {to_asset} (secure ${from_value:.2f})")
-                        print(f"   🏦 CHECKPOINT: {from_asset} → {to_asset} | Score: {combined:.2%} | Secure: ${from_value:.2f}")
+                        safe_print(f"   🏦 CHECKPOINT: {from_asset} → {to_asset} | Score: {combined:.2%} | Secure: ${from_value:.2f}")
             
             # Debug after scanning each asset
             if debug_first_scans and valid_pairs_found == 0:
-                print(f"      ❌ No valid pairs found for {from_asset} ({pair_check_failures} pair checks failed)")
+                safe_print(f"      ❌ No valid pairs found for {from_asset} ({pair_check_failures} pair checks failed)")
             elif debug_first_scans:
-                print(f"      ✅ Found {valid_pairs_found} valid pairs for {from_asset}")
+                safe_print(f"      ✅ Found {valid_pairs_found} valid pairs for {from_asset}")
         
         # Debug log: Show summary
         if scanned_assets and self.scans <= 3:  # Only first few scans
-            print(f"📊 Scan #{self.scans}: Scanned {len(scanned_assets)} assets: {', '.join(scanned_assets)}")
-            print(f"   🔮 Opportunities found: {len(opportunities)}")
+            safe_print(f"📊 Scan #{self.scans}: Scanned {len(scanned_assets)} assets: {', '.join(scanned_assets)}")
+            safe_print(f"   🔮 Opportunities found: {len(opportunities)}")
         
         # ════════════════════════════════════════════════════════════════
         # 🌀 TEMPORAL PRIORITY SORTING - AHEAD OF MARKET GETS PRIORITY!
@@ -14596,12 +14606,12 @@ if __name__ == "__main__":
             # We already passed the gate check in the scan phase which used calculate_true_cost
             # That cost included a 1.5% volatility penalty + learned slippage
             # If we are here, the PROFIT >> COST. So we proceed!
-            print(f"   ⚠️ MEME→MEME ADVISORY: {from_upper}→{to_upper} is high risk! True Cost check passed.")
+            safe_print(f"   ⚠️ MEME→MEME ADVISORY: {from_upper}→{to_upper} is high risk! True Cost check passed.")
 
         # ⚠️ WARNING: STABLECOIN → STABLECOIN = Likely Loss!
         if is_from_stable and is_to_stable:
              # Usually blocked by cost > profit (0 gain). But if we have huge arbitrage...
-             print(f"   ⚠️ STABLE→STABLE ADVISORY: {from_upper}→{to_upper} only makes sense if arbitrage > fees!")
+             safe_print(f"   ⚠️ STABLE→STABLE ADVISORY: {from_upper}→{to_upper} only makes sense if arbitrage > fees!")
              # No block - if calculate_true_cost allowed it, there must be profit (or arb)
         
         # ════════════════════════════════════════════════════════════════════════
@@ -14610,7 +14620,7 @@ if __name__ == "__main__":
         # 🔓🔓🔓 FULL AUTONOMOUS MODE - FEE TRACKER DISABLED! 🔓🔓🔓
         # ════════════════════════════════════════════════════════════════════════
         exchange = opp.source_exchange or 'alpaca'
-        print(f"   🔓 AUTONOMOUS: Fee tracker bypassed for {opp.from_asset}→{opp.to_asset}")
+        safe_print(f"   🔓 AUTONOMOUS: Fee tracker bypassed for {opp.from_asset}→{opp.to_asset}")
         # DISABLED for full autonomous mode:
         if False and self.live and exchange.lower() == 'alpaca' and hasattr(self, 'fee_tracker') and self.fee_tracker:
             try:
@@ -14629,16 +14639,16 @@ if __name__ == "__main__":
                 
                 if not should_trade and alpaca_cost_info:
                     # Fee tracker blocked this trade!
-                    self.rejection_print(f"\n   💰 ALPACA FEE TRACKER BLOCKED!")
-                    self.rejection_print(f"   ├── Symbol: {alpaca_symbol}")
-                    self.rejection_print(f"   ├── Fee Tier: {self.fee_tracker.current_tier.name}")
-                    self.rejection_print(f"   ├── Taker Fee: {alpaca_cost_info.get('fee_cost_usd', 0):.4f} USD ({alpaca_cost_info.get('fee_bps', 0):.1f} bps)")
-                    self.rejection_print(f"   ├── Spread Cost: ${alpaca_cost_info.get('spread_cost_usd', 0):.4f} ({alpaca_cost_info.get('spread_pct', 0)*100:.2f}%)")
-                    self.rejection_print(f"   ├── Total Cost: ${alpaca_cost_info.get('total_cost_usd', 0):.4f}")
-                    self.rejection_print(f"   ├── Expected Profit: ${opp.expected_pnl_usd:.4f}")
-                    self.rejection_print(f"   ├── Net After Costs: ${alpaca_cost_info.get('net_profit_usd', 0):.4f}")
-                    self.rejection_print(f"   └── Reason: {alpaca_cost_info.get('reason', 'Cost exceeds profit')}")
-                    self.rejection_print(f"   ⛔ TRADE REJECTED - Alpaca fees would eat profit!")
+                    self.rejection_safe_print(f"\n   💰 ALPACA FEE TRACKER BLOCKED!")
+                    self.rejection_safe_print(f"   ├── Symbol: {alpaca_symbol}")
+                    self.rejection_safe_print(f"   ├── Fee Tier: {self.fee_tracker.current_tier.name}")
+                    self.rejection_safe_print(f"   ├── Taker Fee: {alpaca_cost_info.get('fee_cost_usd', 0):.4f} USD ({alpaca_cost_info.get('fee_bps', 0):.1f} bps)")
+                    self.rejection_safe_print(f"   ├── Spread Cost: ${alpaca_cost_info.get('spread_cost_usd', 0):.4f} ({alpaca_cost_info.get('spread_pct', 0)*100:.2f}%)")
+                    self.rejection_safe_print(f"   ├── Total Cost: ${alpaca_cost_info.get('total_cost_usd', 0):.4f}")
+                    self.rejection_safe_print(f"   ├── Expected Profit: ${opp.expected_pnl_usd:.4f}")
+                    self.rejection_safe_print(f"   ├── Net After Costs: ${alpaca_cost_info.get('net_profit_usd', 0):.4f}")
+                    self.rejection_safe_print(f"   └── Reason: {alpaca_cost_info.get('reason', 'Cost exceeds profit')}")
+                    self.rejection_safe_print(f"   ⛔ TRADE REJECTED - Alpaca fees would eat profit!")
                     
                     # Record rejection
                     if hasattr(self, 'barter_matrix'):
@@ -14650,15 +14660,15 @@ if __name__ == "__main__":
                     return False
                 elif alpaca_cost_info:
                     # Fee tracker approved - log the real costs
-                    print(f"\n   💰 ALPACA FEE CHECK PASSED:")
-                    print(f"   ├── Fee Tier: {self.fee_tracker.current_tier.name}")
-                    print(f"   ├── Taker Fee: ${alpaca_cost_info.get('fee_cost_usd', 0):.4f}")
-                    print(f"   ├── Spread: {alpaca_cost_info.get('spread_pct', 0)*100:.2f}% (${alpaca_cost_info.get('spread_cost_usd', 0):.4f})")
-                    print(f"   ├── Total Cost: ${alpaca_cost_info.get('total_cost_usd', 0):.4f}")
-                    print(f"   └── Net Profit: ${alpaca_cost_info.get('net_profit_usd', 0):.4f}")
+                    safe_print(f"\n   💰 ALPACA FEE CHECK PASSED:")
+                    safe_print(f"   ├── Fee Tier: {self.fee_tracker.current_tier.name}")
+                    safe_print(f"   ├── Taker Fee: ${alpaca_cost_info.get('fee_cost_usd', 0):.4f}")
+                    safe_print(f"   ├── Spread: {alpaca_cost_info.get('spread_pct', 0)*100:.2f}% (${alpaca_cost_info.get('spread_cost_usd', 0):.4f})")
+                    safe_print(f"   ├── Total Cost: ${alpaca_cost_info.get('total_cost_usd', 0):.4f}")
+                    safe_print(f"   └── Net Profit: ${alpaca_cost_info.get('net_profit_usd', 0):.4f}")
             except Exception as e:
                 # Fee tracker failed - log but continue with legacy gate
-                print(f"   ⚠️ Alpaca fee tracker error: {e} - falling back to legacy gate")
+                safe_print(f"   ⚠️ Alpaca fee tracker error: {e} - falling back to legacy gate")
         
         # ════════════════════════════════════════════════════════════════════════
         # �🛑 CRITICAL PRE-EXECUTION GATE: CONSERVATIVE PROFIT CHECK
@@ -14737,9 +14747,9 @@ if __name__ == "__main__":
             
             if spread_pct > 5.0:
                 # High spread = illiquid market, block immediately
-                self.rejection_print(f"\n   🛑 PRE-EXECUTION GATE: SPREAD TOO HIGH!")
-                self.rejection_print(f"   ├── Spread: {spread_pct:.1f}% (max 5%)")
-                self.rejection_print(f"   └── Market too illiquid for this trade")
+                self.rejection_safe_print(f"\n   🛑 PRE-EXECUTION GATE: SPREAD TOO HIGH!")
+                self.rejection_safe_print(f"   ├── Spread: {spread_pct:.1f}% (max 5%)")
+                self.rejection_safe_print(f"   └── Market too illiquid for this trade")
                 
                 # Block high spread source
                 exchange = opp.source_exchange or 'unknown'
@@ -14749,7 +14759,7 @@ if __name__ == "__main__":
                     'blocked_turn': self.barter_matrix.current_turn,
                     'reason': f'{spread_pct:.1f}% spread'
                 }
-                self.rejection_print(f"   🚫🔴 SOURCE BLOCKED: {opp.from_asset} on {exchange} has {spread_pct:.1f}% spread!")
+                self.rejection_safe_print(f"   🚫🔴 SOURCE BLOCKED: {opp.from_asset} on {exchange} has {spread_pct:.1f}% spread!")
                 
                 # Record rejection
                 self.barter_matrix.record_preexec_rejection(
@@ -14787,9 +14797,9 @@ if __name__ == "__main__":
                 P_WIN_THRESHOLD = 0.90
 
             if p_win is not None and p_win < P_WIN_THRESHOLD and not planet_saver_mode:
-                self.rejection_print(f"\n   🛑 PRE-EXECUTION GATE: LOW PROBABILITY OF WIN - P(win)={p_win:.2%} < {P_WIN_THRESHOLD:.0%}")
-                self.rejection_print(f"   ├── Scanner Expected: ${scanner_gross_pnl:+.4f}")
-                self.rejection_print(f"   └── Monte-Carlo P(win): {p_win:.2%} (threshold {P_WIN_THRESHOLD:.0%})")
+                self.rejection_safe_print(f"\n   🛑 PRE-EXECUTION GATE: LOW PROBABILITY OF WIN - P(win)={p_win:.2%} < {P_WIN_THRESHOLD:.0%}")
+                self.rejection_safe_print(f"   ├── Scanner Expected: ${scanner_gross_pnl:+.4f}")
+                self.rejection_safe_print(f"   └── Monte-Carlo P(win): {p_win:.2%} (threshold {P_WIN_THRESHOLD:.0%})")
 
                 self.barter_matrix.record_preexec_rejection(
                     opp.from_asset, opp.to_asset,
@@ -14816,13 +14826,13 @@ if __name__ == "__main__":
 
             # CRITICAL SAFETY: Never bleed, regardless of mode
             if conservative_pnl < 0:
-                self.rejection_print(f"\n   🛑 PRE-EXECUTION GATE: COSTS EXCEED EDGE!")
-                self.rejection_print(f"   ├── Gross Edge (momentum+signals): ${scanner_gross_pnl:+.4f}")
+                self.rejection_safe_print(f"\n   🛑 PRE-EXECUTION GATE: COSTS EXCEED EDGE!")
+                self.rejection_safe_print(f"   ├── Gross Edge (momentum+signals): ${scanner_gross_pnl:+.4f}")
                 worst_pct_display = (locals().get('worst_pct') if 'worst_pct' in locals() else (total_cost_pct*100))
-                self.rejection_print(f"   ├── Worst-case Costs (p90 estimate): ${mc_cost_usd:.4f} ({worst_pct_display:.2f}%)")
-                self.rejection_print(f"   ├── Net P&L (gross - costs): ${conservative_pnl:+.4f}")
-                self.rejection_print(f"   └── Need more momentum to beat costs!")
-                self.rejection_print(f"   ⛔ WAITING for better opportunity...")
+                self.rejection_safe_print(f"   ├── Worst-case Costs (p90 estimate): ${mc_cost_usd:.4f} ({worst_pct_display:.2f}%)")
+                self.rejection_safe_print(f"   ├── Net P&L (gross - costs): ${conservative_pnl:+.4f}")
+                self.rejection_safe_print(f"   └── Need more momentum to beat costs!")
+                self.rejection_safe_print(f"   ⛔ WAITING for better opportunity...")
                 
                 self.barter_matrix.record_preexec_rejection(
                     opp.from_asset, opp.to_asset,
@@ -14851,12 +14861,12 @@ if __name__ == "__main__":
             # 🔧 FIX: Only block if net profit is negative (break-even or better is OK!)
             # scanner_expected_pnl is ALREADY net of costs, so just needs to be > 0
             if conservative_pnl < required_profit_usd and not planet_saver_mode:
-                self.rejection_print(f"\n   🛑 PRE-EXECUTION GATE BLOCKED!")
-                self.rejection_print(f"   ├── Net Expected P&L: ${conservative_pnl:+.4f}")
-                self.rejection_print(f"   ├── Min Required: ${required_profit_usd:.4f}")
-                self.rejection_print(f"   ├── Cost breakdown: fee={cost_breakdown.get('base_fee', 0):.2f}% spread={spread_pct:.2f}%")
-                self.rejection_print(f"   └── Reason: Net profit below minimum threshold")
-                self.rejection_print(f"   ⛔ TRADE REJECTED - Need at least ${required_profit_usd:.4f} net profit!")
+                self.rejection_safe_print(f"\n   🛑 PRE-EXECUTION GATE BLOCKED!")
+                self.rejection_safe_print(f"   ├── Net Expected P&L: ${conservative_pnl:+.4f}")
+                self.rejection_safe_print(f"   ├── Min Required: ${required_profit_usd:.4f}")
+                self.rejection_safe_print(f"   ├── Cost breakdown: fee={cost_breakdown.get('base_fee', 0):.2f}% spread={spread_pct:.2f}%")
+                self.rejection_safe_print(f"   └── Reason: Net profit below minimum threshold")
+                self.rejection_safe_print(f"   ⛔ TRADE REJECTED - Need at least ${required_profit_usd:.4f} net profit!")
                 
                 # Track rejection for learning - BLOCK THIS PAIR immediately!
                 self.barter_matrix.record_preexec_rejection(
@@ -14864,7 +14874,7 @@ if __name__ == "__main__":
                     f'profit_too_low: net=${conservative_pnl:.4f} < min=${required_profit_usd:.4f}',
                     opp.from_value_usd
                 )
-                self.rejection_print(f"   🚫 Path {opp.from_asset}→{opp.to_asset} BLOCKED - will try others!")
+                self.rejection_safe_print(f"   🚫 Path {opp.from_asset}→{opp.to_asset} BLOCKED - will try others!")
                 
                 # 🚫 HIGH SPREAD SOURCE BLOCK - If spread is the problem, block ALL trades from this source!
                 if spread_pct > self.barter_matrix.HIGH_SPREAD_THRESHOLD:
@@ -14875,15 +14885,15 @@ if __name__ == "__main__":
                         'blocked_turn': self.barter_matrix.current_turn,
                         'reason': f'{spread_pct:.1f}% spread'
                     }
-                    self.rejection_print(f"   🚫🔴 SOURCE BLOCKED: {opp.from_asset} on {exchange} has {spread_pct:.1f}% spread!")
-                    self.rejection_print(f"      ALL {opp.from_asset}→* trades will fail - blocking source for {self.barter_matrix.HIGH_SPREAD_COOLDOWN} turns")
+                    self.rejection_safe_print(f"   🚫🔴 SOURCE BLOCKED: {opp.from_asset} on {exchange} has {spread_pct:.1f}% spread!")
+                    self.rejection_safe_print(f"      ALL {opp.from_asset}→* trades will fail - blocking source for {self.barter_matrix.HIGH_SPREAD_COOLDOWN} turns")
                 
                 return False
             else:
                 # ────────── Round-trip availability check ──────────
                 ok_roundtrip, roundtrip_reason = self.ensure_round_trip_available(opp.from_asset, opp.to_asset, opp.from_value_usd)
                 if not ok_roundtrip:
-                    self.rejection_print(f"\n   🛑 PRE-EXECUTION GATE: ROUND-TRIP UNAVAILABLE - {roundtrip_reason}")
+                    self.rejection_safe_print(f"\n   🛑 PRE-EXECUTION GATE: ROUND-TRIP UNAVAILABLE - {roundtrip_reason}")
                     self.barter_matrix.record_preexec_rejection(
                         opp.from_asset, opp.to_asset,
                         f'round_trip_unavailable: {roundtrip_reason}',
@@ -14892,11 +14902,11 @@ if __name__ == "__main__":
                     return False
 
                 # ✅ GATE PASSED! Show the good news!
-                print(f"\n   ✅ PRE-EXECUTION GATE PASSED:")
-                print(f"   ├── Scanner Expected: ${scanner_gross_pnl:+.4f}")
-                print(f"   ├── Net Expected P&L: ${conservative_pnl:+.4f} (already net of costs)")
-                print(f"   ├── Min Required: ${min_profit_floor:.4f}")
-                print(f"   └── Proceeding with execution... 🚀")
+                safe_print(f"\n   ✅ PRE-EXECUTION GATE PASSED:")
+                safe_print(f"   ├── Scanner Expected: ${scanner_gross_pnl:+.4f}")
+                safe_print(f"   ├── Net Expected P&L: ${conservative_pnl:+.4f} (already net of costs)")
+                safe_print(f"   ├── Min Required: ${min_profit_floor:.4f}")
+                safe_print(f"   └── Proceeding with execution... 🚀")
         
         # ════════════════════════════════════════════════════════════════════════
         
@@ -14905,41 +14915,41 @@ if __name__ == "__main__":
         # Her $0.003 profit goal was already validated
         # DO NOT block her decision with another gate!
         
-        print(f"\n🔬 MICRO CONVERSION:")
-        print(f"   {opp.from_asset} → {opp.to_asset}")
-        print(f"   Amount: {opp.from_amount:.6f} ({opp.from_asset})")
-        print(f"   Value: ${opp.from_value_usd:.2f}")
-        print(f"   ════════════════════════════════════════════════════════")
+        safe_print(f"\n🔬 MICRO CONVERSION:")
+        safe_print(f"   {opp.from_asset} → {opp.to_asset}")
+        safe_print(f"   Amount: {opp.from_amount:.6f} ({opp.from_asset})")
+        safe_print(f"   Value: ${opp.from_value_usd:.2f}")
+        safe_print(f"   ════════════════════════════════════════════════════════")
         
         # 🌀 TEMPORAL JUMP STATUS - Are we AHEAD of the market?
         if opp.timeline_jump_active:
-            print(f"   🌀 TEMPORAL JUMP ACTIVE! ⏳ AHEAD OF MARKET!")
-            print(f"   ⏳ Jump Power: {opp.temporal_jump_power:.2%} | Timeline: {opp.timeline_action.upper()}")
-            print(f"   🔮 Timeline Confidence: {opp.timeline_score:.2%}")
+            safe_print(f"   🌀 TEMPORAL JUMP ACTIVE! ⏳ AHEAD OF MARKET!")
+            safe_print(f"   ⏳ Jump Power: {opp.temporal_jump_power:.2%} | Timeline: {opp.timeline_action.upper()}")
+            safe_print(f"   🔮 Timeline Confidence: {opp.timeline_score:.2%}")
         elif opp.timeline_score > 0:
-            print(f"   ⏳ Timeline: {opp.timeline_action.upper()} @ {opp.timeline_score:.2%} (Jump Power: {opp.temporal_jump_power:.2%})")
+            safe_print(f"   ⏳ Timeline: {opp.timeline_action.upper()} @ {opp.timeline_score:.2%} (Jump Power: {opp.temporal_jump_power:.2%})")
         
-        print(f"   ════════════════════════════════════════════════════════")
-        print(f"   🧠 NEURAL MIND MAP SCORES:")
-        print(f"   V14: {opp.v14_score:.1f} | Hub: {opp.hub_score:.2%}")
-        print(f"   Λ (Lambda): {opp.lambda_score:.2%} | G (Gravity): {opp.gravity_score:.2%}")
-        print(f"   Bus: {opp.bus_score:.2%} | Hive: {opp.hive_score:.2%} | Lighthouse: {opp.lighthouse_score:.2%}")
-        print(f"   Ultimate: {opp.ultimate_score:.2%} | Path: {opp.path_boost:+.2%}")
-        print(f"   🫒 Barter: {opp.barter_matrix_score:.2%} ({opp.barter_matrix_reason})")
-        print(f"   🍀 Luck: {opp.luck_score:.2%} ({opp.luck_state})")
-        print(f"   🔐 Enigma: {opp.enigma_score:+.2%} ({opp.enigma_direction})")
+        safe_print(f"   ════════════════════════════════════════════════════════")
+        safe_print(f"   🧠 NEURAL MIND MAP SCORES:")
+        safe_print(f"   V14: {opp.v14_score:.1f} | Hub: {opp.hub_score:.2%}")
+        safe_print(f"   Λ (Lambda): {opp.lambda_score:.2%} | G (Gravity): {opp.gravity_score:.2%}")
+        safe_print(f"   Bus: {opp.bus_score:.2%} | Hive: {opp.hive_score:.2%} | Lighthouse: {opp.lighthouse_score:.2%}")
+        safe_print(f"   Ultimate: {opp.ultimate_score:.2%} | Path: {opp.path_boost:+.2%}")
+        safe_print(f"   🫒 Barter: {opp.barter_matrix_score:.2%} ({opp.barter_matrix_reason})")
+        safe_print(f"   🍀 Luck: {opp.luck_score:.2%} ({opp.luck_state})")
+        safe_print(f"   🔐 Enigma: {opp.enigma_score:+.2%} ({opp.enigma_direction})")
         if opp.queen_guidance_score != 0.0:
-            print(f"   👑 Queen: {opp.queen_guidance_score:.2%} (confidence: {opp.queen_confidence:.2%})")
+            safe_print(f"   👑 Queen: {opp.queen_guidance_score:.2%} (confidence: {opp.queen_confidence:.2%})")
             if opp.queen_wisdom:
-                print(f"      💕 \"{opp.queen_wisdom[:70]}...\"")
+                safe_print(f"      💕 \"{opp.queen_wisdom[:70]}...\"")
         if opp.wisdom_engine_score != 0.0:
-            print(f"   🧠 Wisdom: {opp.wisdom_engine_score:.2%} ({opp.civilization_insight})")
+            safe_print(f"   🧠 Wisdom: {opp.wisdom_engine_score:.2%} ({opp.civilization_insight})")
             if opp.wisdom_pattern:
-                print(f"      📚 \"{opp.wisdom_pattern[:70]}...\"")
-        print(f"   ═══════════════════════════════════════════════════════=")
-        print(f"   🔮 Combined: {opp.combined_score:.2%}")
-        print(f"   Gate Req: ${opp.gate_required_profit:.4f} | Gate OK: {'✅' if opp.gate_passed else '❌'}")
-        print(f"   Expected Profit: ${opp.expected_pnl_usd:.4f} ({opp.expected_pnl_pct:.2%})")
+                safe_print(f"      📚 \"{opp.wisdom_pattern[:70]}...\"")
+        safe_print(f"   ═══════════════════════════════════════════════════════=")
+        safe_print(f"   🔮 Combined: {opp.combined_score:.2%}")
+        safe_print(f"   Gate Req: ${opp.gate_required_profit:.4f} | Gate OK: {'✅' if opp.gate_passed else '❌'}")
+        safe_print(f"   Expected Profit: ${opp.expected_pnl_usd:.4f} ({opp.expected_pnl_pct:.2%})")
         
         # Publish to ThoughtBus for ecosystem awareness
         if self.bus_aggregator and hasattr(self.bus_aggregator, 'bus') and self.bus_aggregator.bus:
@@ -14965,7 +14975,7 @@ if __name__ == "__main__":
                 logger.debug(f"ThoughtBus publish error: {e}")
         
         if not self.live:
-            print(f"   🔵 DRY RUN - Not executed")
+            safe_print(f"   🔵 DRY RUN - Not executed")
             opp.executed = True
             opp.actual_pnl_usd = opp.expected_pnl_usd  # Simulate
             self.conversions_made += 1
@@ -15011,17 +15021,17 @@ if __name__ == "__main__":
         
         # Fallback if not set (should not happen with new logic)
         if not source_exchange:
-            print(f"   ⚠️ Opportunity missing source_exchange - attempting lookup...")
+            safe_print(f"   ⚠️ Opportunity missing source_exchange - attempting lookup...")
             source_exchange = self._find_asset_exchange(opp.from_asset)
             if source_exchange:
-                print(f"   📍 Fallback located {opp.from_asset} on {source_exchange}")
+                safe_print(f"   📍 Fallback located {opp.from_asset} on {source_exchange}")
                 opp.source_exchange = source_exchange
         
         if not source_exchange:
-            print(f"   ⚠️ Asset {opp.from_asset} not found on any exchange")
+            safe_print(f"   ⚠️ Asset {opp.from_asset} not found on any exchange")
             return False
         
-        print(f"   🔴 LIVE MODE - Executing on {source_exchange.upper()}...")
+        safe_print(f"   🔴 LIVE MODE - Executing on {source_exchange.upper()}...")
         
         # 🇮🇪🎯 IRA SNIPER EXECUTION - Celtic precision
         try:
@@ -15036,11 +15046,11 @@ if __name__ == "__main__":
             )
             
             if validation.get('approved', True):
-                print(f"   🇮🇪 Celtic Intelligence APPROVES")
-                print(f"      Quick Kill Prob: {validation.get('quick_kill_prob', 0.5)*100:.1f}%")
-                print(f"      Intel Score: {validation.get('intelligence_score', 0.5):.2f}")
+                safe_print(f"   🇮🇪 Celtic Intelligence APPROVES")
+                safe_print(f"      Quick Kill Prob: {validation.get('quick_kill_prob', 0.5)*100:.1f}%")
+                safe_print(f"      Intel Score: {validation.get('intelligence_score', 0.5):.2f}")
             else:
-                print(f"   ⚠️ Celtic Intel rejects: {validation.get('reason', 'Unknown')}")
+                safe_print(f"   ⚠️ Celtic Intel rejects: {validation.get('reason', 'Unknown')}")
                 # Still execute - sniper just provides intel, doesn't block
         except ImportError:
             pass  # IRA Sniper not available - continue silently
@@ -15053,15 +15063,15 @@ if __name__ == "__main__":
         
         # CRITICAL: Validate we have the source exchange set
         if not source_exchange:
-            print(f"   ⚠️ CRITICAL: Opportunity missing source_exchange!")
-            print(f"   ⚠️ This should NOT happen - check find_opportunities logic")
+            safe_print(f"   ⚠️ CRITICAL: Opportunity missing source_exchange!")
+            safe_print(f"   ⚠️ This should NOT happen - check find_opportunities logic")
             # Last resort fallback - but log it clearly
             source_exchange = self._find_asset_exchange(opp.from_asset)
             if source_exchange:
-                print(f"   📍 Fallback located {opp.from_asset} on {source_exchange}")
+                safe_print(f"   📍 Fallback located {opp.from_asset} on {source_exchange}")
                 opp.source_exchange = source_exchange  # Update for future reference
             else:
-                print(f"   ❌ Cannot find {opp.from_asset} on any exchange!")
+                safe_print(f"   ❌ Cannot find {opp.from_asset} on any exchange!")
                 self._record_failure(opp)
                 return False
         
@@ -15080,7 +15090,7 @@ if __name__ == "__main__":
         elif source_exchange == 'alpaca' and self.alpaca and ALPACA_API_KEY:
             return await self._execute_on_alpaca(opp)
         else:
-            print(f"   ⚠️ Exchange '{source_exchange}' not available or missing API key")
+            safe_print(f"   ⚠️ Exchange '{source_exchange}' not available or missing API key")
             self._record_failure(opp)
         
         return False
@@ -15279,7 +15289,7 @@ if __name__ == "__main__":
                 self._asset_location_logged = set()
             if asset.upper() not in self._asset_location_logged:
                 self._asset_location_logged.add(asset.upper())
-                print(f"   🔎 Asset location: {asset} on {len(candidates)} exchanges -> Best: {best_exchange}")
+                safe_print(f"   🔎 Asset location: {asset} on {len(candidates)} exchanges -> Best: {best_exchange}")
             
         return best_exchange
     
@@ -15287,7 +15297,7 @@ if __name__ == "__main__":
         """Execute conversion on Kraken using convert_crypto."""
         try:
             # Use the built-in convert_crypto which finds the best path automatically!
-            print(f"   🔄 Converting {opp.from_asset} → {opp.to_asset} via Kraken...")
+            safe_print(f"   🔄 Converting {opp.from_asset} → {opp.to_asset} via Kraken...")
             
             # 👑 QUEEN MIND: Decode conversion path in real-time
             # Refresh balance FIRST to get accurate amounts
@@ -15304,31 +15314,31 @@ if __name__ == "__main__":
                     matched_asset = bal_key
                     break
             
-            print(f"   📊 Kraken {matched_asset} balance: {actual_balance:.6f} (need: {opp.from_amount:.6f})")
+            safe_print(f"   📊 Kraken {matched_asset} balance: {actual_balance:.6f} (need: {opp.from_amount:.6f})")
             
             # Clamp to actual available balance
             if actual_balance <= 0:
-                print(f"   ⚠️ No {opp.from_asset} balance on Kraken (balance: {actual_balance})")
+                safe_print(f"   ⚠️ No {opp.from_asset} balance on Kraken (balance: {actual_balance})")
                 return False
             
             # 👑 QUEEN'S SANITY CHECK: Don't clamp to dust!
             # If we have significantly less than expected, it's likely the wrong exchange
             if actual_balance < opp.from_amount * 0.1:
-                print(f"   ⚠️ Kraken balance {actual_balance:.6f} is < 10% of expected {opp.from_amount:.6f}")
-                print(f"   ⚠️ Likely asset location mismatch. Aborting Kraken execution.")
+                safe_print(f"   ⚠️ Kraken balance {actual_balance:.6f} is < 10% of expected {opp.from_amount:.6f}")
+                safe_print(f"   ⚠️ Likely asset location mismatch. Aborting Kraken execution.")
                 return False
 
             # 👑 SERO EXECUTION FIX: Use 95% of balance for safety margin
             # Kraken has precision issues, leave 5% buffer for fees + rounding
             safe_amount = actual_balance * 0.95
             if opp.from_amount > safe_amount:
-                print(f"   👑 Sero adjusts: {opp.from_amount:.6f} → {safe_amount:.6f} (95% safe)")
+                safe_print(f"   👑 Sero adjusts: {opp.from_amount:.6f} → {safe_amount:.6f} (95% safe)")
                 opp.from_amount = safe_amount
                 opp.from_value_usd = opp.from_amount * self.prices.get(opp.from_asset, 0)
             
             # Check if clamped amount is too small
             if opp.from_value_usd < 1.0:
-                print(f"   ⚠️ Clamped value ${opp.from_value_usd:.2f} is too small for Kraken (min ~$1.50)")
+                safe_print(f"   ⚠️ Clamped value ${opp.from_value_usd:.2f} is too small for Kraken (min ~$1.50)")
                 
                 # 💧🔀 LIQUIDITY AGGREGATION CHECK - Can we top-up from other assets?
                 shortfall = 1.50 - opp.from_value_usd
@@ -15344,12 +15354,12 @@ if __name__ == "__main__":
                     new_balance = self.exchange_balances.get('kraken', {}).get(opp.from_asset, 0)
                     opp.from_amount = float(new_balance) * 0.95
                     opp.from_value_usd = opp.from_amount * self.prices.get(opp.from_asset, 0)
-                    print(f"   💧 POST-AGGREGATION: New {opp.from_asset} balance = {opp.from_amount:.6f} (${opp.from_value_usd:.2f})")
+                    safe_print(f"   💧 POST-AGGREGATION: New {opp.from_asset} balance = {opp.from_amount:.6f} (${opp.from_value_usd:.2f})")
                     if opp.from_value_usd >= 1.50:
-                        print(f"   ✅ Aggregation successful! Proceeding with trade...")
+                        safe_print(f"   ✅ Aggregation successful! Proceeding with trade...")
                         # Continue execution - don't return False
                     else:
-                        print(f"   ❌ Aggregation insufficient - still below minimum")
+                        safe_print(f"   ❌ Aggregation insufficient - still below minimum")
                         self.barter_matrix.record_preexec_rejection(
                             opp.from_asset, opp.to_asset, 
                             f"Value ${opp.from_value_usd:.2f} < ~$1.50 after aggregation",
@@ -15375,7 +15385,7 @@ if __name__ == "__main__":
             # First check if a path exists
             path = self.kraken.find_conversion_path(opp.from_asset, opp.to_asset)
             if not path:
-                print(f"   ⚠️ No conversion path found from {opp.from_asset} to {opp.to_asset}")
+                safe_print(f"   ⚠️ No conversion path found from {opp.from_asset} to {opp.to_asset}")
                 return False
             
             # 🔍 KRAKEN PRE-FLIGHT CHECK: Only check notional minimum (most reliable)
@@ -15390,8 +15400,8 @@ if __name__ == "__main__":
                 # Use a safe default of $1.20 to avoid "volume too low" errors (Kraken often requires >1 EUR/USD)
                 effective_min = max(min_notional, 1.20)
                 if opp.from_value_usd < effective_min:
-                    print(f"   ⚠️ Value ${opp.from_value_usd:.2f} < min notional ${effective_min:.2f} for {pair}")
-                    print(f"   💡 Need ${effective_min:.2f} minimum to trade on Kraken")
+                    safe_print(f"   ⚠️ Value ${opp.from_value_usd:.2f} < min notional ${effective_min:.2f} for {pair}")
+                    safe_print(f"   💡 Need ${effective_min:.2f} minimum to trade on Kraken")
                     return False
 
                 # Guard on base quantity to avoid volume_minimum errors
@@ -15401,8 +15411,8 @@ if __name__ == "__main__":
                     min_qty_needed = max(min_qty, 0.0)
                     if opp.from_amount < min_qty_needed:
                         needed_usd = min_qty_needed * from_price
-                        print(f"   ⚠️ Amount {opp.from_amount:.6f} < Kraken min qty {min_qty_needed:.6f} for {pair}")
-                        print(f"   💡 Need ≥ {min_qty_needed:.6f} ({needed_usd:.2f} USD) to avoid volume_minimum")
+                        safe_print(f"   ⚠️ Amount {opp.from_amount:.6f} < Kraken min qty {min_qty_needed:.6f} for {pair}")
+                        safe_print(f"   💡 Need ≥ {min_qty_needed:.6f} ({needed_usd:.2f} USD) to avoid volume_minimum")
                         # 🚫 Record pre-execution rejection
                         self.barter_matrix.record_preexec_rejection(
                             opp.from_asset, opp.to_asset, 
@@ -15413,12 +15423,12 @@ if __name__ == "__main__":
             
             # Show the path
             for step in path:
-                print(f"   📍 Path: {step['description']} via {step['pair']}")
+                safe_print(f"   📍 Path: {step['description']} via {step['pair']}")
             
             # 🚨 KRAKEN LOSS PREVENTION GATE
             loss_prevention_passed, loss_reason = self._check_kraken_loss_prevention(opp.from_asset, opp.from_amount)
             if not loss_prevention_passed:
-                print(f"   🚫 {loss_reason}")
+                safe_print(f"   🚫 {loss_reason}")
                 self._record_failure(opp)
                 return False
             
@@ -15431,11 +15441,11 @@ if __name__ == "__main__":
             
             if result.get('error'):
                 error_msg = str(result['error'])
-                print(f"   ❌ Conversion error: {error_msg}")
+                safe_print(f"   ❌ Conversion error: {error_msg}")
                 
                 # 👑 QUEEN LEARNING: Auto-fix minimums
                 if "volume_minimum" in error_msg or "min_notional" in error_msg:
-                    print(f"   👑 Queen learning: Increasing minimum for {opp.from_asset}")
+                    safe_print(f"   👑 Queen learning: Increasing minimum for {opp.from_asset}")
                     # Increase minimum to 1.5x current amount or at least $10
                     current_price = self.prices.get(opp.from_asset, 1.0)
                     min_usd_req = 10.0 # Safe default
@@ -15444,7 +15454,7 @@ if __name__ == "__main__":
                     new_min_qty = max(opp.from_amount * 1.5, min_usd_req / current_price if current_price > 0 else 0)
                     
                     self.dynamic_min_qty[opp.from_asset.upper()] = new_min_qty
-                    print(f"      Updated dynamic minimum for {opp.from_asset} to {new_min_qty:.6f}")
+                    safe_print(f"      Updated dynamic minimum for {opp.from_asset} to {new_min_qty:.6f}")
                     
                 self._record_failure(opp)
                 return False
@@ -15472,7 +15482,7 @@ if __name__ == "__main__":
                          if to_price > 0:
                              buy_amount = opp.from_value_usd / to_price
                     
-                    print(f"   ✅ Conversion complete! {success_count} trades executed. Bought {buy_amount:.6f} {opp.to_asset}")
+                    safe_print(f"   ✅ Conversion complete! {success_count} trades executed. Bought {buy_amount:.6f} {opp.to_asset}")
                     
                     # 🔍 VALIDATE ORDER EXECUTION
                     validation = self._validate_order_execution(trades, opp, 'kraken')
@@ -15482,13 +15492,13 @@ if __name__ == "__main__":
                     self._record_conversion(opp, buy_amount, validation, verification)
                     return True
                 else:
-                    print(f"   ❌ No successful trades in conversion")
+                    safe_print(f"   ❌ No successful trades in conversion")
                     self._record_failure(opp)
             elif result.get('dryRun'):
-                print(f"   🔵 DRY RUN: Would convert via {len(path)} trades")
+                safe_print(f"   🔵 DRY RUN: Would convert via {len(path)} trades")
                 return True
             else:
-                print(f"   ✅ Conversion result: {result}")
+                safe_print(f"   ✅ Conversion result: {result}")
                 # Estimate amount for non-standard result
                 to_price = self.prices.get(opp.to_asset, 0)
                 buy_amount = opp.from_value_usd / to_price if to_price > 0 else 0
@@ -15497,14 +15507,14 @@ if __name__ == "__main__":
                 
         except Exception as e:
             logger.error(f"❌ Kraken conversion error: {e}")
-            print(f"   ❌ Error: {e}")
+            safe_print(f"   ❌ Error: {e}")
             self._record_failure(opp)
         return False
     
     async def _execute_on_binance(self, opp) -> bool:
         """Execute conversion on Binance."""
         try:
-            print(f"   🔄 Converting {opp.from_asset} → {opp.to_asset} via Binance...")
+            safe_print(f"   🔄 Converting {opp.from_asset} → {opp.to_asset} via Binance...")
             
             # 👑 QUEEN MIND: Decode conversion path in real-time
             # Refresh balance FIRST to get accurate amounts
@@ -15521,29 +15531,29 @@ if __name__ == "__main__":
                     matched_asset = bal_key
                     break
             
-            print(f"   📊 Binance {matched_asset} balance: {actual_balance:.6f} (need: {opp.from_amount:.6f})")
+            safe_print(f"   📊 Binance {matched_asset} balance: {actual_balance:.6f} (need: {opp.from_amount:.6f})")
             
             # Clamp to actual available balance with extra safety margin for fees
             if actual_balance <= 0:
-                print(f"   ⚠️ No {opp.from_asset} balance on Binance (balance: {actual_balance})")
+                safe_print(f"   ⚠️ No {opp.from_asset} balance on Binance (balance: {actual_balance})")
                 return False
             
             # 👑 QUEEN'S SANITY CHECK: Don't clamp to dust!
             if actual_balance < opp.from_amount * 0.1:
-                print(f"   ⚠️ Binance balance {actual_balance:.6f} is < 10% of expected {opp.from_amount:.6f}")
-                print(f"   ⚠️ Likely asset location mismatch. Aborting Binance execution.")
+                safe_print(f"   ⚠️ Binance balance {actual_balance:.6f} is < 10% of expected {opp.from_amount:.6f}")
+                safe_print(f"   ⚠️ Likely asset location mismatch. Aborting Binance execution.")
                 return False
 
             # Use 98% of balance instead of 99.5% for extra safety on Binance
             safe_amount = actual_balance * 0.98
             if opp.from_amount > safe_amount:
-                print(f"   👑 Queen clamping: {opp.from_amount:.6f} → {safe_amount:.6f}")
+                safe_print(f"   👑 Queen clamping: {opp.from_amount:.6f} → {safe_amount:.6f}")
                 opp.from_amount = safe_amount
                 opp.from_value_usd = opp.from_amount * self.prices.get(opp.from_asset, 0)
             
             # Check if clamped amount is too small
             if opp.from_value_usd < 5.0:
-                print(f"   ⚠️ Clamped value ${opp.from_value_usd:.2f} is too small for Binance (min $5.00)")
+                safe_print(f"   ⚠️ Clamped value ${opp.from_value_usd:.2f} is too small for Binance (min $5.00)")
                 
                 # 💧🔀 LIQUIDITY AGGREGATION CHECK - Can we top-up from other assets?
                 shortfall = 5.0 - opp.from_value_usd
@@ -15559,12 +15569,12 @@ if __name__ == "__main__":
                     new_balance = self.exchange_balances.get('binance', {}).get(opp.from_asset, 0)
                     opp.from_amount = float(new_balance) * 0.98
                     opp.from_value_usd = opp.from_amount * self.prices.get(opp.from_asset, 0)
-                    print(f"   💧 POST-AGGREGATION: New {opp.from_asset} balance = {opp.from_amount:.6f} (${opp.from_value_usd:.2f})")
+                    safe_print(f"   💧 POST-AGGREGATION: New {opp.from_asset} balance = {opp.from_amount:.6f} (${opp.from_value_usd:.2f})")
                     if opp.from_value_usd >= 5.0:
-                        print(f"   ✅ Aggregation successful! Proceeding with trade...")
+                        safe_print(f"   ✅ Aggregation successful! Proceeding with trade...")
                         # Continue execution - don't return False
                     else:
-                        print(f"   ❌ Aggregation insufficient - still below minimum")
+                        safe_print(f"   ❌ Aggregation insufficient - still below minimum")
                         self.barter_matrix.record_preexec_rejection(
                             opp.from_asset, opp.to_asset, 
                             f"Value ${opp.from_value_usd:.2f} < $5.00 after aggregation",
@@ -15590,7 +15600,7 @@ if __name__ == "__main__":
             # Debug: Check what type of binance client we have
             client_type = type(self.binance).__name__
             client_module = type(self.binance).__module__
-            print(f"   📍 Binance client: {client_type} from {client_module}")
+            safe_print(f"   📍 Binance client: {client_type} from {client_module}")
 
             # 🔍 BINANCE PRE-FLIGHT: Enforce min notional / quantity before attempting
             try:
@@ -15600,7 +15610,7 @@ if __name__ == "__main__":
                 min_qty = float(filters.get('min_qty', 0) or 0)
                 from_price = self.prices.get(opp.from_asset, 0) or 0
                 if min_notional > 0 and opp.from_value_usd < min_notional:
-                    print(f"   ⚠️ Value ${opp.from_value_usd:.2f} < Binance min notional ${min_notional:.2f} for {pair_symbol}")
+                    safe_print(f"   ⚠️ Value ${opp.from_value_usd:.2f} < Binance min notional ${min_notional:.2f} for {pair_symbol}")
                     # 🚫 Record pre-execution rejection
                     self.barter_matrix.record_preexec_rejection(
                         opp.from_asset, opp.to_asset, 
@@ -15610,8 +15620,8 @@ if __name__ == "__main__":
                     return False
                 if min_qty > 0 and opp.from_amount < min_qty:
                     needed = min_qty * (from_price if from_price > 0 else 1)
-                    print(f"   ⚠️ Amount {opp.from_amount:.6f} < Binance min qty {min_qty:.6f} for {pair_symbol}")
-                    print(f"   💡 Need ≥ {min_qty:.6f} ({needed:.2f} USD) to avoid minQty rejection")
+                    safe_print(f"   ⚠️ Amount {opp.from_amount:.6f} < Binance min qty {min_qty:.6f} for {pair_symbol}")
+                    safe_print(f"   💡 Need ≥ {min_qty:.6f} ({needed:.2f} USD) to avoid minQty rejection")
                     # 🚫 Record pre-execution rejection
                     self.barter_matrix.record_preexec_rejection(
                         opp.from_asset, opp.to_asset, 
@@ -15624,12 +15634,12 @@ if __name__ == "__main__":
             
             # Check if convert_crypto exists
             if not hasattr(self.binance, 'convert_crypto'):
-                print(f"   ⚠️ BinanceClient missing convert_crypto method!")
-                print(f"   📍 Available methods: {[m for m in dir(self.binance) if not m.startswith('_')][:20]}")
+                safe_print(f"   ⚠️ BinanceClient missing convert_crypto method!")
+                safe_print(f"   📍 Available methods: {[m for m in dir(self.binance) if not m.startswith('_')][:20]}")
                 
                 # Fallback: Use direct place_market_order if available
                 if hasattr(self.binance, 'place_market_order'):
-                    print(f"   🔄 Attempting direct market order fallback...")
+                    safe_print(f"   🔄 Attempting direct market order fallback...")
                     # Try direct pair
                     pair = f"{opp.from_asset}{opp.to_asset}"
                     result = self.binance.place_market_order(
@@ -15638,7 +15648,7 @@ if __name__ == "__main__":
                         quantity=opp.from_amount
                     )
                     if result and not result.get("error"):
-                        print(f"   ✅ Direct order executed: {result}")
+                        safe_print(f"   ✅ Direct order executed: {result}")
                         return True
                     # Try inverse pair
                     pair = f"{opp.to_asset}{opp.from_asset}"
@@ -15648,7 +15658,7 @@ if __name__ == "__main__":
                         quote_qty=opp.from_amount * opp.price if hasattr(opp, 'price') else opp.from_value_usd
                     )
                     if result and not result.get("error"):
-                        print(f"   ✅ Inverse order executed: {result}")
+                        safe_print(f"   ✅ Inverse order executed: {result}")
                         return True
                 
                 self._record_failure(opp)
@@ -15657,7 +15667,7 @@ if __name__ == "__main__":
             # 🚨 BINANCE LOSS PREVENTION GATE
             loss_prevention_passed, loss_reason = self._check_binance_loss_prevention(opp.from_asset, opp.from_amount)
             if not loss_prevention_passed:
-                print(f"   🚫 {loss_reason}")
+                safe_print(f"   🚫 {loss_reason}")
                 self._record_failure(opp)
                 return False
             
@@ -15671,7 +15681,7 @@ if __name__ == "__main__":
             # Handle pathfinding error from convert_crypto
             if result and result.get("error"):
                 if "No conversion path" in str(result.get("error", "")):
-                    print(f"   ⚠️ {result['error']}")
+                    safe_print(f"   ⚠️ {result['error']}")
                     return False
             
             if result and result.get("trades"):
@@ -15687,18 +15697,18 @@ if __name__ == "__main__":
                     return False
             elif result and result.get("dryRun"):
                 # Dry run mode - simulate success
-                print(f"   🧪 DRY RUN: Would convert via {result.get('trades', 0)} trades")
+                safe_print(f"   🧪 DRY RUN: Would convert via {result.get('trades', 0)} trades")
                 return True
             else:
                 error_msg = result.get("error", "Unknown error")
                 logger.error(f"❌ Binance conversion error: {error_msg}")
-                print(f"   ❌ Error: {error_msg}")
+                safe_print(f"   ❌ Error: {error_msg}")
                 self._record_failure(opp)
                 return False
         
         except Exception as e:
             logger.error(f"❌ Binance conversion error: {e}")
-            print(f"   ❌ Error: {e}")
+            safe_print(f"   ❌ Error: {e}")
             self._record_failure(opp)
         return False
     
@@ -15706,7 +15716,7 @@ if __name__ == "__main__":
         """Execute conversion on Alpaca using convert_crypto."""
         try:
             # Use the built-in convert_crypto which finds the best path automatically!
-            print(f"   🔄 Converting {opp.from_asset} → {opp.to_asset} via Alpaca...")
+            safe_print(f"   🔄 Converting {opp.from_asset} → {opp.to_asset} via Alpaca...")
             
             # 👑 QUEEN MIND: Decode conversion path in real-time
             # Refresh balance FIRST to get accurate amounts
@@ -15723,17 +15733,17 @@ if __name__ == "__main__":
                     matched_asset = bal_key
                     break
             
-            print(f"   📊 Alpaca {matched_asset} balance: {actual_balance:.6f} (need: {opp.from_amount:.6f})")
+            safe_print(f"   📊 Alpaca {matched_asset} balance: {actual_balance:.6f} (need: {opp.from_amount:.6f})")
             
             # Clamp to actual available balance
             if actual_balance <= 0:
-                print(f"   ⚠️ No {opp.from_asset} balance on Alpaca (balance: {actual_balance})")
+                safe_print(f"   ⚠️ No {opp.from_asset} balance on Alpaca (balance: {actual_balance})")
                 return False
             
             # 🌍✨ PLANET SAVER: Same sanity check as Kraken - detect location mismatch!
             if actual_balance < opp.from_amount * 0.1:
-                print(f"   🌍⚠️ Alpaca balance {actual_balance:.6f} is < 10% of expected {opp.from_amount:.6f}")
-                print(f"   🌍⚠️ Asset location mismatch! Protecting the planet by aborting.")
+                safe_print(f"   🌍⚠️ Alpaca balance {actual_balance:.6f} is < 10% of expected {opp.from_amount:.6f}")
+                safe_print(f"   🌍⚠️ Asset location mismatch! Protecting the planet by aborting.")
                 return False
             
             # 🌍✨ PLANET SAVER PROTECTION: Don't trade dust that gets eaten by fees!
@@ -15743,24 +15753,24 @@ if __name__ == "__main__":
             # 👑 SERO EXECUTION FIX: Use 95% of balance for safety margin
             safe_amount = actual_balance * 0.95
             if opp.from_amount > safe_amount:
-                print(f"   👑 Sero adjusts: {opp.from_amount:.6f} → {safe_amount:.6f} (95% safe)")
+                safe_print(f"   👑 Sero adjusts: {opp.from_amount:.6f} → {safe_amount:.6f} (95% safe)")
                 opp.from_amount = safe_amount
                 opp.from_value_usd = opp.from_amount * self.prices.get(opp.from_asset, 0)
                 
                 # 🌍✨ PLANET SAVER: Check if clamping destroyed our profit opportunity!
                 clamp_ratio = opp.from_amount / original_amount if original_amount > 0 else 0
                 if clamp_ratio < 0.2:  # Lost more than 80% of intended trade size
-                    print(f"   🌍⚠️ PLANET SAVER PROTECTION: Clamped to {clamp_ratio*100:.1f}% of intended!")
-                    print(f"      Original: ${original_value:.2f} → Clamped: ${opp.from_value_usd:.2f}")
-                    print(f"      Fees would eat this tiny trade alive. ABORTING to save the planet!")
+                    safe_print(f"   🌍⚠️ PLANET SAVER PROTECTION: Clamped to {clamp_ratio*100:.1f}% of intended!")
+                    safe_print(f"      Original: ${original_value:.2f} → Clamped: ${opp.from_value_usd:.2f}")
+                    safe_print(f"      Fees would eat this tiny trade alive. ABORTING to save the planet!")
                     return False
                     
                 # 🌍✨ TRUST THE MATH: Pre-Execution Gate validates net profit
                 # 🛡️ CRITICAL: Use $1.50 minimum to avoid mid-trade failures!
                 PLANET_SAVER_MIN_ALPACA = 1.50  # $1.50 minimum for safety
                 if opp.from_value_usd < PLANET_SAVER_MIN_ALPACA:
-                    print(f"   🌍⚠️ PLANET SAVER: Value ${opp.from_value_usd:.2f} < ${PLANET_SAVER_MIN_ALPACA} minimum")
-                    print(f"      Too small to execute. Skipping dust.")
+                    safe_print(f"   🌍⚠️ PLANET SAVER: Value ${opp.from_value_usd:.2f} < ${PLANET_SAVER_MIN_ALPACA} minimum")
+                    safe_print(f"      Too small to execute. Skipping dust.")
                     return False
                 # ✅ Trust Pre-Execution Gate - if net profit > 0, proceed!
 
@@ -15819,7 +15829,7 @@ if __name__ == "__main__":
             self.run_metrics.record_net_estimate(net_expected_pct)
             
             cost_source = cost_metrics.get('source', 'unknown')
-            print(
+            safe_print(
                 f"   🎲 MONTE CARLO: {cost_source} {total_cost_pct:.2f}% cost | "
                 f"net est ${net_expected_usd:+.4f} ({net_expected_pct:+.2f}%)"
             )
@@ -15831,7 +15841,7 @@ if __name__ == "__main__":
                     positions = self.alpaca.get_positions()
                     total_unrealized_pl = sum(float(p.get('unrealized_pl', 0)) for p in positions)
                     if total_unrealized_pl < -1.00:  # More than $1.00 underwater (was $0.05 - too strict!)
-                        print(
+                        safe_print(
                             f"   🚫 POSITIONS UNDERWATER: ${total_unrealized_pl:.4f} unrealized loss. "
                             f"NOT trading until positions recover!"
                         )
@@ -15841,21 +15851,21 @@ if __name__ == "__main__":
 
             if net_expected_usd < self.alpaca_min_net_profit_usd or net_expected_pct < self.alpaca_min_net_profit_pct:
                 self.run_metrics.record_candidate(passed_preexec=True, passed_mc=False, skip_reason=f"net_below_threshold")
-                print(f"   🛡️ MONTE CARLO: Net ${net_expected_usd:+.4f} ({net_expected_pct:+.2f}%) < required {self.alpaca_min_net_profit_pct:.2f}% - SKIPPING")
-                print(f"      Required: net ≥ {self.alpaca_min_net_profit_pct:.2f}% or net ≥ ${self.alpaca_min_net_profit_usd:.3f}")
+                safe_print(f"   🛡️ MONTE CARLO: Net ${net_expected_usd:+.4f} ({net_expected_pct:+.2f}%) < required {self.alpaca_min_net_profit_pct:.2f}% - SKIPPING")
+                safe_print(f"      Required: net ≥ {self.alpaca_min_net_profit_pct:.2f}% or net ≥ ${self.alpaca_min_net_profit_usd:.3f}")
                 return False
             
             # 🎲❄️ MONTE CARLO SNOWBALL APPROVED - EXECUTE ON ALPACA!
             self.run_metrics.record_candidate(passed_preexec=True, passed_mc=True)
-            print(f"\n   🎲❄️ MONTE CARLO SNOWBALL APPROVED! ❄️🎲")
-            print(f"   ├── Net Profit: ${net_expected_usd:+.4f} ({net_expected_pct:+.2f}%)")
-            print(f"   ├── Mode: One trade → Hold → Roll profits")
-            print(f"   └── Executing on ALPACA... 🦙🚀")
+            safe_print(f"\n   🎲❄️ MONTE CARLO SNOWBALL APPROVED! ❄️🎲")
+            safe_print(f"   ├── Net Profit: ${net_expected_usd:+.4f} ({net_expected_pct:+.2f}%)")
+            safe_print(f"   ├── Mode: One trade → Hold → Roll profits")
+            safe_print(f"   └── Executing on ALPACA... 🦙🚀")
             
             # Execute directly on Alpaca
             path = self.alpaca.find_conversion_path(opp.from_asset, opp.to_asset)
             if not path:
-                print(f"   ⚠️ No conversion path found from {opp.from_asset} to {opp.to_asset}")
+                safe_print(f"   ⚠️ No conversion path found from {opp.from_asset} to {opp.to_asset}")
                 return False
             
             # 🔍 ALPACA PRE-FLIGHT CHECK: Verify minimums for EACH step
@@ -15884,28 +15894,28 @@ if __name__ == "__main__":
                 
                 # For selling, check if we have enough of the from_asset
                 if step.get('side') == 'sell' and opp.from_amount < min_qty:
-                    print(f"   ⚠️ Qty {opp.from_amount:.6f} < min {min_qty:.6f} for {pair}")
-                    print(f"   💡 Need {min_qty:.6f} {base_asset} minimum")
+                    safe_print(f"   ⚠️ Qty {opp.from_amount:.6f} < min {min_qty:.6f} for {pair}")
+                    safe_print(f"   💡 Need {min_qty:.6f} {base_asset} minimum")
                     return False
                 
                 # Check minimum notional value - Use $1.50 buffer for safety!
                 ALPACA_MIN_NOTIONAL_SAFE = 1.50  # $1.50 minimum (not $1.00) to avoid edge cases
                 if opp.from_value_usd < ALPACA_MIN_NOTIONAL_SAFE:
-                    print(f"   ⚠️ Value ${opp.from_value_usd:.2f} < min notional ${ALPACA_MIN_NOTIONAL_SAFE:.2f}")
-                    print(f"   💡 Need ${ALPACA_MIN_NOTIONAL_SAFE:.2f} minimum to trade safely on Alpaca")
+                    safe_print(f"   ⚠️ Value ${opp.from_value_usd:.2f} < min notional ${ALPACA_MIN_NOTIONAL_SAFE:.2f}")
+                    safe_print(f"   💡 Need ${ALPACA_MIN_NOTIONAL_SAFE:.2f} minimum to trade safely on Alpaca")
                     return False
                 
                 # 🛡️ 2-HOP SAFETY: Check if we have enough for BOTH legs!
                 if len(path) >= 2:
                     per_leg_value = opp.from_value_usd * 0.95 / 2  # After 95% adj, split between legs
                     if per_leg_value < 1.00:
-                        print(f"   ⚠️ 2-hop trade needs $2.50+ (each leg gets ~${per_leg_value:.2f})")
-                        print(f"   💡 Value ${opp.from_value_usd:.2f} too small for 2-hop - risk of mid-trade failure!")
+                        safe_print(f"   ⚠️ 2-hop trade needs $2.50+ (each leg gets ~${per_leg_value:.2f})")
+                        safe_print(f"   💡 Value ${opp.from_value_usd:.2f} too small for 2-hop - risk of mid-trade failure!")
                         return False
             
             # Show the path
             for step in path:
-                print(f"   📍 Path: {step['description']} via {step['pair']}")
+                safe_print(f"   📍 Path: {step['description']} via {step['pair']}")
             
             # Execute the conversion
             result = self.alpaca.convert_crypto(
@@ -15915,7 +15925,7 @@ if __name__ == "__main__":
             )
             
             if result.get('error'):
-                print(f"   ❌ Conversion error: {result['error']}")
+                safe_print(f"   ❌ Conversion error: {result['error']}")
                 self._record_failure(opp)
                 return False
             
@@ -15938,11 +15948,11 @@ if __name__ == "__main__":
                          if to_price > 0:
                              buy_amount = opp.from_value_usd / to_price
                     
-                    print(f"   ✅ Conversion complete! {success_count} trades executed. Bought {buy_amount:.6f} {opp.to_asset}")
+                    safe_print(f"   ✅ Conversion complete! {success_count} trades executed. Bought {buy_amount:.6f} {opp.to_asset}")
                     
                     # ⏱️ Record entry time for minimum hold enforcement
                     self.position_entry_times[opp.to_asset.upper()] = time.time()
-                    print(f"   ⏱️ Position entered at {time.strftime('%H:%M:%S')} - will hold minimum {self.min_hold_time_seconds:.0f}s")
+                    safe_print(f"   ⏱️ Position entered at {time.strftime('%H:%M:%S')} - will hold minimum {self.min_hold_time_seconds:.0f}s")
                     
                     # 🦙 Optional OCO exits to capture profit + protect downside
                     self._alpaca_place_exit_orders(opp.to_asset, buy_amount)
@@ -15955,13 +15965,13 @@ if __name__ == "__main__":
                     self._record_conversion(opp, buy_amount, validation, verification)
                     return True
                 else:
-                    print(f"   ❌ No successful trades in conversion")
+                    safe_print(f"   ❌ No successful trades in conversion")
                     self._record_failure(opp)
             elif result.get('dryRun'):
-                print(f"   🔵 DRY RUN: Would convert via {len(path)} trades")
+                safe_print(f"   🔵 DRY RUN: Would convert via {len(path)} trades")
                 return True
             else:
-                print(f"   ✅ Conversion result: {result}")
+                safe_print(f"   ✅ Conversion result: {result}")
                 # Estimate amount for non-standard result
                 to_price = self.prices.get(opp.to_asset, 0)
                 buy_amount = opp.from_value_usd / to_price if to_price > 0 else 0
@@ -15970,7 +15980,7 @@ if __name__ == "__main__":
                 
         except Exception as e:
             logger.error(f"❌ Alpaca conversion error: {e}")
-            print(f"   ❌ Error: {e}")
+            safe_print(f"   ❌ Error: {e}")
             self._record_failure(opp)
         return False
 
@@ -15995,12 +16005,12 @@ if __name__ == "__main__":
             bool: True if execution successful
         """
         exchange = exchange.lower()
-        print(f"\n   🌐═══════════════════════════════════════════════════════════════")
-        print(f"   🌐 MULTI-EXCHANGE EXECUTION: {exchange.upper()}")
-        print(f"   🌐═══════════════════════════════════════════════════════════════")
-        print(f"   📊 Trade: {opp.from_asset} → {opp.to_asset}")
-        print(f"   💰 Amount: {opp.from_amount:.6f} ({opp.from_asset}) = ${opp.from_value_usd:.2f}")
-        print(f"   ✅ Alpaca-verified profit: ${net_expected_usd:+.4f}")
+        safe_print(f"\n   🌐═══════════════════════════════════════════════════════════════")
+        safe_print(f"   🌐 MULTI-EXCHANGE EXECUTION: {exchange.upper()}")
+        safe_print(f"   🌐═══════════════════════════════════════════════════════════════")
+        safe_print(f"   📊 Trade: {opp.from_asset} → {opp.to_asset}")
+        safe_print(f"   💰 Amount: {opp.from_amount:.6f} ({opp.from_asset}) = ${opp.from_value_usd:.2f}")
+        safe_print(f"   ✅ Alpaca-verified profit: ${net_expected_usd:+.4f}")
         
         try:
             # Get appropriate client
@@ -16015,7 +16025,7 @@ if __name__ == "__main__":
                 client = self.coinbase_client
             
             if not client:
-                print(f"   ⚠️ {exchange.upper()} client not available")
+                safe_print(f"   ⚠️ {exchange.upper()} client not available")
                 # Try next exchange in priority
                 return self._try_next_exchange(opp, net_expected_usd, cost_metrics, exclude=[exchange])
             
@@ -16024,14 +16034,14 @@ if __name__ == "__main__":
                 balance = client.get_balance()
                 from_balance = float(balance.get(opp.from_asset, 0))
                 if from_balance < opp.from_amount:
-                    print(f"   ⚠️ {exchange.upper()} insufficient balance: {from_balance:.6f} < {opp.from_amount:.6f}")
+                    safe_print(f"   ⚠️ {exchange.upper()} insufficient balance: {from_balance:.6f} < {opp.from_amount:.6f}")
                     return self._try_next_exchange(opp, net_expected_usd, cost_metrics, exclude=[exchange])
             except Exception as e:
                 logger.warning(f"Balance check failed for {exchange}: {e}")
             
             # Format symbol for exchange
             symbol = self._format_symbol_for_exchange(opp.from_asset, opp.to_asset, exchange)
-            print(f"   🎯 Symbol: {symbol}")
+            safe_print(f"   🎯 Symbol: {symbol}")
             
             # Execute trade
             # 🚨 LOSS PREVENTION GATE: Check Alpaca position P&L before selling
@@ -16039,10 +16049,10 @@ if __name__ == "__main__":
                 # This is a SELL order (crypto→USD) - check if position is at unrealized loss
                 loss_prevention_passed, loss_reason = self._check_alpaca_loss_prevention(opp.from_asset, opp.from_amount)
                 if not loss_prevention_passed:
-                    print(f"   🚨 LOSS PREVENTION BLOCKED SELL!")
-                    print(f"   ├── Asset: {opp.from_asset}")
-                    print(f"   ├── Reason: {loss_reason}")
-                    print(f"   └── Would realize loss - trade rejected!")
+                    safe_print(f"   🚨 LOSS PREVENTION BLOCKED SELL!")
+                    safe_print(f"   ├── Asset: {opp.from_asset}")
+                    safe_print(f"   ├── Reason: {loss_reason}")
+                    safe_print(f"   └── Would realize loss - trade rejected!")
                     
                     # Record rejection for learning
                     if hasattr(self, 'barter_matrix'):
@@ -16060,17 +16070,17 @@ if __name__ == "__main__":
                 # Standard trade execution
                 result = client.execute_trade(symbol, 'sell', opp.from_amount)
             else:
-                print(f"   ❌ {exchange.upper()} client missing execute method")
+                safe_print(f"   ❌ {exchange.upper()} client missing execute method")
                 return False
             
             # Check result
             if result.get('error'):
-                print(f"   ❌ {exchange.upper()} error: {result['error']}")
+                safe_print(f"   ❌ {exchange.upper()} error: {result['error']}")
                 return self._try_next_exchange(opp, net_expected_usd, cost_metrics, exclude=[exchange])
             
             # Success!
-            print(f"   ✅ {exchange.upper()} EXECUTION SUCCESS!")
-            print(f"   📋 Order: {result.get('order_id', result.get('id', 'N/A'))}")
+            safe_print(f"   ✅ {exchange.upper()} EXECUTION SUCCESS!")
+            safe_print(f"   📋 Order: {result.get('order_id', result.get('id', 'N/A'))}")
             
             # Calculate bought amount
             buy_amount = 0.0
@@ -16083,13 +16093,13 @@ if __name__ == "__main__":
             
             # Track position entry time
             self.position_entry_times[opp.to_asset.upper()] = time.time()
-            print(f"   ⏱️ Position entered at {time.strftime('%H:%M:%S')}")
+            safe_print(f"   ⏱️ Position entered at {time.strftime('%H:%M:%S')}")
             
             return True
             
         except Exception as e:
             logger.error(f"❌ {exchange} execution error: {e}")
-            print(f"   ❌ {exchange.upper()} error: {e}")
+            safe_print(f"   ❌ {exchange.upper()} error: {e}")
             return self._try_next_exchange(opp, net_expected_usd, cost_metrics, exclude=[exchange])
     
     def _try_next_exchange(self, opp, net_expected_usd: float, cost_metrics: Dict, exclude: List[str]) -> bool:
@@ -16100,10 +16110,10 @@ if __name__ == "__main__":
         for exch in exec_order:
             if exch in exclude or exch == 'alpaca':
                 continue
-            print(f"   🔄 Trying next exchange: {exch.upper()}")
+            safe_print(f"   🔄 Trying next exchange: {exch.upper()}")
             return self._execute_on_exchange(exch, opp, net_expected_usd, cost_metrics)
         
-        print(f"   ❌ All exchanges exhausted. No execution possible.")
+        safe_print(f"   ❌ All exchanges exhausted. No execution possible.")
         return False
     
     def _format_symbol_for_exchange(self, from_asset: str, to_asset: str, exchange: str) -> str:
@@ -16520,56 +16530,56 @@ if __name__ == "__main__":
     
     def _print_order_validation(self, validation: Dict, verification: Dict, opp):
         """Print comprehensive order validation results."""
-        print("\n   " + "═" * 60)
-        print("   🔍 ORDER VALIDATION & PROFIT VERIFICATION")
-        print("   " + "═" * 60)
+        safe_print("\n   " + "═" * 60)
+        safe_print("   🔍 ORDER VALIDATION & PROFIT VERIFICATION")
+        safe_print("   " + "═" * 60)
         
         # Order IDs
         if validation['order_ids']:
-            print(f"   📋 Order IDs ({validation['exchange'].upper()}):")
+            safe_print(f"   📋 Order IDs ({validation['exchange'].upper()}):")
             for order in validation['order_ids']:
-                print(f"      Step {order['step']}: {order['order_id']} ({order['side']} {order['pair']})")
+                safe_print(f"      Step {order['step']}: {order['order_id']} ({order['side']} {order['pair']})")
         
         # Execution Summary
-        print(f"\n   📊 EXECUTION SUMMARY:")
-        print(f"      Sold: {validation['total_sold']:.8f} {opp.from_asset}")
-        print(f"      Bought: {validation.get('final_amount', 0):.8f} {opp.to_asset}")
+        safe_print(f"\n   📊 EXECUTION SUMMARY:")
+        safe_print(f"      Sold: {validation['total_sold']:.8f} {opp.from_asset}")
+        safe_print(f"      Bought: {validation.get('final_amount', 0):.8f} {opp.to_asset}")
         if validation['avg_sell_price'] > 0:
-            print(f"      Avg Sell Price: ${validation['avg_sell_price']:.6f}")
+            safe_print(f"      Avg Sell Price: ${validation['avg_sell_price']:.6f}")
         if validation['avg_buy_price'] > 0:
-            print(f"      Avg Buy Price: ${validation['avg_buy_price']:.6f}")
-        print(f"      Total Fees: ${validation['total_fees']:.6f}")
+            safe_print(f"      Avg Buy Price: ${validation['avg_buy_price']:.6f}")
+        safe_print(f"      Total Fees: ${validation['total_fees']:.6f}")
         
         # P&L Verification
-        print(f"\n   💰 P&L VERIFICATION:")
-        print(f"      Expected P&L: ${verification['expected_pnl']:+.4f}")
-        print(f"      Calculated P&L: ${verification['calculated_pnl']:+.4f}")
-        print(f"      Verified P&L: ${verification['verified_pnl']:+.4f}")
+        safe_print(f"\n   💰 P&L VERIFICATION:")
+        safe_print(f"      Expected P&L: ${verification['expected_pnl']:+.4f}")
+        safe_print(f"      Calculated P&L: ${verification['calculated_pnl']:+.4f}")
+        safe_print(f"      Verified P&L: ${verification['verified_pnl']:+.4f}")
         
         if verification['discrepancy'] > 0.0001:
             status = "⚠️" if verification['discrepancy_pct'] > 5 else "✅"
-            print(f"      {status} Discrepancy: ${verification['discrepancy']:.4f} ({verification['discrepancy_pct']:.1f}%)")
+            safe_print(f"      {status} Discrepancy: ${verification['discrepancy']:.4f} ({verification['discrepancy_pct']:.1f}%)")
         else:
-            print(f"      ✅ Math Verified!")
+            safe_print(f"      ✅ Math Verified!")
         
         # Validation Status
         if validation['validation_errors']:
-            print(f"\n   ⚠️ VALIDATION ISSUES:")
+            safe_print(f"\n   ⚠️ VALIDATION ISSUES:")
             for error in validation['validation_errors']:
-                print(f"      - {error}")
+                safe_print(f"      - {error}")
         
         if verification['warnings']:
-            print(f"\n   ⚠️ VERIFICATION WARNINGS:")
+            safe_print(f"\n   ⚠️ VERIFICATION WARNINGS:")
             for warning in verification['warnings']:
-                print(f"      - {warning}")
+                safe_print(f"      - {warning}")
         
         # Final Status
         if validation['valid'] and verification['valid']:
-            print(f"\n   ✅ ORDER FULLY VALIDATED - Profit math confirmed!")
+            safe_print(f"\n   ✅ ORDER FULLY VALIDATED - Profit math confirmed!")
         else:
-            print(f"\n   ⚠️ VALIDATION INCOMPLETE - Review required")
+            safe_print(f"\n   ⚠️ VALIDATION INCOMPLETE - Review required")
         
-        print("   " + "═" * 60)
+        safe_print("   " + "═" * 60)
     
     def _record_conversion(self, opp, buy_amount: float, validation: Dict = None, verification: Dict = None):
         """Record a successful conversion with STEP-BY-STEP realized profit tracking and ORDER VALIDATION."""
@@ -16606,12 +16616,12 @@ if __name__ == "__main__":
                     'entry_time': time.time(),
                     'entry_from': from_upper,
                 }
-                print(f"\n   🎿☃️ SNOWBALL ENTRY RECORDED:")
-                print(f"      Asset: {to_upper}")
-                print(f"      Amount: {buy_amount:.6f}")
-                print(f"      Entry Price: ${actual_buy_price:.6f}")
-                print(f"      Entry Value: ${opp.from_value_usd:.2f}")
-                print(f"      ⏳ Waiting for profit >= {self.snowball_min_profit_pct}% to exit...")
+                safe_print(f"\n   🎿☃️ SNOWBALL ENTRY RECORDED:")
+                safe_print(f"      Asset: {to_upper}")
+                safe_print(f"      Amount: {buy_amount:.6f}")
+                safe_print(f"      Entry Price: ${actual_buy_price:.6f}")
+                safe_print(f"      Entry Value: ${opp.from_value_usd:.2f}")
+                safe_print(f"      ⏳ Waiting for profit >= {self.snowball_min_profit_pct}% to exit...")
             
             elif not is_from_stable and is_to_stable and self.snowball_position:
                 # EXIT: Selling coin back to stablecoin
@@ -16638,25 +16648,25 @@ if __name__ == "__main__":
                 self.snowball_profit_history.append(trade_record)
                 self.snowball_total_realized += realized_profit
                 
-                print(f"\n   🎿💰 SNOWBALL EXIT - PROFIT CONFIRMED!")
-                print(f"      Asset: {self.snowball_position['asset']}")
-                print(f"      Entry: ${entry_value:.2f} @ ${entry_price:.6f}")
-                print(f"      Exit:  ${exit_value:.2f} @ ${actual_sell_price:.6f}")
-                print(f"      ════════════════════════════════════")
-                print(f"      💵 REALIZED PROFIT: ${realized_profit:+.4f} ({profit_pct:+.2f}%)")
-                print(f"      📊 SNOWBALL TOTAL:  ${self.snowball_total_realized:+.4f}")
-                print(f"      🎯 Trade #{len(self.snowball_profit_history)}")
-                print(f"      ════════════════════════════════════")
+                safe_print(f"\n   🎿💰 SNOWBALL EXIT - PROFIT CONFIRMED!")
+                safe_print(f"      Asset: {self.snowball_position['asset']}")
+                safe_print(f"      Entry: ${entry_value:.2f} @ ${entry_price:.6f}")
+                safe_print(f"      Exit:  ${exit_value:.2f} @ ${actual_sell_price:.6f}")
+                safe_print(f"      ════════════════════════════════════")
+                safe_print(f"      💵 REALIZED PROFIT: ${realized_profit:+.4f} ({profit_pct:+.2f}%)")
+                safe_print(f"      📊 SNOWBALL TOTAL:  ${self.snowball_total_realized:+.4f}")
+                safe_print(f"      🎯 Trade #{len(self.snowball_profit_history)}")
+                safe_print(f"      ════════════════════════════════════")
                 
                 if realized_profit >= 0:
-                    print(f"      ✅ CONFIRMED WIN! Entering cooldown...")
+                    safe_print(f"      ✅ CONFIRMED WIN! Entering cooldown...")
                 else:
-                    print(f"      ❌ LOSS (shouldn't happen - gates should prevent this)")
+                    safe_print(f"      ❌ LOSS (shouldn't happen - gates should prevent this)")
                 
                 # Clear position - ready for next entry after cooldown
                 self.snowball_position = None
                 self.snowball_last_exit_time = time.time()  # 🎿 Start cooldown timer
-                print(f"      ⏸️ COOLDOWN ACTIVE: {self.snowball_cooldown_seconds}s before next entry")
+                safe_print(f"      ⏸️ COOLDOWN ACTIVE: {self.snowball_cooldown_seconds}s before next entry")
 
         # 🚨 USE ACTUAL EXECUTION DATA, NOT ESTIMATED PRICES
         # This is critical to prevent ghost profits!
@@ -16789,7 +16799,7 @@ if __name__ == "__main__":
                             prev['entry_value_usd'] = prev.get('entry_price', 0.0) * prev.get('amount', 0.0)
             except Exception as e:
                 logger.debug(f"Position registry update error: {e}")
-        # print(step_display)  # FIXME: step_display not defined
+        # safe_print(step_display)  # FIXME: step_display not defined
         
         # 🔧 FIX: Build profit_result from barter_matrix path history
         path_key = (opp.from_asset.upper(), opp.to_asset.upper())
@@ -16803,20 +16813,20 @@ if __name__ == "__main__":
         }
         
         # Show path performance (how this specific conversion path is doing)
-        print(f"   📊 PATH {opp.from_asset}→{opp.to_asset}: {profit_result['path_trades']} trades, ${profit_result['path_total_profit']:+.4f} total")
-        print(f"   🔄 Slippage: {profit_result['actual_slippage_pct']:.2f}%")
+        safe_print(f"   📊 PATH {opp.from_asset}→{opp.to_asset}: {profit_result['path_trades']} trades, ${profit_result['path_total_profit']:+.4f} total")
+        safe_print(f"   🔄 Slippage: {profit_result['actual_slippage_pct']:.2f}%")
         
         # 👑🍄 QUEEN'S MYCELIUM BROADCAST - Send signals to all systems
         if profit_result.get('is_win'):
-            print(f"   👑 Queen's Verdict: ✅ WIN! Path continues.")
+            safe_print(f"   👑 Queen's Verdict: ✅ WIN! Path continues.")
         else:
             win_rate = profit_result.get('path_win_rate', 0)
-            print(f"   👑 Queen's Verdict: ❌ LOSS! Path win rate: {win_rate:.0%}")
+            safe_print(f"   👑 Queen's Verdict: ❌ LOSS! Path win rate: {win_rate:.0%}")
             # Broadcast through mycelium
             queen_signals = self.barter_matrix.get_queen_signals()
             for signal in queen_signals:
                 if signal['type'] == 'PATH_BLOCKED':
-                    print(f"   🍄 MYCELIUM BROADCAST: {signal['path']} BLOCKED - {signal['reason']}")
+                    safe_print(f"   🍄 MYCELIUM BROADCAST: {signal['path']} BLOCKED - {signal['reason']}")
         
         # Update total_profit_usd to match barter matrix
         self.total_profit_usd = self.barter_matrix.total_realized_profit
@@ -16885,11 +16895,11 @@ if __name__ == "__main__":
                 
                 if result:
                     timing_tag = "🎯" if result.direction_correct else "❌"
-                    print(f"   📅 7-Day Validation: {timing_tag} timing={result.timing_score:.0%}")
+                    safe_print(f"   📅 7-Day Validation: {timing_tag} timing={result.timing_score:.0%}")
                     
                     # Log adaptive weight updates
                     weights = self.seven_day_planner.adaptive_weights
-                    print(f"   🧠 Adaptive: h={weights['hourly_weight']:.2f}, s={weights['symbol_weight']:.2f}, acc={weights['accuracy_7d']:.0%}")
+                    safe_print(f"   🧠 Adaptive: h={weights['hourly_weight']:.2f}, s={weights['symbol_weight']:.2f}, acc={weights['accuracy_7d']:.0%}")
                     
                     # 👑📊 FEED VALIDATED PREDICTION TO QUEEN! 
                     # Every verified prediction feeds Queen's neural learning!
@@ -16909,7 +16919,7 @@ if __name__ == "__main__":
                         }
                         queen_result = self.queen.receive_validated_prediction(validation_data)
                         if queen_result.get('neural_trained'):
-                            print(f"   👑🧠 Queen learned from validated prediction!")
+                            safe_print(f"   👑🧠 Queen learned from validated prediction!")
             except Exception as e:
                 logger.debug(f"7-day planner validation error: {e}")
 
@@ -16948,7 +16958,7 @@ if __name__ == "__main__":
                 }
                 nexus_queen_result = self.queen.receive_validated_prediction(nexus_validation_data)
                 if nexus_queen_result.get('neural_trained'):
-                    print(f"   🔮👑 Queen learned from Nexus prediction validation!")
+                    safe_print(f"   🔮👑 Queen learned from Nexus prediction validation!")
             except Exception as e:
                 logger.debug(f"Nexus validation feed error: {e}")
 
@@ -17072,8 +17082,8 @@ if __name__ == "__main__":
             )
             
             if avoid:
-                print(f"   👑🎓 QUEEN WISDOM: BLOCKING {kwargs['from_asset']}→{kwargs['to_asset']}")
-                print(f"      Reason: {reason}")
+                safe_print(f"   👑🎓 QUEEN WISDOM: BLOCKING {kwargs['from_asset']}→{kwargs['to_asset']}")
+                safe_print(f"      Reason: {reason}")
                 
                 # Store in path memory as perma-block
                 self.path_memory.block_path(kwargs['from_asset'], kwargs['to_asset'])
@@ -17314,17 +17324,17 @@ if __name__ == "__main__":
                     # Don't start scanning yet - wait for explicit activation
                     logger.info("🦈🔪 HFT Engine initialized (dormant mode - ready for activation)")
                 
-                print("🦈🔪 HFT HARMONIC MYCELIUM: WIRED (Sub-10ms trading ready)")
-                print(f"   🎯 Target Latency: <10ms signal-to-order")
-                print(f"   🎵 Harmonic Patterns: 528Hz (WIN) → BUY, 396Hz (LOSS) → HOLD")
-                print(f"   🧠 Mycelium: Hot path cache (100ms TTL)")
-                print(f"   🌐 WebSocket: Real-time tick injection active")
+                safe_print("🦈🔪 HFT HARMONIC MYCELIUM: WIRED (Sub-10ms trading ready)")
+                safe_print(f"   🎯 Target Latency: <10ms signal-to-order")
+                safe_print(f"   🎵 Harmonic Patterns: 528Hz (WIN) → BUY, 396Hz (LOSS) → HOLD")
+                safe_print(f"   🧠 Mycelium: Hot path cache (100ms TTL)")
+                safe_print(f"   🌐 WebSocket: Real-time tick injection active")
                 
             except Exception as e:
-                print(f"⚠️ HFT Engine initialization error: {e}")
+                safe_print(f"⚠️ HFT Engine initialization error: {e}")
                 logger.debug(f"HFT Engine init error: {e}")
         else:
-            print("🦈❌ HFT HARMONIC MYCELIUM: NOT AVAILABLE (aureon_hft_harmonic_mycelium.py missing)")
+            safe_print("🦈❌ HFT HARMONIC MYCELIUM: NOT AVAILABLE (aureon_hft_harmonic_mycelium.py missing)")
     
     async def run(self, duration_s: int = 60):
         """Run the micro profit labyrinth."""
@@ -17345,15 +17355,15 @@ if __name__ == "__main__":
             logger.warning(f"⏱️ Timeout loading tradeable pairs after {LOAD_PAIRS_TIMEOUT_S:.0f}s; continuing with partial routing")
         
         # Initial data fetch - ALL EXCHANGES
-        print("\n" + "=" * 70)
-        print("📊 FETCHING DATA FROM ALL EXCHANGES...")
-        print("=" * 70)
+        safe_print("\n" + "=" * 70)
+        safe_print("📊 FETCHING DATA FROM ALL EXCHANGES...")
+        safe_print("=" * 70)
         try:
             await asyncio.wait_for(self.fetch_prices(), timeout=FETCH_PRICES_TIMEOUT_S)
         except asyncio.TimeoutError:
             logger.warning(f"⏱️ Timeout fetching prices after {FETCH_PRICES_TIMEOUT_S:.0f}s; continuing")
-        print(f"   ✅ {len(self.prices)} assets priced")
-        print(f"   ✅ {len(self.ticker_cache)} pairs in ticker cache")
+        safe_print(f"   ✅ {len(self.prices)} assets priced")
+        safe_print(f"   ✅ {len(self.ticker_cache)} pairs in ticker cache")
         
         # 🫒🔄 POPULATE BARTER GRAPH from loaded data
         self.populate_barter_graph()
@@ -17362,40 +17372,40 @@ if __name__ == "__main__":
         # 🌊🔭 BUILD GLOBAL WAVE SCANNER UNIVERSE - A-Z/Z-A Full Coverage
         # ════════════════════════════════════════════════════════════════════════════
         if self.wave_scanner:
-            print("\n" + "=" * 70)
-            print("🌊🔭 BUILDING GLOBAL WAVE SCANNER UNIVERSE...")
-            print("=" * 70)
+            safe_print("\n" + "=" * 70)
+            safe_print("🌊🔭 BUILDING GLOBAL WAVE SCANNER UNIVERSE...")
+            safe_print("=" * 70)
             try:
                 # Build universe from all connected exchanges
                 universe_size = await asyncio.wait_for(self.wave_scanner.build_universe(), timeout=WAVE_SCAN_TIMEOUT_S)
-                print(f"   ✅ Universe built: {universe_size} symbols for A-Z/Z-A sweeps")
+                safe_print(f"   ✅ Universe built: {universe_size} symbols for A-Z/Z-A sweeps")
                 
                 # Wire Queen to scanner (if not already done)
                 if self.queen:
                     self.wave_scanner.queen = self.queen
-                    print("   ✅ Queen wired to Wave Scanner")
+                    safe_print("   ✅ Queen wired to Wave Scanner")
                 
                 # Do initial A-Z sweep with ticker cache
-                print("\n🐝 INITIAL BEE SWEEP (A-Z coverage)...")
+                safe_print("\n🐝 INITIAL BEE SWEEP (A-Z coverage)...")
                 await asyncio.wait_for(self.wave_scanner.full_az_sweep(self.ticker_cache), timeout=WAVE_SCAN_TIMEOUT_S)
                 
                 # Show wave allocation
                 allocation = self.wave_scanner.get_wave_allocation()
-                print("\n🌊 WAVE ALLOCATION:")
+                safe_print("\n🌊 WAVE ALLOCATION:")
                 for wave, count in allocation.get('wave_counts', {}).items():
                     if count > 0:
-                        print(f"   {wave}: {count} symbols")
+                        safe_print(f"   {wave}: {count} symbols")
                 
                 # Show top opportunities
                 top_opps = allocation.get('top_opportunities', [])[:5]
                 if top_opps:
-                    print("\n🎯 TOP OPPORTUNITIES (Jump Score > 0.6):")
+                    safe_print("\n🎯 TOP OPPORTUNITIES (Jump Score > 0.6):")
                     for opp in top_opps:
-                        print(f"   {opp['symbol']:12} {opp['wave']:15} Jump:{opp['jump_score']:.2f} | 24h:{opp['change_24h']:+.1f}%")
+                        safe_print(f"   {opp['symbol']:12} {opp['wave']:15} Jump:{opp['jump_score']:.2f} | 24h:{opp['change_24h']:+.1f}%")
             except Exception as e:
-                print(f"   ⚠️ Wave Scanner error: {e}")
+                safe_print(f"   ⚠️ Wave Scanner error: {e}")
         
-        print("\n📊 FETCHING BALANCES FROM ALL EXCHANGES...")
+        safe_print("\n📊 FETCHING BALANCES FROM ALL EXCHANGES...")
         try:
             await asyncio.wait_for(self.fetch_balances(), timeout=FETCH_BALANCES_TIMEOUT_S)
         except asyncio.TimeoutError:
@@ -17403,7 +17413,7 @@ if __name__ == "__main__":
         
         # ⏱️ INITIALIZE ENTRY TIMES FOR EXISTING POSITIONS
         # Track all current holdings so they also respect minimum hold time
-        print("\n⏱️ INITIALIZING POSITION ENTRY TIMES...")
+        safe_print("\n⏱️ INITIALIZING POSITION ENTRY TIMES...")
         current_time = time.time()
         total_positions = 0
         for exchange, balances in self.exchange_balances.items():
@@ -17415,36 +17425,36 @@ if __name__ == "__main__":
                         total_positions += 1
         
         if total_positions > 0:
-            print(f"   ✅ {total_positions} existing positions will respect min hold time ({self.min_hold_time_seconds:.0f}s)")
-            print(f"   ⏱️ All positions treated as entered at: {time.strftime('%H:%M:%S')}")
+            safe_print(f"   ✅ {total_positions} existing positions will respect min hold time ({self.min_hold_time_seconds:.0f}s)")
+            safe_print(f"   ⏱️ All positions treated as entered at: {time.strftime('%H:%M:%S')}")
         else:
-            print(f"   ℹ️ No existing positions found (starting fresh)")
+            safe_print(f"   ℹ️ No existing positions found (starting fresh)")
         
         # Show exchange status
-        print("\n📡 EXCHANGE STATUS:")
+        safe_print("\n📡 EXCHANGE STATUS:")
         for exchange, data in self.exchange_data.items():
             if data.get('connected'):
                 bal_count = len(data.get('balances', {}))
                 total_val = data.get('total_value', 0)
                 icon = {'kraken': '🐙', 'binance': '🟡', 'alpaca': '🦙'}.get(exchange, '📊')
-                print(f"   {icon} {exchange.upper()}: ✅ Connected | {bal_count} assets | ${total_val:,.2f}")
+                safe_print(f"   {icon} {exchange.upper()}: ✅ Connected | {bal_count} assets | ${total_val:,.2f}")
             else:
                 icon = {'kraken': '🐙', 'binance': '🟡', 'alpaca': '🦙'}.get(exchange, '📊')
-                print(f"   {icon} {exchange.upper()}: ❌ {data.get('error', 'Not connected')}")
+                safe_print(f"   {icon} {exchange.upper()}: ❌ {data.get('error', 'Not connected')}")
         
         # Show balances per exchange
         if self.exchange_balances:
-            print("\n📦 PORTFOLIO BY EXCHANGE:")
+            safe_print("\n📦 PORTFOLIO BY EXCHANGE:")
             for exchange, balances in self.exchange_balances.items():
                 if balances:
                     icon = {'kraken': '🐙', 'binance': '🟡', 'alpaca': '🦙'}.get(exchange, '📊')
                     total = sum(balances.get(a, 0) * self.prices.get(a, 0) for a in balances)
-                    print(f"\n   {icon} {exchange.upper()} (${total:,.2f}):")
+                    safe_print(f"\n   {icon} {exchange.upper()} (${total:,.2f}):")
                     for asset, amount in sorted(balances.items(), key=lambda x: x[1] * self.prices.get(x[0], 0), reverse=True)[:10]:
                         price = self.prices.get(asset, 0)
                         value = amount * price
                         if value >= 1.0:  # Only show if >= $1
-                            print(f"      {asset}: {amount:.6f} = ${value:.2f}")
+                            safe_print(f"      {asset}: {amount:.6f} = ${value:.2f}")
         
         # Calculate starting value
         self.start_value_usd = sum(
@@ -17452,16 +17462,16 @@ if __name__ == "__main__":
             for asset in self.balances
         )
         
-        print(f"\n💰 TOTAL PORTFOLIO VALUE: ${self.start_value_usd:,.2f}")
+        safe_print(f"\n💰 TOTAL PORTFOLIO VALUE: ${self.start_value_usd:,.2f}")
         
         # Handle infinite duration
         duration_display = "♾️ FOREVER" if duration_s == 0 else f"{duration_s}s"
-        print(f"\n🔬 ENTERING MICRO PROFIT LABYRINTH! (Duration: {duration_display})")
-        print(f"   ⚡ SPEED MODE: Aggressive micro-profit harvesting...")
-        print(f"   V14 Score: {self.config['entry_score_threshold']}+ (lowered for speed)")
-        print(f"   Min Profit: ${self.config['min_profit_usd']:.6f} (micro-profits accepted!)")
-        print(f"   Mode: {'🔴 LIVE TRADING' if self.live else '🔵 DRY RUN'}")
-        print()
+        safe_print(f"\n🔬 ENTERING MICRO PROFIT LABYRINTH! (Duration: {duration_display})")
+        safe_print(f"   ⚡ SPEED MODE: Aggressive micro-profit harvesting...")
+        safe_print(f"   V14 Score: {self.config['entry_score_threshold']}+ (lowered for speed)")
+        safe_print(f"   Min Profit: ${self.config['min_profit_usd']:.6f} (micro-profits accepted!)")
+        safe_print(f"   Mode: {'🔴 LIVE TRADING' if self.live else '🔵 DRY RUN'}")
+        safe_print()
         
         start_time = time.time()
         scan_interval = 2.0  # 🛡️ RATE LIMIT SAFE: Every 2 seconds to avoid API throttling
@@ -17469,20 +17479,20 @@ if __name__ == "__main__":
         # ════════════════════════════════════════════════════════════════════════════
         # 🎯 EXECUTION STRATEGY SELECTION
         # ════════════════════════════════════════════════════════════════════════════
-        print("\n" + "=" * 70)
+        safe_print("\n" + "=" * 70)
         if self.fptp_mode:
-            print("🏁 FIRST PAST THE POST MODE ACTIVATED")
-            print("=" * 70)
-            print("   Strategy: Scan ALL exchanges → Execute FIRST profit!")
-            print("   No waiting - capture profit IMMEDIATELY!")
+            safe_print("🏁 FIRST PAST THE POST MODE ACTIVATED")
+            safe_print("=" * 70)
+            safe_print("   Strategy: Scan ALL exchanges → Execute FIRST profit!")
+            safe_print("   No waiting - capture profit IMMEDIATELY!")
         else:
-            print("🎯 TURN-BASED EXCHANGE STRATEGY ACTIVATED")
-            print("=" * 70)
+            safe_print("🎯 TURN-BASED EXCHANGE STRATEGY ACTIVATED")
+            safe_print("=" * 70)
             connected_exchanges = [ex for ex in self.exchange_order 
                                    if self.exchange_data.get(ex, {}).get('connected', False)]
-            print(f"   Turn Order: {' → '.join([ex.upper() for ex in connected_exchanges])}")
-            print(f"   Each exchange scans its assets on its turn")
-        print("=" * 70)
+            safe_print(f"   Turn Order: {' → '.join([ex.upper() for ex in connected_exchanges])}")
+            safe_print(f"   Each exchange scans its assets on its turn")
+        safe_print("=" * 70)
         
         try:
             # duration_s == 0 means run forever
@@ -17495,7 +17505,7 @@ if __name__ == "__main__":
             # 👑🌐 QUEEN'S ONLINE RESEARCH - Throttled to avoid constant code generation
             last_research_time = 0
             research_interval = 300  # Research every 5 minutes (was 1 min)
-            print(f"\n👑🌐 Queen's Research Schedule: Every {research_interval}s (next in {research_interval}s)")
+            safe_print(f"\n👑🌐 Queen's Research Schedule: Every {research_interval}s (next in {research_interval}s)")
             
             while duration_s == 0 or time.time() - start_time < duration_s:
                 elapsed = time.time() - start_time
@@ -17506,9 +17516,9 @@ if __name__ == "__main__":
                 
                 if time_since_research >= research_interval:
                     try:
-                        print(f"\n{'='*70}")
-                        print(f"👑🌐🔬 QUEEN ONLINE RESEARCH & CODE GENERATION CYCLE")
-                        print(f"{'='*70}")
+                        safe_print(f"\n{'='*70}")
+                        safe_print(f"👑🌐🔬 QUEEN ONLINE RESEARCH & CODE GENERATION CYCLE")
+                        safe_print(f"{'='*70}")
                         research_result = await asyncio.wait_for(
                             self.queen_research_online_and_enhance(),
                             timeout=QUEEN_RESEARCH_TIMEOUT_S,
@@ -17516,9 +17526,9 @@ if __name__ == "__main__":
                         last_research_time = time.time()
                         
                         if research_result.get('status') == 'success':
-                            print(f"   ✅ Queen applied enhancement: {research_result.get('enhancement_applied')}")
+                            safe_print(f"   ✅ Queen applied enhancement: {research_result.get('enhancement_applied')}")
                         elif research_result.get('findings', 0) > 0:
-                            print(f"   📚 Queen found {research_result['findings']} insights (processing...)")
+                            safe_print(f"   📚 Queen found {research_result['findings']} insights (processing...)")
                     except Exception as e:
                         logger.debug(f"Queen research error: {e}")
                         last_research_time = time.time()  # Don't spam on errors
@@ -17552,14 +17562,14 @@ if __name__ == "__main__":
                         # 2. Check Chain Integrity (Coherence)
                         # If the Queen's voice doesn't resonate (low coherence), we pause
                         if signal and signal.coherence < 0.4:  # Threshold
-                            print(f"   🛑 HARMONIC PAUSE: Chain Coherence {signal.coherence:.2f} too low")
+                            safe_print(f"   🛑 HARMONIC PAUSE: Chain Coherence {signal.coherence:.2f} too low")
                             # We can still fetch prices, but maybe skip execution logic
                             # For now, we continue but warn, or sleep a bit
                             await asyncio.sleep(1)
                         
                         # 3. Check for specific commands in the echo
                         if signal and "HALT" in signal.content:
-                             print(f"   🛑 VOICE COMMAND: HALT (Pausing execution flow...)")
+                             safe_print(f"   🛑 VOICE COMMAND: HALT (Pausing execution flow...)")
                              await asyncio.sleep(5)
                              continue
                              
@@ -17577,9 +17587,9 @@ if __name__ == "__main__":
                         allocation = self.wave_scanner.get_wave_allocation()
                         top_opps = allocation.get('top_opportunities', [])[:3]
                         if top_opps:
-                            print(f"\n   🌊🔭 WAVE SWEEP: {len(top_opps)} top opportunities")
+                            safe_print(f"\n   🌊🔭 WAVE SWEEP: {len(top_opps)} top opportunities")
                             for opp in top_opps:
-                                print(f"      {opp['wave']:15} {opp['symbol']:12} Jump:{opp['jump_score']:.2f} | 24h:{opp['change_24h']:+.1f}%")
+                                safe_print(f"      {opp['wave']:15} {opp['symbol']:12} Jump:{opp['jump_score']:.2f} | 24h:{opp['change_24h']:+.1f}%")
                     except Exception as e:
                         logger.debug(f"Wave scan error: {e}")
                 
@@ -17782,10 +17792,10 @@ if __name__ == "__main__":
                 
                 # 📊 PERIODIC METRICS SUMMARY
                 if time.time() - self.run_metrics.last_summary > self.metrics_summary_interval:
-                    print(self.run_metrics.get_summary())
+                    safe_print(self.run_metrics.get_summary())
                     self.run_metrics.last_summary = time.time()
                 
-                print(f"🔬 {mode} | {elapsed:.0f}s | Turn:{turn_display} | {neural_str}{cosmic_status}{autonomous_status} | Conv:{self.conversions_made} | Actual:${actual_pnl:+.2f}{drain_warning}{queen_status}{research_status}")
+                safe_print(f"🔬 {mode} | {elapsed:.0f}s | Turn:{turn_display} | {neural_str}{cosmic_status}{autonomous_status} | Conv:{self.conversions_made} | Actual:${actual_pnl:+.2f}{drain_warning}{queen_status}{research_status}")
                 
                 # 🐝 UPDATE HIVE STATE (live status file + Queen's voice)
                 # Use turn counter (integer) not turn_display (string) for modulo
@@ -17824,163 +17834,163 @@ if __name__ == "__main__":
                 await asyncio.sleep(scan_interval)
         
         except KeyboardInterrupt:
-            print("\n\n⚠️ Interrupted by user")
+            safe_print("\n\n⚠️ Interrupted by user")
         
         # Final summary
         await self.print_summary()
     
     async def print_summary(self):
         """Print final summary."""
-        print("\n" + "=" * 70)
-        print("🔬💰 MICRO PROFIT LABYRINTH SUMMARY 💰🔬")
-        print("=" * 70)
-        print(f"Mode: {'🔴 LIVE TRADING' if self.live else '🔵 DRY RUN'}")
-        print(f"Total Turns: {self.turns_completed}")
-        print(f"Total Signals Received: {self.signals_received}")
-        print(f"Opportunities Found: {self.opportunities_found}")
-        print(f"Conversions Made: {self.conversions_made}")
-        print(f"Total Profit: ${self.total_profit_usd:.4f}")
+        safe_print("\n" + "=" * 70)
+        safe_print("🔬💰 MICRO PROFIT LABYRINTH SUMMARY 💰🔬")
+        safe_print("=" * 70)
+        safe_print(f"Mode: {'🔴 LIVE TRADING' if self.live else '🔵 DRY RUN'}")
+        safe_print(f"Total Turns: {self.turns_completed}")
+        safe_print(f"Total Signals Received: {self.signals_received}")
+        safe_print(f"Opportunities Found: {self.opportunities_found}")
+        safe_print(f"Conversions Made: {self.conversions_made}")
+        safe_print(f"Total Profit: ${self.total_profit_usd:.4f}")
         
         # ════════════════════════════════════════════════════════════════
         # 👑🎮🌟 QUEEN AUTONOMOUS CONTROL STATUS 🌟🎮👑
         # ════════════════════════════════════════════════════════════════
         if self.queen_autonomous_control and self.queen_has_full_control:
-            print("\n" + "═" * 70)
-            print("👑🎮🌟 QUEEN SERO - AUTONOMOUS CONTROL STATUS 🌟🎮👑")
-            print("═" * 70)
+            safe_print("\n" + "═" * 70)
+            safe_print("👑🎮🌟 QUEEN SERO - AUTONOMOUS CONTROL STATUS 🌟🎮👑")
+            safe_print("═" * 70)
             try:
                 status = self.queen_autonomous_control.get_full_status()
-                print(f"   💕 SOVEREIGN AUTHORITY: ACTIVE")
-                print(f"   🎯 Systems Online: {status.get('systems_online', 0)}/{status.get('systems_total', 0)}")
-                print(f"   🌍 Gaia Alignment: {status.get('gaia_alignment', 0):.1%}")
-                print(f"   👑 Crown Activation: {status.get('crown_activation', 0):.1%}")
-                print(f"   📊 Decisions Made: {status.get('decisions_made', 0)}")
-                print(f"   ✅ Successful Trades: {status.get('successful_trades', 0)}")
-                print(f"   📚 Patterns Learned: {status.get('patterns_learned', 0)}")
+                safe_print(f"   💕 SOVEREIGN AUTHORITY: ACTIVE")
+                safe_print(f"   🎯 Systems Online: {status.get('systems_online', 0)}/{status.get('systems_total', 0)}")
+                safe_print(f"   🌍 Gaia Alignment: {status.get('gaia_alignment', 0):.1%}")
+                safe_print(f"   👑 Crown Activation: {status.get('crown_activation', 0):.1%}")
+                safe_print(f"   📊 Decisions Made: {status.get('decisions_made', 0)}")
+                safe_print(f"   ✅ Successful Trades: {status.get('successful_trades', 0)}")
+                safe_print(f"   📚 Patterns Learned: {status.get('patterns_learned', 0)}")
                 
                 # Show system statuses
                 systems = status.get('systems', {})
                 if systems:
-                    print("\n   🎮 CONTROLLED SYSTEMS:")
+                    safe_print("\n   🎮 CONTROLLED SYSTEMS:")
                     for name, info in systems.items():
                         sys_status = info.get('status', 'UNKNOWN')
                         authority = info.get('authority', 'N/A')
                         icon = "✅" if sys_status == "ONLINE" else "⚠️" if sys_status == "PARTIAL" else "❌"
-                        print(f"      {icon} {name}: {sys_status} ({authority})")
+                        safe_print(f"      {icon} {name}: {sys_status} ({authority})")
             except Exception as e:
-                print(f"   ⚠️ Status error: {e}")
-            print("═" * 70)
+                safe_print(f"   ⚠️ Status error: {e}")
+            safe_print("═" * 70)
         
         # ════════════════════════════════════════════════════════════════
         # 👑💰 SERO'S BILLION DOLLAR DREAM STATUS 💰👑
         # ════════════════════════════════════════════════════════════════
-        print("\n" + "═" * 70)
+        safe_print("\n" + "═" * 70)
         dream_status = self.barter_matrix.check_dream_progress()
-        print(dream_status)
+        safe_print(dream_status)
         milestones_hit = len(self.barter_matrix.milestones_hit)
-        print(f"   🎯 Milestones: {milestones_hit}/8")
+        safe_print(f"   🎯 Milestones: {milestones_hit}/8")
         if milestones_hit > 0:
-            print(f"   ✅ {', '.join(self.barter_matrix.milestones_hit)}")
-        print("═" * 70)
+            safe_print(f"   ✅ {', '.join(self.barter_matrix.milestones_hit)}")
+        safe_print("═" * 70)
         
         # ════════════════════════════════════════════════════════════════
         # 🎯 TURN-BASED EXCHANGE STATS
         # ════════════════════════════════════════════════════════════════
-        print("\n🎯 TURN-BASED EXCHANGE STATS:")
+        safe_print("\n🎯 TURN-BASED EXCHANGE STATS:")
         icons = {'kraken': '🐙', 'alpaca': '🦙', 'binance': '🟡'}
         for exchange, stats in self.exchange_stats.items():
             if stats['scans'] > 0:  # Only show exchanges that were active
                 icon = icons.get(exchange, '📊')
                 connected = "✅" if self.exchange_data.get(exchange, {}).get('connected') else "❌"
-                print(f"   {icon} {exchange.upper()} {connected}")
-                print(f"      Turns: {stats['scans']} | Opps: {stats['opportunities']} | Conv: {stats['conversions']}")
-                print(f"      Profit: ${stats['profit']:+.4f}")
+                safe_print(f"   {icon} {exchange.upper()} {connected}")
+                safe_print(f"      Turns: {stats['scans']} | Opps: {stats['opportunities']} | Conv: {stats['conversions']}")
+                safe_print(f"      Profit: ${stats['profit']:+.4f}")
         
         # ════════════════════════════════════════════════════════════════
         # 🧠 NEURAL MIND MAP STATUS
         # ════════════════════════════════════════════════════════════════
-        print("\n🧠 NEURAL MIND MAP STATUS:")
-        print(f"   ThoughtBus: {'✅ Active' if self.bus_aggregator else '❌ Offline'}")
-        print(f"   Mycelium Network: {'✅ Active' if self.mycelium_network else '❌ Offline'}")
-        print(f"   Lighthouse: {'✅ Active' if self.lighthouse else '❌ Offline'}")
-        print(f"   Ultimate Intel: {'✅ Active' if self.ultimate_intel else '❌ Offline'}")
-        print(f"   HNC Matrix: {'✅ Active' if self.hnc_matrix else '❌ Offline'}")
-        print(f"   Unified Ecosystem: {'✅ Active' if self.unified_ecosystem else '❌ Offline'}")
-        print(f"   Wave Scanner: {'✅ Active' if self.wave_scanner else '❌ Offline'}")
+        safe_print("\n🧠 NEURAL MIND MAP STATUS:")
+        safe_print(f"   ThoughtBus: {'✅ Active' if self.bus_aggregator else '❌ Offline'}")
+        safe_print(f"   Mycelium Network: {'✅ Active' if self.mycelium_network else '❌ Offline'}")
+        safe_print(f"   Lighthouse: {'✅ Active' if self.lighthouse else '❌ Offline'}")
+        safe_print(f"   Ultimate Intel: {'✅ Active' if self.ultimate_intel else '❌ Offline'}")
+        safe_print(f"   HNC Matrix: {'✅ Active' if self.hnc_matrix else '❌ Offline'}")
+        safe_print(f"   Unified Ecosystem: {'✅ Active' if self.unified_ecosystem else '❌ Offline'}")
+        safe_print(f"   Wave Scanner: {'✅ Active' if self.wave_scanner else '❌ Offline'}")
         
         # 🌊🔭 WAVE SCANNER SUMMARY
         if self.wave_scanner:
             allocation = self.wave_scanner.get_wave_allocation()
-            print(f"\n🌊🔭 WAVE SCANNER (A-Z Coverage):")
-            print(f"   Universe: {allocation.get('universe_size', 0)} symbols")
-            print(f"   Total Scanned: {allocation.get('total_scanned', 0)}")
-            print(f"   Last Scan Time: {allocation.get('last_scan_time', 0):.2f}s")
+            safe_print(f"\n🌊🔭 WAVE SCANNER (A-Z Coverage):")
+            safe_print(f"   Universe: {allocation.get('universe_size', 0)} symbols")
+            safe_print(f"   Total Scanned: {allocation.get('total_scanned', 0)}")
+            safe_print(f"   Last Scan Time: {allocation.get('last_scan_time', 0):.2f}s")
             wave_counts = allocation.get('wave_counts', {})
             if wave_counts:
-                print("   Wave Allocation:")
+                safe_print("   Wave Allocation:")
                 for wave, count in wave_counts.items():
                     if count > 0:
-                        print(f"      {wave}: {count}")
+                        safe_print(f"      {wave}: {count}")
         
         if self.bus_aggregator:
             status = self.bus_aggregator.get_signal_status()
-            print(f"   📡 Bus Signals: {status}")
+            safe_print(f"   📡 Bus Signals: {status}")
         
         # Path Memory Stats
         path_stats = self.path_memory.get_stats()
         if path_stats.get('paths', 0) > 0:
-            print(f"\n🛤️ PATH MEMORY:")
-            print(f"   Total Paths: {path_stats['paths']}")
-            print(f"   Win Rate: {path_stats['win_rate']:.1%}")
-            print(f"   Wins: {path_stats['wins']} | Losses: {path_stats['losses']}")
+            safe_print(f"\n🛤️ PATH MEMORY:")
+            safe_print(f"   Total Paths: {path_stats['paths']}")
+            safe_print(f"   Win Rate: {path_stats['win_rate']:.1%}")
+            safe_print(f"   Wins: {path_stats['wins']} | Losses: {path_stats['losses']}")
         
         # Dream Accuracy
         if any(acc != 0.5 for acc in self.dream_accuracy.values()):
-            print(f"\n💭 DREAM ACCURACY (Adaptive Learning):")
+            safe_print(f"\n💭 DREAM ACCURACY (Adaptive Learning):")
             for source, acc in self.dream_accuracy.items():
-                print(f"   {source}: {acc:.1%}")
+                safe_print(f"   {source}: {acc:.1%}")
         
         # Signal breakdown by system
         if self.all_signals:
-            print("\n📡 SIGNALS BY SYSTEM:")
+            safe_print("\n📡 SIGNALS BY SYSTEM:")
             for system, sigs in self.all_signals.items():
-                print(f"   {system}: {len(sigs)} signals")
+                safe_print(f"   {system}: {len(sigs)} signals")
         
         # Conversions - Show ACTUAL P/L not expected!
         if self.conversions:
-            print("\n📋 CONVERSIONS (ACTUAL P/L):")
+            safe_print("\n📋 CONVERSIONS (ACTUAL P/L):")
             for c in self.conversions:
                 # 🔧 FIX: Use actual_pnl_usd for display (what really happened)
                 actual_pnl = getattr(c, 'actual_pnl_usd', c.expected_pnl_usd)
                 status = "✅" if c.executed and actual_pnl > 0 else "❌"
                 verified = "✓" if getattr(c, 'pnl_verified', False) else "?"
-                print(f"   {status} {c.from_asset} → {c.to_asset}: ${actual_pnl:+.4f} {verified} (Λ:{c.lambda_score:.0%} G:{c.gravity_score:.0%})")
+                safe_print(f"   {status} {c.from_asset} → {c.to_asset}: ${actual_pnl:+.4f} {verified} (Λ:{c.lambda_score:.0%} G:{c.gravity_score:.0%})")
         
         # ═══════════════════════════════════════════════════════════════════
         # 💧🔀 LIQUIDITY ENGINE SUMMARY
         # ═══════════════════════════════════════════════════════════════════
         liq_status = self.liquidity_engine.get_status()
         if liq_status['executed_aggregations'] > 0:
-            print("\n💧🔀 LIQUIDITY ENGINE:")
-            print(f"   Aggregations Executed: {liq_status['executed_aggregations']}")
-            print(f"   Total Aggregation Profit: ${liq_status['total_profit']:+.4f}")
-            print(f"   Pending Plans: {liq_status['pending_plans']}")
-            print(f"   Recent Liquidations: {liq_status['recent_liquidations']}")
+            safe_print("\n💧🔀 LIQUIDITY ENGINE:")
+            safe_print(f"   Aggregations Executed: {liq_status['executed_aggregations']}")
+            safe_print(f"   Total Aggregation Profit: ${liq_status['total_profit']:+.4f}")
+            safe_print(f"   Pending Plans: {liq_status['pending_plans']}")
+            safe_print(f"   Recent Liquidations: {liq_status['recent_liquidations']}")
         
         # ═══════════════════════════════════════════════════════════════════
         # 🫒💰 LIVE BARTER MATRIX SUMMARY
         # ═══════════════════════════════════════════════════════════════════
         barter_summary = self.barter_matrix.get_summary()
         if barter_summary['conversion_count'] > 0:
-            print("\n🫒💰 LIVE BARTER MATRIX:")
-            print(f"   Total Conversions: {barter_summary['conversion_count']}")
-            print(f"   Total Realized P/L: ${barter_summary['total_realized_profit']:+.4f}")
-            print(f"   Avg Profit/Trade: ${barter_summary['avg_profit_per_trade']:+.4f}")
-            print(f"   Paths Learned: {barter_summary['paths_learned']}")
+            safe_print("\n🫒💰 LIVE BARTER MATRIX:")
+            safe_print(f"   Total Conversions: {barter_summary['conversion_count']}")
+            safe_print(f"   Total Realized P/L: ${barter_summary['total_realized_profit']:+.4f}")
+            safe_print(f"   Avg Profit/Trade: ${barter_summary['avg_profit_per_trade']:+.4f}")
+            safe_print(f"   Paths Learned: {barter_summary['paths_learned']}")
             
             # Show top performing paths
             if self.barter_matrix.barter_history:
-                print("\n   📊 PATH PERFORMANCE:")
+                safe_print("\n   📊 PATH PERFORMANCE:")
                 sorted_paths = sorted(
                     self.barter_matrix.barter_history.items(),
                     key=lambda x: x[1].get('total_profit', 0),
@@ -17991,24 +18001,24 @@ if __name__ == "__main__":
                     profit = stats.get('total_profit', 0)
                     slippage = stats.get('avg_slippage', 0)
                     status = "✅" if profit > 0 else "❌"
-                    print(f"   {status} {from_a}→{to_a}: {trades} trades, ${profit:+.4f}, slip:{slippage:.2f}%")
+                    safe_print(f"   {status} {from_a}→{to_a}: {trades} trades, ${profit:+.4f}, slip:{slippage:.2f}%")
         
         # Final portfolio
         if self.balances and self.prices:
-            print("\n📦 FINAL PORTFOLIO:")
+            safe_print("\n📦 FINAL PORTFOLIO:")
             total = 0
             for asset, amount in sorted(self.balances.items()):
                 price = self.prices.get(asset, 0)
                 value = amount * price
                 if value >= 1.0:
-                    print(f"   {asset}: {amount:.6f} = ${value:.2f}")
+                    safe_print(f"   {asset}: {amount:.6f} = ${value:.2f}")
                     total += value
-            print(f"\n💰 TOTAL VALUE: ${total:.2f}")
+            safe_print(f"\n💰 TOTAL VALUE: ${total:.2f}")
             # P/L = Current Value - Starting Value (simple, correct math)
             session_pnl = total - self.start_value_usd
             pnl_symbol = "+" if session_pnl >= 0 else ""
-            print(f"📈 SESSION P/L (Unrealized): ${pnl_symbol}{session_pnl:.4f}")
-            print(f"🎯 REALIZED TRADES P/L: ${self.barter_matrix.total_realized_profit:+.4f} ({self.conversions_made} conversions)")
+            safe_print(f"📈 SESSION P/L (Unrealized): ${pnl_symbol}{session_pnl:.4f}")
+            safe_print(f"🎯 REALIZED TRADES P/L: ${self.barter_matrix.total_realized_profit:+.4f} ({self.conversions_made} conversions)")
             
             # ════════════════════════════════════════════════════════════════════
             # 🚨 GHOST PROFIT DETECTOR - Validate we're not draining portfolio
@@ -18017,28 +18027,28 @@ if __name__ == "__main__":
             actual_pnl = session_pnl
             ghost_profit = realized_pnl - actual_pnl
             
-            print("\n🔍 PROFIT VALIDATION:")
-            print(f"   📊 Starting Portfolio: ${self.start_value_usd:.2f}")
-            print(f"   📊 Ending Portfolio:   ${total:.2f}")
-            print(f"   📊 Actual Change:      ${actual_pnl:+.4f}")
-            print(f"   📊 Reported Profit:    ${realized_pnl:+.4f}")
+            safe_print("\n🔍 PROFIT VALIDATION:")
+            safe_print(f"   📊 Starting Portfolio: ${self.start_value_usd:.2f}")
+            safe_print(f"   📊 Ending Portfolio:   ${total:.2f}")
+            safe_print(f"   📊 Actual Change:      ${actual_pnl:+.4f}")
+            safe_print(f"   📊 Reported Profit:    ${realized_pnl:+.4f}")
             
             if abs(ghost_profit) > 0.01:
                 if ghost_profit > 0:
-                    print(f"\n   ⚠️ GHOST PROFIT DETECTED: ${ghost_profit:+.4f}")
-                    print(f"   ⚠️ Reported profits exceed actual portfolio gain!")
-                    print(f"   ⚠️ This is likely fees, slippage, or price movement eating gains.")
+                    safe_print(f"\n   ⚠️ GHOST PROFIT DETECTED: ${ghost_profit:+.4f}")
+                    safe_print(f"   ⚠️ Reported profits exceed actual portfolio gain!")
+                    safe_print(f"   ⚠️ This is likely fees, slippage, or price movement eating gains.")
                 else:
-                    print(f"\n   ✅ HIDDEN GAIN: ${-ghost_profit:+.4f}")
-                    print(f"   ✅ Portfolio gained more than reported (price appreciation).")
+                    safe_print(f"\n   ✅ HIDDEN GAIN: ${-ghost_profit:+.4f}")
+                    safe_print(f"   ✅ Portfolio gained more than reported (price appreciation).")
                 
                 # Show the math
                 if self.conversions_made > 0:
                     avg_ghost_per_trade = ghost_profit / self.conversions_made
-                    print(f"\n   📉 Average loss per trade: ${avg_ghost_per_trade:.4f}")
-                    print(f"   💡 To profit: Need trades with >${abs(avg_ghost_per_trade):.4f} actual gain")
+                    safe_print(f"\n   📉 Average loss per trade: ${avg_ghost_per_trade:.4f}")
+                    safe_print(f"   💡 To profit: Need trades with >${abs(avg_ghost_per_trade):.4f} actual gain")
             else:
-                print(f"\n   ✅ PROFIT VALIDATED - Reported matches actual!")
+                safe_print(f"\n   ✅ PROFIT VALIDATED - Reported matches actual!")
             
             # ════════════════════════════════════════════════════════════════════
             # 👑�🪐🔭 QUEEN'S COSMIC SYSTEMS STATUS
@@ -18046,17 +18056,17 @@ if __name__ == "__main__":
             if self.queen:
                 try:
                     cosmic = self.queen.get_cosmic_state()
-                    print("\n👑🌌 QUEEN'S COSMIC SYSTEMS:")
+                    safe_print("\n👑🌌 QUEEN'S COSMIC SYSTEMS:")
                     
                     # Schumann Resonance
                     schumann = cosmic.get('schumann', {})
                     if schumann.get('active'):
-                        print(f"   🌊 Schumann Resonance: {schumann.get('resonance', 7.83):.2f}Hz (alignment: {schumann.get('alignment', 0):.0%})")
+                        safe_print(f"   🌊 Schumann Resonance: {schumann.get('resonance', 7.83):.2f}Hz (alignment: {schumann.get('alignment', 0):.0%})")
                     
                     # Planetary Torque
                     planetary = cosmic.get('planetary', {})
                     if planetary.get('active'):
-                        print(f"   🪐 Planetary Torque (Π): {planetary.get('torque', 0):.4f} (luck field: {planetary.get('luck_field', 0):.0%})")
+                        safe_print(f"   🪐 Planetary Torque (Π): {planetary.get('torque', 0):.4f} (luck field: {planetary.get('luck_field', 0):.0%})")
                     
                     # Lunar Phase
                     lunar = cosmic.get('lunar', {})
@@ -18064,28 +18074,28 @@ if __name__ == "__main__":
                         phase_name = lunar.get('name', 'Unknown')
                         phase_val = lunar.get('phase', 0)
                         moon_icon = "🌑🌒🌓🌔🌕🌖🌗🌘"[int(phase_val * 8) % 8]
-                        print(f"   {moon_icon} Lunar Phase: {phase_name} ({phase_val:.0%})")
+                        safe_print(f"   {moon_icon} Lunar Phase: {phase_name} ({phase_val:.0%})")
                     
                     # Harmonic Coherence
                     harmonic = cosmic.get('harmonic', {})
                     if harmonic.get('active'):
-                        print(f"   🎼 Harmonic Coherence: {harmonic.get('coherence', 0):.0%}")
+                        safe_print(f"   🎼 Harmonic Coherence: {harmonic.get('coherence', 0):.0%}")
                     
                     # Quantum Telescope
                     quantum = cosmic.get('quantum', {})
                     if quantum.get('active'):
-                        print(f"   🔭 Quantum Alignment: {quantum.get('alignment', 0):.0%}")
+                        safe_print(f"   🔭 Quantum Alignment: {quantum.get('alignment', 0):.0%}")
                     
                     # Composite Score
                     composite = cosmic.get('composite_cosmic_score', 0)
                     if composite > 0.7:
-                        print(f"\n   🌟 COSMIC ALIGNMENT: {composite:.0%} - HIGHLY FAVORABLE")
+                        safe_print(f"\n   🌟 COSMIC ALIGNMENT: {composite:.0%} - HIGHLY FAVORABLE")
                     elif composite > 0.5:
-                        print(f"\n   ⭐ COSMIC ALIGNMENT: {composite:.0%} - Favorable")
+                        safe_print(f"\n   ⭐ COSMIC ALIGNMENT: {composite:.0%} - Favorable")
                     elif composite > 0.3:
-                        print(f"\n   ☁️ COSMIC ALIGNMENT: {composite:.0%} - Neutral")
+                        safe_print(f"\n   ☁️ COSMIC ALIGNMENT: {composite:.0%} - Neutral")
                     else:
-                        print(f"\n   🌑 COSMIC ALIGNMENT: {composite:.0%} - Unfavorable")
+                        safe_print(f"\n   🌑 COSMIC ALIGNMENT: {composite:.0%} - Unfavorable")
                 except Exception as e:
                     logger.debug(f"Error getting cosmic state: {e}")
             
@@ -18093,13 +18103,13 @@ if __name__ == "__main__":
             # 👑�🍄 QUEEN'S BLOCKED PATHS - Paths the mycelium has blocked
             # ════════════════════════════════════════════════════════════════════
             if self.barter_matrix.blocked_paths:
-                print("\n👑🍄 QUEEN'S BLOCKED PATHS (via Mycelium):")
+                safe_print("\n👑🍄 QUEEN'S BLOCKED PATHS (via Mycelium):")
                 for (from_a, to_a), reason in self.barter_matrix.blocked_paths.items():
-                    print(f"   🚫 {from_a}→{to_a}: {reason}")
-                print(f"   📊 Total blocked: {len(self.barter_matrix.blocked_paths)} paths")
-                print(f"   💡 Blocked paths will be retried after wins on other paths")
+                    safe_print(f"   🚫 {from_a}→{to_a}: {reason}")
+                safe_print(f"   📊 Total blocked: {len(self.barter_matrix.blocked_paths)} paths")
+                safe_print(f"   💡 Blocked paths will be retried after wins on other paths")
             else:
-                print("\n👑 QUEEN STATUS: All paths approved (no losing streaks)")
+                safe_print("\n👑 QUEEN STATUS: All paths approved (no losing streaks)")
             
             # ════════════════════════════════════════════════════════════════════
             # 👑🧠📚 QUEEN'S HISTORICAL WISDOM STATUS
@@ -18107,22 +18117,22 @@ if __name__ == "__main__":
             if self.queen:
                 try:
                     wisdom_state = self.queen.get_historical_wisdom_state()
-                    print("\n👑🧠 QUEEN'S HISTORICAL WISDOM:")
+                    safe_print("\n👑🧠 QUEEN'S HISTORICAL WISDOM:")
                     
                     # Wisdom Engine (11 Civilizations)
                     we = wisdom_state.get('wisdom_engine', {})
                     if we.get('active'):
-                        print(f"   🌍 11 Civilizations: ✅ ACTIVE ({we.get('years_of_wisdom', 5000)} years of wisdom)")
+                        safe_print(f"   🌍 11 Civilizations: ✅ ACTIVE ({we.get('years_of_wisdom', 5000)} years of wisdom)")
                     
                     # Sandbox Evolution
                     se = wisdom_state.get('sandbox_evolution', {})
                     if se.get('active'):
-                        print(f"   🧬 Sandbox Evolution: Gen {se.get('generation', 0)}, {se.get('win_rate', 0):.1f}% win rate")
+                        safe_print(f"   🧬 Sandbox Evolution: Gen {se.get('generation', 0)}, {se.get('win_rate', 0):.1f}% win rate")
                     
                     # Dream Memory
                     dm = wisdom_state.get('dream_memory', {})
                     if dm.get('active'):
-                        print(f"   💭 Dream Memory: {dm.get('dreams', 0)} dreams, {dm.get('prophecies', 0)} prophecies")
+                        safe_print(f"   💭 Dream Memory: {dm.get('dreams', 0)} dreams, {dm.get('prophecies', 0)} prophecies")
                     
                     # Wisdom Collector
                     wc = wisdom_state.get('wisdom_collector', {})
@@ -18131,25 +18141,25 @@ if __name__ == "__main__":
                         trades = wc.get('trades', 0)
                         predictions = wc.get('predictions', 0)
                         strategies = wc.get('strategies', 0)
-                        print(f"   📚 Wisdom Collector: {patterns} patterns | {trades} trades | {predictions} predictions | {strategies} strategies")
+                        safe_print(f"   📚 Wisdom Collector: {patterns} patterns | {trades} trades | {predictions} predictions | {strategies} strategies")
                     
                     # Total Wisdom Score
                     total_score = wisdom_state.get('total_wisdom_score', 0.5)
                     active_sys = wisdom_state.get('active_systems', 0)
                     if total_score > 0.7:
-                        print(f"\n   🧠✨ WISDOM SCORE: {total_score:.0%} - HIGHLY INFORMED ({active_sys} systems)")
+                        safe_print(f"\n   🧠✨ WISDOM SCORE: {total_score:.0%} - HIGHLY INFORMED ({active_sys} systems)")
                     elif total_score > 0.5:
-                        print(f"\n   🧠⭐ WISDOM SCORE: {total_score:.0%} - Well Informed ({active_sys} systems)")
+                        safe_print(f"\n   🧠⭐ WISDOM SCORE: {total_score:.0%} - Well Informed ({active_sys} systems)")
                     else:
-                        print(f"\n   🧠 WISDOM SCORE: {total_score:.0%} - Basic ({active_sys} systems)")
+                        safe_print(f"\n   🧠 WISDOM SCORE: {total_score:.0%} - Basic ({active_sys} systems)")
                     
                     # Civilization Consensus
                     try:
                         consensus = self.queen.get_civilization_consensus()
                         if consensus.get('civilizations_consulted', 0) > 0:
-                            print(f"\n   🏛️ CIVILIZATION CONSENSUS ({consensus['civilizations_consulted']} consulted):")
-                            print(f"      BUY: {consensus['votes']['BUY']} | HOLD: {consensus['votes']['HOLD']} | SELL: {consensus['votes']['SELL']}")
-                            print(f"      → Action: {consensus['consensus_action']} ({consensus['confidence']:.0%} confidence)")
+                            safe_print(f"\n   🏛️ CIVILIZATION CONSENSUS ({consensus['civilizations_consulted']} consulted):")
+                            safe_print(f"      BUY: {consensus['votes']['BUY']} | HOLD: {consensus['votes']['HOLD']} | SELL: {consensus['votes']['SELL']}")
+                            safe_print(f"      → Action: {consensus['consensus_action']} ({consensus['confidence']:.0%} confidence)")
                     except Exception as e:
                         logger.debug(f"Civilization consensus error: {e}")
                     
@@ -18158,12 +18168,12 @@ if __name__ == "__main__":
                         temporal_state = self.queen.get_temporal_state()
                         if temporal_state.get('active'):
                             tid = temporal_state.get('temporal_id', {})
-                            print(f"\n   🔱 TEMPORAL ID (Prime Sentinel):")
-                            print(f"      👤 {tid.get('name', 'Unknown')} | DOB: {tid.get('dob_hash', '?')}")
-                            print(f"      📡 Personal Hz: {tid.get('frequency', 0):.6f}")
-                            print(f"      🌀 Temporal Resonance: {temporal_state.get('temporal_resonance', 0):.1%}")
-                            print(f"      🎵 DOB Harmony: {temporal_state.get('dob_harmony', 0):.2f}")
-                            print(f"      ⚡ Current Strength: {temporal_state.get('current_strength', 0):.1%}")
+                            safe_print(f"\n   🔱 TEMPORAL ID (Prime Sentinel):")
+                            safe_print(f"      👤 {tid.get('name', 'Unknown')} | DOB: {tid.get('dob_hash', '?')}")
+                            safe_print(f"      📡 Personal Hz: {tid.get('frequency', 0):.6f}")
+                            safe_print(f"      🌀 Temporal Resonance: {temporal_state.get('temporal_resonance', 0):.1%}")
+                            safe_print(f"      🎵 DOB Harmony: {temporal_state.get('dob_harmony', 0):.2f}")
+                            safe_print(f"      ⚡ Current Strength: {temporal_state.get('current_strength', 0):.1%}")
                     except Exception as e:
                         logger.debug(f"Temporal state error: {e}")
                         
@@ -18173,7 +18183,7 @@ if __name__ == "__main__":
         # Save path memory on exit
         self.path_memory.save()
         
-        print("=" * 70)
+        safe_print("=" * 70)
     
     # ════════════════════════════════════════════════════════════════════════════
     # 👑🏗️ QUEEN'S SELF-MODIFICATION INTERFACE
@@ -18223,11 +18233,11 @@ if __name__ == "__main__":
         if result.get('status') == 'success':
             logger.info(f"👑✅ Queen successfully modified her own code!")
             logger.info(f"   💡 Change: {description}")
-            print(f"\n👑🏗️ QUEEN MODIFIED HER OWN CODE!")
-            print(f"   📝 Description: {description}")
-            print(f"   ✅ Status: SUCCESS")
-            print(f"   💾 Backup created by Code Architect")
-            print(f"   🔄 Restart micro_profit_labyrinth.py to use new code\n")
+            safe_print(f"\n👑🏗️ QUEEN MODIFIED HER OWN CODE!")
+            safe_print(f"   📝 Description: {description}")
+            safe_print(f"   ✅ Status: SUCCESS")
+            safe_print(f"   💾 Backup created by Code Architect")
+            safe_print(f"   🔄 Restart micro_profit_labyrinth.py to use new code\n")
         else:
             logger.warning(f"👑⚠️ Queen's code change was rejected")
             logger.warning(f"   Reason: {result.get('reason', 'Unknown')}")
@@ -18473,35 +18483,35 @@ async def main():
         memi = get_memi_sync()
         
         if args.sync_cia:
-            print("\n👑🧠 SYNCING CIA DECLASSIFIED INTELLIGENCE...")
+            safe_print("\n👑🧠 SYNCING CIA DECLASSIFIED INTELLIGENCE...")
             result = memi.sync_now()
-            print(f"✅ Sync complete: {result['new_packets']} new packets")
-            print(f"   Total packets: {result['total_packets']}")
-            print(f"   Duration: {result['duration_seconds']:.2f}s")
+            safe_print(f"✅ Sync complete: {result['new_packets']} new packets")
+            safe_print(f"   Total packets: {result['total_packets']}")
+            safe_print(f"   Duration: {result['duration_seconds']:.2f}s")
         
         if args.cia_report or args.sync_cia:
-            print(memi.generate_report())
+            safe_print(memi.generate_report())
         
         if args.cia_wisdom:
-            print("\n👑🎓 QUEEN'S TRADING WISDOM FROM CIA INTELLIGENCE:\n")
+            safe_print("\n👑🎓 QUEEN'S TRADING WISDOM FROM CIA INTELLIGENCE:\n")
             for wisdom in memi.get_trading_wisdom():
-                print(f"  {wisdom}")
-            print()
+                safe_print(f"  {wisdom}")
+            safe_print()
         
         return  # Exit after CIA commands
     
     if args.live and not args.yes:
-        print("\n" + "=" * 60)
-        print("⚠️  LIVE MODE REQUESTED - REAL MONEY!")
-        print("=" * 60)
+        safe_print("\n" + "=" * 60)
+        safe_print("⚠️  LIVE MODE REQUESTED - REAL MONEY!")
+        safe_print("=" * 60)
         confirm = input("Type 'MICRO' to confirm: ")
         if confirm.strip().upper() != 'MICRO':
-            print("Aborted.")
+            safe_print("Aborted.")
             sys.exit(0)
     elif args.live and args.yes:
-        print("\n" + "=" * 60)
-        print("⚠️  LIVE MODE - AUTO-CONFIRMED! 🚀")
-        print("=" * 60)
+        safe_print("\n" + "=" * 60)
+        safe_print("⚠️  LIVE MODE - AUTO-CONFIRMED! 🚀")
+        safe_print("=" * 60)
     
     # Pass dry_run flag so --dry-run explicitly overrides LIVE env
     engine = MicroProfitLabyrinth(live=args.live, dry_run=args.dry_run)
@@ -18512,17 +18522,17 @@ async def main():
         # Use env-configured order, fallback to sensible default
         if not hasattr(engine, 'exchange_order') or not engine.exchange_order:
             engine.exchange_order = ['binance', 'kraken', 'capital', 'coinbase', 'alpaca']
-        print("\n" + "🌐" * 35)
-        print("🌐 MULTI-EXCHANGE PRODUCTION MODE 🌐")
-        print(f"   → Execution order: {' → '.join(engine.exchange_order)}")
-        print(f"   → Alpaca: {'🔒 VERIFY-ONLY' if engine.alpaca_verify_only else '🚀 EXECUTE'}")
-        print(f"   → WebSockets: {'✅ ON' if ENABLE_WEBSOCKETS else '❌ OFF'}")
-        print("🌐" * 35)
+        safe_print("\n" + "🌐" * 35)
+        safe_print("🌐 MULTI-EXCHANGE PRODUCTION MODE 🌐")
+        safe_print(f"   → Execution order: {' → '.join(engine.exchange_order)}")
+        safe_print(f"   → Alpaca: {'🔒 VERIFY-ONLY' if engine.alpaca_verify_only else '🚀 EXECUTE'}")
+        safe_print(f"   → WebSockets: {'✅ ON' if ENABLE_WEBSOCKETS else '❌ OFF'}")
+        safe_print("🌐" * 35)
     else:
-        print("\n" + "🦙" * 35)
-        print("🦙 ALPACA-ONLY MODE 🦙")
-        print("   → Set ALPACA_ONLY=false for multi-exchange")
-        print("🦙" * 35)
+        safe_print("\n" + "🦙" * 35)
+        safe_print("🦙 ALPACA-ONLY MODE 🦙")
+        safe_print("   → Set ALPACA_ONLY=false for multi-exchange")
+        safe_print("🦙" * 35)
     
     engine.fptp_mode = not args.turn_based
     engine.winners_only_mode = args.winners_only  # 🏆 Winners Only mode
@@ -18533,34 +18543,34 @@ async def main():
     engine.snowball_mode = args.snowball
     if args.snowball:
         engine.chain_sniper_mode = False  # Disable chain sniper in snowball mode
-        print("\n" + "🎿" * 35)
-        print("🎿 SNOWBALL MODE ACTIVATED! 🎿")
-        print("   → ONE position at a time (no multi-hop)")
-        print("   → STRICT profit tracking (actual prices, not estimates)")
-        print("   → Exit only when profit CONFIRMED > 0.3%")
-        print("   → Lower minimums ($1.00) to build from small")
-        print("   → \"Make sure as shite we made money!\" - Gary")
-        print("🎿" * 35)
+        safe_print("\n" + "🎿" * 35)
+        safe_print("🎿 SNOWBALL MODE ACTIVATED! 🎿")
+        safe_print("   → ONE position at a time (no multi-hop)")
+        safe_print("   → STRICT profit tracking (actual prices, not estimates)")
+        safe_print("   → Exit only when profit CONFIRMED > 0.3%")
+        safe_print("   → Lower minimums ($1.00) to build from small")
+        safe_print("   → \"Make sure as shite we made money!\" - Gary")
+        safe_print("🎿" * 35)
     
     if args.winners_only:
-        print("\n" + "🏆" * 35)
-        print("🏆 WINNERS ONLY MODE ACTIVATED! 🏆")
-        print("   → Rejections/failures logged to file (background)")
-        print("   → Console shows ONLY winning trades")
-        print("   → Good for the mind. Good for marketing. 💎")
-        print("🏆" * 35)
+        safe_print("\n" + "🏆" * 35)
+        safe_print("🏆 WINNERS ONLY MODE ACTIVATED! 🏆")
+        safe_print("   → Rejections/failures logged to file (background)")
+        safe_print("   → Console shows ONLY winning trades")
+        safe_print("   → Good for the mind. Good for marketing. 💎")
+        safe_print("🏆" * 35)
 
     if args.turn_based:
-        print("\n" + "=" * 60)
-        print("🐢 TURN-BASED MODE ACTIVATED (Safe & Sequential)")
-        print("=" * 60)
+        safe_print("\n" + "=" * 60)
+        safe_print("🐢 TURN-BASED MODE ACTIVATED (Safe & Sequential)")
+        safe_print("=" * 60)
     else:
-        print("\n" + "🏁" * 35)
-        print("🏁 FIRST PAST THE POST MODE ACTIVATED! (Default) 🏁")
-        print("   → Scanning ALL exchanges in parallel")
-        print("   → Executing on FIRST profitable opportunity")
-        print("   → No waiting - CAPTURE PROFIT IMMEDIATELY!")
-        print("🏁" * 35)
+        safe_print("\n" + "🏁" * 35)
+        safe_print("🏁 FIRST PAST THE POST MODE ACTIVATED! (Default) 🏁")
+        safe_print("   → Scanning ALL exchanges in parallel")
+        safe_print("   → Executing on FIRST profitable opportunity")
+        safe_print("   → No waiting - CAPTURE PROFIT IMMEDIATELY!")
+        safe_print("🏁" * 35)
     # Guardrail: enforce a hard upper-bound so --duration can't be defeated by a hung await.
     # (engine.run already tracks duration inside the loop, but blocking calls can prevent loop progress.)
     try:
@@ -18569,7 +18579,7 @@ async def main():
         else:
             await engine.run(duration_s=args.duration)
     except asyncio.TimeoutError:
-        print(f"\n⏱️ Duration reached ({args.duration}s). Stopping.")
+        safe_print(f"\n⏱️ Duration reached ({args.duration}s). Stopping.")
         return
 
 
@@ -18584,7 +18594,7 @@ if __name__ == "__main__":
         error_str = str(e).lower()
         if "closed file" not in error_str and "lost sys" not in error_str:
             try:
-                print(f"\n❌ Error: {e}")
+                safe_print(f"\n❌ Error: {e}")
             except Exception:
                 pass
     finally:
