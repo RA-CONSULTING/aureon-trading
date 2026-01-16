@@ -656,8 +656,9 @@ COMMAND_CENTER_HTML = """
     <!-- OPEN SOURCE CDN LIBRARIES -->
     <!-- Three.js for 3D Globe -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <!-- GSAP for smooth animations -->
+    <!-- GSAP for smooth animations + plugins -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/TextPlugin.min.js"></script>
     <!-- Howler.js for sound effects -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.3/howler.min.js"></script>
     <!-- Chart.js for real-time charts -->
@@ -685,6 +686,14 @@ COMMAND_CENTER_HTML = """
     <!-- SweetAlert2 for tactical alerts -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11.10.7/dist/sweetalert2.min.css" />
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.10.7/dist/sweetalert2.all.min.js"></script>
+    <!-- Animate.css for easy CSS animations -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
+    <!-- Lottie for animated icons -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js"></script>
+    <!-- Framer Motion alternative - Motion One (lightweight) -->
+    <script src="https://cdn.jsdelivr.net/npm/motion@10.16.4/dist/motion.min.js"></script>
+    <!-- Hover.css for button/hover effects -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/hover.css/2.3.1/css/hover-min.css" />
     
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&display=swap');
@@ -759,6 +768,266 @@ COMMAND_CENTER_HTML = """
             color: var(--green);
             overflow: hidden;
             height: 100vh;
+        }
+        
+        /* ═══════════════════════════════════════════════════════════════════════
+           🎨 ENHANCED MICRO-INTERACTIONS & ANIMATIONS
+           ═══════════════════════════════════════════════════════════════════════ */
+        
+        /* NEON GLOW EFFECTS */
+        .neon-glow-green {
+            filter: drop-shadow(0 0 5px var(--green)) drop-shadow(0 0 15px var(--green)) drop-shadow(0 0 30px var(--green));
+        }
+        
+        .neon-glow-gold {
+            filter: drop-shadow(0 0 5px var(--gold)) drop-shadow(0 0 15px var(--gold)) drop-shadow(0 0 30px var(--gold));
+        }
+        
+        /* GRADIENT TEXT ANIMATION */
+        .gradient-text-animated {
+            background: linear-gradient(90deg, var(--gold), var(--orange), var(--red), var(--orange), var(--gold));
+            background-size: 400% 100%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: gradientShift 4s ease infinite;
+        }
+        
+        @keyframes gradientShift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+        
+        /* FLOATING ANIMATION */
+        .float-animation {
+            animation: floatUpDown 3s ease-in-out infinite;
+        }
+        
+        @keyframes floatUpDown {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        /* ROTATE 3D HOVER */
+        .rotate-3d-hover {
+            transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            transform-style: preserve-3d;
+        }
+        
+        .rotate-3d-hover:hover {
+            transform: rotateY(10deg) rotateX(5deg) scale(1.05);
+        }
+        
+        /* POP IN ANIMATION */
+        .pop-in {
+            animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+        
+        @keyframes popIn {
+            0% { transform: scale(0); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        
+        /* SLIDE IN FROM LEFT/RIGHT */
+        .slide-in-left {
+            animation: slideInLeft 0.5s ease-out forwards;
+        }
+        
+        .slide-in-right {
+            animation: slideInRight 0.5s ease-out forwards;
+        }
+        
+        @keyframes slideInLeft {
+            from { transform: translateX(-100px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        
+        @keyframes slideInRight {
+            from { transform: translateX(100px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        
+        /* RIPPLE EFFECT ON CLICK */
+        .ripple {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .ripple::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transform: translate(-50%, -50%);
+            transition: width 0.5s ease, height 0.5s ease;
+        }
+        
+        .ripple:active::before {
+            width: 300%;
+            height: 300%;
+        }
+        
+        /* BORDER GLOW PULSE */
+        .border-glow-pulse {
+            animation: borderGlowPulse 2s ease-in-out infinite;
+        }
+        
+        @keyframes borderGlowPulse {
+            0%, 100% { box-shadow: 0 0 5px var(--green), 0 0 10px var(--green), inset 0 0 5px rgba(0, 255, 136, 0.1); }
+            50% { box-shadow: 0 0 20px var(--green), 0 0 40px var(--green), inset 0 0 15px rgba(0, 255, 136, 0.2); }
+        }
+        
+        /* NUMBER COUNTING ANIMATION */
+        .count-up {
+            display: inline-block;
+            transition: transform 0.3s ease, color 0.3s ease;
+        }
+        
+        .count-up.updating {
+            transform: scale(1.2);
+            color: var(--gold) !important;
+        }
+        
+        /* GLITCH TEXT EFFECT */
+        .glitch-text {
+            position: relative;
+        }
+        
+        .glitch-text::before,
+        .glitch-text::after {
+            content: attr(data-text);
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+        
+        .glitch-text::before {
+            left: 2px;
+            text-shadow: -2px 0 var(--cyan);
+            animation: glitchLeft 2s infinite linear alternate-reverse;
+            clip-path: polygon(0 0, 100% 0, 100% 35%, 0 35%);
+        }
+        
+        .glitch-text::after {
+            left: -2px;
+            text-shadow: 2px 0 var(--red);
+            animation: glitchRight 3s infinite linear alternate-reverse;
+            clip-path: polygon(0 65%, 100% 65%, 100% 100%, 0 100%);
+        }
+        
+        @keyframes glitchLeft {
+            0%, 100% { transform: translateX(0); }
+            20% { transform: translateX(-3px); }
+            40% { transform: translateX(3px); }
+            60% { transform: translateX(-1px); }
+            80% { transform: translateX(1px); }
+        }
+        
+        @keyframes glitchRight {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(2px); }
+            50% { transform: translateX(-2px); }
+            75% { transform: translateX(1px); }
+        }
+        
+        /* HOLOGRAM EFFECT */
+        .hologram {
+            background: linear-gradient(180deg, 
+                rgba(0, 255, 255, 0.1) 0%, 
+                rgba(0, 255, 255, 0.05) 50%, 
+                rgba(0, 255, 255, 0.1) 100%);
+            animation: hologramScan 3s linear infinite;
+            position: relative;
+        }
+        
+        .hologram::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+            animation: scanLine 2s linear infinite;
+        }
+        
+        @keyframes hologramScan {
+            0% { filter: brightness(1) hue-rotate(0deg); }
+            50% { filter: brightness(1.2) hue-rotate(10deg); }
+            100% { filter: brightness(1) hue-rotate(0deg); }
+        }
+        
+        @keyframes scanLine {
+            0% { top: 0; opacity: 1; }
+            100% { top: 100%; opacity: 0; }
+        }
+        
+        /* ENERGY BARS */
+        .energy-bar {
+            height: 4px;
+            background: linear-gradient(90deg, var(--green), var(--cyan), var(--blue));
+            background-size: 200% 100%;
+            animation: energyFlow 2s linear infinite;
+            border-radius: 2px;
+        }
+        
+        @keyframes energyFlow {
+            0% { background-position: 200% 0; }
+            100% { background-position: 0 0; }
+        }
+        
+        /* LOTTIE CONTAINER */
+        .lottie-icon {
+            width: 40px;
+            height: 40px;
+            display: inline-block;
+        }
+        
+        .lottie-icon-lg {
+            width: 80px;
+            height: 80px;
+        }
+        
+        /* PULSE RING */
+        .pulse-ring {
+            position: relative;
+        }
+        
+        .pulse-ring::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 100%;
+            height: 100%;
+            border: 2px solid var(--green);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            animation: pulseRing 1.5s ease-out infinite;
+        }
+        
+        @keyframes pulseRing {
+            0% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+            100% { transform: translate(-50%, -50%) scale(1.5); opacity: 0; }
+        }
+        
+        /* CYBER GRID BACKGROUND */
+        .cyber-grid {
+            background-image: 
+                linear-gradient(rgba(0, 255, 136, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 255, 136, 0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+            animation: gridMove 20s linear infinite;
+        }
+        
+        @keyframes gridMove {
+            0% { background-position: 0 0; }
+            100% { background-position: 50px 50px; }
         }
         
         /* PARTICLE BACKGROUND */
@@ -1108,38 +1377,138 @@ COMMAND_CENTER_HTML = """
             border-radius: 10px;
             padding: 15px;
             text-align: center;
-            transition: all 0.3s;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        /* Animated border glow */
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: conic-gradient(
+                transparent, 
+                rgba(0, 255, 136, 0.1), 
+                transparent 30%
+            );
+            animation: rotateBorder 4s linear infinite;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .stat-card:hover::before {
+            opacity: 1;
+        }
+        
+        @keyframes rotateBorder {
+            100% { transform: rotate(360deg); }
+        }
+        
+        .stat-card::after {
+            content: '';
+            position: absolute;
+            inset: 2px;
+            background: var(--bg-panel);
+            border-radius: 8px;
+            z-index: 0;
+        }
+        
+        .stat-card > * {
+            position: relative;
+            z-index: 1;
         }
         
         .stat-card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 10px 30px rgba(0, 255, 136, 0.3);
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 
+                0 15px 40px rgba(0, 255, 136, 0.4),
+                0 0 60px rgba(0, 255, 136, 0.2);
         }
         
         .stat-card.gold {
             border-color: var(--gold);
         }
         
+        .stat-card.gold::before {
+            background: conic-gradient(
+                transparent, 
+                rgba(255, 215, 0, 0.2), 
+                transparent 30%
+            );
+        }
+        
         .stat-card.gold:hover {
-            box-shadow: 0 10px 30px rgba(255, 215, 0, 0.3);
+            box-shadow: 
+                0 15px 40px rgba(255, 215, 0, 0.4),
+                0 0 60px rgba(255, 215, 0, 0.2);
         }
         
         .stat-label {
             font-size: 0.75em;
             color: #888;
             margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
         
         .stat-value {
             font-family: 'Orbitron', sans-serif;
             font-size: 1.8em;
             font-weight: 700;
+            transition: all 0.3s ease;
         }
         
-        .stat-value.green { color: var(--green); }
-        .stat-value.gold { color: var(--gold); }
-        .stat-value.red { color: var(--red); }
-        .stat-value.blue { color: var(--blue); }
+        /* Animated number update effect */
+        .stat-value.updating {
+            animation: numberPop 0.3s ease;
+        }
+        
+        @keyframes numberPop {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.3); filter: brightness(1.5); }
+            100% { transform: scale(1); }
+        }
+        
+        .stat-value.green { 
+            color: var(--green); 
+            text-shadow: 0 0 10px var(--green);
+        }
+        .stat-value.gold { 
+            color: var(--gold); 
+            text-shadow: 0 0 10px var(--gold);
+        }
+        .stat-value.red { 
+            color: var(--red); 
+            text-shadow: 0 0 10px var(--red);
+        }
+        .stat-value.blue { 
+            color: var(--blue); 
+            text-shadow: 0 0 10px var(--blue);
+        }
+        
+        /* Positive change flash */
+        .stat-card.flash-green {
+            animation: flashGreen 0.5s ease;
+        }
+        
+        @keyframes flashGreen {
+            0%, 100% { background: var(--bg-panel); }
+            50% { background: rgba(0, 255, 136, 0.2); border-color: var(--green); }
+        }
+        
+        /* Negative change flash */
+        .stat-card.flash-red {
+            animation: flashRed 0.5s ease;
+        }
+        
+        @keyframes flashRed {
+            0%, 100% { background: var(--bg-panel); }
+            50% { background: rgba(255, 51, 102, 0.2); border-color: var(--red); }
+        }
         
         /* TRADE FEED */
         #trade-feed {
@@ -1157,17 +1526,65 @@ COMMAND_CENTER_HTML = """
             border-radius: 5px;
             border-left: 4px solid var(--green);
             font-size: 0.9em;
-            animation: slideIn 0.3s ease-out;
+            animation: tradeSlideIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
         }
         
-        @keyframes slideIn {
-            from { transform: translateX(-20px); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
+        /* Shimmer effect on new trade */
+        .trade-item::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                90deg,
+                transparent,
+                rgba(255, 255, 255, 0.1),
+                transparent
+            );
+            animation: tradeShimmer 1s ease forwards;
         }
         
-        .trade-item.buy { border-left-color: var(--green); }
-        .trade-item.sell { border-left-color: var(--red); }
-        .trade-item.whale { border-left-color: var(--blue); border-width: 4px; }
+        @keyframes tradeShimmer {
+            100% { left: 100%; }
+        }
+        
+        @keyframes tradeSlideIn {
+            from { 
+                transform: translateX(-30px) scale(0.95); 
+                opacity: 0; 
+            }
+            to { 
+                transform: translateX(0) scale(1); 
+                opacity: 1; 
+            }
+        }
+        
+        .trade-item:hover {
+            background: rgba(0, 255, 136, 0.1);
+            transform: translateX(5px);
+        }
+        
+        .trade-item.buy { 
+            border-left-color: var(--green); 
+        }
+        .trade-item.sell { 
+            border-left-color: var(--red); 
+        }
+        .trade-item.whale { 
+            border-left-color: var(--blue); 
+            border-width: 4px;
+            animation: tradeSlideIn 0.4s ease, whalePulse 2s ease infinite;
+        }
+        
+        @keyframes whalePulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(0, 191, 255, 0.4); }
+            50% { box-shadow: 0 0 20px 5px rgba(0, 191, 255, 0.2); }
+        }
         
         .trade-time { color: #666; }
         .trade-type { font-weight: bold; }
@@ -1178,6 +1595,7 @@ COMMAND_CENTER_HTML = """
         .trade-pnl { font-weight: bold; }
         .trade-pnl.positive { color: var(--green); }
         .trade-pnl.negative { color: var(--red); }
+
         
         /* EXCHANGE STATUS ROW */
         #exchange-row {
@@ -1192,6 +1610,34 @@ COMMAND_CENTER_HTML = """
             border-radius: 10px;
             padding: 15px;
             text-align: center;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        /* Animated scan line */
+        .exchange-card::before {
+            content: '';
+            position: absolute;
+            top: -100%;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, var(--green), transparent);
+            animation: exchangeScan 3s linear infinite;
+        }
+        
+        @keyframes exchangeScan {
+            0% { top: -100%; opacity: 0; }
+            50% { opacity: 1; }
+            100% { top: 200%; opacity: 0; }
+        }
+        
+        .exchange-card:hover {
+            transform: translateY(-5px) scale(1.03);
+            box-shadow: 
+                0 10px 30px rgba(0, 255, 136, 0.3),
+                0 0 50px rgba(0, 255, 136, 0.1);
         }
         
         .exchange-card.offline {
@@ -1199,38 +1645,90 @@ COMMAND_CENTER_HTML = """
             opacity: 0.7;
         }
         
+        .exchange-card.offline::before {
+            background: linear-gradient(90deg, transparent, var(--red), transparent);
+        }
+        
         .exchange-logo {
-            font-size: 2em;
-            margin-bottom: 5px;
+            font-size: 2.5em;
+            margin-bottom: 8px;
+            animation: logoFloat 3s ease-in-out infinite;
+            display: inline-block;
+        }
+        
+        @keyframes logoFloat {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            25% { transform: translateY(-3px) rotate(-2deg); }
+            75% { transform: translateY(3px) rotate(2deg); }
+        }
+        
+        .exchange-card:hover .exchange-logo {
+            animation: logoBounce 0.5s ease;
+        }
+        
+        @keyframes logoBounce {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.2); }
         }
         
         .exchange-name {
             font-family: 'Orbitron', sans-serif;
             font-weight: 700;
             margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
         }
         
         .exchange-balance {
-            font-size: 1.2em;
+            font-size: 1.3em;
+            font-weight: bold;
             color: var(--gold);
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+            transition: all 0.3s ease;
+        }
+        
+        .exchange-balance.updating {
+            animation: balanceUpdate 0.3s ease;
+        }
+        
+        @keyframes balanceUpdate {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.15); color: #fff; }
+            100% { transform: scale(1); }
         }
         
         .exchange-status-badge {
             display: inline-block;
-            padding: 3px 10px;
-            border-radius: 10px;
+            padding: 4px 12px;
+            border-radius: 15px;
             font-size: 0.75em;
-            margin-top: 5px;
+            margin-top: 8px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
         
         .exchange-status-badge.online {
             background: rgba(0, 255, 136, 0.2);
             color: var(--green);
+            box-shadow: 0 0 10px rgba(0, 255, 136, 0.3);
+            animation: onlinePulse 2s ease infinite;
+        }
+        
+        @keyframes onlinePulse {
+            0%, 100% { box-shadow: 0 0 5px rgba(0, 255, 136, 0.3); }
+            50% { box-shadow: 0 0 15px rgba(0, 255, 136, 0.6); }
         }
         
         .exchange-status-badge.offline {
             background: rgba(255, 51, 102, 0.2);
             color: var(--red);
+            animation: offlineBlink 1s ease infinite;
+        }
+        
+        @keyframes offlineBlink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
         }
         
         /* RIGHT SIDEBAR */
@@ -1258,21 +1756,80 @@ COMMAND_CENTER_HTML = """
             display: flex;
             align-items: center;
             gap: 10px;
-            padding: 10px;
-            margin-bottom: 5px;
+            padding: 12px;
+            margin-bottom: 6px;
             background: rgba(0, 191, 255, 0.1);
-            border-radius: 5px;
-            border-left: 3px solid var(--blue);
-            animation: slideIn 0.3s ease-out;
+            border-radius: 8px;
+            border-left: 4px solid var(--blue);
+            animation: whaleSwim 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
         }
         
-        .whale-icon { font-size: 1.5em; }
+        /* Whale wave effect */
+        .whale-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                90deg,
+                transparent,
+                rgba(0, 191, 255, 0.2),
+                transparent
+            );
+            animation: whaleWave 2s ease infinite;
+        }
+        
+        @keyframes whaleWave {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+        
+        @keyframes whaleSwim {
+            from { 
+                transform: translateX(100px) scale(0.8); 
+                opacity: 0; 
+            }
+            to { 
+                transform: translateX(0) scale(1); 
+                opacity: 1; 
+            }
+        }
+        
+        .whale-item:hover {
+            background: rgba(0, 191, 255, 0.2);
+            transform: translateX(5px);
+            box-shadow: 0 5px 20px rgba(0, 191, 255, 0.3);
+        }
+        
+        .whale-icon { 
+            font-size: 1.8em; 
+            animation: whaleIconBob 2s ease-in-out infinite;
+        }
+        
+        @keyframes whaleIconBob {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            25% { transform: translateY(-3px) rotate(-5deg); }
+            75% { transform: translateY(3px) rotate(5deg); }
+        }
+        
         .whale-info { flex: 1; }
-        .whale-symbol { color: var(--cyan); font-weight: bold; }
-        .whale-volume { color: var(--gold); }
-        .whale-direction { font-size: 1.2em; }
+        .whale-symbol { color: var(--cyan); font-weight: bold; font-size: 1.1em; }
+        .whale-volume { color: var(--gold); text-shadow: 0 0 5px rgba(255, 215, 0, 0.5); }
+        .whale-direction { 
+            font-size: 1.4em; 
+            transition: transform 0.3s ease;
+        }
         .whale-direction.buy { color: var(--green); }
         .whale-direction.sell { color: var(--red); }
+        
+        .whale-item:hover .whale-direction {
+            transform: scale(1.2);
+        }
         
         /* BOT DETECTIONS */
         #bot-panel {
@@ -1290,15 +1847,47 @@ COMMAND_CENTER_HTML = """
             display: flex;
             align-items: center;
             gap: 10px;
-            padding: 8px;
+            padding: 10px;
             margin-bottom: 5px;
             background: rgba(153, 102, 255, 0.1);
-            border-radius: 5px;
+            border-radius: 6px;
             font-size: 0.85em;
+            animation: botDetect 0.4s ease-out;
+            transition: all 0.3s ease;
+            position: relative;
         }
         
-        .bot-icon { font-size: 1.2em; }
-        .bot-firm { color: var(--purple); font-weight: bold; }
+        @keyframes botDetect {
+            from { 
+                transform: scale(0.5) rotateY(90deg); 
+                opacity: 0; 
+            }
+            to { 
+                transform: scale(1) rotateY(0deg); 
+                opacity: 1; 
+            }
+        }
+        
+        .bot-item:hover {
+            background: rgba(153, 102, 255, 0.2);
+            transform: translateX(5px);
+        }
+        
+        .bot-icon { 
+            font-size: 1.4em; 
+            animation: botScan 1.5s linear infinite;
+        }
+        
+        @keyframes botScan {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; filter: hue-rotate(180deg); }
+        }
+        
+        .bot-firm { 
+            color: var(--purple); 
+            font-weight: bold; 
+            text-shadow: 0 0 5px rgba(153, 102, 255, 0.5);
+        }
         .bot-country { color: #888; }
         
         /* HARMONIC VISUALIZATION */
@@ -1363,56 +1952,140 @@ COMMAND_CENTER_HTML = """
             border-radius: 5px;
         }
         
-        /* ALERT BUTTONS */
+        /* ALERT BUTTONS - ENHANCED */
         .alert-btn {
-            padding: 8px 15px;
+            padding: 10px 18px;
             background: linear-gradient(180deg, #4a2020, #2a1010);
             color: var(--red);
             border: 2px solid var(--red);
-            border-radius: 5px;
+            border-radius: 8px;
             cursor: pointer;
             font-family: 'Orbitron', sans-serif;
             font-weight: 700;
             font-size: 0.75em;
             text-transform: uppercase;
-            transition: all 0.3s;
-            box-shadow: 0 0 10px rgba(255, 0, 0, 0.3);
+            letter-spacing: 1px;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 
+                0 0 10px rgba(255, 0, 0, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        /* Button shine effect */
+        .alert-btn::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(
+                to bottom right,
+                rgba(255, 255, 255, 0) 0%,
+                rgba(255, 255, 255, 0.1) 50%,
+                rgba(255, 255, 255, 0) 100%
+            );
+            transform: rotate(45deg);
+            transition: all 0.5s ease;
+            opacity: 0;
+        }
+        
+        .alert-btn:hover::before {
+            opacity: 1;
+            left: 100%;
+        }
+        
+        /* Ripple effect */
+        .alert-btn::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s ease, height 0.6s ease;
+        }
+        
+        .alert-btn:active::after {
+            width: 300px;
+            height: 300px;
         }
         
         .alert-btn:hover {
             background: linear-gradient(180deg, #6a3030, #4a2020);
-            transform: scale(1.05);
-            box-shadow: 0 0 20px rgba(255, 0, 0, 0.5);
+            transform: scale(1.08) translateY(-2px);
+            box-shadow: 
+                0 5px 25px rgba(255, 0, 0, 0.5),
+                0 0 40px rgba(255, 0, 0, 0.3);
+        }
+        
+        .alert-btn:active {
+            transform: scale(0.98) translateY(1px);
         }
         
         .alert-btn.active {
-            animation: alertPulse 0.5s infinite;
+            animation: alertPulse 0.5s infinite, alertGlow 1s ease infinite;
             background: var(--red);
             color: #fff;
+        }
+        
+        @keyframes alertGlow {
+            0%, 100% { box-shadow: 0 0 10px rgba(255, 0, 0, 0.5); }
+            50% { box-shadow: 0 0 30px rgba(255, 0, 0, 0.8), 0 0 60px rgba(255, 0, 0, 0.4); }
         }
         
         .alert-btn.green {
             background: linear-gradient(180deg, #204a20, #102a10);
             color: var(--green);
             border-color: var(--green);
-            box-shadow: 0 0 10px rgba(0, 255, 0, 0.3);
+            box-shadow: 
+                0 0 10px rgba(0, 255, 0, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
         }
         
         .alert-btn.green:hover {
             background: linear-gradient(180deg, #306a30, #204a20);
-            box-shadow: 0 0 20px rgba(0, 255, 0, 0.5);
+            box-shadow: 
+                0 5px 25px rgba(0, 255, 0, 0.5),
+                0 0 40px rgba(0, 255, 0, 0.3);
         }
 
         .alert-btn.blue {
             background: linear-gradient(180deg, #20304a, #101a2a);
             color: var(--blue);
             border-color: var(--blue);
-            box-shadow: 0 0 10px rgba(0, 191, 255, 0.3);
+            box-shadow: 
+                0 0 10px rgba(0, 191, 255, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
         }
 
         .alert-btn.blue:hover {
             background: linear-gradient(180deg, #30446a, #20304a);
-            box-shadow: 0 0 20px rgba(0, 191, 255, 0.5);
+            box-shadow: 
+                0 5px 25px rgba(0, 191, 255, 0.5),
+                0 0 40px rgba(0, 191, 255, 0.3);
+        }
+
+        /* Gold button variant */
+        .alert-btn.gold {
+            background: linear-gradient(180deg, #4a4a20, #2a2a10);
+            color: var(--gold);
+            border-color: var(--gold);
+            box-shadow: 
+                0 0 10px rgba(255, 215, 0, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        }
+
+        .alert-btn.gold:hover {
+            background: linear-gradient(180deg, #6a6a30, #4a4a20);
+            box-shadow: 
+                0 5px 25px rgba(255, 215, 0, 0.5),
+                0 0 40px rgba(255, 215, 0, 0.3);
         }
         
         @keyframes alertPulse {
@@ -1434,6 +2107,12 @@ COMMAND_CENTER_HTML = """
             box-shadow: 
                 0 0 30px rgba(0, 255, 136, 0.3),
                 inset 0 0 20px rgba(0, 0, 0, 0.8);
+            animation: radarPulse 3s ease infinite;
+        }
+        
+        @keyframes radarPulse {
+            0%, 100% { box-shadow: 0 0 30px rgba(0, 255, 136, 0.3), inset 0 0 20px rgba(0, 0, 0, 0.8); }
+            50% { box-shadow: 0 0 50px rgba(0, 255, 136, 0.5), inset 0 0 20px rgba(0, 0, 0, 0.8); }
         }
         
         #radar-canvas {
@@ -2046,24 +2725,108 @@ COMMAND_CENTER_HTML = """
             }
         }
         
-        // Update stats
+        // Track previous values for change detection
+        let prevStats = {};
+        
+        // Update stats with animations
         function updateStats(stats) {
             latestStats = stats || {};
-            document.getElementById('total-pnl').textContent = '$' + (stats.total_pnl || 0).toFixed(2);
-            document.getElementById('total-pnl').className = 'stat-value ' + (stats.total_pnl >= 0 ? 'gold' : 'red');
-            document.getElementById('total-trades').textContent = stats.total_trades || 0;
-            document.getElementById('wins').textContent = stats.winning_trades || 0;
-            document.getElementById('losses').textContent = stats.losing_trades || 0;
             
+            // Animate P&L with color flash
+            const pnlEl = document.getElementById('total-pnl');
+            const newPnl = (stats.total_pnl || 0).toFixed(2);
+            const pnlChanged = prevStats.total_pnl !== stats.total_pnl;
+            
+            if (pnlChanged && typeof gsap !== 'undefined') {
+                const isPositive = stats.total_pnl >= (prevStats.total_pnl || 0);
+                const card = pnlEl.closest('.stat-card');
+                
+                gsap.timeline()
+                    .to(pnlEl, {
+                        scale: 1.3,
+                        textShadow: isPositive 
+                            ? '0 0 30px rgba(0, 255, 136, 1)' 
+                            : '0 0 30px rgba(255, 51, 102, 1)',
+                        duration: 0.15
+                    })
+                    .to(pnlEl, {
+                        scale: 1,
+                        textShadow: '0 0 10px currentColor',
+                        duration: 0.3,
+                        ease: 'elastic.out(1, 0.5)'
+                    });
+                
+                if (card) {
+                    card.classList.add(isPositive ? 'flash-green' : 'flash-red');
+                    setTimeout(() => card.classList.remove('flash-green', 'flash-red'), 500);
+                }
+            }
+            
+            pnlEl.textContent = '$' + newPnl;
+            pnlEl.className = 'stat-value ' + (stats.total_pnl >= 0 ? 'gold' : 'red');
+            
+            // Animate trade count
+            const tradesEl = document.getElementById('total-trades');
+            if (stats.total_trades !== prevStats.total_trades && typeof anime !== 'undefined') {
+                anime({
+                    targets: tradesEl,
+                    innerHTML: [prevStats.total_trades || 0, stats.total_trades || 0],
+                    round: 1,
+                    duration: 500,
+                    easing: 'easeOutExpo'
+                });
+            } else {
+                tradesEl.textContent = stats.total_trades || 0;
+            }
+            
+            // Animate wins/losses
+            const winsEl = document.getElementById('wins');
+            const lossesEl = document.getElementById('losses');
+            
+            if (stats.winning_trades !== prevStats.winning_trades) {
+                winsEl.textContent = stats.winning_trades || 0;
+                winsEl.classList.add('updating');
+                setTimeout(() => winsEl.classList.remove('updating'), 300);
+            } else {
+                winsEl.textContent = stats.winning_trades || 0;
+            }
+            
+            if (stats.losing_trades !== prevStats.losing_trades) {
+                lossesEl.textContent = stats.losing_trades || 0;
+                lossesEl.classList.add('updating');
+                setTimeout(() => lossesEl.classList.remove('updating'), 300);
+            } else {
+                lossesEl.textContent = stats.losing_trades || 0;
+            }
+            
+            // Animate win rate
             const winRate = stats.total_trades > 0 
                 ? ((stats.winning_trades / stats.total_trades) * 100).toFixed(1) 
                 : 0;
-            document.getElementById('win-rate').textContent = winRate + '%';
-            document.getElementById('coherence').textContent = (stats.coherence || 0.5).toFixed(2);
+            const winRateEl = document.getElementById('win-rate');
+            winRateEl.textContent = winRate + '%';
+            
+            // Color win rate based on value
+            if (winRate >= 60) {
+                winRateEl.className = 'stat-value green';
+            } else if (winRate >= 40) {
+                winRateEl.className = 'stat-value gold';
+            } else {
+                winRateEl.className = 'stat-value red';
+            }
+            
+            // Animate coherence
+            const coherenceEl = document.getElementById('coherence');
+            const coherenceVal = (stats.coherence || 0.5).toFixed(2);
+            coherenceEl.textContent = coherenceVal;
+            
+            // Store for next comparison
+            prevStats = {...stats};
+            
             updateSystemRadar();
         }
         
-        // Update systems list
+        // Update systems list with animations
         function updateSystems(systems) {
             systemsData = systems;
             latestSystems = systems || {};
@@ -2072,6 +2835,7 @@ COMMAND_CENTER_HTML = """
             
             let online = 0;
             let total = 0;
+            let delay = 0;
             
             for (const [name, status] of Object.entries(systems)) {
                 total++;
@@ -2079,11 +2843,21 @@ COMMAND_CENTER_HTML = """
                 
                 const item = document.createElement('div');
                 item.className = 'system-item' + (status ? '' : ' offline');
+                item.style.opacity = '0';
+                item.style.transform = 'translateX(-20px)';
                 item.innerHTML = `
                     <span class="system-name">${name}</span>
                     <span class="system-status ${status ? '' : 'offline'}">${status ? '✅ ONLINE' : '❌ OFFLINE'}</span>
                 `;
                 container.appendChild(item);
+                
+                // Staggered animation
+                setTimeout(() => {
+                    item.style.transition = 'all 0.3s ease';
+                    item.style.opacity = '1';
+                    item.style.transform = 'translateX(0)';
+                }, delay);
+                delay += 30;
             }
             
             document.getElementById('systems-online').textContent = online;
@@ -2092,7 +2866,10 @@ COMMAND_CENTER_HTML = """
             updateSystemRadar();
         }
         
-        // Update balances
+        // Track previous balances
+        let prevBalances = {};
+        
+        // Update balances with animations
         function updateBalances(balances) {
             for (const [exchange, balance] of Object.entries(balances)) {
                 const balanceEl = document.getElementById(`${exchange}-balance`);
@@ -2101,7 +2878,28 @@ COMMAND_CENTER_HTML = """
                 
                 if (balanceEl) {
                     if (typeof balance === 'number') {
-                        balanceEl.textContent = '$' + balance.toFixed(2);
+                        const prevBal = prevBalances[exchange];
+                        const changed = prevBal !== balance;
+                        
+                        // Animate balance change
+                        if (changed && typeof anime !== 'undefined' && prevBal !== undefined) {
+                            balanceEl.classList.add('updating');
+                            anime({
+                                targets: { val: prevBal },
+                                val: balance,
+                                duration: 800,
+                                easing: 'easeOutExpo',
+                                update: function(anim) {
+                                    balanceEl.textContent = '$' + anim.animations[0].currentValue.toFixed(2);
+                                },
+                                complete: () => balanceEl.classList.remove('updating')
+                            });
+                        } else {
+                            balanceEl.textContent = '$' + balance.toFixed(2);
+                        }
+                        
+                        prevBalances[exchange] = balance;
+                        
                         if (statusEl) {
                             statusEl.textContent = 'ONLINE';
                             statusEl.className = 'exchange-status-badge online';
@@ -2119,7 +2917,7 @@ COMMAND_CENTER_HTML = """
             }
         }
         
-        // Add trade to feed
+        // Add trade to feed with animations
         function addTrade(trade) {
             tradesData.unshift(trade);
             if (tradesData.length > 50) tradesData.pop();
@@ -2127,21 +2925,50 @@ COMMAND_CENTER_HTML = """
 
             terminalLog(`TRADE ${trade.side || ''} ${trade.symbol || ''} PnL ${trade.pnl?.toFixed?.(2) ?? trade.pnl}`);
             
-            // Play sound for trades
-            if (trade.pnl > 0) {
+            // Create particle burst on profitable trade
+            const firstTrade = document.querySelector('.trade-item');
+            if (firstTrade && trade.pnl > 0) {
+                createTradeBurst(firstTrade, true);
                 playSound('win');
+                
+                // Flash the P&L card green
+                const pnlCard = document.querySelector('.stat-card.gold');
+                if (pnlCard) {
+                    pnlCard.classList.add('flash-green');
+                    setTimeout(() => pnlCard.classList.remove('flash-green'), 500);
+                }
+            } else if (firstTrade && trade.pnl < 0) {
+                // Visual feedback for loss
+                firstTrade.style.animation = 'none';
+                firstTrade.offsetHeight; // Trigger reflow
+                firstTrade.style.animation = 'tradeSlideIn 0.4s ease, shake 0.5s ease';
             }
         }
         
-        // Render trades
+        // Shake animation for losing trades
+        const shakeStyle = document.createElement('style');
+        shakeStyle.textContent = `
+            @keyframes shake {
+                0%, 100% { transform: translateX(0); }
+                10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+                20%, 40%, 60%, 80% { transform: translateX(5px); }
+            }
+        `;
+        document.head.appendChild(shakeStyle);
+        
+        // Render trades with staggered animations
         function renderTrades() {
             const container = document.getElementById('trade-list');
+            const existingItems = container.querySelectorAll('.trade-item');
+            
+            // Only re-render if data changed
             container.innerHTML = '';
             
-            for (const trade of tradesData.slice(0, 20)) {
+            tradesData.slice(0, 20).forEach((trade, index) => {
                 const item = document.createElement('div');
                 const isWhale = trade.volume > 100000;
                 item.className = `trade-item ${trade.side} ${isWhale ? 'whale' : ''}`;
+                item.style.animationDelay = `${index * 0.05}s`;
                 item.innerHTML = `
                     <span class="trade-time">${trade.time || '--:--:--'}</span>
                     <span class="trade-type ${trade.side}">${trade.side?.toUpperCase() || 'TRADE'}</span>
@@ -2152,26 +2979,38 @@ COMMAND_CENTER_HTML = """
                     </span>
                 `;
                 container.appendChild(item);
-            }
+            });
         }
         
-        // Add whale alert
+        // Add whale alert with animation
         function addWhale(whale) {
             whalesData.unshift(whale);
             if (whalesData.length > 30) whalesData.pop();
             renderWhales();
             playSound('whale');
+            
+            // Splash animation on whale panel
+            const whalePanel = document.getElementById('whale-panel');
+            if (whalePanel && typeof gsap !== 'undefined') {
+                gsap.to(whalePanel, {
+                    boxShadow: '0 0 50px rgba(0, 191, 255, 0.8)',
+                    duration: 0.3,
+                    yoyo: true,
+                    repeat: 1
+                });
+            }
         }
         
-        // Render whales
+        // Render whales with swim animation
         function renderWhales() {
             const container = document.getElementById('whale-list');
             container.innerHTML = '';
             document.getElementById('whale-count').textContent = whalesData.length;
             
-            for (const whale of whalesData.slice(0, 10)) {
+            whalesData.slice(0, 10).forEach((whale, index) => {
                 const item = document.createElement('div');
                 item.className = 'whale-item';
+                item.style.animationDelay = `${index * 0.1}s`;
                 item.innerHTML = `
                     <span class="whale-icon">🐋</span>
                     <div class="whale-info">
@@ -2181,14 +3020,25 @@ COMMAND_CENTER_HTML = """
                     <span class="whale-direction ${whale.direction}">${whale.direction === 'buy' ? '📈' : '📉'}</span>
                 `;
                 container.appendChild(item);
-            }
+            });
         }
         
-        // Add bot detection
+        // Add bot detection with scan animation
         function addBot(bot) {
             botsData.unshift(bot);
             if (botsData.length > 50) botsData.pop();
             renderBots();
+            
+            // Flash the bot panel
+            const botPanel = document.getElementById('bot-panel');
+            if (botPanel && typeof gsap !== 'undefined') {
+                gsap.to(botPanel, {
+                    boxShadow: '0 0 40px rgba(153, 102, 255, 0.8)',
+                    duration: 0.2,
+                    yoyo: true,
+                    repeat: 1
+                });
+            }
         }
         
         // Render bots
@@ -2761,28 +3611,213 @@ COMMAND_CENTER_HTML = """
         }
         
         // ═══════════════════════════════════════════════════════════════════════
-        // GSAP ANIMATIONS ON LOAD
+        // 🎨 ENHANCED GSAP ANIMATIONS ON LOAD
         // ═══════════════════════════════════════════════════════════════════════
         
         function initAnimations() {
             if (typeof gsap === 'undefined') return;
             
-            // Animate panels sliding in
-            gsap.from('#header', { y: -100, opacity: 0, duration: 0.8, ease: 'power3.out' });
-            gsap.from('#queen-panel', { scale: 0.9, opacity: 0, duration: 0.6, delay: 0.2 });
-            gsap.from('#systems-panel', { x: -100, opacity: 0, duration: 0.6, delay: 0.3 });
-            gsap.from('#main-display', { y: 50, opacity: 0, duration: 0.6, delay: 0.4 });
-            gsap.from('#right-sidebar', { x: 100, opacity: 0, duration: 0.6, delay: 0.5 });
-            gsap.from('#footer', { y: 50, opacity: 0, duration: 0.6, delay: 0.6 });
+            // Register GSAP plugins
+            if (typeof TextPlugin !== 'undefined') {
+                gsap.registerPlugin(TextPlugin);
+            }
             
-            // Animate stat cards
-            gsap.from('.stat-card', { 
+            // Create master timeline for orchestrated entrance
+            const masterTL = gsap.timeline();
+            
+            // Header drops in with bounce
+            masterTL.from('#header', { 
+                y: -150, 
+                opacity: 0, 
+                duration: 1, 
+                ease: 'bounce.out' 
+            });
+            
+            // Queen panel scales in with golden glow
+            masterTL.from('#queen-panel', { 
+                scale: 0.5, 
+                opacity: 0, 
+                duration: 0.8, 
+                ease: 'elastic.out(1, 0.5)',
+                onComplete: () => {
+                    gsap.to('#queen-avatar', {
+                        filter: 'drop-shadow(0 0 30px rgba(255, 215, 0, 1))',
+                        duration: 0.5
+                    });
+                }
+            }, '-=0.3');
+            
+            // Sidebar panels slide in from sides
+            masterTL.from('#systems-panel', { 
+                x: -200, 
+                opacity: 0, 
+                rotation: -5,
+                duration: 0.8, 
+                ease: 'power4.out' 
+            }, '-=0.5');
+            
+            masterTL.from('#right-sidebar', { 
+                x: 200, 
+                opacity: 0, 
+                rotation: 5,
+                duration: 0.8, 
+                ease: 'power4.out' 
+            }, '-=0.8');
+            
+            // Main display fades up
+            masterTL.from('#main-display', { 
+                y: 100, 
+                opacity: 0, 
+                duration: 0.6, 
+                ease: 'power3.out' 
+            }, '-=0.6');
+            
+            // Footer slides up
+            masterTL.from('#footer', { 
+                y: 100, 
+                opacity: 0, 
+                duration: 0.5, 
+                ease: 'power2.out' 
+            }, '-=0.3');
+            
+            // Stat cards pop in with stagger and bounce
+            masterTL.from('.stat-card', { 
                 scale: 0, 
                 opacity: 0, 
-                duration: 0.4, 
-                stagger: 0.1, 
-                delay: 0.7,
-                ease: 'back.out(1.7)'
+                y: 30,
+                duration: 0.5, 
+                stagger: {
+                    each: 0.1,
+                    from: 'start',
+                    ease: 'power2.in'
+                },
+                ease: 'back.out(2)'
+            }, '-=0.4');
+            
+            // Exchange cards flip in
+            masterTL.from('.exchange-card', {
+                rotationY: 90,
+                opacity: 0,
+                duration: 0.6,
+                stagger: 0.15,
+                ease: 'power2.out',
+                transformOrigin: 'center center'
+            }, '-=0.3');
+            
+            // Radar container pulse in
+            masterTL.from('#radar-container', {
+                scale: 0,
+                opacity: 0,
+                rotation: -180,
+                duration: 0.8,
+                ease: 'back.out(1.5)'
+            }, '-=0.5');
+            
+            // Floating animations for decorative elements
+            gsap.to('#queen-avatar', {
+                y: -10,
+                duration: 2,
+                ease: 'sine.inOut',
+                yoyo: true,
+                repeat: -1
+            });
+            
+            // Continuous subtle pulse on panels
+            gsap.to('.panel', {
+                boxShadow: '0 0 30px rgba(0, 255, 136, 0.4), inset 0 0 30px rgba(0, 0, 0, 0.5)',
+                duration: 2,
+                ease: 'sine.inOut',
+                yoyo: true,
+                repeat: -1,
+                stagger: 0.2
+            });
+            
+            // Logo shimmer animation
+            gsap.to('#logo', {
+                backgroundPosition: '200% 0',
+                duration: 3,
+                ease: 'none',
+                repeat: -1
+            });
+        }
+        
+        // Animate value changes
+        function animateValueChange(element, newValue, isPositive = true) {
+            if (typeof gsap === 'undefined') return;
+            
+            const el = document.getElementById(element) || element;
+            if (!el) return;
+            
+            // Flash animation
+            gsap.timeline()
+                .to(el, {
+                    scale: 1.3,
+                    color: isPositive ? '#00FF88' : '#FF3366',
+                    textShadow: isPositive 
+                        ? '0 0 20px rgba(0, 255, 136, 0.8)' 
+                        : '0 0 20px rgba(255, 51, 102, 0.8)',
+                    duration: 0.15,
+                    ease: 'power2.out'
+                })
+                .to(el, {
+                    scale: 1,
+                    textShadow: 'none',
+                    duration: 0.3,
+                    ease: 'elastic.out(1, 0.3)'
+                });
+            
+            el.textContent = newValue;
+        }
+        
+        // Particle burst effect on trade
+        function createTradeBurst(element, isWin) {
+            if (typeof anime === 'undefined') return;
+            
+            const rect = element.getBoundingClientRect();
+            const particles = 15;
+            
+            for (let i = 0; i < particles; i++) {
+                const particle = document.createElement('div');
+                particle.style.cssText = `
+                    position: fixed;
+                    left: ${rect.left + rect.width / 2}px;
+                    top: ${rect.top + rect.height / 2}px;
+                    width: 6px;
+                    height: 6px;
+                    border-radius: 50%;
+                    background: ${isWin ? 'var(--green)' : 'var(--red)'};
+                    pointer-events: none;
+                    z-index: 9999;
+                `;
+                document.body.appendChild(particle);
+                
+                anime({
+                    targets: particle,
+                    translateX: anime.random(-100, 100),
+                    translateY: anime.random(-100, 100),
+                    scale: [1, 0],
+                    opacity: [1, 0],
+                    duration: 800,
+                    easing: 'easeOutExpo',
+                    complete: () => particle.remove()
+                });
+            }
+        }
+        
+        // Number counter animation
+        function animateCounter(element, endValue, duration = 1000) {
+            if (typeof anime === 'undefined') return;
+            
+            const obj = { value: 0 };
+            anime({
+                targets: obj,
+                value: endValue,
+                round: 1,
+                duration: duration,
+                easing: 'easeOutExpo',
+                update: () => {
+                    element.textContent = obj.value.toLocaleString();
+                }
             });
         }
         
