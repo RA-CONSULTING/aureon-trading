@@ -171,8 +171,25 @@ class MarketDataHub:
 
             if quote is None:
                 # Fallback to stock latest quote endpoint - only for actual stocks
-                # Skip crypto symbols (they will have '/' in normalized form)
+                # Skip crypto symbols (they will have '/' in normalized form or be known crypto base)
+                is_crypto = False
                 if normalized and '/' in normalized:
+                    is_crypto = True
+                else:
+                    # Check if bare symbol is a known crypto
+                    try:
+                        from alpaca_client import CRYPTO_BASE_SYMBOLS
+                        base_sym = symbol.upper()
+                        for suffix in ('USDT', 'USDC', 'USD'):
+                            if base_sym.endswith(suffix) and len(base_sym) > len(suffix):
+                                base_sym = base_sym[:-len(suffix)]
+                                break
+                        if base_sym in CRYPTO_BASE_SYMBOLS:
+                            is_crypto = True
+                    except ImportError:
+                        pass
+                
+                if is_crypto:
                     # This is a crypto pair - skip stock fallback
                     quote = None
                 else:

@@ -39,6 +39,20 @@ except ImportError:
 
 logger = logging.getLogger(__name__)
 
+# ═══════════════════════════════════════════════════════════════════════════════════════════════════
+# CRYPTO SYMBOL DETECTION - Centralized set to prevent stock API fallback for crypto
+# ═══════════════════════════════════════════════════════════════════════════════════════════════════
+CRYPTO_BASE_SYMBOLS = {
+    'BTC', 'ETH', 'LTC', 'XRP', 'SOL', 'DOGE', 'AVAX', 'DOT', 'LINK', 'UNI',
+    'AAVE', 'BCH', 'XLM', 'ATOM', 'ALGO', 'MATIC', 'SHIB', 'PEPE', 'TRUMP',
+    'ADA', 'BNB', 'XMR', 'ETC', 'FIL', 'NEAR', 'APT', 'OP', 'ARB', 'CRV',
+    'MKR', 'SNX', 'COMP', 'YFI', 'SUSHI', 'GRT', 'BAT', 'ZRX', 'ENJ', 'MANA',
+    'SAND', 'AXS', 'GALA', 'IMX', 'LRC', 'SKY', 'XTZ', 'USDG', 'BONK', 'WIF',
+    'FLOKI', 'RENDER', 'INJ', 'TIA', 'SEI', 'SUI', 'BLUR', 'JTO', 'PYTH',
+    'RNDR', 'FET', 'AGIX', 'OCEAN', 'TAO', 'ORDI', 'WLD', 'STRK', 'MEME',
+    'USDC', 'USDT', 'DAI', 'BUSD',  # Stablecoins (quote currencies)
+}
+
 class AlpacaClient:
     """
     Client for Alpaca Markets API (Stocks & Crypto).
@@ -594,11 +608,16 @@ class AlpacaClient:
                     pass
 
             # Fallback: treat as stock symbol (use ORIGINAL symbol, NOT normalized crypto pair)
-            # Stock API doesn't accept '/' in symbols - use the original symbol
-            stock_sym = sym.replace("/", "").replace("USD", "") if '/' in (normalized or '') else sym
-            # Skip stock fallback if this is clearly a crypto pair
-            if stock_sym in ('BTC', 'ETH', 'LTC', 'XRP', 'SOL', 'DOGE', 'AVAX', 'DOT', 'LINK', 'UNI', 'AAVE', 'BCH', 'XLM', 'ATOM', 'ALGO', 'MATIC', 'SHIB', 'PEPE', 'TRUMP'):
-                logger.debug(f"Skipping stock fallback for crypto symbol {sym}")
+            # Stock API doesn't accept '/' in symbols - extract base for checking
+            stock_sym = sym.replace("/", "").replace("USD", "").replace("USDT", "").replace("USDC", "") if '/' in (normalized or '') else sym
+            # Also strip quote currencies from the end of stock_sym for bare symbols
+            for quote_suffix in ('USDT', 'USDC', 'USD'):
+                if stock_sym.endswith(quote_suffix) and len(stock_sym) > len(quote_suffix):
+                    stock_sym = stock_sym[:-len(quote_suffix)]
+                    break
+            # Skip stock fallback if this is clearly a crypto pair - use centralized set
+            if stock_sym.upper() in CRYPTO_BASE_SYMBOLS:
+                logger.debug(f"Skipping stock fallback for crypto symbol {sym} (detected as {stock_sym})")
                 return {}
             resp = self._request(
                 "GET",
@@ -1651,9 +1670,18 @@ class AlpacaClient:
         """Return latest bid/ask/last for a symbol (stocks or crypto)."""
         try:
             norm = self._resolve_symbol(symbol)
+            
+            # Check if this is a crypto symbol by examining the base
+            base_sym = norm.split('/')[0] if '/' in norm else norm
+            # Also check for bare crypto symbols that might not have been normalized
+            for quote_suffix in ('USDT', 'USDC', 'USD'):
+                if base_sym.endswith(quote_suffix) and len(base_sym) > len(quote_suffix):
+                    base_sym = base_sym[:-len(quote_suffix)]
+                    break
+            is_crypto = base_sym.upper() in CRYPTO_BASE_SYMBOLS or '/' in norm
 
-            # Stock path (no slash = stock)
-            if '/' not in norm:
+            # Stock path - only for actual stocks, NOT crypto
+            if not is_crypto and '/' not in norm:
                 # Try quote first, then snapshot, then bars as fallback
                 quote_resp = self.get_latest_stock_quote(norm)
                 snapshot = self.get_stock_snapshot(norm)
