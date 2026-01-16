@@ -25,9 +25,20 @@ Pattern dimensions:
 import json
 import time
 import os
+import sys
 from dataclasses import dataclass, field
 from typing import Dict, List, Tuple, Optional
 from collections import defaultdict
+
+# Safe print function that won't fail on closed stdout
+def safe_print(*args, **kwargs):
+    """Print that won't crash if stdout is closed."""
+    try:
+        print(*args, **kwargs)
+        if hasattr(sys.stdout, 'flush'):
+            sys.stdout.flush()
+    except (ValueError, OSError, IOError):
+        pass  # Ignore I/O errors on closed file
 from probability_intelligence_matrix import (
     get_probability_matrix,
     ProbabilityIntelligence
@@ -143,9 +154,9 @@ class ProbabilityUltimateIntelligence:
         if CLOWNFISH_AVAILABLE and ClownfishNode is not None:
             try:
                 self.clownfish = ClownfishNode()
-                print("🐠 ClownfishNode v2.0 initialized for pattern learning")
+                safe_print("🐠 ClownfishNode v2.0 initialized for pattern learning")
             except Exception as e:
-                print(f"⚠️ ClownfishNode init failed: {e}")
+                safe_print(f"⚠️ ClownfishNode init failed: {e}")
         
         self._load_state()
     
@@ -171,9 +182,9 @@ class ProbabilityUltimateIntelligence:
                 self.total_predictions = data.get("total_predictions", 0)
                 self.correct_predictions = data.get("correct_predictions", 0)
                 
-                print(f"💎 Loaded {len(self.patterns)} learned patterns")
+                safe_print(f"💎 Loaded {len(self.patterns)} learned patterns")
             except Exception as e:
-                print(f"⚠️ Could not load state: {e}")
+                safe_print(f"⚠️ Could not load state: {e}")
     
     def _save_state(self):
         """Save learned patterns to disk."""
@@ -200,7 +211,7 @@ class ProbabilityUltimateIntelligence:
             with open(STATE_FILE, 'w') as f:
                 json.dump(data, f, indent=2)
         except Exception as e:
-            print(f"⚠️ Could not save state: {e}")
+            safe_print(f"⚠️ Could not save state: {e}")
     
     def _detect_scenario(
         self,
@@ -369,7 +380,7 @@ class ProbabilityUltimateIntelligence:
                 elif danger_count >= 2:
                     clownfish_boost = 0.94
             except Exception as e:
-                print(f"⚠️ Clownfish compute error: {e}")
+                safe_print(f"⚠️ Clownfish compute error: {e}")
         
         # Get base intelligence from matrix
         matrix_intel = self.matrix.calculate_intelligent_probability(
@@ -520,8 +531,8 @@ class ProbabilityUltimateIntelligence:
         # Log learning
         accuracy = self.correct_predictions / self.total_predictions * 100 if self.total_predictions > 0 else 0
         cf_dim = pattern_key[4] if len(pattern_key) > 4 else "n/a"
-        print(f"💎 Pattern {pattern_key[:4]}|🐠{cf_dim}: {stats.wins}/{stats.total} wins ({stats.win_rate*100:.1f}%)")
-        print(f"   Overall accuracy: {accuracy:.1f}% ({self.correct_predictions}/{self.total_predictions})")
+        safe_print(f"💎 Pattern {pattern_key[:4]}|🐠{cf_dim}: {stats.wins}/{stats.total} wins ({stats.win_rate*100:.1f}%)")
+        safe_print(f"   Overall accuracy: {accuracy:.1f}% ({self.correct_predictions}/{self.total_predictions})")
         
         # Save every 10 outcomes
         if stats.total % 10 == 0:
@@ -607,22 +618,22 @@ def record_ultimate_outcome(
 
 
 if __name__ == "__main__":
-    print("\n💎 PROBABILITY ULTIMATE INTELLIGENCE")
-    print("=" * 60)
+    safe_print("\n💎 PROBABILITY ULTIMATE INTELLIGENCE")
+    safe_print("=" * 60)
     
     intel = get_ultimate_intelligence()
     stats = intel.get_stats()
     
-    print(f"\n📊 Current Status:")
-    print(f"   Patterns Learned: {stats['total_patterns_learned']}")
-    print(f"   Total Predictions: {stats['total_predictions']}")
-    print(f"   Accuracy: {stats['accuracy']:.1f}%")
-    print(f"   Guaranteed Win Patterns: {stats['guaranteed_win_patterns']}")
-    print(f"   Guaranteed Loss Patterns: {stats['guaranteed_loss_patterns']}")
-    print(f"   High Confidence Patterns: {stats['high_confidence_patterns']}")
+    safe_print(f"\n📊 Current Status:")
+    safe_print(f"   Patterns Learned: {stats['total_patterns_learned']}")
+    safe_print(f"   Total Predictions: {stats['total_predictions']}")
+    safe_print(f"   Accuracy: {stats['accuracy']:.1f}%")
+    safe_print(f"   Guaranteed Win Patterns: {stats['guaranteed_win_patterns']}")
+    safe_print(f"   Guaranteed Loss Patterns: {stats['guaranteed_loss_patterns']}")
+    safe_print(f"   High Confidence Patterns: {stats['high_confidence_patterns']}")
     
     # Test prediction
-    print(f"\n🧪 Test Prediction:")
+    safe_print(f"\n🧪 Test Prediction:")
     now = time.time()
     test_history = [
         (now - 10, 0.001),
@@ -640,14 +651,14 @@ if __name__ == "__main__":
         momentum_score=0.6
     )
     
-    print(f"   Pattern: {prediction.pattern_key}")
-    print(f"   Base Probability: {prediction.base_probability*100:.1f}%")
-    print(f"   Pattern Win Rate: {prediction.pattern_win_rate*100:.1f}%")
-    print(f"   Final Probability: {prediction.final_probability*100:.1f}%")
-    print(f"   Should Trade: {'✅ YES' if prediction.should_trade else '❌ NO'}")
-    print(f"   Reasoning: {prediction.reasoning}")
+    safe_print(f"   Pattern: {prediction.pattern_key}")
+    safe_print(f"   Base Probability: {prediction.base_probability*100:.1f}%")
+    safe_print(f"   Pattern Win Rate: {prediction.pattern_win_rate*100:.1f}%")
+    safe_print(f"   Final Probability: {prediction.final_probability*100:.1f}%")
+    safe_print(f"   Should Trade: {'✅ YES' if prediction.should_trade else '❌ NO'}")
+    safe_print(f"   Reasoning: {prediction.reasoning}")
     
     if prediction.is_guaranteed_win:
-        print(f"   🏆 GUARANTEED WIN DETECTED!")
+        safe_print(f"   🏆 GUARANTEED WIN DETECTED!")
     elif prediction.is_guaranteed_loss:
-        print(f"   💀 GUARANTEED LOSS DETECTED!")
+        safe_print(f"   💀 GUARANTEED LOSS DETECTED!")
