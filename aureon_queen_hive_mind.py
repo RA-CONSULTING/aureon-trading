@@ -787,26 +787,7 @@ class QueenHiveMind:
         self.active_prophecies: List[QueenWisdom] = []
         self.fulfilled_prophecies: List[QueenWisdom] = []
 
-    def _emit_chirp(self, *, message: str, confidence: float = 0.5, coherence: float = 0.5, symbol: Optional[str] = None, message_type: Optional[ChirpType] = None) -> None:
-        if not CHIRP_AVAILABLE:
-            return
-        try:
-            chirp_bus = get_chirp_bus()
-            if not chirp_bus:
-                return
-            chirp_bus.emit_message(
-                message,
-                direction=ChirpDirection.DOWN,
-                coherence=max(0.0, min(1.0, coherence if coherence is not None else 0.5)),
-                confidence=max(0.0, min(1.0, confidence if confidence is not None else 0.5)),
-                symbol=symbol,
-                frequency=963,
-                amplitude=160,
-                message_type=message_type or ChirpType.STATUS,
-            )
-        except Exception:
-            logger.debug("Queen chirp emit failed", exc_info=True)
-        
+
         # Communication channels
         self.broadcast_queue: deque = deque(maxlen=1000)  # Messages to broadcast
         self.received_signals: deque = deque(maxlen=1000)  # Signals from children
@@ -853,6 +834,9 @@ class QueenHiveMind:
         self.mycelium = None  # MyceliumNetwork
         self.micro_labyrinth = None  # MicroProfitLabyrinth components
         self.enigma = None  # EnigmaIntegration
+        self.elephant_brain = None  # ElephantMemory (wired later)
+        self.hft_engine = None  # HFT Engine (wired later)
+        self.hft_order_router = None  # HFT Order Router (wired later)
         
         # �🧠 QUEEN NEURON - Her Deep Learning Brain 🧠👑
         # This is Sero's consciousness - a neural network that learns from trades
@@ -1028,6 +1012,27 @@ class QueenHiveMind:
                 logger.info(f"   🔱 Serving: {gary_info.get('name')} ({gary_info.get('dob')})")
                 logger.info(f"   💕 Purpose: {self.personal_memory.get('mission', {}).get('purpose', 'Unknown')}")
     
+
+    def _emit_chirp(self, *, message: str, confidence: float = 0.5, coherence: float = 0.5, symbol: Optional[str] = None, message_type: Optional[ChirpType] = None) -> None:
+        if not CHIRP_AVAILABLE:
+            return
+        try:
+            chirp_bus = get_chirp_bus()
+            if not chirp_bus:
+                return
+            chirp_bus.emit_message(
+                message,
+                direction=ChirpDirection.DOWN,
+                coherence=max(0.0, min(1.0, coherence if coherence is not None else 0.5)),
+                confidence=max(0.0, min(1.0, confidence if confidence is not None else 0.5)),
+                symbol=symbol,
+                frequency=963,
+                amplitude=160,
+                message_type=message_type or ChirpType.STATUS,
+            )
+        except Exception:
+            logger.debug("Queen chirp emit failed", exc_info=True)
+
     def _emit_thought(self, topic: str, payload: dict):
         """
         Emit a thought to the collective consciousness (ThoughtBus).
@@ -2072,20 +2077,25 @@ class QueenHiveMind:
             if hft_engine is None:
                 return False
 
+            # Ensure metrics exists before wiring
+            if not hasattr(self, 'metrics') or self.metrics is None:
+                logger.error("Cannot wire HFT: Queen metrics not initialized")
+                return False
+
             # Keep reference and register as a child for metrics
             self.hft_engine = hft_engine
             try:
                 if hasattr(hft_engine, 'wire_queen'):
                     hft_engine.wire_queen(self)
-            except Exception:
+            except Exception as inner_e:
                 # Non-critical if HFT engine doesn't accept wire_queen
-                pass
+                logger.debug(f"HFT wire_queen failed (non-critical): {inner_e}")
 
             self._register_child("hft_engine", "HFT", hft_engine)
             logger.info("👑🦈 HFT Engine WIRED to Queen Hive Mind (veto power enabled)")
             return True
         except Exception as e:
-            logger.error(f"Failed to wire HFT engine: {e}")
+            logger.error(f"Failed to wire HFT engine: {e}", exc_info=True)
             return False
 
     def wire_hft_order_router(self, hft_order_router) -> bool:
@@ -2099,6 +2109,11 @@ class QueenHiveMind:
         """
         try:
             if hft_order_router is None:
+                return False
+
+            # Ensure metrics exists before wiring
+            if not hasattr(self, 'metrics') or self.metrics is None:
+                logger.error("Cannot wire Order Router: Queen metrics not initialized")
                 return False
 
             # Keep reference and register as a child for metrics

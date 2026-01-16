@@ -202,8 +202,8 @@ except ImportError:
     SYSTEMS_STATUS['Internal Multiverse'] = False
 
 try:
-    from aureon_stargate_protocol import ActivationCeremony
-    SYSTEMS_STATUS['Stargate Protocol'] = True
+    # from aureon_stargate_protocol import ActivationCeremony
+    SYSTEMS_STATUS['Stargate Protocol'] = False # True
 except ImportError:
     SYSTEMS_STATUS['Stargate Protocol'] = False
 
@@ -3361,6 +3361,18 @@ COMMAND_CENTER_HTML = """
                 case 'stats':
                     updateStats(data.stats);
                     break;
+                case 'log_stream':
+                    // SCI-FI LOG STREAM
+                    // Only show exciting logs or errors in the main alert feed
+                    if (data.message.includes('success') || data.message.includes('profit') || data.message.includes('QUEEN') || data.message.includes('WAVE') || data.message.includes('⚠️')) {
+                         addAlert(data.message, data.message.includes('⚠️') ? 'high' : 'normal');
+                    }
+                    
+                    // Update visuals
+                    if (data.visual_data) {
+                        updateHarmonicVisuals(data.visual_data);
+                    }
+                    break;
             }
         }
         
@@ -4214,7 +4226,47 @@ COMMAND_CENTER_HTML = """
                 `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
         }
         
-        // Draw harmonic visualization
+        // Global Visual State for Sci-Fi FX
+        let visualState = {
+            targetFreqs: [0.02, 0.03, 0.015, 0.025],
+            currentFreqs: [0.02, 0.03, 0.015, 0.025],
+            targetAmps: [20, 15, 25, 18],
+            currentAmps: [20, 15, 25, 18],
+            colors: ['#00FF88', '#FFD700', '#00BFFF', '#FF6600'],
+            phase: 0,
+            activeType: 'normal',
+            particles: []
+        };
+        
+        function updateHarmonicVisuals(data) {
+            visualState.activeType = data.type;
+            
+            // Map entropy to frequencies for unique signatures
+            const baseFreq = (data.entropy % 100) / 1000;
+            visualState.targetFreqs = [
+                baseFreq * 1.5 + 0.01, 
+                baseFreq * 2.0 + 0.02, 
+                baseFreq * 0.5 + 0.005, 
+                baseFreq * 3.0 + 0.03
+            ];
+            
+            // Boost amplitudes on activity (Audio-reactive style)
+            visualState.targetAmps = [
+                40 + (data.entropy % 40), 
+                30 + (data.entropy % 30), 
+                50 + (data.entropy % 50), 
+                35 + (data.entropy % 35)
+            ];
+            
+            // Change colors based on semantic type
+            if (data.type === 'queen') visualState.colors = ['#FF00FF', '#8A2BE2', '#9400D3', '#DA70D6']; // Purples
+            else if (data.type === 'profit') visualState.colors = ['#00FF00', '#32CD32', '#00FA9A', '#7FFF00']; // Greens
+            else if (data.type === 'wave') visualState.colors = ['#00FFFF', '#1E90FF', '#0000FF', '#ADD8E6']; // Blues
+            else if (data.type === 'exchange') visualState.colors = ['#FFA500', '#FF8C00', '#FFD700', '#FFFF00']; // Golds
+            else visualState.colors = ['#00FF88', '#FFD700', '#00BFFF', '#FF6600']; // Default
+        }
+
+        // Draw harmonic visualization (SCI-FI SPECTROGRAM STYLE)
         function drawHarmonics() {
             const canvas = document.getElementById('harmonic-canvas');
             if (!canvas) return;
@@ -4227,32 +4279,53 @@ COMMAND_CENTER_HTML = """
             const height = canvas.height;
             const centerY = height / 2;
             
-            ctx.clearRect(0, 0, width, height);
+            // Decay trail effect (Ghosting)
+            ctx.fillStyle = 'rgba(10, 15, 30, 0.2)'; // Dark blue-black fade
+            ctx.fillRect(0, 0, width, height);
             
-            // Draw multiple harmonic waves
-            const colors = ['#00FF88', '#FFD700', '#00BFFF', '#FF6600'];
-            const frequencies = [0.02, 0.03, 0.015, 0.025];
-            const amplitudes = [20, 15, 25, 18];
-            const phases = [Date.now() * 0.001, Date.now() * 0.0015, Date.now() * 0.0008, Date.now() * 0.0012];
+            visualState.phase += 0.1; // Faster animation
             
+            // Interpolate values for smooth physics
+            for(let i=0; i<4; i++) {
+                visualState.currentFreqs[i] += (visualState.targetFreqs[i] - visualState.currentFreqs[i]) * 0.1;
+                visualState.currentAmps[i] += (visualState.targetAmps[i] - visualState.currentAmps[i]) * 0.1;
+                
+                // Decay target amps back to baseline breathing
+                visualState.targetAmps[i] = visualState.targetAmps[i] * 0.95 + 10 * 0.05;
+            }
+
+            // Draw Sci-Fi Waves
             for (let w = 0; w < 4; w++) {
                 ctx.beginPath();
-                ctx.strokeStyle = colors[w];
-                ctx.lineWidth = 2;
-                ctx.globalAlpha = 0.7;
+                ctx.strokeStyle = visualState.colors[w];
+                ctx.lineWidth = 2 + (visualState.currentAmps[w] / 20); // Thicker when loud
+                ctx.shadowBlur = max(5, visualState.currentAmps[w] / 2); // Glow effect
+                ctx.shadowColor = visualState.colors[w];
+                ctx.globalAlpha = 0.8;
+                
+                const freq = visualState.currentFreqs[w];
+                const amp = visualState.currentAmps[w];
+                const phase = visualState.phase * (w * 0.5 + 1);
                 
                 for (let x = 0; x < width; x++) {
-                    const y = centerY + Math.sin(x * frequencies[w] + phases[w]) * amplitudes[w];
+                    // FM Synthesis style modulation for "tech" look
+                    const modulator = Math.sin(x * 0.02 + phase) * 20; 
+                    const y = centerY + Math.sin(x * freq + phase + (modulator * 0.005)) * amp;
+                    
                     if (x === 0) ctx.moveTo(x, y);
                     else ctx.lineTo(x, y);
                 }
                 ctx.stroke();
             }
             
+            // Cleanup state
+            ctx.shadowBlur = 0;
             ctx.globalAlpha = 1;
             
             requestAnimationFrame(drawHarmonics);
         }
+        
+        function max(a, b) { return a > b ? a : b; }
         
         // Fetch initial state
         async function fetchInitialState() {
@@ -5553,6 +5626,158 @@ async def handle_flight_check(request):
     
     return web.json_response(check_data)
 
+async def monitor_trading_output():
+    """Monitor output from the trading subprocess and broadcast logs/visuals"""
+    global TRADING_PROCESS
+    safe_print("👀 Starting Trading Process Monitor...")
+    
+    # Track accumulated pnl from logs since we can't see internal state directly
+    extracted_pnl = 0.0
+    
+    while True:
+        if TRADING_PROCESS and TRADING_PROCESS.stdout:
+            try:
+                line = await TRADING_PROCESS.stdout.readline()
+                if line:
+                    decoded_line = line.decode('utf-8', errors='replace').strip()
+                    if decoded_line:
+                        # Print to local console (pass-through)
+                        safe_print(f"[MPL] {decoded_line}")
+                        
+                        # ════════════════════════════════════════════════════════════
+                        # 🧠 LOG INTELLIGENCE PARSER - EXTRACT DATA FOR DASHBOARD
+                        # ════════════════════════════════════════════════════════════
+                        
+                        # 1. Exchange Balances & Portfolio Value
+                        # "[MPL] 💰 TOTAL PORTFOLIO VALUE: $9.54"
+                        if "TOTAL PORTFOLIO VALUE:" in decoded_line:
+                            try:
+                                val_str = decoded_line.split("$")[1].replace(",", "").strip()
+                                state.total_pnl = float(val_str) # Using total value as pnl proxy for now if start is 0
+                                # Or extract actual PnL if available
+                            except: pass
+
+                        # "[MPL] 🦙 ALPACA: ✅ Connected | 1 assets | $9.54"
+                        if "ALPACA:" in decoded_line and "$" in decoded_line:
+                            try:
+                                val_str = decoded_line.split("$")[1].split()[0]
+                                state.exchange_balances['alpaca'] = {'USD': float(val_str)}
+                                state.exchange_status['alpaca'] = 'ONLINE'
+                            except: pass
+                            
+                        if "KRAKEN:" in decoded_line and "$" in decoded_line:
+                            try:
+                                val_str = decoded_line.split("$")[1].split()[0]
+                                state.exchange_balances['kraken'] = {'USD': float(val_str)}
+                                state.exchange_status['kraken'] = 'ONLINE'
+                            except: pass
+                            
+                        if "BINANCE:" in decoded_line and "$" in decoded_line:
+                             try:
+                                val_str = decoded_line.split("$")[1].split()[0]
+                                state.exchange_balances['binance'] = {'USD': float(val_str)}
+                                state.exchange_status['binance'] = 'ONLINE'
+                             except: pass
+
+                        # 2. System Status (Coherence, etc.)
+                        # "[MPL] 🎯 COHERENCE: 0.85" (Hypothetical log, need to check MPL output for real one)
+                        # MPL Log: "🔬 🔴 | 0s | Turn:[🦙] ... C:100% ..."
+                        if "🔬" in decoded_line and "C:" in decoded_line:
+                             try:
+                                 # Extract C:100%
+                                 parts = decoded_line.split("C:")[1].split("%")[0]
+                                 state.coherence_score = float(parts) / 100.0
+                             except: pass
+
+                        # 3. Trade/Opportunity Detection
+                        # "[MPL] 🌊🔭 WAVE SWEEP: 1 top opportunities"
+                        if "WAVE SWEEP:" in decoded_line:
+                             try:
+                                 opps = int(decoded_line.split(":")[1].split()[0])
+                                 for _ in range(opps):
+                                     state.bot_detections.append({
+                                         'type': 'OPPORTUNITY', 
+                                         'symbol': 'SCAN', 
+                                         'confidence': 0.8, 
+                                         'time': time.time()
+                                     })
+                             except: pass
+
+                        # "[MPL] 🌀 TROUGH UNI/USDT Jump:0.57"
+                        if "Jump:" in decoded_line:
+                             try:
+                                 symbol = decoded_line.split()[2]
+                                 jump = float(decoded_line.split("Jump:")[1].split("|")[0])
+                                 state.whale_alerts.append({
+                                     'symbol': symbol,
+                                     'size': jump,
+                                     'side': 'buy' if jump > 0 else 'sell',
+                                     'exchange': 'wave',
+                                     'time': time.time()
+                                 })
+                             except: pass
+                        
+                        # 4. Queen Messages
+                        if "👑" in decoded_line:
+                            state.queen_messages.append(decoded_line.replace("[MPL]", "").strip())
+
+
+                        # ════════════════════════════════════════════════════════════
+                        # VISUALIZATION DATA GENERATION
+                        # ════════════════════════════════════════════════════════════
+                        
+                        visual_type = 'scan'
+                        if '🌊' in decoded_line: visual_type = 'wave'
+                        if '👑' in decoded_line: visual_type = 'queen'
+                        if '💰' in decoded_line: visual_type = 'profit'
+                        if '🐙' in decoded_line or '🟡' in decoded_line or '🦙' in decoded_line: visual_type = 'exchange'
+                        if 'Harmonic' in decoded_line: visual_type = 'harmonic'
+                        
+                        h = sum(ord(c) for c in decoded_line)
+                        
+                        visual_data = {
+                            'type': visual_type,
+                            'entropy': h,
+                            'active': True,
+                            'timestamp': time.time()
+                        }
+                        
+                        # Broadcast to UI
+                        await broadcast_to_clients({
+                            'type': 'log_stream',
+                            'message': decoded_line,
+                            'visual_data': visual_data
+                        })
+                        
+                        # Broadcast updated state periodically or on significant events
+                        if visual_type in ['profit', 'exchange', 'queen']:
+                             await broadcast_to_clients({
+                                'type': 'state',
+                                'stats': {
+                                    'total_trades': state.total_trades,
+                                    'winning_trades': state.winning_trades,
+                                    'losing_trades': state.losing_trades,
+                                    'total_pnl': state.total_pnl,
+                                    'coherence': state.coherence_score,
+                                },
+                                'systems': SYSTEMS_STATUS,
+                                'balances': state.exchange_balances,
+                                'queen_message': state.queen_messages[-1] if state.queen_messages else "Active.",
+                             })
+
+                else:
+                    # EOF or process dead
+                    if TRADING_PROCESS.returncode is not None:
+                        safe_print(f"⚠️ Trading Process exited code {TRADING_PROCESS.returncode}")
+                        TRADING_PROCESS = None
+                        # Auto-restart?
+                    await asyncio.sleep(0.5)
+            except Exception as e:
+                safe_print(f"Monitor error: {e}")
+                await asyncio.sleep(1)
+        else:
+            await asyncio.sleep(1)
+
 async def start_background_tasks(app):
     """Start background tasks"""
     if DEMO_MODE:
@@ -5565,7 +5790,7 @@ async def start_background_tasks(app):
     global TRADING_PROCESS, TRADING_LIVE_ENABLED
     safe_print("🚀💰 AUTO-STARTING TRADING ENGINE...")
     try:
-        cmd = [sys.executable, "micro_profit_labyrinth.py", "--live", "--yes"]
+        cmd = [sys.executable, "-u", "micro_profit_labyrinth.py", "--live", "--yes"] # Added -u for unbuffered
         TRADING_PROCESS = await asyncio.create_subprocess_exec(
             *cmd,
             cwd=str(Path(__file__).resolve().parent),
@@ -5574,6 +5799,10 @@ async def start_background_tasks(app):
         )
         TRADING_LIVE_ENABLED = True
         safe_print("✅💰 TRADING ENGINE STARTED - MAKING MONEY NOW!")
+        
+        # Start the monitor
+        app['monitor_task'] = asyncio.create_task(monitor_trading_output())
+        
     except Exception as e:
         safe_print(f"⚠️ Failed to auto-start trading: {e}")
 

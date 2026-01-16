@@ -32372,13 +32372,172 @@
         "rejection_breakdown": {},
         "top_opportunities": []
       }
+    },
+    {
+      "timestamp": 1768599582.7069473,
+      "timestamp_human": "2026-01-16T21:39:42.706948+00:00",
+      "queen": {
+        "market_regime": "VOLATILE",
+        "global_momentum": 0.0,
+        "global_coherence": 0.5,
+        "queen_confidence": 0.5,
+        "queen_strategy": "SNIPER",
+        "portfolio_value": 9.54,
+        "cash_available": 9.54,
+        "positions_held": 0,
+        "directives": {
+          "min_momentum_threshold": 0.2,
+          "min_coherence_threshold": 0.7,
+          "max_position_size": 0.954,
+          "target_exchanges": [],
+          "queen_strategy": "SNIPER",
+          "queen_confidence": 0.5,
+          "market_regime": "VOLATILE"
+        }
+      },
+      "hive_cluster": {
+        "exchanges_active": 0,
+        "total_symbols": 0,
+        "validators_active": 0,
+        "validator_agreement": 0.0,
+        "market_sentiment": "NEUTRAL",
+        "opportunity_density": 0.0,
+        "recommended_action": "WAIT",
+        "system_fill_rate": 0.0,
+        "total_fees_paid": 0.0
+      },
+      "bee_swarm": {
+        "total_scanned": 0,
+        "with_momentum": 0,
+        "rejected": 0,
+        "executed": 0,
+        "momentum_distribution": {
+          "up": 0,
+          "down": 0,
+          "flat": 0
+        },
+        "avg_momentum": 0.0,
+        "max_momentum": 0.0,
+        "max_momentum_symbol": "",
+        "avg_pip_score": 0.0,
+        "avg_coherence": 0.0,
+        "above_phi_threshold": 0,
+        "rejection_breakdown": {},
+        "top_opportunities": []
+      }
+    },
+    {
+      "timestamp": 1768599897.3148813,
+      "timestamp_human": "2026-01-16T21:44:57.314882+00:00",
+      "queen": {
+        "market_regime": "TRENDING",
+        "global_momentum": 0.0,
+        "global_coherence": 0.5,
+        "queen_confidence": 0.5,
+        "queen_strategy": "SNIPER",
+        "portfolio_value": 9.54,
+        "cash_available": 9.54,
+        "positions_held": 0,
+        "directives": {
+          "min_momentum_threshold": 0.15,
+          "min_coherence_threshold": 0.6180339887498948,
+          "max_position_size": 0.954,
+          "target_exchanges": [],
+          "queen_strategy": "SNIPER",
+          "queen_confidence": 0.5,
+          "market_regime": "TRENDING"
+        }
+      },
+      "hive_cluster": {
+        "exchanges_active": 0,
+        "total_symbols": 0,
+        "validators_active": 0,
+        "validator_agreement": 0.0,
+        "market_sentiment": "NEUTRAL",
+        "opportunity_density": 0.0,
+        "recommended_action": "WAIT",
+        "system_fill_rate": 0.0,
+        "total_fees_paid": 0.0
+      },
+      "bee_swarm": {
+        "total_scanned": 0,
+        "with_momentum": 0,
+        "rejected": 0,
+        "executed": 0,
+        "momentum_distribution": {
+          "up": 0,
+          "down": 0,
+          "flat": 0
+        },
+        "avg_momentum": 0.0,
+        "max_momentum": 0.0,
+        "max_momentum_symbol": "",
+        "avg_pip_score": 0.0,
+        "avg_coherence": 0.0,
+        "above_phi_threshold": 0,
+        "rejection_breakdown": {},
+        "top_opportunities": []
+      }
+    },
+    {
+      "timestamp": 1768600973.8742573,
+      "timestamp_human": "2026-01-16T22:02:53.874258+00:00",
+      "queen": {
+        "market_regime": "RANGING",
+        "global_momentum": 0.0,
+        "global_coherence": 0.5,
+        "queen_confidence": 0.5,
+        "queen_strategy": "SNIPER",
+        "portfolio_value": 9.54,
+        "cash_available": 9.54,
+        "positions_held": 0,
+        "directives": {
+          "min_momentum_threshold": 0.15,
+          "min_coherence_threshold": 0.6180339887498948,
+          "max_position_size": 0.954,
+          "target_exchanges": [],
+          "queen_strategy": "SNIPER",
+          "queen_confidence": 0.5,
+          "market_regime": "RANGING"
+        }
+      },
+      "hive_cluster": {
+        "exchanges_active": 0,
+        "total_symbols": 0,
+        "validators_active": 0,
+        "validator_agreement": 0.0,
+        "market_sentiment": "NEUTRAL",
+        "opportunity_density": 0.0,
+        "recommended_action": "WAIT",
+        "system_fill_rate": 0.0,
+        "total_fees_paid": 0.0
+      },
+      "bee_swarm": {
+        "total_scanned": 0,
+        "with_momentum": 0,
+        "rejected": 0,
+        "executed": 0,
+        "momentum_distribution": {
+          "up": 0,
+          "down": 0,
+          "flat": 0
+        },
+        "avg_momentum": 0.0,
+        "max_momentum": 0.0,
+        "max_momentum_symbol": "",
+        "avg_pip_score": 0.0,
+        "avg_coherence": 0.0,
+        "above_phi_threshold": 0,
+        "rejection_breakdown": {},
+        "top_opportunities": []
+      }
     }
   ],
   "last_snapshot": {
-    "timestamp": 1768582544.3983526,
-    "timestamp_human": "2026-01-16T16:55:44.398352+00:00",
+    "timestamp": 1768600973.8742573,
+    "timestamp_human": "2026-01-16T22:02:53.874258+00:00",
     "queen": {
-      "market_regime": "QUIET",
+      "market_regime": "RANGING",
       "global_momentum": 0.0,
       "global_coherence": 0.5,
       "queen_confidence": 0.5,
@@ -32387,13 +32546,13 @@
       "cash_available": 9.54,
       "positions_held": 0,
       "directives": {
-        "min_momentum_threshold": 0.1,
-        "min_coherence_threshold": 0.55,
+        "min_momentum_threshold": 0.15,
+        "min_coherence_threshold": 0.6180339887498948,
         "max_position_size": 0.954,
         "target_exchanges": [],
         "queen_strategy": "SNIPER",
         "queen_confidence": 0.5,
-        "market_regime": "QUIET"
+        "market_regime": "RANGING"
       }
     },
     "hive_cluster": {

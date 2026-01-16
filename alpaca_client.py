@@ -245,17 +245,17 @@ class AlpacaClient:
                         try:
                             wait_time = float(retry_after)
                         except Exception:
-                            wait_time = 2 ** attempt
+                            wait_time = min(60, 2 ** (attempt + 2))  # More aggressive backoff
                     else:
-                        wait_time = 2 ** attempt
+                        wait_time = min(60, 2 ** (attempt + 2))  # More aggressive backoff
 
                     # add jitter
                     import random
-                    jitter = min(1.0, wait_time * 0.1)
+                    jitter = min(2.0, wait_time * 0.2)  # More jitter
                     wait_time = wait_time + (jitter * (0.5 - random.random()))
 
                     logger.warning(f"Rate limited (429) - waiting {wait_time:.2f}s before retry {attempt + 1}")
-                    time.sleep(max(0.1, wait_time))
+                    time.sleep(max(1.0, wait_time))  # Min 1s wait
                     if attempt < self.max_retries:
                         continue
                     # Fall through to error handling if out of retries

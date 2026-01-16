@@ -790,53 +790,69 @@ except ImportError as e:
     safe_print(f"⚠️ Quack Commandos not available: {e}")
 
 # 🌌🪞⚓ STARGATE PROTOCOL - Quantum Mirror & Timeline Activation
-try:
-    from aureon_stargate_protocol import (
-        StargateProtocolEngine, create_stargate_engine,
-        StargateNode, QuantumMirror, ConsciousNode
-    )
-    STARGATE_PROTOCOL_AVAILABLE = True
-    safe_print("🌌 Stargate Protocol LOADED! (12 Planetary Nodes + Quantum Mirrors)")
-except ImportError as e:
-    STARGATE_PROTOCOL_AVAILABLE = False
-    StargateProtocolEngine = None
-    create_stargate_engine = None
-    StargateNode = None
-    QuantumMirror = None
-    ConsciousNode = None
-    logging.getLogger(__name__).debug(f"Stargate Protocol not available: {e}")
+STARGATE_PROTOCOL_AVAILABLE = False # DISABLED PER USER REQUEST
+StargateProtocolEngine = None
+create_stargate_engine = None
+StargateNode = None
+QuantumMirror = None
+ConsciousNode = None
+# try:
+#     from aureon_stargate_protocol import (
+#         StargateProtocolEngine, create_stargate_engine,
+#         StargateNode, QuantumMirror, ConsciousNode
+#     )
+#     STARGATE_PROTOCOL_AVAILABLE = True
+#     safe_print("🌌 Stargate Protocol LOADED! (12 Planetary Nodes + Quantum Mirrors)")
+# except ImportError as e:
+#     STARGATE_PROTOCOL_AVAILABLE = False
+#     StargateProtocolEngine = None
+#     create_stargate_engine = None
+#     StargateNode = None
+#     QuantumMirror = None
+#     ConsciousNode = None
+#     logging.getLogger(__name__).debug(f"Stargate Protocol not available: {e}")
 
 # 🔮 QUANTUM MIRROR SCANNER - Reality Branch Validation
-try:
-    from aureon_quantum_mirror_scanner import (
-        QuantumMirrorScanner, create_quantum_mirror_scanner,
-        RealityBranch, TimelineConvergence
-    )
-    QUANTUM_MIRROR_SCANNER_AVAILABLE = True
-    safe_print("🔮 Quantum Mirror Scanner LOADED! (3-Pass Batten Matrix + Convergence)")
-except ImportError as e:
-    QUANTUM_MIRROR_SCANNER_AVAILABLE = False
-    QuantumMirrorScanner = None
-    create_quantum_mirror_scanner = None
-    RealityBranch = None
-    TimelineConvergence = None
-    logging.getLogger(__name__).debug(f"Quantum Mirror Scanner not available: {e}")
+QUANTUM_MIRROR_SCANNER_AVAILABLE = False # DISABLED PER USER REQUEST
+QuantumMirrorScanner = None
+create_quantum_mirror_scanner = None
+RealityBranch = None
+TimelineConvergence = None
+# try:
+#     from aureon_quantum_mirror_scanner import (
+#         QuantumMirrorScanner, create_quantum_mirror_scanner,
+#         RealityBranch, TimelineConvergence
+#     )
+#     QUANTUM_MIRROR_SCANNER_AVAILABLE = True
+#     safe_print("🔮 Quantum Mirror Scanner LOADED! (3-Pass Batten Matrix + Convergence)")
+# except ImportError as e:
+#     QUANTUM_MIRROR_SCANNER_AVAILABLE = False
+#     QuantumMirrorScanner = None
+#     create_quantum_mirror_scanner = None
+#     RealityBranch = None
+#     TimelineConvergence = None
+#     logging.getLogger(__name__).debug(f"Quantum Mirror Scanner not available: {e}")
 
 # ⚓ TIMELINE ANCHOR VALIDATOR - 7-Day Extended Validation
-try:
-    from aureon_timeline_anchor_validator import (
-        TimelineAnchorValidator, create_timeline_anchor_validator,
-        TimelineAnchor, ValidationRecord
-    )
-    TIMELINE_ANCHOR_VALIDATOR_AVAILABLE = True
-    safe_print("⚓ Timeline Anchor Validator LOADED! (7-Day Validation Cycles)")
-except ImportError as e:
-    TIMELINE_ANCHOR_VALIDATOR_AVAILABLE = False
-    TimelineAnchorValidator = None
-    create_timeline_anchor_validator = None
-    TimelineAnchor = None
-    ValidationRecord = None
-    logging.getLogger(__name__).debug(f"Timeline Anchor Validator not available: {e}")
+TIMELINE_ANCHOR_VALIDATOR_AVAILABLE = False # DISABLED PER USER REQUEST
+TimelineAnchorValidator = None
+create_timeline_anchor_validator = None
+TimelineAnchor = None
+ValidationRecord = None
+# try:
+#     from aureon_timeline_anchor_validator import (
+#         TimelineAnchorValidator, create_timeline_anchor_validator,
+#         TimelineAnchor, ValidationRecord
+#     )
+#     TIMELINE_ANCHOR_VALIDATOR_AVAILABLE = True
+#     safe_print("⚓ Timeline Anchor Validator LOADED! (7-Day Validation Cycles)")
+# except ImportError as e:
+#     TIMELINE_ANCHOR_VALIDATOR_AVAILABLE = False
+#     TimelineAnchorValidator = None
+#     create_timeline_anchor_validator = None
+#     TimelineAnchor = None
+#     ValidationRecord = None
+#     logging.getLogger(__name__).debug(f"Timeline Anchor Validator not available: {e}")
 
 # 🌍✨ PLANET SAVER INTEGRATION - Save the Planet, Free Every Soul
 try:
@@ -17474,7 +17490,7 @@ if __name__ == "__main__":
         safe_print()
         
         start_time = time.time()
-        scan_interval = 2.0  # 🛡️ RATE LIMIT SAFE: Every 2 seconds to avoid API throttling
+        scan_interval = 5.0  # 🛡️ RATE LIMIT SAFE: Every 5 seconds to avoid API hammering (was 2s)
         
         # ════════════════════════════════════════════════════════════════════════════
         # 🎯 EXECUTION STRATEGY SELECTION
@@ -17497,14 +17513,15 @@ if __name__ == "__main__":
         try:
             # duration_s == 0 means run forever
             last_wave_scan_time = 0  # Track last wave scanner update
-            wave_scan_interval = 30  # Run full A-Z sweep every 30 seconds (was 60)
+            wave_scan_interval = 60  # Run full A-Z sweep every 60 seconds (reduced from 30 to save API calls)
             
-            # Global Feed Update (every 60s)
+            # Global Feed Update (every 90s - reduced frequency)
             last_global_feed_time = 0
+            global_feed_interval = 90  # Was 60s
             
             # 👑🌐 QUEEN'S ONLINE RESEARCH - Throttled to avoid constant code generation
             last_research_time = 0
-            research_interval = 300  # Research every 5 minutes (was 1 min)
+            research_interval = 300  # Research every 5 minutes
             safe_print(f"\n👑🌐 Queen's Research Schedule: Every {research_interval}s (next in {research_interval}s)")
             
             while duration_s == 0 or time.time() - start_time < duration_s:
