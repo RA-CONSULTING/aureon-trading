@@ -104,7 +104,7 @@ if os.getenv("AUREON_DEBUG_STARTUP") == "1":
                     safe_print(f"[DEBUG] Import heartbeat; last import: {_AUREON_LAST_IMPORT}")
                 except Exception:
                     pass
-                _time.sleep(5.0)
+                _time.sleep(2.0)
 
         _AUREON_IMPORT_HEARTBEAT_THREAD = threading.Thread(
             target=_aureon_import_heartbeat,
@@ -116,7 +116,7 @@ if os.getenv("AUREON_DEBUG_STARTUP") == "1":
         # Dump stack traces periodically if we hang during import/startup
         try:
             faulthandler.enable(file=sys.stdout, all_threads=True)
-            faulthandler.dump_traceback_later(30, repeat=True, file=sys.stdout)
+            faulthandler.dump_traceback_later(10, repeat=True, file=sys.stdout)
         except Exception:
             pass
     except Exception:
