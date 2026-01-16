@@ -46,6 +46,17 @@ if sys.platform == 'win32':
 
 logger = logging.getLogger(__name__)
 
+# ═══════════════════════════════════════════════════════════════════════════════
+# 🐦 CHIRP BUS INTEGRATION - kHz-Speed Order Routing Signals
+# ═══════════════════════════════════════════════════════════════════════════════
+CHIRP_BUS_AVAILABLE = False
+get_chirp_bus = None
+try:
+    from aureon_chirp_bus import get_chirp_bus
+    CHIRP_BUS_AVAILABLE = True
+except ImportError:
+    CHIRP_BUS_AVAILABLE = False
+
 # Order Router Constants
 ORDER_TIMEOUT_MS = 5000  # 5 second timeout
 MAX_CONCURRENT_ORDERS = 50
@@ -615,6 +626,29 @@ class HFTOrderRouter:
         self.total_orders += 1
 
         logger.info(f"📥 Order queued: {order_request.symbol} {order_request.side} {order_request.quantity}")
+        
+        # 🐦 CHIRP EMISSION - kHz-Speed Order Routing Signals
+        # Emit order submission chirps for ultra-fast execution tracking
+        if CHIRP_BUS_AVAILABLE and get_chirp_bus:
+            try:
+                chirp_bus = get_chirp_bus()
+                
+                # Order direction frequency mapping
+                side_freq = 880.0 if order_request.side == 'buy' else 1760.0
+                
+                chirp_bus.emit_signal(
+                    signal_type='HFT_ORDER_QUEUED',
+                    symbol=order_request.symbol,
+                    coherence=1.0,  # Queued successfully
+                    confidence=1.0,
+                    frequency=side_freq,
+                    amplitude=min(1.0, order_request.quantity / 1000.0)  # Scale by quantity
+                )
+                
+            except Exception as e:
+                # Chirp emission failure - non-critical, continue
+                pass
+        
         return True, order_request.id
 
     def _validate_order(self, order: OrderRequest) -> bool:

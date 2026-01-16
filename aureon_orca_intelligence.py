@@ -54,6 +54,17 @@ if sys.platform == 'win32':
 
 logger = logging.getLogger(__name__)
 
+# ═══════════════════════════════════════════════════════════════════════════════
+# 🐦 CHIRP BUS INTEGRATION - kHz-Speed Whale Hunting Signals
+# ═══════════════════════════════════════════════════════════════════════════════
+CHIRP_BUS_AVAILABLE = False
+get_chirp_bus = None
+try:
+    from aureon_chirp_bus import get_chirp_bus
+    CHIRP_BUS_AVAILABLE = True
+except ImportError:
+    CHIRP_BUS_AVAILABLE = False
+
 # Sacred constants for harmonic timing
 PHI = (1 + math.sqrt(5)) / 2  # Golden Ratio 1.618
 PHI_INVERSE = 0.618  # φ⁻¹ - The trigger threshold
@@ -715,6 +726,28 @@ class OrcaKillerWhaleIntelligence:
         logger.info(f"🐋 Whale ingested: {signal.symbol} {signal.side.upper()} ${signal.volume_usd:,.0f} "
                    f"| Ride confidence: {signal.ride_confidence:.0%}")
         
+        # 🐦 CHIRP EMISSION - kHz-Speed Whale Detection Signals
+        # Emit whale detection chirps for system-wide hunting coordination
+        if CHIRP_BUS_AVAILABLE and get_chirp_bus:
+            try:
+                chirp_bus = get_chirp_bus()
+                
+                # Whale frequency mapping
+                whale_freq = 880.0 if signal.side.lower() == 'buy' else 1760.0
+                
+                chirp_bus.emit_signal(
+                    signal_type='WHALE_DETECTED',
+                    symbol=signal.symbol,
+                    coherence=signal.ride_confidence,
+                    confidence=signal.firm_confidence if signal.firm else signal.ride_confidence,
+                    frequency=whale_freq,
+                    amplitude=min(1.0, signal.volume_usd / 1_000_000)  # Amplitude by volume
+                )
+                
+            except Exception as e:
+                # Chirp emission failure - non-critical, continue
+                pass
+        
         return signal
     
     def ingest_firm_activity(self, firm_data: Dict):
@@ -976,7 +1009,29 @@ class OrcaKillerWhaleIntelligence:
         for r in opportunity.reasoning:
             logger.info(f"   • {r}")
         
-        # 💰 COMMAND MICRO PROFIT - Request execution
+        # � CHIRP EMISSION - kHz-Speed Hunt Start Signals
+        # Emit hunt start chirps for coordinated multi-system hunting
+        if CHIRP_BUS_AVAILABLE and get_chirp_bus:
+            try:
+                chirp_bus = get_chirp_bus()
+                
+                # Hunt direction frequency
+                hunt_freq = 880.0 if opportunity.action.lower() == 'buy' else 1760.0
+                
+                chirp_bus.emit_signal(
+                    signal_type='ORCA_HUNT_START',
+                    symbol=opportunity.symbol,
+                    coherence=opportunity.confidence,
+                    confidence=opportunity.confidence,
+                    frequency=hunt_freq,
+                    amplitude=opportunity.position_size_pct
+                )
+                
+            except Exception as e:
+                # Chirp emission failure - non-critical, continue
+                pass
+        
+        # �💰 COMMAND MICRO PROFIT - Request execution
         if self.micro_profit_connected:
             success, reason, result = self.request_execution(opportunity)
             if success:
@@ -1166,6 +1221,28 @@ class OrcaKillerWhaleIntelligence:
         emoji = "🎯" if pnl_usd > 0 else "❌"
         logger.info(f"{emoji} HUNT COMPLETE: {hunt.id} | PnL: ${pnl_usd:+.2f} | {exit_reason}")
         logger.info(f"   📊 Total: ${self.total_profit_usd:.2f} | Win Rate: {self.win_rate:.0%}")
+        
+        # 🐦 CHIRP EMISSION - kHz-Speed Hunt Complete Signals
+        # Emit hunt completion chirps for system-wide profit tracking
+        if CHIRP_BUS_AVAILABLE and get_chirp_bus:
+            try:
+                chirp_bus = get_chirp_bus()
+                
+                # Win/loss frequency
+                result_freq = 528.0 if pnl_usd > 0 else 220.0  # Love freq for wins, trough for losses
+                
+                chirp_bus.emit_signal(
+                    signal_type='ORCA_HUNT_COMPLETE',
+                    symbol=hunt.symbol,
+                    coherence=self.win_rate,
+                    confidence=abs(pnl_usd) / 10.0 if pnl_usd != 0 else 0.1,  # Confidence based on PnL size
+                    frequency=result_freq,
+                    amplitude=min(1.0, abs(pnl_usd) / 50.0)  # Amplitude by PnL magnitude
+                )
+                
+            except Exception as e:
+                # Chirp emission failure - non-critical, continue
+                pass
         
         self._save_state()
     

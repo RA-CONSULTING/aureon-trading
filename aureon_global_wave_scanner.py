@@ -570,6 +570,55 @@ class GlobalWaveScanner:
                 action_reason=reason,
             )
             
+            # 🐦 CHIRP EMISSION - kHz-Speed Wave Signals
+            # Emit wave analysis chirps for real-time scanner coordination
+            if CHIRP_BUS_AVAILABLE and get_chirp_bus:
+                try:
+                    chirp_bus = get_chirp_bus()
+                    
+                    # Map wave state to frequency
+                    wave_freq_map = {
+                        WaveState.RISING: 880.0,      # Rising wave frequency
+                        WaveState.PEAK: 1760.0,       # Peak frequency (diving signal)
+                        WaveState.FALLING: 440.0,     # Falling wave frequency
+                        WaveState.TROUGH: 220.0,      # Trough frequency (rising signal)
+                        WaveState.BALANCED: 528.0,    # Balanced at love frequency
+                        WaveState.BREAKOUT_UP: 1320.0,   # Breakout up
+                        WaveState.BREAKOUT_DOWN: 660.0   # Breakout down
+                    }
+                    
+                    chirp_bus.emit_signal(
+                        signal_type='WAVE_ANALYSIS',
+                        symbol=symbol,
+                        coherence=wave_strength,
+                        confidence=jump_score,
+                        frequency=wave_freq_map.get(wave_state, 440.0),
+                        amplitude=wave_strength
+                    )
+                    
+                except Exception as e:
+                    # Chirp emission failure - non-critical, continue
+                    pass
+            
+            return WaveAnalysis(
+                symbol=symbol,
+                exchange=exchange,
+                base=base,
+                quote=quote,
+                timestamp=time.time(),
+                price=price,
+                change_1m=change_1m,  # 🦙 SSE momentum
+                change_5m=change_5m,  # 🦙 SSE momentum
+                change_24h=change_24h,
+                volume_24h=volume_24h,
+                wave_state=wave_state,
+                wave_strength=wave_strength,
+                jump_score=jump_score,
+                exit_score=exit_score,
+                action=action,
+                action_reason=reason,
+            )
+            
         except Exception as e:
             logger.debug(f"Wave analysis error for {symbol}: {e}")
             return None
