@@ -47,6 +47,14 @@ def safe_print(*args, **kwargs):
     except (ValueError, OSError):
         pass
 
+# Optional startup debug
+if os.getenv("AUREON_DEBUG_STARTUP") == "1":
+    try:
+        safe_print(f"[DEBUG] aureon_command_center loaded: {__file__}")
+        safe_print(f"[DEBUG] CWD: {os.getcwd()}")
+    except Exception:
+        pass
+
 # Windows UTF-8 fix - AGGRESSIVE VERSION
 # Skip stderr wrapping to avoid "I/O operation on closed file" on exit
 if sys.platform == 'win32':
@@ -5840,6 +5848,8 @@ async def cleanup_background_tasks(app):
 
 def main():
     """Main entry point"""
+    if os.getenv("AUREON_DEBUG_STARTUP") == "1":
+        safe_print(f"[DEBUG] Command Center main() starting (AIOHTTP_AVAILABLE={AIOHTTP_AVAILABLE})")
     if not AIOHTTP_AVAILABLE:
         safe_print("❌ Cannot start Command Center - aiohttp not installed")
         safe_print("   Run: pip install aiohttp")
