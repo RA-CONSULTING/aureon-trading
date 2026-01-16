@@ -17,6 +17,11 @@ import os
 import json
 import math
 import numpy as np
+
+# Set matplotlib backend BEFORE importing pyplot to avoid pygame crashes on Windows
+import matplotlib
+matplotlib.use('Agg')  # Non-interactive backend
+
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 from datetime import datetime, timedelta

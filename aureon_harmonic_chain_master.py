@@ -201,9 +201,14 @@ try:
     from harmonic_wave_simulation import HarmonicWaveSimulator as HarmonicWaveSimulation
     WAVE_SIMULATION_AVAILABLE = True
     print("🌊📈 Layer 0: Harmonic Wave Simulation LOADED!")
-except ImportError:
+except ImportError as e:
     WAVE_SIMULATION_AVAILABLE = False
     HarmonicWaveSimulation = None
+    print(f"⚠️ Layer 0 Wave Simulation not available: {e}")
+except Exception as e:
+    WAVE_SIMULATION_AVAILABLE = False
+    HarmonicWaveSimulation = None
+    print(f"⚠️ Layer 0 Wave Simulation failed to load: {e}")
 
 # Support Systems
 try:
