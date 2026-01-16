@@ -18601,17 +18601,28 @@ async def main():
 
 
 if __name__ == "__main__":
+    # Windows: Set event loop policy for compatibility
+    if sys.platform == 'win32':
+        try:
+            asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
+        except Exception:
+            pass
+    
     try:
         asyncio.run(main())
     except KeyboardInterrupt:
         # User stopped the program
-        pass
+        safe_print("\n⚠️ Interrupted by user")
     except Exception as e:
-        # Catch any final exceptions silently to prevent stderr issues
-        error_str = str(e).lower()
-        if "closed file" not in error_str and "lost sys" not in error_str:
+        # Catch any final exceptions - but ALWAYS show them (don't silently swallow)
+        import traceback
+        error_str = str(e)
+        safe_print(f"\n❌ FATAL ERROR: {error_str}")
+        # Show full traceback for debugging
+        if not ("closed file" in error_str.lower() or "lost sys" in error_str.lower()):
             try:
-                safe_print(f"\n❌ Error: {e}")
+                safe_print("\n📋 Full traceback:")
+                traceback.print_exc()
             except Exception:
                 pass
     finally:
