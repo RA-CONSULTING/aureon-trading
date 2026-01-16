@@ -44,22 +44,47 @@ safe_print("🔊 [DEBUG] Setting SDL_AUDIODRIVER before pygame import...")
 # MUST set this BEFORE importing pygame to prevent hanging on Windows
 import os
 import sys
+
+# Check if pygame should be disabled entirely
+PYGAME_FORCE_DISABLED = False
 if sys.platform == 'win32':
     os.environ['SDL_AUDIODRIVER'] = 'directsound'  # Or try 'winmm' or 'dummy'
     os.environ['SDL_VIDEODRIVER'] = 'dummy'
+    # Optional: Disable pygame audio entirely on Windows if issues persist
+    if os.environ.get('AUREON_DISABLE_PYGAME_AUDIO', '0') == '1':
+        safe_print("🔊 [DEBUG] PYGAME AUDIO DISABLED (AUREON_DISABLE_PYGAME_AUDIO=1)")
+        PYGAME_FORCE_DISABLED = True
 
 safe_print("🔊 [DEBUG] Now importing pygame...")
 
-try:
-    import pygame
-    safe_print("🔊 [DEBUG] pygame imported, now calling mixer.init()...")
-    
-    pygame.mixer.init()
-    safe_print("🔊 [DEBUG] mixer.init() completed!")
-    PYGAME_AVAILABLE = True
-except Exception as e:
+if not PYGAME_FORCE_DISABLED:
+    try:
+        import pygame
+        safe_print("🔊 [DEBUG] pygame imported, now calling mixer.init()...")
+        
+        # Initialize mixer with timeout protection for Windows
+        if sys.platform == 'win32':
+            # On Windows, use a minimal mixer config to avoid hangs
+            try:
+                pygame.mixer.init(frequency=22050, size=-16, channels=1, buffer=512)
+                safe_print("🔊 [DEBUG] mixer.init() completed (Windows mode)!")
+                PYGAME_AVAILABLE = True
+            except Exception as init_err:
+                safe_print(f"⚠️ pygame.mixer.init failed on Windows: {init_err}")
+                PYGAME_AVAILABLE = False
+        else:
+            pygame.mixer.init()
+            safe_print("🔊 [DEBUG] mixer.init() completed!")
+            PYGAME_AVAILABLE = True
+    except Exception as e:
+        PYGAME_AVAILABLE = False
+        safe_print(f"⚠️ Audio output not available: {e} - Queen's voice will be text-only")
+else:
     PYGAME_AVAILABLE = False
-    safe_print(f"⚠️ Audio output not available: {e} - Queen's voice will be text-only")
+    try:
+        import pygame  # Import but don't initialize
+    except Exception:
+        pass
 
 TTS_AVAILABLE = GTTS_AVAILABLE and PYGAME_AVAILABLE
 
