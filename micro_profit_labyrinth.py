@@ -4808,6 +4808,11 @@ class MicroProfitLabyrinth:
     
     async def initialize(self):
         """Initialize all systems."""
+        if os.getenv("AUREON_DEBUG_STARTUP") == "1":
+            try:
+                safe_print("[DEBUG] Entered MicroProfitLabyrinth.initialize()")
+            except Exception:
+                print("[DEBUG] Entered MicroProfitLabyrinth.initialize()")
         safe_print("\n" + "=" * 70)
         safe_print("🔬💰 INITIALIZING MICRO PROFIT LABYRINTH 💰🔬")
         safe_print("🦙 ALPACA-FOCUSED TRADING SYSTEM 🦙" if self.alpaca_only else "⚠️ MULTI-EXCHANGE MODE")
@@ -17354,6 +17359,11 @@ if __name__ == "__main__":
     
     async def run(self, duration_s: int = 60):
         """Run the micro profit labyrinth."""
+        if os.getenv("AUREON_DEBUG_STARTUP") == "1":
+            try:
+                safe_print(f"[DEBUG] Entered MicroProfitLabyrinth.run(duration_s={duration_s})")
+            except Exception:
+                print(f"[DEBUG] Entered MicroProfitLabyrinth.run(duration_s={duration_s})")
         # Timeouts: prevent a single hung await (API/research) from freezing the run.
         LOAD_PAIRS_TIMEOUT_S = 60.0
         FETCH_PRICES_TIMEOUT_S = 30.0
@@ -18477,6 +18487,11 @@ if __name__ == "__main__":
 # ════════════════════════════════════════════════════════════════════════════
 
 async def main():
+    if os.getenv("AUREON_DEBUG_STARTUP") == "1":
+        try:
+            safe_print("[DEBUG] Entered main()")
+        except Exception:
+            print("[DEBUG] Entered main()")
     parser = argparse.ArgumentParser(description="🦙 Micro Profit Labyrinth - ALPACA-FOCUSED Trading System")
     parser.add_argument("--live", action="store_true", help="Run in LIVE mode")
     parser.add_argument("--dry-run", action="store_true", help="Explicit simulation mode (legacy flag)")
@@ -18591,6 +18606,11 @@ async def main():
     # Guardrail: enforce a hard upper-bound so --duration can't be defeated by a hung await.
     # (engine.run already tracks duration inside the loop, but blocking calls can prevent loop progress.)
     try:
+        if os.getenv("AUREON_DEBUG_STARTUP") == "1":
+            try:
+                safe_print(f"[DEBUG] Starting engine.run(duration_s={args.duration})")
+            except Exception:
+                print(f"[DEBUG] Starting engine.run(duration_s={args.duration})")
         if args.duration and args.duration > 0:
             await asyncio.wait_for(engine.run(duration_s=args.duration), timeout=float(args.duration) + 15.0)
         else:
