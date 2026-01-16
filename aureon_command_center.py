@@ -5990,9 +5990,12 @@ def main():
     """Main entry point"""
     if os.getenv("AUREON_DEBUG_STARTUP") == "1":
         safe_print(f"[DEBUG] Command Center main() starting (AIOHTTP_AVAILABLE={AIOHTTP_AVAILABLE})")
+        _aureon_debug_log(f"main() starting; AIOHTTP_AVAILABLE={AIOHTTP_AVAILABLE}")
     if not AIOHTTP_AVAILABLE:
         safe_print("❌ Cannot start Command Center - aiohttp not installed")
         safe_print("   Run: pip install aiohttp")
+        if os.getenv("AUREON_DEBUG_STARTUP") == "1":
+            _aureon_debug_log("main() exiting early: aiohttp not available")
         return
     
     # Count online systems
@@ -6073,7 +6076,8 @@ def main():
 if os.getenv("AUREON_DEBUG_STARTUP") == "1":
     try:
         safe_print("[DEBUG] Module import completed; entering __main__ soon")
-        _aureon_debug_log("module import completed")
+        _aureon_debug_log(f"module import completed; __name__={__name__}")
+        _aureon_debug_log(f"AIOHTTP_AVAILABLE={AIOHTTP_AVAILABLE}")
     except Exception:
         pass
 
@@ -6081,6 +6085,7 @@ if __name__ == '__main__':
     # Stop import-debug tracing now that module import completed
     if os.getenv("AUREON_DEBUG_STARTUP") == "1":
         try:
+            _aureon_debug_log("__main__ block entered")
             # Restore sys.exit now that imports are complete
             try:
                 sys.exit = _ORIGINAL_SYS_EXIT
@@ -6113,9 +6118,14 @@ if __name__ == '__main__':
 
     if os.getenv("AUREON_DEBUG_STARTUP") == "1":
         safe_print("[DEBUG] __main__ entry: calling main()")
+        _aureon_debug_log("calling main()")
     try:
         main()
+        if os.getenv("AUREON_DEBUG_STARTUP") == "1":
+            _aureon_debug_log("main() returned normally")
     except Exception as e:
         safe_print(f"❌ [DEBUG] Command Center crashed: {e}")
+        if os.getenv("AUREON_DEBUG_STARTUP") == "1":
+            _aureon_debug_log(f"main() raised: {e!r}")
         import traceback
         traceback.print_exc()
