@@ -36,22 +36,32 @@ ONE DASHBOARD TO RULE THEM ALL!
 
 import sys
 import os
+import atexit
 
-# Windows UTF-8 fix
+# Windows UTF-8 fix - AGGRESSIVE VERSION
+# Skip stderr wrapping to avoid "I/O operation on closed file" on exit
 if sys.platform == 'win32':
     os.environ['PYTHONIOENCODING'] = 'utf-8'
+    os.environ['PYTHONUNBUFFERED'] = '1'
     try:
         import io
         def _is_utf8_wrapper(stream):
             return (isinstance(stream, io.TextIOWrapper) and 
                     hasattr(stream, 'encoding') and stream.encoding and
                     stream.encoding.lower().replace('-', '') == 'utf8')
+        # Only wrap stdout, NOT stderr (stderr causes shutdown errors)
         if hasattr(sys.stdout, 'buffer') and not _is_utf8_wrapper(sys.stdout):
             sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace', line_buffering=True)
-        if hasattr(sys.stderr, 'buffer') and not _is_utf8_wrapper(sys.stderr):
-            sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace', line_buffering=True)
     except Exception:
         pass
+    
+    # Aggressive cleanup: redirect stderr to devnull on exit
+    def _cleanup_stderr():
+        try:
+            sys.stderr = open(os.devnull, 'w')
+        except Exception:
+            pass
+    atexit.register(_cleanup_stderr)
 
 import asyncio
 import json

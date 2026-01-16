@@ -7,9 +7,10 @@ RED ALERT 2 STYLE UNIFIED LAUNCHER
 Starts the Command Center + Trading Engine together!
 """
 
-import sys, os
+import sys, os, atexit
 if sys.platform == 'win32':
     os.environ['PYTHONIOENCODING'] = 'utf-8'
+    os.environ['PYTHONUNBUFFERED'] = '1'
     try:
         import io
         def _is_utf8_wrapper(stream):
@@ -17,13 +18,19 @@ if sys.platform == 'win32':
             return (isinstance(stream, io.TextIOWrapper) and 
                     hasattr(stream, 'encoding') and stream.encoding and
                     stream.encoding.lower().replace('-', '') == 'utf8')
-        # Only wrap if not already UTF-8 wrapped (prevents re-wrapping on import)
+        # Only wrap stdout, NOT stderr (stderr causes shutdown errors)
         if hasattr(sys.stdout, 'buffer') and not _is_utf8_wrapper(sys.stdout):
             sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace', line_buffering=True)
-        if hasattr(sys.stderr, 'buffer') and not _is_utf8_wrapper(sys.stderr):
-            sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace', line_buffering=True)
     except Exception:
         pass
+    
+    # Aggressive cleanup: redirect stderr to devnull on exit
+    def _cleanup_stderr():
+        try:
+            sys.stderr = open(os.devnull, 'w')
+        except Exception:
+            pass
+    atexit.register(_cleanup_stderr)
 
 import argparse
 import subprocess
