@@ -168,12 +168,12 @@
     "losses": 0.0
   },
   "ETH->USDC": {
-    "wins": 0.0,
-    "losses": 3.0
+    "wins": 10.0,
+    "losses": 6.0
   },
   "ETH->USDT": {
-    "wins": 0.0,
-    "losses": 2.0
+    "wins": 25.0,
+    "losses": 5.0
   },
   "USDT->ETH": {
     "wins": 1.0,
@@ -580,8 +580,8 @@
     "losses": 2.0
   },
   "ETH->LTC": {
-    "wins": 8.0,
-    "losses": 1.0
+    "wins": 13.0,
+    "losses": 4.0
   },
   "USD->BTC": {
     "wins": 1.0,
@@ -612,8 +612,8 @@
     "losses": 0.0
   },
   "ETH->BCH": {
-    "wins": 1.0,
-    "losses": 0.0
+    "wins": 18.0,
+    "losses": 3.0
   },
   "USD->AVAX": {
     "wins": 1.0,
@@ -724,8 +724,8 @@
     "losses": 1.0
   },
   "ETH->UNI": {
-    "wins": 2.0,
-    "losses": 0.0
+    "wins": 24.0,
+    "losses": 3.0
   },
   "UNI->USDC": {
     "wins": 1.0,
@@ -760,8 +760,8 @@
     "losses": 0.0
   },
   "ETH->USD": {
-    "wins": 0.0,
-    "losses": 1.0
+    "wins": 1.0,
+    "losses": 4.0
   },
   "ETH->SKY": {
     "wins": 0.0,
@@ -792,7 +792,7 @@
     "losses": 1.0
   },
   "ETH->CRV": {
-    "wins": 0.0,
+    "wins": 1.0,
     "losses": 1.0
   },
   "ETH->GRT": {
@@ -802,5 +802,9 @@
   "ETH->TRUMP": {
     "wins": 0.0,
     "losses": 1.0
+  },
+  "ETH->LINK": {
+    "wins": 9.0,
+    "losses": 2.0
   }
 }

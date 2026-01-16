@@ -9,7 +9,7 @@
       "times_applied": 0,
       "success_rate": 0.0,
       "total_saved": 0.0,
-      "learned_at": "2026-01-15T23:26:46.210296",
+      "learned_at": "2026-01-16T00:23:40.404697",
       "last_applied": ""
     },
     "ad97150b": {
@@ -21,7 +21,7 @@
       "times_applied": 0,
       "success_rate": 0.0,
       "total_saved": 0.0,
-      "learned_at": "2026-01-15T23:26:47.552798",
+      "learned_at": "2026-01-16T00:23:41.763019",
       "last_applied": ""
     },
     "db2d5a2f": {
@@ -33,7 +33,7 @@
       "times_applied": 0,
       "success_rate": 0.0,
       "total_saved": 0.0,
-      "learned_at": "2026-01-15T23:26:48.871282",
+      "learned_at": "2026-01-16T00:23:42.966791",
       "last_applied": ""
     },
     "7b51face": {
@@ -45,7 +45,7 @@
       "times_applied": 0,
       "success_rate": 0.0,
       "total_saved": 0.0,
-      "learned_at": "2026-01-15T23:26:50.111142",
+      "learned_at": "2026-01-16T00:23:44.263837",
       "last_applied": ""
     },
     "c5d8c916": {
@@ -57,7 +57,7 @@
       "times_applied": 0,
       "success_rate": 0.0,
       "total_saved": 0.0,
-      "learned_at": "2026-01-15T23:26:51.356645",
+      "learned_at": "2026-01-16T00:23:45.460337",
       "last_applied": ""
     },
     "26034109": {
@@ -69,7 +69,7 @@
       "times_applied": 0,
       "success_rate": 0.0,
       "total_saved": 0.0,
-      "learned_at": "2026-01-15T23:26:52.680378",
+      "learned_at": "2026-01-16T00:23:46.649636",
       "last_applied": ""
     },
     "9717d57e": {
@@ -81,7 +81,7 @@
       "times_applied": 0,
       "success_rate": 0.0,
       "total_saved": 0.0,
-      "learned_at": "2026-01-13T22:38:18.932179",
+      "learned_at": "2026-01-16T00:24:07.882574",
       "last_applied": ""
     },
     "6f5d2032": {
@@ -93,31 +93,31 @@
       "times_applied": 0,
       "success_rate": 0.0,
       "total_saved": 0.0,
-      "learned_at": "2026-01-13T22:38:20.545701",
+      "learned_at": "2026-01-16T00:24:09.541691",
       "last_applied": ""
     },
     "49fc004d": {
       "tactic_id": "49fc004d",
       "name": "Tactical patience",
       "source": "WAR_PSYCHOLOGY",
-      "description": "The main strategy and tactics of guerrilla warfare tend to involve the use of a small attacking, mobile force against a large, unwieldy force. The guerrilla force is largely or entirely organized in small units that are dependent on the support of the local population. Tactically, the guerrilla army makes the repetitive attacks far from the opponent's center of gravity with a view to keeping its own casualties to a minimum and imposing a constant debilitating strain on the enemy. This may provok",
-      "trading_application": "Small, quick trades. Hit profitable opportunities fast, exit before losses accumulate.",
+      "description": "Miguel Di Pizio (Italian: [mi\u02c8\u0261u\u025bl di \u02c8pit.tsjo]; born 4 January 2006) is an Australian professional soccer player who plays as an attacking midfielder for A-League Men club Central Coast Mariners.\n\n\n== Early life ==\nBorn in Sydney, New South Wales, Di Pizio started playing football at the age of four. He attended Mamre Anglican School, located in Kemps Creek, and Westfields Sports High School, representing in both schools' football teams. He has an older brother, Gianni Di Pizio, who also playe",
+      "trading_application": "The patient trader profits. Wait for high-probability setups only.",
       "times_applied": 0,
       "success_rate": 0.0,
       "total_saved": 0.0,
-      "learned_at": "2026-01-13T22:38:21.829903",
+      "learned_at": "2026-01-16T00:24:11.716293",
       "last_applied": ""
     },
     "953b77bf": {
       "tactic_id": "953b77bf",
       "name": "Strategic retreat",
       "source": "WAR_PSYCHOLOGY",
-      "description": "The French invasion of Russia, also known as the Russian campaign, the Second Polish War, and in Russia as the Patriotic War of 1812, was initiated by Napoleon with the aim of forcing the Russian Empire  to comply with the continental blockade of the United Kingdom. Widely studied, Napoleon's incursion into Russia remains a focal point in military history, recognized as among the most devastating military endeavors to ever unfold. In a span of less than six months, the campaign exacted a stagger",
+      "description": "Major General Nathanael Greene (August 7, 1742 \u2013 June 19, 1786) was an American military officer and planter who served in the Continental Army during the Revolutionary War. He emerged from the war with a reputation as one of George Washington's most talented and dependable officers and is known for his successful command in the Southern theater of the conflict.\nBorn into a prosperous Quaker family in Warwick, Rhode Island, Greene became active in the colonial opposition to British revenue polic",
       "trading_application": "Strategic retreat is not defeat. Cut losses early to fight another day.",
       "times_applied": 0,
       "success_rate": 0.0,
       "total_saved": 0.0,
-      "learned_at": "2026-01-13T22:38:23.023806",
+      "learned_at": "2026-01-16T00:24:13.020646",
       "last_applied": ""
     },
     "aa582343": {
@@ -129,7 +129,7 @@
       "times_applied": 0,
       "success_rate": 0.0,
       "total_saved": 0.0,
-      "learned_at": "2026-01-13T22:38:24.262805",
+      "learned_at": "2026-01-16T00:24:14.329951",
       "last_applied": ""
     },
     "9acb73ce": {
@@ -141,9 +141,9 @@
       "times_applied": 0,
       "success_rate": 0.0,
       "total_saved": 0.0,
-      "learned_at": "2026-01-13T22:38:26.361431",
+      "learned_at": "2026-01-16T00:24:16.477142",
       "last_applied": ""
     }
   },
-  "last_saved": "2026-01-15T23:26:53.530259"
+  "last_saved": "2026-01-16T00:30:12.156782"
 }

@@ -1,7 +1,7 @@
 {
-  "updated": "2026-01-16T00:14:23.571773",
+  "updated": "2026-01-16T00:49:31.290440",
   "last_snapshot": {
-    "timestamp": "2026-01-16T00:14:23.571744",
+    "timestamp": "2026-01-16T00:49:31.290413",
     "crypto_fear_greed": 49,
     "crypto_fg_classification": "Neutral",
     "vix": 20.0,
@@ -19,8 +19,8 @@
     "gold_change": 0,
     "oil": 75,
     "oil_change": 0,
-    "total_crypto_mcap": 3324902250629.757,
-    "btc_dominance": 57.462951679148425,
+    "total_crypto_mcap": 3327630914565.157,
+    "btc_dominance": 57.47460318690529,
     "eur_usd": 1.1648142237794494,
     "gbp_usd": 1.3442106862061132,
     "usd_jpy": 158.503226,

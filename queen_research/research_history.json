@@ -4,36 +4,36 @@
       "topic": "trending_coins",
       "source": "coingecko",
       "title": "Trending Coins Pattern",
-      "content": "Currently trending: KAITO, BTC, DASH, FOGO, XMR",
+      "content": "Currently trending: KAITO, BTC, DASH, LIT, PENGU",
       "relevance_score": 0.7,
-      "discovered_at": "2026-01-16T00:14:24.550979",
+      "discovered_at": "2026-01-16T00:32:53.680793",
       "applied": false
     },
     {
       "topic": "market_sentiment",
       "source": "coingecko",
       "title": "Global Market Sentiment",
-      "content": "BTC Dominance: 57.5%, 24h Change: -1.03%",
+      "content": "BTC Dominance: 57.5%, 24h Change: -0.98%",
       "relevance_score": 0.8,
-      "discovered_at": "2026-01-16T00:14:24.671940",
+      "discovered_at": "2026-01-16T00:32:53.803628",
       "applied": true
     },
     {
       "topic": "momentum_leaders",
       "source": "binance",
       "title": "Top Momentum Leaders",
-      "content": "Top gainers: {'CREAM': 65.354, 'PNT': 45.228, 'FOGO': 39.886, 'KDA': 17.647, 'DCR': 16.464}",
+      "content": "Top gainers: {'CREAM': 65.354, 'PNT': 45.228, 'FOGO': 33.743, 'KDA': 17.647, 'FRAX': 15.616}",
       "relevance_score": 0.85,
-      "discovered_at": "2026-01-16T00:14:25.598041",
+      "discovered_at": "2026-01-16T00:32:55.562156",
       "applied": true
     },
     {
       "topic": "volume_spike",
       "source": "binance",
       "title": "Volume Spike Detection",
-      "content": "High volume + price increase detected in 1 pairs",
+      "content": "High volume + price increase detected in 2 pairs",
       "relevance_score": 0.9,
-      "discovered_at": "2026-01-16T00:14:25.598057",
+      "discovered_at": "2026-01-16T00:32:55.562184",
       "applied": true
     },
     {
@@ -42,7 +42,7 @@
       "title": "Volatility Patterns",
       "content": "24h volatility: XETHZUSD: 3.35%, SOLUSD: 3.90%, XXBTZUSD: 2.16%",
       "relevance_score": 0.75,
-      "discovered_at": "2026-01-16T00:14:25.668308",
+      "discovered_at": "2026-01-16T00:32:55.779014",
       "applied": true
     },
     {
@@ -51,7 +51,169 @@
       "title": "Queen's Synthesized Strategy",
       "content": "Combined momentum + volume detection for optimal entry",
       "relevance_score": 0.95,
-      "discovered_at": "2026-01-16T00:14:25.669095",
+      "discovered_at": "2026-01-16T00:32:55.780981",
+      "applied": true
+    },
+    {
+      "topic": "trending_coins",
+      "source": "coingecko",
+      "title": "Trending Coins Pattern",
+      "content": "Currently trending: KAITO, DASH, LIT, XMR, BTC",
+      "relevance_score": 0.7,
+      "discovered_at": "2026-01-16T00:38:01.378683",
+      "applied": false
+    },
+    {
+      "topic": "market_sentiment",
+      "source": "coingecko",
+      "title": "Global Market Sentiment",
+      "content": "BTC Dominance: 57.5%, 24h Change: -0.92%",
+      "relevance_score": 0.8,
+      "discovered_at": "2026-01-16T00:38:01.507206",
+      "applied": true
+    },
+    {
+      "topic": "momentum_leaders",
+      "source": "binance",
+      "title": "Top Momentum Leaders",
+      "content": "Top gainers: {'CREAM': 65.354, 'PNT': 45.228, 'FOGO': 33.343, 'KDA': 17.647, 'FRAX': 14.828}",
+      "relevance_score": 0.85,
+      "discovered_at": "2026-01-16T00:38:02.721106",
+      "applied": true
+    },
+    {
+      "topic": "volume_spike",
+      "source": "binance",
+      "title": "Volume Spike Detection",
+      "content": "High volume + price increase detected in 1 pairs",
+      "relevance_score": 0.9,
+      "discovered_at": "2026-01-16T00:38:02.721131",
+      "applied": true
+    },
+    {
+      "topic": "volatility_analysis",
+      "source": "kraken",
+      "title": "Volatility Patterns",
+      "content": "24h volatility: XETHZUSD: 3.35%, SOLUSD: 3.90%, XXBTZUSD: 2.16%",
+      "relevance_score": 0.75,
+      "discovered_at": "2026-01-16T00:38:02.831886",
+      "applied": true
+    },
+    {
+      "topic": "combined_strategy",
+      "source": "queen_synthesis",
+      "title": "Queen's Synthesized Strategy",
+      "content": "Combined momentum + volume detection for optimal entry",
+      "relevance_score": 0.95,
+      "discovered_at": "2026-01-16T00:38:02.833370",
+      "applied": true
+    },
+    {
+      "topic": "trending_coins",
+      "source": "coingecko",
+      "title": "Trending Coins Pattern",
+      "content": "Currently trending: KAITO, DASH, LIT, XMR, BTC",
+      "relevance_score": 0.7,
+      "discovered_at": "2026-01-16T00:43:08.344432",
+      "applied": false
+    },
+    {
+      "topic": "market_sentiment",
+      "source": "coingecko",
+      "title": "Global Market Sentiment",
+      "content": "BTC Dominance: 57.5%, 24h Change: -0.93%",
+      "relevance_score": 0.8,
+      "discovered_at": "2026-01-16T00:43:08.462934",
+      "applied": true
+    },
+    {
+      "topic": "momentum_leaders",
+      "source": "binance",
+      "title": "Top Momentum Leaders",
+      "content": "Top gainers: {'CREAM': 65.354, 'PNT': 45.228, 'FOGO': 33.571, 'KDA': 17.647, 'FRAX': 14.569}",
+      "relevance_score": 0.85,
+      "discovered_at": "2026-01-16T00:43:08.792325",
+      "applied": true
+    },
+    {
+      "topic": "volume_spike",
+      "source": "binance",
+      "title": "Volume Spike Detection",
+      "content": "High volume + price increase detected in 1 pairs",
+      "relevance_score": 0.9,
+      "discovered_at": "2026-01-16T00:43:08.792343",
+      "applied": true
+    },
+    {
+      "topic": "volatility_analysis",
+      "source": "kraken",
+      "title": "Volatility Patterns",
+      "content": "24h volatility: XETHZUSD: 3.35%, SOLUSD: 3.90%, XXBTZUSD: 2.16%",
+      "relevance_score": 0.75,
+      "discovered_at": "2026-01-16T00:43:08.868732",
+      "applied": true
+    },
+    {
+      "topic": "combined_strategy",
+      "source": "queen_synthesis",
+      "title": "Queen's Synthesized Strategy",
+      "content": "Combined momentum + volume detection for optimal entry",
+      "relevance_score": 0.95,
+      "discovered_at": "2026-01-16T00:43:08.869989",
+      "applied": true
+    },
+    {
+      "topic": "trending_coins",
+      "source": "coingecko",
+      "title": "Trending Coins Pattern",
+      "content": "Currently trending: KAITO, DASH, XMR, LIT, PENGU",
+      "relevance_score": 0.7,
+      "discovered_at": "2026-01-16T00:48:12.485169",
+      "applied": false
+    },
+    {
+      "topic": "market_sentiment",
+      "source": "coingecko",
+      "title": "Global Market Sentiment",
+      "content": "BTC Dominance: 57.5%, 24h Change: -0.94%",
+      "relevance_score": 0.8,
+      "discovered_at": "2026-01-16T00:48:12.603743",
+      "applied": true
+    },
+    {
+      "topic": "momentum_leaders",
+      "source": "binance",
+      "title": "Top Momentum Leaders",
+      "content": "Top gainers: {'CREAM': 65.354, 'PNT': 45.228, 'FOGO': 34.057, 'KDA': 17.647, 'FRAX': 14.163}",
+      "relevance_score": 0.85,
+      "discovered_at": "2026-01-16T00:48:12.998875",
+      "applied": true
+    },
+    {
+      "topic": "volume_spike",
+      "source": "binance",
+      "title": "Volume Spike Detection",
+      "content": "High volume + price increase detected in 1 pairs",
+      "relevance_score": 0.9,
+      "discovered_at": "2026-01-16T00:48:12.998904",
+      "applied": true
+    },
+    {
+      "topic": "volatility_analysis",
+      "source": "kraken",
+      "title": "Volatility Patterns",
+      "content": "24h volatility: XETHZUSD: 3.35%, SOLUSD: 3.90%, XXBTZUSD: 2.16%",
+      "relevance_score": 0.75,
+      "discovered_at": "2026-01-16T00:48:13.176118",
+      "applied": true
+    },
+    {
+      "topic": "combined_strategy",
+      "source": "queen_synthesis",
+      "title": "Queen's Synthesized Strategy",
+      "content": "Combined momentum + volume detection for optimal entry",
+      "relevance_score": 0.95,
+      "discovered_at": "2026-01-16T00:48:13.178014",
       "applied": true
     }
   ],
@@ -66,11 +228,53 @@
         "Global Market Sentiment",
         "Volatility Patterns"
       ],
-      "generated_at": "2026-01-16T00:14:25.670060",
+      "generated_at": "2026-01-16T00:32:55.783761",
+      "applied": true,
+      "measured_revenue": 0.0
+    },
+    {
+      "name": "queen_research_enhancement",
+      "description": "Auto-generated from 5 research findings",
+      "source_research": [
+        "Queen's Synthesized Strategy",
+        "Volume Spike Detection",
+        "Top Momentum Leaders",
+        "Global Market Sentiment",
+        "Volatility Patterns"
+      ],
+      "generated_at": "2026-01-16T00:38:02.835186",
+      "applied": true,
+      "measured_revenue": 0.0
+    },
+    {
+      "name": "queen_research_enhancement",
+      "description": "Auto-generated from 5 research findings",
+      "source_research": [
+        "Queen's Synthesized Strategy",
+        "Volume Spike Detection",
+        "Top Momentum Leaders",
+        "Global Market Sentiment",
+        "Volatility Patterns"
+      ],
+      "generated_at": "2026-01-16T00:43:08.870914",
+      "applied": true,
+      "measured_revenue": 0.0
+    },
+    {
+      "name": "queen_research_enhancement",
+      "description": "Auto-generated from 5 research findings",
+      "source_research": [
+        "Queen's Synthesized Strategy",
+        "Volume Spike Detection",
+        "Top Momentum Leaders",
+        "Global Market Sentiment",
+        "Volatility Patterns"
+      ],
+      "generated_at": "2026-01-16T00:48:13.179418",
       "applied": true,
       "measured_revenue": 0.0
     }
   ],
   "total_revenue": 0.0,
-  "last_updated": "2026-01-16T00:14:25.672530"
+  "last_updated": "2026-01-16T00:48:13.183281"
 }

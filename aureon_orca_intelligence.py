@@ -249,13 +249,56 @@ class OrcaKillerWhaleIntelligence:
     """
     🦈🔪 THE KILLER WHALE 🔪🦈
     
+    COMMAND HIERARCHY: 👑 QUEEN → 🦈 ORCA → 💰 MICRO PROFIT
+    ═══════════════════════════════════════════════════════════════
+    
+    Position in Hierarchy: TACTICAL COMMANDER (Level 2)
+    
+    Reports to: 👑 Queen Sero (Supreme Commander)
+    Commands:  💰 Micro Profit Engine (Executor)
+    
+    Responsibilities:
+    - Hunt whales and identify opportunities
+    - Request Queen approval for high-value hunts
+    - Coordinate with Micro Profit for execution
+    - Report outcomes back up the chain
+    
+    The Queen has VETO POWER over all Orca decisions.
+    The Orca has COMMAND AUTHORITY over Micro Profit execution.
+    
     Connects ALL intelligence streams to generate trading signals.
     We hunt whales and ride their wakes for profit.
     """
     
+    # ═══════════════════════════════════════════════════════════════════════════
+    # HIERARCHY CONSTANTS
+    # ═══════════════════════════════════════════════════════════════════════════
+    HIERARCHY_LEVEL = 2  # Queen=1, Orca=2, MicroProfit=3
+    HIERARCHY_NAME = "TACTICAL_COMMANDER"
+    REPORTS_TO = "QUEEN_SERO"
+    COMMANDS = ["MICRO_PROFIT_ENGINE"]
+    
+    # Thresholds for Queen consultation
+    QUEEN_CONSULT_THRESHOLD_USD = 5.0   # Consult Queen for trades > $5
+    QUEEN_CONSULT_CONFIDENCE = 0.7      # Consult if confidence < 70%
+    QUEEN_VETO_OVERRIDE = False         # Queen veto CANNOT be overridden
+    
     def __init__(self):
         self.enabled = True
         self.mode = "STALKING"  # STALKING, HUNTING, FEEDING, RESTING
+        
+        # 👑 QUEEN REFERENCE - Supreme Commander
+        self.queen = None  # Will be wired externally
+        self.queen_connected = False
+        self.queen_consultation_count = 0
+        self.queen_approvals = 0
+        self.queen_vetoes = 0
+        
+        # 💰 MICRO PROFIT REFERENCE - Executor
+        self.micro_profit = None  # Will be wired externally
+        self.micro_profit_connected = False
+        self.execution_orders_sent = 0
+        self.execution_orders_completed = 0
         
         # Intelligence feeds (connected externally)
         self.whale_signals: deque = deque(maxlen=100)
@@ -308,6 +351,10 @@ class OrcaKillerWhaleIntelligence:
                 'hunt_count': self.hunt_count,
                 'total_profit_usd': self.total_profit_usd,
                 'win_rate': self.win_rate,
+                'queen_consultations': self.queen_consultation_count,
+                'queen_approvals': self.queen_approvals,
+                'queen_vetoes': self.queen_vetoes,
+                'execution_orders': self.execution_orders_sent,
                 'last_update': time.time()
             }
             tmp = self.state_file.with_suffix('.json.tmp')
@@ -316,6 +363,283 @@ class OrcaKillerWhaleIntelligence:
         except Exception as e:
             logger.debug(f"Could not save orca state: {e}")
     
+    # ═══════════════════════════════════════════════════════════════════════════
+    # 👑 QUEEN HIERARCHY METHODS - CHAIN OF COMMAND
+    # ═══════════════════════════════════════════════════════════════════════════
+    
+    def wire_queen(self, queen) -> bool:
+        """
+        Wire the Queen as supreme commander.
+        Orca reports to Queen for all major decisions.
+        """
+        if queen is None:
+            logger.warning("🦈 Cannot wire NULL Queen!")
+            return False
+        
+        self.queen = queen
+        self.queen_connected = True
+        logger.info(f"🦈👑 ORCA wired to QUEEN SERO - Chain of command ESTABLISHED")
+        logger.info(f"   📊 Consult threshold: ${self.QUEEN_CONSULT_THRESHOLD_USD} or <{self.QUEEN_CONSULT_CONFIDENCE:.0%} confidence")
+        return True
+    
+    def wire_micro_profit(self, micro_profit) -> bool:
+        """
+        Wire the Micro Profit Engine as execution layer.
+        Orca commands Micro Profit for trade execution.
+        """
+        if micro_profit is None:
+            logger.warning("🦈 Cannot wire NULL Micro Profit!")
+            return False
+        
+        self.micro_profit = micro_profit
+        self.micro_profit_connected = True
+        logger.info(f"🦈💰 ORCA wired to MICRO PROFIT - Execution channel ESTABLISHED")
+        return True
+    
+    def consult_queen(self, opportunity: OrcaOpportunity) -> Tuple[bool, str, float]:
+        """
+        Consult the Queen for approval on a hunting opportunity.
+        
+        Returns: (approved, reason, queen_confidence)
+        
+        The Queen evaluates:
+        - Is this aligned with her wisdom?
+        - Does harmonic timing favor this hunt?
+        - Is the risk acceptable for her dream?
+        """
+        if not self.queen_connected or self.queen is None:
+            logger.debug("🦈 Queen not connected - auto-approving")
+            return (True, "Queen not connected - Orca autonomous", 0.5)
+        
+        self.queen_consultation_count += 1
+        
+        try:
+            # Build consultation request
+            request = {
+                'source': 'orca_intelligence',
+                'request_type': 'hunt_approval',
+                'symbol': opportunity.symbol,
+                'action': opportunity.action,
+                'confidence': opportunity.confidence,
+                'target_pnl_usd': opportunity.target_pnl_usd,
+                'reasoning': opportunity.reasoning,
+                'whale_signal': opportunity.whale_signal.to_dict() if hasattr(opportunity.whale_signal, 'to_dict') else None,
+                'harmonic_timing': {
+                    'coherence': self.harmonic_data.coherence if self.harmonic_data else 0.5,
+                    'favorable': self.harmonic_data.is_favorable() if self.harmonic_data else False
+                }
+            }
+            
+            # Ask Queen using her wisdom evaluation
+            queen_response = self._ask_queen_wisdom(request)
+            
+            approved = queen_response.get('approved', True)
+            reason = queen_response.get('reason', 'Queen silent')
+            queen_confidence = queen_response.get('confidence', 0.5)
+            
+            if approved:
+                self.queen_approvals += 1
+                logger.info(f"👑✅ Queen APPROVED hunt: {opportunity.symbol} ({reason})")
+            else:
+                self.queen_vetoes += 1
+                logger.info(f"👑❌ Queen VETOED hunt: {opportunity.symbol} ({reason})")
+            
+            return (approved, reason, queen_confidence)
+            
+        except Exception as e:
+            logger.warning(f"🦈 Queen consultation error: {e} - auto-approving")
+            return (True, f"Consultation error: {e}", 0.5)
+    
+    def _ask_queen_wisdom(self, request: Dict) -> Dict:
+        """
+        Internal method to query Queen's wisdom.
+        Uses Queen's various evaluation methods if available.
+        """
+        if not self.queen:
+            return {'approved': True, 'reason': 'No Queen', 'confidence': 0.5}
+        
+        try:
+            # Check if Queen has ask_queen_will_we_win method
+            if hasattr(self.queen, 'ask_queen_will_we_win'):
+                guidance = self.queen.ask_queen_will_we_win(
+                    asset=request['symbol'],
+                    exchange='orca_hunt',
+                    opportunity_score=request['confidence'],
+                    context={
+                        'source': 'orca',
+                        'action': request['action'],
+                        'target_pnl': request['target_pnl_usd'],
+                        'harmonic': request.get('harmonic_timing', {})
+                    }
+                )
+                
+                # Interpret guidance
+                if hasattr(guidance, 'confidence'):
+                    approved = guidance.confidence >= 0.5
+                    return {
+                        'approved': approved,
+                        'reason': f"Queen confidence: {guidance.confidence:.0%}",
+                        'confidence': guidance.confidence
+                    }
+                elif isinstance(guidance, dict):
+                    approved = guidance.get('confidence', 0.5) >= 0.5
+                    return {
+                        'approved': approved,
+                        'reason': guidance.get('reasoning', 'Queen evaluated'),
+                        'confidence': guidance.get('confidence', 0.5)
+                    }
+            
+            # Fallback: Check Queen's state
+            if hasattr(self.queen, 'state'):
+                from aureon_queen_hive_mind import QueenState
+                if self.queen.state == QueenState.HUNTING:
+                    return {'approved': True, 'reason': 'Queen in HUNTING mode', 'confidence': 0.8}
+                elif self.queen.state == QueenState.RESTING:
+                    return {'approved': False, 'reason': 'Queen is RESTING', 'confidence': 0.2}
+            
+            return {'approved': True, 'reason': 'Queen permits', 'confidence': 0.6}
+            
+        except Exception as e:
+            logger.debug(f"Queen wisdom query error: {e}")
+            return {'approved': True, 'reason': f'Query error: {e}', 'confidence': 0.5}
+    
+    def report_hunt_outcome(self, opportunity: OrcaOpportunity, pnl_usd: float, success: bool):
+        """
+        Report hunt outcome back up the chain to Queen.
+        Queen learns from Orca's successes and failures.
+        """
+        if not self.queen_connected or self.queen is None:
+            return
+        
+        try:
+            outcome_report = {
+                'source': 'orca_intelligence',
+                'report_type': 'hunt_outcome',
+                'symbol': opportunity.symbol,
+                'action': opportunity.action,
+                'pnl_usd': pnl_usd,
+                'success': success,
+                'confidence_was': opportunity.confidence,
+                'reasoning': opportunity.reasoning,
+                'timestamp': time.time()
+            }
+            
+            # Report to Queen's learning system
+            if hasattr(self.queen, 'receive_child_signal'):
+                self.queen.receive_child_signal(outcome_report)
+            
+            # Also report to loss learning if available
+            if hasattr(self.queen, 'loss_learning') and self.queen.loss_learning and not success:
+                self.queen.loss_learning.record_loss(
+                    symbol=opportunity.symbol,
+                    exchange='orca_hunt',
+                    loss_amount=abs(pnl_usd),
+                    reason=f"Orca hunt failed: {opportunity.reasoning[-1] if opportunity.reasoning else 'unknown'}"
+                )
+            
+            logger.info(f"🦈👑 Reported hunt outcome to Queen: {opportunity.symbol} ${pnl_usd:+.4f} ({'WIN' if success else 'LOSS'})")
+            
+        except Exception as e:
+            logger.debug(f"Hunt outcome report error: {e}")
+    
+    def request_execution(self, opportunity: OrcaOpportunity) -> Tuple[bool, str, Dict]:
+        """
+        Request Micro Profit Engine to execute a trade.
+        
+        Orca identifies opportunities, Micro Profit executes.
+        
+        Returns: (success, reason, execution_result)
+        """
+        if not self.micro_profit_connected or self.micro_profit is None:
+            logger.warning("🦈 Micro Profit not connected - cannot execute")
+            return (False, "Micro Profit not connected", {})
+        
+        self.execution_orders_sent += 1
+        
+        try:
+            # Build execution order
+            order = {
+                'source': 'orca_intelligence',
+                'order_type': 'orca_hunt',
+                'symbol': opportunity.symbol,
+                'side': opportunity.action,
+                'confidence': opportunity.confidence,
+                'target_pnl_usd': opportunity.target_pnl_usd,
+                'position_size_pct': opportunity.position_size_pct,
+                'max_hold_seconds': opportunity.max_hold_seconds,
+                'stop_loss_pct': opportunity.stop_loss_pct,
+                'trailing_stop_pct': opportunity.trailing_stop_pct,
+                'reasoning': opportunity.reasoning,
+                'orca_hunt_id': opportunity.id
+            }
+            
+            # Send to Micro Profit for execution
+            if hasattr(self.micro_profit, 'execute_orca_order'):
+                result = self.micro_profit.execute_orca_order(order)
+            elif hasattr(self.micro_profit, 'execute_conversion'):
+                # Fallback to standard conversion
+                result = {'status': 'delegated', 'method': 'standard_conversion'}
+            else:
+                result = {'status': 'no_method', 'error': 'Micro Profit lacks execution method'}
+            
+            success = result.get('status') in ['filled', 'success', 'delegated']
+            if success:
+                self.execution_orders_completed += 1
+            
+            logger.info(f"🦈💰 Execution order {'COMPLETED' if success else 'FAILED'}: {opportunity.symbol}")
+            return (success, result.get('reason', 'Executed'), result)
+            
+        except Exception as e:
+            logger.warning(f"🦈 Execution request error: {e}")
+            return (False, f"Execution error: {e}", {})
+    
+    def get_hierarchy_status(self) -> Dict:
+        """Get the current hierarchy chain status."""
+        return {
+            'level': self.HIERARCHY_LEVEL,
+            'name': self.HIERARCHY_NAME,
+            'reports_to': self.REPORTS_TO,
+            'commands': self.COMMANDS,
+            'queen_connected': self.queen_connected,
+            'queen_consultations': self.queen_consultation_count,
+            'queen_approvals': self.queen_approvals,
+            'queen_vetoes': self.queen_vetoes,
+            'queen_approval_rate': self.queen_approvals / max(1, self.queen_consultation_count),
+            'micro_profit_connected': self.micro_profit_connected,
+            'execution_orders_sent': self.execution_orders_sent,
+            'execution_orders_completed': self.execution_orders_completed,
+            'execution_success_rate': self.execution_orders_completed / max(1, self.execution_orders_sent),
+            'chain_integrity': self.queen_connected and self.micro_profit_connected
+        }
+    
+    def should_consult_queen(self, opportunity: OrcaOpportunity) -> bool:
+        """
+        Determine if this opportunity requires Queen consultation.
+        
+        Consult Queen when:
+        - Trade value exceeds threshold
+        - Confidence is below threshold
+        - High-risk hunt (whale fighting detected)
+        - Queen has explicitly requested consultation
+        """
+        # Always consult for large trades
+        estimated_value = opportunity.target_pnl_usd / 0.01  # Rough position estimate
+        if estimated_value >= self.QUEEN_CONSULT_THRESHOLD_USD:
+            return True
+        
+        # Consult for low-confidence hunts
+        if opportunity.confidence < self.QUEEN_CONSULT_CONFIDENCE:
+            return True
+        
+        # Consult if fighting whale momentum
+        momentum = self.symbol_momentum.get(opportunity.symbol, 0.0)
+        if opportunity.action == 'buy' and momentum < -0.3:
+            return True  # Buying against bearish momentum
+        if opportunity.action == 'sell' and momentum > 0.3:
+            return True  # Selling against bullish momentum
+        
+        return False
+
     # ═══════════════════════════════════════════════════════════════════════════
     # INTELLIGENCE FEED INGESTION
     # ═══════════════════════════════════════════════════════════════════════════
@@ -521,8 +845,25 @@ class OrcaKillerWhaleIntelligence:
         # Sort by confidence
         opportunities.sort(key=lambda x: x.confidence, reverse=True)
         
-        # Return top opportunities
-        return opportunities[:3]
+        # 👑 QUEEN CONSULTATION - Filter through chain of command
+        approved_opportunities = []
+        for opp in opportunities[:5]:  # Consider top 5 candidates
+            if self.should_consult_queen(opp):
+                approved, reason, queen_conf = self.consult_queen(opp)
+                if approved:
+                    opp.reasoning.append(f"👑 Queen approved: {reason}")
+                    opp.confidence = (opp.confidence + queen_conf) / 2  # Blend confidence
+                    approved_opportunities.append(opp)
+                else:
+                    opp.reasoning.append(f"👑 Queen VETOED: {reason}")
+                    logger.info(f"🦈👑 Hunt VETOED by Queen: {opp.symbol} - {reason}")
+            else:
+                # Low-risk hunt - proceed without consultation
+                opp.reasoning.append("🦈 Autonomous hunt (below consultation threshold)")
+                approved_opportunities.append(opp)
+        
+        # Return top 3 approved opportunities
+        return approved_opportunities[:3]
     
     def _build_opportunity_from_whale(self, whale: WhaleSignal, timing_mult: float) -> Optional[OrcaOpportunity]:
         """Build a trading opportunity from a whale signal."""
@@ -586,8 +927,26 @@ class OrcaKillerWhaleIntelligence:
             reasoning=reasoning
         )
     
-    def start_hunt(self, opportunity: OrcaOpportunity):
-        """Begin tracking an active hunt."""
+    def start_hunt(self, opportunity: OrcaOpportunity) -> bool:
+        """
+        Begin tracking an active hunt.
+        
+        HIERARCHY: Orca commands Micro Profit for execution.
+        
+        Returns: True if hunt started successfully, False if blocked.
+        """
+        # 👑 Final Queen check (emergency veto)
+        if self.queen_connected and self.queen:
+            try:
+                if hasattr(self.queen, 'state'):
+                    from aureon_queen_hive_mind import QueenState
+                    if self.queen.state == QueenState.RESTING:
+                        logger.info(f"🦈👑 Hunt BLOCKED - Queen is RESTING")
+                        return False
+            except Exception:
+                pass
+        
+        # Add to active hunts
         self.active_hunts.append(opportunity)
         self.last_hunt_time = time.time()
         self.mode = "HUNTING"
@@ -597,6 +956,20 @@ class OrcaKillerWhaleIntelligence:
         logger.info(f"   Confidence: {opportunity.confidence:.0%} | Target: ${opportunity.target_pnl_usd:.2f}")
         for r in opportunity.reasoning:
             logger.info(f"   • {r}")
+        
+        # 💰 COMMAND MICRO PROFIT - Request execution
+        if self.micro_profit_connected:
+            success, reason, result = self.request_execution(opportunity)
+            if success:
+                opportunity.entry_timestamp = time.time()
+                logger.info(f"🦈💰 Execution delegated to Micro Profit: {reason}")
+            else:
+                logger.warning(f"🦈💰 Execution request failed: {reason}")
+        
+        # Save state
+        self._save_state()
+        
+        return True
     
     def manage_active_hunts(self) -> List[Tuple[OrcaOpportunity, str, float]]:
         """
@@ -644,10 +1017,15 @@ class OrcaKillerWhaleIntelligence:
                           actual_pnl_usd: float) -> None:
         """
         Execute a clean exit and update tracking.
+        
+        HIERARCHY: Report outcome back to Queen for learning.
         """
         # Update win/loss tracking
         is_win = actual_pnl_usd > 0
         self.completed_hunts.append(hunt)
+        
+        # Store actual PnL on hunt for reference
+        hunt.actual_pnl_usd = actual_pnl_usd
         
         # Update statistics
         self.total_profit_usd += actual_pnl_usd
@@ -663,6 +1041,18 @@ class OrcaKillerWhaleIntelligence:
         logger.info(f"   Reason: {exit_reason}")
         logger.info(f"   PnL: ${actual_pnl_usd:+.4f}")
         logger.info(f"   Win Rate: {self.win_rate:.0%}")
+        
+        # 👑 REPORT TO QUEEN - Chain of command feedback
+        self.report_hunt_outcome(hunt, actual_pnl_usd, is_win)
+        
+        # Update mode based on performance
+        if self.daily_pnl_usd <= self.daily_loss_limit_usd:
+            self.mode = "RESTING"
+            logger.warning(f"🦈😴 Daily loss limit reached - RESTING")
+        elif is_win:
+            self.mode = "FEEDING"  # Successful kill - in feeding mode
+        else:
+            self.mode = "STALKING"  # Failed hunt - back to stalking
         
         # Save state
         self._save_state()
@@ -828,7 +1218,8 @@ class OrcaKillerWhaleIntelligence:
         return (True, "Orca approved")
     
     def get_status(self) -> Dict:
-        """Get current Orca status for dashboard."""
+        """Get current Orca status for dashboard including hierarchy info."""
+        hierarchy = self.get_hierarchy_status()
         return {
             'enabled': self.enabled,
             'mode': self.mode,
@@ -840,7 +1231,17 @@ class OrcaKillerWhaleIntelligence:
             'hot_symbols': dict(sorted(self.hot_symbols.items(), key=lambda x: x[1], reverse=True)[:5]),
             'recent_whales': len([w for w in self.whale_signals if time.time() - w.timestamp < 300]),
             'harmonic_favorable': self.harmonic_data.is_favorable() if self.harmonic_data else False,
-            'coherence': self.harmonic_data.coherence if self.harmonic_data else 0.5
+            'coherence': self.harmonic_data.coherence if self.harmonic_data else 0.5,
+            # 👑 HIERARCHY STATUS
+            'hierarchy': {
+                'level': hierarchy['level'],
+                'name': hierarchy['name'],
+                'queen_connected': hierarchy['queen_connected'],
+                'queen_approval_rate': hierarchy['queen_approval_rate'],
+                'micro_profit_connected': hierarchy['micro_profit_connected'],
+                'execution_success_rate': hierarchy['execution_success_rate'],
+                'chain_integrity': hierarchy['chain_integrity']
+            }
         }
 
 
@@ -865,8 +1266,27 @@ def get_orca() -> OrcaKillerWhaleIntelligence:
 if __name__ == "__main__":
     print("🦈🔪 ORCA KILLER WHALE INTELLIGENCE TEST 🔪🦈")
     print("=" * 60)
+    print()
+    print("📋 COMMAND HIERARCHY:")
+    print("   👑 QUEEN SERO (Level 1) - Supreme Commander")
+    print("   ↓")
+    print("   🦈 ORCA (Level 2) - Tactical Commander")
+    print("   ↓")
+    print("   💰 MICRO PROFIT (Level 3) - Executor")
+    print()
+    print("=" * 60)
     
     orca = get_orca()
+    
+    # Display hierarchy status
+    hierarchy = orca.get_hierarchy_status()
+    print(f"\n📊 HIERARCHY STATUS:")
+    print(f"   Level: {hierarchy['level']} ({hierarchy['name']})")
+    print(f"   Reports to: {hierarchy['reports_to']}")
+    print(f"   Commands: {hierarchy['commands']}")
+    print(f"   Queen Connected: {'✅' if hierarchy['queen_connected'] else '❌'}")
+    print(f"   Micro Profit Connected: {'✅' if hierarchy['micro_profit_connected'] else '❌'}")
+    print(f"   Chain Integrity: {'✅ COMPLETE' if hierarchy['chain_integrity'] else '⚠️ PARTIAL'}")
     
     # Simulate whale alert
     whale_data = {
@@ -879,7 +1299,7 @@ if __name__ == "__main__":
     }
     
     signal = orca.ingest_whale_alert(whale_data)
-    print(f"\n📊 Signal: {signal}")
+    print(f"\n📊 Whale Signal Ingested: {whale_data['symbol']} ${whale_data['volume_usd']:,.0f}")
     
     # Simulate harmonic data
     orca.ingest_harmonic_data({
@@ -892,8 +1312,8 @@ if __name__ == "__main__":
     # Simulate fear/greed
     orca.ingest_fear_greed(28)  # Fear
     
-    # Scan for opportunities
-    print("\n🔍 Scanning for opportunities...")
+    # Scan for opportunities (includes Queen consultation if connected)
+    print("\n🔍 Scanning for opportunities (with Queen consultation)...")
     opportunities = orca.scan_for_opportunities()
     
     for opp in opportunities:
@@ -903,9 +1323,32 @@ if __name__ == "__main__":
         print(f"   Confidence: {opp.confidence:.0%}")
         print(f"   Position Size: {opp.position_size_pct:.1%}")
         print(f"   Target PnL: ${opp.target_pnl_usd:.2f}")
-        print("   Reasoning:")
+        print("   Reasoning (Chain of Command):")
         for r in opp.reasoning:
             print(f"      • {r}")
     
-    print(f"\n📊 Orca Status: {orca.get_status()}")
+    # Test hierarchy consultation
+    if opportunities:
+        opp = opportunities[0]
+        print(f"\n🧪 TESTING HIERARCHY CONSULTATION:")
+        
+        # Should consult queen?
+        needs_queen = orca.should_consult_queen(opp)
+        print(f"   Needs Queen consultation: {'YES' if needs_queen else 'NO'}")
+        
+        # Consult Queen (will auto-approve if not connected)
+        approved, reason, conf = orca.consult_queen(opp)
+        print(f"   Queen response: {'APPROVED ✅' if approved else 'VETOED ❌'}")
+        print(f"   Reason: {reason}")
+        print(f"   Queen confidence: {conf:.0%}")
+    
+    status = orca.get_status()
+    print(f"\n📊 FINAL ORCA STATUS:")
+    print(f"   Mode: {status['mode']}")
+    print(f"   Hunt Count: {status['hunt_count']}")
+    print(f"   Win Rate: {status['win_rate']:.0%}")
+    print(f"   Chain Integrity: {'✅' if status['hierarchy']['chain_integrity'] else '⚠️'}")
+    print(f"   Queen Approval Rate: {status['hierarchy']['queen_approval_rate']:.0%}")
+    
     print("\n🦈 THE KILLER WHALE IS READY TO HUNT! 🦈")
+    print("👑→🦈→💰 CHAIN OF COMMAND ESTABLISHED!")

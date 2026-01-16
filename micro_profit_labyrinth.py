@@ -5462,6 +5462,7 @@ class MicroProfitLabyrinth:
             print(f"🔐🌐 Enigma Integration: ❌ NOT AVAILABLE (import={ENIGMA_INTEGRATION_AVAILABLE})")
         
         # 🦈🔪 ORCA KILLER WHALE INTELLIGENCE - Ride the whale wakes!
+        # HIERARCHY: 👑 QUEEN → 🦈 ORCA → 💰 MICRO PROFIT
         self.orca = None
         try:
             from aureon_orca_intelligence import get_orca
@@ -5471,6 +5472,18 @@ class MicroProfitLabyrinth:
                 print(f"   🎯 Mode: {self.orca.mode}")
                 print(f"   🔪 Strategy: Detect whales → Ride wake → Exit before crash")
                 print(f"   💰 Philosophy: We don't swim with whales - we EAT them!")
+                
+                # 👑🦈 WIRE QUEEN → ORCA HIERARCHY
+                if self.queen:
+                    self.orca.wire_queen(self.queen)
+                    print("   👑→🦈 HIERARCHY: Queen→Orca chain ESTABLISHED")
+                
+                # 🦈💰 WIRE ORCA → MICRO PROFIT HIERARCHY
+                self.orca.wire_micro_profit(self)
+                print("   🦈→💰 HIERARCHY: Orca→MicroProfit chain ESTABLISHED")
+                
+                hierarchy = self.orca.get_hierarchy_status()
+                print(f"   📊 Chain Integrity: {'✅ COMPLETE' if hierarchy['chain_integrity'] else '⚠️ PARTIAL'}")
         except ImportError:
             print("🦈🔪 Orca Intelligence: ❌ NOT AVAILABLE (aureon_orca_intelligence.py missing)")
         except Exception as e:
@@ -14306,6 +14319,98 @@ if __name__ == "__main__":
                         f"pnl: ${top.expected_pnl_usd:.4f})")
         
         return opportunities
+    
+    # ═══════════════════════════════════════════════════════════════════════════
+    # 🦈💰 ORCA → MICRO PROFIT EXECUTION INTERFACE
+    # HIERARCHY: Orca (tactical) commands Micro Profit (executor)
+    # ═══════════════════════════════════════════════════════════════════════════
+    
+    def execute_orca_order(self, order: Dict) -> Dict:
+        """
+        Execute an order from Orca Intelligence.
+        
+        HIERARCHY: Orca is the tactical commander, Micro Profit is the executor.
+        
+        Args:
+            order: Dict with keys:
+                - symbol: Trading pair (e.g., 'BTC/USD')
+                - side: 'buy' or 'sell'
+                - confidence: 0-1 confidence score
+                - target_pnl_usd: Target profit in USD
+                - position_size_pct: Position size as % of capital
+                - orca_hunt_id: Unique hunt identifier
+        
+        Returns:
+            Dict with status and execution details
+        """
+        hunt_id = order.get('orca_hunt_id', 'unknown')
+        symbol = order.get('symbol', '')
+        side = order.get('side', 'buy')
+        confidence = order.get('confidence', 0.5)
+        target_pnl = order.get('target_pnl_usd', 0.10)
+        
+        logger.info(f"🦈💰 ORCA ORDER RECEIVED: {hunt_id}")
+        logger.info(f"   Symbol: {symbol} | Side: {side.upper()}")
+        logger.info(f"   Confidence: {confidence:.0%} | Target: ${target_pnl:.2f}")
+        
+        # Parse symbol to get base/quote
+        if '/' in symbol:
+            base, quote = symbol.split('/')
+        else:
+            base = symbol
+            quote = 'USD'
+        
+        try:
+            # Create a MicroOpportunity from the Orca order
+            from_asset = base if side == 'sell' else quote
+            to_asset = quote if side == 'sell' else base
+            
+            # Calculate amount based on confidence and available balance
+            # This will be determined by actual balance later in execute_conversion
+            estimated_amount = order.get('position_size_pct', 0.02) * 100  # Rough estimate
+            
+            # Build opportunity for the existing execution pipeline
+            opp = MicroOpportunity(
+                from_asset=from_asset,
+                to_asset=to_asset,
+                from_amount=estimated_amount,  # Will be recalculated
+                expected_pnl_usd=target_pnl,
+                confidence=confidence,
+                source_exchange='alpaca',  # Default to Alpaca for Orca orders
+                source='orca_intelligence',
+                from_value_usd=estimated_amount
+            )
+            
+            # Add Orca reasoning to opportunity
+            opp.reasoning = order.get('reasoning', [f'Orca hunt: {hunt_id}'])
+            
+            # Track this as Orca-sourced
+            opp.orca_hunt_id = hunt_id
+            
+            # Queue for execution (will be picked up in main loop)
+            if not hasattr(self, 'orca_pending_orders'):
+                self.orca_pending_orders = []
+            self.orca_pending_orders.append(opp)
+            
+            logger.info(f"🦈💰 Orca order QUEUED: {from_asset}→{to_asset}")
+            
+            return {
+                'status': 'delegated',
+                'hunt_id': hunt_id,
+                'from_asset': from_asset,
+                'to_asset': to_asset,
+                'queued': True,
+                'reason': 'Order queued for execution in main loop'
+            }
+            
+        except Exception as e:
+            logger.error(f"🦈💰 Orca order FAILED: {e}")
+            return {
+                'status': 'error',
+                'hunt_id': hunt_id,
+                'error': str(e),
+                'reason': f'Execution error: {e}'
+            }
     
     async def execute_conversion(self, opp: MicroOpportunity) -> bool:
         """Execute a conversion (dry run or live)."""

@@ -2083,12 +2083,12 @@
       "win_rate": 0.0
     },
     "ETH\u2192LTC": {
-      "trades": 246,
-      "wins": 14,
-      "losses": 232,
+      "trades": 255,
+      "wins": 20,
+      "losses": 235,
       "total_profit": 7.381025999229854,
       "total_loss": 0.0,
-      "win_rate": 5.691056910569105
+      "win_rate": 7.8431372549019605
     },
     "USD\u2192BTC": {
       "trades": 616,
@@ -2147,12 +2147,12 @@
       "win_rate": 2.3255813953488373
     },
     "ETH\u2192BCH": {
-      "trades": 243,
-      "wins": 12,
-      "losses": 231,
+      "trades": 266,
+      "wins": 32,
+      "losses": 234,
       "total_profit": 19.194101743080004,
       "total_loss": 0.0,
-      "win_rate": 4.938271604938271
+      "win_rate": 12.030075187969924
     },
     "USD\u2192AVAX": {
       "trades": 617,
@@ -3603,36 +3603,36 @@
       "win_rate": 0.0
     },
     "ETH\u2192LINK": {
-      "trades": 235,
-      "wins": 3,
-      "losses": 232,
+      "trades": 246,
+      "wins": 12,
+      "losses": 234,
       "total_profit": 5.36022396703125,
       "total_loss": 0.007733435359998708,
-      "win_rate": 1.276595744680851
+      "win_rate": 4.878048780487805
     },
     "ETH\u2192USDC": {
-      "trades": 238,
-      "wins": 6,
-      "losses": 232,
+      "trades": 252,
+      "wins": 17,
+      "losses": 235,
       "total_profit": 0.5232177035585407,
       "total_loss": 0.0,
-      "win_rate": 2.5210084033613445
+      "win_rate": 6.746031746031746
     },
     "ETH\u2192USD": {
-      "trades": 232,
-      "wins": 0,
-      "losses": 232,
-      "total_profit": 0,
+      "trades": 236,
+      "wins": 1,
+      "losses": 235,
+      "total_profit": 0.0,
       "total_loss": 0.0,
-      "win_rate": 0.0
+      "win_rate": 0.423728813559322
     },
     "ETH\u2192USDT": {
-      "trades": 257,
-      "wins": 24,
-      "losses": 233,
+      "trades": 286,
+      "wins": 50,
+      "losses": 236,
       "total_profit": 2.583767898606539,
       "total_loss": 0.0,
-      "win_rate": 9.33852140077821
+      "win_rate": 17.482517482517483
     },
     "ETH\u2192ZUSD": {
       "trades": 231,
@@ -3667,12 +3667,12 @@
       "win_rate": 0.0
     },
     "ETH\u2192UNI": {
-      "trades": 250,
-      "wins": 19,
-      "losses": 231,
+      "trades": 277,
+      "wins": 43,
+      "losses": 234,
       "total_profit": 33.775381180072294,
       "total_loss": 0.0,
-      "win_rate": 7.6
+      "win_rate": 15.523465703971121
     },
     "ETH\u2192XRP": {
       "trades": 231,
@@ -3683,12 +3683,12 @@
       "win_rate": 0.0
     },
     "ETH\u2192CRV": {
-      "trades": 231,
-      "wins": 0,
+      "trades": 232,
+      "wins": 1,
       "losses": 231,
-      "total_profit": 0,
+      "total_profit": 0.0,
       "total_loss": 0.0,
-      "win_rate": 0.0
+      "win_rate": 0.43103448275862066
     },
     "ETH\u2192XTZ": {
       "trades": 231,
@@ -4291,5 +4291,5 @@
       "win_rate": 100.0
     }
   },
-  "last_saved": "2026-01-16T00:14:33.735532"
+  "last_saved": "2026-01-16T00:50:24.457392"
 }
