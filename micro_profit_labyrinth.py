@@ -35,10 +35,6 @@ if sys.platform == 'win32':
         import io
         import atexit
         
-        # Keep references to original streams for cleanup
-        _original_stdout = sys.stdout
-        _original_stderr = sys.stderr
-        
         def _is_utf8_wrapper(stream):
             """Check if stream is already a UTF-8 TextIOWrapper."""
             return (isinstance(stream, io.TextIOWrapper) and 
@@ -46,23 +42,29 @@ if sys.platform == 'win32':
                     stream.encoding and 
                     stream.encoding.lower().replace('-', '') == 'utf8')
         
-        # Only wrap if not already UTF-8 wrapped
+        # ONLY wrap stdout (NOT stderr to prevent closure issues)
         if hasattr(sys.stdout, 'buffer') and not _is_utf8_wrapper(sys.stdout):
-            sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace', line_buffering=True)
-        if hasattr(sys.stderr, 'buffer') and not _is_utf8_wrapper(sys.stderr):
-            sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace', line_buffering=True)
-        
-        def _restore_streams():
-            """Restore original streams on exit to prevent 'lost sys.stderr' errors."""
             try:
-                if sys.stdout != _original_stdout:
-                    sys.stdout.flush()
-                if sys.stderr != _original_stderr:
-                    sys.stderr.flush()
+                sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace', line_buffering=True)
             except Exception:
                 pass
         
-        atexit.register(_restore_streams)
+        def _final_cleanup():
+            """Final cleanup to suppress stderr issues on exit."""
+            try:
+                if hasattr(sys.stdout, 'flush'):
+                    sys.stdout.flush()
+            except Exception:
+                pass
+            # Suppress any remaining stderr errors by redirecting to devnull
+            try:
+                if hasattr(sys.stderr, 'close'):
+                    import os as _os
+                    sys.stderr = open(_os.devnull, 'w')
+            except Exception:
+                pass
+        
+        atexit.register(_final_cleanup)
     except Exception:
         pass
 
@@ -18574,20 +18576,23 @@ async def main():
 if __name__ == "__main__":
     try:
         asyncio.run(main())
+    except KeyboardInterrupt:
+        # User stopped the program
+        pass
     except Exception as e:
         # Catch any final exceptions silently to prevent stderr issues
-        if "closed file" not in str(e).lower():
+        error_str = str(e).lower()
+        if "closed file" not in error_str and "lost sys" not in error_str:
             try:
-                print(f"\n❌ Error: {e}", file=sys.stderr)
+                print(f"\n❌ Error: {e}")
             except Exception:
                 pass
     finally:
-        # Force cleanup on Windows to prevent "lost sys.stderr"
-        if sys.platform == 'win32':
-            try:
-                if hasattr(sys.stdout, 'flush'):
-                    sys.stdout.flush()
-                if hasattr(sys.stderr, 'flush'):
-                    sys.stderr.flush()
-            except Exception:
-                pass
+        # Final cleanup - suppress all exceptions
+        try:
+            if sys.platform == 'win32':
+                # Windows: redirect stderr to devnull to suppress closure errors
+                import os as _os_cleanup
+                sys.stderr = open(_os_cleanup.devnull, 'w')
+        except Exception:
+            pass

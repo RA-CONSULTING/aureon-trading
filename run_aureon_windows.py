@@ -31,14 +31,10 @@ def main():
     
     # Set Windows-specific environment variables
     os.environ['PYTHONIOENCODING'] = 'utf-8'
-    
-    # For asyncio on Windows, use ProactorEventLoop if available
-    # This prevents many stream closure issues
-    if sys.platform == 'win32':
-        os.environ['PYTHONUNBUFFERED'] = '1'  # Unbuffered output
+    os.environ['PYTHONUNBUFFERED'] = '1'  # Unbuffered output
     
     # Build command
-    cmd = [sys.executable, 'micro_profit_labyrinth.py'] + sys.argv[1:]
+    cmd = [sys.executable, '-u', 'micro_profit_labyrinth.py'] + sys.argv[1:]
     
     print("🪟 AUREON WINDOWS LAUNCHER")
     print("=" * 60)
@@ -50,7 +46,12 @@ def main():
     
     try:
         # Run with proper error handling
-        result = subprocess.run(cmd, capture_output=False)
+        # Windows: Use CREATE_NEW_PROCESS_GROUP to isolate streams
+        kwargs = {}
+        if sys.platform == 'win32':
+            kwargs['creationflags'] = subprocess.CREATE_NEW_PROCESS_GROUP if hasattr(subprocess, 'CREATE_NEW_PROCESS_GROUP') else 0x00000200
+        
+        result = subprocess.run(cmd, capture_output=False, **kwargs)
         sys.exit(result.returncode)
     except KeyboardInterrupt:
         print("\n\n⏹️  Stopped by user (Ctrl+C)")
