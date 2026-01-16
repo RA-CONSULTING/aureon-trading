@@ -38,36 +38,23 @@ try:
 except ImportError:
     GTTS_AVAILABLE = False
 
-# Skip pygame completely on Windows to avoid hanging
-import sys
-if sys.platform == 'win32':
+# Debug: Track where we are
+safe_print("🔊 [DEBUG] Starting pygame import...")
+
+try:
+    import pygame
+    safe_print("🔊 [DEBUG] pygame imported, now calling mixer.init()...")
+    
+    # Try with specific driver settings for Windows
+    import os
+    os.environ['SDL_AUDIODRIVER'] = 'dummy'  # Use dummy driver to avoid hanging
+    
+    pygame.mixer.init()
+    safe_print("🔊 [DEBUG] mixer.init() completed!")
+    PYGAME_AVAILABLE = True
+except Exception as e:
     PYGAME_AVAILABLE = False
-    safe_print("⚠️ Audio disabled on Windows - Queen's voice will be text-only")
-else:
-    try:
-        import pygame
-        import threading
-        
-        # Use timeout to prevent hanging
-        def _init_pygame_mixer():
-            try:
-                pygame.mixer.init()
-                return True
-            except Exception:
-                return False
-        
-        _mixer_thread = threading.Thread(target=_init_pygame_mixer, daemon=True)
-        _mixer_thread.start()
-        _mixer_thread.join(timeout=2.0)  # 2 second timeout
-        
-        if _mixer_thread.is_alive():
-            PYGAME_AVAILABLE = False
-            safe_print("⚠️ Audio initialization timed out - Queen's voice will be text-only")
-        else:
-            PYGAME_AVAILABLE = True
-    except Exception:
-        PYGAME_AVAILABLE = False
-        safe_print("⚠️ Audio output not available (no audio device) - Queen's voice will be text-only")
+    safe_print(f"⚠️ Audio output not available: {e} - Queen's voice will be text-only")
 
 TTS_AVAILABLE = GTTS_AVAILABLE and PYGAME_AVAILABLE
 
