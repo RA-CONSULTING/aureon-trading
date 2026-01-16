@@ -39,8 +39,7 @@ if sys.platform == 'win32':
         import io
         if hasattr(sys.stdout, 'buffer'):
             sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace', line_buffering=True)
-        if hasattr(sys.stderr, 'buffer'):
-            # sys.stderr = io.TextIOWrapper(...)  # DISABLED - causes Windows exit errors
+        # Skip stderr wrapping - causes Windows exit errors
     except Exception:
         pass
 
