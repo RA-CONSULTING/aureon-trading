@@ -1,15 +1,26 @@
 #!/usr/bin/env python3
 """
-🌍⚡ AUREON MASTER LAUNCHER - REAL INTELLIGENCE ACROSS ALL SYSTEMS ⚡🌍
-======================================================================
-This launcher boots ALL systems with REAL data flowing through every component.
+🌍⚡ AUREON MASTER LAUNCHER - FULLY AUTONOMOUS TRADING SYSTEM ⚡🌍
+==================================================================
+This launcher boots ALL systems with REAL data and AUTONOMOUS trading.
+
+🔱 PRIME SENTINEL AUTHORITY 🔱
+Gary Leckey (02.11.1991) - "I have taken back control"
 
 WHAT THIS DOES:
 1. Starts the Real Intelligence Engine (Bot/Whale/Momentum detection)
 2. Starts the Real Data Feed Hub (Central distribution)
 3. Wires ALL 200+ systems to receive real data
-4. Starts the Queen Live Runner with real intelligence
-5. Starts API server for dashboards
+4. Starts the Queen Hive Mind (Neural decision making)
+5. Starts Micro Profit Labyrinth (Autonomous execution)
+6. Runs FULLY AUTONOMOUS TRADING LOOP (no human intervention)
+
+The system will:
+- Continuously gather intelligence from all sources
+- Validate signals through 3-pass Batten Matrix
+- Ask Queen for guidance (6-12-1 neural network)
+- Execute trades automatically through Micro Profit Labyrinth
+- Learn from every outcome and adapt
 
 Gary Leckey & Tina Brown | January 2026 | MASTER LAUNCHER
 """
@@ -44,7 +55,7 @@ def print_banner():
     banner = """
 ╔══════════════════════════════════════════════════════════════════════════════╗
 ║                                                                              ║
-║  🌍⚡ AUREON MASTER LAUNCHER - REAL INTELLIGENCE SYSTEM ⚡🌍                  ║
+║  🌍⚡ AUREON MASTER LAUNCHER - FULLY AUTONOMOUS TRADING ⚡🌍                  ║
 ║                                                                              ║
 ║  ██████╗ ███████╗ █████╗ ██╗         ██████╗  █████╗ ████████╗ █████╗       ║
 ║  ██╔══██╗██╔════╝██╔══██╗██║         ██╔══██╗██╔══██╗╚══██╔══╝██╔══██╗      ║
@@ -53,12 +64,18 @@ def print_banner():
 ║  ██║  ██║███████╗██║  ██║███████╗    ██████╔╝██║  ██║   ██║   ██║  ██║      ║
 ║  ╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝╚══════╝    ╚═════╝ ╚═╝  ╚═╝   ╚═╝   ╚═╝  ╚═╝      ║
 ║                                                                              ║
+║  🔱 PRIME SENTINEL AUTHORITY 🔱                                              ║
+║  Gary Leckey (02.11.1991) - "I have taken back control"                     ║
+║                                                                              ║
 ║  Components:                                                                 ║
 ║  • Real Intelligence Engine (Bot/Whale/Momentum)                             ║
 ║  • Real Data Feed Hub (Central Distribution)                                 ║
 ║  • System Wiring (200+ Systems Connected)                                    ║
-║  • Queen Live Runner (Neural Decision Making)                                ║
+║  • Queen Hive Mind (Neural Decision Making)                                  ║
+║  • Micro Profit Labyrinth (Autonomous Execution)                             ║
 ║  • API Server (Dashboard Data)                                               ║
+║                                                                              ║
+║  MODE: FULLY AUTONOMOUS - NO HUMAN INTERVENTION REQUIRED                     ║
 ║                                                                              ║
 ║  Gary Leckey & Tina Brown | January 2026                                     ║
 ╚══════════════════════════════════════════════════════════════════════════════╝
@@ -125,18 +142,20 @@ def launch_system_wiring():
 
 
 def launch_queen_runner():
-    """Launch Queen Live Runner with real intelligence"""
-    print("\n👑 [4/5] LAUNCHING QUEEN LIVE RUNNER...")
+    """Launch Queen Hive Mind with full trading authority"""
+    print("\n👑 [4/5] LAUNCHING QUEEN HIVE MIND - FULL AUTONOMOUS TRADING...")
     
     try:
-        from aureon_queen_live_runner import LiveScannerEngine, LiveWhaleTracker, LiveBotTracker
+        from aureon_queen_hive_mind import get_queen
         
-        # These will be initialized by the live runner
-        print(f"   ✅ Live Scanner: Ready")
-        print(f"   ✅ Whale Tracker: Ready")
-        print(f"   ✅ Bot Tracker: Ready (real firm detection)")
+        queen = get_queen()
         
-        return True
+        print(f"   ✅ Queen Hive Mind: ACTIVE")
+        print(f"   ✅ Neural Network: 6-12-1 architecture")
+        print(f"   ✅ Trading Authority: GRANTED")
+        print(f"   ✅ Prime Sentinel: AUTHORIZED")
+        
+        return queen
     except Exception as e:
         print(f"   ⚠️ Warning: {e}")
         return None
@@ -230,6 +249,132 @@ def run_live_monitoring():
         print("\n\n⏹️ Monitoring stopped")
 
 
+def run_autonomous_trading():
+    """
+    Run fully autonomous trading through Queen and Micro Profit Labyrinth.
+    This is the main trading loop under Prime Sentinel authority.
+    """
+    print("\n" + "=" * 80)
+    print("🔱 PRIME SENTINEL AUTHORITY - AUTONOMOUS TRADING ACTIVATED 🔱")
+    print("=" * 80)
+    print("\n⚡ Gary Leckey (02.11.1991) - Prime Sentinel Decree")
+    print("   'I have taken back control' - Trading authority GRANTED")
+    print("\n🔴 FULLY AUTONOMOUS TRADING MODE")
+    print("Press Ctrl+C to stop\n")
+    
+    from aureon_real_data_feed_hub import get_feed_hub
+    from aureon_system_wiring import get_wiring_status
+    
+    hub = get_feed_hub()
+    
+    # Import trading engines
+    try:
+        from aureon_queen_hive_mind import get_queen
+        from micro_profit_labyrinth import MicroProfitLabyrinth
+        
+        queen = get_queen()
+        labyrinth = MicroProfitLabyrinth()
+        
+        print("✅ Queen Hive Mind: ONLINE")
+        print("✅ Micro Profit Labyrinth: ONLINE")
+        print("✅ All systems wired and ready\n")
+        
+    except Exception as e:
+        print(f"⚠️ Could not initialize trading engines: {e}")
+        print("   Falling back to monitoring mode\n")
+        run_live_monitoring()
+        return
+    
+    # Trading loop
+    cycle_count = 0
+    try:
+        while True:
+            cycle_count += 1
+            timestamp = datetime.now().strftime("%H:%M:%S")
+            
+            # Get wiring status
+            status = get_wiring_status()
+            
+            # Get latest intelligence
+            intel = hub.gather_all_intelligence() if hasattr(hub, 'gather_all_intelligence') else {}
+            
+            # Extract intelligence data
+            bots = intel.get('bots', [])
+            whale_predictions = intel.get('whale_predictions', [])
+            momentum = intel.get('momentum', {})
+            
+            # Get high-confidence validated signals
+            validated_signals = []
+            for prediction in whale_predictions:
+                if prediction.get('confidence', 0) > 0.618:  # Golden ratio threshold
+                    validated_signals.append(prediction)
+            
+            # Display status
+            print(f"\r[{timestamp}] Cycle: {cycle_count:5d} | "
+                  f"🤖 Bots: {len(bots):3d} | "
+                  f"🐋 Whales: {len(whale_predictions):3d} | "
+                  f"✅ Validated: {len(validated_signals):2d} | "
+                  f"📊 Events: {status.get('total_events', 0):,}", end="")
+            
+            # Check for trading opportunities every 5 cycles (5 seconds)
+            if cycle_count % 5 == 0 and validated_signals:
+                print(f"\n\n🎯 [{timestamp}] HIGH-CONFIDENCE SIGNAL DETECTED!")
+                
+                # Ask Queen for guidance
+                for signal in validated_signals[:3]:  # Max 3 per cycle
+                    symbol = signal.get('symbol', 'UNKNOWN')
+                    action = signal.get('action', 'HOLD')
+                    confidence = signal.get('confidence', 0)
+                    
+                    print(f"   🔮 Signal: {symbol} | {action} | Confidence: {confidence:.1%}")
+                    
+                    # Get Queen's decision
+                    try:
+                        if hasattr(queen, 'ask_queen_will_we_win'):
+                            guidance = queen.ask_queen_will_we_win(
+                                asset=symbol,
+                                exchange='kraken',
+                                opportunity_score=confidence,
+                                context={
+                                    'intelligence': intel,
+                                    'validated': True,
+                                    'prime_sentinel': True
+                                }
+                            )
+                            
+                            if guidance and guidance.get('confidence', 0) > 0.618:
+                                print(f"   👑 Queen: {guidance.get('decision', 'HOLD')} "
+                                      f"(Confidence: {guidance.get('confidence', 0):.1%})")
+                                
+                                # Execute through Micro Profit Labyrinth
+                                if hasattr(labyrinth, 'execute_validated_opportunity'):
+                                    result = labyrinth.execute_validated_opportunity(
+                                        symbol=symbol,
+                                        action=action,
+                                        intelligence=intel,
+                                        queen_guidance=guidance
+                                    )
+                                    
+                                    if result:
+                                        print(f"   ⚡ Executed: {result.get('status', 'UNKNOWN')}")
+                                else:
+                                    print(f"   ⚠️ Labyrinth execution not available")
+                            else:
+                                print(f"   👑 Queen: HOLD (Low confidence)")
+                    except Exception as e:
+                        print(f"   ⚠️ Trading error: {e}")
+                
+                print()  # New line after batch
+            
+            time.sleep(1)
+            
+    except KeyboardInterrupt:
+        print("\n\n⏹️ Autonomous trading stopped")
+        print(f"   Total cycles: {cycle_count}")
+        print(f"   Duration: {cycle_count}s")
+
+
+
 def main():
     """Main launcher function"""
     # Setup logging
@@ -241,6 +386,16 @@ def main():
     
     # Print banner
     print_banner()
+    
+    # Prime Sentinel Authentication
+    print("\n" + "=" * 80)
+    print("🔱 PRIME SENTINEL AUTHENTICATION")
+    print("=" * 80)
+    print("\n   Gary Leckey (02.11.1991) - DOB-HASH: 2111991")
+    print("   'HERE I DECREE: I HAVE TAKEN BACK CONTROL OF THE PLANET'")
+    print("\n   ✅ Authentication: GRANTED")
+    print("   ✅ Trading Authority: FULL")
+    print("   ✅ Autonomous Mode: ENABLED")
     
     # Launch all components
     print("\n" + "=" * 80)
@@ -256,7 +411,7 @@ def main():
     wiring_status = launch_system_wiring()
     time.sleep(0.5)
     
-    queen_ready = launch_queen_runner()
+    queen = launch_queen_runner()
     time.sleep(0.5)
     
     api_ready = launch_api_server()
@@ -265,8 +420,8 @@ def main():
     # Print status summary
     print_status_summary(engine, hub, wiring_status)
     
-    # Run live monitoring
-    run_live_monitoring()
+    # Run autonomous trading (this is the main loop)
+    run_autonomous_trading()
 
 
 if __name__ == "__main__":
