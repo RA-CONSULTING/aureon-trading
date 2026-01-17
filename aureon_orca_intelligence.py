@@ -425,6 +425,91 @@ class OrcaKillerWhaleIntelligence:
         logger.info(f"   📊 Sub-10ms latency for whale wake riding")
         return True
     
+    def update_market_data(self, market_data: Dict) -> None:
+        """
+        Update Orca's market view from Micro Profit's data.
+        
+        HIERARCHY: Micro Profit feeds data UP to Orca for analysis.
+        
+        Args:
+            market_data: Dict with keys:
+                - prices: {asset: price_usd}
+                - ticker_cache: {symbol: {bid, ask, price, volume, ...}}
+                - balances: {asset: amount}
+                - momentum: {asset: momentum_pct}
+                - exchange: current exchange name
+        """
+        prices = market_data.get('prices', {})
+        ticker_cache = market_data.get('ticker_cache', {})
+        momentum = market_data.get('momentum', {})
+        balances = market_data.get('balances', {})
+        exchange = market_data.get('exchange', 'unknown')
+        
+        # Update symbol momentum from Micro Profit's tracking
+        for asset, mom in momentum.items():
+            self.symbol_momentum[f"{asset}/USD"] = mom / 100.0  # Convert to decimal
+        
+        # Detect "hot" symbols based on momentum + volume
+        now = time.time()
+        for symbol, data in ticker_cache.items():
+            if not isinstance(data, dict):
+                continue
+            
+            base = data.get('base', '')
+            price = data.get('price', 0) or data.get('last', 0)
+            volume = data.get('volume', 0) or 0
+            change_24h = data.get('change_24h', 0) or 0
+            
+            if not base or price <= 0:
+                continue
+            
+            # Calculate heat score based on:
+            # - Volume (whale activity)
+            # - 24h change (momentum)
+            # - Recent momentum
+            volume_score = min(1.0, (volume * price) / 100000)  # Normalize to 100k USD
+            change_score = abs(change_24h) / 5.0  # 5% = 1.0 score
+            mom_score = abs(momentum.get(base, 0)) / 0.5  # 0.5%/min = 1.0 score
+            
+            heat = volume_score + change_score + mom_score
+            
+            if heat > 1.0:  # Threshold for "hot"
+                self.hot_symbols[f"{base}/USD"] = heat
+        
+        # Look for whale-like activity (large volume spikes)
+        for symbol, data in ticker_cache.items():
+            if not isinstance(data, dict):
+                continue
+            
+            base = data.get('base', '')
+            volume = data.get('volume', 0) or 0
+            price = data.get('price', 0) or data.get('last', 0)
+            
+            if not base or price <= 0:
+                continue
+            
+            volume_usd = volume * price
+            
+            # Whale detection: High volume with strong momentum
+            mom = momentum.get(base, 0)
+            if volume_usd > 50000 and abs(mom) > 0.3:  # $50k+ volume, 0.3%+ momentum
+                whale = WhaleSignal(
+                    timestamp=now,
+                    symbol=f"{base}/USD",
+                    side='buy' if mom > 0 else 'sell',
+                    volume_usd=volume_usd,
+                    firm=None,
+                    firm_confidence=0.0,
+                    exchange=exchange,
+                    momentum_direction='bullish' if mom > 0 else 'bearish',
+                    ride_confidence=min(0.9, 0.5 + abs(mom)),
+                    suggested_action='buy' if mom > 0 else 'sell',
+                    target_pnl_pct=0.005  # 0.5% target
+                )
+                self.whale_signals.append(whale)
+        
+        logger.debug(f"🦈 Market data updated: {len(self.hot_symbols)} hot symbols, {len(self.whale_signals)} whale signals")
+    
     def consult_queen(self, opportunity: OrcaOpportunity) -> Tuple[bool, str, float]:
         """
         Consult the Queen for approval on a hunting opportunity.

@@ -5647,6 +5647,7 @@ class MicroProfitLabyrinth:
         # 🦈🔪 ORCA KILLER WHALE INTELLIGENCE - Ride the whale wakes!
         # HIERARCHY: 👑 QUEEN → 🦈 ORCA → 💰 MICRO PROFIT
         self.orca = None
+        self.orca_pending_orders = []  # Queue for Orca hunt orders
         try:
             from aureon_orca_intelligence import get_orca
             self.orca = get_orca()
@@ -9858,6 +9859,47 @@ class MicroProfitLabyrinth:
         
         safe_print(f"\n🎯 ═══ TURN {self.turns_completed + 1}: {icon} {current_exchange.upper()} ═══")
         
+        # ═══════════════════════════════════════════════════════════════════════════
+        # 🦈💰 PROCESS ORCA PENDING ORDERS FIRST!
+        # HIERARCHY: Orca (tactical) → Micro Profit (executor)
+        # ═══════════════════════════════════════════════════════════════════════════
+        if hasattr(self, 'orca_pending_orders') and self.orca_pending_orders:
+            orca_orders = list(self.orca_pending_orders)  # Copy to iterate safely
+            self.orca_pending_orders.clear()
+            
+            safe_print(f"   🦈💰 ORCA ORDERS: {len(orca_orders)} hunt(s) pending execution")
+            
+            for opp in orca_orders:
+                hunt_id = getattr(opp, 'orca_hunt_id', 'unknown')
+                safe_print(f"   🦈 Executing hunt {hunt_id}: {opp.from_asset}→{opp.to_asset}")
+                
+                try:
+                    # Execute the Orca order through standard pipeline
+                    success = await self.execute_conversion(opp)
+                    
+                    if success:
+                        safe_print(f"   🦈✅ Hunt {hunt_id} EXECUTED")
+                        # Report success to Orca
+                        if hasattr(self, 'orca') and self.orca:
+                            self.orca.report_hunt_outcome(
+                                hunt_id=hunt_id,
+                                success=True,
+                                profit_usd=opp.expected_pnl_usd,
+                                reason="Execution successful"
+                            )
+                    else:
+                        safe_print(f"   🦈❌ Hunt {hunt_id} FAILED")
+                        if hasattr(self, 'orca') and self.orca:
+                            self.orca.report_hunt_outcome(
+                                hunt_id=hunt_id,
+                                success=False,
+                                profit_usd=0,
+                                reason="Execution failed"
+                            )
+                except Exception as e:
+                    safe_print(f"   🦈⚠️ Hunt {hunt_id} ERROR: {e}")
+                    logger.warning(f"Orca order execution error: {e}")
+        
         # �💰 PROFIT HARVESTER - Check portfolio for harvestable profits!
         # Run every N turns on Alpaca to realize gains and get trading cash
         self.turns_since_harvest += 1
@@ -9937,6 +9979,41 @@ class MicroProfitLabyrinth:
                         safe_print(f"   🦁⚡ WINNER ENERGY: {WINNER_ENERGY_MULTIPLIER}x boost applied!")
             except Exception as e:
                 safe_print(f"   ⚠️ Animal Pack scan error: {e}")
+        
+        # ═══════════════════════════════════════════════════════════════════════════
+        # 🦈🔪 ORCA KILLER WHALE HUNT - Detect whales & queue hunt orders
+        # HIERARCHY: Orca scans → consults Queen → queues orders → Micro Profit executes
+        # ═══════════════════════════════════════════════════════════════════════════
+        if hasattr(self, 'orca') and self.orca:
+            try:
+                # Feed current market data to Orca
+                market_data = {
+                    'prices': self.prices,
+                    'ticker_cache': self.ticker_cache,
+                    'balances': self.exchange_balances.get(current_exchange, {}),
+                    'momentum': getattr(self, 'asset_momentum', {}),
+                    'exchange': current_exchange
+                }
+                
+                # Update Orca's market view
+                if hasattr(self.orca, 'update_market_data'):
+                    self.orca.update_market_data(market_data)
+                
+                # Scan for whale hunting opportunities
+                orca_opportunities = self.orca.scan_for_opportunities()
+                
+                if orca_opportunities:
+                    safe_print(f"   🦈🔪 ORCA HUNT: {len(orca_opportunities)} whale(s) detected!")
+                    
+                    # Process top opportunity (Orca handles Queen consultation)
+                    for opp in orca_opportunities[:1]:  # Process best one
+                        safe_print(f"      🎯 Target: {opp.symbol} | Confidence: {opp.confidence:.0%}")
+                        safe_print(f"      💰 Target P&L: ${opp.target_pnl_usd:.2f}")
+                        
+                        # Start hunt (this will consult Queen and queue for execution)
+                        self.orca.start_hunt(opp)
+            except Exception as e:
+                safe_print(f"   ⚠️ Orca scan error: {e}")
         
         # 🦆⚔️ QUACK COMMANDOS STATUS (every 20 turns)
         if self.turns_completed > 0 and self.turns_completed % 20 == 0 and self.quack_commandos:

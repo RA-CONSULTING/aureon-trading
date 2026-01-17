@@ -4,36 +4,36 @@
       "topic": "trending_coins",
       "source": "coingecko",
       "title": "Trending Coins Pattern",
-      "content": "Currently trending: DUSK, MET, XMR, SOL, XRP",
+      "content": "Currently trending: DUSK, MET, OWL, XMR, DASH",
       "relevance_score": 0.7,
-      "discovered_at": "2026-01-17T00:29:37.409050",
+      "discovered_at": "2026-01-17T01:10:43.781253",
       "applied": true
     },
     {
       "topic": "market_sentiment",
       "source": "coingecko",
       "title": "Global Market Sentiment",
-      "content": "BTC Dominance: 57.5%, 24h Change: -0.13%",
+      "content": "BTC Dominance: 57.5%, 24h Change: -0.15%",
       "relevance_score": 0.8,
-      "discovered_at": "2026-01-17T00:29:37.526259",
+      "discovered_at": "2026-01-17T01:10:43.903249",
       "applied": true
     },
     {
       "topic": "momentum_leaders",
       "source": "binance",
       "title": "Top Momentum Leaders",
-      "content": "Top gainers: {'CREAM': 65.354, 'DUSK': 57.143, 'XAI': 45.629, 'PNT': 45.228, 'PIVX': 23.223}",
+      "content": "Top gainers: {'DUSK': 66.93, 'CREAM': 65.354, 'PNT': 45.228, 'XAI': 42.494, 'AXS': 31.633}",
       "relevance_score": 0.85,
-      "discovered_at": "2026-01-17T00:29:37.866312",
+      "discovered_at": "2026-01-17T01:10:44.313987",
       "applied": true
     },
     {
       "topic": "volatility_analysis",
       "source": "kraken",
       "title": "Volatility Patterns",
-      "content": "24h volatility: XETHZUSD: 2.29%, SOLUSD: 3.72%, XXBTZUSD: 1.63%",
+      "content": "24h volatility: XETHZUSD: 2.10%, SOLUSD: 3.72%, XXBTZUSD: 1.63%",
       "relevance_score": 0.75,
-      "discovered_at": "2026-01-17T00:29:37.953022",
+      "discovered_at": "2026-01-17T01:10:44.450001",
       "applied": true
     }
   ],
@@ -47,11 +47,11 @@
         "Volatility Patterns",
         "Trending Coins Pattern"
       ],
-      "generated_at": "2026-01-17T00:29:37.955190",
+      "generated_at": "2026-01-17T01:10:44.459561",
       "applied": true,
       "measured_revenue": 0.0
     }
   ],
   "total_revenue": 0.0,
-  "last_updated": "2026-01-17T00:29:37.958206"
+  "last_updated": "2026-01-17T01:10:44.487173"
 }
