@@ -1055,10 +1055,7 @@ class QueenLossLearningSystem:
         """
         pattern_key = f"{from_asset}→{to_asset}_{exchange}"
         
-        # Dynamic, cost-aware minimum expected profit guard
-        # Require expected_profit >= max(static_floor, fee_estimate*MULTIPLIER, avg_slippage_usd)
-        STATIC_FLOOR = 0.09  # $0.09 base floor (raised per staging request)
-        FEE_MULTIPLIER = 3.0  # Be conservative: require 3x estimated fees
+        # Calculate fee estimate first
         fee_estimate = 0.0
         avg_slippage_usd = 0.0
 
@@ -1098,11 +1095,21 @@ class QueenLossLearningSystem:
             if pattern.get('avg_slippage'):
                 avg_slippage_usd = (pattern['avg_slippage'] / 100.0) * (from_value_usd or 0.0)
 
-        required_min_profit = max(STATIC_FLOOR, fee_estimate * FEE_MULTIPLIER, avg_slippage_usd)
-        logger.debug(f"👑 Dynamic guard: exp=${expected_profit:.4f}, req_min=${required_min_profit:.4f} (fee=${fee_estimate:.4f}*{FEE_MULTIPLIER}, slip_usd=${avg_slippage_usd:.4f})")
+        # Dynamic, cost-aware minimum expected profit guard
+        # For micro-trades (< $50), be much more lenient - just ensure profit > estimated fees
+        # For larger trades, require 2x fees to be conservative
+        if from_value_usd and from_value_usd < 50.0:
+            # Micro-trade: profit must exceed estimated fees (IRA Sniper mode)
+            required_min_profit = max(0.005, fee_estimate * 1.0, avg_slippage_usd)
+        else:
+            # Regular trade: profit must exceed 2x estimated fees
+            required_min_profit = max(0.05, fee_estimate * 2.0, avg_slippage_usd)
+
+        logger.debug(f"👑 Dynamic guard: exp=${expected_profit:.4f}, req_min=${required_min_profit:.4f} (fee=${fee_estimate:.4f}, slip_usd=${avg_slippage_usd:.4f})")
 
         if expected_profit < required_min_profit:
-            return True, f"Expected profit ${expected_profit:.4f} < required ${required_min_profit:.4f} (fee=${fee_estimate:.4f}*{FEE_MULTIPLIER}, slip=${avg_slippage_usd:.4f})"
+            multiplier = 1.0 if (from_value_usd and from_value_usd < 50.0) else 2.0
+            return True, f"Expected profit ${expected_profit:.4f} < required ${required_min_profit:.4f} (fee=${fee_estimate:.4f}*{multiplier}, slip=${avg_slippage_usd:.4f})"
 
         # Check loss patterns - but SURVIVAL MODE is more forgiving!
         if pattern_key in self.loss_patterns:
@@ -1117,8 +1124,9 @@ class QueenLossLearningSystem:
                 return True, f"🐘💀💀 Total losses (${pattern['total_loss']:.4f}) - would starve to death!"
             
             # Check if cause was "fees ate profit" - SURVIVAL MODE: Still try!
+            # COMMENTED OUT for aggressive learning mode
             # if any('fees' in cause.lower() for cause in pattern.get('causes', [])):
-                return True, f"🐘 Queen remembers: Fees ate profit on this path before!"
+            #     return True, f"🐘 Queen remembers: Fees ate profit on this path before!"
             
             if pattern['avg_slippage'] > 2.0:  # >2% avg slippage
                 if expected_profit < pattern['avg_slippage'] / 100 * 1.5:

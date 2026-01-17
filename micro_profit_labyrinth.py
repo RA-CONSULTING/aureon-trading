@@ -88,8 +88,10 @@ if os.getenv("AUREON_DEBUG_STARTUP") == "1":
 import asyncio
 import argparse
 import importlib
+import json
 import logging
 import time
+import uuid
 from dataclasses import dataclass, field, asdict
 from datetime import datetime
 from pathlib import Path
@@ -478,6 +480,16 @@ except ImportError as e:
     safe_print(f"⚠️ Alpaca Client not available: {e}")
     AlpacaClient = None
     ALPACA_AVAILABLE = False
+
+# Capital.com client
+try:
+    from capital_client import CapitalClient
+    safe_print("🏛️ Capital.com Client LOADED!")
+    CAPITAL_AVAILABLE = True
+except ImportError as e:
+    safe_print(f"⚠️ Capital.com Client not available: {e}")
+    CapitalClient = None
+    CAPITAL_AVAILABLE = False
 
 # Alpaca Fee Tracker - CRITICAL for preventing "death by 1000 cuts"
 try:
@@ -4281,6 +4293,7 @@ class MicroProfitLabyrinth:
         self.kraken = None
         self.binance = None
         self.alpaca = None
+        self.capital = None
         
         # Additional signal sources
         self.probability_nexus = None
@@ -4329,7 +4342,7 @@ class MicroProfitLabyrinth:
         # FPTP = Scan ALL exchanges, execute FIRST profitable opportunity!
         # ════════════════════════════════════════════════════════════════
         # 🦙 ALPACA-FOCUSED: Default to Alpaca-only. Other exchanges disabled.
-        self.exchange_order = ['alpaca'] if self.alpaca_only else ['alpaca', 'kraken', 'binance']  # Alpaca first!
+        self.exchange_order = ['alpaca'] if self.alpaca_only else ['binance', 'kraken', 'capital', 'alpaca']  # Multi-exchange order!
         self.current_exchange_index = 0  # Which exchange's turn
         self.turns_completed = 0  # Total turns completed
         self.fptp_mode = True  # 🏁 First Past The Post mode - capture profit IMMEDIATELY! (Default: True)
@@ -4337,6 +4350,7 @@ class MicroProfitLabyrinth:
             'kraken': {'scans': 0, 'opportunities': 0, 'conversions': 0, 'profit': 0.0, 'last_turn': None},
             'alpaca': {'scans': 0, 'opportunities': 0, 'conversions': 0, 'profit': 0.0, 'last_turn': None},
             'binance': {'scans': 0, 'opportunities': 0, 'conversions': 0, 'profit': 0.0, 'last_turn': None},
+            'capital': {'scans': 0, 'opportunities': 0, 'conversions': 0, 'profit': 0.0, 'last_turn': None},
         }
         self.turn_cooldown_seconds = 0.05  # ⚡ TURBO: 50ms between exchanges (was 0.2)
         
@@ -4975,6 +4989,28 @@ class MicroProfitLabyrinth:
                 safe_print(f"⚠️ Alpaca Client error: {e}")
         else:
             safe_print("⚠️ Alpaca Client: Not configured")
+        
+        # ════════════════════════════════════════════════════════════════
+        # 🏛️ CAPITAL.COM CLIENT - CFD TRADING PLATFORM
+        # ════════════════════════════════════════════════════════════════
+        if not self.alpaca_only and CAPITAL_AVAILABLE and CapitalClient and CAPITAL_API_KEY:
+            try:
+                self.capital = CapitalClient()
+                safe_print("🏛️ Capital.com Client: WIRED (CFD Trading)")
+                # Test connection
+                if hasattr(self.capital, 'get_session'):
+                    session = self.capital.get_session()
+                    if session:
+                        safe_print("   🏛️ Capital.com API: ✅ Connected")
+                    else:
+                        safe_print("   🏛️ Capital.com API: ⚠️ Session check failed")
+            except Exception as e:
+                safe_print(f"⚠️ Capital.com Client error: {e}")
+                self.capital = None
+        elif self.alpaca_only:
+            safe_print("🏛️ Capital.com Client: ❌ DISABLED (Alpaca-focused mode)")
+        else:
+            safe_print("⚠️ Capital.com Client: Not configured")
         
         # ════════════════════════════════════════════════════════════════
         # � ALPACA FEE TRACKER - PREVENT "DEATH BY 1000 CUTS"
@@ -6733,6 +6769,34 @@ class MicroProfitLabyrinth:
             except Exception as e:
                 logger.error(f"Binance balance error: {e}")
                 self.exchange_data['binance'] = {'connected': False, 'error': str(e)}
+        
+        # ════════════════════════════════════════════════════════════════
+        # 🏛️ CAPITAL.COM BALANCES
+        # ════════════════════════════════════════════════════════════════
+        if self.capital:
+            try:
+                capital_bal = {}
+                if hasattr(self.capital, 'get_balance'):
+                    raw = self.capital.get_balance() or {}
+                    for asset, amount in raw.items():
+                        try:
+                            amount = float(amount)
+                        except (ValueError, TypeError):
+                            continue
+                        if amount > 0:
+                            capital_bal[asset] = amount
+                            combined[asset] = combined.get(asset, 0) + amount
+                
+                self.exchange_balances['capital'] = capital_bal
+                self.exchange_data['capital'] = {
+                    'connected': True,
+                    'balances': capital_bal,
+                    'total_value': sum(capital_bal.get(a, 0) * self.prices.get(a, 0) for a in capital_bal),
+                }
+                safe_print(f"   🏛️ Capital.com: {len(capital_bal)} assets")
+            except Exception as e:
+                logger.error(f"Capital.com balance error: {e}")
+                self.exchange_data['capital'] = {'connected': False, 'error': str(e)}
         
         # ════════════════════════════════════════════════════════════════
         # 🦙 ALPACA BALANCES
@@ -9380,7 +9444,7 @@ class MicroProfitLabyrinth:
         if not current:
             return "No exchanges"
         
-        icons = {'kraken': '🐙', 'alpaca': '🦙', 'binance': '🟡'}
+        icons = {'kraken': '🐙', 'alpaca': '🦙', 'binance': '🟡', 'capital': '🏛️'}
         turn_markers = []
         
         for ex in self.exchange_order:
@@ -9439,6 +9503,24 @@ class MicroProfitLabyrinth:
                     self.exchange_data['binance']['balances'] = binance_bal
             except Exception as e:
                 logger.error(f"Binance refresh error: {e}")
+
+        elif exchange == 'capital' and self.capital:
+            try:
+                capital_bal = {}
+                if hasattr(self.capital, 'get_balance'):
+                    raw = self.capital.get_balance() or {}
+                    for asset, amount in raw.items():
+                        try:
+                            amount = float(amount)
+                        except (ValueError, TypeError):
+                            continue
+                        if amount > 0:
+                            capital_bal[asset] = amount
+                self.exchange_balances['capital'] = capital_bal
+                if 'capital' in self.exchange_data:
+                    self.exchange_data['capital']['balances'] = capital_bal
+            except Exception as e:
+                logger.error(f"Capital.com refresh error: {e}")
 
         elif exchange == 'alpaca' and self.alpaca:
             try:
@@ -9919,7 +10001,7 @@ class MicroProfitLabyrinth:
         if not current_exchange:
             return [], 0
         
-        icons = {'kraken': '🐙', 'alpaca': '🦙', 'binance': '🟡'}
+        icons = {'kraken': '🐙', 'alpaca': '🦙', 'binance': '🟡', 'capital': '🏛️'}
         icon = icons.get(current_exchange, '📊')
         
         safe_print(f"\n🎯 ═══ TURN {self.turns_completed + 1}: {icon} {current_exchange.upper()} ═══")
@@ -14976,6 +15058,9 @@ if __name__ == "__main__":
             
             # Get confidence from Queen
             confidence = queen_guidance.get('confidence', 0.0) if queen_guidance else 0.0
+
+            # Trace ID for end-to-end audit
+            trace_id = str(uuid.uuid4())
             
             # Log the execution attempt
             logger.info(f"⚡ EXECUTING VALIDATED OPPORTUNITY:")
@@ -14985,19 +15070,55 @@ if __name__ == "__main__":
             
             # Create opportunity object
             opp = MicroOpportunity(
+                timestamp=time.time(),
                 from_asset=from_asset,
                 to_asset=to_asset,
                 from_amount=10.0,  # Will be adjusted by position sizing
+                from_value_usd=10.0,  # Approximate USD value
+                v14_score=6.0,  # Lower threshold for micro profits
+                hub_score=6.0,
+                commando_score=6.0,
+                combined_score=6.0,
                 expected_pnl_usd=0.01,  # Will be recalculated
-                confidence_score=confidence,
-                source_exchange='kraken',
-                path_type='direct',
-                detected_at=time.time()
+                expected_pnl_pct=0.001,  # 0.1% minimum
+                queen_confidence=confidence,
+                source_exchange='kraken'
             )
             
             # Store Queen's intelligence
             opp.queen_confidence = confidence
             opp.intelligence_data = intelligence
+            opp.trace_id = trace_id
+
+            # Audit: decision received and intelligence summary
+            try:
+                intel = intelligence or {}
+                intel_summary = {
+                    'total_sources': intel.get('total_sources', 0),
+                    'bots': len(intel.get('bots', [])) if isinstance(intel.get('bots', []), list) else 0,
+                    'whale_predictions': len(intel.get('whale_predictions', [])) if isinstance(intel.get('whale_predictions', []), list) else 0,
+                    'momentum_keys': list(intel.get('momentum', {}).keys()) if isinstance(intel.get('momentum', {}), dict) else [],
+                }
+                market_snapshot = {
+                    'from_asset': from_asset,
+                    'to_asset': to_asset,
+                    'from_price': self.prices.get(from_asset, 0),
+                    'to_price': self.prices.get(to_asset, 0),
+                }
+                self._audit_event(
+                    event_type='decision_received',
+                    payload={
+                        'trace_id': trace_id,
+                        'pair': f"{from_asset}/{to_asset}",
+                        'action': action,
+                        'confidence': confidence,
+                        'queen_guidance': queen_guidance or {},
+                        'intelligence_summary': intel_summary,
+                        'market_snapshot': market_snapshot,
+                    }
+                )
+            except Exception:
+                logger.debug("Decision audit failed", exc_info=True)
             
             # Execute via async conversion
             loop = asyncio.new_event_loop()
@@ -15006,13 +15127,24 @@ if __name__ == "__main__":
                 result = loop.run_until_complete(self.execute_conversion(opp))
             finally:
                 loop.close()
-            
+            validation = getattr(opp, 'execution_validation', None) or {}
+            verification = getattr(opp, 'execution_verification', None) or {}
+            order_ids = []
+            if isinstance(validation.get('order_ids'), list):
+                order_ids = [entry.get('order_id') for entry in validation.get('order_ids', []) if entry.get('order_id')]
+            real_execution_verified = bool(order_ids) if self.live else False
+
             return {
                 'status': 'executed' if result else 'failed',
                 'symbol': symbol,
                 'action': action,
                 'confidence': confidence,
-                'result': result
+                'trace_id': trace_id,
+                'result': result,
+                'order_ids': order_ids,
+                'real_execution_verified': real_execution_verified,
+                'validation': validation,
+                'verification': verification,
             }
             
         except Exception as e:
@@ -17042,9 +17174,61 @@ if __name__ == "__main__":
             safe_print(f"\n   ⚠️ VALIDATION INCOMPLETE - Review required")
         
         safe_print("   " + "═" * 60)
+
+    def _audit_event(self, event_type: str, payload: Dict[str, Any]) -> None:
+        """
+        Append an execution audit event to a JSONL file.
+        This is the anti-phantom ledger for real trade verification.
+        """
+        try:
+            record = {
+                'event': event_type,
+                'ts': time.time(),
+                'live': getattr(self, 'live', False),
+            }
+            if payload:
+                record.update(payload)
+
+            audit_path = Path(os.getenv('AUREON_AUDIT_PATH', 'execution_audit.jsonl'))
+            with audit_path.open('a', encoding='utf-8') as handle:
+                handle.write(json.dumps(record, ensure_ascii=False) + "\n")
+        except Exception:
+            logger.debug("Audit write failed", exc_info=True)
+
+    def audit_event(self, event_type: str, payload: Dict[str, Any]) -> None:
+        """Public wrapper for audit events (used by master launcher)."""
+        self._audit_event(event_type, payload)
     
     def _record_conversion(self, opp, buy_amount: float, validation: Dict = None, verification: Dict = None):
         """Record a successful conversion with STEP-BY-STEP realized profit tracking and ORDER VALIDATION."""
+        # Attach execution metadata to the opportunity for downstream audit
+        if validation is not None:
+            opp.execution_validation = validation
+        if verification is not None:
+            opp.execution_verification = verification
+
+        # Audit trail (non-phantom verification)
+        try:
+            order_ids = []
+            if validation and isinstance(validation.get('order_ids'), list):
+                order_ids = [entry.get('order_id') for entry in validation.get('order_ids', []) if entry.get('order_id')]
+            real_execution_verified = bool(order_ids) if self.live else False
+            self._audit_event(
+                event_type='execution_result',
+                payload={
+                    'trace_id': getattr(opp, 'trace_id', None),
+                    'pair': f"{opp.from_asset}/{opp.to_asset}",
+                    'exchange': validation.get('exchange') if validation else (opp.source_exchange or 'unknown'),
+                    'live': self.live,
+                    'executed': True,
+                    'real_execution_verified': real_execution_verified,
+                    'order_ids': order_ids,
+                    'validation': validation or {},
+                    'verification': verification or {},
+                }
+            )
+        except Exception:
+            logger.debug("Audit logging failed", exc_info=True)
         opp.executed = True
         self.conversions_made += 1
         self.conversions.append(opp)
@@ -17449,6 +17633,29 @@ if __name__ == "__main__":
         👑🎓 QUEEN LOSS LEARNING INTEGRATION:
         When we fail, we learn. We pull data, research tactics, and never forget.
         """
+        # Attach failure metadata for downstream audit
+        opp.execution_failure = {
+            'error': error_msg,
+            'validation': validation or {},
+        }
+
+        # Audit failure (anti-phantom)
+        try:
+            self._audit_event(
+                event_type='execution_failure',
+                payload={
+                    'trace_id': getattr(opp, 'trace_id', None),
+                    'pair': f"{opp.from_asset}/{opp.to_asset}",
+                    'exchange': opp.source_exchange or 'unknown',
+                    'live': self.live,
+                    'executed': False,
+                    'error': error_msg,
+                    'validation': validation or {},
+                }
+            )
+        except Exception:
+            logger.debug("Audit failure logging failed", exc_info=True)
+
         self.path_memory.record(opp.from_asset, opp.to_asset, False)
         
         if self.thought_bus:
@@ -18365,7 +18572,7 @@ if __name__ == "__main__":
         # 🎯 TURN-BASED EXCHANGE STATS
         # ════════════════════════════════════════════════════════════════
         safe_print("\n🎯 TURN-BASED EXCHANGE STATS:")
-        icons = {'kraken': '🐙', 'alpaca': '🦙', 'binance': '🟡'}
+        icons = {'kraken': '🐙', 'alpaca': '🦙', 'binance': '🟡', 'capital': '🏛️'}
         for exchange, stats in self.exchange_stats.items():
             if stats['scans'] > 0:  # Only show exchanges that were active
                 icon = icons.get(exchange, '📊')
@@ -18999,7 +19206,7 @@ async def main():
         engine.alpaca_only = False
         # Use env-configured order, fallback to sensible default
         if not hasattr(engine, 'exchange_order') or not engine.exchange_order:
-            engine.exchange_order = ['binance', 'kraken', 'capital', 'coinbase', 'alpaca']
+            engine.exchange_order = ['binance', 'kraken', 'capital', 'alpaca']
         safe_print("\n" + "🌐" * 35)
         safe_print("🌐 MULTI-EXCHANGE PRODUCTION MODE 🌐")
         safe_print(f"   → Execution order: {' → '.join(engine.exchange_order)}")

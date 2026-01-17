@@ -4,103 +4,73 @@
       "topic": "trending_coins",
       "source": "coingecko",
       "title": "Trending Coins Pattern",
-      "content": "Currently trending: AXS, BERA, FHE, RON, DUSK",
+      "content": "Currently trending: AXS, RON, GALA, BERA, LIT",
       "relevance_score": 0.7,
-      "discovered_at": "2026-01-17T14:52:59.521402",
-      "applied": true
+      "discovered_at": "2026-01-17T20:53:59.263397",
+      "applied": false
     },
     {
       "topic": "market_sentiment",
       "source": "coingecko",
       "title": "Global Market Sentiment",
-      "content": "BTC Dominance: 57.3%, 24h Change: 0.42%",
+      "content": "BTC Dominance: 57.3%, 24h Change: 0.19%",
       "relevance_score": 0.8,
-      "discovered_at": "2026-01-17T14:52:59.644736",
+      "discovered_at": "2026-01-17T20:53:59.387516",
       "applied": true
     },
     {
       "topic": "momentum_leaders",
       "source": "binance",
       "title": "Top Momentum Leaders",
-      "content": "Top gainers: {'AXS': 67.737, 'CREAM': 65.354, 'DUSK': 48.063, 'PNT': 45.228, 'BERA': 32.035}",
+      "content": "Top gainers: {'STO': 83.639, 'CREAM': 65.354, 'PNT': 45.228, 'AXS': 44.977, 'DUSK': 34.06}",
       "relevance_score": 0.85,
-      "discovered_at": "2026-01-17T14:53:00.207857",
+      "discovered_at": "2026-01-17T20:54:00.143947",
       "applied": true
     },
     {
-      "topic": "volatility_analysis",
-      "source": "kraken",
-      "title": "Volatility Patterns",
-      "content": "24h volatility: XETHZUSD: 1.82%, SOLUSD: 3.72%, XXBTZUSD: 1.43%",
-      "relevance_score": 0.75,
-      "discovered_at": "2026-01-17T14:53:00.664428",
-      "applied": true
-    },
-    {
-      "topic": "trending_coins",
-      "source": "coingecko",
-      "title": "Trending Coins Pattern",
-      "content": "Currently trending: AXS, BERA, RON, FHE, XMR",
-      "relevance_score": 0.7,
-      "discovered_at": "2026-01-17T14:58:10.616653",
-      "applied": true
-    },
-    {
-      "topic": "market_sentiment",
-      "source": "coingecko",
-      "title": "Global Market Sentiment",
-      "content": "BTC Dominance: 57.3%, 24h Change: 0.41%",
-      "relevance_score": 0.8,
-      "discovered_at": "2026-01-17T14:58:10.741728",
-      "applied": true
-    },
-    {
-      "topic": "momentum_leaders",
+      "topic": "volume_spike",
       "source": "binance",
-      "title": "Top Momentum Leaders",
-      "content": "Top gainers: {'AXS': 68.328, 'CREAM': 65.354, 'DUSK': 46.707, 'PNT': 45.228, 'BERA': 31.503}",
-      "relevance_score": 0.85,
-      "discovered_at": "2026-01-17T14:58:11.458674",
+      "title": "Volume Spike Detection",
+      "content": "High volume + price increase detected in 1 pairs",
+      "relevance_score": 0.9,
+      "discovered_at": "2026-01-17T20:54:00.143965",
       "applied": true
     },
     {
       "topic": "volatility_analysis",
       "source": "kraken",
       "title": "Volatility Patterns",
-      "content": "24h volatility: XETHZUSD: 1.82%, SOLUSD: 3.72%, XXBTZUSD: 1.43%",
+      "content": "24h volatility: XETHZUSD: 1.42%, SOLUSD: 1.52%, XXBTZUSD: 0.63%",
       "relevance_score": 0.75,
-      "discovered_at": "2026-01-17T14:58:11.909533",
+      "discovered_at": "2026-01-17T20:54:00.217713",
+      "applied": true
+    },
+    {
+      "topic": "combined_strategy",
+      "source": "queen_synthesis",
+      "title": "Queen's Synthesized Strategy",
+      "content": "Combined momentum + volume detection for optimal entry",
+      "relevance_score": 0.95,
+      "discovered_at": "2026-01-17T20:54:00.218757",
       "applied": true
     }
   ],
   "enhancements": [
     {
       "name": "queen_research_enhancement",
-      "description": "Auto-generated from 4 research findings",
+      "description": "Auto-generated from 5 research findings",
       "source_research": [
+        "Queen's Synthesized Strategy",
+        "Volume Spike Detection",
         "Top Momentum Leaders",
         "Global Market Sentiment",
-        "Volatility Patterns",
-        "Trending Coins Pattern"
+        "Volatility Patterns"
       ],
-      "generated_at": "2026-01-17T14:53:00.698934",
-      "applied": true,
-      "measured_revenue": 0.0
-    },
-    {
-      "name": "queen_research_enhancement",
-      "description": "Auto-generated from 4 research findings",
-      "source_research": [
-        "Top Momentum Leaders",
-        "Global Market Sentiment",
-        "Volatility Patterns",
-        "Trending Coins Pattern"
-      ],
-      "generated_at": "2026-01-17T14:58:11.923255",
+      "generated_at": "2026-01-17T20:54:00.219677",
       "applied": true,
       "measured_revenue": 0.0
     }
   ],
   "total_revenue": 0.0,
-  "last_updated": "2026-01-17T14:58:11.926672"
+  "last_updated": "2026-01-17T20:54:00.223080"
 }
