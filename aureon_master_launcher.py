@@ -273,10 +273,15 @@ def run_autonomous_trading():
         from micro_profit_labyrinth import MicroProfitLabyrinth
         
         queen = get_queen()
-        labyrinth = MicroProfitLabyrinth()
+        queen.has_full_control = True  # Prime Sentinel authority
+        queen.trading_enabled = True
         
-        print("✅ Queen Hive Mind: ONLINE")
+        labyrinth = MicroProfitLabyrinth()
+        labyrinth.dry_run = False  # 🔴 LIVE MODE - NO DRY RUN
+        
+        print("✅ Queen Hive Mind: ONLINE (Full Authority)")
         print("✅ Micro Profit Labyrinth: ONLINE")
+        print("🔴 LIVE MODE: Active (dry_run=False)")
         print("✅ All systems wired and ready\n")
         
     except Exception as e:
