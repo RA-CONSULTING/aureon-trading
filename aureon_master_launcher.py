@@ -188,6 +188,7 @@ def print_banner():
 ║  • Real Intelligence Engine (Bot/Whale/Momentum)                             ║
 ║  • Real Data Feed Hub (Central Distribution)                                 ║
 ║  • System Wiring (200+ Systems Connected)                                    ║
+║  • Mycelium Whale Sonar (Subsystem Monitoring)                               ║
 ║  • Queen Hive Mind (Neural Decision Making)                                  ║
 ║  • Micro Profit Labyrinth (Autonomous Execution)                             ║
 ║  • API Server (Dashboard Data)                                               ║
@@ -277,6 +278,28 @@ def launch_system_wiring():
         return None
 
 
+def launch_whale_sonar():
+    """Launch the Mycelium Whale Sonar for subsystem monitoring"""
+    print("\n🐋 [3.5/5] LAUNCHING MYCELIUM WHALE SONAR...")
+    
+    try:
+        from mycelium_whale_sonar import create_and_start_sonar
+        
+        sonar = create_and_start_sonar()
+        
+        if sonar:
+            print(f"   ✅ Whale Sonar: ACTIVE")
+            print(f"   ✅ Monitoring: system.*, execution.*, market.*, mycelium.*")
+            print(f"   ✅ Aggregation: 1s intervals, 5s windows")
+        else:
+            print(f"   ⚠️ Whale Sonar: Not available (ThoughtBus missing)")
+        
+        return sonar
+    except Exception as e:
+        print(f"   ⚠️ Warning: {e}")
+        return None
+
+
 def launch_queen_runner():
     """Launch Queen Hive Mind with full trading authority"""
     print("\n👑 [4/5] LAUNCHING QUEEN HIVE MIND - FULL AUTONOMOUS TRADING...")
@@ -320,7 +343,7 @@ def launch_api_server():
         return None
 
 
-def print_status_summary(engine, hub, wiring_status):
+def print_status_summary(engine, hub, wiring_status, sonar):
     """Print summary of what's running"""
     print("\n" + "=" * 80)
     print("🌍⚡ AUREON MASTER LAUNCHER - STATUS SUMMARY")
@@ -335,6 +358,14 @@ def print_status_summary(engine, hub, wiring_status):
     if wiring_status:
         print(f"   • Total Systems: {wiring_status['total_wired']}")
         print(f"   • Events Received: {wiring_status['total_events']}")
+    
+    print("\n🐋 WHALE SONAR:")
+    if sonar:
+        print("   • Status: ACTIVE")
+        print("   • Monitoring: All subsystems")
+        print("   • Aggregation: 1s intervals")
+    else:
+        print("   • Status: NOT AVAILABLE")
     
     print("\n📡 DATA FLOW:")
     print("   • intelligence.bot.* → Bot Tracking Systems")
@@ -664,6 +695,7 @@ def test_force_trade():
         engine = launch_real_intelligence()
         hub = launch_feed_hub()
         wiring_status = launch_system_wiring()
+        sonar = launch_whale_sonar()
         queen = launch_queen_runner()
         api_ready = launch_api_server()
         
@@ -792,6 +824,9 @@ def main():
     wiring_status = launch_system_wiring()
     time.sleep(0.5)
     
+    sonar = launch_whale_sonar()
+    time.sleep(0.5)
+    
     queen = launch_queen_runner()
     time.sleep(0.5)
     
@@ -799,7 +834,7 @@ def main():
     time.sleep(1)
     
     # Print status summary
-    print_status_summary(engine, hub, wiring_status)
+    print_status_summary(engine, hub, wiring_status, sonar)
     
     # Run autonomous trading (this is the main loop)
     run_autonomous_trading(engine=engine, hub=hub)

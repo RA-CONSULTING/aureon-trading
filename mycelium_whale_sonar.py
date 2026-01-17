@@ -420,3 +420,15 @@ def ensure_sonar(thought_bus: Any, sample_window: float = 5.0, agg_interval: flo
         logger.debug("WhaleSonar: could not attach sonar attribute to ThoughtBus instance")
     return ws
 
+
+def create_and_start_sonar(sample_window: float = 5.0, agg_interval: float = 1.0, queen_alert_threshold: float = 0.6) -> Optional[WhaleSonar]:
+    """Create and start a WhaleSonar instance, attaching to the global ThoughtBus if available."""
+    if not THOUGHT_BUS_AVAILABLE:
+        logger.warning("WhaleSonar: ThoughtBus not available, cannot start sonar")
+        return None
+    thought_bus = get_thought_bus()
+    if thought_bus is None:
+        logger.warning("WhaleSonar: ThoughtBus instance not available, cannot start sonar")
+        return None
+    return ensure_sonar(thought_bus, sample_window, agg_interval, queen_alert_threshold)
+

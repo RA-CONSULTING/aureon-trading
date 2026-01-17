@@ -110,5 +110,12 @@
     "actor": "auto_tagger",
     "timestamp": 1768515220.782654,
     "rule_name": "ghost_pattern"
+  },
+  "e6986560d787": {
+    "tag": "MEGA_WHALE",
+    "reason": "Volume exceeds $1M threshold - institutional threat",
+    "actor": "auto_tagger",
+    "timestamp": 1768684493.7049313,
+    "rule_name": "mega_whale"
   }
 }
