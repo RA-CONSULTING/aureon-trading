@@ -98,6 +98,82 @@ class FirmPattern:
     pattern_name: str
     occurrences: int = 0
     success_rate: float = 0.0
+    
+# ═══════════════════════════════════════════════════════════════════════════════
+# 🤖 BOT CENSUS REGISTRY 🤖
+# ═══════════════════════════════════════════════════════════════════════════════
+# The "Yellow Pages" of silicon lifeforms.
+# Tracks every known bot entity, its spectral signature, and cultural origin.
+
+@dataclass
+class BotCensusEntry:
+    bot_uuid: str
+    firm_id: str             # "CITADEL_SECURITIES", "UNKNOWN_WHALE"
+    cultural_origin: str     # "USA_Chicago", "Russia_Moscow"
+    primary_spectrum_band: str # "HIGH_FREQ", "INFRA_LOW"
+    
+    first_seen: float
+    last_seen: float
+    
+    frequency_fingerprint: List[float] # Key frequencies (Hz)
+    shape_class: str         # "HFT_SCALPER", "MM_SPOOFER"
+    
+    manipulation_score: float # 0.0 - 1.0 (How toxic is this bot?)
+    status: str              # "ACTIVE", "DORMANT", "BANNED"
+
+class BotCensusRegistry:
+    """
+    Central Registry for all identified autonomous agents.
+    """
+    def __init__(self, persistence_file="bot_census_registry.json"):
+        self.persistence_file = persistence_file
+        self.registry: Dict[str, BotCensusEntry] = {}
+        self.load()
+
+    def register_or_update(self, entry: BotCensusEntry):
+        """Register a new bot or update existing one."""
+        if entry.bot_uuid in self.registry:
+            existing = self.registry[entry.bot_uuid]
+            # Merge logic (keep oldest first_seen, update last_seen)
+            existing.last_seen = time.time()
+            existing.frequency_fingerprint = entry.frequency_fingerprint # Update signatures
+            existing.manipulation_score = (existing.manipulation_score + entry.manipulation_score) / 2
+            existing.status = "ACTIVE"
+            self.registry[entry.bot_uuid] = existing
+        else:
+            self.registry[entry.bot_uuid] = entry
+            
+        self.save()
+
+    def find_by_firm(self, firm_id: str) -> List[BotCensusEntry]:
+        return [b for b in self.registry.values() if b.firm_id == firm_id]
+
+    def find_by_spectrum(self, band: str) -> List[BotCensusEntry]:
+        return [b for b in self.registry.values() if b.primary_spectrum_band == band]
+
+    def load(self):
+        if os.path.exists(self.persistence_file):
+            try:
+                with open(self.persistence_file, 'r') as f:
+                    data = json.load(f)
+                    for k, v in data.items():
+                        self.registry[k] = BotCensusEntry(**v)
+            except Exception as e:
+                logger.error(f"Failed to load Bot Census: {e}")
+
+    def save(self):
+        # Rate limit saves in production
+        try:
+            with open(self.persistence_file, 'w') as f:
+                json.dump({k: asdict(v) for k, v in self.registry.items()}, f, indent=2)
+        except Exception as e:
+            logger.error(f"Failed to save Bot Census: {e}")
+
+# Global Registry Instance
+_registry_instance = BotCensusRegistry()
+
+def get_bot_census() -> BotCensusRegistry:
+    return _registry_instance
     avg_profit_pct: float = 0.0
     
     # Pattern characteristics

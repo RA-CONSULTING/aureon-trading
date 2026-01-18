@@ -76,6 +76,10 @@ class MoneyFlowEvent:
     beneficiaries: List[str]
     victims: List[str]
     
+    # Attributed Bots (Link to Census)
+    attributed_bots: List[str] # List of BotUUIDs from Registry
+    manipulation_vector: str   # "SPOOFING", "WASH_TRADING", "CHURNING"
+    
     # What
     amount_extracted_usd: float
     extraction_method: str
@@ -98,10 +102,41 @@ class MoneyFlowEvent:
     # Evidence
     evidence_sources: List[str]
     confidence: float
-    
-    # Correlation
-    correlated_bot_activity: List[str] = field(default_factory=list)
-    correlated_events: List[str] = field(default_factory=list)
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# 📜 HISTORICAL MANIPULATION EVIDENCE VAULT 📜
+# ═══════════════════════════════════════════════════════════════════════════════
+
+class DeepMoneyFlowVault:
+    def __init__(self, vault_path="deep_money_flow_vault.json"):
+        self.vault_path = vault_path
+        self.events: List[MoneyFlowEvent] = []
+        self.load()
+        
+    def add_event(self, event: MoneyFlowEvent):
+        self.events.append(event)
+        self.save()
+        
+    def find_by_perpetrator(self, name: str) -> List[MoneyFlowEvent]:
+        return [e for e in self.events if name in e.perpetrators]
+        
+    def save(self): 
+        # Convert dataclasses to dicts for JSON serialization
+        data = [asdict(e) for e in self.events]
+        with open(self.vault_path, 'w') as f:
+            json.dump(data, f, indent=2)
+            
+    def load(self):
+        if os.path.exists(self.vault_path):
+            try:
+                with open(self.vault_path, 'r') as f:
+                    data = json.load(f)
+                    self.events = [MoneyFlowEvent(**d) for d in data]
+            except Exception as e:
+                print(f"Error loading vault: {e}")
+                
+_vault_instance = DeepMoneyFlowVault()
+def get_money_flow_vault() -> DeepMoneyFlowVault: return _vault_instance
 
 
 @dataclass
@@ -116,6 +151,10 @@ class DeepAnalysisResult:
     timeline_events: List[Dict]
     bot_correlations: Dict[str, List[str]]
     recommendations: List[str]
+    
+    # Correlation
+    correlated_bot_activity: List[str] = field(default_factory=list)
+    correlated_events: List[str] = field(default_factory=list)
 
 
 class DeepMoneyFlowAnalyzer:

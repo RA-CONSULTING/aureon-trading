@@ -66,6 +66,10 @@ SCHUMANN_BASE = 7.83          # Hz - Earth's heartbeat
 LOVE_FREQUENCY = 528          # Hz - DNA repair/transformation
 UNITY_FREQUENCY = 963         # Hz - Crown/cosmic unity
 
+# Planetary Harmonic Network Integration
+# We now track INTERFERENCE from the 10MHz bot spectrum
+BOT_SPECTRUM_INTERFERENCE_LIMIT = 0.15 # Max allowed distortion from HFTs
+
 # Solfeggio Frequencies (Ancient Healing Tones)
 SOLFEGGIO = [174, 285, 396, 417, 528, 639, 741, 852, 963]
 
@@ -90,6 +94,11 @@ class StargateNode:
     resonance_frequency: float  # Dominant local frequency
     harmonic_signature: List[float]  # Multi-frequency signature
     casimir_strength: float  # Local boundary condition strength (0-1)
+    
+    # New: Planetary Harmonic Network status
+    network_status: str = "ALIGNED" # ALIGNED, JAMMED, DISTORTED
+    local_bot_interference: float = 0.0 # 0.0 - 1.0 (Interference from nearby HFT centers)
+    
     activation_history: List[float] = field(default_factory=list)
     coherence_contribution: float = 0.0
     last_activation: float = 0.0

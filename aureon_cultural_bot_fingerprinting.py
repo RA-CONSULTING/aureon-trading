@@ -41,6 +41,7 @@ CULTURAL_ENTITIES = {
         "country": "USA",
         "type": "Market Maker",
         "founded": 2002,
+        "spectrum_preference": "HIGH_FREQ", # The Rain 🌧️
         "known_patterns": {
             "trading_hours_utc": [13, 14, 15, 16, 17, 18, 19, 20],  # 9am-4pm ET
             "holidays_observed": ["2024-01-01", "2024-07-04", "2024-11-28", "2024-12-25"],
@@ -53,6 +54,7 @@ CULTURAL_ENTITIES = {
         "country": "USA", 
         "type": "Proprietary Trading / Market Maker",
         "founded": 2000,
+        "spectrum_preference": "MID_RANGE", # Surface Waves 🏄
         "known_patterns": {
             "trading_hours_utc": [7, 8, 9, 13, 14, 15, 16],
             "holidays_observed": ["2024-01-01", "2024-11-28", "2024-12-25"],
@@ -65,6 +67,7 @@ CULTURAL_ENTITIES = {
         "country": "USA",
         "type": "HFT / Arbitrage",
         "founded": 1999,
+        "spectrum_preference": "ULTRA_HIGH", # Quantum Foam ⚛️
         "known_patterns": {
             "trading_hours_utc": list(range(24)),  # 24/7 but peaks Asia/Europe
             "holidays_observed": [],  # Trades through holidays
@@ -77,6 +80,7 @@ CULTURAL_ENTITIES = {
         "country": "USA",
         "type": "HFT Specialist",
         "founded": 1998,
+        "spectrum_preference": "ULTRA_HIGH", # Quantum Foam ⚛️
         "known_patterns": {
             "trading_hours_utc": list(range(24)),
             "holidays_observed": [],
@@ -91,6 +95,7 @@ CULTURAL_ENTITIES = {
         "country": "South Korea",
         "type": "Exchange House Bot",
         "founded": 2017,
+        "spectrum_preference": "INFRA_LOW", # Deep Ocean Accumulators 🌊
         "known_patterns": {
             "trading_hours_utc": [0, 1, 2, 3, 4, 5, 6, 7],  # 9am-4pm KST
             "holidays_observed": ["2024-02-09", "2024-02-10", "2024-02-11"],  # Lunar New Year
@@ -98,6 +103,7 @@ CULTURAL_ENTITIES = {
             "position_size_preference": "medium_volatile",
             "market_impact_tolerance": "high"
         }
+
     },
     "BITHUMB_CONSORTIUM": {
         "country": "South Korea",

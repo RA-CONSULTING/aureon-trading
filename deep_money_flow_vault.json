@@ -1,0 +1,45 @@
+[
+  {
+    "event_id": "EVT_1768745023",
+    "date": "2026-01-18",
+    "event_name": "Detected HFT Spoofing Pattern",
+    "perpetrators": [
+      "UNKNOWN_HFT"
+    ],
+    "beneficiaries": [
+      "Market Makers"
+    ],
+    "victims": [
+      "Retail Traders"
+    ],
+    "attributed_bots": [
+      "QUANTUM_HFT"
+    ],
+    "manipulation_vector": "SPOOFING",
+    "amount_extracted_usd": 79467.54644052382,
+    "extraction_method": "Layered Order Book Manipulation",
+    "flow_direction": "retail_to_institution",
+    "source_location": "Global Retail",
+    "destination_location": "Institutional Accounts",
+    "intermediaries": [
+      "Exchange"
+    ],
+    "stated_reason": "Liquidity Provision",
+    "actual_reason": "Price Manipulation",
+    "short_term_effects": [
+      "Price Spike",
+      "Retail Liquidations"
+    ],
+    "long_term_effects": [
+      "Market Distrust"
+    ],
+    "planetary_effects": [
+      "wealth_concentration"
+    ],
+    "evidence_sources": [
+      "Full Spectrum Scan",
+      "Order Book Analysis"
+    ],
+    "confidence": 0.85
+  }
+]

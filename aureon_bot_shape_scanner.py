@@ -61,24 +61,51 @@ except ImportError:
     get_firm_catalog = None
 
 # Configuration
-WINDOW_SIZE = 600       # 10 minutes of buffer for analysis
-FFT_SAMPLE_RATE = 100   # 100ms resampling grid (10Hz)
-MIN_TRADES_FOR_FFT = 50 # Minimum trades to attempt spectral analysis
+SPECTRUM_SCAN_INTERVAL = 5.0  # seconds between Shape refreshes
+
+@dataclass
+class SpectrumBandConfig:
+    name: str # e.g. "INFRA_LOW"
+    min_hz: float
+    max_hz: float
+    window_seconds: int
+    sample_rate_ms: int # 0 for burst analysis
+    description: str
+
+# 🌈 THE FULL SPECTRUM (0.001 Hz to 10 MHz) 🌈
+SPECTRUM_BANDS = [
+    SpectrumBandConfig("INFRA_LOW", 0.001, 0.1, 7200, 10000, "Deep Ocean (Accumulators) 🌊"), 
+    SpectrumBandConfig("MID_RANGE", 0.1, 10.0, 600, 100, "Surface Waves (Market Makers) 🏄"), 
+    SpectrumBandConfig("HIGH_FREQ", 10.0, 1000.0, 60, 1, "The Rain (HFT/Scalpers) 🌧️"), 
+    SpectrumBandConfig("ULTRA_HIGH", 1000.0, 10_000_000.0, 10, 0, "Quantum Foam (Flash Microwaves) ⚛️") 
+]
 
 logger = logging.getLogger("BotShapeScanner")
 logging.basicConfig(level=logging.INFO)
+
+@dataclass
+class SpectralBandResult:
+    band_name: str
+    dominant_freq: float
+    amplitude: float
+    activity_score: float
+    state_description: str # "Active", "Sleeping", "Spiking"
 
 @dataclass
 class BotShapeFingerprint:
     """The spectral DNA of an algorithmic actor"""
     symbol: str
     timestamp: float
-    dominant_freqs: List[float]  # Hz
-    amplitudes: List[float]      # Magnitude
+    spectrum_results: List[SpectralBandResult] # Full spectrum breakdown
     volume_profile: List[float]  # Normalized volume buckets
     layering_score: float        # From depth (0.0 - 1.0)
     bot_class: str               # "HFT", "MM", "ACCUMULATOR", "ARBITRAGE"
     confidence: float
+    
+    @property
+    def dominant_freqs(self) -> List[float]:
+        # Backwards compatibility helper
+        return [r.dominant_freq for r in self.spectrum_results if r.dominant_freq > 0]
 
 class BotShapeScanner:
     def __init__(self, symbols: List[str]):
@@ -86,7 +113,9 @@ class BotShapeScanner:
         self.ws_client = BinanceWebSocketClient()
         
         # Buffers: symbol -> deque of (timestamp, price, quantity)
-        self.trade_buffers: Dict[str, deque] = {s: deque(maxlen=10000) for s in symbols}
+        # We need a large buffer to cover the INFRA_LOW band (2 hours)
+        # Even at 10 trades/sec, 2 hours = 72,000 trades. 
+        self.trade_buffers: Dict[str, deque] = {s: deque(maxlen=100000) for s in symbols}
         self.depth_snapshot: Dict[str, WSOrderBook] = {}
         
         # ThoughtBus
@@ -101,7 +130,7 @@ class BotShapeScanner:
         
         # Analysis State
         self.last_scan_time = 0
-        self.scan_interval = 5.0  # seconds between Shape refreshes
+        self.scan_interval = SPECTRUM_SCAN_INTERVAL
         
         if COUNTER_INTELLIGENCE_AVAILABLE:
             logger.info("🤖 Counter-intelligence integration enabled")
@@ -161,9 +190,8 @@ class BotShapeScanner:
                 'maker': trade.is_buyer_maker
             })
             
-            # Prune old data (keep WINDOW_SIZE seconds)
-            while self.trade_buffers[sym] and (ts - self.trade_buffers[sym][0]['ts'] > WINDOW_SIZE):
-                self.trade_buffers[sym].popleft()
+            # Prune? No, let deque handle maxlen. 
+            # We need deep history for INFRA_LOW band.
 
     def _on_depth(self, depth: WSOrderBook):
         """Update depth snapshot for layering metrics"""
@@ -173,116 +201,219 @@ class BotShapeScanner:
         """Process all buffers and compute 3D shapes"""
         shapes = []
         
-        print("\n🔎 SCANNING BOT FREQUENCIES...")
-        print(f"{'SYMBOL':<10} {'DOM FREQ':<12} {'ACTICITY':<10} {'CLASS':<15} {'SHAPE'}")
+        print(f"\n🔎 SCANNING BOT SPECTRUM (0.001Hz - 10MHz)...")
+        print(f"{'SYMBOL':<8} {'BAND':<12} {'FREQ (Hz)':<10} {'STATE':<15} {'SHAPE'}")
         print("-" * 65)
         
         for symbol in self.symbols:
-            fingerprint = self._compute_fingerprint(symbol)
+            fingerprint = self._compute_full_spectrum_fingerprint(symbol)
             if fingerprint:
                 shapes.append(fingerprint)
                 self._emit_shape(fingerprint)
                 
-                # Visual log
-                freq_str = f"{fingerprint.dominant_freqs[0]:.2f}Hz" if fingerprint.dominant_freqs else "---"
-                icon = "🤖" if fingerprint.bot_class != "HUMAN" else "👤"
-                print(f"{symbol:<10} {freq_str:<12} {len(self.trade_buffers[symbol]):<10} {fingerprint.bot_class:<15} {icon}")
+                # Visual log - show the "hottest" band
+                active_bands = sorted(fingerprint.spectrum_results, key=lambda x: x.amplitude, reverse=True)
+                top_band = active_bands[0] if active_bands else None
+                
+                if top_band:
+                    freq_str = f"{top_band.dominant_freq:.3f}"
+                    icon = "🤖" 
+                    if fingerprint.bot_class == "ORGANIC": icon = "🌱"
+                    elif fingerprint.bot_class == "QUANTUM_HFT": icon = "⚡"
+                    
+                    print(f"{symbol:<8} {top_band.band_name[:10]:<12} {freq_str:<10} {top_band.state_description[:15]:<15} {icon}")
 
         # Save snapshot for external 3D viewer
         self._save_3d_snapshot(shapes)
 
-    def _compute_fingerprint(self, symbol: str) -> Optional[BotShapeFingerprint]:
-        """The core 'Quantum Telescope' Logic: FFT + Feature Extraction"""
+    def _compute_full_spectrum_fingerprint(self, symbol: str) -> Optional[BotShapeFingerprint]:
+        """The core 'Quantum Telescope' Logic: Full Spectrum Analysis"""
         buffer = self.trade_buffers.get(symbol)
-        if not buffer or len(buffer) < MIN_TRADES_FOR_FFT:
+        if not buffer or len(buffer) < 20: # Minimal data check
             return None
             
-        data = list(buffer)
+        data = list(buffer) # Copy for thread safety/stability
         now = time.time()
         
-        # 1. Resample to uniform time grid (10Hz = 100ms)
-        # We create a signal of 'volume traded per 100ms'
-        grid_points = int(WINDOW_SIZE * (1000 / FFT_SAMPLE_RATE)) # 600 * 10
-        signal = np.zeros(grid_points)
+        results = []
         
-        start_time = now - WINDOW_SIZE
-        
-        for t in data:
-            ts = t['ts']
-            if ts < start_time: continue
+        # Iterate through all spectral bands
+        for band in SPECTRUM_BANDS:
+            res = self._analyze_band(data, band, now)
+            results.append(res)
             
-            # Map time to index
-            idx = int((ts - start_time) / (FFT_SAMPLE_RATE / 1000.0))
-            if 0 <= idx < grid_points:
-                signal[idx] += t['qty']
-                
-        # 2. FFT Analysis
-        # Remove DC component (mean) to see fluctuations only
-        signal_centered = signal - np.mean(signal)
+        # Classify based on the full spectrum
+        bot_class = self._classify_spectrum(results)
         
-        # Perform FFT
-        fft_vals = np.fft.rfft(signal_centered)
-        fft_freq = np.fft.rfftfreq(len(signal_centered), d=(FFT_SAMPLE_RATE/1000.0))
-        
-        magnitudes = np.abs(fft_vals)
-        
-        # 3. Find Dominant Frequencies (Peaks)
-        # Simple peak finding: indices where val is larger than neighbors and > threshold
-        threshold = np.max(magnitudes) * 0.2
-        peaks = []
-        for i in range(1, len(magnitudes)-1):
-            if magnitudes[i] > magnitudes[i-1] and magnitudes[i] > magnitudes[i+1]:
-                if magnitudes[i] > threshold:
-                    peaks.append((fft_freq[i], magnitudes[i]))
-                    
-        peaks.sort(key=lambda x: x[1], reverse=True)
-        top_freqs = [p[0] for p in peaks[:3]]
-        top_amps = [p[1] for p in peaks[:3]]
-        
-        # 4. Analyze Order Book Layering
-        layering = 0.0
-        if symbol in self.depth_snapshot:
-            depth = self.depth_snapshot[symbol]
-            # Simple metric: how uniform are the bid/ask steps?
-            # High uniformity / precise spacing = Bot
-            # Random spacing = Organic
-            bids = [p for p, q in depth.bids[:5]]
-            asks = [p for p, q in depth.asks[:5]]
-            bid_diffs = np.diff(bids)
-            ask_diffs = np.diff(asks)
-            
-            bid_var = np.var(bid_diffs) if len(bid_diffs) > 0 else 1
-            ask_var = np.var(ask_diffs) if len(ask_diffs) > 0 else 1
-            
-            # Lower variance = higher layering score
-            layering = 1.0 / (1.0 + (bid_var + ask_var)*10000)
+        # Layering analysis
+        layering = self._analyze_layering(symbol)
 
-        # 5. Classify Bot
-        bot_class = "UNKNOWN"
-        if not top_freqs:
-            bot_class = "ORGANIC/LOW_VOL"
-        else:
-            primary_freq = top_freqs[0]
-            if primary_freq > 1.0: # Faster than 1Hz
-                bot_class = "HFT_ALGO"
-            elif 0.1 < primary_freq <= 1.0:
-                bot_class = "MM_SPOOF"
-            else: # Very slow periodicity
-                bot_class = "ACCUMULATION_BOT"
-                
-            if layering > 0.8:
-                bot_class += "_LAYERED"
-                
         return BotShapeFingerprint(
             symbol=symbol,
             timestamp=now,
-            dominant_freqs=top_freqs,
-            amplitudes=top_amps,
+            spectrum_results=results,
             volume_profile=[], # TODO: Add volume profile buckets
             layering_score=layering,
             bot_class=bot_class,
-            confidence=0.85 # Placeholder
+            confidence=0.85 
         )
+
+    def _analyze_band(self, data: List[Dict], band: SpectrumBandConfig, now: float) -> SpectralBandResult:
+        """Analyze a specific frequency band"""
+        # Filter data for this band's time window
+        start_time = now - band.window_seconds
+        
+        # Optimization: Binary search or just skip
+        # Since data is sorted by TS, we can slice efficiently
+        # effective_data = [d for d in data if d['ts'] >= start_time] 
+        # (Doing a simple filter for clarity, optimize if slow)
+        effective_data = []
+        for d in reversed(data):
+            if d['ts'] < start_time:
+                break
+            effective_data.append(d)
+        effective_data.reverse()
+        
+        if not effective_data:
+            return SpectralBandResult(band.name, 0.0, 0.0, 0.0, "Silent")
+
+        # --- ULTRA HIGH FREQUENCY (Burst Analysis) ---
+        if band.sample_rate_ms == 0: 
+            # 10 MHz equivalent -> 100ns resolution.
+            # We look for "micro-bursts": multiple trades in < 1ms
+            burst_count = 0
+            max_burst_density = 0
+            
+            for i in range(1, len(effective_data)):
+                dt = effective_data[i]['ts'] - effective_data[i-1]['ts']
+                if dt < 0.001: # Less than 1ms separation
+                    burst_count += 1
+            
+            # Frequency proxy: bursts per second * multiplier
+            freq_proxy = (burst_count / max(1, band.window_seconds)) * 1000.0  
+            amplitude = burst_count / len(effective_data) if effective_data else 0
+            
+            state = "Quantum Calm"
+            if freq_proxy > 1000: state = "SINGULARITY ⚛️"
+            elif freq_proxy > 100: state = "Micro-Ripples"
+            
+            return SpectralBandResult(band.name, freq_proxy, amplitude, amplitude, state)
+
+        # --- HIGH FREQ (Inter-arrival Analysis) ---
+        elif band.sample_rate_ms <= 10:
+             # Fast FFT or Inter-arrival
+             # For High Freq, FFT on 1ms grid is expensive.
+             # Use inter-arrival times stats.
+             deltas = []
+             for i in range(1, len(effective_data)):
+                 deltas.append(effective_data[i]['ts'] - effective_data[i-1]['ts'])
+             
+             if not deltas:
+                 return SpectralBandResult(band.name, 0.0, 0.0, 0.0, "Silent")
+                 
+             mean_delta = np.mean(deltas)
+             if mean_delta > 0:
+                 approx_freq = 1.0 / mean_delta
+             else:
+                 approx_freq = 0.0
+                 
+             state = "Drizzle"
+             if approx_freq > 50: state = "Heavy Rain 🌧️"
+             
+             return SpectralBandResult(band.name, approx_freq, 0.5, 0.5, state)
+
+        # --- MID & LOW (Standard FFT) ---
+        else:
+            return self._perform_fft_analysis(effective_data, band, now)
+
+    def _perform_fft_analysis(self, data: List[Dict], band: SpectrumBandConfig, now: float) -> SpectralBandResult:
+        """Standard FFT for Mid/Low bands"""
+        if len(data) < 10:
+             return SpectralBandResult(band.name, 0.0, 0.0, 0.0, "Insufficient Data")
+
+        # Resample to uniform grid
+        grid_points = int(band.window_seconds * (1000 / band.sample_rate_ms))
+        signal = np.zeros(grid_points)
+        start_time = now - band.window_seconds
+        sample_period_sec = band.sample_rate_ms / 1000.0
+        
+        for t in data:
+            idx = int((t['ts'] - start_time) / sample_period_sec)
+            if 0 <= idx < grid_points:
+                signal[idx] += t['qty']
+                
+        # Remove DC
+        if np.all(signal == 0):
+             return SpectralBandResult(band.name, 0.0, 0.0, 0.0, "Flatline")
+             
+        signal_centered = signal - np.mean(signal)
+        
+        # FFT
+        fft_vals = np.fft.rfft(signal_centered)
+        fft_freq = np.fft.rfftfreq(len(signal_centered), d=sample_period_sec)
+        magnitudes = np.abs(fft_vals)
+        
+        # Filter for band range
+        mask = (fft_freq >= band.min_hz) & (fft_freq <= band.max_hz)
+        band_freqs = fft_freq[mask]
+        band_mags = magnitudes[mask]
+        
+        if len(band_mags) == 0:
+             return SpectralBandResult(band.name, 0.0, 0.0, 0.0, "Quiet")
+             
+        peak_idx = np.argmax(band_mags)
+        dom_freq = band_freqs[peak_idx]
+        peak_amp = band_mags[peak_idx]
+        
+        # Normalize amp
+        norm_amp = peak_amp / (np.sum(signal) + 1e-9) * 100.0
+        
+        state = "Normal"
+        if norm_amp > 0.5: state = "High Coherence 🌊"
+        if norm_amp > 1.0: state = "STANDING WAVE ⚠️"
+        
+        return SpectralBandResult(band.name, dom_freq, norm_amp, norm_amp, state)
+
+    def _analyze_layering(self, symbol: str) -> float:
+        """Analyze Order Book Layering"""
+        if symbol not in self.depth_snapshot:
+            return 0.0
+        depth = self.depth_snapshot[symbol]
+        # Simple metric: how uniform are the bid/ask steps?
+        bids = [p for p, q in depth.bids[:5]]
+        asks = [p for p, q in depth.asks[:5]]
+        bid_diffs = np.diff(bids) if len(bids) > 1 else []
+        ask_diffs = np.diff(asks) if len(asks) > 1 else []
+        
+        if len(bid_diffs) == 0 or len(ask_diffs) == 0:
+            return 0.0
+            
+        bid_var = np.var(bid_diffs)
+        ask_var = np.var(ask_diffs)
+        
+        # Lower variance = higher layering score (artificial uniformity)
+        # Avoid div by zero
+        return 1.0 / (1.0 + (bid_var + ask_var)*10000)
+
+    def _classify_spectrum(self, results: List[SpectralBandResult]) -> str:
+        """Determine Bot Class from Spectral Fingerprint"""
+        # Find strongest band
+        sorted_bands = sorted(results, key=lambda x: x.amplitude, reverse=True)
+        if not sorted_bands or sorted_bands[0].amplitude < 0.01:
+            return "ORGANIC"
+        
+        strongest = sorted_bands[0]
+        
+        if strongest.band_name == "ULTRA_HIGH":
+            return "QUANTUM_HFT"
+        elif strongest.band_name == "HIGH_FREQ":
+            return "SCALPER_BOT"
+        elif strongest.band_name == "MID_RANGE":
+            return "MARKET_MAKER"
+        elif strongest.band_name == "INFRA_LOW":
+            return "WHALE_ACCUMULATOR"
+            
+        return "UNKNOWN_ENTITY"
 
     def _emit_shape(self, shape: BotShapeFingerprint):
         """Emit ThoughtBus pulse and analyze for counter-intelligence opportunities"""
