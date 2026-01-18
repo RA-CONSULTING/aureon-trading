@@ -5,6 +5,7 @@ The **Real-Time harmonic Coherence Engine** has been activated and integrated wi
 ## Activation Status: 🟢 ACTIVE
 
 ### 1. New Capabilities
+
 - **Live Streaming**: Consumes real-time data from `binance_ws_client.py` for 10+ major assets.
 - **Harmonic Wave Analysis**: Transforms price action into frequency/amplitude waves.
 - **Coherence Calculation**: Computes Global Coherence ($C_b$) every 5 seconds.

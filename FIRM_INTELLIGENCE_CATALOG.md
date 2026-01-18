@@ -17,7 +17,7 @@ The **Firm Intelligence Catalog** is a real-time intelligence database that trac
 
 ## Architecture
 
-```
+```text
 ┌────────────────────────────────────────────────────────┐
 │           FIRM INTELLIGENCE CATALOG                     │
 │                                                         │
@@ -54,7 +54,9 @@ The **Firm Intelligence Catalog** is a real-time intelligence database that trac
 ## Data Structures
 
 ### FirmMovement
+
 A single tracked trading action:
+
 ```python
 @dataclass
 class FirmMovement:
@@ -79,7 +81,9 @@ class FirmMovement:
 ```
 
 ### FirmPattern
+
 Recognized behavioral pattern:
+
 ```python
 @dataclass
 class FirmPattern:
@@ -104,7 +108,9 @@ class FirmPattern:
 ```
 
 ### FirmStatistics
+
 Aggregated statistics (24-hour window):
+
 ```python
 @dataclass
 class FirmStatistics:
@@ -172,7 +178,7 @@ print(f"Predicted direction: {stats.predicted_direction}")
 print(f"Next 24h probability: {stats.next_24h_activity_probability:.0%}")
 ```
 
-### Pattern Recognition
+### Pattern Recognition Queries
 
 ```python
 # Recognize behavioral patterns
@@ -246,7 +252,8 @@ python firm_catalog_cli.py watch citadel --interval 3
 ### CLI Examples
 
 **Status:**
-```
+
+```text
 📊 FIRM INTELLIGENCE CATALOG STATUS
 ============================================================
 Total firms tracked: 15
@@ -258,7 +265,8 @@ Lookback period:     24 hours
 ```
 
 **Firm Summary:**
-```
+
+```text
 📊 FIRM INTELLIGENCE: CITADEL
 ============================================================
 
@@ -284,10 +292,10 @@ Lookback period:     24 hours
      Occurrences: 6 | Last seen: 4h ago
 
 🔮 PREDICTION
-  Next 24h activity:   85% probability
-  Predicted direction: BULLISH
-  Confidence:          72%
-  Reasoning:           High activity probability (85%) | Bias: bullish | 3 patterns recognized | Focus on: BTC/USD, ETH/USD
+    Next 24h activity:   85% probability
+    Predicted direction: BULLISH
+    Confidence:          72%
+    Reasoning:           High activity probability (85%) | Bias: bullish | 3 patterns recognized | Focus on: BTC/USD, ETH/USD
 ```
 
 ---
@@ -487,9 +495,11 @@ pattern = FirmPattern(
 ## State Persistence
 
 The catalog automatically persists state to:
+
 - `firm_intelligence_catalog_state.json`
 
 State includes:
+
 - All movements from last 24 hours
 - All recognized patterns
 - Metadata (last update time, etc.)
@@ -539,6 +549,7 @@ if catalog_available:
 ```
 
 This makes counter-trades more confident when:
+
 1. Firm is actively trading (recent movements)
 2. Patterns are clear and consistent
 3. Predictions align with our counter-strategy
@@ -584,7 +595,7 @@ This makes counter-trades more confident when:
 2. **Volume Validation**: Verify volume matches market data
 3. **Timestamp Accuracy**: Use precise timestamps for timing analysis
 
-### Pattern Recognition
+### Pattern Recognition Best Practices
 
 1. **Minimum Occurrences**: Require ≥3 occurrences before recognizing pattern
 2. **Recency Weighting**: Prioritize recent patterns over old ones
@@ -611,11 +622,13 @@ This makes counter-trades more confident when:
 **Symptom**: `get_all_active_firms()` returns empty list
 
 **Causes**:
+
 - No firms attributed (attribution engine not working)
 - All movements older than 24h (expired)
 - Catalog not receiving data from bot scanner
 
 **Fix**:
+
 ```python
 # Check if bot scanner is feeding catalog
 from aureon_bot_shape_scanner import BotShapeScanner
@@ -631,11 +644,13 @@ catalog.record_movement('test_firm', 'BTC/USD', 'buy', 1000000, 95000)
 **Symptom**: All predictions have confidence < 0.5
 
 **Causes**:
+
 - Insufficient data (< 5 movements)
 - Inconsistent patterns (no clear behaviors)
 - Recent firm activity is erratic
 
 **Fix**:
+
 - Wait for more data to accumulate
 - Lower recognition thresholds temporarily
 - Check if firm changed strategy recently
@@ -645,11 +660,13 @@ catalog.record_movement('test_firm', 'BTC/USD', 'buy', 1000000, 95000)
 **Symptom**: `recognize_patterns()` returns empty list
 
 **Causes**:
+
 - Occurrences < min_occurrences threshold
 - Movements too sparse (no clustering)
 - Patterns genuinely absent
 
 **Fix**:
+
 ```python
 # Lower threshold temporarily
 patterns = catalog.recognize_patterns('citadel', min_occurrences=2)

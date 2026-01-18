@@ -3,6 +3,7 @@
 ## What Is This?
 
 **Real-time intelligence database** tracking major trading firms (Citadel, Jane Street, Two Sigma, etc.):
+
 - Records every movement (buys, sells, volumes)
 - Recognizes behavioral patterns
 - Predicts next moves
@@ -19,13 +20,14 @@
 ```bash
 cd /workspaces/aureon-trading
 python3 aureon_firm_intelligence_catalog.py
-```
+```text
 
 You should see:
-```
+
+```text
 📊 FIRM INTELLIGENCE CATALOG TEST 📊
 ✅ Firm Intelligence Catalog ready
-```
+```text
 
 ### 2. Test CLI
 
@@ -66,7 +68,8 @@ python3 firm_catalog_cli.py firm citadel
 ```
 
 **Output:**
-```
+
+```text
 📊 FIRM INTELLIGENCE: CITADEL
 ============================================================
 
@@ -87,7 +90,8 @@ python3 firm_catalog_cli.py leaders BTC/USD
 ```
 
 **Output:**
-```
+
+```text
 📊 MARKET LEADERS: BTC/USD
 ============================================================
  1. citadel              $127.5M ████████████ 45.2%
@@ -102,7 +106,8 @@ python3 firm_catalog_cli.py predict jane_street
 ```
 
 **Output:**
-```
+
+```text
 🔮 PREDICTION: JANE_STREET
 ============================================================
 
@@ -124,7 +129,8 @@ python3 firm_catalog_cli.py watch citadel --interval 3
 ```
 
 **Output (updates live):**
-```
+
+```text
 📊 LIVE WATCH: CITADEL
 Updated: 2026-01-17 14:30:15
 ============================================================
@@ -161,7 +167,7 @@ signal = counter_intel.analyze_firm_for_counter_opportunity(
 # - Citadel is very active (85% probability)
 # - Predicted direction is bullish
 # - Patterns are consistent
-# 
+#
 # Then counter-intel confidence gets +10-15% boost!
 ```
 
@@ -188,7 +194,8 @@ print(f"Citadel activity: {summary['statistics']['total_movements']} movements")
 ```
 
 **Flow:**
-```
+
+```text
 Bot Detected → Firm Attribution → Catalog Recording → Intelligence → Counter-Strategy
 ```
 
@@ -259,7 +266,7 @@ Bot Detected → Firm Attribution → Catalog Recording → Intelligence → Cou
 
 ## Data Flow Architecture
 
-```
+```text
 ┌─────────────────────────────────────────────────────────┐
 │                  MARKET DATA FEEDS                       │
 │           (Binance, Kraken, Alpaca, etc.)               │
@@ -391,9 +398,11 @@ status = catalog.get_status()
 
 **Cause**: No data recorded yet
 
-**Fix**: 
+**Fix**:
+
 1. Make sure bot scanner is running
 2. Or manually record test data:
+
 ```python
 catalog.record_movement('citadel', 'BTC/USD', 'buy', 1000000, 95000)
 ```
@@ -409,6 +418,7 @@ catalog.record_movement('citadel', 'BTC/USD', 'buy', 1000000, 95000)
 **Cause**: Not enough repeated behaviors
 
 **Fix**: Lower `min_occurrences` threshold:
+
 ```python
 patterns = catalog.recognize_patterns('citadel', min_occurrences=2)
 ```
@@ -488,6 +498,6 @@ print("✅ Integration test passed!")
 
 ---
 
-**Built with ❤️ by Gary Leckey | January 2026**
+Built with ❤️ by Gary Leckey | January 2026
 
-**"The best defense is a good offense. The best offense is perfect intelligence."**
+"The best defense is a good offense. The best offense is perfect intelligence."

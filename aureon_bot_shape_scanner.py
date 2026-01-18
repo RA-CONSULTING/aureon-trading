@@ -431,20 +431,10 @@ class BotShapeScanner:
         except Exception:
             pass  # Queen not available - continue anyway
             
-        logger.info(f"🚨 Counter-signal emitted: {signal.firm_id} - {signal.strategy.value} "
-                   f"(confidence: {signal.confidence:.2f}, timing: {signal.timing_advantage:.1f}ms)")
-                    'strategy': signal.strategy.value,
-                    'confidence': signal.confidence,
-                    'timing_advantage': signal.timing_advantage,
-                    'expected_profit_pips': signal.expected_profit_pips,
-                    'risk_score': signal.risk_score,
-                    'execution_window_seconds': signal.execution_window_seconds,
-                    'reasoning': signal.reasoning
-                }
-            )
-            
-        logger.info(f"🚨 Counter-signal emitted: {signal.firm_id} - {signal.strategy.value} "
-                   f"(confidence: {signal.confidence:.2f}, timing: {signal.timing_advantage:.1f}ms)")
+        logger.info(
+            f"🚨 Counter-signal emitted: {signal.firm_id} - {signal.strategy.value} "
+            f"(confidence: {signal.confidence:.2f}, timing: {signal.timing_advantage:.1f}ms)"
+        )
 
     def _save_3d_snapshot(self, shapes: List[BotShapeFingerprint]):
         """Save a snapshot for the 3D viewer"""

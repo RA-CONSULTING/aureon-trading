@@ -195,7 +195,7 @@ class OrcaOpportunity:
         if not self.entry_price:
             return False, "No entry price set"
         
-        time_held = time.time() - self.entry_timestamp
+        time_held = time.time() - self.entry_price
         price_change_pct = (current_price - self.entry_price) / self.entry_price
         
         # 1. TIME-BASED EXITS
@@ -413,11 +413,14 @@ class OrcaKillerWhaleIntelligence:
         """
         if queen is None:
             logger.warning("🦈 Cannot wire NULL Queen!")
+            self.queen_connected = False
             return False
         
         self.queen = queen
         self.queen_connected = True
-        logger.info(f"🦈👑 ORCA wired to QUEEN SERO - Chain of command ESTABLISHED")
+        logger.info(f"✅ 🦈👑 ORCA wired to QUEEN SERO - Chain of command ESTABLISHED")
+        logger.info(f"   Queen object type: {type(queen)}")
+        logger.info(f"   Queen has 'ask_queen_will_we_win': {hasattr(queen, 'ask_queen_will_we_win')}")
         logger.info(f"   📊 Consult threshold: ${self.QUEEN_CONSULT_THRESHOLD_USD} or <{self.QUEEN_CONSULT_CONFIDENCE:.0%} confidence")
         return True
     

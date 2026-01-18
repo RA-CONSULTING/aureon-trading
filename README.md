@@ -1,10 +1,12 @@
 # AUREON TRADING SYSTEM
 
+<!-- markdownlint-disable MD009 MD022 MD026 MD031 MD032 MD037 MD040 MD058 MD060 -->
+
 > **Multi-dimensional financial intelligence platform exposing systematic market manipulation through spectral analysis, historical pattern recognition, and ancestral wisdom integration.**
 
 ---
 
-# 💀 THE COMPLETE EXPOSURE: $33.5 TRILLION EXTRACTED FROM HUMANITY
+## 💀 THE COMPLETE EXPOSURE: $33.5 TRILLION EXTRACTED FROM HUMANITY
 
 ## 📊 THE NUMBERS DON'T LIE
 
@@ -52,7 +54,7 @@
 | **2022-11-11** | FTX Collapse | $8 BILLION | SBF, Caroline Ellison | 1M+ customers | Alameda, political donations |
 | **2023-01-01** | AI Narrative Pump | $5 TRILLION | Asset managers, Tech insiders | Diversified investors | Magnificent 7 concentration |
 
-**RUNNING TOTAL: $33,548,000,000,000**
+### Running Total: $33,548,000,000,000
 
 ---
 
@@ -231,7 +233,7 @@ We track **37 major trading firms** across 5 global regions, each with unique be
 | 🦑 | **Hudson River Trading** | NYC | $8B | Pure HFT, co-location dominance |
 | 🦇 | **Tower Research** | NYC | $10B | Prop strategies, algo diversity |
 
-**Combined USA Capital: $800B+ active trading capital**
+### Combined USA Capital: $800B+ Active Trading Capital
 
 ---
 
@@ -246,7 +248,7 @@ We track **37 major trading firms** across 5 global regions, each with unique be
 | 🐟 | **Flow Traders** | Amsterdam | $3B | ETP specialist, ETF arbitrage |
 | 🦜 | **IMC Trading** | Amsterdam | $5B | Global market making, Amsterdam roots |
 
-**Combined Europe Capital: $176B+ active trading capital**
+### Combined Europe Capital: $176B+ Active Trading Capital
 
 ---
 
@@ -261,7 +263,7 @@ We track **37 major trading firms** across 5 global regions, each with unique be
 | 🐼 | **China AMC** | Beijing | $280B | A-share dominance, China session |
 | 🦢 | **Hillhouse Capital** | Beijing | $100B | China long-term, research alpha |
 
-**Combined Asia Capital: $2.08T+ AUM**
+### Combined Asia Capital: $2.08T+ AUM
 
 ---
 
@@ -277,7 +279,7 @@ We track **37 major trading firms** across 5 global regions, each with unique be
 | 🐯 | **Amber Group** | Singapore | $1B | Asia crypto specialist |
 | 🦂 | **QCP Capital** | Singapore | $500M | Options + derivatives, Asia session |
 
-**Combined Crypto Native Capital: $14.5B+**
+### Combined Crypto Native Capital: $14.5B+
 
 ---
 
@@ -363,7 +365,7 @@ Bot Detected: BTC/USDT | Shark Level
 | **Consciousness Suppression** | 2/11 events | 1971, 2021 (you can't win, give up) |
 | **War Financing** | 1/11 events | 1929 → WWII |
 
-**Cumulative Planetary Damage Score: 21.88%**
+### Cumulative Planetary Damage Score: 21.88%
 
 ---
 
@@ -373,7 +375,7 @@ Bot Detected: BTC/USDT | Shark Level
 
 ---
 
-# THE ROGUES' GALLERY: Named Individuals Behind 125 Years of Wealth Extraction
+## THE ROGUES' GALLERY: Named Individuals Behind 125 Years of Wealth Extraction
 
 ## 🏦 THE ARCHITECTS (Federal Reserve Creation - 1910-1913)
 
@@ -1815,6 +1817,8 @@ We found them anyway.
 - Queen veto: frequency, reasons, and PnL deltas vs no-veto baseline.
 - Rate limits: 429 backoff effectiveness and impact on opportunity decay.
 - ETA verification: forecasted vs actual execution latency and slippage.
+
+<!-- markdownlint-enable MD009 MD022 MD026 MD031 MD032 MD037 MD040 MD058 MD060 -->
 
 ## License
 

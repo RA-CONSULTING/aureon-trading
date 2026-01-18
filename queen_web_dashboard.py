@@ -12,12 +12,15 @@ import time
 import json
 import random
 import subprocess
+import logging
 from datetime import datetime
 from collections import defaultdict, deque
 from pathlib import Path
 from flask import Flask, render_template, jsonify, request
 from flask_socketio import SocketIO, emit
 import threading
+
+logger = logging.getLogger(__name__)
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # QUEEN VOICE ENGINE - TEXT TO SPEECH

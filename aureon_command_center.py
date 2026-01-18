@@ -644,10 +644,37 @@ def run_flight_check() -> Dict[str, FlightCheckResult]:
         queen = QueenHiveMind()
         ping_ts = datetime.now().isoformat()
         ping_ms = (time.perf_counter() - start) * 1000
-        results['Queen Hive Mind'] = FlightCheckResult(
-            'Queen Hive Mind', 'GO', ping_ms, ping_ts, True,
-            f"✅ Queen consciousness active"
-        )
+        
+        # Attempt to wire Orca to Queen here
+        if 'Orca Intelligence' in results and results['Orca Intelligence'].status == 'GO':
+            try:
+                from aureon_orca_intelligence import get_orca
+                orca = get_orca()
+                if hasattr(orca, 'wire_queen'):
+                    if orca.wire_queen(queen):
+                         results['Queen Hive Mind'] = FlightCheckResult(
+                            'Queen Hive Mind', 'GO', ping_ms, ping_ts, True,
+                            f"✅ Queen active, ORCA WIRED"
+                        )
+                    else:
+                         results['Queen Hive Mind'] = FlightCheckResult(
+                            'Queen Hive Mind', 'NO-GO', ping_ms, ping_ts, False,
+                            f"❌ Queen active, ORCA WIRE FAILED"
+                        )
+                else:
+                    results['Queen Hive Mind'] = FlightCheckResult(
+                        'Queen Hive Mind', 'GO', ping_ms, ping_ts, True,
+                        f"✅ Queen active, Orca has no wire method"
+                    )
+            except Exception as e:
+                results['Queen Hive Mind'] = FlightCheckResult(
+                    'Queen Hive Mind', 'NO-GO', 0, '', False, f"❌ Orca wiring error: {str(e)[:20]}"
+                )
+        else:
+             results['Queen Hive Mind'] = FlightCheckResult(
+                'Queen Hive Mind', 'GO', ping_ms, ping_ts, True,
+                f"✅ Queen consciousness active"
+            )
     except Exception as e:
         results['Queen Hive Mind'] = FlightCheckResult(
             'Queen Hive Mind', 'NO-GO', 0, '', False, f"❌ {str(e)[:50]}"
@@ -1349,33 +1376,6 @@ COMMAND_CENTER_HTML = """
         }
         
         .event-horizon.active {
-            opacity: 1;
-            transform: scale(1);
-        }
-        
-        /* WORMHOLE RIPPLES */
-        .event-horizon::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: repeating-radial-gradient(
-                circle at center,
-                transparent 0px,
-                transparent 10px,
-                rgba(0, 170, 255, 0.1) 10px,
-                rgba(0, 170, 255, 0.1) 20px
-            );
-            animation: wormholeRipple 2s linear infinite;
-        }
-        
-        @keyframes wormholeRipple {
-            from { transform: scale(0.5); opacity: 1; }
-            to { transform: scale(1.5); opacity: 0; }
-        }
-        
         /* WORMHOLE SWIRL */
         .event-horizon::after {
             content: '';

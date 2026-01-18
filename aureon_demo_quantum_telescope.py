@@ -23,12 +23,14 @@ import time
 import asyncio
 import hashlib
 import logging
+import math
 from datetime import datetime
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Set
 from collections import deque, defaultdict
 import aiohttp
 from aiohttp import web
+import websockets
 
 # Import our enhanced quantum telescope
 from aureon_enhanced_quantum_telescope import EnhancedQuantumGeometryEngine

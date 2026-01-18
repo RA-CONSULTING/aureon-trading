@@ -22,6 +22,19 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from aureon_thought_bus import get_thought_bus, Thought
 
+try:
+    from whale_metrics import (
+        whale_wall_detected_total,
+        whale_layering_score,
+        whale_depth_imbalance,
+    )
+    METRICS_AVAILABLE = True
+except ImportError:
+    METRICS_AVAILABLE = False
+    whale_wall_detected_total = None
+    whale_layering_score = None
+    whale_depth_imbalance = None
+
 logger = logging.getLogger(__name__)
 
 
@@ -96,6 +109,7 @@ class WhaleOrderbookAnalyzer:
 
         bids = self._normalize_side(orderbook.get('bids') or orderbook.get('b') or [])
         asks = self._normalize_side(orderbook.get('asks') or orderbook.get('a') or [])
+        exchange = (orderbook or {}).get('exchange') or getattr(self, 'exchange', 'unknown')
 
         walls: List[Wall] = []
         # Detect walls (single level with notional above threshold)
@@ -110,6 +124,7 @@ class WhaleOrderbookAnalyzer:
 
         analysis = {
             'symbol': symbol,
+            'exchange': exchange,
             'detected_at': time.time(),
             'walls': [w.__dict__ for w in walls],
             'layering_score': layering_score,
@@ -125,14 +140,14 @@ class WhaleOrderbookAnalyzer:
         try:
             self.thought_bus.publish(th)
             # Emit metrics
-            if METRICS_AVAILABLE:
+            if METRICS_AVAILABLE and whale_wall_detected_total and whale_layering_score and whale_depth_imbalance:
                 try:
                     # Wall detections
                     for wall in walls:
-                        whale_wall_detected_total.inc(side=wall['side'], symbol=symbol, exchange=getattr(self, 'exchange', 'unknown'))
+                        whale_wall_detected_total.inc(side=wall.side, symbol=symbol, exchange=exchange)
                     
                     # Layering and depth metrics
-                    whale_layering_score_gauge.set(layering_score, symbol=symbol, exchange=getattr(self, 'exchange', 'unknown'))
+                    whale_layering_score.set(layering_score, symbol=symbol, exchange=exchange)
                     
                     # Depth imbalance (-1 to 1, positive = bid heavy)
                     bids_depth = analysis.get('bids_depth', 0)
@@ -140,7 +155,7 @@ class WhaleOrderbookAnalyzer:
                     total_depth = bids_depth + asks_depth
                     if total_depth > 0:
                         imbalance = (bids_depth - asks_depth) / total_depth
-                        whale_depth_imbalance.set(imbalance, symbol=symbol, exchange=getattr(self, 'exchange', 'unknown'))
+                        whale_depth_imbalance.set(imbalance, symbol=symbol, exchange=exchange)
                 except Exception:
                     logger.debug('Failed to emit whale metrics')
         except Exception:

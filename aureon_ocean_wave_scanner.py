@@ -308,8 +308,12 @@ class OceanWaveScanner:
         """Register or update a bot."""
         import hashlib
         
+        symbol = bot_data["symbol"]
+        exchange = bot_data["exchange"]
+        pattern = bot_data["pattern"]
+
         # Generate bot ID
-        bot_signature = f"{bot_data['exchange']}_{bot_data['symbol']}_{bot_data['pattern']}_{time.time()}"
+        bot_signature = f"{exchange}_{symbol}_{pattern}_{time.time()}"
         bot_id = hashlib.md5(bot_signature.encode()).hexdigest()[:12]
         
         if bot_id not in self.bots:
@@ -329,9 +333,9 @@ class OceanWaveScanner:
             
             bot = BotProfile(
                 bot_id=bot_id,
-                symbol=bot_data["symbol"],
-                exchange=bot_data["exchange"],
-                pattern=bot_data["pattern"],
+                symbol=symbol,
+                exchange=exchange,
+                pattern=pattern,
                 size_class=size_class,
                 total_volume=total_volume,
                 trade_count=len(trades),

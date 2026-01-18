@@ -12,7 +12,7 @@ Status: ✅ OPERATIONAL
 
 This system **BAGS, TAGS, AND TRACKS** every detected whale/bot/firm with complete attribution and intelligence.
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────┐
 │                  COMPLETE PROFILING PIPELINE                │
 ├─────────────────────────────────────────────────────────────┤
@@ -43,14 +43,18 @@ This system **BAGS, TAGS, AND TRACKS** every detected whale/bot/firm with comple
 ## Key Features
 
 ### 1. **Complete Attribution** 🏷️
+
 Every whale gets:
+
 - **Firm Name**: Jump Trading, Citadel, Wintermute, etc.
 - **Office Location**: Singapore, London, New York, Chicago
 - **Classification**: SHARK, WHALE, MEGALODON, LEVIATHAN
 - **Strategy Type**: HFT_ALGO, MM_SPOOF, RETAIL_HUNT, etc.
 
 ### 2. **24-Hour Activity Tracking** 📊
+
 Real-time tracking of:
+
 - **Bought USD**: Total buy volume in last 24 hours
 - **Sold USD**: Total sell volume in last 24 hours
 - **Net PnL**: Estimated profit/loss
@@ -58,20 +62,26 @@ Real-time tracking of:
 - **Symbols Traded**: List of all active symbols
 
 ### 3. **Current Targets** 🎯
+
 Identifies what they're hunting:
+
 - **Primary Target**: Main symbol (ETHUSDT, BTCUSDT, etc.)
 - **Action**: Accumulating, distributing, watching, hunting
 - **Confidence**: How certain we are (0-100%)
 - **Volume**: Total position size estimate
 
 ### 4. **Predictive Intelligence** 🔮
+
 Using Moby Dick strategies:
+
 - **Next Move**: Predicted action with timestamp
 - **Harpoon Validation**: 3-step validation (1/3, 2/3, 3/3)
 - **Execution Readiness**: When all 3 harpoons hit
 
 ### 5. **Real-Time Status** 📍
+
 Live monitoring:
+
 - **Last Seen**: Time since last activity
 - **Status**: ACTIVE, DORMANT, DISAPPEARED
 - **Sonar Signal**: Signal strength (0.0-1.0)
@@ -81,7 +91,8 @@ Live monitoring:
 
 ## File Structure
 
-```
+```text
+
 aureon_whale_profiler_system.py
 ├─ WhaleClass (MINNOW, SHARK, WHALE, MEGALODON, LEVIATHAN)
 ├─ StrategyType (HFT_ALGO, MM_SPOOF, RETAIL_HUNT, etc.)
@@ -166,10 +177,11 @@ report = profiler.get_complete_intelligence_report("WH00001")
 
 # Display beautifully formatted report
 print(profiler.format_complete_report(report))
-```
 
 Output:
-```
+
+```text
+
 ┌─────────────────────────────────────────────────────────────┐
 │ 🦈 COMPLETE WHALE INTELLIGENCE REPORT                       │
 ├─────────────────────────────────────────────────────────────┤
@@ -233,7 +245,9 @@ print(f"Profile created/updated: {profile_id}")
 ## Whale Classifications
 
 ### By Size (Position USD)
-```
+
+```text
+
 🐟 MINNOW      < $10K       Small players
 🦈 SHARK       $10K-$100K   Medium bots
 🐋 WHALE       $100K-$1M    Large traders
@@ -242,7 +256,9 @@ print(f"Profile created/updated: {profile_id}")
 ```
 
 ### By Strategy
-```
+
+```text
+
 📈 ACCUMULATION  - Slow buying pattern
 📉 DISTRIBUTION  - Slow selling pattern
 ⚡ HFT_ALGO      - High-frequency trading (>2Hz)
@@ -260,7 +276,9 @@ print(f"Profile created/updated: {profile_id}")
 ## Firm Attribution Database
 
 ### Major Trading Firms
-```
+
+```text
+
 Citadel Securities
 ├─ HQ: Chicago, USA
 ├─ Offices: New York, London
@@ -291,6 +309,7 @@ Wintermute
 ## Integration with Other Systems
 
 ### 1. Bot Shape Scanner → Profiler
+
 ```python
 # In aureon_bot_shape_scanner.py
 from aureon_complete_profiler_integration import get_complete_profiler
@@ -310,6 +329,7 @@ if advanced_class != 'UNKNOWN':
 ```
 
 ### 2. Profiler → Moby Dick Predictor
+
 ```python
 # Automatically logged to Moby Dick for prediction
 from aureon_moby_dick_whale_hunter import get_moby_dick_hunter, GamEncounter
@@ -328,6 +348,7 @@ hunter.log_gam_encounter(GamEncounter(
 ```
 
 ### 3. Predictor → Queen Hive Mind
+
 ```python
 # Get execution-ready predictions
 predictions = hunter.get_execution_ready_predictions()
@@ -348,13 +369,16 @@ for pred in predictions:
 ## Profile Persistence
 
 All profiles are automatically saved to:
-```
+
+```text
 whale_profiles.json
 └─ Contains all whale profiles with full state
 ```
 
 Structure:
+
 ```json
+
 {
   "profiles": {
     "WH00001": {
@@ -391,6 +415,7 @@ Structure:
 ## Performance Metrics
 
 Track these metrics per profile:
+
 ```python
 profile_tracking = {
     "prediction_accuracy": 0.0,    # % of correct predictions
@@ -482,24 +507,28 @@ profiler.export_profiles_summary("whale_summary.json")
 ## Future Enhancements
 
 ### Phase 1: Advanced Attribution
+
 - [ ] ML-based firm attribution
 - [ ] Geographic time-zone correlation
 - [ ] Inter-firm relationship mapping
 - [ ] Shared strategy detection
 
 ### Phase 2: Predictive Analytics
+
 - [ ] Trade pattern recognition
 - [ ] Volume profile forecasting
 - [ ] Manipulation attempt prediction
 - [ ] Risk score calculation
 
 ### Phase 3: Real-Time Alerts
+
 - [ ] Whale activity notifications
 - [ ] Large position alerts
 - [ ] Manipulation warnings
 - [ ] Prediction execution triggers
 
 ### Phase 4: Visualization
+
 - [ ] Interactive whale map
 - [ ] Real-time activity charts
 - [ ] Network relationship graph
@@ -510,8 +539,10 @@ profiler.export_profiles_summary("whale_summary.json")
 ## Troubleshooting
 
 ### No Profiles Created
+
 **Problem**: Live profiler shows 0 profiles
 **Solution**: Check if bot scanner is running and creating state file
+
 ```bash
 # Check for bot scanner state
 ls -lh bot_shape_scanner_state.json
@@ -521,14 +552,17 @@ python aureon_bot_shape_scanner.py
 ```
 
 ### Profiles Not Updating
+
 **Problem**: Last seen time keeps increasing
 **Solution**: Verify bot scanner is detecting new activity
+
 ```bash
 # Check bot scanner output
 tail -f bot_scanner.log
 ```
 
 ### Incorrect Firm Attribution
+
 **Problem**: Whale attributed to wrong firm
 **Solution**: Update firm attribution heuristics in `_attribute_to_firm()`
 
@@ -537,8 +571,8 @@ tail -f bot_scanner.log
 ## Example Output
 
 ### Summary View
-```
-┌───────────────────────────────────────────────────────────────────┐
+
+```┌───────────────────────────────────────────────────────────────────┐
 │ 🦈 LIVE WHALE TRACKING - 5 Active Whales                         │
 ├───────────────────────────────────────────────────────────────────┤
 │                                                                   │

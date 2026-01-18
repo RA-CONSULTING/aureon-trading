@@ -22,6 +22,13 @@ import numpy as np
 
 from aureon_thought_bus import get_thought_bus, Thought
 
+try:
+    from whale_metrics import whale_shape_detected_total
+    METRICS_AVAILABLE = True
+except ImportError:
+    METRICS_AVAILABLE = False
+    whale_shape_detected_total = None
+
 logger = logging.getLogger(__name__)
 
 
@@ -59,6 +66,7 @@ class BotShapeClassifier:
     def _on_orderbook(self, thought: Thought) -> None:
         payload = thought.payload or {}
         symbol = payload.get('symbol')
+        exchange = payload.get('exchange') or payload.get('exch')
         if not symbol:
             return
         # If we have enough price history, compute spectrogram and classify
@@ -120,6 +128,7 @@ class BotShapeClassifier:
 
         detected = {
             'symbol': symbol,
+            'exchange': exchange,
             'detected_at': time.time(),
             'shape': {'subtype': subtype, 'score': float(score), 'reason': reason},
             'spectrogram': spectro_summary,
@@ -146,7 +155,7 @@ class BotShapeClassifier:
         try:
             self.thought_bus.publish(th)
             # Emit metrics
-            if METRICS_AVAILABLE:
+            if METRICS_AVAILABLE and whale_shape_detected_total:
                 whale_shape_detected_total.inc(subtype=subtype, symbol=symbol, exchange=exchange or 'unknown')
         except Exception:
             logger.debug('Failed to publish whale.shape.detected')

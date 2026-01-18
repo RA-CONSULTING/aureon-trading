@@ -17,6 +17,8 @@
 ╚══════════════════════════════════════════════════════════════════════════════════════╝
 """
 
+from __future__ import annotations
+
 import os
 import json
 import time
@@ -31,8 +33,10 @@ from collections import deque
 
 try:
     import websocket
+    from websocket import WebSocketApp
 except ImportError:
     websocket = None
+    WebSocketApp = None
 
 try:
     from dotenv import load_dotenv
@@ -124,7 +128,7 @@ class BinanceWebSocketClient:
         self.base_url = "wss://stream.binance.com:9443/stream?streams=" if not testnet else "wss://stream.binance.vision/stream?streams="
         
         # State
-        self.ws: Optional[websocket.WebSocketApp] = None
+        self.ws: Optional[Any] = None
         self.wst: Optional[threading.Thread] = None
         self.running = False
         self.connected = False

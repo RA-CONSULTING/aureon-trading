@@ -2,7 +2,7 @@
 
 ## System Architecture - Ahab's Tactics Applied
 
-```
+```text
 ┌──────────────────────────────────────────────────────────────────┐
 │                     🐋 MOBY DICK WHALE HUNTER 🐋                  │
 │                    "Call me Ishmael" - Narrator                  │
@@ -43,6 +43,7 @@
 ## Integration Points
 
 ### 1. Bot Shape Scanner → Moby Dick Hunter
+
 ```python
 # In aureon_bot_shape_scanner.py:
 from aureon_moby_dick_whale_hunter import get_moby_dick_hunter, GamEncounter
@@ -62,6 +63,7 @@ def log_bot_detection_as_gam(symbol, whale_class, frequency, activities):
 ```
 
 ### 2. Moby Dick Predictions → Queen Intelligence
+
 ```python
 # In aureon_queen_hive_mind.py:
 from aureon_moby_dick_whale_hunter import get_moby_dick_hunter
@@ -86,6 +88,7 @@ class QueenHiveMind:
 ```
 
 ### 3. Live Trading Integration
+
 ```python
 # In micro_profit_labyrinth.py:
 from aureon_moby_dick_whale_hunter import get_moby_dick_hunter
@@ -107,7 +110,7 @@ async def check_moby_dick_signals():
 
 ## Data Flow Example
 
-```
+```text
 1. Bot Shape Scanner detects:
    BTCUSDT: 8,500 activities → ACCUMULATION_BOT (0.00Hz)
    
@@ -136,21 +139,25 @@ async def check_moby_dick_signals():
 ## Captain Ahab's Wisdom Applied
 
 ### Obsession vs. Strategy
+
 - **Ahab's Mistake**: Single-minded focus destroyed the Pequod
 - **Our Approach**: Balance whale hunting with normal operations
 - **Lesson**: Don't chase one symbol obsessively, scan the whole ocean
 
 ### The Prophetic Pattern
+
 - **Fedallah's Prophecies**: Cryptic but accurate predictions
 - **Our System**: Statistical pattern recognition + φ thresholds
 - **Validation**: Three independent signals before execution
 
 ### The Crew's Diversity
+
 - **Pequod's Multinational Crew**: Global whale knowledge
 - **Our System**: Multi-exchange intelligence (Binance, Kraken, Alpaca)
 - **Integration**: Each exchange brings unique whale patterns
 
 ### Starbuck's Voice of Reason
+
 - **His Warning**: "Vengeance on a dumb brute is madness!"
 - **Our Guard Rails**:
   - Max position sizes
