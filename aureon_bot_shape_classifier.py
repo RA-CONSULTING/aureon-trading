@@ -29,6 +29,41 @@ except ImportError:
     METRICS_AVAILABLE = False
     whale_shape_detected_total = None
 
+# ════════════════════════════════════════════════════════════════════════════════
+# 🐦 CHIRP BUS INTEGRATION - Emit strong bot patterns to Orca!
+# ════════════════════════════════════════════════════════════════════════════════
+CHIRP_BUS_AVAILABLE = False
+get_chirp_bus = None
+try:
+    from aureon_chirp_bus import get_chirp_bus
+    CHIRP_BUS_AVAILABLE = True
+except ImportError:
+    CHIRP_BUS_AVAILABLE = False
+
+# ════════════════════════════════════════════════════════════════════════════════
+# 🌐 GLOBAL MARKET INTEGRATION
+# ════════════════════════════════════════════════════════════════════════════════
+try:
+    from kraken_client import KrakenClient
+    KRAKEN_AVAILABLE = True
+except ImportError:
+    KRAKEN_AVAILABLE = False
+    KrakenClient = None
+
+try:
+    from binance_ws_client import BinanceWebSocketClient
+    BINANCE_WS_AVAILABLE = True
+except ImportError:
+    BINANCE_WS_AVAILABLE = False
+    BinanceWebSocketClient = None
+
+try:
+    from capital_client import CapitalClient
+    CAPITAL_AVAILABLE = True
+except ImportError:
+    CAPITAL_AVAILABLE = False
+    CapitalClient = None
+
 logger = logging.getLogger(__name__)
 
 
@@ -39,6 +74,23 @@ class BotShapeClassifier:
         self.price_hist: Dict[str, deque] = defaultdict(lambda: deque(maxlen=1024))
         self.sample_window = int(sample_window)
         self.hop = int(hop)
+        
+        # 🌐 GLOBAL MARKET CLIENTS
+        self.kraken_client: Optional[Any] = None
+        self.binance_ws: Optional[Any] = None
+        self.capital_client: Optional[Any] = None
+        
+        # Initialize market connections
+        self._init_market_connections()
+        
+        # 🐦 CHIRP BUS - Emit strong bot patterns to Orca
+        self.chirp_bus = None
+        if CHIRP_BUS_AVAILABLE and get_chirp_bus:
+            try:
+                self.chirp_bus = get_chirp_bus()
+                logger.info("🐦 Bot Shape Classifier → Orca CHIRP BUS connected")
+            except Exception as e:
+                logger.debug(f"Chirp bus init failed: {e}")
 
         # subscribe to market price updates and orderbook analyses
         try:
@@ -133,6 +185,9 @@ class BotShapeClassifier:
             'shape': {'subtype': subtype, 'score': float(score), 'reason': reason},
             'spectrogram': spectro_summary,
         }
+        
+        # Emit strong patterns to Orca for trading signals
+        self.emit_shape_to_orca(symbol, detected['shape'], exchange, spectro_summary)
 
         # Publish both a spectrogram thought (compact) and a shape classification
         s_th = Thought(source='bot_shape_classifier', topic='whale.sonar.spectrogram', payload={'symbol': symbol, 'spectrogram': spectro_summary})

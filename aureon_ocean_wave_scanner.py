@@ -40,7 +40,7 @@ import json
 import time
 import logging
 from dataclasses import dataclass, field
-from typing import Dict, List, Set, Optional
+from typing import Dict, List, Set, Optional, Any
 from collections import defaultdict, deque
 import numpy as np
 
@@ -51,6 +51,52 @@ try:
 except ImportError:
     PROFILER_AVAILABLE = False
     print("⚠️  Bot Intelligence Profiler not available - ownership detection disabled")
+
+# ════════════════════════════════════════════════════════════════════════════════
+# 🐦 CHIRP BUS INTEGRATION - Emit bot detections to Orca for whale wake riding!
+# ════════════════════════════════════════════════════════════════════════════════
+CHIRP_BUS_AVAILABLE = False
+get_chirp_bus = None
+try:
+    from aureon_chirp_bus import get_chirp_bus
+    CHIRP_BUS_AVAILABLE = True
+except ImportError:
+    CHIRP_BUS_AVAILABLE = False
+
+# ════════════════════════════════════════════════════════════════════════════════
+# 🌐 GLOBAL MARKET INTEGRATION - Full Exchange Coverage
+# ════════════════════════════════════════════════════════════════════════════════
+# Kraken (crypto)
+try:
+    from kraken_client import KrakenClient
+    KRAKEN_AVAILABLE = True
+except ImportError:
+    KRAKEN_AVAILABLE = False
+    KrakenClient = None
+
+# Binance streaming (crypto real-time)
+try:
+    from binance_ws_client import BinanceWebSocketClient
+    BINANCE_WS_AVAILABLE = True
+except ImportError:
+    BINANCE_WS_AVAILABLE = False
+    BinanceWebSocketClient = None
+
+# Alpaca (stocks + crypto)
+try:
+    from alpaca_client import AlpacaClient
+    ALPACA_AVAILABLE = True
+except ImportError:
+    ALPACA_AVAILABLE = False
+    AlpacaClient = None
+
+# Capital.com (CFDs + stocks)
+try:
+    from capital_client import CapitalClient
+    CAPITAL_AVAILABLE = True
+except ImportError:
+    CAPITAL_AVAILABLE = False
+    CapitalClient = None
 
 # Massive symbol list - scan EVERYTHING
 CRYPTO_PAIRS = [
@@ -163,6 +209,110 @@ class OceanWaveScanner:
         
         # Connected clients
         self.clients: Set = set()
+        
+        # 🌐 GLOBAL MARKET CLIENTS - Direct access to all exchanges
+        self.kraken_client: Optional[Any] = None
+        self.binance_ws: Optional[Any] = None
+        self.alpaca_client: Optional[Any] = None
+        self.capital_client: Optional[Any] = None
+        
+        # Initialize market connections
+        self._init_market_connections()
+        
+        # 🐦 CHIRP BUS - Emit bot detections to Orca
+        self.chirp_bus = None
+        if CHIRP_BUS_AVAILABLE and get_chirp_bus:
+            try:
+                self.chirp_bus = get_chirp_bus()
+                self.logger.info("🐦 Ocean Wave Scanner → Orca CHIRP BUS connected")
+            except Exception as e:
+                self.logger.debug(f"Chirp bus init failed: {e}")
+    
+    def _init_market_connections(self):
+        """Initialize connections to all global market feeds."""
+        market_count = 0
+        
+        if KRAKEN_AVAILABLE:
+            try:
+                self.kraken_client = KrakenClient()
+                market_count += 1
+                self.logger.info("🐙 Ocean Scanner → Kraken CONNECTED")
+            except Exception as e:
+                self.logger.debug(f"Kraken connection failed: {e}")
+        
+        if BINANCE_WS_AVAILABLE:
+            try:
+                self.binance_ws = BinanceWebSocketClient()
+                if os.getenv('BINANCE_API_KEY'):
+                    market_count += 1
+                    self.logger.info("🟡 Ocean Scanner → Binance WS READY")
+            except Exception as e:
+                self.logger.debug(f"Binance WS connection failed: {e}")
+        
+        if ALPACA_AVAILABLE:
+            try:
+                self.alpaca_client = AlpacaClient()
+                market_count += 1
+                self.logger.info("🦙 Ocean Scanner → Alpaca CONNECTED")
+            except Exception as e:
+                self.logger.debug(f"Alpaca connection failed: {e}")
+        
+        if CAPITAL_AVAILABLE:
+            try:
+                self.capital_client = CapitalClient()
+                if self.capital_client.is_authenticated():
+                    market_count += 1
+                    self.logger.info("💼 Ocean Scanner → Capital.com CONNECTED")
+                else:
+                    self.capital_client = None
+            except Exception as e:
+                self.logger.debug(f"Capital.com connection failed: {e}")
+        
+        if market_count > 0:
+            self.logger.info(f"🌐 Ocean Scanner has {market_count} market feeds")
+    
+    def emit_bot_detection_to_orca(self, bot: BotProfile):
+        """Emit whale/shark bot detection to Orca via chirp bus for wake riding."""
+        if not self.chirp_bus or not bot:
+            return
+        
+        # Only emit significant bots (sharks and whales)
+        if bot.size_class not in ['whale', 'megalodon', 'shark']:
+            return
+        
+        try:
+            # Map bot volume to whale signal strength
+            volume_usd = bot.total_volume
+            side = 'buy' if bot.aggression > 0 else 'sell'
+            
+            self.chirp_bus.emit_signal(
+                signal_type='BOT_WHALE_DETECTED',
+                symbol=bot.symbol,
+                coherence=min(1.0, bot.coordination),
+                confidence=bot.owner_confidence,
+                frequency=880.0 if side == 'buy' else 1760.0,
+                amplitude=min(1.0, volume_usd / 1_000_000),
+                metadata={
+                    'bot_id': bot.bot_id,
+                    'size_class': bot.size_class,
+                    'owner': bot.owner,
+                    'firm_id': bot.firm_id,
+                    'pattern': bot.pattern,
+                    'exchange': bot.exchange
+                }
+            )
+            self.logger.info(f"🐋→🦈 Bot {bot.size_class.upper()} detected: {bot.symbol} on {bot.exchange} (${volume_usd:,.0f})")
+        except Exception as e:
+            self.logger.debug(f"Failed to emit bot to Orca: {e}")
+        
+        # 🐦 CHIRP BUS - Emit bot detections to Orca
+        self.chirp_bus = None
+        if CHIRP_BUS_AVAILABLE and get_chirp_bus:
+            try:
+                self.chirp_bus = get_chirp_bus()
+                self.logger.info("🐦 Ocean Wave Scanner → Orca CHIRP BUS connected")
+            except Exception as e:
+                self.logger.debug(f"Chirp bus init failed: {e}")
         
     async def scan_binance_stream(self, symbols: List[str]):
         """
@@ -377,6 +527,9 @@ class OceanWaveScanner:
             
             # Check for hive membership
             await self.detect_hive_affiliation(bot)
+            
+            # Emit significant bots to Orca for whale wake riding
+            self.emit_bot_detection_to_orca(bot)
             
             # Broadcast discovery
             await self.broadcast_bot_discovery(bot)

@@ -35,6 +35,41 @@ except ImportError:
     whale_layering_score = None
     whale_depth_imbalance = None
 
+# ════════════════════════════════════════════════════════════════════════════════
+# 🐦 CHIRP BUS INTEGRATION - Emit whale wall detections to Orca!
+# ════════════════════════════════════════════════════════════════════════════════
+CHIRP_BUS_AVAILABLE = False
+get_chirp_bus = None
+try:
+    from aureon_chirp_bus import get_chirp_bus
+    CHIRP_BUS_AVAILABLE = True
+except ImportError:
+    CHIRP_BUS_AVAILABLE = False
+
+# ════════════════════════════════════════════════════════════════════════════════
+# 🌐 GLOBAL MARKET INTEGRATION - Exchange Coverage
+# ════════════════════════════════════════════════════════════════════════════════
+try:
+    from kraken_client import KrakenClient
+    KRAKEN_AVAILABLE = True
+except ImportError:
+    KRAKEN_AVAILABLE = False
+    KrakenClient = None
+
+try:
+    from binance_ws_client import BinanceWebSocketClient
+    BINANCE_WS_AVAILABLE = True
+except ImportError:
+    BINANCE_WS_AVAILABLE = False
+    BinanceWebSocketClient = None
+
+try:
+    from capital_client import CapitalClient
+    CAPITAL_AVAILABLE = True
+except ImportError:
+    CAPITAL_AVAILABLE = False
+    CapitalClient = None
+
 logger = logging.getLogger(__name__)
 
 
@@ -60,6 +95,23 @@ class WhaleOrderbookAnalyzer:
         self._stop = threading.Event()
         self._thread: Optional[threading.Thread] = None
         self._recent_analysis: Dict[str, deque] = {}
+        
+        # 🌐 GLOBAL MARKET CLIENTS
+        self.kraken_client: Optional[Any] = None
+        self.binance_ws: Optional[Any] = None
+        self.capital_client: Optional[Any] = None
+        
+        # Initialize market connections
+        self._init_market_connections()
+        
+        # 🐦 CHIRP BUS - Emit whale wall detections to Orca
+        self.chirp_bus = None
+        if CHIRP_BUS_AVAILABLE and get_chirp_bus:
+            try:
+                self.chirp_bus = get_chirp_bus()
+                logger.info("🐦 Whale Orderbook Analyzer → Orca CHIRP BUS connected")
+            except Exception as e:
+                logger.debug(f"Chirp bus init failed: {e}")
 
     def start(self) -> None:
         if self._thread and self._thread.is_alive():
@@ -134,6 +186,10 @@ class WhaleOrderbookAnalyzer:
 
         # Persist small in-memory history
         self._recent_analysis.setdefault(symbol, deque(maxlen=100)).append(analysis)
+        
+        # Emit significant walls to Orca for wake riding
+        if walls:
+            self.emit_whale_wall_to_orca(symbol, walls, exchange)
 
         # Publish Thought
         th = Thought(source='whale_orderbook_analyzer', topic='whale.orderbook.analyzed', payload=analysis)
