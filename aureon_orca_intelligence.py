@@ -81,6 +81,49 @@ except ImportError:
     match_firm_name_simple = None
     match_firm_name = None
 
+# ═══════════════════════════════════════════════════════════════════════════════
+# 🌐 GLOBAL MARKET INTEGRATION - Full Exchange Coverage
+# ═══════════════════════════════════════════════════════════════════════════════
+# Kraken (crypto)
+try:
+    from kraken_client import KrakenClient
+    KRAKEN_AVAILABLE = True
+except ImportError:
+    KRAKEN_AVAILABLE = False
+    KrakenClient = None
+
+# Binance streaming (crypto real-time)
+try:
+    from binance_ws_client import BinanceWebSocketClient
+    BINANCE_WS_AVAILABLE = True
+except ImportError:
+    BINANCE_WS_AVAILABLE = False
+    BinanceWebSocketClient = None
+
+# Alpaca (stocks + crypto)
+try:
+    from alpaca_client import AlpacaClient
+    ALPACA_AVAILABLE = True
+except ImportError:
+    ALPACA_AVAILABLE = False
+    AlpacaClient = None
+
+# Capital.com (CFDs + stocks)
+try:
+    from capital_client import CapitalClient
+    CAPITAL_AVAILABLE = True
+except ImportError:
+    CAPITAL_AVAILABLE = False
+    CapitalClient = None
+
+# Market scanners (global intelligence)
+try:
+    from aureon_global_wave_scanner import GlobalWaveScanner
+    WAVE_SCANNER_AVAILABLE = True
+except ImportError:
+    WAVE_SCANNER_AVAILABLE = False
+    GlobalWaveScanner = None
+
 # Sacred constants for harmonic timing
 PHI = (1 + math.sqrt(5)) / 2  # Golden Ratio 1.618
 PHI_INVERSE = 0.618  # φ⁻¹ - The trigger threshold
@@ -331,6 +374,14 @@ class OrcaKillerWhaleIntelligence:
         self.hft_engine = None  # Will be wired externally
         self.hft_connected = False
         
+        # 🌐 GLOBAL MARKET VISIBILITY - Connect to ALL exchanges and feeds
+        self.kraken_client = None
+        self.binance_ws = None
+        self.alpaca_client = None
+        self.capital_client = None
+        self.wave_scanner = None
+        self._init_market_connections()
+        
         # Intelligence feeds (connected externally)
         self.whale_signals: deque = deque(maxlen=100)
         self.firm_activity: Dict[str, Dict] = {}
@@ -370,6 +421,231 @@ class OrcaKillerWhaleIntelligence:
         
         logger.info("🦈🔪 ORCA KILLER WHALE INTELLIGENCE ACTIVATED 🔪🦈")
         logger.info(f"   Mode: {self.mode} | Max Hunts: {self.max_concurrent_hunts}")
+    
+    def _init_market_connections(self):
+        """Initialize connections to all global market feeds."""
+        market_count = 0
+        
+        # Kraken (crypto spot)
+        if KRAKEN_AVAILABLE:
+            try:
+                self.kraken_client = KrakenClient()
+                market_count += 1
+                logger.info("🐙 Kraken CONNECTED - Crypto spot market visibility")
+            except Exception as e:
+                logger.debug(f"Kraken connection failed: {e}")
+        
+        # Binance WebSocket (real-time crypto streaming)
+        if BINANCE_WS_AVAILABLE:
+            try:
+                self.binance_ws = BinanceWebSocketClient()
+                # Start streaming if API key available
+                if os.getenv('BINANCE_API_KEY'):
+                    # Orca will subscribe to top symbols later
+                    market_count += 1
+                    logger.info("🟡 Binance WebSocket READY - Real-time crypto streaming")
+                else:
+                    logger.debug("Binance API key not set - streaming unavailable")
+            except Exception as e:
+                logger.debug(f"Binance WS connection failed: {e}")
+        
+        # Alpaca (stocks + crypto)
+        if ALPACA_AVAILABLE:
+            try:
+                self.alpaca_client = AlpacaClient()
+                market_count += 1
+                logger.info("🦙 Alpaca CONNECTED - Stocks + crypto market visibility")
+            except Exception as e:
+                logger.debug(f"Alpaca connection failed: {e}")
+        
+        # Capital.com (CFDs + global stocks)
+        if CAPITAL_AVAILABLE:
+            try:
+                self.capital_client = CapitalClient()
+                if self.capital_client.is_authenticated():
+                    market_count += 1
+                    logger.info("💼 Capital.com CONNECTED - CFD + global stock visibility")
+                else:
+                    self.capital_client = None
+                    logger.debug("Capital.com not authenticated")
+            except Exception as e:
+                logger.debug(f"Capital.com connection failed: {e}")
+        
+        # Global Wave Scanner (market intelligence aggregator)
+        if WAVE_SCANNER_AVAILABLE:
+            try:
+                self.wave_scanner = GlobalWaveScanner()
+                market_count += 1
+                logger.info("🌊 Global Wave Scanner CONNECTED - Multi-market intelligence")
+            except Exception as e:
+                logger.debug(f"Wave scanner init failed: {e}")
+        
+        if market_count == 0:
+            logger.warning("⚠️ NO MARKET CONNECTIONS! Orca is BLIND!")
+        else:
+            logger.info(f"🌐 GLOBAL MARKET VISIBILITY: {market_count} data sources connected")
+    
+    def scan_global_markets(self, symbols: Optional[List[str]] = None) -> List[WhaleSignal]:
+        """
+        Actively scan all connected markets for whale activity.
+        This gives Orca proactive hunting capability across exchanges.
+        
+        Args:
+            symbols: Optional list of symbols to scan. If None, scans all hot symbols.
+        
+        Returns:
+            List of detected whale signals
+        """
+        whale_signals = []
+        
+        # Define symbol universe if not provided
+        if symbols is None:
+            symbols = self._get_hot_symbols()
+        
+        scan_start = time.time()
+        
+        # Scan Kraken
+        if self.kraken_client:
+            try:
+                for symbol in symbols:
+                    ticker = self.kraken_client.get_ticker(symbol)
+                    if ticker and 'v' in ticker:  # 'v' = 24h volume
+                        volume_24h = float(ticker['v'][1])  # Last 24h
+                        price = float(ticker.get('c', [0])[0])  # Last trade price
+                        volume_usd = volume_24h * price
+                        
+                        # Whale threshold: $1M+ volume
+                        if volume_usd >= 1_000_000:
+                            signal = self._create_whale_signal(
+                                symbol=symbol,
+                                volume_usd=volume_usd,
+                                exchange='kraken',
+                                ticker_data=ticker
+                            )
+                            if signal:
+                                whale_signals.append(signal)
+            except Exception as e:
+                logger.debug(f"Kraken scan error: {e}")
+        
+        # Scan Binance WebSocket (if streaming)
+        if self.binance_ws and hasattr(self.binance_ws, 'get_latest_ticker'):
+            try:
+                for symbol in symbols:
+                    ticker = self.binance_ws.get_latest_ticker(symbol)
+                    if ticker and 'quoteVolume' in ticker:
+                        volume_usd = float(ticker['quoteVolume'])
+                        
+                        if volume_usd >= 1_000_000:
+                            signal = self._create_whale_signal(
+                                symbol=symbol,
+                                volume_usd=volume_usd,
+                                exchange='binance',
+                                ticker_data=ticker
+                            )
+                            if signal:
+                                whale_signals.append(signal)
+            except Exception as e:
+                logger.debug(f"Binance scan error: {e}")
+        
+        # Scan Alpaca
+        if self.alpaca_client:
+            try:
+                for symbol in symbols:
+                    ticker = self.alpaca_client.get_latest_trade(symbol)
+                    if ticker and 'size' in ticker:
+                        # Alpaca returns trade size, need to estimate volume
+                        # This is a simplified whale detection - real impl would track cumulative
+                        size = float(ticker.get('size', 0))
+                        price = float(ticker.get('price', 0))
+                        trade_usd = size * price
+                        
+                        if trade_usd >= 100_000:  # $100k+ single trade = whale
+                            signal = self._create_whale_signal(
+                                symbol=symbol,
+                                volume_usd=trade_usd,
+                                exchange='alpaca',
+                                ticker_data=ticker
+                            )
+                            if signal:
+                                whale_signals.append(signal)
+            except Exception as e:
+                logger.debug(f"Alpaca scan error: {e}")
+        
+        # Use Global Wave Scanner for aggregated intelligence
+        if self.wave_scanner and hasattr(self.wave_scanner, 'get_hot_opportunities'):
+            try:
+                opportunities = self.wave_scanner.get_hot_opportunities(min_score=0.7)
+                for opp in opportunities:
+                    signal = WhaleSignal(
+                        timestamp=time.time(),
+                        symbol=opp.get('symbol', ''),
+                        side='buy' if opp.get('direction') == 'up' else 'sell',
+                        volume_usd=opp.get('volume_usd', 0),
+                        exchange=opp.get('exchange', 'unknown'),
+                        momentum_direction=opp.get('direction', 'neutral'),
+                        ride_confidence=opp.get('score', 0.5)
+                    )
+                    whale_signals.append(signal)
+            except Exception as e:
+                logger.debug(f"Wave scanner error: {e}")
+        
+        scan_duration = time.time() - scan_start
+        
+        if whale_signals:
+            logger.info(f"🌊 Global scan: {len(whale_signals)} whales detected in {scan_duration:.2f}s")
+        
+        return whale_signals
+    
+    def _get_hot_symbols(self) -> List[str]:
+        """Get list of hot symbols to scan across exchanges."""
+        # Top crypto pairs
+        hot_symbols = [
+            'BTC/USD', 'ETH/USD', 'SOL/USD', 'XRP/USD',
+            'BNB/USD', 'ADA/USD', 'DOGE/USD', 'MATIC/USD'
+        ]
+        
+        # Add symbols with recent momentum
+        for symbol, heat in list(self.symbol_heat.items())[:10]:
+            if heat > 0.5 and symbol not in hot_symbols:
+                hot_symbols.append(symbol)
+        
+        return hot_symbols
+    
+    def _create_whale_signal(self, symbol: str, volume_usd: float, 
+                            exchange: str, ticker_data: Dict) -> Optional[WhaleSignal]:
+        """Create a whale signal from ticker data."""
+        try:
+            # Determine direction from price movement
+            side = 'buy'  # Default
+            momentum_direction = 'neutral'
+            
+            # Try to infer from ticker data
+            if 'priceChangePercent' in ticker_data:
+                pct = float(ticker_data['priceChangePercent'])
+                if pct > 0:
+                    side = 'buy'
+                    momentum_direction = 'bullish'
+                elif pct < 0:
+                    side = 'sell'
+                    momentum_direction = 'bearish'
+            
+            signal = WhaleSignal(
+                timestamp=time.time(),
+                symbol=symbol,
+                side=side,
+                volume_usd=volume_usd,
+                exchange=exchange,
+                momentum_direction=momentum_direction,
+                ride_confidence=0.6,  # Moderate confidence from scanner
+                suggested_action='buy' if side == 'buy' else 'sell',
+                target_pnl_pct=0.002  # 0.2% target
+            )
+            
+            return signal
+            
+        except Exception as e:
+            logger.debug(f"Failed to create whale signal: {e}")
+            return None
     
     def _load_state(self):
         """Load persisted state."""

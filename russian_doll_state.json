@@ -36021,42 +36021,218 @@
           }
         ]
       }
+    },
+    {
+      "timestamp": 1768741233.32302,
+      "timestamp_human": "2026-01-18T13:00:33.323021+00:00",
+      "queen": {
+        "market_regime": "QUIET",
+        "global_momentum": 0.0,
+        "global_coherence": 0.5,
+        "queen_confidence": 0.5,
+        "queen_strategy": "SNIPER",
+        "portfolio_value": 23.86,
+        "cash_available": 9.57,
+        "positions_held": 2,
+        "directives": {
+          "min_momentum_threshold": 0.1,
+          "min_coherence_threshold": 0.55,
+          "max_position_size": 0.9568805939932998,
+          "target_exchanges": [],
+          "queen_strategy": "SNIPER",
+          "queen_confidence": 0.5,
+          "market_regime": "QUIET"
+        }
+      },
+      "hive_cluster": {
+        "exchanges_active": 0,
+        "total_symbols": 0,
+        "validators_active": 0,
+        "validator_agreement": 0.0,
+        "market_sentiment": "NEUTRAL",
+        "opportunity_density": 0.0,
+        "recommended_action": "WAIT",
+        "system_fill_rate": 0.0,
+        "total_fees_paid": 0.0
+      },
+      "bee_swarm": {
+        "total_scanned": 1000,
+        "with_momentum": 0,
+        "rejected": 0,
+        "executed": 0,
+        "momentum_distribution": {
+          "up": 0,
+          "down": 0,
+          "flat": 1000
+        },
+        "avg_momentum": 0.0,
+        "max_momentum": 0.0,
+        "max_momentum_symbol": "SOL/ENSO",
+        "avg_pip_score": 0.3513,
+        "avg_coherence": 0.0,
+        "above_phi_threshold": 0,
+        "rejection_breakdown": {},
+        "top_opportunities": [
+          {
+            "symbol": "SOL/USD",
+            "exchange": "kraken",
+            "pip_score": 0.987,
+            "momentum": 0.0,
+            "coherence": -3.5
+          },
+          {
+            "symbol": "SOL/USDC",
+            "exchange": "kraken",
+            "pip_score": 0.954,
+            "momentum": 0.0,
+            "coherence": -3.5
+          },
+          {
+            "symbol": "TUSD/EUS",
+            "exchange": "kraken",
+            "pip_score": 0.6869999999999998,
+            "momentum": 0.0,
+            "coherence": -6.5
+          },
+          {
+            "symbol": "SOL/EUS",
+            "exchange": "kraken",
+            "pip_score": 0.6489999999999999,
+            "momentum": 0.0,
+            "coherence": -6.5
+          },
+          {
+            "symbol": "SOL/PEPE",
+            "exchange": "kraken",
+            "pip_score": 0.6479999999999999,
+            "momentum": 0.0,
+            "coherence": -3.5
+          }
+        ]
+      }
+    },
+    {
+      "timestamp": 1768742076.0180857,
+      "timestamp_human": "2026-01-18T13:14:36.018088+00:00",
+      "queen": {
+        "market_regime": "QUIET",
+        "global_momentum": 0.0,
+        "global_coherence": 0.5,
+        "queen_confidence": 0.5,
+        "queen_strategy": "SNIPER",
+        "portfolio_value": 23.86,
+        "cash_available": 9.57,
+        "positions_held": 2,
+        "directives": {
+          "min_momentum_threshold": 0.1,
+          "min_coherence_threshold": 0.55,
+          "max_position_size": 0.9568808483655998,
+          "target_exchanges": [],
+          "queen_strategy": "SNIPER",
+          "queen_confidence": 0.5,
+          "market_regime": "QUIET"
+        }
+      },
+      "hive_cluster": {
+        "exchanges_active": 0,
+        "total_symbols": 0,
+        "validators_active": 0,
+        "validator_agreement": 0.0,
+        "market_sentiment": "NEUTRAL",
+        "opportunity_density": 0.0,
+        "recommended_action": "WAIT",
+        "system_fill_rate": 0.0,
+        "total_fees_paid": 0.0
+      },
+      "bee_swarm": {
+        "total_scanned": 1000,
+        "with_momentum": 0,
+        "rejected": 0,
+        "executed": 0,
+        "momentum_distribution": {
+          "up": 0,
+          "down": 0,
+          "flat": 1000
+        },
+        "avg_momentum": 0.0,
+        "max_momentum": 0.0,
+        "max_momentum_symbol": "SOL/ENSO",
+        "avg_pip_score": 0.3501,
+        "avg_coherence": 0.0,
+        "above_phi_threshold": 0,
+        "rejection_breakdown": {},
+        "top_opportunities": [
+          {
+            "symbol": "SOL/USD",
+            "exchange": "kraken",
+            "pip_score": 0.987,
+            "momentum": 0.0,
+            "coherence": -3.5
+          },
+          {
+            "symbol": "SOL/USDC",
+            "exchange": "kraken",
+            "pip_score": 0.954,
+            "momentum": 0.0,
+            "coherence": -3.5
+          },
+          {
+            "symbol": "TUSD/EUS",
+            "exchange": "kraken",
+            "pip_score": 0.6869999999999998,
+            "momentum": 0.0,
+            "coherence": -6.5
+          },
+          {
+            "symbol": "SOL/EUS",
+            "exchange": "kraken",
+            "pip_score": 0.6489999999999999,
+            "momentum": 0.0,
+            "coherence": -6.5
+          },
+          {
+            "symbol": "SOL/PEPE",
+            "exchange": "kraken",
+            "pip_score": 0.6479999999999999,
+            "momentum": 0.0,
+            "coherence": -3.5
+          }
+        ]
+      }
     }
   ],
   "last_snapshot": {
-    "timestamp": 1768661884.514566,
-    "timestamp_human": "2026-01-17T14:58:04.514569+00:00",
+    "timestamp": 1768742076.0180857,
+    "timestamp_human": "2026-01-18T13:14:36.018088+00:00",
     "queen": {
       "market_regime": "QUIET",
-      "global_momentum": -0.0005,
+      "global_momentum": 0.0,
       "global_coherence": 0.5,
       "queen_confidence": 0.5,
       "queen_strategy": "SNIPER",
-      "portfolio_value": 23.89,
+      "portfolio_value": 23.86,
       "cash_available": 9.57,
       "positions_held": 2,
       "directives": {
         "min_momentum_threshold": 0.1,
         "min_coherence_threshold": 0.55,
-        "max_position_size": 0.9568800089370099,
-        "target_exchanges": [
-          "kraken"
-        ],
+        "max_position_size": 0.9568808483655998,
+        "target_exchanges": [],
         "queen_strategy": "SNIPER",
         "queen_confidence": 0.5,
         "market_regime": "QUIET"
       }
     },
     "hive_cluster": {
-      "exchanges_active": 3,
-      "total_symbols": 13,
+      "exchanges_active": 0,
+      "total_symbols": 0,
       "validators_active": 0,
       "validator_agreement": 0.0,
       "market_sentiment": "NEUTRAL",
       "opportunity_density": 0.0,
       "recommended_action": "WAIT",
-      "system_fill_rate": 1800.0,
-      "total_fees_paid": -0.001
+      "system_fill_rate": 0.0,
+      "total_fees_paid": 0.0
     },
     "bee_swarm": {
       "total_scanned": 1000,
@@ -36068,46 +36244,46 @@
         "down": 0,
         "flat": 1000
       },
-      "avg_momentum": -0.0005,
-      "max_momentum": -0.0013,
+      "avg_momentum": 0.0,
+      "max_momentum": 0.0,
       "max_momentum_symbol": "SOL/ENSO",
-      "avg_pip_score": 0.3673,
+      "avg_pip_score": 0.3501,
       "avg_coherence": 0.0,
       "above_phi_threshold": 0,
       "rejection_breakdown": {},
       "top_opportunities": [
         {
-          "symbol": "TUSD/GALA",
-          "exchange": "kraken",
-          "pip_score": 1.007,
-          "momentum": 0.0,
-          "coherence": -7.5
-        },
-        {
           "symbol": "SOL/USD",
           "exchange": "kraken",
           "pip_score": 0.987,
-          "momentum": -0.0012817559125270748,
+          "momentum": 0.0,
           "coherence": -3.5
         },
         {
           "symbol": "SOL/USDC",
           "exchange": "kraken",
           "pip_score": 0.954,
-          "momentum": -0.0012817559125270748,
+          "momentum": 0.0,
           "coherence": -3.5
         },
         {
-          "symbol": "SOL/GALA",
+          "symbol": "TUSD/EUS",
           "exchange": "kraken",
-          "pip_score": 0.8440000000000001,
-          "momentum": -0.0012817559125270748,
-          "coherence": -7.5
+          "pip_score": 0.6869999999999998,
+          "momentum": 0.0,
+          "coherence": -6.5
         },
         {
-          "symbol": "TUSD/AUSD",
+          "symbol": "SOL/EUS",
           "exchange": "kraken",
-          "pip_score": 0.724,
+          "pip_score": 0.6489999999999999,
+          "momentum": 0.0,
+          "coherence": -6.5
+        },
+        {
+          "symbol": "SOL/PEPE",
+          "exchange": "kraken",
+          "pip_score": 0.6479999999999999,
           "momentum": 0.0,
           "coherence": -3.5
         }
