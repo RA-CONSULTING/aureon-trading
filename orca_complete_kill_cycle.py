@@ -387,6 +387,21 @@ except ImportError:
     QueenOptionsScanner = None
     OptionsOpportunity = None
 
+# 🥷 Stealth Execution - Anti-front-running countermeasures
+try:
+    from orca_stealth_execution import (
+        OrcaStealthExecution, get_stealth_executor, get_stealth_config,
+        stealth_order, StealthConfig
+    )
+    STEALTH_AVAILABLE = True
+except ImportError:
+    STEALTH_AVAILABLE = False
+    OrcaStealthExecution = None
+    get_stealth_executor = None
+    get_stealth_config = None
+    stealth_order = None
+    StealthConfig = None
+
 import random  # For simulating market activity
 
 
@@ -432,6 +447,14 @@ class WarRoomDisplay:
             'front_run_rate': 0.0,
             'top_predator': None,
             'strategy_decay': False,
+        }
+        # 🥷 Stealth Execution stats
+        self.stealth_data = {
+            'mode': 'normal',
+            'delayed_orders': 0,
+            'split_orders': 0,
+            'rotated_symbols': 0,
+            'hunted_count': 0,
         }
         
     def _create_layout(self) -> Layout:
@@ -610,6 +633,21 @@ class WarRoomDisplay:
             if pd.get('strategy_decay'):
                 intel.add_row(Text("  ⚠️ DECAY DETECTED", style="bold red"))
         
+        # 🥷 Stealth Execution Stats
+        if hasattr(self, 'stealth_data') and self.stealth_data.get('mode') != 'disabled':
+            intel.add_row("")
+            intel.add_row(Text("🥷 STEALTH MODE", style="bold cyan"))
+            intel.add_row("")
+            st = self.stealth_data
+            mode = st.get('mode', 'normal')
+            mode_color = "cyan" if mode == "normal" else "yellow" if mode == "aggressive" else "red" if mode == "paranoid" else "dim"
+            intel.add_row(Text(f"  Mode: [{mode_color}]{mode.upper()}[/]"))
+            intel.add_row(Text(f"  Delayed: {st.get('delayed_orders', 0)}"))
+            intel.add_row(Text(f"  Split: {st.get('split_orders', 0)}"))
+            intel.add_row(Text(f"  Rotated: {st.get('rotated_symbols', 0)}"))
+            if st.get('hunted_count', 0) > 0:
+                intel.add_row(Text(f"  🎯 Hunted: {st['hunted_count']} symbols", style="yellow"))
+        
         return Panel(intel, title="[bold yellow]🎯 INTELLIGENCE[/]", border_style="yellow")
     
     def _build_footer(self) -> Panel:
@@ -730,6 +768,21 @@ class WarRoomDisplay:
             self.predator_data['top_predator'] = top_predator
         if strategy_decay is not None:
             self.predator_data['strategy_decay'] = strategy_decay
+    
+    def update_stealth(self, mode: str = None, delayed_orders: int = None,
+                       split_orders: int = None, rotated_symbols: int = None,
+                       hunted_count: int = None):
+        """Update stealth execution data."""
+        if mode is not None:
+            self.stealth_data['mode'] = mode
+        if delayed_orders is not None:
+            self.stealth_data['delayed_orders'] = delayed_orders
+        if split_orders is not None:
+            self.stealth_data['split_orders'] = split_orders
+        if rotated_symbols is not None:
+            self.stealth_data['rotated_symbols'] = rotated_symbols
+        if hunted_count is not None:
+            self.stealth_data['hunted_count'] = hunted_count
     
     def increment_cycle(self):
         """Increment cycle counter."""
@@ -1647,6 +1700,16 @@ class OrcaKillCycle:
             print("🦈🔍 Predator Detection: WIRED! (Front-run + stalking detection)")
         except Exception as e:
             print(f"🦈🔍 Predator Detection: {e}")
+        
+        # 29. Stealth Execution (anti-front-running countermeasures)
+        self.stealth_executor = None
+        self.stealth_mode = "normal"  # Can be: normal, aggressive, paranoid, disabled
+        if STEALTH_AVAILABLE and get_stealth_executor:
+            try:
+                self.stealth_executor = get_stealth_executor(self.stealth_mode)
+                print(f"🥷 Stealth Execution: WIRED! (Mode: {self.stealth_mode})")
+            except Exception as e:
+                print(f"🥷 Stealth Execution: {e}")
         
         # HFT Order Router
         self.hft_order_router = None
@@ -2824,6 +2887,67 @@ class OrcaKillCycle:
                 pass  # Silent fail - don't break trading
         
         return tracking_data
+    
+    def execute_stealth_buy(self, client: Any, symbol: str, quantity: float, 
+                            price: float = None, exchange: str = 'alpaca') -> Dict:
+        """
+        🥷 Execute a BUY order with stealth countermeasures.
+        
+        Applies:
+        - Random delay (50-500ms)
+        - Order splitting for large orders
+        - Symbol rotation if hunted
+        """
+        if self.stealth_executor:
+            value_usd = (price or 0) * quantity
+            result = self.stealth_executor.execute_stealth_order(
+                client=client,
+                symbol=symbol,
+                side='buy',
+                quantity=quantity,
+                price=price,
+                value_usd=value_usd
+            )
+            
+            # If predator detector found front-running, mark symbol as hunted
+            if self.predator_detector:
+                report = self.predator_detector.generate_hunting_report()
+                if report.front_run_rate > 0.3:  # >30% front-run rate
+                    top_firm = report.top_predators[0].firm_id if report.top_predators else "unknown"
+                    self.stealth_executor.mark_symbol_hunted(symbol, firm=top_firm)
+            
+            return result
+        else:
+            # Fallback to direct execution
+            return client.place_market_order(symbol=symbol, side='buy', quantity=quantity)
+    
+    def execute_stealth_sell(self, client: Any, symbol: str, quantity: float,
+                             price: float = None, exchange: str = 'alpaca') -> Dict:
+        """
+        🥷 Execute a SELL order with stealth countermeasures.
+        """
+        if self.stealth_executor:
+            value_usd = (price or 0) * quantity
+            return self.stealth_executor.execute_stealth_order(
+                client=client,
+                symbol=symbol,
+                side='sell',
+                quantity=quantity,
+                price=price,
+                value_usd=value_usd
+            )
+        else:
+            return client.place_market_order(symbol=symbol, side='sell', quantity=quantity)
+    
+    def set_stealth_mode(self, mode: str):
+        """
+        Change stealth mode: normal, aggressive, paranoid, disabled
+        """
+        if STEALTH_AVAILABLE and get_stealth_config:
+            self.stealth_mode = mode
+            config = get_stealth_config(mode)
+            self.stealth_executor = OrcaStealthExecution(config)
+            print(f"🥷 Stealth mode changed to: {mode}")
     
     def can_sell_profitably(self, symbol: str, current_price: float) -> Tuple[bool, dict]:
         """
@@ -5721,6 +5845,28 @@ class OrcaKillCycle:
                                     front_run_rate=report.front_run_rate,
                                     top_predator=top_predator,
                                     strategy_decay=report.strategy_decay_alert
+                                )
+                                
+                                # 🥷 AUTO-ESCALATE STEALTH MODE based on threat level
+                                if report.threat_level == "red" and self.stealth_mode != "paranoid":
+                                    self.set_stealth_mode("paranoid")
+                                    print("🥷 AUTO-ESCALATED to PARANOID mode (threat level RED)")
+                                elif report.threat_level == "orange" and self.stealth_mode == "normal":
+                                    self.set_stealth_mode("aggressive")
+                                    print("🥷 AUTO-ESCALATED to AGGRESSIVE mode (threat level ORANGE)")
+                            except Exception:
+                                pass
+                        
+                        # 🥷 STEALTH STATS UPDATE
+                        if self.stealth_executor:
+                            try:
+                                stealth_stats = self.stealth_executor.get_stats()
+                                warroom.update_stealth(
+                                    mode=self.stealth_mode,
+                                    delayed_orders=stealth_stats.get('delayed_orders', 0),
+                                    split_orders=stealth_stats.get('split_orders', 0),
+                                    rotated_symbols=stealth_stats.get('rotated_symbols', 0),
+                                    hunted_count=len(stealth_stats.get('hunted_symbols', []))
                                 )
                             except Exception:
                                 pass
