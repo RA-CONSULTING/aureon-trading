@@ -1213,19 +1213,26 @@ class OrcaKillCycle:
                         print(f"\n\n📉 Momentum reversal detected (in profit) - taking gains!")
                         break
                     
-                    # 3. WHALE SELLING - only if above breakeven
+                    # 3. WHALE SELLING - only if above breakeven AND profitable
                     if self.whale_signal == 'selling' and current >= position.breakeven_price:
-                        position.ready_to_kill = True
-                        position.kill_reason = 'WHALE_SELLING'
-                        print(f"\n\n🐋 Whale selling detected - exiting above breakeven!")
-                        break
+                        # Calculate if we'd be profitable
+                        est_exit = current * buy_qty * (1 - self.fee_rate)
+                        est_pnl = est_exit - position.entry_cost
+                        if est_pnl > 0:
+                            position.ready_to_kill = True
+                            position.kill_reason = 'WHALE_SELLING'
+                            print(f"\n\n🐋 Whale selling detected - exiting with profit!")
+                            break
+                        else:
+                            print(f"\r   🐋 Whale selling but NOT profitable - HOLDING!", end="")
                     
-                    # 4. STOP LOSS - protect capital
-                    if current <= stop_price:
-                        position.ready_to_kill = True
-                        position.kill_reason = 'STOP_LOSS'
-                        print(f"\n\n🛑 STOP LOSS HIT! ${current:,.2f} <= ${stop_price:,.2f}")
-                        break
+                    # 4. NO STOP LOSS! HOLD UNTIL PROFITABLE!
+                    # DISABLED: We NEVER sell at a loss
+                    # if current <= stop_price:
+                    #     position.ready_to_kill = True
+                    #     position.kill_reason = 'STOP_LOSS'
+                    #     print(f"\n\n🛑 STOP LOSS HIT! ${current:,.2f} <= ${stop_price:,.2f}")
+                    #     break
                     
                 time.sleep(self.stream_interval)  # 100ms streaming
             else:
@@ -1693,16 +1700,16 @@ class OrcaKillCycle:
         results = []
         attempted_indices = set()
         last_scan_time = 0
-        scan_interval = 30  # Scan for new opportunities every 30 seconds
+        scan_interval = 5  # 🔥 AGGRESSIVE: Scan every 5 seconds for fast opportunities!
         monitor_interval = 0.05  # 20 updates/sec
         whale_update_interval = 2.0  # Update whale intel every 2 seconds
         last_whale_update = 0
         
-        print(f"\n🚀 STARTING DYNAMIC HUNT - MONITOR + SCAN + BARTER MATRIX!")
+        print(f"\n🚀 STARTING DYNAMIC HUNT - AGGRESSIVE MODE!")
         print("="*80)
-        print("   📊 Monitor current positions | 🔍 Scan for new opportunities")
-        print("   🛒 Add positions dynamically | 🔄 Use barter matrix for kills")
-        print("   🚫 NO STOP LOSS - HOLD UNTIL TARGET HIT!")
+        print("   📊 Monitor current positions | 🔍 Scan every 5 SECONDS (AGGRESSIVE)")
+        print("   🛒 Add positions dynamically | 🔄 Immediate re-buy after sell!")
+        print("   🚫 NO STOP LOSS - ONLY SELL ON PROFIT!")
         print("="*80)
         
         try:
@@ -1976,7 +1983,77 @@ class OrcaKillCycle:
                                         'net_pnl': final_pnl
                                     })
                                     print(f"   ✅ SOLD {pos.symbol}: ${final_pnl:+.4f} ({pos.kill_reason})")
-                                    print(f"   🔄 READY FOR NEXT TRADE!")
+                                    
+                                    # 🔥🔥🔥 IMMEDIATE RE-SCAN & RE-BUY AFTER PROFITABLE SELL! 🔥🔥🔥
+                                    print(f"\n   🔄🔄🔄 IMMEDIATE RE-SCAN - AGGRESSIVE MODE! 🔄🔄🔄")
+                                    # Force immediate market scan
+                                    try:
+                                        new_opps = self.scan_entire_market(min_change_pct=0.3)  # Lower threshold for faster entries
+                                        if new_opps:
+                                            # Find best opportunity we haven't tried
+                                            for new_opp in new_opps[:5]:
+                                                new_symbol = new_opp.symbol if isinstance(new_opp, MarketOpportunity) else new_opp.get('symbol', '')
+                                                new_exchange = new_opp.exchange if isinstance(new_opp, MarketOpportunity) else new_opp.get('exchange', 'alpaca')
+                                                
+                                                # Skip if already in positions
+                                                active_symbols = [p.symbol for p in positions]
+                                                if new_symbol in active_symbols:
+                                                    continue
+                                                
+                                                # Check cash availability
+                                                cash_check = self.get_available_cash()
+                                                available_cash = cash_check.get(new_exchange, 0)
+                                                
+                                                if available_cash >= amount_per_position:
+                                                    print(f"   🚀 FOUND NEW TARGET: {new_symbol} ({new_exchange.upper()})")
+                                                    # Execute immediate buy
+                                                    new_client = self.clients.get(new_exchange)
+                                                    if new_client:
+                                                        try:
+                                                            new_price = new_opp.price if isinstance(new_opp, MarketOpportunity) else 0
+                                                            if new_price == 0:
+                                                                if new_exchange == 'alpaca':
+                                                                    ob = new_client.get_crypto_orderbook(new_symbol)
+                                                                    asks = ob.get('asks', [])
+                                                                    new_price = float(asks[0].get('p', 0)) if asks else 0
+                                                                else:
+                                                                    tick = new_client.get_ticker(new_symbol)
+                                                                    new_price = tick.get('ask', tick.get('price', 0))
+                                                            
+                                                            if new_price > 0:
+                                                                buy_qty_new = amount_per_position / new_price
+                                                                new_buy = new_client.place_market_order(
+                                                                    symbol=new_symbol,
+                                                                    side='buy',
+                                                                    quantity=buy_qty_new
+                                                                )
+                                                                if new_buy:
+                                                                    fill_price = float(new_buy.get('filled_avg_price', new_price))
+                                                                    fill_qty = float(new_buy.get('filled_qty', buy_qty_new))
+                                                                    new_fee_rate = self.fee_rates.get(new_exchange, 0.0025)
+                                                                    new_breakeven = fill_price * (1 + new_fee_rate) / (1 - new_fee_rate)
+                                                                    new_target = new_breakeven + (fill_price * target_pct / 100)
+                                                                    
+                                                                    new_position = LivePosition(
+                                                                        symbol=new_symbol,
+                                                                        exchange=new_exchange,
+                                                                        entry_price=fill_price,
+                                                                        entry_qty=fill_qty,
+                                                                        entry_cost=fill_price * fill_qty * (1 + new_fee_rate),
+                                                                        breakeven_price=new_breakeven,
+                                                                        target_price=new_target,
+                                                                        client=new_client
+                                                                    )
+                                                                    positions.append(new_position)
+                                                                    print(f"   🎯 BOUGHT {new_symbol}: {fill_qty:.4f} @ ${fill_price:.4f}")
+                                                                    print(f"   🎯 New target: ${new_target:.4f}")
+                                                                    break  # Only buy one new position per cycle
+                                                        except Exception as buy_err:
+                                                            print(f"   ⚠️ Re-buy failed: {buy_err}")
+                                    except Exception as scan_err:
+                                        print(f"   ⚠️ Re-scan failed: {scan_err}")
+                                    
+                                    print(f"   🔄 CYCLE CONTINUES - NEVER STOP HUNTING!")
                                 positions.remove(pos)
                                 
                         except Exception as e:
@@ -2494,11 +2571,12 @@ if __name__ == "__main__":
                         else:
                             display_lines.append(f"  {symbol_short:6} {bar} {progress:5.1f}% | ${pos.current_pnl:+.4f} | ${current:.6f}")
                         
-                        # Check exit conditions
+                        # Check exit conditions - ONLY SELL IF PROFITABLE!
                         if current >= pos.target_price:
                             pos.kill_reason = 'TARGET_HIT'
-                        elif current <= pos.stop_price:
-                            pos.kill_reason = 'STOP_LOSS'
+                        # DISABLED: NO STOP LOSS - we NEVER sell at a loss!
+                        # elif current <= pos.stop_price:
+                        #     pos.kill_reason = 'STOP_LOSS'
                         elif pos.current_pnl > 0.01:  # Small momentum profit
                             pos.kill_reason = 'MOMENTUM_PROFIT'
                         
