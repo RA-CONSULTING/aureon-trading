@@ -410,12 +410,22 @@ class OrcaCommandCenter:
         data = await request.json()
         mode = data.get('mode', 'normal')
         
+        # Update the config directly (stealth_mode is in config)
+        self.stealth_executor.config.stealth_mode = mode
+        
+        # Adjust settings based on mode
         if mode == 'normal':
-            self.stealth_executor.set_normal_mode()
+            self.stealth_executor.config.min_delay_ms = 50
+            self.stealth_executor.config.max_delay_ms = 500
+            self.stealth_executor.config.split_threshold_usd = 50.0
         elif mode == 'aggressive':
-            self.stealth_executor.set_aggressive_mode()
+            self.stealth_executor.config.min_delay_ms = 100
+            self.stealth_executor.config.max_delay_ms = 800
+            self.stealth_executor.config.split_threshold_usd = 25.0
         elif mode == 'paranoid':
-            self.stealth_executor.set_paranoid_mode()
+            self.stealth_executor.config.min_delay_ms = 200
+            self.stealth_executor.config.max_delay_ms = 1500
+            self.stealth_executor.config.split_threshold_usd = 15.0
         
         self.stats.stealth_mode = mode
         return web.json_response({'mode': mode, 'status': 'ok'})
