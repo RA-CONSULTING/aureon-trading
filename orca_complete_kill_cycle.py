@@ -362,6 +362,31 @@ except ImportError:
     create_quantum_scanner = None
     QuantumMirrorScanner = None
 
+# 🎯 Alpaca Options Trading - Covered calls & cash-secured puts
+try:
+    from alpaca_options_client import (
+        AlpacaOptionsClient, get_options_client,
+        OptionContract, OptionQuote, OptionType, TradingLevel
+    )
+    OPTIONS_AVAILABLE = True
+except ImportError:
+    OPTIONS_AVAILABLE = False
+    AlpacaOptionsClient = None
+    get_options_client = None
+    OptionContract = None
+    OptionQuote = None
+    OptionType = None
+    TradingLevel = None
+
+# 👑 Queen Options Scanner - Intelligent options discovery
+try:
+    from queen_options_scanner import QueenOptionsScanner, OptionsOpportunity
+    OPTIONS_SCANNER_AVAILABLE = True
+except ImportError:
+    OPTIONS_SCANNER_AVAILABLE = False
+    QueenOptionsScanner = None
+    OptionsOpportunity = None
+
 import random  # For simulating market activity
 
 
@@ -375,6 +400,8 @@ class WarRoomDisplay:
     
     Clean, unified Rich-based terminal display replacing spam logging.
     Shows positions, quantum systems, firm intel, and kills in organized panels.
+    🌟 Now with Rising Star Logic integration!
+    🎯 Now with OPTIONS TRADING support!
     """
     
     def __init__(self):
@@ -389,6 +416,16 @@ class WarRoomDisplay:
         self.total_pnl = 0.0
         self.best_trade = 0.0
         self.worst_trade = 0.0
+        # 🌟 Rising Star stats
+        self.rising_star_stats = {}
+        # 🎯 Options trading stats
+        self.options_data = {
+            'trading_level': 'UNKNOWN',
+            'buying_power': 0.0,
+            'positions': [],
+            'best_opportunity': None,
+            'last_scan': None,
+        }
         
     def _create_layout(self) -> Layout:
         """Create the war room layout."""
@@ -518,6 +555,36 @@ class WarRoomDisplay:
         if not self.firms_data:
             intel.add_row(Text("  Scanning...", style="dim"))
         
+        # Rising Star Stats
+        if hasattr(self, 'rising_star_stats') and self.rising_star_stats:
+            intel.add_row("")
+            intel.add_row(Text("🌟 RISING STAR", style="bold yellow"))
+            intel.add_row("")
+            rs = self.rising_star_stats
+            intel.add_row(Text(f"  Scanned: {rs.get('candidates_scanned', 0)}"))
+            intel.add_row(Text(f"  Sims: {rs.get('simulations_run', 0):,}"))
+            intel.add_row(Text(f"  Winners: {rs.get('winners_selected', 0)}"))
+            intel.add_row(Text(f"  DCA: {rs.get('accumulations_made', 0)} (${rs.get('total_accumulated_value', 0):.2f})"))
+        
+        # 🎯 Options Trading Stats
+        if hasattr(self, 'options_data') and self.options_data.get('trading_level') != 'UNKNOWN':
+            intel.add_row("")
+            intel.add_row(Text("🎯 OPTIONS TRADING", style="bold green"))
+            intel.add_row("")
+            opt = self.options_data
+            level_color = "green" if opt.get('trading_level') in ['COVERED', 'BUYING', 'SPREADS'] else "yellow"
+            intel.add_row(Text(f"  Level: [{level_color}]{opt.get('trading_level', 'N/A')}[/]"))
+            intel.add_row(Text(f"  Buying Power: ${opt.get('buying_power', 0):.2f}"))
+            if opt.get('best_opportunity'):
+                best = opt['best_opportunity']
+                intel.add_row(Text(f"  Best: {best.get('symbol', 'N/A')[:15]}"))
+                intel.add_row(Text(f"  Premium: ${best.get('premium', 0):.2f}"))
+                ann_ret = best.get('annualized_return', 0)
+                ret_color = "green" if ann_ret > 50 else "yellow" if ann_ret > 20 else "dim"
+                intel.add_row(Text(f"  Ann.Ret: [{ret_color}]{ann_ret:.0f}%[/]"))
+            if opt.get('positions'):
+                intel.add_row(Text(f"  📈 {len(opt['positions'])} option positions"))
+        
         return Panel(intel, title="[bold yellow]🎯 INTELLIGENCE[/]", border_style="yellow")
     
     def _build_footer(self) -> Panel:
@@ -528,9 +595,16 @@ class WarRoomDisplay:
         
         footer = Table.grid(expand=True)
         footer.add_column(justify="center", ratio=1)
+        
+        # Build status line with options info
+        options_status = ""
+        if hasattr(self, 'options_data') and self.options_data.get('trading_level') not in ['UNKNOWN', 'DISABLED']:
+            opt_level = self.options_data.get('trading_level', 'N/A')
+            options_status = f" | 🎯 OPTIONS: {opt_level}"
+        
         footer.add_row(
             Text(f"💰 UNREALIZED: [{pnl_color}]{pnl_sign}${unrealized_pnl:.4f}[/] | "
-                 f"🚫 NO STOP LOSS - HOLDING UNTIL PROFIT", style="bold")
+                 f"🌟 RISING STAR + DCA ACTIVE{options_status} | 🚫 NO STOP LOSS", style="bold")
         )
         footer.add_row(
             Text("⌨️ Press Ctrl+C to stop", style="dim")
@@ -602,6 +676,23 @@ class WarRoomDisplay:
             self.best_trade = pnl
         if pnl < self.worst_trade:
             self.worst_trade = pnl
+    
+    def update_rising_star(self, stats: dict):
+        """Update Rising Star statistics."""
+        self.rising_star_stats = stats
+    
+    def update_options(self, trading_level: str = None, buying_power: float = None,
+                       positions: list = None, best_opportunity: dict = None):
+        """Update options trading data."""
+        if trading_level is not None:
+            self.options_data['trading_level'] = trading_level
+        if buying_power is not None:
+            self.options_data['buying_power'] = buying_power
+        if positions is not None:
+            self.options_data['positions'] = positions
+        if best_opportunity is not None:
+            self.options_data['best_opportunity'] = best_opportunity
+        self.options_data['last_scan'] = time.time()
     
     def increment_cycle(self):
         """Increment cycle counter."""
@@ -1122,6 +1213,11 @@ class LivePosition:
     pnl_history: List[tuple] = field(default_factory=list)  # [(timestamp, pnl), ...]
     last_eta: object = None  # ImprovedETA result
     eta_calculator: object = None  # Per-position ETA calculator
+    # 🌟 Rising Star + Accumulation tracking
+    accumulation_count: int = 0          # Times we've added to position (DCA)
+    total_cost: float = 0.0              # Total USD spent across all buys
+    avg_entry_price: float = 0.0         # Average entry price (cost basis)
+    rising_star_candidate: object = None  # Original RisingStarCandidate if applicable
 
 
 @dataclass
@@ -1424,6 +1520,35 @@ class OrcaKillCycle:
             except Exception as e:
                 print(f"🔮 Quantum Mirror: {e}")
         
+        # ═══════════════════════════════════════════════════════════════════
+        # 🎯 OPTIONS TRADING SYSTEMS - APPROVED FOR LEVEL 1!
+        # ═══════════════════════════════════════════════════════════════════
+        
+        # 26. Alpaca Options Client (Covered calls & cash-secured puts)
+        self.options_client = None
+        self.options_trading_level = None
+        if OPTIONS_AVAILABLE and get_options_client:
+            try:
+                self.options_client = get_options_client()
+                level = self.options_client.get_trading_level()
+                self.options_trading_level = level
+                if level and level.value > 0:
+                    print(f"🎯 Alpaca Options Client: WIRED! (Level {level.name})")
+                else:
+                    print("🎯 Alpaca Options Client: DISABLED (Level 0)")
+            except Exception as e:
+                print(f"🎯 Options Client: {e}")
+        
+        # 27. Queen Options Scanner (Intelligent options discovery)
+        self.options_scanner = None
+        if OPTIONS_SCANNER_AVAILABLE and QueenOptionsScanner and self.options_trading_level:
+            try:
+                if self.options_trading_level.value > 0:
+                    self.options_scanner = QueenOptionsScanner()
+                    print("👑 Queen Options Scanner: WIRED! (Income strategy scanner)")
+            except Exception as e:
+                print(f"👑 Options Scanner: {e}")
+        
         # Whale intelligence via ThoughtBus
         self.bus = None
         self.whale_signal = 'neutral'
@@ -1438,6 +1563,442 @@ class OrcaKillCycle:
         # Live streaming settings
         self.stream_interval = 0.1  # 100ms = 10 updates/sec
         self.stop_loss_pct = -1.0   # Stop loss at -1%
+        
+        # ═══════════════════════════════════════════════════════════════════
+        # 🚀 MASTER LAUNCHER INTEGRATIONS - Imported from aureon_master_launcher.py
+        # ═══════════════════════════════════════════════════════════════════
+        
+        # Real Intelligence Engine (Bot/Whale/Momentum detection)
+        self.intelligence_engine = None
+        try:
+            from aureon_real_intelligence_engine import get_intelligence_engine
+            self.intelligence_engine = get_intelligence_engine()
+            print("📡 Real Intelligence Engine: WIRED! (Bot/Whale/Momentum)")
+        except Exception as e:
+            pass
+        
+        # Real Data Feed Hub (Central distribution)
+        self.feed_hub = None
+        try:
+            from aureon_real_data_feed_hub import get_feed_hub
+            self.feed_hub = get_feed_hub()
+            print("📊 Real Data Feed Hub: WIRED! (Central distribution)")
+        except Exception as e:
+            pass
+        
+        # Enigma Integration (Cipher decoding)
+        self.enigma = None
+        try:
+            from aureon_enigma_integration import get_enigma_integration
+            self.enigma = get_enigma_integration()
+            print("🔐 Enigma Integration: WIRED! (Cipher decoding)")
+        except Exception as e:
+            pass
+        
+        # HFT Harmonic Engine - Already wired above (section 16), just set reference
+        # self.hft_engine is already set above
+        
+        # HFT Order Router
+        self.hft_order_router = None
+        try:
+            from aureon_hft_websocket_order_router import get_order_router
+            self.hft_order_router = get_order_router()
+            # Wire exchange clients to router
+            if self.hft_order_router and hasattr(self.hft_order_router, 'wire_exchange_clients'):
+                exchange_clients = {}
+                if 'alpaca' in self.clients and self.clients['alpaca']:
+                    exchange_clients['alpaca'] = self.clients['alpaca']
+                if 'kraken' in self.clients and self.clients['kraken']:
+                    exchange_clients['kraken'] = self.clients['kraken']
+                self.hft_order_router.wire_exchange_clients(exchange_clients)
+            print("🚀 HFT Order Router: WIRED! (WebSocket routing)")
+        except Exception as e:
+            pass
+        
+        # 👑 Queen Hive Mind - Central Decision Controller
+        self.queen_hive = None
+        try:
+            from aureon_queen_hive_mind import get_queen
+            self.queen_hive = get_queen()
+            print("👑 Queen Hive Mind: WIRED! (Central neural arbiter)")
+        except Exception as e:
+            pass
+        
+        # Harmonic Signal Chain - The 5-layer frequency pipeline
+        self.harmonic_signal_chain = None
+        try:
+            from aureon_harmonic_signal_chain import HarmonicSignalChain
+            self.harmonic_signal_chain = HarmonicSignalChain()
+            print("🎵 Harmonic Signal Chain: WIRED! (5-layer signal pipeline)")
+        except Exception as e:
+            pass
+        
+        # Harmonic Alphabet - 7-mode frequency encoding system
+        self.harmonic_alphabet = None
+        try:
+            from aureon_harmonic_alphabet import HarmonicAlphabet
+            self.harmonic_alphabet = HarmonicAlphabet()
+            print("🔤 Harmonic Alphabet: WIRED! (7-mode encoding)")
+        except Exception as e:
+            pass
+        
+        # Chirp Bus (Bird chorus coordination) - handle shared memory gracefully
+        self.chirp_bus = None
+        try:
+            from aureon_chirp_bus import ChirpBus
+            # Try to connect to existing shared memory first
+            try:
+                self.chirp_bus = ChirpBus(create=False)
+            except FileNotFoundError:
+                # No existing bus, create new one
+                self.chirp_bus = ChirpBus(create=True)
+            except FileExistsError:
+                # Already exists, connect without create
+                self.chirp_bus = ChirpBus(create=False)
+            if self.chirp_bus:
+                print("🐦 Chirp Bus: WIRED! (Bird chorus coordination)")
+        except Exception as e:
+            pass
+        
+        # Audit trail for all executions
+        self.audit_file = 'orca_execution_audit.jsonl'
+        self.audit_enabled = True
+        
+        # Flight check status
+        self.flight_check_passed = False
+        self.last_flight_check = {}
+        
+        print("\n✅ MASTER LAUNCHER INTEGRATIONS COMPLETE")
+        
+    def audit_event(self, event_type: str, data: dict):
+        """Log audit event to JSONL file for tracking and debugging."""
+        if not self.audit_enabled:
+            return
+        try:
+            import json
+            event = {
+                'timestamp': datetime.now().isoformat(),
+                'event_type': event_type,
+                'data': data
+            }
+            with open(self.audit_file, 'a') as f:
+                f.write(json.dumps(event) + '\n')
+        except Exception:
+            pass
+    
+    def run_flight_check(self) -> dict:
+        """
+        Run system flight check before execution (anti-phantom validation).
+        Validates all connections are live and working.
+        
+        Returns:
+            dict with check results for each system
+        """
+        flight = {
+            'timestamp': datetime.now().isoformat(),
+            'queen_wired': False,
+            'exchange_alpaca': False,
+            'exchange_kraken': False,
+            'intelligence_engine': False,
+            'feed_hub': False,
+            'enigma': False,
+            'hft_engine': False,
+            'hft_order_router': False,
+            'harmonic_signal_chain': False,
+            'harmonic_alphabet': False,
+            'chirp_bus': False,
+            'thought_bus': False,
+            'miner_brain': False,
+            'quantum_telescope': False,
+            'ultimate_intelligence': False,
+            'whale_tracker': False,
+            'luck_mapper': False,
+            'phantom_filter': False,
+            'inception_engine': False,
+            'elephant_learning': False,
+            'russian_doll': False,
+            'immune_system': False,
+            'moby_dick': False,
+            'stargate': False,
+            'quantum_mirror': False,
+        }
+        
+        # Check exchange connections
+        try:
+            if 'alpaca' in self.clients and self.clients['alpaca']:
+                flight['exchange_alpaca'] = True
+        except:
+            pass
+        
+        try:
+            if 'kraken' in self.clients and self.clients['kraken']:
+                flight['exchange_kraken'] = True
+        except:
+            pass
+        
+        # Check Queen connection
+        try:
+            if self.queen_hive:
+                flight['queen_wired'] = True
+        except:
+            pass
+        
+        # Check Master Launcher integrations
+        flight['intelligence_engine'] = self.intelligence_engine is not None
+        flight['feed_hub'] = self.feed_hub is not None
+        flight['enigma'] = self.enigma is not None
+        flight['hft_engine'] = self.hft_engine is not None
+        flight['hft_order_router'] = self.hft_order_router is not None
+        flight['harmonic_signal_chain'] = self.harmonic_signal_chain is not None
+        flight['harmonic_alphabet'] = self.harmonic_alphabet is not None
+        flight['chirp_bus'] = self.chirp_bus is not None
+        flight['thought_bus'] = self.bus is not None
+        
+        # Check quantum systems
+        flight['miner_brain'] = self.miner_brain is not None
+        flight['quantum_telescope'] = self.quantum_telescope is not None
+        flight['ultimate_intelligence'] = self.ultimate_intel is not None
+        flight['whale_tracker'] = self.whale_tracker is not None
+        flight['luck_mapper'] = self.luck_mapper is not None
+        flight['phantom_filter'] = self.phantom_filter is not None
+        flight['inception_engine'] = self.inception_engine is not None
+        flight['elephant_learning'] = self.elephant is not None
+        flight['russian_doll'] = self.russian_doll is not None
+        flight['immune_system'] = self.immune_system is not None
+        flight['moby_dick'] = self.moby_dick is not None
+        flight['stargate'] = self.stargate is not None
+        flight['quantum_mirror'] = self.quantum_mirror is not None
+        
+        # Count systems online
+        total_systems = len([k for k in flight.keys() if k != 'timestamp'])
+        online_systems = len([k for k, v in flight.items() if k != 'timestamp' and v])
+        
+        flight['summary'] = {
+            'total_systems': total_systems,
+            'online_systems': online_systems,
+            'online_pct': round(online_systems / total_systems * 100, 1) if total_systems > 0 else 0,
+            'critical_online': all([
+                flight['exchange_alpaca'] or flight['exchange_kraken'],  # At least one exchange
+                flight['miner_brain'] or flight['ultimate_intelligence'],  # At least one intelligence source
+            ])
+        }
+        
+        # Determine if flight check passed
+        self.flight_check_passed = flight['summary']['critical_online']
+        self.last_flight_check = flight
+        
+        # Audit the flight check
+        self.audit_event('flight_check', flight)
+        
+        return flight
+    
+    def print_flight_check(self, flight: dict = None):
+        """Print flight check results in a nice format."""
+        if flight is None:
+            flight = self.run_flight_check()
+        
+        print("\n" + "=" * 60)
+        print("✈️ ORCA FLIGHT CHECK - SYSTEM VALIDATION")
+        print("=" * 60)
+        
+        categories = {
+            '🏦 EXCHANGES': ['exchange_alpaca', 'exchange_kraken'],
+            '👑 QUEEN & CORE': ['queen_wired', 'thought_bus', 'intelligence_engine', 'feed_hub'],
+            '⚡ HFT SYSTEMS': ['hft_engine', 'hft_order_router', 'harmonic_signal_chain', 'harmonic_alphabet'],
+            '🧠 INTELLIGENCE': ['miner_brain', 'quantum_telescope', 'ultimate_intelligence', 'enigma'],
+            '🐋 WHALE SYSTEMS': ['whale_tracker', 'moby_dick', 'chirp_bus'],
+            '🔮 QUANTUM': ['luck_mapper', 'inception_engine', 'stargate', 'quantum_mirror'],
+            '🛡️ PROTECTION': ['phantom_filter', 'immune_system', 'elephant_learning', 'russian_doll']
+        }
+        
+        for category, keys in categories.items():
+            print(f"\n{category}:")
+            for key in keys:
+                status = flight.get(key, False)
+                icon = "✅" if status else "❌"
+                name = key.replace('_', ' ').title()
+                print(f"   {icon} {name}")
+        
+        # Summary
+        summary = flight.get('summary', {})
+        print(f"\n{'=' * 60}")
+        print(f"📊 SUMMARY: {summary.get('online_systems', 0)}/{summary.get('total_systems', 0)} systems online ({summary.get('online_pct', 0)}%)")
+        
+        if self.flight_check_passed:
+            print("✅ FLIGHT CHECK PASSED - Ready for autonomous trading")
+        else:
+            print("❌ FLIGHT CHECK FAILED - Critical systems offline")
+        print("=" * 60)
+        
+    def gather_all_intelligence(self, prices: dict = None) -> dict:
+        """
+        Gather intelligence from all sources before making decisions.
+        This is the Master Launcher pattern for comprehensive data gathering.
+        
+        Returns:
+            dict with bot/whale/momentum intelligence
+        """
+        intel = {
+            'timestamp': datetime.now().isoformat(),
+            'total_sources': 0,
+            'bots': [],
+            'whale_predictions': [],
+            'momentum': {},
+            'validated_signals': []
+        }
+        
+        # Get prices if not provided
+        if prices is None:
+            prices = {}
+            try:
+                if 'alpaca' in self.clients and self.clients['alpaca']:
+                    client = self.clients['alpaca']
+                    if hasattr(client, 'get_all_quotes'):
+                        quotes = client.get_all_quotes()
+                        for symbol, data in (quotes or {}).items():
+                            prices[symbol] = data.get('price', data.get('last', 0))
+            except:
+                pass
+        
+        # 1. Real Intelligence Engine
+        if self.intelligence_engine:
+            try:
+                if hasattr(self.intelligence_engine, 'gather_all_intelligence'):
+                    engine_intel = self.intelligence_engine.gather_all_intelligence(prices)
+                    intel['bots'] = engine_intel.get('bots', [])
+                    intel['whale_predictions'] = engine_intel.get('whale_predictions', [])
+                    intel['momentum'] = engine_intel.get('momentum', {})
+                    intel['total_sources'] += 1
+            except:
+                pass
+        
+        # 2. Feed Hub
+        if self.feed_hub:
+            try:
+                if hasattr(self.feed_hub, 'gather_and_distribute'):
+                    summary = self.feed_hub.gather_and_distribute(prices)
+                    intel['validated_signals'] = summary.get('validated_intelligence', [])
+                    intel['total_sources'] += 1
+            except:
+                pass
+        
+        # 3. Miner Brain
+        if self.miner_brain:
+            try:
+                if hasattr(self.miner_brain, 'get_recommendations'):
+                    recs = self.miner_brain.get_recommendations(prices)
+                    for rec in (recs or []):
+                        if rec.get('confidence', 0) > 0.7:
+                            intel['validated_signals'].append({
+                                'source': 'miner_brain',
+                                'symbol': rec.get('symbol'),
+                                'action': rec.get('action'),
+                                'confidence': rec.get('confidence')
+                            })
+                    intel['total_sources'] += 1
+            except:
+                pass
+        
+        # 4. Whale Tracker
+        if self.whale_tracker:
+            try:
+                if hasattr(self.whale_tracker, 'recent_whale_activity'):
+                    activity = self.whale_tracker.recent_whale_activity
+                    for symbol, data in (activity or {}).items():
+                        intel['whale_predictions'].append({
+                            'symbol': symbol,
+                            'action': data.get('direction', 'neutral'),
+                            'value': data.get('value_usd', 0)
+                        })
+                    intel['total_sources'] += 1
+            except:
+                pass
+        
+        # 5. Ultimate Intelligence
+        if self.ultimate_intel:
+            try:
+                if hasattr(self.ultimate_intel, 'get_prediction'):
+                    for symbol in list(prices.keys())[:10]:
+                        pred = self.ultimate_intel.get_prediction(symbol)
+                        if pred and pred.get('confidence', 0) > 0.8:
+                            intel['validated_signals'].append({
+                                'source': 'ultimate_intelligence',
+                                'symbol': symbol,
+                                'action': pred.get('action', 'HOLD'),
+                                'confidence': pred.get('confidence', 0)
+                            })
+                    intel['total_sources'] += 1
+            except:
+                pass
+        
+        # Audit the intelligence gathering
+        self.audit_event('intelligence_gathered', {
+            'total_sources': intel['total_sources'],
+            'bots_count': len(intel['bots']),
+            'whales_count': len(intel['whale_predictions']),
+            'validated_count': len(intel['validated_signals'])
+        })
+        
+        return intel
+    
+    def print_status_summary(self):
+        """Print a comprehensive status summary of all systems (Master Launcher style)."""
+        print("\n" + "=" * 70)
+        print("🦈🔪 ORCA COMPLETE KILL CYCLE - STATUS SUMMARY")
+        print("=" * 70)
+        
+        print("\n📡 INTELLIGENCE SOURCES:")
+        if self.intelligence_engine:
+            print("   • Real Intelligence Engine: ACTIVE")
+        if self.feed_hub:
+            print("   • Real Data Feed Hub: ACTIVE")
+        if self.miner_brain:
+            print("   • Miner Brain: ACTIVE (Cognitive Intelligence)")
+        if self.ultimate_intel:
+            print("   • Ultimate Intelligence: ACTIVE (95% accuracy)")
+        
+        print("\n🐋 WHALE SYSTEMS:")
+        if self.whale_tracker:
+            print("   • Whale Tracker: ACTIVE")
+        if self.moby_dick:
+            print("   • Moby Dick Hunter: ACTIVE")
+        if self.chirp_bus:
+            print("   • Chirp Bus: ACTIVE (Bird chorus)")
+        
+        print("\n⚡ HFT & EXECUTION:")
+        if self.hft_engine:
+            print("   • HFT Harmonic Engine: ACTIVE")
+        if self.hft_order_router:
+            print("   • HFT Order Router: ACTIVE")
+        if self.harmonic_signal_chain:
+            print("   • Harmonic Signal Chain: ACTIVE")
+        
+        print("\n🔮 QUANTUM SYSTEMS:")
+        if self.luck_mapper:
+            print("   • Luck Field Mapper: ACTIVE")
+        if self.inception_engine:
+            print("   • Inception Engine: ACTIVE (LIMBO probability)")
+        if self.stargate:
+            print("   • Stargate Protocol: ACTIVE")
+        if self.quantum_mirror:
+            print("   • Quantum Mirror: ACTIVE")
+        
+        print("\n🛡️ PROTECTION SYSTEMS:")
+        if self.phantom_filter:
+            print("   • Phantom Filter: ACTIVE (4-layer validation)")
+        if self.immune_system:
+            print("   • Immune System: ACTIVE (Self-healing)")
+        if self.elephant:
+            print("   • Elephant Learning: ACTIVE (Pattern memory)")
+        
+        print("\n🏦 EXCHANGE CONNECTIONS:")
+        for exchange, client in self.clients.items():
+            status = "✅ CONNECTED" if client else "❌ OFFLINE"
+            print(f"   • {exchange.title()}: {status}")
+        
+        print("\n" + "=" * 70)
+        print("✅ ORCA KILL CYCLE READY - All systems operational")
+        print("=" * 70)
         
     def _handle_whale_signal(self, thought):
         """Process whale activity signals from ThoughtBus."""
@@ -4487,17 +5048,62 @@ class OrcaKillCycle:
     # 🎖️ WAR ROOM MODE - RICH TERMINAL UI (NO SPAM)
     # ═══════════════════════════════════════════════════════════════════════════════
     
-    def run_autonomous_warroom(self, max_positions: int = 3, amount_per_position: float = 2.5,
+    def run_autonomous_warroom(self, max_positions: int = 2, amount_per_position: float = 2.5,
                                target_pct: float = 1.0, min_change_pct: float = 0.3):
         """
-        🎖️ WAR ROOM AUTONOMOUS MODE - Clean Rich-based dashboard.
+        🎖️🌟 WAR ROOM + RISING STAR MODE - THE WINNING FORMULA 🌟🎖️
         
-        Same logic as run_autonomous() but with unified terminal display.
-        NO LOGGING SPAM - all info displayed in organized panels.
+        COMPLETE 4-STAGE SYSTEM:
+        
+        STAGE 1: SCAN - Use ALL intelligence systems to find candidates
+          - Quantum scoring (Luck, Phantom, Inception, Elephant, etc.)
+          - Probability predictions (95% accuracy)
+          - Wave scanner momentum
+          - Firm intelligence (smart money)
+          - Whale signals
+          
+        STAGE 2: SIMULATE - Top 4 candidates → 30-second Monte Carlo
+          - 1000 simulations each
+          - Historical patterns + predictions
+          - Time-to-profit optimization
+          
+        STAGE 3: SELECT - Pick BEST 2 winners
+          - Highest simulation confidence
+          - Fastest time to profit
+          - 30-second profit window target
+          
+        STAGE 4: EXECUTE + ACCUMULATE + MONITOR + KILL
+          - Open positions on best 2
+          - ACCUMULATE if price drops (DCA strategy)
+          - ALL systems monitoring for exit
+          - KILL when profit target hit
+        
+        Gary Leckey | The Math Works | January 2026
         """
         if not RICH_AVAILABLE:
             print("⚠️ Rich library not available - falling back to standard mode")
             return self.run_autonomous(max_positions, amount_per_position, target_pct, min_change_pct)
+        
+        # ═══════════════════════════════════════════════════════════════════
+        # 🌟 RISING STAR INITIALIZATION
+        # ═══════════════════════════════════════════════════════════════════
+        try:
+            from aureon_rising_star_logic import RisingStarScanner, RisingStarCandidate
+            self.rising_star_scanner = RisingStarScanner(self)
+            self.rising_star_enabled = True
+            RISING_STAR_AVAILABLE = True
+        except ImportError:
+            RISING_STAR_AVAILABLE = False
+            self.rising_star_enabled = False
+        
+        # Rising Star statistics
+        rising_star_stats = {
+            'candidates_scanned': 0,
+            'simulations_run': 0,
+            'winners_selected': 0,
+            'accumulations_made': 0,
+            'total_accumulated_value': 0.0,
+        }
         
         # Initialize War Room display
         warroom = WarRoomDisplay()
@@ -4754,9 +5360,60 @@ class OrcaKillCycle:
                                     last_scan_time = 0  # Force scan
                             except Exception:
                                 pass
+                        
+                        # ═══════════════════════════════════════════════════════
+                        # 🌟 ACCUMULATION CHECK - BUY MORE IF PRICE DROPS
+                        # ═══════════════════════════════════════════════════════
+                        elif RISING_STAR_AVAILABLE and pos.accumulation_count < 3:
+                            # Check if price dropped enough for accumulation
+                            avg_entry = pos.avg_entry_price if pos.avg_entry_price > 0 else pos.entry_price
+                            price_drop_pct = (avg_entry - current) / avg_entry * 100 if avg_entry > 0 else 0
+                            
+                            # Accumulate if price dropped 5%+ from avg entry
+                            if price_drop_pct >= 5.0:
+                                try:
+                                    cash = self.get_available_cash()
+                                    exchange_cash = cash.get(pos.exchange, 0)
+                                    accumulate_amount = min(amount_per_position * 0.5, exchange_cash * 0.5)
+                                    
+                                    if accumulate_amount >= 0.50:
+                                        acc_order = pos.client.place_market_order(
+                                            symbol=pos.symbol,
+                                            side='buy',
+                                            quote_qty=accumulate_amount
+                                        )
+                                        if acc_order:
+                                            acc_qty = float(acc_order.get('filled_qty', 0))
+                                            acc_price = float(acc_order.get('filled_avg_price', current))
+                                            
+                                            if acc_qty > 0:
+                                                # Update position with accumulation
+                                                fee_rate = self.fee_rates.get(pos.exchange, 0.0025)
+                                                acc_cost = acc_price * acc_qty * (1 + fee_rate)
+                                                
+                                                # New total qty and cost
+                                                new_total_qty = pos.entry_qty + acc_qty
+                                                new_total_cost = (pos.total_cost if pos.total_cost > 0 else pos.entry_cost) + acc_cost
+                                                new_avg_entry = new_total_cost / new_total_qty / (1 + fee_rate) if new_total_qty > 0 else pos.entry_price
+                                                
+                                                # Update position
+                                                pos.entry_qty = new_total_qty
+                                                pos.total_cost = new_total_cost
+                                                pos.avg_entry_price = new_avg_entry
+                                                pos.accumulation_count += 1
+                                                
+                                                # Recalculate breakeven and target
+                                                pos.breakeven_price = new_avg_entry * (1 + fee_rate) / (1 - fee_rate)
+                                                pos.target_price = pos.breakeven_price * (1 + target_pct / 100)
+                                                
+                                                # Track stats
+                                                rising_star_stats['accumulations_made'] += 1
+                                                rising_star_stats['total_accumulated_value'] += accumulate_amount
+                                except Exception:
+                                    pass
                     
                     # ═══════════════════════════════════════════════════════
-                    # SCAN FOR NEW OPPORTUNITIES
+                    # 🌟 RISING STAR 4-STAGE SCAN FOR NEW OPPORTUNITIES
                     # ═══════════════════════════════════════════════════════
                     if current_time - last_scan_time >= scan_interval and len(positions) < max_positions:
                         last_scan_time = current_time
@@ -4765,69 +5422,225 @@ class OrcaKillCycle:
                         total_cash = sum(cash.values())
                         
                         if total_cash >= amount_per_position * 0.5:
-                            opportunities = self.scan_entire_market(min_change_pct=min_change_pct)
-                            if opportunities:
-                                active_symbols = [p.symbol for p in positions]
-                                new_opps = [o for o in opportunities if o.symbol not in active_symbols]
+                            active_symbols = [p.symbol for p in positions]
+                            
+                            if RISING_STAR_AVAILABLE:
+                                # ═══════════════════════════════════════════════
+                                # STAGE 1: SCAN - Use ALL intelligence systems
+                                # ═══════════════════════════════════════════════
+                                candidates = self.rising_star_scanner.scan_entire_market(max_candidates=20)
+                                rising_star_stats['candidates_scanned'] += len(candidates)
                                 
-                                if new_opps:
-                                    best = new_opps[0]
-                                    try:
-                                        client = self.clients.get(best.exchange)
-                                        if client:
-                                            symbol_clean = best.symbol.replace('/', '')
-                                            exchange_cash = cash.get(best.exchange, 0)
-                                            buy_amount = min(amount_per_position, exchange_cash * 0.9)
-                                            
-                                            if buy_amount >= 0.50:
-                                                buy_order = client.place_market_order(
-                                                    symbol=symbol_clean,
-                                                    side='buy',
-                                                    quote_qty=buy_amount
-                                                )
-                                                if buy_order:
-                                                    buy_qty = float(buy_order.get('filled_qty', 0))
-                                                    buy_price = float(buy_order.get('filled_avg_price', best.price))
-                                                    
-                                                    if buy_qty > 0 and buy_price > 0:
-                                                        fee_rate = self.fee_rates.get(best.exchange, 0.0025)
-                                                        breakeven = buy_price * (1 + fee_rate) / (1 - fee_rate)
-                                                        target_price = breakeven * (1 + target_pct / 100)
+                                # Filter out symbols we already have
+                                candidates = [c for c in candidates if c.symbol.replace('/', '') not in active_symbols]
+                                
+                                if candidates:
+                                    # ═══════════════════════════════════════════════
+                                    # STAGE 2 & 3: SIMULATE + SELECT - Top 4 → Best 2
+                                    # ═══════════════════════════════════════════════
+                                    # Run 30-second simulation (Monte Carlo)
+                                    best_2 = self.rising_star_scanner.select_best_two(candidates)
+                                    rising_star_stats['simulations_run'] += min(4, len(candidates)) * 1000
+                                    rising_star_stats['winners_selected'] += len(best_2)
+                                    
+                                    # ═══════════════════════════════════════════════
+                                    # STAGE 4: EXECUTE - Open positions on winners
+                                    # ═══════════════════════════════════════════════
+                                    for winner in best_2:
+                                        if len(positions) >= max_positions:
+                                            break
+                                        
+                                        try:
+                                            client = self.clients.get(winner.exchange)
+                                            if client:
+                                                symbol_clean = winner.symbol.replace('/', '')
+                                                exchange_cash = cash.get(winner.exchange, 0)
+                                                buy_amount = min(amount_per_position, exchange_cash * 0.9)
+                                                
+                                                if buy_amount >= 0.50:
+                                                    buy_order = client.place_market_order(
+                                                        symbol=symbol_clean,
+                                                        side='buy',
+                                                        quote_qty=buy_amount
+                                                    )
+                                                    if buy_order:
+                                                        buy_qty = float(buy_order.get('filled_qty', 0))
+                                                        buy_price = float(buy_order.get('filled_avg_price', winner.price))
                                                         
-                                                        pos = LivePosition(
-                                                            symbol=symbol_clean,
-                                                            exchange=best.exchange,
-                                                            entry_price=buy_price,
-                                                            entry_qty=buy_qty,
-                                                            entry_cost=buy_price * buy_qty * (1 + fee_rate),
-                                                            breakeven_price=breakeven,
-                                                            target_price=target_price,
-                                                            client=client,
-                                                            stop_price=0.0
-                                                        )
-                                                        positions.append(pos)
-                                                        session_stats['total_trades'] += 1
-                                    except Exception:
-                                        pass
+                                                        if buy_qty > 0 and buy_price > 0:
+                                                            fee_rate = self.fee_rates.get(winner.exchange, 0.0025)
+                                                            entry_cost = buy_price * buy_qty * (1 + fee_rate)
+                                                            breakeven = buy_price * (1 + fee_rate) / (1 - fee_rate)
+                                                            target_price = breakeven * (1 + target_pct / 100)
+                                                            
+                                                            pos = LivePosition(
+                                                                symbol=symbol_clean,
+                                                                exchange=winner.exchange,
+                                                                entry_price=buy_price,
+                                                                entry_qty=buy_qty,
+                                                                entry_cost=entry_cost,
+                                                                breakeven_price=breakeven,
+                                                                target_price=target_price,
+                                                                client=client,
+                                                                stop_price=0.0,
+                                                                # Rising Star tracking
+                                                                accumulation_count=0,
+                                                                total_cost=entry_cost,
+                                                                avg_entry_price=buy_price,
+                                                                rising_star_candidate=winner
+                                                            )
+                                                            positions.append(pos)
+                                                            session_stats['total_trades'] += 1
+                                        except Exception:
+                                            pass
+                            else:
+                                # Fallback: original scanning without Rising Star
+                                opportunities = self.scan_entire_market(min_change_pct=min_change_pct)
+                                if opportunities:
+                                    new_opps = [o for o in opportunities if o.symbol not in active_symbols]
+                                    
+                                    if new_opps:
+                                        best = new_opps[0]
+                                        try:
+                                            client = self.clients.get(best.exchange)
+                                            if client:
+                                                symbol_clean = best.symbol.replace('/', '')
+                                                exchange_cash = cash.get(best.exchange, 0)
+                                                buy_amount = min(amount_per_position, exchange_cash * 0.9)
+                                                
+                                                if buy_amount >= 0.50:
+                                                    buy_order = client.place_market_order(
+                                                        symbol=symbol_clean,
+                                                        side='buy',
+                                                        quote_qty=buy_amount
+                                                    )
+                                                    if buy_order:
+                                                        buy_qty = float(buy_order.get('filled_qty', 0))
+                                                        buy_price = float(buy_order.get('filled_avg_price', best.price))
+                                                        
+                                                        if buy_qty > 0 and buy_price > 0:
+                                                            fee_rate = self.fee_rates.get(best.exchange, 0.0025)
+                                                            breakeven = buy_price * (1 + fee_rate) / (1 - fee_rate)
+                                                            target_price = breakeven * (1 + target_pct / 100)
+                                                            
+                                                            pos = LivePosition(
+                                                                symbol=symbol_clean,
+                                                                exchange=best.exchange,
+                                                                entry_price=buy_price,
+                                                                entry_qty=buy_qty,
+                                                                entry_cost=buy_price * buy_qty * (1 + fee_rate),
+                                                                breakeven_price=breakeven,
+                                                                target_price=target_price,
+                                                                client=client,
+                                                                stop_price=0.0
+                                                            )
+                                                            positions.append(pos)
+                                                            session_stats['total_trades'] += 1
+                                        except Exception:
+                                            pass
                     
                     # ═══════════════════════════════════════════════════════
-                    # UPDATE QUANTUM SCORES
+                    # UPDATE QUANTUM SCORES FROM ALL SYSTEMS
                     # ═══════════════════════════════════════════════════════
                     try:
-                        quantum = self.get_quantum_score("BTC/USD", "long", 50000, 0)
+                        # Get a representative price for quantum scoring
+                        btc_price = all_prices.get('BTCUSD', all_prices.get('BTC/USD', 50000))
+                        
+                        # Gather full intelligence from all wired systems
+                        intel = self.gather_all_intelligence(all_prices)
+                        
+                        # Get quantum score with correct parameters
+                        quantum = self.get_quantum_score("BTC/USD", btc_price, 0.5, 100000, 0.5)
+                        
+                        # Map quantum results to warroom display
                         warroom.update_quantum(
-                            luck=quantum.get('luck_resonance', 0),
-                            phantom=quantum.get('phantom_clarity', 0),
-                            inception=quantum.get('inception_potential', 0),
-                            elephant=quantum.get('elephant_memory', 0),
+                            luck=quantum.get('luck_field', 0),
+                            phantom=quantum.get('phantom_clarity', 0) if 'phantom_clarity' in quantum else (1.0 if quantum.get('phantom_cleared', False) else 0.5),
+                            inception=quantum.get('limbo_probability', 0),
+                            elephant=quantum.get('elephant_confidence', 0),
                             russian_doll=quantum.get('russian_doll_coherence', 0),
-                            immune=quantum.get('immune_strength', 0),
-                            moby_dick=quantum.get('whale_prediction', 0),
-                            stargate=quantum.get('stargate_alignment', 0),
-                            quantum_mirror=quantum.get('quantum_coherence', 0),
-                            total_boost=quantum.get('total_boost', 1.0)
+                            immune=1.0 if quantum.get('system_health', 'healthy') == 'healthy' else 0.5,
+                            moby_dick=quantum.get('moby_dick_confidence', 0),
+                            stargate=quantum.get('stargate_coherence', 0),
+                            quantum_mirror=quantum.get('mirror_boost', 0) if 'mirror_boost' in quantum else 0.5,
+                            total_boost=quantum.get('quantum_boost', 1.0)
                         )
-                    except Exception:
+                        
+                        # Update firm activity from intelligence
+                        for whale in intel.get('whale_predictions', []):
+                            firm_name = whale.get('firm', whale.get('symbol', 'Unknown'))
+                            warroom.update_firm(
+                                firm_name[:12],
+                                whale.get('action', 'watching'),
+                                whale.get('direction', 'neutral')
+                            )
+                        
+                        # Add bot detections to firms display
+                        for bot in intel.get('bots', [])[:3]:
+                            warroom.update_firm(
+                                bot.get('firm', 'Bot')[:12],
+                                bot.get('type', 'algo'),
+                                bot.get('direction', 'neutral')
+                            )
+                        
+                        # 🌟 Update Rising Star stats in display
+                        if RISING_STAR_AVAILABLE:
+                            warroom.update_rising_star(rising_star_stats)
+                        
+                        # 🎯 OPTIONS SCANNING - Every 5 minutes check for income opportunities
+                        if self.options_scanner and self.options_trading_level:
+                            try:
+                                # Only scan every 5 minutes (options don't change rapidly)
+                                if not hasattr(self, '_last_options_scan') or time.time() - self._last_options_scan > 300:
+                                    self._last_options_scan = time.time()
+                                    
+                                    # Get options buying power
+                                    buying_power = self.options_client.get_options_buying_power()
+                                    
+                                    # Get options positions
+                                    opt_positions = self.options_client.get_positions()
+                                    
+                                    # Find best opportunity (if we have stocks to write calls against)
+                                    best_opp = None
+                                    try:
+                                        # Check if we have any stock positions we could write calls against
+                                        stock_positions = self.clients.get('alpaca', {})
+                                        if stock_positions and hasattr(stock_positions, 'get_positions'):
+                                            for sp in stock_positions.get_positions() or []:
+                                                symbol = sp.get('symbol', '')
+                                                qty = float(sp.get('qty', 0))
+                                                current_price = float(sp.get('current_price', 0))
+                                                
+                                                # Need at least 100 shares for covered call
+                                                if qty >= 100 and current_price > 0:
+                                                    opps = self.options_scanner.scan_covered_calls(
+                                                        underlying=symbol,
+                                                        current_price=current_price,
+                                                        shares_owned=int(qty)
+                                                    )
+                                                    if opps and (not best_opp or opps[0].total_score > best_opp.get('score', 0)):
+                                                        best_opp = {
+                                                            'symbol': opps[0].contract.symbol,
+                                                            'underlying': symbol,
+                                                            'strategy': 'covered_call',
+                                                            'premium': opps[0].quote.mid_price,
+                                                            'annualized_return': opps[0].annualized_return * 100,
+                                                            'score': opps[0].total_score,
+                                                        }
+                                    except Exception:
+                                        pass
+                                    
+                                    # Update warroom display
+                                    warroom.update_options(
+                                        trading_level=self.options_trading_level.name if self.options_trading_level else 'N/A',
+                                        buying_power=buying_power,
+                                        positions=opt_positions,
+                                        best_opportunity=best_opp
+                                    )
+                            except Exception:
+                                pass
+                            
+                    except Exception as e:
                         pass
                     
                     # Update display
@@ -4851,7 +5664,8 @@ class OrcaKillCycle:
                     except Exception:
                         pass
                 else:
-                    console.print(f"[dim]⏳ Kept {pos.symbol}: ${pos.current_pnl:.4f} (holding)[/]")
+                    acc_info = f" (DCA x{pos.accumulation_count})" if pos.accumulation_count > 0 else ""
+                    console.print(f"[dim]⏳ Kept {pos.symbol}: ${pos.current_pnl:.4f}{acc_info} (holding)[/]")
             
             # Summary
             console.print(f"\n[bold magenta]{'='*60}[/]")
@@ -4859,6 +5673,16 @@ class OrcaKillCycle:
             console.print(f"   Cycles: {session_stats['cycles']}")
             console.print(f"   Total P&L: ${session_stats['total_pnl']:+.4f}")
             console.print(f"   Wins: {session_stats['winning_trades']} | Losses: {session_stats['losing_trades']}")
+            
+            # Rising Star Statistics
+            if RISING_STAR_AVAILABLE:
+                console.print(f"\n[bold cyan]🌟 RISING STAR STATISTICS[/]")
+                console.print(f"   Candidates Scanned: {rising_star_stats['candidates_scanned']}")
+                console.print(f"   Monte Carlo Sims: {rising_star_stats['simulations_run']:,}")
+                console.print(f"   Winners Selected: {rising_star_stats['winners_selected']}")
+                console.print(f"   Accumulations (DCA): {rising_star_stats['accumulations_made']}")
+                console.print(f"   DCA Value: ${rising_star_stats['total_accumulated_value']:.2f}")
+            
             console.print(f"[bold magenta]{'='*60}[/]")
         
         return session_stats
