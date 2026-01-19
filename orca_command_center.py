@@ -295,6 +295,14 @@ class OrcaCommandCenter:
             'message': str(thought.payload)
         })
     
+    def load_json(self, filename):
+        """Load JSON file safely."""
+        try:
+            with open(filename, 'r') as f:
+                return json.load(f)
+        except (FileNotFoundError, json.JSONDecodeError):
+            return {}
+    
     def _setup_routes(self):
         """Setup web routes."""
         self.app.router.add_get('/', self._handle_index)
@@ -334,7 +342,28 @@ class OrcaCommandCenter:
         return ws
     
     async def _handle_api_status(self, request):
-        """Return overall system status."""
+        """Return overall system status from live data files."""
+        # Load live data from files that War Room writes to
+        active_positions = self.load_json('active_position.json')
+        pending_validations = self.load_json('7day_pending_validations.json')
+        predator_history = self.load_json('predator_detection_history.json')
+        
+        # Count active positions
+        position_count = len(active_positions) if isinstance(active_positions, dict) else 0
+        
+        # Get predator threat level
+        threat_level = 'low'
+        if predator_history and isinstance(predator_history, dict):
+            predators = predator_history.get('predators', {})
+            if predators:
+                # Check if any predator has critical threat
+                for p_data in predators.values():
+                    if isinstance(p_data, dict) and p_data.get('threat_level') == 'critical':
+                        threat_level = 'critical'
+                        break
+                else:
+                    threat_level = 'medium'
+        
         status = {
             'timestamp': datetime.now().isoformat(),
             'systems': SYSTEMS_STATUS,
@@ -342,43 +371,80 @@ class OrcaCommandCenter:
                 'alpaca': self.alpaca is not None,
                 'kraken': self.kraken is not None
             },
-            'active_positions': len(self.positions),
-            'total_kills': len(self.kills),
+            'active_positions': position_count,
+            'pending_validations': len(pending_validations) if isinstance(pending_validations, dict) else 0,
             'stealth_mode': self.stats.stealth_mode,
-            'threat_level': self.stats.threat_level
+            'threat_level': threat_level
         }
         return web.json_response(status)
     
     async def _handle_api_positions(self, request):
-        """Return active positions."""
-        positions = [asdict(p) for p in self.positions.values()]
-        # Convert datetime to string
-        for p in positions:
-            if isinstance(p.get('entry_time'), datetime):
-                p['entry_time'] = p['entry_time'].isoformat()
+        """Return active positions from live data file."""
+        active_positions = self.load_json('active_position.json')
+        
+        if not isinstance(active_positions, dict):
+            return web.json_response({'positions': []})
+        
+        # Convert to list format expected by frontend
+        positions = []
+        for symbol, pos_data in active_positions.items():
+            if isinstance(pos_data, dict):
+                position = {
+                    'symbol': symbol,
+                    'exchange': pos_data.get('exchange', 'unknown'),
+                    'entry_price': pos_data.get('entry_price', 0),
+                    'current_price': pos_data.get('current_price', pos_data.get('entry_price', 0)),
+                    'quantity': pos_data.get('quantity', 0),
+                    'pnl': pos_data.get('pnl', 0),
+                    'entry_time': pos_data.get('entry_time', datetime.now().isoformat()),
+                    'firm': pos_data.get('firm', 'unknown')
+                }
+                positions.append(position)
+        
         return web.json_response({'positions': positions})
     
     async def _handle_api_kills(self, request):
-        """Return kill history."""
-        kills = [asdict(k) for k in self.kills[-50:]]  # Last 50
-        for k in kills:
-            if isinstance(k.get('entry_time'), datetime):
-                k['entry_time'] = k['entry_time'].isoformat()
-            if isinstance(k.get('exit_time'), datetime):
-                k['exit_time'] = k['exit_time'].isoformat()
-        return web.json_response({'kills': kills})
+        """Return kill history - currently returns empty as War Room doesn't persist kills."""
+        # TODO: War Room doesn't save kills to file yet, so return empty for now
+        return web.json_response({'kills': []})
     
     async def _handle_api_stats(self, request):
         """Return hunting statistics."""
         return web.json_response(asdict(self.stats))
     
     async def _handle_api_intelligence(self, request):
-        """Return intelligence feeds."""
+        """Return intelligence feeds from live data files."""
+        predator_history = self.load_json('predator_detection_history.json')
+        
+        # Extract intelligence data
+        signals = []
+        whales = []
+        bots = []
+        events = []
+        
+        if predator_history and isinstance(predator_history, dict):
+            # Add predator signals
+            predators = predator_history.get('predators', {})
+            for firm_id, p_data in predators.items():
+                if isinstance(p_data, dict):
+                    signals.append({
+                        'type': 'predator_detected',
+                        'firm': firm_id,
+                        'threat_level': p_data.get('threat_level', 'unknown'),
+                        'last_seen': p_data.get('last_seen', 0),
+                        'times_detected': p_data.get('times_detected', 0)
+                    })
+                    whales.append({
+                        'firm': firm_id,
+                        'score': p_data.get('stalking_score', 0),
+                        'symbols': p_data.get('symbols_targeted', [])
+                    })
+        
         return web.json_response({
-            'signals': list(self.intelligence_signals),
-            'whales': list(self.whale_detections),
-            'bots': list(self.bot_shapes),
-            'events': list(self.event_log)
+            'signals': signals,
+            'whales': whales,
+            'bots': bots,
+            'events': events
         })
     
     async def _handle_api_predator(self, request):
