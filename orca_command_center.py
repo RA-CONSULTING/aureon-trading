@@ -387,14 +387,18 @@ class OrcaCommandCenter:
             return web.json_response({'error': 'Predator detection not available'})
         
         report = self.predator_detector.generate_hunting_report()
-        # Get top predator from the list (top_predators is a list, not top_predator_firm)
-        top_predator = report.top_predators[0] if report.top_predators else 'None'
+        # Get top predator from the list (top_predators is a list of PredatorProfile)
+        top_predator_name = 'None'
+        if report.top_predators:
+            p = report.top_predators[0]
+            top_predator_name = p.firm_name if hasattr(p, 'firm_name') else str(p)
+        
         return web.json_response({
             'threat_level': report.threat_level,
             'front_run_rate': report.front_run_rate,
-            'top_predator': top_predator,
+            'top_predator': top_predator_name,
             'decay_alert': report.strategy_decay_alert,
-            'stalked_symbols': report.stalked_symbols,
+            'recommendations': report.recommendations,
             'alerts': list(self.predator_alerts)
         })
     
