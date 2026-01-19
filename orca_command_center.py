@@ -393,7 +393,7 @@ class OrcaCommandCenter:
             'threat_level': report.threat_level,
             'front_run_rate': report.front_run_rate,
             'top_predator': top_predator,
-            'decay_alerts': report.strategy_decay_alerts,
+            'decay_alert': report.strategy_decay_alert,
             'stalked_symbols': report.stalked_symbols,
             'alerts': list(self.predator_alerts)
         })
