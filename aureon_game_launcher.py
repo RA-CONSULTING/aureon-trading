@@ -195,7 +195,7 @@ def run_game_mode(config: GameModeConfig) -> int:
 
         # TRADING ENGINE
         if config.start_trading:
-            trade_args = ["--dry-run"] if config.dry_run else []
+            trade_args = ["--dry-run"] if config.dry_run else ["--live", "--yes"]
             processes.append(_start_process(
                 "💰 TRADING ENGINE",
                 _build_python_command("micro_profit_labyrinth.py", trade_args)
