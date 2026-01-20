@@ -1411,23 +1411,47 @@ DEFAULT_FEE_PROFILES = {
 }
 ```
 
-## Quick Start
+## Quick Start (War Room Dashboard)
 
+The **Aureon War Room** is the central command interface, now auto-starting with full holographic visualization.
+
+### 🐧 Linux / macOS
 ```bash
-# Install
+# 1. Setup
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
+cp .env.example .env  # Add API keys
 
-# Configure
-cp .env.example .env  # Edit with API keys
+# 2. Launch War Room (Auto-Starts Dashboard)
+python orca_complete_kill_cycle.py
+```
 
-# Run (dry-run mode)
-python micro_profit_labyrinth.py --dry-run
+### 🪟 Windows (PowerShell)
+```powershell
+# 1. Setup
+python -m venv .venv
+.\.venv\Scripts\Activate
+pip install -r requirements.txt
+
+# 2. Launch War Room
+python orca_complete_kill_cycle.py
 ```
 
 ---
 
-## 🎮 Windows Plug & Play (Recommended)
+## 🌌 New: Unity Integration (v2026.1)
+
+The system now features **full logic unity** between planetary alignment and market micro-structure.
+
+| Component | Function | Unity Effect |
+|-----------|----------|--------------|
+| **🌌 Stargate Grid** | Tracks 12 planetary nodes (Giza, Stonehenge, etc.) | **Golden Ratio Coherence** ($\phi > 1.618$) boosts trade probability by **10-30%**. |
+| **🐦 Hummingbird Scanner** | Micro-scalping rotation scanner | Detects nectar-rich flowers (volatility pockets) for **+10% probability boost**. |
+| **🐺 Wolf & 🦁 Lion** | Pack hunting algorithms | Consensus detection adds **+15-25% conviction** to Queen's decision. |
+
+---
+
+## 🎮 Windows Plug & Play (Legacy)
 
 **No terminal, no Docker, no dependencies** - just download and double-click!
 
