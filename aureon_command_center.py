@@ -1,4 +1,4 @@
-right mate you bank on the money but also  just like sex if you pull out to early u make no babay hahahya s listen what we do we take the top 3 positions and we watch wantcu live streaming all the gobal data moenmtum data and  its indivaual assass data and we watch and watch till were ready to strike and kill#!/usr/bin/env python3
+#!/usr/bin/env python3
 """
 🎮👑⚔️ AUREON COMMAND CENTER ⚔️👑🎮
 ═══════════════════════════════════════════════════════════════════════════════
