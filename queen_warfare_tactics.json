@@ -9,7 +9,7 @@
       "times_applied": 0,
       "success_rate": 0.0,
       "total_saved": 0.0,
-      "learned_at": "2026-01-16T00:23:40.404697",
+      "learned_at": "2026-01-20T19:54:57.591637",
       "last_applied": ""
     },
     "ad97150b": {
@@ -21,19 +21,19 @@
       "times_applied": 0,
       "success_rate": 0.0,
       "total_saved": 0.0,
-      "learned_at": "2026-01-16T00:23:41.763019",
+      "learned_at": "2026-01-20T19:54:59.705257",
       "last_applied": ""
     },
     "db2d5a2f": {
       "tactic_id": "db2d5a2f",
       "name": "Asymmetric warfare",
       "source": "IRA_GUERRILLA",
-      "description": "Asymmetric warfare (or asymmetric engagement) is a type of war between belligerents whose relative military power, strategy or tactics differ significantly. This type of warfare often, but not necessarily, involves insurgents, terrorist groups, or resistance militias operating within territory mostly controlled by the superior force.\nAsymmetrical warfare can also describe a conflict in which belligerents' material resources are uneven, and consequently, each may attempt to exploit each other's r",
+      "description": "Asymmetric warfare (or asymmetric engagement) is a type of war between belligerents whose relative military power, strategy or tactics differ significantly. This type of warfare often involves insurgents, terrorist groups, or resistance militias operating within territory mostly controlled by the superior force.\nAsymmetrical warfare can also describe a conflict in which belligerents' material resources are uneven, and consequently, each may attempt to exploit each other's relative weaknesses. Su",
       "trading_application": "Risk small amounts for larger potential gains. Never risk more than you can afford to lose.",
       "times_applied": 0,
       "success_rate": 0.0,
       "total_saved": 0.0,
-      "learned_at": "2026-01-16T00:23:42.966791",
+      "learned_at": "2026-01-20T19:55:01.834648",
       "last_applied": ""
     },
     "7b51face": {
@@ -45,7 +45,7 @@
       "times_applied": 0,
       "success_rate": 0.0,
       "total_saved": 0.0,
-      "learned_at": "2026-01-16T00:23:44.263837",
+      "learned_at": "2026-01-20T19:55:04.307537",
       "last_applied": ""
     },
     "c5d8c916": {
@@ -57,7 +57,7 @@
       "times_applied": 0,
       "success_rate": 0.0,
       "total_saved": 0.0,
-      "learned_at": "2026-01-16T00:23:45.460337",
+      "learned_at": "2026-01-20T19:55:07.628709",
       "last_applied": ""
     },
     "26034109": {
@@ -69,7 +69,7 @@
       "times_applied": 0,
       "success_rate": 0.0,
       "total_saved": 0.0,
-      "learned_at": "2026-01-16T00:23:46.649636",
+      "learned_at": "2026-01-20T19:55:10.627479",
       "last_applied": ""
     },
     "9717d57e": {
@@ -145,5 +145,5 @@
       "last_applied": ""
     }
   },
-  "last_saved": "2026-01-16T00:30:12.156782"
+  "last_saved": "2026-01-20T19:55:23.072863"
 }

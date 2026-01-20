@@ -207,7 +207,8 @@ class BinanceClient:
                 pass
 
         for attempt in range(self.max_retries + 1):
-            resp = self.session.request(method, url, params=params if method == 'GET' else None, data=data if method != 'GET' else None, timeout=timeout)
+            # For signed POST requests, params go in query string, not body
+            resp = self.session.request(method, url, params=params, data=data, timeout=timeout)
             if resp.status_code == 429:
                 # Metric: API 429
                 try:
