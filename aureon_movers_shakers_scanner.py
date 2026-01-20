@@ -192,13 +192,11 @@ class MoversShakersScanner:
         except Exception as e:
             logger.warning(f"⚠️ Kraken unavailable: {e}")
         
-        # Try Orca Intelligence
-        try:
-            from aureon_orca_intelligence import OrcaKillerWhaleIntelligence
-            self.orca = OrcaKillerWhaleIntelligence()
-            logger.info("✅ Orca Intelligence connected")
-        except Exception as e:
-            logger.warning(f"⚠️ Orca unavailable: {e}")
+        # Try Orca Intelligence (use singleton to avoid circular recursion!)
+        # NOTE: Orca creates MoversShakersScanner, so we must use get_orca() 
+        # to get the same instance, otherwise infinite loop
+        self.orca = None  # Defer to avoid circular dependency
+        # Will be wired externally by Orca after init
         
         # Try Moby Dick
         try:

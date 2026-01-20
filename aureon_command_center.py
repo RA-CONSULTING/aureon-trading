@@ -230,6 +230,9 @@ from pathlib import Path
 # Live vs demo mode
 DEMO_MODE = os.getenv("AUREON_COMMAND_CENTER_DEMO", "0").lower() in ("1", "true", "yes", "y")
 
+# Windows deferred loading mode - start server first, load systems in background
+WINDOWS_FAST_START = sys.platform == 'win32'
+
 # Web framework
 try:
     from aiohttp import web
@@ -241,182 +244,197 @@ except ImportError:
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # SYSTEM IMPORTS - Load all available intelligence systems
+# On Windows: Deferred to background after server starts
 # ═══════════════════════════════════════════════════════════════════════════════
 
 SYSTEMS_STATUS = {}
+SYSTEMS_LOADING = False
+SYSTEMS_LOADED = False
+thought_bus = None
+queen_voice = None
+TRADING_FIRM_SIGNATURES = {}
 
-# Core Intelligence
-try:
-    from aureon_thought_bus import Thought, get_thought_bus
-    SYSTEMS_STATUS['Thought Bus'] = True
-    thought_bus = get_thought_bus()
-except ImportError:
-    SYSTEMS_STATUS['Thought Bus'] = False
-    thought_bus = None
-
-try:
-    from aureon_mycelium import MyceliumNetwork
-    SYSTEMS_STATUS['Mycelium Network'] = True
-except ImportError:
-    SYSTEMS_STATUS['Mycelium Network'] = False
-
-try:
-    from aureon_enigma import AureonEnigma
-    SYSTEMS_STATUS['Enigma Decoder'] = True
-except ImportError:
-    SYSTEMS_STATUS['Enigma Decoder'] = False
-
-try:
-    from aureon_probability_nexus import AureonProbabilityNexus
-    SYSTEMS_STATUS['Probability Nexus'] = True
-except ImportError:
-    SYSTEMS_STATUS['Probability Nexus'] = False
-
-try:
-    from probability_ultimate_intelligence import ProbabilityUltimateIntelligence
-    SYSTEMS_STATUS['Ultimate Intelligence'] = True
-except ImportError:
-    SYSTEMS_STATUS['Ultimate Intelligence'] = False
-
-try:
-    from aureon_elephant_learning import ElephantMemory
-    SYSTEMS_STATUS['Elephant Memory'] = True
-except ImportError:
-    SYSTEMS_STATUS['Elephant Memory'] = False
-
-try:
-    from aureon_quantum_telescope import QuantumPrism
-    SYSTEMS_STATUS['Quantum Telescope'] = True
-except ImportError:
-    SYSTEMS_STATUS['Quantum Telescope'] = False
-
-try:
-    from aureon_timeline_oracle import TimelineOracle
-    SYSTEMS_STATUS['Timeline Oracle'] = True
-except ImportError:
-    SYSTEMS_STATUS['Timeline Oracle'] = False
-
-try:
-    from aureon_miner_brain import MinerBrain
-    SYSTEMS_STATUS['Miner Brain'] = True
-except ImportError:
-    SYSTEMS_STATUS['Miner Brain'] = False
-
-try:
-    from aureon_harmonic_fusion import HarmonicWaveFusion
-    SYSTEMS_STATUS['Harmonic Fusion'] = True
-except ImportError:
-    SYSTEMS_STATUS['Harmonic Fusion'] = False
-
-try:
-    from aureon_global_wave_scanner import GlobalWaveScanner
-    SYSTEMS_STATUS['Global Wave Scanner'] = True
-except ImportError:
-    SYSTEMS_STATUS['Global Wave Scanner'] = False
-
-try:
-    import aureon_whale_integration
-    SYSTEMS_STATUS['Whale Integration'] = True
-except ImportError:
-    SYSTEMS_STATUS['Whale Integration'] = False
-
-try:
-    from aureon_orca_intelligence import OrcaKillerWhaleIntelligence
-    SYSTEMS_STATUS['Orca Intelligence'] = True
-except ImportError:
-    SYSTEMS_STATUS['Orca Intelligence'] = False
-
-try:
-    from aureon_queen_hive_mind import QueenHiveMind
-    SYSTEMS_STATUS['Queen Hive Mind'] = True
-except ImportError:
-    SYSTEMS_STATUS['Queen Hive Mind'] = False
-
-try:
-    from aureon_bot_intelligence_profiler import BotIntelligenceProfiler, TRADING_FIRM_SIGNATURES
-    SYSTEMS_STATUS['Bot Intelligence'] = True
-except ImportError:
-    SYSTEMS_STATUS['Bot Intelligence'] = False
-    TRADING_FIRM_SIGNATURES = {}
-
-try:
-    from aureon_internal_multiverse import InternalMultiverse
-    SYSTEMS_STATUS['Internal Multiverse'] = True
-except ImportError:
-    SYSTEMS_STATUS['Internal Multiverse'] = False
-
-try:
-    # from aureon_stargate_protocol import ActivationCeremony
-    SYSTEMS_STATUS['Stargate Protocol'] = False # True
-except ImportError:
+def load_all_systems():
+    """Load all intelligence systems - called in background on Windows"""
+    global SYSTEMS_STATUS, thought_bus, queen_voice, TRADING_FIRM_SIGNATURES, SYSTEMS_LOADED, SYSTEMS_LOADING
+    
+    if SYSTEMS_LOADED or SYSTEMS_LOADING:
+        return
+    SYSTEMS_LOADING = True
+    
+    safe_print("🔄 Loading intelligence systems...")
+    
+    # Core Intelligence
+    try:
+        from aureon_thought_bus import Thought, get_thought_bus
+        SYSTEMS_STATUS['Thought Bus'] = True
+        thought_bus = get_thought_bus()
+    except ImportError:
+        SYSTEMS_STATUS['Thought Bus'] = False
+    
+    try:
+        from aureon_mycelium import MyceliumNetwork
+        SYSTEMS_STATUS['Mycelium Network'] = True
+    except ImportError:
+        SYSTEMS_STATUS['Mycelium Network'] = False
+    
+    try:
+        from aureon_enigma import AureonEnigma
+        SYSTEMS_STATUS['Enigma Decoder'] = True
+    except ImportError:
+        SYSTEMS_STATUS['Enigma Decoder'] = False
+    
+    try:
+        from aureon_probability_nexus import AureonProbabilityNexus
+        SYSTEMS_STATUS['Probability Nexus'] = True
+    except ImportError:
+        SYSTEMS_STATUS['Probability Nexus'] = False
+    
+    try:
+        from probability_ultimate_intelligence import ProbabilityUltimateIntelligence
+        SYSTEMS_STATUS['Ultimate Intelligence'] = True
+    except ImportError:
+        SYSTEMS_STATUS['Ultimate Intelligence'] = False
+    
+    try:
+        from aureon_elephant_learning import ElephantMemory
+        SYSTEMS_STATUS['Elephant Memory'] = True
+    except ImportError:
+        SYSTEMS_STATUS['Elephant Memory'] = False
+    
+    try:
+        from aureon_quantum_telescope import QuantumPrism
+        SYSTEMS_STATUS['Quantum Telescope'] = True
+    except ImportError:
+        SYSTEMS_STATUS['Quantum Telescope'] = False
+    
+    try:
+        from aureon_timeline_oracle import TimelineOracle
+        SYSTEMS_STATUS['Timeline Oracle'] = True
+    except ImportError:
+        SYSTEMS_STATUS['Timeline Oracle'] = False
+    
+    try:
+        from aureon_miner_brain import MinerBrain
+        SYSTEMS_STATUS['Miner Brain'] = True
+    except ImportError:
+        SYSTEMS_STATUS['Miner Brain'] = False
+    
+    try:
+        from aureon_harmonic_fusion import HarmonicWaveFusion
+        SYSTEMS_STATUS['Harmonic Fusion'] = True
+    except ImportError:
+        SYSTEMS_STATUS['Harmonic Fusion'] = False
+    
+    try:
+        from aureon_global_wave_scanner import GlobalWaveScanner
+        SYSTEMS_STATUS['Global Wave Scanner'] = True
+    except ImportError:
+        SYSTEMS_STATUS['Global Wave Scanner'] = False
+    
+    try:
+        import aureon_whale_integration
+        SYSTEMS_STATUS['Whale Integration'] = True
+    except ImportError:
+        SYSTEMS_STATUS['Whale Integration'] = False
+    
+    try:
+        from aureon_orca_intelligence import OrcaKillerWhaleIntelligence
+        SYSTEMS_STATUS['Orca Intelligence'] = True
+    except ImportError:
+        SYSTEMS_STATUS['Orca Intelligence'] = False
+    
+    try:
+        from aureon_queen_hive_mind import QueenHiveMind
+        SYSTEMS_STATUS['Queen Hive Mind'] = True
+    except ImportError:
+        SYSTEMS_STATUS['Queen Hive Mind'] = False
+    
+    try:
+        from aureon_bot_intelligence_profiler import BotIntelligenceProfiler, TRADING_FIRM_SIGNATURES as TFS
+        SYSTEMS_STATUS['Bot Intelligence'] = True
+        TRADING_FIRM_SIGNATURES = TFS
+    except ImportError:
+        SYSTEMS_STATUS['Bot Intelligence'] = False
+    
+    try:
+        from aureon_internal_multiverse import InternalMultiverse
+        SYSTEMS_STATUS['Internal Multiverse'] = True
+    except ImportError:
+        SYSTEMS_STATUS['Internal Multiverse'] = False
+    
     SYSTEMS_STATUS['Stargate Protocol'] = False
+    
+    try:
+        from aureon_memory_core import AureonMemoryCore
+        SYSTEMS_STATUS['Memory Core'] = True
+    except ImportError:
+        SYSTEMS_STATUS['Memory Core'] = False
+    
+    try:
+        from aureon_immune_system import AureonImmuneSystem
+        SYSTEMS_STATUS['Immune System'] = True
+    except ImportError:
+        SYSTEMS_STATUS['Immune System'] = False
+    
+    try:
+        from aureon_chirp_bus import get_chirp_bus, ChirpType
+        SYSTEMS_STATUS['Chirp Bus'] = True
+    except ImportError:
+        SYSTEMS_STATUS['Chirp Bus'] = False
+    
+    try:
+        from queen_voice_engine import QueenVoiceEngine, queen_voice as qv
+        SYSTEMS_STATUS['Queen Voice'] = True
+        queen_voice = qv
+    except ImportError:
+        SYSTEMS_STATUS['Queen Voice'] = False
+    
+    try:
+        from aureon_lighthouse import LighthousePatternDetector
+        SYSTEMS_STATUS['Lighthouse'] = True
+    except ImportError:
+        SYSTEMS_STATUS['Lighthouse'] = False
+    
+    try:
+        from aureon_harmonic_signal_chain import HarmonicSignalChain
+        SYSTEMS_STATUS['Harmonic Signal Chain'] = True
+    except ImportError:
+        SYSTEMS_STATUS['Harmonic Signal Chain'] = False
+    
+    # Exchange clients
+    try:
+        from kraken_client import KrakenClient
+        SYSTEMS_STATUS['Kraken Exchange'] = True
+    except ImportError:
+        SYSTEMS_STATUS['Kraken Exchange'] = False
+    
+    try:
+        from binance_client import BinanceClient
+        SYSTEMS_STATUS['Binance Exchange'] = True
+    except ImportError:
+        SYSTEMS_STATUS['Binance Exchange'] = False
+    
+    try:
+        from alpaca_client import AlpacaClient
+        SYSTEMS_STATUS['Alpaca Exchange'] = True
+    except ImportError:
+        SYSTEMS_STATUS['Alpaca Exchange'] = False
+    
+    try:
+        from capital_client import CapitalClient
+        SYSTEMS_STATUS['Capital Exchange'] = True
+    except ImportError:
+        SYSTEMS_STATUS['Capital Exchange'] = False
+    
+    SYSTEMS_LOADED = True
+    SYSTEMS_LOADING = False
+    online = sum(1 for v in SYSTEMS_STATUS.values() if v)
+    safe_print(f"✅ All systems loaded! {online}/{len(SYSTEMS_STATUS)} ONLINE")
 
-try:
-    from aureon_memory_core import AureonMemoryCore
-    SYSTEMS_STATUS['Memory Core'] = True
-except ImportError:
-    SYSTEMS_STATUS['Memory Core'] = False
-
-try:
-    from aureon_immune_system import AureonImmuneSystem
-    SYSTEMS_STATUS['Immune System'] = True
-except ImportError:
-    SYSTEMS_STATUS['Immune System'] = False
-
-try:
-    from aureon_chirp_bus import get_chirp_bus, ChirpType
-    SYSTEMS_STATUS['Chirp Bus'] = True
-except ImportError:
-    SYSTEMS_STATUS['Chirp Bus'] = False
-
-try:
-    from queen_voice_engine import QueenVoiceEngine, queen_voice
-    SYSTEMS_STATUS['Queen Voice'] = True
-except ImportError:
-    SYSTEMS_STATUS['Queen Voice'] = False
-    queen_voice = None
-
-try:
-    from aureon_lighthouse import LighthousePatternDetector
-    SYSTEMS_STATUS['Lighthouse'] = True
-except ImportError:
-    SYSTEMS_STATUS['Lighthouse'] = False
-
-
-# NOTE: Do not restore sys.exit here when debugging startup.
-# Some imports later in this file may call sys.exit() and previously bypassed the guard.
-# We restore sys.exit only once we reach __main__.
-
-try:
-    from aureon_harmonic_signal_chain import HarmonicSignalChain
-    SYSTEMS_STATUS['Harmonic Signal Chain'] = True
-except ImportError:
-    SYSTEMS_STATUS['Harmonic Signal Chain'] = False
-
-# Exchange clients
-try:
-    from kraken_client import KrakenClient
-    SYSTEMS_STATUS['Kraken Exchange'] = True
-except ImportError:
-    SYSTEMS_STATUS['Kraken Exchange'] = False
-
-try:
-    from binance_client import BinanceClient
-    SYSTEMS_STATUS['Binance Exchange'] = True
-except ImportError:
-    SYSTEMS_STATUS['Binance Exchange'] = False
-
-try:
-    from alpaca_client import AlpacaClient
-    SYSTEMS_STATUS['Alpaca Exchange'] = True
-except ImportError:
-    SYSTEMS_STATUS['Alpaca Exchange'] = False
-
-try:
-    from capital_client import CapitalClient
-    SYSTEMS_STATUS['Capital Exchange'] = True
-except ImportError:
-    SYSTEMS_STATUS['Capital Exchange'] = False
+# Load systems immediately on non-Windows, defer on Windows
+if not WINDOWS_FAST_START:
+    load_all_systems()
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # COMMAND CENTER STATE
@@ -6480,40 +6498,43 @@ async def monitor_trading_output():
 
 async def start_background_tasks(app):
     """Start background tasks"""
+    # On Windows: Load systems in background AFTER server starts
+    if WINDOWS_FAST_START and not SYSTEMS_LOADED:
+        safe_print("🔄 Loading systems in background...")
+        loop = asyncio.get_event_loop()
+        await loop.run_in_executor(None, load_all_systems)
+        safe_print("✅ Background system loading complete!")
+    
     if DEMO_MODE:
         app['queen_task'] = asyncio.create_task(queen_commentary_task())
         app['simulate_task'] = asyncio.create_task(simulate_data_task())
     app['balances_task'] = asyncio.create_task(update_balances_task())
-    if sys.platform != 'win32':  # Skip Thought Bus on Windows for faster startup
-        app['thought_bus_task'] = asyncio.create_task(thought_bus_listener_task())
+    app['thought_bus_task'] = asyncio.create_task(thought_bus_listener_task())
     
     # 🚀 AUTO-START TRADING IMMEDIATELY ON BOOT!
-    if sys.platform != 'win32':  # Skip auto-start trading on Windows for faster startup
-        global TRADING_PROCESS, TRADING_LIVE_ENABLED
-        safe_print("🚀💰 AUTO-STARTING TRADING ENGINE...")
-        try:
-            cmd = [sys.executable, "-u", "micro_profit_labyrinth.py", "--live", "--yes", "--multi-exchange"] # Added -u for unbuffered
-            env = dict(os.environ)
-            # Propagate debug flag if set in Command Center environment
-            if env.get("AUREON_DEBUG_STARTUP") == "1":
-                env["AUREON_DEBUG_STARTUP"] = "1"
-            # Force unbuffered output for reliable streaming
-            env["PYTHONUNBUFFERED"] = "1"
-            TRADING_PROCESS = await asyncio.create_subprocess_exec(
-                *cmd,
-                cwd=str(Path(__file__).resolve().parent),
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.STDOUT,
-                env=env,
-            )
-            TRADING_LIVE_ENABLED = True
-            safe_print("✅💰 TRADING ENGINE STARTED - MAKING MONEY NOW!")
-            
-            # Start the monitor
-            app['monitor_task'] = asyncio.create_task(monitor_trading_output())
-            
-        except Exception as e:
-            safe_print(f"⚠️ Failed to auto-start trading: {e}")
+    global TRADING_PROCESS, TRADING_LIVE_ENABLED
+    safe_print("🚀💰 AUTO-STARTING TRADING ENGINE...")
+    try:
+        cmd = [sys.executable, "-u", "micro_profit_labyrinth.py", "--live", "--yes", "--multi-exchange"]
+        env = dict(os.environ)
+        if env.get("AUREON_DEBUG_STARTUP") == "1":
+            env["AUREON_DEBUG_STARTUP"] = "1"
+        env["PYTHONUNBUFFERED"] = "1"
+        TRADING_PROCESS = await asyncio.create_subprocess_exec(
+            *cmd,
+            cwd=str(Path(__file__).resolve().parent),
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.STDOUT,
+            env=env,
+        )
+        TRADING_LIVE_ENABLED = True
+        safe_print("✅💰 TRADING ENGINE STARTED - MAKING MONEY NOW!")
+        
+        # Start the monitor
+        app['monitor_task'] = asyncio.create_task(monitor_trading_output())
+        
+    except Exception as e:
+        safe_print(f"⚠️ Failed to auto-start trading: {e}")
 
 async def cleanup_background_tasks(app):
     """Cleanup background tasks"""
@@ -6538,9 +6559,9 @@ def main():
             _aureon_debug_log("main() exiting early: aiohttp not available")
         return
     
-    # Count online systems
+    # Count online systems (may be 0 on Windows until background load completes)
     state.systems_online = sum(1 for v in SYSTEMS_STATUS.values() if v)
-    state.systems_total = len(SYSTEMS_STATUS)
+    state.systems_total = len(SYSTEMS_STATUS) if SYSTEMS_STATUS else 25  # Estimate if not loaded yet
     
     safe_print("\n" + "=" * 80)
     safe_print("""
@@ -6564,49 +6585,42 @@ def main():
     safe_print(f"")
     safe_print(f"   🌐 URL: http://localhost:8888")
     safe_print(f"")
-    safe_print(f"   📊 Intelligence Systems: {state.systems_online}/{state.systems_total} ONLINE")
-    safe_print(f"   👑 Queen Voice: {'✅ ENABLED' if SYSTEMS_STATUS.get('Queen Voice') else '⚠️ DISABLED'}")
-    safe_print(f"   🛰️  Data Mode: {'DEMO (SIMULATED)' if DEMO_MODE else 'LIVE (THOUGHT BUS)'}")
-    safe_print(f"   🧠 Thought Bus: {'✅ CONNECTED' if SYSTEMS_STATUS.get('Thought Bus') else '⚠️ OFFLINE'}")
-    safe_print(f"   🍄 Mycelium: {'✅ ACTIVE' if SYSTEMS_STATUS.get('Mycelium Network') else '⚠️ OFFLINE'}")
-    safe_print(f"   🐦 Chirp Bus: {'✅ ACTIVE' if SYSTEMS_STATUS.get('Chirp Bus') else '⚠️ OFFLINE'}")
-    safe_print(f"")
-    safe_print(f"   🐙 Kraken: {'✅' if SYSTEMS_STATUS.get('Kraken Exchange') else '❌'}")
-    safe_print(f"   🟡 Binance: {'✅' if SYSTEMS_STATUS.get('Binance Exchange') else '❌'}")
-    safe_print(f"   🦙 Alpaca: {'✅' if SYSTEMS_STATUS.get('Alpaca Exchange') else '❌'}")
-    safe_print(f"   💼 Capital: {'✅' if SYSTEMS_STATUS.get('Capital Exchange') else '❌'}")
-    safe_print(f"")
-    if sys.platform == 'win32':
-        safe_print(f"   ⚡ Windows Mode: Fast startup (Thought Bus & Trading auto-start skipped)")
+    if WINDOWS_FAST_START:
+        safe_print(f"   ⚡ Windows Fast Start: Systems will load after server starts")
+        safe_print(f"   📊 Intelligence Systems: Loading in background...")
+    else:
+        safe_print(f"   📊 Intelligence Systems: {state.systems_online}/{state.systems_total} ONLINE")
+        safe_print(f"   👑 Queen Voice: {'✅ ENABLED' if SYSTEMS_STATUS.get('Queen Voice') else '⚠️ DISABLED'}")
+        safe_print(f"   🛰️  Data Mode: {'DEMO (SIMULATED)' if DEMO_MODE else 'LIVE (THOUGHT BUS)'}")
+        safe_print(f"   🧠 Thought Bus: {'✅ CONNECTED' if SYSTEMS_STATUS.get('Thought Bus') else '⚠️ OFFLINE'}")
+        safe_print(f"   🍄 Mycelium: {'✅ ACTIVE' if SYSTEMS_STATUS.get('Mycelium Network') else '⚠️ OFFLINE'}")
+        safe_print(f"   🐦 Chirp Bus: {'✅ ACTIVE' if SYSTEMS_STATUS.get('Chirp Bus') else '⚠️ OFFLINE'}")
         safe_print(f"")
+        safe_print(f"   🐙 Kraken: {'✅' if SYSTEMS_STATUS.get('Kraken Exchange') else '❌'}")
+        safe_print(f"   🟡 Binance: {'✅' if SYSTEMS_STATUS.get('Binance Exchange') else '❌'}")
+        safe_print(f"   🦙 Alpaca: {'✅' if SYSTEMS_STATUS.get('Alpaca Exchange') else '❌'}")
+        safe_print(f"   💼 Capital: {'✅' if SYSTEMS_STATUS.get('Capital Exchange') else '❌'}")
+    safe_print(f"")
     
-    # 🛫 RUN FLIGHT CHECK - Verify real connectivity
-    safe_print("=" * 80)
-    safe_print("🛫 INITIATING FLIGHT CHECK - TIMESTAMP VERIFICATION...")
-    safe_print("=" * 80)
-    
-    global LAST_FLIGHT_CHECK, LAST_FLIGHT_CHECK_TIME
-    if sys.platform != 'win32':
+    # 🛫 RUN FLIGHT CHECK - Skip on Windows for fast start
+    if not WINDOWS_FAST_START:
+        safe_print("=" * 80)
+        safe_print("🛫 INITIATING FLIGHT CHECK - TIMESTAMP VERIFICATION...")
+        safe_print("=" * 80)
+        
+        global LAST_FLIGHT_CHECK, LAST_FLIGHT_CHECK_TIME
         LAST_FLIGHT_CHECK = run_flight_check()
         LAST_FLIGHT_CHECK_TIME = time.time()
         poem = print_flight_check_poem(LAST_FLIGHT_CHECK)
+        
+        # Print the poem!
+        for line in poem.split('\n'):
+            safe_print(line)
     else:
-        LAST_FLIGHT_CHECK = {}
-        LAST_FLIGHT_CHECK_TIME = time.time()
-        poem = """
-╔══════════════════════════════════════════════════════════════════════════════════╗
-║                                                                                  ║
-║     🛫 FLIGHT CHECK SKIPPED ON WINDOWS - FASTER STARTUP 🛫                       ║
-║                                                                                  ║
-║     "For rapid deployment on Windows systems,                                    ║
-║      Flight check is bypassed to ensure swift initialization."                   ║
-║                                                                                  ║
-╚══════════════════════════════════════════════════════════════════════════════════╝
-"""
-    
-    # Print the poem!
-    for line in poem.split('\n'):
-        safe_print(line)
+        # Windows: Skip flight check for fast startup
+        safe_print("=" * 80)
+        safe_print("⚡ WINDOWS FAST START - Flight check will run in background")
+        safe_print("=" * 80)
     
     safe_print(f"")
     safe_print(f"=" * 80)
@@ -6620,7 +6634,8 @@ def main():
     app.on_startup.append(start_background_tasks)
     app.on_cleanup.append(cleanup_background_tasks)
     
-    safe_print("🔧 [DEBUG] Starting web server on port 8888...")
+    safe_print("🚀 Starting web server on port 8888...")
+    safe_print("🌐 Open http://localhost:8888 in your browser!")
     try:
         web.run_app(app, host='0.0.0.0', port=8888, print=None)
     except Exception as e:

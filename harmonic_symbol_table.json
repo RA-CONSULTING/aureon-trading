@@ -1,0 +1,32 @@
+{
+  "symbols": {
+    "BTC/USD": 1,
+    "ETH/USD": 2,
+    "SOL/USD": 3,
+    "XRP/USD": 4,
+    "AD/USD": 5,
+    "ADA/USD": 5,
+    "DOGE/USD": 6,
+    "DOT/USD": 7,
+    "MATIC/USD": 8,
+    "LTC/USD": 9,
+    "LINK/USD": 10,
+    "BCH/USD": 11,
+    "XLM/USD": 12,
+    "ALGO/USD": 13,
+    "ATOM/USD": 14,
+    "UNI/USD": 15,
+    "AAPL": 32,
+    "MSFT": 33,
+    "GOOG": 34,
+    "AMZN": 35,
+    "NVDA": 36,
+    "TSLA": 37,
+    "META": 38,
+    "BRK.B": 39,
+    "TSM": 40,
+    "V": 41,
+    "TRUMP/USD": 64
+  },
+  "next_id": 65
+}

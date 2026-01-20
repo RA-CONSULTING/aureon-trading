@@ -9271,11 +9271,51 @@
         ]
       },
       "final_status": "NEEDS_REVIEW"
+    },
+    {
+      "timestamp": "2026-01-20T15:47:11.959536",
+      "conversion_num": 1,
+      "exchange": "alpaca",
+      "from_asset": "TRUMP",
+      "to_asset": "USD",
+      "from_amount": 0.24031292624999998,
+      "to_amount": 1.1806050889500999,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "7d112a48-904a-4f83-862a-d91fedc69f3c",
+          "exchange": "alpaca",
+          "pair": "TRUMP/USD",
+          "side": "sell"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.240072613,
+        "total_bought": 1.1806050889500999,
+        "avg_sell_price": 4.9177,
+        "avg_buy_price": 0.0,
+        "total_fees": 0.0,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.02742544456964775,
+        "calculated_pnl": -0.945150739265,
+        "verified_pnl": 1.1806050889500999,
+        "discrepancy": 2.1257558282151,
+        "discrepancy_pct": 224.91183045237858,
+        "math_valid": false,
+        "warnings": [
+          "P&L discrepancy: expected $0.0274 vs verified $1.1806 (4204.8%)",
+          "P&L discrepancy: calculated $-0.9452 vs verified $1.1806 (224.9%)"
+        ]
+      },
+      "final_status": "NEEDS_REVIEW"
     }
   ],
   "summary": {
-    "total": 265,
+    "total": 266,
     "verified": 0,
-    "discrepancies": 265
+    "discrepancies": 266
   }
 }

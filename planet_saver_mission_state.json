@@ -4,12 +4,12 @@
     "total_profit_gbp": 952.0459193011293,
     "freedom_progress": 0.9520459193011293,
     "souls_theoretically_freed": 1,
-    "compound_multiplier": 1.0699217277545664e+16,
-    "current_streak": 767,
+    "compound_multiplier": 1.0,
+    "current_streak": 0,
     "best_streak": 767,
     "total_wins": 927,
-    "total_trades": 77830,
-    "win_rate": 1.191057432866504,
+    "total_trades": 77831,
+    "win_rate": 1.1910421297426474,
     "days_active": 0,
     "started_at": "2026-01-09T10:54:59.789105",
     "last_milestone": "\u2b50 One Thousand - First soul freed"
@@ -19,14 +19,6 @@
   "compounded_gains_usd": 120.90983175124428,
   "active_positions": {},
   "trade_history": [
-    {
-      "type": "LOSS",
-      "loss_usd": 0.0,
-      "symbol": "USD/SUSHI",
-      "exchange": "alpaca",
-      "timestamp": "2026-01-14T17:02:05.850671",
-      "metadata": {}
-    },
     {
       "type": "LOSS",
       "loss_usd": 0.0,
@@ -9742,6 +9734,14 @@
       "streak": 767,
       "total_progress": 0.9520459193011293,
       "metadata": {}
+    },
+    {
+      "type": "LOSS",
+      "loss_usd": 0.0,
+      "symbol": "TRUMP/USD",
+      "exchange": "alpaca",
+      "timestamp": "2026-01-20T15:47:35.110896",
+      "metadata": {}
     }
   ],
   "milestone_history": [
@@ -9782,6 +9782,6 @@
     }
   ],
   "created_at": "2026-01-09T10:54:59.789096",
-  "last_update": "2026-01-16T16:02:55.741373",
+  "last_update": "2026-01-20T15:47:35.110908",
   "last_win_at": "2026-01-16T16:02:55.741100"
 }
