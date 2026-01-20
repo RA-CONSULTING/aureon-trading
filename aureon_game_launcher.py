@@ -46,6 +46,7 @@ import argparse
 import subprocess
 import time
 import webbrowser
+import tempfile
 from dataclasses import dataclass
 from typing import Dict, List, Optional
 
@@ -69,6 +70,7 @@ class ServiceProcess:
     name: str
     command: List[str]
     process: subprocess.Popen
+    log_file: Optional[object] = None
 
 
 def _build_python_command(script_name: str, args: Optional[List[str]] = None) -> List[str]:
@@ -78,10 +80,26 @@ def _build_python_command(script_name: str, args: Optional[List[str]] = None) ->
     return cmd
 
 
-def _start_process(name: str, cmd: List[str]) -> ServiceProcess:
+def _sanitize_name(name: str) -> str:
+    return "".join(c if c.isalnum() or c in "-_" else "_" for c in name).lower()
+
+
+def _get_log_path(name: str) -> str:
+    log_dir = os.path.join(tempfile.gettempdir(), "aureon_service_logs")
+    os.makedirs(log_dir, exist_ok=True)
+    return os.path.join(log_dir, f"{_sanitize_name(name)}.log")
+
+
+def _start_process(name: str, cmd: List[str], log_to_file: bool = False) -> ServiceProcess:
     safe_print(f"🚀 Starting {name} ...")
-    process = subprocess.Popen(cmd)
-    return ServiceProcess(name=name, command=cmd, process=process)
+    log_file = None
+    if log_to_file:
+        log_path = _get_log_path(name)
+        log_file = open(log_path, "a", encoding="utf-8", errors="replace")
+        process = subprocess.Popen(cmd, stdout=log_file, stderr=log_file)
+    else:
+        process = subprocess.Popen(cmd)
+    return ServiceProcess(name=name, command=cmd, process=process, log_file=log_file)
 
 
 def _print_banner():
@@ -140,18 +158,25 @@ def _shutdown_processes(processes: List[ServiceProcess]):
                 svc.process.kill()
         except Exception:
             pass
+        try:
+            if svc.log_file:
+                svc.log_file.close()
+        except Exception:
+            pass
     safe_print("✅ All systems stopped.")
 
 
 def run_game_mode(config: GameModeConfig) -> int:
     processes: List[ServiceProcess] = []
+    orca_warroom_mode = config.start_trading and not config.dry_run
 
     try:
         # PRIMARY: Command Center (the main dashboard)
         if config.command_center:
             processes.append(_start_process(
                 "🎮 COMMAND CENTER",
-                _build_python_command("aureon_command_center.py")
+                _build_python_command("aureon_command_center.py"),
+                log_to_file=orca_warroom_mode
             ))
             time.sleep(2)  # Let it start up
         
@@ -159,47 +184,59 @@ def run_game_mode(config: GameModeConfig) -> int:
         if config.queen_web_dashboard:
             processes.append(_start_process(
                 "Queen Web Dashboard",
-                _build_python_command("queen_web_dashboard.py")
+                _build_python_command("queen_web_dashboard.py"),
+                log_to_file=orca_warroom_mode
             ))
 
         if config.queen_unified_dashboard:
             processes.append(_start_process(
                 "Queen Unified Dashboard",
-                _build_python_command("aureon_queen_unified_dashboard.py")
+                _build_python_command("aureon_queen_unified_dashboard.py"),
+                log_to_file=orca_warroom_mode
             ))
 
         if config.bot_hunter_dashboard:
             processes.append(_start_process(
                 "Bot Hunter Dashboard",
-                _build_python_command("aureon_bot_hunter_dashboard.py")
+                _build_python_command("aureon_bot_hunter_dashboard.py"),
+                log_to_file=orca_warroom_mode
             ))
 
         if config.global_bot_map:
             processes.append(_start_process(
                 "Global Bot Map",
-                _build_python_command("aureon_global_bot_map.py")
+                _build_python_command("aureon_global_bot_map.py"),
+                log_to_file=orca_warroom_mode
             ))
 
         # OPTIONAL: System Hub Mind Map (NEW)
         if config.system_hub:
             processes.append(_start_process(
                 "🌌 SYSTEM HUB",
-                _build_python_command("aureon_system_hub_dashboard.py")
+                _build_python_command("aureon_system_hub_dashboard.py"),
+                log_to_file=orca_warroom_mode
             ))
 
         if config.telemetry:
             processes.append(_start_process(
                 "Telemetry Server",
-                _build_python_command("telemetry_server.py")
+                _build_python_command("telemetry_server.py"),
+                log_to_file=orca_warroom_mode
             ))
 
         # TRADING ENGINE
         if config.start_trading:
-            trade_args = ["--dry-run"] if config.dry_run else ["--live", "--yes"]
-            processes.append(_start_process(
-                "💰 TRADING ENGINE",
-                _build_python_command("micro_profit_labyrinth.py", trade_args)
-            ))
+            if config.dry_run:
+                trade_args = ["--dry-run"]
+                processes.append(_start_process(
+                    "💰 TRADING ENGINE (DRY-RUN)",
+                    _build_python_command("micro_profit_labyrinth.py", trade_args)
+                ))
+            else:
+                processes.append(_start_process(
+                    "🐋 ORCA COMPLETE KILL CYCLE",
+                    _build_python_command("orca_complete_kill_cycle.py", ["--autonomous"])
+                ))
 
         _print_urls(config)
 

@@ -299,6 +299,26 @@ except ImportError:
     PHANTOM_FILTER_AVAILABLE = False
     PhantomSignalFilter = None
 
+# 🦅 Alpaca Momentum Ecosystem
+try:
+    from aureon_animal_momentum_scanners import AlpacaSwarmOrchestrator
+    from aureon_alpaca_scanner_bridge import AlpacaScannerBridge
+    from aureon_micro_momentum_goal import MicroMomentumScanner
+    MOMENTUM_ECOSYSTEM_AVAILABLE = True
+except ImportError:
+    MOMENTUM_ECOSYSTEM_AVAILABLE = False
+    AlpacaSwarmOrchestrator = None
+    AlpacaScannerBridge = None
+    MicroMomentumScanner = None
+
+# 🌌 Stargate Grid
+try:
+    from stargate_grid import StargateGrid
+    STARGATE_GRID_AVAILABLE = True
+except ImportError:
+    STARGATE_GRID_AVAILABLE = False
+    StargateGrid = None
+
 # 🎬 Inception Engine - Russian doll probability (LIMBO = 95% accuracy)
 try:
     from aureon_inception_engine import get_inception_engine, inception_dive, get_limbo_insight, InceptionEngine
@@ -721,6 +741,21 @@ class WarRoomDisplay:
             'rotated_symbols': 0,
             'hunted_count': 0,
         }
+        # 🦅 Momentum Ecosystem stats
+        self.momentum_data = {
+            'wolf_pack': 'Initializing...',
+            'lion_pride': 'Initializing...',
+            'army_ants': 'Initializing...',
+            'hummingbird': 'Initializing...',
+            'micro_targets': 0,
+        }
+        
+        # 🌌 Stargate Grid stats
+        self.stargate_data = {
+            'active_node': 'Initializing...',
+            'grid_coherence': 0.0,
+            'description': ''
+        }
         
     def _create_layout(self) -> Layout:
         """Create the war room layout."""
@@ -865,6 +900,51 @@ class WarRoomDisplay:
         intel.add_row("")
         intel.add_row(Text(f"  ⚡ TOTAL BOOST: [{boost_color}]{total_boost:.2f}x[/]", style="bold"))
         
+        # 🦅 Momentum Ecosystem
+        intel.add_row("")
+        intel.add_row(Text("🦅 MOMENTUM ECOSYSTEM", style="bold cyan"))
+        intel.add_row("")
+        
+        mom = self.momentum_data
+        
+        # Micro-Momentum
+        micro_targets = mom.get('micro_targets', 0)
+        micro_color = "green" if micro_targets > 0 else "dim"
+        intel.add_row(Text(f"  🔬 Micro-Scalp Targets: [{micro_color}]{micro_targets}[/]"))
+        
+        # Wolf Pack
+        wolf = mom.get('wolf_pack', 'Unknown')
+        wolf_color = "green" if "Hunting" in wolf else "yellow" if "Stalking" in wolf else "dim"
+        intel.add_row(Text(f"  🐺 Wolf Pack: [{wolf_color}]{wolf}[/]"))
+        
+        # Lion Pride
+        lion = mom.get('lion_pride', 'Unknown')
+        lion_color = "green" if "Hunting" in lion else "yellow" if "Stalking" in lion else "dim"
+        intel.add_row(Text(f"  🦁 Lion Pride: [{lion_color}]{lion}[/]"))
+        
+        # Army Ants
+        ants = mom.get('army_ants', 'Unknown')
+        ants_color = "green" if "Swarming" in ants else "yellow" if "Marching" in ants else "dim"
+        intel.add_row(Text(f"  🐜 Army Ants: [{ants_color}]{ants}[/]"))
+        
+        # Hummingbird
+        hb = mom.get('hummingbird', 'Unknown')
+        hb_color = "green" if "Pollinating" in hb else "dim"
+        intel.add_row(Text(f"  🐦 Hummingbird: [{hb_color}]{hb}[/]"))
+
+        # 🌌 Stargate Grid
+        intel.add_row("")
+        intel.add_row(Text("🌌 STARGATE GRID (12 Nodes)", style="bold cyan"))
+        intel.add_row("")
+        
+        sg = self.stargate_data
+        node = sg.get('active_node', 'Unknown')
+        intel.add_row(Text(f"  Active Node: [green]{node}[/]"))
+        intel.add_row(Text(f"  Resonance: {sg.get('grid_coherence',0):.2f} Hz"))
+        desc = sg.get('description', '')
+        if desc:
+            intel.add_row(Text(f"  [italic dim]{desc}[/]"))
+
         # Active Firms
         intel.add_row("")
         intel.add_row(Text("🏢 ACTIVE FIRMS", style="bold magenta"))
@@ -1076,6 +1156,29 @@ class WarRoomDisplay:
             self.stealth_data['rotated_symbols'] = rotated_symbols
         if hunted_count is not None:
             self.stealth_data['hunted_count'] = hunted_count
+    
+    def update_momentum(self, wolf_status: str = None, lion_status: str = None, 
+                       ants_status: str = None, hummingbird_status: str = None, micro_targets: int = None):
+        """Update momentum ecosystem data."""
+        if wolf_status is not None:
+            self.momentum_data['wolf_pack'] = wolf_status
+        if lion_status is not None:
+            self.momentum_data['lion_pride'] = lion_status
+        if ants_status is not None:
+            self.momentum_data['army_ants'] = ants_status
+        if hummingbird_status is not None:
+            self.momentum_data['hummingbird'] = hummingbird_status
+        if micro_targets is not None:
+            self.momentum_data['micro_targets'] = micro_targets
+
+    def update_stargate(self, active_node: str = None, coherence: float = None, description: str = None):
+        """Update Stargate Grid data."""
+        if active_node is not None:
+            self.stargate_data['active_node'] = active_node
+        if coherence is not None:
+            self.stargate_data['grid_coherence'] = coherence
+        if description is not None:
+            self.stargate_data['description'] = description
     
     def increment_cycle(self):
         """Increment cycle counter."""
@@ -2105,6 +2208,47 @@ class OrcaKillCycle:
                 print("📜⚔️ Historical Hunter: WIRED! (125 years of manipulation patterns)")
             except Exception as e:
                 print(f"📜⚔️ Historical Hunter: {e}")
+        
+        # ═══════════════════════════════════════════════════════════════════
+        # 🦅 MOMENTUM ECOSYSTEM - ANIMAL SWARMS & MICRO INTELLIGENCE
+        # ═══════════════════════════════════════════════════════════════════
+
+        # 33. Momentum Ecosystem - Animal Swarms & Micro Goals
+        self.momentum_ecosystem = None
+        self.micro_scanner = None
+        self.alpaca_bridge = None
+        self.last_momentum_result = {}
+        self.last_micro_result = []
+        
+        if MOMENTUM_ECOSYSTEM_AVAILABLE:
+            try:
+                # 1. Micro-Momentum Scanner (>0.34% goal)
+                if MicroMomentumScanner:
+                    self.micro_scanner = MicroMomentumScanner()
+                    print("🎯 Micro-Momentum Scanner: WIRED! (>0.34% scalp targets)")
+                
+                # 2. Alpaca Ecosystem (Wolf, Lion, Ants)
+                if 'alpaca' in self.clients and self.clients['alpaca']:
+                    alpaca = self.clients['alpaca']
+                    
+                    if AlpacaScannerBridge:
+                        self.alpaca_bridge = AlpacaScannerBridge(alpaca)
+                        print("🌉 Alpaca Scanner Bridge: WIRED! (Unified scanning bus)")
+                        
+                        if AlpacaSwarmOrchestrator:
+                            self.momentum_ecosystem = AlpacaSwarmOrchestrator(alpaca, self.alpaca_bridge)
+                            print("🦅 Alpaca Swarm Ecosystem: WIRED! (Wolf/Lion/Ants scanning)")
+            except Exception as e:
+                print(f"🦅 Momentum Ecosystem: {e}")
+        
+        # 3. Stargate Grid
+        self.stargate_grid = None
+        if STARGATE_GRID_AVAILABLE:
+            try:
+                self.stargate_grid = StargateGrid()
+                print("🌌 Stargate Planetary Grid: WIRED! (12-Node Resonance)")
+            except Exception as e:
+                print(f"🌌 Stargate Grid Error: {e}")
         
         # Audit trail for all executions
         self.audit_file = 'orca_execution_audit.jsonl'
@@ -3173,6 +3317,49 @@ class OrcaKillCycle:
         # Cap the quantum boost at reasonable levels (raised for more systems)
         result['quantum_boost'] = max(0.4, min(2.0, result['quantum_boost']))
         
+        # 8. STARGATE GRID - Planetary Resonance Alignment (NEW UNITING LAYER)
+        if getattr(self, 'stargate_grid', None):
+            try:
+                active_node = self.stargate_grid.get_active_node()
+                coherence = self.stargate_grid.calculate_grid_coherence()
+                
+                result['stargate_node'] = active_node.name
+                result['stargate_coherence'] = coherence
+                
+                # Apply boost based on Grid Coherence (Schumann alignment)
+                # Golden Ratio (1.618) is the baseline for "coherent" state
+                if coherence >= 1.618:
+                    boost = 1.0 + (coherence / 10.0)  # e.g. 2.0 coherence -> 1.2x boost
+                    result['quantum_boost'] *= min(1.3, boost)  # Cap at 30% boost
+                    result['stargate_aligned'] = True
+                elif coherence < 0.5:
+                    result['quantum_boost'] *= 0.9  # Low coherence = scatter measure
+                    result['stargate_aligned'] = False
+                else:
+                    result['stargate_aligned'] = False
+                    
+            except Exception:
+                pass
+
+        # 9. MOMENTUM ECOSYSTEM - Animal Spirits (NEW UNITY LAYER)
+        if getattr(self, 'momentum_ecosystem', None):
+            # Boost if this symbol is being hunted by the animal pack
+            mom_data = getattr(self, 'last_momentum_result', {})
+            wolf_targets = [t['symbol'] for t in mom_data.get('wolf', [])]
+            lion_prey = [t['symbol'] for t in mom_data.get('lion', [])]
+            hb_flowers = [t['symbol'] for t in mom_data.get('hummingbird', [])]
+            
+            animal_boost = 1.0
+            if symbol in wolf_targets: animal_boost += 0.15 # Wolf pack hunting
+            if symbol in lion_prey: animal_boost += 0.25    # Lion pride hunting (bigger conviction)
+            if symbol in hb_flowers: animal_boost += 0.1    # Hummingbird pollinating
+            
+            if animal_boost > 1.0:
+                result['quantum_boost'] *= animal_boost
+                result['animal_spirit'] = True
+            else:
+                result['animal_spirit'] = False
+
         return result
     
     def print_quantum_status(self):
@@ -3354,6 +3541,54 @@ class OrcaKillCycle:
             kraken_opps = self._scan_kraken_market(min_change_pct, min_volume)
             opportunities.extend(kraken_opps)
             print(f"   📊 Kraken: Found {len(kraken_opps)} opportunities")
+        
+        # ═══════════════════════════════════════════════════════════════════
+        # 🦅 MOMENTUM ECOSYSTEM - Animal Swarms & Micro Goals
+        # ═══════════════════════════════════════════════════════════════════
+        if self.momentum_ecosystem:
+            try:
+                swarm_layout = self.momentum_ecosystem.run_once()
+                self.last_momentum_result = swarm_layout  # Store for dashboard
+                swarm_opps = []
+                for agent, found_list in swarm_layout.items():
+                    for anim in found_list:
+                        opp = MarketOpportunity(
+                            symbol=anim.symbol.replace('/', ''),
+                            exchange='alpaca',  # Ecosystem runs on Alpaca
+                            price=0.0,  # Price is less relevant than move pattern
+                            change_pct=anim.move_pct,
+                            volume=anim.volume,
+                            momentum_score=anim.net_pct * 10.0,  # Scaled score
+                            fee_rate=self.fee_rates.get('alpaca', 0.0025)
+                        )
+                        swarm_opps.append(opp)
+                        print(f"   🦅 {agent.upper()}: Found {anim.symbol} ({anim.reason})")
+                
+                if swarm_opps:
+                    opportunities.extend(swarm_opps)
+                    print(f"   📊 Animal Swarm: Added {len(swarm_opps)} momentum targets")
+            except Exception as e:
+                print(f"   ⚠️ Animal Swarm Scan Failed: {e}")
+
+        if self.micro_scanner:
+            try:
+                micro_signals = self.micro_scanner.get_actionable_signals()
+                self.last_micro_result = micro_signals  # Store for dashboard
+                if micro_signals:
+                    for sig in micro_signals:
+                        opp = MarketOpportunity(
+                            symbol=sig.symbol.replace('/', ''),
+                            exchange='alpaca',
+                            price=sig.current_price,
+                            change_pct=sig.momentum_5m_pct,
+                            volume=0.0,
+                            momentum_score=sig.net_profit_potential * 10.0,
+                            fee_rate=self.fee_rates.get('alpaca', 0.0025)
+                        )
+                        opportunities.extend([opp])
+                    print(f"   📊 Micro-Momentum: Added {len(micro_signals)} scalp targets")
+            except Exception as e:
+                print(f"   ⚠️ Micro-Scanner Failed: {e}")
         
         # ═══════════════════════════════════════════════════════════════════
         # 🌌 QUANTUM ENHANCEMENT - Apply luck field + LIMBO probability boost
@@ -7253,6 +7488,55 @@ class OrcaKillCycle:
                         if RISING_STAR_AVAILABLE:
                             warroom.update_rising_star(rising_star_stats)
                         
+                        # 🦅 Update Momentum stats
+                        mom_res = getattr(self, 'last_momentum_result', {})
+                        micro_res = getattr(self, 'last_micro_result', [])
+                        
+                        wolf_stat = 'Initializing...'
+                        lion_stat = 'Initializing...'
+                        ant_stat = 'Initializing...'
+                        hb_stat = 'Initializing...'
+                        
+                        if self.momentum_ecosystem:
+                            # Use last result or default to Stalking if empty cache but system exists
+                            if not mom_res:
+                                wolf_stat = "Stalking"
+                                lion_stat = "Napping" 
+                                ant_stat = "Marching"
+                                hb_stat = "Hovering"
+                            else:
+                                w_count = len(mom_res.get('wolf', []))
+                                l_count = len(mom_res.get('lion', []))
+                                a_count = len(mom_res.get('ants', []))
+                                hb_data = mom_res.get('hummingbird', [])
+                                hb_count = len(hb_data) if isinstance(hb_data, list) else 0
+
+                                wolf_stat = f"Hunting ({w_count} targets)" if w_count > 0 else "Stalking"
+                                lion_stat = f"Hunting ({l_count} prey)" if l_count > 0 else "Stalking"
+                                ant_stat = f"Swarming ({a_count} paths)" if a_count > 0 else "Foraging"
+                                hb_stat = f"Pollinating ({hb_count} flowers)" if hb_count > 0 else "Hovering"
+                        
+                        warroom.update_momentum(
+                            wolf_status=wolf_stat,
+                            lion_status=lion_stat,
+                            ants_status=ant_stat,
+                            hummingbird_status=hb_stat,
+                            micro_targets=len(micro_res) if micro_res else 0
+                        )
+                        
+                        # 🌌 Stargate Grid Update
+                        if self.stargate_grid:
+                            try:
+                                active_node = self.stargate_grid.get_active_node()
+                                grid_coherence = self.stargate_grid.calculate_grid_coherence()
+                                warroom.update_stargate(
+                                    active_node=f"{active_node.name} ({active_node.element})",
+                                    coherence=grid_coherence,
+                                    description=getattr(active_node, 'description', '')
+                                )
+                            except Exception:
+                                pass
+                        
                         # 🎯 OPTIONS SCANNING - Every 5 minutes check for income opportunities
                         if self.options_scanner and self.options_trading_level:
                             try:
@@ -7917,30 +8201,32 @@ if __name__ == "__main__":
     elif len(sys.argv) >= 2:
         # Single symbol mode (backward compatible)
         symbol = sys.argv[1]
-        amount = float(sys.argv[2]) if len(sys.argv) > 2 else 8.0
-        target = float(sys.argv[3]) if len(sys.argv) > 3 else 1.0
-        
-        orca = OrcaKillCycle()
-        result = orca.hunt_and_kill(symbol, amount, target)
-        
-        if result:
-            print(f"\n💰 Portfolio impact: ${result['net_pnl']:+.4f}")
+        try:
+            amount = float(sys.argv[2]) if len(sys.argv) > 2 else 8.0
+            target = float(sys.argv[3]) if len(sys.argv) > 3 else 1.0
+            
+            orca = OrcaKillCycle()
+            result = orca.hunt_and_kill(symbol, amount, target)
+            
+            if result:
+                print(f"\n💰 Portfolio impact: ${result['net_pnl']:+.4f}")
+        except ValueError:
+            # If parsing fails (e.g. user passed flags we didn't catch), default to War Room
+             print("👑🎖️ AUTONOMOUS WAR ROOM MODE (DEFAULT) 🎖️👑")
+             orca = OrcaKillCycle()
+             stats = orca.run_autonomous_warroom(
+                 max_positions=3,
+                 amount_per_position=2.5,
+                 target_pct=1.0
+             )
+
     else:
-        print("Usage:")
-        print("  👑 WAR ROOM:    python orca_complete_kill_cycle.py --autonomous 3 2.5 1.0  # Clean dashboard")
-        print("  👑 LEGACY:      python orca_complete_kill_cycle.py --autonomous-legacy     # Raw output (debug)")
-        print("  Fast hunt:      python orca_complete_kill_cycle.py --fast 25 3 0.8")
-        print("  Monitor:        python orca_complete_kill_cycle.py --monitor 1.5 1.0")
-        print("  Single symbol:  python orca_complete_kill_cycle.py BTC/USD 8.0 1.0")
-        print("  Pack hunt:      python orca_complete_kill_cycle.py --pack 3 2.5")
-        print("")
-        print("Examples:")
-        print("  python orca_complete_kill_cycle.py --autonomous      # 🎖️ WAR ROOM: Clean Rich dashboard")
-        print("  python orca_complete_kill_cycle.py --autonomous 5 10 # War Room: 5 positions @ $10 each")
-        print("  python orca_complete_kill_cycle.py --autonomous-legacy  # Old print-spam mode")
-        print("  python orca_complete_kill_cycle.py --fast            # Fast hunt: $25×3 @ 0.8% target")
-        print("  python orca_complete_kill_cycle.py --fast 50 2 1.0   # $50×2 @ 1.0% target")
-        print("  python orca_complete_kill_cycle.py --monitor         # Monitor with 1.5% target, 1% stop")
-        print("  python orca_complete_kill_cycle.py --monitor 2.0 0.5 # 2% target, 0.5% stop")
-        print("  python orca_complete_kill_cycle.py --pack            # 3 positions @ $2.50 each")
-        sys.exit(1)
+        # No arguments defaults to WAR ROOM
+        print("👑🎖️ AUTONOMOUS WAR ROOM MODE (DEFAULT) 🎖️👑")
+        orca = OrcaKillCycle()
+        stats = orca.run_autonomous_warroom(
+            max_positions=3,
+            amount_per_position=2.5,
+            target_pct=1.0
+        )
+
