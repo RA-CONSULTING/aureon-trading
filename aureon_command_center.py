@@ -218,6 +218,7 @@ if sys.platform == 'win32':
 import asyncio
 import json
 import time
+import threading
 import random
 import logging
 from datetime import datetime, timedelta
@@ -6580,11 +6581,25 @@ def main():
     safe_print("=" * 80)
     
     global LAST_FLIGHT_CHECK, LAST_FLIGHT_CHECK_TIME
-    LAST_FLIGHT_CHECK = run_flight_check()
-    LAST_FLIGHT_CHECK_TIME = time.time()
+    if sys.platform != 'win32':
+        LAST_FLIGHT_CHECK = run_flight_check()
+        LAST_FLIGHT_CHECK_TIME = time.time()
+        poem = print_flight_check_poem(LAST_FLIGHT_CHECK)
+    else:
+        LAST_FLIGHT_CHECK = {}
+        LAST_FLIGHT_CHECK_TIME = time.time()
+        poem = """
+╔══════════════════════════════════════════════════════════════════════════════════╗
+║                                                                                  ║
+║     🛫 FLIGHT CHECK SKIPPED ON WINDOWS - FASTER STARTUP 🛫                       ║
+║                                                                                  ║
+║     "For rapid deployment on Windows systems,                                    ║
+║      Flight check is bypassed to ensure swift initialization."                   ║
+║                                                                                  ║
+╚══════════════════════════════════════════════════════════════════════════════════╝
+"""
     
     # Print the poem!
-    poem = print_flight_check_poem(LAST_FLIGHT_CHECK)
     for line in poem.split('\n'):
         safe_print(line)
     
