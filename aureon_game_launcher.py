@@ -233,7 +233,8 @@ def run_game_mode(config: GameModeConfig) -> int:
         # TRADING ENGINE
         if config.start_trading:
             if config.dry_run:
-                trade_args = ["--dry-run", "--multi-exchange"]  # Add multi-exchange by default
+                # Run for 24 hours (86400 seconds) instead of forever to avoid Windows subprocess issues
+                trade_args = ["--dry-run", "--multi-exchange", "--duration", "86400"]
                 processes.append(_start_process(
                     "💰 TRADING ENGINE (DRY-RUN)",
                     _build_python_command("micro_profit_labyrinth.py", trade_args)
