@@ -779,15 +779,45 @@ class WarRoomDisplay:
             'description': ''
         }
         
+        # 💎 Portfolio tracking
+        self.portfolio_start_value = 0.0
+        self.portfolio_peak_value = 0.0
+        self.session_start_time = time.time()
+        
+        # 🎯 Opportunity queue (top candidates waiting to be bought)
+        self.opportunity_queue = []
+        
+        # 🏆 Exchange performance tracking
+        self.exchange_stats = {
+            'alpaca': {'wins': 0, 'losses': 0, 'pnl': 0.0, 'trades': 0},
+            'kraken': {'wins': 0, 'losses': 0, 'pnl': 0.0, 'trades': 0},
+            'binance': {'wins': 0, 'losses': 0, 'pnl': 0.0, 'trades': 0}
+        }
+        
+        # 🎖️ Recent kills feed (last 5 trades)
+        self.recent_kills = []
+        
+        # 🏥 System health metrics
+        self.system_health = {
+            'alpaca_latency': 0,
+            'kraken_latency': 0,
+            'binance_latency': 0,
+            'alpaca_status': '🟢',
+            'kraken_status': '🟢',
+            'binance_status': '🟢',
+            'last_trade_time': None,
+            'scanning_active': True
+        }
+        
     def _create_layout(self) -> Layout:
         """Create the war room layout."""
         layout = Layout(name="root")
         
         # Main structure
         layout.split(
-            Layout(name="header", size=5),
+            Layout(name="header", size=7),  # Increased for portfolio value
             Layout(name="main", ratio=1),
-            Layout(name="footer", size=5),
+            Layout(name="footer", size=8),  # Increased for more info
         )
         
         # Split main into left and right
@@ -831,6 +861,27 @@ class WarRoomDisplay:
             cash_text += "[dim]Scanning...[/]"
         
         header.add_row(Text(cash_text))
+        
+        # 💎 Portfolio Value Tracker
+        total_cash = sum(self.cash_balances.values()) if hasattr(self, 'cash_balances') else 0
+        positions_value = sum(p.get('value', 0) for p in self.positions_data)
+        total_portfolio = total_cash + positions_value
+        
+        # Calculate daily change
+        if self.portfolio_start_value > 0:
+            daily_change_pct = ((total_portfolio - self.portfolio_start_value) / self.portfolio_start_value) * 100
+            daily_change_color = "green" if daily_change_pct >= 0 else "red"
+            daily_arrow = "↑" if daily_change_pct >= 0 else "↓"
+            portfolio_text = f"💎 PORTFOLIO: ${total_portfolio:.2f} ({daily_arrow} [{daily_change_color}]{daily_change_pct:+.2f}%[/] today) | Cash: ${total_cash:.2f} | Positions: ${positions_value:.2f}"
+        else:
+            # First run - set starting value
+            self.portfolio_start_value = total_portfolio
+            portfolio_text = f"💎 PORTFOLIO: ${total_portfolio:.2f} | Cash: ${total_cash:.2f} | Positions: ${positions_value:.2f}"
+        
+        if total_portfolio > self.portfolio_peak_value:
+            self.portfolio_peak_value = total_portfolio
+        
+        header.add_row(Text(portfolio_text))
         
         return Panel(header, title="[bold blue]SESSION[/]", border_style="blue")
     
@@ -1060,13 +1111,91 @@ class WarRoomDisplay:
         return Panel(intel, title="[bold yellow]🎯 INTELLIGENCE[/]", border_style="yellow")
     
     def _build_footer(self) -> Panel:
-        """Build the footer with status."""
+        """Build the footer with comprehensive status."""
         unrealized_pnl = sum(p.get('pnl', 0) for p in self.positions_data)
         pnl_color = "green" if unrealized_pnl >= 0 else "red"
         pnl_sign = "+" if unrealized_pnl >= 0 else ""
         
         footer = Table.grid(expand=True)
-        footer.add_column(justify="center", ratio=1)
+        footer.add_column(justify="left", ratio=1)
+        
+        # 🎯 Opportunity Queue (Top 3)
+        opp_text = "🎯 NEXT IN LINE: "
+        if hasattr(self, 'opportunity_queue') and self.opportunity_queue:
+            top_3 = self.opportunity_queue[:3]
+            opp_parts = []
+            for i, opp in enumerate(top_3, 1):
+                symbol = opp.get('symbol', 'N/A')[:8]
+                exchange = opp.get('exchange', 'N/A')[:3].upper()
+                change = opp.get('change_pct', 0)
+                score = opp.get('score', 0)
+                tags = opp.get('tags', [])
+                tag_emoji = "🐺" if "wolf" in tags else "🦁" if "lion" in tags else "📊"
+                opp_parts.append(f"{i}. {symbol} ({exchange}) {change:+.1f}% | {tag_emoji}")
+            opp_text += " | ".join(opp_parts)
+        else:
+            opp_text += "[dim]Scanning for opportunities...[/]"
+        footer.add_row(Text(opp_text))
+        
+        # 🏆 Exchange Performance Leaderboard
+        if hasattr(self, 'exchange_stats'):
+            exchanges = []
+            for ex, stats in self.exchange_stats.items():
+                if stats['trades'] > 0:
+                    win_rate = (stats['wins'] / stats['trades']) * 100
+                    medal = "🥇" if win_rate >= 70 else "🥈" if win_rate >= 50 else "🥉"
+                    exchanges.append((ex, stats['wins'], stats['losses'], stats['pnl'], win_rate, medal))
+            
+            # Sort by win rate
+            exchanges.sort(key=lambda x: x[4], reverse=True)
+            
+            if exchanges:
+                ex_parts = []
+                for ex, w, l, pnl, wr, medal in exchanges:
+                    pnl_color = "green" if pnl >= 0 else "red"
+                    ex_parts.append(f"{medal} {ex.capitalize()}: {w}W-{l}L [{pnl_color}]{pnl:+.2f}[/] ({wr:.0f}%)")
+                footer.add_row(Text("🏆 EXCHANGES: " + " | ".join(ex_parts)))
+        
+        # 🎖️ Recent Kills (Last 5)
+        if hasattr(self, 'recent_kills') and self.recent_kills:
+            kills_text = "🎖️ RECENT: "
+            kill_parts = []
+            for kill in self.recent_kills[-5:]:
+                symbol = kill.get('symbol', 'N/A')[:6]
+                pnl = kill.get('pnl', 0)
+                icon = "✅" if pnl >= 0 else "❌"
+                exchange = kill.get('exchange', 'N/A')[:3].upper()
+                hold_time = kill.get('hold_time', 0)
+                pnl_color = "green" if pnl >= 0 else "red"
+                kill_parts.append(f"{icon} {symbol} [{pnl_color}]{pnl:+.2f}[/] ({hold_time}s) {exchange}")
+            kills_text += " | ".join(kill_parts)
+            footer.add_row(Text(kills_text))
+        
+        # 🏥 System Health
+        if hasattr(self, 'system_health'):
+            sh = self.system_health
+            health_text = "🏥 HEALTH: "
+            health_parts = []
+            
+            # API statuses with latency
+            for ex in ['alpaca', 'kraken', 'binance']:
+                status = sh.get(f'{ex}_status', '🟢')
+                latency = sh.get(f'{ex}_latency', 0)
+                lat_color = "green" if latency < 100 else "yellow" if latency < 300 else "red"
+                health_parts.append(f"{status} {ex.capitalize()} [{lat_color}]{latency}ms[/]")
+            
+            health_text += " | ".join(health_parts)
+            
+            # Last trade time
+            if sh.get('last_trade_time'):
+                seconds_ago = int(time.time() - sh['last_trade_time'])
+                health_text += f" | Last Trade: {seconds_ago}s ago"
+            
+            # Scanning status
+            scan_status = "✅" if sh.get('scanning_active', True) else "⏸️"
+            health_text += f" | Scanning: {scan_status}"
+            
+            footer.add_row(Text(health_text))
         
         # Build status line with options info
         options_status = ""
@@ -1135,7 +1264,7 @@ class WarRoomDisplay:
         """Update firm activity."""
         self.firms_data[firm_name] = {'action': action, 'direction': direction}
     
-    def record_kill(self, pnl: float):
+    def record_kill(self, pnl: float, symbol: str = None, exchange: str = None, hold_time: float = 0):
         """Record a kill (closed position)."""
         if pnl >= 0:
             self.kills_data['wins'] += 1
@@ -1148,6 +1277,54 @@ class WarRoomDisplay:
             self.best_trade = pnl
         if pnl < self.worst_trade:
             self.worst_trade = pnl
+        
+        # Update exchange stats
+        if exchange and hasattr(self, 'exchange_stats') and exchange in self.exchange_stats:
+            self.exchange_stats[exchange]['trades'] += 1
+            self.exchange_stats[exchange]['pnl'] += pnl
+            if pnl >= 0:
+                self.exchange_stats[exchange]['wins'] += 1
+            else:
+                self.exchange_stats[exchange]['losses'] += 1
+        
+        # Add to recent kills feed
+        if hasattr(self, 'recent_kills'):
+            self.recent_kills.append({
+                'symbol': symbol or 'N/A',
+                'exchange': exchange or 'N/A',
+                'pnl': pnl,
+                'hold_time': int(hold_time),
+                'timestamp': time.time()
+            })
+            # Keep only last 10
+            if len(self.recent_kills) > 10:
+                self.recent_kills = self.recent_kills[-10:]
+        
+        # Update system health - last trade time
+        if hasattr(self, 'system_health'):
+            self.system_health['last_trade_time'] = time.time()
+    
+    def update_opportunity_queue(self, opportunities: list):
+        """Update the opportunity queue with top candidates."""
+        if hasattr(self, 'opportunity_queue'):
+            # Extract top opportunities with metadata
+            self.opportunity_queue = []
+            for opp in opportunities[:5]:  # Top 5
+                self.opportunity_queue.append({
+                    'symbol': opp.symbol if hasattr(opp, 'symbol') else opp.get('symbol', 'N/A'),
+                    'exchange': opp.exchange if hasattr(opp, 'exchange') else opp.get('exchange', 'N/A'),
+                    'change_pct': opp.change_pct if hasattr(opp, 'change_pct') else opp.get('change_pct', 0),
+                    'score': opp.momentum_score if hasattr(opp, 'momentum_score') else opp.get('score', 0),
+                    'tags': getattr(opp, 'tags', []) if hasattr(opp, 'tags') else opp.get('tags', [])
+                })
+    
+    def update_system_health(self, exchange: str = None, latency: float = 0, status: str = '🟢'):
+        """Update system health metrics."""
+        if hasattr(self, 'system_health'):
+            if exchange:
+                self.system_health[f'{exchange}_latency'] = int(latency)
+                self.system_health[f'{exchange}_status'] = status
+            self.system_health['scanning_active'] = True
     
     def update_rising_star(self, stats: dict):
         """Update Rising Star statistics."""
@@ -1719,6 +1896,7 @@ class WhaleIntelligenceTracker:
 
 
 @dataclass
+@dataclass
 class LivePosition:
     """Track a live position with streaming updates."""
     symbol: str
@@ -1729,7 +1907,7 @@ class LivePosition:
     breakeven_price: float
     target_price: float
     client: object = None  # Client for THIS position's exchange
-    entry_time: datetime = field(default_factory=datetime.now)
+    entry_time: float = field(default_factory=time.time)  # Changed to timestamp
     current_price: float = 0.0
     current_pnl: float = 0.0
     current_pnl_pct: float = 0.0
@@ -6343,6 +6521,9 @@ class OrcaKillCycle:
                             opportunities = self.scan_entire_market(min_change_pct=min_change_pct)
                             
                             if opportunities:
+                                # Update opportunity queue for display
+                                warroom.update_opportunity_queue(opportunities)
+                                
                                 # Filter for symbols not already in positions
                                 active_symbols = [p.symbol for p in positions]
                                 new_opps = [o for o in opportunities if o.symbol not in active_symbols]
@@ -7458,7 +7639,10 @@ class OrcaKillCycle:
                                     else:
                                         session_stats['losing_trades'] += 1
                                         session_stats['worst_trade'] = min(session_stats['worst_trade'], net_pnl)
-                                    warroom.record_kill(net_pnl)
+                                    
+                                    # Record kill with full details
+                                    hold_time = time.time() - pos.entry_time if hasattr(pos, 'entry_time') else 0
+                                    warroom.record_kill(net_pnl, symbol=pos.symbol, exchange=pos.exchange, hold_time=hold_time)
                                     warroom.remove_position(pos.symbol)
                                     positions.remove(pos)
                                     last_scan_time = 0  # Force scan
