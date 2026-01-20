@@ -7629,6 +7629,22 @@ class OrcaKillCycle:
         if not RICH_AVAILABLE:
             print("⚠️ Rich library not available - falling back to standard mode")
             return self.run_autonomous(max_positions, amount_per_position, target_pct, min_change_pct)
+
+        # ═══════════════════════════════════════════════════════════════════
+        # 👑 QUEEN HIVE MIND (MANDATORY)
+        # ═══════════════════════════════════════════════════════════════════
+        queen = None
+        try:
+            from aureon_queen_hive_mind import QueenHiveMind
+            queen = QueenHiveMind()
+            print("👑 QUEEN SERO: AWAKENED AND READY!")
+            print(f"   🎯 Dream: ${queen.THE_DREAM:,.0f} (ONE BILLION)")
+            print(f"   💰 Current equity: ${queen.equity:,.2f}")
+            print()
+        except Exception as e:
+            print(f"❌ Queen initialization failed: {e}")
+            print("   War Room autonomous mode requires the Queen. Aborting.")
+            return
         
         # ═══════════════════════════════════════════════════════════════════
         # 🌟 RISING STAR INITIALIZATION
@@ -7969,11 +7985,43 @@ class OrcaKillCycle:
         positions: List[LivePosition] = []
         
         # Timing
-        scan_interval = 10
+        base_scan_interval = 10
+        scan_interval = base_scan_interval
         monitor_interval = 1.0
         last_scan_time = 0
         last_portfolio_scan = 0
         portfolio_scan_interval = 30
+        # Queen-driven pacing & profit target
+        base_target_pct = target_pct
+        target_pct_current = target_pct
+        queen_update_interval = 10.0
+        last_queen_update = 0.0
+
+        def _apply_queen_controls() -> None:
+            """Adjust scan speed and profit targets based on Queen collective signal."""
+            nonlocal scan_interval, target_pct_current
+            try:
+                signal = queen.get_collective_signal()
+                confidence = float(signal.get('confidence', 0.5))
+                direction = signal.get('direction', 'NEUTRAL')
+            except Exception:
+                confidence = 0.5
+                direction = 'NEUTRAL'
+
+            # Speed: higher confidence -> faster scans
+            speed_factor = max(0.5, min(1.5, 1.5 - confidence))
+            scan_interval = max(3.0, min(20.0, base_scan_interval * speed_factor))
+
+            # Profit target: higher confidence -> higher target, bearish -> more conservative
+            target_factor = 0.8 + (confidence * 0.6)
+            if direction == 'BULLISH':
+                target_factor *= 1.1
+            elif direction == 'BEARISH':
+                target_factor *= 0.8
+            target_pct_current = max(0.3, min(3.0, base_target_pct * target_factor))
+
+        # Initial Queen pacing/targets
+        _apply_queen_controls()
         
         # ═══════════════════════════════════════════════════════════════════
         # PHASE 0: LOAD EXISTING POSITIONS
@@ -7997,7 +8045,7 @@ class OrcaKillCycle:
                                 fee_rate = self.fee_rates.get(exchange_name, 0.0025)
                                 entry_cost = entry_price * qty * (1 + fee_rate)
                                 breakeven = entry_price * (1 + fee_rate) / (1 - fee_rate)
-                                target_price = breakeven * (1 + target_pct / 100)
+                                target_price = breakeven * (1 + target_pct_current / 100)
                                 exit_value = current_price * qty * (1 - fee_rate)
                                 net_pnl = exit_value - entry_cost
                                 
@@ -8034,7 +8082,7 @@ class OrcaKillCycle:
                                         entry_price = current_price
                                         entry_cost = entry_price * qty * (1 + fee_rate)
                                         breakeven = entry_price * (1 + fee_rate) / (1 - fee_rate)
-                                        target_price = breakeven * (1 + target_pct / 100)
+                                        target_price = breakeven * (1 + target_pct_current / 100)
                                         
                                         pos = LivePosition(
                                             symbol=symbol,
@@ -8071,6 +8119,15 @@ class OrcaKillCycle:
                         'losses': session_stats['losing_trades'],
                         'pnl': session_stats['total_pnl']
                     }
+
+                    # 👑 Queen pacing + profit target updates
+                    if current_time - last_queen_update >= queen_update_interval:
+                        last_queen_update = current_time
+                        _apply_queen_controls()
+                        warroom.add_flash_alert(
+                            f"Queen pacing: scan={scan_interval:.1f}s target={target_pct_current:.2f}%",
+                            'info'
+                        )
                     
                     # Update position health and success rate every cycle
                     warroom.update_position_health()
@@ -8265,7 +8322,7 @@ class OrcaKillCycle:
                                                 
                                                 # Recalculate breakeven and target
                                                 pos.breakeven_price = new_avg_entry * (1 + fee_rate) / (1 - fee_rate)
-                                                pos.target_price = pos.breakeven_price * (1 + target_pct / 100)
+                                                pos.target_price = pos.breakeven_price * (1 + target_pct_current / 100)
                                                 
                                                 # Track stats
                                                 rising_star_stats['accumulations_made'] += 1
@@ -8310,6 +8367,31 @@ class OrcaKillCycle:
                                     for winner in best_2:
                                         if len(positions) >= max_positions:
                                             break
+
+                                        # 👑 Queen approval required
+                                        queen_approved = False
+                                        try:
+                                            signal = queen.get_collective_signal(
+                                                symbol=winner.symbol,
+                                                market_data={
+                                                    'price': getattr(winner, 'price', 0.0),
+                                                    'change_pct': getattr(winner, 'change_pct', 0.0),
+                                                    'momentum': getattr(winner, 'momentum_score', 0.0),
+                                                    'exchange': winner.exchange
+                                                }
+                                            )
+                                            confidence = float(signal.get('confidence', 0.0))
+                                            action = signal.get('action', 'HOLD')
+                                            warroom.add_flash_alert(
+                                                f"Queen signal {action} {confidence:.0%} for {winner.symbol}",
+                                                'info'
+                                            )
+                                            queen_approved = (action == 'BUY' and confidence >= 0.5)
+                                        except Exception:
+                                            queen_approved = False
+
+                                        if not queen_approved:
+                                            continue
                                         
                                         try:
                                             client = self.clients.get(winner.exchange)
@@ -8332,7 +8414,7 @@ class OrcaKillCycle:
                                                             fee_rate = self.fee_rates.get(winner.exchange, 0.0025)
                                                             entry_cost = buy_price * buy_qty * (1 + fee_rate)
                                                             breakeven = buy_price * (1 + fee_rate) / (1 - fee_rate)
-                                                            target_price = breakeven * (1 + target_pct / 100)
+                                                            target_price = breakeven * (1 + target_pct_current / 100)
                                                             
                                                             pos = LivePosition(
                                                                 symbol=symbol_clean,
@@ -8365,6 +8447,31 @@ class OrcaKillCycle:
                                         try:
                                             client = self.clients.get(best.exchange)
                                             if client:
+                                                # 👑 Queen approval required
+                                                queen_approved = False
+                                                try:
+                                                    signal = queen.get_collective_signal(
+                                                        symbol=best.symbol,
+                                                        market_data={
+                                                            'price': best.price,
+                                                            'change_pct': best.change_pct,
+                                                            'momentum': best.momentum_score,
+                                                            'exchange': best.exchange
+                                                        }
+                                                    )
+                                                    confidence = float(signal.get('confidence', 0.0))
+                                                    action = signal.get('action', 'HOLD')
+                                                    warroom.add_flash_alert(
+                                                        f"Queen signal {action} {confidence:.0%} for {best.symbol}",
+                                                        'info'
+                                                    )
+                                                    queen_approved = (action == 'BUY' and confidence >= 0.5)
+                                                except Exception:
+                                                    queen_approved = False
+
+                                                if not queen_approved:
+                                                    continue
+
                                                 symbol_clean = best.symbol.replace('/', '')
                                                 exchange_cash = cash.get(best.exchange, 0)
                                                 buy_amount = min(amount_per_position, exchange_cash * 0.9)
@@ -8385,7 +8492,7 @@ class OrcaKillCycle:
                                                         if buy_qty > 0 and buy_price > 0:
                                                             fee_rate = self.fee_rates.get(best.exchange, 0.0025)
                                                             breakeven = buy_price * (1 + fee_rate) / (1 - fee_rate)
-                                                            target_price = breakeven * (1 + target_pct / 100)
+                                                            target_price = breakeven * (1 + target_pct_current / 100)
                                                             
                                                             pos = LivePosition(
                                                                 symbol=symbol_clean,
