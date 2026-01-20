@@ -318,10 +318,17 @@ class FirstRunSetup:
                 'sandbox': ex_config.sandbox
             }
         
-        # Save main config
-        with open(self.config_file, 'w') as f:
-            json.dump(config_data, f, indent=2)
-        print(f"   ✅ Config saved to {self.config_file}")
+        # Save main config with restrictive permissions
+        # Set umask to ensure file is created with 600 permissions
+        old_umask = os.umask(0o077)
+        try:
+            with open(self.config_file, 'w') as f:
+                json.dump(config_data, f, indent=2)
+            # Explicitly set permissions (belt and suspenders)
+            os.chmod(self.config_file, 0o600)
+        finally:
+            os.umask(old_umask)
+        print(f"   ✅ Config saved to {self.config_file} (mode 600)")
         
         # Try to save credentials to OS keyring (secure), fallback to file
         keyring_success = self._save_to_keyring(credentials)

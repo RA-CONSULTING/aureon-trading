@@ -101,11 +101,13 @@ services:
       - ./grafana/provisioning:/etc/grafana/provisioning:ro
     
     environment:
-      # Use env var for password (set via: export GF_ADMIN_PASSWORD=yourpassword)
-      # Falls back to 'admin' if not set - CHANGE IN PRODUCTION!
-      - GF_SECURITY_ADMIN_PASSWORD=${GF_ADMIN_PASSWORD:-admin}
+      # REQUIRED: Set GF_ADMIN_PASSWORD in environment before starting
+      # Example: export GF_ADMIN_PASSWORD=$(openssl rand -base64 32)
+      # Grafana will fail to start if password is not set (no insecure default)
+      - GF_SECURITY_ADMIN_PASSWORD=${GF_ADMIN_PASSWORD:?ERROR: GF_ADMIN_PASSWORD must be set}
       - GF_USERS_ALLOW_SIGN_UP=false
       - GF_AUTH_ANONYMOUS_ENABLED=false
+      - GF_SECURITY_DISABLE_INITIAL_ADMIN_CREATION=false
     
     networks:
       - aureon-network

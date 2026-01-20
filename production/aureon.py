@@ -62,7 +62,23 @@ def load_config_from_env() -> Optional[dict]:
 
 
 def confirm_live_mode() -> bool:
-    """Safety confirmation gate for live trading mode"""
+    """Safety confirmation gate for live trading mode.
+    
+    In non-interactive mode (containers, CI), requires AUREON_ACCEPT_LIVE_RISK=true.
+    In interactive mode (TTY), requires explicit user confirmation.
+    """
+    # Check environment override first (for non-interactive deployments)
+    if os.environ.get('AUREON_ACCEPT_LIVE_RISK', '').lower() == 'true':
+        print("\n⚠️  AUREON_ACCEPT_LIVE_RISK=true - proceeding with LIVE trading")
+        return True
+    
+    # Non-TTY guard: prevent hanging in containers/CI
+    if not sys.stdin.isatty():
+        print("\n❌ Live mode requires interactive confirmation (TTY).")
+        print("   For non-interactive deployments, set AUREON_ACCEPT_LIVE_RISK=true")
+        print("   Switching to DRY RUN mode.")
+        return False
+    
     print()
     print("⚠️" * 20)
     print("\n    🚨 LIVE TRADING MODE REQUESTED 🚨")

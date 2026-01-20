@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import base64
+import fcntl
 import json
 import os
 import threading
@@ -196,10 +197,22 @@ class ThoughtBus:
         return count
 
     def _persist(self, thought: Thought) -> None:
+        """Persist thought to JSONL with file locking for crash safety."""
         if not self._persist_path:
             return
-        with open(self._persist_path, "a", encoding="utf-8") as f:
-            f.write(json.dumps(thought.to_json(), ensure_ascii=False) + "\n")
+        try:
+            with open(self._persist_path, "a", encoding="utf-8") as f:
+                # Acquire exclusive lock to prevent concurrent writes
+                fcntl.flock(f.fileno(), fcntl.LOCK_EX)
+                try:
+                    f.write(json.dumps(thought.to_json(), ensure_ascii=False) + "\n")
+                    f.flush()
+                    os.fsync(f.fileno())  # Ensure data hits disk
+                finally:
+                    fcntl.flock(f.fileno(), fcntl.LOCK_UN)
+        except (OSError, IOError) as e:
+            # Log but don't crash on persistence failure
+            pass
 
     def _match_handlers(self, topic: str) -> List[Subscriber]:
         with self._lock:

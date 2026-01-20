@@ -1,0 +1,140 @@
+# ═══════════════════════════════════════════════════════════════════════════
+# AUREON Docker Build Context - Exclusions
+# ═══════════════════════════════════════════════════════════════════════════
+# Keep build context lean and secure - exclude secrets, logs, caches
+
+# ───────────────────────────────────────────────────────────────────────────
+# Secrets and credentials (CRITICAL - never ship in image)
+# ───────────────────────────────────────────────────────────────────────────
+.env
+.env.*
+*.env
+credentials.json
+aureon_credentials.json
+*_credentials.json
+secrets/
+*.pem
+*.key
+*.crt
+api_keys.json
+
+# ───────────────────────────────────────────────────────────────────────────
+# Logs and runtime state (regenerated at runtime)
+# ───────────────────────────────────────────────────────────────────────────
+logs/
+*.log
+*.log.*
+thoughts.jsonl
+aureon_thoughts.jsonl
+*.jsonl
+
+# ───────────────────────────────────────────────────────────────────────────
+# Python caches and bytecode
+# ───────────────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+.Python
+*.egg-info/
+*.egg
+.eggs/
+dist/
+build/
+.cache/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# ───────────────────────────────────────────────────────────────────────────
+# Virtual environments (use image's Python)
+# ───────────────────────────────────────────────────────────────────────────
+.venv/
+venv/
+env/
+ENV/
+
+# ───────────────────────────────────────────────────────────────────────────
+# IDE and editor files
+# ───────────────────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.pydevproject
+.settings/
+
+# ───────────────────────────────────────────────────────────────────────────
+# Git metadata (not needed in image)
+# ───────────────────────────────────────────────────────────────────────────
+.git/
+.gitignore
+.gitattributes
+
+# ───────────────────────────────────────────────────────────────────────────
+# Documentation and non-runtime files
+# ───────────────────────────────────────────────────────────────────────────
+*.md
+*.rst
+*.txt
+!requirements*.txt
+docs/
+README*
+LICENSE*
+CHANGELOG*
+CONTRIBUTING*
+
+# ───────────────────────────────────────────────────────────────────────────
+# Test and development files
+# ───────────────────────────────────────────────────────────────────────────
+tests/
+test_*.py
+*_test.py
+conftest.py
+coverage/
+htmlcov/
+.coverage
+*.cover
+
+# ───────────────────────────────────────────────────────────────────────────
+# Large data artifacts (mount as volumes instead)
+# ───────────────────────────────────────────────────────────────────────────
+data/
+*.db
+*.sqlite
+*.sqlite3
+*.csv
+*.parquet
+*.h5
+*.hdf5
+models/
+checkpoints/
+*.onnx
+*.pt
+*.pth
+
+# ───────────────────────────────────────────────────────────────────────────
+# CI/CD and deployment (not needed in runtime image)
+# ───────────────────────────────────────────────────────────────────────────
+.github/
+.gitlab-ci.yml
+.travis.yml
+Jenkinsfile
+azure-pipelines.yml
+*.dockerfile
+docker-compose*.yml
+!production/docker-compose.yml
+
+# ───────────────────────────────────────────────────────────────────────────
+# State files (regenerated at runtime)
+# ───────────────────────────────────────────────────────────────────────────
+*_state.json
+*_history.json
+*_cache.json
+active_position.json
+real_portfolio_state.json
+7day_*.json
+elephant_*.json
+barter_graph_cache.json
