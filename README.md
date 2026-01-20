@@ -1415,6 +1415,12 @@ DEFAULT_FEE_PROFILES = {
 
 The **Aureon War Room** is the central command interface, now auto-starting with full holographic visualization.
 
+If you're running this for the first time, start with the **dry-run engine** once to validate your install:
+
+```bash
+python micro_profit_labyrinth.py --dry-run
+```
+
 ### 🐧 Linux / macOS
 ```bash
 # 1. Setup
@@ -1429,13 +1435,20 @@ python orca_complete_kill_cycle.py
 ### 🪟 Windows (PowerShell)
 ```powershell
 # 1. Setup
-python -m venv .venv
-.\.venv\Scripts\Activate
+py -3 -m venv .venv
+
+# If activation is blocked, run once:
+# Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+
+\.\.venv\Scripts\Activate.ps1
+python -m pip install --upgrade pip
 pip install -r requirements.txt
 
 # 2. Launch War Room
 python orca_complete_kill_cycle.py
 ```
+
+Windows quick reference: [AUREON_WINDOWS_COMMAND_CHEAT_SHEET.md](AUREON_WINDOWS_COMMAND_CHEAT_SHEET.md)
 
 ---
 
@@ -1445,7 +1458,7 @@ The system now features **full logic unity** between planetary alignment and mar
 
 | Component | Function | Unity Effect |
 |-----------|----------|--------------|
-| **🌌 Stargate Grid** | Tracks 12 planetary nodes (Giza, Stonehenge, etc.) | **Golden Ratio Coherence** ($\phi > 1.618$) boosts trade probability by **10-30%**. |
+| **🌌 Stargate Grid** | Tracks 12 planetary nodes (Giza, Stonehenge, etc.) | If **Golden Ratio Coherence** ($\phi > 1.618$), increases `quantum_boost` by **~10–30%** (capped). |
 | **🐦 Hummingbird Scanner** | Micro-scalping rotation scanner | Detects nectar-rich flowers (volatility pockets) for **+10% probability boost**. |
 | **🐺 Wolf & 🦁 Lion** | Pack hunting algorithms | Consensus detection adds **+15-25% conviction** to Queen's decision. |
 
