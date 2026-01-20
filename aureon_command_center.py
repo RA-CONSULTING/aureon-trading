@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+right mate you bank on the money but also  just like sex if you pull out to early u make no babay hahahya s listen what we do we take the top 3 positions and we watch wantcu live streaming all the gobal data moenmtum data and  its indivaual assass data and we watch and watch till were ready to strike and kill#!/usr/bin/env python3
 """
 🎮👑⚔️ AUREON COMMAND CENTER ⚔️👑🎮
 ═══════════════════════════════════════════════════════════════════════════════
@@ -6260,12 +6260,22 @@ async def thought_bus_listener_task():
 # MAIN APPLICATION
 # ═══════════════════════════════════════════════════════════════════════════════
 
+async def handle_health(request):
+    """Health check endpoint for Docker/K8s liveness probes"""
+    return web.json_response({
+        'status': 'healthy',
+        'service': 'aureon-command-center',
+        'timestamp': datetime.now().isoformat()
+    })
+
+
 def create_app():
     """Create the aiohttp application"""
     app = web.Application()
     
     # Routes
     app.router.add_get('/', handle_index)
+    app.router.add_get('/health', handle_health)  # Docker healthcheck endpoint
     app.router.add_get('/api/state', handle_api_state)
     app.router.add_get('/api/flight-check', handle_flight_check)
     app.router.add_post('/api/live-toggle', handle_live_toggle)

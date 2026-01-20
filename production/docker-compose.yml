@@ -101,8 +101,11 @@ services:
       - ./grafana/provisioning:/etc/grafana/provisioning:ro
     
     environment:
-      - GF_SECURITY_ADMIN_PASSWORD=aureon2026
+      # Use env var for password (set via: export GF_ADMIN_PASSWORD=yourpassword)
+      # Falls back to 'admin' if not set - CHANGE IN PRODUCTION!
+      - GF_SECURITY_ADMIN_PASSWORD=${GF_ADMIN_PASSWORD:-admin}
       - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_AUTH_ANONYMOUS_ENABLED=false
     
     networks:
       - aureon-network

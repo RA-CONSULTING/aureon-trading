@@ -201,7 +201,7 @@ class FirstRunSetup:
         
         # Get API credentials
         print("Enter your API credentials:")
-        print("(These will be encrypted and stored securely)\n")
+        print("(Stored locally with restricted file permissions)\n")
         
         config.api_key = input(f"  API Key: ").strip()
         config.api_secret = getpass.getpass(f"  API Secret: ").strip()

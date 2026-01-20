@@ -65,6 +65,10 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     AUREON_CONFIG=/aureon/config \
     AUREON_MODE=production
 
+# Install curl for healthcheck (required in production image)
+RUN apt-get update && apt-get install -y --no-install-recommends curl && \
+    rm -rf /var/lib/apt/lists/*
+
 # Create aureon user (non-root for security)
 RUN groupadd -r aureon && useradd -r -g aureon aureon
 

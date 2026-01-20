@@ -85,30 +85,47 @@ fi
 # Start based on mode
 cd /aureon/app
 
+# Build exchange argument if provided
+EXCHANGE_ARG=""
+if [ -n "$EXCHANGE" ]; then
+    EXCHANGE_ARG="--exchange $EXCHANGE"
+fi
+
 case $MODE in
     "game")
         echo -e "${CYAN}🎮 Starting GAME MODE...${NC}"
         echo -e "${GREEN}   └─ Command Center UI: http://localhost:8888${NC}"
         echo -e "${GREEN}   └─ Trading Engine: DRY_RUN=$DRY_RUN${NC}"
         
-        # Start with supervisor in game mode
-        exec python aureon_game_launcher.py --dry-run
+        # Honor DRY_RUN setting
+        if [ "$DRY_RUN" = "true" ]; then
+            exec python aureon_game_launcher.py --dry-run
+        else
+            echo -e "${RED}   ⚠️  LIVE MODE ENABLED${NC}"
+            exec python aureon_game_launcher.py
+        fi
         ;;
     
     "trading")
         echo -e "${CYAN}💰 Starting TRADING MODE...${NC}"
         if [ "$DRY_RUN" = "true" ]; then
             echo -e "${YELLOW}   └─ Mode: DRY RUN (paper trading)${NC}"
-            exec python micro_profit_labyrinth.py --dry-run
+            exec python micro_profit_labyrinth.py --dry-run $EXCHANGE_ARG
         else
             echo -e "${RED}   └─ Mode: LIVE TRADING${NC}"
-            exec python micro_profit_labyrinth.py
+            exec python micro_profit_labyrinth.py $EXCHANGE_ARG
         fi
         ;;
     
     "orca")
         echo -e "${CYAN}🦈 Starting ORCA KILL MODE...${NC}"
-        exec python orca_complete_kill_cycle.py --dry-run
+        # Honor DRY_RUN setting for orca mode
+        if [ "$DRY_RUN" = "true" ]; then
+            exec python orca_complete_kill_cycle.py --dry-run
+        else
+            echo -e "${RED}   ⚠️  LIVE ORCA MODE${NC}"
+            exec python orca_complete_kill_cycle.py
+        fi
         ;;
     
     "queen")

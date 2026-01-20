@@ -141,14 +141,36 @@ def run_game_mode(dry_run: bool = True):
 
 def run_trading_mode(dry_run: bool = True, exchange: Optional[str] = None):
     """Launch headless trading mode"""
+    import subprocess
+    import signal
+    
     mode_str = 'DRY RUN' if dry_run else 'LIVE'
     print(f"\n💰 Launching TRADING MODE ({mode_str})...")
+    if exchange:
+        print(f"   └─ Exchange: {exchange}")
+    
+    # Build command with absolute path
+    script_path = Path(__file__).parent.parent / 'micro_profit_labyrinth.py'
+    cmd = [sys.executable, str(script_path)]
+    if dry_run:
+        cmd.append('--dry-run')
+    if exchange:
+        cmd.extend(['--exchange', exchange])
     
     try:
-        if dry_run:
-            os.system(f'{sys.executable} micro_profit_labyrinth.py --dry-run')
-        else:
-            os.system(f'{sys.executable} micro_profit_labyrinth.py')
+        # Use subprocess for proper signal handling and exit code propagation
+        proc = subprocess.Popen(cmd)
+        
+        # Forward SIGTERM/SIGINT to child process
+        def signal_handler(signum, frame):
+            proc.terminate()
+            sys.exit(0)
+        
+        signal.signal(signal.SIGTERM, signal_handler)
+        signal.signal(signal.SIGINT, signal_handler)
+        
+        exit_code = proc.wait()
+        sys.exit(exit_code)
     except Exception as e:
         print(f"❌ Trading mode failed: {e}")
         sys.exit(1)
@@ -156,13 +178,30 @@ def run_trading_mode(dry_run: bool = True, exchange: Optional[str] = None):
 
 def run_orca_mode(dry_run: bool = True):
     """Launch Orca kill cycle mode"""
-    print("\n🦈 Launching ORCA KILL MODE...")
+    import subprocess
+    import signal
+    
+    mode_str = 'DRY RUN' if dry_run else 'LIVE'
+    print(f"\n🦈 Launching ORCA KILL MODE ({mode_str})...")
+    
+    # Build command with absolute path
+    script_path = Path(__file__).parent.parent / 'orca_complete_kill_cycle.py'
+    cmd = [sys.executable, str(script_path)]
+    if dry_run:
+        cmd.append('--dry-run')
     
     try:
-        cmd = f'{sys.executable} orca_complete_kill_cycle.py'
-        if dry_run:
-            cmd += ' --dry-run'
-        os.system(cmd)
+        proc = subprocess.Popen(cmd)
+        
+        def signal_handler(signum, frame):
+            proc.terminate()
+            sys.exit(0)
+        
+        signal.signal(signal.SIGTERM, signal_handler)
+        signal.signal(signal.SIGINT, signal_handler)
+        
+        exit_code = proc.wait()
+        sys.exit(exit_code)
     except Exception as e:
         print(f"❌ Orca mode failed: {e}")
         sys.exit(1)
@@ -170,11 +209,28 @@ def run_orca_mode(dry_run: bool = True):
 
 def run_queen_mode():
     """Launch Queen dashboard"""
+    import subprocess
+    import signal
+    
     print("\n👑 Launching QUEEN DASHBOARD...")
     print("   └─ Dashboard: http://localhost:13000")
     
+    # Build command with absolute path
+    script_path = Path(__file__).parent.parent / 'queen_unified_dashboard.py'
+    cmd = [sys.executable, str(script_path)]
+    
     try:
-        os.system(f'{sys.executable} queen_unified_dashboard.py')
+        proc = subprocess.Popen(cmd)
+        
+        def signal_handler(signum, frame):
+            proc.terminate()
+            sys.exit(0)
+        
+        signal.signal(signal.SIGTERM, signal_handler)
+        signal.signal(signal.SIGINT, signal_handler)
+        
+        exit_code = proc.wait()
+        sys.exit(exit_code)
     except Exception as e:
         print(f"❌ Queen mode failed: {e}")
         sys.exit(1)
