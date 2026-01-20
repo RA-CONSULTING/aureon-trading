@@ -6484,34 +6484,36 @@ async def start_background_tasks(app):
         app['queen_task'] = asyncio.create_task(queen_commentary_task())
         app['simulate_task'] = asyncio.create_task(simulate_data_task())
     app['balances_task'] = asyncio.create_task(update_balances_task())
-    app['thought_bus_task'] = asyncio.create_task(thought_bus_listener_task())
+    if sys.platform != 'win32':  # Skip Thought Bus on Windows for faster startup
+        app['thought_bus_task'] = asyncio.create_task(thought_bus_listener_task())
     
     # 🚀 AUTO-START TRADING IMMEDIATELY ON BOOT!
-    global TRADING_PROCESS, TRADING_LIVE_ENABLED
-    safe_print("🚀💰 AUTO-STARTING TRADING ENGINE...")
-    try:
-        cmd = [sys.executable, "-u", "micro_profit_labyrinth.py", "--live", "--yes", "--multi-exchange"] # Added -u for unbuffered
-        env = dict(os.environ)
-        # Propagate debug flag if set in Command Center environment
-        if env.get("AUREON_DEBUG_STARTUP") == "1":
-            env["AUREON_DEBUG_STARTUP"] = "1"
-        # Force unbuffered output for reliable streaming
-        env["PYTHONUNBUFFERED"] = "1"
-        TRADING_PROCESS = await asyncio.create_subprocess_exec(
-            *cmd,
-            cwd=str(Path(__file__).resolve().parent),
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.STDOUT,
-            env=env,
-        )
-        TRADING_LIVE_ENABLED = True
-        safe_print("✅💰 TRADING ENGINE STARTED - MAKING MONEY NOW!")
-        
-        # Start the monitor
-        app['monitor_task'] = asyncio.create_task(monitor_trading_output())
-        
-    except Exception as e:
-        safe_print(f"⚠️ Failed to auto-start trading: {e}")
+    if sys.platform != 'win32':  # Skip auto-start trading on Windows for faster startup
+        global TRADING_PROCESS, TRADING_LIVE_ENABLED
+        safe_print("🚀💰 AUTO-STARTING TRADING ENGINE...")
+        try:
+            cmd = [sys.executable, "-u", "micro_profit_labyrinth.py", "--live", "--yes", "--multi-exchange"] # Added -u for unbuffered
+            env = dict(os.environ)
+            # Propagate debug flag if set in Command Center environment
+            if env.get("AUREON_DEBUG_STARTUP") == "1":
+                env["AUREON_DEBUG_STARTUP"] = "1"
+            # Force unbuffered output for reliable streaming
+            env["PYTHONUNBUFFERED"] = "1"
+            TRADING_PROCESS = await asyncio.create_subprocess_exec(
+                *cmd,
+                cwd=str(Path(__file__).resolve().parent),
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.STDOUT,
+                env=env,
+            )
+            TRADING_LIVE_ENABLED = True
+            safe_print("✅💰 TRADING ENGINE STARTED - MAKING MONEY NOW!")
+            
+            # Start the monitor
+            app['monitor_task'] = asyncio.create_task(monitor_trading_output())
+            
+        except Exception as e:
+            safe_print(f"⚠️ Failed to auto-start trading: {e}")
 
 async def cleanup_background_tasks(app):
     """Cleanup background tasks"""
@@ -6574,6 +6576,9 @@ def main():
     safe_print(f"   🦙 Alpaca: {'✅' if SYSTEMS_STATUS.get('Alpaca Exchange') else '❌'}")
     safe_print(f"   💼 Capital: {'✅' if SYSTEMS_STATUS.get('Capital Exchange') else '❌'}")
     safe_print(f"")
+    if sys.platform == 'win32':
+        safe_print(f"   ⚡ Windows Mode: Fast startup (Thought Bus & Trading auto-start skipped)")
+        safe_print(f"")
     
     # 🛫 RUN FLIGHT CHECK - Verify real connectivity
     safe_print("=" * 80)
