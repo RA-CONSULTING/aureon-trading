@@ -229,7 +229,11 @@ try:
 except ImportError:
     PENNY_PROFIT_AVAILABLE = False
     calculate_penny_profit_threshold = None
-    EXCHANGE_FEES = {'kraken': {'taker': 0.0026}, 'alpaca': {'taker': 0.0025}}
+    EXCHANGE_FEES = {
+        'kraken': {'taker': 0.0026},
+        'alpaca': {'taker': 0.0025},
+        'binance': {'taker': 0.001}  # 0.10% (can be lower with BNB)
+    }
     SLIPPAGE_PCT = 0.001
     SPREAD_PCT = 0.0005
 
