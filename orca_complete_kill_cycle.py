@@ -6149,8 +6149,8 @@ class OrcaKillCycle:
                         cash = self.get_available_cash()
                         total_cash = sum(cash.values())
                         
-                        if total_cash < amount_per_position * 0.5:
-                            print(f"   💸 Waiting for cash (${total_cash:.2f} available, need ${amount_per_position:.2f})")
+                        if total_cash < amount_per_position * 0.3:  # Only need 30% of target (more aggressive)
+                            print(f"   💸 Waiting for cash (${total_cash:.2f} available, need ${amount_per_position * 0.3:.2f})")
                         else:
                             # Scan market
                             opportunities = self.scan_entire_market(min_change_pct=min_change_pct)
@@ -6184,7 +6184,7 @@ class OrcaKillCycle:
                                                 exchange_cash = cash.get(best.exchange, 0)
                                                 buy_amount = min(amount_per_position, exchange_cash * 0.9)
                                                 
-                                                if buy_amount >= 0.50:  # Minimum $0.50
+                                                if buy_amount >= 0.10:  # Minimum $0.10 (exchange mins vary)
                                                     buy_order = client.place_market_order(
                                                         symbol=symbol_clean,
                                                         side='buy',
@@ -8305,7 +8305,7 @@ if __name__ == "__main__":
     # 👑🔄 AUTONOMOUS MODE - Queen-guided infinite loop (WAR ROOM by default)
     elif len(sys.argv) >= 2 and sys.argv[1] == '--autonomous':
         max_pos = int(sys.argv[2]) if len(sys.argv) > 2 else 3
-        amount = float(sys.argv[3]) if len(sys.argv) > 3 else 2.5
+        amount = float(sys.argv[3]) if len(sys.argv) > 3 else 1.0  # Lower to $1 for small accounts
         target = float(sys.argv[4]) if len(sys.argv) > 4 else 1.0
         
         orca = OrcaKillCycle()
