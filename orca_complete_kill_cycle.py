@@ -4533,30 +4533,49 @@ class OrcaKillCycle:
         if 'alpaca' in self.clients:
             try:
                 acct = self.clients['alpaca'].get_account()
-                cash['alpaca'] = float(acct.get('cash', 0)) + (5.0 if test_mode else 0)  # Add $5 for testing
-            except:
+                # Try 'cash' first, then 'buying_power' as fallback
+                alpaca_cash = float(acct.get('cash', 0))
+                if alpaca_cash == 0:
+                    alpaca_cash = float(acct.get('buying_power', 0))
+                cash['alpaca'] = alpaca_cash + (5.0 if test_mode else 0)
+            except Exception as e:
+                print(f"   ⚠️ Alpaca cash error: {e}")
                 cash['alpaca'] = 5.0 if test_mode else 0.0
         
         if 'kraken' in self.clients:
             try:
                 bal = self.clients['kraken'].get_balance()
-                # Kraken cash = USD or USDC
-                cash['kraken'] = bal.get('USD', 0) + bal.get('USDC', 0) + bal.get('USDT', 0) + (5.0 if test_mode else 0)  # Add $5 for testing
-            except:
+                # Kraken uses ZUSD for USD, also check TUSD, DAI and other stables
+                kraken_cash = 0.0
+                for key in ['ZUSD', 'USD', 'USDC', 'USDT', 'TUSD', 'DAI', 'USDD']:
+                    kraken_cash += float(bal.get(key, 0))
+                cash['kraken'] = kraken_cash + (5.0 if test_mode else 0)
+            except Exception as e:
+                print(f"   ⚠️ Kraken cash error: {e}")
                 cash['kraken'] = 5.0 if test_mode else 0.0
         
         if 'binance' in self.clients:
             try:
-                acct = self.clients['binance'].account()
-                balances = acct.get('balances', [])
-                # Binance cash = USDT, USDC, USD, BUSD
+                # Use get_free_balance for cleaner access
+                binance_client = self.clients['binance']
                 binance_cash = 0.0
-                for bal in balances:
-                    asset = bal.get('asset', '')
-                    if asset in ['USDT', 'USDC', 'USD', 'BUSD', 'FDUSD']:
-                        binance_cash += float(bal.get('free', 0))
+                
+                # Try multiple stablecoins
+                for stable in ['USDT', 'USDC', 'USD', 'BUSD', 'FDUSD', 'TUSD', 'DAI']:
+                    try:
+                        if hasattr(binance_client, 'get_free_balance'):
+                            binance_cash += binance_client.get_free_balance(stable)
+                        else:
+                            acct = binance_client.account()
+                            for b in acct.get('balances', []):
+                                if b.get('asset') == stable:
+                                    binance_cash += float(b.get('free', 0))
+                    except:
+                        pass
+                
                 cash['binance'] = binance_cash + (5.0 if test_mode else 0)
-            except:
+            except Exception as e:
+                print(f"   ⚠️ Binance cash error: {e}")
                 cash['binance'] = 5.0 if test_mode else 0.0
         
         return cash

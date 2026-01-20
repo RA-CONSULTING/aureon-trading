@@ -217,7 +217,7 @@
   },
   "USDC->AIXBT": {
     "wins": 0.0,
-    "losses": 8.0
+    "losses": 9.0
   },
   "AIXBT->BANANAS31": {
     "wins": 0.0,
@@ -285,7 +285,7 @@
   },
   "USDC->CHZ": {
     "wins": 0.0,
-    "losses": 1.0
+    "losses": 2.0
   },
   "ALLO->AIXBT": {
     "wins": 0.0,
@@ -333,7 +333,7 @@
   },
   "USDC->BROCCOLI714": {
     "wins": 0.0,
-    "losses": 1.0
+    "losses": 2.0
   },
   "USDC->S": {
     "wins": 1.0,
@@ -2040,6 +2040,394 @@
     "losses": 1.0
   },
   "USDC->GALA": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->STX": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->ARKM": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->PEOPLE": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->REZ": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->LDO": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->NOT": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->TNSR": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->RENDER": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->TON": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->RARE": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->POL": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->ACT": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->PNUT": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->HBAR": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->RAY": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->APE": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->EIGEN": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->1MBABYDOGE": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->CETUS": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->COW": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->DYDX": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->TURBO": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->KAIA": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->PYTH": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->RSR": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->ACX": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->1000CAT": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->MOVE": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->USUAL": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->CGPT": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->COOKIE": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->ANIME": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->BERA": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->1000CHEEMS": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->TST": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->LAYER": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->CAKE": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->KAITO": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->RED": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->CHESS": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->OSMO": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->CVC": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->VELODROME": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->BMT": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->FORM": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->IOTA": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->THE": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->VANRY": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->NIL": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->BEAMX": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->PARTI": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->MUBARAK": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->TUT": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->BANANAS31": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->THETA": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->GUN": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->VET": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->ZEN": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->BABY": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->ONDO": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->BIGTIME": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->VIRTUAL": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->KERNEL": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->WCT": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->GMT": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->HYPER": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->INIT": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->SIGN": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->STO": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->ENJ": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->SYRUP": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->KMNO": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->HAEDAL": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->HUMA": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->SOPH": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->FLUX": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->SPK": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->NEWT": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->SAHARA": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->RVN": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->XAI": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->ERA": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->ROSE": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->FUN": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->TREE": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->TOWNS": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->PROVE": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->MAGIC": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->PLUME": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->MAV": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->SKL": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->A2Z": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->MITO": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->SOMI": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->OPEN": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->LINEA": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->HOLO": {
     "wins": 0.0,
     "losses": 1.0
   }
