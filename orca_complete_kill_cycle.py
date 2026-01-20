@@ -4646,6 +4646,81 @@ class OrcaKillCycle:
             'target_1pct': target_1pct,
         }
     
+    def normalize_order_response(self, order: dict, exchange: str) -> dict:
+        """
+        🔄 Normalize order responses across different exchanges.
+        
+        Returns consistent format:
+        - filled_qty: Quantity filled
+        - filled_avg_price: Average fill price
+        - order_id: Order ID
+        - status: Order status
+        """
+        if not order:
+            return {'filled_qty': 0, 'filled_avg_price': 0, 'order_id': None, 'status': 'empty'}
+        
+        # Check for rejection
+        if order.get('rejected'):
+            return {
+                'filled_qty': 0,
+                'filled_avg_price': 0,
+                'order_id': None,
+                'status': 'rejected',
+                'reason': order.get('reason', 'Unknown')
+            }
+        
+        if exchange == 'binance':
+            # Binance format: executedQty, cummulativeQuoteQty, fills[]
+            exec_qty = float(order.get('executedQty', 0))
+            cumm_quote = float(order.get('cummulativeQuoteQty', 0))
+            
+            # Calculate average price from fills or cumulative
+            avg_price = 0.0
+            if exec_qty > 0 and cumm_quote > 0:
+                avg_price = cumm_quote / exec_qty
+            elif order.get('fills'):
+                total_qty = 0.0
+                total_cost = 0.0
+                for fill in order.get('fills', []):
+                    qty = float(fill.get('qty', 0))
+                    price = float(fill.get('price', 0))
+                    total_qty += qty
+                    total_cost += qty * price
+                if total_qty > 0:
+                    avg_price = total_cost / total_qty
+                    exec_qty = total_qty
+            
+            return {
+                'filled_qty': exec_qty,
+                'filled_avg_price': avg_price,
+                'order_id': order.get('orderId'),
+                'status': order.get('status', 'FILLED' if exec_qty > 0 else 'UNKNOWN')
+            }
+        
+        elif exchange == 'kraken':
+            # Kraken format: vol_exec, price (avg), txid
+            exec_qty = float(order.get('vol_exec', order.get('volume', 0)))
+            avg_price = float(order.get('price', order.get('avg_price', 0)))
+            order_id = order.get('txid', order.get('order_id'))
+            if isinstance(order_id, list):
+                order_id = order_id[0] if order_id else None
+            
+            return {
+                'filled_qty': exec_qty,
+                'filled_avg_price': avg_price,
+                'order_id': order_id,
+                'status': order.get('status', 'closed' if exec_qty > 0 else 'unknown')
+            }
+        
+        else:  # alpaca and default
+            # Alpaca format: filled_qty, filled_avg_price, id
+            return {
+                'filled_qty': float(order.get('filled_qty', 0)),
+                'filled_avg_price': float(order.get('filled_avg_price', order.get('avg_price', 0))),
+                'order_id': order.get('id', order.get('order_id')),
+                'status': order.get('status', 'filled' if order.get('filled_qty') else 'unknown')
+            }
+
     def track_buy_order(self, symbol: str, order_result: dict, exchange: str = 'alpaca') -> dict:
         """
         📝 Track a buy order with all details needed to know when to sell.
@@ -4657,12 +4732,12 @@ class OrcaKillCycle:
         - Entry cost (including fee)
         - Exact breakeven price
         """
-        order_id = order_result.get('id', order_result.get('order_id', order_result.get('txid', [str(time.time())])))
-        if isinstance(order_id, list):
-            order_id = order_id[0]
+        # 🔄 Normalize the order response first!
+        normalized = self.normalize_order_response(order_result, exchange)
         
-        fill_price = float(order_result.get('filled_avg_price', order_result.get('avg_price', order_result.get('price', 0))))
-        fill_qty = float(order_result.get('filled_qty', order_result.get('qty', order_result.get('volume', 0))))
+        order_id = normalized.get('order_id', str(time.time()))
+        fill_price = normalized.get('filled_avg_price', 0)
+        fill_qty = normalized.get('filled_qty', 0)
         
         if fill_price == 0 or fill_qty == 0:
             print(f"⚠️ Cannot track order - missing fill price or qty: {order_result}")
@@ -6918,15 +6993,18 @@ class OrcaKillCycle:
                                                 buy_amount = min(amount_per_position, exchange_cash * 0.9)
                                                 
                                                 if buy_amount >= 0.10:  # Minimum $0.10 (exchange mins vary)
-                                                    buy_order = client.place_market_order(
+                                                    raw_order = client.place_market_order(
                                                         symbol=symbol_clean,
                                                         side='buy',
                                                         quote_qty=buy_amount
                                                     )
                                                     
-                                                    if buy_order:
-                                                        buy_qty = float(buy_order.get('filled_qty', 0))
-                                                        buy_price = float(buy_order.get('filled_avg_price', best.price))
+                                                    # 🔄 NORMALIZE ORDER RESPONSE across exchanges!
+                                                    buy_order = self.normalize_order_response(raw_order, best.exchange)
+                                                    
+                                                    if buy_order and buy_order.get('status') != 'rejected':
+                                                        buy_qty = buy_order.get('filled_qty', 0)
+                                                        buy_price = buy_order.get('filled_avg_price', best.price)
                                                         
                                                         if buy_qty > 0 and buy_price > 0:
                                                             # Calculate levels
@@ -8186,14 +8264,17 @@ class OrcaKillCycle:
                                                 buy_amount = min(amount_per_position, exchange_cash * 0.9)
                                                 
                                                 if buy_amount >= 0.50:
-                                                    buy_order = client.place_market_order(
+                                                    raw_order = client.place_market_order(
                                                         symbol=symbol_clean,
                                                         side='buy',
                                                         quote_qty=buy_amount
                                                     )
-                                                    if buy_order:
-                                                        buy_qty = float(buy_order.get('filled_qty', 0))
-                                                        buy_price = float(buy_order.get('filled_avg_price', best.price))
+                                                    # 🔄 NORMALIZE ORDER RESPONSE across exchanges!
+                                                    buy_order = self.normalize_order_response(raw_order, best.exchange)
+                                                    
+                                                    if buy_order and buy_order.get('status') != 'rejected':
+                                                        buy_qty = buy_order.get('filled_qty', 0)
+                                                        buy_price = buy_order.get('filled_avg_price', best.price)
                                                         
                                                         if buy_qty > 0 and buy_price > 0:
                                                             fee_rate = self.fee_rates.get(best.exchange, 0.0025)

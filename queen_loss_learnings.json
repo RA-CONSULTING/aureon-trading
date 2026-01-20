@@ -31193,6 +31193,3561 @@
       "tactics_applied": [
         "Strategic retreat"
       ]
+    },
+    {
+      "timestamp": 1768943959.83163,
+      "exchange": "binance",
+      "from_asset": "USDC",
+      "to_asset": "MEME",
+      "from_amount": 7.84,
+      "from_value_usd": 7.842352,
+      "executed_price": 0.00116,
+      "expected_price": 0.00116,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.047054112,
+      "loss_amount": 0.14404319999999998,
+      "loss_pct": 1.8367346938775508,
+      "market_data": {},
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 9.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.8,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.5
+      },
+      "combined_score": 1.2000000000000002,
+      "expected_profit": 0.14404319999999998,
+      "cause_identified": "Unknown - needs further analysis",
+      "lessons_learned": [
+        "Fees ($0.0471) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768943960.6946487,
+      "exchange": "binance",
+      "from_asset": "USDC",
+      "to_asset": "PEPE",
+      "from_amount": 7.84,
+      "from_value_usd": 7.842352,
+      "executed_price": 5.09e-06,
+      "expected_price": 5.09e-06,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.047054112,
+      "loss_amount": 0.10803239999999997,
+      "loss_pct": 1.377551020408163,
+      "market_data": {},
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 5.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.5999999999999999,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.5
+      },
+      "combined_score": 0.8999999999999998,
+      "expected_profit": 0.10803239999999997,
+      "cause_identified": "Unknown - needs further analysis",
+      "lessons_learned": [
+        "Fees ($0.0471) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768943961.5212064,
+      "exchange": "binance",
+      "from_asset": "USDC",
+      "to_asset": "FLOKI",
+      "from_amount": 7.84,
+      "from_value_usd": 7.842352,
+      "executed_price": 4.325e-05,
+      "expected_price": 4.325e-05,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.047054112,
+      "loss_amount": 0.10443132000000002,
+      "loss_pct": 1.3316326530612248,
+      "market_data": {},
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 3.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.5800000000000001,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.5
+      },
+      "combined_score": 0.8700000000000001,
+      "expected_profit": 0.10443132000000002,
+      "cause_identified": "Unknown - needs further analysis",
+      "lessons_learned": [
+        "Fees ($0.0471) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768943963.230173,
+      "exchange": "binance",
+      "from_asset": "USDC",
+      "to_asset": "BONK",
+      "from_amount": 7.84,
+      "from_value_usd": 7.842352,
+      "executed_price": 9e-06,
+      "expected_price": 9e-06,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.047054112,
+      "loss_amount": 0.09902969999999997,
+      "loss_pct": 1.262755102040816,
+      "market_data": {},
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 3.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.5499999999999998,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.5
+      },
+      "combined_score": 0.8249999999999997,
+      "expected_profit": 0.09902969999999997,
+      "cause_identified": "Unknown - needs further analysis",
+      "lessons_learned": [
+        "Fees ($0.0471) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768943964.447174,
+      "exchange": "binance",
+      "from_asset": "USDC",
+      "to_asset": "1000SATS",
+      "from_amount": 7.84,
+      "from_value_usd": 7.842352,
+      "executed_price": 1.596e-05,
+      "expected_price": 1.596e-05,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.047054112,
+      "loss_amount": 0.09722915999999998,
+      "loss_pct": 1.2397959183673468,
+      "market_data": {},
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 3.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.54,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.5
+      },
+      "combined_score": 0.81,
+      "expected_profit": 0.09722915999999998,
+      "cause_identified": "Unknown - needs further analysis",
+      "lessons_learned": [
+        "Fees ($0.0471) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768943965.3304582,
+      "exchange": "binance",
+      "from_asset": "USDC",
+      "to_asset": "DOGS",
+      "from_amount": 7.84,
+      "from_value_usd": 7.842352,
+      "executed_price": 4e-05,
+      "expected_price": 4e-05,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.047054112,
+      "loss_amount": 0.059777927999999994,
+      "loss_pct": 0.7622448979591836,
+      "market_data": {},
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 6.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.415,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.5
+      },
+      "combined_score": 0.6224999999999999,
+      "expected_profit": 0.059777927999999994,
+      "cause_identified": "Fees ate most of expected profit",
+      "lessons_learned": [
+        "Fees ($0.0471) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768943966.8542209,
+      "exchange": "binance",
+      "from_asset": "USDC",
+      "to_asset": "PUMP",
+      "from_amount": 7.84,
+      "from_value_usd": 7.842352,
+      "executed_price": 0.002544,
+      "expected_price": 0.002544,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.047054112,
+      "loss_amount": 0.05761727999999999,
+      "loss_pct": 0.7346938775510203,
+      "market_data": {},
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 5.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.39999999999999997,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.5
+      },
+      "combined_score": 0.6,
+      "expected_profit": 0.05761727999999999,
+      "cause_identified": "Fees ate most of expected profit",
+      "lessons_learned": [
+        "Fees ($0.0471) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768943968.256606,
+      "exchange": "binance",
+      "from_asset": "USDC",
+      "to_asset": "SAND",
+      "from_amount": 7.84,
+      "from_value_usd": 7.842352,
+      "executed_price": 0.1393,
+      "expected_price": 0.1393,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.047054112,
+      "loss_amount": 0.055456632,
+      "loss_pct": 0.7071428571428572,
+      "market_data": {},
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 9.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.385,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.5
+      },
+      "combined_score": 0.5775,
+      "expected_profit": 0.055456632,
+      "cause_identified": "Fees ate most of expected profit",
+      "lessons_learned": [
+        "Fees ($0.0471) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768943969.4111834,
+      "exchange": "binance",
+      "from_asset": "USDC",
+      "to_asset": "IDEX",
+      "from_amount": 7.84,
+      "from_value_usd": 7.842352,
+      "executed_price": 0.00991,
+      "expected_price": 0.00991,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.047054112,
+      "loss_amount": 0.055456632,
+      "loss_pct": 0.7071428571428572,
+      "market_data": {},
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 9.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.385,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.5
+      },
+      "combined_score": 0.5775,
+      "expected_profit": 0.055456632,
+      "cause_identified": "Fees ate most of expected profit",
+      "lessons_learned": [
+        "Fees ($0.0471) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768943970.2725797,
+      "exchange": "binance",
+      "from_asset": "USDC",
+      "to_asset": "TLM",
+      "from_amount": 7.84,
+      "from_value_usd": 7.842352,
+      "executed_price": 0.002458,
+      "expected_price": 0.002458,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.047054112,
+      "loss_amount": 0.055456632,
+      "loss_pct": 0.7071428571428572,
+      "market_data": {},
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 9.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.385,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.5
+      },
+      "combined_score": 0.5775,
+      "expected_profit": 0.055456632,
+      "cause_identified": "Fees ate most of expected profit",
+      "lessons_learned": [
+        "Fees ($0.0471) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768943971.1207302,
+      "exchange": "binance",
+      "from_asset": "USDC",
+      "to_asset": "PHA",
+      "from_amount": 7.84,
+      "from_value_usd": 7.842352,
+      "executed_price": 0.0422,
+      "expected_price": 0.0422,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.047054112,
+      "loss_amount": 0.055456632,
+      "loss_pct": 0.7071428571428572,
+      "market_data": {},
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 9.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.385,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.5
+      },
+      "combined_score": 0.5775,
+      "expected_profit": 0.055456632,
+      "cause_identified": "Fees ate most of expected profit",
+      "lessons_learned": [
+        "Fees ($0.0471) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768943972.0064306,
+      "exchange": "binance",
+      "from_asset": "USDC",
+      "to_asset": "GPS",
+      "from_amount": 7.84,
+      "from_value_usd": 7.842352,
+      "executed_price": 0.00677,
+      "expected_price": 0.00677,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.047054112,
+      "loss_amount": 0.055456632,
+      "loss_pct": 0.7071428571428572,
+      "market_data": {},
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 9.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.385,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.5
+      },
+      "combined_score": 0.5775,
+      "expected_profit": 0.055456632,
+      "cause_identified": "Fees ate most of expected profit",
+      "lessons_learned": [
+        "Fees ($0.0471) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768943973.367002,
+      "exchange": "binance",
+      "from_asset": "USDC",
+      "to_asset": "SXT",
+      "from_amount": 7.84,
+      "from_value_usd": 7.842352,
+      "executed_price": 0.0296,
+      "expected_price": 0.0296,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.047054112,
+      "loss_amount": 0.055456632,
+      "loss_pct": 0.7071428571428572,
+      "market_data": {},
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 9.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.385,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.5
+      },
+      "combined_score": 0.5775,
+      "expected_profit": 0.055456632,
+      "cause_identified": "Fees ate most of expected profit",
+      "lessons_learned": [
+        "Fees ($0.0471) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768943974.6198208,
+      "exchange": "binance",
+      "from_asset": "USDC",
+      "to_asset": "HOME",
+      "from_amount": 7.84,
+      "from_value_usd": 7.842352,
+      "executed_price": 0.03073,
+      "expected_price": 0.03073,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.047054112,
+      "loss_amount": 0.055456632,
+      "loss_pct": 0.7071428571428572,
+      "market_data": {},
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 9.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.385,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.5
+      },
+      "combined_score": 0.5775,
+      "expected_profit": 0.055456632,
+      "cause_identified": "Fees ate most of expected profit",
+      "lessons_learned": [
+        "Fees ($0.0471) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768943975.561752,
+      "exchange": "binance",
+      "from_asset": "USDC",
+      "to_asset": "AXS",
+      "from_amount": 7.84,
+      "from_value_usd": 7.842352,
+      "executed_price": 2.008,
+      "expected_price": 2.008,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.047054112,
+      "loss_amount": 0.055456632,
+      "loss_pct": 0.7071428571428572,
+      "market_data": {},
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 9.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.385,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.5
+      },
+      "combined_score": 0.5775,
+      "expected_profit": 0.055456632,
+      "cause_identified": "Fees ate most of expected profit",
+      "lessons_learned": [
+        "Fees ($0.0471) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768943976.5066044,
+      "exchange": "binance",
+      "from_asset": "USDC",
+      "to_asset": "DOLO",
+      "from_amount": 7.84,
+      "from_value_usd": 7.842352,
+      "executed_price": 0.05775,
+      "expected_price": 0.05775,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.047054112,
+      "loss_amount": 0.055456632,
+      "loss_pct": 0.7071428571428572,
+      "market_data": {},
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 9.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.385,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.5
+      },
+      "combined_score": 0.5775,
+      "expected_profit": 0.055456632,
+      "cause_identified": "Fees ate most of expected profit",
+      "lessons_learned": [
+        "Fees ($0.0471) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768943977.2934144,
+      "exchange": "binance",
+      "from_asset": "USDC",
+      "to_asset": "EPIC",
+      "from_amount": 7.84,
+      "from_value_usd": 7.842352,
+      "executed_price": 0.583,
+      "expected_price": 0.583,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.047054112,
+      "loss_amount": 0.053295984000000005,
+      "loss_pct": 0.6795918367346939,
+      "market_data": {},
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 8.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.37,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.5
+      },
+      "combined_score": 0.5549999999999999,
+      "expected_profit": 0.053295984000000005,
+      "cause_identified": "Fees ate most of expected profit",
+      "lessons_learned": [
+        "Fees ($0.0471) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768943978.2610388,
+      "exchange": "binance",
+      "from_asset": "USDC",
+      "to_asset": "SSV",
+      "from_amount": 7.84,
+      "from_value_usd": 7.842352,
+      "executed_price": 4.129,
+      "expected_price": 4.129,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.047054112,
+      "loss_amount": 0.053295984000000005,
+      "loss_pct": 0.6795918367346939,
+      "market_data": {},
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 8.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.37,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.5
+      },
+      "combined_score": 0.5549999999999999,
+      "expected_profit": 0.053295984000000005,
+      "cause_identified": "Fees ate most of expected profit",
+      "lessons_learned": [
+        "Fees ($0.0471) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768943979.2361948,
+      "exchange": "binance",
+      "from_asset": "USDC",
+      "to_asset": "NEIRO",
+      "from_amount": 7.84,
+      "from_value_usd": 7.842352,
+      "executed_price": 0.0001142,
+      "expected_price": 0.0001142,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.047054112,
+      "loss_amount": 0.05329598399999999,
+      "loss_pct": 0.6795918367346937,
+      "market_data": {},
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 3.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.36999999999999994,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.5
+      },
+      "combined_score": 0.5549999999999999,
+      "expected_profit": 0.05329598399999999,
+      "cause_identified": "Fees ate most of expected profit",
+      "lessons_learned": [
+        "Fees ($0.0471) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768943980.1855066,
+      "exchange": "binance",
+      "from_asset": "USDC",
+      "to_asset": "PENGU",
+      "from_amount": 7.84,
+      "from_value_usd": 7.842352,
+      "executed_price": 0.009783,
+      "expected_price": 0.009783,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.047054112,
+      "loss_amount": 0.05329598399999999,
+      "loss_pct": 0.6795918367346937,
+      "market_data": {},
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 3.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.36999999999999994,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.5
+      },
+      "combined_score": 0.5549999999999999,
+      "expected_profit": 0.05329598399999999,
+      "cause_identified": "Fees ate most of expected profit",
+      "lessons_learned": [
+        "Fees ($0.0471) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768943980.960059,
+      "exchange": "binance",
+      "from_asset": "USDC",
+      "to_asset": "LUNC",
+      "from_amount": 7.84,
+      "from_value_usd": 7.842352,
+      "executed_price": 3.769e-05,
+      "expected_price": 3.769e-05,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.047054112,
+      "loss_amount": 0.05329598399999999,
+      "loss_pct": 0.6795918367346937,
+      "market_data": {},
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 3.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.36999999999999994,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.5
+      },
+      "combined_score": 0.5549999999999999,
+      "expected_profit": 0.05329598399999999,
+      "cause_identified": "Fees ate most of expected profit",
+      "lessons_learned": [
+        "Fees ($0.0471) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768943981.8690517,
+      "exchange": "binance",
+      "from_asset": "USDC",
+      "to_asset": "EURI",
+      "from_amount": 7.84,
+      "from_value_usd": 7.842352,
+      "executed_price": 1.1724,
+      "expected_price": 1.1724,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.047054112,
+      "loss_amount": 0.05113533599999999,
+      "loss_pct": 0.6520408163265305,
+      "market_data": {},
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 7.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.355,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.5
+      },
+      "combined_score": 0.5325,
+      "expected_profit": 0.05113533599999999,
+      "cause_identified": "Fees ate most of expected profit",
+      "lessons_learned": [
+        "Fees ($0.0471) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768943983.3115,
+      "exchange": "binance",
+      "from_asset": "USDC",
+      "to_asset": "BANK",
+      "from_amount": 7.84,
+      "from_value_usd": 7.842352,
+      "executed_price": 0.0508,
+      "expected_price": 0.0508,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.047054112,
+      "loss_amount": 0.05113533599999999,
+      "loss_pct": 0.6520408163265305,
+      "market_data": {},
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 7.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.355,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.5
+      },
+      "combined_score": 0.5325,
+      "expected_profit": 0.05113533599999999,
+      "cause_identified": "Fees ate most of expected profit",
+      "lessons_learned": [
+        "Fees ($0.0471) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768943984.3648677,
+      "exchange": "binance",
+      "from_asset": "USDC",
+      "to_asset": "SOL",
+      "from_amount": 7.84,
+      "from_value_usd": 7.842352,
+      "executed_price": 127.75,
+      "expected_price": 127.75,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.047054112,
+      "loss_amount": 0.050703206400000006,
+      "loss_pct": 0.646530612244898,
+      "market_data": {},
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 5.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.35200000000000004,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.5
+      },
+      "combined_score": 0.528,
+      "expected_profit": 0.050703206400000006,
+      "cause_identified": "Fees ate most of expected profit",
+      "lessons_learned": [
+        "Fees ($0.0471) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768943985.3564014,
+      "exchange": "binance",
+      "from_asset": "USDC",
+      "to_asset": "ETH",
+      "from_amount": 7.84,
+      "from_value_usd": 7.842352,
+      "executed_price": 3003.73,
+      "expected_price": 3003.73,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.047054112,
+      "loss_amount": 0.049934976000000006,
+      "loss_pct": 0.6367346938775511,
+      "market_data": {},
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 5.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.325,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.5
+      },
+      "combined_score": 0.52,
+      "expected_profit": 0.049934976000000006,
+      "cause_identified": "Fees ate most of expected profit",
+      "lessons_learned": [
+        "Fees ($0.0471) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768943986.2049816,
+      "exchange": "binance",
+      "from_asset": "USDC",
+      "to_asset": "ZRO",
+      "from_amount": 7.84,
+      "from_value_usd": 7.842352,
+      "executed_price": 1.753,
+      "expected_price": 1.753,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.047054112,
+      "loss_amount": 0.048974688,
+      "loss_pct": 0.6244897959183674,
+      "market_data": {},
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 6.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.34,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.5
+      },
+      "combined_score": 0.51,
+      "expected_profit": 0.048974688,
+      "cause_identified": "Fees ate most of expected profit",
+      "lessons_learned": [
+        "Fees ($0.0471) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768943987.0428963,
+      "exchange": "binance",
+      "from_asset": "USDC",
+      "to_asset": "BIO",
+      "from_amount": 7.84,
+      "from_value_usd": 7.842352,
+      "executed_price": 0.0478,
+      "expected_price": 0.0478,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.047054112,
+      "loss_amount": 0.048974688,
+      "loss_pct": 0.6244897959183674,
+      "market_data": {},
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 6.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.34,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.5
+      },
+      "combined_score": 0.51,
+      "expected_profit": 0.048974688,
+      "cause_identified": "Fees ate most of expected profit",
+      "lessons_learned": [
+        "Fees ($0.0471) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768943988.6773326,
+      "exchange": "binance",
+      "from_asset": "USDC",
+      "to_asset": "SHELL",
+      "from_amount": 7.84,
+      "from_value_usd": 7.842352,
+      "executed_price": 0.0562,
+      "expected_price": 0.0562,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.047054112,
+      "loss_amount": 0.048974688,
+      "loss_pct": 0.6244897959183674,
+      "market_data": {},
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 6.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.34,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.5
+      },
+      "combined_score": 0.51,
+      "expected_profit": 0.048974688,
+      "cause_identified": "Fees ate most of expected profit",
+      "lessons_learned": [
+        "Fees ($0.0471) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768943989.768722,
+      "exchange": "binance",
+      "from_asset": "USDC",
+      "to_asset": "ACH",
+      "from_amount": 7.84,
+      "from_value_usd": 7.842352,
+      "executed_price": 0.012,
+      "expected_price": 0.012,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.047054112,
+      "loss_amount": 0.048974688,
+      "loss_pct": 0.6244897959183674,
+      "market_data": {},
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 6.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.34,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.5
+      },
+      "combined_score": 0.51,
+      "expected_profit": 0.048974688,
+      "cause_identified": "Fees ate most of expected profit",
+      "lessons_learned": [
+        "Fees ($0.0471) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768943990.699341,
+      "exchange": "binance",
+      "from_asset": "USDC",
+      "to_asset": "NXPC",
+      "from_amount": 7.84,
+      "from_value_usd": 7.842352,
+      "executed_price": 0.3418,
+      "expected_price": 0.3418,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.047054112,
+      "loss_amount": 0.048974688,
+      "loss_pct": 0.6244897959183674,
+      "market_data": {},
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 6.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.34,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.5
+      },
+      "combined_score": 0.51,
+      "expected_profit": 0.048974688,
+      "cause_identified": "Fees ate most of expected profit",
+      "lessons_learned": [
+        "Fees ($0.0471) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768943991.536141,
+      "exchange": "binance",
+      "from_asset": "USDC",
+      "to_asset": "BARD",
+      "from_amount": 7.84,
+      "from_value_usd": 7.842352,
+      "executed_price": 0.8135,
+      "expected_price": 0.8135,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.047054112,
+      "loss_amount": 0.048974688,
+      "loss_pct": 0.6244897959183674,
+      "market_data": {},
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 6.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.34,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.5
+      },
+      "combined_score": 0.51,
+      "expected_profit": 0.048974688,
+      "cause_identified": "Fees ate most of expected profit",
+      "lessons_learned": [
+        "Fees ($0.0471) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768943992.290692,
+      "exchange": "binance",
+      "from_asset": "USDC",
+      "to_asset": "KITE",
+      "from_amount": 7.84,
+      "from_value_usd": 7.842352,
+      "executed_price": 0.0987,
+      "expected_price": 0.0987,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.047054112,
+      "loss_amount": 0.048974688,
+      "loss_pct": 0.6244897959183674,
+      "market_data": {},
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 6.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.34,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.5
+      },
+      "combined_score": 0.51,
+      "expected_profit": 0.048974688,
+      "cause_identified": "Fees ate most of expected profit",
+      "lessons_learned": [
+        "Fees ($0.0471) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768943993.6520271,
+      "exchange": "binance",
+      "from_asset": "USDC",
+      "to_asset": "SOLV",
+      "from_amount": 7.84,
+      "from_value_usd": 7.842352,
+      "executed_price": 0.0115,
+      "expected_price": 0.0115,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.047054112,
+      "loss_amount": 0.048974688,
+      "loss_pct": 0.6244897959183674,
+      "market_data": {},
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 6.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.34,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.5
+      },
+      "combined_score": 0.51,
+      "expected_profit": 0.048974688,
+      "cause_identified": "Fees ate most of expected profit",
+      "lessons_learned": [
+        "Fees ($0.0471) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768943994.73683,
+      "exchange": "binance",
+      "from_asset": "USDC",
+      "to_asset": "BTC",
+      "from_amount": 7.84,
+      "from_value_usd": 7.842352,
+      "executed_price": 89688.39,
+      "expected_price": 89688.39,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.047054112,
+      "loss_amount": 0.04681404,
+      "loss_pct": 0.5969387755102041,
+      "market_data": {},
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 5.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.325,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.5
+      },
+      "combined_score": 0.48750000000000004,
+      "expected_profit": 0.04681404,
+      "cause_identified": "Fees ate most of expected profit; Low confidence trade - should have waited",
+      "lessons_learned": [
+        "Score 0.49 was too low - require >= 0.6 for this pair",
+        "Fees ($0.0471) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768943995.5672686,
+      "exchange": "binance",
+      "from_asset": "USDC",
+      "to_asset": "XRP",
+      "from_amount": 7.84,
+      "from_value_usd": 7.842352,
+      "executed_price": 1.9026,
+      "expected_price": 1.9026,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.047054112,
+      "loss_amount": 0.04681404,
+      "loss_pct": 0.5969387755102041,
+      "market_data": {},
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 5.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.325,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.5
+      },
+      "combined_score": 0.48750000000000004,
+      "expected_profit": 0.04681404,
+      "cause_identified": "Fees ate most of expected profit; Low confidence trade - should have waited",
+      "lessons_learned": [
+        "Score 0.49 was too low - require >= 0.6 for this pair",
+        "Fees ($0.0471) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768943996.3668423,
+      "exchange": "binance",
+      "from_asset": "USDC",
+      "to_asset": "LINK",
+      "from_amount": 7.84,
+      "from_value_usd": 7.842352,
+      "executed_price": 12.33,
+      "expected_price": 12.33,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.047054112,
+      "loss_amount": 0.04681404,
+      "loss_pct": 0.5969387755102041,
+      "market_data": {},
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 5.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.325,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.5
+      },
+      "combined_score": 0.48750000000000004,
+      "expected_profit": 0.04681404,
+      "cause_identified": "Fees ate most of expected profit; Low confidence trade - should have waited",
+      "lessons_learned": [
+        "Score 0.49 was too low - require >= 0.6 for this pair",
+        "Fees ($0.0471) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768943997.09784,
+      "exchange": "binance",
+      "from_asset": "USDC",
+      "to_asset": "DOGE",
+      "from_amount": 7.84,
+      "from_value_usd": 7.842352,
+      "executed_price": 0.12409,
+      "expected_price": 0.12409,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.047054112,
+      "loss_amount": 0.04681404,
+      "loss_pct": 0.5969387755102041,
+      "market_data": {},
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 5.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.325,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.5
+      },
+      "combined_score": 0.48750000000000004,
+      "expected_profit": 0.04681404,
+      "cause_identified": "Fees ate most of expected profit; Low confidence trade - should have waited",
+      "lessons_learned": [
+        "Score 0.49 was too low - require >= 0.6 for this pair",
+        "Fees ($0.0471) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768943998.8994462,
+      "exchange": "binance",
+      "from_asset": "USDC",
+      "to_asset": "AVAX",
+      "from_amount": 7.84,
+      "from_value_usd": 7.842352,
+      "executed_price": 12.26,
+      "expected_price": 12.26,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.047054112,
+      "loss_amount": 0.04681404,
+      "loss_pct": 0.5969387755102041,
+      "market_data": {},
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 5.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.325,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.5
+      },
+      "combined_score": 0.48750000000000004,
+      "expected_profit": 0.04681404,
+      "cause_identified": "Fees ate most of expected profit; Low confidence trade - should have waited",
+      "lessons_learned": [
+        "Score 0.49 was too low - require >= 0.6 for this pair",
+        "Fees ($0.0471) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768943999.9416573,
+      "exchange": "binance",
+      "from_asset": "USDC",
+      "to_asset": "DOT",
+      "from_amount": 7.84,
+      "from_value_usd": 7.842352,
+      "executed_price": 1.929,
+      "expected_price": 1.929,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.047054112,
+      "loss_amount": 0.04681404,
+      "loss_pct": 0.5969387755102041,
+      "market_data": {},
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 5.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.325,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.5
+      },
+      "combined_score": 0.48750000000000004,
+      "expected_profit": 0.04681404,
+      "cause_identified": "Fees ate most of expected profit; Low confidence trade - should have waited",
+      "lessons_learned": [
+        "Score 0.49 was too low - require >= 0.6 for this pair",
+        "Fees ($0.0471) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768944000.7096941,
+      "exchange": "binance",
+      "from_asset": "USDC",
+      "to_asset": "UNI",
+      "from_amount": 7.84,
+      "from_value_usd": 7.842352,
+      "executed_price": 4.798,
+      "expected_price": 4.798,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.047054112,
+      "loss_amount": 0.04681404,
+      "loss_pct": 0.5969387755102041,
+      "market_data": {},
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 5.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.325,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.5
+      },
+      "combined_score": 0.48750000000000004,
+      "expected_profit": 0.04681404,
+      "cause_identified": "Fees ate most of expected profit; Low confidence trade - should have waited",
+      "lessons_learned": [
+        "Score 0.49 was too low - require >= 0.6 for this pair",
+        "Fees ($0.0471) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768944001.562774,
+      "exchange": "binance",
+      "from_asset": "USDC",
+      "to_asset": "CRV",
+      "from_amount": 7.84,
+      "from_value_usd": 7.842352,
+      "executed_price": 0.3707,
+      "expected_price": 0.3707,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.047054112,
+      "loss_amount": 0.04681404,
+      "loss_pct": 0.5969387755102041,
+      "market_data": {},
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 5.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.325,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.5
+      },
+      "combined_score": 0.48750000000000004,
+      "expected_profit": 0.04681404,
+      "cause_identified": "Fees ate most of expected profit; Low confidence trade - should have waited",
+      "lessons_learned": [
+        "Score 0.49 was too low - require >= 0.6 for this pair",
+        "Fees ($0.0471) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768944002.492168,
+      "exchange": "binance",
+      "from_asset": "USDC",
+      "to_asset": "CATI",
+      "from_amount": 7.84,
+      "from_value_usd": 7.842352,
+      "executed_price": 0.059,
+      "expected_price": 0.059,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.047054112,
+      "loss_amount": 0.04681404,
+      "loss_pct": 0.5969387755102041,
+      "market_data": {},
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 5.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.325,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.5
+      },
+      "combined_score": 0.48750000000000004,
+      "expected_profit": 0.04681404,
+      "cause_identified": "Fees ate most of expected profit; Low confidence trade - should have waited",
+      "lessons_learned": [
+        "Score 0.49 was too low - require >= 0.6 for this pair",
+        "Fees ($0.0471) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768944003.7113166,
+      "exchange": "binance",
+      "from_asset": "USDC",
+      "to_asset": "XTZ",
+      "from_amount": 7.84,
+      "from_value_usd": 7.842352,
+      "executed_price": 0.569,
+      "expected_price": 0.569,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.047054112,
+      "loss_amount": 0.04681404,
+      "loss_pct": 0.5969387755102041,
+      "market_data": {},
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 5.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.325,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.5
+      },
+      "combined_score": 0.48750000000000004,
+      "expected_profit": 0.04681404,
+      "cause_identified": "Fees ate most of expected profit; Low confidence trade - should have waited",
+      "lessons_learned": [
+        "Score 0.49 was too low - require >= 0.6 for this pair",
+        "Fees ($0.0471) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768944004.7331016,
+      "exchange": "binance",
+      "from_asset": "USDC",
+      "to_asset": "TRUMP",
+      "from_amount": 7.84,
+      "from_value_usd": 7.842352,
+      "executed_price": 4.858,
+      "expected_price": 4.858,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.047054112,
+      "loss_amount": 0.04681404,
+      "loss_pct": 0.5969387755102041,
+      "market_data": {},
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 5.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.325,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.5
+      },
+      "combined_score": 0.48750000000000004,
+      "expected_profit": 0.04681404,
+      "cause_identified": "Fees ate most of expected profit; Low confidence trade - should have waited",
+      "lessons_learned": [
+        "Score 0.49 was too low - require >= 0.6 for this pair",
+        "Fees ($0.0471) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768944005.664386,
+      "exchange": "binance",
+      "from_asset": "USDC",
+      "to_asset": "HEI",
+      "from_amount": 7.84,
+      "from_value_usd": 7.842352,
+      "executed_price": 0.1244,
+      "expected_price": 0.1244,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.047054112,
+      "loss_amount": 0.04681404,
+      "loss_pct": 0.5969387755102041,
+      "market_data": {},
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 5.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.325,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.5
+      },
+      "combined_score": 0.48750000000000004,
+      "expected_profit": 0.04681404,
+      "cause_identified": "Fees ate most of expected profit; Low confidence trade - should have waited",
+      "lessons_learned": [
+        "Score 0.49 was too low - require >= 0.6 for this pair",
+        "Fees ($0.0471) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768944006.5298102,
+      "exchange": "binance",
+      "from_asset": "USDC",
+      "to_asset": "RESOLV",
+      "from_amount": 7.84,
+      "from_value_usd": 7.842352,
+      "executed_price": 0.1038,
+      "expected_price": 0.1038,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.047054112,
+      "loss_amount": 0.04681404,
+      "loss_pct": 0.5969387755102041,
+      "market_data": {},
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 5.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.325,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.5
+      },
+      "combined_score": 0.48750000000000004,
+      "expected_profit": 0.04681404,
+      "cause_identified": "Fees ate most of expected profit; Low confidence trade - should have waited",
+      "lessons_learned": [
+        "Score 0.49 was too low - require >= 0.6 for this pair",
+        "Fees ($0.0471) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768944007.4147239,
+      "exchange": "binance",
+      "from_asset": "USDC",
+      "to_asset": "SUSHI",
+      "from_amount": 7.84,
+      "from_value_usd": 7.842352,
+      "executed_price": 0.3036,
+      "expected_price": 0.3036,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.047054112,
+      "loss_amount": 0.04681404,
+      "loss_pct": 0.5969387755102041,
+      "market_data": {},
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 5.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.325,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.5
+      },
+      "combined_score": 0.48750000000000004,
+      "expected_profit": 0.04681404,
+      "cause_identified": "Fees ate most of expected profit; Low confidence trade - should have waited",
+      "lessons_learned": [
+        "Score 0.49 was too low - require >= 0.6 for this pair",
+        "Fees ($0.0471) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768944008.9292107,
+      "exchange": "binance",
+      "from_asset": "USDC",
+      "to_asset": "GRT",
+      "from_amount": 7.84,
+      "from_value_usd": 7.842352,
+      "executed_price": 0.03671,
+      "expected_price": 0.03671,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.047054112,
+      "loss_amount": 0.04681404,
+      "loss_pct": 0.5969387755102041,
+      "market_data": {},
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 5.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.325,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.5
+      },
+      "combined_score": 0.48750000000000004,
+      "expected_profit": 0.04681404,
+      "cause_identified": "Fees ate most of expected profit; Low confidence trade - should have waited",
+      "lessons_learned": [
+        "Score 0.49 was too low - require >= 0.6 for this pair",
+        "Fees ($0.0471) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768944010.1815262,
+      "exchange": "binance",
+      "from_asset": "USDC",
+      "to_asset": "WLFI",
+      "from_amount": 7.84,
+      "from_value_usd": 7.842352,
+      "executed_price": 0.1631,
+      "expected_price": 0.1631,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.047054112,
+      "loss_amount": 0.04681404,
+      "loss_pct": 0.5969387755102041,
+      "market_data": {},
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 5.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.325,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.5
+      },
+      "combined_score": 0.48750000000000004,
+      "expected_profit": 0.04681404,
+      "cause_identified": "Fees ate most of expected profit; Low confidence trade - should have waited",
+      "lessons_learned": [
+        "Score 0.49 was too low - require >= 0.6 for this pair",
+        "Fees ($0.0471) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768944011.1776826,
+      "exchange": "binance",
+      "from_asset": "USDC",
+      "to_asset": "SKY",
+      "from_amount": 7.84,
+      "from_value_usd": 7.842352,
+      "executed_price": 0.06314,
+      "expected_price": 0.06314,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.047054112,
+      "loss_amount": 0.04681404,
+      "loss_pct": 0.5969387755102041,
+      "market_data": {},
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 5.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.325,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.5
+      },
+      "combined_score": 0.48750000000000004,
+      "expected_profit": 0.04681404,
+      "cause_identified": "Fees ate most of expected profit; Low confidence trade - should have waited",
+      "lessons_learned": [
+        "Score 0.49 was too low - require >= 0.6 for this pair",
+        "Fees ($0.0471) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768944012.009605,
+      "exchange": "binance",
+      "from_asset": "USDC",
+      "to_asset": "SAPIEN",
+      "from_amount": 7.84,
+      "from_value_usd": 7.842352,
+      "executed_price": 0.1261,
+      "expected_price": 0.1261,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.047054112,
+      "loss_amount": 0.04681404,
+      "loss_pct": 0.5969387755102041,
+      "market_data": {},
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 5.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.325,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.5
+      },
+      "combined_score": 0.48750000000000004,
+      "expected_profit": 0.04681404,
+      "cause_identified": "Fees ate most of expected profit; Low confidence trade - should have waited",
+      "lessons_learned": [
+        "Score 0.49 was too low - require >= 0.6 for this pair",
+        "Fees ($0.0471) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768944013.0031013,
+      "exchange": "binance",
+      "from_asset": "USDC",
+      "to_asset": "ICP",
+      "from_amount": 7.84,
+      "from_value_usd": 7.842352,
+      "executed_price": 3.687,
+      "expected_price": 3.687,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.047054112,
+      "loss_amount": 0.0453255936,
+      "loss_pct": 0.5779591836734693,
+      "market_data": {},
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 3.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.295,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.5
+      },
+      "combined_score": 0.472,
+      "expected_profit": 0.0453255936,
+      "cause_identified": "Fees ate most of expected profit; Low confidence trade - should have waited",
+      "lessons_learned": [
+        "Score 0.47 was too low - require >= 0.6 for this pair",
+        "Fees ($0.0471) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768944013.939308,
+      "exchange": "binance",
+      "from_asset": "USDC",
+      "to_asset": "NEO",
+      "from_amount": 7.84,
+      "from_value_usd": 7.842352,
+      "executed_price": 3.64,
+      "expected_price": 3.64,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.047054112,
+      "loss_amount": 0.0430209024,
+      "loss_pct": 0.5485714285714286,
+      "market_data": {},
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 2.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.27999999999999997,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.5
+      },
+      "combined_score": 0.44799999999999995,
+      "expected_profit": 0.0430209024,
+      "cause_identified": "Fees ate most of expected profit; Low confidence trade - should have waited",
+      "lessons_learned": [
+        "Score 0.45 was too low - require >= 0.6 for this pair",
+        "Fees ($0.0471) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768944015.711935,
+      "exchange": "binance",
+      "from_asset": "USDC",
+      "to_asset": "XLM",
+      "from_amount": 7.84,
+      "from_value_usd": 7.842352,
+      "executed_price": 0.2096,
+      "expected_price": 0.2096,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.047054112,
+      "loss_amount": 0.042492744,
+      "loss_pct": 0.5418367346938776,
+      "market_data": {},
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 3.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.295,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.5
+      },
+      "combined_score": 0.4425,
+      "expected_profit": 0.042492744,
+      "cause_identified": "Fees ate most of expected profit; Low confidence trade - should have waited",
+      "lessons_learned": [
+        "Score 0.44 was too low - require >= 0.6 for this pair",
+        "Fees ($0.0471) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768944017.2928145,
+      "exchange": "binance",
+      "from_asset": "USDC",
+      "to_asset": "TRX",
+      "from_amount": 7.84,
+      "from_value_usd": 7.842352,
+      "executed_price": 0.2973,
+      "expected_price": 0.2973,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.047054112,
+      "loss_amount": 0.042492744,
+      "loss_pct": 0.5418367346938776,
+      "market_data": {},
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 3.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.295,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.5
+      },
+      "combined_score": 0.4425,
+      "expected_profit": 0.042492744,
+      "cause_identified": "Fees ate most of expected profit; Low confidence trade - should have waited",
+      "lessons_learned": [
+        "Score 0.44 was too low - require >= 0.6 for this pair",
+        "Fees ($0.0471) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768944018.4664376,
+      "exchange": "binance",
+      "from_asset": "USDC",
+      "to_asset": "ADA",
+      "from_amount": 7.84,
+      "from_value_usd": 7.842352,
+      "executed_price": 0.3536,
+      "expected_price": 0.3536,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.047054112,
+      "loss_amount": 0.042492744,
+      "loss_pct": 0.5418367346938776,
+      "market_data": {},
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 3.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.295,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.5
+      },
+      "combined_score": 0.4425,
+      "expected_profit": 0.042492744,
+      "cause_identified": "Fees ate most of expected profit; Low confidence trade - should have waited",
+      "lessons_learned": [
+        "Score 0.44 was too low - require >= 0.6 for this pair",
+        "Fees ($0.0471) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768944019.5674417,
+      "exchange": "binance",
+      "from_asset": "USDC",
+      "to_asset": "ATOM",
+      "from_amount": 7.84,
+      "from_value_usd": 7.842352,
+      "executed_price": 2.351,
+      "expected_price": 2.351,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.047054112,
+      "loss_amount": 0.042492744,
+      "loss_pct": 0.5418367346938776,
+      "market_data": {},
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 3.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.295,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.5
+      },
+      "combined_score": 0.4425,
+      "expected_profit": 0.042492744,
+      "cause_identified": "Fees ate most of expected profit; Low confidence trade - should have waited",
+      "lessons_learned": [
+        "Score 0.44 was too low - require >= 0.6 for this pair",
+        "Fees ($0.0471) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768944020.5355592,
+      "exchange": "binance",
+      "from_asset": "USDC",
+      "to_asset": "ALGO",
+      "from_amount": 7.84,
+      "from_value_usd": 7.842352,
+      "executed_price": 0.1161,
+      "expected_price": 0.1161,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.047054112,
+      "loss_amount": 0.042492744,
+      "loss_pct": 0.5418367346938776,
+      "market_data": {},
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 3.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.295,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.5
+      },
+      "combined_score": 0.4425,
+      "expected_profit": 0.042492744,
+      "cause_identified": "Fees ate most of expected profit; Low confidence trade - should have waited",
+      "lessons_learned": [
+        "Score 0.44 was too low - require >= 0.6 for this pair",
+        "Fees ($0.0471) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768944021.4364007,
+      "exchange": "binance",
+      "from_asset": "USDC",
+      "to_asset": "ONT",
+      "from_amount": 7.84,
+      "from_value_usd": 7.842352,
+      "executed_price": 0.0589,
+      "expected_price": 0.0589,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.047054112,
+      "loss_amount": 0.042492744,
+      "loss_pct": 0.5418367346938776,
+      "market_data": {},
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 3.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.295,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.5
+      },
+      "combined_score": 0.4425,
+      "expected_profit": 0.042492744,
+      "cause_identified": "Fees ate most of expected profit; Low confidence trade - should have waited",
+      "lessons_learned": [
+        "Score 0.44 was too low - require >= 0.6 for this pair",
+        "Fees ($0.0471) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768944022.394168,
+      "exchange": "binance",
+      "from_asset": "USDC",
+      "to_asset": "INJ",
+      "from_amount": 7.84,
+      "from_value_usd": 7.842352,
+      "executed_price": 4.573,
+      "expected_price": 4.573,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.047054112,
+      "loss_amount": 0.042492744,
+      "loss_pct": 0.5418367346938776,
+      "market_data": {},
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 3.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.295,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.5
+      },
+      "combined_score": 0.4425,
+      "expected_profit": 0.042492744,
+      "cause_identified": "Fees ate most of expected profit; Low confidence trade - should have waited",
+      "lessons_learned": [
+        "Score 0.44 was too low - require >= 0.6 for this pair",
+        "Fees ($0.0471) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768944023.94363,
+      "exchange": "binance",
+      "from_asset": "USDC",
+      "to_asset": "OP",
+      "from_amount": 7.84,
+      "from_value_usd": 7.842352,
+      "executed_price": 0.3057,
+      "expected_price": 0.3057,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.047054112,
+      "loss_amount": 0.042492744,
+      "loss_pct": 0.5418367346938776,
+      "market_data": {},
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 3.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.295,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.5
+      },
+      "combined_score": 0.4425,
+      "expected_profit": 0.042492744,
+      "cause_identified": "Fees ate most of expected profit; Low confidence trade - should have waited",
+      "lessons_learned": [
+        "Score 0.44 was too low - require >= 0.6 for this pair",
+        "Fees ($0.0471) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768944025.0040224,
+      "exchange": "binance",
+      "from_asset": "USDC",
+      "to_asset": "SUI",
+      "from_amount": 7.84,
+      "from_value_usd": 7.842352,
+      "executed_price": 1.5013,
+      "expected_price": 1.5013,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.047054112,
+      "loss_amount": 0.042492744,
+      "loss_pct": 0.5418367346938776,
+      "market_data": {},
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 3.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.295,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.5
+      },
+      "combined_score": 0.4425,
+      "expected_profit": 0.042492744,
+      "cause_identified": "Fees ate most of expected profit; Low confidence trade - should have waited",
+      "lessons_learned": [
+        "Score 0.44 was too low - require >= 0.6 for this pair",
+        "Fees ($0.0471) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768944025.909488,
+      "exchange": "binance",
+      "from_asset": "USDC",
+      "to_asset": "TIA",
+      "from_amount": 7.84,
+      "from_value_usd": 7.842352,
+      "executed_price": 0.474,
+      "expected_price": 0.474,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.047054112,
+      "loss_amount": 0.042492744,
+      "loss_pct": 0.5418367346938776,
+      "market_data": {},
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 3.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.295,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.5
+      },
+      "combined_score": 0.4425,
+      "expected_profit": 0.042492744,
+      "cause_identified": "Fees ate most of expected profit; Low confidence trade - should have waited",
+      "lessons_learned": [
+        "Score 0.44 was too low - require >= 0.6 for this pair",
+        "Fees ($0.0471) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768944026.6117136,
+      "exchange": "binance",
+      "from_asset": "USDC",
+      "to_asset": "MANTA",
+      "from_amount": 7.84,
+      "from_value_usd": 7.842352,
+      "executed_price": 0.0716,
+      "expected_price": 0.0716,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.047054112,
+      "loss_amount": 0.042492744,
+      "loss_pct": 0.5418367346938776,
+      "market_data": {},
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 3.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.295,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.5
+      },
+      "combined_score": 0.4425,
+      "expected_profit": 0.042492744,
+      "cause_identified": "Fees ate most of expected profit; Low confidence trade - should have waited",
+      "lessons_learned": [
+        "Score 0.44 was too low - require >= 0.6 for this pair",
+        "Fees ($0.0471) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768944027.4798958,
+      "exchange": "binance",
+      "from_asset": "USDC",
+      "to_asset": "BLUR",
+      "from_amount": 7.84,
+      "from_value_usd": 7.842352,
+      "executed_price": 0.03233,
+      "expected_price": 0.03233,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.047054112,
+      "loss_amount": 0.042492744,
+      "loss_pct": 0.5418367346938776,
+      "market_data": {},
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 3.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.295,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.5
+      },
+      "combined_score": 0.4425,
+      "expected_profit": 0.042492744,
+      "cause_identified": "Fees ate most of expected profit; Low confidence trade - should have waited",
+      "lessons_learned": [
+        "Score 0.44 was too low - require >= 0.6 for this pair",
+        "Fees ($0.0471) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768944029.2051136,
+      "exchange": "binance",
+      "from_asset": "USDC",
+      "to_asset": "ALT",
+      "from_amount": 7.84,
+      "from_value_usd": 7.842352,
+      "executed_price": 0.01149,
+      "expected_price": 0.01149,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.047054112,
+      "loss_amount": 0.042492744,
+      "loss_pct": 0.5418367346938776,
+      "market_data": {},
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 3.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.295,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.5
+      },
+      "combined_score": 0.4425,
+      "expected_profit": 0.042492744,
+      "cause_identified": "Fees ate most of expected profit; Low confidence trade - should have waited",
+      "lessons_learned": [
+        "Score 0.44 was too low - require >= 0.6 for this pair",
+        "Fees ($0.0471) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768944030.3167844,
+      "exchange": "binance",
+      "from_asset": "USDC",
+      "to_asset": "SEI",
+      "from_amount": 7.84,
+      "from_value_usd": 7.842352,
+      "executed_price": 0.1071,
+      "expected_price": 0.1071,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.047054112,
+      "loss_amount": 0.042492744,
+      "loss_pct": 0.5418367346938776,
+      "market_data": {},
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 3.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.295,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.5
+      },
+      "combined_score": 0.4425,
+      "expected_profit": 0.042492744,
+      "cause_identified": "Fees ate most of expected profit; Low confidence trade - should have waited",
+      "lessons_learned": [
+        "Score 0.44 was too low - require >= 0.6 for this pair",
+        "Fees ($0.0471) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768944031.2942643,
+      "exchange": "binance",
+      "from_asset": "USDC",
+      "to_asset": "JUP",
+      "from_amount": 7.84,
+      "from_value_usd": 7.842352,
+      "executed_price": 0.1926,
+      "expected_price": 0.1926,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.047054112,
+      "loss_amount": 0.042492744,
+      "loss_pct": 0.5418367346938776,
+      "market_data": {},
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 3.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.295,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.5
+      },
+      "combined_score": 0.4425,
+      "expected_profit": 0.042492744,
+      "cause_identified": "Fees ate most of expected profit; Low confidence trade - should have waited",
+      "lessons_learned": [
+        "Score 0.44 was too low - require >= 0.6 for this pair",
+        "Fees ($0.0471) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768944032.12692,
+      "exchange": "binance",
+      "from_asset": "USDC",
+      "to_asset": "FIL",
+      "from_amount": 7.84,
+      "from_value_usd": 7.842352,
+      "executed_price": 1.315,
+      "expected_price": 1.315,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.047054112,
+      "loss_amount": 0.042492744,
+      "loss_pct": 0.5418367346938776,
+      "market_data": {},
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 3.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.295,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.5
+      },
+      "combined_score": 0.4425,
+      "expected_profit": 0.042492744,
+      "cause_identified": "Fees ate most of expected profit; Low confidence trade - should have waited",
+      "lessons_learned": [
+        "Score 0.44 was too low - require >= 0.6 for this pair",
+        "Fees ($0.0471) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768944033.289189,
+      "exchange": "binance",
+      "from_asset": "USDC",
+      "to_asset": "WLD",
+      "from_amount": 7.84,
+      "from_value_usd": 7.842352,
+      "executed_price": 0.474,
+      "expected_price": 0.474,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.047054112,
+      "loss_amount": 0.042492744,
+      "loss_pct": 0.5418367346938776,
+      "market_data": {},
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 3.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.295,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.5
+      },
+      "combined_score": 0.4425,
+      "expected_profit": 0.042492744,
+      "cause_identified": "Fees ate most of expected profit; Low confidence trade - should have waited",
+      "lessons_learned": [
+        "Score 0.44 was too low - require >= 0.6 for this pair",
+        "Fees ($0.0471) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768944034.5810885,
+      "exchange": "binance",
+      "from_asset": "USDC",
+      "to_asset": "PIXEL",
+      "from_amount": 7.84,
+      "from_value_usd": 7.842352,
+      "executed_price": 0.00887,
+      "expected_price": 0.00887,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.047054112,
+      "loss_amount": 0.042492744,
+      "loss_pct": 0.5418367346938776,
+      "market_data": {},
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 3.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.295,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.5
+      },
+      "combined_score": 0.4425,
+      "expected_profit": 0.042492744,
+      "cause_identified": "Fees ate most of expected profit; Low confidence trade - should have waited",
+      "lessons_learned": [
+        "Score 0.44 was too low - require >= 0.6 for this pair",
+        "Fees ($0.0471) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768944035.5400097,
+      "exchange": "binance",
+      "from_asset": "USDC",
+      "to_asset": "STRK",
+      "from_amount": 7.84,
+      "from_value_usd": 7.842352,
+      "executed_price": 0.0782,
+      "expected_price": 0.0782,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.047054112,
+      "loss_amount": 0.042492744,
+      "loss_pct": 0.5418367346938776,
+      "market_data": {},
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 3.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.295,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.5
+      },
+      "combined_score": 0.4425,
+      "expected_profit": 0.042492744,
+      "cause_identified": "Fees ate most of expected profit; Low confidence trade - should have waited",
+      "lessons_learned": [
+        "Score 0.44 was too low - require >= 0.6 for this pair",
+        "Fees ($0.0471) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768944036.3715549,
+      "exchange": "binance",
+      "from_asset": "USDC",
+      "to_asset": "NEAR",
+      "from_amount": 7.84,
+      "from_value_usd": 7.842352,
+      "executed_price": 1.527,
+      "expected_price": 1.527,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.047054112,
+      "loss_amount": 0.042492744,
+      "loss_pct": 0.5418367346938776,
+      "market_data": {},
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 3.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.295,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.5
+      },
+      "combined_score": 0.4425,
+      "expected_profit": 0.042492744,
+      "cause_identified": "Fees ate most of expected profit; Low confidence trade - should have waited",
+      "lessons_learned": [
+        "Score 0.44 was too low - require >= 0.6 for this pair",
+        "Fees ($0.0471) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768944037.2119114,
+      "exchange": "binance",
+      "from_asset": "USDC",
+      "to_asset": "FET",
+      "from_amount": 7.84,
+      "from_value_usd": 7.842352,
+      "executed_price": 0.2367,
+      "expected_price": 0.2367,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.047054112,
+      "loss_amount": 0.042492744,
+      "loss_pct": 0.5418367346938776,
+      "market_data": {},
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 3.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.295,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.5
+      },
+      "combined_score": 0.4425,
+      "expected_profit": 0.042492744,
+      "cause_identified": "Fees ate most of expected profit; Low confidence trade - should have waited",
+      "lessons_learned": [
+        "Score 0.44 was too low - require >= 0.6 for this pair",
+        "Fees ($0.0471) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768944038.157403,
+      "exchange": "binance",
+      "from_asset": "USDC",
+      "to_asset": "PENDLE",
+      "from_amount": 7.84,
+      "from_value_usd": 7.842352,
+      "executed_price": 1.918,
+      "expected_price": 1.918,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.047054112,
+      "loss_amount": 0.042492744,
+      "loss_pct": 0.5418367346938776,
+      "market_data": {},
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 3.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.295,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.5
+      },
+      "combined_score": 0.4425,
+      "expected_profit": 0.042492744,
+      "cause_identified": "Fees ate most of expected profit; Low confidence trade - should have waited",
+      "lessons_learned": [
+        "Score 0.44 was too low - require >= 0.6 for this pair",
+        "Fees ($0.0471) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768944039.1189005,
+      "exchange": "binance",
+      "from_asset": "USDC",
+      "to_asset": "BOME",
+      "from_amount": 7.84,
+      "from_value_usd": 7.842352,
+      "executed_price": 0.000578,
+      "expected_price": 0.000578,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.047054112,
+      "loss_amount": 0.042492744,
+      "loss_pct": 0.5418367346938776,
+      "market_data": {},
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 3.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.295,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.5
+      },
+      "combined_score": 0.4425,
+      "expected_profit": 0.042492744,
+      "cause_identified": "Fees ate most of expected profit; Low confidence trade - should have waited",
+      "lessons_learned": [
+        "Score 0.44 was too low - require >= 0.6 for this pair",
+        "Fees ($0.0471) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768944040.186313,
+      "exchange": "binance",
+      "from_asset": "USDC",
+      "to_asset": "JTO",
+      "from_amount": 7.84,
+      "from_value_usd": 7.842352,
+      "executed_price": 0.34,
+      "expected_price": 0.34,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.047054112,
+      "loss_amount": 0.042492744,
+      "loss_pct": 0.5418367346938776,
+      "market_data": {},
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 3.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.295,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.5
+      },
+      "combined_score": 0.4425,
+      "expected_profit": 0.042492744,
+      "cause_identified": "Fees ate most of expected profit; Low confidence trade - should have waited",
+      "lessons_learned": [
+        "Score 0.44 was too low - require >= 0.6 for this pair",
+        "Fees ($0.0471) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768944041.183939,
+      "exchange": "binance",
+      "from_asset": "USDC",
+      "to_asset": "WIF",
+      "from_amount": 7.84,
+      "from_value_usd": 7.842352,
+      "executed_price": 0.334,
+      "expected_price": 0.334,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.047054112,
+      "loss_amount": 0.042492744,
+      "loss_pct": 0.5418367346938776,
+      "market_data": {},
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 3.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.295,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.5
+      },
+      "combined_score": 0.4425,
+      "expected_profit": 0.042492744,
+      "cause_identified": "Fees ate most of expected profit; Low confidence trade - should have waited",
+      "lessons_learned": [
+        "Score 0.44 was too low - require >= 0.6 for this pair",
+        "Fees ($0.0471) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768944042.1250854,
+      "exchange": "binance",
+      "from_asset": "USDC",
+      "to_asset": "ENA",
+      "from_amount": 7.84,
+      "from_value_usd": 7.842352,
+      "executed_price": 0.1832,
+      "expected_price": 0.1832,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.047054112,
+      "loss_amount": 0.042492744,
+      "loss_pct": 0.5418367346938776,
+      "market_data": {},
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 3.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.295,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.5
+      },
+      "combined_score": 0.4425,
+      "expected_profit": 0.042492744,
+      "cause_identified": "Fees ate most of expected profit; Low confidence trade - should have waited",
+      "lessons_learned": [
+        "Score 0.44 was too low - require >= 0.6 for this pair",
+        "Fees ($0.0471) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768944042.9905753,
+      "exchange": "binance",
+      "from_asset": "USDC",
+      "to_asset": "ETHFI",
+      "from_amount": 7.84,
+      "from_value_usd": 7.842352,
+      "executed_price": 0.619,
+      "expected_price": 0.619,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.047054112,
+      "loss_amount": 0.042492744,
+      "loss_pct": 0.5418367346938776,
+      "market_data": {},
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 3.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.295,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.5
+      },
+      "combined_score": 0.4425,
+      "expected_profit": 0.042492744,
+      "cause_identified": "Fees ate most of expected profit; Low confidence trade - should have waited",
+      "lessons_learned": [
+        "Score 0.44 was too low - require >= 0.6 for this pair",
+        "Fees ($0.0471) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768944044.3395514,
+      "exchange": "binance",
+      "from_asset": "USDC",
+      "to_asset": "YGG",
+      "from_amount": 7.84,
+      "from_value_usd": 7.842352,
+      "executed_price": 0.0616,
+      "expected_price": 0.0616,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.047054112,
+      "loss_amount": 0.042492744,
+      "loss_pct": 0.5418367346938776,
+      "market_data": {},
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 3.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.295,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.5
+      },
+      "combined_score": 0.4425,
+      "expected_profit": 0.042492744,
+      "cause_identified": "Fees ate most of expected profit; Low confidence trade - should have waited",
+      "lessons_learned": [
+        "Score 0.44 was too low - require >= 0.6 for this pair",
+        "Fees ($0.0471) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768944045.3377652,
+      "exchange": "binance",
+      "from_asset": "USDC",
+      "to_asset": "CFX",
+      "from_amount": 7.84,
+      "from_value_usd": 7.842352,
+      "executed_price": 0.0705,
+      "expected_price": 0.0705,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.047054112,
+      "loss_amount": 0.042492744,
+      "loss_pct": 0.5418367346938776,
+      "market_data": {},
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 3.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.295,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.5
+      },
+      "combined_score": 0.4425,
+      "expected_profit": 0.042492744,
+      "cause_identified": "Fees ate most of expected profit; Low confidence trade - should have waited",
+      "lessons_learned": [
+        "Score 0.44 was too low - require >= 0.6 for this pair",
+        "Fees ($0.0471) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768944046.1782122,
+      "exchange": "binance",
+      "from_asset": "USDC",
+      "to_asset": "RUNE",
+      "from_amount": 7.84,
+      "from_value_usd": 7.842352,
+      "executed_price": 0.598,
+      "expected_price": 0.598,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.047054112,
+      "loss_amount": 0.042492744,
+      "loss_pct": 0.5418367346938776,
+      "market_data": {},
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 3.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.295,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.5
+      },
+      "combined_score": 0.4425,
+      "expected_profit": 0.042492744,
+      "cause_identified": "Fees ate most of expected profit; Low confidence trade - should have waited",
+      "lessons_learned": [
+        "Score 0.44 was too low - require >= 0.6 for this pair",
+        "Fees ($0.0471) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768944046.877744,
+      "exchange": "binance",
+      "from_asset": "USDC",
+      "to_asset": "SAGA",
+      "from_amount": 7.84,
+      "from_value_usd": 7.842352,
+      "executed_price": 0.056,
+      "expected_price": 0.056,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.047054112,
+      "loss_amount": 0.042492744,
+      "loss_pct": 0.5418367346938776,
+      "market_data": {},
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 3.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.295,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.5
+      },
+      "combined_score": 0.4425,
+      "expected_profit": 0.042492744,
+      "cause_identified": "Fees ate most of expected profit; Low confidence trade - should have waited",
+      "lessons_learned": [
+        "Score 0.44 was too low - require >= 0.6 for this pair",
+        "Fees ($0.0471) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768944047.8484557,
+      "exchange": "binance",
+      "from_asset": "USDC",
+      "to_asset": "APT",
+      "from_amount": 7.84,
+      "from_value_usd": 7.842352,
+      "executed_price": 1.565,
+      "expected_price": 1.565,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.047054112,
+      "loss_amount": 0.042492744,
+      "loss_pct": 0.5418367346938776,
+      "market_data": {},
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 3.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.295,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.5
+      },
+      "combined_score": 0.4425,
+      "expected_profit": 0.042492744,
+      "cause_identified": "Fees ate most of expected profit; Low confidence trade - should have waited",
+      "lessons_learned": [
+        "Score 0.44 was too low - require >= 0.6 for this pair",
+        "Fees ($0.0471) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768944049.4364038,
+      "exchange": "binance",
+      "from_asset": "USDC",
+      "to_asset": "GALA",
+      "from_amount": 7.84,
+      "from_value_usd": 7.842352,
+      "executed_price": 0.00643,
+      "expected_price": 0.00643,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.047054112,
+      "loss_amount": 0.042492744,
+      "loss_pct": 0.5418367346938776,
+      "market_data": {},
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 3.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.295,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.5
+      },
+      "combined_score": 0.4425,
+      "expected_profit": 0.042492744,
+      "cause_identified": "Fees ate most of expected profit; Low confidence trade - should have waited",
+      "lessons_learned": [
+        "Score 0.44 was too low - require >= 0.6 for this pair",
+        "Fees ($0.0471) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768944050.4573991,
+      "exchange": "binance",
+      "from_asset": "USDC",
+      "to_asset": "STX",
+      "from_amount": 7.84,
+      "from_value_usd": 7.842352,
+      "executed_price": 0.305,
+      "expected_price": 0.305,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.047054112,
+      "loss_amount": 0.042492744,
+      "loss_pct": 0.5418367346938776,
+      "market_data": {},
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 3.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.295,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.5
+      },
+      "combined_score": 0.4425,
+      "expected_profit": 0.042492744,
+      "cause_identified": "Fees ate most of expected profit; Low confidence trade - should have waited",
+      "lessons_learned": [
+        "Score 0.44 was too low - require >= 0.6 for this pair",
+        "Fees ($0.0471) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768944051.516706,
+      "exchange": "binance",
+      "from_asset": "USDC",
+      "to_asset": "ARKM",
+      "from_amount": 7.84,
+      "from_value_usd": 7.842352,
+      "executed_price": 0.177,
+      "expected_price": 0.177,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.047054112,
+      "loss_amount": 0.042492744,
+      "loss_pct": 0.5418367346938776,
+      "market_data": {},
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 3.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.295,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.5
+      },
+      "combined_score": 0.4425,
+      "expected_profit": 0.042492744,
+      "cause_identified": "Fees ate most of expected profit; Low confidence trade - should have waited",
+      "lessons_learned": [
+        "Score 0.44 was too low - require >= 0.6 for this pair",
+        "Fees ($0.0471) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768944052.3964875,
+      "exchange": "binance",
+      "from_asset": "USDC",
+      "to_asset": "PEOPLE",
+      "from_amount": 7.84,
+      "from_value_usd": 7.842352,
+      "executed_price": 0.00939,
+      "expected_price": 0.00939,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.047054112,
+      "loss_amount": 0.042492744,
+      "loss_pct": 0.5418367346938776,
+      "market_data": {},
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 3.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.295,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.5
+      },
+      "combined_score": 0.4425,
+      "expected_profit": 0.042492744,
+      "cause_identified": "Fees ate most of expected profit; Low confidence trade - should have waited",
+      "lessons_learned": [
+        "Score 0.44 was too low - require >= 0.6 for this pair",
+        "Fees ($0.0471) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768944053.502667,
+      "exchange": "binance",
+      "from_asset": "USDC",
+      "to_asset": "REZ",
+      "from_amount": 7.84,
+      "from_value_usd": 7.842352,
+      "executed_price": 0.00454,
+      "expected_price": 0.00454,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.047054112,
+      "loss_amount": 0.042492744,
+      "loss_pct": 0.5418367346938776,
+      "market_data": {},
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 3.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.295,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.5
+      },
+      "combined_score": 0.4425,
+      "expected_profit": 0.042492744,
+      "cause_identified": "Fees ate most of expected profit; Low confidence trade - should have waited",
+      "lessons_learned": [
+        "Score 0.44 was too low - require >= 0.6 for this pair",
+        "Fees ($0.0471) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768944054.7730577,
+      "exchange": "binance",
+      "from_asset": "USDC",
+      "to_asset": "LDO",
+      "from_amount": 7.84,
+      "from_value_usd": 7.842352,
+      "executed_price": 0.5285,
+      "expected_price": 0.5285,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.047054112,
+      "loss_amount": 0.042492744,
+      "loss_pct": 0.5418367346938776,
+      "market_data": {},
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 3.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.295,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.5
+      },
+      "combined_score": 0.4425,
+      "expected_profit": 0.042492744,
+      "cause_identified": "Fees ate most of expected profit; Low confidence trade - should have waited",
+      "lessons_learned": [
+        "Score 0.44 was too low - require >= 0.6 for this pair",
+        "Fees ($0.0471) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768944055.890565,
+      "exchange": "binance",
+      "from_asset": "USDC",
+      "to_asset": "NOT",
+      "from_amount": 7.84,
+      "from_value_usd": 7.842352,
+      "executed_price": 0.000537,
+      "expected_price": 0.000537,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.047054112,
+      "loss_amount": 0.042492744,
+      "loss_pct": 0.5418367346938776,
+      "market_data": {},
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 3.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.295,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.5
+      },
+      "combined_score": 0.4425,
+      "expected_profit": 0.042492744,
+      "cause_identified": "Fees ate most of expected profit; Low confidence trade - should have waited",
+      "lessons_learned": [
+        "Score 0.44 was too low - require >= 0.6 for this pair",
+        "Fees ($0.0471) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
     }
   ],
   "patterns": {
@@ -34232,15 +37787,935 @@
       ],
       "first_seen": 1768939195.4727552,
       "last_seen": 1768941221.9212065
+    },
+    "USDC\u2192MEME_binance": {
+      "losses": 1,
+      "total_loss": 0.14404319999999998,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Unknown - needs further analysis"
+      ],
+      "first_seen": 1768943959.83163,
+      "last_seen": 1768943959.83163
+    },
+    "USDC\u2192PEPE_binance": {
+      "losses": 1,
+      "total_loss": 0.10803239999999997,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Unknown - needs further analysis"
+      ],
+      "first_seen": 1768943960.6946487,
+      "last_seen": 1768943960.6946487
+    },
+    "USDC\u2192FLOKI_binance": {
+      "losses": 1,
+      "total_loss": 0.10443132000000002,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Unknown - needs further analysis"
+      ],
+      "first_seen": 1768943961.5212064,
+      "last_seen": 1768943961.5212064
+    },
+    "USDC\u2192BONK_binance": {
+      "losses": 1,
+      "total_loss": 0.09902969999999997,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Unknown - needs further analysis"
+      ],
+      "first_seen": 1768943963.230173,
+      "last_seen": 1768943963.230173
+    },
+    "USDC\u21921000SATS_binance": {
+      "losses": 1,
+      "total_loss": 0.09722915999999998,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Unknown - needs further analysis"
+      ],
+      "first_seen": 1768943964.447174,
+      "last_seen": 1768943964.447174
+    },
+    "USDC\u2192DOGS_binance": {
+      "losses": 1,
+      "total_loss": 0.059777927999999994,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Fees ate most of expected profit"
+      ],
+      "first_seen": 1768943965.3304582,
+      "last_seen": 1768943965.3304582
+    },
+    "USDC\u2192PUMP_binance": {
+      "losses": 1,
+      "total_loss": 0.05761727999999999,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Fees ate most of expected profit"
+      ],
+      "first_seen": 1768943966.8542209,
+      "last_seen": 1768943966.8542209
+    },
+    "USDC\u2192SAND_binance": {
+      "losses": 1,
+      "total_loss": 0.055456632,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Fees ate most of expected profit"
+      ],
+      "first_seen": 1768943968.256606,
+      "last_seen": 1768943968.256606
+    },
+    "USDC\u2192IDEX_binance": {
+      "losses": 1,
+      "total_loss": 0.055456632,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Fees ate most of expected profit"
+      ],
+      "first_seen": 1768943969.4111834,
+      "last_seen": 1768943969.4111834
+    },
+    "USDC\u2192TLM_binance": {
+      "losses": 1,
+      "total_loss": 0.055456632,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Fees ate most of expected profit"
+      ],
+      "first_seen": 1768943970.2725797,
+      "last_seen": 1768943970.2725797
+    },
+    "USDC\u2192PHA_binance": {
+      "losses": 1,
+      "total_loss": 0.055456632,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Fees ate most of expected profit"
+      ],
+      "first_seen": 1768943971.1207302,
+      "last_seen": 1768943971.1207302
+    },
+    "USDC\u2192GPS_binance": {
+      "losses": 1,
+      "total_loss": 0.055456632,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Fees ate most of expected profit"
+      ],
+      "first_seen": 1768943972.0064306,
+      "last_seen": 1768943972.0064306
+    },
+    "USDC\u2192SXT_binance": {
+      "losses": 1,
+      "total_loss": 0.055456632,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Fees ate most of expected profit"
+      ],
+      "first_seen": 1768943973.367002,
+      "last_seen": 1768943973.367002
+    },
+    "USDC\u2192HOME_binance": {
+      "losses": 1,
+      "total_loss": 0.055456632,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Fees ate most of expected profit"
+      ],
+      "first_seen": 1768943974.6198208,
+      "last_seen": 1768943974.6198208
+    },
+    "USDC\u2192AXS_binance": {
+      "losses": 1,
+      "total_loss": 0.055456632,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Fees ate most of expected profit"
+      ],
+      "first_seen": 1768943975.561752,
+      "last_seen": 1768943975.561752
+    },
+    "USDC\u2192DOLO_binance": {
+      "losses": 1,
+      "total_loss": 0.055456632,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Fees ate most of expected profit"
+      ],
+      "first_seen": 1768943976.5066044,
+      "last_seen": 1768943976.5066044
+    },
+    "USDC\u2192EPIC_binance": {
+      "losses": 1,
+      "total_loss": 0.053295984000000005,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Fees ate most of expected profit"
+      ],
+      "first_seen": 1768943977.2934144,
+      "last_seen": 1768943977.2934144
+    },
+    "USDC\u2192SSV_binance": {
+      "losses": 1,
+      "total_loss": 0.053295984000000005,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Fees ate most of expected profit"
+      ],
+      "first_seen": 1768943978.2610388,
+      "last_seen": 1768943978.2610388
+    },
+    "USDC\u2192NEIRO_binance": {
+      "losses": 1,
+      "total_loss": 0.05329598399999999,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Fees ate most of expected profit"
+      ],
+      "first_seen": 1768943979.2361948,
+      "last_seen": 1768943979.2361948
+    },
+    "USDC\u2192PENGU_binance": {
+      "losses": 1,
+      "total_loss": 0.05329598399999999,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Fees ate most of expected profit"
+      ],
+      "first_seen": 1768943980.1855066,
+      "last_seen": 1768943980.1855066
+    },
+    "USDC\u2192LUNC_binance": {
+      "losses": 1,
+      "total_loss": 0.05329598399999999,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Fees ate most of expected profit"
+      ],
+      "first_seen": 1768943980.960059,
+      "last_seen": 1768943980.960059
+    },
+    "USDC\u2192EURI_binance": {
+      "losses": 1,
+      "total_loss": 0.05113533599999999,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Fees ate most of expected profit"
+      ],
+      "first_seen": 1768943981.8690517,
+      "last_seen": 1768943981.8690517
+    },
+    "USDC\u2192BANK_binance": {
+      "losses": 1,
+      "total_loss": 0.05113533599999999,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Fees ate most of expected profit"
+      ],
+      "first_seen": 1768943983.3115,
+      "last_seen": 1768943983.3115
+    },
+    "USDC\u2192SOL_binance": {
+      "losses": 1,
+      "total_loss": 0.050703206400000006,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Fees ate most of expected profit"
+      ],
+      "first_seen": 1768943984.3648677,
+      "last_seen": 1768943984.3648677
+    },
+    "USDC\u2192ETH_binance": {
+      "losses": 1,
+      "total_loss": 0.049934976000000006,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Fees ate most of expected profit"
+      ],
+      "first_seen": 1768943985.3564014,
+      "last_seen": 1768943985.3564014
+    },
+    "USDC\u2192ZRO_binance": {
+      "losses": 1,
+      "total_loss": 0.048974688,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Fees ate most of expected profit"
+      ],
+      "first_seen": 1768943986.2049816,
+      "last_seen": 1768943986.2049816
+    },
+    "USDC\u2192BIO_binance": {
+      "losses": 1,
+      "total_loss": 0.048974688,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Fees ate most of expected profit"
+      ],
+      "first_seen": 1768943987.0428963,
+      "last_seen": 1768943987.0428963
+    },
+    "USDC\u2192SHELL_binance": {
+      "losses": 1,
+      "total_loss": 0.048974688,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Fees ate most of expected profit"
+      ],
+      "first_seen": 1768943988.6773326,
+      "last_seen": 1768943988.6773326
+    },
+    "USDC\u2192ACH_binance": {
+      "losses": 1,
+      "total_loss": 0.048974688,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Fees ate most of expected profit"
+      ],
+      "first_seen": 1768943989.768722,
+      "last_seen": 1768943989.768722
+    },
+    "USDC\u2192NXPC_binance": {
+      "losses": 1,
+      "total_loss": 0.048974688,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Fees ate most of expected profit"
+      ],
+      "first_seen": 1768943990.699341,
+      "last_seen": 1768943990.699341
+    },
+    "USDC\u2192BARD_binance": {
+      "losses": 1,
+      "total_loss": 0.048974688,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Fees ate most of expected profit"
+      ],
+      "first_seen": 1768943991.536141,
+      "last_seen": 1768943991.536141
+    },
+    "USDC\u2192KITE_binance": {
+      "losses": 1,
+      "total_loss": 0.048974688,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Fees ate most of expected profit"
+      ],
+      "first_seen": 1768943992.290692,
+      "last_seen": 1768943992.290692
+    },
+    "USDC\u2192SOLV_binance": {
+      "losses": 1,
+      "total_loss": 0.048974688,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Fees ate most of expected profit"
+      ],
+      "first_seen": 1768943993.6520271,
+      "last_seen": 1768943993.6520271
+    },
+    "USDC\u2192BTC_binance": {
+      "losses": 1,
+      "total_loss": 0.04681404,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Fees ate most of expected profit; Low confidence trade - should have waited"
+      ],
+      "first_seen": 1768943994.73683,
+      "last_seen": 1768943994.73683
+    },
+    "USDC\u2192XRP_binance": {
+      "losses": 1,
+      "total_loss": 0.04681404,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Fees ate most of expected profit; Low confidence trade - should have waited"
+      ],
+      "first_seen": 1768943995.5672686,
+      "last_seen": 1768943995.5672686
+    },
+    "USDC\u2192LINK_binance": {
+      "losses": 1,
+      "total_loss": 0.04681404,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Fees ate most of expected profit; Low confidence trade - should have waited"
+      ],
+      "first_seen": 1768943996.3668423,
+      "last_seen": 1768943996.3668423
+    },
+    "USDC\u2192DOGE_binance": {
+      "losses": 1,
+      "total_loss": 0.04681404,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Fees ate most of expected profit; Low confidence trade - should have waited"
+      ],
+      "first_seen": 1768943997.09784,
+      "last_seen": 1768943997.09784
+    },
+    "USDC\u2192AVAX_binance": {
+      "losses": 1,
+      "total_loss": 0.04681404,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Fees ate most of expected profit; Low confidence trade - should have waited"
+      ],
+      "first_seen": 1768943998.8994462,
+      "last_seen": 1768943998.8994462
+    },
+    "USDC\u2192DOT_binance": {
+      "losses": 1,
+      "total_loss": 0.04681404,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Fees ate most of expected profit; Low confidence trade - should have waited"
+      ],
+      "first_seen": 1768943999.9416573,
+      "last_seen": 1768943999.9416573
+    },
+    "USDC\u2192UNI_binance": {
+      "losses": 1,
+      "total_loss": 0.04681404,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Fees ate most of expected profit; Low confidence trade - should have waited"
+      ],
+      "first_seen": 1768944000.7096941,
+      "last_seen": 1768944000.7096941
+    },
+    "USDC\u2192CRV_binance": {
+      "losses": 1,
+      "total_loss": 0.04681404,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Fees ate most of expected profit; Low confidence trade - should have waited"
+      ],
+      "first_seen": 1768944001.562774,
+      "last_seen": 1768944001.562774
+    },
+    "USDC\u2192CATI_binance": {
+      "losses": 1,
+      "total_loss": 0.04681404,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Fees ate most of expected profit; Low confidence trade - should have waited"
+      ],
+      "first_seen": 1768944002.492168,
+      "last_seen": 1768944002.492168
+    },
+    "USDC\u2192XTZ_binance": {
+      "losses": 1,
+      "total_loss": 0.04681404,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Fees ate most of expected profit; Low confidence trade - should have waited"
+      ],
+      "first_seen": 1768944003.7113166,
+      "last_seen": 1768944003.7113166
+    },
+    "USDC\u2192TRUMP_binance": {
+      "losses": 1,
+      "total_loss": 0.04681404,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Fees ate most of expected profit; Low confidence trade - should have waited"
+      ],
+      "first_seen": 1768944004.7331016,
+      "last_seen": 1768944004.7331016
+    },
+    "USDC\u2192HEI_binance": {
+      "losses": 1,
+      "total_loss": 0.04681404,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Fees ate most of expected profit; Low confidence trade - should have waited"
+      ],
+      "first_seen": 1768944005.664386,
+      "last_seen": 1768944005.664386
+    },
+    "USDC\u2192RESOLV_binance": {
+      "losses": 1,
+      "total_loss": 0.04681404,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Fees ate most of expected profit; Low confidence trade - should have waited"
+      ],
+      "first_seen": 1768944006.5298102,
+      "last_seen": 1768944006.5298102
+    },
+    "USDC\u2192SUSHI_binance": {
+      "losses": 1,
+      "total_loss": 0.04681404,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Fees ate most of expected profit; Low confidence trade - should have waited"
+      ],
+      "first_seen": 1768944007.4147239,
+      "last_seen": 1768944007.4147239
+    },
+    "USDC\u2192GRT_binance": {
+      "losses": 1,
+      "total_loss": 0.04681404,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Fees ate most of expected profit; Low confidence trade - should have waited"
+      ],
+      "first_seen": 1768944008.9292107,
+      "last_seen": 1768944008.9292107
+    },
+    "USDC\u2192WLFI_binance": {
+      "losses": 1,
+      "total_loss": 0.04681404,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Fees ate most of expected profit; Low confidence trade - should have waited"
+      ],
+      "first_seen": 1768944010.1815262,
+      "last_seen": 1768944010.1815262
+    },
+    "USDC\u2192SKY_binance": {
+      "losses": 1,
+      "total_loss": 0.04681404,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Fees ate most of expected profit; Low confidence trade - should have waited"
+      ],
+      "first_seen": 1768944011.1776826,
+      "last_seen": 1768944011.1776826
+    },
+    "USDC\u2192SAPIEN_binance": {
+      "losses": 1,
+      "total_loss": 0.04681404,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Fees ate most of expected profit; Low confidence trade - should have waited"
+      ],
+      "first_seen": 1768944012.009605,
+      "last_seen": 1768944012.009605
+    },
+    "USDC\u2192ICP_binance": {
+      "losses": 1,
+      "total_loss": 0.0453255936,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Fees ate most of expected profit; Low confidence trade - should have waited"
+      ],
+      "first_seen": 1768944013.0031013,
+      "last_seen": 1768944013.0031013
+    },
+    "USDC\u2192NEO_binance": {
+      "losses": 1,
+      "total_loss": 0.0430209024,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Fees ate most of expected profit; Low confidence trade - should have waited"
+      ],
+      "first_seen": 1768944013.939308,
+      "last_seen": 1768944013.939308
+    },
+    "USDC\u2192XLM_binance": {
+      "losses": 1,
+      "total_loss": 0.042492744,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Fees ate most of expected profit; Low confidence trade - should have waited"
+      ],
+      "first_seen": 1768944015.711935,
+      "last_seen": 1768944015.711935
+    },
+    "USDC\u2192TRX_binance": {
+      "losses": 1,
+      "total_loss": 0.042492744,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Fees ate most of expected profit; Low confidence trade - should have waited"
+      ],
+      "first_seen": 1768944017.2928145,
+      "last_seen": 1768944017.2928145
+    },
+    "USDC\u2192ADA_binance": {
+      "losses": 1,
+      "total_loss": 0.042492744,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Fees ate most of expected profit; Low confidence trade - should have waited"
+      ],
+      "first_seen": 1768944018.4664376,
+      "last_seen": 1768944018.4664376
+    },
+    "USDC\u2192ATOM_binance": {
+      "losses": 1,
+      "total_loss": 0.042492744,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Fees ate most of expected profit; Low confidence trade - should have waited"
+      ],
+      "first_seen": 1768944019.5674417,
+      "last_seen": 1768944019.5674417
+    },
+    "USDC\u2192ALGO_binance": {
+      "losses": 1,
+      "total_loss": 0.042492744,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Fees ate most of expected profit; Low confidence trade - should have waited"
+      ],
+      "first_seen": 1768944020.5355592,
+      "last_seen": 1768944020.5355592
+    },
+    "USDC\u2192ONT_binance": {
+      "losses": 1,
+      "total_loss": 0.042492744,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Fees ate most of expected profit; Low confidence trade - should have waited"
+      ],
+      "first_seen": 1768944021.4364007,
+      "last_seen": 1768944021.4364007
+    },
+    "USDC\u2192INJ_binance": {
+      "losses": 1,
+      "total_loss": 0.042492744,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Fees ate most of expected profit; Low confidence trade - should have waited"
+      ],
+      "first_seen": 1768944022.394168,
+      "last_seen": 1768944022.394168
+    },
+    "USDC\u2192OP_binance": {
+      "losses": 1,
+      "total_loss": 0.042492744,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Fees ate most of expected profit; Low confidence trade - should have waited"
+      ],
+      "first_seen": 1768944023.94363,
+      "last_seen": 1768944023.94363
+    },
+    "USDC\u2192SUI_binance": {
+      "losses": 1,
+      "total_loss": 0.042492744,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Fees ate most of expected profit; Low confidence trade - should have waited"
+      ],
+      "first_seen": 1768944025.0040224,
+      "last_seen": 1768944025.0040224
+    },
+    "USDC\u2192TIA_binance": {
+      "losses": 1,
+      "total_loss": 0.042492744,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Fees ate most of expected profit; Low confidence trade - should have waited"
+      ],
+      "first_seen": 1768944025.909488,
+      "last_seen": 1768944025.909488
+    },
+    "USDC\u2192MANTA_binance": {
+      "losses": 1,
+      "total_loss": 0.042492744,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Fees ate most of expected profit; Low confidence trade - should have waited"
+      ],
+      "first_seen": 1768944026.6117136,
+      "last_seen": 1768944026.6117136
+    },
+    "USDC\u2192BLUR_binance": {
+      "losses": 1,
+      "total_loss": 0.042492744,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Fees ate most of expected profit; Low confidence trade - should have waited"
+      ],
+      "first_seen": 1768944027.4798958,
+      "last_seen": 1768944027.4798958
+    },
+    "USDC\u2192ALT_binance": {
+      "losses": 1,
+      "total_loss": 0.042492744,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Fees ate most of expected profit; Low confidence trade - should have waited"
+      ],
+      "first_seen": 1768944029.2051136,
+      "last_seen": 1768944029.2051136
+    },
+    "USDC\u2192SEI_binance": {
+      "losses": 1,
+      "total_loss": 0.042492744,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Fees ate most of expected profit; Low confidence trade - should have waited"
+      ],
+      "first_seen": 1768944030.3167844,
+      "last_seen": 1768944030.3167844
+    },
+    "USDC\u2192JUP_binance": {
+      "losses": 1,
+      "total_loss": 0.042492744,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Fees ate most of expected profit; Low confidence trade - should have waited"
+      ],
+      "first_seen": 1768944031.2942643,
+      "last_seen": 1768944031.2942643
+    },
+    "USDC\u2192FIL_binance": {
+      "losses": 1,
+      "total_loss": 0.042492744,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Fees ate most of expected profit; Low confidence trade - should have waited"
+      ],
+      "first_seen": 1768944032.12692,
+      "last_seen": 1768944032.12692
+    },
+    "USDC\u2192WLD_binance": {
+      "losses": 1,
+      "total_loss": 0.042492744,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Fees ate most of expected profit; Low confidence trade - should have waited"
+      ],
+      "first_seen": 1768944033.289189,
+      "last_seen": 1768944033.289189
+    },
+    "USDC\u2192PIXEL_binance": {
+      "losses": 1,
+      "total_loss": 0.042492744,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Fees ate most of expected profit; Low confidence trade - should have waited"
+      ],
+      "first_seen": 1768944034.5810885,
+      "last_seen": 1768944034.5810885
+    },
+    "USDC\u2192STRK_binance": {
+      "losses": 1,
+      "total_loss": 0.042492744,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Fees ate most of expected profit; Low confidence trade - should have waited"
+      ],
+      "first_seen": 1768944035.5400097,
+      "last_seen": 1768944035.5400097
+    },
+    "USDC\u2192NEAR_binance": {
+      "losses": 1,
+      "total_loss": 0.042492744,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Fees ate most of expected profit; Low confidence trade - should have waited"
+      ],
+      "first_seen": 1768944036.3715549,
+      "last_seen": 1768944036.3715549
+    },
+    "USDC\u2192FET_binance": {
+      "losses": 1,
+      "total_loss": 0.042492744,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Fees ate most of expected profit; Low confidence trade - should have waited"
+      ],
+      "first_seen": 1768944037.2119114,
+      "last_seen": 1768944037.2119114
+    },
+    "USDC\u2192PENDLE_binance": {
+      "losses": 1,
+      "total_loss": 0.042492744,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Fees ate most of expected profit; Low confidence trade - should have waited"
+      ],
+      "first_seen": 1768944038.157403,
+      "last_seen": 1768944038.157403
+    },
+    "USDC\u2192BOME_binance": {
+      "losses": 1,
+      "total_loss": 0.042492744,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Fees ate most of expected profit; Low confidence trade - should have waited"
+      ],
+      "first_seen": 1768944039.1189005,
+      "last_seen": 1768944039.1189005
+    },
+    "USDC\u2192JTO_binance": {
+      "losses": 1,
+      "total_loss": 0.042492744,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Fees ate most of expected profit; Low confidence trade - should have waited"
+      ],
+      "first_seen": 1768944040.186313,
+      "last_seen": 1768944040.186313
+    },
+    "USDC\u2192WIF_binance": {
+      "losses": 1,
+      "total_loss": 0.042492744,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Fees ate most of expected profit; Low confidence trade - should have waited"
+      ],
+      "first_seen": 1768944041.183939,
+      "last_seen": 1768944041.183939
+    },
+    "USDC\u2192ENA_binance": {
+      "losses": 1,
+      "total_loss": 0.042492744,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Fees ate most of expected profit; Low confidence trade - should have waited"
+      ],
+      "first_seen": 1768944042.1250854,
+      "last_seen": 1768944042.1250854
+    },
+    "USDC\u2192ETHFI_binance": {
+      "losses": 1,
+      "total_loss": 0.042492744,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Fees ate most of expected profit; Low confidence trade - should have waited"
+      ],
+      "first_seen": 1768944042.9905753,
+      "last_seen": 1768944042.9905753
+    },
+    "USDC\u2192YGG_binance": {
+      "losses": 1,
+      "total_loss": 0.042492744,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Fees ate most of expected profit; Low confidence trade - should have waited"
+      ],
+      "first_seen": 1768944044.3395514,
+      "last_seen": 1768944044.3395514
+    },
+    "USDC\u2192CFX_binance": {
+      "losses": 1,
+      "total_loss": 0.042492744,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Fees ate most of expected profit; Low confidence trade - should have waited"
+      ],
+      "first_seen": 1768944045.3377652,
+      "last_seen": 1768944045.3377652
+    },
+    "USDC\u2192RUNE_binance": {
+      "losses": 1,
+      "total_loss": 0.042492744,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Fees ate most of expected profit; Low confidence trade - should have waited"
+      ],
+      "first_seen": 1768944046.1782122,
+      "last_seen": 1768944046.1782122
+    },
+    "USDC\u2192SAGA_binance": {
+      "losses": 1,
+      "total_loss": 0.042492744,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Fees ate most of expected profit; Low confidence trade - should have waited"
+      ],
+      "first_seen": 1768944046.877744,
+      "last_seen": 1768944046.877744
+    },
+    "USDC\u2192APT_binance": {
+      "losses": 1,
+      "total_loss": 0.042492744,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Fees ate most of expected profit; Low confidence trade - should have waited"
+      ],
+      "first_seen": 1768944047.8484557,
+      "last_seen": 1768944047.8484557
+    },
+    "USDC\u2192GALA_binance": {
+      "losses": 1,
+      "total_loss": 0.042492744,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Fees ate most of expected profit; Low confidence trade - should have waited"
+      ],
+      "first_seen": 1768944049.4364038,
+      "last_seen": 1768944049.4364038
+    },
+    "USDC\u2192STX_binance": {
+      "losses": 1,
+      "total_loss": 0.042492744,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Fees ate most of expected profit; Low confidence trade - should have waited"
+      ],
+      "first_seen": 1768944050.4573991,
+      "last_seen": 1768944050.4573991
+    },
+    "USDC\u2192ARKM_binance": {
+      "losses": 1,
+      "total_loss": 0.042492744,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Fees ate most of expected profit; Low confidence trade - should have waited"
+      ],
+      "first_seen": 1768944051.516706,
+      "last_seen": 1768944051.516706
+    },
+    "USDC\u2192PEOPLE_binance": {
+      "losses": 1,
+      "total_loss": 0.042492744,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Fees ate most of expected profit; Low confidence trade - should have waited"
+      ],
+      "first_seen": 1768944052.3964875,
+      "last_seen": 1768944052.3964875
+    },
+    "USDC\u2192REZ_binance": {
+      "losses": 1,
+      "total_loss": 0.042492744,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Fees ate most of expected profit; Low confidence trade - should have waited"
+      ],
+      "first_seen": 1768944053.502667,
+      "last_seen": 1768944053.502667
+    },
+    "USDC\u2192LDO_binance": {
+      "losses": 1,
+      "total_loss": 0.042492744,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Fees ate most of expected profit; Low confidence trade - should have waited"
+      ],
+      "first_seen": 1768944054.7730577,
+      "last_seen": 1768944054.7730577
+    },
+    "USDC\u2192NOT_binance": {
+      "losses": 1,
+      "total_loss": 0.042492744,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Fees ate most of expected profit; Low confidence trade - should have waited"
+      ],
+      "first_seen": 1768944055.890565,
+      "last_seen": 1768944055.890565
     }
   },
   "stats": {
-    "total_losses_analyzed": 795,
+    "total_losses_analyzed": 887,
     "patterns_identified": 227,
     "tactics_learned": 0,
     "wikipedia_researches": 96,
-    "lessons_broadcast": 763,
+    "lessons_broadcast": 855,
     "money_saved_by_learning": 0.0
   },
-  "last_saved": "2026-01-20T21:01:11.082259"
+  "last_saved": "2026-01-20T21:20:56.003829"
 }

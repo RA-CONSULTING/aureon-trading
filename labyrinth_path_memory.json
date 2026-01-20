@@ -2430,5 +2430,85 @@
   "USDC->HOLO": {
     "wins": 0.0,
     "losses": 1.0
+  },
+  "USDC->AVNT": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->ZKC": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->IMX": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->TWT": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->HEMI": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->XPL": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->MIRA": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->AEVO": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->EDEN": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->NOM": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->MORPHO": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->ASTER": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->WAL": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->EUL": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->ZBT": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->TURTLE": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->MMT": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->MINA": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->XVG": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->ALLO": {
+    "wins": 0.0,
+    "losses": 1.0
   }
 }
