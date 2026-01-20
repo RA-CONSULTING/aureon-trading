@@ -3904,7 +3904,7 @@ class OrcaKillCycle:
         return opportunities
     
     def _scan_binance_market(self, min_change_pct: float, min_volume: float) -> List[MarketOpportunity]:
-        """Scan ALL Binance pairs for momentum (UK-compliant)."""
+        """Scan ALL Binance pairs for momentum (UK-compliant - scans ALL non-restricted markets)."""
         opportunities = []
         client = self.clients.get('binance')
         if not client:
@@ -3918,18 +3918,23 @@ class OrcaKillCycle:
             
             tickers = r.json()
             
+            # Track which quote currencies we're seeing
+            quote_currencies = set()
+            
             for ticker in tickers:
                 try:
                     symbol = ticker.get('symbol', '')
                     if not symbol:
                         continue
                     
-                    # Only USD(T) pairs for consistency
-                    if not any(q in symbol for q in ['USDT', 'USDC', 'USD']):
+                    # 🇬🇧 UK Mode: Skip restricted symbols FIRST (leveraged tokens, stock tokens, etc.)
+                    if client.uk_mode and client.is_uk_restricted_symbol(symbol):
                         continue
                     
-                    # 🇬🇧 UK Mode: Skip restricted symbols
-                    if client.uk_mode and client.is_uk_restricted_symbol(symbol):
+                    # Get symbol info to check if it's SPOT and TRADING
+                    # We already have UK filtering, now just verify it's a valid spot pair
+                    # Skip if it looks like a futures/margin symbol (usually ends in specific patterns)
+                    if any(x in symbol for x in ['_', 'BULL', 'BEAR', 'UP', 'DOWN']):
                         continue
                     
                     last_price = float(ticker.get('lastPrice', 0))
@@ -3943,14 +3948,14 @@ class OrcaKillCycle:
                     momentum = abs(change_pct) * (1 + min(volume / 1000000, 1))  # Binance has higher volume
                     
                     if abs(change_pct) >= min_change_pct:
-                        # Normalize symbol format (BTCUSDT -> BTC/USDT)
-                        for quote in ['USDT', 'USDC', 'USD']:
+                        # Normalize symbol format - detect quote currency
+                        norm_symbol = symbol
+                        for quote in ['USDT', 'USDC', 'BUSD', 'USD', 'BTC', 'ETH', 'BNB', 'EUR', 'GBP']:
                             if symbol.endswith(quote):
                                 base = symbol[:-len(quote)]
                                 norm_symbol = f"{base}/{quote}"
+                                quote_currencies.add(quote)
                                 break
-                        else:
-                            norm_symbol = symbol
                         
                         opportunities.append(MarketOpportunity(
                             symbol=norm_symbol,
@@ -3963,6 +3968,12 @@ class OrcaKillCycle:
                         ))
                 except Exception:
                     pass
+            
+            # Print summary of what we scanned
+            if quote_currencies:
+                quotes_str = ', '.join(sorted(quote_currencies))
+                print(f"   🌍 Binance: Scanned quote currencies: {quotes_str}")
+                
         except Exception as e:
             print(f"⚠️ Binance scan error: {e}")
         

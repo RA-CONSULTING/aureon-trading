@@ -1185,155 +1185,155 @@
   },
   "USD->OPEN": {
     "wins": 0.0,
-    "losses": 1.0
+    "losses": 2.0
   },
   "USD->OP": {
     "wins": 0.0,
-    "losses": 1.0
+    "losses": 2.0
   },
   "USD->ORCA": {
     "wins": 0.0,
-    "losses": 1.0
+    "losses": 2.0
   },
   "USD->OSMO": {
     "wins": 0.0,
-    "losses": 1.0
+    "losses": 2.0
   },
   "USD->PARTI": {
     "wins": 0.0,
-    "losses": 1.0
+    "losses": 2.0
   },
   "USD->PENDLE": {
     "wins": 0.0,
-    "losses": 1.0
+    "losses": 2.0
   },
   "USD->PHA": {
     "wins": 0.0,
-    "losses": 1.0
+    "losses": 2.0
   },
   "USD->PLUME": {
     "wins": 0.0,
-    "losses": 1.0
+    "losses": 2.0
   },
   "USD->PNUT": {
     "wins": 0.0,
-    "losses": 1.0
+    "losses": 2.0
   },
   "USD->POL": {
     "wins": 0.0,
-    "losses": 1.0
+    "losses": 2.0
   },
   "USD->PROVE": {
     "wins": 0.0,
-    "losses": 1.0
+    "losses": 2.0
   },
   "USD->PYTH": {
     "wins": 0.0,
-    "losses": 1.0
+    "losses": 2.0
   },
   "USD->QTUM": {
     "wins": 0.0,
-    "losses": 1.0
+    "losses": 2.0
   },
   "USD->RARE": {
     "wins": 0.0,
-    "losses": 1.0
+    "losses": 2.0
   },
   "USD->RAY": {
     "wins": 0.0,
-    "losses": 1.0
+    "losses": 2.0
   },
   "USD->RED": {
     "wins": 0.0,
-    "losses": 1.0
+    "losses": 2.0
   },
   "USD->RENDER": {
     "wins": 0.0,
-    "losses": 1.0
+    "losses": 2.0
   },
   "USD->REZ": {
     "wins": 0.0,
-    "losses": 1.0
+    "losses": 2.0
   },
   "USD->RPL": {
     "wins": 0.0,
-    "losses": 1.0
+    "losses": 2.0
   },
   "USD->RSR": {
     "wins": 0.0,
-    "losses": 1.0
+    "losses": 2.0
   },
   "USD->RUNE": {
     "wins": 0.0,
-    "losses": 1.0
+    "losses": 2.0
   },
   "USD->SAGA": {
     "wins": 0.0,
-    "losses": 1.0
+    "losses": 2.0
   },
   "USD->SAHARA": {
     "wins": 0.0,
-    "losses": 1.0
+    "losses": 2.0
   },
   "USD->SAND": {
     "wins": 0.0,
-    "losses": 1.0
+    "losses": 2.0
   },
   "USD->SAPIEN": {
     "wins": 0.0,
-    "losses": 1.0
+    "losses": 2.0
   },
   "USD->SEI": {
     "wins": 0.0,
-    "losses": 1.0
+    "losses": 2.0
   },
   "USD->SKY": {
     "wins": 0.0,
-    "losses": 1.0
+    "losses": 2.0
   },
   "USD->SNX": {
     "wins": 0.0,
-    "losses": 1.0
+    "losses": 2.0
   },
   "USD->SOLV": {
     "wins": 0.0,
-    "losses": 1.0
+    "losses": 2.0
   },
   "USD->SOMI": {
     "wins": 0.0,
-    "losses": 1.0
+    "losses": 2.0
   },
   "USD->SPK": {
     "wins": 0.0,
-    "losses": 1.0
+    "losses": 2.0
   },
   "USD->STRK": {
     "wins": 0.0,
-    "losses": 1.0
+    "losses": 2.0
   },
   "USD->STX": {
     "wins": 0.0,
-    "losses": 1.0
+    "losses": 2.0
   },
   "USD->SUI": {
     "wins": 0.0,
-    "losses": 1.0
+    "losses": 2.0
   },
   "USD->SUSHI": {
     "wins": 0.0,
-    "losses": 1.0
+    "losses": 2.0
   },
   "USD->SXT": {
     "wins": 0.0,
-    "losses": 1.0
+    "losses": 2.0
   },
   "USD->SYN": {
     "wins": 0.0,
-    "losses": 1.0
+    "losses": 2.0
   },
   "USD->SYRUP": {
     "wins": 0.0,
-    "losses": 1.0
+    "losses": 2.0
   },
   "USD->TAO": {
     "wins": 0.0,
@@ -1341,11 +1341,11 @@
   },
   "USD->TIA": {
     "wins": 0.0,
-    "losses": 1.0
+    "losses": 2.0
   },
   "USD->TLM": {
     "wins": 0.0,
-    "losses": 1.0
+    "losses": 2.0
   },
   "USD->TNSR": {
     "wins": 0.0,
