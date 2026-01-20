@@ -242,6 +242,14 @@ except ImportError:
     AIOHTTP_AVAILABLE = False
     safe_print("❌ aiohttp not available - pip install aiohttp")
 
+# Thought Bus (needed for type annotations)
+try:
+    from aureon_thought_bus import Thought
+    THOUGHT_BUS_AVAILABLE = True
+except ImportError:
+    THOUGHT_BUS_AVAILABLE = False
+    Thought = None
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # SYSTEM IMPORTS - Load all available intelligence systems
 # On Windows: Deferred to background after server starts
@@ -6134,7 +6142,7 @@ async def thought_bus_listener_task():
     thoughts_path = Path(os.getenv("AUREON_THOUGHTS_FILE", "thoughts.jsonl"))
     file_pos = thoughts_path.stat().st_size if thoughts_path.exists() else 0
 
-    def _enqueue(thought: Thought) -> None:
+    def _enqueue(thought) -> None:
         try:
             loop.call_soon_threadsafe(queue.put_nowait, thought)
         except Exception:
