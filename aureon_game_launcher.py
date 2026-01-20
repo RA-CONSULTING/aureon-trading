@@ -93,9 +93,15 @@ def _get_log_path(name: str) -> str:
 def _start_process(name: str, cmd: List[str], log_to_file: bool = False) -> ServiceProcess:
     safe_print(f"🚀 Starting {name} ...")
     log_file = None
-    if log_to_file:
+    
+    # Always create a log file for trading engine to capture startup issues
+    is_trading_engine = "micro_profit_labyrinth" in " ".join(cmd) or "orca_complete_kill_cycle" in " ".join(cmd)
+    
+    if log_to_file or is_trading_engine:
         log_path = _get_log_path(name)
         log_file = open(log_path, "a", encoding="utf-8", errors="replace")
+        if is_trading_engine and not log_to_file:
+            safe_print(f"   📝 Logging to: {log_path}")
         process = subprocess.Popen(cmd, stdout=log_file, stderr=log_file)
     else:
         process = subprocess.Popen(cmd)
@@ -227,7 +233,7 @@ def run_game_mode(config: GameModeConfig) -> int:
         # TRADING ENGINE
         if config.start_trading:
             if config.dry_run:
-                trade_args = ["--dry-run"]
+                trade_args = ["--dry-run", "--multi-exchange"]  # Add multi-exchange by default
                 processes.append(_start_process(
                     "💰 TRADING ENGINE (DRY-RUN)",
                     _build_python_command("micro_profit_labyrinth.py", trade_args)
@@ -259,7 +265,17 @@ def run_game_mode(config: GameModeConfig) -> int:
             # If any child exits, keep running but warn
             for svc in list(processes):
                 if svc.process.poll() is not None:
-                    safe_print(f"⚠️  {svc.name} exited (code {svc.process.returncode}).")
+                    exit_code = svc.process.returncode
+                    safe_print(f"⚠️  {svc.name} exited (code {exit_code}).")
+                    
+                    # For trading engine, show where the log is
+                    is_trading_engine = "micro_profit_labyrinth" in " ".join(svc.command) or "orca_complete_kill_cycle" in " ".join(svc.command)
+                    if is_trading_engine and svc.log_file:
+                        log_path = svc.log_file.name
+                        safe_print(f"   📝 Check log file: {log_path}")
+                        safe_print(f"   💡 Tip: The trading engine might have exited due to a configuration issue.")
+                        safe_print(f"   💡 Try running 'python micro_profit_labyrinth.py --dry-run --multi-exchange' directly to see errors.")
+                    
                     processes.remove(svc)
             if not processes:
                 safe_print("✅ All services stopped.")
