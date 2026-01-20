@@ -92,6 +92,7 @@ def _get_log_path(name: str) -> str:
 
 def _start_process(name: str, cmd: List[str], log_to_file: bool = False) -> ServiceProcess:
     safe_print(f"🚀 Starting {name} ...")
+    safe_print(f"   Command: {' '.join(cmd)}")  # DEBUG: Show the exact command
     log_file = None
     
     # Always create a log file for trading engine to capture startup issues
