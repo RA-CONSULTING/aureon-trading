@@ -620,7 +620,8 @@ COMMAND_CENTER_HTML = """
         const maxReconnectAttempts = 10;
         
         function connect() {
-            ws = new WebSocket('ws://' + window.location.host + '/ws');
+            const wsProtocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
+            ws = new WebSocket(wsProtocol + window.location.host + '/ws');
             
             ws.onopen = function() {
                 console.log('👑 Connected to Command Center');
