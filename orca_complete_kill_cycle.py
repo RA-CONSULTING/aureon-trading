@@ -4870,6 +4870,28 @@ class OrcaKillCycle:
                         kraken_cash = 0.0
                         for key in ['ZUSD', 'USD', 'USDC', 'USDT', 'TUSD', 'DAI', 'USDD']:
                             kraken_cash += float(bal.get(key, 0))
+                        
+                        # 🇬🇧 ADD GBP (ZGBP) - Convert to USD at ~1.27 rate
+                        gbp_balance = float(bal.get('ZGBP', 0) or bal.get('GBP', 0))
+                        if gbp_balance > 0:
+                            gbp_to_usd = 1.27  # Approximate GBP/USD rate
+                            kraken_cash += gbp_balance * gbp_to_usd
+                        
+                        # 🪙 ADD CRYPTO BALANCES - Convert ETH, SOL, etc. to USD
+                        crypto_conversions = {
+                            'ETH': 3300.0,   # Approximate ETH/USD
+                            'XETH': 3300.0,  # Kraken ETH symbol
+                            'SOL': 250.0,    # Approximate SOL/USD
+                            'TRX': 0.25,     # Approximate TRX/USD
+                            'ADA': 1.0,      # Approximate ADA/USD
+                            'DOT': 7.0,      # Approximate DOT/USD
+                            'ATOM': 10.0,    # Approximate ATOM/USD
+                        }
+                        for crypto, usd_rate in crypto_conversions.items():
+                            crypto_bal = float(bal.get(crypto, 0))
+                            if crypto_bal > 0.0001:  # Only count meaningful amounts
+                                kraken_cash += crypto_bal * usd_rate
+                        
                         self.last_cash_status['kraken'] = 'ok'
                         cash['kraken'] = kraken_cash + (5.0 if test_mode else 0)
             except Exception as e:
