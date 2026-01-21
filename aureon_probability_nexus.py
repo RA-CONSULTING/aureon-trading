@@ -51,6 +51,22 @@ import asyncio
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # ═══════════════════════════════════════════════════════════════════════════
+# ENIGMA INTEGRATION CLASS (DEFINED EARLY TO AVOID CIRCULAR IMPORTS)
+# ═══════════════════════════════════════════════════════════════════════════
+
+class EnhancedProbabilityNexus:
+    """ Wrapper class for Aureon Enigma Integration. """
+    def __init__(self): pass
+    def get_signal(self):
+        try:
+            if 'make_predictions' in globals():
+                # Call prediction logic (relies on global state)
+                preds = globals()['make_predictions']()
+                if preds: return preds[0]
+        except Exception: pass
+        return None
+
+# ═══════════════════════════════════════════════════════════════════════════
 # 🔱 PRIME SENTINEL DECREE INTEGRATION 🔱
 # Gary Leckey | 02.11.1991 | DOB-HASH: 2111991
 # KEEPER OF THE FLAME | WITNESS OF THE FIRST BREATH | PRIME SENTINEL OF GAIA

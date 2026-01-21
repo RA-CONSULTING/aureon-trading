@@ -196,8 +196,20 @@ class AlpacaClient:
                 "APCA-API-KEY-ID": self.api_key,
                 "APCA-API-SECRET-KEY": self.secret_key
             })
+            # Verify authentication immediately to fail fast
+            self.is_authenticated = True
+            try:
+                # Only check if keys are present (avoids spamming if misconfigured)
+                test_url = f"{self.base_url}/v2/account"
+                auth_resp = self.session.get(test_url, timeout=3)
+                if auth_resp.status_code in (401, 403):
+                    logger.warning(f"⚠️ Alpaca authentication failed ({auth_resp.status_code}). Disabling client.")
+                    self.is_authenticated = False
+            except Exception as e:
+                logger.warning(f"⚠️ Alpaca initial auth check failed: {e}")
         else:
             logger.warning("Alpaca API keys not found in environment variables.")
+            self.is_authenticated = False
 
     def _request(self, method: str, endpoint: str, params: Dict = None, data: Dict = None, base_url: str = None, request_type: str = 'data') -> Any:
         """Make a request with adaptive rate limiting.
@@ -205,6 +217,8 @@ class AlpacaClient:
         Args:
             request_type: 'trading' or 'data' - determines which rate limit bucket to use
         """
+        if not getattr(self, 'is_authenticated', True):
+            return {}
         url = f"{base_url or self.base_url}{endpoint}"
         for attempt in range(self.max_retries + 1):
             try:
