@@ -8021,11 +8021,22 @@ class OrcaKillCycle:
                 }
                 serializable_positions.append(p_dict)
 
+            exchange_status = {}
+            try:
+                for name, client in getattr(self, "clients", {}).items():
+                    exchange_status[name] = {
+                        "connected": client is not None,
+                        "dry_run": getattr(client, "dry_run", False)
+                    }
+            except Exception:
+                exchange_status = {}
+
             state = {
                 "timestamp": time.time(),
                 "session_stats": session_stats,
                 "positions": serializable_positions,
                 "active_count": len(positions),
+                "exchange_status": exchange_status,
                 "queen_message": "War Room Active",
                 "queen_equity": queen.equity if queen else 0.0
             }

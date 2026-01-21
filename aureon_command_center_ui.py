@@ -1218,8 +1218,12 @@ class AureonCommandCenter:
         # Binance
         if self.binance:
             try:
+                balances = None
                 if hasattr(self.binance, 'get_balances'):
-                    balances = self.binance.get_balances() or {}
+                    balances = self.binance.get_balances()
+                elif hasattr(self.binance, 'get_balance'):
+                    balances = self.binance.get_balance()
+                if balances:
                     all_balances['binance'] = {k: float(v) for k, v in balances.items() if float(v) > 0.0001}
             except Exception as e:
                 logger.error(f"Binance balance error: {e}")
@@ -1278,6 +1282,25 @@ class AureonCommandCenter:
                                 cosmic=0.7,
                                 confidence=0.8,
                                 strategy="WAR ROOM"
+                            )
+
+                        # Surface Orca session stats in Queen updates for live verification
+                        if 'session_stats' in data:
+                            stats = data['session_stats'] or {}
+                            cycles = stats.get('cycles', 0)
+                            trades = stats.get('total_trades', 0)
+                            wins = stats.get('winning_trades', 0)
+                            pnl = stats.get('total_pnl', 0.0)
+                            active = data.get('active_count', 0)
+                            msg = (
+                                f"Live | Cycles: {cycles} | Trades: {trades} | Wins: {wins} "
+                                f"| Open: {active} | PnL: {pnl:.4f}"
+                            )
+                            await self.broadcast_queen_update(
+                                msg,
+                                cosmic=0.75,
+                                confidence=0.85,
+                                strategy="LIVE TRADE"
                             )
 
                     except Exception:
