@@ -1239,6 +1239,15 @@ class AureonCommandCenter:
         self.portfolio.balances = all_balances
         self.portfolio.total_value_usd = total_usd
         self.portfolio.cash_available = total_usd
+
+        # Basic market overview from balances (fallback when no market feeds)
+        unique_assets = set()
+        for _, balances in all_balances.items():
+            unique_assets.update(balances.keys())
+        self.market.total_assets_tracked = len(unique_assets)
+        self.market.rising_count = 0
+        self.market.falling_count = 0
+        self.market.top_movers = []
     
     async def update_loop(self):
         """Main update loop."""
@@ -1278,6 +1287,10 @@ class AureonCommandCenter:
                 if time.time() - self.last_update > 30:
                     await self.fetch_all_balances()
                     await self.broadcast_portfolio()
+                    await self.broadcast({
+                        "type": "market_update",
+                        "market": asdict(self.market)
+                    })
                     self.last_update = time.time()
                 
                 await asyncio.sleep(1) 

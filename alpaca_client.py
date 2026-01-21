@@ -83,7 +83,11 @@ class AlpacaClient:
     """
     def __init__(self):
         self.api_key = os.getenv('ALPACA_API_KEY')
-        self.secret_key = os.getenv('ALPACA_SECRET_KEY')
+        self.secret_key = (
+            os.getenv('ALPACA_SECRET_KEY')
+            or os.getenv('ALPACA_API_SECRET')
+            or os.getenv('ALPACA_SECRET')
+        )
         # Default to LIVE trading
         self.use_paper = os.getenv('ALPACA_PAPER', 'false').lower() == 'true'
         self.dry_run = os.getenv('ALPACA_DRY_RUN', 'false').lower() == 'true'
