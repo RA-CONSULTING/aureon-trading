@@ -1,11 +1,17 @@
 name: aureon-command-center
+region: nyc
 services:
   - name: aureon
     github:
       repo: RA-CONSULTING/aureon-trading
       branch: main
-    run_command: supervisord -c deploy/supervisord.conf
+      deploy_on_push: true
+    source_dir: /
+    build_command: pip install -r requirements.txt
+    run_command: supervisord -n -c deploy/supervisord.conf
     http_port: 8800
+    instance_count: 1
+    instance_size_slug: basic-xxs
     envs:
       - key: AUREON_STATE_DIR
         value: /tmp/aureon_state
