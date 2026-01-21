@@ -1829,7 +1829,7 @@ class AureonCommandCenter:
         
         if MyceliumNetwork:
             try:
-                self.mycelium = MyceliumNetwork()
+                self.mycelium = MyceliumNetwork(initial_capital=1000.0)
                 print("   🍄 Mycelium Network: WIRED")
             except Exception as e:
                 logger.error(f"Mycelium error: {e}")
