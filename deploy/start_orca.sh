@@ -18,6 +18,43 @@ for i in {1..10}; do
     sleep 5
 done
 
+# Display API key status
+echo ""
+echo "═══════════════════════════════════════════════════════════════════"
+echo "🔑 API KEY STATUS CHECK"
+echo "═══════════════════════════════════════════════════════════════════"
+
+# Alpaca
+if [ -n "$ALPACA_API_KEY" ] && [ -n "$ALPACA_SECRET_KEY" ]; then
+    echo "   🦙 Alpaca:     ✅ CONFIGURED"
+else
+    echo "   🦙 Alpaca:     ❌ MISSING (set ALPACA_API_KEY, ALPACA_SECRET_KEY)"
+fi
+
+# Kraken
+if [ -n "$KRAKEN_API_KEY" ] && [ -n "$KRAKEN_API_SECRET" ]; then
+    echo "   🐙 Kraken:     ✅ CONFIGURED"
+else
+    echo "   🐙 Kraken:     ❌ MISSING (set KRAKEN_API_KEY, KRAKEN_API_SECRET)"
+fi
+
+# Binance
+if [ -n "$BINANCE_API_KEY" ] && [ -n "$BINANCE_API_SECRET" ]; then
+    echo "   🟡 Binance:    ✅ CONFIGURED"
+else
+    echo "   🟡 Binance:    ❌ MISSING (set BINANCE_API_KEY, BINANCE_API_SECRET)"
+fi
+
+# Capital.com
+if [ -n "$CAPITAL_API_KEY" ] && [ -n "$CAPITAL_IDENTIFIER" ] && [ -n "$CAPITAL_PASSWORD" ]; then
+    echo "   💼 Capital:    ✅ CONFIGURED"
+else
+    echo "   💼 Capital:    ❌ MISSING (set CAPITAL_API_KEY, CAPITAL_IDENTIFIER, CAPITAL_PASSWORD)"
+fi
+
+echo "═══════════════════════════════════════════════════════════════════"
+echo ""
+
 # Start the Orca Kill Cycle with trading parameters
 # Args: max_positions=3, amount_per_position=$1.00, target_pct=1.0%
 echo "🦈🔪 LAUNCHING ORCA AUTONOMOUS TRADING 🔪🦈"
