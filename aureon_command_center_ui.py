@@ -221,6 +221,22 @@ class MarketOverview:
     momentum_scores: Dict[str, float] = field(default_factory=dict)
 
 
+@dataclass
+class TradeExecution:
+    """Record of an executed trade."""
+    timestamp: float
+    exchange: str
+    symbol: str
+    side: str  # BUY, SELL, CONVERT
+    quantity: float
+    price: float
+    value_usd: float
+    status: str = "EXECUTED"  # EXECUTED, PENDING, FAILED
+    order_id: str = ""
+    pnl: float = 0.0
+    metadata: Dict = field(default_factory=dict)
+
+
 # ════════════════════════════════════════════════════════════════════════════
 # UNIFIED DASHBOARD HTML
 # ════════════════════════════════════════════════════════════════════════════
@@ -834,7 +850,12 @@ COMMAND_CENTER_HTML = """
                 <div style="text-align: center; color: #666; font-style: italic;">No active positions</div>
             </div>
             
-            <h2>🔌 SYSTEMS</h2>
+            <h2>� RECENT TRADES</h2>
+            <div id="recent-trades" style="margin-bottom: 20px; max-height: 200px; overflow-y: auto;">
+                <div style="text-align: center; color: #666; font-style: italic;">No recent trades</div>
+            </div>
+            
+            <h2>�🔌 SYSTEMS</h2>
             <div id="systems-list"></div>
             
             <h2 style="margin-top: 15px;">💎 BALANCES</h2>
@@ -1527,6 +1548,9 @@ COMMAND_CENTER_HTML = """
              if (data.positions) {
                  updatePositions(data.positions);
              }
+             if (data.recent_trades) {
+                 updateRecentTrades(data.recent_trades);
+             }
              if (data.queen_message) {
                  document.getElementById('queen-message').textContent = data.queen_message;
              }
@@ -1574,6 +1598,40 @@ COMMAND_CENTER_HTML = """
                         <div style="font-size: 0.8em; color: ${isPos ? 'var(--accent-green)' : 'var(--accent-red)'}">
                             ${pnlPct.toFixed(2)}%
                         </div>
+                    </div>
+                 `;
+                 container.appendChild(div);
+             });
+        }
+
+        function updateRecentTrades(trades) {
+             const container = document.getElementById('recent-trades');
+             if (!trades || trades.length === 0) {
+                 container.innerHTML = '<div style="text-align: center; color: #666; font-style: italic;">No recent trades</div>';
+                 return;
+             }
+             
+             container.innerHTML = '';
+             trades.slice(0, 15).forEach(t => {
+                 const isPositive = (t.pnl || 0) >= 0;
+                 const sideColor = t.side === 'BUY' ? 'var(--accent-green)' : 
+                                   t.side === 'SELL' ? 'var(--accent-red)' : 'var(--accent-gold)';
+                 const timestamp = new Date(t.timestamp * 1000).toLocaleTimeString();
+                 
+                 const div = document.createElement('div');
+                 div.className = 'balance-item';
+                 div.style.borderLeft = `3px solid ${sideColor}`;
+                 div.style.fontSize = '0.85em';
+                 
+                 div.innerHTML = `
+                    <div style="flex: 1">
+                        <span style="color: ${sideColor}; font-weight: bold;">${t.side}</span>
+                        <span class="balance-asset">${t.symbol}</span>
+                        <span style="font-size: 0.8em; color: #888;">${t.exchange}</span>
+                    </div>
+                    <div style="text-align: right">
+                        <div style="color: #fff;">$${formatNumber(t.value_usd || 0)}</div>
+                        <div style="font-size: 0.75em; color: #666;">${timestamp}</div>
                     </div>
                  `;
                  container.appendChild(div);
@@ -1807,6 +1865,7 @@ class AureonCommandCenter:
         self.signals: deque = deque(maxlen=100)
         self.prices: Dict[str, float] = {}
         self.last_snapshot: Dict[str, Any] = {}
+        self.recent_trades: deque = deque(maxlen=50)  # Last 50 trade executions
         self.registry = None
         self.registry_snapshot: Dict[str, Any] = {
             "total": 0,
@@ -1999,12 +2058,14 @@ class AureonCommandCenter:
         logger.info(f"👑 Client connected (total: {len(self.clients)})")
         
         # Send initial state
+        await self.load_recent_trades()  # Load trades before sending
         await ws.send_json({
             "type": "full_state",
             "systems": SYSTEMS_STATUS,
             "portfolio": asdict(self.portfolio),
             "market": asdict(self.market),
             "signals": [asdict(s) if hasattr(s, '__dataclass_fields__') else s for s in list(self.signals)[-20:]],
+            "recent_trades": [asdict(t) for t in list(self.recent_trades)[:15]],
             "queen": {
                 "message": "Welcome to Aureon Command Center. All systems operational.",
                 "cosmic_score": 0.5,
@@ -2243,22 +2304,63 @@ Object.entries(systems).forEach(([name, online]) => {
         })
     
     async def fetch_all_balances(self):
-        """Fetch balances from all exchanges."""
+        """Fetch balances from all exchanges and calculate total USD value."""
         total_usd = 0.0
         all_balances = {}
+        
+        # Price lookup helper - use cached prices or fetch
+        def get_usd_value(asset: str, amount: float, exchange: str) -> float:
+            """Convert asset amount to USD value."""
+            if amount <= 0:
+                return 0.0
+            
+            # Direct USD values
+            usd_assets = ['USD', 'ZUSD', 'USDT', 'USDC', 'TUSD', 'DAI', 'BUSD']
+            if asset.upper() in usd_assets:
+                return amount
+            
+            # GBP conversion (approximate)
+            if asset.upper() in ['GBP', 'ZGBP']:
+                return amount * 1.27  # GBP to USD rate
+            
+            # EUR conversion
+            if asset.upper() in ['EUR', 'ZEUR']:
+                return amount * 1.08  # EUR to USD rate
+            
+            # Try to get price from cached prices
+            price_key = f"{exchange}:{asset}/USD"
+            if price_key in self.prices:
+                return amount * self.prices[price_key]
+            
+            # Try Kraken ticker for crypto
+            if self.kraken and asset.upper() in ['BTC', 'ETH', 'SOL', 'XRP', 'ADA', 'DOT', 'AVAX', 'LINK', 'ATOM', 'TRX', 'SEI']:
+                try:
+                    ticker = self.kraken.get_ticker(f"{asset}/USD")
+                    if ticker and ticker.get('price', 0) > 0:
+                        price = float(ticker['price'])
+                        self.prices[price_key] = price  # Cache it
+                        return amount * price
+                except:
+                    pass
+            
+            # Fallback: estimate based on known prices
+            crypto_estimates = {
+                'BTC': 100000, 'ETH': 3500, 'SOL': 200, 'XRP': 2.5, 
+                'ADA': 1.0, 'DOT': 8, 'AVAX': 40, 'LINK': 15,
+                'ATOM': 10, 'TRX': 0.25, 'SEI': 0.5, 'DOGE': 0.35
+            }
+            if asset.upper() in crypto_estimates:
+                return amount * crypto_estimates[asset.upper()]
+            
+            return 0.0  # Unknown asset
         
         # Kraken
         if self.kraken:
             try:
                 balances = self.kraken.get_account_balance() or {}
                 all_balances['kraken'] = {k: float(v) for k, v in balances.items() if float(v) > 0.0001}
-                # Estimate USD value
                 for asset, amount in all_balances['kraken'].items():
-                    if asset in ['USD', 'ZUSD', 'USDT', 'USDC']:
-                        total_usd += amount
-                    else:
-                        # Would need price lookup
-                        pass
+                    total_usd += get_usd_value(asset, amount, 'kraken')
             except Exception as e:
                 logger.error(f"Kraken balance error: {e}")
         
@@ -2272,6 +2374,8 @@ Object.entries(systems).forEach(([name, online]) => {
                     balances = self.binance.get_balance()
                 if balances:
                     all_balances['binance'] = {k: float(v) for k, v in balances.items() if float(v) > 0.0001}
+                    for asset, amount in all_balances['binance'].items():
+                        total_usd += get_usd_value(asset, amount, 'binance')
             except Exception as e:
                 logger.error(f"Binance balance error: {e}")
         
@@ -2282,16 +2386,32 @@ Object.entries(systems).forEach(([name, online]) => {
                     account = self.alpaca.get_account()
                     if account:
                         cash = float(getattr(account, 'cash', 0) or 0)
+                        equity = float(getattr(account, 'equity', cash) or cash)
                         all_balances['alpaca'] = {'USD': cash}
+                        # Also get crypto positions
+                        try:
+                            positions = self.alpaca.get_positions() if hasattr(self.alpaca, 'get_positions') else []
+                            for pos in (positions or []):
+                                symbol = pos.get('symbol', '')
+                                qty = float(pos.get('qty', 0))
+                                market_val = float(pos.get('market_value', 0))
+                                if qty > 0 and market_val > 0:
+                                    all_balances['alpaca'][symbol] = qty
+                                    total_usd += market_val
+                        except:
+                            pass
                         total_usd += cash
             except Exception as e:
                 logger.error(f"Alpaca balance error: {e}")
+        
+        # Capital.com - check if we have a client
+        # (Capital uses different balance structure - check if available)
         
         self.portfolio.balances = all_balances
         self.portfolio.total_value_usd = total_usd
         self.portfolio.cash_available = total_usd
 
-        # Basic market overview from balances (fallback when no market feeds)
+        # Basic market overview from balances
         unique_assets = set()
         for _, balances in all_balances.items():
             unique_assets.update(balances.keys())
@@ -2377,6 +2497,94 @@ Object.entries(systems).forEach(([name, online]) => {
         self.market.falling_count = 0
         self.market.top_movers = []
     
+    async def load_recent_trades(self):
+        """Load recent trades from trade log files or Orca snapshot."""
+        trades = []
+        
+        # 1. Try to read from Orca snapshot first (recent executions)
+        state_dir = os.environ.get("AUREON_STATE_DIR", "state")
+        snapshot_file = os.path.join(state_dir, "dashboard_snapshot.json")
+        if os.path.exists(snapshot_file):
+            try:
+                with open(snapshot_file, "r") as f:
+                    data = json.load(f)
+                
+                # Check for closed positions (completed trades)
+                closed = data.get("closed_positions", [])
+                for pos in closed[-20:]:  # Last 20
+                    trades.append(TradeExecution(
+                        timestamp=pos.get("close_time", time.time()),
+                        exchange=pos.get("exchange", ""),
+                        symbol=pos.get("symbol", ""),
+                        side="SELL",  # Closed = sold
+                        quantity=pos.get("qty", 0),
+                        price=pos.get("close_price", 0),
+                        value_usd=pos.get("close_value", 0),
+                        pnl=pos.get("pnl", 0),
+                        status="EXECUTED"
+                    ))
+                
+                # Check for recent opens
+                positions = data.get("positions", [])
+                for pos in positions:
+                    if pos.get("entry_time", 0) > time.time() - 86400:  # Last 24h
+                        trades.append(TradeExecution(
+                            timestamp=pos.get("entry_time", time.time()),
+                            exchange=pos.get("exchange", ""),
+                            symbol=pos.get("symbol", ""),
+                            side="BUY",
+                            quantity=pos.get("qty", 0),
+                            price=pos.get("entry_price", 0),
+                            value_usd=pos.get("entry_value", 0),
+                            status="EXECUTED"
+                        ))
+            except Exception as e:
+                logger.debug(f"Error loading trades from snapshot: {e}")
+        
+        # 2. Try trade log directory
+        trade_log_dir = os.environ.get("AUREON_TRADE_LOG_DIR", "/tmp/aureon_trade_logs")
+        if os.path.exists(trade_log_dir):
+            try:
+                log_files = sorted(
+                    [f for f in os.listdir(trade_log_dir) if f.endswith('.jsonl')],
+                    reverse=True
+                )[:3]  # Last 3 log files
+                
+                for log_file in log_files:
+                    log_path = os.path.join(trade_log_dir, log_file)
+                    try:
+                        with open(log_path, 'r') as f:
+                            lines = f.readlines()[-30:]  # Last 30 lines
+                            for line in reversed(lines):
+                                try:
+                                    entry = json.loads(line.strip())
+                                    if entry.get("type") in ["trade", "execution", "order"]:
+                                        trades.append(TradeExecution(
+                                            timestamp=entry.get("timestamp", time.time()),
+                                            exchange=entry.get("exchange", ""),
+                                            symbol=entry.get("symbol", entry.get("pair", "")),
+                                            side=entry.get("side", "BUY").upper(),
+                                            quantity=float(entry.get("qty", entry.get("quantity", 0))),
+                                            price=float(entry.get("price", 0)),
+                                            value_usd=float(entry.get("value", entry.get("cost", 0))),
+                                            pnl=float(entry.get("pnl", 0)),
+                                            status=entry.get("status", "EXECUTED").upper(),
+                                            order_id=entry.get("order_id", "")
+                                        ))
+                                except (json.JSONDecodeError, ValueError):
+                                    continue
+                    except Exception:
+                        continue
+            except Exception as e:
+                logger.debug(f"Error loading trade logs: {e}")
+        
+        # Sort by timestamp descending
+        trades.sort(key=lambda t: t.timestamp, reverse=True)
+        
+        # Keep last 50
+        self.recent_trades = deque(trades[:50], maxlen=50)
+        return list(self.recent_trades)
+    
     async def update_loop(self):
         """Main update loop."""
         price_fetch_counter = 0
@@ -2390,6 +2598,10 @@ Object.entries(systems).forEach(([name, online]) => {
                     try:
                         with open(snapshot_file, "r") as f:
                              data = json.load(f)
+                        
+                        # Load recent trades
+                        await self.load_recent_trades()
+                        data['recent_trades'] = [asdict(t) for t in list(self.recent_trades)[:15]]
                         
                         # Broadcast live update
                         await self.broadcast({
