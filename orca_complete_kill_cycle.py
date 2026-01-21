@@ -6674,8 +6674,8 @@ class OrcaKillCycle:
             print()
         except Exception as e:
             print(f"❌ Queen initialization failed: {e}")
-            print("   Autonomous mode requires the Queen. Aborting.")
-            return
+            print("   Continuing without Queen - using default settings.")
+            queen = None
         
         # Session statistics
         session_stats = {
@@ -6712,6 +6712,8 @@ class OrcaKillCycle:
         def _apply_queen_controls() -> None:
             """Adjust scan speed and profit targets based on Queen collective signal."""
             nonlocal scan_interval, target_pct_current
+            if queen is None:
+                return
             try:
                 signal = queen.get_collective_signal()
                 confidence = float(signal.get('confidence', 0.5))
@@ -7255,22 +7257,26 @@ class OrcaKillCycle:
                                 if new_opps:
                                     # Ask Queen for guidance (MANDATORY)
                                     queen_approved = False
-                                    try:
-                                        signal = queen.get_collective_signal(
-                                            symbol=best.symbol,
-                                            market_data={
-                                                'price': best.price,
-                                                'change_pct': best.change_pct,
-                                                'momentum': best.momentum_score,
-                                                'exchange': best.exchange
-                                            }
-                                        )
-                                        confidence = float(signal.get('confidence', 0.0))
-                                        action = signal.get('action', 'HOLD')
-                                        print(f"   👑 Queen signal: {action} (confidence {confidence:.0%})")
-                                        queen_approved = (action == 'BUY' and confidence >= 0.5)
-                                    except Exception as e:
-                                        print(f"   ⚠️ Queen signal unavailable: {e}")
+                                    if queen is None:
+                                        queen_approved = True  # Fallback without Queen
+                                        print("   👑 Queen unavailable - proceeding with default approval")
+                                    else:
+                                        try:
+                                            signal = queen.get_collective_signal(
+                                                symbol=best.symbol,
+                                                market_data={
+                                                    'price': best.price,
+                                                    'change_pct': best.change_pct,
+                                                    'momentum': best.momentum_score,
+                                                    'exchange': best.exchange
+                                                }
+                                            )
+                                            confidence = float(signal.get('confidence', 0.0))
+                                            action = signal.get('action', 'HOLD')
+                                            print(f"   👑 Queen signal: {action} (confidence {confidence:.0%})")
+                                            queen_approved = (action == 'BUY' and confidence >= 0.5)
+                                        except Exception as e:
+                                            print(f"   ⚠️ Queen signal unavailable: {e}")
                                     
                                     if queen_approved:
                                         # Take best opportunity
@@ -8204,6 +8210,8 @@ class OrcaKillCycle:
         def _apply_queen_controls() -> None:
             """Adjust scan speed and profit targets based on Queen collective signal."""
             nonlocal scan_interval, target_pct_current
+            if queen is None:
+                return
             try:
                 signal = queen.get_collective_signal()
                 confidence = float(signal.get('confidence', 0.5))
@@ -8614,25 +8622,29 @@ class OrcaKillCycle:
 
                                         # 👑 Queen approval required
                                         queen_approved = False
-                                        try:
-                                            signal = queen.get_collective_signal(
-                                                symbol=winner.symbol,
-                                                market_data={
-                                                    'price': getattr(winner, 'price', 0.0),
-                                                    'change_pct': getattr(winner, 'change_pct', 0.0),
-                                                    'momentum': getattr(winner, 'momentum_score', 0.0),
-                                                    'exchange': winner.exchange
-                                                }
-                                            )
-                                            confidence = float(signal.get('confidence', 0.0))
-                                            action = signal.get('action', 'HOLD')
-                                            warroom.add_flash_alert(
-                                                f"Queen signal {action} {confidence:.0%} for {winner.symbol}",
-                                                'info'
-                                            )
-                                            queen_approved = (action == 'BUY' and confidence >= 0.5)
-                                        except Exception:
-                                            queen_approved = False
+                                        if queen is None:
+                                            queen_approved = True  # Fallback without Queen
+                                            warroom.add_flash_alert("Queen unavailable - proceeding with default approval", 'warning')
+                                        else:
+                                            try:
+                                                signal = queen.get_collective_signal(
+                                                    symbol=winner.symbol,
+                                                    market_data={
+                                                        'price': getattr(winner, 'price', 0.0),
+                                                        'change_pct': getattr(winner, 'change_pct', 0.0),
+                                                        'momentum': getattr(winner, 'momentum_score', 0.0),
+                                                        'exchange': winner.exchange
+                                                    }
+                                                )
+                                                confidence = float(signal.get('confidence', 0.0))
+                                                action = signal.get('action', 'HOLD')
+                                                warroom.add_flash_alert(
+                                                    f"Queen signal {action} {confidence:.0%} for {winner.symbol}",
+                                                    'info'
+                                                )
+                                                queen_approved = (action == 'BUY' and confidence >= 0.5)
+                                            except Exception:
+                                                queen_approved = False
 
                                         if not queen_approved:
                                             continue
@@ -8693,25 +8705,29 @@ class OrcaKillCycle:
                                             if client:
                                                 # 👑 Queen approval required
                                                 queen_approved = False
-                                                try:
-                                                    signal = queen.get_collective_signal(
-                                                        symbol=best.symbol,
-                                                        market_data={
-                                                            'price': best.price,
-                                                            'change_pct': best.change_pct,
-                                                            'momentum': best.momentum_score,
-                                                            'exchange': best.exchange
-                                                        }
-                                                    )
-                                                    confidence = float(signal.get('confidence', 0.0))
-                                                    action = signal.get('action', 'HOLD')
-                                                    warroom.add_flash_alert(
-                                                        f"Queen signal {action} {confidence:.0%} for {best.symbol}",
-                                                        'info'
-                                                    )
-                                                    queen_approved = (action == 'BUY' and confidence >= 0.5)
-                                                except Exception:
-                                                    queen_approved = False
+                                                if queen is None:
+                                                    queen_approved = True  # Fallback without Queen
+                                                    warroom.add_flash_alert("Queen unavailable - proceeding with default approval", 'warning')
+                                                else:
+                                                    try:
+                                                        signal = queen.get_collective_signal(
+                                                            symbol=best.symbol,
+                                                            market_data={
+                                                                'price': best.price,
+                                                                'change_pct': best.change_pct,
+                                                                'momentum': best.momentum_score,
+                                                                'exchange': best.exchange
+                                                            }
+                                                        )
+                                                        confidence = float(signal.get('confidence', 0.0))
+                                                        action = signal.get('action', 'HOLD')
+                                                        warroom.add_flash_alert(
+                                                            f"Queen signal {action} {confidence:.0%} for {best.symbol}",
+                                                            'info'
+                                                        )
+                                                        queen_approved = (action == 'BUY' and confidence >= 0.5)
+                                                    except Exception:
+                                                        queen_approved = False
 
                                                 if not queen_approved:
                                                     continue
