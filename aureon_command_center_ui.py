@@ -121,6 +121,11 @@ GlobalWaveScanner = safe_import('Wave Scanner', lambda: __import__('aureon_globa
 print("\n💰 LOADING DATA & CONVERSION SYSTEMS...")
 MyceliumConversionHub = safe_import('Conversion Hub', lambda: __import__('mycelium_conversion_hub', fromlist=['MyceliumConversionHub']).MyceliumConversionHub)
 
+# Unified Hub Dashboards (HTML only)
+OrcaDashboardHtml = safe_import('Orca Dashboard', lambda: __import__('orca_command_center', fromlist=['ORCA_DASHBOARD_HTML']).ORCA_DASHBOARD_HTML)
+QueenUnifiedDashboardHtml = safe_import('Queen Unified Dashboard', lambda: __import__('aureon_queen_unified_dashboard', fromlist=['UNIFIED_DASHBOARD_HTML']).UNIFIED_DASHBOARD_HTML)
+SystemRegistry = safe_import('System Registry', lambda: __import__('aureon_system_hub', fromlist=['SystemRegistry']).SystemRegistry)
+
 # Print system status
 working = sum(1 for v in SYSTEMS_STATUS.values() if v)
 total = len(SYSTEMS_STATUS)
@@ -289,6 +294,55 @@ COMMAND_CENTER_HTML = """
             display: flex;
             align-items: center;
             gap: 10px;
+        }
+
+        /* Unified Hubs */
+        .hub-summary {
+            display: grid;
+            gap: 6px;
+            margin-bottom: 10px;
+            font-size: 0.9em;
+        }
+
+        .hub-row {
+            display: flex;
+            justify-content: space-between;
+            color: #c6d2ff;
+        }
+
+        .hub-actions {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 10px;
+        }
+
+        .hub-btn {
+            flex: 1;
+            background: rgba(0, 255, 136, 0.1);
+            border: 1px solid rgba(0, 255, 136, 0.3);
+            color: #00ff88;
+            border-radius: 6px;
+            padding: 6px 8px;
+            cursor: pointer;
+            font-size: 0.85em;
+        }
+
+        .hub-btn:hover {
+            background: rgba(0, 255, 136, 0.2);
+        }
+
+        .hub-frame-wrap {
+            border: 1px solid rgba(0, 255, 136, 0.2);
+            border-radius: 8px;
+            overflow: hidden;
+            height: 220px;
+            background: #0b0f1a;
+        }
+
+        #hub-frame {
+            width: 100%;
+            height: 100%;
+            border: 0;
         }
         
         /* Queen Panel */
@@ -578,6 +632,21 @@ COMMAND_CENTER_HTML = """
             
             <h2 style="margin-top: 15px;">💎 BALANCES</h2>
             <div id="balances-list"></div>
+
+            <h2 style="margin-top: 15px;">🧩 UNIFIED HUBS</h2>
+            <div class="hub-summary">
+                <div class="hub-row"><span>Orca</span><span id="hub-orca">—</span></div>
+                <div class="hub-row"><span>Queen</span><span id="hub-queen">—</span></div>
+                <div class="hub-row"><span>Registry</span><span id="hub-registry">—</span></div>
+            </div>
+            <div class="hub-actions">
+                <button class="hub-btn" onclick="openHub('orca')">Orca</button>
+                <button class="hub-btn" onclick="openHub('queen')">Queen</button>
+                <button class="hub-btn" onclick="openHub('registry')">Registry</button>
+            </div>
+            <div class="hub-frame-wrap">
+                <iframe id="hub-frame" title="Unified Hub" src="/hub/registry"></iframe>
+            </div>
         </div>
         
         <!-- Center Panel: Signals Feed -->
@@ -672,8 +741,47 @@ COMMAND_CENTER_HTML = """
                     break;
                 case 'live_update':
                     handleLiveUpdate(data.data);
+                    updateHubStats(data.data);
                     break;
             }
+        }
+
+        function openHub(name) {
+            const frame = document.getElementById('hub-frame');
+            if (!frame) return;
+            const routes = {
+                orca: '/hub/orca',
+                queen: '/hub/queen',
+                registry: '/hub/registry'
+            };
+            frame.src = routes[name] || '/hub/registry';
+        }
+
+        function updateHubStats(snapshot) {
+            if (!snapshot) return;
+            const stats = snapshot.session_stats || {};
+            const trades = stats.total_trades || 0;
+            const pnl = stats.total_pnl || 0;
+            const active = snapshot.active_count || 0;
+            const orcaText = `Trades: ${trades} | Open: ${active} | PnL: ${pnl.toFixed(4)}`;
+            const orcaEl = document.getElementById('hub-orca');
+            if (orcaEl) orcaEl.textContent = orcaText;
+
+            if (snapshot.queen_message) {
+                const queenEl = document.getElementById('hub-queen');
+                if (queenEl) queenEl.textContent = snapshot.queen_message;
+            }
+        }
+
+        async function refreshHubRegistry() {
+            try {
+                const res = await fetch('/api/unified/hubs');
+                const data = await res.json();
+                if (data.registry_total !== undefined) {
+                    const regEl = document.getElementById('hub-registry');
+                    if (regEl) regEl.textContent = `${data.registry_total} systems`;
+                }
+            } catch (e) {}
         }
         
         function updateFullState(data) {
@@ -684,6 +792,7 @@ COMMAND_CENTER_HTML = """
             if (data.signals) {
                 data.signals.forEach(s => addSignal(s));
             }
+            if (data.data) updateHubStats(data.data);
         }
         
         function updateQueen(data) {
@@ -904,6 +1013,8 @@ COMMAND_CENTER_HTML = """
         updateClock();
         
         // Connect on load
+        refreshHubRegistry();
+        setInterval(refreshHubRegistry, 30000);
         connect();
     </script>
 </body>
@@ -945,6 +1056,14 @@ class AureonCommandCenter:
         self.market = MarketOverview()
         self.signals: deque = deque(maxlen=100)
         self.prices: Dict[str, float] = {}
+        self.last_snapshot: Dict[str, Any] = {}
+        self.registry = None
+        self.registry_snapshot: Dict[str, Any] = {
+            "total": 0,
+            "categories": {},
+            "systems": [],
+            "timestamp": 0.0
+        }
         
         # Stats
         self.updates_sent = 0
@@ -958,6 +1077,16 @@ class AureonCommandCenter:
             self.app.router.add_get('/api/status', self.handle_api_status)
             self.app.router.add_get('/api/portfolio', self.handle_api_portfolio)
             self.app.router.add_get('/api/signals', self.handle_api_signals)
+            self.app.router.add_get('/api/unified/hubs', self.handle_api_unified_hubs)
+            self.app.router.add_get('/api/unified/registry', self.handle_api_unified_registry)
+            self.app.router.add_get('/hub/orca', self.handle_hub_orca)
+            self.app.router.add_get('/hub/orca/ws', self.handle_hub_orca_ws)
+            self.app.router.add_get('/hub/orca/api/status', self.handle_hub_orca_status)
+            self.app.router.add_post('/hub/orca/api/stealth', self.handle_hub_orca_stealth)
+            self.app.router.add_get('/hub/orca/api/predator', self.handle_hub_orca_predator)
+            self.app.router.add_get('/hub/queen', self.handle_hub_queen)
+            self.app.router.add_get('/hub/queen/ws', self.handle_hub_queen_ws)
+            self.app.router.add_get('/hub/registry', self.handle_hub_registry)
     
     async def initialize_systems(self):
         """Initialize all trading systems."""
@@ -1154,6 +1283,151 @@ class AureonCommandCenter:
         return web.json_response({
             "signals": [asdict(s) if hasattr(s, '__dataclass_fields__') else s for s in list(self.signals)[-50:]]
         })
+
+    # ═══════════════════════════════════════════════════════════════════════
+    # UNIFIED HUB HANDLERS
+    # ═══════════════════════════════════════════════════════════════════════
+
+    async def handle_api_unified_hubs(self, request):
+        """REST API: Unified hub status summary."""
+        # Read Orca snapshot for live stats
+        state_dir = os.environ.get("AUREON_STATE_DIR", "state")
+        snapshot_file = os.path.join(state_dir, "dashboard_snapshot.json")
+        orca_stats = {}
+        if os.path.exists(snapshot_file):
+            try:
+                with open(snapshot_file, "r") as f:
+                    orca_stats = json.load(f)
+            except Exception:
+                pass
+
+        session = orca_stats.get("session_stats", {})
+        return web.json_response({
+            "hubs": [
+                {"id": "orca", "name": "Orca Kill Cycle", "status": "online" if orca_stats else "offline",
+                 "trades": session.get("total_trades", 0), "pnl": session.get("total_pnl", 0.0)},
+                {"id": "queen", "name": "Queen Hive Mind", "status": "online" if self.queen else "offline",
+                 "confidence": 0.85},
+                {"id": "registry", "name": "System Registry", "status": "online",
+                 "systems": self.registry_snapshot.get("total", 0)}
+            ],
+            "timestamp": time.time()
+        })
+
+    async def handle_api_unified_registry(self, request):
+        """REST API: System registry data."""
+        return web.json_response(self.registry_snapshot)
+
+    async def handle_hub_orca(self, request):
+        """Serve Orca dashboard HTML."""
+        if OrcaDashboardHtml:
+            # Adjust paths for /hub/orca prefix
+            html = OrcaDashboardHtml.replace('"/ws"', '"/hub/orca/ws"')
+            html = html.replace('"/api/', '"/hub/orca/api/')
+            return web.Response(text=html, content_type='text/html')
+        return web.Response(text="<h1>Orca Dashboard not available</h1>", content_type='text/html')
+
+    async def handle_hub_orca_ws(self, request):
+        """WebSocket proxy for Orca dashboard."""
+        ws = web.WebSocketResponse()
+        await ws.prepare(request)
+        
+        # Serve Orca state via WebSocket
+        try:
+            while not ws.closed:
+                state_dir = os.environ.get("AUREON_STATE_DIR", "state")
+                snapshot_file = os.path.join(state_dir, "dashboard_snapshot.json")
+                if os.path.exists(snapshot_file):
+                    try:
+                        with open(snapshot_file, "r") as f:
+                            data = json.load(f)
+                        await ws.send_json(data)
+                    except Exception:
+                        pass
+                await asyncio.sleep(1)
+        except Exception:
+            pass
+        return ws
+
+    async def handle_hub_orca_status(self, request):
+        """Orca API: Status endpoint."""
+        state_dir = os.environ.get("AUREON_STATE_DIR", "state")
+        snapshot_file = os.path.join(state_dir, "dashboard_snapshot.json")
+        if os.path.exists(snapshot_file):
+            try:
+                with open(snapshot_file, "r") as f:
+                    return web.json_response(json.load(f))
+            except Exception as e:
+                return web.json_response({"error": str(e)}, status=500)
+        return web.json_response({"status": "no_data"})
+
+    async def handle_hub_orca_stealth(self, request):
+        """Orca API: Toggle stealth mode (stub)."""
+        return web.json_response({"stealth": True, "message": "Stealth mode toggled"})
+
+    async def handle_hub_orca_predator(self, request):
+        """Orca API: Predator stats (stub)."""
+        return web.json_response({
+            "predator_mode": True,
+            "stalking": 0,
+            "ambush_ready": 0,
+            "kills_today": 0
+        })
+
+    async def handle_hub_queen(self, request):
+        """Serve Queen Unified dashboard HTML."""
+        if QueenUnifiedDashboardHtml:
+            # Adjust paths for /hub/queen prefix
+            html = QueenUnifiedDashboardHtml.replace('"/ws"', '"/hub/queen/ws"')
+            return web.Response(text=html, content_type='text/html')
+        return web.Response(text="<h1>Queen Dashboard not available</h1>", content_type='text/html')
+
+    async def handle_hub_queen_ws(self, request):
+        """WebSocket proxy for Queen dashboard."""
+        ws = web.WebSocketResponse()
+        await ws.prepare(request)
+        
+        try:
+            while not ws.closed:
+                # Provide Queen state
+                queen_state = {
+                    "status": "online" if self.queen else "offline",
+                    "confidence": 0.85,
+                    "cosmic_score": 0.75,
+                    "strategy": "LIVE TRADE",
+                    "portfolio": asdict(self.portfolio),
+                    "timestamp": time.time()
+                }
+                await ws.send_json(queen_state)
+                await asyncio.sleep(1)
+        except Exception:
+            pass
+        return ws
+
+    async def handle_hub_registry(self, request):
+        """Serve System Registry dashboard."""
+        html = """<!DOCTYPE html>
+<html><head><title>System Registry</title>
+<style>
+body { background: #0a0a1a; color: #fff; font-family: monospace; padding: 20px; }
+h1 { color: #ffaa00; }
+.system { background: rgba(0,255,136,0.1); padding: 10px; margin: 5px 0; border-radius: 5px; }
+.online { border-left: 3px solid #00ff88; }
+.offline { border-left: 3px solid #ff3366; opacity: 0.6; }
+</style></head><body>
+<h1>🔌 System Registry</h1>
+<div id="systems"></div>
+<script>
+const systems = """ + json.dumps(SYSTEMS_STATUS) + """;
+const container = document.getElementById('systems');
+Object.entries(systems).forEach(([name, online]) => {
+    const div = document.createElement('div');
+    div.className = 'system ' + (online ? 'online' : 'offline');
+    div.innerHTML = (online ? '✅' : '❌') + ' ' + name;
+    container.appendChild(div);
+});
+</script></body></html>"""
+        return web.Response(text=html, content_type='text/html')
     
     async def broadcast(self, message: Dict):
         """Broadcast message to all connected clients."""
