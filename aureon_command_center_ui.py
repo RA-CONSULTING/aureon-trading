@@ -86,9 +86,32 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # ════════════════════════════════════════════════════════════════════════════
-# SYSTEM IMPORTS - ALL MODELS
+# SYSTEM IMPORTS - ALL MODELS (LAZY LOADED AFTER SERVER START)
 # ════════════════════════════════════════════════════════════════════════════
 SYSTEMS_STATUS = {}
+
+KrakenClient = None
+BinanceClient = None
+AlpacaClient = None
+
+QueenHiveMind = None
+MyceliumNetwork = None
+ThoughtBus = None
+
+ProbabilityUltimateIntelligence = None
+MinerBrain = None
+TimelineOracle = None
+QuantumMirrorScanner = None
+
+HarmonicWaveFusion = None
+GlobalWaveScanner = None
+
+MyceliumConversionHub = None
+
+OrcaDashboardHtml = None
+QueenUnifiedDashboardHtml = None
+SystemRegistry = None
+
 
 def safe_import(name: str, import_fn):
     """Safely import a module and track status."""
@@ -101,43 +124,46 @@ def safe_import(name: str, import_fn):
         logger.debug(f"{name} import failed: {e}")
         return None
 
-# Exchange Clients
-print("\n🔌 LOADING EXCHANGE CLIENTS...")
-KrakenClient = safe_import('Kraken', lambda: __import__('kraken_client', fromlist=['KrakenClient']).KrakenClient)
-BinanceClient = safe_import('Binance', lambda: __import__('binance_client', fromlist=['BinanceClient']).BinanceClient)
-AlpacaClient = safe_import('Alpaca', lambda: __import__('alpaca_client', fromlist=['AlpacaClient']).AlpacaClient)
 
-# Queen & Neural Systems
-print("\n👑 LOADING QUEEN & NEURAL SYSTEMS...")
-QueenHiveMind = safe_import('Queen Hive Mind', lambda: __import__('aureon_queen_hive_mind', fromlist=['QueenHiveMind']).QueenHiveMind)
-MyceliumNetwork = safe_import('Mycelium Network', lambda: __import__('aureon_mycelium', fromlist=['MyceliumNetwork']).MyceliumNetwork)
-ThoughtBus = safe_import('Thought Bus', lambda: __import__('aureon_thought_bus', fromlist=['ThoughtBus']).ThoughtBus)
+def load_systems():
+    """Load optional systems after web server is already accepting traffic."""
+    global KrakenClient, BinanceClient, AlpacaClient
+    global QueenHiveMind, MyceliumNetwork, ThoughtBus
+    global ProbabilityUltimateIntelligence, MinerBrain, TimelineOracle, QuantumMirrorScanner
+    global HarmonicWaveFusion, GlobalWaveScanner
+    global MyceliumConversionHub
+    global OrcaDashboardHtml, QueenUnifiedDashboardHtml, SystemRegistry
 
-# Intelligence Systems  
-print("\n🧠 LOADING INTELLIGENCE SYSTEMS...")
-ProbabilityUltimateIntelligence = safe_import('Ultimate Intelligence', lambda: __import__('probability_ultimate_intelligence', fromlist=['ProbabilityUltimateIntelligence']).ProbabilityUltimateIntelligence)
-MinerBrain = safe_import('Miner Brain', lambda: __import__('aureon_miner_brain', fromlist=['MinerBrain']).MinerBrain)
-TimelineOracle = safe_import('Timeline Oracle', lambda: __import__('aureon_timeline_oracle', fromlist=['TimelineOracle']).TimelineOracle)
-QuantumMirrorScanner = safe_import('Quantum Mirror', lambda: __import__('aureon_quantum_mirror_scanner', fromlist=['QuantumMirrorScanner']).QuantumMirrorScanner)
+    print("\n🔌 LOADING EXCHANGE CLIENTS...")
+    KrakenClient = safe_import('Kraken', lambda: __import__('kraken_client', fromlist=['KrakenClient']).KrakenClient)
+    BinanceClient = safe_import('Binance', lambda: __import__('binance_client', fromlist=['BinanceClient']).BinanceClient)
+    AlpacaClient = safe_import('Alpaca', lambda: __import__('alpaca_client', fromlist=['AlpacaClient']).AlpacaClient)
 
-# Harmonic & Momentum Systems
-print("\n🌊 LOADING HARMONIC & MOMENTUM SYSTEMS...")
-HarmonicWaveFusion = safe_import('Harmonic Fusion', lambda: __import__('aureon_harmonic_fusion', fromlist=['HarmonicWaveFusion']).HarmonicWaveFusion)
-GlobalWaveScanner = safe_import('Wave Scanner', lambda: __import__('aureon_global_wave_scanner', fromlist=['GlobalWaveScanner']).GlobalWaveScanner)
+    print("\n👑 LOADING QUEEN & NEURAL SYSTEMS...")
+    QueenHiveMind = safe_import('Queen Hive Mind', lambda: __import__('aureon_queen_hive_mind', fromlist=['QueenHiveMind']).QueenHiveMind)
+    MyceliumNetwork = safe_import('Mycelium Network', lambda: __import__('aureon_mycelium', fromlist=['MyceliumNetwork']).MyceliumNetwork)
+    ThoughtBus = safe_import('Thought Bus', lambda: __import__('aureon_thought_bus', fromlist=['ThoughtBus']).ThoughtBus)
 
-# Data & Conversion Systems
-print("\n💰 LOADING DATA & CONVERSION SYSTEMS...")
-MyceliumConversionHub = safe_import('Conversion Hub', lambda: __import__('mycelium_conversion_hub', fromlist=['MyceliumConversionHub']).MyceliumConversionHub)
+    print("\n🧠 LOADING INTELLIGENCE SYSTEMS...")
+    ProbabilityUltimateIntelligence = safe_import('Ultimate Intelligence', lambda: __import__('probability_ultimate_intelligence', fromlist=['ProbabilityUltimateIntelligence']).ProbabilityUltimateIntelligence)
+    MinerBrain = safe_import('Miner Brain', lambda: __import__('aureon_miner_brain', fromlist=['MinerBrain']).MinerBrain)
+    TimelineOracle = safe_import('Timeline Oracle', lambda: __import__('aureon_timeline_oracle', fromlist=['TimelineOracle']).TimelineOracle)
+    QuantumMirrorScanner = safe_import('Quantum Mirror', lambda: __import__('aureon_quantum_mirror_scanner', fromlist=['QuantumMirrorScanner']).QuantumMirrorScanner)
 
-# Unified Hub Dashboards (HTML only)
-OrcaDashboardHtml = safe_import('Orca Dashboard', lambda: __import__('orca_command_center', fromlist=['ORCA_DASHBOARD_HTML']).ORCA_DASHBOARD_HTML)
-QueenUnifiedDashboardHtml = safe_import('Queen Unified Dashboard', lambda: __import__('aureon_queen_unified_dashboard', fromlist=['UNIFIED_DASHBOARD_HTML']).UNIFIED_DASHBOARD_HTML)
-SystemRegistry = safe_import('System Registry', lambda: __import__('aureon_system_hub', fromlist=['SystemRegistry']).SystemRegistry)
+    print("\n🌊 LOADING HARMONIC & MOMENTUM SYSTEMS...")
+    HarmonicWaveFusion = safe_import('Harmonic Fusion', lambda: __import__('aureon_harmonic_fusion', fromlist=['HarmonicWaveFusion']).HarmonicWaveFusion)
+    GlobalWaveScanner = safe_import('Wave Scanner', lambda: __import__('aureon_global_wave_scanner', fromlist=['GlobalWaveScanner']).GlobalWaveScanner)
 
-# Print system status
-working = sum(1 for v in SYSTEMS_STATUS.values() if v)
-total = len(SYSTEMS_STATUS)
-print(f"\n✅ SYSTEMS LOADED: {working}/{total}")
+    print("\n💰 LOADING DATA & CONVERSION SYSTEMS...")
+    MyceliumConversionHub = safe_import('Conversion Hub', lambda: __import__('mycelium_conversion_hub', fromlist=['MyceliumConversionHub']).MyceliumConversionHub)
+
+    OrcaDashboardHtml = safe_import('Orca Dashboard', lambda: __import__('orca_command_center', fromlist=['ORCA_DASHBOARD_HTML']).ORCA_DASHBOARD_HTML)
+    QueenUnifiedDashboardHtml = safe_import('Queen Unified Dashboard', lambda: __import__('aureon_queen_unified_dashboard', fromlist=['UNIFIED_DASHBOARD_HTML']).UNIFIED_DASHBOARD_HTML)
+    SystemRegistry = safe_import('System Registry', lambda: __import__('aureon_system_hub', fromlist=['SystemRegistry']).SystemRegistry)
+
+    working = sum(1 for v in SYSTEMS_STATUS.values() if v)
+    total = len(SYSTEMS_STATUS)
+    print(f"\n✅ SYSTEMS LOADED: {working}/{total}")
 
 
 # ════════════════════════════════════════════════════════════════════════════
@@ -1789,6 +1815,8 @@ class AureonCommandCenter:
     
     def initialize_systems(self):
         """Initialize all trading systems."""
+        if not SYSTEMS_STATUS:
+            load_systems()
         print("\n" + "=" * 70)
         print("👑🌌 AUREON COMMAND CENTER - INITIALIZING ALL SYSTEMS")
         print("=" * 70)
