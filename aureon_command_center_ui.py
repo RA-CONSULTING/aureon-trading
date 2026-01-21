@@ -352,7 +352,8 @@ COMMAND_CENTER_HTML = """
         .tab-content {
             display: none;
             height: calc(100vh - 110px);
-            overflow: hidden;
+            overflow-y: auto;
+            overflow-x: hidden;
         }
 
         .tab-content.active {
@@ -362,11 +363,11 @@ COMMAND_CENTER_HTML = """
         /* Main Container */
         #container {
             display: grid;
-            grid-template-columns: 280px 1fr 320px;
+            grid-template-columns: 300px 1fr 340px;
             grid-template-rows: auto 1fr;
-            gap: 10px;
-            padding: 10px;
-            height: 100%;
+            gap: 12px;
+            padding: 12px;
+            min-height: 100%;
         }
         
         /* Panels */
@@ -376,7 +377,9 @@ COMMAND_CENTER_HTML = """
             border-radius: 8px;
             padding: 12px;
             overflow-y: auto;
+            overflow-x: hidden;
             backdrop-filter: blur(10px);
+            max-height: calc(100vh - 180px);
         }
         
         .panel h2 {
@@ -429,7 +432,7 @@ COMMAND_CENTER_HTML = """
             border: 1px solid rgba(0, 255, 136, 0.2);
             border-radius: 8px;
             overflow: hidden;
-            height: 220px;
+            height: 160px;
             background: #0b0f1a;
         }
 
@@ -713,12 +716,33 @@ COMMAND_CENTER_HTML = """
         }
         
         /* Responsive */
-        @media (max-width: 1200px) {
+        @media (max-width: 1400px) {
+            #container {
+                grid-template-columns: 280px 1fr 280px;
+            }
+        }
+        
+        @media (max-width: 1100px) {
+            #container {
+                grid-template-columns: 1fr 1fr;
+            }
+            #queen-panel {
+                grid-column: 1 / -1;
+            }
+            .panel:last-child {
+                grid-column: 1 / -1;
+            }
+        }
+        
+        @media (max-width: 768px) {
             #container {
                 grid-template-columns: 1fr;
             }
             #queen-panel {
                 grid-column: 1;
+            }
+            .panel {
+                max-height: none;
             }
         }
     </style>
@@ -768,7 +792,7 @@ COMMAND_CENTER_HTML = """
     <div id="tab-trading" class="tab-content active">
         <div id="container">
         <!-- Queen Panel (Full Width Top) -->
-        <div id="queen-panel" class="panel">
+        <div id="queen-panel" class="panel" style="grid-column: 1 / -1; max-height: none;">
             <div id="queen-avatar">👑</div>
             <div id="queen-message">Initializing Queen consciousness...</div>
             <div id="queen-stats">
@@ -827,19 +851,19 @@ COMMAND_CENTER_HTML = """
                 <button class="hub-btn" onclick="openHub('queen')">Queen</button>
                 <button class="hub-btn" onclick="openHub('registry')">Registry</button>
             </div>
-            <div class="hub-frame-wrap">
+            <div class="hub-frame-wrap" style="height: 150px;">
                 <iframe id="hub-frame" title="Unified Hub" src="/hub/registry"></iframe>
             </div>
         </div>
         
         <!-- Center Panel: Signals Feed -->
-        <div class="panel">
+        <div class="panel" style="min-height: 400px;">
             <h2>📡 LIVE SIGNALS</h2>
-            <div id="signals-feed"></div>
+            <div id="signals-feed" style="max-height: calc(100% - 50px); overflow-y: auto;"></div>
         </div>
         
         <!-- Right Panel: Market Overview -->
-        <div class="panel">
+        <div class="panel" style="min-height: 400px;">
             <h2>📈 MARKET OVERVIEW</h2>
             <div class="stats-grid">
                 <div class="stat-card">
@@ -853,10 +877,10 @@ COMMAND_CENTER_HTML = """
             </div>
             
             <h2>🚀 TOP MOVERS</h2>
-            <div id="top-movers"></div>
+            <div id="top-movers" style="max-height: 200px; overflow-y: auto;"></div>
             
             <h2 style="margin-top: 15px;">📉 TOP FALLERS</h2>
-            <div id="top-fallers"></div>
+            <div id="top-fallers" style="max-height: 200px; overflow-y: auto;"></div>
         </div>
     </div>
     </div><!-- end tab-trading -->
