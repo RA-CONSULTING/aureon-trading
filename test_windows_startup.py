@@ -54,11 +54,11 @@ try:
     test_step("Step 2: Logging configuration")
     logging.basicConfig(level=logging.WARNING)
     
-    test_step("Step 3: Import OrcaKillerWhale class")
-    from orca_complete_kill_cycle import OrcaKillerWhale
+    test_step("Step 3: Import OrcaKillCycle class")
+    from orca_complete_kill_cycle import OrcaKillCycle
     
-    test_step("Step 4: Create OrcaKillerWhale instance")
-    orca = OrcaKillerWhale()
+    test_step("Step 4: Create OrcaKillCycle instance")
+    orca = OrcaKillCycle()
     
     test_step("Step 5: Check exchange connections")
     print(f"   Exchanges available: {list(orca.clients.keys())}")
