@@ -105,9 +105,13 @@ if sys.platform == 'win32':
 def _safe_print(*args, **kwargs):
     """Print that won't crash if stdout is closed."""
     try:
-        print(*args, **kwargs)
+        import builtins
+        builtins.print(*args, **kwargs)
     except (ValueError, OSError, IOError):
         return
+
+# Route all prints in this module through the safe printer
+print = _safe_print
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # 🎯 RICH WAR ROOM DASHBOARD - Clean terminal UI
@@ -2411,7 +2415,7 @@ class OrcaKillCycle:
         try:
             from aureon_enhanced_quantum_telescope import QuantumTelescope
             self.quantum_telescope = QuantumTelescope()
-            print("🔭 Timeline Oracle: Quantum Telescope WIRED!")
+            _safe_print("🔭 Timeline Oracle: Quantum Telescope WIRED!")
         except Exception:
             pass
         
@@ -2420,7 +2424,7 @@ class OrcaKillCycle:
         if ULTIMATE_INTEL_AVAILABLE and UltimateIntelligence:
             try:
                 self.ultimate_intel = UltimateIntelligence()
-                print("💎 Mycelium: Ultimate Intelligence WIRED! (95% accuracy)")
+                _safe_print("💎 Mycelium: Ultimate Intelligence WIRED! (95% accuracy)")
             except Exception:
                 pass
         
@@ -2429,27 +2433,27 @@ class OrcaKillCycle:
         if ORCA_INTEL_AVAILABLE and OrcaKillerWhale:
             try:
                 self.orca_intel = OrcaKillerWhale()
-                print("🦈 Orca Intelligence: WIRED!")
+                _safe_print("🦈 Orca Intelligence: WIRED!")
             except Exception as e:
-                print(f"🦈 Orca Intelligence: {e}")
+                _safe_print(f"🦈 Orca Intelligence: {e}")
         
         # 5. Global Wave Scanner
         self.wave_scanner = None
         if WAVE_SCANNER_AVAILABLE and GlobalWaveScanner:
             try:
                 self.wave_scanner = GlobalWaveScanner()
-                print("🌊 Global Wave Scanner: WIRED!")
+                _safe_print("🌊 Global Wave Scanner: WIRED!")
             except Exception as e:
-                print(f"🌊 Global Wave Scanner: {e}")
+                _safe_print(f"🌊 Global Wave Scanner: {e}")
         
         # 5b. Queen Volume Hunter - Volume Breakout Detection
         self.volume_hunter = None
         if VOLUME_HUNTER_AVAILABLE and QueenVolumeHunter:
             try:
                 self.volume_hunter = QueenVolumeHunter(live_mode=False)  # Start in dry-run
-                print("👑🔊 Queen Volume Hunter: WIRED! (Breakout detection)")
+                _safe_print("👑🔊 Queen Volume Hunter: WIRED! (Breakout detection)")
             except Exception as e:
-                print(f"👑🔊 Queen Volume Hunter: {e}")
+                _safe_print(f"👑🔊 Queen Volume Hunter: {e}")
         
         # 6. Movers & Shakers Scanner - SKIP (circular import with Orca)
         self.movers_scanner = None
