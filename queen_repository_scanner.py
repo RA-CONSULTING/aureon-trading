@@ -23,6 +23,13 @@ import logging
 from pathlib import Path
 from typing import Dict, List, Any, Tuple
 
+try:
+    from aureon_thought_bus import ThoughtBus, Thought
+    THOUGHT_BUS_AVAILABLE = True
+except ImportError:
+    THOUGHT_BUS_AVAILABLE = False
+    ThoughtBus = None
+
 logger = logging.getLogger(__name__)
 
 class QueenRepositoryScanner:
@@ -37,6 +44,9 @@ class QueenRepositoryScanner:
         self.scan_interval = 60  # Scan every 60 seconds
         self.files_scanned = 0
         self.active_knowledge = {}
+        
+        # Bus Integration
+        self.thought_bus = ThoughtBus() if THOUGHT_BUS_AVAILABLE else None
         
         # Keywords that trigger wisdom response
         self.knowledge_patterns = {
@@ -114,6 +124,14 @@ class QueenRepositoryScanner:
             self.last_scan_time = current_time
             
             logger.info(f"👑👁️ Repository Scan Complete. Scanned {file_count} files. Wisdom Factor: {self.wisdom_factor:.4f}")
+            
+            if self.thought_bus:
+                self.thought_bus.publish(Thought(
+                    source="QUEEN_REPO_SCANNER",
+                    thought_type="WISDOM_UPDATE",
+                    priority=2,
+                    content={"wisdom_factor": self.wisdom_factor, "files_scanned": file_count}
+                ))
             
         except Exception as e:
             logger.error(f"❌ Error during repository scan: {e}")

@@ -180,6 +180,14 @@ except ImportError:
     THOUGHT_BUS_AVAILABLE = False
     ThoughtBus = None
 
+# 🐦 Chirp Bus - High Speed Signaling
+try:
+    from aureon_chirp_bus import ChirpBus
+    CHIRP_BUS_AVAILABLE = True
+except ImportError:
+    CHIRP_BUS_AVAILABLE = False
+    ChirpBus = None
+
 # 🐙 Kraken Client - Exchange Integration
 try:
     from kraken_client import KrakenClient
@@ -475,6 +483,21 @@ class TimelineOracle:
     def __init__(self, thought_bus=None):
         """Initialize the Timeline Oracle with all neural systems."""
         self.thought_bus = thought_bus
+        if self.thought_bus is None and THOUGHT_BUS_AVAILABLE:
+            try:
+                self.thought_bus = ThoughtBus()
+            except Exception:
+                pass
+                
+        self.chirp_bus = None
+        if CHIRP_BUS_AVAILABLE:
+            try:
+                self.chirp_bus = ChirpBus()
+                logger.info("✅ Timeline Oracle: Connected to ChirpBus")
+            except Exception:
+                pass
+        
+        self.queen = None  # Lazy load
         
         # Current timeline state
         self.current_branch_id: Optional[str] = None
@@ -1087,6 +1110,10 @@ class TimelineOracle:
         # Sort by confidence (highest first)
         branches.sort(key=lambda b: b.branch_confidence, reverse=True)
         
+        # Publish best branch if confidence is high enough
+        if branches and branches[0].branch_confidence > 0.5:
+            self._publish_timeline_prediction(branches[0])
+        
         logger.info(f"⏳ Created {len(branches)} timeline branches for {symbol}")
         logger.info(f"   🔮 Best branch: {branches[0].action.value} (conf: {branches[0].branch_confidence:.2%})")
         
@@ -1370,6 +1397,8 @@ class TimelineOracle:
                 systems_that_agreed=self._get_agreeing_systems(branch)
             )
             
+            self._publish_validation(validation)
+            
             self.validated_branches.append(validation)
             self.branches_validated += 1
             
@@ -1407,6 +1436,58 @@ class TimelineOracle:
             agreeing.append('multiverse')
         return agreeing
     
+    def _publish_timeline_prediction(self, branch: TimelineBranch) -> None:
+        """Publish timeline prediction to ThoughtBus and ChirpBus."""
+        try:
+            # 1. ThoughtBus
+            if self.thought_bus:
+                self.thought_bus.publish(Thought(
+                    source="TIMELINE_ORACLE",
+                    thought_type="TIMELINE_PREDICTION",
+                    priority=2,
+                    content={
+                        "symbol": branch.symbol,
+                        "action": branch.action.value,
+                        "confidence": branch.branch_confidence,
+                        "branch_id": branch.branch_id,
+                        "entry": branch.entry_price,
+                        "target_time": branch.target_time
+                    }
+                ))
+
+            # 2. ChirpBus
+            if self.chirp_bus:
+                self.chirp_bus.publish("timeline.prediction", {
+                    "sym": branch.symbol,
+                    "act": branch.action.value,
+                    "conf": branch.branch_confidence,
+                    "id": branch.branch_id
+                })
+        except Exception as e:
+            logger.error(f"Failed to publish timeline prediction: {e}")
+
+    def _publish_validation(self, validation: TimelineValidation) -> None:
+        """Publish timeline validation result."""
+        try:
+            # 1. ThoughtBus
+            if self.thought_bus:
+                self.thought_bus.publish(Thought(
+                    source="TIMELINE_ORACLE",
+                    thought_type="TIMELINE_VALIDATION",
+                    priority=1,
+                    content=asdict(validation)
+                ))
+
+            # 2. ChirpBus
+            if self.chirp_bus:
+                self.chirp_bus.publish("timeline.validation", {
+                    "sym": validation.symbol,
+                    "pnl": validation.pnl_usd,
+                    "acc": validation.timeline_accuracy
+                })
+        except Exception as e:
+            logger.error(f"Failed to publish timeline validation: {e}")
+
     # ═══════════════════════════════════════════════════════════════════════════
     # BATCH VALIDATION - Check All Pending Branches
     # ═══════════════════════════════════════════════════════════════════════════

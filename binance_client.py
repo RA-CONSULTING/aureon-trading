@@ -280,6 +280,25 @@ class BinanceClient:
                 return float(bal["free"])
         return 0.0
 
+    def get_balance(self) -> Dict[str, float]:
+        """Compatibility: return free balances as {asset: amount}."""
+        balances: Dict[str, float] = {}
+        try:
+            acct = self.account()
+            for bal in acct.get("balances", []):
+                asset = bal.get("asset")
+                if not asset:
+                    continue
+                try:
+                    free_amt = float(bal.get("free", 0) or 0)
+                except Exception:
+                    free_amt = 0.0
+                if free_amt > 0:
+                    balances[asset] = free_amt
+        except Exception:
+            return {}
+        return balances
+
     def _format_order_value(self, value: float | str | Decimal | None) -> str | None:
         if value is None:
             return None

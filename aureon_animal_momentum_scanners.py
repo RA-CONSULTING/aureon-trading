@@ -47,6 +47,14 @@ except ImportError:
     logger.debug("🐦 Chirp Bus not available - momentum scanners won't receive Orca signals")
     CHIRP_BUS_AVAILABLE = False
 
+# 📡 THOUGHT BUS INTEGRATION - Neural Persistence
+THOUGHT_BUS_AVAILABLE = False
+try:
+    from aureon_thought_bus import ThoughtBus, Thought, get_thought_bus
+    THOUGHT_BUS_AVAILABLE = True
+except ImportError:
+    THOUGHT_BUS_AVAILABLE = False
+
 # ════════════════════════════════════════════════════════════════════════════════
 # 🌐 GLOBAL MARKET INTEGRATION - Full Exchange Coverage (same as Orca)
 # ════════════════════════════════════════════════════════════════════════════════
@@ -665,6 +673,10 @@ class AlpacaSwarmOrchestrator:
         self.hummingbird = AlpacaHummingbird(alpaca, bridge)
         self.dry_run = True  # Safety default
 
+        # 🔗 Communication Buses
+        self.thought_bus = get_thought_bus() if THOUGHT_BUS_AVAILABLE else None
+        self.chirp_bus = get_chirp_bus() if CHIRP_BUS_AVAILABLE else None
+
     def run_once(self) -> Dict[str, List[AnimalOpportunity]]:
         """Run one orchestration cycle (dry-run safe).
 
@@ -698,7 +710,49 @@ class AlpacaSwarmOrchestrator:
         # Notify bridge of opportunities detected
         total = sum(len(v) for v in out.values())
         self.bridge._stats['opportunities_detected'] += total
+        
+        # 🔊 Publish to Hive Mind
+        self._publish_opportunities(out)
+        
         return out
+
+    def _publish_opportunities(self, results: Dict[str, List[AnimalOpportunity]]):
+        """Publish opportunities to Hive Mind."""
+        if not self.thought_bus and not self.chirp_bus:
+            return
+
+        for agent, opps in results.items():
+            for opp in opps:
+                # ThoughtBus
+                if self.thought_bus:
+                    try:
+                        self.thought_bus.publish(Thought(
+                            source=f"animal_momentum.{agent}",
+                            topic="opportunity.momentum",
+                            payload={
+                                'symbol': opp.symbol, 
+                                'side': opp.side, 
+                                'move_pct': opp.move_pct, 
+                                'net_pct': opp.net_pct, 
+                                'reason': opp.reason,
+                                'volume': opp.volume,
+                                'agent': agent
+                            }
+                        ))
+                    except: pass
+                
+                # ChirpBus (only for top opportunities)
+                if self.chirp_bus and opp.net_pct > 0.4:
+                    try:
+                        self.chirp_bus.emit_message(
+                            message=f"{agent.upper()} {opp.symbol} {opp.net_pct:.2f}%",
+                            direction=ChirpDirection.UP if opp.side == 'buy' else ChirpDirection.DOWN,
+                            confidence=min(1.0, opp.net_pct / 2.0),
+                            symbol=opp.symbol,
+                            frequency=600.0 if opp.side=='buy' else 300.0,
+                            message_type=ChirpType.OPPORTUNITY
+                        )
+                    except: pass
 
     def execute_opportunity(self, opp: AnimalOpportunity, qty: float, use_trailing_stop: bool = True) -> Optional[Dict]:
         """Execute a trade for an opportunity with optional trailing stop.

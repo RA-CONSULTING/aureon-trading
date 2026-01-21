@@ -58,10 +58,18 @@ except ImportError:
 CHIRP_BUS_AVAILABLE = False
 get_chirp_bus = None
 try:
-    from aureon_chirp_bus import get_chirp_bus
+    from aureon_chirp_bus import get_chirp_bus, ChirpDirection, ChirpType
     CHIRP_BUS_AVAILABLE = True
 except ImportError:
     CHIRP_BUS_AVAILABLE = False
+
+# 📡 THOUGHT BUS INTEGRATION - Neural Persistence
+THOUGHT_BUS_AVAILABLE = False
+try:
+    from aureon_thought_bus import ThoughtBus, Thought, get_thought_bus
+    THOUGHT_BUS_AVAILABLE = True
+except ImportError:
+    THOUGHT_BUS_AVAILABLE = False
 
 # ════════════════════════════════════════════════════════════════════════════════
 # 🌐 GLOBAL MARKET INTEGRATION - Full Exchange Coverage
@@ -197,6 +205,16 @@ class OceanWaveScanner:
             self.logger.info("🧠 Bot Intelligence Profiler enabled")
         else:
             self.profiler = None
+
+        # 🔗 Communication Buses
+        self.thought_bus = get_thought_bus() if THOUGHT_BUS_AVAILABLE else None
+        self.chirp_bus = get_chirp_bus() if CHIRP_BUS_AVAILABLE else None
+        
+        if self.thought_bus:
+            self.logger.info("📡 Wired to ThoughtBus")
+            
+        if self.chirp_bus:
+            self.logger.info("🐦 Wired to ChirpBus")
         
         # Volume thresholds for size classification
         self.WHALE_THRESHOLD = 1_000_000  # $1M+ volume
@@ -301,6 +319,27 @@ class OceanWaveScanner:
                     'exchange': bot.exchange
                 }
             )
+
+            # 📡 THOUGHT EMISSION - Neural Persistence
+            if hasattr(self, 'thought_bus') and self.thought_bus:
+                try:
+                    thought = Thought(
+                        source="ocean_wave_scanner",
+                        topic=f"bot.{bot.size_class}",
+                        payload={
+                            "symbol": bot.symbol,
+                            "bot_id": bot.bot_id,
+                            "size_class": bot.size_class,
+                            "aggression": bot.aggression,
+                            "owner": bot.owner,
+                            "firm_id": bot.firm_id,
+                            "timestamp": time.time()
+                        }
+                    )
+                    self.thought_bus.publish(thought)
+                except Exception:
+                    pass
+
             self.logger.info(f"🐋→🦈 Bot {bot.size_class.upper()} detected: {bot.symbol} on {bot.exchange} (${volume_usd:,.0f})")
         except Exception as e:
             self.logger.debug(f"Failed to emit bot to Orca: {e}")

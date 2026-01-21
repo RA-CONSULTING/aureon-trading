@@ -42,6 +42,21 @@ from typing import List, Dict, Optional, Tuple, Set
 from datetime import datetime, timezone
 from collections import defaultdict
 
+# 🚌 Communication Buses
+try:
+    from aureon_thought_bus import ThoughtBus, Thought
+    THOUGHT_BUS_AVAILABLE = True
+except ImportError:
+    THOUGHT_BUS_AVAILABLE = False
+    ThoughtBus = None
+
+try:
+    from aureon_chirp_bus import ChirpBus
+    CHIRP_BUS_AVAILABLE = True
+except ImportError:
+    CHIRP_BUS_AVAILABLE = False
+    ChirpBus = None
+
 # Sacred Constants
 PHI = (1 + math.sqrt(5)) / 2
 
@@ -110,6 +125,15 @@ class StrategicWarfareScanner:
         self.covert_operations: List[CovertOperation] = []
         self.network_map: Dict[str, Set[str]] = defaultdict(set)
         
+        # Bus Integration
+        self.thought_bus = ThoughtBus() if THOUGHT_BUS_AVAILABLE else None
+        self.chirp_bus = None
+        if CHIRP_BUS_AVAILABLE:
+            try:
+                self.chirp_bus = ChirpBus()
+            except Exception:
+                pass
+
         # Load wisdom databases
         self.sun_tzu_principles = self.load_sun_tzu_wisdom()
         self.ira_tactics = self.load_ira_tactics()
@@ -231,8 +255,32 @@ class StrategicWarfareScanner:
         )
         
         self.intelligence_reports.append(report)
+        self._publish_report(report)
         return report
     
+    def _publish_report(self, report: IntelligenceReport) -> None:
+        """Publish intelligence report to ThoughtBus and ChirpBus."""
+        try:
+            # 1. ThoughtBus
+            if self.thought_bus:
+                self.thought_bus.publish(Thought(
+                    source="STRATEGIC_WARFARE",
+                    thought_type="INTELLIGENCE_REPORT",
+                    priority=2,
+                    content=asdict(report)
+                ))
+
+            # 2. ChirpBus
+            if self.chirp_bus:
+                self.chirp_bus.publish("warfare.intel", {
+                    "entity": report.entity_name,
+                    "threat": report.threat_level,
+                    "strength": report.strength_assessment,
+                    "type": report.entity_type
+                })
+        except Exception as e:
+            print(f"⚠️ Failed to publish warfare report: {e}")
+
     def fetch_klines(self, symbol: str, interval: str, limit: int) -> List[Dict]:
         """Fetch klines from Binance."""
         url = "https://api.binance.com/api/v3/klines"

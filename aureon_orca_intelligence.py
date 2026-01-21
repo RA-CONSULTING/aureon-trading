@@ -59,10 +59,18 @@ logger = logging.getLogger(__name__)
 CHIRP_BUS_AVAILABLE = False
 get_chirp_bus = None
 try:
-    from aureon_chirp_bus import get_chirp_bus
+    from aureon_chirp_bus import get_chirp_bus, ChirpDirection, ChirpType
     CHIRP_BUS_AVAILABLE = True
 except ImportError:
     CHIRP_BUS_AVAILABLE = False
+
+# 📡 THOUGHT BUS INTEGRATION - Neural Persistence
+THOUGHT_BUS_AVAILABLE = False
+try:
+    from aureon_thought_bus import ThoughtBus, Thought, get_thought_bus
+    THOUGHT_BUS_AVAILABLE = True
+except ImportError:
+    THOUGHT_BUS_AVAILABLE = False
 
 # Counter-intelligence integration
 try:
@@ -394,7 +402,17 @@ class OrcaKillerWhaleIntelligence:
         self.enabled = True
         self.mode = "STALKING"  # STALKING, HUNTING, FEEDING, RESTING
         
-        # 👑 QUEEN REFERENCE - Supreme Commander
+        # � COMMUNICATION BUSES
+        try:
+            self.thought_bus = ThoughtBus()
+            self.chirp_bus = ChirpBus()
+            print("✅ ORCA: Connected to ThoughtBus and ChirpBus")
+        except Exception as e:
+            print(f"⚠️ ORCA: Bus connection failed: {e}")
+            self.thought_bus = None
+            self.chirp_bus = None
+
+        # �👑 QUEEN REFERENCE - Supreme Commander
         self.queen = None  # Will be wired externally
         self.queen_connected = False
         self.queen_consultation_count = 0
@@ -1786,8 +1804,12 @@ class OrcaKillerWhaleIntelligence:
                 opp.reasoning.append("🦈 Autonomous hunt (below consultation threshold)")
                 approved_opportunities.append(opp)
         
-        # Return top 3 approved opportunities
-        return approved_opportunities[:3]
+        # Publish and return top 3 approved opportunities
+        final_opportunities = approved_opportunities[:3]
+        for opp in final_opportunities:
+            self._publish_opportunity(opp)
+            
+        return final_opportunities
     
     def _build_opportunity_from_whale(self, whale: WhaleSignal, timing_mult: float) -> Optional[OrcaOpportunity]:
         """Build a trading opportunity from a whale signal."""
@@ -1851,6 +1873,41 @@ class OrcaKillerWhaleIntelligence:
             reasoning=reasoning
         )
     
+    def _publish_opportunity(self, opp: OrcaOpportunity) -> None:
+        """Publish an approved opportunity to the ThoughtBus and ChirpBus."""
+        try:
+            # 1. ThoughtBus (Neural Log)
+            if self.thought_bus:
+                thought = Thought(
+                    source="ORCA_INTELLIGENCE",
+                    thought_type="HUNT_OPPORTUNITY",
+                    priority=1,  # High priority
+                    content={
+                        "symbol": opp.symbol,
+                        "action": opp.action,
+                        "confidence": opp.confidence,
+                        "reasoning": opp.reasoning,
+                        "target_pnl": opp.target_pnl_usd,
+                        "id": opp.id
+                    }
+                )
+                self.thought_bus.publish(thought)
+
+            # 2. ChirpBus (High Speed)
+            if self.chirp_bus:
+                payload = {
+                    "symbol": opp.symbol,
+                    "action": opp.action,
+                    "conf": opp.confidence,
+                    "src": "ORCA"
+                }
+                self.chirp_bus.publish("orca.hunt.opportunity", payload)
+                
+            logger.info(f"Published ORCA opportunity: {opp.symbol} {opp.action} (Conf: {opp.confidence:.2f})")
+
+        except Exception as e:
+            logger.error(f"Failed to publish ORCA opportunity: {e}")
+
     def start_hunt(self, opportunity: OrcaOpportunity) -> bool:
         """
         Begin tracking an active hunt.

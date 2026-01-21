@@ -54,6 +54,21 @@ try:
 except Exception:
     CapitalClient = None
 
+# 🚌 Communication Buses
+try:
+    from aureon_thought_bus import ThoughtBus, Thought
+    THOUGHT_BUS_AVAILABLE = True
+except ImportError:
+    THOUGHT_BUS_AVAILABLE = False
+    ThoughtBus = None
+
+try:
+    from aureon_chirp_bus import ChirpBus
+    CHIRP_BUS_AVAILABLE = True
+except ImportError:
+    CHIRP_BUS_AVAILABLE = False
+    ChirpBus = None
+
 # Sacred constants
 PHI = (1 + math.sqrt(5)) / 2  # 1.618 Golden ratio
 LOVE_FREQUENCY = 528
@@ -123,6 +138,15 @@ class OceanScanner:
     
     def __init__(self, exchanges: Dict = None):
         self.exchanges = exchanges or {}
+        
+        # Bus Integration
+        self.thought_bus = ThoughtBus() if THOUGHT_BUS_AVAILABLE else None
+        self.chirp_bus = None
+        if CHIRP_BUS_AVAILABLE:
+            try:
+                self.chirp_bus = ChirpBus()
+            except Exception:
+                pass
 
         # Optional stock scanning configuration
         self.scan_alpaca_stocks = os.getenv('AUREON_SCAN_ALPACA_STOCKS', '0') == '1'
@@ -338,10 +362,38 @@ class OceanScanner:
         # Store top opportunities
         self.hot_opportunities = opportunities[:limit]
         
+        # Publish best opportunities
+        for opp in self.hot_opportunities[:3]:
+           self._publish_opportunity(opp)
+        
         print(f"\n🎯 OCEAN SCAN COMPLETE in {scan_duration:.2f}s")
         print(f"   Found {len(opportunities)} opportunities from {self.total_symbols_scanned:,} symbols")
         
         return opportunities[:limit]
+
+    def _publish_opportunity(self, opp: OceanOpportunity) -> None:
+        """Publish opportunity to ThoughtBus and ChirpBus."""
+        try:
+            # 1. ThoughtBus
+            if self.thought_bus:
+                self.thought_bus.publish(Thought(
+                    source="OCEAN_SCANNER",
+                    thought_type="MARKET_OPPORTUNITY",
+                    priority=2,
+                    content=opp.to_dict()
+                ))
+
+            # 2. ChirpBus
+            if self.chirp_bus:
+                self.chirp_bus.publish("market.opportunity", {
+                    "sym": opp.symbol,
+                    "exch": opp.exchange,
+                    "type": opp.opportunity_type,
+                    "score": opp.ocean_score,
+                    "conf": opp.confidence
+                })
+        except Exception as e:
+            logger.error(f"Failed to publish ocean opportunity: {e}")
 
     def _read_binance_ws_cache(self) -> Optional[Dict[str, Any]]:
         """Read local Binance WS cache if present and fresh."""

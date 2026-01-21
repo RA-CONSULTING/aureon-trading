@@ -32,6 +32,7 @@ import json
 import time
 import logging
 import requests
+import argparse
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Any, Tuple
 from dataclasses import dataclass, field
@@ -412,12 +413,13 @@ class AureonBacktestEngine:
     
     FEE_RATE = 0.001  # 0.1% per trade
     
-    def __init__(self, starting_capital: float = 10000.0):
+    def __init__(self, starting_capital: float = 10000.0, use_obsidian: bool = True):
         self.starting_capital = starting_capital
         self.capital = starting_capital
         self.positions: Dict[str, BacktestPosition] = {}
         self.trades: List[BacktestTrade] = []
         self.equity_curve: List[Tuple[datetime, float]] = []
+        self.use_obsidian = use_obsidian
         
         # Pattern learning
         self.learned_patterns: Dict[str, Dict] = {}
@@ -461,6 +463,16 @@ class AureonBacktestEngine:
             logger.info("🔮 Probability Matrix LOADED")
         except Exception as e:
             logger.warning(f"⚠️ Probability Matrix not available: {e}")
+
+        # 🔮 Obsidian Filter - signal purification (optional)
+        self.obsidian_filter = None
+        if self.use_obsidian:
+            try:
+                from aureon_obsidian_filter import AureonObsidianFilter
+                self.obsidian_filter = AureonObsidianFilter()
+                logger.info("🔮 Obsidian Filter LOADED")
+            except Exception as e:
+                logger.warning(f"⚠️ Obsidian Filter not available: {e}")
         
         # 🧠 Adaptive Learner - learns from winners
         self.adaptive_learner = None
@@ -617,6 +629,30 @@ class AureonBacktestEngine:
         
         # Extract symbol for tracking
         clean_symbol = candle.symbol.split(':')[-1] if ':' in candle.symbol else candle.symbol
+
+        # === OBSIDIAN FILTER CONTEXT ===
+        obsidian_context = None
+        if self.use_obsidian and self.obsidian_filter:
+            try:
+                volatility = abs(candle.high - candle.low) / candle.close if candle.close > 0 else 0.0
+                sentiment = 0.5 + max(-0.5, min(0.5, candle.change_pct / 10.0))
+                market_snapshot = {
+                    'price': candle.close,
+                    'volume': candle.volume,
+                    'volatility': volatility,
+                    'sentiment': sentiment,
+                    'coherence': 0.5,
+                }
+                filtered = self.obsidian_filter.apply(clean_symbol, market_snapshot)
+                obsidian_context = {
+                    'clarity': float(filtered.get('obsidian_clarity', 1.0)),
+                    'chaos': float(filtered.get('obsidian_chaos', 0.0)),
+                    'casimir_stage': float(filtered.get('obsidian_casimir_stage', 0.0)),
+                    'casimir_frequency': int(filtered.get('obsidian_casimir_frequency', 0)),
+                }
+                signal['subsystems_used'].append('Obsidian')
+            except Exception:
+                obsidian_context = None
         
         # === VERIFIED PATTERNS ONLY ===
         # Track pattern signatures that have won
@@ -811,13 +847,32 @@ class AureonBacktestEngine:
             buy_score += 1
             reasons.append("StrongGreen")
         
+        # === OBSIDIAN MODULATION ===
+        if obsidian_context:
+            clarity = obsidian_context['clarity']
+            chaos = obsidian_context['chaos']
+            if clarity >= 1.2:
+                buy_score += 1
+                reasons.append("ObsidianClarity")
+            if chaos >= 0.8:
+                buy_score -= 1
+                reasons.append("ObsidianChaos")
+
         # === V14 ZERO LOSS ENTRY ===
         # Require 8+ score (balanced selectivity for more trades)
         # Maximum possible now: ~20+ points
         if buy_score >= 8:
             signal['action'] = 'BUY'
-            signal['confidence'] = min(0.99, buy_score / 15)
-            signal['reason'] = f"V14 IRA: {'+'.join(reasons)} Score={buy_score}"
+            base_confidence = min(0.99, buy_score / 15)
+            obsidian_suffix = ""
+            if obsidian_context:
+                clarity = obsidian_context['clarity']
+                chaos = obsidian_context['chaos']
+                obsidian_boost = max(0.75, min(1.25, 1 + (clarity - 1.0) * 0.1 - chaos * 0.2))
+                base_confidence = min(0.99, base_confidence * obsidian_boost)
+                obsidian_suffix = f" Obs={obsidian_boost:.2f}"
+            signal['confidence'] = base_confidence
+            signal['reason'] = f"V14 IRA: {'+'.join(reasons)} Score={buy_score}{obsidian_suffix}"
             signal['target_price'] = candle.close * 1.0152  # 1.52% target
             return signal
         
@@ -1130,29 +1185,75 @@ class AureonBacktestEngine:
 # 🚀 MAIN EXECUTION
 # ═══════════════════════════════════════════════════════════════════════════════
 
+def _print_comparison(base: Dict, enhanced: Dict) -> None:
+    def _pct_change(new: float, old: float) -> float:
+        if old == 0:
+            return 0.0
+        return ((new - old) / abs(old)) * 100
+
+    metrics = [
+        ("Total P&L", base['metrics']['total_pnl'], enhanced['metrics']['total_pnl']),
+        ("Win Rate", base['win_rate'], enhanced['win_rate']),
+        ("Total Trades", base['metrics']['total_trades'], enhanced['metrics']['total_trades']),
+        ("Buy Signals", base['metrics']['buy_signals'], enhanced['metrics']['buy_signals']),
+        ("Max Drawdown", base['metrics']['max_drawdown'], enhanced['metrics']['max_drawdown']),
+    ]
+
+    print("\n" + "═" * 80)
+    print("📈 OBSIDIAN IMPROVEMENT SUMMARY")
+    print("═" * 80)
+    for name, old_val, new_val in metrics:
+        delta = new_val - old_val
+        pct = _pct_change(new_val, old_val)
+        print(f"  {name:<15} {old_val:>12.4f} → {new_val:>12.4f} | Δ {delta:+.4f} ({pct:+.1f}%)")
+
+
 def main():
     """Run the full backtest"""
+    parser = argparse.ArgumentParser(description="Aureon Historical Backtest")
+    parser.add_argument("--days", type=int, default=365, help="Number of days of historical data")
+    parser.add_argument("--interval", type=str, default="1h", help="Candle interval (e.g. 1h, 4h, 1d)")
+    parser.add_argument("--compare-obsidian", action="store_true", help="Compare baseline vs Obsidian-enhanced")
+    args = parser.parse_args()
+
     print("\n" + "╔" + "═" * 78 + "╗")
     print("║" + " " * 20 + "🌌 AUREON HISTORICAL BACKTEST 🌌" + " " * 25 + "║")
-    print("║" + " " * 15 + "1 YEAR Global Crypto Market Analysis" + " " * 24 + "║")
+    print("║" + f" " * 15 + f"{args.days} DAY Global Crypto Market Analysis" + " " * 24 + "║")
     print("║" + " " * 10 + "ALL SUBSYSTEMS INTEGRATED • FIND THE WINNERS" + " " * 19 + "║")
     print("╚" + "═" * 78 + "╝")
     
     # Fetch 1 YEAR of historical data (will use cache if available)
     fetcher = HistoricalDataFetcher()
-    data = fetcher.fetch_all_historical(days=365, interval='1h')
+    data = fetcher.fetch_all_historical(days=args.days, interval=args.interval)
     
     if not data:
         print("❌ No data fetched!")
         return
     
     # Run backtest
-    engine = AureonBacktestEngine(starting_capital=10000.0)
-    results = engine.run_backtest(
-        data,
-        max_positions=10,
-        position_size_pct=0.1
-    )
+    if args.compare_obsidian:
+        base_engine = AureonBacktestEngine(starting_capital=10000.0, use_obsidian=False)
+        base_results = base_engine.run_backtest(
+            data,
+            max_positions=10,
+            position_size_pct=0.1
+        )
+        enhanced_engine = AureonBacktestEngine(starting_capital=10000.0, use_obsidian=True)
+        enhanced_results = enhanced_engine.run_backtest(
+            data,
+            max_positions=10,
+            position_size_pct=0.1
+        )
+        results = enhanced_results
+        engine = enhanced_engine
+        _print_comparison(base_results, enhanced_results)
+    else:
+        engine = AureonBacktestEngine(starting_capital=10000.0, use_obsidian=True)
+        results = engine.run_backtest(
+            data,
+            max_positions=10,
+            position_size_pct=0.1
+        )
     
     # Show best performers - THE WINNERS
     print("\n" + "═" * 80)

@@ -14,9 +14,47 @@ Obsidian's properties are metaphorically translated into digital signal processi
 - **Revealing Truth (Sheen)**: A clarity function that enhances the signal-to-noise ratio.
 - **Protection**: A shielding function that reduces the impact of negative sentiment spikes.
 """
+import sys
+import os
+if sys.platform == 'win32':
+    os.environ['PYTHONIOENCODING'] = 'utf-8'
+    try:
+        import io
+        def _is_utf8_wrapper(stream):
+            """Check if stream is already a UTF-8 TextIOWrapper."""
+            return (isinstance(stream, io.TextIOWrapper) and 
+                    hasattr(stream, 'encoding') and stream.encoding and
+                    stream.encoding.lower().replace('-', '') == 'utf8')
+        # Only wrap if not already UTF-8 wrapped (prevents re-wrapping on import)
+        if hasattr(sys.stdout, 'buffer') and not _is_utf8_wrapper(sys.stdout):
+            sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace', line_buffering=True)
+        if hasattr(sys.stderr, 'buffer') and not _is_utf8_wrapper(sys.stderr):
+            sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace', line_buffering=True)
+    except Exception:
+        pass
+
 import numpy as np
 from dataclasses import dataclass, field
 from typing import Dict, Any
+
+# 🐦 CHIRP BUS INTEGRATION - kHz-Speed Obsidian Signals
+CHIRP_BUS_AVAILABLE = False
+get_chirp_bus = None
+ChirpDirection = None
+try:
+    from aureon_chirp_bus import get_chirp_bus, ChirpDirection
+    CHIRP_BUS_AVAILABLE = True
+except ImportError:
+    CHIRP_BUS_AVAILABLE = False
+
+# 🎶 HARMONIC ALPHABET INTEGRATION - Micro-frequency encoding
+HARMONIC_ALPHABET_AVAILABLE = False
+to_harmonics = None
+try:
+    from aureon_harmonic_alphabet import to_harmonics
+    HARMONIC_ALPHABET_AVAILABLE = True
+except ImportError:
+    HARMONIC_ALPHABET_AVAILABLE = False
 
 # --- Sacred Constants derived from Obsidian's properties ---
 # Volcanic glass forms at ~1600-1700°C, cools rapidly. This is a thermal shock analog.
@@ -41,6 +79,50 @@ class AureonObsidianFilter:
     def __init__(self):
         self._filter_states: Dict[str, ObsidianFilterState] = {}
         print("🔮 Aureon Obsidian Filter (Apache Tear Protocol) initialized.")
+
+    def _emit_chirp(self, symbol: str, coherence: float, confidence: float, frequency: int, amplitude: int) -> None:
+        if not (CHIRP_BUS_AVAILABLE and get_chirp_bus and ChirpDirection):
+            return
+        try:
+            chirp_bus = get_chirp_bus()
+            if chirp_bus is None:
+                return
+            chirp_bus.emit_signal(
+                message="OBSIDIAN_FILTER",
+                direction=ChirpDirection.DOWN,
+                coherence=max(0.0, min(1.0, coherence)),
+                confidence=max(0.0, min(1.0, confidence)),
+                symbol=symbol,
+                frequency=frequency,
+                amplitude=amplitude,
+            )
+        except Exception:
+            pass
+
+    def _harmonic_signature(self, symbol: str, clarity: float, chaos: float) -> Dict[str, Any]:
+        if not HARMONIC_ALPHABET_AVAILABLE or not to_harmonics:
+            return {}
+        try:
+            tag = f"OBS:{symbol[:6]}"
+            tones = to_harmonics(tag)
+            if not tones:
+                return {}
+            amp_boost = max(0.5, min(2.0, clarity / 2.0))
+            signal = []
+            for tone in tones[:8]:
+                signal.append({
+                    "frequency": float(tone.frequency),
+                    "amplitude": float(tone.amplitude) * amp_boost,
+                    "mode": tone.mode,
+                })
+            carrier_freq = int(round(signal[0]["frequency"])) if signal else 396
+            return {
+                "harmonic_tag": tag,
+                "harmonic_signal": signal,
+                "harmonic_carrier_hz": carrier_freq,
+            }
+        except Exception:
+            return {}
 
     def _get_state(self, symbol: str) -> ObsidianFilterState:
         """Retrieve or create the state for a given symbol."""
@@ -90,6 +172,13 @@ class AureonObsidianFilter:
         signal_to_noise = grounding_factor / (state.chaos_accumulator + 1e-9)
         state.clarity_factor = np.clip(signal_to_noise * OBSIDIAN_REFRACTIVE_INDEX, 0.1, 5.0)
 
+        # Casimir-staged carrier for bird-system signaling
+        chaos_norm = max(0.0, min(1.0, state.chaos_accumulator))
+        clarity_norm = max(0.0, min(1.0, (state.clarity_factor - 1.0) / 4.0))
+        casimir_stage = (clarity_norm + (1.0 - chaos_norm)) / 2.0
+        casimir_frequency = int(round(396 + (639 - 396) * casimir_stage))
+        casimir_amplitude = int(round(64 + (191 * casimir_stage)))
+
         # Update state
         state.last_price = price
         state.is_stable = state.chaos_accumulator < 0.5
@@ -99,6 +188,8 @@ class AureonObsidianFilter:
         filtered_data['obsidian_chaos'] = state.chaos_accumulator
         filtered_data['obsidian_clarity'] = state.clarity_factor
         filtered_data['obsidian_grounding'] = grounding_factor
+        filtered_data['obsidian_casimir_stage'] = casimir_stage
+        filtered_data['obsidian_casimir_frequency'] = casimir_frequency
         
         # The primary output: a "clarified" price and coherence score
         # The original price is modulated by the clarity factor.
@@ -110,6 +201,18 @@ class AureonObsidianFilter:
         if state.is_stable and state.clarity_factor > 1.5:
             coherence_boost = np.log1p(state.clarity_factor - 1.5) * 0.1
             filtered_data['coherence'] = min(1.0, market_data.get('coherence', 0.5) + coherence_boost)
+
+        # Harmonic alphabet signature (compact signal for downstream scanners)
+        filtered_data.update(self._harmonic_signature(symbol, state.clarity_factor, state.chaos_accumulator))
+
+        # Emit to Chirp Bus (bird system) using Casimir-staged carrier
+        self._emit_chirp(
+            symbol=symbol,
+            coherence=filtered_data.get('coherence', market_data.get('coherence', 0.5)),
+            confidence=clarity_norm,
+            frequency=casimir_frequency,
+            amplitude=casimir_amplitude,
+        )
 
         return filtered_data
 

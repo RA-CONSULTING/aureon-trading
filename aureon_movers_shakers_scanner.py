@@ -35,6 +35,32 @@ from typing import Dict, List, Optional, Any, Tuple
 from collections import deque, defaultdict
 from enum import Enum
 
+# 📡 ThoughtBus - Primary neural communication
+try:
+    from aureon_thought_bus import ThoughtBus, Thought, get_thought_bus
+    THOUGHT_BUS_AVAILABLE = True
+except ImportError:
+    THOUGHT_BUS_AVAILABLE = False
+
+# 🐦 ChirpBus - kHz-speed signaling  
+try:
+    from aureon_chirp_bus import get_chirp_bus, ChirpDirection, ChirpType
+    CHIRP_BUS_AVAILABLE = True
+except ImportError:
+    CHIRP_BUS_AVAILABLE = False
+
+# 👑 Queen Hive Mind - Decision approval
+QUEEN_AVAILABLE = False
+def _lazy_load_queen():
+    global QUEEN_AVAILABLE
+    try:
+        from aureon_queen_hive_mind import QueenHiveMind, get_queen
+        QUEEN_AVAILABLE = True
+        return get_queen()
+    except ImportError:
+        QUEEN_AVAILABLE = False
+        return None
+
 # UTF-8 fix
 if sys.platform == 'win32':
     os.environ['PYTHONIOENCODING'] = 'utf-8'
@@ -184,6 +210,20 @@ class MoversShakersScanner:
         
     def _init_integrations(self):
         """Initialize all available intelligence systems."""
+        # 🔗 Communication Buses
+        self.thought_bus = get_thought_bus() if THOUGHT_BUS_AVAILABLE else None
+        self.chirp_bus = get_chirp_bus() if CHIRP_BUS_AVAILABLE else None
+        self.queen = _lazy_load_queen()
+        
+        if self.thought_bus:
+            logger.info("📡 Wired to ThoughtBus")
+        
+        if self.chirp_bus:
+            logger.info("🐦 Wired to ChirpBus")
+
+        if self.queen:
+            logger.info("👑 Connected to Queen Hive Mind")
+
         # Try Kraken
         try:
             from kraken_client import KrakenClient
@@ -400,6 +440,57 @@ class MoversShakersScanner:
         
         return mover
     
+    def scan(self) -> List[MoverShaker]:
+        """Synchronous scan entry point for ORCA."""
+        logger.info("🌊 Scan requested by ORCA")
+        try:
+            loop = asyncio.get_event_loop()
+            if loop.is_running():
+                # We are in a running loop, return a coroutine? 
+                # ORCA expects a list immediately. This is a problem if ORCA is sync.
+                # Assuming ORCA is sync and no loop is running in this thread context:
+                 return loop.run_until_complete(self.scan_all_exchanges())
+            else:
+                 return loop.run_until_complete(self.scan_all_exchanges())
+        except RuntimeError:
+            # No loop created yet
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            try:
+                return loop.run_until_complete(self.scan_all_exchanges())
+            finally:
+                loop.close()
+
+    def _publish_mover(self, mover: MoverShaker):
+        """Publish mover detection to Hive Mind."""
+        
+        # 1. ThoughtBus (Brain Persistence)
+        if hasattr(self, 'thought_bus') and self.thought_bus:
+            try:
+                thought = Thought(
+                    source="movers_shakers",
+                    topic=f"whale.detected.{mover.wave_type.name.lower()}",
+                    payload=asdict(mover)
+                )
+                self.thought_bus.publish(thought)
+            except Exception as e:
+                logger.warning(f"⚠️ Failed to publish thought: {e}")
+
+        # 2. ChirpBus (Speed Signal)
+        if hasattr(self, 'chirp_bus') and self.chirp_bus:
+            try:
+                msg_type = ChirpType.THREAT if "SHARK" in mover.wave_type.name else ChirpType.OPPORTUNITY
+                self.chirp_bus.emit_message(
+                    message=f"{mover.wave_type.value} {mover.symbol}",
+                    direction=ChirpDirection.UP if mover.side == 'buy' else ChirpDirection.DOWN,
+                    confidence=mover.firm_confidence,
+                    symbol=mover.symbol,
+                    frequency=mover.frequency_hz or 432.0,
+                    message_type=msg_type
+                )
+            except Exception as e:
+                logger.warning(f"⚠️ Failed to emit chirp: {e}")
+
     async def scan_all_exchanges(self) -> List[MoverShaker]:
         """Scan all exchanges and identify movers."""
         all_activities = []
@@ -426,6 +517,8 @@ class MoversShakersScanner:
         for key, activities in grouped.items():
             mover = self.analyze_activity_cluster(activities)
             if mover:
+                # 🔊 Publish to Hive Mind
+                self._publish_mover(mover)
                 movers.append(mover)
         
         return movers

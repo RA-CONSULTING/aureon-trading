@@ -187,7 +187,16 @@ except ImportError:
     MoversShakersScanner = None
     MoverShaker = None
 
-# 💰 AlpacaFeeTracker - Volume-tiered fee detection + spread tracking
+# � Queen Volume Hunter - Volume breakout detection
+try:
+    from queen_volume_hunter import QueenVolumeHunter, VolumeSignal
+    VOLUME_HUNTER_AVAILABLE = True
+except ImportError:
+    VOLUME_HUNTER_AVAILABLE = False
+    QueenVolumeHunter = None
+    VolumeSignal = None
+
+# �💰 AlpacaFeeTracker - Volume-tiered fee detection + spread tracking
 try:
     from alpaca_fee_tracker import AlpacaFeeTracker
     ALPACA_FEE_TRACKER_AVAILABLE = True
@@ -738,6 +747,7 @@ class WarRoomDisplay:
         self.worst_trade = 0.0
         # 💵 Cash balances per exchange
         self.cash_balances = {'alpaca': 0.0, 'kraken': 0.0, 'binance': 0.0}
+        self.cash_status = {'alpaca': 'unknown', 'kraken': 'unknown', 'binance': 'unknown'}
         # 🌟 Rising Star stats
         self.rising_star_stats = {}
         # 🎯 Options trading stats
@@ -904,35 +914,67 @@ class WarRoomDisplay:
                  f"✅ {self.kills_data['wins']} | ❌ {self.kills_data['losses']}")
         )
         
-        # Add cash balances row for all exchanges
-        cash_text = "💵 CASH: "
+        # Add balance row for all exchanges
+        cash_text = "💵 BAL: "
+        total_balance = None
         if hasattr(self, 'cash_balances') and self.cash_balances:
             alpaca_cash = self.cash_balances.get('alpaca', 0)
             kraken_cash = self.cash_balances.get('kraken', 0)
             binance_cash = self.cash_balances.get('binance', 0)
-            total_cash = alpaca_cash + kraken_cash + binance_cash
-            
-            cash_text += f"[cyan]Alpaca[/] ${alpaca_cash:.2f} | [yellow]Kraken[/] ${kraken_cash:.2f} | [green]Binance[/] ${binance_cash:.2f} | [bold]Total[/] ${total_cash:.2f}"
+            status = getattr(self, 'cash_status', {})
+
+            positions_by_exchange = {'alpaca': 0.0, 'kraken': 0.0, 'binance': 0.0}
+            for pos in getattr(self, 'positions_data', []):
+                exchange = (pos.get('exchange') or '').lower()
+                value = float(pos.get('value', 0) or 0)
+                if 'alpaca' in exchange:
+                    positions_by_exchange['alpaca'] += value
+                elif 'kraken' in exchange:
+                    positions_by_exchange['kraken'] += value
+                elif 'binance' in exchange:
+                    positions_by_exchange['binance'] += value
+
+            def _fmt_balance(label: str, value: float, status_key: str, color: str) -> str:
+                state = status.get(status_key, 'ok')
+                if value is None or state in {'no_keys', 'error', 'unavailable'}:
+                    return f"[{color}]{label}[/] [dim]N/A[/]"
+                total_value = (value or 0.0) + positions_by_exchange.get(status_key, 0.0)
+                return f"[{color}]{label}[/] ${total_value:.2f}"
+
+            total_balance = (
+                (alpaca_cash or 0.0) + positions_by_exchange.get('alpaca', 0.0)
+                + (kraken_cash or 0.0) + positions_by_exchange.get('kraken', 0.0)
+                + (binance_cash or 0.0) + positions_by_exchange.get('binance', 0.0)
+            )
+            cash_text += (
+                f"{_fmt_balance('Alpaca', alpaca_cash, 'alpaca', 'cyan')} | "
+                f"{_fmt_balance('Kraken', kraken_cash, 'kraken', 'yellow')} | "
+                f"{_fmt_balance('Binance', binance_cash, 'binance', 'green')} | "
+                f"[bold]Total[/] ${total_balance:.2f}"
+            )
         else:
             cash_text += "[dim]Scanning...[/]"
         
         header.add_row(Text(cash_text))
         
         # 💎 Portfolio Value Tracker
-        total_cash = sum(self.cash_balances.values()) if hasattr(self, 'cash_balances') else 0
+        total_cash = sum(
+            v for v in self.cash_balances.values() if isinstance(v, (int, float))
+        ) if hasattr(self, 'cash_balances') else 0
         positions_value = sum(p.get('value', 0) for p in self.positions_data)
         total_portfolio = total_cash + positions_value
+        balance_value = total_balance if total_balance is not None else total_cash
         
         # Calculate daily change
         if self.portfolio_start_value > 0:
             daily_change_pct = ((total_portfolio - self.portfolio_start_value) / self.portfolio_start_value) * 100
             daily_change_color = "green" if daily_change_pct >= 0 else "red"
             daily_arrow = "↑" if daily_change_pct >= 0 else "↓"
-            portfolio_text = f"💎 PORTFOLIO: ${total_portfolio:.2f} ({daily_arrow} [{daily_change_color}]{daily_change_pct:+.2f}%[/] today) | Cash: ${total_cash:.2f} | Positions: ${positions_value:.2f}"
+            portfolio_text = f"💎 PORTFOLIO: ${total_portfolio:.2f} ({daily_arrow} [{daily_change_color}]{daily_change_pct:+.2f}%[/] today) | Balance: ${balance_value:.2f} | Cash: ${total_cash:.2f} | Positions: ${positions_value:.2f}"
         else:
             # First run - set starting value
             self.portfolio_start_value = total_portfolio
-            portfolio_text = f"💎 PORTFOLIO: ${total_portfolio:.2f} | Cash: ${total_cash:.2f} | Positions: ${positions_value:.2f}"
+            portfolio_text = f"💎 PORTFOLIO: ${total_portfolio:.2f} | Balance: ${balance_value:.2f} | Cash: ${total_cash:.2f} | Positions: ${positions_value:.2f}"
         
         if total_portfolio > self.portfolio_peak_value:
             self.portfolio_peak_value = total_portfolio
@@ -1291,8 +1333,7 @@ class WarRoomDisplay:
                 streak_text += f" | Best today: {best_streak}W"
             
             # Hot exchange
-            hot_ex = max(sd.get('exchange_streaks', {}).items(), key=lambda x: x[1], default=(None, 0))
-            if hot_ex[1] > 0:
+                hot_ex = max(sd.get('exchange_streaks', {}).items(), key=lambda x: x[1], default=(None, 0))
                 streak_text += f" | 🔥 Hot: {hot_ex[0].capitalize()} ({hot_ex[1]}W)"
             
             footer.add_row(Text(streak_text))
@@ -1615,6 +1656,14 @@ class WarRoomDisplay:
             self.cash_balances['kraken'] = kraken
         if binance is not None:
             self.cash_balances['binance'] = binance
+
+    def update_cash_status(self, status: Dict[str, str]):
+        """Update cash balance status for display."""
+        if not status:
+            return
+        for key in ['alpaca', 'kraken', 'binance']:
+            if key in status:
+                self.cash_status[key] = status[key]
     
     def update_streak(self, is_win: bool, exchange: str = None):
         """Update win/loss streak tracking."""
@@ -2376,6 +2425,15 @@ class OrcaKillCycle:
             except Exception as e:
                 print(f"🌊 Global Wave Scanner: {e}")
         
+        # 5b. Queen Volume Hunter - Volume Breakout Detection
+        self.volume_hunter = None
+        if VOLUME_HUNTER_AVAILABLE and QueenVolumeHunter:
+            try:
+                self.volume_hunter = QueenVolumeHunter(live_mode=False)  # Start in dry-run
+                print("👑🔊 Queen Volume Hunter: WIRED! (Breakout detection)")
+            except Exception as e:
+                print(f"👑🔊 Queen Volume Hunter: {e}")
+        
         # 6. Movers & Shakers Scanner - SKIP (circular import with Orca)
         self.movers_scanner = None
         # if MOVERS_SHAKERS_AVAILABLE and MoversShakersScanner:
@@ -2553,6 +2611,24 @@ class OrcaKillCycle:
                 print("🐋 Moby Dick Hunter: WIRED! (Whale prediction tracking)")
             except Exception as e:
                 print(f"🐋 Moby Dick: {e}")
+
+        # 🌊 Ocean Scanner (Wave Analysis)
+        self.ocean_scanner = None
+        try:
+            from aureon_ocean_wave_scanner import OceanScanner
+            self.ocean_scanner = OceanScanner()
+            print("🌊 Ocean Scanner: WIRED! (Wave Analysis)")
+        except ImportError:
+            pass
+
+        # 🐂 Animal Momentum Scanner (Trend Strength)
+        self.animal_scanner = None
+        try:
+            from aureon_animal_momentum_scanners import AnimalMomentumScanner
+            self.animal_scanner = AnimalMomentumScanner()
+            print("🐂 Animal Momentum Scanner: WIRED! (Trend Strength)")
+        except ImportError:
+            pass
         
         # 24. Stargate Protocol (Quantum mirror alignment)
         self.stargate = None
@@ -4525,43 +4601,77 @@ class OrcaKillCycle:
     
     def get_available_cash(self) -> Dict[str, float]:
         """Get available cash across ALL exchanges."""
-        cash = {}
+        cash: Dict[str, float] = {}
+        self.last_cash_status = {'alpaca': 'unknown', 'kraken': 'unknown', 'binance': 'unknown'}
         
         # 🆕 TEST MODE: Add funds for testing fallback logic
         test_mode = os.environ.get('AUREON_TEST_MODE', '').lower() == 'true'
         
         if 'alpaca' in self.clients:
             try:
-                acct = self.clients['alpaca'].get_account()
-                # Try 'cash' first, then 'buying_power' as fallback
-                alpaca_cash = float(acct.get('cash', 0))
-                if alpaca_cash == 0:
-                    alpaca_cash = float(acct.get('buying_power', 0))
-                cash['alpaca'] = alpaca_cash + (5.0 if test_mode else 0)
+                alpaca_client = self.clients['alpaca']
+                if not getattr(alpaca_client, 'api_key', None) or not getattr(alpaca_client, 'secret_key', None):
+                    self.last_cash_status['alpaca'] = 'no_keys'
+                    cash['alpaca'] = 0.0
+                else:
+                    acct = alpaca_client.get_account()
+                    # If API call failed, account may be empty
+                    if not acct:
+                        self.last_cash_status['alpaca'] = 'error'
+                        cash['alpaca'] = 0.0
+                    else:
+                        # Try 'cash' first, then 'buying_power', then equity as fallback
+                        alpaca_cash = float(acct.get('cash', 0) or 0)
+                        if alpaca_cash == 0:
+                            alpaca_cash = float(acct.get('buying_power', 0) or 0)
+                        if alpaca_cash == 0:
+                            alpaca_cash = float(acct.get('equity', acct.get('portfolio_value', 0) or 0) or 0)
+                            if alpaca_cash > 0:
+                                self.last_cash_status['alpaca'] = 'equity'
+                        if self.last_cash_status['alpaca'] == 'unknown':
+                            self.last_cash_status['alpaca'] = 'ok'
+                        cash['alpaca'] = alpaca_cash + (5.0 if test_mode else 0)
             except Exception as e:
                 print(f"   ⚠️ Alpaca cash error: {e}")
+                self.last_cash_status['alpaca'] = 'error'
                 cash['alpaca'] = 5.0 if test_mode else 0.0
         
         if 'kraken' in self.clients:
             try:
-                bal = self.clients['kraken'].get_balance()
-                # Kraken uses ZUSD for USD, also check TUSD, DAI and other stables
-                kraken_cash = 0.0
-                for key in ['ZUSD', 'USD', 'USDC', 'USDT', 'TUSD', 'DAI', 'USDD']:
-                    kraken_cash += float(bal.get(key, 0))
-                cash['kraken'] = kraken_cash + (5.0 if test_mode else 0)
+                kraken_client = self.clients['kraken']
+                if not getattr(kraken_client, 'api_key', None) or not getattr(kraken_client, 'api_secret', None):
+                    self.last_cash_status['kraken'] = 'no_keys'
+                    cash['kraken'] = 0.0
+                else:
+                    bal = kraken_client.get_balance()
+                    if not bal:
+                        self.last_cash_status['kraken'] = 'error'
+                        cash['kraken'] = 0.0
+                    else:
+                        # Kraken uses ZUSD for USD, also check TUSD, DAI and other stables
+                        kraken_cash = 0.0
+                        for key in ['ZUSD', 'USD', 'USDC', 'USDT', 'TUSD', 'DAI', 'USDD']:
+                            kraken_cash += float(bal.get(key, 0))
+                        self.last_cash_status['kraken'] = 'ok'
+                        cash['kraken'] = kraken_cash + (5.0 if test_mode else 0)
             except Exception as e:
                 print(f"   ⚠️ Kraken cash error: {e}")
+                self.last_cash_status['kraken'] = 'error'
                 cash['kraken'] = 5.0 if test_mode else 0.0
         
         if 'binance' in self.clients:
             try:
                 # Use get_free_balance for cleaner access
                 binance_client = self.clients['binance']
+                if not getattr(binance_client, 'api_key', None) or not getattr(binance_client, 'api_secret', None):
+                    self.last_cash_status['binance'] = 'no_keys'
+                    cash['binance'] = 0.0
+                    return cash
                 binance_cash = 0.0
                 
                 # Try multiple stablecoins
-                for stable in ['USDT', 'USDC', 'USD', 'BUSD', 'FDUSD', 'TUSD', 'DAI']:
+                stable_assets = ['USDT', 'USDC', 'USD', 'BUSD', 'FDUSD', 'TUSD', 'DAI', 'LDUSDC']
+                for stable in stable_assets:
                     try:
                         if hasattr(binance_client, 'get_free_balance'):
                             binance_cash += binance_client.get_free_balance(stable)
@@ -4572,13 +4682,43 @@ class OrcaKillCycle:
                                     binance_cash += float(b.get('free', 0))
                     except:
                         pass
+
+                # Fallback: use get_balance if free balance lookups failed
+                if binance_cash == 0 and hasattr(binance_client, 'get_balance'):
+                    try:
+                        balances = binance_client.get_balance()
+                        for stable in stable_assets:
+                            binance_cash += float(balances.get(stable, 0) or 0)
+                    except Exception:
+                        pass
                 
+                self.last_cash_status['binance'] = 'ok'
                 cash['binance'] = binance_cash + (5.0 if test_mode else 0)
             except Exception as e:
                 print(f"   ⚠️ Binance cash error: {e}")
+                self.last_cash_status['binance'] = 'error'
                 cash['binance'] = 5.0 if test_mode else 0.0
         
         return cash
+
+    def _get_binance_ticker(self, client, symbol: str) -> Dict[str, Any]:
+        """Safely fetch Binance ticker for symbols with or without slashes."""
+        if not client or not symbol:
+            return {}
+        symbols_to_try = [symbol, symbol.replace('/', '')]
+        for sym in symbols_to_try:
+            try:
+                if hasattr(client, 'get_ticker'):
+                    ticker = client.get_ticker(sym)
+                    if ticker:
+                        return ticker
+                if hasattr(client, 'get_ticker_price'):
+                    ticker = client.get_ticker_price(sym)
+                    if ticker:
+                        return ticker
+            except Exception:
+                continue
+        return {}
         
     def calculate_exact_breakeven(self, entry_price: float, quantity: float, exchange: str = 'alpaca') -> Dict:
         """
@@ -5551,7 +5691,36 @@ class OrcaKillCycle:
                 print(f"   ⚠️ Whale Tracker: {e}")
         
         # ═══════════════════════════════════════════════════════════════════
-        # ⏳ SOURCE 6: Timeline Oracle (7-day predictions)
+        # 👑🔊 SOURCE 6: Queen Volume Hunter (Volume Breakout Detection)
+        # ═══════════════════════════════════════════════════════════════════
+        if hasattr(self, 'volume_hunter') and self.volume_hunter:
+            try:
+                print("\n👑🔊 Hunting Volume Breakouts...")
+                signals = self.volume_hunter.scan_for_breakouts()
+                for signal in signals[:10]:
+                    # Only add queen-approved signals with strong volume
+                    if signal.volume_ratio >= 2.0:
+                        opp = {
+                            'symbol': signal.symbol,
+                            'action': 'buy' if signal.price_change_5m > 0 else 'sell',
+                            'confidence': signal.signal_strength,
+                            'source': 'volume_hunter',
+                            'exchange': signal.exchange if hasattr(signal, 'exchange') else 'binance',
+                            'change_pct': signal.price_change_5m * 100,
+                            'volume_ratio': signal.volume_ratio,
+                            'whale_detected': signal.whale_detected if hasattr(signal, 'whale_detected') else False,
+                            'queen_approved': signal.queen_approved if hasattr(signal, 'queen_approved') else False
+                        }
+                        all_opportunities.append(opp)
+                        whale_flag = "🐋" if opp.get('whale_detected') else ""
+                        queen_flag = "👑" if opp.get('queen_approved') else ""
+                        print(f"   🔊 {signal.symbol}: {signal.volume_ratio:.1f}x vol, {signal.price_change_5m*100:+.2f}% {whale_flag}{queen_flag}")
+                print(f"   👑🔊 Found {len(signals)} volume breakouts")
+            except Exception as e:
+                print(f"   ⚠️ Volume Hunter: {e}")
+        
+        # ═══════════════════════════════════════════════════════════════════
+        # ⏳ SOURCE 7: Timeline Oracle (7-day predictions)
         # ═══════════════════════════════════════════════════════════════════
         if hasattr(self, 'timeline_oracle') and self.timeline_oracle:
             try:
@@ -5572,7 +5741,7 @@ class OrcaKillCycle:
                 print(f"   ⚠️ Timeline Oracle: {e}")
         
         # ═══════════════════════════════════════════════════════════════════
-        # 📊 SOURCE 7: Simple market scan (FALLBACK)
+        # 📊 SOURCE 8: Simple market scan (FALLBACK)
         # ═══════════════════════════════════════════════════════════════════
         print("\n📊 Market Scan (Fallback)...")
         market_opps = self.scan_entire_market(min_change_pct=0.3)
@@ -6645,7 +6814,7 @@ class OrcaKillCycle:
                                     current_price = float(ticker.get('bid', ticker.get('price', 0)))
                                     market_value = qty * current_price
                                     
-                                    if market_value > 0.10:  # At least $0.10 position
+                                    if market_value > 0.0:  # Track all positions
                                         print(f"   📈 {symbol} (KRAKEN): {qty:.6f} @ ~${current_price:.6f} (${market_value:.2f})")
                                         
                                         # For Kraken we don't have entry price stored - use current price as estimate
@@ -6716,12 +6885,12 @@ class OrcaKillCycle:
                                 
                                 for symbol in symbol_variants:
                                     try:
-                                        ticker = client.get_ticker(symbol)
-                                        if ticker and ticker.get('bid', 0) > 0:
-                                            current_price = float(ticker.get('bid', ticker.get('price', 0)))
+                                        ticker = self._get_binance_ticker(client, symbol)
+                                        if ticker and float(ticker.get('bid', ticker.get('price', 0)) or 0) > 0:
+                                            current_price = float(ticker.get('bid', ticker.get('price', 0)) or 0)
                                             market_value = qty * current_price
                                             
-                                            if market_value > 0.10:  # At least $0.10 position
+                                            if market_value > 0.0:  # Track all positions
                                                 print(f"   📈 {symbol} (BINANCE): {qty:.6f} @ ${current_price:.6f} (${market_value:.2f})")
                                                 
                                                 fee_rate = self.fee_rates.get(exchange_name, 0.001)  # 0.1% Binance fee
@@ -6865,7 +7034,7 @@ class OrcaKillCycle:
                                         current_price = float(ticker.get('bid', ticker.get('price', 0)))
                                         market_value = qty * current_price
                                         
-                                        if market_value > 0.10:  # At least $0.10
+                                        if market_value > 0.0:  # Track all positions
                                             print(f"\n🆕 NEW KRAKEN POSITION DETECTED: {symbol}")
                                             print(f"   📊 {qty:.6f} @ ${current_price:.8f} = ${market_value:.2f}")
                                             
@@ -6903,7 +7072,7 @@ class OrcaKillCycle:
                             binance_symbols = [p.symbol for p in positions if p.exchange == 'binance']
                             for sym in binance_symbols:
                                 try:
-                                    ticker = binance_client.get_ticker(sym)
+                                    ticker = self._get_binance_ticker(binance_client, sym)
                                     if ticker:
                                         batch_prices[sym] = ticker.get('bid', ticker.get('price', 0))
                                 except Exception:
@@ -6927,12 +7096,12 @@ class OrcaKillCycle:
                                             continue  # Already tracking
                                         
                                         try:
-                                            ticker = binance_client.get_ticker(symbol)
-                                            if ticker and ticker.get('bid', 0) > 0:
-                                                current_price = float(ticker.get('bid', ticker.get('price', 0)))
+                                            ticker = self._get_binance_ticker(binance_client, symbol)
+                                            if ticker and float(ticker.get('bid', ticker.get('price', 0)) or 0) > 0:
+                                                current_price = float(ticker.get('bid', ticker.get('price', 0)) or 0)
                                                 market_value = qty * current_price
                                                 
-                                                if market_value > 0.10:  # At least $0.10
+                                                if market_value > 0.0:  # Track all positions
                                                     print(f"\n🆕 NEW BINANCE POSITION DETECTED: {symbol}")
                                                     print(f"   📊 {qty:.6f} @ ${current_price:.6f} = ${market_value:.2f}")
                                                     
@@ -7020,21 +7189,21 @@ class OrcaKillCycle:
                 # ═══════════════════════════════════════════════════════════
                 if current_time - last_scan_time >= scan_interval:
                     last_scan_time = current_time
+
+                    # Always refresh balances, even if position cap is reached
+                    cash = self.get_available_cash()
+                    warroom.update_cash(
+                        alpaca=cash.get('alpaca', 0),
+                        kraken=cash.get('kraken', 0),
+                        binance=cash.get('binance', 0)
+                    )
+                    warroom.update_cash_status(getattr(self, 'last_cash_status', {}))
                     
                     # Check if we have room for more positions
                     if len(positions) < max_positions:
                         print(f"\n🔍 QUEEN SCANNING... ({len(positions)}/{max_positions} positions active)")
-                        
-                        # Get available cash
-                        cash = self.get_available_cash()
+
                         total_cash = sum(cash.values())
-                        
-                        # Update war room display with cash balances
-                        warroom.update_cash(
-                            alpaca=cash.get('alpaca', 0),
-                            kraken=cash.get('kraken', 0),
-                            binance=cash.get('binance', 0)
-                        )
                         
                         if total_cash < amount_per_position * 0.3:  # Only need 30% of target (more aggressive)
                             print(f"   💸 Waiting for cash (${total_cash:.2f} available, need ${amount_per_position * 0.3:.2f})")
@@ -7226,6 +7395,20 @@ class OrcaKillCycle:
                             for sym in kraken_symbols:
                                 try:
                                     ticker = kraken_client.get_ticker(sym)
+                                    if ticker:
+                                        all_prices[sym] = ticker.get('bid', ticker.get('price', 0))
+                                except Exception:
+                                    pass
+                    except Exception:
+                        pass
+                    
+                    try:
+                        binance_client = self.clients.get('binance')
+                        if binance_client:
+                            binance_symbols = [p.symbol for p in positions if p.exchange == 'binance']
+                            for sym in binance_symbols:
+                                try:
+                                    ticker = self._get_binance_ticker(binance_client, sym)
                                     if ticker:
                                         all_prices[sym] = ticker.get('bid', ticker.get('price', 0))
                                 except Exception:
@@ -8077,7 +8260,7 @@ class OrcaKillCycle:
                                     current_price = float(ticker.get('bid', ticker.get('price', 0)))
                                     market_value = qty * current_price
                                     
-                                    if market_value > 0.10:
+                                    if market_value > 0.0:
                                         fee_rate = self.fee_rates.get(exchange_name, 0.0026)
                                         entry_price = current_price
                                         entry_cost = entry_price * qty * (1 + fee_rate)
@@ -8099,6 +8282,44 @@ class OrcaKillCycle:
                                         positions.append(pos)
                                 except Exception:
                                     pass
+                elif exchange_name == 'binance':
+                    binance_balances = client.get_balance()
+                    if binance_balances:
+                        for asset, qty in binance_balances.items():
+                            if asset in ['USD', 'USDT', 'USDC', 'BUSD', 'TUSD', 'DAI', 'FDUSD', 'GBP', 'EUR']:
+                                continue
+                            qty = float(qty)
+                            if qty > 0.000001:
+                                symbol_variants = [f"{asset}/USDT", f"{asset}/USDC", f"{asset}/USD", f"{asset}/BUSD"]
+                                for symbol in symbol_variants:
+                                    try:
+                                        ticker = self._get_binance_ticker(client, symbol)
+                                        current_price = float(ticker.get('bid', ticker.get('price', 0)) or 0)
+                                        if current_price <= 0:
+                                            continue
+                                        market_value = qty * current_price
+                                        if market_value > 0.0:
+                                            fee_rate = self.fee_rates.get(exchange_name, 0.001)
+                                            entry_price = current_price
+                                            entry_cost = entry_price * qty * (1 + fee_rate)
+                                            breakeven = entry_price * (1 + fee_rate) / (1 - fee_rate)
+                                            target_price = breakeven * (1 + target_pct_current / 100)
+                                            pos = LivePosition(
+                                                symbol=symbol,
+                                                exchange=exchange_name,
+                                                entry_price=entry_price,
+                                                entry_qty=qty,
+                                                entry_cost=entry_cost,
+                                                breakeven_price=breakeven,
+                                                target_price=target_price,
+                                                client=client,
+                                                current_price=current_price,
+                                                current_pnl=0.0
+                                            )
+                                            positions.append(pos)
+                                            break
+                                    except Exception:
+                                        continue
             except Exception:
                 pass
         
@@ -8175,6 +8396,8 @@ class OrcaKillCycle:
                     
                     for pos in positions[:]:
                         current = all_prices.get(pos.symbol, 0)
+                        if current <= 0:
+                            current = pos.current_price or pos.entry_price or 0
                         if current <= 0:
                             continue
                         

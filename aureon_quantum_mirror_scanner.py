@@ -55,6 +55,14 @@ from enum import Enum
 import numpy as np
 from metrics import MetricGauge
 
+# 🔮 OBSIDIAN FILTER INTEGRATION
+try:
+    from aureon_obsidian_filter import AureonObsidianFilter
+    OBSIDIAN_FILTER_AVAILABLE = True
+except Exception:
+    AureonObsidianFilter = None
+    OBSIDIAN_FILTER_AVAILABLE = False
+
 logger = logging.getLogger(__name__)
 
 # ═══════════════════════════════════════════════════════════════
@@ -129,6 +137,11 @@ class RealityBranch:
     # Timeline properties
     beneficial_probability: float = 0.0  # P(beneficial outcome)
     convergence_window: float = 0.0  # Seconds until window closes
+
+    # Obsidian refinement signals
+    obsidian_chaos: float = 0.0
+    obsidian_clarity: float = 1.0
+    obsidian_casimir_frequency: float = 0.0
     
     # State
     branch_phase: BranchPhase = BranchPhase.DETECTED
@@ -249,6 +262,9 @@ class QuantumMirrorScanner:
         self._stargate_engine = stargate_engine
         self._scanner_bridge = scanner_bridge  # 🦙 AlpacaScannerBridge
         self._lock = threading.RLock()
+
+        # 🔮 Obsidian filter (gem refinement)
+        self._obsidian_filter = AureonObsidianFilter() if OBSIDIAN_FILTER_AVAILABLE else None
         
         # 🦙 Dynamic cost thresholds from fee tracker
         self._pip_threshold = 0.07  # Default minimum
@@ -347,6 +363,21 @@ class QuantumMirrorScanner:
             branch.last_update = time.time()
             
             return branch
+
+    def _refine_with_obsidian(self, branch: RealityBranch, snapshot: Dict[str, Any]) -> None:
+        if not self._obsidian_filter:
+            return
+        try:
+            filtered = self._obsidian_filter.apply(branch.symbol, snapshot)
+            branch.obsidian_chaos = float(filtered.get('obsidian_chaos', 0.0))
+            branch.obsidian_clarity = float(filtered.get('obsidian_clarity', 1.0))
+            branch.obsidian_casimir_frequency = float(filtered.get('obsidian_casimir_frequency', 0.0))
+
+            # If Casimir carrier is present, gently pull branch frequency toward it
+            if branch.obsidian_casimir_frequency:
+                branch.frequency = (branch.frequency * 0.8) + (branch.obsidian_casimir_frequency * 0.2)
+        except Exception:
+            pass
             
     # ═══════════════════════════════════════════════════════════════
     # VALIDATION PASSES (Batten Matrix)
@@ -440,12 +471,19 @@ class QuantumMirrorScanner:
             # Lambda factor
             lambda_factor = branch.lambda_stability
             
+            obsidian_boost = 0.0
+            if branch.obsidian_clarity >= 1.2:
+                obsidian_boost += 0.05
+            if branch.obsidian_chaos >= 0.8:
+                obsidian_boost -= 0.05
+
             p2 = (
                 drift_coherence * 0.3 +
                 phase_coherence * 0.2 +
                 cross_coherence * 0.3 +
                 lambda_factor * 0.2
             )
+            p2 = max(0.0, min(1.0, p2 + obsidian_boost))
             
             branch.p2_coherence = p2
             
@@ -505,6 +543,10 @@ class QuantumMirrorScanner:
             
             # Beneficial probability
             beneficial = (harmonic_factor + coherence_factor + stability) / 3.0
+            if branch.obsidian_clarity >= 1.2:
+                beneficial = min(1.0, beneficial + 0.03)
+            if branch.obsidian_chaos >= 0.8:
+                beneficial = max(0.0, beneficial - 0.03)
             branch.beneficial_probability = beneficial
             
             # Convergence window estimation (Fibonacci timing)
@@ -853,6 +895,7 @@ class QuantumMirrorScanner:
                 symbol = f"{from_asset}/{to_asset}"
                 branch_id = f"{exchange}:{symbol}"
                 price = prices.get(to_asset, prices.get(from_asset, 100.0))
+                volume = opp.get('volume', 0.0) if isinstance(opp, dict) else getattr(opp, 'volume', 0.0)
                 
                 # Register or get existing branch
                 if branch_id not in self.branches:
@@ -863,12 +906,26 @@ class QuantumMirrorScanner:
                     updated += 1
                     
                 # Update branch with current price and derive frequency from price pattern
-                self.update_branch(
+                branch = self.update_branch(
                     branch_id,
                     price=price,
+                    volume=volume,
                     frequency=(price % 100) + SCHUMANN_BASE * PHI,
                     phase=(price % math.pi)
                 )
+
+                # Refine branch via Obsidian filter (gem refinement)
+                if branch:
+                    volatility = opp.get('volatility', 0.0) if isinstance(opp, dict) else getattr(opp, 'volatility', 0.0)
+                    sentiment = 0.5 + max(-0.5, min(0.5, expected_pnl / 10.0))
+                    snapshot = {
+                        'price': price,
+                        'volume': volume,
+                        'volatility': volatility,
+                        'sentiment': sentiment,
+                        'coherence': branch.coherence_score if branch.coherence_score > 0 else 0.5,
+                    }
+                    self._refine_with_obsidian(branch, snapshot)
                 
                 # Run 3-pass Batten Matrix validation
                 p1 = self.validation_pass_1_harmonic(branch_id)

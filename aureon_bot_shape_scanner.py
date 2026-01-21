@@ -61,6 +61,14 @@ except ImportError:
     THOUGHT_BUS_AVAILABLE = False
     ThoughtBus = None
 
+# Chirp Bus - High Speed Signaling
+try:
+    from aureon_chirp_bus import ChirpBus
+    CHIRP_BUS_AVAILABLE = True
+except ImportError:
+    CHIRP_BUS_AVAILABLE = False
+    ChirpBus = None
+
 # Counter-intelligence integration
 try:
     from aureon_queen_counter_intelligence import queen_counter_intelligence, CounterIntelligenceSignal
@@ -139,6 +147,14 @@ class BotShapeScanner:
         
         # ThoughtBus
         self.bus = ThoughtBus() if THOUGHT_BUS_AVAILABLE else None
+        
+        # ChirpBus
+        self.chirp_bus = None
+        if CHIRP_BUS_AVAILABLE:
+            try:
+                self.chirp_bus = ChirpBus()
+            except Exception:
+                pass
         
         # Counter-intelligence integration
         self.attribution_engine = get_attribution_engine() if COUNTER_INTELLIGENCE_AVAILABLE else None
@@ -554,6 +570,15 @@ class BotShapeScanner:
                     'reasoning': signal.reasoning
                 }
             )
+            
+        # ChirpBus emission
+        if self.chirp_bus:
+            self.chirp_bus.publish("counter.signal", {
+                "firm": signal.firm_id,
+                "strat": signal.strategy.value,
+                "conf": signal.confidence,
+                "pips": signal.expected_profit_pips
+            })
         
         # 👑 QUEEN CONSULTATION - Send counter-signal to Queen for approval
         # (Would be wired externally if Queen is available)

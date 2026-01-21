@@ -50,10 +50,21 @@ logger = logging.getLogger(__name__)
 CHIRP_BUS_AVAILABLE = False
 get_chirp_bus = None
 try:
-    from aureon_chirp_bus import get_chirp_bus
+    from aureon_chirp_bus import get_chirp_bus, ChirpDirection, ChirpType
     CHIRP_BUS_AVAILABLE = True
 except ImportError:
     CHIRP_BUS_AVAILABLE = False
+
+# 📡 THOUGHT BUS INTEGRATION - Neural Persistence
+THOUGHT_BUS_AVAILABLE = False
+ThoughtBus = None
+Thought = None
+get_thought_bus = None
+try:
+    from aureon_thought_bus import ThoughtBus, Thought, get_thought_bus
+    THOUGHT_BUS_AVAILABLE = True
+except ImportError:
+    THOUGHT_BUS_AVAILABLE = False
 
 # ═══════════════════════════════════════════════════════════════════════════
 # 💸 THE GOAL - MICRO-MOMENTUM COST THRESHOLDS (WE CANNOT BLEED!)
@@ -185,6 +196,16 @@ class GlobalWaveScanner:
         self.alpaca = alpaca_client
         self.queen = queen
         self.harmonic = harmonic_fusion
+
+        # 🔗 Communication Buses
+        self.thought_bus = get_thought_bus() if THOUGHT_BUS_AVAILABLE else None
+        self.chirp_bus = get_chirp_bus() if CHIRP_BUS_AVAILABLE else None
+        
+        if self.thought_bus:
+            logger.info("📡 Wired to ThoughtBus")
+        
+        if self.chirp_bus:
+            logger.info("🐦 Wired to ChirpBus")
         
         # 🦙 ALPACA SCANNER BRIDGE (SSE + Fee Tracker + Trailing Stops)
         self.scanner_bridge = scanner_bridge
@@ -598,6 +619,25 @@ class GlobalWaveScanner:
                     
                 except Exception as e:
                     # Chirp emission failure - non-critical, continue
+                    pass
+
+            # 📡 THOUGHT EMISSION - Neural Persistence
+            if hasattr(self, 'thought_bus') and self.thought_bus and wave_strength > 0.6:
+                try:
+                    thought = Thought(
+                        source="global_wave_scanner",
+                        topic=f"wave.{wave_state.name.lower()}",
+                        payload={
+                            "symbol": symbol,
+                            "wave_state": wave_state.name,
+                            "wave_strength": wave_strength,
+                            "jump_score": jump_score,
+                            "action": action,
+                            "timestamp": time.time()
+                        }
+                    )
+                    self.thought_bus.publish(thought)
+                except Exception:
                     pass
             
             return WaveAnalysis(

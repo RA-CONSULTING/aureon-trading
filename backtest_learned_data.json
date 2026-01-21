@@ -1,349 +1,108 @@
 {
-  "timestamp": "2026-01-04T02:23:49.145438",
+  "timestamp": "2026-01-20T23:21:04.203575",
   "metrics": {
-    "total_trades": 86,
-    "winning_trades": 86,
+    "total_trades": 40,
+    "winning_trades": 40,
     "losing_trades": 0,
-    "total_pnl": 2201.7434495250022,
-    "max_drawdown": 0.5578239576185842,
-    "peak_equity": 11198.836780539385,
-    "buy_signals": 96,
-    "sell_signals": 86,
+    "total_pnl": 933.6317496268586,
+    "max_drawdown": 0.6401702072048036,
+    "peak_equity": 10000.0,
+    "buy_signals": 50,
+    "sell_signals": 40,
     "convert_signals": 0
   },
   "tradeable": {
     "buy": [
-      "SOL-GBP",
-      "JUPUSDT",
-      "ADA-USD",
-      "OP-USD",
-      "BTC-USD",
-      "INJUSDT",
-      "SOL-USD",
-      "COMPUSDT",
-      "CRVUSDT",
       "MATIC-USD",
-      "AVAX-USD",
-      "LDOUSDT",
-      "DOGE-USD",
-      "LINK-USD",
-      "DOT-USD",
-      "WLDUSDT",
-      "ARB-USD",
-      "FILUSDT",
-      "XRP-USD",
-      "ETH-USD",
-      "ATOM-USD",
-      "SOLUSDT",
-      "UNI-USD",
-      "BTCUSDT",
-      "DOGEUSDT",
-      "TIAUSDT",
-      "BCHUSDT",
-      "FETUSDT",
-      "UNIUSDT",
-      "AVAXUSDT",
-      "STXUSDT",
-      "NEAR-USD",
-      "NEARUSDT",
-      "LTC-USD",
+      "FIL-USD",
+      "APT-USD",
+      "GRTUSDT",
+      "SOL-GBP",
+      "LINKUSDT",
       "BCH-USD",
-      "AAVEUSDT",
+      "COMPUSDT",
+      "JUPUSDT",
+      "LDOUSDT",
+      "TIAUSDT",
+      "OP-USD",
       "LTCUSDT",
       "SUIUSDT",
+      "SEIUSDT",
+      "OPUSDT",
       "ICP-USD",
-      "FIL-USD",
-      "LINKUSDT",
-      "ICPUSDT"
+      "NEAR-USD",
+      "ETH-GBP",
+      "BTC-EUR",
+      "LINK-USD",
+      "CRVUSDT",
+      "LTC-USD",
+      "UNI-USD",
+      "WLDUSDT",
+      "DOGEUSDT",
+      "ADA-USD",
+      "UNIUSDT",
+      "XRP-USD",
+      "MKRUSDT",
+      "AAVEUSDT",
+      "DOT-USD"
     ],
     "sell": [
-      "SOL-GBP",
-      "JUPUSDT",
-      "ADA-USD",
-      "BTC-USD",
-      "INJUSDT",
-      "SOL-USD",
-      "COMPUSDT",
-      "CRVUSDT",
       "MATIC-USD",
-      "AVAX-USD",
-      "LDOUSDT",
-      "DOGE-USD",
-      "LINK-USD",
-      "DOT-USD",
-      "ARB-USD",
-      "WLDUSDT",
-      "FILUSDT",
-      "XRP-USD",
-      "ETH-USD",
-      "ATOM-USD",
-      "SOLUSDT",
-      "UNI-USD",
-      "BTCUSDT",
-      "DOGEUSDT",
-      "TIAUSDT",
-      "BCHUSDT",
-      "FETUSDT",
-      "UNIUSDT",
-      "AVAXUSDT",
-      "STXUSDT",
-      "NEAR-USD",
-      "NEARUSDT",
-      "LTC-USD",
+      "FIL-USD",
+      "GRTUSDT",
+      "LINKUSDT",
       "BCH-USD",
-      "AAVEUSDT",
+      "COMPUSDT",
+      "JUPUSDT",
+      "LDOUSDT",
       "LTCUSDT",
       "SUIUSDT",
+      "SEIUSDT",
       "ICP-USD",
-      "FIL-USD",
-      "LINKUSDT",
-      "ICPUSDT"
+      "NEAR-USD",
+      "ETH-GBP",
+      "BTC-EUR",
+      "CRVUSDT",
+      "LINK-USD",
+      "LTC-USD",
+      "UNI-USD",
+      "WLDUSDT",
+      "ADA-USD",
+      "UNIUSDT",
+      "XRP-USD",
+      "MKRUSDT",
+      "AAVEUSDT",
+      "DOT-USD"
     ],
     "convert": []
   },
   "best_performers": [
     {
-      "symbol": "DOGE-USD",
-      "trades": 3,
-      "wins": 3,
-      "losses": 0,
-      "win_rate": 100.0,
-      "total_pnl": 156.39838202899477,
-      "avg_pnl": 52.13279400966493
-    },
-    {
-      "symbol": "SOL-USD",
-      "trades": 4,
-      "wins": 4,
-      "losses": 0,
-      "win_rate": 100.0,
-      "total_pnl": 127.92594450557607,
-      "avg_pnl": 31.981486126394017
-    },
-    {
-      "symbol": "FIL-USD",
-      "trades": 3,
-      "wins": 3,
-      "losses": 0,
-      "win_rate": 100.0,
-      "total_pnl": 126.27004416972247,
-      "avg_pnl": 42.09001472324082
-    },
-    {
-      "symbol": "DOGEUSDT",
-      "trades": 1,
-      "wins": 1,
-      "losses": 0,
-      "win_rate": 100.0,
-      "total_pnl": 116.14398623574009,
-      "avg_pnl": 116.14398623574009
-    },
-    {
-      "symbol": "AVAX-USD",
-      "trades": 4,
-      "wins": 4,
-      "losses": 0,
-      "win_rate": 100.0,
-      "total_pnl": 113.35145128471343,
-      "avg_pnl": 28.33786282117836
-    },
-    {
       "symbol": "LTC-USD",
+      "trades": 4,
+      "wins": 4,
+      "losses": 0,
+      "win_rate": 100.0,
+      "total_pnl": 110.48815393621331,
+      "avg_pnl": 27.622038484053327
+    },
+    {
+      "symbol": "ADA-USD",
       "trades": 5,
       "wins": 5,
       "losses": 0,
       "win_rate": 100.0,
-      "total_pnl": 98.39284292364661,
-      "avg_pnl": 19.678568584729323
-    },
-    {
-      "symbol": "BCH-USD",
-      "trades": 4,
-      "wins": 4,
-      "losses": 0,
-      "win_rate": 100.0,
-      "total_pnl": 97.26979322699572,
-      "avg_pnl": 24.31744830674893
-    },
-    {
-      "symbol": "CRVUSDT",
-      "trades": 3,
-      "wins": 3,
-      "losses": 0,
-      "win_rate": 100.0,
-      "total_pnl": 84.47569737409306,
-      "avg_pnl": 28.158565791364353
-    },
-    {
-      "symbol": "ICP-USD",
-      "trades": 3,
-      "wins": 3,
-      "losses": 0,
-      "win_rate": 100.0,
-      "total_pnl": 82.2362493359019,
-      "avg_pnl": 27.412083111967302
-    },
-    {
-      "symbol": "JUPUSDT",
-      "trades": 3,
-      "wins": 3,
-      "losses": 0,
-      "win_rate": 100.0,
-      "total_pnl": 79.38487713995822,
-      "avg_pnl": 26.461625713319407
-    },
-    {
-      "symbol": "ARB-USD",
-      "trades": 3,
-      "wins": 3,
-      "losses": 0,
-      "win_rate": 100.0,
-      "total_pnl": 76.18365953344336,
-      "avg_pnl": 25.394553177814455
-    },
-    {
-      "symbol": "ICPUSDT",
-      "trades": 3,
-      "wins": 3,
-      "losses": 0,
-      "win_rate": 100.0,
-      "total_pnl": 74.18268193193899,
-      "avg_pnl": 24.72756064397966
-    },
-    {
-      "symbol": "ADA-USD",
-      "trades": 4,
-      "wins": 4,
-      "losses": 0,
-      "win_rate": 100.0,
-      "total_pnl": 70.10856172554378,
-      "avg_pnl": 17.527140431385945
-    },
-    {
-      "symbol": "LINK-USD",
-      "trades": 4,
-      "wins": 4,
-      "losses": 0,
-      "win_rate": 100.0,
-      "total_pnl": 65.60393734922522,
-      "avg_pnl": 16.400984337306305
-    },
-    {
-      "symbol": "NEAR-USD",
-      "trades": 3,
-      "wins": 3,
-      "losses": 0,
-      "win_rate": 100.0,
-      "total_pnl": 64.90013624969572,
-      "avg_pnl": 21.633378749898572
-    },
-    {
-      "symbol": "BTC-USD",
-      "trades": 3,
-      "wins": 3,
-      "losses": 0,
-      "win_rate": 100.0,
-      "total_pnl": 49.317278875665366,
-      "avg_pnl": 16.439092958555122
-    },
-    {
-      "symbol": "INJUSDT",
-      "trades": 2,
-      "wins": 2,
-      "losses": 0,
-      "win_rate": 100.0,
-      "total_pnl": 48.960387454028,
-      "avg_pnl": 24.480193727014
-    },
-    {
-      "symbol": "FILUSDT",
-      "trades": 1,
-      "wins": 1,
-      "losses": 0,
-      "win_rate": 100.0,
-      "total_pnl": 48.283358974184985,
-      "avg_pnl": 48.283358974184985
-    },
-    {
-      "symbol": "LTCUSDT",
-      "trades": 2,
-      "wins": 2,
-      "losses": 0,
-      "win_rate": 100.0,
-      "total_pnl": 43.17773329162051,
-      "avg_pnl": 21.588866645810256
+      "total_pnl": 110.47974617769525,
+      "avg_pnl": 22.09594923553905
     },
     {
       "symbol": "MATIC-USD",
-      "trades": 2,
-      "wins": 2,
+      "trades": 4,
+      "wins": 4,
       "losses": 0,
       "win_rate": 100.0,
-      "total_pnl": 42.7265997820887,
-      "avg_pnl": 21.36329989104435
-    },
-    {
-      "symbol": "AAVEUSDT",
-      "trades": 1,
-      "wins": 1,
-      "losses": 0,
-      "win_rate": 100.0,
-      "total_pnl": 42.19484613203108,
-      "avg_pnl": 42.19484613203108
-    },
-    {
-      "symbol": "WLDUSDT",
-      "trades": 2,
-      "wins": 2,
-      "losses": 0,
-      "win_rate": 100.0,
-      "total_pnl": 42.09104948770158,
-      "avg_pnl": 21.04552474385079
-    },
-    {
-      "symbol": "STXUSDT",
-      "trades": 1,
-      "wins": 1,
-      "losses": 0,
-      "win_rate": 100.0,
-      "total_pnl": 40.563005101207445,
-      "avg_pnl": 40.563005101207445
-    },
-    {
-      "symbol": "XRP-USD",
-      "trades": 2,
-      "wins": 2,
-      "losses": 0,
-      "win_rate": 100.0,
-      "total_pnl": 39.3885487845172,
-      "avg_pnl": 19.6942743922586
-    },
-    {
-      "symbol": "FETUSDT",
-      "trades": 1,
-      "wins": 1,
-      "losses": 0,
-      "win_rate": 100.0,
-      "total_pnl": 38.572302985676934,
-      "avg_pnl": 38.572302985676934
-    },
-    {
-      "symbol": "ETH-USD",
-      "trades": 2,
-      "wins": 2,
-      "losses": 0,
-      "win_rate": 100.0,
-      "total_pnl": 35.99017865042144,
-      "avg_pnl": 17.99508932521072
-    },
-    {
-      "symbol": "SOLUSDT",
-      "trades": 2,
-      "wins": 2,
-      "losses": 0,
-      "win_rate": 100.0,
-      "total_pnl": 34.051435281277975,
-      "avg_pnl": 17.025717640638987
+      "total_pnl": 102.76532488555686,
+      "avg_pnl": 25.691331221389216
     },
     {
       "symbol": "UNI-USD",
@@ -351,274 +110,364 @@
       "wins": 2,
       "losses": 0,
       "win_rate": 100.0,
-      "total_pnl": 31.12799744110419,
-      "avg_pnl": 15.563998720552094
+      "total_pnl": 98.74761551675101,
+      "avg_pnl": 49.373807758375506
     },
     {
-      "symbol": "AVAXUSDT",
+      "symbol": "WLDUSDT",
+      "trades": 2,
+      "wins": 2,
+      "losses": 0,
+      "win_rate": 100.0,
+      "total_pnl": 77.27705947035822,
+      "avg_pnl": 38.63852973517911
+    },
+    {
+      "symbol": "XRP-USD",
       "trades": 1,
       "wins": 1,
       "losses": 0,
       "win_rate": 100.0,
-      "total_pnl": 29.485939386956606,
-      "avg_pnl": 29.485939386956606
+      "total_pnl": 60.64403295983475,
+      "avg_pnl": 60.64403295983475
     },
     {
-      "symbol": "TIAUSDT",
+      "symbol": "LTCUSDT",
+      "trades": 2,
+      "wins": 2,
+      "losses": 0,
+      "win_rate": 100.0,
+      "total_pnl": 37.49667522198875,
+      "avg_pnl": 18.748337610994376
+    },
+    {
+      "symbol": "LDOUSDT",
+      "trades": 2,
+      "wins": 2,
+      "losses": 0,
+      "win_rate": 100.0,
+      "total_pnl": 33.667668355292804,
+      "avg_pnl": 16.833834177646402
+    },
+    {
+      "symbol": "FIL-USD",
       "trades": 1,
       "wins": 1,
       "losses": 0,
       "win_rate": 100.0,
-      "total_pnl": 22.61815115347855,
-      "avg_pnl": 22.61815115347855
+      "total_pnl": 28.53908902870107,
+      "avg_pnl": 28.53908902870107
+    },
+    {
+      "symbol": "COMPUSDT",
+      "trades": 1,
+      "wins": 1,
+      "losses": 0,
+      "win_rate": 100.0,
+      "total_pnl": 23.774988955667517,
+      "avg_pnl": 23.774988955667517
+    },
+    {
+      "symbol": "AAVEUSDT",
+      "trades": 1,
+      "wins": 1,
+      "losses": 0,
+      "win_rate": 100.0,
+      "total_pnl": 21.91414235403234,
+      "avg_pnl": 21.91414235403234
+    },
+    {
+      "symbol": "GRTUSDT",
+      "trades": 1,
+      "wins": 1,
+      "losses": 0,
+      "win_rate": 100.0,
+      "total_pnl": 19.92048920168599,
+      "avg_pnl": 19.92048920168599
+    },
+    {
+      "symbol": "DOT-USD",
+      "trades": 1,
+      "wins": 1,
+      "losses": 0,
+      "win_rate": 100.0,
+      "total_pnl": 16.593059137798726,
+      "avg_pnl": 16.593059137798726
+    },
+    {
+      "symbol": "UNIUSDT",
+      "trades": 1,
+      "wins": 1,
+      "losses": 0,
+      "win_rate": 100.0,
+      "total_pnl": 16.529709330335624,
+      "avg_pnl": 16.529709330335624
+    },
+    {
+      "symbol": "BTC-EUR",
+      "trades": 1,
+      "wins": 1,
+      "losses": 0,
+      "win_rate": 100.0,
+      "total_pnl": 15.75876325289848,
+      "avg_pnl": 15.75876325289848
+    },
+    {
+      "symbol": "MKRUSDT",
+      "trades": 1,
+      "wins": 1,
+      "losses": 0,
+      "win_rate": 100.0,
+      "total_pnl": 15.3876582278481,
+      "avg_pnl": 15.3876582278481
+    },
+    {
+      "symbol": "ICP-USD",
+      "trades": 1,
+      "wins": 1,
+      "losses": 0,
+      "win_rate": 100.0,
+      "total_pnl": 15.129483109351701,
+      "avg_pnl": 15.129483109351701
+    },
+    {
+      "symbol": "CRVUSDT",
+      "trades": 1,
+      "wins": 1,
+      "losses": 0,
+      "win_rate": 100.0,
+      "total_pnl": 14.972853832167665,
+      "avg_pnl": 14.972853832167665
+    },
+    {
+      "symbol": "SUIUSDT",
+      "trades": 1,
+      "wins": 1,
+      "losses": 0,
+      "win_rate": 100.0,
+      "total_pnl": 14.941909651924172,
+      "avg_pnl": 14.941909651924172
+    },
+    {
+      "symbol": "NEAR-USD",
+      "trades": 1,
+      "wins": 1,
+      "losses": 0,
+      "win_rate": 100.0,
+      "total_pnl": 14.684295828330015,
+      "avg_pnl": 14.684295828330015
+    },
+    {
+      "symbol": "LINK-USD",
+      "trades": 1,
+      "wins": 1,
+      "losses": 0,
+      "win_rate": 100.0,
+      "total_pnl": 14.318751730411748,
+      "avg_pnl": 14.318751730411748
+    },
+    {
+      "symbol": "BCH-USD",
+      "trades": 1,
+      "wins": 1,
+      "losses": 0,
+      "win_rate": 100.0,
+      "total_pnl": 14.241256830604485,
+      "avg_pnl": 14.241256830604485
+    },
+    {
+      "symbol": "SEIUSDT",
+      "trades": 1,
+      "wins": 1,
+      "losses": 0,
+      "win_rate": 100.0,
+      "total_pnl": 14.18819822253786,
+      "avg_pnl": 14.18819822253786
+    },
+    {
+      "symbol": "JUPUSDT",
+      "trades": 1,
+      "wins": 1,
+      "losses": 0,
+      "win_rate": 100.0,
+      "total_pnl": 14.121302232266716,
+      "avg_pnl": 14.121302232266716
+    },
+    {
+      "symbol": "LINKUSDT",
+      "trades": 1,
+      "wins": 1,
+      "losses": 0,
+      "win_rate": 100.0,
+      "total_pnl": 13.800711743772327,
+      "avg_pnl": 13.800711743772327
+    },
+    {
+      "symbol": "ETH-GBP",
+      "trades": 1,
+      "wins": 1,
+      "losses": 0,
+      "win_rate": 100.0,
+      "total_pnl": 13.248810432833155,
+      "avg_pnl": 13.248810432833155
     }
   ],
   "symbol_performance": {
-    "XRP-USD": {
+    "LDOUSDT": {
       "trades": 2,
       "wins": 2,
       "losses": 0,
-      "total_pnl": 39.3885487845172
-    },
-    "ADA-USD": {
-      "trades": 4,
-      "wins": 4,
-      "losses": 0,
-      "total_pnl": 70.10856172554378
-    },
-    "DOGE-USD": {
-      "trades": 3,
-      "wins": 3,
-      "losses": 0,
-      "total_pnl": 156.39838202899477
-    },
-    "DOT-USD": {
-      "trades": 1,
-      "wins": 1,
-      "losses": 0,
-      "total_pnl": 14.858306662787392
-    },
-    "SUIUSDT": {
-      "trades": 1,
-      "wins": 1,
-      "losses": 0,
-      "total_pnl": 17.167727697849475
-    },
-    "ATOM-USD": {
-      "trades": 1,
-      "wins": 1,
-      "losses": 0,
-      "total_pnl": 16.624388753056355
-    },
-    "ICP-USD": {
-      "trades": 3,
-      "wins": 3,
-      "losses": 0,
-      "total_pnl": 82.2362493359019
-    },
-    "FIL-USD": {
-      "trades": 3,
-      "wins": 3,
-      "losses": 0,
-      "total_pnl": 126.27004416972247
-    },
-    "SOLUSDT": {
-      "trades": 2,
-      "wins": 2,
-      "losses": 0,
-      "total_pnl": 34.051435281277975
-    },
-    "BTC-USD": {
-      "trades": 3,
-      "wins": 3,
-      "losses": 0,
-      "total_pnl": 49.317278875665366
-    },
-    "BTCUSDT": {
-      "trades": 1,
-      "wins": 1,
-      "losses": 0,
-      "total_pnl": 16.689335315889736
+      "total_pnl": 33.667668355292804
     },
     "LINK-USD": {
-      "trades": 4,
-      "wins": 4,
-      "losses": 0,
-      "total_pnl": 65.60393734922522
-    },
-    "JUPUSDT": {
-      "trades": 3,
-      "wins": 3,
-      "losses": 0,
-      "total_pnl": 79.38487713995822
-    },
-    "STXUSDT": {
       "trades": 1,
       "wins": 1,
       "losses": 0,
-      "total_pnl": 40.563005101207445
-    },
-    "MATIC-USD": {
-      "trades": 2,
-      "wins": 2,
-      "losses": 0,
-      "total_pnl": 42.7265997820887
-    },
-    "NEAR-USD": {
-      "trades": 3,
-      "wins": 3,
-      "losses": 0,
-      "total_pnl": 64.90013624969572
-    },
-    "NEARUSDT": {
-      "trades": 1,
-      "wins": 1,
-      "losses": 0,
-      "total_pnl": 19.897527629795825
-    },
-    "SOL-USD": {
-      "trades": 4,
-      "wins": 4,
-      "losses": 0,
-      "total_pnl": 127.92594450557607
-    },
-    "ARB-USD": {
-      "trades": 3,
-      "wins": 3,
-      "losses": 0,
-      "total_pnl": 76.18365953344336
-    },
-    "LDOUSDT": {
-      "trades": 1,
-      "wins": 1,
-      "losses": 0,
-      "total_pnl": 15.672371682219941
-    },
-    "WLDUSDT": {
-      "trades": 2,
-      "wins": 2,
-      "losses": 0,
-      "total_pnl": 42.09104948770158
-    },
-    "LTC-USD": {
-      "trades": 5,
-      "wins": 5,
-      "losses": 0,
-      "total_pnl": 98.39284292364661
-    },
-    "AVAX-USD": {
-      "trades": 4,
-      "wins": 4,
-      "losses": 0,
-      "total_pnl": 113.35145128471343
-    },
-    "CRVUSDT": {
-      "trades": 3,
-      "wins": 3,
-      "losses": 0,
-      "total_pnl": 84.47569737409306
-    },
-    "ETH-USD": {
-      "trades": 2,
-      "wins": 2,
-      "losses": 0,
-      "total_pnl": 35.99017865042144
-    },
-    "ICPUSDT": {
-      "trades": 3,
-      "wins": 3,
-      "losses": 0,
-      "total_pnl": 74.18268193193899
-    },
-    "LTCUSDT": {
-      "trades": 2,
-      "wins": 2,
-      "losses": 0,
-      "total_pnl": 43.17773329162051
-    },
-    "UNIUSDT": {
-      "trades": 1,
-      "wins": 1,
-      "losses": 0,
-      "total_pnl": 14.529085962510777
-    },
-    "UNI-USD": {
-      "trades": 2,
-      "wins": 2,
-      "losses": 0,
-      "total_pnl": 31.12799744110419
-    },
-    "AVAXUSDT": {
-      "trades": 1,
-      "wins": 1,
-      "losses": 0,
-      "total_pnl": 29.485939386956606
-    },
-    "DOGEUSDT": {
-      "trades": 1,
-      "wins": 1,
-      "losses": 0,
-      "total_pnl": 116.14398623574009
-    },
-    "SOL-GBP": {
-      "trades": 1,
-      "wins": 1,
-      "losses": 0,
-      "total_pnl": 14.760987802907398
-    },
-    "INJUSDT": {
-      "trades": 2,
-      "wins": 2,
-      "losses": 0,
-      "total_pnl": 48.960387454028
+      "total_pnl": 14.318751730411748
     },
     "LINKUSDT": {
       "trades": 1,
       "wins": 1,
       "losses": 0,
-      "total_pnl": 15.400500577365875
+      "total_pnl": 13.800711743772327
     },
-    "BCHUSDT": {
+    "JUPUSDT": {
       "trades": 1,
       "wins": 1,
       "losses": 0,
-      "total_pnl": 16.86753058413119
+      "total_pnl": 14.121302232266716
     },
-    "BCH-USD": {
+    "DOT-USD": {
+      "trades": 1,
+      "wins": 1,
+      "losses": 0,
+      "total_pnl": 16.593059137798726
+    },
+    "LTC-USD": {
       "trades": 4,
       "wins": 4,
       "losses": 0,
-      "total_pnl": 97.26979322699572
+      "total_pnl": 110.48815393621331
     },
-    "FETUSDT": {
+    "LTCUSDT": {
+      "trades": 2,
+      "wins": 2,
+      "losses": 0,
+      "total_pnl": 37.49667522198875
+    },
+    "FIL-USD": {
       "trades": 1,
       "wins": 1,
       "losses": 0,
-      "total_pnl": 38.572302985676934
+      "total_pnl": 28.53908902870107
     },
-    "TIAUSDT": {
+    "WLDUSDT": {
+      "trades": 2,
+      "wins": 2,
+      "losses": 0,
+      "total_pnl": 77.27705947035822
+    },
+    "ETH-GBP": {
       "trades": 1,
       "wins": 1,
       "losses": 0,
-      "total_pnl": 22.61815115347855
+      "total_pnl": 13.248810432833155
     },
-    "FILUSDT": {
+    "UNI-USD": {
+      "trades": 2,
+      "wins": 2,
+      "losses": 0,
+      "total_pnl": 98.74761551675101
+    },
+    "BCH-USD": {
       "trades": 1,
       "wins": 1,
       "losses": 0,
-      "total_pnl": 48.283358974184985
+      "total_pnl": 14.241256830604485
+    },
+    "UNIUSDT": {
+      "trades": 1,
+      "wins": 1,
+      "losses": 0,
+      "total_pnl": 16.529709330335624
+    },
+    "SUIUSDT": {
+      "trades": 1,
+      "wins": 1,
+      "losses": 0,
+      "total_pnl": 14.941909651924172
+    },
+    "MKRUSDT": {
+      "trades": 1,
+      "wins": 1,
+      "losses": 0,
+      "total_pnl": 15.3876582278481
     },
     "COMPUSDT": {
       "trades": 1,
       "wins": 1,
       "losses": 0,
-      "total_pnl": 17.89862905933799
+      "total_pnl": 23.774988955667517
+    },
+    "ADA-USD": {
+      "trades": 5,
+      "wins": 5,
+      "losses": 0,
+      "total_pnl": 110.47974617769525
+    },
+    "XRP-USD": {
+      "trades": 1,
+      "wins": 1,
+      "losses": 0,
+      "total_pnl": 60.64403295983475
+    },
+    "CRVUSDT": {
+      "trades": 1,
+      "wins": 1,
+      "losses": 0,
+      "total_pnl": 14.972853832167665
+    },
+    "BTC-EUR": {
+      "trades": 1,
+      "wins": 1,
+      "losses": 0,
+      "total_pnl": 15.75876325289848
+    },
+    "SEIUSDT": {
+      "trades": 1,
+      "wins": 1,
+      "losses": 0,
+      "total_pnl": 14.18819822253786
+    },
+    "GRTUSDT": {
+      "trades": 1,
+      "wins": 1,
+      "losses": 0,
+      "total_pnl": 19.92048920168599
+    },
+    "MATIC-USD": {
+      "trades": 4,
+      "wins": 4,
+      "losses": 0,
+      "total_pnl": 102.76532488555686
+    },
+    "ICP-USD": {
+      "trades": 1,
+      "wins": 1,
+      "losses": 0,
+      "total_pnl": 15.129483109351701
     },
     "AAVEUSDT": {
       "trades": 1,
       "wins": 1,
       "losses": 0,
-      "total_pnl": 42.19484613203108
+      "total_pnl": 21.91414235403234
+    },
+    "NEAR-USD": {
+      "trades": 1,
+      "wins": 1,
+      "losses": 0,
+      "total_pnl": 14.684295828330015
     }
   }
 }

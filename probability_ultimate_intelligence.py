@@ -44,7 +44,33 @@ from probability_intelligence_matrix import (
     ProbabilityIntelligence
 )
 
-# 🐠 CLOWNFISH INTEGRATION - Lazy load to avoid circular imports
+# � ThoughtBus - Primary neural communication
+try:
+    from aureon_thought_bus import ThoughtBus, Thought, get_thought_bus
+    THOUGHT_BUS_AVAILABLE = True
+except ImportError:
+    THOUGHT_BUS_AVAILABLE = False
+
+# 🐦 ChirpBus - kHz-speed signaling
+try:
+    from aureon_chirp_bus import get_chirp_bus, ChirpDirection, ChirpType
+    CHIRP_BUS_AVAILABLE = True
+except ImportError:
+    CHIRP_BUS_AVAILABLE = False
+
+# 👑 Queen Hive Mind - Decision approval
+QUEEN_AVAILABLE = False
+def _lazy_load_queen():
+    global QUEEN_AVAILABLE
+    try:
+        from aureon_queen_hive_mind import QueenHiveMind, get_queen
+        QUEEN_AVAILABLE = True
+        return get_queen()
+    except ImportError:
+        QUEEN_AVAILABLE = False
+        return None
+
+# �🐠 CLOWNFISH INTEGRATION - Lazy load to avoid circular imports
 CLOWNFISH_AVAILABLE = False
 ClownfishNode = None
 MarketState = None
@@ -157,6 +183,18 @@ class ProbabilityUltimateIntelligence:
                 safe_print("🐠 ClownfishNode v2.0 initialized for pattern learning")
             except Exception as e:
                 safe_print(f"⚠️ ClownfishNode init failed: {e}")
+        
+        # 🔗 Initialize Communication Buses
+        self.thought_bus = get_thought_bus() if THOUGHT_BUS_AVAILABLE else None
+        self.chirp_bus = get_chirp_bus() if CHIRP_BUS_AVAILABLE else None
+        self.queen = _lazy_load_queen()
+        
+        if self.thought_bus:
+            safe_print("📡 Ultimate Intelligence: Wired to ThoughtBus")
+        if self.chirp_bus:
+            safe_print("🐦 Ultimate Intelligence: Wired to ChirpBus")
+        if self.queen:
+            safe_print("👑 Ultimate Intelligence: Connected to Queen Hive")
         
         self._load_state()
     
@@ -340,7 +378,8 @@ class ProbabilityUltimateIntelligence:
         target_pnl: float,
         pnl_history: List[Tuple[float, float]],
         momentum_score: float = 0.0,
-        market_state: Optional[any] = None
+        market_state: Optional[any] = None,
+        symbol: str = "UNKNOWN"
     ) -> UltimatePrediction:
         """
         Generate the ultimate prediction combining matrix intelligence
@@ -354,6 +393,7 @@ class ProbabilityUltimateIntelligence:
             pnl_history: List of (timestamp, pnl) tuples
             momentum_score: Current momentum (0-1)
             market_state: Optional MarketState for Clownfish analysis
+            symbol: Optional symbol identifier for bus emission
         """
         
         # 🐠 Compute Clownfish signal if available
@@ -470,7 +510,7 @@ class ProbabilityUltimateIntelligence:
         if is_guaranteed_win and matrix_intel.action != "DANGER":
             should_trade = True
         
-        return UltimatePrediction(
+        prediction = UltimatePrediction(
             base_probability=matrix_intel.adjusted_probability,
             pattern_key=pattern_key,
             pattern_win_rate=pattern_win_rate,
@@ -484,7 +524,53 @@ class ProbabilityUltimateIntelligence:
             clownfish_signal=clownfish_signal,
             reasoning=reasoning
         )
+        
+        # 🔊 Publish to Hive Mind if integrated
+        if hasattr(self, 'publish_prediction'):
+            self.publish_prediction(prediction, symbol)
+            
+        return prediction
     
+    def publish_prediction(self, prediction: UltimatePrediction, symbol: str = "UNKNOWN"):
+        """Publish the prediction to the Hive Mind (ThoughtBus + ChirpBus)."""
+        
+        # 1. ThoughtBus (Brain Persistence)
+        if hasattr(self, 'thought_bus') and self.thought_bus and prediction.should_trade:
+            try:
+                thought = Thought(
+                    source="ultimate_intelligence",
+                    topic="prediction.opportunity.strong" if prediction.final_probability > 0.8 else "prediction.opportunity",
+                    payload={
+                        "symbol": symbol,
+                        "probability": prediction.final_probability,
+                        "confidence": prediction.pattern_confidence,
+                        "is_guaranteed": prediction.is_guaranteed_win,
+                        "pattern_key": "|".join(prediction.pattern_key),
+                        "reasoning": prediction.reasoning,
+                        "timestamp": time.time()
+                    }
+                )
+                self.thought_bus.publish(thought)
+            except Exception as e:
+                safe_print(f"⚠️ Failed to publish thought: {e}")
+
+        # 2. ChirpBus (Speed Signal)
+        if hasattr(self, 'chirp_bus') and self.chirp_bus and prediction.should_trade:
+            try:
+                # Use frequency based on probability (higher prob = higher freq)
+                freq = 432 + (prediction.final_probability * 400) # 432Hz - 832Hz
+                
+                self.chirp_bus.emit_message(
+                    message=f"ULTIMATE_PREDICTION {symbol} {prediction.final_probability:.2f}",
+                    direction=ChirpDirection.UP,
+                    confidence=prediction.final_probability,
+                    symbol=symbol,
+                    frequency=freq,
+                    message_type=ChirpType.OPPORTUNITY
+                )
+            except Exception as e:
+                safe_print(f"⚠️ Failed to emit chirp: {e}")
+
     def record_outcome(
         self,
         pattern_key: Tuple[str, str, str, str, str],

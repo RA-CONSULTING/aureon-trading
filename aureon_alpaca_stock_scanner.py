@@ -37,6 +37,21 @@ from typing import Dict, List, Optional, Tuple
 from dataclasses import dataclass, field
 from collections import deque
 
+# 🚌 Communication Buses
+try:
+    from aureon_thought_bus import ThoughtBus, Thought
+    THOUGHT_BUS_AVAILABLE = True
+except ImportError:
+    THOUGHT_BUS_AVAILABLE = False
+    ThoughtBus = None
+
+try:
+    from aureon_chirp_bus import ChirpBus
+    CHIRP_BUS_AVAILABLE = True
+except ImportError:
+    CHIRP_BUS_AVAILABLE = False
+    ChirpBus = None
+
 logger = logging.getLogger(__name__)
 
 PHI = (1 + math.sqrt(5)) / 2  # Golden ratio
@@ -91,6 +106,15 @@ class AlpacaStockScanner:
         self.price_history: Dict[str, deque] = {}  # Rolling price history
         self.volume_history: Dict[str, deque] = {}  # Rolling volume history
         self.history_window = 50  # Keep 50 data points for MA calculations
+        
+        # Bus Integration
+        self.thought_bus = ThoughtBus() if THOUGHT_BUS_AVAILABLE else None
+        self.chirp_bus = None
+        if CHIRP_BUS_AVAILABLE:
+            try:
+                self.chirp_bus = ChirpBus()
+            except Exception:
+                pass
         
     def scan_stocks(
         self,
@@ -232,8 +256,36 @@ class AlpacaStockScanner:
         # Sort by combined score (highest first)
         opportunities.sort(key=lambda x: x.combined_score, reverse=True)
         
-        return opportunities[:max_results]
+        # Publish best opportunities
+        results = opportunities[:max_results]
+        for opp in results[:3]:
+            self._publish_opportunity(opp)
+            
+        return results
     
+    def _publish_opportunity(self, opp: StockOpportunity) -> None:
+        """Publish opportunity to ThoughtBus and ChirpBus."""
+        try:
+            # 1. ThoughtBus
+            if self.thought_bus:
+                self.thought_bus.publish(Thought(
+                    source="ALPACA_STOCK_SCANNER",
+                    thought_type="STOCK_OPPORTUNITY",
+                    priority=2,
+                    content=asdict(opp)
+                ))
+
+            # 2. ChirpBus
+            if self.chirp_bus:
+                self.chirp_bus.publish("stock.opportunity", {
+                    "sym": opp.symbol,
+                    "score": opp.combined_score,
+                    "signal": opp.signal_type,
+                    "conf": opp.confidence
+                })
+        except Exception as e:
+            logger.error(f"Failed to publish stock opportunity: {e}")
+
     def _filter_to_top_volume_stocks(self, symbols: List[str], limit: int = 500) -> List[str]:
         """Filter to highest volume stocks using BULK snapshots (Heavy Lifting)."""
         if not self.alpaca:
