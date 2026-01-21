@@ -4932,6 +4932,29 @@ class OrcaKillCycle:
                     except Exception:
                         pass
                 
+                # 🪙 ADD CRYPTO BALANCES - Convert ETH, SOL, etc. to USD
+                try:
+                    balances = binance_client.get_balance() if hasattr(binance_client, 'get_balance') else {}
+                    crypto_conversions = {
+                        'ETH': 3300.0,   # Approximate ETH/USD
+                        'SOL': 250.0,    # Approximate SOL/USD
+                        'BTC': 105000.0, # Approximate BTC/USD
+                        'BNB': 700.0,    # Approximate BNB/USD
+                        'TRX': 0.25,     # Approximate TRX/USD
+                        'ADA': 1.0,      # Approximate ADA/USD
+                        'DOT': 7.0,      # Approximate DOT/USD
+                        'AVAX': 40.0,    # Approximate AVAX/USD
+                        'LINK': 25.0,    # Approximate LINK/USD
+                        'MATIC': 0.50,   # Approximate MATIC/USD
+                        'XRP': 3.0,      # Approximate XRP/USD
+                    }
+                    for crypto, usd_rate in crypto_conversions.items():
+                        crypto_bal = float(balances.get(crypto, 0) or 0)
+                        if crypto_bal > 0.0001:  # Only count meaningful amounts
+                            binance_cash += crypto_bal * usd_rate
+                except Exception:
+                    pass
+                
                 self.last_cash_status['binance'] = 'ok'
                 cash['binance'] = binance_cash + (5.0 if test_mode else 0)
             except Exception as e:
