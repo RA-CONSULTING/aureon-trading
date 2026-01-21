@@ -1179,6 +1179,7 @@ class AureonCommandCenter:
         if AIOHTTP_AVAILABLE:
             self.app = web.Application()
             self.app.router.add_get('/', self.handle_index)
+            self.app.router.add_get('/health', self.handle_health)
             self.app.router.add_get('/ws', self.handle_websocket)
             self.app.router.add_get('/api/status', self.handle_api_status)
             self.app.router.add_get('/api/portfolio', self.handle_api_portfolio)
@@ -1318,6 +1319,14 @@ class AureonCommandCenter:
         print("\n" + "=" * 70)
         print(f"✅ COMMAND CENTER INITIALIZED: {working} systems operational")
         print("=" * 70)
+    
+    async def handle_health(self, request):
+        """Health check endpoint for Docker/K8s liveness probes."""
+        return web.json_response({
+            "status": "healthy",
+            "service": "aureon-command-center",
+            "timestamp": time.time()
+        })
     
     async def handle_index(self, request):
         """Serve the command center UI."""
