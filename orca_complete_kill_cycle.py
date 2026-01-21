@@ -4838,14 +4838,32 @@ class OrcaKillCycle:
                         self.last_cash_status['alpaca'] = 'error'
                         cash['alpaca'] = 0.0
                     else:
-                        # Try 'cash' first, then 'buying_power', then equity as fallback
-                        alpaca_cash = float(acct.get('cash', 0) or 0)
-                        if alpaca_cash == 0:
-                            alpaca_cash = float(acct.get('buying_power', 0) or 0)
-                        if alpaca_cash == 0:
-                            alpaca_cash = float(acct.get('equity', acct.get('portfolio_value', 0) or 0) or 0)
-                            if alpaca_cash > 0:
-                                self.last_cash_status['alpaca'] = 'equity'
+                        # Use portfolio_value (total equity) which includes positions
+                        alpaca_cash = float(acct.get('portfolio_value', 0) or acct.get('equity', 0) or 0)
+                        
+                        # 🪙 ADD POSITIONS VALUE - Include all crypto/stock positions
+                        try:
+                            positions = alpaca_client.get_positions()
+                            positions_value = 0.0
+                            self.alpaca_positions = []  # Store for tracking
+                            for pos in positions:
+                                market_val = float(pos.get('market_value', 0) or 0)
+                                positions_value += abs(market_val)
+                                # Track position for sell opportunities
+                                self.alpaca_positions.append({
+                                    'symbol': pos.get('symbol', ''),
+                                    'qty': float(pos.get('qty', 0)),
+                                    'market_value': market_val,
+                                    'unrealized_pl': float(pos.get('unrealized_pl', 0) or 0),
+                                    'avg_entry_price': float(pos.get('avg_entry_price', 0) or 0),
+                                    'current_price': float(pos.get('current_price', 0) or 0)
+                                })
+                            # Use the higher of portfolio_value or cash + positions
+                            base_cash = float(acct.get('cash', 0) or 0)
+                            alpaca_cash = max(alpaca_cash, base_cash + positions_value)
+                        except Exception:
+                            pass
+                        
                         if self.last_cash_status['alpaca'] == 'unknown':
                             self.last_cash_status['alpaca'] = 'ok'
                         cash['alpaca'] = alpaca_cash + (5.0 if test_mode else 0)
@@ -4974,8 +4992,44 @@ class OrcaKillCycle:
                     # Get Capital.com account info
                     accounts = capital_client.get_accounts()
                     if accounts and len(accounts) > 0:
-                        # Use first account's available balance
-                        capital_cash = float(accounts[0].get('available', 0) or 0)
+                        acc = accounts[0]
+                        # Use FULL balance, not just available (includes margin used)
+                        capital_balance = float(acc.get('balance', 0) or 0)
+                        capital_available = float(acc.get('available', 0) or 0)
+                        currency = acc.get('currency', 'GBP')
+                        
+                        # Convert GBP to USD if needed
+                        gbp_to_usd = 1.27
+                        if currency == 'GBP':
+                            capital_cash = capital_balance * gbp_to_usd
+                        else:
+                            capital_cash = capital_balance
+                        
+                        # 🪙 ADD POSITIONS VALUE - Include open CFD positions
+                        try:
+                            positions = capital_client.get_positions()
+                            self.capital_positions = []  # Store for tracking
+                            for pos_data in positions:
+                                pos = pos_data.get('position', {})
+                                market = pos_data.get('market', {})
+                                size = float(pos.get('size', 0) or 0)
+                                level = float(pos.get('level', 0) or 0)  # Entry price
+                                upl = float(pos.get('upl', 0) or 0)  # Unrealized P&L
+                                direction = pos.get('direction', 'BUY')
+                                symbol = market.get('symbol', market.get('epic', ''))
+                                
+                                # Track position
+                                self.capital_positions.append({
+                                    'symbol': symbol,
+                                    'size': size,
+                                    'entry_price': level,
+                                    'unrealized_pl': upl * gbp_to_usd if currency == 'GBP' else upl,
+                                    'direction': direction,
+                                    'deal_id': pos.get('dealId', '')
+                                })
+                        except Exception:
+                            pass
+                        
                         self.last_cash_status['capital'] = 'ok'
                         cash['capital'] = capital_cash + (5.0 if test_mode else 0)
                     else:
@@ -4987,6 +5041,119 @@ class OrcaKillCycle:
                 cash['capital'] = 5.0 if test_mode else 0.0
         
         return cash
+
+    def get_all_positions(self) -> Dict[str, list]:
+        """Get all existing positions across ALL exchanges that could be sold."""
+        all_positions = {'alpaca': [], 'kraken': [], 'binance': [], 'capital': []}
+        
+        # Alpaca positions
+        if 'alpaca' in self.clients:
+            try:
+                positions = self.clients['alpaca'].get_positions()
+                for pos in positions:
+                    qty = float(pos.get('qty', 0))
+                    if qty > 0:
+                        market_val = float(pos.get('market_value', 0) or 0)
+                        entry = float(pos.get('avg_entry_price', 0) or 0)
+                        current = float(pos.get('current_price', 0) or 0)
+                        upl = float(pos.get('unrealized_pl', 0) or 0)
+                        pnl_pct = (upl / (entry * qty) * 100) if entry > 0 and qty > 0 else 0
+                        all_positions['alpaca'].append({
+                            'symbol': pos.get('symbol', ''),
+                            'qty': qty,
+                            'market_value': market_val,
+                            'entry_price': entry,
+                            'current_price': current,
+                            'unrealized_pl': upl,
+                            'pnl_pct': pnl_pct,
+                            'can_sell': qty > 0
+                        })
+            except Exception as e:
+                print(f"   ⚠️ Alpaca positions error: {e}")
+        
+        # Kraken positions (crypto balances)
+        if 'kraken' in self.clients:
+            try:
+                balances = self.clients['kraken'].get_balance()
+                crypto_prices = {
+                    'ETH': 3300.0, 'XETH': 3300.0, 'SOL': 250.0, 'TRX': 0.25,
+                    'ADA': 1.0, 'DOT': 7.0, 'ATOM': 10.0, 'BTC': 105000.0, 'XXBT': 105000.0
+                }
+                for asset, amount in balances.items():
+                    amount = float(amount)
+                    if amount > 0.0001 and asset in crypto_prices:
+                        price = crypto_prices[asset]
+                        market_val = amount * price
+                        if market_val > 0.10:  # Only show if worth > $0.10
+                            all_positions['kraken'].append({
+                                'symbol': asset,
+                                'qty': amount,
+                                'market_value': market_val,
+                                'entry_price': 0,  # Unknown for spot
+                                'current_price': price,
+                                'unrealized_pl': 0,
+                                'pnl_pct': 0,
+                                'can_sell': True
+                            })
+            except Exception as e:
+                print(f"   ⚠️ Kraken positions error: {e}")
+        
+        # Binance positions (crypto balances)
+        if 'binance' in self.clients:
+            try:
+                balances = self.clients['binance'].get_balance()
+                crypto_prices = {
+                    'ETH': 3300.0, 'SOL': 250.0, 'BTC': 105000.0, 'BNB': 700.0,
+                    'TRX': 0.25, 'ADA': 1.0, 'DOT': 7.0, 'AVAX': 40.0, 'LINK': 25.0
+                }
+                for asset, amount in balances.items():
+                    amount = float(amount or 0)
+                    if amount > 0.0001 and asset in crypto_prices:
+                        price = crypto_prices[asset]
+                        market_val = amount * price
+                        if market_val > 0.10:
+                            all_positions['binance'].append({
+                                'symbol': asset,
+                                'qty': amount,
+                                'market_value': market_val,
+                                'entry_price': 0,
+                                'current_price': price,
+                                'unrealized_pl': 0,
+                                'pnl_pct': 0,
+                                'can_sell': True
+                            })
+            except Exception as e:
+                print(f"   ⚠️ Binance positions error: {e}")
+        
+        # Capital.com positions (CFDs)
+        if 'capital' in self.clients:
+            try:
+                capital_client = self._ensure_capital_client()
+                if capital_client:
+                    positions = capital_client.get_positions()
+                    for pos_data in positions:
+                        pos = pos_data.get('position', {})
+                        market = pos_data.get('market', {})
+                        size = float(pos.get('size', 0) or 0)
+                        if size > 0:
+                            level = float(pos.get('level', 0) or 0)
+                            upl = float(pos.get('upl', 0) or 0) * 1.27  # GBP to USD
+                            bid = float(market.get('bid', 0) or 0)
+                            all_positions['capital'].append({
+                                'symbol': market.get('symbol', market.get('epic', '')),
+                                'qty': size,
+                                'market_value': size * bid,
+                                'entry_price': level,
+                                'current_price': bid,
+                                'unrealized_pl': upl,
+                                'pnl_pct': (upl / (level * size) * 100) if level > 0 else 0,
+                                'can_sell': True,
+                                'deal_id': pos.get('dealId', '')
+                            })
+            except Exception as e:
+                print(f"   ⚠️ Capital.com positions error: {e}")
+        
+        return all_positions
 
     def _get_binance_ticker(self, client, symbol: str) -> Dict[str, Any]:
         """Safely fetch Binance ticker for symbols with or without slashes."""
