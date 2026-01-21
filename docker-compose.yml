@@ -44,6 +44,29 @@ services:
       retries: 3
       start_period: 120s
 
+  # 👑 Aureon Command Center - Web Dashboard (Port 8800)
+  command-center:
+    build: .
+    container_name: aureon-web-ui
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      - PYTHONIOENCODING=utf-8
+      - PYTHONUNBUFFERED=1
+    command: ["python", "aureon_command_center_ui.py"]
+    volumes:
+      - ./state:/app/state
+      - ./logs:/app/logs
+      - ./*.json:/app/*.json
+    ports:
+      - "8800:8800"
+    networks:
+      - aureon-net
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+
   # Prometheus - Metrics collection (optional)
   prometheus:
     image: prom/prometheus:latest
