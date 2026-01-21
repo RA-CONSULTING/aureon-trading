@@ -2305,11 +2305,9 @@ Object.entries(systems).forEach(([name, online]) => {
     
     async def start(self):
         """Start the command center."""
-        await self.initialize_systems()
-        
         self.running = True
         
-        # Start web server
+        # START WEB SERVER FIRST - so health checks pass immediately!
         if AIOHTTP_AVAILABLE:
             runner = web.AppRunner(self.app)
             await runner.setup()
@@ -2317,15 +2315,25 @@ Object.entries(systems).forEach(([name, online]) => {
             await site.start()
             
             print(f"\n{'=' * 70}")
-            print(f"👑🌌 AUREON COMMAND CENTER ONLINE")
+            print(f"👑🌌 AUREON COMMAND CENTER STARTING...")
             print(f"{'=' * 70}")
             print(f"🌐 Dashboard: http://localhost:{self.port}")
             print(f"📡 WebSocket: ws://localhost:{self.port}/ws")
-            print(f"🔌 REST API:")
-            print(f"   GET /api/status   - System status")
-            print(f"   GET /api/portfolio - Portfolio data")
-            print(f"   GET /api/signals  - Recent signals")
+            print(f"✅ Health endpoint ready at /health")
             print(f"{'=' * 70}\n")
+        
+        # THEN initialize heavy systems (in background, so health checks don't fail)
+        print("🔧 Initializing trading systems in background...")
+        await self.initialize_systems()
+        
+        print(f"\n{'=' * 70}")
+        print(f"👑🌌 AUREON COMMAND CENTER FULLY ONLINE")
+        print(f"{'=' * 70}")
+        print(f"🔌 REST API:")
+        print(f"   GET /api/status   - System status")
+        print(f"   GET /api/portfolio - Portfolio data")
+        print(f"   GET /api/signals  - Recent signals")
+        print(f"{'=' * 70}\n")
         
         # Start update loop
         asyncio.create_task(self.update_loop())
