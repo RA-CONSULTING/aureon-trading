@@ -60,6 +60,8 @@ if sys.platform == 'win32':
             super().__init__(stream=sys.stdout)
         def emit(self, record):
             try:
+                if getattr(self.stream, 'closed', False):
+                    return
                 msg = self.format(record)
                 self.stream.write(msg + self.terminator)
                 self.flush()
@@ -68,6 +70,9 @@ if sys.platform == 'win32':
                 msg = self.format(record).encode('utf-8', errors='replace').decode('utf-8')
                 self.stream.write(msg + self.terminator)
                 self.flush()
+            except (ValueError, OSError, IOError):
+                # Stream closed or unavailable - skip silently
+                return
             except Exception:
                 self.handleError(record)
 

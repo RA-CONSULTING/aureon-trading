@@ -102,6 +102,13 @@ if sys.platform == 'win32':
     except Exception:
         pass
 
+def _safe_print(*args, **kwargs):
+    """Print that won't crash if stdout is closed."""
+    try:
+        print(*args, **kwargs)
+    except (ValueError, OSError, IOError):
+        return
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # 🎯 RICH WAR ROOM DASHBOARD - Clean terminal UI
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -2360,25 +2367,25 @@ class OrcaKillCycle:
             try:
                 from alpaca_client import AlpacaClient
                 self.clients['alpaca'] = AlpacaClient()
-                print("✅ Alpaca: CONNECTED")
+                _safe_print("✅ Alpaca: CONNECTED")
             except Exception as e:
-                print(f"⚠️ Alpaca: {e}")
+                _safe_print(f"⚠️ Alpaca: {e}")
             
             # Initialize Kraken
             try:
                 from kraken_client import KrakenClient
                 self.clients['kraken'] = KrakenClient()
-                print("✅ Kraken: CONNECTED")
+                _safe_print("✅ Kraken: CONNECTED")
             except Exception as e:
-                print(f"⚠️ Kraken: {e}")
+                _safe_print(f"⚠️ Kraken: {e}")
             
             # Initialize Binance
             try:
                 from binance_client import BinanceClient
                 self.clients['binance'] = BinanceClient()
-                print("✅ Binance: CONNECTED")
+                _safe_print("✅ Binance: CONNECTED")
             except Exception as e:
-                print(f"⚠️ Binance: {e}")
+                _safe_print(f"⚠️ Binance: {e}")
             
             # Set primary client for backward compatibility
             self.client = self.clients.get(exchange) or list(self.clients.values())[0]
