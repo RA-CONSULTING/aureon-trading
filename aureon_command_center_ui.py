@@ -2273,11 +2273,90 @@ Object.entries(systems).forEach(([name, online]) => {
             unique_assets.update(balances.keys())
         self.market.total_assets_tracked = len(unique_assets)
         self.market.rising_count = 0
+
+    async def fetch_market_prices(self):
+        """Fetch live market prices from exchanges."""
+        kraken_prices = {}
+        binance_prices = {}
+        alpaca_prices = {}
+        top_movers = []
+        
+        # Common trading pairs to track
+        kraken_symbols = ["BTC/USD", "ETH/USD", "SOL/USD", "XRP/USD", "ADA/USD", "DOT/USD", "AVAX/USD", "LINK/USD"]
+        binance_symbols = ["BTCUSDT", "ETHUSDT", "SOLUSDT", "XRPUSDT", "ADAUSDT", "DOTUSDT", "AVAXUSDT", "LINKUSDT"]
+        alpaca_symbols = ["BTC/USD", "ETH/USD", "AAPL", "TSLA", "NVDA", "MSFT", "GOOGL", "AMZN"]
+        
+        # Fetch from Kraken
+        if self.kraken:
+            for symbol in kraken_symbols:
+                try:
+                    ticker = self.kraken.get_ticker(symbol)
+                    if ticker and ticker.get("price", 0) > 0:
+                        price = float(ticker.get("price", 0))
+                        kraken_prices[symbol] = price
+                        
+                        # Calculate change from stored price
+                        old_price = self.prices.get(f"kraken:{symbol}", price)
+                        if old_price > 0:
+                            change = (price - old_price) / old_price
+                            top_movers.append({
+                                "symbol": symbol,
+                                "price": price,
+                                "change": change,
+                                "exchange": "kraken"
+                            })
+                        self.prices[f"kraken:{symbol}"] = price
+                except Exception as e:
+                    logger.debug(f"Kraken ticker error for {symbol}: {e}")
+        
+        # Fetch from Binance (if available)
+        if self.binance and hasattr(self.binance, 'get_ticker'):
+            for symbol in binance_symbols[:4]:  # Limit to avoid rate limits
+                try:
+                    ticker = self.binance.get_ticker(symbol)
+                    if ticker:
+                        price = float(ticker.get("lastPrice", ticker.get("price", 0)))
+                        if price > 0:
+                            binance_prices[symbol] = price
+                            
+                            old_price = self.prices.get(f"binance:{symbol}", price)
+                            if old_price > 0:
+                                change = (price - old_price) / old_price
+                                top_movers.append({
+                                    "symbol": symbol,
+                                    "price": price,
+                                    "change": change,
+                                    "exchange": "binance"
+                                })
+                            self.prices[f"binance:{symbol}"] = price
+                except Exception as e:
+                    logger.debug(f"Binance ticker error for {symbol}: {e}")
+        
+        # Sort movers by absolute change
+        top_movers.sort(key=lambda x: abs(x.get("change", 0)), reverse=True)
+        
+        # Update market overview
+        rising = sum(1 for m in top_movers if m.get("change", 0) > 0)
+        falling = sum(1 for m in top_movers if m.get("change", 0) < 0)
+        
+        self.market.total_assets_tracked = len(top_movers)
+        self.market.rising_count = rising
+        self.market.falling_count = falling
+        self.market.top_movers = top_movers[:10]
+        
+        return {
+            "kraken_prices": kraken_prices,
+            "binance_prices": binance_prices,
+            "alpaca_prices": alpaca_prices,
+            "top_movers": top_movers
+        }
         self.market.falling_count = 0
         self.market.top_movers = []
     
     async def update_loop(self):
         """Main update loop."""
+        price_fetch_counter = 0
+        
         while self.running:
             try:
                 # 1. Read live dashboard snapshot from Orca
@@ -2329,14 +2408,55 @@ Object.entries(systems).forEach(([name, online]) => {
                     except Exception:
                         pass
 
-                # 2. Fetch balances every 30 seconds
+                # 2. Fetch market prices every 5 seconds
+                price_fetch_counter += 1
+                if price_fetch_counter >= 5:
+                    price_fetch_counter = 0
+                    try:
+                        market_data = await self.fetch_market_prices()
+                        
+                        # Broadcast market update with live prices
+                        await self.broadcast({
+                            "type": "market_update",
+                            "market": asdict(self.market),
+                            "kraken_prices": market_data.get("kraken_prices", {}),
+                            "binance_prices": market_data.get("binance_prices", {}),
+                            "alpaca_prices": market_data.get("alpaca_prices", {})
+                        })
+                        
+                        # Generate signals from price movements
+                        for mover in market_data.get("top_movers", [])[:3]:
+                            if abs(mover.get("change", 0)) > 0.01:  # 1% threshold
+                                signal_type = "BUY" if mover["change"] > 0 else "SELL"
+                                signal = TradingSignal(
+                                    source="Market Scanner",
+                                    signal_type=signal_type,
+                                    symbol=mover["symbol"],
+                                    confidence=min(abs(mover["change"]) * 10, 0.95),
+                                    score=abs(mover["change"]) * 100,
+                                    reason=f"{mover['change']*100:.2f}% move on {mover['exchange']}",
+                                    timestamp=time.time(),
+                                    exchange=mover["exchange"]
+                                )
+                                await self.broadcast_signal(signal)
+                    except Exception as e:
+                        logger.debug(f"Market price fetch error: {e}")
+
+                # 3. Fetch balances every 30 seconds
                 if time.time() - self.last_update > 30:
                     await self.fetch_all_balances()
                     await self.broadcast_portfolio()
-                    await self.broadcast({
-                        "type": "market_update",
-                        "market": asdict(self.market)
-                    })
+                    
+                    # Update Queen with system status
+                    online_systems = sum(1 for v in SYSTEMS_STATUS.values() if v)
+                    total_systems = len(SYSTEMS_STATUS)
+                    await self.broadcast_queen_update(
+                        f"Systems: {online_systems}/{total_systems} | Portfolio: ${self.portfolio.total_value_usd:.4f} | Scanning markets...",
+                        cosmic=0.618,  # Golden ratio
+                        confidence=online_systems / max(total_systems, 1),
+                        strategy="SCANNING"
+                    )
+                    
                     self.last_update = time.time()
                 
                 await asyncio.sleep(1) 
