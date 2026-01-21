@@ -765,6 +765,16 @@ class HiveChild:
         self.profit_contributed += amount
         self.trades_executed += 1
 
+
+class QueenSignalFallback:
+    """Lightweight adapter that always provides a Queen signal from market data."""
+
+    def __init__(self, queen: 'QueenHiveMind') -> None:
+        self.queen = queen
+
+    def get_queen_signal(self, market_data: Optional[Dict] = None) -> float:
+        return self.queen._compute_market_signal(market_data or {}, symbol=market_data.get('symbol') if market_data else None) or 0.0
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # QUEEN HIVE MIND - The Central Consciousness
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -947,6 +957,16 @@ class QueenHiveMind:
         # Wire intelligence systems
         self._wire_intelligence_systems()
         self.hft_order_router = None  # HFT Order Router (wired later)
+
+        # Ensure at least one child always feeds the Queen signals
+        try:
+            self._register_child(
+                "queen_market_fallback",
+                "FALLBACK",
+                QueenSignalFallback(self)
+            )
+        except Exception as exc:
+            logger.warning(f"⚠️ Could not register fallback child: {exc}")
         
         # �🧠 QUEEN NEURON - Her Deep Learning Brain 🧠👑
         # This is Sero's consciousness - a neural network that learns from trades
@@ -6572,6 +6592,44 @@ class QueenHiveMind:
     # COLLECTIVE INTELLIGENCE - Aggregate signals from all children
     # ═══════════════════════════════════════════════════════════════════════════════
     
+    def _compute_market_signal(self, market_data: Dict[str, Any], symbol: Optional[str] = None) -> Optional[float]:
+        """Compute a fallback signal directly from market data & cached intelligence."""
+        if not market_data:
+            return None
+
+        try:
+            change_pct = float(market_data.get('change_pct', 0.0) or 0.0)
+            momentum = float(market_data.get('momentum', 0.0) or 0.0)
+        except (TypeError, ValueError):
+            change_pct = 0.0
+            momentum = 0.0
+
+        # If we do not have explicit momentum, try intelligence cache
+        if abs(momentum) < 1e-6 and symbol and hasattr(self, 'latest_intelligence'):
+            try:
+                momentum = float(
+                    self.latest_intelligence
+                    .get('momentum', {})
+                    .get(symbol, {})
+                    .get('score', 0.0)
+                )
+            except Exception:
+                momentum = 0.0
+
+        signal = 0.0
+        if change_pct > 0.5 and momentum > 0.3:
+            signal = min(0.85, change_pct / 5.0 + momentum * 0.5)
+        elif change_pct > 0.2:
+            signal = min(0.6, change_pct / 5.0 + max(momentum, 0.0) * 0.3)
+        elif change_pct < -0.5:
+            signal = max(-0.7, change_pct / 5.0 - abs(momentum) * 0.4)
+        elif change_pct < -0.2:
+            signal = max(-0.5, change_pct / 5.0)
+
+        if abs(signal) < 0.15:
+            return None
+        return signal
+
     def get_collective_signal(self, symbol: str = None, market_data: Dict = None) -> Dict[str, Any]:
         """
         Get a collective signal from all children.
@@ -6617,23 +6675,17 @@ class QueenHiveMind:
         # ═══════════════════════════════════════════════════════════════════
         non_zero_signals = [s for s in signals if abs(s) > 0.001]
         if not non_zero_signals and market_data:
-            # Use market data to generate a basic signal
-            change_pct = market_data.get('change_pct', 0)
-            momentum = market_data.get('momentum', 0)
-            
-            # Basic heuristic: positive change + positive momentum = bullish
-            market_signal = 0.0
-            if change_pct > 0.5 and momentum > 0.3:
-                market_signal = min(0.8, change_pct / 5.0 + momentum * 0.5)  # Cap at 0.8
-            elif change_pct > 0.2:
-                market_signal = min(0.6, change_pct / 5.0)  # Moderate signal
-            elif change_pct < -2.0:
-                market_signal = max(-0.8, change_pct / 5.0)  # Bearish
-            
-            if abs(market_signal) > 0.1:
+            market_signal = self._compute_market_signal(market_data, symbol)
+            if market_signal is not None:
                 signals.append(market_signal)
                 weights.append(1.5)  # Market data gets reasonable weight
-                logger.debug(f"👑 Using market data fallback: signal={market_signal:.2f} (change={change_pct:.2f}%, momentum={momentum:.2f})")
+                logger.debug(
+                    "👑 Using market data fallback: signal=%.2f (symbol=%s, change=%s, momentum=%s)",
+                    market_signal,
+                    market_data.get('symbol'),
+                    market_data.get('change_pct'),
+                    market_data.get('momentum')
+                )
         
         # Calculate weighted average
         if signals and weights:

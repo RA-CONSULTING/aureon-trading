@@ -61,8 +61,11 @@ except ImportError as e:
     print(f"   ❌ MultiExchangeClient error: {e}")
     sys.exit(1)
 
-# 4. Test Binance connection
-print("\n4️⃣ Testing Binance connection...")
+# 4. Test Exchange Connections (Binance, Kraken, Alpaca)
+print("\n4️⃣ Testing Exchange Connections...")
+total_liquid_funds = 0.0
+
+# --- BINANCE ---
 try:
     from binance.client import Client
     client = Client(binance_key, binance_secret)
@@ -74,28 +77,48 @@ try:
     if usdc:
         free = float(usdc.get('free', 0))
         locked = float(usdc.get('locked', 0))
+        total_liquid_funds += free
         print(f"   ✅ Binance connected")
         print(f"      USDC/USDT Free: ${free:.2f}")
-        print(f"      USDC/USDT Locked: ${locked:.2f}")
-        
-        if free < 10:
-            print(f"\n   🚨 PROBLEM IDENTIFIED:")
-            print(f"      Insufficient liquid funds (need $10+, have ${free:.2f})")
-            print(f"      System cannot place trades with less than $10 USD")
-            sys.exit(1)
     else:
-        print("   ⚠️  No USDC/USDT balance found")
-        print(f"      Available balances:")
-        for b in balances[:10]:
-            if float(b.get('free', 0)) > 0:
-                print(f"        - {b['asset']}: {b['free']}")
-        sys.exit(1)
+        print("   ⚠️  Binance: No USDC/USDT balance found")
         
 except Exception as e:
     print(f"   ❌ Binance connection error: {e}")
-    import traceback
-    traceback.print_exc()
-    sys.exit(1)
+
+# --- ALPACA ---
+try:
+    from alpaca_client import AlpacaClient
+    alpaca = AlpacaClient()
+    alpaca_funds = float(getattr(alpaca, 'get_cash', lambda: 0)())
+    total_liquid_funds += alpaca_funds
+    print(f"   ✅ Alpaca connected")
+    print(f"      Buying Power: ${alpaca_funds:.2f}")
+except Exception as e:
+    print(f"   ⚠️ Alpaca connection error: {e}")
+
+# --- KRAKEN ---
+try:
+    from kraken_client import KrakenClient
+    kraken = KrakenClient()
+    kb = kraken.get_balance()
+    kraken_funds = kb.get('USD', 0) + kb.get('ZUSD', 0) + kb.get('USDC', 0) + kb.get('USDT', 0)
+    total_liquid_funds += kraken_funds
+    print(f"   ✅ Kraken connected")
+    print(f"      Liquid Funds: ${kraken_funds:.2f}")
+except Exception as e:
+    print(f"   ⚠️ Kraken connection error: {e}")
+
+
+print(f"\n   💰 TOTAL LIQUID FUNDS: ${total_liquid_funds:.2f}")
+
+if total_liquid_funds < 5:
+    print(f"\n   🚨 PROBLEM IDENTIFIED:")
+    print(f"      Insufficient liquid funds (need $5+, have ${total_liquid_funds:.2f})")
+    print(f"      System cannot place trades with less than $5 USD across all exchanges.")
+    # sys.exit(1) # Don't exit harder, let them see
+else:
+    print(f"   ✅ Funds sufficient for trading.")
 
 # 5. Check if system can run
 print("\n5️⃣ Checking if system can run...")

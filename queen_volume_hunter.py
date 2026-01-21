@@ -169,6 +169,13 @@ class QueenVolumeHunter:
         'MATICUSD',
         'XRPUSD',
     ]
+
+    HUNT_SYMBOLS_ALPACA = [
+        'SPY', 'QQQ', 'IWM',  # Major Indices
+        'NVDA', 'TSLA', 'AAPL', 'AMD', 'MSFT', 'AMZN', 'GOOGL', # Tech Giants
+        'COIN', 'MSTR', 'MARA', 'RIOT', # Crypto-proxies
+        'BTC/USD', 'ETH/USD'  # Crypto on Alpaca
+    ]
     
     # From elephant memory: best trading hours (UTC)
     BEST_HOURS = [1, 12, 13, 14, 15, 16]  # 1am, 12pm-4pm
@@ -723,23 +730,43 @@ class QueenVolumeHunter:
             return None
     
     def scan_for_breakouts(self) -> List[VolumeSignal]:
-        """
-        Scan all hunt symbols for volume breakouts - MULTI-EXCHANGE.
-        
-        Now scans:
-        - 🔵 Binance symbols
-        - 🟣 Kraken symbols
-        - 🐦 Emits signals to ChirpBus
-        - 👑 Gets Queen approval
-        """
+        """Scan ALL available exchanges for volume breakouts."""
         signals = []
-        
         print("\n🔍 SCANNING FOR VOLUME BREAKOUTS...")
         print("-" * 60)
         
-        # 🔵 BINANCE SCAN
+        # 1. Scan Binance
+        try:
+            binance_signals = self._scan_binance(self.hunt_universe.get('binance', self.HUNT_SYMBOLS_BINANCE))
+            signals.extend(binance_signals)
+        except Exception as e:
+            logger.error(f"Binance scan failed: {e}")
+            
+        # 2. Scan Kraken
+        try:
+            kraken_signals = self._scan_kraken(self.hunt_universe.get('kraken', self.HUNT_SYMBOLS_KRAKEN))
+            signals.extend(kraken_signals)
+        except Exception as e:
+            logger.error(f"Kraken scan failed: {e}")
+
+        # 3. Scan Alpaca
+        try:
+            if self.alpaca:
+                alpaca_signals = self._scan_alpaca(self.HUNT_SYMBOLS_ALPACA)
+                signals.extend(alpaca_signals)
+        except Exception as e:
+            logger.error(f"Alpaca scan error: {e}")
+            
+        # 🔭 Expand universe from Global Scanner
+        self.expand_hunt_universe_from_global_scanner()
+        
+        # Sort by signal strength, prioritize Queen-approved
+        return sorted(signals, key=lambda x: (-int(x.queen_approved), -x.signal_strength))
+
+    def _scan_binance(self, symbols: List[str]) -> List[VolumeSignal]:
+        signals = []
         print("   🔵 BINANCE:")
-        for symbol in self.hunt_universe.get('binance', self.HUNT_SYMBOLS_BINANCE):
+        for symbol in symbols:
             signal = self.get_volume_signal(symbol, 'binance')
             if signal:
                 is_breakout = signal.volume_ratio >= self.VOLUME_BREAKOUT_THRESHOLD
@@ -772,10 +799,12 @@ class QueenVolumeHunter:
                     self.emit_volume_signal_to_orca(signal)
                     
                     signals.append(signal)
-        
-        # 🟣 KRAKEN SCAN
+        return signals
+
+    def _scan_kraken(self, symbols: List[str]) -> List[VolumeSignal]:
+        signals = []
         print("   🟣 KRAKEN:")
-        for symbol in self.hunt_universe.get('kraken', self.HUNT_SYMBOLS_KRAKEN):
+        for symbol in symbols:
             signal = self.get_volume_signal_kraken(symbol)
             if signal:
                 is_breakout = signal.volume_ratio >= self.VOLUME_BREAKOUT_THRESHOLD
@@ -801,12 +830,88 @@ class QueenVolumeHunter:
                     self.emit_volume_signal_to_orca(signal)
                     
                     signals.append(signal)
-        
-        # 🔭 Expand universe from Global Scanner
-        self.expand_hunt_universe_from_global_scanner()
-        
-        # Sort by signal strength, prioritize Queen-approved
-        return sorted(signals, key=lambda x: (-int(x.queen_approved), -x.signal_strength))
+        return signals
+
+    def _scan_alpaca(self, symbols: List[str]) -> List[VolumeSignal]:
+        """Scan Alpaca for volume breakouts."""
+        signals = []
+        import statistics
+
+        print(f"   🦙 ALPACA ({len(symbols)} symbols):")
+
+        for symbol in symbols:
+            try:
+                # Use simple snapshot bars approach
+                bars = self.alpaca.client.get_bars(symbol, '5Min', limit=50) if hasattr(self.alpaca.client, 'get_bars') else []
+                 
+                if not bars or len(bars) < 20: 
+                    # print(".", end="", flush=True)
+                    continue
+
+                volumes = [b.v for b in bars]
+                closes = [b.c for b in bars]
+                
+                if not volumes: continue
+                
+                current_vol = volumes[-1] 
+                avg_vol = statistics.mean(volumes[:-1]) if len(volumes) > 1 else max(1, current_vol)
+                if avg_vol == 0: avg_vol = 1
+                
+                vol_ratio = current_vol / avg_vol
+                
+                current_price = closes[-1]
+                open_price = bars[-1].o
+                price_change = (current_price - open_price) / open_price
+                
+                is_breakout = vol_ratio >= self.VOLUME_BREAKOUT_THRESHOLD
+                is_moving = abs(price_change) >= self.MIN_PRICE_MOVE
+                
+                if is_breakout and is_moving:
+                    # Calculate signal strength
+                    coherence = self._calculate_coherence(symbol, 'alpaca', current_price)
+                    strength = min(1.0, (vol_ratio / 3.0) * 0.5 + coherence * 0.5)
+                    
+                    # Whale check
+                    dollar_vol = current_vol * current_price
+                    whale = dollar_vol > self.WHALE_THRESHOLD_USD
+                    
+                    # Ask Queen
+                    queen_approved = False
+                    if self.USE_QUEEN_APPROVAL and self.queen:
+                         # Construct dummy signal for approval
+                         dummy_sig = VolumeSignal(symbol, 'alpaca', '', vol_ratio, price_change, current_price, avg_vol, current_vol, strength, coherence, whale, False)
+                         approved, conf, msg = self.get_queen_approval(dummy_sig)
+                         queen_approved = approved
+                         if approved:
+                             print(f"      {symbol}: 👑 APPROVED ({msg[:20]})")
+                    else:
+                         queen_approved = True
+                    
+                    sig = VolumeSignal(
+                        symbol=symbol,
+                        exchange='alpaca',
+                        timestamp=datetime.now(timezone.utc).isoformat(),
+                        volume_ratio=vol_ratio,
+                        price_change_5m=price_change,
+                        current_price=current_price,
+                        avg_volume=avg_vol,
+                        current_volume=current_vol,
+                        signal_strength=strength,
+                        coherence=coherence,
+                        whale_detected=whale,
+                        queen_approved=queen_approved
+                    )
+                    signals.append(sig)
+                    
+                    status = "🚀 BREAKOUT!"
+                    whale_indicator = "🐋" if whale else ""
+                    print(f"      {symbol}: Vol {vol_ratio:.1f}x | 5m {price_change*100:+.2f}% | {status} {whale_indicator}")
+                    
+            except Exception as e:
+                # logger.debug(f"Alpaca scan error {symbol}: {e}")
+                pass
+                
+        return signals
     
     def get_trading_capital(self, exchange: str = 'all') -> Dict[str, float]:
         """
@@ -830,8 +935,9 @@ class QueenVolumeHunter:
         
         try:
             # Kraken USD/USDC
-            kraken_usdc = self.kraken.get_free_balance('USDC') or 0
-            kraken_usd = self.kraken.get_free_balance('USD') or 0
+            kb = self.kraken.get_balance()
+            kraken_usdc = kb.get('USDC', 0)
+            kraken_usd = kb.get('USD', 0) + kb.get('ZUSD', 0)
             capital['kraken'] = kraken_usdc + kraken_usd
         except Exception as e:
             logger.debug(f"Kraken balance error: {e}")
@@ -878,11 +984,77 @@ class QueenVolumeHunter:
                 return self._execute_binance_trade(signal, capital)
             elif signal.exchange == 'kraken':
                 return self._execute_kraken_trade(signal, capital)
+            elif signal.exchange == 'alpaca':
+                return self._execute_alpaca_trade(signal, capital)
             else:
                 return {'status': 'error', 'error': f'Unknown exchange: {signal.exchange}'}
             
         except Exception as e:
             return {'status': 'error', 'error': str(e)}
+
+    def _execute_alpaca_trade(self, signal: VolumeSignal, capital: float) -> Dict:
+        """Execute trade on Alpaca."""
+        try:
+            if not self.alpaca:
+                return {'status': 'error', 'error': 'Alpaca client not initialized'}
+            
+            # Use Alpaca for stock/crypto trading
+            symbol = signal.symbol.replace('/', '')
+            
+            # Check price
+            quote = self.alpaca.get_last_quote(symbol)
+            price = float(quote.get('askprice') or quote.get('price', 0))
+            if price <= 0:
+                # Fallback to last trade
+                trade = self.alpaca.get_last_trade(symbol)
+                price = float(trade.get('price', 0))
+            
+            if price <= 0:
+                return {'status': 'error', 'error': 'Could not get Alpaca price'}
+            
+            # Calculate quantity (safety buffer for fees)
+            notional = capital * 0.98
+            
+            print(f"   🛒 Buying ${notional:.2f} of {symbol} at ~${price:.4f}")
+            
+            # Place MARKER order (notional value)
+            order = self.alpaca.place_order(
+                symbol=symbol,
+                qty=None,
+                notional=notional,
+                side='buy',
+                type='market',
+                time_in_force='ioc'
+            )
+            
+            if not order or 'id' not in order:
+                 return {'status': 'error', 'error': f'Order failed: {order}'}
+            
+            # Record entry logic similar to others...
+            entry = {
+                'symbol': signal.symbol,
+                'exchange': 'alpaca',
+                'entry_price': price,
+                'quantity': float(order.get('qty', 0)) if order.get('qty') else notional/price, 
+                'capital': capital,
+                'timestamp': datetime.now(timezone.utc).isoformat(),
+                'order_id': order.get('id'),
+                'signal': {
+                    'volume_ratio': signal.volume_ratio,
+                    'signal_strength': signal.signal_strength,
+                    'coherence': signal.coherence,
+                    'whale_detected': signal.whale_detected,
+                    'queen_approved': signal.queen_approved
+                }
+            }
+            
+            print(f"   ✅ AL BUY ORDER PLACED!")
+            self.emit_trade_execution_to_orca(signal.symbol, 'BUY', {'status': 'success'})
+            
+            return {'status': 'success', 'entry': entry, 'buy_result': order}
+
+        except Exception as e:
+            return {'status': 'error', 'error': f'Alpaca execution error: {e}'}
     
     def _execute_binance_trade(self, signal: VolumeSignal, capital: float) -> Dict:
         """Execute trade on Binance."""

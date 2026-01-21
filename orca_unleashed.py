@@ -751,6 +751,164 @@ class OrcaUnleashed:
             logger.warning(f"Alpaca scan error: {e}")
         
         return opportunities
+
+    def scan_binance_opportunities(self) -> List[OrcaHunt]:
+        """Scan Binance for hunting opportunities."""
+        opportunities = []
+        if not self.binance:
+            return opportunities
+            
+        try:
+            # High volume pairs on Binance
+            symbols = ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'BNBUSDT', 'XRPUSDT', 'ADAUSDT']
+            
+            for symbol in symbols:
+                try:
+                    ticker = self.binance.get_24h_ticker(symbol)
+                    if not ticker:
+                        continue
+                        
+                    bid = float(ticker.get('bid', 0))
+                    ask = float(ticker.get('ask', 0))
+                    last = float(ticker.get('price', 0))
+                    
+                    if not (bid > 0 and ask > 0):
+                        continue
+                        
+                    mid_price = (bid + ask) / 2
+                    spread_pct = ((ask - bid) / mid_price) * 100 if mid_price else 0
+                    
+                    # Logic copied from Alpaca scan
+                    confidence = 0.55
+                    direction = 'long'
+                    reasoning = []
+                    
+                    if spread_pct < 0.10: # Binance usually tighter
+                        confidence += 0.20
+                        reasoning.append(f"🔥 Tight spread: {spread_pct:.3f}%")
+                    elif spread_pct < 0.20:
+                        confidence += 0.10
+                        reasoning.append(f"✅ Good spread: {spread_pct:.3f}%")
+                    elif spread_pct < 0.30:
+                        confidence += 0.05
+                        reasoning.append(f"📊 Acceptable spread: {spread_pct:.3f}%")
+                    else:
+                        confidence -= 0.10
+                        reasoning.append(f"⚠️ Wide spread: {spread_pct:.3f}%")
+                        
+                    if ask > bid:
+                        position_in_spread = (last - bid) / (ask - bid)
+                        if position_in_spread > 0.7:
+                            confidence += 0.15
+                            reasoning.append("📈 Buyers aggressive")
+                            direction = 'long'
+                        elif position_in_spread < 0.3:
+                            confidence += 0.10
+                            reasoning.append("📉 Sellers aggressive")
+                            direction = 'short'
+                            
+                    if confidence >= self.MIN_CONFIDENCE:
+                        size = self.calculate_position_size()
+                        entry = ask
+                        target = entry * (1 + self.TAKE_PROFIT_PCT)
+                        stop = entry * (1 - self.STOP_LOSS_PCT)
+                        
+                        hunt = OrcaHunt(
+                            symbol=symbol,
+                            exchange='binance',
+                            direction=direction,
+                            confidence=confidence,
+                            entry_price=entry,
+                            target_price=target,
+                            stop_price=stop,
+                            size_usd=size,
+                            reasoning=reasoning
+                        )
+                        opportunities.append(hunt)
+                        logger.info(f"🎯 Found Binance opportunity: {symbol} @ {confidence:.1%}")
+                except Exception as e:
+                    logger.debug(f"Error scanning Binance {symbol}: {e}")
+        except Exception as e:
+            logger.warning(f"Binance scan error: {e}")
+            
+        return opportunities
+
+    def scan_kraken_opportunities(self) -> List[OrcaHunt]:
+        """Scan Kraken for hunting opportunities."""
+        opportunities = []
+        if not self.kraken:
+            return opportunities
+            
+        try:
+            # Kraken symbols
+            symbols = ['XBTUSD', 'ETHUSD', 'SOLUSD', 'XRPUSD', 'ADAUSD']
+            
+            for symbol in symbols:
+                try:
+                    ticker = self.kraken.get_ticker(symbol)
+                    if not ticker:
+                        continue
+                    
+                    # Kraken client normalizes to {symbol, price, bid, ask} with floats
+                    bid = ticker.get('bid', 0.0)
+                    ask = ticker.get('ask', 0.0)
+                    last = ticker.get('price', 0.0)
+                    
+                    if not (bid > 0 and ask > 0):
+                        continue
+                        
+                    mid_price = (bid + ask) / 2
+                    spread_pct = ((ask - bid) / mid_price) * 100 if mid_price else 0
+                    
+                    confidence = 0.55
+                    direction = 'long'
+                    reasoning = []
+                    
+                    if spread_pct < 0.15:
+                        confidence += 0.20
+                        reasoning.append(f"🔥 Tight spread: {spread_pct:.3f}%")
+                    elif spread_pct < 0.25:
+                        confidence += 0.10
+                        reasoning.append(f"✅ Good spread: {spread_pct:.3f}%")
+                    else:
+                        confidence -= 0.05
+                        reasoning.append(f"📊 Spread: {spread_pct:.3f}%")
+                        
+                    if ask > bid:
+                        position_in_spread = (last - bid) / (ask - bid)
+                        if position_in_spread > 0.7:
+                            confidence += 0.15
+                            reasoning.append("📈 Buyers aggressive")
+                        elif position_in_spread < 0.3:
+                            confidence += 0.10
+                            reasoning.append("📉 Sellers aggressive")
+                            direction = 'short'
+                            
+                    if confidence >= self.MIN_CONFIDENCE:
+                        size = self.calculate_position_size()
+                        entry = ask
+                        target = entry * (1 + self.TAKE_PROFIT_PCT)
+                        stop = entry * (1 - self.STOP_LOSS_PCT)
+                        
+                        hunt = OrcaHunt(
+                            symbol=symbol,
+                            exchange='kraken',
+                            direction=direction,
+                            confidence=confidence,
+                            entry_price=entry,
+                            target_price=target,
+                            stop_price=stop,
+                            size_usd=size,
+                            reasoning=reasoning
+                        )
+                        opportunities.append(hunt)
+                        logger.info(f"🎯 Found Kraken opportunity: {symbol} @ {confidence:.1%}")
+                except Exception as e:
+                    logger.debug(f"Error scanning Kraken {symbol}: {e}")
+        except Exception as e:
+            logger.warning(f"Kraken scan error: {e}")
+            
+        return opportunities
     
     def scan_all_markets(self) -> List[OrcaHunt]:
         """Scan all markets for opportunities."""
@@ -758,7 +916,8 @@ class OrcaUnleashed:
         
         # Scan each exchange
         all_opportunities.extend(self.scan_alpaca_opportunities())
-        # Add Kraken, Binance scans here...
+        all_opportunities.extend(self.scan_binance_opportunities())
+        all_opportunities.extend(self.scan_kraken_opportunities())
         
         # Sort by confidence
         all_opportunities.sort(key=lambda x: x.confidence, reverse=True)
@@ -833,6 +992,44 @@ class OrcaUnleashed:
                     # Would need to track and close position...
                 else:
                     logger.error("❌ Order failed!")
+                    return None
+
+            elif hunt.exchange == 'binance' and self.binance:
+                qty = hunt.size_usd / hunt.entry_price
+                side = 'buy' if hunt.direction == 'long' else 'sell'
+                
+                order = self.binance.place_market_order(
+                    symbol=hunt.symbol,
+                    side=side,
+                    quantity=qty
+                )
+                
+                if order and not order.get('rejected'):
+                    logger.info(f"✅ Binance Order placed: {order}")
+                    self.trades_this_hour += 1
+                    self.session_trades += 1
+                    self._save_state()
+                else:
+                    logger.error(f"❌ Binance Order failed: {order}")
+                    return None
+
+            elif hunt.exchange == 'kraken' and self.kraken:
+                qty = hunt.size_usd / hunt.entry_price
+                side = 'buy' if hunt.direction == 'long' else 'sell'
+                
+                order = self.kraken.place_market_order(
+                    symbol=hunt.symbol,
+                    side=side,
+                    quantity=qty
+                )
+                
+                if order:
+                    logger.info(f"✅ Kraken Order placed: {order}")
+                    self.trades_this_hour += 1
+                    self.session_trades += 1
+                    self._save_state()
+                else:
+                    logger.error("❌ Kraken Order failed!")
                     return None
         
         except Exception as e:

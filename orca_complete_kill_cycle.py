@@ -2550,7 +2550,8 @@ class OrcaKillCycle:
         self.volume_hunter = None
         if VOLUME_HUNTER_AVAILABLE and QueenVolumeHunter:
             try:
-                self.volume_hunter = QueenVolumeHunter(live_mode=False)  # Start in dry-run
+                # 🚀 CHANGED TO LIVE MODE for real signal emission
+                self.volume_hunter = QueenVolumeHunter(live_mode=True)
                 _safe_print("👑🔊 Queen Volume Hunter: WIRED! (Breakout detection)")
             except Exception as e:
                 _safe_print(f"👑🔊 Queen Volume Hunter: {e}")
@@ -6178,7 +6179,30 @@ class OrcaKillCycle:
         if hasattr(self, 'orca_intel') and self.orca_intel:
             try:
                 print("\n🦈 Scanning with Orca Intelligence...")
-                if hasattr(self.orca_intel, 'scan_opportunities'):
+                # PREFER scan_global_markets (multi-exchange) if available
+                if hasattr(self.orca_intel, 'scan_global_markets'):
+                    # Scan all hot symbols across all connected exchanges
+                    orca_opps = self.orca_intel.scan_global_markets()
+                    print(f"   🦈 Found {len(orca_opps)} whale signals")
+                    
+                    for opp in orca_opps[:15]:  # Take top 15
+                        # Handle WhaleSignal objects
+                        confidence = getattr(opp, 'ride_confidence', 0.6)
+                        symbol = getattr(opp, 'symbol', 'UNKNOWN')
+                        exchange = getattr(opp, 'exchange', 'alpaca')
+                        action = getattr(opp, 'side', 'buy') # buy/sell
+                        
+                        all_opportunities.append({
+                            'symbol': symbol,
+                            'action': action,
+                            'confidence': confidence,
+                            'source': f'orca_whale_{exchange}',
+                            'exchange': exchange,
+                            'change_pct': 1.0 # Momentum play
+                        })
+
+                elif hasattr(self.orca_intel, 'scan_opportunities'):
+                    # Fallback to old method
                     orca_opps = self.orca_intel.scan_opportunities()
                     for opp in orca_opps[:10]:
                         all_opportunities.append({

@@ -116,7 +116,14 @@ except ImportError:
     KRAKEN_AVAILABLE = False
     KrakenClient = None
 
-# Binance streaming (crypto real-time)
+# Binance (REST + WebSocket)
+try:
+    from binance_client import BinanceClient
+    BINANCE_AVAILABLE = True
+except ImportError:
+    BINANCE_AVAILABLE = False
+    BinanceClient = None
+
 try:
     from binance_ws_client import BinanceWebSocketClient
     BINANCE_WS_AVAILABLE = True
@@ -431,6 +438,7 @@ class OrcaKillerWhaleIntelligence:
         
         # 🌐 GLOBAL MARKET VISIBILITY - Connect to ALL exchanges and feeds
         self.kraken_client = None
+        self.binance_client = None
         self.binance_ws = None
         self.alpaca_client = None
         self.capital_client = None
@@ -499,6 +507,15 @@ class OrcaKillerWhaleIntelligence:
             except Exception as e:
                 logger.debug(f"Kraken connection failed: {e}")
         
+        # Binance (REST + WebSocket)
+        if BINANCE_AVAILABLE:
+            try:
+                self.binance_client = BinanceClient()
+                market_count += 1
+                logger.info("🟡 Binance REST API CONNECTED")
+            except Exception as e:
+                logger.debug(f"Binance connection failed: {e}")
+
         # Binance WebSocket (real-time crypto streaming)
         if BINANCE_WS_AVAILABLE:
             try:
@@ -592,11 +609,12 @@ class OrcaKillerWhaleIntelligence:
         if self.kraken_client:
             try:
                 for symbol in symbols:
-                    ticker = self.kraken_client.get_ticker(symbol)
-                    if ticker and 'v' in ticker:  # 'v' = 24h volume
-                        volume_24h = float(ticker['v'][1])  # Last 24h
-                        price = float(ticker.get('c', [0])[0])  # Last trade price
-                        volume_usd = volume_24h * price
+                    # Use get_24h_ticker for volume info
+                    ticker = self.kraken_client.get_24h_ticker(symbol)
+                    # {symbol, lastPrice, priceChangePercent, quoteVolume}
+                    
+                    if ticker and 'quoteVolume' in ticker:
+                        volume_usd = float(ticker['quoteVolume'])
                         
                         # Whale threshold: $1M+ volume
                         if volume_usd >= 1_000_000:
@@ -611,11 +629,14 @@ class OrcaKillerWhaleIntelligence:
             except Exception as e:
                 logger.debug(f"Kraken scan error: {e}")
         
-        # Scan Binance WebSocket (if streaming)
+        # Scan Binance (WebSocket or REST)
         if self.binance_ws and hasattr(self.binance_ws, 'get_latest_ticker'):
             try:
                 for symbol in symbols:
-                    ticker = self.binance_ws.get_latest_ticker(symbol)
+                    # WS usually expects clean symbols (BTCUSDT)
+                    bsymbol = symbol.replace('/', '').replace('USD', 'USDT')
+                    ticker = self.binance_ws.get_latest_ticker(bsymbol)
+                    
                     if ticker and 'quoteVolume' in ticker:
                         volume_usd = float(ticker['quoteVolume'])
                         
@@ -629,7 +650,28 @@ class OrcaKillerWhaleIntelligence:
                             if signal:
                                 whale_signals.append(signal)
             except Exception as e:
-                logger.debug(f"Binance scan error: {e}")
+                logger.debug(f"Binance WS scan error: {e}")
+        elif self.binance_client:
+             try:
+                for symbol in symbols:
+                    # REST fallback
+                    bsymbol = symbol.replace('/', '').replace('USD', 'USDT')
+                    ticker = self.binance_client.get_24h_ticker(bsymbol)
+                    
+                    if ticker and 'quoteVolume' in ticker:
+                        volume_usd = float(ticker['quoteVolume'])
+                        
+                        if volume_usd >= 1_000_000:
+                            signal = self._create_whale_signal(
+                                symbol=symbol,
+                                volume_usd=volume_usd,
+                                exchange='binance',
+                                ticker_data=ticker
+                            )
+                            if signal:
+                                whale_signals.append(signal)
+             except Exception as e:
+                logger.debug(f"Binance REST scan error: {e}")
         
         # Scan Alpaca
         if self.alpaca_client:
