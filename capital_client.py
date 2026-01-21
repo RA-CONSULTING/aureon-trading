@@ -290,6 +290,34 @@ class CapitalClient:
         except Exception as e:
             logger.error(f"Error fetching Capital.com balances: {e}")
             return {}
+    
+    def get_accounts(self) -> List[Dict[str, Any]]:
+        """Get account information including available balance.
+        Returns list of accounts with structure: [{'accountId': str, 'available': float, 'balance': float}]
+        """
+        if not self.enabled:
+            return []
+        
+        try:
+            response = self._request('GET', '/accounts')
+            if response.status_code == 200:
+                data = response.json()
+                accounts = []
+                for acc in data.get('accounts', []):
+                    balance_data = acc.get('balance', {})
+                    accounts.append({
+                        'accountId': acc.get('accountId', ''),
+                        'balance': float(balance_data.get('balance', 0.0)),
+                        'available': float(balance_data.get('available', balance_data.get('balance', 0.0))),
+                        'currency': os.getenv('CAPITAL_ACCOUNT_CURRENCY', 'GBP').upper()
+                    })
+                return accounts
+            else:
+                logger.error(f"Failed to get Capital.com accounts: {response.text}")
+                return []
+        except Exception as e:
+            logger.error(f"Error fetching Capital.com accounts: {e}")
+            return []
 
     def get_ticker(self, symbol: str) -> Dict[str, float]:
         """Get current price for a symbol."""

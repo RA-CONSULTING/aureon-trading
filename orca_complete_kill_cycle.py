@@ -137,6 +137,13 @@ except ImportError:
 
 from alpaca_client import AlpacaClient
 
+try:
+    from capital_client import CapitalClient
+    CAPITAL_AVAILABLE = True
+except ImportError:
+    CAPITAL_AVAILABLE = False
+    CapitalClient = None
+
 # Try to import ThoughtBus for whale intelligence
 try:
     from aureon_thought_bus import ThoughtBus, Thought
@@ -942,9 +949,10 @@ class WarRoomDisplay:
             alpaca_cash = self.cash_balances.get('alpaca', 0)
             kraken_cash = self.cash_balances.get('kraken', 0)
             binance_cash = self.cash_balances.get('binance', 0)
+            capital_cash = self.cash_balances.get('capital', 0)
             status = getattr(self, 'cash_status', {})
 
-            positions_by_exchange = {'alpaca': 0.0, 'kraken': 0.0, 'binance': 0.0}
+            positions_by_exchange = {'alpaca': 0.0, 'kraken': 0.0, 'binance': 0.0, 'capital': 0.0}
             for pos in getattr(self, 'positions_data', []):
                 exchange = (pos.get('exchange') or '').lower()
                 value = float(pos.get('value', 0) or 0)
@@ -954,6 +962,8 @@ class WarRoomDisplay:
                     positions_by_exchange['kraken'] += value
                 elif 'binance' in exchange:
                     positions_by_exchange['binance'] += value
+                elif 'capital' in exchange:
+                    positions_by_exchange['capital'] += value
 
             def _fmt_balance(label: str, value: float, status_key: str, color: str) -> str:
                 state = status.get(status_key, 'ok')
@@ -966,11 +976,13 @@ class WarRoomDisplay:
                 (alpaca_cash or 0.0) + positions_by_exchange.get('alpaca', 0.0)
                 + (kraken_cash or 0.0) + positions_by_exchange.get('kraken', 0.0)
                 + (binance_cash or 0.0) + positions_by_exchange.get('binance', 0.0)
+                + (capital_cash or 0.0) + positions_by_exchange.get('capital', 0.0)
             )
             cash_text += (
                 f"{_fmt_balance('Alpaca', alpaca_cash, 'alpaca', 'cyan')} | "
                 f"{_fmt_balance('Kraken', kraken_cash, 'kraken', 'yellow')} | "
                 f"{_fmt_balance('Binance', binance_cash, 'binance', 'green')} | "
+                f"{_fmt_balance('Capital', capital_cash, 'capital', 'magenta')} | "
                 f"[bold]Total[/] ${total_balance:.2f}"
             )
         else:
@@ -2359,7 +2371,8 @@ class OrcaKillCycle:
         self.fee_rates = {
             'alpaca': 0.0025,  # 0.25%
             'kraken': 0.0026,  # 0.26% maker/taker
-            'binance': 0.001   # 0.10% base (can be lower with BNB)
+            'binance': 0.001,  # 0.10% base (can be lower with BNB)
+            'capital': 0.0008  # 0.08% spread-based (CFDs)
         }
         
         # Initialize clients for BOTH exchanges (unless specific client provided)
@@ -2390,6 +2403,14 @@ class OrcaKillCycle:
                 _safe_print("✅ Binance: CONNECTED")
             except Exception as e:
                 _safe_print(f"⚠️ Binance: {e}")
+            
+            # Initialize Capital.com
+            if CAPITAL_AVAILABLE:
+                try:
+                    self.clients['capital'] = CapitalClient()
+                    _safe_print("✅ Capital.com: CONNECTED (CFDs)")
+                except Exception as e:
+                    _safe_print(f"⚠️ Capital.com: {e}")
             
             # Set primary client for backward compatibility
             self.client = self.clients.get(exchange) or list(self.clients.values())[0]
@@ -2784,6 +2805,8 @@ class OrcaKillCycle:
                     exchange_clients['kraken'] = self.clients['kraken']
                 if 'binance' in self.clients and self.clients['binance']:
                     exchange_clients['binance'] = self.clients['binance']
+                if 'capital' in self.clients and self.clients['capital']:
+                    exchange_clients['capital'] = self.clients['capital']
                 self.hft_order_router.wire_exchange_clients(exchange_clients)
             print("🚀 HFT Order Router: WIRED! (WebSocket routing)")
         except Exception as e:
@@ -3377,6 +3400,12 @@ class OrcaKillCycle:
         try:
             if 'binance' in self.clients and self.clients['binance']:
                 flight['exchange_binance'] = True
+        except:
+            pass
+        
+        try:
+            if 'capital' in self.clients and self.clients['capital']:
+                flight['exchange_capital'] = True
         except:
             pass
         
@@ -4227,6 +4256,12 @@ class OrcaKillCycle:
             opportunities.extend(binance_opps)
             print(f"   📊 Binance: Found {len(binance_opps)} opportunities")
         
+        # Scan Capital.com
+        if 'capital' in self.clients:
+            capital_opps = self._scan_capital_market(min_change_pct, min_volume)
+            opportunities.extend(capital_opps)
+            print(f"   📊 Capital.com: Found {len(capital_opps)} CFD opportunities")
+        
         # ═══════════════════════════════════════════════════════════════════
         # 🦅 MOMENTUM ECOSYSTEM - Animal Swarms & Micro Goals
         # ═══════════════════════════════════════════════════════════════════
@@ -4620,10 +4655,66 @@ class OrcaKillCycle:
         
         return opportunities
     
+    def _scan_capital_market(self, min_change_pct: float, min_volume: float) -> List[MarketOpportunity]:
+        """Scan Capital.com markets for momentum (CFDs: stocks, indices, forex, commodities)."""
+        opportunities = []
+        client = self.clients.get('capital')
+        if not client or not getattr(client, 'enabled', False):
+            return opportunities
+        
+        try:
+            # Capital.com uses different market structure - get top markets by category
+            # Focus on liquid instruments: major stocks, indices, forex pairs
+            target_symbols = [
+                # Major US Stocks
+                'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA', 'NVDA', 'META', 'NFLX',
+                # Major Indices
+                'US500', 'US30', 'NAS100', 'UK100', 'GER40', 'FRA40',
+                # Major Forex
+                'EURUSD', 'GBPUSD', 'USDJPY', 'AUDUSD', 'USDCAD', 'NZDUSD',
+                # Commodities
+                'GOLD', 'SILVER', 'OIL_CRUDE', 'NATURAL_GAS'
+            ]
+            
+            # Get tickers for target symbols in parallel
+            tickers_dict = client.get_tickers_for_symbols(target_symbols, max_workers=10)
+            
+            for symbol, ticker_data in tickers_dict.items():
+                try:
+                    price = ticker_data.get('price', 0)
+                    change_pct = ticker_data.get('change_pct', 0)
+                    
+                    if price <= 0:
+                        continue
+                    
+                    # Capital.com doesn't provide volume, use price change as momentum proxy
+                    momentum = abs(change_pct) * 2.0  # Weight CFDs higher for equal comparison
+                    
+                    if abs(change_pct) >= min_change_pct:
+                        opportunities.append(MarketOpportunity(
+                            symbol=symbol,
+                            exchange='capital',
+                            price=price,
+                            change_pct=change_pct,
+                            volume=0,  # CFDs don't have traditional volume
+                            momentum_score=momentum,
+                            fee_rate=self.fee_rates.get('capital', 0.0008)
+                        ))
+                except Exception:
+                    pass
+            
+            if opportunities:
+                print(f"   🏦 Capital.com: Found {len(opportunities)} CFD opportunities")
+                
+        except Exception as e:
+            print(f"⚠️ Capital.com scan error: {e}")
+        
+        return opportunities
+    
     def get_available_cash(self) -> Dict[str, float]:
         """Get available cash across ALL exchanges."""
         cash: Dict[str, float] = {}
-        self.last_cash_status = {'alpaca': 'unknown', 'kraken': 'unknown', 'binance': 'unknown'}
+        self.last_cash_status = {'alpaca': 'unknown', 'kraken': 'unknown', 'binance': 'unknown', 'capital': 'unknown'}
         
         # 🆕 TEST MODE: Add funds for testing fallback logic
         test_mode = os.environ.get('AUREON_TEST_MODE', '').lower() == 'true'
@@ -4719,6 +4810,29 @@ class OrcaKillCycle:
                 print(f"   ⚠️ Binance cash error: {e}")
                 self.last_cash_status['binance'] = 'error'
                 cash['binance'] = 5.0 if test_mode else 0.0
+        
+        # Capital.com balance checking
+        if 'capital' in self.clients:
+            try:
+                capital_client = self.clients['capital']
+                if not getattr(capital_client, 'enabled', False):
+                    self.last_cash_status['capital'] = 'no_keys'
+                    cash['capital'] = 0.0
+                else:
+                    # Get Capital.com account info
+                    accounts = capital_client.get_accounts()
+                    if accounts and len(accounts) > 0:
+                        # Use first account's available balance
+                        capital_cash = float(accounts[0].get('available', 0) or 0)
+                        self.last_cash_status['capital'] = 'ok'
+                        cash['capital'] = capital_cash + (5.0 if test_mode else 0)
+                    else:
+                        self.last_cash_status['capital'] = 'error'
+                        cash['capital'] = 5.0 if test_mode else 0.0
+            except Exception as e:
+                print(f"   ⚠️ Capital.com cash error: {e}")
+                self.last_cash_status['capital'] = 'error'
+                cash['capital'] = 5.0 if test_mode else 0.0
         
         return cash
 
@@ -8165,7 +8279,14 @@ class OrcaKillCycle:
         
         # Initialize War Room display
         warroom = WarRoomDisplay()
-        console = Console()
+        
+        # Safe console creation - check if stdout is valid
+        console = None
+        try:
+            if RICH_AVAILABLE and sys.stdout and not sys.stdout.closed:
+                console = Console()
+        except Exception:
+            console = None
         
         # Session statistics
         session_stats = {
@@ -8226,7 +8347,13 @@ class OrcaKillCycle:
         # ═══════════════════════════════════════════════════════════════════
         # PHASE 0: LOAD EXISTING POSITIONS
         # ═══════════════════════════════════════════════════════════════════
-        console.print("[bold blue]📊 Loading existing positions...[/]")
+        if console:
+            try:
+                console.print("[bold blue]📊 Loading existing positions...[/]")
+            except Exception:
+                print("📊 Loading existing positions...")
+        else:
+            print("📊 Loading existing positions...")
         
         for exchange_name, client in self.clients.items():
             try:
@@ -8340,7 +8467,13 @@ class OrcaKillCycle:
             except Exception:
                 pass
         
-        console.print(f"[green]✅ Loaded {len(positions)} positions[/]")
+        if console:
+            try:
+                console.print(f"[green]✅ Loaded {len(positions)} positions[/]")
+            except Exception:
+                print(f"✅ Loaded {len(positions)} positions")
+        else:
+            print(f"✅ Loaded {len(positions)} positions")
         
         # ═══════════════════════════════════════════════════════════════════
         # MAIN LOOP WITH RICH LIVE
@@ -9166,10 +9299,22 @@ class OrcaKillCycle:
                     time.sleep(monitor_interval)
                     
         except KeyboardInterrupt:
-            console.print("\n[bold yellow]👑 STOPPING WAR ROOM...[/]")
+            if console:
+                try:
+                    console.print("\n[bold yellow]👑 STOPPING WAR ROOM...[/]")
+                except Exception:
+                    print("\n👑 STOPPING WAR ROOM...")
+            else:
+                print("\n👑 STOPPING WAR ROOM...")
             
             # Close profitable positions
-            console.print("[bold]🛑 Closing profitable positions only...[/]")
+            if console:
+                try:
+                    console.print("[bold]🛑 Closing profitable positions only...[/]")
+                except Exception:
+                    print("🛑 Closing profitable positions only...")
+            else:
+                print("🛑 Closing profitable positions only...")
             for pos in positions:
                 if pos.current_pnl > 0:
                     try:
@@ -9178,30 +9323,78 @@ class OrcaKillCycle:
                             side='sell',
                             quantity=pos.entry_qty
                         )
-                        console.print(f"[green]✅ Closed {pos.symbol}: +${pos.current_pnl:.4f}[/]")
+                        if console:
+                            try:
+                                console.print(f"[green]✅ Closed {pos.symbol}: +${pos.current_pnl:.4f}[/]")
+                            except Exception:
+                                print(f"✅ Closed {pos.symbol}: +${pos.current_pnl:.4f}")
+                        else:
+                            print(f"✅ Closed {pos.symbol}: +${pos.current_pnl:.4f}")
                     except Exception:
                         pass
                 else:
                     acc_info = f" (DCA x{pos.accumulation_count})" if pos.accumulation_count > 0 else ""
-                    console.print(f"[dim]⏳ Kept {pos.symbol}: ${pos.current_pnl:.4f}{acc_info} (holding)[/]")
+                    if console:
+                        try:
+                            console.print(f"[dim]⏳ Kept {pos.symbol}: ${pos.current_pnl:.4f}{acc_info} (holding)[/]")
+                        except Exception:
+                            print(f"⏳ Kept {pos.symbol}: ${pos.current_pnl:.4f}{acc_info} (holding)")
+                    else:
+                        print(f"⏳ Kept {pos.symbol}: ${pos.current_pnl:.4f}{acc_info} (holding)")
             
             # Summary
-            console.print(f"\n[bold magenta]{'='*60}[/]")
-            console.print(f"[bold]👑 WAR ROOM SESSION COMPLETE[/]")
-            console.print(f"   Cycles: {session_stats['cycles']}")
-            console.print(f"   Total P&L: ${session_stats['total_pnl']:+.4f}")
-            console.print(f"   Wins: {session_stats['winning_trades']} | Losses: {session_stats['losing_trades']}")
+            if console:
+                try:
+                    console.print(f"\n[bold magenta]{'='*60}[/]")
+                    console.print(f"[bold]👑 WAR ROOM SESSION COMPLETE[/]")
+                    console.print(f"   Cycles: {session_stats['cycles']}")
+                    console.print(f"   Total P&L: ${session_stats['total_pnl']:+.4f}")
+                    console.print(f"   Wins: {session_stats['winning_trades']} | Losses: {session_stats['losing_trades']}")
+                except Exception:
+                    print(f"\n{'='*60}")
+                    print(f"👑 WAR ROOM SESSION COMPLETE")
+                    print(f"   Cycles: {session_stats['cycles']}")
+                    print(f"   Total P&L: ${session_stats['total_pnl']:+.4f}")
+                    print(f"   Wins: {session_stats['winning_trades']} | Losses: {session_stats['losing_trades']}")
+            else:
+                print(f"\n{'='*60}")
+                print(f"👑 WAR ROOM SESSION COMPLETE")
+                print(f"   Cycles: {session_stats['cycles']}")
+                print(f"   Total P&L: ${session_stats['total_pnl']:+.4f}")
+                print(f"   Wins: {session_stats['winning_trades']} | Losses: {session_stats['losing_trades']}")
             
             # Rising Star Statistics
             if RISING_STAR_AVAILABLE:
-                console.print(f"\n[bold cyan]🌟 RISING STAR STATISTICS[/]")
-                console.print(f"   Candidates Scanned: {rising_star_stats['candidates_scanned']}")
-                console.print(f"   Monte Carlo Sims: {rising_star_stats['simulations_run']:,}")
-                console.print(f"   Winners Selected: {rising_star_stats['winners_selected']}")
-                console.print(f"   Accumulations (DCA): {rising_star_stats['accumulations_made']}")
-                console.print(f"   DCA Value: ${rising_star_stats['total_accumulated_value']:.2f}")
+                if console:
+                    try:
+                        console.print(f"\n[bold cyan]🌟 RISING STAR STATISTICS[/]")
+                        console.print(f"   Candidates Scanned: {rising_star_stats['candidates_scanned']}")
+                        console.print(f"   Monte Carlo Sims: {rising_star_stats['simulations_run']:,}")
+                        console.print(f"   Winners Selected: {rising_star_stats['winners_selected']}")
+                        console.print(f"   Accumulations (DCA): {rising_star_stats['accumulations_made']}")
+                        console.print(f"   DCA Value: ${rising_star_stats['total_accumulated_value']:.2f}")
+                    except Exception:
+                        print(f"\n🌟 RISING STAR STATISTICS")
+                        print(f"   Candidates Scanned: {rising_star_stats['candidates_scanned']}")
+                        print(f"   Monte Carlo Sims: {rising_star_stats['simulations_run']:,}")
+                        print(f"   Winners Selected: {rising_star_stats['winners_selected']}")
+                        print(f"   Accumulations (DCA): {rising_star_stats['accumulations_made']}")
+                        print(f"   DCA Value: ${rising_star_stats['total_accumulated_value']:.2f}")
+                else:
+                    print(f"\n🌟 RISING STAR STATISTICS")
+                    print(f"   Candidates Scanned: {rising_star_stats['candidates_scanned']}")
+                    print(f"   Monte Carlo Sims: {rising_star_stats['simulations_run']:,}")
+                    print(f"   Winners Selected: {rising_star_stats['winners_selected']}")
+                    print(f"   Accumulations (DCA): {rising_star_stats['accumulations_made']}")
+                    print(f"   DCA Value: ${rising_star_stats['total_accumulated_value']:.2f}")
             
-            console.print(f"[bold magenta]{'='*60}[/]")
+            if console:
+                try:
+                    console.print(f"[bold magenta]{'='*60}[/]")
+                except Exception:
+                    print(f"{'='*60}")
+            else:
+                print(f"{'='*60}")
         
         return session_stats
 
