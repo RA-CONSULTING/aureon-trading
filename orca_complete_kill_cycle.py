@@ -8554,37 +8554,31 @@ class OrcaKillCycle:
         # ═══════════════════════════════════════════════════════════════════
         # MAIN LOOP WITH RICH LIVE
         # ═══════════════════════════════════════════════════════════════════
+        
+        # Only use Rich Live if available, warroom exists, console is valid, AND stdout is open
+        use_rich_live = (RICH_AVAILABLE and 
+                       warroom is not None and 
+                       console is not None and
+                       hasattr(sys.stdout, 'closed') and 
+                       not sys.stdout.closed)
+        
+        # Try to start Rich Live mode
+        live = None
+        if use_rich_live:
+            try:
+                live = Live(warroom.build_display(), refresh_per_second=2, console=console)
+                live.start()
+                _safe_print("✅ Rich War Room display started")
+            except (ValueError, OSError, IOError) as e:
+                # Rich Live crashed - fall back to text mode
+                _safe_print(f"⚠️ Rich display failed ({e}), switching to text mode...")
+                use_rich_live = False
+                live = None
+        
         try:
-            # Only use Rich Live if available, warroom exists, console is valid, AND stdout is open
-            use_rich_live = (RICH_AVAILABLE and 
-                           warroom is not None and 
-                           console is not None and
-                           hasattr(sys.stdout, 'closed') and 
-                           not sys.stdout.closed)
-            
-            if use_rich_live:
-                try:
-                    with Live(warroom.build_display(), refresh_per_second=2, console=console) as live:
-                        while True:
-                            current_time = time.time()
-                            session_stats['cycles'] += 1
-                            warroom.cycle_count = session_stats['cycles']
-                            warroom.total_pnl = session_stats['total_pnl']
-                            warroom.kills_data = {
-                                'wins': session_stats['winning_trades'],
-                                'losses': session_stats['losing_trades'],
-                                'pnl': session_stats['total_pnl']
-                            }
-                except (ValueError, OSError, IOError) as e:
-                    # Rich Live crashed - fall back to text mode
-                    _safe_print(f"⚠️ Rich display failed ({e}), switching to text mode...")
-                    use_rich_live = False
-            
-            if not use_rich_live:
-                # Fallback: simple loop without Rich warroom display
-                while True:
-                    current_time = time.time()
-                    session_stats['cycles'] += 1
+            while True:
+                current_time = time.time()
+                session_stats['cycles'] += 1
 
                     # 👑 Queen pacing + profit target updates
                     if current_time - last_queen_update >= queen_update_interval:
@@ -9383,8 +9377,18 @@ class OrcaKillCycle:
                         total_boost=quantum.get('quantum_boost', 1.0) if quantum else 1.0
                     )
                     
-                    # Update display
-                    live.update(warroom.build_display())
+                    # Update display (Rich Live if available, otherwise just skip)
+                    if live is not None:
+                        try:
+                            live.update(warroom.build_display())
+                        except (ValueError, OSError, IOError) as e:
+                            # Rich crashed during update - stop using it
+                            _safe_print(f"⚠️ Rich display crashed ({e}), stopping display...")
+                            try:
+                                live.stop()
+                            except:
+                                pass
+                            live = None
                     time.sleep(monitor_interval)
                     
         except KeyboardInterrupt:
@@ -9484,6 +9488,14 @@ class OrcaKillCycle:
                     print(f"{'='*60}")
             else:
                 print(f"{'='*60}")
+        
+        finally:
+            # Stop Rich Live display if it's running
+            if live is not None:
+                try:
+                    live.stop()
+                except:
+                    pass
         
         return session_stats
 
