@@ -8031,12 +8031,20 @@ class OrcaKillCycle:
             except Exception:
                 exchange_status = {}
 
+            # Run flight check for system validation
+            flight_check = {}
+            try:
+                flight_check = self.run_flight_check()
+            except Exception:
+                flight_check = {"summary": {"online_pct": 0, "critical_online": False}}
+
             state = {
                 "timestamp": time.time(),
                 "session_stats": session_stats,
                 "positions": serializable_positions,
                 "active_count": len(positions),
                 "exchange_status": exchange_status,
+                "flight_check": flight_check,
                 "queen_message": "War Room Active",
                 "queen_equity": queen.equity if queen else 0.0
             }

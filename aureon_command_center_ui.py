@@ -344,6 +344,64 @@ COMMAND_CENTER_HTML = """
             height: 100%;
             border: 0;
         }
+
+        /* Flight Check Panel */
+        .flight-check-panel {
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 15px;
+        }
+
+        .flight-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9em;
+            padding: 8px;
+            border-radius: 6px;
+        }
+
+        .flight-status.online {
+            background: rgba(0, 255, 136, 0.15);
+            color: #00ff88;
+            border-left: 3px solid #00ff88;
+        }
+
+        .flight-status.offline {
+            background: rgba(255, 51, 102, 0.15);
+            color: #ff3366;
+            border-left: 3px solid #ff3366;
+        }
+
+        .flight-progress {
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+            overflow: hidden;
+            margin-top: 8px;
+        }
+
+        .flight-progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #00ff88, #00bfff);
+            transition: width 0.3s;
+        }
+
+        .flight-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4px;
+            margin-top: 8px;
+            font-size: 0.75em;
+            color: #888;
+        }
+
+        .flight-item {
+            display: flex;
+            justify-content: space-between;
+        }
         
         /* Queen Panel */
         #queen-panel {
@@ -621,6 +679,11 @@ COMMAND_CENTER_HTML = """
                     <div class="stat-value" id="pnl-total">$0.00</div>
                 </div>
             </div>
+
+            <h2>✈️ FLIGHT CHECK</h2>
+            <div id="flight-check" class="flight-check-panel">
+                <div class="flight-status offline">Awaiting status...</div>
+            </div>
             
             <h2>⚔️ ACTIVE POSITIONS</h2>
             <div id="positions-list" style="margin-bottom: 20px;">
@@ -771,6 +834,41 @@ COMMAND_CENTER_HTML = """
                 const queenEl = document.getElementById('hub-queen');
                 if (queenEl) queenEl.textContent = snapshot.queen_message;
             }
+
+            // Update flight check display
+            updateFlightCheck(snapshot.flight_check);
+        }
+
+        function updateFlightCheck(flightCheck) {
+            const container = document.getElementById('flight-check');
+            if (!container || !flightCheck) return;
+
+            const summary = flightCheck.summary || {};
+            const online = summary.online_systems || 0;
+            const total = summary.total_systems || 0;
+            const pct = summary.online_pct || 0;
+            const critical = summary.critical_online || false;
+
+            const statusClass = critical ? 'online' : 'offline';
+            const statusIcon = critical ? '✅' : '❌';
+            const statusText = critical ? 'FLIGHT CHECK PASSED' : 'CRITICAL SYSTEMS OFFLINE';
+
+            container.innerHTML = `
+                <div class="flight-status ${statusClass}">
+                    <span>${statusIcon}</span>
+                    <span>${statusText}</span>
+                    <span style="margin-left: auto;">${online}/${total} (${pct}%)</span>
+                </div>
+                <div class="flight-progress">
+                    <div class="flight-progress-bar" style="width: ${pct}%"></div>
+                </div>
+                <div class="flight-details">
+                    <div class="flight-item"><span>Exchanges:</span><span>${flightCheck.exchange_alpaca ? '✅' : '❌'} Alpaca ${flightCheck.exchange_kraken ? '✅' : '❌'} Kraken</span></div>
+                    <div class="flight-item"><span>Queen:</span><span>${flightCheck.queen_wired ? '✅ Wired' : '❌ Offline'}</span></div>
+                    <div class="flight-item"><span>ThoughtBus:</span><span>${flightCheck.thought_bus ? '✅' : '❌'}</span></div>
+                    <div class="flight-item"><span>Intelligence:</span><span>${flightCheck.miner_brain || flightCheck.ultimate_intelligence ? '✅' : '❌'}</span></div>
+                </div>
+            `;
         }
 
         async function refreshHubRegistry() {
