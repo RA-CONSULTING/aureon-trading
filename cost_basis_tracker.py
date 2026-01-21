@@ -26,9 +26,47 @@ Usage:
 import json
 import os
 import time
+import builtins
 from typing import Dict, Any, Optional, Tuple
 from datetime import datetime
 from dotenv import load_dotenv
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# 🔇 WINDOWS UTF-8 FIX - MUST BE BEFORE ANY PRINT STATEMENTS!
+# ═══════════════════════════════════════════════════════════════════════════════
+import sys
+if sys.platform == 'win32':
+    os.environ['PYTHONIOENCODING'] = 'utf-8'
+    try:
+        import io
+        def _is_utf8_wrapper(stream):
+            """Check if stream is already a UTF-8 TextIOWrapper."""
+            return (isinstance(stream, io.TextIOWrapper) and 
+                    hasattr(stream, 'encoding') and stream.encoding and
+                    stream.encoding.lower().replace('-', '') == 'utf8')
+        def _is_buffer_valid(stream):
+            """Check if stream buffer is valid and not closed."""
+            if not hasattr(stream, 'buffer'):
+                return False
+            try:
+                return stream.buffer is not None and not stream.buffer.closed
+            except (ValueError, AttributeError):
+                return False
+        # Only wrap if not already UTF-8 wrapped AND buffer is valid (prevents re-wrapping + closed buffer errors)
+        if _is_buffer_valid(sys.stdout) and not _is_utf8_wrapper(sys.stdout):
+            sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace', line_buffering=True)
+        if _is_buffer_valid(sys.stderr) and not _is_utf8_wrapper(sys.stderr):
+            sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace', line_buffering=True)
+    except Exception:
+        pass
+
+def _safe_print(*args, **kwargs):
+    """Safe print that handles closed stdout/stderr."""
+    try:
+        builtins.print(*args, **kwargs)
+    except (ValueError, OSError, IOError):
+        # Silently ignore if stdout/stderr is closed
+        pass
 
 load_dotenv()
 
@@ -52,9 +90,9 @@ class CostBasisTracker:
                     data = json.load(f)
                     self.positions = data.get('positions', {})
                     self.last_sync = data.get('last_sync', 0)
-                    print(f"📊 Cost Basis Tracker: Loaded {len(self.positions)} positions")
+                    _safe_print(f"📊 Cost Basis Tracker: Loaded {len(self.positions)} positions")
             except Exception as e:
-                print(f"⚠️ Failed to load cost basis file: {e}")
+                _safe_print(f"⚠️ Failed to load cost basis file: {e}")
                 self.positions = {}
     
     def _save(self):

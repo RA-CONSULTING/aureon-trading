@@ -7215,12 +7215,6 @@ class OrcaKillCycle:
 
                     # Always refresh balances, even if position cap is reached
                     cash = self.get_available_cash()
-                    warroom.update_cash(
-                        alpaca=cash.get('alpaca', 0),
-                        kraken=cash.get('kraken', 0),
-                        binance=cash.get('binance', 0)
-                    )
-                    warroom.update_cash_status(getattr(self, 'last_cash_status', {}))
                     
                     # Check if we have room for more positions
                     if len(positions) < max_positions:
@@ -7238,17 +7232,14 @@ class OrcaKillCycle:
                             
                             if opportunities:
                                 # Update volatility based on opportunity count
-                                warroom.update_volatility(len(opportunities))
                                 
                                 # Update opportunity queue for display
-                                warroom.update_opportunity_queue(opportunities)
                                 
                                 # Update efficiency metrics
-                                warroom.update_efficiency(scanned=len(opportunities))
                                 
                                 # Flash alert if extreme volatility
                                 if len(opportunities) > 4000:
-                                    warroom.add_flash_alert(f"Extreme volatility! {len(opportunities):,} opportunities", 'warning')
+                                    print(f"⚠️ Extreme volatility! {len(opportunities):,} opportunities")
                                 
                                 # Filter for symbols not already in positions
                                 active_symbols = [p.symbol for p in positions]
@@ -7331,11 +7322,8 @@ class OrcaKillCycle:
                                                             self.track_buy_order(symbol_clean, buy_order, best.exchange)
                                                             
                                                             # Update efficiency metrics (bought)
-                                                            if hasattr(warroom, 'efficiency_metrics'):
-                                                                warroom.efficiency_metrics['total_bought'] = warroom.efficiency_metrics.get('total_bought', 0) + 1
                                                             
                                                             # Update position health
-                                                            warroom.update_position_health()
                                                             
                                                             print(f"   ✅ BOUGHT: {buy_qty:.6f} @ ${buy_price:,.4f}")
                                                             print(f"      🎯 Target: ${target_price:,.4f} ({target_pct_current:.2f}%)")
@@ -7346,7 +7334,7 @@ class OrcaKillCycle:
                                             print(f"   ⚠️ Buy failed: {e}")
                                             # Flash alert for API issues
                                             if 'timeout' in str(e).lower() or 'connection' in str(e).lower():
-                                                warroom.add_flash_alert(f"{best.exchange.upper()} API issue", 'warning')
+                                                print(f"⚠️ {best.exchange.upper()} API issue")
                                     else:
                                         print(f"   👑 Queen says: Wait (consciousness too low)")
                                 else:
@@ -8358,32 +8346,46 @@ class OrcaKillCycle:
         # MAIN LOOP WITH RICH LIVE
         # ═══════════════════════════════════════════════════════════════════
         try:
-            with Live(warroom.build_display(), refresh_per_second=2, console=console) as live:
+            if RICH_AVAILABLE and warroom is not None:
+                with Live(warroom.build_display(), refresh_per_second=2, console=console) as live:
+                    while True:
+                        current_time = time.time()
+                        session_stats['cycles'] += 1
+                        warroom.cycle_count = session_stats['cycles']
+                        warroom.total_pnl = session_stats['total_pnl']
+                        warroom.kills_data = {
+                            'wins': session_stats['winning_trades'],
+                            'losses': session_stats['losing_trades'],
+                            'pnl': session_stats['total_pnl']
+                        }
+            else:
+                # Fallback: simple loop without Rich warroom display
                 while True:
                     current_time = time.time()
                     session_stats['cycles'] += 1
-                    warroom.cycle_count = session_stats['cycles']
-                    warroom.total_pnl = session_stats['total_pnl']
-                    warroom.kills_data = {
-                        'wins': session_stats['winning_trades'],
-                        'losses': session_stats['losing_trades'],
-                        'pnl': session_stats['total_pnl']
-                    }
 
                     # 👑 Queen pacing + profit target updates
                     if current_time - last_queen_update >= queen_update_interval:
                         last_queen_update = current_time
                         _apply_queen_controls()
-                        warroom.add_flash_alert(
-                            f"Queen pacing: scan={scan_interval:.1f}s target={target_pct_current:.2f}%",
-                            'info'
-                        )
+                        if warroom is not None:
+                            warroom.add_flash_alert(
+                                f"Queen pacing: scan={scan_interval:.1f}s target={target_pct_current:.2f}%",
+                                'info'
+                            )
+                        else:
+                            print(f"👑 Queen pacing: scan={scan_interval:.1f}s target={target_pct_current:.2f}%")
                     
                     # Update position health and success rate every cycle
-                    warroom.update_position_health()
-                    if session_stats['total_trades'] > 0:
-                        success_rate = (session_stats['winning_trades'] / session_stats['total_trades']) * 100
-                        warroom.update_efficiency(success_rate=success_rate)
+                    if warroom is not None:
+                        warroom.update_position_health()
+                        if session_stats['total_trades'] > 0:
+                            success_rate = (session_stats['winning_trades'] / session_stats['total_trades']) * 100
+                            warroom.update_efficiency(success_rate=success_rate)
+                    else:
+                        if session_stats['total_trades'] > 0:
+                            success_rate = (session_stats['winning_trades'] / session_stats['total_trades']) * 100
+                            print(f"📊 Success rate: {success_rate:.1f}%")
                     
                     # ═══════════════════════════════════════════════════════
                     # BATCH PRICE UPDATE
@@ -8421,7 +8423,11 @@ class OrcaKillCycle:
                     # ═══════════════════════════════════════════════════════
                     # UPDATE POSITIONS & CHECK FOR EXITS
                     # ═══════════════════════════════════════════════════════
-                    warroom.positions_data = []  # Clear and rebuild
+                    if warroom is not None:
+                        warroom.positions_data = []  # Clear and rebuild
+                    else:
+                        # No warroom display - nothing to clear
+                        pass
                     
                     for pos in positions[:]:
                         current = all_prices.get(pos.symbol, 0)
@@ -8480,26 +8486,33 @@ class OrcaKillCycle:
                                     )
                                     if ci_signal:
                                         firm_str = f"{firm_id[:8]} {ci_signal.confidence:.0%}"
-                                        warroom.update_firm(firm_id, str(ci_signal.strategy.value)[:10] if hasattr(ci_signal.strategy, 'value') else '?', 'neutral')
+                                        if warroom is not None:
+                                            warroom.update_firm(firm_id, str(ci_signal.strategy.value)[:10] if hasattr(ci_signal.strategy, 'value') else '?', 'neutral')
                                         break
                             except Exception:
                                 pass
                         
                         # Update warroom
-                        warroom.update_position(
-                            symbol=pos.symbol,
-                            exchange=pos.exchange.upper(),
-                            value=market_value,
-                            pnl=net_pnl,
-                            progress=progress,
-                            eta=eta_str,
-                            firm=firm_str
-                        )
+                        if warroom is not None:
+                            warroom.update_position(
+                                symbol=pos.symbol,
+                                exchange=pos.exchange.upper(),
+                                value=market_value,
+                                pnl=net_pnl,
+                                progress=progress,
+                                eta=eta_str,
+                                firm=firm_str
+                            )
+                        else:
+                            print(f"POS: {pos.symbol} {pos.exchange.upper()} value=${market_value:.2f} pnl={net_pnl:+.4f} progress={progress} eta={eta_str} firm={firm_str}")
                         
                         # Flash alert for deeply underwater positions
                         pnl_pct = (net_pnl / entry_cost * 100) if entry_cost > 0 else 0
                         if pnl_pct < -15 and not hasattr(pos, 'alerted_underwater'):
-                            warroom.add_flash_alert(f"{pos.symbol} underwater {pnl_pct:.1f}%", 'critical')
+                            if warroom is not None:
+                                warroom.add_flash_alert(f"{pos.symbol} underwater {pnl_pct:.1f}%", 'critical')
+                            else:
+                                print(f"⚠️ {pos.symbol} underwater {pnl_pct:.1f}%")
                             pos.alerted_underwater = True
                         elif pnl_pct >= -5:
                             pos.alerted_underwater = False  # Reset alert when recovered
@@ -8524,8 +8537,12 @@ class OrcaKillCycle:
                                     
                                     # Record kill with full details
                                     hold_time = time.time() - pos.entry_time if hasattr(pos, 'entry_time') else 0
-                                    warroom.record_kill(net_pnl, symbol=pos.symbol, exchange=pos.exchange, hold_time=hold_time)
-                                    warroom.remove_position(pos.symbol)
+                                    if warroom is not None:
+                                        warroom.record_kill(net_pnl, symbol=pos.symbol, exchange=pos.exchange, hold_time=hold_time)
+                                        warroom.remove_position(pos.symbol)
+                                    else:
+                                        print(f"🏆 Recorded kill: {pos.symbol} +${net_pnl:+.4f}")
+                                        # No warroom to remove position from, maintain local state only
                                     positions.remove(pos)
                                     last_scan_time = 0  # Force scan
                             except Exception:
@@ -8624,7 +8641,10 @@ class OrcaKillCycle:
                                         queen_approved = False
                                         if queen is None:
                                             queen_approved = True  # Fallback without Queen
-                                            warroom.add_flash_alert("Queen unavailable - proceeding with default approval", 'warning')
+                                            if warroom is not None:
+                                                warroom.add_flash_alert("Queen unavailable - proceeding with default approval", 'warning')
+                                            else:
+                                                print("👑 Queen unavailable - proceeding with default approval")
                                         else:
                                             try:
                                                 signal = queen.get_collective_signal(
@@ -8638,10 +8658,13 @@ class OrcaKillCycle:
                                                 )
                                                 confidence = float(signal.get('confidence', 0.0))
                                                 action = signal.get('action', 'HOLD')
-                                                warroom.add_flash_alert(
-                                                    f"Queen signal {action} {confidence:.0%} for {winner.symbol}",
-                                                    'info'
-                                                )
+                                                if warroom is not None:
+                                                    warroom.add_flash_alert(
+                                                        f"Queen signal {action} {confidence:.0%} for {winner.symbol}",
+                                                        'info'
+                                                    )
+                                                else:
+                                                    print(f"👑 Queen signal {action} {confidence:.0%} for {winner.symbol}")
                                                 queen_approved = (action == 'BUY' and confidence >= 0.5)
                                             except Exception:
                                                 queen_approved = False
@@ -8707,7 +8730,10 @@ class OrcaKillCycle:
                                                 queen_approved = False
                                                 if queen is None:
                                                     queen_approved = True  # Fallback without Queen
-                                                    warroom.add_flash_alert("Queen unavailable - proceeding with default approval", 'warning')
+                                                    if warroom is not None:
+                                                        warroom.add_flash_alert("Queen unavailable - proceeding with default approval", 'warning')
+                                                    else:
+                                                        print("👑 Queen unavailable - proceeding with default approval")
                                                 else:
                                                     try:
                                                         signal = queen.get_collective_signal(
@@ -8918,23 +8944,32 @@ class OrcaKillCycle:
                         # Update firm activity from intelligence
                         for whale in intel.get('whale_predictions', []):
                             firm_name = whale.get('firm', whale.get('symbol', 'Unknown'))
-                            warroom.update_firm(
-                                firm_name[:12],
-                                whale.get('action', 'watching'),
-                                whale.get('direction', 'neutral')
-                            )
+                            if warroom is not None:
+                                warroom.update_firm(
+                                    firm_name[:12],
+                                    whale.get('action', 'watching'),
+                                    whale.get('direction', 'neutral')
+                                )
+                            else:
+                                print(f"FIRM: {firm_name[:12]} action={whale.get('action','watching')} dir={whale.get('direction','neutral')}")
                         
                         # Add bot detections to firms display
                         for bot in intel.get('bots', [])[:3]:
-                            warroom.update_firm(
-                                bot.get('firm', 'Bot')[:12],
-                                bot.get('type', 'algo'),
-                                bot.get('direction', 'neutral')
-                            )
+                            if warroom is not None:
+                                warroom.update_firm(
+                                    bot.get('firm', 'Bot')[:12],
+                                    bot.get('type', 'algo'),
+                                    bot.get('direction', 'neutral')
+                                )
+                            else:
+                                print(f"BOT: {bot.get('firm','Bot')[:12]} type={bot.get('type','algo')} dir={bot.get('direction','neutral')}")
                         
                         # 🌟 Update Rising Star stats in display
                         if RISING_STAR_AVAILABLE:
-                            warroom.update_rising_star(rising_star_stats)
+                            if warroom is not None:
+                                warroom.update_rising_star(rising_star_stats)
+                            else:
+                                print(f"RisingStar: {rising_star_stats}")
                         
                         # 🦅 Update Momentum stats
                         mom_res = getattr(self, 'last_momentum_result', {})
@@ -8964,13 +8999,16 @@ class OrcaKillCycle:
                                 ant_stat = f"Swarming ({a_count} paths)" if a_count > 0 else "Foraging"
                                 hb_stat = f"Pollinating ({hb_count} flowers)" if hb_count > 0 else "Hovering"
                         
-                        warroom.update_momentum(
-                            wolf_status=wolf_stat,
-                            lion_status=lion_stat,
-                            ants_status=ant_stat,
-                            hummingbird_status=hb_stat,
-                            micro_targets=len(micro_res) if micro_res else 0
-                        )
+                        if warroom is not None:
+                            warroom.update_momentum(
+                                wolf_status=wolf_stat,
+                                lion_status=lion_stat,
+                                ants_status=ant_stat,
+                                hummingbird_status=hb_stat,
+                                micro_targets=len(micro_res) if micro_res else 0
+                            )
+                        else:
+                            print(f"Momentum: wolf={wolf_stat}, lion={lion_stat}, ants={ant_stat}, hb={hb_stat}, micro={len(micro_res) if micro_res else 0}")
                         
                         # 🌌 Stargate Grid Update
                         if self.stargate_grid:
