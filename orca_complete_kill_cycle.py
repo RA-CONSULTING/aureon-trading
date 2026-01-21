@@ -7624,7 +7624,8 @@ class OrcaKillCycle:
                                 try:
                                     ticker = kraken_client.get_ticker(sym)
                                     if ticker:
-                                        all_prices[sym] = ticker.get('bid', ticker.get('price', 0))
+                                        price = ticker.get('bid', ticker.get('price', 0))
+                                        all_prices[sym] = float(price) if price else 0
                                 except Exception:
                                     pass
                     except Exception:
@@ -7638,7 +7639,8 @@ class OrcaKillCycle:
                                 try:
                                     ticker = self._get_binance_ticker(binance_client, sym)
                                     if ticker:
-                                        all_prices[sym] = ticker.get('bid', ticker.get('price', 0))
+                                        price = ticker.get('bid', ticker.get('price', 0))
+                                        all_prices[sym] = float(price) if price else 0
                                 except Exception:
                                     pass
                     except Exception:
