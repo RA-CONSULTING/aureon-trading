@@ -690,6 +690,10 @@ COMMAND_CENTER_HTML = """
         .signal-item.buy { border-left-color: var(--accent-green); }
         .signal-item.sell { border-left-color: var(--accent-red); }
         .signal-item.hold { border-left-color: var(--accent-gold); }
+        .signal-item.voice {
+            border-left-color: var(--accent-gold);
+            background: rgba(255, 170, 0, 0.08);
+        }
         
         .signal-header {
             display: flex;
@@ -715,6 +719,19 @@ COMMAND_CENTER_HTML = """
         .signal-details {
             font-size: 0.85em;
             color: var(--text-secondary);
+        }
+
+        .signal-meta {
+            margin-top: 6px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+            font-size: 0.75em;
+            color: #aaa;
+        }
+
+        .signal-meta span {
+            display: block;
         }
         
         .signal-confidence {
@@ -1635,22 +1652,55 @@ COMMAND_CENTER_HTML = """
             const container = document.getElementById('signals-feed');
             
             const div = document.createElement('div');
-            div.className = 'signal-item ' + (signal.signal_type || 'hold').toLowerCase();
+            const isVoice = signal?.metadata?.voice;
+            div.className = 'signal-item ' + (isVoice ? 'voice' : (signal.signal_type || 'hold').toLowerCase());
             
             const confidence = signal.confidence || 0;
+            const ts = signal.timestamp ? new Date(signal.timestamp * 1000).toLocaleTimeString() : '';
             
-            div.innerHTML = `
-                <div class="signal-header">
-                    <span class="signal-symbol">${signal.symbol}</span>
-                    <span class="signal-type ${(signal.signal_type || 'HOLD').toLowerCase()}">${signal.signal_type || 'HOLD'}</span>
-                </div>
-                <div class="signal-details">
-                    <strong>${signal.source}</strong>: ${signal.reason || 'No reason provided'}
-                </div>
-                <div class="signal-confidence">
-                    <div class="signal-confidence-bar" style="width: ${confidence * 100}%"></div>
-                </div>
-            `;
+            if (isVoice) {
+                const who = signal?.metadata?.who || 'Queen';
+                const what = signal?.metadata?.what || 'Monitoring';
+                const where = signal?.metadata?.where || 'All exchanges';
+                const how = signal?.metadata?.how || 'Batten Matrix 3-pass + 4th gate';
+                const positions = signal?.metadata?.positions || [];
+                const market = signal?.metadata?.market || [];
+                const picks = signal?.metadata?.picks || [];
+                const positionsText = positions.length ? positions.join(' | ') : 'No active positions';
+                const marketText = market.length ? market.join(' | ') : 'No dominant movers';
+                const picksText = picks.length ? picks.join(' | ') : 'No picks yet';
+
+                div.innerHTML = `
+                    <div class="signal-header">
+                        <span class="signal-symbol">👑 ${who}</span>
+                        <span class="signal-type hold">VOICE</span>
+                    </div>
+                    <div class="signal-details">
+                        <strong>${what}</strong> · ${signal.reason || 'Live command stream'}
+                    </div>
+                    <div class="signal-meta">
+                        <span>Where: ${where}</span>
+                        <span>When: ${ts}</span>
+                        <span>How: ${how}</span>
+                        <span>Positions: ${positionsText}</span>
+                        <span>Picks: ${picksText}</span>
+                        <span style="grid-column: 1 / -1;">Market: ${marketText}</span>
+                    </div>
+                `;
+            } else {
+                div.innerHTML = `
+                    <div class="signal-header">
+                        <span class="signal-symbol">${signal.symbol}</span>
+                        <span class="signal-type ${(signal.signal_type || 'HOLD').toLowerCase()}">${signal.signal_type || 'HOLD'}</span>
+                    </div>
+                    <div class="signal-details">
+                        <strong>${signal.source}</strong>: ${signal.reason || 'No reason provided'}
+                    </div>
+                    <div class="signal-confidence">
+                        <div class="signal-confidence-bar" style="width: ${confidence * 100}%"></div>
+                    </div>
+                `;
+            }
             
             container.insertBefore(div, container.firstChild);
             
@@ -2220,6 +2270,8 @@ class AureonCommandCenter:
         # Stats
         self.updates_sent = 0
         self.last_update = 0.0
+        self.last_voice_ts = 0.0
+        self.last_voice_hash = ""
         
         # Web server
         if AIOHTTP_AVAILABLE:
@@ -2645,6 +2697,89 @@ Object.entries(systems).forEach(([name, online]) => {
             "confidence": confidence,
             "strategy": strategy
         })
+
+    def _build_queen_voice_signal(self, snapshot: Dict[str, Any]) -> Optional[TradingSignal]:
+        """Build a Queen Voice signal summarizing who/what/where/when/how."""
+        positions = snapshot.get('positions', []) or []
+        active_count = snapshot.get('active_count', len(positions))
+        exchange_status = snapshot.get('exchange_status', {}) or {}
+        connected_exchanges = [k for k, v in exchange_status.items() if isinstance(v, dict) and v.get('connected')]
+        where = ", ".join(connected_exchanges) if connected_exchanges else "unknown"
+
+        # Summarize top positions by absolute PnL
+        top_positions = sorted(
+            positions,
+            key=lambda p: abs(float(p.get('current_pnl', 0.0) or 0.0)),
+            reverse=True
+        )[:3]
+        position_lines = []
+        for p in top_positions:
+            symbol = p.get('symbol', 'UNKNOWN')
+            exch = p.get('exchange', 'n/a')
+            pnl = float(p.get('current_pnl', 0.0) or 0.0)
+            position_lines.append(f"{symbol}@{exch} {pnl:+.4f}")
+
+        movers = (self.market.top_movers or [])[:3]
+        market_lines = []
+        for m in movers:
+            symbol = m.get('symbol', 'UNKNOWN')
+            change = float(m.get('change', 0.0) or 0.0) * 100
+            exchange = m.get('exchange', 'mkt')
+            market_lines.append(f"{symbol} {change:+.2f}% ({exchange})")
+
+        winners = snapshot.get('last_winners', []) or []
+        decisions = snapshot.get('last_queen_decisions', []) or []
+        picks = []
+        for w in winners[:3]:
+            picks.append(
+                f"{w.get('symbol','?')}@{w.get('exchange','?')} score={float(w.get('score',0)):.2f}"
+            )
+        if not picks and decisions:
+            for d in decisions[:3]:
+                picks.append(
+                    f"{d.get('symbol','?')} {d.get('action','HOLD')} {float(d.get('confidence',0)):.0%}"
+                )
+
+        queen_message = snapshot.get('queen_message') or "Scanning markets"
+        session_stats = snapshot.get('session_stats', {}) or {}
+        cycles = session_stats.get('cycles', 0)
+        trades = session_stats.get('total_trades', 0)
+        wins = session_stats.get('winning_trades', 0)
+        pnl = session_stats.get('total_pnl', 0.0)
+
+        intent = "Evaluating entries" if active_count == 0 else "Managing positions + scouting"
+        reason = (
+            f"{queen_message} | Positions: {active_count} | Trades: {trades} | Wins: {wins} | PnL: {pnl:.4f}"
+        )
+
+        voice_hash = f"{queen_message}|{active_count}|{trades}|{wins}|{round(pnl,4)}|{position_lines}|{market_lines}"
+        if time.time() - self.last_voice_ts < 5 and voice_hash == self.last_voice_hash:
+            return None
+
+        self.last_voice_ts = time.time()
+        self.last_voice_hash = voice_hash
+
+        return TradingSignal(
+            source="Queen Voice",
+            signal_type="HOLD",
+            symbol=f"{active_count} positions",
+            confidence=0.5,
+            score=0.0,
+            reason=reason,
+            timestamp=time.time(),
+            exchange=where,
+            metadata={
+                "voice": True,
+                "who": "Queen Sero",
+                "what": intent,
+                "where": where,
+                "when": datetime.utcnow().isoformat() + "Z",
+                "how": "Batten Matrix 3-pass + 4th execution gate",
+                "positions": position_lines,
+                "market": market_lines,
+                "picks": picks
+            }
+        )
     
     async def fetch_all_balances(self):
         """Fetch balances from all exchanges and calculate total USD value."""
@@ -2964,6 +3099,10 @@ Object.entries(systems).forEach(([name, online]) => {
                                 confidence=0.8,
                                 strategy="WAR ROOM"
                             )
+
+                        voice_signal = self._build_queen_voice_signal(data)
+                        if voice_signal:
+                            await self.broadcast_signal(voice_signal)
 
                         # Surface Orca session stats in Queen updates for live verification
                         if 'session_stats' in data:

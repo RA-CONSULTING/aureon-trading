@@ -334,6 +334,12 @@ class BinanceClient:
             return {"dryRun": True, "symbol": symbol, "side": side, "quantity": quantity, "quoteQty": quote_qty}
         
         params = {"symbol": symbol, "side": side.upper(), "type": "MARKET", "newOrderRespType": "FULL"}
+        filters = {}
+        try:
+            filters = self.get_symbol_filters(symbol)
+        except Exception:
+            filters = {}
+        min_notional = float(filters.get('min_notional', 0.0) or 0.0)
         if quantity:
             # Adjust quantity to match symbol's lot size and precision
             adjusted_qty = self.adjust_quantity(symbol, float(quantity))
@@ -345,10 +351,45 @@ class BinanceClient:
                     "reason": f"Quantity {quantity} adjusts to {adjusted_qty} (below min qty)",
                     "uk_restricted": False
                 }
+            if min_notional > 0:
+                try:
+                    price_info = self.best_price(symbol)
+                    price = float(price_info.get("price", 0))
+                except Exception:
+                    price = 0.0
+                if price > 0:
+                    notional = adjusted_qty * price
+                    if notional < min_notional:
+                        return {
+                            "rejected": True,
+                            "error": "min_notional",
+                            "symbol": symbol,
+                            "side": side,
+                            "reason": f"Notional {notional:.8f} < minNotional {min_notional}",
+                            "uk_restricted": False
+                        }
             params["quantity"] = self._format_order_value(adjusted_qty)
         elif quote_qty:
             # Adjust quote quantity to match symbol's quote precision
             adjusted_quote = self.adjust_quote_qty(symbol, float(quote_qty))
+            if adjusted_quote <= 0:
+                return {
+                    "rejected": True,
+                    "error": "min_notional",
+                    "symbol": symbol,
+                    "side": side,
+                    "reason": f"Quote amount {quote_qty} adjusts to {adjusted_quote}",
+                    "uk_restricted": False
+                }
+            if min_notional > 0 and adjusted_quote < min_notional:
+                return {
+                    "rejected": True,
+                    "error": "min_notional",
+                    "symbol": symbol,
+                    "side": side,
+                    "reason": f"Notional {adjusted_quote:.8f} < minNotional {min_notional}",
+                    "uk_restricted": False
+                }
             params["quoteOrderQty"] = self._format_order_value(adjusted_quote)
         else:
             raise ValueError("Must provide either quantity or quote_qty")

@@ -2394,6 +2394,9 @@ class OrcaKillCycle:
         """
         self.primary_exchange = exchange
         self.clients = {}
+        self.last_rising_star_candidates: List[Dict[str, Any]] = []
+        self.last_rising_star_winners: List[Dict[str, Any]] = []
+        self.last_queen_decisions: List[Dict[str, Any]] = []
         
         # ═══════════════════════════════════════════════════════════════════
         # 💰 FEE PROFILES - Use adaptive profit gate for accurate cost tracking
@@ -4734,6 +4737,14 @@ class OrcaKillCycle:
             skipped_restricted = 0
             skipped_zeros = 0
             skipped_low_change = 0
+            skipped_uk_groups = 0
+
+            allowed_pairs = None
+            if client.uk_mode and getattr(client, 'api_key', None) and getattr(client, 'api_secret', None):
+                try:
+                    allowed_pairs = client.get_allowed_pairs_uk()
+                except Exception:
+                    allowed_pairs = None
             
             for ticker in tickers:
                 try:
@@ -4744,6 +4755,11 @@ class OrcaKillCycle:
                     # 🇬🇧 UK Mode: Skip restricted symbols FIRST (leveraged tokens, stock tokens, etc.)
                     if client.uk_mode and client.is_uk_restricted_symbol(symbol):
                         skipped_restricted += 1
+                        continue
+
+                    # 🇬🇧 UK Mode: Skip symbols not in account trade groups when available
+                    if allowed_pairs is not None and symbol not in allowed_pairs:
+                        skipped_uk_groups += 1
                         continue
                     
                     # Get symbol info to check if it's SPOT and TRADING
@@ -4788,7 +4804,7 @@ class OrcaKillCycle:
                 except Exception:
                     pass
             
-            print(f"   🔍 DEBUG: Binance Stats - Restricted: {skipped_restricted}, ZeroPrice: {skipped_zeros}, LowChange: {skipped_low_change}, Passed: {len(opportunities)}")
+            print(f"   🔍 DEBUG: Binance Stats - Restricted: {skipped_restricted}, UKGroups: {skipped_uk_groups}, ZeroPrice: {skipped_zeros}, LowChange: {skipped_low_change}, Passed: {len(opportunities)}")
 
             # Print summary of what we scanned
             if quote_currencies:
@@ -8630,6 +8646,9 @@ class OrcaKillCycle:
                 "flight_check": flight_check,
                 "queen_message": "War Room Active",
                 "queen_equity": queen.equity if queen else 0.0,
+                "last_candidates": getattr(self, 'last_rising_star_candidates', []),
+                "last_winners": getattr(self, 'last_rising_star_winners', []),
+                "last_queen_decisions": getattr(self, 'last_queen_decisions', []),
                 # Market feed tab data
                 "kraken_prices": kraken_prices,
                 "binance_prices": binance_prices,
@@ -9581,10 +9600,35 @@ class OrcaKillCycle:
                                 rising_star_stats['simulations_run'] += min(4, len(candidates)) * 1000
                                 rising_star_stats['winners_selected'] += len(best_2)
                                 print(f"⭐ STAGE 2-3 COMPLETE: Selected {len(best_2)} winners for execution")
+
+                                try:
+                                    self.last_rising_star_candidates = [
+                                        {
+                                            "symbol": c.symbol,
+                                            "exchange": c.exchange,
+                                            "score": getattr(c, 'score', 0.0),
+                                            "change_pct": getattr(c, 'change_24h_pct', 0.0) or getattr(c, 'change_pct', 0.0),
+                                            "momentum": getattr(c, 'momentum_strength', 0.0) or getattr(c, 'momentum_score', 0.0)
+                                        }
+                                        for c in candidates[:8]
+                                    ]
+                                    self.last_rising_star_winners = [
+                                        {
+                                            "symbol": w.symbol,
+                                            "exchange": w.exchange,
+                                            "score": getattr(w, 'score', 0.0),
+                                            "change_pct": getattr(w, 'change_24h_pct', 0.0) or getattr(w, 'change_pct', 0.0),
+                                            "momentum": getattr(w, 'momentum_strength', 0.0) or getattr(w, 'momentum_score', 0.0)
+                                        }
+                                        for w in best_2
+                                    ]
+                                except Exception:
+                                    pass
                                 
                                 # ═══════════════════════════════════════════════
                                 # STAGE 4: EXECUTE - Open positions on winners
                                 # ═══════════════════════════════════════════════
+                                decisions = []
                                 for winner in best_2:
                                     print(f"⭐ STAGE 4: Evaluating {winner.symbol} on {winner.exchange}")
                                     # Check NEW position count only (existing positions don't count against limit)
@@ -9617,6 +9661,15 @@ class OrcaKillCycle:
                                             confidence = float(signal.get('confidence', 0.0))
                                             action = signal.get('action', 'HOLD')
                                             print(f"⭐ STAGE 4: Queen signal for {winner.symbol}: {action} {confidence:.0%} (change={change_pct:.1f}%, mom={momentum:.2f})")
+
+                                            decisions.append({
+                                                "symbol": winner.symbol,
+                                                "exchange": winner.exchange,
+                                                "action": action,
+                                                "confidence": confidence,
+                                                "change_pct": change_pct,
+                                                "momentum": momentum
+                                            })
                                             
                                             # Lower threshold: Accept BUY with any confidence, or HOLD with Rising Star score > 0.5
                                             queen_approved = (
@@ -9646,6 +9699,12 @@ class OrcaKillCycle:
                                             exchange_cash = cash.get(winner.exchange, 0)
                                             buy_amount = min(amount_per_position, exchange_cash * 0.9)
                                             print(f"⭐ STAGE 4: Buy amount ${buy_amount:.2f} for {symbol_clean} on {winner.exchange} (cash={exchange_cash:.2f})")
+
+                                            if winner.exchange == 'binance' and hasattr(client, 'can_trade_symbol'):
+                                                can_trade, reason = client.can_trade_symbol(symbol_clean)
+                                                if not can_trade:
+                                                    print(f"⭐ STAGE 4: ⚠️ SKIPPING - {reason}")
+                                                    continue
                                             
                                             if buy_amount >= 0.50:
                                                 print(f"⭐ STAGE 4: CALLING place_market_order({symbol_clean}, buy, quote_qty={buy_amount:.2f})")
@@ -9698,6 +9757,10 @@ class OrcaKillCycle:
                                         print(f"⭐ STAGE 4: ❌ ERROR executing buy: {e}")
                                         import traceback
                                         traceback.print_exc()
+                                try:
+                                    self.last_queen_decisions = decisions
+                                except Exception:
+                                    pass
                         else:
                             # Fallback: original scanning without Rising Star
                             opportunities = self.scan_entire_market(min_change_pct=min_change_pct)
