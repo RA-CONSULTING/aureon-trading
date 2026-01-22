@@ -9523,7 +9523,15 @@ class OrcaKillCycle:
                                 exchange_cash = cash.get(pos.exchange, 0)
                                 accumulate_amount = min(amount_per_position * 0.5, exchange_cash * 0.5)
                                 
-                                if accumulate_amount >= 0.50:
+                                # 🔍 SMART-SIZE: Enforce minimums for accumulation
+                                min_required_acc = 1.0
+                                if pos.exchange == 'binance': min_required_acc = 5.5
+                                elif pos.exchange == 'kraken': min_required_acc = 2.0
+                                
+                                if accumulate_amount < min_required_acc:
+                                    accumulate_amount = min_required_acc
+                                
+                                if accumulate_amount <= exchange_cash:
                                     acc_order = pos.client.place_market_order(
                                         symbol=pos.symbol,
                                         side='buy',
@@ -9698,7 +9706,46 @@ class OrcaKillCycle:
                                             symbol_clean = winner.symbol.replace('/', '')
                                             exchange_cash = cash.get(winner.exchange, 0)
                                             buy_amount = min(amount_per_position, exchange_cash * 0.9)
-                                            print(f"⭐ STAGE 4: Buy amount ${buy_amount:.2f} for {symbol_clean} on {winner.exchange} (cash={exchange_cash:.2f})")
+                                            
+                                            # 🔍 SMART-SIZE LOGIC: Respect Exchange Minimums
+                                            # -----------------------------------------------
+                                            min_required = 1.0  # Default safe floor
+                                            
+                                            if hasattr(client, 'get_symbol_filters'):
+                                                try:
+                                                    filters = client.get_symbol_filters(symbol_clean)
+                                                    # Get min notional/cost from filters
+                                                    filter_min = float(filters.get('min_notional', 0) or filters.get('minNotional', 0) or filters.get('costmin', 0) or 0)
+                                                    
+                                                    # Check if min_qty implies a higher cost floor (Price * MinQty)
+                                                    min_qty_floor = 0.0
+                                                    if 'min_qty' in filters and hasattr(winner, 'price') and winner.price > 0:
+                                                        try:
+                                                            min_qty_floor = float(filters['min_qty']) * float(winner.price)
+                                                        except: pass
+
+                                                    # Enforce hard floors AND implied floors
+                                                    if winner.exchange == 'binance':
+                                                        min_required = max(filter_min, min_qty_floor, 5.5)
+                                                    elif winner.exchange == 'kraken':
+                                                        min_required = max(filter_min, min_qty_floor, 2.0)
+                                                    else:
+                                                        min_required = max(filter_min, min_qty_floor, 1.0)
+                                                        
+                                                except Exception as e:
+                                                    print(f"⭐ STAGE 4: Filter check warning: {e}")
+                                                    pass
+
+                                            # Auto-bump if affordable
+                                            if buy_amount < min_required:
+                                                if exchange_cash >= min_required:
+                                                    print(f"⭐ STAGE 4: 🔼 Bumping buy ${buy_amount:.2f} → ${min_required:.2f} (Exchange Min)")
+                                                    buy_amount = min_required
+                                                else:
+                                                    print(f"⭐ STAGE 4: ⚠️ SKIPPING - Cash ${exchange_cash:.2f} < Min ${min_required:.2f}")
+                                                    continue
+
+                                            print(f"⭐ STAGE 4: Final Buy Amount ${buy_amount:.2f} for {symbol_clean} on {winner.exchange} (cash={exchange_cash:.2f})")
 
                                             if winner.exchange == 'binance' and hasattr(client, 'can_trade_symbol'):
                                                 can_trade, reason = client.can_trade_symbol(symbol_clean)
@@ -9706,7 +9753,7 @@ class OrcaKillCycle:
                                                     print(f"⭐ STAGE 4: ⚠️ SKIPPING - {reason}")
                                                     continue
                                             
-                                            if buy_amount >= 0.50:
+                                            if buy_amount > 0:
                                                 print(f"⭐ STAGE 4: CALLING place_market_order({symbol_clean}, buy, quote_qty={buy_amount:.2f})")
                                                 buy_order = client.place_market_order(
                                                     symbol=symbol_clean,

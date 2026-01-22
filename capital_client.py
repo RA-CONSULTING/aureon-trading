@@ -255,6 +255,9 @@ class CapitalClient:
 
     def _get_market_snapshot(self, epic: str) -> Optional[Dict[str, Any]]:
         """Fetch detailed market info (including bid/ask) for a specific epic."""
+        if time.time() < self._rate_limit_until:
+            return None  # Silently skip if globally rate limited
+            
         try:
             response = self._request('GET', f'/markets/{epic}')
             if response.status_code == 200:

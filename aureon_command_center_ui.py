@@ -2747,12 +2747,62 @@ Object.entries(systems).forEach(([name, online]) => {
         wins = session_stats.get('winning_trades', 0)
         pnl = session_stats.get('total_pnl', 0.0)
 
+        # 🧠 COGNITIVE ENGINE CHECK - Deep Learning & Historical Memory
+        # ------------------------------------------------------------
+        neuron_weights_file = "queen_neuron_weights.json"
+        elephant_memory_file = "queen_elephant_memory.json"
+        
+        learning_active = False
+        memory_active = False
+        cognitive_notes = []
+        
+        try:
+            # Check for recent backpropagation (Deep Learning)
+            if os.path.exists(neuron_weights_file):
+                mtime = os.path.getmtime(neuron_weights_file)
+                age = time.time() - mtime
+                if age < 300:  # Updated in last 5 mins
+                    learning_active = True
+                    cognitive_notes.append(f"Neural Weights Updated {int(age)}s ago")
+            
+            # Check for historical memory access
+            if os.path.exists(elephant_memory_file):
+                mtime = os.path.getmtime(elephant_memory_file)
+                age = time.time() - mtime
+                if age < 300:
+                    memory_active = True
+                    cognitive_notes.append(f"Elephant Memory Recall {int(age)}s ago")
+        except Exception:
+            pass
+
         intent = "Evaluating entries" if active_count == 0 else "Managing positions + scouting"
+        
+        # Determine "Who" based on cognitive state
+        who = "Queen Sero"
+        if learning_active and memory_active:
+            who = "Queen Sero (Full/Cognitive)"
+        elif learning_active:
+            who = "Queen Sero (Learning)"
+        
+        # Determine "How" based on active systems
+        base_how = "Batten Matrix 3-pass + 4th execution gate"
+        if cognitive_notes:
+            how = f"{base_how} + {' + '.join(cognitive_notes)}"
+        else:
+            how = base_how
+
+        # Richer reason string
+        reason_parts = [queen_message]
+        if learning_active:
+            reason_parts.append("🧠 Backpropagation Active")
+        if memory_active:
+            reason_parts.append("📜 Historical Pattern Match")
+        
         reason = (
-            f"{queen_message} | Positions: {active_count} | Trades: {trades} | Wins: {wins} | PnL: {pnl:.4f}"
+            f"{' | '.join(reason_parts)} | Positions: {active_count} | Trades: {trades} | Wins: {wins} | PnL: {pnl:.4f}"
         )
 
-        voice_hash = f"{queen_message}|{active_count}|{trades}|{wins}|{round(pnl,4)}|{position_lines}|{market_lines}"
+        voice_hash = f"{queen_message}|{active_count}|{trades}|{wins}|{round(pnl,4)}|{position_lines}|{market_lines}|{learning_active}|{memory_active}"
         if time.time() - self.last_voice_ts < 5 and voice_hash == self.last_voice_hash:
             return None
 
@@ -2770,14 +2820,19 @@ Object.entries(systems).forEach(([name, online]) => {
             exchange=where,
             metadata={
                 "voice": True,
-                "who": "Queen Sero",
+                "who": who,
                 "what": intent,
                 "where": where,
                 "when": datetime.utcnow().isoformat() + "Z",
-                "how": "Batten Matrix 3-pass + 4th execution gate",
+                "how": how,
                 "positions": position_lines,
                 "market": market_lines,
-                "picks": picks
+                "picks": picks,
+                "cognitive": {
+                    "learning": learning_active,
+                    "memory": memory_active,
+                    "notes": cognitive_notes
+                }
             }
         )
     
