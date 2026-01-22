@@ -196,7 +196,7 @@ class QueenVolumeHunter:
     USE_QUEEN_APPROVAL = True
     USE_CHIRP_BUS = True
     
-    def __init__(self, live_mode: bool = True, queen: QueenHiveMind = None):
+    def __init__(self, live_mode: bool = True, queen: Optional['QueenHiveMind'] = None):
         self.live_mode = live_mode
         
         # Bus Integration

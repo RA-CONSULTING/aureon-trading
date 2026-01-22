@@ -6600,9 +6600,11 @@ class QueenHiveMind:
         try:
             change_pct = float(market_data.get('change_pct', 0.0) or 0.0)
             momentum = float(market_data.get('momentum', 0.0) or 0.0)
+            score = float(market_data.get('score', 0.0) or 0.0)  # Rising Star score
         except (TypeError, ValueError):
             change_pct = 0.0
             momentum = 0.0
+            score = 0.0
 
         # If we do not have explicit momentum, try intelligence cache
         if abs(momentum) < 1e-6 and symbol and hasattr(self, 'latest_intelligence'):
@@ -6617,7 +6619,12 @@ class QueenHiveMind:
                 momentum = 0.0
 
         signal = 0.0
-        if change_pct > 0.5 and momentum > 0.3:
+        
+        # If Rising Star score is high, trust it (it already passed multi-intelligence filter)
+        if score > 0.4:
+            # High-scoring Rising Star candidates get strong signals
+            signal = min(0.9, score + change_pct / 10.0)
+        elif change_pct > 0.5 and momentum > 0.3:
             signal = min(0.85, change_pct / 5.0 + momentum * 0.5)
         elif change_pct > 0.2:
             signal = min(0.6, change_pct / 5.0 + max(momentum, 0.0) * 0.3)
@@ -6626,7 +6633,8 @@ class QueenHiveMind:
         elif change_pct < -0.2:
             signal = max(-0.5, change_pct / 5.0)
 
-        if abs(signal) < 0.15:
+        # Lower threshold for returning signal (was 0.15)
+        if abs(signal) < 0.05:
             return None
         return signal
 
@@ -6714,6 +6722,786 @@ class QueenHiveMind:
             'queen_wisdom': queen_wisdom.to_dict() if queen_wisdom else None,
             'timestamp': time.time()
         }
+    
+    # ═══════════════════════════════════════════════════════════════════════════════
+    # 💰🚪 PROFIT GATE INTEGRATION - Know What a REAL Win Is
+    # ═══════════════════════════════════════════════════════════════════════════════
+    
+    def check_profit_gate(
+        self,
+        exchange: str,
+        entry_price: float,
+        current_price: float,
+        quantity: float,
+        is_maker: bool = False,
+        gate_level: str = 'breakeven'
+    ) -> Dict[str, Any]:
+        """
+        👑💰 Check if a position is a REAL win after ALL fees.
+        
+        This is THE authoritative method for Queen to verify profitability.
+        Accounts for:
+        - Maker/taker fees (per exchange)
+        - Slippage estimates
+        - Spread costs  
+        - Fixed costs (withdrawal, gas)
+        
+        Args:
+            exchange: Exchange name (kraken, binance, alpaca, capital)
+            entry_price: Entry price
+            current_price: Current/exit price
+            quantity: Position quantity
+            is_maker: Whether exit will be limit (maker) or market (taker)
+            gate_level: 'breakeven', 'prime', or 'prime_buffer'
+        
+        Returns:
+            Dict with:
+                is_win: bool - True if passes gate
+                net_pnl: float - Actual profit after all costs
+                gross_pnl: float - Profit before costs
+                total_costs: float - Sum of all trading costs
+                margin_over_threshold: float - How much above/below gate
+        """
+        # Use profit gate if available
+        if hasattr(self, 'prime_profit_gate') and self.prime_profit_gate:
+            try:
+                from adaptive_prime_profit_gate import is_real_win
+                return is_real_win(
+                    exchange=exchange,
+                    entry_price=entry_price,
+                    current_price=current_price,
+                    quantity=quantity,
+                    is_maker=is_maker,
+                    gate_level=gate_level
+                )
+            except Exception as e:
+                logger.warning(f"👑 Profit gate check failed: {e}")
+        
+        # Fallback: simple calculation with conservative estimates
+        entry_value = entry_price * quantity
+        exit_value = current_price * quantity
+        gross_pnl = exit_value - entry_value
+        
+        # Conservative fee estimates per exchange
+        fee_estimates = {
+            'kraken': 0.0053,   # 0.40% taker + 0.05% slip + 0.08% spread
+            'binance': 0.0023,  # 0.10% fee + 0.03% slip + 0.10% spread
+            'alpaca': 0.0040,   # 0.15% fee + 0.05% slip + 0.20% spread
+            'capital': 0.0028   # 0.00% fee + 0.08% slip + 0.20% spread
+        }
+        
+        total_rate = fee_estimates.get(exchange.lower(), 0.0053)
+        total_costs = (entry_value + exit_value) * total_rate
+        net_pnl = gross_pnl - total_costs
+        
+        return {
+            'is_win': net_pnl > 0,
+            'gate_level': gate_level,
+            'gross_pnl': gross_pnl,
+            'net_pnl': net_pnl,
+            'total_costs': total_costs,
+            'margin_over_threshold': net_pnl,
+            'exchange': exchange,
+            'entry_price': entry_price,
+            'current_price': current_price,
+            'quantity': quantity,
+            'is_maker': is_maker,
+            'fallback_used': True
+        }
+    
+    def get_exchange_fee_profile(self, exchange: str) -> Dict[str, float]:
+        """
+        👑 Get complete fee profile for an exchange.
+        
+        Returns all cost components so children know what costs to expect.
+        """
+        if hasattr(self, 'prime_profit_gate') and self.prime_profit_gate:
+            try:
+                from adaptive_prime_profit_gate import get_fee_profile
+                return get_fee_profile(exchange)
+            except Exception as e:
+                logger.warning(f"👑 Fee profile lookup failed: {e}")
+        
+        # Fallback profiles
+        profiles = {
+            'kraken': {
+                'maker_fee': 0.0025, 'taker_fee': 0.0040,
+                'slippage': 0.0005, 'spread': 0.0008,
+                'total_taker_rate': 0.0053, 'total_maker_rate': 0.0038
+            },
+            'binance': {
+                'maker_fee': 0.0010, 'taker_fee': 0.0010,
+                'slippage': 0.0003, 'spread': 0.0010,
+                'total_taker_rate': 0.0023, 'total_maker_rate': 0.0023
+            },
+            'alpaca': {
+                'maker_fee': 0.0015, 'taker_fee': 0.0025,
+                'slippage': 0.0005, 'spread': 0.0020,
+                'total_taker_rate': 0.0050, 'total_maker_rate': 0.0040
+            },
+            'capital': {
+                'maker_fee': 0.0000, 'taker_fee': 0.0000,
+                'slippage': 0.0008, 'spread': 0.0020,
+                'total_taker_rate': 0.0028, 'total_maker_rate': 0.0028
+            }
+        }
+        return profiles.get(exchange.lower(), profiles['kraken'])
+    
+    def calculate_min_price_for_profit(
+        self,
+        exchange: str,
+        entry_price: float,
+        quantity: float,
+        target_net_profit: float = 0.01,
+        is_maker: bool = False
+    ) -> float:
+        """
+        👑 Calculate minimum exit price needed for target net profit.
+        
+        Queen uses this to know exactly when to sell.
+        """
+        entry_value = entry_price * quantity
+        profile = self.get_exchange_fee_profile(exchange)
+        
+        # Cost rate per leg
+        if is_maker:
+            cost_rate = profile.get('total_maker_rate', 0.0038)
+        else:
+            cost_rate = profile.get('total_taker_rate', 0.0053)
+        
+        # Required exit value: (entry_value + target + entry_costs + exit_costs)
+        # exit_value * (1 - cost_rate) = entry_value * (1 - cost_rate) + target
+        # exit_value = (entry_value * (1 - cost_rate) + target) / (1 - cost_rate)
+        
+        entry_net = entry_value * (1 - cost_rate)
+        numerator = entry_net + target_net_profit
+        denominator = 1 - cost_rate
+        
+        required_exit_value = numerator / denominator if denominator > 0 else float('inf')
+        required_price = required_exit_value / quantity if quantity > 0 else float('inf')
+        
+        return required_price
+    
+    # ═══════════════════════════════════════════════════════════════════════════════
+    # 🫒🔄 BARTER MATRIX - Queen's Conversion Powers
+    # ═══════════════════════════════════════════════════════════════════════════════
+    #
+    # "Trade the green olive for a bean, the bean for a carrot, the carrot for a chair,
+    #  the chair for a lamp, and the lamp for a black olive. Each trade finds someone
+    #  who values what you have MORE than what they have."
+    #
+    # Queen Sero now has the power to:
+    # 1. Navigate the barter graph across ALL exchanges
+    # 2. Find optimal conversion paths (multi-hop trades)
+    # 3. Execute conversions with profit gate validation
+    # 4. Discover arbitrage opportunities
+    # 5. Rebalance portfolio across assets and exchanges
+    # ═══════════════════════════════════════════════════════════════════════════════
+    
+    def init_barter_navigator(self, clients: Dict[str, Any] = None) -> bool:
+        """
+        👑🫒 Initialize the Barter Navigator for conversion powers.
+        
+        Args:
+            clients: Dict of exchange clients {name: client}
+        
+        Returns:
+            True if successfully initialized
+        """
+        try:
+            from aureon_barter_navigator import BarterNavigator
+            
+            self.barter_navigator = BarterNavigator()
+            self.barter_clients = clients or {}
+            
+            # Try to load from cache first
+            if not self.barter_navigator.load_cache():
+                # No cache, load from exchanges
+                self.barter_navigator.load_all_exchanges()
+            
+            logger.info("👑🫒 Queen's Barter Navigator initialized!")
+            logger.info(f"   🪙 Assets: {len(self.barter_navigator.assets)}")
+            logger.info(f"   🔗 Edges: {self.barter_navigator.total_edges}")
+            return True
+            
+        except Exception as e:
+            logger.warning(f"👑🫒 Barter Navigator init failed: {e}")
+            self.barter_navigator = None
+            return False
+    
+    def find_conversion_path(
+        self,
+        from_asset: str,
+        to_asset: str,
+        amount: float = 1.0,
+        max_hops: int = 4
+    ) -> Dict[str, Any]:
+        """
+        👑🫒 Find the optimal conversion path from one asset to another.
+        
+        Uses the Barter Matrix to find multi-hop paths across exchanges.
+        Like trading a green olive through intermediaries to get a black olive.
+        
+        Args:
+            from_asset: What you have (e.g., 'ETH')
+            to_asset: What you want (e.g., 'USD')
+            amount: How much you have
+            max_hops: Maximum trades in the chain
+        
+        Returns:
+            Dict with:
+                path: List of edges (trades)
+                expected_output: How much to_asset you'll get
+                total_fees: Sum of all fees
+                exchanges: Set of exchanges used
+                description: Human-readable path
+                is_profitable: Whether conversion makes sense
+        """
+        result = {
+            'from_asset': from_asset,
+            'to_asset': to_asset,
+            'amount': amount,
+            'path': [],
+            'expected_output': 0.0,
+            'total_fees': 0.0,
+            'exchanges': set(),
+            'description': '',
+            'is_profitable': False,
+            'reason': ''
+        }
+        
+        if not hasattr(self, 'barter_navigator') or not self.barter_navigator:
+            result['reason'] = "Barter Navigator not initialized"
+            return result
+        
+        try:
+            # Find path using Dijkstra
+            path = self.barter_navigator.find_path(from_asset, to_asset, max_hops)
+            
+            if not path:
+                result['reason'] = f"No path found from {from_asset} to {to_asset}"
+                return result
+            
+            # Calculate expected output
+            expected_output = amount * path.total_rate
+            
+            result['path'] = [
+                {
+                    'from': hop.from_asset,
+                    'to': hop.to_asset,
+                    'pair': hop.pair,
+                    'exchange': hop.exchange,
+                    'rate': hop.rate,
+                    'effective_rate': hop.effective_rate,
+                    'fee_rate': hop.fee_rate
+                }
+                for hop in path.hops
+            ]
+            result['expected_output'] = expected_output
+            result['total_fees'] = path.total_fees
+            result['exchanges'] = path.exchanges_used
+            result['description'] = path.describe()
+            result['num_hops'] = path.num_hops
+            result['total_rate'] = path.total_rate
+            
+            # Check if profitable (output value > input value after all fees)
+            from_price = self.barter_navigator.prices.get(from_asset.upper(), 0)
+            to_price = self.barter_navigator.prices.get(to_asset.upper(), 0)
+            
+            if from_price > 0 and to_price > 0:
+                input_value = amount * from_price
+                output_value = expected_output * to_price
+                # Profitable if output > input (accounting for fees already in rate)
+                result['is_profitable'] = output_value >= input_value * 0.995  # Allow 0.5% buffer
+                result['input_value_usd'] = input_value
+                result['output_value_usd'] = output_value
+            elif to_asset.upper() in ['USD', 'USDT', 'USDC']:
+                result['is_profitable'] = True  # Converting to cash is always valid
+                result['output_value_usd'] = expected_output
+            
+            return result
+            
+        except Exception as e:
+            result['reason'] = f"Path finding error: {e}"
+            logger.error(f"👑🫒 Conversion path error: {e}")
+            return result
+    
+    def should_convert(
+        self,
+        from_asset: str,
+        to_asset: str,
+        amount: float,
+        reason: str = 'rebalance'
+    ) -> Dict[str, Any]:
+        """
+        👑🫒 Queen decides if a conversion should happen.
+        
+        Checks:
+        1. Path exists in barter matrix
+        2. Fees don't eat the value
+        3. Amount meets minimum requirements
+        4. Market conditions are favorable
+        
+        Args:
+            from_asset: Asset to convert from
+            to_asset: Asset to convert to
+            amount: Amount to convert
+            reason: Why converting (rebalance, take_profit, opportunity)
+        
+        Returns:
+            Dict with decision and reasoning
+        """
+        result = {
+            'should_convert': False,
+            'from_asset': from_asset,
+            'to_asset': to_asset,
+            'amount': amount,
+            'reason': reason,
+            'path': None,
+            'queen_says': '',
+            'warnings': [],
+            'errors': []
+        }
+        
+        # Get conversion path
+        path_info = self.find_conversion_path(from_asset, to_asset, amount)
+        result['path'] = path_info
+        
+        if not path_info.get('path'):
+            result['errors'].append(path_info.get('reason', 'No path found'))
+            result['queen_says'] = f"👑🚫 No barter path from {from_asset} to {to_asset}"
+            return result
+        
+        # Check minimum value requirements
+        min_values = {
+            'kraken': 1.20,
+            'binance': 5.00,
+            'alpaca': 1.00
+        }
+        
+        input_value = path_info.get('input_value_usd', amount)
+        exchanges_used = path_info.get('exchanges', set())
+        
+        for exchange in exchanges_used:
+            min_val = min_values.get(exchange, 1.0)
+            if input_value < min_val:
+                result['errors'].append(f"Value ${input_value:.2f} below {exchange} minimum ${min_val:.2f}")
+        
+        if result['errors']:
+            result['queen_says'] = f"👑⚠️ Conversion blocked: {result['errors'][0]}"
+            return result
+        
+        # Check fee efficiency
+        total_fee_pct = path_info.get('total_fees', 0) * 100
+        num_hops = path_info.get('num_hops', 1)
+        
+        if total_fee_pct > 2.0:
+            result['warnings'].append(f"High fees: {total_fee_pct:.2f}%")
+        
+        if num_hops > 3:
+            result['warnings'].append(f"Many hops ({num_hops}): increased slippage risk")
+        
+        # Queen's decision based on reason
+        if reason == 'take_profit':
+            # Always convert to realize profits
+            result['should_convert'] = True
+            result['queen_says'] = f"👑💰 Converting to realize profit! Path: {path_info['description']}"
+        
+        elif reason == 'rebalance':
+            # Convert if fees are reasonable
+            if total_fee_pct <= 1.5:
+                result['should_convert'] = True
+                result['queen_says'] = f"👑🔄 Rebalancing approved. Path: {path_info['description']}"
+            else:
+                result['queen_says'] = f"👑⏳ Rebalance delayed - fees too high ({total_fee_pct:.2f}%)"
+        
+        elif reason == 'opportunity':
+            # Check if conversion creates value
+            if path_info.get('is_profitable', False):
+                result['should_convert'] = True
+                result['queen_says'] = f"👑✨ Opportunity! Converting via: {path_info['description']}"
+            else:
+                result['queen_says'] = f"👑🚫 Conversion not profitable after fees"
+        
+        else:
+            # Default: convert if profitable
+            result['should_convert'] = path_info.get('is_profitable', False)
+            result['queen_says'] = f"👑 Conversion {'approved' if result['should_convert'] else 'denied'}"
+        
+        return result
+    
+    def execute_conversion(
+        self,
+        from_asset: str,
+        to_asset: str,
+        amount: float,
+        exchange: str = None,
+        dry_run: bool = False
+    ) -> Dict[str, Any]:
+        """
+        👑🫒 Execute a conversion using the barter path.
+        
+        Args:
+            from_asset: Asset to sell
+            to_asset: Asset to buy
+            amount: Amount of from_asset to convert
+            exchange: Preferred exchange (or None for optimal)
+            dry_run: If True, simulate only
+        
+        Returns:
+            Dict with conversion results
+        """
+        result = {
+            'success': False,
+            'from_asset': from_asset,
+            'to_asset': to_asset,
+            'amount_in': amount,
+            'amount_out': 0.0,
+            'fees_paid': 0.0,
+            'trades': [],
+            'errors': [],
+            'dry_run': dry_run
+        }
+        
+        # First check if we should convert
+        decision = self.should_convert(from_asset, to_asset, amount, reason='opportunity')
+        
+        if not decision.get('should_convert') and not dry_run:
+            result['errors'].append(decision.get('queen_says', 'Conversion not approved'))
+            return result
+        
+        path_info = decision.get('path', {})
+        path = path_info.get('path', [])
+        
+        if not path:
+            result['errors'].append("No conversion path available")
+            return result
+        
+        if dry_run:
+            # Simulate the conversion
+            result['success'] = True
+            result['amount_out'] = path_info.get('expected_output', 0)
+            result['fees_paid'] = path_info.get('total_fees', 0) * amount
+            result['trades'] = [
+                {
+                    'step': i + 1,
+                    'from': hop['from'],
+                    'to': hop['to'],
+                    'exchange': hop['exchange'],
+                    'simulated': True
+                }
+                for i, hop in enumerate(path)
+            ]
+            logger.info(f"👑🫒 DRY RUN: {from_asset} → {to_asset}: {amount} → {result['amount_out']:.6f}")
+            return result
+        
+        # Execute real trades
+        if not hasattr(self, 'barter_clients') or not self.barter_clients:
+            result['errors'].append("No exchange clients available for conversion")
+            return result
+        
+        current_amount = amount
+        current_asset = from_asset
+        
+        for i, hop in enumerate(path):
+            hop_exchange = hop.get('exchange', 'kraken')
+            client = self.barter_clients.get(hop_exchange)
+            
+            if not client:
+                result['errors'].append(f"No client for {hop_exchange}")
+                break
+            
+            try:
+                # Execute the trade
+                from_a = hop['from']
+                to_a = hop['to']
+                pair = hop.get('pair', f"{from_a}{to_a}")
+                
+                # Determine side (buy or sell)
+                if pair.startswith(from_a):
+                    side = 'sell'
+                    symbol = pair
+                    qty = current_amount
+                else:
+                    side = 'buy'
+                    symbol = pair
+                    # Calculate qty based on rate
+                    qty = current_amount * hop.get('rate', 1.0)
+                
+                logger.info(f"👑🫒 Step {i+1}: {side.upper()} {symbol} on {hop_exchange}")
+                
+                # Execute order
+                if hasattr(client, 'place_market_order'):
+                    order = client.place_market_order(symbol, side, qty)
+                else:
+                    result['errors'].append(f"Client {hop_exchange} has no place_market_order")
+                    break
+                
+                if order and not order.get('error'):
+                    filled_qty = float(order.get('executedQty', order.get('filled_qty', qty)))
+                    
+                    # Determine actual output amount (what we hold now)
+                    if order.get('receivedQty'):
+                         amount_received = float(order['receivedQty'])
+                    elif side == 'sell':
+                         # If we sold Base, we received Quote (cummulativeQuoteQty)
+                         amount_received = float(order.get('cummulativeQuoteQty', 0))
+                    else:
+                         # If we bought Base, we received Base (executedQty)
+                         amount_received = filled_qty
+
+                    result['trades'].append({
+                        'step': i + 1,
+                        'from': from_a,
+                        'to': to_a,
+                        'exchange': hop_exchange,
+                        'side': side,
+                        'qty': filled_qty,
+                        'received': amount_received,
+                        'order_id': order.get('id', order.get('orderId', '')),
+                        'success': True
+                    })
+                    
+                    # Update for next hop
+                    current_amount = amount_received
+                    current_asset = to_a
+                else:
+                    result['errors'].append(f"Order failed at step {i+1}: {order}")
+                    break
+                    
+            except Exception as e:
+                result['errors'].append(f"Trade error at step {i+1}: {e}")
+                logger.error(f"👑🫒 Conversion step {i+1} failed: {e}")
+                break
+        
+        # Check if completed successfully
+        if current_asset == to_asset and not result['errors']:
+            result['success'] = True
+            result['amount_out'] = current_amount
+            logger.info(f"👑💰 Conversion complete: {amount} {from_asset} → {current_amount} {to_asset}")
+        else:
+            result['partial'] = True
+            result['stopped_at'] = current_asset
+            result['amount_remaining'] = current_amount
+        
+        return result
+    
+    def find_arbitrage_opportunities(
+        self,
+        min_profit_pct: float = 0.3,
+        assets: List[str] = None
+    ) -> List[Dict[str, Any]]:
+        """
+        👑💰 Find circular arbitrage opportunities in the barter graph.
+        
+        Looks for paths like: USD → BTC → ETH → USD where you end up with more.
+        
+        Args:
+            min_profit_pct: Minimum profit percentage to report
+            assets: List of assets to check (or None for stablecoins)
+        
+        Returns:
+            List of arbitrage opportunities
+        """
+        opportunities = []
+        
+        if not hasattr(self, 'barter_navigator') or not self.barter_navigator:
+            return opportunities
+        
+        if assets is None:
+            assets = ['USD', 'USDT', 'USDC']
+        
+        # For each starting asset, find circular paths
+        for start_asset in assets:
+            try:
+                # Find paths back to self
+                paths = self.barter_navigator.find_all_paths(start_asset, start_asset, max_hops=4, max_paths=10)
+                
+                for path in paths:
+                    if path.num_hops < 2:
+                        continue  # Need at least 2 hops for arbitrage
+                    
+                    # Calculate profit
+                    profit_rate = path.total_rate - 1.0
+                    profit_pct = profit_rate * 100
+                    
+                    if profit_pct >= min_profit_pct:
+                        opportunities.append({
+                            'start_asset': start_asset,
+                            'path': path.describe(),
+                            'profit_pct': profit_pct,
+                            'hops': path.num_hops,
+                            'exchanges': list(path.exchanges_used),
+                            'total_fees': path.total_fees,
+                            'confidence': 1.0 - (path.num_hops * 0.1)  # Lower confidence with more hops
+                        })
+                        
+            except Exception as e:
+                logger.debug(f"Arbitrage check error for {start_asset}: {e}")
+        
+        # Sort by profit
+        opportunities.sort(key=lambda x: x['profit_pct'], reverse=True)
+        
+        if opportunities:
+            logger.info(f"👑💰 Found {len(opportunities)} arbitrage opportunities!")
+        
+        return opportunities
+    
+    def get_best_liquidation_path(
+        self,
+        asset: str,
+        amount: float,
+        target: str = 'USD'
+    ) -> Dict[str, Any]:
+        """
+        👑💵 Find the best way to convert an asset to cash.
+        
+        Used when taking profits or liquidating positions.
+        
+        Args:
+            asset: Asset to liquidate
+            amount: Amount to liquidate
+            target: Target cash asset (USD, USDT, etc.)
+        
+        Returns:
+            Best path info or direct conversion
+        """
+        # Try direct path first
+        direct_path = self.find_conversion_path(asset, target, amount)
+        
+        if direct_path.get('path') and direct_path.get('is_profitable'):
+            direct_path['path_type'] = 'direct'
+            return direct_path
+        
+        # Try alternative stablecoins
+        alternatives = ['USD', 'USDT', 'USDC']
+        best_path = None
+        best_output = 0
+        
+        for alt in alternatives:
+            if alt == target:
+                continue
+            
+            path = self.find_conversion_path(asset, alt, amount)
+            output = path.get('expected_output', 0)
+            
+            if output > best_output:
+                best_output = output
+                best_path = path
+        
+        if best_path:
+            best_path['path_type'] = 'alternative'
+            best_path['note'] = f"Using {best_path.get('to_asset')} instead of {target}"
+            return best_path
+        
+        # Fallback: return direct even if not ideal
+        direct_path['path_type'] = 'fallback'
+        return direct_path
+    
+    def rebalance_portfolio(
+        self,
+        exchange_balances: Dict[str, Dict[str, float]],
+        target_allocation: Dict[str, float] = None,
+        dry_run: bool = True
+    ) -> Dict[str, Any]:
+        """
+        👑🔄 Rebalance portfolio across assets using barter paths.
+        
+        Args:
+            exchange_balances: {exchange: {asset: balance}}
+            target_allocation: {asset: target_pct} (e.g., {'BTC': 0.3, 'ETH': 0.3, 'USD': 0.4})
+            dry_run: If True, only calculate - don't execute
+        
+        Returns:
+            Rebalancing plan and/or results
+        """
+        result = {
+            'current_allocation': {},
+            'target_allocation': target_allocation or {'USD': 1.0},
+            'trades_needed': [],
+            'estimated_fees': 0.0,
+            'dry_run': dry_run,
+            'executed': []
+        }
+        
+        if not hasattr(self, 'barter_navigator') or not self.barter_navigator:
+            result['error'] = "Barter Navigator not initialized"
+            return result
+        
+        # Calculate current allocation
+        total_value_usd = 0.0
+        asset_values = {}
+        
+        for exchange, balances in exchange_balances.items():
+            for asset, qty in balances.items():
+                qty = float(qty)
+                if qty <= 0:
+                    continue
+                
+                # Get USD value
+                if asset.upper() in ['USD', 'USDT', 'USDC', 'ZUSD']:
+                    value = qty
+                else:
+                    price = self.barter_navigator.prices.get(asset.upper(), 0)
+                    value = qty * price if price > 0 else 0
+                
+                if value > 0.10:  # Ignore tiny balances
+                    key = f"{exchange}:{asset}"
+                    asset_values[key] = {
+                        'exchange': exchange,
+                        'asset': asset,
+                        'quantity': qty,
+                        'value_usd': value
+                    }
+                    total_value_usd += value
+        
+        if total_value_usd <= 0:
+            result['error'] = "No assets with value found"
+            return result
+        
+        # Calculate current allocation percentages
+        for key, info in asset_values.items():
+            pct = info['value_usd'] / total_value_usd
+            result['current_allocation'][key] = {
+                **info,
+                'current_pct': pct
+            }
+        
+        result['total_value_usd'] = total_value_usd
+        
+        # Calculate trades needed
+        target = target_allocation or {'USD': 1.0}
+        
+        for key, info in result['current_allocation'].items():
+            asset = info['asset'].upper()
+            current_pct = info['current_pct']
+            target_pct = target.get(asset, 0)
+            
+            diff_pct = target_pct - current_pct
+            diff_value = diff_pct * total_value_usd
+            
+            if abs(diff_value) > 1.0:  # Only rebalance if difference > $1
+                if diff_pct < 0:
+                    # Need to sell this asset
+                    sell_amount = abs(diff_value) / self.barter_navigator.prices.get(asset, 1.0)
+                    result['trades_needed'].append({
+                        'action': 'SELL',
+                        'asset': asset,
+                        'exchange': info['exchange'],
+                        'amount': sell_amount,
+                        'value_usd': abs(diff_value),
+                        'reason': f"Reduce {asset} from {current_pct*100:.1f}% to {target_pct*100:.1f}%"
+                    })
+        
+        # Calculate estimated fees
+        for trade in result['trades_needed']:
+            fee_profile = self.get_exchange_fee_profile(trade['exchange'])
+            fee_pct = fee_profile.get('total_taker_rate', 0.005)
+            result['estimated_fees'] += trade['value_usd'] * fee_pct
+        
+        logger.info(f"👑🔄 Rebalance plan: {len(result['trades_needed'])} trades, ~${result['estimated_fees']:.4f} fees")
+        
+        return result
     
     # ═══════════════════════════════════════════════════════════════════════════════
     # PROFIT TRACKING - The path to liberation

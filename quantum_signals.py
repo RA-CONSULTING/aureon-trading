@@ -23,20 +23,36 @@ import logging
 logger = logging.getLogger(__name__)
 
 # =============================================================================
-# CORRECT FEE MODEL - Matches penny profit formula
+# CORRECT FEE MODEL - Matches adaptive_prime_profit_gate.py
 # =============================================================================
 FEE_RATES = {
     'kraken': {
-        'fee': 0.004,       # 0.40% taker
-        'slippage': 0.002,  # 0.20%
-        'spread': 0.001,    # 0.10%
-        'total': 0.007      # 0.70% per leg
+        'maker': 0.0025,    # 0.25% maker (limit orders)
+        'taker': 0.0040,    # 0.40% taker (market orders)
+        'slippage': 0.0005, # 0.05% estimated slippage
+        'spread': 0.0008,   # 0.08% typical spread
+        'total': 0.0053     # 0.53% per leg (taker + slip + spread)
     },
     'binance': {
-        'fee': 0.001,       # 0.10% taker
-        'slippage': 0.002,  # 0.20%
-        'spread': 0.001,    # 0.10%
-        'total': 0.004      # 0.40% per leg
+        'maker': 0.0010,    # 0.10% maker
+        'taker': 0.0010,    # 0.10% taker
+        'slippage': 0.0003, # 0.03% slippage (better liquidity)
+        'spread': 0.0010,   # 0.10% spread (UK restricted)
+        'total': 0.0023     # 0.23% per leg
+    },
+    'alpaca': {
+        'maker': 0.0015,    # 0.15% maker
+        'taker': 0.0025,    # 0.25% taker
+        'slippage': 0.0005, # 0.05% slippage
+        'spread': 0.0020,   # 0.20% spread (crypto)
+        'total': 0.0050     # 0.50% per leg
+    },
+    'capital': {
+        'maker': 0.0000,    # No commission (spread-based)
+        'taker': 0.0000,    # No commission
+        'slippage': 0.0008, # 0.08% slippage
+        'spread': 0.0020,   # 0.20% spread (CFDs)
+        'total': 0.0028     # 0.28% per leg
     }
 }
 
@@ -44,6 +60,11 @@ FEE_RATES = {
 def get_total_fee_rate(exchange: str = 'kraken') -> float:
     """Get combined fee rate for penny profit calculations."""
     return FEE_RATES.get(exchange, FEE_RATES['kraken'])['total']
+
+
+def get_fee_profile(exchange: str = 'kraken') -> dict:
+    """Get complete fee profile for an exchange."""
+    return FEE_RATES.get(exchange, FEE_RATES['kraken'])
 
 
 # =============================================================================

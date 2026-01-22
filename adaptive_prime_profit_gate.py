@@ -644,6 +644,132 @@ def adjust_for_volatility(exchange: str, volatility_pct: float):
     get_adaptive_gate().adjust_slippage_for_volatility(exchange, volatility_pct)
 
 
+def is_real_win(
+    exchange: str,
+    entry_price: float,
+    current_price: float,
+    quantity: float,
+    is_maker: bool = False,
+    gate_level: str = 'breakeven'
+) -> dict:
+    """
+    🎯 CHECK IF A POSITION IS A REAL WIN AFTER ALL FEES 🎯
+    
+    This is THE authoritative function for determining if a trade is profitable.
+    It accounts for:
+    - Maker/taker fees (based on order type)
+    - Slippage estimates
+    - Spread costs
+    - Fixed costs (withdrawal, gas)
+    
+    Args:
+        exchange: Exchange name (kraken, binance, alpaca, capital)
+        entry_price: Entry price
+        current_price: Current/exit price
+        quantity: Position quantity
+        is_maker: Whether exit will be maker (limit) or taker (market)
+        gate_level: 'breakeven', 'prime', or 'prime_buffer'
+    
+    Returns:
+        Dict with win status and breakdown
+    """
+    gate = get_adaptive_gate()
+    
+    # Get fee profile
+    profile = gate.fee_profiles.get(exchange.lower(), DEFAULT_FEE_PROFILES.get('kraken'))
+    
+    # Calculate trade values
+    entry_value = entry_price * quantity
+    exit_value = current_price * quantity
+    gross_pnl = exit_value - entry_value
+    gross_pct = (current_price / entry_price - 1) if entry_price > 0 else 0
+    
+    # Calculate actual costs (buy + sell legs)
+    # Entry was already paid - use taker (market order)
+    entry_fee = profile.taker_fee
+    entry_slippage = profile.slippage_estimate
+    entry_spread = profile.spread_cost / 2  # Half spread on buy
+    entry_cost_rate = entry_fee + entry_slippage + entry_spread
+    
+    # Exit depends on order type
+    exit_fee = profile.maker_fee if is_maker else profile.taker_fee
+    exit_slippage = profile.slippage_estimate
+    exit_spread = profile.spread_cost / 2  # Half spread on sell
+    exit_cost_rate = exit_fee + exit_slippage + exit_spread
+    
+    # Total costs in USD
+    entry_costs = entry_value * entry_cost_rate
+    exit_costs = exit_value * exit_cost_rate
+    total_costs = entry_costs + exit_costs + profile.fixed_costs()
+    
+    # Net P&L
+    net_pnl = gross_pnl - total_costs
+    
+    # Get gate thresholds
+    gates = gate.calculate_gates(exchange, entry_value, is_maker=is_maker)
+    
+    # Determine gate status
+    if gate_level == 'breakeven':
+        threshold_r = gates.r_breakeven
+        threshold_pnl = 0.0
+    elif gate_level == 'prime_buffer':
+        threshold_r = gates.r_prime_buffer
+        threshold_pnl = gates.prime_target + gates.buffer_amount
+    else:  # prime
+        threshold_r = gates.r_prime
+        threshold_pnl = gates.prime_target
+    
+    is_win = net_pnl >= threshold_pnl
+    
+    return {
+        'is_win': is_win,
+        'gate_level': gate_level,
+        'gross_pnl': gross_pnl,
+        'net_pnl': net_pnl,
+        'total_costs': total_costs,
+        'costs_breakdown': {
+            'entry_fee': entry_value * entry_fee,
+            'entry_slippage': entry_value * entry_slippage,
+            'entry_spread': entry_value * entry_spread,
+            'exit_fee': exit_value * exit_fee,
+            'exit_slippage': exit_value * exit_slippage,
+            'exit_spread': exit_value * exit_spread,
+            'fixed': profile.fixed_costs(),
+        },
+        'threshold_pnl': threshold_pnl,
+        'threshold_r': threshold_r,
+        'actual_r': gross_pct,
+        'margin_over_threshold': net_pnl - threshold_pnl,
+        'exchange': exchange,
+        'entry_price': entry_price,
+        'current_price': current_price,
+        'quantity': quantity,
+        'is_maker': is_maker,
+    }
+
+
+def get_fee_profile(exchange: str) -> dict:
+    """
+    Get complete fee profile for an exchange.
+    
+    Returns dict with all fee components for external use.
+    """
+    gate = get_adaptive_gate()
+    profile = gate.fee_profiles.get(exchange.lower(), DEFAULT_FEE_PROFILES.get('kraken'))
+    
+    return {
+        'exchange': exchange.lower(),
+        'maker_fee': profile.maker_fee,
+        'taker_fee': profile.taker_fee,
+        'slippage': profile.slippage_estimate,
+        'spread': profile.spread_cost,
+        'withdrawal_fee': profile.withdrawal_fee_usd,
+        'gas_fee': profile.network_gas_usd,
+        'total_taker_rate': profile.taker_fee + profile.slippage_estimate + profile.spread_cost,
+        'total_maker_rate': profile.maker_fee + profile.slippage_estimate + profile.spread_cost,
+    }
+
+
 # ═══════════════════════════════════════════════════════════════
 # �🎯 PROBABILITY MATRIX INTEGRATION 🎯🧠
 # ═══════════════════════════════════════════════════════════════
