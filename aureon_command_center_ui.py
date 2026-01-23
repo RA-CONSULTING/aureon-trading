@@ -2635,7 +2635,32 @@ COMMAND_CENTER_HTML = """
                 pushMetric('pnl_total', pnlTotal);
                 
                 // Update exchange breakdown
-                updateExchangeBreakdown(data.portfolio.exchange_breakdown || {});
+                const breakdown = data.portfolio.exchange_breakdown || {};
+                updateExchangeBreakdown(breakdown);
+
+                // Update summary cards
+                const assetsValue = Math.max(totalValue - cashAvailable, 0);
+                document.getElementById('assets-value').textContent = '$' + formatNumber(assetsValue);
+
+                const cashAssets = new Set(['USD', 'USDT', 'USDC', 'TUSD', 'DAI', 'BUSD', 'ZUSD', 'ZUSDT', 'ZUSDC', 'ZEUR', 'ZGBP', 'EUR', 'GBP']);
+                let holdingsCount = 0;
+                Object.values(breakdown).forEach(entry => {
+                    const assets = entry.assets || {};
+                    Object.keys(assets).forEach(asset => {
+                        if (!cashAssets.has(String(asset || '').toUpperCase())) {
+                            holdingsCount += 1;
+                        }
+                    });
+                });
+                document.getElementById('holdings-count').textContent = holdingsCount.toString();
+
+                document.getElementById('portfolio-count').textContent = Object.keys(breakdown).length.toString();
+
+                const cashRatio = totalValue > 0 ? (cashAvailable / totalValue) * 100 : 0;
+                document.getElementById('cash-ratio').textContent = cashRatio.toFixed(1) + '%';
+
+                const positions = data.portfolio.positions || [];
+                document.getElementById('positions-count').textContent = positions.length.toString();
             }
             
             if (data.balances) {
@@ -3657,6 +3682,8 @@ class AureonCommandCenter:
         self.market = MarketOverview()
         self.signals: deque = deque(maxlen=100)
         self.prices: Dict[str, float] = {}
+        self.price_failures: Dict[str, float] = {}
+        self.price_failure_ttl: float = 300.0
         self.last_snapshot: Dict[str, Any] = {}
         self.recent_trades: deque = deque(maxlen=50)  # Last 50 trade executions
         self.registry = None
@@ -4673,6 +4700,12 @@ Object.entries(systems).forEach(([name, online]) => {
         total_cash = 0.0
         all_balances = {}
         exchange_breakdown = {}
+        now_ts = time.time()
+        price_fetch_budget = {
+            "kraken": 8,
+            "binance": 8,
+            "alpaca": 4
+        }
         
         # Stable/cash assets that count as "cash available"
         cash_assets = {'USD', 'ZUSD', 'USDT', 'USDC', 'TUSD', 'DAI', 'BUSD', 'GBP', 'ZGBP', 'EUR', 'ZEUR'}
@@ -4682,35 +4715,71 @@ Object.entries(systems).forEach(([name, online]) => {
             """Convert asset amount to USD value."""
             if amount <= 0:
                 return 0.0
+
+            raw_asset = asset.upper()
+            normalized = raw_asset
+            if normalized.startswith(("X", "Z")) and len(normalized) > 3:
+                normalized = normalized[1:]
+            if normalized in ["XBT", "XXBT"]:
+                normalized = "BTC"
             
             # Direct USD values
             usd_assets = ['USD', 'ZUSD', 'USDT', 'USDC', 'TUSD', 'DAI', 'BUSD']
-            if asset.upper() in usd_assets:
+            if normalized in usd_assets:
                 return amount
             
             # GBP conversion (approximate)
-            if asset.upper() in ['GBP', 'ZGBP']:
+            if normalized in ['GBP', 'ZGBP']:
                 return amount * 1.27  # GBP to USD rate
             
             # EUR conversion
-            if asset.upper() in ['EUR', 'ZEUR']:
+            if normalized in ['EUR', 'ZEUR']:
                 return amount * 1.08  # EUR to USD rate
             
             # Try to get price from cached prices
-            price_key = f"{exchange}:{asset}/USD"
-            if price_key in self.prices:
-                return amount * self.prices[price_key]
+            cache_keys = [
+                f"{exchange}:{normalized}/USD",
+                f"{exchange}:{normalized}/USDT",
+                f"{exchange}:{normalized}USD",
+                f"{exchange}:{normalized}USDT",
+                f"{exchange}:{raw_asset}/USD",
+                f"{exchange}:{raw_asset}/USDT",
+                f"{exchange}:{raw_asset}USD",
+                f"{exchange}:{raw_asset}USDT"
+            ]
+            for price_key in cache_keys:
+                if price_key in self.prices:
+                    return amount * self.prices[price_key]
             
-            # Try Kraken ticker for crypto
-            if self.kraken and asset.upper() in ['BTC', 'ETH', 'SOL', 'XRP', 'ADA', 'DOT', 'AVAX', 'LINK', 'ATOM', 'TRX', 'SEI']:
+            # Live lookup with lightweight budget + failure backoff
+            fail_key = f"{exchange}:{normalized}"
+            last_fail = self.price_failures.get(fail_key, 0)
+            if now_ts - last_fail < self.price_failure_ttl:
+                return 0.0
+
+            if exchange in price_fetch_budget and price_fetch_budget[exchange] > 0:
+                price_fetch_budget[exchange] -= 1
                 try:
-                    ticker = self.kraken.get_ticker(f"{asset}/USD")
-                    if ticker and ticker.get('price', 0) > 0:
-                        price = float(ticker['price'])
-                        self.prices[price_key] = price  # Cache it
-                        return amount * price
-                except:
-                    pass
+                    if exchange == "kraken" and self.kraken:
+                        ticker = self.kraken.get_ticker(f"{normalized}/USD")
+                        price = float(ticker.get('price', 0) or 0)
+                        if price <= 0:
+                            ticker = self.kraken.get_ticker(f"{normalized}/USDT")
+                            price = float(ticker.get('price', 0) or 0)
+                        if price > 0:
+                            self.prices[f"{exchange}:{normalized}/USD"] = price
+                            return amount * price
+                    if exchange == "binance" and self.binance and hasattr(self.binance, 'get_ticker'):
+                        ticker = self.binance.get_ticker(f"{normalized}USDT")
+                        price = float(ticker.get('lastPrice', ticker.get('price', 0)) or 0)
+                        if price > 0:
+                            self.prices[f"{exchange}:{normalized}/USDT"] = price
+                            return amount * price
+                except Exception:
+                    self.price_failures[fail_key] = now_ts
+                    return 0.0
+            else:
+                return 0.0
             
             # Fallback: estimate based on known prices
             crypto_estimates = {
@@ -4718,8 +4787,8 @@ Object.entries(systems).forEach(([name, online]) => {
                 'ADA': 1.0, 'DOT': 8, 'AVAX': 40, 'LINK': 15,
                 'ATOM': 10, 'TRX': 0.25, 'SEI': 0.5, 'DOGE': 0.35
             }
-            if asset.upper() in crypto_estimates:
-                return amount * crypto_estimates[asset.upper()]
+            if normalized in crypto_estimates:
+                return amount * crypto_estimates[normalized]
             
             return 0.0  # Unknown asset
         
@@ -4920,6 +4989,10 @@ Object.entries(systems).forEach(([name, online]) => {
                                     "exchange": "binance"
                                 })
                             self.prices[f"binance:{symbol}"] = price
+                            if symbol.endswith("USDT"):
+                                base = symbol.replace("USDT", "")
+                                self.prices[f"binance:{base}/USDT"] = price
+                                self.prices[f"binance:{base}/USD"] = price
                             binance_prices[symbol] = {"price": price, "change": change}
                 except Exception as e:
                     logger.debug(f"Binance ticker error for {symbol}: {e}")
