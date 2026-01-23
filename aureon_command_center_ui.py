@@ -210,6 +210,8 @@ class PortfolioState:
     balances: Dict[str, Dict] = field(default_factory=dict)  # exchange -> {asset: amount}
     pnl_today: float = 0.0
     pnl_total: float = 0.0
+    exchange_breakdown: Dict[str, Dict] = field(default_factory=dict)  # exchange -> {total_usd, cash_usd, assets}
+    baseline_value: float = 0.0  # Starting value for P&L calculation
 
 
 @dataclass
@@ -270,11 +272,14 @@ COMMAND_CENTER_HTML = """
         
         body {
             font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background-color: rgba(0, 0, 0, 1) !important;
             background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
             color: var(--text-primary);
             min-height: 100vh;
             overflow-x: hidden;
             line-height: 1.45;
+            margin: 0;
+            overflow: hidden;
         }
         
         /* Header */
@@ -1183,10 +1188,15 @@ COMMAND_CENTER_HTML = """
             border-color: var(--accent-red);
         }
         
-        /* Responsive */
-        @media (max-width: 1400px) {
+        @media (max-width: 1920px) {
             #container {
-                grid-template-columns: minmax(260px, 300px) 1fr;
+                grid-template-columns: minmax(280px, 320px) 1fr minmax(300px, 360px);
+                height: calc(100vh - 70px);
+                overflow: hidden;
+            }
+            .panel {
+                max-height: 100%;
+                overflow: auto;
             }
         }
         
@@ -1351,6 +1361,25 @@ COMMAND_CENTER_HTML = """
                     <div class="stat-value" id="pnl-total">$0.00</div>
                     <div class="metric-chart" id="chart-pnl-total"></div>
                 </div>
+            </div>
+            
+            <!-- Exchange Breakdown -->
+            <h3 style="margin-top: 20px; color: #00bfff;">💱 EXCHANGE BREAKDOWN</h3>
+            <div id="exchange-breakdown" class="exchange-breakdown-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-top: 10px;">
+                <div class="empty-state">Loading exchange data...</div>
+            </div>
+            
+            <!-- P&L Controls -->
+            <div style="margin-top: 15px; display: flex; gap: 10px; flex-wrap: wrap;">
+                <button onclick="resetPnLBaseline()" class="btn-action" style="background: linear-gradient(135deg, #ff6b6b, #cc5555); border: none; padding: 8px 16px; border-radius: 6px; color: white; cursor: pointer; font-size: 0.85em;">
+                    🔄 Reset Total P&L Baseline
+                </button>
+                <button onclick="resetTodayPnL()" class="btn-action" style="background: linear-gradient(135deg, #00bfff, #0099cc); border: none; padding: 8px 16px; border-radius: 6px; color: white; cursor: pointer; font-size: 0.85em;">
+                    📅 Reset Today's P&L
+                </button>
+                <button onclick="refreshBalances()" class="btn-action" style="background: linear-gradient(135deg, #00ff88, #00cc66); border: none; padding: 8px 16px; border-radius: 6px; color: white; cursor: pointer; font-size: 0.85em;">
+                    🔃 Refresh Balances
+                </button>
             </div>
         </div>
         
@@ -1675,6 +1704,51 @@ COMMAND_CENTER_HTML = """
                 </div>
             </div>
         </div>
+        
+        <!-- Queen Neuron Visualization -->
+        <div class="panel" style="margin-top: 15px;">
+            <div class="section-header">
+                <h2>👑 QUEEN NEURAL NETWORK</h2>
+                <span class="chip" id="neuron-version">v1</span>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 20px;">
+                <div>
+                    <div class="stats-grid" style="grid-template-columns: repeat(2, 1fr);">
+                        <div class="stat-card">
+                            <div class="stat-label">Input Neurons</div>
+                            <div class="stat-value" id="neuron-input-size">7</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Hidden Neurons</div>
+                            <div class="stat-value" id="neuron-hidden-size">12</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Learning Rate</div>
+                            <div class="stat-value" id="neuron-learning-rate">0.01</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Last Update</div>
+                            <div class="stat-value" id="neuron-timestamp" style="font-size: 0.7em;">--</div>
+                        </div>
+                    </div>
+                    <div style="margin-top: 15px; padding: 10px; background: rgba(0,0,0,0.3); border-radius: 8px;">
+                        <div style="color: #00bfff; font-weight: bold; margin-bottom: 8px;">🎯 Input Features</div>
+                        <div style="font-size: 0.8em; color: #aaa; line-height: 1.6;">
+                            1. Coherence Score<br>
+                            2. Lambda Stability<br>
+                            3. Drift Score<br>
+                            4. PIP Prediction<br>
+                            5. Validation Pass Count<br>
+                            6. Time Factor<br>
+                            7. Market Volatility
+                        </div>
+                    </div>
+                </div>
+                <div id="neuron-canvas-container" style="background: rgba(0,0,0,0.4); border-radius: 8px; padding: 15px; min-height: 250px; position: relative;">
+                    <canvas id="neuron-canvas" style="width: 100%; height: 250px;"></canvas>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- TAB 7: ORCA LIVE - Real-time Orca Kill Cycle Monitor -->
@@ -1929,6 +2003,61 @@ COMMAND_CENTER_HTML = """
                 const data = JSON.parse(event.data);
                 handleMessage(data);
             };
+        }
+        
+        // Command functions for P&L management
+        function resetPnLBaseline() {
+            if (!ws || ws.readyState !== WebSocket.OPEN) {
+                alert('Not connected to server');
+                return;
+            }
+            if (confirm('Reset Total P&L baseline to current portfolio value?')) {
+                ws.send(JSON.stringify({ command: 'reset_pnl_baseline' }));
+            }
+        }
+        
+        function resetTodayPnL() {
+            if (!ws || ws.readyState !== WebSocket.OPEN) {
+                alert('Not connected to server');
+                return;
+            }
+            if (confirm('Reset Today\\'s P&L starting point to current value?')) {
+                ws.send(JSON.stringify({ command: 'reset_today_pnl' }));
+            }
+        }
+        
+        function refreshBalances() {
+            if (!ws || ws.readyState !== WebSocket.OPEN) {
+                alert('Not connected to server');
+                return;
+            }
+            ws.send(JSON.stringify({ command: 'refresh_balances' }));
+        }
+        
+        // Toast notification function
+        function showToast(message, type = 'info') {
+            const toast = document.createElement('div');
+            toast.className = 'toast-notification';
+            const bgColor = type === 'success' ? '#00ff88' : type === 'error' ? '#ff6b6b' : '#00bfff';
+            toast.style.cssText = `
+                position: fixed;
+                bottom: 20px;
+                right: 20px;
+                background: ${bgColor};
+                color: #000;
+                padding: 12px 24px;
+                border-radius: 8px;
+                font-weight: bold;
+                z-index: 10000;
+                animation: slideIn 0.3s ease-out;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            `;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            setTimeout(() => {
+                toast.style.animation = 'fadeOut 0.3s ease-out';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
         }
 
         // Apply density preference on load
@@ -2198,6 +2327,17 @@ COMMAND_CENTER_HTML = """
                     updateHubStats(data.data);
                     markLive('orca', 'Orca Live');
                     break;
+                case 'command_response':
+                    // Handle command responses
+                    if (data.success) {
+                        console.log('✅ Command success:', data.message);
+                        // Show toast notification
+                        showToast(data.message, 'success');
+                    } else {
+                        console.error('❌ Command failed:', data.message);
+                        showToast('Error: ' + data.message, 'error');
+                    }
+                    break;
             }
 
             if (typeof data.type === 'string') {
@@ -2362,11 +2502,73 @@ COMMAND_CENTER_HTML = """
                 pnlTotalEl.textContent = '$' + formatNumber(pnlTotal);
                 pnlTotalEl.className = 'stat-value ' + (pnlTotal >= 0 ? '' : 'negative');
                 pushMetric('pnl_total', pnlTotal);
+                
+                // Update exchange breakdown
+                updateExchangeBreakdown(data.portfolio.exchange_breakdown || {});
             }
             
             if (data.balances) {
                 updateBalances(data.balances);
             }
+        }
+        
+        function updateExchangeBreakdown(breakdown) {
+            const container = document.getElementById('exchange-breakdown');
+            if (!container) return;
+            
+            const exchanges = Object.keys(breakdown);
+            if (exchanges.length === 0) {
+                container.innerHTML = '<div class="empty-state">No exchange data available</div>';
+                return;
+            }
+            
+            const exchangeIcons = {
+                'kraken': '🐙',
+                'binance': '🟡',
+                'alpaca': '🦙',
+                'capital': '💰'
+            };
+            
+            let html = '';
+            for (const [exchange, data] of Object.entries(breakdown)) {
+                const icon = exchangeIcons[exchange] || '💱';
+                const totalUsd = data.total_usd || 0;
+                const cashUsd = data.cash_usd || 0;
+                const assetsUsd = totalUsd - cashUsd;
+                const assets = data.assets || {};
+                const assetCount = Object.keys(assets).length;
+                
+                // Build holdings list
+                let holdingsHtml = '';
+                const sortedAssets = Object.entries(assets).sort((a, b) => b[1] - a[1]);
+                sortedAssets.slice(0, 5).forEach(([asset, amount]) => {
+                    holdingsHtml += `<div style="display: flex; justify-content: space-between; padding: 2px 0; border-bottom: 1px solid #222;">
+                        <span style="color: #aaa;">${asset}</span>
+                        <span style="color: #fff;">${formatNumber(amount)}</span>
+                    </div>`;
+                });
+                if (sortedAssets.length > 5) {
+                    holdingsHtml += `<div style="color: #666; font-size: 0.8em; text-align: center; padding-top: 4px;">+${sortedAssets.length - 5} more</div>`;
+                }
+                
+                html += `
+                    <div class="exchange-card" style="background: rgba(0,0,0,0.4); border: 1px solid #333; border-radius: 8px; padding: 12px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <span style="font-weight: bold; color: #00bfff;">${icon} ${exchange.toUpperCase()}</span>
+                            <span style="color: #ffaa00; font-size: 1.1em;">$${formatNumber(totalUsd)}</span>
+                        </div>
+                        <div style="font-size: 0.85em; color: #888; margin-bottom: 8px;">
+                            <div>💵 Cash: <span style="color: #00ff88;">$${formatNumber(cashUsd)}</span></div>
+                            <div>📈 Assets: <span style="color: #ff6b6b;">$${formatNumber(assetsUsd)}</span></div>
+                        </div>
+                        <div style="font-size: 0.8em; border-top: 1px solid #333; padding-top: 8px;">
+                            <div style="color: #666; margin-bottom: 4px;">Holdings (${assetCount}):</div>
+                            ${holdingsHtml || '<div style="color: #444;">No holdings</div>'}
+                        </div>
+                    </div>
+                `;
+            }
+            container.innerHTML = html;
         }
         
         function updateBalances(balances) {
@@ -2658,6 +2860,29 @@ COMMAND_CENTER_HTML = """
             const intel = data?.bot_intel || data?.bot_snapshot || data;
             if (!intel) return;
 
+            // Update timestamp and status
+            if (intel.last_update) {
+                const date = new Date(intel.last_update * 1000);
+                const timeStr = date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                const timeEl = document.getElementById('time-bots');
+                if (timeEl) timeEl.textContent = timeStr;
+                
+                const age = (Date.now()/1000) - intel.last_update;
+                const liveEl = document.getElementById('live-bots');
+                if (liveEl) {
+                    if (age > 3600) { // 1 hour
+                        liveEl.textContent = 'Archive';
+                        liveEl.className = 'tab-live dead';
+                    } else if (age > 300) { // 5 mins
+                        liveEl.textContent = 'Stale';
+                        liveEl.className = 'tab-live stale';
+                    } else {
+                        liveEl.textContent = 'Live';
+                        liveEl.className = 'tab-live active';
+                    }
+                }
+            }
+
             const countEl = document.getElementById('bot-count');
             if (countEl && intel.bot_count !== undefined) {
                 countEl.textContent = intel.bot_count;
@@ -2765,46 +2990,37 @@ COMMAND_CENTER_HTML = """
 
         // Update market feed tab
         function updateMarketFeedTab(data) {
-            if (data.kraken_prices) {
-                const feed = document.getElementById('kraken-feed');
-                if (feed) {
-                    feed.innerHTML = '';
-                    Object.entries(data.kraken_prices).slice(0, 15).forEach(([sym, price]) => {
-                        const change = (Math.random() - 0.5) * 0.1; // Simulated change
-                        const changeClass = change >= 0 ? 'positive' : 'negative';
-                        const div = document.createElement('div');
-                        div.className = 'mover-item';
-                        div.innerHTML = `<span class="mover-symbol">${sym}</span><span class="mover-change ${changeClass}">$${formatNumber(price)}</span>`;
-                        feed.appendChild(div);
-                    });
-                }
+            function renderFeed(elementId, prices) {
+                const feed = document.getElementById(elementId);
+                if (!feed || !prices) return;
+                
+                feed.innerHTML = '';
+                Object.entries(prices).slice(0, 15).forEach(([sym, val]) => {
+                    let price = 0;
+                    let change = 0;
+                    
+                    if (typeof val === 'object' && val !== null) {
+                        price = val.price || 0;
+                        change = val.change || 0;
+                    } else {
+                        price = val;
+                        change = 0; 
+                    }
+                    
+                    const changeClass = change >= 0 ? 'positive' : 'negative';
+                    const sign = change >= 0 ? '+' : '';
+                    const changeText = (change * 100).toFixed(2) + '%';
+                    
+                    const div = document.createElement('div');
+                    div.className = 'mover-item';
+                    div.innerHTML = `<span class="mover-symbol">${sym}</span><span class="mover-change ${changeClass}">$${formatNumber(price)} <small>(${sign}${changeText})</small></span>`;
+                    feed.appendChild(div);
+                });
             }
-            if (data.binance_prices) {
-                const feed = document.getElementById('binance-feed');
-                if (feed) {
-                    feed.innerHTML = '';
-                    Object.entries(data.binance_prices).slice(0, 15).forEach(([sym, price]) => {
-                        const changeClass = Math.random() > 0.5 ? 'positive' : 'negative';
-                        const div = document.createElement('div');
-                        div.className = 'mover-item';
-                        div.innerHTML = `<span class="mover-symbol">${sym}</span><span class="mover-change ${changeClass}">$${formatNumber(price)}</span>`;
-                        feed.appendChild(div);
-                    });
-                }
-            }
-            if (data.alpaca_prices) {
-                const feed = document.getElementById('alpaca-feed');
-                if (feed) {
-                    feed.innerHTML = '';
-                    Object.entries(data.alpaca_prices).slice(0, 15).forEach(([sym, price]) => {
-                        const changeClass = Math.random() > 0.5 ? 'positive' : 'negative';
-                        const div = document.createElement('div');
-                        div.className = 'mover-item';
-                        div.innerHTML = `<span class="mover-symbol">${sym}</span><span class="mover-change ${changeClass}">$${formatNumber(price)}</span>`;
-                        feed.appendChild(div);
-                    });
-                }
-            }
+
+            if (data.kraken_prices) renderFeed('kraken-feed', data.kraken_prices);
+            if (data.binance_prices) renderFeed('binance-feed', data.binance_prices);
+            if (data.alpaca_prices) renderFeed('alpaca-feed', data.alpaca_prices);
         }
 
         // Update quantum tab
@@ -2913,6 +3129,113 @@ COMMAND_CENTER_HTML = """
                     }
                 }
             }
+            
+            // Draw Queen Neural Network
+            if (learning.queen_neuron) {
+                drawNeuralNetwork(learning.queen_neuron);
+            }
+        }
+        
+        // Queen Neural Network Visualization
+        function drawNeuralNetwork(neuronData) {
+            const canvas = document.getElementById('neuron-canvas');
+            if (!canvas || !neuronData) return;
+            
+            const ctx = canvas.getContext('2d');
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width * 2;
+            canvas.height = 250 * 2;
+            ctx.scale(2, 2);
+            
+            const width = rect.width;
+            const height = 250;
+            ctx.clearRect(0, 0, width, height);
+            
+            const inputSize = neuronData.input_size || 7;
+            const hiddenSize = neuronData.hidden_size || 12;
+            const weights = neuronData.weights_input_hidden || [];
+            
+            // Update stats
+            const versionEl = document.getElementById('neuron-version');
+            if (versionEl) versionEl.textContent = 'v' + (neuronData.version || 1);
+            const inputEl = document.getElementById('neuron-input-size');
+            if (inputEl) inputEl.textContent = inputSize;
+            const hiddenEl = document.getElementById('neuron-hidden-size');
+            if (hiddenEl) hiddenEl.textContent = hiddenSize;
+            const lrEl = document.getElementById('neuron-learning-rate');
+            if (lrEl) lrEl.textContent = (neuronData.learning_rate || 0.01).toFixed(4);
+            const ts = neuronData.timestamp || '';
+            const tsEl = document.getElementById('neuron-timestamp');
+            if (tsEl) tsEl.textContent = ts ? ts.split('T')[0] : '--';
+            
+            // Layer positions
+            const layers = [
+                { x: 60, count: inputSize, label: 'Input', color: '#00bfff' },
+                { x: width / 2, count: hiddenSize, label: 'Hidden', color: '#ffaa00' },
+                { x: width - 60, count: 1, label: 'Output', color: '#00ff88' }
+            ];
+            
+            // Calculate neuron positions
+            const positions = layers.map(layer => {
+                const neurons = [];
+                const spacing = (height - 40) / (layer.count + 1);
+                for (let i = 0; i < layer.count; i++) {
+                    neurons.push({ x: layer.x, y: 20 + spacing * (i + 1) });
+                }
+                return neurons;
+            });
+            
+            // Draw connections with weight colors
+            ctx.lineWidth = 0.5;
+            for (let i = 0; i < positions[0].length; i++) {
+                for (let j = 0; j < positions[1].length; j++) {
+                    const weight = weights[i] ? (weights[i][j] || 0) : 0;
+                    const intensity = Math.min(Math.abs(weight) * 2, 1);
+                    const color = weight >= 0 ? 
+                        `rgba(0, 255, 136, ${intensity * 0.6})` : 
+                        `rgba(255, 107, 107, ${intensity * 0.6})`;
+                    ctx.strokeStyle = color;
+                    ctx.beginPath();
+                    ctx.moveTo(positions[0][i].x, positions[0][i].y);
+                    ctx.lineTo(positions[1][j].x, positions[1][j].y);
+                    ctx.stroke();
+                }
+            }
+            
+            // Draw hidden to output connections
+            const hiddenOutput = neuronData.weights_hidden_output || [];
+            for (let i = 0; i < positions[1].length; i++) {
+                const weight = hiddenOutput[i] || 0;
+                const intensity = Math.min(Math.abs(weight) * 2, 1);
+                const color = weight >= 0 ? 
+                    `rgba(0, 255, 136, ${intensity * 0.8})` : 
+                    `rgba(255, 107, 107, ${intensity * 0.8})`;
+                ctx.strokeStyle = color;
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(positions[1][i].x, positions[1][i].y);
+                ctx.lineTo(positions[2][0].x, positions[2][0].y);
+                ctx.stroke();
+            }
+            
+            // Draw neurons
+            layers.forEach((layer, layerIdx) => {
+                positions[layerIdx].forEach((pos, i) => {
+                    ctx.beginPath();
+                    ctx.arc(pos.x, pos.y, 8, 0, Math.PI * 2);
+                    ctx.fillStyle = layer.color;
+                    ctx.fill();
+                    ctx.strokeStyle = '#fff';
+                    ctx.lineWidth = 1;
+                    ctx.stroke();
+                });
+                
+                // Layer label
+                ctx.fillStyle = '#888';
+                ctx.font = '10px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText(layer.label, layer.x, height - 5);
+            });
         }
 
         // ═══════════════════════════════════════════════════════════════════
@@ -3452,6 +3775,60 @@ class AureonCommandCenter:
                 "type": "signals",
                 "signals": [asdict(s) if hasattr(s, '__dataclass_fields__') else s for s in list(self.signals)[-50:]]
             })
+        elif cmd == "reset_pnl_baseline":
+            # Reset P&L baseline to current portfolio value
+            try:
+                baseline_data = {
+                    "timestamp": datetime.now().isoformat(),
+                    "total_value_usdc": self.portfolio.total_value_usd,
+                    "details": {
+                        "meta": {"usdt_usdc": 1.0},
+                        "note": f"Baseline reset from UI on {datetime.now().strftime('%Y-%m-%d %H:%M')}"
+                    }
+                }
+                with open("pnl_baseline.json", "w") as f:
+                    json.dump(baseline_data, f, indent=2)
+                self.portfolio.baseline_value = self.portfolio.total_value_usd
+                self.portfolio.pnl_total = 0.0
+                await ws.send_json({
+                    "type": "command_response",
+                    "command": "reset_pnl_baseline",
+                    "success": True,
+                    "message": f"P&L baseline reset to ${self.portfolio.total_value_usd:.4f}"
+                })
+                await self.broadcast_portfolio()
+                logger.info(f"P&L baseline reset to ${self.portfolio.total_value_usd:.4f}")
+            except Exception as e:
+                await ws.send_json({
+                    "type": "command_response",
+                    "command": "reset_pnl_baseline",
+                    "success": False,
+                    "message": str(e)
+                })
+        elif cmd == "reset_today_pnl":
+            # Reset today's P&L starting point
+            try:
+                today_data = {
+                    "date": time.strftime("%Y-%m-%d"),
+                    "value": self.portfolio.total_value_usd
+                }
+                with open("pnl_today_start.json", "w") as f:
+                    json.dump(today_data, f)
+                self.portfolio.pnl_today = 0.0
+                await ws.send_json({
+                    "type": "command_response",
+                    "command": "reset_today_pnl",
+                    "success": True,
+                    "message": f"Today's P&L reset at ${self.portfolio.total_value_usd:.4f}"
+                })
+                await self.broadcast_portfolio()
+            except Exception as e:
+                await ws.send_json({
+                    "type": "command_response",
+                    "command": "reset_today_pnl",
+                    "success": False,
+                    "message": str(e)
+                })
     
     async def handle_api_status(self, request):
         """REST API: System status."""
@@ -3953,17 +4330,46 @@ Object.entries(systems).forEach(([name, online]) => {
                 for key, val in patterns.items():
                     if key == "default" or not isinstance(val, dict):
                         continue
+                    # Calculate wins/losses from entry arrays if summary keys are missing/zero
+                    wins = int(val.get("total_wins", 0) or 0)
+                    losses = int(val.get("total_losses", 0) or 0)
+                    if wins == 0 and "winning_rsi_entries" in val:
+                        wins = len(val.get("winning_rsi_entries", []))
+                    if losses == 0 and "losing_rsi_entries" in val:
+                        losses = len(val.get("losing_rsi_entries", []))
                     pattern_rows.append({
                         "symbol": key,
-                        "total_wins": int(val.get("total_wins", 0) or 0),
-                        "total_losses": int(val.get("total_losses", 0) or 0),
+                        "total_wins": wins,
+                        "total_losses": losses,
                         "total_pnl": float(val.get("total_pnl", 0) or 0),
-                        "verified_winner": bool(val.get("verified_winner", False))
+                        "verified_winner": bool(val.get("verified_winner", False)),
+                        "best_rsi_buy": float(val.get("best_rsi_buy", 30) or 30),
+                        "best_rsi_sell": float(val.get("best_rsi_sell", 70) or 70)
                     })
                 pattern_rows.sort(key=lambda p: (p.get("total_pnl", 0), p.get("total_wins", 0)), reverse=True)
                 learning["patterns"] = pattern_rows[:10]
             except Exception as e:
                 logger.debug(f"Learning patterns load error: {e}")
+
+        # Load Queen neuron weights for neural visualization
+        neuron_path = Path("queen_neuron_weights.json")
+        if neuron_path.exists():
+            try:
+                with neuron_path.open("r") as f:
+                    neuron_data = json.load(f)
+                learning["queen_neuron"] = {
+                    "version": neuron_data.get("version", 1),
+                    "input_size": neuron_data.get("input_size", 7),
+                    "hidden_size": neuron_data.get("hidden_size", 12),
+                    "learning_rate": neuron_data.get("base_learning_rate", 0.01),
+                    "weights_input_hidden": neuron_data.get("weights_input_hidden", []),
+                    "weights_hidden_output": neuron_data.get("weights_hidden_output", []),
+                    "bias_hidden": neuron_data.get("bias_hidden", []),
+                    "bias_output": neuron_data.get("bias_output", []),
+                    "timestamp": neuron_data.get("timestamp", "")
+                }
+            except Exception as e:
+                logger.debug(f"Queen neuron weights load error: {e}")
 
         learning["last_update"] = now
         self.learning_snapshot = learning
@@ -3987,8 +4393,16 @@ Object.entries(systems).forEach(([name, online]) => {
         firms_db_path = Path("all_firms_complete.json")
         if report_path.exists():
             try:
+                # Get file modification time
+                mtime = report_path.stat().st_mtime
+                snapshot["last_update"] = mtime
+                
                 with report_path.open("r") as f:
                     report = json.load(f)
+                
+                # Prefer internal timestamp if available
+                if "timestamp" in report:
+                    snapshot["last_update"] = report["timestamp"]
 
                 firms = report.get("firms", []) or []
                 all_bots = report.get("all_bots", {}) or {}
@@ -4125,7 +4539,12 @@ Object.entries(systems).forEach(([name, online]) => {
     async def fetch_all_balances(self):
         """Fetch balances from all exchanges and calculate total USD value."""
         total_usd = 0.0
+        total_cash = 0.0
         all_balances = {}
+        exchange_breakdown = {}
+        
+        # Stable/cash assets that count as "cash available"
+        cash_assets = {'USD', 'ZUSD', 'USDT', 'USDC', 'TUSD', 'DAI', 'BUSD', 'GBP', 'ZGBP', 'EUR', 'ZEUR'}
         
         # Price lookup helper - use cached prices or fetch
         def get_usd_value(asset: str, amount: float, exchange: str) -> float:
@@ -4178,8 +4597,20 @@ Object.entries(systems).forEach(([name, online]) => {
             try:
                 balances = self.kraken.get_account_balance() or {}
                 all_balances['kraken'] = {k: float(v) for k, v in balances.items() if float(v) > 0.0001}
+                kraken_total = 0.0
+                kraken_cash = 0.0
                 for asset, amount in all_balances['kraken'].items():
-                    total_usd += get_usd_value(asset, amount, 'kraken')
+                    usd_val = get_usd_value(asset, amount, 'kraken')
+                    kraken_total += usd_val
+                    total_usd += usd_val
+                    if asset.upper() in cash_assets:
+                        kraken_cash += usd_val
+                        total_cash += usd_val
+                exchange_breakdown['kraken'] = {
+                    'total_usd': round(kraken_total, 4),
+                    'cash_usd': round(kraken_cash, 4),
+                    'assets': dict(all_balances.get('kraken', {}))
+                }
             except Exception as e:
                 logger.error(f"Kraken balance error: {e}")
         
@@ -4193,8 +4624,20 @@ Object.entries(systems).forEach(([name, online]) => {
                     balances = self.binance.get_balance()
                 if balances:
                     all_balances['binance'] = {k: float(v) for k, v in balances.items() if float(v) > 0.0001}
+                    binance_total = 0.0
+                    binance_cash = 0.0
                     for asset, amount in all_balances['binance'].items():
-                        total_usd += get_usd_value(asset, amount, 'binance')
+                        usd_val = get_usd_value(asset, amount, 'binance')
+                        binance_total += usd_val
+                        total_usd += usd_val
+                        if asset.upper() in cash_assets:
+                            binance_cash += usd_val
+                            total_cash += usd_val
+                    exchange_breakdown['binance'] = {
+                        'total_usd': round(binance_total, 4),
+                        'cash_usd': round(binance_cash, 4),
+                        'assets': dict(all_balances.get('binance', {}))
+                    }
             except Exception as e:
                 logger.error(f"Binance balance error: {e}")
         
@@ -4207,6 +4650,9 @@ Object.entries(systems).forEach(([name, online]) => {
                         cash = float(getattr(account, 'cash', 0) or 0)
                         equity = float(getattr(account, 'equity', cash) or cash)
                         all_balances['alpaca'] = {'USD': cash}
+                        alpaca_total = cash
+                        alpaca_cash = cash
+                        total_cash += cash
                         # Also get crypto positions
                         try:
                             positions = self.alpaca.get_positions() if hasattr(self.alpaca, 'get_positions') else []
@@ -4216,19 +4662,69 @@ Object.entries(systems).forEach(([name, online]) => {
                                 market_val = float(pos.get('market_value', 0))
                                 if qty > 0 and market_val > 0:
                                     all_balances['alpaca'][symbol] = qty
-                                    total_usd += market_val
+                                    alpaca_total += market_val
                         except:
                             pass
-                        total_usd += cash
+                        total_usd += alpaca_total
+                        exchange_breakdown['alpaca'] = {
+                            'total_usd': round(alpaca_total, 4),
+                            'cash_usd': round(alpaca_cash, 4),
+                            'equity': round(equity, 4),
+                            'assets': dict(all_balances.get('alpaca', {}))
+                        }
             except Exception as e:
                 logger.error(f"Alpaca balance error: {e}")
         
         # Capital.com - check if we have a client
         # (Capital uses different balance structure - check if available)
         
+        # Load baseline for P&L calculation
+        baseline_value = 0.0
+        baseline_path = Path("pnl_baseline.json")
+        if baseline_path.exists():
+            try:
+                with baseline_path.open("r") as f:
+                    baseline_data = json.load(f)
+                    baseline_value = float(baseline_data.get("total_value_usdc", 0) or 0)
+            except Exception as e:
+                logger.debug(f"P&L baseline load error: {e}")
+        
+        # Calculate P&L
+        pnl_total = total_usd - baseline_value if baseline_value > 0 else 0.0
+        
+        # Load today's starting value for daily P&L
+        today_start_path = Path("pnl_today_start.json")
+        today_start_value = total_usd  # Default to current if no file
+        today_date = time.strftime("%Y-%m-%d")
+        if today_start_path.exists():
+            try:
+                with today_start_path.open("r") as f:
+                    today_data = json.load(f)
+                    if today_data.get("date") == today_date:
+                        today_start_value = float(today_data.get("value", total_usd))
+                    else:
+                        # New day, save new starting value
+                        with today_start_path.open("w") as fw:
+                            json.dump({"date": today_date, "value": total_usd}, fw)
+            except Exception:
+                pass
+        else:
+            # Create today's start file
+            try:
+                with today_start_path.open("w") as f:
+                    json.dump({"date": today_date, "value": total_usd}, f)
+            except Exception:
+                pass
+        
+        pnl_today = total_usd - today_start_value
+        
         self.portfolio.balances = all_balances
-        self.portfolio.total_value_usd = total_usd
-        self.portfolio.cash_available = total_usd
+        self.portfolio.total_value_usd = round(total_usd, 4)
+        self.portfolio.cash_available = round(total_cash, 4)
+        self.portfolio.pnl_today = round(pnl_today, 4)
+        self.portfolio.pnl_total = round(pnl_total, 4)
+        self.portfolio.exchange_breakdown = exchange_breakdown
+        self.portfolio.baseline_value = round(baseline_value, 4)
 
         # Basic market overview from balances
         unique_assets = set()
@@ -4256,10 +4752,10 @@ Object.entries(systems).forEach(([name, online]) => {
                     ticker = self.kraken.get_ticker(symbol)
                     if ticker and ticker.get("price", 0) > 0:
                         price = float(ticker.get("price", 0))
-                        kraken_prices[symbol] = price
                         
                         # Calculate change from stored price
                         old_price = self.prices.get(f"kraken:{symbol}", price)
+                        change = 0.0
                         if old_price > 0:
                             change = (price - old_price) / old_price
                             top_movers.append({
@@ -4269,6 +4765,7 @@ Object.entries(systems).forEach(([name, online]) => {
                                 "exchange": "kraken"
                             })
                         self.prices[f"kraken:{symbol}"] = price
+                        kraken_prices[symbol] = {"price": price, "change": change}
                 except Exception as e:
                     logger.debug(f"Kraken ticker error for {symbol}: {e}")
         
@@ -4280,9 +4777,9 @@ Object.entries(systems).forEach(([name, online]) => {
                     if ticker:
                         price = float(ticker.get("lastPrice", ticker.get("price", 0)))
                         if price > 0:
-                            binance_prices[symbol] = price
-                            
+                            # Calculate change from stored price
                             old_price = self.prices.get(f"binance:{symbol}", price)
+                            change = 0.0
                             if old_price > 0:
                                 change = (price - old_price) / old_price
                                 top_movers.append({
@@ -4292,8 +4789,32 @@ Object.entries(systems).forEach(([name, online]) => {
                                     "exchange": "binance"
                                 })
                             self.prices[f"binance:{symbol}"] = price
+                            binance_prices[symbol] = {"price": price, "change": change}
                 except Exception as e:
                     logger.debug(f"Binance ticker error for {symbol}: {e}")
+        
+        # Fetch from Alpaca
+        if self.alpaca:
+            for symbol in alpaca_symbols:
+                try:
+                    ticker = self.alpaca.get_ticker(symbol)
+                    if ticker and "price" in ticker:
+                        price = float(ticker["price"])
+                        
+                        old_price = self.prices.get(f"alpaca:{symbol}", price)
+                        change = 0.0
+                        if old_price > 0:
+                            change = (price - old_price) / old_price
+                            top_movers.append({
+                                "symbol": symbol,
+                                "price": price,
+                                "change": change,
+                                "exchange": "alpaca"
+                            })
+                        self.prices[f"alpaca:{symbol}"] = price
+                        alpaca_prices[symbol] = {"price": price, "change": change}
+                except Exception as e:
+                    logger.debug(f"Alpaca ticker error for {symbol}: {e}")
         
         # Sort movers by absolute change
         top_movers.sort(key=lambda x: abs(x.get("change", 0)), reverse=True)

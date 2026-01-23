@@ -8784,8 +8784,14 @@ class OrcaKillCycle:
                     for sym in ['BTC/USD', 'ETH/USD', 'SOL/USD', 'XRP/USD', 'DOGE/USD', 'ADA/USD']:
                         try:
                             ticker = self.kraken.get_ticker(sym)
-                            if ticker and 'last' in ticker:
-                                kraken_prices[sym] = float(ticker['last'])
+                            if ticker:
+                                price = ticker.get('price')
+                                if price is None:
+                                    price = ticker.get('last')
+                                if price is None:
+                                    price = ticker.get('lastPrice')
+                                if price is not None:
+                                    kraken_prices[sym] = float(price)
                         except Exception:
                             pass
             except Exception:
@@ -8795,8 +8801,14 @@ class OrcaKillCycle:
                     for sym in ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'XRPUSDT', 'DOGEUSDT', 'ADAUSDT']:
                         try:
                             ticker = self.binance.get_ticker(sym)
-                            if ticker and 'last' in ticker:
-                                binance_prices[sym] = float(ticker['last'])
+                            if ticker:
+                                price = ticker.get('price')
+                                if price is None:
+                                    price = ticker.get('last')
+                                if price is None:
+                                    price = ticker.get('lastPrice')
+                                if price is not None:
+                                    binance_prices[sym] = float(price)
                         except Exception:
                             pass
             except Exception:
@@ -8806,8 +8818,14 @@ class OrcaKillCycle:
                     for sym in ['BTC/USD', 'ETH/USD', 'AAPL', 'TSLA', 'NVDA', 'SPY']:
                         try:
                             ticker = self.alpaca.get_ticker(sym)
-                            if ticker and 'last' in ticker:
-                                alpaca_prices[sym] = float(ticker['last'])
+                            if ticker:
+                                price = ticker.get('price')
+                                if price is None:
+                                    price = ticker.get('last')
+                                if price is None:
+                                    price = ticker.get('lastPrice')
+                                if price is not None:
+                                    alpaca_prices[sym] = float(price)
                         except Exception:
                             pass
             except Exception:

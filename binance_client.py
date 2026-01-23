@@ -628,6 +628,46 @@ class BinanceClient:
             pass
         return None
 
+    def get_ticker(self, symbol: str) -> Dict[str, Any]:
+        """Unified ticker interface (symbol, price, bid, ask, last).
+        
+        Wraps get_24h_ticker to provide a richer object, but falls back
+        to get_ticker_price if needed.
+        """
+        try:
+            # get_24h_ticker provides bid/ask, which is preferred
+            ticker_24h = self.get_24h_ticker(symbol)
+            if ticker_24h and 'lastPrice' in ticker_24h:
+                price = float(ticker_24h['lastPrice'])
+                bid = float(ticker_24h.get('bidPrice', 0))
+                ask = float(ticker_24h.get('askPrice', 0))
+                return {
+                    "symbol": symbol,
+                    "price": price,
+                    "last": price,
+                    "bid": bid if bid > 0 else price,
+                    "ask": ask if ask > 0 else price,
+                }
+        except Exception:
+            # Fallback to the simpler price-only endpoint if 24h fails
+            pass
+
+        try:
+            ticker_price = self.get_ticker_price(symbol)
+            if ticker_price and 'price' in ticker_price:
+                price = float(ticker_price['price'])
+                return {
+                    "symbol": symbol,
+                    "price": price,
+                    "last": price,
+                    "bid": price,
+                    "ask": price,
+                }
+        except Exception:
+            pass
+        
+        return {}
+
     def get_24h_tickers(self) -> list:
         """Get all 24h ticker stats for commando scanning 🦆⚔️
         
@@ -1035,8 +1075,8 @@ class BinanceClient:
         if from_asset == to_asset:
             return {"error": "Cannot convert to same asset"}
         
-        # 🌍✨ PLANET SAVER: Allow stablecoin swaps - past doesn't define future!
-        # Let the scanner and Queen decide what's profitable!
+        # 🌍✨ PLANET SAVER: Freedom! Past doesn't define future!
+        # Let the scanner and Queen decide profitability!
         
         path = self.find_conversion_path(from_asset, to_asset)
         
