@@ -188,7 +188,261 @@ GARY_WISDOM = [
                     "mission_reminder", FREQ_741, 70.0),
 ]
 
-ALL_WISDOM = MOGOLLON_WISDOM + IRISH_WISDOM + UNIVERSAL_WISDOM + GARY_WISDOM
+# ═══════════════════════════════════════════════════════════════════════════════
+# EGYPTIAN WISDOM - Ma'at, Nile Cycles, Pyramid Geometry (432 Hz - Giza Resonance)
+# ═══════════════════════════════════════════════════════════════════════════════
+FREQ_432 = 432.0  # Giza pyramid resonance
+
+EGYPTIAN_WISDOM = [
+    AncestralWisdom("egyptian", "Ma'at: Truth, justice, and cosmic balance are the foundation of all existence.", 
+                    "seeking_balance", FREQ_432, 65.0),
+    AncestralWisdom("egyptian", "As the Nile rises, abundance flows. As it recedes, prepare and preserve.", 
+                    "liquidity_cycle", FREQ_528, 60.0),
+    AncestralWisdom("egyptian", "The pyramid teaches: A strong foundation supports infinite height.", 
+                    "building_position", FREQ_432, 55.0),
+    AncestralWisdom("egyptian", "Thoth measured time itself. Patience is divine mathematics.", 
+                    "timing_decision", FREQ_741, 70.0),
+    AncestralWisdom("egyptian", "Ka, Ba, Akh—the three souls see from three perspectives. So must you.", 
+                    "multi_analysis", FREQ_852, 75.0),
+    AncestralWisdom("egyptian", "The scarab rolls forward what others leave behind. Opportunity in waste.", 
+                    "overlooked_opportunity", FREQ_417, 50.0),
+    AncestralWisdom("egyptian", "Osiris died and rose. Every ending births a beginning.", 
+                    "after_loss", FREQ_528, 60.0),
+    AncestralWisdom("egyptian", "The Eye of Horus sees 63/64ths. Accept that perfect knowledge is impossible.", 
+                    "uncertainty", FREQ_639, 65.0),
+    AncestralWisdom("egyptian", "Akhet season: The flood brings fertile silt. High volatility deposits opportunity.", 
+                    "high_volatility", FREQ_432, 70.0),
+    AncestralWisdom("egyptian", "The ankh: Life flows through holding opposites together.", 
+                    "contradiction", FREQ_528, 55.0),
+]
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# CELTIC WISDOM - Druidic Cycles, Fire Festivals, Ogham (396/285/852 Hz)
+# ═══════════════════════════════════════════════════════════════════════════════
+FREQ_285 = 285.0  # Newgrange healing frequency
+
+CELTIC_WISDOM = [
+    AncestralWisdom("celtic", "The Druids tracked 19-year Metonic cycles. What was, will be again.", 
+                    "long_cycle", FREQ_396, 75.0),
+    AncestralWisdom("celtic", "At Samhain's threshold, the veil thins. Defensive posture when worlds blur.", 
+                    "high_volatility_season", FREQ_852, 60.0),
+    AncestralWisdom("celtic", "Imbolc: First stirrings of spring. Early trend detection rewards the patient.", 
+                    "early_trend", FREQ_285, 55.0),
+    AncestralWisdom("celtic", "Beltane fires leap high. Growth phase—but remember 'Sell in May'.", 
+                    "growth_caution", FREQ_528, 60.0),
+    AncestralWisdom("celtic", "Lughnasadh: Harvest before autumn volatility. Take profits while sun shines.", 
+                    "profit_taking", FREQ_741, 65.0),
+    AncestralWisdom("celtic", "The Ogham tree speaks: Each pattern tells its own story. Read the candles like runes.", 
+                    "pattern_recognition", FREQ_396, 70.0),
+    AncestralWisdom("celtic", "Three confirming signs the Druids required. Never act on one signal alone.", 
+                    "confirmation_needed", FREQ_639, 60.0),
+    AncestralWisdom("celtic", "The Otherworld threshold: Support and resistance are transformation zones.", 
+                    "key_level", FREQ_852, 65.0),
+    AncestralWisdom("celtic", "Newgrange aligns once per year. Wait for your alignment, then act decisively.", 
+                    "timing_window", FREQ_285, 70.0),
+    AncestralWisdom("celtic", "The salmon swims upstream to where it began. Retracements return to origin.", 
+                    "retracement", FREQ_396, 55.0),
+]
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# MAYAN WISDOM - Cyclical Time, Tzolkin, Long Count (528 Hz - Transformation)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+MAYAN_WISDOM = [
+    AncestralWisdom("mayan", "Time is cyclical, not linear. Historical patterns repeat in sacred rhythms.", 
+                    "cycle_analysis", FREQ_528, 65.0),
+    AncestralWisdom("mayan", "Tzolkin's 260-day count: Short cycles nest within long. Multiple timeframes reveal truth.", 
+                    "timeframe_analysis", FREQ_741, 70.0),
+    AncestralWisdom("mayan", "The Long Count measures 5,125-year Great Cycles. Super-cycles exist—respect them.", 
+                    "macro_awareness", FREQ_852, 80.0),
+    AncestralWisdom("mayan", "Kukulkan descends at equinox—shadow becomes serpent. Balance points precede direction.", 
+                    "equilibrium_point", FREQ_528, 65.0),
+    AncestralWisdom("mayan", "The cenote is a portal to the underworld. Drawdowns are journeys, not endings.", 
+                    "drawdown", FREQ_396, 60.0),
+    AncestralWisdom("mayan", "Wayeb: Five unlucky days end the Haab. Know when NOT to trade.", 
+                    "dangerous_period", FREQ_417, 55.0),
+    AncestralWisdom("mayan", "The jaguar hunts at night. Some opportunities reveal themselves only in darkness.", 
+                    "contrarian_opportunity", FREQ_741, 70.0),
+    AncestralWisdom("mayan", "Zero was the Mayan gift to mathematics. Nothing is also something.", 
+                    "flat_market", FREQ_639, 50.0),
+    AncestralWisdom("mayan", "As above, so below—the macro influences the micro in infinite reflection.", 
+                    "fractal_pattern", FREQ_528, 60.0),
+]
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# CHINESE WISDOM - I Ching, Yin-Yang, Wu Wei (639 Hz - Harmony)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+CHINESE_WISDOM = [
+    AncestralWisdom("chinese", "Yin and Yang: Bull and bear, greed and fear—complementary opposites dance forever.", 
+                    "market_duality", FREQ_639, 60.0),
+    AncestralWisdom("chinese", "Wu Wei: The river that flows downhill never has to try. Trade with the trend.", 
+                    "trend_following", FREQ_528, 55.0),
+    AncestralWisdom("chinese", "Yi—constant change. Expect regime changes. Nothing lasts forever.", 
+                    "regime_change", FREQ_417, 65.0),
+    AncestralWisdom("chinese", "Qian (Heaven): Pure yang, creative force. Momentum phase—ride the dragon.", 
+                    "strong_trend", FREQ_741, 70.0),
+    AncestralWisdom("chinese", "Kun (Earth): Pure yin, receptive. Accumulation phase—be patient like earth.", 
+                    "consolidation", FREQ_639, 55.0),
+    AncestralWisdom("chinese", "Tai (Peace): Heaven below, Earth above—harmony. When extremes meet, balance emerges.", 
+                    "convergence", FREQ_528, 60.0),
+    AncestralWisdom("chinese", "When one extreme is reached, reversal begins. The I Ching teaches mean reversion.", 
+                    "overbought_oversold", FREQ_396, 65.0),
+    AncestralWisdom("chinese", "The five elements cycle: Wood→Fire→Earth→Metal→Water. Sectors rotate in patterns.", 
+                    "sector_rotation", FREQ_639, 70.0),
+    AncestralWisdom("chinese", "Empty your cup to receive new tea. Let go of bias to see clearly.", 
+                    "bias_check", FREQ_852, 60.0),
+    AncestralWisdom("chinese", "The sage acts without acting, teaches without speaking. Let the trade come to you.", 
+                    "patience", FREQ_528, 50.0),
+]
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# HINDU WISDOM - Vedic, Karma, Dharma, Chakras (528/741 Hz)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+HINDU_WISDOM = [
+    AncestralWisdom("hindu", "Karma: Every action creates consequence. Position sizing is your karma.", 
+                    "risk_management", FREQ_528, 65.0),
+    AncestralWisdom("hindu", "Dharma: Your righteous duty. Following your system IS your dharma.", 
+                    "discipline", FREQ_741, 70.0),
+    AncestralWisdom("hindu", "Maya: Headlines are illusion. See the signal through the noise.", 
+                    "noise_filtering", FREQ_852, 60.0),
+    AncestralWisdom("hindu", "Kalachakra—the Wheel of Time: Nested cycles within cycles. Multiple timeframes.", 
+                    "multi_timeframe", FREQ_639, 65.0),
+    AncestralWisdom("hindu", "Satya Yuga: Golden age of bull markets. Recognize when you're in one.", 
+                    "bull_market", FREQ_528, 55.0),
+    AncestralWisdom("hindu", "Kali Yuga: The dark age of destruction. Bear markets serve their purpose.", 
+                    "bear_market", FREQ_396, 60.0),
+    AncestralWisdom("hindu", "Prana: Life force flows where breath goes. Volume is the market's breath.", 
+                    "volume_analysis", FREQ_528, 60.0),
+    AncestralWisdom("hindu", "Root chakra: Fundamentals. Heart chakra: Sentiment. Crown: Institutional flow.", 
+                    "multi_analysis", FREQ_741, 70.0),
+    AncestralWisdom("hindu", "Detachment from outcome, attachment to process. This is the trader's yoga.", 
+                    "process_focus", FREQ_852, 75.0),
+    AncestralWisdom("hindu", "Om: The primordial vibration. Find your frequency and resonate with it.", 
+                    "identity_alignment", SCHUMANN_FUNDAMENTAL, 50.0),
+]
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# NORSE WISDOM - Wyrd, Runes, Ragnarok (852 Hz - Spiritual Order)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+NORSE_WISDOM = [
+    AncestralWisdom("norse", "Wyrd: The web of fate connects past to future. Your track record shapes destiny.", 
+                    "consistency", FREQ_852, 70.0),
+    AncestralWisdom("norse", "After Ragnarok, a new world rises. Buy the rebirth after the crash.", 
+                    "post_crash", FREQ_396, 65.0),
+    AncestralWisdom("norse", "Yggdrasil connects Nine Worlds. Stocks, crypto, forex—branches of the same tree.", 
+                    "correlation", FREQ_639, 60.0),
+    AncestralWisdom("norse", "Odin sacrificed an eye for wisdom. Knowledge requires sacrifice. Losses teach.", 
+                    "learning_from_loss", FREQ_741, 70.0),
+    AncestralWisdom("norse", "Fehu rune: Cattle, wealth, liquid assets. Cash flow is king.", 
+                    "liquidity", FREQ_528, 55.0),
+    AncestralWisdom("norse", "Hagalaz rune: Hail, disruption. Black swan events demand preparation.", 
+                    "black_swan", FREQ_417, 75.0),
+    AncestralWisdom("norse", "Isa rune: Ice, stillness. Consolidation—wait for the thaw.", 
+                    "sideways_market", FREQ_396, 50.0),
+    AncestralWisdom("norse", "Jera rune: Harvest, annual cycle. Q4 reaping after Q2/Q3 planting.", 
+                    "seasonal_cycle", FREQ_639, 60.0),
+    AncestralWisdom("norse", "The Norns weave fate at Urd's Well. History, present, future—all connected.", 
+                    "historical_analysis", FREQ_852, 65.0),
+    AncestralWisdom("norse", "Berserker fury has its place, but Odin's wisdom wins more battles.", 
+                    "emotional_control", FREQ_741, 70.0),
+]
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# PYTHAGOREAN WISDOM - Sacred Mathematics, Harmony, Fibonacci (φ×100 Hz)
+# ═══════════════════════════════════════════════════════════════════════════════
+FREQ_PHI = PHI * 100  # ~161.8 Hz - Golden ratio frequency
+
+PYTHAGOREAN_WISDOM = [
+    AncestralWisdom("pythagorean", "All is Number. The universe is fundamentally mathematical.", 
+                    "quantitative_analysis", FREQ_PHI, 70.0),
+    AncestralWisdom("pythagorean", "Harmonia: Ratios create beauty in music and markets. Fibonacci retracements.", 
+                    "fibonacci_levels", FREQ_528, 65.0),
+    AncestralWisdom("pythagorean", "The Tetraktys: 1+2+3+4=10. Layered analysis reveals complete truth.", 
+                    "multi_layer_analysis", FREQ_PHI, 60.0),
+    AncestralWisdom("pythagorean", "φ = 1.618033... The Golden Ratio appears everywhere. Trust its levels.", 
+                    "golden_ratio", FREQ_PHI, 75.0),
+    AncestralWisdom("pythagorean", "The octave (2:1), fifth (3:2), fourth (4:3)—simple ratios create harmony.", 
+                    "harmonic_patterns", FREQ_639, 65.0),
+    AncestralWisdom("pythagorean", "Perfect numbers: 6, 28, 496. Some numbers carry special power.", 
+                    "sacred_numbers", FREQ_741, 60.0),
+    AncestralWisdom("pythagorean", "The sphere is the most perfect form. Mean reversion seeks equilibrium.", 
+                    "mean_reversion", FREQ_528, 55.0),
+    AncestralWisdom("pythagorean", "Music of the spheres: Planetary bodies create cosmic frequencies.", 
+                    "cosmic_cycles", FREQ_852, 70.0),
+    AncestralWisdom("pythagorean", "1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144... Nature's count is your guide.", 
+                    "fibonacci_sequence", FREQ_PHI, 70.0),
+]
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# GHOST DANCE WISDOM - Ancestral Invocation, Ceremony, Resistance (741/528/417 Hz)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+GHOST_DANCE_WISDOM = [
+    AncestralWisdom("ghost_dance", "Invoke the ancestors to restore balance. Historical patterns counter manipulation.", 
+                    "pattern_analysis", FREQ_741, 70.0),
+    AncestralWisdom("ghost_dance", "The circle dance creates energy. Coordinated action amplifies power.", 
+                    "momentum_building", FREQ_528, 60.0),
+    AncestralWisdom("ghost_dance", "Wovoka's vision: The world will be restored. Decentralized freedom approaches.", 
+                    "mission_reminder", FREQ_852, 75.0),
+    AncestralWisdom("ghost_dance", "Full moon ceremonies mark validation windows. Respect the 29.5-day cycle.", 
+                    "lunar_cycle", SCHUMANN_FUNDAMENTAL, 65.0),
+    AncestralWisdom("ghost_dance", "Four directions, four validations. North=wisdom, East=vision, South=growth, West=reflection.", 
+                    "four_pass_validation", FREQ_639, 70.0),
+    AncestralWisdom("ghost_dance", "White Buffalo returns in chaos. Black swan = transformation opportunity.", 
+                    "black_swan_opportunity", FREQ_417, 65.0),
+    AncestralWisdom("ghost_dance", "Never extinguish the sacred fire. Preserve base liquidity always.", 
+                    "capital_preservation", FREQ_528, 80.0),
+    AncestralWisdom("ghost_dance", "Grandmother Spirit: Patience, the antidote to overtrading.", 
+                    "overtrading_warning", FREQ_417, 55.0),
+]
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# WARFARE WISDOM - Sun Tzu, Clausewitz, Boyd OODA (Various frequencies)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+WARFARE_WISDOM = [
+    AncestralWisdom("sun_tzu", "Know yourself, know your enemy—a hundred battles, a hundred victories.", 
+                    "self_awareness", FREQ_741, 70.0),
+    AncestralWisdom("sun_tzu", "Supreme excellence: winning without fighting. Profits without excessive risk.", 
+                    "risk_reward", FREQ_639, 65.0),
+    AncestralWisdom("sun_tzu", "All warfare is deception. Markets deceive—expect it, profit from it.", 
+                    "market_deception", FREQ_417, 60.0),
+    AncestralWisdom("sun_tzu", "Be formless like water. Adapt to market conditions.", 
+                    "adaptability", FREQ_528, 55.0),
+    AncestralWisdom("clausewitz", "Friction: The fog of war. Build margins for the unexpected.", 
+                    "risk_buffer", FREQ_396, 65.0),
+    AncestralWisdom("clausewitz", "Find the center of gravity. Strike where impact is maximum.", 
+                    "key_level", FREQ_741, 70.0),
+    AncestralWisdom("clausewitz", "The culminating point: Know when to consolidate gains.", 
+                    "profit_taking", FREQ_639, 60.0),
+    AncestralWisdom("boyd", "OODA: Observe→Orient→Decide→Act. Faster cycles defeat slower opponents.", 
+                    "speed_advantage", FREQ_852, 75.0),
+    AncestralWisdom("liddell_hart", "The indirect approach: Attack weakness, avoid strength.", 
+                    "market_inefficiency", FREQ_528, 65.0),
+]
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# COMBINED WISDOM - All Civilizations United
+# ═══════════════════════════════════════════════════════════════════════════════
+
+ALL_WISDOM = (
+    MOGOLLON_WISDOM + 
+    IRISH_WISDOM + 
+    EGYPTIAN_WISDOM +
+    CELTIC_WISDOM +
+    MAYAN_WISDOM +
+    CHINESE_WISDOM +
+    HINDU_WISDOM +
+    NORSE_WISDOM +
+    PYTHAGOREAN_WISDOM +
+    GHOST_DANCE_WISDOM +
+    WARFARE_WISDOM +
+    UNIVERSAL_WISDOM + 
+    GARY_WISDOM
+)
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -412,23 +666,76 @@ class QueenConsciousnessMeasurement:
             metrics = self.measure_consciousness()
             
         env = self.environment_history[-1] if self.environment_history else self.sense_environment()
+        context_lower = context.lower()
+        
+        # Context keyword expansion for better matching
+        context_keywords = {
+            'balance': ['balance', 'equilibrium', 'harmony', 'seeking_balance', 'convergence'],
+            'loss': ['loss', 'after_loss', 'drawdown', 'learning_from_loss', 'failure', 'after_failure'],
+            'cycle': ['cycle', 'long_cycle', 'cycle_analysis', 'seasonal_cycle', 'lunar_cycle', 'multi_timeframe'],
+            'trend': ['trend', 'trend_following', 'strong_trend', 'momentum', 'direction'],
+            'profit': ['profit', 'profit_taking', 'harvest', 'capital_growth'],
+            'risk': ['risk', 'risk_management', 'risk_reward', 'capital_preservation', 'risk_buffer'],
+            'fibonacci': ['fibonacci', 'fibonacci_levels', 'fibonacci_sequence', 'golden_ratio', 'harmonic'],
+            'pattern': ['pattern', 'pattern_recognition', 'pattern_analysis', 'fractal_pattern', 'seeking_pattern'],
+            'volatility': ['volatility', 'high_volatility', 'high_volatility_season', 'turbulent', 'black_swan'],
+            'discipline': ['discipline', 'process_focus', 'consistency', 'dharma'],
+            'timing': ['timing', 'timing_decision', 'timing_window', 'seasonal', 'early_trend'],
+            'opportunity': ['opportunity', 'hunting_opportunity', 'overlooked_opportunity', 'high_confidence_opportunity', 'contrarian_opportunity'],
+            'deception': ['deception', 'market_deception', 'noise_filtering', 'maya'],
+            'adaptation': ['adaptation', 'adaptability', 'regime_change', 'resistance_to_change'],
+            'patience': ['patience', 'wait', 'consolidation', 'sideways_market', 'overtrading_warning'],
+        }
+        
+        # Expand context with related keywords
+        expanded_context = set([context_lower])
+        for key, values in context_keywords.items():
+            if key in context_lower or context_lower in values:
+                expanded_context.update(values)
         
         candidates = []
         for wisdom in ALL_WISDOM:
-            if wisdom.context != "any" and wisdom.context not in context.lower():
+            # Check if wisdom context matches expanded context
+            context_match = (
+                wisdom.context == "any" or 
+                wisdom.context in expanded_context or
+                any(kw in wisdom.context for kw in expanded_context)
+            )
+            
+            if not context_match:
                 continue
             if metrics.awakening_index < wisdom.activation_threshold:
                 continue
                 
-            priority = 2.0 if wisdom.source == env.active_lineage else 1.5 if wisdom.source in ["gary", "universal"] else 1.0
+            # Base priority
+            priority = 1.0
+            
+            # Lineage bonus
+            if wisdom.source == env.active_lineage:
+                priority *= 2.0
+            elif wisdom.source in ["gary", "universal"]:
+                priority *= 1.2  # Reduced from 1.5
+            
+            # Frequency resonance matching
             freq_match = 1.0 - abs(wisdom.resonance_frequency - env.schumann_resonance * 50) / 500
-            candidates.append((wisdom, priority * freq_match))
+            
+            # IMPORTANT: Penalize "any" context when we have specific context
+            if wisdom.context == "any" and context_lower not in ["any", "general", ""]:
+                priority *= 0.3  # Strong penalty for generic wisdom when seeking specific
+            
+            # Exact context match bonus
+            if wisdom.context == context_lower:
+                priority *= 2.0
+            elif wisdom.context in expanded_context:
+                priority *= 1.5
+            
+            candidates.append((wisdom, priority * max(0.1, freq_match)))
             
         if not candidates:
             return GARY_WISDOM[0]
             
         candidates.sort(key=lambda x: x[1], reverse=True)
-        top_n = min(3, len(candidates))
+        top_n = min(5, len(candidates))
         selected = random.choices([c[0] for c in candidates[:top_n]], 
                                   weights=[c[1] for c in candidates[:top_n]])[0]
         
