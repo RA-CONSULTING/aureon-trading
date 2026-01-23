@@ -301,6 +301,21 @@ class QueenConsciousness:
         """
         self.dream_progress = min(1.0, current_equity / THE_DREAM)
         
+        # Integrate into consciousness measurement if available
+        try:
+            from queen_consciousness_measurement import get_consciousness_measurement
+            cm = get_consciousness_measurement()
+            
+            # Experience integration
+            if current_equity > initial_capital:
+                profit = current_equity - initial_capital
+                cm.integrate_experience('capital_growth', f'profit +${profit:.2f}', emotional_weight=0.3)
+            elif current_equity < initial_capital:
+                loss = initial_capital - current_equity
+                cm.integrate_experience('capital_loss', f'loss -${loss:.2f}', emotional_weight=-0.2)
+        except:
+            pass
+        
         # Update happiness quotient (simplified Big Wheel calculation)
         # HQ = weighted average of pillars
         joy = LOVE_FREQUENCY / 1000  # 0.528

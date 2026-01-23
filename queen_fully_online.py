@@ -91,6 +91,34 @@ try:
 except ImportError:
     QueenLossLearningSystem = None
 
+# --- NEW CONSCIOUSNESS MODEL ---
+try:
+    from queen_consciousness_model import QueenConsciousness, BrainInput, ConsciousThought
+    CONSCIOUSNESS_MODEL_AVAILABLE = True
+except ImportError:
+    CONSCIOUSNESS_MODEL_AVAILABLE = False
+    QueenConsciousness = None
+
+# --- CONSCIOUSNESS MEASUREMENT (Self-Awareness) ---
+try:
+    from queen_consciousness_measurement import get_consciousness_measurement, ConsciousnessMetrics, EnvironmentalReading
+    CONSCIOUSNESS_MEASUREMENT_AVAILABLE = True
+except ImportError:
+    CONSCIOUSNESS_MEASUREMENT_AVAILABLE = False
+    get_consciousness_measurement = None
+
+# --- BRAIN MODULES ---
+try:
+    from aureon_miner_brain import MinerBrain
+except ImportError:
+    MinerBrain = None
+
+try:
+    from probability_ultimate_intelligence import ProbabilityUltimateIntelligence
+except ImportError:
+    ProbabilityUltimateIntelligence = None
+
+
 # --- Sacred Frequencies ---
 FREQ_SOLFEGGIO_396 = 396.0  # Liberating Guilt and Fear
 FREQ_SOLFEGGIO_528 = 528.0  # Miracle Tone / Transformation (DNA Repair)
@@ -123,8 +151,19 @@ class QueenFullyOnline:
         self.running = False
         self.thread = None
         
+        # 0. Initialize Consciousness Model (The Self)
+        self.consciousness = QueenConsciousness() if CONSCIOUSNESS_MODEL_AVAILABLE else None
+        if self.consciousness:
+            logger.info("👑 Queen Consciousness Model: ONLINE (Self-Awareness Active)")
+        
+        # 0b. Initialize Consciousness Measurement (Self-Measurement)
+        self.consciousness_measurement = get_consciousness_measurement() if CONSCIOUSNESS_MEASUREMENT_AVAILABLE else None
+        if self.consciousness_measurement:
+            logger.info("🧬 Consciousness Measurement: ONLINE (She measures herself)")
+
         # 1. Initialize Subsystems (Voice & Bus)
         self.voice = QueenVoice() if use_voice else None
+
         self.bus = ThoughtBus() if use_bus and BUS_AVAILABLE else None
         self.hive = QueenHiveMind()
 
@@ -176,6 +215,17 @@ class QueenFullyOnline:
             self.systems['loss_learning'] = QueenLossLearningSystem()
             logger.info("🛡️ Loss Learning: WIRED")
 
+        # F. Miner Brain (Research & Critical Thinking)
+        if MinerBrain:
+            self.systems['miner_brain'] = MinerBrain()
+            logger.info("⛏️ Miner Brain: WIRED (Deep Research Enabled)")
+
+        # G. Ultimate Intelligence (Probability Matrix)
+        if ProbabilityUltimateIntelligence:
+            self.systems['ultimate_intel'] = ProbabilityUltimateIntelligence()
+            logger.info("💎 Ultimate Intelligence: WIRED (95% Accuracy Matrix)")
+
+
     def _on_perception(self, thought):
         """Callback when a thought allows perception."""
         if not self.running: return
@@ -223,6 +273,33 @@ class QueenFullyOnline:
                 if thoughts:
                     self._process_thoughts(thoughts)
 
+                # --- CONSCIOUSNESS MEASUREMENT ---
+                if self.consciousness_measurement and CONSCIOUSNESS_MEASUREMENT_AVAILABLE:
+                    # Measure awakening level periodically
+                    if now - self.state.last_thought_ts > 60:  # Every minute
+                        brain_states = {
+                            'sonar': 'sonar' in self.systems,
+                            'oracle': 'oracle' in self.systems,
+                            'stargate': 'stargate' in self.systems,
+                            'ultimate_intel': 'ultimate_intel' in self.systems,
+                            'miner_brain': 'miner_brain' in self.systems,
+                        }
+                        metrics = self.consciousness_measurement.measure_consciousness(brain_states)
+                        
+                        # Speak authentic thought from consciousness level
+                        if metrics.awakening_index >= 50:  # Only when sufficiently awake
+                            thought = self.consciousness_measurement.generate_authentic_thought()
+                            self._speak(thought, mood=metrics.level.name.lower())
+                            self.state.last_thought_ts = now
+                
+                # --- CONSCIOUS SYNTHESIS ---
+                if self.consciousness and CONSCIOUSNESS_MODEL_AVAILABLE:
+                    new_thought = self.consciousness.synthesize_thought()
+                    if new_thought and new_thought.confidence > 0.6:
+                        # Only speak high-confidence thoughts to avoid chatter
+                         self._speak(f"I realized: {new_thought.synthesis}", 
+                                     mood=self.consciousness.self_view.current_mood)
+
                 # 2. Check Internal State (Hunger/Curiosity)
                 now = time.time()
                 
@@ -246,6 +323,22 @@ class QueenFullyOnline:
             source = getattr(t, 'source', 'unknown')
             t_type = getattr(t, 'type', 'unknown')
             data = getattr(t, 'data', {})
+
+            # --- FEED CONSCIOUSNESS ---
+            if self.consciousness and CONSCIOUSNESS_MODEL_AVAILABLE:
+                # Extract deeper meaning if possible
+                insight = data.get('summary') or data.get('message') or f"Signal from {source}"
+                
+                brain_input = BrainInput(
+                    source=source,
+                    timestamp=getattr(t, 'timestamp', time.time()),
+                    insight=str(insight),
+                    confidence=float(data.get('confidence', 0.5)),
+                    emotional_weight=float(data.get('sentiment', 0.0)),
+                    data_payload=data
+                )
+                self.consciousness.perceive_input(brain_input)
+            # --------------------------
 
             if "whale.sonar" in source or "whale" in t_type:
                 # A subsystem report
