@@ -614,6 +614,35 @@ class KrakenClient:
         else:
             raise ValueError("Must provide quantity or quote_qty")
         
+        # ✅ BALANCE CHECK - Prevent "Insufficient funds" error
+        try:
+            balances = self.get_balance()
+            base_currency = pair_info.get("base", "").replace("X", "").replace("Z", "")
+            quote_currency = pair_info.get("quote", "").replace("X", "").replace("Z", "")
+            
+            # Map common Kraken currency codes
+            if quote_currency == "USD": quote_currency = "USD"
+            if base_currency == "BT": base_currency = "BTC"
+            if base_currency == "XBT": base_currency = "BTC"
+            
+            if side.lower() == 'buy':
+                # Check if we have enough quote currency to buy
+                required_quote = vol * float(price_info.get("price", 0)) * 1.01  # Add 1% buffer for fees
+                available_quote = balances.get(quote_currency, 0)
+                if available_quote < required_quote:
+                    raise RuntimeError(f"EOrder:Insufficient funds to buy {vol:.8f} {base_currency}. Need {required_quote:.2f} {quote_currency}, have {available_quote:.2f}")
+            elif side.lower() == 'sell':
+                # Check if we have enough base currency to sell
+                available_base = balances.get(base_currency, 0)
+                if available_base < vol:
+                    raise RuntimeError(f"EOrder:Insufficient funds to sell {vol:.8f} {base_currency}. Have {available_base:.8f}")
+        except Exception as balance_check_err:
+            # If balance check fails for any reason, log but don't block (could be API issue)
+            print(f"   ⚠️ Balance check warning: {balance_check_err}")
+            # Re-raise if it's an insufficient funds error
+            if "Insufficient funds" in str(balance_check_err):
+                raise
+        
         # Round to lot_decimals
         vol = round(vol, lot_decimals)
         

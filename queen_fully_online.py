@@ -117,6 +117,22 @@ except ImportError:
     CONSCIOUSNESS_MEASUREMENT_AVAILABLE = False
     get_consciousness_measurement = None
 
+# --- CONSCIENCE (The Jiminy Cricket) ---
+try:
+    from queen_conscience import get_conscience, QueenConscience, ConscienceVerdict
+    CONSCIENCE_AVAILABLE = True
+except ImportError:
+    CONSCIENCE_AVAILABLE = False
+    get_conscience = None
+
+# --- WORLD UNDERSTANDING (Her Reality Context) ---
+try:
+    from queen_world_understanding import get_world_understanding, QueensWorldUnderstanding
+    WORLD_UNDERSTANDING_AVAILABLE = True
+except ImportError:
+    WORLD_UNDERSTANDING_AVAILABLE = False
+    get_world_understanding = None
+
 # --- BRAIN MODULES ---
 try:
     from aureon_miner_brain import MinerBrain
@@ -157,7 +173,7 @@ class QueenFullyOnline:
     Integrates Perception (Bus), Knowledge (Wiki/Hive), and Expression (Voice/Action).
     """
 
-    def __init__(self, use_voice=True, use_bus=True):
+    def __init__(self, use_voice=True, use_bus=True, conscience=None, world_understanding=None):
         self.state = ConsciousnessState()
         self.running = False
         self.thread = None
@@ -171,6 +187,16 @@ class QueenFullyOnline:
         self.consciousness_measurement = get_consciousness_measurement() if CONSCIOUSNESS_MEASUREMENT_AVAILABLE else None
         if self.consciousness_measurement:
             logger.info("🧬 Consciousness Measurement: ONLINE (She measures herself)")
+        
+        # 0c. Initialize Conscience (The Jiminy Cricket)
+        self.conscience = conscience if conscience is not None else (get_conscience() if CONSCIENCE_AVAILABLE else None)
+        if self.conscience:
+            logger.info("🦗 Jiminy Cricket: ONLINE (Her conscience guides her)")
+        
+        # 0d. Initialize World Understanding (Her Reality)
+        self.world_understanding = world_understanding if world_understanding is not None else (get_world_understanding() if WORLD_UNDERSTANDING_AVAILABLE else None)
+        if self.world_understanding:
+            logger.info("🌍 World Understanding: ONLINE (She knows her reality)")
 
         # 1. Initialize Subsystems (Voice & Bus)
         self.voice = QueenVoice() if use_voice else None
@@ -285,6 +311,8 @@ class QueenFullyOnline:
         
         while self.running:
             try:
+                now = time.time()
+                
                 # 1. Process Perceptions (Inputs)
                 thoughts = []
                 while not self.perception_queue.empty():
@@ -326,11 +354,19 @@ class QueenFullyOnline:
                                      mood=self.consciousness.self_view.current_mood)
 
                 # 2. Check Internal State (Hunger/Curiosity)
-                now = time.time()
                 
                 # 3. Speak occasionally if silence is too long (Idle chatter / Wisdom)
                 if now - last_speech_time > 60: # Every minute of silence
-                    self._express_random_wisdom_or_status()
+                    # Ask the conscience for a reminder (enhanced with world context)
+                    if self.conscience:
+                        reminder = self.conscience.remind_purpose()
+                        self._speak(reminder, mood="reflective")
+                    elif self.world_understanding:
+                        # Fallback to world lesson if conscience not available
+                        world_lesson = self.world_understanding.get_random_lesson()
+                        self._speak(world_lesson, mood="determined")
+                    else:
+                        self._express_random_wisdom_or_status()
                     last_speech_time = now
                 
                 # 4. Harmonic Alignment (Heartbeat)
@@ -429,20 +465,28 @@ class QueenFullyOnline:
         chosen = random.choice(topics)
         self._speak(chosen)
 
-    def _speak(self, text):
+    def _speak(self, text, mood="neutral"):
         """Vocalize text (and log it)."""
         logger.info(f"QUEEN SPEAKS: {text}")
         if self.voice:
             try:
-                self.voice.speak(text)
+                self.voice.speak(text, mood=mood)
             except Exception as e:
                 logger.error(f"Voice failure: {e}")
         else:
             print(f">>> [QUEEN]: {text}")
 
-    def inject_context(self, context_key, context_value):
-        """Allow external scripts to inject knowledge into the Queen."""
-        self.state.market_context[context_key] = context_value
+    def get_world_context(self) -> str:
+        """Get the Queen's understanding of her world"""
+        if self.world_understanding:
+            return self.world_understanding.get_world_context()
+        return "World understanding not available."
+    
+    def get_turtle_metaphor(self) -> str:
+        """Get the turtle emerging from the beach metaphor"""
+        if self.world_understanding:
+            return self.world_understanding.get_turtle_metaphor()
+        return "Turtle metaphor not available."
 
 # --- Singleton Instantiation ---
 # Use this in other scripts: `from queen_fully_online import awaken_queen`
