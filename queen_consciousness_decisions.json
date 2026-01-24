@@ -1,0 +1,149 @@
+[
+  {
+    "timestamp": 1769293123.033632,
+    "node_id": "BIN-ENSO",
+    "symbol": "ENSOUSDT",
+    "relay": "BIN",
+    "action": "harvest",
+    "amount": 4.831774461043293,
+    "confidence": 0.85,
+    "consensus": 5,
+    "executed": true,
+    "result": "[DRY RUN] Harvested $4.83",
+    "questions": [
+      "Is BIN-ENSO truly at the state all realms perceive?",
+      "Am I certain this is the right action?",
+      "What could go wrong?"
+    ],
+    "realm_votes": [
+      {
+        "realm": "\u26a1 POWER STATION",
+        "action": "harvest",
+        "confidence": 0.95,
+        "interpretation": "Generator"
+      },
+      {
+        "realm": "\ud83d\udcb0 LIVING ECONOMY",
+        "action": "harvest",
+        "confidence": 0.9,
+        "interpretation": "Profitable Asset"
+      },
+      {
+        "realm": "\ud83c\udf0a HARMONIC WAVEFORM",
+        "action": "harvest",
+        "confidence": 0.85,
+        "interpretation": "Peak Resonator"
+      },
+      {
+        "realm": "\ud83c\udf0c QUANTUM FIELD",
+        "action": "harvest",
+        "confidence": 0.8,
+        "interpretation": "Favorable State"
+      },
+      {
+        "realm": "\ud83c\udf44 MYCELIUM NETWORK",
+        "action": "harvest",
+        "confidence": 0.75,
+        "interpretation": "Fruiting Body"
+      }
+    ]
+  },
+  {
+    "timestamp": 1769293141.1773868,
+    "node_id": "BIN-ENSO",
+    "symbol": "ENSOUSDT",
+    "relay": "BIN",
+    "action": "harvest",
+    "amount": 4.839711913293294,
+    "confidence": 0.85,
+    "consensus": 5,
+    "executed": true,
+    "result": "[DRY RUN] Harvested $4.84",
+    "questions": [
+      "Is BIN-ENSO truly at the state all realms perceive?",
+      "Am I certain this is the right action?",
+      "What could go wrong?"
+    ],
+    "realm_votes": [
+      {
+        "realm": "\u26a1 POWER STATION",
+        "action": "harvest",
+        "confidence": 0.95,
+        "interpretation": "Generator"
+      },
+      {
+        "realm": "\ud83d\udcb0 LIVING ECONOMY",
+        "action": "harvest",
+        "confidence": 0.9,
+        "interpretation": "Profitable Asset"
+      },
+      {
+        "realm": "\ud83c\udf0a HARMONIC WAVEFORM",
+        "action": "harvest",
+        "confidence": 0.85,
+        "interpretation": "Peak Resonator"
+      },
+      {
+        "realm": "\ud83c\udf0c QUANTUM FIELD",
+        "action": "harvest",
+        "confidence": 0.8,
+        "interpretation": "Favorable State"
+      },
+      {
+        "realm": "\ud83c\udf44 MYCELIUM NETWORK",
+        "action": "harvest",
+        "confidence": 0.75,
+        "interpretation": "Fruiting Body"
+      }
+    ]
+  },
+  {
+    "timestamp": 1769293162.5229614,
+    "node_id": "BIN-0G",
+    "symbol": "0GUSDT",
+    "relay": "BIN",
+    "action": "harvest",
+    "amount": 1.001424511943097,
+    "confidence": 0.7545284592549654,
+    "consensus": 5,
+    "executed": true,
+    "result": "[DRY RUN] Harvested $1.00",
+    "questions": [
+      "Is BIN-0G truly at the state all realms perceive?",
+      "Am I certain this is the right action?",
+      "What could go wrong?"
+    ],
+    "realm_votes": [
+      {
+        "realm": "\u26a1 POWER STATION",
+        "action": "harvest",
+        "confidence": 0.7222149426918977,
+        "interpretation": "Generator"
+      },
+      {
+        "realm": "\ud83d\udcb0 LIVING ECONOMY",
+        "action": "harvest",
+        "confidence": 0.8002849023886194,
+        "interpretation": "Profitable Asset"
+      },
+      {
+        "realm": "\ud83c\udf0a HARMONIC WAVEFORM",
+        "action": "harvest",
+        "confidence": 0.85,
+        "interpretation": "Peak Resonator"
+      },
+      {
+        "realm": "\ud83c\udf0c QUANTUM FIELD",
+        "action": "harvest",
+        "confidence": 0.8,
+        "interpretation": "Favorable State"
+      },
+      {
+        "realm": "\ud83c\udf44 MYCELIUM NETWORK",
+        "action": "harvest",
+        "confidence": 0.6001424511943096,
+        "interpretation": "Fruiting Body"
+      }
+    ]
+  }
+]

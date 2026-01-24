@@ -1,0 +1,14 @@
+{
+  "date": "2026-01-24",
+  "cycles_completed": 6,
+  "decisions_made": 3,
+  "harvests_executed": 3,
+  "deploys_executed": 0,
+  "total_harvested_usd": 10.672910886279684,
+  "total_deployed_usd": 0.0,
+  "consecutive_failures": 0,
+  "is_paused": false,
+  "pause_reason": "",
+  "starting_field_value": 456.362795869983,
+  "current_field_value": 456.9378945450477
+}
