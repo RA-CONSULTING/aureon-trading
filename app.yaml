@@ -50,6 +50,19 @@ services:
   - key: AUREON_ENABLE_AUTONOMOUS_CONTROL
     scope: RUN_TIME
     value: "1"
+  # 🔥 LIVE TRADING MODE - Set to 1 for real trades
+  - key: LIVE
+    scope: RUN_TIME
+    value: "1"
+  - key: KRAKEN_DRY_RUN
+    scope: RUN_TIME
+    value: "false"
+  - key: BINANCE_DRY_RUN
+    scope: RUN_TIME
+    value: "false"
+  - key: ALPACA_DRY_RUN
+    scope: RUN_TIME
+    value: "false"
 
 # 👑 The Queen's Autonomous Engine 👑
 # This is the core brain, running all 9 autonomous loops.
@@ -96,6 +109,19 @@ services:
   - key: AUREON_ENABLE_AUTONOMOUS_CONTROL
     scope: RUN_TIME
     value: "1"
+  # 🔥 LIVE TRADING MODE - Set to 1 for real trades
+  - key: LIVE
+    scope: RUN_TIME
+    value: "1"
+  - key: KRAKEN_DRY_RUN
+    scope: RUN_TIME
+    value: "false"
+  - key: BINANCE_DRY_RUN
+    scope: RUN_TIME
+    value: "false"
+  - key: ALPACA_DRY_RUN
+    scope: RUN_TIME
+    value: "false"
 
 # 🧠 Centralized Brain/Nervous System 🧠
 # Redis is used for the ThoughtBus Pub/Sub to connect all services.

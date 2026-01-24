@@ -2789,8 +2789,10 @@ class OrcaKillCycle:
         self.queen_validator = None
         if QUEEN_VALIDATOR_AVAILABLE and QueenValidatedTrader and not quick_init:
             try:
-                self.queen_validator = QueenValidatedTrader(dry_run=True)  # Initialize in dry-run mode
-                print("👑🍄 Queen Validated Trader: WIRED! (100% accuracy validation)")
+                # Check LIVE mode from environment
+                is_live = os.getenv('LIVE', '0') == '1'
+                self.queen_validator = QueenValidatedTrader(dry_run=not is_live)
+                print(f"👑🍄 Queen Validated Trader: WIRED! ({'🔥 LIVE' if is_live else '🧪 DRY-RUN'})")
             except Exception as e:
                 print(f"👑 Queen Validator: {e}")
         
@@ -3215,8 +3217,9 @@ class OrcaKillCycle:
         self.global_orchestrator = None
         if GLOBAL_ORCHESTRATOR_AVAILABLE:
             try:
-                self.global_orchestrator = GlobalAureonOrchestrator(dry_run=True)
-                print("🌍 Global Orchestrator: WIRED!")
+                is_live = os.getenv('LIVE', '0') == '1'
+                self.global_orchestrator = GlobalAureonOrchestrator(dry_run=not is_live)
+                print(f"🌍 Global Orchestrator: WIRED! ({'🔥 LIVE' if is_live else '🧪 DRY-RUN'})")
             except Exception:
                 pass
         
@@ -3404,8 +3407,9 @@ class OrcaKillCycle:
         self.neural_revenue = None
         if NEURAL_REVENUE_AVAILABLE:
             try:
-                self.neural_revenue = NeuralRevenueOrchestrator(dry_run=True)
-                print("🌍🔗 Neural Revenue Orchestrator: WIRED! (Energy reclamation)")
+                is_live = os.getenv('LIVE', '0') == '1'
+                self.neural_revenue = NeuralRevenueOrchestrator(dry_run=not is_live)
+                print(f"🌍🔗 Neural Revenue Orchestrator: WIRED! ({'🔥 LIVE' if is_live else '🧪 DRY-RUN'})")
             except Exception:
                 pass
         
@@ -9516,8 +9520,9 @@ class OrcaKillCycle:
         global_orchestrator = None
         if GLOBAL_ORCHESTRATOR_AVAILABLE:
             try:
-                global_orchestrator = GlobalAureonOrchestrator(dry_run=True)
-                print("🌍 Global Orchestrator initialized - Master control active")
+                is_live = os.getenv('LIVE', '0') == '1'
+                global_orchestrator = GlobalAureonOrchestrator(dry_run=not is_live)
+                print(f"🌍 Global Orchestrator initialized - {'🔥 LIVE' if is_live else '🧪 DRY-RUN'}")
             except Exception as e:
                 print(f"⚠️ Global Orchestrator initialization failed: {e}")
                 global_orchestrator = None
@@ -9743,8 +9748,9 @@ class OrcaKillCycle:
         neural_revenue = None
         if NEURAL_REVENUE_AVAILABLE:
             try:
-                neural_revenue = NeuralRevenueOrchestrator(dry_run=True)
-                print("🌍🔗 Neural Revenue Orchestrator initialized - Energy reclamation active")
+                is_live = os.getenv('LIVE', '0') == '1'
+                neural_revenue = NeuralRevenueOrchestrator(dry_run=not is_live)
+                print(f"🌍🔗 Neural Revenue Orchestrator initialized - {'🔥 LIVE' if is_live else '🧪 DRY-RUN'}")
             except Exception as e:
                 print(f"⚠️ Neural Revenue Orchestrator initialization failed: {e}")
                 neural_revenue = None
