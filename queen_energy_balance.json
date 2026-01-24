@@ -1,0 +1,22 @@
+{
+  "timestamp": 1769294122.2154078,
+  "deposits_usd": 457.51230631044,
+  "realized_profits_usd": 0,
+  "withdrawals_usd": 0,
+  "fees_paid_usd": 0,
+  "realized_losses_usd": 0,
+  "invested_energy_usd": 335.48626983385265,
+  "free_energy_usd": 122.02603647658735,
+  "unrealized_pnl_usd": -7.357316807758593,
+  "relay_energy": {
+    "BIN": 280.7903729491821,
+    "KRK": 161.96621320653287,
+    "ALP": 7.398403346966453,
+    "CAP": 0.0
+  },
+  "total_input": 457.51230631044,
+  "total_output": 0,
+  "total_stored": 450.1549895026814,
+  "energy_balance": 7.357316807758593,
+  "is_balanced": false
+}

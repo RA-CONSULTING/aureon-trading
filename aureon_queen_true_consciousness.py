@@ -102,6 +102,18 @@ except ImportError:
     BINANCE_AVAILABLE = False
 
 try:
+    from kraken_client import KrakenClient
+    KRAKEN_AVAILABLE = True
+except ImportError:
+    KRAKEN_AVAILABLE = False
+
+try:
+    from alpaca_client import AlpacaClient
+    ALPACA_AVAILABLE = True
+except ImportError:
+    ALPACA_AVAILABLE = False
+
+try:
     from aureon_micro_momentum_goal import MicroMomentumScanner
     MOMENTUM_SCANNER_AVAILABLE = True
 except ImportError:
@@ -220,6 +232,67 @@ class RiskLimits:
     max_consecutive_failures: int = 5     # Pause after 5 failures
     min_free_energy_pct: float = 0.10     # Keep 10% as free energy
     max_single_deploy_pct: float = 0.05   # Max 5% per new deployment
+
+
+@dataclass
+class EnergyBalance:
+    """
+    ⚡ ENERGY CONSERVATION TRACKING
+    
+    Ensures NO energy is lost through the system.
+    Total energy in = Total energy out + stored energy
+    
+    Like a power station, we track:
+    - Input: What came in (deposits, profits)
+    - Output: What went out (withdrawals, fees, losses)
+    - Stored: What's still in the system
+    - Balance: Must equal zero (conservation law)
+    """
+    timestamp: float
+    
+    # Energy inputs
+    deposits_usd: float = 0.0
+    realized_profits_usd: float = 0.0
+    
+    # Energy outputs  
+    withdrawals_usd: float = 0.0
+    fees_paid_usd: float = 0.0
+    realized_losses_usd: float = 0.0
+    
+    # Stored energy (current state)
+    invested_energy_usd: float = 0.0      # In positions
+    free_energy_usd: float = 0.0          # Available cash
+    unrealized_pnl_usd: float = 0.0       # Paper gains/losses
+    
+    # Relay breakdown
+    relay_energy: Dict[str, float] = None  # Energy per relay
+    
+    # Conservation check
+    @property
+    def total_input(self) -> float:
+        return self.deposits_usd + self.realized_profits_usd
+    
+    @property
+    def total_output(self) -> float:
+        return self.withdrawals_usd + self.fees_paid_usd + self.realized_losses_usd
+    
+    @property
+    def total_stored(self) -> float:
+        return self.invested_energy_usd + self.free_energy_usd + self.unrealized_pnl_usd
+    
+    @property
+    def energy_balance(self) -> float:
+        """Should be ~0 if energy is conserved (input - output - stored)"""
+        return self.total_input - self.total_output - self.total_stored
+    
+    @property
+    def is_balanced(self) -> bool:
+        """Check if energy is conserved (within tolerance)"""
+        return abs(self.energy_balance) < 0.01  # $0.01 tolerance
+    
+    def __post_init__(self):
+        if self.relay_energy is None:
+            self.relay_energy = {}
 
 
 # ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════
@@ -369,91 +442,437 @@ class QueenTrueConsciousnessController:
     # ═══════════════════════════════════════════════════════════════════════════════════════════════════════════
     
     def _init_opportunity_detection(self):
-        """Initialize opportunity detection systems"""
-        # Default watchlist - high volume, tradeable pairs
-        self.opportunity_watchlist = [
-            'BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'BNBUSDT', 'XRPUSDT',
-            'ADAUSDT', 'DOGEUSDT', 'AVAXUSDT', 'DOTUSDT', 'LINKUSDT',
-            'MATICUSDT', 'ATOMUSDT', 'LTCUSDT', 'NEARUSDT', 'APTUSDT'
-        ]
+        """Initialize opportunity detection systems for ALL RELAYS"""
+        # Default watchlists per relay
+        self.watchlists = {
+            'BIN': [  # Binance - crypto
+                'BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'BNBUSDT', 'XRPUSDT',
+                'ADAUSDT', 'DOGEUSDT', 'AVAXUSDT', 'DOTUSDT', 'LINKUSDT',
+                'MATICUSDT', 'ATOMUSDT', 'LTCUSDT', 'NEARUSDT', 'APTUSDT'
+            ],
+            'KRK': [  # Kraken - crypto  
+                'XXBTZUSD', 'XETHZUSD', 'SOLUSD', 'XRPUSD', 'ADAUSD',
+                'DOGEUSD', 'DOTUSD', 'LINKUSD', 'ATOMUSD', 'MATICUSD'
+            ],
+            'ALP': [  # Alpaca - stocks + crypto
+                'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 'TSLA',
+                'META', 'AMD', 'SPY', 'QQQ'
+            ]
+        }
         
-        # Initialize Binance client for market scanning
+        # Initialize ALL exchange clients
+        self.exchange_clients = {}
+        
+        # Binance
         if BINANCE_AVAILABLE:
             try:
-                self.binance_client = BinanceClient()
-                self.logger.info("🔍 Opportunity detection: Binance client initialized")
+                self.exchange_clients['BIN'] = BinanceClient()
+                self.logger.info("🔍 BIN relay: Binance client initialized")
             except Exception as e:
-                self.logger.warning(f"⚠️ Could not init Binance client: {e}")
-                self.binance_client = None
+                self.logger.warning(f"⚠️ BIN relay failed: {e}")
+        
+        # Kraken
+        if KRAKEN_AVAILABLE:
+            try:
+                self.exchange_clients['KRK'] = KrakenClient()
+                self.logger.info("🔍 KRK relay: Kraken client initialized")
+            except Exception as e:
+                self.logger.warning(f"⚠️ KRK relay failed: {e}")
+        
+        # Alpaca
+        if ALPACA_AVAILABLE:
+            try:
+                self.exchange_clients['ALP'] = AlpacaClient()
+                self.logger.info("🔍 ALP relay: Alpaca client initialized")
+            except Exception as e:
+                self.logger.warning(f"⚠️ ALP relay failed: {e}")
+        
+        # Legacy compatibility
+        self.binance_client = self.exchange_clients.get('BIN')
+        self.opportunity_watchlist = self.watchlists.get('BIN', [])
+        
+        # Initialize energy balance tracking
+        self.energy_balance = self._measure_system_energy()
     
     def scan_for_opportunities(self) -> List[MarketOpportunity]:
         """
-        🔍 OPPORTUNITY DETECTION
+        🔍 MULTI-RELAY OPPORTUNITY DETECTION
         
-        Scan markets for new deployment opportunities.
-        Returns list of opportunities sorted by score.
+        Scans ALL connected relays for new deployment opportunities.
+        Returns list of opportunities sorted by score across all relays.
         """
-        opportunities = []
+        all_opportunities = []
         
-        if not self.binance_client:
+        # Scan each relay
+        for relay, client in self.exchange_clients.items():
+            try:
+                relay_opps = self._scan_relay_opportunities(relay, client)
+                all_opportunities.extend(relay_opps)
+            except Exception as e:
+                self.logger.error(f"Opportunity scan error on {relay}: {e}")
+        
+        # Sort by score descending
+        all_opportunities.sort(key=lambda x: x.opportunity_score, reverse=True)
+        self.detected_opportunities = all_opportunities[:5]  # Keep top 5 across all relays
+        self.stats.opportunities_detected += len(all_opportunities)
+        
+        return all_opportunities[:5]
+    
+    def _scan_relay_opportunities(self, relay: str, client) -> List[MarketOpportunity]:
+        """Scan a specific relay for opportunities"""
+        opportunities = []
+        watchlist = self.watchlists.get(relay, [])
+        
+        if not watchlist:
             return opportunities
         
-        try:
-            # Get 24h tickers for watchlist
-            tickers = self.binance_client.get_24h_tickers()
-            ticker_map = {t['symbol']: t for t in tickers}
-            
-            for symbol in self.opportunity_watchlist:
-                if symbol not in ticker_map:
-                    continue
-                
-                ticker = ticker_map[symbol]
-                price = float(ticker.get('lastPrice', 0))
-                change_24h = float(ticker.get('priceChangePercent', 0))
-                volume = float(ticker.get('quoteVolume', 0))
-                
-                # Skip low volume
-                if volume < 1_000_000:  # Min $1M daily volume
-                    continue
-                
-                # Skip if already have this node
-                existing_symbols = [n.get('symbol', '') for n in self.consciousness.nodes.values()]
-                if symbol in existing_symbols or symbol.replace('USDT', '/USDT') in existing_symbols:
-                    continue
-                
-                # Calculate opportunity score
-                # Higher score for: positive momentum, high volume, not overbought
-                momentum_score = min(1.0, max(0, change_24h + 10) / 20)  # -10% to +10% → 0 to 1
-                volume_score = min(1.0, volume / 100_000_000)  # $100M+ = 1.0
-                
-                # Penalize extreme moves (overbought/oversold)
-                if abs(change_24h) > 15:
-                    momentum_score *= 0.5
-                
-                opp_score = (momentum_score * 0.6 + volume_score * 0.4)
-                
-                # Only include if score > 0.5
-                if opp_score > 0.5:
-                    opportunities.append(MarketOpportunity(
-                        symbol=symbol,
-                        relay='BIN',
-                        current_price=price,
-                        momentum_1h=change_24h / 24,  # Rough estimate
-                        momentum_24h=change_24h,
-                        volume_usd=volume,
-                        opportunity_score=opp_score,
-                        reasoning=f"24h: {change_24h:+.2f}%, Vol: ${volume/1e6:.1f}M"
-                    ))
-            
-            # Sort by score descending
-            opportunities.sort(key=lambda x: x.opportunity_score, reverse=True)
-            self.detected_opportunities = opportunities[:5]  # Keep top 5
-            self.stats.opportunities_detected += len(opportunities)
-            
-        except Exception as e:
-            self.logger.error(f"Opportunity scan error: {e}")
+        # Get existing symbols to avoid duplicates
+        existing_symbols = set()
+        for n in self.consciousness.nodes.values():
+            sym = n.get('symbol', '')
+            existing_symbols.add(sym)
+            existing_symbols.add(sym.replace('/', ''))
+            existing_symbols.add(sym.replace('/USDT', 'USDT'))
         
-        return opportunities[:5]
+        if relay == 'BIN' and hasattr(client, 'get_24h_tickers'):
+            # Binance has batch ticker endpoint
+            try:
+                tickers = client.get_24h_tickers()
+                ticker_map = {t['symbol']: t for t in tickers}
+                
+                for symbol in watchlist:
+                    if symbol in existing_symbols:
+                        continue
+                    if symbol not in ticker_map:
+                        continue
+                    
+                    ticker = ticker_map[symbol]
+                    price = float(ticker.get('lastPrice', 0))
+                    change_24h = float(ticker.get('priceChangePercent', 0))
+                    volume = float(ticker.get('quoteVolume', 0))
+                    
+                    if volume < 1_000_000:  # Min $1M volume
+                        continue
+                    
+                    opp = self._score_opportunity(symbol, relay, price, change_24h, volume)
+                    if opp:
+                        opportunities.append(opp)
+            except Exception as e:
+                self.logger.warning(f"BIN ticker scan error: {e}")
+        
+        elif relay == 'KRK' and hasattr(client, 'get_ticker'):
+            # Kraken - individual tickers
+            for symbol in watchlist[:5]:  # Limit to avoid rate limits
+                if symbol in existing_symbols:
+                    continue
+                try:
+                    ticker = client.get_ticker(symbol)
+                    if ticker:
+                        price = float(ticker.get('last', ticker.get('c', [0])[0] if isinstance(ticker.get('c'), list) else 0))
+                        # Kraken doesn't give 24h change easily, estimate from open
+                        open_price = float(ticker.get('o', price))
+                        change_24h = ((price - open_price) / open_price * 100) if open_price > 0 else 0
+                        volume = float(ticker.get('v', [0, 0])[1] if isinstance(ticker.get('v'), list) else 0) * price
+                        
+                        opp = self._score_opportunity(symbol, relay, price, change_24h, volume)
+                        if opp:
+                            opportunities.append(opp)
+                except Exception:
+                    pass
+        
+        elif relay == 'ALP' and hasattr(client, 'get_latest_quote'):
+            # Alpaca - stocks
+            for symbol in watchlist[:5]:
+                if symbol in existing_symbols:
+                    continue
+                try:
+                    # Get quote and bars for momentum
+                    quote = client.get_latest_quote(symbol)
+                    if quote:
+                        price = float(quote.get('ap', quote.get('ask_price', 0)))
+                        # Would need bars for 24h change - simplified
+                        change_24h = 0  # TODO: fetch from bars
+                        volume = 10_000_000  # Assume high volume for stocks
+                        
+                        opp = self._score_opportunity(symbol, relay, price, change_24h, volume)
+                        if opp:
+                            opportunities.append(opp)
+                except Exception:
+                    pass
+        
+        return opportunities
+    
+    def _score_opportunity(self, symbol: str, relay: str, price: float, 
+                          change_24h: float, volume: float) -> Optional[MarketOpportunity]:
+        """Score an opportunity and return if it meets threshold"""
+        
+        # Calculate opportunity score
+        momentum_score = min(1.0, max(0, change_24h + 10) / 20)  # -10% to +10% → 0 to 1
+        volume_score = min(1.0, volume / 100_000_000)  # $100M+ = 1.0
+        
+        # Penalize extreme moves
+        if abs(change_24h) > 15:
+            momentum_score *= 0.5
+        
+        opp_score = (momentum_score * 0.6 + volume_score * 0.4)
+        
+        # Only return if score > 0.5
+        if opp_score > 0.5:
+            return MarketOpportunity(
+                symbol=symbol,
+                relay=relay,
+                current_price=price,
+                momentum_1h=change_24h / 24,
+                momentum_24h=change_24h,
+                volume_usd=volume,
+                opportunity_score=opp_score,
+                reasoning=f"{relay}: 24h {change_24h:+.2f}%, Vol ${volume/1e6:.1f}M"
+            )
+        return None
+    
+    # ═══════════════════════════════════════════════════════════════════════════════════════════════════════════
+    # ENERGY CONSERVATION - Ensure No Energy Lost Through The System
+    # ═══════════════════════════════════════════════════════════════════════════════════════════════════════════
+    
+    ENERGY_BALANCE_FILE = "queen_energy_balance.json"
+    
+    def _measure_system_energy(self) -> EnergyBalance:
+        """
+        ⚡ MEASURE TOTAL SYSTEM ENERGY
+        
+        Like a power station monitoring its grid:
+        - How much energy is in each relay?
+        - How much is invested vs free?
+        - Is energy being conserved (not leaking)?
+        """
+        
+        nodes = self.consciousness.nodes
+        free_energy = self.consciousness.free_energy
+        
+        # Calculate energy per relay
+        relay_energy = {}
+        for node_id, node in nodes.items():
+            relay = node.get('relay', 'UNK')
+            if relay not in relay_energy:
+                relay_energy[relay] = {'invested': 0.0, 'unrealized_pnl': 0.0}
+            relay_energy[relay]['invested'] += node.get('current_energy', 0)
+            relay_energy[relay]['unrealized_pnl'] += node.get('power', 0)
+        
+        # Add free energy per relay
+        for relay, free in free_energy.items():
+            if relay not in relay_energy:
+                relay_energy[relay] = {'invested': 0.0, 'unrealized_pnl': 0.0}
+            relay_energy[relay]['free'] = free
+        
+        # Calculate totals
+        total_invested = sum(n.get('current_energy', 0) for n in nodes.values())
+        total_free = sum(free_energy.values())
+        total_unrealized = sum(n.get('power', 0) for n in nodes.values())
+        
+        # Load historical data for deposits/withdrawals/fees
+        historical = self._load_energy_history()
+        
+        balance = EnergyBalance(
+            timestamp=time.time(),
+            deposits_usd=historical.get('deposits_usd', total_invested + total_free),  # Assume starting balance
+            realized_profits_usd=historical.get('realized_profits_usd', 0),
+            withdrawals_usd=historical.get('withdrawals_usd', 0),
+            fees_paid_usd=historical.get('fees_paid_usd', 0),
+            realized_losses_usd=historical.get('realized_losses_usd', 0),
+            invested_energy_usd=total_invested,
+            free_energy_usd=total_free,
+            unrealized_pnl_usd=total_unrealized,
+            relay_energy={r: sum(v.values()) for r, v in relay_energy.items()}
+        )
+        
+        return balance
+    
+    def _load_energy_history(self) -> Dict:
+        """Load historical energy tracking data"""
+        if os.path.exists(self.ENERGY_BALANCE_FILE):
+            try:
+                with open(self.ENERGY_BALANCE_FILE, 'r') as f:
+                    return json.load(f)
+            except:
+                pass
+        return {}
+    
+    def _save_energy_balance(self, balance: EnergyBalance):
+        """Save energy balance state"""
+        data = {
+            'timestamp': balance.timestamp,
+            'deposits_usd': balance.deposits_usd,
+            'realized_profits_usd': balance.realized_profits_usd,
+            'withdrawals_usd': balance.withdrawals_usd,
+            'fees_paid_usd': balance.fees_paid_usd,
+            'realized_losses_usd': balance.realized_losses_usd,
+            'invested_energy_usd': balance.invested_energy_usd,
+            'free_energy_usd': balance.free_energy_usd,
+            'unrealized_pnl_usd': balance.unrealized_pnl_usd,
+            'relay_energy': balance.relay_energy,
+            'total_input': balance.total_input,
+            'total_output': balance.total_output,
+            'total_stored': balance.total_stored,
+            'energy_balance': balance.energy_balance,
+            'is_balanced': balance.is_balanced
+        }
+        with open(self.ENERGY_BALANCE_FILE, 'w') as f:
+            json.dump(data, f, indent=2)
+    
+    def record_energy_flow(self, flow_type: str, amount: float, fee: float = 0.0):
+        """
+        Record an energy flow (harvest/deploy) to maintain conservation tracking.
+        
+        Args:
+            flow_type: 'harvest', 'deploy', 'fee', 'profit', 'loss'
+            amount: Amount in USD
+            fee: Fee paid (if any)
+        """
+        history = self._load_energy_history()
+        
+        if flow_type == 'harvest' or flow_type == 'profit':
+            history['realized_profits_usd'] = history.get('realized_profits_usd', 0) + amount
+        elif flow_type == 'loss':
+            history['realized_losses_usd'] = history.get('realized_losses_usd', 0) + amount
+        
+        if fee > 0:
+            history['fees_paid_usd'] = history.get('fees_paid_usd', 0) + fee
+        
+        # Save updated history
+        with open(self.ENERGY_BALANCE_FILE, 'w') as f:
+            json.dump(history, f, indent=2)
+    
+    def check_energy_conservation(self) -> Tuple[bool, str, EnergyBalance]:
+        """
+        ⚡🔍 CHECK ENERGY CONSERVATION
+        
+        Ensures no energy is being lost through the system.
+        Returns (is_conserved, message, balance)
+        """
+        
+        balance = self._measure_system_energy()
+        
+        # Check if balanced
+        if balance.is_balanced:
+            status = "✅ Energy conserved"
+        else:
+            drift = balance.energy_balance
+            if drift > 0:
+                status = f"⚠️ Energy leak: ${abs(drift):.2f} unaccounted (possible fees)"
+            else:
+                status = f"⚠️ Energy gain: ${abs(drift):.2f} unaccounted (possible deposits)"
+        
+        # Save current balance
+        self._save_energy_balance(balance)
+        
+        return balance.is_balanced, status, balance
+    
+    def display_energy_grid(self):
+        """
+        ⚡ DISPLAY ENERGY GRID STATUS
+        
+        Shows energy flow across all relays like a power station control panel.
+        """
+        
+        balance = self._measure_system_energy()
+        
+        print()
+        print("╔" + "═"*98 + "╗")
+        print("║" + "⚡ QUEEN SERO - ENERGY GRID STATUS ⚡".center(98) + "║")
+        print("╚" + "═"*98 + "╝")
+        
+        print(f"""
+  ENERGY CONSERVATION CHECK
+  ─────────────────────────────────────────────────────────────────────────────────────────────────────
+  Total Input:        ${balance.total_input:,.2f}  (deposits + realized profits)
+  Total Output:       ${balance.total_output:,.2f}  (withdrawals + fees + realized losses)  
+  Total Stored:       ${balance.total_stored:,.2f}  (invested + free + unrealized P&L)
+  ─────────────────────────────────────────────────────────────────────────────────────────────────────
+  Energy Balance:     ${balance.energy_balance:+.2f}  {'✅ CONSERVED' if balance.is_balanced else '⚠️ CHECK REQUIRED'}
+  
+  RELAY BREAKDOWN
+  ─────────────────────────────────────────────────────────────────────────────────────────────────────""")
+        
+        for relay, energy in sorted(balance.relay_energy.items()):
+            bar_len = int(min(50, energy / 10))  # Scale for display
+            bar = "█" * bar_len + "░" * (50 - bar_len)
+            status = "🟢" if energy > 0 else "🔴"
+            print(f"  {status} {relay:6} │{bar}│ ${energy:,.2f}")
+        
+        print(f"""
+  ─────────────────────────────────────────────────────────────────────────────────────────────────────
+  SUMMARY
+  ─────────────────────────────────────────────────────────────────────────────────────────────────────
+  Invested Energy:    ${balance.invested_energy_usd:,.2f}
+  Free Energy:        ${balance.free_energy_usd:,.2f}
+  Unrealized P&L:     ${balance.unrealized_pnl_usd:+,.2f}
+  Fees Paid:          ${balance.fees_paid_usd:,.2f}
+""")
+        
+        return balance
+    
+    def display_relay_status(self):
+        """
+        📡 DISPLAY RELAY CONNECTIVITY STATUS
+        
+        Shows all connected relays and their status.
+        """
+        
+        print()
+        print("╔" + "═"*98 + "╗")
+        print("║" + "📡 QUEEN SERO - MULTI-RELAY CONNECTIVITY STATUS 📡".center(98) + "║")
+        print("╚" + "═"*98 + "╝")
+        
+        print(f"""
+  CONNECTED RELAYS
+  ─────────────────────────────────────────────────────────────────────────────────────────────────────""")
+        
+        for relay, symbols in self.watchlists.items():
+            client = self.exchange_clients.get(relay)
+            if client:
+                status = "🟢 ONLINE"
+                try:
+                    # Quick health check
+                    if hasattr(client, 'get_balance'):
+                        client.get_balance()
+                    elif hasattr(client, 'fetch_balance'):
+                        pass  # ccxt style
+                except:
+                    status = "🟡 DEGRADED"
+            else:
+                status = "🔴 OFFLINE"
+            
+            watchlist_display = ', '.join(symbols[:5])
+            if len(symbols) > 5:
+                watchlist_display += f", +{len(symbols)-5} more"
+            
+            print(f"  {status} {relay:6} │ Watching: {watchlist_display}")
+        
+        print(f"""
+  ─────────────────────────────────────────────────────────────────────────────────────────────────────
+  
+  RELAY CAPABILITIES
+  ─────────────────────────────────────────────────────────────────────────────────────────────────────
+  BIN (Binance)  │ Crypto spot trading, high volume, lowest fees
+  KRK (Kraken)   │ Crypto spot trading, fiat pairs, institutional grade
+  ALP (Alpaca)   │ Stock trading, crypto, fractional shares
+  CAP (Capital)  │ CFDs, leverage trading (separate risk profile)
+  
+  Total Watchlist:   {sum(len(s) for s in self.watchlists.values())} symbols across {len(self.watchlists)} relays
+""")
+        
+        # Count nodes per relay
+        nodes = self.consciousness.nodes
+        relay_counts = {}
+        for node in nodes.values():
+            r = node.get('relay', 'UNK')
+            relay_counts[r] = relay_counts.get(r, 0) + 1
+        
+        print("  ACTIVE NODES PER RELAY")
+        print("  ─────────────────────────────────────────────────────────────────────────────────────────────────────")
+        for r, count in sorted(relay_counts.items()):
+            print(f"  {r:6} │ {count} active nodes")
+        print()
     
     # ═══════════════════════════════════════════════════════════════════════════════════════════════════════════
     # RISK MANAGEMENT - Position Sizing, Circuit Breakers, Exposure Limits
@@ -861,11 +1280,21 @@ class QueenTrueConsciousnessController:
                 decisions.append(decision)
                 self.logger.info(f"🔍 Opportunity: {opp.symbol} score={opp.opportunity_score:.2f} deploy=${deploy_amount:.2f}")
         
+        # 5. ENERGY CONSERVATION CHECK - Ensure no leaks
+        if len(decisions) > 0 or self.stats.cycles_completed % 10 == 0:  # Check every 10 cycles or on actions
+            is_conserved, status, balance = self.check_energy_conservation()
+            if not is_conserved:
+                self.logger.warning(f"⚡ {status}")
+            else:
+                self.logger.debug(f"⚡ Energy conservation verified: ${balance.total_stored:.2f} stored")
+        
         return decisions
     
     def execute_conscious_decision(self, decision: ConsciousDecision) -> ConsciousDecision:
         """
         EXECUTE A CONSCIOUS DECISION
+        
+        Now includes energy flow recording for conservation tracking.
         """
         
         self.logger.info(f"👑 ACTING: {decision.action.value} on {decision.node_id} | Consensus: {decision.consensus_count}/5")
@@ -878,6 +1307,9 @@ class QueenTrueConsciousnessController:
                 self.stats.harvests_executed += 1
                 self.stats.total_harvested_usd += decision.amount
                 self.stats.consecutive_failures = 0
+                # Record energy flow (even in dry run for tracking)
+                estimated_fee = decision.amount * 0.001  # Estimate 0.1% fee
+                self.record_energy_flow('harvest', decision.amount, fee=estimated_fee)
             else:
                 # LIVE execution
                 result = self.consciousness.harvest_surplus(decision.node_id, decision.amount)
@@ -888,6 +1320,9 @@ class QueenTrueConsciousnessController:
                     self.stats.harvests_executed += 1
                     self.stats.total_harvested_usd += decision.amount
                     self.stats.consecutive_failures = 0
+                    # Record energy flow with actual fee
+                    actual_fee = result.get('fee', decision.amount * 0.001)
+                    self.record_energy_flow('harvest', decision.amount, fee=actual_fee)
                 else:
                     decision.executed = False
                     decision.result = f"Failed: {result.get('error', 'Unknown')}"
