@@ -97,6 +97,18 @@ class AureonCapitalMobilizer:
             self.exchange_clients['kraken'] = KrakenClient()
         except Exception as e:
             print(f"⚠️  Kraken client not available: {e}")
+        
+        try:
+            from alpaca_client import AlpacaClient
+            self.exchange_clients['alpaca'] = AlpacaClient()
+        except Exception as e:
+            print(f"⚠️  Alpaca client not available: {e}")
+        
+        try:
+            from capital_client import CapitalClient
+            self.exchange_clients['capital'] = CapitalClient()
+        except Exception as e:
+            print(f"⚠️  Capital.com client not available: {e}")
     
     def audit_capital(self, exchange: str = None) -> Dict[str, CapitalSummary]:
         """
@@ -113,6 +125,10 @@ class AureonCapitalMobilizer:
                 summaries[exch] = self._audit_binance()
             elif exch == 'kraken':
                 summaries[exch] = self._audit_kraken()
+            elif exch == 'alpaca':
+                summaries[exch] = self._audit_alpaca()
+            elif exch == 'capital':
+                summaries[exch] = self._audit_capital()
         
         return summaries
     
@@ -208,6 +224,71 @@ class AureonCapitalMobilizer:
                 summary.locked_positions[asset] = amount
         
         # TODO: Add Kraken profit checking when cost basis supports it
+        summary.total_buying_power_usd = summary.total_stable_usd
+        return summary
+    
+    def _audit_alpaca(self) -> CapitalSummary:
+        """Audit Alpaca capital."""
+        summary = CapitalSummary(exchange='alpaca')
+        
+        if 'alpaca' not in self.exchange_clients:
+            return summary
+        
+        client = self.exchange_clients['alpaca']
+        
+        try:
+            # Get account info for cash
+            account = client.get_account()
+            cash = float(account.get('cash', 0))
+            summary.free_stablecoins['USD'] = cash
+            summary.total_stable_usd = cash
+            
+            # Get positions
+            positions = client.get_positions()
+            for pos in positions:
+                symbol = pos.get('symbol', '')
+                qty = float(pos.get('qty', 0))
+                if qty > 0:
+                    summary.locked_positions[symbol] = qty
+            
+            # TODO: Add profit checking for Alpaca positions
+        except Exception as e:
+            pass  # Silently handle errors
+        
+        summary.total_buying_power_usd = summary.total_stable_usd
+        return summary
+    
+    def _audit_capital(self) -> CapitalSummary:
+        """Audit Capital.com capital."""
+        summary = CapitalSummary(exchange='capital')
+        
+        if 'capital' not in self.exchange_clients:
+            return summary
+        
+        client = self.exchange_clients['capital']
+        
+        try:
+            # Get account info
+            accounts = client.get_accounts()
+            if accounts and len(accounts) > 0:
+                balance = float(accounts[0].get('balance', {}).get('balance', 0))
+                summary.free_stablecoins['GBP'] = balance
+                summary.total_stable_usd = balance * 1.27  # Rough GBP to USD conversion
+            
+            # Get positions
+            positions = client.get_positions()
+            for pos_data in positions:
+                pos = pos_data.get('position', {})
+                market = pos_data.get('market', {})
+                symbol = market.get('instrumentName', 'unknown')
+                size = float(pos.get('size', 0))
+                if size > 0:
+                    summary.locked_positions[symbol] = size
+            
+            # TODO: Add profit checking for Capital.com positions
+        except Exception as e:
+            pass  # Silently handle errors
+        
         summary.total_buying_power_usd = summary.total_stable_usd
         return summary
     
