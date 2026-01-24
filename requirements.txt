@@ -2,8 +2,8 @@ requests>=2.32.0
 python-dotenv>=1.0.0
 python-binance>=1.0.19
 krakenex>=2.1.0
-numpy
-pandas
+numpy>=1.26.0
+pandas>=2.1.0
 matplotlib>=3.8.0
 aiohttp>=3.9.0
 websockets>=12.0
@@ -19,3 +19,6 @@ flask
 psutil>=5.9.0
 supervisor
 rich>=13.7.0
+alpaca-py>=0.20.0
+alpaca-trade-api>=3.0.0
+pyttsx3>=2.90
