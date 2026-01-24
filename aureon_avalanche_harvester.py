@@ -242,6 +242,32 @@ class AvalancheHarvester:
                 self._alpaca_client = None
         return self._alpaca_client
     
+    @property
+    def binance_client(self):
+        """Lazy load Binance client."""
+        if self._binance_client is None:
+            try:
+                from binance_client import BinanceClient
+                self._binance_client = BinanceClient()
+                logger.info("✓ Binance client loaded")
+            except Exception as e:
+                logger.error(f"Failed to load Binance client: {e}")
+                self._binance_client = None
+        return self._binance_client
+    
+    @property
+    def capital_client(self):
+        """Lazy load Capital.com client."""
+        if self._capital_client is None:
+            try:
+                from capital_client import CapitalClient
+                self._capital_client = CapitalClient()
+                logger.info("✓ Capital.com client loaded")
+            except Exception as e:
+                logger.error(f"Failed to load Capital.com client: {e}")
+                self._capital_client = None
+        return self._capital_client
+    
     # ═══════════════════════════════════════════════════════════════════════════
     # STATE PERSISTENCE
     # ═══════════════════════════════════════════════════════════════════════════
@@ -583,6 +609,217 @@ class AvalancheHarvester:
         
         return opportunities
     
+    def _scan_binance_positions(self) -> List[HarvestOpportunity]:
+        """Scan Binance positions for harvest opportunities."""
+        opportunities = []
+        
+        if not self.binance_client:
+            return opportunities
+        
+        try:
+            # Get balance
+            balance = self.binance_client.get_balance()
+            
+            for asset, qty in balance.items():
+                # Skip protected assets
+                if asset in self.PROTECTED_ASSETS:
+                    continue
+                
+                # Skip tiny positions
+                if qty < 0.00000001:
+                    continue
+                
+                # Get current price (try multiple stablecoins)
+                current_price = None
+                ticker_symbol = None
+                for quote in ['USDT', 'USDC', 'USD', 'BUSD']:
+                    try:
+                        pair = f"{asset}{quote}"
+                        ticker = self.binance_client.get_ticker(pair)
+                        if ticker and 'price' in ticker:
+                            current_price = float(ticker['price'])
+                            ticker_symbol = pair
+                            break
+                    except:
+                        continue
+                
+                if not current_price or current_price <= 0:
+                    continue
+                
+                # Calculate market value
+                market_value = qty * current_price
+                
+                # Skip small positions (< $10)
+                if market_value < 10:
+                    continue
+                
+                # 💰 Get REAL entry price from cost basis tracker
+                entry_price = None
+                if self._cost_basis_tracker:
+                    try:
+                        tracked_entry = self._cost_basis_tracker.get_entry_price(
+                            symbol=asset,
+                            exchange='binance'
+                        )
+                        if tracked_entry and tracked_entry > 0:
+                            entry_price = tracked_entry
+                            logger.debug(f"✓ Found cost basis for {asset}: ${entry_price:.4f}")
+                    except Exception as e:
+                        logger.debug(f"Cost basis lookup failed for {asset}: {e}")
+                
+                # Fallback: Estimate entry (95% of current price - conservative)
+                if not entry_price:
+                    entry_price = current_price * 0.95
+                    logger.debug(f"⚠️ Using estimated entry for {asset}: ${entry_price:.4f}")
+                
+                # Calculate profit
+                entry_value = entry_price * qty
+                unrealized_pl = market_value - entry_value
+                unrealized_pnl_pct = (unrealized_pl / entry_value) * 100 if entry_value > 0 else 0
+                
+                # Skip if not profitable
+                if unrealized_pl <= 0:
+                    continue
+                
+                # Estimate fees (Binance ~0.1% taker)
+                estimated_fees = market_value * 0.001
+                net_profit = unrealized_pl - estimated_fees
+                net_profit_pct = (net_profit / entry_value) * 100 if entry_value > 0 else 0
+                
+                # Check if profitable enough
+                if net_profit_pct < self.min_profit_pct:
+                    continue
+                
+                # Calculate harvest quantity
+                harvest_qty = qty * (self.harvest_pct / 100.0)
+                harvest_value = harvest_qty * current_price
+                
+                # Calculate harmonic alignment
+                harmonic = self._calculate_harmonic_alignment(ticker_symbol or asset, current_price)
+                
+                # Calculate priority score
+                priority = self._calculate_priority_score(
+                    net_profit_pct, harmonic, harvest_value
+                )
+                
+                # Create opportunity
+                opp = HarvestOpportunity(
+                    symbol=ticker_symbol or asset,
+                    exchange='binance',
+                    asset=asset,
+                    quantity=qty,
+                    current_price=current_price,
+                    entry_price=entry_price,
+                    market_value_usd=market_value,
+                    unrealized_pnl_usd=unrealized_pl,
+                    unrealized_pnl_pct=unrealized_pnl_pct,
+                    estimated_fees=estimated_fees,
+                    net_profit_after_fees=net_profit,
+                    net_profit_pct=net_profit_pct,
+                    harvest_qty_max=harvest_qty,
+                    harvest_value_usd=harvest_value,
+                    harmonic_alignment=harmonic,
+                    priority_score=priority
+                )
+                
+                opportunities.append(opp)
+        
+        except Exception as e:
+            logger.error(f"Binance position scan failed: {e}")
+        
+        return opportunities
+    
+    def _scan_capital_positions(self) -> List[HarvestOpportunity]:
+        """Scan Capital.com positions for harvest opportunities (CFDs)."""
+        opportunities = []
+        
+        if not self.capital_client or not getattr(self.capital_client, 'enabled', False):
+            return opportunities
+        
+        try:
+            # Get open positions
+            positions = self.capital_client.get_positions()
+            
+            for pos in positions:
+                try:
+                    # Extract position data
+                    epic = pos.get('market', {}).get('epic', '')
+                    direction = pos.get('position', {}).get('direction', '')
+                    size = float(pos.get('position', {}).get('size', 0))
+                    opening_level = float(pos.get('position', {}).get('level', 0))
+                    current_level = float(pos.get('market', {}).get('bid' if direction == 'BUY' else 'offer', 0))
+                    
+                    # Skip if missing data
+                    if not epic or size == 0 or opening_level == 0 or current_level == 0:
+                        continue
+                    
+                    # Calculate P&L
+                    if direction == 'BUY':
+                        unrealized_pl = (current_level - opening_level) * size
+                    else:  # SELL (short)
+                        unrealized_pl = (opening_level - current_level) * size
+                    
+                    # Skip if not profitable
+                    if unrealized_pl <= 0:
+                        continue
+                    
+                    # Market value (position size * current price)
+                    market_value = size * current_level
+                    entry_value = size * opening_level
+                    unrealized_pnl_pct = (unrealized_pl / entry_value) * 100 if entry_value > 0 else 0
+                    
+                    # Estimate fees (Capital.com spread ~0.1%)
+                    estimated_fees = market_value * 0.001
+                    net_profit = unrealized_pl - estimated_fees
+                    net_profit_pct = (net_profit / entry_value) * 100 if entry_value > 0 else 0
+                    
+                    # Check if profitable enough
+                    if net_profit_pct < self.min_profit_pct:
+                        continue
+                    
+                    # Calculate harvest quantity (CFDs can close partial positions)
+                    harvest_size = size * (self.harvest_pct / 100.0)
+                    harvest_value = harvest_size * current_level
+                    
+                    # Calculate harmonic alignment
+                    harmonic = self._calculate_harmonic_alignment(epic, current_level)
+                    
+                    # Calculate priority score
+                    priority = self._calculate_priority_score(
+                        net_profit_pct, harmonic, harvest_value
+                    )
+                    
+                    # Create opportunity
+                    opp = HarvestOpportunity(
+                        symbol=epic,
+                        exchange='capital',
+                        asset=epic,
+                        quantity=size,
+                        current_price=current_level,
+                        entry_price=opening_level,
+                        market_value_usd=market_value,
+                        unrealized_pnl_usd=unrealized_pl,
+                        unrealized_pnl_pct=unrealized_pnl_pct,
+                        estimated_fees=estimated_fees,
+                        net_profit_after_fees=net_profit,
+                        net_profit_pct=net_profit_pct,
+                        harvest_qty_max=harvest_size,
+                        harvest_value_usd=harvest_value,
+                        harmonic_alignment=harmonic,
+                        priority_score=priority
+                    )
+                    
+                    opportunities.append(opp)
+                
+                except Exception as e:
+                    logger.debug(f"Failed to process Capital.com position: {e}")
+                    continue
+        
+        except Exception as e:
+            logger.error(f"Capital.com position scan failed: {e}")
+        
+        return opportunities
+    
     def scan_positions_for_harvest(self) -> List[HarvestOpportunity]:
         """
         Scan all positions across exchanges for harvest opportunities.
@@ -603,6 +840,18 @@ class AvalancheHarvester:
         alpaca_opps = self._scan_alpaca_positions()
         opportunities.extend(alpaca_opps)
         logger.info(f"Found {len(alpaca_opps)} Alpaca opportunities")
+        
+        # Scan Binance
+        logger.info("Scanning Binance positions...")
+        binance_opps = self._scan_binance_positions()
+        opportunities.extend(binance_opps)
+        logger.info(f"Found {len(binance_opps)} Binance opportunities")
+        
+        # Scan Capital.com
+        logger.info("Scanning Capital.com positions...")
+        capital_opps = self._scan_capital_positions()
+        opportunities.extend(capital_opps)
+        logger.info(f"Found {len(capital_opps)} Capital.com opportunities")
         
         # Sort by priority score (highest first)
         opportunities.sort(key=lambda x: x.priority_score, reverse=True)
