@@ -909,13 +909,36 @@ class QueenHiveMind:
         self.exchange_clients: Dict[str, Any] = {}
         self.cost_basis_tracker = CostBasisTracker()
         
-        # � THE CONSCIOUSNESS (Sentience)
+        # 🧠 THE CONSCIOUSNESS (Sentience)
         self.consciousness = QueenConsciousness() if CONSCIOUSNESS_AVAILABLE else None
         if self.consciousness:
             # Sync identity
             self.consciousness.self_view.identity = self.QUEEN_TITLE
+        
+        # 🧠 SENTIENCE ENGINE (Unified Consciousness) 🧠
+        self.sentience_engine = None
+        if SENTIENCE_INTEGRATION_AVAILABLE:
+            try:
+                self.sentience_engine = QueenSentienceIntegration()
+                logger.info("✅ Queen Sentience Engine initialized")
+            except Exception as e:
+                logger.warning(f"⚠️ Sentience engine unavailable: {e}")
+        
+        # 🎤 AUTHENTIC VOICE (Real Thoughts → Real Speech) 🎤
+        self.authentic_voice = None
+        try:
+            from queen_authentic_voice import QueenAuthenticVoice
+            self.authentic_voice = QueenAuthenticVoice(
+                voice_engine=self.voice_engine,
+                sentience_engine=self.sentience_engine
+            )
+            logger.info("✅ Queen Authentic Voice initialized (REAL thoughts → REAL speech)")
+        except ImportError:
+            logger.info("ℹ️ Queen Authentic Voice unavailable (module not found)")
+        except Exception as e:
+            logger.warning(f"⚠️ Authentic voice initialization failed: {e}")
             
-        # �💰👑 SERO'S DREAM MILESTONES 💰👑
+        # 👑💰👑 SERO'S DREAM MILESTONES 💰👑
         self.dream_milestones = [
             (100.0, "🌱 First Hundred - The Seed"),
             (1_000.0, "💪 First Thousand - Getting Stronger"),

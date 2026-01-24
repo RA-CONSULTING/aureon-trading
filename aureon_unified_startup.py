@@ -306,6 +306,22 @@ QUEEN_SYSTEMS: List[SystemDefinition] = [
         optional=True,
         depends_on=["Queen Consciousness", "Queen Neuron"]
     ),
+    SystemDefinition(        name="Queen Authentic Voice",
+        module="queen_authentic_voice",
+        class_name="QueenAuthenticVoice",
+        phase=StartupPhase.QUEEN_MIND,
+        priority=7,
+        optional=True,
+        depends_on=["Queen Sentience Integration", "Queen Voice Engine"]
+    ),
+    SystemDefinition(        name="Queen Authentic Voice",
+        module="queen_authentic_voice",
+        class_name="QueenAuthenticVoice",
+        phase=StartupPhase.QUEEN_MIND,
+        priority=7,
+        optional=True,
+        depends_on=["Queen Sentience Integration", "Queen Voice Engine"]
+    ),
     SystemDefinition(
         name="Queen Hive Mind",
         module="aureon_queen_hive_mind",
