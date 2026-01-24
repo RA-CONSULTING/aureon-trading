@@ -2827,7 +2827,17 @@ class OrcaKillCycle:
         if COST_BASIS_TRACKER_AVAILABLE and CostBasisTracker:
             try:
                 self.cost_basis_tracker = CostBasisTracker()
-                print("📊 Cost Basis Tracker: WIRED! (FIFO + profit checks)")
+                # 🔄 CRITICAL: Sync from exchanges if no positions loaded
+                # This ensures Digital Ocean can sell positions with real entry prices
+                if len(self.cost_basis_tracker.positions) == 0 and not quick_init:
+                    print("📊 Cost Basis: No cached positions - syncing from exchanges...")
+                    try:
+                        synced = self.cost_basis_tracker.sync_from_exchanges()
+                        print(f"📊 Cost Basis Tracker: WIRED! ({synced} positions synced from exchanges)")
+                    except Exception as sync_e:
+                        print(f"📊 Cost Basis Tracker: WIRED but sync failed: {sync_e}")
+                else:
+                    print(f"📊 Cost Basis Tracker: WIRED! ({len(self.cost_basis_tracker.positions)} cached positions)")
             except Exception as e:
                 print(f"📊 Cost Basis Tracker: {e}")
         
