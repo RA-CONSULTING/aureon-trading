@@ -207,23 +207,93 @@ class AureonCapitalMobilizer:
         if 'kraken' not in self.exchange_clients:
             return summary
         
-        client = self.exchange_clients['kraken']
-        balances = client.get_balance()
+        # Try state file first (more reliable than API which rate limits)
+        try:
+            import json
+            import os
+            if os.path.exists('aureon_kraken_state.json'):
+                with open('aureon_kraken_state.json', 'r') as f:
+                    state = json.load(f)
+                    
+                    # Get positions from state file
+                    positions = state.get('positions', {})
+                    for symbol, pos_data in positions.items():
+                        # Check if it's a stablecoin or crypto
+                        asset = symbol.replace('USD', '').replace('USDC', '').replace('USDT', '')
+                        
+                        if asset in ['', 'Z', 'T']:  # Stablecoin symbols
+                            # This is USD/USDC/USDT
+                            qty = pos_data.get('quantity', 0)
+                            if 'USD' in symbol:
+                                summary.free_stablecoins['USD'] = summary.free_stablecoins.get('USD', 0) + qty
+                                summary.total_stable_usd += qty
+                        else:
+                            # Crypto position
+                            qty = pos_data.get('quantity', 0)
+                            if qty > 0:
+                                summary.locked_positions[asset] = qty
+                        
+                        # Check if profitable for harvest
+                        if self.cost_basis and asset not in ['', 'Z', 'T']:
+                            entry_price = pos_data.get('entry_price', 0)
+                            quantity = pos_data.get('quantity', 0)
+                            
+                            # Try to get current price
+                            try:
+                                client = self.exchange_clients['kraken']
+                                ticker = client.get_ticker(symbol)
+                                if ticker and 'last' in ticker:
+                                    current_price = ticker['last']
+                                    
+                                    # Calculate if profitable
+                                    can_sell, info = self.cost_basis.can_sell_profitably(
+                                        symbol=symbol,
+                                        current_price=current_price,
+                                        quantity=quantity,
+                                        exchange='kraken'
+                                    )
+                                    
+                                    if can_sell:
+                                        harvest_value = info.get('gross_value', 0)
+                                        summary.harvestable_positions.append({
+                                            'asset': asset,
+                                            'amount': quantity,
+                                            'symbol': symbol,
+                                            'entry_price': entry_price,
+                                            'current_price': current_price,
+                                            'profit_pct': info.get('profit_pct'),
+                                            'net_profit': info.get('net_profit'),
+                                            'harvest_value_usd': harvest_value
+                                        })
+                                        summary.harvestable_value_usd += harvest_value
+                            except:
+                                pass  # Skip if can't get price
+                    
+                    summary.total_buying_power_usd = summary.total_stable_usd + summary.harvestable_value_usd
+                    return summary
+        except Exception as e:
+            pass  # Fall back to API
         
-        stables = ['USD', 'USDT', 'USDC', 'ZUSD']
-        
-        for asset, amount in balances.items():
-            if amount <= 0:
-                continue
+        # Fallback: Try API (might be rate limited)
+        try:
+            client = self.exchange_clients['kraken']
+            balances = client.get_balance()
             
-            # Stablecoins
-            if any(s in asset for s in stables):
-                summary.free_stablecoins[asset] = amount
-                summary.total_stable_usd += amount
-            else:
-                summary.locked_positions[asset] = amount
+            stables = ['USD', 'USDT', 'USDC', 'ZUSD']
+            
+            for asset, amount in balances.items():
+                if amount <= 0:
+                    continue
+                
+                # Stablecoins
+                if any(s in asset for s in stables):
+                    summary.free_stablecoins[asset] = amount
+                    summary.total_stable_usd += amount
+                else:
+                    summary.locked_positions[asset] = amount
+        except:
+            pass  # Silently fail if rate limited
         
-        # TODO: Add Kraken profit checking when cost basis supports it
         summary.total_buying_power_usd = summary.total_stable_usd
         return summary
     
