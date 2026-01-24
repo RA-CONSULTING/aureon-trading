@@ -310,11 +310,19 @@ class TimelinePhase(Enum):
 
 
 @dataclass
+class RealityStem:
+    """Historical stem feeding spore projections."""
+    stem_id: str
+    symbol: str
+    exchange: str
+    lookback_seconds: int
+    collected_at: float
+    notes: str = ""
+
+
+@dataclass
 class QuantumMirror:
-    """
-    A quantum mirror represents an alternate timeline or higher-coherence reality
-    that can be accessed or anchored through resonance at stargate nodes.
-    """
+    """Alternate timeline projected as a spore from the stem."""
     mirror_id: str
     coherence_signature: float  # Overall coherence of this timeline (0-1)
     frequency_spectrum: List[float]  # Dominant frequencies
@@ -327,6 +335,30 @@ class QuantumMirror:
     first_contact: float = 0.0
     last_interaction: float = 0.0
     anchor_progress: float = 0.0  # 0-1 progress toward anchoring
+    spore_id: Optional[str] = None  # Link to projection source
+    stem_source: Optional[str] = None  # Which stem (historical set) spawned it
+    projection_confidence: float = 0.0  # Confidence from spore projection
+
+
+def spawn_spore_mirror(spore_id: str, stem: RealityStem, base_freqs: List[float], probability: float, beneficial: float) -> QuantumMirror:
+    """Create a quantum mirror seeded from a spore projection."""
+    now = time.time()
+    return QuantumMirror(
+        mirror_id=f"spore::{spore_id}",
+        coherence_signature=max(base_freqs) / (max(base_freqs) + 1e-6),
+        frequency_spectrum=base_freqs,
+        probability_amplitude=max(0.0, min(1.0, probability)),
+        entanglement_strength=0.1,
+        beneficial_score=beneficial,
+        stability_index=0.5,
+        drift_rate=0.05,
+        first_contact=now,
+        last_interaction=now,
+        anchor_progress=0.0,
+        spore_id=spore_id,
+        stem_source=stem.stem_id,
+        projection_confidence=max(0.0, min(1.0, probability)),
+    )
     
     def compute_score(self) -> float:
         """
@@ -423,7 +455,17 @@ class StargateProtocolEngine:
         logger.info(f"   Planetary nodes: {len(self.stargates)}")
         
     def _initialize_quantum_mirrors(self):
-        """Initialize the quantum mirror pool with potential timelines"""
+        """Initialize the quantum mirror pool as spores from default stems."""
+        # Create default reality stem (historical baseline)
+        default_stem = RealityStem(
+            stem_id="stem::genesis",
+            symbol="GLOBAL_MARKET",
+            exchange="PLANETARY_NETWORK",
+            lookback_seconds=604800,  # 7 days
+            collected_at=time.time(),
+            notes="Genesis stem - historical planetary coherence baseline"
+        )
+        
         mirror_templates = [
             {
                 "id": "golden_age",
@@ -456,17 +498,91 @@ class StargateProtocolEngine:
         ]
         
         for tmpl in mirror_templates:
-            mirror = QuantumMirror(
-                mirror_id=tmpl["id"],
-                coherence_signature=tmpl["coherence"],
-                frequency_spectrum=tmpl["frequencies"],
-                probability_amplitude=0.1,  # Start low
-                entanglement_strength=0.0,
-                beneficial_score=tmpl["beneficial"],
-                stability_index=tmpl["stability"],
-                drift_rate=0.01,
+            # Use spawn_spore_mirror to create mirrors with full provenance
+            mirror = spawn_spore_mirror(
+                spore_id=f"spore::{tmpl['id']}",
+                stem=default_stem,
+                base_freqs=tmpl["frequencies"],
+                probability=tmpl["coherence"],
+                beneficial=tmpl["beneficial"]
             )
+            # Override stability from template
+            mirror.stability_index = tmpl["stability"]
+            mirror.drift_rate = 0.01
+            mirror.probability_amplitude = 0.1  # Start low
             self.quantum_mirrors[mirror.mirror_id] = mirror
+            
+        logger.info(f"🍄 Initialized {len(mirror_templates)} spore-mirrors from stem: {default_stem.stem_id}")
+    
+    def project_spore_from_stem(self, stem: RealityStem, prediction_data: Dict[str, Any]) -> Optional[QuantumMirror]:
+        """
+        Project a new spore (quantum mirror) from historical stem data and a prediction.
+        
+        This is where the Queen's Monte Carlo paths become timeline projections.
+        Each spore carries provenance: which stem (historical data) spawned it,
+        and what projection confidence (from simulation) it has.
+        
+        Args:
+            stem: The historical data stem (past 7 days, etc.)
+            prediction_data: Dict with keys:
+                - symbol: str
+                - direction: str (BULLISH/BEARISH)
+                - probability: float (0-1)
+                - expected_value: float
+                - confidence: float (0-1)
+                - frequencies: List[float] (harmonic signature)
+        
+        Returns:
+            The newly projected spore-mirror, or None if invalid
+        """
+        with self._lock:
+            # Extract prediction fields
+            symbol = prediction_data.get("symbol", "UNKNOWN")
+            probability = prediction_data.get("probability", 0.5)
+            confidence = prediction_data.get("confidence", 0.5)
+            expected_value = prediction_data.get("expected_value", 0.0)
+            frequencies = prediction_data.get("frequencies", [528.0, SCHUMANN_BASE, 432.0])
+            
+            # Compute beneficial score (higher expected value = more beneficial)
+            beneficial = max(0.0, min(1.0, 0.5 + expected_value / 2.0))
+            
+            # Generate spore ID
+            spore_id = f"spore::{symbol}::{int(time.time())}"
+            
+            # Create the spore-mirror
+            mirror = spawn_spore_mirror(
+                spore_id=spore_id,
+                stem=stem,
+                base_freqs=frequencies,
+                probability=probability,
+                beneficial=beneficial
+            )
+            
+            # Additional metadata
+            mirror.stability_index = confidence
+            mirror.drift_rate = 0.05 * (1.0 - confidence)  # Higher confidence = lower drift
+            
+            # Register in the quantum mirror pool
+            self.quantum_mirrors[mirror.mirror_id] = mirror
+            
+            # Emit event
+            self._emit_thought(
+                topic="stargate.spore.projected",
+                payload={
+                    "spore_id": spore_id,
+                    "stem_source": stem.stem_id,
+                    "symbol": symbol,
+                    "probability": probability,
+                    "confidence": confidence,
+                    "beneficial": beneficial,
+                    "frequencies": frequencies,
+                }
+            )
+            
+            logger.info(f"🍄 Projected spore: {spore_id} from stem: {stem.stem_id}")
+            logger.info(f"   Symbol: {symbol} | Prob: {probability:.3f} | Conf: {confidence:.3f}")
+            
+            return mirror
             
     def register_conscious_node(self, node_id: str, stargate_id: str, 
                                   intention: str) -> ConsciousNode:

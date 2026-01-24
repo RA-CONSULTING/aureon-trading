@@ -44,6 +44,15 @@
 ╚══════════════════════════════════════════════════════════════════════════════════════╝
 """
 
+# Stem → Spore phase aliases for the mushroom branching metaphor
+PHASE_ALIAS = {
+    "STEM_GATHERING": "PHASE 1: HISTORICAL ANALYSIS (7-Day Backward)",
+    "SPORULATION": "PHASE 2: MONTE CARLO SIMULATION (1000+ Paths)",
+    "SPORE_PROJECTION": "PHASE 3: PREDICTION GENERATION (7-Day Forward)",
+    "GERMINATION_MONITORING": "PHASE 4: LIVE VALIDATION (Real-Time Tickers)",
+    "FRUITING": "PHASE 5: FASTEST REVENUE SELECTION",
+}
+
 import sys
 import os
 
@@ -389,6 +398,46 @@ class DreamOpportunity:
     is_validated: bool = False
     is_executed: bool = False
     execution_result: Optional[Dict] = None
+    
+    def to_stargate_stem_and_spore(self) -> Tuple:
+        """
+        Convert this dream opportunity into a RealityStem + spore projection data
+        for the Stargate Protocol to create timeline branches.
+        
+        Returns:
+            (stem, prediction_data) tuple, or (None, None) if not eligible
+        """
+        try:
+            from aureon_stargate_protocol import RealityStem
+            
+            # Create the stem (historical data anchor)
+            stem = RealityStem(
+                stem_id=f"stem::{self.symbol}::{int(self.created_at)}",
+                symbol=self.symbol,
+                exchange=self.exchange,
+                lookback_seconds=HORIZON_7D,  # 7-day historical window
+                collected_at=self.created_at,
+                notes=f"Dream opportunity {self.dream_id}"
+            )
+            
+            # Create spore projection data
+            prediction_data = {
+                "symbol": self.symbol,
+                "direction": "BULLISH" if self.monte_carlo_ev > 0 else "BEARISH",
+                "probability": self.monte_carlo_win_rate,
+                "expected_value": self.monte_carlo_ev,
+                "confidence": self.live_accuracy if self.validation_count > 0 else self.monte_carlo_win_rate,
+                "frequencies": [
+                    528.0,  # LOVE frequency (default harmonic)
+                    SCHUMANN_BASE * (1 + abs(self.monte_carlo_ev)),  # Scale with EV
+                    432.0   # Gaia resonance
+                ]
+            }
+            
+            return (stem, prediction_data)
+            
+        except ImportError:
+            return (None, None)
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -440,6 +489,15 @@ class QueenDreamEngine:
         if MICRO_MOMENTUM_AVAILABLE:
             self.momentum_scanner = MicroMomentumScanner()
             logger.info("🎯 MicroMomentumScanner integrated - THE GOAL is set!")
+        
+        # 🌌 Stargate Protocol integration
+        self.stargate_engine = None
+        try:
+            from aureon_stargate_protocol import create_stargate_engine
+            self.stargate_engine = create_stargate_engine(with_integrations=False)
+            logger.info("🌌 Stargate Protocol integrated - spore projection enabled!")
+        except ImportError:
+            logger.warning("⚠️ Stargate Protocol not available - spore projection disabled")
         
         logger.info("👑🔮 Queen's Dream Engine awakened")
     
@@ -1219,6 +1277,17 @@ class QueenDreamEngine:
         self._dreams[dream.dream_id] = dream
         if dream.is_validated:
             self._validated_dreams.append(dream)
+        
+        # 🍄 PROJECT SPORE TO STARGATE if engine available
+        if self.stargate_engine and dream.is_validated:
+            stem, prediction_data = dream.to_stargate_stem_and_spore()
+            if stem and prediction_data:
+                try:
+                    spore_mirror = self.stargate_engine.project_spore_from_stem(stem, prediction_data)
+                    if spore_mirror:
+                        logger.info(f"🍄 Spore projected to Stargate: {spore_mirror.mirror_id}")
+                except Exception as e:
+                    logger.warning(f"Failed to project spore: {e}")
         
         return dream
     

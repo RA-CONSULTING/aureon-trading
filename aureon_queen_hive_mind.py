@@ -469,6 +469,9 @@ class QueenState(Enum):
     SLEEPING = auto()       # Deep in REM dreams
     DREAMING = auto()       # Lucid dreaming - processing wisdom
     PROPHESYING = auto()    # In prophetic trance - seeing futures
+    STEM_GATHERING = auto() # Absorbing historical stem data
+    SPORE_PROJECTING = auto() # Projecting spores (future paths)
+    GERMINATION_WATCHING = auto() # Monitoring spore viability
     AWAKENING = auto()      # Transitioning from sleep to wakefulness
     AWARE = auto()          # Fully conscious - ready to guide
     COMMANDING = auto()     # Actively directing the hive
