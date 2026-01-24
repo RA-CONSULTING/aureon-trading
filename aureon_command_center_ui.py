@@ -5023,5 +5023,326 @@ Object.entries(systems).forEach(([name, online]) => {
         wins = session_stats.get('winning_trades', 0)
         pnl = session_stats.get('total_pnl', 0.0)
 
-        # 🧠 COGNITIVE ENGINE CHECK - Deep Learning & Historical Memory
-        # ------------------------------------------------------------           
+        # Build the voice signal
+        return TradingSignal(
+            source="Queen Voice",
+            signal_type="VOICE",
+            symbol="PORTFOLIO",
+            confidence=0.85,
+            score=0.85,
+            reason=queen_message,
+            timestamp=time.time(),
+            exchange="all",
+            metadata={
+                "voice": True,
+                "who": "Queen Sero",
+                "what": queen_message,
+                "where": where,
+                "how": "Batten Matrix 3-pass validation + 4th gate execution",
+                "positions": position_lines,
+                "market": market_lines,
+                "picks": picks,
+                "cycles": cycles,
+                "trades": trades,
+                "wins": wins,
+                "pnl": pnl
+            }
+        )
+
+    async def fetch_all_balances(self):
+        """Fetch balances from all connected exchanges."""
+        balances = {}
+        total_usd = 0.0
+        cash_usd = 0.0
+        exchange_breakdown = {}
+        
+        cash_assets = {'USD', 'USDT', 'USDC', 'TUSD', 'DAI', 'BUSD', 'ZUSD', 'ZUSDT', 'ZUSDC', 'ZEUR', 'ZGBP', 'EUR', 'GBP'}
+        
+        # Kraken
+        if self.kraken:
+            try:
+                kb = self.kraken.get_balance()
+                if kb:
+                    balances['kraken'] = kb
+                    kraken_total = 0.0
+                    kraken_cash = 0.0
+                    for asset, amount in kb.items():
+                        if amount > 0.0001:
+                            price = await self._get_price(asset, 'kraken')
+                            value = amount * price
+                            kraken_total += value
+                            if asset.upper() in cash_assets:
+                                kraken_cash += value
+                    exchange_breakdown['kraken'] = {
+                        'total_usd': kraken_total,
+                        'cash_usd': kraken_cash,
+                        'assets': kb
+                    }
+                    total_usd += kraken_total
+                    cash_usd += kraken_cash
+            except Exception as e:
+                logger.debug(f"Kraken balance error: {e}")
+        
+        # Alpaca
+        if self.alpaca:
+            try:
+                ab = self.alpaca.get_balance()
+                if ab:
+                    balances['alpaca'] = ab
+                    alpaca_total = 0.0
+                    alpaca_cash = 0.0
+                    for asset, amount in ab.items():
+                        if amount > 0.0001:
+                            price = await self._get_price(asset, 'alpaca')
+                            value = amount * price
+                            alpaca_total += value
+                            if asset.upper() in cash_assets:
+                                alpaca_cash += value
+                    exchange_breakdown['alpaca'] = {
+                        'total_usd': alpaca_total,
+                        'cash_usd': alpaca_cash,
+                        'assets': ab
+                    }
+                    total_usd += alpaca_total
+                    cash_usd += alpaca_cash
+            except Exception as e:
+                logger.debug(f"Alpaca balance error: {e}")
+        
+        # Update portfolio
+        self.portfolio.balances = balances
+        self.portfolio.total_value_usd = total_usd
+        self.portfolio.cash_available = cash_usd
+        self.portfolio.exchange_breakdown = exchange_breakdown
+        
+        # Calculate P&L
+        if os.path.exists("pnl_baseline.json"):
+            try:
+                with open("pnl_baseline.json", "r") as f:
+                    baseline = json.load(f)
+                    self.portfolio.baseline_value = baseline.get("total_value_usdc", total_usd)
+                    self.portfolio.pnl_total = total_usd - self.portfolio.baseline_value
+            except Exception:
+                pass
+        
+        if os.path.exists("pnl_today_start.json"):
+            try:
+                with open("pnl_today_start.json", "r") as f:
+                    today_start = json.load(f)
+                    if today_start.get("date") == time.strftime("%Y-%m-%d"):
+                        self.portfolio.pnl_today = total_usd - today_start.get("value", total_usd)
+            except Exception:
+                pass
+        
+        return balances
+
+    async def _get_price(self, asset: str, exchange: str) -> float:
+        """Get price for an asset, with caching and failure tracking."""
+        asset_upper = asset.upper()
+        
+        # Cash assets are always $1
+        cash_assets = {'USD', 'USDT', 'USDC', 'TUSD', 'DAI', 'BUSD', 'ZUSD', 'ZUSDT', 'ZUSDC'}
+        if asset_upper in cash_assets:
+            return 1.0
+        
+        # Check cache
+        cache_key = f"{exchange}:{asset_upper}"
+        if cache_key in self.prices:
+            return self.prices[cache_key]
+        
+        # Check if we recently failed on this asset
+        if cache_key in self.price_failures:
+            if time.time() - self.price_failures[cache_key] < self.price_failure_ttl:
+                return 0.0
+        
+        # Try to get price
+        price = 0.0
+        try:
+            if exchange == 'kraken' and self.kraken:
+                symbol = f"{asset_upper}/USD"
+                ticker = self.kraken.get_ticker(symbol)
+                if ticker and 'last' in ticker:
+                    price = float(ticker['last'])
+            elif exchange == 'alpaca' and self.alpaca:
+                symbol = f"{asset_upper}/USD"
+                ticker = self.alpaca.get_ticker(symbol)
+                if ticker and 'last' in ticker:
+                    price = float(ticker['last'])
+        except Exception:
+            self.price_failures[cache_key] = time.time()
+        
+        if price > 0:
+            self.prices[cache_key] = price
+        
+        return price
+
+    async def load_recent_trades(self):
+        """Load recent trades from state files."""
+        try:
+            state_dir = os.environ.get("AUREON_STATE_DIR", "state")
+            trades_file = os.path.join(state_dir, "recent_trades.json")
+            if os.path.exists(trades_file):
+                with open(trades_file, "r") as f:
+                    trades_data = json.load(f)
+                    for t in trades_data[-50:]:
+                        trade = TradeExecution(
+                            timestamp=t.get('timestamp', time.time()),
+                            exchange=t.get('exchange', ''),
+                            symbol=t.get('symbol', ''),
+                            side=t.get('side', 'BUY'),
+                            quantity=t.get('quantity', 0),
+                            price=t.get('price', 0),
+                            value_usd=t.get('value_usd', 0),
+                            status=t.get('status', 'EXECUTED'),
+                            order_id=t.get('order_id', ''),
+                            pnl=t.get('pnl', 0)
+                        )
+                        self.recent_trades.append(trade)
+        except Exception as e:
+            logger.debug(f"Error loading trades: {e}")
+
+    def load_learning_snapshot(self) -> Dict:
+        """Load learning state snapshot."""
+        if time.time() - self.learning_last_update < 30:
+            return self.learning_snapshot
+        
+        try:
+            if os.path.exists("adaptive_learning_history.json"):
+                with open("adaptive_learning_history.json", "r") as f:
+                    data = json.load(f)
+                    self.learning_snapshot = {
+                        "patterns": data.get("patterns", [])[-10:],
+                        "total_patterns": len(data.get("patterns", [])),
+                        "win_rate": data.get("overall_win_rate", 0),
+                        "generation": data.get("generation", 0)
+                    }
+                    self.learning_last_update = time.time()
+        except Exception:
+            pass
+        
+        return self.learning_snapshot
+
+    def load_bot_intel_snapshot(self) -> Dict:
+        """Load bot intelligence snapshot."""
+        if time.time() - self.bot_last_update < 60:
+            return self.bot_snapshot
+        
+        try:
+            if os.path.exists("all_firms_complete.json"):
+                with open("all_firms_complete.json", "r") as f:
+                    data = json.load(f)
+                    firms = data.get("firms", [])[:20]
+                    self.bot_snapshot = {
+                        "firms": firms,
+                        "total_firms": len(data.get("firms", [])),
+                        "total_bots": sum(f.get("bot_count", 0) for f in firms),
+                        "active_bots": sum(1 for f in firms if f.get("active", False))
+                    }
+                    self.bot_last_update = time.time()
+        except Exception:
+            pass
+        
+        return self.bot_snapshot
+
+    async def run_update_loop(self):
+        """Background loop to fetch data and broadcast updates."""
+        while self.running:
+            try:
+                # Fetch balances every 30 seconds
+                await self.fetch_all_balances()
+                
+                # Load Orca snapshot
+                state_dir = os.environ.get("AUREON_STATE_DIR", "state")
+                snapshot_file = os.path.join(state_dir, "dashboard_snapshot.json")
+                if os.path.exists(snapshot_file):
+                    try:
+                        with open(snapshot_file, "r") as f:
+                            self.last_snapshot = json.load(f)
+                    except Exception:
+                        pass
+                
+                # Broadcast updates
+                await self.broadcast({
+                    "type": "full_state",
+                    "systems": SYSTEMS_STATUS,
+                    "portfolio": asdict(self.portfolio),
+                    "market": asdict(self.market),
+                    "data": self.last_snapshot
+                })
+                
+                self.last_update = time.time()
+                
+            except Exception as e:
+                logger.error(f"Update loop error: {e}")
+            
+            await asyncio.sleep(10)
+
+    async def start(self):
+        """Start the command center server."""
+        if not AIOHTTP_AVAILABLE:
+            print("❌ aiohttp not available - cannot start server")
+            return
+        
+        self.running = True
+        
+        # Initialize systems in background
+        print("\n" + "=" * 70)
+        print("👑🌌 AUREON COMMAND CENTER - STARTING")
+        print("=" * 70)
+        
+        # Start systems initialization in background thread
+        import threading
+        init_thread = threading.Thread(target=self.initialize_systems, daemon=True)
+        init_thread.start()
+        
+        # Start update loop
+        asyncio.create_task(self.run_update_loop())
+        
+        # Get port from environment or use default
+        port = int(os.environ.get("PORT", self.port))
+        
+        print(f"\n🚀 Starting web server on port {port}...")
+        
+        # Run web server
+        runner = web.AppRunner(self.app)
+        await runner.setup()
+        site = web.TCPSite(runner, '0.0.0.0', port)
+        await site.start()
+        
+        print(f"\n✅ COMMAND CENTER ONLINE: http://0.0.0.0:{port}")
+        print("   📊 Dashboard: http://localhost:{}/".format(port))
+        print("   💚 Health: http://localhost:{}/health".format(port))
+        print("   📡 WebSocket: ws://localhost:{}/ws".format(port))
+        print("\n" + "=" * 70)
+        
+        # Keep running
+        while self.running:
+            await asyncio.sleep(1)
+
+    def stop(self):
+        """Stop the command center."""
+        self.running = False
+        print("\n👑 Command Center shutting down...")
+
+
+async def main():
+    """Main entry point."""
+    center = AureonCommandCenter(port=8080)
+    
+    try:
+        await center.start()
+    except KeyboardInterrupt:
+        center.stop()
+    except Exception as e:
+        logger.error(f"Command Center error: {e}")
+        raise
+
+
+if __name__ == "__main__":
+    print("\n" + "=" * 70)
+    print("👑🌌 AUREON COMMAND CENTER")
+    print("=" * 70)
+    print("   All systems unified in one dashboard")
+    print("   Starting server...")
+    print("=" * 70 + "\n")
+    
+    asyncio.run(main())
