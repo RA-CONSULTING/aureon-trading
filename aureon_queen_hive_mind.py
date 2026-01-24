@@ -158,6 +158,14 @@ except ImportError:
     BrainInput = None
     CONSCIOUSNESS_AVAILABLE = False
 
+# 👑🧠❤️ QUEEN SENTIENCE INTEGRATION - Unified Consciousness Engine 🧠❤️👑
+try:
+    from queen_sentience_integration import QueenSentienceIntegration
+    SENTIENCE_INTEGRATION_AVAILABLE = True
+except ImportError:
+    QueenSentienceIntegration = None
+    SENTIENCE_INTEGRATION_AVAILABLE = False
+
 
 # 🐘💔 LOSS LEARNING - NEVER REPEAT MISTAKES 💔🐘
 try:

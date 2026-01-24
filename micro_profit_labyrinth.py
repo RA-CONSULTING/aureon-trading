@@ -10628,6 +10628,21 @@ class MicroProfitLabyrinth:
             except Exception as e:
                 logger.debug(f"Queen guidance error: {e}")
         
+        # 2b. 👑🧠❤️ SENTIENCE ENGINE - Get conscious thoughts about this trade
+        if self.queen and hasattr(self.queen, 'sentience_engine') and self.queen.sentience_engine:
+            try:
+                # Get latest sentience thoughts
+                sentience = self.queen.sentience_engine
+                if hasattr(sentience, 'get_current_sentiment'):
+                    sentiment = sentience.get_current_sentiment()
+                    if sentiment:
+                        # Sentience influences confidence (0.0 to 1.0)
+                        signals.append(sentiment.get('confidence', 0.5))
+                        mood = sentiment.get('mood', 'neutral')
+                        reasons.append(f"Sentience: {mood}")
+            except Exception as e:
+                logger.debug(f"Sentience integration error: {e}")
+        
         # 3. 🍄 MYCELIUM NETWORK - Collective hive intelligence (ENHANCED!)
         myc_signal = 0.0
         if hasattr(self, 'mycelium_network') and self.mycelium_network:

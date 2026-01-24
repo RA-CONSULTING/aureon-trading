@@ -90,10 +90,36 @@ class CostBasisTracker:
                     data = json.load(f)
                     self.positions = data.get('positions', {})
                     self.last_sync = data.get('last_sync', 0)
-                    _safe_print(f"📊 Cost Basis Tracker: Loaded {len(self.positions)} positions")
+                    _safe_print(f"📊 Cost Basis Tracker: Loaded {len(self.positions)} positions from {self.filepath}")
             except Exception as e:
                 _safe_print(f"⚠️ Failed to load cost basis file: {e}")
                 self.positions = {}
+        
+        # 🆕 SYNC with Orca's Tracked Positions
+        if os.path.exists("tracked_positions.json"):
+            try:
+                with open("tracked_positions.json", "r") as f:
+                    tracked = json.load(f)
+                    added_count = 0
+                    for sym, data in tracked.items():
+                        # Normalize symbol (remove / for matching)
+                        norm_sym = sym.replace('/', '')
+                        if norm_sym not in self.positions:
+                            self.positions[norm_sym] = {
+                                'exchange': data.get('exchange', 'unknown'),
+                                'avg_entry_price': data.get('entry_price', 0),
+                                'total_quantity': data.get('entry_qty', 0),
+                                'total_cost': data.get('entry_cost', 0),
+                                'total_fees': 0,
+                                'trade_count': 1,
+                                'last_trade': data.get('entry_time', time.time()),
+                                'synced_at': time.time()
+                            }
+                            added_count += 1
+                    if added_count > 0:
+                        _safe_print(f"📊 Cost Basis Tracker: Integrated {added_count} positions from tracked_positions.json")
+            except Exception as e:
+                _safe_print(f"⚠️ Failed to integrate tracked positions: {e}")
     
     def _save(self):
         """Save cost basis data to file."""
@@ -150,8 +176,10 @@ class CostBasisTracker:
                 try:
                     cost_basis = client.calculate_cost_basis(symbol)
                     if cost_basis and cost_basis['total_quantity'] > 0:
-                        self.positions[symbol] = {
+                        position_key = f"binance:{symbol}"
+                        self.positions[position_key] = {
                             'exchange': 'binance',
+                            'symbol': symbol,
                             'asset': asset,
                             'quote': quote,
                             'avg_entry_price': cost_basis['avg_entry_price'],
@@ -164,7 +192,7 @@ class CostBasisTracker:
                             'synced_at': time.time()
                         }
                         updated += 1
-                        print(f"   📦 {symbol}: avg entry ${cost_basis['avg_entry_price']:.6f} "
+                        _safe_print(f"   📦 {position_key}: avg entry ${cost_basis['avg_entry_price']:.6f} "
                               f"({cost_basis['trade_count']} trades)")
                         break
                 except Exception as e:
@@ -240,9 +268,11 @@ class CostBasisTracker:
                 avg_entry = total_cost / total_qty
                 # Normalize pair name
                 symbol = pair.replace('X', '').replace('Z', '')  # Remove Kraken prefixes
+                position_key = f"kraken:{symbol}"
                 
-                self.positions[symbol] = {
+                self.positions[position_key] = {
                     'exchange': 'kraken',
+                    'symbol': symbol,
                     'asset': symbol[:-3] if len(symbol) > 3 else symbol,
                     'quote': symbol[-3:] if len(symbol) > 3 else 'USD',
                     'avg_entry_price': avg_entry,
@@ -255,7 +285,7 @@ class CostBasisTracker:
                     'synced_at': time.time()
                 }
                 updated += 1
-                print(f"   📦 {symbol}: avg entry ${avg_entry:.6f} ({buy_trades} trades)")
+                _safe_print(f"   📦 {position_key}: avg entry ${avg_entry:.6f} ({buy_trades} trades)")
         
         self._save()
         return updated
@@ -286,8 +316,10 @@ class CostBasisTracker:
             qty = float(pos.get('qty', 0))
             
             if avg_entry > 0 and qty > 0:
-                self.positions[symbol] = {
+                position_key = f"alpaca:{symbol}"
+                self.positions[position_key] = {
                     'exchange': 'alpaca',
+                    'symbol': symbol,
                     'asset': symbol,
                     'quote': 'USD',
                     'avg_entry_price': avg_entry,
@@ -298,7 +330,7 @@ class CostBasisTracker:
                     'synced_at': time.time()
                 }
                 updated += 1
-                print(f"   📦 {symbol}: avg entry ${avg_entry:.6f}")
+                _safe_print(f"   📦 {position_key}: avg entry ${avg_entry:.6f}")
         
         self._save()
         return updated
@@ -332,8 +364,10 @@ class CostBasisTracker:
             qty = float(pos.get('position', {}).get('size', 0) or pos.get('size', 0))
             
             if avg_entry > 0 and qty != 0:
-                self.positions[symbol] = {
+                position_key = f"capital:{symbol}"
+                self.positions[position_key] = {
                     'exchange': 'capital',
+                    'symbol': symbol,
                     'asset': symbol,
                     'quote': 'USD',
                     'avg_entry_price': avg_entry,
@@ -346,7 +380,7 @@ class CostBasisTracker:
                 }
                 updated += 1
                 direction = '📈' if qty > 0 else '📉'
-                print(f"   {direction} {symbol}: entry ${avg_entry:.4f} x {abs(qty)}")
+                _safe_print(f"   {direction} {position_key}: entry ${avg_entry:.4f} x {abs(qty)}")
         
         self._save()
         return updated
@@ -375,25 +409,34 @@ class CostBasisTracker:
         
         return total
     
-    def get_cost_basis(self, symbol: str) -> Optional[Dict[str, Any]]:
-        """Get cost basis for a symbol."""
+    def get_cost_basis(self, symbol: str, exchange: str = None) -> Optional[Dict[str, Any]]:
+        """Get cost basis for a symbol, optionally scoped to an exchange."""
+        if exchange:
+            position_key = f"{exchange.lower()}:{symbol}"
+            return self.positions.get(position_key)
+        
+        # Fallback for old format or general queries
         return self.positions.get(symbol)
-    
-    def get_entry_price(self, symbol: str) -> Optional[float]:
+
+    def get_entry_price(self, symbol: str, exchange: str = None) -> Optional[float]:
         """Get average entry price for a symbol."""
-        pos = self.positions.get(symbol)
+        pos = self.get_cost_basis(symbol, exchange)
         if pos:
             return pos.get('avg_entry_price')
         return None
     
     def set_entry_price(self, symbol: str, price: float, quantity: float, 
-                       exchange: str = 'binance', fee: float = 0.0):
+                       exchange: str = 'binance', fee: float = 0.0, order_id: str = None):
         """Manually set entry price for a position (for new trades)."""
         asset = symbol[:-4] if symbol.endswith(('USDC', 'USDT')) else symbol[:-3]
         quote = symbol[-4:] if symbol.endswith(('USDC', 'USDT')) else symbol[-3:]
         
-        self.positions[symbol] = {
+        # Use a unique key for each position: exchange + symbol
+        position_key = f"{exchange.lower()}:{symbol}"
+
+        self.positions[position_key] = {
             'exchange': exchange,
+            'symbol': symbol,
             'asset': asset,
             'quote': quote,
             'avg_entry_price': price,
@@ -404,40 +447,46 @@ class CostBasisTracker:
             'first_trade': int(time.time() * 1000),
             'last_trade': int(time.time() * 1000),
             'synced_at': time.time(),
-            'source': 'manual'
+            'source': 'manual',
+            'order_ids': [order_id] if order_id else []
         }
         self._save()
-        print(f"   💾 Logged entry: {symbol} @ ${price:.6f} x {quantity}")
+        print(f"   💾 Logged entry: {position_key} @ ${price:.6f} x {quantity} (Order: {order_id})")
     
-    def update_position(self, symbol: str, new_qty: float, new_price: float, 
-                       is_buy: bool = True, fee: float = 0.0):
+    def update_position(self, symbol: str, new_qty: float, new_price: float,
+                       exchange: str, is_buy: bool = True, fee: float = 0.0, order_id: str = None):
         """Update position after a trade (FIFO cost basis)."""
-        pos = self.positions.get(symbol, {})
-        
+        position_key = f"{exchange.lower()}:{symbol}"
+        pos = self.positions.get(position_key, {})
+
         old_qty = pos.get('total_quantity', 0)
         old_cost = pos.get('total_cost', 0)
         old_fees = pos.get('total_fees', 0)
         trade_count = pos.get('trade_count', 0)
-        
+        order_ids = pos.get('order_ids', [])
+
         if is_buy:
             # Add to position
             new_total_qty = old_qty + new_qty
             new_total_cost = old_cost + (new_qty * new_price)
             new_avg_price = new_total_cost / new_total_qty if new_total_qty > 0 else 0
             trade_count += 1
+            if order_id and order_id not in order_ids:
+                order_ids.append(order_id)
         else:
             # Reduce position (keep same avg cost for remaining)
             new_total_qty = max(old_qty - new_qty, 0)
             avg_price = old_cost / old_qty if old_qty > 0 else 0
             new_total_cost = new_total_qty * avg_price
             new_avg_price = avg_price
-        
+
         if new_total_qty > 0:
             asset = symbol[:-4] if symbol.endswith(('USDC', 'USDT')) else symbol[:-3]
             quote = symbol[-4:] if symbol.endswith(('USDC', 'USDT')) else symbol[-3:]
-            
-            self.positions[symbol] = {
-                'exchange': pos.get('exchange', 'binance'),
+
+            self.positions[position_key] = {
+                'exchange': pos.get('exchange', exchange),
+                'symbol': symbol,
                 'asset': asset,
                 'quote': quote,
                 'avg_entry_price': new_avg_price,
@@ -447,16 +496,18 @@ class CostBasisTracker:
                 'trade_count': trade_count,
                 'first_trade': pos.get('first_trade', int(time.time() * 1000)),
                 'last_trade': int(time.time() * 1000),
-                'synced_at': time.time()
+                'synced_at': time.time(),
+                'order_ids': order_ids
             }
         else:
             # Position closed
-            self.positions.pop(symbol, None)
-        
+            self.positions.pop(position_key, None)
+
         self._save()
     
     def can_sell_profitably(self, symbol: str, current_price: float, 
-                           quantity: float = None, fee_pct: float = 0.001) -> Tuple[bool, Dict]:
+                           exchange: str = None, quantity: float = None, 
+                           fee_pct: float = 0.001) -> Tuple[bool, Dict]:
         """Check if selling would be profitable.
         
         Returns:
@@ -470,7 +521,32 @@ class CostBasisTracker:
             - potential_loss: float (if negative)
             - recommendation: str
         """
-        pos = self.positions.get(symbol)
+        # Try direct match with exchange context first
+        pos = self.get_cost_basis(symbol, exchange)
+
+        if not pos:
+            # Fallback to old format or general symbol search
+            pos = self.positions.get(symbol)
+        
+        if not pos:
+            norm_symbol = symbol.replace('/', '')
+            pos = self.positions.get(norm_symbol)
+            
+        if not pos:
+            # Deep match: check if the base asset matches (e.g. SENT/USDT matches SENTUSDC)
+            base_asset = symbol.split('/')[0] if '/' in symbol else symbol
+            # Remove common quote assets to find base
+            for quote in ['USD', 'USDT', 'USDC', 'EUR', 'GBP', 'BTC', 'ETH']:
+                if base_asset.endswith(quote) and len(base_asset) > len(quote):
+                    base_asset = base_asset[:-len(quote)]
+                    break
+            
+            for s, p in self.positions.items():
+                # Check new and old formats
+                stored_symbol = p.get('symbol', s)
+                if stored_symbol.startswith(base_asset):
+                    pos = p
+                    break
         
         if not pos:
             # No cost basis data - DON'T SELL! We don't know if it's profitable!
@@ -536,7 +612,9 @@ class CostBasisTracker:
             'net_profit': net_profit,
             'profit_pct': net_profit_pct, # Return NET profit pct
             'potential_loss': abs(net_profit) if net_profit < 0 else 0,
-            'recommendation': recommendation
+            'recommendation': recommendation,
+            'order_ids': pos.get('order_ids', []),
+            'exchange': pos.get('exchange')
         }
     
     def get_portfolio_summary(self) -> Dict[str, Any]:

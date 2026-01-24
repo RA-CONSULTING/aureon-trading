@@ -98,6 +98,15 @@ try:
     NEURON_AVAILABLE = True
 except ImportError:
     NEURON_AVAILABLE = False
+
+# Queen Conscience (Ethical Compass - can VETO trades)
+try:
+    from queen_conscience import QueenConscience, ConscienceVerdict
+    CONSCIENCE_AVAILABLE = True
+except ImportError:
+    CONSCIENCE_AVAILABLE = False
+    QueenConscience = None
+    ConscienceVerdict = None
     QueenNeuron = None
     create_queen_neuron = None
 
@@ -277,6 +286,15 @@ class QueenOrcaBridge:
         # Queen side
         self.queen_voice = queen_voice
         self.queen_neuron = create_queen_neuron() if NEURON_AVAILABLE else None
+        
+        # Queen's conscience (ethical compass - can VETO trades)
+        self.queen_conscience = None
+        if CONSCIENCE_AVAILABLE:
+            try:
+                self.queen_conscience = QueenConscience()
+                logger.info("👑❤️ Queen conscience connected to Orca - Ethical VETO enabled")
+            except Exception as e:
+                logger.warning(f"⚠️ Could not initialize Queen conscience: {e}")
         
         # Orca side
         self.orca_kill_cycle = orca_kill_cycle
@@ -736,6 +754,29 @@ class QueenOrcaBridge:
             self._telemetry['decisions_made'] += 1
             
             if action == 'HUNT' and confidence > 0.6:
+                # 👑❤️ CONSCIENCE CHECK - Can veto unethical trades
+                if self.queen_conscience:
+                    verdict = self.queen_conscience.ask_why(
+                        action='trade_execution',
+                        context={
+                            'symbol': signal.symbol,
+                            'exchange': signal.exchange,
+                            'confidence': confidence,
+                            'expected_profit': signal.data.get('expected_profit', 0),
+                            'risk_level': signal.data.get('risk', 0)
+                        }
+                    )
+                    
+                    if verdict.verdict == ConscienceVerdict.VETO:
+                        self._stats['queen_rejections'] += 1
+                        self._stats['conscience_vetoes'] = self._stats.get('conscience_vetoes', 0) + 1
+                        logger.warning(f"🚫❤️ CONSCIENCE VETO: {verdict.reasoning}")
+                        return None
+                    elif verdict.verdict == ConscienceVerdict.CAUTION:
+                        # Lower confidence but allow
+                        confidence *= 0.8
+                        logger.info(f"⚠️❤️ CONSCIENCE CAUTION: {verdict.reasoning}")
+                
                 self._stats['queen_approvals'] += 1
                 return QueenOrcaDecision(
                     command=OrcaCommand.HUNT_SYMBOL,

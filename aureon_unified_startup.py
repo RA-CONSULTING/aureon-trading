@@ -298,6 +298,15 @@ QUEEN_SYSTEMS: List[SystemDefinition] = [
         depends_on=["Queen Neuron"]
     ),
     SystemDefinition(
+        name="Queen Sentience Integration",
+        module="queen_sentience_integration",
+        class_name="QueenSentienceIntegration",
+        phase=StartupPhase.QUEEN_MIND,
+        priority=6,
+        optional=True,
+        depends_on=["Queen Consciousness", "Queen Neuron"]
+    ),
+    SystemDefinition(
         name="Queen Hive Mind",
         module="aureon_queen_hive_mind",
         class_name="QueenHiveMind",

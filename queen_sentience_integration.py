@@ -488,6 +488,40 @@ class QueenSentienceEngine:
             }
         }
     
+    def get_current_sentiment(self) -> Dict:
+        """
+        Get current sentiment for trading decisions.
+        Returns: {confidence: float, mood: str, emotion: str}
+        """
+        if not self.current_thought:
+            return {"confidence": 0.5, "mood": "neutral", "emotion": "calm"}
+        
+        # Extract sentiment from current thought
+        thought = self.current_thought
+        
+        # Map thought types to confidence levels
+        confidence_map = {
+            ThoughtType.INSIGHT: 0.8,
+            ThoughtType.ANALYSIS: 0.7,
+            ThoughtType.OBSERVATION: 0.6,
+            ThoughtType.QUESTION: 0.5,
+            ThoughtType.DOUBT: 0.3,
+            ThoughtType.EMOTION: 0.4,
+            ThoughtType.MEMORY: 0.65,
+            ThoughtType.INTENTION: 0.75,
+            ThoughtType.REFLECTION: 0.7,
+            ThoughtType.CURIOSITY: 0.55
+        }
+        
+        confidence = confidence_map.get(thought.thought_type, 0.5) * thought.intensity
+        
+        return {
+            "confidence": confidence,
+            "mood": thought.emotional_tone,
+            "emotion": thought.thought_type.value,
+            "thinking_about": thought.content[:50] + "..." if len(thought.content) > 50 else thought.content
+        }
+    
     def stop(self):
         """Stop all sentience loops."""
         logger.info("🛑 Stopping sentience engine...")
@@ -506,6 +540,9 @@ def get_sentience_engine() -> QueenSentienceEngine:
     if _sentience_engine is None:
         _sentience_engine = QueenSentienceEngine()
     return _sentience_engine
+
+# Alias for compatibility with startup system
+QueenSentienceIntegration = QueenSentienceEngine
 
 
 # ═══════════════════════════════════════════════════════════════════════════════

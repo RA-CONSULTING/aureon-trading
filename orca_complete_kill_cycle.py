@@ -6040,7 +6040,8 @@ class OrcaKillCycle:
                     price=fill_price,
                     quantity=fill_qty,
                     exchange=exchange,
-                    fee=breakeven_info['entry_fee']
+                    fee=breakeven_info['entry_fee'],
+                    order_id=order_id
                 )
             except Exception as e:
                 print(f"⚠️ Cost basis tracker error: {e}")
@@ -6189,6 +6190,21 @@ class OrcaKillCycle:
                     'net_pnl': net_pnl,
                     'exit_value': exit_value
                 })
+
+            # Update cost basis tracker
+            if self.cost_basis_tracker:
+                try:
+                    self.cost_basis_tracker.update_position(
+                        symbol=symbol,
+                        new_qty=fill_qty,
+                        new_price=fill_price,
+                        exchange=exchange,
+                        is_buy=False,
+                        fee=exit_value * fee_rate, # Approximate fee
+                        order_id=order_id
+                    )
+                except Exception as e:
+                    _safe_print(f"⚠️ Cost basis tracker update failed on sell: {e}")
             
             # Log to trade logger
             if self.trade_logger:
@@ -6326,7 +6342,7 @@ class OrcaKillCycle:
         # CHECK 1: Is entry price CONFIRMED (not estimated)?
         # ═══════════════════════════════════════════════════════════════════
         if self.cost_basis_tracker:
-            can_sell, cb_info = self.cost_basis_tracker.can_sell_profitably(symbol, current_price)
+            can_sell, cb_info = self.cost_basis_tracker.can_sell_profitably(symbol, current_price, exchange=exchange)
             if cb_info.get('entry_price') is None:
                 # No confirmed cost basis - BLOCK SELL!
                 info['blocked_reason'] = 'NO_CONFIRMED_COST_BASIS'
