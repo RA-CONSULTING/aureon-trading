@@ -1,145 +1,129 @@
+# 👑🌌 AUREON TRADING SYSTEM - DIGITAL OCEAN APP PLATFORM
+# ═══════════════════════════════════════════════════════════════════════════
+#
+# SINGLE SERVICE with PARALLEL PROCESSES via supervisord:
+#   1. 👑 Command Center UI (port 8080) - Dashboard & WebSocket
+#   2. 🦈 Orca Kill Cycle - Trading Engine  
+#   3. 🧠 Autonomous Engine - 9 Intelligence Loops
+#
+# All processes start together on boot via supervisord.conf
+#
+# Gary Leckey | January 2026 | DIGITAL OCEAN DEPLOYMENT
+# ═══════════════════════════════════════════════════════════════════════════
+
 name: aureon-trading
 region: lon
+
 services:
-- name: aureon-command-center
-  dockerfile_path: Dockerfile
-  source_dir: /
-  github:
-    branch: main
-    deploy_on_push: true
-    repo: RA-CONSULTING/aureon-trading
-  http_port: 8080
-  instance_count: 1
-  instance_size_slug: professional-xs
-  health_check:
-    http_path: /health
-    initial_delay_seconds: 120
-    period_seconds: 60
-  envs:
-  - key: PYTHONUNBUFFERED
-    scope: RUN_AND_BUILD_TIME
-    value: "1"
-  - key: AUREON_STATE_DIR
-    scope: RUN_TIME
-    value: /app/state
-  - key: PORT
-    scope: RUN_TIME
-    value: "8080"
-  # ⚠️ REPLACE THESE WITH YOUR API KEYS ⚠️
-  - key: KRAKEN_API_KEY
-    scope: RUN_TIME
-    value: "place_your_key_here"
-  - key: KRAKEN_API_SECRET
-    scope: RUN_TIME
-    value: "place_your_secret_here"
-  - key: BINANCE_API_KEY
-    scope: RUN_TIME
-    value: "place_your_key_here"
-  - key: BINANCE_API_SECRET
-    scope: RUN_TIME
-    value: "place_your_secret_here"
-  - key: ALPACA_API_KEY
-    scope: RUN_TIME
-    value: "place_your_key_here"
-  - key: ALPACA_SECRET_KEY
-    scope: RUN_TIME
-    value: "place_your_secret_here"
-  - key: AUREON_REDIS_URL
-    scope: RUN_TIME
-    value: ${db.REDIS_URL}
-  - key: AUREON_ENABLE_AUTONOMOUS_CONTROL
-    scope: RUN_TIME
-    value: "1"
-  # 🔥 LIVE TRADING MODE - Set to 1 for real trades
-  - key: LIVE
-    scope: RUN_TIME
-    value: "1"
-  - key: KRAKEN_DRY_RUN
-    scope: RUN_TIME
-    value: "false"
-  - key: BINANCE_DRY_RUN
-    scope: RUN_TIME
-    value: "false"
-  - key: ALPACA_DRY_RUN
-    scope: RUN_TIME
-    value: "false"
-  # 💼 CAPITAL.COM (CFD Trading)
-  - key: CAPITAL_API_KEY
-    scope: RUN_TIME
-    value: "place_your_key_here"
-  - key: CAPITAL_IDENTIFIER
-    scope: RUN_TIME
-    value: "place_your_email_here"
-  - key: CAPITAL_PASSWORD
-    scope: RUN_TIME
-    value: "place_your_password_here"
-  - key: CAPITAL_DEMO
-    scope: RUN_TIME
-    value: "false"
+  # 👑 MAIN SERVICE - Runs ALL parallel processes via supervisord
+  - name: aureon-command-center
+    dockerfile_path: Dockerfile
+    source_dir: /
+    github:
+      branch: main
+      deploy_on_push: true
+      repo: RA-CONSULTING/aureon-trading
+    
+    # HTTP settings for health checks
+    http_port: 8080
+    instance_count: 1
+    instance_size_slug: professional-xs
+    
+    # Health check - Command Center /health endpoint
+    health_check:
+      http_path: /health
+      initial_delay_seconds: 120
+      period_seconds: 60
+      timeout_seconds: 30
+      success_threshold: 1
+      failure_threshold: 3
+    
+    # Environment variables
+    envs:
+      # Python settings
+      - key: PYTHONUNBUFFERED
+        scope: RUN_AND_BUILD_TIME
+        value: "1"
+      - key: PYTHONIOENCODING
+        scope: RUN_AND_BUILD_TIME
+        value: "utf-8"
+      
+      # Aureon settings
+      - key: PORT
+        scope: RUN_TIME
+        value: "8080"
+      - key: AUREON_STATE_DIR
+        scope: RUN_TIME
+        value: /app/state
+      - key: AUREON_ENABLE_AUTONOMOUS_CONTROL
+        scope: RUN_TIME
+        value: "1"
+      
+      # 🔥 LIVE TRADING MODE
+      - key: LIVE
+        scope: RUN_TIME
+        value: "1"
+      - key: KRAKEN_DRY_RUN
+        scope: RUN_TIME
+        value: "false"
+      - key: BINANCE_DRY_RUN
+        scope: RUN_TIME
+        value: "false"
+      - key: ALPACA_DRY_RUN
+        scope: RUN_TIME
+        value: "false"
+      
+      # ═══════════════════════════════════════════════════════════════
+      # ⚠️ API KEYS - SET THESE IN DIGITAL OCEAN DASHBOARD ⚠️
+      # Go to: App > Settings > App-Level Environment Variables
+      # ═══════════════════════════════════════════════════════════════
+      
+      # 🐙 KRAKEN
+      - key: KRAKEN_API_KEY
+        scope: RUN_TIME
+        type: SECRET
+      - key: KRAKEN_API_SECRET
+        scope: RUN_TIME
+        type: SECRET
+      
+      # 🟡 BINANCE
+      - key: BINANCE_API_KEY
+        scope: RUN_TIME
+        type: SECRET
+      - key: BINANCE_API_SECRET
+        scope: RUN_TIME
+        type: SECRET
+      
+      # 🦙 ALPACA
+      - key: ALPACA_API_KEY
+        scope: RUN_TIME
+        type: SECRET
+      - key: ALPACA_SECRET_KEY
+        scope: RUN_TIME
+        type: SECRET
+      
+      # 💼 CAPITAL.COM (CFD Trading)
+      - key: CAPITAL_API_KEY
+        scope: RUN_TIME
+        type: SECRET
+      - key: CAPITAL_IDENTIFIER
+        scope: RUN_TIME
+        type: SECRET
+      - key: CAPITAL_PASSWORD
+        scope: RUN_TIME
+        type: SECRET
+      - key: CAPITAL_DEMO
+        scope: RUN_TIME
+        value: "false"
+      
+      # 🧠 Redis for ThoughtBus (optional - uses internal if available)
+      - key: AUREON_REDIS_URL
+        scope: RUN_TIME
+        value: "\${db.REDIS_URL}"
 
-# 👑 The Queen's Autonomous Engine 👑
-# This is the core brain, running all 9 autonomous loops.
-- name: aureon-autonomous-engine
-  dockerfile_path: Dockerfile
-  source_dir: /
-  github:
-    branch: main
-    deploy_on_push: true
-    repo: RA-CONSULTING/aureon-trading
-  # This is a worker, not a web service. It runs continuously.
-  instance_count: 1
-  instance_size_slug: professional-xs
-  run_command: python aureon_autonomous_worker.py
-  envs:
-  - key: PYTHONUNBUFFERED
-    scope: RUN_AND_BUILD_TIME
-    value: "1"
-  - key: AUREON_STATE_DIR
-    scope: RUN_TIME
-    value: /app/state
-  # ⚠️ REPLACE THESE WITH YOUR API KEYS ⚠️
-  - key: KRAKEN_API_KEY
-    scope: RUN_TIME
-    value: "place_your_key_here"
-  - key: KRAKEN_API_SECRET
-    scope: RUN_TIME
-    value: "place_your_secret_here"
-  - key: BINANCE_API_KEY
-    scope: RUN_TIME
-    value: "place_your_key_here"
-  - key: BINANCE_API_SECRET
-    scope: RUN_TIME
-    value: "place_your_secret_here"
-  - key: ALPACA_API_KEY
-    scope: RUN_TIME
-    value: "place_your_key_here"
-  - key: ALPACA_SECRET_KEY
-    scope: RUN_TIME
-    value: "place_your_secret_here"
-  - key: AUREON_REDIS_URL
-    scope: RUN_TIME
-    value: ${db.REDIS_URL}
-  - key: AUREON_ENABLE_AUTONOMOUS_CONTROL
-    scope: RUN_TIME
-    value: "1"
-  # 🔥 LIVE TRADING MODE - Set to 1 for real trades
-  - key: LIVE
-    scope: RUN_TIME
-    value: "1"
-  - key: KRAKEN_DRY_RUN
-    scope: RUN_TIME
-    value: "false"
-  - key: BINANCE_DRY_RUN
-    scope: RUN_TIME
-    value: "false"
-  - key: ALPACA_DRY_RUN
-    scope: RUN_TIME
-    value: "false"
-
-# 🧠 Centralized Brain/Nervous System 🧠
-# Redis is used for the ThoughtBus Pub/Sub to connect all services.
+# 🧠 Redis Database for ThoughtBus Pub/Sub
 databases:
-- name: db
-  engine: REDIS
-  production: true
-  version: "7"
+  - name: db
+    engine: REDIS
+    production: true
+    version: "7"
