@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>COP & Energy Panel Preview</title>
+    <style>
+        body {
+            background: #0b1221;
+            color: #f8fafc;
+            font-family: 'Inter', system-ui, sans-serif;
+            padding: 20px;
+        }
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 12px;
+            margin-bottom: 15px;
+        }
+        .summary-card {
+            background: #0f172a;
+            border: 1px solid rgba(148, 163, 184, 0.24);
+            border-radius: 12px;
+            padding: 14px 16px;
+            box-shadow: 0 10px 22px rgba(2, 6, 23, 0.35);
+        }
+        .summary-label {
+            font-size: 0.75em;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #94a3b8;
+            margin-bottom: 8px;
+        }
+        .summary-value {
+            font-size: 1.2em;
+            font-weight: 700;
+            color: #f8fafc;
+        }
+        .energy-breakdown {
+            display: grid;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .cop-history {
+            margin-top: 12px;
+            padding: 12px;
+            background: rgba(15, 23, 42, 0.6);
+            border-radius: 8px;
+            border: 1px solid rgba(148, 163, 184, 0.2);
+        }
+    </style>
+</head>
+<body>
+    <h1 style="color: #facc15; margin-bottom: 20px;">⚡ ENERGY & COP TRACKING</h1>
+    
+    <!-- Summary Cards -->
+    <div class="summary-grid">
+        <div class="summary-card" style="border: 1px solid rgba(250, 204, 21, 0.3);">
+            <div class="summary-label">Total Energy (USD)</div>
+            <div class="summary-value">$12,547.83</div>
+        </div>
+        <div class="summary-card" style="border: 1px solid rgba(34, 197, 94, 0.3);">
+            <div class="summary-label">Energy Momentum</div>
+            <div class="summary-value" style="color: #22c55e;">+2.47%</div>
+        </div>
+        <div class="summary-card" style="border: 1px solid rgba(56, 189, 248, 0.3);">
+            <div class="summary-label">Last COP</div>
+            <div class="summary-value" style="color: #22c55e;">1.0234</div>
+        </div>
+        <div class="summary-card" style="border: 1px solid rgba(239, 68, 68, 0.3);">
+            <div class="summary-label">Min COP</div>
+            <div class="summary-value" style="color: #facc15;">1.0012</div>
+        </div>
+    </div>
+
+    <!-- Per-Exchange Energy Breakdown -->
+    <h3 style="color: #00bfff; margin-top: 20px;">Per-Exchange Energy</h3>
+    <div class="energy-breakdown">
+        <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(148, 163, 184, 0.2); border-radius: 8px; padding: 10px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <span style="font-weight: 700; color: #f8fafc; text-transform: uppercase;">ALPACA</span>
+                <span style="font-size: 0.85em; font-weight: 600; color: #22c55e;">+3.2%</span>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; font-size: 0.8em;">
+                <div>
+                    <div style="color: #94a3b8; font-size: 0.75em;">Cash</div>
+                    <div style="color: #f8fafc; font-weight: 600;">$4,200.50</div>
+                </div>
+                <div>
+                    <div style="color: #94a3b8; font-size: 0.75em;">Assets</div>
+                    <div style="color: #f8fafc; font-weight: 600;">$2,847.33</div>
+                </div>
+                <div>
+                    <div style="color: #94a3b8; font-size: 0.75em;">Total</div>
+                    <div style="color: #facc15; font-weight: 700;">$7,047.83</div>
+                </div>
+            </div>
+        </div>
+
+        <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(148, 163, 184, 0.2); border-radius: 8px; padding: 10px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <span style="font-weight: 700; color: #f8fafc; text-transform: uppercase;">KRAKEN</span>
+                <span style="font-size: 0.85em; font-weight: 600; color: #22c55e;">+1.8%</span>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; font-size: 0.8em;">
+                <div>
+                    <div style="color: #94a3b8; font-size: 0.75em;">Cash</div>
+                    <div style="color: #f8fafc; font-weight: 600;">$3,100.00</div>
+                </div>
+                <div>
+                    <div style="color: #94a3b8; font-size: 0.75em;">Assets</div>
+                    <div style="color: #f8fafc; font-weight: 600;">$2,400.00</div>
+                </div>
+                <div>
+                    <div style="color: #94a3b8; font-size: 0.75em;">Total</div>
+                    <div style="color: #facc15; font-weight: 700;">$5,500.00</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- COP Last Action Details -->
+    <h3 style="color: #00bfff; margin-top: 20px;">Last COP Action</h3>
+    <div class="cop-history">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <span style="font-size: 0.85em; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em;">Last COP Action</span>
+            <span style="font-size: 0.75em; color: #64748b;">3:45:12 PM</span>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; font-size: 0.85em;">
+            <div>
+                <div style="color: #94a3b8; font-size: 0.75em; margin-bottom: 2px;">Action</div>
+                <div style="color: #f8fafc; font-weight: 600;">SELL</div>
+            </div>
+            <div>
+                <div style="color: #94a3b8; font-size: 0.75em; margin-bottom: 2px;">Symbol</div>
+                <div style="color: #f8fafc; font-weight: 600;">BTC/USD</div>
+            </div>
+            <div>
+                <div style="color: #94a3b8; font-size: 0.75em; margin-bottom: 2px;">Exchange</div>
+                <div style="color: #f8fafc; font-weight: 600;">KRAKEN</div>
+            </div>
+            <div>
+                <div style="color: #94a3b8; font-size: 0.75em; margin-bottom: 2px;">COP Value</div>
+                <div style="color: #22c55e; font-weight: 600;">1.0234</div>
+            </div>
+        </div>
+    </div>
+
+    <div style="margin-top: 30px; padding: 15px; background: rgba(34, 197, 94, 0.1); border-left: 3px solid #22c55e; border-radius: 6px;">
+        <strong style="color: #22c55e;">✅ All COP values > 1.0</strong><br>
+        <span style="color: #94a3b8; font-size: 0.9em;">Energy is increasing on every trading action. Queen is maintaining positive momentum across all exchanges.</span>
+    </div>
+</body>
+</html>

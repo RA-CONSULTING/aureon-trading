@@ -2577,6 +2577,9 @@ class OrcaKillCycle:
         self.last_rising_star_candidates: List[Dict[str, Any]] = []
         self.last_rising_star_winners: List[Dict[str, Any]] = []
         self.last_queen_decisions: List[Dict[str, Any]] = []
+        self.energy_last_totals: Dict[str, float] = {}
+        self.cop_last_action: Optional[Dict[str, Any]] = None
+        self.cop_min_action: Optional[Dict[str, Any]] = None
         
         # ═══════════════════════════════════════════════════════════════════
         # 💰 FEE PROFILES - Use adaptive profit gate for accurate cost tracking
@@ -6170,6 +6173,12 @@ class OrcaKillCycle:
             fee_rate = self.fee_rates.get(exchange, 0.0025)
             exit_value = fill_price * fill_qty * (1 - fee_rate)
             net_pnl = exit_value - entry_cost if entry_cost > 0 else 0
+            if entry_cost > 0:
+                cop = exit_value / entry_cost
+                self._record_action_cop(cop, 'SELL', exchange, symbol, {
+                    'net_pnl': net_pnl,
+                    'exit_value': exit_value
+                })
             
             # Log to trade logger
             if self.trade_logger:
@@ -6329,6 +6338,18 @@ class OrcaKillCycle:
             info['blocked_reason'] = f'NET_PNL_NEGATIVE_OR_ZERO ({net_pnl:.6f})'
             print(f"   👑❌ EXIT BLOCKED: {symbol} - Net P&L ${net_pnl:.6f} < ${MIN_PROFIT_THRESHOLD:.4f} threshold")
             return False, info
+
+        # ═══════════════════════════════════════════════════════════════════
+        # CHECK 2B: COP > 1.0 (Energy gain on every action)
+        # ═══════════════════════════════════════════════════════════════════
+        confirmed_cost = info.get('confirmed_cost_basis', entry_cost)
+        cop = (exit_value / confirmed_cost) if confirmed_cost and confirmed_cost > 0 else 0.0
+        info['cop'] = cop
+        MIN_COP = 1.0001
+        if cop < MIN_COP:
+            info['blocked_reason'] = f'COP_BELOW_1 ({cop:.6f})'
+            print(f"   👑❌ EXIT BLOCKED: {symbol} - COP {cop:.6f} < {MIN_COP:.4f}")
+            return False, info
         
         # ═══════════════════════════════════════════════════════════════════
         # CHECK 3: Use is_real_win() for ACCURATE fee calculation (if available)
@@ -6381,6 +6402,158 @@ class OrcaKillCycle:
         info['blocked_reason'] = None
         print(f"   👑✅ EXIT APPROVED: {symbol} - Net P&L ${info['net_pnl']:.4f} is CERTAIN ({reason})")
         return True, info
+
+    def _record_action_cop(self, cop: float, action: str, exchange: str, symbol: str, extra: Optional[Dict[str, Any]] = None) -> None:
+        """Record COP for the last action, and track minimum COP observed."""
+        if cop is None:
+            return
+        try:
+            cop_value = float(cop)
+        except Exception:
+            return
+        record = {
+            "cop": cop_value,
+            "action": action,
+            "exchange": exchange,
+            "symbol": symbol,
+            "timestamp": time.time()
+        }
+        if extra:
+            record.update(extra)
+        self.cop_last_action = record
+        if self.cop_min_action is None or cop_value < float(self.cop_min_action.get("cop", cop_value)):
+            self.cop_min_action = record
+
+    def _expected_cop_for_buy(self, price: float, qty: float, fee_rate: float, target_pct: float) -> Tuple[float, float, float, float]:
+        """Estimate COP for a BUY using target price and fees."""
+        entry_cost = price * qty * (1 + fee_rate)
+        breakeven = price * (1 + fee_rate) / (1 - fee_rate)
+        target_price = breakeven * (1 + (target_pct / 100))
+        expected_exit_value = target_price * qty * (1 - fee_rate)
+        cop = (expected_exit_value / entry_cost) if entry_cost > 0 else 0.0
+        return cop, target_price, entry_cost, expected_exit_value
+
+    def _get_energy_snapshot(self) -> Dict[str, Any]:
+        """Compute cash/assets energy per exchange with momentum tracking."""
+        live_prices = self._get_live_crypto_prices()
+        gbp_usd_rate = live_prices.get('GBPUSD', 1.27)
+        energy = {
+            "exchanges": {},
+            "total": {"cash": 0.0, "assets": 0.0, "total": 0.0}
+        }
+
+        def _finalize(exchange: str, cash: float, assets: float) -> None:
+            total = cash + assets
+            last_total = self.energy_last_totals.get(exchange, 0.0)
+            momentum = ((total - last_total) / last_total) if last_total > 0 else 0.0
+            self.energy_last_totals[exchange] = total
+            energy["exchanges"][exchange] = {
+                "cash": cash,
+                "assets": assets,
+                "total": total,
+                "momentum_pct": momentum * 100
+            }
+            energy["total"]["cash"] += cash
+            energy["total"]["assets"] += assets
+            energy["total"]["total"] += total
+
+        # Alpaca energy
+        if 'alpaca' in self.clients:
+            cash = 0.0
+            assets = 0.0
+            try:
+                alpaca_client = self.clients['alpaca']
+                acct = alpaca_client.get_account() if alpaca_client else {}
+                cash = float((acct or {}).get('cash', 0) or 0)
+                positions = alpaca_client.get_positions() if alpaca_client else []
+                assets = sum(abs(float(p.get('market_value', 0) or 0)) for p in (positions or []))
+            except Exception:
+                pass
+            _finalize('alpaca', cash, assets)
+
+        # Kraken energy
+        if 'kraken' in self.clients:
+            cash = 0.0
+            assets = 0.0
+            try:
+                kraken_client = self.clients['kraken']
+                bal = kraken_client.get_balance() if kraken_client else {}
+                cash_assets = {'ZUSD', 'USD', 'USDC', 'USDT', 'TUSD', 'DAI', 'USDD', 'ZEUR', 'EUR', 'ZGBP', 'GBP'}
+                kraken_pairs = {
+                    'BTC': 'BTCUSD', 'XXBT': 'BTCUSD',
+                    'ETH': 'ETHUSD', 'XETH': 'ETHUSD',
+                    'SOL': 'SOLUSD', 'TRX': 'TRXUSD',
+                    'ADA': 'ADAUSD', 'DOT': 'DOTUSD',
+                    'ATOM': 'ATOMUSD'
+                }
+                for asset, qty in (bal or {}).items():
+                    try:
+                        qty = float(qty or 0)
+                    except Exception:
+                        continue
+                    if qty <= 0:
+                        continue
+                    if asset in {'ZGBP', 'GBP'}:
+                        cash += qty * gbp_usd_rate
+                        continue
+                    if asset in cash_assets:
+                        cash += qty
+                        continue
+                    pair = kraken_pairs.get(asset)
+                    price = float(live_prices.get(pair, 0)) if pair else 0.0
+                    if price > 0:
+                        assets += qty * price
+            except Exception:
+                pass
+            _finalize('kraken', cash, assets)
+
+        # Binance energy
+        if 'binance' in self.clients:
+            cash = 0.0
+            assets = 0.0
+            try:
+                binance_client = self.clients['binance']
+                bal = binance_client.get_balance() if binance_client else {}
+                stable_assets = {'USDT', 'USDC', 'USD', 'BUSD', 'FDUSD', 'TUSD', 'DAI', 'LDUSDC'}
+                binance_pairs = {
+                    'BTC': 'BTCUSDT', 'ETH': 'ETHUSDT', 'SOL': 'SOLUSDT', 'BNB': 'BNBUSDT',
+                    'TRX': 'TRXUSDT', 'ADA': 'ADAUSDT', 'DOT': 'DOTUSDT', 'AVAX': 'AVAXUSDT',
+                    'LINK': 'LINKUSDT', 'MATIC': 'MATICUSDT', 'XRP': 'XRPUSDT'
+                }
+                for asset, qty in (bal or {}).items():
+                    try:
+                        qty = float(qty or 0)
+                    except Exception:
+                        continue
+                    if qty <= 0:
+                        continue
+                    if asset in stable_assets:
+                        cash += qty
+                        continue
+                    pair = binance_pairs.get(asset)
+                    price = float(live_prices.get(pair, 0)) if pair else 0.0
+                    if price > 0:
+                        assets += qty * price
+            except Exception:
+                pass
+            _finalize('binance', cash, assets)
+
+        # Capital (cash-only snapshot)
+        if 'capital' in self.clients:
+            cash = 0.0
+            try:
+                capital_client = self.clients['capital']
+                bal = capital_client.get_account_balance() if capital_client else {}
+                for asset, qty in (bal or {}).items():
+                    if str(asset).upper() in {'GBP'}:
+                        cash += float(qty or 0) * gbp_usd_rate
+                    else:
+                        cash += float(qty or 0)
+            except Exception:
+                pass
+            _finalize('capital', cash, 0.0)
+
+        return energy
         
     def calculate_breakeven_price(self, entry_price: float) -> float:
         """
@@ -8089,6 +8262,9 @@ class OrcaKillCycle:
             'worst_trade': 0.0,
             'positions_closed': 0,
             'cash_freed': 0.0,
+            'energy': {},
+            'cop_last_action': None,
+            'cop_min_action': None,
         }
         
         # Current positions - will be loaded from portfolio
@@ -8191,6 +8367,7 @@ class OrcaKillCycle:
                                             quantity=qty
                                         )
                                         if sell_order:
+                                            self._record_action_cop(exit_info.get('cop'), 'SELL', exchange_name, symbol)
                                             session_stats['positions_closed'] += 1
                                             session_stats['cash_freed'] += exit_value
                                             session_stats['total_pnl'] += exit_info.get('net_pnl', net_pnl)
@@ -8279,6 +8456,7 @@ class OrcaKillCycle:
                                             try:
                                                 sell_order = client.place_market_order(symbol, 'sell', quantity=qty)
                                                 if sell_order:
+                                                    self._record_action_cop(exit_info.get('cop'), 'SELL', exchange_name, symbol)
                                                     net_pnl = exit_info.get('net_pnl', 0)
                                                     exit_value = exit_info.get('exit_value', current_price * qty)
                                                     session_stats['positions_closed'] += 1
@@ -8366,6 +8544,7 @@ class OrcaKillCycle:
                                                             quantity=qty
                                                         )
                                                         if sell_order:
+                                                            self._record_action_cop(exit_info.get('cop'), 'SELL', exchange_name, symbol)
                                                             net_pnl = exit_info.get('net_pnl', 0)
                                                             exit_value = exit_info.get('exit_value', current_price * qty)
                                                             session_stats['positions_closed'] += 1
@@ -8435,6 +8614,11 @@ class OrcaKillCycle:
             while True:  # ♾️ INFINITE LOOP
                 current_time = time.time()
                 session_stats['cycles'] += 1
+
+                energy_snapshot = self._get_energy_snapshot()
+                session_stats['energy'] = energy_snapshot
+                session_stats['cop_last_action'] = self.cop_last_action
+                session_stats['cop_min_action'] = self.cop_min_action
                 
                 # Update dashboard state for Command Center UI (legacy mode)
                 self._dump_dashboard_state(session_stats, positions, queen)
@@ -8653,6 +8837,7 @@ class OrcaKillCycle:
                                     )
                                     # 🔍 Verify sell succeeded using is_order_successful
                                     if self.is_order_successful(sell_order, pos.exchange):
+                                        self._record_action_cop(exit_info.get('cop'), 'SELL', pos.exchange, pos.symbol)
                                         session_stats['positions_closed'] += 1
                                         session_stats['cash_freed'] += exit_value
                                         session_stats['total_pnl'] += exit_info.get('net_pnl', net_pnl)
@@ -8744,50 +8929,62 @@ class OrcaKillCycle:
                                                 buy_amount = min(amount_per_position, exchange_cash * 0.9)
                                                 
                                                 if buy_amount >= 0.10:  # Minimum $0.10 (exchange mins vary)
-                                                    raw_order = client.place_market_order(
-                                                        symbol=symbol_clean,
-                                                        side='buy',
-                                                        quote_qty=buy_amount
+                                                    fee_rate = self.fee_rates.get(best.exchange, 0.0025)
+                                                    expected_qty = buy_amount / best.price if best.price > 0 else 0.0
+                                                    cop_est, _, _, _ = self._expected_cop_for_buy(
+                                                        best.price, expected_qty, fee_rate, target_pct_current
                                                     )
-                                                    
-                                                    # 🔄 NORMALIZE ORDER RESPONSE across exchanges!
-                                                    buy_order = self.normalize_order_response(raw_order, best.exchange)
-                                                    
-                                                    if buy_order and buy_order.get('status') != 'rejected':
-                                                        buy_qty = buy_order.get('filled_qty', 0)
-                                                        buy_price = buy_order.get('filled_avg_price', best.price)
+                                                    if cop_est <= 1.0:
+                                                        print(f"   👑❌ BUY BLOCKED: COP {cop_est:.6f} ≤ 1.0 (energy not increasing)")
+                                                    else:
+                                                        raw_order = client.place_market_order(
+                                                            symbol=symbol_clean,
+                                                            side='buy',
+                                                            quote_qty=buy_amount
+                                                        )
                                                         
-                                                        if buy_qty > 0 and buy_price > 0:
-                                                            # Calculate levels
-                                                            fee_rate = self.fee_rates.get(best.exchange, 0.0025)
-                                                            breakeven = buy_price * (1 + fee_rate) / (1 - fee_rate)
-                                                            target_price = breakeven * (1 + target_pct_current / 100)
+                                                        # 🔄 NORMALIZE ORDER RESPONSE across exchanges!
+                                                        buy_order = self.normalize_order_response(raw_order, best.exchange)
+                                                        
+                                                        if buy_order and buy_order.get('status') != 'rejected':
+                                                            buy_qty = buy_order.get('filled_qty', 0)
+                                                            buy_price = buy_order.get('filled_avg_price', best.price)
                                                             
-                                                            pos = LivePosition(
-                                                                symbol=symbol_clean,
-                                                                exchange=best.exchange,
-                                                                entry_price=buy_price,
-                                                                entry_qty=buy_qty,
-                                                                entry_cost=buy_price * buy_qty * (1 + fee_rate),
-                                                                breakeven_price=breakeven,
-                                                                target_price=target_price,
-                                                                client=client,
-                                                                stop_price=0.0  # NO STOP LOSS!
-                                                            )
-                                                            positions.append(pos)
-                                                            
-                                                            # Track the buy order
-                                                            self.track_buy_order(symbol_clean, buy_order, best.exchange)
-                                                            
-                                                            # Update efficiency metrics (bought)
-                                                            
-                                                            # Update position health
-                                                            
-                                                            print(f"   ✅ BOUGHT: {buy_qty:.6f} @ ${buy_price:,.4f}")
-                                                            print(f"      🎯 Target: ${target_price:,.4f} ({target_pct_current:.2f}%)")
-                                                            print(f"      🚫 NO STOP LOSS - HOLD UNTIL PROFIT!")
-                                                            
-                                                            session_stats['total_trades'] += 1
+                                                            if buy_qty > 0 and buy_price > 0:
+                                                                # Calculate levels
+                                                                fee_rate = self.fee_rates.get(best.exchange, 0.0025)
+                                                                breakeven = buy_price * (1 + fee_rate) / (1 - fee_rate)
+                                                                target_price = breakeven * (1 + target_pct_current / 100)
+                                                                cop_actual, _, _, _ = self._expected_cop_for_buy(
+                                                                    buy_price, buy_qty, fee_rate, target_pct_current
+                                                                )
+                                                                
+                                                                pos = LivePosition(
+                                                                    symbol=symbol_clean,
+                                                                    exchange=best.exchange,
+                                                                    entry_price=buy_price,
+                                                                    entry_qty=buy_qty,
+                                                                    entry_cost=buy_price * buy_qty * (1 + fee_rate),
+                                                                    breakeven_price=breakeven,
+                                                                    target_price=target_price,
+                                                                    client=client,
+                                                                    stop_price=0.0  # NO STOP LOSS!
+                                                                )
+                                                                positions.append(pos)
+                                                                
+                                                                # Track the buy order
+                                                                self.track_buy_order(symbol_clean, buy_order, best.exchange)
+                                                                self._record_action_cop(cop_actual, 'BUY', best.exchange, symbol_clean)
+                                                                
+                                                                # Update efficiency metrics (bought)
+                                                                
+                                                                # Update position health
+                                                                
+                                                                print(f"   ✅ BOUGHT: {buy_qty:.6f} @ ${buy_price:,.4f}")
+                                                                print(f"      🎯 Target: ${target_price:,.4f} ({target_pct_current:.2f}%)")
+                                                                print(f"      🚫 NO STOP LOSS - HOLD UNTIL PROFIT!")
+                                                                
+                                                                session_stats['total_trades'] += 1
                                         except Exception as e:
                                             print(f"   ⚠️ Buy failed: {e}")
                                             # Flash alert for API issues
@@ -9286,6 +9483,7 @@ class OrcaKillCycle:
             import random
             # Prepare serializable positions
             serializable_positions = []
+            seen_symbols = set()
             for p in positions:
                 p_dict = {
                     'symbol': p.symbol,
@@ -9299,6 +9497,23 @@ class OrcaKillCycle:
                     'entry_time': p.entry_time
                 }
                 serializable_positions.append(p_dict)
+                seen_symbols.add(p.symbol)
+
+            # Add tracked positions not in active positions (THE TRUTH)
+            if hasattr(self, 'tracked_positions'):
+                for sym, tp in self.tracked_positions.items():
+                    if sym not in seen_symbols:
+                        serializable_positions.append({
+                            'symbol': sym,
+                            'exchange': tp.get('exchange', 'unknown'),
+                            'entry_price': tp.get('entry_price', 0),
+                            'entry_qty': tp.get('entry_qty', 0),
+                            'current_price': tp.get('entry_price', 0), # Default to entry
+                            'current_pnl': 0.0,
+                            'current_pnl_pct': 0.0,
+                            'target_price': tp.get('breakeven_price', 0),
+                            'entry_time': tp.get('entry_time', time.time())
+                        })
 
             exchange_status = {}
             try:

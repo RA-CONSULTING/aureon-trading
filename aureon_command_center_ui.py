@@ -96,6 +96,7 @@ SYSTEMS_STATUS = {}
 KrakenClient = None
 BinanceClient = None
 AlpacaClient = None
+CapitalClient = None
 
 QueenHiveMind = None
 MyceliumNetwork = None
@@ -130,7 +131,7 @@ def safe_import(name: str, import_fn):
 
 def load_systems():
     """Load optional systems after web server is already accepting traffic."""
-    global KrakenClient, BinanceClient, AlpacaClient
+    global KrakenClient, BinanceClient, AlpacaClient, CapitalClient
     global QueenHiveMind, MyceliumNetwork, ThoughtBus
     global ProbabilityUltimateIntelligence, MinerBrain, TimelineOracle, QuantumMirrorScanner
     global HarmonicWaveFusion, GlobalWaveScanner
@@ -141,6 +142,7 @@ def load_systems():
     KrakenClient = safe_import('Kraken', lambda: __import__('kraken_client', fromlist=['KrakenClient']).KrakenClient)
     BinanceClient = safe_import('Binance', lambda: __import__('binance_client', fromlist=['BinanceClient']).BinanceClient)
     AlpacaClient = safe_import('Alpaca', lambda: __import__('alpaca_client', fromlist=['AlpacaClient']).AlpacaClient)
+    CapitalClient = safe_import('Capital', lambda: __import__('capital_client', fromlist=['CapitalClient']).CapitalClient)
 
     print("\n👑 LOADING QUEEN & NEURAL SYSTEMS...")
     QueenHiveMind = safe_import('Queen Hive Mind', lambda: __import__('aureon_queen_hive_mind', fromlist=['QueenHiveMind']).QueenHiveMind)
@@ -586,6 +588,41 @@ COMMAND_CENTER_HTML = """
             display: flex;
             align-items: center;
             gap: 8px;
+        }
+
+        /* Energy & COP Panels */
+        .energy-breakdown-card {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(250, 204, 21, 0.3);
+            border-radius: 8px;
+            padding: 12px;
+            transition: all 0.2s ease;
+        }
+
+        .energy-breakdown-card:hover {
+            border-color: rgba(250, 204, 21, 0.5);
+            background: rgba(15, 23, 42, 0.8);
+        }
+
+        .cop-indicator {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 10px;
+            border-radius: 999px;
+            font-size: 0.85em;
+            font-weight: 700;
+        }
+
+        .cop-indicator.positive {
+            background: rgba(34, 197, 94, 0.2);
+            color: var(--accent-green);
+            border: 1px solid var(--accent-green);
+        }
+
+        .cop-indicator.negative {
+            background: rgba(239, 68, 68, 0.2);
+            color: var(--accent-red);
+            border: 1px solid var(--accent-red);
         }
 
         /* Unified Hubs */
@@ -1688,6 +1725,58 @@ COMMAND_CENTER_HTML = """
                 <div class="summary-value" id="queen-intent">Awaiting directive...</div>
                 <div class="summary-label">Cash Directive</div>
                 <div class="summary-value" id="queen-cash-intent">Awaiting cash plan...</div>
+            </div>
+            
+            <!-- Energy & COP Tracking (Queen Awareness) -->
+            <h3 style="margin-top: 20px; color: #facc15;">⚡ ENERGY & COP TRACKING</h3>
+            <div class="summary-grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));">
+                <div class="summary-card" style="border: 1px solid rgba(250, 204, 21, 0.3);">
+                    <div class="summary-label">Total Energy (USD)</div>
+                    <div class="summary-value" id="energy-total">$0.00</div>
+                </div>
+                <div class="summary-card" style="border: 1px solid rgba(34, 197, 94, 0.3);">
+                    <div class="summary-label">Energy Momentum</div>
+                    <div class="summary-value" id="energy-momentum" style="color: var(--accent-green);">+0.00%</div>
+                </div>
+                <div class="summary-card" style="border: 1px solid rgba(56, 189, 248, 0.3);">
+                    <div class="summary-label">Last COP</div>
+                    <div class="summary-value" id="cop-last">—</div>
+                </div>
+                <div class="summary-card" style="border: 1px solid rgba(239, 68, 68, 0.3);">
+                    <div class="summary-label">Min COP</div>
+                    <div class="summary-value" id="cop-min" style="color: var(--accent-gold);">—</div>
+                </div>
+            </div>
+            
+            <!-- Per-Exchange Energy Details -->
+            <div id="energy-breakdown" class="exchange-breakdown-grid" style="margin-top: 12px;">
+                <div class="empty-state">Loading energy data...</div>
+            </div>
+            
+            <!-- COP Action History -->
+            <div style="margin-top: 12px; padding: 12px; background: rgba(15, 23, 42, 0.6); border-radius: 8px; border: 1px solid rgba(148, 163, 184, 0.2);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <span style="font-size: 0.85em; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em;">Last COP Action</span>
+                    <span id="cop-last-timestamp" style="font-size: 0.75em; color: #64748b;">—</span>
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; font-size: 0.85em;">
+                    <div>
+                        <div style="color: #94a3b8; font-size: 0.75em; margin-bottom: 2px;">Action</div>
+                        <div id="cop-last-action" style="color: #f8fafc; font-weight: 600;">—</div>
+                    </div>
+                    <div>
+                        <div style="color: #94a3b8; font-size: 0.75em; margin-bottom: 2px;">Symbol</div>
+                        <div id="cop-last-symbol" style="color: #f8fafc; font-weight: 600;">—</div>
+                    </div>
+                    <div>
+                        <div style="color: #94a3b8; font-size: 0.75em; margin-bottom: 2px;">Exchange</div>
+                        <div id="cop-last-exchange" style="color: #f8fafc; font-weight: 600;">—</div>
+                    </div>
+                    <div>
+                        <div style="color: #94a3b8; font-size: 0.75em; margin-bottom: 2px;">COP Value</div>
+                        <div id="cop-last-value" style="color: #f8fafc; font-weight: 600;">—</div>
+                    </div>
+                </div>
             </div>
             
             <!-- Exchange Breakdown -->
@@ -2987,7 +3076,108 @@ COMMAND_CENTER_HTML = """
             }
         }
         
+        function updateEnergyAndCOP(data) {
+            // Update from session_stats.energy and session_stats.cop_*
+            const sessionStats = data.session_stats || {};
+            const energy = sessionStats.energy || {};
+            const energyTotal = energy.total || {};
+            
+            // Total energy
+            const totalEnergy = energyTotal.total || 0;
+            document.getElementById('energy-total').textContent = '$' + formatNumber(totalEnergy);
+            
+            // Energy momentum (average across exchanges)
+            const exchanges = energy.exchanges || {};
+            let totalMomentum = 0;
+            let momentumCount = 0;
+            Object.values(exchanges).forEach(ex => {
+                if (ex.momentum_pct !== undefined) {
+                    totalMomentum += ex.momentum_pct;
+                    momentumCount++;
+                }
+            });
+            const avgMomentum = momentumCount > 0 ? totalMomentum / momentumCount : 0;
+            const momentumEl = document.getElementById('energy-momentum');
+            const momentumSign = avgMomentum >= 0 ? '+' : '';
+            momentumEl.textContent = momentumSign + avgMomentum.toFixed(2) + '%';
+            momentumEl.style.color = avgMomentum >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
+            
+            // Last COP action
+            const copLast = sessionStats.cop_last_action || {};
+            if (copLast.cop !== undefined) {
+                document.getElementById('cop-last').textContent = copLast.cop.toFixed(4);
+                document.getElementById('cop-last-action').textContent = copLast.action || '—';
+                document.getElementById('cop-last-symbol').textContent = copLast.symbol || '—';
+                document.getElementById('cop-last-exchange').textContent = copLast.exchange || '—';
+                const copValue = copLast.cop || 0;
+                const copValueEl = document.getElementById('cop-last-value');
+                copValueEl.textContent = copValue.toFixed(4);
+                copValueEl.style.color = copValue >= 1.0 ? 'var(--accent-green)' : 'var(--accent-red)';
+                
+                // Timestamp
+                if (copLast.timestamp) {
+                    const dt = new Date(copLast.timestamp * 1000);
+                    document.getElementById('cop-last-timestamp').textContent = dt.toLocaleTimeString();
+                }
+            }
+            
+            // Min COP
+            const copMin = sessionStats.cop_min_action || {};
+            if (copMin.cop !== undefined) {
+                const minCopEl = document.getElementById('cop-min');
+                minCopEl.textContent = copMin.cop.toFixed(4);
+                minCopEl.style.color = copMin.cop >= 1.0 ? 'var(--accent-green)' : 'var(--accent-red)';
+            }
+            
+            // Per-exchange energy breakdown
+            const container = document.getElementById('energy-breakdown');
+            if (!container) return;
+            
+            if (Object.keys(exchanges).length === 0) {
+                container.innerHTML = '<div class="empty-state">No energy data available</div>';
+                return;
+            }
+            
+            let html = '';
+            Object.entries(exchanges).forEach(([exName, exData]) => {
+                const cash = exData.cash || 0;
+                const assets = exData.assets || 0;
+                const total = exData.total || 0;
+                const momentum = exData.momentum_pct || 0;
+                const momentumColor = momentum >= 0 ? '#22c55e' : '#ef4444';
+                const momentumSign = momentum >= 0 ? '+' : '';
+                
+                html += `
+                    <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(148, 163, 184, 0.2); border-radius: 8px; padding: 10px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                            <span style="font-weight: 700; color: #f8fafc; text-transform: uppercase;">${exName}</span>
+                            <span style="font-size: 0.85em; font-weight: 600; color: ${momentumColor};">${momentumSign}${momentum.toFixed(2)}%</span>
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; font-size: 0.8em;">
+                            <div>
+                                <div style="color: #94a3b8; font-size: 0.75em;">Cash</div>
+                                <div style="color: #f8fafc; font-weight: 600;">$${formatNumber(cash)}</div>
+                            </div>
+                            <div>
+                                <div style="color: #94a3b8; font-size: 0.75em;">Assets</div>
+                                <div style="color: #f8fafc; font-weight: 600;">$${formatNumber(assets)}</div>
+                            </div>
+                            <div>
+                                <div style="color: #94a3b8; font-size: 0.75em;">Total</div>
+                                <div style="color: #facc15; font-weight: 700;">$${formatNumber(total)}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+        
         function updatePortfolio(data) {
+            // Update energy/COP first
+            updateEnergyAndCOP(data);
+            
             if (data.portfolio) {
                 const totalValue = data.portfolio.total_value_usd || 0;
                 const cashAvailable = data.portfolio.cash_available || 0;
@@ -3035,10 +3225,12 @@ COMMAND_CENTER_HTML = """
 
                 const positions = data.portfolio.positions || [];
                 document.getElementById('positions-count').textContent = positions.length.toString();
+                updatePositions(positions);
             }
             
-            if (data.balances) {
-                updateBalances(data.balances);
+            const balances = data.balances || (data.portfolio ? data.portfolio.balances : null);
+            if (balances) {
+                updateBalances(balances);
             }
         }
         
@@ -3155,6 +3347,7 @@ COMMAND_CENTER_HTML = """
         
         function addSignal(signal) {
             const container = document.getElementById('signals-feed');
+            const div = document.createElement('div');
             
             const isVoice = signal?.metadata?.voice;
             div.className = 'signal-item ' + (isVoice ? 'voice' : (signal.signal_type || 'hold').toLowerCase());
@@ -4314,6 +4507,7 @@ class AureonCommandCenter:
         self.kraken = None
         self.binance = None
         self.alpaca = None
+        self.capital = None
         self.queen = None
         self.mycelium = None
         self.thought_bus = None
@@ -4412,6 +4606,14 @@ class AureonCommandCenter:
                 time.sleep(0.1) # Yield GIL
             except Exception as e:
                 logger.error(f"Alpaca error: {e}")
+
+        if CapitalClient:
+            try:
+                self.capital = CapitalClient()
+                print("   💰 Capital.com: CONNECTED")
+                time.sleep(0.1) # Yield GIL
+            except Exception as e:
+                logger.error(f"Capital error: {e}")
         
         # Neural Systems
         print("\n👑 WIRING NEURAL SYSTEMS...")
@@ -5107,9 +5309,84 @@ Object.entries(systems).forEach(([name, online]) => {
                     cash_usd += alpaca_cash
             except Exception as e:
                 logger.debug(f"Alpaca balance error: {e}")
+
+        # Binance
+        if self.binance:
+            try:
+                # Use standard get_balance() which returns {asset: amount}
+                bb = self.binance.get_balance()
+                if bb:
+                    balances['binance'] = bb
+                    binance_total = 0.0
+                    binance_cash = 0.0
+                    for asset, amount in bb.items():
+                        if amount > 0.0001:
+                            price = await self._get_price(asset, 'binance')
+                            value = amount * price
+                            binance_total += value
+                            if asset.upper() in cash_assets:
+                                binance_cash += value
+                    exchange_breakdown['binance'] = {
+                        'total_usd': binance_total,
+                        'cash_usd': binance_cash,
+                        'assets': bb
+                    }
+                    total_usd += binance_total
+                    cash_usd += binance_cash
+            except Exception as e:
+                logger.debug(f"Binance balance error: {e}")
+
+        # Capital
+        if self.capital:
+            try:
+                # Capital.com use get_account_balance()
+                cb = self.capital.get_account_balance()
+                if cb:
+                    balances['capital'] = cb
+                    capital_total = 0.0
+                    capital_cash = 0.0
+                    for asset, amount in cb.items():
+                        if amount > 0.0001:
+                            price = await self._get_price(asset, 'capital')
+                            value = amount * price
+                            capital_total += value
+                            if asset.upper() in cash_assets or asset.upper() == 'GBP':
+                                capital_cash += value
+                    exchange_breakdown['capital'] = {
+                        'total_usd': capital_total,
+                        'cash_usd': capital_cash,
+                        'assets': cb
+                    }
+                    total_usd += capital_total
+                    cash_usd += capital_cash
+            except Exception as e:
+                logger.debug(f"Capital balance error: {e}")
+
+        # Load tracked positions to populate self.portfolio.positions
+        tracked_positions = []
+        if os.path.exists("tracked_positions.json"):
+            try:
+                with open("tracked_positions.json", "r") as f:
+                    data = json.load(f)
+                    for symbol, pos in data.items():
+                        # Add to positions list for UI
+                        tracked_positions.append({
+                            'symbol': symbol,
+                            'exchange': pos.get('exchange', 'unknown'),
+                            'entry_price': pos.get('entry_price', 0),
+                            'entry_qty': pos.get('entry_qty', 0),
+                            'entry_cost': pos.get('entry_cost', 0),
+                            'current_price': 0.0, # Will be updated by UI if possible
+                            'current_pnl': 0.0,
+                            'current_pnl_pct': 0.0,
+                            'entry_time': pos.get('entry_time', time.time())
+                        })
+            except Exception as e:
+                logger.error(f"Error loading tracked positions for UI: {e}")
         
         # Update portfolio
         self.portfolio.balances = balances
+        self.portfolio.positions = tracked_positions
         self.portfolio.total_value_usd = total_usd
         self.portfolio.cash_available = cash_usd
         self.portfolio.exchange_breakdown = exchange_breakdown
@@ -5167,6 +5444,33 @@ Object.entries(systems).forEach(([name, online]) => {
                 ticker = self.alpaca.get_ticker(symbol)
                 if ticker and 'last' in ticker:
                     price = float(ticker['last'])
+            elif exchange == 'binance' and self.binance:
+                # Try USDT or BUSD or USDC pairs
+                pairs = [f"{asset_upper}USDT", f"{asset_upper}BUSD", f"{asset_upper}USDC"]
+                for p in pairs:
+                    ticker = self.binance.get_ticker(p)
+                    if ticker and 'price' in ticker:
+                        price = float(ticker['price'])
+                        break
+                    if ticker and 'lastPrice' in ticker:
+                        price = float(ticker['lastPrice'])
+                        break
+            elif exchange == 'capital':
+                if asset_upper == 'USD':
+                    price = 1.0
+                elif asset_upper == 'GBP':
+                    # Use a fixed rate or fetch from Kraken
+                    try:
+                        ticker = self.kraken.get_ticker("GBP/USD") if self.kraken else None
+                        if ticker:
+                            price = float(ticker.get('last', 1.25))
+                        else:
+                            price = 1.25
+                    except:
+                        price = 1.25
+                else:
+                    # Default for other Capital assets
+                    price = 1.0 
         except Exception:
             self.price_failures[cache_key] = time.time()
         
