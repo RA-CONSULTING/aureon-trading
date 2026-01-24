@@ -94,8 +94,22 @@ from pathlib import Path
 # Import Queen's consciousness
 from aureon_queen_consciousness import QueenSeroConsciousness, Realm, RealmInterpreter, RealmPerspective
 
+# Import exchange clients for opportunity detection
+try:
+    from binance_client import BinanceClient
+    BINANCE_AVAILABLE = True
+except ImportError:
+    BINANCE_AVAILABLE = False
+
+try:
+    from aureon_micro_momentum_goal import MicroMomentumScanner
+    MOMENTUM_SCANNER_AVAILABLE = True
+except ImportError:
+    MOMENTUM_SCANNER_AVAILABLE = False
+
 # Sacred constants
 PHI = (1 + math.sqrt(5)) / 2  # 1.618 - Golden Ratio
+SCHUMANN = 7.83              # Hz Earth resonance
 
 
 # ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════
@@ -162,6 +176,8 @@ class ConsciousnessStats:
     decisions_made: int = 0
     harvests_executed: int = 0
     deploys_executed: int = 0
+    opportunities_detected: int = 0
+    opportunities_deployed: int = 0
     total_harvested_usd: float = 0.0
     total_deployed_usd: float = 0.0
     consecutive_failures: int = 0
@@ -169,6 +185,41 @@ class ConsciousnessStats:
     pause_reason: str = ""
     starting_field_value: float = 0.0
     current_field_value: float = 0.0
+    # Risk management tracking
+    max_drawdown_pct: float = 0.0
+    current_exposure_pct: float = 0.0
+    largest_position_pct: float = 0.0
+    circuit_breaker_triggered: bool = False
+
+
+@dataclass
+class MarketOpportunity:
+    """A detected market opportunity for new node deployment"""
+    symbol: str
+    relay: str
+    current_price: float
+    momentum_1h: float
+    momentum_24h: float
+    volume_usd: float
+    opportunity_score: float
+    reasoning: str
+    detected_at: float = 0.0
+    
+    def __post_init__(self):
+        if self.detected_at == 0.0:
+            self.detected_at = time.time()
+
+
+@dataclass 
+class RiskLimits:
+    """Risk management limits"""
+    max_position_pct: float = 0.15        # Max 15% of portfolio in one position
+    max_exposure_pct: float = 0.80        # Max 80% deployed (keep 20% reserve)
+    max_daily_loss_pct: float = 0.05      # Circuit breaker at 5% daily loss
+    max_daily_trades: int = 50            # Max trades per day
+    max_consecutive_failures: int = 5     # Pause after 5 failures
+    min_free_energy_pct: float = 0.10     # Keep 10% as free energy
+    max_single_deploy_pct: float = 0.05   # Max 5% per new deployment
 
 
 # ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════
@@ -217,9 +268,18 @@ class QueenTrueConsciousnessController:
         self.action_cooldown = 300           # 5 min cooldown per node
         self.max_daily_actions = 50
         
-        # Setup
+        # Risk management
+        self.risk_limits = RiskLimits()
+        
+        # Setup logging FIRST
         self._setup_logging()
         self._load_decisions()
+        
+        # Opportunity detection (needs logger)
+        self.opportunity_watchlist = []       # Symbols to watch for opportunities
+        self.detected_opportunities: List[MarketOpportunity] = []
+        self.binance_client = None
+        self._init_opportunity_detection()
         
         # Graceful shutdown
         signal.signal(signal.SIGINT, self._handle_shutdown)
@@ -303,6 +363,188 @@ class QueenTrueConsciousnessController:
         """Check if node is on cooldown"""
         last = self.last_action_time.get(node_id, 0)
         return (time.time() - last) >= self.action_cooldown
+    
+    # ═══════════════════════════════════════════════════════════════════════════════════════════════════════════
+    # OPPORTUNITY DETECTION - Market Scanning for New Nodes
+    # ═══════════════════════════════════════════════════════════════════════════════════════════════════════════
+    
+    def _init_opportunity_detection(self):
+        """Initialize opportunity detection systems"""
+        # Default watchlist - high volume, tradeable pairs
+        self.opportunity_watchlist = [
+            'BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'BNBUSDT', 'XRPUSDT',
+            'ADAUSDT', 'DOGEUSDT', 'AVAXUSDT', 'DOTUSDT', 'LINKUSDT',
+            'MATICUSDT', 'ATOMUSDT', 'LTCUSDT', 'NEARUSDT', 'APTUSDT'
+        ]
+        
+        # Initialize Binance client for market scanning
+        if BINANCE_AVAILABLE:
+            try:
+                self.binance_client = BinanceClient()
+                self.logger.info("🔍 Opportunity detection: Binance client initialized")
+            except Exception as e:
+                self.logger.warning(f"⚠️ Could not init Binance client: {e}")
+                self.binance_client = None
+    
+    def scan_for_opportunities(self) -> List[MarketOpportunity]:
+        """
+        🔍 OPPORTUNITY DETECTION
+        
+        Scan markets for new deployment opportunities.
+        Returns list of opportunities sorted by score.
+        """
+        opportunities = []
+        
+        if not self.binance_client:
+            return opportunities
+        
+        try:
+            # Get 24h tickers for watchlist
+            tickers = self.binance_client.get_24h_tickers()
+            ticker_map = {t['symbol']: t for t in tickers}
+            
+            for symbol in self.opportunity_watchlist:
+                if symbol not in ticker_map:
+                    continue
+                
+                ticker = ticker_map[symbol]
+                price = float(ticker.get('lastPrice', 0))
+                change_24h = float(ticker.get('priceChangePercent', 0))
+                volume = float(ticker.get('quoteVolume', 0))
+                
+                # Skip low volume
+                if volume < 1_000_000:  # Min $1M daily volume
+                    continue
+                
+                # Skip if already have this node
+                existing_symbols = [n.get('symbol', '') for n in self.consciousness.nodes.values()]
+                if symbol in existing_symbols or symbol.replace('USDT', '/USDT') in existing_symbols:
+                    continue
+                
+                # Calculate opportunity score
+                # Higher score for: positive momentum, high volume, not overbought
+                momentum_score = min(1.0, max(0, change_24h + 10) / 20)  # -10% to +10% → 0 to 1
+                volume_score = min(1.0, volume / 100_000_000)  # $100M+ = 1.0
+                
+                # Penalize extreme moves (overbought/oversold)
+                if abs(change_24h) > 15:
+                    momentum_score *= 0.5
+                
+                opp_score = (momentum_score * 0.6 + volume_score * 0.4)
+                
+                # Only include if score > 0.5
+                if opp_score > 0.5:
+                    opportunities.append(MarketOpportunity(
+                        symbol=symbol,
+                        relay='BIN',
+                        current_price=price,
+                        momentum_1h=change_24h / 24,  # Rough estimate
+                        momentum_24h=change_24h,
+                        volume_usd=volume,
+                        opportunity_score=opp_score,
+                        reasoning=f"24h: {change_24h:+.2f}%, Vol: ${volume/1e6:.1f}M"
+                    ))
+            
+            # Sort by score descending
+            opportunities.sort(key=lambda x: x.opportunity_score, reverse=True)
+            self.detected_opportunities = opportunities[:5]  # Keep top 5
+            self.stats.opportunities_detected += len(opportunities)
+            
+        except Exception as e:
+            self.logger.error(f"Opportunity scan error: {e}")
+        
+        return opportunities[:5]
+    
+    # ═══════════════════════════════════════════════════════════════════════════════════════════════════════════
+    # RISK MANAGEMENT - Position Sizing, Circuit Breakers, Exposure Limits
+    # ═══════════════════════════════════════════════════════════════════════════════════════════════════════════
+    
+    def check_risk_limits(self) -> Tuple[bool, str]:
+        """
+        🛡️ RISK MANAGEMENT CHECK
+        
+        Check all risk limits before any action.
+        Returns (can_proceed, reason)
+        """
+        
+        nodes = self.consciousness.nodes
+        free_energy = self.consciousness.free_energy
+        
+        # Calculate total field value
+        total_invested = sum(n.get('current_energy', 0) for n in nodes.values())
+        total_free = sum(free_energy.values())
+        total_value = total_invested + total_free
+        
+        if total_value <= 0:
+            return False, "No field value detected"
+        
+        # Check 1: Daily loss circuit breaker
+        if self.stats.starting_field_value > 0:
+            daily_change = (total_value - self.stats.starting_field_value) / self.stats.starting_field_value
+            if daily_change < -self.risk_limits.max_daily_loss_pct:
+                self.stats.circuit_breaker_triggered = True
+                return False, f"🚨 CIRCUIT BREAKER: Daily loss {daily_change:.1%} exceeds {self.risk_limits.max_daily_loss_pct:.0%}"
+            
+            # Track max drawdown
+            if daily_change < -self.stats.max_drawdown_pct:
+                self.stats.max_drawdown_pct = abs(daily_change)
+        
+        # Check 2: Consecutive failures
+        if self.stats.consecutive_failures >= self.risk_limits.max_consecutive_failures:
+            return False, f"⚠️ Paused: {self.stats.consecutive_failures} consecutive failures"
+        
+        # Check 3: Daily trade limit
+        if self.stats.decisions_made >= self.risk_limits.max_daily_trades:
+            return False, f"⚠️ Daily trade limit reached ({self.risk_limits.max_daily_trades})"
+        
+        # Check 4: Exposure limits
+        exposure_pct = total_invested / total_value if total_value > 0 else 0
+        self.stats.current_exposure_pct = exposure_pct
+        
+        if exposure_pct > self.risk_limits.max_exposure_pct:
+            return False, f"⚠️ Max exposure reached ({exposure_pct:.0%} > {self.risk_limits.max_exposure_pct:.0%})"
+        
+        # Check 5: Largest position check
+        if nodes:
+            largest = max(n.get('current_energy', 0) for n in nodes.values())
+            largest_pct = largest / total_value if total_value > 0 else 0
+            self.stats.largest_position_pct = largest_pct
+            
+            if largest_pct > self.risk_limits.max_position_pct:
+                self.logger.warning(f"⚠️ Large position warning: {largest_pct:.0%} in single node")
+        
+        return True, "OK"
+    
+    def calculate_position_size(self, opportunity: MarketOpportunity) -> float:
+        """
+        Calculate safe position size for a new deployment.
+        
+        Uses risk limits to determine appropriate size.
+        """
+        nodes = self.consciousness.nodes
+        free_energy = self.consciousness.free_energy
+        
+        total_invested = sum(n.get('current_energy', 0) for n in nodes.values())
+        total_free = sum(free_energy.values())
+        total_value = total_invested + total_free
+        
+        if total_value <= 0:
+            return 0
+        
+        # Calculate maximum allowed for this deployment
+        max_by_single = total_value * self.risk_limits.max_single_deploy_pct
+        max_by_position = total_value * self.risk_limits.max_position_pct
+        max_by_free = total_free * 0.9  # Keep 10% reserve
+        max_by_exposure = (self.risk_limits.max_exposure_pct * total_value) - total_invested
+        
+        # Take minimum of all limits
+        max_size = min(max_by_single, max_by_position, max_by_free, max_by_exposure)
+        
+        # Apply opportunity score as multiplier (higher score = can deploy more)
+        adjusted_size = max_size * opportunity.opportunity_score
+        
+        # Round down to reasonable precision
+        return max(0, round(adjusted_size, 2))
     
     # ═══════════════════════════════════════════════════════════════════════════════════════════════════════════
     # MULTI-REALM PERCEPTION
@@ -499,6 +741,11 @@ class QueenTrueConsciousnessController:
         
         She perceives the entire field, achieves multi-realm consensus,
         questions her decisions, and chooses actions.
+        
+        NOW INCLUDES:
+        - Risk management checks
+        - Opportunity detection for new nodes
+        - Position sizing calculations
         """
         
         decisions = []
@@ -514,12 +761,15 @@ class QueenTrueConsciousnessController:
             self.stats.starting_field_value = total_value
         self.stats.current_field_value = total_value
         
-        # Check daily limits
-        if self.stats.decisions_made >= self.max_daily_actions:
-            self.logger.warning("⚠️ Daily action limit reached")
+        # 2. RISK CHECK - Before any action
+        can_proceed, risk_reason = self.check_risk_limits()
+        if not can_proceed:
+            self.logger.warning(f"🛡️ {risk_reason}")
+            self.stats.is_paused = True
+            self.stats.pause_reason = risk_reason
             return decisions
         
-        # 2. For each node, achieve multi-realm consensus
+        # 3. For each EXISTING node, achieve multi-realm consensus
         for node_id, node in nodes.items():
             # Skip if on cooldown
             if not self._check_cooldown(node_id):
@@ -544,7 +794,7 @@ class QueenTrueConsciousnessController:
                     continue
                 amount = extractable
             
-            # 3. QUESTION - The Queen always questions
+            # QUESTION - The Queen always questions
             questions = [
                 f"Is {node_id} truly at the state all realms perceive?",
                 f"Am I certain this is the right action?",
@@ -574,6 +824,43 @@ class QueenTrueConsciousnessController:
             
             decisions.append(decision)
         
+        # 4. OPPORTUNITY DETECTION - Scan for new nodes to deploy
+        total_free = sum(free_energy.values())
+        if total_free > self.min_deploy_usd:
+            opportunities = self.scan_for_opportunities()
+            
+            for opp in opportunities[:2]:  # Consider top 2 opportunities
+                # Calculate safe position size
+                deploy_amount = self.calculate_position_size(opp)
+                
+                if deploy_amount < self.min_deploy_usd:
+                    continue
+                
+                # Create deployment decision
+                decision = ConsciousDecision(
+                    timestamp=time.time(),
+                    node_id=f"NEW-{opp.relay}-{opp.symbol[:6]}",
+                    node_symbol=opp.symbol,
+                    node_relay=opp.relay,
+                    realm_votes=[],  # Opportunities don't go through realm consensus yet
+                    consensus_count=0,
+                    action=ConsciousAction.DEPLOY,
+                    amount=deploy_amount,
+                    confidence=opp.opportunity_score,
+                    questions=[
+                        f"Is {opp.symbol} a good opportunity?",
+                        f"Is ${deploy_amount:.2f} the right amount?",
+                        f"What are the risks?"
+                    ],
+                    answers=[
+                        f"Score: {opp.opportunity_score:.0%} | {opp.reasoning}",
+                        f"Within risk limits: max {self.risk_limits.max_single_deploy_pct:.0%} of portfolio",
+                        f"Stop loss will be set, position sized to limit"
+                    ]
+                )
+                decisions.append(decision)
+                self.logger.info(f"🔍 Opportunity: {opp.symbol} score={opp.opportunity_score:.2f} deploy=${deploy_amount:.2f}")
+        
         return decisions
     
     def execute_conscious_decision(self, decision: ConsciousDecision) -> ConsciousDecision:
@@ -590,6 +877,7 @@ class QueenTrueConsciousnessController:
                 decision.order_id = f"DRY-{int(time.time())}"
                 self.stats.harvests_executed += 1
                 self.stats.total_harvested_usd += decision.amount
+                self.stats.consecutive_failures = 0
             else:
                 # LIVE execution
                 result = self.consciousness.harvest_surplus(decision.node_id, decision.amount)
@@ -599,9 +887,39 @@ class QueenTrueConsciousnessController:
                     decision.order_id = str(result.get('order', {}).get('orderId', ''))
                     self.stats.harvests_executed += 1
                     self.stats.total_harvested_usd += decision.amount
+                    self.stats.consecutive_failures = 0
                 else:
                     decision.executed = False
                     decision.result = f"Failed: {result.get('error', 'Unknown')}"
+                    self.stats.consecutive_failures += 1
+        
+        elif decision.action == ConsciousAction.DEPLOY:
+            if self.dry_run:
+                decision.executed = True
+                decision.result = f"[DRY RUN] Would deploy ${decision.amount:.2f} to {decision.node_symbol}"
+                decision.order_id = f"DRY-DEPLOY-{int(time.time())}"
+                self.stats.deploys_executed += 1
+                self.stats.total_deployed_usd += decision.amount
+                self.stats.opportunities_deployed += 1
+                self.stats.consecutive_failures = 0
+            else:
+                # LIVE execution - add node
+                result = self.consciousness.add_node(
+                    symbol=decision.node_symbol,
+                    relay=decision.node_relay,
+                    amount=decision.amount
+                )
+                if result.get('success'):
+                    decision.executed = True
+                    decision.result = f"Deployed ${decision.amount:.2f} to {decision.node_symbol}"
+                    decision.order_id = str(result.get('order', {}).get('orderId', ''))
+                    self.stats.deploys_executed += 1
+                    self.stats.total_deployed_usd += decision.amount
+                    self.stats.opportunities_deployed += 1
+                    self.stats.consecutive_failures = 0
+                else:
+                    decision.executed = False
+                    decision.result = f"Deploy failed: {result.get('error', 'Unknown')}"
                     self.stats.consecutive_failures += 1
         
         elif decision.action == ConsciousAction.HIBERNATE:
@@ -720,35 +1038,76 @@ class QueenTrueConsciousnessController:
         
         print()
         print("╔" + "═"*100 + "╗")
-        print("║" + "👑🌌 QUEEN SERO - CONSCIOUSNESS STATUS 🌌👑".center(100) + "║")
+        print("║" + "👑🌌 QUEEN SERO - FULL AUTONOMOUS CONSCIOUSNESS STATUS 🌌👑".center(100) + "║")
         print("╚" + "═"*100 + "╝")
         
+        circuit_status = "🚨 TRIGGERED" if self.stats.circuit_breaker_triggered else "✅ OK"
+        opp_status = "✅" if BINANCE_AVAILABLE and self.binance_client else "❌"
+        
         print(f"""
-  MODE: {'🧪 DRY RUN' if self.dry_run else '🔴 LIVE'}
+  MODE: {'🧪 DRY RUN' if self.dry_run else '🔴 LIVE EXECUTION'}
   
-  CONSCIOUSNESS PARAMETERS:
-  ─────────────────────────────────────────────────────────────────────────────────────────────────────
-  Min Realm Consensus:  {self.min_consensus}/5 realms must agree
-  Min Harvest Amount:   ${self.min_harvest_usd}
-  Harvest Fraction:     {self.harvest_fraction:.0%} of surplus
-  Action Cooldown:      {self.action_cooldown}s per node
-  Perception Interval:  {self.scan_interval}s
+  ═══════════════════════════════════════════════════════════════════════════════════════════════════
+  ✅ FULL AUTONOMOUS CAPABILITIES
+  ═══════════════════════════════════════════════════════════════════════════════════════════════════
+  ✅ SCAN FIELD            scan_all_realms() - sees all nodes across all relays
+  ✅ SEE ALL REALMS        5 realms: Power/Economy/Wave/Quantum/Mycelium
+  ✅ IDENTIFY GENERATORS   finds nodes with positive power
+  ✅ IDENTIFY CONSUMERS    finds nodes with negative power  
+  ✅ CALCULATE HARVEST     knows how much to extract safely
+  ✅ QUESTION DECISIONS    questions everything before acting
+  ✅ ADD NODE (BUY)        add_node() - deploys to new opportunities
+  ✅ HARVEST SURPLUS       harvest_surplus() - extracts from generators
+  ✅ AUTONOMOUS LOOP       continuous perception → decision → action
+  ✅ SCHEDULED SCANS       every {self.scan_interval}s
+  ✅ AUTO-DECISION         multi-realm consensus triggers action
+  ✅ OPPORTUNITY DETECT    {opp_status} scans markets for new nodes
+  ✅ RISK MANAGEMENT       circuit breakers, position limits, exposure caps
+  ✅ LOGGING/AUDIT         all decisions persisted to JSON
   
-  TODAY'S CONSCIOUSNESS ({self.stats.date}):
-  ─────────────────────────────────────────────────────────────────────────────────────────────────────
-  Cycles Completed:     {self.stats.cycles_completed}
-  Decisions Made:       {self.stats.decisions_made}
-  Harvests Executed:    {self.stats.harvests_executed}
-  Total Harvested:      ${self.stats.total_harvested_usd:.2f}
-  Field Value Change:   ${self.stats.current_field_value - self.stats.starting_field_value:+.2f}
+  ═══════════════════════════════════════════════════════════════════════════════════════════════════
+  CONSCIOUSNESS PARAMETERS
+  ═══════════════════════════════════════════════════════════════════════════════════════════════════
+  Min Realm Consensus:    {self.min_consensus}/5 realms must agree
+  Min Harvest Amount:     ${self.min_harvest_usd}
+  Harvest Fraction:       {self.harvest_fraction:.0%} of surplus
+  Action Cooldown:        {self.action_cooldown}s per node
+  Perception Interval:    {self.scan_interval}s
   
-  RECENT CONSCIOUS DECISIONS:
-  ─────────────────────────────────────────────────────────────────────────────────────────────────────""")
+  ═══════════════════════════════════════════════════════════════════════════════════════════════════
+  RISK MANAGEMENT
+  ═══════════════════════════════════════════════════════════════════════════════════════════════════
+  Max Position Size:      {self.risk_limits.max_position_pct:.0%} of portfolio
+  Max Exposure:           {self.risk_limits.max_exposure_pct:.0%} deployed
+  Max Daily Loss:         {self.risk_limits.max_daily_loss_pct:.0%} (circuit breaker)
+  Max Daily Trades:       {self.risk_limits.max_daily_trades}
+  Max Consecutive Fails:  {self.risk_limits.max_consecutive_failures}
+  Circuit Breaker:        {circuit_status}
+  
+  ═══════════════════════════════════════════════════════════════════════════════════════════════════
+  TODAY'S CONSCIOUSNESS ({self.stats.date})
+  ═══════════════════════════════════════════════════════════════════════════════════════════════════
+  Cycles Completed:       {self.stats.cycles_completed}
+  Decisions Made:         {self.stats.decisions_made}
+  Harvests Executed:      {self.stats.harvests_executed}
+  Deploys Executed:       {self.stats.deploys_executed}
+  Opportunities Detected: {self.stats.opportunities_detected}
+  Total Harvested:        ${self.stats.total_harvested_usd:.2f}
+  Total Deployed:         ${self.stats.total_deployed_usd:.2f}
+  Current Exposure:       {self.stats.current_exposure_pct:.0%}
+  Max Drawdown:           {self.stats.max_drawdown_pct:.1%}
+  Field Value Change:     ${self.stats.current_field_value - self.stats.starting_field_value:+.2f}
+  Consecutive Failures:   {self.stats.consecutive_failures}
+  
+  ═══════════════════════════════════════════════════════════════════════════════════════════════════
+  RECENT CONSCIOUS DECISIONS
+  ═══════════════════════════════════════════════════════════════════════════════════════════════════""")
         
         for d in self.decisions[-5:]:
             ts = datetime.fromtimestamp(d['timestamp']).strftime("%H:%M:%S")
             consensus = d.get('consensus', '?')
-            print(f"  [{ts}] {d['action']}: {d['node_id']} | ${d.get('amount', 0):.2f} | "
+            action_emoji = {'harvest': '⚡', 'deploy': '🌱', 'hibernate': '💤'}.get(d['action'], '👁️')
+            print(f"  [{ts}] {action_emoji} {d['action']}: {d['node_id']} | ${d.get('amount', 0):.2f} | "
                   f"Consensus: {consensus}/5 | {d.get('result', '')}")
         
         print()

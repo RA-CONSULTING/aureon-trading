@@ -145,5 +145,90 @@
         "interpretation": "Fruiting Body"
       }
     ]
+  },
+  {
+    "timestamp": 1769293492.7664685,
+    "node_id": "BIN-ENSO",
+    "symbol": "ENSOUSDT",
+    "relay": "BIN",
+    "action": "harvest",
+    "amount": 4.815899556543292,
+    "confidence": 0.85,
+    "consensus": 5,
+    "executed": true,
+    "result": "[DRY RUN] Harvested $4.82",
+    "questions": [
+      "Is BIN-ENSO truly at the state all realms perceive?",
+      "Am I certain this is the right action?",
+      "What could go wrong?"
+    ],
+    "realm_votes": [
+      {
+        "realm": "\u26a1 POWER STATION",
+        "action": "harvest",
+        "confidence": 0.95,
+        "interpretation": "Generator"
+      },
+      {
+        "realm": "\ud83d\udcb0 LIVING ECONOMY",
+        "action": "harvest",
+        "confidence": 0.9,
+        "interpretation": "Profitable Asset"
+      },
+      {
+        "realm": "\ud83c\udf0a HARMONIC WAVEFORM",
+        "action": "harvest",
+        "confidence": 0.85,
+        "interpretation": "Peak Resonator"
+      },
+      {
+        "realm": "\ud83c\udf0c QUANTUM FIELD",
+        "action": "harvest",
+        "confidence": 0.8,
+        "interpretation": "Favorable State"
+      },
+      {
+        "realm": "\ud83c\udf44 MYCELIUM NETWORK",
+        "action": "harvest",
+        "confidence": 0.75,
+        "interpretation": "Fruiting Body"
+      }
+    ]
+  },
+  {
+    "timestamp": 1769293493.2461054,
+    "node_id": "NEW-BIN-ETHUSD",
+    "symbol": "ETHUSDT",
+    "relay": "BIN",
+    "action": "deploy",
+    "amount": 16.16,
+    "confidence": 0.70651,
+    "consensus": 0,
+    "executed": true,
+    "result": "[DRY RUN] Would deploy $16.16 to ETHUSDT",
+    "questions": [
+      "Is ETHUSDT a good opportunity?",
+      "Is $16.16 the right amount?",
+      "What are the risks?"
+    ],
+    "realm_votes": []
+  },
+  {
+    "timestamp": 1769293493.2463102,
+    "node_id": "NEW-BIN-SOLUSD",
+    "symbol": "SOLUSDT",
+    "relay": "BIN",
+    "action": "deploy",
+    "amount": 15.89,
+    "confidence": 0.6946,
+    "consensus": 0,
+    "executed": true,
+    "result": "[DRY RUN] Would deploy $15.89 to SOLUSDT",
+    "questions": [
+      "Is SOLUSDT a good opportunity?",
+      "Is $15.89 the right amount?",
+      "What are the risks?"
+    ],
+    "realm_votes": []
   }
 ]

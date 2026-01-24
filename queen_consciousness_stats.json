@@ -1,14 +1,20 @@
 {
   "date": "2026-01-24",
-  "cycles_completed": 6,
-  "decisions_made": 3,
-  "harvests_executed": 3,
-  "deploys_executed": 0,
-  "total_harvested_usd": 10.672910886279684,
-  "total_deployed_usd": 0.0,
+  "cycles_completed": 7,
+  "decisions_made": 6,
+  "harvests_executed": 4,
+  "deploys_executed": 2,
+  "opportunities_detected": 4,
+  "opportunities_deployed": 2,
+  "total_harvested_usd": 15.488810442822977,
+  "total_deployed_usd": 32.05,
   "consecutive_failures": 0,
   "is_paused": false,
   "pause_reason": "",
   "starting_field_value": 456.362795869983,
-  "current_field_value": 456.9378945450477
+  "current_field_value": 457.3919584679804,
+  "max_drawdown_pct": 0.0,
+  "current_exposure_pct": 0.733213419655847,
+  "largest_position_pct": 0.3417074323803175,
+  "circuit_breaker_triggered": false
 }
