@@ -206,6 +206,15 @@ class AvalancheHarvester:
             logger.info("✓ ThoughtBus integration enabled")
         except Exception as e:
             logger.debug(f"ThoughtBus not available: {e}")
+        
+        # 💰 COST BASIS TRACKER - Get REAL entry prices!
+        self._cost_basis_tracker = None
+        try:
+            from cost_basis_tracker import CostBasisTracker
+            self._cost_basis_tracker = CostBasisTracker()
+            logger.info(f"✓ Cost Basis Tracker loaded ({len(self._cost_basis_tracker.positions)} positions)")
+        except Exception as e:
+            logger.warning(f"Cost Basis Tracker not available: {e}")
     
     @property
     def kraken_client(self):
@@ -396,9 +405,25 @@ class AvalancheHarvester:
                     if market_value < 1.0:
                         continue
                     
-                    # Estimate entry price (assume 5% profit as baseline)
-                    # In production, would track actual entry prices
-                    entry_price = current_price * 0.95
+                    # 💰 GET REAL ENTRY PRICE from cost basis tracker!
+                    entry_price = None
+                    if self._cost_basis_tracker:
+                        try:
+                            # Try to get actual entry price
+                            tracked_entry = self._cost_basis_tracker.get_entry_price(
+                                symbol=symbol, 
+                                exchange='kraken'
+                            )
+                            if tracked_entry and tracked_entry > 0:
+                                entry_price = tracked_entry
+                                logger.debug(f"✓ Found cost basis for {symbol}: ${entry_price:.4f}")
+                        except Exception as e:
+                            logger.debug(f"Cost basis lookup failed for {symbol}: {e}")
+                    
+                    # Fallback: Estimate entry price if not tracked (assume 5% profit as baseline)
+                    if entry_price is None or entry_price <= 0:
+                        entry_price = current_price * 0.95
+                        logger.debug(f"⚠️ Using estimated entry for {symbol}: ${entry_price:.4f}")
                     
                     # Calculate profit
                     unrealized_pnl_usd = market_value - (qty * entry_price)
@@ -488,8 +513,23 @@ class AvalancheHarvester:
                 if unrealized_pl <= 0:
                     continue
                 
+                # 💰 VERIFY entry price with cost basis tracker
+                verified_entry = avg_entry_price
+                if self._cost_basis_tracker and avg_entry_price > 0:
+                    try:
+                        tracked_entry = self._cost_basis_tracker.get_entry_price(
+                            symbol=symbol,
+                            exchange='alpaca'
+                        )
+                        if tracked_entry and tracked_entry > 0:
+                            # Use tracked entry if available (more accurate)
+                            verified_entry = tracked_entry
+                            logger.debug(f"✓ Verified cost basis for {symbol}: ${verified_entry:.4f}")
+                    except Exception as e:
+                        logger.debug(f"Cost basis verification failed for {symbol}: {e}")
+                
                 # Calculate profit %
-                entry_value = qty * avg_entry_price
+                entry_value = qty * verified_entry
                 unrealized_pnl_pct = (unrealized_pl / entry_value) * 100 if entry_value > 0 else 0
                 
                 # Estimate fees (Alpaca ~0.1% for crypto, ~0% for stocks)
@@ -523,7 +563,7 @@ class AvalancheHarvester:
                     asset=symbol,
                     quantity=abs(qty),
                     current_price=current_price,
-                    entry_price=avg_entry_price,
+                    entry_price=verified_entry,  # ✓ Use verified entry (cost basis tracker)
                     market_value_usd=abs(market_value),
                     unrealized_pnl_usd=unrealized_pl,
                     unrealized_pnl_pct=unrealized_pnl_pct,
