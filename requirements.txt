@@ -19,7 +19,6 @@ flask
 psutil>=5.9.0
 supervisor
 rich>=13.7.0
-alpaca-py>=0.20.0
-alpaca-trade-api>=3.0.0
+ alpaca-py>=0.20.0
 pyttsx3>=2.90
 redis>=4.5.0
