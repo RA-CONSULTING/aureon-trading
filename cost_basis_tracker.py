@@ -433,8 +433,12 @@ class CostBasisTracker:
         
         # Use a unique key for each position: exchange + symbol
         position_key = f"{exchange.lower()}:{symbol}"
+        
+        # 🔧 ALSO store normalized versions for fallback matching
+        norm_symbol = symbol.replace('/', '')  # Remove slashes
+        norm_key = f"{exchange.lower()}:{norm_symbol}"
 
-        self.positions[position_key] = {
+        position_data = {
             'exchange': exchange,
             'symbol': symbol,
             'asset': asset,
@@ -450,8 +454,16 @@ class CostBasisTracker:
             'source': 'manual',
             'order_ids': [order_id] if order_id else []
         }
+        
+        # Store under BOTH keys for better matching
+        self.positions[position_key] = position_data
+        if norm_symbol != symbol:
+            self.positions[norm_key] = position_data.copy()
+        
         self._save()
-        print(f"   💾 Logged entry: {position_key} @ ${price:.6f} x {quantity} (Order: {order_id})")
+        _safe_print(f"   💾 Logged entry: {position_key} @ ${price:.6f} x {quantity} (Order: {order_id})")
+        if norm_symbol != symbol:
+            _safe_print(f"      Also indexed as: {norm_key}")
     
     def update_position(self, symbol: str, new_qty: float, new_price: float,
                        exchange: str, is_buy: bool = True, fee: float = 0.0, order_id: str = None):
@@ -521,19 +533,73 @@ class CostBasisTracker:
             - potential_loss: float (if negative)
             - recommendation: str
         """
-        # Try direct match with exchange context first
-        pos = self.get_cost_basis(symbol, exchange)
-
-        if not pos:
-            # Fallback to old format or general symbol search
-            pos = self.positions.get(symbol)
+        # 🔍 ENHANCED SYMBOL MATCHING with multiple fallback strategies
+        pos = None
+        matched_key = None
         
+        # Strategy 1: Direct match with exchange context
+        if exchange:
+            position_key = f"{exchange.lower()}:{symbol}"
+            pos = self.positions.get(position_key)
+            if pos:
+                matched_key = position_key
+        
+        # Strategy 2: Try without exchange prefix
+        if not pos:
+            pos = self.positions.get(symbol)
+            if pos:
+                matched_key = symbol
+        
+        # Strategy 3: Try normalized (no slashes)
         if not pos:
             norm_symbol = symbol.replace('/', '')
-            pos = self.positions.get(norm_symbol)
+            if exchange:
+                norm_key = f"{exchange.lower()}:{norm_symbol}"
+                pos = self.positions.get(norm_key)
+                if pos:
+                    matched_key = norm_key
             
+            if not pos:
+                pos = self.positions.get(norm_symbol)
+                if pos:
+                    matched_key = norm_symbol
+        
+        # Strategy 4: Try adding/removing common quote currencies
         if not pos:
-            # Deep match: check if the base asset matches (e.g. SENT/USDT matches SENTUSDC)
+            for quote in ['USDT', 'USDC', 'USD', 'EUR', 'GBP']:
+                # Try adding quote
+                test_symbol = f"{symbol}{quote}"
+                if exchange:
+                    test_key = f"{exchange.lower()}:{test_symbol}"
+                    pos = self.positions.get(test_key)
+                    if pos:
+                        matched_key = test_key
+                        break
+                
+                if not pos:
+                    pos = self.positions.get(test_symbol)
+                    if pos:
+                        matched_key = test_symbol
+                        break
+                
+                # Try removing quote
+                if symbol.endswith(quote):
+                    test_symbol = symbol[:-len(quote)]
+                    if exchange:
+                        test_key = f"{exchange.lower()}:{test_symbol}"
+                        pos = self.positions.get(test_key)
+                        if pos:
+                            matched_key = test_key
+                            break
+                    
+                    if not pos:
+                        pos = self.positions.get(test_symbol)
+                        if pos:
+                            matched_key = test_symbol
+                            break
+        
+        # Strategy 5: Deep base asset match
+        if not pos:
             base_asset = symbol.split('/')[0] if '/' in symbol else symbol
             # Remove common quote assets to find base
             for quote in ['USD', 'USDT', 'USDC', 'EUR', 'GBP', 'BTC', 'ETH']:
@@ -546,9 +612,15 @@ class CostBasisTracker:
                 stored_symbol = p.get('symbol', s)
                 if stored_symbol.startswith(base_asset):
                     pos = p
+                    matched_key = s
                     break
         
+        # 🚨 NO POSITION FOUND - Critical debugging info
         if not pos:
+            _safe_print(f"   🚨 COST BASIS NOT FOUND for {symbol}")
+            _safe_print(f"      Exchange: {exchange}")
+            _safe_print(f"      Available positions: {list(self.positions.keys())[:5]}")
+            
             # No cost basis data - DON'T SELL! We don't know if it's profitable!
             return False, {
                 'entry_price': None,
@@ -558,6 +630,9 @@ class CostBasisTracker:
                 'cost_basis': 0,
                 'recommendation': 'NO_DATA - DO NOT SELL (unknown entry price)'
             }
+        
+        # ✅ FOUND POSITION - Use it for P&L calculation
+        _safe_print(f"   ✅ Cost basis found: {matched_key} → entry ${pos['avg_entry_price']:.6f}")
         
         entry_price = pos['avg_entry_price']
         qty = quantity or pos['total_quantity']
