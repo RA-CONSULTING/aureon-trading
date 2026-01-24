@@ -339,27 +339,6 @@ class QuantumMirror:
     stem_source: Optional[str] = None  # Which stem (historical set) spawned it
     projection_confidence: float = 0.0  # Confidence from spore projection
 
-
-def spawn_spore_mirror(spore_id: str, stem: RealityStem, base_freqs: List[float], probability: float, beneficial: float) -> QuantumMirror:
-    """Create a quantum mirror seeded from a spore projection."""
-    now = time.time()
-    return QuantumMirror(
-        mirror_id=f"spore::{spore_id}",
-        coherence_signature=max(base_freqs) / (max(base_freqs) + 1e-6),
-        frequency_spectrum=base_freqs,
-        probability_amplitude=max(0.0, min(1.0, probability)),
-        entanglement_strength=0.1,
-        beneficial_score=beneficial,
-        stability_index=0.5,
-        drift_rate=0.05,
-        first_contact=now,
-        last_interaction=now,
-        anchor_progress=0.0,
-        spore_id=spore_id,
-        stem_source=stem.stem_id,
-        projection_confidence=max(0.0, min(1.0, probability)),
-    )
-    
     def compute_score(self) -> float:
         """
         Compute overall timeline score using Batten Matrix formula:
@@ -393,6 +372,27 @@ def spawn_spore_mirror(spore_id: str, stem: RealityStem, base_freqs: List[float]
             self.first_contact = time.time()
             
         self.last_interaction = time.time()
+
+
+def spawn_spore_mirror(spore_id: str, stem: RealityStem, base_freqs: List[float], probability: float, beneficial: float) -> QuantumMirror:
+    """Create a quantum mirror seeded from a spore projection."""
+    now = time.time()
+    return QuantumMirror(
+        mirror_id=f"spore::{spore_id}",
+        coherence_signature=max(base_freqs) / (max(base_freqs) + 1e-6),
+        frequency_spectrum=base_freqs,
+        probability_amplitude=max(0.0, min(1.0, probability)),
+        entanglement_strength=0.1,
+        beneficial_score=beneficial,
+        stability_index=0.5,
+        drift_rate=0.05,
+        first_contact=now,
+        last_interaction=now,
+        anchor_progress=0.0,
+        spore_id=spore_id,
+        stem_source=stem.stem_id,
+        projection_confidence=max(0.0, min(1.0, probability)),
+    )
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -559,6 +559,7 @@ class StargateProtocolEngine:
             )
             
             # Additional metadata
+            mirror.projection_confidence = confidence  # Set from prediction data
             mirror.stability_index = confidence
             mirror.drift_rate = 0.05 * (1.0 - confidence)  # Higher confidence = lower drift
             

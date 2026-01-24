@@ -1,0 +1,34 @@
+{
+  "stem": {
+    "stem_id": "stem::BTC/USD::1769241032",
+    "symbol": "BTC/USD",
+    "exchange": "kraken",
+    "lookback_seconds": 604800,
+    "collected_at": 1769241032.5735438,
+    "notes": "Live test stem - momentum: +0.0180"
+  },
+  "prediction": {
+    "symbol": "BTC/USD",
+    "direction": "BULLISH",
+    "probability": 0.71,
+    "expected_value": 0.01964616319983579,
+    "confidence": 0.71,
+    "frequencies": [
+      528.0,
+      7.983829457854713,
+      432.0
+    ]
+  },
+  "spore_mirror": {
+    "mirror_id": "spore::spore::BTC/USD::1769241032",
+    "spore_id": "spore::BTC/USD::1769241032",
+    "stem_source": "stem::BTC/USD::1769241032",
+    "projection_confidence": 0.71,
+    "phase": "potential",
+    "coherence_signature": 0.9999999981060607,
+    "beneficial_score": 0.5098230815999178,
+    "stability_index": 0.71,
+    "entanglement_strength": 0.16927499999999998,
+    "viability_score": 0.415837671755907
+  }
+}
