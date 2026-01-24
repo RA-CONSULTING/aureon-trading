@@ -127,9 +127,14 @@ def _build_ticker_cache(tickers: list) -> tuple[Dict[str, float], Dict[str, Dict
 def main() -> int:
     parser = argparse.ArgumentParser(description='Kraken market data cache feeder')
     parser.add_argument('--out', default=os.getenv('KRAKEN_CACHE_PATH', 'ws_cache/kraken_prices.json'))
-    parser.add_argument('--interval-s', type=float, default=float(os.getenv('KRAKEN_CACHE_INTERVAL_S', '5')))
+    parser.add_argument('--interval-s', type=float, default=float(os.getenv('KRAKEN_CACHE_INTERVAL_S', '15')))
     parser.add_argument('--once', action='store_true', help='Write cache once and exit')
     args = parser.parse_args()
+
+    # Increase interval to reduce rate limit pressure (default 15s instead of 5s)
+    if args.interval_s < 10:
+        print(f"⚠️  Interval {args.interval_s}s too low, using 10s minimum to avoid rate limits")
+        args.interval_s = 10
 
     try:
         client = KrakenClient()
@@ -140,34 +145,72 @@ def main() -> int:
     print(f"🐙 Kraken cache feeder started")
     print(f"   Output: {args.out}")
     print(f"   Interval: {args.interval_s}s")
+    print(f"   Fallback: aureon_kraken_state.json (when rate limited)")
+
+    consecutive_errors = 0
+    max_consecutive_errors = 5
 
     while True:
         started = time.time()
         
         try:
             tickers = client.get_24h_tickers() if hasattr(client, 'get_24h_tickers') else []
-            prices, ticker_cache = _build_ticker_cache(tickers)
+            
+            if not tickers:
+                # Fallback: Use state file when rate limited
+                print(f"   ⚠️  No tickers from API (rate limited) - using state file fallback")
+                try:
+                    with open('aureon_kraken_state.json', 'r') as f:
+                        state = json.load(f)
+                    # Build minimal cache from state file
+                    prices = {}
+                    ticker_cache = {}
+                    for sym, pos in state.get('positions', {}).items():
+                        if pos.get('exchange') == 'kraken':
+                            # Extract price info if available
+                            pass
+                    payload = {
+                        'generated_at': time.time(),
+                        'source': 'kraken_state_fallback',
+                        'count': 0,
+                        'ticker_count': 0,
+                        'prices': prices,
+                        'ticker_cache': ticker_cache,
+                        'note': 'Rate limited - using state file',
+                    }
+                    _atomic_write_json(args.out, payload)
+                    print(f"   📄 Wrote fallback cache from state file")
+                except Exception as e2:
+                    print(f"   ❌ State file fallback also failed: {e2}")
+            else:
+                prices, ticker_cache = _build_ticker_cache(tickers)
 
-            payload = {
-                'generated_at': time.time(),
-                'source': 'kraken_rest',
-                'count': len(prices),
-                'ticker_count': len(ticker_cache) // 2,  # Divide by 2 (we store with and without prefix)
-                'prices': prices,
-                'ticker_cache': ticker_cache,
-            }
-            _atomic_write_json(args.out, payload)
+                payload = {
+                    'generated_at': time.time(),
+                    'source': 'kraken_rest',
+                    'count': len(prices),
+                    'ticker_count': len(ticker_cache) // 2,
+                    'prices': prices,
+                    'ticker_cache': ticker_cache,
+                }
+                _atomic_write_json(args.out, payload)
 
-            took = time.time() - started
-            print(f"   🐙 Wrote {len(prices)} Kraken prices, {len(ticker_cache)//2} tickers in {took:.2f}s")
+                took = time.time() - started
+                print(f"   🐙 Wrote {len(prices)} Kraken prices, {len(ticker_cache)//2} tickers in {took:.2f}s")
+                consecutive_errors = 0  # Reset on success
 
         except Exception as e:
-            print(f"   ❌ Kraken fetch error: {e}")
+            consecutive_errors += 1
+            print(f"   ❌ Kraken fetch error ({consecutive_errors}/{max_consecutive_errors}): {e}")
+            
+            if consecutive_errors >= max_consecutive_errors:
+                print(f"   💀 Too many consecutive errors, exiting")
+                return 1
 
         if args.once:
             return 0
 
-        sleep_for = max(0.5, args.interval_s - (time.time() - started))
+        sleep_for = max(1.0, args.interval_s - (time.time() - started))
         time.sleep(sleep_for)
 
 

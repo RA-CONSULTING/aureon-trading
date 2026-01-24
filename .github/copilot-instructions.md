@@ -576,16 +576,36 @@ echo '{}' > 7day_pending_validations.json
 
 ## When Making Changes
 
-1. **Preserve the 3-validate-4th-execute pattern** (Batten Matrix core)
-2. **Always update coherence/lambda metrics** when touching validation code
-3. **Test with `--dry-run` flag** before live execution
-4. **Check Queen Hive guidance** before modifying execution logic
-5. **Update JSON state schemas carefully** (many modules read these)
-6. **Run `python check_system_health.py`** after structural changes
-7. **Use `@dataclass` for new data structures** (enables JSON serialization)
-8. **Instrument new code paths with metrics** (OpenTelemetry)
-9. **Feed outcomes to Queen neural learning** (`queen_neuron.py`)
-10. **Document sacred number usage** (PHI, LOVE_FREQUENCY, etc.)
+1. **ALWAYS USE REAL DATA** - NO SIMULATIONS, NO FAKES, NO GHOSTS, NO PHANTOMS
+2. **Preserve the 3-validate-4th-execute pattern** (Batten Matrix core)
+3. **Always update coherence/lambda metrics** when touching validation code
+4. **Test with `--dry-run` flag** before live execution (dry-run still uses REAL market data, just doesn't execute trades)
+5. **Check Queen Hive guidance** before modifying execution logic
+6. **Update JSON state schemas carefully** (many modules read these)
+7. **Run `python check_system_health.py`** after structural changes
+8. **Use `@dataclass` for new data structures** (enables JSON serialization)
+9. **Instrument new code paths with metrics** (OpenTelemetry)
+10. **Feed outcomes to Queen neural learning** (`queen_neuron.py`)
+11. **Document sacred number usage** (PHI, LOVE_FREQUENCY, etc.)
+
+### CRITICAL: REAL DATA ONLY POLICY
+```
+⚠️ NEVER USE:
+- Simulated prices
+- Random/fake balances  
+- Mock exchange responses
+- Phantom positions
+- Ghost orders
+
+✅ ALWAYS USE:
+- Live API calls to exchanges
+- Real balance queries
+- Actual market prices
+- State files with persisted real data
+- Real position data
+```
+
+When an API is rate-limited, use the **state file** (e.g., `aureon_kraken_state.json`) which contains REAL persisted data - NOT made-up values.
 
 ---
 
