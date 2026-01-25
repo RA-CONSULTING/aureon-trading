@@ -180,9 +180,13 @@ class QueenPowerDashboard:
         runtime_str = f"{int(runtime//60)}m {int(runtime%60)}s"
         
         print("\033[2J\033[H")  # Clear screen
-        print("=" * 80)
-        print(f"🐝 QUEEN POWER DASHBOARD - {now} | Runtime: {runtime_str} | Cycle: #{self.cycle_count}")
-        print("=" * 80)
+        print("\n")
+        print("┏" + "━" * 78 + "┓")
+        print(f"┃  🐝 QUEEN POWER DASHBOARD{' ' * 51}┃")
+        print("┠" + "─" * 78 + "┨")
+        print(f"┃  📅 {now}  ⏱️  Runtime: {runtime_str:<10} 🔄 Cycle: #{self.cycle_count:<6}┃")
+        print("┗" + "━" * 78 + "┛")
+        print()
     
     def display_queen_intelligence(self):
         """Display Queen's redistribution intelligence."""
@@ -198,31 +202,41 @@ class QueenPowerDashboard:
         # Heartbeat indicator
         if is_alive:
             heartbeat = "\033[92m💚 ACTIVE\033[0m"
-            status_msg = f"(updated {seconds_since:.0f}s ago)"
+            status_msg = f"\033[90m(updated {seconds_since:.0f}s ago)\033[0m"
         else:
             heartbeat = "\033[91m💔 IDLE\033[0m"
-            status_msg = "(no recent activity)"
+            status_msg = "\033[90m(no recent activity)\033[0m"
         
-        print("\n🐝 QUEEN'S REDISTRIBUTION ENGINE")
-        print("-" * 80)
-        print(f"Status:                 {heartbeat} {status_msg}")
-        print(f"Net Energy Gained:      {format_usd(net_gained)}")
-        print(f"Drains Avoided:         {format_usd(drains_avoided)}")
-        print(f"Total Decisions Made:   {decisions}")
-        print(f"Total Executions:       {executions}")
-        print(f"Execution Rate:         {(executions/decisions*100 if decisions > 0 else 0):.1f}%")
+        print("┏" + "━" * 78 + "┓")
+        print("┃  🐝 QUEEN'S REDISTRIBUTION ENGINE" + " " * 43 + "┃")
+        print("┗" + "━" * 78 + "┛")
+        print()
+        print(f"  ⚡ Engine Status:       {heartbeat} {status_msg}")
+        print()
+        print("  💰 Financial Performance:")
+        print(f"     ├─ Net Energy Gained:        {format_usd(net_gained)}")
+        print(f"     ├─ Drains Blocked:           {format_usd(drains_avoided)}")
+        print(f"     └─ Total Conserved:          {format_usd(net_gained + drains_avoided)}")
+        print()
+        print("  📈 Decision Metrics:")
+        print(f"     ├─ Total Decisions:          {decisions}")
+        print(f"     ├─ Executed Orders:          {executions}")
+        print(f"     └─ Execution Rate:           {(executions/decisions*100 if decisions > 0 else 0):.1f}%")
         
         # Show efficiency (gained vs total conserved)
         total_conserved = net_gained + drains_avoided
         if total_conserved > 0:
             efficiency = (net_gained / total_conserved * 100)
-            print(f"Queen Efficiency:       {efficiency:.1f}% (gained/conserved)")
+            efficiency_bar = "█" * int(efficiency / 10) + "░" * (10 - int(efficiency / 10))
+            print()
+            print(f"  🎯 Queen Efficiency:     {efficiency:.1f}% [{efficiency_bar}]")
         
         # Show recent decisions
         recent = state.get('recent_decisions', [])
         if recent:
-            print("\n📊 Recent Decisions (last 3):")
-            for dec in recent[-3:]:
+            print()
+            print("  📊 Recent Decisions:")
+            for i, dec in enumerate(recent[-3:], 1):
                 opp = dec.get('opportunity', {})
                 decision = dec.get('decision', 'UNKNOWN')
                 relay = opp.get('relay', '???')
@@ -230,10 +244,16 @@ class QueenPowerDashboard:
                 net_gain = opp.get('net_energy_gain', 0.0)
                 confidence = dec.get('queen_confidence', 0.0)
                 
+                decision_icon = "✅" if decision == 'EXECUTE' else "🚫"
                 decision_color = '\033[92m' if decision == 'EXECUTE' else '\033[91m'
-                print(f"  {decision_color}{decision}\033[0m | {relay} → {target} | Net: {format_usd(net_gain)} | Conf: {confidence:.2f}")
+                conf_bar = "●" * int(confidence * 5) + "○" * (5 - int(confidence * 5))
+                
+                prefix = "     └─" if i == len(recent[-3:]) else "     ├─"
+                print(f"{prefix} {decision_icon} {decision_color}{decision:<8}\033[0m │ {relay} → {target:<12} │ {format_usd(net_gain):<12} │ Confidence: {conf_bar}")
         else:
-            print("\n📊 No decisions made yet (scanning for opportunities...)")
+            print()
+            print("  📊 \033[90m🔍 Scanning for profitable opportunities...\033[0m")
+        print()
     
     def display_power_station(self):
         """Display power station output."""
@@ -246,25 +266,40 @@ class QueenPowerDashboard:
         net_flow = state.get('net_flow', 0.0)
         efficiency = state.get('efficiency', 0.0)
         
+        status_icon = "🟢" if status == 'RUNNING' else "🟡"
         status_color = '\033[92m' if status == 'RUNNING' else '\033[93m'
         
-        print("\n⚡ POWER STATION")
-        print("-" * 80)
-        print(f"Status:         {status_color}{status}\033[0m")
-        print(f"Cycles Run:     {cycles}")
-        print(f"Total Energy:   {format_usd(total_energy)}")
-        print(f"Deployed:       {format_usd(deployed)}")
-        print(f"Net Flow:       {format_usd(net_flow)}")
-        print(f"Efficiency:     {efficiency:.1f}%")
+        print("┏" + "━" * 78 + "┓")
+        print("┃  ⚡ POWER STATION" + " " * 59 + "┃")
+        print("┗" + "━" * 78 + "┛")
+        print()
+        print(f"  {status_icon} Station Status:      {status_color}{status}\033[0m  \033[90m({cycles} cycles completed)\033[0m")
+        print()
+        print("  💎 Energy Reserves:")
+        print(f"     ├─ Total Energy:             {format_usd(total_energy)}")
+        print(f"     ├─ Currently Deployed:       {format_usd(deployed)}")
+        print(f"     └─ Net Flow (24h):           {format_usd(net_flow)}")
+        print()
+        efficiency_bar = "█" * int(efficiency / 10) + "░" * (10 - int(efficiency / 10))
+        print(f"  📊 Efficiency:           {efficiency:.1f}% [{efficiency_bar}]")
+        print()
     
     def display_relay_status(self):
         """Display status of all relays."""
-        print("\n🔌 RELAY ENERGY STATUS (INTERNAL ISOLATION)")
-        print("-" * 80)
+        print("┏" + "━" * 78 + "┓")
+        print("┃  🔌 RELAY ENERGY STATUS" + " " * 52 + "┃")
+        print("┗" + "━" * 78 + "┛")
+        print()
+        print("  \033[90m(Internal isolation: Energy moves within relay only)\033[0m")
+        print()
         
         relays = ['BIN', 'KRK', 'ALP', 'CAP']
+        relay_names = {'BIN': 'Binance', 'KRK': 'Kraken', 'ALP': 'Alpaca', 'CAP': 'Capital'}
         total_system_energy = 0.0
         total_idle_energy = 0.0
+        
+        print(f"  {'RELAY':<10} {'TOTAL':<12} {'IDLE':<12} {'POSITIONS':<12} {'MOBILITY':<20}")
+        print("  " + "─" * 74)
         
         for relay in relays:
             energy = self.get_relay_energy(relay)
@@ -278,16 +313,25 @@ class QueenPowerDashboard:
             
             # Mobility indicator
             if idle_pct > 50:
-                mobility = "\033[92m🟢 HIGH MOBILITY\033[0m"
+                mobility = "\033[92m🟢 HIGH\033[0m"
+                mobility_bar = "█" * 5
             elif idle_pct > 10:
-                mobility = "\033[93m🟡 MEDIUM\033[0m"
+                mobility = "\033[93m🟡 MED\033[0m"
+                mobility_bar = "█" * 3 + "░" * 2
             else:
-                mobility = "\033[91m🔴 LOCKED\033[0m"
+                mobility = "\033[91m🔴 LOW\033[0m"
+                mobility_bar = "█" + "░" * 4
             
-            print(f"{relay}: Total {format_usd(total)} | Idle {format_usd(idle)} ({idle_pct:.1f}%) | Positions {format_usd(positions)} | {mobility}")
+            total_str = f"${total:.2f}"
+            idle_str = f"${idle:.2f}"
+            pos_str = f"${positions:.2f}"
+            
+            print(f"  {relay:<10} {total_str:<12} {idle_str:<12} {pos_str:<12} {mobility} [{mobility_bar}] {idle_pct:.0f}%")
         
-        print("-" * 80)
-        print(f"TOTAL SYSTEM: {format_usd(total_system_energy)} | Idle: {format_usd(total_idle_energy)} ({total_idle_energy/total_system_energy*100 if total_system_energy > 0 else 0:.1f}%)")
+        print("  " + "─" * 74)
+        total_idle_pct = (total_idle_energy/total_system_energy*100 if total_system_energy > 0 else 0)
+        print(f"  {'TOTAL':<10} ${total_system_energy:<11.2f} ${total_idle_energy:<11.2f} ${total_system_energy-total_idle_energy:<11.2f} \033[96m⚡ System: {total_idle_pct:.0f}% idle\033[0m")
+        print()
     
     def display_energy_conservation(self):
         """Display energy conservation metrics."""
@@ -297,15 +341,27 @@ class QueenPowerDashboard:
         
         total_conserved = net_gained + drains_avoided
         
-        print("\n🌿 ENERGY CONSERVATION")
-        print("-" * 80)
-        print(f"Net Energy Gained:      {format_usd(net_gained)}")
-        print(f"Drains Avoided:         {format_usd(drains_avoided)}")
-        print(f"Total Conserved:        {format_usd(total_conserved)}")
+        print("┏" + "━" * 78 + "┓")
+        print("┃  🌿 ENERGY CONSERVATION" + " " * 52 + "┃")
+        print("┗" + "━" * 78 + "┛")
+        print()
         
         if total_conserved > 0:
-            efficiency = (net_gained / total_conserved * 100) if total_conserved > 0 else 0
-            print(f"Conservation Efficiency: {efficiency:.1f}% (gained / total conserved)")
+            efficiency = (net_gained / total_conserved * 100)
+            print(f"  💎 Net Energy Gained:        {format_usd(net_gained)}")
+            print(f"  🛡️  Drains Blocked:           {format_usd(drains_avoided)}")
+            print(f"  ✨ Total Conserved:           {format_usd(total_conserved)}")
+            print()
+            efficiency_bar = "█" * int(efficiency / 10) + "░" * (10 - int(efficiency / 10))
+            print(f"  📊 Conservation Rate:        {efficiency:.1f}% [{efficiency_bar}]")
+            print(f"     \033[90m(Net gained / Total conserved)\033[0m")
+        else:
+            print(f"  💎 Net Energy Gained:        {format_usd(net_gained)}")
+            print(f"  🛡️  Drains Blocked:           {format_usd(drains_avoided)}")
+            print(f"  ✨ Total Conserved:           {format_usd(total_conserved)}")
+            print()
+            print("  \033[90m📈 Begin trading to track conservation metrics\033[0m")
+        print()
     
     async def run(self):
         """Run continuous dashboard updates."""
@@ -322,8 +378,10 @@ class QueenPowerDashboard:
                 self.display_relay_status()
                 self.display_energy_conservation()
                 
-                print("\n" + "=" * 80)
-                print(f"⏳ Updating every {self.update_interval}s... (Press Ctrl+C to stop)")
+                print("┏" + "━" * 78 + "┓")
+                print(f"┃  ⏳ Next update in {self.update_interval}s" + " " * 33 + "\033[90mPress Ctrl+C to stop\033[0m" + " " * 3 + "┃")
+                print("┗" + "━" * 78 + "┛")
+                print()
                 
                 await asyncio.sleep(self.update_interval)
         
