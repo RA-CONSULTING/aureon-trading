@@ -154,13 +154,30 @@ class QueenPowerRedistribution:
         self.total_blocked_drains_avoided = 0.0
         self.all_energy_nodes: List[EnergyNode] = []  # All positions across all relays
         
+        # Load cost basis data
+        self.cost_basis = self.load_state_file('cost_basis_history.json', {})
+        cost_basis_positions = self.cost_basis.get('positions', {})
+        logger.info(f"📊 Cost Basis Tracker: Loaded {len(cost_basis_positions)} positions from cost_basis_history.json")
+        
         # Configuration
-        self.min_idle_energy_usd = 10.0  # Min USD to consider redistribution
-        self.min_net_gain_usd = 0.50  # Min net gain required
-        self.min_positive_energy_to_redistribute = 5.0  # Min profit before we redistribute
+        self.min_idle_energy_usd = 0.50  # Min USD to consider redistribution (LOWERED for small accounts)
+        self.min_net_gain_usd = 0.01  # Min net gain required (LOWERED to catch micro-profits)
+        self.min_positive_energy_to_redistribute = 0.10  # Min profit before we redistribute (LOWERED)
         self.profit_redistribution_percentage = 0.50  # Take 50% of profit to redistribute
         self.scan_interval_seconds = 30  # How often to scan for opportunities
         self.max_redistribution_per_relay = 0.25  # Max 25% of idle energy per cycle
+        
+        # Momentum scanner integration
+        self.momentum_scanner = None
+        try:
+            from aureon_animal_momentum_scanners import AlpacaSwarmOrchestrator
+            from aureon_alpaca_scanner_bridge import AlpacaScannerBridge
+            # Initialize bridge and orchestrator
+            bridge = AlpacaScannerBridge(self.alpaca)
+            self.momentum_scanner = AlpacaSwarmOrchestrator(self.alpaca, bridge)
+            logger.info("🐺 Momentum Scanner integrated - Will find real targets!")
+        except Exception as e:
+            logger.warning(f"Momentum scanner not available: {e}")
         
         logger.info(f"✅ Queen Power Redistribution initialized (dry_run={dry_run})")
     
@@ -235,69 +252,173 @@ class QueenPowerRedistribution:
         """
         nodes = []
         
-        # Scan BIN (Binance)
+        # Scan BIN (Binance) - Get LIVE balances from API
         try:
-            bin_state = self.load_state_file('binance_truth_tracker_state.json', {})
-            positions = bin_state.get('positions', {})
-            for symbol, pos_data in positions.items():
-                if isinstance(pos_data, dict):
-                    qty = pos_data.get('quantity', 0.0)
-                    entry = pos_data.get('entry_price', 0.0)
-                    current = pos_data.get('current_price', entry)
-                    pnl = (current - entry) * qty if qty > 0 else 0.0
-                    pnl_pct = ((current - entry) / entry * 100) if entry > 0 else 0.0
-                    position_value = current * qty
+            if self.binance:
+                logger.info("  🔍 Scanning Binance via LIVE API...")
+                balances = self.binance.get_balance()
+                logger.info(f"  📊 BIN: Found {len(balances)} assets")
+                
+                for asset, qty in balances.items():
+                    if qty < 0.00001 or asset in ['USDT', 'USD', 'USDC', 'BUSD']:
+                        continue  # Skip dust and stablecoins
                     
-                    if qty > 0 and position_value > 1.0:  # Min $1 position
-                        node = EnergyNode(
-                            relay='BIN',
-                            symbol=symbol,
-                            quantity=qty,
-                            entry_price=entry,
-                            current_price=current,
-                            unrealized_pnl=pnl,
-                            pnl_percentage=pnl_pct,
-                            position_value_usd=position_value,
-                            is_positive_energy=pnl > 0,
-                            energy_available_to_redistribute=max(0, pnl * self.profit_redistribution_percentage) if pnl > self.min_positive_energy_to_redistribute else 0.0,
-                            timestamp=time.time()
-                        )
-                        nodes.append(node)
-                        if node.is_positive_energy:
-                            logger.info(f"  🟢 BIN node: {symbol} | +${pnl:.2f} ({pnl_pct:.1f}%) | Redistributable: ${node.energy_available_to_redistribute:.2f}")
+                    symbol = f'{asset}USDT'
+                    try:
+                        ticker = self.binance.get_ticker(symbol)
+                        current_price = float(ticker.get('last', 0))
+                        
+                        if current_price <= 0:
+                            continue
+                        
+                        position_value = qty * current_price
+                        
+                        # Look up cost basis from history
+                        entry_price = current_price  # Default if no basis found
+                        cost_basis_positions = self.cost_basis.get('positions', {})
+                        
+                        # Try different key formats: ASSETUSDC, ASSETUSDT, binance:ASSETUSDC
+                        for quote in ['USDC', 'USDT']:
+                            basis_key = f'{asset}{quote}'
+                            if basis_key in cost_basis_positions:
+                                entry_price = cost_basis_positions[basis_key].get('avg_entry_price', current_price)
+                                break
+                            # Try with exchange prefix
+                            basis_key_prefixed = f'binance:{asset}{quote}'
+                            if basis_key_prefixed in cost_basis_positions:
+                                entry_price = cost_basis_positions[basis_key_prefixed].get('avg_entry_price', current_price)
+                                break
+                        
+                        # Calculate PnL
+                        pnl = (current_price - entry_price) * qty
+                        pnl_pct = ((current_price - entry_price) / entry_price * 100) if entry_price > 0 else 0.0
+                        is_positive = pnl > self.min_positive_energy_to_redistribute
+                        redistributable = (pnl * 0.5) if is_positive else 0.0  # 50% of profit
+                        
+                        if position_value > 0.50:  # Min $0.50 position
+                            node = EnergyNode(
+                                relay='BIN',
+                                symbol=symbol,
+                                quantity=qty,
+                                entry_price=entry_price,
+                                current_price=current_price,
+                                unrealized_pnl=pnl,
+                                pnl_percentage=pnl_pct,
+                                position_value_usd=position_value,
+                                is_positive_energy=is_positive,
+                                energy_available_to_redistribute=redistributable,
+                                timestamp=time.time()
+                            )
+                            nodes.append(node)
+                            # Show entry price + PnL in log
+                            pnl_indicator = "🟢" if is_positive else ("🔴" if pnl < -0.10 else "⚪")
+                            logger.info(f"  {pnl_indicator} BIN: {symbol} | {qty:.4f} units | ${position_value:.2f} | Entry: ${entry_price:.4f} | PnL: ${pnl:.2f} ({pnl_pct:.1f}%)")
+                    except Exception as e:
+                        logger.debug(f"  ⚪ BIN {symbol}: {e}")
+            else:
+                logger.warning("  ⚠️ BIN: Client not available")
         except Exception as e:
             logger.warning(f"BIN node scan failed: {e}")
         
-        # Scan KRK (Kraken)
+        # Scan KRK (Kraken) - Multi-source approach (adapt to data availability)
         try:
+            logger.info("  🔍 Scanning Kraken (multi-source: API balance + cost basis + state)...")
+            
+            # Source 1: Try live API balance first
+            api_balances = {}
+            if self.kraken:
+                try:
+                    api_balances = self.kraken.get_balance()
+                    if api_balances:
+                        logger.info(f"  📡 KRK API: Found {len(api_balances)} live balances")
+                except Exception as e:
+                    logger.debug(f"  ⚠️ KRK API balance failed: {e}")
+            
+            # Source 2: Cost basis history (most reliable for quantity + entry price)
+            cost_basis_positions = self.cost_basis.get('positions', {})
+            kraken_cost_basis = {k: v for k, v in cost_basis_positions.items() 
+                                if v.get('exchange') == 'kraken'}
+            
+            # Source 3: State file (fallback for active positions)
             krk_state = self.load_state_file('aureon_kraken_state.json', {})
-            positions = krk_state.get('positions', {})
-            for symbol, pos_data in positions.items():
-                if isinstance(pos_data, dict):
-                    qty = pos_data.get('volume', 0.0)
-                    entry = pos_data.get('avg_price', 0.0)
-                    current = pos_data.get('current_price', entry)
-                    pnl = (current - entry) * qty if qty > 0 else 0.0
-                    pnl_pct = ((current - entry) / entry * 100) if entry > 0 else 0.0
-                    position_value = current * qty
-                    
-                    if qty > 0 and position_value > 1.0:
-                        node = EnergyNode(
-                            relay='KRK',
-                            symbol=symbol,
-                            quantity=qty,
-                            entry_price=entry,
-                            current_price=current,
-                            unrealized_pnl=pnl,
-                            pnl_percentage=pnl_pct,
-                            position_value_usd=position_value,
-                            is_positive_energy=pnl > 0,
-                            energy_available_to_redistribute=max(0, pnl * self.profit_redistribution_percentage) if pnl > self.min_positive_energy_to_redistribute else 0.0,
-                            timestamp=time.time()
-                        )
-                        nodes.append(node)
-                        if node.is_positive_energy:
-                            logger.info(f"  🟢 KRK node: {symbol} | +${pnl:.2f} ({pnl_pct:.1f}%) | Redistributable: ${node.energy_available_to_redistribute:.2f}")
+            krk_state_positions = krk_state.get('positions', {})
+            
+            # Merge sources: Use cost_basis as primary, supplement with API + state
+            all_kraken_symbols = set(kraken_cost_basis.keys()) | set(api_balances.keys()) | set(krk_state_positions.keys())
+            logger.info(f"  📊 KRK: Scanning {len(all_kraken_symbols)} total symbols across all sources")
+            
+            for symbol in all_kraken_symbols:
+                # Get quantity from best source
+                qty = 0.0
+                entry_price = 0.0
+                asset = symbol
+                quote = 'USD'
+                
+                # Prefer cost basis for entry + quantity
+                if symbol in kraken_cost_basis:
+                    pos_data = kraken_cost_basis[symbol]
+                    qty = pos_data.get('total_quantity', 0.0)
+                    entry_price = pos_data.get('avg_entry_price', 0.0)
+                    asset = pos_data.get('asset', symbol)
+                    quote = pos_data.get('quote', 'USD')
+                
+                # Supplement with API balance if qty missing
+                elif symbol in api_balances:
+                    qty = api_balances[symbol]
+                    # Try to infer entry from state
+                    if symbol in krk_state_positions:
+                        entry_price = krk_state_positions[symbol].get('entry_price', 0.0)
+                
+                # Fallback to state file
+                elif symbol in krk_state_positions:
+                    state_pos = krk_state_positions[symbol]
+                    qty = state_pos.get('quantity', 0.0)
+                    entry_price = state_pos.get('entry_price', 0.0)
+                
+                if qty < 0.00001:
+                    continue
+                
+                # Get current price (try multiple symbol formats)
+                ticker_asset = asset.rstrip('U') if asset.endswith('U') and len(asset) > 2 else asset
+                current_price = entry_price  # Fallback
+                
+                if self.kraken:
+                    for try_symbol in [f'{ticker_asset}{quote}', f'{ticker_asset}USD', symbol, f'{asset}USD']:
+                        try:
+                            ticker = self.kraken.get_ticker(try_symbol)
+                            fetched_price = float(ticker.get('last', 0))
+                            if fetched_price > 0:
+                                current_price = fetched_price
+                                break
+                        except:
+                            continue
+                
+                position_value = qty * current_price
+                
+                # Calculate PnL
+                pnl = (current_price - entry_price) * qty
+                pnl_pct = ((current_price - entry_price) / entry_price * 100) if entry_price > 0 else 0.0
+                is_positive = pnl > self.min_positive_energy_to_redistribute
+                redistributable = (pnl * 0.5) if is_positive else 0.0  # 50% of profit
+                
+                if position_value > 0.50:  # Min $0.50 position
+                    node = EnergyNode(
+                        relay='KRK',
+                        symbol=symbol,
+                        quantity=qty,
+                        entry_price=entry_price,
+                        current_price=current_price,
+                        unrealized_pnl=pnl,
+                        pnl_percentage=pnl_pct,
+                        position_value_usd=position_value,
+                        is_positive_energy=is_positive,
+                        energy_available_to_redistribute=redistributable,
+                        timestamp=time.time()
+                    )
+                    nodes.append(node)
+                    # Show entry price + PnL in log
+                    pnl_indicator = "🟢" if is_positive else ("🔴" if pnl < -0.10 else "⚪")
+                    logger.info(f"  {pnl_indicator} KRK: {symbol} | {qty:.4f} units | ${position_value:.2f} | Entry: ${entry_price:.4f} | PnL: ${pnl:.2f} ({pnl_pct:.1f}%)")
         except Exception as e:
             logger.warning(f"KRK node scan failed: {e}")
         
@@ -315,7 +436,8 @@ class QueenPowerRedistribution:
                     pnl_pct = float(pos.get('unrealized_plpc', 0.0)) * 100
                     position_value = float(pos.get('market_value', 0.0))
                     
-                    if abs(qty) > 0 and position_value > 1.0:
+                    # Include ANY position with non-zero quantity (even small micro-positions)
+                    if abs(qty) > 0 and position_value > 0.01:
                         node = EnergyNode(
                             relay='ALP',
                             symbol=symbol,
@@ -331,7 +453,7 @@ class QueenPowerRedistribution:
                         )
                         nodes.append(node)
                         if node.is_positive_energy:
-                            logger.info(f"  🟢 ALP node: {symbol} | +${pnl:.2f} ({pnl_pct:.1f}%) | Redistributable: ${node.energy_available_to_redistribute:.2f}")
+                            logger.info(f"  🟢 ALP node: {symbol} | +${pnl:.4f} ({pnl_pct:.2f}%) | Redistributable: ${node.energy_available_to_redistribute:.4f}")
         except Exception as e:
             logger.warning(f"ALP node scan failed: {e}")
         
@@ -354,17 +476,31 @@ class QueenPowerRedistribution:
         Find best asset to convert idle energy into.
         Returns (target_asset, expected_gain_pct, momentum_score) or None.
         
-        Uses scanning system data to find high-momentum assets.
+        Uses momentum scanner to find high-momentum assets from REAL order books.
         """
-        # Load scanning system metrics
+        # Use momentum scanner if available
+        if self.momentum_scanner and relay == 'ALP':
+            try:
+                # Get best opportunity from momentum scanner
+                best_opp = self.momentum_scanner.get_best_opportunity()
+                if best_opp:
+                    symbol = best_opp.symbol
+                    expected_gain = best_opp.net_pct  # Net after fees
+                    momentum = best_opp.volume / 1000  # Normalize volume as momentum score
+                    
+                    logger.info(f"🎯 Momentum scanner found: {symbol} | {expected_gain:.2f}% net gain | {best_opp.side} signal | {best_opp.reason}")
+                    return (symbol, expected_gain, momentum)
+            except Exception as e:
+                logger.warning(f"Momentum scanner query failed: {e}")
+        
+        # Fallback: Load scanning system metrics
         scan_metrics = self.load_state_file('power_station_state.json', {})
         
         # Relay-specific asset selection
         if relay == 'BIN':
             # Binance: Check high-momentum crypto
             watchlist = ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'ADAUSDT', 'DOTUSDT']
-            # TODO: Integrate with aureon_animal_momentum_scanners.py for real momentum
-            # For now, return None (no opportunities)
+            # TODO: Integrate with Binance momentum scanner
             return None
         
         elif relay == 'KRK':
