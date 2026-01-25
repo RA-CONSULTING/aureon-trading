@@ -74,6 +74,8 @@ import sys
 import os
 import time
 import asyncio
+import threading
+import json
 from typing import Dict, Optional, List, Tuple, Any
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -835,6 +837,159 @@ except ImportError:
     CachedTicker = None
 
 import random  # For simulating market activity
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# 🐙 KRAKEN API RATE LIMITER - PREVENTS RATE LIMIT DEATH
+# ═══════════════════════════════════════════════════════════════════════════════
+# Kraken has strict rate limits: 15 calls per 3 seconds for public, 20 per minute for private
+# Multiple DO processes were hammering the API causing "EAPI:Rate limit exceeded"
+# Solution: Use cache for prices, rate limit essential API calls
+
+_kraken_call_times: list = []  # Track recent API call timestamps
+_kraken_rate_limit_window = 3.0  # Window in seconds
+_kraken_max_calls_per_window = 10  # Max calls in window (conservative)
+_kraken_rate_limit_lock = threading.Lock()
+
+def kraken_rate_limit_check() -> bool:
+    """Check if we can make a Kraken API call without hitting rate limit."""
+    global _kraken_call_times
+    now = time.time()
+    with _kraken_rate_limit_lock:
+        # Remove old calls outside window
+        _kraken_call_times = [t for t in _kraken_call_times if now - t < _kraken_rate_limit_window]
+        return len(_kraken_call_times) < _kraken_max_calls_per_window
+
+def kraken_rate_limit_record():
+    """Record a Kraken API call for rate limiting."""
+    global _kraken_call_times
+    with _kraken_rate_limit_lock:
+        _kraken_call_times.append(time.time())
+
+def get_cached_price(symbol: str, exchange: str = 'any', max_age: float = 60.0) -> Optional[float]:
+    """
+    🌐 GET PRICE FROM CACHE - NO API CALLS!
+    
+    This is the RECOMMENDED way to get prices for display/valuation.
+    Uses unified cache (populated by Binance WebSocket) - FREE and fast!
+    
+    Args:
+        symbol: Asset symbol (BTC, ETH, SOL, etc.) or pair (BTCUSD, ETHUSDT)
+        exchange: 'kraken', 'binance', 'any' (default tries all)
+        max_age: Maximum cache age in seconds (default 60s)
+        
+    Returns:
+        Price as float, or None if not in cache
+    """
+    if not UNIFIED_CACHE_AVAILABLE or not get_price:
+        return None
+    
+    # Normalize symbol - extract base asset
+    symbol = symbol.upper()
+    base_symbol = symbol
+    for suffix in ['USDT', 'USDC', 'USD', 'ZUSD', 'EUR', 'ZEUR', 'BTC', 'ETH', '/USD', '/USDT']:
+        if symbol.endswith(suffix):
+            base_symbol = symbol[:-len(suffix)]
+            break
+    
+    # Handle Kraken-style prefixes (XXBT -> BTC, XETH -> ETH)
+    if len(base_symbol) == 4 and base_symbol[0] in ('X', 'Z'):
+        base_symbol = base_symbol[1:]
+    if base_symbol == 'XBT':
+        base_symbol = 'BTC'
+    
+    # Try to get from cache
+    price = get_price(base_symbol, max_age=max_age)
+    if price and price > 0:
+        return price
+    
+    # Try with original symbol
+    price = get_price(symbol, max_age=max_age)
+    return price if price and price > 0 else None
+
+def get_cached_ticker_dict(symbol: str, max_age: float = 60.0) -> Optional[Dict[str, Any]]:
+    """
+    Get ticker from cache as dict format compatible with Kraken/Binance API responses.
+    
+    Returns dict with: price, bid, ask, last, c (Kraken format)
+    """
+    if not UNIFIED_CACHE_AVAILABLE or not get_ticker:
+        return None
+    
+    # Normalize symbol
+    symbol = symbol.upper()
+    base_symbol = symbol
+    for suffix in ['USDT', 'USDC', 'USD', 'ZUSD', 'EUR', '/USD', '/USDT']:
+        if symbol.endswith(suffix):
+            base_symbol = symbol[:-len(suffix)]
+            break
+    if len(base_symbol) == 4 and base_symbol[0] in ('X', 'Z'):
+        base_symbol = base_symbol[1:]
+    if base_symbol == 'XBT':
+        base_symbol = 'BTC'
+    
+    ticker = get_ticker(base_symbol, max_age=max_age)
+    if not ticker:
+        ticker = get_ticker(symbol, max_age=max_age)
+    
+    if ticker and ticker.price > 0:
+        # Return in compatible dict format
+        return {
+            'price': ticker.price,
+            'last': ticker.price,
+            'bid': ticker.bid or ticker.price,
+            'ask': ticker.ask or ticker.price,
+            'c': [str(ticker.price)],  # Kraken format
+            'source': ticker.source,
+            'cached': True
+        }
+    return None
+
+def smart_get_ticker(client: Any, symbol: str, exchange: str = 'unknown') -> Optional[Dict[str, Any]]:
+    """
+    🧠 SMART TICKER GETTER - Cache first, API fallback with rate limiting.
+    
+    Priority:
+    1. Check unified cache (FREE, no API call)
+    2. If Kraken: Check rate limit before API call
+    3. Make API call only if needed and allowed
+    
+    Args:
+        client: Exchange client (KrakenClient, etc.)
+        symbol: Trading pair (BTCUSD, ETHUSDT, etc.)
+        exchange: Exchange name for rate limiting logic
+        
+    Returns:
+        Ticker dict or None
+    """
+    # 1. Try cache first (FREE!)
+    cached = get_cached_ticker_dict(symbol, max_age=30.0)
+    if cached:
+        return cached
+    
+    # 2. For Kraken, check rate limit before API call
+    if exchange.lower() == 'kraken':
+        if not kraken_rate_limit_check():
+            # Rate limited - return None, let caller handle fallback
+            return None
+        # Record the API call
+        kraken_rate_limit_record()
+    
+    # 3. Make the actual API call
+    try:
+        if hasattr(client, 'get_ticker'):
+            return client.get_ticker(symbol)
+        elif hasattr(client, 'get_ticker_price'):
+            result = client.get_ticker_price(symbol)
+            if result:
+                price = float(result.get('price', 0) if isinstance(result, dict) else result)
+                return {'price': price, 'last': price, 'bid': price, 'ask': price}
+    except Exception as e:
+        if 'Rate limit' in str(e):
+            # Log but don't spam
+            pass
+        return None
+    
+    return None
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -5456,52 +5611,77 @@ class OrcaKillCycle:
         return opportunities
     
     def _get_live_crypto_prices(self) -> Dict[str, float]:
-        """Get LIVE prices from exchange APIs for portfolio valuation."""
+        """
+        Get prices for portfolio valuation - CACHE FIRST, API FALLBACK.
+        
+        🚀 OPTIMIZATION: Uses unified cache (Binance WebSocket) for FREE prices!
+        Only falls back to API calls if cache is empty/stale.
+        This prevents Kraken rate limiting on DigitalOcean.
+        """
         prices = {}
         
-        # Kraken prices (for Kraken holdings + GBP rate)
-        if 'kraken' in self.clients:
-            kraken = self.clients['kraken']
-            kraken_pairs = ['ETHUSD', 'SOLUSD', 'BTCUSD', 'TRXUSD', 'ADAUSD', 'DOTUSD', 'ATOMUSD', 'GBPUSD']
-            for pair in kraken_pairs:
-                try:
-                    ticker = kraken.get_ticker(pair)
-                    if ticker:
-                        if 'c' in ticker and isinstance(ticker['c'], list):
-                            prices[pair] = float(ticker['c'][0])
-                        elif 'price' in ticker:
-                            prices[pair] = float(ticker['price'])
-                        elif 'last' in ticker:
-                            prices[pair] = float(ticker['last'])
-                except Exception:
-                    pass
+        # 1. TRY CACHE FIRST (FREE! No API calls!)
+        all_symbols = ['ETH', 'SOL', 'BTC', 'TRX', 'ADA', 'DOT', 'ATOM', 'BNB', 'AVAX', 'LINK', 'MATIC', 'XRP']
+        if UNIFIED_CACHE_AVAILABLE and get_all_prices:
+            try:
+                cached = get_all_prices(max_age=60.0)  # 60s is fine for valuation
+                for sym, price in cached.items():
+                    if price > 0:
+                        # Add in both formats for compatibility
+                        prices[f"{sym}USD"] = price
+                        prices[f"{sym}USDT"] = price
+            except Exception:
+                pass
         
-        # Binance prices (for Binance holdings)
+        # 2. FALLBACK: Binance API (free tier, no issues)
+        # Only if cache didn't have prices we need
         if 'binance' in self.clients:
             binance = self.clients['binance']
             binance_pairs = ['ETHUSDT', 'SOLUSDT', 'BTCUSDT', 'BNBUSDT', 'TRXUSDT', 
                             'ADAUSDT', 'DOTUSDT', 'AVAXUSDT', 'LINKUSDT', 'MATICUSDT', 'XRPUSDT']
             for pair in binance_pairs:
-                try:
-                    result = binance.get_ticker_price(pair)
-                    if isinstance(result, dict):
-                        prices[pair] = float(result.get('price', 0))
-                    elif result:
-                        prices[pair] = float(result)
-                except Exception:
-                    pass
+                if pair not in prices or prices.get(pair, 0) == 0:
+                    try:
+                        result = binance.get_ticker_price(pair)
+                        if isinstance(result, dict):
+                            prices[pair] = float(result.get('price', 0))
+                        elif result:
+                            prices[pair] = float(result)
+                    except Exception:
+                        pass
         
-        # Fallback prices if API calls failed (approximate)
+        # 3. KRAKEN API - ONLY for GBP/USD rate (not available on Binance)
+        # Use rate limiting to prevent hammering
+        if 'kraken' in self.clients and kraken_rate_limit_check():
+            kraken = self.clients['kraken']
+            # Only fetch what we can't get elsewhere
+            kraken_only_pairs = ['GBPUSD']  # GBP rate not on Binance
+            for pair in kraken_only_pairs:
+                if pair not in prices or prices.get(pair, 0) == 0:
+                    try:
+                        kraken_rate_limit_record()
+                        ticker = kraken.get_ticker(pair)
+                        if ticker:
+                            if 'c' in ticker and isinstance(ticker['c'], list):
+                                prices[pair] = float(ticker['c'][0])
+                            elif 'price' in ticker:
+                                prices[pair] = float(ticker['price'])
+                            elif 'last' in ticker:
+                                prices[pair] = float(ticker['last'])
+                    except Exception:
+                        pass
+        
+        # 4. HARDCODED FALLBACKS (last resort)
         fallbacks = {
-            'ETHUSD': 3000.0, 'ETHUSDT': 3000.0,
-            'SOLUSD': 130.0, 'SOLUSDT': 130.0,
-            'BTCUSD': 90000.0, 'BTCUSDT': 90000.0,
+            'ETHUSD': 3300.0, 'ETHUSDT': 3300.0,
+            'SOLUSD': 250.0, 'SOLUSDT': 250.0,
+            'BTCUSD': 105000.0, 'BTCUSDT': 105000.0,
             'GBPUSD': 1.27,
             'TRXUSD': 0.25, 'TRXUSDT': 0.25,
             'BNBUSDT': 700.0,
             'ADAUSD': 1.0, 'ADAUSDT': 1.0,
             'DOTUSD': 7.0, 'DOTUSDT': 7.0,
-            'ATOMUSD': 10.0,
+            'ATOMUSD': 10.0, 'ATOMUSDT': 10.0,
         }
         for pair, fallback in fallbacks.items():
             if pair not in prices or prices[pair] == 0:
@@ -5733,14 +5913,25 @@ class OrcaKillCycle:
             except Exception as e:
                 print(f"   ⚠️ Alpaca positions error: {e}")
         
-        # Kraken positions (crypto balances)
+        # Kraken positions (crypto balances) - USE CACHED PRICES!
         if 'kraken' in self.clients:
             try:
                 balances = self.clients['kraken'].get_balance()
-                crypto_prices = {
+                # Get prices from cache first, then fallbacks
+                crypto_prices = {}
+                for asset in ['ETH', 'XETH', 'SOL', 'TRX', 'ADA', 'DOT', 'ATOM', 'BTC', 'XXBT', 'SEI']:
+                    cached_price = get_cached_price(asset, max_age=120.0) if UNIFIED_CACHE_AVAILABLE else None
+                    if cached_price and cached_price > 0:
+                        crypto_prices[asset] = cached_price
+                # Fallbacks for anything not in cache
+                fallback_prices = {
                     'ETH': 3300.0, 'XETH': 3300.0, 'SOL': 250.0, 'TRX': 0.25,
-                    'ADA': 1.0, 'DOT': 7.0, 'ATOM': 10.0, 'BTC': 105000.0, 'XXBT': 105000.0
+                    'ADA': 1.0, 'DOT': 7.0, 'ATOM': 10.0, 'BTC': 105000.0, 'XXBT': 105000.0, 'SEI': 0.30
                 }
+                for k, v in fallback_prices.items():
+                    if k not in crypto_prices:
+                        crypto_prices[k] = v
+                
                 for asset, amount in balances.items():
                     amount = float(amount)
                     if amount > 0.0001 and asset in crypto_prices:
@@ -5760,14 +5951,26 @@ class OrcaKillCycle:
             except Exception as e:
                 print(f"   ⚠️ Kraken positions error: {e}")
         
-        # Binance positions (crypto balances)
+        # Binance positions (crypto balances) - USE CACHED PRICES!
         if 'binance' in self.clients:
             try:
                 balances = self.clients['binance'].get_balance()
-                crypto_prices = {
+                # Get prices from cache first, then fallbacks
+                crypto_prices = {}
+                for asset in ['ETH', 'SOL', 'BTC', 'BNB', 'TRX', 'ADA', 'DOT', 'AVAX', 'LINK', 'SENT', 'KAIA', 'ENSO', 'LPT']:
+                    cached_price = get_cached_price(asset, max_age=120.0) if UNIFIED_CACHE_AVAILABLE else None
+                    if cached_price and cached_price > 0:
+                        crypto_prices[asset] = cached_price
+                # Fallbacks
+                fallback_prices = {
                     'ETH': 3300.0, 'SOL': 250.0, 'BTC': 105000.0, 'BNB': 700.0,
-                    'TRX': 0.25, 'ADA': 1.0, 'DOT': 7.0, 'AVAX': 40.0, 'LINK': 25.0
+                    'TRX': 0.25, 'ADA': 1.0, 'DOT': 7.0, 'AVAX': 40.0, 'LINK': 25.0,
+                    'SENT': 0.027, 'KAIA': 0.07, 'ENSO': 1.30, 'LPT': 3.10
                 }
+                for k, v in fallback_prices.items():
+                    if k not in crypto_prices:
+                        crypto_prices[k] = v
+                
                 for asset, amount in balances.items():
                     amount = float(amount or 0)
                     if amount > 0.0001 and asset in crypto_prices:
