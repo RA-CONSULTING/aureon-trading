@@ -6554,7 +6554,11 @@ class OrcaKillCycle:
         # CHECK 1: Is entry price CONFIRMED (not estimated)?
         # ═══════════════════════════════════════════════════════════════════
         if self.cost_basis_tracker:
-            can_sell, cb_info = self.cost_basis_tracker.can_sell_profitably(symbol, current_price, exchange=exchange)
+            # CRITICAL: Pass current balance (entry_qty) not historical total!
+            # The cost basis file tracks ALL buys, but we only have current balance.
+            can_sell, cb_info = self.cost_basis_tracker.can_sell_profitably(
+                symbol, current_price, exchange=exchange, quantity=entry_qty
+            )
             if cb_info.get('entry_price') is None:
                 # No confirmed cost basis - BLOCK SELL!
                 info['blocked_reason'] = 'NO_CONFIRMED_COST_BASIS'
@@ -6562,11 +6566,28 @@ class OrcaKillCycle:
                 return False, info
             # Use confirmed entry price for accurate P&L
             confirmed_entry = cb_info.get('entry_price', entry_price)
-            confirmed_cost = cb_info.get('cost_basis', entry_cost)
+            # CRITICAL FIX: Calculate cost basis using CURRENT quantity, not historical!
+            confirmed_cost = entry_qty * confirmed_entry  # Use current qty × avg entry
             net_pnl = exit_value - confirmed_cost
             info['confirmed_entry_price'] = confirmed_entry
             info['confirmed_cost_basis'] = confirmed_cost
             info['net_pnl'] = net_pnl
+        
+        # ═══════════════════════════════════════════════════════════════════
+        # STOP-LOSS: Allow exit even at loss if position dropped too far
+        # This prevents "bag holding" forever on bad positions
+        # ═══════════════════════════════════════════════════════════════════
+        STOP_LOSS_PCT = -30.0  # Exit if down more than 30%
+        net_pnl_pct = ((exit_value - confirmed_cost) / confirmed_cost * 100) if confirmed_cost > 0 else 0
+        
+        if net_pnl_pct <= STOP_LOSS_PCT:
+            # STOP-LOSS TRIGGERED - Allow exit to cut losses
+            print(f"   🛑 STOP-LOSS TRIGGERED: {symbol} at {net_pnl_pct:.1f}% loss (threshold: {STOP_LOSS_PCT}%)")
+            info['stop_loss_triggered'] = True
+            info['loss_pct'] = net_pnl_pct
+            info['queen_approved'] = True  # Force approval for stop-loss
+            info['reason'] = f"STOP_LOSS at {net_pnl_pct:.1f}%"
+            return True, info  # ALLOW EXIT despite loss!
         
         # ═══════════════════════════════════════════════════════════════════
         # CHECK 2: Is net P&L POSITIVE (mathematically certain profit)?
