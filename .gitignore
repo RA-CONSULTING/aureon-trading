@@ -61,3 +61,23 @@ queen_backups/
 queen_strategies/queen_learning_turn_*_*.py
 queen_strategies/queen_research_enhancement_*.py
 real_portfolio_state.json
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# LARGE GENERATED/BACKUP FOLDERS - DO NOT TRACK
+# ═══════════════════════════════════════════════════════════════════════════════
+queen_strategies/
+queen_backups/
+queen_configs/*.bak
+runs/
+logs/
+harmonic_cache/
+ws_cache/
+
+# Old/archived projects (should be separate repos)
+Aueron-Trading-Quantum-Quackers-War-Ready-Version--alert-autofix-gl1/
+NEXUS-LIVE-FEED--main/
+RAINBOW-main/
+
+# Python virtual environments
+.venv*/
+venv*/
