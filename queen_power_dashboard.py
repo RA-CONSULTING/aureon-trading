@@ -97,9 +97,39 @@ class QueenPowerDashboard:
         self.cycle_count = 0
         self.start_time = time.time()
         self.total_energy_at_start = 0.0
+        self._cached_nodes = []
+        self._cache_time = 0
+        self._cache_ttl = 30  # Refresh every 30 seconds
+        
+        # Initialize the redistribution scanner for LIVE data
+        self.scanner = None
+        self._init_scanner()
         
         # Calculate baseline energy
         self._calculate_baseline_energy()
+    
+    def _init_scanner(self):
+        """Initialize the Queen Power Redistribution scanner for live data."""
+        try:
+            from queen_power_redistribution import QueenPowerRedistribution
+            self.scanner = QueenPowerRedistribution(dry_run=True)
+            print("✅ Queen Power Scanner initialized - LIVE data enabled")
+        except Exception as e:
+            print(f"⚠️ Scanner init failed: {e} - using fallback state files")
+            self.scanner = None
+    
+    def _get_live_nodes(self):
+        """Get live energy nodes from scanner (cached)."""
+        now = time.time()
+        if now - self._cache_time > self._cache_ttl:
+            if self.scanner:
+                try:
+                    self._cached_nodes = self.scanner.scan_all_energy_nodes()
+                    self._cache_time = now
+                    print(f"📊 Scanned {len(self._cached_nodes)} live nodes")
+                except Exception as e:
+                    print(f"⚠️ Scan failed: {e}")
+        return self._cached_nodes
     
     def _calculate_baseline_energy(self):
         """Calculate total system energy at startup."""
@@ -181,7 +211,31 @@ class QueenPowerDashboard:
         })
     
     def get_relay_energy(self, relay: str) -> Dict:
-        """Get energy status for a relay."""
+        """Get energy status for a relay using LIVE scanner data."""
+        # Map relay codes
+        relay_map = {'BIN': 'BIN', 'KRK': 'KRK', 'ALP': 'ALP', 'CAP': 'CAP'}
+        relay_code = relay_map.get(relay, relay)
+        
+        # Get live nodes from scanner
+        nodes = self._get_live_nodes()
+        
+        # Filter nodes for this relay
+        relay_nodes = [n for n in nodes if n.relay == relay_code]
+        
+        if relay_nodes:
+            total = sum(n.position_value_usd for n in relay_nodes)
+            # Idle = positive energy (profitable positions available to redistribute)
+            idle = sum(n.energy_available_to_redistribute for n in relay_nodes)
+            positions_count = len(relay_nodes)
+            return {
+                'total': total,
+                'idle': idle,
+                'positions': total,  # All deployed
+                'positions_count': positions_count,
+                'idle_pct': (idle / total * 100) if total > 0 else 0
+            }
+        
+        # Fallback: Try state files
         if relay == 'BIN':
             state = load_json_safe('binance_truth_tracker_state.json', {})
             total = state.get('total_balance_usd', 0.0)
@@ -191,24 +245,24 @@ class QueenPowerDashboard:
                 'total': total,
                 'idle': free_usdt,
                 'positions': positions,
+                'positions_count': 0,
                 'idle_pct': (free_usdt / total * 100) if total > 0 else 0
             }
         
         elif relay == 'KRK':
             state = load_json_safe('aureon_kraken_state.json', {})
             free_usd = state.get('balances', {}).get('ZUSD', 0.0)
-            # Calculate total from all positions
             total = free_usd
             positions_value = 0.0
             for asset, bal in state.get('balances', {}).items():
                 if asset != 'ZUSD' and isinstance(bal, (int, float)) and bal > 0:
-                    # Approximate USD value (simplified)
                     positions_value += bal
             total += positions_value
             return {
                 'total': total,
                 'idle': free_usd,
                 'positions': positions_value,
+                'positions_count': 0,
                 'idle_pct': (free_usd / total * 100) if total > 0 else 0
             }
         
@@ -221,19 +275,23 @@ class QueenPowerDashboard:
                 'total': equity,
                 'idle': cash,
                 'positions': positions,
+                'positions_count': 0,
                 'idle_pct': (cash / equity * 100) if equity > 0 else 0
             }
         
         elif relay == 'CAP':
-            # Capital.com: simplified (no state file yet)
+            # Capital.com: Try to get from global financial state
+            state = load_json_safe('global_financial_state.json', {})
+            cap_balance = state.get('capital_balance', 92.66)
             return {
-                'total': 92.66,
-                'idle': 92.66,
+                'total': cap_balance,
+                'idle': cap_balance,
                 'positions': 0.0,
+                'positions_count': 0,
                 'idle_pct': 100.0
             }
         
-        return {'total': 0.0, 'idle': 0.0, 'positions': 0.0, 'idle_pct': 0.0}
+        return {'total': 0.0, 'idle': 0.0, 'positions': 0.0, 'positions_count': 0, 'idle_pct': 0.0}
     
     def display_header(self):
         """Display dashboard header with total system energy."""
