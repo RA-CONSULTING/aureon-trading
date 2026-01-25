@@ -1006,10 +1006,7 @@ class QueenPowerRedistribution:
         logger.info("💰 Step 0: Harvesting profitable positions...")
         
         # Scan all positions
-        all_nodes = []
-        for relay in ['BIN', 'KRK', 'ALP']:
-            nodes = self.scan_relay_energy_nodes(relay)
-            all_nodes.extend(nodes)
+        all_nodes = self.scan_all_energy_nodes()
         
         # Filter for profitable positions that meet minimum threshold
         harvestable_nodes = [
@@ -1031,21 +1028,21 @@ class QueenPowerRedistribution:
             harvest_amount_usd = node.unrealized_pnl * harvest_percentage
             
             if self.dry_run:
-                logger.info(f"🔶 DRY-RUN: Would sell {node.asset} on {node.relay} for ${harvest_amount_usd:.2f} profit")
+                logger.info(f"🔶 DRY-RUN: Would sell {node.symbol} on {node.relay} for ${harvest_amount_usd:.2f} profit")
                 harvested_count += 1
                 total_harvested += harvest_amount_usd
                 continue
             
             # LIVE EXECUTION: Sell position
             try:
-                logger.info(f"⚡ HARVESTING: Selling {harvest_percentage*100:.0f}% of {node.asset} on {node.relay} (${harvest_amount_usd:.2f})")
+                logger.info(f"⚡ HARVESTING: Selling {harvest_percentage*100:.0f}% of {node.symbol} on {node.relay} (${harvest_amount_usd:.2f})")
                 
                 # Calculate how much of the position to sell
                 sell_quantity = node.quantity * harvest_percentage
                 
                 if node.relay == 'BIN' and self.binance:
                     order = self.binance.execute_trade(
-                        symbol=node.asset,
+                        symbol=node.symbol,
                         side='sell',
                         quantity=sell_quantity
                     )
@@ -1055,7 +1052,7 @@ class QueenPowerRedistribution:
                     
                 elif node.relay == 'KRK' and self.kraken:
                     order = self.kraken.execute_trade(
-                        symbol=node.asset,
+                        symbol=node.symbol,
                         side='sell',
                         quantity=sell_quantity
                     )
@@ -1065,7 +1062,7 @@ class QueenPowerRedistribution:
                     
                 elif node.relay == 'ALP' and self.alpaca:
                     order = self.alpaca.execute_trade(
-                        symbol=node.asset,
+                        symbol=node.symbol,
                         side='sell',
                         quantity=sell_quantity
                     )
@@ -1074,7 +1071,7 @@ class QueenPowerRedistribution:
                     total_harvested += harvest_amount_usd
                 
             except Exception as e:
-                logger.error(f"❌ Failed to harvest {node.asset} on {node.relay}: {e}")
+                logger.error(f"❌ Failed to harvest {node.symbol} on {node.relay}: {e}")
         
         logger.info(f"💰 Harvest complete: {harvested_count} positions, ${total_harvested:.2f} converted to stablecoins")
         
