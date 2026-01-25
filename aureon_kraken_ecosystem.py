@@ -94,7 +94,7 @@ CONFIG = {
     'KRAKEN_FEE': 0.0026,           # Legacy field (uses taker)
     'SLIPPAGE_PCT': 0.0010,         # 0.10% estimated slippage per trade
     'SPREAD_COST_PCT': 0.0005,      # 0.05% estimated spread cost
-    'MIN_NET_PROFIT': 0.03,         # Enforce ≥$0.03 net on all platforms
+    'MIN_NET_PROFIT': 0.0001,       # Allow any net profit >$0.0001 (was 0.03 - too strict!)
     
     # 🧬 SANDBOX EVOLVED EXITS (454 Generations of Learning)
     'TAKE_PROFIT_PCT': _EVOLVED_TP,   # Evolved: 1.82% (was 0.8%)
@@ -1355,6 +1355,9 @@ class AureonKrakenEcosystem:
         📐 NOTE: The penny profit threshold already accounts for all fees
         via the formula r = ((1 + P/A) / (1-f)²) - 1 where f = fee + slippage + spread.
         We use gross_pnl comparison with threshold - don't double-count fees!
+        
+        🔧 FIX: MIN_NET_PROFIT was 0.03 which blocked many small wins.
+        Now using 0.0001 (1/10th of a cent) to allow any real profit.
         """
         change_pct = (current_price - pos.entry_price) / pos.entry_price
         
@@ -1369,13 +1372,16 @@ class AureonKrakenEcosystem:
         total_rate = fee_rate + slippage + spread
         exit_fee = exit_value * total_rate
         net_pnl = gross_pnl - (pos.entry_fee + exit_fee)
-        min_net = CONFIG.get('MIN_NET_PROFIT', 0.03)
+        min_net = CONFIG.get('MIN_NET_PROFIT', 0.0001)  # Was 0.03 - now allows any real profit
         
-        # 🪙 PENNY PROFIT TAKE PROFIT: Always allow - the engine calculated this correctly
+        # 🪙 PENNY PROFIT TAKE PROFIT: Allow ANY net profit (even tiny ones)
         if reason in ["TP", "PENNY_TP"]:
             if net_pnl >= min_net:
                 return True
-            print(f"   🛑 HOLDING {pos.symbol}: Net {net_pnl:+.4f} below target {min_net:.2f}")
+            # Log but don't print spam for small misses
+            if net_pnl > -0.01:  # Close to breakeven
+                return False  # Silent hold - almost there
+            print(f"   🛑 HOLDING {pos.symbol}: Net {net_pnl:+.4f} below target {min_net:.4f}")
             return False
         
         # 🪙 PENNY PROFIT STOP LOSS: Trust the penny profit engine's calculation
