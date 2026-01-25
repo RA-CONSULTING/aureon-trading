@@ -159,6 +159,14 @@ class QueenPowerRedistribution:
         cost_basis_positions = self.cost_basis.get('positions', {})
         logger.info(f"📊 Cost Basis Tracker: Loaded {len(cost_basis_positions)} positions from cost_basis_history.json")
         
+        # Relay-specific fee profiles (from adaptive_prime_profit_gate.py)
+        self.relay_fees = {
+            'BIN': {'maker': 0.0010, 'taker': 0.0010, 'spread': 0.0005, 'slippage': 0.0003},  # Binance
+            'KRK': {'maker': 0.0025, 'taker': 0.0040, 'spread': 0.0008, 'slippage': 0.0005},  # Kraken
+            'ALP': {'maker': 0.0015, 'taker': 0.0025, 'spread': 0.0008, 'slippage': 0.0005},  # Alpaca
+            'CAP': {'maker': 0.0000, 'taker': 0.0000, 'spread': 0.0020, 'slippage': 0.0008},  # Capital (spread-based)
+        }
+        
         # Configuration
         self.min_idle_energy_usd = 0.50  # Min USD to consider redistribution (LOWERED for small accounts)
         self.min_net_gain_usd = 0.01  # Min net gain required (LOWERED to catch micro-profits)
@@ -181,7 +189,48 @@ class QueenPowerRedistribution:
         
         logger.info(f"✅ Queen Power Redistribution initialized (dry_run={dry_run})")
     
-    def load_state_file(self, filepath: str, default: Dict = None) -> Dict:
+    def calculate_relay_energy_drain(self, relay: str, trade_value_usd: float, is_maker: bool = True) -> Dict:
+        """
+        Calculate total energy drain for a trade on a specific relay.
+        CRITICAL: Must be accurate to prevent energy loss!
+        
+        Returns:
+            {
+                'maker_fee': float,
+                'taker_fee': float,
+                'spread_cost': float,
+                'slippage': float,
+                'total_drain': float,
+                'relay': str
+            }
+        """
+        fees = self.relay_fees.get(relay, self.relay_fees['KRK'])  # Default to Kraken (conservative)
+        
+        fee_rate = fees['maker'] if is_maker else fees['taker']
+        
+        # Calculate components
+        trading_fee = trade_value_usd * fee_rate
+        spread_cost = trade_value_usd * fees['spread']
+        slippage_cost = trade_value_usd * fees['slippage']
+        
+        # CRITICAL: We pay fees on BOTH sides of conversion (buy + sell)
+        # USD → Asset: pay fee on entry
+        # Asset → USD (future): pay fee on exit
+        # So we double the trading fee for round-trip
+        total_drain = (trading_fee * 2) + spread_cost + slippage_cost
+        
+        return {
+            'maker_fee': trading_fee if is_maker else 0,
+            'taker_fee': 0 if is_maker else trading_fee,
+            'spread_cost': spread_cost,
+            'slippage': slippage_cost,
+            'total_drain': total_drain,
+            'relay': relay,
+            'fee_rate': fee_rate,
+            'round_trip_factor': 2.0  # We account for entry + exit
+        }
+    
+    def load_state_file(self, filepath: str, default: Optional[Dict] = None) -> Dict:
         """Load JSON state file with fallback."""
         try:
             if os.path.exists(filepath):
@@ -260,17 +309,62 @@ class QueenPowerRedistribution:
                 logger.info(f"  📊 BIN: Found {len(balances)} assets")
                 
                 for asset, qty in balances.items():
-                    if qty < 0.00001 or asset in ['USDT', 'USD', 'USDC', 'BUSD']:
-                        continue  # Skip dust and stablecoins
+                    # Include ALL nodes - dust is quantum entangled energy!
+                    # Only skip pure quote currencies (USDT/USDC) - they are the medium, not nodes
+                    if asset in ['USDT', 'USDC', 'BUSD']:
+                        continue  # Skip pure quote currencies only
                     
-                    symbol = f'{asset}USDT'
-                    try:
-                        ticker = self.binance.get_ticker(symbol)
-                        current_price = float(ticker.get('last', 0))
-                        
-                        if current_price <= 0:
+                    # Try multiple quote currencies to find a valid pair
+                    symbol = None
+                    current_price = 0
+                    for quote in ['USDT', 'USDC', 'BTC', 'BNB']:
+                        try_symbol = f'{asset}{quote}'
+                        try:
+                            ticker = self.binance.get_ticker(try_symbol)
+                            if ticker:
+                                price = float(ticker.get('last', ticker.get('price', 0)))
+                                if price > 0:
+                                    symbol = try_symbol
+                                    current_price = price
+                                    # Convert BTC/BNB prices to USD
+                                    if quote == 'BTC':
+                                        btc_ticker = self.binance.get_ticker('BTCUSDT')
+                                        if btc_ticker:
+                                            current_price = price * float(btc_ticker.get('last', 0))
+                                    elif quote == 'BNB':
+                                        bnb_ticker = self.binance.get_ticker('BNBUSDT')
+                                        if bnb_ticker:
+                                            current_price = price * float(bnb_ticker.get('last', 0))
+                                    break
+                        except:
                             continue
-                        
+                    
+                    # Handle special cases: USD balance, Earn products
+                    if not symbol and asset == 'USD':
+                        symbol = 'USD'
+                        current_price = 1.0  # USD = 1 USD
+                    elif not symbol and asset.startswith('LD'):
+                        # Binance Earn products (LDUSDC = staked USDC)
+                        base_asset = asset[2:]  # Remove 'LD' prefix
+                        if base_asset in ['USDC', 'USDT', 'BUSD']:
+                            symbol = asset
+                            current_price = 1.0  # Stablecoins = $1
+                        else:
+                            # Try to get price for underlying
+                            try:
+                                ticker = self.binance.get_ticker(f'{base_asset}USDT')
+                                if ticker:
+                                    symbol = asset
+                                    current_price = float(ticker.get('last', 0))
+                            except:
+                                pass
+                    
+                    if not symbol or current_price <= 0:
+                        # Still track as unknown quantum node
+                        logger.info(f"  🌌 BIN: {asset} | {qty:.6f} units | NO PAIR FOUND (quantum orphan)")
+                        continue
+                    
+                    try:
                         position_value = qty * current_price
                         
                         # Look up cost basis from history
@@ -295,24 +389,25 @@ class QueenPowerRedistribution:
                         is_positive = pnl > self.min_positive_energy_to_redistribute
                         redistributable = (pnl * 0.5) if is_positive else 0.0  # 50% of profit
                         
-                        if position_value > 0.50:  # Min $0.50 position
-                            node = EnergyNode(
-                                relay='BIN',
-                                symbol=symbol,
-                                quantity=qty,
-                                entry_price=entry_price,
-                                current_price=current_price,
-                                unrealized_pnl=pnl,
-                                pnl_percentage=pnl_pct,
-                                position_value_usd=position_value,
-                                is_positive_energy=is_positive,
-                                energy_available_to_redistribute=redistributable,
-                                timestamp=time.time()
-                            )
-                            nodes.append(node)
-                            # Show entry price + PnL in log
-                            pnl_indicator = "🟢" if is_positive else ("🔴" if pnl < -0.10 else "⚪")
-                            logger.info(f"  {pnl_indicator} BIN: {symbol} | {qty:.4f} units | ${position_value:.2f} | Entry: ${entry_price:.4f} | PnL: ${pnl:.2f} ({pnl_pct:.1f}%)")
+                        # ALL nodes included - quantum entanglement doesn't discriminate by size!
+                        node = EnergyNode(
+                            relay='BIN',
+                            symbol=symbol,
+                            quantity=qty,
+                            entry_price=entry_price,
+                            current_price=current_price,
+                            unrealized_pnl=pnl,
+                            pnl_percentage=pnl_pct,
+                            position_value_usd=position_value,
+                            is_positive_energy=is_positive,
+                            energy_available_to_redistribute=redistributable,
+                            timestamp=time.time()
+                        )
+                        nodes.append(node)
+                        # Show entry price + PnL in log - include dust indicator
+                        dust_marker = "🌌" if position_value < 0.50 else ""  # Quantum dust marker
+                        pnl_indicator = "🟢" if is_positive else ("🔴" if pnl < -0.10 else "⚪")
+                        logger.info(f"  {pnl_indicator}{dust_marker} BIN: {symbol} | {qty:.6f} units | ${position_value:.4f} | Entry: ${entry_price:.6f} | PnL: ${pnl:.4f} ({pnl_pct:.1f}%)")
                     except Exception as e:
                         logger.debug(f"  ⚪ BIN {symbol}: {e}")
             else:
@@ -323,6 +418,40 @@ class QueenPowerRedistribution:
         # Scan KRK (Kraken) - Multi-source approach (adapt to data availability)
         try:
             logger.info("  🔍 Scanning Kraken (multi-source: API balance + cost basis + state)...")
+            
+            # Kraken symbol mapping (internal codes → standard ticker symbols)
+            KRAKEN_SYMBOL_MAP = {
+                'XBT': 'BTC', 'BT': 'XBT',  # Bitcoin variants
+                'XRP': 'XRP', 'RP': 'XRP',  # Ripple
+                'XDG': 'DOGE', 'DG': 'XDG', # Dogecoin
+                'XXBT': 'XBT', 'XXRP': 'XRP', 'XETH': 'ETH', 'XLTC': 'LTC',
+                'ZUSD': 'USD', 'ZEUR': 'EUR', 'ZGBP': 'GBP',
+            }
+            
+            def get_kraken_ticker_symbol(asset: str, quote: str) -> list:
+                """Generate possible Kraken ticker symbols to try."""
+                # Map internal codes to standard
+                mapped_asset = KRAKEN_SYMBOL_MAP.get(asset, asset)
+                mapped_quote = KRAKEN_SYMBOL_MAP.get(quote, quote)
+                
+                # Generate variants to try
+                variants = [
+                    f'{mapped_asset}{mapped_quote}',
+                    f'{asset}{quote}',
+                    f'X{mapped_asset}Z{mapped_quote}',  # Kraken format: XXBTZUSD
+                    f'X{mapped_asset}{mapped_quote}',
+                    f'{mapped_asset}Z{mapped_quote}',
+                ]
+                # For BTC specifically
+                if asset in ['BT', 'XBT', 'BTC']:
+                    variants.extend(['XBTUSD', 'XXBTZUSD', 'BTCUSD'])
+                # For XRP
+                if asset in ['RP', 'XRP']:
+                    variants.extend(['XRPUSD', 'XXRPZUSD'])
+                # For DOGE
+                if asset in ['DG', 'XDG', 'DOGE']:
+                    variants.extend(['XDGUSD', 'DOGEUSD'])
+                return variants
             
             # Source 1: Try live API balance first
             api_balances = {}
@@ -343,9 +472,20 @@ class QueenPowerRedistribution:
             krk_state = self.load_state_file('aureon_kraken_state.json', {})
             krk_state_positions = krk_state.get('positions', {})
             
-            # Merge sources: Use cost_basis as primary, supplement with API + state
-            all_kraken_symbols = set(kraken_cost_basis.keys()) | set(api_balances.keys()) | set(krk_state_positions.keys())
-            logger.info(f"  📊 KRK: Scanning {len(all_kraken_symbols)} total symbols across all sources")
+            # CRITICAL: Only count positions that ACTUALLY EXIST
+            # Cost basis may contain SOLD positions - use it only for entry price lookup!
+            # Priority: 1) State file (local truth), 2) API (live, but may be rate-limited)
+            # Cost basis is used ONLY to get entry prices for positions confirmed elsewhere
+            
+            # Get symbols from live sources ONLY (not cost_basis which may have sold positions)
+            all_kraken_symbols = set(api_balances.keys()) | set(krk_state_positions.keys())
+            
+            # If API returned nothing (rate limited or error), rely solely on state file
+            if not api_balances:
+                logger.info(f"  ⚠️ KRK API returned empty (rate limited?) - using state file as truth")
+                all_kraken_symbols = set(krk_state_positions.keys())
+            
+            logger.info(f"  📊 KRK: Scanning {len(all_kraken_symbols)} ACTIVE positions")
             
             for symbol in all_kraken_symbols:
                 # Get quantity from best source
@@ -354,45 +494,57 @@ class QueenPowerRedistribution:
                 asset = symbol
                 quote = 'USD'
                 
-                # Prefer cost basis for entry + quantity
-                if symbol in kraken_cost_basis:
-                    pos_data = kraken_cost_basis[symbol]
-                    qty = pos_data.get('total_quantity', 0.0)
-                    entry_price = pos_data.get('avg_entry_price', 0.0)
-                    asset = pos_data.get('asset', symbol)
-                    quote = pos_data.get('quote', 'USD')
-                
-                # Supplement with API balance if qty missing
-                elif symbol in api_balances:
-                    qty = api_balances[symbol]
-                    # Try to infer entry from state
-                    if symbol in krk_state_positions:
-                        entry_price = krk_state_positions[symbol].get('entry_price', 0.0)
-                
-                # Fallback to state file
-                elif symbol in krk_state_positions:
+                # Priority 1: State file (local tracked positions)
+                if symbol in krk_state_positions:
                     state_pos = krk_state_positions[symbol]
                     qty = state_pos.get('quantity', 0.0)
                     entry_price = state_pos.get('entry_price', 0.0)
+                    # Get entry from cost_basis if available (more accurate)
+                    if symbol in kraken_cost_basis:
+                        cb_data = kraken_cost_basis[symbol]
+                        entry_price = cb_data.get('avg_entry_price', entry_price)
+                        asset = cb_data.get('asset', symbol)
+                        quote = cb_data.get('quote', 'USD')
+                
+                # Priority 2: API balance (live data)
+                elif symbol in api_balances:
+                    qty = api_balances[symbol]
+                    # Look up entry price from cost_basis
+                    if symbol in kraken_cost_basis:
+                        cb_data = kraken_cost_basis[symbol]
+                        entry_price = cb_data.get('avg_entry_price', 0.0)
+                        asset = cb_data.get('asset', symbol)
+                        quote = cb_data.get('quote', 'USD')
                 
                 if qty < 0.00001:
                     continue
                 
-                # Get current price (try multiple symbol formats)
-                ticker_asset = asset.rstrip('U') if asset.endswith('U') and len(asset) > 2 else asset
-                current_price = entry_price  # Fallback
+                # Get current price using symbol mapping
+                current_price = 0  # Don't fallback to entry_price - we need real price!
                 
                 if self.kraken:
-                    for try_symbol in [f'{ticker_asset}{quote}', f'{ticker_asset}USD', symbol, f'{asset}USD']:
+                    # Use the mapping function to get all possible ticker symbols
+                    symbols_to_try = get_kraken_ticker_symbol(asset, quote)
+                    # Also try the original symbol and common variants
+                    symbols_to_try.extend([symbol, f'{asset}USD', f'{asset}USDT'])
+                    
+                    for try_symbol in symbols_to_try:
                         try:
                             ticker = self.kraken.get_ticker(try_symbol)
                             # Kraken returns 'price' field, not 'last'
                             fetched_price = float(ticker.get('price', ticker.get('last', 0)))
                             if fetched_price > 0:
                                 current_price = fetched_price
+                                logger.debug(f"  📡 KRK: {symbol} → {try_symbol} = ${fetched_price:.6f}")
                                 break
                         except:
                             continue
+                
+                # If still no price, log and use entry as fallback (but flag it)
+                if current_price <= 0:
+                    current_price = entry_price  # Fallback
+                    if entry_price > 0:
+                        logger.debug(f"  ⚠️ KRK: {symbol} no live price, using entry ${entry_price:.6f}")
                 
                 position_value = qty * current_price
                 
@@ -478,7 +630,13 @@ class QueenPowerRedistribution:
         Returns (target_asset, expected_gain_pct, momentum_score) or None.
         
         Uses momentum scanner to find high-momentum assets from REAL order books.
+        CRITICAL: Only recommend targets where expected_gain > energy_drain!
         """
+        # Calculate minimum required gain to cover fees (relay-specific)
+        drain_info = self.calculate_relay_energy_drain(relay, idle_usd, is_maker=True)
+        min_gain_pct_required = (drain_info['total_drain'] / idle_usd * 100) + 0.5  # +0.5% buffer
+        
+        logger.debug(f"  {relay}: Min gain required: {min_gain_pct_required:.2f}% to cover ${drain_info['total_drain']:.4f} drain")
         # Use momentum scanner if available
         if self.momentum_scanner and relay == 'ALP':
             try:
@@ -499,27 +657,55 @@ class QueenPowerRedistribution:
         
         # Relay-specific asset selection
         if relay == 'BIN':
-            # Binance: Check high-momentum crypto
-            watchlist = ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'ADAUSDT', 'DOTUSDT']
-            # TODO: Integrate with Binance momentum scanner
+            # Binance: Look at our WINNING positions as potential targets
+            # Strategy: Feed the winners - add more to profitable positions
+            winning_bins = [n for n in self.all_energy_nodes 
+                          if n.relay == 'BIN' and n.is_positive_energy and n.pnl_percentage > min_gain_pct_required]
+            
+            if winning_bins:
+                # Pick the best performer
+                best = max(winning_bins, key=lambda n: n.pnl_percentage)
+                logger.info(f"  🎯 BIN: Feed the winner - {best.symbol} is up {best.pnl_percentage:.1f}%")
+                return (best.symbol, best.pnl_percentage * 0.5, 0.8)  # Conservative: expect 50% of current gain
+            
+            # Fallback: No winners to feed, skip
+            logger.debug(f"  BIN: No winning positions above {min_gain_pct_required:.2f}% threshold")
             return None
         
         elif relay == 'KRK':
-            # Kraken: Check high-momentum crypto
-            watchlist = ['XXBTZUSD', 'XETHZUSD', 'SOLUSD', 'ADAUSD', 'DOTUSD']
-            # Check for validated branches from 7-day system
-            validations = self.load_state_file('7day_pending_validations.json', {})
+            # Kraken: Look at our WINNING positions as potential targets
+            # Strategy: Feed the winners - add more to profitable positions
+            winning_krks = [n for n in self.all_energy_nodes 
+                          if n.relay == 'KRK' and n.is_positive_energy and n.pnl_percentage > min_gain_pct_required]
+            
+            if winning_krks:
+                # Pick the best performer
+                best = max(winning_krks, key=lambda n: n.pnl_percentage)
+                logger.info(f"  🎯 KRK: Feed the winner - {best.symbol} is up {best.pnl_percentage:.1f}%")
+                return (best.symbol, best.pnl_percentage * 0.5, 0.8)  # Conservative: expect 50% of current gain
+            
+            # Fallback: Check for validated branches from 7-day system
+            validations_data = self.load_state_file('7day_pending_validations.json', {})
+            
+            # Handle both dict and list formats
+            if isinstance(validations_data, list):
+                validations = {f"branch_{i}": v for i, v in enumerate(validations_data)}
+            else:
+                validations = validations_data
             
             # Find branches ready for 4th decision
             for branch_id, branch in validations.items():
+                if not isinstance(branch, dict):
+                    continue
                 if branch.get('relay') == 'KRK' and branch.get('coherence', 0) > 0.618:
                     symbol = branch.get('symbol', '')
                     expected_gain = branch.get('expected_pip_profit_pct', 0.0)
                     momentum = branch.get('coherence', 0.0)
                     
-                    if expected_gain > 0.5:  # Min 0.5% expected gain
+                    if expected_gain > min_gain_pct_required:
                         return (symbol, expected_gain, momentum)
             
+            logger.debug(f"  KRK: No winning positions above {min_gain_pct_required:.2f}% threshold")
             return None
         
         elif relay == 'ALP':
@@ -569,8 +755,8 @@ class QueenPowerRedistribution:
             # Calculate expected gain and drain
             expected_gain_usd = max_deploy * (expected_gain_pct / 100.0)
             
-            # Ask Queen to calculate energy drain
-            drain_info = self.queen.calculate_energy_drain(relay, max_deploy, is_maker=True)
+            # Calculate energy drain using relay-specific fees
+            drain_info = self.calculate_relay_energy_drain(relay, max_deploy, is_maker=True)
             energy_drain = drain_info['total_drain']
             
             # Calculate net energy gain
@@ -619,8 +805,8 @@ class QueenPowerRedistribution:
             # Calculate expected gain and drain
             expected_gain_usd = redistributable * (expected_gain_pct / 100.0)
             
-            # Ask Queen to calculate energy drain
-            drain_info = self.queen.calculate_energy_drain(node.relay, redistributable, is_maker=True)
+            # Calculate energy drain using relay-specific fees
+            drain_info = self.calculate_relay_energy_drain(node.relay, redistributable, is_maker=True)
             energy_drain = drain_info['total_drain']
             
             # Calculate net energy gain
