@@ -1,11 +1,11 @@
 {
   "runtime_sec": 31.556674242019653,
-  "cycles_run": 85,
+  "cycles_run": 86,
   "successful_pulses": 0,
   "failed_pulses": 0,
   "blocked_operations": 0,
   "total_energy_now": 93.75999999999999,
-  "energy_deployed": 349.8816116433491,
+  "energy_deployed": 1964.8171513686843,
   "net_flow": 0.0,
   "net_flow_24h": 0.0,
   "gain_per_sec": 0.0,
@@ -14,12 +14,12 @@
   "efficiency": 0.0,
   "timestamp": 1769300023.6864214,
   "status": "RUNNING",
-  "last_update": 1769359731.174,
+  "last_update": 1769361967.9581919,
   "last_harvest": {
-    "harvested_count": 3,
-    "total_harvested_usd": 12.92152729206494
+    "harvested_count": 18,
+    "total_harvested_usd": 122.34571665825034
   },
-  "total_portfolio_value": 349.8816116433491,
+  "total_portfolio_value": 1964.8171513686843,
   "total_idle_cash": 0.0,
-  "total_position_value": 349.8816116433491
+  "total_position_value": 1964.8171513686843
 }

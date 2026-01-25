@@ -465,86 +465,64 @@ class QueenPowerRedistribution:
             
             # Source 2: Cost basis history (most reliable for quantity + entry price)
             cost_basis_positions = self.cost_basis.get('positions', {})
-            kraken_cost_basis = {k: v for k, v in cost_basis_positions.items() 
-                                if v.get('exchange') == 'kraken'}
             
             # Source 3: State file (fallback for active positions)
             krk_state = self.load_state_file('aureon_kraken_state.json', {})
             krk_state_positions = krk_state.get('positions', {})
             
-            # CRITICAL: Only count positions that ACTUALLY EXIST
-            # Cost basis may contain SOLD positions - use it only for entry price lookup!
-            # Priority: 1) API (live), 2) State file (local truth)
-            # Cost basis is used ONLY to get entry prices for positions confirmed elsewhere
+            # CRITICAL: Combine all sources to get a complete list of potential symbols.
+            # This prevents missing positions if one source (like the API) is temporarily unavailable.
+            all_kraken_symbols = set(api_balances.keys()) | set(krk_state_positions.keys()) | set(k for k, v in cost_basis_positions.items() if v.get('exchange') == 'kraken')
             
-            # Get symbols from live sources ONLY (not cost_basis which may have sold positions)
-            all_kraken_symbols = set(api_balances.keys()) | set(krk_state_positions.keys())
-            
-            # If API returned nothing (rate limited or error), rely solely on state file
             if not api_balances:
-                logger.info(f"  ⚠️ KRK API returned empty (rate limited?) - using state file as truth")
-                all_kraken_symbols = set(krk_state_positions.keys())
+                logger.info(f"  ⚠️ KRK API returned empty (rate limited?) - using state file + cost basis as truth")
             
-            # CRITICAL: If BOTH API and state file are empty, we have a problem!
-            # On DigitalOcean fresh deploy, state file is empty and API may be rate limited
-            # In this case, we CANNOT use cost_basis as it may contain sold positions
             if not all_kraken_symbols:
-                logger.warning("  ⚠️ KRK: No positions found in API or state file!")
-                logger.warning("  ⚠️ KRK: State file may be empty (fresh deploy?)")
-                logger.warning("  ⚠️ KRK: API may be rate limited - waiting for kraken_cache_feeder to populate")
-                # DO NOT fall back to cost_basis - it contains SOLD positions!
-                # The system should wait for either:
-                # 1. API to become available (after rate limit cooldown)
-                # 2. kraken_cache_feeder to populate state file
-                # 3. A trade to occur that updates state file
+                logger.warning("  ⚠️ KRK: No positions found in API, state file, or cost basis!")
+                logger.warning("  ⚠️ KRK: This may happen on a fresh deploy before any trades.")
             
-            logger.info(f"  📊 KRK: Scanning {len(all_kraken_symbols)} ACTIVE positions")
+            logger.info(f"  📊 KRK: Scanning {len(all_kraken_symbols)} potential positions from all sources")
             
             for symbol in all_kraken_symbols:
-                # Get quantity from best source
+                # Get quantity from best source (API > State > Cost Basis)
                 qty = 0.0
                 entry_price = 0.0
                 asset = symbol
                 quote = 'USD'
                 
-                # Priority 1: State file (local tracked positions)
-                if symbol in krk_state_positions:
-                    state_pos = krk_state_positions[symbol]
-                    qty = state_pos.get('quantity', 0.0)
-                    entry_price = state_pos.get('entry_price', 0.0)
-                    # Get entry from cost_basis if available (more accurate)
-                    if symbol in kraken_cost_basis:
-                        cb_data = kraken_cost_basis[symbol]
-                        entry_price = cb_data.get('avg_entry_price', entry_price)
-                        asset = cb_data.get('asset', symbol)
-                        quote = cb_data.get('quote', 'USD')
-                
-                # Priority 2: API balance (live data)
-                elif symbol in api_balances:
+                # Determine quantity from the most reliable source available
+                if symbol in api_balances:
                     qty = api_balances[symbol]
-                    # Look up entry price from cost_basis
-                    if symbol in kraken_cost_basis:
-                        cb_data = kraken_cost_basis[symbol]
-                        entry_price = cb_data.get('avg_entry_price', 0.0)
-                        asset = cb_data.get('asset', symbol)
-                        quote = cb_data.get('quote', 'USD')
-                
-                if qty < 0.00001:
+                elif symbol in krk_state_positions:
+                    qty = krk_state_positions[symbol].get('quantity', 0.0)
+                elif symbol in cost_basis_positions and cost_basis_positions[symbol].get('exchange') == 'kraken':
+                    # Fallback to cost basis for quantity ONLY if other sources fail
+                    qty = cost_basis_positions[symbol].get('total_quantity', 0.0)
+
+                if qty < 0.000001: # Use a very small threshold to include dust
                     continue
+
+                # Determine entry price from the most reliable source available
+                if symbol in krk_state_positions:
+                    entry_price = krk_state_positions[symbol].get('entry_price', 0.0)
+                
+                # Cost basis is the ultimate source of truth for entry price
+                if symbol in cost_basis_positions and cost_basis_positions[symbol].get('exchange') == 'kraken':
+                    cb_data = cost_basis_positions[symbol]
+                    entry_price = cb_data.get('avg_entry_price', entry_price)
+                    asset = cb_data.get('asset', symbol)
+                    quote = cb_data.get('quote', 'USD')
                 
                 # Get current price using symbol mapping
-                current_price = 0  # Don't fallback to entry_price - we need real price!
+                current_price = 0
                 
                 if self.kraken:
-                    # Use the mapping function to get all possible ticker symbols
                     symbols_to_try = get_kraken_ticker_symbol(asset, quote)
-                    # Also try the original symbol and common variants
                     symbols_to_try.extend([symbol, f'{asset}USD', f'{asset}USDT'])
                     
-                    for try_symbol in symbols_to_try:
+                    for try_symbol in set(symbols_to_try): # Use set to avoid duplicate checks
                         try:
                             ticker = self.kraken.get_ticker(try_symbol)
-                            # Kraken returns 'price' field, not 'last'
                             fetched_price = float(ticker.get('price', ticker.get('last', 0)))
                             if fetched_price > 0:
                                 current_price = fetched_price
@@ -553,21 +531,19 @@ class QueenPowerRedistribution:
                         except:
                             continue
                 
-                # If still no price, log and use entry as fallback (but flag it)
                 if current_price <= 0:
-                    current_price = entry_price  # Fallback
-                    if entry_price > 0:
-                        logger.debug(f"  ⚠️ KRK: {symbol} no live price, using entry ${entry_price:.6f}")
+                    logger.debug(f"  ⚠️ KRK: {symbol} no live price, using entry ${entry_price:.6f} as fallback.")
+                    current_price = entry_price
                 
                 position_value = qty * current_price
                 
                 # Calculate PnL
-                pnl = (current_price - entry_price) * qty
+                pnl = (current_price - entry_price) * qty if entry_price > 0 else 0.0
                 pnl_pct = ((current_price - entry_price) / entry_price * 100) if entry_price > 0 else 0.0
                 is_positive = pnl > self.min_positive_energy_to_redistribute
-                redistributable = (pnl * 0.5) if is_positive else 0.0  # 50% of profit
+                redistributable = (pnl * self.profit_redistribution_percentage) if is_positive else 0.0
                 
-                if position_value > 0.50:  # Min $0.50 position
+                if position_value > 0.01: # Lowered threshold to include smaller positions
                     node = EnergyNode(
                         relay='KRK',
                         symbol=symbol,
@@ -582,11 +558,10 @@ class QueenPowerRedistribution:
                         timestamp=time.time()
                     )
                     nodes.append(node)
-                    # Show entry price + PnL in log
-                    pnl_indicator = "🟢" if is_positive else ("🔴" if pnl < -0.10 else "⚪")
-                    logger.info(f"  {pnl_indicator} KRK: {symbol} | {qty:.4f} units | ${position_value:.2f} | Entry: ${entry_price:.4f} | PnL: ${pnl:.2f} ({pnl_pct:.1f}%)")
+                    pnl_indicator = "🟢" if is_positive else ("🔴" if pnl < -0.01 else "⚪")
+                    logger.info(f"  {pnl_indicator} KRK: {symbol} | {qty:.6f} units | ${position_value:.4f} | Entry: ${entry_price:.6f} | PnL: ${pnl:.4f} ({pnl_pct:.1f}%)")
         except Exception as e:
-            logger.warning(f"KRK node scan failed: {e}")
+            logger.error(f"CRITICAL KRK node scan failed: {e}", exc_info=True)
         
         # Scan ALP (Alpaca)
         try:
