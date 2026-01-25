@@ -821,6 +821,19 @@ except ImportError:
     NEURAL_REVENUE_AVAILABLE = False
     NeuralRevenueOrchestrator = None
 
+# 🌐 Unified Market Cache - NO MORE API RATE LIMITS!
+# Uses Binance WebSocket for free real-time data, shared across all processes
+try:
+    from unified_market_cache import get_market_cache, get_price, get_ticker, get_all_prices, CachedTicker
+    UNIFIED_CACHE_AVAILABLE = True
+except ImportError:
+    UNIFIED_CACHE_AVAILABLE = False
+    get_market_cache = None
+    get_price = None
+    get_ticker = None
+    get_all_prices = None
+    CachedTicker = None
+
 import random  # For simulating market activity
 
 
@@ -5191,8 +5204,51 @@ class OrcaKillCycle:
         return opportunities
     
     def _scan_kraken_market(self, min_change_pct: float, min_volume: float) -> List[MarketOpportunity]:
-        """Scan ALL Kraken pairs for momentum."""
+        """
+        Scan Kraken pairs for momentum.
+        
+        🚀 PRODUCTION FIX: Uses unified cache instead of direct API calls!
+        This prevents rate limit death when multiple processes are running.
+        """
         opportunities = []
+        
+        # 🌐 PRODUCTION: Use unified cache (Binance WebSocket data)
+        # This is FREE and doesn't hit Kraken API at all!
+        if UNIFIED_CACHE_AVAILABLE and get_all_prices:
+            try:
+                cached_prices = get_all_prices(max_age=30)  # 30 second freshness
+                if cached_prices:
+                    for symbol, price in cached_prices.items():
+                        if price <= 0:
+                            continue
+                        
+                        # Get full ticker for change/volume
+                        ticker = get_ticker(symbol, max_age=30) if get_ticker else None
+                        change_pct = ticker.change_24h if ticker else 0.0
+                        volume = ticker.volume_24h if ticker else 0.0
+                        
+                        momentum = abs(change_pct) * (1 + min(volume / 100000, 1))
+                        
+                        if abs(change_pct) >= min_change_pct:
+                            norm_symbol = f"{symbol}/USD"
+                            opportunities.append(MarketOpportunity(
+                                symbol=norm_symbol,
+                                exchange='kraken',  # Source agnostic - works for any exchange
+                                price=price,
+                                change_pct=change_pct,
+                                volume=volume,
+                                momentum_score=momentum,
+                                fee_rate=self.fee_rates.get('kraken', 0.0026)
+                            ))
+                    
+                    if opportunities:
+                        print(f"   🌐 Cache scan: {len(opportunities)} opportunities from unified cache")
+                        return opportunities
+            except Exception as e:
+                print(f"   ⚠️ Cache scan error: {e}")
+        
+        # 🐙 FALLBACK: Direct Kraken API (only if cache unavailable)
+        # This should rarely be used in production!
         client = self.clients.get('kraken')
         if not client:
             return opportunities
@@ -5236,7 +5292,7 @@ class OrcaKillCycle:
                 except Exception:
                     pass
         except Exception as e:
-            print(f"⚠️ Kraken scan error: {e}")
+            print(f"⚠️ Kraken scan error (fallback API): {e}")
         
         return opportunities
     
