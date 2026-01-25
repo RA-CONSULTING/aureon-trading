@@ -667,9 +667,10 @@ class Synapse:
 class MyceliumNetwork:
     """Neural network for pattern detection across symbols"""
     
-    def __init__(self):
+    def __init__(self, initial_capital: float = 1000.0):
         self.synapses: Dict[str, List[Synapse]] = {}
         self.activations: Dict[str, float] = {}
+        self.initial_capital = initial_capital  # Store for compatibility
         
     def add_signal(self, symbol: str, signal: float):
         """Add a market signal to the network"""

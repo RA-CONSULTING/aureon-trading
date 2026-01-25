@@ -81,7 +81,7 @@ except ImportError:
     get_consciousness_measurement = None
 
 try:
-    from queen_conscience import get_queen_conscience
+    from queen_conscience import get_conscience as get_queen_conscience
     CONSCIENCE_AVAILABLE = True
 except ImportError:
     CONSCIENCE_AVAILABLE = False

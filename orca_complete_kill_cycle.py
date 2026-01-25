@@ -5345,7 +5345,8 @@ class OrcaKillCycle:
     def _scan_capital_market(self, min_change_pct: float, min_volume: float) -> List[MarketOpportunity]:
         """Scan Capital.com markets for momentum (CFDs: stocks, indices, forex, commodities)."""
         opportunities = []
-        client = self.clients.get('capital')
+        # 🔄 Lazy-load Capital.com client if needed (avoids rate limiting during init)
+        client = self._ensure_capital_client()
         if not client or not getattr(client, 'enabled', False):
             return opportunities
         
