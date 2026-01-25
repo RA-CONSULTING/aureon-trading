@@ -27,7 +27,7 @@ sleep 30
 # Start Queen Power Redistribution with error handling
 echo "⚡ Starting Queen Power Redistribution Engine..."
 while true; do
-    python -u queen_power_redistribution.py --interval 60 2>&1 || {
+    python -u queen_power_redistribution.py --interval 10 --live 2>&1 || {
         echo "❌ Queen redistribution crashed, restarting in 10s..."
         sleep 10
     }
