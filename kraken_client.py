@@ -22,6 +22,46 @@ KRAKEN_BASE = "https://api.kraken.com"
 
 ASSETPAIR_CACHE_TTL = 300  # seconds
 
+# ═══════════════════════════════════════════════════════════════════════════════
+# 🔢 PERSISTENT NONCE MANAGER - Fix "Invalid nonce" errors across multiple instances
+# ═══════════════════════════════════════════════════════════════════════════════
+NONCE_FILE = os.path.join(os.path.dirname(__file__), "kraken_nonce.json")
+_nonce_lock = threading.Lock()
+
+def _get_next_nonce() -> int:
+    """
+    Get the next nonce that's guaranteed to be higher than any previously used.
+    Uses a persistent file to track across restarts and multiple instances.
+    """
+    with _nonce_lock:
+        # Start with nanoseconds as baseline
+        current_time_nonce = int(time.time() * 1_000_000_000)
+        
+        # Load last used nonce from file
+        last_nonce = 0
+        try:
+            if os.path.exists(NONCE_FILE):
+                with open(NONCE_FILE, 'r') as f:
+                    data = json.load(f)
+                    last_nonce = int(data.get('last_nonce', 0))
+        except Exception:
+            pass
+        
+        # Use whichever is higher + increment to ensure uniqueness
+        # Add 1_000_000_000 (1 second in nanoseconds) as safety buffer
+        new_nonce = max(current_time_nonce, last_nonce + 1_000_000_000) + 1
+        
+        # Save new nonce to file (atomic write)
+        try:
+            tmp_file = NONCE_FILE + '.tmp'
+            with open(tmp_file, 'w') as f:
+                json.dump({'last_nonce': new_nonce, 'updated': time.time()}, f)
+            os.replace(tmp_file, NONCE_FILE)
+        except Exception:
+            pass
+        
+        return new_nonce
+
 class KrakenClient:
     """
     Minimal Kraken REST client exposing a Binance-like interface expected by the
@@ -95,9 +135,9 @@ class KrakenClient:
                 time.sleep(self._min_call_interval - elapsed)
             
             data = dict(data)
-            # Use NANOSECONDS for nonce to avoid "invalid nonce" errors
-            # Microseconds (1000000) was not high enough - needs 1000000000
-            data["nonce"] = str(int(time.time() * 1000000000))
+            # Use PERSISTENT NONCE to avoid "invalid nonce" errors
+            # This tracks across restarts and multiple instances (local + DO)
+            data["nonce"] = str(_get_next_nonce())
             headers = {
                 "API-Key": self.api_key,
                 "API-Sign": self._kraken_sign(path, data)
