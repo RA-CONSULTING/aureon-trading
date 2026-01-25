@@ -127,14 +127,15 @@ def _build_ticker_cache(tickers: list) -> tuple[Dict[str, float], Dict[str, Dict
 def main() -> int:
     parser = argparse.ArgumentParser(description='Kraken market data cache feeder')
     parser.add_argument('--out', default=os.getenv('KRAKEN_CACHE_PATH', 'ws_cache/kraken_prices.json'))
-    parser.add_argument('--interval-s', type=float, default=float(os.getenv('KRAKEN_CACHE_INTERVAL_S', '15')))
+    parser.add_argument('--interval-s', type=float, default=float(os.getenv('KRAKEN_CACHE_INTERVAL_S', '120')))
     parser.add_argument('--once', action='store_true', help='Write cache once and exit')
     args = parser.parse_args()
 
-    # Increase interval to reduce rate limit pressure (default 15s instead of 5s)
-    if args.interval_s < 10:
-        print(f"⚠️  Interval {args.interval_s}s too low, using 10s minimum to avoid rate limits")
-        args.interval_s = 10
+    # CRITICAL: Increase minimum interval to 120s to avoid rate limits
+    # Binance WebSocket is the PRIMARY data source - Kraken cache is BACKUP ONLY
+    if args.interval_s < 60:
+        print(f"⚠️  Interval {args.interval_s}s too low, using 60s minimum to avoid rate limits")
+        args.interval_s = 60
 
     try:
         client = KrakenClient()

@@ -407,6 +407,18 @@ class KrakenClient:
     def _ticker(self, altnames: List[str]) -> Dict[str, Any]:
         if not altnames:
             return {}
+        
+        # 🐙 RATE LIMITING: Wait if we're calling too fast
+        if self._rate_limiter:
+            # Wait for token bucket to allow call
+            waited = 0
+            while not self._rate_limiter.acquire() and waited < 5:
+                time.sleep(0.2)
+                waited += 0.2
+            if waited >= 5:
+                # Rate limited - return empty rather than spam API
+                return {}
+        
         # Kraken expects internal pair names, not altnames; map
         self._load_asset_pairs()
         
