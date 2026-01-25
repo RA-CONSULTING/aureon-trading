@@ -1097,21 +1097,34 @@ class QueenPowerRedistribution:
         # STEP 0: Harvest profitable positions first (convert to stablecoins)
         harvest_result = await self.harvest_profitable_positions()
         
-        # Calculate and update total system energy AFTER harvest
-        total_energy = 0.0
+        # Calculate total portfolio value (idle cash + all positions)
+        total_portfolio_value = 0.0
+        total_idle_cash = 0.0
+        total_position_value = 0.0
+        
         for relay in ['BIN', 'KRK', 'ALP', 'CAP']:
             idle, _ = self.get_relay_idle_energy(relay)
-            total_energy += idle
-            logger.info(f"  {relay}: ${idle:.2f} idle energy")
+            total_idle_cash += idle
+            logger.info(f"  {relay}: ${idle:.2f} idle cash")
         
-        logger.info(f"💎 Total System Energy: ${total_energy:.2f}")
+        # Add value of all positions
+        all_nodes = self.scan_all_energy_nodes()
+        for node in all_nodes:
+            total_position_value += node.market_value
+        
+        total_portfolio_value = total_idle_cash + total_position_value
+        
+        logger.info(f"💎 Total Portfolio Value: ${total_portfolio_value:.2f} (Cash: ${total_idle_cash:.2f} + Positions: ${total_position_value:.2f})")
+        logger.info(f"⚡ Idle Energy Available: ${total_idle_cash:.2f}")
         
         # Update power station state
         power_state = self.load_state_file('power_station_state.json', {})
         power_state['status'] = 'RUNNING'
         power_state['cycles_run'] = power_state.get('cycles_run', 0) + 1
-        power_state['total_energy_now'] = total_energy
-        power_state['energy_deployed'] = 0.0  # TODO: Calculate from positions
+        power_state['total_portfolio_value'] = total_portfolio_value
+        power_state['total_idle_cash'] = total_idle_cash
+        power_state['total_position_value'] = total_position_value
+        power_state['energy_deployed'] = total_position_value
         power_state['net_flow'] = self.total_net_energy_gained
         power_state['efficiency'] = 0.0  # TODO: Calculate
         power_state['last_update'] = time.time()
