@@ -100,6 +100,69 @@ except Exception as e:
     sys.exit(1)
 "
 
+# Seed Kraken state file from live API (if empty)
+echo "🐙 Seeding Kraken state file from API..."
+python -c "
+import sys
+import os
+import json
+import time
+sys.path.insert(0, '/app')
+
+state_file = '/app/aureon_kraken_state.json'
+
+# Check if state file exists and has positions
+needs_seeding = True
+try:
+    with open(state_file, 'r') as f:
+        state = json.load(f)
+    if state.get('positions'):
+        print(f'✅ Kraken state already has {len(state[\"positions\"])} positions')
+        needs_seeding = False
+except:
+    pass
+
+if needs_seeding:
+    print('🔄 Seeding Kraken positions from live API...')
+    try:
+        from kraken_client import KrakenClient
+        client = KrakenClient()
+        time.sleep(2)  # Rate limit protection
+        balance = client._private('/0/private/Balance', {})
+        
+        if balance:
+            positions = {}
+            for asset, amount in balance.items():
+                qty = float(amount)
+                if qty > 0.00001:
+                    # Normalize asset name
+                    norm = {'XBT': 'BTC', 'XETH': 'ETH', 'ZUSD': 'USD'}.get(asset, asset)
+                    symbol = f'{norm}USD'
+                    positions[symbol] = {
+                        'symbol': symbol,
+                        'exchange': 'kraken',
+                        'quantity': qty,
+                        'entry_price': 0.0,  # Will be looked up from cost_basis
+                        'entry_time': time.time()
+                    }
+            
+            state = {
+                'positions': positions,
+                'seeded_at': time.time(),
+                'seeded_from': 'api_balance'
+            }
+            
+            with open(state_file, 'w') as f:
+                json.dump(state, f, indent=2)
+            print(f'✅ Seeded {len(positions)} Kraken positions from API')
+        else:
+            print('⚠️ Kraken API returned empty - will retry on first scan')
+    except Exception as e:
+        print(f'⚠️ Kraken seeding failed (will retry later): {e}')
+
+print('✅ Kraken state initialization complete')
+"
+
 echo "🎉 Validation complete! Ready to start services."
 echo ""
 echo "🚀 Starting supervisor..."

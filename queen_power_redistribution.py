@@ -474,7 +474,7 @@ class QueenPowerRedistribution:
             
             # CRITICAL: Only count positions that ACTUALLY EXIST
             # Cost basis may contain SOLD positions - use it only for entry price lookup!
-            # Priority: 1) State file (local truth), 2) API (live, but may be rate-limited)
+            # Priority: 1) API (live), 2) State file (local truth)
             # Cost basis is used ONLY to get entry prices for positions confirmed elsewhere
             
             # Get symbols from live sources ONLY (not cost_basis which may have sold positions)
@@ -484,6 +484,19 @@ class QueenPowerRedistribution:
             if not api_balances:
                 logger.info(f"  ⚠️ KRK API returned empty (rate limited?) - using state file as truth")
                 all_kraken_symbols = set(krk_state_positions.keys())
+            
+            # CRITICAL: If BOTH API and state file are empty, we have a problem!
+            # On DigitalOcean fresh deploy, state file is empty and API may be rate limited
+            # In this case, we CANNOT use cost_basis as it may contain sold positions
+            if not all_kraken_symbols:
+                logger.warning("  ⚠️ KRK: No positions found in API or state file!")
+                logger.warning("  ⚠️ KRK: State file may be empty (fresh deploy?)")
+                logger.warning("  ⚠️ KRK: API may be rate limited - waiting for kraken_cache_feeder to populate")
+                # DO NOT fall back to cost_basis - it contains SOLD positions!
+                # The system should wait for either:
+                # 1. API to become available (after rate limit cooldown)
+                # 2. kraken_cache_feeder to populate state file
+                # 3. A trade to occur that updates state file
             
             logger.info(f"  📊 KRK: Scanning {len(all_kraken_symbols)} ACTIVE positions")
             
