@@ -1196,19 +1196,11 @@ class QueenPowerRedistribution:
         harvest_result = await self.harvest_profitable_positions()
         
         # Calculate total portfolio value (idle cash + all positions)
-        total_portfolio_value = 0.0
         total_idle_cash = 0.0
-        total_position_value = 0.0
-        
-        for relay in ['BIN', 'KRK', 'ALP', 'CAP']:
-            idle, _ = self.get_relay_idle_energy(relay)
-            total_idle_cash += idle
-            logger.info(f"  {relay}: ${idle:.2f} idle cash")
-        
-        # Add value of all positions
+        total_position_value = 0
         all_nodes = self.scan_all_energy_nodes()
         for node in all_nodes:
-            total_position_value += node.market_value
+            total_position_value += node.position_value_usd
         
         total_portfolio_value = total_idle_cash + total_position_value
         
