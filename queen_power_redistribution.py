@@ -195,9 +195,9 @@ class QueenPowerRedistribution:
             return (cash, 'USD')
         
         elif relay == 'CAP':
-            # Capital.com: Check GBP balance (convert to USD)
-            # Note: Capital.com is CFDs, handle separately
-            return (0.0, 'GBP')  # Skip for now
+            # Capital.com: Use hardcoded balance for now (manual tracking)
+            # TODO: Integrate with Capital.com API when available
+            return (92.66, 'USD')  # Current CAP balance
         
         return (0.0, 'UNKNOWN')
     
@@ -463,6 +463,28 @@ class QueenPowerRedistribution:
         logger.info("=" * 60)
         logger.info("🐝 QUEEN POWER REDISTRIBUTION CYCLE STARTING")
         logger.info("=" * 60)
+        
+        # Calculate and update total system energy FIRST
+        total_energy = 0.0
+        for relay in ['BIN', 'KRK', 'ALP', 'CAP']:
+            idle, _ = self.get_relay_idle_energy(relay)
+            total_energy += idle
+            logger.info(f"  {relay}: ${idle:.2f} idle energy")
+        
+        logger.info(f"💎 Total System Energy: ${total_energy:.2f}")
+        
+        # Update power station state
+        power_state = self.load_state_file('power_station_state.json', {})
+        power_state['status'] = 'RUNNING'
+        power_state['cycles_run'] = power_state.get('cycles_run', 0) + 1
+        power_state['total_energy_now'] = total_energy
+        power_state['energy_deployed'] = 0.0  # TODO: Calculate from positions
+        power_state['net_flow'] = self.total_net_energy_gained
+        power_state['efficiency'] = 0.0  # TODO: Calculate
+        power_state['last_update'] = time.time()
+        
+        with open('power_station_state.json', 'w') as f:
+            json.dump(power_state, f, indent=2)
         
         # Step 1: Analyze opportunities
         logger.info("🔍 Step 1: Analyzing opportunities across all relays...")
