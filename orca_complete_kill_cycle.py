@@ -297,13 +297,25 @@ except ImportError:
     queen_preload_uk_restrictions = None
     TradeResult = None
 
-# �📊 CostBasisTracker - FIFO cost basis + can_sell_profitably() check
+# 📊 CostBasisTracker - FIFO cost basis + can_sell_profitably() check
 try:
     from cost_basis_tracker import CostBasisTracker
     COST_BASIS_TRACKER_AVAILABLE = True
 except ImportError:
     COST_BASIS_TRACKER_AVAILABLE = False
     CostBasisTracker = None
+
+# 💎 TradeProfitValidator - NO PHANTOM GAINS! Validates every trade
+try:
+    from trade_profit_validator import TradeProfitValidator, validate_buy, validate_sell, is_real_profit, get_validator
+    TRADE_VALIDATOR_AVAILABLE = True
+except ImportError:
+    TRADE_VALIDATOR_AVAILABLE = False
+    TradeProfitValidator = None
+    validate_buy = None
+    validate_sell = None
+    is_real_profit = None
+    get_validator = None
 
 # 🦈 OrcaKillExecutor - Position tracking with order IDs
 try:
@@ -10518,7 +10530,27 @@ class OrcaKillCycle:
                                 quantity=pos.entry_qty
                             )
                             if sell_order:
-                                queen_pnl = exit_info.get('net_pnl', net_pnl)
+                                # 💎 VALIDATE THE SELL - No phantom gains!
+                                validated_pnl = exit_info.get('net_pnl', net_pnl)
+                                if TRADE_VALIDATOR_AVAILABLE and validate_sell:
+                                    try:
+                                        sell_validation = validate_sell(
+                                            symbol=pos.symbol,
+                                            exchange=pos.exchange,
+                                            order_response=sell_order,
+                                            cost_basis=entry_cost,
+                                            qty=pos.entry_qty
+                                        )
+                                        if sell_validation.is_valid:
+                                            # Use VALIDATED P&L (from actual fill price)
+                                            validated_pnl = sell_validation.net_pnl or validated_pnl
+                                            print(f"   💎 VALIDATED: Order {sell_validation.order_id} | Net: ${validated_pnl:+.4f}")
+                                        else:
+                                            print(f"   ⚠️ SELL NOT VALIDATED: {', '.join(sell_validation.errors)}")
+                                    except Exception as val_err:
+                                        print(f"   ⚠️ Validation error: {val_err}")
+                                
+                                queen_pnl = validated_pnl
                                 session_stats['total_pnl'] += queen_pnl
                                 session_stats['total_trades'] += 1
                                 if queen_pnl >= 0:

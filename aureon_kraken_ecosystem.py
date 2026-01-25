@@ -76,6 +76,18 @@ except ImportError:
     NEXUS_AVAILABLE = False
     print("⚠️ Nexus Predictor not available")
 
+# 💎 TRADE PROFIT VALIDATOR - NO PHANTOM GAINS!
+try:
+    from trade_profit_validator import TradeProfitValidator, validate_buy, validate_sell, is_real_profit, get_validator
+    TRADE_VALIDATOR_AVAILABLE = True
+    print("💎 Trade Profit Validator loaded - no phantom gains!")
+except ImportError:
+    TRADE_VALIDATOR_AVAILABLE = False
+    validate_buy = None
+    validate_sell = None
+    is_real_profit = None
+    get_validator = None
+
 # ═══════════════════════════════════════════════════════════════
 # CONFIGURATION - THE UNIFIED PARAMETERS
 # ═══════════════════════════════════════════════════════════════
@@ -2102,11 +2114,12 @@ class AureonKrakenEcosystem:
         
         # EXECUTE TRADE
         success = False
+        sell_order = None
         if not self.dry_run:
             try:
                 # Sell entire quantity
-                res = self.client.place_market_order(symbol, 'SELL', quantity=pos.quantity)
-                if res.get('orderId'):
+                sell_order = self.client.place_market_order(symbol, 'SELL', quantity=pos.quantity)
+                if sell_order and sell_order.get('orderId'):
                     success = True
                 else:
                     print(f"   ⚠️ Sell failed for {symbol}: No order ID returned. Retrying next cycle.")
@@ -2136,6 +2149,30 @@ class AureonKrakenEcosystem:
         
         gross_pnl = exit_value - pos.entry_value
         net_pnl = gross_pnl - total_expenses
+        
+        # 💎 VALIDATE THE SELL - No phantom gains!
+        validated_pnl = net_pnl
+        if TRADE_VALIDATOR_AVAILABLE and validate_sell and sell_order and not self.dry_run:
+            try:
+                sell_validation = validate_sell(
+                    symbol=symbol,
+                    exchange='kraken',
+                    order_response=sell_order,
+                    cost_basis=pos.entry_value,
+                    qty=pos.quantity
+                )
+                if sell_validation.is_valid:
+                    # Use VALIDATED P&L (from actual fill price)
+                    if sell_validation.net_pnl is not None:
+                        validated_pnl = sell_validation.net_pnl
+                        print(f"   💎 VALIDATED: Order {sell_validation.order_id} | Net: ${validated_pnl:+.4f}")
+                else:
+                    print(f"   ⚠️ SELL NOT VALIDATED: {', '.join(sell_validation.errors)}")
+            except Exception as val_err:
+                print(f"   ⚠️ Validation error: {val_err}")
+        
+        # Use validated P&L
+        net_pnl = validated_pnl
         
         # Release symbol exposure
         if symbol in self.tracker.symbol_exposure:
