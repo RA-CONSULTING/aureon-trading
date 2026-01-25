@@ -5,6 +5,9 @@
 #   1. 👑 Command Center UI (port 8080) - Dashboard & WebSocket
 #   2. 🦈 Orca Kill Cycle - Trading Engine  
 #   3. 🧠 Autonomous Engine - 9 Intelligence Loops
+#   4. 🐝 Queen Power Redistribution - Energy optimization
+#   5. 📊 Queen Power Dashboard - Real-time monitoring
+#   6. 🔄 Kraken Cache Feeder - Centralized API access
 #
 # All processes start together on boot via supervisord.conf
 #
@@ -27,7 +30,7 @@ services:
     # HTTP settings for health checks
     http_port: 8080
     instance_count: 1
-    instance_size_slug: professional-xs
+    instance_size_slug: professional-xs  # 1GB RAM, 0.5 vCPU
     
     # Health check - Command Center /health endpoint
     health_check:

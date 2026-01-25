@@ -35,12 +35,31 @@ ENV AUREON_ENABLE_AUTONOMOUS_CONTROL=1
 # Create directories for state files and logs
 RUN mkdir -p /app/state /app/logs /var/log/supervisor
 
-# Make startup scripts executable
-RUN chmod +x /app/deploy/start_orca.sh 2>/dev/null || true
+# Make all startup scripts executable
+RUN chmod +x /app/deploy/*.sh 2>/dev/null || true
 
-# Expose HTTP port for DO App Platform
-EXPOSE 8080
+# Create empty state files if they don't exist (prevents errors on first boot)
+RUN touch /app/queen_redistribution_state.json \
+    /app/power_station_state.json \
+    /app/queen_energy_balance.json \
+    /app/aureon_kraken_state.json \
+    /app/binance_truth_tracker_state.json \
+    /app/alpaca_truth_tracker_state.json \
+    /app/7day_pending_validations.json && \
+    echo '{"last_update":0.0,"total_net_energy_gained":0.0,"total_blocked_drains_avoided":0.0,"decisions_count":0,"executions_count":0,"recent_decisions":[],"recent_executions":[]}' > /app/queen_redistribution_state.json && \
+    echo '{"status":"STOPPED","cycles_run":0,"total_energy_now":0.0,"energy_deployed":0.0,"net_flow":0.0,"efficiency":0.0}' > /app/power_station_state.json && \
+    echo '{"last_update":0,"total_energy_in":0.0,"total_energy_out":0.0,"net_balance":0.0}' > /app/queen_energy_balance.json
 
-# 👑 PARALLEL STARTUP: Use supervisord to run Command Center + Orca + Autonomous Engine together
-# This ensures all parallel processes start on boot in Digital Ocean
-CMD ["supervisord", "-n", "-c", "/app/deploy/supervisord.conf"]
+# Expose ports
+EXPOSE 8080 8800
+
+# Health check endpoint
+HEALTHCHECK --interval=60s --timeout=10s --start-period=120s --retries=3 \
+  CMD python -c "import os; exit(0 if os.path.exists('/app/queen_redistribution_state.json') else 1)"
+
+# Run startup validation before supervisor
+RUN chmod +x /app/deploy/validate_startup.sh
+
+# 👑 PARALLEL STARTUP: Use supervisord to run all systems
+# Systems: Command Center + Orca + Autonomous Engine + Queen Power System + Kraken Cache
+ENTRYPOINT ["/bin/bash", "-c", "/app/deploy/validate_startup.sh && exec supervisord -n -c /app/deploy/supervisord.conf"]
