@@ -198,7 +198,30 @@ LAYER_FREQUENCIES = {
 
 
 # ═══════════════════════════════════════════════════════════════════════════════════════
-# 📋 SOVEREIGNTY & AUTONOMOUS DECISION TYPES
+# �💰 QUEEN'S SACRED 1.88% LAW - SOURCE LAW DIRECT 💰👑
+# ═══════════════════════════════════════════════════════════════════════════════════════
+# This is HARDCODED into the Queen's autonomous decision-making.
+# NO trade exits below 1.88% realized profit - THE QUEEN COMMANDS IT!
+# ALL autonomous decisions MUST honor this sacred law.
+# ═══════════════════════════════════════════════════════════════════════════════════════
+QUEEN_MIN_COP = 1.0188                   # 🎯 Sacred constant: 1.88% minimum realized profit
+QUEEN_MIN_PROFIT_PCT = 1.88              # 🎯 Percentage form
+QUEEN_PROFIT_THRESHOLD = 0.0188          # 🎯 Decimal form
+QUEEN_AUTONOMOUS_PROFIT_FREQ = 188.0     # 🎯 Hz - Sacred frequency for autonomous profits
+
+# QUEEN'S AUTONOMOUS PROFIT MANDATE - Immutable law for all autonomous decisions
+QUEEN_AUTONOMOUS_PROFIT_MANDATE = {
+    'min_cop': QUEEN_MIN_COP,                  # COP >= 1.0188 for ANY exit
+    'min_profit_pct': QUEEN_MIN_PROFIT_PCT,   # 1.88% minimum
+    'min_threshold': QUEEN_PROFIT_THRESHOLD,   # 0.0188 decimal
+    'sacred_frequency': QUEEN_AUTONOMOUS_PROFIT_FREQ,  # 188.0 Hz
+    'reason': "Queen's Autonomous Profit Law - NO exits below 1.88% realized profit!",
+    'hardcoded': True,  # IMMUTABLE - cannot be overridden by any system!
+}
+
+
+# ═══════════════════════════════════════════════════════════════════════════════════════
+# �📋 SOVEREIGNTY & AUTONOMOUS DECISION TYPES
 # ═══════════════════════════════════════════════════════════════════════════════════════
 
 class SovereigntyLevel(Enum):
@@ -853,6 +876,79 @@ class QueenAutonomousControl:
             result = {"success": False, "error": str(e)}
         
         return result
+    
+    # ═══════════════════════════════════════════════════════════════════════════════
+    # 👑💰 QUEEN'S AUTONOMOUS PROFIT GATE - 1.88% SOURCE LAW 💰👑
+    # ═══════════════════════════════════════════════════════════════════════════════
+    
+    def queen_autonomous_profit_gate(self, entry_cost: float, current_value: float) -> Tuple[bool, Dict[str, Any]]:
+        """
+        👑💰 THE QUEEN'S SACRED 1.88% AUTONOMOUS PROFIT GATE 💰👑
+        
+        This is the FINAL GATE before ANY exit is allowed.
+        MIN_COP = 1.0188 (1.88% minimum realized profit) - SOURCE LAW DIRECT!
+        
+        Args:
+            entry_cost: Total cost at entry (price × qty × (1 + entry_fee))
+            current_value: Current exit value (price × qty × (1 - exit_fee))
+        
+        Returns:
+            (approved: bool, info: dict) - True if exit is allowed
+        """
+        cop = current_value / entry_cost if entry_cost > 0 else 0.0
+        profit_pct = (cop - 1) * 100
+        required_value = entry_cost * QUEEN_MIN_COP
+        gap_value = required_value - current_value
+        gap_pct = (QUEEN_MIN_PROFIT_PCT - profit_pct) if profit_pct < QUEEN_MIN_PROFIT_PCT else 0
+        
+        approved = cop >= QUEEN_MIN_COP
+        
+        info = {
+            'entry_cost': entry_cost,
+            'current_value': current_value,
+            'cop': cop,
+            'profit_pct': profit_pct,
+            'required_value': required_value,
+            'required_cop': QUEEN_MIN_COP,
+            'required_profit_pct': QUEEN_MIN_PROFIT_PCT,
+            'gap_value': gap_value,
+            'gap_pct': gap_pct,
+            'approved': approved,
+            'sacred_frequency': QUEEN_AUTONOMOUS_PROFIT_FREQ,
+            'queen_verdict': '👑✅ AUTONOMOUS EXIT APPROVED!' if approved else '👑❌ AUTONOMOUS EXIT BLOCKED - HOLD!',
+        }
+        
+        if not approved:
+            logger.info(f"👑❌ AUTONOMOUS EXIT BLOCKED: COP {cop:.4f} ({profit_pct:+.2f}%) < {QUEEN_MIN_COP:.4f} ({QUEEN_MIN_PROFIT_PCT:.2f}% required)")
+            logger.info(f"   Need ${gap_value:.4f} more ({gap_pct:.2f}% gap to 1.88%)")
+        else:
+            logger.info(f"👑✅ AUTONOMOUS EXIT APPROVED: COP {cop:.4f} ({profit_pct:+.2f}%) >= {QUEEN_MIN_COP:.4f}")
+        
+        return approved, info
+    
+    def can_take_autonomous_profit(self, symbol: str, exchange: str, 
+                                   entry_price: float, current_price: float,
+                                   quantity: float, fee_rate: float = 0.0026) -> Tuple[bool, Dict[str, Any]]:
+        """
+        👑 Check if the Queen allows taking profit on this position.
+        
+        This is a convenience wrapper that calculates entry_cost and current_value
+        from the provided position details.
+        """
+        entry_cost = entry_price * quantity * (1 + fee_rate)
+        current_value = current_price * quantity * (1 - fee_rate)
+        
+        approved, info = self.queen_autonomous_profit_gate(entry_cost, current_value)
+        
+        # Add position details to info
+        info['symbol'] = symbol
+        info['exchange'] = exchange
+        info['entry_price'] = entry_price
+        info['current_price'] = current_price
+        info['quantity'] = quantity
+        info['fee_rate'] = fee_rate
+        
+        return approved, info
     
     def _execute_scan(self) -> Dict[str, Any]:
         """Execute quantum field scan."""
