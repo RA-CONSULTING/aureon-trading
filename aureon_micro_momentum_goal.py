@@ -97,9 +97,15 @@ class CostProfile:
 DEFAULT_COST = CostProfile.ALPACA
 BREAK_EVEN_THRESHOLD = DEFAULT_COST['round_trip'] * 100  # 0.34%
 
+# 👑 QUEEN'S SACRED 1.88% LAW - MOMENTUM MUST SERVE PROFIT
+QUEEN_MIN_COP = 1.0188              # Sacred constant: 1.88% minimum realized profit
+QUEEN_MIN_PROFIT_PCT = 1.88         # Percentage form
+QUEEN_MIN_GROSS_PCT = 2.60          # Gross move needed to net 1.88% (after ~0.72% fees)
+QUEEN_MOMENTUM_PROFIT_FREQ = 188.0  # Hz - Sacred frequency for momentum profits
+
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# 🎯 MOMENTUM TIERS - WHAT WE'RE LOOKING FOR
+# 🎯 MOMENTUM TIERS - QUEEN'S 1.88% ALIGNED
 # ═══════════════════════════════════════════════════════════════════════════════
 
 class MomentumTier(Enum):

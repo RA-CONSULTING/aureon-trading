@@ -99,6 +99,11 @@ logger = logging.getLogger(__name__)
 
 PHI = (1 + math.sqrt(5)) / 2  # 1.618
 
+# 👑 QUEEN'S SACRED 1.88% LAW - THE HUNT SERVES THE QUEEN
+QUEEN_MIN_COP = 1.0188              # Sacred constant: 1.88% minimum realized profit
+QUEEN_MIN_PROFIT_PCT = 1.88         # Percentage form - no whale hunt below this
+QUEEN_WHALE_PROFIT_FREQ = 188.0     # Hz - Sacred frequency for profitable whale hunts
+
 
 @dataclass
 class GamEncounter:

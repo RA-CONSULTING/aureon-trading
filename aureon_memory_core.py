@@ -29,6 +29,11 @@ from typing import Dict, List, Any, Optional
 logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] 🧠 %(message)s')
 logger = logging.getLogger("AureonMemory")
 
+# 👑 QUEEN'S SACRED 1.88% LAW - MEMORY SERVES THE QUEEN
+QUEEN_MIN_COP = 1.0188              # Sacred constant: 1.88% minimum realized profit
+QUEEN_MIN_PROFIT_PCT = 1.88         # Percentage form - memory only stores profitable trades
+QUEEN_MEMORY_PROFIT_FREQ = 188.0    # Hz - Sacred frequency in memory patterns
+
 class AureonMemoryCore:
     """
     The Hippocampus of the Aureon Brain.

@@ -88,6 +88,14 @@ from enum import Enum
 import threading
 
 # ═══════════════════════════════════════════════════════════════════════════════
+# 👑 QUEEN'S SACRED 1.88% LAW - SOURCE LAW DIRECT
+# ═══════════════════════════════════════════════════════════════════════════════
+QUEEN_MIN_COP = 1.0188              # Sacred constant: 1.88% minimum realized profit
+QUEEN_MIN_PROFIT_PCT = 1.88         # Percentage form
+QUEEN_PROFIT_THRESHOLD = 0.0188     # Decimal form
+QUEEN_INCEPTION_PROFIT_FREQ = 188.0 # Hz - Sacred profit frequency across all dream levels
+
+# ═══════════════════════════════════════════════════════════════════════════════
 # INCEPTION LEVEL DEFINITIONS
 # ═══════════════════════════════════════════════════════════════════════════════
 

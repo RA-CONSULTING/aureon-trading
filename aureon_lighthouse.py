@@ -29,6 +29,11 @@ import numpy as np
 
 logger = logging.getLogger(__name__)
 
+# 👑 QUEEN'S SACRED 1.88% LAW - LIGHTHOUSE MUST GUIDE TO PROFIT
+QUEEN_MIN_COP = 1.0188              # Sacred constant: 1.88% minimum realized profit
+QUEEN_MIN_PROFIT_PCT = 1.88         # Percentage form
+QUEEN_LIGHTHOUSE_PROFIT_FREQ = 188.0  # Hz - Sacred frequency guiding the lighthouse
+
 # Import harmonic types
 try:
     from aureon_harmonic_seed import GlobalHarmonicState, SymbolWaveState, SCHUMANN_BASE

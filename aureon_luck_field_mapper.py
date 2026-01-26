@@ -54,6 +54,11 @@ SCHUMANN_BASE = 7.83                   # Earth's Heartbeat (Hz)
 LOVE_FREQUENCY = 528.0                 # DNA Repair / Transformation (Hz)
 UNITY_FREQUENCY = 963.0                # Crown Chakra / Divine Connection (Hz)
 
+# 👑 QUEEN'S SACRED 1.88% LAW - LUCK SERVES THE QUEEN
+QUEEN_MIN_COP = 1.0188              # Sacred constant: 1.88% minimum realized profit
+QUEEN_MIN_PROFIT_PCT = 1.88         # Percentage form
+QUEEN_LUCK_PROFIT_FREQ = 188.0      # Hz - Sacred frequency for lucky profits
+
 # Solfeggio Frequencies - Ancient Healing Tones
 SOLFEGGIO = {
     "UT": 396.0,    # Liberating Guilt/Fear

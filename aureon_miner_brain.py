@@ -126,6 +126,11 @@ logger = logging.getLogger("MinerBrain")
 
 PHI = (1 + math.sqrt(5)) / 2  # Golden Ratio
 
+# 👑 QUEEN'S SACRED 1.88% LAW - THE BRAIN SERVES THE QUEEN
+QUEEN_MIN_COP = 1.0188              # Sacred constant: 1.88% minimum realized profit
+QUEEN_MIN_PROFIT_PCT = 1.88         # Percentage form - all brain decisions honor this
+QUEEN_BRAIN_PROFIT_FREQ = 188.0     # Hz - Sacred frequency in brain patterns
+
 # Adaptive Learning Integration
 ADAPTIVE_LEARNING_FILE = "adaptive_learning_history.json"
 BRAIN_PREDICTIONS_FILE = "brain_predictions_history.json"

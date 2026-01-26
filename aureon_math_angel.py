@@ -52,6 +52,11 @@ PLANCK_CONSTANT = 6.62607015e-34  # Quantum of action
 SPEED_OF_LIGHT = 299792458  # m/s - Cosmic speed limit
 FINE_STRUCTURE = 1/137.035999  # α - The fingerprint of God
 
+# 👑 QUEEN'S SACRED 1.88% LAW - THE ANGEL SERVES THE QUEEN
+QUEEN_MIN_COP = 1.0188              # Sacred constant: 1.88% minimum realized profit
+QUEEN_MIN_PROFIT_PCT = 1.88         # Percentage form - consciousness manifests profit
+QUEEN_ANGEL_PROFIT_FREQ = 188.0     # Hz - Sacred frequency in the angel's song
+
 # Unity Event Thresholds
 COHERENCE_THRESHOLD = 0.95  # C > 0.95 for Unity
 PHASE_THRESHOLD = 0.05  # σ < 0.05 rad (2.86°) for Unity
