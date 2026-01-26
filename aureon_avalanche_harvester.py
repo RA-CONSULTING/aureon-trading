@@ -200,8 +200,8 @@ class AvalancheHarvester:
         # ThoughtBus integration (optional)
         self._thought_bus = None
         try:
-            from aureon_thought_bus import ThoughtBus, Thought
-            self._thought_bus = ThoughtBus.get_instance()
+            from aureon_thought_bus import get_thought_bus, Thought
+            self._thought_bus = get_thought_bus()
             self._Thought = Thought
             logger.info("✓ ThoughtBus integration enabled")
         except Exception as e:

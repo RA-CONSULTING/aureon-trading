@@ -6071,7 +6071,7 @@ class OrcaKillCycle:
                                     'symbol': symbol,
                                     'size': size,
                                     'entry_price': level,
-                                    'unrealized_pl': upl * gbp_to_usd if currency == 'GBP' else upl,
+                                    'unrealized_pl': upl * gbp_usd_rate if currency == 'GBP' else upl,
                                     'direction': direction,
                                     'deal_id': pos.get('dealId', '')
                                 })
@@ -6818,9 +6818,9 @@ class OrcaKillCycle:
             )
             
             if not approved:
-                logger.warning(f"👑❌ QUEEN'S 1.88% GATE BLOCKED BUY: {symbol}")
-                logger.warning(f"    Reason: {gate_reason}")
-                logger.warning(f"    THE QUEEN DEMANDS 1.88% MINIMUM - THIS TRADE DOES NOT QUALIFY!")
+                print(f"👑❌ QUEEN'S 1.88% GATE BLOCKED BUY: {symbol}")
+                print(f"    Reason: {gate_reason}")
+                print(f"    THE QUEEN DEMANDS 1.88% MINIMUM - THIS TRADE DOES NOT QUALIFY!")
                 return {
                     'status': 'blocked',
                     'reason': gate_reason,
@@ -6830,8 +6830,8 @@ class OrcaKillCycle:
                     'min_required': '1.88%'
                 }
             else:
-                logger.info(f"👑✅ QUEEN'S 1.88% GATE APPROVED: {symbol}")
-                logger.info(f"    Reason: {gate_reason}")
+                print(f"👑✅ QUEEN'S 1.88% GATE APPROVED: {symbol}")
+                print(f"    Reason: {gate_reason}")
         # ═══════════════════════════════════════════════════════════════════════
         
         if self.stealth_executor:
@@ -6916,10 +6916,8 @@ class OrcaKillCycle:
         )
         
         if not approved:
-            logger.warning(f"👑❌ QUEEN'S 1.88% GATE BLOCKED: {symbol} [{context}]")
-            logger.warning(f"    Reason: {gate_reason}")
             print(f"👑❌ QUEEN'S 1.88% GATE BLOCKED: {symbol} [{context}]")
-            print(f"    {gate_reason}")
+            print(f"    Reason: {gate_reason}")
             return {
                 'status': 'blocked',
                 'reason': gate_reason,
@@ -6931,8 +6929,7 @@ class OrcaKillCycle:
                 'rejected': True
             }
         
-        logger.info(f"👑✅ QUEEN APPROVED: {symbol} [{context}] - {gate_reason}")
-        print(f"👑✅ QUEEN APPROVED: {symbol} [{context}]")
+        print(f"👑✅ QUEEN APPROVED: {symbol} [{context}] - {gate_reason}")
         
         # ═══════════════════════════════════════════════════════════════════
         #   🎯 EXECUTE THE BUY - THE QUEEN HAS GRANTED PERMISSION!
@@ -6944,7 +6941,7 @@ class OrcaKillCycle:
         elif quantity and quantity > 0:
             return client.place_market_order(symbol=symbol, side='buy', quantity=quantity)
         else:
-            logger.error(f"❌ No quantity specified for buy: {symbol}")
+            print(f"❌ No quantity specified for buy: {symbol}")
             return {'status': 'error', 'reason': 'No quantity specified'}
     
     def execute_sell_with_logging(self, client: Any, symbol: str, quantity: float,
@@ -9723,6 +9720,9 @@ class OrcaKillCycle:
                                 new_opps = [o for o in opportunities if o.symbol not in active_symbols]
                                 
                                 if new_opps:
+                                    # Take best opportunity first (needed for Queen signal)
+                                    best = new_opps[0]
+                                    
                                     # Ask Queen for guidance (MANDATORY)
                                     queen_approved = False
                                     if queen is None:
@@ -9747,8 +9747,6 @@ class OrcaKillCycle:
                                             print(f"   ⚠️ Queen signal unavailable: {e}")
                                     
                                     if queen_approved:
-                                        # Take best opportunity
-                                        best = new_opps[0]
                                         print(f"   👑 QUEEN APPROVED: {best.symbol} ({best.exchange})")
                                         print(f"      Change: {best.change_pct:+.2f}% | Momentum: {best.momentum_score:.2f}")
                                         
