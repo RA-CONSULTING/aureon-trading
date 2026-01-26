@@ -130,7 +130,11 @@ def check_alpaca():
         return
     try:
         from alpaca_client import AlpacaClient
-        AlpacaClient().get_balance()
+        client = AlpacaClient()
+        # Alpaca uses get_account_balance(), not get_balance()
+        balance = client.get_account_balance()
+        if not balance:
+            errors.append("Alpaca returned empty balance")
     except Exception as e:
         errors.append(f"Alpaca connectivity failed: {e}")
 
@@ -139,7 +143,10 @@ def check_kraken():
         return
     try:
         from kraken_client import KrakenClient
-        KrakenClient().get_balance()
+        client = KrakenClient()
+        balance = client.get_balance()
+        if balance is None:
+            errors.append("Kraken returned None balance")
     except Exception as e:
         errors.append(f"Kraken connectivity failed: {e}")
 
@@ -148,7 +155,10 @@ def check_binance():
         return
     try:
         from binance_client import BinanceClient
-        BinanceClient().get_balance()
+        client = BinanceClient()
+        balance = client.get_balance()
+        if balance is None:
+            errors.append("Binance returned None balance")
     except Exception as e:
         errors.append(f"Binance connectivity failed: {e}")
 
@@ -157,7 +167,11 @@ def check_capital():
         return
     try:
         from capital_client import CapitalClient
-        CapitalClient().get_balance()
+        client = CapitalClient()
+        # Capital uses get_account_balance(), not get_balance()
+        balance = client.get_account_balance()
+        if not balance:
+            errors.append("Capital.com returned empty balance")
     except Exception as e:
         errors.append(f"Capital.com connectivity failed: {e}")
 
