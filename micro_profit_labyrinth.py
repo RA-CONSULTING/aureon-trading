@@ -4073,15 +4073,19 @@ class ProfitHarvester:
     
     Key Principles:
     1. VERIFY profit via Alpaca API (unrealized_pl from API is TRUTH)
-    2. ANY net profit after fees = IMMEDIATE HARVEST
-    3. NO minimum thresholds - even $0.001 profit is a WIN
-    4. Cash flow is KING - keep harvesting to fund new opportunities
-    5. NO STOP LOSSES - we only sell when we WIN
+    2. 1.88% net profit minimum = QUEEN'S SACRED LAW
+    3. Cash flow is KING - keep harvesting to fund new opportunities
+    4. NO STOP LOSSES - we only sell when we WIN
+    
+    👑💰 QUEEN'S SACRED 1.88% PROFIT MANDATE 💰👑
+    - NO exits below 1.88% realized profit after ALL costs
+    - This ensures next trade's fees are ALREADY FUNDED
+    - Unity in tandem with Queen Sero's brain
     """
     
-    # SAFER HARVEST RULES - avoid bleeding on tiny wins
-    MIN_PROFIT_USD = 0.001      # Minimal absolute profit allowed (still tiny, but checked with pct)
-    MIN_PROFIT_PCT = 0.5        # Require at least 0.5% net profit after fees to harvest
+    # 👑💰 QUEEN'S SACRED HARVEST RULES - 1.88% MINIMUM 💰👑
+    MIN_PROFIT_USD = 0.001      # Minimal absolute profit ($0.001 floor)
+    MIN_PROFIT_PCT = 1.88       # 🎯 QUEEN'S SACRED 1.88% MINIMUM - HARDCODED!
     MIN_POSITION_VALUE = 1.00   # Position must be worth at least $1.00 to avoid dust harvesting
     
     # Fee estimate for selling on Alpaca (conservative)

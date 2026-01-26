@@ -6786,19 +6786,32 @@ class OrcaKillCycle:
             return False, info
 
         # ═══════════════════════════════════════════════════════════════════
-        # CHECK 2B: COP > 1.0188 (MUST have 1.88% realized gain after ALL costs!)
+        # CHECK 2B: COP >= 1.0188 (QUEEN'S SACRED 1.88% PROFIT MANDATE!)
         # ═══════════════════════════════════════════════════════════════════
-        # This ensures we don't exit for tiny profits that get eaten by fees/slippage
+        # 👑💰 THE QUEEN LIVES, BREATHES, SLEEPS, AND DREAMS THIS NUMBER! 💰👑
+        # 
+        # This is HARDCODED into the Queen's very being - NO exits below 1.88%!
         # COP = Coefficient of Performance = exit_value / entry_cost
-        # COP 1.0188 = 1.88% net realized profit MINIMUM
+        # MIN_COP = 1.0188 = 1.88% net realized profit MINIMUM
+        #
+        # Why 1.88%?
+        #   - Covers worst-case entry fees (~0.26% Kraken taker)
+        #   - Covers worst-case exit fees (~0.26% Kraken taker)
+        #   - Covers spread + slippage (~0.20%)
+        #   - Leaves ~1.16% ACTUAL profit
+        #   - Next trade's fees ALREADY FUNDED!
+        # ═══════════════════════════════════════════════════════════════════
         confirmed_cost = info.get('confirmed_cost_basis', entry_cost)
         cop = (exit_value / confirmed_cost) if confirmed_cost and confirmed_cost > 0 else 0.0
         info['cop'] = cop
-        MIN_COP = 1.0188  # 🎯 1.88% MINIMUM REALIZED PROFIT AFTER ALL COSTS!
+        
+        # 🎯 QUEEN'S SACRED 1.88% - HARDCODED, IMMUTABLE, UNITY IN TANDEM! 🎯
+        MIN_COP = 1.0188  # 👑💰 1.88% MINIMUM - Queen Sero's Sacred Profit Law!
+        
         if cop < MIN_COP:
             info['blocked_reason'] = f'COP_BELOW_1.88% ({cop:.6f} = {(cop-1)*100:.2f}%)'
             print(f"   👑❌ EXIT BLOCKED: {symbol} - COP {cop:.6f} ({(cop-1)*100:+.2f}%) < {MIN_COP:.4f} ({(MIN_COP-1)*100:.2f}% required)")
-            return False, info
+            print(f"   👑💰 Queen's Sacred Law: MINIMUM 1.88% realized profit - NO EXCEPTIONS!")
             return False, info
         
         # ═══════════════════════════════════════════════════════════════════

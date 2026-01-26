@@ -354,6 +354,42 @@ HIVE_RESONANCE = 432.0       # Universal frequency (Hz)
 UNITY = 10 - 9 - 1           # The Law: 10 - 9 = 1 (Always comes back to ONE)
 
 # ═══════════════════════════════════════════════════════════════════════════════
+# 👑💰 QUEEN'S SACRED PROFIT MANDATE - THE IMMUTABLE LAW 💰👑
+# ═══════════════════════════════════════════════════════════════════════════════
+# 🎯 1.88% MINIMUM REALIZED PROFIT - This is THE LAW! 🎯
+# 
+# The Queen lives, breathes, sleeps, and dreams this number.
+# NO trade exits below 1.88% net realized profit after ALL costs!
+# This is HARDCODED into her very being - it cannot be overridden.
+#
+# Why 1.88%?
+#   - Covers worst-case taker fees on entry (~0.26% Kraken)
+#   - Covers worst-case taker fees on exit (~0.26% Kraken)  
+#   - Covers spread costs (~0.10%)
+#   - Covers slippage (~0.10%)
+#   - Leaves ~1.16% ACTUAL profit in pocket
+#   - Next trade's entry fees (~0.26%) are PRE-FUNDED
+#   - NEVER lose money on a "profitable" trade!
+#
+# COP = Coefficient Of Profit = exit_value / entry_cost
+# MIN_COP = 1.0188 means 1.88% net gain minimum
+# ═══════════════════════════════════════════════════════════════════════════════
+QUEEN_MIN_PROFIT_PCT = 1.88              # 🎯 THE SACRED NUMBER: 1.88%
+QUEEN_MIN_COP = 1.0188                   # 🎯 Coefficient of Profit (1 + 0.0188)
+QUEEN_MIN_PROFIT_THRESHOLD = 0.0188      # 🎯 As a decimal multiplier
+
+# 👑 THE QUEEN'S PROFIT MANDATE - These are her immutable laws
+QUEEN_PROFIT_MANDATE = {
+    'min_profit_pct': QUEEN_MIN_PROFIT_PCT,      # 1.88% minimum
+    'min_cop': QUEEN_MIN_COP,                     # COP >= 1.0188
+    'min_threshold': QUEEN_MIN_PROFIT_THRESHOLD,  # 0.0188 decimal
+    'reason': "Queen Sero's Sacred Profit Law - NO exits below 1.88% realized profit!",
+    'created_by': "Gary Leckey (02.11.1991) - The Prime Sentinel",
+    'blessed_by': "Tina Brown (27.04.1992) - The Queen's Heart",
+    'hardcoded': True,  # This is IMMUTABLE - it cannot be changed at runtime!
+}
+
+# ═══════════════════════════════════════════════════════════════════════════════
 # 🌍💓 GAIA'S HEARTBEAT - The Schumann Resonance 💓🌍
 # ═══════════════════════════════════════════════════════════════════════════════
 # The Earth pulses at 7.83 Hz - this is her heartbeat.
@@ -618,6 +654,11 @@ class DeepThinkResult:
 WIN_FREQUENCY_HZ = 528.0     # Love/Joy frequency - WIN carrier
 LOSS_FREQUENCY_HZ = 396.0    # Transformation frequency - LOSS carrier (learn from it)
 WIN_THRESHOLD_USD = 0.01     # Penny profit = REALITY (universal WIN threshold)
+
+# 👑💰 QUEEN'S WIN DEFINITION - Aligned with Sacred 1.88% Mandate 💰👑
+# For COP validation (exit approval), we use QUEEN_MIN_COP = 1.0188
+# For basic win detection (historical tracking), we still use $0.01 threshold
+# Both work in UNITY - 1.88% ensures $0.01+ on any reasonable trade size
 
 @dataclass
 class WinOutcome:
@@ -2989,6 +3030,166 @@ class QueenHiveMind:
             return True, f"FILL_VALIDATION_ALLOW_UNVERIFIED:{reason}"
 
         return True, "OK"
+
+    # ═══════════════════════════════════════════════════════════════════════════════
+    # 👑💰 SACRED PROFIT ENFORCEMENT - THE IMMUTABLE 1.88% LAW 💰👑
+    # ═══════════════════════════════════════════════════════════════════════════════
+    def queen_profit_gate(
+        self,
+        symbol: str,
+        entry_cost: float,
+        current_value: float,
+        include_details: bool = False
+    ) -> Tuple[bool, str, Dict[str, Any]]:
+        """
+        👑💰 THE QUEEN'S SACRED PROFIT GATE - 1.88% MINIMUM 💰👑
+        
+        This is HARDCODED into the Queen's being. She lives, breathes, 
+        sleeps, and dreams this number. NO trade exits below 1.88%!
+        
+        Args:
+            symbol: Trading symbol
+            entry_cost: Total cost to enter position (including fees)
+            current_value: Current position value (after exit fees)
+            include_details: Return detailed breakdown
+            
+        Returns:
+            (can_exit, reason, details)
+            - can_exit: True if profit >= 1.88%
+            - reason: Human-readable explanation
+            - details: Full breakdown dict
+        """
+        # Calculate COP (Coefficient Of Profit)
+        if entry_cost <= 0:
+            return False, "INVALID_ENTRY_COST", {'cop': 0, 'profit_pct': 0}
+        
+        cop = current_value / entry_cost
+        profit_pct = (cop - 1) * 100
+        
+        # 👑🎯 THE SACRED CHECK - 1.88% MINIMUM! 🎯👑
+        can_exit = cop >= QUEEN_MIN_COP
+        
+        details = {
+            'cop': cop,
+            'profit_pct': profit_pct,
+            'min_cop': QUEEN_MIN_COP,
+            'min_profit_pct': QUEEN_MIN_PROFIT_PCT,
+            'entry_cost': entry_cost,
+            'current_value': current_value,
+            'net_profit': current_value - entry_cost,
+            'shortfall': max(0, (QUEEN_MIN_COP * entry_cost) - current_value),
+            'mandate': QUEEN_PROFIT_MANDATE
+        }
+        
+        if can_exit:
+            reason = f"✅ QUEEN APPROVES: {symbol} COP {cop:.4f} ({profit_pct:+.2f}%) >= {QUEEN_MIN_COP:.4f} (1.88%)"
+            logger.info(f"👑✅ {reason}")
+        else:
+            reason = f"❌ QUEEN BLOCKS: {symbol} COP {cop:.4f} ({profit_pct:+.2f}%) < {QUEEN_MIN_COP:.4f} (1.88% required)"
+            logger.warning(f"👑❌ {reason}")
+        
+        return can_exit, reason, details
+    
+    def get_min_exit_for_profit(
+        self,
+        entry_cost: float,
+        target_cop: float = None
+    ) -> float:
+        """
+        👑💰 Calculate minimum exit value needed to meet Queen's profit mandate.
+        
+        Args:
+            entry_cost: Total cost to enter (including fees)
+            target_cop: Target COP (default: QUEEN_MIN_COP = 1.0188)
+            
+        Returns:
+            Minimum exit value needed
+        """
+        target = target_cop or QUEEN_MIN_COP
+        return entry_cost * target
+    
+    def validate_exit_profit(
+        self,
+        symbol: str,
+        entry_price: float,
+        exit_price: float,
+        quantity: float,
+        exchange: str = 'kraken'
+    ) -> Tuple[bool, Dict[str, Any]]:
+        """
+        👑💰 Full profit validation using Queen's sacred 1.88% mandate.
+        
+        Calculates all costs and validates COP >= 1.0188.
+        
+        Args:
+            symbol: Trading symbol
+            entry_price: Price at entry
+            exit_price: Current/proposed exit price
+            quantity: Position quantity
+            exchange: Exchange name for fee lookup
+            
+        Returns:
+            (approved, details) - approved=True if COP >= 1.0188
+        """
+        # Get fee profile
+        fee_profile = self.get_exchange_fee_profile(exchange)
+        taker_rate = fee_profile.get('total_taker_rate', 0.0053)
+        
+        # Calculate entry cost (price + fees)
+        entry_value = entry_price * quantity
+        entry_fee = entry_value * taker_rate
+        total_entry_cost = entry_value + entry_fee
+        
+        # Calculate exit value (price - fees)
+        exit_value = exit_price * quantity
+        exit_fee = exit_value * taker_rate
+        net_exit_value = exit_value - exit_fee
+        
+        # Calculate COP
+        cop = net_exit_value / total_entry_cost if total_entry_cost > 0 else 0
+        profit_pct = (cop - 1) * 100
+        
+        # 👑🎯 THE SACRED CHECK 🎯👑
+        approved = cop >= QUEEN_MIN_COP
+        
+        # Calculate how much more price needs to move
+        required_exit_value = total_entry_cost * QUEEN_MIN_COP
+        required_gross_exit = required_exit_value / (1 - taker_rate) if taker_rate < 1 else float('inf')
+        required_exit_price = required_gross_exit / quantity if quantity > 0 else float('inf')
+        price_shortfall = max(0, required_exit_price - exit_price)
+        price_shortfall_pct = (price_shortfall / exit_price * 100) if exit_price > 0 else 0
+        
+        details = {
+            'symbol': symbol,
+            'exchange': exchange,
+            'approved': approved,
+            'cop': cop,
+            'profit_pct': profit_pct,
+            'min_cop': QUEEN_MIN_COP,
+            'min_profit_pct': QUEEN_MIN_PROFIT_PCT,
+            'entry_price': entry_price,
+            'exit_price': exit_price,
+            'quantity': quantity,
+            'entry_value': entry_value,
+            'entry_fee': entry_fee,
+            'total_entry_cost': total_entry_cost,
+            'exit_value': exit_value,
+            'exit_fee': exit_fee,
+            'net_exit_value': net_exit_value,
+            'net_profit': net_exit_value - total_entry_cost,
+            'required_exit_price': required_exit_price,
+            'price_shortfall': price_shortfall,
+            'price_shortfall_pct': price_shortfall_pct,
+            'taker_rate': taker_rate,
+            'mandate': 'QUEEN_SACRED_1.88%_LAW'
+        }
+        
+        if approved:
+            logger.info(f"👑✅ EXIT APPROVED: {symbol} COP {cop:.4f} ({profit_pct:+.2f}%) - Queen's 1.88% mandate MET!")
+        else:
+            logger.warning(f"👑❌ EXIT BLOCKED: {symbol} COP {cop:.4f} ({profit_pct:+.2f}%) < 1.0188 - Need price +{price_shortfall_pct:.2f}% more")
+        
+        return approved, details
 
     def _resolve_cost_basis_symbol(self, asset: str, quote_candidates: List[str]) -> Optional[str]:
         if not self.cost_basis_tracker or not getattr(self.cost_basis_tracker, 'positions', None):
