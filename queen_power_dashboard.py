@@ -100,6 +100,9 @@ class QueenPowerDashboard:
         self._cached_nodes = []
         self._cache_time = 0
         self._cache_ttl = 30  # Refresh every 30 seconds
+        self._last_scan_time = 0
+        self._last_scan_error = ""
+        self._last_scan_count = 0
         
         # Initialize the redistribution scanner for LIVE data
         self.scanner = None
@@ -126,8 +129,13 @@ class QueenPowerDashboard:
                 try:
                     self._cached_nodes = self.scanner.scan_all_energy_nodes()
                     self._cache_time = now
+                    self._last_scan_time = now
+                    self._last_scan_count = len(self._cached_nodes)
+                    self._last_scan_error = ""
                     print(f"📊 Scanned {len(self._cached_nodes)} live nodes")
                 except Exception as e:
+                    self._last_scan_time = now
+                    self._last_scan_error = str(e)
                     print(f"⚠️ Scan failed: {e}")
         return self._cached_nodes
     
@@ -209,6 +217,48 @@ class QueenPowerDashboard:
             'net_flow': 0.0,
             'efficiency': 0.0
         })
+
+    def get_dashboard_snapshot(self) -> Dict:
+        """Get latest trading snapshot with positions and system health."""
+        state_dir = os.getenv('AUREON_STATE_DIR', 'state')
+        candidates = [
+            os.path.join(state_dir, 'dashboard_snapshot.json'),
+            'dashboard_snapshot.json'
+        ]
+        snapshot = {}
+        for path in candidates:
+            data = load_json_safe(path, {})
+            if data:
+                snapshot = data
+                break
+        return snapshot
+
+    def get_hive_state(self) -> Dict:
+        """Get Queen voice and hive state (if available)."""
+        hive = load_json_safe('public/hive_state.json', {
+            'updated_at': '',
+            'mood': 'Unknown',
+            'active_scanner': 'Unknown',
+            'coherence_score': 0.0,
+            'veto_count': 0,
+            'last_veto_reason': 'None',
+            'message_log': []
+        })
+        return hive
+
+    def get_scanner_status(self) -> Dict:
+        """Get live scanner health/status for dashboard."""
+        now = time.time()
+        last_scan_age = (now - self._last_scan_time) if self._last_scan_time else None
+        cache_age = (now - self._cache_time) if self._cache_time else None
+        return {
+            'enabled': self.scanner is not None,
+            'last_scan_time': self._last_scan_time,
+            'last_scan_age': last_scan_age,
+            'last_scan_count': self._last_scan_count,
+            'last_error': self._last_scan_error,
+            'cache_age': cache_age
+        }
     
     def get_relay_energy(self, relay: str) -> Dict:
         """Get energy status for a relay using LIVE scanner data."""
@@ -504,6 +554,41 @@ class QueenPowerDashboard:
         """Get dashboard data as dict for web API."""
         energy = self.get_total_system_energy()
         queen_state = self.get_queen_redistribution_state()
+        power_state = self.get_power_station_state()
+        hive_state = self.get_hive_state()
+        scanner_state = self.get_scanner_status()
+        snapshot = self.get_dashboard_snapshot()
+
+        positions = snapshot.get('positions', []) if isinstance(snapshot, dict) else []
+        now = time.time()
+        normalized_positions = []
+        positions_by_exchange = {}
+        for p in positions:
+            try:
+                entry = float(p.get('entry_price', 0) or 0)
+                current = float(p.get('current_price', 0) or 0)
+                target = float(p.get('target_price', 0) or 0)
+                progress = 0.0
+                if target > entry:
+                    progress = (current - entry) / (target - entry)
+                progress = max(-1.0, min(2.0, progress))
+                entry_time = float(p.get('entry_time', 0) or 0)
+                age_sec = (now - entry_time) if entry_time > 0 else None
+                exch = p.get('exchange', 'unknown')
+                positions_by_exchange[exch] = positions_by_exchange.get(exch, 0) + 1
+                normalized_positions.append({
+                    'symbol': p.get('symbol', 'UNKNOWN'),
+                    'exchange': exch,
+                    'entry_price': entry,
+                    'current_price': current,
+                    'target_price': target,
+                    'current_pnl': float(p.get('current_pnl', 0) or 0),
+                    'current_pnl_pct': float(p.get('current_pnl_pct', 0) or 0),
+                    'progress': round(progress * 100, 2),
+                    'age_sec': age_sec,
+                })
+            except Exception:
+                continue
         
         # Get relay breakdown
         relays = {}
@@ -528,6 +613,16 @@ class QueenPowerDashboard:
             'energy_growth': energy.get('energy_growth', 0),
             'growth_percentage': energy.get('growth_percentage', 0),
             'relays': relays,
+            'power_station': power_state,
+            'scanner': scanner_state,
+            'hive': hive_state,
+            'snapshot': {
+                'timestamp': snapshot.get('timestamp'),
+                'active_count': snapshot.get('active_count', 0),
+                'exchange_status': snapshot.get('exchange_status', {}),
+                'positions_by_exchange': positions_by_exchange,
+                'positions': normalized_positions[:50]
+            },
             'queen': {
                 'decisions_count': queen_state.get('decisions_count', 0),
                 'net_gained': queen_state.get('total_net_energy_gained', 0),
@@ -973,6 +1068,63 @@ async def handle_root(request):
             font-size: 0.8em;
             color: var(--text-dim);
             margin-top: 5px;
+
+        /* System Status & Voice */
+        .status-grid {
+            display: grid;
+            grid-template-columns: 1.2fr 1fr;
+            gap: 20px;
+        }
+        .status-card {
+            background: var(--bg-panel);
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 15px;
+            padding: 20px;
+        }
+        .status-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            font-size: 0.9em;
+        }
+        .status-list li {
+            padding: 6px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .voice-log {
+            max-height: 220px;
+            overflow-y: auto;
+            padding: 0;
+            margin: 0;
+            list-style: none;
+            font-size: 0.9em;
+        }
+        .voice-log li {
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            color: var(--text);
+        }
+
+        .positions-section {
+            margin-top: 20px;
+        }
+        .positions-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9em;
+        }
+        .positions-table th,
+        .positions-table td {
+            padding: 8px 6px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            text-align: left;
+        }
+        .positions-table th {
+            color: var(--text-dim);
+            font-weight: 600;
+        }
+        .badge-positive { color: var(--green); }
+        .badge-negative { color: var(--red); }
         }
         
         /* Footer */
@@ -992,6 +1144,7 @@ async def handle_root(request):
         @media (max-width: 1000px) {
             .energy-summary, .relay-grid { grid-template-columns: repeat(2, 1fr); }
             .queen-stats { grid-template-columns: 1fr; }
+            .status-grid { grid-template-columns: 1fr; }
         }
         
         @media (max-width: 600px) {
@@ -1067,6 +1220,53 @@ async def handle_root(request):
                     <div class="queen-stat-label">Drains Avoided</div>
                 </div>
             </div>
+        </div>
+
+        <!-- System Status + Queen Voice -->
+        <div class="queen-section">
+            <h2>🧭 System Status & Queen Voice</h2>
+            <div class="status-grid">
+                <div class="status-card">
+                    <h3>🛰️ Power Station & Scanner</h3>
+                    <ul class="status-list">
+                        <li>⚡ Power Station: <span id="powerStatus">UNKNOWN</span></li>
+                        <li>🔁 Cycles: <span id="powerCycles">0</span></li>
+                        <li>⏱️ Last Update: <span id="powerLastUpdate">--</span></li>
+                        <li>📦 Last Harvest: <span id="powerLastHarvest">--</span></li>
+                        <li>🔍 Scanner: <span id="scannerStatus">UNKNOWN</span></li>
+                        <li>🧮 Last Scan: <span id="scannerLastScan">--</span></li>
+                        <li>🛑 Last Error: <span id="scannerLastError">None</span></li>
+                    </ul>
+                </div>
+                <div class="status-card">
+                    <h3>👑 Queen Voice Log</h3>
+                    <ul class="status-list">
+                        <li>🙂 Mood: <span id="queenMood">Unknown</span></li>
+                        <li>🔭 Active Scanner: <span id="queenScanner">Unknown</span></li>
+                        <li>📡 Coherence: <span id="queenCoherence">0.000</span></li>
+                    </ul>
+                    <ul class="voice-log" id="queenVoiceLog"></ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Positions Monitoring -->
+        <div class="queen-section positions-section">
+            <h2>📍 Live Positions & Progress</h2>
+            <table class="positions-table">
+                <thead>
+                    <tr>
+                        <th>Symbol</th>
+                        <th>Exchange</th>
+                        <th>PNL</th>
+                        <th>Progress</th>
+                        <th>Age</th>
+                    </tr>
+                </thead>
+                <tbody id="positionsTable">
+                    <tr><td colspan="5">Loading...</td></tr>
+                </tbody>
+            </table>
         </div>
     </div>
     
@@ -1228,6 +1428,72 @@ async def handle_root(request):
                 animateValue('queenDecisions', data.queen?.decisions_count || 0);
                 animateValue('queenGained', (data.queen?.net_gained || 0).toFixed(2), '$');
                 animateValue('queenAvoided', (data.queen?.drains_avoided || 0).toFixed(2), '$');
+
+                // Update Power Station & Scanner
+                const power = data.power_station || {};
+                const scanner = data.scanner || {};
+                const hive = data.hive || {};
+
+                const powerStatus = power.status || 'UNKNOWN';
+                const lastUpdateTs = power.last_update ? new Date(power.last_update * 1000) : null;
+                const lastHarvest = power.last_harvest || {};
+                const scannerStatus = !scanner.enabled
+                    ? 'DISABLED'
+                    : (scanner.last_error ? 'ERROR' : 'OK');
+
+                document.getElementById('powerStatus').textContent = powerStatus;
+                document.getElementById('powerCycles').textContent = power.cycles_run || 0;
+                document.getElementById('powerLastUpdate').textContent = lastUpdateTs ? lastUpdateTs.toLocaleTimeString() : '--';
+                document.getElementById('powerLastHarvest').textContent =
+                    (lastHarvest.total_harvested_usd !== undefined)
+                        ? `$${Number(lastHarvest.total_harvested_usd || 0).toFixed(2)} / ${lastHarvest.harvested_count || 0} nodes`
+                        : '--';
+                document.getElementById('scannerStatus').textContent = scannerStatus;
+                document.getElementById('scannerLastScan').textContent =
+                    (scanner.last_scan_age !== null && scanner.last_scan_age !== undefined)
+                        ? `${Math.round(scanner.last_scan_age)}s ago (${scanner.last_scan_count || 0} nodes)`
+                        : '--';
+                document.getElementById('scannerLastError').textContent = scanner.last_error || 'None';
+
+                // Update Queen Voice / Hive
+                document.getElementById('queenMood').textContent = hive.mood || 'Unknown';
+                document.getElementById('queenScanner').textContent = hive.active_scanner || 'Unknown';
+                document.getElementById('queenCoherence').textContent =
+                    (hive.coherence_score !== undefined) ? Number(hive.coherence_score).toFixed(3) : '0.000';
+
+                const voiceLog = document.getElementById('queenVoiceLog');
+                if (voiceLog) {
+                    const messages = Array.isArray(hive.message_log) ? hive.message_log : [];
+                    voiceLog.innerHTML = messages.length
+                        ? messages.map(m => `<li>${m}</li>`).join('')
+                        : '<li>No voice messages yet.</li>';
+                }
+
+                // Update Positions table
+                const positions = data.snapshot?.positions || [];
+                const tbody = document.getElementById('positionsTable');
+                if (tbody) {
+                    if (!positions.length) {
+                        tbody.innerHTML = '<tr><td colspan="5">No active positions</td></tr>';
+                    } else {
+                        tbody.innerHTML = positions.map(p => {
+                            const pnl = Number(p.current_pnl || 0);
+                            const pnlPct = Number(p.current_pnl_pct || 0);
+                            const pnlClass = pnl >= 0 ? 'badge-positive' : 'badge-negative';
+                            const progress = Number(p.progress || 0).toFixed(1) + '%';
+                            const age = (p.age_sec !== null && p.age_sec !== undefined)
+                                ? Math.floor(p.age_sec / 60) + 'm'
+                                : '--';
+                            return `<tr>
+                                <td>${p.symbol}</td>
+                                <td>${p.exchange}</td>
+                                <td class="${pnlClass}">${pnl.toFixed(2)} (${pnlPct.toFixed(2)}%)</td>
+                                <td>${progress}</td>
+                                <td>${age}</td>
+                            </tr>`;
+                        }).join('');
+                    }
+                }
                 
                 // Update footer
                 document.getElementById('cycleInfo').textContent = 'Cycle: ' + data.cycle;

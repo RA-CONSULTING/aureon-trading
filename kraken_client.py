@@ -410,14 +410,14 @@ class KrakenClient:
         
         # 🐙 RATE LIMITING: Wait if we're calling too fast
         if self._rate_limiter:
-            # Wait for token bucket to allow call
-            waited = 0
-            while not self._rate_limiter.acquire() and waited < 5:
-                time.sleep(0.2)
-                waited += 0.2
-            if waited >= 5:
-                # Rate limited - return empty rather than spam API
-                return {}
+            start_wait = time.monotonic()
+            if not self._rate_limiter.allow():
+                # Block with a soft timeout to avoid spamming API
+                while not self._rate_limiter.allow():
+                    if time.monotonic() - start_wait >= 5:
+                        # Rate limited - return empty rather than spam API
+                        return {}
+                    time.sleep(0.2)
         
         # Kraken expects internal pair names, not altnames; map
         self._load_asset_pairs()
