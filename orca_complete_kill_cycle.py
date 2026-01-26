@@ -92,6 +92,15 @@ except ImportError:
     ParallelOrchestrator = None
     PARALLEL_ORCHESTRATOR_AVAILABLE = False
 
+# 🤖 Sero AI Agent Integration
+try:
+    from aureon_sero_client import get_sero_client, SeroClient
+    SERO_AVAILABLE = True
+except ImportError:
+    get_sero_client = None
+    SeroClient = None
+    SERO_AVAILABLE = False
+
 # 👑 AWAKEN THE QUEEN 👑
 try:
     from queen_fully_online import awaken_queen
@@ -3184,6 +3193,11 @@ class OrcaKillCycle:
                 print("🏢 Firm Attribution Engine: WIRED! (Trade fingerprinting)")
             except Exception as e:
                 print(f"🏢 Firm Attribution: {e}")
+        
+        # 🤖 Sero AI Agent - External intelligence augmentation
+        self.sero_client = get_sero_client() if SERO_AVAILABLE and get_sero_client else None
+        if self.sero_client and self.sero_client.enabled:
+            print(f"🤖 Sero AI Agent wired: agent_id={self.sero_client.agent_id[:8]}...")
         
         # 16. HFT Harmonic Mycelium Engine (sub-10ms signals) - DISPLAY ONLY
         self.hft_engine = None

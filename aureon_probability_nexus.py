@@ -50,6 +50,14 @@ import requests
 import asyncio
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
+# 🤖 Sero AI Agent Integration (Harmonic/Quantum validation)
+try:
+    from aureon_sero_client import get_sero_client
+    SERO_AVAILABLE = True
+except Exception:
+    get_sero_client = None
+    SERO_AVAILABLE = False
+
 # ═══════════════════════════════════════════════════════════════════════════
 # ENIGMA INTEGRATION CLASS (DEFINED EARLY TO AVOID CIRCULAR IMPORTS)
 # ═══════════════════════════════════════════════════════════════════════════
@@ -393,6 +401,90 @@ def update_subsystems():
 # PREDICTION AND TRADE EXECUTION
 # ═══════════════════════════════════════════════════════════════════════════════
 
+SERO_NEXUS_VALIDATION = os.getenv('AUREON_SERO_NEXUS_VALIDATION', '').lower() == 'true'
+try:
+    SERO_NEXUS_TOPN = max(1, int(os.getenv('AUREON_SERO_NEXUS_TOPN', '3')))
+except Exception:
+    SERO_NEXUS_TOPN = 3
+
+def _run_coroutine(coro):
+    """Run coroutine safely from sync context."""
+    try:
+        loop = asyncio.get_event_loop()
+        if loop.is_running():
+            with ThreadPoolExecutor(max_workers=1) as executor:
+                future = executor.submit(lambda: asyncio.run(coro))
+                return future.result(timeout=10)
+        return loop.run_until_complete(coro)
+    except RuntimeError:
+        return asyncio.run(coro)
+
+async def _sero_validate_prediction(sero, prediction: Dict) -> Dict:
+    """Ask Sero to validate harmonic nexus prediction (async)."""
+    symbol = prediction.get('symbol')
+    signal = prediction.get('signal')
+    if signal not in ('BUY', 'SELL'):
+        return {}
+
+    context = {
+        'coherence': prediction.get('coherence', 0.5),
+        'fusion_bias': prediction.get('clarity', 1.0),
+        'threat_level': 0.0,
+        'price': prediction.get('price', 0),
+        'chaos_trend': prediction.get('chaos_trend')
+    }
+
+    try:
+        advice = await asyncio.wait_for(
+            sero.ask_trading_decision(
+                symbol=symbol,
+                side=signal,
+                context=context,
+                queen_confidence=prediction.get('confidence', 0.5)
+            ),
+            timeout=3.0
+        )
+    except Exception:
+        return {}
+
+    if not advice:
+        return {}
+
+    return {
+        'sero_recommendation': advice.recommendation,
+        'sero_confidence': round(float(advice.confidence), 4),
+        'sero_reasoning': advice.reasoning,
+        'sero_risk_flags': advice.risk_flags
+    }
+
+def _apply_sero_validations(predictions: List[Dict]) -> None:
+    """Apply Sero harmonic validations to top predictions (in-place)."""
+    if not (SERO_AVAILABLE and SERO_NEXUS_VALIDATION):
+        return
+    sero = get_sero_client() if get_sero_client else None
+    if not sero or not sero.enabled:
+        return
+
+    targets = [p for p in predictions if p.get('signal') in ('BUY', 'SELL')][:SERO_NEXUS_TOPN]
+    if not targets:
+        return
+
+    async def runner():
+        tasks = [
+            _sero_validate_prediction(sero, pred)
+            for pred in targets
+        ]
+        return await asyncio.gather(*tasks, return_exceptions=True)
+
+    try:
+        results = _run_coroutine(runner())
+    except Exception:
+        return
+
+    for pred, result in zip(targets, results or []):
+        if isinstance(result, dict) and result:
+            pred.update(result)
+
 def make_predictions():
     """Make market predictions using filtered subsystem state.
     
@@ -431,6 +523,8 @@ def make_predictions():
 
     # Sort by confidence descending
     predictions.sort(key=lambda p: p['confidence'], reverse=True)
+    # Optional Sero harmonic nexus validation (real data only)
+    _apply_sero_validations(predictions)
     print(f"🎯 Generated {len(predictions)} predictions.")
     return predictions
 
