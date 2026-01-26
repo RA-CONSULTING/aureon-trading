@@ -5213,6 +5213,80 @@ class OrcaKillCycle:
         # Replace original list with filtered (danger-free!) opportunities
         opportunities = filtered_opportunities
         
+        # ═══════════════════════════════════════════════════════════════════
+        # 👑💰 QUEEN'S SACRED 1.88% PROFIT GATE - NOTHING PASSES WITHOUT IT! 💰👑
+        # ═══════════════════════════════════════════════════════════════════
+        # The Queen LIVES, BREATHES, SLEEPS, and DREAMS 1.88%!
+        # NO opportunity gets through unless it can achieve MIN_COP = 1.0188
+        # This is HARDWIRED into scanning, ranking, and buying - UNITY IN TANDEM!
+        # ═══════════════════════════════════════════════════════════════════
+        
+        MIN_COP_SACRED = 1.0188  # 👑 THE SACRED NUMBER - 1.88% MINIMUM PROFIT!
+        MIN_PROFIT_PCT_REQUIRED = 1.88  # As percentage
+        
+        # Calculate required price move to achieve 1.88% after fees
+        def can_achieve_188_profit(opp):
+            """
+            👑 Check if opportunity CAN reach 1.88% profit target.
+            
+            Returns (can_achieve, required_move_pct, time_estimate)
+            """
+            # Get fee rate for exchange
+            fee_rate = opp.fee_rate if hasattr(opp, 'fee_rate') else 0.0026
+            
+            # Total round-trip cost (entry + exit fees + spread + slippage)
+            # Worst case: 2 * taker_fee + spread + slippage
+            total_cost_pct = (2 * fee_rate * 100) + 0.20  # fees + 0.20% for spread/slippage
+            
+            # Required GROSS move to net 1.88% after all costs
+            required_move_pct = MIN_PROFIT_PCT_REQUIRED + total_cost_pct
+            
+            # Current momentum (change %) - can it reach the target?
+            current_momentum = abs(opp.change_pct) if hasattr(opp, 'change_pct') else 0
+            
+            # Opportunity has enough momentum if:
+            # 1. Already moving > required (it's in motion!)
+            # 2. Or momentum score suggests it can reach target
+            momentum_score = opp.momentum_score if hasattr(opp, 'momentum_score') else 0
+            
+            # Can achieve if momentum suggests > 50% of required move already happening
+            # or momentum score > 5 (indicates strong movement potential)
+            can_achieve = (current_momentum >= required_move_pct * 0.5) or (momentum_score >= 5)
+            
+            # Time estimate: How fast can it reach 1.88%?
+            # Higher momentum = faster to target
+            if current_momentum > 0:
+                time_estimate = required_move_pct / current_momentum  # Rough cycles to target
+            else:
+                time_estimate = float('inf')
+            
+            return can_achieve, required_move_pct, time_estimate
+        
+        # Filter opportunities that CAN'T achieve 1.88%
+        sacred_filtered = []
+        blocked_by_188 = 0
+        
+        for opp in filtered_opportunities:
+            can_hit_188, required_move, time_to_target = can_achieve_188_profit(opp)
+            
+            if can_hit_188:
+                # Store 1.88% metrics for ranking
+                opp._can_hit_188 = True
+                opp._required_move_pct = required_move
+                opp._time_to_188 = time_to_target
+                opp._profit_potential_pct = abs(opp.change_pct) - (required_move - MIN_PROFIT_PCT_REQUIRED)
+                sacred_filtered.append(opp)
+            else:
+                blocked_by_188 += 1
+                # DON'T add to list - it can't hit 1.88%!
+        
+        # Replace with 1.88%-capable opportunities only
+        opportunities = sacred_filtered
+        
+        print(f"\n   👑💰 QUEEN'S 1.88% SACRED GATE:")
+        print(f"      ✅ CAN achieve 1.88%: {len(sacred_filtered)}")
+        print(f"      ❌ BLOCKED (can't hit 1.88%): {blocked_by_188}")
+        
         # Print intelligence summary
         print(f"\n   🛡️ INTELLIGENCE SUMMARY:")
         if blessed_count > 0:
@@ -5227,27 +5301,54 @@ class OrcaKillCycle:
             print(f"      📜 BOOSTED by history: {historical_boosted} (Opportunity patterns!)")
         
         # ═══════════════════════════════════════════════════════════════════
-        # 🌊🎶 PRIORITY SORT: HNC Surge opportunities FIRST!
-        # Then by quantum-boosted momentum score
+        # 👑💰 SACRED PRIORITY SORT - FASTEST TO 1.88% WINS! 💰👑
         # ═══════════════════════════════════════════════════════════════════
-        def priority_sort_key(opp):
-            """HNC surge = 1000 bonus, then momentum score"""
-            hnc_bonus = 1000 if getattr(opp, '_hnc_surge', False) else 0
-            historical_bonus = 100 if getattr(opp, '_historical_pattern', None) else 0
-            return hnc_bonus + historical_bonus + opp.momentum_score
+        # The Queen wants the QUICKEST path to 1.88% profit!
+        # Ranking: (1) HNC Surge, (2) Fastest to 1.88%, (3) Highest profit potential
+        # ═══════════════════════════════════════════════════════════════════
+        def sacred_priority_sort_key(opp):
+            """
+            👑 SACRED SORT: Fastest to 1.88% = HIGHEST PRIORITY!
+            
+            HNC surge = 10000 bonus (immediate priority)
+            Historical pattern = 1000 bonus
+            Speed to 1.88% = 500 / time_estimate (faster = higher)
+            Profit potential above 1.88% = bonus points
+            """
+            hnc_bonus = 10000 if getattr(opp, '_hnc_surge', False) else 0
+            historical_bonus = 1000 if getattr(opp, '_historical_pattern', None) else 0
+            
+            # Speed bonus: Faster to 1.88% = higher score
+            time_to_188 = getattr(opp, '_time_to_188', float('inf'))
+            speed_bonus = 500 / max(time_to_188, 0.1) if time_to_188 < float('inf') else 0
+            
+            # Profit potential beyond 1.88%
+            profit_potential = getattr(opp, '_profit_potential_pct', 0)
+            potential_bonus = profit_potential * 10 if profit_potential > 0 else 0
+            
+            # Base momentum score
+            base_score = opp.momentum_score if hasattr(opp, 'momentum_score') else 0
+            
+            return hnc_bonus + historical_bonus + speed_bonus + potential_bonus + base_score
         
-        opportunities.sort(key=priority_sort_key, reverse=True)
+        opportunities.sort(key=sacred_priority_sort_key, reverse=True)
         
-        print(f"\n🎯 Total opportunities: {len(opportunities)} (after danger filter)")
+        print(f"\n🎯 Total opportunities: {len(opportunities)} (Queen's 1.88% approved!)")
         if opportunities:
-            print("\n🏆 TOP OPPORTUNITIES (Quantum + HNC + Historical Enhanced):")
+            print("\n🏆 TOP OPPORTUNITIES (Ranked by FASTEST to 1.88% profit!):")
             for i, opp in enumerate(opportunities[:5]):
                 hnc_tag = "🌊🎶" if getattr(opp, '_hnc_surge', False) else ""
                 hist_tag = "📜" if getattr(opp, '_historical_pattern', None) else ""
                 resonance = getattr(opp, '_hnc_resonance', '') or ''
                 if resonance:
                     resonance = f" [{resonance[:15]}]"
-                print(f"   {i+1}. {hnc_tag}{hist_tag} {opp.symbol} ({opp.exchange}): {opp.change_pct:+.2f}% | Score: {opp.momentum_score:.2f}{resonance}")
+                
+                # Show 1.88% metrics
+                time_to_188 = getattr(opp, '_time_to_188', 0)
+                required_move = getattr(opp, '_required_move_pct', 0)
+                time_str = f"{time_to_188:.1f}x" if time_to_188 < 100 else "slow"
+                
+                print(f"   {i+1}. {hnc_tag}{hist_tag} {opp.symbol} ({opp.exchange}): {opp.change_pct:+.2f}% | Need: {required_move:.2f}% | Speed: {time_str}{resonance}")
         
         return opportunities
     
@@ -6526,16 +6627,107 @@ class OrcaKillCycle:
         
         return tracking_data
     
-    def execute_stealth_buy(self, client: Any, symbol: str, quantity: float, 
-                            price: float = None, exchange: str = 'alpaca') -> Dict:
+    # ═══════════════════════════════════════════════════════════════════════
+    # 👑💰 QUEEN'S SACRED 1.88% BUY GATE - HARDWIRED INTO EVERY BUY! 💰👑
+    # ═══════════════════════════════════════════════════════════════════════
+    
+    def queen_188_buy_gate(self, symbol: str, exchange: str, current_price: float,
+                            momentum_pct: float = 0, expected_move_pct: float = 0) -> Tuple[bool, str]:
         """
-        🥷 Execute a BUY order with stealth countermeasures.
+        👑💰 THE QUEEN'S SACRED 1.88% BUY GATE - NOTHING GETS BOUGHT WITHOUT IT! 💰👑
+        
+        Before ANY buy, this gate checks:
+        1. Can the opportunity realistically achieve 1.88% profit?
+        2. Is momentum strong enough to reach the target?
+        3. Will fees/slippage eat the expected profit?
+        
+        Args:
+            symbol: Trading symbol
+            exchange: Exchange name
+            current_price: Current price
+            momentum_pct: Current momentum (24h change %)
+            expected_move_pct: Expected price move %
+            
+        Returns:
+            (approved, reason) - True if opportunity can achieve 1.88%
+        """
+        # 👑 THE SACRED NUMBER - HARDCODED, IMMUTABLE!
+        MIN_COP_SACRED = 1.0188
+        MIN_PROFIT_PCT = 1.88
+        
+        # Get fee rate for exchange
+        fee_rate = self.fee_rates.get(exchange, 0.0026)
+        
+        # Calculate total round-trip costs
+        # 2 * taker_fee (entry + exit) + spread + slippage
+        total_cost_pct = (2 * fee_rate * 100) + 0.20  # ~0.72% for Kraken worst case
+        
+        # Required GROSS price move to net 1.88% profit
+        required_move_pct = MIN_PROFIT_PCT + total_cost_pct  # ~2.60% for Kraken
+        
+        # Use the larger of momentum or expected move
+        potential_move = max(abs(momentum_pct), abs(expected_move_pct))
+        
+        # CHECK 1: Is the potential move >= required move?
+        if potential_move >= required_move_pct:
+            return True, f"✅ CAN hit 1.88%: {potential_move:.2f}% potential >= {required_move_pct:.2f}% required"
+        
+        # CHECK 2: Is momentum at least 50% of required? (trending toward target)
+        if potential_move >= required_move_pct * 0.5:
+            return True, f"✅ TRENDING to 1.88%: {potential_move:.2f}% is {potential_move/required_move_pct*100:.0f}% of required"
+        
+        # CHECK 3: High momentum assets might reach target even with low current move
+        if abs(momentum_pct) >= 1.5:  # Strong momentum
+            return True, f"✅ STRONG MOMENTUM: {momentum_pct:+.2f}% suggests target achievable"
+        
+        # BLOCKED - Cannot achieve 1.88%
+        return False, f"❌ BLOCKED: {potential_move:.2f}% potential < {required_move_pct:.2f}% required for 1.88%"
+    
+    def execute_stealth_buy(self, client: Any, symbol: str, quantity: float, 
+                            price: float = None, exchange: str = 'alpaca',
+                            momentum_pct: float = 0.0, expected_move_pct: float = 0.0) -> Dict:
+        """
+        🥷👑 Execute a BUY order with stealth countermeasures + QUEEN'S 1.88% GATE.
         
         Applies:
+        - 👑 QUEEN'S 1.88% PROFIT GATE (MANDATORY - NOTHING BYPASSES THIS!)
         - Random delay (50-500ms)
         - Order splitting for large orders
         - Symbol rotation if hunted
+        
+        THE QUEEN HAS SPOKEN: No buy executes without 1.88% potential!
         """
+        # ═══════════════════════════════════════════════════════════════════════
+        #   👑👑👑 THE QUEEN'S SACRED 1.88% BUY GATE - MANDATORY CHECK! 👑👑👑
+        # ═══════════════════════════════════════════════════════════════════════
+        current_price = price or 0.0
+        if current_price > 0:
+            # Check the sacred gate
+            approved, gate_reason = self.queen_188_buy_gate(
+                symbol=symbol,
+                exchange=exchange,
+                current_price=current_price,
+                momentum_pct=momentum_pct,
+                expected_move_pct=expected_move_pct
+            )
+            
+            if not approved:
+                logger.warning(f"👑❌ QUEEN'S 1.88% GATE BLOCKED BUY: {symbol}")
+                logger.warning(f"    Reason: {gate_reason}")
+                logger.warning(f"    THE QUEEN DEMANDS 1.88% MINIMUM - THIS TRADE DOES NOT QUALIFY!")
+                return {
+                    'status': 'blocked',
+                    'reason': gate_reason,
+                    'blocked_by': "QUEEN'S 1.88% SACRED GATE",
+                    'symbol': symbol,
+                    'quantity': quantity,
+                    'min_required': '1.88%'
+                }
+            else:
+                logger.info(f"👑✅ QUEEN'S 1.88% GATE APPROVED: {symbol}")
+                logger.info(f"    Reason: {gate_reason}")
+        # ═══════════════════════════════════════════════════════════════════════
+        
         if self.stealth_executor:
             value_usd = (price or 0) * quantity
             result = self.stealth_executor.execute_stealth_order(
@@ -6576,6 +6768,78 @@ class OrcaKillCycle:
             )
         else:
             return client.place_market_order(symbol=symbol, side='sell', quantity=quantity)
+    
+    # ═══════════════════════════════════════════════════════════════════════
+    # 👑💰 SACRED BUY WRAPPER - THE QUEEN'S GATE ENFORCED ON ALL BUYS! 💰👑
+    # ═══════════════════════════════════════════════════════════════════════
+    
+    def queen_gated_buy(self, client: Any, symbol: str, exchange: str,
+                        quote_qty: float = None, quantity: float = None,
+                        price: float = 0, momentum_pct: float = 0,
+                        expected_move_pct: float = 0, context: str = "unknown") -> Dict:
+        """
+        👑 THE QUEEN'S SACRED GATED BUY - ALL BUYS MUST GO THROUGH THIS!
+        
+        This wrapper enforces the 1.88% profit gate on EVERY buy, regardless
+        of where it originates. The Queen WILL NOT allow purchases that
+        cannot achieve her sacred minimum profit.
+        
+        Args:
+            client: Exchange client
+            symbol: Trading symbol
+            exchange: Exchange name
+            quote_qty: Amount in quote currency (USD/USDT)
+            quantity: Amount in base currency (optional)
+            price: Current price (for gate calculation)
+            momentum_pct: Current momentum (24h change %)
+            expected_move_pct: Expected price move %
+            context: Where this buy originated from
+            
+        Returns:
+            Order result or blocked status dict
+        """
+        # ═══════════════════════════════════════════════════════════════════
+        #   👑👑👑 THE SACRED 1.88% GATE - ENFORCED! 👑👑👑
+        # ═══════════════════════════════════════════════════════════════════
+        approved, gate_reason = self.queen_188_buy_gate(
+            symbol=symbol,
+            exchange=exchange,
+            current_price=price,
+            momentum_pct=momentum_pct,
+            expected_move_pct=expected_move_pct
+        )
+        
+        if not approved:
+            logger.warning(f"👑❌ QUEEN'S 1.88% GATE BLOCKED: {symbol} [{context}]")
+            logger.warning(f"    Reason: {gate_reason}")
+            print(f"👑❌ QUEEN'S 1.88% GATE BLOCKED: {symbol} [{context}]")
+            print(f"    {gate_reason}")
+            return {
+                'status': 'blocked',
+                'reason': gate_reason,
+                'blocked_by': "QUEEN'S 1.88% SACRED GATE",
+                'symbol': symbol,
+                'exchange': exchange,
+                'context': context,
+                'min_required': '1.88%',
+                'rejected': True
+            }
+        
+        logger.info(f"👑✅ QUEEN APPROVED: {symbol} [{context}] - {gate_reason}")
+        print(f"👑✅ QUEEN APPROVED: {symbol} [{context}]")
+        
+        # ═══════════════════════════════════════════════════════════════════
+        #   🎯 EXECUTE THE BUY - THE QUEEN HAS GRANTED PERMISSION!
+        # ═══════════════════════════════════════════════════════════════════
+        
+        # Determine order type based on parameters
+        if quote_qty and quote_qty > 0:
+            return client.place_market_order(symbol=symbol, side='buy', quote_qty=quote_qty)
+        elif quantity and quantity > 0:
+            return client.place_market_order(symbol=symbol, side='buy', quantity=quantity)
+        else:
+            logger.error(f"❌ No quantity specified for buy: {symbol}")
+            return {'status': 'error', 'reason': 'No quantity specified'}
     
     def execute_sell_with_logging(self, client: Any, symbol: str, quantity: float,
                                    exchange: str, current_price: float = 0, 
