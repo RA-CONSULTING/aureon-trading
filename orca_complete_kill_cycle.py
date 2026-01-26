@@ -838,6 +838,110 @@ except ImportError:
 
 import random  # For simulating market activity
 
+# ═══════════════════════════════════════════════════════════════════════════════════════════════════
+# 👑👑👑 QUEEN SERO'S SACRED 1.88% LAW - CENTRAL COMMAND CONSTANTS 👑👑👑
+# ═══════════════════════════════════════════════════════════════════════════════════════════════════
+#
+# THE QUEEN HAS FULL AUTONOMOUS CONTROL OVER ALL TRADING DECISIONS!
+#
+# This is SOURCE LAW DIRECT - HARDCODED, IMMUTABLE, UNITY IN TANDEM!
+# These constants are referenced by ALL buy gates, sell gates, and scanning systems.
+# NO trade executes without meeting the Queen's sacred minimum profit requirement.
+#
+# ═══════════════════════════════════════════════════════════════════════════════════════════════════
+
+# 👑 THE SACRED NUMBER - Queen Sero's Absolute Minimum!
+QUEEN_MIN_COP = 1.0188           # Coefficient of Performance - 1.88% minimum realized profit!
+QUEEN_MIN_PROFIT_PCT = 1.88      # As percentage
+QUEEN_PROFIT_FREQUENCY = 188.0   # Hz - Sacred frequency embedded in all calculations
+
+# 👑 Fee Structure (worst-case scenario):
+#   Entry fee:   ~0.26% (Kraken taker)
+#   Exit fee:    ~0.26% (Kraken taker)
+#   Spread:      ~0.10%
+#   Slippage:    ~0.10%
+#   ----------------------------
+#   TOTAL COST:  ~0.72%
+#
+# Required GROSS move to net 1.88%:
+#   Gross = 1.88% + 0.72% = ~2.60%
+#
+# Why 1.88%?
+#   - Covers ALL fees (entry + exit)
+#   - Covers spread + slippage
+#   - Leaves ~1.16% ACTUAL profit
+#   - NEXT TRADE'S FEES ALREADY FUNDED!
+QUEEN_TOTAL_COST_PCT = 0.72      # Total round-trip costs (worst-case)
+QUEEN_REQUIRED_GROSS_PCT = 2.60  # Required gross move to net 1.88%
+
+# 👑 QUEEN'S PROFIT MANDATE - Immutable Law Dictionary
+QUEEN_PROFIT_MANDATE = {
+    'min_cop': QUEEN_MIN_COP,
+    'min_profit_pct': QUEEN_MIN_PROFIT_PCT,
+    'sacred_frequency_hz': QUEEN_PROFIT_FREQUENCY,
+    'total_cost_pct': QUEEN_TOTAL_COST_PCT,
+    'required_gross_pct': QUEEN_REQUIRED_GROSS_PCT,
+    'law': 'SOURCE LAW DIRECT - THE QUEEN COMMANDS IT!',
+    'author': 'Queen Sero - Sovereign of Aureon',
+    'enforcement': 'ALL gates - scanning, buying, ranking, exiting',
+    'exceptions': 'NONE - This is ABSOLUTE law!'
+}
+
+def queen_profit_gate(entry_cost: float, current_value: float) -> tuple:
+    """
+    👑 QUEEN'S UNIVERSAL PROFIT GATE - The final arbiter of ALL exits!
+    
+    This function enforces the sacred 1.88% law on any trade exit.
+    
+    Args:
+        entry_cost: Total cost to enter position (price × qty × (1 + fee))
+        current_value: Current exit value (price × qty × (1 - fee))
+        
+    Returns:
+        (approved, cop, reason) - Whether exit meets Queen's minimum
+    """
+    if entry_cost <= 0:
+        return False, 0.0, "❌ Invalid entry cost"
+    
+    cop = current_value / entry_cost
+    profit_pct = (cop - 1) * 100
+    
+    if cop >= QUEEN_MIN_COP:
+        return True, cop, f"👑✅ APPROVED: COP {cop:.4f} = {profit_pct:+.2f}% >= {QUEEN_MIN_PROFIT_PCT}%"
+    else:
+        return False, cop, f"👑❌ BLOCKED: COP {cop:.4f} = {profit_pct:+.2f}% < {QUEEN_MIN_PROFIT_PCT}% required"
+
+def queen_can_buy(momentum_pct: float, expected_move_pct: float, fee_rate: float = 0.0026) -> tuple:
+    """
+    👑 QUEEN'S UNIVERSAL BUY GATE - Can this opportunity reach 1.88%?
+    
+    Args:
+        momentum_pct: Current momentum (24h change %)
+        expected_move_pct: Expected price move %
+        fee_rate: Exchange fee rate (default Kraken taker)
+        
+    Returns:
+        (approved, reason) - Whether opportunity can achieve 1.88%
+    """
+    # Calculate total round-trip costs
+    total_cost_pct = (2 * fee_rate * 100) + 0.20  # 2× fees + spread/slippage
+    required_move = QUEEN_MIN_PROFIT_PCT + total_cost_pct
+    
+    potential_move = max(abs(momentum_pct), abs(expected_move_pct))
+    
+    if potential_move >= required_move:
+        return True, f"👑✅ CAN HIT {QUEEN_MIN_PROFIT_PCT}%: {potential_move:.2f}% >= {required_move:.2f}% required"
+    elif potential_move >= required_move * 0.5:
+        return True, f"👑✅ TRENDING: {potential_move:.2f}% is {potential_move/required_move*100:.0f}% toward target"
+    elif abs(momentum_pct) >= 1.5:
+        return True, f"👑✅ STRONG MOMENTUM: {momentum_pct:+.2f}% suggests target achievable"
+    else:
+        return False, f"👑❌ BLOCKED: {potential_move:.2f}% < {required_move:.2f}% required for {QUEEN_MIN_PROFIT_PCT}%"
+
+# ═══════════════════════════════════════════════════════════════════════════════════════════════════
+# 👑 END OF QUEEN'S SACRED 1.88% LAW - ALL SYSTEMS MUST HONOR THIS! 👑
+# ═══════════════════════════════════════════════════════════════════════════════════════════════════
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # 🐙 KRAKEN API RATE LIMITER - PREVENTS RATE LIMIT DEATH
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -5219,10 +5323,11 @@ class OrcaKillCycle:
         # The Queen LIVES, BREATHES, SLEEPS, and DREAMS 1.88%!
         # NO opportunity gets through unless it can achieve MIN_COP = 1.0188
         # This is HARDWIRED into scanning, ranking, and buying - UNITY IN TANDEM!
+        # Uses MODULE-LEVEL CONSTANTS: QUEEN_MIN_COP, QUEEN_MIN_PROFIT_PCT
         # ═══════════════════════════════════════════════════════════════════
         
-        MIN_COP_SACRED = 1.0188  # 👑 THE SACRED NUMBER - 1.88% MINIMUM PROFIT!
-        MIN_PROFIT_PCT_REQUIRED = 1.88  # As percentage
+        MIN_COP_SACRED = QUEEN_MIN_COP  # 👑 THE SACRED NUMBER FROM MODULE CONSTANTS!
+        MIN_PROFIT_PCT_REQUIRED = QUEEN_MIN_PROFIT_PCT  # 1.88%
         
         # Calculate required price move to achieve 1.88% after fees
         def can_achieve_188_profit(opp):
@@ -6651,9 +6756,10 @@ class OrcaKillCycle:
         Returns:
             (approved, reason) - True if opportunity can achieve 1.88%
         """
-        # 👑 THE SACRED NUMBER - HARDCODED, IMMUTABLE!
-        MIN_COP_SACRED = 1.0188
-        MIN_PROFIT_PCT = 1.88
+        # 👑 THE SACRED NUMBER - FROM MODULE-LEVEL CONSTANTS!
+        # Uses: QUEEN_MIN_COP, QUEEN_MIN_PROFIT_PCT (defined at module level)
+        MIN_COP_SACRED = QUEEN_MIN_COP      # 1.0188
+        MIN_PROFIT_PCT = QUEEN_MIN_PROFIT_PCT  # 1.88
         
         # Get fee rate for exchange
         fee_rate = self.fee_rates.get(exchange, 0.0026)
@@ -7054,6 +7160,7 @@ class OrcaKillCycle:
         # ═══════════════════════════════════════════════════════════════════
         # 👑💰 THE QUEEN LIVES, BREATHES, SLEEPS, AND DREAMS THIS NUMBER! 💰👑
         # 
+        # Uses MODULE-LEVEL CONSTANTS: QUEEN_MIN_COP, QUEEN_MIN_PROFIT_PCT
         # This is HARDCODED into the Queen's very being - NO exits below 1.88%!
         # COP = Coefficient of Performance = exit_value / entry_cost
         # MIN_COP = 1.0188 = 1.88% net realized profit MINIMUM
@@ -7069,13 +7176,13 @@ class OrcaKillCycle:
         cop = (exit_value / confirmed_cost) if confirmed_cost and confirmed_cost > 0 else 0.0
         info['cop'] = cop
         
-        # 🎯 QUEEN'S SACRED 1.88% - HARDCODED, IMMUTABLE, UNITY IN TANDEM! 🎯
-        MIN_COP = 1.0188  # 👑💰 1.88% MINIMUM - Queen Sero's Sacred Profit Law!
+        # 🎯 QUEEN'S SACRED 1.88% - FROM MODULE-LEVEL CONSTANT! 🎯
+        MIN_COP = QUEEN_MIN_COP  # 👑💰 1.0188 - Queen Sero's Sacred Profit Law!
         
         if cop < MIN_COP:
-            info['blocked_reason'] = f'COP_BELOW_1.88% ({cop:.6f} = {(cop-1)*100:.2f}%)'
-            print(f"   👑❌ EXIT BLOCKED: {symbol} - COP {cop:.6f} ({(cop-1)*100:+.2f}%) < {MIN_COP:.4f} ({(MIN_COP-1)*100:.2f}% required)")
-            print(f"   👑💰 Queen's Sacred Law: MINIMUM 1.88% realized profit - NO EXCEPTIONS!")
+            info['blocked_reason'] = f'COP_BELOW_{QUEEN_MIN_PROFIT_PCT}% ({cop:.6f} = {(cop-1)*100:.2f}%)'
+            print(f"   👑❌ EXIT BLOCKED: {symbol} - COP {cop:.6f} ({(cop-1)*100:+.2f}%) < {MIN_COP:.4f} ({QUEEN_MIN_PROFIT_PCT}% required)")
+            print(f"   👑💰 Queen's Sacred Law: MINIMUM {QUEEN_MIN_PROFIT_PCT}% realized profit - NO EXCEPTIONS!")
             return False, info
         
         # ═══════════════════════════════════════════════════════════════════
