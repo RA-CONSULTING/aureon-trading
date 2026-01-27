@@ -8103,6 +8103,40 @@ class OrcaKillCycle:
 
         return energy
         
+    def _enforce_min_trade_size(self, exchange: str, symbol: str, amount: float, client=None) -> Tuple[float, str]:
+        """
+        Regulate order size based on exchange specifics and user Minimums.
+        Returns: (adjusted_amount, reason)
+        """
+        # 1. Base thresholds (hard floor)
+        min_required = 1.0
+        if exchange == 'binance': 
+            min_required = 6.0  # Buffer above $5.0
+        elif exchange == 'kraken': 
+            min_required = 6.0  # Buffer above typical $5.0 costmin
+        elif exchange == 'capital': 
+            min_required = 100.0 # User specified "capitual min amount is 100"
+
+        # 2. Exchange specific filters (if client provided)
+        if client and hasattr(client, 'get_symbol_filters'):
+            try:
+                filters = client.get_symbol_filters(symbol.replace('/', ''))
+                # Get min notional/cost from filters
+                filter_min = float(filters.get('min_notional', 0) or filters.get('minNotional', 0) or filters.get('costmin', 0) or 0)
+                
+                # Update min_required if filter is higher
+                if filter_min > min_required:
+                    min_required = filter_min * 1.05  # 5% buffer
+                    
+            except Exception:
+                pass
+
+        # 3. Adjust
+        if amount < min_required:
+             return min_required, f"Bumped to {exchange} min ${min_required:.2f}"
+        
+        return amount, "OK"
+
     def calculate_breakeven_price(self, entry_price: float) -> float:
         """
         Calculate minimum sell price to break even after fees.
@@ -12377,43 +12411,21 @@ class OrcaKillCycle:
                                             exchange_cash = cash.get(winner.exchange, 0)
                                             buy_amount = min(amount_per_position, exchange_cash * 0.9)
                                             
-                                            # 🔍 SMART-SIZE LOGIC: Respect Exchange Minimums
+                                            # 🔍 SMART-SIZE LOGIC: Respect Exchange Minimums (Refactored)
                                             # -----------------------------------------------
-                                            min_required = 1.0  # Default safe floor
-                                            
-                                            if hasattr(client, 'get_symbol_filters'):
-                                                try:
-                                                    filters = client.get_symbol_filters(symbol_clean)
-                                                    # Get min notional/cost from filters
-                                                    filter_min = float(filters.get('min_notional', 0) or filters.get('minNotional', 0) or filters.get('costmin', 0) or 0)
-                                                    
-                                                    # Check if min_qty implies a higher cost floor (Price * MinQty)
-                                                    min_qty_floor = 0.0
-                                                    if 'min_qty' in filters and hasattr(winner, 'price') and winner.price > 0:
-                                                        try:
-                                                            min_qty_floor = float(filters['min_qty']) * float(winner.price)
-                                                        except: pass
-
-                                                    # Enforce hard floors AND implied floors
-                                                    if winner.exchange == 'binance':
-                                                        min_required = max(filter_min, min_qty_floor, 5.5)
-                                                    elif winner.exchange == 'kraken':
-                                                        min_required = max(filter_min, min_qty_floor, 2.0)
+                                            try:
+                                                adjusted_amount, adj_reason = self._enforce_min_trade_size(winner.exchange, symbol_clean, buy_amount, client)
+                                                
+                                                if adjusted_amount > buy_amount:
+                                                    # Check if we can afford the bump
+                                                    if exchange_cash >= adjusted_amount:
+                                                        print(f"⭐ STAGE 4: 🔼 {adj_reason} (was ${buy_amount:.2f})")
+                                                        buy_amount = adjusted_amount
                                                     else:
-                                                        min_required = max(filter_min, min_qty_floor, 1.0)
-                                                        
-                                                except Exception as e:
-                                                    print(f"⭐ STAGE 4: Filter check warning: {e}")
-                                                    pass
-
-                                            # Auto-bump if affordable
-                                            if buy_amount < min_required:
-                                                if exchange_cash >= min_required:
-                                                    print(f"⭐ STAGE 4: 🔼 Bumping buy ${buy_amount:.2f} → ${min_required:.2f} (Exchange Min)")
-                                                    buy_amount = min_required
-                                                else:
-                                                    print(f"⭐ STAGE 4: ⚠️ SKIPPING - Cash ${exchange_cash:.2f} < Min ${min_required:.2f}")
-                                                    continue
+                                                        print(f"⭐ STAGE 4: ⚠️ SKIPPING - Cash ${exchange_cash:.2f} < Min ${adjusted_amount:.2f} ({adj_reason})")
+                                                        continue
+                                            except Exception as adj_err:
+                                                print(f"⭐ STAGE 4: Adjustment error: {adj_err}")
 
                                             print(f"⭐ STAGE 4: Final Buy Amount ${buy_amount:.2f} for {symbol_clean} on {winner.exchange} (cash={exchange_cash:.2f})")
 
@@ -12525,7 +12537,15 @@ class OrcaKillCycle:
                                             exchange_cash = cash.get(best.exchange, 0)
                                             buy_amount = min(amount_per_position, exchange_cash * 0.9)
                                             
-                                            if buy_amount >= 0.50:
+                                            try:
+                                                adjusted_amount, adj_reason = self._enforce_min_trade_size(best.exchange, symbol_clean, buy_amount, client)
+                                                if exchange_cash < adjusted_amount:
+                                                    if warroom: warroom.add_flash_alert(f"Skipped {best.symbol}: Cash < Min {adjusted_amount}", 'warning')
+                                                    continue
+                                                buy_amount = adjusted_amount
+                                            except Exception: pass
+
+                                            if buy_amount > 0:
                                                 raw_order = client.place_market_order(
                                                     symbol=symbol_clean,
                                                     side='buy',
@@ -13616,12 +13636,12 @@ if __name__ == "__main__":
     
         else:
             # No arguments defaults to WAR ROOM
-            print("👑🎖️ AUTONOMOUS WAR ROOM MODE (DEFAULT) 🎖️👑")
+            print("👑🎖️ AUTONOMOUS WAR ROOM MODE (DEFAULT - RECONFIGURED) 🎖️👑")
             orca = OrcaKillCycle()
             stats = orca.run_autonomous_warroom(
                 max_positions=3,
-                amount_per_position=2.5,
-                target_pct=1.0
+                amount_per_position=25.0,  # Increased for Capital/Exchange Mins
+                target_pct=1.5             # Increased for Positive Growth
             )
         
     except KeyboardInterrupt:

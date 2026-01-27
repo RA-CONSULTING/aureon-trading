@@ -12,10 +12,11 @@ try:
 except ImportError:
     pass
 
-from kraken_client import KrakenClient
-from binance_client import BinanceClient
-from alpaca_client import AlpacaClient
-from capital_client import CapitalClient
+# Imports deferred to avoid circular dependencies
+# from kraken_client import KrakenClient
+# from binance_client import BinanceClient
+# from alpaca_client import AlpacaClient
+# from capital_client import CapitalClient
 
 # Updated FX rates as of November 2025 (approximate mid-market)
 # These are used for Capital.com equity conversion to base currency
@@ -329,15 +330,19 @@ class UnifiedExchangeClient:
         self.kraken_min_notional = float(os.getenv("KRAKEN_MIN_NOTIONAL", "5"))
         
         if self.exchange_id == "kraken":
+            from kraken_client import KrakenClient
             self.client = KrakenClient()
             self.dry_run = self.client.dry_run
         elif self.exchange_id == "binance":
+            from binance_client import BinanceClient
             self.client = BinanceClient()
             self.dry_run = self.client.dry_run
         elif self.exchange_id == "alpaca":
+            from alpaca_client import AlpacaClient
             self.client = AlpacaClient()
             self.dry_run = self.client.dry_run
         elif self.exchange_id == "capital":
+            from capital_client import CapitalClient
             self.client = CapitalClient()
             self.dry_run = self.client.dry_run
         else:
