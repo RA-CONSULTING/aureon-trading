@@ -196,6 +196,7 @@ try:
     from rich.table import Table
     from rich.text import Text
     from rich.style import Style
+    from rich import box
     RICH_AVAILABLE = True
 except ImportError:
     RICH_AVAILABLE = False

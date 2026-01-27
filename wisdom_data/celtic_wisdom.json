@@ -1,6 +1,6 @@
 {
   "civilization": "Celtic",
-  "last_updated": "2026-01-24T14:49:12.017896",
+  "last_updated": "2026-01-27T16:39:00.858563",
   "version": "1.0.0",
   "sources": [
     "hardcoded",
@@ -1385,6 +1385,16 @@
       "trading_application": "Wisdom integration from celtic tradition",
       "timestamp": "2026-01-24T14:48:29.025468",
       "content_hash": "e6504f07e70f4a7d52706428b12cd973"
+    },
+    {
+      "source": "Wikipedia",
+      "civilization": "celtic",
+      "topic": "Druids",
+      "content": "With regard to their actual course of studies, the main object of all education is, in their opinion, to imbue their scholars with a firm belief in the indestructibility of the human soul, which, according to their belief, merely passes at death from one tenement to another; for by such doctrine alone, they say, which robs death of all its terrors, can the highest form of human courage be developed. Subsidiary to the teachings of this main principle, they hold various lectures and discussions on",
+      "relevance_score": 0.4,
+      "trading_application": "Wisdom integration from celtic tradition",
+      "timestamp": "2026-01-27T16:38:17.817127",
+      "content_hash": "e6504f07e70f4a7d52706428b12cd973"
     }
   ],
   "scan_history": [
@@ -1550,6 +1560,14 @@
     },
     {
       "timestamp": "2026-01-24T14:49:12.017869",
+      "insights_found": 1,
+      "sources_used": [
+        "Wikipedia",
+        "Sacred-Texts"
+      ]
+    },
+    {
+      "timestamp": "2026-01-27T16:39:00.858538",
       "insights_found": 1,
       "sources_used": [
         "Wikipedia",
