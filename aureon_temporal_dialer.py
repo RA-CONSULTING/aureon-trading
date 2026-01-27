@@ -16,6 +16,7 @@ By adjusting the "dial", the Queen can perceive data from different
 temporal probabilities and energetic layers.
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import logging
 import math
 import random

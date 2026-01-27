@@ -17,6 +17,7 @@ Strategy:
 £76 → £100,000 in 24 hours using HISTORICAL INTELLIGENCE
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import random
 import time
 import json

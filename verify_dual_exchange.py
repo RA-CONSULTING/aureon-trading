@@ -2,6 +2,7 @@
 """
 Verify that the unified ecosystem is pulling from both Kraken and Binance
 """
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 sys.path.insert(0, '/workspaces/aureon-trading')
 

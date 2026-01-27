@@ -12,6 +12,7 @@ a decision object (or None).
 """
 
 from __future__ import annotations
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 
 from dataclasses import dataclass
 from typing import Dict, Optional, Sequence

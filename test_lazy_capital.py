@@ -4,6 +4,7 @@ Test lazy-loading of Capital.com client.
 Verifies Capital.com is NOT initialized during quick_init, only on first use.
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys, os
 if sys.platform == 'win32':
     os.environ['PYTHONIOENCODING'] = 'utf-8'

@@ -7,6 +7,7 @@ Provides contextual intelligence for trading decisions.
 Uses: https://wikipedia-api.readthedocs.io/
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 import json
 import time

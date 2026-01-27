@@ -17,6 +17,7 @@ Integration Points:
 - aureon_thought_bus.py: Cross-module signal distribution
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 

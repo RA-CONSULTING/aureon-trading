@@ -13,6 +13,7 @@ This system trades on 194 BTC pairs. Strategy:
 The cycle: BTC → ALT → BTC (with profit)
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 import math
 import time

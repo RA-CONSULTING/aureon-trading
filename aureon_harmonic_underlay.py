@@ -11,6 +11,7 @@ Visualizes the "Harmonic Underlays" of the ecosystem by:
 "See the dominant wave harmonics via global population coherence and the bridges connecting the entire ecosystem."
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 import sys
 import json

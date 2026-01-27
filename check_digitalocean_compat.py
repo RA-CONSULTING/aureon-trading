@@ -6,6 +6,7 @@ Validates that the Aureon system can run on DigitalOcean.
 Checks paths, permissions, dependencies, network access.
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 import sys
 import json

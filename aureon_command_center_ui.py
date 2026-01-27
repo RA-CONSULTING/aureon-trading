@@ -35,6 +35,7 @@ Combines ALL existing models and systems into ONE dashboard:
 Gary Leckey | January 2026 | ALL SYSTEMS → UNIFIED UI
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 

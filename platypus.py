@@ -20,6 +20,7 @@ Implements the full process tree:
 Gary Leckey & GitHub Copilot | December 2025
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import numpy as np
 import pandas as pd
 from dataclasses import dataclass, field

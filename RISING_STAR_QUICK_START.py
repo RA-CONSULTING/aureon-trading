@@ -36,6 +36,7 @@ AFTER (Rising Star - 60-70% win rate):
 ═══════════════════════════════════════════════════════════════════════════════
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 # ═══════════════════════════════════════════════════════════════════════════
 # STEP 1: ENABLE RISING STAR (Add to your __init__ or before War Room loop)
 # ═══════════════════════════════════════════════════════════════════════════

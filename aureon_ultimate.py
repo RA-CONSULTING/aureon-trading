@@ -23,6 +23,7 @@ Gary Leckey | November 2025
 "We're making history! If you don't quit, you can't lose!" 🎵
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os, sys, time, math, json, logging, hmac, hashlib, random
 from collections import Counter, deque
 from datetime import datetime

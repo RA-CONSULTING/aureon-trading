@@ -4,6 +4,7 @@
 Geographic coordinates for all 37 tracked trading firms
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 # HQ Coordinates for all tracked firms (lat, lon)
 FIRM_COORDINATES = {
     # USA - New York

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Quick test for Orca autonomous mode initialization."""
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import time
 

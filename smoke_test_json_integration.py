@@ -3,6 +3,7 @@
 🧪 SMOKE TEST: JSON Feed Integration
 Validates that all JSON data sources are properly feeding the unified ecosystem.
 """
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import json
 import os
 

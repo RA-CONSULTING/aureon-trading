@@ -6,6 +6,7 @@ Provides:
 - subscribe_to_whale_predictions(handler) -> register a callback
 """
 from __future__ import annotations
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 
 import logging
 from typing import Any, Callable, Dict, Optional

@@ -31,6 +31,7 @@ Gary Leckey & GitHub Copilot | November 2025
 "From Atom to Multiverse - We don't quit!"
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 # ═══════════════════════════════════════════════════════════════════════════
 # WINDOWS UTF-8 FIX - MUST BE AT VERY TOP BEFORE ALL OTHER IMPORTS
 # ═══════════════════════════════════════════════════════════════════════════

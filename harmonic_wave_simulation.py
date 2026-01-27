@@ -13,6 +13,7 @@ Gary Leckey & GitHub Copilot | December 2025
 "From Chaos to Coherence - The Wave Reveals All"
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 import json
 import math

@@ -24,6 +24,7 @@ Gary Leckey & GitHub Copilot | December 2025
 "From Atom to Multiverse - The Rainbow Bridge Protocol"
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import time
 import math
 import numpy as np

@@ -3,6 +3,7 @@ Simple end-to-end test for BotShapeClassifier integration.
 Run: python aureon_bot_shape_test.py
 """
 from __future__ import annotations
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 
 import time
 import math

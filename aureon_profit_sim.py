@@ -13,6 +13,7 @@ To profit 2p after fees on a £10 trade:
 Strategy: Only enter when coherence > 0.938 (high-conviction setup)
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 import sys
 import time

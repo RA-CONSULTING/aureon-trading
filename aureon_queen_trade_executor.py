@@ -15,6 +15,7 @@ No more manual exchange selection - QUEEN DECIDES.
 Author: Aureon Trading System
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 

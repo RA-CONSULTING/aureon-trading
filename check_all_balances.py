@@ -2,6 +2,7 @@
 """
 Quick check of all exchange balances
 """
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 from dotenv import load_dotenv
 load_dotenv(override=True)
 

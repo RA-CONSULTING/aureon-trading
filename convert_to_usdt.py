@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Convert portfolio assets to USDT for trading"""
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os, sys
 from binance_client import BinanceClient
 from dotenv import load_dotenv

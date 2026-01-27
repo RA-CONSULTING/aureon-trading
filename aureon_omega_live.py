@@ -14,6 +14,7 @@ This is the LIVE trading version. It will:
 TRD_GRP_039 = BTC pairs ONLY (no USDT)
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 import math
 import time

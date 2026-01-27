@@ -9,6 +9,7 @@ Steps:
 Run:
   python binance_trade_sample.py
 """
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os, json
 try:
     from dotenv import load_dotenv  # type: ignore

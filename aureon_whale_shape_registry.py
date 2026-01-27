@@ -9,6 +9,7 @@ Publishes:
 - topic: `whale.shape.recorded` payload: {symbol, pattern_id, subtype, score}
 """
 from __future__ import annotations
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 
 import hashlib
 import logging

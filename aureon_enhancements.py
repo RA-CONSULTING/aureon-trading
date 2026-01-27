@@ -18,6 +18,7 @@ Usage:
     modifier = layer.get_unified_modifier(lambda_value, coherence, price, volume)
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 from dataclasses import dataclass
 from typing import Dict, Optional, List, Any, Tuple
 from datetime import datetime

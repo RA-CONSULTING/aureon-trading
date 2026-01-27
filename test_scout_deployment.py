@@ -2,6 +2,7 @@
 """
 Test Scout Deployment - Verify force trades on startup
 """
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 from dotenv import load_dotenv
 load_dotenv()

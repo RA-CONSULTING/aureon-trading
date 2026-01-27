@@ -16,6 +16,7 @@ This system captures complete trade data for:
 ═══════════════════════════════════════════════════════════════════════════════════════
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 print(__doc__)
 
 print("\n" + "="*80)

@@ -7,6 +7,7 @@ Quick validation that all core modules load and configs are valid.
 Run: python test_system_health.py
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 from datetime import datetime

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Fix the if __name__ block in orca_complete_kill_cycle.py"""
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 with open("orca_complete_kill_cycle.py", "r") as f:
     lines = f.readlines()
 

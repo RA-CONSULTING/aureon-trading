@@ -10,6 +10,7 @@ This script simulates the trading logic to verify that:
 Run this BEFORE live trading to ensure the logic is correct!
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 from dataclasses import dataclass
 from typing import Optional

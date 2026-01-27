@@ -27,6 +27,7 @@ THE DECREE HIERARCHY:
 ═══════════════════════════════════════════════════════════════════════════════════════════
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Tuple, Any
 from datetime import datetime

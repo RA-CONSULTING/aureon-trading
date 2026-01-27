@@ -26,6 +26,7 @@ Gary Leckey & GitHub Copilot | January 2026
 "Trade the olive for a bean, the bean for a carrot..."
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 import sys
 import json

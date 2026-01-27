@@ -26,6 +26,7 @@ Gary Leckey | The Math Works | January 2026
 ═══════════════════════════════════════════════════════════════════════════════
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 # ═══════════════════════════════════════════════════════════════════════════════
 # 🔇 LOGGING SUPPRESSION - MUST BE BEFORE ALL OTHER IMPORTS!
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -9807,6 +9808,12 @@ class OrcaKillCycle:
                 print(f"   🤖 Autonomous control: {'ENABLED' if auto_active else 'PARTIAL'}")
             except Exception as e:
                 print(f"⚠️ Autonomous control enable failed: {e}")
+            try:
+                from baton_relay_monitor import start_baton_monitor
+                start_baton_monitor()
+                print("   🏃 Baton relay monitor: ACTIVE")
+            except Exception as e:
+                print(f"⚠️ Baton relay monitor failed: {e}")
             print()
         except Exception as e:
             print(f"❌ Queen initialization failed: {e}")
@@ -9877,6 +9884,24 @@ class OrcaKillCycle:
 
         # Initial Queen pacing/targets
         _apply_queen_controls()
+
+        def _baton(stage: str, topic: str = None, meta: dict = None) -> None:
+            """Emit baton relay stages for end-to-end validation."""
+            try:
+                from aureon_baton_link import emit_stage
+                emit_stage(stage, "orca", topic=topic, meta=meta)
+            except Exception:
+                return
+
+        _baton(
+            "intent",
+            topic="orca.autonomous.intent",
+            meta={
+                "max_positions": max_positions,
+                "amount_per_position": amount_per_position,
+                "target_pct": target_pct,
+            },
+        )
         
         # ═══════════════════════════════════════════════════════════════════
         # PHASE 0 (STARTUP): SCAN EXISTING PORTFOLIO - CLOSE PROFITABLE POSITIONS
@@ -10441,6 +10466,11 @@ class OrcaKillCycle:
                             print(f"   💸 Waiting for cash (${total_cash:.2f} available, need ${amount_per_position * 0.3:.2f})")
                         else:
                             # Scan market
+                            _baton(
+                                "plan",
+                                topic="orca.scan.plan",
+                                meta={"min_change_pct": min_change_pct, "positions": len(positions)},
+                            )
                             scan_start = time.time()
                             opportunities = self.scan_entire_market(min_change_pct=min_change_pct)
                             scan_time = time.time() - scan_start
@@ -10510,6 +10540,11 @@ class OrcaKillCycle:
                                                     if cop_est <= 1.0:
                                                         print(f"   👑❌ BUY BLOCKED: COP {cop_est:.6f} ≤ 1.0 (energy not increasing)")
                                                     else:
+                                                        _baton(
+                                                            "execute",
+                                                            topic="orca.buy.execute",
+                                                            meta={"symbol": best.symbol, "exchange": best.exchange},
+                                                        )
                                                         raw_order = client.place_market_order(
                                                             symbol=symbol_clean,
                                                             side='buy',
@@ -10548,6 +10583,11 @@ class OrcaKillCycle:
                                                                 # Track the buy order
                                                                 self.track_buy_order(symbol_clean, buy_order, best.exchange)
                                                                 self._record_action_cop(cop_actual, 'BUY', best.exchange, symbol_clean)
+                                                                _baton(
+                                                                    "confirm",
+                                                                    topic="orca.buy.confirm",
+                                                                    meta={"symbol": symbol_clean, "exchange": best.exchange},
+                                                                )
                                                                 
                                                                 # Update efficiency metrics (bought)
                                                                 

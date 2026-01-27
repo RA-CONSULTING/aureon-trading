@@ -1,6 +1,7 @@
 # aureon_hive_state.py
 # 🐝 State of the Hive - Live Status Publisher & Queen's Voice Hook
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 import json
 import time

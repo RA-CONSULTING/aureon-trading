@@ -12,6 +12,7 @@ This script simulates a winning trade on each trading platform:
 Gary Leckey | December 2025
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import time
 

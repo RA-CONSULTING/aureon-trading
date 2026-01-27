@@ -4,6 +4,7 @@ Compare baseline vs optimized ecosystem performance
 Loads both trade datasets and validates improvements
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import json
 from pathlib import Path
 from collections import defaultdict

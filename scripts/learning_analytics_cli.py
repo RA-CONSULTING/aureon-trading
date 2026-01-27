@@ -12,6 +12,7 @@ Usage:
     python scripts/learning_analytics_cli.py --recommend        # Get entry recommendation
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 import json

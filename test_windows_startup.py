@@ -4,6 +4,7 @@ Test script to diagnose Windows startup issues for Orca autonomous mode.
 Run this on Windows to see where the crash occurs.
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 

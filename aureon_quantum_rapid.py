@@ -11,6 +11,7 @@ Based on Quantum Quackers realMoneyLive.ts:
 This is the FAST trader - no waiting around!
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 import sys
 import time

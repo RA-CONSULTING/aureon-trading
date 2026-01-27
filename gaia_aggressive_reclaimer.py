@@ -9,6 +9,7 @@ Based on the WORKING rotations from this chat:
 - Deploy ALL cash immediately
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys, os
 os.environ['PYTHONUNBUFFERED'] = '1'
 

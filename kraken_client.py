@@ -1,3 +1,4 @@
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os, time, json, math, hmac, hashlib, base64, threading
 from typing import Dict, Any, List, Tuple
 from decimal import Decimal

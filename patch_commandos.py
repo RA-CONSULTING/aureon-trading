@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Patch to add Commandos initialization to s5_intelligent_dance.py"""
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 with open('s5_intelligent_dance.py', 'r') as f:
     content = f.read()
 

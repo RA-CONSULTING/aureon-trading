@@ -11,6 +11,7 @@ The 440 Hz "Mars Distortion" represents noise/corruption.
 The Triadic Envelope provides 99.2% field purity protection.
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import random
 
 # --- CONFIGURATION ---

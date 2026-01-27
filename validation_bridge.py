@@ -4,6 +4,7 @@ Validation Bridge - Coordinates both Schumann and Aura validators
 Manages the 10-minute live proof protocol and data synchronization
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import subprocess
 import json
 import time

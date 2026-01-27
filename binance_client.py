@@ -1,3 +1,4 @@
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os, time, hmac, hashlib, requests, json
 from decimal import Decimal, InvalidOperation, ROUND_DOWN, ROUND_UP
 try:

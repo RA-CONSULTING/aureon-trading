@@ -6,6 +6,7 @@ ElephantMemory, applies a simple Batten Matrix style 3-pass validation, and
 publishes `whale.behavior.predicted` Thoughts with action/confidence/time_horizon.
 """
 from __future__ import annotations
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 
 import logging
 import math

@@ -18,6 +18,7 @@ ONE SYSTEM. ALL THE POWER.
 Gary Leckey | November 2025
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os, sys, time, math, json, logging, tempfile
 from datetime import datetime
 from typing import Dict, List, Optional, Tuple

@@ -3,6 +3,7 @@
 🔍 KRAKEN API DIAGNOSTICS - Check if your Kraken setup is ready for real trading
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 from kraken_client import KrakenClient
 import os
 

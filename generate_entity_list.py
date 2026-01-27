@@ -3,6 +3,7 @@
 Generate comprehensive planetary entity list from all attribution data.
 Consolidates entities from cultural attribution, bot owners, etc.
 """
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import json
 from collections import defaultdict
 

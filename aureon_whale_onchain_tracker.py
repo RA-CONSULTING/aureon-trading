@@ -10,6 +10,7 @@ Publishes `whale.onchain.detected` for transfers >= threshold.
 Note: Uses exchange APIs instead of blockchain providers (no extra API keys needed).
 """
 from __future__ import annotations
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 
 import logging
 import time

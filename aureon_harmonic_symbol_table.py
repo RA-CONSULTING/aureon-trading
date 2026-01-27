@@ -1,5 +1,6 @@
 # aureon_harmonic_symbol_table.py
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import json
 import os
 import zlib

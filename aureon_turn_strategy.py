@@ -30,6 +30,7 @@ STRATEGY:
 - Use CHECKPOINTS to secure gains before next move
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import asyncio
 import time
 import logging

@@ -19,6 +19,7 @@ Usage:
     python run_platypus.py --preset geometric --start 2023-01-01 --end 2024-01-01
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 import sys
 import argparse

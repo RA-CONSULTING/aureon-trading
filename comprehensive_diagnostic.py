@@ -3,6 +3,7 @@
 🔧 COMPREHENSIVE SYSTEM DIAGNOSTIC
 Tests all components step by step to find the issue
 """
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 import sys
 import json

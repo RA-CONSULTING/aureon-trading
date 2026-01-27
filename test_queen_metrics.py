@@ -1,4 +1,5 @@
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 try:
     from aureon_queen_hive_mind import QueenHiveMind
     print("Import successful")

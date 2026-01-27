@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Quick simulation to test MIN_TRADE_USD = $1.44 before restarting live"""
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 sys.path.insert(0, '.')
 

@@ -6,6 +6,7 @@ Runs on localhost with live WebSocket feeds
 WITH TEXT-TO-SPEECH VOICE ENGINE + OPEN SOURCE DATA
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 import time

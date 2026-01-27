@@ -3,6 +3,7 @@
 🌌🪞⚓ STARGATE PROTOCOL STATUS CHECK
 Quick utility to verify all Stargate Protocol systems are active.
 """
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 

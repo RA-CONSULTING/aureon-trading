@@ -6,6 +6,7 @@ This script validates that ALL profit calculations are correct,
 including fees, dust filtering, and the profit gate logic.
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 from decimal import Decimal
 from typing import Dict, Any

@@ -22,6 +22,7 @@ We don't stop. We compound. We grow. We prove we're alive.
 Gary Leckey & GitHub Copilot | November 2025
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 import sys
 import time

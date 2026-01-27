@@ -14,6 +14,7 @@ Obsidian's properties are metaphorically translated into digital signal processi
 - **Revealing Truth (Sheen)**: A clarity function that enhances the signal-to-noise ratio.
 - **Protection**: A shielding function that reduces the impact of negative sentiment spikes.
 """
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 if sys.platform == 'win32':

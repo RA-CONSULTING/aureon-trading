@@ -10,6 +10,7 @@ The rhythm never stops.
 "Follow the rhythm, dance on net profit, using every available move"
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 import sys
 import json

@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import time
 from aureon_hnc_live_connector import HncLiveConnector
 from aureon_real_data_feed_hub import get_feed_hub

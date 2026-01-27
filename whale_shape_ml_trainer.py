@@ -19,6 +19,7 @@ Features:
 
 Target: Predict (shape_subtype, expected_profit, win_probability)
 """
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 

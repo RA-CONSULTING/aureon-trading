@@ -4,6 +4,7 @@
 Automatic bot classification and tagging based on behavior patterns
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import time
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Callable

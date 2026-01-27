@@ -75,6 +75,7 @@
 """
 
 from __future__ import annotations
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 
 import sys
 import math
@@ -1025,6 +1026,23 @@ class QueenHiveMind:
             'alpaca': {'status': 'OFFLINE', 'instance': None},
             'labyrinth': {'status': 'OFFLINE', 'instance': None},
         }
+        self._full_control_initialized = False
+
+        # Ensure Queen has full autonomous control by default
+        try:
+            if not self._full_control_initialized:
+                try:
+                    self.take_full_control()
+                    self._full_control_initialized = True
+                except Exception as e:
+                    logger.warning(f"⚠️ Full control wiring failed: {e}")
+            status = self.enable_full_autonomous_control()
+            if status.get('autonomous_loop'):
+                logger.info("👑🤖 Full autonomous control ENABLED by default")
+            else:
+                logger.info("👑🤖 Full autonomous control PARTIAL (fallback active)")
+        except Exception as e:
+            logger.warning(f"⚠️ Full autonomous control enable failed: {e}")
         
         # 🧠📡 REAL INTELLIGENCE SYSTEMS - Queen's Eyes and Ears
         self.feed_hub = None  # Real Data Feed Hub
@@ -10234,6 +10252,14 @@ Feeling: {thought['emotion']}
         """
         if hasattr(self, 'autonomous_control') and self.autonomous_control:
             return self.autonomous_control.get_full_status()
+
+        if hasattr(self, 'queen_voice') and self.queen_voice:
+            return {
+                'sovereignty_level': 'COMMANDER',
+                'autonomous_active': True,
+                'systems_online': len(self.controlled_systems),
+                'message': 'Autonomous control active (via Voice)'
+            }
         
         return {
             'sovereignty_level': 'NONE',

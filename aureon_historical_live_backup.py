@@ -16,6 +16,7 @@ FULL ECOSYSTEM INTEGRATION:
 THE PAST PREDICTS. THE PRESENT EXECUTES. THE FUTURE PROFITS.
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 import sys
 import time

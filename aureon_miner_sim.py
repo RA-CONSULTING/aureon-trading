@@ -18,6 +18,7 @@ Simulates the quantum-enhanced miner with FULL 12-DIMENSION ecosystem:
 Gary Leckey & GitHub Copilot | December 2025
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import time
 import logging
 import sys

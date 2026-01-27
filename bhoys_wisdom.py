@@ -16,6 +16,7 @@ Integration:
 "Every penny is a battle won, every trade a step towards freedom."
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import random
 from typing import Dict, List, Optional
 from dataclasses import dataclass

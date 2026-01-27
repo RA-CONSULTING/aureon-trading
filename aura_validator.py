@@ -6,6 +6,7 @@ Provides both:
 1. Class-based API for import by QueenHiveMind
 2. Stdin-based CLI for piped biofield data streams
 """
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys, json, time, csv, math, os
 from collections import deque
 

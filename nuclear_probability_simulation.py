@@ -13,6 +13,7 @@ Uses:
 This simulation PROVES whether £76 → £100K in 24 hours is achievable
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 import sys
 import json

@@ -15,6 +15,7 @@ All validated data flows to Queen for REAL trade decisions.
 Gary Leckey & Tina Brown | January 2026 | REAL INTELLIGENCE
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 

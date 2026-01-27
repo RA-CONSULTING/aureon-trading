@@ -1,4 +1,5 @@
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 def validate_sell_logic():
     print("🧮 VALIDATING SELL LOGIC & SNIPER AWARENESS")
     print("="*50)

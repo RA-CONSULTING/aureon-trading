@@ -31,6 +31,7 @@ Gary Leckey | December 2025
 "The flame ignited cannot be extinguished - it only grows stronger."
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 import time
 from typing import Dict, Any, Optional, Tuple, List

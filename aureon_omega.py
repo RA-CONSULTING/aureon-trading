@@ -50,6 +50,7 @@ This is the COMPLETE integration of ALL TSX systems into a unified Python trader
 ═══════════════════════════════════════════════════════════════════════════════
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 import math
 import time

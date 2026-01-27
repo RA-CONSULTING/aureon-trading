@@ -5,6 +5,7 @@ Takes profits across ALL exchanges simultaneously.
 Optimized for speed with parallel network calls.
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys, os
 os.environ['PYTHONUNBUFFERED'] = '1'
 

@@ -14,6 +14,7 @@ Author: Aureon Trading System (Prime Sentinel)
 Version: 1.0.0
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 import sys
 import json

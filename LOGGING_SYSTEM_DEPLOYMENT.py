@@ -291,4 +291,5 @@ Future enhancements:
 🚀 Ready for production data collection and probability matrix validation!
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 print(__doc__)

@@ -6,6 +6,7 @@ Tests the newly integrated HFT capabilities in the Queen Hive Mind.
 Demonstrates HFT activation, status monitoring, and emergency controls.
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 import time

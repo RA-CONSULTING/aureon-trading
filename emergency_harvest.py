@@ -11,6 +11,7 @@ Notes:
 - Routes sells through MultiExchangeClient so it works across exchanges
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import json
 import os
 import sys

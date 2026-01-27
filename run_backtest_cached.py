@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Quick runner to test backtest with cached data and fixed imports"""
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import subprocess
 import sys
 

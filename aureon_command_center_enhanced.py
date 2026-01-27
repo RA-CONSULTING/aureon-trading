@@ -20,6 +20,7 @@ Features from Mind Map + Queen Unified + All Dashboards:
 Gary Leckey | January 2026 | FULL LIVE DATA STREAMING
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys, os
 if sys.platform == 'win32':
     os.environ['PYTHONIOENCODING'] = 'utf-8'

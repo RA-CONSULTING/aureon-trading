@@ -57,6 +57,7 @@ Gary Leckey | December 2025
 "Strike while the iron is hot - better yet, strike before it heats up."
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import math
 import time
 import logging

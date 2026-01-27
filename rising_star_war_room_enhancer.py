@@ -17,6 +17,7 @@ Gary Leckey | The Math Works | January 2026
 ═══════════════════════════════════════════════════════════════════════════════
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import time
 from typing import List, Optional
 from aureon_rising_star_logic import RisingStarScanner

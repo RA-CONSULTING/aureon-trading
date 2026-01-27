@@ -3,6 +3,7 @@
 Direct check - what is ACTUALLY wrong with the trading system?
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 import sys
 import json

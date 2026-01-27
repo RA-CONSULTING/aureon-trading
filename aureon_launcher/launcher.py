@@ -4,6 +4,7 @@ AUREON Desktop Launcher
 Windows Desktop App with OS Keychain integration
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import tkinter as tk
 from tkinter import ttk, messagebox
 import threading

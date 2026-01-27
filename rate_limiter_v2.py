@@ -8,6 +8,7 @@ Provides:
 
 This builds on the simple TokenBucket but adds production-ready features.
 """
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import time
 import threading
 from typing import Any, Dict, Optional, Tuple

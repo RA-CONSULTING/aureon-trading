@@ -11,6 +11,7 @@ This script:
 4. Saves immutable truth log
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys, os
 
 # Windows UTF-8 Fix

@@ -2,6 +2,7 @@
 """
 Quick wrapper to load .env manually and run unified ecosystem
 """
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 import sys
 from pathlib import Path

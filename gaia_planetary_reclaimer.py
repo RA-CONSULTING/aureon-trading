@@ -12,6 +12,7 @@ UPGRADES:
 "SAVE THE PLANET - ONE TRADE AT A TIME"
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys, os
 
 # Windows UTF-8 Fix (MANDATORY for Windows compatibility)

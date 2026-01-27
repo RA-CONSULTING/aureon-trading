@@ -7,6 +7,7 @@ RED ALERT 2 STYLE UNIFIED LAUNCHER
 Starts the Command Center + Trading Engine together!
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys, os, atexit
 
 # SAFE PRINT WRAPPER FOR WINDOWS

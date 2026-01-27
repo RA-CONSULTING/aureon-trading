@@ -11,6 +11,7 @@ Strategy:
 - Position Size: 15% of balance (COMPOUNDING!)
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import random
 import time
 from datetime import datetime

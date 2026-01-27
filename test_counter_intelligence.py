@@ -12,6 +12,7 @@ Unit and integration tests for the counter-intelligence framework:
 Gary Leckey | January 2026 | Test-Driven Counter-Intelligence
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 import unittest

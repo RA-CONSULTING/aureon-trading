@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Test if we can actually place a trade"""
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 from dotenv import load_dotenv
 from binance.client import Client

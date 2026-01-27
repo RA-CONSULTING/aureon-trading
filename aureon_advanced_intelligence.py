@@ -43,6 +43,7 @@ FROM AURIS_TRADER (aureon_auris_trader.py):
 Gary Leckey | November 2025
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import math
 import time
 import random

@@ -48,6 +48,7 @@ COMMUNICATION PROTOCOL:
 
 Author: Gary Leckey / Aureon System
 """
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os, sys, time, logging, argparse, json, math
 from datetime import datetime
 from typing import Dict, List, Optional, Any, Tuple

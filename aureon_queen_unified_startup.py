@@ -27,6 +27,7 @@ All systems emit to ThoughtBus → Dashboard displays real-time data
 Gary Leckey & Tina Brown | January 2026 | UNIFIED QUEEN CONTROL
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 

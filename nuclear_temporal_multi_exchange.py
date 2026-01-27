@@ -14,6 +14,7 @@ This simulation uses:
 £76 → £100,000 in 24 hours
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import random
 import time
 from dataclasses import dataclass

@@ -1,4 +1,5 @@
 # emit_test_stream_aura.py  (aura)
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import json, sys, math, time, random
 t0 = time.time()
 def out(**kw): print(json.dumps(kw)); sys.stdout.flush()

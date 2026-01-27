@@ -6,6 +6,7 @@ This script compares:
 2. What BINANCE actually shows (real account balance)
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 from binance_client import BinanceClient
 
 print("=" * 80)

@@ -32,6 +32,7 @@ Integration:
 - Drives continuous improvement in strategy
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 if sys.platform == 'win32':

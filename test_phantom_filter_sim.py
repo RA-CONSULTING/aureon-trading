@@ -3,6 +3,7 @@
 🧪 PHANTOM FILTER LOGIC TEST 🧪
 Verifies that the Cross-Reality Correlation works as expected.
 """
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import time
 import logging
 from dataclasses import dataclass

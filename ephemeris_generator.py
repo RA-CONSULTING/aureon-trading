@@ -7,6 +7,7 @@ Step 1-2 of the Platypus pipeline:
 Generate ephemeris data using Skyfield (DE440) and validate against JPL Horizons.
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import numpy as np
 import pandas as pd
 from datetime import datetime, timedelta

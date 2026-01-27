@@ -12,6 +12,7 @@ Tests all integration points:
 Usage:
     python test_whale_system.py
 """
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 

@@ -1,4 +1,5 @@
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """Capital.com stock snapshot cache feeder.

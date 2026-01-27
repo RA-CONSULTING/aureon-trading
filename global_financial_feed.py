@@ -29,6 +29,7 @@ Gary Leckey & GitHub Copilot | December 2025
 "From Prime to Probability - The Entire Earth's Pulse"
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 import json
 import time

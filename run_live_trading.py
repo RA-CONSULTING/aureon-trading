@@ -4,6 +4,7 @@
 Aureon Unified Ecosystem with optimized parameters
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))

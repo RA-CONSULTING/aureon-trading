@@ -17,6 +17,7 @@ Intelligence gathering system combining:
 MISSION: Identify hidden power structures, coordination networks, and strategic vulnerabilities
 in global financial markets using warfare intelligence methodologies.
 """
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys, os
 if sys.platform == 'win32':
     os.environ['PYTHONIOENCODING'] = 'utf-8'

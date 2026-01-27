@@ -5,6 +5,7 @@ Simulate trading to $1 BILLION using Imperial Predictability Engine
 Based on current balance and metrics framework
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import time
 import sys
 from datetime import datetime

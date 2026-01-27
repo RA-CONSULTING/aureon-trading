@@ -44,6 +44,7 @@
 ╚══════════════════════════════════════════════════════════════════════════════════════╝
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 # Stem → Spore phase aliases for the mushroom branching metaphor
 PHASE_ALIAS = {
     "STEM_GATHERING": "PHASE 1: HISTORICAL ANALYSIS (7-Day Backward)",

@@ -14,6 +14,7 @@ the OPTIMAL hunting ground based on:
 Gary Leckey | January 2026 | HUNT SMART, NOT HARD!
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 import time

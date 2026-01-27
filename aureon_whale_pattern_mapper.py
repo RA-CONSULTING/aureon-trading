@@ -6,6 +6,7 @@ distribution, manipulation, support/resistance), stores patterns in Elephant Mem
 and publishes `whale.pattern.classified` Thoughts for downstream predictors.
 """
 from __future__ import annotations
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 
 import hashlib
 import logging

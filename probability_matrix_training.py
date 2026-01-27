@@ -5,6 +5,7 @@ Probability Matrix Training Runner
 - Aggregates per-symbol win rates/PNL
 - Emits probability reports consumed by UnifiedStateAggregator
 """
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import json
 import random
 import sys

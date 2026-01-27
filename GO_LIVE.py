@@ -6,6 +6,7 @@ The test_ecosystem_demo.py proved ALL SYSTEMS WORK.
 This is the production launch version.
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import asyncio
 import time
 from datetime import datetime

@@ -6,6 +6,7 @@ Demonstrates: Queen asks Dr Auris Throne → Gets recommendation → Applies to 
 This test bypasses full Orca initialization to focus on Dr Auris Throne integration.
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys, os
 if sys.platform == 'win32':
     os.environ['PYTHONIOENCODING'] = 'utf-8'

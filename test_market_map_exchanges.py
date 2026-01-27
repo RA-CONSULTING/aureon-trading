@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Quick test of market map with all exchanges."""
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import json
 sys.path.insert(0, '/workspaces/aureon-trading')

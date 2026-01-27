@@ -12,6 +12,7 @@ Parse geomagnetic indices from GFZ Potsdam data file:
 Source: https://www.gfz-potsdam.de/en/section/geomagnetism/data-products-services/geomagnetic-kp-index
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta

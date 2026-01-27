@@ -13,6 +13,7 @@ Strategy:
 THE PRESENT IS A GIFT. THE PAST UNWRAPS IT.
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import random
 from dataclasses import dataclass
 from typing import List

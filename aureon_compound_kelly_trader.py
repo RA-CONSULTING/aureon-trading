@@ -11,6 +11,7 @@ AUREON COMPOUND KELLY TRADER
 Author: Aureon System / Gary Leckey
 Date: November 28, 2025
 """
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os, sys, json, time, logging, argparse, random
 from datetime import datetime
 from typing import List, Dict, Any

@@ -10,6 +10,7 @@ This strategy ACTUALLY works because it:
 "Save the Planet" = Make ONE profitable trade
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 import time

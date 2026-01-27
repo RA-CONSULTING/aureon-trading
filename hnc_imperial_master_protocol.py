@@ -4,6 +4,7 @@ Solar + Geo + Schumann + Lunar + PLANETARY ALIGNMENTS
 Final Fold: December 8, 2025 — Grand Trine + First Quarter Moon + Jupiter Cazimi
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt

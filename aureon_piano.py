@@ -28,6 +28,7 @@ RAINBOW BRIDGE STATES:
 Gary Leckey & GitHub Copilot | November 2025
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import hmac
 import hashlib
 import time

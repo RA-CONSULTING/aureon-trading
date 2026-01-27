@@ -18,6 +18,7 @@ TARGET: 80%+ WIN RATE ON HIGH-CONFIDENCE SETUPS
 ═══════════════════════════════════════════════════════════════════════════════
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 

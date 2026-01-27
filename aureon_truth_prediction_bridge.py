@@ -11,6 +11,7 @@ Purpose:
 ⚠️ This bridges REAL intelligence (95% accuracy) into trading decisions.
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import json
 import time
 from pathlib import Path

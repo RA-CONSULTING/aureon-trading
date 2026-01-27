@@ -1,4 +1,5 @@
 # validator_auris.py
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys, json, math, time, csv, collections
 from typing import List, Deque
 import numpy as np

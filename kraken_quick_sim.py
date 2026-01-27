@@ -6,6 +6,7 @@ Fast simulation using current market snapshot to evaluate strategies.
 Runs 50 simulated cycles per strategy to give quick flavor of Kraken ecosystem.
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 import sys
 import random

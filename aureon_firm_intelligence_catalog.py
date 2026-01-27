@@ -16,6 +16,7 @@ This gives us UNFAIR ADVANTAGE by knowing what firms are doing BEFORE they execu
 Gary Leckey | January 2026 | Know Thy Enemy, Beat Thy Enemy
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 import json

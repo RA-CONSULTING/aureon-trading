@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Check current Binance balance after redemption"""
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 from dotenv import load_dotenv
 from binance.client import Client

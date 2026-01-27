@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Quick debug script to see why no opportunities are being found."""
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))

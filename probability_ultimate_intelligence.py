@@ -22,6 +22,7 @@ Pattern dimensions:
 - Clownfish: danger (<0.35), weak (0.35-0.55), neutral (0.55-0.75), strong (>0.75)
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import json
 import time
 import os

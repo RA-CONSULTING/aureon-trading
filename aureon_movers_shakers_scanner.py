@@ -22,6 +22,7 @@ REAL-TIME DETECTION:
 Gary Leckey | January 2026 | "Find the Waves, Ride the Whales"
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 import math

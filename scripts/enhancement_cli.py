@@ -15,6 +15,7 @@ Outputs:
 This avoids needing full aureon_unified_ecosystem; uses public REST.
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import argparse
 import sys
 import math

@@ -20,6 +20,7 @@ All systems receive real data from aureon_real_data_feed_hub
 Gary Leckey & Tina Brown | January 2026 | SYSTEM WIRING
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 

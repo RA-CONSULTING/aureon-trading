@@ -15,6 +15,7 @@ POWERED BY THE FULL AUREON UNIFIED ECOSYSTEM:
 "Get Data → Take Trade → Sell Trade → Repeat"
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import asyncio
 import time
 import random

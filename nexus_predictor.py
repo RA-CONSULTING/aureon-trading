@@ -27,6 +27,7 @@ Usage:
 ═══════════════════════════════════════════════════════════════════════════════
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import numpy as np
 from datetime import datetime
 from typing import Dict, List, Optional, Any

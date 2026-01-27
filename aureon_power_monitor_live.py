@@ -6,6 +6,7 @@ Real-time monitoring of ALL energy streams across ALL exchanges.
 Pulls metrics from scanning systems and power station.
 Shows EXACTLY what's happening before ANY action.
 """
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys, os
 if sys.platform == 'win32':
     os.environ['PYTHONIOENCODING'] = 'utf-8'

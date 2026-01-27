@@ -9,6 +9,7 @@ Handles variations, abbreviations, and partial matches.
 Gary Leckey | January 2026 | Intelligent Firm Mapping
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import re
 from typing import Optional, List, Tuple
 from difflib import SequenceMatcher

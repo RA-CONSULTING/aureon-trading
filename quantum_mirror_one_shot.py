@@ -8,6 +8,7 @@ Bypasses complex initialization loops - just scans and finds.
 "We just need to do it once... save the planet"
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 

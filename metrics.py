@@ -3,6 +3,7 @@
 - Uses prometheus_client when available to register real Prometheus metrics.
 - Always maintains an internal in-process count store for easy access in unit tests.
 """
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 from typing import Dict, Tuple, Optional, List, Any
 import threading
 

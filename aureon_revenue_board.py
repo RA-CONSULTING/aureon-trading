@@ -24,6 +24,7 @@ Gary Leckey & GitHub Copilot | January 2026
 """
 
 from __future__ import annotations
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 
 import os
 import sys

@@ -16,6 +16,7 @@ Tests all critical components for production deployment:
 Gary Leckey | January 2026 | DEPLOYMENT VERIFICATION
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 import time

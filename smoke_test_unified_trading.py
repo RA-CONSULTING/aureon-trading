@@ -3,6 +3,7 @@
 🌍⚡ SMOKE TEST: Unified Trading System ⚡🌍
 Validates all major components in dry run mode.
 """
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 from aureon_unified_ecosystem import AureonKrakenEcosystem
 
 def main():

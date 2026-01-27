@@ -6,6 +6,7 @@
 Tests the Queen's ability to execute trades through the neural chain.
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import time
 sys.path.insert(0, '.')

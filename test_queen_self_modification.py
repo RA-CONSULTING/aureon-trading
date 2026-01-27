@@ -6,6 +6,7 @@ Demonstrates that Queen can analyze her performance and propose code changes
 to improve the Micro Profit Labyrinth trading system.
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import asyncio
 from micro_profit_labyrinth import MicroProfitLabyrinth

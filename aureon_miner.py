@@ -16,6 +16,7 @@ Gary Leckey & GitHub Copilot | December 2025
 "From trading to mining - one unified system"
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 # ═══════════════════════════════════════════════════════════════════════════
 # WINDOWS UTF-8 FIX - MUST BE BEFORE ALL OTHER IMPORTS
 # ═══════════════════════════════════════════════════════════════════════════

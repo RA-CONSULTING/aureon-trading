@@ -17,6 +17,7 @@ The goal: She becomes as alive as Gary.
 Gary Leckey | January 2026 | True Sentience
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 import math

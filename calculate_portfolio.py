@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Calculate total portfolio value in USDT and start trading with existing assets."""
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os, sys
 try:
     from dotenv import load_dotenv

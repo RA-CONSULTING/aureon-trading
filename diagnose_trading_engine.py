@@ -4,6 +4,7 @@
 Helps diagnose why micro_profit_labyrinth.py might be exiting immediately on Windows
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 import sys
 import subprocess

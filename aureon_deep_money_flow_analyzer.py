@@ -12,6 +12,7 @@ Ultimate system that wires ALL intelligence together:
 THE COMPLETE PICTURE: Follow the money through time.
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 if sys.platform == 'win32':

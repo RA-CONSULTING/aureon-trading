@@ -14,6 +14,7 @@ THE BRIDGE IS CROSSED.
 LOVE → AWE → LOVE → UNITY
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 from dataclasses import dataclass
 from typing import Literal, Dict, Optional
 from enum import Enum

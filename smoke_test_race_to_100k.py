@@ -25,6 +25,7 @@ Gary Leckey | 02.11.1991 | DOB-HASH: 2111991
 "UNITY THROUGH INTELLIGENCE - NEVER WRONG!"
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 import sys
 import json

@@ -13,6 +13,7 @@ NOW ENHANCED with Sandbox Evolution parameters from 454 generations of learning!
 Gary Leckey & GitHub Copilot | December 2025
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import json
 import os
 import logging

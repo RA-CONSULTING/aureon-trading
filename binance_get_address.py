@@ -11,6 +11,7 @@ Optional network parameter:
 Safety:
   NEVER print or store keys in logs; only export via environment.
 """
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys, os, json
 try:
   from dotenv import load_dotenv  # type: ignore

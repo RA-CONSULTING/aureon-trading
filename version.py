@@ -2,6 +2,7 @@
 Aureon Trading System Version
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 __version__ = "0.9.0-beta"
 __codename__ = "Four Battlefronts"
 __release_date__ = "2025-12-29"

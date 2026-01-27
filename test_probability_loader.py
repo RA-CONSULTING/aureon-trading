@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Test probability loader and position hygiene"""
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 from probability_loader import ProbabilityLoader, PositionHygieneChecker
 
 # Test probability loader

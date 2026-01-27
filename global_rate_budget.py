@@ -10,6 +10,7 @@ Implements priority buckets for API requests:
 Ensures critical operations get priority during rate limit pressure.
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import time
 import threading
 import logging

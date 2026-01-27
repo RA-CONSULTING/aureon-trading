@@ -3,6 +3,7 @@
 Telemetry Server - Prometheus Metrics Exporter
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import logging
 import threading
 import socket

@@ -27,6 +27,7 @@ Like dreams within dreams, each layer is deeper, smarter, faster.
 "The seed that we plant in this man's mind will grow into an idea." - Cobb 🎬
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 import time

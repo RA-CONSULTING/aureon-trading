@@ -12,6 +12,7 @@ CoinGecko API is FREE with generous rate limits (10-30 calls/minute).
 We fetch prices for ALL Alpaca-tradeable crypto and cache locally.
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 if sys.platform == 'win32':

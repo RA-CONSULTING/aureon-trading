@@ -17,6 +17,7 @@ This is a *smoke-first* implementation focusing on readability and safe dry-run 
 """
 
 from __future__ import annotations
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 
 import json
 import logging

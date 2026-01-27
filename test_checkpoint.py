@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Simple test to verify checkpoint logic."""
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import asyncio
 import sys
 sys.path.insert(0, '/workspaces/aureon-trading')

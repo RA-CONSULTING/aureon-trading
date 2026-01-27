@@ -13,6 +13,7 @@ Proves that the intelligence matrix can correctly identify:
 Gary Leckey | December 2025
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import time
 import random
 import json

@@ -6,6 +6,7 @@ simple API with caching.  If a codex is missing, safe defaults are returned.
 """
 
 from __future__ import annotations
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 
 import json
 from dataclasses import dataclass

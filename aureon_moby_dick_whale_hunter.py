@@ -68,6 +68,7 @@ KEY STRATEGIES FROM MOBY DICK:
 Gary Leckey | January 2026 | "Call me Ishmael"
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 import math

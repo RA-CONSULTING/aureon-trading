@@ -12,6 +12,7 @@ This solves: "System has $2.03 USDC but skipping trades needing $5.50"
 Reality: May have $50 USDT + profitable positions worth $200
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys, os
 if sys.platform == 'win32':
     os.environ['PYTHONIOENCODING'] = 'utf-8'

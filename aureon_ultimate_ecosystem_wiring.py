@@ -49,6 +49,7 @@ Gary Leckey & GitHub Copilot | December 2025
 "From pattern to profit - the machine never stops learning."
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 import time
 import json

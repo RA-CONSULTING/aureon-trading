@@ -9,6 +9,7 @@ Usage:
   AUREON_LADDER_ENABLED=1 AUREON_LADDER_MODE=execute python tools/ladder_self_test.py
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 from pprint import pprint
 

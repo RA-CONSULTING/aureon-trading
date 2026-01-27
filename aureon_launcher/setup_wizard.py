@@ -4,6 +4,7 @@ AUREON Setup Wizard
 First-time configuration for API keys and settings
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import tkinter as tk
 from tkinter import ttk, messagebox
 

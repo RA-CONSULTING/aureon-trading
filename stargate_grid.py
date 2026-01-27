@@ -10,6 +10,7 @@ market correlation and geomagnetic influence on trading patterns.
 Each node has specific coordinates, frequencies, and numerological significance.
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 from dataclasses import dataclass
 from typing import List, Dict, Optional, Tuple
 from datetime import datetime

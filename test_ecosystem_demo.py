@@ -11,6 +11,7 @@ Quick demonstration of:
 This is a SAFE TEST - no real trades, just shows the systems talking to each other.
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import asyncio
 import time
 from datetime import datetime

@@ -7,6 +7,7 @@ Runs the Queen and monitors ALL connected systems in real-time.
 Gary Leckey | January 2026 | The Prime Sentinel
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import time
 import logging

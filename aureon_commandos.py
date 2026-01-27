@@ -14,6 +14,7 @@ COMMANDOS:
 Gary Leckey's Animal Army | November 2025
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import logging
 import math
 import time

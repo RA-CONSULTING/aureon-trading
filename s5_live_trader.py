@@ -11,6 +11,7 @@ Gary Leckey & GitHub Copilot | January 2026
 Press Ctrl+C to stop.
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import asyncio
 import json
 import time

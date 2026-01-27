@@ -6,6 +6,7 @@ Unified entry point for production deployment.
 Handles first-run setup, mode selection, and system initialization.
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 import argparse

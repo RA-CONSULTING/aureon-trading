@@ -19,6 +19,7 @@ Gary Leckey | December 2025
 "Math that matches reality."
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import math
 import time
 from dataclasses import dataclass, field

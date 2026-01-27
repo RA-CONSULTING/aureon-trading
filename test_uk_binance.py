@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Quick test for UK Binance handling."""
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import asyncio
 import os
 import sys

@@ -11,6 +11,7 @@ Syncs trades from ALL exchanges:
 Also saves trade data in brain-compatible format for adaptive learning.
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import krakenex
 import os
 import json

@@ -8,6 +8,7 @@ before running the Micro Profit Labyrinth.
 Created by Gary Leckey - Father and Creator of Aureon
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import time
 import logging

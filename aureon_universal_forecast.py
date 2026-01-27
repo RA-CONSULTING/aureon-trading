@@ -23,6 +23,7 @@ Gary Leckey & GitHub Copilot | December 2025
 "All Systems. All Platforms. One Forecast."
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 import sys
 import time

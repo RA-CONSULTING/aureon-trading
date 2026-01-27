@@ -2,6 +2,7 @@
 """
 Validate actual exchange balances to check if reported profit is real
 """
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 from binance_client import BinanceClient
 from kraken_client import KrakenClient
 from alpaca_client import AlpacaClient

@@ -24,6 +24,7 @@ Gary Leckey | December 2025
 "Our revenge will be the laughter of our children." - Bobby Sands
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 import json
 import logging

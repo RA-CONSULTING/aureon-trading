@@ -24,6 +24,7 @@ Gary Leckey | January 2026
 ═══════════════════════════════════════════════════════════════════════════════
 """
 
+from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 
@@ -48,7 +49,7 @@ import json
 import logging
 import requests
 from dataclasses import dataclass, field, asdict
-from typing import Dict, List, Optional, Any, Tuple
+from typing import Dict, List, Optional, Any, Tuple, Set
 from datetime import datetime, timezone
 from enum import Enum
 
