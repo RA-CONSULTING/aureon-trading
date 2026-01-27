@@ -103,6 +103,17 @@ except ImportError:
     IRAKillScanner = None
     SNIPER_CONFIG = {}
 
+# 🎯📊 Probability Nexus Integration (Batten Matrix: Coherence × Lambda × Probability)
+try:
+    from aureon_probability_nexus import process_market_data, update_subsystems, SUBSYSTEM_STATE
+    PROBABILITY_NEXUS_AVAILABLE = True
+    print("🎯 Probability Nexus WIRED! (Batten Matrix validation)")
+except ImportError:
+    process_market_data = None
+    update_subsystems = None
+    SUBSYSTEM_STATE = {}
+    PROBABILITY_NEXUS_AVAILABLE = False
+
 # 🤖 Dr Auris Throne AI Agent Integration
 try:
     from aureon_sero_client import get_sero_client, SeroClient
@@ -3510,7 +3521,9 @@ class OrcaKillCycle:
             try:
                 self.bus = ThoughtBus()
                 self.bus.subscribe('whale.*', self._handle_whale_signal)
+                self.bus.subscribe('portfolio_snapshot', self._handle_portfolio_snapshot)
                 print("🐋 Whale intelligence: CONNECTED")
+                print("💰 Portfolio updates: SUBSCRIBED via ThoughtBus")
             except Exception:
                 pass
         
@@ -3539,6 +3552,21 @@ class OrcaKillCycle:
             print("📊 Real Data Feed Hub: WIRED! (Central distribution)")
         except Exception as e:
             pass
+        
+        # 💰 PORTFOLIO PROFIT MONITOR - Queen's financial awareness
+        self.portfolio_state = None
+        self.portfolio_last_update = 0
+        try:
+            # Check if portfolio state file exists
+            if os.path.exists("live_profit_state.json"):
+                with open("live_profit_state.json", 'r') as f:
+                    self.portfolio_state = json.load(f)
+                    self.portfolio_last_update = self.portfolio_state.get('timestamp', 0)
+                print(f"💰 Portfolio Monitor: WIRED! (${self.portfolio_state['totals']['total_value_usd']:.2f} total)")
+            else:
+                print("💰 Portfolio Monitor: Awaiting first snapshot...")
+        except Exception as e:
+            print(f"💰 Portfolio Monitor: {e}")
         
         # Enigma Integration (Cipher decoding)
         self.enigma = None
@@ -4874,6 +4902,37 @@ class OrcaKillCycle:
         except Exception:
             pass
     
+    def _handle_portfolio_snapshot(self, thought):
+        """Process portfolio snapshot updates from ThoughtBus."""
+        try:
+            data = thought.data if hasattr(thought, 'data') else thought
+            if isinstance(data, dict):
+                self.portfolio_state = {
+                    'timestamp': data.get('timestamp', time.time()),
+                    'totals': {
+                        'total_value_usd': data.get('total_value_usd', 0),
+                        'total_pnl_usd': data.get('total_pnl_usd', 0),
+                        'positions_count': data.get('positions_count', 0),
+                        'profitable_count': data.get('profitable_count', 0)
+                    },
+                    'exchanges': data.get('exchanges', {})
+                }
+                self.portfolio_last_update = self.portfolio_state['timestamp']
+        except Exception:
+            pass
+    
+    def refresh_portfolio_state(self):
+        """Manually refresh portfolio state from file."""
+        try:
+            if os.path.exists("live_profit_state.json"):
+                with open("live_profit_state.json", 'r') as f:
+                    self.portfolio_state = json.load(f)
+                    self.portfolio_last_update = self.portfolio_state.get('timestamp', 0)
+                return True
+        except Exception:
+            pass
+        return False
+    
     # ═══════════════════════════════════════════════════════════════════════
     # � QUANTUM INTELLIGENCE - ENHANCED PROBABILITY SCORING
     # ═══════════════════════════════════════════════════════════════════════
@@ -5423,6 +5482,30 @@ class OrcaKillCycle:
             capital_opps = self._scan_capital_market(min_change_pct, min_volume)
             opportunities.extend(capital_opps)
             print(f"   📊 Capital.com: Found {len(capital_opps)} CFD opportunities")
+        
+        # ═══════════════════════════════════════════════════════════════════
+        # 🎯📊 FEED DATA TO PROBABILITY NEXUS (Batten Matrix)
+        # ═══════════════════════════════════════════════════════════════════
+        if PROBABILITY_NEXUS_AVAILABLE and process_market_data and opportunities:
+            try:
+                # Feed market data from opportunities to Probability Nexus
+                for opp in opportunities:
+                    market_snapshot = {
+                        'price': opp.price,
+                        'volume': opp.volume,
+                        'coherence': min(1.0, opp.momentum_score / 100.0) if opp.momentum_score else 0.5,
+                        'volatility': abs(opp.change_pct) / 100.0,
+                        'sentiment': 0.5 + (opp.change_pct / 200.0),  # Normalize to 0-1
+                        'timestamp': int(time.time()),
+                    }
+                    # Feed to Probability Nexus
+                    process_market_data([market_snapshot], symbol=opp.symbol)
+                
+                # Update subsystem state to calculate coherence/lambda metrics
+                update_subsystems()
+                print(f"   🎯 Fed {len(opportunities)} snapshots to Probability Nexus (Batten Matrix)")
+            except Exception as e:
+                print(f"   ⚠️ Probability Nexus feed error: {e}")
         
         # ═══════════════════════════════════════════════════════════════════
         # 🦅 MOMENTUM ECOSYSTEM - Animal Swarms & Micro Goals
@@ -12082,6 +12165,10 @@ class OrcaKillCycle:
         # Avalanche timing
         last_avalanche_time = 0
         avalanche_interval = 30.0
+        
+        # Truth check timing
+        last_truth_check = 0
+        truth_check_interval = 60.0
 
         try:
             while True:

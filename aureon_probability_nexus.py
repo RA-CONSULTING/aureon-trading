@@ -228,6 +228,9 @@ MAX_TRADE_SLIPPAGE = 0.01       # Maximum slippage for trades
 # Runtime storage for processed market snapshots
 MARKET_SNAPSHOTS = []  # List[Dict]: stores processed/filtered market snapshots
 
+# Subsystem state storage (Batten Matrix: Coherence × Lambda × Probability)
+SUBSYSTEM_STATE = {}  # Dict[str, Dict]: symbol -> {avg_coherence, avg_clarity, chaos_trend, etc.}
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # INITIALIZATION - SETUP AND WARMUP
 # ═══════════════════════════════════════════════════════════════════════════════

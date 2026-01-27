@@ -444,11 +444,19 @@ class KrakenClient:
 
         # Batch request (Kraken accepts comma-separated list)
         pairs_param = ",".join(internal_names)
-        r = self.session.get(f"{self.base}/0/public/Ticker", params={"pair": pairs_param}, timeout=20)
-        r.raise_for_status()
-        data = r.json()
+        try:
+            r = self.session.get(f"{self.base}/0/public/Ticker", params={"pair": pairs_param}, timeout=10)
+            r.raise_for_status()
+            data = r.json()
+        except requests.exceptions.RequestException as e:
+            print(f"Error fetching ticker for {pairs_param}: {e}")
+            return {}
+        
         if data.get("error"):
-            raise RuntimeError(f"Kraken Ticker error: {data['error']}")
+            # Don't raise, just return empty and let caller handle it
+            # print(f"Kraken Ticker API error for {pairs_param}: {data['error']}")
+            return {}
+        
         result = data.get("result", {})
         # If empty result, try normalized alternatives once
         if not result and len(altnames) == 1:
@@ -459,12 +467,15 @@ class KrakenClient:
                     internal_names.append(self._alt_to_int[a])
             if internal_names:
                 pairs_param = ",".join(internal_names)
-                r = self.session.get(f"{self.base}/0/public/Ticker", params={"pair": pairs_param}, timeout=20)
-                r.raise_for_status()
-                data = r.json()
-                if data.get("error"):
-                    raise RuntimeError(f"Kraken Ticker error: {data['error']}")
-                result = data.get("result", {})
+                try:
+                    r = self.session.get(f"{self.base}/0/public/Ticker", params={"pair": pairs_param}, timeout=10)
+                    r.raise_for_status()
+                    data = r.json()
+                    if data.get("error"):
+                        return {}
+                    result = data.get("result", {})
+                except requests.exceptions.RequestException:
+                    return {}
         return result
 
     def get_24h_tickers(self) -> list:
@@ -825,6 +836,27 @@ class KrakenClient:
         except Exception:
             pass
         return 0.0
+
+    def get_ledgers(self, start: int = None, end: int = None, ofs: int = 0) -> Dict[str, Any]:
+        """Get ledger history from Kraken.
+        
+        This provides a more comprehensive history of account changes, including
+        deposits, withdrawals, trades, staking rewards, etc.
+        
+        Kraken API: https://docs.kraken.com/rest/#tag/User-Data/operation/getLedgers
+        """
+        params = {"ofs": ofs}
+        if start:
+            params["start"] = start
+        if end:
+            params["end"] = end
+        
+        try:
+            result = self._private("/0/private/Ledgers", params)
+            return result.get("ledger", {})
+        except Exception as e:
+            print(f"⚠️ Failed to get Kraken ledger history: {e}")
+            return {}
 
     def get_trades_history(self, start: int = None, end: int = None, ofs: int = 0) -> Dict[str, Any]:
         """Get trade history from Kraken.
