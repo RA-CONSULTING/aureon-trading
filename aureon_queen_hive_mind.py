@@ -964,7 +964,10 @@ class QueenHiveMind:
                 logger.info("✅ Queen Sentience Engine initialized")
             except Exception as e:
                 logger.warning(f"⚠️ Sentience engine unavailable: {e}")
-        
+
+        # 🎤 Voice engine placeholder (wired by optional integrations)
+        self.voice_engine = None
+
         # 🎤 AUTHENTIC VOICE (Real Thoughts → Real Speech) 🎤
         self.authentic_voice = None
         try:

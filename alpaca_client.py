@@ -203,7 +203,13 @@ class AlpacaClient:
                 test_url = f"{self.base_url}/v2/account"
                 auth_resp = self.session.get(test_url, timeout=3)
                 if auth_resp.status_code in (401, 403):
-                    logger.warning(f"⚠️ Alpaca authentication failed ({auth_resp.status_code}). Disabling client.")
+                    logger.warning(
+                        "⚠️ Alpaca authentication failed (%s). Disabling client. base_url=%s ALPACA_PAPER=%s "
+                        "(check paper vs live keys and IP restrictions).",
+                        auth_resp.status_code,
+                        self.base_url,
+                        str(self.use_paper).lower(),
+                    )
                     self.is_authenticated = False
             except Exception as e:
                 logger.warning(f"⚠️ Alpaca initial auth check failed: {e}")

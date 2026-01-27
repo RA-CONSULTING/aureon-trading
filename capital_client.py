@@ -18,6 +18,13 @@ except ImportError:
 
 logger = logging.getLogger(__name__)
 
+class _SessionUnavailableResponse:
+    status_code = 401
+    text = '{"errorCode":"session.unavailable"}'
+
+    def json(self):
+        return {"errorCode": "session.unavailable"}
+
 class CapitalClient:
     """
     Client for Capital.com API.
@@ -51,6 +58,7 @@ class CapitalClient:
         self._rate_limit_until = 0  # Timestamp when rate limit expires
         self._rate_limit_logged = False  # Only log rate limits once
         self._session_error_logged = False  # Only log session errors once
+        self._session_unavailable_logged = False  # Only log missing-token state once
         
         if not self.api_key or not self.identifier or not self.password:
             logger.warning("Capital.com credentials not fully set. Client will be disabled.")
@@ -91,6 +99,7 @@ class CapitalClient:
                 self.x_security_token = response.headers.get('X-SECURITY-TOKEN')
                 self.session_start_time = time.time()
                 self._session_error_logged = False  # Reset on success
+                self._session_unavailable_logged = False
                 logger.info("Capital.com session established.")
             elif response.status_code == 429 or 'too-many.requests' in response.text.lower():
                 # Rate limited - back off for 5 minutes
@@ -98,16 +107,31 @@ class CapitalClient:
                 if not self._session_error_logged:
                     logger.warning("Capital.com rate limited - backing off for 5 minutes")
                     self._session_error_logged = True
-            else:
+            elif response.status_code in (401, 403):
+                self.cst = None
+                self.x_security_token = None
                 if not self._session_error_logged:
-                    logger.error(f"Failed to create Capital.com session: {response.text}")
+                    logger.error(
+                        "Capital.com auth failed (%s). Check demo/live, IP restrictions, and API permissions. Response: %s",
+                        response.status_code,
+                        response.text,
+                    )
                     self._session_error_logged = True
-                self.enabled = False
+                self._rate_limit_until = time.time() + 60
+            else:
+                self.cst = None
+                self.x_security_token = None
+                if not self._session_error_logged:
+                    logger.error(
+                        "Failed to create Capital.com session (%s): %s",
+                        response.status_code,
+                        response.text,
+                    )
+                    self._session_error_logged = True
         except Exception as e:
             if not self._session_error_logged:
                 logger.error(f"Capital.com connection error: {e}")
                 self._session_error_logged = True
-            self.enabled = False
 
     def _session_is_expired(self) -> bool:
         """Capital.com sessions can expire; refresh after 55 minutes or when tokens missing."""
@@ -137,6 +161,8 @@ class CapitalClient:
 
         url = f"{self.base_url}{path}"
         headers = self._get_headers()
+        if not headers:
+            return _SessionUnavailableResponse()
         try:
             resp = requests.request(method.upper(), url, headers=headers, params=params, json=json_body, timeout=20)
         except Exception as e:
@@ -174,8 +200,14 @@ class CapitalClient:
             
         # If session creation failed, return empty headers
         if not self.cst or not self.x_security_token:
+            if not self._session_unavailable_logged:
+                logger.error(
+                    "Capital.com session unavailable; missing tokens after login. "
+                    "Verify CAPITAL_API_KEY, CAPITAL_IDENTIFIER, CAPITAL_PASSWORD, and demo/live selection."
+                )
+                self._session_unavailable_logged = True
             return {}
-            
+        self._session_unavailable_logged = False
         return {
             "X-CAP-API-KEY": self.api_key,
             "CST": self.cst,
