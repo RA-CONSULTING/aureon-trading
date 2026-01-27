@@ -9791,6 +9791,22 @@ class OrcaKillCycle:
             print("👑 QUEEN DR AURIS THRONE: AWAKENED AND READY!")
             print(f"   🎯 Dream: ${queen.THE_DREAM:,.0f} (ONE BILLION)")
             print(f"   💰 Current equity: ${queen.equity:,.2f}")
+            try:
+                from aureon_queen_hive_mind import wire_all_systems
+                wired = wire_all_systems(queen)
+                wired_ok = [k for k, v in wired.items() if v]
+                wired_fail = [k for k, v in wired.items() if not v]
+                print(f"   🔗 Predictive systems wired: {len(wired_ok)} ok, {len(wired_fail)} missing")
+                if wired_fail:
+                    print(f"   ⚠️ Missing: {', '.join(wired_fail)}")
+            except Exception as e:
+                print(f"⚠️ Predictive system wiring failed: {e}")
+            try:
+                status = queen.enable_full_autonomous_control()
+                auto_active = status.get('autonomous_loop', False)
+                print(f"   🤖 Autonomous control: {'ENABLED' if auto_active else 'PARTIAL'}")
+            except Exception as e:
+                print(f"⚠️ Autonomous control enable failed: {e}")
             print()
         except Exception as e:
             print(f"❌ Queen initialization failed: {e}")
@@ -13576,4 +13592,3 @@ if __name__ == "__main__":
         traceback.print_exc(file=sys.stderr)
         print("\n🛑 Orca exiting gracefully to prevent crash loop\n", file=sys.stderr)
         sys.exit(1)
-
