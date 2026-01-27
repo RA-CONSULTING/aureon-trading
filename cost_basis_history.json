@@ -2940,5 +2940,68 @@
     }
   },
   "last_sync": 1769531931.2594972,
-  "updated_at": "2026-01-27T16:38:51.953756"
+  "updated_at": "2026-01-27T16:38:51.953756",
+  "kraken:ATOMUSD": {
+    "entry_price": 0.0,
+    "quantity": 0.0,
+    "timestamp": "2026-01-27T19:21:28.215487",
+    "source": "airdrop_auto_added",
+    "exchange": "kraken"
+  },
+  "kraken:BSXUSD": {
+    "entry_price": 0.0,
+    "quantity": 0.0,
+    "timestamp": "2026-01-27T19:21:28.215523",
+    "source": "airdrop_auto_added",
+    "exchange": "kraken"
+  },
+  "kraken:ESXUSD": {
+    "entry_price": 0.0,
+    "quantity": 0.0,
+    "timestamp": "2026-01-27T19:21:28.215537",
+    "source": "airdrop_auto_added",
+    "exchange": "kraken"
+  },
+  "kraken:FIGHTUSD": {
+    "entry_price": 0.0,
+    "quantity": 0.0,
+    "timestamp": "2026-01-27T19:21:28.215547",
+    "source": "airdrop_auto_added",
+    "exchange": "kraken"
+  },
+  "kraken:FISUSD": {
+    "entry_price": 0.0,
+    "quantity": 0.0,
+    "timestamp": "2026-01-27T19:21:28.215557",
+    "source": "airdrop_auto_added",
+    "exchange": "kraken"
+  },
+  "kraken:ICNTUSD": {
+    "entry_price": 0.0,
+    "quantity": 0.0,
+    "timestamp": "2026-01-27T19:21:28.215565",
+    "source": "airdrop_auto_added",
+    "exchange": "kraken"
+  },
+  "kraken:MXCUSD": {
+    "entry_price": 0.0,
+    "quantity": 0.0,
+    "timestamp": "2026-01-27T19:21:28.215575",
+    "source": "airdrop_auto_added",
+    "exchange": "kraken"
+  },
+  "kraken:SEIUSD": {
+    "entry_price": 0.0,
+    "quantity": 0.0,
+    "timestamp": "2026-01-27T19:21:28.215582",
+    "source": "airdrop_auto_added",
+    "exchange": "kraken"
+  },
+  "kraken:TANSSIUSD": {
+    "entry_price": 0.0,
+    "quantity": 0.0,
+    "timestamp": "2026-01-27T19:21:28.215599",
+    "source": "airdrop_auto_added",
+    "exchange": "kraken"
+  }
 }
