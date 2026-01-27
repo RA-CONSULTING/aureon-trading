@@ -632,6 +632,14 @@ class KrakenClient:
             return value
         return format(Decimal(str(value)), 'f').rstrip('0').rstrip('.') or '0'
 
+    async def execute_trade(self, symbol: str, side: str, quantity: float) -> Dict:
+        """Standardized trade execution method."""
+        return self.place_market_order(
+            symbol=symbol,
+            side=side,
+            quantity=quantity
+        )
+
     def place_market_order(self, symbol: str, side: str, quantity: float | str | Decimal | None = None, quote_qty: float | str | Decimal | None = None) -> Dict[str, Any]:
         """
         Execute a market order. In dry-run, returns a mock.

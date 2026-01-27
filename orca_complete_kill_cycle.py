@@ -347,6 +347,15 @@ except ImportError:
     TradeEntry = None
     TradeExit = None
 
+# 🌉 Truth Prediction Bridge - 95% accuracy intelligence
+try:
+    from aureon_truth_prediction_bridge import get_truth_bridge, TruthPredictionBridge
+    TRUTH_BRIDGE_AVAILABLE = True
+except ImportError:
+    get_truth_bridge = None
+    TruthPredictionBridge = None
+    TRUTH_BRIDGE_AVAILABLE = False
+
 # 🪙 Penny Profit Calculator - Exact breakeven with fees/slippage/spread
 try:
     from penny_profit_sim import calculate_penny_profit_threshold, EXCHANGE_FEES, SLIPPAGE_PCT, SPREAD_PCT
@@ -2825,6 +2834,37 @@ class MarketOpportunity:
     timestamp: float = field(default_factory=time.time)
 
 
+@dataclass
+class TradingCosts:
+    """Black box trading costs (percentages)."""
+    maker_fee_pct: float = 0.0
+    taker_fee_pct: float = 0.0
+    spread_pct: float = 0.0
+    slippage_pct: float = 0.0
+
+    def total_entry_cost_pct(self) -> float:
+        return self.maker_fee_pct + (self.spread_pct / 2)
+
+    def total_exit_cost_pct(self) -> float:
+        return self.taker_fee_pct + (self.spread_pct / 2) + self.slippage_pct
+
+    def total_round_trip_cost_pct(self) -> float:
+        return self.total_entry_cost_pct() + self.total_exit_cost_pct()
+
+
+@dataclass
+class BlackBoxTruthCheck:
+    """Black box truth validation result."""
+    approved: bool
+    reason: str
+    entry_cost: float
+    expected_exit_value: float
+    expected_pnl: float
+    total_costs_value: float
+    required_pnl: float
+    expected_move_pct: float
+
+
 class OrcaKillCycle:
     """
     Complete kill cycle with proper math + live streaming + whale intelligence.
@@ -3814,6 +3854,17 @@ class OrcaKillCycle:
         self._intel_snapshot_cache = {}
         self._intel_snapshot_time = 0
         self._intel_cache_ttl = 2.0  # 2 second cache
+        self.prediction_window_seconds = 30.0
+        self.prediction_buffer = {}  # symbol -> list of {'timestamp','probability','confidence'}
+        
+        # 🌉 TRUTH PREDICTION BRIDGE - 95% accuracy real-time validation
+        self.truth_bridge = None
+        if TRUTH_BRIDGE_AVAILABLE and get_truth_bridge:
+            try:
+                self.truth_bridge = get_truth_bridge()
+                _safe_print("🌉 Truth Prediction Bridge: WIRED! (95% accuracy Queen+Auris+Harmonic)")
+            except Exception as e:
+                _safe_print(f"⚠️ Truth Bridge failed: {e}")
         
         if PARALLEL_ORCHESTRATOR_AVAILABLE and get_orchestrator and not quick_init:
             try:
@@ -4061,12 +4112,67 @@ class OrcaKillCycle:
                     'confidence': confidence,
                     'timestamp': time.time()
                 }
+                # Track validated prediction history for 30s window
+                now = time.time()
+                history = self.prediction_buffer.get(symbol, [])
+                history.append({
+                    'timestamp': now,
+                    'probability': win_probability,
+                    'confidence': confidence
+                })
+                cutoff = now - 120.0
+                history = [h for h in history if h['timestamp'] >= cutoff]
+                self.prediction_buffer[symbol] = history
             
             # Update orchestrator heartbeat
             if self.parallel_orchestrator:
                 self.parallel_orchestrator.heartbeat('probability_nexus')
         except Exception:
             pass
+
+    def _prediction_window_ready(self, symbol: str, min_seconds: float = None) -> Tuple[bool, dict]:
+        """Check if we have >=30s of validated predictions for the symbol."""
+        if not symbol:
+            return False, {'reason': 'NO_SYMBOL'}
+        window = min_seconds if min_seconds is not None else self.prediction_window_seconds
+        base = self._normalize_base_asset(symbol)
+
+        # Match any buffer key that includes the base asset
+        candidates = []
+        for key, history in self.prediction_buffer.items():
+            key_norm = key.replace('/', '').upper()
+            if base and base in key_norm:
+                candidates.extend(history)
+
+        if not candidates:
+            return False, {'reason': 'NO_VALIDATED_PREDICTIONS'}
+
+        candidates = sorted(candidates, key=lambda x: x['timestamp'])
+        duration = candidates[-1]['timestamp'] - candidates[0]['timestamp']
+        count = len(candidates)
+
+        if duration < window:
+            return False, {
+                'reason': 'INSUFFICIENT_PREDICTION_WINDOW',
+                'duration': duration,
+                'required': window,
+                'count': count
+            }
+
+        if count < 3:
+            return False, {
+                'reason': 'INSUFFICIENT_PREDICTION_SAMPLES',
+                'duration': duration,
+                'required': window,
+                'count': count
+            }
+
+        return True, {
+            'reason': 'PREDICTION_WINDOW_OK',
+            'duration': duration,
+            'required': window,
+            'count': count
+        }
     
     def _on_coherence_update(self, thought):
         """Handle coherence update from Quantum Mirror Scanner."""
@@ -6265,6 +6371,231 @@ class OrcaKillCycle:
             except Exception:
                 continue
         return {}
+
+    def _normalize_base_asset(self, symbol: str) -> str:
+        """Normalize symbol to base asset for cross-checking balances."""
+        if not symbol:
+            return ''
+        base = symbol.replace('/', '').upper()
+        for suffix in ['USDT', 'USDC', 'USD', 'ZUSD', 'EUR', 'ZEUR', 'GBP', 'BUSD', 'TUSD', 'FDUSD']:
+            if base.endswith(suffix):
+                base = base[: -len(suffix)]
+                break
+        if base == 'XBT':
+            base = 'BTC'
+        if len(base) == 4 and base[0] in ('X', 'Z'):
+            base = base[1:]
+        return base
+
+    def _get_black_box_costs(self, exchange: str) -> TradingCosts:
+        """Get black box cost structure using real fee profiles when available."""
+        fee_profile = {}
+        if 'EXCHANGE_FEES' in globals() and isinstance(EXCHANGE_FEES, dict):
+            fee_profile = EXCHANGE_FEES.get(exchange, {})
+
+        maker_fee = fee_profile.get('maker', self.fee_rates.get(exchange, 0.0025))
+        taker_fee = fee_profile.get('taker', self.fee_rates.get(exchange, 0.0025))
+        spread = fee_profile.get('spread', SPREAD_PCT if 'SPREAD_PCT' in globals() else 0.0005)
+        slippage = fee_profile.get('slippage', SLIPPAGE_PCT if 'SLIPPAGE_PCT' in globals() else 0.001)
+
+        return TradingCosts(
+            maker_fee_pct=maker_fee * 100,
+            taker_fee_pct=taker_fee * 100,
+            spread_pct=spread * 100,
+            slippage_pct=slippage * 100
+        )
+
+    def _black_box_buy_gate(self, symbol: str, exchange: str, price: float,
+                            quantity: float, expected_move_pct: float) -> BlackBoxTruthCheck:
+        """Black box truth gate: expected P&L must be > 3x total costs."""
+        if price <= 0 or quantity <= 0:
+            return BlackBoxTruthCheck(
+                approved=False,
+                reason='INVALID_PRICE_OR_QUANTITY',
+                entry_cost=0.0,
+                expected_exit_value=0.0,
+                expected_pnl=0.0,
+                total_costs_value=0.0,
+                required_pnl=0.0,
+                expected_move_pct=expected_move_pct
+            )
+
+        costs = self._get_black_box_costs(exchange)
+        entry_cost = price * quantity * (1 + (costs.total_entry_cost_pct() / 100))
+        expected_exit_price = price * (1 + (expected_move_pct / 100)) if expected_move_pct else price
+        expected_exit_value = expected_exit_price * quantity * (1 - (costs.total_exit_cost_pct() / 100))
+        expected_pnl = expected_exit_value - entry_cost
+
+        total_costs_value = (price * quantity * (costs.total_entry_cost_pct() / 100)) + \
+                            (expected_exit_price * quantity * (costs.total_exit_cost_pct() / 100))
+        required_pnl = 3 * total_costs_value
+        approved = expected_pnl > required_pnl
+        reason = (
+            f"BLACK_BOX {'PASS' if approved else 'BLOCK'}: expected_pnl=${expected_pnl:.6f} "
+            f"vs 3x_costs=${required_pnl:.6f} (move={expected_move_pct:.2f}%)"
+        )
+
+        return BlackBoxTruthCheck(
+            approved=approved,
+            reason=reason,
+            entry_cost=entry_cost,
+            expected_exit_value=expected_exit_value,
+            expected_pnl=expected_pnl,
+            total_costs_value=total_costs_value,
+            required_pnl=required_pnl,
+            expected_move_pct=expected_move_pct
+        )
+
+    def _black_box_exit_gate(self, symbol: str, exchange: str, entry_price: float,
+                             entry_qty: float, current_price: float) -> BlackBoxTruthCheck:
+        """Black box truth gate for exit: realized P&L must be > 3x total costs."""
+        if entry_price <= 0 or entry_qty <= 0 or current_price <= 0:
+            return BlackBoxTruthCheck(
+                approved=False,
+                reason='INVALID_PRICE_OR_QUANTITY',
+                entry_cost=0.0,
+                expected_exit_value=0.0,
+                expected_pnl=0.0,
+                total_costs_value=0.0,
+                required_pnl=0.0,
+                expected_move_pct=0.0
+            )
+
+        costs = self._get_black_box_costs(exchange)
+        entry_gross = entry_price * entry_qty
+        entry_cost = entry_gross * (1 + (costs.total_entry_cost_pct() / 100))
+        exit_value = current_price * entry_qty * (1 - (costs.total_exit_cost_pct() / 100))
+        net_pnl = exit_value - entry_cost
+
+        total_costs_value = (entry_gross * (costs.total_entry_cost_pct() / 100)) + \
+                            (current_price * entry_qty * (costs.total_exit_cost_pct() / 100))
+        required_pnl = 3 * total_costs_value
+        approved = net_pnl > required_pnl
+        reason = (
+            f"BLACK_BOX {'PASS' if approved else 'BLOCK'}: net_pnl=${net_pnl:.6f} "
+            f"vs 3x_costs=${required_pnl:.6f}"
+        )
+
+        return BlackBoxTruthCheck(
+            approved=approved,
+            reason=reason,
+            entry_cost=entry_cost,
+            expected_exit_value=exit_value,
+            expected_pnl=net_pnl,
+            total_costs_value=total_costs_value,
+            required_pnl=required_pnl,
+            expected_move_pct=0.0
+        )
+
+    def monitor_portfolio_truth(self) -> List[Dict[str, Any]]:
+        """Cross-check tracked positions vs real balances to catch mismatches."""
+        anomalies: List[Dict[str, Any]] = []
+
+        actual: Dict[str, Dict[str, float]] = {'alpaca': {}, 'kraken': {}, 'binance': {}, 'capital': {}}
+
+        # Alpaca
+        try:
+            alpaca = self.clients.get('alpaca')
+            if alpaca:
+                positions = alpaca.get_positions()
+                for pos in positions:
+                    qty = float(pos.get('qty', 0) or 0)
+                    if qty > 0:
+                        symbol = pos.get('symbol', '')
+                        actual['alpaca'][self._normalize_base_asset(symbol)] = qty
+        except Exception:
+            pass
+
+        # Kraken
+        try:
+            kraken = self.clients.get('kraken')
+            if kraken:
+                balances = kraken.get_balance()
+                for asset, qty in balances.items():
+                    qty = float(qty or 0)
+                    if qty > 0:
+                        actual['kraken'][self._normalize_base_asset(asset)] = qty
+        except Exception:
+            pass
+
+        # Binance
+        try:
+            binance = self.clients.get('binance')
+            if binance:
+                balances = binance.get_balance()
+                for asset, qty in balances.items():
+                    qty = float(qty or 0)
+                    if qty > 0:
+                        actual['binance'][self._normalize_base_asset(asset)] = qty
+        except Exception:
+            pass
+
+        # Capital.com (positions only)
+        try:
+            capital = self._ensure_capital_client()
+            if capital:
+                positions = capital.get_positions()
+                for pos_data in positions:
+                    pos = pos_data.get('position', {})
+                    size = float(pos.get('size', 0) or 0)
+                    if size > 0:
+                        symbol = pos_data.get('market', {}).get('symbol', '')
+                        actual['capital'][self._normalize_base_asset(symbol)] = size
+        except Exception:
+            pass
+
+        # Check tracked vs actual
+        for symbol, tracked in self.tracked_positions.items():
+            exchange = tracked.get('exchange', 'unknown')
+            base = self._normalize_base_asset(symbol)
+            tracked_qty = float(tracked.get('entry_qty', 0) or 0)
+            actual_qty = actual.get(exchange, {}).get(base, 0.0)
+
+            if tracked_qty > 0 and actual_qty <= 0:
+                anomalies.append({
+                    'type': 'MISSING_ACTUAL_POSITION',
+                    'symbol': symbol,
+                    'exchange': exchange,
+                    'tracked_qty': tracked_qty,
+                    'actual_qty': actual_qty
+                })
+            elif tracked_qty > 0:
+                diff = abs(tracked_qty - actual_qty)
+                if diff > max(0.000001, tracked_qty * 0.01):
+                    anomalies.append({
+                        'type': 'QTY_MISMATCH',
+                        'symbol': symbol,
+                        'exchange': exchange,
+                        'tracked_qty': tracked_qty,
+                        'actual_qty': actual_qty
+                    })
+
+        # Check actual holdings that are not tracked
+        for exchange, assets in actual.items():
+            for base, qty in assets.items():
+                if base in ['USD', 'USDC', 'USDT', 'BUSD', 'DAI', 'TUSD', 'FDUSD', 'EUR', 'GBP']:
+                    continue
+                tracked_match = any(
+                    self._normalize_base_asset(sym) == base and data.get('exchange') == exchange
+                    for sym, data in self.tracked_positions.items()
+                )
+                if not tracked_match:
+                    anomalies.append({
+                        'type': 'UNTRACKED_HOLDING',
+                        'symbol': base,
+                        'exchange': exchange,
+                        'actual_qty': qty
+                    })
+
+        if anomalies:
+            self.audit_event('portfolio_truth_check', {
+                'timestamp': datetime.now().isoformat(),
+                'anomalies': anomalies
+            })
+            for a in anomalies:
+                print(f"⚠️ PORTFOLIO TRUTH CHECK: {a['type']} | {a.get('exchange')} | {a.get('symbol')} | tracked={a.get('tracked_qty')} actual={a.get('actual_qty')}")
+
+        return anomalies
     
     def harvest_all_exchanges(self, queen=None, min_profit_usd: float = 0.01) -> Dict[str, Any]:
         """
@@ -6849,6 +7180,77 @@ class OrcaKillCycle:
                 print(f"👑✅ QUEEN'S 1.88% GATE APPROVED: {symbol}")
                 print(f"    Reason: {gate_reason}")
         # ═══════════════════════════════════════════════════════════════════════
+
+        # ═══════════════════════════════════════════════════════════════════════
+        #   🔮 REQUIRE 30s VALIDATED PREDICTION WINDOW
+        # ═══════════════════════════════════════════════════════════════════════
+        pred_ok, pred_info = self._prediction_window_ready(symbol)
+        if not pred_ok:
+            print(f"🔮❌ PREDICTION WINDOW BLOCKED BUY: {symbol}")
+            print(f"    Reason: {pred_info.get('reason')} | duration={pred_info.get('duration')} count={pred_info.get('count')}")
+            return {
+                'status': 'blocked',
+                'reason': pred_info,
+                'blocked_by': 'PREDICTION_WINDOW_GATE',
+                'symbol': symbol,
+                'quantity': quantity
+            }
+        # ═══════════════════════════════════════════════════════════════════════
+
+        # ═══════════════════════════════════════════════════════════════════════
+        #   🌉 TRUTH PREDICTION ENGINE GATE (Queen's 95% accuracy + Dr. Auris validation)
+        # ═══════════════════════════════════════════════════════════════════════
+        if self.truth_bridge:
+            truth_signal = self.truth_bridge.get_trading_signal(symbol, "BUY", max_age_seconds=60.0)
+            if not truth_signal.approved:
+                print(f"🌉❌ TRUTH ENGINE BLOCKED BUY: {symbol}")
+                print(f"    Reason: {truth_signal.reason}")
+                print(f"    Win Prob: {truth_signal.win_probability:.1%} | Confidence: {truth_signal.confidence:.1%}")
+                print(f"    Predicted: {truth_signal.predicted_direction} | Auris Resonance: {truth_signal.auris_resonance:.3f}")
+                print(f"    Queen Approved: {truth_signal.queen_approved} | Age: {truth_signal.age_seconds:.1f}s")
+                return {
+                    'status': 'blocked',
+                    'reason': truth_signal.reason,
+                    'blocked_by': 'TRUTH_PREDICTION_ENGINE',
+                    'symbol': symbol,
+                    'quantity': quantity,
+                    'truth_signal': {
+                        'win_probability': truth_signal.win_probability,
+                        'confidence': truth_signal.confidence,
+                        'predicted_direction': truth_signal.predicted_direction,
+                        'auris_resonance': truth_signal.auris_resonance,
+                        'queen_approved': truth_signal.queen_approved
+                    }
+                }
+            else:
+                print(f"🌉✅ TRUTH ENGINE APPROVED BUY: {symbol}")
+                print(f"    Win Prob: {truth_signal.win_probability:.1%} | Confidence: {truth_signal.confidence:.1%}")
+                print(f"    Predicted: {truth_signal.predicted_direction} | Auris: {truth_signal.auris_resonance:.3f}")
+        # ═══════════════════════════════════════════════════════════════════════
+
+        # ═══════════════════════════════════════════════════════════════════════
+        #   🔮 BLACK BOX TRUTH GATE - EXPECTED P&L MUST BE > 3× COSTS
+        # ═══════════════════════════════════════════════════════════════════════
+        if current_price > 0 and quantity > 0:
+            bb_check = self._black_box_buy_gate(
+                symbol=symbol,
+                exchange=exchange,
+                price=current_price,
+                quantity=quantity,
+                expected_move_pct=expected_move_pct
+            )
+            if not bb_check.approved:
+                print(f"🔮❌ BLACK BOX GATE BLOCKED BUY: {symbol}")
+                print(f"    Reason: {bb_check.reason}")
+                return {
+                    'status': 'blocked',
+                    'reason': bb_check.reason,
+                    'blocked_by': 'BLACK_BOX_TRUTH_GATE',
+                    'symbol': symbol,
+                    'quantity': quantity,
+                    'expected_move_pct': expected_move_pct
+                }
+        # ═══════════════════════════════════════════════════════════════════════
         
         if self.stealth_executor:
             value_usd = (price or 0) * quantity
@@ -6977,6 +7379,85 @@ class OrcaKillCycle:
         print(f"👑✅ QUEEN APPROVED: {symbol} [{context}] - {gate_reason}")
 
         # ═══════════════════════════════════════════════════════════════════
+        #   🔮 REQUIRE 30s VALIDATED PREDICTION WINDOW
+        # ═══════════════════════════════════════════════════════════════════
+        pred_ok, pred_info = self._prediction_window_ready(symbol)
+        if not pred_ok:
+            print(f"🔮❌ PREDICTION WINDOW BLOCKED: {symbol} [{context}]")
+            print(f"    Reason: {pred_info.get('reason')} | duration={pred_info.get('duration')} count={pred_info.get('count')}")
+            return {
+                'status': 'blocked',
+                'reason': pred_info,
+                'blocked_by': 'PREDICTION_WINDOW_GATE',
+                'symbol': symbol,
+                'exchange': exchange,
+                'context': context,
+                'rejected': True
+            }
+
+        # ═══════════════════════════════════════════════════════════════════
+        #   🌉 TRUTH PREDICTION ENGINE GATE (95% accuracy)
+        # ═══════════════════════════════════════════════════════════════════
+        if self.truth_bridge:
+            truth_signal = self.truth_bridge.get_trading_signal(symbol, "BUY", max_age_seconds=60.0)
+            if not truth_signal.approved:
+                print(f"🌉❌ TRUTH ENGINE BLOCKED: {symbol} [{context}]")
+                print(f"    Reason: {truth_signal.reason}")
+                print(f"    Win: {truth_signal.win_probability:.1%} | Confidence: {truth_signal.confidence:.1%} | Predicted: {truth_signal.predicted_direction}")
+                return {
+                    'status': 'blocked',
+                    'reason': truth_signal.reason,
+                    'blocked_by': 'TRUTH_PREDICTION_ENGINE',
+                    'symbol': symbol,
+                    'exchange': exchange,
+                    'context': context,
+                    'rejected': True
+                }
+            print(f"🌉✅ TRUTH ENGINE APPROVED: {symbol} (Win:{truth_signal.win_probability:.1%} Pred:{truth_signal.predicted_direction})")
+
+        # ═══════════════════════════════════════════════════════════════════
+        #   🔮 BLACK BOX TRUTH GATE - EXPECTED P&L MUST BE > 3× COSTS
+        # ═══════════════════════════════════════════════════════════════════
+        qty_for_gate = 0.0
+        if price and price > 0:
+            if quote_qty and quote_qty > 0:
+                qty_for_gate = quote_qty / price
+            elif quantity and quantity > 0:
+                qty_for_gate = quantity
+
+        if qty_for_gate > 0:
+            bb_check = self._black_box_buy_gate(
+                symbol=symbol,
+                exchange=exchange,
+                price=price,
+                quantity=qty_for_gate,
+                expected_move_pct=expected_move_pct
+            )
+            if not bb_check.approved:
+                print(f"🔮❌ BLACK BOX GATE BLOCKED: {symbol} [{context}]")
+                print(f"    Reason: {bb_check.reason}")
+                return {
+                    'status': 'blocked',
+                    'reason': bb_check.reason,
+                    'blocked_by': 'BLACK_BOX_TRUTH_GATE',
+                    'symbol': symbol,
+                    'exchange': exchange,
+                    'context': context,
+                    'rejected': True
+                }
+        else:
+            print(f"🔮❌ BLACK BOX GATE BLOCKED: {symbol} [{context}] - qty unavailable")
+            return {
+                'status': 'blocked',
+                'reason': 'BLACK_BOX_QTY_UNAVAILABLE',
+                'blocked_by': 'BLACK_BOX_TRUTH_GATE',
+                'symbol': symbol,
+                'exchange': exchange,
+                'context': context,
+                'rejected': True
+            }
+
+        # ═══════════════════════════════════════════════════════════════════
         #   🤖 DR AURIS THRONE SECOND-OPINION GATE - ASK BEFORE EVERY TRADE
         # ═══════════════════════════════════════════════════════════════════
         # Internal confidence from real inputs (momentum + expected move)
@@ -7086,6 +7567,37 @@ class OrcaKillCycle:
                     'exchange': exchange,
                     'rejected': True
                 }
+
+        # 🔮 Require 30s validated prediction window
+        pred_ok, pred_info = self._prediction_window_ready(symbol)
+        if not pred_ok:
+            print(f"🔮❌ PREDICTION WINDOW BLOCKED SELL: {symbol} [{exchange}]")
+            return {
+                'status': 'blocked',
+                'reason': pred_info,
+                'blocked_by': 'PREDICTION_WINDOW_GATE',
+                'symbol': symbol,
+                'exchange': exchange,
+                'rejected': True
+            }
+        
+        # 🌉 Truth Prediction Engine check for sell direction
+        if self.truth_bridge:
+            truth_signal = self.truth_bridge.get_trading_signal(symbol, "SELL", max_age_seconds=60.0)
+            if not truth_signal.approved:
+                print(f"🌉❌ TRUTH ENGINE BLOCKED SELL: {symbol} [{exchange}]")
+                print(f"    Reason: {truth_signal.reason}")
+                print(f"    Predicted: {truth_signal.predicted_direction} (Win:{truth_signal.win_probability:.1%})")
+                return {
+                    'status': 'blocked',
+                    'reason': truth_signal.reason,
+                    'blocked_by': 'TRUTH_PREDICTION_ENGINE',
+                    'symbol': symbol,
+                    'exchange': exchange,
+                    'rejected': True
+                }
+            print(f"🌉✅ TRUTH ENGINE APPROVED SELL: {symbol} (Predicted:{truth_signal.predicted_direction})")
+        
         sell_order = client.place_market_order(symbol=symbol, side='sell', quantity=quantity)
         
         if sell_order:
@@ -7276,6 +7788,38 @@ class OrcaKillCycle:
             info['confirmed_entry_price'] = confirmed_entry
             info['confirmed_cost_basis'] = confirmed_cost
             info['net_pnl'] = net_pnl
+
+        # ═══════════════════════════════════════════════════════════════════
+        # CHECK 1A: REQUIRE 30s VALIDATED PREDICTION WINDOW
+        # ═══════════════════════════════════════════════════════════════════
+        pred_ok, pred_info = self._prediction_window_ready(symbol)
+        info['prediction_window'] = pred_info
+        if not pred_ok:
+            info['blocked_reason'] = f"PREDICTION_WINDOW_BLOCKED ({pred_info.get('reason')})"
+            print(f"   🔮❌ EXIT BLOCKED: {symbol} - {pred_info.get('reason')}")
+            return False, info
+
+        # ═══════════════════════════════════════════════════════════════════
+        # CHECK 1B: BLACK BOX TRUTH GATE - PROFIT MUST BE > 3× TOTAL COSTS
+        # ═══════════════════════════════════════════════════════════════════
+        bb_exit = self._black_box_exit_gate(
+            symbol=symbol,
+            exchange=exchange,
+            entry_price=entry_price,
+            entry_qty=entry_qty,
+            current_price=current_price
+        )
+        info['black_box'] = {
+            'approved': bb_exit.approved,
+            'reason': bb_exit.reason,
+            'total_costs_value': bb_exit.total_costs_value,
+            'required_pnl': bb_exit.required_pnl,
+            'expected_pnl': bb_exit.expected_pnl
+        }
+        if not bb_exit.approved:
+            info['blocked_reason'] = f"BLACK_BOX_BLOCKED ({bb_exit.reason})"
+            print(f"   🔮❌ EXIT BLOCKED: {symbol} - {bb_exit.reason}")
+            return False, info
         
         # ═══════════════════════════════════════════════════════════════════
         # CHECK 2: Is net P&L POSITIVE (mathematically certain profit)?
@@ -9258,6 +9802,8 @@ class OrcaKillCycle:
         last_whale_update = 0
         last_portfolio_scan = 0
         portfolio_scan_interval = 30  # Scan portfolio every 30 seconds (was 10)
+        truth_check_interval = 60.0
+        last_truth_check = 0.0
         # Queen-driven pacing & profit target
         base_target_pct = target_pct
         target_pct_current = target_pct
@@ -9588,6 +10134,8 @@ class OrcaKillCycle:
         # Avalanche timing
         last_avalanche_time = 0
         avalanche_interval = 30.0
+        truth_check_interval = 60.0
+        last_truth_check = 0.0
 
         try:
             while True:  # ♾️ INFINITE LOOP
@@ -9601,6 +10149,11 @@ class OrcaKillCycle:
                 
                 # Update dashboard state for Command Center UI (legacy mode)
                 self._dump_dashboard_state(session_stats, positions, queen)
+
+                # 🧾 Portfolio truth check - detect mismatches / untracked holdings
+                if current_time - last_truth_check >= truth_check_interval:
+                    last_truth_check = current_time
+                    self.monitor_portfolio_truth()
 
                 # ❄️ AVALANCHE HARVEST (Run independently of scanner)
                 if self.avalanche and (current_time - last_avalanche_time >= avalanche_interval):
@@ -11295,6 +11848,11 @@ class OrcaKillCycle:
                 
                 # Update dashboard state for Command Center UI
                 self._dump_dashboard_state(session_stats, positions, queen)
+
+                # 🧾 Portfolio truth check - detect mismatches / untracked holdings
+                if current_time - last_truth_check >= truth_check_interval:
+                    last_truth_check = current_time
+                    self.monitor_portfolio_truth()
 
                 # ❄️ AVALANCHE HARVEST
                 if self.avalanche and (current_time - last_avalanche_time >= avalanche_interval):

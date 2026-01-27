@@ -9,7 +9,7 @@
       "times_applied": 0,
       "success_rate": 0.0,
       "total_saved": 0.0,
-      "learned_at": "2026-01-20T19:54:57.591637",
+      "learned_at": "2026-01-26T19:33:18.602509",
       "last_applied": ""
     },
     "ad97150b": {
@@ -21,7 +21,7 @@
       "times_applied": 0,
       "success_rate": 0.0,
       "total_saved": 0.0,
-      "learned_at": "2026-01-20T19:54:59.705257",
+      "learned_at": "2026-01-26T19:33:19.991569",
       "last_applied": ""
     },
     "db2d5a2f": {
@@ -33,7 +33,7 @@
       "times_applied": 0,
       "success_rate": 0.0,
       "total_saved": 0.0,
-      "learned_at": "2026-01-20T19:55:01.834648",
+      "learned_at": "2026-01-26T19:33:21.470042",
       "last_applied": ""
     },
     "7b51face": {
@@ -45,7 +45,7 @@
       "times_applied": 0,
       "success_rate": 0.0,
       "total_saved": 0.0,
-      "learned_at": "2026-01-20T19:55:04.307537",
+      "learned_at": "2026-01-26T19:33:22.856313",
       "last_applied": ""
     },
     "c5d8c916": {
@@ -57,7 +57,7 @@
       "times_applied": 0,
       "success_rate": 0.0,
       "total_saved": 0.0,
-      "learned_at": "2026-01-20T19:55:07.628709",
+      "learned_at": "2026-01-26T19:33:24.186220",
       "last_applied": ""
     },
     "26034109": {
@@ -69,7 +69,7 @@
       "times_applied": 0,
       "success_rate": 0.0,
       "total_saved": 0.0,
-      "learned_at": "2026-01-20T19:55:10.627479",
+      "learned_at": "2026-01-26T19:33:25.618311",
       "last_applied": ""
     },
     "9717d57e": {
@@ -81,7 +81,7 @@
       "times_applied": 0,
       "success_rate": 0.0,
       "total_saved": 0.0,
-      "learned_at": "2026-01-16T00:24:07.882574",
+      "learned_at": "2026-01-26T19:33:46.537436",
       "last_applied": ""
     },
     "6f5d2032": {
@@ -93,31 +93,31 @@
       "times_applied": 0,
       "success_rate": 0.0,
       "total_saved": 0.0,
-      "learned_at": "2026-01-16T00:24:09.541691",
+      "learned_at": "2026-01-26T19:33:48.226768",
       "last_applied": ""
     },
     "49fc004d": {
       "tactic_id": "49fc004d",
       "name": "Tactical patience",
       "source": "WAR_PSYCHOLOGY",
-      "description": "Miguel Di Pizio (Italian: [mi\u02c8\u0261u\u025bl di \u02c8pit.tsjo]; born 4 January 2006) is an Australian professional soccer player who plays as an attacking midfielder for A-League Men club Central Coast Mariners.\n\n\n== Early life ==\nBorn in Sydney, New South Wales, Di Pizio started playing football at the age of four. He attended Mamre Anglican School, located in Kemps Creek, and Westfields Sports High School, representing in both schools' football teams. He has an older brother, Gianni Di Pizio, who also playe",
-      "trading_application": "The patient trader profits. Wait for high-probability setups only.",
+      "description": "The main strategy and tactics of guerrilla warfare tend to involve the use of a small attacking, mobile force against a large, unwieldy force. The guerrilla force is largely or entirely organized in small units that are dependent on the support of the local population. Tactically, the guerrilla army makes the repetitive attacks far from the opponent's center of gravity with a view to keeping its own casualties to a minimum and imposing a constant debilitating strain on the enemy. This may provok",
+      "trading_application": "Small, quick trades. Hit profitable opportunities fast, exit before losses accumulate.",
       "times_applied": 0,
       "success_rate": 0.0,
       "total_saved": 0.0,
-      "learned_at": "2026-01-16T00:24:11.716293",
+      "learned_at": "2026-01-26T19:33:49.544250",
       "last_applied": ""
     },
     "953b77bf": {
       "tactic_id": "953b77bf",
       "name": "Strategic retreat",
       "source": "WAR_PSYCHOLOGY",
-      "description": "Major General Nathanael Greene (August 7, 1742 \u2013 June 19, 1786) was an American military officer and planter who served in the Continental Army during the Revolutionary War. He emerged from the war with a reputation as one of George Washington's most talented and dependable officers and is known for his successful command in the Southern theater of the conflict.\nBorn into a prosperous Quaker family in Warwick, Rhode Island, Greene became active in the colonial opposition to British revenue polic",
+      "description": "The French invasion of Russia, also known as the Russian campaign, the Second Polish War, and in Russia as the Patriotic War of 1812, was initiated by Napoleon with the aim of forcing the Russian Empire  to comply with the continental blockade of the United Kingdom. Widely studied, Napoleon's incursion into Russia remains a focal point in military history, recognized as among the most devastating military endeavors to ever unfold. In a span of less than six months, the campaign exacted a stagger",
       "trading_application": "Strategic retreat is not defeat. Cut losses early to fight another day.",
       "times_applied": 0,
       "success_rate": 0.0,
       "total_saved": 0.0,
-      "learned_at": "2026-01-16T00:24:13.020646",
+      "learned_at": "2026-01-26T19:33:50.923617",
       "last_applied": ""
     },
     "aa582343": {
@@ -129,7 +129,7 @@
       "times_applied": 0,
       "success_rate": 0.0,
       "total_saved": 0.0,
-      "learned_at": "2026-01-16T00:24:14.329951",
+      "learned_at": "2026-01-26T19:33:52.287038",
       "last_applied": ""
     },
     "9acb73ce": {
@@ -141,9 +141,237 @@
       "times_applied": 0,
       "success_rate": 0.0,
       "total_saved": 0.0,
-      "learned_at": "2026-01-16T00:24:16.477142",
+      "learned_at": "2026-01-26T19:33:54.579337",
+      "last_applied": ""
+    },
+    "1cc32f06": {
+      "tactic_id": "1cc32f06",
+      "name": "Apache Wars",
+      "source": "APACHE_WARFARE",
+      "description": "The Apache Wars were a series of armed conflicts between the United States Army and various Apache tribal confederations fought in the southwest between 1849 and 1886, though minor hostilities continued until as late as 1924. After the Mexican\u2013American War in 1846, the United States annexed conflicted territory from Mexico which was the home of both settlers and Apache tribes. Conflicts continued as American settlers came into traditional Apache lands to raise livestock and crops and to mine min",
+      "trading_application": "Patience is power. Wait for the right moment. Know your terrain (market) intimately.",
+      "times_applied": 0,
+      "success_rate": 0.0,
+      "total_saved": 0.0,
+      "learned_at": "2026-01-26T19:33:26.972303",
+      "last_applied": ""
+    },
+    "af95ea68": {
+      "tactic_id": "af95ea68",
+      "name": "Geronimo",
+      "source": "APACHE_WARFARE",
+      "description": "Ger\u00f3nimo (Mescalero-Chiricahua: Goyaa\u0142\u00e9, lit.\u2009'the one who yawns', Athapascan pronunciation: [k\u00f2j\u00e0\u02d0\u026c\u025b\u0301]; June 16, 1829 \u2013 February 17, 1909) was a military leader and medicine man from the Bedonkohe band of the Ndendahe Apache people. From 1850 to 1886, Geronimo joined with members of three other Central Apache bands \u2013  the Tchihende, the Tsokanende (called Chiricahua by Americans) and the Nednhi \u2013 to carry out numerous raids, as well as fight against Mexican and U.S. military campaigns in the no",
+      "trading_application": "Patience is power. Wait for the right moment. Know your terrain (market) intimately.",
+      "times_applied": 0,
+      "success_rate": 0.0,
+      "total_saved": 0.0,
+      "learned_at": "2026-01-26T19:33:28.252151",
+      "last_applied": ""
+    },
+    "8b83d460": {
+      "tactic_id": "8b83d460",
+      "name": "Apache scouts",
+      "source": "APACHE_WARFARE",
+      "description": "The Apache Scouts were part of the United States Army Indian Scouts. Most of their service was during the Apache Wars, between 1849 and 1886, though the last scout retired in 1947. The Apache scouts were the eyes and ears of the United States military and sometimes the cultural translators for the various Apache bands and the Americans. Apache scouts also served in the Navajo War, the Yavapai War, the Mexican Border War and they saw stateside duty during World War II. There has been a great deal",
+      "trading_application": "Patience is power. Wait for the right moment. Know your terrain (market) intimately.",
+      "times_applied": 0,
+      "success_rate": 0.0,
+      "total_saved": 0.0,
+      "learned_at": "2026-01-26T19:33:29.609857",
+      "last_applied": ""
+    },
+    "b3083e91": {
+      "tactic_id": "b3083e91",
+      "name": "Desert warfare",
+      "source": "APACHE_WARFARE",
+      "description": "Desert warfare is warfare in deserts or similar arid or semi-arid environments. The term encompasses military operations affected by the terrain, climate, and resource availability of these areas, as well as the strategies and tactics used by military forces in these situations and environments.\nDesert warfare is distinct from other types of warfare in other environments and terrains, in that the desert is generally considered very inhospitable. The hot temperatures in the day and the cold tempe",
+      "trading_application": "Operate in harsh conditions. Thrive when others panic.",
+      "times_applied": 0,
+      "success_rate": 0.0,
+      "total_saved": 0.0,
+      "learned_at": "2026-01-26T19:33:31.008065",
+      "last_applied": ""
+    },
+    "8d064058": {
+      "tactic_id": "8d064058",
+      "name": "Tracking (hunting)",
+      "source": "APACHE_WARFARE",
+      "description": "Tracking in hunting and ecology is the science and art of observing animal tracks and other signs, with the goal of gaining understanding of the landscape and the animal being tracked (the \"quarry\"). A further goal of tracking is the deeper understanding of the systems and patterns that make up the environment surrounding and incorporating the tracker.\nThe practice of tracking may focus on, but is not limited to, the patterns and systems of the local animal life and ecology. Trackers must be abl",
+      "trading_application": "Follow the smart money. Watch for whale movements and institutional flow.",
+      "times_applied": 0,
+      "success_rate": 0.0,
+      "total_saved": 0.0,
+      "learned_at": "2026-01-26T19:33:32.329012",
+      "last_applied": ""
+    },
+    "beddaa8d": {
+      "tactic_id": "beddaa8d",
+      "name": "Patience (virtue)",
+      "source": "APACHE_WARFARE",
+      "description": "This is a discography for singles released by Motorcity Records.\n\n\n== Nightmare 12\" singles ==\nSingles with the MARE-prefix released on Ian Levine's label Nightmare Records (7\" singles had the prefix MARES) before the label was re-named Motorcity Records. Subsequent 12\" singles carried the MOTC-prefix (7\" singles 7MOTC) . \n\n\u25c4 NRG 8 - Scherrie Payne - \"Chasing Me Into Somebody Else's Arms\" (Nightmare Gold, 1987)\nMARE 1 - Evelyn Thomas - \"Tightrope\" (1986)\nMARE 2 - Darryl Pandy - \"Animal Magnetism",
+      "trading_application": "The patient trader profits. Wait for high-probability setups only.",
+      "times_applied": 0,
+      "success_rate": 0.0,
+      "total_saved": 0.0,
+      "learned_at": "2026-01-26T19:33:34.786955",
+      "last_applied": ""
+    },
+    "3bd5db94": {
+      "tactic_id": "3bd5db94",
+      "name": "Market manipulation",
+      "source": "TRADING_WARFARE",
+      "description": "In economics and finance, market manipulation occurs when someone intentionally alters the supply or demand of a security to influence its price. This can involve spreading misleading information, executing misleading trades, or manipulating quotes and prices.\nMarket manipulation is prohibited in most countries, in particular, it is prohibited in the United States under Section 9(a)(2) of the Securities Exchange Act of 1934, in the European Union under Article 12 of the Market Abuse Regulation, ",
+      "trading_application": "Markets are manipulated. Accept this, account for it, use it.",
+      "times_applied": 0,
+      "success_rate": 0.0,
+      "total_saved": 0.0,
+      "learned_at": "2026-01-26T19:33:36.349662",
+      "last_applied": ""
+    },
+    "837ff0ee": {
+      "tactic_id": "837ff0ee",
+      "name": "Short squeeze",
+      "source": "TRADING_WARFARE",
+      "description": "In the stock market, a short squeeze is a rapid increase in the price of a stock owing primarily to an excess of short selling of a stock rather than underlying fundamentals. A short squeeze occurs when demand has increased relative to supply because short sellers have to buy stock to cover their short positions.\n\n\n== Overview ==\nShort selling is a finance practice in which an investor, known as the short-seller, borrows shares of stock and immediately sells them, hoping to buy them back later (",
+      "trading_application": "Don't get caught in squeezes. Respect momentum.",
+      "times_applied": 0,
+      "success_rate": 0.0,
+      "total_saved": 0.0,
+      "learned_at": "2026-01-26T19:33:37.720372",
+      "last_applied": ""
+    },
+    "ead0eb6b": {
+      "tactic_id": "ead0eb6b",
+      "name": "Bear raid",
+      "source": "TRADING_WARFARE",
+      "description": "A bear raid is a type of stock market strategy, where a trader (or group of traders) attempts to force down the price of a stock to cover a short position. The name is derived from the common use of bear or bearish in the language of market sentiment to reflect the idea that investors expect downward price movement.\nA bear raid can be done by spreading negative rumors or misinformation about the target firm, which puts downward pressure on the share price. This is typically considered a form of ",
+      "trading_application": "Understand market manipulation. Trade defensively.",
+      "times_applied": 0,
+      "success_rate": 0.0,
+      "total_saved": 0.0,
+      "learned_at": "2026-01-26T19:33:39.062871",
+      "last_applied": ""
+    },
+    "ca1d7bf0": {
+      "tactic_id": "ca1d7bf0",
+      "name": "Pump and dump",
+      "source": "TRADING_WARFARE",
+      "description": "Pump and dump (P&D) is a form of securities fraud that involves artificially inflating the price of an owned stock through false and misleading positive statements (pump), in order to sell the cheaply purchased stock at a higher price (dump).\nIn a classic pump and dump, the scammer first buys lots of cheap shares in some company of little value. They then spread false information exaggerating the potential value of the company. This causes investors and speculators to buy shares in said company ",
+      "trading_application": "Understand market manipulation. Trade defensively.",
+      "times_applied": 0,
+      "success_rate": 0.0,
+      "total_saved": 0.0,
+      "learned_at": "2026-01-26T19:33:40.459535",
+      "last_applied": ""
+    },
+    "e92a2de7": {
+      "tactic_id": "e92a2de7",
+      "name": "Stop hunting",
+      "source": "TRADING_WARFARE",
+      "description": "The Hunting Wives is an American drama television series based on the novel of the same name by May Cobb. It stars Brittany Snow, Malin Akerman, Evan Jonigkeit, Katie Lowes, George Ferrier, Dermot Mulroney, Jaime Ray Newman, and Chrissy Metz. The series premiered on Netflix on July 21, 2025, in the USA and on other streaming services elsewhere. In September 2025, the series was renewed for a second season which is set to premiere in 2026.\n\n\n== Premise ==\nSophie, a wife and mother who moves from ",
+      "trading_application": "Place stops wisely. Big players hunt obvious stop levels.",
+      "times_applied": 0,
+      "success_rate": 0.0,
+      "total_saved": 0.0,
+      "learned_at": "2026-01-26T19:33:41.785454",
+      "last_applied": ""
+    },
+    "0bfd5297": {
+      "tactic_id": "0bfd5297",
+      "name": "Spoofing (finance)",
+      "source": "TRADING_WARFARE",
+      "description": "Spoofing is a disruptive algorithmic trading activity employed by traders to outpace other market participants and to manipulate markets. Spoofers feign interest in trading futures, stocks, and other products in financial markets creating an illusion of the demand and supply of the traded asset. In an order driven market, spoofers post a relatively large number of limit orders on one side of the limit order book to make other market participants believe that there is pressure to sell (limit orde",
+      "trading_application": "Order books lie. Don't trust visible liquidity completely.",
+      "times_applied": 0,
+      "success_rate": 0.0,
+      "total_saved": 0.0,
+      "learned_at": "2026-01-26T19:33:43.865429",
+      "last_applied": ""
+    },
+    "69ec4bad": {
+      "tactic_id": "69ec4bad",
+      "name": "Wash trading",
+      "source": "TRADING_WARFARE",
+      "description": "Wash trading is a form of  market manipulation in which an entity simultaneously sells and buys the same financial instruments,  creating a false impression of market activity without incurring market risk or changing the entity's market position. Wash trading has been deemed illegal in most jurisdictions. For instance, the United States enacted the Commodity Exchange Act (CEA) in 1936 to prohibit wash trading. To comply with regulations, most regulated stock exchanges have implemented protectiv",
+      "trading_application": "Markets are manipulated. Accept this, account for it, use it.",
+      "times_applied": 0,
+      "success_rate": 0.0,
+      "total_saved": 0.0,
+      "learned_at": "2026-01-26T19:33:45.235117",
+      "last_applied": ""
+    },
+    "c7724aba": {
+      "tactic_id": "c7724aba",
+      "name": "Risk management",
+      "source": "RECOVERY",
+      "description": "Risk management is the identification, evaluation, and prioritization of risks, followed by the minimization, monitoring, and control of the impact or probability of those risks occurring. Risks can come from various sources (i.e, threats) including uncertainty in international markets, political instability, dangers of project failures (at any phase in design, development, production, or sustaining of life-cycles), legal liabilities, credit risk, accidents, natural causes and disasters, deliber",
+      "trading_application": "Position size controls everything. Small positions survive.",
+      "times_applied": 0,
+      "success_rate": 0.0,
+      "total_saved": 0.0,
+      "learned_at": "2026-01-26T19:33:56.064610",
+      "last_applied": ""
+    },
+    "b396d377": {
+      "tactic_id": "b396d377",
+      "name": "Loss aversion",
+      "source": "RECOVERY",
+      "description": "In cognitive science and behavioral economics, loss aversion refers to a cognitive bias in which the same situation is perceived as worse if it is framed as a loss, rather than a gain. It should not be confused with risk aversion, which describes the rational behavior of valuing an uncertain outcome at less than its expected value.\nWhen defined in terms of the pseudo-utility function as in cumulative prospect theory (CPT), the left-hand of the function increases much more steeply than gains, thu",
+      "trading_application": "Accept losses as tuition. Each loss teaches something valuable.",
+      "times_applied": 0,
+      "success_rate": 0.0,
+      "total_saved": 0.0,
+      "learned_at": "2026-01-26T19:33:57.413129",
+      "last_applied": ""
+    },
+    "fd2a05f6": {
+      "tactic_id": "fd2a05f6",
+      "name": "Survivorship bias",
+      "source": "RECOVERY",
+      "description": "Survivorship bias or survival bias is the logical error of concentrating on entities that passed a selection process while overlooking those that did not. This can lead to incorrect conclusions because of incomplete data.\nSurvivorship bias is a form of sampling bias that can lead to overly optimistic beliefs because multiple failures are overlooked, such as when companies that no longer exist are excluded from analyses of financial performance. It can also lead to the false belief that the succe",
+      "trading_application": "Preserve capital. Live to trade another day.",
+      "times_applied": 0,
+      "success_rate": 0.0,
+      "total_saved": 0.0,
+      "learned_at": "2026-01-26T19:33:58.706654",
+      "last_applied": ""
+    },
+    "4fc48a5c": {
+      "tactic_id": "4fc48a5c",
+      "name": "Recovery (economics)",
+      "source": "RECOVERY",
+      "description": "New Democracy (Greek: \u039d\u03ad\u03b1 \u0394\u03b7\u03bc\u03bf\u03ba\u03c1\u03b1\u03c4\u03af\u03b1, romanized: N\u00e9a Dimokrat\u00eda [\u02c8nea \u00f0imokra\u02c8ti.a], ND/\u039d\u0394) is a liberal-conservative political party in Greece. In contemporary Greek politics, New Democracy has been the main centre-right to right wing political party and one of the two major parties along with its historic rival, the Panhellenic Socialist Movement (PASOK). New Democracy and PASOK were created in the wake of the toppling of the military junta in 1974, ruling Greece in succession for the next fou",
+      "trading_application": "Preserve capital. Live to trade another day.",
+      "times_applied": 0,
+      "success_rate": 0.0,
+      "total_saved": 0.0,
+      "learned_at": "2026-01-26T19:34:02.782047",
+      "last_applied": ""
+    },
+    "9490da3f": {
+      "tactic_id": "9490da3f",
+      "name": "Mean reversion (finance)",
+      "source": "RECOVERY",
+      "description": "Mean reversion is a financial term for the assumption that an asset's price will tend to converge to the average price over time.\nUsing mean reversion as a timing strategy involves both the identification of the trading range for a security and the computation of the average price using quantitative methods. Mean reversion is a phenomenon that can be exhibited in a host of financial time-series data, from price data, earnings data, and book value.\nWhen the current market price is less than the a",
+      "trading_application": "After extreme moves, expect pullback. Don't chase extended moves.",
+      "times_applied": 0,
+      "success_rate": 0.0,
+      "total_saved": 0.0,
+      "learned_at": "2026-01-26T19:34:04.121024",
+      "last_applied": ""
+    },
+    "bf1329a0": {
+      "tactic_id": "bf1329a0",
+      "name": "Capitulation (stock trading)",
+      "source": "RECOVERY",
+      "description": "A market trend is a perceived tendency of the financial markets to move in a particular direction over time. Analysts classify these trends as secular for long time-frames, primary for medium time-frames, and secondary for short time-frames. Traders attempt to identify market trends using technical analysis, a framework which characterizes market trends as predictable price tendencies within the market when price reaches support and resistance levels, varying over time.\nA future market trend can",
+      "trading_application": "When everyone gives up, opportunity emerges. Be patient.",
+      "times_applied": 0,
+      "success_rate": 0.0,
+      "total_saved": 0.0,
+      "learned_at": "2026-01-26T19:34:05.461919",
       "last_applied": ""
     }
   },
-  "last_saved": "2026-01-20T21:19:21.521369"
+  "last_saved": "2026-01-26T19:34:06.140883"
 }

@@ -519,24 +519,23 @@ class AlpacaClient:
         return result
 
     # Compatibility alias for older code (create_order -> place_order)
-    def create_order(
-        self,
-        symbol: str,
-        qty: float,
-        side: str,
-        type: str = "market",
-        time_in_force: str = "gtc",
-        position_intent: Optional[str] = None,
-    ) -> Dict[str, Any]:
-        """Backwards-compatible wrapper so older callers can use `create_order`."""
+    create_order = place_order
+
+    async def execute_trade(self, symbol: str, side: str, quantity: float) -> Dict:
+        """Standardized trade execution method."""
         return self.place_order(
             symbol=symbol,
-            qty=qty,
+            qty=quantity,
             side=side,
-            type=type,
-            time_in_force=time_in_force,
-            position_intent=position_intent,
+            type="market",
+            time_in_force="gtc"
         )
+
+    def get_orders(self, status: str = "open", limit: int = 50) -> List[Dict]:
+        """Get a list of orders."""
+        params = {"status": status, "limit": limit}
+        result = self._request("GET", "/v2/orders", params=params, request_type='trading')
+        return result if isinstance(result, list) else []
 
     def get_crypto_bars(self, symbols: List[str], timeframe: str = "1Min", limit: int = 100) -> Dict[str, Any]:
         """Get crypto bars for one or more symbols with chunking support."""
@@ -1925,7 +1924,6 @@ class AlpacaClient:
                     continue
 
                 pair_base, pair_quote = normalized.split('/')
-
                 if base and pair_base.upper() != base.upper():
                     continue
                 if quote and pair_quote.upper() != quote.upper():

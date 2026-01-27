@@ -1,0 +1,5363 @@
+[
+  {
+    "timestamp": 1769464133.686383,
+    "datetime_str": "2026-01-26 21:48:53",
+    "total_usd_value": 136203.63626181008,
+    "initial_usd_value": 0.0,
+    "pnl_usd": 0.0,
+    "growth_pct": 0.0,
+    "roi_pct": 0.0,
+    "exchanges": [
+      {
+        "exchange": "kraken",
+        "timestamp": 1769464133.6864374,
+        "total_usd_value": 136203.63626181008,
+        "holdings": [
+          {
+            "asset": "ACU",
+            "exchange": "kraken",
+            "quantity": 0.00057,
+            "usd_value": 0.00057,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ASRR",
+            "exchange": "kraken",
+            "quantity": 0.00037,
+            "usd_value": 0.00037,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ATOM",
+            "exchange": "kraken",
+            "quantity": 0.00077257,
+            "usd_value": 0.00849827,
+            "current_price": 11.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "BSX",
+            "exchange": "kraken",
+            "quantity": 90744.1,
+            "usd_value": 90744.1,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "CCD",
+            "exchange": "kraken",
+            "quantity": 300.0,
+            "usd_value": 300.0,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "DAI",
+            "exchange": "kraken",
+            "quantity": 0.0616847,
+            "usd_value": 0.0616847,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ESX",
+            "exchange": "kraken",
+            "quantity": 296.384,
+            "usd_value": 296.384,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "EUL",
+            "exchange": "kraken",
+            "quantity": 2.509442,
+            "usd_value": 2.509442,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "FIGHT",
+            "exchange": "kraken",
+            "quantity": 374.5,
+            "usd_value": 374.5,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "FIS",
+            "exchange": "kraken",
+            "quantity": 105.576,
+            "usd_value": 105.576,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "GHIBLI",
+            "exchange": "kraken",
+            "quantity": 40400.0,
+            "usd_value": 40400.0,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ICNT",
+            "exchange": "kraken",
+            "quantity": 16.0,
+            "usd_value": 16.0,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "IN",
+            "exchange": "kraken",
+            "quantity": 210.0,
+            "usd_value": 210.0,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "KTA",
+            "exchange": "kraken",
+            "quantity": 7.24428,
+            "usd_value": 7.24428,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "MXC",
+            "exchange": "kraken",
+            "quantity": 3100.0,
+            "usd_value": 3100.0,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "OPEN",
+            "exchange": "kraken",
+            "quantity": 10.78167,
+            "usd_value": 10.78167,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ROLL",
+            "exchange": "kraken",
+            "quantity": 60.0,
+            "usd_value": 60.0,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "SEI",
+            "exchange": "kraken",
+            "quantity": 0.0005,
+            "usd_value": 0.0005,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "SKR",
+            "exchange": "kraken",
+            "quantity": 500.0,
+            "usd_value": 500.0,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "TANSSI",
+            "exchange": "kraken",
+            "quantity": 0.3103,
+            "usd_value": 0.3103,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "TRX",
+            "exchange": "kraken",
+            "quantity": 7.36615568,
+            "usd_value": 7.36615568,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "TUSD",
+            "exchange": "kraken",
+            "quantity": 11.80156,
+            "usd_value": 11.80156,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "USDC",
+            "exchange": "kraken",
+            "quantity": 0.38587379,
+            "usd_value": 0.38587379,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "USDT",
+            "exchange": "kraken",
+            "quantity": 0.02543723,
+            "usd_value": 0.02543723,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ETH",
+            "exchange": "kraken",
+            "quantity": 0.016476117,
+            "usd_value": 56.34832013999999,
+            "current_price": 3420.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ZCAD",
+            "exchange": "kraken",
+            "quantity": 0.0009,
+            "usd_value": 0.0009,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ZGBP",
+            "exchange": "kraken",
+            "quantity": 0.0056,
+            "usd_value": 0.0056,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "USD",
+            "exchange": "kraken",
+            "quantity": 0.2251,
+            "usd_value": 0.2251,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          }
+        ],
+        "num_positions": 28,
+        "largest_position_usd": 90744.1,
+        "largest_position_asset": "BSX"
+      },
+      {
+        "exchange": "alpaca",
+        "timestamp": 1769464143.1720896,
+        "total_usd_value": 0.0,
+        "holdings": [],
+        "num_positions": 0,
+        "largest_position_usd": 0.0,
+        "largest_position_asset": ""
+      }
+    ],
+    "num_exchanges": 2,
+    "num_total_positions": 28,
+    "largest_holding_usd": 90744.1,
+    "largest_holding_asset": "BSX",
+    "largest_holding_exchange": "kraken",
+    "sacred_alignment": 1.0,
+    "geometric_angle": 240.0,
+    "perfection_score": 0.6333333333333333
+  },
+  {
+    "timestamp": 1769464146.1786327,
+    "datetime_str": "2026-01-26 21:49:06",
+    "total_usd_value": 136203.63626181008,
+    "initial_usd_value": 136203.63626181008,
+    "pnl_usd": 0.0,
+    "growth_pct": 0.0,
+    "roi_pct": 0.0,
+    "exchanges": [
+      {
+        "exchange": "kraken",
+        "timestamp": 1769464146.1786892,
+        "total_usd_value": 136203.63626181008,
+        "holdings": [
+          {
+            "asset": "ACU",
+            "exchange": "kraken",
+            "quantity": 0.00057,
+            "usd_value": 0.00057,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ASRR",
+            "exchange": "kraken",
+            "quantity": 0.00037,
+            "usd_value": 0.00037,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ATOM",
+            "exchange": "kraken",
+            "quantity": 0.00077257,
+            "usd_value": 0.00849827,
+            "current_price": 11.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "BSX",
+            "exchange": "kraken",
+            "quantity": 90744.1,
+            "usd_value": 90744.1,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "CCD",
+            "exchange": "kraken",
+            "quantity": 300.0,
+            "usd_value": 300.0,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "DAI",
+            "exchange": "kraken",
+            "quantity": 0.0616847,
+            "usd_value": 0.0616847,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ESX",
+            "exchange": "kraken",
+            "quantity": 296.384,
+            "usd_value": 296.384,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "EUL",
+            "exchange": "kraken",
+            "quantity": 2.509442,
+            "usd_value": 2.509442,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "FIGHT",
+            "exchange": "kraken",
+            "quantity": 374.5,
+            "usd_value": 374.5,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "FIS",
+            "exchange": "kraken",
+            "quantity": 105.576,
+            "usd_value": 105.576,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "GHIBLI",
+            "exchange": "kraken",
+            "quantity": 40400.0,
+            "usd_value": 40400.0,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ICNT",
+            "exchange": "kraken",
+            "quantity": 16.0,
+            "usd_value": 16.0,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "IN",
+            "exchange": "kraken",
+            "quantity": 210.0,
+            "usd_value": 210.0,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "KTA",
+            "exchange": "kraken",
+            "quantity": 7.24428,
+            "usd_value": 7.24428,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "MXC",
+            "exchange": "kraken",
+            "quantity": 3100.0,
+            "usd_value": 3100.0,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "OPEN",
+            "exchange": "kraken",
+            "quantity": 10.78167,
+            "usd_value": 10.78167,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ROLL",
+            "exchange": "kraken",
+            "quantity": 60.0,
+            "usd_value": 60.0,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "SEI",
+            "exchange": "kraken",
+            "quantity": 0.0005,
+            "usd_value": 0.0005,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "SKR",
+            "exchange": "kraken",
+            "quantity": 500.0,
+            "usd_value": 500.0,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "TANSSI",
+            "exchange": "kraken",
+            "quantity": 0.3103,
+            "usd_value": 0.3103,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "TRX",
+            "exchange": "kraken",
+            "quantity": 7.36615568,
+            "usd_value": 7.36615568,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "TUSD",
+            "exchange": "kraken",
+            "quantity": 11.80156,
+            "usd_value": 11.80156,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "USDC",
+            "exchange": "kraken",
+            "quantity": 0.38587379,
+            "usd_value": 0.38587379,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "USDT",
+            "exchange": "kraken",
+            "quantity": 0.02543723,
+            "usd_value": 0.02543723,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ETH",
+            "exchange": "kraken",
+            "quantity": 0.016476117,
+            "usd_value": 56.34832013999999,
+            "current_price": 3420.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ZCAD",
+            "exchange": "kraken",
+            "quantity": 0.0009,
+            "usd_value": 0.0009,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ZGBP",
+            "exchange": "kraken",
+            "quantity": 0.0056,
+            "usd_value": 0.0056,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "USD",
+            "exchange": "kraken",
+            "quantity": 0.2251,
+            "usd_value": 0.2251,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          }
+        ],
+        "num_positions": 28,
+        "largest_position_usd": 90744.1,
+        "largest_position_asset": "BSX"
+      },
+      {
+        "exchange": "alpaca",
+        "timestamp": 1769464155.3166082,
+        "total_usd_value": 0.0,
+        "holdings": [],
+        "num_positions": 0,
+        "largest_position_usd": 0.0,
+        "largest_position_asset": ""
+      }
+    ],
+    "num_exchanges": 2,
+    "num_total_positions": 28,
+    "largest_holding_usd": 90744.1,
+    "largest_holding_asset": "BSX",
+    "largest_holding_exchange": "kraken",
+    "sacred_alignment": 1.0,
+    "geometric_angle": 240.0,
+    "perfection_score": 0.6333333333333333
+  },
+  {
+    "timestamp": 1769464158.321822,
+    "datetime_str": "2026-01-26 21:49:18",
+    "total_usd_value": 136203.63626181008,
+    "initial_usd_value": 136203.63626181008,
+    "pnl_usd": 0.0,
+    "growth_pct": 0.0,
+    "roi_pct": 0.0,
+    "exchanges": [
+      {
+        "exchange": "kraken",
+        "timestamp": 1769464158.3218763,
+        "total_usd_value": 136203.63626181008,
+        "holdings": [
+          {
+            "asset": "ACU",
+            "exchange": "kraken",
+            "quantity": 0.00057,
+            "usd_value": 0.00057,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ASRR",
+            "exchange": "kraken",
+            "quantity": 0.00037,
+            "usd_value": 0.00037,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ATOM",
+            "exchange": "kraken",
+            "quantity": 0.00077257,
+            "usd_value": 0.00849827,
+            "current_price": 11.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "BSX",
+            "exchange": "kraken",
+            "quantity": 90744.1,
+            "usd_value": 90744.1,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "CCD",
+            "exchange": "kraken",
+            "quantity": 300.0,
+            "usd_value": 300.0,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "DAI",
+            "exchange": "kraken",
+            "quantity": 0.0616847,
+            "usd_value": 0.0616847,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ESX",
+            "exchange": "kraken",
+            "quantity": 296.384,
+            "usd_value": 296.384,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "EUL",
+            "exchange": "kraken",
+            "quantity": 2.509442,
+            "usd_value": 2.509442,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "FIGHT",
+            "exchange": "kraken",
+            "quantity": 374.5,
+            "usd_value": 374.5,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "FIS",
+            "exchange": "kraken",
+            "quantity": 105.576,
+            "usd_value": 105.576,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "GHIBLI",
+            "exchange": "kraken",
+            "quantity": 40400.0,
+            "usd_value": 40400.0,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ICNT",
+            "exchange": "kraken",
+            "quantity": 16.0,
+            "usd_value": 16.0,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "IN",
+            "exchange": "kraken",
+            "quantity": 210.0,
+            "usd_value": 210.0,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "KTA",
+            "exchange": "kraken",
+            "quantity": 7.24428,
+            "usd_value": 7.24428,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "MXC",
+            "exchange": "kraken",
+            "quantity": 3100.0,
+            "usd_value": 3100.0,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "OPEN",
+            "exchange": "kraken",
+            "quantity": 10.78167,
+            "usd_value": 10.78167,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ROLL",
+            "exchange": "kraken",
+            "quantity": 60.0,
+            "usd_value": 60.0,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "SEI",
+            "exchange": "kraken",
+            "quantity": 0.0005,
+            "usd_value": 0.0005,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "SKR",
+            "exchange": "kraken",
+            "quantity": 500.0,
+            "usd_value": 500.0,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "TANSSI",
+            "exchange": "kraken",
+            "quantity": 0.3103,
+            "usd_value": 0.3103,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "TRX",
+            "exchange": "kraken",
+            "quantity": 7.36615568,
+            "usd_value": 7.36615568,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "TUSD",
+            "exchange": "kraken",
+            "quantity": 11.80156,
+            "usd_value": 11.80156,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "USDC",
+            "exchange": "kraken",
+            "quantity": 0.38587379,
+            "usd_value": 0.38587379,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "USDT",
+            "exchange": "kraken",
+            "quantity": 0.02543723,
+            "usd_value": 0.02543723,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ETH",
+            "exchange": "kraken",
+            "quantity": 0.016476117,
+            "usd_value": 56.34832013999999,
+            "current_price": 3420.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ZCAD",
+            "exchange": "kraken",
+            "quantity": 0.0009,
+            "usd_value": 0.0009,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ZGBP",
+            "exchange": "kraken",
+            "quantity": 0.0056,
+            "usd_value": 0.0056,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "USD",
+            "exchange": "kraken",
+            "quantity": 0.2251,
+            "usd_value": 0.2251,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          }
+        ],
+        "num_positions": 28,
+        "largest_position_usd": 90744.1,
+        "largest_position_asset": "BSX"
+      },
+      {
+        "exchange": "alpaca",
+        "timestamp": 1769464167.4269972,
+        "total_usd_value": 0.0,
+        "holdings": [],
+        "num_positions": 0,
+        "largest_position_usd": 0.0,
+        "largest_position_asset": ""
+      }
+    ],
+    "num_exchanges": 2,
+    "num_total_positions": 28,
+    "largest_holding_usd": 90744.1,
+    "largest_holding_asset": "BSX",
+    "largest_holding_exchange": "kraken",
+    "sacred_alignment": 1.0,
+    "geometric_angle": 240.0,
+    "perfection_score": 0.6333333333333333
+  },
+  {
+    "timestamp": 1769464389.5261421,
+    "datetime_str": "2026-01-26 21:53:09",
+    "total_usd_value": 136212.12626181007,
+    "initial_usd_value": 136203.63626181008,
+    "pnl_usd": 8.489999999990687,
+    "growth_pct": 0.006233313759458846,
+    "roi_pct": 0.006233313759458846,
+    "exchanges": [
+      {
+        "exchange": "kraken",
+        "timestamp": 1769464389.5261936,
+        "total_usd_value": 136203.63626181008,
+        "holdings": [
+          {
+            "asset": "ACU",
+            "exchange": "kraken",
+            "quantity": 0.00057,
+            "usd_value": 0.00057,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ASRR",
+            "exchange": "kraken",
+            "quantity": 0.00037,
+            "usd_value": 0.00037,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ATOM",
+            "exchange": "kraken",
+            "quantity": 0.00077257,
+            "usd_value": 0.00849827,
+            "current_price": 11.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "BSX",
+            "exchange": "kraken",
+            "quantity": 90744.1,
+            "usd_value": 90744.1,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "CCD",
+            "exchange": "kraken",
+            "quantity": 300.0,
+            "usd_value": 300.0,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "DAI",
+            "exchange": "kraken",
+            "quantity": 0.0616847,
+            "usd_value": 0.0616847,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ESX",
+            "exchange": "kraken",
+            "quantity": 296.384,
+            "usd_value": 296.384,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "EUL",
+            "exchange": "kraken",
+            "quantity": 2.509442,
+            "usd_value": 2.509442,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "FIGHT",
+            "exchange": "kraken",
+            "quantity": 374.5,
+            "usd_value": 374.5,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "FIS",
+            "exchange": "kraken",
+            "quantity": 105.576,
+            "usd_value": 105.576,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "GHIBLI",
+            "exchange": "kraken",
+            "quantity": 40400.0,
+            "usd_value": 40400.0,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ICNT",
+            "exchange": "kraken",
+            "quantity": 16.0,
+            "usd_value": 16.0,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "IN",
+            "exchange": "kraken",
+            "quantity": 210.0,
+            "usd_value": 210.0,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "KTA",
+            "exchange": "kraken",
+            "quantity": 7.24428,
+            "usd_value": 7.24428,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "MXC",
+            "exchange": "kraken",
+            "quantity": 3100.0,
+            "usd_value": 3100.0,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "OPEN",
+            "exchange": "kraken",
+            "quantity": 10.78167,
+            "usd_value": 10.78167,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ROLL",
+            "exchange": "kraken",
+            "quantity": 60.0,
+            "usd_value": 60.0,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "SEI",
+            "exchange": "kraken",
+            "quantity": 0.0005,
+            "usd_value": 0.0005,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "SKR",
+            "exchange": "kraken",
+            "quantity": 500.0,
+            "usd_value": 500.0,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "TANSSI",
+            "exchange": "kraken",
+            "quantity": 0.3103,
+            "usd_value": 0.3103,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "TRX",
+            "exchange": "kraken",
+            "quantity": 7.36615568,
+            "usd_value": 7.36615568,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "TUSD",
+            "exchange": "kraken",
+            "quantity": 11.80156,
+            "usd_value": 11.80156,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "USDC",
+            "exchange": "kraken",
+            "quantity": 0.38587379,
+            "usd_value": 0.38587379,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "USDT",
+            "exchange": "kraken",
+            "quantity": 0.02543723,
+            "usd_value": 0.02543723,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ETH",
+            "exchange": "kraken",
+            "quantity": 0.016476117,
+            "usd_value": 56.34832013999999,
+            "current_price": 3420.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ZCAD",
+            "exchange": "kraken",
+            "quantity": 0.0009,
+            "usd_value": 0.0009,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ZGBP",
+            "exchange": "kraken",
+            "quantity": 0.0056,
+            "usd_value": 0.0056,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "USD",
+            "exchange": "kraken",
+            "quantity": 0.2251,
+            "usd_value": 0.2251,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          }
+        ],
+        "num_positions": 28,
+        "largest_position_usd": 90744.1,
+        "largest_position_asset": "BSX"
+      },
+      {
+        "exchange": "alpaca",
+        "timestamp": 1769464398.951217,
+        "total_usd_value": 8.49,
+        "holdings": [
+          {
+            "asset": "USD",
+            "exchange": "alpaca",
+            "quantity": 1.1,
+            "usd_value": 1.1,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "EQUITY",
+            "exchange": "alpaca",
+            "quantity": 7.39,
+            "usd_value": 7.39,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          }
+        ],
+        "num_positions": 2,
+        "largest_position_usd": 7.39,
+        "largest_position_asset": "EQUITY"
+      }
+    ],
+    "num_exchanges": 2,
+    "num_total_positions": 30,
+    "largest_holding_usd": 90744.1,
+    "largest_holding_asset": "BSX",
+    "largest_holding_exchange": "kraken",
+    "sacred_alignment": 0.9999376668624054,
+    "geometric_angle": 240.0025425838455,
+    "perfection_score": 0.6333474587991417
+  },
+  {
+    "timestamp": 1769464404.3046904,
+    "datetime_str": "2026-01-26 21:53:24",
+    "total_usd_value": 136212.12626181007,
+    "initial_usd_value": 136203.63626181008,
+    "pnl_usd": 8.489999999990687,
+    "growth_pct": 0.006233313759458846,
+    "roi_pct": 0.006233313759458846,
+    "exchanges": [
+      {
+        "exchange": "kraken",
+        "timestamp": 1769464404.3047597,
+        "total_usd_value": 136203.63626181008,
+        "holdings": [
+          {
+            "asset": "ACU",
+            "exchange": "kraken",
+            "quantity": 0.00057,
+            "usd_value": 0.00057,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ASRR",
+            "exchange": "kraken",
+            "quantity": 0.00037,
+            "usd_value": 0.00037,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ATOM",
+            "exchange": "kraken",
+            "quantity": 0.00077257,
+            "usd_value": 0.00849827,
+            "current_price": 11.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "BSX",
+            "exchange": "kraken",
+            "quantity": 90744.1,
+            "usd_value": 90744.1,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "CCD",
+            "exchange": "kraken",
+            "quantity": 300.0,
+            "usd_value": 300.0,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "DAI",
+            "exchange": "kraken",
+            "quantity": 0.0616847,
+            "usd_value": 0.0616847,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ESX",
+            "exchange": "kraken",
+            "quantity": 296.384,
+            "usd_value": 296.384,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "EUL",
+            "exchange": "kraken",
+            "quantity": 2.509442,
+            "usd_value": 2.509442,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "FIGHT",
+            "exchange": "kraken",
+            "quantity": 374.5,
+            "usd_value": 374.5,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "FIS",
+            "exchange": "kraken",
+            "quantity": 105.576,
+            "usd_value": 105.576,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "GHIBLI",
+            "exchange": "kraken",
+            "quantity": 40400.0,
+            "usd_value": 40400.0,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ICNT",
+            "exchange": "kraken",
+            "quantity": 16.0,
+            "usd_value": 16.0,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "IN",
+            "exchange": "kraken",
+            "quantity": 210.0,
+            "usd_value": 210.0,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "KTA",
+            "exchange": "kraken",
+            "quantity": 7.24428,
+            "usd_value": 7.24428,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "MXC",
+            "exchange": "kraken",
+            "quantity": 3100.0,
+            "usd_value": 3100.0,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "OPEN",
+            "exchange": "kraken",
+            "quantity": 10.78167,
+            "usd_value": 10.78167,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ROLL",
+            "exchange": "kraken",
+            "quantity": 60.0,
+            "usd_value": 60.0,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "SEI",
+            "exchange": "kraken",
+            "quantity": 0.0005,
+            "usd_value": 0.0005,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "SKR",
+            "exchange": "kraken",
+            "quantity": 500.0,
+            "usd_value": 500.0,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "TANSSI",
+            "exchange": "kraken",
+            "quantity": 0.3103,
+            "usd_value": 0.3103,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "TRX",
+            "exchange": "kraken",
+            "quantity": 7.36615568,
+            "usd_value": 7.36615568,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "TUSD",
+            "exchange": "kraken",
+            "quantity": 11.80156,
+            "usd_value": 11.80156,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "USDC",
+            "exchange": "kraken",
+            "quantity": 0.38587379,
+            "usd_value": 0.38587379,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "USDT",
+            "exchange": "kraken",
+            "quantity": 0.02543723,
+            "usd_value": 0.02543723,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ETH",
+            "exchange": "kraken",
+            "quantity": 0.016476117,
+            "usd_value": 56.34832013999999,
+            "current_price": 3420.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ZCAD",
+            "exchange": "kraken",
+            "quantity": 0.0009,
+            "usd_value": 0.0009,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ZGBP",
+            "exchange": "kraken",
+            "quantity": 0.0056,
+            "usd_value": 0.0056,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "USD",
+            "exchange": "kraken",
+            "quantity": 0.2251,
+            "usd_value": 0.2251,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          }
+        ],
+        "num_positions": 28,
+        "largest_position_usd": 90744.1,
+        "largest_position_asset": "BSX"
+      },
+      {
+        "exchange": "alpaca",
+        "timestamp": 1769464413.4221528,
+        "total_usd_value": 8.49,
+        "holdings": [
+          {
+            "asset": "USD",
+            "exchange": "alpaca",
+            "quantity": 1.1,
+            "usd_value": 1.1,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "EQUITY",
+            "exchange": "alpaca",
+            "quantity": 7.39,
+            "usd_value": 7.39,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          }
+        ],
+        "num_positions": 2,
+        "largest_position_usd": 7.39,
+        "largest_position_asset": "EQUITY"
+      }
+    ],
+    "num_exchanges": 2,
+    "num_total_positions": 30,
+    "largest_holding_usd": 90744.1,
+    "largest_holding_asset": "BSX",
+    "largest_holding_exchange": "kraken",
+    "sacred_alignment": 0.9999376668624054,
+    "geometric_angle": 240.0025425838455,
+    "perfection_score": 0.6333474587991417
+  },
+  {
+    "timestamp": 1769464418.5947917,
+    "datetime_str": "2026-01-26 21:53:38",
+    "total_usd_value": 136212.12626181007,
+    "initial_usd_value": 136203.63626181008,
+    "pnl_usd": 8.489999999990687,
+    "growth_pct": 0.006233313759458846,
+    "roi_pct": 0.006233313759458846,
+    "exchanges": [
+      {
+        "exchange": "kraken",
+        "timestamp": 1769464418.5948374,
+        "total_usd_value": 136203.63626181008,
+        "holdings": [
+          {
+            "asset": "ACU",
+            "exchange": "kraken",
+            "quantity": 0.00057,
+            "usd_value": 0.00057,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ASRR",
+            "exchange": "kraken",
+            "quantity": 0.00037,
+            "usd_value": 0.00037,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ATOM",
+            "exchange": "kraken",
+            "quantity": 0.00077257,
+            "usd_value": 0.00849827,
+            "current_price": 11.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "BSX",
+            "exchange": "kraken",
+            "quantity": 90744.1,
+            "usd_value": 90744.1,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "CCD",
+            "exchange": "kraken",
+            "quantity": 300.0,
+            "usd_value": 300.0,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "DAI",
+            "exchange": "kraken",
+            "quantity": 0.0616847,
+            "usd_value": 0.0616847,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ESX",
+            "exchange": "kraken",
+            "quantity": 296.384,
+            "usd_value": 296.384,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "EUL",
+            "exchange": "kraken",
+            "quantity": 2.509442,
+            "usd_value": 2.509442,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "FIGHT",
+            "exchange": "kraken",
+            "quantity": 374.5,
+            "usd_value": 374.5,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "FIS",
+            "exchange": "kraken",
+            "quantity": 105.576,
+            "usd_value": 105.576,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "GHIBLI",
+            "exchange": "kraken",
+            "quantity": 40400.0,
+            "usd_value": 40400.0,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ICNT",
+            "exchange": "kraken",
+            "quantity": 16.0,
+            "usd_value": 16.0,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "IN",
+            "exchange": "kraken",
+            "quantity": 210.0,
+            "usd_value": 210.0,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "KTA",
+            "exchange": "kraken",
+            "quantity": 7.24428,
+            "usd_value": 7.24428,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "MXC",
+            "exchange": "kraken",
+            "quantity": 3100.0,
+            "usd_value": 3100.0,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "OPEN",
+            "exchange": "kraken",
+            "quantity": 10.78167,
+            "usd_value": 10.78167,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ROLL",
+            "exchange": "kraken",
+            "quantity": 60.0,
+            "usd_value": 60.0,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "SEI",
+            "exchange": "kraken",
+            "quantity": 0.0005,
+            "usd_value": 0.0005,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "SKR",
+            "exchange": "kraken",
+            "quantity": 500.0,
+            "usd_value": 500.0,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "TANSSI",
+            "exchange": "kraken",
+            "quantity": 0.3103,
+            "usd_value": 0.3103,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "TRX",
+            "exchange": "kraken",
+            "quantity": 7.36615568,
+            "usd_value": 7.36615568,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "TUSD",
+            "exchange": "kraken",
+            "quantity": 11.80156,
+            "usd_value": 11.80156,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "USDC",
+            "exchange": "kraken",
+            "quantity": 0.38587379,
+            "usd_value": 0.38587379,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "USDT",
+            "exchange": "kraken",
+            "quantity": 0.02543723,
+            "usd_value": 0.02543723,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ETH",
+            "exchange": "kraken",
+            "quantity": 0.016476117,
+            "usd_value": 56.34832013999999,
+            "current_price": 3420.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ZCAD",
+            "exchange": "kraken",
+            "quantity": 0.0009,
+            "usd_value": 0.0009,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ZGBP",
+            "exchange": "kraken",
+            "quantity": 0.0056,
+            "usd_value": 0.0056,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "USD",
+            "exchange": "kraken",
+            "quantity": 0.2251,
+            "usd_value": 0.2251,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          }
+        ],
+        "num_positions": 28,
+        "largest_position_usd": 90744.1,
+        "largest_position_asset": "BSX"
+      },
+      {
+        "exchange": "alpaca",
+        "timestamp": 1769464427.7636082,
+        "total_usd_value": 8.49,
+        "holdings": [
+          {
+            "asset": "USD",
+            "exchange": "alpaca",
+            "quantity": 1.1,
+            "usd_value": 1.1,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "EQUITY",
+            "exchange": "alpaca",
+            "quantity": 7.39,
+            "usd_value": 7.39,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          }
+        ],
+        "num_positions": 2,
+        "largest_position_usd": 7.39,
+        "largest_position_asset": "EQUITY"
+      }
+    ],
+    "num_exchanges": 2,
+    "num_total_positions": 30,
+    "largest_holding_usd": 90744.1,
+    "largest_holding_asset": "BSX",
+    "largest_holding_exchange": "kraken",
+    "sacred_alignment": 0.9999376668624054,
+    "geometric_angle": 240.0025425838455,
+    "perfection_score": 0.6333474587991417
+  },
+  {
+    "timestamp": 1769464432.9442585,
+    "datetime_str": "2026-01-26 21:53:52",
+    "total_usd_value": 136212.12626181007,
+    "initial_usd_value": 136203.63626181008,
+    "pnl_usd": 8.489999999990687,
+    "growth_pct": 0.006233313759458846,
+    "roi_pct": 0.006233313759458846,
+    "exchanges": [
+      {
+        "exchange": "kraken",
+        "timestamp": 1769464432.9443028,
+        "total_usd_value": 136203.63626181008,
+        "holdings": [
+          {
+            "asset": "ACU",
+            "exchange": "kraken",
+            "quantity": 0.00057,
+            "usd_value": 0.00057,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ASRR",
+            "exchange": "kraken",
+            "quantity": 0.00037,
+            "usd_value": 0.00037,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ATOM",
+            "exchange": "kraken",
+            "quantity": 0.00077257,
+            "usd_value": 0.00849827,
+            "current_price": 11.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "BSX",
+            "exchange": "kraken",
+            "quantity": 90744.1,
+            "usd_value": 90744.1,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "CCD",
+            "exchange": "kraken",
+            "quantity": 300.0,
+            "usd_value": 300.0,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "DAI",
+            "exchange": "kraken",
+            "quantity": 0.0616847,
+            "usd_value": 0.0616847,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ESX",
+            "exchange": "kraken",
+            "quantity": 296.384,
+            "usd_value": 296.384,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "EUL",
+            "exchange": "kraken",
+            "quantity": 2.509442,
+            "usd_value": 2.509442,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "FIGHT",
+            "exchange": "kraken",
+            "quantity": 374.5,
+            "usd_value": 374.5,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "FIS",
+            "exchange": "kraken",
+            "quantity": 105.576,
+            "usd_value": 105.576,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "GHIBLI",
+            "exchange": "kraken",
+            "quantity": 40400.0,
+            "usd_value": 40400.0,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ICNT",
+            "exchange": "kraken",
+            "quantity": 16.0,
+            "usd_value": 16.0,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "IN",
+            "exchange": "kraken",
+            "quantity": 210.0,
+            "usd_value": 210.0,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "KTA",
+            "exchange": "kraken",
+            "quantity": 7.24428,
+            "usd_value": 7.24428,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "MXC",
+            "exchange": "kraken",
+            "quantity": 3100.0,
+            "usd_value": 3100.0,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "OPEN",
+            "exchange": "kraken",
+            "quantity": 10.78167,
+            "usd_value": 10.78167,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ROLL",
+            "exchange": "kraken",
+            "quantity": 60.0,
+            "usd_value": 60.0,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "SEI",
+            "exchange": "kraken",
+            "quantity": 0.0005,
+            "usd_value": 0.0005,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "SKR",
+            "exchange": "kraken",
+            "quantity": 500.0,
+            "usd_value": 500.0,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "TANSSI",
+            "exchange": "kraken",
+            "quantity": 0.3103,
+            "usd_value": 0.3103,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "TRX",
+            "exchange": "kraken",
+            "quantity": 7.36615568,
+            "usd_value": 7.36615568,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "TUSD",
+            "exchange": "kraken",
+            "quantity": 11.80156,
+            "usd_value": 11.80156,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "USDC",
+            "exchange": "kraken",
+            "quantity": 0.38587379,
+            "usd_value": 0.38587379,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "USDT",
+            "exchange": "kraken",
+            "quantity": 0.02543723,
+            "usd_value": 0.02543723,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ETH",
+            "exchange": "kraken",
+            "quantity": 0.016476117,
+            "usd_value": 56.34832013999999,
+            "current_price": 3420.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ZCAD",
+            "exchange": "kraken",
+            "quantity": 0.0009,
+            "usd_value": 0.0009,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ZGBP",
+            "exchange": "kraken",
+            "quantity": 0.0056,
+            "usd_value": 0.0056,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "USD",
+            "exchange": "kraken",
+            "quantity": 0.2251,
+            "usd_value": 0.2251,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          }
+        ],
+        "num_positions": 28,
+        "largest_position_usd": 90744.1,
+        "largest_position_asset": "BSX"
+      },
+      {
+        "exchange": "alpaca",
+        "timestamp": 1769464442.2206323,
+        "total_usd_value": 8.49,
+        "holdings": [
+          {
+            "asset": "USD",
+            "exchange": "alpaca",
+            "quantity": 1.1,
+            "usd_value": 1.1,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "EQUITY",
+            "exchange": "alpaca",
+            "quantity": 7.39,
+            "usd_value": 7.39,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          }
+        ],
+        "num_positions": 2,
+        "largest_position_usd": 7.39,
+        "largest_position_asset": "EQUITY"
+      }
+    ],
+    "num_exchanges": 2,
+    "num_total_positions": 30,
+    "largest_holding_usd": 90744.1,
+    "largest_holding_asset": "BSX",
+    "largest_holding_exchange": "kraken",
+    "sacred_alignment": 0.9999376668624054,
+    "geometric_angle": 240.0025425838455,
+    "perfection_score": 0.6333474587991417
+  },
+  {
+    "timestamp": 1769464447.3957872,
+    "datetime_str": "2026-01-26 21:54:07",
+    "total_usd_value": 136212.12626181007,
+    "initial_usd_value": 136203.63626181008,
+    "pnl_usd": 8.489999999990687,
+    "growth_pct": 0.006233313759458846,
+    "roi_pct": 0.006233313759458846,
+    "exchanges": [
+      {
+        "exchange": "kraken",
+        "timestamp": 1769464447.3958323,
+        "total_usd_value": 136203.63626181008,
+        "holdings": [
+          {
+            "asset": "ACU",
+            "exchange": "kraken",
+            "quantity": 0.00057,
+            "usd_value": 0.00057,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ASRR",
+            "exchange": "kraken",
+            "quantity": 0.00037,
+            "usd_value": 0.00037,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ATOM",
+            "exchange": "kraken",
+            "quantity": 0.00077257,
+            "usd_value": 0.00849827,
+            "current_price": 11.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "BSX",
+            "exchange": "kraken",
+            "quantity": 90744.1,
+            "usd_value": 90744.1,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "CCD",
+            "exchange": "kraken",
+            "quantity": 300.0,
+            "usd_value": 300.0,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "DAI",
+            "exchange": "kraken",
+            "quantity": 0.0616847,
+            "usd_value": 0.0616847,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ESX",
+            "exchange": "kraken",
+            "quantity": 296.384,
+            "usd_value": 296.384,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "EUL",
+            "exchange": "kraken",
+            "quantity": 2.509442,
+            "usd_value": 2.509442,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "FIGHT",
+            "exchange": "kraken",
+            "quantity": 374.5,
+            "usd_value": 374.5,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "FIS",
+            "exchange": "kraken",
+            "quantity": 105.576,
+            "usd_value": 105.576,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "GHIBLI",
+            "exchange": "kraken",
+            "quantity": 40400.0,
+            "usd_value": 40400.0,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ICNT",
+            "exchange": "kraken",
+            "quantity": 16.0,
+            "usd_value": 16.0,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "IN",
+            "exchange": "kraken",
+            "quantity": 210.0,
+            "usd_value": 210.0,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "KTA",
+            "exchange": "kraken",
+            "quantity": 7.24428,
+            "usd_value": 7.24428,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "MXC",
+            "exchange": "kraken",
+            "quantity": 3100.0,
+            "usd_value": 3100.0,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "OPEN",
+            "exchange": "kraken",
+            "quantity": 10.78167,
+            "usd_value": 10.78167,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ROLL",
+            "exchange": "kraken",
+            "quantity": 60.0,
+            "usd_value": 60.0,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "SEI",
+            "exchange": "kraken",
+            "quantity": 0.0005,
+            "usd_value": 0.0005,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "SKR",
+            "exchange": "kraken",
+            "quantity": 500.0,
+            "usd_value": 500.0,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "TANSSI",
+            "exchange": "kraken",
+            "quantity": 0.3103,
+            "usd_value": 0.3103,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "TRX",
+            "exchange": "kraken",
+            "quantity": 7.36615568,
+            "usd_value": 7.36615568,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "TUSD",
+            "exchange": "kraken",
+            "quantity": 11.80156,
+            "usd_value": 11.80156,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "USDC",
+            "exchange": "kraken",
+            "quantity": 0.38587379,
+            "usd_value": 0.38587379,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "USDT",
+            "exchange": "kraken",
+            "quantity": 0.02543723,
+            "usd_value": 0.02543723,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ETH",
+            "exchange": "kraken",
+            "quantity": 0.016476117,
+            "usd_value": 56.34832013999999,
+            "current_price": 3420.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ZCAD",
+            "exchange": "kraken",
+            "quantity": 0.0009,
+            "usd_value": 0.0009,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ZGBP",
+            "exchange": "kraken",
+            "quantity": 0.0056,
+            "usd_value": 0.0056,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "USD",
+            "exchange": "kraken",
+            "quantity": 0.2251,
+            "usd_value": 0.2251,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          }
+        ],
+        "num_positions": 28,
+        "largest_position_usd": 90744.1,
+        "largest_position_asset": "BSX"
+      },
+      {
+        "exchange": "alpaca",
+        "timestamp": 1769464456.5813863,
+        "total_usd_value": 8.49,
+        "holdings": [
+          {
+            "asset": "USD",
+            "exchange": "alpaca",
+            "quantity": 1.1,
+            "usd_value": 1.1,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "EQUITY",
+            "exchange": "alpaca",
+            "quantity": 7.39,
+            "usd_value": 7.39,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          }
+        ],
+        "num_positions": 2,
+        "largest_position_usd": 7.39,
+        "largest_position_asset": "EQUITY"
+      }
+    ],
+    "num_exchanges": 2,
+    "num_total_positions": 30,
+    "largest_holding_usd": 90744.1,
+    "largest_holding_asset": "BSX",
+    "largest_holding_exchange": "kraken",
+    "sacred_alignment": 0.9999376668624054,
+    "geometric_angle": 240.0025425838455,
+    "perfection_score": 0.6333474587991417
+  },
+  {
+    "timestamp": 1769464461.7534106,
+    "datetime_str": "2026-01-26 21:54:21",
+    "total_usd_value": 136212.12626181007,
+    "initial_usd_value": 136203.63626181008,
+    "pnl_usd": 8.489999999990687,
+    "growth_pct": 0.006233313759458846,
+    "roi_pct": 0.006233313759458846,
+    "exchanges": [
+      {
+        "exchange": "kraken",
+        "timestamp": 1769464461.753454,
+        "total_usd_value": 136203.63626181008,
+        "holdings": [
+          {
+            "asset": "ACU",
+            "exchange": "kraken",
+            "quantity": 0.00057,
+            "usd_value": 0.00057,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ASRR",
+            "exchange": "kraken",
+            "quantity": 0.00037,
+            "usd_value": 0.00037,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ATOM",
+            "exchange": "kraken",
+            "quantity": 0.00077257,
+            "usd_value": 0.00849827,
+            "current_price": 11.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "BSX",
+            "exchange": "kraken",
+            "quantity": 90744.1,
+            "usd_value": 90744.1,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "CCD",
+            "exchange": "kraken",
+            "quantity": 300.0,
+            "usd_value": 300.0,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "DAI",
+            "exchange": "kraken",
+            "quantity": 0.0616847,
+            "usd_value": 0.0616847,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ESX",
+            "exchange": "kraken",
+            "quantity": 296.384,
+            "usd_value": 296.384,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "EUL",
+            "exchange": "kraken",
+            "quantity": 2.509442,
+            "usd_value": 2.509442,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "FIGHT",
+            "exchange": "kraken",
+            "quantity": 374.5,
+            "usd_value": 374.5,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "FIS",
+            "exchange": "kraken",
+            "quantity": 105.576,
+            "usd_value": 105.576,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "GHIBLI",
+            "exchange": "kraken",
+            "quantity": 40400.0,
+            "usd_value": 40400.0,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ICNT",
+            "exchange": "kraken",
+            "quantity": 16.0,
+            "usd_value": 16.0,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "IN",
+            "exchange": "kraken",
+            "quantity": 210.0,
+            "usd_value": 210.0,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "KTA",
+            "exchange": "kraken",
+            "quantity": 7.24428,
+            "usd_value": 7.24428,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "MXC",
+            "exchange": "kraken",
+            "quantity": 3100.0,
+            "usd_value": 3100.0,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "OPEN",
+            "exchange": "kraken",
+            "quantity": 10.78167,
+            "usd_value": 10.78167,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ROLL",
+            "exchange": "kraken",
+            "quantity": 60.0,
+            "usd_value": 60.0,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "SEI",
+            "exchange": "kraken",
+            "quantity": 0.0005,
+            "usd_value": 0.0005,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "SKR",
+            "exchange": "kraken",
+            "quantity": 500.0,
+            "usd_value": 500.0,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "TANSSI",
+            "exchange": "kraken",
+            "quantity": 0.3103,
+            "usd_value": 0.3103,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "TRX",
+            "exchange": "kraken",
+            "quantity": 7.36615568,
+            "usd_value": 7.36615568,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "TUSD",
+            "exchange": "kraken",
+            "quantity": 11.80156,
+            "usd_value": 11.80156,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "USDC",
+            "exchange": "kraken",
+            "quantity": 0.38587379,
+            "usd_value": 0.38587379,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "USDT",
+            "exchange": "kraken",
+            "quantity": 0.02543723,
+            "usd_value": 0.02543723,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ETH",
+            "exchange": "kraken",
+            "quantity": 0.016476117,
+            "usd_value": 56.34832013999999,
+            "current_price": 3420.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ZCAD",
+            "exchange": "kraken",
+            "quantity": 0.0009,
+            "usd_value": 0.0009,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ZGBP",
+            "exchange": "kraken",
+            "quantity": 0.0056,
+            "usd_value": 0.0056,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "USD",
+            "exchange": "kraken",
+            "quantity": 0.2251,
+            "usd_value": 0.2251,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          }
+        ],
+        "num_positions": 28,
+        "largest_position_usd": 90744.1,
+        "largest_position_asset": "BSX"
+      },
+      {
+        "exchange": "alpaca",
+        "timestamp": 1769464470.8399284,
+        "total_usd_value": 8.49,
+        "holdings": [
+          {
+            "asset": "USD",
+            "exchange": "alpaca",
+            "quantity": 1.1,
+            "usd_value": 1.1,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "EQUITY",
+            "exchange": "alpaca",
+            "quantity": 7.39,
+            "usd_value": 7.39,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          }
+        ],
+        "num_positions": 2,
+        "largest_position_usd": 7.39,
+        "largest_position_asset": "EQUITY"
+      }
+    ],
+    "num_exchanges": 2,
+    "num_total_positions": 30,
+    "largest_holding_usd": 90744.1,
+    "largest_holding_asset": "BSX",
+    "largest_holding_exchange": "kraken",
+    "sacred_alignment": 0.9999376668624054,
+    "geometric_angle": 240.0025425838455,
+    "perfection_score": 0.6333474587991417
+  },
+  {
+    "timestamp": 1769464476.013142,
+    "datetime_str": "2026-01-26 21:54:36",
+    "total_usd_value": 136212.12626181007,
+    "initial_usd_value": 136203.63626181008,
+    "pnl_usd": 8.489999999990687,
+    "growth_pct": 0.006233313759458846,
+    "roi_pct": 0.006233313759458846,
+    "exchanges": [
+      {
+        "exchange": "kraken",
+        "timestamp": 1769464476.0131848,
+        "total_usd_value": 136203.63626181008,
+        "holdings": [
+          {
+            "asset": "ACU",
+            "exchange": "kraken",
+            "quantity": 0.00057,
+            "usd_value": 0.00057,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ASRR",
+            "exchange": "kraken",
+            "quantity": 0.00037,
+            "usd_value": 0.00037,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ATOM",
+            "exchange": "kraken",
+            "quantity": 0.00077257,
+            "usd_value": 0.00849827,
+            "current_price": 11.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "BSX",
+            "exchange": "kraken",
+            "quantity": 90744.1,
+            "usd_value": 90744.1,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "CCD",
+            "exchange": "kraken",
+            "quantity": 300.0,
+            "usd_value": 300.0,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "DAI",
+            "exchange": "kraken",
+            "quantity": 0.0616847,
+            "usd_value": 0.0616847,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ESX",
+            "exchange": "kraken",
+            "quantity": 296.384,
+            "usd_value": 296.384,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "EUL",
+            "exchange": "kraken",
+            "quantity": 2.509442,
+            "usd_value": 2.509442,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "FIGHT",
+            "exchange": "kraken",
+            "quantity": 374.5,
+            "usd_value": 374.5,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "FIS",
+            "exchange": "kraken",
+            "quantity": 105.576,
+            "usd_value": 105.576,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "GHIBLI",
+            "exchange": "kraken",
+            "quantity": 40400.0,
+            "usd_value": 40400.0,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ICNT",
+            "exchange": "kraken",
+            "quantity": 16.0,
+            "usd_value": 16.0,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "IN",
+            "exchange": "kraken",
+            "quantity": 210.0,
+            "usd_value": 210.0,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "KTA",
+            "exchange": "kraken",
+            "quantity": 7.24428,
+            "usd_value": 7.24428,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "MXC",
+            "exchange": "kraken",
+            "quantity": 3100.0,
+            "usd_value": 3100.0,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "OPEN",
+            "exchange": "kraken",
+            "quantity": 10.78167,
+            "usd_value": 10.78167,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ROLL",
+            "exchange": "kraken",
+            "quantity": 60.0,
+            "usd_value": 60.0,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "SEI",
+            "exchange": "kraken",
+            "quantity": 0.0005,
+            "usd_value": 0.0005,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "SKR",
+            "exchange": "kraken",
+            "quantity": 500.0,
+            "usd_value": 500.0,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "TANSSI",
+            "exchange": "kraken",
+            "quantity": 0.3103,
+            "usd_value": 0.3103,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "TRX",
+            "exchange": "kraken",
+            "quantity": 7.36615568,
+            "usd_value": 7.36615568,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "TUSD",
+            "exchange": "kraken",
+            "quantity": 11.80156,
+            "usd_value": 11.80156,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "USDC",
+            "exchange": "kraken",
+            "quantity": 0.38587379,
+            "usd_value": 0.38587379,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "USDT",
+            "exchange": "kraken",
+            "quantity": 0.02543723,
+            "usd_value": 0.02543723,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ETH",
+            "exchange": "kraken",
+            "quantity": 0.016476117,
+            "usd_value": 56.34832013999999,
+            "current_price": 3420.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ZCAD",
+            "exchange": "kraken",
+            "quantity": 0.0009,
+            "usd_value": 0.0009,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ZGBP",
+            "exchange": "kraken",
+            "quantity": 0.0056,
+            "usd_value": 0.0056,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "USD",
+            "exchange": "kraken",
+            "quantity": 0.2251,
+            "usd_value": 0.2251,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          }
+        ],
+        "num_positions": 28,
+        "largest_position_usd": 90744.1,
+        "largest_position_asset": "BSX"
+      },
+      {
+        "exchange": "alpaca",
+        "timestamp": 1769464485.0630655,
+        "total_usd_value": 8.49,
+        "holdings": [
+          {
+            "asset": "USD",
+            "exchange": "alpaca",
+            "quantity": 1.1,
+            "usd_value": 1.1,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "EQUITY",
+            "exchange": "alpaca",
+            "quantity": 7.39,
+            "usd_value": 7.39,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          }
+        ],
+        "num_positions": 2,
+        "largest_position_usd": 7.39,
+        "largest_position_asset": "EQUITY"
+      }
+    ],
+    "num_exchanges": 2,
+    "num_total_positions": 30,
+    "largest_holding_usd": 90744.1,
+    "largest_holding_asset": "BSX",
+    "largest_holding_exchange": "kraken",
+    "sacred_alignment": 0.9999376668624054,
+    "geometric_angle": 240.0025425838455,
+    "perfection_score": 0.6333474587991417
+  },
+  {
+    "timestamp": 1769464490.2366097,
+    "datetime_str": "2026-01-26 21:54:50",
+    "total_usd_value": 136212.12626181007,
+    "initial_usd_value": 136203.63626181008,
+    "pnl_usd": 8.489999999990687,
+    "growth_pct": 0.006233313759458846,
+    "roi_pct": 0.006233313759458846,
+    "exchanges": [
+      {
+        "exchange": "kraken",
+        "timestamp": 1769464490.236653,
+        "total_usd_value": 136203.63626181008,
+        "holdings": [
+          {
+            "asset": "ACU",
+            "exchange": "kraken",
+            "quantity": 0.00057,
+            "usd_value": 0.00057,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ASRR",
+            "exchange": "kraken",
+            "quantity": 0.00037,
+            "usd_value": 0.00037,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ATOM",
+            "exchange": "kraken",
+            "quantity": 0.00077257,
+            "usd_value": 0.00849827,
+            "current_price": 11.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "BSX",
+            "exchange": "kraken",
+            "quantity": 90744.1,
+            "usd_value": 90744.1,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "CCD",
+            "exchange": "kraken",
+            "quantity": 300.0,
+            "usd_value": 300.0,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "DAI",
+            "exchange": "kraken",
+            "quantity": 0.0616847,
+            "usd_value": 0.0616847,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ESX",
+            "exchange": "kraken",
+            "quantity": 296.384,
+            "usd_value": 296.384,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "EUL",
+            "exchange": "kraken",
+            "quantity": 2.509442,
+            "usd_value": 2.509442,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "FIGHT",
+            "exchange": "kraken",
+            "quantity": 374.5,
+            "usd_value": 374.5,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "FIS",
+            "exchange": "kraken",
+            "quantity": 105.576,
+            "usd_value": 105.576,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "GHIBLI",
+            "exchange": "kraken",
+            "quantity": 40400.0,
+            "usd_value": 40400.0,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ICNT",
+            "exchange": "kraken",
+            "quantity": 16.0,
+            "usd_value": 16.0,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "IN",
+            "exchange": "kraken",
+            "quantity": 210.0,
+            "usd_value": 210.0,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "KTA",
+            "exchange": "kraken",
+            "quantity": 7.24428,
+            "usd_value": 7.24428,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "MXC",
+            "exchange": "kraken",
+            "quantity": 3100.0,
+            "usd_value": 3100.0,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "OPEN",
+            "exchange": "kraken",
+            "quantity": 10.78167,
+            "usd_value": 10.78167,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ROLL",
+            "exchange": "kraken",
+            "quantity": 60.0,
+            "usd_value": 60.0,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "SEI",
+            "exchange": "kraken",
+            "quantity": 0.0005,
+            "usd_value": 0.0005,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "SKR",
+            "exchange": "kraken",
+            "quantity": 500.0,
+            "usd_value": 500.0,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "TANSSI",
+            "exchange": "kraken",
+            "quantity": 0.3103,
+            "usd_value": 0.3103,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "TRX",
+            "exchange": "kraken",
+            "quantity": 7.36615568,
+            "usd_value": 7.36615568,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "TUSD",
+            "exchange": "kraken",
+            "quantity": 11.80156,
+            "usd_value": 11.80156,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "USDC",
+            "exchange": "kraken",
+            "quantity": 0.38587379,
+            "usd_value": 0.38587379,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "USDT",
+            "exchange": "kraken",
+            "quantity": 0.02543723,
+            "usd_value": 0.02543723,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ETH",
+            "exchange": "kraken",
+            "quantity": 0.016476117,
+            "usd_value": 56.34832013999999,
+            "current_price": 3420.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ZCAD",
+            "exchange": "kraken",
+            "quantity": 0.0009,
+            "usd_value": 0.0009,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ZGBP",
+            "exchange": "kraken",
+            "quantity": 0.0056,
+            "usd_value": 0.0056,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "USD",
+            "exchange": "kraken",
+            "quantity": 0.2251,
+            "usd_value": 0.2251,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          }
+        ],
+        "num_positions": 28,
+        "largest_position_usd": 90744.1,
+        "largest_position_asset": "BSX"
+      },
+      {
+        "exchange": "alpaca",
+        "timestamp": 1769464499.3576055,
+        "total_usd_value": 8.49,
+        "holdings": [
+          {
+            "asset": "USD",
+            "exchange": "alpaca",
+            "quantity": 1.1,
+            "usd_value": 1.1,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "EQUITY",
+            "exchange": "alpaca",
+            "quantity": 7.39,
+            "usd_value": 7.39,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          }
+        ],
+        "num_positions": 2,
+        "largest_position_usd": 7.39,
+        "largest_position_asset": "EQUITY"
+      }
+    ],
+    "num_exchanges": 2,
+    "num_total_positions": 30,
+    "largest_holding_usd": 90744.1,
+    "largest_holding_asset": "BSX",
+    "largest_holding_exchange": "kraken",
+    "sacred_alignment": 0.9999376668624054,
+    "geometric_angle": 240.0025425838455,
+    "perfection_score": 0.6333474587991417
+  },
+  {
+    "timestamp": 1769464504.5319629,
+    "datetime_str": "2026-01-26 21:55:04",
+    "total_usd_value": 136212.12626181007,
+    "initial_usd_value": 136203.63626181008,
+    "pnl_usd": 8.489999999990687,
+    "growth_pct": 0.006233313759458846,
+    "roi_pct": 0.006233313759458846,
+    "exchanges": [
+      {
+        "exchange": "kraken",
+        "timestamp": 1769464504.5320075,
+        "total_usd_value": 136203.63626181008,
+        "holdings": [
+          {
+            "asset": "ACU",
+            "exchange": "kraken",
+            "quantity": 0.00057,
+            "usd_value": 0.00057,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ASRR",
+            "exchange": "kraken",
+            "quantity": 0.00037,
+            "usd_value": 0.00037,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ATOM",
+            "exchange": "kraken",
+            "quantity": 0.00077257,
+            "usd_value": 0.00849827,
+            "current_price": 11.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "BSX",
+            "exchange": "kraken",
+            "quantity": 90744.1,
+            "usd_value": 90744.1,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "CCD",
+            "exchange": "kraken",
+            "quantity": 300.0,
+            "usd_value": 300.0,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "DAI",
+            "exchange": "kraken",
+            "quantity": 0.0616847,
+            "usd_value": 0.0616847,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ESX",
+            "exchange": "kraken",
+            "quantity": 296.384,
+            "usd_value": 296.384,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "EUL",
+            "exchange": "kraken",
+            "quantity": 2.509442,
+            "usd_value": 2.509442,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "FIGHT",
+            "exchange": "kraken",
+            "quantity": 374.5,
+            "usd_value": 374.5,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "FIS",
+            "exchange": "kraken",
+            "quantity": 105.576,
+            "usd_value": 105.576,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "GHIBLI",
+            "exchange": "kraken",
+            "quantity": 40400.0,
+            "usd_value": 40400.0,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ICNT",
+            "exchange": "kraken",
+            "quantity": 16.0,
+            "usd_value": 16.0,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "IN",
+            "exchange": "kraken",
+            "quantity": 210.0,
+            "usd_value": 210.0,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "KTA",
+            "exchange": "kraken",
+            "quantity": 7.24428,
+            "usd_value": 7.24428,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "MXC",
+            "exchange": "kraken",
+            "quantity": 3100.0,
+            "usd_value": 3100.0,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "OPEN",
+            "exchange": "kraken",
+            "quantity": 10.78167,
+            "usd_value": 10.78167,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ROLL",
+            "exchange": "kraken",
+            "quantity": 60.0,
+            "usd_value": 60.0,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "SEI",
+            "exchange": "kraken",
+            "quantity": 0.0005,
+            "usd_value": 0.0005,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "SKR",
+            "exchange": "kraken",
+            "quantity": 500.0,
+            "usd_value": 500.0,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "TANSSI",
+            "exchange": "kraken",
+            "quantity": 0.3103,
+            "usd_value": 0.3103,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "TRX",
+            "exchange": "kraken",
+            "quantity": 7.36615568,
+            "usd_value": 7.36615568,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "TUSD",
+            "exchange": "kraken",
+            "quantity": 11.80156,
+            "usd_value": 11.80156,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "USDC",
+            "exchange": "kraken",
+            "quantity": 0.38587379,
+            "usd_value": 0.38587379,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "USDT",
+            "exchange": "kraken",
+            "quantity": 0.02543723,
+            "usd_value": 0.02543723,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ETH",
+            "exchange": "kraken",
+            "quantity": 0.016476117,
+            "usd_value": 56.34832013999999,
+            "current_price": 3420.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ZCAD",
+            "exchange": "kraken",
+            "quantity": 0.0009,
+            "usd_value": 0.0009,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ZGBP",
+            "exchange": "kraken",
+            "quantity": 0.0056,
+            "usd_value": 0.0056,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "USD",
+            "exchange": "kraken",
+            "quantity": 0.2251,
+            "usd_value": 0.2251,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          }
+        ],
+        "num_positions": 28,
+        "largest_position_usd": 90744.1,
+        "largest_position_asset": "BSX"
+      },
+      {
+        "exchange": "alpaca",
+        "timestamp": 1769464513.6807835,
+        "total_usd_value": 8.49,
+        "holdings": [
+          {
+            "asset": "USD",
+            "exchange": "alpaca",
+            "quantity": 1.1,
+            "usd_value": 1.1,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "EQUITY",
+            "exchange": "alpaca",
+            "quantity": 7.39,
+            "usd_value": 7.39,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          }
+        ],
+        "num_positions": 2,
+        "largest_position_usd": 7.39,
+        "largest_position_asset": "EQUITY"
+      }
+    ],
+    "num_exchanges": 2,
+    "num_total_positions": 30,
+    "largest_holding_usd": 90744.1,
+    "largest_holding_asset": "BSX",
+    "largest_holding_exchange": "kraken",
+    "sacred_alignment": 0.9999376668624054,
+    "geometric_angle": 240.0025425838455,
+    "perfection_score": 0.6333474587991417
+  },
+  {
+    "timestamp": 1769464518.8553605,
+    "datetime_str": "2026-01-26 21:55:18",
+    "total_usd_value": 136212.12626181007,
+    "initial_usd_value": 136203.63626181008,
+    "pnl_usd": 8.489999999990687,
+    "growth_pct": 0.006233313759458846,
+    "roi_pct": 0.006233313759458846,
+    "exchanges": [
+      {
+        "exchange": "kraken",
+        "timestamp": 1769464518.8554175,
+        "total_usd_value": 136203.63626181008,
+        "holdings": [
+          {
+            "asset": "ACU",
+            "exchange": "kraken",
+            "quantity": 0.00057,
+            "usd_value": 0.00057,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ASRR",
+            "exchange": "kraken",
+            "quantity": 0.00037,
+            "usd_value": 0.00037,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ATOM",
+            "exchange": "kraken",
+            "quantity": 0.00077257,
+            "usd_value": 0.00849827,
+            "current_price": 11.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "BSX",
+            "exchange": "kraken",
+            "quantity": 90744.1,
+            "usd_value": 90744.1,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "CCD",
+            "exchange": "kraken",
+            "quantity": 300.0,
+            "usd_value": 300.0,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "DAI",
+            "exchange": "kraken",
+            "quantity": 0.0616847,
+            "usd_value": 0.0616847,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ESX",
+            "exchange": "kraken",
+            "quantity": 296.384,
+            "usd_value": 296.384,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "EUL",
+            "exchange": "kraken",
+            "quantity": 2.509442,
+            "usd_value": 2.509442,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "FIGHT",
+            "exchange": "kraken",
+            "quantity": 374.5,
+            "usd_value": 374.5,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "FIS",
+            "exchange": "kraken",
+            "quantity": 105.576,
+            "usd_value": 105.576,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "GHIBLI",
+            "exchange": "kraken",
+            "quantity": 40400.0,
+            "usd_value": 40400.0,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ICNT",
+            "exchange": "kraken",
+            "quantity": 16.0,
+            "usd_value": 16.0,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "IN",
+            "exchange": "kraken",
+            "quantity": 210.0,
+            "usd_value": 210.0,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "KTA",
+            "exchange": "kraken",
+            "quantity": 7.24428,
+            "usd_value": 7.24428,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "MXC",
+            "exchange": "kraken",
+            "quantity": 3100.0,
+            "usd_value": 3100.0,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "OPEN",
+            "exchange": "kraken",
+            "quantity": 10.78167,
+            "usd_value": 10.78167,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ROLL",
+            "exchange": "kraken",
+            "quantity": 60.0,
+            "usd_value": 60.0,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "SEI",
+            "exchange": "kraken",
+            "quantity": 0.0005,
+            "usd_value": 0.0005,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "SKR",
+            "exchange": "kraken",
+            "quantity": 500.0,
+            "usd_value": 500.0,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "TANSSI",
+            "exchange": "kraken",
+            "quantity": 0.3103,
+            "usd_value": 0.3103,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "TRX",
+            "exchange": "kraken",
+            "quantity": 7.36615568,
+            "usd_value": 7.36615568,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "TUSD",
+            "exchange": "kraken",
+            "quantity": 11.80156,
+            "usd_value": 11.80156,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "USDC",
+            "exchange": "kraken",
+            "quantity": 0.38587379,
+            "usd_value": 0.38587379,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "USDT",
+            "exchange": "kraken",
+            "quantity": 0.02543723,
+            "usd_value": 0.02543723,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ETH",
+            "exchange": "kraken",
+            "quantity": 0.016476117,
+            "usd_value": 56.34832013999999,
+            "current_price": 3420.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ZCAD",
+            "exchange": "kraken",
+            "quantity": 0.0009,
+            "usd_value": 0.0009,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ZGBP",
+            "exchange": "kraken",
+            "quantity": 0.0056,
+            "usd_value": 0.0056,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "USD",
+            "exchange": "kraken",
+            "quantity": 0.2251,
+            "usd_value": 0.2251,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          }
+        ],
+        "num_positions": 28,
+        "largest_position_usd": 90744.1,
+        "largest_position_asset": "BSX"
+      },
+      {
+        "exchange": "alpaca",
+        "timestamp": 1769464527.8952286,
+        "total_usd_value": 8.49,
+        "holdings": [
+          {
+            "asset": "USD",
+            "exchange": "alpaca",
+            "quantity": 1.1,
+            "usd_value": 1.1,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "EQUITY",
+            "exchange": "alpaca",
+            "quantity": 7.39,
+            "usd_value": 7.39,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          }
+        ],
+        "num_positions": 2,
+        "largest_position_usd": 7.39,
+        "largest_position_asset": "EQUITY"
+      }
+    ],
+    "num_exchanges": 2,
+    "num_total_positions": 30,
+    "largest_holding_usd": 90744.1,
+    "largest_holding_asset": "BSX",
+    "largest_holding_exchange": "kraken",
+    "sacred_alignment": 0.9999376668624054,
+    "geometric_angle": 240.0025425838455,
+    "perfection_score": 0.6333474587991417
+  },
+  {
+    "timestamp": 1769464533.0708718,
+    "datetime_str": "2026-01-26 21:55:33",
+    "total_usd_value": 136212.12626181007,
+    "initial_usd_value": 136203.63626181008,
+    "pnl_usd": 8.489999999990687,
+    "growth_pct": 0.006233313759458846,
+    "roi_pct": 0.006233313759458846,
+    "exchanges": [
+      {
+        "exchange": "kraken",
+        "timestamp": 1769464533.0709147,
+        "total_usd_value": 136203.63626181008,
+        "holdings": [
+          {
+            "asset": "ACU",
+            "exchange": "kraken",
+            "quantity": 0.00057,
+            "usd_value": 0.00057,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ASRR",
+            "exchange": "kraken",
+            "quantity": 0.00037,
+            "usd_value": 0.00037,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ATOM",
+            "exchange": "kraken",
+            "quantity": 0.00077257,
+            "usd_value": 0.00849827,
+            "current_price": 11.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "BSX",
+            "exchange": "kraken",
+            "quantity": 90744.1,
+            "usd_value": 90744.1,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "CCD",
+            "exchange": "kraken",
+            "quantity": 300.0,
+            "usd_value": 300.0,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "DAI",
+            "exchange": "kraken",
+            "quantity": 0.0616847,
+            "usd_value": 0.0616847,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ESX",
+            "exchange": "kraken",
+            "quantity": 296.384,
+            "usd_value": 296.384,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "EUL",
+            "exchange": "kraken",
+            "quantity": 2.509442,
+            "usd_value": 2.509442,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "FIGHT",
+            "exchange": "kraken",
+            "quantity": 374.5,
+            "usd_value": 374.5,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "FIS",
+            "exchange": "kraken",
+            "quantity": 105.576,
+            "usd_value": 105.576,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "GHIBLI",
+            "exchange": "kraken",
+            "quantity": 40400.0,
+            "usd_value": 40400.0,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ICNT",
+            "exchange": "kraken",
+            "quantity": 16.0,
+            "usd_value": 16.0,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "IN",
+            "exchange": "kraken",
+            "quantity": 210.0,
+            "usd_value": 210.0,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "KTA",
+            "exchange": "kraken",
+            "quantity": 7.24428,
+            "usd_value": 7.24428,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "MXC",
+            "exchange": "kraken",
+            "quantity": 3100.0,
+            "usd_value": 3100.0,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "OPEN",
+            "exchange": "kraken",
+            "quantity": 10.78167,
+            "usd_value": 10.78167,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ROLL",
+            "exchange": "kraken",
+            "quantity": 60.0,
+            "usd_value": 60.0,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "SEI",
+            "exchange": "kraken",
+            "quantity": 0.0005,
+            "usd_value": 0.0005,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "SKR",
+            "exchange": "kraken",
+            "quantity": 500.0,
+            "usd_value": 500.0,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "TANSSI",
+            "exchange": "kraken",
+            "quantity": 0.3103,
+            "usd_value": 0.3103,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "TRX",
+            "exchange": "kraken",
+            "quantity": 7.36615568,
+            "usd_value": 7.36615568,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "TUSD",
+            "exchange": "kraken",
+            "quantity": 11.80156,
+            "usd_value": 11.80156,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "USDC",
+            "exchange": "kraken",
+            "quantity": 0.38587379,
+            "usd_value": 0.38587379,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "USDT",
+            "exchange": "kraken",
+            "quantity": 0.02543723,
+            "usd_value": 0.02543723,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ETH",
+            "exchange": "kraken",
+            "quantity": 0.016476117,
+            "usd_value": 56.34832013999999,
+            "current_price": 3420.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ZCAD",
+            "exchange": "kraken",
+            "quantity": 0.0009,
+            "usd_value": 0.0009,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ZGBP",
+            "exchange": "kraken",
+            "quantity": 0.0056,
+            "usd_value": 0.0056,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "USD",
+            "exchange": "kraken",
+            "quantity": 0.2251,
+            "usd_value": 0.2251,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          }
+        ],
+        "num_positions": 28,
+        "largest_position_usd": 90744.1,
+        "largest_position_asset": "BSX"
+      },
+      {
+        "exchange": "alpaca",
+        "timestamp": 1769464542.2523026,
+        "total_usd_value": 8.49,
+        "holdings": [
+          {
+            "asset": "USD",
+            "exchange": "alpaca",
+            "quantity": 1.1,
+            "usd_value": 1.1,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "EQUITY",
+            "exchange": "alpaca",
+            "quantity": 7.39,
+            "usd_value": 7.39,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          }
+        ],
+        "num_positions": 2,
+        "largest_position_usd": 7.39,
+        "largest_position_asset": "EQUITY"
+      }
+    ],
+    "num_exchanges": 2,
+    "num_total_positions": 30,
+    "largest_holding_usd": 90744.1,
+    "largest_holding_asset": "BSX",
+    "largest_holding_exchange": "kraken",
+    "sacred_alignment": 0.9999376668624054,
+    "geometric_angle": 240.0025425838455,
+    "perfection_score": 0.6333474587991417
+  },
+  {
+    "timestamp": 1769464547.429003,
+    "datetime_str": "2026-01-26 21:55:47",
+    "total_usd_value": 136212.12626181007,
+    "initial_usd_value": 136203.63626181008,
+    "pnl_usd": 8.489999999990687,
+    "growth_pct": 0.006233313759458846,
+    "roi_pct": 0.006233313759458846,
+    "exchanges": [
+      {
+        "exchange": "kraken",
+        "timestamp": 1769464547.4290462,
+        "total_usd_value": 136203.63626181008,
+        "holdings": [
+          {
+            "asset": "ACU",
+            "exchange": "kraken",
+            "quantity": 0.00057,
+            "usd_value": 0.00057,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ASRR",
+            "exchange": "kraken",
+            "quantity": 0.00037,
+            "usd_value": 0.00037,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ATOM",
+            "exchange": "kraken",
+            "quantity": 0.00077257,
+            "usd_value": 0.00849827,
+            "current_price": 11.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "BSX",
+            "exchange": "kraken",
+            "quantity": 90744.1,
+            "usd_value": 90744.1,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "CCD",
+            "exchange": "kraken",
+            "quantity": 300.0,
+            "usd_value": 300.0,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "DAI",
+            "exchange": "kraken",
+            "quantity": 0.0616847,
+            "usd_value": 0.0616847,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ESX",
+            "exchange": "kraken",
+            "quantity": 296.384,
+            "usd_value": 296.384,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "EUL",
+            "exchange": "kraken",
+            "quantity": 2.509442,
+            "usd_value": 2.509442,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "FIGHT",
+            "exchange": "kraken",
+            "quantity": 374.5,
+            "usd_value": 374.5,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "FIS",
+            "exchange": "kraken",
+            "quantity": 105.576,
+            "usd_value": 105.576,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "GHIBLI",
+            "exchange": "kraken",
+            "quantity": 40400.0,
+            "usd_value": 40400.0,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ICNT",
+            "exchange": "kraken",
+            "quantity": 16.0,
+            "usd_value": 16.0,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "IN",
+            "exchange": "kraken",
+            "quantity": 210.0,
+            "usd_value": 210.0,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "KTA",
+            "exchange": "kraken",
+            "quantity": 7.24428,
+            "usd_value": 7.24428,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "MXC",
+            "exchange": "kraken",
+            "quantity": 3100.0,
+            "usd_value": 3100.0,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "OPEN",
+            "exchange": "kraken",
+            "quantity": 10.78167,
+            "usd_value": 10.78167,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ROLL",
+            "exchange": "kraken",
+            "quantity": 60.0,
+            "usd_value": 60.0,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "SEI",
+            "exchange": "kraken",
+            "quantity": 0.0005,
+            "usd_value": 0.0005,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "SKR",
+            "exchange": "kraken",
+            "quantity": 500.0,
+            "usd_value": 500.0,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "TANSSI",
+            "exchange": "kraken",
+            "quantity": 0.3103,
+            "usd_value": 0.3103,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "TRX",
+            "exchange": "kraken",
+            "quantity": 7.36615568,
+            "usd_value": 7.36615568,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "TUSD",
+            "exchange": "kraken",
+            "quantity": 11.80156,
+            "usd_value": 11.80156,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "USDC",
+            "exchange": "kraken",
+            "quantity": 0.38587379,
+            "usd_value": 0.38587379,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "USDT",
+            "exchange": "kraken",
+            "quantity": 0.02543723,
+            "usd_value": 0.02543723,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ETH",
+            "exchange": "kraken",
+            "quantity": 0.016476117,
+            "usd_value": 56.34832013999999,
+            "current_price": 3420.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ZCAD",
+            "exchange": "kraken",
+            "quantity": 0.0009,
+            "usd_value": 0.0009,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ZGBP",
+            "exchange": "kraken",
+            "quantity": 0.0056,
+            "usd_value": 0.0056,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "USD",
+            "exchange": "kraken",
+            "quantity": 0.2251,
+            "usd_value": 0.2251,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          }
+        ],
+        "num_positions": 28,
+        "largest_position_usd": 90744.1,
+        "largest_position_asset": "BSX"
+      },
+      {
+        "exchange": "alpaca",
+        "timestamp": 1769464556.5649457,
+        "total_usd_value": 8.49,
+        "holdings": [
+          {
+            "asset": "USD",
+            "exchange": "alpaca",
+            "quantity": 1.1,
+            "usd_value": 1.1,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "EQUITY",
+            "exchange": "alpaca",
+            "quantity": 7.39,
+            "usd_value": 7.39,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          }
+        ],
+        "num_positions": 2,
+        "largest_position_usd": 7.39,
+        "largest_position_asset": "EQUITY"
+      }
+    ],
+    "num_exchanges": 2,
+    "num_total_positions": 30,
+    "largest_holding_usd": 90744.1,
+    "largest_holding_asset": "BSX",
+    "largest_holding_exchange": "kraken",
+    "sacred_alignment": 0.9999376668624054,
+    "geometric_angle": 240.0025425838455,
+    "perfection_score": 0.6333474587991417
+  },
+  {
+    "timestamp": 1769464561.7491033,
+    "datetime_str": "2026-01-26 21:56:01",
+    "total_usd_value": 136212.12626181007,
+    "initial_usd_value": 136203.63626181008,
+    "pnl_usd": 8.489999999990687,
+    "growth_pct": 0.006233313759458846,
+    "roi_pct": 0.006233313759458846,
+    "exchanges": [
+      {
+        "exchange": "kraken",
+        "timestamp": 1769464561.7491486,
+        "total_usd_value": 136203.63626181008,
+        "holdings": [
+          {
+            "asset": "ACU",
+            "exchange": "kraken",
+            "quantity": 0.00057,
+            "usd_value": 0.00057,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ASRR",
+            "exchange": "kraken",
+            "quantity": 0.00037,
+            "usd_value": 0.00037,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ATOM",
+            "exchange": "kraken",
+            "quantity": 0.00077257,
+            "usd_value": 0.00849827,
+            "current_price": 11.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "BSX",
+            "exchange": "kraken",
+            "quantity": 90744.1,
+            "usd_value": 90744.1,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "CCD",
+            "exchange": "kraken",
+            "quantity": 300.0,
+            "usd_value": 300.0,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "DAI",
+            "exchange": "kraken",
+            "quantity": 0.0616847,
+            "usd_value": 0.0616847,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ESX",
+            "exchange": "kraken",
+            "quantity": 296.384,
+            "usd_value": 296.384,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "EUL",
+            "exchange": "kraken",
+            "quantity": 2.509442,
+            "usd_value": 2.509442,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "FIGHT",
+            "exchange": "kraken",
+            "quantity": 374.5,
+            "usd_value": 374.5,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "FIS",
+            "exchange": "kraken",
+            "quantity": 105.576,
+            "usd_value": 105.576,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "GHIBLI",
+            "exchange": "kraken",
+            "quantity": 40400.0,
+            "usd_value": 40400.0,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ICNT",
+            "exchange": "kraken",
+            "quantity": 16.0,
+            "usd_value": 16.0,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "IN",
+            "exchange": "kraken",
+            "quantity": 210.0,
+            "usd_value": 210.0,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "KTA",
+            "exchange": "kraken",
+            "quantity": 7.24428,
+            "usd_value": 7.24428,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "MXC",
+            "exchange": "kraken",
+            "quantity": 3100.0,
+            "usd_value": 3100.0,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "OPEN",
+            "exchange": "kraken",
+            "quantity": 10.78167,
+            "usd_value": 10.78167,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ROLL",
+            "exchange": "kraken",
+            "quantity": 60.0,
+            "usd_value": 60.0,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "SEI",
+            "exchange": "kraken",
+            "quantity": 0.0005,
+            "usd_value": 0.0005,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "SKR",
+            "exchange": "kraken",
+            "quantity": 500.0,
+            "usd_value": 500.0,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "TANSSI",
+            "exchange": "kraken",
+            "quantity": 0.3103,
+            "usd_value": 0.3103,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "TRX",
+            "exchange": "kraken",
+            "quantity": 7.36615568,
+            "usd_value": 7.36615568,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "TUSD",
+            "exchange": "kraken",
+            "quantity": 11.80156,
+            "usd_value": 11.80156,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "USDC",
+            "exchange": "kraken",
+            "quantity": 0.38587379,
+            "usd_value": 0.38587379,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "USDT",
+            "exchange": "kraken",
+            "quantity": 0.02543723,
+            "usd_value": 0.02543723,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ETH",
+            "exchange": "kraken",
+            "quantity": 0.016476117,
+            "usd_value": 56.34832013999999,
+            "current_price": 3420.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ZCAD",
+            "exchange": "kraken",
+            "quantity": 0.0009,
+            "usd_value": 0.0009,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "ZGBP",
+            "exchange": "kraken",
+            "quantity": 0.0056,
+            "usd_value": 0.0056,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "USD",
+            "exchange": "kraken",
+            "quantity": 0.2251,
+            "usd_value": 0.2251,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          }
+        ],
+        "num_positions": 28,
+        "largest_position_usd": 90744.1,
+        "largest_position_asset": "BSX"
+      },
+      {
+        "exchange": "alpaca",
+        "timestamp": 1769464570.8831358,
+        "total_usd_value": 8.49,
+        "holdings": [
+          {
+            "asset": "USD",
+            "exchange": "alpaca",
+            "quantity": 1.1,
+            "usd_value": 1.1,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          },
+          {
+            "asset": "EQUITY",
+            "exchange": "alpaca",
+            "quantity": 7.39,
+            "usd_value": 7.39,
+            "current_price": 1.0,
+            "cost_basis": null,
+            "unrealized_pnl": null,
+            "pnl_pct": null
+          }
+        ],
+        "num_positions": 2,
+        "largest_position_usd": 7.39,
+        "largest_position_asset": "EQUITY"
+      }
+    ],
+    "num_exchanges": 2,
+    "num_total_positions": 30,
+    "largest_holding_usd": 90744.1,
+    "largest_holding_asset": "BSX",
+    "largest_holding_exchange": "kraken",
+    "sacred_alignment": 0.9999376668624054,
+    "geometric_angle": 240.0025425838455,
+    "perfection_score": 0.6333474587991417
+  }
+]

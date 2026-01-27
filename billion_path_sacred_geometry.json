@@ -1,0 +1,72 @@
+{
+  "path_id": "SACRED_PATH_20260126_204741",
+  "current_capital": 1000.0,
+  "target": 1000000000.0,
+  "total_trades_needed": 1527,
+  "average_return_per_trade": 0.9088888888888889,
+  "probability_of_success": 0.00039663819001619136,
+  "sacred_geometry_score": 0.9121346964371205,
+  "estimated_days": 1527,
+  "estimated_years": 4.183561643835616,
+  "metatron_sphere_path": [
+    0,
+    2,
+    3,
+    8,
+    12,
+    0
+  ],
+  "milestones": [
+    {
+      "trade": 13,
+      "capital": 1124.8186646727956,
+      "progress": 0.00011248186646727957
+    },
+    {
+      "trade": 21,
+      "capital": 1209.2550439291497,
+      "progress": 0.00012092550439291497
+    },
+    {
+      "trade": 34,
+      "capital": 1360.1926437612292,
+      "progress": 0.0001360192643761229
+    },
+    {
+      "trade": 55,
+      "capital": 1644.8198151835913,
+      "progress": 0.00016448198151835914
+    },
+    {
+      "trade": 89,
+      "capital": 2237.271812925424,
+      "progress": 0.0002237271812925424
+    },
+    {
+      "trade": 144,
+      "capital": 3679.9090098514525,
+      "progress": 0.0003679909009851452
+    },
+    {
+      "trade": 233,
+      "capital": 8232.95670187096,
+      "progress": 0.000823295670187096
+    },
+    {
+      "trade": 377,
+      "capital": 30296.53154493187,
+      "progress": 0.0030296531544931867
+    },
+    {
+      "trade": 610,
+      "capital": 249430.0324262921,
+      "progress": 0.02494300324262921
+    },
+    {
+      "trade": 987,
+      "capital": 7556864.845656532,
+      "progress": 0.7556864845656531
+    }
+  ],
+  "generated_at": "2026-01-26T20:47:41.246319"
+}

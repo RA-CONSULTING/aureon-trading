@@ -1,0 +1,15 @@
+{
+  "timestamp": "2026-01-26T21:28:21.804830",
+  "duration_seconds": 59.71525001525879,
+  "total_positions": 5,
+  "deployed_usd": 50.0,
+  "realized_pnl": 0.0,
+  "unrealized_pnl": 0.0,
+  "wins": 0,
+  "losses": 0,
+  "win_rate": 0.0,
+  "quantum_coherence": 1.0,
+  "sacred_geometry_score": 0.8481206915560632,
+  "predictions_total": 5,
+  "closed_positions": []
+}
