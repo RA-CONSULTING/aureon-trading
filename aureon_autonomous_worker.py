@@ -77,8 +77,12 @@ class AureonAutonomousWorker:
 
         # Import and start parallel orchestrator
         try:
-            from aureon_parallel_orchestrator import get_parallel_orchestrator
-            self.orchestrator = get_parallel_orchestrator()
+            try:
+                from aureon_parallel_orchestrator import get_parallel_orchestrator
+                self.orchestrator = get_parallel_orchestrator()
+            except Exception:
+                from aureon_parallel_orchestrator import get_orchestrator
+                self.orchestrator = get_orchestrator()
             orchestrator_thread = threading.Thread(
                 target=self._run_orchestrator,
                 daemon=True

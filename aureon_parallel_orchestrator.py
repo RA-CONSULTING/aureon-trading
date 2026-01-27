@@ -736,6 +736,11 @@ def get_orchestrator() -> ParallelOrchestrator:
     return _orchestrator
 
 
+def get_parallel_orchestrator() -> ParallelOrchestrator:
+    """Backward-compatible alias used by older modules."""
+    return get_orchestrator()
+
+
 def start_all_parallel_systems(skip_warmup: bool = False) -> Dict[str, bool]:
     """
     Convenience function to start all parallel systems.
