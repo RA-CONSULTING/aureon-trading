@@ -8,7 +8,11 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 # Load environment variables from .env file
 try:
     from dotenv import load_dotenv
-    load_dotenv()
+    env_path = os.path.join(os.path.dirname(__file__), '.env')
+    if os.path.exists(env_path):
+        load_dotenv(env_path)
+    else:
+        load_dotenv()  # Fallback
 except ImportError:
     pass
 
@@ -24,6 +28,12 @@ class CapitalClient:
         self.identifier = os.getenv('CAPITAL_IDENTIFIER')
         self.password = os.getenv('CAPITAL_PASSWORD')
         self.demo_mode = os.getenv('CAPITAL_DEMO', '0') == '1'
+        
+        # Debug: Show what's loaded
+        has_key = bool(self.api_key)
+        has_id = bool(self.identifier)
+        has_pwd = bool(self.password)
+        print(f"🌐 Capital.com: key={'✓' if has_key else '✗'}, id={'✓' if has_id else '✗'}, pwd={'✓' if has_pwd else '✗'}, demo={self.demo_mode}")
         
         if self.demo_mode:
             self.base_url = "https://demo-api-capital.backend-capital.com/api/v1"

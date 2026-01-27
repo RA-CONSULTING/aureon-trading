@@ -7,7 +7,11 @@ import requests
 # Load environment variables from .env file
 try:
     from dotenv import load_dotenv
-    load_dotenv()
+    env_path = os.path.join(os.path.dirname(__file__), '.env')
+    if os.path.exists(env_path):
+        load_dotenv(env_path)
+    else:
+        load_dotenv()  # Fallback
 except ImportError:
     pass
 
@@ -73,6 +77,11 @@ class KrakenClient:
         # API keys (optional in dry-run)
         self.api_key = os.getenv("KRAKEN_API_KEY", "")
         self.api_secret = os.getenv("KRAKEN_API_SECRET", "")
+        
+        # Debug: Show if credentials are loaded
+        if not self.api_key or not self.api_secret:
+            print(f"⚠️ Kraken: Missing credentials (key={'✓' if self.api_key else '✗'}, secret={'✓' if self.api_secret else '✗'})")
+        
         # Kraken has no public testnet for spot; keep flag for parity
         self.use_testnet = False
         # Dry-run - default FALSE for live trading
