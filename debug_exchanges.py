@@ -1,100 +1,66 @@
 from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
-import os
-import sys
-import time
-import traceback
 from binance_client import BinanceClient
 from kraken_client import KrakenClient
-from alpaca_client import AlpacaClient
+import json
+import os
 
-print("=" * 80)
-print("🔍 EXCHANGE DIAGNOSTIC TOOL")
-print("=" * 80)
-
-# 1. BINANCE CHECK
-print("\n🟡 CHECKING BINANCE...")
-try:
-    b = BinanceClient()
-    print(f"   API Key: {b.api_key[:4]}...{b.api_key[-4:]}")
-    print(f"   Testnet: {b.use_testnet}")
-    print(f"   Dry Run: {b.dry_run}")
-    print(f"   UK Mode: {b.uk_mode}")
-    
-    # Check time sync
-    print(f"   Time Offset: {b._time_offset_ms}ms")
-    
-    # Check balances
-    print("   Requesting account info...")
+def debug_balances():
+    print("\n🧐 --- BINANCE RAW DEBUG ---")
     try:
-        info = b.account()
-        print(f"   Account Type: {info.get('accountType', 'Unknown')}")
-        print(f"   Can Trade: {info.get('canTrade', False)}")
-        print(f"   Permissions: {info.get('permissions', [])}")
-        
-        balances = info.get('balances', [])
-        found_assets = 0
-        for bal in balances:
-            free = float(bal.get('free', 0))
-            locked = float(bal.get('locked', 0))
-            if free > 0 or locked > 0:
-                print(f"   💰 {bal['asset']}: Free={free}, Locked={locked}")
-                found_assets += 1
-        
-        if found_assets == 0:
-            print("   ⚠️ No positive balances found on Binance.")
+        if not os.getenv("BINANCE_API_KEY"):
+            print("⚠️ No Binance API Key in env")
+        else:
+            b = BinanceClient()
+            acct = b.account()
+            # Print ALL non-zero balances
+            found_any = False
+            if acct and 'balances' in acct:
+                for x in acct['balances']:
+                    total = float(x['free']) + float(x['locked'])
+                    if total > 0:
+                        print(f"💰 {x['asset']}: {total} (Free: {x['free']}, Locked: {x['locked']})")
+                        found_any = True
+            else:
+                print("❌ No 'balances' key in response or empty.")
+                print(f"Raw Response keys: {acct.keys() if acct else 'None'}")
+            
+            if not found_any:
+                print("⚠️ Account exists but ALL balances are 0.0")
             
     except Exception as e:
-        print(f"   ❌ BINANCE ACCOUNT ERROR: {e}")
-        traceback.print_exc()
+        print(f"🔥 Error: {e}")
 
-except Exception as e:
-    print(f"   ❌ BINANCE INIT ERROR: {e}")
-    traceback.print_exc()
-
-# 2. KRAKEN CHECK
-print("\n🐙 CHECKING KRAKEN...")
-try:
-    k = KrakenClient()
-    print(f"   API Key: {k.api_key[:4]}...{k.api_key[-4:]}")
-    print(f"   Dry Run: {k.dry_run}")
-    
-    # Check balances
-    print("   Requesting balances...")
+    print("\n🧐 --- KRAKEN RAW DEBUG ---")
     try:
-        balances = k.get_account_balance()
-        if balances:
-            for asset, amount in balances.items():
-                print(f"   💰 {asset}: {amount}")
+        if not os.getenv("KRAKEN_API_KEY"):
+            print("⚠️ No Kraken API Key in env")
         else:
-            print("   ⚠️ No balances returned from Kraken.")
+            k = KrakenClient()
+            # Debug the internal account() method vs get_account_balance
+            print("Calling k.account()...")
+            raw = k.account()
+            
+            found_any = False
+            if raw and 'balances' in raw:
+                for x in raw['balances']:
+                    # Kraken client normalizes names in account() method usually, let's see
+                    # output is list of dicts: {'asset': 'BTC', 'free': ..., 'locked': ...}
+                    try:
+                        total = float(x.get('free', 0)) + float(x.get('locked', 0))
+                    except:
+                        total = 0
+                        
+                    if total > 0:
+                        print(f"💰 {x.get('asset')}: {total}")
+                        found_any = True
+            else:
+                print(f"❌ Raw response weird: {raw}")
+                
+            if not found_any:
+                print("⚠️ Account exists but ALL balances are 0.0")
+
     except Exception as e:
-        print(f"   ❌ KRAKEN BALANCE ERROR: {e}")
-        traceback.print_exc()
+        print(f"🔥 Error: {e}")
 
-except Exception as e:
-    print(f"   ❌ KRAKEN INIT ERROR: {e}")
-    traceback.print_exc()
-
-# 3. ALPACA CHECK
-print("\n🦙 CHECKING ALPACA...")
-try:
-    a = AlpacaClient()
-    print(f"   API Key: {a.api_key[:4]}...{a.api_key[-4:]}")
-    print(f"   Paper: {a.use_paper}")
-    
-    # Check account
-    print("   Requesting account...")
-    try:
-        acc = a.get_account()
-        print(f"   Status: {acc.get('status')}")
-        print(f"   Cash: ${acc.get('cash')}")
-        print(f"   Buying Power: ${acc.get('buying_power')}")
-    except Exception as e:
-        print(f"   ❌ ALPACA ACCOUNT ERROR: {e}")
-        traceback.print_exc()
-    
-except Exception as e:
-    print(f"   ❌ ALPACA INIT ERROR: {e}")
-    traceback.print_exc()
-
-print("\n" + "=" * 80)
+if __name__ == "__main__":
+    debug_balances()

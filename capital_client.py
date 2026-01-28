@@ -31,6 +31,12 @@ class CapitalClient:
     Client for Capital.com API.
     Handles session management and trading operations.
     """
+    # Shared session state across all instances to prevent rate limiting
+    _shared_cst = None
+    _shared_x_security_token = None
+    _shared_session_start_time = 0
+    _shared_rate_limit_until = 0
+
     def __init__(self):
         self.api_key = os.getenv('CAPITAL_API_KEY')
         self.identifier = os.getenv('CAPITAL_IDENTIFIER')
@@ -41,22 +47,29 @@ class CapitalClient:
         has_key = bool(self.api_key)
         has_id = bool(self.identifier)
         has_pwd = bool(self.password)
-        print(f"🌐 Capital.com: key={'✓' if has_key else '✗'}, id={'✓' if has_id else '✗'}, pwd={'✓' if has_pwd else '✗'}, demo={self.demo_mode}")
+        # Only print if this is the first initialization or verbose logging is needed to reduce spam
+        if not CapitalClient._shared_cst: 
+             print(f"🌐 Capital.com: key={'✓' if has_key else '✗'}, id={'✓' if has_id else '✗'}, pwd={'✓' if has_pwd else '✗'}, demo={self.demo_mode}")
         
         if self.demo_mode:
             self.base_url = "https://demo-api-capital.backend-capital.com/api/v1"
         else:
             self.base_url = "https://api-capital.backend-capital.com/api/v1"
             
-        self.cst = None
-        self.x_security_token = None
-        self.session_start_time = 0
+        # Initialize from shared state if available
+        self.cst = CapitalClient._shared_cst
+        self.x_security_token = CapitalClient._shared_x_security_token
+        self.session_start_time = CapitalClient._shared_session_start_time
+        
         self.dry_run = False  # ALWAYS LIVE
         self.market_cache: List[Dict[str, Any]] = []
         self.market_index: Dict[str, Dict[str, Any]] = {}
         self.market_cache_time = 0.0
         self.market_cache_ttl = int(os.getenv('CAPITAL_MARKET_CACHE_TTL', '900'))  # 15 minutes
-        self._rate_limit_until = 0  # Timestamp when rate limit expires
+        
+        # Use shared rate limit
+        self._rate_limit_until = CapitalClient._shared_rate_limit_until 
+        
         self._rate_limit_logged = False  # Only log rate limits once
         self._session_error_logged = False  # Only log session errors once
         self._session_unavailable_logged = False  # Only log missing-token state once
@@ -73,11 +86,25 @@ class CapitalClient:
         if not self.enabled:
             return
         
-        # Check if we're rate limited
+        # Sync with shared state first
+        if CapitalClient._shared_rate_limit_until > time.time():
+            self._rate_limit_until = CapitalClient._shared_rate_limit_until
+            return
+
+        # Check if we're rate limited locally or globally
         if time.time() < self._rate_limit_until:
-            return  # Still rate limited, skip silently
-        
-        # Check if session is still valid (avoid unnecessary re-auth within 50 min window)
+             return
+
+        # Check if shared session is still valid (avoid unnecessary re-auth within 50 min window)
+        if (CapitalClient._shared_cst and CapitalClient._shared_x_security_token and 
+            (time.time() - CapitalClient._shared_session_start_time) < (50 * 60)):  # 50 min buffer
+            self.cst = CapitalClient._shared_cst
+            self.x_security_token = CapitalClient._shared_x_security_token
+            self.session_start_time = CapitalClient._shared_session_start_time
+            logger.debug("Capital.com session restored from shared state")
+            return
+
+        # Check if local session is valid (though it should be synced above)
         if (self.cst and self.x_security_token and 
             (time.time() - self.session_start_time) < (50 * 60)):  # 50 min buffer
             logger.debug("Capital.com session still valid (within 50 min), skipping re-auth")
@@ -98,6 +125,25 @@ class CapitalClient:
             if response.status_code == 200:
                 self.cst = response.headers.get('CST')
                 self.x_security_token = response.headers.get('X-SECURITY-TOKEN')
+                self.session_start_time = time.time()
+                
+                # Update shared state
+                CapitalClient._shared_cst = self.cst
+                CapitalClient._shared_x_security_token = self.x_security_token
+                CapitalClient._shared_session_start_time = self.session_start_time
+                
+                self._session_error_logged = False  # Reset on success
+                self._session_unavailable_logged = False
+                logger.info("Capital.com session established.")
+            elif response.status_code == 429 or 'too-many.requests' in response.text.lower():
+                # Rate limited - back off for 5 minutes
+                self._rate_limit_until = time.time() + 300
+                CapitalClient._shared_rate_limit_until = self._rate_limit_until
+                
+                if not self._session_error_logged:
+                    logger.warning("Capital.com rate limited - backing off for 5 minutes")
+                    self._session_error_logged = True
+            elif response.status_code in (401, 403):
                 self.session_start_time = time.time()
                 self._session_error_logged = False  # Reset on success
                 self._session_unavailable_logged = False

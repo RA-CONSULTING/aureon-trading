@@ -1690,6 +1690,16 @@ class AlpacaClient:
             pass
         return balances
 
+    def get_account_activities(self, activity_types: List[str] = None, page_size: int = 100) -> List[Dict[str, Any]]:
+        """Get account activities (fills, transfers, dividends)."""
+        params = {"page_size": page_size}
+        if activity_types:
+             if isinstance(activity_types, list):
+                 params["activity_types"] = ",".join(activity_types)
+             else:
+                 params["activity_types"] = activity_types
+        return self._request("GET", "/v2/account/activities", params=params) or []
+
     def get_stock_snapshot(self, symbol: str) -> Dict[str, Any]:
         """Return snapshot for a stock symbol (latest/daily bars)."""
         try:

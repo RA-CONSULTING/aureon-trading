@@ -363,39 +363,95 @@ class ElephantMemory:
         return False, 0.0
     
     def get_best_trading_hours(self) -> List[int]:
-        """Get the best hours to trade based on history"""
-        if not self.best_hours:
-            return list(range(24))  # All hours if no data
-        
-        # Sort by profit and return top 6 hours
-        sorted_hours = sorted(self.best_hours.items(), key=lambda x: x[1], reverse=True)
-        return [h for h, _ in sorted_hours[:6]]
+        """Get the best hours to trade based on personal history AND ingrested wisdom"""
+        # 1. Gather Personal Experience (Self-Learning)
+        personal_best = []
+        if self.best_hours:
+            sorted_hours = sorted(self.best_hours.items(), key=lambda x: x[1], reverse=True)
+            personal_best = [h for h, _ in sorted_hours[:6]] # Top 6 from experience
+            
+        # 2. Gather Historical Wisdom (Ingested Knowledge)
+        wisdom_best = []
+        for wid, w in self.wisdom.items():
+            if wid.startswith('coinbase_golden_hour_'):
+                try:
+                    hour = int(wid.split('_')[-1])
+                    wisdom_best.append(hour)
+                except ValueError:
+                    pass
+                    
+        # 3. Merge & Prioritize
+        # If we have NO personal experience, trust Wisdom 100%
+        if not personal_best:
+            if not wisdom_best:
+                return list(range(24)) # Absolute zero knowledge
+            return list(set(wisdom_best)) # Return unique wisdom hours
+            
+        # If we have both, combine them (Union of top personal + all wisdom)
+        combined = list(set(personal_best + wisdom_best))
+        return combined
+
+    def get_worst_trading_hours(self) -> List[int]:
+        """Get hours to AVOID based on history and wisdom"""
+        avoid = []
+        # Wisdom avoids (e.g. "coinbase_avoid_hour_X")
+        for wid, w in self.wisdom.items():
+            if wid.startswith('coinbase_avoid_hour_'):
+                try:
+                    hour = int(wid.split('_')[-1])
+                    avoid.append(hour)
+                except ValueError:
+                    pass
+        return list(set(avoid))
     
     def get_asset_score(self, symbol: str) -> float:
         """Get historical performance score for an asset (0-100)"""
-        if symbol not in self.asset_performance:
-            return 50.0  # Neutral if unknown
-        
-        stats = self.asset_performance[symbol]
-        win_rate = stats.get('win_rate', 50)
-        profit_factor = stats.get('profit_factor', 1.0)
-        sample_size = stats.get('trades', 0)
-        
-        # Score based on win rate and profit factor
-        base_score = (win_rate + (profit_factor - 1) * 20) / 2
-        
-        # Confidence adjustment based on sample size
-        if sample_size < 10:
-            confidence = 0.3
-        elif sample_size < 50:
-            confidence = 0.6
-        elif sample_size < 100:
-            confidence = 0.8
+        # 1. Base Score from Personal Stats
+        if symbol in self.asset_performance:
+            stats = self.asset_performance[symbol]
+            win_rate = stats.get('win_rate', 50)
+            profit_factor = stats.get('profit_factor', 1.0)
+            sample_size = stats.get('trades', 0)
+            
+            # Score based on win rate and profit factor
+            base_score = (win_rate + (profit_factor - 1) * 20) / 2
+            
+            # Confidence adjustment based on sample size
+            if sample_size < 10:
+                confidence = 0.3
+            elif sample_size < 50:
+                confidence = 0.6
+            elif sample_size < 100:
+                confidence = 0.8
+            else:
+                confidence = 1.0
+            
+            final_score = 50 + (base_score - 50) * confidence
         else:
-            confidence = 1.0
+            final_score = 50.0  # Neutral if unknown
+            
+        # 2. Apply Wisdom Modifiers (Macro Context)
+        current_date = datetime.now()
         
-        # Blend with neutral 50 based on confidence
-        return 50 + (base_score - 50) * confidence
+        # September Effect (Bearish) - Slight penalty
+        if current_date.month == 9:
+            sept_wisdom = self.wisdom.get('wiki_september_effect')
+            if sept_wisdom:
+                final_score *= 0.9 
+                
+        # Weekend Effect (Sunday Dump) - Slight penalty for buys
+        if current_date.weekday() == 6: # Sunday
+            sunday_wisdom = self.wisdom.get('wiki_sunday_dump')
+            if sunday_wisdom:
+                final_score *= 0.95
+                
+        # Bitcoin Halving Boost (Post-Halving Bull Run assumption)
+        halving_wisdom = self.wisdom.get('wiki_bitcoin_halving_cycle')
+        if halving_wisdom and symbol.startswith('BTC'):
+             # Slight permanent boost for BTC if Aware of Halving Cycle
+             final_score *= 1.02
+             
+        return min(100.0, max(0.0, final_score))
     
     def get_pattern_signals(self, symbol: str, current_price: float, 
                            price_change_1h: float, volume_change: float) -> List[Dict]:

@@ -72,8 +72,15 @@ class RealPortfolioSnapshot:
     
     # Historical tracking
     starting_capital: float = 78.51  # ACTUAL starting capital
-    realized_pnl: float = 0.0
-    unrealized_pnl: float = 0.0
+    
+    # 💰 P&L BREAKDOWN (The Truth) 💰
+    cumulative_net_pnl: float = 0.0   # Total Equity - Starting Capital
+    floating_pnl: float = 0.0         # Unrealized (Open Positions)
+    lifetime_realized_pnl: float = 0.0 # Cumulative - Floating (Banked)
+    
+    realized_pnl: float = 0.0  # DEPRECATED: Kept for backward compat (Same as cumulative_net_pnl)
+    unrealized_pnl: float = 0.0 # DEPRECATED: Kept for compat (Same as floating_pnl)
+    
     total_fees_paid: float = 0.0
     total_trades: int = 0
     
@@ -357,26 +364,59 @@ class RealPortfolioTracker:
             'reserves': {}
         }
 
+    def _load_live_profit_source(self) -> Optional[Dict]:
+        """
+        Load authoritative live profit state from quick_profit_check.py.
+        This provides accurately valued positions (including crypto assets).
+        """
+        try:
+            path = Path("live_profit_state.json")
+            if path.exists() and time.time() - path.stat().st_mtime < 300: # 5 min fresh
+                with open(path, 'r') as f:
+                    return json.load(f)
+        except Exception:
+            pass
+        return None
+
     def get_real_portfolio(self) -> RealPortfolioSnapshot:
         """
         Get REAL portfolio snapshot from ALL exchanges.
         
         This is the TRUTH - what Queen and Orca should see.
         """
-        # Get balances from all exchanges
+        # Get balances from all exchanges (basic checks)
         alpaca = self._get_alpaca_balance()
         kraken = self._get_kraken_balance()
         binance = self._get_binance_balance()
         capital = self._get_capital_balance()
         
-        # Total REAL value
-        total_usd = (
-            alpaca.total_usd + 
-            kraken.total_usd + 
-            binance.total_usd + 
-            capital.total_usd
-        )
+        # 1. Calculate Base Equity (Cash + value)
+        # Note: Internal _get methods often miss specific crypto position values
+        # So we prefer live_profit_state.json if available for TOTAL VALUE
         
+        live_state = self._load_live_profit_source()
+        
+        if live_state and 'totals' in live_state:
+            # TRUST THE LIVE STATE (It has better pricing)
+            total_usd = float(live_state['totals']['total_value_usd'])
+            floating_pnl = float(live_state['totals']['total_pnl_usd'])
+            
+            # Override exchange breakdowns if possible (optional, keeping simple for now)
+            # Just ensure total matches reality
+        else:
+            # Fallback to internal check (might undervalue)
+            total_usd = (
+                alpaca.total_usd + 
+                kraken.total_usd + 
+                binance.total_usd + 
+                capital.total_usd
+            )
+            # Estimate floating from alpaca (others assume 0 in current impl)
+            floating_pnl = alpaca.positions_usd - (alpaca.total_usd - alpaca.cash_usd) # Rough approx
+            # Actually, alpaca.positions_usd is Value. PnL is harder to derive without cost basis here.
+            # We will default to 0 if live_state missing.
+            floating_pnl = 0.0
+
         # Get trade stats
         trade_stats = self._get_trade_stats()
         
@@ -384,23 +424,34 @@ class RealPortfolioTracker:
         treasury = self._get_treasury_state()
         treasury_usd = float(treasury.get('total_usd', 0.0))
         
-        # Calculate P&L
-        realized_pnl = total_usd - self.starting_capital
+        # 2. Calculate P&L Metaphysics
+        cumulative_net_pnl = total_usd - self.starting_capital
+        lifetime_realized_pnl = cumulative_net_pnl - floating_pnl
         
         # Create snapshot
         snapshot = RealPortfolioSnapshot(
             timestamp=time.time(),
             total_usd=total_usd,
             alpaca_usd=alpaca.total_usd,
-            kraken_usd=kraken.total_usd,
+            kraken_usd=kraken.total_usd, # Note: This might be cash-only if live_state used
             binance_usd=binance.total_usd,
             capital_usd=capital.total_usd,
+            
             starting_capital=self.starting_capital,
-            realized_pnl=realized_pnl,
+            
+            # The TRUTH
+            cumulative_net_pnl=cumulative_net_pnl,
+            floating_pnl=floating_pnl,
+            lifetime_realized_pnl=lifetime_realized_pnl,
+            
+            # Legacy Compat
+            realized_pnl=cumulative_net_pnl, 
+            unrealized_pnl=floating_pnl,
+            
             total_fees_paid=trade_stats['total_fees'],
             total_trades=trade_stats['total_trades'],
             winning_trades=trade_stats['winning_trades'],
-            losing_trades=trade_stats['losing_trades'],
+            losing_trades=trade_stats['losing_trades'], 
             dream_progress_pct=(total_usd / 1_000_000_000.0) * 100 if total_usd > 0 else 0,
             treasury_usd=treasury_usd,
             harvest_reserve_breakdown=treasury.get('reserves', {})
@@ -408,7 +459,12 @@ class RealPortfolioTracker:
         
         # Update history
         self.last_snapshot = snapshot
-        self.history.append(snapshot.to_dict())
+        try:
+            self.history.append(snapshot.__dict__) # Serialize
+        except:
+             # Fallback if __dict__ fails (dataclass normally supports it, but just in case)
+             pass
+             
         self._save_state()
         
         return snapshot
@@ -418,10 +474,10 @@ class RealPortfolioTracker:
         snapshot = self.get_real_portfolio()
         
         # Determine status
-        if snapshot.realized_pnl > 0:
+        if snapshot.cumulative_net_pnl > 0:
             status = "📈 PROFITABLE"
             status_emoji = "💰"
-        elif snapshot.realized_pnl < -10:
+        elif snapshot.cumulative_net_pnl < -10:
             status = "📉 LOSING"
             status_emoji = "🔴"
         else:
@@ -433,8 +489,13 @@ class RealPortfolioTracker:
             'status_emoji': status_emoji,
             'total_usd': f"${snapshot.total_usd:.2f}",
             'starting_capital': f"${snapshot.starting_capital:.2f}",
-            'pnl': f"${snapshot.realized_pnl:+.2f}",
-            'pnl_pct': f"{((snapshot.total_usd - snapshot.starting_capital) / snapshot.starting_capital * 100):+.1f}%",
+            
+            # The Three PnLs
+            'cumulative_net': f"${snapshot.cumulative_net_pnl:+.2f}",
+            'floating': f"${snapshot.floating_pnl:+.2f}",
+            'lifetime_realized': f"${snapshot.lifetime_realized_pnl:+.2f}",
+            
+            'pnl_pct': f"{(snapshot.cumulative_net_pnl / snapshot.starting_capital * 100):+.1f}%",
             'total_trades': snapshot.total_trades,
             'dream_progress': f"{snapshot.dream_progress_pct:.10f}%",
             'treasury': f"${snapshot.treasury_usd:.2f}",
@@ -460,7 +521,11 @@ class RealPortfolioTracker:
             f"  💵 TOTAL VALUE: {summary['total_usd']}",
             f"  💎 TREASURY: {summary['treasury']}",
             f"  📊 Started With: {summary['starting_capital']}",
-            f"  📈 P&L: {summary['pnl']} ({summary['pnl_pct']})",
+            f"  ",
+            f"  📈 P&L BREAKDOWN:",
+            f"     🌊 Floating (Open):   {summary['floating']}",
+            f"     💰 Realized (Banked): {summary['lifetime_realized']}",
+            f"     🏆 Cumulative Net:    {summary['cumulative_net']} ({summary['pnl_pct']})",
             f"  ",
             f"  🏦 BY EXCHANGE:",
             f"     🦙 Alpaca:  {summary['exchanges']['alpaca']}",

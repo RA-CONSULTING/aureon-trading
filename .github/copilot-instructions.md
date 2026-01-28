@@ -19,6 +19,39 @@
 - **Sacred constants**: use centralized values (e.g., Schumann 7.83 Hz, $\phi$) instead of hardcoding.
 - **Atomic JSON writes**: write temp file then rename to avoid corrupted state.
 
+## CRITICAL AGENT RULES - READ FIRST!
+
+### 🚫 NO NEW PYTHON FILES
+- **ALWAYS search the repo first** before creating any new file
+- Use `grep_search`, `file_search`, or `semantic_search` to find existing implementations
+- The codebase already has 200+ modules - the solution likely exists
+- Extend existing files rather than creating new ones
+- If you must create a new file, explain WHY no existing file can be extended
+
+### 🚫 NO SIMULATION DATA - REAL DATA ONLY
+- **NEVER use fake/mock/simulated prices or balances**
+- **NEVER generate random test data**
+- Fetch REAL data from:
+  - Exchange APIs (Kraken, Binance, Alpaca, Capital.com)
+  - Open source feeds (CoinGecko, Yahoo Finance, etc.)
+  - Persisted state files (`*_state.json`, `cost_basis_history.json`)
+- If an API is rate-limited, use the **cached real data** from state files
+- If no real data available, STOP and inform the user - do not invent data
+
+### ✅ DATA SOURCES FOR REAL MARKET DATA
+```python
+# Open source price feeds (no API key needed):
+# - CoinGecko: https://api.coingecko.com/api/v3/simple/price
+# - Binance public: https://api.binance.com/api/v3/ticker/price
+# - Kraken public: https://api.kraken.com/0/public/Ticker
+
+# Persisted state files with real data:
+# - cost_basis_history.json (247 positions)
+# - aureon_kraken_state.json
+# - alpaca_truth_tracker_state.json
+# - elephant_memory.json
+```
+
 ## Integration points
 - Exchange clients share a common surface (`get_balance`, `get_ticker`, `execute_trade`) in `kraken_client.py`, `binance_client.py`, `alpaca_client.py`.
 - Optional components: Windows launcher (see aureon_launcher/README.md) and local sensor WS server (server/README.md) that feeds Schumann/biometrics into the UI.

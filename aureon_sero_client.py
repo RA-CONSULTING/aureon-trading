@@ -33,7 +33,7 @@ for Queen decision validation and market intelligence enhancement.
 Architecture:
 - HTTP client to Dr Auris Throne Chatbot API
 - Async query interface for non-blocking integration
-- Structured prompts for trading context
+- ⚡ HARMONIC COMPRESSED PROMPTS - Minimal tokens to avoid rate limits
 - Response parsing with confidence scoring
 - Fail-safe: Trading continues if chatbot unavailable
 
@@ -64,6 +64,16 @@ from dotenv import load_dotenv
 load_dotenv()
 logger = logging.getLogger(__name__)
 
+# ═══════════════════════════════════════════════════════════════════════════════
+# ⚡ HARMONIC HFT COMPRESSION - MINIMAL TOKENS FOR DR. AURIS
+# ═══════════════════════════════════════════════════════════════════════════════
+# Problem: Rate limited by token count - need to compress prompts to ~50 tokens
+# Solution: Use harmonic alphabet shortcodes + numeric encoding
+#
+# OLD PROMPT: ~200 tokens → Rate Limited!
+# NEW PROMPT: ~40 tokens → ✅ Passes!
+# ═══════════════════════════════════════════════════════════════════════════════
+
 @dataclass
 class SeroAdvice:
     """Structured response from Dr Auris Throne Chatbot."""
@@ -76,6 +86,8 @@ class SeroAdvice:
 class SeroClient:
     """
     Client for Dr Auris Throne Chatbot (Llama 3.3 Instruct 70B) intelligence augmentation.
+    
+    ⚡ HFT-OPTIMIZED: Uses compressed harmonic prompts to minimize token usage
     
     Provides async interface to query external AI agent for:
     - Trade decision validation
@@ -92,7 +104,21 @@ class SeroClient:
         self.api_key = os.getenv('AUREON_AGENT_KEY', '') or self.chatbot_id
         
         self.enabled = bool(self.endpoint and self.api_key and self.agent_id and self.chatbot_id)
-        self.timeout = aiohttp.ClientTimeout(total=15.0)  # 15s max (outer gate has 3s timeout)
+        self.timeout = aiohttp.ClientTimeout(total=15.0)  # 15s max
+        
+        # ⚡ HFT RATE LIMIT TRACKING
+        self._last_call_time = 0
+        self._rate_limit_until = 0  # Timestamp when rate limit expires
+        # Allow override via env to match DigitalOcean rate limits
+        self._min_call_interval = float(os.getenv('AUREON_AURIS_MIN_INTERVAL', '15'))  # seconds
+        self._calls_this_minute = 0
+        self._minute_start = time.time()
+        self._max_calls_per_minute = int(os.getenv('AUREON_AURIS_MAX_PER_MIN', '6'))
+        
+        # ⚡ TOKEN CACHING - Don't request new token every call!
+        self._cached_token = None
+        self._token_expiry = 0  # Unix timestamp when token expires
+        self._token_ttl = 300  # 5 minute token cache TTL
         
         if not self.enabled:
             logger.warning("Dr Auris Throne Chatbot not configured - AI augmentation disabled")
@@ -126,10 +152,13 @@ class SeroClient:
         
         try:
             response = await self._query_api(prompt)
+            if response is None:
+                raise Exception("Dr Auris Throne returned no response")
             return self._parse_trading_response(response)
         except Exception as e:
-            logger.warning(f"Dr Auris Throne query failed (non-critical): {type(e).__name__} {repr(e)}")
-            return None
+            # Propagate to caller so dual-vote retry logic can backoff and retry
+            logger.warning(f"Dr Auris Throne query failed: {type(e).__name__} {repr(e)}")
+            raise
     
     async def ask_market_intelligence(self, query: str) -> Optional[str]:
         """
@@ -158,48 +187,88 @@ class SeroClient:
         context: Dict[str, Any],
         queen_confidence: float
     ) -> str:
-        """Build structured prompt for trading decision validation."""
-        coherence = context.get('coherence', 0.0)
-        fusion_bias = context.get('fusion_bias', 0.0)
-        threat_level = context.get('threat_level', 0.0)
+        """
+        Build COMPRESSED harmonic prompt for trading decision validation.
         
-        prompt = f"""Trading Decision Validation Request:
-
-Symbol: {symbol}
-Side: {side}
-Queen Confidence: {queen_confidence:.2f}
-
-Context Metrics:
-- Harmonic Coherence: {coherence:.2f}
-- Fusion Bias: {fusion_bias:.2f}
-- Counter-Frequency Threat: {threat_level:.2f}
-
-Based on these metrics, provide:
-1. Recommendation: PROCEED / CAUTION / ABORT
-2. Confidence: 0.0-1.0
-3. Risk flags (if any)
-4. Brief reasoning (1 sentence)
-
-Format response as:
-RECOMMENDATION: [choice]
-CONFIDENCE: [0.0-1.0]
-RISK_FLAGS: [comma-separated or "none"]
-REASONING: [brief explanation]
-"""
+        ⚡ HFT COMPRESSION: Reduces ~200 tokens → ~40 tokens
+        Uses harmonic shortcodes to avoid rate limits while preserving meaning.
+        
+        Harmonic Shortcodes:
+        - SYM = Symbol (e.g., BTCUSDT)
+        - ACT = Action (BUY/SELL)
+        - QC = Queen Confidence (0-1)
+        - PNL = Profit/Loss ($ or %)
+        - EP = Entry Price
+        - CP = Current Price
+        """
+        # Extract context values with defaults
+        pnl = context.get('pnl', 0)
+        entry = context.get('entry_price', 0)
+        current = context.get('current_price', 0)
+        pct = context.get('profit_percent', 0)
+        exch = context.get('exchange', 'UNK')[:3].upper()
+        
+        # ═══════════════════════════════════════════════════════════════
+        # ⚡ HARMONIC MICRO-PACKET FORMAT (HFT-Optimized)
+        # ═══════════════════════════════════════════════════════════════
+        # Format: EXCH:SYM ACT PNL% QC → PROCEED/HOLD?
+        # Example: BIN:BNBUSDC SELL +2.5% QC85 → ?
+        # 
+        # Response expected: PROCEED 0.8 or HOLD 0.6
+        # ═══════════════════════════════════════════════════════════════
+        
+        # Build ultra-compact prompt (~35-45 tokens)
+        prompt = f"""{exch}:{symbol} {side} {pct:+.1f}% QC{queen_confidence*100:.0f}
+EP{entry:.2f}→CP{current:.2f} PNL${pnl:.2f}
+Reply: PROCEED/CAUTION/ABORT + 0.0-1.0 + reason"""
+        
         return prompt
     
     async def _query_api(self, prompt: str) -> Optional[Dict[str, Any]]:
         """
         Send query to Dr Auris Throne Chatbot API using DigitalOcean Agents flow.
         
+        ⚡ HFT RATE LIMIT AWARE: Tracks call timing, respects rate limits
+        
         Args:
-            prompt: Text prompt to send
+            prompt: Text prompt to send (should be pre-compressed)
         
         Returns:
-            API response dict or None if failed
+            API response dict or None if failed/rate limited
         """
         if not self.endpoint or not self.agent_id or not self.api_key:
             return None
+        
+        # ⚡ RATE LIMIT CHECK - Wait if we're still in cooldown from 429
+        now = time.time()
+        if now < self._rate_limit_until:
+            wait_time = self._rate_limit_until - now
+            logger.warning(f"Dr Auris rate limited (429 cooldown) - waiting {wait_time:.1f}s")
+            await asyncio.sleep(wait_time)
+            now = time.time()  # Update after sleep
+        
+        # ⚡ PER-MINUTE RATE LIMIT - Reset counter each minute
+        if now - self._minute_start >= 60:
+            self._calls_this_minute = 0
+            self._minute_start = now
+        
+        # ⚡ CHECK IF WE'VE HIT THE PER-MINUTE LIMIT
+        if self._calls_this_minute >= self._max_calls_per_minute:
+            wait_time = 60 - (now - self._minute_start)
+            if wait_time > 0:
+                logger.warning(f"Dr Auris per-minute limit ({self._max_calls_per_minute}/min) - waiting {wait_time:.1f}s")
+                await asyncio.sleep(wait_time)
+                self._calls_this_minute = 0
+                self._minute_start = time.time()
+                now = time.time()
+        
+        # ⚡ MINIMUM INTERVAL - Don't hammer the API
+        time_since_last = now - self._last_call_time
+        if time_since_last < self._min_call_interval:
+            await asyncio.sleep(self._min_call_interval - time_since_last)
+        
+        self._last_call_time = time.time()
+        self._calls_this_minute += 1  # Track call count
 
         async with aiohttp.ClientSession(timeout=self.timeout) as session:
             token = await self._get_access_token(session)
@@ -212,10 +281,11 @@ REASONING: [brief explanation]
                 'Content-Type': 'application/json'
             }
 
+            # ⚡ COMPRESSED PAYLOAD - Minimal structure
             payload = {
                 'messages': [
                     {
-                        'id': f"sero-{int(time.time()*1000)}",
+                        'id': f"hft-{int(time.time()*1000)}",
                         'role': 'user',
                         'content': prompt,
                         'sentTime': datetime.now(timezone.utc).isoformat(),
@@ -223,13 +293,24 @@ REASONING: [brief explanation]
                     }
                 ],
                 'stream': False,
-                'include_functions_info': True,
-                'include_retrieval_info': True,
-                'include_guardrails_info': True
+                'include_functions_info': False,  # ⚡ DISABLED - saves tokens
+                'include_retrieval_info': False,  # ⚡ DISABLED - saves tokens
+                'include_guardrails_info': False  # ⚡ DISABLED - saves tokens
             }
 
             try:
                 async with session.post(url, json=payload, headers=headers) as resp:
+                    if resp.status == 429:
+                        # ⚡ RATE LIMITED - Set cooldown and RAISE exception
+                        text = await resp.text()
+                        retry_after = resp.headers.get('Retry-After')
+                        try:
+                            cooldown = int(retry_after) if retry_after else 60
+                        except ValueError:
+                            cooldown = 60
+                        logger.error(f"Dr Auris Throne API error: {resp.status} at {url} | {text[:200]}")
+                        self._rate_limit_until = time.time() + cooldown
+                        raise Exception(f"Rate limit exceeded (429) - waiting {cooldown}s cooldown")
                     if resp.status != 200:
                         text = await resp.text()
                         logger.error(f"Dr Auris Throne API error: {resp.status} at {url} | {text[:200]}")
@@ -245,7 +326,17 @@ REASONING: [brief explanation]
                 return None
 
     async def _get_access_token(self, session: aiohttp.ClientSession) -> Optional[str]:
-        """Issue access token via DigitalOcean Agents auth endpoint."""
+        """Issue access token via DigitalOcean Agents auth endpoint.
+        
+        ⚡ TOKEN CACHING: Reuses cached token for 5 minutes to reduce API calls.
+        This is critical for avoiding rate limits!
+        """
+        # ⚡ CHECK CACHE FIRST - Don't request new token if we have a valid one!
+        now = time.time()
+        if self._cached_token and now < self._token_expiry:
+            logger.debug(f"Using cached token (expires in {self._token_expiry - now:.0f}s)")
+            return self._cached_token
+        
         url = f"https://cloud.digitalocean.com/gen-ai/auth/agents/{self.agent_id}/token"
         api_keys = []
         if self.chatbot_id:
@@ -262,7 +353,13 @@ REASONING: [brief explanation]
                 async with session.post(url, json={}, headers=headers) as resp:
                     if resp.status == 200:
                         data = await resp.json()
-                        return data.get('access_token')
+                        token = data.get('access_token')
+                        if token:
+                            # ⚡ CACHE THE TOKEN
+                            self._cached_token = token
+                            self._token_expiry = now + self._token_ttl
+                            logger.info(f"New token acquired (cached for {self._token_ttl}s)")
+                        return token
                     text = await resp.text()
                     logger.error(f"Token issuance failed: {resp.status} | {text[:200]}")
             except aiohttp.ClientError as e:
@@ -274,6 +371,12 @@ REASONING: [brief explanation]
     def _parse_trading_response(self, response: Optional[Dict[str, Any]]) -> Optional[SeroAdvice]:
         """
         Parse structured trading response from Dr Auris Throne.
+        
+        ⚡ HARMONIC HFT PARSER: Handles both compressed and verbose responses
+        
+        Expected formats:
+        - Compressed: "PROCEED 0.85 profit locked"
+        - Verbose: "RECOMMENDATION: PROCEED\nCONFIDENCE: 0.85\n..."
         
         Args:
             response: Raw API response dict
@@ -289,35 +392,75 @@ REASONING: [brief explanation]
             if not message:
                 return None
             
-            # Parse structured response
-            lines = message.strip().split('\n')
-            parsed = {}
-            for line in lines:
-                if ':' in line:
-                    key, value = line.split(':', 1)
-                    parsed[key.strip().upper()] = value.strip()
+            message_upper = message.upper().strip()
             
-            recommendation = parsed.get('RECOMMENDATION', 'CAUTION').upper()
-            if recommendation not in ['PROCEED', 'CAUTION', 'ABORT']:
-                recommendation = 'CAUTION'
+            # ═══════════════════════════════════════════════════════════════
+            # ⚡ FAST PARSE: Check for compressed HFT response first
+            # Format: "PROCEED 0.85 reason" or "HOLD 0.6 wait for better"
+            # ═══════════════════════════════════════════════════════════════
+            recommendation = 'CAUTION'
+            confidence = 0.5
+            reasoning = message.strip()
+            risk_flags = []
             
-            confidence_str = parsed.get('CONFIDENCE', '0.5')
-            try:
-                confidence = float(confidence_str)
-            except:
-                confidence = 0.5
+            # Fast check for PROCEED/CAUTION/ABORT/HOLD at start
+            for action in ['PROCEED', 'CAUTION', 'ABORT', 'HOLD']:
+                if message_upper.startswith(action):
+                    recommendation = 'PROCEED' if action == 'PROCEED' else ('ABORT' if action == 'ABORT' else 'CAUTION')
+                    
+                    # Try to extract confidence number after action word
+                    parts = message.split()
+                    if len(parts) >= 2:
+                        try:
+                            # Second token might be confidence (0.0-1.0)
+                            conf_str = parts[1].replace(',', '').replace('%', '')
+                            conf_val = float(conf_str)
+                            if 0 <= conf_val <= 1:
+                                confidence = conf_val
+                            elif 0 <= conf_val <= 100:
+                                confidence = conf_val / 100
+                            # Reasoning is everything after confidence
+                            if len(parts) > 2:
+                                reasoning = ' '.join(parts[2:])
+                        except (ValueError, IndexError):
+                            # Confidence not a number, reasoning starts at parts[1]
+                            reasoning = ' '.join(parts[1:])
+                    break
             
-            reasoning = parsed.get('REASONING', 'No reasoning provided')
-            
-            risk_flags_str = parsed.get('RISK_FLAGS', 'none')
-            risk_flags = [] if risk_flags_str.lower() == 'none' else [
-                f.strip() for f in risk_flags_str.split(',')
-            ]
+            # ═══════════════════════════════════════════════════════════════
+            # FALLBACK: Parse verbose format (RECOMMENDATION: X, CONFIDENCE: Y)
+            # ═══════════════════════════════════════════════════════════════
+            if 'RECOMMENDATION:' in message_upper or 'CONFIDENCE:' in message_upper:
+                lines = message.strip().split('\n')
+                parsed = {}
+                for line in lines:
+                    if ':' in line:
+                        key, value = line.split(':', 1)
+                        parsed[key.strip().upper()] = value.strip()
+                
+                if 'RECOMMENDATION' in parsed:
+                    rec = parsed['RECOMMENDATION'].upper()
+                    if rec in ['PROCEED', 'CAUTION', 'ABORT']:
+                        recommendation = rec
+                
+                if 'CONFIDENCE' in parsed:
+                    try:
+                        confidence = float(parsed['CONFIDENCE'])
+                    except:
+                        pass
+                
+                if 'REASONING' in parsed:
+                    reasoning = parsed['REASONING']
+                
+                if 'RISK_FLAGS' in parsed:
+                    risk_str = parsed['RISK_FLAGS']
+                    if risk_str.lower() != 'none':
+                        risk_flags = [f.strip() for f in risk_str.split(',')]
             
             return SeroAdvice(
                 recommendation=recommendation,
                 confidence=confidence,
-                reasoning=reasoning,
+                reasoning=reasoning[:200],  # Truncate for sanity
                 risk_flags=risk_flags,
                 timestamp=time.time()
             )

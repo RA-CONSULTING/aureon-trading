@@ -144,19 +144,6 @@ class KrakenClient:
             if elapsed < self._min_call_interval:
                 time.sleep(self._min_call_interval - elapsed)
             
-            data = dict(data)
-            # Use PERSISTENT NONCE to avoid "invalid nonce" errors
-            # This tracks across restarts and multiple instances (local + DO)
-            data["nonce"] = str(_get_next_nonce())
-            headers = {
-                "API-Key": self.api_key,
-                "API-Sign": self._kraken_sign(path, data)
-            }
-            url = f"{self.base}{path}"
-            
-            # Update last call time before making request
-            self._last_private_call = time.time()
-            
             # Respect rate limiter for private calls as well
             if getattr(self, '_rate_limiter', None):
                 try:
@@ -164,31 +151,73 @@ class KrakenClient:
                 except Exception:
                     pass
 
+            last_error = None
+            
+            # Retry loop with NONCE REGENERATION
             for attempt in range(self.max_retries + 1):
-                r = self.session.post(url, data=data, headers=headers, timeout=15)
-                if r.status_code == 429:
-                    # Metric: API 429
-                    try:
-                        from metrics import api_429_counter
-                        api_429_counter.inc(1, exchange='kraken', endpoint='private')
-                    except Exception:
-                        pass
+                try:
+                    # Regenerate nonce and signature for every attempt
+                    # This is critical for preventing "Invalid nonce" errors on retry
+                    current_data = dict(data)
+                    current_data["nonce"] = str(_get_next_nonce())
+                    
+                    headers = {
+                        "API-Key": self.api_key,
+                        "API-Sign": self._kraken_sign(path, current_data)
+                    }
+                    url = f"{self.base}{path}"
+                    
+                    # Update last call time before making request
+                    self._last_private_call = time.time()
+                    
+                    r = self.session.post(url, data=current_data, headers=headers, timeout=15)
+                    
+                    if r.status_code == 429:
+                        # Metric: API 429
+                        try:
+                            from metrics import api_429_counter
+                            api_429_counter.inc(1, exchange='kraken', endpoint='private')
+                        except Exception:
+                            pass
 
-                    retry_after = r.headers.get('Retry-After')
-                    try:
-                        wait_time = float(retry_after) if retry_after else 2 ** attempt
-                    except Exception:
-                        wait_time = 2 ** attempt
-                    time.sleep(min(max(wait_time, 0.1), 10))
-                    if attempt < self.max_retries:
+                        retry_after = r.headers.get('Retry-After')
+                        try:
+                            wait_time = float(retry_after) if retry_after else 2 ** (attempt + 1)
+                        except Exception:
+                            wait_time = 2 ** (attempt + 1)
+                        
+                        warning_msg = f"⚠️ Kraken 429 (HTTP) - Retrying ({attempt+1}/{self.max_retries}) in {wait_time:.2f}s..."
+                        print(warning_msg)
+                        time.sleep(min(max(wait_time, 1.0), 10.0))
                         continue
-                r.raise_for_status()
-                res = r.json()
-                if res.get("error"):
-                    raise RuntimeError(f"Kraken error: {res['error']}")
-                return res.get("result", {})
-            # If we exit loop without return, raise
-            raise RuntimeError("Kraken private request failed after retries")
+                    
+                    r.raise_for_status()
+                    res = r.json()
+                    
+                    if res.get("error"):
+                        errs = res["error"]
+                        # Check for retryable logic errors (JSON body errors despite 200 OK)
+                        is_retryable = any(x in str(errs) for x in ["Rate limit", "Invalid nonce", "Service", "Busy", "EService"])
+                        
+                        if is_retryable and attempt < self.max_retries:
+                            wait_time = (attempt + 1) * 2.0
+                            print(f"⚠️ Kraken API Error: {errs} - Retrying ({attempt+1}/{self.max_retries}) in {wait_time}s...")
+                            time.sleep(wait_time)
+                            continue
+                            
+                        raise RuntimeError(f"Kraken error: {errs}")
+                        
+                    return res.get("result", {})
+                    
+                except Exception as e:
+                    last_error = e
+                    # Network errors, timeouts, etc
+                    if attempt < self.max_retries:
+                        time.sleep(1)
+                        continue
+                    raise last_error
+
+            raise RuntimeError(f"Kraken private request failed after {self.max_retries} retries: {last_error}")
 
     # ──────────────────────────────────────────────────────────────────────
     # Public helpers and Binance-like interface
@@ -597,7 +626,8 @@ class KrakenClient:
         """Return balances as a simple asset -> amount map (free+locked)."""
         try:
             acct = self.account()
-        except Exception:
+        except Exception as e:
+            print(f"⚠️ Kraken account() failed in get_account_balance: {e}")
             return {}
 
         out: Dict[str, float] = {}
@@ -711,18 +741,15 @@ class KrakenClient:
                 required_quote = vol * float(price_info.get("price", 0)) * 1.01  # Add 1% buffer for fees
                 available_quote = balances.get(quote_currency, 0)
                 if available_quote < required_quote:
-                    raise RuntimeError(f"EOrder:Insufficient funds to buy {vol:.8f} {base_currency}. Need {required_quote:.2f} {quote_currency}, have {available_quote:.2f}")
+                    print(f"   ⚠️ Kraken Buy Balance Warning: Need {required_quote:.2f} {quote_currency}, Have {available_quote:.2f}. Proceeding anyway.")
             elif side.lower() == 'sell':
                 # Check if we have enough base currency to sell
                 available_base = balances.get(base_currency, 0)
                 if available_base < vol:
-                    raise RuntimeError(f"EOrder:Insufficient funds to sell {vol:.8f} {base_currency}. Have {available_base:.8f}")
+                    print(f"   ⚠️ Kraken Sell Balance Warning: Need {vol:.8f} {base_currency}, Have {available_base:.8f}. Proceeding anyway.")
         except Exception as balance_check_err:
             # If balance check fails for any reason, log but don't block (could be API issue)
             print(f"   ⚠️ Balance check warning: {balance_check_err}")
-            # Re-raise if it's an insufficient funds error
-            if "Insufficient funds" in str(balance_check_err):
-                raise
         
         # Round to lot_decimals
         vol = round(vol, lot_decimals)

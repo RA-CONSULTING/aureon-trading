@@ -1645,5 +1645,197 @@
         "entry_cost": 0.063616954832,
         "entry_time": 1769266296.956587,
         "breakeven_price": 4.960679999999999
+    },
+    "BSXUSD": {
+        "exchange": "kraken",
+        "buy_price": 0.0,
+        "quantity": 90744.1,
+        "buy_timestamp": "2026-01-27T21:36:38.083665",
+        "auto_tracked": true,
+        "source": "portfolio_truth_check"
+    },
+    "EULUSD": {
+        "exchange": "kraken",
+        "buy_price": 0.0,
+        "quantity": 2.509442,
+        "buy_timestamp": "2026-01-27T21:36:38.088315",
+        "auto_tracked": true,
+        "source": "portfolio_truth_check"
+    },
+    "FIGHTUSD": {
+        "exchange": "kraken",
+        "buy_price": 0.0,
+        "quantity": 374.5,
+        "buy_timestamp": "2026-01-27T21:36:38.091146",
+        "auto_tracked": true,
+        "source": "portfolio_truth_check"
+    },
+    "FISUSD": {
+        "exchange": "kraken",
+        "buy_price": 0.0,
+        "quantity": 105.576,
+        "buy_timestamp": "2026-01-27T21:36:38.093807",
+        "auto_tracked": true,
+        "source": "portfolio_truth_check"
+    },
+    "GHIBLIUSD": {
+        "exchange": "kraken",
+        "buy_price": 0.0,
+        "quantity": 40400.0,
+        "buy_timestamp": "2026-01-27T21:36:38.096471",
+        "auto_tracked": true,
+        "source": "portfolio_truth_check"
+    },
+    "ICNTUSD": {
+        "exchange": "kraken",
+        "buy_price": 0.0,
+        "quantity": 16.0,
+        "buy_timestamp": "2026-01-27T21:36:38.099140",
+        "auto_tracked": true,
+        "source": "portfolio_truth_check"
+    },
+    "KTAUSD": {
+        "exchange": "kraken",
+        "buy_price": 0.0,
+        "quantity": 7.24428,
+        "buy_timestamp": "2026-01-27T21:36:38.101930",
+        "auto_tracked": true,
+        "source": "portfolio_truth_check"
+    },
+    "MXCUSD": {
+        "exchange": "kraken",
+        "buy_price": 0.0,
+        "quantity": 3100.0,
+        "buy_timestamp": "2026-01-27T21:36:38.104818",
+        "auto_tracked": true,
+        "source": "portfolio_truth_check"
+    },
+    "OPENUSD": {
+        "exchange": "binance",
+        "buy_price": 0.0,
+        "quantity": 1.84122118,
+        "buy_timestamp": "2026-01-27T22:19:20.018285",
+        "auto_tracked": true,
+        "source": "portfolio_truth_check"
+    },
+    "SKRUSD": {
+        "exchange": "kraken",
+        "buy_price": 0.0,
+        "quantity": 500.0,
+        "buy_timestamp": "2026-01-27T21:36:38.110301",
+        "auto_tracked": true,
+        "source": "portfolio_truth_check"
+    },
+    "TRXUSD": {
+        "exchange": "kraken",
+        "buy_price": 0.0,
+        "quantity": 81.94032068,
+        "buy_timestamp": "2026-01-27T21:36:38.113036",
+        "auto_tracked": true,
+        "source": "portfolio_truth_check"
+    },
+    "TUSD": {
+        "exchange": "kraken",
+        "buy_price": 0.0,
+        "quantity": 11.80156,
+        "buy_timestamp": "2026-01-27T21:36:38.115850",
+        "auto_tracked": true,
+        "source": "portfolio_truth_check"
+    },
+    "USD": {
+        "exchange": "binance",
+        "buy_price": 0.0,
+        "quantity": 0.130134,
+        "buy_timestamp": "2026-01-27T21:36:38.118603",
+        "auto_tracked": true,
+        "source": "portfolio_truth_check"
+    },
+    "LPTUSD": {
+        "exchange": "binance",
+        "buy_price": 0.0,
+        "quantity": 0.56567817,
+        "buy_timestamp": "2026-01-27T21:36:38.121313",
+        "auto_tracked": true,
+        "source": "portfolio_truth_check"
+    },
+    "PYTHUSD": {
+        "exchange": "binance",
+        "buy_price": 0.0,
+        "quantity": 945.5009948,
+        "buy_timestamp": "2026-01-27T21:36:38.123992",
+        "auto_tracked": true,
+        "source": "portfolio_truth_check"
+    },
+    "KAIAUSD": {
+        "exchange": "binance",
+        "buy_price": 0.0,
+        "quantity": 21.89421909,
+        "buy_timestamp": "2026-01-27T21:36:38.126909",
+        "auto_tracked": true,
+        "source": "portfolio_truth_check"
+    },
+    "SHELLUSD": {
+        "exchange": "binance",
+        "buy_price": 0.0,
+        "quantity": 82.72358723,
+        "buy_timestamp": "2026-01-27T21:36:38.129722",
+        "auto_tracked": true,
+        "source": "portfolio_truth_check"
+    },
+    "0GUSD": {
+        "exchange": "binance",
+        "buy_price": 0.0,
+        "quantity": 0.80069833,
+        "buy_timestamp": "2026-01-27T21:36:38.135635",
+        "auto_tracked": true,
+        "source": "portfolio_truth_check"
+    },
+    "ENSOUSD": {
+        "exchange": "binance",
+        "buy_price": 0.0,
+        "quantity": 3.88346538,
+        "buy_timestamp": "2026-01-27T21:36:38.138471",
+        "auto_tracked": true,
+        "source": "portfolio_truth_check"
+    },
+    "KITEUSD": {
+        "exchange": "binance",
+        "buy_price": 0.0,
+        "quantity": 95.60911196,
+        "buy_timestamp": "2026-01-27T21:36:38.141342",
+        "auto_tracked": true,
+        "source": "portfolio_truth_check"
+    },
+    "BREVUSD": {
+        "exchange": "binance",
+        "buy_price": 0.0,
+        "quantity": 239.67221917,
+        "buy_timestamp": "2026-01-27T21:36:38.144166",
+        "auto_tracked": true,
+        "source": "portfolio_truth_check"
+    },
+    "COPPERUSD": {
+        "exchange": "capital",
+        "buy_price": 0.0,
+        "quantity": 0.01,
+        "buy_timestamp": "2026-01-27T21:36:38.147112",
+        "auto_tracked": true,
+        "source": "portfolio_truth_check"
+    },
+    "LRCUSD": {
+        "exchange": "capital",
+        "buy_price": 0.0,
+        "quantity": 0.01,
+        "buy_timestamp": "2026-01-27T21:36:38.149915",
+        "auto_tracked": true,
+        "source": "portfolio_truth_check"
+    },
+    "STOUSD": {
+        "exchange": "binance",
+        "buy_price": 0.0,
+        "quantity": 64.5,
+        "buy_timestamp": "2026-01-27T21:57:58.005980",
+        "auto_tracked": true,
+        "source": "portfolio_truth_check"
     }
 }

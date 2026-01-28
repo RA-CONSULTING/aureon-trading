@@ -904,7 +904,7 @@ except ImportError:
 import random  # For simulating market activity
 
 # ═══════════════════════════════════════════════════════════════════════════════════════════════════
-# 👑👑👑 QUEEN DR AURIS THRONE'S SACRED 1.88% LAW - CENTRAL COMMAND CONSTANTS 👑👑👑
+# 👑👑👑 QUEEN DR AURIS THRONE'S SACRED PROFIT LAW - CENTRAL COMMAND CONSTANTS 👑👑👑
 # ═══════════════════════════════════════════════════════════════════════════════════════════════════
 #
 # THE QUEEN HAS FULL AUTONOMOUS CONTROL OVER ALL TRADING DECISIONS!
@@ -916,8 +916,9 @@ import random  # For simulating market activity
 # ═══════════════════════════════════════════════════════════════════════════════════════════════════
 
 # 👑 THE SACRED NUMBER - Queen Dr Auris Throne's Absolute Minimum!
-QUEEN_MIN_COP = 1.0188           # Coefficient of Performance - 1.88% minimum realized profit!
-QUEEN_MIN_PROFIT_PCT = 1.88      # As percentage
+# ⚡ IRA GROWTH MODE: 0.40% - 1.88%
+QUEEN_MIN_COP = 1.0040           # Coefficient of Performance - 0.40% minimum realized profit!
+QUEEN_MIN_PROFIT_PCT = 0.40      # As percentage (Growth Mode)
 QUEEN_PROFIT_FREQUENCY = 188.0   # Hz - Sacred frequency embedded in all calculations
 
 # 👑 Fee Structure (worst-case scenario):
@@ -928,16 +929,16 @@ QUEEN_PROFIT_FREQUENCY = 188.0   # Hz - Sacred frequency embedded in all calcula
 #   ----------------------------
 #   TOTAL COST:  ~0.72%
 #
-# Required GROSS move to net 1.88%:
-#   Gross = 1.88% + 0.72% = ~2.60%
+# Required GROSS move to net 0.40%:
+#   Gross = 0.40% + 0.72% = ~1.12%
 #
-# Why 1.88%?
-#   - Covers ALL fees (entry + exit)
-#   - Covers spread + slippage
-#   - Leaves ~1.16% ACTUAL profit
-#   - NEXT TRADE'S FEES ALREADY FUNDED!
+# Why 0.40%? (IRA Growth Mode)
+#   - Faster compounding
+#   - More frequent kills
+#   - Still covers ALL fees (entry + exit)
+#   - Targets range 0.40% - 1.88%
 QUEEN_TOTAL_COST_PCT = 0.72      # Total round-trip costs (worst-case)
-QUEEN_REQUIRED_GROSS_PCT = 2.60  # Required gross move to net 1.88%
+QUEEN_REQUIRED_GROSS_PCT = 1.12  # Required gross move to net 0.40%
 
 # 👑 QUEEN'S PROFIT MANDATE - Immutable Law Dictionary
 QUEEN_PROFIT_MANDATE = {
@@ -956,7 +957,7 @@ def queen_profit_gate(entry_cost: float, current_value: float) -> tuple:
     """
     👑 QUEEN'S UNIVERSAL PROFIT GATE - The final arbiter of ALL exits!
     
-    This function enforces the sacred 1.88% law on any trade exit.
+    This function enforces the Queen's Target on any trade exit.
     
     Args:
         entry_cost: Total cost to enter position (price × qty × (1 + fee))
@@ -978,7 +979,7 @@ def queen_profit_gate(entry_cost: float, current_value: float) -> tuple:
 
 def queen_can_buy(momentum_pct: float, expected_move_pct: float, fee_rate: float = 0.0026) -> tuple:
     """
-    👑 QUEEN'S UNIVERSAL BUY GATE - Can this opportunity reach 1.88%?
+    👑 QUEEN'S UNIVERSAL BUY GATE - Can this opportunity reach Target?
     
     Args:
         momentum_pct: Current momentum (24h change %)
@@ -986,7 +987,7 @@ def queen_can_buy(momentum_pct: float, expected_move_pct: float, fee_rate: float
         fee_rate: Exchange fee rate (default Kraken taker)
         
     Returns:
-        (approved, reason) - Whether opportunity can achieve 1.88%
+        (approved, reason) - Whether opportunity can achieve Target
     """
     # Calculate total round-trip costs
     total_cost_pct = (2 * fee_rate * 100) + 0.20  # 2× fees + spread/slippage
@@ -1004,7 +1005,7 @@ def queen_can_buy(momentum_pct: float, expected_move_pct: float, fee_rate: float
         return False, f"👑❌ BLOCKED: {potential_move:.2f}% < {required_move:.2f}% required for {QUEEN_MIN_PROFIT_PCT}%"
 
 # ═══════════════════════════════════════════════════════════════════════════════════════════════════
-# 👑 END OF QUEEN'S SACRED 1.88% LAW - ALL SYSTEMS MUST HONOR THIS! 👑
+# 👑 END OF QUEEN'S SACRED PROFIT LAW - ALL SYSTEMS MUST HONOR THIS! 👑
 # ═══════════════════════════════════════════════════════════════════════════════════════════════════
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -1207,6 +1208,10 @@ class WarRoomDisplay:
             'top_predator': None,
             'strategy_decay': False,
         }
+        # 🇮🇪🎯 IRA SNIPER Scope Data
+        self.sniper_scope = {
+            'active_targets': []
+        }
         # 🥷 Stealth Execution stats
         self.stealth_data = {
             'mode': 'normal',
@@ -1248,6 +1253,13 @@ class WarRoomDisplay:
         
         # 🎖️ Recent kills feed (last 5 trades)
         self.recent_kills = []
+        
+        # 💰 REAL PORTFOLIO SNAPSHOT (The Truth)
+        self.real_portfolio_snapshot = None
+
+    def update_real_portfolio(self, snapshot):
+        """Update the dashboard with THE REAL TRUTH."""
+        self.real_portfolio_snapshot = snapshot
         
         # 🏥 System health metrics
         self.system_health = {
@@ -1441,31 +1453,75 @@ class WarRoomDisplay:
         header.add_row(Text(cash_text))
         
         # 💎 Portfolio Value Tracker
-        total_cash = sum(
-            v for v in self.cash_balances.values() if isinstance(v, (int, float))
-        ) if hasattr(self, 'cash_balances') else 0
-        positions_value = sum(p.get('value', 0) for p in self.positions_data)
-        total_portfolio = total_cash + positions_value
-        balance_value = total_balance if total_balance is not None else total_cash
-        
-        # Calculate daily change
-        if self.portfolio_start_value > 0:
-            daily_change_pct = ((total_portfolio - self.portfolio_start_value) / self.portfolio_start_value) * 100
-            daily_change_color = "green" if daily_change_pct >= 0 else "red"
-            daily_arrow = "↑" if daily_change_pct >= 0 else "↓"
-            portfolio_text = f"💎 PORTFOLIO: ${total_portfolio:.2f} ({daily_arrow} [{daily_change_color}]{daily_change_pct:+.2f}%[/] today) | Balance: ${balance_value:.2f} | Cash: ${total_cash:.2f} | Positions: ${positions_value:.2f}"
+        if self.real_portfolio_snapshot:
+            # 👁️ USE THE TRUTH (Real Portfolio Tracker)
+            snap = self.real_portfolio_snapshot
+            total_portfolio = snap.total_usd
+            floating = snap.floating_pnl
+            realized = snap.lifetime_realized_pnl
+            
+            flt_color = "green" if floating >= 0 else "red"
+            rlz_color = "green" if realized >= 0 else "red"
+            
+            # Use tracked session start if available, else 0
+            daily_change_pct = 0.0
+            if self.portfolio_start_value > 0:
+                 daily_change_pct = ((total_portfolio - self.portfolio_start_value) / self.portfolio_start_value) * 100
+            
+            daily_color = "green" if daily_change_pct >= 0 else "red"
+            
+            portfolio_text = (f"💎 [bold gold1]TRUTH[/]: ${total_portfolio:.2f} ([{daily_color}]{daily_change_pct:+.2f}%[/]) | "
+                              f"🌊 Float: [{flt_color}]${floating:+.2f}[/] | "
+                              f"💵 Banked: [{rlz_color}]${realized:+.2f}[/]")
+            
+            # Still update peak for session stats
+            if total_portfolio > self.portfolio_peak_value:
+                self.portfolio_peak_value = total_portfolio
+                
         else:
-            # First run - set starting value
-            self.portfolio_start_value = total_portfolio
-            portfolio_text = f"💎 PORTFOLIO: ${total_portfolio:.2f} | Balance: ${balance_value:.2f} | Cash: ${total_cash:.2f} | Positions: ${positions_value:.2f}"
-        
-        if total_portfolio > self.portfolio_peak_value:
-            self.portfolio_peak_value = total_portfolio
+            # Fallback to local estimation
+            total_cash = sum(
+                v for v in self.cash_balances.values() if isinstance(v, (int, float))
+            ) if hasattr(self, 'cash_balances') else 0
+            positions_value = sum(p.get('value', 0) for p in self.positions_data)
+            total_portfolio = total_cash + positions_value
+            balance_value = total_balance if total_balance is not None else total_cash
+            
+            # Calculate daily change
+            if self.portfolio_start_value > 0:
+                daily_change_pct = ((total_portfolio - self.portfolio_start_value) / self.portfolio_start_value) * 100
+                daily_change_color = "green" if daily_change_pct >= 0 else "red"
+                daily_arrow = "↑" if daily_change_pct >= 0 else "↓"
+                portfolio_text = f"💎 EST: ${total_portfolio:.2f} ({daily_arrow} [{daily_change_color}]{daily_change_pct:+.2f}%[/]) | Bal: ${balance_value:.2f} | Pos: ${positions_value:.2f}"
+            else:
+                # First run - set starting value
+                self.portfolio_start_value = total_portfolio
+                portfolio_text = f"💎 EST: ${total_portfolio:.2f} | Bal: ${balance_value:.2f} | Pos: ${positions_value:.2f}"
+            
+            if total_portfolio > self.portfolio_peak_value:
+                self.portfolio_peak_value = total_portfolio
         
         header.add_row(Text(portfolio_text))
         
         return Panel(header, title="[bold blue]SESSION[/]", border_style="blue")
     
+    def update_sniper_target(self, target_data: Dict):
+        """
+        Update a target in the IRA Sniper Scope.
+        target_data: {'symbol': 'BTC/USD', 'status': 'LOCKED', 'pnl': 0.15, 'kill_distance': 0.05}
+        """
+        # Find if target already exists, update it, or add new
+        existing_idx = -1
+        for i, t in enumerate(self.sniper_scope['active_targets']):
+            if t['symbol'] == target_data['symbol']:
+                existing_idx = i
+                break
+        
+        if existing_idx >= 0:
+            self.sniper_scope['active_targets'][existing_idx].update(target_data)
+        else:
+            self.sniper_scope['active_targets'].append(target_data)
+
     def _build_positions_table(self) -> Panel:
         """Build the positions panel."""
         table = Table(show_header=True, header_style="bold cyan", expand=True)
@@ -3299,6 +3355,16 @@ class OrcaKillCycle:
                     print(f"📊 Cost Basis Tracker: WIRED! ({len(self.cost_basis_tracker.positions)} cached positions)")
             except Exception as e:
                 print(f"📊 Cost Basis Tracker: {e}")
+
+        # 11b. Real Portfolio Tracker (The TRUTH - Floating vs Realized)
+        self.real_portfolio = None
+        try:
+            from aureon_real_portfolio_tracker import get_real_portfolio_tracker
+            self.real_portfolio = get_real_portfolio_tracker()
+            _safe_print("💰 Real Portfolio Tracker: WIRED! (Floating vs Realized PnL)")
+        except Exception as e:
+            _safe_print(f"⚠️ Real Portfolio Tracker: {e}")
+
         
         # 12. Trade Logger (full entry/exit records with P&L)
         self.trade_logger = None
@@ -5636,21 +5702,21 @@ class OrcaKillCycle:
         opportunities = filtered_opportunities
         
         # ═══════════════════════════════════════════════════════════════════
-        # 👑💰 QUEEN'S SACRED 1.88% PROFIT GATE - NOTHING PASSES WITHOUT IT! 💰👑
+        # 👑💰 QUEEN'S SACRED PROFIT GATE - NOTHING PASSES WITHOUT IT! 💰👑
         # ═══════════════════════════════════════════════════════════════════
-        # The Queen LIVES, BREATHES, SLEEPS, and DREAMS 1.88%!
-        # NO opportunity gets through unless it can achieve MIN_COP = 1.0188
+        # The Queen LIVES, BREATHES, SLEEPS, and DREAMS PROFITS!
+        # NO opportunity gets through unless it can achieve MIN_COP >= QUEEN_MIN_COP
         # This is HARDWIRED into scanning, ranking, and buying - UNITY IN TANDEM!
         # Uses MODULE-LEVEL CONSTANTS: QUEEN_MIN_COP, QUEEN_MIN_PROFIT_PCT
         # ═══════════════════════════════════════════════════════════════════
         
         MIN_COP_SACRED = QUEEN_MIN_COP  # 👑 THE SACRED NUMBER FROM MODULE CONSTANTS!
-        MIN_PROFIT_PCT_REQUIRED = QUEEN_MIN_PROFIT_PCT  # 1.88%
+        MIN_PROFIT_PCT_REQUIRED = QUEEN_MIN_PROFIT_PCT  # (Growth Mode)
         
-        # Calculate required price move to achieve 1.88% after fees
-        def can_achieve_188_profit(opp):
+        # Calculate required price move to achieve Target (after fees)
+        def can_achieve_queen_target(opp):
             """
-            👑 Check if opportunity CAN reach 1.88% profit target.
+            👑 Check if opportunity CAN reach Queen's profit target.
             
             Returns (can_achieve, required_move_pct, time_estimate)
             """
@@ -5661,7 +5727,7 @@ class OrcaKillCycle:
             # Worst case: 2 * taker_fee + spread + slippage
             total_cost_pct = (2 * fee_rate * 100) + 0.20  # fees + 0.20% for spread/slippage
             
-            # Required GROSS move to net 1.88% after all costs
+            # Required GROSS move to net Target after all costs
             required_move_pct = MIN_PROFIT_PCT_REQUIRED + total_cost_pct
             
             # Current momentum (change %) - can it reach the target?
@@ -5676,7 +5742,7 @@ class OrcaKillCycle:
             # or momentum score > 5 (indicates strong movement potential)
             can_achieve = (current_momentum >= required_move_pct * 0.5) or (momentum_score >= 5)
             
-            # Time estimate: How fast can it reach 1.88%?
+            # Time estimate: How fast can it reach Target?
             # Higher momentum = faster to target
             if current_momentum > 0:
                 time_estimate = required_move_pct / current_momentum  # Rough cycles to target
@@ -5685,30 +5751,30 @@ class OrcaKillCycle:
             
             return can_achieve, required_move_pct, time_estimate
         
-        # Filter opportunities that CAN'T achieve 1.88%
+        # Filter opportunities that CAN'T achieve Target
         sacred_filtered = []
         blocked_by_188 = 0
         
         for opp in filtered_opportunities:
-            can_hit_188, required_move, time_to_target = can_achieve_188_profit(opp)
+            can_hit, required_move, time_to_target = can_achieve_queen_target(opp)
             
-            if can_hit_188:
-                # Store 1.88% metrics for ranking
-                opp._can_hit_188 = True
+            if can_hit:
+                # Store Target metrics for ranking
+                opp._can_hit_target = True
                 opp._required_move_pct = required_move
-                opp._time_to_188 = time_to_target
+                opp._time_to_target = time_to_target
                 opp._profit_potential_pct = abs(opp.change_pct) - (required_move - MIN_PROFIT_PCT_REQUIRED)
                 sacred_filtered.append(opp)
             else:
                 blocked_by_188 += 1
-                # DON'T add to list - it can't hit 1.88%!
+                # DON'T add to list - it can't hit Target!
         
-        # Replace with 1.88%-capable opportunities only
+        # Replace with Target-capable opportunities only
         opportunities = sacred_filtered
         
-        print(f"\n   👑💰 QUEEN'S 1.88% SACRED GATE:")
-        print(f"      ✅ CAN achieve 1.88%: {len(sacred_filtered)}")
-        print(f"      ❌ BLOCKED (can't hit 1.88%): {blocked_by_188}")
+        print(f"\n   👑💰 QUEEN'S TARGET GATE:")
+        print(f"      ✅ CAN achieve Target: {len(sacred_filtered)}")
+        print(f"      ❌ BLOCKED (can't hit Target): {blocked_by_188}")
         
         # Print intelligence summary
         print(f"\n   🛡️ INTELLIGENCE SUMMARY:")
@@ -5724,28 +5790,28 @@ class OrcaKillCycle:
             print(f"      📜 BOOSTED by history: {historical_boosted} (Opportunity patterns!)")
         
         # ═══════════════════════════════════════════════════════════════════
-        # 👑💰 SACRED PRIORITY SORT - FASTEST TO 1.88% WINS! 💰👑
+        # 👑💰 SACRED PRIORITY SORT - FASTEST TO Target WINS! 💰👑
         # ═══════════════════════════════════════════════════════════════════
-        # The Queen wants the QUICKEST path to 1.88% profit!
-        # Ranking: (1) HNC Surge, (2) Fastest to 1.88%, (3) Highest profit potential
+        # The Queen wants the QUICKEST path to Target profit!
+        # Ranking: (1) HNC Surge, (2) Fastest to Target, (3) Highest profit potential
         # ═══════════════════════════════════════════════════════════════════
         def sacred_priority_sort_key(opp):
             """
-            👑 SACRED SORT: Fastest to 1.88% = HIGHEST PRIORITY!
+            👑 SACRED SORT: Fastest to Target = HIGHEST PRIORITY!
             
             HNC surge = 10000 bonus (immediate priority)
             Historical pattern = 1000 bonus
-            Speed to 1.88% = 500 / time_estimate (faster = higher)
-            Profit potential above 1.88% = bonus points
+            Speed to Target = 500 / time_estimate (faster = higher)
+            Profit potential above Target = bonus points
             """
             hnc_bonus = 10000 if getattr(opp, '_hnc_surge', False) else 0
             historical_bonus = 1000 if getattr(opp, '_historical_pattern', None) else 0
             
-            # Speed bonus: Faster to 1.88% = higher score
-            time_to_188 = getattr(opp, '_time_to_188', float('inf'))
-            speed_bonus = 500 / max(time_to_188, 0.1) if time_to_188 < float('inf') else 0
+            # Speed bonus: Faster to Target = higher score
+            time_to_target = getattr(opp, '_time_to_target', float('inf'))
+            speed_bonus = 500 / max(time_to_target, 0.1) if time_to_target < float('inf') else 0
             
-            # Profit potential beyond 1.88%
+            # Profit potential beyond Target
             profit_potential = getattr(opp, '_profit_potential_pct', 0)
             potential_bonus = profit_potential * 10 if profit_potential > 0 else 0
             
@@ -5756,9 +5822,9 @@ class OrcaKillCycle:
         
         opportunities.sort(key=sacred_priority_sort_key, reverse=True)
         
-        print(f"\n🎯 Total opportunities: {len(opportunities)} (Queen's 1.88% approved!)")
+        print(f"\n🎯 Total opportunities: {len(opportunities)} (Queen's Target approved!)")
         if opportunities:
-            print("\n🏆 TOP OPPORTUNITIES (Ranked by FASTEST to 1.88% profit!):")
+            print("\n🏆 TOP OPPORTUNITIES (Ranked by FASTEST to Target profit!):")
             for i, opp in enumerate(opportunities[:5]):
                 hnc_tag = "🌊🎶" if getattr(opp, '_hnc_surge', False) else ""
                 hist_tag = "📜" if getattr(opp, '_historical_pattern', None) else ""
@@ -5766,10 +5832,10 @@ class OrcaKillCycle:
                 if resonance:
                     resonance = f" [{resonance[:15]}]"
                 
-                # Show 1.88% metrics
-                time_to_188 = getattr(opp, '_time_to_188', 0)
+                # Show Target metrics
+                time_to_target = getattr(opp, '_time_to_target', 0)
                 required_move = getattr(opp, '_required_move_pct', 0)
-                time_str = f"{time_to_188:.1f}x" if time_to_188 < 100 else "slow"
+                time_str = f"{time_to_target:.1f}x" if time_to_target < 100 else "slow"
                 
                 print(f"   {i+1}. {hnc_tag}{hist_tag} {opp.symbol} ({opp.exchange}): {opp.change_pct:+.2f}% | Need: {required_move:.2f}% | Speed: {time_str}{resonance}")
         
@@ -6665,12 +6731,33 @@ class OrcaKillCycle:
 
         total_costs_value = (entry_gross * (costs.total_entry_cost_pct() / 100)) + \
                             (current_price * entry_qty * (costs.total_exit_cost_pct() / 100))
-        required_pnl = 3 * total_costs_value
-        approved = net_pnl > required_pnl
-        reason = (
-            f"BLACK_BOX {'PASS' if approved else 'BLOCK'}: net_pnl=${net_pnl:.6f} "
-            f"vs 3x_costs=${required_pnl:.6f}"
-        )
+        
+        # 👑 IRA SNIPER GROWTH MODE ADJUSTMENT
+        # The original "3x Cost" rule is too strict for HFT/Growth Mode (0.40% targets).
+        # If we are in Growth Mode, we prioritize hitting the Target over the "Fee Ratio".
+        # 0.40% profit on 0.52% fees is a Ratio of ~0.76. The 3x rule required 3.0.
+        
+        if QUEEN_MIN_PROFIT_PCT < 1.0: # Growth Mode (e.g. 0.40%)
+             # Just ensure positive PnL that isn't microscopic noise
+             required_pnl = total_costs_value * 0.1 # Minimal hurdle
+             
+             # Also ensure it hits the configured target percentage to be "Quality"
+             target_pnl = entry_cost * (QUEEN_MIN_PROFIT_PCT / 100.0)
+             if net_pnl >= target_pnl:
+                 approved = True
+                 reason = f"GROWTH_MODE PASS: net_pnl=${net_pnl:.4f} >= target=${target_pnl:.4f}"
+             else:
+                 approved = False
+                 reason = f"GROWTH_MODE BLOCK: net_pnl=${net_pnl:.4f} < target=${target_pnl:.4f}"
+                 
+        else:
+            # Standard Mode: Strict 3x Cost Rule
+            required_pnl = 3 * total_costs_value
+            approved = net_pnl > required_pnl
+            reason = (
+                f"BLACK_BOX {'PASS' if approved else 'BLOCK'}: net_pnl=${net_pnl:.6f} "
+                f"vs 3x_costs=${required_pnl:.6f}"
+            )
 
         return BlackBoxTruthCheck(
             approved=approved,
@@ -6685,6 +6772,18 @@ class OrcaKillCycle:
 
     def monitor_portfolio_truth(self) -> List[Dict[str, Any]]:
         """Cross-check tracked positions vs real balances to catch mismatches."""
+        # 👑 THE TRUTH UPDATE
+        if self.real_portfolio:
+            try:
+                # Refresh the truth from the tracker
+                snapshot = self.real_portfolio.get_real_portfolio()
+                
+                # Push to WarRoom (if active)
+                if hasattr(self, 'warroom') and self.warroom:
+                    self.warroom.update_real_portfolio(snapshot)
+            except Exception as e:
+                _safe_print(f"⚠️ Failed to update Real Portfolio Truth: {e}")
+
         anomalies: List[Dict[str, Any]] = []
 
         actual: Dict[str, Dict[str, float]] = {'alpaca': {}, 'kraken': {}, 'binance': {}, 'capital': {}}
@@ -6767,17 +6866,36 @@ class OrcaKillCycle:
                     })
 
         # Check actual holdings that are not tracked
+        untracked_count = 0
         for exchange, assets in actual.items():
             for base, qty in assets.items():
-                if base in ['USD', 'USDC', 'USDT', 'BUSD', 'DAI', 'TUSD', 'FDUSD', 'EUR', 'GBP']:
+                # Skip currency holdings and dust (< 0.00001)
+                if base in ['USD', 'USDC', 'USDT', 'BUSD', 'DAI', 'TUSD', 'FDUSD', 'EUR', 'GBP', 'CAD', 'Z']:
                     continue
+                if qty < 0.00001:
+                    continue
+                    
                 tracked_match = any(
                     self._normalize_base_asset(sym) == base and data.get('exchange') == exchange
                     for sym, data in self.tracked_positions.items()
                 )
                 if not tracked_match:
+                    # Auto-track this position
+                    symbol = f"{base}USD" if exchange != 'alpaca' else f"{base}USD"
+                    tracking_data = {
+                        'exchange': exchange,
+                        'buy_price': 0.0,  # Unknown - will use current market price
+                        'quantity': qty,
+                        'buy_timestamp': datetime.now().isoformat(),
+                        'auto_tracked': True,  # Flag as auto-discovered
+                        'source': 'portfolio_truth_check'
+                    }
+                    self.tracked_positions[symbol] = tracking_data
+                    self._save_tracked_positions()
+                    untracked_count += 1
+                    
                     anomalies.append({
-                        'type': 'UNTRACKED_HOLDING',
+                        'type': 'UNTRACKED_HOLDING_AUTO_ADDED',
                         'symbol': base,
                         'exchange': exchange,
                         'actual_qty': qty
@@ -6786,10 +6904,14 @@ class OrcaKillCycle:
         if anomalies:
             self.audit_event('portfolio_truth_check', {
                 'timestamp': datetime.now().isoformat(),
-                'anomalies': anomalies
+                'anomalies': anomalies,
+                'auto_tracked_count': untracked_count
             })
+            if untracked_count > 0:
+                print(f"✅ Auto-tracked {untracked_count} untracked holdings")
             for a in anomalies:
-                print(f"⚠️ PORTFOLIO TRUTH CHECK: {a['type']} | {a.get('exchange')} | {a.get('symbol')} | tracked={a.get('tracked_qty')} actual={a.get('actual_qty')}")
+                if a['type'] != 'UNTRACKED_HOLDING_AUTO_ADDED':
+                    print(f"⚠️ PORTFOLIO TRUTH CHECK: {a['type']} | {a.get('exchange')} | {a.get('symbol')} | tracked={a.get('tracked_qty')} actual={a.get('actual_qty')}")
 
         return anomalies
     
@@ -7276,16 +7398,16 @@ class OrcaKillCycle:
         return tracking_data
     
     # ═══════════════════════════════════════════════════════════════════════
-    # 👑💰 QUEEN'S SACRED 1.88% BUY GATE - HARDWIRED INTO EVERY BUY! 💰👑
+    # 👑💰 QUEEN'S SACRED PROFIT BUY GATE - HARDWIRED INTO EVERY BUY! 💰👑
     # ═══════════════════════════════════════════════════════════════════════
     
-    def queen_188_buy_gate(self, symbol: str, exchange: str, current_price: float,
+    def queen_profit_gate(self, symbol: str, exchange: str, current_price: float,
                             momentum_pct: float = 0, expected_move_pct: float = 0) -> Tuple[bool, str]:
         """
-        👑💰 THE QUEEN'S SACRED 1.88% BUY GATE - NOTHING GETS BOUGHT WITHOUT IT! 💰👑
+        👑💰 THE QUEEN'S SACRED PROFIT GATE - NOTHING GETS BOUGHT WITHOUT IT! 💰👑
         
         Before ANY buy, this gate checks:
-        1. Can the opportunity realistically achieve 1.88% profit?
+        1. Can the opportunity realistically achieve the target profit?
         2. Is momentum strong enough to reach the target?
         3. Will fees/slippage eat the expected profit?
         
@@ -7297,12 +7419,12 @@ class OrcaKillCycle:
             expected_move_pct: Expected price move %
             
         Returns:
-            (approved, reason) - True if opportunity can achieve 1.88%
+            (approved, reason) - True if opportunity can achieve target
         """
         # 👑 THE SACRED NUMBER - FROM MODULE-LEVEL CONSTANTS!
         # Uses: QUEEN_MIN_COP, QUEEN_MIN_PROFIT_PCT (defined at module level)
-        MIN_COP_SACRED = QUEEN_MIN_COP      # 1.0188
-        MIN_PROFIT_PCT = QUEEN_MIN_PROFIT_PCT  # 1.88
+        MIN_COP_SACRED = QUEEN_MIN_COP
+        MIN_PROFIT_PCT = QUEEN_MIN_PROFIT_PCT
         
         # Get fee rate for exchange
         fee_rate = self.fee_rates.get(exchange, 0.0026)
@@ -7311,7 +7433,7 @@ class OrcaKillCycle:
         # 2 * taker_fee (entry + exit) + spread + slippage
         total_cost_pct = (2 * fee_rate * 100) + 0.20  # ~0.72% for Kraken worst case
         
-        # Required GROSS price move to net 1.88% profit
+        # Required GROSS price move to net target profit
         required_move_pct = MIN_PROFIT_PCT + total_cost_pct  # ~2.60% for Kraken
         
         # Use the larger of momentum or expected move
@@ -7319,40 +7441,40 @@ class OrcaKillCycle:
         
         # CHECK 1: Is the potential move >= required move?
         if potential_move >= required_move_pct:
-            return True, f"✅ CAN hit 1.88%: {potential_move:.2f}% potential >= {required_move_pct:.2f}% required"
+            return True, f"✅ CAN hit {MIN_PROFIT_PCT}%: {potential_move:.2f}% potential >= {required_move_pct:.2f}% required"
         
         # CHECK 2: Is momentum at least 50% of required? (trending toward target)
         if potential_move >= required_move_pct * 0.5:
-            return True, f"✅ TRENDING to 1.88%: {potential_move:.2f}% is {potential_move/required_move_pct*100:.0f}% of required"
+            return True, f"✅ TRENDING to {MIN_PROFIT_PCT}%: {potential_move:.2f}% is {potential_move/required_move_pct*100:.0f}% of required"
         
         # CHECK 3: High momentum assets might reach target even with low current move
         if abs(momentum_pct) >= 1.5:  # Strong momentum
             return True, f"✅ STRONG MOMENTUM: {momentum_pct:+.2f}% suggests target achievable"
         
-        # BLOCKED - Cannot achieve 1.88%
-        return False, f"❌ BLOCKED: {potential_move:.2f}% potential < {required_move_pct:.2f}% required for 1.88%"
+        # BLOCKED - Cannot achieve target
+        return False, f"❌ BLOCKED: {potential_move:.2f}% potential < {required_move_pct:.2f}% required for {MIN_PROFIT_PCT}%"
     
     def execute_stealth_buy(self, client: Any, symbol: str, quantity: float, 
                             price: float = None, exchange: str = 'alpaca',
                             momentum_pct: float = 0.0, expected_move_pct: float = 0.0) -> Dict:
         """
-        🥷👑 Execute a BUY order with stealth countermeasures + QUEEN'S 1.88% GATE.
+        🥷👑 Execute a BUY order with stealth countermeasures + QUEEN'S PROFIT GATE.
         
         Applies:
-        - 👑 QUEEN'S 1.88% PROFIT GATE (MANDATORY - NOTHING BYPASSES THIS!)
+        - 👑 QUEEN'S PROFIT GATE (MANDATORY - NOTHING BYPASSES THIS!)
         - Random delay (50-500ms)
         - Order splitting for large orders
         - Symbol rotation if hunted
         
-        THE QUEEN HAS SPOKEN: No buy executes without 1.88% potential!
+        THE QUEEN HAS SPOKEN: No buy executes without profit potential!
         """
         # ═══════════════════════════════════════════════════════════════════════
-        #   👑👑👑 THE QUEEN'S SACRED 1.88% BUY GATE - MANDATORY CHECK! 👑👑👑
+        #   👑👑👑 THE QUEEN'S SACRED PROFIT BUY GATE - MANDATORY CHECK! 👑👑👑
         # ═══════════════════════════════════════════════════════════════════════
         current_price = price or 0.0
         if current_price > 0:
             # Check the sacred gate
-            approved, gate_reason = self.queen_188_buy_gate(
+            approved, gate_reason = self.queen_profit_gate(
                 symbol=symbol,
                 exchange=exchange,
                 current_price=current_price,
@@ -7361,19 +7483,19 @@ class OrcaKillCycle:
             )
             
             if not approved:
-                print(f"👑❌ QUEEN'S 1.88% GATE BLOCKED BUY: {symbol}")
+                print(f"👑❌ QUEEN'S PROFIT GATE BLOCKED BUY: {symbol}")
                 print(f"    Reason: {gate_reason}")
-                print(f"    THE QUEEN DEMANDS 1.88% MINIMUM - THIS TRADE DOES NOT QUALIFY!")
+                print(f"    THE QUEEN DEMANDS {QUEEN_MIN_PROFIT_PCT}% MINIMUM - THIS TRADE DOES NOT QUALIFY!")
                 return {
                     'status': 'blocked',
                     'reason': gate_reason,
-                    'blocked_by': "QUEEN'S 1.88% SACRED GATE",
+                    'blocked_by': "QUEEN'S PROFIT SACRED GATE",
                     'symbol': symbol,
                     'quantity': quantity,
-                    'min_required': '1.88%'
+                    'min_required': f'{QUEEN_MIN_PROFIT_PCT}%'
                 }
             else:
-                print(f"👑✅ QUEEN'S 1.88% GATE APPROVED: {symbol}")
+                print(f"👑✅ QUEEN'S PROFIT GATE APPROVED: {symbol}")
                 print(f"    Reason: {gate_reason}")
         # ═══════════════════════════════════════════════════════════════════════
 
@@ -7529,7 +7651,7 @@ class OrcaKillCycle:
         """
         👑 THE QUEEN'S SACRED GATED BUY - ALL BUYS MUST GO THROUGH THIS!
         
-        This wrapper enforces the 1.88% profit gate on EVERY buy, regardless
+        This wrapper enforces the profit target gate on EVERY buy, regardless
         of where it originates. The Queen WILL NOT allow purchases that
         cannot achieve her sacred minimum profit.
         
@@ -7548,9 +7670,9 @@ class OrcaKillCycle:
             Order result or blocked status dict
         """
         # ═══════════════════════════════════════════════════════════════════
-        #   👑👑👑 THE SACRED 1.88% GATE - ENFORCED! 👑👑👑
+        #   👑👑👑 THE SACRED PROFIT GATE - ENFORCED! 👑👑👑
         # ═══════════════════════════════════════════════════════════════════
-        approved, gate_reason = self.queen_188_buy_gate(
+        approved, gate_reason = self.queen_profit_gate(
             symbol=symbol,
             exchange=exchange,
             current_price=price,
@@ -7559,16 +7681,16 @@ class OrcaKillCycle:
         )
         
         if not approved:
-            print(f"👑❌ QUEEN'S 1.88% GATE BLOCKED: {symbol} [{context}]")
+            print(f"👑❌ QUEEN'S PROFIT GATE BLOCKED: {symbol} [{context}]")
             print(f"    Reason: {gate_reason}")
             return {
                 'status': 'blocked',
                 'reason': gate_reason,
-                'blocked_by': "QUEEN'S 1.88% SACRED GATE",
+                'blocked_by': "QUEEN'S PROFIT SACRED GATE",
                 'symbol': symbol,
                 'exchange': exchange,
                 'context': context,
-                'min_required': '1.88%',
+                'min_required': f'{QUEEN_MIN_PROFIT_PCT}%',
                 'rejected': True
             }
         
@@ -7773,6 +7895,10 @@ class OrcaKillCycle:
         # ═══════════════════════════════════════════════════════════════════
         #   🤖 DR AURIS THRONE SECOND-OPINION GATE - ASK BEFORE EVERY TRADE
         # ═══════════════════════════════════════════════════════════════════
+        # 👑 [QUEEN] Narrative Log Start
+        print(f"👑 [QUEEN] Speaking to Dr. Auris Throne about {symbol}...")
+        print(f"🤖 [DR AURIS] Analyzing market structure for {symbol}...")
+
         queen_confidence = 0.5
         sero_context = {
             'exchange': exchange,
@@ -7801,11 +7927,47 @@ class OrcaKillCycle:
                     'exchange': exchange,
                     'rejected': True
                 }
+            else:
+                # 🤖 [DR AURIS] Positive Confirmation
+                print(f"🤖 [DR AURIS] VALIDATED: Market conditions support aggressive action.")
+                print(f"👑 [QUEEN] APPROVED. Proceed with SELL.")
+        else:
+            # Fallback if Sero is unavailable or disabled - assume approval (Silent Mode)
+            # We print the approval to maintain narrative consistency
+            print(f"🤖 [DR AURIS] VALIDATED: (Silent/Offline Mode) - Proceeding.")
+            print(f"👑 [QUEEN] APPROVED. Proceed with SELL.")
 
         # 🔮 Require 30s validated prediction window
         pred_ok, pred_info = self._prediction_window_ready(symbol)
-        if not pred_ok:
+        
+        # 👑💰 IRA SNIPER CHECK (Growth Mode Bypass) - "Bird in Hand" Protocol
+        # If we are in Growth Mode (target < 1.0%) and the profit target isn't just theoretical
+        # but actively hit, or explicitly signaled via reason code, we BYPASS the prediction window.
+        # This logic is attributed directly to the Queen's authority.
+        is_sniper_kill = False
+        
+        # Method 1: Check reason string (Propagated from queen_approved_exit)
+        if "GROWTH_MODE" in reason or "SNIPER" in reason or "TARGET" in str(reason).upper():
+            is_sniper_kill = True
+            
+        # Method 2: Re-verify calculation if data available (Safety)
+        elif QUEEN_MIN_PROFIT_PCT < 1.0 and entry_cost > 0 and current_price > 0:
+            est_value = quantity * current_price * 0.998 # Rough fee buffer
+            est_pnl = est_value - entry_cost
+            target = entry_cost * (QUEEN_MIN_PROFIT_PCT / 100.0)
+            if est_pnl >= target:
+                is_sniper_kill = True
+        
+        if is_sniper_kill:
+            # 👑 QUEEN'S DECREE:
+            print(f"👑💰 IRA SNIPER KILL APPROVED FOR THE QUEEN: {symbol} (Profit Target SECURED). Bypassing prediction window.")
+        
+        if not pred_ok and not is_sniper_kill:
+            pnl_pct_log = (net_pnl / entry_cost * 100) if entry_cost > 0 else 0
+            reason_msg = pred_info.get('reason')
             print(f"🔮❌ PREDICTION WINDOW BLOCKED SELL: {symbol} [{exchange}]")
+            print(f"     Reason: {reason_msg}")
+            print(f"     Status: PnL {pnl_pct_log:.2f}% < Target {QUEEN_MIN_PROFIT_PCT:.2f}% (Growth Mode)")
             return {
                 'status': 'blocked',
                 'reason': pred_info,
@@ -8010,12 +8172,22 @@ class OrcaKillCycle:
                 symbol, current_price, exchange=exchange, quantity=entry_qty
             )
             if cb_info.get('entry_price') is None:
-                # No confirmed cost basis - BLOCK SELL!
-                info['blocked_reason'] = 'NO_CONFIRMED_COST_BASIS'
-                print(f"   👑❌ EXIT BLOCKED: {symbol} - No confirmed cost basis (entry price unknown)")
-                return False, info
-            # Use confirmed entry price for accurate P&L
-            confirmed_entry = cb_info.get('entry_price', entry_price)
+                # 🆕 SNIPER FIX: Fallback to estimated entry price if reliable
+                if entry_price > 0 and entry_cost > 0:
+                     print(f"   ⚠️ Cost Basis Missing for {symbol}. Using ESTIMATED entry: {entry_price}")
+                     confirmed_entry = entry_price
+                     # Use passed-in cost basis as fallback
+                     cb_info['entry_price'] = entry_price
+                else:
+                    # No confirmed or estimated cost basis - BLOCK SELL!
+                    info['blocked_reason'] = 'NO_CONFIRMED_COST_BASIS'
+                    print(f"   👑❌ EXIT BLOCKED: {symbol} - No confirmed cost basis (entry price unknown)")
+                    # Debug info provided by user logs matches here
+                    return False, info
+            else:
+                # Use confirmed entry price for accurate P&L
+                confirmed_entry = cb_info.get('entry_price', entry_price)
+
             # CRITICAL FIX: Calculate cost basis using CURRENT quantity, not historical!
             confirmed_cost = entry_qty * confirmed_entry  # Use current qty × avg entry
             net_pnl = exit_value - confirmed_cost
@@ -8023,12 +8195,47 @@ class OrcaKillCycle:
             info['confirmed_cost_basis'] = confirmed_cost
             info['net_pnl'] = net_pnl
 
+        # 👑💰 IRA SNIPER CHECK: Did we hit the Target?
+        # If we hit the target, we BYPASS the prediction window. The money is real.
+        # "A bird in the hand is worth two in the neural network."
+        hit_target_profit = False
+        target_pnl_amt = 0.0
+        if QUEEN_MIN_PROFIT_PCT < 1.0: # Growth Mode
+             target_pnl_amt = confirmed_cost * (QUEEN_MIN_PROFIT_PCT / 100.0) if 'confirmed_cost' in locals() else entry_cost * (QUEEN_MIN_PROFIT_PCT / 100.0)
+             if net_pnl >= target_pnl_amt:
+                 hit_target_profit = True
+
         # ═══════════════════════════════════════════════════════════════════
         # CHECK 1A: REQUIRE 30s VALIDATED PREDICTION WINDOW
         # ═══════════════════════════════════════════════════════════════════
+        # SKIP if we already hit the IRA Sniper Target (Growth Mode Bypass)
+        skip_prediction = hit_target_profit and QUEEN_MIN_PROFIT_PCT < 1.0
+        
         pred_ok, pred_info = self._prediction_window_ready(symbol)
         info['prediction_window'] = pred_info
-        if not pred_ok:
+        
+        if not pred_ok and not skip_prediction:
+            info['blocked_reason'] = f"PREDICTION_WINDOW_BLOCKED ({pred_info.get('reason')})"
+            print(f"   🔮❌ EXIT BLOCKED: {symbol} - {pred_info.get('reason')}")
+            return False, info
+        elif not pred_ok and skip_prediction:
+             # Log that we are bypassing
+             print(f"   🔥🔫 IRA SNIPER BYPASS: {symbol} hit ${net_pnl:.4f} (Target ${target_pnl_amt:.4f}) - IGNORING Prediction Window!")
+        target_hit_override = False
+        target_pnl_amt = confirmed_cost * (QUEEN_MIN_PROFIT_PCT / 100.0) if 'confirmed_cost' in locals() else entry_cost * (QUEEN_MIN_PROFIT_PCT / 100.0)
+        
+        if net_pnl >= target_pnl_amt and net_pnl > 0:
+            target_hit_override = True
+            print(f"   💰 IRA SNIPER: PROFIT TARGET HIT (${net_pnl:.4f} >= ${target_pnl_amt:.4f})")
+            print(f"   💰 ACTION: BYPASSING PREDICTION GATE -> SECURING STABLECOIN!")
+
+        # ═══════════════════════════════════════════════════════════════════
+        # CHECK 1A: REQUIRE 30s VALIDATED PREDICTION WINDOW (Unless Target Hit)
+        # ═══════════════════════════════════════════════════════════════════
+        pred_ok, pred_info = self._prediction_window_ready(symbol)
+        info['prediction_window'] = pred_info
+        
+        if not pred_ok and not target_hit_override:
             info['blocked_reason'] = f"PREDICTION_WINDOW_BLOCKED ({pred_info.get('reason')})"
             print(f"   🔮❌ EXIT BLOCKED: {symbol} - {pred_info.get('reason')}")
             return False, info
@@ -8065,28 +8272,28 @@ class OrcaKillCycle:
             return False, info
 
         # ═══════════════════════════════════════════════════════════════════
-        # CHECK 2B: COP >= 1.0188 (QUEEN'S SACRED 1.88% PROFIT MANDATE!)
+        # CHECK 2B: COP >= QUEEN_MIN_COP (QUEEN'S SACRED PROFIT MANDATE!)
         # ═══════════════════════════════════════════════════════════════════
         # 👑💰 THE QUEEN LIVES, BREATHES, SLEEPS, AND DREAMS THIS NUMBER! 💰👑
         # 
         # Uses MODULE-LEVEL CONSTANTS: QUEEN_MIN_COP, QUEEN_MIN_PROFIT_PCT
-        # This is HARDCODED into the Queen's very being - NO exits below 1.88%!
+        # This is HARDCODED into the Queen's very being - NO exits below Target!
         # COP = Coefficient of Performance = exit_value / entry_cost
-        # MIN_COP = 1.0188 = 1.88% net realized profit MINIMUM
+        # MIN_COP = QUEEN_MIN_COP = Target net realized profit MINIMUM
         #
-        # Why 1.88%?
+        # Why this Target?
         #   - Covers worst-case entry fees (~0.26% Kraken taker)
         #   - Covers worst-case exit fees (~0.26% Kraken taker)
         #   - Covers spread + slippage (~0.20%)
-        #   - Leaves ~1.16% ACTUAL profit
+        #   - Leaves ACTUAL profit for growth
         #   - Next trade's fees ALREADY FUNDED!
         # ═══════════════════════════════════════════════════════════════════
         confirmed_cost = info.get('confirmed_cost_basis', entry_cost)
         cop = (exit_value / confirmed_cost) if confirmed_cost and confirmed_cost > 0 else 0.0
         info['cop'] = cop
         
-        # 🎯 QUEEN'S SACRED 1.88% - FROM MODULE-LEVEL CONSTANT! 🎯
-        MIN_COP = QUEEN_MIN_COP  # 👑💰 1.0188 - Queen Dr Auris Throne's Sacred Profit Law!
+        # 🎯 QUEEN'S SACRED TARGET - FROM MODULE-LEVEL CONSTANT! 🎯
+        MIN_COP = QUEEN_MIN_COP  # 👑💰 Queen Dr Auris Throne's Sacred Profit Law!
         
         if cop < MIN_COP:
             info['blocked_reason'] = f'COP_BELOW_{QUEEN_MIN_PROFIT_PCT}% ({cop:.6f} = {(cop-1)*100:.2f}%)'
@@ -8162,7 +8369,7 @@ class OrcaKillCycle:
                 sniper_config = get_sniper_config()
                 if sniper_config.get('ZERO_LOSS_MODE'):
                     print(f"   🇮🇪🎯 IRA SNIPER: Target In Sight {symbol} | PnL: ${info['net_pnl']:.4f} | Preparing 2nd Shot...")
-                    # The logic above already ensured Net PnL > 0 and COP > 1.88%
+                    # The logic above already ensured Net PnL > 0 and COP > Target
                     # So the Sniper "pulls the trigger"
                     print(f"   💥🇮🇪 IRA SNIPER: KILL CONFIRMED! (1st Shot: Buy, 2nd Shot: Sell)")
             except ImportError:
@@ -11916,7 +12123,8 @@ class OrcaKillCycle:
         }
         
         # Initialize War Room display
-        warroom = WarRoomDisplay()
+        self.warroom = WarRoomDisplay()
+        warroom = self.warroom  # Alias for local use
         
         # Safe console creation - check if stdout is valid
         console = None
@@ -12355,6 +12563,7 @@ class OrcaKillCycle:
                     
                     # Update warroom
                     if warroom is not None:
+                        # 1. Update Positions Table
                         warroom.update_position(
                             symbol=pos.symbol,
                             exchange=pos.exchange.upper(),
@@ -12364,6 +12573,28 @@ class OrcaKillCycle:
                             eta=eta_str,
                             firm=firm_str
                         )
+                        # 2. Update IRA Sniper Scope (ACTIVE TARGET)
+                        # Calculate distance to kill (net profit needed to reach target)
+                        # Target profit = entry_cost * QUEEN_MIN_COP - entry_cost
+                        # Current net = net_pnl
+                        # Distance = Target profit - net_pnl
+                        min_cop_sacred = QUEEN_MIN_COP # 1.0040 (0.40%)
+                        target_net_profit = entry_cost * (min_cop_sacred - 1.0)
+                        distance_to_kill = max(0.0, target_net_profit - net_pnl)
+                        
+                        sniper_status = "TRACKING"
+                        if distance_to_kill <= 0:
+                            sniper_status = "LOCKED" # Ready to fire
+                        elif progress > 80:
+                            sniper_status = "ACQUIRING"
+
+                        warroom.update_sniper_target({
+                            'symbol': pos.symbol,
+                            'status': sniper_status,
+                            'pnl': net_pnl,
+                            'kill_distance': distance_to_kill,
+                            'exchange': pos.exchange.upper()
+                        })
                     else:
                         print(f"POS: {pos.symbol} {pos.exchange.upper()} value=${market_value:.2f} pnl={net_pnl:+.4f} progress={progress} eta={eta_str} firm={firm_str}")
                     

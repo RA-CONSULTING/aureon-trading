@@ -1,47 +1,26 @@
 from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
+import json
 from capital_client import CapitalClient
 
 def main():
-    print("--- CAPITAL.COM CHECK ---")
-    api_key = os.getenv('CAPITAL_API_KEY')
-    identifier = os.getenv('CAPITAL_IDENTIFIER')
-    password = os.getenv('CAPITAL_PASSWORD')
-    
-    print(f"API Key: {'SET' if api_key else 'NOT SET'}")
-    print(f"Identifier: {'SET' if identifier else 'NOT SET'}")
-    print(f"Password: {'SET' if password else 'NOT SET'}")
-    
-    if not (api_key and identifier and password):
-        print("⚠️  Please set CAPITAL_API_KEY, CAPITAL_IDENTIFIER, and CAPITAL_PASSWORD in .env")
-        return
-
+    print("--- CAPITAL.COM DIAGNOSTIC ---")
     client = CapitalClient()
-    if client.enabled:
-        print("✅ Session Established!")
+    if client.enabled and client.cst:
+        print("✅ Connected")
         
-        print("\n--- BALANCES ---")
-        bals = client.get_account_balance()
-        print(bals)
+        print("\n--- RAW POSITION DATA ---")
+        res = client._request('GET', '/positions')
+        positions = res.json().get('positions', [])
         
-        print("\n--- TICKER CHECK (BTCUSD) ---")
-        ticker = client.get_ticker("BTCUSD")
-        print(ticker)
-        
-        print("\n--- MARKET SCAN ---")
-        # Debug raw response
-        url = f"{client.base_url}/markets"
-        params = {'searchTerm': 'BTC', 'limit': 1}
-        import requests
-        res = requests.get(url, headers=client._get_headers(), params=params)
-        print(f"Raw BTC Search: {res.json()}")
+        if positions:
+            # Print FIRST position completely to see structure
+            print(json.dumps(positions[0], indent=2))
+        else:
+            print("No positions found.")
 
-        tickers = client.get_24h_tickers()
-        print(f"Found {len(tickers)} markets")
-        if tickers:
-            print(f"Sample: {tickers[0]}")
     else:
-        print("❌ Failed to connect.")
+        print("❌ Not connected")
 
 if __name__ == "__main__":
     main()

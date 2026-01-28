@@ -1,5 +1,5 @@
 {
-  "timestamp": 1769540050.5304785,
+  "timestamp": 1769541643.5633876,
   "exchanges": {
     "alpaca": {
       "positions": [
@@ -7,10 +7,10 @@
           "symbol": "ETHUSD",
           "qty": 0.001838121,
           "entry_price": 2931.638730179,
-          "current_price": 2952.199,
-          "value": 5.426499,
-          "pnl": 0.037792,
-          "pnl_pct": 0.70131851666828
+          "current_price": 2971.4,
+          "value": 5.461793,
+          "pnl": 0.073086,
+          "pnl_pct": 1.35628082951996
         },
         {
           "symbol": "PEPEUSD",
@@ -31,8 +31,8 @@
           "pnl_pct": 0.0
         }
       ],
-      "total_value": 6.426056,
-      "total_pnl": 0.037792,
+      "total_value": 6.46135,
+      "total_pnl": 0.073086,
       "count": 3
     },
     "kraken": {
@@ -41,9 +41,9 @@
           "symbol": "BSX",
           "qty": 90744.1,
           "entry_price": 0,
-          "current_price": 1.751e-05,
-          "value_usd": 1.588929191,
-          "pnl_usd": 1.588929191,
+          "current_price": 1.75e-05,
+          "value_usd": 1.58802175,
+          "pnl_usd": 1.58802175,
           "is_airdrop": true,
           "quote": "USD"
         },
@@ -51,9 +51,9 @@
           "symbol": "DAI",
           "qty": 0.0616847,
           "entry_price": 0,
-          "current_price": 0.99966,
-          "value_usd": 0.061663727202,
-          "pnl_usd": 0.061663727202,
+          "current_price": 0.99967,
+          "value_usd": 0.061664344049,
+          "pnl_usd": 0.061664344049,
           "is_airdrop": true,
           "quote": "USD"
         },
@@ -61,9 +61,9 @@
           "symbol": "ESX",
           "qty": 296.384,
           "entry_price": 0,
-          "current_price": 0.002651,
-          "value_usd": 0.785713984,
-          "pnl_usd": 0.785713984,
+          "current_price": 0.00265,
+          "value_usd": 0.7854176,
+          "pnl_usd": 0.7854176,
           "is_airdrop": true,
           "quote": "USD"
         },
@@ -71,9 +71,9 @@
           "symbol": "EUL",
           "qty": 2.509442,
           "entry_price": 0,
-          "current_price": 1.871,
-          "value_usd": 4.695165982,
-          "pnl_usd": 4.695165982,
+          "current_price": 1.877,
+          "value_usd": 4.710222634,
+          "pnl_usd": 4.710222634,
           "is_airdrop": true,
           "quote": "USD"
         },
@@ -81,9 +81,9 @@
           "symbol": "FIGHT",
           "qty": 374.5,
           "entry_price": 0,
-          "current_price": 0.02301,
-          "value_usd": 8.617245,
-          "pnl_usd": 8.617245,
+          "current_price": 0.02328,
+          "value_usd": 8.718359999999999,
+          "pnl_usd": 8.718359999999999,
           "is_airdrop": true,
           "quote": "USD"
         },
@@ -101,9 +101,9 @@
           "symbol": "GHIBLI",
           "qty": 40400.0,
           "entry_price": 0,
-          "current_price": 0.000837,
-          "value_usd": 33.8148,
-          "pnl_usd": 33.8148,
+          "current_price": 0.000838,
+          "value_usd": 33.855199999999996,
+          "pnl_usd": 33.855199999999996,
           "is_airdrop": true,
           "quote": "USD"
         },
@@ -111,9 +111,9 @@
           "symbol": "ICNT",
           "qty": 16.0,
           "entry_price": 0,
-          "current_price": 0.3929,
-          "value_usd": 6.2864,
-          "pnl_usd": 6.2864,
+          "current_price": 0.3822,
+          "value_usd": 6.1152,
+          "pnl_usd": 6.1152,
           "is_airdrop": true,
           "quote": "USD"
         },
@@ -121,9 +121,9 @@
           "symbol": "IN",
           "qty": 210.0,
           "entry_price": 0,
-          "current_price": 0.0655,
-          "value_usd": 13.755,
-          "pnl_usd": 13.755,
+          "current_price": 0.0657,
+          "value_usd": 13.796999999999999,
+          "pnl_usd": 13.796999999999999,
           "is_airdrop": true,
           "quote": "USD"
         },
@@ -131,9 +131,9 @@
           "symbol": "KTA",
           "qty": 7.24428,
           "entry_price": 0,
-          "current_price": 0.3044,
-          "value_usd": 2.205158832,
-          "pnl_usd": 2.205158832,
+          "current_price": 0.3131,
+          "value_usd": 2.268184068,
+          "pnl_usd": 2.268184068,
           "is_airdrop": true,
           "quote": "USD"
         },
@@ -141,9 +141,9 @@
           "symbol": "MXC",
           "qty": 3100.0,
           "entry_price": 0,
-          "current_price": 0.001081,
-          "value_usd": 3.3510999999999997,
-          "pnl_usd": 3.3510999999999997,
+          "current_price": 0.001074,
+          "value_usd": 3.3294,
+          "pnl_usd": 3.3294,
           "is_airdrop": true,
           "quote": "USD"
         },
@@ -151,9 +151,9 @@
           "symbol": "OPEN",
           "qty": 10.78167,
           "entry_price": 0,
-          "current_price": 0.1611,
-          "value_usd": 1.7369270369999998,
-          "pnl_usd": 1.7369270369999998,
+          "current_price": 0.1628,
+          "value_usd": 1.755255876,
+          "pnl_usd": 1.755255876,
           "is_airdrop": true,
           "quote": "USD"
         },
@@ -161,9 +161,9 @@
           "symbol": "ROLL",
           "qty": 60.0,
           "entry_price": 0,
-          "current_price": 0.08215,
-          "value_usd": 4.929,
-          "pnl_usd": 4.929,
+          "current_price": 0.08294,
+          "value_usd": 4.9764,
+          "pnl_usd": 4.9764,
           "is_airdrop": true,
           "quote": "USD"
         },
@@ -171,9 +171,9 @@
           "symbol": "SKR",
           "qty": 500.0,
           "entry_price": 0,
-          "current_price": 0.023903,
-          "value_usd": 11.951500000000001,
-          "pnl_usd": 11.951500000000001,
+          "current_price": 0.024008,
+          "value_usd": 12.004000000000001,
+          "pnl_usd": 12.004000000000001,
           "is_airdrop": true,
           "quote": "USD"
         },
@@ -181,9 +181,9 @@
           "symbol": "SOL",
           "qty": 0.2283146031,
           "entry_price": 0,
-          "current_price": 125.03,
-          "value_usd": 28.546174825593003,
-          "pnl_usd": 28.546174825593003,
+          "current_price": 125.66,
+          "value_usd": 28.690013025546,
+          "pnl_usd": 28.690013025546,
           "is_airdrop": true,
           "quote": "USD"
         },
@@ -201,9 +201,9 @@
           "symbol": "TRX",
           "qty": 81.94032068,
           "entry_price": 0,
-          "current_price": 0.293816,
-          "value_usd": 24.07537726091488,
-          "pnl_usd": 24.07537726091488,
+          "current_price": 0.294218,
+          "value_usd": 24.108317269828238,
+          "pnl_usd": 24.108317269828238,
           "is_airdrop": true,
           "quote": "USD"
         },
@@ -231,15 +231,15 @@
           "symbol": "USDT",
           "qty": 0.02543723,
           "entry_price": 0,
-          "current_price": 0.99863,
-          "value_usd": 0.0254023809949,
-          "pnl_usd": 0.0254023809949,
+          "current_price": 0.99852,
+          "value_usd": 0.0253995828996,
+          "pnl_usd": 0.0253995828996,
           "is_airdrop": true,
           "quote": "USD"
         }
       ],
-      "total_value_usd": 160.7443490761888,
-      "total_pnl_usd": 160.7443490761888,
+      "total_value_usd": 161.10684700580688,
+      "total_pnl_usd": 161.10684700580688,
       "count": 20,
       "profitable_count": 20
     },
@@ -249,28 +249,28 @@
           "symbol": "BNB",
           "qty": 3.87e-06,
           "entry_price": 879.2696993477463,
-          "current_price": 890.75,
-          "value": 0.0034472025,
-          "pnl": 4.4428763524221945e-05,
-          "pnl_pct": 1.3056631726044885
+          "current_price": 890.81,
+          "value": 0.0034474347,
+          "pnl": 4.4660963524221735e-05,
+          "pnl_pct": 1.3124870174435013
         },
         {
           "symbol": "TRX",
           "qty": 848.00732823,
           "entry_price": 0.2946,
-          "current_price": 0.294,
-          "value": 249.31415449961997,
-          "pnl": -0.5088043969379911,
-          "pnl_pct": -0.20366598778003717
+          "current_price": 0.2944,
+          "value": 249.653357430912,
+          "pnl": -0.16960146564598133,
+          "pnl_pct": -0.06788866259333944
         },
         {
           "symbol": "LPT",
           "qty": 0.5656585,
           "entry_price": 3.6038512035010943,
-          "current_price": 3.217,
-          "value": 1.8197233945,
-          "pnl": -0.2188256714956237,
-          "pnl_pct": -10.734383348715212
+          "current_price": 3.221,
+          "value": 1.8219860284999998,
+          "pnl": -0.2165630374956237,
+          "pnl_pct": -10.62339097488707
         },
         {
           "symbol": "IO",
@@ -285,102 +285,102 @@
           "symbol": "ZRO",
           "qty": 0.197466,
           "entry_price": 2.3144363406408095,
-          "current_price": 1.952,
-          "value": 0.385453632,
-          "pnl": -0.0715688544409781,
-          "pnl_pct": -15.659810307872196
+          "current_price": 1.951,
+          "value": 0.385256166,
+          "pnl": -0.07176632044097808,
+          "pnl_pct": -15.70301737226365
         },
         {
           "symbol": "KAIA",
           "qty": 21.89391,
           "entry_price": 0.0852997827436375,
-          "current_price": 0.0719,
-          "value": 1.5741721290000001,
-          "pnl": -0.2933736374087525,
-          "pnl_pct": -15.70904674389336
+          "current_price": 0.072,
+          "value": 1.57636152,
+          "pnl": -0.29118424640875273,
+          "pnl_pct": -15.591813151047607
         },
         {
           "symbol": "SHELL",
           "qty": 82.72134,
           "entry_price": 0.0664,
-          "current_price": 0.0445,
-          "value": 3.68109963,
-          "pnl": -1.811597346,
-          "pnl_pct": -32.98192771084338
+          "current_price": 0.0453,
+          "value": 3.7472767019999997,
+          "pnl": -1.745420274,
+          "pnl_pct": -31.77710843373494
         },
         {
           "symbol": "GUN",
           "qty": 9.9081,
           "entry_price": 0.0369961339385153,
-          "current_price": 0.03069,
-          "value": 0.304079589,
-          "pnl": -0.06248180567620346,
-          "pnl_pct": -17.045386280078905
+          "current_price": 0.03061,
+          "value": 0.303286941,
+          "pnl": -0.06327445367620346,
+          "pnl_pct": -17.261625090688018
         },
         {
           "symbol": "SOMI",
           "qty": 51.8556,
           "entry_price": 0.300470325203252,
-          "current_price": 0.223,
-          "value": 11.5637988,
-          "pnl": -4.017270195609755,
-          "pnl_pct": -25.78302038673786
+          "current_price": 0.2237,
+          "value": 11.60009772,
+          "pnl": -3.9809712756097544,
+          "pnl_pct": -25.55005228929712
         },
         {
           "symbol": "OPEN",
           "qty": 1.841195,
           "entry_price": 0.17734959612277867,
-          "current_price": 0.1616,
-          "value": 0.297537112,
-          "pnl": -0.028998077633279492,
-          "pnl_pct": -8.880536785590014
+          "current_price": 0.1624,
+          "value": 0.29901006799999996,
+          "pnl": -0.0275251216332795,
+          "pnl_pct": -8.42945033403353
         },
         {
           "symbol": "LINEA",
           "qty": 53.1887,
           "entry_price": 0.01014,
-          "current_price": 0.00625,
-          "value": 0.332429375,
-          "pnl": -0.20690404299999995,
-          "pnl_pct": -38.3629191321499
+          "current_price": 0.00643,
+          "value": 0.34200334099999996,
+          "pnl": -0.19733007699999996,
+          "pnl_pct": -36.58777120315582
         },
         {
           "symbol": "0G",
           "qty": 0.8006805,
           "entry_price": 0.9196418410041841,
-          "current_price": 0.841,
-          "value": 0.6733723005,
-          "pnl": -0.06296698857615066,
-          "pnl_pct": -8.551355266558208
+          "current_price": 0.845,
+          "value": 0.6765750225,
+          "pnl": -0.05976426657615066,
+          "pnl_pct": -8.116403329657174
         },
         {
           "symbol": "ENSO",
           "qty": 3.88314,
           "entry_price": 0.8900633261501264,
-          "current_price": 1.312,
-          "value": 5.0946796800000005,
-          "pnl": 1.6384391756933985,
-          "pnl_pct": 47.405242015185095
+          "current_price": 1.334,
+          "value": 5.18010876,
+          "pnl": 1.7238682556933984,
+          "pnl_pct": 49.87697625629338
         },
         {
           "symbol": "SENT",
           "qty": 6.26069353,
           "entry_price": 0.030418787074993976,
-          "current_price": 0.02604,
-          "value": 0.16302845952120001,
-          "pnl": -0.027414243909662406,
-          "pnl_pct": -14.39500879571097
+          "current_price": 0.02628,
+          "value": 0.16453102596840002,
+          "pnl": -0.0259116774624624,
+          "pnl_pct": -13.606022701662223
         }
       ],
-      "total_value": 275.20977459964115,
-      "total_pnl": -5.6719943108850375,
+      "total_value": 275.75609695658045,
+      "total_pnl": -5.125671953945827,
       "count": 14,
       "profitable_count": 2
     }
   },
   "totals": {
-    "total_value_usd": 442.38017967582994,
-    "total_pnl_usd": 155.11014676530377,
+    "total_value_usd": 443.32429396238734,
+    "total_pnl_usd": 156.05426105186103,
     "positions_count": 37,
     "profitable_count": 23
   }
