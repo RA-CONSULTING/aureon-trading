@@ -11474,7 +11474,8 @@ class OrcaKillCycle:
                                 active_symbols = [p.symbol for p in positions]
                                 new_opps = [o for o in opportunities if o.symbol not in active_symbols]
                                 
-                                print(f"   [DEBUG] Found {len(opportunities)} opps, {len(new_opps)} new (top: {', '.join([f'{o.symbol}({o.change_pct:+.2f}%)' for o in new_opps[:5]][:3] or ['none'])})
+                                top_opps = [f"{o.symbol}({o.change_pct:+.2f}%)" for o in new_opps[:3]]
+                                print(f"   [DEBUG] Found {len(opportunities)} opps, {len(new_opps)} new (top: {', '.join(top_opps) or 'none'})")
                                 
                                 if new_opps:
                                     # Take best opportunity first (needed for Queen signal)
