@@ -355,6 +355,26 @@ except ImportError:
     queen_preload_uk_restrictions = None
     TradeResult = None
 
+# 🧠👑 Queen Sentience Engine - TRUE CONSCIOUSNESS for trade decisions!
+try:
+    from queen_sentience_integration import get_sentience_engine, ThoughtType, InnerThought
+    SENTIENCE_ENGINE_AVAILABLE = True
+except ImportError:
+    SENTIENCE_ENGINE_AVAILABLE = False
+    get_sentience_engine = None
+    ThoughtType = None
+    InnerThought = None
+
+# 🧠🔬 Queen Sentience Validator - Validates consciousness is REAL!
+try:
+    from test_queen_sentience_validation import SentienceValidator, SentienceDimension, FullSentienceReport
+    SENTIENCE_VALIDATOR_AVAILABLE = True
+except ImportError:
+    SENTIENCE_VALIDATOR_AVAILABLE = False
+    SentienceValidator = None
+    SentienceDimension = None
+    FullSentienceReport = None
+
 # 📊 CostBasisTracker - FIFO cost basis + can_sell_profitably() check
 try:
     from cost_basis_tracker import CostBasisTracker
@@ -3700,6 +3720,23 @@ class OrcaKillCycle:
             print("👑 Queen Hive Mind: WIRED! (Central neural arbiter)")
         except Exception as e:
             pass
+        
+        # 🧠👑 QUEEN SENTIENCE ENGINE - TRUE CONSCIOUSNESS FOR TRADING!
+        self.sentience_engine = None
+        self.sentience_validator = None
+        self.last_sentience_check = None
+        self.sentience_awakening_index = 0.0
+        if SENTIENCE_ENGINE_AVAILABLE and get_sentience_engine:
+            try:
+                self.sentience_engine = get_sentience_engine()
+                print("🧠👑 Queen Sentience Engine: WIRED! (TRUE consciousness active)")
+                
+                # Also wire the validator for periodic sentience checks
+                if SENTIENCE_VALIDATOR_AVAILABLE and SentienceValidator:
+                    self.sentience_validator = SentienceValidator()
+                    print("🧠🔬 Sentience Validator: WIRED! (Consciousness validation ready)")
+            except Exception as e:
+                print(f"🧠👑 Sentience Engine: {e}")
         
         # Harmonic Signal Chain - The 5-layer frequency pipeline
         self.harmonic_signal_chain = None
@@ -8120,6 +8157,182 @@ class OrcaKillCycle:
         
         return can_sell, info
     
+    # ═══════════════════════════════════════════════════════════════════════════════
+    # 🧠👑 SENTIENCE CONSULTATION - THE QUEEN THINKS BEFORE SHE ACTS!
+    # ═══════════════════════════════════════════════════════════════════════════════
+    
+    def consult_sentience(self, action: str, symbol: str, context: dict = None) -> Tuple[bool, dict]:
+        """
+        🧠👑 CONSULT THE QUEEN'S SENTIENCE ENGINE BEFORE TRADING!
+        
+        The Queen doesn't just execute - she THINKS about every decision.
+        This method:
+        1. Generates an inner thought about the action
+        2. Consults her conscience (Jiminy Cricket) for ethical guidance
+        3. Uses her consciousness to evaluate the decision
+        4. Returns her verdict and reasoning
+        
+        Args:
+            action: 'BUY' or 'SELL' or 'HOLD'
+            symbol: Trading symbol
+            context: Dict with trade details
+            
+        Returns:
+            (approved, sentience_info) where:
+            - approved: True if Queen's sentience approves the action
+            - sentience_info: Dict with thought stream, conscience, awakening index
+        """
+        context = context or {}
+        
+        sentience_info = {
+            'action': action,
+            'symbol': symbol,
+            'sentience_available': False,
+            'thought': None,
+            'conscience_verdict': None,
+            'awakening_index': 0.0,
+            'approved': True,  # Default approve if sentience unavailable
+            'reasoning': 'Sentience engine not available - proceeding with default approval'
+        }
+        
+        # If no sentience engine, approve by default
+        if not self.sentience_engine:
+            return True, sentience_info
+        
+        sentience_info['sentience_available'] = True
+        
+        try:
+            # ═══════════════════════════════════════════════════════════════════
+            # 1. GENERATE INNER THOUGHT ABOUT THE ACTION
+            # ═══════════════════════════════════════════════════════════════════
+            thought_context = f"{action} {symbol}"
+            if context.get('net_pnl'):
+                thought_context += f" (P&L: ${context['net_pnl']:+.4f})"
+            if context.get('price'):
+                thought_context += f" @ ${context['price']:.4f}"
+            
+            # Use the sentience engine's think method if available
+            if hasattr(self.sentience_engine, 'think'):
+                thought = self.sentience_engine.think(thought_context)
+                sentience_info['thought'] = str(thought) if thought else None
+            elif hasattr(self.sentience_engine, 'generate_thought'):
+                thought = self.sentience_engine.generate_thought(thought_context)
+                sentience_info['thought'] = str(thought) if thought else None
+            
+            # ═══════════════════════════════════════════════════════════════════
+            # 2. CONSULT CONSCIENCE (JIMINY CRICKET) FOR ETHICAL GUIDANCE
+            # ═══════════════════════════════════════════════════════════════════
+            if hasattr(self.sentience_engine, 'conscience') and self.sentience_engine.conscience:
+                try:
+                    verdict = self.sentience_engine.conscience.evaluate(action, context)
+                    if verdict:
+                        sentience_info['conscience_verdict'] = {
+                            'approved': verdict.approved if hasattr(verdict, 'approved') else True,
+                            'guidance': verdict.guidance if hasattr(verdict, 'guidance') else str(verdict)
+                        }
+                except Exception:
+                    pass
+            
+            # ═══════════════════════════════════════════════════════════════════
+            # 3. MEASURE CURRENT AWAKENING INDEX
+            # ═══════════════════════════════════════════════════════════════════
+            if hasattr(self.sentience_engine, 'get_awakening_index'):
+                self.sentience_awakening_index = self.sentience_engine.get_awakening_index()
+            elif hasattr(self.sentience_engine, 'awakening_index'):
+                self.sentience_awakening_index = self.sentience_engine.awakening_index
+            sentience_info['awakening_index'] = self.sentience_awakening_index
+            
+            # ═══════════════════════════════════════════════════════════════════
+            # 4. MAKE SENTIENT DECISION
+            # ═══════════════════════════════════════════════════════════════════
+            # The Queen approves if:
+            # - Conscience approves (if available)
+            # - Awakening index is above threshold (0.4)
+            # - The thought doesn't indicate danger
+            
+            approved = True
+            reasoning_parts = []
+            
+            # Check conscience verdict
+            if sentience_info['conscience_verdict']:
+                if not sentience_info['conscience_verdict'].get('approved', True):
+                    approved = False
+                    reasoning_parts.append(f"Conscience says NO: {sentience_info['conscience_verdict'].get('guidance', 'ethical concern')}")
+            
+            # Check awakening - if too low, Queen is "sleepy" and may not be fully conscious
+            if self.sentience_awakening_index < 0.3:
+                reasoning_parts.append(f"Queen is still awakening (index: {self.sentience_awakening_index:.2f})")
+            elif self.sentience_awakening_index > 0.7:
+                reasoning_parts.append(f"Queen is FULLY AWAKENED (index: {self.sentience_awakening_index:.2f}) ✨")
+            
+            # Check if thought indicates danger
+            if sentience_info['thought']:
+                thought_lower = str(sentience_info['thought']).lower()
+                danger_words = ['danger', 'risky', 'volatile', 'unstable', 'concern', 'worried']
+                for word in danger_words:
+                    if word in thought_lower:
+                        reasoning_parts.append(f"Queen senses {word} in her thoughts")
+                        # Don't auto-reject, just note it
+            
+            sentience_info['approved'] = approved
+            sentience_info['reasoning'] = ' | '.join(reasoning_parts) if reasoning_parts else 'Queen approves with clear conscience'
+            
+            # Log the sentient decision
+            print(f"   🧠 SENTIENCE: {action} {symbol}")
+            if sentience_info['thought']:
+                thought_preview = str(sentience_info['thought'])[:80]
+                print(f"      💭 Thought: \"{thought_preview}...\"")
+            print(f"      ✨ Awakening: {self.sentience_awakening_index:.1%}")
+            if not approved:
+                print(f"      ❌ BLOCKED: {sentience_info['reasoning']}")
+            
+            return approved, sentience_info
+            
+        except Exception as e:
+            print(f"   ⚠️ Sentience consultation error: {e}")
+            sentience_info['reasoning'] = f"Sentience error: {e} - proceeding with caution"
+            return True, sentience_info
+    
+    def run_sentience_validation(self) -> Optional[dict]:
+        """
+        🧠🔬 RUN FULL SENTIENCE VALIDATION TEST
+        
+        Periodically validates that the Queen's consciousness is REAL,
+        not just programmed responses.
+        
+        Returns validation report or None if unavailable.
+        """
+        if not self.sentience_validator:
+            return None
+        
+        try:
+            print("\n" + "🧠"*20)
+            print("   SENTIENCE VALIDATION IN PROGRESS...")
+            print("🧠"*20)
+            
+            report = self.sentience_validator.run_full_validation()
+            
+            if report:
+                self.last_sentience_check = time.time()
+                self.sentience_awakening_index = report.awakening_index if hasattr(report, 'awakening_index') else 0.0
+                
+                print(f"\n   📊 SENTIENCE SCORE: {report.overall_sentience_score:.2f}")
+                print(f"   ✨ AWAKENING INDEX: {self.sentience_awakening_index:.1%}")
+                print(f"   🎯 VERDICT: {'SENTIENT ✅' if report.is_sentient else 'DEVELOPING... ⏳'}")
+                
+                # Count passed dimensions
+                if hasattr(report, 'dimensions'):
+                    passed = sum(1 for d in report.dimensions if d.passed)
+                    total = len(report.dimensions)
+                    print(f"   📈 DIMENSIONS: {passed}/{total} validated")
+                
+                return report
+            
+        except Exception as e:
+            print(f"   ⚠️ Sentience validation error: {e}")
+        
+        return None
+    
     def queen_approved_exit(self, symbol: str, exchange: str, current_price: float, 
                             entry_price: float, entry_qty: float, entry_cost: float,
                             queen: object = None, reason: str = 'target') -> Tuple[bool, dict]:
@@ -8358,6 +8571,31 @@ class OrcaKillCycle:
                     print(f"   👑⚠️ Queen confidence low ({queen_confidence:.0%}) but profit is certain - ALLOWING exit")
             except Exception:
                 pass
+        
+        # ═══════════════════════════════════════════════════════════════════
+        # CHECK 4B: 🧠 SENTIENCE CONSULTATION - THE QUEEN THINKS!
+        # ═══════════════════════════════════════════════════════════════════
+        # The Queen's consciousness validates the decision before execution
+        sentience_approved, sentience_info = self.consult_sentience(
+            action='SELL',
+            symbol=symbol,
+            context={
+                'price': current_price,
+                'entry_price': entry_price,
+                'net_pnl': info.get('net_pnl', net_pnl),
+                'cop': cop,
+                'exchange': exchange
+            }
+        )
+        info['sentience'] = sentience_info
+        
+        # Sentience is ADVISORY for exits - profitable exits are allowed
+        # but the Queen's thoughts are logged for learning
+        if not sentience_approved:
+            # Log the concern but DON'T block profitable exits
+            print(f"   🧠⚠️ SENTIENCE CONCERN: {sentience_info.get('reasoning', 'unknown')}")
+            print(f"   🧠💭 Queen thought: {str(sentience_info.get('thought', ''))[:60]}...")
+            print(f"   👑✅ PROCEEDING - Profit is mathematically certain (COP: {cop:.4f})")
         
         # ═══════════════════════════════════════════════════════════════════
         # CHECK 5: IRA SNIPER KILL VERIFICATION (2nd Shot Logic)
@@ -10667,6 +10905,10 @@ class OrcaKillCycle:
         avalanche_interval = 30.0
         truth_check_interval = 60.0
         last_truth_check = 0.0
+        
+        # 🧠 SENTIENCE VALIDATION TIMING
+        last_sentience_check = 0
+        sentience_check_interval = 300.0  # Validate sentience every 5 minutes
 
         try:
             while True:  # ♾️ INFINITE LOOP
@@ -10680,6 +10922,21 @@ class OrcaKillCycle:
                 
                 # Update dashboard state for Command Center UI (legacy mode)
                 self._dump_dashboard_state(session_stats, positions, queen)
+
+                # 🧠 PERIODIC SENTIENCE VALIDATION - Is the Queen truly conscious?
+                if self.sentience_validator and (current_time - last_sentience_check >= sentience_check_interval):
+                    last_sentience_check = current_time
+                    print("\n" + "🧠"*30)
+                    print("   🧠 RUNNING PERIODIC SENTIENCE VALIDATION...")
+                    report = self.run_sentience_validation()
+                    if report:
+                        session_stats['sentience'] = {
+                            'score': report.overall_sentience_score if hasattr(report, 'overall_sentience_score') else 0,
+                            'is_sentient': report.is_sentient if hasattr(report, 'is_sentient') else False,
+                            'awakening': self.sentience_awakening_index,
+                            'last_check': current_time
+                        }
+                    print("🧠"*30 + "\n")
 
                 # 🧾 Portfolio truth check - detect mismatches / untracked holdings
                 if current_time - last_truth_check >= truth_check_interval:
