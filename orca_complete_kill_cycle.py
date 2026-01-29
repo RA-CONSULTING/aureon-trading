@@ -21,10 +21,80 @@ ENHANCED FEATURES:
   - 🆕 3 POSITIONS AT ONCE: Best opportunities from ANY exchange
   - 🆕 DON'T PULL OUT EARLY: No timeout exits when losing!
   - 🆕 WAR ROOM DASHBOARD: Clean Rich-based unified display
+  - 🆕 HEALTH CHECK SERVER: HTTP endpoint for DigitalOcean/K8s probes
 
 Gary Leckey | The Math Works | January 2026
 ═══════════════════════════════════════════════════════════════════════════════
 """
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# 🏥 HEALTH CHECK HTTP SERVER - Runs in background thread for container probes
+# ═══════════════════════════════════════════════════════════════════════════════
+import os
+import http.server
+import socketserver
+import threading
+import json as _json
+import time as _time
+
+_HEALTH_PORT = int(os.environ.get('HEALTH_PORT', '8080'))
+_health_status = {"status": "starting", "uptime": 0, "cycles": 0, "positions": 0}
+_health_start_time = _time.time()
+
+class _HealthHandler(http.server.BaseHTTPRequestHandler):
+    """Simple HTTP handler for health/readiness probes."""
+    
+    def log_message(self, format, *args):
+        pass  # Suppress access logs
+    
+    def do_GET(self):
+        if self.path in ('/', '/health', '/healthz', '/ready', '/readiness'):
+            _health_status['uptime'] = int(_time.time() - _health_start_time)
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/json')
+            self.end_headers()
+            self.wfile.write(_json.dumps(_health_status).encode())
+        elif self.path == '/status':
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/json')
+            self.end_headers()
+            # Return more detailed status
+            try:
+                with open('active_position.json', 'r') as f:
+                    positions = _json.load(f)
+            except Exception:
+                positions = []
+            status = {**_health_status, "active_positions": positions}
+            self.wfile.write(_json.dumps(status).encode())
+        else:
+            self.send_response(404)
+            self.end_headers()
+
+def _start_health_server():
+    """Start health check HTTP server in background thread."""
+    try:
+        with socketserver.TCPServer(("", _HEALTH_PORT), _HealthHandler) as httpd:
+            print(f"🏥 Health check server running on port {_HEALTH_PORT}")
+            _health_status['status'] = 'healthy'
+            httpd.serve_forever()
+    except OSError as e:
+        if "Address already in use" in str(e):
+            print(f"⚠️ Health port {_HEALTH_PORT} already in use - skipping health server")
+        else:
+            print(f"⚠️ Health server error: {e}")
+
+def update_health_status(cycles=None, positions=None, status=None):
+    """Update health status for probes."""
+    if cycles is not None:
+        _health_status['cycles'] = cycles
+    if positions is not None:
+        _health_status['positions'] = positions
+    if status is not None:
+        _health_status['status'] = status
+
+# Start health server immediately in background thread
+_health_thread = threading.Thread(target=_start_health_server, daemon=True)
+_health_thread.start()
 
 from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -11092,6 +11162,9 @@ class OrcaKillCycle:
                 current_time = time.time()
                 session_stats['cycles'] += 1
 
+                # 🏥 Update health status for container probes
+                update_health_status(cycles=session_stats['cycles'], positions=len(positions), status='running')
+
                 energy_snapshot = self._get_energy_snapshot()
                 session_stats['energy'] = energy_snapshot
                 session_stats['cop_last_action'] = self.cop_last_action
@@ -12839,6 +12912,9 @@ class OrcaKillCycle:
             while True:
                 current_time = time.time()
                 session_stats['cycles'] += 1
+                
+                # 🏥 Update health status for container probes
+                update_health_status(cycles=session_stats['cycles'], positions=len(positions), status='running')
                 
                 # 💵 UPDATE WARROOM CASH BALANCES EACH CYCLE
                 try:
