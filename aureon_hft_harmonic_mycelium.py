@@ -603,8 +603,8 @@ class HFTHarmonicEngine:
                 from aureon_thought_bus import Thought
                 thought = Thought(
                     source="HFT",
-                    type="signal",
-                    data={
+                    topic="signal",
+                    payload={
                         'signal': signal.to_dict(),
                         'timestamp': signal.timestamp,
                         'symbol': signal.symbol,
@@ -612,7 +612,7 @@ class HFTHarmonicEngine:
                         'confidence': signal.confidence
                     }
                 )
-                self.thought_bus.emit(thought)
+                self.thought_bus.publish(thought)
 
             # Publish to handlers
             topic = f"hft.signal.{signal.symbol.lower()}"

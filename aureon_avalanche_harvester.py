@@ -878,10 +878,10 @@ class AvalancheHarvester:
         # Emit ThoughtBus event if available
         if self._thought_bus and opportunities:
             try:
-                self._thought_bus.emit(self._Thought(
+                self._thought_bus.publish(self._Thought(
                     source="AvalancheHarvester",
                     topic="harvest.scan_complete",
-                    data={
+                    payload={
                         "opportunities": len(opportunities),
                         "total_harvest_value_usd": sum(o.harvest_value_usd for o in opportunities),
                         "avg_profit_pct": sum(o.net_profit_pct for o in opportunities) / len(opportunities),
@@ -998,10 +998,10 @@ class AvalancheHarvester:
                 # Emit ThoughtBus event
                 if self._thought_bus:
                     try:
-                        self._thought_bus.emit(self._Thought(
+                        self._thought_bus.publish(self._Thought(
                             source="AvalancheHarvester",
                             topic="harvest.executed",
-                            data={
+                            payload={
                                 'exchange': 'kraken',
                                 'asset': opportunity.asset,
                                 'harvest_value_usd': received_amount,
@@ -1067,10 +1067,10 @@ class AvalancheHarvester:
                 # Emit ThoughtBus event
                 if self._thought_bus:
                     try:
-                        self._thought_bus.emit(self._Thought(
+                        self._thought_bus.publish(self._Thought(
                             source="AvalancheHarvester",
                             topic="harvest.executed",
-                            data={
+                            payload={
                                 'exchange': 'alpaca',
                                 'asset': opportunity.asset,
                                 'harvest_value_usd': received_amount,
@@ -1164,10 +1164,10 @@ class AvalancheHarvester:
             # Emit ThoughtBus signal
             if self._thought_bus:
                 try:
-                    self._thought_bus.emit(self._Thought(
+                    self._thought_bus.publish(self._Thought(
                         source="AvalancheHarvester",
                         topic="treasury.ready_for_deployment",
-                        data={
+                        payload={
                             'total_usd': self.treasury.total_usd,
                             'available_usd': self.treasury.available_for_deployment,
                             'reserves': self.treasury.reserves

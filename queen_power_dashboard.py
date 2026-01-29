@@ -1527,8 +1527,22 @@ async def start_web_server(dashboard, port):
     
     runner = web.AppRunner(app)
     await runner.setup()
-    site = web.TCPSite(runner, '0.0.0.0', port)
-    await site.start()
+    
+    # Try the requested port, if fail, try port+1, then port+2
+    max_retries = 3
+    for i in range(max_retries):
+        try:
+            current_port = port + i
+            site = web.TCPSite(runner, '0.0.0.0', current_port, reuse_address=True)
+            await site.start()
+            port = current_port # Update port if we shifted
+            break
+        except OSError as e:
+            if i == max_retries - 1:
+                print(f"❌ Failed to bind port {port} after {max_retries} attempts: {e}")
+                raise e
+            print(f"⚠️ Port {current_port} busy, trying {current_port + 1}...")
+            await asyncio.sleep(1)
     
     print(f"🌐 Web server started on http://0.0.0.0:{port}")
     print(f"   💚 Health: http://localhost:{port}/health")

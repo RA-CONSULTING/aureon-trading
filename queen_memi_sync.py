@@ -537,10 +537,10 @@ class QueenMemiSync:
         if self.thought_bus:
             try:
                 from aureon_thought_bus import Thought
-                self.thought_bus.emit(Thought(
+                self.thought_bus.publish(Thought(
                     source="QueenMemiSync",
-                    type="memi_sync_complete",
-                    data={
+                    topic="memi_sync_complete",
+                    payload={
                         'packets_loaded': len(self.fetcher.packets),
                         'new_packets': new_count,
                         'high_relevance': self.fetcher.stats['high_relevance_count'],
@@ -602,10 +602,10 @@ class QueenMemiSync:
         if self.thought_bus:
             try:
                 from aureon_thought_bus import Thought
-                self.thought_bus.emit(Thought(
+                self.thought_bus.publish(Thought(
                     source="QueenMemiSync",
-                    type="memi_sync_complete",
-                    data=result
+                    topic="memi_sync_complete",
+                    payload=result
                 ))
             except Exception:
                 pass

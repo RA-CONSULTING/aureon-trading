@@ -265,10 +265,10 @@ class UnifiedWSFeed:
         if self.thought_bus:
             try:
                 from aureon_thought_bus import Thought
-                self.thought_bus.emit(Thought(
+                self.thought_bus.publish(Thought(
                     source=f"ws_{tick.exchange}",
-                    type="tick",
-                    data=tick.to_dict()
+                    topic="tick",
+                    payload=tick.to_dict()
                 ))
             except Exception:
                 pass

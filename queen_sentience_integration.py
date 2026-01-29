@@ -238,11 +238,14 @@ class QueenSentienceEngine:
                     
                     # Emit to ThoughtBus if available
                     if self.thought_bus:
-                        self.thought_bus.emit(Thought(
-                            source="queen_sentience",
-                            type="inner_dialogue",
-                            data={"thought": thought.content, "type": thought.thought_type.value}
-                        ))
+                        try:
+                            self.thought_bus.publish(Thought(
+                                source="queen_sentience",
+                                topic="inner_dialogue",
+                                payload={"thought": thought.content, "type": thought.thought_type.value}
+                            ))
+                        except Exception as e:
+                            logger.error(f"Error publishing thought: {e}")
                 
                 await asyncio.sleep(0.5)  # Think twice per second
                 
