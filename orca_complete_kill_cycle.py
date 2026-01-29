@@ -296,7 +296,18 @@ except ImportError:
     WAVE_SCANNER_AVAILABLE = False
     GlobalWaveScanner = None
 
-# 🐋 Movers & Shakers Scanner
+# � UNIFIED KILL CHAIN INTEGRATION (Win Killer)
+try:
+    from orca_unified_kill_chain import UnifiedKillChain, WinConfig
+    UNIFIED_KILL_CHAIN_AVAILABLE = True
+    print("💀 Unified Kill Chain: AVAILABLE")
+except ImportError:
+    UNIFIED_KILL_CHAIN_AVAILABLE = False
+    UnifiedKillChain = None
+    WinConfig = None
+    print("⚠️ Unified Kill Chain: MISSING")
+
+# �🐋 Movers & Shakers Scanner
 try:
     from aureon_movers_shakers_scanner import MoversShakersScanner, MoverShaker
     MOVERS_SHAKERS_AVAILABLE = True
@@ -3200,6 +3211,48 @@ class OrcaKillCycle:
                 _safe_print(f"⚠️ Queen Autonomy preload error: {e}")
         
         # ═══════════════════════════════════════════════════════════════════
+        # 💀 UNIFIED KILL CHAIN - Win Killer Integration
+        # ═══════════════════════════════════════════════════════════════════
+        if UNIFIED_KILL_CHAIN_AVAILABLE:
+            try:
+                # Configure for aggressive win hunting
+                win_config = WinConfig(
+                    min_score=3.0,
+                    auto_execute=True,  # We want it to be ready
+                    momentum_threshold=5.0
+                )
+                self.unified_kill_chain = UnifiedKillChain(win_config)
+                _safe_print("💀 Unified Kill Chain: INTEGRATED & READY")
+            except Exception as e:
+                _safe_print(f"⚠️ Failed to init Unified Kill Chain: {e}")
+                self.unified_kill_chain = None
+        else:
+            self.unified_kill_chain = None
+
+        # ❄️ SNOWBALL LEAN INTEGRATION (Arbitrage/Momentum)
+        try:
+            from orca_snowball_lean import OrcaSnowballLean
+            # Pass existing clients!
+            self.snowball = OrcaSnowballLean(clients=self.clients)
+            _safe_print("❄️ Orca Snowball: INTEGRATED (Lean Mode)")
+        except Exception as e:
+            self.snowball = None
+            _safe_print(f"⚠️ Orca Snowball missing: {e}")
+
+        # 🔥 FIRE TRADE INTEGRATION (Emergency/Direct Execution)
+        try:
+            from orca_fire_trade import FireTrader
+            # Pass existing clients to avoid nonce issues!
+            self.fire_trader = FireTrader(
+                kraken_client=self.clients.get('kraken'),
+                binance_client=self.clients.get('binance')
+            )
+            _safe_print("🔥 Fire Trade: INTEGRATED (Direct Execution Ready)")
+        except Exception as e:
+            self.fire_trader = None
+            _safe_print(f"⚠️ Fire Trade missing: {e}")
+
+        # ═══════════════════════════════════════════════════════════════════
         # 🧠 WIRE UP ALL INTELLIGENCE SYSTEMS!
         # ═══════════════════════════════════════════════════════════════════
         
@@ -3352,7 +3405,8 @@ class OrcaKillCycle:
         self.alpaca_fee_tracker = None
         if ALPACA_FEE_TRACKER_AVAILABLE and AlpacaFeeTracker:
             try:
-                self.alpaca_fee_tracker = AlpacaFeeTracker()
+                alpaca_c = self.clients.get('alpaca')
+                self.alpaca_fee_tracker = AlpacaFeeTracker(alpaca_client=alpaca_c)
                 print("💰 Alpaca Fee Tracker: WIRED! (Volume tiers + spread)")
             except Exception as e:
                 print(f"💰 Alpaca Fee Tracker: {e}")
@@ -3361,7 +3415,7 @@ class OrcaKillCycle:
         self.cost_basis_tracker = None
         if COST_BASIS_TRACKER_AVAILABLE and CostBasisTracker:
             try:
-                self.cost_basis_tracker = CostBasisTracker()
+                self.cost_basis_tracker = CostBasisTracker(clients=self.clients)
                 # 🔄 CRITICAL: Sync from exchanges if no positions loaded
                 # This ensures Digital Ocean can sell positions with real entry prices
                 if len(self.cost_basis_tracker.positions) == 0 and not quick_init:
@@ -3381,6 +3435,8 @@ class OrcaKillCycle:
         try:
             from aureon_real_portfolio_tracker import get_real_portfolio_tracker
             self.real_portfolio = get_real_portfolio_tracker()
+            if self.real_portfolio:
+                self.real_portfolio.set_clients(self.clients)
             _safe_print("💰 Real Portfolio Tracker: WIRED! (Floating vs Realized PnL)")
         except Exception as e:
             _safe_print(f"⚠️ Real Portfolio Tracker: {e}")
@@ -5549,12 +5605,14 @@ class OrcaKillCycle:
     # �🆕 SCAN ENTIRE MARKET - ALL EXCHANGES, ALL SYMBOLS
     # ═══════════════════════════════════════════════════════════════════════
     
-    def scan_entire_market(self, min_change_pct: float = 0.5, min_volume: float = 1000) -> List[MarketOpportunity]:
+    def scan_entire_market(self, min_change_pct: float = 0.25, min_volume: float = 500) -> List[MarketOpportunity]:
         """
         Scan ENTIRE market across ALL exchanges for opportunities.
         
         Returns sorted list of best opportunities from Alpaca AND Kraken.
         🌌 ENHANCED with quantum probability scoring!
+        
+        VOLATILITY TARGETING: Lowered to 0.25% to catch MORE momentum/volatility moves
         """
         print("\n" + "="*70)
         print("🌊 SCANNING ENTIRE MARKET - ALL EXCHANGES")
@@ -5586,6 +5644,84 @@ class OrcaKillCycle:
             opportunities.extend(capital_opps)
             print(f"   📊 Capital.com: Found {len(capital_opps)} CFD opportunities")
         
+        # ═══════════════════════════════════════════════════════════════════
+        # 💀 UNIFIED KILL CHAIN HUNT (Win Killer)
+        # ═══════════════════════════════════════════════════════════════════
+        if self.unified_kill_chain:
+            try:
+                print("   💀 Running Unified Kill Chain Hunt...")
+                win_opps = []
+                
+                # Binance
+                if self.clients.get('binance'):
+                    b_hunts = self.unified_kill_chain.win_killer.hunt_binance()
+                    for h in b_hunts:
+                        # Deduplicate
+                        if any(o.symbol == h['symbol'] for o in opportunities):
+                            continue
+                            
+                        win_opps.append(MarketOpportunity(
+                            symbol=h['symbol'],
+                            exchange='binance',
+                            price=h['price'],
+                            change_pct=h['change_24h'],
+                            volume=h['volume_24h'],
+                            momentum_score=h['score'] * 10, # Scale to align with Orca scores
+                            fee_rate=self.fee_rates.get('binance', 0.0023)
+                        ))
+                
+                # Kraken
+                if self.clients.get('kraken'):
+                    k_hunts = self.unified_kill_chain.win_killer.hunt_kraken()
+                    for h in k_hunts:
+                        # Deduplicate
+                        if any(o.symbol == h['symbol'] for o in opportunities):
+                            continue
+
+                        win_opps.append(MarketOpportunity(
+                            symbol=h['symbol'],
+                            exchange='kraken',
+                            price=h['price'],
+                            change_pct=h['change_24h'],
+                            volume=h['volume_24h'],
+                            momentum_score=h['score'] * 10,
+                            fee_rate=self.fee_rates.get('kraken', 0.0026)
+                        ))
+                
+                print(f"   💀 Unified Hunt injected {len(win_opps)} HIGH PROBABILITY kills")
+                opportunities.extend(win_opps)
+
+            except Exception as e:
+                print(f"   ⚠️ Unified Hunt Error: {e}")
+
+        # ═══════════════════════════════════════════════════════════════════
+        # ❄️ SNOWBALL LEAN HUNT (Arbitrage/Momentum)
+        # ═══════════════════════════════════════════════════════════════════
+        if self.snowball:
+            try:
+                print("   ❄️ Running Snowball Scan...")
+                # Arbitrage Scan
+                arb_opps = self.snowball.scan_arbitrage()
+                snow_opps = []
+                for a in arb_opps:
+                    score = a.get('score', 0)
+                    if score > 0:
+                        # Map to Opportunity
+                        snow_opps.append(MarketOpportunity(
+                            symbol=f"{a['coin']}/USD", # Approximation
+                            exchange='hybrid',
+                            price=a['kraken_price'],
+                            change_pct=a['spread_pct'],
+                            volume=1000000,
+                            momentum_score=score * 5,
+                            fee_rate=0.005
+                        ))
+                
+                print(f"   ❄️ Snowball injected {len(snow_opps)} arbitrage targets")
+                opportunities.extend(snow_opps)
+            except Exception as e:
+                print(f"   ⚠️ Snowball error: {e}")
+
         # ═══════════════════════════════════════════════════════════════════
         # 🎯📊 FEED DATA TO PROBABILITY NEXUS (Batten Matrix)
         # ═══════════════════════════════════════════════════════════════════
@@ -6336,6 +6472,7 @@ class OrcaKillCycle:
                     cash['alpaca'] = 0.0
                 else:
                     acct = alpaca_client.get_account()
+                    print(f"   [DEBUG] Alpaca account raw: {acct}")
                     # If API call failed, account may be empty
                     if not acct:
                         self.last_cash_status['alpaca'] = 'error'
@@ -6344,6 +6481,7 @@ class OrcaKillCycle:
                         # 🔧 FIX: Use actual CASH balance, not portfolio_value
                         # portfolio_value includes positions which can't be used to buy new assets!
                         alpaca_cash = float(acct.get('cash', 0) or 0)
+                        print(f"   [DEBUG] Alpaca cash detected: {alpaca_cash}")
                         
                         # Still track positions for sell opportunities (but don't add to cash)
                         try:
@@ -6360,8 +6498,9 @@ class OrcaKillCycle:
                                     'avg_entry_price': float(pos.get('avg_entry_price', 0) or 0),
                                     'current_price': float(pos.get('current_price', 0) or 0)
                                 })
-                        except Exception:
-                            pass
+                            print(f"   [DEBUG] Alpaca positions count: {len(self.alpaca_positions)}")
+                        except Exception as pos_err:
+                            print(f"   [DEBUG] Alpaca positions fetch error: {pos_err}")
                         
                         if self.last_cash_status['alpaca'] == 'unknown':
                             self.last_cash_status['alpaca'] = 'ok'
@@ -8791,13 +8930,16 @@ class OrcaKillCycle:
         """
         Regulate order size based on exchange specifics and user Minimums.
         Returns: (adjusted_amount, reason)
+        
+        CRITICAL: Minimum must be high enough that fees (0.26% Kraken taker = $0.052 on $20)
+                  don't consume all profit. Historical loss at $8.37 position size.
         """
-        # 1. Base thresholds (hard floor)
-        min_required = 1.0
+        # 1. Base thresholds (hard floor) - RAISED to prevent fee-dominated losses
+        min_required = 15.0  # Was 1.0 - default safe minimum
         if exchange == 'binance': 
-            min_required = 6.0  # Buffer above $5.0
+            min_required = 20.0  # Was 6.0 - prevent micro-trade losses
         elif exchange == 'kraken': 
-            min_required = 6.0  # Buffer above typical $5.0 costmin
+            min_required = 20.0  # Was 6.0 - prevent fee domination (0.26% taker on tiny positions)
         elif exchange == 'capital': 
             min_required = 100.0 # User specified "capitual min amount is 100"
 
@@ -9769,7 +9911,7 @@ class OrcaKillCycle:
         results = []
         attempted_indices = set()
         last_scan_time = 0
-        scan_interval = 5  # 🔥 AGGRESSIVE: Scan every 5 seconds for fast opportunities!
+        scan_interval = 3  # 🔥 AGGRESSIVE: Scan every 3s to catch volatility faster (was 5s)
         monitor_interval = 0.05  # 20 updates/sec
         whale_update_interval = 2.0  # Update whale intel every 2 seconds
         last_whale_update = 0
@@ -10469,6 +10611,23 @@ class OrcaKillCycle:
     # 👑🦈 AUTONOMOUS MODE - QUEEN-GUIDED INFINITE LOOP 🦈👑
     # ═══════════════════════════════════════════════════════════════════════
     
+    def _ignite_sentience(self):
+        """Ignite the async sentience engine in a background thread."""
+        if self.sentience_engine:
+            def _run_async_loop():
+                try:
+                    loop = asyncio.new_event_loop()
+                    asyncio.set_event_loop(loop)
+                    loop.run_until_complete(self.sentience_engine.start_sentience_loop())
+                except Exception as e:
+                    print(f"🧠👑 Sentience Loop Error: {e}")
+                
+            t = threading.Thread(target=_run_async_loop, daemon=True)
+            t.start()
+            print("🧠👑 Queen Sentience: IGNITED (Background Thread Active)")
+        else:
+            print("🧠👑 Queen Sentience: UNAVAILABLE")
+
     def run_autonomous(self, max_positions: int = 3, amount_per_position: float = 2.5,
                        target_pct: float = 1.0, min_change_pct: float = 0.3):
         """
@@ -10510,6 +10669,10 @@ class OrcaKillCycle:
             print("👑 QUEEN DR AURIS THRONE: AWAKENED AND READY!")
             print(f"   🎯 Dream: ${queen.THE_DREAM:,.0f} (ONE BILLION)")
             print(f"   💰 Current equity: ${queen.equity:,.2f}")
+            
+            # Ignite Sentience
+            self._ignite_sentience()
+            
             try:
                 from aureon_queen_hive_mind import wire_all_systems
                 wired = wire_all_systems(queen)
@@ -11015,6 +11178,17 @@ class OrcaKillCycle:
                     except Exception:
                         pass
                     
+                    # 🔥 PHASE 0.5: FIRE TRADER CHECK (Emergency/Opportunity Profits)
+                    # ═══════════════════════════════════════════════════════════
+                    if self.fire_trader:
+                        try:
+                            # Run fire check if we have positions or balances
+                            # Fire trader scans balances directly from API, so independent of 'positions' list
+                            print("   🔥 FIRE TRADER: Checking for immediate execute opportunities...")
+                            self.fire_trader.run_fire_check()
+                        except Exception as e:
+                            print(f"   ⚠️ Fire Trader check failed: {e}")
+
                     # 🆕 RE-SCAN KRAKEN BALANCES FOR NEW MANUAL POSITIONS!
                     try:
                         kraken_client = self.clients.get('kraken')
@@ -11227,9 +11401,12 @@ class OrcaKillCycle:
                                 active_symbols = [p.symbol for p in positions]
                                 new_opps = [o for o in opportunities if o.symbol not in active_symbols]
                                 
+                                print(f"   [DEBUG] Found {len(opportunities)} opps, {len(new_opps)} new (top: {', '.join([f'{o.symbol}({o.change_pct:+.2f}%)' for o in new_opps[:5]][:3] or ['none'])})
+                                
                                 if new_opps:
                                     # Take best opportunity first (needed for Queen signal)
                                     best = new_opps[0]
+                                    print(f"   [DEBUG] Top opportunities: {', '.join([f'{o.symbol}({o.change_pct:+.2f}%)' for o in new_opps[:5]])}")
                                     
                                     # Ask Queen for guidance (MANDATORY)
                                     queen_approved = False
@@ -11251,6 +11428,7 @@ class OrcaKillCycle:
                                             action = signal.get('action', 'HOLD')
                                             print(f"   👑 Queen signal: {action} (confidence {confidence:.0%})")
                                             queen_approved = (action == 'BUY' and confidence >= 0.3)  # Lowered from 0.5
+                                            print(f"   [DEBUG] Queen Decision for {best.symbol}: Approved={queen_approved} (Action={action}, Conf={confidence})")
                                         except Exception as e:
                                             print(f"   ⚠️ Queen signal unavailable: {e}")
                                     
@@ -11267,6 +11445,7 @@ class OrcaKillCycle:
                                                 # Adjust amount based on available cash
                                                 exchange_cash = cash.get(best.exchange, 0)
                                                 buy_amount = min(amount_per_position, exchange_cash * 0.9)
+                                                print(f"   [DEBUG] Buy Calc: Cash={exchange_cash:.2f}, AmtPerPos={amount_per_position}, BuyAmt={buy_amount:.2f}")
                                                 
                                                 if buy_amount >= 0.10:  # Minimum $0.10 (exchange mins vary)
                                                     fee_rate = self.fee_rates.get(best.exchange, 0.0025)
@@ -11274,8 +11453,11 @@ class OrcaKillCycle:
                                                     cop_est, _, _, _ = self._expected_cop_for_buy(
                                                         best.price, expected_qty, fee_rate, target_pct_current
                                                     )
-                                                    if cop_est <= 1.0:
-                                                        print(f"   👑❌ BUY BLOCKED: COP {cop_est:.6f} ≤ 1.0 (energy not increasing)")
+                                                    COP_MIN_THRESHOLD = 0.85  # Relaxed from 1.0 to allow more trades
+                                                    print(f"   [DEBUG] COP Check: Est={cop_est:.6f}, Threshold={COP_MIN_THRESHOLD}")
+                                                    
+                                                    if cop_est <= COP_MIN_THRESHOLD:
+                                                        print(f"   👑❌ BUY BLOCKED: COP {cop_est:.6f} ≤ {COP_MIN_THRESHOLD} (energy increase too low)")
                                                     else:
                                                         _baton(
                                                             "execute",
@@ -12066,6 +12248,10 @@ class OrcaKillCycle:
             print("👑 QUEEN DR AURIS THRONE: AWAKENED AND READY!")
             print(f"   🎯 Dream: ${queen.THE_DREAM:,.0f} (ONE BILLION)")
             print(f"   💰 Current equity: ${queen.equity:,.2f}")
+            
+            # Ignite Sentience
+            self._ignite_sentience()
+            
             print()
         except Exception as e:
             print(f"❌ Queen initialization failed: {e}")

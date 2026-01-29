@@ -1711,10 +1711,10 @@
         "source": "portfolio_truth_check"
     },
     "OPENUSD": {
-        "exchange": "binance",
+        "exchange": "kraken",
         "buy_price": 0.0,
-        "quantity": 1.84122118,
-        "buy_timestamp": "2026-01-27T22:19:20.018285",
+        "quantity": 10.78167,
+        "buy_timestamp": "2026-01-29T10:27:22.756358",
         "auto_tracked": true,
         "source": "portfolio_truth_check"
     },
@@ -1745,8 +1745,8 @@
     "USD": {
         "exchange": "binance",
         "buy_price": 0.0,
-        "quantity": 0.130134,
-        "buy_timestamp": "2026-01-27T21:36:38.118603",
+        "quantity": 4.96428274,
+        "buy_timestamp": "2026-01-29T15:15:33.127179",
         "auto_tracked": true,
         "source": "portfolio_truth_check"
     },
@@ -1835,6 +1835,86 @@
         "buy_price": 0.0,
         "quantity": 64.5,
         "buy_timestamp": "2026-01-27T21:57:58.005980",
+        "auto_tracked": true,
+        "source": "portfolio_truth_check"
+    },
+    "BABYUSD": {
+        "exchange": "kraken",
+        "buy_price": 0.0,
+        "quantity": 0.00017,
+        "buy_timestamp": "2026-01-29T10:27:22.748747",
+        "auto_tracked": true,
+        "source": "portfolio_truth_check"
+    },
+    "BONDUSD": {
+        "exchange": "kraken",
+        "buy_price": 0.0,
+        "quantity": 61.53846154,
+        "buy_timestamp": "2026-01-29T10:27:22.752028",
+        "auto_tracked": true,
+        "source": "portfolio_truth_check"
+    },
+    "SAHARAUSD": {
+        "exchange": "kraken",
+        "buy_price": 0.0,
+        "quantity": 352.0831,
+        "buy_timestamp": "2026-01-29T10:27:22.759496",
+        "auto_tracked": true,
+        "source": "portfolio_truth_check"
+    },
+    "SCRTUSD": {
+        "exchange": "kraken",
+        "buy_price": 0.0,
+        "quantity": 0.0094652,
+        "buy_timestamp": "2026-01-29T10:27:22.762470",
+        "auto_tracked": true,
+        "source": "portfolio_truth_check"
+    },
+    "LDBNBUSD": {
+        "exchange": "binance",
+        "buy_price": 0.0,
+        "quantity": 0.00172696,
+        "buy_timestamp": "2026-01-29T10:27:22.771854",
+        "auto_tracked": true,
+        "source": "portfolio_truth_check"
+    },
+    "AXSUSD": {
+        "exchange": "binance",
+        "buy_price": 0.0,
+        "quantity": 2.28,
+        "buy_timestamp": "2026-01-29T10:27:22.774827",
+        "auto_tracked": true,
+        "source": "portfolio_truth_check"
+    },
+    "ROSEUSD": {
+        "exchange": "binance",
+        "buy_price": 0.0,
+        "quantity": 1963.4,
+        "buy_timestamp": "2026-01-29T10:27:22.777917",
+        "auto_tracked": true,
+        "source": "portfolio_truth_check"
+    },
+    "SSVUSD": {
+        "exchange": "binance",
+        "buy_price": 0.0,
+        "quantity": 1.23982105,
+        "buy_timestamp": "2026-01-29T10:27:22.781129",
+        "auto_tracked": true,
+        "source": "portfolio_truth_check"
+    },
+    "SYNUSD": {
+        "exchange": "binance",
+        "buy_price": 0.0,
+        "quantity": 97.10766,
+        "buy_timestamp": "2026-01-29T10:27:22.784215",
+        "auto_tracked": true,
+        "source": "portfolio_truth_check"
+    },
+    "BEAMXUSD": {
+        "exchange": "binance",
+        "buy_price": 0.0,
+        "quantity": 1791.0,
+        "buy_timestamp": "2026-01-29T10:27:22.787273",
         "auto_tracked": true,
         "source": "portfolio_truth_check"
     }

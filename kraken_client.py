@@ -54,7 +54,8 @@ def _get_next_nonce() -> int:
         
         # Use whichever is higher + increment to ensure uniqueness
         # Add 1_000_000_000 (1 second in nanoseconds) as safety buffer
-        new_nonce = max(current_time_nonce, last_nonce + 1_000_000_000) + 1
+        # INCREASED BUFFER: to 5 seconds to ensure we clear any server-side window
+        new_nonce = max(current_time_nonce, last_nonce + 5_000_000_000) + 100
         
         # Save new nonce to file (atomic write)
         try:

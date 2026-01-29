@@ -1,0 +1,73 @@
+# 🦈 Aureon Trading - DigitalOcean Autonomous Mode
+# Simplified docker-compose for pure volatility/momentum trading
+# Usage: docker-compose -f docker-compose.autonomous.yml up -d
+
+version: '3.8'
+
+services:
+  # Autonomous volatility trader (no UI, pure trading)
+  aureon-autonomous:
+    build: .
+    container_name: aureon-autonomous-trader
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      # Core settings
+      - PYTHONIOENCODING=utf-8
+      - PYTHONUNBUFFERED=1
+      - AUREON_STATE_DIR=/app/state
+      - AUREON_ENABLE_AUTONOMOUS_CONTROL=1
+      
+      # Autonomous mode config
+      - MODE=autonomous
+      - MAX_POSITIONS=3              # Max concurrent positions
+      - AMOUNT_PER_POSITION=5.0      # Dollar amount per trade
+      - TARGET_PCT=1.0               # Profit target %
+      - MIN_CHANGE_PCT=0.25          # Min volatility to detect (0.25% = catches more)
+      
+      # Exchange API keys (from .env file)
+      # KRAKEN_API_KEY=...
+      # KRAKEN_API_SECRET=...
+      # BINANCE_API_KEY=...
+      # BINANCE_API_SECRET=...
+      # ALPACA_API_KEY=...
+      # ALPACA_API_SECRET=...
+      
+    volumes:
+      # Persist state and trade history
+      - ./state:/app/state
+      - ./logs:/app/logs
+      - ./*.json:/app/*.json
+    
+    networks:
+      - aureon-net
+    
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "5"
+    
+    deploy:
+      resources:
+        limits:
+          cpus: '1.5'
+          memory: 3G
+        reservations:
+          cpus: '0.5'
+          memory: 1G
+    
+    healthcheck:
+      test: ["CMD", "python", "-c", "import os, time; exit(0 if os.path.exists('/app/state') else 1)"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 120s
+
+networks:
+  aureon-net:
+    driver: bridge
+
+volumes:
+  state:
+  logs:

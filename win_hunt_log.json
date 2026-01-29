@@ -1,0 +1,26 @@
+[
+  {
+    "timestamp": "2026-01-29T01:05:01.444038",
+    "symbol": "WLDUSDT",
+    "type": "MOMENTUM",
+    "price": 0.5633,
+    "score": 5.9985670720816,
+    "status": "IDENTIFIED"
+  },
+  {
+    "timestamp": "2026-01-29T01:05:07.021654",
+    "symbol": "WLDUSDT",
+    "type": "MOMENTUM",
+    "price": 0.5636,
+    "score": 6.0116994428352,
+    "status": "IDENTIFIED"
+  },
+  {
+    "timestamp": "2026-01-29T01:05:12.596790",
+    "symbol": "WLDUSDT",
+    "type": "MOMENTUM",
+    "price": 0.5627,
+    "score": 5.978558737997,
+    "status": "IDENTIFIED"
+  }
+]

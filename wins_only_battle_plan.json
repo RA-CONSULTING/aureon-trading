@@ -1,0 +1,77 @@
+{
+  "timestamp": "2026-01-29T01:04:29.618209",
+  "mode": "WINS_ONLY",
+  "wins": [
+    {
+      "type": "ARBITRAGE",
+      "coin": "ETH",
+      "spread": 0.13599999999999998,
+      "status": "READY"
+    },
+    {
+      "type": "ARBITRAGE",
+      "coin": "SOL",
+      "spread": 0.12,
+      "status": "READY"
+    },
+    {
+      "type": "ARBITRAGE",
+      "coin": "BTC",
+      "spread": 0.10699999999999998,
+      "status": "READY"
+    },
+    {
+      "type": "MOMENTUM",
+      "symbol": "JTOUSDT",
+      "entry": 0.454,
+      "target": 0.4767,
+      "stop": 0.44038,
+      "rr": 1.6666666666666639,
+      "status": "READY"
+    },
+    {
+      "type": "MOMENTUM",
+      "symbol": "SOMIUSDT",
+      "entry": 0.3199,
+      "target": 0.33589500000000005,
+      "stop": 0.310303,
+      "rr": 1.6666666666666667,
+      "status": "READY"
+    },
+    {
+      "type": "MOMENTUM",
+      "symbol": "WLDUSDT",
+      "entry": 0.563,
+      "target": 0.59115,
+      "stop": 0.54611,
+      "rr": 1.666666666666671,
+      "status": "READY"
+    },
+    {
+      "type": "MOMENTUM",
+      "symbol": "KITEUSDT",
+      "entry": 0.1465,
+      "target": 0.153825,
+      "stop": 0.14210499999999998,
+      "rr": 1.6666666666666625,
+      "status": "READY"
+    },
+    {
+      "type": "BOUNCE",
+      "symbol": "FISUSDT",
+      "entry": 0.0191,
+      "target": 0.02275,
+      "gain_pct": 19.109947643979062,
+      "status": "READY"
+    },
+    {
+      "type": "BOUNCE",
+      "symbol": "VOXELUSDT",
+      "entry": 0.014,
+      "target": 0.0156,
+      "gain_pct": 11.428571428571422,
+      "status": "READY"
+    }
+  ],
+  "expected_return": 50.901519072550485
+}

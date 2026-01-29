@@ -152,6 +152,18 @@ class RealPortfolioTracker:
         
         logger.info("💰👁️ Real Portfolio Tracker initialized")
         logger.info(f"   Starting Capital: ${self.starting_capital:.2f}")
+
+    def set_clients(self, clients: Dict[str, Any]) -> None:
+        """Inject existing clients to avoid nonce issues."""
+        if 'kraken' in clients:
+            self._kraken_client = clients['kraken']
+        if 'binance' in clients:
+            self._binance_client = clients['binance']
+        if 'alpaca' in clients:
+            self._alpaca_client = clients['alpaca']
+        if 'capital' in clients:
+            self._capital_client = clients['capital']
+        logger.info("💰👁️ Clients injected into RealPortfolioTracker")
     
     def _load_state(self) -> None:
         """Load previous state from disk."""

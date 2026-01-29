@@ -32,6 +32,13 @@ ENV PORT=8080
 ENV AUREON_STATE_DIR=/app/state
 ENV AUREON_ENABLE_AUTONOMOUS_CONTROL=1
 
+# Autonomous volatility trading defaults
+ENV MODE=parallel
+ENV MAX_POSITIONS=3
+ENV AMOUNT_PER_POSITION=5.0
+ENV TARGET_PCT=1.0
+ENV MIN_CHANGE_PCT=0.25
+
 # Create directories for state files and logs
 RUN mkdir -p /app/state /app/logs /var/log/supervisor
 
@@ -53,13 +60,14 @@ RUN touch /app/queen_redistribution_state.json \
 # Expose ports
 EXPOSE 8080 8800
 
-# Health check - use HTTP endpoint on port 8080
+# Health check - works for both parallel (HTTP) and autonomous (file) modes
 HEALTHCHECK --interval=30s --timeout=10s --start-period=120s --retries=3 \
-  CMD curl -f http://localhost:8080/health || exit 1
+  CMD if [ "$MODE" = "autonomous" ]; then python -c "import os, time; exit(0 if os.path.exists('/app/state') and any(os.path.getmtime(f) > time.time()-120 for f in ['/app/7day_pending_validations.json', '/app/active_position.json']) else 1)"; else curl -f http://localhost:8080/health || exit 1; fi
 
 # Run startup validation before supervisor
 RUN chmod +x /app/deploy/validate_startup.sh
 
 # 👑 PARALLEL STARTUP: Use supervisord to run all systems
 # Systems: Command Center + Orca + Autonomous Engine + Queen Power System + Kraken Cache
-ENTRYPOINT ["/bin/bash", "-c", "/app/deploy/validate_startup.sh && exec supervisord -n -c /app/deploy/supervisord.conf"]
+# For standalone autonomous mode: docker run -e MODE=autonomous aureon-trading
+ENTRYPOINT ["/bin/bash", "-c", "if [ \"$MODE\" = \"autonomous\" ]; then exec python -u orca_complete_kill_cycle.py --autonomous ${MAX_POSITIONS:-3} ${AMOUNT_PER_POSITION:-5.0} ${TARGET_PCT:-1.0}; else /app/deploy/validate_startup.sh && exec supervisord -n -c /app/deploy/supervisord.conf; fi"]

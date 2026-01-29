@@ -77,12 +77,17 @@ COST_BASIS_FILE = "cost_basis_history.json"
 class CostBasisTracker:
     """Track real cost basis for all positions."""
     
-    def __init__(self, filepath: str = COST_BASIS_FILE):
+    def __init__(self, filepath: str = COST_BASIS_FILE, clients=None):
         self.filepath = filepath
         self.positions: Dict[str, Dict[str, Any]] = {}
         self.last_sync: float = 0
+        self.clients = clients or {}
         self._load()
     
+    def set_clients(self, clients):
+        """Inject shared exchange clients."""
+        self.clients = clients
+
     def _load(self):
         """Load cost basis data from file."""
         if os.path.exists(self.filepath):
@@ -141,8 +146,11 @@ class CostBasisTracker:
         Returns number of positions updated.
         """
         try:
-            from binance_client import BinanceClient
-            client = BinanceClient()
+            if self.clients and 'binance' in self.clients:
+                client = self.clients['binance']
+            else:
+                from binance_client import BinanceClient
+                client = BinanceClient()
         except Exception as e:
             print(f"⚠️ Failed to initialize Binance client: {e}")
             return 0
@@ -206,9 +214,13 @@ class CostBasisTracker:
     def sync_from_kraken(self) -> int:
         """Sync cost basis from Kraken trade history."""
         try:
-            from kraken_client import KrakenClient
-            client = KrakenClient()
-            if client.dry_run:
+            if self.clients and 'kraken' in self.clients:
+                client = self.clients['kraken']
+            else:
+                from kraken_client import KrakenClient
+                client = KrakenClient()
+
+            if getattr(client, 'dry_run', False):
                 print("   ⚪ Kraken in dry-run mode - skipping")
                 return 0
         except Exception as e:
@@ -294,8 +306,11 @@ class CostBasisTracker:
     def sync_from_alpaca(self) -> int:
         """Sync cost basis from Alpaca trade history."""
         try:
-            from alpaca_client import AlpacaClient
-            client = AlpacaClient()
+            if self.clients and 'alpaca' in self.clients:
+                client = self.clients['alpaca']
+            else:
+                from alpaca_client import AlpacaClient
+                client = AlpacaClient()
         except Exception as e:
             print(f"   ⚠️ Failed to initialize Alpaca client: {e}")
             return 0
@@ -339,9 +354,13 @@ class CostBasisTracker:
     def sync_from_capital(self) -> int:
         """Sync cost basis from Capital.com positions."""
         try:
-            from capital_client import CapitalClient
-            client = CapitalClient()
-            if not client.enabled:
+            if self.clients and 'capital' in self.clients:
+                client = self.clients['capital']
+            else:
+                from capital_client import CapitalClient
+                client = CapitalClient()
+            
+            if not getattr(client, 'enabled', False):
                 print("   ⚪ Capital.com not authenticated - skipping")
                 return 0
         except Exception as e:
