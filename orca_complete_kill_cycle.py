@@ -8310,7 +8310,21 @@ class OrcaKillCycle:
             print("   SENTIENCE VALIDATION IN PROGRESS...")
             print("🧠"*20)
             
-            report = self.sentience_validator.run_full_validation()
+            # The validate_sentience method is async, so we need to run it
+            import asyncio
+            try:
+                loop = asyncio.get_event_loop()
+                if loop.is_closed():
+                    loop = asyncio.new_event_loop()
+                    asyncio.set_event_loop(loop)
+            except RuntimeError:
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+            
+            # Run the async validation (skip sentience loop for speed)
+            report = loop.run_until_complete(
+                self.sentience_validator.validate_sentience(run_sentience_loop=False)
+            )
             
             if report:
                 self.last_sentience_check = time.time()
