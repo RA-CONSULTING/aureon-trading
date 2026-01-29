@@ -32,7 +32,6 @@ ASSETPAIR_CACHE_TTL = 300  # seconds
 # ═══════════════════════════════════════════════════════════════════════════════
 NONCE_FILE = os.path.join(os.path.dirname(__file__), "kraken_nonce.json")
 _nonce_lock = threading.Lock()
-_last_nonce_used = 0  # In-memory cache for faster access
 
 def _get_next_nonce() -> int:
     """
@@ -42,41 +41,33 @@ def _get_next_nonce() -> int:
     Once you use nanoseconds, you can NEVER go back to microseconds.
     
     Strategy:
-    1. Use NANOSECONDS (time.time() * 1_000_000_000) - must match historical usage
-    2. Always increment from last used to ensure strictly increasing
-    3. Use in-memory cache + file persistence for reliability
+    1. ALWAYS read from file first (multiple processes can be running)
+    2. Increment by small amount to ensure strictly increasing
+    3. Save back to file atomically
     """
-    global _last_nonce_used
-    
     with _nonce_lock:
-        # NANOSECONDS since epoch (must match historical usage pattern)
-        current_time_nonce = int(time.time() * 1_000_000_000)
+        # ALWAYS load from file to handle multiple processes
+        file_nonce = 0
+        try:
+            if os.path.exists(NONCE_FILE):
+                with open(NONCE_FILE, 'r') as f:
+                    data = json.load(f)
+                    file_nonce = int(data.get('last_nonce', 0))
+        except Exception:
+            pass
         
-        # Load last used nonce from file if memory is empty
-        if _last_nonce_used == 0:
-            try:
-                if os.path.exists(NONCE_FILE):
-                    with open(NONCE_FILE, 'r') as f:
-                        data = json.load(f)
-                        _last_nonce_used = int(data.get('last_nonce', 0))
-            except Exception:
-                pass
+        # New nonce = file nonce + small increment (1 million nanoseconds = 1ms)
+        # This ensures strictly increasing even with rapid calls
+        new_nonce = file_nonce + 1_000_000
         
-        # New nonce must be higher than both current time AND last used + small buffer
-        # Use small increment (1 million nanoseconds = 1ms) to avoid running away
-        new_nonce = max(current_time_nonce, _last_nonce_used + 1_000_000)
-        
-        # Update in-memory cache
-        _last_nonce_used = new_nonce
-        
-        # Save to file (atomic write) - don't block on this
+        # Save to file (atomic write)
         try:
             tmp_file = NONCE_FILE + '.tmp'
             with open(tmp_file, 'w') as f:
                 json.dump({'last_nonce': new_nonce, 'updated': time.time()}, f)
             os.replace(tmp_file, NONCE_FILE)
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"⚠️ Failed to save nonce: {e}")
         
         return new_nonce
 
