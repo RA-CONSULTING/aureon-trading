@@ -48,7 +48,7 @@ logger = logging.getLogger(__name__)
 
 # Import cognitive narrator
 try:
-    from queen_cognitive_narrator import get_narrator, QueenCognitiveNarrator
+    from queen_cognitive_narrator import QueenCognitiveNarrator
     NARRATOR_AVAILABLE = True
 except ImportError:
     NARRATOR_AVAILABLE = False
@@ -70,6 +70,14 @@ except ImportError:
     MARKET_CACHE_AVAILABLE = False
     DEFAULT_SYMBOLS = ['BTC', 'ETH', 'SOL', 'XRP', 'DOGE', 'ADA', 'AVAX', 'LINK', 'DOT', 'MATIC']
     logger.warning("Unified market cache not available")
+
+# Import Harmonic Liquid Aluminium Field for live visualization
+try:
+    from aureon_harmonic_liquid_aluminium import HarmonicLiquidAluminiumField
+    HARMONIC_FIELD_AVAILABLE = True
+except ImportError:
+    HARMONIC_FIELD_AVAILABLE = False
+    logger.warning("Harmonic Liquid Aluminium Field not available")
 
 PRO_DASHBOARD_HTML = """
 <!DOCTYPE html>
@@ -614,6 +622,62 @@ PRO_DASHBOARD_HTML = """
             }
         }
         
+        /* Harmonic Liquid Aluminium Field Styles */
+        .harmonic-container {
+            margin: 20px auto;
+            max-width: 1200px;
+            padding: 0 20px;
+        }
+        
+        .harmonic-stats {
+            display: flex;
+            gap: 20px;
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-left: auto;
+        }
+        
+        .harmonic-stats span {
+            white-space: nowrap;
+        }
+        
+        .harmonic-canvas-container {
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            padding: 16px;
+            margin: 16px 0;
+            border: 1px solid var(--border-color);
+        }
+        
+        #harmonic-field-canvas {
+            width: 100%;
+            height: 400px;
+            background: linear-gradient(135deg, #0d1117, #161b22);
+            border-radius: 4px;
+        }
+        
+        .harmonic-legend {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 16px;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+        
+        .legend-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 2px;
+        }
+        
         @media (max-width: 1100px) {
             .main-container {
                 grid-template-columns: 1fr 1fr;
@@ -821,6 +885,50 @@ PRO_DASHBOARD_HTML = """
         </div>
     </div>
     
+    <!-- Harmonic Liquid Aluminium Field Visualization -->
+    <div class="harmonic-container">
+        <div class="panel">
+            <div class="panel-header">
+                <span class="panel-title">🔩 Harmonic Liquid Aluminium Field</span>
+                <div class="harmonic-stats" id="harmonic-stats">
+                    <span>Frequency: <span id="field-frequency">432.0 Hz</span></span>
+                    <span>Amplitude: <span id="field-amplitude">0.5000</span></span>
+                    <span>Phase: <span id="field-phase">0.0000</span></span>
+                    <span>Nodes: <span id="field-nodes">0</span></span>
+                    <span>Energy: <span id="field-energy">0.00</span></span>
+                    <span>Pattern: <span id="field-pattern">circle</span></span>
+                </div>
+            </div>
+            
+            <div class="harmonic-canvas-container">
+                <canvas id="harmonic-field-canvas" width="800" height="400"></canvas>
+            </div>
+            
+            <div class="harmonic-legend">
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #ff6b6b;"></div>
+                    <span>Alpaca (174 Hz)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #4ecdc4;"></div>
+                    <span>Kraken (285 Hz)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #45b7d1;"></div>
+                    <span>Binance (396 Hz)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #96ceb4;"></div>
+                    <span>Capital (528 Hz)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #ffeaa7;"></div>
+                    <span>Master Waveform</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
     <script>
         // ========== State ==========
         const state = {
@@ -893,6 +1001,9 @@ PRO_DASHBOARD_HTML = """
                     break;
                 case 'queen_thought':
                     handleQueenThought(data);
+                    break;
+                case 'harmonic_field':
+                    updateHarmonicField(data.data);
                     break;
                 case 'activity':
                     addActivity(data.message, data.category || '');
@@ -1249,6 +1360,138 @@ PRO_DASHBOARD_HTML = """
             return num.toFixed(0);
         }
         
+        // ========== Harmonic Liquid Aluminium Field ==========
+        let harmonicCanvas = null;
+        let harmonicCtx = null;
+        let harmonicData = null;
+        
+        function initHarmonicField() {
+            harmonicCanvas = document.getElementById('harmonic-field-canvas');
+            if (harmonicCanvas) {
+                harmonicCtx = harmonicCanvas.getContext('2d');
+                console.log('Harmonic field canvas initialized');
+            }
+        }
+        
+        function updateHarmonicField(data) {
+            harmonicData = data;
+            renderHarmonicField();
+            updateHarmonicStats(data);
+        }
+        
+        function updateHarmonicStats(data) {
+            if (!data.global) return;
+            
+            document.getElementById('field-frequency').textContent = data.global.frequency + ' Hz';
+            document.getElementById('field-amplitude').textContent = data.global.amplitude.toFixed(4);
+            document.getElementById('field-phase').textContent = data.global.phase.toFixed(4);
+            document.getElementById('field-nodes').textContent = data.global.total_nodes;
+            document.getElementById('field-energy').textContent = data.global.total_energy;
+            document.getElementById('field-pattern').textContent = data.cymatics || 'circle';
+        }
+        
+        function renderHarmonicField() {
+            if (!harmonicCtx || !harmonicData) return;
+            
+            const canvas = harmonicCanvas;
+            const ctx = harmonicCtx;
+            const width = canvas.width;
+            const height = canvas.height;
+            
+            // Clear canvas
+            ctx.fillStyle = '#0d1117';
+            ctx.fillRect(0, 0, width, height);
+            
+            // Draw grid
+            ctx.strokeStyle = '#30363d';
+            ctx.lineWidth = 1;
+            ctx.setLineDash([5, 5]);
+            
+            // Vertical lines
+            for (let x = 0; x < width; x += 50) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, height);
+                ctx.stroke();
+            }
+            
+            // Horizontal lines
+            for (let y = 0; y < height; y += 50) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(width, y);
+                ctx.stroke();
+            }
+            
+            ctx.setLineDash([]);
+            
+            // Draw master waveform
+            if (harmonicData.master_waveform && harmonicData.master_waveform.length > 0) {
+                drawWaveform(harmonicData.master_waveform, '#ffeaa7', 2, height/2);
+            }
+            
+            // Draw layer waveforms
+            const layerColors = {
+                'alpaca': '#ff6b6b',
+                'kraken': '#4ecdc4', 
+                'binance': '#45b7d1',
+                'capital': '#96ceb4'
+            };
+            
+            if (harmonicData.layers) {
+                let layerIndex = 0;
+                Object.entries(harmonicData.layers).forEach(([exchange, layer]) => {
+                    if (layer.waveform && layer.waveform.length > 0) {
+                        const color = layerColors[exchange] || '#888888';
+                        const yOffset = height/2 + (layerIndex - 1.5) * 30;
+                        drawWaveform(layer.waveform, color, 1, yOffset);
+                        layerIndex++;
+                    }
+                });
+            }
+            
+            // Draw standing waves (support/resistance levels)
+            if (harmonicData.standing_waves) {
+                harmonicData.standing_waves.forEach(wave => {
+                    const y = height/2 + (wave.level || 0) * 50;
+                    ctx.strokeStyle = '#58a6ff';
+                    ctx.lineWidth = 2;
+                    ctx.setLineDash([10, 5]);
+                    ctx.beginPath();
+                    ctx.moveTo(0, y);
+                    ctx.lineTo(width, y);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                });
+            }
+        }
+        
+        function drawWaveform(waveform, color, lineWidth, yCenter) {
+            if (!waveform || waveform.length === 0) return;
+            
+            const ctx = harmonicCtx;
+            const width = harmonicCanvas.width;
+            const height = harmonicCanvas.height;
+            
+            ctx.strokeStyle = color;
+            ctx.lineWidth = lineWidth;
+            ctx.beginPath();
+            
+            const step = width / waveform.length;
+            waveform.forEach((amplitude, i) => {
+                const x = i * step;
+                const y = yCenter + amplitude * 100; // Scale amplitude
+                
+                if (i === 0) {
+                    ctx.moveTo(x, y);
+                } else {
+                    ctx.lineTo(x, y);
+                }
+            });
+            
+            ctx.stroke();
+        }
+        
         // Clock
         function updateClock() {
             document.getElementById('clock').textContent = new Date().toLocaleTimeString();
@@ -1259,6 +1502,7 @@ PRO_DASHBOARD_HTML = """
         // ========== Initialize ==========
         connectWebSocket();
         initChart();
+        initHarmonicField();
         
         // Fetch initial data via HTTP
         async function fetchInitialData() {
@@ -1302,7 +1546,10 @@ class AureonProDashboard:
         self.clients: Set = set()
         
         # Queen's Cognitive Narrator
-        self.narrator = get_narrator() if NARRATOR_AVAILABLE else None
+        self.narrator = QueenCognitiveNarrator() if NARRATOR_AVAILABLE else None
+        
+        # Harmonic Liquid Aluminium Field for live visualization
+        self.harmonic_field = HarmonicLiquidAluminiumField() if HARMONIC_FIELD_AVAILABLE else None
         
         # Binance WebSocket for real-time market data
         self.binance_ws = None
@@ -1449,6 +1696,20 @@ class AureonProDashboard:
                 'todayPnl': 0,  # Would need historical data
                 'positions': positions[:20]  # Top 20
             }
+            
+            # Update harmonic field with positions
+            if self.harmonic_field:
+                for pos in positions:
+                    try:
+                        self.harmonic_field.add_or_update_node(
+                            exchange=pos.get('exchange', 'unknown'),
+                            symbol=pos.get('symbol', 'UNKNOWN'),
+                            current_price=pos.get('currentPrice', 0),
+                            entry_price=pos.get('avgCost', 0),
+                            quantity=pos.get('quantity', 0)
+                        )
+                    except Exception as e:
+                        self.logger.debug(f"Harmonic field update error for {pos.get('symbol')}: {e}")
             
         except ImportError:
             self.logger.debug("live_position_viewer not available")
@@ -1703,6 +1964,28 @@ class AureonProDashboard:
             
             await asyncio.sleep(5)  # Update every 5 seconds
     
+    async def harmonic_field_loop(self):
+        """Stream harmonic liquid aluminium field data for live visualization."""
+        await asyncio.sleep(2)  # Wait for initialization
+        
+        while True:
+            try:
+                if self.harmonic_field:
+                    # Capture current field snapshot
+                    snapshot = self.harmonic_field.capture_snapshot()
+                    
+                    # Broadcast to all connected clients
+                    await self.broadcast({
+                        'type': 'harmonic_field',
+                        'data': snapshot.to_dict()
+                    })
+                    
+            except Exception as e:
+                self.logger.error(f"Harmonic field streaming error: {e}")
+            
+            # Stream every 100ms (10Hz) for smooth visualization
+            await asyncio.sleep(0.1)
+    
     async def start(self):
         """Start the dashboard."""
         runner = web.AppRunner(self.app)
@@ -1738,6 +2021,7 @@ class AureonProDashboard:
         asyncio.create_task(self.queen_commentary_loop())
         asyncio.create_task(self.data_refresh_loop())
         asyncio.create_task(self.market_flow_loop())
+        asyncio.create_task(self.harmonic_field_loop())
         
         # Initial data fetch
         await self.refresh_portfolio()
