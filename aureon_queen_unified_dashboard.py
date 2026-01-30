@@ -316,7 +316,20 @@ UNIFIED_DASHBOARD_HTML = """
             <div id="queen-status">
                 Systems online: Bot Hunter • Quantum Telescope • Planetary Tracker • Ocean Scanner
             </div>
-            <button class="voice-button" id="voice-toggle">🔊 Enable Voice</button>
+            <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                <button class="voice-button" id="voice-toggle">🔊 Enable Voice</button>
+                <select id="voice-select" style="background: #1a1a2e; color: #00ff88; border: 1px solid #333; padding: 5px 10px; border-radius: 5px; font-size: 12px;">
+                    <option value="">Default Voice</option>
+                </select>
+                <div style="display: flex; align-items: center; gap: 5px;">
+                    <label style="font-size: 11px; color: #888;">Vol:</label>
+                    <input type="range" id="voice-volume" min="0" max="1" step="0.1" value="0.8" style="width: 60px;">
+                </div>
+                <div style="display: flex; align-items: center; gap: 5px;">
+                    <label style="font-size: 11px; color: #888;">Speed:</label>
+                    <input type="range" id="voice-rate" min="0.5" max="2" step="0.1" value="1.0" style="width: 60px;">
+                </div>
+            </div>
         </div>
         
         <!-- Left Panel: Real-Time Stats -->
@@ -425,38 +438,85 @@ UNIFIED_DASHBOARD_HTML = """
         setInterval(fetchHubData, 3000);
         fetchHubData();
         
-        // Text-to-speech
+        // Text-to-speech with enhanced controls
         let voiceEnabled = false;
+        let selectedVoice = null;
         const synth = window.speechSynthesis;
+        const voiceSelect = document.getElementById('voice-select');
+        const volumeSlider = document.getElementById('voice-volume');
+        const rateSlider = document.getElementById('voice-rate');
+        
+        // Populate voice list
+        function populateVoices() {
+            const voices = synth.getVoices();
+            voiceSelect.innerHTML = '<option value="">Default Voice</option>';
+            voices.forEach((voice, i) => {
+                const option = document.createElement('option');
+                option.value = i;
+                option.textContent = `${voice.name} (${voice.lang})`;
+                // Highlight female/natural voices
+                if (voice.name.includes('Female') || voice.name.includes('Samantha') || 
+                    voice.name.includes('Zira') || voice.name.includes('Hazel') ||
+                    voice.name.includes('Google UK English Female')) {
+                    option.textContent = '⭐ ' + option.textContent;
+                }
+                voiceSelect.appendChild(option);
+            });
+        }
+        
+        // Load voices (some browsers need this event)
+        if (synth.onvoiceschanged !== undefined) {
+            synth.onvoiceschanged = populateVoices;
+        }
+        populateVoices();
+        
+        voiceSelect.addEventListener('change', function() {
+            const voices = synth.getVoices();
+            selectedVoice = this.value ? voices[parseInt(this.value)] : null;
+        });
         
         document.getElementById('voice-toggle').addEventListener('click', function() {
             voiceEnabled = !voiceEnabled;
             this.textContent = voiceEnabled ? '🔊 Voice ON' : '🔇 Voice OFF';
+            this.style.background = voiceEnabled ? '#00ff88' : '#333';
+            this.style.color = voiceEnabled ? '#000' : '#00ff88';
             if (voiceEnabled) {
-                speak("Queen consciousness online. Monitoring all bot activity.");
+                speak("Queen Aureon consciousness online. I am monitoring all bot activity across the markets.");
             }
         });
         
         function speak(text) {
             if (!voiceEnabled || !synth) return;
             
-            const utterance = new SpeechSynthesisUtterance(text);
-            utterance.rate = 1.1;
-            utterance.pitch = 1.2;
-            utterance.volume = 0.8;
+            // Cancel any ongoing speech
+            synth.cancel();
             
-            // Try to use a female voice
-            const voices = synth.getVoices();
-            const femaleVoice = voices.find(v => v.name.includes('Female') || v.name.includes('Samantha') || v.name.includes('Victoria'));
-            if (femaleVoice) utterance.voice = femaleVoice;
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.rate = parseFloat(rateSlider.value);
+            utterance.pitch = 1.15;  // Slightly higher for feminine voice
+            utterance.volume = parseFloat(volumeSlider.value);
+            
+            // Use selected voice or try to find a good default
+            if (selectedVoice) {
+                utterance.voice = selectedVoice;
+            } else {
+                const voices = synth.getVoices();
+                const preferredVoice = voices.find(v => 
+                    v.name.includes('Google UK English Female') ||
+                    v.name.includes('Samantha') ||
+                    v.name.includes('Zira') ||
+                    v.name.includes('Female')
+                );
+                if (preferredVoice) utterance.voice = preferredVoice;
+            }
             
             synth.speak(utterance);
             
             // Visual feedback
-            document.getElementById('voice-toggle').classList.add('speaking');
-            utterance.onend = () => {
-                document.getElementById('voice-toggle').classList.remove('speaking');
-            };
+            const btn = document.getElementById('voice-toggle');
+            btn.classList.add('speaking');
+            utterance.onend = () => btn.classList.remove('speaking');
+            utterance.onerror = () => btn.classList.remove('speaking');
         }
         
         // State
