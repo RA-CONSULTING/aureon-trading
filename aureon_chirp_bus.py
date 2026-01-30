@@ -113,6 +113,20 @@ class ChirpRingBuffer:
         self.buf = self.shm.buf
         if self.create:
             self.buf[:HEADER_SIZE] = b"\x00" * HEADER_SIZE
+    
+    def close(self) -> None:
+        """Close and cleanup shared memory."""
+        if self.shm:
+            try:
+                self.shm.close()
+                if self.create:
+                    self.shm.unlink()
+            except Exception:
+                pass
+    
+    def __del__(self) -> None:
+        """Cleanup on deletion."""
+        self.close()
 
     def _read_idx(self) -> int:
         return struct.unpack("Q", self.buf[8:16])[0]

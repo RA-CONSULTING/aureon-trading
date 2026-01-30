@@ -19,6 +19,14 @@ PORT: 14000
 
 from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys, os
+
+# Load environment variables from .env file FIRST
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
+
 if sys.platform == 'win32':
     os.environ['PYTHONIOENCODING'] = 'utf-8'
     try:
@@ -30,6 +38,7 @@ if sys.platform == 'win32':
 
 import asyncio
 import aiohttp
+import atexit
 from aiohttp import web
 import json
 import logging
