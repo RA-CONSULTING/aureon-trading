@@ -1584,6 +1584,42 @@ class AureonProDashboard:
         self.app.router.add_get('/api/prices', self.handle_prices)
         self.app.router.add_get('/api/balances', self.handle_balances)
         self.app.router.add_get('/health', self.handle_health)
+        self.app.router.add_get('/api/status', self.handle_status)  # Diagnostic endpoint
+    
+    async def handle_status(self, request):
+        """Diagnostic status endpoint showing what's working and what's not."""
+        status = {
+            'timestamp': datetime.now().isoformat(),
+            'services': {},
+            'data': {},
+            'config': {}
+        }
+        
+        # Check API keys
+        import os
+        status['config']['binance_api_key'] = 'SET' if os.getenv('BINANCE_API_KEY') else 'MISSING'
+        status['config']['binance_api_secret'] = 'SET' if os.getenv('BINANCE_API_SECRET') else 'MISSING'
+        status['config']['alpaca_api_key'] = 'SET' if os.getenv('ALPACA_API_KEY') else 'MISSING'
+        status['config']['alpaca_secret'] = 'SET' if os.getenv('ALPACA_SECRET_KEY') else 'MISSING'
+        status['config']['kraken_api_key'] = 'SET' if os.getenv('KRAKEN_API_KEY') else 'MISSING'
+        status['config']['kraken_secret'] = 'SET' if os.getenv('KRAKEN_API_SECRET') else 'MISSING'
+        
+        # Check modules
+        status['services']['binance_ws'] = 'AVAILABLE' if BINANCE_WS_AVAILABLE else 'MISSING'
+        status['services']['narrator'] = 'AVAILABLE' if NARRATOR_AVAILABLE else 'MISSING'
+        status['services']['harmonic_field'] = 'AVAILABLE' if HARMONIC_FIELD_AVAILABLE else 'MISSING'
+        status['services']['market_cache'] = 'AVAILABLE' if MARKET_CACHE_AVAILABLE else 'MISSING'
+        
+        # Check live data
+        status['services']['binance_ws_connected'] = self.binance_ws is not None
+        status['data']['binance_tickers'] = len(self.binance_tickers)
+        status['data']['all_prices'] = len(self.all_prices)
+        status['data']['prices'] = len(self.prices)
+        status['data']['positions'] = len(self.portfolio.get('positions', []))
+        status['data']['portfolio_value'] = self.portfolio.get('totalValue', 0)
+        status['data']['websocket_clients'] = len(self.clients)
+        
+        return web.json_response(status)
     
     async def handle_index(self, request):
         return web.Response(text=PRO_DASHBOARD_HTML, content_type='text/html')
@@ -1649,6 +1685,7 @@ class AureonProDashboard:
             # Get Binance positions
             try:
                 binance_pos = await asyncio.to_thread(get_binance_positions)
+                self.logger.info(f"📊 Binance: Fetched {len(binance_pos)} positions")
                 for pos in binance_pos:
                     if pos.get('current_value', 0) > 0:
                         positions.append({
@@ -1664,11 +1701,12 @@ class AureonProDashboard:
                         total_value += pos.get('current_value', 0)
                         total_cost += pos.get('cost_basis', 0)
             except Exception as e:
-                self.logger.debug(f"Binance fetch: {e}")
+                self.logger.warning(f"⚠️  Binance portfolio fetch failed: {e}")
             
             # Get Alpaca positions
             try:
                 alpaca_pos = await asyncio.to_thread(get_alpaca_positions)
+                self.logger.info(f"📊 Alpaca: Fetched {len(alpaca_pos)} positions")
                 for pos in alpaca_pos:
                     if pos.get('current_value', 0) > 0:
                         positions.append({
@@ -1684,7 +1722,7 @@ class AureonProDashboard:
                         total_value += pos.get('current_value', 0)
                         total_cost += pos.get('cost_basis', 0)
             except Exception as e:
-                self.logger.debug(f"Alpaca fetch: {e}")
+                self.logger.warning(f"⚠️  Alpaca portfolio fetch failed: {e}")
             
             # Sort by value descending
             positions.sort(key=lambda x: x.get('currentValue', 0), reverse=True)
@@ -1711,10 +1749,12 @@ class AureonProDashboard:
                     except Exception as e:
                         self.logger.debug(f"Harmonic field update error for {pos.get('symbol')}: {e}")
             
+            self.logger.info(f"📊 Portfolio: {len(positions)} positions, ${total_value:,.2f} value")
+            
         except ImportError:
-            self.logger.debug("live_position_viewer not available")
+            self.logger.warning("⚠️  live_position_viewer not available - check if file exists")
         except Exception as e:
-            self.logger.error(f"Portfolio refresh error: {e}")
+            self.logger.error(f"❌ Portfolio refresh error: {e}", exc_info=True)
     
     async def refresh_prices(self):
         """Fetch real crypto prices."""
@@ -1746,8 +1786,11 @@ class AureonProDashboard:
                                 'change24h': data.get('solana', {}).get('usd_24h_change', 0)
                             }
                         }
+                        self.logger.info(f"💰 Prices: BTC ${self.prices['BTC']['price']:,.0f}, ETH ${self.prices['ETH']['price']:,.0f}, SOL ${self.prices['SOL']['price']:,.0f}")
+                    else:
+                        self.logger.warning(f"⚠️  CoinGecko API returned {resp.status}")
         except Exception as e:
-            self.logger.debug(f"Price fetch error: {e}")
+            self.logger.warning(f"⚠️  Price fetch error: {e}")
     
     async def queen_commentary_loop(self):
         """Queen provides periodic deep cognitive thoughts."""
@@ -1839,7 +1882,7 @@ class AureonProDashboard:
     def start_binance_websocket(self):
         """Start Binance WebSocket in background thread for real-time data."""
         if not BINANCE_WS_AVAILABLE:
-            self.logger.warning("Binance WebSocket not available")
+            self.logger.error("❌ Binance WebSocket module not available - check binance_ws_client.py import")
             return
         
         def run_ws():
@@ -1849,6 +1892,8 @@ class AureonProDashboard:
                     'BTC', 'ETH', 'SOL', 'XRP', 'DOGE', 'ADA', 'AVAX', 'LINK', 'DOT', 'MATIC',
                     'SHIB', 'PEPE', 'LTC', 'BCH', 'UNI', 'AAVE', 'ATOM', 'XLM', 'ALGO', 'VET'
                 ]
+                
+                self.logger.info(f"🔶 Starting Binance WebSocket for {len(symbols)} symbols...")
                 
                 # Build streams - use ticker for price updates
                 streams = [f"{s.lower()}usdt@ticker" for s in symbols]
@@ -1878,9 +1923,10 @@ class AureonProDashboard:
                 
                 self.binance_ws.on_ticker = on_ticker
                 self.binance_ws.start(streams)
+                self.logger.info(f"✅ Binance WebSocket started - waiting for data...")
                 
             except Exception as e:
-                self.logger.error(f"Binance WS error: {e}")
+                self.logger.error(f"❌ Binance WS startup error: {e}", exc_info=True)
         
         import threading
         ws_thread = threading.Thread(target=run_ws, daemon=True)
@@ -1988,6 +2034,10 @@ class AureonProDashboard:
     
     async def start(self):
         """Start the dashboard."""
+        
+        # Pre-flight check: verify API keys
+        self._check_api_keys()
+        
         runner = web.AppRunner(self.app)
         await runner.setup()
         site = web.TCPSite(runner, '0.0.0.0', self.port)
@@ -1997,6 +2047,7 @@ class AureonProDashboard:
         print(f"👑 AUREON PRO TRADING TERMINAL")
         print(f"{'='*70}")
         print(f"🌐 Dashboard: http://localhost:{self.port}")
+        print(f"🩺 Status: http://localhost:{self.port}/api/status")
         print(f"📊 Features:")
         print(f"   • Real-time portfolio P&L with live prices")
         print(f"   • Multi-exchange balance tracking")
@@ -2030,6 +2081,23 @@ class AureonProDashboard:
         # Keep running
         while True:
             await asyncio.sleep(3600)
+    
+    def _check_api_keys(self):
+        \"\"\"Check if API keys are configured and log warnings.\"\"\"
+        import os
+        missing = []
+        
+        if not os.getenv('BINANCE_API_KEY'):
+            missing.append('BINANCE_API_KEY')
+        if not os.getenv('BINANCE_API_SECRET'):
+            missing.append('BINANCE_API_SECRET')
+        if not os.getenv('ALPACA_API_KEY'):
+            missing.append('ALPACA_API_KEY')
+        if not os.getenv('ALPACA_SECRET_KEY'):
+            missing.append('ALPACA_SECRET_KEY')
+        
+        if missing:
+            self.logger.error(f\"\\n{'='*70}\")\n            self.logger.error(f\"⚠️  MISSING API KEYS - Dashboard will have LIMITED DATA\")\n            self.logger.error(f\"{'='*70}\")\n            for key in missing:\n                self.logger.error(f\"  ❌ {key} not set\")\n            self.logger.error(f\"\\nPortfolio data will NOT be available without API keys!\")\n            self.logger.error(f\"Set these in DigitalOcean App Settings > Environment Variables\")\n            self.logger.error(f\"{'='*70}\\n\")\n        else:\n            self.logger.info(\"✅ All API keys configured\")
 
 
 async def main():
