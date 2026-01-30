@@ -2083,7 +2083,7 @@ class AureonProDashboard:
             await asyncio.sleep(3600)
     
     def _check_api_keys(self):
-        \"\"\"Check if API keys are configured and log warnings.\"\"\"
+        """Check if API keys are configured and log warnings."""
         import os
         missing = []
         
@@ -2097,7 +2097,16 @@ class AureonProDashboard:
             missing.append('ALPACA_SECRET_KEY')
         
         if missing:
-            self.logger.error(f\"\\n{'='*70}\")\n            self.logger.error(f\"⚠️  MISSING API KEYS - Dashboard will have LIMITED DATA\")\n            self.logger.error(f\"{'='*70}\")\n            for key in missing:\n                self.logger.error(f\"  ❌ {key} not set\")\n            self.logger.error(f\"\\nPortfolio data will NOT be available without API keys!\")\n            self.logger.error(f\"Set these in DigitalOcean App Settings > Environment Variables\")\n            self.logger.error(f\"{'='*70}\\n\")\n        else:\n            self.logger.info(\"✅ All API keys configured\")
+            self.logger.error("\n" + "="*70)
+            self.logger.error("⚠️  MISSING API KEYS - Dashboard will have LIMITED DATA")
+            self.logger.error("="*70)
+            for key in missing:
+                self.logger.error(f"  ❌ {key} not set")
+            self.logger.error("\nPortfolio data will NOT be available without API keys!")
+            self.logger.error("Set these in DigitalOcean App Settings > Environment Variables")
+            self.logger.error("="*70 + "\n")
+        else:
+            self.logger.info("✅ All API keys configured")
 
 
 async def main():
