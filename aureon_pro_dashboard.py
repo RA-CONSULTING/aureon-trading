@@ -80,6 +80,15 @@ except ImportError:
     DEFAULT_SYMBOLS = ['BTC', 'ETH', 'SOL', 'XRP', 'DOGE', 'ADA', 'AVAX', 'LINK', 'DOT', 'MATIC']
     logger.warning("Unified market cache not available")
 
+# Import Ocean Scanner for global market scanning
+try:
+    from aureon_ocean_scanner import OceanScanner
+    OCEAN_SCANNER_AVAILABLE = True
+except ImportError:
+    OCEAN_SCANNER_AVAILABLE = False
+    OceanScanner = None
+    logger.warning("Ocean Scanner not available")
+
 # Import Harmonic Liquid Aluminium Field for live visualization
 try:
     from aureon_harmonic_liquid_aluminium import HarmonicLiquidAluminiumField
@@ -1581,6 +1590,15 @@ class AureonProDashboard:
         # Harmonic Liquid Aluminium Field for live visualization
         self.harmonic_field = HarmonicLiquidAluminiumField() if HARMONIC_FIELD_AVAILABLE else None
         
+        # Ocean Scanner for global market opportunities
+        self.ocean_scanner = None
+        self.ocean_data = {
+            'universe_size': 0,
+            'hot_opportunities': 0,
+            'top_opportunities': [],
+            'scan_count': 0
+        }
+        
         # Binance WebSocket for real-time market data
         self.binance_ws = None
         self.binance_tickers = {}  # symbol -> WSTicker
@@ -1613,6 +1631,7 @@ class AureonProDashboard:
         self.app.router.add_get('/api/portfolio', self.handle_portfolio)
         self.app.router.add_get('/api/prices', self.handle_prices)
         self.app.router.add_get('/api/balances', self.handle_balances)
+        self.app.router.add_get('/api/ocean', self.handle_ocean)
         self.app.router.add_get('/health', self.handle_health)
         self.app.router.add_get('/api/status', self.handle_status)  # Diagnostic endpoint
     
@@ -1709,6 +1728,10 @@ class AureonProDashboard:
     async def handle_balances(self, request):
         return web.json_response(self.exchange_balances)
     
+    async def handle_ocean(self, request):
+        """Return ocean scanner data."""
+        return web.json_response(self.ocean_data)
+    
     async def broadcast(self, message: Dict):
         """Broadcast to all connected clients."""
         if not self.clients:
@@ -1719,6 +1742,43 @@ class AureonProDashboard:
                 await client.send_json(message)
             except:
                 self.clients.discard(client)
+    
+    async def _init_ocean_scanner(self):
+        """Initialize ocean scanner universe discovery in background."""
+        try:
+            if self.ocean_scanner:
+                await self.ocean_scanner.discover_universe()
+                self.logger.info("✅ Ocean Scanner: Universe discovered")
+        except Exception as e:
+            self.logger.error(f"❌ Ocean Scanner universe discovery error: {e}")
+    
+    async def ocean_data_loop(self):
+        """Periodically fetch ocean scanner data and broadcast."""
+        await asyncio.sleep(10)  # Wait for init
+        
+        while True:
+            try:
+                if self.ocean_scanner:
+                    summary = self.ocean_scanner.get_ocean_summary()
+                    self.ocean_data = {
+                        'universe_size': summary.get('universe_size', {}).get('total', 0),
+                        'hot_opportunities': summary.get('hot_opportunities', 0),
+                        'top_opportunities': summary.get('top_5', []),
+                        'scan_count': summary.get('scan_count', 0),
+                        'last_scan_time': summary.get('last_scan_time', 0)
+                    }
+                    
+                    # Broadcast to clients
+                    await self.broadcast({
+                        'type': 'ocean_scanner_update',
+                        'data': self.ocean_data
+                    })
+                    
+                    self.logger.info(f"🌊 Ocean: {self.ocean_data['universe_size']:,} symbols, {self.ocean_data['hot_opportunities']} hot opps")
+            except Exception as e:
+                self.logger.error(f"❌ Ocean data loop error: {e}")
+            
+            await asyncio.sleep(30)  # Update every 30 seconds
     
     async def refresh_portfolio(self):
         """Fetch real portfolio data from exchanges with timeout protection."""
@@ -2166,6 +2226,34 @@ class AureonProDashboard:
         self.logger.info("🚀 Pre-loading market data before server start...")
         await self.refresh_prices()
         await self.refresh_portfolio()
+        
+        # Initialize Ocean Scanner
+        if OCEAN_SCANNER_AVAILABLE and OceanScanner:
+            try:
+                self.logger.info("🌊 Initializing Ocean Scanner...")
+                # Load exchange clients
+                exchanges = {}
+                try:
+                    from kraken_client import KrakenClient
+                    exchanges['kraken'] = KrakenClient()
+                    self.logger.info("✅ Ocean Scanner: Kraken loaded")
+                except:
+                    pass
+                try:
+                    from alpaca_client import AlpacaClient
+                    exchanges['alpaca'] = AlpacaClient()
+                    self.logger.info("✅ Ocean Scanner: Alpaca loaded")
+                except:
+                    pass
+                
+                if exchanges:
+                    self.ocean_scanner = OceanScanner(exchanges)
+                    # Discover universe in background
+                    asyncio.create_task(self._init_ocean_scanner())
+                    self.logger.info("✅ Ocean Scanner initialized")
+            except Exception as e:
+                self.logger.error(f"❌ Ocean Scanner init error: {e}")
+        
         self.logger.info(f"📊 Initial data loaded: {len(self.prices)} prices, {len(self.portfolio.get('positions', []))} positions")
         
         runner = web.AppRunner(self.app)
@@ -2211,6 +2299,8 @@ class AureonProDashboard:
         # DISABLED: market_flow_loop depends on Binance WS
         # asyncio.create_task(self.market_flow_loop())
         asyncio.create_task(self.harmonic_field_loop())
+        if self.ocean_scanner:
+            asyncio.create_task(self.ocean_data_loop())
         
         self.logger.info("✅ All systems online, dashboard ready")
         
