@@ -55,6 +55,9 @@ services:
       - key: AUREON_STATE_DIR
         scope: RUN_TIME
         value: /app/state
+      - key: HEALTH_PORT
+        scope: RUN_TIME
+        value: "8081"
       - key: KRAKEN_NONCE_PATH
         scope: RUN_TIME
         value: /app/state/kraken_nonce.json
