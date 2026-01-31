@@ -964,9 +964,11 @@ PRO_DASHBOARD_HTML = """
         let reconnectAttempts = 0;
         
         function connectWebSocket() {
+            console.log('🔌 Attempting WebSocket connection to:', `ws://${window.location.host}/ws`);
             ws = new WebSocket(`ws://${window.location.host}/ws`);
             
             ws.onopen = () => {
+                console.log('✅ WebSocket connected');
                 document.getElementById('ws-status').classList.remove('disconnected');
                 document.getElementById('ws-text').textContent = 'Connected';
                 reconnectAttempts = 0;
@@ -974,23 +976,32 @@ PRO_DASHBOARD_HTML = """
             };
             
             ws.onclose = () => {
+                console.log('❌ WebSocket disconnected');
                 document.getElementById('ws-status').classList.add('disconnected');
                 document.getElementById('ws-text').textContent = 'Disconnected';
                 setTimeout(connectWebSocket, Math.min(1000 * Math.pow(2, reconnectAttempts++), 30000));
             };
             
+            ws.onerror = (error) => {
+                console.error('❌ WebSocket error:', error);
+            };
+            
             ws.onmessage = (event) => {
                 const data = JSON.parse(event.data);
+                console.log('📨 Raw message received:', event.data);
                 handleMessage(data);
             };
         }
         
         function handleMessage(data) {
+            console.log('📨 Received message:', data.type, data);
             switch(data.type) {
                 case 'portfolio_update':
+                    console.log('📊 Updating portfolio:', data.data);
                     updatePortfolio(data.data);
                     break;
                 case 'price_update':
+                    console.log('💰 Updating prices:', data.data);
                     updatePrices(data.data);
                     break;
                 case 'all_prices_update':
@@ -1509,30 +1520,40 @@ PRO_DASHBOARD_HTML = """
         updateClock();
         
         // ========== Initialize ==========
+        console.log('🚀 Initializing Aureon Pro Terminal...');
         connectWebSocket();
         initChart();
         initHarmonicField();
         
         // Fetch initial data via HTTP
         async function fetchInitialData() {
+            console.log('📡 Fetching initial data...');
             try {
                 const resp = await fetch('/api/portfolio');
                 if (resp.ok) {
                     const data = await resp.json();
+                    console.log('📊 Portfolio data:', data);
                     updatePortfolio(data);
                     if (data.totalValue) updateChart(data.totalValue);
+                } else {
+                    console.error('❌ Portfolio fetch failed:', resp.status);
                 }
             } catch (e) {
-                console.log('Initial fetch error:', e);
+                console.error('❌ Portfolio fetch error:', e);
             }
             
             try {
                 const resp = await fetch('/api/prices');
                 if (resp.ok) {
                     const data = await resp.json();
+                    console.log('💰 Price data:', data);
                     updatePrices(data);
+                } else {
+                    console.error('❌ Prices fetch failed:', resp.status);
                 }
-            } catch (e) {}
+            } catch (e) {
+                console.error('❌ Prices fetch error:', e);
+            }
         }
         
         fetchInitialData();
