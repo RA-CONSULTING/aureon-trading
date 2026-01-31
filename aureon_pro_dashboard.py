@@ -1753,12 +1753,16 @@ class AureonProDashboard:
             self.logger.error(f"❌ Ocean Scanner universe discovery error: {e}")
     
     async def ocean_data_loop(self):
-        """Periodically fetch ocean scanner data and broadcast."""
+        """Periodically scan ocean and broadcast opportunities."""
         await asyncio.sleep(10)  # Wait for init
         
         while True:
             try:
                 if self.ocean_scanner:
+                    # 🌊 ACTUALLY SCAN THE OCEAN (not just read empty summary)
+                    opportunities = await self.ocean_scanner.scan_ocean(limit=100)
+                    
+                    # Get updated summary after scan
                     summary = self.ocean_scanner.get_ocean_summary()
                     self.ocean_data = {
                         'universe_size': summary.get('universe_size', {}).get('total', 0),
@@ -1774,11 +1778,11 @@ class AureonProDashboard:
                         'data': self.ocean_data
                     })
                     
-                    self.logger.info(f"🌊 Ocean: {self.ocean_data['universe_size']:,} symbols, {self.ocean_data['hot_opportunities']} hot opps")
+                    self.logger.info(f"🌊 Ocean: {self.ocean_data['universe_size']:,} symbols, {self.ocean_data['hot_opportunities']} hot, scan #{self.ocean_data['scan_count']}")
             except Exception as e:
                 self.logger.error(f"❌ Ocean data loop error: {e}")
             
-            await asyncio.sleep(30)  # Update every 30 seconds
+            await asyncio.sleep(30)  # Scan every 30 seconds
     
     async def refresh_portfolio(self):
         """Fetch real portfolio data from exchanges with timeout protection."""
