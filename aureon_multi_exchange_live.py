@@ -38,6 +38,14 @@ from decimal import Decimal, ROUND_DOWN
 from binance_client import BinanceClient
 from hnc_probability_matrix import HNCProbabilityIntegration
 
+# Unified market cache (Binance WS -> file cache)
+try:
+    from unified_market_cache import get_market_cache
+    MARKET_CACHE_AVAILABLE = True
+except ImportError:
+    MARKET_CACHE_AVAILABLE = False
+    get_market_cache = None
+
 # Import Alpaca components
 try:
     from alpaca_client import AlpacaClient
@@ -92,6 +100,7 @@ CONFIG = {
     'ENABLE_KRAKEN': os.getenv('ENABLE_KRAKEN', '1') == '1',
     'ENABLE_CAPITAL': os.getenv('ENABLE_CAPITAL', '1') == '1',  # CFD trading
     'ENABLE_ALPACA': os.getenv('ENABLE_ALPACA', '1') == '1',    # Stock/Crypto streaming
+    'BINANCE_USE_UNIFIED_CACHE': os.getenv('BINANCE_USE_UNIFIED_CACHE', '1') == '1',
     
     # Paper Trading Mode
     'PAPER_TRADING': True,        # Simulate trades without real money
@@ -214,6 +223,7 @@ class MultiExchangeManager:
         self.clients = {}
         self.alpaca_stream = None
         self.lot_info = {}  # symbol -> {step, min_qty, precision}
+        self.market_cache = get_market_cache() if MARKET_CACHE_AVAILABLE else None
         
         # Initialize Binance
         if CONFIG['ENABLE_BINANCE']:
@@ -256,6 +266,9 @@ class MultiExchangeManager:
         """Load trading rules from each exchange."""
         # Binance exchange info
         if 'binance' in self.clients:
+            if CONFIG.get('BINANCE_USE_UNIFIED_CACHE'):
+                logger.info("⚠️ Skipping Binance exchange_info (using unified cache mode)")
+                return
             try:
                 client = self.clients['binance']
                 info = client.exchange_info()
@@ -310,27 +323,52 @@ class MultiExchangeManager:
         tickers = {}
         
         if exchange == 'binance':
-            try:
-                raw = client.session.get(f"{client.base}/api/v3/ticker/24hr", timeout=10).json()
-                for t in raw:
-                    sym = t['symbol']
-                    quote = None
-                    for q in CONFIG['QUOTE_CURRENCIES'].get('binance', []):
-                        if sym.endswith(q):
-                            quote = q
-                            break
-                    if quote:
-                        tickers[sym] = {
-                            'price': float(t['lastPrice']),
-                            'change': float(t['priceChangePercent']),
-                            'volume': float(t['quoteVolume']),
-                            'high': float(t['highPrice']),
-                            'low': float(t['lowPrice']),
+            if CONFIG.get('BINANCE_USE_UNIFIED_CACHE') and self.market_cache:
+                try:
+                    cache_tickers = self.market_cache.get_all_tickers()
+                    for symbol, t in cache_tickers.items():
+                        pair = t.pair or f"{symbol}USDT"
+                        quote = None
+                        for q in CONFIG['QUOTE_CURRENCIES'].get('binance', []):
+                            if pair.endswith(q):
+                                quote = q
+                                break
+                        if not quote:
+                            continue
+                        price = float(t.price)
+                        tickers[pair] = {
+                            'price': price,
+                            'change': float(t.change_24h),
+                            'volume': float(t.volume_24h),
+                            'high': price,
+                            'low': price,
                             'exchange': 'binance',
                             'quote': quote,
                         }
-            except Exception as e:
-                logger.error(f"Binance ticker error: {e}")
+                except Exception as e:
+                    logger.error(f"Binance cache ticker error: {e}")
+            else:
+                try:
+                    raw = client.session.get(f"{client.base}/api/v3/ticker/24hr", timeout=10).json()
+                    for t in raw:
+                        sym = t['symbol']
+                        quote = None
+                        for q in CONFIG['QUOTE_CURRENCIES'].get('binance', []):
+                            if sym.endswith(q):
+                                quote = q
+                                break
+                        if quote:
+                            tickers[sym] = {
+                                'price': float(t['lastPrice']),
+                                'change': float(t['priceChangePercent']),
+                                'volume': float(t['quoteVolume']),
+                                'high': float(t['highPrice']),
+                                'low': float(t['lowPrice']),
+                                'exchange': 'binance',
+                                'quote': quote,
+                            }
+                except Exception as e:
+                    logger.error(f"Binance ticker error: {e}")
         
         elif exchange == 'kraken':
             try:
