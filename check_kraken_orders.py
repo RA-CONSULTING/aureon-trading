@@ -22,13 +22,15 @@ def check_kraken_orders():
         
         # Fetch raw trade history
         trades_history = client.get_trades_history()
-        
-        if not trades_history or 'trades' not in trades_history:
+        if not trades_history:
             print("No trade history returned from Kraken API.")
             return
-
-        trades = trades_history['trades']
-        count = trades_history.get('count', len(trades))
+        if isinstance(trades_history, dict) and 'trades' in trades_history:
+            trades = trades_history.get('trades', {})
+            count = trades_history.get('count', len(trades))
+        else:
+            trades = trades_history
+            count = len(trades)
 
         print(f"\n✅ Found {count} total trades in history. Showing the {len(trades)} most recent trades:\n")
 
