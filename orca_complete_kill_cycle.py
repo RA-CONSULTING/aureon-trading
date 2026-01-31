@@ -37,8 +37,8 @@ import threading
 import json as _json
 import time as _time
 
-# Use port 8081 for Orca health checks (8080 is for Pro Dashboard)
-_HEALTH_PORT = int(os.environ.get('HEALTH_PORT', '8081'))
+# Use port 8080 for Orca health checks (matches app.yaml deployment config)
+_HEALTH_PORT = int(os.environ.get('HEALTH_PORT', '8080'))
 _health_status = {"status": "starting", "uptime": 0, "cycles": 0, "positions": 0}
 _health_start_time = _time.time()
 
