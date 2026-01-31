@@ -48,6 +48,16 @@ from typing import Dict, List, Optional, Tuple, Set, Any
 from datetime import datetime, timedelta
 import json
 import logging
+import aiohttp  # For open source API calls
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# 🌐 OPEN SOURCE DATA FEEDS (NO API KEYS REQUIRED)
+# ═══════════════════════════════════════════════════════════════════════════════
+OPEN_SOURCE_FEEDS = {
+    'coingecko': 'https://api.coingecko.com/api/v3',
+    'binance_public': 'https://api.binance.com/api/v3',
+    'kraken_public': 'https://api.kraken.com/0/public',
+}
 
 # Optional Capital.com stock feed (off by default)
 try:
@@ -174,6 +184,14 @@ class OceanScanner:
         self.alpaca_stock_universe: Set[str] = set()
         self.binance_universe: Set[str] = set()
         
+        # ═══════════════════════════════════════════════════════════════════
+        # 🌐 OPEN SOURCE UNIVERSE (NO API KEYS NEEDED!)
+        # ═══════════════════════════════════════════════════════════════════
+        self.coingecko_universe: Set[str] = set()      # 14,000+ coins (FREE)
+        self.binance_public_universe: Set[str] = set() # 1,495+ pairs (NO KEY)
+        self.kraken_public_universe: Set[str] = set()  # 800+ pairs (NO KEY)
+        self.open_source_prices: Dict[str, Dict] = {}  # Cached prices from free APIs
+        
         # Price cache
         self.prices: Dict[str, Dict] = {}  # symbol -> {price, timestamp, exchange}
         
@@ -282,6 +300,58 @@ class OceanScanner:
                     print(f"   🟡 BINANCE: {len(self.binance_universe)} pairs discovered!")
             except Exception as e:
                 print(f"   ❌ Binance discovery error: {e}")
+        
+        # ═══════════════════════════════════════════════════════════════
+        # 🌐 OPEN SOURCE: COINGECKO (14,000+ coins - NO API KEY!)
+        # ═══════════════════════════════════════════════════════════════
+        try:
+            async with aiohttp.ClientSession() as session:
+                url = f"{OPEN_SOURCE_FEEDS['coingecko']}/coins/list"
+                async with session.get(url, timeout=aiohttp.ClientTimeout(total=15)) as resp:
+                    if resp.status == 200:
+                        coins = await resp.json()
+                        self.coingecko_universe = {c['id'] for c in coins}
+                        universe_counts['coingecko'] = len(self.coingecko_universe)
+                        print(f"   🌐 COINGECKO: {len(self.coingecko_universe):,} coins discovered! (OPEN SOURCE)")
+        except Exception as e:
+            print(f"   ⚠️ CoinGecko discovery error: {e}")
+        
+        # ═══════════════════════════════════════════════════════════════
+        # 🟡 BINANCE PUBLIC API (NO API KEY - backup if client unavailable)
+        # ═══════════════════════════════════════════════════════════════
+        if not self.binance_universe:
+            try:
+                async with aiohttp.ClientSession() as session:
+                    url = f"{OPEN_SOURCE_FEEDS['binance_public']}/exchangeInfo"
+                    async with session.get(url, timeout=aiohttp.ClientTimeout(total=15)) as resp:
+                        if resp.status == 200:
+                            data = await resp.json()
+                            symbols = data.get('symbols', [])
+                            self.binance_public_universe = {
+                                s['symbol'] for s in symbols 
+                                if s.get('status') == 'TRADING'
+                            }
+                            universe_counts['binance_public'] = len(self.binance_public_universe)
+                            print(f"   🟡 BINANCE (PUBLIC): {len(self.binance_public_universe):,} pairs discovered! (NO API KEY)")
+            except Exception as e:
+                print(f"   ⚠️ Binance public discovery error: {e}")
+        
+        # ═══════════════════════════════════════════════════════════════
+        # 🐙 KRAKEN PUBLIC API (NO API KEY - backup if client unavailable)
+        # ═══════════════════════════════════════════════════════════════
+        if not self.kraken_universe:
+            try:
+                async with aiohttp.ClientSession() as session:
+                    url = f"{OPEN_SOURCE_FEEDS['kraken_public']}/AssetPairs"
+                    async with session.get(url, timeout=aiohttp.ClientTimeout(total=15)) as resp:
+                        if resp.status == 200:
+                            data = await resp.json()
+                            pairs = data.get('result', {})
+                            self.kraken_public_universe = {p for p in pairs.keys() if not p.endswith('.d')}
+                            universe_counts['kraken_public'] = len(self.kraken_public_universe)
+                            print(f"   🐙 KRAKEN (PUBLIC): {len(self.kraken_public_universe):,} pairs discovered! (NO API KEY)")
+            except Exception as e:
+                print(f"   ⚠️ Kraken public discovery error: {e}")
         
         # ═══════════════════════════════════════════════════════════════
         # 📊 UNIVERSE SUMMARY
