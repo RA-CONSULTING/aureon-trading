@@ -1878,7 +1878,51 @@ class AureonProDashboard:
                         except Exception as e:
                             self.logger.debug(f"Harmonic field update error for {pos.get('symbol')}: {e}")
                 
-                self.logger.info(f"✅ Portfolio: {len(positions)} positions, ${total_value:,.2f} value")
+                # Fallback to state snapshot if live positions are empty
+                if not positions:
+                    try:
+                        if os.path.exists(snapshot_path):
+                            with open(snapshot_path, "r") as f:
+                                snapshot = json.load(f)
+                            snap_positions = snapshot.get("positions", [])
+                            if snap_positions:
+                                positions = []
+                                total_value = 0.0
+                                total_cost = 0.0
+                                for pos in snap_positions:
+                                    qty = float(pos.get("entry_qty", 0) or 0)
+                                    entry = float(pos.get("entry_price", 0) or 0)
+                                    current = float(pos.get("current_price", entry) or entry)
+                                    current_value = current * qty
+                                    total_value += current_value
+                                    total_cost += entry * qty
+                                    positions.append({
+                                        "symbol": pos.get("symbol", "UNKNOWN"),
+                                        "quantity": qty,
+                                        "avgCost": entry,
+                                        "currentPrice": current,
+                                        "currentValue": current_value,
+                                        "unrealizedPnl": float(pos.get("current_pnl", 0) or 0),
+                                        "pnlPercent": float(pos.get("current_pnl_pct", 0) or 0),
+                                        "exchange": pos.get("exchange", "unknown"),
+                                    })
+                                positions.sort(key=lambda x: x.get("currentValue", 0), reverse=True)
+                                self.portfolio = {
+                                    "totalValue": total_value,
+                                    "costBasis": total_cost,
+                                    "unrealizedPnl": total_value - total_cost,
+                                    "todayPnl": 0,
+                                    "positions": positions[:20],
+                                }
+                                self.logger.info(f"✅ Portfolio (snapshot fallback): {len(positions)} positions, ${total_value:,.2f} value")
+                            else:
+                                self.logger.info("✅ Portfolio: 0 positions (snapshot empty)")
+                        else:
+                            self.logger.info("✅ Portfolio: 0 positions (no snapshot)")
+                    except Exception as e:
+                        self.logger.warning(f"⚠️  Snapshot fallback failed: {e}")
+                else:
+                    self.logger.info(f"✅ Portfolio: {len(positions)} positions, ${total_value:,.2f} value")
                 
             except ImportError:
                 self.logger.warning("⚠️  live_position_viewer not available - using state snapshot")
