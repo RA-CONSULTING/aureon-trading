@@ -331,6 +331,14 @@ except ImportError:
     OrderResponse = None
     ORDER_ROUTER_AVAILABLE = False
 
+# 🌊👑 HARMONIC LIQUID ALUMINIUM FIELD - Queen's Vision of the Market 👑🌊
+try:
+    from aureon_harmonic_liquid_aluminium import HarmonicLiquidAluminiumField
+    HARMONIC_LIQUID_ALUMINIUM_AVAILABLE = True
+except ImportError:
+    HarmonicLiquidAluminiumField = None
+    HARMONIC_LIQUID_ALUMINIUM_AVAILABLE = False
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # LOGGING
 # ═══════════════════════════════════════════════════════════════════════════════
