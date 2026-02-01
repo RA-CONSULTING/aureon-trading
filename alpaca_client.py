@@ -1683,6 +1683,11 @@ class AlpacaClient:
             pass
         return balances
 
+
+    def get_balance(self) -> Dict[str, float]:
+        """Alias for get_account_balance for cross-exchange compatible interface."""
+        return self.get_account_balance()
+
     def get_stock_snapshot(self, symbol: str) -> Dict[str, Any]:
         """Return snapshot for a stock symbol (latest/daily bars)."""
         try:

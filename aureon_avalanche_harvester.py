@@ -931,6 +931,9 @@ class AvalancheHarvester:
                 return self._execute_kraken_harvest(opportunity)
             elif opportunity.exchange == 'alpaca':
                 return self._execute_alpaca_harvest(opportunity)
+            elif opportunity.exchange == 'binance':
+                logger.warning(f"Binance harvest not yet implemented for {opportunity.asset}")
+                return False
             else:
                 logger.error(f"Unknown exchange: {opportunity.exchange}")
                 return False

@@ -441,6 +441,10 @@ class KrakenClient:
                     out[asset] = total
         return out
 
+    def get_balance(self) -> Dict[str, float]:
+        """Alias for get_account_balance for Alpaca-compatible interface."""
+        return self.get_account_balance()
+
     def get_free_balance(self, asset: str) -> float:
         acct = self.account()
         for bal in acct.get("balances", []):

@@ -230,6 +230,10 @@ class BinanceWebSocketClient:
 
     def _connect(self):
         """Establish WebSocket connection."""
+        # DISABLED: No local WebSocket server running
+        logger.warning("🔶 Binance WebSocket connection disabled (no local server)")
+        return
+        
         # Build stream URL
         # Note: If no streams initially, we connect to base path and subscribe later? 
         # Actually /stream endpoint requires streams param or separate subscribe.
@@ -274,11 +278,12 @@ class BinanceWebSocketClient:
         """Handle connection close."""
         logger.warning(f"🔶 Binance WebSocket Closed: {close_status_code} - {close_msg}")
         self.connected = False
-        if self.running:
-            logger.info("Attempting reconnect in 5s...")
-            time.sleep(5)
-            self.reconnect_count += 1
-            self._connect()
+        # Disable auto-reconnect to prevent spam when server unavailable
+        # if self.running:
+        #     logger.info("Attempting reconnect in 5s...")
+        #     time.sleep(5)
+        #     self.reconnect_count += 1
+        #     self._connect()
 
     def _on_error(self, ws, error):
         """Handle errors."""

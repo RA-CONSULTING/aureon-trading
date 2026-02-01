@@ -1024,6 +1024,10 @@ PRO_DASHBOARD_HTML = """
                 case 'exchange_balance':
                     updateExchangeBalance(data.data);
                     break;
+                case 'exchange_balances':
+                    // New message type with all balances at once
+                    updateAllExchangeBalances(data.data);
+                    break;
                 case 'bot_detected':
                     handleBotDetected(data.data);
                     break;
@@ -1189,6 +1193,22 @@ PRO_DASHBOARD_HTML = """
                     el.textContent = formatCurrency(data.balance);
                     el.classList.add('flash-green');
                     setTimeout(() => el.classList.remove('flash-green'), 500);
+                }
+            }
+        }
+        
+        function updateAllExchangeBalances(balances) {
+            if (!balances || typeof balances !== 'object') return;
+            
+            for (const [exchange, balance] of Object.entries(balances)) {
+                const el = document.getElementById(`${exchange}-balance`);
+                if (el && balance !== undefined) {
+                    const formatted = balance > 0 ? formatCurrency(balance) : '$---.--';
+                    el.textContent = formatted;
+                    if (balance > 0) {
+                        el.classList.add('flash-green');
+                        setTimeout(() => el.classList.remove('flash-green'), 500);
+                    }
                 }
             }
         }
@@ -1730,6 +1750,53 @@ class AureonProDashboard:
     async def handle_balances(self, request):
         return web.json_response(self.exchange_balances)
     
+    async def refresh_exchange_balances(self):
+        """Fetch real-time balances from all exchange clients."""
+        try:
+            # Try Binance
+            try:
+                from binance_client import BinanceClient
+                binance = BinanceClient()
+                bin_balance = binance.get_balance()
+                if isinstance(bin_balance, dict):
+                    self.exchange_balances['binance'] = float(bin_balance.get('USDT', {}).get('free', 0) or 0)
+                    self.logger.info(f"✅ Binance balance: ${self.exchange_balances['binance']:,.2f}")
+            except Exception as e:
+                self.logger.debug(f"Binance balance fetch: {e}")
+            
+            # Try Kraken
+            try:
+                from kraken_client import KrakenClient
+                kraken = KrakenClient()
+                krk_balance = kraken.get_balance()
+                if isinstance(krk_balance, dict):
+                    usd_bal = krk_balance.get('USD', krk_balance.get('ZUSD', 0))
+                    self.exchange_balances['kraken'] = float(usd_bal or 0)
+                    self.logger.info(f"✅ Kraken balance: ${self.exchange_balances['kraken']:,.2f}")
+            except Exception as e:
+                self.logger.debug(f"Kraken balance fetch: {e}")
+            
+            # Try Alpaca
+            try:
+                from alpaca_client import AlpacaClient
+                alpaca = AlpacaClient()
+                alp_balance = alpaca.get_balance()
+                if isinstance(alp_balance, dict):
+                    cash = alp_balance.get('cash', 0)
+                    self.exchange_balances['alpaca'] = float(cash or 0)
+                    self.logger.info(f"✅ Alpaca balance: ${self.exchange_balances['alpaca']:,.2f}")
+            except Exception as e:
+                self.logger.debug(f"Alpaca balance fetch: {e}")
+            
+            # Broadcast all balances to connected clients
+            await self.broadcast({
+                'type': 'exchange_balances',
+                'data': self.exchange_balances
+            })
+                
+        except Exception as e:
+            self.logger.debug(f"Exchange balance refresh error: {e}")
+    
     async def handle_ocean(self, request):
         """Return ocean scanner data."""
         return web.json_response(self.ocean_data)
@@ -2187,6 +2254,8 @@ class AureonProDashboard:
                 self.logger.info("✅ [Data Refresh] Portfolio refresh complete.")
                 await self.refresh_prices()
                 self.logger.info("✅ [Data Refresh] Price refresh complete.")
+                await self.refresh_exchange_balances()
+                self.logger.info("✅ [Data Refresh] Exchange balances refresh complete.")
                 
                 await self.broadcast({
                     'type': 'portfolio_update',
@@ -2196,6 +2265,12 @@ class AureonProDashboard:
                 await self.broadcast({
                     'type': 'price_update',
                     'data': self.prices
+                })
+                
+                # Broadcast exchange balances
+                await self.broadcast({
+                    'type': 'exchange_balances',
+                    'data': self.exchange_balances
                 })
                 
                 # Broadcast all prices (full 40+ symbols)
