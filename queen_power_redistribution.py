@@ -321,7 +321,11 @@ class QueenPowerRedistribution:
                     logger.warning(f"BIN balance fetch failed: {e}")
             # Fallback to state file (with TTL check)
             state = self.load_state_file('binance_truth_tracker_state.json', {})
-            last_update = state.get('last_update', 0)
+            # Try 'last_update' first, fallback to 'timestamp' key
+            last_update = state.get('last_update') or state.get('timestamp', 0)
+            if last_update == 0:
+                logger.warning(f"⚠️ BIN state file has no timestamp, skipping")
+                return (0.0, 'USDT')
             age = time.time() - last_update
             if age > STATE_FILE_MAX_AGE_SECONDS:
                 logger.error(f"❌ BIN state file is stale ({age:.0f}s old, max {STATE_FILE_MAX_AGE_SECONDS}s) - returning 0")
@@ -341,7 +345,11 @@ class QueenPowerRedistribution:
                     logger.warning(f"KRK balance fetch failed: {e}")
             # Fallback to state file (with TTL check)
             state = self.load_state_file('aureon_kraken_state.json', {})
-            last_update = state.get('last_update', 0)
+            # Try 'last_update' first, fallback to 'timestamp' key
+            last_update = state.get('last_update') or state.get('timestamp', 0)
+            if last_update == 0:
+                logger.warning(f"⚠️ KRK state file has no timestamp, skipping")
+                return (0.0, 'USD')
             age = time.time() - last_update
             if age > STATE_FILE_MAX_AGE_SECONDS:
                 logger.error(f"❌ KRK state file is stale ({age:.0f}s old, max {STATE_FILE_MAX_AGE_SECONDS}s) - returning 0")
@@ -361,7 +369,11 @@ class QueenPowerRedistribution:
                     logger.warning(f"ALP balance fetch failed: {e}")
             # Fallback to state file (with TTL check)
             state = self.load_state_file('alpaca_truth_tracker_state.json', {})
-            last_update = state.get('last_update', 0)
+            # Try 'last_update' first, fallback to 'timestamp' key
+            last_update = state.get('last_update') or state.get('timestamp', 0)
+            if last_update == 0:
+                logger.warning(f"⚠️ ALP state file has no timestamp, skipping")
+                return (0.0, 'USD')
             age = time.time() - last_update
             if age > STATE_FILE_MAX_AGE_SECONDS:
                 logger.error(f"❌ ALP state file is stale ({age:.0f}s old, max {STATE_FILE_MAX_AGE_SECONDS}s) - returning 0")
