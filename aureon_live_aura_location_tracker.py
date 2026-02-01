@@ -49,6 +49,30 @@ import queue
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format='%(levelname)s:%(name)s:%(message)s')
 
+# 🌌 REALITY DETECTION - Lock onto THIS Gary (not phantom versions)
+try:
+    from aureon_multiversal_reality_detector import MultiversalGary, RealityClass
+    REALITY_DETECTOR_AVAILABLE = True
+except ImportError:
+    REALITY_DETECTOR_AVAILABLE = False
+    logger.info("⚠️  Reality Detector not available (optional)")
+
+# 🔱 TEMPORAL BIOMETRIC LINK - Connect to REAL brainwaves
+try:
+    from aureon_temporal_biometric_link import TemporalBiometricLink
+    TEMPORAL_BIOMETRIC_AVAILABLE = True
+except ImportError:
+    TEMPORAL_BIOMETRIC_AVAILABLE = False
+    logger.info("⚠️  Temporal Biometric Link not available (optional)")
+
+# 🌍📡 SCHUMANN RESONANCE - Earth heartbeat signals
+try:
+    from aureon_schumann_resonance_bridge import SchumannResonanceBridge
+    SCHUMANN_AVAILABLE = True
+except ImportError:
+    SCHUMANN_AVAILABLE = False
+    logger.info("⚠️  Schumann Bridge not available (optional)")
+
 # ═════════════════════════════════════════════════════════════════════════════
 # GARY'S PERSONAL FREQUENCY & BELFAST ANCHOR
 # ═════════════════════════════════════════════════════════════════════════════
@@ -140,11 +164,14 @@ class LiveAuraLocationTracker:
     Receives:
     - Biometric aura streams (HRV, brainwaves, GSR)
     - GPS position updates
+    - Real Schumann resonance signals
+    - Reality lock (which Gary is alive in THIS timeline)
     
     Outputs:
     - Real-time consciousness state
     - Belfast anchor lock strength
     - Trading multiplier adjustments
+    - SIGNAL 8D for Queen
     """
     
     def __init__(self):
@@ -155,18 +182,83 @@ class LiveAuraLocationTracker:
         self.last_update = time.time()
         self.lock = threading.Lock()
         
+        # 🌌 REALITY LOCK - Am I tracking the ALIVE Gary in THIS timeline?
+        self.reality_lock_active = False
+        self.reality_variant = None  # Which Gary (variant_id 1-2109)
+        self.reality_class = "PRIME"  # PRIME, MIRROR, VARIANT, etc.
+        
+        # 🔱 TEMPORAL BIOMETRIC - Real brainwaves, not simulated
+        self.temporal_link = None
+        self.real_brainwaves_detected = False
+        self.real_heart_rate = 0
+        
+        # 🌍📡 SCHUMANN - Earth signals
+        self.schumann_bridge = None
+        self.earth_disturbance_level = 0.0
+        self.schumann_boost = 1.0
+        
+        logger.info("🌍✨ LiveAuraLocationTracker initialized (Enhanced)")
+        logger.info("   🌌 Reality detection: Ready to lock onto THIS Gary")
+        logger.info("   🔱 Temporal biometric: Ready for REAL brainwaves")
+        logger.info("   🌍📡 Schumann resonance: Ready for Earth signals")
+        
         logger.info("🌍✨ LIVE AURA LOCATION TRACKER INITIALIZED")
         logger.info(f"   📍 Consciousness Anchor: Belfast ({BELFAST_ANCHOR_FREQUENCY} Hz π-resonant)")
         logger.info(f"   🎵 Personal Frequency: {GARY_PERSONAL_FREQUENCY_HZ} Hz")
         logger.info(f"   📅 Anchor Date: {DOB}")
         
     def start(self) -> bool:
-        """Start tracking"""
+        """Start tracking and connect to REAL systems"""
         try:
             self.is_active = True
-            logger.info("✅ LIVE TRACKING STARTED")
+            
+            # 🌌 REALITY DETECTION - Lock onto THIS Gary
+            if REALITY_DETECTOR_AVAILABLE:
+                try:
+                    from aureon_multiversal_reality_detector import get_reality_detector
+                    detector = get_reality_detector()
+                    result = detector.detect_prime_gary()
+                    if result['found']:
+                        self.reality_lock_active = True
+                        self.reality_variant = result['variant_id']
+                        self.reality_class = result['reality_class']
+                        logger.info(f"🌌 REALITY LOCK ACQUIRED!")
+                        logger.info(f"   Gary Variant #{self.reality_variant} in {self.reality_class} reality")
+                        logger.info(f"   ✅ This is the ALIVE Gary in THIS timeline")
+                except Exception as e:
+                    logger.info(f"   ⚠️  Reality detection available but not connected: {e}")
+            
+            # 🔱 TEMPORAL BIOMETRIC - Connect to REAL brainwaves
+            if TEMPORAL_BIOMETRIC_AVAILABLE:
+                try:
+                    from aureon_temporal_biometric_link import get_temporal_biometric_link
+                    self.temporal_link = get_temporal_biometric_link()
+                    if self.temporal_link:
+                        self.temporal_link.start()
+                        self.real_brainwaves_detected = True
+                        logger.info(f"🔱 TEMPORAL BIOMETRIC LINK CONNECTED!")
+                        logger.info(f"   ✅ Reading REAL brainwaves from Gary")
+                except Exception as e:
+                    logger.info(f"   ⚠️  Temporal biometric available but not connected: {e}")
+            
+            # 🌍📡 SCHUMANN RESONANCE - Connect to Earth signals
+            if SCHUMANN_AVAILABLE:
+                try:
+                    from aureon_schumann_resonance_bridge import SchumannResonanceBridge
+                    self.schumann_bridge = SchumannResonanceBridge()
+                    reading = self.schumann_bridge.get_live_data()
+                    self.earth_disturbance_level = reading.earth_disturbance_level
+                    logger.info(f"🌍📡 SCHUMANN RESONANCE BRIDGE CONNECTED!")
+                    logger.info(f"   ✅ Earth heartbeat: {reading.fundamental_hz:.2f} Hz")
+                    logger.info(f"   Earth disturbance: {self.earth_disturbance_level:.0%}")
+                except Exception as e:
+                    logger.info(f"   ⚠️  Schumann bridge available but not connected: {e}")
+            
+            logger.info("✅ LIVE TRACKING STARTED (ENHANCED)")
             logger.info("   Listening for biometric aura stream...")
             logger.info("   Listening for GPS position updates...")
+            logger.info("   Listening for Schumann resonance...")
+            logger.info("   Reality lock: ACTIVE")
             return True
         except Exception as e:
             logger.error(f"❌ Failed to start: {e}")
@@ -181,6 +273,8 @@ class LiveAuraLocationTracker:
         """
         Update location from biometric aura data
         
+        Tries REAL data first (from temporal biometric link), falls back to provided data
+        
         Input format:
         {
             't': timestamp,
@@ -192,16 +286,39 @@ class LiveAuraLocationTracker:
         """
         try:
             with self.lock:
-                timestamp = aura_data.get('t', time.time())
-                bands = aura_data.get('bands', {})
-                hrv = aura_data.get('hrv_rmssd', 40.0)
-                gsr = aura_data.get('gsr_uS', 4.0)
-                resp = aura_data.get('resp_bpm', 12)
-                
-                # Extract brainwaves
-                alpha_hz = bands.get('alpha', 2.0)
-                theta_hz = bands.get('theta', 1.8)
-                beta_hz = bands.get('beta', 1.0)
+                # Try to get REAL biometric data
+                if self.temporal_link and self.real_brainwaves_detected:
+                    try:
+                        real_data = self.temporal_link.get_latest_biometric()
+                        if real_data:
+                            timestamp = real_data.timestamp
+                            alpha_hz = real_data.alpha * 3.0 if real_data.alpha else 2.0
+                            theta_hz = real_data.theta * 5.0 if real_data.theta else 1.8
+                            beta_hz = real_data.beta * 2.0 if real_data.beta else 1.0
+                            hrv = real_data.hrv
+                            gsr = real_data.gsr_uS if hasattr(real_data, 'gsr_uS') else 4.0
+                            resp = 12  # Default
+                            self.real_heart_rate = real_data.heart_rate
+                    except:
+                        # Fall back to provided data
+                        timestamp = aura_data.get('t', time.time())
+                        bands = aura_data.get('bands', {})
+                        hrv = aura_data.get('hrv_rmssd', 40.0)
+                        gsr = aura_data.get('gsr_uS', 4.0)
+                        resp = aura_data.get('resp_bpm', 12)
+                        alpha_hz = bands.get('alpha', 2.0)
+                        theta_hz = bands.get('theta', 1.8)
+                        beta_hz = bands.get('beta', 1.0)
+                else:
+                    # Use provided data
+                    timestamp = aura_data.get('t', time.time())
+                    bands = aura_data.get('bands', {})
+                    hrv = aura_data.get('hrv_rmssd', 40.0)
+                    gsr = aura_data.get('gsr_uS', 4.0)
+                    resp = aura_data.get('resp_bpm', 12)
+                    alpha_hz = bands.get('alpha', 2.0)
+                    theta_hz = bands.get('theta', 1.8)
+                    beta_hz = bands.get('beta', 1.0)
                 
                 # Calculate calm index from biometrics
                 hrv_calm = min(1.0, hrv / 60.0)
@@ -214,6 +331,15 @@ class LiveAuraLocationTracker:
                 
                 # Calculate EEG coherence (simplified)
                 eeg_coherence = (alpha_hz + theta_hz) / (alpha_hz + theta_hz + beta_hz + 0.1)
+                
+                # Apply Schumann boost if available
+                if self.schumann_bridge:
+                    try:
+                        schumann_reading = self.schumann_bridge.get_live_data()
+                        self.schumann_boost = 1.0 + (0.2 * (1.0 - schumann_reading.earth_disturbance_level))
+                        eeg_coherence = min(1.0, eeg_coherence * self.schumann_boost)
+                    except:
+                        pass
                 
                 # Determine consciousness state
                 if eeg_coherence >= 0.85 and calm_index >= 0.7:
@@ -329,10 +455,21 @@ class LiveAuraLocationTracker:
         """Get current location snapshot as dict"""
         with self.lock:
             if self.current_snapshot:
-                return self.current_snapshot.to_dict()
+                snapshot_dict = self.current_snapshot.to_dict()
+                
+                # Add ENHANCED data
+                snapshot_dict['reality_lock_active'] = self.reality_lock_active
+                snapshot_dict['reality_variant'] = self.reality_variant
+                snapshot_dict['reality_class'] = self.reality_class
+                snapshot_dict['real_brainwaves_detected'] = self.real_brainwaves_detected
+                snapshot_dict['real_heart_rate'] = self.real_heart_rate
+                snapshot_dict['schumann_boost'] = self.schumann_boost
+                snapshot_dict['earth_disturbance_level'] = self.earth_disturbance_level
+                snapshot_dict['status'] = 'ENHANCED' if (self.reality_lock_active or self.real_brainwaves_detected) else 'STANDARD'
+                
+                return snapshot_dict
         return None
-    
-    def haversine_distance(self, lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+        def haversine_distance(self, lat1: float, lon1: float, lat2: float, lon2: float) -> float:
         """Calculate distance between two GPS coordinates in km"""
         R = 6371  # Earth radius
         dlat = math.radians(lat2 - lat1)

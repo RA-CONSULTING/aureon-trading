@@ -1,6 +1,6 @@
 {
   "starting_capital": 78.51,
-  "last_update": 1769950100.5576234,
+  "last_update": 1769950165.6211417,
   "history": [
     {
       "timestamp": 1769805026.2806504,
@@ -326,6 +326,29 @@
     },
     {
       "timestamp": 1769950100.5574954,
+      "total_usd": 7.15,
+      "alpaca_usd": 7.15,
+      "kraken_usd": 0.0,
+      "binance_usd": 0.0,
+      "capital_usd": 0.0,
+      "starting_capital": 78.51,
+      "cumulative_net_pnl": -71.36,
+      "floating_pnl": 0.0,
+      "lifetime_realized_pnl": -71.36,
+      "realized_pnl": -71.36,
+      "unrealized_pnl": 0.0,
+      "total_fees_paid": 5532.691631492612,
+      "total_trades": 1368,
+      "winning_trades": 0,
+      "losing_trades": 0,
+      "win_rate": 0.0,
+      "dream_target": 1000000000.0,
+      "dream_progress_pct": 7.15e-07,
+      "treasury_usd": 0.0,
+      "harvest_reserve_breakdown": {}
+    },
+    {
+      "timestamp": 1769950165.620974,
       "total_usd": 7.15,
       "alpaca_usd": 7.15,
       "kraken_usd": 0.0,
