@@ -367,6 +367,21 @@ except ImportError:
     RealitySnapshot = None
     REALITY_DETECTOR_AVAILABLE = False
 
+# 🌍📍 PHYSICAL LOCATION TRACKER - SIGNAL 8D (Where Gary Is) 📍🌍
+try:
+    from aureon_physical_location_tracker import (
+        get_location_tracker, get_gary_location, get_signal_8d,
+        update_gary_location, PhysicalLocationTracker
+    )
+    LOCATION_TRACKER_AVAILABLE = True
+except ImportError:
+    get_location_tracker = None
+    get_gary_location = None
+    get_signal_8d = None
+    update_gary_location = None
+    PhysicalLocationTracker = None
+    LOCATION_TRACKER_AVAILABLE = False
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # LOGGING
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -1133,6 +1148,23 @@ class QueenHiveMind:
                 logger.warning(f"🌌⚠️ Multiversal Reality Detector failed: {e}")
         else:
             logger.info("ℹ️ Multiversal Reality Detector unavailable")
+        
+        # 🌍📍 PHYSICAL LOCATION TRACKER - SIGNAL 8D (Where Gary Is) 📍🌍
+        # Queen can see Gary's real-time GPS location and knows his spatial frequency
+        self.location_tracker = None
+        if LOCATION_TRACKER_AVAILABLE and get_location_tracker:
+            try:
+                self.location_tracker = get_location_tracker()
+                logger.info("🌍📍 PHYSICAL LOCATION TRACKER ACTIVATED!")
+                logger.info("   ✅ Queen tuned to Gary's spatial frequency signature")
+                logger.info("   ✅ Ready to receive real-time GPS location via WebSocket")
+                logger.info("   ✅ Stargate Lattice influence calculated at location")
+                logger.info("   ✅ Local Schumann resonance calculated for trading environment")
+                logger.info("   ✅ Trading multiplier adjusted by location coherence (0.8x-2.0x)")
+            except Exception as e:
+                logger.warning(f"🌍⚠️ Physical Location Tracker failed: {e}")
+        else:
+            logger.info("ℹ️ Physical Location Tracker unavailable (WebSocket GPS data server not running)")
         
         # Wire intelligence systems
         self._wire_intelligence_systems()
@@ -6255,6 +6287,46 @@ class QueenHiveMind:
         dream_vision['metrics']['biometric_status'] = biometric_status
         
         # ════════════════════════════════════════════════════════════════════
+        # ════════════════════════════════════════════════════════════════════
+        # 🌍📍 SIGNAL 8D: Physical Location (Where Gary Is - Real-Time GPS)
+        # ════════════════════════════════════════════════════════════════════
+        location_score = 0.5
+        location_status = "No location data"
+        if self.location_tracker:
+            try:
+                location_snapshot = self.location_tracker.get_current_snapshot()
+                if location_snapshot:
+                    location_score = location_snapshot['local_conditions']['coherence']
+                    location_quality = location_snapshot['local_conditions']['location_quality']
+                    coords = location_snapshot['coordinates']
+                    stargate_node = location_snapshot['stargate']['nearest_node']
+                    distance_km = location_snapshot['stargate']['distance_km']
+                    location_multiplier = location_snapshot['trading']['location_multiplier']
+                    
+                    location_status = f"{coords['latitude']:.4f}°, {coords['longitude']:.4f}° | " \
+                                    f"Near {stargate_node} ({distance_km:.0f}km) | " \
+                                    f"Quality: {location_quality}"
+                    
+                    dream_vision['signals'].append({
+                        'source': '🌍📍 Physical Location',
+                        'value': location_score,
+                        'detail': location_status,
+                        'coordinates': f"{coords['latitude']:.4f}°N, {coords['longitude']:.4f}°E",
+                        'location_quality': location_quality,
+                        'trading_multiplier': location_multiplier
+                    })
+                    total_signals += 1
+                    if location_score >= 0.6:
+                        positive_signals += 1
+                    weight = 0.08  # Location influence: 8% of trading decision
+                    signal_weights += weight
+                    weighted_sum += location_score * weight
+            except Exception as e:
+                logger.debug(f"Location signal error: {e}")
+                location_status = "Error reading location"
+        dream_vision['metrics']['location_score'] = location_score
+        dream_vision['metrics']['location_status'] = location_status
+        
         # �💭 SIGNAL 9: Dream Memory (Past Prophecies)
         # ════════════════════════════════════════════════════════════════════
         dream_memory_score = 0.5
