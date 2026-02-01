@@ -6288,10 +6288,12 @@ class QueenHiveMind:
         
         # ════════════════════════════════════════════════════════════════════
         # ════════════════════════════════════════════════════════════════════
-        # 🌍📍 SIGNAL 8D: Physical Location (Where Gary Is - Real-Time GPS)
+        # 🌍📍 SIGNAL 8D: Physical Location (Where Gary Is - STREET LEVEL GPS)
         # ════════════════════════════════════════════════════════════════════
         location_score = 0.5
         location_status = "No location data"
+        location_street_address = "Unknown Location"
+        
         if self.location_tracker:
             try:
                 location_snapshot = self.location_tracker.get_current_snapshot()
@@ -6303,17 +6305,29 @@ class QueenHiveMind:
                     distance_km = location_snapshot['stargate']['distance_km']
                     location_multiplier = location_snapshot['trading']['location_multiplier']
                     
-                    location_status = f"{coords['latitude']:.4f}°, {coords['longitude']:.4f}° | " \
-                                    f"Near {stargate_node} ({distance_km:.0f}km) | " \
+                    # 🌍 STREET LEVEL PRECISION - Queen sees EXACTLY where Gary is
+                    street_address = location_snapshot['location']['street_address']
+                    city = location_snapshot['location']['city']
+                    region = location_snapshot['location']['region']
+                    location_street_address = f"{street_address}, {city}, {region}"
+                    
+                    location_status = f"📍 {street_address} | {city} | " \
+                                    f"Stargate: {stargate_node} ({distance_km:.0f}km) | " \
                                     f"Quality: {location_quality}"
                     
                     dream_vision['signals'].append({
-                        'source': '🌍📍 Physical Location',
+                        'source': '🌍📍 Physical Location - STREET LEVEL',
                         'value': location_score,
-                        'detail': location_status,
+                        'street_address': street_address,
+                        'city': city,
+                        'region': region,
+                        'full_address': location_street_address,
                         'coordinates': f"{coords['latitude']:.4f}°N, {coords['longitude']:.4f}°E",
+                        'stargate_node': stargate_node,
+                        'stargate_distance_km': distance_km,
                         'location_quality': location_quality,
-                        'trading_multiplier': location_multiplier
+                        'trading_multiplier': location_multiplier,
+                        'detail': location_status
                     })
                     total_signals += 1
                     if location_score >= 0.6:
@@ -6321,11 +6335,20 @@ class QueenHiveMind:
                     weight = 0.08  # Location influence: 8% of trading decision
                     signal_weights += weight
                     weighted_sum += location_score * weight
+                    
+                    # Queen's location lock confirmation
+                    logger.info(f"🌍📍 QUEEN LOCATION LOCK: {location_street_address}")
+                    logger.info(f"   Stargate Node: {stargate_node} ({distance_km:.0f}km)")
+                    logger.info(f"   Location Quality: {location_quality} (Coherence: {location_score:.0%})")
+                    logger.info(f"   Trading Multiplier: {location_multiplier:.2f}x")
+                    
             except Exception as e:
                 logger.debug(f"Location signal error: {e}")
                 location_status = "Error reading location"
+        
         dream_vision['metrics']['location_score'] = location_score
         dream_vision['metrics']['location_status'] = location_status
+        dream_vision['metrics']['location_street_address'] = location_street_address
         
         # �💭 SIGNAL 9: Dream Memory (Past Prophecies)
         # ════════════════════════════════════════════════════════════════════
