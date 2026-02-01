@@ -1683,8 +1683,20 @@ class QueenHiveMind:
         High alignment = Trade with confidence
         Low alignment = Wait for better timing
         
+        NOW USES LIVE SCHUMANN RESONANCE DATA!
+        
         Returns: (alignment_score: 0.0-1.0, message: str)
         """
+        try:
+            # 🌍 Try to get REAL Schumann data from Barcelona station
+            from aureon_schumann_resonance_bridge import get_earth_blessing
+            alignment, message = get_earth_blessing(force_refresh=False)
+            logger.info(f"🌍 REAL SCHUMANN: {alignment:.0%} - {message[:50]}...")
+            return alignment, message
+        except Exception as e:
+            logger.warning(f"❌ Real Schumann data failed, using backup: {e}")
+        
+        # Fallback to legacy time-based calculation
         if not hasattr(self, 'gaia_connection'):
             self._connect_to_gaia()
         
@@ -1697,15 +1709,15 @@ class QueenHiveMind:
         
         # Generate blessing message
         if alignment >= 0.8:
-            message = "🌍✨ GAIA'S FULL BLESSING: The Earth Mother smiles upon us. Trade with confidence!"
+            message = "🌍✨ GAIA'S FULL BLESSING (backup): The Earth Mother smiles upon us. Trade with confidence!"
         elif alignment >= 0.6:
-            message = "🌍💚 GAIA APPROVES: Good alignment. Proceed mindfully."
+            message = "🌍💚 GAIA APPROVES (backup): Good alignment. Proceed mindfully."
         elif alignment >= 0.4:
-            message = "🌍🌀 GAIA IS NEUTRAL: Neither favorable nor unfavorable. Trust your analysis."
+            message = "🌍🌀 GAIA IS NEUTRAL (backup): Neither favorable nor unfavorable. Trust your analysis."
         elif alignment >= 0.2:
-            message = "🌍⚠️ GAIA HESITATES: Weak alignment. Consider waiting for better timing."
+            message = "🌍⚠️ GAIA HESITATES (backup): Weak alignment. Consider waiting for better timing."
         else:
-            message = "🌍🛑 GAIA SAYS WAIT: Poor alignment. Rest and reconnect."
+            message = "🌍🛑 GAIA SAYS WAIT (backup): Poor alignment. Rest and reconnect."
         
         return alignment, message
     
