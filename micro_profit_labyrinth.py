@@ -1117,7 +1117,7 @@ if QUEEN_GATES_OPEN:
     # 🛡️ SAFETY FIRST: Raised from 0.0001% to prevent bleeding by fees!
     PROFIT_THRESHOLD_BASE = 0.05        # 0.05% - Sensible minimum
     TIMELINE_STABILITY_THRESHOLD = 0.2  # Require SOME stability (was 0.0)
-    HEART_COHERENCE_THRESHOLD = 0.4     # Require SOME coherence (was 0.0)
+    HEART_COHERENCE_THRESHOLD = 0.2     # Allow more validators disagreement (was 0.4)
     MIN_COMBINED_BOOST = 0.5            # Lower floor
     QUEEN_CONFIDENCE_BOOST = 1.2        # Reduced from 1.5 for safety
 else:
@@ -1146,7 +1146,7 @@ MIN_NET_PROFIT_USD = float(os.getenv("MIN_NET_PROFIT_USD", "0.001"))
 # Speed is key - small gains compound fast!
 MICRO_CONFIG = {
     # LOWER than V14's 8+ - we trust our math
-    'entry_score_threshold': 2,  # 2+ (was 3+) - COMPOUND MODE: let math gate decide
+    'entry_score_threshold': 1,  # 1+ (was 3+) - AGGRESSIVE: compound mode, trust the math
     
     # Net profit floor (after costs) — epsilon mode
     'min_profit_usd': EPSILON_PROFIT_USD,
@@ -1158,7 +1158,7 @@ MICRO_CONFIG = {
     'slippage': 0.0015,        # 0.15% (was 0.20%) - Better estimate for liquid pairs
     
     # Combined cost threshold
-    'total_cost_rate': 0.0060,  # 0.60% (was 0.85%) - PRIME PROFIT: realistic costs
+    'total_cost_rate': 0.0040,  # 0.40% (was 0.60%) - More aggressive after verified math
     
     # So min_profit_pct (0.20%) is NET profit AFTER 0.60% costs
     # Any spread requirement is enforced by conservative cost model, not a fixed floor

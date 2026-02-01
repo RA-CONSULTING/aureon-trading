@@ -2107,10 +2107,10 @@ class QueenHiveMind:
             final_score *= 1.2  # Boost for validated intelligence
             reasoning.append(f"✅ Validated intelligence available")
         
-        # Apply coherence requirement (Golden Ratio threshold)
-        if coherence < 0.618:
+        # Apply coherence requirement (Lowered for faster execution)
+        if coherence < 0.5:
             final_score *= 0.5
-            reasoning.append(f"⚠️ Low coherence ({coherence:.2f} < 0.618)")
+            reasoning.append(f"⚠️ Low coherence ({coherence:.2f} < 0.5)")
         
         # === FEAR & GREED VALIDATION ===
         # Check market sentiment before executing
@@ -2166,7 +2166,7 @@ class QueenHiveMind:
             reasoning.append("🐋 No whale intelligence available")
         
         # Final decision - lower threshold for small portfolios
-        decision_threshold = 0.3 if self.equity < 1000 else 0.618  # Lower threshold for small portfolios
+        decision_threshold = 0.3 if self.equity < 1000 else 0.5  # Lowered to 0.5 for more trades
         decision = 'EXECUTE' if final_score > decision_threshold else 'HOLD'
         
         # === UNUSUAL WHALES OPTIONS FLOW INTELLIGENCE ===
@@ -3587,7 +3587,7 @@ class QueenHiveMind:
                 logger.info(f"   🏆 Best Win Rate: {sandbox_evolution.best_win_rate:.1f}%")
             if hasattr(sandbox_evolution, 'params'):
                 params = sandbox_evolution.params
-                logger.info(f"   📊 Min Coherence: {params.get('min_coherence', 0.4):.0%}")
+                logger.info(f"   📊 Min Coherence: {params.get('min_coherence', 0.2):.0%}")
                 logger.info(f"   💰 Position Size: {params.get('position_size_pct', 0.12):.1%}")
             
             return True
@@ -3811,7 +3811,7 @@ class QueenHiveMind:
             logger.info(f"   📊 Reality Branches: {branch_count}")
             logger.info("   ✅ 3-Pass Validation: P1(Harmonic) → P2(Coherence) → P3(Stability)")
             logger.info("   🌀 Convergence Detection: ACTIVE")
-            logger.info("   ⚡ 4th Pass Gate: φ threshold (0.618)")
+            logger.info("   ⚡ 4th Pass Gate: Lowered φ threshold (0.5)")
             
             # Wire convergence callback to Queen
             if hasattr(mirror_scanner, 'on_convergence'):
@@ -4525,7 +4525,7 @@ class QueenHiveMind:
                     adaptive_thresholds = self.adaptive_learner.optimized_thresholds.copy()
                     navigation['signals']['adaptive_learning'] = {
                         'thresholds': adaptive_thresholds,
-                        'min_coherence': adaptive_thresholds.get('min_coherence', 0.45),
+                        'min_coherence': adaptive_thresholds.get('min_coherence', 0.2),
                         'min_score': adaptive_thresholds.get('min_score', 65),
                         'min_probability': adaptive_thresholds.get('min_probability', 0.50)
                     }
@@ -7015,7 +7015,7 @@ class QueenHiveMind:
             if coherence >= 0.7:
                 queen_confidence += 0.1
                 reasoning_parts.append(f"Harmonic alignment ({coherence:.0%})")
-            elif coherence < 0.4:
+            elif coherence < 0.2:
                 queen_confidence -= 0.15
                 reasoning_parts.append(f"Poor harmonic alignment ({coherence:.0%})")
         
