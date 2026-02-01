@@ -469,7 +469,8 @@ class LiveAuraLocationTracker:
                 
                 return snapshot_dict
         return None
-        def haversine_distance(self, lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+    
+    def haversine_distance(self, lat1: float, lon1: float, lat2: float, lon2: float) -> float:
         """Calculate distance between two GPS coordinates in km"""
         R = 6371  # Earth radius
         dlat = math.radians(lat2 - lat1)
