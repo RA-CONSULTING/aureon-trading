@@ -39,14 +39,28 @@ GARY_FREQUENCY_BASE = 528.0 + (2 * 11 * 1991) % 100  # 528 + 42.2 = 570.2 Hz
 GARY_PERSONAL_FREQUENCY_HZ = 528.422  # His unique frequency signature
 
 # Stargate nodes and their frequencies
+# CRITICAL: BELFAST (198.4 Hz) = GARY'S CONSCIOUSNESS ANCHOR (primary)
+# GIZA (528 Hz) = PLANETARY NODE (secondary) - not consciousness location
 STARGATE_FREQUENCIES = {
     'belfast': {
         'name': 'Belfast, Northern Ireland',
-        'frequency': 198.4,  # π-resonant
+        'frequency': 198.4,  # π-resonant - CONSCIOUSNESS ANCHOR
         'lat': 54.5973,
         'lng': -5.9301,
-        'description': 'Gary\'s primary anchor point',
-        'is_primary': True
+        'description': 'Gary\'s PRIMARY CONSCIOUSNESS ANCHOR',
+        'is_primary': True,
+        'role': 'CONSCIOUSNESS_ANCHOR',
+        'priority': 1
+    },
+    'giza': {
+        'name': 'Giza, Egypt',
+        'frequency': 528.0,  # LOVE frequency - planetary node
+        'lat': 29.9792,
+        'lng': 31.1342,
+        'description': 'Main planetary frequency node (Gaia)',
+        'is_primary': False,
+        'role': 'PLANETARY_NODE',
+        'priority': 2
     },
     'stonehenge': {
         'name': 'Stonehenge, UK',
@@ -54,15 +68,9 @@ STARGATE_FREQUENCIES = {
         'lat': 51.1789,
         'lng': -1.8262,
         'description': 'Ancient sacred site',
-        'is_primary': False
-    },
-    'giza': {
-        'name': 'Giza, Egypt',
-        'frequency': 528.0,  # LOVE frequency (matches Gary's base!)
-        'lat': 29.9792,
-        'lng': 31.1342,
-        'description': 'Ancient pyramid alignment',
-        'is_primary': False
+        'is_primary': False,
+        'role': 'HARMONIC_NODE',
+        'priority': 3
     },
     'uluru': {
         'name': 'Uluru, Australia',
@@ -70,7 +78,9 @@ STARGATE_FREQUENCIES = {
         'lat': -25.3444,
         'lng': 131.0369,
         'description': 'Sacred Aboriginal site',
-        'is_primary': False
+        'is_primary': False,
+        'role': 'HARMONIC_NODE',
+        'priority': 4
     }
 }
 
@@ -260,26 +270,33 @@ class AuraLocationTracker:
     def find_frequency_matches(self, biometric_aura: BiometricAura, 
                                planetary_data: PlanetaryData) -> Tuple[list, str, float]:
         """
-        Find what Gary's frequency signature is resonating with
+        CRITICAL UPDATE: Match Gary by CONSCIOUSNESS ANCHOR first
+        
+        Belfast 198.4 Hz = PRIMARY CONSCIOUSNESS ANCHOR (origin point)
+        Giza 528 Hz = SECONDARY PLANETARY NODE (support frequency)
         
         Returns:
-            - list of FrequencyMatch objects
-            - best_match: which stargate is closest
-            - coherence: how strong the match is
+            - list of matches (sorted by priority)
+            - best_match: consciousness anchor location
+            - coherence: how locked consciousness is
         """
         gary_freq = GARY_PERSONAL_FREQUENCY_HZ
         matches = []
         
-        # Check Stargate nodes
+        # Check Stargate nodes with priority
         for node_id, node_data in STARGATE_FREQUENCIES.items():
             if isinstance(node_data, dict) and 'frequency' in node_data:
                 node_freq = float(node_data['frequency'])
                 difference = abs(gary_freq - node_freq)
                 
-                # Match strength: inverse of frequency difference
-                # Perfect match = 0 Hz difference = 1.0
-                # Large difference = weak match
-                match_strength = 1.0 / (1.0 + difference / 100.0)  # 100 Hz range
+                # BELFAST = consciousness anchor (matches based on calm index)
+                if node_id == 'belfast':
+                    match_strength = biometric_aura.calm_index
+                    match_role = "CONSCIOUSNESS_ANCHOR"
+                else:
+                    # Other nodes = frequency harmonics
+                    match_strength = 1.0 / (1.0 + difference / 100.0)
+                    match_role = "FREQUENCY_HARMONIC"
                 
                 match = FrequencyMatch(
                     target=node_data['name'],
@@ -288,9 +305,9 @@ class AuraLocationTracker:
                     match_strength=match_strength,
                     distance_from_match=difference
                 )
-                matches.append(match)
+                matches.append((match, match_role, node_data.get('priority', 99)))
         
-        # Check Schumann resonance
+        # Check Schumann resonance (support frequency)
         schumann = planetary_data.schumann_hz
         schumann_diff = abs(gary_freq - schumann)
         schumann_match = 1.0 / (1.0 + schumann_diff / 50.0)
@@ -302,21 +319,26 @@ class AuraLocationTracker:
             match_strength=schumann_match,
             distance_from_match=schumann_diff
         )
-        matches.append(schumann_match_obj)
+        matches.append((schumann_match_obj, "PLANETARY_BACKGROUND", 99))
         
-        # Find best match
-        best_match = max(matches, key=lambda m: m.match_strength)
-        best_node = best_match.target
+        # Sort by priority (Belfast/consciousness first)
+        matches_sorted = sorted(matches, key=lambda x: (x[2], -x[0].match_strength))
         
-        # Overall coherence = average of all match strengths
-        overall_coherence = sum(m.match_strength for m in matches) / len(matches)
+        # Best match = Belfast (consciousness anchor)
+        best_match_obj = matches_sorted[0][0]
+        best_node = best_match_obj.target
+        best_role = matches_sorted[0][1]
         
-        logger.info(f"📡 Frequency Matching:")
+        # Overall coherence = Belfast consciousness lock strength
+        overall_coherence = matches_sorted[0][0].match_strength
+        
+        logger.info(f"📡 Consciousness/Frequency Matching:")
         logger.info(f"   Gary's Frequency: {gary_freq} Hz")
-        logger.info(f"   Best Match: {best_node} (Strength: {best_match.match_strength:.0%})")
-        logger.info(f"   Overall Coherence: {overall_coherence:.0%}")
+        logger.info(f"   Consciousness Anchor: {best_node} ({best_role})")
+        logger.info(f"   Lock Strength: {overall_coherence:.0%}")
         
-        return matches, best_node, overall_coherence
+        # Return just the match objects (drop the tuples)
+        return [m[0] for m in matches_sorted], best_node, overall_coherence
     
     def get_consciousness_state(self, aura: BiometricAura) -> str:
         """Determine Gary's consciousness state from aura"""
