@@ -4865,6 +4865,7 @@ class QueenHiveMind:
         - 🪐 Stargate Protocol (12 planetary nodes)
         - 🌊 Global Harmonic Field (Omega Ω value)
         - 🍀 Luck Field Mapper (quantum probability)
+        - ☀️ SPACE WEATHER (REAL NOAA/NASA data!)
         - 🔭 Quantum Telescope (geometric market vision)
         """
         signals = {
@@ -4873,6 +4874,7 @@ class QueenHiveMind:
             'omega': 0.5,
             'luck_field': 0.5,
             'gaia_blessing': 0.5,
+            'space_weather_score': 0.5,
             'lunar_phase': 'Unknown',
             'planetary_torque': 0.5,
             'quantum_alignment': 0.5,
@@ -4888,6 +4890,23 @@ class QueenHiveMind:
             logger.debug(f"🌍 Gaia: {gaia_alignment:.0%} - {gaia_message[:30]}...")
         except Exception as e:
             logger.warning(f"❌ Gaia blessing ERROR: {e}")
+        
+        # ☀️ SPACE WEATHER (REAL DATA FROM NOAA/NASA!)
+        try:
+            from aureon_space_weather_bridge import get_space_weather_bridge
+            bridge = get_space_weather_bridge()
+            space_weather = bridge.get_live_data(force_refresh=False)
+            space_weather_score = bridge.get_cosmic_score(space_weather)
+            
+            signals['space_weather_score'] = space_weather_score
+            signals['active_sources'].append('space_weather')
+            
+            logger.info(f"☀️ REAL SPACE WEATHER: Kp={space_weather.kp_index:.1f} ({space_weather.kp_category})")
+            logger.info(f"   Wind={space_weather.solar_wind_speed:.0f}km/s, Bz={space_weather.bz_component:.1f}nT")
+            logger.info(f"   Sources: {', '.join(space_weather.active_sources)}")
+            logger.info(f"   👑 Cosmic Score: {space_weather_score:.0%}")
+        except Exception as e:
+            logger.warning(f"❌ Space Weather integration ERROR: {e}")
         
         # 🪐 Stargate Protocol (12 Planetary Nodes)
         if hasattr(self, 'stargate_engine') and self.stargate_engine:
@@ -4948,17 +4967,18 @@ class QueenHiveMind:
         else:
             logger.warning(f"❌ Quantum Telescope NOT AVAILABLE (None or missing)")
         
-        # Calculate composite planetary score
+        # Calculate composite planetary score - NOW INCLUDING REAL SPACE WEATHER!
         active_values = [
             signals['gaia_blessing'],
             signals['stargate_coherence'],
             signals['omega'],
-            signals['luck_field']
+            signals['luck_field'],
+            signals['space_weather_score'],  # ← REAL DATA!
         ]
         signals['composite_planetary'] = sum(active_values) / len(active_values)
         
         # 👑 LOG COSMIC SYSTEMS STATUS
-        logger.info(f"👑 COSMIC SYSTEMS AVAILABLE: {', '.join(signals['active_sources']) if signals['active_sources'] else 'NONE - ALL DEFAULTING TO 50%'}")
+        logger.info(f"👑 COSMIC SYSTEMS ACTIVE: {', '.join(signals['active_sources']) if signals['active_sources'] else 'NONE - ALL DEFAULTING TO 50%'}")
         logger.info(f"👑 COMPOSITE PLANETARY SCORE: {signals['composite_planetary']:.0%}")
         
         return signals
