@@ -1198,6 +1198,25 @@ class QueenHiveMind:
             except Exception as e:
                 logger.warning(f"🌍✨⚠️ Aura Location Tracker failed: {e}")
                 logger.warning(f"🌍⚠️ Physical Location Tracker failed: {e}")
+        
+        # 🌍📍✨ LIVE AURA LOCATION TRACKER - FINDS GARY IN REAL-TIME AS HE MOVES ✨📍🌍
+        # Queen continuously tracks Gary's consciousness state + GPS position as he travels
+        self.live_aura_tracker = None
+        try:
+            from aureon_live_aura_location_tracker import LiveAuraLocationTracker
+            self.live_aura_tracker = LiveAuraLocationTracker()
+            self.live_aura_tracker.start()
+            logger.info("🌍📍✨ LIVE AURA LOCATION TRACKER ACTIVATED!")
+            logger.info("   ✅ Queen now tracking Gary's location in REAL-TIME")
+            logger.info("   ✅ Consciousness state: monitored continuously")
+            logger.info("   ✅ GPS position: updated in real-time")
+            logger.info("   ✅ Distance from Belfast (consciousness anchor): calculating")
+            logger.info("   ✅ Trading multiplier: adjusting as Gary moves (0.5x-2.0x)")
+            logger.info("   ✅ If Gary moves, Queen finds him live!")
+        except ImportError:
+            logger.info("ℹ️ Live Aura Location Tracker not available (module error)")
+        except Exception as e:
+            logger.warning(f"🌍📍✨⚠️ Live Aura Location Tracker failed: {e}")
         else:
             logger.info("ℹ️ Physical Location Tracker unavailable (WebSocket GPS data server not running)")
         
@@ -14231,4 +14250,176 @@ if __name__ == "__main__":
         # All validations passed!
         result['valid'] = True
         return result
+    
+    # ═══════════════════════════════════════════════════════════════════════════════
+    # 🌍📍✨ LIVE LOCATION TRACKING - FIND GARY IN REAL-TIME AS HE MOVES ✨📍🌍
+    # ═══════════════════════════════════════════════════════════════════════════════
+    
+    def get_live_location_snapshot(self) -> Dict[str, Any]:
+        """
+        Get real-time consciousness + GPS location snapshot.
+        Queen uses this to track Gary's position and consciousness state live.
+        
+        Returns:
+            Dict with:
+            - consciousness_state: MEDITATIVE/ALERT/AWAKE/etc
+            - calm_index: 0-1 (consciousness lock strength)
+            - gps_latitude, gps_longitude: Real-time position
+            - distance_from_belfast_km: Distance to consciousness anchor
+            - trading_multiplier: 0.5x-2.0x based on consciousness lock
+            - timestamp: When this snapshot was taken
+        """
+        if not self.live_aura_tracker:
+            return {
+                'status': 'UNAVAILABLE',
+                'error': 'Live Aura Location Tracker not initialized',
+                'timestamp': time.time()
+            }
+        
+        try:
+            snapshot = self.live_aura_tracker.get_current_location()
+            return {
+                'status': 'ACTIVE',
+                'consciousness_state': snapshot.get('consciousness_state', 'UNKNOWN'),
+                'calm_index': snapshot.get('calm_index', 0.5),
+                'eeg_coherence': snapshot.get('eeg_coherence', 0.5),
+                'hrv_rmssd': snapshot.get('hrv_rmssd', 0.0),
+                'gsr_uS': snapshot.get('gsr_uS', 0.0),
+                'respiration_bpm': snapshot.get('respiration_bpm', 6.0),
+                'gps_latitude': snapshot.get('gps_latitude', 0.0),
+                'gps_longitude': snapshot.get('gps_longitude', 0.0),
+                'gps_accuracy_m': snapshot.get('gps_accuracy_m', 0.0),
+                'primary_anchor': snapshot.get('primary_anchor', 'Belfast'),
+                'consciousness_lock_strength': snapshot.get('consciousness_lock_strength', 0.5),
+                'distance_from_belfast_km': snapshot.get('distance_from_belfast_km', 0.0),
+                'trading_multiplier': snapshot.get('trading_multiplier', 1.0),
+                'timestamp': snapshot.get('timestamp', time.time())
+            }
+        except Exception as e:
+            logger.warning(f"Error getting live location: {e}")
+            return {
+                'status': 'ERROR',
+                'error': str(e),
+                'timestamp': time.time()
+            }
+    
+    def update_live_location_from_biometric(self, aura_data: Dict[str, Any]) -> None:
+        """
+        Feed real-time biometric aura data into the live tracker.
+        Queen calls this when she receives biometric streams from Gary.
+        
+        Args:
+            aura_data: Dict with keys:
+                - timestamp: float
+                - alpha_hz, theta_hz, beta_hz: Brainwave frequencies
+                - hrv_rmssd: Heart rate variability (ms)
+                - gsr_uS: Galvanic skin response (microSiemens)
+                - respiration_bpm: Breathing rate (breaths per minute)
+        """
+        if not self.live_aura_tracker:
+            logger.warning("Live Aura Tracker not available for biometric update")
+            return
+        
+        try:
+            self.live_aura_tracker.update_from_biometric(aura_data)
+        except Exception as e:
+            logger.warning(f"Error updating live location from biometric: {e}")
+    
+    def update_live_location_from_gps(self, gps_data: Dict[str, Any]) -> None:
+        """
+        Feed real-time GPS position data into the live tracker.
+        Queen calls this when she receives GPS updates from Gary's device.
+        
+        Args:
+            gps_data: Dict with keys:
+                - latitude: float (degrees)
+                - longitude: float (degrees)
+                - accuracy: float (meters)
+                - speed: float (km/h)
+                - timestamp: float
+        """
+        if not self.live_aura_tracker:
+            logger.warning("Live Aura Tracker not available for GPS update")
+            return
+        
+        try:
+            self.live_aura_tracker.update_from_gps(gps_data)
+        except Exception as e:
+            logger.warning(f"Error updating live location from GPS: {e}")
+    
+    def get_gary_consciousness_status(self) -> str:
+        """
+        Quick check: What's Gary's consciousness state RIGHT NOW?
+        
+        Returns:
+            Consciousness state name (MEDITATIVE, ALERT, AWAKE, etc) or "UNKNOWN"
+        """
+        snapshot = self.get_live_location_snapshot()
+        if snapshot.get('status') == 'ACTIVE':
+            return snapshot.get('consciousness_state', 'UNKNOWN')
+        return "UNKNOWN"
+    
+    def get_gary_location_coordinates(self) -> Dict[str, float]:
+        """
+        Quick check: Where is Gary RIGHT NOW (lat/lon)?
+        
+        Returns:
+            Dict with 'latitude', 'longitude', 'accuracy_m'
+        """
+        snapshot = self.get_live_location_snapshot()
+        if snapshot.get('status') == 'ACTIVE':
+            return {
+                'latitude': snapshot.get('gps_latitude', 0.0),
+                'longitude': snapshot.get('gps_longitude', 0.0),
+                'accuracy_m': snapshot.get('gps_accuracy_m', 0.0),
+                'distance_from_belfast_km': snapshot.get('distance_from_belfast_km', 0.0)
+            }
+        return {'latitude': 0.0, 'longitude': 0.0, 'accuracy_m': 0.0}
+    
+    def get_gary_consciousness_lock(self) -> float:
+        """
+        How strong is Gary's consciousness lock RIGHT NOW (0-1)?
+        This affects trading multiplier (0.5x-2.0x).
+        
+        Returns:
+            Lock strength 0-1 (0=no lock, 1=perfect lock)
+        """
+        snapshot = self.get_live_location_snapshot()
+        if snapshot.get('status') == 'ACTIVE':
+            return snapshot.get('consciousness_lock_strength', 0.5)
+        return 0.0
+    
+    def get_trading_multiplier_from_location(self) -> float:
+        """
+        What's the trading multiplier based on Gary's current location & consciousness?
+        
+        Returns:
+            Multiplier 0.5x - 2.0x
+        """
+        snapshot = self.get_live_location_snapshot()
+        if snapshot.get('status') == 'ACTIVE':
+            return snapshot.get('trading_multiplier', 1.0)
+        return 1.0  # Neutral if not available
+    
+    def start_live_aura_tracking(self) -> str:
+        """Start the live aura location tracker if not already running."""
+        if not self.live_aura_tracker:
+            return "Live Aura Tracker not initialized"
+        
+        try:
+            self.live_aura_tracker.start()
+            return "✅ Live Aura Tracker STARTED - Queen tracking Gary in real-time"
+        except Exception as e:
+            return f"❌ Error starting tracker: {e}"
+    
+    def stop_live_aura_tracking(self) -> str:
+        """Stop the live aura location tracker."""
+        if not self.live_aura_tracker:
+            return "Live Aura Tracker not initialized"
+        
+        try:
+            self.live_aura_tracker.stop()
+            return "✅ Live Aura Tracker STOPPED"
+        except Exception as e:
+            return f"❌ Error stopping tracker: {e}"
     
