@@ -4026,6 +4026,37 @@ class OrcaKillCycle:
             from aureon_queen_hive_mind import get_queen
             self.queen_hive = get_queen()
             print("👑 Queen Hive Mind: WIRED! (Central neural arbiter)")
+            
+            # ═══════════════════════════════════════════════════════════════════
+            # 👑🔗 WIRE QUEEN'S ADVANCED SYSTEMS DIRECTLY INTO ORCA
+            # These are the 4 systems that were 100% autonomy blockers!
+            # ═══════════════════════════════════════════════════════════════════
+            if self.queen_hive:
+                # 1. Probability Nexus (Batten Matrix validation)
+                if hasattr(self.queen_hive, 'probability_nexus') and self.queen_hive.probability_nexus:
+                    self.probability_nexus = self.queen_hive.probability_nexus
+                    print("   🔮 Probability Nexus: WIRED from Queen!")
+                
+                # 2. HNC Matrix (Pattern Recognition)
+                if hasattr(self.queen_hive, 'hnc_matrix') and self.queen_hive.hnc_matrix:
+                    self.hnc_matrix = self.queen_hive.hnc_matrix
+                    print("   📊 HNC Matrix: WIRED from Queen!")
+                
+                # 3. 7-Day Planner (Forward/Back Validation)
+                if hasattr(self.queen_hive, 'seven_day_planner') and self.queen_hive.seven_day_planner:
+                    self.seven_day_planner = self.queen_hive.seven_day_planner
+                    print("   📅 7-Day Planner: WIRED from Queen!")
+                
+                # 4. Adaptive Learner (Self-Optimization)
+                if hasattr(self.queen_hive, 'adaptive_learner') and self.queen_hive.adaptive_learner:
+                    self.adaptive_learner = self.queen_hive.adaptive_learner
+                    print("   🧠 Adaptive Learner: WIRED from Queen!")
+                
+                # 5. Prime Profit Gate (Exact profit calculation)
+                if hasattr(self.queen_hive, 'prime_profit_gate') and self.queen_hive.prime_profit_gate:
+                    self.prime_profit_gate = self.queen_hive.prime_profit_gate
+                    print("   🚪 Prime Profit Gate: WIRED from Queen!")
+                    
         except Exception as e:
             pass
         
