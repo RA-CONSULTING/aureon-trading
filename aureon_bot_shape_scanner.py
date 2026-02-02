@@ -637,3 +637,12 @@ def get_bot_scanner():
     if _GLOBAL_INSTANCE is None:
         _GLOBAL_INSTANCE = BotShapeScanner()
     return _GLOBAL_INSTANCE
+
+# Fix getter - provide default symbols
+def get_bot_scanner():
+    global _GLOBAL_INSTANCE
+    if _GLOBAL_INSTANCE is None:
+        # Default to common trading pairs for bot detection
+        default_symbols = ['BTC/USD', 'ETH/USD', 'SOL/USD']
+        _GLOBAL_INSTANCE = BotShapeScanner(symbols=default_symbols)
+    return _GLOBAL_INSTANCE

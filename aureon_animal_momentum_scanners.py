@@ -831,3 +831,40 @@ def get_animal_scanners():
     if _GLOBAL_INSTANCE is None:
         _GLOBAL_INSTANCE = AnimalMomentumScanners()
     return _GLOBAL_INSTANCE
+
+# Create wrapper class for all animal scanners
+class AnimalMomentumScanners:
+    """Unified interface for all animal momentum scanners."""
+    def __init__(self):
+        self.wolf = AlpacaLoneWolf()
+        self.lion = AlpacaLionHunt()
+        self.ants = AlpacaArmyAnts()
+        self.hummingbird = AlpacaHummingbird()
+    
+    def get_all_signals(self):
+        """Get signals from all animal scanners."""
+        signals = {}
+        try:
+            signals['wolf'] = self.wolf.scan()
+        except:
+            pass
+        try:
+            signals['lion'] = self.lion.scan()
+        except:
+            pass
+        try:
+            signals['ants'] = self.ants.scan()
+        except:
+            pass
+        try:
+            signals['hummingbird'] = self.hummingbird.scan()
+        except:
+            pass
+        return signals
+
+# Fix getter
+def get_animal_scanners():
+    global _GLOBAL_INSTANCE
+    if _GLOBAL_INSTANCE is None:
+        _GLOBAL_INSTANCE = AnimalMomentumScanners()
+    return _GLOBAL_INSTANCE
