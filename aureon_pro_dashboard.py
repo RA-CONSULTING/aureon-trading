@@ -2513,6 +2513,62 @@ class AureonProDashboard:
             # Stream every 100ms (10Hz) for smooth visualization
             await asyncio.sleep(0.1)
     
+    async def ocean_data_loop(self):
+        """
+        🌊 OCEAN DATA LOOP - Stream global market into harmonic field
+        
+        Layer 1: Your portfolio (already implemented in refresh_portfolio)
+        Layer 2: ENTIRE GLOBAL MARKET live-streamed from OceanScanner
+        """
+        await asyncio.sleep(5)  # Wait for initialization
+        
+        self.logger.info("🌊 Ocean data streaming started - feeding global market into harmonic field")
+        
+        while True:
+            try:
+                if not self.ocean_scanner or not self.harmonic_field:
+                    await asyncio.sleep(5)
+                    continue
+                
+                # Scan the ocean for opportunities
+                opportunities = await self.ocean_scanner.scan_ocean(limit=50)
+                
+                if opportunities:
+                    # Feed opportunities into harmonic field as market layer
+                    for opp in opportunities[:20]:  # Top 20 global market movers
+                        try:
+                            # Add to harmonic field with exchange="market" to create separate layer
+                            self.harmonic_field.add_or_update_node(
+                                exchange="market_global",
+                                symbol=opp.symbol,
+                                current_price=opp.current_price,
+                                entry_price=opp.current_price * 0.99,  # Simulate 1% entry for visualization
+                                quantity=1.0,  # Normalized quantity for visualization
+                                asset_class="crypto"
+                            )
+                        except Exception as e:
+                            self.logger.debug(f"Market layer update error for {opp.symbol}: {e}")
+                    
+                    self.logger.info(f"🌊 Ocean: {len(opportunities)} opportunities → Harmonic field updated")
+                
+            except Exception as e:
+                self.logger.error(f"Ocean data loop error: {e}")
+            
+            # Scan every 10 seconds (don't overload)
+            await asyncio.sleep(10)
+    
+    async def _init_ocean_scanner(self):
+        """Initialize ocean scanner universe in background."""
+        try:
+            self.logger.info("🌊 Discovering ocean scanner universe...")
+            universe = await self.ocean_scanner.discover_universe()
+            total = sum(universe.values())
+            self.logger.info(f"🌊 Ocean universe discovered: {total:,} symbols across {len(universe)} exchanges")
+            for exchange, count in universe.items():
+                self.logger.info(f"   • {exchange}: {count:,} symbols")
+        except Exception as e:
+            self.logger.error(f"Ocean scanner universe discovery error: {e}")
+    
     async def start(self):
         """Start the dashboard."""
         
