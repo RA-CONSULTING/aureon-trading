@@ -1947,6 +1947,7 @@ class AureonProDashboard:
                 
                 # Update harmonic field with positions
                 if self.harmonic_field:
+                    nodes_added = 0
                     for pos in positions:
                         try:
                             self.harmonic_field.add_or_update_node(
@@ -1956,8 +1957,10 @@ class AureonProDashboard:
                                 entry_price=pos.get('avgCost', 0),
                                 quantity=pos.get('quantity', 0)
                             )
+                            nodes_added += 1
                         except Exception as e:
-                            self.logger.debug(f"Harmonic field update error for {pos.get('symbol')}: {e}")
+                            self.logger.warning(f"⚠️ Harmonic field update error for {pos.get('symbol')}: {e}")
+                    self.logger.info(f"🔩 Harmonic field: {nodes_added} nodes updated")
                 
                 # Fallback to state snapshot if live positions are empty
                 if not positions:
@@ -2043,6 +2046,7 @@ class AureonProDashboard:
                     "positions": positions[:20],
                 }
                 if self.harmonic_field:
+                    nodes_added = 0
                     for pos in positions:
                         try:
                             self.harmonic_field.add_or_update_node(
@@ -2052,8 +2056,10 @@ class AureonProDashboard:
                                 entry_price=pos.get("avgCost", 0),
                                 quantity=pos.get("quantity", 0)
                             )
+                            nodes_added += 1
                         except Exception as e:
-                            self.logger.debug(f"Harmonic field update error for {pos.get('symbol')}: {e}")
+                            self.logger.warning(f"⚠️ Harmonic field update error for {pos.get('symbol')}: {e}")
+                    self.logger.info(f"🔩 Harmonic field: {nodes_added} nodes updated (snapshot fallback)")
                 self.logger.info(f"✅ Portfolio (snapshot): {len(positions)} positions, ${total_value:,.2f} value")
 
             # Update exchange balances from state files (best-effort, no API calls)
@@ -2477,17 +2483,29 @@ class AureonProDashboard:
         """Stream harmonic liquid aluminium field data for live visualization."""
         await asyncio.sleep(2)  # Wait for initialization
         
+        field_status_logged = False  # Only log once per change
+        last_node_count = -1
+        
         while True:
             try:
                 if self.harmonic_field:
                     # Capture current field snapshot
                     snapshot = self.harmonic_field.capture_snapshot()
                     
+                    # Log status change
+                    if snapshot.total_nodes != last_node_count:
+                        self.logger.info(f"🔩 Harmonic field: {snapshot.total_nodes} nodes, {snapshot.total_energy:.2f} energy, {snapshot.global_frequency:.2f} Hz")
+                        last_node_count = snapshot.total_nodes
+                        field_status_logged = True
+                    
                     # Broadcast to all connected clients
                     await self.broadcast({
                         'type': 'harmonic_field',
                         'data': snapshot.to_dict()
                     })
+                elif not field_status_logged:
+                    self.logger.warning("⚠️ Harmonic field not available - visualization disabled")
+                    field_status_logged = True
                     
             except Exception as e:
                 self.logger.error(f"Harmonic field streaming error: {e}")
