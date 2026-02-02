@@ -3,6 +3,8 @@ from typing import Dict, Any, List, Tuple
 from decimal import Decimal
 
 import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 
 # Load environment variables from .env file
 try:
@@ -33,6 +35,23 @@ class KrakenClient:
 
         self.base = KRAKEN_BASE
         self.session = requests.Session()
+        
+        # Configure HTTPAdapter with connection pooling and SSL/TLS stability improvements
+        retry_strategy = Retry(
+            total=3,
+            status_forcelist=[429, 500, 502, 503, 504],
+            allowed_methods=["GET", "POST"],
+            backoff_factor=1
+        )
+        adapter = HTTPAdapter(
+            max_retries=retry_strategy,
+            pool_connections=10,
+            pool_maxsize=10,
+            pool_block=False
+        )
+        self.session.mount("https://", adapter)
+        self.session.mount("http://", adapter)
+        
         if self.api_key:
             self.session.headers.update({"API-Key": self.api_key})
 

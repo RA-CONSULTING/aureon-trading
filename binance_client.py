@@ -1,5 +1,7 @@
 import os, time, hmac, hashlib, requests, json
 from decimal import Decimal, InvalidOperation, ROUND_DOWN, ROUND_UP
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 try:
     from dotenv import load_dotenv  # type: ignore
     load_dotenv()
@@ -57,6 +59,23 @@ class BinanceClient:
         
         self.base = BINANCE_TESTNET if self.use_testnet else BINANCE_MAINNET
         self.session = requests.Session()
+        
+        # Configure HTTPAdapter with connection pooling and SSL/TLS stability improvements
+        retry_strategy = Retry(
+            total=3,
+            status_forcelist=[429, 500, 502, 503, 504],
+            allowed_methods=["GET", "POST"],
+            backoff_factor=1
+        )
+        adapter = HTTPAdapter(
+            max_retries=retry_strategy,
+            pool_connections=10,
+            pool_maxsize=10,
+            pool_block=False
+        )
+        self.session.mount("https://", adapter)
+        self.session.mount("http://", adapter)
+        
         if self.api_key:
             self.session.headers.update({"X-MBX-APIKEY": self.api_key})
         

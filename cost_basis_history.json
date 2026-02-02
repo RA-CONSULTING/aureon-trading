@@ -3177,8 +3177,198 @@
       "trade_count": 1,
       "last_trade": 1769600182.1548767,
       "synced_at": 1769600182.1548767
+    },
+    "ZEC": {
+      "exchange": "binance",
+      "avg_entry_price": 0,
+      "total_quantity": 0.014,
+      "total_cost": 0.0,
+      "total_fees": 0,
+      "trade_count": 1,
+      "last_trade": "2026-02-02T14:58:24.397535",
+      "auto_discovered": true
+    },
+    "USDC": {
+      "exchange": "binance",
+      "avg_entry_price": 0,
+      "total_quantity": 6.28344639,
+      "total_cost": 0.0,
+      "total_fees": 0,
+      "trade_count": 1,
+      "last_trade": "2026-02-02T14:58:24.397559",
+      "auto_discovered": true
+    },
+    "AXS": {
+      "exchange": "binance",
+      "avg_entry_price": 0,
+      "total_quantity": 2.28,
+      "total_cost": 0.0,
+      "total_fees": 0,
+      "trade_count": 1,
+      "last_trade": "2026-02-02T14:58:24.397581",
+      "auto_discovered": true
+    },
+    "ROSE": {
+      "exchange": "binance",
+      "avg_entry_price": 0,
+      "total_quantity": 1963.4,
+      "total_cost": 0.0,
+      "total_fees": 0,
+      "trade_count": 1,
+      "last_trade": "2026-02-02T14:58:24.397605",
+      "auto_discovered": true
+    },
+    "LPT": {
+      "exchange": "binance",
+      "avg_entry_price": 0,
+      "total_quantity": 0.56567817,
+      "total_cost": 0.0,
+      "total_fees": 0,
+      "trade_count": 1,
+      "last_trade": "2026-02-02T14:58:24.397632",
+      "auto_discovered": true
+    },
+    "SSV": {
+      "exchange": "binance",
+      "avg_entry_price": 0,
+      "total_quantity": 1.23982105,
+      "total_cost": 0.0,
+      "total_fees": 0,
+      "trade_count": 1,
+      "last_trade": "2026-02-02T14:58:24.397656",
+      "auto_discovered": true
+    },
+    "BEAMX": {
+      "exchange": "binance",
+      "avg_entry_price": 0,
+      "total_quantity": 1791.0,
+      "total_cost": 0.0,
+      "total_fees": 0,
+      "trade_count": 1,
+      "last_trade": "2026-02-02T14:58:24.397679",
+      "auto_discovered": true
+    },
+    "ZRO": {
+      "exchange": "binance",
+      "avg_entry_price": 0,
+      "total_quantity": 5.95746638,
+      "total_cost": 0.0,
+      "total_fees": 0,
+      "trade_count": 1,
+      "last_trade": "2026-02-02T14:58:24.397700",
+      "auto_discovered": true
+    },
+    "KAIA": {
+      "exchange": "binance",
+      "avg_entry_price": 0,
+      "total_quantity": 21.89421909,
+      "total_cost": 0.0,
+      "total_fees": 0,
+      "trade_count": 1,
+      "last_trade": "2026-02-02T14:58:24.397723",
+      "auto_discovered": true
+    },
+    "PENGU": {
+      "exchange": "binance",
+      "avg_entry_price": 0,
+      "total_quantity": 1710.0,
+      "total_cost": 0.0,
+      "total_fees": 0,
+      "trade_count": 1,
+      "last_trade": "2026-02-02T14:58:24.397745",
+      "auto_discovered": true
+    },
+    "SHELL": {
+      "exchange": "binance",
+      "avg_entry_price": 0,
+      "total_quantity": 82.72358723,
+      "total_cost": 0.0,
+      "total_fees": 0,
+      "trade_count": 1,
+      "last_trade": "2026-02-02T14:58:24.397770",
+      "auto_discovered": true
+    },
+    "STO": {
+      "exchange": "binance",
+      "avg_entry_price": 0,
+      "total_quantity": 255.1,
+      "total_cost": 0.0,
+      "total_fees": 0,
+      "trade_count": 1,
+      "last_trade": "2026-02-02T14:58:24.397794",
+      "auto_discovered": true
+    },
+    "RESOLV": {
+      "exchange": "binance",
+      "avg_entry_price": 0,
+      "total_quantity": 59.943,
+      "total_cost": 0.0,
+      "total_fees": 0,
+      "trade_count": 1,
+      "last_trade": "2026-02-02T14:58:24.397818",
+      "auto_discovered": true
+    },
+    "SOMI": {
+      "exchange": "binance",
+      "avg_entry_price": 0,
+      "total_quantity": 53.9,
+      "total_cost": 0.0,
+      "total_fees": 0,
+      "trade_count": 1,
+      "last_trade": "2026-02-02T14:58:24.397840",
+      "auto_discovered": true
+    },
+    "AVNT": {
+      "exchange": "binance",
+      "avg_entry_price": 0,
+      "total_quantity": 72.2,
+      "total_cost": 0.0,
+      "total_fees": 0,
+      "trade_count": 1,
+      "last_trade": "2026-02-02T14:58:24.397864",
+      "auto_discovered": true
+    },
+    "NOM": {
+      "exchange": "binance",
+      "avg_entry_price": 0,
+      "total_quantity": 524.0,
+      "total_cost": 0.0,
+      "total_fees": 0,
+      "trade_count": 1,
+      "last_trade": "2026-02-02T14:58:24.397888",
+      "auto_discovered": true
+    },
+    "ENSO": {
+      "exchange": "binance",
+      "avg_entry_price": 0,
+      "total_quantity": 3.88346538,
+      "total_cost": 0.0,
+      "total_fees": 0,
+      "trade_count": 1,
+      "last_trade": "2026-02-02T14:58:24.397914",
+      "auto_discovered": true
+    },
+    "TURTLE": {
+      "exchange": "binance",
+      "avg_entry_price": 0,
+      "total_quantity": 415.3,
+      "total_cost": 0.0,
+      "total_fees": 0,
+      "trade_count": 1,
+      "last_trade": "2026-02-02T14:58:24.397940",
+      "auto_discovered": true
+    },
+    "BREV": {
+      "exchange": "binance",
+      "avg_entry_price": 0,
+      "total_quantity": 269.60564699,
+      "total_cost": 0.0,
+      "total_fees": 0,
+      "trade_count": 1,
+      "last_trade": "2026-02-02T14:58:24.397967",
+      "auto_discovered": true
     }
   },
-  "last_sync": 1769531931.2594972,
+  "last_sync": "2026-02-02T14:58:35.854971",
   "updated_at": "2026-01-28T11:36:26.337202"
 }
