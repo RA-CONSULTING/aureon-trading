@@ -1690,6 +1690,27 @@ class AureonProDashboard:
         status['data']['portfolio_value'] = self.portfolio.get('totalValue', 0)
         status['data']['websocket_clients'] = len(self.clients)
         
+        # Ocean Scanner stats
+        if self.ocean_scanner:
+            status['services']['ocean_scanner'] = 'ACTIVE'
+            status['data']['ocean_symbols_scanned'] = self.ocean_scanner.total_symbols_scanned
+            status['data']['ocean_scan_count'] = self.ocean_scanner.scan_count
+            status['data']['ocean_hot_opportunities'] = len(self.ocean_scanner.hot_opportunities)
+        else:
+            status['services']['ocean_scanner'] = 'DISABLED'
+        
+        # Harmonic Field stats
+        if self.harmonic_field:
+            status['services']['harmonic_field_active'] = 'STREAMING'
+            try:
+                snapshot = self.harmonic_field.capture_snapshot()
+                status['data']['harmonic_nodes'] = snapshot.total_nodes
+                status['data']['harmonic_energy'] = round(snapshot.total_energy, 2)
+                status['data']['harmonic_frequency'] = round(snapshot.global_frequency, 2)
+                status['data']['harmonic_layers'] = len(snapshot.layers)
+            except Exception as e:
+                status['data']['harmonic_error'] = str(e)
+        
         return web.json_response(status)
     
     async def handle_index(self, request):
@@ -2515,14 +2536,19 @@ class AureonProDashboard:
     
     async def ocean_data_loop(self):
         """
-        🌊 OCEAN DATA LOOP - Stream global market into harmonic field
+        🌊 OCEAN DATA LOOP - Stream ENTIRE global market into harmonic field
         
-        Layer 1: Your portfolio (already implemented in refresh_portfolio)
-        Layer 2: ENTIRE GLOBAL MARKET live-streamed from OceanScanner
+        Layer 1: Your portfolio (20 positions from exchanges)
+        Layer 2: FULL MARKET SCAN (500+ symbols across all exchanges)
+        
+        This creates a visualization of the ENTIRE global market pulse
+        tuned into your harmonic field frequency.
         """
         await asyncio.sleep(5)  # Wait for initialization
         
-        self.logger.info("🌊 Ocean data streaming started - feeding global market into harmonic field")
+        self.logger.info("🌊🔭 OCEAN SCANNER → HARMONIC FIELD: Full market streaming started")
+        
+        scan_iteration = 0
         
         while True:
             try:
@@ -2530,32 +2556,40 @@ class AureonProDashboard:
                     await asyncio.sleep(5)
                     continue
                 
-                # Scan the ocean for opportunities
-                opportunities = await self.ocean_scanner.scan_ocean(limit=50)
+                scan_iteration += 1
+                
+                # AGGRESSIVE SCAN: Get top 500 symbols from the entire market
+                opportunities = await self.ocean_scanner.scan_ocean(limit=500)
                 
                 if opportunities:
-                    # Feed opportunities into harmonic field as market layer
-                    for opp in opportunities[:20]:  # Top 20 global market movers
+                    # Feed TOP 100 into harmonic field (balance between visibility and performance)
+                    nodes_added = 0
+                    for opp in opportunities[:100]:
                         try:
-                            # Add to harmonic field with exchange="market" to create separate layer
+                            # Add to harmonic field - separate layer for global market
                             self.harmonic_field.add_or_update_node(
                                 exchange="market_global",
                                 symbol=opp.symbol,
                                 current_price=opp.current_price,
-                                entry_price=opp.current_price * 0.99,  # Simulate 1% entry for visualization
-                                quantity=1.0,  # Normalized quantity for visualization
+                                entry_price=opp.entry_price if hasattr(opp, 'entry_price') else opp.current_price * 0.99,
+                                quantity=1000.0,  # Normalized quantity for better visualization energy
                                 asset_class="crypto"
                             )
+                            nodes_added += 1
                         except Exception as e:
                             self.logger.debug(f"Market layer update error for {opp.symbol}: {e}")
                     
-                    self.logger.info(f"🌊 Ocean: {len(opportunities)} opportunities → Harmonic field updated")
+                    # Summary stats
+                    top_movers = [f"{opp.symbol} ({opp.momentum_5m:+.2f}%)" for opp in opportunities[:5]]
+                    self.logger.info(f"🌊 Scan #{scan_iteration}: {len(opportunities)} found, {nodes_added} → Harmonic field | Top: {', '.join(top_movers)}")
+                else:
+                    self.logger.warning(f"🌊 Scan #{scan_iteration}: No opportunities found")
                 
             except Exception as e:
                 self.logger.error(f"Ocean data loop error: {e}")
             
-            # Scan every 10 seconds (don't overload)
-            await asyncio.sleep(10)
+            # Scan every 8 seconds for continuous market pulse
+            await asyncio.sleep(8)
     
     async def _init_ocean_scanner(self):
         """Initialize ocean scanner universe in background."""
