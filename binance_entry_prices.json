@@ -1,0 +1,135 @@
+{
+  "ZEC": {
+    "symbol": "ZECUSDC",
+    "entry_price": 434.95599894570375,
+    "total_bought": 1.897,
+    "total_cost": 825.11153,
+    "trades": 77
+  },
+  "AXS": {
+    "symbol": "AXSUSDC",
+    "entry_price": 1.1352752756998534,
+    "total_bought": 259.34,
+    "total_cost": 294.42229,
+    "trades": 26
+  },
+  "ROSE": {
+    "symbol": "ROSEUSDC",
+    "entry_price": 0.020955312105333874,
+    "total_bought": 3721.5,
+    "total_cost": 77.985194,
+    "trades": 13
+  },
+  "LPT": {
+    "symbol": "LPTUSDC",
+    "entry_price": 3.603851203501094,
+    "total_bought": 4.57,
+    "total_cost": 16.4696,
+    "trades": 3
+  },
+  "SSV": {
+    "symbol": "SSVUSDC",
+    "entry_price": 4.833,
+    "total_bought": 1.241,
+    "total_cost": 5.997753,
+    "trades": 1
+  },
+  "BEAMX": {
+    "symbol": "BEAMXUSDC",
+    "entry_price": 0.003349,
+    "total_bought": 1791.0,
+    "total_cost": 5.998059,
+    "trades": 1
+  },
+  "ZRO": {
+    "symbol": "ZROUSDC",
+    "entry_price": 2.2682398236092265,
+    "total_bought": 29.48,
+    "total_cost": 66.86771,
+    "trades": 12
+  },
+  "KAIA": {
+    "symbol": "KAIAUSDC",
+    "entry_price": 0.08529978274363749,
+    "total_bought": 322.2,
+    "total_cost": 27.48359,
+    "trades": 5
+  },
+  "PENGU": {
+    "symbol": "PENGUUSDC",
+    "entry_price": 0.011311183887063404,
+    "total_bought": 16434.0,
+    "total_cost": 185.887996,
+    "trades": 25
+  },
+  "SHELL": {
+    "symbol": "SHELLUSDC",
+    "entry_price": 0.0664,
+    "total_bought": 82.8,
+    "total_cost": 5.49792,
+    "trades": 1
+  },
+  "STO": {
+    "symbol": "STOUSDC",
+    "entry_price": 0.09383194618272842,
+    "total_bought": 319.6,
+    "total_cost": 29.988690000000002,
+    "trades": 6
+  },
+  "RESOLV": {
+    "symbol": "RESOLVUSDC",
+    "entry_price": 0.11883676911544226,
+    "total_bought": 1067.2,
+    "total_cost": 126.8226,
+    "trades": 22
+  },
+  "SOMI": {
+    "symbol": "SOMIUSDC",
+    "entry_price": 0.29058229537366553,
+    "total_bought": 337.2,
+    "total_cost": 97.98435,
+    "trades": 15
+  },
+  "AVNT": {
+    "symbol": "AVNTUSDC",
+    "entry_price": 0.34352057205720565,
+    "total_bought": 90.9,
+    "total_cost": 31.22602,
+    "trades": 6
+  },
+  "NOM": {
+    "symbol": "NOMUSDC",
+    "entry_price": 0.010055083275980729,
+    "total_bought": 7265.0,
+    "total_cost": 73.05018,
+    "trades": 12
+  },
+  "ENSO": {
+    "symbol": "ENSOUSDC",
+    "entry_price": 0.8529456863107335,
+    "total_bought": 162.39,
+    "total_cost": 138.50985,
+    "trades": 26
+  },
+  "TURTLE": {
+    "symbol": "TURTLEUSDC",
+    "entry_price": 0.07136348317319299,
+    "total_bought": 2071.1,
+    "total_cost": 147.80091,
+    "trades": 23
+  },
+  "F": {
+    "symbol": "FUSDC",
+    "entry_price": 0.007141952095319704,
+    "total_bought": 24507.0,
+    "total_cost": 175.02782,
+    "trades": 19
+  },
+  "BREV": {
+    "symbol": "BREVUSDC",
+    "entry_price": 0.22470804501875782,
+    "total_bought": 239.9,
+    "total_cost": 53.90746,
+    "trades": 9
+  }
+}

@@ -97,6 +97,47 @@ except ImportError:
     HARMONIC_FIELD_AVAILABLE = False
     logger.warning("Harmonic Liquid Aluminium Field not available")
 
+# ═══════════════════════════════════════════════════════════════════════════════
+# ⚡ V11 POWER STATION - Compound Engine (SIPHON + COMPOUND + REINVEST)
+# ═══════════════════════════════════════════════════════════════════════════════
+try:
+    from v11_power_station_live import V11PowerStationLive, V11Config, PowerGridState
+    V11_AVAILABLE = True
+    logger.info("⚡ V11 Power Station: AVAILABLE")
+except ImportError:
+    V11_AVAILABLE = False
+    V11PowerStationLive = None
+    V11Config = None
+    PowerGridState = None
+    logger.warning("V11 Power Station not available")
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# 🌐 OPEN SOURCE DATA FEEDS - Fear & Greed, CoinGecko, etc.
+# ═══════════════════════════════════════════════════════════════════════════════
+try:
+    from queen_open_source_data_engine import OpenSourceDataEngine, get_data_engine
+    OPEN_DATA_AVAILABLE = True
+    logger.info("🌐 Open Source Data Engine: AVAILABLE")
+except ImportError:
+    OPEN_DATA_AVAILABLE = False
+    OpenSourceDataEngine = None
+    get_data_engine = None
+    logger.warning("Open Source Data Engine not available")
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# 📡 THOUGHTBUS - Event bridge for system communication
+# ═══════════════════════════════════════════════════════════════════════════════
+try:
+    from aureon_thought_bus import ThoughtBus, get_thought_bus, Thought
+    THOUGHTBUS_AVAILABLE = True
+    logger.info("📡 ThoughtBus: AVAILABLE")
+except ImportError:
+    THOUGHTBUS_AVAILABLE = False
+    ThoughtBus = None
+    get_thought_bus = None
+    Thought = None
+    logger.warning("ThoughtBus not available")
+
 PRO_DASHBOARD_HTML = """
 <!DOCTYPE html>
 <html lang="en">
@@ -223,7 +264,7 @@ PRO_DASHBOARD_HTML = """
         /* Main Layout */
         .main-container {
             display: grid;
-            grid-template-columns: 320px 1fr 380px;
+            grid-template-columns: 320px 1fr 280px;
             grid-template-rows: auto 1fr;
             gap: 1px;
             background: var(--border-color);
@@ -234,6 +275,7 @@ PRO_DASHBOARD_HTML = """
             background: var(--bg-secondary);
             padding: 16px;
             overflow-y: auto;
+            min-height: 0;  /* Critical for flex/grid children to scroll properly */
         }
         
         .panel-header {
@@ -468,12 +510,62 @@ PRO_DASHBOARD_HTML = """
             grid-row: span 1;
         }
         
+        /* Professional Trading Chart Container */
         .chart-container {
-            background: var(--bg-tertiary);
+            background: linear-gradient(180deg, rgba(13, 17, 23, 0.95) 0%, rgba(22, 27, 34, 0.9) 100%);
             border-radius: 8px;
-            padding: 16px;
-            height: 300px;
-            border: 1px solid var(--border-color);
+            padding: 12px 16px 8px 8px;
+            height: 180px;
+            border: 1px solid rgba(48, 54, 61, 0.6);
+            position: relative;
+            box-shadow: 
+                inset 0 1px 0 rgba(255, 255, 255, 0.03),
+                0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+        
+        .chart-container::before {
+            content: '📈 EQUITY';
+            position: absolute;
+            top: 4px;
+            left: 8px;
+            font-size: 8px;
+            color: #6e7681;
+            font-family: 'SF Mono', monospace;
+            letter-spacing: 0.5px;
+        }
+        
+        .chart-container canvas {
+            margin-top: 4px;
+        }
+        
+        /* Chart Info Bar - Compact */
+        .chart-info-bar {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            padding: 4px 8px;
+            background: var(--bg-tertiary);
+            border-radius: 4px;
+            margin-bottom: 8px;
+        }
+        
+        .chart-stat {
+            font-size: 9px;
+            color: #6e7681;
+            font-family: 'SF Mono', monospace;
+        }
+        
+        .chart-stat span {
+            color: #8b949e;
+        }
+        
+        .chart-interval-badge {
+            font-size: 9px;
+            background: rgba(34, 197, 94, 0.15);
+            color: #22c55e;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-family: 'SF Mono', monospace;
         }
         
         /* Activity Feed */
@@ -636,65 +728,295 @@ PRO_DASHBOARD_HTML = """
         /* Responsive */
         @media (max-width: 1400px) {
             .main-container {
-                grid-template-columns: 280px 1fr 320px;
+                grid-template-columns: 260px 1fr 260px;
             }
         }
         
-        /* Harmonic Liquid Aluminium Field Styles */
-        .harmonic-container {
-            margin: 20px auto;
-            max-width: 1200px;
-            padding: 0 20px;
+        /* ═══════════════════════════════════════════════════════════════════════
+           📈🔩 UNIFIED PORTFOLIO + HARMONIC FIELD STYLES
+           ═══════════════════════════════════════════════════════════════════════ */
+        
+        /* Living Cells Section */
+        .harmonic-section {
+            margin-top: 8px;
         }
         
-        .harmonic-stats {
+        /* Harmonic Stats Bar (compact) */
+        .harmonic-stats-bar {
             display: flex;
-            gap: 20px;
-            font-size: 12px;
+            gap: 16px;
+            font-size: 11px;
             color: var(--text-secondary);
-            margin-left: auto;
+            background: var(--bg-tertiary);
+            padding: 6px 12px;
+            border-radius: 6px;
+            margin-bottom: 8px;
         }
         
-        .harmonic-stats span {
+        .harmonic-stats-bar span {
             white-space: nowrap;
         }
         
-        .harmonic-canvas-container {
-            background: var(--bg-secondary);
-            border-radius: 8px;
-            padding: 16px;
-            margin: 16px 0;
-            border: 1px solid var(--border-color);
+        /* Living Cells Canvas Wrapper - Full Width Bio Lab */
+        .harmonic-canvas-wrapper {
+            background: linear-gradient(180deg, #0a0f14 0%, #050a0d 100%);
+            border-radius: 12px;
+            padding: 0;
+            border: 1px solid rgba(34, 197, 94, 0.2);
+            box-shadow: 
+                inset 0 0 60px rgba(0, 0, 0, 0.8),
+                inset 0 0 100px rgba(34, 197, 94, 0.03),
+                0 0 30px rgba(34, 197, 94, 0.05);
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .harmonic-canvas-wrapper::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(ellipse at 20% 20%, rgba(34, 197, 94, 0.08), transparent 40%),
+                radial-gradient(ellipse at 80% 80%, rgba(99, 102, 241, 0.06), transparent 40%),
+                radial-gradient(ellipse at 50% 50%, rgba(239, 68, 68, 0.04), transparent 50%);
+            pointer-events: none;
         }
         
         #harmonic-field-canvas {
             width: 100%;
-            height: 400px;
-            background: linear-gradient(135deg, #0d1117, #161b22);
-            border-radius: 4px;
+            height: 100%;
+            background: transparent;
+            border-radius: 12px;
+            display: block;
         }
         
-        .harmonic-legend {
+        /* Compact Legend Bar */
+        .harmonic-legend-bar {
             display: flex;
-            gap: 20px;
+            gap: 8px;
             justify-content: center;
             flex-wrap: wrap;
-            margin-top: 16px;
+            margin-top: 8px;
+            padding: 4px 8px;
+            background: var(--bg-tertiary);
+            border-radius: 6px;
         }
         
-        .legend-item {
-            display: flex;
+        .legend-chip {
+            display: inline-flex;
             align-items: center;
-            gap: 8px;
-            font-size: 12px;
+            gap: 4px;
+            font-size: 10px;
+            color: var(--text-secondary);
+            padding: 2px 6px;
+            border-radius: 4px;
+            background: var(--bg-secondary);
+        }
+        
+        .legend-chip::before {
+            content: '';
+            width: 8px;
+            height: 8px;
+            border-radius: 2px;
+            background: var(--color);
+        }
+        
+        /* Harmonic Top Nodes & Layer Stats */
+        .harmonic-toplist, .harmonic-layer-stats {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            margin-top: 8px;
+            font-size: 10px;
+        }
+        
+        .chip {
+            display: inline-block;
+            background: var(--bg-tertiary);
+            padding: 3px 8px;
+            border-radius: 4px;
             color: var(--text-secondary);
         }
         
-        .legend-color {
-            width: 12px;
-            height: 12px;
-            border-radius: 2px;
+        /* ═══════════════════════════════════════════════════════════════════════
+           📊 ULTRA-COMPACT RIGHT SIDEBAR - No Scroll Design
+           ═══════════════════════════════════════════════════════════════════════ */
+        
+        .right-sidebar {
+            display: flex;
+            flex-direction: column;
+            padding: 6px !important;
+            gap: 4px;
+            overflow: hidden;
         }
+        
+        .sb-row {
+            display: flex;
+            gap: 4px;
+            background: var(--bg-tertiary);
+            border-radius: 4px;
+            padding: 5px 8px;
+            border: 1px solid var(--border-color);
+        }
+        
+        .sb-row.full { flex-direction: column; }
+        
+        .sb-label {
+            font-size: 9px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            white-space: nowrap;
+        }
+        
+        .sb-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(50px, 1fr));
+            gap: 3px;
+            width: 100%;
+        }
+        
+        .sb-cell {
+            text-align: center;
+            background: var(--bg-secondary);
+            padding: 3px 2px;
+            border-radius: 3px;
+        }
+        
+        .sb-val {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--text-primary);
+            display: block;
+        }
+        
+        .sb-val.g { color: var(--accent-green); }
+        .sb-val.y { color: #f0b90b; }
+        .sb-val.o { color: var(--accent-orange); }
+        .sb-val.r { color: var(--accent-red); }
+        
+        .sb-sub {
+            font-size: 7px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+        }
+        
+        /* Exchange Pills */
+        .ex-pills {
+            display: flex;
+            gap: 4px;
+            width: 100%;
+        }
+        
+        .ex-pill {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 3px;
+            background: var(--bg-secondary);
+            padding: 3px 4px;
+            border-radius: 3px;
+            font-size: 10px;
+        }
+        
+        .ex-pill span:first-child { font-size: 10px; }
+        .ex-pill .ex-v {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        
+        /* Fear & Greed Mini */
+        .fg-mini {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            width: 100%;
+        }
+        
+        .fg-badge {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: conic-gradient(from 180deg, #ff4757 0deg, #ffa502 90deg, #2ed573 180deg, #ffa502 270deg, #ff4757 360deg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        
+        .fg-badge::before {
+            content: '';
+            position: absolute;
+            width: 24px;
+            height: 24px;
+            background: var(--bg-tertiary);
+            border-radius: 50%;
+        }
+        
+        .fg-badge .fg-n {
+            position: relative;
+            z-index: 1;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            font-weight: 700;
+        }
+        
+        .fg-txt { flex: 1; }
+        .fg-txt .fg-l { font-size: 10px; font-weight: 600; display: block; }
+        .fg-txt .fg-s { font-size: 9px; color: var(--text-secondary); }
+        .fg-txt .fg-s b { color: var(--text-primary); font-family: 'JetBrains Mono', monospace; }
+        
+        /* Position Summary */
+        .pos-summary {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 3px;
+            width: 100%;
+        }
+        
+        /* Activity Mini */
+        .activity-mini {
+            flex: 1;
+            overflow: hidden;
+            background: var(--bg-tertiary);
+            border-radius: 4px;
+            padding: 5px 8px;
+            border: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .activity-mini .sb-label { margin-bottom: 3px; }
+        
+        .activity-scroll {
+            flex: 1;
+            overflow-y: auto;
+            font-size: 9px;
+            line-height: 1.4;
+        }
+        
+        .act-line {
+            padding: 2px 0;
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .act-line:last-child { border-bottom: none; }
+        .act-line.profit { color: var(--accent-green); }
+        .act-line.alert { color: var(--accent-orange); }
+        
+        .muted { color: var(--text-secondary); }
+        
+        /* ═══════════════════════════════════════════════════════════════════════ */
         
         @media (max-width: 1100px) {
             .main-container {
@@ -823,17 +1145,39 @@ PRO_DASHBOARD_HTML = """
             </div>
         </div>
         
-        <!-- Center Panel: Charts & Activity -->
+        <!-- Center Panel: Living Cells + Portfolio Chart -->
         <div class="panel chart-panel">
             <div class="panel-header">
-                <span class="panel-title">📈 Portfolio Performance</span>
+                <span class="panel-title">🧬 Living Position Cells</span>
+                <span class="chart-interval-badge">Real-time organisms</span>
             </div>
             
-            <div class="chart-container">
+            <!-- Living Position Cells Visualization - MAIN FEATURE -->
+            <div class="harmonic-section" style="margin-top: 0;">
+                <div class="harmonic-canvas-wrapper" style="height: 280px;">
+                    <canvas id="harmonic-field-canvas" width="800" height="280"></canvas>
+                </div>
+                <div class="harmonic-legend-bar">
+                    <span class="legend-chip" style="--color: #22c55e;">💚 Profit</span>
+                    <span class="legend-chip" style="--color: #ef4444;">❤️ Loss</span>
+                    <span class="legend-chip" style="--color: #f97316;">🦙 Alpaca</span>
+                    <span class="legend-chip" style="--color: #eab308;">🟡 Binance</span>
+                    <span class="legend-chip" style="--color: #06b6d4;">🐙 Kraken</span>
+                </div>
+            </div>
+            
+            <!-- Compact Portfolio Chart -->
+            <div class="chart-container" style="height: 100px; margin-top: 12px;">
                 <canvas id="portfolio-chart"></canvas>
             </div>
+            <div class="chart-info-bar">
+                <span class="chart-stat">📊 <span id="chart-candles">0</span></span>
+                <span class="chart-stat">📈 <span id="chart-high">--</span></span>
+                <span class="chart-stat">📉 <span id="chart-low">--</span></span>
+                <span class="chart-stat">⏱️ <span id="chart-countdown">30s</span></span>
+            </div>
             
-            <div class="panel-header" style="margin-top: 20px;">
+            <div class="panel-header" style="margin-top: 12px;">
                 <span class="panel-title">⚡ Live Activity</span>
             </div>
             
@@ -842,111 +1186,79 @@ PRO_DASHBOARD_HTML = """
             </div>
         </div>
         
-        <!-- Right Panel: Exchange Balances & Bot Detection -->
-        <div class="panel">
-            <div class="panel-header">
-                <span class="panel-title">🏦 Exchange Balances</span>
+        <!-- Right Panel: Ultra-Compact Info Sidebar -->
+        <div class="panel right-sidebar">
+            <!-- EXCHANGES -->
+            <div class="sb-row">
+                <span class="sb-label">🏦</span>
+                <div class="ex-pills">
+                    <div class="ex-pill"><span>🟡</span><span class="ex-v" id="binance-balance">--</span></div>
+                    <div class="ex-pill"><span>🐙</span><span class="ex-v" id="kraken-balance">--</span></div>
+                    <div class="ex-pill"><span>🦙</span><span class="ex-v" id="alpaca-balance">--</span></div>
+                </div>
             </div>
             
-            <div class="exchange-list" id="exchange-list">
-                <div class="exchange-card">
-                    <div class="exchange-header">
-                        <span class="exchange-name">
-                            <span class="exchange-status"></span>
-                            🟡 Binance
-                        </span>
+            <!-- V11 POWER -->
+            <div class="sb-row full" id="v11-panel">
+                <span class="sb-label">⚡ V11 Power</span>
+                <div class="sb-grid">
+                    <div class="sb-cell"><span class="sb-val" id="v11-total-nodes">0</span><span class="sb-sub">Nodes</span></div>
+                    <div class="sb-cell"><span class="sb-val g" id="v11-generating">0</span><span class="sb-sub">Gen</span></div>
+                    <div class="sb-cell"><span class="sb-val" id="v11-grid-value">$0</span><span class="sb-sub">Value</span></div>
+                    <div class="sb-cell"><span class="sb-val y" id="v11-siphon">$0</span><span class="sb-sub">Siphon</span></div>
+                    <div class="sb-cell"><span class="sb-val" id="v11-unrealized">$0</span><span class="sb-sub">P&L</span></div>
+                    <div class="sb-cell"><span class="sb-val" id="v11-reserve">$0</span><span class="sb-sub">Reserve</span></div>
+                </div>
+            </div>
+            
+            <!-- SENTIMENT -->
+            <div class="sb-row" id="sentiment-panel">
+                <div class="fg-mini">
+                    <div class="fg-badge"><span class="fg-n" id="fg-value">50</span></div>
+                    <div class="fg-txt">
+                        <span class="fg-l" id="fg-label">Neutral</span>
+                        <span class="fg-s">BTC <b id="btc-dominance">--</b>% · MCap <b id="total-mcap">--</b>T</span>
                     </div>
-                    <div class="exchange-balance" id="binance-balance">$---.--</div>
-                </div>
-                <div class="exchange-card">
-                    <div class="exchange-header">
-                        <span class="exchange-name">
-                            <span class="exchange-status"></span>
-                            🐙 Kraken
-                        </span>
-                    </div>
-                    <div class="exchange-balance" id="kraken-balance">$---.--</div>
-                </div>
-                <div class="exchange-card">
-                    <div class="exchange-header">
-                        <span class="exchange-name">
-                            <span class="exchange-status"></span>
-                            🦙 Alpaca
-                        </span>
-                    </div>
-                    <div class="exchange-balance" id="alpaca-balance">$---.--</div>
                 </div>
             </div>
             
-            <div class="panel-header" style="margin-top: 20px;">
-                <span class="panel-title">🤖 Bot Detection</span>
-            </div>
-            
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-value" id="total-bots">0</div>
-                    <div class="stat-label">Bots</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value" id="whale-count">0</div>
-                    <div class="stat-label">Whales</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value" id="hive-count">0</div>
-                    <div class="stat-label">Hives</div>
+            <!-- DETECTION -->
+            <div class="sb-row full">
+                <span class="sb-label">🤖 Detection</span>
+                <div class="sb-grid">
+                    <div class="sb-cell"><span class="sb-val" id="total-bots">0</span><span class="sb-sub">Bots</span></div>
+                    <div class="sb-cell"><span class="sb-val" id="whale-count">0</span><span class="sb-sub">Whales</span></div>
+                    <div class="sb-cell"><span class="sb-val" id="hive-count">0</span><span class="sb-sub">Hives</span></div>
                 </div>
             </div>
             
-            <div class="bot-grid" id="bot-grid">
-                <!-- Bot cards will be added here -->
-            </div>
-        </div>
-    </div>
-    
-    <!-- Harmonic Liquid Aluminium Field Visualization -->
-    <div class="harmonic-container">
-        <div class="panel">
-            <div class="panel-header">
-                <span class="panel-title">🔩 Harmonic Liquid Aluminium Field</span>
-                <div class="harmonic-stats" id="harmonic-stats">
-                    <span>Frequency: <span id="field-frequency">432.0 Hz</span></span>
-                    <span>Amplitude: <span id="field-amplitude">0.5000</span></span>
-                    <span>Phase: <span id="field-phase">0.0000</span></span>
-                    <span>Nodes: <span id="field-nodes">0</span></span>
-                    <span>Energy: <span id="field-energy">0.00</span></span>
-                    <span>Pattern: <span id="field-pattern">circle</span></span>
+            <!-- OCEAN SCANNER -->
+            <div class="sb-row full">
+                <span class="sb-label">🌊 Ocean</span>
+                <div class="sb-grid">
+                    <div class="sb-cell"><span class="sb-val" id="ocean-universe">0</span><span class="sb-sub">Symbols</span></div>
+                    <div class="sb-cell"><span class="sb-val o" id="ocean-hot">0</span><span class="sb-sub">Hot</span></div>
+                    <div class="sb-cell"><span class="sb-val" id="ocean-scans">0</span><span class="sb-sub">Scans</span></div>
                 </div>
-                <div class="harmonic-toplist" id="field-top-nodes"></div>
             </div>
             
-            <div class="harmonic-canvas-container">
-                <canvas id="harmonic-field-canvas" width="800" height="400"></canvas>
+            <!-- PORTFOLIO SUMMARY -->
+            <div class="sb-row full">
+                <span class="sb-label">📊 Portfolio</span>
+                <div class="pos-summary">
+                    <div class="sb-cell"><span class="sb-val" id="sb-total-value">$0</span><span class="sb-sub">Total</span></div>
+                    <div class="sb-cell"><span class="sb-val" id="sb-unrealized">$0</span><span class="sb-sub">Unrealized</span></div>
+                    <div class="sb-cell"><span class="sb-val" id="sb-positions">0</span><span class="sb-sub">Positions</span></div>
+                </div>
             </div>
             
-            <div class="harmonic-legend">
-                <div class="legend-item">
-                    <div class="legend-color" style="background: #ff6b6b;"></div>
-                    <span>Alpaca (174 Hz)</span>
-                </div>
-                <div class="legend-item">
-                    <div class="legend-color" style="background: #4ecdc4;"></div>
-                    <span>Kraken (285 Hz)</span>
-                </div>
-                <div class="legend-item">
-                    <div class="legend-color" style="background: #45b7d1;"></div>
-                    <span>Binance (396 Hz)</span>
-                </div>
-                <div class="legend-item">
-                    <div class="legend-color" style="background: #96ceb4;"></div>
-                    <span>Capital (528 Hz)</span>
-                </div>
-                <div class="legend-item">
-                    <div class="legend-color" style="background: #ffeaa7;"></div>
-                    <span>Master Waveform</span>
+            <!-- ACTIVITY FEED -->
+            <div class="activity-mini">
+                <span class="sb-label">⚡ Activity</span>
+                <div class="activity-scroll" id="sidebar-activity">
+                    <div class="act-line muted">Initializing...</div>
                 </div>
             </div>
-
-            <div class="harmonic-layer-stats" id="field-layer-stats"></div>
         </div>
     </div>
     
@@ -1049,6 +1361,18 @@ PRO_DASHBOARD_HTML = """
                 case 'activity':
                     addActivity(data.message, data.category || '');
                     break;
+                // ⚡ V11 POWER STATION
+                case 'v11_update':
+                    updateV11PowerStation(data.data);
+                    break;
+                // 🌐 MARKET SENTIMENT
+                case 'sentiment_update':
+                    updateMarketSentiment(data.data);
+                    break;
+                // 🌊 OCEAN SCANNER
+                case 'ocean_scanner_update':
+                    updateOceanScanner(data.data);
+                    break;
             }
         }
 
@@ -1147,6 +1471,19 @@ PRO_DASHBOARD_HTML = """
             if (data.headline) {
                 addActivity('👑 ' + data.headline, 'queen');
             }
+            
+            // 🧬 Trigger Queen pulse in Living Cells visualization
+            if (data.decision) {
+                triggerQueenPulse(data.decision);
+            } else if (data.paragraphs) {
+                // Check for BUY/SELL keywords in thought
+                const allText = data.paragraphs.map(p => p.text).join(' ').toUpperCase();
+                if (allText.includes('BUY') || allText.includes('ENTER') || allText.includes('LONG')) {
+                    triggerQueenPulse('BUY');
+                } else if (allText.includes('SELL') || allText.includes('EXIT') || allText.includes('CLOSE')) {
+                    triggerQueenPulse('SELL');
+                }
+            }
         }
         
         // ========== Portfolio ==========
@@ -1167,12 +1504,17 @@ PRO_DASHBOARD_HTML = """
             
             if (data.positions) {
                 renderPositions(data.positions);
+                // 🧬 SYNC LIVING CELLS WITH POSITIONS
+                syncCellsWithPositions(data.positions);
             }
 
             // Push latest equity point into chart
             if (typeof data.totalValue === 'number') {
                 updateChart(data.totalValue);
             }
+            
+            // Update sidebar portfolio summary
+            updateSidebarPortfolio();
         }
         
         function renderPositions(positions) {
@@ -1360,42 +1702,131 @@ PRO_DASHBOARD_HTML = """
             while (feed.children.length > 50) {
                 feed.removeChild(feed.lastChild);
             }
+            
+            // Also update sidebar mini feed
+            addSidebarActivity(text, category);
         }
         
-        // ========== Chart ==========
+        // ========== Professional Trading Chart (30s Buffered) ==========
         let chart = null;
+        let chartBuffer = {
+            values: [],
+            lastUpdate: 0,
+            updateInterval: 30000,  // 30 seconds between chart updates
+            candles: [],            // OHLC candles
+            currentCandle: null,
+            maxCandles: 60          // 30 minutes of data at 30s intervals
+        };
         
         function initChart() {
             const ctx = document.getElementById('portfolio-chart').getContext('2d');
+            
+            // Initialize with empty candle
+            chartBuffer.currentCandle = {
+                time: Date.now(),
+                open: 0,
+                high: 0,
+                low: Infinity,
+                close: 0,
+                volume: 0
+            };
+            
             chart = new Chart(ctx, {
                 type: 'line',
                 data: {
                     labels: [],
-                    datasets: [{
-                        label: 'Portfolio Value',
-                        data: [],
-                        borderColor: '#3fb950',
-                        backgroundColor: 'rgba(63, 185, 80, 0.1)',
-                        fill: true,
-                        tension: 0.4
-                    }]
+                    datasets: [
+                        {
+                            label: 'Portfolio Value',
+                            data: [],
+                            borderColor: '#22c55e',
+                            backgroundColor: createGradient(ctx),
+                            fill: true,
+                            tension: 0.2,
+                            borderWidth: 2,
+                            pointRadius: 0,
+                            pointHoverRadius: 4,
+                            pointHoverBackgroundColor: '#22c55e',
+                            pointHoverBorderColor: '#fff',
+                            pointHoverBorderWidth: 2
+                        },
+                        {
+                            label: 'Moving Avg',
+                            data: [],
+                            borderColor: 'rgba(99, 102, 241, 0.7)',
+                            borderWidth: 1,
+                            borderDash: [5, 5],
+                            fill: false,
+                            tension: 0.4,
+                            pointRadius: 0
+                        }
+                    ]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    animation: {
+                        duration: 750,
+                        easing: 'easeOutQuart'
+                    },
+                    interaction: {
+                        intersect: false,
+                        mode: 'index'
+                    },
                     plugins: {
-                        legend: { display: false }
+                        legend: { display: false },
+                        tooltip: {
+                            enabled: true,
+                            backgroundColor: 'rgba(13, 17, 23, 0.95)',
+                            titleColor: '#f0f6fc',
+                            bodyColor: '#8b949e',
+                            borderColor: 'rgba(48, 54, 61, 0.8)',
+                            borderWidth: 1,
+                            padding: 12,
+                            displayColors: false,
+                            callbacks: {
+                                title: (items) => items[0]?.label || '',
+                                label: (item) => {
+                                    if (item.datasetIndex === 0) {
+                                        const val = item.raw;
+                                        const prev = item.dataIndex > 0 ? 
+                                            chart.data.datasets[0].data[item.dataIndex - 1] : val;
+                                        const change = val - prev;
+                                        const pct = prev > 0 ? (change / prev * 100).toFixed(2) : 0;
+                                        return [
+                                            `Value: $${val.toLocaleString(undefined, {minimumFractionDigits: 2})}`,
+                                            `Change: ${change >= 0 ? '+' : ''}$${change.toFixed(2)} (${change >= 0 ? '+' : ''}${pct}%)`
+                                        ];
+                                    }
+                                    return `MA: $${item.raw.toFixed(2)}`;
+                                }
+                            }
+                        }
                     },
                     scales: {
                         x: {
-                            grid: { color: 'rgba(48, 54, 61, 0.5)' },
-                            ticks: { color: '#8b949e' }
+                            grid: { 
+                                color: 'rgba(48, 54, 61, 0.3)',
+                                drawBorder: false
+                            },
+                            ticks: { 
+                                color: '#6e7681',
+                                font: { size: 10 },
+                                maxRotation: 0,
+                                maxTicksLimit: 8
+                            }
                         },
                         y: {
-                            grid: { color: 'rgba(48, 54, 61, 0.5)' },
+                            position: 'right',
+                            grid: { 
+                                color: 'rgba(48, 54, 61, 0.3)',
+                                drawBorder: false
+                            },
                             ticks: { 
-                                color: '#8b949e',
-                                callback: v => '$' + v.toFixed(0)
+                                color: '#6e7681',
+                                font: { size: 10 },
+                                callback: v => '$' + formatCompact(v),
+                                maxTicksLimit: 5
                             }
                         }
                     }
@@ -1403,20 +1834,132 @@ PRO_DASHBOARD_HTML = """
             });
         }
         
+        function createGradient(ctx) {
+            const gradient = ctx.createLinearGradient(0, 0, 0, 180);
+            gradient.addColorStop(0, 'rgba(34, 197, 94, 0.3)');
+            gradient.addColorStop(0.5, 'rgba(34, 197, 94, 0.1)');
+            gradient.addColorStop(1, 'rgba(34, 197, 94, 0)');
+            return gradient;
+        }
+        
+        function formatCompact(num) {
+            if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
+            if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
+            return num.toFixed(2);
+        }
+        
         function updateChart(value) {
-            if (!chart) return;
+            if (!chart || typeof value !== 'number' || isNaN(value)) return;
             
-            const now = new Date().toLocaleTimeString();
-            chart.data.labels.push(now);
-            chart.data.datasets[0].data.push(value);
+            const now = Date.now();
             
-            if (chart.data.labels.length > 30) {
-                chart.data.labels.shift();
-                chart.data.datasets[0].data.shift();
+            // Always update current candle with latest value
+            if (!chartBuffer.currentCandle.open) {
+                chartBuffer.currentCandle.open = value;
+                chartBuffer.currentCandle.high = value;
+                chartBuffer.currentCandle.low = value;
+            }
+            chartBuffer.currentCandle.high = Math.max(chartBuffer.currentCandle.high, value);
+            chartBuffer.currentCandle.low = Math.min(chartBuffer.currentCandle.low, value);
+            chartBuffer.currentCandle.close = value;
+            chartBuffer.currentCandle.volume++;
+            
+            // Only commit candle every 30 seconds
+            if (now - chartBuffer.lastUpdate < chartBuffer.updateInterval) {
+                return; // Buffer - don't update chart yet
             }
             
-            chart.update('none');
+            // Commit current candle
+            chartBuffer.lastUpdate = now;
+            const timeLabel = new Date().toLocaleTimeString('en-GB', { 
+                hour: '2-digit', 
+                minute: '2-digit',
+                second: '2-digit'
+            });
+            
+            // Add new data point (use close price)
+            chart.data.labels.push(timeLabel);
+            chart.data.datasets[0].data.push(chartBuffer.currentCandle.close);
+            
+            // Calculate and add moving average (5-period SMA)
+            const data = chart.data.datasets[0].data;
+            const maWindow = 5;
+            if (data.length >= maWindow) {
+                const slice = data.slice(-maWindow);
+                const ma = slice.reduce((a, b) => a + b, 0) / maWindow;
+                chart.data.datasets[1].data.push(ma);
+            } else {
+                chart.data.datasets[1].data.push(chartBuffer.currentCandle.close);
+            }
+            
+            // Trim old data
+            if (chart.data.labels.length > chartBuffer.maxCandles) {
+                chart.data.labels.shift();
+                chart.data.datasets[0].data.shift();
+                chart.data.datasets[1].data.shift();
+            }
+            
+            // Update chart colors based on trend
+            const lastTwo = chart.data.datasets[0].data.slice(-2);
+            if (lastTwo.length === 2) {
+                const trending = lastTwo[1] >= lastTwo[0];
+                chart.data.datasets[0].borderColor = trending ? '#22c55e' : '#ef4444';
+                const ctx = chart.ctx;
+                const gradient = ctx.createLinearGradient(0, 0, 0, 180);
+                if (trending) {
+                    gradient.addColorStop(0, 'rgba(34, 197, 94, 0.3)');
+                    gradient.addColorStop(1, 'rgba(34, 197, 94, 0)');
+                } else {
+                    gradient.addColorStop(0, 'rgba(239, 68, 68, 0.3)');
+                    gradient.addColorStop(1, 'rgba(239, 68, 68, 0)');
+                }
+                chart.data.datasets[0].backgroundColor = gradient;
+            }
+            
+            // Update chart stats bar
+            updateChartStats();
+            
+            // Smooth animation update
+            chart.update('default');
+            
+            // Start new candle
+            chartBuffer.currentCandle = {
+                time: now,
+                open: value,
+                high: value,
+                low: value,
+                close: value,
+                volume: 1
+            };
         }
+        
+        function updateChartStats() {
+            if (!chart || !chart.data.datasets[0].data.length) return;
+            
+            const data = chart.data.datasets[0].data;
+            const high = Math.max(...data);
+            const low = Math.min(...data);
+            
+            const candlesEl = document.getElementById('chart-candles');
+            const highEl = document.getElementById('chart-high');
+            const lowEl = document.getElementById('chart-low');
+            
+            if (candlesEl) candlesEl.textContent = data.length;
+            if (highEl) highEl.textContent = '$' + formatCompact(high);
+            if (lowEl) lowEl.textContent = '$' + formatCompact(low);
+        }
+        
+        // Chart countdown timer
+        setInterval(() => {
+            if (!chartBuffer.lastUpdate) return;
+            const elapsed = Date.now() - chartBuffer.lastUpdate;
+            const remaining = Math.max(0, Math.ceil((chartBuffer.updateInterval - elapsed) / 1000));
+            const countdownEl = document.getElementById('chart-countdown');
+            if (countdownEl) {
+                countdownEl.textContent = remaining + 's';
+                countdownEl.style.color = remaining <= 5 ? '#22c55e' : '#8b949e';
+            }
+        }, 1000);
         
         // ========== Utilities ==========
         function formatCurrency(value, showSign = false) {
@@ -1433,188 +1976,460 @@ PRO_DASHBOARD_HTML = """
             return num.toFixed(0);
         }
         
-        // ========== Harmonic Liquid Aluminium Field ==========
+        // ========== LIVING POSITION CELLS - Biological Visualization ==========
         let harmonicCanvas = null;
         let harmonicCtx = null;
-        let harmonicData = null;
+        let harmonicTime = 0;
+        let livingCells = [];  // Each cell = one position (asset)
+        let queenPulses = [];  // Queen decision effects
+        let nutrientField = [];  // Background energy field
+        let fieldSize = 32;
+        
+        // Cell state colors - biological
+        const CELL_COLORS = {
+            profit: { membrane: '#22c55e', nucleus: '#4ade80', glow: 'rgba(34, 197, 94, 0.4)' },
+            loss: { membrane: '#ef4444', nucleus: '#f87171', glow: 'rgba(239, 68, 68, 0.4)' },
+            neutral: { membrane: '#6366f1', nucleus: '#818cf8', glow: 'rgba(99, 102, 241, 0.3)' },
+            dividing: { membrane: '#f59e0b', nucleus: '#fbbf24', glow: 'rgba(245, 158, 11, 0.5)' }
+        };
+        
+        // Exchange colors for cell tints
+        const EXCHANGE_MEMBRANE = {
+            alpaca: '#f97316',   // Orange
+            binance: '#eab308',  // Yellow/Gold
+            kraken: '#06b6d4',   // Cyan
+            capital: '#10b981'   // Emerald
+        };
         
         function initHarmonicField() {
             harmonicCanvas = document.getElementById('harmonic-field-canvas');
             if (harmonicCanvas) {
+                const rect = harmonicCanvas.getBoundingClientRect();
+                harmonicCanvas.width = rect.width;
+                harmonicCanvas.height = rect.height;
                 harmonicCtx = harmonicCanvas.getContext('2d');
-                console.log('Harmonic field canvas initialized');
-            }
-        }
-        
-        function updateHarmonicField(data) {
-            harmonicData = data;
-            renderHarmonicField();
-            updateHarmonicStats(data);
-        }
-        
-        function updateHarmonicStats(data) {
-            if (!data.global) return;
-            
-            document.getElementById('field-frequency').textContent = data.global.frequency + ' Hz';
-            document.getElementById('field-amplitude').textContent = data.global.amplitude.toFixed(4);
-            document.getElementById('field-phase').textContent = data.global.phase.toFixed(4);
-            document.getElementById('field-nodes').textContent = data.global.total_nodes;
-            document.getElementById('field-energy').textContent = data.global.total_energy;
-            document.getElementById('field-pattern').textContent = data.cymatics || 'circle';
-
-            // Render a quick toplist of the strongest nodes for readability
-            const toplist = document.getElementById('field-top-nodes');
-            if (toplist) {
-                const nodes = (data.nodes || []).slice(0, 6);
-                if (!nodes.length) {
-                    toplist.innerHTML = '<span style="color: var(--text-secondary);">No active nodes</span>';
-                } else {
-                    toplist.innerHTML = nodes.map(n => {
-                        const energy = (n.energy !== undefined ? n.energy : (n.amplitude || 0) * (n.frequency || 0)).toFixed(2);
-                        return `<span class="chip">
-                            <strong>${n.exchange || 'exch'}</strong> · ${n.symbol || 'SYM'} · ${energy}E
-                        </span>`;
-                    }).join('');
-                }
-            }
-
-            // Render per-layer stats for clarity
-            const layerStats = document.getElementById('field-layer-stats');
-            if (layerStats && data.layers) {
-                const entries = Object.entries(data.layers);
-                if (!entries.length) {
-                    layerStats.innerHTML = '<span style="color: var(--text-secondary);">No layers active</span>';
-                } else {
-                    layerStats.innerHTML = entries.map(([exch, layer]) => {
-                        return `<span class="chip">
-                            <strong>${exch}</strong> · ${layer.total_nodes} nodes · ${layer.total_energy.toFixed(1)}E · ${layer.avg_frequency.toFixed(1)} Hz
-                        </span>`;
-                    }).join('');
-                }
-            }
-        }
-        
-        function renderHarmonicField() {
-            if (!harmonicCtx || !harmonicData) return;
-            
-            const canvas = harmonicCanvas;
-            const ctx = harmonicCtx;
-            const width = canvas.width;
-            const height = canvas.height;
-            
-            // Clear canvas
-            ctx.fillStyle = '#0d1117';
-            ctx.fillRect(0, 0, width, height);
-            
-            // Draw grid
-            ctx.strokeStyle = '#30363d';
-            ctx.lineWidth = 1;
-            ctx.setLineDash([5, 5]);
-            
-            // Vertical lines
-            for (let x = 0; x < width; x += 50) {
-                ctx.beginPath();
-                ctx.moveTo(x, 0);
-                ctx.lineTo(x, height);
-                ctx.stroke();
-            }
-            
-            // Horizontal lines
-            for (let y = 0; y < height; y += 50) {
-                ctx.beginPath();
-                ctx.moveTo(0, y);
-                ctx.lineTo(width, y);
-                ctx.stroke();
-            }
-            
-            ctx.setLineDash([]);
-            
-            // Draw master waveform
-            if (harmonicData.master_waveform && harmonicData.master_waveform.length > 0) {
-                drawWaveform(harmonicData.master_waveform, '#ffeaa7', 2, height/2);
-            }
-            
-            // Draw layer waveforms
-            const layerColors = {
-                'alpaca': '#ff6b6b',
-                'kraken': '#4ecdc4', 
-                'binance': '#45b7d1',
-                'capital': '#96ceb4',
-                'market_global': '#9b59b6'
-            };
-            
-            if (harmonicData.layers) {
-                let layerIndex = 0;
-                Object.entries(harmonicData.layers).forEach(([exchange, layer]) => {
-                    if (layer.waveform && layer.waveform.length > 0) {
-                        const color = layerColors[exchange] || '#888888';
-                        const yOffset = height/2 + (layerIndex - 1.5) * 30;
-                        drawWaveform(layer.waveform, color, 1, yOffset);
-                        layerIndex++;
-                    }
-                });
-            }
-
-            // Draw nodes as dynamic particles for a more alive field
-            if (harmonicData.nodes && harmonicData.nodes.length) {
-                const now = Date.now() / 650; // slower oscillation for readability
-                harmonicData.nodes.forEach((node) => {
-                    const color = layerColors[node.exchange] || '#9b59b6';
-                    const freq = node.frequency || 0;
-                    const amp = node.amplitude || 0.05;
-                    const phase = node.phase || 0;
-                    // Normalize freq into canvas and clamp amplitude visual scale
-                    const normFreq = Math.min(Math.max(freq % 800, 0), 800) / 800;
-                    const x = normFreq * width;
-                    const y = height / 2 + Math.sin(now + phase) * (Math.min(amp, 0.2) * 180 + 18);
-                    const radius = Math.max(2, Math.min(10, amp * 14 + 2));
-                    ctx.fillStyle = color;
-                    ctx.beginPath();
-                    ctx.arc(x, y, radius, 0, Math.PI * 2);
-                    ctx.fill();
-                });
-            }
-            
-            // Draw standing waves (support/resistance levels)
-            if (harmonicData.standing_waves) {
-                harmonicData.standing_waves.forEach(wave => {
-                    const y = height/2 + (wave.level || 0) * 50;
-                    ctx.strokeStyle = '#58a6ff';
-                    ctx.lineWidth = 2;
-                    ctx.setLineDash([10, 5]);
-                    ctx.beginPath();
-                    ctx.moveTo(0, y);
-                    ctx.lineTo(width, y);
-                    ctx.stroke();
-                    ctx.setLineDash([]);
-                });
-            }
-        }
-        
-        function drawWaveform(waveform, color, lineWidth, yCenter) {
-            if (!waveform || waveform.length === 0) return;
-            
-            const ctx = harmonicCtx;
-            const width = harmonicCanvas.width;
-            const height = harmonicCanvas.height;
-            
-            ctx.strokeStyle = color;
-            ctx.lineWidth = lineWidth;
-            ctx.beginPath();
-            
-            const step = width / waveform.length;
-            waveform.forEach((amplitude, i) => {
-                const x = i * step;
-                const y = yCenter + amplitude * 100; // Scale amplitude
                 
-                if (i === 0) {
-                    ctx.moveTo(x, y);
+                // Initialize nutrient field
+                initNutrientField();
+                
+                // Start animation
+                requestAnimationFrame(animateLivingCells);
+                console.log('🧬 Living Position Cells initialized');
+            }
+        }
+        
+        function initNutrientField() {
+            nutrientField = [];
+            for (let y = 0; y < fieldSize; y++) {
+                nutrientField[y] = [];
+                for (let x = 0; x < fieldSize; x++) {
+                    nutrientField[y][x] = 0.5 + Math.random() * 0.3;
+                }
+            }
+        }
+        
+        // Update cells from real portfolio positions
+        function updateHarmonicField(data) {
+            // Also accept portfolio data directly
+            if (state.portfolio && state.portfolio.positions) {
+                syncCellsWithPositions(state.portfolio.positions);
+            }
+        }
+        
+        // Sync living cells with actual positions
+        function syncCellsWithPositions(positions) {
+            if (!positions || !harmonicCanvas) return;
+            
+            const w = harmonicCanvas.width;
+            const h = harmonicCanvas.height;
+            
+            // Create map of existing cells by symbol
+            const existingCells = {};
+            livingCells.forEach(cell => {
+                existingCells[cell.symbol] = cell;
+            });
+            
+            // Update or create cells for each position
+            const newCells = [];
+            positions.forEach((pos, idx) => {
+                const symbol = pos.symbol || 'UNKNOWN';
+                const existing = existingCells[symbol];
+                
+                if (existing) {
+                    // Update existing cell with new data
+                    existing.targetSize = calculateCellSize(pos);
+                    existing.pnlPercent = pos.pnlPercent || 0;
+                    existing.currentValue = pos.currentValue || 0;
+                    existing.quantity = pos.quantity || 0;
+                    existing.exchange = pos.exchange || 'alpaca';
+                    existing.isGrowing = pos.pnlPercent > existing.lastPnl;
+                    existing.isShrinking = pos.pnlPercent < existing.lastPnl;
+                    existing.lastPnl = pos.pnlPercent;
+                    newCells.push(existing);
+                    delete existingCells[symbol];
                 } else {
-                    ctx.lineTo(x, y);
+                    // Create new cell (birth animation)
+                    const cell = createLivingCell(pos, idx, positions.length, w, h);
+                    newCells.push(cell);
                 }
             });
             
+            // Cells not in positions anymore = death (shrink to zero)
+            Object.values(existingCells).forEach(cell => {
+                cell.dying = true;
+                cell.targetSize = 0;
+                newCells.push(cell);
+            });
+            
+            livingCells = newCells.filter(c => !(c.dying && c.size < 1));
+        }
+        
+        function createLivingCell(pos, idx, total, w, h) {
+            // Arrange cells in organic pattern
+            const angle = (idx / Math.max(total, 1)) * Math.PI * 2;
+            const radius = Math.min(w, h) * 0.3;
+            const centerX = w / 2;
+            const centerY = h / 2;
+            
+            return {
+                symbol: pos.symbol || 'UNKNOWN',
+                x: centerX + Math.cos(angle) * radius * (0.5 + Math.random() * 0.5),
+                y: centerY + Math.sin(angle) * radius * (0.5 + Math.random() * 0.5),
+                vx: 0,
+                vy: 0,
+                size: 5,  // Start small (birth)
+                targetSize: calculateCellSize(pos),
+                pnlPercent: pos.pnlPercent || 0,
+                lastPnl: pos.pnlPercent || 0,
+                currentValue: pos.currentValue || 0,
+                quantity: pos.quantity || 0,
+                exchange: pos.exchange || 'alpaca',
+                phase: Math.random() * Math.PI * 2,
+                pulseRate: 0.8 + Math.random() * 0.4,  // Different heartbeat rates
+                isGrowing: false,
+                isShrinking: false,
+                dying: false,
+                organelles: Math.floor(3 + Math.random() * 4),  // Internal structures
+                membraneWobble: [],
+                birth: harmonicTime
+            };
+        }
+        
+        function calculateCellSize(pos) {
+            // Size based on position value (log scale for visibility)
+            const value = pos.currentValue || 0;
+            const minSize = 20;
+            const maxSize = 60;
+            
+            if (value <= 0) return minSize;
+            
+            // Log scale: $1 = minSize, $10000+ = maxSize
+            const logVal = Math.log10(Math.max(1, value));
+            const normalized = Math.min(1, logVal / 4);  // 4 = log10(10000)
+            
+            return minSize + (maxSize - minSize) * normalized;
+        }
+        
+        function animateLivingCells() {
+            harmonicTime += 0.016;  // ~60fps
+            updateCellPhysics();
+            updateNutrientField();
+            renderBiologicalField();
+            requestAnimationFrame(animateLivingCells);
+        }
+        
+        function updateCellPhysics() {
+            const w = harmonicCanvas?.width || 400;
+            const h = harmonicCanvas?.height || 150;
+            
+            livingCells.forEach(cell => {
+                // Smooth size transitions (growth/shrinkage)
+                const sizeDiff = cell.targetSize - cell.size;
+                cell.size += sizeDiff * 0.05;  // Smooth interpolation
+                
+                // Gentle floating motion (like cells in fluid)
+                cell.vx += (Math.random() - 0.5) * 0.1;
+                cell.vy += (Math.random() - 0.5) * 0.1;
+                
+                // Damping
+                cell.vx *= 0.95;
+                cell.vy *= 0.95;
+                
+                // Apply velocity
+                cell.x += cell.vx;
+                cell.y += cell.vy;
+                
+                // Keep in bounds with soft bounce
+                const margin = cell.size + 10;
+                if (cell.x < margin) { cell.x = margin; cell.vx *= -0.5; }
+                if (cell.x > w - margin) { cell.x = w - margin; cell.vx *= -0.5; }
+                if (cell.y < margin) { cell.y = margin; cell.vy *= -0.5; }
+                if (cell.y > h - margin) { cell.y = h - margin; cell.vy *= -0.5; }
+                
+                // Cell-cell repulsion (avoid overlap)
+                livingCells.forEach(other => {
+                    if (other === cell) return;
+                    const dx = cell.x - other.x;
+                    const dy = cell.y - other.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    const minDist = cell.size + other.size + 5;
+                    
+                    if (dist < minDist && dist > 0) {
+                        const force = (minDist - dist) / minDist * 0.3;
+                        cell.vx += (dx / dist) * force;
+                        cell.vy += (dy / dist) * force;
+                    }
+                });
+            });
+            
+            // Process Queen pulses
+            queenPulses = queenPulses.filter(pulse => {
+                pulse.radius += 3;
+                pulse.opacity -= 0.02;
+                
+                // Affect nearby cells
+                livingCells.forEach(cell => {
+                    const dx = cell.x - pulse.x;
+                    const dy = cell.y - pulse.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    
+                    if (Math.abs(dist - pulse.radius) < 20) {
+                        // Cell reacts to Queen decision
+                        cell.vx += (dx / dist) * pulse.strength * 0.5;
+                        cell.vy += (dy / dist) * pulse.strength * 0.5;
+                    }
+                });
+                
+                return pulse.opacity > 0;
+            });
+        }
+        
+        function updateNutrientField() {
+            const t = harmonicTime;
+            for (let y = 0; y < fieldSize; y++) {
+                for (let x = 0; x < fieldSize; x++) {
+                    // Slow-moving nutrient waves
+                    nutrientField[y][x] = 0.3 + 
+                        Math.sin(x * 0.3 + t * 0.5) * 0.15 +
+                        Math.cos(y * 0.25 + t * 0.3) * 0.15 +
+                        Math.sin((x + y) * 0.2 + t * 0.4) * 0.1;
+                }
+            }
+        }
+        
+        // Called when Queen makes a decision
+        function triggerQueenPulse(decision) {
+            const w = harmonicCanvas?.width || 400;
+            const h = harmonicCanvas?.height || 150;
+            
+            queenPulses.push({
+                x: w / 2,
+                y: h / 2,
+                radius: 10,
+                opacity: 0.8,
+                strength: decision === 'BUY' ? 1 : decision === 'SELL' ? -1 : 0.5,
+                color: decision === 'BUY' ? '#22c55e' : decision === 'SELL' ? '#ef4444' : '#6366f1'
+            });
+        }
+        
+        function renderBiologicalField() {
+            if (!harmonicCtx) return;
+            
+            const ctx = harmonicCtx;
+            const w = harmonicCanvas.width;
+            const h = harmonicCanvas.height;
+            const t = harmonicTime;
+            
+            // Dark biological background with nutrient glow
+            ctx.fillStyle = '#0a0f14';
+            ctx.fillRect(0, 0, w, h);
+            
+            // Render nutrient field (subtle background glow)
+            renderNutrientField(ctx, w, h);
+            
+            // Render Queen decision pulses
+            queenPulses.forEach(pulse => {
+                ctx.strokeStyle = pulse.color.replace(')', `, ${pulse.opacity})`).replace('rgb', 'rgba').replace('#', '');
+                // Convert hex to rgba
+                const r = parseInt(pulse.color.slice(1, 3), 16);
+                const g = parseInt(pulse.color.slice(3, 5), 16);
+                const b = parseInt(pulse.color.slice(5, 7), 16);
+                ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, ${pulse.opacity})`;
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(pulse.x, pulse.y, pulse.radius, 0, Math.PI * 2);
+                ctx.stroke();
+            });
+            
+            // Render living cells (positions)
+            livingCells.forEach(cell => {
+                renderLivingCell(ctx, cell, t);
+            });
+            
+            // Top info bar
+            renderFieldInfo(ctx, w, h);
+        }
+        
+        function renderNutrientField(ctx, w, h) {
+            const cellW = w / fieldSize;
+            const cellH = h / fieldSize;
+            
+            for (let y = 0; y < fieldSize; y++) {
+                for (let x = 0; x < fieldSize; x++) {
+                    const nutrient = nutrientField[y][x];
+                    const alpha = nutrient * 0.15;
+                    
+                    ctx.fillStyle = `rgba(34, 197, 94, ${alpha})`;
+                    ctx.fillRect(x * cellW, y * cellH, cellW + 1, cellH + 1);
+                }
+            }
+        }
+        
+        function renderLivingCell(ctx, cell, t) {
+            const x = cell.x;
+            const y = cell.y;
+            const size = cell.size;
+            
+            if (size < 1) return;
+            
+            // Determine cell state colors
+            const pnl = cell.pnlPercent;
+            const state = pnl > 1 ? 'profit' : pnl < -1 ? 'loss' : 'neutral';
+            const colors = CELL_COLORS[state];
+            const exchangeColor = EXCHANGE_MEMBRANE[cell.exchange] || '#6366f1';
+            
+            // Heartbeat pulse
+            const pulse = 1 + Math.sin(t * cell.pulseRate * 4) * 0.08;
+            const pulseSize = size * pulse;
+            
+            // Growth/shrink animation
+            const growthPulse = cell.isGrowing ? 1 + Math.sin(t * 8) * 0.15 : 
+                               cell.isShrinking ? 1 - Math.sin(t * 8) * 0.1 : 1;
+            const finalSize = pulseSize * growthPulse;
+            
+            // Cell glow (aura)
+            const glowGrad = ctx.createRadialGradient(x, y, 0, x, y, finalSize * 1.5);
+            glowGrad.addColorStop(0, colors.glow);
+            glowGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+            ctx.fillStyle = glowGrad;
+            ctx.beginPath();
+            ctx.arc(x, y, finalSize * 1.5, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Cell membrane (outer boundary) - wobbly organic edge
+            ctx.save();
+            ctx.translate(x, y);
+            
+            // Draw wobbly membrane
+            ctx.beginPath();
+            const membranePoints = 24;
+            for (let i = 0; i <= membranePoints; i++) {
+                const angle = (i / membranePoints) * Math.PI * 2;
+                const wobble = Math.sin(angle * 3 + t * 2 + cell.phase) * 3 +
+                              Math.sin(angle * 5 + t * 1.5) * 2;
+                const r = finalSize + wobble;
+                const px = Math.cos(angle) * r;
+                const py = Math.sin(angle) * r;
+                
+                if (i === 0) ctx.moveTo(px, py);
+                else ctx.lineTo(px, py);
+            }
+            ctx.closePath();
+            
+            // Fill with gradient
+            const cellGrad = ctx.createRadialGradient(0, 0, 0, 0, 0, finalSize);
+            cellGrad.addColorStop(0, colors.nucleus);
+            cellGrad.addColorStop(0.6, exchangeColor);
+            cellGrad.addColorStop(1, colors.membrane);
+            ctx.fillStyle = cellGrad;
+            ctx.fill();
+            
+            // Membrane outline
+            ctx.strokeStyle = colors.membrane;
+            ctx.lineWidth = 2;
             ctx.stroke();
+            
+            // Nucleus (center)
+            const nucleusSize = finalSize * 0.35;
+            ctx.fillStyle = colors.nucleus;
+            ctx.beginPath();
+            ctx.arc(0, 0, nucleusSize, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Organelles (internal dots showing activity)
+            for (let i = 0; i < cell.organelles; i++) {
+                const orgAngle = (i / cell.organelles) * Math.PI * 2 + t * 0.5;
+                const orgDist = finalSize * 0.5;
+                const orgX = Math.cos(orgAngle) * orgDist;
+                const orgY = Math.sin(orgAngle) * orgDist;
+                const orgSize = 2 + Math.sin(t * 3 + i) * 1;
+                
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+                ctx.beginPath();
+                ctx.arc(orgX, orgY, orgSize, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            
+            // Growth indicator (mitosis-like division line when growing fast)
+            if (cell.isGrowing && pnl > 5) {
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+                ctx.lineWidth = 1;
+                ctx.setLineDash([3, 3]);
+                ctx.beginPath();
+                ctx.moveTo(-finalSize, 0);
+                ctx.lineTo(finalSize, 0);
+                ctx.stroke();
+                ctx.setLineDash([]);
+            }
+            
+            ctx.restore();
+            
+            // Symbol label
+            ctx.font = 'bold 9px "SF Mono", monospace';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            
+            // Symbol text with shadow
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+            ctx.fillText(cell.symbol, x + 1, y + finalSize + 12);
+            ctx.fillStyle = '#ffffff';
+            ctx.fillText(cell.symbol, x, y + finalSize + 11);
+            
+            // P&L percentage below
+            const pnlText = (pnl >= 0 ? '+' : '') + pnl.toFixed(1) + '%';
+            ctx.font = '8px "SF Mono", monospace';
+            ctx.fillStyle = pnl >= 0 ? '#22c55e' : '#ef4444';
+            ctx.fillText(pnlText, x, y + finalSize + 22);
+            
+            // Value inside cell (if big enough)
+            if (finalSize > 25) {
+                ctx.font = 'bold 8px "SF Mono", monospace';
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+                const valueText = cell.currentValue >= 1000 ? 
+                    '$' + (cell.currentValue / 1000).toFixed(1) + 'K' :
+                    '$' + cell.currentValue.toFixed(2);
+                ctx.fillText(valueText, x, y);
+            }
+        }
+        
+        function renderFieldInfo(ctx, w, h) {
+            // Top bar with stats
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+            ctx.fillRect(0, 0, w, 20);
+            
+            ctx.font = '9px "SF Mono", monospace';
+            ctx.fillStyle = '#6366f1';
+            ctx.textAlign = 'left';
+            ctx.fillText('🧬 LIVING POSITIONS', 8, 13);
+            
+            // Cell count
+            ctx.textAlign = 'right';
+            ctx.fillStyle = '#22c55e';
+            ctx.fillText(`${livingCells.length} cells`, w - 8, 13);
+        }
+        
+        function updateHarmonicStats(data) {
+            // Stats are now shown inline
         }
         
         // Clock
@@ -1623,6 +2438,113 @@ PRO_DASHBOARD_HTML = """
         }
         setInterval(updateClock, 1000);
         updateClock();
+        
+        // ════════════════════════════════════════════════════════════════════════════════
+        // ⚡ V11 POWER STATION UPDATE
+        // ════════════════════════════════════════════════════════════════════════════════
+        function updateV11PowerStation(data) {
+            if (!data) return;
+            
+            // Update V11 stats
+            const v11Panel = document.getElementById('v11-panel');
+            if (v11Panel) {
+                document.getElementById('v11-total-nodes').textContent = data.total_nodes || 0;
+                document.getElementById('v11-generating').textContent = data.generating_nodes || 0;
+                document.getElementById('v11-grid-value').textContent = '$' + (data.total_grid_value || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                document.getElementById('v11-siphon').textContent = '$' + (data.total_siphon_capacity || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                document.getElementById('v11-unrealized').textContent = '$' + (data.total_unrealized_pnl || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                document.getElementById('v11-reserve').textContent = '$' + (data.reserve_balance || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                
+                // Color the unrealized P&L
+                const unrealizedEl = document.getElementById('v11-unrealized');
+                if (data.total_unrealized_pnl > 0) {
+                    unrealizedEl.style.color = 'var(--accent-green)';
+                } else if (data.total_unrealized_pnl < 0) {
+                    unrealizedEl.style.color = 'var(--accent-red)';
+                }
+            }
+            
+            // Log activity for significant events
+            if (data.generating_nodes > 0) {
+                addActivity(`⚡ V11: ${data.generating_nodes} nodes generating, $${data.total_siphon_capacity?.toFixed(2)} siphon ready`, 'profit');
+            }
+        }
+        
+        // ════════════════════════════════════════════════════════════════════════════════
+        // 🌐 MARKET SENTIMENT UPDATE (Fear & Greed)
+        // ════════════════════════════════════════════════════════════════════════════════
+        function updateMarketSentiment(data) {
+            if (!data) return;
+            
+            const fgValue = data.fear_greed_index || 50;
+            const fgLabel = data.fear_greed_label || 'Neutral';
+            
+            const fgValueEl = document.getElementById('fg-value');
+            const fgLabelEl = document.getElementById('fg-label');
+            
+            if (fgValueEl) fgValueEl.textContent = fgValue;
+            if (fgLabelEl) fgLabelEl.textContent = fgLabel;
+            
+            // BTC Dominance
+            if (data.btc_dominance) {
+                const btcDom = document.getElementById('btc-dominance');
+                if (btcDom) btcDom.textContent = data.btc_dominance.toFixed(1);
+            }
+            
+            // Total Market Cap
+            if (data.total_market_cap) {
+                const mcap = document.getElementById('total-mcap');
+                if (mcap) mcap.textContent = data.total_market_cap.toFixed(2);
+            }
+        }
+        
+        // ════════════════════════════════════════════════════════════════════════════════
+        // 🌊 OCEAN SCANNER UPDATE
+        // ════════════════════════════════════════════════════════════════════════════════
+        function updateOceanScanner(data) {
+            if (!data) return;
+            
+            const oceanUniverse = document.getElementById('ocean-universe');
+            const oceanHot = document.getElementById('ocean-hot');
+            const oceanScans = document.getElementById('ocean-scans');
+            
+            if (oceanUniverse) oceanUniverse.textContent = (data.universe_size || 0).toLocaleString();
+            if (oceanHot) oceanHot.textContent = data.hot_opportunities || 0;
+            if (oceanScans) oceanScans.textContent = data.scan_count || 0;
+        }
+        
+        // ════════════════════════════════════════════════════════════════════════════════
+        // 📊 SIDEBAR PORTFOLIO UPDATE
+        // ════════════════════════════════════════════════════════════════════════════════
+        function updateSidebarPortfolio() {
+            const total = document.getElementById('sb-total-value');
+            const unrealized = document.getElementById('sb-unrealized');
+            const positions = document.getElementById('sb-positions');
+            
+            if (total) total.textContent = '$' + state.portfolio.totalValue.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            if (unrealized) {
+                unrealized.textContent = (state.portfolio.unrealizedPnl >= 0 ? '+$' : '-$') + Math.abs(state.portfolio.unrealizedPnl).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                unrealized.className = 'sb-val ' + (state.portfolio.unrealizedPnl >= 0 ? 'g' : 'r');
+            }
+            if (positions) positions.textContent = state.portfolio.positions.length;
+        }
+        
+        // ════════════════════════════════════════════════════════════════════════════════
+        // ⚡ SIDEBAR ACTIVITY (Mini Feed)
+        // ════════════════════════════════════════════════════════════════════════════════
+        const sidebarActivityItems = [];
+        function addSidebarActivity(message, type = 'info') {
+            sidebarActivityItems.unshift({ message, type, time: Date.now() });
+            if (sidebarActivityItems.length > 10) sidebarActivityItems.pop();
+            
+            const container = document.getElementById('sidebar-activity');
+            if (container) {
+                container.innerHTML = sidebarActivityItems.map(item => {
+                    const cls = item.type === 'profit' ? 'profit' : item.type === 'alert' ? 'alert' : '';
+                    return `<div class="act-line ${cls}">${item.message}</div>`;
+                }).join('');
+            }
+        }
         
         // ========== Initialize ==========
         console.log('🚀 Initializing Aureon Pro Terminal...');
@@ -1721,6 +2643,66 @@ class AureonProDashboard:
         self.bot_counts = {'whales': 0, 'hives': 0}
         self.queen_messages = deque(maxlen=50)
         
+        # ═══════════════════════════════════════════════════════════════════════════════
+        # ⚡ V11 POWER STATION - Compound Engine
+        # ═══════════════════════════════════════════════════════════════════════════════
+        self.v11_station = None
+        self.v11_data = {
+            'total_nodes': 0,
+            'generating_nodes': 0,
+            'hibernating_nodes': 0,
+            'consuming_nodes': 0,
+            'total_grid_value': 0,
+            'total_entry_cost': 0,
+            'total_unrealized_pnl': 0,
+            'total_siphon_capacity': 0,
+            'reserve_balance': 0,
+            'siphons_session': 0,
+            'energy_siphoned': 0,
+            'last_scan': None
+        }
+        if V11_AVAILABLE:
+            try:
+                v11_config = V11Config(
+                    enabled_exchanges=['binance', 'alpaca', 'kraken'],
+                    max_concurrent_positions=100
+                )
+                self.v11_station = V11PowerStationLive(config=v11_config, dry_run=True)
+                logger.info("⚡ V11 Power Station: INITIALIZED")
+            except Exception as e:
+                logger.warning(f"⚡ V11 Power Station init failed: {e}")
+        
+        # ═══════════════════════════════════════════════════════════════════════════════
+        # 🌐 OPEN SOURCE DATA - Fear & Greed, Market Sentiment
+        # ═══════════════════════════════════════════════════════════════════════════════
+        self.open_data_engine = None
+        self.market_sentiment = {
+            'fear_greed_index': 50,
+            'fear_greed_label': 'Neutral',
+            'btc_dominance': 0,
+            'total_market_cap': 0,
+            'last_update': None
+        }
+        if OPEN_DATA_AVAILABLE and get_data_engine:
+            try:
+                self.open_data_engine = get_data_engine()
+                logger.info("🌐 Open Source Data Engine: INITIALIZED")
+            except Exception as e:
+                logger.warning(f"🌐 Open Data Engine init failed: {e}")
+        
+        # ═══════════════════════════════════════════════════════════════════════════════
+        # 📡 THOUGHTBUS - System event bridge
+        # ═══════════════════════════════════════════════════════════════════════════════
+        self.thought_bus = None
+        self.thought_events = deque(maxlen=100)  # Last 100 events
+        if THOUGHTBUS_AVAILABLE and get_thought_bus:
+            try:
+                self.thought_bus = get_thought_bus()
+                self.thought_bus.subscribe("*", self._on_thought_event)
+                logger.info("📡 ThoughtBus: CONNECTED")
+            except Exception as e:
+                logger.warning(f"📡 ThoughtBus init failed: {e}")
+        
         # Setup web app
         self.app = web.Application()
         self.app.router.add_get('/', self.handle_index)
@@ -1732,6 +2714,23 @@ class AureonProDashboard:
         self.app.router.add_get('/api/ocean', self.handle_ocean)
         self.app.router.add_get('/health', self.handle_health)
         self.app.router.add_get('/api/status', self.handle_status)  # Diagnostic endpoint
+        # ⚡ NEW ENDPOINTS
+        self.app.router.add_get('/api/v11', self.handle_v11)  # V11 Power Station
+        self.app.router.add_get('/api/sentiment', self.handle_sentiment)  # Fear & Greed
+        self.app.router.add_get('/api/thoughts', self.handle_thoughts)  # ThoughtBus events
+    
+    def _on_thought_event(self, thought):
+        """Handle incoming thought events from ThoughtBus."""
+        try:
+            event = {
+                'timestamp': datetime.now().isoformat(),
+                'topic': thought.topic if hasattr(thought, 'topic') else 'unknown',
+                'source': thought.source if hasattr(thought, 'source') else 'unknown',
+                'message': str(thought.payload if hasattr(thought, 'payload') else thought)[:200]
+            }
+            self.thought_events.append(event)
+        except Exception:
+            pass
     
     async def handle_status(self, request):
         """Diagnostic status endpoint showing what's working and what's not."""
@@ -1853,6 +2852,7 @@ class AureonProDashboard:
     
     async def handle_portfolio(self, request):
         # Fetch real portfolio data
+        self.logger.info("📊 HANDLE_PORTFOLIO: Called")
         await self.refresh_portfolio()
         return web.json_response(self.portfolio)
     
@@ -2011,6 +3011,30 @@ class AureonProDashboard:
         """Return ocean scanner data."""
         return web.json_response(self.ocean_data)
     
+    # ═══════════════════════════════════════════════════════════════════════════════
+    # ⚡ V11 POWER STATION API
+    # ═══════════════════════════════════════════════════════════════════════════════
+    async def handle_v11(self, request):
+        """Return V11 Power Station grid status."""
+        return web.json_response(self.v11_data)
+    
+    # ═══════════════════════════════════════════════════════════════════════════════
+    # 🌐 MARKET SENTIMENT API (Fear & Greed, Open Source Data)
+    # ═══════════════════════════════════════════════════════════════════════════════
+    async def handle_sentiment(self, request):
+        """Return market sentiment data."""
+        return web.json_response(self.market_sentiment)
+    
+    # ═══════════════════════════════════════════════════════════════════════════════
+    # 📡 THOUGHTBUS EVENTS API
+    # ═══════════════════════════════════════════════════════════════════════════════
+    async def handle_thoughts(self, request):
+        """Return recent ThoughtBus events."""
+        return web.json_response({
+            'events': list(self.thought_events),
+            'count': len(self.thought_events)
+        })
+    
     async def broadcast(self, message: Dict):
         """Broadcast to all connected clients."""
         if not self.clients:
@@ -2063,12 +3087,263 @@ class AureonProDashboard:
             
             await asyncio.sleep(30)  # Scan every 30 seconds
     
-    async def refresh_portfolio(self):
-        """Fetch real portfolio data from exchanges with timeout protection."""
+    # ═══════════════════════════════════════════════════════════════════════════════
+    # ⚡ V11 POWER STATION DATA LOOP
+    # ═══════════════════════════════════════════════════════════════════════════════
+    async def v11_data_loop(self):
+        """Periodically scan V11 Power Grid and broadcast status."""
+        await asyncio.sleep(5)  # Wait for init
+        
+        while True:
+            try:
+                if self.v11_station and V11_AVAILABLE:
+                    # Scan the power grid (sync function, run in thread)
+                    grid_state = await asyncio.to_thread(self.v11_station.scan_power_grid)
+                    
+                    if grid_state:
+                        self.v11_data = {
+                            'total_nodes': grid_state.total_nodes,
+                            'generating_nodes': grid_state.generating_nodes,
+                            'hibernating_nodes': grid_state.hibernating_nodes,
+                            'consuming_nodes': grid_state.consuming_nodes,
+                            'total_grid_value': round(grid_state.total_grid_value, 2),
+                            'total_entry_cost': round(grid_state.total_entry_cost, 2),
+                            'total_unrealized_pnl': round(grid_state.total_unrealized_pnl, 2),
+                            'total_siphon_capacity': round(grid_state.total_siphon_capacity, 2),
+                            'reserve_balance': round(grid_state.reserve_balance, 2),
+                            'siphons_session': grid_state.siphons_this_session,
+                            'energy_siphoned': round(grid_state.energy_siphoned_session, 2),
+                            'last_scan': datetime.now().isoformat()
+                        }
+                        
+                        # Broadcast to clients
+                        await self.broadcast({
+                            'type': 'v11_update',
+                            'data': self.v11_data
+                        })
+                        
+                        gen = self.v11_data['generating_nodes']
+                        tot = self.v11_data['total_nodes']
+                        siphon = self.v11_data['total_siphon_capacity']
+                        self.logger.info(f"⚡ V11: {gen}/{tot} generating, ${siphon:,.2f} siphon capacity")
+            except Exception as e:
+                self.logger.error(f"❌ V11 data loop error: {e}")
+            
+            await asyncio.sleep(60)  # Scan every 60 seconds
+    
+    # ═══════════════════════════════════════════════════════════════════════════════
+    # 🌐 MARKET SENTIMENT DATA LOOP (Fear & Greed)
+    # ═══════════════════════════════════════════════════════════════════════════════
+    async def sentiment_data_loop(self):
+        """Periodically fetch market sentiment data (Fear & Greed Index)."""
+        await asyncio.sleep(8)  # Wait for init
+        
+        while True:
+            try:
+                # Try to fetch Fear & Greed Index from Alternative.me API (free, no key needed)
+                async with aiohttp.ClientSession() as session:
+                    async with session.get(
+                        'https://api.alternative.me/fng/',
+                        timeout=aiohttp.ClientTimeout(total=10)
+                    ) as resp:
+                        if resp.status == 200:
+                            data = await resp.json()
+                            if 'data' in data and len(data['data']) > 0:
+                                fng = data['data'][0]
+                                self.market_sentiment['fear_greed_index'] = int(fng.get('value', 50))
+                                self.market_sentiment['fear_greed_label'] = fng.get('value_classification', 'Neutral')
+                                self.market_sentiment['last_update'] = datetime.now().isoformat()
+                
+                # Try to get BTC dominance from CoinGecko (free API)
+                async with aiohttp.ClientSession() as session:
+                    async with session.get(
+                        'https://api.coingecko.com/api/v3/global',
+                        timeout=aiohttp.ClientTimeout(total=10)
+                    ) as resp:
+                        if resp.status == 200:
+                            data = await resp.json()
+                            if 'data' in data:
+                                global_data = data['data']
+                                self.market_sentiment['btc_dominance'] = round(
+                                    global_data.get('market_cap_percentage', {}).get('btc', 0), 2
+                                )
+                                self.market_sentiment['total_market_cap'] = round(
+                                    global_data.get('total_market_cap', {}).get('usd', 0) / 1e12, 3  # In trillions
+                                )
+                
+                # Broadcast to clients
+                await self.broadcast({
+                    'type': 'sentiment_update',
+                    'data': self.market_sentiment
+                })
+                
+                fg = self.market_sentiment['fear_greed_index']
+                label = self.market_sentiment['fear_greed_label']
+                self.logger.info(f"🌐 Sentiment: Fear & Greed {fg} ({label})")
+                
+            except Exception as e:
+                self.logger.error(f"❌ Sentiment data loop error: {e}")
+            
+            await asyncio.sleep(300)  # Every 5 minutes (API rate limits)
+    
+    async def _fetch_live_prices_for_symbols(self, symbols: list) -> dict:
+        """Fetch LIVE prices from FREE public APIs (CoinGecko, Binance public, Kraken public).
+        
+        This is used when we have cost basis data but no live API access (e.g., Binance IP ban).
+        Returns {symbol: price} dict with REAL current market prices.
+        """
+        print(f"💰 _fetch_live_prices_for_symbols called with {len(symbols)} symbols")  # DEBUG
+        
+        # Check cache first
+        now = time.time()
+        if hasattr(self, '_price_cache') and hasattr(self, '_price_cache_time'):
+            if now - self._price_cache_time < 300:  # 5 minutes
+                cached_prices = {sym: self._price_cache.get(sym) for sym in symbols if sym in self._price_cache}
+                if len(cached_prices) > 0:
+                    self.logger.info(f"💰 Using cached prices for {len(cached_prices)}/{len(symbols)} symbols")
+                    return cached_prices
+        
+        prices = {}
+        
+        # Map common trading symbols to CoinGecko IDs
+        symbol_to_coingecko = {
+            'BTC': 'bitcoin', 'ETH': 'ethereum', 'SOL': 'solana', 'BNB': 'binancecoin',
+            'XRP': 'ripple', 'ADA': 'cardano', 'DOGE': 'dogecoin', 'AVAX': 'avalanche-2',
+            'DOT': 'polkadot', 'LINK': 'chainlink', 'MATIC': 'matic-network', 'ATOM': 'cosmos',
+            'UNI': 'uniswap', 'LTC': 'litecoin', 'NEAR': 'near', 'TRX': 'tron',
+            'SHIB': 'shiba-inu', 'APT': 'aptos', 'ARB': 'arbitrum', 'OP': 'optimism',
+            'SUI': 'sui', 'PEPE': 'pepe', 'WIF': 'dogwifhat', 'BONK': 'bonk',
+            'FARTCOIN': 'fartcoin', 'TRUMP': 'maga', 'MELANIA': 'melania-meme',
+            'INJ': 'injective-protocol', 'FTM': 'fantom', 'RENDER': 'render-token',
+            'TAO': 'bittensor', 'FET': 'fetch-ai', 'AGIX': 'singularitynet',
+            'IMX': 'immutable-x', 'SEI': 'sei-network', 'TIA': 'celestia',
+        }
+        
+        # Extract base assets from symbols (remove USDT, USDC, USD, FDUSD suffixes)
+        base_assets = set()
+        symbol_map = {}  # Map base asset back to original symbols
+        for sym in symbols:
+            base = sym.replace('USDT', '').replace('USDC', '').replace('FDUSD', '').replace('USD', '').replace('/USD', '')
+            base_assets.add(base)
+            if base not in symbol_map:
+                symbol_map[base] = []
+            symbol_map[base].append(sym)
+        
+        # 1. Try CoinGecko (free, no API key needed)
         try:
-            self.logger.info("🔄 Starting portfolio refresh...")
+            coingecko_ids = [symbol_to_coingecko.get(base, base.lower()) for base in base_assets]
+            ids_str = ','.join(set(coingecko_ids))
+            
+            async with aiohttp.ClientSession() as session:
+                async with session.get(
+                    f'https://api.coingecko.com/api/v3/simple/price?ids={ids_str}&vs_currencies=usd',
+                    timeout=aiohttp.ClientTimeout(total=5)
+                ) as resp:
+                    if resp.status == 200:
+                        data = await resp.json()
+                        for base, cg_id in symbol_to_coingecko.items():
+                            if cg_id in data and 'usd' in data[cg_id]:
+                                price = data[cg_id]['usd']
+                                # Apply to all symbols with this base asset
+                                for sym in symbol_map.get(base, []):
+                                    prices[sym] = price
+                        self.logger.info(f"💰 CoinGecko: Got {len(prices)} live prices")
+        except Exception as e:
+            self.logger.info(f"CoinGecko error: {e}")
+        
+        # 2. Fill gaps with Binance public API (no auth needed)
+        missing = [s for s in symbols if s not in prices]
+        if missing:
+            try:
+                async with aiohttp.ClientSession() as session:
+                    async with session.get(
+                        'https://api.binance.com/api/v3/ticker/price',
+                        timeout=aiohttp.ClientTimeout(total=5)
+                    ) as resp:
+                        if resp.status == 200:
+                            data = await resp.json()
+                            binance_prices = {p['symbol']: float(p['price']) for p in data}
+                            for sym in missing:
+                                # Try exact match, then with USDT suffix
+                                if sym in binance_prices:
+                                    prices[sym] = binance_prices[sym]
+                                elif sym + 'USDT' in binance_prices:
+                                    prices[sym] = binance_prices[sym + 'USDT']
+                                elif sym.replace('USD', 'USDT') in binance_prices:
+                                    prices[sym] = binance_prices[sym.replace('USD', 'USDT')]
+                            self.logger.info(f"💰 Binance public: Filled {len([s for s in missing if s in prices])} more prices")
+            except Exception as e:
+                self.logger.info(f"Binance public error: {e}")
+        
+        # 3. Fill remaining gaps with Kraken public API
+        still_missing = [s for s in symbols if s not in prices]
+        if still_missing:
+            try:
+                # Kraken uses different symbol format (XXBTZUSD, XETHZUSD, etc.)
+                kraken_map = {
+                    'BTC': 'XXBTZUSD', 'ETH': 'XETHZUSD', 'SOL': 'SOLUSD', 'XRP': 'XXRPZUSD',
+                    'ADA': 'ADAUSD', 'DOT': 'DOTUSD', 'ATOM': 'ATOMUSD', 'LINK': 'LINKUSD',
+                    'LTC': 'XLTCZUSD', 'XMR': 'XXMRZUSD', 'ZEC': 'XZECZUSD', 'ETC': 'XETCZUSD',
+                    'REP': 'XREPZUSD', 'GNO': 'GNOUSD', 'MLN': 'XMLEZUSD', 'ICN': 'XICNZUSD',
+                    'DASH': 'DASHUSD', 'XEM': 'XEMUSD', 'GNT': 'XGNTZUSD', 'STORJ': 'STORJUSD',
+                    'ANT': 'XANTZUSD', 'BAT': 'BATUSD', 'ZRX': 'ZRXUSD', 'OMG': 'OMGUSD',
+                    'QTUM': 'QTUMUSD', 'XTZ': 'XTZUSD', 'EOS': 'EOSUSD', 'LSK': 'LSKUSD',
+                    'WAVES': 'WAVESUSD', 'STR': 'STRUSD', 'XLM': 'XXLMZUSD', 'BTG': 'BTGUSD',
+                    'TRX': 'TRXUSD', 'ADA': 'ADAUSD', 'BSV': 'BSVUSD', 'XRP': 'XXRPZUSD',
+                }
+
+                # Also try direct symbol lookups for some
+                pairs = []
+                for sym in still_missing:
+                    base = sym.replace('USDT', '').replace('USDC', '').replace('FDUSD', '').replace('USD', '').replace('/USD', '')
+                    if base in kraken_map:
+                        pairs.append(kraken_map[base])
+                    # Also try some direct formats
+                    elif sym.endswith('USD'):
+                        pairs.append(sym)
+
+                if pairs:
+                    pairs_str = ','.join(set(pairs))  # Remove duplicates
+                    async with aiohttp.ClientSession() as session:
+                        async with session.get(
+                            f'https://api.kraken.com/0/public/Ticker?pair={pairs_str}',
+                            timeout=aiohttp.ClientTimeout(total=5)
+                        ) as resp:
+                            if resp.status == 200:
+                                data = await resp.json()
+                                result = data.get('result', {})
+                                filled = 0
+                                for kraken_pair, info in result.items():
+                                    price = float(info.get('c', [0])[0])  # Last trade price
+                                    # Map back to our symbols
+                                    for base, kp in kraken_map.items():
+                                        if kraken_pair == kp or kraken_pair.startswith(base):
+                                            for sym in symbol_map.get(base, []):
+                                                if sym not in prices:
+                                                    prices[sym] = price
+                                                    filled += 1
+                                                    break
+                                self.logger.info(f"💰 Kraken public: Filled {filled} more prices")
+            except Exception as e:
+                self.logger.info(f"Kraken public error: {e}")
+        
+        # Cache the results
+        self._price_cache = prices.copy()
+        self._price_cache_time = time.time()
+        
+        return prices
+    
+    async def refresh_portfolio(self):
+        """Fetch real portfolio data from ALL exchanges with caching."""
+        self.logger.info("🔄 REFRESH_PORTFOLIO: Starting portfolio refresh")
+        try:
+            self.logger.info("🔄 Starting portfolio refresh (ALL EXCHANGES)...")
             state_dir = os.getenv("AUREON_STATE_DIR", ".")
             snapshot_path = os.path.join(state_dir, "dashboard_snapshot.json")
+            
+            # CACHE: Keep previous positions if fetch fails
+            if not hasattr(self, '_cached_positions'):
+                self._cached_positions = {'binance': [], 'alpaca': [], 'kraken': []}
             
             # Try to use live_position_viewer for real data
             try:
@@ -2078,29 +3353,53 @@ class AureonProDashboard:
                 total_value = 0
                 total_cost = 0
                 
-                # Fetch all positions in parallel using gather
+                # Fetch ALL positions in parallel - Binance, Alpaca, AND Kraken
                 async def get_bin_pos():
                     try:
-                        return await asyncio.wait_for(
+                        result = await asyncio.wait_for(
                             asyncio.to_thread(get_binance_positions),
-                            timeout=3.0
+                            timeout=5.0
                         )
+                        if result:
+                            self._cached_positions['binance'] = result
+                        return result or self._cached_positions.get('binance', [])
                     except (asyncio.TimeoutError, Exception) as e:
-                        self.logger.warning(f"⚠️  Binance fetch failed: {e}")
-                        return []
+                        self.logger.warning(f"⚠️  Binance fetch failed (using cache): {e}")
+                        return self._cached_positions.get('binance', [])
                 
                 async def get_alp_pos():
                     try:
-                        return await asyncio.wait_for(
+                        result = await asyncio.wait_for(
                             asyncio.to_thread(get_alpaca_positions),
-                            timeout=3.0
+                            timeout=5.0
                         )
+                        if result:
+                            self._cached_positions['alpaca'] = result
+                        return result or self._cached_positions.get('alpaca', [])
                     except (asyncio.TimeoutError, Exception) as e:
-                        self.logger.warning(f"⚠️  Alpaca fetch failed: {e}")
-                        return []
+                        self.logger.warning(f"⚠️  Alpaca fetch failed (using cache): {e}")
+                        return self._cached_positions.get('alpaca', [])
                 
-                # Gather both in parallel (not sequentially)
-                binance_pos, alpaca_pos = await asyncio.gather(get_bin_pos(), get_alp_pos())
+                async def get_kraken_pos():
+                    """Fetch Kraken positions from state file."""
+                    try:
+                        kraken_state_path = os.path.join(state_dir, "aureon_kraken_state.json")
+                        if os.path.exists(kraken_state_path):
+                            with open(kraken_state_path, "r") as f:
+                                kraken_data = json.load(f)
+                            positions = kraken_data.get("positions", [])
+                            if positions:
+                                self._cached_positions['kraken'] = positions
+                            return positions or self._cached_positions.get('kraken', [])
+                        return self._cached_positions.get('kraken', [])
+                    except Exception as e:
+                        self.logger.warning(f"⚠️  Kraken fetch failed (using cache): {e}")
+                        return self._cached_positions.get('kraken', [])
+                
+                # Gather ALL THREE in parallel
+                binance_pos, alpaca_pos, kraken_pos = await asyncio.gather(
+                    get_bin_pos(), get_alp_pos(), get_kraken_pos()
+                )
                 
                 # Process Binance positions
                 if binance_pos:
@@ -2137,6 +3436,102 @@ class AureonProDashboard:
                             })
                             total_value += pos.get('current_value', 0)
                             total_cost += pos.get('cost_basis', 0)
+                
+                # Process Kraken positions
+                if kraken_pos:
+                    self.logger.info(f"📊 Kraken: Fetched {len(kraken_pos)} positions")
+                    for pos in kraken_pos:
+                        current_val = pos.get('current_value', 0) or (pos.get('quantity', 0) * pos.get('current_price', 0))
+                        if current_val > 0:
+                            cost = pos.get('cost_basis', 0) or (pos.get('quantity', 0) * pos.get('avg_cost', 0))
+                            pnl = current_val - cost
+                            pnl_pct = (pnl / cost * 100) if cost > 0 else 0
+                            positions.append({
+                                'symbol': pos.get('symbol', pos.get('pair', 'UNKNOWN')),
+                                'quantity': pos.get('quantity', pos.get('vol', 0)),
+                                'avgCost': pos.get('avg_cost', pos.get('cost', 0)),
+                                'currentPrice': pos.get('current_price', 0),
+                                'currentValue': current_val,
+                                'unrealizedPnl': pnl,
+                                'pnlPercent': pnl_pct,
+                                'exchange': 'kraken'
+                            })
+                            total_value += current_val
+                            total_cost += cost
+                
+                # Log summary
+                self.logger.info(f"📊 TOTAL: {len(positions)} positions across ALL exchanges")
+                
+                # 🛡️ VALIDATE: Check against cost_basis_history.json to ensure data integrity
+                # If live_position_viewer gives wrong data (e.g., cumulative trades vs current positions),
+                # fall back to the known good cost_basis_history.json data
+                try:
+                    cost_basis_path = os.path.join(state_dir, "cost_basis_history.json")
+                    if os.path.exists(cost_basis_path):
+                        with open(cost_basis_path, "r") as f:
+                            cost_basis_data = json.load(f)
+                        
+                        fallback_pos = cost_basis_data.get("positions", {}) or {}
+                        if not fallback_pos:
+                            fallback_pos = cost_basis_data
+                        
+                        # Count positions by exchange in both datasets
+                        live_by_exchange = {}
+                        for pos in positions:
+                            exch = pos.get('exchange', 'unknown')
+                            live_by_exchange[exch] = live_by_exchange.get(exch, 0) + 1
+                        
+                        cost_basis_by_exchange = {}
+                        for sym, pos_data in fallback_pos.items():
+                            if isinstance(pos_data, dict) and pos_data.get('total_cost', 0) > 0.01:
+                                exch = pos_data.get('exchange', 'unknown')
+                                cost_basis_by_exchange[exch] = cost_basis_by_exchange.get(exch, 0) + 1
+                        
+                        # Check for data inconsistency (live data much smaller than expected)
+                        total_expected = len([p for p in fallback_pos.values() if isinstance(p, dict) and p.get('total_cost', 0) > 0.01])
+                        total_live = len(positions)
+                        
+                        self.logger.info(f"🛡️ Validation: Live data has {total_live} positions, cost_basis has {total_expected}")
+                        
+                        # If live data is significantly less than expected, or no positions at all, use cost_basis
+                        if total_live < total_expected * 0.5 or total_live < 3:
+                            self.logger.warning(f"⚠️ Live position data appears incomplete ({total_live} vs {total_expected} expected). Using cost_basis_history.json")
+                            positions = []  # Clear and rebuild from cost_basis
+                            
+                            # Rebuild positions from cost_basis_history.json
+                            sorted_positions = sorted(
+                                [(k, v) for k, v in fallback_pos.items() 
+                                 if isinstance(v, dict) and v.get('total_cost', 0) > 0.01],
+                                key=lambda x: x[1].get('total_cost', 0),
+                                reverse=True
+                            )[:20]  # Top 20 by value
+                            
+                            total_value = 0.0
+                            total_cost = 0.0
+                            
+                            for symbol, pos_data in sorted_positions:
+                                qty = float(pos_data.get('total_quantity', 0) or 0)
+                                avg_entry = float(pos_data.get('avg_entry_price', 0) or 0)
+                                cost_basis = float(pos_data.get('total_cost', 0) or qty * avg_entry)
+                                exchange = pos_data.get('exchange', 'unknown')
+                                
+                                positions.append({
+                                    'symbol': symbol,
+                                    'quantity': qty,
+                                    'avgCost': avg_entry,
+                                    'currentPrice': avg_entry,  # Will be updated with live prices
+                                    'currentValue': cost_basis,  # Will be updated with live prices
+                                    'unrealizedPnl': 0,  # Will be updated with live prices
+                                    'pnlPercent': 0,  # Will be updated with live prices
+                                    'exchange': exchange
+                                })
+                                total_value += cost_basis
+                                total_cost += cost_basis
+                            
+                            self.logger.info(f"✅ Switched to cost_basis_history.json: {len(positions)} verified positions")
+                
+                except Exception as e:
+                    self.logger.warning(f"⚠️ Position validation failed: {e}")
                 
                 # Sort by value descending
                 positions.sort(key=lambda x: x.get('currentValue', 0), reverse=True)
@@ -2180,34 +3575,70 @@ class AureonProDashboard:
                     self.logger.debug(f"Balance load error: {e}")
                     new_balances = self.exchange_balances
                 
-                # ATOMIC UPDATE: Set everything at once
-                self.portfolio = {
-                    'totalValue': total_value,
-                    'costBasis': total_cost,
-                    'unrealizedPnl': total_value - total_cost,
-                    'todayPnl': 0,  # Would need historical data
-                    'positions': positions[:20]  # Top 20
-                }
-                self.exchange_balances = new_balances
+                # FALLBACK FIRST: Check if we need to load from cost_basis_history.json (273 REAL positions!)
+                # This MUST happen BEFORE the atomic update so we use the right data
+                if not positions or len(positions) < 5:
+                    try:
+                        cost_basis_path = os.path.join(state_dir, "cost_basis_history.json")
+                        if os.path.exists(cost_basis_path):
+                            with open(cost_basis_path, "r") as f:
+                                cost_basis_data = json.load(f)
+                            
+                            # Extract positions from the nested structure
+                            fallback_pos = cost_basis_data.get("positions", {}) or {}
+                            if not fallback_pos:
+                                fallback_pos = cost_basis_data  # Sometimes it's flat
+                            
+                            self.logger.info(f"📚 Fallback: Loading from cost_basis_history.json with {len(fallback_pos)} total positions")
+                            
+                            # Sort by total_cost (highest value positions first)
+                            sorted_positions = sorted(
+                                [(k, v) for k, v in fallback_pos.items() 
+                                 if isinstance(v, dict) and v.get('total_cost', 0) > 0.01],
+                                key=lambda x: x[1].get('total_cost', 0),
+                                reverse=True
+                            )[:20]  # Top 20 by value
+                            
+                            # 🆕 FETCH LIVE PRICES from free APIs (CoinGecko, Binance public, Kraken public)
+                            # Cost basis has BUY prices, but we need CURRENT prices for real values!
+                            symbols_to_price = [sym for sym, _ in sorted_positions]
+                            live_prices = await self._fetch_live_prices_for_symbols(symbols_to_price)
+                            self.logger.info(f"💰 Fetched {len(live_prices)} LIVE prices for positions")
+                            
+                            positions = []
+                            total_value = 0.0
+                            total_cost = 0.0
+                            
+                            for symbol, pos_data in sorted_positions:
+                                qty = float(pos_data.get('total_quantity', 0) or 0)
+                                avg_entry = float(pos_data.get('avg_entry_price', 0) or 0)
+                                cost_basis = float(pos_data.get('total_cost', 0) or qty * avg_entry)
+                                exchange = pos_data.get('exchange', 'unknown')
+                                
+                                # Use LIVE price if available, else fall back to entry price
+                                current_price = live_prices.get(symbol, avg_entry)
+                                current_value = qty * current_price
+                                pnl = current_value - cost_basis
+                                pnl_pct = (pnl / cost_basis * 100) if cost_basis > 0 else 0
+                                
+                                positions.append({
+                                    'symbol': symbol,
+                                    'quantity': qty,
+                                    'avgCost': avg_entry,
+                                    'currentPrice': current_price,
+                                    'currentValue': current_value,
+                                    'unrealizedPnl': pnl,
+                                    'pnlPercent': pnl_pct,
+                                    'exchange': exchange
+                                })
+                                total_value += current_value
+                                total_cost += cost_basis
+                            
+                            self.logger.info(f"📚 Loaded {len(positions)} positions with LIVE prices (Binance/Kraken/Alpaca/Capital)")
+                    except Exception as e:
+                        self.logger.warning(f"⚠️ Cost basis fallback failed: {e}")
                 
-                # Update harmonic field with positions
-                if self.harmonic_field:
-                    nodes_added = 0
-                    for pos in positions:
-                        try:
-                            self.harmonic_field.add_or_update_node(
-                                exchange=pos.get('exchange', 'unknown'),
-                                symbol=pos.get('symbol', 'UNKNOWN'),
-                                current_price=pos.get('currentPrice', 0),
-                                entry_price=pos.get('avgCost', 0),
-                                quantity=pos.get('quantity', 0)
-                            )
-                            nodes_added += 1
-                        except Exception as e:
-                            self.logger.warning(f"⚠️ Harmonic field update error for {pos.get('symbol')}: {e}")
-                    self.logger.info(f"🔩 Harmonic field: {nodes_added} nodes updated")
-                
-                # Fallback to state snapshot if live positions are empty
+                # Final fallback to state snapshot if STILL empty
                 if not positions:
                     try:
                         if os.path.exists(snapshot_path):
@@ -2236,13 +3667,6 @@ class AureonProDashboard:
                                         "exchange": pos.get("exchange", "unknown"),
                                     })
                                 positions.sort(key=lambda x: x.get("currentValue", 0), reverse=True)
-                                self.portfolio = {
-                                    "totalValue": total_value,
-                                    "costBasis": total_cost,
-                                    "unrealizedPnl": total_value - total_cost,
-                                    "todayPnl": 0,
-                                    "positions": positions[:20],
-                                }
                                 self.logger.info(f"✅ Portfolio (snapshot fallback): {len(positions)} positions, ${total_value:,.2f} value")
                             else:
                                 self.logger.info("✅ Portfolio: 0 positions (snapshot empty)")
@@ -2250,8 +3674,61 @@ class AureonProDashboard:
                             self.logger.info("✅ Portfolio: 0 positions (no snapshot)")
                     except Exception as e:
                         self.logger.warning(f"⚠️  Snapshot fallback failed: {e}")
-                else:
-                    self.logger.info(f"✅ Portfolio: {len(positions)} positions, ${total_value:,.2f} value | Balances: Binance ${new_balances['binance']:,.2f}, Kraken ${new_balances['kraken']:,.2f}, Alpaca ${new_balances['alpaca']:,.2f}")
+                
+                # 🆕 FETCH LIVE PRICES for ALL positions to ensure real current values
+                # Even if live_position_viewer worked, it might be using cached/fallback prices
+                if positions:
+                    self.logger.info(f"🔄 Starting live price fetch for {len(positions)} positions")
+                    symbols_to_price = list(set(p.get('symbol', '') for p in positions if p.get('symbol')))
+                    self.logger.info(f"🔄 Fetching prices for {len(symbols_to_price)} symbols: {symbols_to_price[:5]}...")
+                    live_prices = await self._fetch_live_prices_for_symbols(symbols_to_price)
+                    self.logger.info(f"💰 Fetched {len(live_prices)} LIVE prices: {list(live_prices.keys())[:5]}...")
+                    
+                    # Update all positions with live prices where available
+                    updated = 0
+                    for pos in positions:
+                        symbol = pos.get('symbol', '')
+                        if symbol in live_prices:
+                            old_price = pos.get('currentPrice', 0)
+                            new_price = live_prices[symbol]
+                            if abs(new_price - old_price) > 0.001:  # Only update if significantly different
+                                pos['currentPrice'] = new_price
+                                qty = pos.get('quantity', 0)
+                                pos['currentValue'] = qty * new_price
+                                cost_basis = pos.get('avgCost', 0) * qty
+                                pos['unrealizedPnl'] = pos['currentValue'] - cost_basis
+                                pos['pnlPercent'] = (pos['unrealizedPnl'] / cost_basis * 100) if cost_basis > 0 else 0
+                                updated += 1
+                    self.logger.info(f"💰 Updated {updated} positions with live prices")
+                
+                # NOW do the ATOMIC UPDATE with whatever positions we have (could be from API, cost_basis, or snapshot)
+                self.portfolio = {
+                    'totalValue': total_value,
+                    'costBasis': total_cost,
+                    'unrealizedPnl': total_value - total_cost,
+                    'todayPnl': 0,
+                    'positions': positions[:20]
+                }
+                self.exchange_balances = new_balances
+                
+                # Update harmonic field with positions
+                if self.harmonic_field:
+                    nodes_added = 0
+                    for pos in positions[:20]:
+                        try:
+                            self.harmonic_field.add_or_update_node(
+                                exchange=pos.get('exchange', 'unknown'),
+                                symbol=pos.get('symbol', 'UNKNOWN'),
+                                current_price=pos.get('currentPrice', 0),
+                                entry_price=pos.get('avgCost', 0),
+                                quantity=pos.get('quantity', 0)
+                            )
+                            nodes_added += 1
+                        except Exception as e:
+                            self.logger.warning(f"⚠️ Harmonic field update error for {pos.get('symbol')}: {e}")
+                    self.logger.info(f"🔩 Harmonic field: {nodes_added} nodes updated")
+                
+                self.logger.info(f"✅ Portfolio FINAL: {len(positions)} positions, ${total_value:,.2f} value | Balances: Binance ${new_balances['binance']:,.2f}, Kraken ${new_balances['kraken']:,.2f}, Alpaca ${new_balances['alpaca']:,.2f}")
                 
                 
             except ImportError:
@@ -2659,8 +4136,8 @@ class AureonProDashboard:
     async def data_refresh_loop(self):
         """Periodically refresh data and broadcast updates."""
         while True:
-            # Poll every 3 seconds for near-real-time updates (WebSocket disabled)
-            await asyncio.sleep(3)
+            # Poll every 10 seconds - buffered updates prevent flickering
+            await asyncio.sleep(10)
             
             try:
                 self.logger.info("🔄 [Data Refresh] Starting portfolio and price refresh...")
@@ -3046,6 +4523,15 @@ class AureonProDashboard:
         asyncio.create_task(self.harmonic_field_loop())
         if self.ocean_scanner:
             asyncio.create_task(self.ocean_data_loop())
+        
+        # ⚡ V11 POWER STATION
+        if self.v11_station:
+            asyncio.create_task(self.v11_data_loop())
+            self.logger.info("⚡ V11 Power Station data loop: STARTED")
+        
+        # 🌐 MARKET SENTIMENT (Fear & Greed Index)
+        asyncio.create_task(self.sentiment_data_loop())
+        self.logger.info("🌐 Market Sentiment data loop: STARTED")
         
         self.logger.info("✅ All systems online, dashboard ready")
         

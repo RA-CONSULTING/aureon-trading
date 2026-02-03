@@ -1,0 +1,4823 @@
+{
+  "stats": {
+    "starting_capital": 10.0,
+    "ending_capital": 19.351338573117875,
+    "total_pnl": 10.811,
+    "total_pnl_pct": 93.51338573117876,
+    "total_trades": 569,
+    "winning_trades": 569,
+    "losing_trades": 0,
+    "win_rate": 100.0,
+    "avg_win": 0.019,
+    "avg_loss": 0,
+    "largest_win": 0.019,
+    "largest_loss": 0,
+    "max_drawdown": 0,
+    "max_drawdown_pct": 0.0,
+    "start_date": "2025-02-03T15:00:00+00:00",
+    "end_date": "2026-02-03T15:34:11+00:00",
+    "trading_days": 365,
+    "trades_per_day": 1.558904109589041,
+    "best_month": "2025-02",
+    "best_month_pnl": 6.453908027690744,
+    "worst_month": "2025-12",
+    "worst_month_pnl": 0.02008273155983923,
+    "ira_trades": 9,
+    "apache_trades": 2,
+    "sun_tzu_vetoes": 0,
+    "ghost_dance_ceremonies": 1,
+    "historical_pattern_avoids": 0
+  },
+  "trades": [
+    {
+      "timestamp": "2026-02-03T15:34:11+00:00",
+      "symbol": "POWER_SIPHON",
+      "side": "SIPHON",
+      "entry_price": 1,
+      "exit_price": 1.02,
+      "quantity": 1,
+      "entry_cost": 1,
+      "exit_value": 1.019,
+      "fees": 0.001,
+      "pnl": 0.019,
+      "pnl_pct": 1.9,
+      "tactical_philosophy": "POWER_STATION",
+      "combat_mode": "SIPHON",
+      "battle_readiness": 0.8,
+      "active_frequency": 528,
+      "ancestors_invoked": [],
+      "historical_pattern": "none",
+      "danger_level": 0,
+      "ira_stealth": 0.8,
+      "apache_patience": 0.9,
+      "sun_tzu_veto_available": false,
+      "wolf_readiness": 0.7,
+      "counter_phase": 180
+    },
+    {
+      "timestamp": "2026-02-03T15:34:11+00:00",
+      "symbol": "POWER_SIPHON",
+      "side": "SIPHON",
+      "entry_price": 1,
+      "exit_price": 1.02,
+      "quantity": 1,
+      "entry_cost": 1,
+      "exit_value": 1.019,
+      "fees": 0.001,
+      "pnl": 0.019,
+      "pnl_pct": 1.9,
+      "tactical_philosophy": "POWER_STATION",
+      "combat_mode": "SIPHON",
+      "battle_readiness": 0.8,
+      "active_frequency": 528,
+      "ancestors_invoked": [],
+      "historical_pattern": "none",
+      "danger_level": 0,
+      "ira_stealth": 0.8,
+      "apache_patience": 0.9,
+      "sun_tzu_veto_available": false,
+      "wolf_readiness": 0.7,
+      "counter_phase": 180
+    },
+    {
+      "timestamp": "2026-02-03T15:34:11+00:00",
+      "symbol": "POWER_SIPHON",
+      "side": "SIPHON",
+      "entry_price": 1,
+      "exit_price": 1.02,
+      "quantity": 1,
+      "entry_cost": 1,
+      "exit_value": 1.019,
+      "fees": 0.001,
+      "pnl": 0.019,
+      "pnl_pct": 1.9,
+      "tactical_philosophy": "POWER_STATION",
+      "combat_mode": "SIPHON",
+      "battle_readiness": 0.8,
+      "active_frequency": 528,
+      "ancestors_invoked": [],
+      "historical_pattern": "none",
+      "danger_level": 0,
+      "ira_stealth": 0.8,
+      "apache_patience": 0.9,
+      "sun_tzu_veto_available": false,
+      "wolf_readiness": 0.7,
+      "counter_phase": 180
+    },
+    {
+      "timestamp": "2026-02-03T15:34:11+00:00",
+      "symbol": "POWER_SIPHON",
+      "side": "SIPHON",
+      "entry_price": 1,
+      "exit_price": 1.02,
+      "quantity": 1,
+      "entry_cost": 1,
+      "exit_value": 1.019,
+      "fees": 0.001,
+      "pnl": 0.019,
+      "pnl_pct": 1.9,
+      "tactical_philosophy": "POWER_STATION",
+      "combat_mode": "SIPHON",
+      "battle_readiness": 0.8,
+      "active_frequency": 528,
+      "ancestors_invoked": [],
+      "historical_pattern": "none",
+      "danger_level": 0,
+      "ira_stealth": 0.8,
+      "apache_patience": 0.9,
+      "sun_tzu_veto_available": false,
+      "wolf_readiness": 0.7,
+      "counter_phase": 180
+    },
+    {
+      "timestamp": "2026-02-03T15:34:11+00:00",
+      "symbol": "POWER_SIPHON",
+      "side": "SIPHON",
+      "entry_price": 1,
+      "exit_price": 1.02,
+      "quantity": 1,
+      "entry_cost": 1,
+      "exit_value": 1.019,
+      "fees": 0.001,
+      "pnl": 0.019,
+      "pnl_pct": 1.9,
+      "tactical_philosophy": "POWER_STATION",
+      "combat_mode": "SIPHON",
+      "battle_readiness": 0.8,
+      "active_frequency": 528,
+      "ancestors_invoked": [],
+      "historical_pattern": "none",
+      "danger_level": 0,
+      "ira_stealth": 0.8,
+      "apache_patience": 0.9,
+      "sun_tzu_veto_available": false,
+      "wolf_readiness": 0.7,
+      "counter_phase": 180
+    },
+    {
+      "timestamp": "2026-02-03T15:34:11+00:00",
+      "symbol": "POWER_SIPHON",
+      "side": "SIPHON",
+      "entry_price": 1,
+      "exit_price": 1.02,
+      "quantity": 1,
+      "entry_cost": 1,
+      "exit_value": 1.019,
+      "fees": 0.001,
+      "pnl": 0.019,
+      "pnl_pct": 1.9,
+      "tactical_philosophy": "POWER_STATION",
+      "combat_mode": "SIPHON",
+      "battle_readiness": 0.8,
+      "active_frequency": 528,
+      "ancestors_invoked": [],
+      "historical_pattern": "none",
+      "danger_level": 0,
+      "ira_stealth": 0.8,
+      "apache_patience": 0.9,
+      "sun_tzu_veto_available": false,
+      "wolf_readiness": 0.7,
+      "counter_phase": 180
+    },
+    {
+      "timestamp": "2026-02-03T15:34:11+00:00",
+      "symbol": "POWER_SIPHON",
+      "side": "SIPHON",
+      "entry_price": 1,
+      "exit_price": 1.02,
+      "quantity": 1,
+      "entry_cost": 1,
+      "exit_value": 1.019,
+      "fees": 0.001,
+      "pnl": 0.019,
+      "pnl_pct": 1.9,
+      "tactical_philosophy": "POWER_STATION",
+      "combat_mode": "SIPHON",
+      "battle_readiness": 0.8,
+      "active_frequency": 528,
+      "ancestors_invoked": [],
+      "historical_pattern": "none",
+      "danger_level": 0,
+      "ira_stealth": 0.8,
+      "apache_patience": 0.9,
+      "sun_tzu_veto_available": false,
+      "wolf_readiness": 0.7,
+      "counter_phase": 180
+    },
+    {
+      "timestamp": "2026-02-03T15:34:11+00:00",
+      "symbol": "POWER_SIPHON",
+      "side": "SIPHON",
+      "entry_price": 1,
+      "exit_price": 1.02,
+      "quantity": 1,
+      "entry_cost": 1,
+      "exit_value": 1.019,
+      "fees": 0.001,
+      "pnl": 0.019,
+      "pnl_pct": 1.9,
+      "tactical_philosophy": "POWER_STATION",
+      "combat_mode": "SIPHON",
+      "battle_readiness": 0.8,
+      "active_frequency": 528,
+      "ancestors_invoked": [],
+      "historical_pattern": "none",
+      "danger_level": 0,
+      "ira_stealth": 0.8,
+      "apache_patience": 0.9,
+      "sun_tzu_veto_available": false,
+      "wolf_readiness": 0.7,
+      "counter_phase": 180
+    },
+    {
+      "timestamp": "2026-02-03T15:34:11+00:00",
+      "symbol": "POWER_SIPHON",
+      "side": "SIPHON",
+      "entry_price": 1,
+      "exit_price": 1.02,
+      "quantity": 1,
+      "entry_cost": 1,
+      "exit_value": 1.019,
+      "fees": 0.001,
+      "pnl": 0.019,
+      "pnl_pct": 1.9,
+      "tactical_philosophy": "POWER_STATION",
+      "combat_mode": "SIPHON",
+      "battle_readiness": 0.8,
+      "active_frequency": 528,
+      "ancestors_invoked": [],
+      "historical_pattern": "none",
+      "danger_level": 0,
+      "ira_stealth": 0.8,
+      "apache_patience": 0.9,
+      "sun_tzu_veto_available": false,
+      "wolf_readiness": 0.7,
+      "counter_phase": 180
+    },
+    {
+      "timestamp": "2026-02-03T15:34:11+00:00",
+      "symbol": "POWER_SIPHON",
+      "side": "SIPHON",
+      "entry_price": 1,
+      "exit_price": 1.02,
+      "quantity": 1,
+      "entry_cost": 1,
+      "exit_value": 1.019,
+      "fees": 0.001,
+      "pnl": 0.019,
+      "pnl_pct": 1.9,
+      "tactical_philosophy": "POWER_STATION",
+      "combat_mode": "SIPHON",
+      "battle_readiness": 0.8,
+      "active_frequency": 528,
+      "ancestors_invoked": [],
+      "historical_pattern": "none",
+      "danger_level": 0,
+      "ira_stealth": 0.8,
+      "apache_patience": 0.9,
+      "sun_tzu_veto_available": false,
+      "wolf_readiness": 0.7,
+      "counter_phase": 180
+    },
+    {
+      "timestamp": "2026-02-03T15:34:11+00:00",
+      "symbol": "POWER_SIPHON",
+      "side": "SIPHON",
+      "entry_price": 1,
+      "exit_price": 1.02,
+      "quantity": 1,
+      "entry_cost": 1,
+      "exit_value": 1.019,
+      "fees": 0.001,
+      "pnl": 0.019,
+      "pnl_pct": 1.9,
+      "tactical_philosophy": "POWER_STATION",
+      "combat_mode": "SIPHON",
+      "battle_readiness": 0.8,
+      "active_frequency": 528,
+      "ancestors_invoked": [],
+      "historical_pattern": "none",
+      "danger_level": 0,
+      "ira_stealth": 0.8,
+      "apache_patience": 0.9,
+      "sun_tzu_veto_available": false,
+      "wolf_readiness": 0.7,
+      "counter_phase": 180
+    },
+    {
+      "timestamp": "2026-02-03T15:34:11+00:00",
+      "symbol": "POWER_SIPHON",
+      "side": "SIPHON",
+      "entry_price": 1,
+      "exit_price": 1.02,
+      "quantity": 1,
+      "entry_cost": 1,
+      "exit_value": 1.019,
+      "fees": 0.001,
+      "pnl": 0.019,
+      "pnl_pct": 1.9,
+      "tactical_philosophy": "POWER_STATION",
+      "combat_mode": "SIPHON",
+      "battle_readiness": 0.8,
+      "active_frequency": 528,
+      "ancestors_invoked": [],
+      "historical_pattern": "none",
+      "danger_level": 0,
+      "ira_stealth": 0.8,
+      "apache_patience": 0.9,
+      "sun_tzu_veto_available": false,
+      "wolf_readiness": 0.7,
+      "counter_phase": 180
+    },
+    {
+      "timestamp": "2026-02-03T15:34:11+00:00",
+      "symbol": "POWER_SIPHON",
+      "side": "SIPHON",
+      "entry_price": 1,
+      "exit_price": 1.02,
+      "quantity": 1,
+      "entry_cost": 1,
+      "exit_value": 1.019,
+      "fees": 0.001,
+      "pnl": 0.019,
+      "pnl_pct": 1.9,
+      "tactical_philosophy": "POWER_STATION",
+      "combat_mode": "SIPHON",
+      "battle_readiness": 0.8,
+      "active_frequency": 528,
+      "ancestors_invoked": [],
+      "historical_pattern": "none",
+      "danger_level": 0,
+      "ira_stealth": 0.8,
+      "apache_patience": 0.9,
+      "sun_tzu_veto_available": false,
+      "wolf_readiness": 0.7,
+      "counter_phase": 180
+    },
+    {
+      "timestamp": "2026-02-03T15:34:11+00:00",
+      "symbol": "POWER_SIPHON",
+      "side": "SIPHON",
+      "entry_price": 1,
+      "exit_price": 1.02,
+      "quantity": 1,
+      "entry_cost": 1,
+      "exit_value": 1.019,
+      "fees": 0.001,
+      "pnl": 0.019,
+      "pnl_pct": 1.9,
+      "tactical_philosophy": "POWER_STATION",
+      "combat_mode": "SIPHON",
+      "battle_readiness": 0.8,
+      "active_frequency": 528,
+      "ancestors_invoked": [],
+      "historical_pattern": "none",
+      "danger_level": 0,
+      "ira_stealth": 0.8,
+      "apache_patience": 0.9,
+      "sun_tzu_veto_available": false,
+      "wolf_readiness": 0.7,
+      "counter_phase": 180
+    },
+    {
+      "timestamp": "2026-02-03T15:34:11+00:00",
+      "symbol": "POWER_SIPHON",
+      "side": "SIPHON",
+      "entry_price": 1,
+      "exit_price": 1.02,
+      "quantity": 1,
+      "entry_cost": 1,
+      "exit_value": 1.019,
+      "fees": 0.001,
+      "pnl": 0.019,
+      "pnl_pct": 1.9,
+      "tactical_philosophy": "POWER_STATION",
+      "combat_mode": "SIPHON",
+      "battle_readiness": 0.8,
+      "active_frequency": 528,
+      "ancestors_invoked": [],
+      "historical_pattern": "none",
+      "danger_level": 0,
+      "ira_stealth": 0.8,
+      "apache_patience": 0.9,
+      "sun_tzu_veto_available": false,
+      "wolf_readiness": 0.7,
+      "counter_phase": 180
+    },
+    {
+      "timestamp": "2026-02-03T15:34:11+00:00",
+      "symbol": "POWER_SIPHON",
+      "side": "SIPHON",
+      "entry_price": 1,
+      "exit_price": 1.02,
+      "quantity": 1,
+      "entry_cost": 1,
+      "exit_value": 1.019,
+      "fees": 0.001,
+      "pnl": 0.019,
+      "pnl_pct": 1.9,
+      "tactical_philosophy": "POWER_STATION",
+      "combat_mode": "SIPHON",
+      "battle_readiness": 0.8,
+      "active_frequency": 528,
+      "ancestors_invoked": [],
+      "historical_pattern": "none",
+      "danger_level": 0,
+      "ira_stealth": 0.8,
+      "apache_patience": 0.9,
+      "sun_tzu_veto_available": false,
+      "wolf_readiness": 0.7,
+      "counter_phase": 180
+    },
+    {
+      "timestamp": "2026-02-03T15:34:11+00:00",
+      "symbol": "POWER_SIPHON",
+      "side": "SIPHON",
+      "entry_price": 1,
+      "exit_price": 1.02,
+      "quantity": 1,
+      "entry_cost": 1,
+      "exit_value": 1.019,
+      "fees": 0.001,
+      "pnl": 0.019,
+      "pnl_pct": 1.9,
+      "tactical_philosophy": "POWER_STATION",
+      "combat_mode": "SIPHON",
+      "battle_readiness": 0.8,
+      "active_frequency": 528,
+      "ancestors_invoked": [],
+      "historical_pattern": "none",
+      "danger_level": 0,
+      "ira_stealth": 0.8,
+      "apache_patience": 0.9,
+      "sun_tzu_veto_available": false,
+      "wolf_readiness": 0.7,
+      "counter_phase": 180
+    },
+    {
+      "timestamp": "2026-02-03T15:34:11+00:00",
+      "symbol": "POWER_SIPHON",
+      "side": "SIPHON",
+      "entry_price": 1,
+      "exit_price": 1.02,
+      "quantity": 1,
+      "entry_cost": 1,
+      "exit_value": 1.019,
+      "fees": 0.001,
+      "pnl": 0.019,
+      "pnl_pct": 1.9,
+      "tactical_philosophy": "POWER_STATION",
+      "combat_mode": "SIPHON",
+      "battle_readiness": 0.8,
+      "active_frequency": 528,
+      "ancestors_invoked": [],
+      "historical_pattern": "none",
+      "danger_level": 0,
+      "ira_stealth": 0.8,
+      "apache_patience": 0.9,
+      "sun_tzu_veto_available": false,
+      "wolf_readiness": 0.7,
+      "counter_phase": 180
+    },
+    {
+      "timestamp": "2026-02-03T15:34:11+00:00",
+      "symbol": "POWER_SIPHON",
+      "side": "SIPHON",
+      "entry_price": 1,
+      "exit_price": 1.02,
+      "quantity": 1,
+      "entry_cost": 1,
+      "exit_value": 1.019,
+      "fees": 0.001,
+      "pnl": 0.019,
+      "pnl_pct": 1.9,
+      "tactical_philosophy": "POWER_STATION",
+      "combat_mode": "SIPHON",
+      "battle_readiness": 0.8,
+      "active_frequency": 528,
+      "ancestors_invoked": [],
+      "historical_pattern": "none",
+      "danger_level": 0,
+      "ira_stealth": 0.8,
+      "apache_patience": 0.9,
+      "sun_tzu_veto_available": false,
+      "wolf_readiness": 0.7,
+      "counter_phase": 180
+    },
+    {
+      "timestamp": "2026-02-03T15:34:11+00:00",
+      "symbol": "POWER_SIPHON",
+      "side": "SIPHON",
+      "entry_price": 1,
+      "exit_price": 1.02,
+      "quantity": 1,
+      "entry_cost": 1,
+      "exit_value": 1.019,
+      "fees": 0.001,
+      "pnl": 0.019,
+      "pnl_pct": 1.9,
+      "tactical_philosophy": "POWER_STATION",
+      "combat_mode": "SIPHON",
+      "battle_readiness": 0.8,
+      "active_frequency": 528,
+      "ancestors_invoked": [],
+      "historical_pattern": "none",
+      "danger_level": 0,
+      "ira_stealth": 0.8,
+      "apache_patience": 0.9,
+      "sun_tzu_veto_available": false,
+      "wolf_readiness": 0.7,
+      "counter_phase": 180
+    },
+    {
+      "timestamp": "2026-02-03T15:34:11+00:00",
+      "symbol": "POWER_SIPHON",
+      "side": "SIPHON",
+      "entry_price": 1,
+      "exit_price": 1.02,
+      "quantity": 1,
+      "entry_cost": 1,
+      "exit_value": 1.019,
+      "fees": 0.001,
+      "pnl": 0.019,
+      "pnl_pct": 1.9,
+      "tactical_philosophy": "POWER_STATION",
+      "combat_mode": "SIPHON",
+      "battle_readiness": 0.8,
+      "active_frequency": 528,
+      "ancestors_invoked": [],
+      "historical_pattern": "none",
+      "danger_level": 0,
+      "ira_stealth": 0.8,
+      "apache_patience": 0.9,
+      "sun_tzu_veto_available": false,
+      "wolf_readiness": 0.7,
+      "counter_phase": 180
+    },
+    {
+      "timestamp": "2026-02-03T15:34:11+00:00",
+      "symbol": "POWER_SIPHON",
+      "side": "SIPHON",
+      "entry_price": 1,
+      "exit_price": 1.02,
+      "quantity": 1,
+      "entry_cost": 1,
+      "exit_value": 1.019,
+      "fees": 0.001,
+      "pnl": 0.019,
+      "pnl_pct": 1.9,
+      "tactical_philosophy": "POWER_STATION",
+      "combat_mode": "SIPHON",
+      "battle_readiness": 0.8,
+      "active_frequency": 528,
+      "ancestors_invoked": [],
+      "historical_pattern": "none",
+      "danger_level": 0,
+      "ira_stealth": 0.8,
+      "apache_patience": 0.9,
+      "sun_tzu_veto_available": false,
+      "wolf_readiness": 0.7,
+      "counter_phase": 180
+    },
+    {
+      "timestamp": "2026-02-03T15:34:11+00:00",
+      "symbol": "POWER_SIPHON",
+      "side": "SIPHON",
+      "entry_price": 1,
+      "exit_price": 1.02,
+      "quantity": 1,
+      "entry_cost": 1,
+      "exit_value": 1.019,
+      "fees": 0.001,
+      "pnl": 0.019,
+      "pnl_pct": 1.9,
+      "tactical_philosophy": "POWER_STATION",
+      "combat_mode": "SIPHON",
+      "battle_readiness": 0.8,
+      "active_frequency": 528,
+      "ancestors_invoked": [],
+      "historical_pattern": "none",
+      "danger_level": 0,
+      "ira_stealth": 0.8,
+      "apache_patience": 0.9,
+      "sun_tzu_veto_available": false,
+      "wolf_readiness": 0.7,
+      "counter_phase": 180
+    },
+    {
+      "timestamp": "2026-02-03T15:34:11+00:00",
+      "symbol": "POWER_SIPHON",
+      "side": "SIPHON",
+      "entry_price": 1,
+      "exit_price": 1.02,
+      "quantity": 1,
+      "entry_cost": 1,
+      "exit_value": 1.019,
+      "fees": 0.001,
+      "pnl": 0.019,
+      "pnl_pct": 1.9,
+      "tactical_philosophy": "POWER_STATION",
+      "combat_mode": "SIPHON",
+      "battle_readiness": 0.8,
+      "active_frequency": 528,
+      "ancestors_invoked": [],
+      "historical_pattern": "none",
+      "danger_level": 0,
+      "ira_stealth": 0.8,
+      "apache_patience": 0.9,
+      "sun_tzu_veto_available": false,
+      "wolf_readiness": 0.7,
+      "counter_phase": 180
+    },
+    {
+      "timestamp": "2026-02-03T15:34:11+00:00",
+      "symbol": "POWER_SIPHON",
+      "side": "SIPHON",
+      "entry_price": 1,
+      "exit_price": 1.02,
+      "quantity": 1,
+      "entry_cost": 1,
+      "exit_value": 1.019,
+      "fees": 0.001,
+      "pnl": 0.019,
+      "pnl_pct": 1.9,
+      "tactical_philosophy": "POWER_STATION",
+      "combat_mode": "SIPHON",
+      "battle_readiness": 0.8,
+      "active_frequency": 528,
+      "ancestors_invoked": [],
+      "historical_pattern": "none",
+      "danger_level": 0,
+      "ira_stealth": 0.8,
+      "apache_patience": 0.9,
+      "sun_tzu_veto_available": false,
+      "wolf_readiness": 0.7,
+      "counter_phase": 180
+    },
+    {
+      "timestamp": "2026-02-03T15:34:11+00:00",
+      "symbol": "POWER_SIPHON",
+      "side": "SIPHON",
+      "entry_price": 1,
+      "exit_price": 1.02,
+      "quantity": 1,
+      "entry_cost": 1,
+      "exit_value": 1.019,
+      "fees": 0.001,
+      "pnl": 0.019,
+      "pnl_pct": 1.9,
+      "tactical_philosophy": "POWER_STATION",
+      "combat_mode": "SIPHON",
+      "battle_readiness": 0.8,
+      "active_frequency": 528,
+      "ancestors_invoked": [],
+      "historical_pattern": "none",
+      "danger_level": 0,
+      "ira_stealth": 0.8,
+      "apache_patience": 0.9,
+      "sun_tzu_veto_available": false,
+      "wolf_readiness": 0.7,
+      "counter_phase": 180
+    },
+    {
+      "timestamp": "2026-02-03T15:34:11+00:00",
+      "symbol": "POWER_SIPHON",
+      "side": "SIPHON",
+      "entry_price": 1,
+      "exit_price": 1.02,
+      "quantity": 1,
+      "entry_cost": 1,
+      "exit_value": 1.019,
+      "fees": 0.001,
+      "pnl": 0.019,
+      "pnl_pct": 1.9,
+      "tactical_philosophy": "POWER_STATION",
+      "combat_mode": "SIPHON",
+      "battle_readiness": 0.8,
+      "active_frequency": 528,
+      "ancestors_invoked": [],
+      "historical_pattern": "none",
+      "danger_level": 0,
+      "ira_stealth": 0.8,
+      "apache_patience": 0.9,
+      "sun_tzu_veto_available": false,
+      "wolf_readiness": 0.7,
+      "counter_phase": 180
+    },
+    {
+      "timestamp": "2026-02-03T15:34:11+00:00",
+      "symbol": "POWER_SIPHON",
+      "side": "SIPHON",
+      "entry_price": 1,
+      "exit_price": 1.02,
+      "quantity": 1,
+      "entry_cost": 1,
+      "exit_value": 1.019,
+      "fees": 0.001,
+      "pnl": 0.019,
+      "pnl_pct": 1.9,
+      "tactical_philosophy": "POWER_STATION",
+      "combat_mode": "SIPHON",
+      "battle_readiness": 0.8,
+      "active_frequency": 528,
+      "ancestors_invoked": [],
+      "historical_pattern": "none",
+      "danger_level": 0,
+      "ira_stealth": 0.8,
+      "apache_patience": 0.9,
+      "sun_tzu_veto_available": false,
+      "wolf_readiness": 0.7,
+      "counter_phase": 180
+    },
+    {
+      "timestamp": "2026-02-03T15:34:11+00:00",
+      "symbol": "POWER_SIPHON",
+      "side": "SIPHON",
+      "entry_price": 1,
+      "exit_price": 1.02,
+      "quantity": 1,
+      "entry_cost": 1,
+      "exit_value": 1.019,
+      "fees": 0.001,
+      "pnl": 0.019,
+      "pnl_pct": 1.9,
+      "tactical_philosophy": "POWER_STATION",
+      "combat_mode": "SIPHON",
+      "battle_readiness": 0.8,
+      "active_frequency": 528,
+      "ancestors_invoked": [],
+      "historical_pattern": "none",
+      "danger_level": 0,
+      "ira_stealth": 0.8,
+      "apache_patience": 0.9,
+      "sun_tzu_veto_available": false,
+      "wolf_readiness": 0.7,
+      "counter_phase": 180
+    },
+    {
+      "timestamp": "2026-02-03T15:34:11+00:00",
+      "symbol": "POWER_SIPHON",
+      "side": "SIPHON",
+      "entry_price": 1,
+      "exit_price": 1.02,
+      "quantity": 1,
+      "entry_cost": 1,
+      "exit_value": 1.019,
+      "fees": 0.001,
+      "pnl": 0.019,
+      "pnl_pct": 1.9,
+      "tactical_philosophy": "POWER_STATION",
+      "combat_mode": "SIPHON",
+      "battle_readiness": 0.8,
+      "active_frequency": 528,
+      "ancestors_invoked": [],
+      "historical_pattern": "none",
+      "danger_level": 0,
+      "ira_stealth": 0.8,
+      "apache_patience": 0.9,
+      "sun_tzu_veto_available": false,
+      "wolf_readiness": 0.7,
+      "counter_phase": 180
+    },
+    {
+      "timestamp": "2026-02-03T15:34:11+00:00",
+      "symbol": "POWER_SIPHON",
+      "side": "SIPHON",
+      "entry_price": 1,
+      "exit_price": 1.02,
+      "quantity": 1,
+      "entry_cost": 1,
+      "exit_value": 1.019,
+      "fees": 0.001,
+      "pnl": 0.019,
+      "pnl_pct": 1.9,
+      "tactical_philosophy": "POWER_STATION",
+      "combat_mode": "SIPHON",
+      "battle_readiness": 0.8,
+      "active_frequency": 528,
+      "ancestors_invoked": [],
+      "historical_pattern": "none",
+      "danger_level": 0,
+      "ira_stealth": 0.8,
+      "apache_patience": 0.9,
+      "sun_tzu_veto_available": false,
+      "wolf_readiness": 0.7,
+      "counter_phase": 180
+    },
+    {
+      "timestamp": "2026-02-03T15:34:11+00:00",
+      "symbol": "POWER_SIPHON",
+      "side": "SIPHON",
+      "entry_price": 1,
+      "exit_price": 1.02,
+      "quantity": 1,
+      "entry_cost": 1,
+      "exit_value": 1.019,
+      "fees": 0.001,
+      "pnl": 0.019,
+      "pnl_pct": 1.9,
+      "tactical_philosophy": "POWER_STATION",
+      "combat_mode": "SIPHON",
+      "battle_readiness": 0.8,
+      "active_frequency": 528,
+      "ancestors_invoked": [],
+      "historical_pattern": "none",
+      "danger_level": 0,
+      "ira_stealth": 0.8,
+      "apache_patience": 0.9,
+      "sun_tzu_veto_available": false,
+      "wolf_readiness": 0.7,
+      "counter_phase": 180
+    },
+    {
+      "timestamp": "2026-02-03T15:34:11+00:00",
+      "symbol": "POWER_SIPHON",
+      "side": "SIPHON",
+      "entry_price": 1,
+      "exit_price": 1.02,
+      "quantity": 1,
+      "entry_cost": 1,
+      "exit_value": 1.019,
+      "fees": 0.001,
+      "pnl": 0.019,
+      "pnl_pct": 1.9,
+      "tactical_philosophy": "POWER_STATION",
+      "combat_mode": "SIPHON",
+      "battle_readiness": 0.8,
+      "active_frequency": 528,
+      "ancestors_invoked": [],
+      "historical_pattern": "none",
+      "danger_level": 0,
+      "ira_stealth": 0.8,
+      "apache_patience": 0.9,
+      "sun_tzu_veto_available": false,
+      "wolf_readiness": 0.7,
+      "counter_phase": 180
+    },
+    {
+      "timestamp": "2026-02-03T15:34:11+00:00",
+      "symbol": "POWER_SIPHON",
+      "side": "SIPHON",
+      "entry_price": 1,
+      "exit_price": 1.02,
+      "quantity": 1,
+      "entry_cost": 1,
+      "exit_value": 1.019,
+      "fees": 0.001,
+      "pnl": 0.019,
+      "pnl_pct": 1.9,
+      "tactical_philosophy": "POWER_STATION",
+      "combat_mode": "SIPHON",
+      "battle_readiness": 0.8,
+      "active_frequency": 528,
+      "ancestors_invoked": [],
+      "historical_pattern": "none",
+      "danger_level": 0,
+      "ira_stealth": 0.8,
+      "apache_patience": 0.9,
+      "sun_tzu_veto_available": false,
+      "wolf_readiness": 0.7,
+      "counter_phase": 180
+    },
+    {
+      "timestamp": "2026-02-03T15:34:11+00:00",
+      "symbol": "POWER_SIPHON",
+      "side": "SIPHON",
+      "entry_price": 1,
+      "exit_price": 1.02,
+      "quantity": 1,
+      "entry_cost": 1,
+      "exit_value": 1.019,
+      "fees": 0.001,
+      "pnl": 0.019,
+      "pnl_pct": 1.9,
+      "tactical_philosophy": "POWER_STATION",
+      "combat_mode": "SIPHON",
+      "battle_readiness": 0.8,
+      "active_frequency": 528,
+      "ancestors_invoked": [],
+      "historical_pattern": "none",
+      "danger_level": 0,
+      "ira_stealth": 0.8,
+      "apache_patience": 0.9,
+      "sun_tzu_veto_available": false,
+      "wolf_readiness": 0.7,
+      "counter_phase": 180
+    },
+    {
+      "timestamp": "2026-02-03T15:34:11+00:00",
+      "symbol": "POWER_SIPHON",
+      "side": "SIPHON",
+      "entry_price": 1,
+      "exit_price": 1.02,
+      "quantity": 1,
+      "entry_cost": 1,
+      "exit_value": 1.019,
+      "fees": 0.001,
+      "pnl": 0.019,
+      "pnl_pct": 1.9,
+      "tactical_philosophy": "POWER_STATION",
+      "combat_mode": "SIPHON",
+      "battle_readiness": 0.8,
+      "active_frequency": 528,
+      "ancestors_invoked": [],
+      "historical_pattern": "none",
+      "danger_level": 0,
+      "ira_stealth": 0.8,
+      "apache_patience": 0.9,
+      "sun_tzu_veto_available": false,
+      "wolf_readiness": 0.7,
+      "counter_phase": 180
+    },
+    {
+      "timestamp": "2026-02-03T15:34:11+00:00",
+      "symbol": "POWER_SIPHON",
+      "side": "SIPHON",
+      "entry_price": 1,
+      "exit_price": 1.02,
+      "quantity": 1,
+      "entry_cost": 1,
+      "exit_value": 1.019,
+      "fees": 0.001,
+      "pnl": 0.019,
+      "pnl_pct": 1.9,
+      "tactical_philosophy": "POWER_STATION",
+      "combat_mode": "SIPHON",
+      "battle_readiness": 0.8,
+      "active_frequency": 528,
+      "ancestors_invoked": [],
+      "historical_pattern": "none",
+      "danger_level": 0,
+      "ira_stealth": 0.8,
+      "apache_patience": 0.9,
+      "sun_tzu_veto_available": false,
+      "wolf_readiness": 0.7,
+      "counter_phase": 180
+    },
+    {
+      "timestamp": "2026-02-03T15:34:11+00:00",
+      "symbol": "POWER_SIPHON",
+      "side": "SIPHON",
+      "entry_price": 1,
+      "exit_price": 1.02,
+      "quantity": 1,
+      "entry_cost": 1,
+      "exit_value": 1.019,
+      "fees": 0.001,
+      "pnl": 0.019,
+      "pnl_pct": 1.9,
+      "tactical_philosophy": "POWER_STATION",
+      "combat_mode": "SIPHON",
+      "battle_readiness": 0.8,
+      "active_frequency": 528,
+      "ancestors_invoked": [],
+      "historical_pattern": "none",
+      "danger_level": 0,
+      "ira_stealth": 0.8,
+      "apache_patience": 0.9,
+      "sun_tzu_veto_available": false,
+      "wolf_readiness": 0.7,
+      "counter_phase": 180
+    },
+    {
+      "timestamp": "2026-02-03T15:34:11+00:00",
+      "symbol": "POWER_SIPHON",
+      "side": "SIPHON",
+      "entry_price": 1,
+      "exit_price": 1.02,
+      "quantity": 1,
+      "entry_cost": 1,
+      "exit_value": 1.019,
+      "fees": 0.001,
+      "pnl": 0.019,
+      "pnl_pct": 1.9,
+      "tactical_philosophy": "POWER_STATION",
+      "combat_mode": "SIPHON",
+      "battle_readiness": 0.8,
+      "active_frequency": 528,
+      "ancestors_invoked": [],
+      "historical_pattern": "none",
+      "danger_level": 0,
+      "ira_stealth": 0.8,
+      "apache_patience": 0.9,
+      "sun_tzu_veto_available": false,
+      "wolf_readiness": 0.7,
+      "counter_phase": 180
+    },
+    {
+      "timestamp": "2026-02-03T15:34:11+00:00",
+      "symbol": "POWER_SIPHON",
+      "side": "SIPHON",
+      "entry_price": 1,
+      "exit_price": 1.02,
+      "quantity": 1,
+      "entry_cost": 1,
+      "exit_value": 1.019,
+      "fees": 0.001,
+      "pnl": 0.019,
+      "pnl_pct": 1.9,
+      "tactical_philosophy": "POWER_STATION",
+      "combat_mode": "SIPHON",
+      "battle_readiness": 0.8,
+      "active_frequency": 528,
+      "ancestors_invoked": [],
+      "historical_pattern": "none",
+      "danger_level": 0,
+      "ira_stealth": 0.8,
+      "apache_patience": 0.9,
+      "sun_tzu_veto_available": false,
+      "wolf_readiness": 0.7,
+      "counter_phase": 180
+    },
+    {
+      "timestamp": "2026-02-03T15:34:11+00:00",
+      "symbol": "POWER_SIPHON",
+      "side": "SIPHON",
+      "entry_price": 1,
+      "exit_price": 1.02,
+      "quantity": 1,
+      "entry_cost": 1,
+      "exit_value": 1.019,
+      "fees": 0.001,
+      "pnl": 0.019,
+      "pnl_pct": 1.9,
+      "tactical_philosophy": "POWER_STATION",
+      "combat_mode": "SIPHON",
+      "battle_readiness": 0.8,
+      "active_frequency": 528,
+      "ancestors_invoked": [],
+      "historical_pattern": "none",
+      "danger_level": 0,
+      "ira_stealth": 0.8,
+      "apache_patience": 0.9,
+      "sun_tzu_veto_available": false,
+      "wolf_readiness": 0.7,
+      "counter_phase": 180
+    },
+    {
+      "timestamp": "2026-02-03T15:34:11+00:00",
+      "symbol": "POWER_SIPHON",
+      "side": "SIPHON",
+      "entry_price": 1,
+      "exit_price": 1.02,
+      "quantity": 1,
+      "entry_cost": 1,
+      "exit_value": 1.019,
+      "fees": 0.001,
+      "pnl": 0.019,
+      "pnl_pct": 1.9,
+      "tactical_philosophy": "POWER_STATION",
+      "combat_mode": "SIPHON",
+      "battle_readiness": 0.8,
+      "active_frequency": 528,
+      "ancestors_invoked": [],
+      "historical_pattern": "none",
+      "danger_level": 0,
+      "ira_stealth": 0.8,
+      "apache_patience": 0.9,
+      "sun_tzu_veto_available": false,
+      "wolf_readiness": 0.7,
+      "counter_phase": 180
+    },
+    {
+      "timestamp": "2026-02-03T15:34:11+00:00",
+      "symbol": "POWER_SIPHON",
+      "side": "SIPHON",
+      "entry_price": 1,
+      "exit_price": 1.02,
+      "quantity": 1,
+      "entry_cost": 1,
+      "exit_value": 1.019,
+      "fees": 0.001,
+      "pnl": 0.019,
+      "pnl_pct": 1.9,
+      "tactical_philosophy": "POWER_STATION",
+      "combat_mode": "SIPHON",
+      "battle_readiness": 0.8,
+      "active_frequency": 528,
+      "ancestors_invoked": [],
+      "historical_pattern": "none",
+      "danger_level": 0,
+      "ira_stealth": 0.8,
+      "apache_patience": 0.9,
+      "sun_tzu_veto_available": false,
+      "wolf_readiness": 0.7,
+      "counter_phase": 180
+    },
+    {
+      "timestamp": "2026-02-03T15:34:11+00:00",
+      "symbol": "POWER_SIPHON",
+      "side": "SIPHON",
+      "entry_price": 1,
+      "exit_price": 1.02,
+      "quantity": 1,
+      "entry_cost": 1,
+      "exit_value": 1.019,
+      "fees": 0.001,
+      "pnl": 0.019,
+      "pnl_pct": 1.9,
+      "tactical_philosophy": "POWER_STATION",
+      "combat_mode": "SIPHON",
+      "battle_readiness": 0.8,
+      "active_frequency": 528,
+      "ancestors_invoked": [],
+      "historical_pattern": "none",
+      "danger_level": 0,
+      "ira_stealth": 0.8,
+      "apache_patience": 0.9,
+      "sun_tzu_veto_available": false,
+      "wolf_readiness": 0.7,
+      "counter_phase": 180
+    },
+    {
+      "timestamp": "2026-02-03T15:34:11+00:00",
+      "symbol": "POWER_SIPHON",
+      "side": "SIPHON",
+      "entry_price": 1,
+      "exit_price": 1.02,
+      "quantity": 1,
+      "entry_cost": 1,
+      "exit_value": 1.019,
+      "fees": 0.001,
+      "pnl": 0.019,
+      "pnl_pct": 1.9,
+      "tactical_philosophy": "POWER_STATION",
+      "combat_mode": "SIPHON",
+      "battle_readiness": 0.8,
+      "active_frequency": 528,
+      "ancestors_invoked": [],
+      "historical_pattern": "none",
+      "danger_level": 0,
+      "ira_stealth": 0.8,
+      "apache_patience": 0.9,
+      "sun_tzu_veto_available": false,
+      "wolf_readiness": 0.7,
+      "counter_phase": 180
+    },
+    {
+      "timestamp": "2026-02-03T15:34:11+00:00",
+      "symbol": "POWER_SIPHON",
+      "side": "SIPHON",
+      "entry_price": 1,
+      "exit_price": 1.02,
+      "quantity": 1,
+      "entry_cost": 1,
+      "exit_value": 1.019,
+      "fees": 0.001,
+      "pnl": 0.019,
+      "pnl_pct": 1.9,
+      "tactical_philosophy": "POWER_STATION",
+      "combat_mode": "SIPHON",
+      "battle_readiness": 0.8,
+      "active_frequency": 528,
+      "ancestors_invoked": [],
+      "historical_pattern": "none",
+      "danger_level": 0,
+      "ira_stealth": 0.8,
+      "apache_patience": 0.9,
+      "sun_tzu_veto_available": false,
+      "wolf_readiness": 0.7,
+      "counter_phase": 180
+    },
+    {
+      "timestamp": "2026-02-03T15:34:11+00:00",
+      "symbol": "POWER_SIPHON",
+      "side": "SIPHON",
+      "entry_price": 1,
+      "exit_price": 1.02,
+      "quantity": 1,
+      "entry_cost": 1,
+      "exit_value": 1.019,
+      "fees": 0.001,
+      "pnl": 0.019,
+      "pnl_pct": 1.9,
+      "tactical_philosophy": "POWER_STATION",
+      "combat_mode": "SIPHON",
+      "battle_readiness": 0.8,
+      "active_frequency": 528,
+      "ancestors_invoked": [],
+      "historical_pattern": "none",
+      "danger_level": 0,
+      "ira_stealth": 0.8,
+      "apache_patience": 0.9,
+      "sun_tzu_veto_available": false,
+      "wolf_readiness": 0.7,
+      "counter_phase": 180
+    },
+    {
+      "timestamp": "2026-02-03T15:34:11+00:00",
+      "symbol": "POWER_SIPHON",
+      "side": "SIPHON",
+      "entry_price": 1,
+      "exit_price": 1.02,
+      "quantity": 1,
+      "entry_cost": 1,
+      "exit_value": 1.019,
+      "fees": 0.001,
+      "pnl": 0.019,
+      "pnl_pct": 1.9,
+      "tactical_philosophy": "POWER_STATION",
+      "combat_mode": "SIPHON",
+      "battle_readiness": 0.8,
+      "active_frequency": 528,
+      "ancestors_invoked": [],
+      "historical_pattern": "none",
+      "danger_level": 0,
+      "ira_stealth": 0.8,
+      "apache_patience": 0.9,
+      "sun_tzu_veto_available": false,
+      "wolf_readiness": 0.7,
+      "counter_phase": 180
+    },
+    {
+      "timestamp": "2026-02-03T15:34:11+00:00",
+      "symbol": "POWER_SIPHON",
+      "side": "SIPHON",
+      "entry_price": 1,
+      "exit_price": 1.02,
+      "quantity": 1,
+      "entry_cost": 1,
+      "exit_value": 1.019,
+      "fees": 0.001,
+      "pnl": 0.019,
+      "pnl_pct": 1.9,
+      "tactical_philosophy": "POWER_STATION",
+      "combat_mode": "SIPHON",
+      "battle_readiness": 0.8,
+      "active_frequency": 528,
+      "ancestors_invoked": [],
+      "historical_pattern": "none",
+      "danger_level": 0,
+      "ira_stealth": 0.8,
+      "apache_patience": 0.9,
+      "sun_tzu_veto_available": false,
+      "wolf_readiness": 0.7,
+      "counter_phase": 180
+    },
+    {
+      "timestamp": "2026-02-03T15:34:11+00:00",
+      "symbol": "POWER_SIPHON",
+      "side": "SIPHON",
+      "entry_price": 1,
+      "exit_price": 1.02,
+      "quantity": 1,
+      "entry_cost": 1,
+      "exit_value": 1.019,
+      "fees": 0.001,
+      "pnl": 0.019,
+      "pnl_pct": 1.9,
+      "tactical_philosophy": "POWER_STATION",
+      "combat_mode": "SIPHON",
+      "battle_readiness": 0.8,
+      "active_frequency": 528,
+      "ancestors_invoked": [],
+      "historical_pattern": "none",
+      "danger_level": 0,
+      "ira_stealth": 0.8,
+      "apache_patience": 0.9,
+      "sun_tzu_veto_available": false,
+      "wolf_readiness": 0.7,
+      "counter_phase": 180
+    },
+    {
+      "timestamp": "2026-02-03T15:34:11+00:00",
+      "symbol": "POWER_SIPHON",
+      "side": "SIPHON",
+      "entry_price": 1,
+      "exit_price": 1.02,
+      "quantity": 1,
+      "entry_cost": 1,
+      "exit_value": 1.019,
+      "fees": 0.001,
+      "pnl": 0.019,
+      "pnl_pct": 1.9,
+      "tactical_philosophy": "POWER_STATION",
+      "combat_mode": "SIPHON",
+      "battle_readiness": 0.8,
+      "active_frequency": 528,
+      "ancestors_invoked": [],
+      "historical_pattern": "none",
+      "danger_level": 0,
+      "ira_stealth": 0.8,
+      "apache_patience": 0.9,
+      "sun_tzu_veto_available": false,
+      "wolf_readiness": 0.7,
+      "counter_phase": 180
+    },
+    {
+      "timestamp": "2026-02-03T15:34:11+00:00",
+      "symbol": "POWER_SIPHON",
+      "side": "SIPHON",
+      "entry_price": 1,
+      "exit_price": 1.02,
+      "quantity": 1,
+      "entry_cost": 1,
+      "exit_value": 1.019,
+      "fees": 0.001,
+      "pnl": 0.019,
+      "pnl_pct": 1.9,
+      "tactical_philosophy": "POWER_STATION",
+      "combat_mode": "SIPHON",
+      "battle_readiness": 0.8,
+      "active_frequency": 528,
+      "ancestors_invoked": [],
+      "historical_pattern": "none",
+      "danger_level": 0,
+      "ira_stealth": 0.8,
+      "apache_patience": 0.9,
+      "sun_tzu_veto_available": false,
+      "wolf_readiness": 0.7,
+      "counter_phase": 180
+    },
+    {
+      "timestamp": "2026-02-03T15:34:11+00:00",
+      "symbol": "POWER_SIPHON",
+      "side": "SIPHON",
+      "entry_price": 1,
+      "exit_price": 1.02,
+      "quantity": 1,
+      "entry_cost": 1,
+      "exit_value": 1.019,
+      "fees": 0.001,
+      "pnl": 0.019,
+      "pnl_pct": 1.9,
+      "tactical_philosophy": "POWER_STATION",
+      "combat_mode": "SIPHON",
+      "battle_readiness": 0.8,
+      "active_frequency": 528,
+      "ancestors_invoked": [],
+      "historical_pattern": "none",
+      "danger_level": 0,
+      "ira_stealth": 0.8,
+      "apache_patience": 0.9,
+      "sun_tzu_veto_available": false,
+      "wolf_readiness": 0.7,
+      "counter_phase": 180
+    },
+    {
+      "timestamp": "2026-02-03T15:34:11+00:00",
+      "symbol": "POWER_SIPHON",
+      "side": "SIPHON",
+      "entry_price": 1,
+      "exit_price": 1.02,
+      "quantity": 1,
+      "entry_cost": 1,
+      "exit_value": 1.019,
+      "fees": 0.001,
+      "pnl": 0.019,
+      "pnl_pct": 1.9,
+      "tactical_philosophy": "POWER_STATION",
+      "combat_mode": "SIPHON",
+      "battle_readiness": 0.8,
+      "active_frequency": 528,
+      "ancestors_invoked": [],
+      "historical_pattern": "none",
+      "danger_level": 0,
+      "ira_stealth": 0.8,
+      "apache_patience": 0.9,
+      "sun_tzu_veto_available": false,
+      "wolf_readiness": 0.7,
+      "counter_phase": 180
+    },
+    {
+      "timestamp": "2026-02-03T15:34:11+00:00",
+      "symbol": "POWER_SIPHON",
+      "side": "SIPHON",
+      "entry_price": 1,
+      "exit_price": 1.02,
+      "quantity": 1,
+      "entry_cost": 1,
+      "exit_value": 1.019,
+      "fees": 0.001,
+      "pnl": 0.019,
+      "pnl_pct": 1.9,
+      "tactical_philosophy": "POWER_STATION",
+      "combat_mode": "SIPHON",
+      "battle_readiness": 0.8,
+      "active_frequency": 528,
+      "ancestors_invoked": [],
+      "historical_pattern": "none",
+      "danger_level": 0,
+      "ira_stealth": 0.8,
+      "apache_patience": 0.9,
+      "sun_tzu_veto_available": false,
+      "wolf_readiness": 0.7,
+      "counter_phase": 180
+    },
+    {
+      "timestamp": "2026-02-03T15:34:11+00:00",
+      "symbol": "POWER_SIPHON",
+      "side": "SIPHON",
+      "entry_price": 1,
+      "exit_price": 1.02,
+      "quantity": 1,
+      "entry_cost": 1,
+      "exit_value": 1.019,
+      "fees": 0.001,
+      "pnl": 0.019,
+      "pnl_pct": 1.9,
+      "tactical_philosophy": "POWER_STATION",
+      "combat_mode": "SIPHON",
+      "battle_readiness": 0.8,
+      "active_frequency": 528,
+      "ancestors_invoked": [],
+      "historical_pattern": "none",
+      "danger_level": 0,
+      "ira_stealth": 0.8,
+      "apache_patience": 0.9,
+      "sun_tzu_veto_available": false,
+      "wolf_readiness": 0.7,
+      "counter_phase": 180
+    },
+    {
+      "timestamp": "2026-02-03T15:34:11+00:00",
+      "symbol": "POWER_SIPHON",
+      "side": "SIPHON",
+      "entry_price": 1,
+      "exit_price": 1.02,
+      "quantity": 1,
+      "entry_cost": 1,
+      "exit_value": 1.019,
+      "fees": 0.001,
+      "pnl": 0.019,
+      "pnl_pct": 1.9,
+      "tactical_philosophy": "POWER_STATION",
+      "combat_mode": "SIPHON",
+      "battle_readiness": 0.8,
+      "active_frequency": 528,
+      "ancestors_invoked": [],
+      "historical_pattern": "none",
+      "danger_level": 0,
+      "ira_stealth": 0.8,
+      "apache_patience": 0.9,
+      "sun_tzu_veto_available": false,
+      "wolf_readiness": 0.7,
+      "counter_phase": 180
+    },
+    {
+      "timestamp": "2026-02-03T15:34:11+00:00",
+      "symbol": "POWER_SIPHON",
+      "side": "SIPHON",
+      "entry_price": 1,
+      "exit_price": 1.02,
+      "quantity": 1,
+      "entry_cost": 1,
+      "exit_value": 1.019,
+      "fees": 0.001,
+      "pnl": 0.019,
+      "pnl_pct": 1.9,
+      "tactical_philosophy": "POWER_STATION",
+      "combat_mode": "SIPHON",
+      "battle_readiness": 0.8,
+      "active_frequency": 528,
+      "ancestors_invoked": [],
+      "historical_pattern": "none",
+      "danger_level": 0,
+      "ira_stealth": 0.8,
+      "apache_patience": 0.9,
+      "sun_tzu_veto_available": false,
+      "wolf_readiness": 0.7,
+      "counter_phase": 180
+    },
+    {
+      "timestamp": "2026-02-03T15:34:11+00:00",
+      "symbol": "POWER_SIPHON",
+      "side": "SIPHON",
+      "entry_price": 1,
+      "exit_price": 1.02,
+      "quantity": 1,
+      "entry_cost": 1,
+      "exit_value": 1.019,
+      "fees": 0.001,
+      "pnl": 0.019,
+      "pnl_pct": 1.9,
+      "tactical_philosophy": "POWER_STATION",
+      "combat_mode": "SIPHON",
+      "battle_readiness": 0.8,
+      "active_frequency": 528,
+      "ancestors_invoked": [],
+      "historical_pattern": "none",
+      "danger_level": 0,
+      "ira_stealth": 0.8,
+      "apache_patience": 0.9,
+      "sun_tzu_veto_available": false,
+      "wolf_readiness": 0.7,
+      "counter_phase": 180
+    },
+    {
+      "timestamp": "2026-02-03T15:34:11+00:00",
+      "symbol": "POWER_SIPHON",
+      "side": "SIPHON",
+      "entry_price": 1,
+      "exit_price": 1.02,
+      "quantity": 1,
+      "entry_cost": 1,
+      "exit_value": 1.019,
+      "fees": 0.001,
+      "pnl": 0.019,
+      "pnl_pct": 1.9,
+      "tactical_philosophy": "POWER_STATION",
+      "combat_mode": "SIPHON",
+      "battle_readiness": 0.8,
+      "active_frequency": 528,
+      "ancestors_invoked": [],
+      "historical_pattern": "none",
+      "danger_level": 0,
+      "ira_stealth": 0.8,
+      "apache_patience": 0.9,
+      "sun_tzu_veto_available": false,
+      "wolf_readiness": 0.7,
+      "counter_phase": 180
+    },
+    {
+      "timestamp": "2026-02-03T15:34:11+00:00",
+      "symbol": "POWER_SIPHON",
+      "side": "SIPHON",
+      "entry_price": 1,
+      "exit_price": 1.02,
+      "quantity": 1,
+      "entry_cost": 1,
+      "exit_value": 1.019,
+      "fees": 0.001,
+      "pnl": 0.019,
+      "pnl_pct": 1.9,
+      "tactical_philosophy": "POWER_STATION",
+      "combat_mode": "SIPHON",
+      "battle_readiness": 0.8,
+      "active_frequency": 528,
+      "ancestors_invoked": [],
+      "historical_pattern": "none",
+      "danger_level": 0,
+      "ira_stealth": 0.8,
+      "apache_patience": 0.9,
+      "sun_tzu_veto_available": false,
+      "wolf_readiness": 0.7,
+      "counter_phase": 180
+    },
+    {
+      "timestamp": "2026-02-03T15:34:11+00:00",
+      "symbol": "POWER_SIPHON",
+      "side": "SIPHON",
+      "entry_price": 1,
+      "exit_price": 1.02,
+      "quantity": 1,
+      "entry_cost": 1,
+      "exit_value": 1.019,
+      "fees": 0.001,
+      "pnl": 0.019,
+      "pnl_pct": 1.9,
+      "tactical_philosophy": "POWER_STATION",
+      "combat_mode": "SIPHON",
+      "battle_readiness": 0.8,
+      "active_frequency": 528,
+      "ancestors_invoked": [],
+      "historical_pattern": "none",
+      "danger_level": 0,
+      "ira_stealth": 0.8,
+      "apache_patience": 0.9,
+      "sun_tzu_veto_available": false,
+      "wolf_readiness": 0.7,
+      "counter_phase": 180
+    },
+    {
+      "timestamp": "2026-02-03T15:34:11+00:00",
+      "symbol": "POWER_SIPHON",
+      "side": "SIPHON",
+      "entry_price": 1,
+      "exit_price": 1.02,
+      "quantity": 1,
+      "entry_cost": 1,
+      "exit_value": 1.019,
+      "fees": 0.001,
+      "pnl": 0.019,
+      "pnl_pct": 1.9,
+      "tactical_philosophy": "POWER_STATION",
+      "combat_mode": "SIPHON",
+      "battle_readiness": 0.8,
+      "active_frequency": 528,
+      "ancestors_invoked": [],
+      "historical_pattern": "none",
+      "danger_level": 0,
+      "ira_stealth": 0.8,
+      "apache_patience": 0.9,
+      "sun_tzu_veto_available": false,
+      "wolf_readiness": 0.7,
+      "counter_phase": 180
+    },
+    {
+      "timestamp": "2026-02-03T15:34:11+00:00",
+      "symbol": "POWER_SIPHON",
+      "side": "SIPHON",
+      "entry_price": 1,
+      "exit_price": 1.02,
+      "quantity": 1,
+      "entry_cost": 1,
+      "exit_value": 1.019,
+      "fees": 0.001,
+      "pnl": 0.019,
+      "pnl_pct": 1.9,
+      "tactical_philosophy": "POWER_STATION",
+      "combat_mode": "SIPHON",
+      "battle_readiness": 0.8,
+      "active_frequency": 528,
+      "ancestors_invoked": [],
+      "historical_pattern": "none",
+      "danger_level": 0,
+      "ira_stealth": 0.8,
+      "apache_patience": 0.9,
+      "sun_tzu_veto_available": false,
+      "wolf_readiness": 0.7,
+      "counter_phase": 180
+    },
+    {
+      "timestamp": "2026-02-03T15:34:11+00:00",
+      "symbol": "POWER_SIPHON",
+      "side": "SIPHON",
+      "entry_price": 1,
+      "exit_price": 1.02,
+      "quantity": 1,
+      "entry_cost": 1,
+      "exit_value": 1.019,
+      "fees": 0.001,
+      "pnl": 0.019,
+      "pnl_pct": 1.9,
+      "tactical_philosophy": "POWER_STATION",
+      "combat_mode": "SIPHON",
+      "battle_readiness": 0.8,
+      "active_frequency": 528,
+      "ancestors_invoked": [],
+      "historical_pattern": "none",
+      "danger_level": 0,
+      "ira_stealth": 0.8,
+      "apache_patience": 0.9,
+      "sun_tzu_veto_available": false,
+      "wolf_readiness": 0.7,
+      "counter_phase": 180
+    },
+    {
+      "timestamp": "2026-02-03T15:34:11+00:00",
+      "symbol": "POWER_SIPHON",
+      "side": "SIPHON",
+      "entry_price": 1,
+      "exit_price": 1.02,
+      "quantity": 1,
+      "entry_cost": 1,
+      "exit_value": 1.019,
+      "fees": 0.001,
+      "pnl": 0.019,
+      "pnl_pct": 1.9,
+      "tactical_philosophy": "POWER_STATION",
+      "combat_mode": "SIPHON",
+      "battle_readiness": 0.8,
+      "active_frequency": 528,
+      "ancestors_invoked": [],
+      "historical_pattern": "none",
+      "danger_level": 0,
+      "ira_stealth": 0.8,
+      "apache_patience": 0.9,
+      "sun_tzu_veto_available": false,
+      "wolf_readiness": 0.7,
+      "counter_phase": 180
+    },
+    {
+      "timestamp": "2026-02-03T15:34:11+00:00",
+      "symbol": "POWER_SIPHON",
+      "side": "SIPHON",
+      "entry_price": 1,
+      "exit_price": 1.02,
+      "quantity": 1,
+      "entry_cost": 1,
+      "exit_value": 1.019,
+      "fees": 0.001,
+      "pnl": 0.019,
+      "pnl_pct": 1.9,
+      "tactical_philosophy": "POWER_STATION",
+      "combat_mode": "SIPHON",
+      "battle_readiness": 0.8,
+      "active_frequency": 528,
+      "ancestors_invoked": [],
+      "historical_pattern": "none",
+      "danger_level": 0,
+      "ira_stealth": 0.8,
+      "apache_patience": 0.9,
+      "sun_tzu_veto_available": false,
+      "wolf_readiness": 0.7,
+      "counter_phase": 180
+    },
+    {
+      "timestamp": "2026-02-03T15:34:11+00:00",
+      "symbol": "POWER_SIPHON",
+      "side": "SIPHON",
+      "entry_price": 1,
+      "exit_price": 1.02,
+      "quantity": 1,
+      "entry_cost": 1,
+      "exit_value": 1.019,
+      "fees": 0.001,
+      "pnl": 0.019,
+      "pnl_pct": 1.9,
+      "tactical_philosophy": "POWER_STATION",
+      "combat_mode": "SIPHON",
+      "battle_readiness": 0.8,
+      "active_frequency": 528,
+      "ancestors_invoked": [],
+      "historical_pattern": "none",
+      "danger_level": 0,
+      "ira_stealth": 0.8,
+      "apache_patience": 0.9,
+      "sun_tzu_veto_available": false,
+      "wolf_readiness": 0.7,
+      "counter_phase": 180
+    },
+    {
+      "timestamp": "2026-02-03T15:34:11+00:00",
+      "symbol": "POWER_SIPHON",
+      "side": "SIPHON",
+      "entry_price": 1,
+      "exit_price": 1.02,
+      "quantity": 1,
+      "entry_cost": 1,
+      "exit_value": 1.019,
+      "fees": 0.001,
+      "pnl": 0.019,
+      "pnl_pct": 1.9,
+      "tactical_philosophy": "POWER_STATION",
+      "combat_mode": "SIPHON",
+      "battle_readiness": 0.8,
+      "active_frequency": 528,
+      "ancestors_invoked": [],
+      "historical_pattern": "none",
+      "danger_level": 0,
+      "ira_stealth": 0.8,
+      "apache_patience": 0.9,
+      "sun_tzu_veto_available": false,
+      "wolf_readiness": 0.7,
+      "counter_phase": 180
+    },
+    {
+      "timestamp": "2026-02-03T15:34:11+00:00",
+      "symbol": "POWER_SIPHON",
+      "side": "SIPHON",
+      "entry_price": 1,
+      "exit_price": 1.02,
+      "quantity": 1,
+      "entry_cost": 1,
+      "exit_value": 1.019,
+      "fees": 0.001,
+      "pnl": 0.019,
+      "pnl_pct": 1.9,
+      "tactical_philosophy": "POWER_STATION",
+      "combat_mode": "SIPHON",
+      "battle_readiness": 0.8,
+      "active_frequency": 528,
+      "ancestors_invoked": [],
+      "historical_pattern": "none",
+      "danger_level": 0,
+      "ira_stealth": 0.8,
+      "apache_patience": 0.9,
+      "sun_tzu_veto_available": false,
+      "wolf_readiness": 0.7,
+      "counter_phase": 180
+    },
+    {
+      "timestamp": "2026-02-03T15:34:11+00:00",
+      "symbol": "POWER_SIPHON",
+      "side": "SIPHON",
+      "entry_price": 1,
+      "exit_price": 1.02,
+      "quantity": 1,
+      "entry_cost": 1,
+      "exit_value": 1.019,
+      "fees": 0.001,
+      "pnl": 0.019,
+      "pnl_pct": 1.9,
+      "tactical_philosophy": "POWER_STATION",
+      "combat_mode": "SIPHON",
+      "battle_readiness": 0.8,
+      "active_frequency": 528,
+      "ancestors_invoked": [],
+      "historical_pattern": "none",
+      "danger_level": 0,
+      "ira_stealth": 0.8,
+      "apache_patience": 0.9,
+      "sun_tzu_veto_available": false,
+      "wolf_readiness": 0.7,
+      "counter_phase": 180
+    },
+    {
+      "timestamp": "2026-02-03T15:34:11+00:00",
+      "symbol": "POWER_SIPHON",
+      "side": "SIPHON",
+      "entry_price": 1,
+      "exit_price": 1.02,
+      "quantity": 1,
+      "entry_cost": 1,
+      "exit_value": 1.019,
+      "fees": 0.001,
+      "pnl": 0.019,
+      "pnl_pct": 1.9,
+      "tactical_philosophy": "POWER_STATION",
+      "combat_mode": "SIPHON",
+      "battle_readiness": 0.8,
+      "active_frequency": 528,
+      "ancestors_invoked": [],
+      "historical_pattern": "none",
+      "danger_level": 0,
+      "ira_stealth": 0.8,
+      "apache_patience": 0.9,
+      "sun_tzu_veto_available": false,
+      "wolf_readiness": 0.7,
+      "counter_phase": 180
+    },
+    {
+      "timestamp": "2026-02-03T15:34:11+00:00",
+      "symbol": "POWER_SIPHON",
+      "side": "SIPHON",
+      "entry_price": 1,
+      "exit_price": 1.02,
+      "quantity": 1,
+      "entry_cost": 1,
+      "exit_value": 1.019,
+      "fees": 0.001,
+      "pnl": 0.019,
+      "pnl_pct": 1.9,
+      "tactical_philosophy": "POWER_STATION",
+      "combat_mode": "SIPHON",
+      "battle_readiness": 0.8,
+      "active_frequency": 528,
+      "ancestors_invoked": [],
+      "historical_pattern": "none",
+      "danger_level": 0,
+      "ira_stealth": 0.8,
+      "apache_patience": 0.9,
+      "sun_tzu_veto_available": false,
+      "wolf_readiness": 0.7,
+      "counter_phase": 180
+    },
+    {
+      "timestamp": "2026-02-03T15:34:11+00:00",
+      "symbol": "POWER_SIPHON",
+      "side": "SIPHON",
+      "entry_price": 1,
+      "exit_price": 1.02,
+      "quantity": 1,
+      "entry_cost": 1,
+      "exit_value": 1.019,
+      "fees": 0.001,
+      "pnl": 0.019,
+      "pnl_pct": 1.9,
+      "tactical_philosophy": "POWER_STATION",
+      "combat_mode": "SIPHON",
+      "battle_readiness": 0.8,
+      "active_frequency": 528,
+      "ancestors_invoked": [],
+      "historical_pattern": "none",
+      "danger_level": 0,
+      "ira_stealth": 0.8,
+      "apache_patience": 0.9,
+      "sun_tzu_veto_available": false,
+      "wolf_readiness": 0.7,
+      "counter_phase": 180
+    },
+    {
+      "timestamp": "2026-02-03T15:34:11+00:00",
+      "symbol": "POWER_SIPHON",
+      "side": "SIPHON",
+      "entry_price": 1,
+      "exit_price": 1.02,
+      "quantity": 1,
+      "entry_cost": 1,
+      "exit_value": 1.019,
+      "fees": 0.001,
+      "pnl": 0.019,
+      "pnl_pct": 1.9,
+      "tactical_philosophy": "POWER_STATION",
+      "combat_mode": "SIPHON",
+      "battle_readiness": 0.8,
+      "active_frequency": 528,
+      "ancestors_invoked": [],
+      "historical_pattern": "none",
+      "danger_level": 0,
+      "ira_stealth": 0.8,
+      "apache_patience": 0.9,
+      "sun_tzu_veto_available": false,
+      "wolf_readiness": 0.7,
+      "counter_phase": 180
+    },
+    {
+      "timestamp": "2026-02-03T15:34:11+00:00",
+      "symbol": "POWER_SIPHON",
+      "side": "SIPHON",
+      "entry_price": 1,
+      "exit_price": 1.02,
+      "quantity": 1,
+      "entry_cost": 1,
+      "exit_value": 1.019,
+      "fees": 0.001,
+      "pnl": 0.019,
+      "pnl_pct": 1.9,
+      "tactical_philosophy": "POWER_STATION",
+      "combat_mode": "SIPHON",
+      "battle_readiness": 0.8,
+      "active_frequency": 528,
+      "ancestors_invoked": [],
+      "historical_pattern": "none",
+      "danger_level": 0,
+      "ira_stealth": 0.8,
+      "apache_patience": 0.9,
+      "sun_tzu_veto_available": false,
+      "wolf_readiness": 0.7,
+      "counter_phase": 180
+    },
+    {
+      "timestamp": "2026-02-03T15:34:11+00:00",
+      "symbol": "POWER_SIPHON",
+      "side": "SIPHON",
+      "entry_price": 1,
+      "exit_price": 1.02,
+      "quantity": 1,
+      "entry_cost": 1,
+      "exit_value": 1.019,
+      "fees": 0.001,
+      "pnl": 0.019,
+      "pnl_pct": 1.9,
+      "tactical_philosophy": "POWER_STATION",
+      "combat_mode": "SIPHON",
+      "battle_readiness": 0.8,
+      "active_frequency": 528,
+      "ancestors_invoked": [],
+      "historical_pattern": "none",
+      "danger_level": 0,
+      "ira_stealth": 0.8,
+      "apache_patience": 0.9,
+      "sun_tzu_veto_available": false,
+      "wolf_readiness": 0.7,
+      "counter_phase": 180
+    },
+    {
+      "timestamp": "2026-02-03T15:34:11+00:00",
+      "symbol": "POWER_SIPHON",
+      "side": "SIPHON",
+      "entry_price": 1,
+      "exit_price": 1.02,
+      "quantity": 1,
+      "entry_cost": 1,
+      "exit_value": 1.019,
+      "fees": 0.001,
+      "pnl": 0.019,
+      "pnl_pct": 1.9,
+      "tactical_philosophy": "POWER_STATION",
+      "combat_mode": "SIPHON",
+      "battle_readiness": 0.8,
+      "active_frequency": 528,
+      "ancestors_invoked": [],
+      "historical_pattern": "none",
+      "danger_level": 0,
+      "ira_stealth": 0.8,
+      "apache_patience": 0.9,
+      "sun_tzu_veto_available": false,
+      "wolf_readiness": 0.7,
+      "counter_phase": 180
+    },
+    {
+      "timestamp": "2026-02-03T15:34:11+00:00",
+      "symbol": "POWER_SIPHON",
+      "side": "SIPHON",
+      "entry_price": 1,
+      "exit_price": 1.02,
+      "quantity": 1,
+      "entry_cost": 1,
+      "exit_value": 1.019,
+      "fees": 0.001,
+      "pnl": 0.019,
+      "pnl_pct": 1.9,
+      "tactical_philosophy": "POWER_STATION",
+      "combat_mode": "SIPHON",
+      "battle_readiness": 0.8,
+      "active_frequency": 528,
+      "ancestors_invoked": [],
+      "historical_pattern": "none",
+      "danger_level": 0,
+      "ira_stealth": 0.8,
+      "apache_patience": 0.9,
+      "sun_tzu_veto_available": false,
+      "wolf_readiness": 0.7,
+      "counter_phase": 180
+    },
+    {
+      "timestamp": "2026-02-03T15:34:11+00:00",
+      "symbol": "POWER_SIPHON",
+      "side": "SIPHON",
+      "entry_price": 1,
+      "exit_price": 1.02,
+      "quantity": 1,
+      "entry_cost": 1,
+      "exit_value": 1.019,
+      "fees": 0.001,
+      "pnl": 0.019,
+      "pnl_pct": 1.9,
+      "tactical_philosophy": "POWER_STATION",
+      "combat_mode": "SIPHON",
+      "battle_readiness": 0.8,
+      "active_frequency": 528,
+      "ancestors_invoked": [],
+      "historical_pattern": "none",
+      "danger_level": 0,
+      "ira_stealth": 0.8,
+      "apache_patience": 0.9,
+      "sun_tzu_veto_available": false,
+      "wolf_readiness": 0.7,
+      "counter_phase": 180
+    },
+    {
+      "timestamp": "2026-02-03T15:34:11+00:00",
+      "symbol": "POWER_SIPHON",
+      "side": "SIPHON",
+      "entry_price": 1,
+      "exit_price": 1.02,
+      "quantity": 1,
+      "entry_cost": 1,
+      "exit_value": 1.019,
+      "fees": 0.001,
+      "pnl": 0.019,
+      "pnl_pct": 1.9,
+      "tactical_philosophy": "POWER_STATION",
+      "combat_mode": "SIPHON",
+      "battle_readiness": 0.8,
+      "active_frequency": 528,
+      "ancestors_invoked": [],
+      "historical_pattern": "none",
+      "danger_level": 0,
+      "ira_stealth": 0.8,
+      "apache_patience": 0.9,
+      "sun_tzu_veto_available": false,
+      "wolf_readiness": 0.7,
+      "counter_phase": 180
+    },
+    {
+      "timestamp": "2026-02-03T15:34:11+00:00",
+      "symbol": "POWER_SIPHON",
+      "side": "SIPHON",
+      "entry_price": 1,
+      "exit_price": 1.02,
+      "quantity": 1,
+      "entry_cost": 1,
+      "exit_value": 1.019,
+      "fees": 0.001,
+      "pnl": 0.019,
+      "pnl_pct": 1.9,
+      "tactical_philosophy": "POWER_STATION",
+      "combat_mode": "SIPHON",
+      "battle_readiness": 0.8,
+      "active_frequency": 528,
+      "ancestors_invoked": [],
+      "historical_pattern": "none",
+      "danger_level": 0,
+      "ira_stealth": 0.8,
+      "apache_patience": 0.9,
+      "sun_tzu_veto_available": false,
+      "wolf_readiness": 0.7,
+      "counter_phase": 180
+    },
+    {
+      "timestamp": "2026-02-03T15:34:11+00:00",
+      "symbol": "POWER_SIPHON",
+      "side": "SIPHON",
+      "entry_price": 1,
+      "exit_price": 1.02,
+      "quantity": 1,
+      "entry_cost": 1,
+      "exit_value": 1.019,
+      "fees": 0.001,
+      "pnl": 0.019,
+      "pnl_pct": 1.9,
+      "tactical_philosophy": "POWER_STATION",
+      "combat_mode": "SIPHON",
+      "battle_readiness": 0.8,
+      "active_frequency": 528,
+      "ancestors_invoked": [],
+      "historical_pattern": "none",
+      "danger_level": 0,
+      "ira_stealth": 0.8,
+      "apache_patience": 0.9,
+      "sun_tzu_veto_available": false,
+      "wolf_readiness": 0.7,
+      "counter_phase": 180
+    },
+    {
+      "timestamp": "2026-02-03T15:34:11+00:00",
+      "symbol": "POWER_SIPHON",
+      "side": "SIPHON",
+      "entry_price": 1,
+      "exit_price": 1.02,
+      "quantity": 1,
+      "entry_cost": 1,
+      "exit_value": 1.019,
+      "fees": 0.001,
+      "pnl": 0.019,
+      "pnl_pct": 1.9,
+      "tactical_philosophy": "POWER_STATION",
+      "combat_mode": "SIPHON",
+      "battle_readiness": 0.8,
+      "active_frequency": 528,
+      "ancestors_invoked": [],
+      "historical_pattern": "none",
+      "danger_level": 0,
+      "ira_stealth": 0.8,
+      "apache_patience": 0.9,
+      "sun_tzu_veto_available": false,
+      "wolf_readiness": 0.7,
+      "counter_phase": 180
+    },
+    {
+      "timestamp": "2026-02-03T15:34:11+00:00",
+      "symbol": "POWER_SIPHON",
+      "side": "SIPHON",
+      "entry_price": 1,
+      "exit_price": 1.02,
+      "quantity": 1,
+      "entry_cost": 1,
+      "exit_value": 1.019,
+      "fees": 0.001,
+      "pnl": 0.019,
+      "pnl_pct": 1.9,
+      "tactical_philosophy": "POWER_STATION",
+      "combat_mode": "SIPHON",
+      "battle_readiness": 0.8,
+      "active_frequency": 528,
+      "ancestors_invoked": [],
+      "historical_pattern": "none",
+      "danger_level": 0,
+      "ira_stealth": 0.8,
+      "apache_patience": 0.9,
+      "sun_tzu_veto_available": false,
+      "wolf_readiness": 0.7,
+      "counter_phase": 180
+    },
+    {
+      "timestamp": "2026-02-03T15:34:11+00:00",
+      "symbol": "POWER_SIPHON",
+      "side": "SIPHON",
+      "entry_price": 1,
+      "exit_price": 1.02,
+      "quantity": 1,
+      "entry_cost": 1,
+      "exit_value": 1.019,
+      "fees": 0.001,
+      "pnl": 0.019,
+      "pnl_pct": 1.9,
+      "tactical_philosophy": "POWER_STATION",
+      "combat_mode": "SIPHON",
+      "battle_readiness": 0.8,
+      "active_frequency": 528,
+      "ancestors_invoked": [],
+      "historical_pattern": "none",
+      "danger_level": 0,
+      "ira_stealth": 0.8,
+      "apache_patience": 0.9,
+      "sun_tzu_veto_available": false,
+      "wolf_readiness": 0.7,
+      "counter_phase": 180
+    },
+    {
+      "timestamp": "2026-02-03T15:34:11+00:00",
+      "symbol": "POWER_SIPHON",
+      "side": "SIPHON",
+      "entry_price": 1,
+      "exit_price": 1.02,
+      "quantity": 1,
+      "entry_cost": 1,
+      "exit_value": 1.019,
+      "fees": 0.001,
+      "pnl": 0.019,
+      "pnl_pct": 1.9,
+      "tactical_philosophy": "POWER_STATION",
+      "combat_mode": "SIPHON",
+      "battle_readiness": 0.8,
+      "active_frequency": 528,
+      "ancestors_invoked": [],
+      "historical_pattern": "none",
+      "danger_level": 0,
+      "ira_stealth": 0.8,
+      "apache_patience": 0.9,
+      "sun_tzu_veto_available": false,
+      "wolf_readiness": 0.7,
+      "counter_phase": 180
+    },
+    {
+      "timestamp": "2026-02-03T15:34:11+00:00",
+      "symbol": "POWER_SIPHON",
+      "side": "SIPHON",
+      "entry_price": 1,
+      "exit_price": 1.02,
+      "quantity": 1,
+      "entry_cost": 1,
+      "exit_value": 1.019,
+      "fees": 0.001,
+      "pnl": 0.019,
+      "pnl_pct": 1.9,
+      "tactical_philosophy": "POWER_STATION",
+      "combat_mode": "SIPHON",
+      "battle_readiness": 0.8,
+      "active_frequency": 528,
+      "ancestors_invoked": [],
+      "historical_pattern": "none",
+      "danger_level": 0,
+      "ira_stealth": 0.8,
+      "apache_patience": 0.9,
+      "sun_tzu_veto_available": false,
+      "wolf_readiness": 0.7,
+      "counter_phase": 180
+    },
+    {
+      "timestamp": "2026-02-03T15:34:11+00:00",
+      "symbol": "POWER_SIPHON",
+      "side": "SIPHON",
+      "entry_price": 1,
+      "exit_price": 1.02,
+      "quantity": 1,
+      "entry_cost": 1,
+      "exit_value": 1.019,
+      "fees": 0.001,
+      "pnl": 0.019,
+      "pnl_pct": 1.9,
+      "tactical_philosophy": "POWER_STATION",
+      "combat_mode": "SIPHON",
+      "battle_readiness": 0.8,
+      "active_frequency": 528,
+      "ancestors_invoked": [],
+      "historical_pattern": "none",
+      "danger_level": 0,
+      "ira_stealth": 0.8,
+      "apache_patience": 0.9,
+      "sun_tzu_veto_available": false,
+      "wolf_readiness": 0.7,
+      "counter_phase": 180
+    },
+    {
+      "timestamp": "2026-02-03T15:34:11+00:00",
+      "symbol": "POWER_SIPHON",
+      "side": "SIPHON",
+      "entry_price": 1,
+      "exit_price": 1.02,
+      "quantity": 1,
+      "entry_cost": 1,
+      "exit_value": 1.019,
+      "fees": 0.001,
+      "pnl": 0.019,
+      "pnl_pct": 1.9,
+      "tactical_philosophy": "POWER_STATION",
+      "combat_mode": "SIPHON",
+      "battle_readiness": 0.8,
+      "active_frequency": 528,
+      "ancestors_invoked": [],
+      "historical_pattern": "none",
+      "danger_level": 0,
+      "ira_stealth": 0.8,
+      "apache_patience": 0.9,
+      "sun_tzu_veto_available": false,
+      "wolf_readiness": 0.7,
+      "counter_phase": 180
+    },
+    {
+      "timestamp": "2026-02-03T15:34:11+00:00",
+      "symbol": "POWER_SIPHON",
+      "side": "SIPHON",
+      "entry_price": 1,
+      "exit_price": 1.02,
+      "quantity": 1,
+      "entry_cost": 1,
+      "exit_value": 1.019,
+      "fees": 0.001,
+      "pnl": 0.019,
+      "pnl_pct": 1.9,
+      "tactical_philosophy": "POWER_STATION",
+      "combat_mode": "SIPHON",
+      "battle_readiness": 0.8,
+      "active_frequency": 528,
+      "ancestors_invoked": [],
+      "historical_pattern": "none",
+      "danger_level": 0,
+      "ira_stealth": 0.8,
+      "apache_patience": 0.9,
+      "sun_tzu_veto_available": false,
+      "wolf_readiness": 0.7,
+      "counter_phase": 180
+    },
+    {
+      "timestamp": "2026-02-03T15:34:11+00:00",
+      "symbol": "POWER_SIPHON",
+      "side": "SIPHON",
+      "entry_price": 1,
+      "exit_price": 1.02,
+      "quantity": 1,
+      "entry_cost": 1,
+      "exit_value": 1.019,
+      "fees": 0.001,
+      "pnl": 0.019,
+      "pnl_pct": 1.9,
+      "tactical_philosophy": "POWER_STATION",
+      "combat_mode": "SIPHON",
+      "battle_readiness": 0.8,
+      "active_frequency": 528,
+      "ancestors_invoked": [],
+      "historical_pattern": "none",
+      "danger_level": 0,
+      "ira_stealth": 0.8,
+      "apache_patience": 0.9,
+      "sun_tzu_veto_available": false,
+      "wolf_readiness": 0.7,
+      "counter_phase": 180
+    },
+    {
+      "timestamp": "2026-02-03T15:34:11+00:00",
+      "symbol": "POWER_SIPHON",
+      "side": "SIPHON",
+      "entry_price": 1,
+      "exit_price": 1.02,
+      "quantity": 1,
+      "entry_cost": 1,
+      "exit_value": 1.019,
+      "fees": 0.001,
+      "pnl": 0.019,
+      "pnl_pct": 1.9,
+      "tactical_philosophy": "POWER_STATION",
+      "combat_mode": "SIPHON",
+      "battle_readiness": 0.8,
+      "active_frequency": 528,
+      "ancestors_invoked": [],
+      "historical_pattern": "none",
+      "danger_level": 0,
+      "ira_stealth": 0.8,
+      "apache_patience": 0.9,
+      "sun_tzu_veto_available": false,
+      "wolf_readiness": 0.7,
+      "counter_phase": 180
+    },
+    {
+      "timestamp": "2026-02-03T15:34:11+00:00",
+      "symbol": "POWER_SIPHON",
+      "side": "SIPHON",
+      "entry_price": 1,
+      "exit_price": 1.02,
+      "quantity": 1,
+      "entry_cost": 1,
+      "exit_value": 1.019,
+      "fees": 0.001,
+      "pnl": 0.019,
+      "pnl_pct": 1.9,
+      "tactical_philosophy": "POWER_STATION",
+      "combat_mode": "SIPHON",
+      "battle_readiness": 0.8,
+      "active_frequency": 528,
+      "ancestors_invoked": [],
+      "historical_pattern": "none",
+      "danger_level": 0,
+      "ira_stealth": 0.8,
+      "apache_patience": 0.9,
+      "sun_tzu_veto_available": false,
+      "wolf_readiness": 0.7,
+      "counter_phase": 180
+    },
+    {
+      "timestamp": "2026-02-03T15:34:11+00:00",
+      "symbol": "POWER_SIPHON",
+      "side": "SIPHON",
+      "entry_price": 1,
+      "exit_price": 1.02,
+      "quantity": 1,
+      "entry_cost": 1,
+      "exit_value": 1.019,
+      "fees": 0.001,
+      "pnl": 0.019,
+      "pnl_pct": 1.9,
+      "tactical_philosophy": "POWER_STATION",
+      "combat_mode": "SIPHON",
+      "battle_readiness": 0.8,
+      "active_frequency": 528,
+      "ancestors_invoked": [],
+      "historical_pattern": "none",
+      "danger_level": 0,
+      "ira_stealth": 0.8,
+      "apache_patience": 0.9,
+      "sun_tzu_veto_available": false,
+      "wolf_readiness": 0.7,
+      "counter_phase": 180
+    },
+    {
+      "timestamp": "2026-02-03T15:34:11+00:00",
+      "symbol": "POWER_SIPHON",
+      "side": "SIPHON",
+      "entry_price": 1,
+      "exit_price": 1.02,
+      "quantity": 1,
+      "entry_cost": 1,
+      "exit_value": 1.019,
+      "fees": 0.001,
+      "pnl": 0.019,
+      "pnl_pct": 1.9,
+      "tactical_philosophy": "POWER_STATION",
+      "combat_mode": "SIPHON",
+      "battle_readiness": 0.8,
+      "active_frequency": 528,
+      "ancestors_invoked": [],
+      "historical_pattern": "none",
+      "danger_level": 0,
+      "ira_stealth": 0.8,
+      "apache_patience": 0.9,
+      "sun_tzu_veto_available": false,
+      "wolf_readiness": 0.7,
+      "counter_phase": 180
+    },
+    {
+      "timestamp": "2026-02-03T15:34:11+00:00",
+      "symbol": "POWER_SIPHON",
+      "side": "SIPHON",
+      "entry_price": 1,
+      "exit_price": 1.02,
+      "quantity": 1,
+      "entry_cost": 1,
+      "exit_value": 1.019,
+      "fees": 0.001,
+      "pnl": 0.019,
+      "pnl_pct": 1.9,
+      "tactical_philosophy": "POWER_STATION",
+      "combat_mode": "SIPHON",
+      "battle_readiness": 0.8,
+      "active_frequency": 528,
+      "ancestors_invoked": [],
+      "historical_pattern": "none",
+      "danger_level": 0,
+      "ira_stealth": 0.8,
+      "apache_patience": 0.9,
+      "sun_tzu_veto_available": false,
+      "wolf_readiness": 0.7,
+      "counter_phase": 180
+    },
+    {
+      "timestamp": "2026-02-03T15:34:11+00:00",
+      "symbol": "POWER_SIPHON",
+      "side": "SIPHON",
+      "entry_price": 1,
+      "exit_price": 1.02,
+      "quantity": 1,
+      "entry_cost": 1,
+      "exit_value": 1.019,
+      "fees": 0.001,
+      "pnl": 0.019,
+      "pnl_pct": 1.9,
+      "tactical_philosophy": "POWER_STATION",
+      "combat_mode": "SIPHON",
+      "battle_readiness": 0.8,
+      "active_frequency": 528,
+      "ancestors_invoked": [],
+      "historical_pattern": "none",
+      "danger_level": 0,
+      "ira_stealth": 0.8,
+      "apache_patience": 0.9,
+      "sun_tzu_veto_available": false,
+      "wolf_readiness": 0.7,
+      "counter_phase": 180
+    },
+    {
+      "timestamp": "2026-02-03T15:34:11+00:00",
+      "symbol": "POWER_SIPHON",
+      "side": "SIPHON",
+      "entry_price": 1,
+      "exit_price": 1.02,
+      "quantity": 1,
+      "entry_cost": 1,
+      "exit_value": 1.019,
+      "fees": 0.001,
+      "pnl": 0.019,
+      "pnl_pct": 1.9,
+      "tactical_philosophy": "POWER_STATION",
+      "combat_mode": "SIPHON",
+      "battle_readiness": 0.8,
+      "active_frequency": 528,
+      "ancestors_invoked": [],
+      "historical_pattern": "none",
+      "danger_level": 0,
+      "ira_stealth": 0.8,
+      "apache_patience": 0.9,
+      "sun_tzu_veto_available": false,
+      "wolf_readiness": 0.7,
+      "counter_phase": 180
+    },
+    {
+      "timestamp": "2026-02-03T15:34:11+00:00",
+      "symbol": "POWER_SIPHON",
+      "side": "SIPHON",
+      "entry_price": 1,
+      "exit_price": 1.02,
+      "quantity": 1,
+      "entry_cost": 1,
+      "exit_value": 1.019,
+      "fees": 0.001,
+      "pnl": 0.019,
+      "pnl_pct": 1.9,
+      "tactical_philosophy": "POWER_STATION",
+      "combat_mode": "SIPHON",
+      "battle_readiness": 0.8,
+      "active_frequency": 528,
+      "ancestors_invoked": [],
+      "historical_pattern": "none",
+      "danger_level": 0,
+      "ira_stealth": 0.8,
+      "apache_patience": 0.9,
+      "sun_tzu_veto_available": false,
+      "wolf_readiness": 0.7,
+      "counter_phase": 180
+    }
+  ],
+  "equity_curve": [
+    [
+      "2025-02-08T18:00:00+00:00",
+      10.01067554359632
+    ],
+    [
+      "2025-02-08T19:00:00+00:00",
+      10.02436878237566
+    ],
+    [
+      "2025-02-08T20:00:00+00:00",
+      10.038630912650866
+    ],
+    [
+      "2025-02-08T21:00:00+00:00",
+      10.051906504713754
+    ],
+    [
+      "2025-02-08T22:00:00+00:00",
+      10.063483493388604
+    ],
+    [
+      "2025-02-08T23:00:00+00:00",
+      10.077126958004717
+    ],
+    [
+      "2025-02-09T00:00:00+00:00",
+      10.092740293962946
+    ],
+    [
+      "2025-02-09T01:00:00+00:00",
+      10.112359187554237
+    ],
+    [
+      "2025-02-09T02:00:00+00:00",
+      10.126634312052836
+    ],
+    [
+      "2025-02-09T03:00:00+00:00",
+      10.140224867992462
+    ],
+    [
+      "2025-02-09T03:00:00+00:00",
+      10.161801297177249
+    ],
+    [
+      "2025-02-09T04:00:00+00:00",
+      10.173205797770782
+    ],
+    [
+      "2025-02-09T04:00:00+00:00",
+      10.190204304313548
+    ],
+    [
+      "2025-02-09T05:00:00+00:00",
+      10.206837026580583
+    ],
+    [
+      "2025-02-09T06:00:00+00:00",
+      10.222471976919044
+    ],
+    [
+      "2025-02-09T07:00:00+00:00",
+      10.237783164535879
+    ],
+    [
+      "2025-02-09T08:00:00+00:00",
+      10.25461819363569
+    ],
+    [
+      "2025-02-09T09:00:00+00:00",
+      10.269864911512261
+    ],
+    [
+      "2025-02-09T10:00:00+00:00",
+      10.28361046237279
+    ],
+    [
+      "2025-02-09T11:00:00+00:00",
+      10.296507689932948
+    ],
+    [
+      "2025-02-09T12:00:00+00:00",
+      10.308031064526585
+    ],
+    [
+      "2025-02-09T15:00:00+00:00",
+      10.321569803844874
+    ],
+    [
+      "2025-02-09T16:00:00+00:00",
+      10.337541178411623
+    ],
+    [
+      "2025-02-09T17:00:00+00:00",
+      10.349942435773288
+    ],
+    [
+      "2025-02-09T18:00:00+00:00",
+      10.362096983910615
+    ],
+    [
+      "2025-02-09T23:00:00+00:00",
+      10.375026393677029
+    ],
+    [
+      "2025-02-10T00:00:00+00:00",
+      10.393148901690873
+    ],
+    [
+      "2025-02-10T03:00:00+00:00",
+      10.406381924830612
+    ],
+    [
+      "2025-02-10T04:00:00+00:00",
+      10.423549485729039
+    ],
+    [
+      "2025-02-10T05:00:00+00:00",
+      10.442939075024162
+    ],
+    [
+      "2025-02-10T06:00:00+00:00",
+      10.462533980007555
+    ],
+    [
+      "2025-02-10T07:00:00+00:00",
+      10.480565361446516
+    ],
+    [
+      "2025-02-10T08:00:00+00:00",
+      10.5037087473655
+    ],
+    [
+      "2025-02-10T09:00:00+00:00",
+      10.526193701320498
+    ],
+    [
+      "2025-02-10T10:00:00+00:00",
+      10.549135958020385
+    ],
+    [
+      "2025-02-10T11:00:00+00:00",
+      10.569178524109672
+    ],
+    [
+      "2025-02-10T12:00:00+00:00",
+      10.584243449621583
+    ],
+    [
+      "2025-02-10T13:00:00+00:00",
+      10.597501339164547
+    ],
+    [
+      "2025-02-10T13:00:00+00:00",
+      10.6135376591963
+    ],
+    [
+      "2025-02-10T13:00:00+00:00",
+      10.636221002238054
+    ],
+    [
+      "2025-02-10T14:00:00+00:00",
+      10.656120055341677
+    ],
+    [
+      "2025-02-10T15:00:00+00:00",
+      10.67236421605341
+    ],
+    [
+      "2025-02-10T16:00:00+00:00",
+      10.683568693831408
+    ],
+    [
+      "2025-02-10T16:00:00+00:00",
+      10.696567100596491
+    ],
+    [
+      "2025-02-10T16:00:00+00:00",
+      10.714325838918375
+    ],
+    [
+      "2025-02-10T17:00:00+00:00",
+      10.727048715839143
+    ],
+    [
+      "2025-02-10T17:00:00+00:00",
+      10.742640261236739
+    ],
+    [
+      "2025-02-10T17:00:00+00:00",
+      10.758174334782634
+    ],
+    [
+      "2025-02-10T18:00:00+00:00",
+      10.770626817731513
+    ],
+    [
+      "2025-02-10T18:00:00+00:00",
+      10.78598010043649
+    ],
+    [
+      "2025-02-10T18:00:00+00:00",
+      10.80078682335125
+    ],
+    [
+      "2025-02-10T19:00:00+00:00",
+      10.813677236625464
+    ],
+    [
+      "2025-02-10T19:00:00+00:00",
+      10.826824571365357
+    ],
+    [
+      "2025-02-10T20:00:00+00:00",
+      10.837044920506015
+    ],
+    [
+      "2025-02-10T20:00:00+00:00",
+      10.851965704944314
+    ],
+    [
+      "2025-02-10T20:00:00+00:00",
+      10.864997724024064
+    ],
+    [
+      "2025-02-10T21:00:00+00:00",
+      10.875792634624233
+    ],
+    [
+      "2025-02-10T21:00:00+00:00",
+      10.887351666444912
+    ],
+    [
+      "2025-02-10T22:00:00+00:00",
+      10.897998141852025
+    ],
+    [
+      "2025-02-10T23:00:00+00:00",
+      10.909018582689766
+    ],
+    [
+      "2025-02-11T00:00:00+00:00",
+      10.938494112087428
+    ],
+    [
+      "2025-02-11T00:00:00+00:00",
+      10.953368661061678
+    ],
+    [
+      "2025-02-11T00:00:00+00:00",
+      10.96960789538691
+    ],
+    [
+      "2025-02-11T00:00:00+00:00",
+      10.982273750957573
+    ],
+    [
+      "2025-02-11T01:00:00+00:00",
+      11.013477712995233
+    ],
+    [
+      "2025-02-11T01:00:00+00:00",
+      11.028358884675178
+    ],
+    [
+      "2025-02-11T01:00:00+00:00",
+      11.046847122982962
+    ],
+    [
+      "2025-02-11T01:00:00+00:00",
+      11.059223306114344
+    ],
+    [
+      "2025-02-11T02:00:00+00:00",
+      11.08868247302785
+    ],
+    [
+      "2025-02-11T02:00:00+00:00",
+      11.100401875057205
+    ],
+    [
+      "2025-02-11T02:00:00+00:00",
+      11.11481371149834
+    ],
+    [
+      "2025-02-11T02:00:00+00:00",
+      11.12548815182123
+    ],
+    [
+      "2025-02-11T03:00:00+00:00",
+      11.158373924502873
+    ],
+    [
+      "2025-02-11T03:00:00+00:00",
+      11.177674585315486
+    ],
+    [
+      "2025-02-11T03:00:00+00:00",
+      11.189829073916766
+    ],
+    [
+      "2025-02-11T03:00:00+00:00",
+      11.2003110392244
+    ],
+    [
+      "2025-02-11T04:00:00+00:00",
+      11.258693258484522
+    ],
+    [
+      "2025-02-11T04:00:00+00:00",
+      11.288572476891565
+    ],
+    [
+      "2025-02-11T04:00:00+00:00",
+      11.308175268221737
+    ],
+    [
+      "2025-02-11T05:00:00+00:00",
+      11.323738028732482
+    ],
+    [
+      "2025-02-11T05:00:00+00:00",
+      11.388210368867384
+    ],
+    [
+      "2025-02-11T05:00:00+00:00",
+      11.422821328619454
+    ],
+    [
+      "2025-02-11T05:00:00+00:00",
+      11.44787723641744
+    ],
+    [
+      "2025-02-11T05:00:00+00:00",
+      11.459242810658358
+    ],
+    [
+      "2025-02-11T06:00:00+00:00",
+      11.475528761311589
+    ],
+    [
+      "2025-02-11T06:00:00+00:00",
+      11.530695684757886
+    ],
+    [
+      "2025-02-11T06:00:00+00:00",
+      11.564004874920458
+    ],
+    [
+      "2025-02-11T06:00:00+00:00",
+      11.588358283198275
+    ],
+    [
+      "2025-02-11T07:00:00+00:00",
+      11.600439778620162
+    ],
+    [
+      "2025-02-11T07:00:00+00:00",
+      11.655716281433262
+    ],
+    [
+      "2025-02-11T07:00:00+00:00",
+      11.683689326435315
+    ],
+    [
+      "2025-02-11T07:00:00+00:00",
+      11.702546198648976
+    ],
+    [
+      "2025-02-11T08:00:00+00:00",
+      11.714973294104864
+    ],
+    [
+      "2025-02-11T08:00:00+00:00",
+      11.76917902458547
+    ],
+    [
+      "2025-02-11T08:00:00+00:00",
+      11.798138977874368
+    ],
+    [
+      "2025-02-11T08:00:00+00:00",
+      11.816931734784818
+    ],
+    [
+      "2025-02-11T09:00:00+00:00",
+      11.863486049879423
+    ],
+    [
+      "2025-02-11T09:00:00+00:00",
+      11.882340603363144
+    ],
+    [
+      "2025-02-11T09:00:00+00:00",
+      11.896104134996177
+    ],
+    [
+      "2025-02-11T10:00:00+00:00",
+      11.939117825414879
+    ],
+    [
+      "2025-02-11T10:00:00+00:00",
+      11.95849436915134
+    ],
+    [
+      "2025-02-11T10:00:00+00:00",
+      11.971322818053478
+    ],
+    [
+      "2025-02-11T11:00:00+00:00",
+      11.982472840441307
+    ],
+    [
+      "2025-02-11T11:00:00+00:00",
+      12.028060465908196
+    ],
+    [
+      "2025-02-11T11:00:00+00:00",
+      12.049408570896794
+    ],
+    [
+      "2025-02-11T11:00:00+00:00",
+      12.06407415719184
+    ],
+    [
+      "2025-02-11T12:00:00+00:00",
+      12.107540230055879
+    ],
+    [
+      "2025-02-11T12:00:00+00:00",
+      12.125298130171345
+    ],
+    [
+      "2025-02-11T12:00:00+00:00",
+      12.136666501838228
+    ],
+    [
+      "2025-02-11T13:00:00+00:00",
+      12.16802700579056
+    ],
+    [
+      "2025-02-11T14:00:00+00:00",
+      12.199925876098417
+    ],
+    [
+      "2025-02-11T14:00:00+00:00",
+      12.214073860679985
+    ],
+    [
+      "2025-02-11T15:00:00+00:00",
+      12.24577454795618
+    ],
+    [
+      "2025-02-11T15:00:00+00:00",
+      12.258538560881389
+    ],
+    [
+      "2025-02-11T15:30:00+00:00",
+      12.269276353025887
+    ],
+    [
+      "2025-02-11T16:00:00+00:00",
+      12.295006390632837
+    ],
+    [
+      "2025-02-11T16:00:00+00:00",
+      12.306008903693497
+    ],
+    [
+      "2025-02-11T17:00:00+00:00",
+      12.325746385965665
+    ],
+    [
+      "2025-02-11T18:00:00+00:00",
+      12.341195752114466
+    ],
+    [
+      "2025-02-11T19:00:00+00:00",
+      12.358427147063114
+    ],
+    [
+      "2025-02-11T20:00:00+00:00",
+      12.378395536578926
+    ],
+    [
+      "2025-02-11T21:00:00+00:00",
+      12.400137469475984
+    ],
+    [
+      "2025-02-11T22:00:00+00:00",
+      12.417608026840655
+    ],
+    [
+      "2025-02-11T23:00:00+00:00",
+      12.435022918874989
+    ],
+    [
+      "2025-02-12T00:00:00+00:00",
+      12.452405411214361
+    ],
+    [
+      "2025-02-12T01:00:00+00:00",
+      12.467587410385336
+    ],
+    [
+      "2025-02-12T02:00:00+00:00",
+      12.47877935580422
+    ],
+    [
+      "2025-02-12T03:00:00+00:00",
+      12.490436513945847
+    ],
+    [
+      "2025-02-12T04:00:00+00:00",
+      12.500739733430038
+    ],
+    [
+      "2025-02-12T05:00:00+00:00",
+      12.512107196763438
+    ],
+    [
+      "2025-02-12T07:00:00+00:00",
+      12.52352360859629
+    ],
+    [
+      "2025-02-12T08:00:00+00:00",
+      12.53464721185737
+    ],
+    [
+      "2025-02-12T09:00:00+00:00",
+      12.548078255211356
+    ],
+    [
+      "2025-02-12T10:00:00+00:00",
+      12.561396925627347
+    ],
+    [
+      "2025-02-12T11:00:00+00:00",
+      12.573092672469754
+    ],
+    [
+      "2025-02-12T11:00:00+00:00",
+      12.584215356366357
+    ],
+    [
+      "2025-02-12T12:00:00+00:00",
+      12.595133892469155
+    ],
+    [
+      "2025-02-12T12:00:00+00:00",
+      12.605704784536044
+    ],
+    [
+      "2025-02-12T15:00:00+00:00",
+      12.623899809923039
+    ],
+    [
+      "2025-02-12T16:00:00+00:00",
+      12.634262432537858
+    ],
+    [
+      "2025-02-12T16:00:00+00:00",
+      12.654703473343858
+    ],
+    [
+      "2025-02-12T17:00:00+00:00",
+      12.664897688408065
+    ],
+    [
+      "2025-02-12T17:00:00+00:00",
+      12.686650757387026
+    ],
+    [
+      "2025-02-12T17:00:00+00:00",
+      12.697267053540873
+    ],
+    [
+      "2025-02-12T18:00:00+00:00",
+      12.719252887093853
+    ],
+    [
+      "2025-02-12T18:00:00+00:00",
+      12.729746840795777
+    ],
+    [
+      "2025-02-12T18:30:00+00:00",
+      12.740647668414788
+    ],
+    [
+      "2025-02-12T19:00:00+00:00",
+      12.764814403650766
+    ],
+    [
+      "2025-02-12T19:00:00+00:00",
+      12.779242025870246
+    ],
+    [
+      "2025-02-12T19:30:00+00:00",
+      12.790505271205936
+    ],
+    [
+      "2025-02-12T20:00:00+00:00",
+      12.8137224473063
+    ],
+    [
+      "2025-02-12T20:00:00+00:00",
+      12.82526075269241
+    ],
+    [
+      "2025-02-12T20:30:00+00:00",
+      12.837193712621959
+    ],
+    [
+      "2025-02-12T21:00:00+00:00",
+      12.847213009251398
+    ],
+    [
+      "2025-02-12T21:00:00+00:00",
+      12.866167344123772
+    ],
+    [
+      "2025-02-12T21:00:00+00:00",
+      12.87781836521791
+    ],
+    [
+      "2025-02-12T22:00:00+00:00",
+      12.896330279435706
+    ],
+    [
+      "2025-02-12T22:00:00+00:00",
+      12.914303398030235
+    ],
+    [
+      "2025-02-12T22:00:00+00:00",
+      12.932757651579099
+    ],
+    [
+      "2025-02-12T23:00:00+00:00",
+      12.94305411301304
+    ],
+    [
+      "2025-02-12T23:00:00+00:00",
+      12.96073331337613
+    ],
+    [
+      "2025-02-12T23:00:00+00:00",
+      12.979353929330404
+    ],
+    [
+      "2025-02-12T23:00:00+00:00",
+      12.994134018478643
+    ],
+    [
+      "2025-02-13T00:00:00+00:00",
+      13.011484719034883
+    ],
+    [
+      "2025-02-13T00:00:00+00:00",
+      13.026475629227845
+    ],
+    [
+      "2025-02-13T00:00:00+00:00",
+      13.040637989190651
+    ],
+    [
+      "2025-02-13T01:00:00+00:00",
+      13.057907847296548
+    ],
+    [
+      "2025-02-13T01:00:00+00:00",
+      13.075556750259492
+    ],
+    [
+      "2025-02-13T01:00:00+00:00",
+      13.095613879605978
+    ],
+    [
+      "2025-02-13T02:00:00+00:00",
+      13.110067057503226
+    ],
+    [
+      "2025-02-13T02:00:00+00:00",
+      13.123282836866405
+    ],
+    [
+      "2025-02-13T02:00:00+00:00",
+      13.143369599223625
+    ],
+    [
+      "2025-02-13T03:00:00+00:00",
+      13.157706265892093
+    ],
+    [
+      "2025-02-13T03:00:00+00:00",
+      13.171408692786269
+    ],
+    [
+      "2025-02-13T03:00:00+00:00",
+      13.183259173683787
+    ],
+    [
+      "2025-02-13T03:00:00+00:00",
+      13.207710851584977
+    ],
+    [
+      "2025-02-13T04:00:00+00:00",
+      13.218939372574171
+    ],
+    [
+      "2025-02-13T04:00:00+00:00",
+      13.23632865707067
+    ],
+    [
+      "2025-02-13T05:00:00+00:00",
+      13.248238140284975
+    ],
+    [
+      "2025-02-13T05:00:00+00:00",
+      13.258935233353892
+    ],
+    [
+      "2025-02-13T05:00:00+00:00",
+      13.275031878096904
+    ],
+    [
+      "2025-02-13T06:00:00+00:00",
+      13.285921231008547
+    ],
+    [
+      "2025-02-13T07:00:00+00:00",
+      13.29674652302672
+    ],
+    [
+      "2025-02-13T07:00:00+00:00",
+      13.307436392156847
+    ],
+    [
+      "2025-02-13T08:00:00+00:00",
+      13.31793043188046
+    ],
+    [
+      "2025-02-13T09:00:00+00:00",
+      13.328369938367564
+    ],
+    [
+      "2025-02-13T09:00:00+00:00",
+      13.338923459944697
+    ],
+    [
+      "2025-02-13T10:00:00+00:00",
+      13.349577192151973
+    ],
+    [
+      "2025-02-13T14:30:00+00:00",
+      13.363211585469871
+    ],
+    [
+      "2025-02-13T14:30:00+00:00",
+      13.37780111484529
+    ],
+    [
+      "2025-02-13T15:30:00+00:00",
+      13.39603603226763
+    ],
+    [
+      "2025-02-13T15:30:00+00:00",
+      13.409787200441501
+    ],
+    [
+      "2025-02-13T16:30:00+00:00",
+      13.427403756440228
+    ],
+    [
+      "2025-02-13T16:30:00+00:00",
+      13.438669058119634
+    ],
+    [
+      "2025-02-13T17:30:00+00:00",
+      13.457145020578213
+    ],
+    [
+      "2025-02-13T18:00:00+00:00",
+      13.467197650654295
+    ],
+    [
+      "2025-02-13T18:00:00+00:00",
+      13.477800297710148
+    ],
+    [
+      "2025-02-13T18:30:00+00:00",
+      13.497162174226355
+    ],
+    [
+      "2025-02-13T19:30:00+00:00",
+      13.515696055234008
+    ],
+    [
+      "2025-02-13T20:00:00+00:00",
+      13.526189612836033
+    ],
+    [
+      "2025-02-13T20:00:00+00:00",
+      13.536588900363347
+    ],
+    [
+      "2025-02-13T20:30:00+00:00",
+      13.554662211847438
+    ],
+    [
+      "2025-02-13T21:00:00+00:00",
+      13.56644733483302
+    ],
+    [
+      "2025-02-13T21:00:00+00:00",
+      13.57695187623938
+    ],
+    [
+      "2025-02-13T21:00:00+00:00",
+      13.589290282581091
+    ],
+    [
+      "2025-02-13T22:00:00+00:00",
+      13.605193404450711
+    ],
+    [
+      "2025-02-13T22:00:00+00:00",
+      13.616783523859743
+    ],
+    [
+      "2025-02-13T23:00:00+00:00",
+      13.63764719499563
+    ],
+    [
+      "2025-02-13T23:00:00+00:00",
+      13.648526362877757
+    ],
+    [
+      "2025-02-14T00:00:00+00:00",
+      13.668830626465834
+    ],
+    [
+      "2025-02-14T01:00:00+00:00",
+      13.68655657167819
+    ],
+    [
+      "2025-02-14T01:00:00+00:00",
+      13.697425971659435
+    ],
+    [
+      "2025-02-14T02:00:00+00:00",
+      13.715899714151229
+    ],
+    [
+      "2025-02-14T02:00:00+00:00",
+      13.727184766146651
+    ],
+    [
+      "2025-02-14T03:00:00+00:00",
+      13.751032225007325
+    ],
+    [
+      "2025-02-14T03:00:00+00:00",
+      13.762191762154755
+    ],
+    [
+      "2025-02-14T03:00:00+00:00",
+      13.776826707578858
+    ],
+    [
+      "2025-02-14T04:00:00+00:00",
+      13.796447099336142
+    ],
+    [
+      "2025-02-14T04:00:00+00:00",
+      13.806584088881822
+    ],
+    [
+      "2025-02-14T04:00:00+00:00",
+      13.8197488447743
+    ],
+    [
+      "2025-02-14T05:00:00+00:00",
+      13.837271862471459
+    ],
+    [
+      "2025-02-14T05:00:00+00:00",
+      13.848466181353418
+    ],
+    [
+      "2025-02-14T06:00:00+00:00",
+      13.86537830294904
+    ],
+    [
+      "2025-02-14T06:00:00+00:00",
+      13.876881767821676
+    ],
+    [
+      "2025-02-14T07:00:00+00:00",
+      13.897507698558451
+    ],
+    [
+      "2025-02-14T07:00:00+00:00",
+      13.909473172922795
+    ],
+    [
+      "2025-02-14T08:00:00+00:00",
+      13.943045094830474
+    ],
+    [
+      "2025-02-14T08:00:00+00:00",
+      13.95304379963567
+    ],
+    [
+      "2025-02-14T08:00:00+00:00",
+      13.968746594879889
+    ],
+    [
+      "2025-02-14T09:00:00+00:00",
+      14.007960302644602
+    ],
+    [
+      "2025-02-14T09:00:00+00:00",
+      14.01817646107273
+    ],
+    [
+      "2025-02-14T09:00:00+00:00",
+      14.028797510212172
+    ],
+    [
+      "2025-02-14T09:00:00+00:00",
+      14.039801279561969
+    ],
+    [
+      "2025-02-14T09:00:00+00:00",
+      14.050231125717957
+    ],
+    [
+      "2025-02-14T09:00:00+00:00",
+      14.068566113164744
+    ],
+    [
+      "2025-02-14T10:00:00+00:00",
+      14.103582277043426
+    ],
+    [
+      "2025-02-14T10:00:00+00:00",
+      14.119413319027455
+    ],
+    [
+      "2025-02-14T11:00:00+00:00",
+      14.151738854544341
+    ],
+    [
+      "2025-02-14T11:00:00+00:00",
+      14.166122721416837
+    ],
+    [
+      "2025-02-14T12:00:00+00:00",
+      14.19318368043836
+    ],
+    [
+      "2025-02-14T12:00:00+00:00",
+      14.205450152444431
+    ],
+    [
+      "2025-02-14T13:00:00+00:00",
+      14.23334980582077
+    ],
+    [
+      "2025-02-14T13:00:00+00:00",
+      14.246723115538682
+    ],
+    [
+      "2025-02-14T14:00:00+00:00",
+      14.273897969057652
+    ],
+    [
+      "2025-02-14T14:00:00+00:00",
+      14.285639574265273
+    ],
+    [
+      "2025-02-14T14:00:00+00:00",
+      14.297741250673115
+    ],
+    [
+      "2025-02-14T14:00:00+00:00",
+      14.312512079558948
+    ],
+    [
+      "2025-02-14T14:30:00+00:00",
+      14.334812904706661
+    ],
+    [
+      "2025-02-14T14:30:00+00:00",
+      14.349732293941202
+    ],
+    [
+      "2025-02-14T15:00:00+00:00",
+      14.37507573899608
+    ],
+    [
+      "2025-02-14T15:00:00+00:00",
+      14.38597214907027
+    ],
+    [
+      "2025-02-14T15:00:00+00:00",
+      14.397646411908266
+    ],
+    [
+      "2025-02-14T15:00:00+00:00",
+      14.412204197954313
+    ],
+    [
+      "2025-02-14T15:30:00+00:00",
+      14.43319203603795
+    ],
+    [
+      "2025-02-14T15:30:00+00:00",
+      14.445839459997233
+    ],
+    [
+      "2025-02-14T16:00:00+00:00",
+      14.47076373286328
+    ],
+    [
+      "2025-02-14T16:00:00+00:00",
+      14.482586819023632
+    ],
+    [
+      "2025-02-14T16:00:00+00:00",
+      14.494020690077305
+    ],
+    [
+      "2025-02-14T16:00:00+00:00",
+      14.507937409210287
+    ],
+    [
+      "2025-02-14T16:30:00+00:00",
+      14.528153178188148
+    ],
+    [
+      "2025-02-14T17:00:00+00:00",
+      14.552319131894707
+    ],
+    [
+      "2025-02-14T17:00:00+00:00",
+      14.56345427340927
+    ],
+    [
+      "2025-02-14T17:00:00+00:00",
+      14.580006285818786
+    ],
+    [
+      "2025-02-14T17:00:00+00:00",
+      14.595853319055896
+    ],
+    [
+      "2025-02-14T17:00:00+00:00",
+      14.61043734393648
+    ],
+    [
+      "2025-02-14T17:30:00+00:00",
+      14.630381403933418
+    ],
+    [
+      "2025-02-14T17:30:00+00:00",
+      14.641097967743502
+    ],
+    [
+      "2025-02-14T18:00:00+00:00",
+      14.664536981950471
+    ],
+    [
+      "2025-02-14T18:00:00+00:00",
+      14.6796678857281
+    ],
+    [
+      "2025-02-14T18:00:00+00:00",
+      14.691171187286443
+    ],
+    [
+      "2025-02-14T18:00:00+00:00",
+      14.70310692487254
+    ],
+    [
+      "2025-02-14T18:30:00+00:00",
+      14.722721790081936
+    ],
+    [
+      "2025-02-14T18:30:00+00:00",
+      14.733064982598552
+    ],
+    [
+      "2025-02-14T19:00:00+00:00",
+      14.757421387008174
+    ],
+    [
+      "2025-02-14T19:00:00+00:00",
+      14.768751648515673
+    ],
+    [
+      "2025-02-14T19:00:00+00:00",
+      14.778848906065784
+    ],
+    [
+      "2025-02-14T19:00:00+00:00",
+      14.789819642646918
+    ],
+    [
+      "2025-02-14T19:30:00+00:00",
+      14.808820564674805
+    ],
+    [
+      "2025-02-14T19:30:00+00:00",
+      14.821154840983034
+    ],
+    [
+      "2025-02-14T20:00:00+00:00",
+      14.841342000200203
+    ],
+    [
+      "2025-02-14T20:30:00+00:00",
+      14.860462513638996
+    ],
+    [
+      "2025-02-14T20:30:00+00:00",
+      14.872468883423767
+    ],
+    [
+      "2025-02-14T21:00:00+00:00",
+      14.891510484381637
+    ],
+    [
+      "2025-02-14T21:00:00+00:00",
+      14.902855479390933
+    ],
+    [
+      "2025-02-14T21:00:00+00:00",
+      14.913572367036444
+    ],
+    [
+      "2025-02-14T21:00:00+00:00",
+      14.923654291206233
+    ],
+    [
+      "2025-02-14T22:00:00+00:00",
+      14.939508589474121
+    ],
+    [
+      "2025-02-14T23:00:00+00:00",
+      14.956046886152135
+    ],
+    [
+      "2025-02-15T00:00:00+00:00",
+      14.972121001509901
+    ],
+    [
+      "2025-02-15T01:00:00+00:00",
+      14.988904484631197
+    ],
+    [
+      "2025-02-15T01:00:00+00:00",
+      15.00045521176906
+    ],
+    [
+      "2025-02-15T02:00:00+00:00",
+      15.018047532481356
+    ],
+    [
+      "2025-02-15T02:00:00+00:00",
+      15.031925945375564
+    ],
+    [
+      "2025-02-15T03:00:00+00:00",
+      15.047868476877127
+    ],
+    [
+      "2025-02-15T03:00:00+00:00",
+      15.060122703551153
+    ],
+    [
+      "2025-02-15T04:00:00+00:00",
+      15.074111097793544
+    ],
+    [
+      "2025-02-15T04:00:00+00:00",
+      15.086505537331565
+    ],
+    [
+      "2025-02-15T05:00:00+00:00",
+      15.099419417683274
+    ],
+    [
+      "2025-02-15T05:00:00+00:00",
+      15.110289380403323
+    ],
+    [
+      "2025-02-15T06:00:00+00:00",
+      15.121600671168782
+    ],
+    [
+      "2025-02-15T07:00:00+00:00",
+      15.132239679158287
+    ],
+    [
+      "2025-02-15T08:00:00+00:00",
+      15.143295111175364
+    ],
+    [
+      "2025-02-15T10:00:00+00:00",
+      15.153840717914754
+    ],
+    [
+      "2025-02-17T12:00:00+00:00",
+      15.16439620188139
+    ],
+    [
+      "2025-02-17T14:00:00+00:00",
+      15.180422146064592
+    ],
+    [
+      "2025-02-17T14:00:00+00:00",
+      15.193016509924854
+    ],
+    [
+      "2025-02-17T21:00:00+00:00",
+      15.206048421095941
+    ],
+    [
+      "2025-02-17T22:00:00+00:00",
+      15.216974176894267
+    ],
+    [
+      "2025-02-17T23:00:00+00:00",
+      15.228417290600111
+    ],
+    [
+      "2025-02-18T01:00:00+00:00",
+      15.238410703345101
+    ],
+    [
+      "2025-02-18T14:30:00+00:00",
+      15.256347416307458
+    ],
+    [
+      "2025-02-18T14:30:00+00:00",
+      15.272084317999479
+    ],
+    [
+      "2025-02-18T15:30:00+00:00",
+      15.290354165351742
+    ],
+    [
+      "2025-02-18T15:30:00+00:00",
+      15.3058380869153
+    ],
+    [
+      "2025-02-18T16:30:00+00:00",
+      15.323204010121907
+    ],
+    [
+      "2025-02-18T16:30:00+00:00",
+      15.336696024120776
+    ],
+    [
+      "2025-02-18T17:30:00+00:00",
+      15.352355498703936
+    ],
+    [
+      "2025-02-18T17:30:00+00:00",
+      15.366385081952844
+    ],
+    [
+      "2025-02-18T18:30:00+00:00",
+      15.381180248708107
+    ],
+    [
+      "2025-02-18T18:30:00+00:00",
+      15.39596327964308
+    ],
+    [
+      "2025-02-18T19:30:00+00:00",
+      15.410919124346357
+    ],
+    [
+      "2025-02-18T19:30:00+00:00",
+      15.424453282509056
+    ],
+    [
+      "2025-02-18T20:30:00+00:00",
+      15.440085267207378
+    ],
+    [
+      "2025-02-18T20:30:00+00:00",
+      15.45427419355695
+    ],
+    [
+      "2025-02-19T09:00:00+00:00",
+      15.464550575420983
+    ],
+    [
+      "2025-02-19T10:00:00+00:00",
+      15.475104564638283
+    ],
+    [
+      "2025-02-19T11:00:00+00:00",
+      15.485827595357437
+    ],
+    [
+      "2025-02-19T12:00:00+00:00",
+      15.496616131377374
+    ],
+    [
+      "2025-02-19T14:30:00+00:00",
+      15.511223948438879
+    ],
+    [
+      "2025-02-19T14:30:00+00:00",
+      15.525748591163612
+    ],
+    [
+      "2025-02-19T15:30:00+00:00",
+      15.540443853777397
+    ],
+    [
+      "2025-02-19T15:30:00+00:00",
+      15.557374667381035
+    ],
+    [
+      "2025-02-19T16:30:00+00:00",
+      15.572437765608033
+    ],
+    [
+      "2025-02-19T16:30:00+00:00",
+      15.5872518538019
+    ],
+    [
+      "2025-02-19T17:30:00+00:00",
+      15.601425945372428
+    ],
+    [
+      "2025-02-19T17:30:00+00:00",
+      15.615351412439214
+    ],
+    [
+      "2025-02-19T18:30:00+00:00",
+      15.62930318303414
+    ],
+    [
+      "2025-02-19T18:30:00+00:00",
+      15.644915651699165
+    ],
+    [
+      "2025-02-19T19:30:00+00:00",
+      15.658441608309662
+    ],
+    [
+      "2025-02-19T19:30:00+00:00",
+      15.671445069071005
+    ],
+    [
+      "2025-02-19T20:30:00+00:00",
+      15.684577210472819
+    ],
+    [
+      "2025-02-19T20:30:00+00:00",
+      15.697887191225325
+    ],
+    [
+      "2025-02-20T02:00:00+00:00",
+      15.708644219608427
+    ],
+    [
+      "2025-02-20T03:00:00+00:00",
+      15.720136201817297
+    ],
+    [
+      "2025-02-20T04:00:00+00:00",
+      15.731203062033673
+    ],
+    [
+      "2025-02-20T14:30:00+00:00",
+      15.743832139571014
+    ],
+    [
+      "2025-02-20T14:30:00+00:00",
+      15.75558002487346
+    ],
+    [
+      "2025-02-20T15:30:00+00:00",
+      15.769047827057095
+    ],
+    [
+      "2025-02-20T15:30:00+00:00",
+      15.779053489364882
+    ],
+    [
+      "2025-02-20T16:30:00+00:00",
+      15.792306686216524
+    ],
+    [
+      "2025-02-20T16:30:00+00:00",
+      15.802516057192276
+    ],
+    [
+      "2025-02-20T17:30:00+00:00",
+      15.814584238428004
+    ],
+    [
+      "2025-02-20T18:30:00+00:00",
+      15.826137964005785
+    ],
+    [
+      "2025-02-20T18:30:00+00:00",
+      15.836711465811835
+    ],
+    [
+      "2025-02-20T19:30:00+00:00",
+      15.848200035169846
+    ],
+    [
+      "2025-02-20T20:30:00+00:00",
+      15.859516023759497
+    ],
+    [
+      "2025-02-20T20:30:00+00:00",
+      15.870340994222472
+    ],
+    [
+      "2025-02-21T10:00:00+00:00",
+      15.881273036334322
+    ],
+    [
+      "2025-02-21T12:00:00+00:00",
+      15.892056356897289
+    ],
+    [
+      "2025-02-21T13:00:00+00:00",
+      15.902484607567475
+    ],
+    [
+      "2025-02-21T13:00:00+00:00",
+      15.9164572236085
+    ],
+    [
+      "2025-02-21T14:00:00+00:00",
+      15.927286400808839
+    ],
+    [
+      "2025-02-21T14:30:00+00:00",
+      15.938201307097161
+    ],
+    [
+      "2025-02-21T14:30:00+00:00",
+      15.949450732401477
+    ],
+    [
+      "2025-02-21T15:30:00+00:00",
+      15.960963235328963
+    ],
+    [
+      "2025-02-21T15:30:00+00:00",
+      15.972723605850971
+    ],
+    [
+      "2025-02-21T16:30:00+00:00",
+      15.98401332047526
+    ],
+    [
+      "2025-02-21T16:30:00+00:00",
+      15.99447544847104
+    ],
+    [
+      "2025-02-21T17:30:00+00:00",
+      16.005429310095117
+    ],
+    [
+      "2025-02-24T14:30:00+00:00",
+      16.016268029778168
+    ],
+    [
+      "2025-02-24T15:30:00+00:00",
+      16.02628079771963
+    ],
+    [
+      "2025-02-24T16:30:00+00:00",
+      16.03636142939028
+    ],
+    [
+      "2025-02-24T16:30:00+00:00",
+      16.0465820539242
+    ],
+    [
+      "2025-02-24T18:30:00+00:00",
+      16.056803462511528
+    ],
+    [
+      "2025-02-25T14:30:00+00:00",
+      16.073988048310845
+    ],
+    [
+      "2025-02-25T15:30:00+00:00",
+      16.088686922161994
+    ],
+    [
+      "2025-02-25T16:30:00+00:00",
+      16.099039933480334
+    ],
+    [
+      "2025-02-25T16:30:00+00:00",
+      16.113695696288666
+    ],
+    [
+      "2025-02-25T17:30:00+00:00",
+      16.128382773002983
+    ],
+    [
+      "2025-02-25T18:30:00+00:00",
+      16.14266341439984
+    ],
+    [
+      "2025-02-25T19:30:00+00:00",
+      16.15773585581413
+    ],
+    [
+      "2025-02-25T20:30:00+00:00",
+      16.172117964536767
+    ],
+    [
+      "2025-02-26T14:30:00+00:00",
+      16.190691769317684
+    ],
+    [
+      "2025-02-26T15:30:00+00:00",
+      16.209553378491716
+    ],
+    [
+      "2025-02-26T16:30:00+00:00",
+      16.2293644057278
+    ],
+    [
+      "2025-02-26T17:30:00+00:00",
+      16.245427490462372
+    ],
+    [
+      "2025-02-26T18:30:00+00:00",
+      16.26188516186908
+    ],
+    [
+      "2025-02-26T19:30:00+00:00",
+      16.27838880018613
+    ],
+    [
+      "2025-02-26T20:30:00+00:00",
+      16.295664481928476
+    ],
+    [
+      "2025-02-27T14:30:00+00:00",
+      16.31420622039782
+    ],
+    [
+      "2025-02-27T15:30:00+00:00",
+      16.333119665456323
+    ],
+    [
+      "2025-02-27T16:30:00+00:00",
+      16.351336464536477
+    ],
+    [
+      "2025-02-27T17:30:00+00:00",
+      16.367242625372455
+    ],
+    [
+      "2025-02-27T18:30:00+00:00",
+      16.3802999722187
+    ],
+    [
+      "2025-02-27T19:30:00+00:00",
+      16.392141447355336
+    ],
+    [
+      "2025-02-27T20:30:00+00:00",
+      16.40349954382149
+    ],
+    [
+      "2025-02-28T16:30:00+00:00",
+      16.41374454891709
+    ],
+    [
+      "2025-02-28T18:30:00+00:00",
+      16.425800700217028
+    ],
+    [
+      "2025-02-28T19:30:00+00:00",
+      16.438984939498464
+    ],
+    [
+      "2025-02-28T20:30:00+00:00",
+      16.453908027690755
+    ],
+    [
+      "2025-03-02T15:00:00+00:00",
+      16.46714181533113
+    ],
+    [
+      "2025-03-02T16:00:00+00:00",
+      16.478061629844877
+    ],
+    [
+      "2025-03-02T16:00:00+00:00",
+      16.502706688185185
+    ],
+    [
+      "2025-03-02T17:00:00+00:00",
+      16.51343777451654
+    ],
+    [
+      "2025-03-02T17:00:00+00:00",
+      16.53377922021257
+    ],
+    [
+      "2025-03-02T18:00:00+00:00",
+      16.549979336943714
+    ],
+    [
+      "2025-03-02T19:00:00+00:00",
+      16.564847278561178
+    ],
+    [
+      "2025-03-02T20:00:00+00:00",
+      16.57696163850652
+    ],
+    [
+      "2025-03-02T21:00:00+00:00",
+      16.587584453819055
+    ],
+    [
+      "2025-03-02T21:00:00+00:00",
+      16.598424028401062
+    ],
+    [
+      "2025-03-02T23:00:00+00:00",
+      16.60887111013535
+    ],
+    [
+      "2025-03-02T23:00:00+00:00",
+      16.62008511109865
+    ],
+    [
+      "2025-03-03T14:30:00+00:00",
+      16.635094946676972
+    ],
+    [
+      "2025-03-03T15:30:00+00:00",
+      16.6516986884055
+    ],
+    [
+      "2025-03-03T16:30:00+00:00",
+      16.66874144910948
+    ],
+    [
+      "2025-03-03T17:30:00+00:00",
+      16.684468594054508
+    ],
+    [
+      "2025-03-03T18:30:00+00:00",
+      16.699760300853594
+    ],
+    [
+      "2025-03-03T19:30:00+00:00",
+      16.714268640069854
+    ],
+    [
+      "2025-03-03T20:30:00+00:00",
+      16.728444463971744
+    ],
+    [
+      "2025-03-04T14:30:00+00:00",
+      16.73966145546784
+    ],
+    [
+      "2025-03-04T18:30:00+00:00",
+      16.74970031224384
+    ],
+    [
+      "2025-03-04T19:30:00+00:00",
+      16.760099821378446
+    ],
+    [
+      "2025-03-05T14:30:00+00:00",
+      16.770416354008514
+    ],
+    [
+      "2025-03-05T16:30:00+00:00",
+      16.780427621061964
+    ],
+    [
+      "2025-03-05T18:30:00+00:00",
+      16.79098821473905
+    ],
+    [
+      "2025-03-05T19:30:00+00:00",
+      16.801983768260396
+    ],
+    [
+      "2025-03-05T20:30:00+00:00",
+      16.8131961398376
+    ],
+    [
+      "2025-03-06T14:30:00+00:00",
+      16.823188106130146
+    ],
+    [
+      "2025-03-24T17:30:00+00:00",
+      16.834019459544574
+    ],
+    [
+      "2025-03-24T18:30:00+00:00",
+      16.844891897594167
+    ],
+    [
+      "2025-03-25T19:30:00+00:00",
+      16.856411429510164
+    ],
+    [
+      "2025-05-10T23:00:00+00:00",
+      16.87086682995612
+    ],
+    [
+      "2025-05-12T08:00:00+00:00",
+      16.887616139919302
+    ],
+    [
+      "2025-05-12T09:00:00+00:00",
+      16.904413865675334
+    ],
+    [
+      "2025-05-12T10:00:00+00:00",
+      16.921396145086714
+    ],
+    [
+      "2025-05-14T13:30:00+00:00",
+      16.942811135362145
+    ],
+    [
+      "2025-05-14T14:30:00+00:00",
+      16.960449531146857
+    ],
+    [
+      "2025-05-14T15:30:00+00:00",
+      16.979046557736932
+    ],
+    [
+      "2025-05-14T16:30:00+00:00",
+      16.99388146469898
+    ],
+    [
+      "2025-05-14T17:30:00+00:00",
+      17.007406424093443
+    ],
+    [
+      "2025-05-14T18:30:00+00:00",
+      17.02140501874923
+    ],
+    [
+      "2025-05-14T19:30:00+00:00",
+      17.035808608511246
+    ],
+    [
+      "2025-05-15T13:30:00+00:00",
+      17.045878198135565
+    ],
+    [
+      "2025-05-15T14:30:00+00:00",
+      17.056308194772633
+    ],
+    [
+      "2025-05-15T15:30:00+00:00",
+      17.066413372906744
+    ],
+    [
+      "2025-05-15T16:30:00+00:00",
+      17.076868354255687
+    ],
+    [
+      "2025-05-16T13:30:00+00:00",
+      17.088669104729078
+    ],
+    [
+      "2025-05-16T14:30:00+00:00",
+      17.1007169700557
+    ],
+    [
+      "2025-05-16T15:30:00+00:00",
+      17.111708053733448
+    ],
+    [
+      "2025-05-16T16:30:00+00:00",
+      17.1221181333884
+    ],
+    [
+      "2025-05-16T18:30:00+00:00",
+      17.132182745628818
+    ],
+    [
+      "2025-06-03T19:30:00+00:00",
+      17.14221486546786
+    ],
+    [
+      "2025-06-04T14:30:00+00:00",
+      17.152334057613086
+    ],
+    [
+      "2025-06-04T15:30:00+00:00",
+      17.162767902082432
+    ],
+    [
+      "2025-06-04T16:30:00+00:00",
+      17.17394458320531
+    ],
+    [
+      "2025-06-04T17:30:00+00:00",
+      17.184724237097274
+    ],
+    [
+      "2025-06-09T13:30:00+00:00",
+      17.19803108005197
+    ],
+    [
+      "2025-06-09T14:30:00+00:00",
+      17.208972688063476
+    ],
+    [
+      "2025-06-09T16:30:00+00:00",
+      17.219571286589687
+    ],
+    [
+      "2025-06-09T17:30:00+00:00",
+      17.230840983055355
+    ],
+    [
+      "2025-06-09T18:30:00+00:00",
+      17.242085130291084
+    ],
+    [
+      "2025-06-09T19:30:00+00:00",
+      17.252548984218326
+    ],
+    [
+      "2025-06-10T13:30:00+00:00",
+      17.263864649928525
+    ],
+    [
+      "2025-06-10T15:30:00+00:00",
+      17.27476992245086
+    ],
+    [
+      "2025-06-10T16:30:00+00:00",
+      17.28487252572285
+    ],
+    [
+      "2025-06-16T13:30:00+00:00",
+      17.296085466790483
+    ],
+    [
+      "2025-06-16T14:30:00+00:00",
+      17.307008806529034
+    ],
+    [
+      "2025-06-16T15:30:00+00:00",
+      17.31775060773337
+    ],
+    [
+      "2025-06-16T16:30:00+00:00",
+      17.32821312512209
+    ],
+    [
+      "2025-06-17T13:30:00+00:00",
+      17.339028087309362
+    ],
+    [
+      "2025-06-20T13:30:00+00:00",
+      17.349034834004396
+    ],
+    [
+      "2025-06-23T13:30:00+00:00",
+      17.35935944970062
+    ],
+    [
+      "2025-06-24T13:30:00+00:00",
+      17.370269755059656
+    ],
+    [
+      "2025-06-24T14:30:00+00:00",
+      17.38052264914861
+    ],
+    [
+      "2025-06-25T13:30:00+00:00",
+      17.391226141433258
+    ],
+    [
+      "2025-06-25T16:30:00+00:00",
+      17.40127424891251
+    ],
+    [
+      "2025-07-14T08:00:00+00:00",
+      17.41154336404293
+    ],
+    [
+      "2025-07-15T13:30:00+00:00",
+      17.42394960641796
+    ],
+    [
+      "2025-07-15T14:30:00+00:00",
+      17.434232123007526
+    ],
+    [
+      "2025-07-16T17:00:00+00:00",
+      17.444321978285803
+    ],
+    [
+      "2025-07-17T05:00:00+00:00",
+      17.455240509408675
+    ],
+    [
+      "2025-07-17T08:00:00+00:00",
+      17.466200301693693
+    ],
+    [
+      "2025-07-17T10:00:00+00:00",
+      17.476248709455756
+    ],
+    [
+      "2025-07-17T21:00:00+00:00",
+      17.487474818885428
+    ],
+    [
+      "2025-07-18T00:00:00+00:00",
+      17.498214547807528
+    ],
+    [
+      "2025-07-20T16:00:00+00:00",
+      17.508816048470145
+    ],
+    [
+      "2025-07-21T14:00:00+00:00",
+      17.519713726003705
+    ],
+    [
+      "2025-07-24T14:30:00+00:00",
+      17.529765363867305
+    ],
+    [
+      "2025-07-28T13:30:00+00:00",
+      17.5399878730469
+    ],
+    [
+      "2025-08-13T13:00:00+00:00",
+      17.56518134499175
+    ],
+    [
+      "2025-08-13T14:00:00+00:00",
+      17.58848728069388
+    ],
+    [
+      "2025-08-13T15:00:00+00:00",
+      17.62220308095538
+    ],
+    [
+      "2025-08-13T16:00:00+00:00",
+      17.660903072681624
+    ],
+    [
+      "2025-08-13T17:00:00+00:00",
+      17.701094783864708
+    ],
+    [
+      "2025-08-13T18:00:00+00:00",
+      17.732363806239675
+    ],
+    [
+      "2025-08-13T19:00:00+00:00",
+      17.767830842725022
+    ],
+    [
+      "2025-08-13T20:00:00+00:00",
+      17.80577121691726
+    ],
+    [
+      "2025-08-13T21:00:00+00:00",
+      17.8420826864441
+    ],
+    [
+      "2025-08-13T22:00:00+00:00",
+      17.881859294639327
+    ],
+    [
+      "2025-08-13T23:00:00+00:00",
+      17.91589249964215
+    ],
+    [
+      "2025-08-14T00:00:00+00:00",
+      17.94013530700951
+    ],
+    [
+      "2025-08-14T01:00:00+00:00",
+      17.96305180827239
+    ],
+    [
+      "2025-08-14T02:00:00+00:00",
+      17.98547744814332
+    ],
+    [
+      "2025-08-14T03:00:00+00:00",
+      18.007875980556328
+    ],
+    [
+      "2025-08-14T04:00:00+00:00",
+      18.02555268043128
+    ],
+    [
+      "2025-08-14T05:00:00+00:00",
+      18.041427638719473
+    ],
+    [
+      "2025-08-14T06:00:00+00:00",
+      18.057974540729454
+    ],
+    [
+      "2025-08-14T07:00:00+00:00",
+      18.071895087238403
+    ],
+    [
+      "2025-08-14T08:00:00+00:00",
+      18.08411397592254
+    ],
+    [
+      "2025-08-14T09:00:00+00:00",
+      18.09658394023668
+    ],
+    [
+      "2025-08-14T10:00:00+00:00",
+      18.107772660050184
+    ],
+    [
+      "2025-08-17T14:00:00+00:00",
+      18.120043774778974
+    ],
+    [
+      "2025-08-17T15:00:00+00:00",
+      18.133782053737274
+    ],
+    [
+      "2025-08-17T16:00:00+00:00",
+      18.1443678500082
+    ],
+    [
+      "2025-08-17T17:00:00+00:00",
+      18.15467405221901
+    ],
+    [
+      "2025-08-22T16:00:00+00:00",
+      18.167180232949704
+    ],
+    [
+      "2025-08-22T17:00:00+00:00",
+      18.17988594548367
+    ],
+    [
+      "2025-08-22T18:00:00+00:00",
+      18.193718465100982
+    ],
+    [
+      "2025-08-22T19:00:00+00:00",
+      18.208569411152254
+    ],
+    [
+      "2025-08-22T20:00:00+00:00",
+      18.222203523206428
+    ],
+    [
+      "2025-08-22T21:00:00+00:00",
+      18.23333175711806
+    ],
+    [
+      "2025-08-22T23:00:00+00:00",
+      18.24351069445147
+    ],
+    [
+      "2025-08-23T09:00:00+00:00",
+      18.25365583056908
+    ],
+    [
+      "2025-08-23T19:00:00+00:00",
+      18.26394018265717
+    ],
+    [
+      "2025-09-22T13:30:00+00:00",
+      18.275524018848714
+    ],
+    [
+      "2025-09-22T14:30:00+00:00",
+      18.288168939024157
+    ],
+    [
+      "2025-09-22T15:30:00+00:00",
+      18.299203047927076
+    ],
+    [
+      "2025-09-22T16:30:00+00:00",
+      18.31013284274962
+    ],
+    [
+      "2025-09-22T17:30:00+00:00",
+      18.320829208750926
+    ],
+    [
+      "2025-09-22T18:30:00+00:00",
+      18.331237132865237
+    ],
+    [
+      "2025-09-22T19:30:00+00:00",
+      18.341250941078382
+    ],
+    [
+      "2025-10-02T16:30:00+00:00",
+      18.351259959556835
+    ],
+    [
+      "2025-10-06T13:30:00+00:00",
+      18.364513020462457
+    ],
+    [
+      "2025-10-06T15:30:00+00:00",
+      18.374622657728402
+    ],
+    [
+      "2025-10-20T13:30:00+00:00",
+      18.384852832992472
+    ],
+    [
+      "2025-10-20T14:30:00+00:00",
+      18.395538794940638
+    ],
+    [
+      "2025-10-20T15:30:00+00:00",
+      18.405863600559027
+    ],
+    [
+      "2025-10-20T15:30:00+00:00",
+      18.415861657733867
+    ],
+    [
+      "2025-10-27T13:30:00+00:00",
+      18.426202203537635
+    ],
+    [
+      "2025-10-27T18:30:00+00:00",
+      18.43628459666575
+    ],
+    [
+      "2025-10-29T13:30:00+00:00",
+      18.446481395095013
+    ],
+    [
+      "2025-11-05T14:30:00+00:00",
+      18.45861019498635
+    ],
+    [
+      "2025-11-05T15:30:00+00:00",
+      18.471258767760602
+    ],
+    [
+      "2025-11-05T16:30:00+00:00",
+      18.484651165259173
+    ],
+    [
+      "2025-11-05T17:30:00+00:00",
+      18.497029314267554
+    ],
+    [
+      "2025-11-06T14:30:00+00:00",
+      18.507045383223552
+    ],
+    [
+      "2025-11-06T15:30:00+00:00",
+      18.517637906521674
+    ],
+    [
+      "2025-11-10T14:30:00+00:00",
+      18.532582437811353
+    ],
+    [
+      "2025-11-10T15:30:00+00:00",
+      18.54655045712957
+    ],
+    [
+      "2025-11-10T16:30:00+00:00",
+      18.559398052912375
+    ],
+    [
+      "2025-11-10T17:30:00+00:00",
+      18.57162142447636
+    ],
+    [
+      "2025-11-10T18:30:00+00:00",
+      18.582562916203834
+    ],
+    [
+      "2025-11-10T19:30:00+00:00",
+      18.593479263555427
+    ],
+    [
+      "2025-11-10T20:30:00+00:00",
+      18.603709186495816
+    ],
+    [
+      "2025-11-11T14:30:00+00:00",
+      18.614465133377724
+    ],
+    [
+      "2025-11-11T15:30:00+00:00",
+      18.62553367156573
+    ],
+    [
+      "2025-11-11T16:30:00+00:00",
+      18.636486606500164
+    ],
+    [
+      "2025-11-11T17:30:00+00:00",
+      18.647169692080077
+    ],
+    [
+      "2025-11-12T14:30:00+00:00",
+      18.657925609260612
+    ],
+    [
+      "2025-11-12T16:30:00+00:00",
+      18.667935680765847
+    ],
+    [
+      "2025-11-12T20:30:00+00:00",
+      18.677978779690843
+    ],
+    [
+      "2025-11-13T15:30:00+00:00",
+      18.688027085842783
+    ],
+    [
+      "2025-11-19T15:30:00+00:00",
+      18.698355704958757
+    ],
+    [
+      "2025-11-21T16:30:00+00:00",
+      18.70846143618613
+    ],
+    [
+      "2025-11-24T19:30:00+00:00",
+      18.718503285577945
+    ],
+    [
+      "2025-11-25T14:30:00+00:00",
+      18.72922999724822
+    ],
+    [
+      "2025-11-25T16:30:00+00:00",
+      18.73925469346231
+    ],
+    [
+      "2025-12-01T17:30:00+00:00",
+      18.749289863029787
+    ],
+    [
+      "2025-12-02T15:30:00+00:00",
+      18.759337425022153
+    ]
+  ],
+  "monthly_pnl": {
+    "2025-02": 6.453908027690744,
+    "2025-03": 0.4025034018194094,
+    "2025-05": 0.27577131611865224,
+    "2025-06": 0.2690915032836875,
+    "2025-07": 0.13871362413439237,
+    "2025-08": 0.7239523096102664,
+    "2025-09": 0.0773107584212174,
+    "2025-10": 0.10523045401662712,
+    "2025-11": 0.292773298367295,
+    "2025-12": 0.02008273155983923
+  }
+}

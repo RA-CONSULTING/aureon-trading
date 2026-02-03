@@ -95,9 +95,9 @@ class BinanceClient:
 
         # Token bucket rate limiter for Binance and request/quote caching
         try:
-            rate = float(os.getenv('BINANCE_RATE_PER_SECOND', '10'))
+            rate = float(os.getenv('BINANCE_RATE_PER_SECOND', '0.2'))  # Even more conservative: 0.2 req/sec
         except Exception:
-            rate = 10.0
+            rate = 0.2  # Very conservative default to avoid bans
         try:
             burst = float(os.getenv('BINANCE_BURST_CAPACITY', str(max(1, int(rate)))))
         except Exception:

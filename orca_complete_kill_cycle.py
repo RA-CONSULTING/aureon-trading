@@ -1013,6 +1013,18 @@ except ImportError:
     get_all_prices = None
     CachedTicker = None
 
+# ⚡👑 V11 POWER STATION - Queen's Compound Engine (SIPHON + COMPOUND + REINVEST)
+# Never sell losers - only extract profits from winners!
+try:
+    from v11_power_station_live import V11PowerStationLive, V11Config, PowerGridState
+    V11_POWER_STATION_AVAILABLE = True
+    print("⚡ V11 Power Station: AVAILABLE (Compound Engine)")
+except ImportError:
+    V11_POWER_STATION_AVAILABLE = False
+    V11PowerStationLive = None
+    V11Config = None
+    PowerGridState = None
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # 🌍 FREE OPEN SOURCE DATA FEEDS - ZERO API COST!
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -3756,6 +3768,27 @@ class OrcaKillCycle:
                 print("❄️ Avalanche Harvester: WIRED! (Continuous Profit Scraping)")
             except Exception as e:
                 print(f"❄️ Avalanche Harvester: {e}")
+        
+        # ⚡👑 V11 POWER STATION - Queen's Compound Engine
+        # SIPHON profits from winners → COMPOUND 50% stays → REINVEST into best targets
+        self.v11_power_station = None
+        self.v11_last_cycle_time = 0
+        self.v11_cycle_interval = 300.0  # Run compound cycle every 5 minutes
+        if V11_POWER_STATION_AVAILABLE and V11PowerStationLive and not quick_init:
+            try:
+                v11_config = V11Config(
+                    enabled_exchanges=['binance', 'alpaca', 'kraken'],
+                    max_concurrent_positions=100,
+                    min_siphon_amount=5.50,  # Binance MIN_NOTIONAL = $5
+                    siphon_percentage=50.0,  # Extract 50% of profits
+                    reinvest_threshold=5.50  # Reinvest when reserve >= $5.50
+                )
+                # Check LIVE mode from environment
+                is_live = os.getenv('LIVE', '0') == '1'
+                self.v11_power_station = V11PowerStationLive(config=v11_config, dry_run=not is_live)
+                print(f"⚡👑 V11 Power Station: WIRED! ({'🔥 LIVE' if is_live else '🧪 DRY-RUN'} | Compound Engine)")
+            except Exception as e:
+                print(f"⚡ V11 Power Station: {e}")
 
         # ═══════════════════════════════════════════════════════════════════
         # 🤖 BOT DETECTION & COUNTER-INTELLIGENCE SYSTEMS
@@ -11909,6 +11942,54 @@ class OrcaKillCycle:
                     except Exception as e:
                         print(f"⚠️ Avalanche cycle error: {e}")
 
+                # ⚡👑 V11 POWER STATION - COMPOUND CYCLE (Siphon + Compound + Reinvest)
+                # Never sell losers! Only extract 50% profits from winners, reinvest into best targets
+                if self.v11_power_station and (current_time - self.v11_last_cycle_time >= self.v11_cycle_interval):
+                    self.v11_last_cycle_time = current_time
+                    try:
+                        # Run the compound cycle
+                        v11_result = self.v11_power_station.run_compound_cycle()
+                        
+                        # Track in session stats
+                        if 'v11' not in session_stats:
+                            session_stats['v11'] = {
+                                'total_siphoned': 0.0,
+                                'total_reinvested': 0.0,
+                                'siphon_count': 0,
+                                'reinvest_count': 0,
+                                'pending_siphon': 0.0,
+                                'reserve_balance': 0.0
+                            }
+                        
+                        # Update stats
+                        session_stats['v11']['total_siphoned'] += v11_result.get('siphon_amount', 0)
+                        session_stats['v11']['total_reinvested'] += v11_result.get('reinvest_amount', 0)
+                        session_stats['v11']['siphon_count'] += v11_result.get('siphons', 0)
+                        session_stats['v11']['reinvest_count'] += v11_result.get('reinvests', 0)
+                        session_stats['v11']['pending_siphon'] = v11_result.get('pending_siphon', 0)
+                        session_stats['v11']['reserve_balance'] = v11_result.get('pending_reinvest', 0)
+                        
+                        # Add siphoned profits to total P&L
+                        if v11_result.get('siphon_amount', 0) > 0:
+                            session_stats['total_pnl'] += v11_result['siphon_amount']
+                            print(f"\n⚡👑 V11 POWER STATION: Siphoned ${v11_result['siphon_amount']:.2f} from {v11_result['siphons']} generators!")
+                        
+                        # Report reinvestments
+                        if v11_result.get('reinvest_amount', 0) > 0:
+                            print(f"   💰 Reinvested ${v11_result['reinvest_amount']:.2f} into {v11_result['reinvests']} positions!")
+                        
+                        # Report pending (below minimum)
+                        if v11_result.get('pending_siphon', 0) > 0:
+                            print(f"   ⏳ Pending siphon: ${v11_result['pending_siphon']:.2f} (below $5 min, accumulating)")
+                        
+                        # Show grid summary periodically
+                        grid_state = v11_result.get('grid_state')
+                        if grid_state:
+                            print(f"   📊 Grid: {grid_state.generating_nodes}⚡ generating | {grid_state.hibernating_nodes}💤 hibernating | ${grid_state.total_grid_value:.2f} total")
+                        
+                    except Exception as e:
+                        print(f"⚠️ V11 Power Station cycle error: {e}")
+
                 # 👑 Queen pacing + profit target updates
                 if current_time - last_queen_update >= queen_update_interval:
                     last_queen_update = current_time
@@ -13667,6 +13748,49 @@ class OrcaKillCycle:
                                     'pnl': amt,
                                     'pnl_pct': 0.0,
                                     'exchange': 'MIXED',
+                                    'type': 'win'
+                                })
+                                warroom.recent_kills = warroom.recent_kills[:10]
+                    except Exception:
+                        pass
+
+                # ⚡👑 V11 POWER STATION - COMPOUND CYCLE (Siphon + Compound + Reinvest)
+                if self.v11_power_station and (current_time - self.v11_last_cycle_time >= self.v11_cycle_interval):
+                    self.v11_last_cycle_time = current_time
+                    try:
+                        v11_result = self.v11_power_station.run_compound_cycle()
+                        
+                        # Track in session stats
+                        if 'v11' not in session_stats:
+                            session_stats['v11'] = {
+                                'total_siphoned': 0.0,
+                                'total_reinvested': 0.0,
+                                'siphon_count': 0,
+                                'reinvest_count': 0,
+                                'pending_siphon': 0.0,
+                                'reserve_balance': 0.0
+                            }
+                        
+                        session_stats['v11']['total_siphoned'] += v11_result.get('siphon_amount', 0)
+                        session_stats['v11']['total_reinvested'] += v11_result.get('reinvest_amount', 0)
+                        session_stats['v11']['siphon_count'] += v11_result.get('siphons', 0)
+                        session_stats['v11']['reinvest_count'] += v11_result.get('reinvests', 0)
+                        session_stats['v11']['pending_siphon'] = v11_result.get('pending_siphon', 0)
+                        session_stats['v11']['reserve_balance'] = v11_result.get('pending_reinvest', 0)
+                        
+                        # Add siphoned profits to total P&L
+                        if v11_result.get('siphon_amount', 0) > 0:
+                            session_stats['total_pnl'] += v11_result['siphon_amount']
+                            # Update WarRoom
+                            if warroom:
+                                warroom.total_pnl = session_stats['total_pnl']
+                                warroom.recent_kills.insert(0, {
+                                    'time': datetime.now().strftime('%H:%M:%S'),
+                                    'symbol': f"⚡ V11 x{v11_result['siphons']}",
+                                    'side': 'SIPHON',
+                                    'pnl': v11_result['siphon_amount'],
+                                    'pnl_pct': 0.0,
+                                    'exchange': 'COMPOUND',
                                     'type': 'win'
                                 })
                                 warroom.recent_kills = warroom.recent_kills[:10]

@@ -46,138 +46,180 @@ def binance_sign(params):
     return query + '&signature=' + signature
 
 def get_binance_positions():
-    """Get current Binance holdings with cost basis from trade history"""
+    """Get current Binance holdings - REAL positions from account API"""
     positions = []
     
-    # Get account balances
-    params = {'timestamp': int(time.time() * 1000)}
-    response = requests.get(
-        'https://api.binance.com/api/v3/account?' + binance_sign(params),
-        headers={'X-MBX-APIKEY': BINANCE_KEY},
-        timeout=10
-    )
-    account = response.json()
-    
-    # Get all current prices at once
-    prices_response = requests.get('https://api.binance.com/api/v3/ticker/price', timeout=10)
-    prices = {p['symbol']: float(p['price']) for p in prices_response.json()}
-    
-    # Get holdings
-    holdings = {}
-    for b in account.get('balances', []):
-        total = float(b['free']) + float(b['locked'])
-        if total > 0.0001:
-            holdings[b['asset']] = total
-    
-    # For each holding, get trade history to calculate cost basis
-    for asset, qty in holdings.items():
-        if asset in ['USDC', 'USDT', 'FDUSD', 'EUR', 'GBP', 'BUSD']:
-            continue
+    try:
+        from binance_client import get_binance_client
+        client = get_binance_client()
+        if not client:
+            print("⚠️ Binance client not available")
+            return positions
         
-        # Try USDC pair first, then USDT
-        for quote in ['USDC', 'USDT']:
-            symbol = asset + quote
-            params = {
-                'symbol': symbol,
-                'timestamp': int(time.time() * 1000),
-                'limit': 500
-            }
-            
-            try:
-                response = requests.get(
-                    'https://api.binance.com/api/v3/myTrades?' + binance_sign(params),
-                    headers={'X-MBX-APIKEY': BINANCE_KEY},
-                    timeout=10
-                )
-                trades = response.json()
+        # Get account balances - this gives REAL current holdings
+        account = client.account()
+        
+        if 'balances' not in account:
+            print(f"⚠️ Binance API error: {account}")
+            return positions
+        
+        # Process REAL holdings from account balances
+        for b in account.get('balances', []):
+            total = float(b['free']) + float(b['locked'])
+            if total > 0.0001:  # Only include assets with balance
+                asset = b['asset']
                 
-                if isinstance(trades, list) and len(trades) > 0:
-                    # Calculate cost basis (only BUY trades)
-                    total_bought_qty = 0
-                    total_bought_cost = 0
+                # Skip stablecoins/fiat
+                if asset in ['USDC', 'USDT', 'FDUSD', 'EUR', 'GBP', 'BUSD', 'TUSD', 'DAI']:
+                    continue
+                
+                # Find the best trading pair for this asset
+                symbol = None
+                current_price = 0
+                
+                # Try different quote currencies in order of preference
+                for quote in ['USDC', 'USDT', 'FDUSD', 'BUSD']:
+                    pair = asset + quote
+                    try:
+                        ticker = client.get_ticker(pair)
+                        if ticker and 'price' in ticker:
+                            symbol = pair
+                            current_price = float(ticker['price'])
+                            break
+                    except Exception:
+                        continue  # Try next quote currency
+                
+                if symbol and current_price > 0:
+                    current_value = total * current_price
                     
-                    for t in trades:
-                        trade_qty = float(t['qty'])
-                        trade_price = float(t['price'])
-                        
-                        if t.get('isBuyer'):
-                            total_bought_qty += trade_qty
-                            total_bought_cost += trade_qty * trade_price
-                    
-                    if total_bought_qty > 0:
-                        avg_entry = total_bought_cost / total_bought_qty
-                        current_price = prices.get(symbol, 0)
-                        current_value = qty * current_price
-                        cost_basis = qty * avg_entry  # Cost for CURRENT holding
-                        pnl = current_value - cost_basis
-                        pnl_pct = ((current_price / avg_entry) - 1) * 100 if avg_entry > 0 else 0
-                        
-                        positions.append({
-                            'exchange': 'Binance',
-                            'symbol': symbol,
-                            'asset': asset,
-                            'quantity': qty,
-                            'avg_entry': avg_entry,
-                            'avg_cost': avg_entry,
-                            'cost_basis': cost_basis,
-                            'current_price': current_price,
-                            'current_value': current_value,
-                            'pnl': pnl,
-                            'unrealized_pnl': pnl,
-                            'pnl_pct': pnl_pct,
-                            'pnl_percent': pnl_pct,
-                            'trades': len(trades)
-                        })
-                        break  # Found trades, don't check other quote
-            except Exception as e:
-                pass
+                    positions.append({
+                        'exchange': 'binance',
+                        'symbol': symbol,
+                        'quantity': total,
+                        'avg_cost': current_price,  # Use current price as cost basis for now
+                        'current_price': current_price,
+                        'current_value': current_value,
+                        'unrealized_pnl': 0,  # No P&L calculation
+                        'pnl_percent': 0,
+                        'cost_basis': current_value  # Cost basis = current value for simplicity
+                    })
+        
+        print(f"✅ Binance: Found {len(positions)} REAL positions")
+        
+    except Exception as e:
+        print(f"⚠️ Binance error: {e}")
     
     return positions
 
 def get_alpaca_positions():
-    """Get Alpaca positions (already includes entry price)"""
+    """Get Alpaca positions - REAL positions from Alpaca API"""
     positions = []
     
     try:
         from alpaca_client import AlpacaClient
         alpaca = AlpacaClient()
         
-        for pos in alpaca.get_positions():
+        alpaca_positions = alpaca.get_positions()
+        print(f"✅ Alpaca: Found {len(alpaca_positions)} REAL positions")
+        
+        for pos in alpaca_positions:
             symbol = pos.get('symbol', '')
             qty = float(pos.get('qty', 0))
-            entry = float(pos.get('avg_entry_price', 0))
-            current = float(pos.get('current_price', 0))
-            pnl = float(pos.get('unrealized_pl', 0))
-            cost_basis = qty * entry
-            pnl_pct = ((current / entry) - 1) * 100 if entry > 0 else 0
+            entry_price = float(pos.get('avg_entry_price', 0))
+            current_price = float(pos.get('current_price', 0))
+            market_value = float(pos.get('market_value', 0))
+            unrealized_pl = float(pos.get('unrealized_pl', 0))
             
-            positions.append({
-                'exchange': 'Alpaca',
-                'symbol': symbol,
-                'asset': symbol.replace('USD', ''),
-                'quantity': qty,
-                'avg_entry': entry,
-                'avg_cost': entry,
-                'cost_basis': cost_basis,
-                'current_price': current,
-                'current_value': qty * current,
-                'pnl': pnl,
-                'unrealized_pnl': pnl,
-                'pnl_pct': pnl_pct,
-                'pnl_percent': pnl_pct,
-                'trades': 0
-            })
+            # Only include positions with quantity > 0
+            if qty > 0.0001:
+                positions.append({
+                    'exchange': 'alpaca',
+                    'symbol': symbol,
+                    'quantity': qty,
+                    'avg_cost': entry_price,
+                    'current_price': current_price,
+                    'current_value': market_value,
+                    'unrealized_pnl': unrealized_pl,
+                    'pnl_percent': (unrealized_pl / (qty * entry_price) * 100) if (qty * entry_price) > 0 else 0,
+                    'cost_basis': qty * entry_price
+                })
+                
     except Exception as e:
         print(f"⚠️ Alpaca error: {e}")
     
     return positions
 
 def get_kraken_positions():
-    """Get Kraken positions with cost basis"""
+    """Get Kraken positions - REAL positions from Kraken API"""
     positions = []
     
-    # Try to get from Kraken - but they need trade history too
-    # For now, skip as nonce issues persist
+    try:
+        from kraken_client import KrakenClient, get_kraken_client
+        kraken = get_kraken_client()
+        
+        # Get account balances
+        account_data = kraken.account()
+        balances = account_data.get('balances', [])
+        
+        print(f"✅ Kraken: Found {len([b for b in balances if float(b.get('free', 0)) > 0.0001])} REAL balances")
+        
+        # Get current prices from Kraken public API
+        prices = {}
+        try:
+            # Get ticker data for common pairs
+            pairs = ['BTCUSD', 'ETHUSD', 'ADAUSD', 'SOLUSD', 'DOTUSD', 'LINKUSD', 'USDCUSD', 'USDTUSD']
+            for pair in pairs:
+                try:
+                    ticker = kraken.get_ticker(pair)
+                    if ticker and 'price' in ticker:
+                        prices[pair] = float(ticker['price'])
+                except:
+                    pass
+        except:
+            pass
+        
+        # Process balances into positions
+        for bal in balances:
+            asset = bal.get('asset', '')
+            free = float(bal.get('free', 0))
+            locked = float(bal.get('locked', 0))
+            total = free + locked
+            
+            if total > 0.0001 and asset not in ['USD', 'USDT', 'USDC', 'EUR', 'GBP']:
+                # Find appropriate trading pair
+                symbol = None
+                current_price = 0
+                
+                # Try different quote currencies
+                for quote in ['USD', 'USDT', 'USDC']:
+                    pair = asset + quote
+                    if pair in prices:
+                        symbol = pair
+                        current_price = prices[pair]
+                        break
+                
+                # If no price found, skip this position
+                if not symbol or current_price <= 0:
+                    continue
+                
+                current_value = total * current_price
+                
+                positions.append({
+                    'exchange': 'kraken',
+                    'symbol': symbol,
+                    'quantity': total,
+                    'avg_cost': current_price,  # Use current price as cost basis
+                    'current_price': current_price,
+                    'current_value': current_value,
+                    'unrealized_pnl': 0,
+                    'pnl_percent': 0,
+                    'cost_basis': current_value
+                })
+        
+        print(f"✅ Kraken: Processed {len(positions)} REAL positions")
+        
+    except Exception as e:
+        print(f"⚠️ Kraken error: {e}")
     
     return positions
 
@@ -210,21 +252,21 @@ def print_report(all_positions):
         print("-"*90)
         
         # Sort by P&L descending
-        positions.sort(key=lambda x: x['pnl'], reverse=True)
+        positions.sort(key=lambda x: x['unrealized_pnl'], reverse=True)
         
         ex_cost = 0
         ex_value = 0
         ex_pnl = 0
         
         for pos in positions:
-            asset = pos['asset']
+            asset = pos['symbol']
             qty = pos['quantity']
-            entry = pos['avg_entry']
+            entry = pos['avg_cost']
             current = pos['current_price']
             cost = pos['cost_basis']
             value = pos['current_value']
-            pnl = pos['pnl']
-            pnl_pct = pos['pnl_pct']
+            pnl = pos['unrealized_pnl']
+            pnl_pct = pos['pnl_percent']
             
             ex_cost += cost
             ex_value += value
@@ -258,21 +300,33 @@ def print_report(all_positions):
     print("="*90)
 
 def main():
-    print("📡 Fetching LIVE positions from exchanges...")
+    print("📡 Fetching REAL LIVE positions from exchanges...")
     
     all_positions = []
     
     # Get Binance positions
-    print("   🟡 Querying Binance trade history...")
+    print("   🟡 Querying Binance account API...")
     binance_pos = get_binance_positions()
     all_positions.extend(binance_pos)
     print(f"      Found {len(binance_pos)} positions")
     
+    # Small delay between exchanges to be rate-limit safe
+    time.sleep(1)
+    
     # Get Alpaca positions
-    print("   🦙 Querying Alpaca positions...")
+    print("   🦙 Querying Alpaca positions API...")
     alpaca_pos = get_alpaca_positions()
     all_positions.extend(alpaca_pos)
     print(f"      Found {len(alpaca_pos)} positions")
+    
+    # Small delay between exchanges
+    time.sleep(1)
+    
+    # Get Kraken positions
+    print("   🐙 Querying Kraken account API...")
+    kraken_pos = get_kraken_positions()
+    all_positions.extend(kraken_pos)
+    print(f"      Found {len(kraken_pos)} positions")
     
     # Print report
     print_report(all_positions)
