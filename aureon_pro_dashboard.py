@@ -1028,6 +1028,9 @@ PRO_DASHBOARD_HTML = """
                     // New message type with all balances at once
                     updateAllExchangeBalances(data.data);
                     break;
+                case 'bots_snapshot':
+                    handleBotsSnapshot(data.data);
+                    break;
                 case 'bot_detected':
                     handleBotDetected(data.data);
                     break;
@@ -1044,6 +1047,16 @@ PRO_DASHBOARD_HTML = """
                     addActivity(data.message, data.category || '');
                     break;
             }
+        }
+
+        // ========== Bots Snapshot ==========
+        function handleBotsSnapshot(snapshot) {
+            if (!snapshot || !snapshot.bots) return;
+            state.bots = snapshot.bots;
+            document.getElementById('total-bots').textContent = Object.keys(state.bots).length;
+            document.getElementById('total-whales').textContent = snapshot.whales || 0;
+            document.getElementById('total-hives').textContent = snapshot.hives || 0;
+            renderBots();
         }
         
         // ========== Market Flow (Binance WebSocket Data) ==========
@@ -1665,6 +1678,7 @@ class AureonProDashboard:
         self.all_prices = {}  # Full 40+ symbol prices from Binance WS
         self.exchange_balances = {'binance': 0, 'kraken': 0, 'alpaca': 0}
         self.bots = {}
+        self.bot_counts = {'whales': 0, 'hives': 0}
         self.queen_messages = deque(maxlen=50)
         
         # Setup web app
@@ -1674,6 +1688,7 @@ class AureonProDashboard:
         self.app.router.add_get('/api/portfolio', self.handle_portfolio)
         self.app.router.add_get('/api/prices', self.handle_prices)
         self.app.router.add_get('/api/balances', self.handle_balances)
+        self.app.router.add_get('/api/bots', self.handle_bots)
         self.app.router.add_get('/api/ocean', self.handle_ocean)
         self.app.router.add_get('/health', self.handle_health)
         self.app.router.add_get('/api/status', self.handle_status)  # Diagnostic endpoint
@@ -1719,6 +1734,11 @@ class AureonProDashboard:
             status['data']['ocean_hot_opportunities'] = len(self.ocean_scanner.hot_opportunities)
         else:
             status['services']['ocean_scanner'] = 'DISABLED'
+
+        # Bot intel summary
+        status['data']['bots'] = len(self.bots)
+        status['data']['whales'] = self.bot_counts.get('whales', 0)
+        status['data']['hives'] = self.bot_counts.get('hives', 0)
         
         # Harmonic Field stats
         if self.harmonic_field:
@@ -1767,6 +1787,17 @@ class AureonProDashboard:
                     'type': 'all_prices_update',
                     'data': self.all_prices
                 })
+
+            # Send bots snapshot if available
+            if self.bots:
+                await ws.send_json({
+                    'type': 'bots_snapshot',
+                    'data': {
+                        'bots': self.bots,
+                        'whales': self.bot_counts.get('whales', 0),
+                        'hives': self.bot_counts.get('hives', 0)
+                    }
+                })
         except Exception as e:
             self.logger.error(f"❌ Error sending initial state: {e}")
         
@@ -1791,6 +1822,14 @@ class AureonProDashboard:
     
     async def handle_balances(self, request):
         return web.json_response(self.exchange_balances)
+
+    async def handle_bots(self, request):
+        await self.refresh_bots()
+        return web.json_response({
+            'bots': self.bots,
+            'whales': self.bot_counts.get('whales', 0),
+            'hives': self.bot_counts.get('hives', 0)
+        })
     
     async def refresh_exchange_balances(self):
         """Fetch real-time balances from all exchange clients."""
@@ -2322,6 +2361,70 @@ class AureonProDashboard:
                 'ETH': {'price': 2700, 'change24h': -1.2},
                 'SOL': {'price': 120, 'change24h': 0.8}
             }
+
+    async def refresh_bots(self):
+        """Load latest bot intelligence from real cached reports (no fake data)."""
+        try:
+            report_path = os.path.join(os.getenv("AUREON_STATE_DIR", "."), "bot_intelligence_report.json")
+            if not os.path.exists(report_path):
+                report_path = os.path.join(os.getcwd(), "bot_intelligence_report.json")
+
+            if not os.path.exists(report_path):
+                self.logger.warning("⚠️ Bot intelligence report not found")
+                return
+
+            with open(report_path, "r", encoding="utf-8") as f:
+                report = json.load(f)
+
+            bots_raw = report.get("all_bots", {}) or {}
+            bots: Dict[str, Dict] = {}
+            whales = 0
+            firms = set()
+
+            for bot_id, info in bots_raw.items():
+                bot_type = info.get("size_class", "bot").lower()
+                if bot_type == "whale" or info.get("role", "").lower() == "coordinator":
+                    whales += 1
+                    display_type = "whale"
+                else:
+                    display_type = "bot"
+
+                firm = info.get("owner_name") or info.get("likely_owner")
+                if firm:
+                    firms.add(firm)
+
+                bots[bot_id] = {
+                    'id': bot_id,
+                    'type': display_type,
+                    'exchange': info.get('exchange', 'unknown'),
+                    'symbol': info.get('symbol', 'UNKNOWN'),
+                    'status': 'active',
+                    'confidence': info.get('owner_confidence', 0),
+                    'owner': firm,
+                    'pattern': info.get('pattern', ''),
+                    'volume': info.get('metrics', {}).get('total_volume_usd', 0),
+                    'color': '#ff00ff' if display_type == 'whale' else '#00ffaa'
+                }
+
+            self.bots = bots
+            self.bot_counts = {
+                'whales': whales,
+                'hives': len(firms)
+            }
+
+            # Broadcast snapshot to clients
+            await self.broadcast({
+                'type': 'bots_snapshot',
+                'data': {
+                    'bots': self.bots,
+                    'whales': self.bot_counts.get('whales', 0),
+                    'hives': self.bot_counts.get('hives', 0)
+                }
+            })
+
+            self.logger.info(f"🤖 Bots loaded: {len(bots)} (whales: {whales}, hives: {len(firms)})")
+        except Exception as e:
+            self.logger.warning(f"⚠️ Bot refresh failed: {e}")
     
     async def queen_commentary_loop(self):
         """Queen provides periodic deep cognitive thoughts."""
@@ -2394,6 +2497,8 @@ class AureonProDashboard:
                 self.logger.info("✅ [Data Refresh] Portfolio refresh complete.")
                 await self.refresh_prices()
                 self.logger.info("✅ [Data Refresh] Price refresh complete.")
+                await self.refresh_bots()
+                self.logger.info("✅ [Data Refresh] Bot intel refresh complete.")
                 
                 await self.broadcast({
                     'type': 'portfolio_update',
