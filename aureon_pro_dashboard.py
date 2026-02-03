@@ -916,6 +916,7 @@ PRO_DASHBOARD_HTML = """
                     <span>Energy: <span id="field-energy">0.00</span></span>
                     <span>Pattern: <span id="field-pattern">circle</span></span>
                 </div>
+                <div class="harmonic-toplist" id="field-top-nodes"></div>
             </div>
             
             <div class="harmonic-canvas-container">
@@ -1458,6 +1459,22 @@ PRO_DASHBOARD_HTML = """
             document.getElementById('field-nodes').textContent = data.global.total_nodes;
             document.getElementById('field-energy').textContent = data.global.total_energy;
             document.getElementById('field-pattern').textContent = data.cymatics || 'circle';
+
+            // Render a quick toplist of the strongest nodes for readability
+            const toplist = document.getElementById('field-top-nodes');
+            if (toplist) {
+                const nodes = (data.nodes || []).slice(0, 6);
+                if (!nodes.length) {
+                    toplist.innerHTML = '<span style="color: var(--text-secondary);">No active nodes</span>';
+                } else {
+                    toplist.innerHTML = nodes.map(n => {
+                        const energy = (n.energy !== undefined ? n.energy : (n.amplitude || 0) * (n.frequency || 0)).toFixed(2);
+                        return `<span class="chip">
+                            <strong>${n.exchange || 'exch'}</strong> · ${n.symbol || 'SYM'} · ${energy}E
+                        </span>`;
+                    }).join('');
+                }
+            }
         }
         
         function renderHarmonicField() {
@@ -1523,16 +1540,17 @@ PRO_DASHBOARD_HTML = """
 
             // Draw nodes as dynamic particles for a more alive field
             if (harmonicData.nodes && harmonicData.nodes.length) {
-                const now = Date.now() / 500; // drive gentle oscillation
+                const now = Date.now() / 650; // slower oscillation for readability
                 harmonicData.nodes.forEach((node) => {
                     const color = layerColors[node.exchange] || '#9b59b6';
                     const freq = node.frequency || 0;
                     const amp = node.amplitude || 0.05;
                     const phase = node.phase || 0;
-                    const normFreq = Math.min(Math.max(freq % 600, 0), 600) / 600;
+                    // Normalize freq into canvas and clamp amplitude visual scale
+                    const normFreq = Math.min(Math.max(freq % 800, 0), 800) / 800;
                     const x = normFreq * width;
-                    const y = height / 2 + Math.sin(now + phase) * (amp * 140 + 20);
-                    const radius = Math.max(2, Math.min(8, amp * 12 + 2));
+                    const y = height / 2 + Math.sin(now + phase) * (Math.min(amp, 0.2) * 180 + 18);
+                    const radius = Math.max(2, Math.min(10, amp * 14 + 2));
                     ctx.fillStyle = color;
                     ctx.beginPath();
                     ctx.arc(x, y, radius, 0, Math.PI * 2);
