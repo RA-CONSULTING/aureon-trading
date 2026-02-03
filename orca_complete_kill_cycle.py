@@ -1013,6 +1013,40 @@ except ImportError:
     get_all_prices = None
     CachedTicker = None
 
+# ═══════════════════════════════════════════════════════════════════════════════
+# 🌍 FREE OPEN SOURCE DATA FEEDS - ZERO API COST!
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# 🌐 Queen Open Source Data Engine (CoinGecko, Fear & Greed, DeFi Llama, etc.)
+try:
+    from queen_open_source_data_engine import OpenSourceDataEngine, get_data_engine
+    OPEN_SOURCE_DATA_AVAILABLE = True
+    print("🌐 Open Source Data Engine: AVAILABLE")
+except ImportError:
+    OPEN_SOURCE_DATA_AVAILABLE = False
+    OpenSourceDataEngine = None
+    get_data_engine = None
+
+# ☀️🌍 Space Weather Bridge (NOAA solar wind, K-index, NASA solar flares)
+try:
+    from aureon_space_weather_bridge import SpaceWeatherBridge, get_space_weather_bridge
+    SPACE_WEATHER_AVAILABLE = True
+    print("☀️ Space Weather Bridge: AVAILABLE")
+except ImportError:
+    SPACE_WEATHER_AVAILABLE = False
+    SpaceWeatherBridge = None
+    get_space_weather_bridge = None
+
+# 🌍💱 Global Financial Feed (Fear & Greed, VIX, DXY, macro correlations)
+try:
+    from global_financial_feed import GlobalFinancialFeed, MacroSnapshot
+    GLOBAL_FINANCIAL_FEED_AVAILABLE = True
+    print("🌍 Global Financial Feed: AVAILABLE")
+except ImportError:
+    GLOBAL_FINANCIAL_FEED_AVAILABLE = False
+    GlobalFinancialFeed = None
+    MacroSnapshot = None
+
 import random  # For simulating market activity
 
 # ═══════════════════════════════════════════════════════════════════════════════════════════════════
@@ -3976,6 +4010,50 @@ class OrcaKillCycle:
         # self.hft_engine is already set above
         
         # ═══════════════════════════════════════════════════════════════════
+        # 🌍 OPEN SOURCE DATA FEEDS - FREE INTELLIGENCE! (No API keys needed)
+        # ═══════════════════════════════════════════════════════════════════
+        
+        # 30. Open Source Data Engine (CoinGecko, Fear & Greed, DeFi Llama, etc.)
+        self.open_source_data = None
+        self.fear_greed_index = 50  # Default neutral
+        self.fear_greed_label = "Neutral"
+        self.last_fear_greed_update = 0
+        if OPEN_SOURCE_DATA_AVAILABLE and get_data_engine:
+            try:
+                self.open_source_data = get_data_engine()
+                print("🌐 Open Source Data Engine: WIRED! (FREE market intelligence)")
+                # Fetch initial Fear & Greed
+                self._update_fear_greed()
+            except Exception as e:
+                print(f"🌐 Open Source Data Engine: {e}")
+        
+        # 31. Space Weather Bridge (NOAA + NASA - solar flares, K-index, geomagnetic)
+        self.space_weather = None
+        self.space_weather_reading = None
+        self.last_space_weather_update = 0
+        if SPACE_WEATHER_AVAILABLE and get_space_weather_bridge:
+            try:
+                self.space_weather = get_space_weather_bridge()
+                print("☀️🌍 Space Weather Bridge: WIRED! (NOAA/NASA cosmic data)")
+                # Fetch initial space weather
+                self._update_space_weather()
+            except Exception as e:
+                print(f"☀️ Space Weather Bridge: {e}")
+        
+        # 32. Global Financial Feed (VIX, DXY, macro correlations, economic events)
+        self.global_financial_feed = None
+        self.macro_snapshot = None
+        self.last_macro_update = 0
+        if GLOBAL_FINANCIAL_FEED_AVAILABLE and GlobalFinancialFeed:
+            try:
+                self.global_financial_feed = GlobalFinancialFeed()
+                print("🌍💱 Global Financial Feed: WIRED! (VIX/DXY/Macro)")
+                # Fetch initial macro snapshot
+                self._update_macro_data()
+            except Exception as e:
+                print(f"🌍 Global Financial Feed: {e}")
+        
+        # ═══════════════════════════════════════════════════════════════════
         # 🦈🔍 PREDATOR DETECTION SYSTEM - WHO'S HUNTING WHO?
         # ═══════════════════════════════════════════════════════════════════
         
@@ -5453,8 +5531,141 @@ class OrcaKillCycle:
             pass
         return False
     
+    # ═══════════════════════════════════════════════════════════════════════════════
+    # 🌍 OPEN SOURCE DATA FEEDS - FREE INTELLIGENCE METHODS
+    # ═══════════════════════════════════════════════════════════════════════════════
+    
+    def _update_fear_greed(self) -> bool:
+        """Fetch Fear & Greed index from free API (alternative.me)."""
+        try:
+            import urllib.request
+            url = 'https://api.alternative.me/fng/?limit=1'
+            req = urllib.request.Request(url, headers={'User-Agent': 'Aureon/1.0'})
+            with urllib.request.urlopen(req, timeout=5) as resp:
+                data = json.loads(resp.read().decode())
+                if data and 'data' in data and len(data['data']) > 0:
+                    self.fear_greed_index = int(data['data'][0].get('value', 50))
+                    self.fear_greed_label = data['data'][0].get('value_classification', 'Neutral')
+                    self.last_fear_greed_update = time.time()
+                    # Feed to Orca Intelligence if available
+                    if self.orca_intel and hasattr(self.orca_intel, 'ingest_fear_greed'):
+                        self.orca_intel.ingest_fear_greed(self.fear_greed_index)
+                    return True
+        except Exception as e:
+            # Silent fail - don't spam logs
+            pass
+        return False
+    
+    def _update_space_weather(self) -> bool:
+        """Fetch space weather from NOAA (free public API)."""
+        try:
+            if self.space_weather:
+                self.space_weather_reading = self.space_weather.get_live_data()
+                self.last_space_weather_update = time.time()
+                return True
+        except Exception:
+            pass
+        return False
+    
+    def _update_macro_data(self) -> bool:
+        """Fetch global macro data (VIX, DXY, Fear & Greed)."""
+        try:
+            if self.global_financial_feed:
+                self.macro_snapshot = self.global_financial_feed.get_snapshot()
+                self.last_macro_update = time.time()
+                # Sync Fear & Greed from macro if available
+                if self.macro_snapshot and hasattr(self.macro_snapshot, 'crypto_fear_greed'):
+                    if self.macro_snapshot.crypto_fear_greed != 50:  # Not default
+                        self.fear_greed_index = self.macro_snapshot.crypto_fear_greed
+                        self.fear_greed_label = self.macro_snapshot.crypto_fg_classification
+                return True
+        except Exception:
+            pass
+        return False
+    
+    def refresh_open_source_data(self, force: bool = False) -> dict:
+        """
+        Refresh all open source data feeds.
+        Called periodically from main loop (every 60 seconds).
+        
+        Returns:
+            dict with update status for each feed
+        """
+        now = time.time()
+        results = {}
+        
+        # Fear & Greed - update every 5 minutes
+        if force or (now - self.last_fear_greed_update) > 300:
+            results['fear_greed'] = self._update_fear_greed()
+        
+        # Space Weather - update every 5 minutes
+        if force or (now - self.last_space_weather_update) > 300:
+            results['space_weather'] = self._update_space_weather()
+        
+        # Macro data - update every 60 seconds
+        if force or (now - self.last_macro_update) > 60:
+            results['macro'] = self._update_macro_data()
+        
+        return results
+    
+    def get_cosmic_trading_conditions(self) -> dict:
+        """
+        Get unified cosmic/sentiment trading conditions.
+        Queen uses this for timing and risk management.
+        
+        Returns:
+            dict with:
+            - fear_greed: 0-100 (0=Extreme Fear, 100=Extreme Greed)
+            - fear_greed_label: str classification
+            - kp_index: 0-9 geomagnetic activity (high=volatile markets)
+            - solar_wind_speed: km/s (high=caution)
+            - vix: volatility index
+            - dxy: dollar strength index
+            - trading_mood: AGGRESSIVE/CAUTIOUS/NEUTRAL
+            - cosmic_boost: -1 to +1 adjustment factor
+        """
+        conditions = {
+            'fear_greed': self.fear_greed_index,
+            'fear_greed_label': self.fear_greed_label,
+            'kp_index': 3.0,
+            'solar_wind_speed': 400.0,
+            'vix': 20.0,
+            'dxy': 100.0,
+            'trading_mood': 'NEUTRAL',
+            'cosmic_boost': 0.0
+        }
+        
+        # Space weather data
+        if self.space_weather_reading:
+            conditions['kp_index'] = getattr(self.space_weather_reading, 'kp_index', 3.0)
+            conditions['solar_wind_speed'] = getattr(self.space_weather_reading, 'solar_wind_speed', 400.0)
+        
+        # Macro data
+        if self.macro_snapshot:
+            conditions['vix'] = getattr(self.macro_snapshot, 'vix', 20.0)
+            conditions['dxy'] = getattr(self.macro_snapshot, 'dxy', 100.0)
+        
+        # Calculate trading mood
+        fg = conditions['fear_greed']
+        kp = conditions['kp_index']
+        vix = conditions['vix']
+        
+        # Extreme fear + low VIX + calm space weather = BUY opportunity (contrarian)
+        if fg < 25 and vix < 25 and kp < 5:
+            conditions['trading_mood'] = 'AGGRESSIVE'
+            conditions['cosmic_boost'] = 0.15  # +15% confidence boost
+        # Extreme greed + high VIX + storm conditions = CAUTION
+        elif fg > 75 or vix > 30 or kp >= 7:
+            conditions['trading_mood'] = 'CAUTIOUS'
+            conditions['cosmic_boost'] = -0.10  # -10% confidence
+        else:
+            conditions['trading_mood'] = 'NEUTRAL'
+            conditions['cosmic_boost'] = 0.0
+        
+        return conditions
+    
     # ═══════════════════════════════════════════════════════════════════════
-    # � QUANTUM INTELLIGENCE - ENHANCED PROBABILITY SCORING
+    # 🔮 QUANTUM INTELLIGENCE - ENHANCED PROBABILITY SCORING
     # ═══════════════════════════════════════════════════════════════════════
     
     def get_quantum_score(self, symbol: str, price: float, change_pct: float, 
@@ -11274,6 +11485,18 @@ class OrcaKillCycle:
         target_pct_current = target_pct
         queen_update_interval = 10.0
         last_queen_update = 0.0
+        # 🌍 Open Source Data refresh timing
+        open_source_data_interval = 60.0  # Refresh every 60 seconds
+        last_open_source_update = 0.0
+        
+        # 🌍 Initial open source data fetch
+        print("\n🌍 Fetching open source intelligence (Fear & Greed, Space Weather, Macro)...")
+        self.refresh_open_source_data(force=True)
+        cosmic = self.get_cosmic_trading_conditions()
+        print(f"   😱 Fear & Greed: {cosmic['fear_greed']} ({cosmic['fear_greed_label']})")
+        print(f"   ☀️ K-Index: {cosmic['kp_index']:.1f} | Solar Wind: {cosmic['solar_wind_speed']:.0f} km/s")
+        print(f"   📊 VIX: {cosmic['vix']:.1f} | DXY: {cosmic['dxy']:.1f}")
+        print(f"   🎯 Trading Mood: {cosmic['trading_mood']} (boost: {cosmic['cosmic_boost']:+.0%})")
 
         def _apply_queen_controls() -> None:
             """Adjust scan speed and profit targets based on Queen collective signal."""
@@ -11642,6 +11865,15 @@ class OrcaKillCycle:
                 
                 # Update dashboard state for Command Center UI (legacy mode)
                 self._dump_dashboard_state(session_stats, positions, queen)
+                
+                # 🌍 OPEN SOURCE DATA REFRESH (Fear & Greed, Space Weather, Macro)
+                if current_time - last_open_source_update >= open_source_data_interval:
+                    last_open_source_update = current_time
+                    self.refresh_open_source_data()
+                    cosmic = self.get_cosmic_trading_conditions()
+                    # Adjust trading behavior based on cosmic conditions
+                    if cosmic['cosmic_boost'] != 0:
+                        print(f"🌍 Cosmic Update: F&G={cosmic['fear_greed']} | Mood={cosmic['trading_mood']} | Boost={cosmic['cosmic_boost']:+.0%}")
 
                 # 🧠 PERIODIC SENTIENCE VALIDATION - Is the Queen truly conscious?
                 if self.sentience_validator and (current_time - last_sentience_check >= sentience_check_interval):
