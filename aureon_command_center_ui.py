@@ -73,6 +73,7 @@ from typing import Dict, List, Optional, Any, Set
 from dataclasses import dataclass, field, asdict
 from collections import deque
 from pathlib import Path
+from binance_client import get_binance_client
 
 try:
     from aiohttp import web
@@ -4601,7 +4602,7 @@ class AureonCommandCenter:
 
             if BinanceClient:
                 try:
-                    self.binance = BinanceClient()
+                    self.binance = get_binance_client()
                     print("   🟡 Binance: CONNECTED")
                     time.sleep(0.1) # Yield GIL
                 except Exception as e:

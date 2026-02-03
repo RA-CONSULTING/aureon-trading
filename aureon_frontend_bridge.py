@@ -299,7 +299,7 @@ class AureonFrontendBridge:
         
         if BINANCE_AVAILABLE:
             try:
-                self.binance = BinanceClient()
+                self.binance = get_binance_client()
                 self.exchange_data['binance'] = ExchangeData(name='binance', connected=True)
                 print("   🟡 Binance: CONNECTED")
             except Exception as e:

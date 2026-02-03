@@ -44,7 +44,7 @@ async def debug_usd_source():
     # BINANCE
     try:
         from binance_client import BinanceClient
-        binance = BinanceClient()
+        binance = get_binance_client()
         if hasattr(binance, 'account'):
             print("\n🟡 FETCHING BINANCE...")
             acct = binance.account() or {}

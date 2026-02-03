@@ -5,7 +5,7 @@ from kraken_client import KrakenClient, get_kraken_client
 
 class TestClientsRateAndCache(unittest.TestCase):
     def test_binance_has_rate_and_cache(self):
-        b = BinanceClient()
+        b = get_binance_client()
         self.assertTrue(hasattr(b, '_rate_limiter'))
         self.assertTrue(hasattr(b, '_request_cache'))
         # Monkeypatch session.request to count calls

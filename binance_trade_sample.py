@@ -20,7 +20,7 @@ from binance_client import BinanceClient, safe_trade, load_risk_config, position
 
 
 def main():
-    client = BinanceClient()
+    client = get_binance_client()
     symbol = os.getenv("BINANCE_SYMBOL", "BTCUSDT")
     risk = load_risk_config()
     quote_asset = "USDT"  # simplification

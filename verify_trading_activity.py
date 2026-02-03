@@ -226,7 +226,7 @@ def check_exchange_trades() -> Dict[str, Any]:
     # Check Binance
     try:
         from binance_client import BinanceClient
-        binance = BinanceClient()
+        binance = get_binance_client()
         
         # Binance requires specific symbol for trade history
         # Try to get account info instead

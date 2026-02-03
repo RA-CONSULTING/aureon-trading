@@ -13,7 +13,7 @@ print("=" * 80)
 print("🔍 BINANCE P&L REALITY CHECK")
 print("=" * 80)
 
-client = BinanceClient()
+client = get_binance_client()
 
 print(f"\n📋 CLIENT CONFIGURATION:")
 print(f"   Testnet Mode:  {client.use_testnet}")

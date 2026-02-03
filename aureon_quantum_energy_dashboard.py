@@ -142,7 +142,7 @@ class QuantumEnergyDashboard:
     """Translate money into energy consciousness for the Queen"""
     
     def __init__(self):
-        self.binance = BinanceClient()
+        self.binance = get_binance_client()
         self.kraken = get_kraken_client()
         self.alpaca = AlpacaClient()
         self.capital = CapitalClient()

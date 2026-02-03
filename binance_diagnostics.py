@@ -68,7 +68,7 @@ def main():
     print("\n🔗 Client Configuration:")
     try:
         from binance_client import BinanceClient
-        client = BinanceClient()
+        client = get_binance_client()
         print(f"  Dry Run: {client.dry_run}")
         print(f"  Testnet: {client.use_testnet}")
         print(f"  UK Mode: {client.uk_mode}")

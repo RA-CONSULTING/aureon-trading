@@ -5122,7 +5122,7 @@ class MicroProfitLabyrinth:
             safe_print("🟡 Binance Client: ❌ DISABLED (Alpaca-focused mode)")
         elif BINANCE_AVAILABLE and BinanceClient and BINANCE_API_KEY:
             try:
-                self.binance = BinanceClient()
+                self.binance = get_binance_client()
                 safe_print("🟡 Binance Client: WIRED (API Key loaded)")
             except Exception as e:
                 safe_print(f"⚠️ Binance Client error: {e}")

@@ -179,7 +179,7 @@ def main():
         print("\n   ❌ Cancelled.")
         return
     
-    client = BinanceClient()
+    client = get_binance_client()
     print(f"\n🔌 BinanceClient ready")
     
     # Check UK restrictions

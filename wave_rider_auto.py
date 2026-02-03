@@ -23,7 +23,7 @@ class WaveRiderAuto:
     """Continuous wave riding system"""
     
     def __init__(self, live_mode: bool = True):
-        self.binance = BinanceClient()
+        self.binance = get_binance_client()
         self.live_mode = live_mode
         self.position_file = 'active_position.json'
         self.trade_history_file = 'wave_rider_history.json'

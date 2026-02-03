@@ -1877,7 +1877,7 @@ class AureonProDashboard:
             # Try Binance
             try:
                 from binance_client import BinanceClient
-                binance = BinanceClient()
+                binance = get_binance_client()
                 bin_balance = await asyncio.to_thread(binance.get_balance)
                 if isinstance(bin_balance, dict):
                     # Sum all stablecoins (USDT, USDC, BUSD, etc.)

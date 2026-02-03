@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-client = BinanceClient()
+client = get_binance_client()
 
 def check_balances():
     account = client.account()

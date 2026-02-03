@@ -220,7 +220,7 @@ class OrcaGlobalHunter:
             
         # Binance (data only for UK)
         try:
-            from binance_client import BinanceClient
+            from binance_client import BinanceClient, get_binance_client
             self.exchanges['binance'] = BinanceClient()
             info = self.exchanges['binance'].exchange_info()
             symbols = [s['symbol'] for s in info.get('symbols', []) if s.get('status') == 'TRADING']

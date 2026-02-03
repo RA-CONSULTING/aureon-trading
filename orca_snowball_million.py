@@ -62,7 +62,7 @@ class QueenSnowball:
         
         self.kraken = get_kraken_client()
         try:
-            self.binance = BinanceClient()
+            self.binance = get_binance_client()
         except:
             self.binance = None
             

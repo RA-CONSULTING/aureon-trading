@@ -392,7 +392,7 @@ class FullMarketTrainer:
             return False
         
         try:
-            self.binance = BinanceClient()
+            self.binance = get_binance_client()
             
             # Get 24h historical klines
             historical = self.binance.get_24h_historical() if hasattr(self.binance, 'get_24h_historical') else {}

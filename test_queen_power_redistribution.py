@@ -85,7 +85,7 @@ class QueenPowerController:
         self.scanner = HarmonicWaveformScanner()
         
         # Exchange clients for execution
-        self.binance = BinanceClient()
+        self.binance = get_binance_client()
         self.kraken = get_kraken_client()
         self.alpaca = AlpacaClient()
         

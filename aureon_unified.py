@@ -895,7 +895,7 @@ class UnifiedOrchestrator:
     
     def __init__(self, dry_run: bool = True):
         self.dry_run = dry_run
-        self.client = BinanceClient()
+        self.client = get_binance_client()
         
         # Initialize all systems
         self.data = DataIngestionSystem(self.client)

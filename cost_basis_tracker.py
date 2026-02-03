@@ -150,7 +150,7 @@ class CostBasisTracker:
                 client = self.clients['binance']
             else:
                 from binance_client import BinanceClient
-                client = BinanceClient()
+                client = get_binance_client()
         except Exception as e:
             print(f"⚠️ Failed to initialize Binance client: {e}")
             return 0

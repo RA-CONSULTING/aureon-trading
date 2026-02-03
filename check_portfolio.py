@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-client = BinanceClient()
+client = get_binance_client()
 account = client.account()
 
 total_usd = 0

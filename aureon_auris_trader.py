@@ -227,7 +227,7 @@ class AurisEngine:
 
 class AurisTrader:
     def __init__(self):
-        self.client = BinanceClient()
+        self.client = get_binance_client()
         self.engine = AurisEngine()
         self.positions = {}
         self.history = {}  # For calculating volatility/momentum

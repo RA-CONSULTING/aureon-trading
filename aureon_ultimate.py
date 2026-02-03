@@ -746,7 +746,7 @@ class AureonUltimate:
             self.client = get_kraken_client()
             logger.info("🟣 Using Kraken client (dry-run compatible)")
         else:
-            self.client = BinanceClient()
+            self.client = get_binance_client()
             logger.info("🟡 Using Binance client")
         self.lot_mgr = LotSizeManager(self.client)
         self.memory = ElephantMemory()

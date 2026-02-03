@@ -68,7 +68,7 @@ def debug_check():
         print(f"   Env BINANCE_API_KEY present: {bool(b_key)}")
 
         # Instantiate with NO ARGS
-        binance = BinanceClient()
+        binance = get_binance_client()
         
         # Test ZROUSDT
         print("1. Testing get_all_orders('ZROUSDT', limit=1000)...")

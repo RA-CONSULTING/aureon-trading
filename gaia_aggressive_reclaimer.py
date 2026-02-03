@@ -34,7 +34,7 @@ class AggressiveReclaimer:
         from alpaca_client import AlpacaClient
         from kraken_client import KrakenClient, get_kraken_client
         
-        self.binance = BinanceClient()
+        self.binance = get_binance_client()
         self.alpaca = AlpacaClient()
         self.kraken = get_kraken_client()
         

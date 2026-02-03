@@ -74,7 +74,7 @@ def force_trade():
     print("   📊 Loading Binance market data...")
     try:
         from binance_client import BinanceClient
-        binance = BinanceClient()
+        binance = get_binance_client()
         tickers = binance.get_24h_tickers()
         
         for t in tickers:

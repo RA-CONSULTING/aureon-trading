@@ -47,7 +47,7 @@ class BigSimulator:
         
         # Initialize clients
         print("🔧 Initializing exchange clients...")
-        self.binance = BinanceClient()
+        self.binance = get_binance_client()
         self.kraken = get_kraken_client()
         
         # Get real market data

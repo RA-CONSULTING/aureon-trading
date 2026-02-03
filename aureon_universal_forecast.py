@@ -46,7 +46,7 @@ from hnc_imperial_predictability import CosmicStateEngine, PredictabilityEngine,
 from hnc_probability_matrix import TemporalFrequencyAnalyzer, ProbabilityMatrix, ProbabilityState
 
 # Import all exchange clients
-from binance_client import BinanceClient
+from binance_client import BinanceClient, get_binance_client
 from kraken_client import KrakenClient, get_kraken_client
 from alpaca_client import AlpacaClient
 from capital_client import CapitalClient

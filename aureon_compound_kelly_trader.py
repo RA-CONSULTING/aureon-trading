@@ -36,7 +36,7 @@ logger = logging.getLogger(__name__)
 class CompoundKellyTrader:
     def __init__(self, dry_run: bool = True):
         self.dry_run = dry_run
-        self.client = BinanceClient()
+        self.client = get_binance_client()
         self.fee_pct = 0.002  # 0.2% round-trip
         self.coherence_threshold = 0.05  # Very low for aggressive entry
         self.max_positions = 7

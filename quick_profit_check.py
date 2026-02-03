@@ -35,7 +35,7 @@ def get_current_price(exchange, symbol):
             ticker = client.get_ticker(symbol + 'USD')
             return float(ticker.get('last', 0))
         elif exchange == 'binance':
-            client = BinanceClient()
+            client = get_binance_client()
             ticker = client.get_ticker_price(symbol + 'USDT')
             return float(ticker.get('price', 0))
     except:
@@ -240,7 +240,7 @@ def get_portfolio_snapshot() -> Dict[str, Any]:
     
     # Binance
     try:
-        binance = BinanceClient()
+        binance = get_binance_client()
         balances = binance.get_balance()
         
         binance_data = {
@@ -535,7 +535,7 @@ def main():
     # Binance - show balance with P&L if cost basis available
     print("\n\n🟡 BINANCE:")
     try:
-        binance = BinanceClient()
+        binance = get_binance_client()
         balances = binance.get_balance()
         
         if not balances:

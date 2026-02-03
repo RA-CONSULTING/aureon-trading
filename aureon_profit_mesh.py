@@ -88,7 +88,7 @@ class FastCoherence:
 class ProfitMeshTrader:
     def __init__(self, dry_run: bool = True):
         self.dry_run = dry_run
-        self.client = BinanceClient()
+        self.client = get_binance_client()
         self.coherence = FastCoherence()
         self.positions = {}  # {symbol: {...}}
         self.total_profit = 0.0  # USD equivalent

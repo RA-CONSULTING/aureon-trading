@@ -267,7 +267,7 @@ def calculate_coherence(price_change_pct: float, volume_btc: float, volatility_p
 
 class AureonUnifiedLive:
     def __init__(self):
-        self.client = BinanceClient()
+        self.client = get_binance_client()
         self.lot_mgr = LotSizeManager(self.client)
         self.memory = ElephantMemory()
         self.spiral = spiral_memory  # 🌀 SPIRAL MEMORY INTEGRATION

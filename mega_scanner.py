@@ -181,7 +181,7 @@ class MegaScanner:
         
         if BINANCE_OK:
             try:
-                self.binance = BinanceClient()
+                self.binance = get_binance_client()
                 print("   🟡 Binance: CONNECTED")
             except Exception as e:
                 print(f"   🟡 Binance: FAILED - {e}")

@@ -393,7 +393,7 @@ def main():
     log('🖥️', 'SYSTEM', 'Initializing Exchange Uplinks...')
     capital = CapitalClient()
     alpaca = AlpacaClient()
-    binance = BinanceClient()
+    binance = get_binance_client()
     kraken = get_kraken_client()
     dr_auris = SeroClient()
     

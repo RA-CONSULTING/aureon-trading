@@ -248,7 +248,7 @@ def run_billion_trader():
     print()
     
     # Initialize
-    client = BinanceClient()
+    client = get_binance_client()
     tracker = CostBasisTracker(COST_BASIS_FILE)
     logger = TradeLogger(TRADE_LOG_FILE)
     

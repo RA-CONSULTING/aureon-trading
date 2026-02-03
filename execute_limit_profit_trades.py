@@ -216,7 +216,7 @@ def main():
     
     # Initialize Binance client
     print("\n🔌 Initializing BinanceClient (LIVE MODE)...")
-    client = BinanceClient()
+    client = get_binance_client()
     print(f"   ✅ Client ready")
     
     # Check we can trade these pairs

@@ -626,7 +626,7 @@ class AureonNexus:
     def connect_binance(self) -> bool:
         """Connect to Binance API"""
         try:
-            self.binance = BinanceClient()
+            self.binance = get_binance_client()
             if self.binance.ping():
                 logger.info("✅ Connected to Binance")
                 

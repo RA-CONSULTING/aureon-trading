@@ -10,7 +10,7 @@ def debug_balances():
         if not os.getenv("BINANCE_API_KEY"):
             print("⚠️ No Binance API Key in env")
         else:
-            b = BinanceClient()
+            b = get_binance_client()
             acct = b.account()
             # Print ALL non-zero balances
             found_any = False

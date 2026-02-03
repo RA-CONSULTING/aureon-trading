@@ -366,7 +366,7 @@ class UnifiedKillChain:
     def __init__(self, win_config: WinConfig = None):
         self.capital = CapitalClient() if CapitalClient else None
         self.kraken = get_kraken_client() if KrakenClient else None
-        self.binance = BinanceClient() if BinanceClient else None
+        self.binance = get_binance_client() if BinanceClient else None
         self.alpaca = AlpacaClient() if AlpacaClient else None
         self.cost_basis = load_cost_basis()
         self.real_portfolio = get_real_portfolio_tracker() if get_real_portfolio_tracker else None

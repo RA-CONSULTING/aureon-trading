@@ -56,7 +56,7 @@ class BinanceConversionCommando:
         self.dry_run = dry_run
         os.environ['BINANCE_DRY_RUN'] = 'true' if dry_run else 'false'
         
-        self.binance = BinanceClient()
+        self.binance = get_binance_client()
         
         # State
         self.holdings: Dict[str, float] = {}

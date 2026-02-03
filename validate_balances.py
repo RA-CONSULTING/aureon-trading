@@ -11,7 +11,7 @@ print('=== REAL BALANCE VALIDATION ===')
 
 # Binance
 try:
-    binance = BinanceClient()
+    binance = get_binance_client()
     account = binance.account()
     usdt_balance = float([b for b in account["balances"] if b["asset"] == "USDT"][0]["free"])
     print(f'Binance USDT: ${usdt_balance:.2f}')

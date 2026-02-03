@@ -72,7 +72,7 @@ def repair():
     print("\n📡 100% CONNECTIVITY VERIFICATION...")
     try:
         from binance_client import BinanceClient
-        bc = BinanceClient()
+        bc = get_binance_client()
         print("   ✅ BINANCE: Connected")
     except: print("   ❌ BINANCE: Failed")
     

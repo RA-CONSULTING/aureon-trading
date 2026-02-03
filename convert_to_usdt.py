@@ -12,7 +12,7 @@ if os.getenv('CONFIRM_LIVE', '').lower() != 'yes':
     print("❌ Set CONFIRM_LIVE=yes to execute conversions")
     sys.exit(1)
 
-client = BinanceClient()
+client = get_binance_client()
 account = client.account()
 
 # Get all non-zero balances

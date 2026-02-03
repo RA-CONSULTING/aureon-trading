@@ -17,7 +17,7 @@ logger = logging.getLogger("CHZ_CHECK")
 
 def check_chz_status():
     try:
-        client = BinanceClient()
+        client = get_binance_client()
     except Exception as e:
         print(f"Failed to initialize BinanceClient: {e}")
         return

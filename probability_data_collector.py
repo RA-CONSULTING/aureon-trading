@@ -91,7 +91,7 @@ class DataPoint:
 
 class ProbabilityCollector:
     def __init__(self):
-        self.binance = BinanceClient()
+        self.binance = get_binance_client()
         self.hnc = HNCProbabilityIntegration()
         self.data_buffer: List[DataPoint] = []
         self.collection_interval = 60  # Collect every minute

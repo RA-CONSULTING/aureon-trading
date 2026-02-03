@@ -335,7 +335,7 @@ class UnifiedExchangeClient:
             self.dry_run = self.client.dry_run
         elif self.exchange_id == "binance":
             from binance_client import BinanceClient
-            self.client = BinanceClient()
+            self.client = get_binance_client()
             self.dry_run = self.client.dry_run
         elif self.exchange_id == "alpaca":
             from alpaca_client import AlpacaClient

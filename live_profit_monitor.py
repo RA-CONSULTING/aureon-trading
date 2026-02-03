@@ -19,7 +19,7 @@ def get_current_price(symbol, exchange):
             return float(ticker.get('last', 0)) if ticker else 0
         elif exchange == 'binance':
             from binance_client import BinanceClient
-            client = BinanceClient()
+            client = get_binance_client()
             ticker = client.get_ticker(symbol)
             return float(ticker.get('price', 0)) if ticker else 0
         elif exchange == 'alpaca':

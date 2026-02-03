@@ -180,7 +180,7 @@ class AureonLiveTrader:
             logger.warning("⚠️  LIVE MONEY MODE ENABLED - Real capital at risk!")
         
         try:
-            self.client = BinanceClient()
+            self.client = get_binance_client()
             if self.client.ping():
                 logger.info("✅ Binance API reachable")
             balance = self.client.get_free_balance("USDT")

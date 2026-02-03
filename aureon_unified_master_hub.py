@@ -50,6 +50,7 @@ from pathlib import Path
 # Core systems
 from aureon_system_hub import SystemRegistry
 from aureon_thought_bus import ThoughtBus, Thought
+from binance_client import get_binance_client
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s | %(message)s')
 logger = logging.getLogger(__name__)

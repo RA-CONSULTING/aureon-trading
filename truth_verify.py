@@ -38,7 +38,7 @@ def get_binance_truth() -> Tuple[float, Dict]:
     """Get REAL Binance balance - no lies"""
     from binance_client import BinanceClient
     try:
-        b = BinanceClient()
+        b = get_binance_client()
         total = 0
         details = {}
         for bal in b.account().get('balances', []):

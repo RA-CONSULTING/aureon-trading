@@ -467,7 +467,7 @@ def main():
     
     # Initialize
     print("\n🔌 Initializing...")
-    client = BinanceClient()
+    client = get_binance_client()
     engine = ProbabilityForecastEngine(client)
     
     # Check trading pairs

@@ -111,7 +111,7 @@ class SelfValidatingPredictor:
     def __init__(self):
         print("\n🔮 Initializing Self-Validating Prediction Engine...")
         
-        self.binance = BinanceClient()
+        self.binance = get_binance_client()
         self.kraken = get_kraken_client()
         
         # Prediction history

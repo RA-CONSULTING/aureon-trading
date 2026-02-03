@@ -113,7 +113,7 @@ class IntegratedForecastTrader:
         print("\n🌳 Initializing Integrated Forecast Trader...")
         
         # Initialize all engines
-        self.client = BinanceClient()
+        self.client = get_binance_client()
         self.earth_engine = EarthResonanceEngine()
         self.cosmic_engine = CosmicStateEngine()
         self.predictability_engine = PredictabilityEngine()

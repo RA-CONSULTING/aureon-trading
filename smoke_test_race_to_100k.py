@@ -56,7 +56,7 @@ def get_real_portfolio_balance() -> Tuple[float, Dict[str, float]]:
     # 🟡 BINANCE
     try:
         from binance_client import BinanceClient
-        binance = BinanceClient()
+        binance = get_binance_client()
         # Get USD-equivalent balances
         usdt = float(binance.get_free_balance('USDT') or 0)
         usdc = float(binance.get_free_balance('USDC') or 0)

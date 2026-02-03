@@ -204,7 +204,7 @@ class QueenVolumeHunter:
         self.thought_bus = ThoughtBus() if THOUGHT_BUS_AVAILABLE else None
         
         # Exchange clients
-        self.binance = BinanceClient()
+        self.binance = get_binance_client()
         self.kraken = get_kraken_client()
         self.alpaca = AlpacaClient() if ALPACA_AVAILABLE else None
         

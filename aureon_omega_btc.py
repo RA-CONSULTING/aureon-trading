@@ -24,6 +24,7 @@ from datetime import datetime
 from urllib.parse import urlencode
 from typing import Dict, List, Optional, Tuple
 import requests
+from binance_client import get_binance_client
 
 # 🪙 PENNY PROFIT ENGINE
 try:
@@ -361,7 +362,7 @@ class PositionTracker:
 
 class AureonOmegaTrader:
     def __init__(self):
-        self.client = BinanceClient()
+        self.client = get_binance_client()
         self.analyzer = OmegaAnalyzer()
         self.positions = PositionTracker()
         self.trade_count = 0

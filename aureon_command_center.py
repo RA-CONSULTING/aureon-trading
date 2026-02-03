@@ -757,7 +757,7 @@ def run_flight_check() -> Dict[str, FlightCheckResult]:
     try:
         start = time.perf_counter()
         from binance_client import BinanceClient
-        client = BinanceClient()
+        client = get_binance_client()
         ping_ts = datetime.now().isoformat()
         ping_ms = (time.perf_counter() - start) * 1000
         results['Binance Exchange'] = FlightCheckResult(
@@ -6097,7 +6097,7 @@ async def update_balances_task():
             try:
                 if binance_client is None:
                     from binance_client import BinanceClient
-                    binance_client = BinanceClient()
+                    binance_client = get_binance_client()
                 acct = binance_client.account()
                 fiat = {}
                 for bal in acct.get('balances', []):

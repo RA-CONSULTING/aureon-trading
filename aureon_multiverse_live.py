@@ -1247,7 +1247,7 @@ class MultiverseLiveEngine:
         # Initialize Exchange Clients (Binance, Kraken)
         if BINANCE_AVAILABLE and not simulation_mode:
             try:
-                self.binance = BinanceClient()
+                self.binance = get_binance_client()
                 logger.info("📈 Binance Client: ONLINE")
             except Exception as e:
                 self.binance = None

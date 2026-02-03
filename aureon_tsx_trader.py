@@ -358,7 +358,7 @@ class TSXTrader:
     def __init__(self, config: TradingConfig, paper_mode: bool = True):
         self.config = config
         self.paper_mode = paper_mode
-        self.client = BinanceClient()
+        self.client = get_binance_client()
         self.trades: List[dict] = []
         self.positions: Dict[str, float] = {}
     

@@ -420,7 +420,7 @@ class AureonHistoricalLive:
             print(f"⚠️  Alpaca: {e}")
         
         try:
-            self.binance = BinanceClient()
+            self.binance = get_binance_client()
             print("✅ Binance: CONNECTED")
         except Exception as e:
             print(f"⚠️  Binance: {e}")

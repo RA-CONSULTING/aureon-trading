@@ -27,7 +27,7 @@ def main():
         return
     coin = sys.argv[1].upper()
     network = sys.argv[2] if len(sys.argv) > 2 else None
-    client = BinanceClient()
+    client = get_binance_client()
     try:
         addr = client.get_deposit_address(coin, network)
         print(json.dumps(addr, indent=2))

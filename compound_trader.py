@@ -15,7 +15,7 @@ GBP = 0.79
 
 class CompoundTrader:
     def __init__(self):
-        self.client = BinanceClient()
+        self.client = get_binance_client()
         self.positions = {}  # symbol -> {entry, qty, target, stop}
         self.trades_completed = 0
         self.total_profit = 0.0

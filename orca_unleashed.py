@@ -236,7 +236,7 @@ class OrcaUnleashed:
         
         if BINANCE_AVAILABLE:
             try:
-                self.binance = BinanceClient()
+                self.binance = get_binance_client()
                 exchange_count += 1
                 logger.info("🟡 Binance CONNECTED")
             except Exception as e:

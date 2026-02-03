@@ -49,7 +49,7 @@ for var in critical_vars:
 print("\n5️⃣ Binance Connection:")
 try:
     from binance_client import BinanceClient
-    client = BinanceClient()
+    client = get_binance_client()
     print("   ✅ BinanceClient imported")
     
     # Try to get account info

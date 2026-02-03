@@ -94,7 +94,7 @@ class AureonExchangeIntelligenceAudit:
         
         try:
             from binance_client import BinanceClient
-            client = BinanceClient()
+            client = get_binance_client()
             
             print("🔍 Interrogating Binance API...")
             

@@ -3451,7 +3451,7 @@ class OrcaKillCycle:
             
             # Initialize Binance
             try:
-                from binance_client import BinanceClient
+                from binance_client import BinanceClient, get_binance_client
                 self.clients['binance'] = BinanceClient()
                 _safe_print("✅ Binance: CONNECTED")
             except Exception as e:

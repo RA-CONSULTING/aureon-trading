@@ -378,7 +378,7 @@ class HarmonicRedistributionMath:
     
     def __init__(self):
         # Exchange clients
-        self.binance = BinanceClient()
+        self.binance = get_binance_client()
         self.kraken = get_kraken_client()
         self.alpaca = AlpacaClient()
         self.capital = CapitalClient()

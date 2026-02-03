@@ -67,7 +67,7 @@ def get_binance_trades():
             print("   ⚠️ Binance API keys not configured")
             return []
         
-        binance = BinanceClient()
+        binance = get_binance_client()
         all_trades = binance.get_all_my_trades()
         
         trade_list = []

@@ -147,7 +147,7 @@ class HarmonicSeedLoader:
                 logger.warning(f"Could not init Kraken: {e}")
             
             try:
-                from binance_client import BinanceClient
+                from binance_client import BinanceClient, get_binance_client
                 self._exchange_clients['binance'] = BinanceClient()
                 logger.info("✅ Binance client initialized")
             except Exception as e:

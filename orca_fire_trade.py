@@ -27,7 +27,7 @@ class FireTrader:
     def __init__(self, kraken_client=None, binance_client=None):
         try:
             from kraken_client import KrakenClient, get_kraken_client
-            from binance_client import BinanceClient
+            from binance_client import BinanceClient, get_binance_client
             self.kraken = kraken_client if kraken_client else get_kraken_client()
             self.binance = binance_client if binance_client else BinanceClient()
         except ImportError:

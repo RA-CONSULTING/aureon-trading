@@ -18,7 +18,7 @@ print("=" * 60)
 print("\n1️⃣ Checking Binance Balance...")
 try:
     from binance_client import BinanceClient
-    client = BinanceClient()
+    client = get_binance_client()
     
     print("   Checking liquid stablecoins:")
     liquid_total = 0

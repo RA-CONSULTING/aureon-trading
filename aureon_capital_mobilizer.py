@@ -88,7 +88,7 @@ class AureonCapitalMobilizer:
     def _load_exchange_clients(self):
         """Load exchange clients dynamically."""
         try:
-            from binance_client import BinanceClient
+            from binance_client import BinanceClient, get_binance_client
             self.exchange_clients['binance'] = BinanceClient()
         except Exception as e:
             print(f"⚠️  Binance client not available: {e}")

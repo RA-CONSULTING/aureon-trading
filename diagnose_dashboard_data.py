@@ -141,7 +141,7 @@ async def test_ocean_scanner():
                     from kraken_client import KrakenClient, get_kraken_client
                     exchanges['kraken'] = get_kraken_client()
                 elif exch_name == 'binance':
-                    from binance_client import BinanceClient
+                    from binance_client import BinanceClient, get_binance_client
                     exchanges['binance'] = BinanceClient()
                 elif exch_name == 'alpaca':
                     from alpaca_client import AlpacaClient

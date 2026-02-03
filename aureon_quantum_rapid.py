@@ -120,7 +120,7 @@ def get_opportunity(client: BinanceClient, symbol: str) -> Optional[Dict]:
 
 class QuantumRapidTrader:
     def __init__(self):
-        self.client = BinanceClient()
+        self.client = get_binance_client()
         self.positions: Dict[str, Dict] = {}
         self.trades: List[Dict] = []
         self.starting_capital = 0.0

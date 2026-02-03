@@ -440,7 +440,7 @@ class QueenSeroConsciousness:
         self.current_realm = Realm.QUANTUM_FIELD  # Default perspective
         
         # Exchange clients
-        self.binance = BinanceClient()
+        self.binance = get_binance_client()
         self.kraken = get_kraken_client()
         self.alpaca = AlpacaClient()
         self.cost_basis = CostBasisTracker()

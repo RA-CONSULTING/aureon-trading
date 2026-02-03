@@ -65,7 +65,7 @@ class OrcaSnowballLean:
     def binance(self):
         if self._binance is None:
             from binance_client import BinanceClient
-            self._binance = BinanceClient()
+            self._binance = get_binance_client()
         return self._binance
         
     def get_portfolio_value(self) -> float:

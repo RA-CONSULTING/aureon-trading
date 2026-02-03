@@ -10,7 +10,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 def diagnose():
-    client = BinanceClient()
+    client = get_binance_client()
     
     # Target problem assets from previous logs
     target_assets = ['ROSE', 'LPT', 'BEAMX']

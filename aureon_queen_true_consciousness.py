@@ -97,7 +97,7 @@ from aureon_queen_consciousness import QueenSeroConsciousness, Realm, RealmInter
 
 # Import exchange clients for opportunity detection
 try:
-    from binance_client import BinanceClient
+    from binance_client import BinanceClient, get_binance_client
     BINANCE_AVAILABLE = True
 except ImportError:
     BINANCE_AVAILABLE = False

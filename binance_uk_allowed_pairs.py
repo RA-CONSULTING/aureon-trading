@@ -43,7 +43,7 @@ def fetch_uk_allowed_pairs() -> Dict[str, Any]:
     
     try:
         from binance_client import BinanceClient
-        client = BinanceClient()
+        client = get_binance_client()
     except Exception as e:
         print(f"❌ Failed to create Binance client: {e}")
         return {"error": str(e)}

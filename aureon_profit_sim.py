@@ -335,7 +335,7 @@ class ProfitSimulator:
     """
     
     def __init__(self, trade_size_usd: float = 10.0):
-        self.client = BinanceClient()
+        self.client = get_binance_client()
         self.symbols = ['BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'SOLUSDT']
         self.feed = LiveMarketFeed(self.client, self.symbols)
         self.coherence = CoherenceEngine()

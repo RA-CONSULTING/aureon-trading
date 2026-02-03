@@ -49,7 +49,7 @@ async def check_balances():
     # Check Binance
     try:
         from binance_client import BinanceClient
-        binance = BinanceClient()
+        binance = get_binance_client()
         # Use simple account() method
         info = binance.account()
         print(f"\n🟡 BINANCE BALANCES:")

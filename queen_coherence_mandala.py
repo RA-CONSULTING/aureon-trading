@@ -730,7 +730,7 @@ async def run_live_coherence():
     print("   LIVE MARKET COHERENCE")
     print("👑" * 25 + "\n")
     
-    binance = BinanceClient()
+    binance = get_binance_client()
     system = QueenCoherenceSystem(dim=3, alpha=0.15)
     adapter = MarketCoherenceAdapter()
     renderer = MandalaRenderer(size=11)

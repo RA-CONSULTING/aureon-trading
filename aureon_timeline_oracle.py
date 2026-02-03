@@ -602,7 +602,7 @@ class TimelineOracle:
         # 🟡 Binance
         if BINANCE_AVAILABLE:
             try:
-                self.binance = BinanceClient()
+                self.binance = get_binance_client()
                 logger.info("   🟡 Binance Exchange: WIRED")
             except Exception as e:
                 logger.warning(f"   🟡 Binance: Failed ({e})")

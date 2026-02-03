@@ -205,7 +205,7 @@ class HiveMindTrader:
         # Binance node
         if BINANCE_AVAILABLE:
             try:
-                binance_client = BinanceClient()
+                binance_client = get_binance_client()
                 binance_balance = self._get_exchange_balance(binance_client, 'binance')
                 if binance_balance > 0:
                     node = HiveNode(

@@ -125,7 +125,7 @@ class APIBufferMonitor:
         # Binance
         if BINANCE_OK:
             try:
-                bc = BinanceClient()
+                bc = get_binance_client()
                 start = time.time()
                 ticker = bc.get_24h_ticker('BTCUSDC')
                 latency = (time.time() - start) * 1000

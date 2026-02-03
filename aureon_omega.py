@@ -61,6 +61,7 @@ from datetime import datetime
 from urllib.parse import urlencode
 from typing import Dict, List, Optional, Tuple
 import requests
+from binance_client import get_binance_client
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # PRIME SENTINEL IDENTITY
@@ -914,7 +915,7 @@ class AureonOmega:
         self.lighthouse = LighthouseConsensus()
         
         # Trading components
-        self.client = BinanceClient()
+        self.client = get_binance_client()
         self.hive = None
         
         # State

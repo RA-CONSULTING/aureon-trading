@@ -6,7 +6,7 @@ import sys
 sys.path.append("/workspaces/aureon-trading")
 
 from orca_complete_kill_cycle import OrcaKillCycle as Orca
-from binance_client import BinanceClient
+from binance_client import BinanceClient, get_binance_client
 
 # Initialize Orca properly
 orca = Orca()

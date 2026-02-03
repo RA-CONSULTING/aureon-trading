@@ -411,7 +411,7 @@ class QueenFullSystemIntegration:
         # Binance data
         if self.status.binance:
             try:
-                client = BinanceClient()
+                client = get_binance_client()
                 prices = client.get_all_tickers() if hasattr(client, 'get_all_tickers') else []
                 market_data['exchanges']['binance'] = {
                     'symbols': len(prices) if prices else 0,

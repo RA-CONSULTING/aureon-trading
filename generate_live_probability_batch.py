@@ -53,7 +53,7 @@ def collect_baseline(client: BinanceClient, symbol: str, samples: int = 5, inter
 
 
 def main():
-    client = BinanceClient()
+    client = get_binance_client()
     integration = HNCProbabilityIntegration()
 
     symbols = DEFAULT_SYMBOLS

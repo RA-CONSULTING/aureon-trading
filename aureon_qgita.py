@@ -559,7 +559,7 @@ class LotSizeManager:
 class AureonQGITATrader:
     def __init__(self, dry_run: bool = True):
         self.dry_run = dry_run
-        self.client = BinanceClient()
+        self.client = get_binance_client()
         self.lot_manager = LotSizeManager(self.client)
         self.qgita = QGITAEngine()
         self.decision_fusion = DecisionFusion()

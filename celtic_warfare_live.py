@@ -226,7 +226,7 @@ class CelticWarfareLiveTrader:
         
         if LIVE_CONFIG['USE_BINANCE'] and BINANCE_AVAILABLE:
             try:
-                self.binance_client = BinanceClient()
+                self.binance_client = get_binance_client()
                 self.war_room.connect_exchange('binance', self.binance_client)
                 logger.info("✅ Connected to Binance")
             except Exception as e:

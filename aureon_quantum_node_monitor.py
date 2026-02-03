@@ -183,7 +183,7 @@ class QuantumNodeMonitor:
         """Lazy load exchange clients"""
         try:
             from binance_client import BinanceClient
-            self.binance = BinanceClient()
+            self.binance = get_binance_client()
         except Exception:
             pass
         

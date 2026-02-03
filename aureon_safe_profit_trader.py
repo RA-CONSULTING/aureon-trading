@@ -40,7 +40,7 @@ logger = logging.getLogger(__name__)
 class SafeProfitTrader:
     def __init__(self, dry_run: bool = True):
         self.dry_run = dry_run
-        self.client = BinanceClient()
+        self.client = get_binance_client()
         self.fee_pct = 0.004  # 0.4% round-trip (0.2% each side for taker)
         self.take_profit_pct = 0.012  # 1.2% take profit (must beat fees!)
         self.stop_loss_pct = 0.008  # 0.8% stop loss

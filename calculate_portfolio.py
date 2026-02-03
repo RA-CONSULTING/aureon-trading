@@ -11,7 +11,7 @@ except:
 from binance_client import BinanceClient
 import json
 
-client = BinanceClient()
+client = get_binance_client()
 
 print("\n" + "="*80)
 print("PORTFOLIO VALUATION & TRADING READINESS")

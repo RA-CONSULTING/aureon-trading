@@ -98,7 +98,7 @@ class S5InfiniteDance:
     def __init__(self):
         # The dancers
         self.kraken = get_kraken_client()
-        self.binance = BinanceClient()
+        self.binance = get_binance_client()
         
         # The dance floor state
         self.kraken_holdings: Dict[str, float] = {}

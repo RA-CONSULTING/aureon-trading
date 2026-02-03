@@ -350,7 +350,7 @@ class OrcaCompetition:
     """
     
     def __init__(self):
-        self.client = BinanceClient()
+        self.client = get_binance_client()
         self.cost_tracker = CostTracker()
         self.competition_log: List[CompetitionResult] = []
         

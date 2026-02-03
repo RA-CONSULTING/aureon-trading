@@ -313,7 +313,7 @@ class AureonUnifiedDashboard:
         if self._binance is None:
             try:
                 from binance_client import BinanceClient
-                self._binance = BinanceClient()
+                self._binance = get_binance_client()
                 logger.info("✓ Binance client loaded")
             except Exception as e:
                 logger.debug(f"Binance not available: {e}")

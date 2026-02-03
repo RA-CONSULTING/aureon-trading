@@ -1855,9 +1855,61 @@ class BinancePoolClient:
         return {k: sorted(v) for k, v in conversions.items()}
 
 
+# ═══════════════════════════════════════════════════════════════════════════════
+# 🟡 SINGLETON PATTERN - Single Binance client instance across all modules
+# ═══════════════════════════════════════════════════════════════════════════════
+_binance_client_instance: Optional['BinanceClient'] = None
+_binance_client_lock = None  # Lazy init to avoid import issues
+
+def get_binance_client() -> Optional['BinanceClient']:
+    """
+    Get the singleton BinanceClient instance.
+    
+    This ensures only ONE BinanceClient exists across the entire application,
+    preventing rate limit issues and connection pool exhaustion.
+    
+    Usage:
+        from binance_client import get_binance_client
+        client = get_binance_client()
+        if client:
+            balance = client.get_balance()
+    
+    Returns:
+        BinanceClient instance, or None if credentials are missing
+    """
+    global _binance_client_instance, _binance_client_lock
+    
+    # Lazy init the lock
+    if _binance_client_lock is None:
+        import threading
+        _binance_client_lock = threading.Lock()
+    
+    if _binance_client_instance is None:
+        with _binance_client_lock:
+            # Double-check locking pattern
+            if _binance_client_instance is None:
+                try:
+                    _binance_client_instance = BinanceClient()
+                    import logging
+                    logging.getLogger(__name__).info("🟡 Binance singleton client initialized")
+                except ValueError as e:
+                    # Missing credentials
+                    import logging
+                    logging.getLogger(__name__).warning(f"⚠️ Binance client unavailable: {e}")
+                    return None
+                except Exception as e:
+                    import logging
+                    logging.getLogger(__name__).error(f"❌ Binance client init failed: {e}")
+                    return None
+    
+    return _binance_client_instance
+
+
 def safe_trade(symbol: str = None, side: str = "BUY") -> Dict[str, Any]:
     symbol = symbol or os.getenv("BINANCE_SYMBOL", "BTCUSDT")
-    client = BinanceClient()
+    client = get_binance_client()
+    if not client:
+        return {"error": "Binance client not available"}
     if not client.ping():
         raise RuntimeError("Binance API not reachable")
     risk = load_risk_config()

@@ -7799,7 +7799,7 @@ class AureonMiner:
             # Check if Binance API keys are configured
             api_key = os.getenv('BINANCE_API_KEY')
             if api_key:
-                client = BinanceClient()
+                client = get_binance_client()
                 self._binance_pool = BinancePoolClient(client)
                 self._binance_tracking_enabled = True
                 

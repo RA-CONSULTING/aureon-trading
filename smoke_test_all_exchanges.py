@@ -315,7 +315,7 @@ def test_binance(dry_run: bool = True) -> SmokeTestResult:
     
     try:
         from binance_client import BinanceClient
-        client = BinanceClient()
+        client = get_binance_client()
         
         # Get current price
         ticker = client.get_ticker('BTCUSDT')

@@ -146,7 +146,7 @@ class MasterEquation:
 class ProfitTrader:
     def __init__(self, dry_run: bool = True):
         self.dry_run = dry_run
-        self.client = BinanceClient()
+        self.client = get_binance_client()
         self.master_eq = MasterEquation()
         self.positions = {}  # symbol -> {'entry_price': float, 'quantity': float, 'entry_time': float, 'quote_spent': float}
         self.TARGET_PROFIT_PCT = 0.35  # 0.35% target (0.2% fees + 0.15% net) - MINIMAL BUT POSITIVE

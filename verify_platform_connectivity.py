@@ -92,7 +92,7 @@ def check_binance():
     print("="*80)
     
     try:
-        client = BinanceClient()
+        client = get_binance_client()
         
         # Check API connectivity
         print("✅ API Connection: SUCCESS")

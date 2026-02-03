@@ -166,7 +166,7 @@ class MultiPairTrader:
         self.dry_run = dry_run
         self.max_pairs = max_pairs
         self.risk_percent = risk_percent / 100.0
-        self.client = BinanceClient()
+        self.client = get_binance_client()
         self.master_eq = MasterEquation()
         self.positions = {}
         self.total_pnl = 0.0

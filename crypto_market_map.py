@@ -330,7 +330,7 @@ class CryptoMarketMap:
         try:
             if binance_client is None:
                 from binance_client import BinanceClient
-                binance_client = BinanceClient()
+                binance_client = get_binance_client()
             
             logger.info("🟡 Loading historical data from Binance...")
             

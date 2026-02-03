@@ -68,7 +68,7 @@ class UnifiedKillChain:
         # Initialize Clients
         self.capital = CapitalClient()
         self.alpaca = AlpacaClient()
-        self.binance = BinanceClient()
+        self.binance = get_binance_client()
         self.kraken = get_kraken_client()
         
         # Kraken warmup delay to avoid "Invalid nonce" errors after heavy init

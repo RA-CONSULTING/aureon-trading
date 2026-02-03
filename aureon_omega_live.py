@@ -25,6 +25,7 @@ from datetime import datetime
 from urllib.parse import urlencode
 from typing import Dict, List, Optional, Tuple
 import requests
+from binance_client import get_binance_client
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # CONFIGURATION
@@ -311,7 +312,7 @@ class OmegaAnalyzer:
 
 class AureonOmegaLive:
     def __init__(self):
-        self.client = BinanceClient()
+        self.client = get_binance_client()
         self.analyzer = OmegaAnalyzer()
         self.trades_this_hour = 0
         self.hour_start = time.time()

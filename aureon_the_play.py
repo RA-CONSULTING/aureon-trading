@@ -206,7 +206,7 @@ class MasterEquation:
 class AureonThePlayTrader:
     def __init__(self, dry_run: bool = True):
         self.dry_run = dry_run
-        self.client = BinanceClient()
+        self.client = get_binance_client()
         self.master_eq = MasterEquation()
         self.positions = {}
         self.total_profit = 0.0

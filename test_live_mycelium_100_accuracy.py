@@ -167,7 +167,7 @@ class BinanceLiveStreamer:
         self.client = None
         if BINANCE_AVAILABLE:
             try:
-                self.client = BinanceClient()
+                self.client = get_binance_client()
             except:
                 pass
     

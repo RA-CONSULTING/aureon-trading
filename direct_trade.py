@@ -25,7 +25,7 @@ def direct_trade(symbol: str = None, amount_usdt: float = 15.0):
     print(f"Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print()
     
-    client = BinanceClient()
+    client = get_binance_client()
     
     # Check balance
     account = client.account()

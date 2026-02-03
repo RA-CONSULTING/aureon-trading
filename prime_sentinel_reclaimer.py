@@ -106,7 +106,7 @@ class PrimeSentinelReclaimer:
             
         # Binance
         try:
-            from binance_client import BinanceClient
+            from binance_client import BinanceClient, get_binance_client
             self.exchanges['binance'] = BinanceClient()
             log("🟡 BINANCE: Connected")
         except Exception as e:

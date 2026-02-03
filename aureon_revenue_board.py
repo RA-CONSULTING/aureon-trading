@@ -179,7 +179,7 @@ class RevenueBoard:
         # Try to initialize if not provided
         if self.binance is None and BINANCE_AVAILABLE:
             try:
-                self.binance = BinanceClient()
+                self.binance = get_binance_client()
                 logger.info("📈 Binance client connected")
             except Exception as e:
                 logger.warning(f"Binance not available: {e}")

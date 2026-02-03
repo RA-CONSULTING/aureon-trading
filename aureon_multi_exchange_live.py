@@ -35,7 +35,7 @@ from typing import Dict, List, Optional, Any
 from decimal import Decimal, ROUND_DOWN
 
 # Import core components
-from binance_client import BinanceClient
+from binance_client import BinanceClient, get_binance_client
 from hnc_probability_matrix import HNCProbabilityIntegration
 
 # Unified market cache (Binance WS -> file cache)

@@ -123,7 +123,7 @@ print("\n🟡 BINANCE: Testing trade execution...")
 try:
     from binance_client import BinanceClient
     
-    binance = BinanceClient()
+    binance = get_binance_client()
     print(f"   Dry Run Mode: {binance.dry_run}")
     
     # Get balance

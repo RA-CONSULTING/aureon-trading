@@ -511,7 +511,7 @@ class OrcaKillerWhaleIntelligence:
         # Binance (REST + WebSocket)
         if BINANCE_AVAILABLE:
             try:
-                self.binance_client = BinanceClient()
+                self.binance_client = get_binance_client()
                 market_count += 1
                 logger.info("🟡 Binance REST API CONNECTED")
             except Exception as e:

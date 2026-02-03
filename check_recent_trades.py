@@ -5,7 +5,7 @@ from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 from binance_client import BinanceClient
 from datetime import datetime
 
-client = BinanceClient()
+client = get_binance_client()
 
 # Get all recent trades from last hour
 print("\n📊 RECENT BINANCE ORDERS (Last 60 minutes):\n")

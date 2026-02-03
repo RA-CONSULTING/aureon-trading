@@ -51,7 +51,7 @@ except Exception as e:
 print("\n🟡 LOADING FROM BINANCE:")
 try:
     from binance_client import BinanceClient
-    binance = BinanceClient()
+    binance = get_binance_client()
     info = binance.exchange_info()
     symbols = info.get('symbols', [])
     

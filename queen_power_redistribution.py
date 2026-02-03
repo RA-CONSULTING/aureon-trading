@@ -163,7 +163,7 @@ class QueenPowerRedistribution:
             logger.warning(f"Kraken not available: {e}")
         
         try:
-            self.binance = BinanceClient()
+            self.binance = get_binance_client()
         except Exception as e:
             logger.warning(f"Binance not available: {e}")
         

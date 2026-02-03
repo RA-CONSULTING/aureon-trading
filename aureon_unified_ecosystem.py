@@ -7502,7 +7502,7 @@ def sync_exchange_trades_to_brain():
         binance_secret = os.getenv('BINANCE_API_SECRET')
         
         if binance_key and binance_secret:
-            binance = BinanceClient()
+            binance = get_binance_client()
             
             # Get all trades from Binance
             all_trades = binance.get_all_my_trades()

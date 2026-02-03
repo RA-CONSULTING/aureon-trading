@@ -305,7 +305,7 @@ class BarterNavigator:
         """Load pairs from Binance."""
         print("\n🟡 Loading Binance pairs...")
         try:
-            self.binance = BinanceClient()
+            self.binance = get_binance_client()
             
             # Get exchange info for all pairs
             exchange_info = self.binance.client.get_exchange_info() if hasattr(self.binance, 'client') else {}

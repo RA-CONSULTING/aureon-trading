@@ -132,7 +132,7 @@ def main():
     reset = "--reset-baseline" in args
     show = "--show-baseline" in args
 
-    client = BinanceClient()
+    client = get_binance_client()
 
     total_now, details, meta = compute_total_account_value(client)
 

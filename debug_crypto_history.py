@@ -27,7 +27,7 @@ def debug_binance():
         return
 
     # FIXED: No args for init (loads from env)
-    client = BinanceClient()
+    client = get_binance_client()
     
     # Check Connectivity
     try:

@@ -264,7 +264,7 @@ class RealPortfolioTracker:
         try:
             if self._binance_client is None:
                 from binance_client import BinanceClient
-                self._binance_client = BinanceClient()
+                self._binance_client = get_binance_client()
             
             balances = self._binance_client.get_balance()
             

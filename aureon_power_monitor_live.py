@@ -29,7 +29,7 @@ from pathlib import Path
 
 # Exchange clients
 try:
-    from binance_client import BinanceClient
+    from binance_client import BinanceClient, get_binance_client
     BIN_AVAILABLE = True
 except:
     BIN_AVAILABLE = False

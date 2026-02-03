@@ -30,7 +30,7 @@ except ImportError:
     KRAKEN_AVAILABLE = False
 
 try:
-    from binance_client import BinanceClient
+    from binance_client import BinanceClient, get_binance_client
     BINANCE_AVAILABLE = True
 except ImportError:
     BINANCE_AVAILABLE = False

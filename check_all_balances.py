@@ -16,7 +16,7 @@ total_usd = 0.0
 # Test Binance
 try:
     from binance_client import BinanceClient
-    b = BinanceClient()
+    b = get_binance_client()
     usdt = b.get_free_balance('USDT')
     btc = b.get_free_balance('BTC')
     eth = b.get_free_balance('ETH')

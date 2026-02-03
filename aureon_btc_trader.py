@@ -146,7 +146,7 @@ python3 s5_intelligent_dance.pypython3 s5_intelligent_dance.pyclass LotSizeManag
 class AureonBTCTrader:
     def __init__(self, dry_run: bool = True):
         self.dry_run = dry_run
-        self.client = BinanceClient()
+        self.client = get_binance_client()
         self.lot_mgr = LotSizeManager(self.client)
         self.positions = {}
         self.total_profit_btc = 0.0

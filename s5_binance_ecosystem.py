@@ -81,7 +81,7 @@ class S5BinanceEcosystem:
         # Force dry_run off for real trading
         os.environ['BINANCE_DRY_RUN'] = 'true' if dry_run else 'false'
         
-        self.binance = BinanceClient()
+        self.binance = get_binance_client()
         self.pool = BinancePoolClient(self.binance)
         self.dry_run = dry_run
         
