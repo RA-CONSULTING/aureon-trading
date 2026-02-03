@@ -2546,20 +2546,31 @@ class AureonProDashboard:
         """
         await asyncio.sleep(5)  # Wait for initialization
         
-        self.logger.info("🌊🔭 OCEAN SCANNER → HARMONIC FIELD: Full market streaming started")
+        self.logger.info("🌊🔭 OCEAN DATA LOOP STARTED - Initializing full market streaming")
+        self.logger.info(f"   Ocean Scanner: {'ACTIVE' if self.ocean_scanner else 'MISSING'}")
+        self.logger.info(f"   Harmonic Field: {'ACTIVE' if self.harmonic_field else 'MISSING'}")
         
         scan_iteration = 0
         
         while True:
             try:
-                if not self.ocean_scanner or not self.harmonic_field:
+                if not self.ocean_scanner:
+                    self.logger.warning("⚠️ Ocean scanner not available - waiting...")
+                    await asyncio.sleep(5)
+                    continue
+                    
+                if not self.harmonic_field:
+                    self.logger.warning("⚠️ Harmonic field not available - waiting...")
                     await asyncio.sleep(5)
                     continue
                 
                 scan_iteration += 1
+                self.logger.info(f"🌊 Scan #{scan_iteration}: Starting ocean scan (limit=500)...")
                 
                 # AGGRESSIVE SCAN: Get top 500 symbols from the entire market
                 opportunities = await self.ocean_scanner.scan_ocean(limit=500)
+                
+                self.logger.info(f"🌊 Scan #{scan_iteration}: Found {len(opportunities)} opportunities")
                 
                 if opportunities:
                     # Feed TOP 100 into harmonic field (balance between visibility and performance)
@@ -2586,9 +2597,10 @@ class AureonProDashboard:
                     self.logger.warning(f"🌊 Scan #{scan_iteration}: No opportunities found")
                 
             except Exception as e:
-                self.logger.error(f"Ocean data loop error: {e}")
+                self.logger.error(f"🌊 Ocean data loop error on scan #{scan_iteration}: {e}", exc_info=True)
             
             # Scan every 8 seconds for continuous market pulse
+            self.logger.debug(f"🌊 Scan #{scan_iteration}: Sleeping 8s until next scan...")
             await asyncio.sleep(8)
     
     async def _init_ocean_scanner(self):
