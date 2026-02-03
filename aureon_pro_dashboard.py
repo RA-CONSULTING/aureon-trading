@@ -945,6 +945,8 @@ PRO_DASHBOARD_HTML = """
                     <span>Master Waveform</span>
                 </div>
             </div>
+
+            <div class="harmonic-layer-stats" id="field-layer-stats"></div>
         </div>
     </div>
     
@@ -1471,6 +1473,21 @@ PRO_DASHBOARD_HTML = """
                         const energy = (n.energy !== undefined ? n.energy : (n.amplitude || 0) * (n.frequency || 0)).toFixed(2);
                         return `<span class="chip">
                             <strong>${n.exchange || 'exch'}</strong> · ${n.symbol || 'SYM'} · ${energy}E
+                        </span>`;
+                    }).join('');
+                }
+            }
+
+            // Render per-layer stats for clarity
+            const layerStats = document.getElementById('field-layer-stats');
+            if (layerStats && data.layers) {
+                const entries = Object.entries(data.layers);
+                if (!entries.length) {
+                    layerStats.innerHTML = '<span style="color: var(--text-secondary);">No layers active</span>';
+                } else {
+                    layerStats.innerHTML = entries.map(([exch, layer]) => {
+                        return `<span class="chip">
+                            <strong>${exch}</strong> · ${layer.total_nodes} nodes · ${layer.total_energy.toFixed(1)}E · ${layer.avg_frequency.toFixed(1)} Hz
                         </span>`;
                     }).join('');
                 }
