@@ -217,7 +217,8 @@ try:
     for candidate in dotenv_candidates:
         try:
             if candidate.exists():
-                load_dotenv(dotenv_path=str(candidate), override=False)
+                # 🔑 Use override=True to ensure newest keys are always loaded!
+                load_dotenv(dotenv_path=str(candidate), override=True)
                 print(f"✅ Loaded .env file from {candidate}")
                 loaded = True
                 break
@@ -225,7 +226,7 @@ try:
             continue
 
     if not loaded:
-        load_dotenv(override=False)
+        load_dotenv(override=True)
         print("✅ Loaded .env file (default search)")
 except ImportError:
     print("⚠️ python-dotenv not installed, using system env vars only")

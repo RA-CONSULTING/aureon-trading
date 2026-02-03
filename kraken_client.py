@@ -9,7 +9,8 @@ from urllib3.util.retry import Retry
 # Load environment variables from .env file
 try:
     from dotenv import load_dotenv
-    load_dotenv()
+    # 🔑 Use override=True to ensure newest keys are always loaded!
+    load_dotenv(override=True)
 except ImportError:
     pass
 

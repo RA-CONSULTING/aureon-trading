@@ -2444,7 +2444,8 @@ class AureonProDashboard:
                     'owner': firm,
                     'pattern': info.get('pattern', ''),
                     'volume': info.get('metrics', {}).get('total_volume_usd', 0),
-                    'color': '#ff00ff' if display_type == 'whale' else '#00ffaa'
+                    'color': '#ff00ff' if display_type == 'whale' else '#00ffaa',
+                    'source': 'bot_intelligence_report.json'
                 }
 
             # Secondary source: consolidated_entity_list.json (bot census)
@@ -2472,26 +2473,52 @@ class AureonProDashboard:
                             'owner': owner,
                             'pattern': entity.get("type", ""),
                             'volume': 0,
-                            'color': '#00ffaa'
+                            'color': '#00ffaa',
+                            'source': 'consolidated_entity_list.json'
                         }
 
             self.bots = bots
+
+            # Compute trusted vs raw counts (do not treat low-confidence/synthetic as trusted)
+            def _is_trusted_entry(b: Dict) -> bool:
+                if not isinstance(b, dict):
+                    return False
+                if b.get('owner'):
+                    return True
+                try:
+                    if float(b.get('confidence', 0)) >= 0.25:
+                        return True
+                except Exception:
+                    pass
+                return False
+
+            raw_count = len(self.bots)
+            trusted_bots = {bid: b for bid, b in self.bots.items() if _is_trusted_entry(b)}
+            raw_whales = sum(1 for b in self.bots.values() if b.get('type') == 'whale')
+            trusted_whales = sum(1 for b in trusted_bots.values() if b.get('type') == 'whale')
+
             self.bot_counts = {
-                'whales': whales,
+                'raw_bots': raw_count,
+                'bots': len(trusted_bots),
+                'raw_whales': raw_whales,
+                'whales': trusted_whales,
                 'hives': len(firms)
             }
 
-            # Broadcast snapshot to clients
+            # Broadcast snapshot to clients (backwards-compatible + provenance)
             await self.broadcast({
                 'type': 'bots_snapshot',
                 'data': {
                     'bots': self.bots,
+                    'trusted_bots': trusted_bots,
+                    'raw_bots': raw_count,
+                    'raw_whales': raw_whales,
                     'whales': self.bot_counts.get('whales', 0),
                     'hives': self.bot_counts.get('hives', 0)
                 }
             })
 
-            self.logger.info(f"🤖 Bots loaded: {len(bots)} (whales: {whales}, hives: {len(firms)})")
+            self.logger.info(f"🤖 Bots loaded: raw={raw_count} trusted={len(trusted_bots)} (trusted_whales={trusted_whales}, hives={len(firms)})")
         except Exception as e:
             self.logger.warning(f"⚠️ Bot refresh failed: {e}")
     
