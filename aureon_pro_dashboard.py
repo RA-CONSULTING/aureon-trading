@@ -2405,18 +2405,19 @@ class AureonProDashboard:
     async def refresh_bots(self):
         """Load latest bot intelligence from real cached reports (no fake data)."""
         try:
-            report_path = os.path.join(os.getenv("AUREON_STATE_DIR", "."), "bot_intelligence_report.json")
-            if not os.path.exists(report_path):
-                report_path = os.path.join(os.getcwd(), "bot_intelligence_report.json")
+            state_dir = os.getenv("AUREON_STATE_DIR", ".")
 
-            if not os.path.exists(report_path):
-                self.logger.warning("⚠️ Bot intelligence report not found")
-                return
+            def _load_json_if_exists(path: str):
+                if os.path.exists(path):
+                    with open(path, "r", encoding="utf-8") as f:
+                        return json.load(f)
+                return None
 
-            with open(report_path, "r", encoding="utf-8") as f:
-                report = json.load(f)
+            # Primary source: bot_intelligence_report.json
+            report = _load_json_if_exists(os.path.join(state_dir, "bot_intelligence_report.json")) or \
+                      _load_json_if_exists(os.path.join(os.getcwd(), "bot_intelligence_report.json"))
 
-            bots_raw = report.get("all_bots", {}) or {}
+            bots_raw = report.get("all_bots", {}) if isinstance(report, dict) else {}
             bots: Dict[str, Dict] = {}
             whales = 0
             firms = set()
@@ -2445,6 +2446,34 @@ class AureonProDashboard:
                     'volume': info.get('metrics', {}).get('total_volume_usd', 0),
                     'color': '#ff00ff' if display_type == 'whale' else '#00ffaa'
                 }
+
+            # Secondary source: consolidated_entity_list.json (bot census)
+            consolidated = _load_json_if_exists(os.path.join(state_dir, "consolidated_entity_list.json")) or \
+                            _load_json_if_exists(os.path.join(os.getcwd(), "consolidated_entity_list.json"))
+
+            if isinstance(consolidated, list):
+                for entity in consolidated:
+                    owner = entity.get("entity_name") or entity.get("firm_name")
+                    bots_list = entity.get("bots_controlled", []) or []
+                    symbols = entity.get("symbols", []) or []
+                    for bot_id in bots_list:
+                        if bot_id in bots:
+                            continue
+                        symbol = symbols[0] if symbols else "UNKNOWN"
+                        if owner:
+                            firms.add(owner)
+                        bots[bot_id] = {
+                            'id': bot_id,
+                            'type': 'bot',
+                            'exchange': 'unknown',
+                            'symbol': symbol,
+                            'status': 'active',
+                            'confidence': entity.get("avg_confidence", 0),
+                            'owner': owner,
+                            'pattern': entity.get("type", ""),
+                            'volume': 0,
+                            'color': '#00ffaa'
+                        }
 
             self.bots = bots
             self.bot_counts = {
