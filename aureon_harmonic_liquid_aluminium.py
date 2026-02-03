@@ -232,6 +232,8 @@ class HarmonicLayer:
     nodes: Dict[str, LiquidNode] = field(default_factory=dict)
     
     def to_dict(self) -> Dict:
+        # Include a light-weight waveform for visualization (capped to 240 samples to keep payload lean)
+        waveform = self.waveform_samples[:240] if self.waveform_samples else []
         return {
             'layer': self.layer_id,
             'exchange': self.exchange,
@@ -244,6 +246,7 @@ class HarmonicLayer:
             'avg_frequency': round(self.average_frequency, 2),
             'avg_amplitude': round(self.average_amplitude, 4),
             'dominant_state': self.dominant_state.value,
+            'waveform': waveform,
         }
 
 
@@ -278,6 +281,22 @@ class FieldSnapshot:
     total_pnl_usd: float = 0.0
     
     def to_dict(self) -> Dict:
+        def _downsample(seq: List[float], max_len: int = 360) -> List[float]:
+            if not seq:
+                return []
+            step = max(1, len(seq) // max_len)
+            return seq[::step][:max_len]
+
+        # Flatten a small subset of nodes for the UI (cap to avoid payload bloat)
+        nodes: List[Dict] = []
+        for layer in self.layers.values():
+            for node in layer.nodes.values():
+                nodes.append(node.to_dict())
+                if len(nodes) >= 200:  # keep payload lightweight for WebSocket
+                    break
+            if len(nodes) >= 200:
+                break
+
         return {
             'timestamp': self.timestamp,
             'cycle': self.cycle,
@@ -291,6 +310,8 @@ class FieldSnapshot:
             },
             'cymatics': self.cymatics_pattern.value,
             'standing_waves': self.standing_waves,
+            'master_waveform': _downsample(self.master_waveform, 360),
+            'nodes': nodes,
             'financial': {
                 'total_value_usd': round(self.total_value_usd, 2),
                 'total_pnl_usd': round(self.total_pnl_usd, 2),

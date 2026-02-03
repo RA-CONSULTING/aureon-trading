@@ -1487,7 +1487,8 @@ PRO_DASHBOARD_HTML = """
                 'alpaca': '#ff6b6b',
                 'kraken': '#4ecdc4', 
                 'binance': '#45b7d1',
-                'capital': '#96ceb4'
+                'capital': '#96ceb4',
+                'market_global': '#9b59b6'
             };
             
             if (harmonicData.layers) {
@@ -1499,6 +1500,25 @@ PRO_DASHBOARD_HTML = """
                         drawWaveform(layer.waveform, color, 1, yOffset);
                         layerIndex++;
                     }
+                });
+            }
+
+            // Draw nodes as dynamic particles for a more alive field
+            if (harmonicData.nodes && harmonicData.nodes.length) {
+                const now = Date.now() / 500; // drive gentle oscillation
+                harmonicData.nodes.forEach((node) => {
+                    const color = layerColors[node.exchange] || '#9b59b6';
+                    const freq = node.frequency || 0;
+                    const amp = node.amplitude || 0.05;
+                    const phase = node.phase || 0;
+                    const normFreq = Math.min(Math.max(freq % 600, 0), 600) / 600;
+                    const x = normFreq * width;
+                    const y = height / 2 + Math.sin(now + phase) * (amp * 140 + 20);
+                    const radius = Math.max(2, Math.min(8, amp * 12 + 2));
+                    ctx.fillStyle = color;
+                    ctx.beginPath();
+                    ctx.arc(x, y, radius, 0, Math.PI * 2);
+                    ctx.fill();
                 });
             }
             
