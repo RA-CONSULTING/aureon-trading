@@ -2671,6 +2671,10 @@ class AureonProDashboard:
                 await self.refresh_bots()
                 self.logger.info("✅ [Data Refresh] Bot intel refresh complete.")
                 
+                # Refresh exchange balances (Binance, Kraken, Alpaca)
+                await self.refresh_exchange_balances()
+                self.logger.info("✅ [Data Refresh] Exchange balances refresh complete.")
+                
                 await self.broadcast({
                     'type': 'portfolio_update',
                     'data': self.portfolio
