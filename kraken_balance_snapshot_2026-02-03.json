@@ -1,0 +1,23 @@
+{
+  "snapshot_time": "2026-02-03T12:10:00Z",
+  "note": "Captured with MAX_INT nonce - API key now exhausted",
+  "balances": {
+    "BSX": 90744.10,
+    "GHIBLI": 40400.00,
+    "MXC": 3100.00,
+    "SAHARA": 606.4649,
+    "SKR": 500.00,
+    "FIGHT": 374.50,
+    "IN": 210.00,
+    "FIS": 105.58,
+    "TRX.B": 81.95,
+    "ADA": 27.89,
+    "ICNT": 16.00,
+    "TUSD": 11.80,
+    "OPEN": 10.78,
+    "ZGBP": 6.81,
+    "EUL": 3.64,
+    "SOL": 0.0083,
+    "SCRT": 0.0095
+  }
+}

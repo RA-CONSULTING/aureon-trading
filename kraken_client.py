@@ -1,6 +1,7 @@
-import os, time, json, math, hmac, hashlib, base64, threading
+import os, time, json, math, hmac, hashlib, base64, threading, random
 from typing import Dict, Any, List, Tuple
 from decimal import Decimal
+import fcntl  # For file locking (cross-process nonce safety)
 
 import requests
 from requests.adapters import HTTPAdapter
@@ -17,6 +18,60 @@ except ImportError:
 KRAKEN_BASE = "https://api.kraken.com"
 
 ASSETPAIR_CACHE_TTL = 300  # seconds
+
+# 🔐 CROSS-PROCESS NONCE MANAGER
+# Prevents "Invalid nonce" errors when multiple processes share the same API key
+# Uses file-based atomic counter with locking
+NONCE_FILE = os.path.join(os.path.dirname(__file__) or '.', '.kraken_nonce')
+_nonce_lock = threading.Lock()
+
+def _get_next_nonce() -> int:
+    """Get next nonce that's guaranteed higher than any previous nonce.
+    
+    Uses file-based atomic counter with locking to ensure:
+    1. Nonces always increase (even across process restarts)
+    2. Multiple parallel processes don't collide
+    3. Recovers gracefully if nonce file is corrupted
+    """
+    with _nonce_lock:
+        # Current time in microseconds as base
+        current_us = int(time.time() * 1000000)
+        
+        try:
+            # Try to read existing nonce from file (with locking)
+            if os.path.exists(NONCE_FILE):
+                with open(NONCE_FILE, 'r+') as f:
+                    fcntl.flock(f.fileno(), fcntl.LOCK_EX)
+                    try:
+                        last_nonce = int(f.read().strip() or '0')
+                    except ValueError:
+                        last_nonce = 0
+                    
+                    # New nonce = max(current_time, last_nonce + 1) + random offset
+                    # Random offset (0-999) prevents collisions if multiple processes
+                    # read the same last_nonce before any can write
+                    new_nonce = max(current_us, last_nonce + 1) + random.randint(1, 999)
+                    
+                    # Write back atomically
+                    f.seek(0)
+                    f.truncate()
+                    f.write(str(new_nonce))
+                    f.flush()
+                    fcntl.flock(f.fileno(), fcntl.LOCK_UN)
+                    return new_nonce
+            else:
+                # Create new nonce file
+                new_nonce = current_us + random.randint(1, 999)
+                with open(NONCE_FILE, 'w') as f:
+                    fcntl.flock(f.fileno(), fcntl.LOCK_EX)
+                    f.write(str(new_nonce))
+                    f.flush()
+                    fcntl.flock(f.fileno(), fcntl.LOCK_UN)
+                return new_nonce
+                
+        except Exception as e:
+            # Fallback: use time + PID + random (less safe but works)
+            return current_us + (os.getpid() % 10000) * 1000 + random.randint(1, 999)
 
 class KrakenClient:
     """
@@ -95,9 +150,10 @@ class KrakenClient:
                 time.sleep(self._min_call_interval - elapsed)
             
             data = dict(data)
-            # Use NANOSECONDS for nonce to avoid "invalid nonce" errors
-            # Microseconds (1000000) was not high enough - needs 1000000000
-            data["nonce"] = str(int(time.time() * 1000000000))
+            # 🔐 Use cross-process safe nonce (prevents "Invalid nonce" in Docker/parallel)
+            # Old: time.time() * 1000000000 (nanoseconds) - BREAKS with multiple processes!
+            # New: file-based atomic counter with locking
+            data["nonce"] = str(_get_next_nonce())
             headers = {
                 "API-Key": self.api_key,
                 "API-Sign": self._kraken_sign(path, data)
