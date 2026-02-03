@@ -34,7 +34,7 @@ from collections import deque
 os.environ['LIVE'] = '1'
 
 from binance_client import BinanceClient
-from kraken_client import KrakenClient
+from kraken_client import KrakenClient, get_kraken_client
 
 # Constants
 PHI = (1 + math.sqrt(5)) / 2
@@ -112,7 +112,7 @@ class SelfValidatingPredictor:
         print("\n🔮 Initializing Self-Validating Prediction Engine...")
         
         self.binance = BinanceClient()
-        self.kraken = KrakenClient()
+        self.kraken = get_kraken_client()
         
         # Prediction history
         self.predictions: List[Prediction] = []

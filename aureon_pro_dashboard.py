@@ -1893,8 +1893,8 @@ class AureonProDashboard:
             
             # Try Kraken
             try:
-                from kraken_client import KrakenClient
-                kraken = KrakenClient()
+                from kraken_client import KrakenClient, get_kraken_client
+                kraken = get_kraken_client()
                 krk_balance = await asyncio.to_thread(kraken.get_balance)
                 if isinstance(krk_balance, dict):
                     # Sum USD and stablecoins
@@ -2888,8 +2888,8 @@ class AureonProDashboard:
                 
                 # Kraken (1,434 pairs)
                 try:
-                    from kraken_client import KrakenClient
-                    exchanges['kraken'] = KrakenClient()
+                    from kraken_client import KrakenClient, get_kraken_client
+                    exchanges['kraken'] = get_kraken_client()
                     self.logger.info("✅ Ocean Scanner: Kraken loaded")
                 except Exception as e:
                     self.logger.warning(f"⚠️ Kraken not available: {e}")

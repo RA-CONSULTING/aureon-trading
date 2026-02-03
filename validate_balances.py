@@ -4,7 +4,7 @@ Validate actual exchange balances to check if reported profit is real
 """
 from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 from binance_client import BinanceClient
-from kraken_client import KrakenClient
+from kraken_client import KrakenClient, get_kraken_client
 from alpaca_client import AlpacaClient
 
 print('=== REAL BALANCE VALIDATION ===')
@@ -20,7 +20,7 @@ except Exception as e:
 
 # Kraken
 try:
-    kraken = KrakenClient()
+    kraken = get_kraken_client()
     balances = kraken.get_account_balance()
     usd_total = balances.get('USD', 0) + balances.get('ZUSD', 0) + balances.get('USDT', 0)
     print(f'Kraken USD: ${usd_total:.2f}')

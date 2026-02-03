@@ -76,8 +76,8 @@ def get_real_portfolio_balance() -> Tuple[float, Dict[str, float]]:
     
     # 🟣 KRAKEN
     try:
-        from kraken_client import KrakenClient
-        kraken = KrakenClient()
+        from kraken_client import KrakenClient, get_kraken_client
+        kraken = get_kraken_client()
         balances = kraken.get_account_balance() or {}
         
         # Common Kraken asset mappings

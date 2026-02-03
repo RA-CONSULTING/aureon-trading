@@ -13,8 +13,8 @@ def get_current_price(symbol, exchange):
     """Get current price from exchange."""
     try:
         if exchange == 'kraken':
-            from kraken_client import KrakenClient
-            client = KrakenClient()
+            from kraken_client import KrakenClient, get_kraken_client
+            client = get_kraken_client()
             ticker = client.get_ticker(symbol)
             return float(ticker.get('last', 0)) if ticker else 0
         elif exchange == 'binance':

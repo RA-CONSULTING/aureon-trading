@@ -288,8 +288,8 @@ class CryptoMarketMap:
         """Load historical data from Kraken exchange."""
         try:
             if kraken_client is None:
-                from kraken_client import KrakenClient
-                kraken_client = KrakenClient()
+                from kraken_client import KrakenClient, get_kraken_client
+                kraken_client = get_kraken_client()
             
             logger.info("🐙 Loading pairs from Kraken...")
             

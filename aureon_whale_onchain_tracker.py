@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 
 # Import exchange clients
 try:
-    from kraken_client import KrakenClient
+    from kraken_client import KrakenClient, get_kraken_client
     KRAKEN_AVAILABLE = True
 except ImportError:
     KRAKEN_AVAILABLE = False
@@ -68,7 +68,7 @@ class WhaleExchangeTracker:
         self.exchanges = {}
         if KRAKEN_AVAILABLE:
             try:
-                self.exchanges['kraken'] = KrakenClient()
+                self.exchanges['kraken'] = get_kraken_client()
                 logger.info("✅ Kraken client initialized for whale tracking")
             except Exception as e:
                 logger.debug(f"Kraken init failed: {e}")

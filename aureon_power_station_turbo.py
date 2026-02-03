@@ -37,7 +37,7 @@ except:
     BIN_AVAILABLE = False
 
 try:
-    from kraken_client import KrakenClient
+    from kraken_client import KrakenClient, get_kraken_client
     KRK_AVAILABLE = True
 except:
     KRK_AVAILABLE = False
@@ -143,7 +143,7 @@ class PowerStationTurbo:
         
         if KRK_AVAILABLE:
             try:
-                self.relays['KRK'] = KrakenClient()
+                self.relays['KRK'] = get_kraken_client()
                 log.info("🔵 KRK relay ONLINE")
             except Exception as e:
                 log.warning(f"KRK relay failed: {e}")

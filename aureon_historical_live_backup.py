@@ -89,7 +89,7 @@ except ImportError as e:
 
 # 📡 EXCHANGE CLIENTS
 try:
-    from kraken_client import KrakenClient
+    from kraken_client import KrakenClient, get_kraken_client
     from alpaca_client import AlpacaClient
     from binance_client import BinanceClient
     EXCHANGES_AVAILABLE = True
@@ -408,7 +408,7 @@ class AureonHistoricalLive:
         
         # Fall back to individual clients
         try:
-            self.kraken = KrakenClient()
+            self.kraken = get_kraken_client()
             print("✅ Kraken: CONNECTED")
         except Exception as e:
             print(f"⚠️  Kraken: {e}")

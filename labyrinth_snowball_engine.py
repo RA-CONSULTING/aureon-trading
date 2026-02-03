@@ -110,7 +110,7 @@ except ImportError:
 
 # Kraken Client
 try:
-    from kraken_client import KrakenClient
+    from kraken_client import KrakenClient, get_kraken_client
     KRAKEN_AVAILABLE = True
     print("🐙 Kraken Client LOADED!")
 except ImportError:
@@ -249,7 +249,7 @@ class LabyrinthSnowball:
         # Kraken for execution
         self.kraken: Optional[KrakenClient] = None
         if KRAKEN_AVAILABLE and not dry_run:
-            self.kraken = KrakenClient()
+            self.kraken = get_kraken_client()
             print("🐙 Kraken Client: WIRED")
         elif dry_run:
             print("🔵 Running in DRY RUN mode")

@@ -28,7 +28,7 @@ import random
 # Add project root
 sys.path.insert(0, '/workspaces/aureon-trading')
 
-from kraken_client import KrakenClient
+from kraken_client import KrakenClient, get_kraken_client
 
 # Kraken fee structure (taker fees for market orders)
 KRAKEN_TAKER_FEE = 0.0026  # 0.26%
@@ -95,7 +95,7 @@ class KrakenSimulator:
         self.gross_pnl = 0.0
         
         # Kraken client for real market data
-        self.client = KrakenClient()
+        self.client = get_kraken_client()
         self.ticker_cache: Dict[str, Dict] = {}
         self.last_ticker_update = 0
         

@@ -223,8 +223,8 @@ class RealPortfolioTracker:
         """Get REAL Kraken balance."""
         try:
             if self._kraken_client is None:
-                from kraken_client import KrakenClient
-                self._kraken_client = KrakenClient()
+                from kraken_client import KrakenClient, get_kraken_client
+                self._kraken_client = get_kraken_client()
             
             balances = self._kraken_client.get_balance()
             

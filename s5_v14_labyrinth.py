@@ -47,7 +47,7 @@ from s5_v14_dance_enhancements import V14DanceEnhancer, V14_CONFIG, V14ScoringEn
 
 # Import trading systems
 try:
-    from kraken_client import KrakenClient
+    from kraken_client import KrakenClient, get_kraken_client
     KRAKEN_AVAILABLE = True
 except ImportError:
     KRAKEN_AVAILABLE = False
@@ -174,7 +174,7 @@ class V14LabyrinthEngine:
         
         # Kraken client
         if KRAKEN_AVAILABLE and not dry_run:
-            self.kraken = KrakenClient()
+            self.kraken = get_kraken_client()
         else:
             self.kraken = None
         

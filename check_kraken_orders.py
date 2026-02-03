@@ -1,6 +1,6 @@
 import os
 from dotenv import load_dotenv
-from kraken_client import KrakenClient
+from kraken_client import KrakenClient, get_kraken_client
 
 # Load environment variables
 env_path = os.path.join(os.path.dirname(__file__), '.env')
@@ -13,7 +13,7 @@ def check_kraken_orders():
     """
     print("🐙 Initializing Kraken client...")
     try:
-        client = KrakenClient()
+        client = get_kraken_client()
         if not client.api_key or not client.api_secret:
             print("❌ ERROR: Kraken API key or secret not found in .env file.")
             return

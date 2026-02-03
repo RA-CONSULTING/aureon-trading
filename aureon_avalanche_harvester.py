@@ -224,8 +224,8 @@ class AvalancheHarvester:
         """Lazy load Kraken client."""
         if self._kraken_client is None:
             try:
-                from kraken_client import KrakenClient
-                self._kraken_client = KrakenClient()
+                from kraken_client import KrakenClient, get_kraken_client
+                self._kraken_client = get_kraken_client()
                 logger.info("✓ Kraken client loaded")
             except Exception as e:
                 logger.error(f"Failed to load Kraken client: {e}")

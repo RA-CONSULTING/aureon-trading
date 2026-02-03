@@ -45,8 +45,8 @@ class WinningOpportunity:
 def load_kraken_client():
     """Load Kraken client for live trading"""
     try:
-        from kraken_client import KrakenClient
-        client = KrakenClient()
+        from kraken_client import KrakenClient, get_kraken_client
+        client = get_kraken_client()
         return client
     except Exception as e:
         print(f"⚠️ Could not load Kraken client: {e}")

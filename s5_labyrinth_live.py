@@ -26,7 +26,7 @@ import requests
 # Add parent directory for imports
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from kraken_client import KrakenClient
+from kraken_client import KrakenClient, get_kraken_client
 from aureon_mycelium import MyceliumNetwork
 
 
@@ -84,7 +84,7 @@ class S5LabyrinthLive:
     MIN_DIP_TO_BUY = -0.002   # 0.2% down = buy opportunity
     
     def __init__(self):
-        self.kraken = KrakenClient()
+        self.kraken = get_kraken_client()
         self.network = MyceliumNetwork(initial_capital=100.0)
         
         # Holdings

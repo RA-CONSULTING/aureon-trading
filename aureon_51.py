@@ -28,7 +28,7 @@ from datetime import datetime
 from typing import Dict, List
 
 sys.path.insert(0, '/workspaces/aureon-trading')
-from kraken_client import KrakenClient
+from kraken_client import KrakenClient, get_kraken_client
 
 # ═══════════════════════════════════════════════════════════════
 # THE MATH THAT GUARANTEES PROFIT
@@ -80,7 +80,7 @@ class Aureon51:
     def __init__(self, initial_balance: float = 1000.0):
         self.initial_balance = initial_balance
         self.balance = initial_balance
-        self.client = KrakenClient()
+        self.client = get_kraken_client()
         self.positions: Dict[str, Position] = {}
         self.ticker_cache: Dict[str, Dict] = {}
         self.price_history: Dict[str, List[float]] = {}  # Track price movement

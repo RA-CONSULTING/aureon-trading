@@ -48,7 +48,7 @@ from collections import defaultdict
 
 # Exchange clients
 from binance_client import BinanceClient
-from kraken_client import KrakenClient
+from kraken_client import KrakenClient, get_kraken_client
 
 # Optional: Alpaca client
 try:
@@ -205,7 +205,7 @@ class QueenVolumeHunter:
         
         # Exchange clients
         self.binance = BinanceClient()
-        self.kraken = KrakenClient()
+        self.kraken = get_kraken_client()
         self.alpaca = AlpacaClient() if ALPACA_AVAILABLE else None
         
         # Queen Hive Mind integration

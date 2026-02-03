@@ -24,7 +24,7 @@ os.environ['LIVE'] = '1'
 os.environ['DRY_RUN'] = '0'
 
 from binance.client import Client as BinanceClientRaw
-from kraken_client import KrakenClient
+from kraken_client import KrakenClient, get_kraken_client
 
 # Get API keys
 BINANCE_KEY = os.getenv('BINANCE_API_KEY')
@@ -90,7 +90,7 @@ def execute_binance_scalp(symbol: str, side: str, quantity: float, target_pct: f
 
 def execute_kraken_scalp(pair: str, side: str, volume: float):
     """Execute a quick scalp trade on Kraken"""
-    client = KrakenClient()
+    client = get_kraken_client()
     
     print(f"\n{'='*60}")
     print(f"🐙 KRAKEN TRADE: {side} {volume} {pair}")

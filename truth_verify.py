@@ -114,9 +114,9 @@ def get_alpaca_truth() -> Tuple[float, Dict]:
 
 def get_kraken_truth() -> Tuple[float, Dict]:
     """Get REAL Kraken balance - no lies"""
-    from kraken_client import KrakenClient
+    from kraken_client import KrakenClient, get_kraken_client
     try:
-        k = KrakenClient()
+        k = get_kraken_client()
         total = 0
         details = {}
         for bal in k.account().get('balances', []):

@@ -94,8 +94,8 @@ class AureonCapitalMobilizer:
             print(f"⚠️  Binance client not available: {e}")
         
         try:
-            from kraken_client import KrakenClient
-            self.exchange_clients['kraken'] = KrakenClient()
+            from kraken_client import KrakenClient, get_kraken_client
+            self.exchange_clients['kraken'] = get_kraken_client()
         except Exception as e:
             print(f"⚠️  Kraken client not available: {e}")
         

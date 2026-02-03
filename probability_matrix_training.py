@@ -16,7 +16,7 @@ from typing import Dict, List
 from pathlib import Path
 
 sys.path.insert(0, '/workspaces/aureon-trading')
-from kraken_client import KrakenClient
+from kraken_client import KrakenClient, get_kraken_client
 
 # Strategy constants aligned with aureon_51_sim
 KRAKEN_FEE = 0.0026
@@ -92,7 +92,7 @@ def fetch_momentum_pairs(client: KrakenClient) -> List[Dict]:
 
 
 def simulate_training(trades_per_run: int = 200) -> Dict[str, SymbolStats]:
-    client = KrakenClient()
+    client = get_kraken_client()
     momentum_pairs = fetch_momentum_pairs(client)
     if not momentum_pairs:
         raise RuntimeError('No momentum pairs available for training')

@@ -71,7 +71,7 @@ except ImportError:
     BINANCE_AVAILABLE = False
 
 try:
-    from kraken_client import KrakenClient
+    from kraken_client import KrakenClient, get_kraken_client
     KRAKEN_AVAILABLE = True
 except ImportError:
     KRAKEN_AVAILABLE = False
@@ -235,7 +235,7 @@ class CelticWarfareLiveTrader:
         
         if LIVE_CONFIG['USE_KRAKEN'] and KRAKEN_AVAILABLE:
             try:
-                self.kraken_client = KrakenClient()
+                self.kraken_client = get_kraken_client()
                 self.war_room.connect_exchange('kraken', self.kraken_client)
                 logger.info("✅ Connected to Kraken")
             except Exception as e:

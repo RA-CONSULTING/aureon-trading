@@ -191,7 +191,7 @@ except ImportError:
 
 # 🐙 Kraken Client - Exchange Integration
 try:
-    from kraken_client import KrakenClient
+    from kraken_client import KrakenClient, get_kraken_client
     KRAKEN_AVAILABLE = True
     print("🐙 Timeline Oracle: Kraken Exchange WIRED!")
 except ImportError:
@@ -594,7 +594,7 @@ class TimelineOracle:
         # 🐙 Kraken
         if KRAKEN_AVAILABLE:
             try:
-                self.kraken = KrakenClient()
+                self.kraken = get_kraken_client()
                 logger.info("   🐙 Kraken Exchange: WIRED")
             except Exception as e:
                 logger.warning(f"   🐙 Kraken: Failed ({e})")

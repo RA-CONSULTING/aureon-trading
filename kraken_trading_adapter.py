@@ -30,7 +30,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 try:
-    from kraken_client import KrakenClient
+    from kraken_client import KrakenClient, get_kraken_client
     KRAKEN_AVAILABLE = True
 except ImportError:
     KRAKEN_AVAILABLE = False
@@ -94,7 +94,7 @@ class KrakenTradingAdapter:
         if not KRAKEN_AVAILABLE:
             raise RuntimeError("KrakenClient not available")
         
-        self.client = KrakenClient()
+        self.client = get_kraken_client()
         self.positions_file = Path("kraken_positions.json")
         self.tracked_positions: Dict[str, Dict] = {}
         

@@ -88,7 +88,7 @@ except ImportError:
     AlpacaClient = None
 
 try:
-    from kraken_client import KrakenClient
+    from kraken_client import KrakenClient, get_kraken_client
     KRAKEN_AVAILABLE = True
 except ImportError:
     KRAKEN_AVAILABLE = False
@@ -228,7 +228,7 @@ class OrcaUnleashed:
         
         if KRAKEN_AVAILABLE:
             try:
-                self.kraken = KrakenClient()
+                self.kraken = get_kraken_client()
                 exchange_count += 1
                 logger.info("🐙 Kraken CONNECTED")
             except Exception as e:

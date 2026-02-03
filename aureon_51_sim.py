@@ -18,7 +18,7 @@ from typing import Dict, List
 from dataclasses import dataclass
 
 sys.path.insert(0, '/workspaces/aureon-trading')
-from kraken_client import KrakenClient
+from kraken_client import KrakenClient, get_kraken_client
 
 # ═══════════════════════════════════════════════════════════════
 # THE PROFIT MATH
@@ -63,7 +63,7 @@ def run_fast_sim():
     """)
     
     print("📡 Fetching real Kraken market data...")
-    client = KrakenClient()
+    client = get_kraken_client()
     tickers = client.get_24h_tickers()
     print(f"✅ Loaded {len(tickers)} pairs\n")
     

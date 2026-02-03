@@ -35,7 +35,7 @@ except ImportError:
     CapitalClient = None
 
 try:
-    from kraken_client import KrakenClient
+    from kraken_client import KrakenClient, get_kraken_client
 except ImportError:
     KrakenClient = None
 
@@ -365,7 +365,7 @@ class WinKiller:
 class UnifiedKillChain:
     def __init__(self, win_config: WinConfig = None):
         self.capital = CapitalClient() if CapitalClient else None
-        self.kraken = KrakenClient() if KrakenClient else None
+        self.kraken = get_kraken_client() if KrakenClient else None
         self.binance = BinanceClient() if BinanceClient else None
         self.alpaca = AlpacaClient() if AlpacaClient else None
         self.cost_basis = load_cost_basis()

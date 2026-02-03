@@ -94,8 +94,8 @@ def check_status():
                 
                 # Try to get current prices
                 try:
-                    from kraken_client import KrakenClient
-                    client = KrakenClient()
+                    from kraken_client import KrakenClient, get_kraken_client
+                    client = get_kraken_client()
                     can_price = True
                 except:
                     can_price = False

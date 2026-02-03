@@ -48,7 +48,7 @@ import logging
 from aureon_queen_true_consciousness import QueenTrueConsciousnessController
 
 # Import exchange clients
-from kraken_client import KrakenClient
+from kraken_client import KrakenClient, get_kraken_client
 from binance_client import BinanceClient
 from alpaca_client import AlpacaClient
 
@@ -158,7 +158,7 @@ class QueenPowerRedistribution:
         
         # Try to initialize exchanges (gracefully handle missing credentials)
         try:
-            self.kraken = KrakenClient()
+            self.kraken = get_kraken_client()
         except Exception as e:
             logger.warning(f"Kraken not available: {e}")
         

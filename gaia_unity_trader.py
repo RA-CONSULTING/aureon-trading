@@ -129,11 +129,11 @@ class GaiaUnityTrader:
         
         from binance_client import BinanceClient
         from alpaca_client import AlpacaClient
-        from kraken_client import KrakenClient
+        from kraken_client import KrakenClient, get_kraken_client
         
         self.binance = BinanceClient()
         self.alpaca = AlpacaClient()
-        self.kraken = KrakenClient()
+        self.kraken = get_kraken_client()
         
         print("✅ BINANCE connected - Eastern node active")
         print("✅ ALPACA connected - Western node active")

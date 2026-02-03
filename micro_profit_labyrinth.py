@@ -477,7 +477,7 @@ except ImportError as e:
     try:
         from kraken_client import KrakenClient
         def get_kraken_client():
-            return KrakenClient()
+            return get_kraken_client()
         safe_print("🐙 Kraken Client LOADED (direct)!")
         KRAKEN_AVAILABLE = True
     except ImportError:

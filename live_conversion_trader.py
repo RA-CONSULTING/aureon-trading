@@ -37,7 +37,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 # Kraken Client
 try:
-    from kraken_client import KrakenClient
+    from kraken_client import KrakenClient, get_kraken_client
     KRAKEN_AVAILABLE = True
 except ImportError:
     KRAKEN_AVAILABLE = False
@@ -130,7 +130,7 @@ class LiveConversionTrader:
         # Kraken Client
         self.kraken = None
         if KRAKEN_AVAILABLE and not dry_run:
-            self.kraken = KrakenClient()
+            self.kraken = get_kraken_client()
             print("🐙 Kraken Client: CONNECTED")
         else:
             print("🐙 Kraken Client: DRY RUN MODE")

@@ -47,7 +47,7 @@ from hnc_probability_matrix import TemporalFrequencyAnalyzer, ProbabilityMatrix,
 
 # Import all exchange clients
 from binance_client import BinanceClient
-from kraken_client import KrakenClient
+from kraken_client import KrakenClient, get_kraken_client
 from alpaca_client import AlpacaClient
 from capital_client import CapitalClient
 from unified_exchange_client import MultiExchangeClient
@@ -267,7 +267,7 @@ class UniversalForecastEngine:
         
         # Kraken
         try:
-            self.clients['kraken'] = KrakenClient()
+            self.clients['kraken'] = get_kraken_client()
             print("   ✅ Kraken Client")
         except Exception as e:
             print(f"   ⚠️ Kraken: {e}")

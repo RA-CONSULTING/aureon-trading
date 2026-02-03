@@ -43,8 +43,8 @@ class TradingState:
     last_update: str = ""
 
 def load_client():
-    from kraken_client import KrakenClient
-    return KrakenClient()
+    from kraken_client import KrakenClient, get_kraken_client
+    return get_kraken_client()
 
 def get_balances(client) -> Dict[str, float]:
     return client.get_account_balance()

@@ -114,8 +114,8 @@ class PrimeSentinelReclaimer:
             
         # Kraken
         try:
-            from kraken_client import KrakenClient
-            self.exchanges['kraken'] = KrakenClient()
+            from kraken_client import KrakenClient, get_kraken_client
+            self.exchanges['kraken'] = get_kraken_client()
             log("🐙 KRAKEN: Connected")
         except Exception as e:
             log(f"⚠️ KRAKEN: {e}")

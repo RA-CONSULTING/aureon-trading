@@ -32,7 +32,7 @@ from decimal import Decimal, ROUND_DOWN
 from dataclasses import dataclass, field
 from binance_client import BinanceClient
 try:
-    from kraken_client import KrakenClient
+    from kraken_client import KrakenClient, get_kraken_client
 except Exception:
     KrakenClient = None
 from aureon_commandos import QuackCommandos  # 🦆⚔️ THE ANIMAL ARMY
@@ -743,7 +743,7 @@ class AureonUltimate:
         ex = ex or os.getenv("EXCHANGE", "binance").lower()
 
         if ex == "kraken" and KrakenClient is not None:
-            self.client = KrakenClient()
+            self.client = get_kraken_client()
             logger.info("🟣 Using Kraken client (dry-run compatible)")
         else:
             self.client = BinanceClient()

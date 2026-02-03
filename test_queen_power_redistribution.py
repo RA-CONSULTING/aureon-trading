@@ -54,7 +54,7 @@ from aureon_harmonic_waveform import HarmonicWaveformScanner, HarmonicNode, Powe
 
 # Exchange clients
 from binance_client import BinanceClient
-from kraken_client import KrakenClient
+from kraken_client import KrakenClient, get_kraken_client
 from alpaca_client import AlpacaClient
 
 
@@ -86,7 +86,7 @@ class QueenPowerController:
         
         # Exchange clients for execution
         self.binance = BinanceClient()
-        self.kraken = KrakenClient()
+        self.kraken = get_kraken_client()
         self.alpaca = AlpacaClient()
         
         # Transfer history

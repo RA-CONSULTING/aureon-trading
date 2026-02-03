@@ -74,7 +74,7 @@ from enum import Enum
 
 # Exchange clients
 from binance_client import BinanceClient
-from kraken_client import KrakenClient
+from kraken_client import KrakenClient, get_kraken_client
 from alpaca_client import AlpacaClient
 from capital_client import CapitalClient
 from cost_basis_tracker import CostBasisTracker
@@ -168,7 +168,7 @@ class PowerRedistributionEngine:
     
     def __init__(self):
         self.binance = BinanceClient()
-        self.kraken = KrakenClient()
+        self.kraken = get_kraken_client()
         self.alpaca = AlpacaClient()
         self.capital = CapitalClient()
         self.cost_basis = CostBasisTracker()

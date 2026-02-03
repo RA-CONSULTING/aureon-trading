@@ -10,7 +10,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from dotenv import load_dotenv
 load_dotenv()
 
-from kraken_client import KrakenClient
+from kraken_client import KrakenClient, get_kraken_client
 
 def main():
     print("=" * 60)
@@ -18,7 +18,7 @@ def main():
     print("=" * 60)
     
     # Connect to Kraken
-    kraken = KrakenClient()
+    kraken = get_kraken_client()
     
     # Get balances
     print("\n📊 Getting balances from Kraken...")

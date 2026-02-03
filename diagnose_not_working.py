@@ -100,8 +100,8 @@ except Exception as e:
 
 # --- KRAKEN ---
 try:
-    from kraken_client import KrakenClient
-    kraken = KrakenClient()
+    from kraken_client import KrakenClient, get_kraken_client
+    kraken = get_kraken_client()
     kb = kraken.get_balance()
     kraken_funds = kb.get('USD', 0) + kb.get('ZUSD', 0) + kb.get('USDC', 0) + kb.get('USDT', 0)
     total_liquid_funds += kraken_funds

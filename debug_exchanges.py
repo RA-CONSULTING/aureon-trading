@@ -1,6 +1,6 @@
 from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 from binance_client import BinanceClient
-from kraken_client import KrakenClient
+from kraken_client import KrakenClient, get_kraken_client
 import json
 import os
 
@@ -35,7 +35,7 @@ def debug_balances():
         if not os.getenv("KRAKEN_API_KEY"):
             print("⚠️ No Kraken API Key in env")
         else:
-            k = KrakenClient()
+            k = get_kraken_client()
             # Debug the internal account() method vs get_account_balance
             print("Calling k.account()...")
             raw = k.account()

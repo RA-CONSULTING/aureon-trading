@@ -25,7 +25,7 @@ from dataclasses import dataclass
 from threading import Thread, Lock
 
 sys.path.insert(0, '/workspaces/aureon-trading')
-from kraken_client import KrakenClient
+from kraken_client import KrakenClient, get_kraken_client
 
 # � PENNY PROFIT ENGINE
 try:
@@ -238,7 +238,7 @@ class Aureon51Live:
         self.initial_balance = initial_balance
         self.balance = initial_balance
         self.dry_run = dry_run
-        self.client = KrakenClient()
+        self.client = get_kraken_client()
         self.memory = ElephantMemory()
         self.positions: Dict[str, Position] = {}
         self.ticker_cache: Dict[str, Dict] = {}

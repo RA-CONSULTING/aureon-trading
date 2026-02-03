@@ -95,7 +95,7 @@ logger = logging.getLogger(__name__)
 
 # Exchange clients
 from binance_client import BinanceClient
-from kraken_client import KrakenClient
+from kraken_client import KrakenClient, get_kraken_client
 from alpaca_client import AlpacaClient
 from cost_basis_tracker import CostBasisTracker
 
@@ -441,7 +441,7 @@ class QueenSeroConsciousness:
         
         # Exchange clients
         self.binance = BinanceClient()
-        self.kraken = KrakenClient()
+        self.kraken = get_kraken_client()
         self.alpaca = AlpacaClient()
         self.cost_basis = CostBasisTracker()
         

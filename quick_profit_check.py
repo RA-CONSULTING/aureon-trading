@@ -8,7 +8,7 @@ from typing import Dict, Any
 sys.path.insert(0, '/workspaces/aureon-trading')
 
 from alpaca_client import AlpacaClient
-from kraken_client import KrakenClient  
+from kraken_client import KrakenClient, get_kraken_client  
 from binance_client import BinanceClient
 
 # Try to import Thought Bus for Queen integration
@@ -31,7 +31,7 @@ def get_current_price(exchange, symbol):
     """Get current price for a symbol."""
     try:
         if exchange == 'kraken':
-            client = KrakenClient()
+            client = get_kraken_client()
             ticker = client.get_ticker(symbol + 'USD')
             return float(ticker.get('last', 0))
         elif exchange == 'binance':
@@ -102,7 +102,7 @@ def get_portfolio_snapshot() -> Dict[str, Any]:
     
     # Kraken
     try:
-        kraken = KrakenClient()
+        kraken = get_kraken_client()
         balances = kraken.get_balance()
         ledgers = kraken.get_ledgers()
         
@@ -389,7 +389,7 @@ def main():
     # Kraken - show balance with P&L calculated from ledger history
     print("\n\n🐙 KRAKEN:")
     try:
-        kraken = KrakenClient()
+        kraken = get_kraken_client()
         balances = kraken.get_balance()
         ledgers = kraken.get_ledgers()
 

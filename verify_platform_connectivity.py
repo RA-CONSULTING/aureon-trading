@@ -9,7 +9,7 @@ import sys
 import os
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from kraken_client import KrakenClient
+from kraken_client import KrakenClient, get_kraken_client
 from binance_client import BinanceClient
 from capital_client import CapitalClient
 import json
@@ -22,7 +22,7 @@ def check_kraken():
     print("="*80)
     
     try:
-        client = KrakenClient()
+        client = get_kraken_client()
         
         # Check API connectivity
         print("✅ API Connection: SUCCESS")

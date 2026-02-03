@@ -156,8 +156,8 @@ class AureonExchangeIntelligenceAudit:
         intel = ExchangeIntelligence(exchange='kraken')
         
         try:
-            from kraken_client import KrakenClient
-            client = KrakenClient()
+            from kraken_client import KrakenClient, get_kraken_client
+            client = get_kraken_client()
             
             print("🔍 Interrogating Kraken API...")
             

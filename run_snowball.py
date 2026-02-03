@@ -13,7 +13,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-from kraken_client import KrakenClient
+from kraken_client import KrakenClient, get_kraken_client
 
 MILLION = 1_000_000
 CYCLE_SECONDS = 45
@@ -131,7 +131,7 @@ def main():
     print("   SNOWBALL TO MILLION - CONTINUOUS RUN")
     print("🏔️❄️" * 20 + "\n")
     
-    kraken = KrakenClient()
+    kraken = get_kraken_client()
     cycle = 0
     
     while True:

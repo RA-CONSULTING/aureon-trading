@@ -10,11 +10,11 @@ os.chdir('/workspaces/aureon-trading')
 from dotenv import load_dotenv
 load_dotenv('/workspaces/aureon-trading/.env')
 
-from kraken_client import KrakenClient
+from kraken_client import KrakenClient, get_kraken_client
 import time
 import json
 
-kraken = KrakenClient()
+kraken = get_kraken_client()
 
 # Load position
 try:

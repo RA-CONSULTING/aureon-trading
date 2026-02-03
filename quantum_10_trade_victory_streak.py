@@ -48,7 +48,7 @@ from datetime import datetime
 from pathlib import Path
 
 # Import exchange clients
-from kraken_client import KrakenClient
+from kraken_client import KrakenClient, get_kraken_client
 from alpaca_client import AlpacaClient
 
 # Import quantum prediction system
@@ -109,7 +109,7 @@ class QuantumVictoryTrader:
         # Initialize exchanges
         print("🔗 Connecting to exchanges...")
         try:
-            self.kraken = KrakenClient()
+            self.kraken = get_kraken_client()
             print("   ✅ Kraken connected")
         except Exception as e:
             print(f"   ⚠️  Kraken connection failed: {e}")

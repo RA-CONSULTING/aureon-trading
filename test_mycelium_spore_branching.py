@@ -51,7 +51,7 @@ except ImportError as e:
     STARGATE_AVAILABLE = False
 
 try:
-    from kraken_client import KrakenClient
+    from kraken_client import KrakenClient, get_kraken_client
     KRAKEN_AVAILABLE = True
 except ImportError:
     print("⚠️ Kraken client not available")
@@ -89,7 +89,7 @@ def fetch_live_substrate_data(symbol: str = "BTC/USD") -> Dict:
         }
     
     try:
-        client = KrakenClient()
+        client = get_kraken_client()
         ticker = client.get_ticker(symbol)
         
         if not ticker:

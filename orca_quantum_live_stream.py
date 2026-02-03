@@ -60,7 +60,7 @@ from metatron_probability_billion_path import (
 )
 
 # Import exchange clients
-from kraken_client import KrakenClient
+from kraken_client import KrakenClient, get_kraken_client
 from alpaca_client import AlpacaClient
 
 # Import Orca components (if available)
@@ -129,7 +129,7 @@ class OrcaQuantumLiveStream:
         self.exchanges = {}
         
         try:
-            self.exchanges['kraken'] = KrakenClient()
+            self.exchanges['kraken'] = get_kraken_client()
             print("   ✅ Kraken connected")
         except Exception as e:
             print(f"   ⚠️  Kraken failed: {e}")

@@ -48,7 +48,7 @@ import json
 import time
 from typing import Any, Dict
 
-from kraken_client import KrakenClient
+from kraken_client import KrakenClient, get_kraken_client
 
 
 def _atomic_write_json(path: str, data: Dict[str, Any]) -> None:
@@ -139,7 +139,7 @@ def main() -> int:
         args.interval_s = 60
 
     try:
-        client = KrakenClient()
+        client = get_kraken_client()
     except Exception as e:
         print(f'❌ KrakenClient init failed: {e}')
         return 2

@@ -931,8 +931,8 @@ async def main():
     exchanges = {}
     
     try:
-        from kraken_client import KrakenClient
-        exchanges['kraken'] = KrakenClient()
+        from kraken_client import KrakenClient, get_kraken_client
+        exchanges['kraken'] = get_kraken_client()
         print("✅ Kraken client loaded")
     except Exception as e:
         print(f"❌ Kraken: {e}")

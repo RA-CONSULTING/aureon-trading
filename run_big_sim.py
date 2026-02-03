@@ -20,7 +20,7 @@ import statistics
 try:
     from aureon_unified_ecosystem import AureonKrakenEcosystem, CONFIG
     from binance_client import BinanceClient
-    from kraken_client import KrakenClient
+    from kraken_client import KrakenClient, get_kraken_client
 except ImportError as e:
     print(f"Import error: {e}")
     sys.exit(1)
@@ -48,7 +48,7 @@ class BigSimulator:
         # Initialize clients
         print("🔧 Initializing exchange clients...")
         self.binance = BinanceClient()
-        self.kraken = KrakenClient()
+        self.kraken = get_kraken_client()
         
         # Get real market data
         print("📊 Fetching real market data...")

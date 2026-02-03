@@ -1,7 +1,7 @@
 from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import unittest
 from binance_client import BinanceClient
-from kraken_client import KrakenClient
+from kraken_client import KrakenClient, get_kraken_client
 
 class TestClientsRateAndCache(unittest.TestCase):
     def test_binance_has_rate_and_cache(self):
@@ -25,7 +25,7 @@ class TestClientsRateAndCache(unittest.TestCase):
         self.assertEqual(calls['count'], 1)
 
     def test_kraken_has_rate_and_cache(self):
-        k = KrakenClient()
+        k = get_kraken_client()
         self.assertTrue(hasattr(k, '_rate_limiter'))
         self.assertTrue(hasattr(k, '_request_cache'))
         # Monkeypatch session.get to count calls

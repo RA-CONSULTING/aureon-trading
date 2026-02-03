@@ -13,7 +13,7 @@ except ImportError:
     pass
 
 # Imports deferred to avoid circular dependencies
-# from kraken_client import KrakenClient
+# from kraken_client import KrakenClient, get_kraken_client
 # from binance_client import BinanceClient
 # from alpaca_client import AlpacaClient
 # from capital_client import CapitalClient
@@ -330,8 +330,8 @@ class UnifiedExchangeClient:
         self.kraken_min_notional = float(os.getenv("KRAKEN_MIN_NOTIONAL", "5"))
         
         if self.exchange_id == "kraken":
-            from kraken_client import KrakenClient
-            self.client = KrakenClient()
+            from kraken_client import KrakenClient, get_kraken_client
+            self.client = get_kraken_client()
             self.dry_run = self.client.dry_run
         elif self.exchange_id == "binance":
             from binance_client import BinanceClient

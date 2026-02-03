@@ -25,7 +25,7 @@ import random
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from kraken_client import KrakenClient
+from kraken_client import KrakenClient, get_kraken_client
 from binance_client import BinanceClient
 
 
@@ -97,7 +97,7 @@ class S5InfiniteDance:
     
     def __init__(self):
         # The dancers
-        self.kraken = KrakenClient()
+        self.kraken = get_kraken_client()
         self.binance = BinanceClient()
         
         # The dance floor state

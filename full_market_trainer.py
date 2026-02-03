@@ -59,7 +59,7 @@ except ImportError:
 
 # Kraken Client
 try:
-    from kraken_client import KrakenClient
+    from kraken_client import KrakenClient, get_kraken_client
     KRAKEN_AVAILABLE = True
 except ImportError:
     KrakenClient = None
@@ -338,7 +338,7 @@ class FullMarketTrainer:
             return False
         
         try:
-            self.kraken = KrakenClient()
+            self.kraken = get_kraken_client()
             
             # Get 24h tickers
             tickers = self.kraken.get_24h_tickers()

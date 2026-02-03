@@ -36,7 +36,7 @@ import requests
 
 # Import our systems
 from aureon_mycelium import MyceliumNetwork
-from kraken_client import KrakenClient
+from kraken_client import KrakenClient, get_kraken_client
 
 
 @dataclass
@@ -126,7 +126,7 @@ class S5LiveExecutionEngine:
         self.network = MyceliumNetwork(initial_capital=starting_capital)
         
         # Initialize Kraken client for real execution
-        self.kraken = KrakenClient()
+        self.kraken = get_kraken_client()
         
         # Price tracking
         self.prices: Dict[str, LivePrice] = {}

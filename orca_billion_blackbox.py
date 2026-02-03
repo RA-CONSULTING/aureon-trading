@@ -63,7 +63,7 @@ from metatron_probability_billion_path import (
 )
 
 # Exchange clients
-from kraken_client import KrakenClient
+from kraken_client import KrakenClient, get_kraken_client
 from alpaca_client import AlpacaClient
 
 PHI = 1.618033988749895  # Golden Ratio
@@ -135,7 +135,7 @@ class BillionBlackBox:
         # Exchanges
         self.exchanges = {}
         try:
-            self.exchanges['kraken'] = KrakenClient()
+            self.exchanges['kraken'] = get_kraken_client()
             print("   ✅ Kraken connected")
         except Exception as e:
             print(f"   ⚠️  Kraken: {e}")

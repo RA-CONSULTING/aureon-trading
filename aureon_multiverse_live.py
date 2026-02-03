@@ -208,7 +208,7 @@ except ImportError:
     BinanceClient = None
 
 try:
-    from kraken_client import KrakenClient
+    from kraken_client import KrakenClient, get_kraken_client
     KRAKEN_AVAILABLE = True
     _safe_print("📈 Kraken Client WIRED!")
 except ImportError:
@@ -1259,7 +1259,7 @@ class MultiverseLiveEngine:
         # Initialize Kraken Client
         if KRAKEN_AVAILABLE and not simulation_mode:
             try:
-                self.kraken = KrakenClient()
+                self.kraken = get_kraken_client()
                 logger.info("📈 Kraken Client: ONLINE")
             except Exception as e:
                 self.kraken = None

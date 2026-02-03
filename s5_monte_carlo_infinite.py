@@ -28,7 +28,7 @@ import requests
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from kraken_client import KrakenClient
+from kraken_client import KrakenClient, get_kraken_client
 
 
 @dataclass
@@ -124,7 +124,7 @@ class MonteCarloInfiniteLabyrinth:
     }
     
     def __init__(self):
-        self.kraken = KrakenClient()
+        self.kraken = get_kraken_client()
         
         # The labyrinth - all market paths
         self.paths: Dict[str, PathNode] = {}

@@ -227,8 +227,8 @@ class MoversShakersScanner:
 
         # Try Kraken
         try:
-            from kraken_client import KrakenClient
-            self.kraken = KrakenClient()
+            from kraken_client import KrakenClient, get_kraken_client
+            self.kraken = get_kraken_client()
             logger.info("✅ Kraken client connected")
         except Exception as e:
             logger.warning(f"⚠️ Kraken unavailable: {e}")

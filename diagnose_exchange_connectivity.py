@@ -59,8 +59,8 @@ def check_alpaca() -> None:
 def check_kraken() -> None:
     _section("KRAKEN")
     try:
-        from kraken_client import KrakenClient
-        client = KrakenClient()
+        from kraken_client import KrakenClient, get_kraken_client
+        client = get_kraken_client()
     except Exception as exc:
         print(f"❌ Failed to import KrakenClient: {exc}")
         return

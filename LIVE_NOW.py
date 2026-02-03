@@ -80,7 +80,7 @@ except:
 # 🏹 AUTO SCOUT - MARKET SCANNER
 try:
     from auto_scout import MarketPulse
-    from kraken_client import KrakenClient
+    from kraken_client import KrakenClient, get_kraken_client
     SCOUT_AVAILABLE = True
     print("  ✅ Auto Scout: LOADED")
 except:
@@ -189,7 +189,7 @@ if MEMORY_AVAILABLE:
 # Initialize Scout
 if SCOUT_AVAILABLE:
     try:
-        scout = MarketPulse(KrakenClient())
+        scout = MarketPulse(get_kraken_client())
         print("  ✅ Auto Scout: ONLINE (Market scanner)")
     except Exception as e:
         print(f"  ⚠️  Scout error: {e}")

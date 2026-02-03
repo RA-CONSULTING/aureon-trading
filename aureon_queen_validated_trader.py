@@ -87,7 +87,7 @@ except ImportError:
     STARGATE_AVAILABLE = False
 
 try:
-    from kraken_client import KrakenClient
+    from kraken_client import KrakenClient, get_kraken_client
     KRAKEN_AVAILABLE = True
 except ImportError:
     KRAKEN_AVAILABLE = False
@@ -179,7 +179,7 @@ class QueenValidatedTrader:
         # Exchange clients
         if KRAKEN_AVAILABLE and not self.dry_run:
             try:
-                self.exchanges['kraken'] = KrakenClient()
+                self.exchanges['kraken'] = get_kraken_client()
                 logger.info("✅ Kraken client initialized")
             except Exception as e:
                 logger.warning(f"Could not initialize Kraken: {e}")

@@ -186,8 +186,8 @@ class MomentumSnowball:
         self.kraken = None
         if not dry_run:
             try:
-                from kraken_client import KrakenClient
-                self.kraken = KrakenClient()
+                from kraken_client import KrakenClient, get_kraken_client
+                self.kraken = get_kraken_client()
             except:
                 print("⚠️ Kraken not available - dry run mode")
                 self.dry_run = True

@@ -64,7 +64,7 @@ except ImportError:
     BINANCE_AVAILABLE = False
 
 try:
-    from kraken_client import KrakenClient
+    from kraken_client import KrakenClient, get_kraken_client
 except ImportError:
     KrakenClient = None
 
@@ -222,7 +222,7 @@ class HiveMindTrader:
         # Kraken node
         if KrakenClient:
             try:
-                kraken_client = KrakenClient()
+                kraken_client = get_kraken_client()
                 kraken_balance = self._get_exchange_balance(kraken_client, 'kraken')
                 if kraken_balance > 0:
                     node = HiveNode(

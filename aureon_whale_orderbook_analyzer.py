@@ -51,7 +51,7 @@ except ImportError:
 # 🌐 GLOBAL MARKET INTEGRATION - Exchange Coverage
 # ════════════════════════════════════════════════════════════════════════════════
 try:
-    from kraken_client import KrakenClient
+    from kraken_client import KrakenClient, get_kraken_client
     KRAKEN_AVAILABLE = True
 except ImportError:
     KRAKEN_AVAILABLE = False
@@ -132,7 +132,7 @@ class WhaleOrderbookAnalyzer:
         """Initialize connections to various exchange clients."""
         if KRAKEN_AVAILABLE and KrakenClient:
             try:
-                self.kraken_client = KrakenClient()
+                self.kraken_client = get_kraken_client()
                 logger.info("WhaleOrderbookAnalyzer: Kraken client initialized.")
             except Exception as e:
                 logger.error(f"Failed to initialize Kraken client: {e}")

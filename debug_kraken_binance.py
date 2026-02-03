@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 load_dotenv("/workspaces/aureon-trading/.env")
 
 from binance_client import BinanceClient
-from kraken_client import KrakenClient
+from kraken_client import KrakenClient, get_kraken_client
 
 def debug_check():
     print("=== DEBUG START ===")
@@ -22,7 +22,7 @@ def debug_check():
         print(f"   Env KRAKEN_API_SECRET present: {bool(k_secret)}")
         
         # Instantiate with NO ARGS
-        kraken = KrakenClient()
+        kraken = get_kraken_client()
         
         # 1. Check Account
         print("1. Testing account()...")

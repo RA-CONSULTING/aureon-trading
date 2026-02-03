@@ -4593,7 +4593,7 @@ class AureonCommandCenter:
 
             if KrakenClient:
                 try:
-                    self.kraken = KrakenClient()
+                    self.kraken = get_kraken_client()
                     print("   🐙 Kraken: CONNECTED")
                     time.sleep(0.1) # Yield GIL
                 except Exception as e:

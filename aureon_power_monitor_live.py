@@ -35,7 +35,7 @@ except:
     BIN_AVAILABLE = False
 
 try:
-    from kraken_client import KrakenClient
+    from kraken_client import KrakenClient, get_kraken_client
     KRK_AVAILABLE = True
 except:
     KRK_AVAILABLE = False
@@ -123,7 +123,7 @@ class LivePowerMonitor:
         
         if KRK_AVAILABLE:
             try:
-                self.clients['KRK'] = KrakenClient()
+                self.clients['KRK'] = get_kraken_client()
             except:
                 pass
         

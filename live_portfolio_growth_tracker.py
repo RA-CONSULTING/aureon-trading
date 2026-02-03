@@ -57,7 +57,7 @@ PERFECTION_ANGLE = 306.0  # 360 - 54 (golden angle complement)
 
 # Import exchange clients
 try:
-    from kraken_client import KrakenClient
+    from kraken_client import KrakenClient, get_kraken_client
 except ImportError:
     KrakenClient = None
 
@@ -222,7 +222,7 @@ class LivePortfolioTracker:
         # Kraken
         if KrakenClient:
             try:
-                self.exchanges['kraken'] = KrakenClient()
+                self.exchanges['kraken'] = get_kraken_client()
                 print("   ✅ Kraken connected")
             except Exception as e:
                 print(f"   ⚠️  Kraken: {e}")

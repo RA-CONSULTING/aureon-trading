@@ -140,8 +140,8 @@ class HarmonicSeedLoader:
         """Lazy-load exchange clients"""
         if not self._exchange_clients:
             try:
-                from kraken_client import KrakenClient
-                self._exchange_clients['kraken'] = KrakenClient()
+                from kraken_client import KrakenClient, get_kraken_client
+                self._exchange_clients['kraken'] = get_kraken_client()
                 logger.info("✅ Kraken client initialized")
             except Exception as e:
                 logger.warning(f"Could not init Kraken: {e}")

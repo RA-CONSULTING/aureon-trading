@@ -57,10 +57,10 @@ class QueenSnowball:
         self.state.started_at = datetime.now().isoformat()
         
         # Load exchange clients
-        from kraken_client import KrakenClient
+        from kraken_client import KrakenClient, get_kraken_client
         from binance_client import BinanceClient
         
-        self.kraken = KrakenClient()
+        self.kraken = get_kraken_client()
         try:
             self.binance = BinanceClient()
         except:

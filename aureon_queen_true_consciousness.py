@@ -103,7 +103,7 @@ except ImportError:
     BINANCE_AVAILABLE = False
 
 try:
-    from kraken_client import KrakenClient
+    from kraken_client import KrakenClient, get_kraken_client
     KRAKEN_AVAILABLE = True
 except ImportError:
     KRAKEN_AVAILABLE = False
@@ -487,7 +487,7 @@ class QueenTrueConsciousnessController:
         # Kraken
         if KRAKEN_AVAILABLE:
             try:
-                self.exchange_clients['KRK'] = KrakenClient()
+                self.exchange_clients['KRK'] = get_kraken_client()
                 self.logger.info("🔍 KRK relay: Kraken client initialized")
             except Exception as e:
                 self.logger.warning(f"⚠️ KRK relay failed: {e}")

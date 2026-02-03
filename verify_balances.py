@@ -33,8 +33,8 @@ async def check_balances():
 
     # Check Kraken
     try:
-        from kraken_client import KrakenClient
-        kraken = KrakenClient()
+        from kraken_client import KrakenClient, get_kraken_client
+        kraken = get_kraken_client()
         bal = kraken.get_account_balance()
         print(f"\n🐙 KRAKEN BALANCES:")
         if bal:

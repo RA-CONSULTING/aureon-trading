@@ -4,7 +4,7 @@
 """
 
 from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
-from kraken_client import KrakenClient
+from kraken_client import KrakenClient, get_kraken_client
 import os
 
 print('🔍 KRAKEN API DIAGNOSTICS')
@@ -17,7 +17,7 @@ print(f'  KRAKEN_API_SECRET: {"SET" if os.getenv("KRAKEN_API_SECRET") else "NOT 
 print(f'  KRAKEN_DRY_RUN: {os.getenv("KRAKEN_DRY_RUN", "false")}')
 print()
 
-client = KrakenClient()
+client = get_kraken_client()
 print('🔗 Client Configuration:')
 print(f'  Dry Run: {client.dry_run}')
 print(f'  API Key Set: {bool(client.api_key)}')

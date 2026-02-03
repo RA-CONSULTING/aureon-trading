@@ -217,8 +217,8 @@ class CostBasisTracker:
             if self.clients and 'kraken' in self.clients:
                 client = self.clients['kraken']
             else:
-                from kraken_client import KrakenClient
-                client = KrakenClient()
+                from kraken_client import KrakenClient, get_kraken_client
+                client = get_kraken_client()
 
             if getattr(client, 'dry_run', False):
                 print("   ⚪ Kraken in dry-run mode - skipping")

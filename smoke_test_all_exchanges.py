@@ -198,8 +198,8 @@ def test_kraken(dry_run: bool = True) -> SmokeTestResult:
     )
     
     try:
-        from kraken_client import KrakenClient
-        client = KrakenClient()
+        from kraken_client import KrakenClient, get_kraken_client
+        client = get_kraken_client()
         
         # Get current price
         ticker = client.get_ticker('XXBTZUSD')  # Kraken uses this format

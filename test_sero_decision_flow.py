@@ -17,7 +17,7 @@ from dataclasses import dataclass
 from typing import Dict, Any, Optional
 
 from aureon_sero_client import SeroClient, SeroAdvice
-from kraken_client import KrakenClient
+from kraken_client import KrakenClient, get_kraken_client
 import requests
 
 @dataclass
@@ -68,7 +68,7 @@ def apply_sero_to_queen_confidence(
 
 def _live_eth_context() -> Dict[str, Any]:
     """Fetch live ETH/USD data from Kraken and build real-data context."""
-    client = KrakenClient()
+    client = get_kraken_client()
     symbols = ["ETH/USD", "ETHUSD", "XETHZUSD", "ETHUSDT"]
     ticker = None
     for sym in symbols:

@@ -67,7 +67,7 @@ except ImportError:
 
 # Try to import other exchange clients
 try:
-    from kraken_client import KrakenClient
+    from kraken_client import KrakenClient, get_kraken_client
     KRAKEN_AVAILABLE = True
 except ImportError:
     KRAKEN_AVAILABLE = False
@@ -236,7 +236,7 @@ class MultiExchangeManager:
         # Initialize Kraken
         if CONFIG['ENABLE_KRAKEN'] and KRAKEN_AVAILABLE:
             try:
-                self.clients['kraken'] = KrakenClient()
+                self.clients['kraken'] = get_kraken_client()
                 logger.info("✅ Kraken connected")
             except Exception as e:
                 logger.error(f"❌ Kraken failed: {e}")

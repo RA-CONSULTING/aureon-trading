@@ -3443,8 +3443,8 @@ class OrcaKillCycle:
             
             # Initialize Kraken
             try:
-                from kraken_client import KrakenClient
-                self.clients['kraken'] = KrakenClient()
+                from kraken_client import KrakenClient, get_kraken_client
+                self.clients['kraken'] = get_kraken_client()
                 _safe_print("✅ Kraken: CONNECTED")
             except Exception as e:
                 _safe_print(f"⚠️ Kraken: {e}")

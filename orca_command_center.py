@@ -245,7 +245,7 @@ class OrcaCommandCenter:
         
         try:
             if KrakenClient:
-                self.kraken = KrakenClient()
+                self.kraken = get_kraken_client()
                 logger.info("✅ Kraken connected")
         except Exception as e:
             logger.warning(f"⚠️  Kraken: {e}")

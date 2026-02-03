@@ -37,8 +37,8 @@ print()
 
 # Test Kraken
 try:
-    from kraken_client import KrakenClient
-    k = KrakenClient()
+    from kraken_client import KrakenClient, get_kraken_client
+    k = get_kraken_client()
     bal = k.get_account_balance()
     print(f'🐙 KRAKEN:')
     kraken_usd = 0

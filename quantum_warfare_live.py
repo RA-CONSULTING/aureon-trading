@@ -49,7 +49,7 @@ except ImportError:
 
 # Import exchange clients
 try:
-    from kraken_client import KrakenClient
+    from kraken_client import KrakenClient, get_kraken_client
     KRAKEN_AVAILABLE = True
 except ImportError:
     KRAKEN_AVAILABLE = False
@@ -126,7 +126,7 @@ class QuantumWarfareLive:
         """Initialize exchange connections"""
         if KRAKEN_AVAILABLE:
             try:
-                self.kraken = KrakenClient()
+                self.kraken = get_kraken_client()
                 print("   ✅ Kraken connected")
             except Exception as e:
                 print(f"   ❌ Kraken: {e}")

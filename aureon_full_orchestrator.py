@@ -104,8 +104,8 @@ class AureonFullOrchestrator:
         # 1. Kraken Client
         print("\n📡 Loading Kraken Client...")
         try:
-            from kraken_client import KrakenClient
-            self.client = KrakenClient()
+            from kraken_client import KrakenClient, get_kraken_client
+            self.client = get_kraken_client()
             print("   ✅ Kraken connected")
         except Exception as e:
             print(f"   ❌ Kraken failed: {e}")

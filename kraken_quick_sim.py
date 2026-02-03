@@ -15,7 +15,7 @@ from dataclasses import dataclass, field
 from typing import Dict, List
 
 sys.path.insert(0, '/workspaces/aureon-trading')
-from kraken_client import KrakenClient
+from kraken_client import KrakenClient, get_kraken_client
 
 # Kraken fees
 TAKER_FEE = 0.0026  # 0.26%
@@ -48,7 +48,7 @@ def run_analysis():
     banner()
     
     print("📡 Connecting to Kraken and fetching market data...")
-    client = KrakenClient()
+    client = get_kraken_client()
     
     # Get all tickers
     tickers = client.get_24h_tickers()

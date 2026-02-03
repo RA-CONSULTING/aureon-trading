@@ -32,7 +32,7 @@ load_dotenv()
 # ════════════════════════════════════════════════════════════════════════════════
 
 try:
-    from kraken_client import KrakenClient
+    from kraken_client import KrakenClient, get_kraken_client
     KRAKEN_OK = True
 except ImportError:
     KrakenClient = None
@@ -174,7 +174,7 @@ class MegaScanner:
         
         if KRAKEN_OK:
             try:
-                self.kraken = KrakenClient()
+                self.kraken = get_kraken_client()
                 print("   🐙 Kraken: CONNECTED")
             except Exception as e:
                 print(f"   🐙 Kraken: FAILED - {e}")

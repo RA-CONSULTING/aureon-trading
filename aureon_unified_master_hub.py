@@ -2642,7 +2642,7 @@ class AureonUnifiedMasterHub:
         # Initialize exchange clients
         if KrakenClient:
             try:
-                self.exchange_clients['Kraken'] = KrakenClient()
+                self.exchange_clients['Kraken'] = get_kraken_client()
                 self.systems_status['Kraken'] = {
                     'status': 'ONLINE', 'confidence': 1.0, 'accuracy': 0.0,
                     'signals_sent': 0, 'metadata': {}

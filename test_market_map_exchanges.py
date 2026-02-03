@@ -28,8 +28,8 @@ except Exception as e:
 # Now test loading from Kraken
 print("\n🐙 LOADING FROM KRAKEN:")
 try:
-    from kraken_client import KrakenClient
-    kraken = KrakenClient()
+    from kraken_client import KrakenClient, get_kraken_client
+    kraken = get_kraken_client()
     pairs = kraken._load_asset_pairs()
     
     bases = set()

@@ -59,7 +59,7 @@ except ImportError:
     BinanceClient = None
 
 try:
-    from kraken_client import KrakenClient
+    from kraken_client import KrakenClient, get_kraken_client
     KRAKEN_AVAILABLE = True
 except ImportError:
     KRAKEN_AVAILABLE = False
@@ -186,7 +186,7 @@ class RevenueBoard:
         
         if self.kraken is None and KRAKEN_AVAILABLE:
             try:
-                self.kraken = KrakenClient()
+                self.kraken = get_kraken_client()
                 logger.info("📈 Kraken client connected")
             except Exception as e:
                 logger.warning(f"Kraken not available: {e}")

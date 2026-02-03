@@ -60,9 +60,9 @@ results = {
 # ════════════════════════════════════════════════════════════════════════════
 print("\n🐙 KRAKEN: Testing SELL with existing balance...")
 try:
-    from kraken_client import KrakenClient
+    from kraken_client import KrakenClient, get_kraken_client
     
-    kraken = KrakenClient()
+    kraken = get_kraken_client()
     print(f"   Dry Run Mode: {kraken.dry_run}")
     
     balance = kraken.get_balance()

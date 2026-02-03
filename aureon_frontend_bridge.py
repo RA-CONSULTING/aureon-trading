@@ -79,7 +79,7 @@ print("\n🔌 LOADING EXCHANGE CLIENTS...")
 try:
     from kraken_client import KrakenClient
     def get_kraken_client():
-        return KrakenClient()
+        return get_kraken_client()
     KRAKEN_AVAILABLE = True
     print("   🐙 Kraken Client: LOADED")
 except ImportError as e:

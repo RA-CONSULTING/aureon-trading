@@ -66,9 +66,9 @@ results = {
 # ════════════════════════════════════════════════════════════════════════════
 print("\n🐙 KRAKEN: Testing trade execution...")
 try:
-    from kraken_client import KrakenClient
+    from kraken_client import KrakenClient, get_kraken_client
     
-    kraken = KrakenClient()
+    kraken = get_kraken_client()
     print(f"   Dry Run Mode: {kraken.dry_run}")
     
     # Get balance first

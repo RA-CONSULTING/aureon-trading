@@ -77,8 +77,8 @@ def repair():
     except: print("   ❌ BINANCE: Failed")
     
     try:
-        from kraken_client import KrakenClient
-        kc = KrakenClient()
+        from kraken_client import KrakenClient, get_kraken_client
+        kc = get_kraken_client()
         print("   ✅ KRAKEN: Connected")
     except: print("   ❌ KRAKEN: Failed")
 

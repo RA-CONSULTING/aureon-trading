@@ -43,7 +43,7 @@ if sys.platform == 'win32':
 
 from orca_complete_kill_cycle import OrcaKillCycle
 from aureon_live_momentum_hunter import LiveMomentumHunter, HuntResult
-from kraken_client import KrakenClient
+from kraken_client import KrakenClient, get_kraken_client
 from alpaca_client import AlpacaClient
 
 class OrcaSmartKillCycle:
@@ -90,7 +90,7 @@ class OrcaSmartKillCycle:
             
             # Check Kraken
             try:
-                kraken_client = KrakenClient()
+                kraken_client = get_kraken_client()
                 orderbook = kraken_client.get_crypto_orderbook(symbol)
                 if orderbook and 'asks' in orderbook and orderbook['asks']:
                     opp_kraken = opp.__class__(**opp.__dict__)  # Copy

@@ -11,7 +11,7 @@ from datetime import datetime, timedelta, timezone
 from capital_client import CapitalClient
 from alpaca_client import AlpacaClient
 from binance_client import BinanceClient
-from kraken_client import KrakenClient
+from kraken_client import KrakenClient, get_kraken_client
 from aureon_sero_client import SeroClient
 
 # ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════
@@ -69,7 +69,7 @@ class UnifiedKillChain:
         self.capital = CapitalClient()
         self.alpaca = AlpacaClient()
         self.binance = BinanceClient()
-        self.kraken = KrakenClient()
+        self.kraken = get_kraken_client()
         
         # Kraken warmup delay to avoid "Invalid nonce" errors after heavy init
         log_system("Kraken: Nonce sync warmup (3s)...")

@@ -15,7 +15,7 @@ from datetime import datetime, timezone
 from capital_client import CapitalClient
 from alpaca_client import AlpacaClient
 from binance_client import BinanceClient
-from kraken_client import KrakenClient
+from kraken_client import KrakenClient, get_kraken_client
 from aureon_sero_client import SeroClient
 
 def log(emoji, role, msg):
@@ -394,7 +394,7 @@ def main():
     capital = CapitalClient()
     alpaca = AlpacaClient()
     binance = BinanceClient()
-    kraken = KrakenClient()
+    kraken = get_kraken_client()
     dr_auris = SeroClient()
     
     # Report connectivity

@@ -166,8 +166,8 @@ class AureonLive:
         
         if SCOUT_AVAILABLE:
             try:
-                from kraken_client import KrakenClient
-                self.scout = MarketPulse(KrakenClient())
+                from kraken_client import KrakenClient, get_kraken_client
+                self.scout = MarketPulse(get_kraken_client())
                 print("  ✅ Auto Scout: ONLINE")
             except Exception as e:
                 print(f"  ⚠️  Auto Scout error: {e}")

@@ -46,7 +46,7 @@ logger = logging.getLogger(__name__)
 
 # Exchange clients
 try:
-    from kraken_client import KrakenClient
+    from kraken_client import KrakenClient, get_kraken_client
     KRAKEN_AVAILABLE = True
 except ImportError:
     KrakenClient = None
@@ -238,7 +238,7 @@ class BarterNavigator:
         """Load pairs from Kraken."""
         print("\n🐙 Loading Kraken pairs...")
         try:
-            self.kraken = KrakenClient()
+            self.kraken = get_kraken_client()
             
             # Get all asset pairs
             pairs = self.kraken._load_asset_pairs() if hasattr(self.kraken, '_load_asset_pairs') else {}

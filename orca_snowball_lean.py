@@ -57,8 +57,8 @@ class OrcaSnowballLean:
     @property
     def kraken(self):
         if self._kraken is None:
-            from kraken_client import KrakenClient
-            self._kraken = KrakenClient()
+            from kraken_client import KrakenClient, get_kraken_client
+            self._kraken = get_kraken_client()
         return self._kraken
         
     @property  

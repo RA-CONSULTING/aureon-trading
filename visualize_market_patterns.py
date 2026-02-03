@@ -32,7 +32,7 @@ except:
     BINANCE_OK = False
 
 try:
-    from kraken_client import KrakenClient
+    from kraken_client import KrakenClient, get_kraken_client
     KRAKEN_OK = True
 except:
     KRAKEN_OK = False
@@ -142,7 +142,7 @@ class APIBufferMonitor:
         # Kraken
         if KRAKEN_OK:
             try:
-                kc = KrakenClient()
+                kc = get_kraken_client()
                 start = time.time()
                 ticker = kc.get_24h_ticker('XXBTZUSD')
                 latency = (time.time() - start) * 1000

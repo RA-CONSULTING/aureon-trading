@@ -18,8 +18,8 @@ async def debug_usd_source():
     
     # KRAKEN
     try:
-        from kraken_client import KrakenClient
-        kraken = KrakenClient()
+        from kraken_client import KrakenClient, get_kraken_client
+        kraken = get_kraken_client()
         if hasattr(kraken, 'get_account_balance'):
             print("\n🐙 FETCHING KRAKEN...")
             raw = kraken.get_account_balance() or {}

@@ -288,8 +288,8 @@ class AureonUnifiedDashboard:
         """Lazy load Kraken client."""
         if self._kraken is None:
             try:
-                from kraken_client import KrakenClient
-                self._kraken = KrakenClient()
+                from kraken_client import KrakenClient, get_kraken_client
+                self._kraken = get_kraken_client()
                 logger.info("✓ Kraken client loaded")
             except Exception as e:
                 logger.debug(f"Kraken not available: {e}")

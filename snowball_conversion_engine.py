@@ -254,8 +254,8 @@ class SnowballEngine:
         self.kraken = None
         if not dry_run:
             try:
-                from kraken_client import KrakenClient
-                self.kraken = KrakenClient()
+                from kraken_client import KrakenClient, get_kraken_client
+                self.kraken = get_kraken_client()
             except:
                 logger.warning("⚠️ Kraken client not available - running in dry mode")
                 self.dry_run = True

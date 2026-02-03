@@ -29,7 +29,7 @@ from typing import Dict, List, Optional
 import random
 
 sys.path.insert(0, '/workspaces/aureon-trading')
-from kraken_client import KrakenClient
+from kraken_client import KrakenClient, get_kraken_client
 
 # =============================================================================
 # CONFIGURATION - CORRECTED FEE MODEL (matches penny profit formula)
@@ -86,7 +86,7 @@ class QuantumQuackers:
         self.max_drawdown = 0.0
         
         # Kraken client
-        self.client = KrakenClient()
+        self.client = get_kraken_client()
         self.ticker_cache: Dict[str, Dict] = {}
         
         # Stats

@@ -49,7 +49,7 @@ from collections import deque
 from threading import Thread, Lock
 
 sys.path.insert(0, '/workspaces/aureon-trading')
-from kraken_client import KrakenClient
+from kraken_client import KrakenClient, get_kraken_client
 from aureon_lattice import LatticeEngine
 
 # 🧬 SANDBOX EVOLVED PARAMETERS - 454 Generations of Learning
@@ -948,7 +948,7 @@ class AureonKrakenEcosystem:
     
     def __init__(self, initial_balance: float = 1000.0, dry_run: bool = True):
         self.dry_run = dry_run
-        self.client = KrakenClient()
+        self.client = get_kraken_client()
         self.auris = AurisEngine()
         self.mycelium = MyceliumNetwork(initial_capital=initial_balance)
         self.lattice = LatticeEngine()

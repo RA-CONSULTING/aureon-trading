@@ -116,8 +116,8 @@ def run_dashboard(auto_sell: bool = False, refresh_interval: float = 5.0):
     
     # Import clients and profit gate
     try:
-        from kraken_client import KrakenClient
-        kraken = KrakenClient()
+        from kraken_client import KrakenClient, get_kraken_client
+        kraken = get_kraken_client()
         print("✅ Kraken client connected")
     except Exception as e:
         print(f"❌ Kraken client failed: {e}")

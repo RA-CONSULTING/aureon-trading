@@ -20,7 +20,7 @@ from collections import defaultdict
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from kraken_client import KrakenClient
+from kraken_client import KrakenClient, get_kraken_client
 from aureon_mycelium import MyceliumNetwork
 
 
@@ -71,7 +71,7 @@ class S5UltraLabyrinth:
     MIN_MOVE_PCT = 0.01  # 0.01% = 1 bp - even smaller movements
     
     def __init__(self):
-        self.kraken = KrakenClient()
+        self.kraken = get_kraken_client()
         
         # State
         self.holdings = {}

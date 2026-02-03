@@ -149,8 +149,8 @@ def check_exchange_trades() -> Dict[str, Any]:
     
     # Check Kraken
     try:
-        from kraken_client import KrakenClient
-        kraken = KrakenClient()
+        from kraken_client import KrakenClient, get_kraken_client
+        kraken = get_kraken_client()
         
         # Get recent trades
         trades = kraken.get_trades_history()

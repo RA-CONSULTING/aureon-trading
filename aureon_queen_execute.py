@@ -74,7 +74,7 @@ except ImportError:
 
 # Import Kraken client
 try:
-    from kraken_client import KrakenClient
+    from kraken_client import KrakenClient, get_kraken_client
     KRAKEN_OK = True
 except ImportError:
     KRAKEN_OK = False
@@ -332,7 +332,7 @@ class KrakenExecutor:
     
     def __init__(self):
         if KRAKEN_OK:
-            self.client = KrakenClient()
+            self.client = get_kraken_client()
             self.client.dry_run = False  # Enable live trading
         else:
             self.client = None

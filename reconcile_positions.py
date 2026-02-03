@@ -36,12 +36,12 @@ def reconcile_positions():
     # Load clients
     from alpaca_client import AlpacaClient
     from binance_client import BinanceClient
-    from kraken_client import KrakenClient
+    from kraken_client import KrakenClient, get_kraken_client
     
     clients = {
         'alpaca': AlpacaClient(),
         'binance': BinanceClient(),
-        'kraken': KrakenClient()
+        'kraken': get_kraken_client()
     }
     
     # Load tracked positions

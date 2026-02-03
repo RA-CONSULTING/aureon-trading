@@ -424,7 +424,7 @@ def load_all_systems():
     
     # Exchange clients
     try:
-        from kraken_client import KrakenClient
+        from kraken_client import KrakenClient, get_kraken_client
         SYSTEMS_STATUS['Kraken Exchange'] = True
     except ImportError:
         SYSTEMS_STATUS['Kraken Exchange'] = False
@@ -738,8 +738,8 @@ def run_flight_check() -> Dict[str, FlightCheckResult]:
     # KRAKEN EXCHANGE CHECK
     try:
         start = time.perf_counter()
-        from kraken_client import KrakenClient
-        client = KrakenClient()
+        from kraken_client import KrakenClient, get_kraken_client
+        client = get_kraken_client()
         ping_ts = datetime.now().isoformat()
         # Try to get server time (proves connectivity)
         server_time = client.get_server_time() if hasattr(client, 'get_server_time') else None
@@ -6084,8 +6084,8 @@ async def update_balances_task():
         if SYSTEMS_STATUS.get('Kraken Exchange'):
             try:
                 if kraken_client is None:
-                    from kraken_client import KrakenClient
-                    kraken_client = KrakenClient()
+                    from kraken_client import KrakenClient, get_kraken_client
+                    kraken_client = get_kraken_client()
                 kraken_bal = kraken_client.get_account_balance()
                 balances['kraken'] = _sum_fiat(kraken_bal) if kraken_bal else 'offline'
             except Exception:

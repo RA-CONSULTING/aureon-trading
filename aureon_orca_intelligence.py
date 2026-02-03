@@ -111,7 +111,7 @@ except ImportError:
 # ═══════════════════════════════════════════════════════════════════════════════
 # Kraken (crypto)
 try:
-    from kraken_client import KrakenClient
+    from kraken_client import KrakenClient, get_kraken_client
     KRAKEN_AVAILABLE = True
 except ImportError:
     KRAKEN_AVAILABLE = False
@@ -502,7 +502,7 @@ class OrcaKillerWhaleIntelligence:
         # Kraken (crypto spot)
         if KRAKEN_AVAILABLE:
             try:
-                self.kraken_client = KrakenClient()
+                self.kraken_client = get_kraken_client()
                 market_count += 1
                 logger.info("🐙 Kraken CONNECTED - Crypto spot market visibility")
             except Exception as e:
