@@ -3147,7 +3147,21 @@ class AureonProDashboard:
     async def handle_portfolio(self, request):
         # Fetch real portfolio data
         self.logger.info("📊 HANDLE_PORTFOLIO: Called")
-        await self.refresh_portfolio()
+        try:
+            await self.refresh_portfolio()
+            self.logger.info(f"📊 HANDLE_PORTFOLIO: Returning {len(self.portfolio.get('positions', []))} positions")
+        except Exception as e:
+            self.logger.error(f"❌ HANDLE_PORTFOLIO: refresh_portfolio() failed: {e}", exc_info=True)
+            # Return cached/default data instead of crashing
+            if not hasattr(self, 'portfolio') or not self.portfolio:
+                self.portfolio = {
+                    'positions': [],
+                    'totalValue': 0,
+                    'totalCost': 0,
+                    'unrealizedPnl': 0,
+                    'cash': 0,
+                    'error': str(e)
+                }
         return web.json_response(self.portfolio)
     
     async def handle_prices(self, request):
@@ -3630,10 +3644,13 @@ class AureonProDashboard:
     async def refresh_portfolio(self):
         """Fetch real portfolio data from ALL exchanges with caching."""
         self.logger.info("🔄 REFRESH_PORTFOLIO: Starting portfolio refresh")
+        self.logger.info(f"🔄 Environment: AUREON_STATE_DIR={os.getenv('AUREON_STATE_DIR', '.')}")
         try:
             self.logger.info("🔄 Starting portfolio refresh (ALL EXCHANGES)...")
             state_dir = os.getenv("AUREON_STATE_DIR", ".")
+            self.logger.info(f"🔄 State directory: {state_dir}")
             snapshot_path = os.path.join(state_dir, "dashboard_snapshot.json")
+            self.logger.info(f"🔄 Snapshot path: {snapshot_path}")
             
             # CACHE: Keep previous positions if fetch fails
             if not hasattr(self, '_cached_positions'):
@@ -3641,7 +3658,9 @@ class AureonProDashboard:
             
             # Try to use live_position_viewer for real data
             try:
+                self.logger.info("📦 Importing live_position_viewer...")
                 from live_position_viewer import get_binance_positions, get_alpaca_positions
+                self.logger.info("✅ live_position_viewer imported successfully")
                 
                 positions = []
                 total_value = 0
@@ -3691,9 +3710,11 @@ class AureonProDashboard:
                         return self._cached_positions.get('kraken', [])
                 
                 # Gather ALL THREE in parallel
+                self.logger.info("🔄 Fetching positions from Binance, Alpaca, and Kraken in parallel...")
                 binance_pos, alpaca_pos, kraken_pos = await asyncio.gather(
                     get_bin_pos(), get_alp_pos(), get_kraken_pos()
                 )
+                self.logger.info(f"✅ Parallel fetch complete: Binance={len(binance_pos) if binance_pos else 0}, Alpaca={len(alpaca_pos) if alpaca_pos else 0}, Kraken={len(kraken_pos) if kraken_pos else 0}")
                 
                 # Process Binance positions
                 if binance_pos:
