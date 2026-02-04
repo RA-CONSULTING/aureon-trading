@@ -282,8 +282,9 @@ while true; do
     fi
     
     echo "   Using Python: $PYTHON_CMD"
-    # 👑 QUEEN'S PARAMETERS: 25 positions, $10 each, 1% minimum target, IRA Sniper armed
-    $PYTHON_CMD -u orca_complete_kill_cycle.py --autonomous 25 10.0 1.0
+    # 👑 QUEEN'S PARAMETERS: 50 positions, $10 each, 1% minimum target, IRA Sniper armed
+    # Increased to 50 to handle full portfolio: 19 Binance + 18 Kraken + Alpaca
+    $PYTHON_CMD -u orca_complete_kill_cycle.py --autonomous 50 10.0 1.0
     EXIT_CODE=$?
     echo "$(date): Orca exited with code $EXIT_CODE"
     
