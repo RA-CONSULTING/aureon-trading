@@ -33,9 +33,9 @@ services:
     # HTTP settings for health checks
     http_port: 8080
     instance_count: 1
-    instance_size_slug: apps-d-4vcpu-8gb  # 8GB RAM, 4 vCPU - handles memory spikes
+    instance_size_slug: apps-d-8vcpu-32gb  # 32GB RAM, 8 vCPU - DigitalOcean recommended size
     
-    # Autoscaling for memory spikes
+    # Autoscaling for memory spikes during parallel supervisord startup
     autoscaling:
       min_instance_count: 1
       max_instance_count: 2

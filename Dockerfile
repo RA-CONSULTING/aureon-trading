@@ -37,8 +37,12 @@ ENV AUREON_ENABLE_AUTONOMOUS_CONTROL=1
 # Aggressive GC tuning, minimize memory fragmentation, prevent memory leaks
 ENV PYTHONMALLOC=malloc
 ENV PYTHONHASHSEED=0
-# GC tuning: collect frequently to prevent bloat (gen0=500, gen1=5, gen2=5)
+# GC tuning: collect frequently to prevent bloat (gen0=700, gen1=5, gen2=5)
 ENV PYTHONGCFLAGS=700,5,5
+# Memory limits - prevent individual processes from consuming all RAM
+ENV MALLOC_ARENA_MAX=2
+ENV MALLOC_MMAP_THRESHOLD_=131072
+ENV MALLOC_TRIM_THRESHOLD_=131072
 
 # Autonomous volatility trading defaults
 ENV MODE=parallel

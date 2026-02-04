@@ -4024,87 +4024,87 @@ class AureonProDashboard:
 
             # No more duplicate balance refresh code here - it's all done above atomically
             
-        except ImportError:
-            self.logger.warning("⚠️  live_position_viewer not available - using state snapshot")
-            positions = []
-            total_value = 0.0
-            total_cost = 0.0
-            try:
-                if os.path.exists(snapshot_path):
-                    with open(snapshot_path, "r") as f:
-                        snapshot = json.load(f)
-                    for pos in snapshot.get("positions", []):
-                        qty = float(pos.get("entry_qty", 0) or 0)
-                        entry = float(pos.get("entry_price", 0) or 0)
-                        current = float(pos.get("current_price", entry) or entry)
-                        current_value = current * qty
-                        total_value += current_value
-                        total_cost += entry * qty
-                        positions.append({
-                            "symbol": pos.get("symbol", "UNKNOWN"),
-                            "quantity": qty,
-                            "avgCost": entry,
-                            "currentPrice": current,
-                            "currentValue": current_value,
-                            "unrealizedPnl": float(pos.get("current_pnl", 0) or 0),
-                            "pnlPercent": float(pos.get("current_pnl_pct", 0) or 0),
-                            "exchange": pos.get("exchange", "unknown"),
-                        })
-                    positions.sort(key=lambda x: x.get("currentValue", 0), reverse=True)
-                else:
-                    self.logger.info("✅ Portfolio: 0 positions (no snapshot)")
-            except Exception as e:
-                self.logger.warning(f"⚠️  State snapshot load failed: {e}")
-                
-            # Load balances from state files
-            try:
-                def _read_state(path: str) -> Dict:
-                    if os.path.exists(path):
-                        with open(path, "r") as f:
-                            return json.load(f)
-                    return {}
+            except ImportError:
+                self.logger.warning("⚠️  live_position_viewer not available - using state snapshot")
+                positions = []
+                total_value = 0.0
+                total_cost = 0.0
+                try:
+                    if os.path.exists(snapshot_path):
+                        with open(snapshot_path, "r") as f:
+                            snapshot = json.load(f)
+                        for pos in snapshot.get("positions", []):
+                            qty = float(pos.get("entry_qty", 0) or 0)
+                            entry = float(pos.get("entry_price", 0) or 0)
+                            current = float(pos.get("current_price", entry) or entry)
+                            current_value = current * qty
+                            total_value += current_value
+                            total_cost += entry * qty
+                            positions.append({
+                                "symbol": pos.get("symbol", "UNKNOWN"),
+                                "quantity": qty,
+                                "avgCost": entry,
+                                "currentPrice": current,
+                                "currentValue": current_value,
+                                "unrealizedPnl": float(pos.get("current_pnl", 0) or 0),
+                                "pnlPercent": float(pos.get("current_pnl_pct", 0) or 0),
+                                "exchange": pos.get("exchange", "unknown"),
+                            })
+                        positions.sort(key=lambda x: x.get("currentValue", 0), reverse=True)
+                    else:
+                        self.logger.info("✅ Portfolio: 0 positions (no snapshot)")
+                except Exception as e:
+                    self.logger.warning(f"⚠️  State snapshot load failed: {e}")
+                    
+                # Load balances from state files
+                try:
+                    def _read_state(path: str) -> Dict:
+                        if os.path.exists(path):
+                            with open(path, "r") as f:
+                                return json.load(f)
+                        return {}
 
-                bin_state = _read_state(os.path.join(state_dir, "binance_truth_tracker_state.json"))
-                krk_state = _read_state(os.path.join(state_dir, "aureon_kraken_state.json"))
-                alp_state = _read_state(os.path.join(state_dir, "alpaca_truth_tracker_state.json"))
-                snapshot_data = _read_state(snapshot_path)
-                snapshot_balances = snapshot_data.get("exchange_balances", {}) or {}
+                    bin_state = _read_state(os.path.join(state_dir, "binance_truth_tracker_state.json"))
+                    krk_state = _read_state(os.path.join(state_dir, "aureon_kraken_state.json"))
+                    alp_state = _read_state(os.path.join(state_dir, "alpaca_truth_tracker_state.json"))
+                    snapshot_data = _read_state(snapshot_path)
+                    snapshot_balances = snapshot_data.get("exchange_balances", {}) or {}
 
-                new_balances = {
-                    "binance": float(bin_state.get("balances", {}).get("USDT", {}).get("free", 0.0) or snapshot_balances.get("binance", 0.0) or 0.0),
-                    "kraken": float(krk_state.get("balances", {}).get("USD", krk_state.get("balances", {}).get("ZUSD", 0.0)) or snapshot_balances.get("kraken", 0.0) or 0.0),
-                    "alpaca": float(alp_state.get("cash", 0.0) or snapshot_balances.get("alpaca", 0.0) or 0.0),
+                    new_balances = {
+                        "binance": float(bin_state.get("balances", {}).get("USDT", {}).get("free", 0.0) or snapshot_balances.get("binance", 0.0) or 0.0),
+                        "kraken": float(krk_state.get("balances", {}).get("USD", krk_state.get("balances", {}).get("ZUSD", 0.0)) or snapshot_balances.get("kraken", 0.0) or 0.0),
+                        "alpaca": float(alp_state.get("cash", 0.0) or snapshot_balances.get("alpaca", 0.0) or 0.0),
+                    }
+                except Exception as e:
+                    self.logger.debug(f"Balance load error: {e}")
+                    new_balances = self.exchange_balances
+                    
+                # ATOMIC UPDATE: Set everything at once
+                self.portfolio = {
+                    "totalValue": total_value,
+                    "costBasis": total_cost,
+                    "unrealizedPnl": total_value - total_cost,
+                    "todayPnl": 0,
+                    "positions": positions[:20],
                 }
-            except Exception as e:
-                self.logger.debug(f"Balance load error: {e}")
-                new_balances = self.exchange_balances
+                self.exchange_balances = new_balances
                 
-            # ATOMIC UPDATE: Set everything at once
-            self.portfolio = {
-                "totalValue": total_value,
-                "costBasis": total_cost,
-                "unrealizedPnl": total_value - total_cost,
-                "todayPnl": 0,
-                "positions": positions[:20],
-            }
-            self.exchange_balances = new_balances
-            
-            if self.harmonic_field:
-                nodes_added = 0
-                for pos in positions:
-                    try:
-                        self.harmonic_field.add_or_update_node(
-                            exchange=pos.get("exchange", "unknown"),
-                            symbol=pos.get("symbol", "UNKNOWN"),
-                            current_price=pos.get("currentPrice", 0),
-                            entry_price=pos.get("avgCost", 0),
-                            quantity=pos.get("quantity", 0)
-                        )
-                        nodes_added += 1
-                    except Exception as e:
-                        self.logger.warning(f"⚠️ Harmonic field update error for {pos.get('symbol')}: {e}")
-                self.logger.info(f"🔩 Harmonic field: {nodes_added} nodes updated (snapshot fallback)")
-            self.logger.info(f"✅ Portfolio (snapshot): {len(positions)} positions, ${total_value:,.2f} value | Balances: Binance ${new_balances['binance']:,.2f}, Kraken ${new_balances['kraken']:,.2f}, Alpaca ${new_balances['alpaca']:,.2f}")
+                if self.harmonic_field:
+                    nodes_added = 0
+                    for pos in positions:
+                        try:
+                            self.harmonic_field.add_or_update_node(
+                                exchange=pos.get("exchange", "unknown"),
+                                symbol=pos.get("symbol", "UNKNOWN"),
+                                current_price=pos.get("currentPrice", 0),
+                                entry_price=pos.get("avgCost", 0),
+                                quantity=pos.get("quantity", 0)
+                            )
+                            nodes_added += 1
+                        except Exception as e:
+                            self.logger.warning(f"⚠️ Harmonic field update error for {pos.get('symbol')}: {e}")
+                    self.logger.info(f"🔩 Harmonic field: {nodes_added} nodes updated (snapshot fallback)")
+                self.logger.info(f"✅ Portfolio (snapshot): {len(positions)} positions, ${total_value:,.2f} value | Balances: Binance ${new_balances['binance']:,.2f}, Kraken ${new_balances['kraken']:,.2f}, Alpaca ${new_balances['alpaca']:,.2f}")
 
             # No more duplicate balance refresh code here - it's all done above atomically
             
@@ -5104,57 +5104,9 @@ class AureonProDashboard:
     async def start(self):
         """Start the dashboard."""
         
-        # Pre-flight check: verify API keys
-        self._check_api_keys()
-        
-        # Fetch initial data BEFORE starting server (so data is ready immediately)
-        self.logger.info("🚀 Pre-loading market data before server start...")
-        await self.refresh_prices()
-        await self.refresh_portfolio()
-        
-        # Initialize Ocean Scanner
-        if OCEAN_SCANNER_AVAILABLE and OceanScanner:
-            try:
-                self.logger.info("🌊 Initializing Ocean Scanner...")
-                # Load ALL exchange clients (Kraken, Alpaca, Binance)
-                exchanges = {}
-                
-                # Kraken (1,434 pairs)
-                try:
-                    from kraken_client import KrakenClient, get_kraken_client
-                    exchanges['kraken'] = get_kraken_client()
-                    self.logger.info("✅ Ocean Scanner: Kraken loaded")
-                except Exception as e:
-                    self.logger.warning(f"⚠️ Kraken not available: {e}")
-                
-                # Alpaca (62 crypto + 10,000 stocks)
-                try:
-                    from alpaca_client import AlpacaClient
-                    exchanges['alpaca'] = AlpacaClient()
-                    self.logger.info("✅ Ocean Scanner: Alpaca loaded")
-                except Exception as e:
-                    self.logger.warning(f"⚠️ Alpaca not available: {e}")
-                
-                # Binance (2,000+ pairs)
-                try:
-                    from binance_client import BinanceClient
-                    exchanges['binance'] = BinanceClient()
-                    self.logger.info("✅ Ocean Scanner: Binance loaded")
-                except Exception as e:
-                    self.logger.warning(f"⚠️ Binance not available: {e}")
-                
-                if exchanges:
-                    self.ocean_scanner = OceanScanner(exchanges)
-                    # Discover universe in background
-                    asyncio.create_task(self._init_ocean_scanner())
-                    self.logger.info(f"✅ Ocean Scanner initialized with {len(exchanges)} exchange(s)")
-                else:
-                    self.logger.error("❌ Ocean Scanner: No exchanges available!")
-            except Exception as e:
-                self.logger.error(f"❌ Ocean Scanner init error: {e}")
-        
-        self.logger.info(f"📊 Initial data loaded: {len(self.prices)} prices, {len(self.portfolio.get('positions', []))} positions")
-        
+        # CRITICAL: Start web server FIRST so health checks succeed immediately
+        # Then load data in background to prevent timeout
+        self.logger.info("🚀 Starting web server on port {self.port}...")
         runner = web.AppRunner(self.app)
         await runner.setup()
         site = web.TCPSite(runner, '0.0.0.0', self.port)
@@ -5163,34 +5115,61 @@ class AureonProDashboard:
         print(f"\n{'='*70}")
         print(f"👑 AUREON PRO TRADING TERMINAL")
         print(f"{'='*70}")
-        print(f"🌐 Dashboard: http://localhost:{self.port}")
-        print(f"🩺 Status: http://localhost:{self.port}/api/status")
-        print(f"📊 Initial State:")
-        print(f"   • Prices loaded: {len(self.prices)} symbols")
-        if self.prices.get('BTC'):
-            print(f"   • BTC: ${self.prices['BTC']['price']:,.0f} ({self.prices['BTC']['change24h']:+.2f}%)")
-        if self.prices.get('ETH'):
-            print(f"   • ETH: ${self.prices['ETH']['price']:,.0f} ({self.prices['ETH']['change24h']:+.2f}%)")
-        if self.prices.get('SOL'):
-            print(f"   • SOL: ${self.prices['SOL']['price']:,.0f} ({self.prices['SOL']['change24h']:+.2f}%)")
-        print(f"   • Portfolio: {len(self.portfolio.get('positions', []))} positions, ${self.portfolio.get('totalValue', 0):,.2f}")
-        print(f"📊 Features:")
-        print(f"   • Real-time portfolio P&L with live prices")
-        print(f"   • Multi-exchange balance tracking")
-        print(f"   • Live price ticker (BTC/ETH/SOL)")
-        print(f"   • Bot detection & whale alerts")
-        print(f"   • Queen's AI commentary with voice")
-        print(f"   • WebSocket real-time updates")
-        if self.narrator:
-            print(f"   • 🧠 Cognitive Narrator: ACTIVE")
-        if BINANCE_WS_AVAILABLE:
-            print(f"   • 🔶 Binance WebSocket: ACTIVE")
+        print(f"🌐 Dashboard: http://0.0.0.0:{self.port} (port 8080 for DigitalOcean)")
+        print(f"🩺 Health: http://0.0.0.0:{self.port}/health")
+        print(f"📊 Status: http://0.0.0.0:{self.port}/api/status")
+        print(f"{'='*70}")
+        print("⚡ Web server ready - loading data in background...")
         print(f"{'='*70}\n")
         
-        # DISABLED: Binance WebSocket causes crashes in production (SSL errors, ping/pong timeouts)
-        # Using HTTP API polling instead for reliability
-        # self.start_binance_websocket()
-        self.logger.warning("⚠️  Binance WebSocket DISABLED (crashes in production) - using HTTP polling")
+        # Pre-flight check: verify API keys (non-blocking)\n        self._check_api_keys()
+        
+        # Load data in background AFTER server is accepting connections
+        # This prevents health check timeouts during slow initialization
+        async def background_init():
+            self.logger.info("🔄 Background initialization started...")
+            await self.refresh_prices()
+            await self.refresh_portfolio()
+            
+            # Initialize Ocean Scanner
+            if OCEAN_SCANNER_AVAILABLE and OceanScanner:
+                try:
+                    self.logger.info("🌊 Initializing Ocean Scanner...")
+                    exchanges = {}
+                    
+                    # Load exchange clients
+                    try:
+                        from kraken_client import get_kraken_client
+                        exchanges['kraken'] = get_kraken_client()
+                        self.logger.info("✅ Ocean: Kraken loaded")
+                    except Exception as e:
+                        self.logger.warning(f"⚠️ Kraken: {e}")
+                    
+                    try:
+                        from alpaca_client import AlpacaClient
+                        exchanges['alpaca'] = AlpacaClient()
+                        self.logger.info("✅ Ocean: Alpaca loaded")
+                    except Exception as e:
+                        self.logger.warning(f"⚠️ Alpaca: {e}")
+                    
+                    try:
+                        from binance_client import BinanceClient
+                        exchanges['binance'] = BinanceClient()
+                        self.logger.info("✅ Ocean: Binance loaded")
+                    except Exception as e:
+                        self.logger.warning(f"⚠️ Binance: {e}")
+                    
+                    if exchanges:
+                        self.ocean_scanner = OceanScanner(exchanges)
+                        await self._init_ocean_scanner()
+                        self.logger.info(f"✅ Ocean Scanner ready: {len(exchanges)} exchanges")
+                except Exception as e:
+                    self.logger.error(f"❌ Ocean Scanner error: {e}")
+            
+            self.logger.info(f"✅ Initialization complete: {len(self.prices)} prices, {len(self.portfolio.get('positions', []))} positions")
+        
+        # Run background init without blocking server startup
+        asyncio.create_task(background_init())
         
         # Start background tasks
         asyncio.create_task(self.queen_commentary_loop())
