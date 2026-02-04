@@ -16,6 +16,8 @@ services:
       - PYTHONIOENCODING=utf-8
       - PYTHONUNBUFFERED=1
       - AUREON_STATE_DIR=/app/state
+      - KRAKEN_NONCE_PATH=/app/state/kraken_nonce.json
+      - KRAKEN_PRIVATE_LOCK_PATH=/app/state/kraken_private.lock
       - AUREON_ENABLE_AUTONOMOUS_CONTROL=1
       
       # Autonomous mode config
