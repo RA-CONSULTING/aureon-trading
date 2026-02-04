@@ -1616,9 +1616,9 @@ class QueenHiveMind:
             try:
                 from v11_power_station_live import V11PowerStationLive, V11Config
                 config = V11Config()
-                self.power_station = V11PowerStationLive(config=config, dry_run=True)
+                self.power_station = V11PowerStationLive(config=config, dry_run=False)  # LIVE MODE!
                 wired_count += 1
-                logger.info("👑⚡ V11 Power Station AUTO-WIRED (100% win rate mode)")
+                logger.info("👑⚡ V11 Power Station AUTO-WIRED (🔴 LIVE MODE)")
             except Exception as e:
                 logger.debug(f"Could not auto-wire V11 Power Station: {e}")
         

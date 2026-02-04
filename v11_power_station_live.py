@@ -272,7 +272,7 @@ class V11PowerStationLive:
     STATE_FILE = "v11_power_station_state.json"
     HISTORY_FILE = "v11_siphon_history.json"
     
-    def __init__(self, config: V11Config = None, dry_run: bool = True):
+    def __init__(self, config: V11Config = None, dry_run: bool = False):  # Default to LIVE!
         self.config = config or V11Config()
         self.dry_run = dry_run
         
