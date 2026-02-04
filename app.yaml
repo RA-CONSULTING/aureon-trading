@@ -141,7 +141,7 @@ services:
       # 🧠 Redis for ThoughtBus (optional - uses internal if available)
       - key: AUREON_REDIS_URL
         scope: RUN_TIME
-        value: "\${db.REDIS_URL}"
+        value: "${db.REDIS_URL}"
 
 # 🧠 Redis Database for ThoughtBus Pub/Sub
 databases:
