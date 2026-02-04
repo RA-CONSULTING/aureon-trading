@@ -1092,7 +1092,49 @@ PRO_DASHBOARD_HTML = """
         .fg-txt .fg-s { font-size: 9px; color: var(--text-secondary); }
         .fg-txt .fg-s b { color: var(--text-primary); font-family: 'JetBrains Mono', monospace; }
         
-        /* Position Summary */
+        /* Leaders & Laggards Section */
+        .leaders-laggards {
+            display: flex;
+            gap: 6px;
+            width: 100%;
+        }
+        
+        .leader-section {
+            flex: 1;
+            background: var(--bg-secondary);
+            border-radius: 4px;
+            padding: 4px 6px;
+        }
+        
+        .section-title {
+            font-size: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            display: block;
+            margin-bottom: 3px;
+        }
+        
+        .section-title.green { color: var(--accent-green); }
+        .section-title.red { color: var(--accent-red); }
+        
+        .leader-list {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 9px;
+            line-height: 1.5;
+        }
+        
+        .leader-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .leader-item .sym { color: var(--text-primary); font-weight: 600; }
+        .leader-item .pct { font-weight: 700; }
+        .leader-item .pct.up { color: var(--accent-green); }
+        .leader-item .pct.down { color: var(--accent-red); }
+        
+        /* Position Summary (kept for compatibility) */
         .pos-summary {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -1355,21 +1397,29 @@ PRO_DASHBOARD_HTML = """
                 </div>
             </div>
             
-            <!-- PORTFOLIO SUMMARY -->
+            <!-- PERFORMANCE LEADERS & LAGGARDS -->
             <div class="sb-row full">
-                <span class="sb-label">📊 Portfolio</span>
-                <div class="pos-summary">
-                    <div class="sb-cell"><span class="sb-val" id="sb-total-value">$0</span><span class="sb-sub">Total</span></div>
-                    <div class="sb-cell"><span class="sb-val" id="sb-unrealized">$0</span><span class="sb-sub">Unrealized</span></div>
-                    <div class="sb-cell"><span class="sb-val" id="sb-positions">0</span><span class="sb-sub">Positions</span></div>
+                <span class="sb-label">🏆 Leaders & Laggards</span>
+                <div class="leaders-laggards">
+                    <div class="leader-section">
+                        <span class="section-title green">🔥 Top Gainers</span>
+                        <div id="top-leaders" class="leader-list">--</div>
+                    </div>
+                    <div class="leader-section">
+                        <span class="section-title red">❄️ Top Losers</span>
+                        <div id="top-laggards" class="leader-list">--</div>
+                    </div>
                 </div>
             </div>
             
-            <!-- ACTIVITY FEED -->
-            <div class="activity-mini">
-                <span class="sb-label">⚡ Activity</span>
-                <div class="activity-scroll" id="sidebar-activity">
-                    <div class="act-line muted">Initializing...</div>
+            <!-- QUEEN'S AI INSIGHTS -->
+            <div class="sb-row full">
+                <span class="sb-label">🔮 Queen's Insights</span>
+                <div class="sb-grid" style="grid-template-columns: repeat(2, 1fr);">
+                    <div class="sb-cell"><span class="sb-val g" id="sb-coherence">--</span><span class="sb-sub">Coherence</span></div>
+                    <div class="sb-cell"><span class="sb-val y" id="sb-lambda">--</span><span class="sb-sub">Lambda λ</span></div>
+                    <div class="sb-cell"><span class="sb-val" id="sb-win-rate">--</span><span class="sb-sub">Win Rate</span></div>
+                    <div class="sb-cell"><span class="sb-val" id="sb-timelines">--</span><span class="sb-sub">Anchored</span></div>
                 </div>
             </div>
         </div>
@@ -1627,6 +1677,9 @@ PRO_DASHBOARD_HTML = """
                     triggerQueenPulse('SELL');
                 }
             }
+            
+            // 🔮 Update Queen's Insights sidebar with AI metrics
+            updateQueenInsights(data);
         }
         
         // ========== Portfolio ==========
@@ -1658,8 +1711,8 @@ PRO_DASHBOARD_HTML = """
                 updateChart(data.totalValue);
             }
             
-            // Update sidebar portfolio summary
-            updateSidebarPortfolio();
+            // Update sidebar Leaders & Laggards
+            updateLeadersLaggards();
         }
         
         // 📊 Update the top positions bar with all positions
@@ -1898,9 +1951,6 @@ PRO_DASHBOARD_HTML = """
             while (feed.children.length > 50) {
                 feed.removeChild(feed.lastChild);
             }
-            
-            // Also update sidebar mini feed
-            addSidebarActivity(text, category);
         }
         
         // ========== Professional Trading Chart (30s Buffered) ==========
@@ -2710,35 +2760,77 @@ PRO_DASHBOARD_HTML = """
         }
         
         // ════════════════════════════════════════════════════════════════════════════════
-        // 📊 SIDEBAR PORTFOLIO UPDATE
+        // 🏆 LEADERS & LAGGARDS UPDATE (Top/Bottom Performers)
         // ════════════════════════════════════════════════════════════════════════════════
-        function updateSidebarPortfolio() {
-            const total = document.getElementById('sb-total-value');
-            const unrealized = document.getElementById('sb-unrealized');
-            const positions = document.getElementById('sb-positions');
+        function updateLeadersLaggards() {
+            const positions = state.portfolio.positions || [];
+            if (!positions.length) return;
             
-            if (total) total.textContent = '$' + state.portfolio.totalValue.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
-            if (unrealized) {
-                unrealized.textContent = (state.portfolio.unrealizedPnl >= 0 ? '+$' : '-$') + Math.abs(state.portfolio.unrealizedPnl).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
-                unrealized.className = 'sb-val ' + (state.portfolio.unrealizedPnl >= 0 ? 'g' : 'r');
+            // Sort by P&L percentage
+            const sorted = [...positions].sort((a, b) => (b.pnlPercent || 0) - (a.pnlPercent || 0));
+            
+            // Get top 3 winners and losers
+            const winners = sorted.slice(0, 3);
+            const losers = sorted.slice(-3).reverse();
+            
+            const leadersEl = document.getElementById('top-leaders');
+            const laggardsEl = document.getElementById('top-laggards');
+            
+            if (leadersEl && winners.length) {
+                leadersEl.innerHTML = winners.map(p => `
+                    <div class="leader-item">
+                        <span class="sym">${p.symbol}</span>
+                        <span class="pct up">+${(p.pnlPercent || 0).toFixed(1)}%</span>
+                    </div>
+                `).join('');
             }
-            if (positions) positions.textContent = state.portfolio.positions.length;
+            
+            if (laggardsEl && losers.length) {
+                laggardsEl.innerHTML = losers.map(p => `
+                    <div class="leader-item">
+                        <span class="sym">${p.symbol}</span>
+                        <span class="pct down">${(p.pnlPercent || 0).toFixed(1)}%</span>
+                    </div>
+                `).join('');
+            }
         }
         
         // ════════════════════════════════════════════════════════════════════════════════
-        // ⚡ SIDEBAR ACTIVITY (Mini Feed)
+        // 🔮 QUEEN'S AI INSIGHTS UPDATE
         // ════════════════════════════════════════════════════════════════════════════════
-        const sidebarActivityItems = [];
-        function addSidebarActivity(message, type = 'info') {
-            sidebarActivityItems.unshift({ message, type, time: Date.now() });
-            if (sidebarActivityItems.length > 10) sidebarActivityItems.pop();
+        function updateQueenInsights(data) {
+            // Update coherence
+            const coherenceEl = document.getElementById('sb-coherence');
+            if (coherenceEl && data.coherence !== undefined) {
+                const coherence = (data.coherence * 100).toFixed(0);
+                coherenceEl.textContent = coherence + '%';
+                coherenceEl.className = 'sb-val ' + (data.coherence >= 0.7 ? 'g' : data.coherence >= 0.5 ? 'y' : 'r');
+            }
             
-            const container = document.getElementById('sidebar-activity');
-            if (container) {
-                container.innerHTML = sidebarActivityItems.map(item => {
-                    const cls = item.type === 'profit' ? 'profit' : item.type === 'alert' ? 'alert' : '';
-                    return `<div class="act-line ${cls}">${item.message}</div>`;
-                }).join('');
+            // Update lambda stability
+            const lambdaEl = document.getElementById('sb-lambda');
+            if (lambdaEl && data.lambda !== undefined) {
+                lambdaEl.textContent = data.lambda.toFixed(2);
+                lambdaEl.className = 'sb-val ' + (data.lambda >= 0.8 ? 'g' : data.lambda >= 0.5 ? 'y' : 'r');
+            }
+            
+            // Update win rate
+            const winRateEl = document.getElementById('sb-win-rate');
+            if (winRateEl) {
+                const positions = state.portfolio.positions || [];
+                const winners = positions.filter(p => (p.pnlPercent || 0) > 0).length;
+                const total = positions.length;
+                const rate = total > 0 ? ((winners / total) * 100).toFixed(0) : '--';
+                winRateEl.textContent = rate + (rate !== '--' ? '%' : '');
+                if (rate !== '--') {
+                    winRateEl.className = 'sb-val ' + (parseInt(rate) >= 60 ? 'g' : parseInt(rate) >= 40 ? 'y' : 'r');
+                }
+            }
+            
+            // Update anchored timelines
+            const timelinesEl = document.getElementById('sb-timelines');
+            if (timelinesEl && data.anchored_timelines !== undefined) {
+                timelinesEl.textContent = data.anchored_timelines;
             }
         }
         
@@ -4381,6 +4473,9 @@ class AureonProDashboard:
                             for i, p in enumerate(thought.get('paragraphs', []))
                         ]
                         
+                        # Load timeline data for Queen's Insights
+                        timeline_data = self._load_timeline_data()
+                        
                         await self.broadcast({
                             'type': 'queen_thought',
                             'headline': f"{thought.get('emoji', '👑')} {thought.get('title', 'Analysis')}",
@@ -4393,7 +4488,11 @@ class AureonProDashboard:
                                 'Markets': 'active' if btc_price > 0 else 'processing',
                                 'Analysis': 'processing',
                                 f"Confidence {thought.get('confidence', 0):.0%}": 'active'
-                            }
+                            },
+                            # Queen's Insights data
+                            'coherence': thought.get('confidence', 0.5),  # Use confidence as coherence proxy
+                            'lambda': thought.get('lambda', 0.7),  # Lambda stability
+                            'anchored_timelines': timeline_data.get('anchored', 0)
                         })
                 else:
                     # Fallback simple messages
