@@ -14,9 +14,9 @@ flask-cors==4.0.0 \
 flask-socketio==5.3.6 \
     --hash=sha256:8b5d8a08900dbdeec5b35fb1c7c21e9fb6b0d74b9a8b7f2c9d1e3e3a3a3a3a3a \
     --hash=sha256:8fe7e2c4a02e97e9e79c92e8c5a9b0d29d29d2a2a2a2a2a2a2a2a2a2a2a2a2a2
-werkzeug==3.0.1 \
-    --hash=sha256:507e811ecea72b18a404947ead4b3688c2ef3a3e6a2a2e2e2e2e2e2e2e2e2e2e \
-    --hash=sha256:9fa7ad5a0eda90de41bb2f6ec1a4b5be4a0c9e6c6c6c6c6c6c6c6c6c6c6c6c6c
+werkzeug==3.1.5 \
+    --hash=sha256:5111e36e91086ece91f93268bb39b4a35c1e6f1feac762c9c822ded0a4e322dc \
+    --hash=sha256:6a548b0e88955dd07ccb25539d7d0cc97417ee9e179677d22c7041c8f078ce67
 
 # Monitoring & Observability
 prometheus-client==0.20.0 \
