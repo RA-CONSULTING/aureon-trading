@@ -106,6 +106,7 @@ class ChirpRingBuffer:
     create: bool = False
     shm: Optional[shared_memory.SharedMemory] = field(init=False, default=None)
     buf: Optional[memoryview] = field(init=False, default=None)
+    _initialized: bool = field(init=False, default=False)
 
     def __post_init__(self) -> None:
         size = HEADER_SIZE + (self.slots * CHIRP_SIZE)
@@ -114,6 +115,7 @@ class ChirpRingBuffer:
             self.buf = self.shm.buf
             if self.create:
                 self.buf[:HEADER_SIZE] = b"\x00" * HEADER_SIZE
+            self._initialized = True
         except (FileExistsError, FileNotFoundError) as e:
             # Shared memory segment doesn't exist or is corrupted
             # Try to cleanup and recreate
@@ -124,9 +126,14 @@ class ChirpRingBuffer:
             except (FileNotFoundError, ValueError):
                 pass
             # Try again with create=True
-            self.shm = shared_memory.SharedMemory(name=self.name, create=True, size=size)
-            self.buf = self.shm.buf
-            self.buf[:HEADER_SIZE] = b"\x00" * HEADER_SIZE
+            try:
+                self.shm = shared_memory.SharedMemory(name=self.name, create=True, size=size)
+                self.buf = self.shm.buf
+                self.buf[:HEADER_SIZE] = b"\x00" * HEADER_SIZE
+                self._initialized = True
+            except Exception:
+                # Give up - shared memory not available
+                self._initialized = False
     
     def close(self) -> None:
         """Close and cleanup shared memory."""
@@ -139,8 +146,9 @@ class ChirpRingBuffer:
                 pass
     
     def __del__(self) -> None:
-        """Cleanup on deletion."""
-        self.close()
+        """Cleanup on deletion - only if initialized."""
+        if getattr(self, '_initialized', False):
+            self.close()
 
     def _read_idx(self) -> int:
         return struct.unpack("Q", self.buf[8:16])[0]
