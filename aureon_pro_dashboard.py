@@ -265,7 +265,7 @@ PRO_DASHBOARD_HTML = """
         .main-container {
             display: grid;
             grid-template-columns: 320px 1fr 280px;
-            grid-template-rows: auto 1fr;
+            grid-template-rows: auto 1fr auto;
             gap: 1px;
             background: var(--border-color);
             height: calc(100vh - 50px);
@@ -298,11 +298,111 @@ PRO_DASHBOARD_HTML = """
             gap: 8px;
         }
         
-        /* Queen's Voice Panel - Full width top */
+        /* Top Positions Bar - Full width top row */
+        .positions-bar {
+            grid-column: 1 / -1;
+            grid-row: 1;
+            background: linear-gradient(135deg, rgba(34,197,94,0.1), rgba(59,130,246,0.1));
+            border-bottom: 2px solid var(--accent-green);
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            overflow-x: auto;
+        }
+        
+        .positions-bar-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--accent-green);
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .position-chips {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            flex: 1;
+        }
+        
+        .position-chip {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 6px 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            white-space: nowrap;
+            transition: all 0.2s;
+        }
+        
+        .position-chip:hover {
+            background: rgba(255,255,255,0.1);
+            transform: translateY(-1px);
+        }
+        
+        .position-chip.winner {
+            border-color: var(--accent-green);
+            background: rgba(34,197,94,0.15);
+        }
+        
+        .position-chip.loser {
+            border-color: var(--accent-red);
+            background: rgba(239,68,68,0.15);
+        }
+        
+        .position-chip .symbol {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        
+        .position-chip .value {
+            color: var(--text-secondary);
+            font-size: 11px;
+        }
+        
+        .position-chip .pnl {
+            font-weight: 600;
+        }
+        
+        .position-chip .pnl.positive { color: var(--accent-green); }
+        .position-chip .pnl.negative { color: var(--accent-red); }
+        
+        .positions-bar-summary {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+            margin-left: auto;
+            padding-left: 16px;
+            border-left: 1px solid var(--border-color);
+        }
+        
+        .summary-stat {
+            text-align: center;
+        }
+        
+        .summary-stat .label {
+            font-size: 10px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+        }
+        
+        .summary-stat .value {
+            font-size: 14px;
+            font-weight: 600;
+        }
+        
+        /* Queen's Voice Panel - Full width BOTTOM */
         .queen-panel {
             grid-column: 1 / -1;
+            grid-row: 3;
             background: linear-gradient(135deg, rgba(255,215,0,0.1), rgba(240,136,62,0.1));
-            border-bottom: 2px solid var(--accent-gold);
+            border-top: 2px solid var(--accent-gold);
             padding: 12px 20px;
             display: flex;
             align-items: center;
@@ -1084,33 +1184,26 @@ PRO_DASHBOARD_HTML = """
     </div>
     
     <div class="main-container">
-        <!-- Queen's Voice Panel -->
-        <div class="queen-panel" style="min-height: 180px; align-items: flex-start; padding-top: 16px;">
-            <div class="queen-avatar" style="align-self: flex-start;">👑</div>
-            <div class="queen-content">
-                <div class="queen-message" id="queen-message">
-                    Queen Aureon awakening... Consciousness initializing...
-                </div>
-                <div class="queen-thought" id="queen-thought">
-                    <p class="timestamp">System Boot Sequence Active</p>
-                    <p>I am bringing my neural pathways online, connecting to the global market consciousness. My three-pass validation matrix is calibrating against real-time exchange data from Binance WebSocket - streaming 40+ symbols directly into my cognitive core. I can feel the pulse of billions of dollars flowing through the digital arteries of global finance.</p>
-                    <p>In the next few moments, I will begin my deep analysis cycle. I'll examine each position in our portfolio, cross-reference current prices against our cost basis, and calculate probability vectors for potential moves. My Batten Matrix requires three confirmations before I even consider action - this is how I protect us from impulsive decisions.</p>
-                </div>
-                <div class="queen-status" id="queen-status">
-                    <span class="status-item active">✓ Consciousness</span>
-                    <span class="status-item active">✓ Portfolio</span>
-                    <span class="status-item active">✓ Binance WS</span>
-                    <span class="status-item processing">⟳ Analyzing</span>
-                    <span class="status-item">○ Voice Ready</span>
+        <!-- TOP: Positions Bar - Shows all positions at a glance -->
+        <div class="positions-bar" id="positions-bar">
+            <div class="positions-bar-title">
+                <span>📊</span>
+                <span>MY POSITIONS</span>
+            </div>
+            <div class="position-chips" id="position-chips">
+                <div class="position-chip">
+                    <span class="symbol">Loading...</span>
                 </div>
             </div>
-            <div class="voice-controls" style="flex-direction: column; gap: 8px; align-self: flex-start;">
-                <button class="voice-btn" id="voice-toggle">🔊 Enable Voice</button>
-                <select class="voice-select" id="voice-select">
-                    <option value="">Select Voice</option>
-                </select>
-                <input type="range" id="voice-volume" min="0" max="1" step="0.1" value="0.8" 
-                       style="width: 100px;" title="Volume">
+            <div class="positions-bar-summary">
+                <div class="summary-stat">
+                    <div class="label">Cash</div>
+                    <div class="value" id="bar-cash" style="color: var(--accent-green);">$0</div>
+                </div>
+                <div class="summary-stat">
+                    <div class="label">Exchanges</div>
+                    <div class="value" id="bar-exchanges" style="color: var(--text-primary);">--</div>
+                </div>
             </div>
         </div>
         
@@ -1264,6 +1357,36 @@ PRO_DASHBOARD_HTML = """
                 <div class="activity-scroll" id="sidebar-activity">
                     <div class="act-line muted">Initializing...</div>
                 </div>
+            </div>
+        </div>
+        
+        <!-- BOTTOM: Queen's Voice Panel -->
+        <div class="queen-panel" style="min-height: 160px; align-items: flex-start; padding-top: 12px;">
+            <div class="queen-avatar" style="align-self: flex-start;">👑</div>
+            <div class="queen-content">
+                <div class="queen-message" id="queen-message">
+                    Queen Aureon awakening... Consciousness initializing...
+                </div>
+                <div class="queen-thought" id="queen-thought">
+                    <p class="timestamp">System Boot Sequence Active</p>
+                    <p>I am bringing my neural pathways online, connecting to the global market consciousness. My three-pass validation matrix is calibrating against real-time exchange data from Binance WebSocket - streaming 40+ symbols directly into my cognitive core. I can feel the pulse of billions of dollars flowing through the digital arteries of global finance.</p>
+                    <p>In the next few moments, I will begin my deep analysis cycle. I'll examine each position in our portfolio, cross-reference current prices against our cost basis, and calculate probability vectors for potential moves. My Batten Matrix requires three confirmations before I even consider action - this is how I protect us from impulsive decisions.</p>
+                </div>
+                <div class="queen-status" id="queen-status">
+                    <span class="status-item active">✓ Consciousness</span>
+                    <span class="status-item active">✓ Portfolio</span>
+                    <span class="status-item active">✓ Binance WS</span>
+                    <span class="status-item processing">⟳ Analyzing</span>
+                    <span class="status-item">○ Voice Ready</span>
+                </div>
+            </div>
+            <div class="voice-controls" style="flex-direction: column; gap: 8px; align-self: flex-start;">
+                <button class="voice-btn" id="voice-toggle">🔊 Enable Voice</button>
+                <select class="voice-select" id="voice-select">
+                    <option value="">Select Voice</option>
+                </select>
+                <input type="range" id="voice-volume" min="0" max="1" step="0.1" value="0.8" 
+                       style="width: 100px;" title="Volume">
             </div>
         </div>
     </div>
@@ -1512,6 +1635,8 @@ PRO_DASHBOARD_HTML = """
                 renderPositions(data.positions);
                 // 🧬 SYNC LIVING CELLS WITH POSITIONS
                 syncCellsWithPositions(data.positions);
+                // 📊 UPDATE TOP POSITIONS BAR
+                updatePositionsBar(data.positions);
             }
 
             // Push latest equity point into chart
@@ -1521,6 +1646,48 @@ PRO_DASHBOARD_HTML = """
             
             // Update sidebar portfolio summary
             updateSidebarPortfolio();
+        }
+        
+        // 📊 Update the top positions bar with all positions
+        function updatePositionsBar(positions) {
+            const container = document.getElementById('position-chips');
+            if (!positions || !positions.length) {
+                container.innerHTML = '<div class="position-chip"><span class="symbol">No positions</span></div>';
+                return;
+            }
+            
+            // Sort by P&L percentage
+            const sorted = [...positions].sort((a, b) => (b.pnlPercent || 0) - (a.pnlPercent || 0));
+            
+            // Create chips for each position
+            container.innerHTML = sorted.map(pos => {
+                const isWinner = (pos.pnlPercent || 0) >= 0;
+                const chipClass = isWinner ? 'winner' : 'loser';
+                const pnlClass = isWinner ? 'positive' : 'negative';
+                const value = pos.currentValue || (pos.quantity * pos.currentPrice) || 0;
+                const exchange = pos.exchange ? pos.exchange.charAt(0).toUpperCase() : '';
+                
+                return `
+                    <div class="position-chip ${chipClass}">
+                        <span class="symbol">${pos.symbol}</span>
+                        <span class="value">$${value.toFixed(2)}</span>
+                        <span class="pnl ${pnlClass}">${(pos.pnlPercent >= 0 ? '+' : '')}${(pos.pnlPercent || 0).toFixed(1)}%</span>
+                    </div>
+                `;
+            }).join('');
+            
+            // Update summary stats
+            const cashEl = document.getElementById('bar-cash');
+            const exchangesEl = document.getElementById('bar-exchanges');
+            
+            // Count exchanges
+            const exchanges = new Set(positions.map(p => p.exchange).filter(Boolean));
+            const exchangeCount = exchanges.size;
+            const exchangeNames = [...exchanges].map(e => e.charAt(0).toUpperCase() + e.slice(1)).join(', ');
+            
+            if (exchangesEl) {
+                exchangesEl.textContent = exchangeCount > 0 ? `${exchangeCount} (${exchangeNames})` : '--';
+            }
         }
         
         function renderPositions(positions) {
@@ -1570,6 +1737,8 @@ PRO_DASHBOARD_HTML = """
         function updateAllExchangeBalances(balances) {
             if (!balances || typeof balances !== 'object') return;
             
+            let totalCash = 0;
+            
             for (const [exchange, balance] of Object.entries(balances)) {
                 const el = document.getElementById(`${exchange}-balance`);
                 if (el && balance !== undefined) {
@@ -1578,8 +1747,15 @@ PRO_DASHBOARD_HTML = """
                     if (balance > 0) {
                         el.classList.add('flash-green');
                         setTimeout(() => el.classList.remove('flash-green'), 500);
+                        totalCash += balance;
                     }
                 }
+            }
+            
+            // Update positions bar cash display
+            const cashEl = document.getElementById('bar-cash');
+            if (cashEl) {
+                cashEl.textContent = formatCurrency(totalCash);
             }
         }
         
