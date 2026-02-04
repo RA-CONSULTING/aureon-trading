@@ -462,13 +462,36 @@ class AlpacaClient:
         time_in_force: str = "gtc",
         position_intent: Optional[str] = None,
     ) -> Dict[str, Any]:
-        """Place an order."""
+        """Place an order with minimum notional validation."""
         symbol = self._resolve_symbol(symbol)
         
         # Handle stock symbols (remove /USD for API)
         asset_class = "crypto" if symbol.endswith("USD") or ("/" in symbol and not symbol.split('/')[0].isupper()) else "us_equity"
         if asset_class == "us_equity" and "/" in symbol:
             symbol = symbol.split('/')[0]
+        
+        # ═══════════════════════════════════════════════════════════════════
+        # 💰 ALPACA MINIMUM ORDER VALIDATION
+        # Alpaca requires minimum $1 notional value for all orders
+        # ═══════════════════════════════════════════════════════════════════
+        MIN_NOTIONAL = 1.0  # Alpaca minimum is $1
+        
+        # Try to estimate notional value
+        try:
+            # Get current price to validate notional
+            ticker = self.get_ticker(symbol)
+            if ticker:
+                current_price = float(ticker.get('last') or ticker.get('price') or ticker.get('mark_price') or 0)
+                if current_price > 0:
+                    estimated_notional = qty * current_price
+                    if estimated_notional < MIN_NOTIONAL:
+                        # Adjust quantity to meet minimum
+                        min_qty = MIN_NOTIONAL / current_price
+                        min_qty = max(min_qty * 1.05, min_qty + 0.0001)  # Add 5% buffer
+                        logger.warning(f"⚠️ Alpaca: Order notional ${estimated_notional:.2f} < ${MIN_NOTIONAL} minimum. Adjusting qty {qty:.6f} → {min_qty:.6f}")
+                        qty = min_qty
+        except Exception as e:
+            logger.debug(f"Could not validate notional for {symbol}: {e}")
         
         if self.dry_run:
             logger.info(f"[DRY RUN] Alpaca Order: {side} {qty} {symbol}")
