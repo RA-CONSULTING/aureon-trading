@@ -1,4 +1,5 @@
 # aureon_harmonic_symbol_table.py
+# EXPANDED: Now uses 2-byte IDs (0x0000-0xFFFF) to support 65,000+ symbols
 
 from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import json
@@ -14,10 +15,10 @@ if sys.platform == 'win32':
 
 SYMBOL_TABLE_FILE = "harmonic_symbol_table.json"
 
-# Reserve 0x00 for invalid/unknown
-# Reserve 0x01-0x3F for Core/Major assets (hardcoded to ensure stability across nodes if file is missing)
-# Reserve 0xFF for 'Expansion' (future use)
-# Dynamic range: 0x40 - 0xFE
+# Reserve 0x0000 for invalid/unknown
+# Reserve 0x0001-0x00FF for Core/Major assets (hardcoded)
+# Reserve 0xFFFF for 'Expansion' (future use)
+# Dynamic range: 0x0100 - 0xFFFE (65,278 symbols!)
 
 CORE_SYMBOLS = {
     "BTC/USD": 0x01,
@@ -55,7 +56,7 @@ class HarmonicSymbolTable:
         self._lock = threading.RLock()
         self._symbol_to_id: Dict[str, int] = CORE_SYMBOLS.copy()
         self._id_to_symbol: Dict[int, str] = {v: k for k, v in CORE_SYMBOLS.items()}
-        self._next_dynamic_id = 0x40
+        self._next_dynamic_id = 0x0100  # Start dynamic IDs at 256 (2-byte range)
         self._dirty = False
         self._load()
 
@@ -97,7 +98,7 @@ class HarmonicSymbolTable:
 
     def get_id(self, symbol: str) -> int:
         if not symbol:
-            return 0x00
+            return 0x0000
         
         sym_key = symbol.strip().upper()
         
@@ -105,26 +106,24 @@ class HarmonicSymbolTable:
             if sym_key in self._symbol_to_id:
                 return self._symbol_to_id[sym_key]
             
-            # Create new ID
+            # Create new ID (2-byte range: 0x0100 - 0xFFFE = 65,278 dynamic symbols)
             new_id = self._next_dynamic_id
-            if new_id > 0xFE:
-                # Table full, fallback to CRC or wraparound? 
-                # For now, let's use CRC logic if full, or cap at 0xFF
-                # Note: 0xFF is reserved.
-                # Fallback: CRC logic mapped to 0xE0-0xFE range?
-                # Simplest: Return CRC (legacy behavior) masked to not conflict with Core?
-                # Let's just wrap for now but warn
-                print(f"[HarmonicSymbolTable] Warning: Symbol table full! Symbol {sym_key} unmapped.")
-                return (zlib.crc32(sym_key.encode("utf-8")) & 0xFF)
+            if new_id > 0xFFFE:
+                # Table truly full (65,000+ symbols!) - use CRC fallback
+                # This should never happen with 21,955 symbols
+                crc_id = (zlib.crc32(sym_key.encode("utf-8")) & 0xFFFF)
+                if crc_id < 0x0100:
+                    crc_id += 0x0100  # Keep in dynamic range
+                return crc_id
 
             self._symbol_to_id[sym_key] = new_id
             self._id_to_symbol[new_id] = sym_key
             self._next_dynamic_id += 1
             self._dirty = True
             
-            # Auto-save every new symbol? Or throttle?
-            # Auto-save for safety.
-            self._save()
+            # Throttle saves - only save every 100 new symbols
+            if self._next_dynamic_id % 100 == 0:
+                self._save()
             return new_id
 
     def get_symbol(self, sid: int) -> Optional[str]:
