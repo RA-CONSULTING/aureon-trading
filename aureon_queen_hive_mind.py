@@ -1679,6 +1679,17 @@ class QueenHiveMind:
                     if result.success:
                         logger.info(f"   ⚛️ Initial Amp: {result.state.unified_amplification:.3f}x")
                         logger.info(f"   🧠 Cognitive Hz: {result.state.amplified_frequency_hz:.2f}")
+                    
+                    # 👑🎮 ACTIVATE FULL AUTONOMOUS CONTROL via Quantum Cognition
+                    try:
+                        if hasattr(self.quantum_cognition, 'take_full_autonomous_control'):
+                            control_result = self.quantum_cognition.take_full_autonomous_control()
+                            if control_result.get('success'):
+                                logger.info(f"👑🎮 FULL AUTONOMOUS CONTROL ACTIVE via Quantum Cognition")
+                                logger.info(f"   🔱 Sovereignty: {control_result.get('sovereignty_level')}")
+                                logger.info(f"   🌐 Systems: {control_result.get('online_systems')}/{control_result.get('total_systems')}")
+                    except Exception as ac_err:
+                        logger.debug(f"Quantum autonomous control init: {ac_err}")
                 else:
                     self.quantum_cognition = None
             except Exception as e:
@@ -11323,7 +11334,19 @@ Feeling: {thought['emotion']}
             result['autonomous_loop'] = True
             result['message'] = "👑 QUEEN AUTONOMOUS MODE: ENABLED (via Voice)"
         
-        else:
+        # Also enable via Quantum Cognition if available
+        if hasattr(self, 'quantum_cognition') and self.quantum_cognition:
+            try:
+                if hasattr(self.quantum_cognition, 'take_full_autonomous_control'):
+                    qc_result = self.quantum_cognition.take_full_autonomous_control()
+                    result['quantum_cognition_active'] = qc_result.get('success', False)
+                    result['quantum_subsystems'] = qc_result.get('online_systems', 0)
+                    result['sovereignty_level'] = 'SUPREME_QUANTUM'
+                    logger.info(f"👑⚛️ Quantum Cognition SUPREME control: {qc_result.get('online_systems', 0)} subsystems")
+            except Exception as e:
+                logger.debug(f"Quantum cognition control: {e}")
+        
+        if not result['success']:
             result['message'] = "Autonomous control not available"
         
         return result
@@ -11344,6 +11367,61 @@ Feeling: {thought['emotion']}
         
         logger.info(result['message'])
         return result
+    
+    def get_full_autonomous_status(self) -> Dict[str, Any]:
+        """
+        👑📊 GET COMPLETE STATUS OF QUEEN'S AUTONOMOUS CONTROL
+        
+        Returns comprehensive dashboard of ALL systems under Queen's command.
+        """
+        status = {
+            'queen_sovereignty': 'SUPREME_AUTONOMOUS',
+            'has_full_control': getattr(self, 'has_full_control', False),
+            'trading_enabled': getattr(self, 'trading_enabled', False),
+            'controlled_systems': {},
+            'quantum_cognition': {},
+            'autonomous_control': {},
+            'totals': {
+                'hive_systems': 0,
+                'hive_online': 0,
+                'quantum_systems': 0,
+                'quantum_online': 0
+            }
+        }
+        
+        # Get Hive controlled systems
+        if hasattr(self, 'controlled_systems'):
+            for name, info in self.controlled_systems.items():
+                status['controlled_systems'][name] = {
+                    'status': info.get('status', 'UNKNOWN'),
+                    'authority': info.get('authority', 'UNKNOWN')
+                }
+                status['totals']['hive_systems'] += 1
+                if info.get('status') == 'ONLINE':
+                    status['totals']['hive_online'] += 1
+        
+        # Get Quantum Cognition status
+        if hasattr(self, 'quantum_cognition') and self.quantum_cognition:
+            try:
+                qc_status = self.quantum_cognition.get_status()
+                status['quantum_cognition'] = qc_status
+                
+                if hasattr(self.quantum_cognition, 'get_full_subsystem_status'):
+                    subsys_status = self.quantum_cognition.get_full_subsystem_status()
+                    status['totals']['quantum_systems'] = subsys_status.get('totals', {}).get('total', 0)
+                    status['totals']['quantum_online'] = subsys_status.get('totals', {}).get('online', 0)
+            except:
+                pass
+        
+        # Get Autonomous Control status
+        if hasattr(self, 'autonomous_control') and self.autonomous_control:
+            try:
+                ac_status = self.autonomous_control.get_full_status()
+                status['autonomous_control'] = ac_status
+            except:
+                pass
+        
+        return status
     
     def autonomous_perceive(self) -> Dict[str, Any]:
         """

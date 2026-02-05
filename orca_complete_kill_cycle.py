@@ -612,6 +612,15 @@ except ImportError:
     HarmonicLiquidAluminiumField = None
     FieldSnapshot = None
 
+# 🔤 Unified Symbol Manager - Correct symbol formats & quantities per exchange
+try:
+    from unified_symbol_manager import get_symbol_manager, UnifiedSymbolManager
+    SYMBOL_MANAGER_AVAILABLE = True
+except ImportError:
+    SYMBOL_MANAGER_AVAILABLE = False
+    get_symbol_manager = None
+    UnifiedSymbolManager = None
+
 # 🦅 Alpaca Momentum Ecosystem
 try:
     from aureon_animal_momentum_scanners import AlpacaSwarmOrchestrator
@@ -8168,6 +8177,169 @@ class OrcaKillCycle:
                 'order_id': order.get('id', order.get('order_id')),
                 'status': order.get('status', 'filled' if order.get('filled_qty') else 'unknown')
             }
+
+    # ═══════════════════════════════════════════════════════════════════════
+    # 🔤 UNIFIED SYMBOL MANAGEMENT - Correct symbols & quantities per exchange
+    # ═══════════════════════════════════════════════════════════════════════
+
+    def get_exchange_symbol(self, symbol: str, exchange: str) -> str:
+        """
+        Convert a canonical symbol (e.g., BTC/USD) to exchange-specific format.
+        
+        Exchange formats:
+        - kraken: XBTUSD (XBT for BTC, no separator)
+        - binance: BTCUSDC (UK mode prefers USDC)
+        - alpaca: BTC/USD (with slash)
+        - capital: BTCUSD (no separator)
+        """
+        if SYMBOL_MANAGER_AVAILABLE and get_symbol_manager:
+            try:
+                mgr = get_symbol_manager()
+                return mgr.to_exchange_format(symbol, exchange)
+            except Exception as e:
+                self.logger.warning(f"Symbol manager error: {e}, using fallback")
+        
+        # Fallback conversion logic
+        exchange_lower = exchange.lower()
+        
+        # Normalize to BASE/QUOTE first
+        symbol = symbol.upper().replace('-', '/').replace('_', '/')
+        if '/' not in symbol:
+            # Try to find quote currency
+            for quote in ['USD', 'USDC', 'USDT', 'EUR', 'GBP', 'BTC', 'ETH']:
+                if symbol.endswith(quote):
+                    base = symbol[:-len(quote)]
+                    symbol = f"{base}/{quote}"
+                    break
+        
+        if '/' in symbol:
+            base, quote = symbol.split('/')
+        else:
+            return symbol  # Can't parse, return as-is
+        
+        if exchange_lower == 'kraken':
+            # Kraken uses XBT for BTC
+            if base == 'BTC':
+                base = 'XBT'
+            return f"{base}{quote}"
+        
+        elif exchange_lower == 'binance':
+            # UK mode: prefer USDC over USDT
+            if quote == 'USD':
+                quote = 'USDC'
+            return f"{base}{quote}"
+        
+        elif exchange_lower == 'alpaca':
+            # Alpaca uses slash format
+            return f"{base}/{quote}"
+        
+        elif exchange_lower == 'capital':
+            # Capital uses no separator
+            return f"{base}{quote}"
+        
+        return symbol
+
+    def format_quantity_for_exchange(self, qty: float, symbol: str, exchange: str) -> str:
+        """
+        Format quantity to exchange's precision requirements.
+        
+        Precision by exchange:
+        - kraken: 8 decimals for crypto
+        - binance: varies by symbol (usually 5)
+        - alpaca: 5 decimals
+        - capital: 3 decimals
+        """
+        if SYMBOL_MANAGER_AVAILABLE and get_symbol_manager:
+            try:
+                mgr = get_symbol_manager()
+                return mgr.format_quantity(qty, symbol, exchange)
+            except Exception as e:
+                self.logger.warning(f"Symbol manager format error: {e}, using fallback")
+        
+        # Fallback precision
+        exchange_lower = exchange.lower()
+        
+        if exchange_lower == 'kraken':
+            decimals = 8
+        elif exchange_lower == 'binance':
+            decimals = 5
+        elif exchange_lower == 'alpaca':
+            decimals = 5
+        elif exchange_lower == 'capital':
+            decimals = 3
+        else:
+            decimals = 6
+        
+        # Format without trailing zeros
+        formatted = f"{qty:.{decimals}f}"
+        if '.' in formatted:
+            formatted = formatted.rstrip('0').rstrip('.')
+        
+        return formatted
+
+    def get_min_order_size(self, symbol: str, exchange: str, price: float = 0.0) -> float:
+        """
+        Get minimum order size for a symbol on an exchange.
+        
+        Minimum order values:
+        - kraken: ~$10-20 depending on pair
+        - binance: $10 notional
+        - alpaca: 0.001 BTC or $1
+        - capital: ~$100 for CFDs
+        """
+        if SYMBOL_MANAGER_AVAILABLE and get_symbol_manager:
+            try:
+                mgr = get_symbol_manager()
+                return mgr.get_min_order_size(symbol, exchange, price)
+            except Exception as e:
+                self.logger.warning(f"Symbol manager min order error: {e}, using fallback")
+        
+        # Fallback minimums
+        exchange_lower = exchange.lower()
+        
+        # Conservative defaults
+        if exchange_lower == 'kraken':
+            return 0.0001  # ~$6 at 60k BTC
+        elif exchange_lower == 'binance':
+            if price > 0:
+                return 10.0 / price  # $10 minimum notional
+            return 0.0002
+        elif exchange_lower == 'alpaca':
+            return 0.001  # Alpaca minimum
+        elif exchange_lower == 'capital':
+            if price > 0:
+                return 100.0 / price  # CFD minimum
+            return 0.002
+        
+        return 0.001
+
+    def validate_order_params(self, symbol: str, quantity: float, exchange: str, price: float = 0.0) -> tuple:
+        """
+        Validate order parameters before execution.
+        
+        Returns:
+            tuple: (is_valid: bool, error_message: str, formatted_qty: str)
+        """
+        if SYMBOL_MANAGER_AVAILABLE and get_symbol_manager:
+            try:
+                mgr = get_symbol_manager()
+                is_valid, error_msg = mgr.validate_order(quantity, symbol, exchange, price)
+                formatted_qty = mgr.format_quantity(quantity, symbol, exchange)
+                return (is_valid, error_msg, formatted_qty)
+            except Exception as e:
+                self.logger.warning(f"Symbol manager validation error: {e}, using fallback")
+        
+        # Fallback validation
+        min_qty = self.get_min_order_size(symbol, exchange, price)
+        
+        if quantity <= 0:
+            return (False, "Quantity must be positive", "0")
+        
+        if quantity < min_qty:
+            return (False, f"Quantity {quantity} below minimum {min_qty}", str(quantity))
+        
+        formatted = self.format_quantity_for_exchange(quantity, symbol, exchange)
+        return (True, "", formatted)
 
     def is_order_successful(self, order: dict, exchange: str) -> bool:
         """
