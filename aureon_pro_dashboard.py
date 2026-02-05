@@ -2824,9 +2824,15 @@ PRO_DASHBOARD_HTML = """
             const winRateEl = document.getElementById('sb-win-rate');
             if (winRateEl) {
                 const positions = state.portfolio.positions || [];
-                const winners = positions.filter(p => (p.pnlPercent || 0) > 0).length;
+                console.log('🎯 Win rate calculation - Positions:', positions.length, positions);
+                const winners = positions.filter(p => {
+                    const pnl = p.pnlPercent || p.pnl_pct || 0;
+                    console.log(`   Position ${p.symbol}: pnlPercent=${pnl}`);
+                    return pnl > 0;
+                }).length;
                 const total = positions.length;
                 const rate = total > 0 ? ((winners / total) * 100).toFixed(0) : '--';
+                console.log(`   Win Rate: ${winners}/${total} = ${rate}%`);
                 winRateEl.textContent = rate + (rate !== '--' ? '%' : '');
                 if (rate !== '--') {
                     winRateEl.className = 'sb-val ' + (parseInt(rate) >= 60 ? 'g' : parseInt(rate) >= 40 ? 'y' : 'r');
@@ -3149,7 +3155,13 @@ class AureonProDashboard:
         self.logger.info("📊 HANDLE_PORTFOLIO: Called")
         try:
             await self.refresh_portfolio()
-            self.logger.info(f"📊 HANDLE_PORTFOLIO: Returning {len(self.portfolio.get('positions', []))} positions")
+            position_count = len(self.portfolio.get('positions', []))
+            winners = len([p for p in self.portfolio.get('positions', []) if (p.get('pnlPercent', 0) or 0) > 0])
+            win_rate = (winners / position_count * 100) if position_count > 0 else 0
+            self.logger.info(f"📊 HANDLE_PORTFOLIO: Returning {position_count} positions | Win Rate: {winners}/{position_count} = {win_rate:.1f}%")
+            # Log first few positions for debugging
+            for pos in self.portfolio.get('positions', [])[:3]:
+                self.logger.info(f"   🔹 {pos.get('symbol')}: {pos.get('quantity')} @ {pos.get('avgCost')} → ${pos.get('currentValue'):.2f} | PnL: {pos.get('pnlPercent', 0):.2f}%")
         except Exception as e:
             self.logger.error(f"❌ HANDLE_PORTFOLIO: refresh_portfolio() failed: {e}", exc_info=True)
             # Return cached/default data instead of crashing
@@ -3794,78 +3806,52 @@ class AureonProDashboard:
                             total_cost += cost
                 
                 # Log summary
-                self.logger.info(f"📊 TOTAL: {len(positions)} positions across ALL exchanges")
+                self.logger.info(f"📊 TOTAL: {len(positions)} positions from live APIs")
                 
-                # 🛡️ VALIDATE: Check against cost_basis_history.json to ensure data integrity
-                # If live_position_viewer gives wrong data (e.g., cumulative trades vs current positions),
-                # fall back to the known good cost_basis_history.json data
+                # 🆙 ENRICH: Merge live positions with cost_basis_history.json for accurate entry prices
+                # Live APIs give us CURRENT holdings, cost_basis gives us ENTRY prices for P&L calculation
                 try:
                     cost_basis_path = os.path.join(state_dir, "cost_basis_history.json")
                     if os.path.exists(cost_basis_path):
                         with open(cost_basis_path, "r") as f:
                             cost_basis_data = json.load(f)
                         
-                        fallback_pos = cost_basis_data.get("positions", {}) or {}
-                        if not fallback_pos:
-                            fallback_pos = cost_basis_data
+                        cost_basis_map = cost_basis_data.get("positions", {}) or {}
+                        if not cost_basis_map:
+                            cost_basis_map = cost_basis_data
                         
-                        # Count positions by exchange in both datasets
-                        live_by_exchange = {}
-                        for pos in positions:
-                            exch = pos.get('exchange', 'unknown')
-                            live_by_exchange[exch] = live_by_exchange.get(exch, 0) + 1
+                        self.logger.info(f"📚 Enriching {len(positions)} live positions with {len(cost_basis_map)} cost basis entries")
                         
-                        cost_basis_by_exchange = {}
-                        for sym, pos_data in fallback_pos.items():
-                            if isinstance(pos_data, dict) and pos_data.get('total_cost', 0) > 0.01:
-                                exch = pos_data.get('exchange', 'unknown')
-                                cost_basis_by_exchange[exch] = cost_basis_by_exchange.get(exch, 0) + 1
+                        # ENRICH each live position with entry price from cost_basis
+                        for i, pos in enumerate(positions):
+                            symbol = pos.get('symbol', '')
+                            # Look up this symbol in cost_basis
+                            if symbol in cost_basis_map:
+                                cb = cost_basis_map[symbol]
+                                if isinstance(cb, dict):
+                                    # Use entry price and cost from cost_basis
+                                    avg_entry = float(cb.get('avg_entry_price', 0) or 0)
+                                    qty = pos.get('quantity', 0)  # Use LIVE qty
+                                    cost_basis = float(cb.get('total_cost', 0) or qty * avg_entry)
+                                    
+                                    # Recalculate P&L with LIVE price and cost_basis entry price
+                                    current_price = pos.get('currentPrice', avg_entry)
+                                    current_value = qty * current_price
+                                    pnl = current_value - cost_basis
+                                    pnl_pct = (pnl / cost_basis * 100) if cost_basis > 0 else 0
+                                    
+                                    # Update position with enriched data
+                                    positions[i]['avgCost'] = avg_entry
+                                    positions[i]['currentValue'] = current_value
+                                    positions[i]['unrealizedPnl'] = pnl
+                                    positions[i]['pnlPercent'] = pnl_pct
+                                    
+                                    self.logger.debug(f"   ✅ {symbol}: qty={qty:.4f} @ ${avg_entry:.2f} (entry) → ${current_price:.2f} (now) | P&L: {pnl_pct:+.2f}%")
                         
-                        # Check for data inconsistency (live data much smaller than expected)
-                        total_expected = len([p for p in fallback_pos.values() if isinstance(p, dict) and p.get('total_cost', 0) > 0.01])
-                        total_live = len(positions)
-                        
-                        self.logger.info(f"🛡️ Validation: Live data has {total_live} positions, cost_basis has {total_expected}")
-                        
-                        # If live data is significantly less than expected, or no positions at all, use cost_basis
-                        if total_live < total_expected * 0.5 or total_live < 3:
-                            self.logger.warning(f"⚠️ Live position data appears incomplete ({total_live} vs {total_expected} expected). Using cost_basis_history.json")
-                            positions = []  # Clear and rebuild from cost_basis
-                            
-                            # Rebuild positions from cost_basis_history.json
-                            sorted_positions = sorted(
-                                [(k, v) for k, v in fallback_pos.items() 
-                                 if isinstance(v, dict) and v.get('total_cost', 0) > 0.01],
-                                key=lambda x: x[1].get('total_cost', 0),
-                                reverse=True
-                            )[:20]  # Top 20 by value
-                            
-                            total_value = 0.0
-                            total_cost = 0.0
-                            
-                            for symbol, pos_data in sorted_positions:
-                                qty = float(pos_data.get('total_quantity', 0) or 0)
-                                avg_entry = float(pos_data.get('avg_entry_price', 0) or 0)
-                                cost_basis = float(pos_data.get('total_cost', 0) or qty * avg_entry)
-                                exchange = pos_data.get('exchange', 'unknown')
-                                
-                                positions.append({
-                                    'symbol': symbol,
-                                    'quantity': qty,
-                                    'avgCost': avg_entry,
-                                    'currentPrice': avg_entry,  # Will be updated with live prices
-                                    'currentValue': cost_basis,  # Will be updated with live prices
-                                    'unrealizedPnl': 0,  # Will be updated with live prices
-                                    'pnlPercent': 0,  # Will be updated with live prices
-                                    'exchange': exchange
-                                })
-                                total_value += cost_basis
-                                total_cost += cost_basis
-                            
-                            self.logger.info(f"✅ Switched to cost_basis_history.json: {len(positions)} verified positions")
+                        self.logger.info(f"✅ Enriched {len(positions)} positions with cost basis data")
                 
                 except Exception as e:
-                    self.logger.warning(f"⚠️ Position validation failed: {e}")
+                    self.logger.warning(f"⚠️ Position enrichment failed: {e}")
                 
                 # Sort by value descending
                 positions.sort(key=lambda x: x.get('currentValue', 0), reverse=True)

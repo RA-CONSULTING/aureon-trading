@@ -382,6 +382,11 @@ class AureonUnifiedDashboard:
                 metrics["pnl_total"] += exchange.get("pnl_total", 0)
                 metrics["positions_count"] += exchange.get("positions_count", 0)
                 metrics["positions"].extend(exchange.get("positions", []))
+            
+            # NORMALIZE position field names for frontend (pnl_pct → pnlPercent)
+            for position in metrics["positions"]:
+                if "pnl_pct" in position and "pnlPercent" not in position:
+                    position["pnlPercent"] = position.pop("pnl_pct")
         
         except Exception as e:
             logger.error(f"Failed to collect portfolio metrics: {e}")

@@ -3393,6 +3393,42 @@ class OrcaKillCycle:
         except Exception as e:
             _safe_print(f"⚠️ Failed to save tracked positions: {e}")
 
+    def _load_kraken_assets_for_monitoring(self) -> List[str]:
+        """Auto-discover all tradeable Kraken assets for comprehensive market monitoring."""
+        try:
+            kraken_client = self.clients.get('kraken')
+            if not kraken_client:
+                return []
+            
+            tradeable_pairs = kraken_client.get_tradeable_pairs()
+            if not tradeable_pairs:
+                return []
+            
+            filtered = []
+            major_quotes = ['USD', 'USDT', 'EUR', 'GBP']
+            major_alts = ['BTC', 'ETH', 'SOL', 'ADA', 'DOT', 'AVAX', 'MATIC', 'ARB', 'OP']
+            
+            for pair in tradeable_pairs:
+                symbol = pair.get('symbol') or pair.get('pair', '')
+                quote = pair.get('quote', '')
+                base = pair.get('base', '')
+                
+                if not symbol or symbol.startswith('F') or symbol.startswith('D'):
+                    continue
+                
+                if any(q in quote for q in major_quotes):
+                    filtered.append(symbol)
+                elif any(a in base for a in major_alts) and quote in ['USDC', 'DAI', 'BUSD']:
+                    filtered.append(symbol)
+            
+            filtered = sorted(list(set(filtered)))
+            _safe_print(f"🔍 Discovered {len(filtered)} Kraken trading pairs")
+            return filtered
+            
+        except Exception as e:
+            _safe_print(f"⚠️ Kraken asset discovery failed: {e}")
+            return []
+
     def __init__(self, client=None, exchange='alpaca', quick_init=False):
         """
         Initialize OrcaKillCycle.
