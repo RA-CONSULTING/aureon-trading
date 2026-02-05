@@ -56,13 +56,14 @@ services:
           percent: 85
     
     # Health check - Queen Power Dashboard /health endpoint on port 8080
+    # Extended initial delay to allow supervisor + 43 processes to start sequentially
     health_check:
       http_path: /health
-      initial_delay_seconds: 240
-      period_seconds: 45
+      initial_delay_seconds: 600
+      period_seconds: 60
       timeout_seconds: 30
       success_threshold: 1
-      failure_threshold: 6
+      failure_threshold: 10
     
     # Environment variables
     envs:
