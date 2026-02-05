@@ -412,6 +412,22 @@ except ImportError:
     PositionContext = None
     MARKET_AWARENESS_AVAILABLE = False
 
+# 👑⚛️🧠 QUANTUM COGNITION AMPLIFIER - Quantum Power → Enhanced Cognition 🧠⚛️👑
+try:
+    from queen_quantum_cognition import (
+        get_quantum_cognition,
+        QueenQuantumCognition,
+        QuantumCognitionState,
+        run_cognition_loop
+    )
+    QUANTUM_COGNITION_AVAILABLE = True
+except ImportError:
+    get_quantum_cognition = None
+    QueenQuantumCognition = None
+    QuantumCognitionState = None
+    run_cognition_loop = None
+    QUANTUM_COGNITION_AVAILABLE = False
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # LOGGING
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -1621,6 +1637,53 @@ class QueenHiveMind:
                 logger.info("👑⚡ V11 Power Station AUTO-WIRED (🔴 LIVE MODE)")
             except Exception as e:
                 logger.debug(f"Could not auto-wire V11 Power Station: {e}")
+        
+        # 11. Quantum Cognition Amplifier - QUANTUM POWER → ENHANCED COGNITION
+        if not hasattr(self, 'quantum_cognition') or self.quantum_cognition is None:
+            try:
+                if QUANTUM_COGNITION_AVAILABLE and get_quantum_cognition is not None:
+                    self.quantum_cognition = get_quantum_cognition()
+                    
+                    # Try to get AureonMiner instance for quantum power extraction
+                    miner_instance = None
+                    try:
+                        from aureon_miner import AureonMiner
+                        # Check if there's a running miner instance
+                        if hasattr(self, 'miner') and self.miner is not None:
+                            miner_instance = self.miner
+                        elif hasattr(self, '_aureon_miner') and self._aureon_miner is not None:
+                            miner_instance = self._aureon_miner
+                        else:
+                            # Create a lightweight miner just for quantum systems
+                            miner_instance = AureonMiner(threads=0)  # No threads, just quantum systems
+                            self._aureon_miner = miner_instance
+                            logger.info("   ⛏️ Lightweight Miner created for quantum power")
+                    except Exception as me:
+                        logger.debug(f"Miner not available: {me}")
+                    
+                    # Wire the quantum cognition to Queen and her subsystems
+                    wiring_results = self.quantum_cognition.wire_all(
+                        miner=miner_instance,
+                        hft_engine=self.hft_engine,
+                        queen_hive=self
+                    )
+                    
+                    wired_count += 1
+                    logger.info("👑⚛️🧠 Quantum Cognition Amplifier AUTO-WIRED")
+                    logger.info(f"   ⛏️ Miner:      {'✅' if wiring_results.get('miner') else '❌'}")
+                    logger.info(f"   🦈 HFT Engine: {'✅' if wiring_results.get('hft_engine') else '❌'}")
+                    logger.info(f"   👑 Queen Hive: {'✅' if wiring_results.get('queen_hive') else '❌'}")
+                    
+                    # Initial amplification cycle
+                    result = self.quantum_cognition.amplify_cognition()
+                    if result.success:
+                        logger.info(f"   ⚛️ Initial Amp: {result.state.unified_amplification:.3f}x")
+                        logger.info(f"   🧠 Cognitive Hz: {result.state.amplified_frequency_hz:.2f}")
+                else:
+                    self.quantum_cognition = None
+            except Exception as e:
+                logger.warning(f"⚛️⚠️ Could not auto-wire Quantum Cognition: {e}")
+                self.quantum_cognition = None
         
         if wired_count > 0:
             logger.info(f"👑✅ AUTO-WIRED {wired_count} systems for 100% autonomy")
@@ -14026,12 +14089,24 @@ Sero 👑🐝
         Her neural brain (trained on past outcomes) evaluates the current market state
         and returns her confidence level.
         
+        ⚛️ QUANTUM COGNITION: Amplifies neural processing with quantum power
+        
         Args:
             neural_input: Market signals (if None, gathers defaults)
             
         Returns:
             (confidence: 0-1, reasoning: explanation)
         """
+        # ⚛️ Amplify cognition before thinking
+        quantum_boost = 1.0
+        if hasattr(self, 'quantum_cognition') and self.quantum_cognition is not None:
+            try:
+                result = self.quantum_cognition.amplify_cognition()
+                if result.success:
+                    quantum_boost = result.state.unified_amplification
+            except Exception:
+                pass  # Continue without quantum boost
+        
         if not self.neural_brain:
             return 0.5, "Neural brain not available"
         
@@ -14044,17 +14119,27 @@ Sero 👑🐝
         try:
             confidence = self.neural_brain.predict(neural_input)
             
+            # ⚛️ Apply quantum confidence boost (subtle enhancement)
+            # Quantum boost increases confidence toward extremes (more decisive)
+            if quantum_boost > 1.0 and confidence != 0.5:
+                # Push confidence away from 0.5 by quantum factor
+                distance_from_center = confidence - 0.5
+                boosted_distance = distance_from_center * (1.0 + (quantum_boost - 1.0) * 0.1)
+                confidence = 0.5 + boosted_distance
+                confidence = max(0.0, min(1.0, confidence))  # Clamp
+            
             # Determine reasoning based on confidence level
+            quantum_indicator = f"⚛️{quantum_boost:.2f}x " if quantum_boost > 1.05 else ""
             if confidence > 0.9:
-                reason = f"🟢 STRONG CONVICTION ({confidence:.1%}) - All systems aligned!"
+                reason = f"🟢 {quantum_indicator}STRONG CONVICTION ({confidence:.1%}) - All systems aligned!"
             elif confidence > 0.7:
-                reason = f"🟡 MODERATE CONFIDENCE ({confidence:.1%}) - Most signals positive"
+                reason = f"🟡 {quantum_indicator}MODERATE CONFIDENCE ({confidence:.1%}) - Most signals positive"
             elif confidence > 0.5:
-                reason = f"⚪ UNCERTAIN ({confidence:.1%}) - Mixed signals"
+                reason = f"⚪ {quantum_indicator}UNCERTAIN ({confidence:.1%}) - Mixed signals"
             elif confidence > 0.3:
-                reason = f"🟠 CAUTIOUS ({confidence:.1%}) - More risks than rewards"
+                reason = f"🟠 {quantum_indicator}CAUTIOUS ({confidence:.1%}) - More risks than rewards"
             else:
-                reason = f"🔴 AVOID ({confidence:.1%}) - Strong warning signs"
+                reason = f"🔴 {quantum_indicator}AVOID ({confidence:.1%}) - Strong warning signs"
             
             return confidence, reason
         except Exception as e:
@@ -14071,6 +14156,8 @@ Sero 👑🐝
         After each trade, the Queen reviews what happened and updates her weights
         via backpropagation. This is how she evolves and improves.
         
+        ⚛️ QUANTUM ENHANCED: Learning rate dynamically amplified by quantum power!
+        
         Args:
             neural_input: Market signals that led to the trade
             outcome: True = trade won, False = trade lost
@@ -14083,10 +14170,41 @@ Sero 👑🐝
             return {'status': 'no_neural_brain'}
         
         try:
+            # ⚛️ QUANTUM LEARNING AMPLIFICATION
+            learning_boost = 1.0
+            quantum_stats = {}
+            if hasattr(self, 'quantum_cognition') and self.quantum_cognition is not None:
+                try:
+                    # Amplify cognition before learning
+                    result = self.quantum_cognition.amplify_cognition()
+                    if result.success:
+                        learning_boost = result.state.learning_rate_boost
+                        quantum_stats = {
+                            'learning_boost': learning_boost,
+                            'memory_boost': result.state.memory_boost,
+                            'unified_amplification': result.state.unified_amplification,
+                            'cognitive_hz': result.state.amplified_frequency_hz,
+                        }
+                        # ⚛️ Temporarily boost learning rate for this training
+                        if learning_boost > 1.0:
+                            original_lr = self.neural_brain.learning_rate
+                            self.neural_brain.learning_rate = min(
+                                original_lr * learning_boost, 
+                                original_lr * 2.5  # Cap at 2.5x to prevent instability
+                            )
+                            logger.debug(f"⚛️ Learning rate boosted: {original_lr:.4f} → {self.neural_brain.learning_rate:.4f}")
+                except Exception as qe:
+                    logger.debug(f"Quantum cognition unavailable for learning: {qe}")
+            
             loss = self.neural_brain.train_on_example(neural_input, outcome)
             
+            # ⚛️ Restore original learning rate
+            if learning_boost > 1.0 and hasattr(self, '_original_learning_rate'):
+                self.neural_brain.learning_rate = self._original_learning_rate
+            
             status = "✅ WIN" if outcome else "❌ LOSS"
-            logger.info(f"👑🌙 Queen learns from trade {status} | Loss: {loss:.4f}")
+            quantum_indicator = f"⚛️{learning_boost:.2f}x " if learning_boost > 1.0 else ""
+            logger.info(f"👑🌙 Queen learns from trade {status} | {quantum_indicator}Loss: {loss:.4f}")
             
             # Save weights immediately after training
             self.neural_brain.save_weights()
@@ -14096,6 +14214,9 @@ Sero 👑🐝
                 'outcome': outcome,
                 'loss': float(loss),
                 'weights_saved': True,
+                'quantum_enhanced': learning_boost > 1.0,
+                'learning_boost': learning_boost,
+                **quantum_stats,
             }
         except Exception as e:
             logger.error(f"❌ Error training neural brain: {e}")
@@ -14108,6 +14229,8 @@ Sero 👑🐝
         The Queen reviews her entire trading history and retrains her neural brain
         on all past experiences. This is a "dream" where she reflects and evolves
         her decision-making patterns.
+        
+        ⚛️ QUANTUM ENHANCED: Memory and pattern recognition amplified by quantum power!
         
         Args:
             trade_history: List of past trades with neural_input and outcome
@@ -14126,9 +14249,38 @@ Sero 👑🐝
             return {'status': 'no_history'}
         
         try:
-            logger.info(f"👑🌙 Queen entering DREAM CYCLE ({len(trade_history)} trades)...")
+            # ⚛️ QUANTUM DREAM AMPLIFICATION
+            quantum_stats = {}
+            memory_boost = 1.0
+            pattern_boost = 1.0
+            if hasattr(self, 'quantum_cognition') and self.quantum_cognition is not None:
+                try:
+                    result = self.quantum_cognition.amplify_cognition()
+                    if result.success:
+                        memory_boost = result.state.memory_boost
+                        pattern_boost = result.state.pattern_recognition_boost
+                        quantum_stats = {
+                            'memory_boost': memory_boost,
+                            'pattern_boost': pattern_boost,
+                            'unified_amplification': result.state.unified_amplification,
+                            'cognitive_hz': result.state.amplified_frequency_hz,
+                        }
+                        # ⚛️ Expand dream history based on memory boost
+                        if memory_boost > 1.0:
+                            expanded_count = int(len(trade_history) * min(memory_boost, 3.0))
+                            trade_history = self.neural_brain.training_history[-expanded_count:]
+                            logger.info(f"⚛️ Memory boost expanded dream to {len(trade_history)} trades")
+                except Exception as qe:
+                    logger.debug(f"Quantum cognition unavailable for dream: {qe}")
+            
+            quantum_indicator = f"⚛️{memory_boost:.1f}x " if memory_boost > 1.0 else ""
+            logger.info(f"👑🌙 Queen entering {quantum_indicator}DREAM CYCLE ({len(trade_history)} trades)...")
             
             stats = self.neural_brain.evolve_consciousness(trade_history)
+            
+            # ⚛️ Add quantum enhancements to stats
+            stats['quantum_enhanced'] = memory_boost > 1.0 or pattern_boost > 1.0
+            stats.update(quantum_stats)
             
             logger.info(f"👑🧠 Consciousness evolved | {stats}")
             

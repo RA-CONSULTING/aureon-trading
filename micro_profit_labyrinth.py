@@ -18518,8 +18518,33 @@ if __name__ == "__main__":
             research_interval = 300  # Research every 5 minutes
             safe_print(f"\n👑🌐 Queen's Research Schedule: Every {research_interval}s (next in {research_interval}s)")
             
+            # ⚛️🧠 QUANTUM COGNITION AMPLIFICATION - Continuous cognitive enhancement
+            last_cognition_time = 0
+            cognition_interval = 5  # Amplify cognition every 5 seconds (HFT-grade)
+            quantum_cognition = None
+            try:
+                if self.queen and hasattr(self.queen, 'quantum_cognition'):
+                    quantum_cognition = self.queen.quantum_cognition
+                    if quantum_cognition:
+                        safe_print(f"⚛️🧠 Quantum Cognition ACTIVE - Amplifying every {cognition_interval}s")
+            except Exception:
+                pass
+            
             while duration_s == 0 or time.time() - start_time < duration_s:
                 elapsed = time.time() - start_time
+                
+                # ⚛️🧠 QUANTUM COGNITION AMPLIFICATION CYCLE (every 5s)
+                if quantum_cognition and (time.time() - last_cognition_time) >= cognition_interval:
+                    try:
+                        result = quantum_cognition.amplify_cognition()
+                        if result.success and result.state.unified_amplification > 1.0:
+                            # Only log when amplification is significant
+                            if result.state.unified_amplification > 1.5:
+                                logger.debug(f"⚛️ Cognition: {result.state.unified_amplification:.2f}x | Hz: {result.state.amplified_frequency_hz:.1f}")
+                        last_cognition_time = time.time()
+                    except Exception as qe:
+                        logger.debug(f"Quantum cognition error: {qe}")
+                        last_cognition_time = time.time()
                 
                 # 👑🌐 QUEEN'S PERIODIC ONLINE RESEARCH & SELF-ENHANCEMENT
                 time_since_research = time.time() - last_research_time
