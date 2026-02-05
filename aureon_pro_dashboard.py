@@ -3366,68 +3366,7 @@ class AureonProDashboard:
             except:
                 self.clients.discard(client)
     
-    async def _init_ocean_scanner(self):
-        """Initialize ocean scanner universe discovery in background."""
-        try:
-            if self.ocean_scanner:
-                await self.ocean_scanner.discover_universe()
-                self.logger.info("✅ Ocean Scanner: Universe discovered")
-        except Exception as e:
-            self.logger.error(f"❌ Ocean Scanner universe discovery error: {e}")
-    
-    async def ocean_data_loop(self):
-        """Periodically scan ocean and broadcast opportunities."""
-        await asyncio.sleep(10)  # Wait for init
-        
-        while True:
-            try:
-                if self.ocean_scanner:
-                    # 🌊 ACTUALLY SCAN THE OCEAN (not just read empty summary)
-                    try:
-                        opportunities = await asyncio.wait_for(
-                            self.ocean_scanner.scan_ocean(limit=100),
-                            timeout=10.0
-                        )
-                        self.logger.info(f"✅ Ocean scan complete: {len(opportunities) if opportunities else 0} opportunities")
-                    except asyncio.TimeoutError:
-                        self.logger.warning("⚠️ Ocean scan timeout (>10s) - using cached data")
-                        opportunities = []
-                    except Exception as e:
-                        self.logger.error(f"❌ Ocean scan failed: {e}")
-                        opportunities = []
-                    
-                    # Get updated summary after scan
-                    summary = self.ocean_scanner.get_ocean_summary()
-                    self.ocean_data = {
-                        'universe_size': summary.get('universe_size', {}).get('total', 0) or 0,
-                        'hot_opportunities': summary.get('hot_opportunities', 0) or len(opportunities),
-                        'top_opportunities': summary.get('top_5', []),
-                        'scan_count': summary.get('scan_count', 0),
-                        'last_scan_time': summary.get('last_scan_time', 0)
-                    }
-                    
-                    self.logger.info(f"🌊 Ocean: {self.ocean_data['universe_size']:,} symbols, {self.ocean_data['hot_opportunities']} hot, scan #{self.ocean_data['scan_count']}")
-                else:
-                    # No scanner - use fallback data
-                    self.logger.warning("⚠️ Ocean scanner not initialized - using fallback data")
-                    self.ocean_data = {
-                        'universe_size': len(self.all_prices) or 0,
-                        'hot_opportunities': 0,
-                        'top_opportunities': [],
-                        'scan_count': 0,
-                        'last_scan_time': 0
-                    }
-                
-                # Broadcast to clients
-                await self.broadcast({
-                    'type': 'ocean_scanner_update',
-                    'data': self.ocean_data
-                })
-            except Exception as e:
-                self.logger.error(f"❌ Ocean data loop error: {e}", exc_info=True)
-            
-            await asyncio.sleep(30)  # Scan every 30 seconds
-    
+
     # ═══════════════════════════════════════════════════════════════════════════════
     # ⚡ V11 POWER STATION DATA LOOP
     # ═══════════════════════════════════════════════════════════════════════════════
@@ -5048,7 +4987,7 @@ class AureonProDashboard:
     
     async def ocean_data_loop(self):
         """
-        🌊 OCEAN DATA LOOP - Stream ENTIRE global market into harmonic field
+        🌊 OCEAN DATA LOOP - Stream ENTIRE global market into harmonic field + update dashboard
         
         Layer 1: Your portfolio (20 positions from exchanges)
         Layer 2: FULL MARKET SCAN (500+ symbols across all exchanges)
@@ -5105,6 +5044,22 @@ class AureonProDashboard:
                     # Summary stats
                     top_movers = [f"{opp.symbol} ({opp.momentum_5m:+.2f}%)" for opp in opportunities[:5]]
                     self.logger.info(f"🌊 Scan #{scan_iteration}: {len(opportunities)} found, {nodes_added} → Harmonic field | Top: {', '.join(top_movers)}")
+                    
+                    # UPDATE DASHBOARD: Also populate self.ocean_data for the dashboard Ocean tab
+                    summary = self.ocean_scanner.get_ocean_summary()
+                    self.ocean_data = {
+                        'universe_size': summary.get('universe_size', {}).get('total', 0) or 0,
+                        'hot_opportunities': summary.get('hot_opportunities', 0) or len(opportunities),
+                        'top_opportunities': summary.get('top_5', []),
+                        'scan_count': summary.get('scan_count', 0),
+                        'last_scan_time': summary.get('last_scan_time', 0)
+                    }
+                    
+                    # Broadcast to WebSocket clients
+                    await self.broadcast({
+                        'type': 'ocean_scanner_update',
+                        'data': self.ocean_data
+                    })
                 else:
                     self.logger.warning(f"🌊 Scan #{scan_iteration}: No opportunities found")
                 

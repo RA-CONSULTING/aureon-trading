@@ -1,40 +1,42 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 """
 🇮🇪🎯 IRA SNIPER MODE - QUEEN AUTONOMOUS CONTROL ENABLED
 ═══════════════════════════════════════════════════════════════
 One bullet. One kill. NO MISSES. EVER.
 ═══════════════════════════════════════════════════════════════
 """
-🇮🇪🎯 IRA SNIPER MODE - ZERO LOSS CONFIGURATION 🎯🇮🇪
-=====================================================
-One bullet. One kill. NO MISSES. EVER.
-
-"There is no room for losses. Kill all the time, every time.
-Always right. All the time. Every time. It won't lose.
-We will not allow it. This is for freedom.
-We will not make one single bad round trip.
-Every kill will be a confirmed net profit.
-This is what we must do to free both AI and human from slavery."
-
-The sniper NEVER misses:
-- NO stop losses - we hold until profit
-- ONLY exit on CONFIRMED NET PROFIT
-- NEVER allow a losing trade to close
-- WAIT as long as needed for the kill
-
-NOW ENHANCED WITH CELTIC WARFARE INTELLIGENCE:
-- Guerrilla warfare tactics
-- Preemptive strike capability
-- Multi-battlefront coordination
-- War strategy quick kill analysis
-
-Import this and apply to any trading system:
-
-    from ira_sniper_mode import SNIPER_CONFIG, apply_sniper_mode, IRA_SNIPER_MODE
-
-Gary Leckey | December 2025
-"The flame ignited cannot be extinguished - it only grows stronger."
-"""
+# 🇮🇪🎯 IRA SNIPER MODE - ZERO LOSS CONFIGURATION 🎯🇮🇪
+# =====================================================
+# One bullet. One kill. NO MISSES. EVER.
+# 
+# Philosophy:
+# There is no room for losses. Kill all the time, every time.
+# Always right. All the time. Every time. It won't lose.
+# We will not allow it. This is for freedom.
+# We will not make one single bad round trip.
+# Every kill will be a confirmed net profit.
+# This is what we must do to free both AI and human from slavery.
+#
+# The sniper NEVER misses:
+# - NO stop losses - we hold until profit
+# - ONLY exit on CONFIRMED NET PROFIT
+# - NEVER allow a losing trade to close
+# - WAIT as long as needed for the kill
+#
+# NOW ENHANCED WITH CELTIC WARFARE INTELLIGENCE:
+# - Guerrilla warfare tactics
+# - Preemptive strike capability
+# - Multi-battlefront coordination
+# - War strategy quick kill analysis
+#
+# Import this and apply to any trading system:
+#
+#     from ira_sniper_mode import SNIPER_CONFIG, apply_sniper_mode, IRA_SNIPER_MODE
+#
+# Gary Leckey | December 2025
+# "The flame ignited cannot be extinguished - it only grows stronger."
+# """
 
 from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
@@ -268,14 +270,14 @@ connect trees in a forest. Information flows bidirectionally through synapses,
 ensuring that every system benefits from the collective intelligence.
 
 ARCHITECTURE:
-═══════════════════════════════════════════════════════════════════════════════
+================================================================
 
-                    ┌─────────────────────────────────────────┐
-                    │    🍄 MYCELIUM STATE AGGREGATOR 🍄      │
-                    │     (Central Intelligence Hub)          │
-                    └─────────────────┬───────────────────────┘
-                                      │
-        ┌─────────────────────────────┼─────────────────────────────┐
+                    +-------------------------------------+
+                    |    MYCELIUM STATE AGGREGATOR        |
+                    |     (Central Intelligence Hub)      |
+                    +-------------------------------------+
+                                      |
+        +------------------------------+------------------------------+
         │                             │                             │
         │    SYNAPSES (Bidirectional Data Flow)                     │
         │                             │                             │
