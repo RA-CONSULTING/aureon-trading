@@ -2314,6 +2314,9 @@ PRO_DASHBOARD_HTML = """
                     existing.currentValue = pos.currentValue || 0;
                     existing.quantity = pos.quantity || 0;
                     existing.exchange = pos.exchange || 'alpaca';
+                    existing.costBasis = pos.costBasis || (pos.quantity * pos.avgCost) || 0;
+                    existing.avgCost = pos.avgCost || 0;
+                    existing.unrealizedPnl = pos.unrealizedPnl || 0;
                     existing.isGrowing = pos.pnlPercent > existing.lastPnl;
                     existing.isShrinking = pos.pnlPercent < existing.lastPnl;
                     existing.lastPnl = pos.pnlPercent;
@@ -2356,6 +2359,9 @@ PRO_DASHBOARD_HTML = """
                 currentValue: pos.currentValue || 0,
                 quantity: pos.quantity || 0,
                 exchange: pos.exchange || 'alpaca',
+                costBasis: pos.costBasis || (pos.quantity * pos.avgCost) || 0,
+                avgCost: pos.avgCost || 0,
+                unrealizedPnl: pos.unrealizedPnl || 0,
                 phase: Math.random() * Math.PI * 2,
                 pulseRate: 0.8 + Math.random() * 0.4,  // Different heartbeat rates
                 isGrowing: false,
@@ -2544,9 +2550,9 @@ PRO_DASHBOARD_HTML = """
             
             if (size < 1) return;
             
-            // Determine cell state colors
-            const pnl = cell.pnlPercent;
-            const state = pnl > 1 ? 'profit' : pnl < -1 ? 'loss' : 'neutral';
+            // Determine cell state colors based on unrealizedPnl or pnlPercent
+            const pnl = cell.unrealizedPnl || (cell.pnlPercent || 0);
+            const state = pnl > 0 ? 'profit' : pnl < 0 ? 'loss' : 'neutral';
             const colors = CELL_COLORS[state];
             const exchangeColor = EXCHANGE_MEMBRANE[cell.exchange] || '#6366f1';
             
@@ -3720,6 +3726,7 @@ class AureonProDashboard:
                     self.logger.info(f"📊 Binance: Fetched {len(binance_pos)} positions")
                     for pos in binance_pos:
                         if pos.get('current_value', 0) > 0:
+                            cost_basis = pos.get('cost_basis', 0) or (pos.get('quantity', 0) * pos.get('avg_cost', 0))
                             positions.append({
                                 'symbol': pos['symbol'],
                                 'quantity': pos['quantity'],
@@ -3728,16 +3735,18 @@ class AureonProDashboard:
                                 'currentValue': pos.get('current_value', 0),
                                 'unrealizedPnl': pos.get('unrealized_pnl', 0),
                                 'pnlPercent': pos.get('pnl_percent', 0),
+                                'costBasis': cost_basis,
                                 'exchange': 'binance'
                             })
                             total_value += pos.get('current_value', 0)
-                            total_cost += pos.get('cost_basis', 0)
+                            total_cost += cost_basis
                 
                 # Process Alpaca positions
                 if alpaca_pos:
                     self.logger.info(f"📊 Alpaca: Fetched {len(alpaca_pos)} positions")
                     for pos in alpaca_pos:
                         if pos.get('current_value', 0) > 0:
+                            cost_basis = pos.get('cost_basis', 0) or (pos.get('quantity', 0) * pos.get('avg_cost', 0))
                             positions.append({
                                 'symbol': pos['symbol'],
                                 'quantity': pos['quantity'],
@@ -3746,10 +3755,11 @@ class AureonProDashboard:
                                 'currentValue': pos.get('current_value', 0),
                                 'unrealizedPnl': pos.get('unrealized_pnl', 0),
                                 'pnlPercent': pos.get('pnl_percent', 0),
+                                'costBasis': cost_basis,
                                 'exchange': 'alpaca'
                             })
                             total_value += pos.get('current_value', 0)
-                            total_cost += pos.get('cost_basis', 0)
+                            total_cost += cost_basis
                 
                 # Process Kraken positions
                 if kraken_pos:
@@ -3768,6 +3778,7 @@ class AureonProDashboard:
                                 'currentValue': current_val,
                                 'unrealizedPnl': pnl,
                                 'pnlPercent': pnl_pct,
+                                'costBasis': cost,
                                 'exchange': 'kraken'
                             })
                             total_value += current_val
@@ -3813,6 +3824,7 @@ class AureonProDashboard:
                                     positions[i]['currentValue'] = current_value
                                     positions[i]['unrealizedPnl'] = pnl
                                     positions[i]['pnlPercent'] = pnl_pct
+                                    positions[i]['costBasis'] = cost_basis
                                     
                                     self.logger.debug(f"   ✅ {symbol}: qty={qty:.4f} @ ${avg_entry:.2f} (entry) → ${current_price:.2f} (now) | P&L: {pnl_pct:+.2f}%")
                         
