@@ -3133,6 +3133,13 @@ class AureonProDashboard:
                     'data': self.all_prices
                 })
 
+            # Send initial exchange balances
+            self.logger.info(f"📤 Sending initial exchange balances: Binance=${self.exchange_balances.get('binance', 0):.2f}, Kraken=${self.exchange_balances.get('kraken', 0):.2f}, Alpaca=${self.exchange_balances.get('alpaca', 0):.2f}")
+            await ws.send_json({
+                'type': 'exchange_balances',
+                'data': self.exchange_balances
+            })
+            
             # Send bots snapshot if available
             if self.bots:
                 await ws.send_json({
@@ -5152,6 +5159,7 @@ class AureonProDashboard:
             self.logger.info("🔄 Background initialization started...")
             await self.refresh_prices()
             await self.refresh_portfolio()
+            await self.refresh_exchange_balances()
             
             # Initialize Ocean Scanner
             if OCEAN_SCANNER_AVAILABLE and OceanScanner:
