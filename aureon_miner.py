@@ -8120,6 +8120,119 @@ class AureonMiner:
             logger.error(f"⚡ Failed to route mining proceeds to V11: {e}")
             return False
     
+    def amplify_v11_nodes_with_quantum_power(self) -> Dict[str, float]:
+        """
+        ⚛️💎⚡ QUANTUM POWER AMPLIFICATION FOR V11 NODES ⚡💎⚛️
+        
+        Merges miner's quantum systems with V11 trading grid:
+        - Casimir Effect Engine: Multi-stream vacuum energy extraction
+        - QVEE Engine: Quantum vacuum energy resonance
+        - Diamond Lattice: Sacred geometry amplification
+        - Quantum Lattice: Ping-pong wave interference
+        - LuminaCell: NV Diamond contactless power
+        - Coherence Engine: Dynamic systems optimization
+        
+        Each V11 node (trading position) gets Hz amplification boost
+        from unified quantum power generation systems.
+        
+        Returns:
+            Dict with amplification metrics per system
+        """
+        if not self._v11_enabled or not self._v11_station:
+            return {'error': 'V11 not available'}
+        
+        try:
+            # Gather quantum power from all miner systems
+            amplification_matrix = {}
+            
+            # 1. Casimir Effect - Vacuum energy between mining streams
+            casimir_force = self.optimizer.casimir.total_casimir_force
+            casimir_cascade = self.optimizer.casimir.inter_stream_cascade
+            casimir_zpe = self.optimizer.casimir.zero_point_energy
+            amplification_matrix['casimir_force'] = casimir_force
+            amplification_matrix['casimir_cascade'] = casimir_cascade
+            amplification_matrix['casimir_zpe'] = casimir_zpe
+            
+            # 2. QVEE Engine - Quantum vacuum energy extraction
+            qvee_output = self.optimizer.qvee.state.coherence_output
+            qvee_master = self.optimizer.qvee.state.master_transform
+            qvee_zpe_coupling = self.optimizer.qvee.state.zpe_coupling
+            amplification_matrix['qvee_output'] = qvee_output
+            amplification_matrix['qvee_master_transform'] = qvee_master
+            amplification_matrix['qvee_zpe_coupling'] = qvee_zpe_coupling
+            
+            # 3. Diamond Lattice - Sacred geometry ZPE
+            diamond_zpe = self.optimizer.diamond.state.total_zpe_extracted
+            diamond_harmonic = self.optimizer.diamond.state.harmonic_multiplier
+            diamond_coherence = self.optimizer.diamond.state.coherence_factor
+            amplification_matrix['diamond_zpe'] = diamond_zpe
+            amplification_matrix['diamond_harmonic'] = diamond_harmonic
+            amplification_matrix['diamond_coherence'] = diamond_coherence
+            
+            # 4. Quantum Lattice - Ping-pong resonance
+            lattice_resonance = self.optimizer.lattice.resonance_field
+            lattice_cascade = self.optimizer.lattice.cascade_factor
+            lattice_amplitude = self.optimizer.lattice.wave_amplitude
+            amplification_matrix['lattice_resonance'] = lattice_resonance
+            amplification_matrix['lattice_cascade'] = lattice_cascade
+            amplification_matrix['lattice_amplitude'] = lattice_amplitude
+            
+            # 5. LuminaCell v2 - NV Diamond contactless power
+            lumina_output = self.optimizer.lumina.state.power_output_watts
+            lumina_efficiency = self.optimizer.lumina.state.system_efficiency
+            lumina_photon_flux = self.optimizer.lumina.state.photon_flux_density
+            amplification_matrix['lumina_output_watts'] = lumina_output
+            amplification_matrix['lumina_efficiency'] = lumina_efficiency
+            amplification_matrix['lumina_photon_flux'] = lumina_photon_flux
+            
+            # 6. Coherence Engine - Dynamic systems model
+            coherence_psi = self.optimizer.coherence.state.unified_coherence
+            coherence_gamma = self.optimizer.coherence.state.planetary_gamma
+            coherence_cascade = self.optimizer.coherence.state.cascade_multiplier
+            amplification_matrix['coherence_psi'] = coherence_psi
+            amplification_matrix['coherence_gamma'] = coherence_gamma
+            amplification_matrix['coherence_cascade'] = coherence_cascade
+            
+            # Calculate unified Hz amplification multiplier
+            # Merge all quantum systems into single power amplifier
+            unified_amplification = (
+                casimir_cascade * 
+                qvee_master * 
+                diamond_harmonic * 
+                lattice_cascade * 
+                (1.0 + lumina_efficiency) * 
+                coherence_cascade
+            )
+            
+            amplification_matrix['unified_amplification'] = unified_amplification
+            amplification_matrix['base_frequency_hz'] = 7.83  # Schumann resonance
+            amplification_matrix['amplified_frequency_hz'] = 7.83 * unified_amplification
+            
+            # Apply amplification to V11 grid
+            grid = self.scan_v11_power_grid()
+            if grid:
+                amplification_matrix['v11_nodes'] = grid['total_nodes']
+                amplification_matrix['v11_generating'] = grid['generating_nodes']
+                amplification_matrix['v11_power_per_node'] = unified_amplification / max(1, grid['total_nodes'])
+                
+                logger.info("⚛️💎⚡ QUANTUM POWER AMPLIFICATION ACTIVE ⚡💎⚛️")
+                logger.info(f"   Unified Amplification: {unified_amplification:.3f}x")
+                logger.info(f"   Base Frequency: 7.83 Hz (Schumann)")
+                logger.info(f"   Amplified Frequency: {7.83 * unified_amplification:.2f} Hz")
+                logger.info(f"   V11 Nodes: {grid['total_nodes']} ({grid['generating_nodes']} generating)")
+                logger.info(f"   Power Per Node: {amplification_matrix['v11_power_per_node']:.3f}x")
+                logger.info(f"   🔷 Diamond ZPE: {diamond_zpe:.6f} | Harmonic: {diamond_harmonic:.3f}x")
+                logger.info(f"   ⚛️ Casimir Force: {casimir_force:.6f} | Cascade: {casimir_cascade:.3f}x")
+                logger.info(f"   ⚡ QVEE Master: {qvee_master:.3f}x | Output: {qvee_output:.6f}")
+                logger.info(f"   💎 Lumina: {lumina_output:.2f}W | Efficiency: {lumina_efficiency*100:.1f}%")
+                logger.info(f"   🌊 Coherence Ψ: {coherence_psi:.3f} | Γ: {coherence_gamma:.3f}")
+            
+            return amplification_matrix
+            
+        except Exception as e:
+            logger.error(f"⚛️ Quantum power amplification failed: {e}")
+            return {'error': str(e)}
+    
     def add_pool(self, host: str, port: int, worker: str, password: str = 'x', name: str = "pool"):
         """Add a mining pool configuration"""
         session = MiningSession(host, port, worker, password, self.optimizer, name)
@@ -8368,6 +8481,10 @@ class AureonMiner:
                 
                 # ⚡ SCAN V11 POWER GRID - Integration point for mining → trading
                 self.scan_v11_power_grid()
+                
+                # ⚛️💎 AMPLIFY V11 NODES WITH QUANTUM POWER (every 10 cycles = ~2 minutes)
+                if total_shares % 10 == 0 and self._v11_enabled:
+                    self.amplify_v11_nodes_with_quantum_power()
                 
                 # If we have earnings, consider routing to V11 for compounding
                 if self._binance_tracking_enabled and self._earnings_this_session > 0:
