@@ -3641,28 +3641,41 @@ class AureonProDashboard:
                 # Fetch ALL positions in parallel - Binance, Alpaca, AND Kraken
                 async def get_bin_pos():
                     try:
+                        # REDUCE TIMEOUT: Binance ticker API can be slow/blocked
+                        # Try with 2s timeout; if it fails, use cache and move on
                         result = await asyncio.wait_for(
                             asyncio.to_thread(get_binance_positions),
-                            timeout=5.0
+                            timeout=2.0  # Reduced from 5s to 2s
                         )
                         if result:
                             self._cached_positions['binance'] = result
                         return result or self._cached_positions.get('binance', [])
-                    except (asyncio.TimeoutError, Exception) as e:
-                        self.logger.warning(f"⚠️  Binance fetch failed (using cache): {e}")
+                    except asyncio.TimeoutError:
+                        # Binance API is hanging - use cache and don't block other exchanges
+                        self.logger.warning(f"⚠️  Binance fetch TIMEOUT (2s) - using cache with {len(self._cached_positions.get('binance', []))} cached positions")
+                        return self._cached_positions.get('binance', [])
+                    except (ConnectionError, OSError) as e:
+                        # Network errors - likely Binance IP ban or network issue
+                        self.logger.warning(f"⚠️  Binance network error (likely IP ban or no connectivity): {e}")
+                        return self._cached_positions.get('binance', [])
+                    except Exception as e:
+                        self.logger.warning(f"⚠️  Binance fetch failed: {e}")
                         return self._cached_positions.get('binance', [])
                 
                 async def get_alp_pos():
                     try:
                         result = await asyncio.wait_for(
                             asyncio.to_thread(get_alpaca_positions),
-                            timeout=5.0
+                            timeout=3.0  # Reduced from 5s for faster fallback
                         )
                         if result:
                             self._cached_positions['alpaca'] = result
                         return result or self._cached_positions.get('alpaca', [])
-                    except (asyncio.TimeoutError, Exception) as e:
-                        self.logger.warning(f"⚠️  Alpaca fetch failed (using cache): {e}")
+                    except asyncio.TimeoutError:
+                        self.logger.warning(f"⚠️  Alpaca fetch TIMEOUT (3s) - using cache with {len(self._cached_positions.get('alpaca', []))} cached positions")
+                        return self._cached_positions.get('alpaca', [])
+                    except Exception as e:
+                        self.logger.warning(f"⚠️  Alpaca fetch failed: {e}")
                         return self._cached_positions.get('alpaca', [])
                 
                 async def get_kraken_pos():
@@ -3670,20 +3683,36 @@ class AureonProDashboard:
                     try:
                         result = await asyncio.wait_for(
                             asyncio.to_thread(get_kraken_positions),
-                            timeout=5.0
+                            timeout=3.0  # Reduced from 5s for consistency
                         )
                         if result:
                             self._cached_positions['kraken'] = result
                         return result or self._cached_positions.get('kraken', [])
-                    except (asyncio.TimeoutError, Exception) as e:
-                        self.logger.warning(f"⚠️  Kraken fetch failed (using cache): {e}")
+                    except asyncio.TimeoutError:
+                        self.logger.warning(f"⚠️  Kraken fetch TIMEOUT (3s) - using cache with {len(self._cached_positions.get('kraken', []))} cached positions")
+                        return self._cached_positions.get('kraken', [])
+                    except Exception as e:
+                        self.logger.warning(f"⚠️  Kraken fetch failed: {e}")
                         return self._cached_positions.get('kraken', [])
                 
                 # Gather ALL THREE in parallel
                 self.logger.info("🔄 Fetching positions from Binance, Alpaca, and Kraken in parallel...")
                 binance_pos, alpaca_pos, kraken_pos = await asyncio.gather(
-                    get_bin_pos(), get_alp_pos(), get_kraken_pos()
+                    get_bin_pos(), get_alp_pos(), get_kraken_pos(),
+                    return_exceptions=True  # Don't fail if one times out
                 )
+                
+                # Handle exceptions from gather
+                if isinstance(binance_pos, Exception):
+                    self.logger.warning(f"⚠️ Binance exception: {binance_pos}")
+                    binance_pos = self._cached_positions.get('binance', [])
+                if isinstance(alpaca_pos, Exception):
+                    self.logger.warning(f"⚠️ Alpaca exception: {alpaca_pos}")
+                    alpaca_pos = self._cached_positions.get('alpaca', [])
+                if isinstance(kraken_pos, Exception):
+                    self.logger.warning(f"⚠️ Kraken exception: {kraken_pos}")
+                    kraken_pos = self._cached_positions.get('kraken', [])
+                
                 self.logger.info(f"✅ Parallel fetch complete: Binance={len(binance_pos) if binance_pos else 0}, Alpaca={len(alpaca_pos) if alpaca_pos else 0}, Kraken={len(kraken_pos) if kraken_pos else 0}")
                 
                 # Process Binance positions
