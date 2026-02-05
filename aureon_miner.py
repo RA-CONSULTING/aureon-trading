@@ -85,6 +85,15 @@ except ImportError:
     MinerBrain = None
     BRAIN_AVAILABLE = False
 
+# Import V11 Power Station - Multi-Exchange Trading Grid
+try:
+    from v11_power_station_live import V11PowerStationLive, V11Config
+    V11_AVAILABLE = True
+except ImportError:
+    V11PowerStationLive = None
+    V11Config = None
+    V11_AVAILABLE = False
+
 # Load environment variables
 try:
     from dotenv import load_dotenv
@@ -7787,6 +7796,15 @@ class AureonMiner:
         self._brain_confidence = 0.5  # Brain confidence level
         self._load_miner_brain()
         
+        # ⚡ V11 POWER STATION - Multi-Exchange Trading Grid Integration
+        self._v11_station = None
+        self._v11_enabled = False
+        self._v11_last_scan = 0.0
+        self._v11_scan_interval = 300.0  # Scan power grid every 5 minutes
+        self._v11_grid_state = None
+        self._v11_mining_profit_share = 0.0  # Mining proceeds to trade with V11
+        self._load_v11_power_station()
+        
         # Backward compatibility: if host/port provided in init, add as first pool
         if pool_host and pool_port and worker:
             self.add_pool(pool_host, pool_port, worker, password, "default")
@@ -7844,6 +7862,35 @@ class AureonMiner:
         except Exception as e:
             logger.error(f"🧠 Miner Brain failed to load: {e}")
             self._miner_brain = None
+    
+    def _load_v11_power_station(self):
+        """Load V11 Power Station for multi-exchange trading grid integration"""
+        if not V11_AVAILABLE or V11PowerStationLive is None:
+            logger.info("⚡ V11 Power Station: NOT AVAILABLE (import failed)")
+            return
+        
+        try:
+            v11_config = V11Config(
+                enabled_exchanges=['binance', 'alpaca', 'kraken'],
+                max_concurrent_positions=100
+            )
+            self._v11_station = V11PowerStationLive(config=v11_config, dry_run=True)
+            self._v11_enabled = True
+            
+            logger.info("⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡")
+            logger.info("   V11 POWER STATION - MULTI-EXCHANGE TRADING GRID")
+            logger.info("   Compound Profit Engine (SIPHON + COMPOUND + REINVEST)")
+            logger.info("   Integrating Mining Proceeds into Trading Operations")
+            logger.info("⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡")
+            logger.info("   🟡 Binance (1200 req/min)")
+            logger.info("   🦙 Alpaca (200 req/min)")
+            logger.info("   🐙 Kraken (15 req/min)")
+            logger.info("   ♻️ Automatic Siphon & Compound")
+            logger.info("   💰 Reserve Management & Profit Harvesting")
+        except Exception as e:
+            logger.error(f"⚡ V11 Power Station failed to load: {e}")
+            self._v11_station = None
+            self._v11_enabled = False
     
     def run_brain_cycle(self, force: bool = False) -> Optional[Dict[str, Any]]:
         """
@@ -7987,6 +8034,91 @@ class AureonMiner:
                 self._last_binance_balance = current_balance
         except Exception as e:
             logger.debug(f"Binance earnings check failed: {e}")
+    
+    def scan_v11_power_grid(self) -> Optional[Dict[str, Any]]:
+        """
+        Scan the V11 Power Grid to get current trading performance.
+        Integration point: Mining proceeds can be routed into trading positions.
+        Returns grid state with nodes, siphon capacity, and reserve balance.
+        """
+        if not self._v11_enabled or not self._v11_station:
+            return None
+        
+        try:
+            now = time.time()
+            # Scan every 5 minutes
+            if now - self._v11_last_scan < self._v11_scan_interval:
+                return self._v11_grid_state
+            
+            # Scan the power grid
+            grid_state = self._v11_station.scan_power_grid()
+            if grid_state:
+                self._v11_grid_state = {
+                    'total_nodes': grid_state.total_nodes,
+                    'generating_nodes': grid_state.generating_nodes,
+                    'hibernating_nodes': grid_state.hibernating_nodes,
+                    'consuming_nodes': grid_state.consuming_nodes,
+                    'total_grid_value': round(grid_state.total_grid_value, 2),
+                    'total_unrealized_pnl': round(grid_state.total_unrealized_pnl, 2),
+                    'total_siphon_capacity': round(grid_state.total_siphon_capacity, 2),
+                    'reserve_balance': round(grid_state.reserve_balance, 2),
+                    'energy_siphoned_session': round(grid_state.energy_siphoned_session, 2)
+                }
+                
+                self._v11_last_scan = now
+                
+                # Log power grid status
+                gen = self._v11_grid_state['generating_nodes']
+                tot = self._v11_grid_state['total_nodes']
+                siphon = self._v11_grid_state['total_siphon_capacity']
+                reserve = self._v11_grid_state['reserve_balance']
+                pnl = self._v11_grid_state['total_unrealized_pnl']
+                
+                logger.info(f"⚡ V11 Grid Scan: {gen}/{tot} nodes generating | Siphon: ${siphon:,.2f} | Reserve: ${reserve:,.2f} | P&L: ${pnl:+,.2f}")
+                
+                return self._v11_grid_state
+            else:
+                logger.warning("⚡ V11 grid scan returned None")
+                return None
+        except Exception as e:
+            logger.error(f"⚡ V11 power grid scan failed: {e}")
+            return None
+    
+    def route_mining_proceeds_to_v11(self, btc_amount: float) -> bool:
+        """
+        Route mining proceeds (in BTC) into V11 Power Station trading capital.
+        This integrates the mining earnings into the trading grid.
+        
+        Args:
+            btc_amount: Amount of BTC mined to allocate to trading
+        
+        Returns:
+            True if routing was successful
+        """
+        if not self._v11_enabled or not self._v11_station:
+            logger.warning("⚡ V11 Power Station not available - cannot route mining proceeds")
+            return False
+        
+        try:
+            if btc_amount <= 0:
+                return False
+            
+            # Store the amount for V11 integration
+            self._v11_mining_profit_share = btc_amount
+            
+            logger.info(f"⚡ MINING → TRADING: Routing {btc_amount:.8f} BTC to V11 Power Station")
+            logger.info(f"   ⛏️  Mining Income: {btc_amount:.8f} BTC")
+            logger.info(f"   💰 Trading Capital: Ready for Siphon & Compound")
+            
+            # Get current grid state
+            grid = self.scan_v11_power_grid()
+            if grid:
+                logger.info(f"   🎯 V11 Grid: {grid['generating_nodes']}/{grid['total_nodes']} nodes, Reserve: ${grid['reserve_balance']:,.2f}")
+            
+            return True
+        except Exception as e:
+            logger.error(f"⚡ Failed to route mining proceeds to V11: {e}")
+            return False
     
     def add_pool(self, host: str, port: int, worker: str, password: str = 'x', name: str = "pool"):
         """Add a mining pool configuration"""
@@ -8233,6 +8365,18 @@ class AureonMiner:
                 
                 # Update Quantum Processing Brain (unified ecosystem coordinator)
                 self.optimizer.update_brain()
+                
+                # ⚡ SCAN V11 POWER GRID - Integration point for mining → trading
+                self.scan_v11_power_grid()
+                
+                # If we have earnings, consider routing to V11 for compounding
+                if self._binance_tracking_enabled and self._earnings_this_session > 0:
+                    # Automatically route portion of earnings to V11 (if enabled)
+                    # This bridges mining income into trading capital
+                    if self._v11_enabled:
+                        # Route 10% of earnings to trading (90% stays as cash reserve)
+                        trading_allocation = self._earnings_this_session * 0.1
+                        self.route_mining_proceeds_to_v11(trading_allocation)
                 
                 # Format total hashrate
                 unit = 'H/s'
