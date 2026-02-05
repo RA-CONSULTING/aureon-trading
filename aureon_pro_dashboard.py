@@ -3524,10 +3524,12 @@ class AureonProDashboard:
                 if hasattr(self.quantum_cognition, 'get_full_subsystem_status'):
                     status = self.quantum_cognition.get_full_subsystem_status()
                     data['subsystem_status'] = status
-                if hasattr(self.quantum_cognition, 'amplification_level'):
-                    data['amplification_level'] = self.quantum_cognition.amplification_level
-                if hasattr(self.quantum_cognition, 'is_fully_autonomous'):
-                    data['autonomous_mode'] = self.quantum_cognition.is_fully_autonomous
+                # Get amplification from state object
+                if hasattr(self.quantum_cognition, 'state') and hasattr(self.quantum_cognition.state, 'unified_amplification'):
+                    data['amplification_level'] = self.quantum_cognition.state.unified_amplification
+                # Get enabled status
+                if hasattr(self.quantum_cognition, 'enabled'):
+                    data['autonomous_mode'] = self.quantum_cognition.enabled
             except Exception as e:
                 data['error'] = str(e)
         return web.json_response(data)
@@ -3540,13 +3542,14 @@ class AureonProDashboard:
         data = self.asset_data.copy()
         if self.asset_command:
             try:
-                # Get portfolio overview
-                if hasattr(self.asset_command, 'get_full_portfolio'):
-                    portfolio = await asyncio.to_thread(self.asset_command.get_full_portfolio)
+                # Get portfolio overview - CORRECT METHOD NAME: get_full_portfolio_status
+                if hasattr(self.asset_command, 'get_full_portfolio_status'):
+                    portfolio = await asyncio.to_thread(self.asset_command.get_full_portfolio_status)
                     if portfolio:
                         data['portfolio'] = portfolio
                         data['total_portfolio_value'] = portfolio.get('total_value', 0)
                         data['total_positions'] = portfolio.get('total_positions', 0)
+                        data['exchanges_connected'] = portfolio.get('exchanges_connected', 0)
             except Exception as e:
                 data['error'] = str(e)
         return web.json_response(data)
@@ -3559,16 +3562,14 @@ class AureonProDashboard:
         data = self.symbol_data.copy()
         if self.symbol_manager:
             try:
-                # Get counts per exchange
-                if hasattr(self.symbol_manager, 'kraken_pairs'):
-                    data['kraken_pairs'] = len(self.symbol_manager.kraken_pairs) if self.symbol_manager.kraken_pairs else 0
-                if hasattr(self.symbol_manager, 'binance_pairs'):
-                    data['binance_pairs'] = len(self.symbol_manager.binance_pairs) if self.symbol_manager.binance_pairs else 0
-                if hasattr(self.symbol_manager, 'alpaca_pairs'):
-                    data['alpaca_pairs'] = len(self.symbol_manager.alpaca_pairs) if self.symbol_manager.alpaca_pairs else 0
-                if hasattr(self.symbol_manager, 'capital_pairs'):
-                    data['capital_pairs'] = len(self.symbol_manager.capital_pairs) if self.symbol_manager.capital_pairs else 0
-                data['loaded'] = True
+                # Get counts per exchange from _symbol_cache dict
+                if hasattr(self.symbol_manager, '_symbol_cache'):
+                    cache = self.symbol_manager._symbol_cache
+                    data['kraken_pairs'] = len(cache.get('kraken', {}))
+                    data['binance_pairs'] = len(cache.get('binance', {}))
+                    data['alpaca_pairs'] = len(cache.get('alpaca', {}))
+                    data['capital_pairs'] = len(cache.get('capital', {}))
+                    data['loaded'] = True
             except Exception as e:
                 data['error'] = str(e)
         return web.json_response(data)
@@ -3581,18 +3582,17 @@ class AureonProDashboard:
         data = self.queen_hive_data.copy()
         if self.queen_hive:
             try:
-                # Get hive status
-                if hasattr(self.queen_hive, 'name'):
-                    data['queen_name'] = self.queen_hive.name
-                if hasattr(self.queen_hive, 'authority'):
-                    data['authority_level'] = str(self.queen_hive.authority)
-                if hasattr(self.queen_hive, 'hive_members'):
-                    data['hive_systems_online'] = len([m for m in self.queen_hive.hive_members.values() if m.get('active', False)])
-                    data['total_hive_systems'] = len(self.queen_hive.hive_members)
-                if hasattr(self.queen_hive, 'autonomous_enabled'):
-                    data['autonomous_enabled'] = self.queen_hive.autonomous_enabled
+                # Use get_full_autonomous_status which has all the data we need
                 if hasattr(self.queen_hive, 'get_full_autonomous_status'):
                     full_status = self.queen_hive.get_full_autonomous_status()
+                    data['queen_name'] = 'SERO'
+                    data['authority_level'] = full_status.get('queen_sovereignty', 'SUPREME_AUTONOMOUS')
+                    data['hive_systems_online'] = full_status.get('totals', {}).get('hive_online', 0)
+                    data['total_hive_systems'] = full_status.get('totals', {}).get('hive_systems', 0)
+                    data['quantum_systems_online'] = full_status.get('totals', {}).get('quantum_online', 0)
+                    data['total_quantum_systems'] = full_status.get('totals', {}).get('quantum_systems', 0)
+                    data['autonomous_enabled'] = full_status.get('has_full_control', False)
+                    data['trading_enabled'] = full_status.get('trading_enabled', False)
                     data['full_autonomous_status'] = full_status
             except Exception as e:
                 data['error'] = str(e)
@@ -3725,11 +3725,13 @@ class AureonProDashboard:
                         self.quantum_data['quantum_systems_online'] = status.get('quantum_systems_online', 0)
                         self.quantum_data['hive_systems_online'] = status.get('hive_systems_online', 0)
                     
-                    if hasattr(self.quantum_cognition, 'amplification_level'):
-                        self.quantum_data['amplification_level'] = self.quantum_cognition.amplification_level
+                    # Get amplification from state object
+                    if hasattr(self.quantum_cognition, 'state') and hasattr(self.quantum_cognition.state, 'unified_amplification'):
+                        self.quantum_data['amplification_level'] = self.quantum_cognition.state.unified_amplification
                     
-                    if hasattr(self.quantum_cognition, 'is_fully_autonomous'):
-                        self.quantum_data['autonomous_mode'] = self.quantum_cognition.is_fully_autonomous
+                    # Get enabled status
+                    if hasattr(self.quantum_cognition, 'enabled'):
+                        self.quantum_data['autonomous_mode'] = self.quantum_cognition.enabled
                     
                     self.quantum_data['last_update'] = datetime.now().isoformat()
                     
@@ -3756,9 +3758,9 @@ class AureonProDashboard:
         while True:
             try:
                 if self.asset_command and ASSET_COMMAND_AVAILABLE:
-                    # Get portfolio data
-                    if hasattr(self.asset_command, 'get_full_portfolio'):
-                        portfolio = await asyncio.to_thread(self.asset_command.get_full_portfolio)
+                    # Get portfolio data - CORRECT METHOD NAME: get_full_portfolio_status
+                    if hasattr(self.asset_command, 'get_full_portfolio_status'):
+                        portfolio = await asyncio.to_thread(self.asset_command.get_full_portfolio_status)
                         if portfolio:
                             self.asset_data['total_portfolio_value'] = portfolio.get('total_value', 0)
                             self.asset_data['total_positions'] = portfolio.get('total_positions', 0)
@@ -3791,15 +3793,13 @@ class AureonProDashboard:
         while True:
             try:
                 if self.symbol_manager and SYMBOL_MANAGER_AVAILABLE:
-                    # Get symbol counts
-                    if hasattr(self.symbol_manager, 'kraken_pairs'):
-                        self.symbol_data['kraken_pairs'] = len(self.symbol_manager.kraken_pairs) if self.symbol_manager.kraken_pairs else 0
-                    if hasattr(self.symbol_manager, 'binance_pairs'):
-                        self.symbol_data['binance_pairs'] = len(self.symbol_manager.binance_pairs) if self.symbol_manager.binance_pairs else 0
-                    if hasattr(self.symbol_manager, 'alpaca_pairs'):
-                        self.symbol_data['alpaca_pairs'] = len(self.symbol_manager.alpaca_pairs) if self.symbol_manager.alpaca_pairs else 0
-                    if hasattr(self.symbol_manager, 'capital_pairs'):
-                        self.symbol_data['capital_pairs'] = len(self.symbol_manager.capital_pairs) if self.symbol_manager.capital_pairs else 0
+                    # Get symbol counts from _symbol_cache dict
+                    if hasattr(self.symbol_manager, '_symbol_cache'):
+                        cache = self.symbol_manager._symbol_cache
+                        self.symbol_data['kraken_pairs'] = len(cache.get('kraken', {}))
+                        self.symbol_data['binance_pairs'] = len(cache.get('binance', {}))
+                        self.symbol_data['alpaca_pairs'] = len(cache.get('alpaca', {}))
+                        self.symbol_data['capital_pairs'] = len(cache.get('capital', {}))
                     
                     self.symbol_data['loaded'] = True
                     self.symbol_data['last_update'] = datetime.now().isoformat()
@@ -3828,23 +3828,17 @@ class AureonProDashboard:
         while True:
             try:
                 if self.queen_hive and QUEEN_HIVE_AVAILABLE:
-                    # Get hive status
-                    if hasattr(self.queen_hive, 'name'):
-                        self.queen_hive_data['queen_name'] = self.queen_hive.name
-                    if hasattr(self.queen_hive, 'authority'):
-                        self.queen_hive_data['authority_level'] = str(self.queen_hive.authority)
-                    if hasattr(self.queen_hive, 'hive_members'):
-                        active = len([m for m in self.queen_hive.hive_members.values() if m.get('active', False)])
-                        total = len(self.queen_hive.hive_members)
-                        self.queen_hive_data['hive_systems_online'] = active
-                        self.queen_hive_data['total_hive_systems'] = total
-                    if hasattr(self.queen_hive, 'autonomous_enabled'):
-                        self.queen_hive_data['autonomous_enabled'] = self.queen_hive.autonomous_enabled
-                    
-                    # Get full autonomous status if available
+                    # Use get_full_autonomous_status which has all the data we need
                     if hasattr(self.queen_hive, 'get_full_autonomous_status'):
                         full_status = self.queen_hive.get_full_autonomous_status()
-                        self.queen_hive_data['full_autonomous_status'] = full_status
+                        self.queen_hive_data['queen_name'] = 'SERO'
+                        self.queen_hive_data['authority_level'] = full_status.get('queen_sovereignty', 'SUPREME_AUTONOMOUS')
+                        self.queen_hive_data['hive_systems_online'] = full_status.get('totals', {}).get('hive_online', 0)
+                        self.queen_hive_data['total_hive_systems'] = full_status.get('totals', {}).get('hive_systems', 0)
+                        self.queen_hive_data['quantum_systems_online'] = full_status.get('totals', {}).get('quantum_online', 0)
+                        self.queen_hive_data['total_quantum_systems'] = full_status.get('totals', {}).get('quantum_systems', 0)
+                        self.queen_hive_data['autonomous_enabled'] = full_status.get('has_full_control', False)
+                        self.queen_hive_data['trading_enabled'] = full_status.get('trading_enabled', False)
                     
                     self.queen_hive_data['last_update'] = datetime.now().isoformat()
                     
