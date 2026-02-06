@@ -82,7 +82,11 @@ class _ReuseAddrTCPServer(socketserver.TCPServer):
 def _start_health_server():
     """Start health check HTTP server in background thread."""
     import sys
-    ports_to_try = [_HEALTH_PORT, 8081, 8888, 9999]  # Fallback ports (never 8080 — that's the dashboard)
+    # Deduplicate & always exclude 8080 (reserved for dashboard)
+    ports_to_try = list(dict.fromkeys([_HEALTH_PORT, 8081, 8888, 9999]))
+    ports_to_try = [p for p in ports_to_try if p != 8080]
+    if not ports_to_try:
+        ports_to_try = [8081]
     
     for port in ports_to_try:
         try:
@@ -3648,6 +3652,12 @@ class OrcaKillCycle:
         
         self.exchange = exchange
         self.fee_rate = self.fee_rates.get(exchange, 0.0025)
+        
+        # Wire exchange clients as DIRECT attributes (hunt_and_kill etc. use self.kraken)
+        self.kraken = self.clients.get('kraken')
+        self.binance = self.clients.get('binance')
+        self.alpaca = self.clients.get('alpaca')
+        self.capital = self.clients.get('capital')
         
         #                                                                    
         #   KRAKEN ASSET DISCOVERY - Auto-populate symbol whitelist
@@ -10113,12 +10123,10 @@ class OrcaKillCycle:
             # Try to get price from all exchanges to find which one has it
             for ex in ['binance', 'kraken', 'alpaca']:
                 try:
-                    if ex == 'binance':
-                        ticker = self.binance.get_ticker(symbol)
-                    elif ex == 'kraken':
-                        ticker = self.kraken.get_ticker(symbol)
-                    else:
-                        ticker = self.alpaca.get_ticker(symbol)
+                    ex_client = getattr(self, ex, None) or self.clients.get(ex)
+                    if not ex_client:
+                        continue
+                    ticker = ex_client.get_ticker(symbol)
                     
                     if ticker and float(ticker.get('last', ticker.get('price', 0))) > 0:
                         exchange = ex
@@ -10153,18 +10161,10 @@ class OrcaKillCycle:
         #                                                                    
         # SELECT CLIENT BASED ON EXCHANGE
         #                                                                    
-        if exchange == 'binance':
-            client = self.binance
-            print(f"  Using Binance client")
-        elif exchange == 'kraken':
-            client = self.kraken
-            print(f"  Using Kraken client")
-        elif exchange == 'alpaca':
-            client = self.alpaca
-            print(f"  Using Alpaca client")
-        else:
+        client = getattr(self, exchange, None) or self.clients.get(exchange)
+        if not client:
             client = self.client  # Fallback to default
-            print(f"  Using default client ({exchange})")
+        print(f"  Using {exchange} client ({'OK' if client else 'MISSING'})")
         
         # Get current price from the correct exchange
         try:
@@ -13636,9 +13636,12 @@ class OrcaKillCycle:
                     
                     # 1. Get current price and momentum
                     ticker = None
-                    for client_name, client in [('kraken', self.kraken), ('binance', self.binance), ('alpaca', self.alpaca)]:
+                    for client_name in ['kraken', 'binance', 'alpaca']:
+                        cl = getattr(self, client_name, None) or self.clients.get(client_name)
+                        if not cl:
+                            continue
                         try:
-                            ticker = client.get_ticker(symbol)
+                            ticker = cl.get_ticker(symbol)
                             if ticker:
                                 break
                         except:
