@@ -8634,6 +8634,62 @@ class OrcaKillCycle:
             # Fallback to direct execution
             return client.place_market_order(symbol=symbol, side='buy', quantity=quantity)
     
+    # ════════════════════════════════════════════════════════════════════════════
+    #  👑 QUEEN LEARNING FEEDBACK - FEED EVERY TRADE OUTCOME TO HER NEURAL BRAIN
+    # ════════════════════════════════════════════════════════════════════════════
+
+    def _queen_learn_from_sell(self, queen, symbol: str, exchange: str, pnl: float,
+                               entry_price: float = 0, exit_price: float = 0,
+                               reason: str = '') -> None:
+        """Feed trade outcome to Queen's neural brain for learning + update equity."""
+        if not queen:
+            return
+        try:
+            import asyncio
+            from queen_neuron import NeuralInput
+            outcome = pnl > 0
+            # Build a neutral NeuralInput (we don't have the original signals post-trade)
+            neural_input = NeuralInput(
+                probability_score=0.7 if outcome else 0.3,
+                wisdom_score=0.5,
+                quantum_signal=0.0,
+                gaia_resonance=0.5,
+                emotional_coherence=0.6 if outcome else 0.4,
+                mycelium_signal=0.0
+            )
+            trade_details = {
+                'symbol': symbol, 'exchange': exchange, 'pnl': pnl,
+                'entry_price': entry_price, 'exit_price': exit_price,
+                'reason': reason, 'outcome': 'WIN' if outcome else 'LOSS'
+            }
+
+            async def _learn():
+                return await queen.learn_from_trade(
+                    neural_input=neural_input,
+                    outcome=outcome,
+                    trade_details=trade_details
+                )
+
+            try:
+                loop = asyncio.get_event_loop()
+                if loop.is_closed():
+                    loop = asyncio.new_event_loop()
+                    asyncio.set_event_loop(loop)
+            except RuntimeError:
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+            result = loop.run_until_complete(_learn())
+            status = "WIN ✅" if outcome else "LOSS ❌"
+            loss_val = result.get('loss', 'N/A')
+            quantum_tag = " ⚛️" if result.get('quantum_enhanced') else ""
+            print(f"     👑 QUEEN LEARNED: {symbol} {status} (${pnl:+.4f}) | Loss: {loss_val}{quantum_tag}")
+            # Update Queen equity tracking
+            if hasattr(queen, 'equity'):
+                queen.equity += pnl
+                print(f"     👑 QUEEN EQUITY: ${queen.equity:,.2f}")
+        except Exception as e:
+            print(f"     ⚠️ Queen learning error: {e}")
+
     def execute_stealth_sell(self, client: Any, symbol: str, quantity: float,
                              price: float = None, exchange: str = 'alpaca') -> Dict:
         """
@@ -8912,6 +8968,28 @@ class OrcaKillCycle:
                     'rejected': True
                 }
         
+        #                                                                    
+        #  🛡️ QUEEN SOUL SHIELD GATE - PROTECT GARY'S ENERGY BEFORE EVERY TRADE
+        #                                                                    
+        if self.queen_soul_shield:
+            try:
+                shield_status = self.queen_soul_shield.get_shield_status()
+                if shield_status.power_level < 0.3:
+                    print(f"   🛡️ SOUL SHIELD BLOCKED: {symbol} [{context}] - Shield power critically low ({shield_status.power_level:.0%})")
+                    return {
+                        'status': 'blocked',
+                        'reason': f'Soul Shield power critically low: {shield_status.power_level:.0%}',
+                        'blocked_by': 'QUEEN_SOUL_SHIELD',
+                        'symbol': symbol,
+                        'exchange': exchange,
+                        'context': context,
+                        'rejected': True
+                    }
+                # Log shield status on every approved trade
+                print(f"   🛡️ SOUL SHIELD: {shield_status.power_level:.0%} power | Blocked {shield_status.attacks_blocked_session} attacks")
+            except Exception as e:
+                print(f"   ⚠️ Soul Shield check warning: {e}")
+
         #                                                                    
         #     EXECUTE THE BUY - THE QUEEN HAS GRANTED PERMISSION!
         #                                                                    
@@ -11221,6 +11299,14 @@ class OrcaKillCycle:
                                         'net_pnl': final_pnl
                                     })
                                     print(f"      SOLD {pos.symbol}: ${final_pnl:+.4f} ({pos.kill_reason})")
+                                    # 👑 QUEEN LEARNS FROM THIS TRADE
+                                    self._queen_learn_from_sell(
+                                        queen=queen if 'queen' in dir() else self.queen_hive,
+                                        symbol=pos.symbol, exchange=pos.exchange,
+                                        pnl=final_pnl,
+                                        entry_price=pos.entry_price, exit_price=sell_price,
+                                        reason=f'pack_hunt_{pos.kill_reason}'
+                                    )
                                     
                                     #     IMMEDIATE RE-SCAN & RE-BUY AFTER PROFITABLE SELL!    
                                     print(f"\n       IMMEDIATE RE-SCAN - AGGRESSIVE MODE!    ")
@@ -11643,11 +11729,17 @@ class OrcaKillCycle:
         print()
         
         # Wire up the Queen Hive Mind (MANDATORY for autonomous mode)
+        # Use the already-initialized self.queen_hive to avoid dual Queen instances
         queen = None
         try:
-            from aureon_queen_hive_mind import QueenHiveMind
-            queen = QueenHiveMind()
-            print("  QUEEN DR AURIS THRONE: AWAKENED AND READY!")
+            if self.queen_hive:
+                queen = self.queen_hive
+                print("  👑 QUEEN DR AURIS THRONE: AWAKENED (from init)!")
+            else:
+                from aureon_queen_hive_mind import QueenHiveMind
+                queen = QueenHiveMind()
+                self.queen_hive = queen  # Store so there's only ONE Queen
+                print("  👑 QUEEN DR AURIS THRONE: AWAKENED AND READY!")
             print(f"     Dream: ${queen.THE_DREAM:,.0f} (ONE BILLION)")
             print(f"     Current equity: ${queen.equity:,.2f}")
             
@@ -11905,6 +11997,13 @@ class OrcaKillCycle:
                                             session_stats['total_trades'] += 1
                                             session_stats['best_trade'] = max(session_stats['best_trade'], exit_info.get('net_pnl', net_pnl))
                                             print(f"        CLOSED! +${exit_info.get('net_pnl', net_pnl):.4f} freed ${exit_value:.2f}")
+                                            # 👑 QUEEN LEARNS FROM THIS TRADE
+                                            self._queen_learn_from_sell(
+                                                queen=queen, symbol=symbol, exchange=exchange_name,
+                                                pnl=exit_info.get('net_pnl', net_pnl),
+                                                entry_price=entry_price, exit_price=current_price,
+                                                reason='phase0_profitable_close'
+                                            )
                                     except Exception as e:
                                         print(f"         Sell failed: {e}")
                                         # Keep as live position to monitor
@@ -11999,6 +12098,13 @@ class OrcaKillCycle:
                                                     session_stats['winning_trades'] += 1
                                                     session_stats['total_trades'] += 1
                                                     print(f"        CLOSED! +${net_pnl:.4f}")
+                                                    # 👑 QUEEN LEARNS FROM THIS TRADE
+                                                    self._queen_learn_from_sell(
+                                                        queen=queen, symbol=symbol, exchange=exchange_name,
+                                                        pnl=net_pnl,
+                                                        entry_price=entry_price, exit_price=current_price,
+                                                        reason='phase0_kraken_profitable'
+                                                    )
                                                     continue  # Skip adding to positions
                                             except Exception as e:
                                                 print(f"         Sell failed: {e}")
@@ -12681,6 +12787,13 @@ class OrcaKillCycle:
                                         session_stats['best_trade'] = max(session_stats['best_trade'], exit_info.get('net_pnl', net_pnl))
                                         positions.remove(pos)
                                         print(f"     CLOSED! +${exit_info.get('net_pnl', net_pnl):.4f}   Cash freed for new buys!")
+                                        # 👑 QUEEN LEARNS FROM THIS TRADE
+                                        self._queen_learn_from_sell(
+                                            queen=queen, symbol=pos.symbol, exchange=pos.exchange,
+                                            pnl=exit_info.get('net_pnl', net_pnl),
+                                            entry_price=pos.entry_price, exit_price=current,
+                                            reason='phase0_auto_close'
+                                        )
                                         last_scan_time = 0  # Force immediate scan for new opportunities
                         except Exception as sell_err:
                             print(f"   Sell check error for {pos.symbol}: {sell_err}")
@@ -13409,6 +13522,14 @@ class OrcaKillCycle:
                                     # Remove position
                                     positions.remove(pos)
                                     
+                                    # 👑 QUEEN LEARNS FROM THIS TRADE
+                                    self._queen_learn_from_sell(
+                                        queen=queen, symbol=pos.symbol, exchange=pos.exchange,
+                                        pnl=final_pnl,
+                                        entry_price=pos.entry_price, exit_price=sell_price,
+                                        reason=f'phase2_monitor_{sell_reason}'
+                                    )
+                                    
                                     # Force immediate scan for next opportunity
                                     last_scan_time = 0
                                     
@@ -13469,6 +13590,13 @@ class OrcaKillCycle:
                             closed_pnl += final_pnl
                             session_stats['total_pnl'] += final_pnl
                             print(f"      Closed {pos.symbol}: ${final_pnl:+.4f}")
+                            # 👑 QUEEN LEARNS FROM THIS TRADE
+                            self._queen_learn_from_sell(
+                                queen=queen, symbol=pos.symbol, exchange=pos.exchange,
+                                pnl=final_pnl,
+                                entry_price=pos.entry_price, exit_price=sell_price,
+                                reason='ctrl_c_cleanup'
+                            )
                     else:
                         kept_count += 1
                         blocked_reason = exit_info.get('blocked_reason', 'not profitable')
