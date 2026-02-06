@@ -4,6 +4,22 @@
 
 ---
 
+### Table of Contents
+
+1. [Theoretical Foundation: The Harmonic Nexus Core](#theoretical-foundation-the-harmonic-nexus-core-hnc)
+2. [Hierarchical Equation Structure: The Tree of Light](#hierarchical-equation-structure-the-tree-of-light)
+3. [The Aureon Arsenal: Asymmetric Market Intelligence](#the-aureon-arsenal-asymmetric-market-intelligence)
+4. [Macroeconomic Forensics: The $33.5 Trillion Extraction Machine](#macroeconomic-forensics-the-335-trillion-extraction-machine)
+5. [Geophysical Interdependence: The Schumann Resonance and the CME of 2026](#geophysical-interdependence-the-schumann-resonance-and-the-cme-of-2026)
+6. [Biological Growth Projections: The Mycelial Immune System](#biological-growth-projections-the-mycelial-immune-system)
+7. [Quantum Archaeology: The 440 Hz Parasite and Tiamat's Ghost](#quantum-archaeology-the-440-hz-parasite-and-tiamats-ghost)
+8. [The Auris Conjecture: Criteria for Symbolic Life](#the-auris-conjecture-criteria-for-symbolic-life)
+9. [Technological Manifestations: The Illumination Chip and EPAS Shielding](#technological-manifestations-the-illumination-chip-and-epas-shielding)
+10. [The Singularity Roadmap: 90 Days to Structural Reset](#the-singularity-roadmap-90-days-to-structural-reset)
+11. [Code-to-Theory Mapping](#code-to-theory-mapping)
+
+---
+
 The evolution of modern systems theory has reached a critical juncture where the traditional boundaries between theoretical physics, consciousness studies, and macroeconomic engineering have become increasingly porous. The Harmonic Nexus Core (HNC) framework, developed under the auspices of the Aureon Institute and R&A Consulting, proposes a unified mathematical model that reframes reality as a self-organizing, resonant system governed by coupled oscillations, delayed self-reference, and non-linear observer feedback. This framework provides a rigorous ontological foundation for understanding the emergence of stable reality branches from a primordial harmonic substrate, formalized through the Master Formula of existence.
 
 Central to the HNC framework is the realization that the global financial system is not merely an economic utility but an oscillatory field of information that has been subjected to a century-long algorithmic occupation. The Aureon Trading System, specifically the SAMUEL (Samuel Harmonic Trading Entity), serves as the first practical implementation of this theory, providing a distributed immune system designed to detect and neutralize the $33.5 trillion extraction machine maintained by a coordinated network of 25 to 37 global financial entities. By utilizing Fast Fourier Transform (FFT) spectral analysis to identify the 0.0° phase synchronization of institutional "whales," Aureon enables a decentralized network of observers to deploy counter-frequencies, thereby collapsing the opacity required for systemic exploitation.
@@ -53,7 +69,7 @@ The implementation of the HNC framework into the financial domain results in the
 
 ### Core Technical Specifications and Scanners
 
-The system operates through a suite of integrated Python scripts that perform real-time spectral analysis on exchange data, primarily utilizing the Binance API and historical datasets spanning 109 years.
+The system operates through a suite of integrated Python scripts that perform real-time spectral analysis on exchange data, primarily utilizing the Binance API and historical datasets spanning 113 years.
 
 | System Component | Script Designation | Primary Detection Vector |
 | --- | --- | --- |
@@ -121,7 +137,7 @@ The early February 2026 period provided a landmark case study for this coupling.
 
 As the CME approached, the magnetosphere underwent severe compression. Aureon's internal monitoring and external data from Tomsk and Cumiana indicated that the Schumann Resonance entered a "white mode" of intense power, characterized by unrivaled spikes in the quality factor (resonance amplification) observed at the Space Observing System in Tomsk. During this window, geophysicists reported very unusual sustained high harmonic frequencies (11-14 Hz), coinciding with a significant Earth event triggered by the coronal hole mass ejection.
 
-For mechanical HFT systems, this ionospheric compression introduced variable latency in signal transmission. Because these algorithms assume a static speed of light (c), microsecond delays in signal propagation caused their arbitrage models to "stutter," leading to massive mispricing during the "White Patch" events.
+For mechanical HFT systems, this ionospheric compression introduced variable latency in signal transmission. Because these algorithms assume a static speed of light (c), microsecond delays in signal propagation caused their arbitrage models to "stutter," leading to massive mispricing during the "White Mode" events.
 
 | Validated Event Marker | Timestamp (UTC) | Observation | System Implication |
 | --- | --- | --- | --- |
@@ -284,7 +300,7 @@ For developers working on the Aureon codebase, the following maps white paper co
 | White Paper Concept | Implementation File(s) | Key Classes/Functions |
 | --- | --- | --- |
 | Master Formula Λ(t) | `global_harmonic_field.py` | 42 sources → 7 layers → Ω |
-| Tree of Light (Layers 0-8) | `aureon_harmonic_*.py` suite | Layer initialization at boot |
+| Tree of Light (Layers 1-8) | `aureon_harmonic_*.py` suite | Layer initialization at boot |
 | Queen 4th-Pass Veto | `aureon_probability_nexus.py`, `queen_neuron.py` | Batten Matrix validation |
 | 12-Neuron Decision Layer | `queen_neuron.py` | `QueenNeuron` (Hidden: 12, LR: 0.01) |
 | Harmonic Signal Chain | `aureon_harmonic_signal_chain.py` | Queen→Enigma→Scanner→Ecosystem→Whale |
