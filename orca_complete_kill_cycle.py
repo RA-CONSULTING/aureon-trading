@@ -12345,7 +12345,8 @@ class OrcaKillCycle:
                                     print(f"     Breadcrumb portfolio: ${breadcrumb_summary['total_value']:.2f}")
                                     print(f"     Breadcrumb P&L: ${breadcrumb_summary['total_pnl']:+.2f}")
                     except Exception as ee:
-                        pass  # Silent fail - eternal machine is optional enhancement
+                        print(f"   Eternal Machine error (non-fatal): {ee}")
+                        import traceback; traceback.print_exc()
 
                 #   Queen pacing + profit target updates
                 if current_time - last_queen_update >= queen_update_interval:
@@ -12568,8 +12569,8 @@ class OrcaKillCycle:
                                         positions.remove(pos)
                                         print(f"     CLOSED! +${exit_info.get('net_pnl', net_pnl):.4f}   Cash freed for new buys!")
                                         last_scan_time = 0  # Force immediate scan for new opportunities
-                        except Exception:
-                            pass
+                        except Exception as sell_err:
+                            print(f"   Sell check error for {pos.symbol}: {sell_err}")
                 
                 #                                                            
                 # PHASE 1: SCAN FOR NEW OPPORTUNITIES (   QUANTUM ENHANCED)
@@ -13981,10 +13982,25 @@ if __name__ == "__main__":
         if args.autonomous:
             print("  AUTONOMOUS MODE ACTIVATED")
             print(f"  {'LIVE MODE - REAL TRADES' if not args.dry_run else 'DRY-RUN MODE'}")
-            print(f"  Starting autonomous war room...")
-            orca.run_autonomous_warroom()
+            print(f"  Starting FULL autonomous Queen loop (sell + buy + frog)...")
+            print(f"  Args: max_positions={args.max_positions}, position_size=${args.position_size}, min_target={args.min_target}%")
+            # CRITICAL: Use run_autonomous() NOT run_autonomous_warroom()!
+            # run_autonomous_warroom() is BUY-ONLY (no sell/harvest/siphon/frog).
+            # run_autonomous() has the FULL 4-phase loop:
+            #   PHASE 0: Scan portfolio → close profitable positions (Queen-gated)
+            #   PHASE 1: Scan for new opportunities (quantum enhanced)
+            #   PHASE 2: Monitor live positions → auto-close on profit
+            #   + Eternal Machine (Quantum Frog leaps)
+            #   + Avalanche Harvester
+            #   + Fire Trader emergency profits
+            orca.run_autonomous(
+                max_positions=args.max_positions,
+                amount_per_position=args.position_size,
+                target_pct=args.min_target,
+                min_change_pct=0.05
+            )
         else:
-            print("  MANUAL MODE - Use orca.run_autonomous_warroom() for autonomous trading")
+            print("  MANUAL MODE - Use orca.run_autonomous() for autonomous trading")
             # Keep alive for manual interaction
             import time
             while True:
