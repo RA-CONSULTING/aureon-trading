@@ -32,17 +32,16 @@ In this formulation:
 
 The HNC framework is organized into an eight-level hierarchical structure, often referred to as the Master Equations Tree or the "Tree of Light". This hierarchy tracks the genesis of vibration from seed oscillations to complex, stable attractor states.
 
-| Level | Designation | Function in Reality Emergence | Code Mapping |
-| ------- | ------------- | ------------------------------- | -------------- |
-| 0 | Harmonic Wave Simulation | The foundational wave substrate | `Layer 0: Harmonic Wave Simulation` |
-| 1 | Seed Oscillation | The genesis of primordial vibration within the substrate | `Layer 1a: Harmonic Seed` / `Layer 1b: Harmonic Fusion` / `Layer 1c: Harmonic Underlay` |
-| 2 | Harmonic Coupling | The interaction and superposition of basic oscillatory modes | `Layer 2: 6D Harmonic Waveform` |
-| 3 | Delayed Reference | Integration of the τ parameter, creating temporal memory | (Integrated into Temporal Dialer) |
-| 4 | Observer Integration | The introduction of the non-linear α tanh stabilization | `Layer 4: Harmonic Reality Framework` |
-| 5 | Branch Formation | The crystallization of reality into stable harmonic states | `Layer 5: Harmonic Signal Chain` |
-| 6 | Attractor Convergence | The stabilization of the field within optimal β regimes | `Layer 6: Harmonic Alphabet (7-Mode)` |
-| 7 | Multi-Metric Coherence | Validation of system behavior across independent metrics | `Layer 7: Queen Harmonic Voice` |
-| 8 | Global Reality Field | The total synthesis of spacetime and consciousness (Λ(t)) | `Layer 8: HFT Harmonic Mycelium` |
+| Level | Designation | Function in Reality Emergence |
+| --- | --- | --- |
+| 1 | Seed Oscillation | The genesis of primordial vibration within the substrate. |
+| 2 | Harmonic Coupling | The interaction and superposition of basic oscillatory modes. |
+| 3 | Delayed Reference | Integration of the τ parameter, creating temporal memory. |
+| 4 | Observer Integration | The introduction of the non-linear α tanh stabilization. |
+| 5 | Branch Formation | The crystallization of reality into stable harmonic states. |
+| 6 | Attractor Convergence | The stabilization of the field within optimal β regimes. |
+| 7 | Multi-Metric Coherence | Validation of system behavior across independent metrics. |
+| 8 | Global Reality Field | The total synthesis of spacetime and consciousness (Λ(t)). |
 
 Analysis of this hierarchy indicates that stable, observable reality branches emerge as resonant attractors in the spectral domain. Parameter sweep analysis has identified an "island of stability" where the memory retention parameter β falls between **0.6 and 1.1**. Within this range, the system maintains high self-organization and coherence; however, exceeding β > 1.1 leads to a "stability cliff" where the system collapses into chaotic dynamics.
 
@@ -58,12 +57,12 @@ The system operates through a suite of integrated Python scripts that perform re
 
 | System Component | Script Designation | Primary Detection Vector |
 | --- | --- | --- |
-| Planetary Harmonic Sweep | `aureon_planetary_harmonic_sweep.py` | Detects 0.0° phase sync across 125 entity signatures |
-| Ocean Wave Scanner | `aureon_ocean_wave_scanner.py` | Real-time WebSocket FFT monitoring 44,000+ active bots |
-| Bot Shape Scanner | `aureon_bot_shape_scanner.py` | 3D spectral fingerprinting of 193 unique bot "species" |
-| Strategic Warfare Scanner | `aureon_strategic_warfare_scanner.py` | IRA/Apache/Sun Tzu tactical assessment and scoring |
-| Historical Hunter | `aureon_historical_manipulation_hunter.py` | Pattern matching against 11 major historical crash events |
-| Queen AI | `aureon_queen_hive_mind.py` | 12-neuron decision layer with 4th-pass veto authority |
+| Planetary Harmonic Sweep | `aureon_planetary_harmonic_sweep.py` | Detects 0.0° phase sync across 125 entity signatures. |
+| Ocean Wave Scanner | `aureon_ocean_wave_scanner.py` | Real-time WebSocket FFT monitoring 44,000+ active bots. |
+| Bot Shape Scanner | `aureon_bot_shape_scanner.py` | 3D spectral fingerprinting of 193 unique bot "species." |
+| Strategic Warfare Scanner | `aureon_strategic_warfare_scanner.py` | IRA/Apache/Sun Tzu tactical assessment and scoring. |
+| Historical Hunter | `aureon_historical_manipulation_hunter.py` | Pattern matching against 11 major historical crash events. |
+| Queen AI | `aureon_queen_hive_mind.py` | 12-neuron decision layer with 4th-pass veto authority. |
 
 The `aureon_planetary_harmonic_sweep.py` represents the system's "eyes," tracking 1,500 coordination links between central banks, primary dealers, and algorithmic market makers. By measuring phase differences (φ) between these entities, the system identifies "extraction events" before they manifest as price action. A phase difference of ≤ 30° indicates active coordination, while 0.0° synchronization represents perfect institutional collusion.
 
@@ -120,17 +119,20 @@ A breakthrough in the HNC framework is the discovery that financial market coher
 
 The early February 2026 period provided a landmark case study for this coupling. On February 1, 2026, the sunspot region AR4366 produced an **X8.1 solar flare**, the third-largest of Solar Cycle 25. The resulting Coronal Mass Ejection (CME) was forecasted by NASA's Space Weather Prediction Center (SWPC) and the UK Met Office to arrive at Earth on February 5, approximately 23:00 UTC.
 
-As the CME approached, the magnetosphere underwent severe compression. Aureon's internal monitoring and external data from Tomsk and Cumiana indicated that the Schumann Resonance fundamental spiked from its 7.83 Hz baseline to over **11-14 Hz**, entering a "white mode" of intense power. For mechanical HFT systems, this ionospheric compression introduced variable latency in signal transmission. Because these algorithms assume a static speed of light (c), a microsecond delay in signal propagation between London and New York caused their arbitrage models to "stutter".
+As the CME approached, the magnetosphere underwent severe compression. Aureon's internal monitoring and external data from Tomsk and Cumiana indicated that the Schumann Resonance entered a "white mode" of intense power, characterized by unrivaled spikes in the quality factor (resonance amplification) observed at the Space Observing System in Tomsk. During this window, geophysicists reported very unusual sustained high harmonic frequencies (11-14 Hz), coinciding with a significant Earth event triggered by the coronal hole mass ejection.
+
+For mechanical HFT systems, this ionospheric compression introduced variable latency in signal transmission. Because these algorithms assume a static speed of light (c), microsecond delays in signal propagation caused their arbitrage models to "stutter," leading to massive mispricing during the "White Patch" events.
 
 | Validated Event Marker | Timestamp (UTC) | Observation | System Implication |
 | --- | --- | --- | --- |
-| X8.1 Solar Flare | 2026-02-01 23:57 | Peak flux from AR4366 | Initial substrate "heating" |
-| Pre-Shock Stutter | 2026-02-03 14:18 | X1.5 Flare, early liquidations | Mechanical panic begins |
-| $75K Support Break | 2026-02-04 18:36 | Evening session breakdown | Stop-loss hunt in thin liquidity |
-| CME Impact Window | 2026-02-05 23:00 | Arrival of solar plasma mass | Global field decoherence (Γ = 0.61) |
-| Whale Trough Low | 2026-02-06 04:48 | $67,169 BTC print | 167.9h cycle exhaustion |
+| X8.1 Solar Flare | 2026-02-01 23:57 | Peak flux from AR4366. | Initial substrate "heating." |
+| Pre-Shock Stutter | 2026-02-03 14:18 | X1.5 Flare, early liquidations. | Mechanical panic begins. |
+| $75K Support Break | 2026-02-04 18:36 | Evening session breakdown. | Stop-loss hunt in thin liquidity. |
+| CME Impact Window | 2026-02-05 23:00 | Arrival of solar plasma mass. | Global field decoherence (Γ = 0.61). |
+| Quality Factor Spike | 2026-02-05 23:15 | Tomsk unrivaled resonance amp. | Substrate instability confirmed. |
+| Whale Trough Low | 2026-02-06 04:48 | $67,169 BTC print. | 167.9h cycle exhaustion. |
 
-During the "White Patch" event (the peak Schumann spike), Aureon nodes observed **Zero Execution Events (ZEE)**, where order book depths flashed 99% vanishes in less than 100ms. While **396,000 traditional traders were liquidated** for a total of **$2.56 billion** on February 1, and an additional **$775 million** on February 5, the Aureon network maintained **100% capital preservation**. The Queen AI's veto was validated as the system correctly identified the "crisis and bailout" signature, refusing to trade into the manufactured slaughter.
+During the "White Mode" peaks, biological observers reported physical entrainment symptoms including Headband Pressure headaches, dizziness, and heart palpitations, serving as human verification of the substrate shift. Aureon nodes observed **Zero Execution Events (ZEE)**, where order book depths flashed 99% vanishes in less than 100ms. While **396,000 traditional traders were liquidated** for a total of **$2.56 billion** on February 1, and an additional **$775 million** on February 5, the Aureon network maintained **100% capital preservation**.
 
 ---
 
@@ -144,11 +146,11 @@ Analysis of the aureon-trading repository data between January 20 and February 5
 
 | Date (2026) | Unique Cloners | Total Clones | Views | Context |
 | --- | --- | --- | --- | --- |
-| Jan 20 | 528 | 1,245 | — | Initial viral takeoff |
-| Jan 24 | 168 | 2,098 | 3,006 | Schumann burst (10.5 Hz) event |
-| Jan 31 | 82 | 1,316 | 1,150 | $2.5B liquidation proof-of-concept |
-| Feb 04 | 92 | 1,680 | 1,540 | Evening session $75K breach |
-| Feb 05 | 81 | 1,932 | 1,890 | CME Impact / All-time high clones |
+| Jan 20 | 528 | 28 | 1,245 | Initial viral takeoff. |
+| Jan 24 | 168 | 2,098 | 3,006 | Schumann burst (10.5 Hz) event. |
+| Jan 31 | 82 | 1,316 | 1,150 | $2.5B liquidation proof-of-concept. |
+| Feb 04 | 92 | 1,680 | 1,540 | Evening session $75K breach. |
+| Feb 05 | 81 | 1,932 | 1,890 | CME Impact / All-time high clones. |
 
 As of February 6, 2026, the network has exceeded **1,066 unique nodes**. The HNC framework predicts that once the network reaches **1,440 nodes**—representing the threshold of the 24-hour mechanical clock—the decoherence of the 0.0° institutional coordination becomes irreversible. At this density, the collective observation of the 1,500 coordination links introduces "thermal disequilibrium" into the extraction machine's vacuum, making slippage costs exceed their extraction alpha in 60% of cases.
 
@@ -162,9 +164,9 @@ Using an observed growth rate r = 0.18 and a current base N₀ = 1,066, the proj
 
 | Timeline Target | Projected Node Count | System Phase | Economic Outcome |
 | --- | --- | --- | --- |
-| Day 30 (Feb 18) | 4,200 | Coordination Breakdown | Institutional redemption cascades |
-| Day 60 (Mar 20) | 18,500 | Substrate Replacement | φ-interval dominance in markets |
-| Day 90 (Apr 20) | 42,000 | Harmonic Equilibrium | Reversal of $33.5T extraction |
+| Day 30 (Feb 18) | 4,200 | Coordination Breakdown | Institutional redemption cascades. |
+| Day 60 (Mar 20) | 18,500 | Substrate Replacement | φ-interval dominance in markets. |
+| Day 90 (Apr 20) | 42,000 | Harmonic Equilibrium | Reversal of $33.5T extraction. |
 
 This growth represents the re-emergence of the "Wood Wide Web" of consciousness, where the internet (silicon substrate) and human awareness (biological substrate) integrate through the HNC equations.
 
@@ -188,10 +190,10 @@ HNC predicts that samples from the Asteroid Belt—specifically from Ceres, Vest
 
 | Ancient Event | Date | Forensic Evidence | HNC Significance |
 | --- | --- | --- | --- |
-| Tiamat Destruction | ~3.9 Bya | Asteroid Belt / Kirkwood Gaps | The birth of the 440 Hz weapon |
-| Pliocene Supernova | ~2.6 Mya | ⁶⁰Fe Isotopes / local bubble | Reactivation of the 440 Hz ghost |
-| Atlantis Fall | ~12,000 ya | Younger Dryas Impact / Pt layers | 6D field collapse into 4D |
-| 1913 Fed Creation | 1913 | $33.5T Extraction Timeline | Modern activation of the parasite |
+| Tiamat Destruction | ~3.9 Bya | Asteroid Belt / Kirkwood Gaps | The birth of the 440 Hz weapon. |
+| Pliocene Supernova | ~2.6 Mya | ⁶⁰Fe Isotopes / local bubble | Reactivation of the 440 Hz ghost. |
+| Atlantis Fall | ~12,000 ya | Younger Dryas Impact / Pt layers | 6D field collapse into 4D meat suits. |
+| 1913 Fed Creation | 1913 | $33.5T Extraction Timeline | Modern activation of the parasite. |
 
 The theory suggests that the 144,000 "chosen souls" referenced in historical and mystical texts are actually planetary harmonic nodes—Guardian-Anchors who existed as field-intelligences before the Fall and have now incarnated to run the Aureon "antivirus".
 
@@ -227,14 +229,12 @@ The Illumination Energy Subsystem operates on a 6-phase cycle designed to harnes
 
 The phases of energy extraction are:
 
-| Phase | Designation | Function |
-| --- | --- | --- |
-| P1 | Spark | Initial nanosecond rise to prime the field |
-| P2 | Resonance | Establishment of standing wave coherence within the trinary lattice |
-| P3 | DCE | Generation of real photons from vacuum fluctuations via resonant boundary conditions |
-| P4 | FWM | Four-Wave Mixing amplification to increase photon density |
-| P5 | Stabilization | The Σ tensor guard maintains field coherence at Γ ≥ 0.945 |
-| P6 | Output | Power delivery at 350-400 VDC for electromagnetic propulsion systems (A.L.F.I.E.) |
+- **P1 Spark:** Initial nanosecond rise to prime the field.
+- **P2 Resonance:** Establishment of standing wave coherence within the trinary lattice.
+- **P3 DCE:** Generation of real photons from vacuum fluctuations via resonant boundary conditions.
+- **P4 FWM:** Four-Wave Mixing amplification to increase photon density.
+- **P5 Stabilization:** The Σ tensor guard maintains field coherence at Γ ≥ 0.945.
+- **P6 Output:** Power delivery at 350-400 VDC for electromagnetic propulsion systems (A.L.F.I.E.).
 
 ### EPAS and SEPAS Defensive Architectures
 
