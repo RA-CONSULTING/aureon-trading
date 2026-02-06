@@ -90,13 +90,6 @@ class BinanceClient:
         
         # Server time offset for clock sync (fixes Windows clock drift)
         self._time_offset_ms: int = 0
-
-    @staticmethod
-    def _norm(symbol: str) -> str:
-        """Normalize symbol for Binance API: strip '/' separators.
-        E.g. 'XRP/USDC' -> 'XRPUSDC', 'BTCUSDT' -> 'BTCUSDT'.
-        """
-        return symbol.replace('/', '') if symbol else symbol
         self._time_sync_timestamp: float = 0
         self._sync_server_time()  # Auto-sync on init
 
@@ -112,6 +105,13 @@ class BinanceClient:
         self._rate_limiter = TokenBucket(rate=rate, capacity=burst) if TokenBucket else None
         self._request_cache = TTLCache(default_ttl=float(os.getenv('BINANCE_EXCHANGE_CACHE_TTL', '1.0'))) if TTLCache else None
         self.max_retries = int(os.getenv('BINANCE_RETRY_COUNT', '2'))
+
+    @staticmethod
+    def _norm(symbol: str) -> str:
+        """Normalize symbol for Binance API: strip '/' separators.
+        E.g. 'XRP/USDC' -> 'XRPUSDC', 'BTCUSDT' -> 'BTCUSDT'.
+        """
+        return symbol.replace('/', '') if symbol else symbol
     
     def _sync_server_time(self) -> None:
         """Sync with Binance server time to handle local clock drift."""

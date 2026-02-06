@@ -4731,7 +4731,7 @@ class OrcaKillCycle:
         self.queen_soul_shield = None
         try:
             from queen_soul_shield import QueenSoulShield
-            self.queen_soul_shield = QueenSoulShield(protected_name="Gary Leckey")
+            self.queen_soul_shield = QueenSoulShield(protected_soul="Gary Leckey")
             # Start monitoring in background
             self.queen_soul_shield.start_monitoring()
             _safe_print("    Queen Soul Shield: ACTIVE! (Gary's soul protected)")
