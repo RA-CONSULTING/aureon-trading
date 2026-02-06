@@ -102,6 +102,9 @@ except Exception as e:
 
 # Seed Kraken state file from live API (if empty)
 echo "🐙 Seeding Kraken state file from API..."
+if [ "${AUREON_SKIP_KRAKEN_SEED:-0}" = "1" ]; then
+    echo "⏭️ Skipping Kraken seeding because AUREON_SKIP_KRAKEN_SEED=1"
+else
 python -c "
 import sys
 import os
@@ -117,7 +120,7 @@ try:
     with open(state_file, 'r') as f:
         state = json.load(f)
     if state.get('positions'):
-        print(f'✅ Kraken state already has {len(state[\"positions\"])} positions')
+        print(f'✅ Kraken state already has {len(state["positions"])} positions')
         needs_seeding = False
 except:
     pass
@@ -162,6 +165,7 @@ if needs_seeding:
 
 print('✅ Kraken state initialization complete')
 "
+fi
 
 echo "🎉 Validation complete! Ready to start services."
 echo ""

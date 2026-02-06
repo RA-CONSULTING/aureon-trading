@@ -79,6 +79,9 @@ services:
       - key: PORT
         scope: RUN_TIME
         value: "8080"
+      - key: AUREON_SKIP_KRAKEN_SEED
+        scope: RUN_TIME
+        value: "1"
       - key: AUREON_STATE_DIR
         scope: RUN_TIME
         value: /app/state
