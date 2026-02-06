@@ -1,6 +1,6 @@
 {
   "starting_capital": 78.51,
-  "last_update": 1770333953.779467,
+  "last_update": 1770409129.2512627,
   "history": [
     {
       "timestamp": 1769964334.7836993,
@@ -15386,6 +15386,29 @@
       "win_rate": 0.0,
       "dream_target": 1000000000.0,
       "dream_progress_pct": 1.9429659999999998e-06,
+      "treasury_usd": 0.0,
+      "harvest_reserve_breakdown": {}
+    },
+    {
+      "timestamp": 1770409129.2510269,
+      "total_usd": 19.92966,
+      "alpaca_usd": 6.67,
+      "kraken_usd": 13.25966,
+      "binance_usd": 0.0,
+      "capital_usd": 0.0,
+      "starting_capital": 78.51,
+      "cumulative_net_pnl": -58.58034000000001,
+      "floating_pnl": 0.0,
+      "lifetime_realized_pnl": -58.58034000000001,
+      "realized_pnl": -58.58034000000001,
+      "unrealized_pnl": 0.0,
+      "total_fees_paid": 0.0,
+      "total_trades": 94,
+      "winning_trades": 0,
+      "losing_trades": 0,
+      "win_rate": 0.0,
+      "dream_target": 1000000000.0,
+      "dream_progress_pct": 1.9929659999999997e-06,
       "treasury_usd": 0.0,
       "harvest_reserve_breakdown": {}
     }
