@@ -93,9 +93,11 @@ COPY --chown=aureon:aureon production/supervisord.conf /etc/supervisor/conf.d/su
 RUN chmod +x /aureon/entrypoint.sh && \
     mkdir -p /aureon/config/supervisor.d
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-    CMD curl -f http://localhost:8888/health || exit 1
+# Health check - test the new health check server on port 8080
+# Initial delay of 120s to allow supervisor and all services to start
+# Interval of 30s, timeout 5s, retries 5 (fail after 5 consecutive failures)
+HEALTHCHECK --interval=30s --timeout=5s --start-period=120s --retries=5 \
+    CMD curl -f http://localhost:8080/health || exit 1
 
 # Expose ports
 # 8888 - Command Center UI
