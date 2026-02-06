@@ -82,7 +82,7 @@ class _ReuseAddrTCPServer(socketserver.TCPServer):
 def _start_health_server():
     """Start health check HTTP server in background thread."""
     import sys
-    ports_to_try = [_HEALTH_PORT, 8080, 8888, 9999]  # Fallback ports
+    ports_to_try = [_HEALTH_PORT, 8081, 8888, 9999]  # Fallback ports (never 8080 — that's the dashboard)
     
     for port in ports_to_try:
         try:
@@ -126,12 +126,13 @@ def update_health_status(cycles=None, positions=None, status=None):
     if status is not None:
         _health_status['status'] = status
 
-# Start health server immediately in background thread (NON-DAEMON so it survives)
-_health_thread = threading.Thread(target=_start_health_server, daemon=False)
-_health_thread.start()
-
-# Give health server a brief moment to bind to a port
-_time.sleep(0.5)
+# Only start health server when orca is the MAIN program (not on import by dashboard/bridge)
+_health_thread = None
+if __name__ == '__main__' or os.environ.get('ORCA_HEALTH_SERVER') == '1':
+    _health_thread = threading.Thread(target=_start_health_server, daemon=True)
+    _health_thread.start()
+    # Give health server a brief moment to bind to a port
+    _time.sleep(0.5)
 
 #    DISABLED: Baton link was causing hangs during import
 # from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
