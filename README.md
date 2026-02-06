@@ -4,6 +4,19 @@
 
 > **Multi-dimensional financial intelligence platform exposing systematic market manipulation through spectral analysis, historical pattern recognition, and ancestral wisdom integration.**
 
+### Quick Navigation
+
+| Section | What's There |
+|---------|-------------|
+| [The Evidence](#-the-complete-exposure-335-trillion-extracted-from-humanity) | $33.5T extraction timeline, perpetrator network, bot registry |
+| [Bot Intelligence](#-the-bot-army-23-algorithms-exposed) | 23 exposed algorithms, ownership attribution, detection methods |
+| [Global Predators](#-global-bot-intelligence-system) | 37 firms profiled, $13T+ capital tracked, 44,000+ bots |
+| [Architecture](#architecture-overview) | System design, Queen Hive Mind, exchange clients, profit gate |
+| [Quick Start](#quick-start-war-room-dashboard) | Setup instructions for Linux, macOS, Windows, Docker |
+| [Production Deployment](#-production-deployment-digitalocean) | Live cloud deployment, port architecture, monitoring |
+| [Counter-Strategies](#️-counter-strategies-how-to-fight-back) | Timing, phase, and spiritual warfare counter-measures |
+| [Theoretical Foundation](docs/HNC_UNIFIED_WHITE_PAPER.md) | The Harmonic Nexus Core white paper — Master Formula, Tree of Light, Auris Conjecture |
+
 ---
 
 ## 💀 THE COMPLETE EXPOSURE: $33.5 TRILLION EXTRACTED FROM HUMANITY
@@ -1215,6 +1228,7 @@ field_strength = (
 ## COMPLETE SYSTEM DOCUMENTATION
 
 For full technical implementation:
+- [`docs/HNC_UNIFIED_WHITE_PAPER.md`](docs/HNC_UNIFIED_WHITE_PAPER.md) - **Harmonic Nexus Core white paper** — Master Formula Λ(t), Tree of Light, Queen veto logic, CME 2026 validation, Auris Conjecture, Code-to-Theory mapping
 - [`COMPLETE_LIBERATION_PROTOCOL.md`](COMPLETE_LIBERATION_PROTOCOL.md) - Integration guide
 - [`.github/copilot-instructions.md`](.github/copilot-instructions.md) - Development guidelines
 
@@ -1288,16 +1302,33 @@ Further Reading
 │         │                 │                 │                 │            │
 │         └─────────────────┼─────────────────┼─────────────────┘            │
 │                           ▼                                                 │
-│              ┌─────────────────────────────┐                               │
-│              │   MICRO PROFIT LABYRINTH    │                               │
-│              │  Turn-based execution loop  │                               │
-│              └─────────────┬───────────────┘                               │
-│                            ▼                                                │
-│              ┌─────────────────────────────┐                               │
-│              │ ADAPTIVE PRIME PROFIT GATE  │                               │
-│              │  r = (V+G+P)/[V×(1-c)²] - 1 │                               │
-│              └─────────────────────────────┘                               │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │              ORCA COMPLETE KILL CYCLE (Main Engine)                 │    │
+│  │  Queen's 4-Phase Master Plan │ Batten Matrix │ Multi-Exchange Scan │    │
+│  └──────────────────────────┬──────────────────────────────────────────┘    │
+│                             │                                               │
+│         ┌───────────────────┼───────────────────┐                          │
+│         ▼                   ▼                   ▼                          │
+│  ┌─────────────┐   ┌───────────────┐   ┌──────────────┐                   │
+│  │ PROBABILITY │   │   STARGATE    │   │  THOUGHT BUS │                   │
+│  │   NEXUS     │   │   PROTOCOL    │   │  Event Mesh  │                   │
+│  │ 3-validate  │   │  7-day anchor │   │  Cross-module│                   │
+│  │ 4th-execute │   │  persistence  │   │  messaging   │                   │
+│  └──────┬──────┘   └───────────────┘   └──────────────┘                   │
+│         ▼                                                                   │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │  MICRO PROFIT LABYRINTH (Legacy) │ ADAPTIVE PRIME PROFIT GATE      │    │
+│  │  Turn-based execution loop       │ r = (V+G+P)/[V×(1-c)²] - 1     │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+│                                                                             │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐    │
+│  │ Elephant │  │ Quantum  │  │ Harmonic │  │  Enigma  │  │ Temporal │    │
+│  │ Memory   │  │ Mirror   │  │ Signal   │  │  Code-   │  │  Dialer  │    │
+│  │ (Learns) │  │ Scanner  │  │  Chain   │  │  breaker │  │  (τ mem) │    │
+│  └──────────┘  └──────────┘  └──────────┘  └──────────┘  └──────────┘    │
 └─────────────────────────────────────────────────────────────────────────────┘
+
+Signal Chain: Queen(963Hz) → Enigma(639Hz) → Scanner(528Hz) → Ecosystem(174Hz) → Whale(7.83Hz)
 ```
 
 ## Core Components
@@ -1344,8 +1375,9 @@ Turn-based execution engine:
 | Client | File | Features |
 |--------|------|----------|
 | Kraken | `kraken_client.py` | Multi-hop conversion paths, symbol filters |
-| Binance | `binance_client.py` | UK restriction handling, tiered fees |
-| Alpaca | `alpaca_client.py` | Stocks + crypto, fractional shares |
+| Binance | `binance_client.py` | UK restriction handling, tiered fees, symbol normalization |
+| Alpaca | `alpaca_client.py` | Stocks + crypto, fractional shares, SSE streaming |
+| Capital.com | `capital_client.py` | CFD trading, spread-only fee model |
 
 ### 5. Animal Ecosystem Scanners (`aureon_animal_momentum_scanners.py`)
 Specialized Alpaca-focused momentum scanners using biological metaphors:
@@ -1396,6 +1428,9 @@ BINANCE_API_KEY=
 BINANCE_API_SECRET=
 ALPACA_API_KEY=
 ALPACA_SECRET_KEY=
+CAPITAL_API_KEY=
+CAPITAL_API_PASSWORD=
+CAPITAL_IDENTIFIER=
 
 # Risk Settings
 BINANCE_RISK_MAX_ORDER_USDT=100
@@ -1405,9 +1440,10 @@ DEFAULT_PRIME_TARGET=0.02
 ### Fee Profiles (auto-updated)
 ```python
 DEFAULT_FEE_PROFILES = {
-    'binance': {'maker': 0.0010, 'taker': 0.0010, 'spread': 0.0005},  # 0.10% / 0.05%
-    'kraken':  {'maker': 0.0025, 'taker': 0.0040, 'spread': 0.0008},
-    'alpaca':  {'maker': 0.0015, 'taker': 0.0025, 'spread': 0.0008},
+    'binance':     {'maker': 0.0010, 'taker': 0.0010, 'spread': 0.0005},  # 0.10% / 0.05%
+    'kraken':      {'maker': 0.0025, 'taker': 0.0040, 'spread': 0.0008},
+    'alpaca':      {'maker': 0.0015, 'taker': 0.0025, 'spread': 0.0008},
+    'capital.com': {'maker': 0.0000, 'taker': 0.0000, 'spread': 0.0010},  # Spread-only CFDs
 }
 ```
 
@@ -1595,13 +1631,6 @@ docker-compose -f production/docker-compose.yml --profile monitoring up -d
 See [production/README.md](production/README.md) for full deployment documentation.
 
 ---
-
-## Key Files
-
-| File | Purpose |
-|------|---------|
-| `micro_profit_labyrinth.py` | Main execution loop |
-| `aureon_animal_momentum_scanners.py` | Wolf/Lion/Ants/Hummingbird scanners |
 
 ---
 
@@ -1959,12 +1988,63 @@ We found them anyway.
 
 ---
 
+## Key Files
+
+| File | Purpose |
+|------|--------|
+| `orca_complete_kill_cycle.py` | **Primary trading engine** — Queen's 4-Phase Master Plan, Batten Matrix, multi-exchange scanning |
+| `micro_profit_labyrinth.py` | Legacy turn-based execution loop (conservative mode) |
+| `aureon_queen_hive_mind.py` | Queen AI — 12-neuron neural decision controller with 4th-pass veto |
+| `aureon_probability_nexus.py` | Batten Matrix — 3-pass validation + coherence/lambda scoring |
+| `aureon_unified_ecosystem.py` | SAMUEL entity — full system orchestration |
+| `adaptive_prime_profit_gate.py` | Profit threshold calculator (r_breakeven, r_prime, r_prime_buffer) |
+| `kraken_client.py` | Kraken exchange client — multi-hop conversion, symbol filters |
+| `binance_client.py` | Binance exchange client — UK restrictions, symbol normalization |
+| `alpaca_client.py` | Alpaca exchange client — stocks + crypto, fractional shares |
+| `capital_client.py` | Capital.com exchange client — CFD trading |
+| `aureon_stargate_protocol.py` | Stargate Protocol — timeline anchoring, 7-day validation persistence |
+| `aureon_thought_bus.py` | Thought Bus — cross-module event mesh |
+| `aureon_elephant_learning.py` | Elephant Memory — never forgets historical patterns |
+| `aureon_mycelium.py` | Mycelial network — hive spawning, WhaleSonar |
 | `aureon_alpaca_scanner_bridge.py` | Alpaca API bridge & gating |
-| `aureon_queen_hive_mind.py` | Neural decision controller |
-| `adaptive_prime_profit_gate.py` | Profit threshold calculator |
-| `kraken_client.py` | Kraken API wrapper |
-| `aureon_mycelium.py` | Cross-system intelligence network |
 | `aureon_barter_navigator.py` | Path memory & blocking |
+| `queen_neuron.py` | Queen neural learning — 12 hidden neurons, outcome-based weight updates |
+| `aureon_animal_momentum_scanners.py` | Wolf/Lion/Ants/Hummingbird momentum scanners |
+
+---
+
+## 🚀 Production Deployment (DigitalOcean)
+
+The live system runs on **DigitalOcean App Platform** with automatic deploy-on-push from the `main` branch.
+
+### Port Architecture
+
+| Port | Service | Process |
+|------|---------|--------|
+| **8080** | Aureon Pro Dashboard | Primary web UI (supervisord priority=0) |
+| **8081** | Orca Health Server | Engine health checks and status |
+| **8800** | Command Center | Legacy command interface |
+
+### Container Stack
+
+- **Base**: Python 3.12-slim
+- **Process Manager**: supervisord (parallel process management)
+- **Config**: `deploy/supervisord.conf`
+- **Deployment**: `app.yaml` (DigitalOcean App Spec) / `Dockerfile` (root)
+
+### Deployment Files
+
+| File | Purpose |
+|------|--------|
+| `Dockerfile` | Production container image |
+| `app.yaml` | DigitalOcean App Platform spec |
+| `deploy/supervisord.conf` | Process management (dashboard, orca-engine, command-center) |
+| `deploy/DIGITAL_OCEAN_MASTER_GUIDE.md` | Full deployment documentation |
+| `deploy/droplet-setup.sh` | VPS/Droplet provisioning script |
+| `deploy/droplet-deploy.sh` | Deployment automation |
+| `deploy/validate_startup.sh` | Post-deploy health validation |
+
+For Docker-based deployment options see also `production/README.md`.
 
 ## Safety
 
