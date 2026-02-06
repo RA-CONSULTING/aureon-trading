@@ -12403,6 +12403,117 @@ class OrcaKillCycle:
                         except Exception as e:
                             print(f"      Fire Trader check failed: {e}")
 
+                    #                                                            
+                    #   PHASE 0.6: FULL ARSENAL HARVEST (ALL exchanges, ALL tactics!)
+                    #                                                            
+                    # harvest_all_exchanges scans ALL 4 exchanges for profitable positions
+                    try:
+                        harvest_results = self.harvest_all_exchanges(queen=queen, min_profit_usd=0.01)
+                        if harvest_results.get('harvested'):
+                            for h in harvest_results['harvested']:
+                                session_stats['positions_closed'] += 1
+                                session_stats['cash_freed'] += h.get('freed', 0)
+                                session_stats['total_pnl'] += h.get('profit', 0)
+                                session_stats['winning_trades'] += 1
+                                session_stats['total_trades'] += 1
+                                # Remove from tracked positions if present
+                                positions[:] = [p for p in positions if not (p.symbol == h['symbol'] and p.exchange == h['exchange'])]
+                    except Exception as e:
+                        print(f"      Harvest all exchanges error: {e}")
+
+                    #                                                            
+                    #   PHASE 0.7: GATHER ALL INTELLIGENCE (Master Launcher)
+                    #                                                            
+                    try:
+                        intel_report = self.gather_all_intelligence(batch_prices)
+                        if intel_report.get('validated_signals'):
+                            print(f"     INTELLIGENCE: {intel_report['total_sources']} sources | "
+                                  f"{len(intel_report.get('validated_signals', []))} validated signals | "
+                                  f"{len(intel_report.get('whale_predictions', []))} whale predictions")
+                    except Exception as e:
+                        print(f"      Intelligence gathering error: {e}")
+
+                    #                                                            
+                    #   PHASE 0.8: HARMONIC SIGNAL CHAIN (Frequency pipeline)
+                    #                                                            
+                    if self.harmonic_signal_chain:
+                        try:
+                            chain_result = self.harmonic_signal_chain.process_market_pulse(batch_prices)
+                            if chain_result:
+                                print(f"     HARMONIC CHAIN: Signal processed through 5 frequency layers")
+                        except Exception as e:
+                            print(f"      Harmonic Signal Chain error: {e}")
+
+                    #                                                            
+                    #   PHASE 0.9: OCEAN + ANIMAL SCANNERS (Wave & trend analysis)
+                    #                                                            
+                    if self.ocean_scanner:
+                        try:
+                            wave_data = self.ocean_scanner.scan_waves(batch_prices)
+                            if wave_data:
+                                print(f"     OCEAN SCANNER: Wave analysis complete")
+                        except Exception as e:
+                            print(f"      Ocean Scanner error: {e}")
+
+                    if self.animal_scanner:
+                        try:
+                            trend_data = self.animal_scanner.scan_trends(batch_prices)
+                            if trend_data:
+                                print(f"     ANIMAL SCANNER: Trend analysis complete")
+                        except Exception as e:
+                            print(f"      Animal Scanner error: {e}")
+
+                    #                                                            
+                    #   PHASE 0.95: OPTIONS SCANNER (Covered calls + cash-secured puts)
+                    #                                                            
+                    if self.options_scanner:
+                        try:
+                            options_opps = self.options_scanner.scan_opportunities()
+                            if options_opps:
+                                print(f"     OPTIONS SCANNER: {len(options_opps)} option opportunities found")
+                        except Exception as e:
+                            print(f"      Options Scanner error: {e}")
+
+                    #                                                            
+                    #   PHASE 0.96: QUEEN-ORCA BRIDGE (Unified command intelligence)
+                    #                                                            
+                    if self.queen_orca_bridge:
+                        try:
+                            bridge_status = self.queen_orca_bridge.sync_state(
+                                positions=[{'symbol': p.symbol, 'exchange': p.exchange, 'pnl': p.current_pnl} for p in positions],
+                                session_stats=session_stats
+                            )
+                            if bridge_status:
+                                print(f"     QUEEN-ORCA BRIDGE: State synced")
+                        except Exception as e:
+                            print(f"      Queen-Orca Bridge error: {e}")
+
+                    #                                                            
+                    #   PHASE 0.97: PREDATOR DETECTION (Front-run + stalking defense)
+                    #                                                            
+                    if self.predator_detector:
+                        try:
+                            predator_report = self.predator_detector.generate_hunting_report()
+                            if predator_report and predator_report.front_run_rate > 0.1:
+                                print(f"     PREDATOR ALERT: Front-run rate {predator_report.front_run_rate:.0%}")
+                                if self.stealth_executor:
+                                    for pred in (predator_report.top_predators or [])[:3]:
+                                        self.stealth_executor.mark_symbol_hunted(
+                                            pred.symbol if hasattr(pred, 'symbol') else '',
+                                            firm=pred.firm_id if hasattr(pred, 'firm_id') else 'unknown'
+                                        )
+                        except Exception as e:
+                            print(f"      Predator Detector error: {e}")
+
+                    #                                                            
+                    #   PHASE 0.98: REAL PORTFOLIO + TRADE LOGGER SYNC
+                    #                                                            
+                    if self.real_portfolio:
+                        try:
+                            self.real_portfolio.update_prices(batch_prices)
+                        except Exception as e:
+                            print(f"      Real Portfolio sync error: {e}")
+
                     #   RE-SCAN KRAKEN BALANCES FOR NEW MANUAL POSITIONS!
                     try:
                         kraken_client = self.clients.get('kraken')
@@ -12552,10 +12663,12 @@ class OrcaKillCycle:
                                 
                                 if can_exit:
                                     print(f"\n   QUEEN APPROVED AUTO-CLOSE: {pos.symbol} is PROFITABLE! (+${exit_info.get('net_pnl', net_pnl):.4f})")
-                                    sell_order = pos.client.place_market_order(
+                                    sell_order = self.execute_stealth_sell(
+                                        client=pos.client,
                                         symbol=pos.symbol,
-                                        side='sell',
-                                        quantity=pos.entry_qty
+                                        quantity=pos.entry_qty,
+                                        price=current,
+                                        exchange=pos.exchange
                                     )
                                     #   Verify sell succeeded using is_order_successful
                                     if self.is_order_successful(sell_order, pos.exchange):
@@ -12594,6 +12707,100 @@ class OrcaKillCycle:
                         if total_cash < amount_per_position * 0.3:  # Only need 30% of target (more aggressive)
                             print(f"     Waiting for cash (${total_cash:.2f} available, need ${amount_per_position * 0.3:.2f})")
                         else:
+                            #                                                    
+                            #   PRE-SCAN INTELLIGENCE ENRICHMENT (All available brains!)
+                            #                                                    
+                            # Miner Brain - Timeline oracle mining
+                            if self.miner_brain:
+                                try:
+                                    miner_recs = self.miner_brain.get_recommendations(batch_prices if batch_prices else {})
+                                    if miner_recs:
+                                        print(f"     MINER BRAIN: {len(miner_recs)} recommendations")
+                                except Exception as e:
+                                    print(f"      Miner Brain error: {e}")
+
+                            # Quantum Telescope - Enhanced deep scanning
+                            if self.quantum_telescope:
+                                try:
+                                    qt_scan = self.quantum_telescope.deep_scan(batch_prices if batch_prices else {})
+                                    if qt_scan:
+                                        print(f"     QUANTUM TELESCOPE: Deep scan complete")
+                                except Exception as e:
+                                    print(f"      Quantum Telescope error: {e}")
+
+                            # Timeline Oracle - 7-day planner guidance
+                            if self.timeline_oracle:
+                                try:
+                                    tl_guidance = self.timeline_oracle.get_current_guidance()
+                                    if tl_guidance:
+                                        print(f"     TIMELINE ORACLE: Guidance active")
+                                except Exception as e:
+                                    print(f"      Timeline Oracle error: {e}")
+
+                            # Volume Hunter - Breakout detection
+                            if self.volume_hunter:
+                                try:
+                                    vol_breakouts = self.volume_hunter.scan_breakouts()
+                                    if vol_breakouts:
+                                        print(f"     VOLUME HUNTER: {len(vol_breakouts)} breakout signals")
+                                except Exception as e:
+                                    print(f"      Volume Hunter error: {e}")
+
+                            # Enigma - Pattern decoding
+                            if self.enigma:
+                                try:
+                                    enigma_decode = self.enigma.decode_patterns(batch_prices if batch_prices else {})
+                                    if enigma_decode:
+                                        print(f"     ENIGMA: Pattern decoded")
+                                except Exception as e:
+                                    print(f"      Enigma error: {e}")
+
+                            # Ultimate Intelligence - 95% accuracy system
+                            if self.ultimate_intel:
+                                try:
+                                    ui_predictions = self.ultimate_intel.get_predictions(limit=5)
+                                    if ui_predictions:
+                                        print(f"     ULTIMATE INTEL: {len(ui_predictions)} predictions")
+                                except Exception as e:
+                                    print(f"      Ultimate Intelligence error: {e}")
+
+                            # Orca Intelligence - Full scanning
+                            if self.orca_intel:
+                                try:
+                                    orca_scan = self.orca_intel.full_scan()
+                                    if orca_scan:
+                                        print(f"     ORCA INTEL: Full scan complete")
+                                except Exception as e:
+                                    print(f"      Orca Intelligence error: {e}")
+
+                            # Neural Revenue Orchestrator - Revenue generation
+                            if self.neural_revenue:
+                                try:
+                                    revenue_status = self.neural_revenue.check_opportunities()
+                                    if revenue_status:
+                                        print(f"     NEURAL REVENUE: Opportunities checked")
+                                except Exception as e:
+                                    print(f"      Neural Revenue error: {e}")
+
+                            # Chirp Bus - Bird chorus coordination 
+                            if self.chirp_bus:
+                                try:
+                                    self.chirp_bus.broadcast_cycle_status({
+                                        'cycle': session_stats['cycles'],
+                                        'positions': len(positions),
+                                        'pnl': session_stats['total_pnl']
+                                    })
+                                except Exception:
+                                    pass
+
+                            # Multi-Exchange Manager - Cross-exchange orchestration
+                            if self.multi_exchange:
+                                try:
+                                    mx_status = self.multi_exchange.sync_all()
+                                    if mx_status:
+                                        print(f"     MULTI-EXCHANGE: All synced")
+                                except Exception as e:
+                                    print(f"      Multi-Exchange error: {e}")
                             #    Quantum-enhanced market scan
                             _baton(
                                 "plan",
@@ -12603,6 +12810,37 @@ class OrcaKillCycle:
                             scan_start = time.time()
                             opportunities = self.scan_entire_market(min_change_pct=min_change_pct)
                             scan_time = time.time() - scan_start
+                            
+                            #                                                    
+                            #   RISING STARS SCAN - All intelligence systems combined!
+                            #                                                    
+                            try:
+                                rising_stars = self.scan_for_rising_stars(top_n=5, min_confidence=0.70)
+                                if rising_stars:
+                                    print(f"     RISING STARS: {len(rising_stars)} high-confidence candidates")
+                                    # Merge rising star symbols into opportunities if not already present
+                                    opp_symbols = {o.symbol for o in opportunities} if opportunities else set()
+                                    for star in rising_stars:
+                                        star_symbol = star.get('symbol', '')
+                                        if star_symbol and star_symbol not in opp_symbols:
+                                            # Create a synthetic opportunity object
+                                            try:
+                                                from types import SimpleNamespace
+                                                star_opp = SimpleNamespace(
+                                                    symbol=star_symbol,
+                                                    exchange=star.get('exchange', 'alpaca'),
+                                                    change_pct=star.get('confidence', 0.8) * 2,  # Convert confidence to change proxy
+                                                    momentum_score=star.get('confidence', 0.8),
+                                                    price=0  # Will be fetched during buy
+                                                )
+                                                if opportunities is None:
+                                                    opportunities = []
+                                                opportunities.append(star_opp)
+                                                print(f"       {star_symbol} ({star.get('source', '?')}: {star.get('confidence', 0):.0%})")
+                                            except Exception:
+                                                pass
+                            except Exception as e:
+                                print(f"      Rising Stars scan error: {e}")
                             
                             if opportunities:
                                 #    Apply quantum pattern recognition boost to scoring
@@ -12705,14 +12943,25 @@ class OrcaKillCycle:
                                                             topic="orca.buy.execute",
                                                             meta={"symbol": best.symbol, "exchange": best.exchange, "quantum_amp": quantum_stats['amplification']},
                                                         )
-                                                        raw_order = client.place_market_order(
+                                                        #   FULL ARSENAL BUY - Queen Gated (6 validation gates!)
+                                                        raw_order = self.queen_gated_buy(
+                                                            client=client,
                                                             symbol=symbol_clean,
-                                                            side='buy',
-                                                            quote_qty=buy_amount
+                                                            exchange=best.exchange,
+                                                            quote_qty=buy_amount,
+                                                            price=best.price,
+                                                            momentum_pct=best.change_pct,
+                                                            expected_move_pct=best.change_pct * 0.5,
+                                                            context='autonomous_queen_loop'
                                                         )
                                                         
+                                                        # If queen_gated_buy returned a block, skip
+                                                        if raw_order and raw_order.get('rejected'):
+                                                            print(f"      QUEEN ARSENAL BLOCKED: {raw_order.get('blocked_by', 'unknown')}")
+                                                            raw_order = None
+                                                        
                                                         #   NORMALIZE ORDER RESPONSE across exchanges!
-                                                        buy_order = self.normalize_order_response(raw_order, best.exchange)
+                                                        buy_order = self.normalize_order_response(raw_order, best.exchange) if raw_order and not raw_order.get('rejected') else None
                                                         
                                                         if buy_order and buy_order.get('status') != 'rejected':
                                                             buy_qty = buy_order.get('filled_qty', 0)
@@ -13133,10 +13382,12 @@ class OrcaKillCycle:
                             
                             # Execute sell if ready
                             if should_sell:
-                                sell_order = pos.client.place_market_order(
+                                sell_order = self.execute_stealth_sell(
+                                    client=pos.client,
                                     symbol=pos.symbol,
-                                    side='sell',
-                                    quantity=pos.entry_qty
+                                    quantity=pos.entry_qty,
+                                    price=current,
+                                    exchange=pos.exchange
                                 )
                                 if sell_order:
                                     sell_price = float(sell_order.get('filled_avg_price', current))
@@ -13204,10 +13455,12 @@ class OrcaKillCycle:
                     )
                     
                     if can_exit:
-                        sell_order = pos.client.place_market_order(
+                        sell_order = self.execute_stealth_sell(
+                            client=pos.client,
                             symbol=pos.symbol,
-                            side='sell',
-                            quantity=pos.entry_qty
+                            quantity=pos.entry_qty,
+                            price=pos.current_price,
+                            exchange=pos.exchange
                         )
                         if sell_order:
                             sell_price = float(sell_order.get('filled_avg_price', pos.current_price))
