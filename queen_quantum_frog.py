@@ -7612,6 +7612,21 @@ class OrcaKillCycle:
                 continue
         return {}
 
+
+    def _binance_symbol_variants(self, asset: str) -> List[str]:
+        """Build resilient Binance quote variants for asset price discovery."""
+        clean_asset = (asset or '').upper().strip()
+        if not clean_asset:
+            return []
+        if clean_asset.startswith('LD') and len(clean_asset) > 2:
+            clean_asset = clean_asset[2:]
+
+        preferred_quotes = [
+            'USDT', 'USDC', 'FDUSD', 'BUSD', 'TUSD',
+            'USD', 'BTC', 'ETH', 'BNB', 'EUR', 'TRY'
+        ]
+        return [f"{clean_asset}/{quote}" for quote in preferred_quotes if clean_asset != quote]
+
     def _normalize_base_asset(self, symbol: str) -> str:
         """Normalize symbol to base asset for cross-checking balances."""
         if not symbol:
@@ -12011,7 +12026,7 @@ class OrcaKillCycle:
                             qty = float(qty)
                             if qty > 0.000001:
                                 # Try multiple quote currencies (USDT is most common on Binance)
-                                symbol_variants = [f"{asset}/USDT", f"{asset}/USDC", f"{asset}/USD", f"{asset}/BUSD"]
+                                symbol_variants = self._binance_symbol_variants(asset)
                                 found_price = False
                                 
                                 for symbol in symbol_variants:
@@ -12388,7 +12403,7 @@ class OrcaKillCycle:
                                 # Check if this is a NEW position not already tracked
                                 if qty > 0.000001:
                                     # Try multiple quote currencies
-                                    symbol_variants = [f"{asset}/USDT", f"{asset}/USDC", f"{asset}/USD", f"{asset}/BUSD"]
+                                    symbol_variants = self._binance_symbol_variants(asset)
                                     for symbol in symbol_variants:
                                         if symbol in current_binance_symbols:
                                             continue  # Already tracking
@@ -13869,7 +13884,7 @@ class OrcaKillCycle:
                                 continue
                             qty = float(qty)
                             if qty > 0.000001:
-                                symbol_variants = [f"{asset}/USDT", f"{asset}/USDC", f"{asset}/USD", f"{asset}/BUSD"]
+                                symbol_variants = self._binance_symbol_variants(asset)
                                 for symbol in symbol_variants:
                                     try:
                                         ticker = self._get_binance_ticker(client, symbol)
