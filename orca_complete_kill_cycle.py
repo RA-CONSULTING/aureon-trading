@@ -3896,7 +3896,7 @@ class OrcaKillCycle:
         try:
             from prime_sentinel_decree import PrimeSentinelDecree
             self.prime_sentinel = PrimeSentinelDecree()
-            print("  Prime Sentinel Decree LOADED - Control reclaimed")
+            _safe_print("  Prime Sentinel Decree LOADED - Control reclaimed")
         except Exception:
             pass
         
@@ -3910,9 +3910,9 @@ class OrcaKillCycle:
             try:
                 alpaca_c = self.clients.get('alpaca')
                 self.alpaca_fee_tracker = AlpacaFeeTracker(alpaca_client=alpaca_c)
-                print("  Alpaca Fee Tracker: WIRED! (Volume tiers + spread)")
+                _safe_print("  Alpaca Fee Tracker: WIRED! (Volume tiers + spread)")
             except Exception as e:
-                print(f"  Alpaca Fee Tracker: {e}")
+                _safe_print(f"  Alpaca Fee Tracker: {e}")
         
         # 11. Cost Basis Tracker (FIFO cost basis + can_sell_profitably check)
         self.cost_basis_tracker = None
@@ -14317,12 +14317,20 @@ class OrcaKillCycle:
     #                                                                                
 
 if __name__ == "__main__":
-    # Windows UTF-8 wrapper
+    # Windows UTF-8 wrapper (avoid wrapping sys.stdout.buffer, which can get closed when the
+    # original TextIOWrapper is GC'd, causing "write to closed file" mid-run).
     import sys
     if sys.platform == "win32":
-        import codecs
-        sys.stdout = codecs.getwriter('utf-8')(sys.stdout.buffer, 'strict')
-        sys.stderr = codecs.getwriter('utf-8')(sys.stderr.buffer, 'strict')
+        os.environ.setdefault("PYTHONUTF8", "1")
+        os.environ.setdefault("PYTHONIOENCODING", "utf-8")
+        try:
+            sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+        except Exception:
+            pass
+        try:
+            sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+        except Exception:
+            pass
 
     import argparse
     import traceback
@@ -14392,6 +14400,4 @@ if __name__ == "__main__":
         traceback.print_exc(file=sys.stderr)
         print("\n  Orca exiting gracefully to prevent crash loop\n", file=sys.stderr)
         sys.exit(1)
-
-
 
