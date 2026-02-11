@@ -12140,8 +12140,8 @@ class OrcaKillCycle:
                     binance_positions = client.get_balance()
                     if binance_positions:
                         for asset, qty in binance_positions.items():
-
-                                continue
+                            if asset in ['USD', 'USDT', 'USDC', 'BUSD', 'TUSD', 'DAI', 'FDUSD', 'GBP', 'EUR']:
+                                continue  # Skip stablecoins/fiat
                             qty = float(qty)
                             if qty > 0.000001:
                                 # Try multiple quote currencies (USDT is most common on Binance)
