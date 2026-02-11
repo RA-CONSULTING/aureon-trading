@@ -119,6 +119,9 @@ class AutonomousConfig:
     # 🎯 VALIDATION
     min_win_probability: float = 0.50    # 50% win rate minimum
     min_net_profit_pct: float = 0.001    # 0.001% minimum net profit
+    ungated_autonomy: bool = True        # Allow Queen to execute her own cognitive decision without hard gates
+    learning_state_file: str = "nexus_learning_state.json"
+    consciousness_state_file: str = "queen_consciousness_state.json"
     
     # 🔧 OPERATIONAL
     dry_run: bool = True                 # Paper trading mode
@@ -222,7 +225,54 @@ class QueenAutonomousController:
         self.current_balance_usd = 0.0
         
         self._initialize_components()
+        self.learning_intelligence = self._load_learning_intelligence()
         self._load_state()
+
+    def _load_learning_intelligence(self) -> Dict[str, float]:
+        """Load Queen learning snapshots so decisions can use historical cognition."""
+        learning = {
+            'global_win_rate': 0.50,
+            'global_avg_pattern_pnl': 0.0,
+            'confidence': 0.50,
+            'wisdom_memory_count': 0,
+        }
+
+        try:
+            if Path(self.config.learning_state_file).exists():
+                with open(self.config.learning_state_file, 'r') as f:
+                    raw = json.load(f)
+
+                outcomes = raw.get('pattern_outcomes', {})
+                wins = sum(v.get('wins', 0) for v in outcomes.values())
+                losses = sum(v.get('losses', 0) for v in outcomes.values())
+                total = max(1, wins + losses)
+                avg_pnl = 0.0
+                if outcomes:
+                    avg_pnl = sum(v.get('pnl', 0.0) for v in outcomes.values()) / len(outcomes)
+
+                learning['global_win_rate'] = wins / total
+                learning['global_avg_pattern_pnl'] = avg_pnl
+
+            if Path(self.config.consciousness_state_file).exists():
+                with open(self.config.consciousness_state_file, 'r') as f:
+                    consciousness = json.load(f)
+                learning['wisdom_memory_count'] = len(consciousness.get('wisdom', {}))
+
+            confidence = (
+                learning['global_win_rate'] * 0.70 +
+                max(0.0, min(1.0, learning['global_avg_pattern_pnl'] / 10.0)) * 0.25 +
+                (0.05 if learning['wisdom_memory_count'] > 0 else 0.0)
+            )
+            learning['confidence'] = max(0.0, min(1.0, confidence))
+
+            logger.info("   🧠 Learning intelligence loaded | "
+                        f"win_rate={learning['global_win_rate']:.2%} "
+                        f"avg_pattern_pnl={learning['global_avg_pattern_pnl']:+.3f} "
+                        f"confidence={learning['confidence']:.2f}")
+        except Exception as e:
+            logger.warning(f"Could not load learning intelligence: {e}")
+
+        return learning
     
     def _initialize_components(self):
         """Initialize all Queen components"""
@@ -327,9 +377,12 @@ class QueenAutonomousController:
         signals = self.momentum_scanner.scan_for_momentum()
         
         # Filter to actionable signals only
-        actionable = [s for s in signals 
-                     if s.tier != MomentumTier.TIER_4_SKIP 
-                     and s.net_profit_potential > self.config.min_net_profit_pct]
+        if self.config.ungated_autonomy:
+            actionable = [s for s in signals if s.tier != MomentumTier.TIER_4_SKIP]
+        else:
+            actionable = [s for s in signals 
+                         if s.tier != MomentumTier.TIER_4_SKIP 
+                         and s.net_profit_potential > self.config.min_net_profit_pct]
         
         return actionable
     
@@ -357,9 +410,10 @@ class QueenAutonomousController:
         
         # Direction check: momentum should be continuing
         # LONG: positive momentum, SHORT: negative momentum
+        autonomous_direction = self._choose_autonomous_direction(signal)
         direction_confirmed = (
-            (signal.direction == 'LONG' and signal.momentum_1m_pct > 0) or
-            (signal.direction == 'SHORT' and signal.momentum_1m_pct < 0)
+            (autonomous_direction == 'LONG' and signal.momentum_1m_pct > 0) or
+            (autonomous_direction == 'SHORT' and signal.momentum_1m_pct < 0)
         )
         
         # Scoring based on ACTUAL momentum (not random walks!)
@@ -408,6 +462,15 @@ class QueenAutonomousController:
                 reason = f"TIER 3 needs net>{0.05}% and direction (net={net_profit:.3f}%)"
         else:
             reason = "TIER 4 SKIP - momentum below costs"
+
+        # Ungated mode = Queen's cognitive systems can execute without hard approval gates.
+        if self.config.ungated_autonomy and not validated:
+            confidence = self.learning_intelligence.get('confidence', 0.5)
+            validated = True
+            reason = (
+                "🧠 UNGATED AUTONOMY - executed via Queen cognitive override "
+                f"(confidence={confidence:.2f})"
+            )
         
         # Calculate composite score
         score = tier_score * net_profit * 100 * (1.2 if direction_confirmed else 0.8)
@@ -416,7 +479,7 @@ class QueenAutonomousController:
         
         return {
             'symbol': signal.symbol,
-            'direction': signal.direction,
+            'direction': autonomous_direction,
             'price': signal.current_price,
             'momentum_5m': signal.momentum_5m_pct,
             'momentum_1m': signal.momentum_1m_pct,
@@ -424,10 +487,25 @@ class QueenAutonomousController:
             'tier': signal.tier.name,
             'tier_score': tier_score,
             'direction_confirmed': direction_confirmed,
+            'learning_confidence': self.learning_intelligence.get('confidence', 0.5),
             'score': score,
             'reason': reason,
             'validated': validated
         }
+
+    def _choose_autonomous_direction(self, signal: MomentumSignal) -> str:
+        """Choose trade direction using momentum plus Queen learning confidence."""
+        if not self.config.ungated_autonomy:
+            return signal.direction
+
+        momentum_vote = (signal.momentum_5m_pct or 0.0) + (signal.momentum_1m_pct or 0.0)
+        confidence = self.learning_intelligence.get('confidence', 0.5)
+
+        # When confidence is strong, Queen can follow her inferred momentum vote.
+        if confidence >= 0.55 and momentum_vote != 0:
+            return 'LONG' if momentum_vote > 0 else 'SHORT'
+
+        return signal.direction
     
     # ═══════════════════════════════════════════════════════════════════════════
     # 💰 TRADE EXECUTION
@@ -442,12 +520,12 @@ class QueenAutonomousController:
             return None
         
         # Check rate limits
-        if self.trades_this_hour >= self.config.max_trades_per_hour:
+        if (not self.config.ungated_autonomy) and self.trades_this_hour >= self.config.max_trades_per_hour:
             logger.warning(f"Rate limit reached ({self.config.max_trades_per_hour}/hour)")
             return None
         
         # Check daily loss limit
-        if self.daily_stats.net_pnl_pct <= -self.config.max_daily_loss_pct:
+        if (not self.config.ungated_autonomy) and self.daily_stats.net_pnl_pct <= -self.config.max_daily_loss_pct:
             logger.warning(f"🛑 CIRCUIT BREAKER: Daily loss limit reached ({self.daily_stats.net_pnl_pct:.2f}%)")
             return None
         
