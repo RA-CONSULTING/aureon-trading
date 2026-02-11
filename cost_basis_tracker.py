@@ -187,6 +187,67 @@ class CostBasisTracker:
         """Inject shared exchange clients."""
         self.clients = clients
 
+    @staticmethod
+    def _strip_known_quote(symbol: str) -> str:
+        """Strip a known quote suffix without using rstrip character semantics."""
+        symbol = (symbol or '').replace('/', '')
+        for quote in ('USDT', 'USDC', 'ZUSD', 'USD', 'EUR', 'GBP', 'BTC', 'ETH'):
+            if symbol.endswith(quote) and len(symbol) > len(quote):
+                return symbol[:-len(quote)]
+        return symbol
+
+    @staticmethod
+    def _normalize_kraken_pair(pair: str) -> str:
+        """Convert Kraken pair naming (e.g., XXBTZUSD, XPEPEZUSD) to BTCUSD/PEPEUSD style."""
+        raw = (pair or '').upper()
+        p = raw.replace('/', '')
+        if not p:
+            return p
+
+        if '/' in raw:
+            base, quote = raw.split('/', 1)
+            base = base.lstrip('XZ')
+            quote = quote.lstrip('XZ')
+            if base in ('XBT', 'BT'):
+                base = 'BTC'
+            if base in ('XDG', 'DG'):
+                base = 'DOGE'
+            if quote == 'XBT':
+                quote = 'BTC'
+            return f"{base}{quote}"
+
+        quotes = ('USDT', 'USDC', 'USD', 'EUR', 'GBP', 'BTC', 'ETH')
+        for quote in quotes:
+            zq = f"Z{quote}"
+            if p.endswith(zq):
+                base = p[:-len(zq)]
+            elif p.endswith(quote):
+                base = p[:-len(quote)]
+            else:
+                continue
+
+            if base.startswith(('XX', 'ZZ')):
+                base = base[2:]
+            elif base.startswith(('X', 'Z')):
+                base = base[1:]
+
+            if base in ('XBT', 'BT'):
+                base = 'BTC'
+            if base in ('XDG', 'DG'):
+                base = 'DOGE'
+            return f"{base}{quote}"
+
+        stripped = p
+        if stripped.startswith(('XX', 'ZZ')):
+            stripped = stripped[2:]
+        elif stripped.startswith(('X', 'Z')):
+            stripped = stripped[1:]
+        if stripped in ('XBT', 'BT'):
+            return 'BTC'
+        if stripped in ('XDG', 'DG'):
+            return 'DOGE'
+        return stripped.replace('XBT', 'BTC')
+
     def _load(self):
         """Load cost basis data from file."""
         if os.path.exists(self.filepath):
@@ -363,7 +424,7 @@ class CostBasisTracker:
         updated = 0
         for pair, pair_trade_list in pair_trades.items():
             # Reset trade lots for this pair to rebuild from history
-            symbol_norm = pair.replace('X', '').replace('Z', '')
+            symbol_norm = self._normalize_kraken_pair(pair)
             position_key = f"kraken:{symbol_norm}"
             self.trade_lots[position_key] = []
 
@@ -411,8 +472,8 @@ class CostBasisTracker:
             
             if total_qty > 0 and buy_trades > 0:
                 avg_entry = total_cost / total_qty
-                # Normalize pair name
-                symbol = pair.replace('X', '').replace('Z', '')  # Remove Kraken prefixes
+                # Normalize pair name without stripping in-symbol X/Z characters
+                symbol = self._normalize_kraken_pair(pair)
                 position_key = f"kraken:{symbol}"
                 
                 self.positions[position_key] = {
@@ -615,7 +676,7 @@ class CostBasisTracker:
         if '/' in symbol:
             base = symbol.split('/')[0]
         else:
-            base = symbol.rstrip('USDT').rstrip('USDC').rstrip('USD').rstrip('EUR').rstrip('GBP')
+            base = self._strip_known_quote(symbol)
         
         # Try all quote currency combinations
         for quote_in in ['USDT', 'USDC', 'USD', 'EUR', 'GBP']:

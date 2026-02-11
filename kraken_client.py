@@ -645,10 +645,35 @@ class KrakenClient:
             params["start"] = start
         if end:
             params["end"] = end
-        
+
         try:
-            result = self._private("/0/private/TradesHistory", params)
-            return result.get("trades", {})
+            # Kraken returns paginated results (default ~50 per call).
+            # Aggregate pages by default so downstream cost-basis calculations
+            # are based on full ledger-backed trade history.
+            all_trades: Dict[str, Any] = {}
+            page_size = 50
+            max_pages = 200
+            page = 0
+            next_ofs = ofs
+
+            while page < max_pages:
+                page_params = dict(params)
+                page_params["ofs"] = next_ofs
+                result = self._private("/0/private/TradesHistory", page_params)
+                trades = result.get("trades", {}) or {}
+
+                if not trades:
+                    break
+
+                all_trades.update(trades)
+                page += 1
+
+                if len(trades) < page_size:
+                    break
+
+                next_ofs += len(trades)
+
+            return all_trades
         except Exception as e:
             print(f"⚠️ Failed to get Kraken trade history: {e}")
             return {}
