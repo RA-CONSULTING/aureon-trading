@@ -3735,8 +3735,8 @@ class AureonProDashboard:
                 self.logger.info("🛑 Sentiment data loop cancelled")
                 raise
             except Exception as e:
+                self.logger.error(f"❌ Sentiment loop error: {e}", exc_info=True)
 
-            
             await asyncio.sleep(300)  # Every 5 minutes (API rate limits)
     
     # ═══════════════════════════════════════════════════════════════════════════════
