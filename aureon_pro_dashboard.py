@@ -3685,7 +3685,10 @@ class AureonProDashboard:
                 async with aiohttp.ClientSession(timeout=timeout) as session:
                     # Try to fetch Fear & Greed Index from Alternative.me API (free, no key needed)
                     try:
-                        async with session.get('https://api.alternative.me/fng/') as resp:
+                        async with session.get(
+                            'https://api.alternative.me/fng/',
+                            timeout=aiohttp.ClientTimeout(total=15)
+                        ) as resp:
                             if resp.status == 200:
                                 data = await resp.json()
                                 if 'data' in data and len(data['data']) > 0:
@@ -3700,12 +3703,19 @@ class AureonProDashboard:
                                     self.market_sentiment['last_update'] = datetime.now().isoformat()
                             else:
                                 self.logger.warning(f"⚠️ Alternative.me API returned status {resp.status}")
+                    except asyncio.TimeoutError:
+                        self.logger.warning("⚠️ Fear & Greed refresh timed out (keeping last sentiment value)")
+                    except aiohttp.ClientError as exc:
+                        self.logger.warning(f"⚠️ Fear & Greed refresh failed: {exc}")
                     except Exception:
-                        self.logger.exception("❌ Failed to refresh Fear & Greed data")
+                        self.logger.exception("❌ Unexpected error while refreshing Fear & Greed data")
 
                     # Try to get BTC dominance from CoinGecko (free API)
                     try:
-                        async with session.get('https://api.coingecko.com/api/v3/global') as resp:
+                        async with session.get(
+                            'https://api.coingecko.com/api/v3/global',
+                            timeout=aiohttp.ClientTimeout(total=15)
+                        ) as resp:
                             if resp.status == 200:
                                 data = await resp.json()
                                 if 'data' in data:
@@ -3718,8 +3728,12 @@ class AureonProDashboard:
                                     )
                             else:
                                 self.logger.warning(f"⚠️ CoinGecko API returned status {resp.status}")
+                    except asyncio.TimeoutError:
+                        self.logger.warning("⚠️ CoinGecko global refresh timed out (keeping last market cap snapshot)")
+                    except aiohttp.ClientError as exc:
+                        self.logger.warning(f"⚠️ CoinGecko global refresh failed: {exc}")
                     except Exception:
-                        self.logger.exception("❌ Failed to refresh CoinGecko global data")
+                        self.logger.exception("❌ Unexpected error while refreshing CoinGecko global data")
                 
                 # Broadcast to clients
                 await self.broadcast({
