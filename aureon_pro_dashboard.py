@@ -3723,7 +3723,7 @@ class AureonProDashboard:
                 self.logger.info(f"🌐 Sentiment: Fear & Greed {fg} ({label})")
                 
             except Exception as e:
-                self.logger.error(f"❌ Sentiment data loop error: {e}")
+                self.logger.error(f"❌ Sentiment data loop error: {type(e).__name__}: {e!r}")
             
             await asyncio.sleep(300)  # Every 5 minutes (API rate limits)
     
