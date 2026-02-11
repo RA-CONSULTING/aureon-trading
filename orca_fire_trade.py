@@ -70,9 +70,11 @@ class FireTrader:
             for asset, amt in b_balances.items():
                 amt = float(amt)
                 if amt > 0:
+                    # Skip stablecoins and LD* (Binance Simple Earn/Locked) - not spot tradeable
+                    if asset in ['USDT', 'USDC', 'BUSD', 'FDUSD', 'TUSD'] or asset.startswith('LD'):
+                        continue
                     log_fire(f"   {asset}: {amt}")
-                    if asset not in ['USDT', 'USDC', 'BUSD']:
-                        tradeable_binance[asset] = amt
+                    tradeable_binance[asset] = amt
         except Exception as e:
             log_fire(f"   Error: {e}")
         

@@ -7842,7 +7842,7 @@ class OrcaKillCycle:
                 elif exchange_name == 'binance':
                     balances = client.get_balance()
                     for asset, qty in (balances or {}).items():
-                        if asset in ['USD', 'USDT', 'USDC', 'BUSD', 'TUSD', 'DAI', 'FDUSD', 'GBP', 'EUR']:
+                        if asset in ['USD', 'USDT', 'USDC', 'BUSD', 'TUSD', 'DAI', 'FDUSD', 'GBP', 'EUR'] or asset.startswith('LD'):
                             continue
                         qty = float(qty or 0)
                         if qty > 0.0001:
@@ -12140,8 +12140,8 @@ class OrcaKillCycle:
                     binance_positions = client.get_balance()
                     if binance_positions:
                         for asset, qty in binance_positions.items():
-                            # Skip stablecoins and fiat
-                            if asset in ['USD', 'USDT', 'USDC', 'BUSD', 'TUSD', 'DAI', 'FDUSD', 'GBP', 'EUR']:
+                            # Skip stablecoins, fiat, and LD* (Binance Simple Earn/Locked - not spot tradeable)
+                            if asset in ['USD', 'USDT', 'USDC', 'BUSD', 'TUSD', 'DAI', 'FDUSD', 'GBP', 'EUR'] or asset.startswith('LD'):
                                 continue
                             qty = float(qty)
                             if qty > 0.000001:
