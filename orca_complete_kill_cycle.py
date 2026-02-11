@@ -12138,6 +12138,33 @@ class OrcaKillCycle:
                     binance_positions = client.get_balance()
                     if binance_positions:
                         for asset, qty in binance_positions.items():
+                            # Binance "Simple Earn" / locked balance tickers are often prefixed with "LD"
+                            # (e.g. LDZEC, LDAXS). These are not spot-tradable pairs, but we can still
+                            # estimate their market value using the underlying asset's spot price.
+                            if isinstance(asset, str) and asset.startswith("LD") and len(asset) > 2:
+                                underlying = asset[2:]
+                                qty = float(qty or 0)
+                                if qty <= 0.000001:
+                                    continue
+
+                                symbol_variants = [f"{underlying}/USDT", f"{underlying}/USDC", f"{underlying}/USD", f"{underlying}/BUSD"]
+                                priced = False
+                                for symbol in symbol_variants:
+                                    try:
+                                        ticker = self._get_binance_ticker(client, symbol)
+                                        price = float(ticker.get('bid', ticker.get('price', 0)) or 0) if ticker else 0.0
+                                        if price > 0:
+                                            market_value = qty * price
+                                            print(f"     {asset} (BINANCE EARN): {qty:.6f} ~ {symbol} @ ${price:.6f} (${market_value:.2f})")
+                                            priced = True
+                                            break
+                                    except Exception:
+                                        continue
+
+                                if not priced and qty * 100 > 1:
+                                    print(f"      {asset}: {qty:.6f} (earn token; could not price underlying {underlying})")
+                                continue
+
                             # Skip stablecoins and fiat
                             if asset in ['USD', 'USDT', 'USDC', 'BUSD', 'TUSD', 'DAI', 'FDUSD', 'GBP', 'EUR']:
                                 continue
@@ -14392,6 +14419,5 @@ if __name__ == "__main__":
         traceback.print_exc(file=sys.stderr)
         print("\n  Orca exiting gracefully to prevent crash loop\n", file=sys.stderr)
         sys.exit(1)
-
 
 
