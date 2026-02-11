@@ -87,7 +87,7 @@ WARRIOR_FREQUENCY = 741.0  # Hz
 class V11Config:
     """V11 Power Station configuration"""
     # Position sizing
-    max_concurrent_positions: int = 10  # Max nodes in power grid
+    max_concurrent_positions: Optional[int] = None  # Max nodes in power grid (None or <=0 = unlimited)
     max_position_pct: float = 0.10  # 10% per node
     capital_reserve_pct: float = 0.10  # 10% reserve (root system)
     min_trade_size: float = 5.0  # Minimum $5 to open position
@@ -274,6 +274,8 @@ class V11PowerStationLive:
     
     def __init__(self, config: V11Config = None, dry_run: bool = False):  # Default to LIVE!
         self.config = config or V11Config()
+        if self.config.max_concurrent_positions is not None and self.config.max_concurrent_positions <= 0:
+            self.config.max_concurrent_positions = None
         self.dry_run = dry_run
         
         # Power grid
@@ -309,8 +311,10 @@ class V11PowerStationLive:
         print(f"   ✅ SIPHON when 2%+ profitable (take 50%, leave 50%)")
         print(f"   ✅ 100% WIN RATE - Only realize gains, never losses")
         print("═" * 90)
+        max_nodes = self.config.max_concurrent_positions
+        max_nodes_label = 'unlimited' if max_nodes is None or max_nodes <= 0 else str(max_nodes)
         print(f"   Mode: {'🧪 DRY RUN' if self.dry_run else '🔴 LIVE TRADING'}")
-        print(f"   Max Nodes: {self.config.max_concurrent_positions}")
+        print(f"   Max Nodes: {max_nodes_label}")
         print(f"   Siphon Threshold: {self.config.profit_siphon_pct*100:.1f}%+")
         print(f"   Siphon Rate: {self.config.max_siphon_rate*100:.0f}% of gains")
         print(f"   Exchanges: {', '.join(self.config.enabled_exchanges)}")

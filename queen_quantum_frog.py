@@ -3858,7 +3858,7 @@ class OrcaKillCycle:
             try:
                 v11_config = V11Config(
                     enabled_exchanges=['binance', 'alpaca', 'kraken'],
-                    max_concurrent_positions=100,
+                    max_concurrent_positions=None,
                     min_siphon_amount=5.50,  # Binance MIN_NOTIONAL = $5
                     siphon_percentage=50.0,  # Extract 50% of profits
                     reinvest_threshold=5.50  # Reinvest when reserve >= $5.50
