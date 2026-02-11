@@ -652,7 +652,15 @@ class GlobalFinancialFeed:
         
         # Broadcast to Thought Bus (The Queen is listening)
         self._broadcast_to_hive(snapshot)
-        
+
+        # Feed into Autonomy Hub (The Big Wheel)
+        try:
+            from aureon_autonomy_hub import get_autonomy_hub
+            hub = get_autonomy_hub()
+            hub.data_bridge.ingest_macro_snapshot(snapshot.to_dict())
+        except Exception:
+            pass  # Hub not available yet
+
         # Log summary
         print(f"   😱 Fear/Greed: {snapshot.crypto_fear_greed} ({snapshot.crypto_fg_classification})")
         print(f"   📊 VIX: {snapshot.vix:.1f} | S&P: {snapshot.spx:.0f} ({snapshot.spx_change:+.2f}%)")

@@ -13403,6 +13403,15 @@ class AureonKrakenEcosystem:
         self.memory = spiral_memory  # 🌀 Durable memory core
         self.flux_predictor = SystemFluxPredictor() # 🔮 Initialize Flux Predictor
 
+        # ⚙️ THE BIG WHEEL - Autonomy Hub connects Data -> Predictions -> Decisions -> Feedback
+        self.autonomy_hub = None
+        try:
+            from aureon_autonomy_hub import get_autonomy_hub
+            self.autonomy_hub = get_autonomy_hub()
+            print("⚙️  THE BIG WHEEL: Autonomy Hub connected (Data->Predictions->Decisions->Feedback)")
+        except Exception as e:
+            print(f"⚠️  Autonomy Hub init deferred: {e}")
+
         # Mirror harmonic engine reference for convenience
         self.harmonic_engine = getattr(self.auris, 'harmonic_engine', None)
         
@@ -22930,6 +22939,21 @@ class AureonKrakenEcosystem:
             while True:
                 self.iteration += 1
                 now = datetime.now().strftime("%H:%M:%S")
+
+                # ⚙️ THE BIG WHEEL: Spin autonomy hub each cycle (data -> predictions -> decisions -> learning)
+                if self.autonomy_hub:
+                    try:
+                        # Feed current market context into the hub
+                        for sym, ticker in list(self.ticker_cache.items())[:50]:
+                            price = float(ticker.get('last', ticker.get('c', [0])[0] if isinstance(ticker.get('c'), list) else 0) or 0)
+                            change = float(ticker.get('p', [0, 0])[1] if isinstance(ticker.get('p'), list) else ticker.get('change_pct', 0) or 0)
+                            if price > 0:
+                                self.autonomy_hub.data_bridge.ingest_market_tick(sym, price, change, 0, 'kraken')
+                        hub_decision = self.autonomy_hub.spin_cycle()
+                        if hub_decision and hub_decision.direction != "NEUTRAL":
+                            logger.info(f"⚙️  BIG WHEEL: {hub_decision.direction} @ {hub_decision.confidence:.2f} | WR: {self.autonomy_hub.feedback_loop.get_rolling_win_rate():.1%}")
+                    except Exception as e:
+                        logger.debug(f"Autonomy hub cycle: {e}")
 
                 # 🍄 Constant nerve-system pulse (state shared + persisted)
                 self._mycelium_heartbeat(note='cycle')

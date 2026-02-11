@@ -491,6 +491,21 @@ class NewsFeed:
             "timestamp": self.last_poll_time.isoformat()
         })
         
+        # 5. Feed into Autonomy Hub (The Big Wheel)
+        try:
+            from aureon_autonomy_hub import get_autonomy_hub
+            hub = get_autonomy_hub()
+            hub.data_bridge.ingest_news_sentiment({
+                'crypto_sentiment': signals.get('crypto_sentiment', 0.0),
+                'aggregate_sentiment': sentiment_analysis.get('aggregate_sentiment', 0.0),
+                'confidence': sentiment_analysis.get('confidence', 0.5),
+                'bullish_ratio': sentiment_analysis.get('bullish_ratio', 0.33),
+                'bearish_ratio': sentiment_analysis.get('bearish_ratio', 0.33),
+                'key_themes': signals.get('key_themes', []),
+            })
+        except Exception:
+            pass  # Hub not available yet
+
         return {
             "status": "success",
             "timestamp": self.last_poll_time.isoformat(),

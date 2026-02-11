@@ -259,6 +259,20 @@ class TradeLogger:
         
         result = "✅ WIN" if exit_record.net_pnl > 0 else "❌ LOSS"
         logger.info(f"📊 Trade Exit: {trade_id} | {result} | P&L: ${exit_record.net_pnl:+.2f} ({exit_record.pnl_pct:+.2f}%) | Reason: {exit_record.reason}")
+
+        # Feed outcome into Autonomy Hub feedback loop (closes the learning circle)
+        try:
+            from aureon_autonomy_hub import get_autonomy_hub
+            hub = get_autonomy_hub()
+            hub.record_trade_outcome({
+                'symbol': exit_record.symbol,
+                'net_pnl': exit_record.net_pnl,
+                'pnl_pct': exit_record.pnl_pct,
+                'total_fees': exit_record.fees,
+                'exchange': self.active_trades.get(trade_id, {}).get('exchange', 'unknown'),
+            })
+        except Exception:
+            pass  # Hub not available yet
     
     def log_execution(self, execution_type: str, exchange: str, symbol: str, 
                       side: str, order_id: str, quantity: float = 0.0,
