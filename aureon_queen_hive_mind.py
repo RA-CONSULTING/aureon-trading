@@ -14160,6 +14160,36 @@ Sero 👑🐝
             logger.error(f"❌ Error gathering neural inputs: {e}")
             return None
     
+    def _coerce_neural_input(self, neural_input: Any = None) -> Optional['NeuralInput']:
+        """
+        Normalize incoming neural input into a NeuralInput instance.
+
+        Accepts:
+        - NeuralInput objects (pass-through)
+        - dict payloads from autonomous/orchestrator loops
+        - None (gathers default market signals)
+        """
+        if neural_input is None:
+            return self.gather_neural_inputs()
+
+        if NeuralInput and isinstance(neural_input, NeuralInput):
+            return neural_input
+
+        if isinstance(neural_input, dict):
+            # Support alternate key names produced by autonomous loops
+            return self.gather_neural_inputs(
+                probability_score=neural_input.get('probability_score', neural_input.get('probability', 0.5)),
+                wisdom_score=neural_input.get('wisdom_score', neural_input.get('wisdom', 0.5)),
+                quantum_signal=neural_input.get('quantum_signal', neural_input.get('market_pulse', 0.0)),
+                gaia_resonance=neural_input.get('gaia_resonance', neural_input.get('gaia', 0.5)),
+                emotional_coherence=neural_input.get('emotional_coherence', neural_input.get('emotion', 0.5)),
+                mycelium_signal=neural_input.get('mycelium_signal', neural_input.get('mycelium', 0.0)),
+                market_state=neural_input.get('market_state', neural_input),
+            )
+
+        logger.warning(f"⚠️ Unsupported neural_input type: {type(neural_input).__name__}; falling back to defaults")
+        return self.gather_neural_inputs()
+
     def think(self, neural_input: Optional['NeuralInput'] = None) -> Tuple[float, str]:
         """
         👑🧠 QUEEN THINKS - Get her confidence for a trade
@@ -14188,8 +14218,7 @@ Sero 👑🐝
         if not self.neural_brain:
             return 0.5, "Neural brain not available"
         
-        if neural_input is None:
-            neural_input = self.gather_neural_inputs()
+        neural_input = self._coerce_neural_input(neural_input)
         
         if neural_input is None:
             return 0.5, "Could not gather neural inputs"
