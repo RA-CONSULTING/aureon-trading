@@ -237,6 +237,28 @@ class QueenNeuronV2:
     # ════════════════════════════════════════════════════════════════════════════
     # FORWARD PASS
     # ════════════════════════════════════════════════════════════════════════════
+
+    @staticmethod
+    def _coerce_neural_input(neural_input: Any, happiness: float) -> NeuralInputV2:
+        """Normalize legacy inputs to NeuralInputV2."""
+        if isinstance(neural_input, NeuralInputV2):
+            return neural_input
+
+        if isinstance(neural_input, NeuralInput):
+            return NeuralInputV2.from_v1(neural_input, happiness)
+
+        if isinstance(neural_input, dict):
+            return NeuralInputV2(
+                probability_score=float(neural_input.get('probability_score', neural_input.get('probability', 0.5))),
+                wisdom_score=float(neural_input.get('wisdom_score', neural_input.get('wisdom', 0.5))),
+                quantum_signal=float(neural_input.get('quantum_signal', neural_input.get('market_pulse', 0.0))),
+                gaia_resonance=float(neural_input.get('gaia_resonance', neural_input.get('gaia', 0.5))),
+                emotional_coherence=float(neural_input.get('emotional_coherence', neural_input.get('emotion', 0.5))),
+                mycelium_signal=float(neural_input.get('mycelium_signal', neural_input.get('mycelium', 0.0))),
+                happiness_signal=float(neural_input.get('happiness_signal', happiness)),
+            )
+
+        raise TypeError(f"Unsupported neural input type: {type(neural_input).__name__}")
     
     def forward(self, X: np.ndarray) -> np.ndarray:
         """
@@ -260,10 +282,7 @@ class QueenNeuronV2:
         
         If given a v1 input, automatically augment with current happiness.
         """
-        # Handle backwards compatibility
-        if isinstance(neural_input, NeuralInput):
-            neural_input = NeuralInputV2.from_v1(neural_input, self.current_happiness)
-        
+        neural_input = self._coerce_neural_input(neural_input, self.current_happiness)
         X = neural_input.to_array()
         output = self.forward(X)
         return float(output[0, 0])
@@ -345,9 +364,7 @@ class QueenNeuronV2:
             except Exception:
                 pass
         
-        # Handle backwards compatible v1 inputs
-        if isinstance(neural_input, NeuralInput):
-            neural_input = NeuralInputV2.from_v1(neural_input, self.current_happiness)
+        neural_input = self._coerce_neural_input(neural_input, self.current_happiness)
         
         X = neural_input.to_array()
         y = np.array([[1.0 if is_win else 0.0]], dtype=np.float32)
