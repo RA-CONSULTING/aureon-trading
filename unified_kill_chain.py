@@ -10,7 +10,7 @@ from datetime import datetime, timedelta, timezone
 # Import Clients
 from capital_client import CapitalClient
 from alpaca_client import AlpacaClient
-from binance_client import BinanceClient
+from binance_client import BinanceClient, get_binance_client
 from kraken_client import KrakenClient, get_kraken_client
 from aureon_sero_client import SeroClient
 

@@ -47,7 +47,7 @@ from dataclasses import dataclass, field
 from collections import defaultdict
 
 # Exchange clients
-from binance_client import BinanceClient
+from binance_client import BinanceClient, get_binance_client
 from kraken_client import KrakenClient, get_kraken_client
 
 # Optional: Alpaca client
