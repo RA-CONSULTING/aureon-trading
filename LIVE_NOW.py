@@ -18,7 +18,7 @@ POWERED BY THE FULL AUREON UNIFIED ECOSYSTEM:
 from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import asyncio
 import time
-import random
+import os
 from datetime import datetime
 from typing import List, Dict
 
@@ -96,6 +96,23 @@ except:
     SNIPER_AVAILABLE = False
     print("  ⚠️  Auto Sniper: Not available")
 
+# Exchange clients for LIVE data
+try:
+    from alpaca_client import AlpacaClient
+    ALPACA_AVAILABLE = True
+    print("  ✅ Alpaca Client: LOADED")
+except:
+    ALPACA_AVAILABLE = False
+    print("  ⚠️  Alpaca Client: Not available")
+
+try:
+    from kraken_client import KrakenClient
+    KRAKEN_AVAILABLE = True
+    print("  ✅ Kraken Client: LOADED")
+except:
+    KRAKEN_AVAILABLE = False
+    print("  ⚠️  Kraken Client: Not available")
+
 print("\n" + "="*80)
 print("║                                                                             ║")
 print("║              🔮💎 AUREON UNIFIED LIVE TRADER 💎🔮                           ║")
@@ -130,6 +147,21 @@ immune_system = None
 memory_core = None
 scout = None
 sniper = None
+
+# Exchange clients for LIVE trading
+exchange_clients = {}
+if ALPACA_AVAILABLE:
+    try:
+        exchange_clients['alpaca'] = AlpacaClient()
+        print("  ✅ Alpaca Exchange: CONNECTED (LIVE)")
+    except Exception as e:
+        print(f"  ⚠️  Alpaca: {e}")
+if KRAKEN_AVAILABLE:
+    try:
+        exchange_clients['kraken'] = KrakenClient()
+        print("  ✅ Kraken Exchange: CONNECTED (LIVE)")
+    except Exception as e:
+        print(f"  ⚠️  Kraken: {e}")
 
 # Stats
 stats = {
@@ -293,45 +325,57 @@ async def scan_for_opportunities() -> List[Dict]:
         except Exception as e:
             print(f"  ⚠️  Scout error: {e}")
     
-    # Fallback: Simulate market scanning
+    # Fallback: Use LIVE exchange data when Scout is unavailable
     symbols = ['BTC/USD', 'ETH/USD', 'SOL/USD', 'DOGE/USD', 'ADA/USD']
-    
+
+    # Get the best available exchange client
+    client = exchange_clients.get('kraken') or exchange_clients.get('alpaca')
+    if not client:
+        print("  ⚠️  No exchange client available for scanning")
+        return opportunities
+
     for symbol in symbols:
-        price = random.uniform(0.5, 50000)
-        change_24h = random.uniform(-5, 15)
-        
+        try:
+            ticker = client.get_ticker(symbol)
+            if not ticker or ticker.get('price', 0) <= 0:
+                continue
+            price = float(ticker['price'])
+        except Exception as e:
+            continue
+
+        # Use real price data with pattern matching
         for pattern in ELITE_PATTERNS:
-            if change_24h > 1.0 and random.random() < pattern['win_rate']:
-                confidence = pattern['win_rate'] + random.uniform(-0.05, 0.05)
-                
-                # 🍄 Boost with Mycelium
-                if mycelium:
-                    try:
-                        result = mycelium.process_market_data({
-                            'symbol': symbol,
-                            'price': price,
-                            'momentum': change_24h / 100
-                        })
-                        if result and result.get('confidence'):
-                            confidence = (confidence + result['confidence']) / 2
-                            stats['mycelium_boosts'] += 1
-                    except:
-                        pass
-                
-                if confidence > 0.75:
-                    opportunities.append({
+            confidence = pattern['win_rate']
+
+            # 🍄 Boost with Mycelium
+            if mycelium:
+                try:
+                    result = mycelium.process_market_data({
                         'symbol': symbol,
-                        'exchange': 'Kraken',
-                        'pattern': pattern['id'],
-                        'confidence': confidence,
-                        'entry_price': price,
-                        'target_price': price * (1 + pattern['avg_profit']),
-                        'stop_price': price * 0.98,
-                        'avg_profit': pattern['avg_profit']
+                        'price': price,
+                        'momentum': 0.01
                     })
-                    stats['patterns_detected'] += 1
-                    break
-    
+                    if result and result.get('confidence'):
+                        confidence = (confidence + result['confidence']) / 2
+                        stats['mycelium_boosts'] += 1
+                except:
+                    pass
+
+            if confidence > 0.75:
+                exchange_name = 'kraken' if 'kraken' in exchange_clients else 'alpaca'
+                opportunities.append({
+                    'symbol': symbol,
+                    'exchange': exchange_name,
+                    'pattern': pattern['id'],
+                    'confidence': confidence,
+                    'entry_price': price,
+                    'target_price': price * (1 + pattern['avg_profit']),
+                    'stop_price': price * 0.98,
+                    'avg_profit': pattern['avg_profit']
+                })
+                stats['patterns_detected'] += 1
+                break
+
     return opportunities
 
 
@@ -355,17 +399,36 @@ async def execute_trade(opp: Dict) -> bool:
             pass
     
     # NO PDT LIMIT - Full production autonomous trading
-    if False:  # PDT limit removed - unlimited trading
-        return False
-    
+
     # Position size: 10% of capital, scaled by confidence
     position_value = min(capital * 0.10, capital * opp['confidence'])
     quantity = position_value / opp['entry_price']
-    
+
+    # LIVE trade execution via exchange client
+    exchange_name = opp.get('exchange', 'kraken').lower()
+    client = exchange_clients.get(exchange_name) or exchange_clients.get('alpaca') or exchange_clients.get('kraken')
+    order_result = None
+    if client:
+        try:
+            order_result = client.place_market_order(
+                symbol=opp['symbol'],
+                side='buy',
+                quantity=quantity
+            )
+            if not order_result or order_result.get('status') in ['rejected', 'error']:
+                print(f"  ⚠️  Order rejected: {order_result}")
+                return False
+        except Exception as e:
+            print(f"  ⚠️  Order execution error: {e}")
+            return False
+    else:
+        print("  ⚠️  No exchange client available - cannot execute trade")
+        return False
+
     # Create position
     position = {
         'symbol': opp['symbol'],
-        'exchange': opp['exchange'],
+        'exchange': exchange_name,
         'pattern': opp['pattern'],
         'entry_price': opp['entry_price'],
         'target_price': opp['target_price'],
@@ -374,52 +437,85 @@ async def execute_trade(opp: Dict) -> bool:
         'position_value': position_value,
         'entry_time': time.time(),
         'status': 'open',
-        'avg_profit': opp['avg_profit']
+        'avg_profit': opp['avg_profit'],
+        'order_id': order_result.get('id', 'unknown') if order_result else 'unknown'
     }
-    
+
     positions.append(position)
-    
-    print(f"✅ Position opened: {opp['pattern']} on {opp['exchange']} (confidence: {opp['confidence']*100:.0f}%)")
-    
+
+    print(f"✅ LIVE position opened: {opp['pattern']} on {exchange_name.upper()} (confidence: {opp['confidence']*100:.0f}%)")
+    print(f"   Order ID: {position['order_id']}")
+
     return position
 
 
 async def monitor_positions():
-    """Monitor positions and execute kills using UNIFIED ECOSYSTEM"""
+    """Monitor positions using LIVE exchange prices and execute kills"""
     global capital, stats
-    
+
     for pos in positions:
         if pos['status'] != 'open':
             continue
-        
-        # Simulate price movement based on pattern's avg profit
-        profit_multiplier = pos['avg_profit'] + random.uniform(-0.01, 0.02)
-        current_price = pos['entry_price'] * (1 + profit_multiplier)
-        
+
+        # Get LIVE price from exchange
+        exchange_name = pos.get('exchange', 'kraken').lower()
+        client = exchange_clients.get(exchange_name) or exchange_clients.get('alpaca') or exchange_clients.get('kraken')
+        current_price = pos['entry_price']  # fallback
+        if client:
+            try:
+                ticker = client.get_ticker(pos['symbol'])
+                if ticker and ticker.get('price', 0) > 0:
+                    current_price = float(ticker['price'])
+            except Exception as e:
+                print(f"  ⚠️  Price fetch error for {pos['symbol']}: {e}")
+                continue
+        else:
+            continue
+
         profit = (current_price - pos['entry_price']) * pos['quantity']
         profit_pct = (current_price / pos['entry_price'] - 1)
-        
+
         # 🎯 Sniper: Kill for any profit > £0.50
         if sniper and profit > 0.50:
             try:
                 sniper_result = sniper.check_and_kill(pos)
                 if sniper_result or profit > 0.50:  # Sniper approved or profit threshold
-                    print(f"  🎯 SNIPER KILL (Unified): {pos['symbol']} +£{profit:.2f} ({profit_pct*100:.2f}%)")
-                    
+                    # Execute LIVE sell order
+                    sell_success = False
+                    if client:
+                        try:
+                            sell_result = client.place_market_order(
+                                symbol=pos['symbol'],
+                                side='sell',
+                                quantity=pos['quantity']
+                            )
+                            if sell_result and sell_result.get('status') not in ['rejected', 'error']:
+                                sell_success = True
+                            else:
+                                print(f"  ⚠️  Sell rejected: {sell_result}")
+                                continue
+                        except Exception as e:
+                            print(f"  ⚠️  Sell error: {e}")
+                            continue
+                    if not sell_success:
+                        continue
+
+                    print(f"  🎯 SNIPER KILL (LIVE): {pos['symbol']} +£{profit:.2f} ({profit_pct*100:.2f}%)")
+
                     # Close position
                     pos['status'] = 'closed'
                     pos['exit_price'] = current_price
                     pos['profit'] = profit
                     pos['profit_pct'] = profit_pct
-                    
+
                     # Update capital
                     capital += profit
-                    
+
                     if profit > 0:
                         stats['wins'] += 1
                     else:
                         stats['losses'] += 1
-                    
+
                     stats['profit'] += profit
                     stats['kills'] += 1
                     

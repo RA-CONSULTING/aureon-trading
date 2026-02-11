@@ -12,6 +12,20 @@ import time
 from datetime import datetime
 from typing import List, Dict
 import json
+import os
+
+# Exchange clients for LIVE data
+try:
+    from alpaca_client import AlpacaClient
+    ALPACA_AVAILABLE = True
+except:
+    ALPACA_AVAILABLE = False
+
+try:
+    from kraken_client import KrakenClient
+    KRAKEN_AVAILABLE = True
+except:
+    KRAKEN_AVAILABLE = False
 
 # Import all working ecosystem components (tested in demo)
 try:
@@ -180,7 +194,22 @@ class AureonLive:
             print("  ✅ Auto Sniper: ONLINE")
         else:
             self.sniper = None
-        
+
+        # Initialize exchange clients for LIVE trading
+        self.exchange_clients = {}
+        if ALPACA_AVAILABLE:
+            try:
+                self.exchange_clients['alpaca'] = AlpacaClient()
+                print("  ✅ Alpaca Exchange: CONNECTED (LIVE)")
+            except Exception as e:
+                print(f"  ⚠️  Alpaca: {e}")
+        if KRAKEN_AVAILABLE:
+            try:
+                self.exchange_clients['kraken'] = KrakenClient()
+                print("  ✅ Kraken Exchange: CONNECTED (LIVE)")
+            except Exception as e:
+                print(f"  ⚠️  Kraken: {e}")
+
         print("\n💎 ALL SYSTEMS READY! 💎\n")
         print(f"💰 Starting Capital: £{self.capital:.2f}")
         print(f"🎯 Target: £{self.target:,.2f}")
@@ -302,15 +331,35 @@ class AureonLive:
                 pass
         
         # NO PDT LIMIT - Full production autonomous trading
-        
+
         # Calculate position size (10% of capital max)
         position_value = min(self.capital * 0.10, self.capital * opp['confidence'])
         quantity = position_value / opp['entry_price']
-        
-        # Simulate trade execution
+
+        # LIVE trade execution via exchange client
+        exchange_name = opp.get('exchange', 'kraken').lower()
+        client = self.exchange_clients.get(exchange_name) or self.exchange_clients.get('alpaca') or self.exchange_clients.get('kraken')
+        order_result = None
+        if client:
+            try:
+                order_result = client.place_market_order(
+                    symbol=opp['symbol'],
+                    side='buy',
+                    quantity=quantity
+                )
+                if not order_result or order_result.get('status') in ['rejected', 'error']:
+                    print(f"  ⚠️  Order rejected: {order_result}")
+                    return False
+            except Exception as e:
+                print(f"  ⚠️  Order execution error: {e}")
+                return False
+        else:
+            print("  ⚠️  No exchange client available - cannot execute trade")
+            return False
+
         position = {
             'symbol': opp['symbol'],
-            'exchange': opp['exchange'],
+            'exchange': exchange_name,
             'pattern': opp['pattern'],
             'entry_price': opp['entry_price'],
             'target_price': opp['target_price'],
@@ -318,18 +367,21 @@ class AureonLive:
             'quantity': quantity,
             'position_value': position_value,
             'entry_time': time.time(),
-            'status': 'open'
+            'status': 'open',
+            'order_id': order_result.get('id', 'unknown') if order_result else 'unknown'
         }
-        
+
         self.positions.append(position)
         self.trades_today += 1
-        
-        print(f"\n  💰 TRADE EXECUTED:")
+
+        print(f"\n  💰 LIVE TRADE EXECUTED:")
         print(f"     Symbol: {opp['symbol']}")
+        print(f"     Exchange: {exchange_name.upper()}")
         print(f"     Pattern: {opp['pattern']} ({opp['confidence']*100:.0f}% confidence)")
         print(f"     Entry: £{opp['entry_price']:.2f}")
         print(f"     Target: £{opp['target_price']:.2f} (+{((opp['target_price']/opp['entry_price']-1)*100):.1f}%)")
         print(f"     Position: £{position_value:.2f}")
+        print(f"     Order ID: {position['order_id']}")
         print(f"     Day Trades: {self.trades_today} (UNLIMITED)\n")
         
         # Store in Memory
@@ -342,21 +394,51 @@ class AureonLive:
         return True
     
     async def monitor_positions(self):
-        """Monitor open positions and execute Sniper kills"""
+        """Monitor open positions using LIVE exchange prices"""
         for pos in self.positions:
             if pos['status'] != 'open':
                 continue
-            
-            # Simulate price movement (in real version, get from exchange)
-            # For demo: assume 2% profit on average
-            current_price = pos['entry_price'] * 1.02
+
+            # Get LIVE price from exchange
+            exchange_name = pos.get('exchange', 'kraken').lower()
+            client = self.exchange_clients.get(exchange_name) or self.exchange_clients.get('alpaca') or self.exchange_clients.get('kraken')
+            current_price = pos['entry_price']  # fallback
+            if client:
+                try:
+                    ticker = client.get_ticker(pos['symbol'])
+                    if ticker and ticker.get('price', 0) > 0:
+                        current_price = float(ticker['price'])
+                except Exception as e:
+                    print(f"  ⚠️  Price fetch error for {pos['symbol']}: {e}")
+                    continue
+
             profit = (current_price - pos['entry_price']) * pos['quantity']
             profit_pct = (current_price / pos['entry_price'] - 1)
             
             # 🎯 Sniper: Kill for any profit > £1
             if self.sniper and profit > 1.0:
-                print(f"  🎯 SNIPER KILL: {pos['symbol']} +£{profit:.2f} ({profit_pct*100:.2f}%)")
-                
+                # Execute LIVE sell order on exchange
+                sell_success = False
+                if client:
+                    try:
+                        sell_result = client.place_market_order(
+                            symbol=pos['symbol'],
+                            side='sell',
+                            quantity=pos['quantity']
+                        )
+                        if sell_result and sell_result.get('status') not in ['rejected', 'error']:
+                            sell_success = True
+                        else:
+                            print(f"  ⚠️  Sell rejected: {sell_result}")
+                            continue
+                    except Exception as e:
+                        print(f"  ⚠️  Sell error: {e}")
+                        continue
+                if not sell_success:
+                    continue
+
+                print(f"  🎯 SNIPER KILL (LIVE): {pos['symbol']} +£{profit:.2f} ({profit_pct*100:.2f}%)")
+
                 # Close position
                 pos['status'] = 'closed'
                 pos['exit_price'] = current_price
