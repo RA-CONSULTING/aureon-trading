@@ -7496,6 +7496,12 @@ class OrcaKillCycle:
         if not symbol:
             return ''
         base = symbol.replace('/', '').upper()
+
+        # Binance earn/locked balances are reported with an "LD" prefix
+        # (e.g., LDZEC). Strip it so truth checks compare against spot symbols.
+        if base.startswith('LD') and len(base) > 2:
+            base = base[2:]
+
         for suffix in ['USDT', 'USDC', 'USD', 'ZUSD', 'EUR', 'ZEUR', 'GBP', 'BUSD', 'TUSD', 'FDUSD']:
             if base.endswith(suffix):
                 base = base[: -len(suffix)]
@@ -11829,6 +11835,7 @@ class OrcaKillCycle:
             'cop_last_action': None,
             'cop_min_action': None,
             'quantum_amplification': 1.0,
+            'quantum_hz': SCHUMANN_BASE_HZ,
             'quantum_cycles': 0,
         }
         
@@ -12277,6 +12284,7 @@ class OrcaKillCycle:
                             quantum_stats['hz'] = result.state.amplified_frequency_hz
                             quantum_stats['cycles'] += 1
                             session_stats['quantum_amplification'] = quantum_stats['amplification']
+                            session_stats['quantum_hz'] = quantum_stats['hz']
                             session_stats['quantum_cycles'] = quantum_stats['cycles']
                             
                             # Display quantum status when amplification is significant
@@ -13764,10 +13772,10 @@ class OrcaKillCycle:
 
             # Quantum data for quantum tab
             quantum_data = {
-                'coherence': quantum_stats.get('amplification', 0.618) if quantum_stats else 0.618,
+                'coherence': session_stats.get('quantum_amplification', 0.618),
                 'active_timelines': 7,
                 'anchored_timelines': 3,
-                'schumann_hz': quantum_stats.get('hz', 7.83) if quantum_stats else 7.83,
+                'schumann_hz': session_stats.get('quantum_hz', 7.83),
                 'love_freq': 528
             }
 
@@ -14405,5 +14413,3 @@ if __name__ == "__main__":
         traceback.print_exc(file=sys.stderr)
         print("\n  Orca exiting gracefully to prevent crash loop\n", file=sys.stderr)
         sys.exit(1)
-
-

@@ -1109,7 +1109,26 @@ class CostBasisTracker:
             }
         
         # ✅ FOUND POSITION - Use it for P&L calculation
-        _safe_print(f"   ✅ Cost basis found: {matched_key} → entry ${pos['avg_entry_price']:.6f}")
+        avg_entry = float(pos.get('avg_entry_price', 0) or 0)
+        lots = self.trade_lots.get(matched_key, [])
+        has_lot_cost_data = any((lot.quantity > 0 and lot.price > 0) for lot in lots)
+
+        # Guardrail: a zero entry price is not valid cost-basis data.
+        # This previously logged as "found" and produced misleading P&L.
+        if avg_entry <= 0 and not has_lot_cost_data:
+            _safe_print(f"   🚨 COST BASIS INVALID for {symbol}")
+            _safe_print(f"      Matched key: {matched_key}")
+            _safe_print("      Stored entry price is zero and no valid trade lots were found")
+            return False, {
+                'entry_price': None,
+                'current_price': current_price,
+                'profit_pct': 0,
+                'net_profit': 0,
+                'cost_basis': 0,
+                'recommendation': 'NO_VALID_COST_BASIS - DO NOT SELL'
+            }
+
+        _safe_print(f"   ✅ Cost basis found: {matched_key} → entry ${avg_entry:.6f}")
         
         # 🆕 Use FIFO lots to calculate cost of goods for the specific quantity to be sold
         sell_qty = quantity or pos.get('total_quantity', 0)
