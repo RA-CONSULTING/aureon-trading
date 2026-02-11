@@ -96,6 +96,7 @@ logger = logging.getLogger(__name__)
 SYSTEMS_STATUS = {}
 
 KrakenClient = None
+get_kraken_client = None
 BinanceClient = None
 AlpacaClient = None
 CapitalClient = None
@@ -133,7 +134,7 @@ def safe_import(name: str, import_fn):
 
 def load_systems():
     """Load optional systems after web server is already accepting traffic."""
-    global KrakenClient, BinanceClient, AlpacaClient, CapitalClient
+    global KrakenClient, get_kraken_client, BinanceClient, AlpacaClient, CapitalClient
     global QueenHiveMind, MyceliumNetwork, ThoughtBus
     global ProbabilityUltimateIntelligence, MinerBrain, TimelineOracle, QuantumMirrorScanner
     global HarmonicWaveFusion, GlobalWaveScanner
@@ -142,6 +143,7 @@ def load_systems():
 
     print("\n🔌 LOADING EXCHANGE CLIENTS...")
     KrakenClient = safe_import('Kraken', lambda: __import__('kraken_client', fromlist=['KrakenClient']).KrakenClient)
+    get_kraken_client = safe_import('Kraken Client Getter', lambda: __import__('kraken_client', fromlist=['get_kraken_client']).get_kraken_client)
     BinanceClient = safe_import('Binance', lambda: __import__('binance_client', fromlist=['BinanceClient']).BinanceClient)
     AlpacaClient = safe_import('Alpaca', lambda: __import__('alpaca_client', fromlist=['AlpacaClient']).AlpacaClient)
     CapitalClient = safe_import('Capital', lambda: __import__('capital_client', fromlist=['CapitalClient']).CapitalClient)
@@ -4592,7 +4594,7 @@ class AureonCommandCenter:
             # Exchange Clients
             print("\n📊 CONNECTING TO EXCHANGES...")
 
-            if KrakenClient:
+            if KrakenClient and get_kraken_client:
                 try:
                     self.kraken = get_kraken_client()
                     print("   🐙 Kraken: CONNECTED")
