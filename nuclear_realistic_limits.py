@@ -35,8 +35,8 @@ class TraderConstraints:
     """Real-world trading constraints"""
     # Account level
     starting_capital: float = 76.0
-    pdt_restricted: bool = True  # Under $25k = PDT restricted
-    day_trades_available: int = 3  # PDT allows 3 day trades per 5 days
+    pdt_restricted: bool = False  # NO LIMITS - Full production autonomous trading
+    day_trades_available: int = 999999  # UNLIMITED - No PDT restrictions
     
     # Exchange limits
     max_trades_per_hour: int = 20  # Conservative API limit
@@ -149,16 +149,12 @@ class RealisticLimitsSimulation:
         return self.current_capital
     
     def can_trade(self, is_day_trade: bool) -> bool:
-        """Check if we can execute this trade given constraints"""
-        # Check hourly limit
+        """Check if we can execute this trade given constraints - NO LIMITS"""
+        # Check hourly API rate limit only (exchange protection)
         if self.trades_this_hour >= self.constraints.max_trades_per_hour:
             return False
-        
-        # Check PDT rules
-        if is_day_trade and self.constraints.pdt_restricted:
-            if self.day_trades_used >= self.constraints.day_trades_available:
-                return False
-        
+
+        # NO PDT RESTRICTIONS - Full production autonomous trading
         return True
     
     def scan_opportunities(self, hour: int) -> List[TradeOpportunity]:
@@ -339,7 +335,7 @@ class RealisticLimitsSimulation:
                 
                 if not self.can_trade(opp.is_day_trade):
                     if opp.is_day_trade:
-                        print(f"    ⏸️  {opp.type}: Skipped (PDT limit reached)")
+                        print(f"    ⏸️  {opp.type}: Skipped (hourly rate limit)")
                     else:
                         print(f"    ⏸️  {opp.type}: Skipped (hourly limit)")
                     continue
