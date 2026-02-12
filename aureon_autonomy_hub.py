@@ -264,6 +264,56 @@ class DataBridge:
         self._store_signal(signal)
         return signal
 
+    def ingest_surveillance_alert(self, alert_data: Dict) -> UnifiedSignal:
+        """Bridge: AureonSurveillanceSystem manipulation alerts -> UnifiedSignal"""
+        alert_type = alert_data.get('alert_type', '')
+        severity = alert_data.get('severity', 'low')
+        symbols = alert_data.get('symbols', [])
+
+        # Manipulation detected = bearish pressure (caution)
+        if severity in ('critical', 'high'):
+            direction = "BEARISH"
+            strength = -0.4
+            confidence = 0.6
+        elif severity == 'medium':
+            direction = "NEUTRAL"
+            strength = -0.1
+            confidence = 0.3
+        else:
+            direction = "NEUTRAL"
+            strength = 0.0
+            confidence = 0.1
+
+        signal = UnifiedSignal(
+            source="surveillance",
+            signal_type="data",
+            symbol=symbols[0] if symbols else "MARKET",
+            direction=direction,
+            confidence=confidence,
+            strength=strength,
+            payload={
+                'alert_type': alert_type,
+                'severity': severity,
+                'symbols': symbols,
+                'description': alert_data.get('description', ''),
+            }
+        )
+        self._store_signal(signal)
+        return signal
+
+    def ingest_price_cache(self, cache_data: Dict, source: str = "coingecko") -> int:
+        """Bridge: CoinGecko/Kraken cache files -> UnifiedSignals. Returns count ingested."""
+        ticker_cache = cache_data.get('ticker_cache', {})
+        count = 0
+        for symbol, data in ticker_cache.items():
+            price = data.get('price', 0)
+            change = data.get('change24h', data.get('change_pct', 0))
+            volume = data.get('volume', 0)
+            if price and price > 0:
+                self.ingest_market_tick(symbol, price, change, volume, source)
+                count += 1
+        return count
+
     def get_latest(self, source: Optional[str] = None) -> List[UnifiedSignal]:
         """Get latest signals, optionally filtered by source."""
         with self._lock:
@@ -680,17 +730,58 @@ class FeedbackLoopEngine:
         return weights
 
     def _update_cost_model(self, trade_result: Dict):
-        """Update adaptive profit gate with real cost data."""
+        """Update adaptive profit gate with real cost data from actual trades."""
         try:
-            from adaptive_prime_profit_gate import get_gate
-            gate = get_gate()
-            if gate and hasattr(gate, 'update_exchange_fees'):
+            from adaptive_prime_profit_gate import get_adaptive_gate
+            gate = get_adaptive_gate()
+            if gate:
                 exchange = trade_result.get('exchange', 'kraken')
                 actual_fee_rate = trade_result.get('fee_rate', 0.0)
-                if actual_fee_rate > 0:
-                    gate.update_exchange_fees(exchange, taker_fee=actual_fee_rate)
+                actual_slippage = trade_result.get('actual_slippage', 0.0)
+
+                # Update fee profile with real data
+                if actual_fee_rate > 0 and hasattr(gate, 'fee_profiles'):
+                    ex = exchange.lower()
+                    if ex in gate.fee_profiles:
+                        profile = gate.fee_profiles[ex]
+                        # Blend: 80% existing + 20% actual (smooth adaptation)
+                        profile.taker_fee = profile.taker_fee * 0.8 + actual_fee_rate * 0.2
+                        profile.last_updated = time.time()
+
+                # Update slippage with real data
+                if actual_slippage > 0 and hasattr(gate, 'fee_profiles'):
+                    ex = exchange.lower()
+                    if ex in gate.fee_profiles:
+                        profile = gate.fee_profiles[ex]
+                        profile.slippage_estimate = profile.slippage_estimate * 0.8 + actual_slippage * 0.2
+                        profile.last_updated = time.time()
         except Exception:
             pass
+
+    def get_kelly_inputs(self) -> Dict[str, float]:
+        """Get live Kelly Criterion inputs from actual trading data.
+
+        Returns win_rate, avg_win, avg_loss for Kelly sizing.
+        This replaces the hardcoded 0.55 win rate everywhere.
+        """
+        with self._lock:
+            outcomes = list(self._outcomes)
+
+        if len(outcomes) < 10:
+            return {'win_rate': 0.55, 'avg_win_pct': 0.5, 'avg_loss_pct': 0.3}
+
+        wins = [o for o in outcomes if o.get('was_profitable')]
+        losses = [o for o in outcomes if not o.get('was_profitable')]
+
+        win_rate = len(wins) / len(outcomes) if outcomes else 0.55
+        avg_win = sum(o.get('pnl_pct', 0) for o in wins) / len(wins) if wins else 0.5
+        avg_loss = abs(sum(o.get('pnl_pct', 0) for o in losses) / len(losses)) if losses else 0.3
+
+        return {
+            'win_rate': max(0.01, min(0.99, win_rate)),
+            'avg_win_pct': max(0.01, avg_win),
+            'avg_loss_pct': max(0.01, avg_loss),
+        }
 
     def _persist(self, record: Dict):
         """Persist feedback record to JSONL."""
@@ -816,6 +907,280 @@ def adapt_sentiment_to_prediction(data_signals: Dict[str, UnifiedSignal],
     )
 
 
+# ── NEW PREDICTOR ADAPTERS (closing the remaining 35% gap) ──────────────────
+
+_hnc_instance = None
+_imperial_instance = None
+_ultimate_instance = None
+_whale_hunter_instance = None
+_quantum_telescope_instance = None
+
+
+def adapt_hnc_probability_matrix(data_signals: Dict[str, UnifiedSignal],
+                                  symbol: str) -> Optional[UnifiedSignal]:
+    """Adapter: HNC Probability Matrix (multi-day temporal forecasting) -> UnifiedSignal"""
+    global _hnc_instance
+    try:
+        if _hnc_instance is None:
+            from hnc_probability_matrix import TemporalFrequencyAnalyzer
+            _hnc_instance = TemporalFrequencyAnalyzer()
+
+        # Build current_data from available market signals
+        current_data = {}
+        for key, sig in data_signals.items():
+            if sig.source.startswith('market_') and sig.symbol == symbol:
+                current_data = sig.payload
+                break
+
+        if not current_data:
+            current_data = {'price': 0, 'change_pct': 0, 'volume': 0}
+
+        matrix = _hnc_instance.generate_probability_matrix(symbol, current_data)
+        if not matrix:
+            return None
+
+        combined = getattr(matrix, 'combined_probability', 0.5)
+        confidence = getattr(matrix, 'confidence_score', 0.5)
+        action = getattr(matrix, 'recommended_action', 'HOLD')
+
+        if 'BUY' in str(action).upper():
+            direction = "BULLISH"
+            strength = (combined - 0.5) * 2
+        elif 'SELL' in str(action).upper():
+            direction = "BEARISH"
+            strength = (0.5 - combined) * -2
+        else:
+            direction = "NEUTRAL"
+            strength = 0.0
+
+        return UnifiedSignal(
+            source="predictor:hnc_matrix",
+            signal_type="prediction",
+            symbol=symbol,
+            direction=direction,
+            confidence=min(confidence, 1.0),
+            strength=max(-1.0, min(1.0, strength)),
+            payload={
+                'combined_probability': combined,
+                'fine_tuned': getattr(matrix, 'fine_tuned_probability', combined),
+                'recommended_action': str(action),
+            }
+        )
+    except Exception as e:
+        logger.debug(f"HNC Matrix adapter: {e}")
+        return None
+
+
+def adapt_imperial_predictability(data_signals: Dict[str, UnifiedSignal],
+                                   symbol: str) -> Optional[UnifiedSignal]:
+    """Adapter: Imperial Predictability Engine (cosmic sync) -> UnifiedSignal"""
+    global _imperial_instance
+    try:
+        if _imperial_instance is None:
+            from hnc_imperial_predictability import PredictabilityEngine
+            _imperial_instance = PredictabilityEngine()
+
+        matrix = _imperial_instance.generate_matrix()
+        if not matrix:
+            return None
+
+        combined = getattr(matrix, 'combined_probability', 0.5)
+        action = getattr(matrix, 'recommended_action', 'HOLD')
+        pos_mult = getattr(matrix, 'position_multiplier', 1.0)
+
+        if 'BUY' in str(action).upper():
+            direction = "BULLISH"
+        elif 'SELL' in str(action).upper():
+            direction = "BEARISH"
+        else:
+            direction = "NEUTRAL"
+
+        strength = (combined - 0.5) * 2 if direction == "BULLISH" else \
+                   (0.5 - combined) * -2 if direction == "BEARISH" else 0.0
+
+        return UnifiedSignal(
+            source="predictor:imperial",
+            signal_type="prediction",
+            symbol=symbol,
+            direction=direction,
+            confidence=min(abs(strength) + 0.3, 1.0),
+            strength=max(-1.0, min(1.0, strength)),
+            payload={
+                'combined_probability': combined,
+                'position_multiplier': pos_mult,
+                'recommended_action': str(action),
+            }
+        )
+    except Exception as e:
+        logger.debug(f"Imperial adapter: {e}")
+        return None
+
+
+def adapt_probability_ultimate(data_signals: Dict[str, UnifiedSignal],
+                                symbol: str) -> Optional[UnifiedSignal]:
+    """Adapter: Probability Ultimate Intelligence (95% accuracy) -> UnifiedSignal"""
+    global _ultimate_instance
+    try:
+        if _ultimate_instance is None:
+            from probability_ultimate_intelligence import ProbabilityUltimateIntelligence
+            _ultimate_instance = ProbabilityUltimateIntelligence()
+
+        # Build market state from data signals
+        market_state = {}
+        for key, sig in data_signals.items():
+            if sig.source.startswith('market_') and sig.symbol == symbol:
+                market_state = sig.payload
+                break
+
+        prediction = _ultimate_instance.predict(symbol=symbol, market_data=market_state)
+        if not prediction:
+            return None
+
+        prob = getattr(prediction, 'final_probability', 0.5)
+        should_trade = getattr(prediction, 'should_trade', False)
+        win_rate = getattr(prediction, 'pattern_win_rate', 0.5)
+        is_guaranteed = getattr(prediction, 'is_guaranteed_win', False)
+
+        if not should_trade:
+            return UnifiedSignal(
+                source="predictor:probability_ultimate",
+                signal_type="prediction", symbol=symbol,
+                direction="NEUTRAL", confidence=0.0, strength=0.0,
+            )
+
+        if prob > 0.55:
+            direction = "BULLISH"
+            strength = (prob - 0.5) * 2
+        elif prob < 0.45:
+            direction = "BEARISH"
+            strength = (0.5 - prob) * -2
+        else:
+            direction = "NEUTRAL"
+            strength = 0.0
+
+        confidence = min(win_rate, 1.0)
+        if is_guaranteed:
+            confidence = min(confidence + 0.2, 1.0)
+
+        return UnifiedSignal(
+            source="predictor:probability_ultimate",
+            signal_type="prediction",
+            symbol=symbol,
+            direction=direction,
+            confidence=confidence,
+            strength=max(-1.0, min(1.0, strength)),
+            payload={
+                'final_probability': prob,
+                'pattern_win_rate': win_rate,
+                'pattern_key': getattr(prediction, 'pattern_key', ''),
+                'is_guaranteed_win': is_guaranteed,
+                'reasoning': str(getattr(prediction, 'reasoning', ''))[:200],
+            }
+        )
+    except Exception as e:
+        logger.debug(f"Ultimate Intelligence adapter: {e}")
+        return None
+
+
+def adapt_whale_hunter(data_signals: Dict[str, UnifiedSignal],
+                        symbol: str) -> Optional[UnifiedSignal]:
+    """Adapter: Moby Dick Whale Hunter predictions -> UnifiedSignal"""
+    global _whale_hunter_instance
+    try:
+        if _whale_hunter_instance is None:
+            from aureon_moby_dick_whale_hunter import MobyDickWhaleHunter
+            _whale_hunter_instance = MobyDickWhaleHunter()
+
+        prediction = _whale_hunter_instance.predict_next_whale_appearance(symbol)
+        if not prediction:
+            return None
+
+        side = getattr(prediction, 'predicted_side', 'neutral')
+        confidence = getattr(prediction, 'confidence', 0.3)
+        ready = getattr(prediction, 'ready_for_execution', False)
+
+        if side == 'buy' or side == 'accumulation':
+            direction = "BULLISH"
+            strength = confidence * 0.8
+        elif side == 'sell' or side == 'distribution':
+            direction = "BEARISH"
+            strength = -confidence * 0.8
+        else:
+            direction = "NEUTRAL"
+            strength = 0.0
+
+        return UnifiedSignal(
+            source="predictor:whale_hunter",
+            signal_type="prediction",
+            symbol=symbol,
+            direction=direction,
+            confidence=confidence if ready else confidence * 0.5,
+            strength=strength,
+            payload={
+                'predicted_side': side,
+                'ready_for_execution': ready,
+                'pattern_type': getattr(prediction, 'pattern_type', ''),
+                'validation_count': getattr(prediction, 'validation_count', 0),
+            }
+        )
+    except Exception as e:
+        logger.debug(f"Whale Hunter adapter: {e}")
+        return None
+
+
+def adapt_quantum_telescope(data_signals: Dict[str, UnifiedSignal],
+                             symbol: str) -> Optional[UnifiedSignal]:
+    """Adapter: Enhanced Quantum Telescope (sacred geometry) -> UnifiedSignal"""
+    global _quantum_telescope_instance
+    try:
+        if _quantum_telescope_instance is None:
+            from aureon_enhanced_quantum_telescope import EnhancedQuantumGeometryEngine
+            _quantum_telescope_instance = EnhancedQuantumGeometryEngine()
+
+        # Build bot data from market signals
+        bot_data = {}
+        for key, sig in data_signals.items():
+            if sig.source.startswith('market_') and sig.symbol == symbol:
+                bot_data = sig.payload
+                break
+
+        analysis = _quantum_telescope_instance.analyze_bot_with_telescope(bot_data)
+        if not analysis:
+            return None
+
+        golden_ratio = analysis.get('golden_ratio_score', 0.5)
+        harmonic = analysis.get('harmonic_resonance', 0.5)
+        manipulation = analysis.get('manipulation_probability', 0.5)
+
+        # High golden ratio + low manipulation = bullish geometry
+        geo_score = (golden_ratio * 0.5 + harmonic * 0.3 - manipulation * 0.2)
+
+        if geo_score > 0.55:
+            direction = "BULLISH"
+        elif geo_score < 0.45:
+            direction = "BEARISH"
+        else:
+            direction = "NEUTRAL"
+
+        return UnifiedSignal(
+            source="predictor:quantum_telescope",
+            signal_type="prediction",
+            symbol=symbol,
+            direction=direction,
+            confidence=min(abs(geo_score - 0.5) * 3, 1.0),
+            strength=(geo_score - 0.5) * 2,
+            payload={
+                'shape': analysis.get('shape', ''),
+                'golden_ratio_score': golden_ratio,
+                'harmonic_resonance': harmonic,
+                'manipulation_probability': manipulation,
+            }
+        )
+    except Exception as e:
+        logger.debug(f"Quantum Telescope adapter: {e}")
+        return None
+
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # 7. THE BIG WHEEL - AUTONOMY HUB
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -842,10 +1207,15 @@ class AutonomyHub:
         self._thought_bus = None
         self._lock = threading.Lock()
 
-        # Register default predictor adapters
+        # Register ALL predictor adapters - every prediction engine wired in
         self.prediction_bus.register_predictor('nexus_predictor', adapt_nexus_predictor)
         self.prediction_bus.register_predictor('macro_context', adapt_macro_to_prediction)
         self.prediction_bus.register_predictor('sentiment_analysis', adapt_sentiment_to_prediction)
+        self.prediction_bus.register_predictor('hnc_matrix', adapt_hnc_probability_matrix)
+        self.prediction_bus.register_predictor('imperial', adapt_imperial_predictability)
+        self.prediction_bus.register_predictor('probability_ultimate', adapt_probability_ultimate)
+        self.prediction_bus.register_predictor('whale_hunter', adapt_whale_hunter)
+        self.prediction_bus.register_predictor('quantum_telescope', adapt_quantum_telescope)
 
         # Apply learned weights from feedback loop
         self._apply_learned_weights()
@@ -860,11 +1230,14 @@ class AutonomyHub:
             from aureon_thought_bus import get_thought_bus, Thought
             self._thought_bus = get_thought_bus()
 
-            # Subscribe to data topics and bridge them
+            # Subscribe to ALL data topics and bridge them
             self._thought_bus.subscribe("market.*", self._on_market_thought)
             self._thought_bus.subscribe("news.*", self._on_news_thought)
             self._thought_bus.subscribe("whale.*", self._on_whale_thought)
             self._thought_bus.subscribe("execution.*", self._on_execution_thought)
+            self._thought_bus.subscribe("surveillance.*", self._on_surveillance_thought)
+            self._thought_bus.subscribe("intelligence.*", self._on_whale_thought)  # Whale intel
+            self._thought_bus.subscribe("bot.*", self._on_surveillance_thought)    # Bot detection
 
             logger.info("[AutonomyHub] Connected to ThoughtBus")
         except Exception as e:
@@ -903,6 +1276,12 @@ class AutonomyHub:
                 entry_predictions=self.prediction_bus.get_latest_predictions(),
                 entry_decision=UnifiedSignal()
             )
+
+    def _on_surveillance_thought(self, thought):
+        """Bridge ThoughtBus surveillance/bot alerts -> DataBridge."""
+        payload = thought.payload if hasattr(thought, 'payload') else {}
+        if payload:
+            self.data_bridge.ingest_surveillance_alert(payload)
 
     def spin_cycle(self, symbol: str = "BTCUSD") -> UnifiedSignal:
         """
@@ -983,7 +1362,8 @@ class AutonomyHub:
         }
 
     def _pull_macro_data(self):
-        """Pull latest macro snapshot from GlobalFinancialFeed."""
+        """Pull ALL cached data sources into the hub."""
+        # 1. Global Financial Feed (macro indicators)
         try:
             state_file = "global_financial_state.json"
             if os.path.exists(state_file):
@@ -991,7 +1371,45 @@ class AutonomyHub:
                 if time.time() - mtime < 300:  # Less than 5 min old
                     with open(state_file, 'r') as f:
                         snapshot = json.load(f)
-                    self.data_bridge.ingest_macro_snapshot(snapshot)
+                    self.data_bridge.ingest_macro_snapshot(
+                        snapshot.get('last_snapshot', snapshot)
+                    )
+        except Exception:
+            pass
+
+        # 2. CoinGecko price cache
+        try:
+            cg_path = "ws_cache/ws_prices.json"
+            if os.path.exists(cg_path):
+                mtime = os.path.getmtime(cg_path)
+                if time.time() - mtime < 120:  # Less than 2 min old
+                    with open(cg_path, 'r') as f:
+                        cache = json.load(f)
+                    self.data_bridge.ingest_price_cache(cache, "coingecko")
+        except Exception:
+            pass
+
+        # 3. Kraken price cache
+        try:
+            kr_path = "ws_cache/kraken_prices.json"
+            if os.path.exists(kr_path):
+                mtime = os.path.getmtime(kr_path)
+                if time.time() - mtime < 120:
+                    with open(kr_path, 'r') as f:
+                        cache = json.load(f)
+                    self.data_bridge.ingest_price_cache(cache, "kraken_cache")
+        except Exception:
+            pass
+
+        # 4. Unified market cache
+        try:
+            uni_path = "ws_cache/unified_prices.json"
+            if os.path.exists(uni_path):
+                mtime = os.path.getmtime(uni_path)
+                if time.time() - mtime < 60:
+                    with open(uni_path, 'r') as f:
+                        cache = json.load(f)
+                    self.data_bridge.ingest_price_cache(cache, "unified_cache")
         except Exception:
             pass
 

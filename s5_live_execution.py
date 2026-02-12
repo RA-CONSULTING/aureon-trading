@@ -563,13 +563,26 @@ class S5LiveExecutionEngine:
     
     async def _execute_real_trade(self, opp: ConversionOpportunity) -> bool:
         """Execute a real trade on Kraken"""
-        
+
+        # Consult Autonomy Hub before executing (Big Wheel veto check)
+        try:
+            from aureon_autonomy_hub import get_autonomy_hub
+            hub = get_autonomy_hub()
+            hub_decision = hub.spin_cycle(opp.symbol)
+            if hub_decision and hub_decision.direction == "HOLD":
+                print(f"      ⚙️ BIG WHEEL VETO: Hub says HOLD (confidence={hub_decision.confidence:.2f})")
+                return False
+            if hub_decision and hub_decision.direction != "NEUTRAL":
+                print(f"      ⚙️ BIG WHEEL: {hub_decision.direction} @ {hub_decision.confidence:.2f}")
+        except Exception:
+            pass  # Hub not available, proceed anyway
+
         # Map to Kraken pair
         kraken_pair = self.BINANCE_TO_KRAKEN.get(opp.symbol)
         if not kraken_pair:
             print(f"      ⚠️ No Kraken mapping for {opp.symbol}")
             return False
-        
+
         try:
             # Execute order
             print(f"\n   🔥 EXECUTING: {opp.side} {opp.quantity:.6f} {kraken_pair}")

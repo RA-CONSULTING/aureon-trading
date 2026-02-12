@@ -1198,12 +1198,25 @@ class QueenExecutionEngine:
         if not signal.is_actionable():
             print("❌ Signal not actionable")
             return None
-        
+
+        # Consult Autonomy Hub (Big Wheel) for cross-system validation
+        try:
+            from aureon_autonomy_hub import get_autonomy_hub
+            hub = get_autonomy_hub()
+            hub_decision = hub.spin_cycle(signal.symbol)
+            if hub_decision and hub_decision.direction == "HOLD" and hub_decision.confidence > 0.5:
+                print(f"   ⚙️ BIG WHEEL: HOLD (confidence={hub_decision.confidence:.2f}) - skipping")
+                return None
+            if hub_decision and hub_decision.direction != "NEUTRAL":
+                print(f"   ⚙️ BIG WHEEL: {hub_decision.direction} @ {hub_decision.confidence:.2f}")
+        except Exception:
+            pass
+
         # Only allow LONG trades when we have stablecoins (can't short without crypto)
         if signal.direction != "LONG":
             print(f"   ⚠️ Skipping {signal.direction} - Only LONG trades allowed with stablecoins")
             return None
-        
+
         # Calculate position size
         position_size = self.calculate_position_size(signal)
         buying_power = self.get_buying_power()

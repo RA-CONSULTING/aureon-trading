@@ -357,6 +357,18 @@ export class UnifiedOrchestrator {
     const isOptimalHour = unifiedStateAggregator.isOptimalTradingHour();
     const isPrimeSymbol = unifiedStateAggregator.isPrimeSymbol(symbol);
     
+    // Step 14d: Get Autonomy Hub signal (The Big Wheel - Python backend consensus)
+    let autonomyHubSignal: import('./decisionFusion').AutonomyHubSignal | null = null;
+    try {
+      const { getLatestHubSignal } = await import('./autonomyHubBridge');
+      autonomyHubSignal = getLatestHubSignal();
+      if (autonomyHubSignal && autonomyHubSignal.direction !== 'NEUTRAL') {
+        console.log(`[UnifiedOrchestrator] Big Wheel: ${autonomyHubSignal.direction} @ ${autonomyHubSignal.confidence.toFixed(2)} (WR: ${(autonomyHubSignal.rollingWinRate * 100).toFixed(1)}%)`);
+      }
+    } catch {
+      // Hub bridge not available
+    }
+
     // Step 15: Get bus consensus
     const busSnapshot = unifiedBus.snapshot();
     const consensus = unifiedBus.checkConsensus();
@@ -831,6 +843,25 @@ export class UnifiedOrchestrator {
     let effectiveConfidence = consensus.confidence;
     if (harmonicLock) {
       effectiveConfidence = Math.min(1, effectiveConfidence + 0.1);
+    }
+
+    // Apply Autonomy Hub signal boost/veto (The Big Wheel)
+    try {
+      const { getLatestHubSignal } = require('./autonomyHubBridge');
+      const hubSignal = getLatestHubSignal();
+      if (hubSignal && hubSignal.direction !== 'NEUTRAL') {
+        const hubAligned = (hubSignal.direction === 'BULLISH' && consensus.signal === 'BUY') ||
+                           (hubSignal.direction === 'BEARISH' && consensus.signal === 'SELL');
+        if (hubAligned) {
+          // Hub agrees - boost confidence
+          effectiveConfidence = Math.min(1, effectiveConfidence + 0.05 * hubSignal.confidence);
+        } else if (hubSignal.confidence > 0.7) {
+          // Hub strongly disagrees - reduce confidence
+          effectiveConfidence *= 0.85;
+        }
+      }
+    } catch {
+      // Hub bridge not available
     }
     
     // QGITA tier-based position sizing and thresholds

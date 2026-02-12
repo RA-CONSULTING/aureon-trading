@@ -512,6 +512,20 @@ class AureonSurveillanceSystem:
         logger.critical(f"   Severity: {alert.severity:.1%}")
         logger.critical(f"   Symbols: {alert.symbols}")
         logger.critical(f"   {alert.description}")
+
+        # Feed into Autonomy Hub (The Big Wheel) for unified decision making
+        try:
+            from aureon_autonomy_hub import get_autonomy_hub
+            hub = get_autonomy_hub()
+            hub.data_bridge.ingest_surveillance_alert({
+                'alert_type': alert.alert_type,
+                'severity': 'critical' if alert.severity > 0.7 else 'medium' if alert.severity > 0.4 else 'low',
+                'symbols': alert.symbols,
+                'description': alert.description,
+                'exchanges': getattr(alert, 'exchanges', []),
+            })
+        except Exception:
+            pass
         
     def _notify_ui(self, tick: MarketTick):
         """Notify UI callbacks of new data"""
