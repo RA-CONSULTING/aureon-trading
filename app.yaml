@@ -1,42 +1,26 @@
 # ⚡🌌 AUREON POWER STATION - DIGITAL OCEAN APP PLATFORM
-# ═══════════════════════════════════════════════════════════════════════════
-#
 # PRIMARY INTERFACE: Aureon Pro Dashboard (Port 8080)
-#   Bloomberg-style professional trading terminal with live data
-#
-# PARALLEL PROCESSES via supervisord (startup order by priority):
-#   0. 👑 Aureon Pro Dashboard (pri 0) - PRIMARY interface + health checks (port 8080)
-#   1. 📡 Binance WS Feeder (pri 3) - FREE real-time data
-#   2. 🔄 Kraken Cache (pri 6) - Backup data
-#   3. 🦈 Orca Kill Cycle (pri 10) - Multi-exchange aggressive trader
-#   4. 🧠 Autonomous Engine (pri 20) - 9 Intelligence loops  
-#   5. 🐝 Queen Redistribution (pri 25) - Autonomous energy optimization
-#   6. 👑 Command Center (port 8800, pri 50) - Internal operations dashboard
-#
-# All processes start together on boot via supervisord.conf
-#
-# Gary Leckey | January 2026 | ENERGY-FOCUSED INTERFACE
-# ═══════════════════════════════════════════════════════════════════════════
+# All systems are started by supervisord in one service container.
 
 name: aureon-trading
 region: lon
 
 services:
-  # ⚡ MAIN SERVICE - Runs ALL parallel processes via supervisord
   - name: aureon-power-station
     dockerfile_path: Dockerfile
-    source_dir: /
+    source_dir: .
     github:
       branch: main
       deploy_on_push: true
       repo: RA-CONSULTING/aureon-trading
-    
-    # HTTP settings for health checks
+
+    # Ensure App Platform executes the same multi-system startup as local production
+    run_command: /app/deploy/validate_startup.sh && /usr/bin/supervisord -n -c /app/deploy/supervisord.conf
+
     http_port: 8080
     instance_count: 1
-    instance_size_slug: apps-d-8vcpu-32gb  # 32GB RAM, 8 vCPU - DigitalOcean recommended size
-    
-    # Autoscaling for memory spikes during parallel supervisord startup
+    instance_size_slug: apps-d-8vcpu-32gb
+
     autoscaling:
       min_instance_count: 1
       max_instance_count: 2
@@ -45,34 +29,32 @@ services:
           percent: 80
         memory:
           percent: 85
-    
-    # Health check - Queen Power Dashboard /health endpoint on port 8080
-    # Extended initial delay to allow supervisor + 43 processes to start sequentially
+
+    # Dashboard starts web server first, so health checks can begin earlier.
     health_check:
       http_path: /health
-      initial_delay_seconds: 600
-      period_seconds: 60
-      timeout_seconds: 30
+      initial_delay_seconds: 180
+      period_seconds: 30
+      timeout_seconds: 20
       success_threshold: 1
-      failure_threshold: 10
-    
-    # Environment variables
+      failure_threshold: 6
+
     envs:
-      # Python settings
+      # Runtime/platform basics
       - key: PYTHONUNBUFFERED
         scope: RUN_AND_BUILD_TIME
         value: "1"
       - key: PYTHONIOENCODING
         scope: RUN_AND_BUILD_TIME
         value: "utf-8"
-      
-      # Aureon settings
       - key: PORT
         scope: RUN_TIME
         value: "8080"
-      - key: AUREON_SKIP_KRAKEN_SEED
+      - key: MODE
         scope: RUN_TIME
-        value: "1"
+        value: "parallel"
+
+      # Shared state and process controls
       - key: AUREON_STATE_DIR
         scope: RUN_TIME
         value: /app/state
@@ -85,8 +67,14 @@ services:
       - key: AUREON_ENABLE_AUTONOMOUS_CONTROL
         scope: RUN_TIME
         value: "1"
-      
-      # 🔥 LIVE TRADING MODE
+      - key: AUREON_SKIP_KRAKEN_SEED
+        scope: RUN_TIME
+        value: "1"
+      - key: AUREON_REQUIRE_ALL_EXCHANGES
+        scope: RUN_TIME
+        value: "true"
+
+      # Trading mode
       - key: LIVE
         scope: RUN_TIME
         value: "1"
@@ -99,37 +87,42 @@ services:
       - key: ALPACA_DRY_RUN
         scope: RUN_TIME
         value: "false"
-      
-      # ═══════════════════════════════════════════════════════════════
-      # ⚠️ API KEYS - SET THESE IN DIGITAL OCEAN DASHBOARD ⚠️
-      # Go to: App > Settings > App-Level Environment Variables
-      # ═══════════════════════════════════════════════════════════════
-      
-      # 🐙 KRAKEN
+
+      # Supabase for realtime dashboard data + audit logging
+      - key: SUPABASE_URL
+        scope: RUN_TIME
+        type: SECRET
+      - key: SUPABASE_ANON_KEY
+        scope: RUN_TIME
+        type: SECRET
+
+      # Frontend build-time vars (if frontend is built in this app image)
+      - key: VITE_SUPABASE_URL
+        scope: RUN_AND_BUILD_TIME
+        type: SECRET
+      - key: VITE_SUPABASE_PUBLISHABLE_KEY
+        scope: RUN_AND_BUILD_TIME
+        type: SECRET
+
+      # Exchange/API credentials
       - key: KRAKEN_API_KEY
         scope: RUN_TIME
         type: SECRET
       - key: KRAKEN_API_SECRET
         scope: RUN_TIME
         type: SECRET
-      
-      # 🟡 BINANCE
       - key: BINANCE_API_KEY
         scope: RUN_TIME
         type: SECRET
       - key: BINANCE_API_SECRET
         scope: RUN_TIME
         type: SECRET
-      
-      # 🦙 ALPACA
       - key: ALPACA_API_KEY
         scope: RUN_TIME
         type: SECRET
       - key: ALPACA_SECRET_KEY
         scope: RUN_TIME
         type: SECRET
-      
-      # 💼 CAPITAL.COM (CFD Trading)
       - key: CAPITAL_API_KEY
         scope: RUN_TIME
         type: SECRET
@@ -142,13 +135,14 @@ services:
       - key: CAPITAL_DEMO
         scope: RUN_TIME
         value: "false"
-      
-      # 🧠 Redis for ThoughtBus (optional - uses internal if available)
+
+      # Optional Redis thought bus (managed DB wiring)
       - key: AUREON_REDIS_URL
         scope: RUN_TIME
-        value: "${db.REDIS_URL}"
+        value: ${db.DATABASE_URL}
 
-# 🧠 Redis Database for ThoughtBus Pub/Sub
+# Managed Redis database
+# If you already have an external Redis, remove this block and set AUREON_REDIS_URL directly.
 databases:
   - name: db
     engine: REDIS

@@ -29,8 +29,10 @@ def check_env_vars():
         'BINANCE_API_SECRET': 'Binance API Secret',
         'ALPACA_API_KEY': 'Alpaca API Key',
         'ALPACA_SECRET_KEY': 'Alpaca Secret Key',
-        'KRAKEN_API_KEY': 'Kraken API Key (optional)',
-        'KRAKEN_API_SECRET': 'Kraken API Secret (optional)',
+        'KRAKEN_API_KEY': 'Kraken API Key',
+        'KRAKEN_API_SECRET': 'Kraken API Secret',
+        'SUPABASE_URL': 'Supabase URL for realtime dashboard/audit data',
+        'SUPABASE_ANON_KEY': 'Supabase anon key for realtime dashboard/audit data',
     }
     
     missing = []
@@ -47,6 +49,10 @@ def check_env_vars():
         'PORT': 'HTTP Port (default: 8080)',
         'AUREON_STATE_DIR': 'State directory',
         'LIVE': 'Live trading mode',
+        'AUREON_REQUIRE_ALL_EXCHANGES': 'Strict startup exchange validation',
+        'AUREON_REDIS_URL': 'Redis ThoughtBus URL (optional)',
+        'VITE_SUPABASE_URL': 'Frontend build/runtime Supabase URL',
+        'VITE_SUPABASE_PUBLISHABLE_KEY': 'Frontend build/runtime Supabase key',
     }
     
     logger.info("\n📝 Optional Variables:")
@@ -191,6 +197,67 @@ def test_binance_auth():
         logger.error(f"  ❌ Test failed: {e}")
         return False
 
+
+
+def validate_app_yaml():
+    """Validate app.yaml includes critical DigitalOcean runtime wiring."""
+    logger.info("\n" + "="*70)
+    logger.info("📄 app.yaml RUNTIME WIRING CHECK")
+    logger.info("="*70)
+
+    try:
+        import yaml
+    except ImportError:
+        logger.warning("  ⚠️  PyYAML not installed - skipping app.yaml validation")
+        return False
+
+    path = 'app.yaml'
+    if not os.path.exists(path):
+        logger.error("  ❌ app.yaml not found")
+        return False
+
+    with open(path, 'r', encoding='utf-8') as fh:
+        spec = yaml.safe_load(fh) or {}
+
+    services = spec.get('services') or []
+    if not services:
+        logger.error("  ❌ app.yaml has no services")
+        return False
+
+    svc = services[0]
+    ok = True
+
+    if str(svc.get('http_port')) != '8080':
+        logger.error(f"  ❌ http_port should be 8080, found {svc.get('http_port')}")
+        ok = False
+    else:
+        logger.info("  ✅ http_port is 8080")
+
+    run_command = svc.get('run_command', '')
+    if 'supervisord' not in str(run_command):
+        logger.error("  ❌ run_command does not start supervisord")
+        ok = False
+    else:
+        logger.info("  ✅ run_command starts supervisord")
+
+    env_keys = {e.get('key') for e in svc.get('envs', []) if isinstance(e, dict)}
+    critical_env_keys = {
+        'SUPABASE_URL',
+        'SUPABASE_ANON_KEY',
+        'AUREON_STATE_DIR',
+        'AUREON_REQUIRE_ALL_EXCHANGES',
+    }
+
+    missing = sorted(critical_env_keys - env_keys)
+    if missing:
+        logger.error(f"  ❌ Missing app.yaml env keys: {', '.join(missing)}")
+        ok = False
+    else:
+        logger.info("  ✅ app.yaml includes critical env keys for dashboard systems")
+
+    return ok
+
+
 def main():
     """Run all diagnostics."""
     logger.info("\n" + "="*70)
@@ -204,6 +271,7 @@ def main():
         'env_vars': check_env_vars(),
         'modules': check_modules(),
         'api_connectivity': True,  # Will check below
+        'app_yaml': validate_app_yaml(),
         'binance_auth': False,
     }
     
@@ -225,6 +293,11 @@ def main():
         logger.info("  ✅ All modules available")
     else:
         logger.warning("  ⚠️  Some modules missing (may work anyway)")
+
+    if results['app_yaml']:
+        logger.info("  ✅ app.yaml wiring looks correct")
+    else:
+        logger.error("  ❌ app.yaml wiring needs fixes")
     
     if results['binance_auth']:
         logger.info("  ✅ Binance authentication working")
@@ -233,7 +306,7 @@ def main():
     
     logger.info("\n" + "="*70)
     
-    if all([results['env_vars'], results['binance_auth']]):
+    if all([results['env_vars'], results['app_yaml'], results['binance_auth']]):
         logger.info("✅ System should be working! Check dashboard logs for runtime issues.")
         logger.info("\nNext steps:")
         logger.info("  1. Access dashboard at: https://your-app.ondigitalocean.app")
@@ -245,8 +318,10 @@ def main():
         logger.error("\nFix these issues:")
         if not results['env_vars']:
             logger.error("  1. Set missing API keys in DigitalOcean App Settings")
+        if not results['app_yaml']:
+            logger.error("  2. Fix app.yaml service wiring/env vars before redeploy")
         if not results['binance_auth']:
-            logger.error("  2. Verify API keys are correct and have required permissions")
+            logger.error("  3. Verify API keys are correct and have required permissions")
         logger.error("\nAfter fixing, redeploy the app.")
         return 1
 

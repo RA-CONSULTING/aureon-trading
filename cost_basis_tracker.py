@@ -187,6 +187,67 @@ class CostBasisTracker:
         """Inject shared exchange clients."""
         self.clients = clients
 
+    @staticmethod
+    def _strip_known_quote(symbol: str) -> str:
+        """Strip a known quote suffix without using rstrip character semantics."""
+        symbol = (symbol or '').replace('/', '')
+        for quote in ('USDT', 'USDC', 'ZUSD', 'USD', 'EUR', 'GBP', 'BTC', 'ETH'):
+            if symbol.endswith(quote) and len(symbol) > len(quote):
+                return symbol[:-len(quote)]
+        return symbol
+
+    @staticmethod
+    def _normalize_kraken_pair(pair: str) -> str:
+        """Convert Kraken pair naming (e.g., XXBTZUSD, XPEPEZUSD) to BTCUSD/PEPEUSD style."""
+        raw = (pair or '').upper()
+        p = raw.replace('/', '')
+        if not p:
+            return p
+
+        if '/' in raw:
+            base, quote = raw.split('/', 1)
+            base = base.lstrip('XZ')
+            quote = quote.lstrip('XZ')
+            if base in ('XBT', 'BT'):
+                base = 'BTC'
+            if base in ('XDG', 'DG'):
+                base = 'DOGE'
+            if quote == 'XBT':
+                quote = 'BTC'
+            return f"{base}{quote}"
+
+        quotes = ('USDT', 'USDC', 'USD', 'EUR', 'GBP', 'BTC', 'ETH')
+        for quote in quotes:
+            zq = f"Z{quote}"
+            if p.endswith(zq):
+                base = p[:-len(zq)]
+            elif p.endswith(quote):
+                base = p[:-len(quote)]
+            else:
+                continue
+
+            if base.startswith(('XX', 'ZZ')):
+                base = base[2:]
+            elif base.startswith(('X', 'Z')):
+                base = base[1:]
+
+            if base in ('XBT', 'BT'):
+                base = 'BTC'
+            if base in ('XDG', 'DG'):
+                base = 'DOGE'
+            return f"{base}{quote}"
+
+        stripped = p
+        if stripped.startswith(('XX', 'ZZ')):
+            stripped = stripped[2:]
+        elif stripped.startswith(('X', 'Z')):
+            stripped = stripped[1:]
+        if stripped in ('XBT', 'BT'):
+            return 'BTC'
+        if stripped in ('XDG', 'DG'):
+            return 'DOGE'
+        return stripped.replace('XBT', 'BTC')
+
     def _load(self):
         """Load cost basis data from file."""
         if os.path.exists(self.filepath):
@@ -363,7 +424,7 @@ class CostBasisTracker:
         updated = 0
         for pair, pair_trade_list in pair_trades.items():
             # Reset trade lots for this pair to rebuild from history
-            symbol_norm = pair.replace('X', '').replace('Z', '')
+            symbol_norm = self._normalize_kraken_pair(pair)
             position_key = f"kraken:{symbol_norm}"
             self.trade_lots[position_key] = []
 
@@ -411,8 +472,8 @@ class CostBasisTracker:
             
             if total_qty > 0 and buy_trades > 0:
                 avg_entry = total_cost / total_qty
-                # Normalize pair name
-                symbol = pair.replace('X', '').replace('Z', '')  # Remove Kraken prefixes
+                # Normalize pair name without stripping in-symbol X/Z characters
+                symbol = self._normalize_kraken_pair(pair)
                 position_key = f"kraken:{symbol}"
                 
                 self.positions[position_key] = {
@@ -585,17 +646,37 @@ class CostBasisTracker:
         """
         pos = None
         matched_key = None
+
+        def _is_open_position(candidate: Optional[Dict[str, Any]]) -> bool:
+            """Ignore stale/closed snapshots so they don't shadow real open positions."""
+            if not candidate:
+                return False
+            try:
+                qty = float(candidate.get('total_quantity', 0) or 0)
+            except (TypeError, ValueError):
+                return False
+            return qty > 0.0000001
+
+        def _exchange_matches(candidate_key: str, candidate: Optional[Dict[str, Any]]) -> bool:
+            """When exchange context is provided, don't cross-match to another venue."""
+            if not exchange:
+                return True
+            normalized_exchange = exchange.lower()
+            if candidate_key.startswith(f"{normalized_exchange}:"):
+                return True
+            candidate_exchange = str((candidate or {}).get('exchange', '')).lower()
+            return candidate_exchange == normalized_exchange
         
         # Strategy 1: Direct match with exchange context
         if exchange:
             position_key = f"{exchange.lower()}:{symbol}"
             pos = self.positions.get(position_key)
-            if pos:
+            if _is_open_position(pos):
                 return (pos, position_key)
         
         # Strategy 2: Try without exchange prefix
         pos = self.positions.get(symbol)
-        if pos:
+        if _is_open_position(pos) and _exchange_matches(symbol, pos):
             return (pos, symbol)
         
         # Strategy 3: Try normalized (no slashes)
@@ -603,11 +684,11 @@ class CostBasisTracker:
         if exchange:
             norm_key = f"{exchange.lower()}:{norm_symbol}"
             pos = self.positions.get(norm_key)
-            if pos:
+            if _is_open_position(pos):
                 return (pos, norm_key)
-        
+
         pos = self.positions.get(norm_symbol)
-        if pos:
+        if _is_open_position(pos) and _exchange_matches(norm_symbol, pos):
             return (pos, norm_symbol)
         
         # Strategy 4: Try swapping quote currencies (USDT ↔ USDC ↔ USD)
@@ -615,7 +696,7 @@ class CostBasisTracker:
         if '/' in symbol:
             base = symbol.split('/')[0]
         else:
-            base = symbol.rstrip('USDT').rstrip('USDC').rstrip('USD').rstrip('EUR').rstrip('GBP')
+            base = self._strip_known_quote(symbol)
         
         # Try all quote currency combinations
         for quote_in in ['USDT', 'USDC', 'USD', 'EUR', 'GBP']:
@@ -632,13 +713,13 @@ class CostBasisTracker:
                         if exchange:
                             test_key = f"{exchange.lower()}:{test_symbol}"
                             pos = self.positions.get(test_key)
-                            if pos:
+                            if _is_open_position(pos):
                                 # Debug message
                                 # print(f"   ✓ Matched via quote swap: {symbol} → {test_key}")
                                 return (pos, test_key)
-                        
+
                         pos = self.positions.get(test_symbol)
-                        if pos:
+                        if _is_open_position(pos) and _exchange_matches(test_symbol, pos):
                             # Debug message
                             # print(f"   ✓ Matched via quote swap: {symbol} → {test_symbol}")
                             return (pos, test_symbol)
@@ -652,8 +733,15 @@ class CostBasisTracker:
                 break
         
         for s, p in self.positions.items():
-            stored_symbol = p.get('symbol', s)
-            if stored_symbol.startswith(base_asset):
+            stored_symbol = p.get('symbol') or s
+            # Strip exchange prefix (e.g., kraken:EUL -> EUL) before base matching
+            symbol_part = stored_symbol.split(':', 1)[1] if ':' in stored_symbol else stored_symbol
+            normalized_symbol = symbol_part.replace('/', '')
+            if (
+                normalized_symbol.startswith(base_asset)
+                and _is_open_position(p)
+                and _exchange_matches(s, p)
+            ):
                 return (p, s)
         
         return (None, None)
@@ -1048,7 +1136,26 @@ class CostBasisTracker:
             }
         
         # ✅ FOUND POSITION - Use it for P&L calculation
-        _safe_print(f"   ✅ Cost basis found: {matched_key} → entry ${pos['avg_entry_price']:.6f}")
+        avg_entry = float(pos.get('avg_entry_price', 0) or 0)
+        lots = self.trade_lots.get(matched_key, [])
+        has_lot_cost_data = any((lot.quantity > 0 and lot.price > 0) for lot in lots)
+
+        # Guardrail: a zero entry price is not valid cost-basis data.
+        # This previously logged as "found" and produced misleading P&L.
+        if avg_entry <= 0 and not has_lot_cost_data:
+            _safe_print(f"   🚨 COST BASIS INVALID for {symbol}")
+            _safe_print(f"      Matched key: {matched_key}")
+            _safe_print("      Stored entry price is zero and no valid trade lots were found")
+            return False, {
+                'entry_price': None,
+                'current_price': current_price,
+                'profit_pct': 0,
+                'net_profit': 0,
+                'cost_basis': 0,
+                'recommendation': 'NO_VALID_COST_BASIS - DO NOT SELL'
+            }
+
+        _safe_print(f"   ✅ Cost basis found: {matched_key} → entry ${avg_entry:.6f}")
         
         # 🆕 Use FIFO lots to calculate cost of goods for the specific quantity to be sold
         sell_qty = quantity or pos.get('total_quantity', 0)

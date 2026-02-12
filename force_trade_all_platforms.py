@@ -46,12 +46,24 @@ import time
 import json
 from datetime import datetime
 
+from queen_force_trade_governance import evaluate_queen_force_trade_authority
+
 print("\n" + "=" * 70)
 print("🔥🔥🔥 FORCE TRADE ALL PLATFORMS - LIVE VERIFICATION 🔥🔥🔥")
 print("=" * 70)
 print(f"   Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 print(f"   LIVE Mode: {os.getenv('LIVE', '0')}")
 print("=" * 70 + "\n")
+
+decision = evaluate_queen_force_trade_authority()
+print(f"👑 Queen Governance: {decision.reason}")
+if decision.missing_requirements:
+    print("   Missing requirements:")
+    for requirement in decision.missing_requirements:
+        print(f"   - {requirement}")
+if not decision.allowed:
+    print("🛑 Aborting platform force-trade verification: only the unified Queen may force trades.")
+    sys.exit(1)
 
 # Results tracking
 results = {
@@ -121,8 +133,8 @@ except Exception as e:
 # ════════════════════════════════════════════════════════════════════════════
 print("\n🟡 BINANCE: Testing trade execution...")
 try:
-    from binance_client import BinanceClient
-    
+    from binance_client import get_binance_client
+
     binance = get_binance_client()
     print(f"   Dry Run Mode: {binance.dry_run}")
     

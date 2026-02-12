@@ -391,6 +391,20 @@ class NeuralRevenueOrchestrator:
             else:
                 system.is_active = False
 
+    def check_opportunities(self) -> Dict[str, Any]:
+        """Backward-compatible scanner hook to probe revenue opportunities."""
+        try:
+            opportunities = []
+            if self.full_orchestrator and hasattr(self.full_orchestrator, 'scan_opportunities'):
+                opportunities = self.full_orchestrator.scan_opportunities() or []
+            return {
+                'opportunities_found': len(opportunities),
+                'opportunities': opportunities[:5],
+                'status': 'ok'
+            }
+        except Exception as e:
+            return {'opportunities_found': 0, 'opportunities': [], 'status': f'error: {e}'}
+
     def get_revenue_status(self) -> Dict[str, Any]:
         """Get current revenue and neural status"""
         return {

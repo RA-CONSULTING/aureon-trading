@@ -1142,6 +1142,11 @@ def get_autonomous_controller() -> QueenFullAutonomous:
     return _autonomous_instance
 
 
+def get_queen_autonomous() -> QueenFullAutonomous:
+    """Backward-compatible alias for autonomous controller accessor."""
+    return get_autonomous_controller()
+
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # MAIN ENTRY POINT
 # ═══════════════════════════════════════════════════════════════════════════════

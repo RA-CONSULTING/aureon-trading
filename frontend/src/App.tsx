@@ -14,7 +14,7 @@ import { LivePnLTable } from "@/components/LivePnLTable";
 import { LiveTerminalStats } from "@/components/LiveTerminalStats";
 import { BrainStatePanel } from "@/components/BrainStatePanel";
 import { HiveStatePanel } from "@/components/HiveStatePanel";
-import { HiveStatePanel } from "@/components/HiveStatePanel";
+import { Badge } from "@/components/ui/badge";
 import { useTerminalSync } from "@/hooks/useTerminalSync";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
@@ -40,8 +40,36 @@ interface Trade {
   timestamp: string;
 }
 
+interface DecisionAudit {
+  id: string;
+  symbol: string;
+  decision_action: string;
+  confidence: number;
+  decision_timestamp: string;
+  summary: string | null;
+}
+
+interface ValidationFill {
+  id: string;
+  symbol: string;
+  side: string;
+  exchange: string;
+  stage: string;
+  validation_status: string;
+  executed_price: number | null;
+  executed_qty: number | null;
+  created_at: string;
+}
+
 function TradeFeed() {
   const [trades, setTrades] = useState<Trade[]>([]);
+  const [decisionStream, setDecisionStream] = useState<DecisionAudit[]>([]);
+  const [validationFills, setValidationFills] = useState<ValidationFill[]>([]);
+  const [streamHealth, setStreamHealth] = useState({
+    tradeFeed: false,
+    decisionFeed: false,
+    validationFeed: false,
+  });
   const { toast } = useToast();
   
   // Always sync terminal data (public feed)
@@ -58,6 +86,7 @@ function TradeFeed() {
         filter: `user_id=eq.${LIVE_FEED_USER_ID}`,
       }, (payload) => {
         setTrades(prev => [payload.new as Trade, ...prev]);
+        setStreamHealth(prev => ({ ...prev, tradeFeed: true }));
         toast({
           title: "New Trade",
           description: `${(payload.new as Trade).side} ${(payload.new as Trade).symbol}`,
@@ -73,6 +102,8 @@ function TradeFeed() {
   // Load existing trades on mount
   useEffect(() => {
     loadTrades();
+    loadDecisionStream();
+    loadValidationFills();
   }, []);
 
   const loadTrades = async () => {
@@ -85,8 +116,76 @@ function TradeFeed() {
 
     if (!error && data) {
       setTrades(data.map(t => ({ ...t, side: t.side as "BUY" | "SELL" })));
+      setStreamHealth(prev => ({ ...prev, tradeFeed: data.length > 0 }));
     }
   };
+
+  const loadDecisionStream = async () => {
+    const { data, error } = await supabase
+      .from("decision_audit_log")
+      .select("id, symbol, decision_action, confidence, decision_timestamp, summary")
+      .order("decision_timestamp", { ascending: false })
+      .limit(20);
+
+    if (!error && data) {
+      setDecisionStream(data as DecisionAudit[]);
+      setStreamHealth(prev => ({ ...prev, decisionFeed: data.length > 0 }));
+    }
+  };
+
+  const loadValidationFills = async () => {
+    const { data, error } = await supabase
+      .from("trade_audit_log")
+      .select("id, symbol, side, exchange, stage, validation_status, executed_price, executed_qty, created_at")
+      .in("stage", ["FILLED", "PARTIALLY_FILLED", "ORDER_CONFIRMED"])
+      .order("created_at", { ascending: false })
+      .limit(20);
+
+    if (!error && data) {
+      setValidationFills(data as ValidationFill[]);
+      setStreamHealth(prev => ({ ...prev, validationFeed: data.length > 0 }));
+    }
+  };
+
+  useEffect(() => {
+    const decisionChannel = supabase
+      .channel("decision-audit-realtime")
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "decision_audit_log",
+        },
+        (payload) => {
+          const next = payload.new as DecisionAudit;
+          setDecisionStream(prev => [next, ...prev].slice(0, 20));
+          setStreamHealth(prev => ({ ...prev, decisionFeed: true }));
+        }
+      )
+      .subscribe();
+
+    const validationChannel = supabase
+      .channel("validation-fill-realtime")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "trade_audit_log",
+        },
+        () => {
+          setStreamHealth(prev => ({ ...prev, validationFeed: true }));
+          loadValidationFills();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(decisionChannel);
+      supabase.removeChannel(validationChannel);
+    };
+  }, []);
 
   const totalBuys = trades.filter(t => t.side === "BUY").length;
   const totalSells = trades.filter(t => t.side === "SELL").length;
@@ -151,6 +250,76 @@ function TradeFeed() {
 
           {/* Portfolio Summary */}
           <PortfolioSummaryPanel />
+
+          {/* Realtime Data Connectivity + Execution Validation */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Aureon Pro Realtime Feeds</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex flex-wrap gap-2">
+                <Badge variant={streamHealth.tradeFeed ? "default" : "destructive"}>
+                  Trade Feed {streamHealth.tradeFeed ? "Connected" : "Offline"}
+                </Badge>
+                <Badge variant={streamHealth.decisionFeed ? "default" : "destructive"}>
+                  Decision Stream {streamHealth.decisionFeed ? "Connected" : "Offline"}
+                </Badge>
+                <Badge variant={streamHealth.validationFeed ? "default" : "destructive"}>
+                  Validation Fills {streamHealth.validationFeed ? "Connected" : "Offline"}
+                </Badge>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <h3 className="text-sm font-semibold">Live Decisions</h3>
+                  {decisionStream.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">No decisions received yet.</p>
+                  ) : (
+                    <div className="space-y-2 max-h-52 overflow-y-auto">
+                      {decisionStream.map((decision) => (
+                        <div key={decision.id} className="rounded-md border border-border/60 p-2 text-sm">
+                          <div className="flex items-center justify-between">
+                            <span className="font-medium">{decision.symbol}</span>
+                            <Badge variant="outline">{decision.decision_action}</Badge>
+                          </div>
+                          <div className="text-xs text-muted-foreground mt-1">
+                            Confidence {(decision.confidence * 100).toFixed(1)}% · {format(new Date(decision.decision_timestamp), "MMM d, HH:mm:ss")}
+                          </div>
+                          {decision.summary && (
+                            <div className="text-xs text-muted-foreground mt-1 line-clamp-2">{decision.summary}</div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <h3 className="text-sm font-semibold">Validation Fills</h3>
+                  {validationFills.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">No validation fills received yet.</p>
+                  ) : (
+                    <div className="space-y-2 max-h-52 overflow-y-auto">
+                      {validationFills.map((fill) => (
+                        <div key={fill.id} className="rounded-md border border-border/60 p-2 text-sm">
+                          <div className="flex items-center justify-between">
+                            <span className="font-medium">{fill.exchange} · {fill.symbol}</span>
+                            <Badge variant="outline">{fill.validation_status}</Badge>
+                          </div>
+                          <div className="text-xs text-muted-foreground mt-1">
+                            {fill.side} · {fill.stage} · {format(new Date(fill.created_at), "MMM d, HH:mm:ss")}
+                          </div>
+                          <div className="text-xs text-muted-foreground mt-1">
+                            {fill.executed_qty ?? 0} @ ${fill.executed_price ? fill.executed_price.toLocaleString() : "-"}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
           {/* Cognitive State: Brain + Hive */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">

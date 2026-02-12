@@ -147,6 +147,34 @@ The system scans **entire market** every 3-10 seconds:
 
 ---
 
+
+## Runtime Validation (Proves Parallel + Optimized Operation)
+
+Run these checks on the droplet after deployment to confirm the system is truly utilizing DigitalOcean resources:
+
+```bash
+# 1) Confirm containers are running and healthy
+docker compose -f docker-compose.autonomous.yml ps
+docker inspect --format='{{json .State.Health}}' aureon-autonomous-trader | jq
+
+# 2) Confirm CPU/RAM usage and no restart loops
+docker stats --no-stream aureon-autonomous-trader
+docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.RunningFor}}'
+
+# 3) Confirm bot/runtime processes in parallel
+pgrep -af "(aureon|orca|queen|ws_market_data_feeder|aureon_live_tv_station|deploy_digital_ocean)"
+
+# 4) If using supervisor mode, verify all programs are RUNNING
+supervisorctl -c supervisord.conf status
+
+# 5) Unified local status helper
+bash check_status.sh
+```
+
+If any service is missing or unhealthy, do not assume optimization is active. Fix health/restarts first, then re-run the checklist.
+
+---
+
 ## Monitoring Your Bot
 
 ### Docker Logs

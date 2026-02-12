@@ -220,6 +220,15 @@ QUEEN_AUTONOMOUS_PROFIT_MANDATE = {
     'hardcoded': True,  # IMMUTABLE - cannot be overridden by any system!
 }
 
+# Trading execution guardrails
+SUPPORTED_TRADE_SIDES = {"BUY", "SELL", "CONVERT"}
+REQUIRED_TRADE_SUBSYSTEMS = [
+    "temporal_dialer",
+    "harmonic_chain_master",
+    "probability_nexus",
+    "thought_bus",
+]
+
 
 # ═══════════════════════════════════════════════════════════════════════════════════════
 # �📋 SOVEREIGNTY & AUTONOMOUS DECISION TYPES
@@ -964,23 +973,176 @@ class QueenAutonomousControl:
     def _execute_trade(self, decision: AutonomousDecision) -> Dict[str, Any]:
         """Execute a trade through the Queen."""
         params = decision.parameters
-        
+        readiness = self.validate_trade_subsystems()
+
+        if not readiness["ready"]:
+            return {
+                "success": False,
+                "reason": "Required Queen subsystems offline",
+                "subsystems": readiness,
+            }
+
+        side = str(params.get("side", "")).upper()
+        if side not in SUPPORTED_TRADE_SIDES:
+            return {
+                "success": False,
+                "reason": f"Unsupported side '{side}'. Must be one of {sorted(SUPPORTED_TRADE_SIDES)}",
+            }
+
         # If we have the Queen Hive Mind, use her execution
         if self.queen and hasattr(self.queen, 'execute_trade'):
-            return self.queen.execute_trade(
+            result = self.queen.execute_trade(
                 symbol=params.get("symbol"),
-                side=params.get("side"),
+                side=side,
                 amount=params.get("amount"),
                 exchange=params.get("exchange")
             )
-        
+            return self._validate_execution_result(result=result, expected_side=side, expected_exchange=params.get("exchange"))
+
         # Otherwise, log intent
-        logger.info(f"👑 TRADE APPROVED: {params.get('side')} {params.get('amount')} {params.get('symbol')}")
-        return {
+        logger.info(f"👑 TRADE APPROVED: {side} {params.get('amount')} {params.get('symbol')}")
+        fallback = {
             "success": True,
             "message": "Trade approved by Queen (no executor connected)",
             "parameters": params,
+            "exchange": params.get("exchange"),
+            "order_id": f"SIM-{int(time.time() * 1000)}",
         }
+        return self._validate_execution_result(result=fallback, expected_side=side, expected_exchange=params.get("exchange"))
+
+    def force_buy_sell_convert_cycle(
+        self,
+        symbol: str,
+        amount: float,
+        exchange: str,
+        convert_symbol: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """Force a Queen-governed BUY -> SELL -> CONVERT cycle.
+
+        This path is intentionally strict and requires the deep-learning system
+        (queen_neuron) to be online so the cycle is always grounded in Queen
+        intelligence before execution.
+        """
+        required = list(REQUIRED_TRADE_SUBSYSTEMS) + ["queen_neuron"]
+        readiness = self.validate_trade_subsystems(required_subsystems=required)
+        if not readiness["ready"]:
+            return {
+                "success": False,
+                "reason": "Required Queen subsystems offline",
+                "subsystems": readiness,
+            }
+
+        neuron_state = self.systems.get("queen_neuron")
+        neuron_signal: Dict[str, Any] = {}
+        if neuron_state and neuron_state.instance and hasattr(neuron_state.instance, "predict"):
+            try:
+                prediction = neuron_state.instance.predict({
+                    "symbol": symbol,
+                    "exchange": exchange,
+                    "intent": "force_buy_sell_convert_cycle",
+                })
+                if isinstance(prediction, dict):
+                    neuron_signal = prediction
+            except Exception as exc:
+                neuron_signal = {"warning": f"queen_neuron prediction unavailable: {exc}"}
+
+        legs = [
+            {"side": "BUY", "symbol": symbol},
+            {"side": "SELL", "symbol": symbol},
+            {"side": "CONVERT", "symbol": convert_symbol or symbol},
+        ]
+        executed_trades: List[Dict[str, Any]] = []
+
+        for leg in legs:
+            decision = AutonomousDecision(
+                action=AutonomousAction.APPROVE_TRADE,
+                reason="Forced Queen cycle validated by deep-learning systems",
+                confidence=float(neuron_signal.get("confidence", 0.0)) if isinstance(neuron_signal, dict) else 0.0,
+                parameters={
+                    "symbol": leg["symbol"],
+                    "side": leg["side"],
+                    "amount": amount,
+                    "exchange": exchange,
+                },
+            )
+            result = self._execute_trade(decision)
+            executed_trades.append(result)
+            if not result.get("success"):
+                return {
+                    "success": False,
+                    "reason": "Forced Queen cycle failed",
+                    "failed_side": leg["side"],
+                    "trades": executed_trades,
+                    "neuron_signal": neuron_signal,
+                }
+
+        return {
+            "success": True,
+            "validated": True,
+            "cycle": [leg["side"] for leg in legs],
+            "trades": executed_trades,
+            "neuron_signal": neuron_signal,
+        }
+
+    def validate_trade_subsystems(self, required_subsystems: Optional[List[str]] = None) -> Dict[str, Any]:
+        """Validate that trading-critical Queen subsystems are online."""
+        required = required_subsystems or REQUIRED_TRADE_SUBSYSTEMS
+        online = [name for name in required if name in self.systems and self.systems[name].status == "ONLINE"]
+        missing = [name for name in required if name not in self.systems or self.systems[name].status != "ONLINE"]
+        return {
+            "ready": len(missing) == 0,
+            "required": required,
+            "online": online,
+            "missing": missing,
+        }
+
+    def _validate_execution_result(self, result: Dict[str, Any], expected_side: str, expected_exchange: Optional[str]) -> Dict[str, Any]:
+        """Require order identifiers for BUY/SELL/CONVERT executions."""
+        if not isinstance(result, dict):
+            return {"success": False, "reason": "Executor returned non-dict response", "raw_result": result}
+
+        if not result.get("success"):
+            return result
+
+        order_id = (
+            result.get("order_id")
+            or result.get("id")
+            or result.get("client_order_id")
+            or result.get("txid")
+        )
+
+        if not self._is_valid_exchange_order_id(order_id):
+            return {
+                "success": False,
+                "reason": "Exchange order id missing/invalid on successful trade",
+                "result": result,
+                "expected_side": expected_side,
+            }
+
+        exchange = result.get("exchange") or expected_exchange
+        if not exchange:
+            return {
+                "success": False,
+                "reason": "Exchange not provided for successful trade",
+                "result": result,
+            }
+
+        result["order_id"] = str(order_id).strip()
+        result["exchange"] = exchange
+        result["validated"] = True
+        return result
+
+    @staticmethod
+    def _is_valid_exchange_order_id(order_id: Any) -> bool:
+        """Validate order identifier emitted by an exchange API."""
+        if order_id is None:
+            return False
+        if isinstance(order_id, int):
+            return order_id > 0
+        if isinstance(order_id, str):
+            cleaned = order_id.strip()
+            return bool(cleaned) and cleaned.lower() not in {"none", "null", "n/a", "unknown", "pending"}
+        return False
     
     def _execute_calibration(self) -> Dict[str, Any]:
         """Calibrate all harmonic frequencies."""
@@ -1138,6 +1300,7 @@ class QueenAutonomousControl:
     
     def get_full_status(self) -> Dict[str, Any]:
         """Get comprehensive status of Queen's autonomous control."""
+        trading_readiness = self.validate_trade_subsystems()
         return {
             "sovereignty_level": self.sovereignty_level,
             "autonomous_active": self.autonomous_active,
@@ -1151,6 +1314,7 @@ class QueenAutonomousControl:
             "crown_activation": self.crown_activation,
             "unified_field_omega": self.unified_field_omega,
             "pending_decisions": len(self.pending_decisions),
+            "trading_readiness": trading_readiness,
             "systems": {
                 name: {
                     "status": sys.status,

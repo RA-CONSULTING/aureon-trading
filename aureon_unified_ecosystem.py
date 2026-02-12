@@ -7493,7 +7493,7 @@ def sync_exchange_trades_to_brain():
     # 🟡 BINANCE TRADE SYNC
     # ═══════════════════════════════════════════════════════════════
     try:
-        from binance_client import BinanceClient
+        from binance_client import BinanceClient, get_binance_client
         
         binance_key = os.getenv('BINANCE_API_KEY')
         binance_secret = os.getenv('BINANCE_API_SECRET')

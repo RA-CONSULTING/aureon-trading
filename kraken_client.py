@@ -1,7 +1,18 @@
 import os, time, json, math, hmac, hashlib, base64, threading, random
 from typing import Dict, Any, List, Tuple
 from decimal import Decimal
-import fcntl  # For file locking (cross-process nonce safety)
+
+# Cross-process file locking for the Kraken nonce counter.
+# - POSIX: fcntl.flock
+# - Windows: msvcrt.locking (byte-range lock)
+try:
+    import fcntl  # type: ignore
+except Exception:  # pragma: no cover - Windows
+    fcntl = None  # type: ignore
+    try:
+        import msvcrt  # type: ignore
+    except Exception:  # pragma: no cover
+        msvcrt = None  # type: ignore
 
 import requests
 from requests.adapters import HTTPAdapter
@@ -22,8 +33,57 @@ ASSETPAIR_CACHE_TTL = 300  # seconds
 # 🔐 CROSS-PROCESS NONCE MANAGER
 # Prevents "Invalid nonce" errors when multiple processes share the same API key
 # Uses file-based atomic counter with locking
-NONCE_FILE = os.path.join(os.path.dirname(__file__) or '.', '.kraken_nonce')
+_DEFAULT_NONCE_FILE = os.path.join(os.path.dirname(__file__) or '.', '.kraken_nonce')
+# Prefer a stable per-instance state path when provided (Docker/Windows-friendly).
+NONCE_FILE = os.getenv("KRAKEN_NONCE_PATH") or _DEFAULT_NONCE_FILE
 _nonce_lock = threading.Lock()
+
+def _lock_file(handle) -> None:
+    if fcntl is not None:
+        fcntl.flock(handle.fileno(), fcntl.LOCK_EX)
+        return
+    if 'msvcrt' in globals() and msvcrt is not None:
+        # Ensure file has at least one byte so we can lock a range.
+        try:
+            handle.seek(0, os.SEEK_END)
+            if handle.tell() == 0:
+                handle.write("0")
+                handle.flush()
+        except Exception:
+            pass
+        handle.seek(0)
+        # Lock the first byte. This blocks until acquired.
+        msvcrt.locking(handle.fileno(), msvcrt.LK_LOCK, 1)
+        return
+
+def _unlock_file(handle) -> None:
+    if fcntl is not None:
+        fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
+        return
+    if 'msvcrt' in globals() and msvcrt is not None:
+        try:
+            handle.seek(0)
+        except Exception:
+            pass
+        try:
+            msvcrt.locking(handle.fileno(), msvcrt.LK_UNLCK, 1)
+        except Exception:
+            pass
+
+def _read_nonce_text(text: str) -> int:
+    text = (text or "").strip()
+    if not text:
+        return 0
+    if text.startswith("{"):
+        try:
+            payload = json.loads(text)
+            return int(payload.get("nonce") or 0)
+        except Exception:
+            return 0
+    try:
+        return int(text)
+    except Exception:
+        return 0
 
 def _get_next_nonce() -> int:
     """Get next nonce that's guaranteed higher than any previous nonce.
@@ -41,10 +101,10 @@ def _get_next_nonce() -> int:
             # Try to read existing nonce from file (with locking)
             if os.path.exists(NONCE_FILE):
                 with open(NONCE_FILE, 'r+') as f:
-                    fcntl.flock(f.fileno(), fcntl.LOCK_EX)
+                    _lock_file(f)
                     try:
-                        last_nonce = int(f.read().strip() or '0')
-                    except ValueError:
+                        last_nonce = _read_nonce_text(f.read())
+                    except Exception:
                         last_nonce = 0
                     
                     # New nonce = max(current_time, last_nonce + 1) + random offset
@@ -57,16 +117,24 @@ def _get_next_nonce() -> int:
                     f.truncate()
                     f.write(str(new_nonce))
                     f.flush()
-                    fcntl.flock(f.fileno(), fcntl.LOCK_UN)
+                    try:
+                        os.fsync(f.fileno())
+                    except Exception:
+                        pass
+                    _unlock_file(f)
                     return new_nonce
             else:
                 # Create new nonce file
                 new_nonce = current_us + random.randint(1, 999)
-                with open(NONCE_FILE, 'w') as f:
-                    fcntl.flock(f.fileno(), fcntl.LOCK_EX)
+                with open(NONCE_FILE, 'w+') as f:
+                    _lock_file(f)
                     f.write(str(new_nonce))
                     f.flush()
-                    fcntl.flock(f.fileno(), fcntl.LOCK_UN)
+                    try:
+                        os.fsync(f.fileno())
+                    except Exception:
+                        pass
+                    _unlock_file(f)
                 return new_nonce
                 
         except Exception as e:
@@ -645,10 +713,35 @@ class KrakenClient:
             params["start"] = start
         if end:
             params["end"] = end
-        
+
         try:
-            result = self._private("/0/private/TradesHistory", params)
-            return result.get("trades", {})
+            # Kraken returns paginated results (default ~50 per call).
+            # Aggregate pages by default so downstream cost-basis calculations
+            # are based on full ledger-backed trade history.
+            all_trades: Dict[str, Any] = {}
+            page_size = 50
+            max_pages = 200
+            page = 0
+            next_ofs = ofs
+
+            while page < max_pages:
+                page_params = dict(params)
+                page_params["ofs"] = next_ofs
+                result = self._private("/0/private/TradesHistory", page_params)
+                trades = result.get("trades", {}) or {}
+
+                if not trades:
+                    break
+
+                all_trades.update(trades)
+                page += 1
+
+                if len(trades) < page_size:
+                    break
+
+                next_ofs += len(trades)
+
+            return all_trades
         except Exception as e:
             print(f"⚠️ Failed to get Kraken trade history: {e}")
             return {}
