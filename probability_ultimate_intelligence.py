@@ -28,7 +28,7 @@ import time
 import os
 import sys
 from dataclasses import dataclass, field
-from typing import Dict, List, Tuple, Optional
+from typing import Any, Dict, List, Tuple, Optional
 from collections import defaultdict
 
 # Safe print function that won't fail on closed stdout
