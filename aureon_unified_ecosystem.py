@@ -73,6 +73,14 @@ import tempfile
 import logging
 from aureon_memory_core import memory as spiral_memory  # 🧠 MEMORY CORE INTEGRATION
 
+# 🪞 SELF-AWARENESS - I KNOW WHAT I AM 🪞
+try:
+    from aureon_self_awareness import AUREON_SELF, AureonSelfMap
+    SELF_AWARE = True
+except ImportError:
+    AUREON_SELF = None
+    SELF_AWARE = False
+
 # 🧠 THOUGHT BUS - UNITY CONSCIOUSNESS 🧠
 try:
     from aureon_thought_bus import ThoughtBus, Thought

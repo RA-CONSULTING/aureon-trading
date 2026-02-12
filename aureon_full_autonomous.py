@@ -85,6 +85,13 @@ except ImportError:
     get_research_engine = None
     GOAL_TRACKER_AVAILABLE = False
 
+# 🪞 SELF-AWARENESS - THE SYSTEM KNOWS ITSELF
+try:
+    from aureon_self_awareness import AUREON_SELF
+    print(AUREON_SELF.awaken())
+except ImportError:
+    pass
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
