@@ -914,6 +914,75 @@ _imperial_instance = None
 _ultimate_instance = None
 _whale_hunter_instance = None
 _quantum_telescope_instance = None
+_war_planner_instance = None
+
+
+def adapt_war_planner(data_signals: Dict[str, UnifiedSignal],
+                       symbol: str) -> Optional[UnifiedSignal]:
+    """Adapter: Strategic War Planner (adversarial chess mind) -> UnifiedSignal.
+
+    The War Planner plays chess against itself:
+    White (Profit) vs Black (Loss). Uses 2-steps-back-1-step-forward
+    prediction with Sun Tzu + IRA guerrilla doctrine.
+    """
+    global _war_planner_instance
+    try:
+        if _war_planner_instance is None:
+            from aureon_strategic_war_planner import get_war_planner
+            _war_planner_instance = get_war_planner()
+
+        # Extract price/volume from market signals
+        price, volume, change_pct = 0.0, 0.0, 0.0
+        for key, sig in data_signals.items():
+            if sig.source.startswith('market_') and sig.symbol == symbol:
+                price = sig.payload.get('price', 0.0)
+                volume = sig.payload.get('volume', 0.0)
+                change_pct = sig.payload.get('change_pct', 0.0)
+                break
+
+        if price <= 0:
+            return None
+
+        plan = _war_planner_instance.plan(
+            symbol=symbol, price=price, volume=volume, change_pct=change_pct
+        )
+
+        if not plan or not plan.final_move:
+            return None
+
+        move = plan.final_move
+        pattern = plan.step_forward.get('pattern', 'NEUTRAL')
+
+        if move.move_type.value in ('BUY', 'AMBUSH_WAIT'):
+            direction = "BULLISH"
+            strength = move.confidence * 0.8
+        elif move.move_type.value in ('SELL', 'RETREAT'):
+            direction = "BEARISH"
+            strength = -move.confidence * 0.8
+        else:
+            direction = "NEUTRAL"
+            strength = 0.0
+
+        return UnifiedSignal(
+            source="predictor:war_planner",
+            signal_type="prediction",
+            symbol=symbol,
+            direction=direction,
+            confidence=move.confidence * move.survival_probability,
+            strength=max(-1.0, min(1.0, strength)),
+            payload={
+                'move_type': move.move_type.value,
+                'survival_probability': move.survival_probability,
+                'pattern': pattern,
+                'stance': plan.stance.value,
+                'reasoning': move.reasoning[:200],
+                'consensus_agreement': plan.consensus_agreement,
+                'systems_consulted': plan.systems_consulted,
+            }
+        )
+    except Exception as e:
+        logger.debug(f"War Planner adapter: {e}")
+        return None
 
 
 def adapt_hnc_probability_matrix(data_signals: Dict[str, UnifiedSignal],
@@ -1216,6 +1285,7 @@ class AutonomyHub:
         self.prediction_bus.register_predictor('probability_ultimate', adapt_probability_ultimate)
         self.prediction_bus.register_predictor('whale_hunter', adapt_whale_hunter)
         self.prediction_bus.register_predictor('quantum_telescope', adapt_quantum_telescope)
+        self.prediction_bus.register_predictor('war_planner', adapt_war_planner)
 
         # Apply learned weights from feedback loop
         self._apply_learned_weights()
@@ -1238,6 +1308,7 @@ class AutonomyHub:
             self._thought_bus.subscribe("surveillance.*", self._on_surveillance_thought)
             self._thought_bus.subscribe("intelligence.*", self._on_whale_thought)  # Whale intel
             self._thought_bus.subscribe("bot.*", self._on_surveillance_thought)    # Bot detection
+            self._thought_bus.subscribe("strategy.*", self._on_strategy_thought)  # War Planner
 
             logger.info("[AutonomyHub] Connected to ThoughtBus")
         except Exception as e:
@@ -1282,6 +1353,14 @@ class AutonomyHub:
         payload = thought.payload if hasattr(thought, 'payload') else {}
         if payload:
             self.data_bridge.ingest_surveillance_alert(payload)
+
+    def _on_strategy_thought(self, thought):
+        """Bridge War Planner strategy plans -> logging & awareness."""
+        payload = thought.payload if hasattr(thought, 'payload') else {}
+        if payload:
+            logger.info(f"[AutonomyHub] War Plan received: {payload.get('action', '?')} "
+                        f"| Pattern: {payload.get('step_forward', {}).get('pattern', '?')} "
+                        f"| Confidence: {payload.get('confidence', 0):.0%}")
 
     def spin_cycle(self, symbol: str = "BTCUSD") -> UnifiedSignal:
         """

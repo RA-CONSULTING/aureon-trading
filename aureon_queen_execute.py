@@ -1212,6 +1212,26 @@ class QueenExecutionEngine:
         except Exception:
             pass
 
+        # Consult War Planner (adversarial chess mind)
+        try:
+            from aureon_strategic_war_planner import get_war_planner
+            planner = get_war_planner()
+            war_plan = planner.plan(
+                symbol=signal.symbol, price=signal.price,
+                change_pct=signal.momentum_score * 100,
+                has_position=False, position_side="none",
+            )
+            if war_plan and war_plan.final_move:
+                fm = war_plan.final_move
+                print(f"   ⚔️ WAR PLANNER: {fm.move_type.value} | "
+                      f"Survival: {fm.survival_probability:.0%} | "
+                      f"Stance: {war_plan.stance.value}")
+                if fm.move_type.value in ('RETREAT', 'HOLD') and fm.confidence > 0.6:
+                    print(f"   ⚔️ WAR PLANNER: Enemy too strong — skipping trade")
+                    return None
+        except Exception:
+            pass
+
         # Only allow LONG trades when we have stablecoins (can't short without crypto)
         if signal.direction != "LONG":
             print(f"   ⚠️ Skipping {signal.direction} - Only LONG trades allowed with stablecoins")

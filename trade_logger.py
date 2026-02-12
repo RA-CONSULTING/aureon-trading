@@ -273,6 +273,14 @@ class TradeLogger:
             })
         except Exception:
             pass  # Hub not available yet
+
+        # Feed outcome into War Planner (adversarial chess learning)
+        try:
+            from aureon_strategic_war_planner import get_war_planner
+            planner = get_war_planner()
+            planner.record_outcome(exit_record.symbol, exit_record.net_pnl)
+        except Exception:
+            pass  # War Planner not available yet
     
     def log_execution(self, execution_type: str, exchange: str, symbol: str, 
                       side: str, order_id: str, quantity: float = 0.0,

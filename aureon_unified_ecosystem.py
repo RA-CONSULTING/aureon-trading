@@ -13412,6 +13412,15 @@ class AureonKrakenEcosystem:
         except Exception as e:
             print(f"⚠️  Autonomy Hub init deferred: {e}")
 
+        # ⚔️ THE MIND - Strategic War Planner (adversarial chess engine)
+        self.war_planner = None
+        try:
+            from aureon_strategic_war_planner import get_war_planner
+            self.war_planner = get_war_planner()
+            print("⚔️  THE MIND: War Planner connected (Sun Tzu + IRA + Boyd OODA)")
+        except Exception as e:
+            print(f"⚠️  War Planner init deferred: {e}")
+
         # Mirror harmonic engine reference for convenience
         self.harmonic_engine = getattr(self.auris, 'harmonic_engine', None)
         
@@ -22954,6 +22963,33 @@ class AureonKrakenEcosystem:
                             logger.info(f"⚙️  BIG WHEEL: {hub_decision.direction} @ {hub_decision.confidence:.2f} | WR: {self.autonomy_hub.feedback_loop.get_rolling_win_rate():.1%}")
                     except Exception as e:
                         logger.debug(f"Autonomy hub cycle: {e}")
+
+                # ⚔️ THE MIND: War Planner OODA cycle (Observe -> Orient -> Decide -> Act)
+                if self.war_planner:
+                    try:
+                        # Pick a representative symbol from active positions or top ticker
+                        wp_symbol = "BTCUSD"
+                        wp_price = 0.0
+                        wp_change = 0.0
+                        for sym, ticker in list(self.ticker_cache.items())[:5]:
+                            p = float(ticker.get('last', ticker.get('c', [0])[0] if isinstance(ticker.get('c'), list) else 0) or 0)
+                            c = float(ticker.get('p', [0, 0])[1] if isinstance(ticker.get('p'), list) else ticker.get('change_pct', 0) or 0)
+                            if p > 0:
+                                wp_symbol = sym
+                                wp_price = p
+                                wp_change = c
+                                break
+                        if wp_price > 0:
+                            war_plan = self.war_planner.plan(
+                                symbol=wp_symbol, price=wp_price, change_pct=wp_change
+                            )
+                            if war_plan and war_plan.final_move and war_plan.final_move.move_type.value != 'HOLD':
+                                logger.info(f"⚔️  WAR PLANNER: {war_plan.final_move.move_type.value} | "
+                                            f"Pattern: {war_plan.step_forward.get('pattern', '?')} | "
+                                            f"Survival: {war_plan.final_move.survival_probability:.0%} | "
+                                            f"Stance: {war_plan.stance.value}")
+                    except Exception as e:
+                        logger.debug(f"War planner cycle: {e}")
 
                 # 🍄 Constant nerve-system pulse (state shared + persisted)
                 self._mycelium_heartbeat(note='cycle')

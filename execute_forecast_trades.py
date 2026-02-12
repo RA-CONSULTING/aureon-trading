@@ -378,6 +378,25 @@ def execute_forecast_trade(client: BinanceClient, engine: ProbabilityForecastEng
     except Exception:
         pass
 
+    # Phase 2.6: Consult War Planner (adversarial chess validation)
+    try:
+        from aureon_strategic_war_planner import get_war_planner
+        planner = get_war_planner()
+        war_plan = planner.plan(
+            symbol=symbol, price=forecast.current_price,
+            change_pct=forecast.price_change_pct,
+        )
+        if war_plan and war_plan.final_move:
+            fm = war_plan.final_move
+            print(f"   ⚔️  WAR PLANNER: {fm.move_type.value} | "
+                  f"Survival: {fm.survival_probability:.0%} | "
+                  f"Pattern: {war_plan.step_forward.get('pattern', '?')}")
+            if fm.move_type.value == 'RETREAT' and fm.confidence > 0.5:
+                print(f"   ⚔️  WAR PLANNER VETO: Enemy counter too strong")
+                return False, 0
+    except Exception:
+        pass
+
     # Phase 3: Execute if profitable
     if forecast.recommended_action != "BUY":
         print(f"\n   ⏸️ HOLDING - Conditions not met for profitable trade")

@@ -108,3 +108,47 @@ export function getAccuracyFeedback(): Record<string, unknown> | null {
   }
   return null;
 }
+
+// ═══════════════════════════════════════════════════════════════
+// WAR PLANNER BRIDGE — Adversarial Chess Mind → TypeScript
+// ═══════════════════════════════════════════════════════════════
+
+interface WarPlanState {
+  timestamp: number;
+  symbol: string;
+  stance: string;
+  action: string;         // BUY, SELL, HOLD, RETREAT, AMBUSH_WAIT
+  confidence: number;
+  survivalProbability: number;
+  pattern: string;         // CHARGING_BULL, BEAR_AMBUSH, etc.
+  reasoning: string;
+  consensusAgreement: number;
+  systemsConsulted: string[];
+}
+
+/**
+ * Get the latest War Planner decision from shared state.
+ * Returns null if unavailable or stale (>60s old).
+ */
+export function getLatestWarPlan(): WarPlanState | null {
+  try {
+    if (typeof globalThis !== 'undefined' && (globalThis as any).__warPlanState) {
+      const state = (globalThis as any).__warPlanState as WarPlanState;
+      const age = (Date.now() / 1000) - state.timestamp;
+      if (age > 60) return null;
+      return state;
+    }
+  } catch {
+    // Silent fail
+  }
+  return null;
+}
+
+/**
+ * Updates the global War Plan state (called by server-side bridge).
+ */
+export function updateWarPlanState(state: WarPlanState): void {
+  if (typeof globalThis !== 'undefined') {
+    (globalThis as any).__warPlanState = state;
+  }
+}

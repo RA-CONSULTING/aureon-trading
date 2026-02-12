@@ -369,6 +369,23 @@ export class UnifiedOrchestrator {
       // Hub bridge not available
     }
 
+    // Step 14e: Get War Planner signal (adversarial chess mind - can we survive the counter?)
+    try {
+      const { getLatestWarPlan } = await import('./autonomyHubBridge');
+      const warPlan = getLatestWarPlan();
+      if (warPlan && warPlan.action !== 'HOLD') {
+        console.log(`[UnifiedOrchestrator] War Planner: ${warPlan.action} | Pattern: ${warPlan.pattern} | Survival: ${(warPlan.survivalProbability * 100).toFixed(0)}% | Stance: ${warPlan.stance}`);
+        // War Planner RETREAT veto — if enemy counter too strong, reduce confidence
+        if (warPlan.action === 'RETREAT' && warPlan.confidence > 0.6) {
+          if (autonomyHubSignal) {
+            autonomyHubSignal.confidence *= 0.5; // Halve hub confidence when war planner says retreat
+          }
+        }
+      }
+    } catch {
+      // War Planner bridge not available
+    }
+
     // Step 15: Get bus consensus
     const busSnapshot = unifiedBus.snapshot();
     const consensus = unifiedBus.checkConsensus();
@@ -863,7 +880,26 @@ export class UnifiedOrchestrator {
     } catch {
       // Hub bridge not available
     }
-    
+
+    // Apply War Planner signal (adversarial chess survival check)
+    try {
+      const { getLatestWarPlan } = require('./autonomyHubBridge');
+      const warPlan = getLatestWarPlan();
+      if (warPlan) {
+        if (warPlan.action === 'RETREAT' && warPlan.confidence > 0.5) {
+          // War Planner says enemy counter is too strong — reduce confidence
+          effectiveConfidence *= 0.7;
+          console.log(`[UnifiedOrchestrator] War Planner RETREAT — reducing confidence (survival: ${(warPlan.survivalProbability * 100).toFixed(0)}%)`);
+        } else if (warPlan.action === 'BUY' && warPlan.survivalProbability > 0.6) {
+          // War Planner confirms attack with high survival — boost
+          effectiveConfidence = Math.min(1, effectiveConfidence + 0.05 * warPlan.survivalProbability);
+          console.log(`[UnifiedOrchestrator] War Planner ATTACK confirmed (survival: ${(warPlan.survivalProbability * 100).toFixed(0)}%)`);
+        }
+      }
+    } catch {
+      // War Planner bridge not available
+    }
+
     // QGITA tier-based position sizing and thresholds
     const qgitaTier = qgitaSignal?.tier || 3;
     const qgitaPositionMultiplier = qgitaSignalGenerator.getPositionSizeMultiplier(qgitaTier);
