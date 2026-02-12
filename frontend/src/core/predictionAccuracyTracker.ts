@@ -289,7 +289,7 @@ class PredictionAccuracyTracker {
    */
   private publishAccuracyStats(): void {
     const stats = this.getStats();
-    
+
     unifiedBus.publish({
       systemName: 'PredictionAccuracy',
       timestamp: Date.now(),
@@ -299,6 +299,23 @@ class PredictionAccuracyTracker {
       signal: stats.accuracy15m >= 0.55 ? 'BUY' : stats.accuracy15m <= 0.45 ? 'SELL' : 'NEUTRAL',
       data: stats,
     });
+
+    // Feed accuracy data to Autonomy Hub bridge (closes the feedback loop)
+    try {
+      if (typeof globalThis !== 'undefined') {
+        (globalThis as any).__predictionAccuracyFeedback = {
+          timestamp: Date.now(),
+          accuracy1m: stats.accuracy1m ?? 0,
+          accuracy5m: stats.accuracy5m ?? 0,
+          accuracy15m: stats.accuracy15m ?? 0,
+          totalPredictions: stats.totalPredictions ?? 0,
+          validated: stats.validated ?? 0,
+          signal: stats.accuracy15m >= 0.55 ? 'BUY' : stats.accuracy15m <= 0.45 ? 'SELL' : 'NEUTRAL',
+        };
+      }
+    } catch {
+      // Hub bridge not available
+    }
   }
 
   /**

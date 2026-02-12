@@ -514,8 +514,8 @@ class V11PowerStationLive:
                 pass
             
             for asset, amount in balances.items():
-                # Skip stablecoins and dust
-                if asset in ['USDT', 'USDC', 'USD', 'EUR', 'GBP', 'BUSD', 'FDUSD']:
+                # Skip stablecoins, dust, and LD* (Binance Simple Earn/Locked - not spot tradeable)
+                if asset in ['USDT', 'USDC', 'USD', 'EUR', 'GBP', 'BUSD', 'FDUSD'] or asset.startswith('LD'):
                     continue
                 if amount < 0.0001:
                     continue

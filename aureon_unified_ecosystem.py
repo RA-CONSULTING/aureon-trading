@@ -13403,6 +13403,24 @@ class AureonKrakenEcosystem:
         self.memory = spiral_memory  # 🌀 Durable memory core
         self.flux_predictor = SystemFluxPredictor() # 🔮 Initialize Flux Predictor
 
+        # ⚙️ THE BIG WHEEL - Autonomy Hub connects Data -> Predictions -> Decisions -> Feedback
+        self.autonomy_hub = None
+        try:
+            from aureon_autonomy_hub import get_autonomy_hub
+            self.autonomy_hub = get_autonomy_hub()
+            print("⚙️  THE BIG WHEEL: Autonomy Hub connected (Data->Predictions->Decisions->Feedback)")
+        except Exception as e:
+            print(f"⚠️  Autonomy Hub init deferred: {e}")
+
+        # ⚔️ THE MIND - Strategic War Planner (adversarial chess engine)
+        self.war_planner = None
+        try:
+            from aureon_strategic_war_planner import get_war_planner
+            self.war_planner = get_war_planner()
+            print("⚔️  THE MIND: War Planner connected (Sun Tzu + IRA + Boyd OODA)")
+        except Exception as e:
+            print(f"⚠️  War Planner init deferred: {e}")
+
         # Mirror harmonic engine reference for convenience
         self.harmonic_engine = getattr(self.auris, 'harmonic_engine', None)
         
@@ -22930,6 +22948,48 @@ class AureonKrakenEcosystem:
             while True:
                 self.iteration += 1
                 now = datetime.now().strftime("%H:%M:%S")
+
+                # ⚙️ THE BIG WHEEL: Spin autonomy hub each cycle (data -> predictions -> decisions -> learning)
+                if self.autonomy_hub:
+                    try:
+                        # Feed current market context into the hub
+                        for sym, ticker in list(self.ticker_cache.items())[:50]:
+                            price = float(ticker.get('last', ticker.get('c', [0])[0] if isinstance(ticker.get('c'), list) else 0) or 0)
+                            change = float(ticker.get('p', [0, 0])[1] if isinstance(ticker.get('p'), list) else ticker.get('change_pct', 0) or 0)
+                            if price > 0:
+                                self.autonomy_hub.data_bridge.ingest_market_tick(sym, price, change, 0, 'kraken')
+                        hub_decision = self.autonomy_hub.spin_cycle()
+                        if hub_decision and hub_decision.direction != "NEUTRAL":
+                            logger.info(f"⚙️  BIG WHEEL: {hub_decision.direction} @ {hub_decision.confidence:.2f} | WR: {self.autonomy_hub.feedback_loop.get_rolling_win_rate():.1%}")
+                    except Exception as e:
+                        logger.debug(f"Autonomy hub cycle: {e}")
+
+                # ⚔️ THE MIND: War Planner OODA cycle (Observe -> Orient -> Decide -> Act)
+                if self.war_planner:
+                    try:
+                        # Pick a representative symbol from active positions or top ticker
+                        wp_symbol = "BTCUSD"
+                        wp_price = 0.0
+                        wp_change = 0.0
+                        for sym, ticker in list(self.ticker_cache.items())[:5]:
+                            p = float(ticker.get('last', ticker.get('c', [0])[0] if isinstance(ticker.get('c'), list) else 0) or 0)
+                            c = float(ticker.get('p', [0, 0])[1] if isinstance(ticker.get('p'), list) else ticker.get('change_pct', 0) or 0)
+                            if p > 0:
+                                wp_symbol = sym
+                                wp_price = p
+                                wp_change = c
+                                break
+                        if wp_price > 0:
+                            war_plan = self.war_planner.plan(
+                                symbol=wp_symbol, price=wp_price, change_pct=wp_change
+                            )
+                            if war_plan and war_plan.final_move and war_plan.final_move.move_type.value != 'HOLD':
+                                logger.info(f"⚔️  WAR PLANNER: {war_plan.final_move.move_type.value} | "
+                                            f"Pattern: {war_plan.step_forward.get('pattern', '?')} | "
+                                            f"Survival: {war_plan.final_move.survival_probability:.0%} | "
+                                            f"Stance: {war_plan.stance.value}")
+                    except Exception as e:
+                        logger.debug(f"War planner cycle: {e}")
 
                 # 🍄 Constant nerve-system pulse (state shared + persisted)
                 self._mycelium_heartbeat(note='cycle')

@@ -48,6 +48,7 @@ aureon_memory_spiral.json
 cached_candles.json
 thoughts.jsonl
 thoughts.jsonl
+autonomy_feedback_loop.jsonl
 bot_shape_snapshot.json
 planet_saver_mission_state.json
 queen_elephant_memory.json
