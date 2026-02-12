@@ -123,8 +123,15 @@ class CompoundKellyTrader:
                 symbol = pair['symbol']
                 profit_pct = self.expected_profit_pct(symbol)
                 if profit_pct > 0.0:
-                    # Use Kelly criterion for sizing
-                    win_prob = 0.55  # Assume 55% win rate (can be tuned)
+                    # Use Kelly criterion for sizing - pull LIVE win rate from Autonomy Hub
+                    win_prob = 0.55  # Default fallback
+                    try:
+                        from aureon_autonomy_hub import get_autonomy_hub
+                        hub_wr = get_autonomy_hub().feedback_loop.get_rolling_win_rate()
+                        if hub_wr > 0.0:
+                            win_prob = max(0.51, min(0.85, hub_wr))  # Clamp to sane range
+                    except Exception:
+                        pass  # Use default
                     win_pct = profit_pct / 100
                     loss_pct = self.fee_pct
                     balance = pair['quote_balance'] if pair['can_buy'] else pair['base_balance']

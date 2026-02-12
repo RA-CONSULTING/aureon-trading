@@ -224,9 +224,23 @@ class ProbabilityCollector:
             if total_predictions > 0:
                 accuracy = (correct_predictions / total_predictions) * 100
                 logger.info(f"✅ VALIDATION COMPLETE: {accuracy:.2f}% Accuracy ({correct_predictions}/{total_predictions})")
+
+                # Feed validation accuracy back into Autonomy Hub feedback loop
+                try:
+                    from aureon_autonomy_hub import get_autonomy_hub
+                    hub = get_autonomy_hub()
+                    # Update predictor accuracy scores based on real validation
+                    with hub.feedback_loop._lock:
+                        acc = hub.feedback_loop._predictor_accuracy['probability_collector']
+                        acc['total'] = total_predictions
+                        acc['correct'] = correct_predictions
+                        acc['incorrect'] = total_predictions - correct_predictions
+                    logger.info(f"   ⚙️  Fed {accuracy:.1f}% accuracy into Autonomy Hub feedback loop")
+                except Exception:
+                    pass
             else:
                 logger.info("⚠️  Not enough data to validate predictions yet.")
-                
+
         except Exception as e:
             logger.error(f"Validation error: {e}")
 

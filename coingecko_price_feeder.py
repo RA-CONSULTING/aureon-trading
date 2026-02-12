@@ -231,6 +231,17 @@ def run_price_feed(interval: float = 30.0, max_iterations: int = 0):
                 save_cache(ticker_cache, BINANCE_CACHE_PATH)  # Animal scanners look here
                 save_cache(ticker_cache, COINGECKO_CACHE_PATH)
                 logger.info(f"   💾 Saved to {BINANCE_CACHE_PATH}")
+
+                # Feed into Autonomy Hub (The Big Wheel)
+                try:
+                    from aureon_autonomy_hub import get_autonomy_hub
+                    hub = get_autonomy_hub()
+                    count = hub.data_bridge.ingest_price_cache(
+                        {'ticker_cache': ticker_cache}, 'coingecko'
+                    )
+                    logger.info(f"   ⚙️  Fed {count} prices into Autonomy Hub")
+                except Exception:
+                    pass
                 
                 # Show sample prices
                 samples = list(ticker_cache.items())[:5]
