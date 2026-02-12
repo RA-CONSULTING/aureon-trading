@@ -259,6 +259,33 @@ class QuantumTelescope:
             'projection': projection
         }
 
+    def deep_scan(self, market_data: Dict) -> Dict[str, Dict]:
+        """
+        Backward-compatible API used by orchestration loops.
+
+        Accepts a symbol->payload mapping and returns observation results keyed by symbol.
+        Payload may be either a float price or a dict with optional
+        price/volume/change_pct fields.
+        """
+        results: Dict[str, Dict] = {}
+        for symbol, payload in (market_data or {}).items():
+            try:
+                if isinstance(payload, dict):
+                    price = float(payload.get('price', 0.0) or 0.0)
+                    volume = float(payload.get('volume', 1.0) or 1.0)
+                    change_pct = float(payload.get('change_pct', payload.get('change', 0.0)) or 0.0)
+                else:
+                    price = float(payload or 0.0)
+                    volume = 1.0
+                    change_pct = 0.0
+
+                results[symbol] = self.observe(symbol, price, volume, change_pct)
+            except Exception:
+                # Keep scan resilient for legacy scanner loops.
+                continue
+
+        return results
+
 if __name__ == "__main__":
     # Test the Telescope
     logging.basicConfig(level=logging.INFO)

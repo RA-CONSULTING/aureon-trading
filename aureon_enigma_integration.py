@@ -1033,6 +1033,39 @@ class EnigmaIntegration:
         """Have Enigma verbalize its current state."""
         return self.translator.speak()
         
+    def decode_patterns(self, prices: Dict[str, Any]) -> Dict[str, Any]:
+        """Backward-compatible pattern decoding entrypoint for scanner loops."""
+        if not prices:
+            return {}
+
+        symbol, payload = next(iter(prices.items()))
+        if isinstance(payload, dict):
+            price = float(payload.get('price', 0.0) or 0.0)
+            volume = float(payload.get('volume', 0.0) or 0.0)
+            change_pct = float(payload.get('change_pct', payload.get('change', 0.0)) or 0.0)
+        else:
+            price = float(payload or 0.0)
+            volume = 0.0
+            change_pct = 0.0
+
+        context = {
+            'market': {
+                'symbol': symbol,
+                'price': price,
+                'volume': volume,
+                'change_pct': change_pct,
+            }
+        }
+
+        thought = self.process_market_context(context)
+        return {
+            'symbol': thought.symbol,
+            'action': thought.action,
+            'confidence': thought.confidence,
+            'grade': thought.grade.value if thought.grade else None,
+            'content': thought.content,
+        }
+
     def get_ultra_briefing(self, time_window_minutes: int = 60) -> Dict[str, Any]:
         """Get ULTRA-grade intelligence briefing."""
         return self.enigma.get_ultra_briefing(time_window_minutes)
