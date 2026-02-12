@@ -6367,6 +6367,37 @@ class MinerBrain:
             }
         }
 
+    def get_recommendations(self, prices: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """
+        Backward-compatible recommendation API used by legacy scanner loops.
+
+        Returns a lightweight ranked list of opportunities from provided market data.
+        """
+        recs: List[Dict[str, Any]] = []
+        for symbol, payload in (prices or {}).items():
+            try:
+                if isinstance(payload, dict):
+                    change_pct = float(payload.get('change_pct', payload.get('change', 0.0)) or 0.0)
+                    volume = float(payload.get('volume', 0.0) or 0.0)
+                else:
+                    change_pct = 0.0
+                    volume = 0.0
+
+                score = abs(change_pct) * 0.7 + min(volume / 1_000_000.0, 1.0) * 0.3
+                direction = 'BUY' if change_pct > 0 else ('SELL' if change_pct < 0 else 'HOLD')
+                recs.append({
+                    'symbol': symbol,
+                    'direction': direction,
+                    'confidence': min(0.99, max(0.01, score)),
+                    'change_pct': change_pct,
+                    'volume': volume,
+                })
+            except Exception:
+                continue
+
+        recs.sort(key=lambda x: x['confidence'], reverse=True)
+        return recs[:10]
+
     def get_latest_prediction(self):
         """Get the latest prediction in a standardized format."""
         if self.latest_prediction:

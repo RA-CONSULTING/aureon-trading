@@ -764,6 +764,10 @@ class QueenVolumeHunter:
         # Sort by signal strength, prioritize Queen-approved
         return sorted(signals, key=lambda x: (-int(x.queen_approved), -x.signal_strength))
 
+    def scan_breakouts(self) -> List[VolumeSignal]:
+        """Backward-compatible alias for legacy scanner call sites."""
+        return self.scan_for_breakouts()
+
     def _scan_binance(self, symbols: List[str]) -> List[VolumeSignal]:
         signals = []
         print("   🔵 BINANCE:")
