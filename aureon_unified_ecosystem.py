@@ -2923,11 +2923,14 @@ class UnifiedTradeConfirmation:
 
         return confirmation
         
-    def submit_order(self, exchange: str, symbol: str, side: str, 
+    def submit_order(self, exchange: str, symbol: str, side: str,
                     quantity: float = None, quote_qty: float = None) -> Dict[str, Any]:
         """
         Submit order and return unified confirmation.
         Validates lot sizes and minimum notional before submission.
+
+        THIS IS REAL. Every order placed here moves real money on real exchanges.
+        There is no undo. There is no reset. Gary's capital is at stake.
         """
         # Normalize symbol per exchange to ensure BUY/SELL works across venues
         # (e.g. BTCUSD → BTCUSDT on Binance, BTC/USD on Alpaca, XBTUSD on Kraken).
