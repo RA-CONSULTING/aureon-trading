@@ -92,6 +92,22 @@ try:
 except ImportError:
     pass
 
+# 🌀 PHASE TRANSITION DETECTOR - Geometric Regime Change Detection
+try:
+    from aureon_phase_transition_detector import PhaseTransitionDetector
+    PHASE_DETECTOR_BOOT = True
+    print("🌀 Phase Transition Detector: LOADED (Takens embedding + curvature analysis)")
+except ImportError:
+    PHASE_DETECTOR_BOOT = False
+
+# ☀️ CROSS-SUBSTRATE SOLAR MONITOR
+try:
+    from aureon_cross_substrate_monitor import CrossSubstrateMonitor
+    SOLAR_MONITOR_BOOT = True
+    print("☀️ Cross-Substrate Solar Monitor: LOADED (NOAA SWPC + Granger causality)")
+except ImportError:
+    SOLAR_MONITOR_BOOT = False
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,

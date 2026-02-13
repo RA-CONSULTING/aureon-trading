@@ -102,6 +102,30 @@ except Exception as e:
     # This flag refers only to the optional external module `aureon_immune_system`.
     print(f"⚠️  External Immune System module (aureon_immune_system) not available: {e}")
 
+# 🌀 PHASE TRANSITION DETECTOR - Geometric Regime Change Detection 🌀
+try:
+    from aureon_phase_transition_detector import PhaseTransitionDetector, PhaseState
+    PHASE_DETECTOR = PhaseTransitionDetector()
+    PHASE_DETECTOR_AVAILABLE = True
+    print("🌀 Phase Transition Detector: ONLINE (Takens embedding + Frenet-Serret curvature)")
+except ImportError:
+    PHASE_DETECTOR = None
+    PHASE_DETECTOR_AVAILABLE = False
+    print("⚠️  Phase Transition Detector not available")
+
+# ☀️ CROSS-SUBSTRATE SOLAR MONITOR - Solar-Market Correlation Research ☀️
+try:
+    from aureon_cross_substrate_monitor import CrossSubstrateMonitor, CrossSubstrateAnalyzer
+    SOLAR_MONITOR = CrossSubstrateMonitor()
+    SOLAR_ANALYZER = CrossSubstrateAnalyzer()
+    SOLAR_MONITOR_AVAILABLE = True
+    print("☀️ Cross-Substrate Solar Monitor: ONLINE (NOAA + Granger causality)")
+except ImportError:
+    SOLAR_MONITOR = None
+    SOLAR_ANALYZER = None
+    SOLAR_MONITOR_AVAILABLE = False
+    print("⚠️  Cross-Substrate Solar Monitor not available")
+
 # 💎 PROBABILITY ULTIMATE INTELLIGENCE - 95% Accuracy Pattern Learning 💎
 try:
     from probability_ultimate_intelligence import (
