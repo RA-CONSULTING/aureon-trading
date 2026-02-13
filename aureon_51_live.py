@@ -313,17 +313,23 @@ class Aureon51Live:
         return symbol
         
     async def websocket_handler(self, pairs_to_subscribe: List[str]):
-        """Handle WebSocket connection and messages"""
+        """Handle WebSocket connection and messages
+
+        FIX #5: Exponential backoff reconnection (2s, 4s, 8s, 16s, 32s, max 60s).
+        Never gives up — keeps trying forever with capped backoff.
+        """
         retry_count = 0
-        max_retries = 5
-        
-        while retry_count < max_retries:
+
+        while True:  # Never give up — always reconnect
             try:
-                async with websockets.connect(KRAKEN_WS_URL, ping_interval=20) as ws:
+                async with websockets.connect(KRAKEN_WS_URL, ping_interval=20, ping_timeout=30) as ws:
                     self.ws_connected = True
+                    if retry_count > 0:
+                        print(f"   🟢 WebSocket RECONNECTED after {retry_count} retries!")
+                    else:
+                        print("   🟢 WebSocket connected!")
                     retry_count = 0
-                    print("   🔴 WebSocket connected!")
-                    
+
                     # Subscribe to ticker for watched pairs
                     if pairs_to_subscribe:
                         subscribe_msg = {
@@ -333,11 +339,11 @@ class Aureon51Live:
                         }
                         await ws.send(json.dumps(subscribe_msg))
                         print(f"   📡 Subscribed to {len(pairs_to_subscribe)} pairs")
-                    
+
                     async for message in ws:
                         try:
                             data = json.loads(message)
-                            
+
                             # Skip system messages
                             if isinstance(data, dict):
                                 if data.get('event') == 'subscriptionStatus':
@@ -348,32 +354,37 @@ class Aureon51Live:
                                     elif status == 'error':
                                         print(f"   ⚠️ Sub error for {pair}: {data.get('errorMessage')}")
                                 continue
-                                
+
                             # Ticker update: [channelID, {...}, "ticker", "XBT/USD"]
                             if isinstance(data, list) and len(data) >= 4 and data[2] == "ticker":
                                 ws_pair = data[3]
                                 ticker_data = data[1]
-                                
+
                                 # Get last trade price
                                 if 'c' in ticker_data:
                                     price = float(ticker_data['c'][0])
-                                    
+
                                     with self.price_lock:
                                         self.realtime_prices[ws_pair] = price
-                                        
+
                                         # Also update by REST symbol
                                         if ws_pair in self.ws_to_symbol:
                                             symbol = self.ws_to_symbol[ws_pair]
                                             self.realtime_prices[symbol] = price
-                                            
+
                         except Exception as e:
                             pass
-                            
+
             except Exception as e:
                 retry_count += 1
                 self.ws_connected = False
-                print(f"   ⚠️ WebSocket error (retry {retry_count}/{max_retries}): {e}")
-                await asyncio.sleep(5)
+                # Exponential backoff: 2s, 4s, 8s, 16s, 32s, capped at 60s
+                backoff = min(2 ** retry_count, 60)
+                if retry_count <= 5:
+                    print(f"   ⚠️ WebSocket error (retry {retry_count}, backoff {backoff}s): {e}")
+                elif retry_count % 10 == 0:
+                    print(f"   ⚠️ WebSocket still reconnecting (attempt {retry_count}, backoff {backoff}s)")
+                await asyncio.sleep(backoff)
                 
     def start_websocket(self, pairs: List[str]):
         """Start WebSocket in background thread"""
