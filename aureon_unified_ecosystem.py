@@ -126,6 +126,20 @@ except ImportError:
     SOLAR_MONITOR_AVAILABLE = False
     print("⚠️  Cross-Substrate Solar Monitor not available")
 
+# 🔧 OPERATIONAL CORE — The 9 Surgical Fixes (Brain→Body, Circuit Breaker, etc.)
+try:
+    from aureon_operational_core import get_operational_core, AureonOperationalCore
+    OPS_CORE = get_operational_core(
+        phase_detector=PHASE_DETECTOR if PHASE_DETECTOR_AVAILABLE else None,
+        solar_monitor=SOLAR_MONITOR if SOLAR_MONITOR_AVAILABLE else None,
+    )
+    OPS_CORE_AVAILABLE = True
+    print("🔧 Operational Core: ONLINE (Signal Gate + Circuit Breaker + Trade Lock + Reconciler)")
+except ImportError as e:
+    OPS_CORE = None
+    OPS_CORE_AVAILABLE = False
+    print(f"⚠️  Operational Core not available: {e}")
+
 # 💎 PROBABILITY ULTIMATE INTELLIGENCE - 95% Accuracy Pattern Learning 💎
 try:
     from probability_ultimate_intelligence import (
@@ -12791,7 +12805,7 @@ class PerformanceTracker:
         self.halt_reason = ""
         self.total_hold_time_sec = 0.0  # Track average hold time
         self.closed_positions = 0
-        self.circuit_breaker_enabled = False  # Disabled until first baseline reset
+        self.circuit_breaker_enabled = True  # 🔧 FIX: Enabled — was disabled, letting drawdowns go unchecked
         
         # Earth engine reference for PHI amplification
         self.earth_engine = None
@@ -20024,12 +20038,15 @@ class AureonKrakenEcosystem:
                     coherence=opp.get('coherence', 0.5)
                 )
                 
-                # 🪙 PENNY MODE: Celtic is advisory, not blocking
-                # Log the recommendation but don't return None
+                # 🔧 FIX #2: Celtic Sniper now ENFORCES vetoes (was advisory-only)
+                # When Celtic says no, the trade does not execute.
                 if not entry_check.get('approved', True):
                     reason = entry_check.get('reason', 'Celtic intelligence hesitant')
-                    print(f"   ☘️⚠️ CELTIC SNIPER NOTE {symbol}: {reason} (proceeding anyway - penny math protects)")
-                    # Don't return None - let penny profit math be the gate
+                    print(f"   ☘️🛑 CELTIC SNIPER BLOCKED {symbol}: {reason}")
+                    self._emit_mycelium_event('entry.blocked_celtic', {
+                        'symbol': symbol, 'exchange': exchange, 'reason': reason,
+                    })
+                    return None
                     
                 # Apply Celtic modifier to sizing
                 celtic_modifier = entry_check.get('size_modifier', 1.0)
@@ -20047,7 +20064,36 @@ class AureonKrakenEcosystem:
         # 🔥 FORCE TRADE MODE - Skip halt check
         if not is_force_scout and self.tracker.trading_halted:
             return None
-        
+
+        # 🔧 OPERATIONAL CORE: Signal Gate + Circuit Breaker + Trade Lock
+        # This is THE connection between the analysis brain and execution body.
+        # If the brain says NO, the body stops. If the exchange is broken, we wait.
+        if OPS_CORE_AVAILABLE and OPS_CORE is not None and not is_force_scout:
+            queen_guidance = None
+            if hasattr(self, 'autonomy_hub') and self.autonomy_hub:
+                try:
+                    hub = self.autonomy_hub
+                    if hasattr(hub, 'last_decision') and hub.last_decision:
+                        queen_guidance = {
+                            'direction': getattr(hub.last_decision, 'direction', 'NEUTRAL'),
+                            'confidence': getattr(hub.last_decision, 'confidence', 0.5),
+                        }
+                except Exception:
+                    pass
+
+            allowed, ops_reason = OPS_CORE.check_trade_allowed(
+                symbol=symbol, price=price, exchange=exchange,
+                queen_guidance=queen_guidance,
+            )
+            if not allowed:
+                self._emit_mycelium_event('entry.blocked_ops', {
+                    'symbol': symbol,
+                    'exchange': exchange,
+                    'reason': ops_reason,
+                })
+                print(f"   🔧🛑 OPS GATE BLOCKED {symbol}: {ops_reason}")
+                return None
+
         # 🌍⚡ Get HNC frequency modifier for position sizing ⚡🌍
         hnc_modifier = 1.0
         hnc_enhanced = None
@@ -20418,6 +20464,14 @@ class AureonKrakenEcosystem:
                 print(f"   ⚠️ Kraken filter check failed for {symbol}: {e}")
         
         if not self.dry_run:
+            # 🔧 FIX #6: Acquire trade lock before placing order
+            _lock_acquired = False
+            if OPS_CORE_AVAILABLE and OPS_CORE is not None:
+                _lock_acquired, _lock_reason = OPS_CORE.trade_lock.acquire(symbol, timeout=3.0)
+                if not _lock_acquired:
+                    print(f"   🔒🛑 TRADE LOCK: Cannot acquire lock for {symbol}: {_lock_reason}")
+                    return None
+
             try:
                 # Safety: never submit a BUY without a positive size.
                 # Some upstream sizing paths (especially force scouts) can produce 0/None
@@ -20437,8 +20491,22 @@ class AureonKrakenEcosystem:
                     reason = (res.get('reason') or '').lower()
                     if 'must provide quantity' in reason and quantity and quantity > 0:
                         res = self.client.place_market_order(exchange, symbol, 'BUY', quantity=quantity)
+
+                # 🔧 FIX #3: Record success/failure for circuit breaker
+                if OPS_CORE_AVAILABLE and OPS_CORE is not None:
+                    if isinstance(res, dict) and (res.get('rejected') or res.get('error')):
+                        OPS_CORE.record_api_failure(exchange, str(res.get('reason', res.get('error', ''))))
+                    else:
+                        OPS_CORE.record_api_success(exchange)
+
             except Exception as e:
                 print(f"   ⚠️ Execution error for {symbol}: {e}")
+                # 🔧 FIX #3: Record failure for circuit breaker
+                if OPS_CORE_AVAILABLE and OPS_CORE is not None:
+                    OPS_CORE.record_api_failure(exchange, str(e))
+                # 🔧 FIX #6: Release trade lock on failure
+                if _lock_acquired and OPS_CORE_AVAILABLE and OPS_CORE is not None:
+                    OPS_CORE.trade_lock.release(symbol)
                 return
 
             if isinstance(res, dict):
@@ -20513,7 +20581,29 @@ class AureonKrakenEcosystem:
                             quantity = exec_qty
                             pos_size = cumm_quote
                             entry_fee = pos_size * total_rate
-                            
+
+                    # 🔧 FIX #7: Execution confirmation — verify order actually filled
+                    if OPS_CORE_AVAILABLE and OPS_CORE is not None and order_id and order_id != 'dry_run':
+                        confirm_result = OPS_CORE.confirm_order(
+                            self.client, exchange, order_id, symbol
+                        )
+                        if not confirm_result.get('confirmed'):
+                            print(f"   ⚠️🔧 ORDER NOT CONFIRMED for {symbol}: {confirm_result.get('status')}")
+                            # Release trade lock and abort position creation
+                            if _lock_acquired:
+                                OPS_CORE.trade_lock.release(symbol)
+                            return
+                        # Use confirmed fill price if available
+                        if confirm_result.get('fill_price') and confirm_result['fill_price'] > 0:
+                            price = confirm_result['fill_price']
+                        if confirm_result.get('fill_qty') and confirm_result['fill_qty'] > 0:
+                            quantity = confirm_result['fill_qty']
+                            pos_size = quantity * price
+
+            # 🔧 FIX #6: Release trade lock after order processing
+            if _lock_acquired and OPS_CORE_AVAILABLE and OPS_CORE is not None:
+                OPS_CORE.trade_lock.release(symbol)
+
         prime_multiplier = 1.0
         if len(self.positions) < 3:  # Apply prime sizing to first few positions
             prime_multiplier = self.prime_sizer.get_next_size(1.0) / CONFIG['BASE_POSITION_SIZE']
@@ -23904,7 +23994,35 @@ class AureonKrakenEcosystem:
                         }))
                 except Exception:
                     pass  # Non-critical
-                
+
+                # 🔧 FIX #8: Continuous state pulse — write state EVERY cycle
+                # 🔧 FIX #4: Exchange reconciliation — check every 5 minutes
+                if OPS_CORE_AVAILABLE and OPS_CORE is not None:
+                    try:
+                        tracker_stats = {
+                            'total_trades': self.tracker.total_trades,
+                            'wins': self.tracker.wins,
+                            'losses': self.tracker.losses,
+                            'net_profit': self.tracker.net_profit,
+                            'win_rate': self.tracker.win_rate if hasattr(self.tracker, 'win_rate') else 0,
+                            'trading_halted': self.tracker.trading_halted,
+                            'current_drawdown': self.tracker.current_drawdown,
+                            'iteration': self.iteration,
+                        }
+                        OPS_CORE.heartbeat(self.positions, tracker_stats)
+
+                        # Reconciliation check (every 5 minutes)
+                        if OPS_CORE.reconciler.should_reconcile() and not self.dry_run:
+                            recon = OPS_CORE.reconciler.reconcile(
+                                self.client, self.positions, self.tracker.cash_balance
+                            )
+                            if recon.get('should_halt'):
+                                self.tracker.trading_halted = True
+                                self.tracker.halt_reason = "RECONCILIATION: Critical state drift detected"
+                                print(f"   ⚖️🛑 TRADING HALTED: Exchange/internal state drift > 10%")
+                    except Exception as e:
+                        logger.debug(f"Ops core heartbeat: {e}")
+
                 time.sleep(interval)
                 
         except KeyboardInterrupt:
