@@ -94,7 +94,7 @@ except ImportError:
 
 # Queen Hive Mind
 try:
-    from aureon_queen_hive_mind import QueenHiveMind, create_queen_hive_mind
+    from aureon_queen_hive_mind import QueenHiveMind, create_queen_hive_mind, get_queen
     QUEEN_AVAILABLE = True
 except ImportError:
     QUEEN_AVAILABLE = False
@@ -218,7 +218,10 @@ class QueenHarmonicVoice:
         if queen:
             self.queen = queen
         elif QUEEN_AVAILABLE:
-            self.queen = create_queen_hive_mind(initial_capital=100.0)
+            try:
+                self.queen = get_queen(initial_capital=100.0)
+            except Exception:
+                self.queen = create_queen_hive_mind(initial_capital=100.0)
         else:
             self.queen = None
             logger.warning("Queen Hive Mind not available - running in standalone mode")

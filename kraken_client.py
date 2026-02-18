@@ -29,6 +29,7 @@ except ImportError:
 KRAKEN_BASE = "https://api.kraken.com"
 
 ASSETPAIR_CACHE_TTL = 300  # seconds
+KRAKEN_TRADES_PAGE_SIZE = 50
 
 # 🔐 CROSS-PROCESS NONCE MANAGER
 # Prevents "Invalid nonce" errors when multiple processes share the same API key
@@ -190,6 +191,36 @@ class KrakenClient:
         self._private_lock = threading.Lock()
         self._min_call_interval: float = 0.5  # 500ms between private API calls
 
+    def _normalize_asset_name(self, asset: str) -> str:
+        asset_up = (asset or "").upper()
+        alias_map = {
+            "XBT": "BTC",
+            "XXBT": "BTC",
+            "XDG": "DOGE",
+            "XXDG": "DOGE",
+            "XETH": "ETH",
+            "XXETH": "ETH",
+            "ZUSD": "USD",
+            "ZEUR": "EUR",
+            "ZGBP": "GBP",
+            "ZCAD": "CAD",
+        }
+        if asset_up in alias_map:
+            return alias_map[asset_up]
+        if asset_up.startswith(("X", "Z")) and len(asset_up) > 3:
+            return asset_up[1:]
+        return asset_up
+
+    def _pair_base_quote(self, pair: str) -> Tuple[str, str]:
+        pairs = self._load_asset_pairs()
+        internal = pair if pair in pairs else self._alt_to_int.get(pair) or self._alt_to_int.get(pair.upper())
+        if not internal or internal not in pairs:
+            return "", ""
+        info = pairs[internal]
+        base = self._normalize_asset_name(info.get("base", ""))
+        quote = self._normalize_asset_name(info.get("quote", ""))
+        return base, quote
+
     # ──────────────────────────────────────────────────────────────────────
     # Private signing helpers (only if we later enable non-dry-run)
     # ──────────────────────────────────────────────────────────────────────
@@ -260,6 +291,74 @@ class KrakenClient:
             self._alt_to_int[alt] = internal
             self._int_to_alt[internal] = alt
         return pairs
+
+    def get_ledgers(self, since: int | None = None, max_records: int = 1000) -> List[Dict[str, Any]]:
+        if self.dry_run:
+            return []
+        data: Dict[str, Any] = {"ofs": 0}
+        if since:
+            data["start"] = int(since)
+        ledgers: List[Dict[str, Any]] = []
+        total = None
+        while True:
+            res = self._private("/0/private/Ledgers", data)
+            batch = res.get("ledger", {}) or {}
+            count = int(res.get("count", 0) or 0)
+            if total is None:
+                total = count
+            for ledger_id, entry in batch.items():
+                entry = dict(entry)
+                entry["id"] = ledger_id
+                entry["asset"] = self._normalize_asset_name(entry.get("asset", ""))
+                ledgers.append(entry)
+                if len(ledgers) >= max_records:
+                    break
+            if len(ledgers) >= max_records or not batch:
+                break
+            data["ofs"] += len(batch)
+            if total is not None and data["ofs"] >= total:
+                break
+        ledgers.sort(key=lambda x: x.get("time", 0))
+        return ledgers
+
+    def get_trades_history(self, since: int | None = None, max_records: int = 1000) -> List[Dict[str, Any]]:
+        if self.dry_run:
+            return []
+        data: Dict[str, Any] = {"ofs": 0}
+        if since:
+            data["start"] = int(since)
+        trades: List[Dict[str, Any]] = []
+        total = None
+        while True:
+            res = self._private("/0/private/TradesHistory", data)
+            batch = res.get("trades", {}) or {}
+            count = int(res.get("count", 0) or 0)
+            if total is None:
+                total = count
+            for trade_id, trade in batch.items():
+                pair = trade.get("pair", "")
+                base, quote = self._pair_base_quote(pair)
+                trades.append({
+                    "id": trade_id,
+                    "pair": pair,
+                    "base": base,
+                    "quote": quote,
+                    "type": trade.get("type", ""),
+                    "price": float(trade.get("price", 0) or 0),
+                    "vol": float(trade.get("vol", 0) or 0),
+                    "cost": float(trade.get("cost", 0) or 0),
+                    "fee": float(trade.get("fee", 0) or 0),
+                    "time": float(trade.get("time", 0) or 0),
+                })
+                if len(trades) >= max_records:
+                    break
+            if len(trades) >= max_records or not batch:
+                break
+            data["ofs"] += len(batch)
+            if total is not None and data["ofs"] >= total:
+                break
+        trades.sort(key=lambda x: x.get("time", 0))
+        return trades
 
     def _normalize_symbol(self, symbol: str) -> List[str]:
         """
@@ -1732,41 +1831,469 @@ class KrakenClient:
     def get_convertible_assets(self) -> Dict[str, List[str]]:
         """
         Get all assets that can be converted to/from.
-        
+
         Returns:
             Dict mapping each asset to list of assets it can convert to
         """
         pairs = self._load_asset_pairs()
-        
+
         # Build conversion map
         conversions = {}
-        
+
         for internal, info in pairs.items():
             base = info.get("base", "").lstrip("XZ")
             quote = info.get("quote", "").lstrip("XZ")
-            
+
             # Normalize XBT -> BTC
             if base == 'XBT': base = 'BTC'
             if quote == 'XBT': quote = 'BTC'
-            
+
             if not base or not quote:
                 continue
-            
+
             base = base.upper()
             quote = quote.upper()
-            
+
             # Base can convert to quote (by selling)
             if base not in conversions:
                 conversions[base] = set()
             conversions[base].add(quote)
-            
+
             # Quote can convert to base (by buying)
             if quote not in conversions:
                 conversions[quote] = set()
             conversions[quote].add(base)
-        
+
         # Convert sets to sorted lists
         return {k: sorted(v) for k, v in conversions.items()}
+
+    # ══════════════════════════════════════════════════════════════════════
+    # MARGIN TRADING - Leveraged positions on Kraken
+    # ══════════════════════════════════════════════════════════════════════
+
+    def get_trade_balance(self, asset: str = "ZUSD") -> Dict[str, Any]:
+        """
+        Get margin/trade balance information from Kraken.
+
+        Args:
+            asset: Base asset for balance calculation (default ZUSD for USD)
+
+        Returns:
+            Dict with margin account details:
+            - equity_value: Total equity (balance + unrealized P&L)
+            - trade_balance: Balance available for trading (equity - margin used)
+            - margin_amount: Total margin used by open positions
+            - unrealized_pnl: Net unrealized profit/loss of open margin positions
+            - cost_basis: Total cost basis of open margin positions
+            - floating_valuation: Current floating valuation of open positions
+            - free_margin: Available margin for new trades
+            - margin_level: Margin level percentage (equity / margin * 100)
+        """
+        if self.dry_run:
+            return {
+                "equity_value": 10000.0,
+                "trade_balance": 10000.0,
+                "margin_amount": 0.0,
+                "unrealized_pnl": 0.0,
+                "cost_basis": 0.0,
+                "floating_valuation": 0.0,
+                "free_margin": 10000.0,
+                "margin_level": 0.0,
+                "dryRun": True
+            }
+
+        result = self._private("/0/private/TradeBalance", {"asset": asset})
+
+        return {
+            "equity_value": float(result.get("e", 0)),        # Total equity
+            "trade_balance": float(result.get("tb", 0)),      # Trade balance
+            "margin_amount": float(result.get("m", 0)),       # Margin used
+            "unrealized_pnl": float(result.get("n", 0)),      # Unrealized P&L
+            "cost_basis": float(result.get("c", 0)),           # Cost basis
+            "floating_valuation": float(result.get("v", 0)),   # Floating valuation
+            "free_margin": float(result.get("mf", 0)),         # Free margin
+            "margin_level": float(result.get("ml", 0)),        # Margin level %
+        }
+
+    def get_open_margin_positions(self, do_calcs: bool = True) -> List[Dict[str, Any]]:
+        """
+        Get all open margin positions on Kraken.
+
+        Args:
+            do_calcs: If True, include profit/loss calculations (default True)
+
+        Returns:
+            List of open margin positions with details:
+            - position_id: Unique position identifier
+            - pair: Trading pair
+            - side: 'buy' (long) or 'sell' (short)
+            - volume: Position volume
+            - cost: Entry cost
+            - fee: Fees paid
+            - current_value: Current position value (if do_calcs=True)
+            - unrealized_pnl: Unrealized P&L (if do_calcs=True)
+            - leverage: Leverage used
+            - margin: Margin allocated
+        """
+        if self.dry_run:
+            return []
+
+        params = {"docalcs": "true" if do_calcs else "false"}
+        result = self._private("/0/private/OpenPositions", params)
+
+        positions = []
+        for pos_id, pos_data in result.items():
+            base, quote = self._pair_base_quote(pos_data.get("pair", ""))
+            positions.append({
+                "position_id": pos_id,
+                "pair": pos_data.get("pair", ""),
+                "base": base,
+                "quote": quote,
+                "side": pos_data.get("type", ""),          # 'buy' or 'sell'
+                "order_type": pos_data.get("ordertype", ""),
+                "volume": float(pos_data.get("vol", 0)),
+                "volume_closed": float(pos_data.get("vol_closed", 0)),
+                "cost": float(pos_data.get("cost", 0)),
+                "fee": float(pos_data.get("fee", 0)),
+                "current_value": float(pos_data.get("value", 0)),
+                "unrealized_pnl": float(pos_data.get("net", 0)),
+                "leverage": pos_data.get("leverage", "1"),
+                "margin": float(pos_data.get("margin", 0)),
+                "terms": pos_data.get("terms", ""),
+                "open_time": float(pos_data.get("time", 0)),
+                "misc": pos_data.get("misc", ""),
+            })
+
+        return positions
+
+    def get_margin_pairs(self) -> List[Dict[str, Any]]:
+        """
+        Get all trading pairs that support margin trading with their leverage limits.
+
+        Returns:
+            List of pairs with margin info:
+            - pair: Altname of the pair
+            - internal: Internal Kraken pair name
+            - leverage_buy: List of available buy leverages (e.g., [2, 3, 4, 5])
+            - leverage_sell: List of available sell leverages
+            - max_leverage: Maximum leverage available
+        """
+        pairs = self._load_asset_pairs()
+        margin_pairs = []
+
+        for internal, info in pairs.items():
+            leverage_buy = info.get("leverage_buy", [])
+            leverage_sell = info.get("leverage_sell", [])
+
+            # Only include pairs that support margin (have leverage options)
+            if not leverage_buy and not leverage_sell:
+                continue
+
+            alt = info.get("altname") or internal
+            base = self._normalize_asset_name(info.get("base", ""))
+            quote = self._normalize_asset_name(info.get("quote", ""))
+
+            max_lev = max(leverage_buy + leverage_sell) if (leverage_buy or leverage_sell) else 1
+
+            margin_pairs.append({
+                "pair": alt,
+                "internal": internal,
+                "base": base,
+                "quote": quote,
+                "leverage_buy": leverage_buy,
+                "leverage_sell": leverage_sell,
+                "max_leverage": max_lev,
+            })
+
+        return margin_pairs
+
+    def get_pair_leverage(self, symbol: str) -> Dict[str, Any]:
+        """
+        Get available leverage options for a specific trading pair.
+
+        Args:
+            symbol: Trading pair (e.g., 'ETHUSD', 'BTCUSD')
+
+        Returns:
+            Dict with leverage info or empty dict if pair doesn't support margin
+        """
+        pair, pair_info = self._resolve_pair(symbol)
+        if not pair_info:
+            return {}
+
+        leverage_buy = pair_info.get("leverage_buy", [])
+        leverage_sell = pair_info.get("leverage_sell", [])
+
+        if not leverage_buy and not leverage_sell:
+            return {}
+
+        return {
+            "pair": pair_info.get("altname", symbol),
+            "leverage_buy": leverage_buy,
+            "leverage_sell": leverage_sell,
+            "max_leverage": max(leverage_buy + leverage_sell) if (leverage_buy or leverage_sell) else 1,
+            "margin_supported": True,
+        }
+
+    def place_margin_order(
+        self,
+        symbol: str,
+        side: str,
+        quantity: float | str | Decimal,
+        leverage: int | str,
+        order_type: str = "market",
+        price: float | str | Decimal | None = None,
+        take_profit: float | str | Decimal | None = None,
+        stop_loss: float | str | Decimal | None = None,
+        post_only: bool = False,
+        reduce_only: bool = False,
+    ) -> Dict[str, Any]:
+        """
+        Place a margin (leveraged) order on Kraken.
+
+        This opens a leveraged position using borrowed funds. For example, with 3x
+        leverage on a $100 trade, you put up ~$33 margin and borrow ~$67.
+
+        Args:
+            symbol: Trading pair (e.g., 'ETHUSD', 'BTCUSD')
+            side: 'buy' for long, 'sell' for short
+            quantity: Amount of base asset to trade
+            leverage: Leverage multiplier (e.g., 2, 3, 5). Must be supported by pair.
+            order_type: 'market' or 'limit'
+            price: Limit price (required if order_type='limit')
+            take_profit: Attach take-profit at this price (optional)
+            stop_loss: Attach stop-loss at this price (optional)
+            post_only: For limit orders, ensure maker-only (0.16% fee vs 0.26%)
+            reduce_only: Only reduce an existing position, don't open new one
+
+        Returns:
+            Binance-compatible order response with margin details
+
+        Example:
+            # Long 0.5 ETH at 3x leverage
+            place_margin_order('ETHUSD', 'buy', 0.5, leverage=3)
+
+            # Short 0.01 BTC at 2x with stop-loss
+            place_margin_order('BTCUSD', 'sell', 0.01, leverage=2, stop_loss=105000)
+        """
+        if self.dry_run:
+            return {
+                "dryRun": True, "symbol": symbol, "side": side,
+                "type": order_type.upper(), "quantity": str(quantity),
+                "leverage": str(leverage), "price": str(price) if price else None,
+                "takeProfit": str(take_profit) if take_profit else None,
+                "stopLoss": str(stop_loss) if stop_loss else None,
+                "margin": True
+            }
+
+        # Resolve pair and validate
+        pair, pair_info = self._resolve_pair(symbol)
+        if not pair or not pair_info:
+            raise RuntimeError(f"Unknown Kraken trading pair: {symbol}")
+
+        # Validate leverage is supported for this pair
+        lev = int(leverage)
+        if side.lower() == "buy":
+            valid_levs = pair_info.get("leverage_buy", [])
+        else:
+            valid_levs = pair_info.get("leverage_sell", [])
+
+        if not valid_levs:
+            raise RuntimeError(f"Margin trading not supported for {symbol}")
+        if lev not in valid_levs:
+            raise RuntimeError(
+                f"Leverage {lev}x not supported for {symbol} ({side}). "
+                f"Available: {valid_levs}"
+            )
+
+        # Validate minimum volume
+        ordermin = float(pair_info.get("ordermin", 0.0001))
+        lot_decimals = int(pair_info.get("lot_decimals", 8))
+        vol = round(float(quantity), lot_decimals)
+
+        if vol < ordermin:
+            return {
+                "error": "volume_minimum",
+                "symbol": symbol,
+                "volume": vol,
+                "ordermin": ordermin,
+                "margin": True
+            }
+
+        # Build order params
+        params = {
+            "pair": pair,
+            "type": side.lower(),
+            "ordertype": order_type.lower(),
+            "volume": self._format_order_value(vol),
+            "leverage": str(lev),
+        }
+
+        # Price for limit orders
+        if order_type.lower() == "limit" and price:
+            params["price"] = self._format_order_value(price)
+
+        # Order flags
+        oflags = []
+        if post_only and order_type.lower() == "limit":
+            oflags.append("post")
+        if reduce_only:
+            oflags.append("nompp")
+        if oflags:
+            params["oflags"] = ",".join(oflags)
+
+        # Conditional close orders (TP/SL attached to margin position)
+        if stop_loss and take_profit:
+            # Attach stop-loss as conditional close, add TP as separate order
+            params["close[ordertype]"] = "stop-loss"
+            params["close[price]"] = self._format_order_value(stop_loss)
+
+            res = self._private("/0/private/AddOrder", params)
+            entry_txid = res.get("txid", ["unknown"])[0]
+
+            # Add take-profit as separate margin order
+            close_side = "sell" if side.lower() == "buy" else "buy"
+            tp_params = {
+                "pair": pair,
+                "type": close_side,
+                "ordertype": "take-profit",
+                "volume": self._format_order_value(vol),
+                "price": self._format_order_value(take_profit),
+                "leverage": str(lev),
+                "reduce_only": "true",
+            }
+            tp_res = self._private("/0/private/AddOrder", tp_params)
+            tp_txid = tp_res.get("txid", ["unknown"])[0]
+
+            return {
+                "symbol": symbol,
+                "entryOrderId": entry_txid,
+                "takeProfitOrderId": tp_txid,
+                "stopLossAttached": True,
+                "type": order_type.upper(),
+                "side": side.upper(),
+                "quantity": str(vol),
+                "leverage": str(lev),
+                "takeProfit": str(take_profit),
+                "stopLoss": str(stop_loss),
+                "status": "NEW",
+                "margin": True
+            }
+
+        elif take_profit:
+            params["close[ordertype]"] = "take-profit"
+            params["close[price]"] = self._format_order_value(take_profit)
+        elif stop_loss:
+            params["close[ordertype]"] = "stop-loss"
+            params["close[price]"] = self._format_order_value(stop_loss)
+
+        res = self._private("/0/private/AddOrder", params)
+        txid = res.get("txid", ["unknown"])[0]
+
+        filled = order_type.lower() == "market"
+
+        return {
+            "symbol": symbol,
+            "orderId": txid,
+            "clientOrderId": str(time.time()),
+            "transactTime": int(time.time() * 1000),
+            "price": str(price) if price else "0.00000000",
+            "origQty": str(vol),
+            "executedQty": str(vol) if filled else "0",
+            "status": "FILLED" if filled else "NEW",
+            "timeInForce": "GTC",
+            "type": order_type.upper(),
+            "side": side.upper(),
+            "leverage": str(lev),
+            "takeProfit": str(take_profit) if take_profit else None,
+            "stopLoss": str(stop_loss) if stop_loss else None,
+            "margin": True
+        }
+
+    def close_margin_position(
+        self,
+        symbol: str,
+        side: str,
+        volume: float | str | Decimal | None = None,
+        order_type: str = "market",
+        price: float | str | Decimal | None = None,
+        leverage: int | str | None = None,
+    ) -> Dict[str, Any]:
+        """
+        Close an open margin position by placing an opposing order.
+
+        To close a long margin position, place a leveraged sell.
+        To close a short margin position, place a leveraged buy.
+
+        Args:
+            symbol: Trading pair
+            side: 'sell' to close a long, 'buy' to close a short
+            volume: Amount to close (None = close entire position for this pair)
+            order_type: 'market' or 'limit'
+            price: Limit price (required if order_type='limit')
+            leverage: Leverage (should match the open position's leverage)
+
+        Returns:
+            Order response
+        """
+        if self.dry_run:
+            return {
+                "dryRun": True, "symbol": symbol, "side": side,
+                "type": order_type.upper(), "volume": str(volume),
+                "margin_close": True
+            }
+
+        # If no volume specified, find the open position volume
+        if volume is None:
+            positions = self.get_open_margin_positions(do_calcs=False)
+            pair, _ = self._resolve_pair(symbol)
+            for pos in positions:
+                if pos["pair"] == pair and pos["side"] != side.lower():
+                    remaining = pos["volume"] - pos["volume_closed"]
+                    if remaining > 0:
+                        volume = remaining
+                        if leverage is None:
+                            leverage = pos["leverage"]
+                        break
+            if volume is None:
+                return {"error": "no_position", "symbol": symbol}
+
+        pair, pair_info = self._resolve_pair(symbol)
+        if not pair:
+            raise RuntimeError(f"Unknown Kraken trading pair: {symbol}")
+
+        lot_decimals = int(pair_info.get("lot_decimals", 8)) if pair_info else 8
+        vol = round(float(volume), lot_decimals)
+
+        params = {
+            "pair": pair,
+            "type": side.lower(),
+            "ordertype": order_type.lower(),
+            "volume": self._format_order_value(vol),
+        }
+
+        if leverage:
+            params["leverage"] = str(int(leverage) if str(leverage).isdigit() else leverage)
+
+        if order_type.lower() == "limit" and price:
+            params["price"] = self._format_order_value(price)
+
+        # Add reduce_only flag to ensure we only close, never open new position
+        params["reduce_only"] = "true"
+
+        res = self._private("/0/private/AddOrder", params)
+        txid = res.get("txid", ["unknown"])[0]
+
+        return {
+            "symbol": symbol,
+            "orderId": txid,
+            "type": order_type.upper(),
+            "side": side.upper(),
+            "quantity": str(vol),
+            "leverage": str(leverage) if leverage else None,
+            "status": "FILLED" if order_type.lower() == "market" else "NEW",
+            "margin_close": True
+        }
 
 
 # ══════════════════════════════════════════════════════════════════════════════

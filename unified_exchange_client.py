@@ -287,6 +287,60 @@ class MultiExchangeClient:
                 result[exchange] = assets
         return result
 
+    # ══════════════════════════════════════════════════════════════════════
+    # MARGIN TRADING - Leveraged positions (Kraken supported)
+    # ══════════════════════════════════════════════════════════════════════
+
+    def get_trade_balance(self, exchange: str, asset: str = "ZUSD") -> Dict[str, Any]:
+        """Get margin/trade balance from the specified exchange."""
+        if exchange not in self.clients:
+            return {}
+        return self.clients[exchange].get_trade_balance(asset)
+
+    def get_open_margin_positions(self, exchange: str, do_calcs: bool = True) -> List[Dict[str, Any]]:
+        """Get all open margin positions on the specified exchange."""
+        if exchange not in self.clients:
+            return []
+        return self.clients[exchange].get_open_margin_positions(do_calcs)
+
+    def get_margin_pairs(self, exchange: str) -> List[Dict[str, Any]]:
+        """Get pairs that support margin trading on the specified exchange."""
+        if exchange not in self.clients:
+            return []
+        return self.clients[exchange].get_margin_pairs()
+
+    def get_pair_leverage(self, exchange: str, symbol: str) -> Dict[str, Any]:
+        """Get available leverage for a specific pair on the specified exchange."""
+        if exchange not in self.clients:
+            return {}
+        return self.clients[exchange].get_pair_leverage(symbol)
+
+    def place_margin_order(self, exchange: str, symbol: str, side: str, quantity,
+                           leverage, order_type: str = "market", price=None,
+                           take_profit=None, stop_loss=None,
+                           post_only: bool = False) -> Dict[str, Any]:
+        """Place a margin (leveraged) order on the specified exchange."""
+        if exchange not in self.clients:
+            logger.error(f"Unknown exchange: {exchange}")
+            return {}
+        return self.clients[exchange].place_margin_order(
+            symbol, side, quantity, leverage,
+            order_type=order_type, price=price,
+            take_profit=take_profit, stop_loss=stop_loss,
+            post_only=post_only
+        )
+
+    def close_margin_position(self, exchange: str, symbol: str, side: str,
+                              volume=None, order_type: str = "market",
+                              price=None, leverage=None) -> Dict[str, Any]:
+        """Close an open margin position on the specified exchange."""
+        if exchange not in self.clients:
+            return {}
+        return self.clients[exchange].close_margin_position(
+            symbol, side, volume=volume,
+            order_type=order_type, price=price, leverage=leverage
+        )
+
         def normalize_symbol(self, exchange: str, symbol: str) -> str:
             """Normalize canonical symbols to exchange-specific formats.
             - Kraken: BTC→XBT, prefer USD/USDC/USDT variants
@@ -334,7 +388,7 @@ class UnifiedExchangeClient:
             self.client = get_kraken_client()
             self.dry_run = self.client.dry_run
         elif self.exchange_id == "binance":
-            from binance_client import BinanceClient
+            from binance_client import BinanceClient, get_binance_client
             self.client = get_binance_client()
             self.dry_run = self.client.dry_run
         elif self.exchange_id == "alpaca":
@@ -1070,3 +1124,110 @@ class UnifiedExchangeClient:
             except Exception:
                 return quantity
         return quantity
+
+    # ══════════════════════════════════════════════════════════════════════
+    # MARGIN TRADING - Leveraged positions (Kraken only for now)
+    # ══════════════════════════════════════════════════════════════════════
+
+    def get_trade_balance(self, asset: str = "ZUSD") -> Dict[str, Any]:
+        """Get margin/trade balance information (equity, free margin, margin level)."""
+        if self.exchange_id == "kraken":
+            if hasattr(self.client, 'get_trade_balance'):
+                try:
+                    return self.client.get_trade_balance(asset)
+                except Exception as e:
+                    logger.error(f"Error getting Kraken trade balance: {e}")
+                    return {}
+        logger.warning(f"{self.exchange_id} doesn't support margin trade balance queries")
+        return {}
+
+    def get_open_margin_positions(self, do_calcs: bool = True) -> List[Dict[str, Any]]:
+        """Get all open margin positions."""
+        if self.exchange_id == "kraken":
+            if hasattr(self.client, 'get_open_margin_positions'):
+                try:
+                    return self.client.get_open_margin_positions(do_calcs)
+                except Exception as e:
+                    logger.error(f"Error getting Kraken margin positions: {e}")
+                    return []
+        logger.warning(f"{self.exchange_id} doesn't support margin positions")
+        return []
+
+    def get_margin_pairs(self) -> List[Dict[str, Any]]:
+        """Get trading pairs that support margin trading with leverage limits."""
+        if self.exchange_id == "kraken":
+            if hasattr(self.client, 'get_margin_pairs'):
+                try:
+                    return self.client.get_margin_pairs()
+                except Exception as e:
+                    logger.error(f"Error getting Kraken margin pairs: {e}")
+                    return []
+        return []
+
+    def get_pair_leverage(self, symbol: str) -> Dict[str, Any]:
+        """Get available leverage options for a specific pair."""
+        if self.exchange_id == "kraken":
+            if hasattr(self.client, 'get_pair_leverage'):
+                try:
+                    return self.client.get_pair_leverage(symbol)
+                except Exception as e:
+                    logger.error(f"Error getting leverage for {symbol}: {e}")
+                    return {}
+        return {}
+
+    def place_margin_order(self, symbol: str, side: str, quantity, leverage,
+                           order_type: str = "market", price=None,
+                           take_profit=None, stop_loss=None,
+                           post_only: bool = False) -> Dict[str, Any]:
+        """Place a margin (leveraged) order."""
+        side = side.lower()
+
+        if self.exchange_id == "kraken":
+            # Notional floor check
+            if order_type.lower() == "limit" and price:
+                notional = float(price) * float(quantity)
+            else:
+                ticker = self.get_ticker(symbol)
+                notional = ticker.get('price', 0) * float(quantity)
+            if notional < self.kraken_min_notional:
+                logger.warning(f"Kraken margin order blocked: notional {notional:.2f} below min {self.kraken_min_notional:.2f}")
+                return {'error': 'min_notional', 'exchange': self.exchange_id, 'margin': True}
+
+            if hasattr(self.client, 'place_margin_order'):
+                try:
+                    return self.client.place_margin_order(
+                        symbol, side, quantity, leverage,
+                        order_type=order_type, price=price,
+                        take_profit=take_profit, stop_loss=stop_loss,
+                        post_only=post_only
+                    )
+                except Exception as e:
+                    logger.error(f"Error placing Kraken margin order: {e}")
+                    return {
+                        'rejected': True, 'error': 'exception',
+                        'reason': str(e), 'exchange': self.exchange_id,
+                        'margin': True
+                    }
+
+        logger.warning(f"{self.exchange_id} doesn't support margin trading")
+        return {'error': 'not_supported', 'exchange': self.exchange_id, 'margin': True}
+
+    def close_margin_position(self, symbol: str, side: str, volume=None,
+                              order_type: str = "market", price=None,
+                              leverage=None) -> Dict[str, Any]:
+        """Close an open margin position."""
+        side = side.lower()
+
+        if self.exchange_id == "kraken":
+            if hasattr(self.client, 'close_margin_position'):
+                try:
+                    return self.client.close_margin_position(
+                        symbol, side, volume=volume,
+                        order_type=order_type, price=price, leverage=leverage
+                    )
+                except Exception as e:
+                    logger.error(f"Error closing Kraken margin position: {e}")
+                    return {'error': 'exception', 'reason': str(e)}
+
+        logger.warning(f"{self.exchange_id} doesn't support closing margin positions")
+        return {'error': 'not_supported', 'exchange': self.exchange_id}

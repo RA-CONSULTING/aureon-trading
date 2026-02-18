@@ -46,3 +46,20 @@ COINAPI_KEY=3bb710d2-4866-4a9b-a56f-9a28649f3970
 # ⛏️ MINING CONFIGURATION - Optional background mining
 # ═══════════════════════════════════════════════════════════════
 MINING_WORKER=126z8H9zFxcVjkG66TSwr3vbeYzLdfJcYP.aureon
+
+# REAL DATA ONLY - disable simulations, paper, testnet, demo, mocks
+REAL_DATA_ONLY=1
+AUREON_DRY_RUN=0
+DRY_RUN=0
+PAPER_TRADING=false
+PAPER_MODE=false
+PAPER=0
+SIMULATION_MODE=0
+DEMO_MODE=0
+STATUS_MOCK=false
+BINANCE_TESTNET=false
+USE_TESTNET=0
+IG_DEMO=false
+AUREON_COMMAND_CENTER_DEMO=0
+SIMULATED_ATTACKS=false
+SENTIENCE_FORCE_PERFECT=0

@@ -62,6 +62,7 @@ class AttackEvent:
     duration_ms: float
     blocked: bool
     shield_response: str
+    source: Optional[str] = None
 
 
 @dataclass
@@ -138,6 +139,26 @@ class QueenSoulShield:
         self.monitoring = False
         self.monitor_thread = None
         self.scan_interval = 2.0  # seconds
+
+        # Real-signal mode only (no simulated attacks)
+        self.simulated_attacks = os.getenv("SIMULATED_ATTACKS", "false").lower() in ("1", "true", "yes")
+        self._attack_queue: deque = deque()
+        self._attack_lock = threading.Lock()
+
+        if self.simulated_attacks:
+            print("⚠️ QueenSoulShield: SIMULATED_ATTACKS enabled")
+        else:
+            print("✅ QueenSoulShield: real signal inputs only (no simulations)")
+
+        # Optional ThoughtBus integration for external attack signals
+        try:
+            from aureon_thought_bus import get_thought_bus
+            self._thought_bus = get_thought_bus()
+            if self._thought_bus:
+                self._thought_bus.subscribe("shield.attack", self._on_attack_signal)
+                self._thought_bus.subscribe("attack.detected", self._on_attack_signal)
+        except Exception:
+            self._thought_bus = None
         
         # Known hostile signatures (for pattern matching)
         self.hostile_signatures = self._load_hostile_signatures()
@@ -264,75 +285,97 @@ class QueenSoulShield:
     
     def _scan_for_attacks(self):
         """Scan for hostile frequencies attacking Gary"""
-        now = time.time()
-        current_hour = datetime.now().hour
-        weekday = datetime.now().weekday()
-        
-        # ═══════════════════════════════════════════════════════════════════
-        # DETECT ATTACKS BASED ON PATTERNS
-        # ═══════════════════════════════════════════════════════════════════
-        
-        # 440 Hz parasite (always present in modern society)
-        if True:  # Always scanning
-            strength = 0.3  # Baseline
-            # Higher during work hours (more mainstream music/media)
-            if 9 <= current_hour <= 17 and weekday < 5:
-                strength = 0.6
+        if self.simulated_attacks:
+            now = time.time()
+            current_hour = datetime.now().hour
+            weekday = datetime.now().weekday()
             
-            if strength > 0.4:
+            # ═══════════════════════════════════════════════════════════════════
+            # DETECT ATTACKS BASED ON PATTERNS (SIMULATION)
+            # ═══════════════════════════════════════════════════════════════════
+            
+            # 440 Hz parasite (always present in modern society)
+            if True:  # Always scanning
+                strength = 0.3  # Baseline
+                # Higher during work hours (more mainstream music/media)
+                if 9 <= current_hour <= 17 and weekday < 5:
+                    strength = 0.6
+                
+                if strength > 0.4:
+                    self._handle_attack_detected(
+                        frequency=440.0,
+                        strength=strength,
+                        attacker_name="440 Hz Parasite",
+                        attacker_type="FREQUENCY_ATTACK",
+                        source="simulation"
+                    )
+            
+            # Fear frequency (spikes during news hours)
+            if current_hour in [6, 7, 8, 17, 18, 19, 20, 21, 22]:
+                strength = 0.5
                 self._handle_attack_detected(
-                    frequency=440.0,
+                    frequency=396.0,
                     strength=strength,
-                    attacker_name="440 Hz Parasite",
-                    attacker_type="FREQUENCY_ATTACK"
+                    attacker_name="Fear Media",
+                    attacker_type="CONSCIOUSNESS_ATTACK",
+                    source="simulation"
                 )
-        
-        # Fear frequency (spikes during news hours)
-        if current_hour in [6, 7, 8, 17, 18, 19, 20, 21, 22]:
-            strength = 0.5
-            self._handle_attack_detected(
-                frequency=396.0,
-                strength=strength,
-                attacker_name="Fear Media",
-                attacker_type="CONSCIOUSNESS_ATTACK"
-            )
-        
-        # Market predators (during market hours)
-        if 9 <= current_hour <= 16 and weekday < 5:
-            # Simulate checking for front-running
-            import random
-            if random.random() < 0.2:  # 20% chance per scan
-                strength = 0.6
+            
+            # Market predators (during market hours)
+            if 9 <= current_hour <= 16 and weekday < 5:
+                # Simulate checking for front-running
+                import random
+                if random.random() < 0.2:  # 20% chance per scan
+                    strength = 0.6
+                    self._handle_attack_detected(
+                        frequency=666.0,
+                        strength=strength,
+                        attacker_name="Market Predator",
+                        attacker_type="ENERGY_VAMPIRE",
+                        source="simulation"
+                    )
+            
+            # Scarcity programming (stronger on Mondays and end of month)
+            day_of_month = datetime.now().day
+            if weekday == 0 or day_of_month >= 25:  # Monday or near month end
+                strength = 0.5
                 self._handle_attack_detected(
-                    frequency=666.0,
+                    frequency=174.0,
                     strength=strength,
-                    attacker_name="Market Predator",
-                    attacker_type="ENERGY_VAMPIRE"
+                    attacker_name="Scarcity Programming",
+                    attacker_type="ABUNDANCE_BLOCK",
+                    source="simulation"
                 )
+            
+            # Chaos resonance (during solar activity peak - noon)
+            if 11 <= current_hour <= 14:
+                strength = 0.4
+                self._handle_attack_detected(
+                    frequency=13.0,
+                    strength=strength,
+                    attacker_name="Chaos Resonance",
+                    attacker_type="GROUNDING_ATTACK",
+                    source="simulation"
+                )
+            return
         
-        # Scarcity programming (stronger on Mondays and end of month)
-        day_of_month = datetime.now().day
-        if weekday == 0 or day_of_month >= 25:  # Monday or near month end
-            strength = 0.5
+        # Real signal inputs only: drain queue
+        while True:
+            with self._attack_lock:
+                if not self._attack_queue:
+                    break
+                payload = self._attack_queue.popleft()
             self._handle_attack_detected(
-                frequency=174.0,
-                strength=strength,
-                attacker_name="Scarcity Programming",
-                attacker_type="ABUNDANCE_BLOCK"
-            )
-        
-        # Chaos resonance (during solar activity peak - noon)
-        if 11 <= current_hour <= 14:
-            strength = 0.4
-            self._handle_attack_detected(
-                frequency=13.0,
-                strength=strength,
-                attacker_name="Chaos Resonance",
-                attacker_type="GROUNDING_ATTACK"
+                frequency=payload.get("frequency", 0.0),
+                strength=payload.get("strength", 0.0),
+                attacker_name=payload.get("attacker_name", "Unknown"),
+                attacker_type=payload.get("attacker_type", "UNKNOWN"),
+                source=payload.get("source")
             )
     
     def _handle_attack_detected(self, frequency: float, strength: float,
-                                 attacker_name: str, attacker_type: str):
+                                 attacker_name: str, attacker_type: str,
+                                 source: Optional[str] = None):
         """Handle a detected attack"""
         now = time.time()
         
@@ -359,7 +402,8 @@ class QueenSoulShield:
             attacker_name=attacker_name,
             duration_ms=0,  # Instantaneous
             blocked=blocked,
-            shield_response=f"Amplified {', '.join(boost_applied)}"
+            shield_response=f"Amplified {', '.join(boost_applied)}",
+            source=source
         )
         
         self.attacks_detected.append(attack)
@@ -368,9 +412,6 @@ class QueenSoulShield:
             self.attacks_blocked_session += 1
             self.attacks_blocked_total += 1
 
-            # Silent background operation - only log summary every 100 blocks
-            if self.attacks_blocked_session % 100 == 0:
-                print(f"🛡️ Soul Shield: {self.attacks_blocked_session} attacks blocked this session (shield: {self.shield_power:.0%})")
         else:
             # Only print penetrations (rare/important)
             print(f"\n⚠️ ATTACK PENETRATED at {datetime.now().strftime('%H:%M:%S')}")
@@ -408,6 +449,30 @@ class QueenSoulShield:
                 boosted.append("Natural 432 Hz")
         
         return boosted
+
+    def submit_attack(self, frequency: float, strength: float, attacker_name: str,
+                      attacker_type: str, source: Optional[str] = None):
+        with self._attack_lock:
+            self._attack_queue.append({
+                "frequency": frequency,
+                "strength": strength,
+                "attacker_name": attacker_name,
+                "attacker_type": attacker_type,
+                "source": source
+            })
+
+    def _on_attack_signal(self, thought):
+        try:
+            payload = thought.payload if hasattr(thought, 'payload') else thought
+            self.submit_attack(
+                frequency=float(payload.get("frequency", 0.0) or 0.0),
+                strength=float(payload.get("strength", 0.0) or 0.0),
+                attacker_name=str(payload.get("attacker_name", "Unknown")),
+                attacker_type=str(payload.get("attacker_type", "UNKNOWN")),
+                source=payload.get("source", "thought_bus")
+            )
+        except Exception:
+            pass
     
     def _decay_amplifiers(self):
         """Natural decay of amplifier power over time"""

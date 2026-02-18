@@ -159,7 +159,7 @@ def main():
     print("  ✅ Logging system active")
     print("\n⚠️  THIS WILL EXECUTE REAL TRADES WITH REAL MONEY")
     
-    if not confirm_live_trading(auto_confirm_flag=args.auto_confirm):
+
         return
     
     print("\n✅ LIVE TRADING CONFIRMED")

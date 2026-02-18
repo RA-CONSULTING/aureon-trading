@@ -3572,6 +3572,10 @@ class OrcaKillCycle:
         self.symbol_whitelist = symbol_whitelist if symbol_whitelist else []
         self.initial_capital = initial_capital
         self.autonomous_mode = autonomous_mode
+        self.require_prediction_window = os.getenv("REQUIRE_PREDICTION_WINDOW", "true").lower() in ("1", "true", "yes")
+        self.allow_no_predictions = os.getenv("ALLOW_NO_PREDICTIONS", "false").lower() in ("1", "true", "yes")
+        if self.allow_no_predictions:
+            self.require_prediction_window = False
         self.clients = {}
         self.last_rising_star_candidates: List[Dict[str, Any]] = []
         self.last_rising_star_winners: List[Dict[str, Any]] = []
@@ -3724,7 +3728,7 @@ class OrcaKillCycle:
         if QUEEN_ETERNAL_MACHINE_AVAILABLE:
             try:
                 # Get fee structure for primary exchange
-                exchange_fee_key = self.primary_exchange.lower()
+                exchange_fee_key = "kraken"
                 if exchange_fee_key not in EXCHANGE_FEES:
                     exchange_fee_key = 'default'
                 
@@ -9528,16 +9532,19 @@ class OrcaKillCycle:
         # SKIP if we already hit the IRA Sniper Target (Growth Mode Bypass)
         skip_prediction = hit_target_profit and QUEEN_MIN_PROFIT_PCT < 1.0
         
-        pred_ok, pred_info = self._prediction_window_ready(symbol)
-        info['prediction_window'] = pred_info
-        
-        if not pred_ok and not skip_prediction:
-            info['blocked_reason'] = f"PREDICTION_WINDOW_BLOCKED ({pred_info.get('reason')})"
-            print(f"      EXIT BLOCKED: {symbol} - {pred_info.get('reason')}")
-            return False, info
-        elif not pred_ok and skip_prediction:
-             # Log that we are bypassing
-             print(f"      IRA SNIPER BYPASS: {symbol} hit ${net_pnl:.4f} (Target ${target_pnl_amt:.4f}) - IGNORING Prediction Window!")
+        if self.require_prediction_window:
+            pred_ok, pred_info = self._prediction_window_ready(symbol)
+            info['prediction_window'] = pred_info
+            
+            if not pred_ok and not skip_prediction:
+                info['blocked_reason'] = f"PREDICTION_WINDOW_BLOCKED ({pred_info.get('reason')})"
+                print(f"      EXIT BLOCKED: {symbol} - {pred_info.get('reason')}")
+                return False, info
+            elif not pred_ok and skip_prediction:
+                 # Log that we are bypassing
+                 print(f"      IRA SNIPER BYPASS: {symbol} hit ${net_pnl:.4f} (Target ${target_pnl_amt:.4f}) - IGNORING Prediction Window!")
+        else:
+            info['prediction_window'] = {'reason': 'PREDICTION_WINDOW_DISABLED'}
         target_hit_override = False
         target_pnl_amt = confirmed_cost * (QUEEN_MIN_PROFIT_PCT / 100.0) if 'confirmed_cost' in locals() else entry_cost * (QUEEN_MIN_PROFIT_PCT / 100.0)
         
@@ -9549,13 +9556,14 @@ class OrcaKillCycle:
         #                                                                    
         # CHECK 1A: REQUIRE 30s VALIDATED PREDICTION WINDOW (Unless Target Hit)
         #                                                                    
-        pred_ok, pred_info = self._prediction_window_ready(symbol)
-        info['prediction_window'] = pred_info
-        
-        if not pred_ok and not target_hit_override:
-            info['blocked_reason'] = f"PREDICTION_WINDOW_BLOCKED ({pred_info.get('reason')})"
-            print(f"      EXIT BLOCKED: {symbol} - {pred_info.get('reason')}")
-            return False, info
+        if self.require_prediction_window:
+            pred_ok, pred_info = self._prediction_window_ready(symbol)
+            info['prediction_window'] = pred_info
+            
+            if not pred_ok and not target_hit_override:
+                info['blocked_reason'] = f"PREDICTION_WINDOW_BLOCKED ({pred_info.get('reason')})"
+                print(f"      EXIT BLOCKED: {symbol} - {pred_info.get('reason')}")
+                return False, info
 
         #                                                                    
         # CHECK 1B: BLACK BOX TRUTH GATE - PROFIT MUST BE > 3  TOTAL COSTS

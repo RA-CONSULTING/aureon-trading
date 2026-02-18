@@ -439,7 +439,12 @@ class HarmonicChainMaster:
         # Layer 7: Queen Voice
         if QUEEN_VOICE_AVAILABLE:
             try:
-                self.queen_voice = QueenHarmonicVoice()
+                try:
+                    from aureon_queen_hive_mind import get_queen
+                    queen = get_queen()
+                except Exception:
+                    queen = None
+                self.queen_voice = QueenHarmonicVoice(queen=queen) if queen else QueenHarmonicVoice()
                 self.state.layers[HarmonicLayer.QUEEN_VOICE].active = True
                 self.state.layers[HarmonicLayer.QUEEN_VOICE].instance = self.queen_voice
                 active_count += 1

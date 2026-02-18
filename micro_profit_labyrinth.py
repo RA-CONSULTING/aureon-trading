@@ -5716,7 +5716,10 @@ class MicroProfitLabyrinth:
                 # 👑🎤 THE HARMONIC VOICE - Autonomous Control
                 if QueenHarmonicVoice and HarmonicSignalChain:
                     try:
-                        self.queen_voice = QueenHarmonicVoice()
+                        if hasattr(self.queen, 'voice_engine') and self.queen.voice_engine:
+                            self.queen_voice = self.queen.voice_engine
+                        else:
+                            self.queen_voice = QueenHarmonicVoice(queen=self.queen)
                         self.queen_voice.awaken()
                         safe_print(f"   👑🎤 Harmonic Voice: ✅ WIRED (Autonomous Control Active!)")
                         # Also wire to the main Queen if she doesn't have it

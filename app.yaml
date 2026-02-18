@@ -78,6 +78,9 @@ services:
       - key: LIVE
         scope: RUN_TIME
         value: "1"
+      - key: REAL_DATA_ONLY
+        scope: RUN_TIME
+        value: "1"
       - key: KRAKEN_DRY_RUN
         scope: RUN_TIME
         value: "false"

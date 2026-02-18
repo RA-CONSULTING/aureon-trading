@@ -1577,11 +1577,12 @@ class QueenHiveMind:
             except Exception as e:
                 logger.debug(f"Could not auto-wire Research Neuron: {e}")
         
-        # 5. Voice Engine (QueenHarmonicVoice) 
+        # 5. Voice Engine (QueenHarmonicVoice)
         if not hasattr(self, 'voice_engine') or self.voice_engine is None:
             try:
                 from queen_harmonic_voice import QueenHarmonicVoice
-                self.voice_engine = QueenHarmonicVoice()
+                # Pass self to avoid recursive Queen creation loops.
+                self.voice_engine = QueenHarmonicVoice(queen=self)
                 wired_count += 1
                 logger.info("👑🎵 Harmonic Voice AUTO-WIRED")
             except Exception as e:

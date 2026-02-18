@@ -180,6 +180,17 @@ CONFIG = {
     
     # State Persistence
     'STATE_FILE': 'aureon_kraken_state.json',
+
+    # Margin Trading (Kraken Leveraged Positions)
+    'MARGIN_ENABLED': os.getenv('MARGIN_ENABLED', '0') == '1',
+    'MARGIN_DEFAULT_LEVERAGE': int(os.getenv('MARGIN_DEFAULT_LEVERAGE', '2')),
+    'MARGIN_MAX_LEVERAGE': int(os.getenv('MARGIN_MAX_LEVERAGE', '5')),
+    'MARGIN_MAX_EXPOSURE_PCT': float(os.getenv('MARGIN_MAX_EXPOSURE_PCT', '0.30')),  # Max 30% of equity in margin
+    'MARGIN_MIN_FREE_MARGIN_PCT': float(os.getenv('MARGIN_MIN_FREE_MARGIN_PCT', '0.20')),  # Keep 20% free margin
+    'MARGIN_TP_MULTIPLIER': float(os.getenv('MARGIN_TP_MULTIPLIER', '1.5')),  # TP is 1.5x wider for margin
+    'MARGIN_SL_MULTIPLIER': float(os.getenv('MARGIN_SL_MULTIPLIER', '0.5')),  # SL is tighter for margin
+    'MARGIN_MIN_SCORE': int(os.getenv('MARGIN_MIN_SCORE', '75')),  # Higher score required for margin trades
+    'MARGIN_MIN_COHERENCE': float(os.getenv('MARGIN_MIN_COHERENCE', '0.60')),  # Higher coherence for margin
 }
 
 PHI = (1 + math.sqrt(5)) / 2  # Golden Ratio = 1.618
@@ -756,7 +767,12 @@ class Position:
     nexus_prob: float = 0.5  # Nexus prediction probability at entry
     nexus_edge: float = 0.0  # Nexus edge at entry
     nexus_patterns: List[str] = field(default_factory=list)  # Patterns triggered at entry
-    
+
+    # Margin trading fields
+    is_margin: bool = False       # Whether this is a leveraged margin position
+    leverage: int = 1             # Leverage multiplier (1 = spot, 2-5 = margin)
+    margin_amount: float = 0.0   # Actual margin (collateral) put up
+
     # Generate unique ID for position
     id: str = field(default_factory=lambda: f"pos_{int(time.time()*1000)}_{random.randint(1000,9999)}")
     
@@ -1937,28 +1953,165 @@ class AureonKrakenEcosystem:
         prime_marker = f" [×{prime_multiplier:.1f}]" if prime_multiplier != 1.0 else ""
         nexus_marker = f" 🔮{opp.get('nexus_prob', 0.5)*100:.0f}%" if self.nexus and 'nexus_prob' in opp else ""
         print(f"   {icon} BUY  {symbol:12s} @ {curr_sym}{price:.6f} | {curr_sym}{pos_size:.2f} ({actual_fraction*100:.1f}%) | Γ={opp['coherence']:.2f} | +{opp['change24h']:.1f}%{nexus_marker}{scout_marker}{prime_marker}")
-        
+
+    def open_margin_position(self, opp: Dict):
+        """Open a leveraged margin position on Kraken.
+
+        Requires MARGIN_ENABLED=1 in config. Uses higher entry thresholds
+        (score >= MARGIN_MIN_SCORE, coherence >= MARGIN_MIN_COHERENCE) and
+        tighter risk management than spot positions.
+        """
+        if not CONFIG.get('MARGIN_ENABLED'):
+            return
+        if self.tracker.trading_halted:
+            return
+
+        symbol = opp['symbol']
+        price = opp['price']
+
+        # Margin requires higher confidence
+        if opp.get('score', 0) < CONFIG['MARGIN_MIN_SCORE']:
+            return
+        if opp.get('coherence', 0) < CONFIG['MARGIN_MIN_COHERENCE']:
+            return
+
+        # Check leverage availability for this pair
+        pair_lev = self.client.get_pair_leverage(symbol)
+        if not pair_lev.get('margin_supported'):
+            return
+
+        leverage = min(
+            CONFIG['MARGIN_DEFAULT_LEVERAGE'],
+            CONFIG['MARGIN_MAX_LEVERAGE'],
+            pair_lev.get('max_leverage', 2)
+        )
+        if leverage < 2:
+            return
+
+        # Check margin account health
+        trade_balance = self.client.get_trade_balance()
+        free_margin = trade_balance.get('free_margin', 0)
+        equity = trade_balance.get('equity_value', 0)
+
+        if equity <= 0:
+            return
+
+        # Enforce minimum free margin percentage
+        if free_margin / equity < CONFIG['MARGIN_MIN_FREE_MARGIN_PCT']:
+            return
+
+        # Enforce maximum margin exposure
+        margin_used = trade_balance.get('margin_amount', 0)
+        max_margin = equity * CONFIG['MARGIN_MAX_EXPOSURE_PCT']
+        if margin_used >= max_margin:
+            return
+
+        # Calculate position size (margin = collateral, notional = margin * leverage)
+        size_fraction = self.tracker.calculate_position_size(opp['coherence'], symbol)
+        lattice_state = self.lattice.get_state()
+        risk_mod = lattice_state.get('risk_mod', 1.0) if isinstance(lattice_state, dict) else getattr(lattice_state, 'risk_mod', 1.0)
+        size_fraction *= risk_mod
+        if size_fraction <= 0:
+            return
+
+        margin_budget = min(
+            self.tracker.balance * size_fraction,
+            max_margin - margin_used,
+            free_margin * 0.8,  # Don't use all free margin
+        )
+        if margin_budget < CONFIG['MIN_TRADE_USD']:
+            return
+
+        # Notional = margin * leverage
+        notional = margin_budget * leverage
+        quantity = notional / price
+
+        # Calculate TP/SL with margin multipliers (tighter SL, wider TP)
+        tp_pct = CONFIG['TAKE_PROFIT_PCT'] * CONFIG.get('MARGIN_TP_MULTIPLIER', 1.5)
+        sl_pct = CONFIG['STOP_LOSS_PCT'] * CONFIG.get('MARGIN_SL_MULTIPLIER', 0.5)
+        take_profit = price * (1 + tp_pct / 100)
+        stop_loss = price * (1 - sl_pct / 100)
+
+        # Fee calculation
+        fee_rate = CONFIG.get('KRAKEN_FEE_TAKER', CONFIG['KRAKEN_FEE'])
+        slippage = CONFIG.get('SLIPPAGE_PCT', 0.002)
+        spread = CONFIG.get('SPREAD_COST_PCT', 0.001)
+        total_rate = fee_rate + slippage + spread
+        entry_fee = notional * total_rate
+
+        if not self.dry_run:
+            try:
+                res = self.client.place_margin_order(
+                    symbol, 'buy', quantity, leverage,
+                    order_type='market',
+                    take_profit=take_profit,
+                    stop_loss=stop_loss,
+                )
+                if not res.get('orderId') and not res.get('entryOrderId'):
+                    print(f"   [MARGIN] Order failed for {symbol}: {res}")
+                    return
+            except Exception as e:
+                print(f"   [MARGIN] Execution error for {symbol}: {e}")
+                return
+
+        actual_fraction = (margin_budget / self.tracker.balance) if self.tracker.balance > 0 else 0.0
+
+        # Track as a margin position
+        self.positions[f"M:{symbol}"] = Position(
+            symbol=symbol,
+            entry_price=price,
+            quantity=quantity,
+            entry_fee=entry_fee,
+            entry_value=notional,
+            momentum=opp['change24h'],
+            coherence=opp['coherence'],
+            entry_time=time.time(),
+            dominant_node=opp['dominant_node'],
+            is_margin=True,
+            leverage=leverage,
+            margin_amount=margin_budget,
+            nexus_prob=opp.get('nexus_prob', 0.5),
+            nexus_edge=opp.get('nexus_edge', 0.0),
+            nexus_patterns=opp.get('nexus_patterns', []),
+        )
+
+        self.capital_pool.allocate(f"M:{symbol}", margin_budget)
+        self.tracker.total_fees += entry_fee
+        self.tracker.symbol_exposure[symbol] = self.tracker.symbol_exposure.get(symbol, 0.0) + actual_fraction
+
+        curr_sym = "$" if CONFIG['BASE_CURRENCY'] == 'USD' else "£" if CONFIG['BASE_CURRENCY'] == 'GBP' else "€"
+        print(
+            f"   [MARGIN {leverage}x] BUY  {symbol:12s} @ {curr_sym}{price:.6f} | "
+            f"Notional {curr_sym}{notional:.2f} (Margin {curr_sym}{margin_budget:.2f}) | "
+            f"TP={curr_sym}{take_profit:.2f} SL={curr_sym}{stop_loss:.2f} | "
+            f"Score={opp.get('score', 0):.0f}"
+        )
+
     def check_positions(self):
         """Check all positions for TP/SL"""
         to_close = []
-        
+
         for symbol, pos in self.positions.items():
             pos.cycles += 1
-            
+
+            # Use the actual trading symbol for price lookups
+            # (margin positions are keyed as "M:ETHUSD" but trade as "ETHUSD")
+            lookup_symbol = pos.symbol
+
             # Get current price (prefer WebSocket)
-            current_price = self.get_realtime_price(symbol)
+            current_price = self.get_realtime_price(lookup_symbol)
             source = "WS"
-            
+
             if current_price is None:
                 # Fallback to ticker cache
-                current_price = self.ticker_cache.get(symbol, {}).get('price')
+                current_price = self.ticker_cache.get(lookup_symbol, {}).get('price')
                 source = "CACHE"
-                
+
             # If still None, force a fresh lookup for this specific symbol
             if current_price is None:
                 try:
                     # Force single ticker lookup - normalize symbol for Kraken API
-                    ticker_symbol = self._normalize_ticker_symbol(symbol)
+                    ticker_symbol = self._normalize_ticker_symbol(lookup_symbol)
                     ticker = self.client._ticker([ticker_symbol])
                     # Extract price (Kraken format is complex, need to be careful)
                     # _ticker returns dict keyed by internal name. We need to find the value.
@@ -2068,11 +2221,14 @@ class AureonKrakenEcosystem:
         for symbol, pos in self.positions.items():
             if pos.cycles < CONFIG['MIN_HOLD_CYCLES']:
                 continue  # Don't sell too quickly
-                
+
+            # Use actual trading symbol for price lookups (margin keys are "M:SYMBOL")
+            lookup_symbol = pos.symbol
+
             # Get current price
-            current_price = self.get_realtime_price(symbol)
+            current_price = self.get_realtime_price(lookup_symbol)
             if current_price is None:
-                current_price = self.ticker_cache.get(symbol, {}).get('price', pos.entry_price)
+                current_price = self.ticker_cache.get(lookup_symbol, {}).get('price', pos.entry_price)
             if current_price is None or current_price == 0:
                 continue
                 
@@ -2117,17 +2273,31 @@ class AureonKrakenEcosystem:
         # EXECUTE TRADE
         success = False
         sell_order = None
+        trade_symbol = pos.symbol  # Use the actual trading symbol (not the key)
         if not self.dry_run:
             try:
-                # Sell entire quantity
-                sell_order = self.client.place_market_order(symbol, 'SELL', quantity=pos.quantity)
-                if sell_order and sell_order.get('orderId'):
-                    success = True
+                if pos.is_margin:
+                    # Close margin position via leveraged opposing order
+                    sell_order = self.client.close_margin_position(
+                        trade_symbol, 'sell', volume=pos.quantity,
+                        leverage=pos.leverage
+                    )
+                    if sell_order and (sell_order.get('orderId') or sell_order.get('margin_close')):
+                        success = True
+                    else:
+                        print(f"   [MARGIN] Close failed for {trade_symbol}: {sell_order}. Retrying next cycle.")
+                        return
                 else:
-                    print(f"   ⚠️ Sell failed for {symbol}: No order ID returned. Retrying next cycle.")
-                    return # Don't remove position, try again later
+                    # Sell entire quantity (spot)
+                    sell_order = self.client.place_market_order(trade_symbol, 'SELL', quantity=pos.quantity)
+                    if sell_order and sell_order.get('orderId'):
+                        success = True
+                    else:
+                        print(f"   Sell failed for {trade_symbol}: No order ID returned. Retrying next cycle.")
+                        return # Don't remove position, try again later
             except Exception as e:
-                print(f"   ⚠️ Sell execution error for {symbol}: {e}")
+                prefix = "[MARGIN] " if pos.is_margin else ""
+                print(f"   {prefix}Sell execution error for {trade_symbol}: {e}")
                 return # Don't remove position, try again later
         else:
             success = True # Dry run always succeeds
@@ -2215,7 +2385,8 @@ class AureonKrakenEcosystem:
         # Dynamic currency symbol
         curr_sym = "£" if CONFIG['BASE_CURRENCY'] == 'GBP' else "€" if CONFIG['BASE_CURRENCY'] == 'EUR' else "$"
         gen_marker = f" [G{pos.generation}]" if pos.generation > 0 else ""
-        print(f"   {icon} CLOSE {symbol:12s}{gen_marker} | {reason} {pct:+.2f}% | Net: {curr_sym}{net_pnl:+.2f} | Pool: {curr_sym}{self.capital_pool.total_profits:+.2f} | WR: {self.tracker.win_rate:.1f}%")
+        margin_marker = f" [MARGIN {pos.leverage}x]" if pos.is_margin else ""
+        print(f"   {icon} CLOSE {pos.symbol:12s}{gen_marker}{margin_marker} | {reason} {pct:+.2f}% | Net: {curr_sym}{net_pnl:+.2f} | Pool: {curr_sym}{self.capital_pool.total_profits:+.2f} | WR: {self.tracker.win_rate:.1f}%")
         # Refresh equity to keep tracker in sync with realised trade
         self.refresh_equity()
         
@@ -2331,21 +2502,31 @@ class AureonKrakenEcosystem:
                     
                     for opp in all_opps[:CONFIG['MAX_POSITIONS'] - len(self.positions)]:
                         self.open_position(opp)
-                        
+                        # Also consider margin position for high-confidence opportunities
+                        if CONFIG.get('MARGIN_ENABLED') and f"M:{opp['symbol']}" not in self.positions:
+                            self.open_margin_position(opp)
+
                 # Show positions
                 if self.positions:
-                    print(f"\n   📊 Active Positions ({len(self.positions)}/{CONFIG['MAX_POSITIONS']}):")
+                    spot_count = sum(1 for p in self.positions.values() if not p.is_margin)
+                    margin_count = sum(1 for p in self.positions.values() if p.is_margin)
+                    label = f"{len(self.positions)}/{CONFIG['MAX_POSITIONS']}"
+                    if margin_count > 0:
+                        label += f" ({margin_count} margin)"
+                    print(f"\n   Active Positions ({label}):")
                     for symbol, pos in self.positions.items():
-                        rt = self.get_realtime_price(symbol)
+                        lookup = pos.symbol
+                        rt = self.get_realtime_price(lookup)
                         if rt:
                             pct = (rt - pos.entry_price) / pos.entry_price * 100
-                            src = "🔴"
+                            src = "RT"
                         else:
-                            cached = self.ticker_cache.get(symbol, {}).get('price', pos.entry_price)
+                            cached = self.ticker_cache.get(lookup, {}).get('price', pos.entry_price)
                             pct = (cached - pos.entry_price) / pos.entry_price * 100
-                            src = "⚪"
+                            src = "CACHE"
                         icon = self._get_node_icon(pos.dominant_node)
-                        print(f"      {icon} {symbol:12s} Entry: ${pos.entry_price:.6f} | Now: {pct:+.2f}% {src}")
+                        margin_tag = f" [{pos.leverage}x]" if pos.is_margin else ""
+                        print(f"      {icon} {pos.symbol:12s}{margin_tag} Entry: ${pos.entry_price:.6f} | Now: {pct:+.2f}% [{src}]")
                         
                 # Stats
                 rt_count = len(self.realtime_prices)

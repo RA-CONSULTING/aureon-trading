@@ -332,6 +332,7 @@ class Breadcrumb:
     current_price: float = 0.0
     unrealized_pnl: float = 0.0
     pnl_percent: float = 0.0
+    exchange: str = "binance"
     
     def update_price(self, price: float) -> None:
         """Update current price and P&L."""
@@ -476,6 +477,8 @@ class QueenEternalMachine:
         self.state_file = Path(state_file)
         self.exchange = exchange
         self.cost_basis_file = Path(cost_basis_file)
+        self._exchange_clients: Dict[str, Any] = {}
+        self.live_trading = (not self.dry_run) and (os.getenv("LIVE", "0").lower() in ("1", "true", "yes"))
         
         # Fee structure - THE QUEEN KNOWS HER COSTS!
         self.fee_structure = fee_structure or EXCHANGE_FEES.get(exchange, EXCHANGE_FEES['default'])
@@ -483,6 +486,11 @@ class QueenEternalMachine:
         # Track total fees paid
         self.total_fees_paid: float = 0.0
         self.total_slippage_cost: float = 0.0
+
+        if self.live_trading:
+            logger.info("Eternal Machine live trading: ENABLED")
+        else:
+            logger.warning("Eternal Machine live trading: DISABLED (simulation-only)")
         
         # 🆕 FRIENDS WITH BAGGAGE SYSTEM
         self.friends: Dict[str, Friend] = {}  # All our "friends" (assets)
@@ -811,6 +819,82 @@ class QueenEternalMachine:
                 logger.warning(f"   ⚠️ Kraken cached fallback also failed: {cache_e}")
         
         return balances
+
+    def _get_exchange_client(self, exchange: str):
+        if exchange in self._exchange_clients:
+            return self._exchange_clients[exchange]
+        client = None
+        try:
+            if exchange == 'binance':
+                from binance_client import get_binance_client
+                client = get_binance_client()
+            elif exchange == 'kraken':
+                from kraken_client import get_kraken_client
+                client = get_kraken_client()
+            elif exchange == 'alpaca':
+                from alpaca_client import AlpacaClient
+                client = AlpacaClient()
+        except Exception as e:
+            logger.warning(f"⚠️ Could not init {exchange} client: {e}")
+        self._exchange_clients[exchange] = client
+        return client
+
+    def _pair_candidates(self, base_symbol: str, exchange: str) -> List[str]:
+        base = (base_symbol or "").upper()
+        if exchange == 'binance':
+            return [f"{base}USDT", f"{base}USDC", f"{base}USD"]
+        if exchange == 'kraken':
+            return [f"{base}USD", f"{base}USDT", f"{base}USDC"]
+        if exchange == 'alpaca':
+            return [f"{base}USD", f"{base}/USD"]
+        return [f"{base}USD"]
+
+    def _order_failed(self, response: Dict[str, Any]) -> bool:
+        if not isinstance(response, dict):
+            return True
+        if response.get("rejected") or response.get("error") or response.get("dryRun"):
+            return True
+        return False
+
+    def _extract_order_id(self, response: Dict[str, Any]) -> Optional[str]:
+        if not isinstance(response, dict):
+            return None
+        for key in ("orderId", "id", "clientOrderId", "order_id", "txid"):
+            value = response.get(key)
+            if isinstance(value, list):
+                value = value[0] if value else None
+            if value:
+                return str(value)
+        return None
+
+    def _log_order_id(self, label: str, exchange: str, symbol: str, side: str, response: Dict[str, Any]) -> None:
+        order_id = self._extract_order_id(response)
+        if order_id:
+            logger.info(f"   🧾 {label} ORDER ID ({exchange} {side} {symbol}): {order_id}")
+            return
+        logger.warning(f"⚠️ {label} order missing ID ({exchange} {side} {symbol}): {response}")
+
+    def _log_order_summary(self, label: str, exchange: str, sell_res: Dict[str, Any], buy_res: Dict[str, Any]) -> None:
+        sell_id = self._extract_order_id(sell_res) or "missing"
+        buy_id = self._extract_order_id(buy_res) or "missing"
+        logger.info(f"   ✅ LIVE ORDER SUMMARY ({label} {exchange}): SELL={sell_id} BUY={buy_id}")
+
+    def _place_market_order(self, exchange: str, base_symbol: str, side: str, quantity: float | None = None, quote_qty: float | None = None) -> Dict[str, Any]:
+        client = self._get_exchange_client(exchange)
+        if not client:
+            return {"error": "no_client", "exchange": exchange}
+        if getattr(client, "dry_run", False):
+            return {"error": "dry_run", "exchange": exchange}
+        last_err: str | None = None
+        for pair in self._pair_candidates(base_symbol, exchange):
+            try:
+                res = client.place_market_order(pair, side, quantity=quantity, quote_qty=quote_qty)
+                if not self._order_failed(res):
+                    return res
+                last_err = f"rejected for {pair}"
+            except Exception as e:
+                last_err = str(e)
+        return {"error": last_err or "order_failed", "exchange": exchange, "symbol": base_symbol, "side": side}
     
     def _load_friends_from_cost_basis_fallback(self) -> None:
         """Fallback: Load from cost_basis_history.json if tracked_positions.json doesn't exist."""
@@ -1765,13 +1849,28 @@ class QueenEternalMachine:
         # Use the PRE-CALCULATED net value from the opportunity (already fee-adjusted!)
         net_value_for_purchase = opportunity.net_value_after_fees
         
-        # Track fees paid
-        self.total_fees_paid += opportunity.total_fees
-        self.total_slippage_cost += opportunity.slippage_cost
-        
         # Calculate quantities
         old_qty = self.main_position.quantity * (1 - self.breadcrumb_percent)
         new_qty = net_value_for_purchase / opportunity.to_price
+
+        if self.live_trading:
+            exchange = self.exchange
+            sell_res = self._place_market_order(exchange, opportunity.from_symbol, "SELL", quantity=old_qty)
+            if self._order_failed(sell_res):
+                logger.error(f"❌ Leap SELL failed on {exchange}: {sell_res}")
+                return False
+            self._log_order_id("LEAP SELL", exchange, opportunity.from_symbol, "SELL", sell_res)
+            buy_res = self._place_market_order(exchange, opportunity.to_symbol, "BUY", quote_qty=net_value_for_purchase)
+            if self._order_failed(buy_res):
+                logger.error(f"❌ Leap BUY failed on {exchange}: {buy_res}")
+                logger.error("⚠️ Sell may have executed - manual reconciliation required.")
+                return False
+            self._log_order_id("LEAP BUY", exchange, opportunity.to_symbol, "BUY", buy_res)
+            self._log_order_summary("LEAP", exchange, sell_res, buy_res)
+
+        # Track fees paid (after order execution if live)
+        self.total_fees_paid += opportunity.total_fees
+        self.total_slippage_cost += opportunity.slippage_cost
         
         # Create breadcrumb from current position (this stays and grows!)
         breadcrumb_qty = self.main_position.quantity * self.breadcrumb_percent
@@ -1781,7 +1880,8 @@ class QueenEternalMachine:
             cost_basis=breadcrumb_value,
             entry_price=self.main_position.current_price,
             entry_time=datetime.now(),
-            current_price=self.main_position.current_price
+            current_price=self.main_position.current_price,
+            exchange=self.exchange
         )
         self.breadcrumbs[self.main_position.symbol] = breadcrumb
         self.total_breadcrumbs += 1
@@ -1849,13 +1949,31 @@ class QueenEternalMachine:
         breadcrumb_value = opportunity.gross_value * self.breadcrumb_percent
         net_leap_value = leap_value - breadcrumb_value
         
-        # Track fees
-        self.total_fees_paid += opportunity.total_fees
-        self.total_slippage_cost += opportunity.slippage_cost
-        
         # Calculate quantities
         old_qty_leaping = net_leap_value / friend.current_price if friend.current_price > 0 else 0
         new_qty = opportunity.net_value_after_fees / opportunity.to_price if opportunity.to_price > 0 else 0
+
+        if self.live_trading:
+            exchange = friend.exchange
+            if exchange in ("multi", "kraken-cached"):
+                logger.warning(f"⚠️ Friend leap exchange '{exchange}' not tradable - skipping live order")
+                return False
+            sell_res = self._place_market_order(exchange, friend.symbol, "SELL", quantity=old_qty_leaping)
+            if self._order_failed(sell_res):
+                logger.error(f"❌ Friend leap SELL failed on {exchange}: {sell_res}")
+                return False
+            self._log_order_id("FRIEND LEAP SELL", exchange, friend.symbol, "SELL", sell_res)
+            buy_res = self._place_market_order(exchange, opportunity.to_symbol, "BUY", quote_qty=opportunity.net_value_after_fees)
+            if self._order_failed(buy_res):
+                logger.error(f"❌ Friend leap BUY failed on {exchange}: {buy_res}")
+                logger.error("⚠️ Sell may have executed - manual reconciliation required.")
+                return False
+            self._log_order_id("FRIEND LEAP BUY", exchange, opportunity.to_symbol, "BUY", buy_res)
+            self._log_order_summary("FRIEND LEAP", exchange, sell_res, buy_res)
+
+        # Track fees (after order execution if live)
+        self.total_fees_paid += opportunity.total_fees
+        self.total_slippage_cost += opportunity.slippage_cost
         
         # Leave breadcrumb if friend is clear
         if friend.is_clear and breadcrumb_value > 0:
@@ -1866,7 +1984,8 @@ class QueenEternalMachine:
                 cost_basis=breadcrumb_value,
                 entry_price=friend.current_price,
                 entry_time=datetime.now(),
-                current_price=friend.current_price
+                current_price=friend.current_price,
+                exchange=friend.exchange
             )
             self.breadcrumbs[friend.symbol] = breadcrumb
             self.total_breadcrumbs += 1
@@ -1975,6 +2094,12 @@ class QueenEternalMachine:
         
         coin = self.market_data[start_symbol]
         quantity = self.available_cash / coin.price
+
+        if self.live_trading:
+            buy_res = self._place_market_order(self.exchange, start_symbol, "BUY", quote_qty=self.available_cash)
+            if self._order_failed(buy_res):
+                logger.error(f"❌ Journey BUY failed on {self.exchange}: {buy_res}")
+                return False
         
         self.main_position = MainPosition(
             symbol=start_symbol,
@@ -2077,6 +2202,14 @@ class QueenEternalMachine:
         # Calculate realized profit
         cost_portion = crumb.cost_basis * percent_to_sell
         profit = sell_value - cost_portion
+
+        if self.live_trading:
+            exchange = crumb.exchange if hasattr(crumb, "exchange") else self.exchange
+            sell_res = self._place_market_order(exchange, symbol, "SELL", quantity=sell_qty)
+            if self._order_failed(sell_res):
+                logger.error(f"❌ Scalp SELL failed on {exchange}: {sell_res}")
+                return 0.0
+            self._log_order_id("SCALP SELL", exchange, symbol, "SELL", sell_res)
         
         # Update breadcrumb
         crumb.quantity -= sell_qty
@@ -2411,7 +2544,8 @@ class QueenEternalMachine:
                         "quantity": c.quantity,
                         "cost_basis": c.cost_basis,
                         "entry_price": c.entry_price,
-                        "entry_time": c.entry_time.isoformat()
+                        "entry_time": c.entry_time.isoformat(),
+                        "exchange": c.exchange
                     }
                     for s, c in self.breadcrumbs.items()
                 },
@@ -2425,11 +2559,20 @@ class QueenEternalMachine:
                 }
             }
             
-            # Atomic write
-            temp_file = self.state_file.with_suffix('.tmp')
-            with open(temp_file, 'w') as f:
+            # Atomic write (Windows-safe)
+            import tempfile
+            temp_dir = self.state_file.parent
+            with tempfile.NamedTemporaryFile("w", delete=False, dir=temp_dir, suffix=".tmp") as f:
                 json.dump(state, f, indent=2)
-            temp_file.rename(self.state_file)
+                temp_path = Path(f.name)
+            try:
+                os.replace(temp_path, self.state_file)
+            finally:
+                if temp_path.exists() and temp_path != self.state_file:
+                    try:
+                        temp_path.unlink()
+                    except Exception:
+                        pass
             
         except Exception as e:
             logger.error(f"❌ Failed to save state: {e}")
@@ -2464,7 +2607,8 @@ class QueenEternalMachine:
                     quantity=data["quantity"],
                     cost_basis=data["cost_basis"],
                     entry_price=data["entry_price"],
-                    entry_time=datetime.fromisoformat(data["entry_time"])
+                    entry_time=datetime.fromisoformat(data["entry_time"]),
+                    exchange=data.get("exchange", self.exchange)
                 )
             
             # Load statistics

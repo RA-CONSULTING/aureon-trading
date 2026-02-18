@@ -30,6 +30,28 @@ _LAST_PING: Optional[float] = None
 _AUTO_CONTROL_DONE = False
 _LAST_HANDOFF: Optional[tuple[str, float]] = None
 _BATON_LOG_PATH = Path("state/baton_relay.jsonl")
+_REAL_DATA_ENV_DEFAULTS = {
+    "AUREON_DRY_RUN": "0",
+    "DRY_RUN": "0",
+    "BINANCE_DRY_RUN": "false",
+    "KRAKEN_DRY_RUN": "false",
+    "ALPACA_DRY_RUN": "false",
+    "ALPACA_PAPER": "false",
+    "BINANCE_USE_TESTNET": "false",
+    "BINANCE_TESTNET": "false",
+    "USE_TESTNET": "0",
+    "CAPITAL_DEMO": "0",
+    "IG_DEMO": "false",
+    "PAPER_TRADING": "false",
+    "PAPER_MODE": "false",
+    "PAPER": "0",
+    "SIMULATION_MODE": "0",
+    "DEMO_MODE": "0",
+    "STATUS_MOCK": "false",
+    "SIMULATED_ATTACKS": "false",
+    "AUREON_COMMAND_CENTER_DEMO": "0",
+    "SENTIENCE_FORCE_PERFECT": "0",
+}
 
 
 def _stream_is_broken(stream) -> bool:
@@ -101,9 +123,17 @@ def _should_ping(now: float) -> bool:
     return False
 
 
+def _enforce_real_data_only() -> None:
+    if os.getenv("REAL_DATA_ONLY", "1").strip().lower() not in ("1", "true", "yes", "on"):
+        return
+    for key, value in _REAL_DATA_ENV_DEFAULTS.items():
+        os.environ[key] = value
+
+
 def link_system(module_name: str) -> None:
     """Publish a baton heartbeat and ensure Mycelium sonar is wired."""
     _ensure_stdio()
+    _enforce_real_data_only()
     if module_name in _LINKED:
         return
     _LINKED.add(module_name)

@@ -604,7 +604,12 @@ class LiveSacredWaveformVisualizer:
         # Try to import Queen's Harmonic Voice
         try:
             from queen_harmonic_voice import QueenHarmonicVoice, QueenCommand, SystemResponse
-            self.queen_voice = QueenHarmonicVoice()
+            try:
+                from aureon_queen_hive_mind import get_queen
+                queen = get_queen()
+            except Exception:
+                queen = None
+            self.queen_voice = QueenHarmonicVoice(queen=queen) if queen else QueenHarmonicVoice()
             self.QueenCommand = QueenCommand
             self._queen_telemetry: Dict[str, Any] = {
                 'is_active': False,

@@ -77,6 +77,7 @@ class RealPortfolioSnapshot:
     cumulative_net_pnl: float = 0.0   # Total Equity - Starting Capital
     floating_pnl: float = 0.0         # Unrealized (Open Positions)
     lifetime_realized_pnl: float = 0.0 # Cumulative - Floating (Banked)
+    kraken_realized_pnl: float = 0.0   # Kraken-only realized PnL (trade history)
     
     realized_pnl: float = 0.0  # DEPRECATED: Kept for backward compat (Same as cumulative_net_pnl)
     unrealized_pnl: float = 0.0 # DEPRECATED: Kept for compat (Same as floating_pnl)
@@ -111,6 +112,7 @@ class RealPortfolioSnapshot:
             'realized_pnl': round(self.realized_pnl, 2),
             'unrealized_pnl': round(self.unrealized_pnl, 2),
             'total_pnl': round(self.realized_pnl + self.unrealized_pnl, 2),
+            'kraken_realized_pnl': round(self.kraken_realized_pnl, 2),
             'total_fees_paid': round(self.total_fees_paid, 2),
             'total_trades': self.total_trades,
             'winning_trades': self.winning_trades,
@@ -146,6 +148,12 @@ class RealPortfolioTracker:
         self._kraken_client = None
         self._binance_client = None
         self._capital_client = None
+
+        # Kraken trade history cache (avoid heavy calls every cycle)
+        self._kraken_trades_cache: List[Dict[str, Any]] = []
+        self._kraken_trades_cache_time = 0.0
+        self._kraken_trades_cache_ttl = int(os.getenv("KRAKEN_TRADES_CACHE_TTL", "300"))
+        self._kraken_trades_since = int(os.getenv("KRAKEN_TRADES_SINCE", "0") or 0)
         
         # Load previous state if exists
         self._load_state()
@@ -376,6 +384,63 @@ class RealPortfolioTracker:
             'reserves': {}
         }
 
+    def _get_kraken_trades(self) -> List[Dict[str, Any]]:
+        if self._kraken_trades_cache and (time.time() - self._kraken_trades_cache_time) < self._kraken_trades_cache_ttl:
+            return self._kraken_trades_cache
+        if self._kraken_client is None:
+            from kraken_client import get_kraken_client
+            self._kraken_client = get_kraken_client()
+        try:
+            trades = self._kraken_client.get_trades_history(
+                since=self._kraken_trades_since if self._kraken_trades_since > 0 else None
+            )
+            self._kraken_trades_cache = trades
+            self._kraken_trades_cache_time = time.time()
+            return trades
+        except Exception as e:
+            logger.debug(f"Kraken trade history unavailable: {e}")
+            return []
+
+    def _compute_kraken_realized_pnl(self) -> Optional[float]:
+        trades = self._get_kraken_trades()
+        if not trades:
+            return None
+
+        usd_quotes = {"USD", "USDT", "USDC"}
+        positions: Dict[str, Dict[str, float]] = {}
+        realized = 0.0
+
+        for trade in trades:
+            base = trade.get("base", "")
+            quote = trade.get("quote", "")
+            if not base or quote not in usd_quotes:
+                continue
+
+            ttype = trade.get("type", "")
+            qty = float(trade.get("vol", 0) or 0)
+            cost = float(trade.get("cost", 0) or 0)
+            fee = float(trade.get("fee", 0) or 0)
+            if qty <= 0:
+                continue
+
+            pos = positions.setdefault(base, {"qty": 0.0, "cost": 0.0})
+            if ttype == "buy":
+                pos["qty"] += qty
+                pos["cost"] += cost + fee
+            elif ttype == "sell":
+                if pos["qty"] <= 0:
+                    realized += (cost - fee)
+                    continue
+                avg_cost = pos["cost"] / pos["qty"] if pos["qty"] > 0 else 0.0
+                sell_qty = min(qty, pos["qty"])
+                cost_basis = avg_cost * sell_qty
+                proceeds = cost - fee
+                realized += proceeds - cost_basis
+                pos["qty"] -= sell_qty
+                pos["cost"] -= cost_basis
+
+        return realized
+
     def _load_live_profit_source(self) -> Optional[Dict]:
         """
         Load authoritative live profit state from quick_profit_check.py.
@@ -439,6 +504,17 @@ class RealPortfolioTracker:
         # 2. Calculate P&L Metaphysics
         cumulative_net_pnl = total_usd - self.starting_capital
         lifetime_realized_pnl = cumulative_net_pnl - floating_pnl
+
+        # Kraken realized PnL from trade history (USD quotes only)
+        kraken_realized_pnl = None
+        try:
+            kraken_realized_pnl = self._compute_kraken_realized_pnl()
+        except Exception as e:
+            logger.debug(f"Kraken realized PnL calc failed: {e}")
+
+        if kraken_realized_pnl is not None:
+            lifetime_realized_pnl = kraken_realized_pnl
+            floating_pnl = cumulative_net_pnl - lifetime_realized_pnl
         
         # Create snapshot
         snapshot = RealPortfolioSnapshot(
@@ -455,6 +531,7 @@ class RealPortfolioTracker:
             cumulative_net_pnl=cumulative_net_pnl,
             floating_pnl=floating_pnl,
             lifetime_realized_pnl=lifetime_realized_pnl,
+            kraken_realized_pnl=kraken_realized_pnl or 0.0,
             
             # Legacy Compat
             realized_pnl=cumulative_net_pnl, 
