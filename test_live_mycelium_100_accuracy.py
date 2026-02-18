@@ -68,6 +68,33 @@ try:
 except ImportError as e:
     print(f"⚠️ Stargate Protocol not available: {e}")
     STARGATE_AVAILABLE = False
+    
+    # Fallback classes when Stargate is unavailable
+    @dataclass
+    class RealityStem:
+        """Fallback RealityStem when Stargate is unavailable"""
+        symbol: str = ""
+        momentum: float = 0.0
+        volatility: float = 0.0
+        substrate_index: float = 0.0
+        timestamp: float = 0.0
+    
+    @dataclass
+    class QuantumMirror:
+        """Fallback QuantumMirror when Stargate is unavailable"""
+        probability: float = 0.0
+        direction: str = "NEUTRAL"
+        confidence: float = 0.0
+    
+    class TimelinePhase:
+        """Fallback TimelinePhase when Stargate is unavailable"""
+        GENESIS = "genesis"
+        COHERENCE = "coherence"
+        PROPHECY = "prophecy"
+    
+    def create_stargate_engine(*args, **kwargs):
+        """Fallback stargate engine creator"""
+        return None
 
 try:
     from binance_client import BinanceClient
