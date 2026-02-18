@@ -47,7 +47,7 @@ from dataclasses import dataclass, field
 from collections import defaultdict
 
 # Exchange clients
-from binance_client import BinanceClient
+from binance_client import BinanceClient, get_binance_client
 from kraken_client import KrakenClient, get_kraken_client
 
 # Optional: Alpaca client
@@ -763,6 +763,10 @@ class QueenVolumeHunter:
         
         # Sort by signal strength, prioritize Queen-approved
         return sorted(signals, key=lambda x: (-int(x.queen_approved), -x.signal_strength))
+
+    def scan_breakouts(self) -> List[VolumeSignal]:
+        """Backward-compatible alias for legacy scanner call sites."""
+        return self.scan_for_breakouts()
 
     def _scan_binance(self, symbols: List[str]) -> List[VolumeSignal]:
         signals = []

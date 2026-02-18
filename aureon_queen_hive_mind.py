@@ -14063,7 +14063,42 @@ Sero 👑🐝
         """
         if not NeuralInput:
             return None
+
+        def _coerce_scalar(value: Any, default: float, min_val: float, max_val: float) -> float:
+            """Extract a numeric signal from nested payloads and clamp to range."""
+            scalar = value
+
+            if isinstance(scalar, dict):
+                for key in (
+                    'signal',
+                    'score',
+                    'value',
+                    'strength',
+                    'confidence',
+                    'coherence',
+                    'probability',
+                ):
+                    nested = scalar.get(key)
+                    if isinstance(nested, (int, float)) and not isinstance(nested, bool):
+                        scalar = nested
+                        break
+                else:
+                    scalar = default
+
+            if not isinstance(scalar, (int, float)) or isinstance(scalar, bool):
+                scalar = default
+
+            scalar = float(scalar)
+            return max(min_val, min(max_val, scalar))
         
+        # Normalize inbound payloads early (autonomous loops may pass dict payloads)
+        probability_score = _coerce_scalar(probability_score, 0.5, 0.0, 1.0)
+        wisdom_score = _coerce_scalar(wisdom_score, 0.5, 0.0, 1.0)
+        quantum_signal = _coerce_scalar(quantum_signal, 0.0, -1.0, 1.0)
+        gaia_resonance = _coerce_scalar(gaia_resonance, 0.5, 0.0, 1.0)
+        emotional_coherence = _coerce_scalar(emotional_coherence, 0.5, 0.0, 1.0)
+        mycelium_signal = _coerce_scalar(mycelium_signal, 0.0, -1.0, 1.0)
+
         # 🐠 CLOWNFISH MICRO-CHANGE SIGNAL
         clownfish_signal = 0.5  # Default neutral
         clownfish_boost = 1.0
@@ -14074,12 +14109,36 @@ Sero 👑🐝
             if self.clownfish is not None and market_state is not None:
                 try:
                     cf_result = self.clownfish.compute(market_state)
-                    clownfish_signal = cf_result.get('signal', 0.5)
-                    clownfish_micro_signals = cf_result.get('micro_signals', {})
+                    if isinstance(cf_result, dict):
+                        clownfish_signal = _coerce_scalar(cf_result.get('signal', 0.5), 0.5, 0.0, 1.0)
+                        clownfish_micro_signals = cf_result.get('micro_signals', {})
+                    elif isinstance(cf_result, (int, float)):
+                        # Some clownfish implementations return only the signal
+                        clownfish_signal = _coerce_scalar(cf_result, 0.5, 0.0, 1.0)
+                        clownfish_micro_signals = {}
+                    else:
+                        clownfish_signal = 0.5
+                        clownfish_micro_signals = {}
+
+                    def _as_signal_strength(value: Any) -> Optional[float]:
+                        """Normalize clownfish micro-signal values to a scalar in [0, 1]."""
+                        if isinstance(value, (int, float)):
+                            return float(value)
+                        if isinstance(value, dict):
+                            for key in ('signal', 'score', 'value', 'strength'):
+                                nested = value.get(key)
+                                if isinstance(nested, (int, float)):
+                                    return float(nested)
+                        return None
+
+                    micro_signal_values = [
+                        sig for sig in (_as_signal_strength(v) for v in clownfish_micro_signals.values())
+                        if sig is not None
+                    ]
                     
                     # Count strong/danger signals from 12 factors
-                    strong_count = sum(1 for v in clownfish_micro_signals.values() if v > 0.7)
-                    danger_count = sum(1 for v in clownfish_micro_signals.values() if v < 0.3)
+                    strong_count = sum(1 for v in micro_signal_values if v > 0.7)
+                    danger_count = sum(1 for v in micro_signal_values if v < 0.3)
                     
                     # Calculate boost/penalty for neural input
                     if strong_count >= 4:
@@ -14142,12 +14201,12 @@ Sero 👑🐝
                 pass
 
             # Clamp all values to valid ranges
-            prob = max(0.0, min(1.0, probability_score))
-            wisdom = max(0.0, min(1.0, wisdom_score))
-            quantum = max(-1.0, min(1.0, quantum_signal))
-            gaia = max(0.0, min(1.0, gaia_resonance))
-            emotion = max(0.0, min(1.0, emotional_coherence))
-            myc = max(-1.0, min(1.0, mycelium_signal))
+            prob = _coerce_scalar(probability_score, 0.5, 0.0, 1.0)
+            wisdom = _coerce_scalar(wisdom_score, 0.5, 0.0, 1.0)
+            quantum = _coerce_scalar(quantum_signal, 0.0, -1.0, 1.0)
+            gaia = _coerce_scalar(gaia_resonance, 0.5, 0.0, 1.0)
+            emotion = _coerce_scalar(emotional_coherence, 0.5, 0.0, 1.0)
+            myc = _coerce_scalar(mycelium_signal, 0.0, -1.0, 1.0)
             
             return NeuralInput(
                 probability_score=prob,
@@ -14161,6 +14220,36 @@ Sero 👑🐝
             logger.error(f"❌ Error gathering neural inputs: {e}")
             return None
     
+    def _coerce_neural_input(self, neural_input: Any = None) -> Optional['NeuralInput']:
+        """
+        Normalize incoming neural input into a NeuralInput instance.
+
+        Accepts:
+        - NeuralInput objects (pass-through)
+        - dict payloads from autonomous/orchestrator loops
+        - None (gathers default market signals)
+        """
+        if neural_input is None:
+            return self.gather_neural_inputs()
+
+        if NeuralInput and isinstance(neural_input, NeuralInput):
+            return neural_input
+
+        if isinstance(neural_input, dict):
+            # Support alternate key names produced by autonomous loops
+            return self.gather_neural_inputs(
+                probability_score=neural_input.get('probability_score', neural_input.get('probability', 0.5)),
+                wisdom_score=neural_input.get('wisdom_score', neural_input.get('wisdom', 0.5)),
+                quantum_signal=neural_input.get('quantum_signal', neural_input.get('market_pulse', 0.0)),
+                gaia_resonance=neural_input.get('gaia_resonance', neural_input.get('gaia', 0.5)),
+                emotional_coherence=neural_input.get('emotional_coherence', neural_input.get('emotion', 0.5)),
+                mycelium_signal=neural_input.get('mycelium_signal', neural_input.get('mycelium', 0.0)),
+                market_state=neural_input.get('market_state', neural_input),
+            )
+
+        logger.warning(f"⚠️ Unsupported neural_input type: {type(neural_input).__name__}; falling back to defaults")
+        return self.gather_neural_inputs()
+
     def think(self, neural_input: Optional['NeuralInput'] = None) -> Tuple[float, str]:
         """
         👑🧠 QUEEN THINKS - Get her confidence for a trade
@@ -14189,8 +14278,7 @@ Sero 👑🐝
         if not self.neural_brain:
             return 0.5, "Neural brain not available"
         
-        if neural_input is None:
-            neural_input = self.gather_neural_inputs()
+        neural_input = self._coerce_neural_input(neural_input)
         
         if neural_input is None:
             return 0.5, "Could not gather neural inputs"

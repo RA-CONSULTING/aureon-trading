@@ -3858,7 +3858,7 @@ class OrcaKillCycle:
             try:
                 v11_config = V11Config(
                     enabled_exchanges=['binance', 'alpaca', 'kraken'],
-                    max_concurrent_positions=100,
+                    max_concurrent_positions=None,
                     min_siphon_amount=5.50,  # Binance MIN_NOTIONAL = $5
                     siphon_percentage=50.0,  # Extract 50% of profits
                     reinvest_threshold=5.50  # Reinvest when reserve >= $5.50
@@ -7612,6 +7612,110 @@ class OrcaKillCycle:
                 continue
         return {}
 
+
+    def _binance_symbol_variants(self, asset: str) -> List[str]:
+        """Build resilient Binance quote variants for asset price discovery."""
+        clean_asset = (asset or '').upper().strip()
+        if not clean_asset:
+            return []
+        if clean_asset.startswith('LD') and len(clean_asset) > 2:
+            clean_asset = clean_asset[2:]
+
+        preferred_quotes = [
+            'USDT', 'USDC', 'FDUSD', 'BUSD', 'TUSD',
+            'USD', 'BTC', 'ETH', 'BNB', 'EUR', 'TRY'
+        ]
+        return [f"{clean_asset}/{quote}" for quote in preferred_quotes if clean_asset != quote]
+
+    def _kraken_symbol_variants(self, asset: str) -> List[str]:
+        """Build Kraken symbol candidates honoring Kraken naming quirks."""
+        clean_asset = (asset or '').upper().strip()
+        if not clean_asset:
+            return []
+
+        candidates: List[str] = []
+
+        # Original + USD/USDT/USDC style
+        for quote in ['USD', 'USDT', 'USDC', 'EUR']:
+            candidates.append(f"{clean_asset}{quote}")
+
+        # De-prefixed base asset forms
+        no_prefix = clean_asset
+        if clean_asset.startswith('XX') and len(clean_asset) > 2:
+            no_prefix = clean_asset[2:]
+        elif clean_asset.startswith(('X', 'Z')) and len(clean_asset) > 1:
+            no_prefix = clean_asset[1:]
+
+        for quote in ['USD', 'USDT', 'USDC', 'EUR']:
+            candidates.append(f"{no_prefix}{quote}")
+
+        # Kraken classic X*/Z* pair formats
+        candidates.append(f"X{no_prefix}ZUSD")
+        candidates.append(f"X{no_prefix}ZEUR")
+        candidates.append(f"XX{no_prefix}ZUSD")
+
+        # Stable aliases for BTC naming
+        if no_prefix == 'BTC':
+            candidates.extend(['XBTUSD', 'XXBTZUSD', 'XBTEUR', 'XXBTZEUR'])
+        elif no_prefix == 'XBT':
+            candidates.extend(['BTCUSD', 'XBTUSD', 'XXBTZUSD'])
+
+        # De-dupe while preserving order
+        seen = set()
+        ordered = []
+        for sym in candidates:
+            if sym and sym not in seen:
+                ordered.append(sym)
+                seen.add(sym)
+        return ordered
+
+    def _extract_ticker_price(self, ticker: Dict[str, Any], exchange: str = '') -> float:
+        """Extract a numeric price from heterogeneous exchange ticker payloads."""
+        if not ticker:
+            return 0.0
+        try:
+            if exchange == 'kraken' and isinstance(ticker.get('c'), list) and ticker.get('c'):
+                return float(ticker['c'][0] or 0)
+            for key in ['bid', 'price', 'last', 'ask', 'close']:
+                val = ticker.get(key)
+                if val is not None:
+                    p = float(val)
+                    if p > 0:
+                        return p
+        except Exception:
+            return 0.0
+        return 0.0
+
+    def _resolve_asset_price(self, client: Any, exchange: str, asset: str) -> Tuple[str, float, Dict[str, Any]]:
+        """Unified price lookup with exchange-specific symbol preference logic."""
+        exchange = (exchange or '').lower().strip()
+        if not client or not asset:
+            return '', 0.0, {}
+
+        if exchange == 'binance':
+            symbols_to_try = self._binance_symbol_variants(asset)
+        elif exchange == 'kraken':
+            symbols_to_try = self._kraken_symbol_variants(asset)
+        else:
+            symbols_to_try = [asset]
+
+        for symbol in symbols_to_try:
+            ticker = {}
+            try:
+                if exchange == 'binance':
+                    ticker = self._get_binance_ticker(client, symbol) or {}
+                else:
+                    ticker = smart_get_ticker(client, symbol, exchange=exchange) or {}
+            except Exception:
+                ticker = {}
+
+            price = self._extract_ticker_price(ticker, exchange=exchange)
+            if price > 0:
+                return symbol, price, ticker
+
+        return '', 0.0, {}
+
+
     def _normalize_base_asset(self, symbol: str) -> str:
         """Normalize symbol to base asset for cross-checking balances."""
         if not symbol:
@@ -7967,25 +8071,18 @@ class OrcaKillCycle:
                             continue
                         qty = float(qty or 0)
                         if qty > 0.0001:
-                            # Try to get price
-                            symbol = f"{asset}USDT"
-                            ticker = self._get_binance_ticker(client, symbol)
-                            if not ticker or float(ticker.get('price', 0) or 0) == 0:
-                                symbol = f"{asset}USDC"
-                                ticker = self._get_binance_ticker(client, symbol)
-                            
-                            if ticker and float(ticker.get('price', 0) or 0) > 0:
-                                current_price = float(ticker.get('price', 0))
+                            symbol, current_price, _ = self._resolve_asset_price(client, 'binance', asset)
+                            if current_price > 0:
                                 market_value = qty * current_price
                                 results['total_value'] += market_value
-                                
+
                                 if market_value >= 0.50:  # Only report positions worth > $0.50
                                     print(f"   📊 BINANCE {asset}: {qty:.4f} @ ${current_price:.6f} = ${market_value:.2f}")
                                     results['still_holding'].append({
                                         'exchange': exchange_name, 'symbol': symbol,
                                         'qty': qty, 'value': market_value, 'pnl': 0  # No entry price known
                                     })
-                                    
+
                 elif exchange_name == 'kraken':
                     balances = client.get_balance()
                     for asset, qty in (balances or {}).items():
@@ -7993,23 +8090,17 @@ class OrcaKillCycle:
                             continue
                         qty = float(qty or 0)
                         if qty > 0.0001:
-                            symbol = f"{asset}USD"
-                            try:
-                                ticker = client.get_ticker(symbol)
-                                if ticker:
-                                    current_price = float(ticker.get('c', [0])[0] if 'c' in ticker else ticker.get('price', 0))
-                                    if current_price > 0:
-                                        market_value = qty * current_price
-                                        results['total_value'] += market_value
-                                        
-                                        if market_value >= 0.50:
-                                            print(f"   📊 KRAKEN {asset}: {qty:.6f} @ ${current_price:.4f} = ${market_value:.2f}")
-                                            results['still_holding'].append({
-                                                'exchange': exchange_name, 'symbol': symbol,
-                                                'qty': qty, 'value': market_value, 'pnl': 0
-                                            })
-                            except Exception:
-                                pass
+                            symbol, current_price, _ = self._resolve_asset_price(client, 'kraken', asset)
+                            if current_price > 0:
+                                market_value = qty * current_price
+                                results['total_value'] += market_value
+
+                                if market_value >= 0.50:
+                                    print(f"   📊 KRAKEN {asset}: {qty:.6f} @ ${current_price:.4f} = ${market_value:.2f}")
+                                    results['still_holding'].append({
+                                        'exchange': exchange_name, 'symbol': symbol,
+                                        'qty': qty, 'value': market_value, 'pnl': 0
+                                    })
                                 
                 elif exchange_name == 'capital':
                     capital_client = self._ensure_capital_client()
@@ -9523,22 +9614,30 @@ class OrcaKillCycle:
             can_sell, cb_info = self.cost_basis_tracker.can_sell_profitably(
                 symbol, current_price, exchange=exchange, quantity=entry_qty
             )
-            if cb_info.get('entry_price') is None:
-                # 🆕 SNIPER FIX: Fallback to estimated entry price if reliable
-                if entry_price > 0 and entry_cost > 0:
-                     print(f"   ⚠️ Cost Basis Missing for {symbol}. Using ESTIMATED entry: {entry_price}")
-                     confirmed_entry = entry_price
-                     # Use passed-in cost basis as fallback
-                     cb_info['entry_price'] = entry_price
+            confirmed_from_tracker = float(cb_info.get('entry_price', 0) or 0)
+            if confirmed_from_tracker <= 0:
+                recovered_cb = self._recover_cost_basis_from_exchange(symbol, exchange, quantity=entry_qty)
+                if recovered_cb and float(recovered_cb.get('entry_price', 0) or 0) > 0:
+                    confirmed_entry = float(recovered_cb['entry_price'])
+                    cb_info['entry_price'] = confirmed_entry
+                    src = recovered_cb.get('source', 'exchange_api')
+                    first_trade = recovered_cb.get('first_trade')
+                    last_trade = recovered_cb.get('last_trade')
+                    print(f"   🛰️ Cost basis recovered for {symbol} from {src}: ${confirmed_entry:.8f}")
+                    if first_trade or last_trade:
+                        print(f"      Trade window(ms): first={first_trade} last={last_trade}")
+                # fallback to estimate only if no API/tracker recovery
+                elif entry_price > 0 and entry_cost > 0:
+                    print(f"   ⚠️ Cost Basis Missing for {symbol}. Using ESTIMATED entry: {entry_price}")
+                    confirmed_entry = entry_price
+                    cb_info['entry_price'] = entry_price
                 else:
-                    # No confirmed or estimated cost basis - BLOCK SELL!
                     info['blocked_reason'] = 'NO_CONFIRMED_COST_BASIS'
                     print(f"   👑❌ EXIT BLOCKED: {symbol} - No confirmed cost basis (entry price unknown)")
-                    # Debug info provided by user logs matches here
                     return False, info
             else:
                 # Use confirmed entry price for accurate P&L
-                confirmed_entry = cb_info.get('entry_price', entry_price)
+                confirmed_entry = confirmed_from_tracker
 
             # CRITICAL FIX: Calculate cost basis using CURRENT quantity, not historical!
             confirmed_cost = entry_qty * confirmed_entry  # Use current qty × avg entry
@@ -11926,10 +12025,8 @@ class OrcaKillCycle:
                                 continue  # Skip cash/stablecoins
                             qty = float(qty)
                             if qty > 0.000001:
-                                symbol = f"{asset}USD"
+                                symbol, current_price, _ = self._resolve_asset_price(client, 'kraken', asset)
                                 try:
-                                    ticker = client.get_ticker(symbol)
-                                    current_price = float(ticker.get('bid', ticker.get('price', 0)))
                                     market_value = qty * current_price
                                     
                                     if market_value > 0.0:  # Track all positions
@@ -12011,7 +12108,7 @@ class OrcaKillCycle:
                             qty = float(qty)
                             if qty > 0.000001:
                                 # Try multiple quote currencies (USDT is most common on Binance)
-                                symbol_variants = [f"{asset}/USDT", f"{asset}/USDC", f"{asset}/USD", f"{asset}/BUSD"]
+                                symbol_variants = self._binance_symbol_variants(asset)
                                 found_price = False
                                 
                                 for symbol in symbol_variants:
@@ -12293,9 +12390,10 @@ class OrcaKillCycle:
                             kraken_symbols = [p.symbol for p in positions if p.exchange == 'kraken']
                             for sym in kraken_symbols:
                                 try:
-                                    ticker = kraken_client.get_ticker(sym)
-                                    if ticker:
-                                        batch_prices[sym] = ticker.get('bid', ticker.get('price', 0))
+                                    ticker = smart_get_ticker(kraken_client, sym, exchange='kraken')
+                                    price = self._extract_ticker_price(ticker or {}, exchange='kraken')
+                                    if price > 0:
+                                        batch_prices[sym] = price
                                 except Exception:
                                     pass
                     except Exception:
@@ -12323,13 +12421,11 @@ class OrcaKillCycle:
                                 if asset in ['USD', 'ZUSD', 'EUR', 'ZEUR', 'DAI', 'USDC', 'USDT', 'TUSD']:
                                     continue  # Skip cash/stablecoins
                                 qty = float(qty)
-                                symbol = f"{asset}USD"
-                                
+                                symbol, current_price, _ = self._resolve_asset_price(kraken_client, 'kraken', asset)
+
                                 # Check if this is a NEW position not already tracked
-                                if qty > 0.000001 and symbol not in current_kraken_symbols:
+                                if qty > 0.000001 and symbol and symbol not in current_kraken_symbols:
                                     try:
-                                        ticker = kraken_client.get_ticker(symbol)
-                                        current_price = float(ticker.get('bid', ticker.get('price', 0)))
                                         market_value = qty * current_price
                                         
                                         if market_value > 0.0:  # Track all positions
@@ -12371,8 +12467,9 @@ class OrcaKillCycle:
                             for sym in binance_symbols:
                                 try:
                                     ticker = self._get_binance_ticker(binance_client, sym)
-                                    if ticker:
-                                        batch_prices[sym] = ticker.get('bid', ticker.get('price', 0))
+                                    price = self._extract_ticker_price(ticker or {}, exchange='binance')
+                                    if price > 0:
+                                        batch_prices[sym] = price
                                 except Exception:
                                     pass
                             
@@ -12388,7 +12485,7 @@ class OrcaKillCycle:
                                 # Check if this is a NEW position not already tracked
                                 if qty > 0.000001:
                                     # Try multiple quote currencies
-                                    symbol_variants = [f"{asset}/USDT", f"{asset}/USDC", f"{asset}/USD", f"{asset}/BUSD"]
+                                    symbol_variants = self._binance_symbol_variants(asset)
                                     for symbol in symbol_variants:
                                         if symbol in current_binance_symbols:
                                             continue  # Already tracking
@@ -12724,10 +12821,10 @@ class OrcaKillCycle:
                             kraken_symbols = [p.symbol for p in positions if p.exchange == 'kraken']
                             for sym in kraken_symbols:
                                 try:
-                                    ticker = kraken_client.get_ticker(sym)
-                                    if ticker:
-                                        price = ticker.get('bid', ticker.get('price', 0))
-                                        all_prices[sym] = float(price) if price else 0
+                                    ticker = smart_get_ticker(kraken_client, sym, exchange='kraken')
+                                    price = self._extract_ticker_price(ticker or {}, exchange='kraken')
+                                    if price > 0:
+                                        all_prices[sym] = price
                                 except Exception:
                                     pass
                     except Exception:
@@ -13832,10 +13929,8 @@ class OrcaKillCycle:
                                 continue
                             qty = float(qty)
                             if qty > 0.000001:
-                                symbol = f"{asset}USD"
+                                symbol, current_price, _ = self._resolve_asset_price(client, 'kraken', asset)
                                 try:
-                                    ticker = client.get_ticker(symbol)
-                                    current_price = float(ticker.get('bid', ticker.get('price', 0)))
                                     market_value = qty * current_price
                                     
                                     if market_value > 0.0:
@@ -13869,7 +13964,7 @@ class OrcaKillCycle:
                                 continue
                             qty = float(qty)
                             if qty > 0.000001:
-                                symbol_variants = [f"{asset}/USDT", f"{asset}/USDC", f"{asset}/USD", f"{asset}/BUSD"]
+                                symbol_variants = self._binance_symbol_variants(asset)
                                 for symbol in symbol_variants:
                                     try:
                                         ticker = self._get_binance_ticker(client, symbol)
@@ -14116,9 +14211,10 @@ class OrcaKillCycle:
                         kraken_symbols = [p.symbol for p in positions if p.exchange == 'kraken']
                         for sym in kraken_symbols:
                             try:
-                                ticker = kraken_client.get_ticker(sym)
-                                if ticker:
-                                    all_prices[sym] = ticker.get('bid', ticker.get('price', 0))
+                                ticker = smart_get_ticker(kraken_client, sym, exchange='kraken')
+                                price = self._extract_ticker_price(ticker or {}, exchange='kraken')
+                                if price > 0:
+                                    all_prices[sym] = price
                             except Exception:
                                 pass
                 except Exception:

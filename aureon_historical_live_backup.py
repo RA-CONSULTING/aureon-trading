@@ -746,7 +746,7 @@ class AureonHistoricalLive:
         pattern_id = signal.pattern.pattern_id
         self.stats['patterns_used'][pattern_id] = self.stats['patterns_used'].get(pattern_id, 0) + 1
         
-        print(f"   ✅ Position opened (Day trades: {self.day_trades_used}/3)")
+        print(f"   ✅ Position opened (Day trades: {self.day_trades_used} - UNLIMITED)")
         
         # Publish position opened
         self.publish_thought("position.opened", {
@@ -756,10 +756,7 @@ class AureonHistoricalLive:
             "position_size": position_size
         }
         
-        # Check PDT restrictions
-        if not self.pdt_unlocked and self.current_capital < self.pdt_threshold:
-            if self.day_trades_used >= 3:
-                return False, "PDT limit reached (3/3 day trades used)"
+        # NO PDT RESTRICTIONS - Full production autonomous trading (unlimited)
         
         return True, "OK"
     
@@ -803,7 +800,7 @@ class AureonHistoricalLive:
         pattern_id = signal.pattern.pattern_id
         self.stats['patterns_used'][pattern_id] = self.stats['patterns_used'].get(pattern_id, 0) + 1
         
-        print(f"   ✅ Position opened (Day trades: {self.day_trades_used}/3)")
+        print(f"   ✅ Position opened (Day trades: {self.day_trades_used} - UNLIMITED)")
         
         return position
     
@@ -952,7 +949,7 @@ class AureonHistoricalLive:
         print(f"Total Trades: {self.stats['total_trades']} ({self.stats['winning_trades']}W / {self.stats['losing_trades']}L)")
         print(f"Win Rate: {win_rate:.1f}%")
         print(f"Total Profit: £{self.stats['total_profit']:+,.2f}")
-        print(f"Day Trades: {self.day_trades_used}/{'∞' if self.pdt_unlocked else '3'}")
+        print(f"Day Trades: {self.day_trades_used} (UNLIMITED)")
         print(f"Margin: {'✅ UNLOCKED' if self.margin_unlocked else '❌ LOCKED'}")
         print(f"PDT: {'✅ UNLIMITED' if self.pdt_unlocked else '⚠️  RESTRICTED'}")
         print(f"{'═' * 80}")

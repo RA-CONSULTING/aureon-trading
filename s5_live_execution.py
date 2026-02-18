@@ -563,13 +563,45 @@ class S5LiveExecutionEngine:
     
     async def _execute_real_trade(self, opp: ConversionOpportunity) -> bool:
         """Execute a real trade on Kraken"""
-        
+
+        # Consult Autonomy Hub before executing (Big Wheel veto check)
+        try:
+            from aureon_autonomy_hub import get_autonomy_hub
+            hub = get_autonomy_hub()
+            hub_decision = hub.spin_cycle(opp.symbol)
+            if hub_decision and hub_decision.direction == "HOLD":
+                print(f"      ⚙️ BIG WHEEL VETO: Hub says HOLD (confidence={hub_decision.confidence:.2f})")
+                return False
+            if hub_decision and hub_decision.direction != "NEUTRAL":
+                print(f"      ⚙️ BIG WHEEL: {hub_decision.direction} @ {hub_decision.confidence:.2f}")
+        except Exception:
+            pass  # Hub not available, proceed anyway
+
+        # Consult War Planner (adversarial chess — can we survive the counter-move?)
+        try:
+            from aureon_strategic_war_planner import get_war_planner
+            planner = get_war_planner()
+            war_plan = planner.plan(
+                symbol=opp.symbol, price=opp.entry_price or 0.0,
+                volume=0.0, change_pct=opp.spread_pct or 0.0,
+            )
+            if war_plan and war_plan.final_move:
+                fm = war_plan.final_move
+                print(f"      ⚔️ WAR PLANNER: {fm.move_type.value} | "
+                      f"Survival: {fm.survival_probability:.0%} | "
+                      f"Pattern: {war_plan.step_forward.get('pattern', '?')}")
+                if fm.move_type.value == 'RETREAT' and fm.confidence > 0.6:
+                    print(f"      ⚔️ WAR PLANNER VETO: RETREAT with high confidence")
+                    return False
+        except Exception:
+            pass
+
         # Map to Kraken pair
         kraken_pair = self.BINANCE_TO_KRAKEN.get(opp.symbol)
         if not kraken_pair:
             print(f"      ⚠️ No Kraken mapping for {opp.symbol}")
             return False
-        
+
         try:
             # Execute order
             print(f"\n   🔥 EXECUTING: {opp.side} {opp.quantity:.6f} {kraken_pair}")

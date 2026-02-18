@@ -677,6 +677,16 @@ class AlpacaStreamingIntegration:
         metrics['last_price'] = trade.price
         metrics['momentum'] = self.sse_client.get_momentum(symbol) or 0
         metrics['volatility'] = self.sse_client.get_volatility(symbol) or 0
+
+        # Feed into Autonomy Hub (The Big Wheel) for unified data capture
+        try:
+            from aureon_autonomy_hub import get_autonomy_hub
+            hub = get_autonomy_hub()
+            hub.data_bridge.ingest_market_tick(
+                symbol, trade.price, metrics['momentum'], metrics['volume'], 'alpaca'
+            )
+        except Exception:
+            pass
         
         # Update 6D harmonic waveform if available
         if self.harmonic_6d:

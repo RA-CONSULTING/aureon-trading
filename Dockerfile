@@ -44,12 +44,12 @@ ENV MALLOC_ARENA_MAX=2
 ENV MALLOC_MMAP_THRESHOLD_=131072
 ENV MALLOC_TRIM_THRESHOLD_=131072
 
-# Autonomous volatility trading defaults
+# Autonomous volatility trading defaults - NO LIMITS, full production
 ENV MODE=parallel
-ENV MAX_POSITIONS=3
-ENV AMOUNT_PER_POSITION=5.0
+ENV MAX_POSITIONS=50
+ENV AMOUNT_PER_POSITION=10.0
 ENV TARGET_PCT=1.0
-ENV MIN_CHANGE_PCT=0.25
+ENV MIN_CHANGE_PCT=0.05
 
 # Create directories for state files and logs
 RUN mkdir -p /app/state /app/logs /var/log/supervisor
@@ -82,4 +82,4 @@ RUN chmod +x /app/deploy/validate_startup.sh
 # 👑 PARALLEL STARTUP: Use supervisord to run all systems
 # Systems: Command Center + Orca + Autonomous Engine + Queen Power System + Kraken Cache
 # For standalone autonomous mode: docker run -e MODE=autonomous aureon-trading
-ENTRYPOINT ["/bin/bash", "-c", "if [ \"$MODE\" = \"autonomous\" ]; then exec python -u orca_complete_kill_cycle.py --autonomous ${MAX_POSITIONS:-3} ${AMOUNT_PER_POSITION:-5.0} ${TARGET_PCT:-1.0}; else /app/deploy/validate_startup.sh && exec supervisord -n -c /app/deploy/supervisord.conf; fi"]
+ENTRYPOINT ["/bin/bash", "-c", "if [ \"$MODE\" = \"autonomous\" ]; then exec python -u orca_complete_kill_cycle.py --autonomous ${MAX_POSITIONS:-50} ${AMOUNT_PER_POSITION:-10.0} ${TARGET_PCT:-1.0}; else /app/deploy/validate_startup.sh && exec supervisord -n -c /app/deploy/supervisord.conf; fi"]

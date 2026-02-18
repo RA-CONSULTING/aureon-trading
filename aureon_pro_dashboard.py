@@ -3048,7 +3048,7 @@ class AureonProDashboard:
             try:
                 v11_config = V11Config(
                     enabled_exchanges=['binance', 'alpaca', 'kraken'],
-                    max_concurrent_positions=100
+                    max_concurrent_positions=None
                 )
                 self.v11_station = V11PowerStationLive(config=v11_config, dry_run=False)
                 logger.info("⚡ V11 Power Station: INITIALIZED")
@@ -3681,36 +3681,59 @@ class AureonProDashboard:
         
         while True:
             try:
-                # Try to fetch Fear & Greed Index from Alternative.me API (free, no key needed)
-                async with aiohttp.ClientSession() as session:
-                    async with session.get(
-                        'https://api.alternative.me/fng/',
-                        timeout=aiohttp.ClientTimeout(total=10)
-                    ) as resp:
-                        if resp.status == 200:
-                            data = await resp.json()
-                            if 'data' in data and len(data['data']) > 0:
-                                fng = data['data'][0]
-                                self.market_sentiment['fear_greed_index'] = int(fng.get('value', 50))
-                                self.market_sentiment['fear_greed_label'] = fng.get('value_classification', 'Neutral')
-                                self.market_sentiment['last_update'] = datetime.now().isoformat()
-                
-                # Try to get BTC dominance from CoinGecko (free API)
-                async with aiohttp.ClientSession() as session:
-                    async with session.get(
-                        'https://api.coingecko.com/api/v3/global',
-                        timeout=aiohttp.ClientTimeout(total=10)
-                    ) as resp:
-                        if resp.status == 200:
-                            data = await resp.json()
-                            if 'data' in data:
-                                global_data = data['data']
-                                self.market_sentiment['btc_dominance'] = round(
-                                    global_data.get('market_cap_percentage', {}).get('btc', 0), 2
-                                )
-                                self.market_sentiment['total_market_cap'] = round(
-                                    global_data.get('total_market_cap', {}).get('usd', 0) / 1e12, 3  # In trillions
-                                )
+                timeout = aiohttp.ClientTimeout(total=10)
+                async with aiohttp.ClientSession(timeout=timeout) as session:
+                    # Try to fetch Fear & Greed Index from Alternative.me API (free, no key needed)
+                    try:
+                        async with session.get(
+                            'https://api.alternative.me/fng/',
+                            timeout=aiohttp.ClientTimeout(total=15)
+                        ) as resp:
+                            if resp.status == 200:
+                                data = await resp.json()
+                                if 'data' in data and len(data['data']) > 0:
+                                    fng = data['data'][0]
+                                    raw_index = fng.get('value', 50)
+                                    try:
+                                        self.market_sentiment['fear_greed_index'] = int(raw_index)
+                                    except (TypeError, ValueError):
+                                        self.logger.warning(f"⚠️ Invalid Fear & Greed index value: {raw_index!r}")
+
+                                    self.market_sentiment['fear_greed_label'] = fng.get('value_classification', 'Neutral')
+                                    self.market_sentiment['last_update'] = datetime.now().isoformat()
+                            else:
+                                self.logger.warning(f"⚠️ Alternative.me API returned status {resp.status}")
+                    except asyncio.TimeoutError:
+                        self.logger.warning("⚠️ Fear & Greed refresh timed out (keeping last sentiment value)")
+                    except aiohttp.ClientError as exc:
+                        self.logger.warning(f"⚠️ Fear & Greed refresh failed: {exc}")
+                    except Exception:
+                        self.logger.exception("❌ Unexpected error while refreshing Fear & Greed data")
+
+                    # Try to get BTC dominance from CoinGecko (free API)
+                    try:
+                        async with session.get(
+                            'https://api.coingecko.com/api/v3/global',
+                            timeout=aiohttp.ClientTimeout(total=15)
+                        ) as resp:
+                            if resp.status == 200:
+                                data = await resp.json()
+                                if 'data' in data:
+                                    global_data = data['data']
+                                    self.market_sentiment['btc_dominance'] = round(
+                                        global_data.get('market_cap_percentage', {}).get('btc', 0), 2
+                                    )
+                                    self.market_sentiment['total_market_cap'] = round(
+                                        global_data.get('total_market_cap', {}).get('usd', 0) / 1e12, 3  # In trillions
+                                    )
+                            else:
+                                self.logger.warning(f"⚠️ CoinGecko API returned status {resp.status}")
+                    except asyncio.TimeoutError:
+                        self.logger.warning("⚠️ CoinGecko global refresh timed out (keeping last market cap snapshot)")
+                    except aiohttp.ClientError as exc:
+                        self.logger.warning(f"⚠️ CoinGecko global refresh failed: {exc}")
+                    except Exception:
+                        self.logger.exception("❌ Unexpected error while refreshing CoinGecko global data")
                 
                 # Broadcast to clients
                 await self.broadcast({
@@ -3722,9 +3745,12 @@ class AureonProDashboard:
                 label = self.market_sentiment['fear_greed_label']
                 self.logger.info(f"🌐 Sentiment: Fear & Greed {fg} ({label})")
                 
+            except asyncio.CancelledError:
+                self.logger.info("🛑 Sentiment data loop cancelled")
+                raise
             except Exception as e:
-                self.logger.error(f"❌ Sentiment data loop error: {e}")
-            
+                self.logger.error(f"❌ Sentiment loop error: {e}", exc_info=True)
+
             await asyncio.sleep(300)  # Every 5 minutes (API rate limits)
     
     # ═══════════════════════════════════════════════════════════════════════════════

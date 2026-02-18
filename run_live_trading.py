@@ -14,6 +14,7 @@ from trade_logger import get_trade_logger
 from unified_exchange_client import MultiExchangeClient
 import signal
 import time
+import argparse
 
 def signal_handler(sig, frame):
     """Handle Ctrl+C gracefully"""
@@ -95,8 +96,48 @@ def fetch_exchange_balances():
         print("   Using last known portfolio value: £56.68")
         return 72.0, 56.68, {}
 
+
+def should_auto_confirm(auto_confirm_flag: bool) -> bool:
+    """Return True when live-trading confirmation should be skipped."""
+    if auto_confirm_flag:
+        return True
+
+    env_auto = os.getenv("AUREON_AUTO_CONFIRM_LIVE_TRADING", "0")
+    return env_auto.strip().lower() in {"1", "true", "yes", "on"}
+
+
+def confirm_live_trading(auto_confirm_flag: bool) -> bool:
+    """Handle confirmation flow for interactive and autonomous runs."""
+    if should_auto_confirm(auto_confirm_flag):
+        print("\n✅ Live trading auto-confirmed (flag/env enabled)")
+        return True
+
+    if not sys.stdin.isatty():
+        print("\n❌ Non-interactive session detected but no auto-confirm was provided.")
+        print("   Set AUREON_AUTO_CONFIRM_LIVE_TRADING=1 or pass --auto-confirm.")
+        return False
+
+    confirmation = input("\n🔴 Type 'ENABLE LIVE TRADING' to confirm: ")
+    if confirmation != "ENABLE LIVE TRADING":
+        print("\n❌ Live trading NOT enabled. Exiting...")
+        print("   To enable live trading, run again and type exact phrase.")
+        return False
+
+    return True
+
+
 def main():
     """Launch ecosystem with LIVE trading enabled"""
+    parser = argparse.ArgumentParser(description="Aureon live trading launcher")
+    parser.add_argument(
+        "--auto-confirm",
+        action="store_true",
+        help="Skip interactive confirmation prompt (for autonomous/systemd runs)",
+    )
+    parser.add_argument("--interval", type=float, default=5.0, help="Trading loop interval seconds")
+    parser.add_argument("--target-profit-gbp", type=float, default=50.0, help="Profit target in GBP")
+    parser.add_argument("--max-minutes", type=int, default=60, help="Maximum runtime in minutes")
+    args = parser.parse_args()
     
     print("\n" + "="*80)
     print(" "*20 + "🚀 AUREON LIVE TRADING SYSTEM 🚀")
@@ -118,16 +159,7 @@ def main():
     print("  ✅ Logging system active")
     print("\n⚠️  THIS WILL EXECUTE REAL TRADES WITH REAL MONEY")
     
-    auto_confirm = os.getenv("LIVE_TRADING_AUTO_CONFIRM", "").strip()
-    if auto_confirm == "ENABLE LIVE TRADING":
-        confirmation = auto_confirm
-        print("\n🔴 Type 'ENABLE LIVE TRADING' to confirm: ENABLE LIVE TRADING")
-    else:
-        confirmation = input("\n🔴 Type 'ENABLE LIVE TRADING' to confirm: ")
-    
-    if confirmation != "ENABLE LIVE TRADING":
-        print("\n❌ Live trading NOT enabled. Exiting...")
-        print("   To enable live trading, run again and type exact phrase.")
+
         return
     
     print("\n✅ LIVE TRADING CONFIRMED")
@@ -155,9 +187,9 @@ def main():
     print(f"  Mode:                 💰 LIVE (real trades)")
     print(f"  Min Gates:            {5}")
     print(f"  Min Coherence:        {0.48}")
-    print(f"  Trading Interval:     5 seconds")
-    print(f"  Target Profit:        £50")
-    print(f"  Max Runtime:          60 minutes")
+    print(f"  Trading Interval:     {args.interval:g} seconds")
+    print(f"  Target Profit:        £{args.target_profit_gbp:g}")
+    print(f"  Max Runtime:          {args.max_minutes} minutes")
     print(f"  Risk Management:      Circuit breaker at -15% DD")
     
     print("\n" + "="*80)
@@ -178,9 +210,9 @@ def main():
     # Run ecosystem
     try:
         engine.run(
-            interval=5.0,
-            target_profit_gbp=50.0,
-            max_minutes=60
+            interval=args.interval,
+            target_profit_gbp=args.target_profit_gbp,
+            max_minutes=args.max_minutes
         )
     except KeyboardInterrupt:
         print("\n\n🛑 Shutdown requested by user")

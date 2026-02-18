@@ -701,6 +701,16 @@ class AureonMultiExchangeTrader:
                 logger.info(f"   Buy {base} on {min_q['exchange'].upper()} (${min_q['price']:.2f})")
                 logger.info(f"   Sell {base} on {max_q['exchange'].upper()} (${max_q['price']:.2f})")
 
+    def sync_all(self) -> Dict[str, Any]:
+        """Backward-compatible sync entrypoint for legacy orchestrators."""
+        self.update_all_tickers()
+        opportunities = self.scan_opportunities()
+        return {
+            'exchanges_connected': list(self.clients.keys()),
+            'opportunities_found': len(opportunities),
+            'top_opportunities': opportunities[:5],
+        }
+
     def scan_opportunities(self) -> List[Dict]:
         """Scan all exchanges for opportunities using v6.1 logic."""
         opportunities = []

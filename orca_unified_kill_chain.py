@@ -40,7 +40,7 @@ except ImportError:
     KrakenClient = None
 
 try:
-    from binance_client import BinanceClient
+    from binance_client import BinanceClient, get_binance_client
 except ImportError:
     BinanceClient = None
 

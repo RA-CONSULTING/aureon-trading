@@ -85,6 +85,29 @@ except ImportError:
     get_research_engine = None
     GOAL_TRACKER_AVAILABLE = False
 
+# 🪞 SELF-AWARENESS - THE SYSTEM KNOWS ITSELF
+try:
+    from aureon_self_awareness import AUREON_SELF
+    print(AUREON_SELF.awaken())
+except ImportError:
+    pass
+
+# 🌀 PHASE TRANSITION DETECTOR - Geometric Regime Change Detection
+try:
+    from aureon_phase_transition_detector import PhaseTransitionDetector
+    PHASE_DETECTOR_BOOT = True
+    print("🌀 Phase Transition Detector: LOADED (Takens embedding + curvature analysis)")
+except ImportError:
+    PHASE_DETECTOR_BOOT = False
+
+# ☀️ CROSS-SUBSTRATE SOLAR MONITOR
+try:
+    from aureon_cross_substrate_monitor import CrossSubstrateMonitor
+    SOLAR_MONITOR_BOOT = True
+    print("☀️ Cross-Substrate Solar Monitor: LOADED (NOAA SWPC + Granger causality)")
+except ImportError:
+    SOLAR_MONITOR_BOOT = False
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
@@ -1140,6 +1163,11 @@ def get_autonomous_controller() -> QueenFullAutonomous:
     if _autonomous_instance is None:
         _autonomous_instance = QueenFullAutonomous()
     return _autonomous_instance
+
+
+def get_queen_autonomous() -> QueenFullAutonomous:
+    """Backward-compatible alias for autonomous controller accessor."""
+    return get_autonomous_controller()
 
 
 # ═══════════════════════════════════════════════════════════════════════════════

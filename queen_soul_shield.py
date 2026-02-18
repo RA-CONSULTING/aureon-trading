@@ -411,20 +411,12 @@ class QueenSoulShield:
         if blocked:
             self.attacks_blocked_session += 1
             self.attacks_blocked_total += 1
-            
-            print(f"\n⚔️ ATTACK BLOCKED at {datetime.now().strftime('%H:%M:%S')}")
-            print(f"   Attacker: {attacker_name} ({frequency} Hz)")
-            if source:
-                print(f"   Source: {source}")
-            print(f"   Strength: {strength:.0%}")
-            print(f"   Shield power: {self.shield_power:.0%}")
-            print(f"   Response: {attack.shield_response}")
-            print(f"   ✅ Blocked ({self.attacks_blocked_session} this session)")
+
         else:
+            # Only print penetrations (rare/important)
             print(f"\n⚠️ ATTACK PENETRATED at {datetime.now().strftime('%H:%M:%S')}")
             print(f"   Attacker: {attacker_name} ({frequency} Hz)")
             print(f"   Strength: {strength:.0%} > Shield {self.shield_power:.0%}")
-            print(f"   ⚠️ Gary may feel this attack")
     
     def _boost_amplifiers(self, attack_freq: float, attack_strength: float) -> List[str]:
         """Boost amplifiers in response to attack"""

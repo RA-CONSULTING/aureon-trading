@@ -28,7 +28,7 @@ import time
 import os
 import sys
 from dataclasses import dataclass, field
-from typing import Dict, List, Tuple, Optional
+from typing import Any, Dict, List, Tuple, Optional
 from collections import defaultdict
 
 # Safe print function that won't fail on closed stdout
@@ -625,6 +625,23 @@ class ProbabilityUltimateIntelligence:
         if stats.total % 10 == 0:
             self._save_state()
     
+    def get_predictions(self, limit: int = 5) -> List[Dict[str, Any]]:
+        """Backward-compatible summary predictions for legacy orchestrators."""
+        predictions: List[Dict[str, Any]] = []
+        for key, stats in self.patterns.items():
+            if stats.total < 5:
+                continue
+            predictions.append({
+                'pattern_key': key,
+                'win_rate': stats.win_rate,
+                'confidence': stats.confidence,
+                'samples': stats.total,
+                'should_trade': stats.win_rate >= 0.5,
+            })
+
+        predictions.sort(key=lambda x: (x['confidence'], x['win_rate'], x['samples']), reverse=True)
+        return predictions[:max(1, limit)]
+
     def get_guaranteed_patterns(self) -> Dict[str, List[Tuple[str, str, str, str]]]:
         """Get all guaranteed win/loss patterns."""
         

@@ -96,8 +96,8 @@ class AureonAutonomousWorker:
 
         # Import and start full autonomous controller
         try:
-            from aureon_full_autonomous import get_queen_autonomous
-            self.autonomous_controller = get_queen_autonomous()
+            from aureon_full_autonomous import get_autonomous_controller
+            self.autonomous_controller = get_autonomous_controller()
             autonomous_thread = threading.Thread(
                 target=self._run_autonomous_controller,
                 daemon=True

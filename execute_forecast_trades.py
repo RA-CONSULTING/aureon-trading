@@ -362,6 +362,41 @@ def execute_forecast_trade(client: BinanceClient, engine: ProbabilityForecastEng
     print(f"   Frequency:      {forecast.frequency:.1f}Hz {'🎵' if forecast.is_harmonic else '⚡'}")
     print(f"   Recommendation: {forecast.recommended_action}")
     
+    # Phase 2.5: Consult Autonomy Hub (Big Wheel cross-validation)
+    try:
+        from aureon_autonomy_hub import get_autonomy_hub
+        hub = get_autonomy_hub()
+        hub.data_bridge.ingest_market_tick(
+            symbol, forecast.current_price, forecast.price_change_pct, 0, 'binance'
+        )
+        hub_decision = hub.spin_cycle(symbol)
+        if hub_decision and hub_decision.direction != "NEUTRAL":
+            print(f"   ⚙️  BIG WHEEL: {hub_decision.direction} @ {hub_decision.confidence:.2f}")
+            if hub_decision.direction == "BEARISH" and hub_decision.confidence > 0.6:
+                print(f"   ⚙️  BIG WHEEL VETO: Strong bearish consensus from hub")
+                return False, 0
+    except Exception:
+        pass
+
+    # Phase 2.6: Consult War Planner (adversarial chess validation)
+    try:
+        from aureon_strategic_war_planner import get_war_planner
+        planner = get_war_planner()
+        war_plan = planner.plan(
+            symbol=symbol, price=forecast.current_price,
+            change_pct=forecast.price_change_pct,
+        )
+        if war_plan and war_plan.final_move:
+            fm = war_plan.final_move
+            print(f"   ⚔️  WAR PLANNER: {fm.move_type.value} | "
+                  f"Survival: {fm.survival_probability:.0%} | "
+                  f"Pattern: {war_plan.step_forward.get('pattern', '?')}")
+            if fm.move_type.value == 'RETREAT' and fm.confidence > 0.5:
+                print(f"   ⚔️  WAR PLANNER VETO: Enemy counter too strong")
+                return False, 0
+    except Exception:
+        pass
+
     # Phase 3: Execute if profitable
     if forecast.recommended_action != "BUY":
         print(f"\n   ⏸️ HOLDING - Conditions not met for profitable trade")

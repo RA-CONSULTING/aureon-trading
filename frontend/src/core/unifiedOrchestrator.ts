@@ -357,6 +357,35 @@ export class UnifiedOrchestrator {
     const isOptimalHour = unifiedStateAggregator.isOptimalTradingHour();
     const isPrimeSymbol = unifiedStateAggregator.isPrimeSymbol(symbol);
     
+    // Step 14d: Get Autonomy Hub signal (The Big Wheel - Python backend consensus)
+    let autonomyHubSignal: import('./decisionFusion').AutonomyHubSignal | null = null;
+    try {
+      const { getLatestHubSignal } = await import('./autonomyHubBridge');
+      autonomyHubSignal = getLatestHubSignal();
+      if (autonomyHubSignal && autonomyHubSignal.direction !== 'NEUTRAL') {
+        console.log(`[UnifiedOrchestrator] Big Wheel: ${autonomyHubSignal.direction} @ ${autonomyHubSignal.confidence.toFixed(2)} (WR: ${(autonomyHubSignal.rollingWinRate * 100).toFixed(1)}%)`);
+      }
+    } catch {
+      // Hub bridge not available
+    }
+
+    // Step 14e: Get War Planner signal (adversarial chess mind - can we survive the counter?)
+    try {
+      const { getLatestWarPlan } = await import('./autonomyHubBridge');
+      const warPlan = getLatestWarPlan();
+      if (warPlan && warPlan.action !== 'HOLD') {
+        console.log(`[UnifiedOrchestrator] War Planner: ${warPlan.action} | Pattern: ${warPlan.pattern} | Survival: ${(warPlan.survivalProbability * 100).toFixed(0)}% | Stance: ${warPlan.stance}`);
+        // War Planner RETREAT veto — if enemy counter too strong, reduce confidence
+        if (warPlan.action === 'RETREAT' && warPlan.confidence > 0.6) {
+          if (autonomyHubSignal) {
+            autonomyHubSignal.confidence *= 0.5; // Halve hub confidence when war planner says retreat
+          }
+        }
+      }
+    } catch {
+      // War Planner bridge not available
+    }
+
     // Step 15: Get bus consensus
     const busSnapshot = unifiedBus.snapshot();
     const consensus = unifiedBus.checkConsensus();
@@ -832,7 +861,45 @@ export class UnifiedOrchestrator {
     if (harmonicLock) {
       effectiveConfidence = Math.min(1, effectiveConfidence + 0.1);
     }
-    
+
+    // Apply Autonomy Hub signal boost/veto (The Big Wheel)
+    try {
+      const { getLatestHubSignal } = require('./autonomyHubBridge');
+      const hubSignal = getLatestHubSignal();
+      if (hubSignal && hubSignal.direction !== 'NEUTRAL') {
+        const hubAligned = (hubSignal.direction === 'BULLISH' && consensus.signal === 'BUY') ||
+                           (hubSignal.direction === 'BEARISH' && consensus.signal === 'SELL');
+        if (hubAligned) {
+          // Hub agrees - boost confidence
+          effectiveConfidence = Math.min(1, effectiveConfidence + 0.05 * hubSignal.confidence);
+        } else if (hubSignal.confidence > 0.7) {
+          // Hub strongly disagrees - reduce confidence
+          effectiveConfidence *= 0.85;
+        }
+      }
+    } catch {
+      // Hub bridge not available
+    }
+
+    // Apply War Planner signal (adversarial chess survival check)
+    try {
+      const { getLatestWarPlan } = require('./autonomyHubBridge');
+      const warPlan = getLatestWarPlan();
+      if (warPlan) {
+        if (warPlan.action === 'RETREAT' && warPlan.confidence > 0.5) {
+          // War Planner says enemy counter is too strong — reduce confidence
+          effectiveConfidence *= 0.7;
+          console.log(`[UnifiedOrchestrator] War Planner RETREAT — reducing confidence (survival: ${(warPlan.survivalProbability * 100).toFixed(0)}%)`);
+        } else if (warPlan.action === 'BUY' && warPlan.survivalProbability > 0.6) {
+          // War Planner confirms attack with high survival — boost
+          effectiveConfidence = Math.min(1, effectiveConfidence + 0.05 * warPlan.survivalProbability);
+          console.log(`[UnifiedOrchestrator] War Planner ATTACK confirmed (survival: ${(warPlan.survivalProbability * 100).toFixed(0)}%)`);
+        }
+      }
+    } catch {
+      // War Planner bridge not available
+    }
+
     // QGITA tier-based position sizing and thresholds
     const qgitaTier = qgitaSignal?.tier || 3;
     const qgitaPositionMultiplier = qgitaSignalGenerator.getPositionSizeMultiplier(qgitaTier);

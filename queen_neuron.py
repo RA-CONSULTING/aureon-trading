@@ -153,6 +153,24 @@ class QueenNeuron:
     # ════════════════════════════════════════════════════════════════════════════
     # FORWARD PASS
     # ════════════════════════════════════════════════════════════════════════════
+
+    @staticmethod
+    def _coerce_neural_input(neural_input: Any) -> NeuralInput:
+        """Accept legacy dict payloads and normalize to NeuralInput."""
+        if isinstance(neural_input, NeuralInput):
+            return neural_input
+
+        if isinstance(neural_input, dict):
+            return NeuralInput(
+                probability_score=float(neural_input.get('probability_score', neural_input.get('probability', 0.5))),
+                wisdom_score=float(neural_input.get('wisdom_score', neural_input.get('wisdom', 0.5))),
+                quantum_signal=float(neural_input.get('quantum_signal', neural_input.get('market_pulse', 0.0))),
+                gaia_resonance=float(neural_input.get('gaia_resonance', neural_input.get('gaia', 0.5))),
+                emotional_coherence=float(neural_input.get('emotional_coherence', neural_input.get('emotion', 0.5))),
+                mycelium_signal=float(neural_input.get('mycelium_signal', neural_input.get('mycelium', 0.0))),
+            )
+
+        raise TypeError(f"Unsupported neural input type: {type(neural_input).__name__}")
     
     def forward(self, X: np.ndarray) -> np.ndarray:
         """
@@ -184,6 +202,7 @@ class QueenNeuron:
         Returns:
             Trade confidence (0.0 = don't trade, 1.0 = go all in)
         """
+        neural_input = self._coerce_neural_input(neural_input)
         X = neural_input.to_array()
         output = self.forward(X)
         return float(output[0, 0])
@@ -263,6 +282,7 @@ class QueenNeuron:
         except Exception:
             is_win = False
 
+        neural_input = self._coerce_neural_input(neural_input)
         X = neural_input.to_array()
         y = np.array([[1.0 if is_win else 0.0]], dtype=np.float32)
 

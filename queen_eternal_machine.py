@@ -1045,94 +1045,141 @@ class QueenEternalMachine:
     # ═══════════════════════════════════════════════════════════════════════════
     
     def fetch_market_data(self) -> Dict[str, MarketCoin]:
-        """Fetch live market data from Binance + CoinGecko for comprehensive coverage."""
-        try:
-            # First, get data from Binance USDC pairs (high volume)
-            resp = requests.get(
-                "https://api.binance.com/api/v3/ticker/24hr",
-                timeout=10
-            )
-            resp.raise_for_status()
-            data = resp.json()
-            
-            self.market_data.clear()
-            symbols_added = set()
-            
-            for ticker in data:
-                symbol = ticker['symbol']
-                # Collect USDC pairs with decent volume
-                if symbol.endswith('USDC'):
-                    volume = float(ticker['quoteVolume'])
-                    if volume > 100000:  # Min $100k volume
-                        coin_symbol = symbol.replace('USDC', '')
-                        price = float(ticker['lastPrice'])
-                        if price > 0.0001:  # Filter dust
-                            self.market_data[coin_symbol] = MarketCoin(
-                                symbol=coin_symbol,
-                                price=price,
-                                change_24h=float(ticker['priceChangePercent']),
-                                volume_24h=volume,
-                                high_24h=float(ticker['highPrice']),
-                                low_24h=float(ticker['lowPrice'])
-                            )
-                            symbols_added.add(coin_symbol)
-            
-            # Now add critical coins from CoinGecko if not already present
-            # This ensures GALA, and other important positions are always included
-            critical_coins = ['GALA', 'PENGU', 'PUMP', 'DOGE', 'SHIB', 'MC', 'ROSE']
-            
+        """Fetch live market data directly from exchange APIs (Binance/Alpaca/Kraken)."""
+        self.market_data.clear()
+
+        def _to_float(value: Any, default: float = 0.0) -> float:
             try:
-                # Get CoinGecko data for critical coins
-                cg_resp = requests.get(
-                    "https://api.coingecko.com/api/v3/simple/price",
-                    params={
-                        'ids': 'gallant,pengu,pump-fun,dogecoin,shiba-inu,meme-coin,rise',
-                        'vs_currencies': 'usd',
-                        'include_24hr_change': 'true'
-                    },
-                    timeout=10
-                )
-                cg_resp.raise_for_status()
-                cg_data = cg_resp.json()
-                
-                # Map CoinGecko IDs to our symbols
-                cg_map = {
-                    'gallant': 'GALA',
-                    'pengu': 'PENGU',
-                    'pump-fun': 'PUMP',
-                    'dogecoin': 'DOGE',
-                    'shiba-inu': 'SHIB',
-                    'meme-coin': 'MC',
-                    'rise': 'ROSE'
-                }
-                
-                for cg_id, symbol in cg_map.items():
-                    if cg_id in cg_data and symbol not in symbols_added:
-                        coin_data = cg_data[cg_id]
-                        price = coin_data.get('usd', 0)
-                        change = coin_data.get('usd_24h_change', 0)
-                        
-                        if price and price > 0.0001:
-                            self.market_data[symbol] = MarketCoin(
-                                symbol=symbol,
-                                price=price,
-                                change_24h=change,
-                                volume_24h=0,  # CoinGecko doesn't give us volume easily
-                                high_24h=0,
-                                low_24h=0
-                            )
-                            symbols_added.add(symbol)
-                            
-            except Exception as e:
-                logger.debug(f"⚠️  Could not fetch CoinGecko data: {e}")
-            
-            self.last_scan_time = datetime.now()
-            logger.info(f"📊 Fetched {len(self.market_data)} coins from market (Binance + CoinGecko)")
-            return self.market_data
-            
+                return float(value)
+            except Exception:
+                return default
+
+        def _add_ticker(ticker: Dict[str, Any], quote_suffix: str = "USDC") -> None:
+            symbol = str(ticker.get('symbol', ''))
+            if not symbol or not symbol.endswith(quote_suffix):
+                return
+
+            coin_symbol = symbol[:-len(quote_suffix)]
+            if not coin_symbol:
+                return
+
+            price = _to_float(ticker.get('lastPrice'))
+            volume = _to_float(ticker.get('quoteVolume'))
+            if price <= 0.0:
+                return
+
+            # Keep high-liquidity universe wide, but always keep held assets (handled later)
+            if volume < 100000 and coin_symbol not in held_symbols:
+                return
+
+            self.market_data[coin_symbol] = MarketCoin(
+                symbol=coin_symbol,
+                price=price,
+                change_24h=_to_float(ticker.get('priceChangePercent')),
+                volume_24h=volume,
+                high_24h=_to_float(ticker.get('highPrice'), price),
+                low_24h=_to_float(ticker.get('lowPrice'), price),
+            )
+
+        def _base_symbol(symbol: str) -> str:
+            return str(symbol).split(":")[-1].split("/")[0].upper()
+
+        held_symbols = {_base_symbol(s) for s in self.friends.keys() if s and s != "CASH"}
+        exchange_fetches: List[str] = []
+
+        # 1) Binance broad market scan
+        try:
+            from binance_client import BinanceClient
+            binance = BinanceClient()
+            for ticker in binance.get_24h_tickers() or []:
+                _add_ticker(ticker, quote_suffix="USDC")
+            exchange_fetches.append("binance")
         except Exception as e:
-            logger.error(f"❌ Failed to fetch market data: {e}")
+            logger.warning(f"⚠️ Binance market data unavailable: {e}")
+
+        # 2) Alpaca crypto scan (only if available)
+        try:
+            from alpaca_client import AlpacaClient
+            alpaca = AlpacaClient()
+            for ticker in alpaca.get_24h_tickers() or []:
+                _add_ticker(ticker, quote_suffix="USD")
+            exchange_fetches.append("alpaca")
+        except Exception as e:
+            logger.debug(f"⚠️ Alpaca market data unavailable: {e}")
+
+        # 3) Kraken scan (available symbols often have multiple quote formats)
+        try:
+            from kraken_client import KrakenClient
+            kraken = KrakenClient()
+            for ticker in kraken.get_24h_tickers() or []:
+                symbol = str(ticker.get('symbol', ''))
+                if symbol.endswith("USD"):
+                    _add_ticker(ticker, quote_suffix="USD")
+                elif symbol.endswith("USDC"):
+                    _add_ticker(ticker, quote_suffix="USDC")
+            exchange_fetches.append("kraken")
+        except Exception as e:
+            logger.debug(f"⚠️ Kraken market data unavailable: {e}")
+
+        # 4) Hard guarantee: every held symbol gets a live exchange quote
+        # so leap logic always uses real exchange data for our actual portfolio.
+        for friend in self.friends.values():
+            friend_symbol = _base_symbol(friend.symbol)
+            if friend_symbol in self.market_data:
+                # Keep alias key so update_friends_prices can resolve raw symbols too
+                self.market_data.setdefault(friend.symbol, self.market_data[friend_symbol])
+                continue
+
+            primary_exchange = str(friend.exchange or self.exchange or "binance").lower().split(":")[-1]
+            candidate_exchanges = [primary_exchange, 'binance', 'kraken', 'alpaca']
+            seen = set()
+            candidate_exchanges = [ex for ex in candidate_exchanges if not (ex in seen or seen.add(ex))]
+
+            for ex in candidate_exchanges:
+                try:
+                    pair = f"{friend_symbol}USDC"
+                    if ex == 'kraken':
+                        pair = f"{friend_symbol}USD"
+                    elif ex == 'alpaca':
+                        pair = f"{friend_symbol}/USD"
+
+                    if ex == 'binance':
+                        from binance_client import BinanceClient
+                        t = BinanceClient().get_24h_ticker(pair)
+                    elif ex == 'kraken':
+                        from kraken_client import KrakenClient
+                        t = KrakenClient().get_24h_ticker(pair)
+                    elif ex == 'alpaca':
+                        from alpaca_client import AlpacaClient
+                        t = AlpacaClient().get_ticker(pair)
+                        if t and 'price' in t:
+                            t = {
+                                'symbol': f"{friend_symbol}USD",
+                                'lastPrice': t.get('price', 0),
+                                'priceChangePercent': t.get('change_24h', 0),
+                                'quoteVolume': t.get('volume_24h', 0),
+                                'highPrice': t.get('high_24h', t.get('price', 0)),
+                                'lowPrice': t.get('low_24h', t.get('price', 0)),
+                            }
+                    else:
+                        continue
+
+                    if t and _to_float(t.get('lastPrice')) > 0:
+                        _add_ticker(t, quote_suffix="USD" if ex in {'kraken', 'alpaca'} else "USDC")
+                        if friend_symbol in self.market_data:
+                            self.market_data.setdefault(friend.symbol, self.market_data[friend_symbol])
+                        break
+                except Exception:
+                    continue
+
+        if not self.market_data:
+            logger.error("❌ Failed to fetch market data from all exchanges")
             return self.market_data
+
+        self.last_scan_time = datetime.now()
+        src = ", ".join(exchange_fetches) if exchange_fetches else "held-symbol direct lookups"
+        logger.info(f"📊 Fetched {len(self.market_data)} coins from exchanges ({src})")
+        return self.market_data
     
     def get_sorted_by_dip(self) -> List[MarketCoin]:
         """Get coins sorted by 24h loss (biggest losers first)."""

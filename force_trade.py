@@ -29,6 +29,8 @@ load_dotenv()
 import time
 from datetime import datetime
 
+from queen_force_trade_governance import evaluate_queen_force_trade_authority
+
 def force_trade():
     """Force execute a single trade"""
     
@@ -49,6 +51,17 @@ def force_trade():
     print()
     print("⚠️  WARNING: This will execute a REAL trade!")
     print("="*70)
+
+    decision = evaluate_queen_force_trade_authority()
+    print(f"👑 Queen Governance: {decision.reason}")
+    if decision.missing_requirements:
+        print("   Missing requirements:")
+        for requirement in decision.missing_requirements:
+            print(f"   - {requirement}")
+    if not decision.allowed:
+        print("🛑 Aborting force trade: only the unified Queen may authorize forced trades.")
+        return False
+
     print()
     
     # Import after setting environment
@@ -73,7 +86,7 @@ def force_trade():
     # Force load Binance data since that's where we have API keys
     print("   📊 Loading Binance market data...")
     try:
-        from binance_client import BinanceClient
+        from binance_client import get_binance_client
         binance = get_binance_client()
         tickers = binance.get_24h_tickers()
         

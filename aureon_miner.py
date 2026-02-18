@@ -7872,7 +7872,7 @@ class AureonMiner:
         try:
             v11_config = V11Config(
                 enabled_exchanges=['binance', 'alpaca', 'kraken'],
-                max_concurrent_positions=100
+                max_concurrent_positions=None
             )
             self._v11_station = V11PowerStationLive(config=v11_config, dry_run=True)
             self._v11_enabled = True
