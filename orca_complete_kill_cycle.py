@@ -1215,7 +1215,7 @@ def get_queen_phase(current_capital: float) -> dict:
             'target': 2500,
             'strategy': 'MOONSHOT_HUNTING',
             'min_cop': 1.10,  # Accept 10%+ gains for quick compounding
-            'max_positions': 50,  # NO LIMITS - Full production autonomous trading
+            'max_positions': 0,  # <=0 means UNLIMITED positions
             'prefer_volatile': True,
             'new_listings': True,
             'leverage_ok': True,
@@ -1228,7 +1228,7 @@ def get_queen_phase(current_capital: float) -> dict:
             'target': 250_000,
             'strategy': 'COMPOUND_MOMENTUM',
             'min_cop': 1.05,  # Accept 5%+ gains, compound rapidly
-            'max_positions': 50,  # NO LIMITS - Full production autonomous trading
+            'max_positions': 0,  # <=0 means UNLIMITED positions
             'prefer_volatile': True,
             'leverage_ok': True,
             'split_positions': True,
@@ -1241,7 +1241,7 @@ def get_queen_phase(current_capital: float) -> dict:
             'target': 50_000_000,
             'strategy': 'WHALE_TACTICS',
             'min_cop': 1.03,  # Accept 3%+ gains with large size
-            'max_positions': 50,  # NO LIMITS - Full production autonomous trading
+            'max_positions': 0,  # <=0 means UNLIMITED positions
             'options_preferred': True,
             'arbitrage_active': True,
             'catalyst_hunting': True,
@@ -1254,7 +1254,7 @@ def get_queen_phase(current_capital: float) -> dict:
             'target': 1_000_000_000,
             'strategy': 'MARKET_MAKER',
             'min_cop': 1.02,  # Accept 2%+ gains with massive size
-            'max_positions': 50,  # NO LIMITS - Full production autonomous trading
+            'max_positions': 0,  # <=0 means UNLIMITED positions
             'market_making': True,
             'mega_leverage': True,
             'priority_access': True,
@@ -8806,21 +8806,24 @@ class OrcaKillCycle:
         print(f"   QUEEN APPROVED: {symbol} [{context}] - {gate_reason}")
 
         #                                                                    
-        #     REQUIRE 30s VALIDATED PREDICTION WINDOW
+        #     REQUIRE 30s VALIDATED PREDICTION WINDOW (configurable)
         #                                                                    
-        pred_ok, pred_info = self._prediction_window_ready(symbol)
-        if not pred_ok:
-            print(f"   PREDICTION WINDOW BLOCKED: {symbol} [{context}]")
-            print(f"    Reason: {pred_info.get('reason')} | duration={pred_info.get('duration')} count={pred_info.get('count')}")
-            return {
-                'status': 'blocked',
-                'reason': pred_info,
-                'blocked_by': 'PREDICTION_WINDOW_GATE',
-                'symbol': symbol,
-                'exchange': exchange,
-                'context': context,
-                'rejected': True
-            }
+        if self.require_prediction_window:
+            pred_ok, pred_info = self._prediction_window_ready(symbol)
+            if not pred_ok:
+                print(f"   PREDICTION WINDOW BLOCKED: {symbol} [{context}]")
+                print(f"    Reason: {pred_info.get('reason')} | duration={pred_info.get('duration')} count={pred_info.get('count')}")
+                return {
+                    'status': 'blocked',
+                    'reason': pred_info,
+                    'blocked_by': 'PREDICTION_WINDOW_GATE',
+                    'symbol': symbol,
+                    'exchange': exchange,
+                    'context': context,
+                    'rejected': True
+                }
+        else:
+            print(f"   PREDICTION WINDOW BYPASS: {symbol} [{context}] (REQUIRE_PREDICTION_WINDOW=false)")
 
         #                                                                    
         #     TRUTH PREDICTION ENGINE GATE (95% accuracy)
@@ -11711,7 +11714,7 @@ class OrcaKillCycle:
         else:
             print("   Queen Sentience: UNAVAILABLE")
 
-    def run_autonomous(self, max_positions: int = 50, amount_per_position: float = 10.0,
+    def run_autonomous(self, max_positions: int = 0, amount_per_position: float = 10.0,
                        target_pct: float = 1.0, min_change_pct: float = 0.05):
         """
            FULLY AUTONOMOUS QUEEN-GUIDED TRADING LOOP   
@@ -11727,6 +11730,20 @@ class OrcaKillCycle:
         
         NO STOP LOSS - HOLD UNTIL PROFIT!
         """
+        # Max positions: <=0 means unlimited, can be overridden by ORCA_MAX_POSITIONS env.
+        env_max_positions = os.getenv('ORCA_MAX_POSITIONS', '').strip().lower()
+        if env_max_positions:
+            try:
+                if env_max_positions in {'unlimited', 'infinite', 'inf', 'none', 'nolimit', 'no-limit'}:
+                    max_positions = 0
+                else:
+                    max_positions = int(env_max_positions)
+            except Exception:
+                print(f"   Invalid ORCA_MAX_POSITIONS='{env_max_positions}' (ignoring)")
+
+        cap_enabled = int(max_positions) > 0
+        max_positions_label = str(int(max_positions)) if cap_enabled else "∞"
+
         print("\n" + " "*30)
         print("     AUTONOMOUS QUEEN MODE - INFINITE LOOP   ")
         print(" "*30)
@@ -11946,7 +11963,7 @@ class OrcaKillCycle:
             "intent",
             topic="orca.autonomous.intent",
             meta={
-                "max_positions": max_positions,
+                "max_positions": (int(max_positions) if cap_enabled else "unlimited"),
                 "amount_per_position": amount_per_position,
                 "target_pct": target_pct,
             },
@@ -12154,9 +12171,15 @@ class OrcaKillCycle:
                     # Binance positions - SCAN BALANCE FOR HOLDINGS
                     binance_positions = client.get_balance()
                     if binance_positions:
+                        skipped_ld_tokens = 0
                         for asset, qty in binance_positions.items():
                             if asset in ['USD', 'USDT', 'USDC', 'BUSD', 'TUSD', 'DAI', 'FDUSD', 'GBP', 'EUR']:
                                 continue  # Skip stablecoins/fiat
+                            # Skip Binance Earn/locked wrapper balances (LD*):
+                            # they are often non-tradable directly and cause repeated no-price scans.
+                            if str(asset).startswith('LD'):
+                                skipped_ld_tokens += 1
+                                continue
                             qty = float(qty)
                             if qty > 0.000001:
                                 # Try multiple quote currencies (USDT is most common on Binance)
@@ -12243,6 +12266,8 @@ class OrcaKillCycle:
                                 
                                 if not found_price and qty * 100 > 1:  # Asset worth checking (rough estimate)
                                     print(f"      {asset}: {qty:.6f} (could not get price for any trading pair)")
+                        if skipped_ld_tokens > 0:
+                            print(f"      Binance: skipped {skipped_ld_tokens} LD* earn/locked balances during scan")
                     else:
                         print(f"   No positions on {exchange_name.upper()}")
                                     
@@ -12415,9 +12440,10 @@ class OrcaKillCycle:
                     try:
                         # Non-blocking harvest check
                         h_results = self.avalanche.run_harvest_cycle(dry_run=False)
-                        if h_results['harvested_count'] > 0:
-                            amt = h_results['total_harvested_usd']
-                            print(f"\n   AVALANCHE: Harvested ${amt:.2f} from {h_results['harvested_count']} positions! (Treasury growing)")
+                        harvested_count = int((h_results or {}).get('harvested_count', 0) or 0)
+                        if harvested_count > 0:
+                            amt = float((h_results or {}).get('total_harvested_usd', 0.0) or 0.0)
+                            print(f"\n   AVALANCHE: Harvested ${amt:.2f} from {harvested_count} positions! (Treasury growing)")
                             # Add to stats but differentiate from realized kill PnL
                             session_stats['total_pnl'] += amt
                     except Exception as e:
@@ -12561,7 +12587,14 @@ class OrcaKillCycle:
                     #                                                            
                     if self.harmonic_signal_chain:
                         try:
-                            chain_result = self.harmonic_signal_chain.send_signal({'type': 'market_pulse', 'data': batch_prices})
+                            signal_message = "market_pulse"
+                            if batch_prices and isinstance(batch_prices, dict):
+                                try:
+                                    sample_symbols = list(batch_prices.keys())[:5]
+                                    signal_message = f"market_pulse:{','.join(sample_symbols)}"
+                                except Exception:
+                                    signal_message = "market_pulse"
+                            chain_result = self.harmonic_signal_chain.send_signal(signal_message)
                             if chain_result:
                                 print(f"     HARMONIC CHAIN: Signal processed through 5 frequency layers")
                         except Exception as e:
@@ -12822,12 +12855,12 @@ class OrcaKillCycle:
                     cash = self.get_available_cash()
                     
                     # Check if we have room for more positions
-                    if len(positions) < max_positions:
+                    if (not cap_enabled) or (len(positions) < max_positions):
                         #    Show quantum-enhanced scanning status
                         quantum_indicator = ""
                         if quantum_cognition and quantum_stats['amplification'] > 1.0:
                             quantum_indicator = f"   {quantum_stats['amplification']:.1f}x"
-                        print(f"\n {quantum_indicator} QUANTUM-ENHANCED SCANNING... ({len(positions)}/{max_positions} positions)")
+                        print(f"\n {quantum_indicator} QUANTUM-ENHANCED SCANNING... ({len(positions)}/{max_positions_label} positions)")
 
                         total_cash = sum(cash.values())
                         
@@ -12997,8 +13030,20 @@ class OrcaKillCycle:
                                 print(f"   [DEBUG] Found {len(opportunities)} opps, {len(new_opps)} new (top: {', '.join(top_opps) or 'none'})")
                                 
                                 if new_opps:
-                                    # Take best opportunity first (needed for Queen signal)
-                                    best = new_opps[0]
+                                    # PRIORITIZE opportunities on exchanges that actually have spendable cash
+                                    funded_opps = [
+                                        o for o in new_opps
+                                        if cash.get(o.exchange, 0.0) >= 0.10 and getattr(o, 'price', 0) and getattr(o, 'price', 0) > 0
+                                    ]
+                                    funded_opps.sort(key=lambda x: getattr(x, 'momentum_score', 0.0), reverse=True)
+                                    if funded_opps:
+                                        best = funded_opps[0]
+                                        print(f"   [DEBUG] Funded opps: {len(funded_opps)} (best funded: {best.symbol} on {best.exchange}, cash=${cash.get(best.exchange, 0.0):.2f})")
+                                    else:
+                                        best = new_opps[0]
+                                        cash_preview = ", ".join([f"{ex.upper()}=${amt:.2f}" for ex, amt in cash.items()])
+                                        print(f"   [DEBUG] No funded opportunities. Exchange cash: {cash_preview}")
+
                                     print(f"   [DEBUG] Top opportunities: {', '.join([f'{o.symbol}({o.change_pct:+.2f}%)' for o in new_opps[:5]])}")
                                     
                                     # Ask Queen for guidance (MANDATORY)
@@ -13033,6 +13078,16 @@ class OrcaKillCycle:
                                             quantum_indicator = f"  {quantum_stats['amplification']:.1f}x " if quantum_boost_applied else ""
                                             print(f"     {quantum_indicator}Queen signal: {action} (confidence {confidence:.0%})")
                                             queen_approved = (action == 'BUY' and confidence >= 0.3)  # Lowered from 0.5
+
+                                            # Fallback autonomy: if Queen says HOLD but setup is strong and funded,
+                                            # let the Queen Arsenal perform final hard-gate validation.
+                                            if not queen_approved:
+                                                setup_strong = abs(best.change_pct) >= max(0.10, min_change_pct * 2) and best.momentum_score >= 0.20
+                                                setup_funded = cash.get(best.exchange, 0.0) >= 0.10
+                                                if action != 'BUY' and setup_strong and setup_funded:
+                                                    print(f"      Queen fallback override: strong funded setup ({best.symbol}) -> sending to Queen Arsenal gates")
+                                                    queen_approved = True
+
                                             print(f"   [DEBUG] {quantum_indicator}Queen Decision for {best.symbol}: Approved={queen_approved} (Action={action}, Conf={confidence:.1%})")
                                         except Exception as e:
                                             print(f"      Queen signal unavailable: {e}")
@@ -13052,6 +13107,30 @@ class OrcaKillCycle:
                                                 exchange_cash = cash.get(best.exchange, 0)
                                                 buy_amount = min(amount_per_position, exchange_cash * 0.9)
                                                 print(f"   [DEBUG] Buy Calc: Cash={exchange_cash:.2f}, AmtPerPos={amount_per_position}, BuyAmt={buy_amount:.2f}")
+
+                                                # Kraken funding fallback:
+                                                # If cash is mostly in GBP and pair is /USD, switch to /GBP pair.
+                                                if best.exchange == 'kraken' and symbol_clean.endswith('USD'):
+                                                    try:
+                                                        bal = client.get_balance() or {}
+                                                        usd_bal = float(bal.get('ZUSD', 0) or bal.get('USD', 0) or 0)
+                                                        gbp_bal = float(bal.get('ZGBP', 0) or bal.get('GBP', 0) or 0)
+                                                        if usd_bal < 1.0 and gbp_bal > 0:
+                                                            base = symbol_clean[:-3]
+                                                            gbp_symbol = f"{base}GBP"
+                                                            gbp_ticker = client.get_ticker(gbp_symbol)
+                                                            if gbp_ticker:
+                                                                # Convert USD-equivalent buy amount into GBP quote amount
+                                                                try:
+                                                                    live_prices = self._get_live_crypto_prices()
+                                                                    gbp_usd = float(live_prices.get('GBPUSD', 1.27) or 1.27)
+                                                                except Exception:
+                                                                    gbp_usd = 1.27
+                                                                symbol_clean = gbp_symbol
+                                                                buy_amount = buy_amount / gbp_usd if gbp_usd > 0 else buy_amount
+                                                                print(f"   [DEBUG] Kraken GBP funding route: using {symbol_clean} with quote_qty={buy_amount:.4f} GBP")
+                                                    except Exception as kr_fallback_err:
+                                                        print(f"      Kraken funding fallback error: {kr_fallback_err}")
                                                 
                                                 if buy_amount >= 0.10:  # Minimum $0.10 (exchange mins vary)
                                                     fee_rate = self.fee_rates.get(best.exchange, 0.0025)
@@ -13134,6 +13213,8 @@ class OrcaKillCycle:
                                                                 print(f"        NO STOP LOSS - HOLD UNTIL PROFIT!")
                                                                 
                                                                 session_stats['total_trades'] += 1
+                                                else:
+                                                    print(f"      BUY SKIPPED: insufficient funded quote amount on {best.exchange.upper()} (buy_amount={buy_amount:.4f})")
                                         except Exception as e:
                                             print(f"      Buy failed: {e}")
                                             # Flash alert for API issues
@@ -13185,7 +13266,7 @@ class OrcaKillCycle:
                     #   Harmonic Liquid Aluminium Field visualization
                     self._print_harmonic_field_summary()
                     
-                    print(f"     {len(positions)}/{max_positions} ACTIVE POSITIONS | Next scan: {max(0, scan_interval - (current_time - last_scan_time)):.0f}s")
+                    print(f"     {len(positions)}/{max_positions_label} ACTIVE POSITIONS | Next scan: {max(0, scan_interval - (current_time - last_scan_time)):.0f}s")
                     print("="*80)
                     
                     # Update and display each position
@@ -14134,7 +14215,7 @@ class OrcaKillCycle:
     #    WAR ROOM MODE - RICH TERMINAL UI (NO SPAM)
     #                                                                                
     
-    def run_autonomous_warroom(self, max_positions: int = 50,
+    def run_autonomous_warroom(self, max_positions: int = 0,
                                target_pct: float = 1.0, min_change_pct: float = 0.05,
                                duration_hours: float = float('inf'), trade_interval_seconds: int = 10,
                                risk_per_trade_pct: float = 0.5, amount_per_position: float = None):
@@ -14149,6 +14230,9 @@ class OrcaKillCycle:
         """
         import time
         from rich.live import Live
+
+        cap_enabled = int(max_positions) > 0
+        max_positions_label = str(int(max_positions)) if cap_enabled else "∞"
 
         try:
             # Queen initialization and other setup code...
@@ -14173,7 +14257,10 @@ class OrcaKillCycle:
             amount_per_position = capital * (risk_per_trade_pct / 100.0)  # Risk % of capital per trade
         else:
             # Use provided amount
-            capital = amount_per_position * max_positions
+            if cap_enabled:
+                capital = amount_per_position * max_positions
+            else:
+                capital = getattr(self, 'initial_capital', 0) or (amount_per_position * 10)
         print(f"  Position sizing: ${amount_per_position:.2f} per trade ({risk_per_trade_pct}% risk on ${capital:.2f} capital)")
 
         # 3. Main trading loop
@@ -14183,7 +14270,7 @@ class OrcaKillCycle:
         last_dashboard_update = 0
         dashboard_update_interval = 30  # Update dashboard every 30 seconds
 
-        print(f"   WAR ROOM ACTIVATED - {max_positions} max positions, ${amount_per_position:.2f} per trade")
+        print(f"   WAR ROOM ACTIVATED - {max_positions_label} max positions, ${amount_per_position:.2f} per trade")
         print(f"  Duration: {duration_hours} hours, Check interval: {trade_interval_seconds}s")
         print("  Scanning for rising stars with intelligence systems...")
 
@@ -14215,8 +14302,9 @@ class OrcaKillCycle:
 
                 # STAGE 2: Execute trades for top candidates
                 executed_this_round = 0
-                for candidate in candidates[:max_positions]:
-                    if executed_this_round >= max_positions:
+                candidate_batch = candidates[:max_positions] if cap_enabled else candidates
+                for candidate in candidate_batch:
+                    if cap_enabled and executed_this_round >= max_positions:
                         break
                     
                     symbol = candidate['symbol']
@@ -14341,9 +14429,66 @@ class OrcaKillCycle:
         except Exception as e:
             print(f"   War room snapshot failed: {e}")
 
-    #                                                                                
+    #                                                                                 
     # MAIN EXECUTION
-    #                                                                                
+    #                                                                                 
+
+_ORCA_LOCK_HANDLE = None
+
+
+def _acquire_orca_singleton_lock(lock_name: str = "orca_autonomous_live.lock") -> bool:
+    """Acquire singleton lock so only one autonomous Orca process can run."""
+    global _ORCA_LOCK_HANDLE
+    lock_path = os.path.join("/tmp", lock_name)
+    try:
+        lock_f = open(lock_path, "w")
+        try:
+            import fcntl
+            fcntl.flock(lock_f.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except Exception:
+            # Lock acquisition failed (usually another running process) -> enforce singleton.
+            try:
+                lock_f.close()
+            except Exception:
+                pass
+            return False
+        lock_f.write(str(os.getpid()))
+        lock_f.flush()
+        _ORCA_LOCK_HANDLE = lock_f
+        return True
+    except Exception:
+        return False
+
+
+def _production_preflight(orca: "OrcaKillCycle", live_mode: bool) -> None:
+    """Fail-fast checks before entering autonomous loop."""
+    if not live_mode:
+        return
+
+    # 1) Required runtime packages for full live intelligence stack
+    required_modules = ["dotenv", "numpy", "scipy", "aiohttp", "websockets"]
+    missing = []
+    for mod in required_modules:
+        try:
+            __import__(mod)
+        except Exception:
+            missing.append(mod)
+    if missing:
+        raise RuntimeError(f"Missing production dependencies: {', '.join(missing)}")
+
+    # 2) Critical systems online
+    fc = orca.run_flight_check() if hasattr(orca, 'run_flight_check') else {}
+    summary = (fc or {}).get('summary', {}) if isinstance(fc, dict) else {}
+    if summary and not summary.get('critical_online', False):
+        raise RuntimeError("Flight check failed: critical systems offline")
+
+    # 3) Must have spendable cash to trade
+    cash = orca.get_available_cash() if hasattr(orca, 'get_available_cash') else {}
+    total_cash = float(sum(cash.values())) if isinstance(cash, dict) else 0.0
+    if total_cash < 0.10:
+        raise RuntimeError(f"No spendable cash detected for live trading (total_cash=${total_cash:.4f})")
+
+    print(f"  Production preflight PASSED: total spendable cash=${total_cash:.2f}")
 
 if __name__ == "__main__":
     # Windows UTF-8 wrapper
@@ -14362,14 +14507,39 @@ if __name__ == "__main__":
         parser.add_argument("--symbols", type=str, help="Comma-separated list of symbols to trade")
         parser.add_argument("--initial-capital", type=float, default=1000, help="Initial capital amount")
         parser.add_argument("--dry-run", action="store_true", help="Dry run mode - no real trades")
+        parser.add_argument("--allow-multi-instance", action="store_true", help="Allow multiple autonomous Orca instances (not recommended)")
         # Positional args passed by start_orca.sh: max_positions position_size min_target
-        parser.add_argument("max_positions", nargs="?", type=int, default=50, help="Max concurrent positions (default: 50)")
+        parser.add_argument("max_positions", nargs="?", type=int, default=0, help="Max concurrent positions (<=0 for unlimited, default: unlimited)")
         parser.add_argument("position_size", nargs="?", type=float, default=10.0, help="Position size in USD (default: 10.0)")
         parser.add_argument("min_target", nargs="?", type=float, default=1.0, help="Min profit target percent (default: 1.0)")
         
         args = parser.parse_args()
+
+        # Force consistent runtime mode flags for all subsystems.
+        # `--autonomous` without `--dry-run` must run fully LIVE.
+        if args.autonomous and not args.dry_run:
+            os.environ['LIVE'] = '1'
+            os.environ['LIVE_MODE'] = 'true'
+            os.environ['DRY_RUN'] = '0'
+            os.environ['DRY_RUN_MODE'] = 'false'
+            os.environ['KRAKEN_DRY_RUN'] = 'false'
+            os.environ['BINANCE_DRY_RUN'] = 'false'
+            os.environ['ALPACA_DRY_RUN'] = 'false'
+            os.environ['ALPACA_PAPER'] = os.getenv('ALPACA_PAPER', 'false')
+        elif args.dry_run:
+            os.environ['LIVE'] = '0'
+            os.environ['LIVE_MODE'] = 'false'
+            os.environ['DRY_RUN'] = '1'
+            os.environ['DRY_RUN_MODE'] = 'true'
         
         print(f"  Args parsed: autonomous={args.autonomous}, dry_run={args.dry_run}, max_positions={args.max_positions}, position_size={args.position_size}, min_target={args.min_target}")
+
+        # Prevent duplicate autonomous instances by default (production safety)
+        if args.autonomous and not args.allow_multi_instance:
+            lock_ok = _acquire_orca_singleton_lock("orca_autonomous.lock")
+            if not lock_ok:
+                print("  Another Orca autonomous instance is already running. Exiting for production safety.")
+                sys.exit(1)
         
         # Parse symbols
         symbol_whitelist = None
@@ -14383,12 +14553,26 @@ if __name__ == "__main__":
             initial_capital=args.initial_capital,
             autonomous_mode=args.autonomous
         )
+
+        # Normalize instantiated clients to requested mode.
+        requested_dry_run = bool(args.dry_run)
+        try:
+            for _name, _client in getattr(orca, 'clients', {}).items():
+                if _client is not None and hasattr(_client, 'dry_run'):
+                    setattr(_client, 'dry_run', requested_dry_run)
+        except Exception:
+            pass
         
         print(f"  Orca instance created successfully")
         
         if args.autonomous:
             print("  AUTONOMOUS MODE ACTIVATED")
             print(f"  {'LIVE MODE - REAL TRADES' if not args.dry_run else 'DRY-RUN MODE'}")
+            print(f"  Runtime gate state: LIVE={os.getenv('LIVE')} DRY_RUN={os.getenv('DRY_RUN')} KRAKEN_DRY_RUN={os.getenv('KRAKEN_DRY_RUN')} BINANCE_DRY_RUN={os.getenv('BINANCE_DRY_RUN')} ALPACA_DRY_RUN={os.getenv('ALPACA_DRY_RUN')}")
+
+            # Production readiness checks (live mode only)
+            _production_preflight(orca, live_mode=not args.dry_run)
+
             print(f"  Starting FULL autonomous Queen loop (sell + buy + frog)...")
             print(f"  Args: max_positions={args.max_positions}, position_size=${args.position_size}, min_target={args.min_target}%")
             # CRITICAL: Use run_autonomous() NOT run_autonomous_warroom()!
