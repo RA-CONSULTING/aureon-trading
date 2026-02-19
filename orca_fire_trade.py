@@ -51,12 +51,21 @@ class FireTrader:
         # Kraken balances
         log_fire("\n🐙 KRAKEN:")
         tradeable_kraken = {}
+        kraken_cash = 0.0
+        kraken_usd_cash = 0.0
+        kraken_usdc_cash = 0.0
         try:
             k_balances = self.kraken.get_balance()
             for asset, amt in k_balances.items():
                 amt = float(amt)
                 if amt > 0:
                     log_fire(f"   {asset}: {amt}")
+                    if asset in ['USD', 'ZUSD', 'USDC', 'USDT', 'TUSD']:
+                        kraken_cash += amt
+                    if asset in ['USD', 'ZUSD']:
+                        kraken_usd_cash += amt
+                    if asset == 'USDC':
+                        kraken_usdc_cash += amt
                     if asset not in ['USD', 'ZUSD', 'ZGBP']:
                         tradeable_kraken[asset] = amt
         except Exception as e:
@@ -65,11 +74,14 @@ class FireTrader:
         # Binance balances
         log_fire("\n🟡 BINANCE:")
         tradeable_binance = {}
+        binance_cash = 0.0
         try:
             b_balances = self.binance.get_balance()
             for asset, amt in b_balances.items():
                 amt = float(amt)
                 if amt > 0:
+                    if asset in ['USDT', 'USDC', 'BUSD', 'FDUSD', 'TUSD']:
+                        binance_cash += amt
                     # Skip stablecoins and LD* (Binance Simple Earn/Locked) - not spot tradeable
                     if asset in ['USDT', 'USDC', 'BUSD', 'FDUSD', 'TUSD'] or asset.startswith('LD'):
                         continue
@@ -127,26 +139,31 @@ class FireTrader:
             # Get current price and check if profitable
             try:
                 pair = f"{asset}USD"
-                ticker = self.kraken.get_ticker(pair)
-                if not ticker or not ticker.get('price'):
+                ticker24 = self.kraken.get_24h_ticker(pair)
+                if ticker24 and ticker24.get('lastPrice'):
+                    price = float(ticker24.get('lastPrice', 0) or 0)
+                    change_24h = float(ticker24.get('priceChangePercent', 0) or 0)
+                    quote_vol = float(ticker24.get('quoteVolume', 0) or 0)
+                else:
+                    ticker = self.kraken.get_ticker(pair)
+                    if not ticker or not ticker.get('price'):
+                        continue
+                    price = float(ticker['price'])
+                    change_24h = 0.0
+                    quote_vol = 0.0
+
+                if price <= 0:
                     continue
-                    
-                price = float(ticker['price'])
+
                 value = qty * price
                 
                 if value < 5:  # Skip small positions
                     continue
-                    
-                # Check 24h data
-                high = float(ticker.get('high', price))
-                low = float(ticker.get('low', price))
-                
-                if high <= low:
-                    log_fire(f"   [DEBUG] Kraken {asset}: invalid range high={high:.4f} low={low:.4f}")
-                    continue
 
-                position_pct = ((price - low) / (high - low)) * 100
-                log_fire(f"   [DEBUG] Kraken {asset}: qty={qty:.4f}, price=${price:.4f}, low=${low:.4f}, high=${high:.4f}, position%={position_pct:.2f}")
+                log_fire(
+                    f"   [DEBUG] Kraken {asset}: qty={qty:.4f}, price=${price:.4f}, "
+                    f"24h_change={change_24h:+.2f}%, vol=${quote_vol:,.0f}"
+                )
 
                 # Load cost basis to ensure we're not selling at a loss
                 cost_basis = None
@@ -163,13 +180,15 @@ class FireTrader:
                 # Calculate profit margin including 0.26% taker fee
                 fee_rate = 0.0026
                 net_price = price * (1 - fee_rate)
-                profit_margin = ((net_price - (cost_basis or low)) / (cost_basis or low)) * 100 if (cost_basis or low) > 0 else 0
+                entry_ref = cost_basis if cost_basis is not None else price
+                profit_margin = ((net_price - entry_ref) / entry_ref) * 100 if entry_ref > 0 else 0
 
-                log_fire(f"   [DEBUG] Kraken {asset}: cost_basis=${cost_basis:.4f if cost_basis else 0}, net_after_fees=${net_price:.4f}, profit_margin={profit_margin:.2f}%")
+                cost_basis_dbg = f"{cost_basis:.4f}" if cost_basis is not None else "0.0000"
+                log_fire(f"   [DEBUG] Kraken {asset}: cost_basis=${cost_basis_dbg}, net_after_fees=${net_price:.4f}, profit_margin={profit_margin:.2f}%")
 
-                # Only sell if: (1) in upper range AND (2) actual profit after fees > 0.5%
-                if position_pct > 60 and profit_margin > 0.5:  # In profit zone with real profit
-                    log_fire(f"   📈 {asset}: ${value:.2f} @ ${price:.4f} ({position_pct:.0f}% of range, +{profit_margin:.2f}% profit)")
+                # Sell if: (1) actual profit after fees > 0.5% and (2) momentum isn't strongly down
+                if profit_margin > 0.5 and change_24h > -1.0:
+                    log_fire(f"   📈 {asset}: ${value:.2f} @ ${price:.4f} (24h {change_24h:+.2f}%, +{profit_margin:.2f}% profit)")
                     
                     # This is our best sell
                     log_fire(f"\n🎯 PROFIT OPPORTUNITY: {asset}")
@@ -209,7 +228,120 @@ class FireTrader:
                 log_fire(f"   [DEBUG] Kraken {asset}: error while checking profit - {e}")
         
         log_fire("\n⚠️ No profitable positions to sell")
-        
+
+        # -----------------------------------------------------------------
+        # BUY FALLBACK: if we have real cash but no sell candidates, try a
+        # conservative momentum/dip entry with small size.
+        # -----------------------------------------------------------------
+        total_cash = kraken_cash + binance_cash
+        if total_cash < 1.0:
+            log_fire("   [DEBUG] Buy fallback skipped: insufficient total cash")
+            return False
+
+        log_fire("\n🛒 No sell found - scanning for BUY opportunities with available cash...")
+        log_fire(f"   [DEBUG] Cash available: Kraken=${kraken_cash:.2f}, Binance=${binance_cash:.2f}")
+
+        # Prefer Kraken if it has more cash (current setup often has Kraken USDC)
+        prefer_kraken = kraken_cash >= binance_cash and self.kraken is not None
+
+        # Conservative buy amount: 10% of funded exchange cash, capped
+        def _buy_amount(cash_amt: float) -> float:
+            return max(1.0, min(10.0, cash_amt * 0.10))
+
+        watchlist = ["ETH", "SOL", "BTC", "ADA", "XRP", "LINK", "AVAX", "DOT", "ATOM", "TRX"]
+
+        if prefer_kraken and kraken_cash >= 1.0:
+            best_buy = None
+            for base in watchlist:
+                for pair in (f"{base}USDC", f"{base}USD", f"X{base}ZUSD"):
+                    try:
+                        # Enforce quote-currency funding compatibility
+                        if pair.endswith("USDC") and kraken_usdc_cash < 1.0:
+                            continue
+                        if (pair.endswith("USD") or pair.endswith("ZUSD")) and kraken_usd_cash < 1.0:
+                            continue
+
+                        ticker24 = self.kraken.get_24h_ticker(pair)
+                        if not ticker24:
+                            continue
+                        price = float(ticker24.get('lastPrice', 0) or 0)
+                        change_24h = float(ticker24.get('priceChangePercent', 0) or 0)
+                        quote_vol = float(ticker24.get('quoteVolume', 0) or 0)
+                        if price <= 0 or quote_vol < 25000:
+                            continue
+                        # Favor positive momentum + high liquidity
+                        score = change_24h + min(quote_vol / 1_000_000, 5)
+                        if best_buy is None or score > best_buy['score']:
+                            best_buy = {
+                                'pair': pair,
+                                'price': price,
+                                'change_24h': change_24h,
+                                'quote_vol': quote_vol,
+                                'score': score,
+                            }
+                    except Exception:
+                        continue
+
+            if best_buy:
+                if best_buy['pair'].endswith('USDC'):
+                    funded_cash = kraken_usdc_cash
+                    quote_ccy = 'USDC'
+                else:
+                    funded_cash = kraken_usd_cash
+                    quote_ccy = 'USD'
+
+                quote_qty = min(_buy_amount(funded_cash), funded_cash * 0.9)
+                log_fire(f"\n🎯 BUY OPPORTUNITY (Kraken): {best_buy['pair']}")
+                log_fire(
+                    f"   Price=${best_buy['price']:.6f} | 24h={best_buy['change_24h']:+.2f}% | "
+                    f"Vol=${best_buy['quote_vol']:.0f}"
+                )
+                log_fire(f"   Executing BUY quote_qty={quote_qty:.2f} {quote_ccy}")
+                try:
+                    order = self.kraken.place_market_order(best_buy['pair'], 'buy', quote_qty=quote_qty)
+                    log_result(f"BUY ORDER RESULT: {json.dumps(order, indent=2) if order else 'None'}")
+                    if order and not order.get('error') and not order.get('rejected'):
+                        log_fire("💥 BUY EXECUTED (Kraken)")
+                        return True
+                    log_fire(f"❌ Buy not filled/rejected: {order}")
+                except Exception as e:
+                    log_fire(f"❌ Kraken buy failed: {e}")
+
+        if self.binance is not None and binance_cash >= 1.0:
+            best_buy = None
+            for base in watchlist:
+                for pair in (f"{base}USDC", f"{base}USDT"):
+                    try:
+                        ticker = self.binance.get_24h_ticker(pair)
+                        if not ticker:
+                            continue
+                        price = float(ticker.get('lastPrice', 0) or 0)
+                        change = float(ticker.get('priceChangePercent', 0) or 0)
+                        volume = float(ticker.get('quoteVolume', 0) or 0)
+                        if price <= 0 or volume < 50000:
+                            continue
+                        score = change + min(volume / 1_000_000, 5)
+                        if best_buy is None or score > best_buy['score']:
+                            best_buy = {'pair': pair, 'price': price, 'change': change, 'volume': volume, 'score': score}
+                    except Exception:
+                        continue
+
+            if best_buy:
+                quote_qty = min(_buy_amount(binance_cash), binance_cash * 0.9)
+                log_fire(f"\n🎯 BUY OPPORTUNITY (Binance): {best_buy['pair']}")
+                log_fire(f"   Price=${best_buy['price']:.6f} | 24h={best_buy['change']:+.2f}% | Vol=${best_buy['volume']:.0f}")
+                log_fire(f"   Executing BUY quote_qty=${quote_qty:.2f}")
+                try:
+                    order = self.binance.place_market_order(best_buy['pair'], 'buy', quote_qty=quote_qty)
+                    log_result(f"BUY ORDER RESULT: {json.dumps(order, indent=2) if order else 'None'}")
+                    if order and not order.get('error') and not order.get('rejected'):
+                        log_fire("💥 BUY EXECUTED (Binance)")
+                        return True
+                    log_fire(f"❌ Buy not filled/rejected: {order}")
+                except Exception as e:
+                    log_fire(f"❌ Binance buy failed: {e}")
+
+        log_fire("⚠️ No valid buy opportunities after fallback scan")
         return False
 
 def main():

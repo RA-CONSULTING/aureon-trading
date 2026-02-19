@@ -586,17 +586,21 @@ class QueenEternalMachine:
         self.is_running: bool = False
         self.start_time: Optional[datetime] = None
         
-        # Load REAL positions from tracked_positions.json!
+        # ALWAYS load REAL positions from LIVE exchange APIs!
+        # The frog must know what it ACTUALLY holds - no phantom positions!
+        self._load_friends_from_real_positions()
+        
         if initial_vault is None:
-            self._load_friends_from_real_positions()  # NEW: Load from LIVE positions!
             self.initial_vault = self.total_portfolio_value
         else:
             self.initial_vault = initial_vault
-            self.available_cash = initial_vault
-            self.cash_balance = initial_vault
         
-        # Load existing state if available
+        # Load existing state (statistics only - main_position synced from real data below)
         self._load_state()
+        
+        # CRITICAL: Override stale main_position from state file with REAL holdings!
+        # The Frog must leap from positions we ACTUALLY hold, not phantom data.
+        self._sync_main_position_to_real_holdings()
         
         logger.info("👑 Queen Eternal Machine initialized")
         logger.info(f"   💰 Total vault: ${self.total_portfolio_value:.2f}")
@@ -606,6 +610,47 @@ class QueenEternalMachine:
         logger.info(f"   📉 Min dip advantage: {min_dip_advantage*100:.1f}%")
         logger.info(f"   🧪 Dry run: {dry_run}")
     
+    def _sync_main_position_to_real_holdings(self) -> None:
+        """
+        Sync main_position with what we ACTUALLY hold on exchanges.
+        
+        If the state file loaded a main_position for a coin we don't hold,
+        replace it with our largest REAL holding so opportunities are calculated
+        against assets that actually exist.
+        """
+        if not self.friends:
+            # No real holdings loaded - clear phantom main_position
+            if self.main_position:
+                logger.warning(f"🐸 PHANTOM DETECTED: main_position={self.main_position.symbol} but we hold NOTHING - clearing!")
+                self.main_position = None
+            return
+        
+        # Check if current main_position is actually held
+        if self.main_position:
+            mp_symbol = self.main_position.symbol
+            # Check if we hold this asset in our friends list
+            if mp_symbol not in self.friends:
+                logger.warning(f"🐸 PHANTOM MAIN POSITION DETECTED: {mp_symbol} is NOT in real holdings!")
+                logger.warning(f"   State file had {mp_symbol} but we don't hold it on any exchange")
+                logger.warning(f"   Clearing phantom and selecting largest REAL holding...")
+                self.main_position = None
+        
+        # If no main_position (cleared or never set), pick largest real holding
+        if self.main_position is None and self.friends:
+            # Find the friend with highest value (our biggest real position)
+            best_friend = max(self.friends.values(), key=lambda f: f.current_value)
+            if best_friend.current_value > 0:
+                self.main_position = MainPosition(
+                    symbol=best_friend.symbol,
+                    quantity=best_friend.quantity,
+                    cost_basis=best_friend.cost_basis / best_friend.quantity if best_friend.quantity > 0 else best_friend.entry_price,
+                    entry_price=best_friend.entry_price,
+                    entry_time=datetime.now()
+                )
+                logger.info(f"🐸 REAL MAIN POSITION SET: {best_friend.symbol} (qty={best_friend.quantity:.4f}, exchange={best_friend.exchange})")
+            else:
+                logger.info(f"🐸 No valuable positions to set as main_position (all friends have $0 value)")
+
     def _load_friends_from_real_positions(self) -> None:
         """
         Load friends from LIVE API balances + cross-reference with cost basis tracker.
@@ -844,7 +889,12 @@ class QueenEternalMachine:
         if exchange == 'binance':
             return [f"{base}USDT", f"{base}USDC", f"{base}USD"]
         if exchange == 'kraken':
-            return [f"{base}USD", f"{base}USDT", f"{base}USDC"]
+            kraken_base = "XBT" if base == "BTC" else base
+            return [
+                f"{kraken_base}USD",
+                f"X{kraken_base}ZUSD",
+                f"{kraken_base}/USD",
+            ]
         if exchange == 'alpaca':
             return [f"{base}USD", f"{base}/USD"]
         return [f"{base}USD"]
@@ -855,6 +905,64 @@ class QueenEternalMachine:
         if response.get("rejected") or response.get("error") or response.get("dryRun"):
             return True
         return False
+
+    def _base_symbol_variants(self, base_symbol: str) -> set[str]:
+        base = (base_symbol or "").upper().strip()
+        for suffix in ("/USDT", "/USDC", "/USD", "USDT", "USDC", "USD"):
+            if base.endswith(suffix):
+                base = base[:-len(suffix)]
+                break
+        variants = {base}
+        if base == "BTC":
+            variants.update({"XBT", "XXBT", "XBTC"})
+        if base == "XBT":
+            variants.update({"BTC", "XXBT", "XBTC"})
+        variants.update({f"X{base}", f"Z{base}"})
+        return {v for v in variants if v}
+
+    def _asset_symbol_candidates(self, asset: str) -> set[str]:
+        raw = (asset or "").upper().strip()
+        if not raw:
+            return set()
+        trimmed = raw
+        for suffix in (".B", ".F", ".S"):
+            if trimmed.endswith(suffix):
+                trimmed = trimmed[:-len(suffix)]
+        candidates = {raw, trimmed}
+        if trimmed.startswith("X") and len(trimmed) > 1:
+            candidates.add(trimmed[1:])
+        if trimmed.startswith("Z") and len(trimmed) > 1:
+            candidates.add(trimmed[1:])
+        if trimmed == "XXBT":
+            candidates.update({"XBT", "BTC"})
+        if trimmed == "XBT":
+            candidates.add("BTC")
+        return {c for c in candidates if c}
+
+    def _get_available_base_quantity(self, exchange: str, base_symbol: str) -> float:
+        client = self._get_exchange_client(exchange)
+        if not client or not hasattr(client, "get_balance"):
+            return 0.0
+        try:
+            balances = client.get_balance() or {}
+        except Exception:
+            return 0.0
+        if not isinstance(balances, dict):
+            return 0.0
+
+        variants = self._base_symbol_variants(base_symbol)
+        available = 0.0
+        for asset, qty in balances.items():
+            try:
+                qty_f = float(qty or 0)
+            except Exception:
+                continue
+            if qty_f <= 0:
+                continue
+            asset_candidates = self._asset_symbol_candidates(str(asset))
+            if asset_candidates.intersection(variants):
+                available += qty_f
+        return max(0.0, available)
 
     def _extract_order_id(self, response: Dict[str, Any]) -> Optional[str]:
         if not isinstance(response, dict):
@@ -891,6 +999,14 @@ class QueenEternalMachine:
                 res = client.place_market_order(pair, side, quantity=quantity, quote_qty=quote_qty)
                 if not self._order_failed(res):
                     return res
+                if isinstance(res, dict) and str(res.get("error", "")).lower() == "volume_minimum":
+                    return {
+                        "error": "volume_minimum",
+                        "exchange": exchange,
+                        "symbol": base_symbol,
+                        "side": side,
+                        "details": res,
+                    }
                 last_err = f"rejected for {pair}"
             except Exception as e:
                 last_err = str(e)
@@ -2205,8 +2321,31 @@ class QueenEternalMachine:
 
         if self.live_trading:
             exchange = crumb.exchange if hasattr(crumb, "exchange") else self.exchange
+            available_qty = self._get_available_base_quantity(exchange, symbol)
+            if available_qty <= 0:
+                logger.warning(f"⚠️ No available live balance for {symbol} on {exchange}; skipping scalp sell")
+                return 0.0
+            if sell_qty > available_qty:
+                logger.warning(
+                    f"⚠️ Adjusting scalp sell qty for {symbol} on {exchange}: "
+                    f"tracked={sell_qty:.8f}, available={available_qty:.8f}"
+                )
+                sell_qty = available_qty
+                sell_value = sell_qty * crumb.current_price
+                cost_portion = crumb.cost_basis * percent_to_sell * (sell_qty / max(crumb.quantity * percent_to_sell, 1e-12))
+                profit = sell_value - cost_portion
+            if sell_qty <= 0:
+                return 0.0
             sell_res = self._place_market_order(exchange, symbol, "SELL", quantity=sell_qty)
             if self._order_failed(sell_res):
+                if isinstance(sell_res, dict) and str(sell_res.get("error", "")).lower() == "volume_minimum":
+                    details = sell_res.get("details") if isinstance(sell_res.get("details"), dict) else {}
+                    min_qty = details.get("ordermin", "?")
+                    qty = details.get("volume", sell_qty)
+                    logger.warning(
+                        f"⚠️ Scalp skipped for {symbol} on {exchange}: dust size {qty} below min {min_qty}"
+                    )
+                    return 0.0
                 logger.error(f"❌ Scalp SELL failed on {exchange}: {sell_res}")
                 return 0.0
             self._log_order_id("SCALP SELL", exchange, symbol, "SELL", sell_res)
@@ -2256,6 +2395,16 @@ class QueenEternalMachine:
         logger.info(f"\n{'='*60}")
         logger.info(f"🔄 CYCLE #{self.total_cycles} - {datetime.now().strftime('%H:%M:%S')}")
         logger.info(f"{'='*60}")
+        
+        # 🐸 SYNC: Refresh friends from REAL exchange positions every cycle
+        # This prevents phantom positions from accumulating over time
+        try:
+            self._load_friends_from_real_positions()
+            self._sync_main_position_to_real_holdings()
+            print(f"   🐸 [SYNC] Friends: {len(self.friends)} | Main: {self.main_position.symbol if self.main_position else 'NONE'}")
+        except Exception as e:
+            logger.warning(f"⚠️ Real position sync failed (using cached): {e}")
+            print(f"   🐸 [SYNC] FAILED: {e}")
         
         # 👑⚛️ QUEEN'S AUTONOMOUS DECISION - Full cognitive control
         queen_decision = None
@@ -2350,6 +2499,7 @@ class QueenEternalMachine:
         
         # 2. SCAN
         self.fetch_market_data()
+        print(f"   🐸 [SCAN] Market data: {len(self.market_data)} coins scanned")
         
         # 3. UPDATE
         if self.main_position and self.main_position.symbol in self.market_data:
@@ -2360,6 +2510,7 @@ class QueenEternalMachine:
         
         # 4. ANALYZE
         opportunities = self.find_leap_opportunities()
+        print(f"   🐸 [ANALYZE] Leap opportunities found: {len(opportunities)}")
         
         # 5. LEAP (if good opportunity AND Queen approves)
         if opportunities and queen_decision and queen_decision['has_control']:

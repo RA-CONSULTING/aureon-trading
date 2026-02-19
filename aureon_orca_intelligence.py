@@ -413,7 +413,7 @@ class OrcaKillerWhaleIntelligence:
         # � COMMUNICATION BUSES
         try:
             self.thought_bus = ThoughtBus()
-            self.chirp_bus = ChirpBus()
+            self.chirp_bus = get_chirp_bus() if CHIRP_BUS_AVAILABLE and get_chirp_bus else None
             print("✅ ORCA: Connected to ThoughtBus and ChirpBus")
         except Exception as e:
             print(f"⚠️ ORCA: Bus connection failed: {e}")

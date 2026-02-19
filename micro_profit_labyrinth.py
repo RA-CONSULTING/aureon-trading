@@ -89,6 +89,7 @@ if os.getenv("AUREON_DEBUG_STARTUP") == "1":
 import asyncio
 import argparse
 import importlib
+import inspect
 import json
 import logging
 import time
@@ -272,9 +273,9 @@ LIVE_MODE = os.getenv("LIVE", "0") == "1"
 # 🌐 MULTI-EXCHANGE CONFIG FLAGS (Production Pipeline)
 # ════════════════════════════════════════════════════════════════════════════
 # ALPACA_VERIFY_ONLY: When True, Alpaca is used only for balance/price verification, not execution
-ALPACA_VERIFY_ONLY = os.getenv("ALPACA_VERIFY_ONLY", "true").lower() == "true"
+ALPACA_VERIFY_ONLY = os.getenv("ALPACA_VERIFY_ONLY", "false").lower() == "true"
 # ALPACA_EXECUTE: Explicit flag to enable Alpaca execution (overrides VERIFY_ONLY)
-ALPACA_EXECUTE = os.getenv("ALPACA_EXECUTE", "false").lower() == "true"
+ALPACA_EXECUTE = os.getenv("ALPACA_EXECUTE", "true").lower() == "true"
 # ALPACA_INCLUDE_STOCKS: ENABLED BY DEFAULT for stock scanning
 # Checks specifically for stock opportunities alongside crypto
 ALPACA_INCLUDE_STOCKS = os.getenv("ALPACA_INCLUDE_STOCKS", "true").lower() == "true"
@@ -487,12 +488,13 @@ except ImportError as e:
 
 # Binance client
 try:
-    from binance_client import BinanceClient
+    from binance_client import BinanceClient, get_binance_client
     safe_print("🟡 Binance Client LOADED!")
     BINANCE_AVAILABLE = True
 except ImportError as e:
     safe_print(f"⚠️ Binance Client not available: {e}")
     BinanceClient = None
+    get_binance_client = None
     BINANCE_AVAILABLE = False
 
 # Alpaca client
@@ -4084,9 +4086,9 @@ class ProfitHarvester:
     - Unity in tandem with Queen Sero's brain
     """
     
-    # 👑💰 QUEEN'S SACRED HARVEST RULES - 1.88% MINIMUM 💰👑
+    # 👑💰 FULL-CYCLE HARVEST RULES - Any confirmed profit gets harvested 💰👑
     MIN_PROFIT_USD = 0.001      # Minimal absolute profit ($0.001 floor)
-    MIN_PROFIT_PCT = 1.88       # 🎯 QUEEN'S SACRED 1.88% MINIMUM - HARDCODED!
+    MIN_PROFIT_PCT = 0.30       # 🎯 0.30% minimum - allows micro-profits to complete full cycle!
     MIN_POSITION_VALUE = 1.00   # Position must be worth at least $1.00 to avoid dust harvesting
     
     # Fee estimate for selling on Alpaca (conservative)
@@ -4417,8 +4419,13 @@ class MicroProfitLabyrinth:
         # Turn-based OR First-Past-The-Post (FPTP)
         # FPTP = Scan ALL exchanges, execute FIRST profitable opportunity!
         # ════════════════════════════════════════════════════════════════
-        # 🦙 ALPACA-FOCUSED: Default to Alpaca-only. Other exchanges disabled.
-        self.exchange_order = ['alpaca'] if self.alpaca_only else ['binance', 'kraken', 'capital', 'alpaca']  # Multi-exchange order!
+        # 🌐 MULTI-BATTLEFRONT: Use EXCH_EXEC_ORDER from env, or default multi-exchange
+        if self.alpaca_only:
+            self.exchange_order = ['alpaca']
+        elif hasattr(self, 'exchange_order') and self.exchange_order:
+            pass  # Already set from EXCH_EXEC_ORDER at line 4274
+        else:
+            self.exchange_order = ['binance', 'kraken', 'capital', 'alpaca']  # Multi-exchange order!
         self.current_exchange_index = 0  # Which exchange's turn
         self.turns_completed = 0  # Total turns completed
         self.fptp_mode = True  # 🏁 First Past The Post mode - capture profit IMMEDIATELY! (Default: True)
@@ -8116,24 +8123,40 @@ class MicroProfitLabyrinth:
                 logger.warning(f"Queen Deep Think error (non-fatal): {e}")
                 safe_print(f"   ⚠️ Queen Deep Think unavailable: {e}")
         
-        # 🌾💰 PROFIT HARVESTER - Harvest any profitable positions FIRST!
-        # This gives us cash to buy new opportunities!
+        # 🌾💰 PROFIT HARVESTER - Harvest profitable positions on ALL exchanges!
+        # This gives us cash to buy new opportunities across ALL battlefronts!
         self.turns_since_harvest += 1
-        safe_print(f"   🌾 Harvest check: turns_since={self.turns_since_harvest}, interval={self.harvest_interval}, alpaca={'✅' if self.alpaca else '❌'}")
-        if self.alpaca and self.turns_since_harvest >= self.harvest_interval:
-            try:
-                safe_print(f"   🌾 Running harvest scan (ANY NET PROFIT = SELL!)...")
-                harvest_result = await self.harvest_profitable_positions()
-                if harvest_result.get('harvested'):
-                    safe_print(f"   🌾✅ CASH FLOW! Harvested ${harvest_result['total_profit_harvested']:.4f} profit → ${harvest_result['cash_generated']:.2f} cash")
-                elif harvest_result.get('candidates_found', 0) > 0:
-                    safe_print(f"   🌾 {harvest_result['candidates_found']} positions found - waiting for NET profit after fees")
-                else:
-                    safe_print(f"   🌾 No profitable positions yet - HODL until we're green! (NO LOSSES ACCEPTED)")
-                self.turns_since_harvest = 0
-            except Exception as e:
-                safe_print(f"   🌾❌ Harvest error: {e}")
-                logger.debug(f"Harvest check error: {e}")
+        safe_print(f"   🌾 Harvest check: turns_since={self.turns_since_harvest}, interval={self.harvest_interval}")
+        if self.turns_since_harvest >= self.harvest_interval:
+            # 🦙 Alpaca harvest (uses get_positions with P&L tracking)
+            if self.alpaca:
+                try:
+                    safe_print(f"   🌾🦙 Running Alpaca harvest scan (ANY NET PROFIT = SELL!)...")
+                    harvest_result = await self.harvest_profitable_positions()
+                    if harvest_result.get('harvested'):
+                        safe_print(f"   🌾✅ ALPACA CASH FLOW! Harvested ${harvest_result['total_profit_harvested']:.4f} profit → ${harvest_result['cash_generated']:.2f} cash")
+                    elif harvest_result.get('candidates_found', 0) > 0:
+                        safe_print(f"   🌾 {harvest_result['candidates_found']} Alpaca positions found - waiting for NET profit after fees")
+                except Exception as e:
+                    safe_print(f"   🌾❌ Alpaca harvest error: {e}")
+                    logger.debug(f"Harvest check error: {e}")
+            # 🐙 Kraken harvest (uses cost basis tracker + current prices)
+            if self.kraken:
+                try:
+                    kraken_harvest = await self.harvest_exchange_positions('kraken')
+                    if kraken_harvest.get('harvested'):
+                        safe_print(f"   🌾✅ KRAKEN CASH FLOW! Harvested ${kraken_harvest['total_profit_harvested']:.4f} profit")
+                except Exception as e:
+                    logger.debug(f"Kraken harvest error: {e}")
+            # 🟡 Binance harvest (uses cost basis tracker + current prices)
+            if self.binance:
+                try:
+                    binance_harvest = await self.harvest_exchange_positions('binance')
+                    if binance_harvest.get('harvested'):
+                        safe_print(f"   🌾✅ BINANCE CASH FLOW! Harvested ${binance_harvest['total_profit_harvested']:.4f} profit")
+                except Exception as e:
+                    logger.debug(f"Binance harvest error: {e}")
+            self.turns_since_harvest = 0
         
         connected_exchanges = [ex for ex in self.exchange_order 
                                if self.exchange_data.get(ex, {}).get('connected', False)]
@@ -8145,6 +8168,32 @@ class MicroProfitLabyrinth:
         # 🔄 Refresh balances for ALL exchanges in parallel
         refresh_tasks = [self.refresh_exchange_balances(ex) for ex in connected_exchanges]
         await asyncio.gather(*refresh_tasks, return_exceptions=True)
+        
+        # ⚔️ BATTLEFRONT STATUS REPORT — Show all active exchanges
+        safe_print(f"\n   ⚔️  BATTLEFRONT STATUS — {len(connected_exchanges)} EXCHANGES ACTIVE")
+        safe_print(f"   {'─' * 55}")
+        for ex in connected_exchanges:
+            balances = self.exchange_balances.get(ex, {})
+            total_value = 0.0
+            cash_value = 0.0
+            crypto_count = 0
+            for asset, amount in balances.items():
+                if isinstance(amount, (int, float)) and amount > 0:
+                    upper = asset.upper()
+                    price = self.prices.get(upper, self.prices.get(asset, 0))
+                    if upper in ('USD', 'USDT', 'USDC', 'ZUSD', 'TUSD', 'DAI', 'BUSD', 'EUR', 'ZEUR', 'GBP'):
+                        val = float(amount)
+                        cash_value += val
+                        total_value += val
+                    elif price > 0:
+                        val = float(amount) * price
+                        total_value += val
+                        if val >= 0.01:
+                            crypto_count += 1
+            mode_flag = "🟢 LIVE" if not self.dry_run else "🧪 DRY"
+            icon = {'kraken': '🐙', 'binance': '🟡', 'alpaca': '🦙', 'capital': '💼', 'coinbase': '🔵'}.get(ex, '🔗')
+            safe_print(f"   {icon} {ex.upper():10s}  {mode_flag}  💵${cash_value:>8.2f}  📦{crypto_count} pos  🏦${total_value:>8.2f} total")
+        safe_print(f"   {'─' * 55}")
         
         # 🔍 Scan ALL exchanges for opportunities in parallel
         all_opportunities: List['MicroOpportunity'] = []
@@ -10161,6 +10210,126 @@ class MicroProfitLabyrinth:
         except Exception as e:
             logger.error(f"Profit harvester error: {e}")
             safe_print(f"   ❌ Harvest error: {e}")
+        
+        return result
+
+    async def harvest_exchange_positions(self, exchange: str) -> Dict[str, Any]:
+        """
+        🌾💰 HARVEST PROFITABLE POSITIONS on Kraken/Binance
+        
+        Uses cost basis tracker to identify positions bought for less than current price.
+        Sells profitable positions back to USD/USDC to complete the full cycle.
+        
+        Args:
+            exchange: 'kraken' or 'binance'
+            
+        Returns:
+            Dict with harvest results
+        """
+        result = {
+            'harvested': False,
+            'positions_sold': 0,
+            'total_profit_harvested': 0.0,
+            'cash_generated': 0.0,
+            'exchange': exchange,
+        }
+        
+        client = self.kraken if exchange == 'kraken' else (self.binance if exchange == 'binance' else None)
+        if not client:
+            return result
+        
+        STABLECOINS = {'USD', 'USDT', 'USDC', 'ZUSD', 'TUSD', 'DAI', 'BUSD', 'EUR', 'ZEUR', 'GBP', 'ZGBP'}
+        
+        try:
+            balances = self.exchange_balances.get(exchange, {})
+            if not balances:
+                return result
+            
+            harvested_any = False
+            
+            for asset, amount in list(balances.items()):
+                if asset.upper() in STABLECOINS:
+                    continue  # Don't sell stablecoins
+                if amount <= 0:
+                    continue
+                
+                current_price = self.prices.get(asset, 0)
+                if current_price <= 0:
+                    continue
+                
+                current_value = amount * current_price
+                if current_value < 1.0:  # Skip dust
+                    continue
+                
+                # Check cost basis to see if we're in profit
+                entry_price = None
+                if hasattr(self, 'cost_basis_tracker') and self.cost_basis_tracker:
+                    entry_price = self.cost_basis_tracker.get_entry_price(asset, exchange)
+                # Fallback: check position_registry (in-memory, set by _record_conversion)
+                if not entry_price or entry_price <= 0:
+                    reg = self.position_registry.get(asset.upper(), {})
+                    if reg.get('entry_price', 0) > 0 and reg.get('source', '') == exchange:
+                        entry_price = reg['entry_price']
+                if not entry_price or entry_price <= 0:
+                    continue  # No cost basis record — can't determine profit
+                
+                # Calculate unrealized P&L
+                unrealized_pnl = (current_price - entry_price) * amount
+                unrealized_pct = ((current_price / entry_price) - 1.0) * 100 if entry_price > 0 else 0
+                
+                # Only harvest if in profit by at least MIN_PROFIT_PCT (0.3%)
+                if unrealized_pct < self.profit_harvester.MIN_PROFIT_PCT:
+                    continue
+                
+                # ⏱️ Check minimum hold time
+                asset_upper = asset.upper()
+                if asset_upper in self.position_entry_times:
+                    hold_duration = time.time() - self.position_entry_times[asset_upper]
+                    if hold_duration < self.min_hold_time_seconds:
+                        continue  # Still in hold period
+                
+                safe_print(f"   🌾 {exchange.upper()} HARVEST: {asset} = {amount:.6f} @ ${current_price:.4f}")
+                safe_print(f"      Entry: ${entry_price:.4f} → Now: ${current_price:.4f} = ${unrealized_pnl:+.4f} ({unrealized_pct:+.1f}%)")
+                
+                # Execute sell — convert crypto back to USD/USDC
+                target_quote = 'USD' if exchange == 'kraken' else 'USDC'
+                
+                try:
+                    sell_result = client.convert_crypto(
+                        from_asset=asset,
+                        to_asset=target_quote,
+                        amount=amount * 0.95  # 95% safety margin
+                    )
+                    
+                    if sell_result and not sell_result.get('error'):
+                        result['positions_sold'] += 1
+                        result['total_profit_harvested'] += unrealized_pnl
+                        result['cash_generated'] += current_value * 0.95
+                        harvested_any = True
+                        safe_print(f"      ✅ SOLD on {exchange.upper()}! Profit: ${unrealized_pnl:.4f}")
+                        
+                        # Remove entry time tracking
+                        self.position_entry_times.pop(asset_upper, None)
+                        
+                        logger.info(f"🌾 {exchange.upper()} HARVEST: {asset} sold for ${unrealized_pnl:.4f} profit")
+                    else:
+                        error_msg = sell_result.get('error', 'Unknown') if sell_result else 'No result'
+                        safe_print(f"      ❌ Sell failed: {error_msg}")
+                except Exception as e:
+                    safe_print(f"      ❌ Sell error: {e}")
+                    continue
+                
+                # Limit to 2 harvests per exchange per sweep
+                if result['positions_sold'] >= 2:
+                    break
+            
+            if harvested_any:
+                result['harvested'] = True
+                # Refresh balances after harvest
+                await self.refresh_exchange_balances(exchange)
+                
+        except Exception as e:
+            logger.debug(f"{exchange} harvest error: {e}")
         
         return result
 
@@ -13326,7 +13495,7 @@ if __name__ == "__main__":
         # 🚨 LOWERED: Allow micro-profit trades with small balances!
         EXCHANGE_MIN_VALUE = {
             'kraken': 0.10,     # Kraken (was $0.50, lowered for micro-profits)
-            'binance': 5.00,    # Binance MIN_NOTIONAL is typically $5-10 (can't lower this)
+            'binance': 1.00,    # Binance MIN_NOTIONAL (lowered from $5 - actual min varies per pair)
             'alpaca': 0.10,     # Alpaca (was $1.00, lowered for micro-profits)
         }
         min_value = EXCHANGE_MIN_VALUE.get(exchange, 1.0)
@@ -13463,9 +13632,12 @@ if __name__ == "__main__":
                 if min_qty > 0 and amount < min_qty:
                     continue  # Skip - below Alpaca minimum quantity
                 
-                # Skip quote currencies - can't convert USD to other assets on Alpaca
-                if from_asset.upper() in ['USD', 'USDT', 'USDC', 'EUR', 'GBP']:
-                    continue  # Skip quote currencies - not convertible on Alpaca
+                # 🦁💰 CASH DEPLOYMENT: USD/USDT/USDC ARE convertible on Alpaca!
+                # They buy crypto via convert_crypto(). DO NOT SKIP them!
+                # The Lion Hunt logic in _find_asset_opportunities handles USD→crypto
+                # Only skip non-tradeable fiat like EUR/GBP on Alpaca
+                if from_asset.upper() in ['EUR', 'GBP']:
+                    continue  # EUR/GBP not tradeable on Alpaca crypto
             
             # Skip blocked assets
             if exchange == 'binance' and from_asset.upper() in self.blocked_binance_assets:
@@ -15694,9 +15866,9 @@ if __name__ == "__main__":
 
             # Monte-Carlo P(win) gating: require a high probability of positive net P&L
             try:
-                P_WIN_THRESHOLD = float(os.getenv('AUREON_MC_PWIN_THRESHOLD', '0.90'))
+                P_WIN_THRESHOLD = float(os.getenv('AUREON_MC_PWIN_THRESHOLD', '0.55'))
             except Exception:
-                P_WIN_THRESHOLD = 0.90
+                P_WIN_THRESHOLD = 0.55
 
             if p_win is not None and p_win < P_WIN_THRESHOLD and not planet_saver_mode:
                 self.rejection_safe_print(f"\n   🛑 PRE-EXECUTION GATE: LOW PROBABILITY OF WIN - P(win)={p_win:.2%} < {P_WIN_THRESHOLD:.0%}")
@@ -16455,11 +16627,12 @@ if __name__ == "__main__":
                 opp.from_value_usd = opp.from_amount * self.prices.get(opp.from_asset, 0)
             
             # Check if clamped amount is too small
-            if opp.from_value_usd < 5.0:
-                safe_print(f"   ⚠️ Clamped value ${opp.from_value_usd:.2f} is too small for Binance (min $5.00)")
+            binance_min_val = 1.0  # Binance min notional (actual varies per pair, pre-flight checks below)
+            if opp.from_value_usd < binance_min_val:
+                safe_print(f"   ⚠️ Clamped value ${opp.from_value_usd:.2f} is too small for Binance (min ${binance_min_val:.2f})")
                 
                 # 💧🔀 LIQUIDITY AGGREGATION CHECK - Can we top-up from other assets?
-                shortfall = 5.0 - opp.from_value_usd
+                shortfall = binance_min_val - opp.from_value_usd
                 aggregation_result = await self._attempt_liquidity_aggregation(
                     target_asset=opp.from_asset,
                     target_exchange='binance',
@@ -16473,30 +16646,30 @@ if __name__ == "__main__":
                     opp.from_amount = float(new_balance) * 0.98
                     opp.from_value_usd = opp.from_amount * self.prices.get(opp.from_asset, 0)
                     safe_print(f"   💧 POST-AGGREGATION: New {opp.from_asset} balance = {opp.from_amount:.6f} (${opp.from_value_usd:.2f})")
-                    if opp.from_value_usd >= 5.0:
+                    if opp.from_value_usd >= binance_min_val:
                         safe_print(f"   ✅ Aggregation successful! Proceeding with trade...")
                         # Continue execution - don't return False
                     else:
                         safe_print(f"   ❌ Aggregation insufficient - still below minimum")
                         self.barter_matrix.record_preexec_rejection(
                             opp.from_asset, opp.to_asset, 
-                            f"Value ${opp.from_value_usd:.2f} < $5.00 after aggregation",
+                            f"Value ${opp.from_value_usd:.2f} < ${binance_min_val:.2f} after aggregation",
                             opp.from_value_usd
                         )
                         self.barter_matrix.record_source_rejection(
-                            opp.from_asset, 'binance', 5.0, opp.from_value_usd
+                            opp.from_asset, 'binance', binance_min_val, opp.from_value_usd
                         )
                         return False
                 else:
                     # 🚫 Record pre-execution rejection
                     self.barter_matrix.record_preexec_rejection(
                         opp.from_asset, opp.to_asset, 
-                        f"Value ${opp.from_value_usd:.2f} < $5.00 Binance minimum (no aggregation available)",
+                        f"Value ${opp.from_value_usd:.2f} < ${binance_min_val:.2f} Binance minimum (no aggregation available)",
                         opp.from_value_usd
                     )
                     # 🚫 Also record SOURCE rejection - this asset is too small for Binance entirely
                     self.barter_matrix.record_source_rejection(
-                        opp.from_asset, 'binance', 5.0, opp.from_value_usd
+                        opp.from_asset, 'binance', binance_min_val, opp.from_value_usd
                     )
                     return False
             
@@ -16743,12 +16916,14 @@ if __name__ == "__main__":
                 if self.alpaca:
                     positions = self.alpaca.get_positions()
                     total_unrealized_pl = sum(float(p.get('unrealized_pl', 0)) for p in positions)
-                    if total_unrealized_pl < -1.00:  # More than $1.00 underwater (was $0.05 - too strict!)
+                    if total_unrealized_pl < -25.00:  # Only stop if $25+ underwater (was $1.00 - blocked everything!)
                         safe_print(
-                            f"   🚫 POSITIONS UNDERWATER: ${total_unrealized_pl:.4f} unrealized loss. "
-                            f"NOT trading until positions recover!"
+                            f"   🚫 POSITIONS DEEPLY UNDERWATER: ${total_unrealized_pl:.4f} unrealized loss. "
+                            f"Pausing new entries until positions recover."
                         )
                         return False
+                    elif total_unrealized_pl < 0:
+                        safe_print(f"   📊 Positions slightly underwater: ${total_unrealized_pl:.4f} - continuing to trade (normal volatility)")
             except Exception:
                 pass  # If check fails, continue to safety gate
 
@@ -16811,9 +16986,9 @@ if __name__ == "__main__":
                 # 🛡️ 2-HOP SAFETY: Check if we have enough for BOTH legs!
                 if len(path) >= 2:
                     per_leg_value = opp.from_value_usd * 0.95 / 2  # After 95% adj, split between legs
-                    if per_leg_value < 1.00:
-                        safe_print(f"   ⚠️ 2-hop trade needs $2.50+ (each leg gets ~${per_leg_value:.2f})")
-                        safe_print(f"   💡 Value ${opp.from_value_usd:.2f} too small for 2-hop - risk of mid-trade failure!")
+                    if per_leg_value < 0.25:
+                        safe_print(f"   ⚠️ 2-hop trade needs $0.50+ (each leg gets ~${per_leg_value:.2f})")
+                        safe_print(f"   💡 Value ${opp.from_value_usd:.2f} too small for 2-hop")
                         return False
             
             # Show the path
@@ -17754,6 +17929,39 @@ if __name__ == "__main__":
                             prev['entry_value_usd'] = prev.get('entry_price', 0.0) * prev.get('amount', 0.0)
             except Exception as e:
                 logger.debug(f"Position registry update error: {e}")
+
+            # ────────── Cost Basis Tracker (persistent across restarts) ──────────
+            try:
+                exchange_name = validation.get('exchange', opp.source_exchange or 'unknown')
+                if is_buy and entry_price > 0 and final_amount > 0:
+                    # Record BUY entry price so harvest can calculate P&L later
+                    order_id_str = ''
+                    order_ids_list = validation.get('order_ids', [])
+                    if order_ids_list:
+                        first = order_ids_list[0]
+                        order_id_str = first.get('order_id', '') if isinstance(first, dict) else str(first)
+                    if hasattr(self, 'cost_basis_tracker') and self.cost_basis_tracker:
+                        self.cost_basis_tracker.set_entry_price(
+                            symbol=to_up,
+                            price=float(entry_price),
+                            quantity=float(final_amount),
+                            exchange=exchange_name,
+                            fee=float(fees_usd),
+                            order_id=order_id_str
+                        )
+                        logger.info(f"💰 Cost basis recorded: {to_up} @ ${entry_price:.6f} x {final_amount:.6f} on {exchange_name}")
+                    # Also record position entry time for hold-time enforcement
+                    self.position_entry_times[to_up] = time.time()
+                elif is_sell and hasattr(self, 'cost_basis_tracker') and self.cost_basis_tracker:
+                    # On sell, clear the cost basis entry for this asset/exchange
+                    try:
+                        self.cost_basis_tracker.clear_entry(from_up, exchange_name)
+                    except Exception:
+                        pass  # clear_entry may not exist yet - that's OK
+                    # Remove entry time tracking
+                    self.position_entry_times.pop(from_up, None)
+            except Exception as e:
+                logger.debug(f"Cost basis tracker update error: {e}")
         # safe_print(step_display)  # FIXME: step_display not defined
         
         # 🔧 FIX: Build profit_result from barter_matrix path history
@@ -18773,6 +18981,8 @@ if __name__ == "__main__":
                         wisdom = self.queen.broadcast_cosmic_wisdom()
                         if wisdom:
                             cosmic = self.queen.get_cosmic_state()
+                            if inspect.isawaitable(cosmic):
+                                cosmic = await cosmic
                             score = cosmic.get('composite_cosmic_score', 0)
                             # Show cosmic alignment indicator
                             if score > 0.7:

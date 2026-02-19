@@ -1,0 +1,192 @@
+{
+  "timestamp": "2026-02-19T08:19:51.177129",
+  "results": [
+    {
+      "exchange": "kraken",
+      "operation": "CLIENT_INIT",
+      "success": true,
+      "details": "KrakenClient loaded",
+      "timestamp": "2026-02-19T08:19:19.166471"
+    },
+    {
+      "exchange": "kraken",
+      "operation": "GET_BALANCE",
+      "success": true,
+      "details": "USDC=$36.47, USD=$0.0081, total=$36.48",
+      "timestamp": "2026-02-19T08:19:19.231729"
+    },
+    {
+      "exchange": "kraken",
+      "operation": "GET_TICKER",
+      "success": true,
+      "details": "ETH/USDC price=$1978.57",
+      "timestamp": "2026-02-19T08:19:19.293268"
+    },
+    {
+      "exchange": "kraken",
+      "operation": "FIND_PATH_USDC\u2192ETH",
+      "success": true,
+      "details": "1 step(s): ['Buy ETH with USDC']",
+      "timestamp": "2026-02-19T08:19:19.294003"
+    },
+    {
+      "exchange": "kraken",
+      "operation": "BUY_ETH",
+      "success": true,
+      "details": "OrderID=OA3VFA-LKQYC-HQG4K7, status=FILLED, qty=0.00202166 ETH",
+      "timestamp": "2026-02-19T08:19:19.693684"
+    },
+    {
+      "exchange": "kraken",
+      "operation": "VERIFY_BUY",
+      "success": true,
+      "details": "ETH balance after buy: 0.00202276",
+      "timestamp": "2026-02-19T08:19:21.726772"
+    },
+    {
+      "exchange": "kraken",
+      "operation": "SELL_ETH",
+      "success": true,
+      "details": "OrderID=ONZ3QE-4NG2F-IGK3JX, status=FILLED, received=$0.0000",
+      "timestamp": "2026-02-19T08:19:22.224110"
+    },
+    {
+      "exchange": "kraken",
+      "operation": "CONVERT_USDC\u2192ETH",
+      "success": true,
+      "details": "1 trades in conversion",
+      "timestamp": "2026-02-19T08:19:22.723296"
+    },
+    {
+      "exchange": "kraken",
+      "operation": "CONVERT_ETH\u2192USDC",
+      "success": false,
+      "details": "Multi-hop step 1 would have 0.000981 < min 0.001 for ETHUSDC",
+      "timestamp": "2026-02-19T08:19:23.769919"
+    },
+    {
+      "exchange": "alpaca",
+      "operation": "CLIENT_INIT",
+      "success": true,
+      "details": "AlpacaClient loaded",
+      "timestamp": "2026-02-19T08:19:42.569730"
+    },
+    {
+      "exchange": "alpaca",
+      "operation": "GET_BALANCE",
+      "success": true,
+      "details": "USD=$0.78, assets=2",
+      "timestamp": "2026-02-19T08:19:42.735592"
+    },
+    {
+      "exchange": "alpaca",
+      "operation": "GET_TICKER",
+      "success": true,
+      "details": "SHIB/USD price=$0.00000627",
+      "timestamp": "2026-02-19T08:19:43.002796"
+    },
+    {
+      "exchange": "alpaca",
+      "operation": "FIND_PATH_USD\u2192SHIB",
+      "success": true,
+      "details": "1 step(s)",
+      "timestamp": "2026-02-19T08:19:43.093427"
+    },
+    {
+      "exchange": "alpaca",
+      "operation": "SELL_SHIB\u2192USD",
+      "success": false,
+      "details": "Multi-hop step 1 would yield $0.00 < min $1.00",
+      "timestamp": "2026-02-19T08:19:43.093830"
+    },
+    {
+      "exchange": "alpaca",
+      "operation": "VERIFY_SELL",
+      "success": true,
+      "details": "USD before=$0.7800, after=$0.7800",
+      "timestamp": "2026-02-19T08:19:45.094083"
+    },
+    {
+      "exchange": "alpaca",
+      "operation": "BUY_SHIB_DIRECT",
+      "success": false,
+      "details": "{}",
+      "timestamp": "2026-02-19T08:19:45.261440"
+    },
+    {
+      "exchange": "alpaca",
+      "operation": "CONVERT_AAVE\u2192USD",
+      "success": false,
+      "details": "Multi-hop step 1 would yield $0.62 < min $1.00",
+      "timestamp": "2026-02-19T08:19:45.433744"
+    },
+    {
+      "exchange": "binance",
+      "operation": "CLIENT_INIT",
+      "success": true,
+      "details": "BinanceClient loaded",
+      "timestamp": "2026-02-19T08:19:45.691739"
+    },
+    {
+      "exchange": "binance",
+      "operation": "GET_BALANCE",
+      "success": true,
+      "details": "Cash=$0.0000, spot=21, locked(LD)=0",
+      "timestamp": "2026-02-19T08:19:45.915946"
+    },
+    {
+      "exchange": "binance",
+      "operation": "GET_TICKER",
+      "success": true,
+      "details": "ETH/USDC=$1978.90 (-2.31%)",
+      "timestamp": "2026-02-19T08:19:46.138212"
+    },
+    {
+      "exchange": "binance",
+      "operation": "FIND_PATH_USDC\u2192ETH",
+      "success": true,
+      "details": "1 step(s): ['']",
+      "timestamp": "2026-02-19T08:19:51.157889"
+    },
+    {
+      "exchange": "binance",
+      "operation": "BUY_ETH",
+      "success": false,
+      "details": "No spot cash ($0.0000). All funds are in Binance Earn (LD* prefixed). Need to redeem from Earn to spot first.",
+      "timestamp": "2026-02-19T08:19:51.157969"
+    },
+    {
+      "exchange": "binance",
+      "operation": "SELL_ETH",
+      "success": false,
+      "details": "Skipped \u2014 no buy to reverse",
+      "timestamp": "2026-02-19T08:19:51.158000"
+    },
+    {
+      "exchange": "binance",
+      "operation": "CONVERT",
+      "success": false,
+      "details": "Skipped \u2014 no spot funds",
+      "timestamp": "2026-02-19T08:19:51.158017"
+    },
+    {
+      "exchange": "binance",
+      "operation": "FIND_PATH_ETH\u2192BTC",
+      "success": true,
+      "details": "1 step(s)",
+      "timestamp": "2026-02-19T08:19:51.158206"
+    },
+    {
+      "exchange": "binance",
+      "operation": "FIND_PATH_BTC\u2192USDC",
+      "success": true,
+      "details": "1 step(s)",
+      "timestamp": "2026-02-19T08:19:51.158367"
+    }
+  ],
+  "summary": {
+    "total": 26,
+    "passed": 19,
+    "failed": 7
+  }
+}

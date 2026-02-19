@@ -300,7 +300,12 @@ class GlobalWaveScanner:
         # 🐙 KRAKEN
         if self.kraken:
             try:
-                pairs = self.kraken.get_tradeable_pairs()
+                if hasattr(self.kraken, 'get_tradeable_pairs'):
+                    pairs = self.kraken.get_tradeable_pairs()
+                elif hasattr(self.kraken, 'get_available_pairs'):
+                    pairs = self.kraken.get_available_pairs()
+                else:
+                    pairs = []
                 for pair in pairs:
                     symbol = pair.get('symbol', pair.get('pair', ''))
                     if symbol:

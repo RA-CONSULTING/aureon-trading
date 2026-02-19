@@ -36288,24 +36288,130 @@
           }
         ]
       }
+    },
+    {
+      "timestamp": 1771450637.8279383,
+      "timestamp_human": "2026-02-18T21:37:17.827939+00:00",
+      "queen": {
+        "market_regime": "QUIET",
+        "global_momentum": 0.0,
+        "global_coherence": 0.5,
+        "queen_confidence": 0.5,
+        "queen_strategy": "SNIPER",
+        "portfolio_value": 158.79,
+        "cash_available": 56.49,
+        "positions_held": 13,
+        "directives": {
+          "min_momentum_threshold": 0.1,
+          "min_coherence_threshold": 0.55,
+          "max_position_size": 5.649097224,
+          "target_exchanges": [],
+          "queen_strategy": "SNIPER",
+          "queen_confidence": 0.5,
+          "market_regime": "QUIET"
+        }
+      },
+      "hive_cluster": {
+        "exchanges_active": 0,
+        "total_symbols": 0,
+        "validators_active": 0,
+        "validator_agreement": 0.0,
+        "market_sentiment": "NEUTRAL",
+        "opportunity_density": 0.0,
+        "recommended_action": "WAIT",
+        "system_fill_rate": 0.0,
+        "total_fees_paid": 0.0
+      },
+      "bee_swarm": {
+        "total_scanned": 0,
+        "with_momentum": 0,
+        "rejected": 0,
+        "executed": 0,
+        "momentum_distribution": {
+          "up": 0,
+          "down": 0,
+          "flat": 0
+        },
+        "avg_momentum": 0.0,
+        "max_momentum": 0.0,
+        "max_momentum_symbol": "",
+        "avg_pip_score": 0.0,
+        "avg_coherence": 0.0,
+        "above_phi_threshold": 0,
+        "rejection_breakdown": {},
+        "top_opportunities": []
+      }
+    },
+    {
+      "timestamp": 1771452596.5457008,
+      "timestamp_human": "2026-02-18T22:09:56.545701+00:00",
+      "queen": {
+        "market_regime": "QUIET",
+        "global_momentum": 0.0,
+        "global_coherence": 0.5,
+        "queen_confidence": 0.5,
+        "queen_strategy": "SNIPER",
+        "portfolio_value": 159.17,
+        "cash_available": 56.49,
+        "positions_held": 13,
+        "directives": {
+          "min_momentum_threshold": 0.1,
+          "min_coherence_threshold": 0.55,
+          "max_position_size": 5.648540418,
+          "target_exchanges": [],
+          "queen_strategy": "SNIPER",
+          "queen_confidence": 0.5,
+          "market_regime": "QUIET"
+        }
+      },
+      "hive_cluster": {
+        "exchanges_active": 0,
+        "total_symbols": 0,
+        "validators_active": 0,
+        "validator_agreement": 0.0,
+        "market_sentiment": "NEUTRAL",
+        "opportunity_density": 0.0,
+        "recommended_action": "WAIT",
+        "system_fill_rate": 0.0,
+        "total_fees_paid": 0.0
+      },
+      "bee_swarm": {
+        "total_scanned": 0,
+        "with_momentum": 0,
+        "rejected": 0,
+        "executed": 0,
+        "momentum_distribution": {
+          "up": 0,
+          "down": 0,
+          "flat": 0
+        },
+        "avg_momentum": 0.0,
+        "max_momentum": 0.0,
+        "max_momentum_symbol": "",
+        "avg_pip_score": 0.0,
+        "avg_coherence": 0.0,
+        "above_phi_threshold": 0,
+        "rejection_breakdown": {},
+        "top_opportunities": []
+      }
     }
   ],
   "last_snapshot": {
-    "timestamp": 1768753825.743848,
-    "timestamp_human": "2026-01-18T16:30:25.743849+00:00",
+    "timestamp": 1771452596.5457008,
+    "timestamp_human": "2026-02-18T22:09:56.545701+00:00",
     "queen": {
       "market_regime": "QUIET",
       "global_momentum": 0.0,
       "global_coherence": 0.5,
       "queen_confidence": 0.5,
       "queen_strategy": "SNIPER",
-      "portfolio_value": 23.85,
-      "cash_available": 9.57,
-      "positions_held": 2,
+      "portfolio_value": 159.17,
+      "cash_available": 56.49,
+      "positions_held": 13,
       "directives": {
         "min_momentum_threshold": 0.1,
         "min_coherence_threshold": 0.55,
-        "max_position_size": 0.9568808483655998,
+        "max_position_size": 5.648540418,
         "target_exchanges": [],
         "queen_strategy": "SNIPER",
         "queen_confidence": 0.5,
@@ -36324,59 +36430,23 @@
       "total_fees_paid": 0.0
     },
     "bee_swarm": {
-      "total_scanned": 1000,
+      "total_scanned": 0,
       "with_momentum": 0,
       "rejected": 0,
       "executed": 0,
       "momentum_distribution": {
         "up": 0,
         "down": 0,
-        "flat": 1000
+        "flat": 0
       },
       "avg_momentum": 0.0,
       "max_momentum": 0.0,
-      "max_momentum_symbol": "SOL/ENSO",
-      "avg_pip_score": 0.351,
+      "max_momentum_symbol": "",
+      "avg_pip_score": 0.0,
       "avg_coherence": 0.0,
       "above_phi_threshold": 0,
       "rejection_breakdown": {},
-      "top_opportunities": [
-        {
-          "symbol": "SOL/USD",
-          "exchange": "kraken",
-          "pip_score": 0.987,
-          "momentum": 0.0,
-          "coherence": -3.5
-        },
-        {
-          "symbol": "SOL/USDC",
-          "exchange": "kraken",
-          "pip_score": 0.954,
-          "momentum": 0.0,
-          "coherence": -3.5
-        },
-        {
-          "symbol": "TUSD/EUS",
-          "exchange": "kraken",
-          "pip_score": 0.6869999999999998,
-          "momentum": 0.0,
-          "coherence": -6.5
-        },
-        {
-          "symbol": "SOL/EUS",
-          "exchange": "kraken",
-          "pip_score": 0.6489999999999999,
-          "momentum": 0.0,
-          "coherence": -6.5
-        },
-        {
-          "symbol": "SOL/PEPE",
-          "exchange": "kraken",
-          "pip_score": 0.6479999999999999,
-          "momentum": 0.0,
-          "coherence": -3.5
-        }
-      ]
+      "top_opportunities": []
     }
   }
 }

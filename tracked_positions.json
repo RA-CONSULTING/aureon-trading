@@ -683,5 +683,37 @@
         "buy_timestamp": "2026-02-06T23:17:34.103577",
         "auto_tracked": true,
         "source": "portfolio_truth_check"
+    },
+    "AAVEUSD": {
+        "exchange": "alpaca",
+        "buy_price": 0.0,
+        "quantity": 0.049923265,
+        "buy_timestamp": "2026-02-18T22:27:09.683361",
+        "auto_tracked": true,
+        "source": "portfolio_truth_check"
+    },
+    "TRX.SUSD": {
+        "exchange": "kraken",
+        "buy_price": 0.0,
+        "quantity": 81.9542338,
+        "buy_timestamp": "2026-02-18T22:27:09.684980",
+        "auto_tracked": true,
+        "source": "portfolio_truth_check"
+    },
+    "XBTUSD": {
+        "exchange": "kraken",
+        "buy_price": 0.0,
+        "quantity": 0.00038867,
+        "buy_timestamp": "2026-02-18T23:48:11.163478",
+        "auto_tracked": true,
+        "source": "portfolio_truth_check"
+    },
+    "XLMUSD": {
+        "exchange": "binance",
+        "buy_price": 0.0,
+        "quantity": 475.35520547,
+        "buy_timestamp": "2026-02-18T22:27:09.686874",
+        "auto_tracked": true,
+        "source": "portfolio_truth_check"
     }
 }

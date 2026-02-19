@@ -12461,6 +12461,19 @@ class OrcaKillCycle:
                     try:
                         import asyncio
                         
+                        print(f"\n   🐸 ETERNAL MACHINE: Starting cycle #{self.queen_eternal_machine.total_cycles + 1}...")
+                        
+                        # Show current main position
+                        mp = self.queen_eternal_machine.main_position
+                        if mp:
+                            print(f"   🐸 Main Position: {mp.symbol} qty={getattr(mp, 'quantity', '?')} cost=${getattr(mp, 'cost_basis', 0):.4f}")
+                        else:
+                            print(f"   🐸 Main Position: NONE (scanning for real holdings...)")
+                        
+                        # Show friends count
+                        friends_count = len(self.queen_eternal_machine.friends)
+                        print(f"   🐸 Friends loaded: {friends_count}")
+                        
                         # Run the eternal machine cycle (non-blocking)
                         async def _run_eternal_cycle():
                             return await self.queen_eternal_machine.run_cycle()
@@ -12475,15 +12488,21 @@ class OrcaKillCycle:
                         # Run cycle
                         eternal_stats = loop.run_until_complete(_run_eternal_cycle())
                         
-                        # Update session stats with eternal machine results
+                        # Always show cycle result summary
                         if eternal_stats:
                             session_stats['eternal_leaps'] = self.queen_eternal_machine.total_leaps
                             session_stats['eternal_breadcrumbs'] = self.queen_eternal_machine.total_breadcrumbs
                             session_stats['eternal_fees_paid'] = self.queen_eternal_machine.total_fees_paid
                             
+                            # Show main position after sync
+                            mp_after = self.queen_eternal_machine.main_position
+                            mp_sym = mp_after.symbol if mp_after else "NONE"
+                            print(f"   🐸 Cycle complete: main={mp_sym}, leaps={eternal_stats.leaps_made}, scalps={eternal_stats.scalps_executed}")
+                            print(f"   🐸 Lifetime: {self.queen_eternal_machine.total_cycles} cycles, {self.queen_eternal_machine.total_leaps} leaps, {self.queen_eternal_machine.total_breadcrumbs} breadcrumbs")
+                            
                             # Log if leaps happened
                             if eternal_stats.leaps_made > 0:
-                                print(f"\n   ETERNAL MACHINE: Quantum leap executed!")
+                                print(f"\n   🐸 ETERNAL MACHINE: Quantum leap executed!")
                                 print(f"     Total leaps: {self.queen_eternal_machine.total_leaps}")
                                 print(f"     Breadcrumbs: {self.queen_eternal_machine.total_breadcrumbs}")
                                 print(f"     Fees paid: ${self.queen_eternal_machine.total_fees_paid:.4f}")
@@ -12493,8 +12512,10 @@ class OrcaKillCycle:
                                 if breadcrumb_summary['count'] > 0:
                                     print(f"     Breadcrumb portfolio: ${breadcrumb_summary['total_value']:.2f}")
                                     print(f"     Breadcrumb P&L: ${breadcrumb_summary['total_pnl']:+.2f}")
+                        else:
+                            print(f"   🐸 Cycle returned no stats (possible internal issue)")
                     except Exception as ee:
-                        print(f"   Eternal Machine error (non-fatal): {ee}")
+                        print(f"   🐸 Eternal Machine error (non-fatal): {ee}")
                         import traceback; traceback.print_exc()
 
                 #   Queen pacing + profit target updates
@@ -13109,14 +13130,26 @@ class OrcaKillCycle:
                                                 print(f"   [DEBUG] Buy Calc: Cash={exchange_cash:.2f}, AmtPerPos={amount_per_position}, BuyAmt={buy_amount:.2f}")
 
                                                 # Kraken funding fallback:
-                                                # If cash is mostly in GBP and pair is /USD, switch to /GBP pair.
+                                                # If cash is mostly in USDC/GBP and pair is /USD, switch quote accordingly.
                                                 if best.exchange == 'kraken' and symbol_clean.endswith('USD'):
                                                     try:
                                                         bal = client.get_balance() or {}
                                                         usd_bal = float(bal.get('ZUSD', 0) or bal.get('USD', 0) or 0)
+                                                        usdc_bal = float(bal.get('USDC', 0) or 0)
                                                         gbp_bal = float(bal.get('ZGBP', 0) or bal.get('GBP', 0) or 0)
-                                                        if usd_bal < 1.0 and gbp_bal > 0:
-                                                            base = symbol_clean[:-3]
+                                                        base = symbol_clean[:-3]
+
+                                                        # Prefer USDC route first (common funded cash bucket on Kraken)
+                                                        if usd_bal < 1.0 and usdc_bal > 0:
+                                                            usdc_symbol = f"{base}USDC"
+                                                            usdc_ticker = client.get_ticker(usdc_symbol)
+                                                            if usdc_ticker:
+                                                                symbol_clean = usdc_symbol
+                                                                # quote_qty is now in USDC terms, no FX conversion needed
+                                                                buy_amount = min(buy_amount, usdc_bal * 0.9)
+                                                                print(f"   [DEBUG] Kraken USDC funding route: using {symbol_clean} with quote_qty={buy_amount:.4f} USDC")
+
+                                                        elif usd_bal < 1.0 and gbp_bal > 0:
                                                             gbp_symbol = f"{base}GBP"
                                                             gbp_ticker = client.get_ticker(gbp_symbol)
                                                             if gbp_ticker:

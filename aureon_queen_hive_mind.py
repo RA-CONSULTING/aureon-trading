@@ -4105,7 +4105,7 @@ class QueenHiveMind:
             self.temporal_dialer.calibrate()
             
             # Initial tune to Gaia
-            self.temporal_dialer.tune_frequency(GAIA_HZ)
+            self.temporal_dialer.tune_frequency(self.GAIA_HZ)
             
             logger.info("👑🕰️ TEMPORAL DIALER WIRED to Queen Hive Mind")
             logger.info("   📡 Connected to Quantum Field")

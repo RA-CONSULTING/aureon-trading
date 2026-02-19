@@ -1,28 +1,21 @@
 {
-  "timestamp": "2026-02-06T23:28:29.596287",
-  "initial_vault": 1000.0,
-  "available_cash": 77.95720412780025,
+  "timestamp": "2026-02-18T23:49:28.634999",
+  "initial_vault": 80.0,
+  "available_cash": 0.0,
   "main_position": {
-    "symbol": "GALA",
-    "quantity": 362286.7212073092,
-    "cost_basis": 1420.163947132652,
-    "entry_price": 0.00392,
-    "entry_time": "2026-02-05T21:27:21.135203"
+    "symbol": "MC",
+    "quantity": 3100.0,
+    "cost_basis": 1.0,
+    "entry_price": 1.0,
+    "entry_time": "2026-02-18T23:30:03.575840"
   },
-  "breadcrumbs": {
-    "ETH": {
-      "quantity": 0.002515805970309464,
-      "cost_basis": 4.685638303581971,
-      "entry_price": 1862.48,
-      "entry_time": "2026-02-05T21:27:21.135196"
-    }
-  },
+  "breadcrumbs": {},
   "statistics": {
-    "total_cycles": 15,
+    "total_cycles": 25,
     "total_leaps": 2,
     "total_breadcrumbs": 2,
     "total_scalps": 4,
-    "total_profit_realized": 7.672629574070693,
+    "total_profit_realized": 7.67,
     "start_time": null
   }
 }

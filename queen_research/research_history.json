@@ -4,36 +4,108 @@
       "topic": "trending_coins",
       "source": "coingecko",
       "title": "Trending Coins Pattern",
-      "content": "Currently trending: BTC, SOL, HYPE, XRP, ETH",
+      "content": "Currently trending: OP, SOL, BTC, ESP, PENGU",
       "relevance_score": 0.7,
-      "discovered_at": "2026-02-05T22:37:13.822197",
+      "discovered_at": "2026-02-19T07:42:34.799181",
       "applied": true
     },
     {
       "topic": "market_sentiment",
       "source": "coingecko",
       "title": "Global Market Sentiment",
-      "content": "BTC Dominance: 56.3%, 24h Change: -10.76%",
+      "content": "BTC Dominance: 56.3%, 24h Change: -1.54%",
       "relevance_score": 0.8,
-      "discovered_at": "2026-02-05T22:37:13.945789",
+      "discovered_at": "2026-02-19T07:42:34.922146",
       "applied": true
     },
     {
       "topic": "momentum_leaders",
       "source": "binance",
       "title": "Top Momentum Leaders",
-      "content": "Top gainers: {'CREAM': 65.354, 'PNT': 45.228, 'C98': 27.66, 'KDA': 17.647, 'THE': 16.612}",
+      "content": "Top gainers: {'CREAM': 65.354, 'PNT': 45.228, 'ESP': 26.093, 'KDA': 17.647, 'CLV': 13.97}",
       "relevance_score": 0.85,
-      "discovered_at": "2026-02-05T22:37:14.260888",
+      "discovered_at": "2026-02-19T07:42:35.678806",
       "applied": true
     },
     {
       "topic": "volatility_analysis",
       "source": "kraken",
       "title": "Volatility Patterns",
-      "content": "24h volatility: XETHZUSD: 19.62%, SOLUSD: 20.38%, XXBTZUSD: 17.72%",
+      "content": "24h volatility: XETHZUSD: 5.99%, SOLUSD: 6.88%, XXBTZUSD: 3.92%",
       "relevance_score": 0.75,
-      "discovered_at": "2026-02-05T22:37:14.324889",
+      "discovered_at": "2026-02-19T07:42:35.751875",
+      "applied": true
+    },
+    {
+      "topic": "trending_coins",
+      "source": "coingecko",
+      "title": "Trending Coins Pattern",
+      "content": "Currently trending: OP, SOL, BTC, ESP, PENGU",
+      "relevance_score": 0.7,
+      "discovered_at": "2026-02-19T07:50:31.691745",
+      "applied": true
+    },
+    {
+      "topic": "market_sentiment",
+      "source": "coingecko",
+      "title": "Global Market Sentiment",
+      "content": "BTC Dominance: 56.3%, 24h Change: -1.52%",
+      "relevance_score": 0.8,
+      "discovered_at": "2026-02-19T07:50:31.812542",
+      "applied": true
+    },
+    {
+      "topic": "momentum_leaders",
+      "source": "binance",
+      "title": "Top Momentum Leaders",
+      "content": "Top gainers: {'CREAM': 65.354, 'PNT': 45.228, 'ESP': 26.121, 'KDA': 17.647, 'PROM': 14.858}",
+      "relevance_score": 0.85,
+      "discovered_at": "2026-02-19T07:50:32.129998",
+      "applied": true
+    },
+    {
+      "topic": "volatility_analysis",
+      "source": "kraken",
+      "title": "Volatility Patterns",
+      "content": "24h volatility: XETHZUSD: 5.99%, SOLUSD: 6.88%, XXBTZUSD: 3.92%",
+      "relevance_score": 0.75,
+      "discovered_at": "2026-02-19T07:50:32.196262",
+      "applied": true
+    },
+    {
+      "topic": "trending_coins",
+      "source": "coingecko",
+      "title": "Trending Coins Pattern",
+      "content": "Currently trending: OP, BTC, SOL, PENGU, ESP",
+      "relevance_score": 0.7,
+      "discovered_at": "2026-02-19T07:58:44.606219",
+      "applied": true
+    },
+    {
+      "topic": "market_sentiment",
+      "source": "coingecko",
+      "title": "Global Market Sentiment",
+      "content": "BTC Dominance: 56.3%, 24h Change: -1.52%",
+      "relevance_score": 0.8,
+      "discovered_at": "2026-02-19T07:58:44.725990",
+      "applied": true
+    },
+    {
+      "topic": "momentum_leaders",
+      "source": "binance",
+      "title": "Top Momentum Leaders",
+      "content": "Top gainers: {'CREAM': 65.354, 'PNT': 45.228, 'ESP': 27.358, 'KDA': 17.647, 'PROM': 14.506}",
+      "relevance_score": 0.85,
+      "discovered_at": "2026-02-19T07:58:45.729279",
+      "applied": true
+    },
+    {
+      "topic": "volatility_analysis",
+      "source": "kraken",
+      "title": "Volatility Patterns",
+      "content": "24h volatility: XETHZUSD: 5.99%, SOLUSD: 6.88%, XXBTZUSD: 3.92%",
+      "relevance_score": 0.75,
+      "discovered_at": "2026-02-19T07:58:45.812866",
       "applied": true
     }
   ],
@@ -47,11 +119,37 @@
         "Volatility Patterns",
         "Trending Coins Pattern"
       ],
-      "generated_at": "2026-02-05T22:37:14.327100",
+      "generated_at": "2026-02-19T07:42:35.753708",
+      "applied": true,
+      "measured_revenue": 0.0
+    },
+    {
+      "name": "queen_research_enhancement",
+      "description": "Auto-generated from 4 research findings",
+      "source_research": [
+        "Top Momentum Leaders",
+        "Global Market Sentiment",
+        "Volatility Patterns",
+        "Trending Coins Pattern"
+      ],
+      "generated_at": "2026-02-19T07:50:32.198045",
+      "applied": true,
+      "measured_revenue": 0.0
+    },
+    {
+      "name": "queen_research_enhancement",
+      "description": "Auto-generated from 4 research findings",
+      "source_research": [
+        "Top Momentum Leaders",
+        "Global Market Sentiment",
+        "Volatility Patterns",
+        "Trending Coins Pattern"
+      ],
+      "generated_at": "2026-02-19T07:58:45.814921",
       "applied": true,
       "measured_revenue": 0.0
     }
   ],
   "total_revenue": 0.0,
-  "last_updated": "2026-02-05T22:37:14.330139"
+  "last_updated": "2026-02-19T07:58:45.818590"
 }
