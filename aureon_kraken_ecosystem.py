@@ -100,6 +100,23 @@ except ImportError:
     king_on_sell = None
     start_king = None
 
+# 👁 AUREON THE SEER - Autonomous Coherence & Cosmic Intelligence
+try:
+    from aureon_seer_integration import (
+        start_seer, seer_update_context, seer_get_vision,
+        seer_get_risk_modifier, seer_should_trade, get_triumvirate_consensus,
+    )
+    SEER_AVAILABLE = True
+    print("👁 Aureon the Seer loaded - cosmic coherence active!")
+except ImportError:
+    SEER_AVAILABLE = False
+    start_seer = None
+    seer_update_context = None
+    seer_get_vision = None
+    seer_get_risk_modifier = None
+    seer_should_trade = None
+    get_triumvirate_consensus = None
+
 # ═══════════════════════════════════════════════════════════════
 # CONFIGURATION - THE UNIFIED PARAMETERS
 # ═══════════════════════════════════════════════════════════════
@@ -1029,7 +1046,18 @@ class AureonKrakenEcosystem:
                 print(f"   ⚠️ The King could not rise: {e}")
         else:
             self.king = None
-        
+
+        # 👁 AUREON THE SEER - Autonomous Coherence & Cosmic Intelligence
+        if SEER_AVAILABLE and start_seer:
+            try:
+                self.seer = start_seer()
+                print("   👁 Aureon the Seer awakened - cosmic coherence active!")
+            except Exception as e:
+                self.seer = None
+                print(f"   Seer could not awaken: {e}")
+        else:
+            self.seer = None
+
         # Initialize capital pool
         self.capital_pool.update_equity(initial_balance)
         
@@ -1843,6 +1871,12 @@ class AureonKrakenEcosystem:
         size_fraction = self.tracker.calculate_position_size(opp['coherence'], symbol)
         risk_mod = lattice_state.get('risk_mod', 1.0) if isinstance(lattice_state, dict) else getattr(lattice_state, 'risk_mod', 1.0)
         size_fraction *= risk_mod
+        # 👁 Apply Seer's cosmic risk modifier
+        if SEER_AVAILABLE and seer_get_risk_modifier:
+            try:
+                size_fraction *= seer_get_risk_modifier()
+            except Exception:
+                pass
         if size_fraction <= 0:
             return
 
@@ -2524,7 +2558,18 @@ class AureonKrakenEcosystem:
                 
                 # Apply Triadic Envelope Protocol to filter signals
                 all_opps = self.lattice.filter_signals(raw_opps)
-                
+
+                # 👁 Feed the Seer and apply cosmic risk modifier
+                if SEER_AVAILABLE and seer_update_context:
+                    try:
+                        seer_update_context(
+                            positions=self.positions,
+                            ticker_cache=self.ticker_cache,
+                            market_data={"coherence": network_coherence, "lattice": l_state},
+                        )
+                    except Exception:
+                        pass
+
                 # Dynamic Portfolio Rebalancing - sell underperformers if better opportunities exist
                 freed_capital = 0.0
                 if all_opps and len(self.positions) >= CONFIG['MAX_POSITIONS'] // 2:
@@ -2619,8 +2664,19 @@ class AureonKrakenEcosystem:
                 print(f"   🌐 Lattice: {l_state.phase} ({l_state.frequency}Hz) | Purity: {l_state.field_purity*100:.0f}% | {lambda_str}")
                 print(f"   🎮 Mode: {mode_str} | Entry Γ: {CONFIG['ENTRY_COHERENCE']:.3f} | Exit Γ: {CONFIG['EXIT_COHERENCE']:.3f}")
                 print(f"   💰 Compounded: {curr_sym}{self.tracker.compounded:.2f} | Harvested: {curr_sym}{self.tracker.harvested:.2f}")
-                print(f"   🌟 Pool: {curr_sym}{total_pool_profits:+.2f} total | {curr_sym}{capital_available:.2f} available | Scouts: {scout_count} | Splits: {split_count}{signal_str}")
-                print(f"   ⏱️ Runtime: {runtime:.1f} min | Positions: {len(self.positions)}/{CONFIG['MAX_POSITIONS']} | Max Gen: {max_gen}")
+                print(f"   Pool: {curr_sym}{total_pool_profits:+.2f} total | {curr_sym}{capital_available:.2f} available | Scouts: {scout_count} | Splits: {split_count}{signal_str}")
+                print(f"   Runtime: {runtime:.1f} min | Positions: {len(self.positions)}/{CONFIG['MAX_POSITIONS']} | Max Gen: {max_gen}")
+
+                # 👁 The Triumvirate status (Queen + King + Seer)
+                if SEER_AVAILABLE and seer_get_vision:
+                    try:
+                        sv = seer_get_vision()
+                        if sv and sv.get("grade"):
+                            seer_str = f"Seer: {sv['grade']} ({sv.get('unified_score', 0):.2f}) | Action: {sv.get('action', '?')} | Risk: {sv.get('risk_modifier', 1.0):.1f}x"
+                            king_str = "King: Active" if KING_AVAILABLE else "King: N/A"
+                            print(f"   [TRIUMVIRATE] {seer_str} | {king_str}")
+                    except Exception:
+                        pass
                 
                 if self.tracker.trading_halted:
                     print(f"   🛑 TRADING HALTED: {self.tracker.halt_reason}")

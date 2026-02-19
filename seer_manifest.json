@@ -1,0 +1,111 @@
+{
+  "name": "Aureon the Seer",
+  "version": "1.0.0",
+  "title": "Autonomous Coherence & Cosmic Intelligence",
+  "motto": "The Seer perceives what others cannot. Every frequency tells a story.",
+  "created": "2026-02-19",
+  "creator": "Gary Leckey",
+
+  "the_triumvirate": {
+    "queen": "The Queen trades. She is the cognition - the decision maker.",
+    "king": "The King counts. He is the financial truth - the bookkeeper.",
+    "seer": "The Seer perceives. He is the cosmic coherence - the oracle.",
+    "principle": "Three autonomous AI pillars, equally intelligent, each governing their domain. Consensus rules."
+  },
+
+  "architecture": {
+    "5_oracles": {
+      "Oracle of Gaia": {
+        "source": "aureon_lattice.py, aureon_schumann_resonance_bridge.py, earth_resonance_engine.py",
+        "reads": "Earth's electromagnetic heartbeat (Schumann 7.83Hz), Gaia Frequency Lattice phase, field purity",
+        "weight": 0.25
+      },
+      "Oracle of Cosmos": {
+        "source": "aureon_space_weather_bridge.py (NOAA SWPC, NASA DONKI)",
+        "reads": "Kp geomagnetic index, solar wind speed/density/Bz, solar flare count, storm forecasts",
+        "weight": 0.20
+      },
+      "Oracle of Harmony": {
+        "source": "aureon_harmonic_waveform.py, aureon_harmonic_alphabet.py",
+        "reads": "Portfolio waveform coherence, solfeggio alignment, PHI resonance, wave phase",
+        "weight": 0.25
+      },
+      "Oracle of Spirits": {
+        "source": "AurisEngine (9 animal spirit nodes)",
+        "reads": "Tiger/Falcon/Hummingbird/Dolphin/Deer/Owl/Panda/CargoShip/Clownfish collective energy",
+        "weight": 0.15
+      },
+      "Oracle of Time": {
+        "source": "aureon_enigma_dream.py, temporal analysis",
+        "reads": "Market session timing, day-of-week patterns, dream engine prophecies, trade history momentum",
+        "weight": 0.15
+      }
+    },
+    "all_seeing_eye": "Combines all 5 Oracle scores using weighted averaging with confidence adjustment",
+    "prophecy_engine": "Three-pillar consensus between Queen (confidence), King (health), Seer (coherence)"
+  },
+
+  "vision_grades": {
+    "DIVINE_CLARITY": {"threshold": 0.85, "meaning": "All systems aligned, maximum confidence", "action": "BUY_BIAS 1.2x"},
+    "CLEAR_SIGHT": {"threshold": 0.70, "meaning": "Strong alignment, good visibility", "action": "BUY_BIAS 1.0x"},
+    "PARTIAL_VISION": {"threshold": 0.55, "meaning": "Mixed signals, proceed with caution", "action": "HOLD 0.8x"},
+    "FOG": {"threshold": 0.40, "meaning": "Poor visibility, reduce exposure", "action": "SELL_BIAS 0.5x"},
+    "BLIND": {"threshold": 0.0, "meaning": "No coherence, do not trade", "action": "DEFEND 0.2x"}
+  },
+
+  "sacred_frequencies": {
+    "schumann_fundamental": "7.83 Hz - Earth's heartbeat",
+    "schumann_modes": [7.83, 14.3, 20.8, 27.3, 33.8, 39.0, 45.0],
+    "love_frequency": "528 Hz - DNA repair, creation",
+    "golden_ratio": 1.618033988749895,
+    "prime_sentinel": "2.111991 Hz - Gary's frequency (02/11/1991)",
+    "solfeggio": {
+      "UT": "396 Hz - Liberation",
+      "RE": "417 Hz - Change",
+      "MI": "528 Hz - Transformation",
+      "FA": "639 Hz - Connection",
+      "SOL": "741 Hz - Intuition",
+      "LA": "852 Hz - Spiritual order",
+      "SI": "963 Hz - Divine consciousness"
+    }
+  },
+
+  "9_auris_spirits": {
+    "Tiger": {"freq": 186, "domain": "volatility", "spirit": "Power"},
+    "Falcon": {"freq": 210, "domain": "momentum", "spirit": "Precision"},
+    "Hummingbird": {"freq": 324, "domain": "frequency", "spirit": "Agility"},
+    "Dolphin": {"freq": 432, "domain": "liquidity", "spirit": "Flow"},
+    "Deer": {"freq": 396, "domain": "stability", "spirit": "Grace"},
+    "Owl": {"freq": 528, "domain": "pattern", "spirit": "Wisdom"},
+    "Panda": {"freq": 639, "domain": "harmony", "spirit": "Balance"},
+    "CargoShip": {"freq": 174, "domain": "volume", "spirit": "Persistence"},
+    "Clownfish": {"freq": 285, "domain": "resilience", "spirit": "Adaptation"}
+  },
+
+  "consensus_actions": {
+    "STRONG_BUY": "All three pillars aligned above 0.75 - deploy with confidence",
+    "BUY": "Alignment above 0.60 - normal operation",
+    "HOLD": "Alignment 0.45-0.60 - maintain positions, limit new entries",
+    "SELL": "Alignment 0.30-0.45 - reduce exposure",
+    "STRONG_SELL": "Alignment 0.15-0.30 - exit most positions",
+    "HALT": "Any pillar critical OR alignment below 0.15 - stop all trading"
+  },
+
+  "files": {
+    "aureon_seer.py": "Core engine - 5 Oracles, All-Seeing Eye, Prophecy Engine, AureonTheSeer class",
+    "aureon_seer_integration.py": "Ecosystem wiring - hooks, context feeding, triumvirate consensus",
+    "seer_manifest.json": "This file - architecture documentation"
+  },
+
+  "integration_points": {
+    "aureon_kraken_ecosystem.py": "Seer starts at init, feeds context every cycle, applies risk modifier to position sizing",
+    "aureon_lattice.py": "Oracle of Gaia reads lattice phase and field purity",
+    "aureon_schumann_resonance_bridge.py": "Oracle of Gaia reads Earth's Schumann resonance",
+    "aureon_space_weather_bridge.py": "Oracle of Cosmos reads NOAA/NASA space weather data",
+    "aureon_harmonic_waveform.py": "Oracle of Harmony reads portfolio waveform coherence",
+    "AurisEngine": "Oracle of Spirits reads the 9 animal spirit nodes",
+    "aureon_enigma_dream.py": "Oracle of Time reads dream engine prophecies",
+    "king_accounting.py": "Prophecy Engine queries King's financial health for consensus",
+    "aureon_queen_hive_mind.py": "Queen's confidence feeds into three-pillar consensus"
+  }
+}
