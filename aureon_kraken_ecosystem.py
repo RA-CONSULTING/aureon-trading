@@ -89,6 +89,17 @@ except ImportError:
     is_real_profit = None
     get_validator = None
 
+# 👑 THE KING - Autonomous Accounting AI
+try:
+    from king_integration import king_on_buy, king_on_sell, start_king
+    KING_AVAILABLE = True
+    print("👑 The King loaded - autonomous accounting active!")
+except ImportError:
+    KING_AVAILABLE = False
+    king_on_buy = None
+    king_on_sell = None
+    start_king = None
+
 # ═══════════════════════════════════════════════════════════════
 # CONFIGURATION - THE UNIFIED PARAMETERS
 # ═══════════════════════════════════════════════════════════════
@@ -1007,6 +1018,17 @@ class AureonKrakenEcosystem:
             print("   🔮 Nexus Predictor initialized (79.6% validated)")
         else:
             self.nexus = None
+
+        # 👑 THE KING - Autonomous Accounting AI
+        if KING_AVAILABLE and start_king:
+            try:
+                self.king = start_king()
+                print("   👑 The King has risen - autonomous accounting active!")
+            except Exception as e:
+                self.king = None
+                print(f"   ⚠️ The King could not rise: {e}")
+        else:
+            self.king = None
         
         # Initialize capital pool
         self.capital_pool.update_equity(initial_balance)
@@ -1904,10 +1926,19 @@ class AureonKrakenEcosystem:
                 if not res.get('orderId'):
                     print(f"   ⚠️ Order failed for {symbol}: No order ID returned")
                     return
+                # 👑 The King records the buy
+                if KING_AVAILABLE and king_on_buy:
+                    try:
+                        king_on_buy(
+                            'kraken', symbol, quantity, price,
+                            fee=entry_fee, order_id=res.get('orderId', ''),
+                        )
+                    except Exception:
+                        pass  # Non-critical
             except Exception as e:
                 print(f"   ⚠️ Execution error for {symbol}: {e}")
                 return
-        
+
         # 🌟 Apply prime-based sizing if enabled
         prime_multiplier = 1.0
         if len(self.positions) < 3:  # Apply prime sizing to first few positions
@@ -2321,7 +2352,21 @@ class AureonKrakenEcosystem:
         
         gross_pnl = exit_value - pos.entry_value
         net_pnl = gross_pnl - total_expenses
-        
+
+        # 👑 The King records the sell
+        if KING_AVAILABLE and king_on_sell and not self.dry_run:
+            try:
+                order_id = ""
+                if sell_order:
+                    order_id = sell_order.get('orderId', '')
+                king_on_sell(
+                    'kraken', trade_symbol, pos.quantity, price,
+                    fee=exit_fee, order_id=order_id,
+                    is_margin=pos.is_margin, leverage=pos.leverage,
+                )
+            except Exception:
+                pass  # Non-critical
+
         # 💎 VALIDATE THE SELL - No phantom gains!
         validated_pnl = net_pnl
         if TRADE_VALIDATOR_AVAILABLE and validate_sell and sell_order and not self.dry_run:
