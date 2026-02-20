@@ -1,0 +1,83 @@
+{
+  "name": "The King",
+  "version": "1.0.0",
+  "title": "Autonomous Accounting AI",
+  "motto": "The King counts every coin. The Queen trades them.",
+  "created": "2026-02-19",
+  "creator": "Gary Leckey",
+
+  "philosophy": {
+    "purpose": "Transform the Enigma signal-decoding architecture into a financial-decoding system",
+    "principle": "Every coin has two sides. Every transaction, two entries.",
+    "relationship": "The King and Queen rule the repo together - She trades, He accounts"
+  },
+
+  "architecture": {
+    "origin": "Mapped from aureon_enigma.py (5 Rotors + Reflector + Bombe)",
+    "mapping": {
+      "Enigma Rotor Sigma (Schumann Resonance)": "Transaction Decoder - standardizes raw exchange data",
+      "Enigma Rotor Phi (Golden Ratio)": "Cost Basis Engine - FIFO tax lot tracking",
+      "Enigma Rotor Omega (Market Harmonics)": "P&L Calculator - realized and unrealized gains",
+      "Enigma Rotor Gamma (Auris Coherence)": "Portfolio Valuation - multi-exchange aggregation",
+      "Enigma Rotor Psi (Consciousness Field)": "Tax & Compliance - capital gains calculations",
+      "Universal Reflector": "Royal Treasury - unified financial truth from all 5 engines",
+      "Bombe Pattern Matcher": "Royal Auditor - reconciliation and anomaly detection",
+      "Intelligence Grades": "Financial Health Grades (SOVEREIGN, PROSPEROUS, STABLE, STRAINED, BANKRUPT)",
+      "Dream Engine": "Forecast Engine (future: projections, tax planning)",
+      "Universal Translator": "Royal Decree - financial reports and proclamations"
+    }
+  },
+
+  "financial_health_grades": {
+    "SOVEREIGN": {"threshold": 0.85, "meaning": "Excellent financial health, growing equity"},
+    "PROSPEROUS": {"threshold": 0.70, "meaning": "Good health, consistent profits"},
+    "STABLE": {"threshold": 0.55, "meaning": "Neutral, breaking even after costs"},
+    "STRAINED": {"threshold": 0.40, "meaning": "Losses detected, needs attention"},
+    "BANKRUPT": {"threshold": 0.0, "meaning": "Critical - trading should halt"}
+  },
+
+  "capabilities": {
+    "transaction_tracking": "Standardized recording of all trades, deposits, withdrawals across exchanges",
+    "cost_basis_fifo": "First-In-First-Out tax lot tracking for accurate cost basis",
+    "realized_pnl": "Automatic P&L calculation on every sell using FIFO lots",
+    "unrealized_pnl": "Real-time mark-to-market portfolio valuation",
+    "double_entry_ledger": "Proper accounting with balanced debits and credits",
+    "margin_accounting": "Full margin position tracking (collateral, loans, leveraged P&L)",
+    "tax_reporting": "UK capital gains tax calculations with annual exemption",
+    "reconciliation": "Automatic comparison of books vs live exchange balances",
+    "anomaly_detection": "Flags fee anomalies, phantom trades, balance discrepancies",
+    "autonomous_monitoring": "Background thread watches all trades in real-time",
+    "financial_reports": "Daily reports, trial balance, balance sheet, income statement"
+  },
+
+  "files": {
+    "king_accounting.py": "Core engine - 5 Royal Deciphers, Royal Treasury, Royal Auditor, TheKing class",
+    "king_ledger.py": "Double-entry accounting ledger with chart of accounts",
+    "king_integration.py": "Ecosystem wiring - hooks into trades, syncs with existing systems",
+    "king_manifest.json": "This file - system documentation and architecture"
+  },
+
+  "persistence": {
+    "king_state.json": "King's accounting state (tax lots, realized gains, P&L summary)",
+    "king_double_entry_ledger.json": "Double-entry journal entries and account balances",
+    "king_audit.jsonl": "Audit trail of all financial events"
+  },
+
+  "integration_points": {
+    "aureon_kraken_ecosystem.py": "Hooks into open_position() and close_position() for automatic recording",
+    "cost_basis_tracker.py": "Can bootstrap from existing CostBasisTracker data",
+    "trade_profit_validator.py": "Shares exchange fee profiles for accurate cost calculation",
+    "unified_exchange_client.py": "Uses for live balance reconciliation",
+    "aureon_queen_hive_mind.py": "Reports financial health to the Queen",
+    "ThoughtBus": "Broadcasts financial events for system-wide awareness"
+  },
+
+  "immutable_laws": [
+    "Every transaction creates balanced journal entries (debits = credits)",
+    "Cost basis is ALWAYS calculated using FIFO (First In, First Out)",
+    "No trade exits without the King recording it",
+    "The King's books must always balance (Assets = Liabilities + Equity)",
+    "Anomalies are ALWAYS flagged, never hidden",
+    "The Queen's sacred 1.88% minimum profit is respected and verified"
+  ]
+}

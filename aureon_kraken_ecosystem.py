@@ -89,6 +89,50 @@ except ImportError:
     is_real_profit = None
     get_validator = None
 
+# 👑 THE KING - Autonomous Accounting AI
+try:
+    from king_integration import king_on_buy, king_on_sell, start_king
+    KING_AVAILABLE = True
+    print("👑 The King loaded - autonomous accounting active!")
+except ImportError:
+    KING_AVAILABLE = False
+    king_on_buy = None
+    king_on_sell = None
+    start_king = None
+
+# 👁 AUREON THE SEER - Autonomous Coherence & Cosmic Intelligence
+try:
+    from aureon_seer_integration import (
+        start_seer, seer_update_context, seer_get_vision,
+        seer_get_risk_modifier, seer_should_trade, get_triumvirate_consensus,
+    )
+    SEER_AVAILABLE = True
+    print("👁 Aureon the Seer loaded - cosmic coherence active!")
+except ImportError:
+    SEER_AVAILABLE = False
+    start_seer = None
+    seer_update_context = None
+    seer_get_vision = None
+    seer_get_risk_modifier = None
+    seer_should_trade = None
+    get_triumvirate_consensus = None
+
+# AUREON LYRA - Emotional Frequency & Harmonics Engine
+try:
+    from aureon_lyra_integration import (
+        start_lyra, lyra_update_context, lyra_get_resonance,
+        lyra_get_position_multiplier, lyra_should_trade,
+    )
+    LYRA_AVAILABLE = True
+    print("Aureon Lyra loaded - emotional frequency & harmonics active!")
+except ImportError:
+    LYRA_AVAILABLE = False
+    start_lyra = None
+    lyra_update_context = None
+    lyra_get_resonance = None
+    lyra_get_position_multiplier = None
+    lyra_should_trade = None
+
 # ═══════════════════════════════════════════════════════════════
 # CONFIGURATION - THE UNIFIED PARAMETERS
 # ═══════════════════════════════════════════════════════════════
@@ -1007,7 +1051,40 @@ class AureonKrakenEcosystem:
             print("   🔮 Nexus Predictor initialized (79.6% validated)")
         else:
             self.nexus = None
-        
+
+        # 👑 THE KING - Autonomous Accounting AI
+        if KING_AVAILABLE and start_king:
+            try:
+                self.king = start_king()
+                print("   👑 The King has risen - autonomous accounting active!")
+            except Exception as e:
+                self.king = None
+                print(f"   ⚠️ The King could not rise: {e}")
+        else:
+            self.king = None
+
+        # 👁 AUREON THE SEER - Autonomous Coherence & Cosmic Intelligence
+        if SEER_AVAILABLE and start_seer:
+            try:
+                self.seer = start_seer()
+                print("   👁 Aureon the Seer awakened - cosmic coherence active!")
+            except Exception as e:
+                self.seer = None
+                print(f"   Seer could not awaken: {e}")
+        else:
+            self.seer = None
+
+        # AUREON LYRA - Emotional Frequency & Harmonics Engine
+        if LYRA_AVAILABLE and start_lyra:
+            try:
+                self.lyra = start_lyra()
+                print("   Aureon Lyra awakened - emotional frequency & harmonics active!")
+            except Exception as e:
+                self.lyra = None
+                print(f"   Lyra could not awaken: {e}")
+        else:
+            self.lyra = None
+
         # Initialize capital pool
         self.capital_pool.update_equity(initial_balance)
         
@@ -1821,6 +1898,18 @@ class AureonKrakenEcosystem:
         size_fraction = self.tracker.calculate_position_size(opp['coherence'], symbol)
         risk_mod = lattice_state.get('risk_mod', 1.0) if isinstance(lattice_state, dict) else getattr(lattice_state, 'risk_mod', 1.0)
         size_fraction *= risk_mod
+        # 👁 Apply Seer's cosmic risk modifier
+        if SEER_AVAILABLE and seer_get_risk_modifier:
+            try:
+                size_fraction *= seer_get_risk_modifier()
+            except Exception:
+                pass
+        # 🎵 Apply Lyra's PHI-based position multiplier
+        if LYRA_AVAILABLE and lyra_get_position_multiplier:
+            try:
+                size_fraction *= lyra_get_position_multiplier()
+            except Exception:
+                pass
         if size_fraction <= 0:
             return
 
@@ -1904,10 +1993,19 @@ class AureonKrakenEcosystem:
                 if not res.get('orderId'):
                     print(f"   ⚠️ Order failed for {symbol}: No order ID returned")
                     return
+                # 👑 The King records the buy
+                if KING_AVAILABLE and king_on_buy:
+                    try:
+                        king_on_buy(
+                            'kraken', symbol, quantity, price,
+                            fee=entry_fee, order_id=res.get('orderId', ''),
+                        )
+                    except Exception:
+                        pass  # Non-critical
             except Exception as e:
                 print(f"   ⚠️ Execution error for {symbol}: {e}")
                 return
-        
+
         # 🌟 Apply prime-based sizing if enabled
         prime_multiplier = 1.0
         if len(self.positions) < 3:  # Apply prime sizing to first few positions
@@ -2321,7 +2419,21 @@ class AureonKrakenEcosystem:
         
         gross_pnl = exit_value - pos.entry_value
         net_pnl = gross_pnl - total_expenses
-        
+
+        # 👑 The King records the sell
+        if KING_AVAILABLE and king_on_sell and not self.dry_run:
+            try:
+                order_id = ""
+                if sell_order:
+                    order_id = sell_order.get('orderId', '')
+                king_on_sell(
+                    'kraken', trade_symbol, pos.quantity, price,
+                    fee=exit_fee, order_id=order_id,
+                    is_margin=pos.is_margin, leverage=pos.leverage,
+                )
+            except Exception:
+                pass  # Non-critical
+
         # 💎 VALIDATE THE SELL - No phantom gains!
         validated_pnl = net_pnl
         if TRADE_VALIDATOR_AVAILABLE and validate_sell and sell_order and not self.dry_run:
@@ -2479,7 +2591,29 @@ class AureonKrakenEcosystem:
                 
                 # Apply Triadic Envelope Protocol to filter signals
                 all_opps = self.lattice.filter_signals(raw_opps)
-                
+
+                # 👁 Feed the Seer and apply cosmic risk modifier
+                if SEER_AVAILABLE and seer_update_context:
+                    try:
+                        seer_update_context(
+                            positions=self.positions,
+                            ticker_cache=self.ticker_cache,
+                            market_data={"coherence": network_coherence, "lattice": l_state},
+                        )
+                    except Exception:
+                        pass
+
+                # 🎵 Feed Lyra emotional frequency data
+                if LYRA_AVAILABLE and lyra_update_context:
+                    try:
+                        lyra_update_context(
+                            positions=self.positions,
+                            ticker_cache=self.ticker_cache,
+                            market_data={"coherence": network_coherence, "lattice": l_state},
+                        )
+                    except Exception:
+                        pass
+
                 # Dynamic Portfolio Rebalancing - sell underperformers if better opportunities exist
                 freed_capital = 0.0
                 if all_opps and len(self.positions) >= CONFIG['MAX_POSITIONS'] // 2:
@@ -2574,8 +2708,27 @@ class AureonKrakenEcosystem:
                 print(f"   🌐 Lattice: {l_state.phase} ({l_state.frequency}Hz) | Purity: {l_state.field_purity*100:.0f}% | {lambda_str}")
                 print(f"   🎮 Mode: {mode_str} | Entry Γ: {CONFIG['ENTRY_COHERENCE']:.3f} | Exit Γ: {CONFIG['EXIT_COHERENCE']:.3f}")
                 print(f"   💰 Compounded: {curr_sym}{self.tracker.compounded:.2f} | Harvested: {curr_sym}{self.tracker.harvested:.2f}")
-                print(f"   🌟 Pool: {curr_sym}{total_pool_profits:+.2f} total | {curr_sym}{capital_available:.2f} available | Scouts: {scout_count} | Splits: {split_count}{signal_str}")
-                print(f"   ⏱️ Runtime: {runtime:.1f} min | Positions: {len(self.positions)}/{CONFIG['MAX_POSITIONS']} | Max Gen: {max_gen}")
+                print(f"   Pool: {curr_sym}{total_pool_profits:+.2f} total | {curr_sym}{capital_available:.2f} available | Scouts: {scout_count} | Splits: {split_count}{signal_str}")
+                print(f"   Runtime: {runtime:.1f} min | Positions: {len(self.positions)}/{CONFIG['MAX_POSITIONS']} | Max Gen: {max_gen}")
+
+                # 🏛️ The Quadrumvirate status (Queen + King + Seer + Lyra)
+                if SEER_AVAILABLE and seer_get_vision:
+                    try:
+                        sv = seer_get_vision()
+                        if sv and sv.get("grade"):
+                            seer_str = f"Seer: {sv['grade']} ({sv.get('unified_score', 0):.2f}) | Risk: {sv.get('risk_modifier', 1.0):.1f}x"
+                            king_str = "King: Active" if KING_AVAILABLE else "King: N/A"
+                            lyra_str = ""
+                            if LYRA_AVAILABLE and lyra_get_resonance:
+                                try:
+                                    lr = lyra_get_resonance()
+                                    if lr and lr.get("grade"):
+                                        lyra_str = f" | Lyra: {lr['grade']} ({lr.get('score', 0):.2f})"
+                                except Exception:
+                                    pass
+                            print(f"   [QUADRUMVIRATE] {seer_str} | {king_str}{lyra_str}")
+                    except Exception:
+                        pass
                 
                 if self.tracker.trading_halted:
                     print(f"   🛑 TRADING HALTED: {self.tracker.halt_reason}")
