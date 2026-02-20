@@ -1,16 +1,18 @@
 #!/usr/bin/env python3
 """
-AUREON TRIUMVIRATE - Comprehensive Integration Test Suite
+AUREON QUADRUMVIRATE - Comprehensive Integration Test Suite
 =====================================================
-Tests all 3 systems (Queen, King, Seer) interacting together.
+Tests all 4 systems (Queen, King, Seer, Lyra) interacting together.
 
 Tests cover:
-  1. Freeway consensus - all 3 must pass independently
+  1. Freeway consensus - all 4 must pass independently
   2. Queen's absolute veto power (11+ systems = supreme authority)
-  3. King and Seer analytical data flowing freely
-  4. Control handoff between systems
+  3. All 4 pillars' analytical data flowing freely
+  4. Control handoff between all 4 systems
   5. Edge cases and boundary conditions
   6. Override and escalation scenarios
+  7. Lyra emotional frequency & harmonics voting
+  8. Four-pillar complete interaction simulation
 
 Gary Leckey | February 2026
 """
@@ -25,40 +27,45 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from aureon_triumvirate import (
     TriumvirateEngine, QueenEvaluator, KingEvaluator, SeerEvaluator,
+    LyraEvaluator,
     ControlHandoffEngine, PillarRole, ConsensusAction, VoteResult,
     PillarVote, TriumvirateConsensus, ControlHandoff,
     QUEEN_CONNECTED_SYSTEMS, QUEEN_PASS_THRESHOLD, QUEEN_VETO_THRESHOLD,
-    KING_PASS_GRADES, SEER_PASS_GRADES,
+    KING_PASS_GRADES, SEER_PASS_GRADES, LYRA_PASS_GRADES,
+    LYRA_CONNECTED_SYSTEMS,
     get_triumvirate,
 )
 
 
 # ═══════════════════════════════════════════════════════════════════════════
-# TEST 1: FREEWAY CONSENSUS - All 3 Must Pass
+# TEST 1: FREEWAY CONSENSUS - All 4 Must Pass
 # ═══════════════════════════════════════════════════════════════════════════
 
 class TestFreewayConsensus(unittest.TestCase):
     """
-    Tests the core freeway consensus rule: ALL 3 pillars must
+    Tests the core freeway consensus rule: ALL 4 pillars must
     independently vote PASS for any action to proceed.
     """
 
     def setUp(self):
         self.engine = TriumvirateEngine()
 
-    def test_all_three_pass_consensus_achieved(self):
-        """When Queen, King, and Seer all pass, consensus is achieved."""
+    def test_all_four_pass_consensus_achieved(self):
+        """When Queen, King, Seer, and Lyra all pass, consensus is achieved."""
         result = self.engine.evaluate_consensus(
             queen_confidence=0.75,
             king_health="PROSPEROUS",
             seer_grade="CLEAR_SIGHT",
             seer_score=0.77,
+            lyra_grade="CLEAR_RESONANCE",
+            lyra_score=0.77,
         )
         self.assertTrue(result.passed)
         self.assertFalse(result.queen_vetoed)
         self.assertEqual(result.queen_vote.vote, VoteResult.PASS.value)
         self.assertEqual(result.king_vote.vote, VoteResult.PASS.value)
         self.assertEqual(result.seer_vote.vote, VoteResult.PASS.value)
+        self.assertEqual(result.lyra_vote.vote, VoteResult.PASS.value)
         self.assertIn(result.action, [
             ConsensusAction.STRONG_BUY.value,
             ConsensusAction.BUY.value,
@@ -66,25 +73,30 @@ class TestFreewayConsensus(unittest.TestCase):
         ])
 
     def test_queen_blocks_consensus_fails(self):
-        """When Queen blocks, consensus fails even if King+Seer pass."""
+        """When Queen blocks, consensus fails even if others pass."""
         result = self.engine.evaluate_consensus(
             queen_confidence=0.35,  # Below QUEEN_PASS_THRESHOLD (0.45)
             king_health="PROSPEROUS",
             seer_grade="DIVINE_CLARITY",
             seer_score=0.92,
+            lyra_grade="DIVINE_HARMONY",
+            lyra_score=0.92,
         )
         self.assertFalse(result.passed)
         self.assertEqual(result.queen_vote.vote, VoteResult.BLOCK.value)
         self.assertEqual(result.king_vote.vote, VoteResult.PASS.value)
         self.assertEqual(result.seer_vote.vote, VoteResult.PASS.value)
+        self.assertEqual(result.lyra_vote.vote, VoteResult.PASS.value)
 
     def test_king_blocks_consensus_fails(self):
-        """When King blocks, consensus fails even if Queen+Seer pass."""
+        """When King blocks, consensus fails even if others pass."""
         result = self.engine.evaluate_consensus(
             queen_confidence=0.80,
             king_health="BANKRUPT",
             seer_grade="DIVINE_CLARITY",
             seer_score=0.92,
+            lyra_grade="CLEAR_RESONANCE",
+            lyra_score=0.77,
         )
         self.assertFalse(result.passed)
         self.assertEqual(result.queen_vote.vote, VoteResult.PASS.value)
@@ -92,43 +104,79 @@ class TestFreewayConsensus(unittest.TestCase):
         self.assertEqual(result.action, ConsensusAction.HALT.value)
 
     def test_seer_blocks_consensus_fails(self):
-        """When Seer blocks, consensus fails even if Queen+King pass."""
+        """When Seer blocks, consensus fails even if others pass."""
         result = self.engine.evaluate_consensus(
             queen_confidence=0.80,
             king_health="PROSPEROUS",
             seer_grade="BLIND",
             seer_score=0.15,
+            lyra_grade="CLEAR_RESONANCE",
+            lyra_score=0.77,
         )
         self.assertFalse(result.passed)
         self.assertEqual(result.queen_vote.vote, VoteResult.PASS.value)
         self.assertEqual(result.king_vote.vote, VoteResult.PASS.value)
         self.assertEqual(result.seer_vote.vote, VoteResult.BLOCK.value)
+        self.assertEqual(result.lyra_vote.vote, VoteResult.PASS.value)
 
-    def test_all_three_block_consensus_fails(self):
-        """When all three block, consensus definitely fails."""
+    def test_lyra_blocks_consensus_fails(self):
+        """When Lyra blocks, consensus fails even if others pass."""
+        result = self.engine.evaluate_consensus(
+            queen_confidence=0.80,
+            king_health="PROSPEROUS",
+            seer_grade="CLEAR_SIGHT",
+            seer_score=0.77,
+            lyra_grade="SILENCE",
+            lyra_score=0.15,
+        )
+        self.assertFalse(result.passed)
+        self.assertEqual(result.queen_vote.vote, VoteResult.PASS.value)
+        self.assertEqual(result.king_vote.vote, VoteResult.PASS.value)
+        self.assertEqual(result.seer_vote.vote, VoteResult.PASS.value)
+        self.assertEqual(result.lyra_vote.vote, VoteResult.BLOCK.value)
+
+    def test_all_four_block_consensus_fails(self):
+        """When all four block, consensus definitely fails."""
         result = self.engine.evaluate_consensus(
             queen_confidence=0.20,  # Below veto threshold
             king_health="BANKRUPT",
             seer_grade="BLIND",
             seer_score=0.10,
+            lyra_grade="SILENCE",
+            lyra_score=0.10,
         )
         self.assertFalse(result.passed)
         self.assertTrue(result.queen_vetoed)
         self.assertEqual(result.action, ConsensusAction.HALT.value)
 
-    def test_two_of_three_pass_still_blocked(self):
-        """Even when 2 of 3 pass, the single blocker prevents consensus."""
-        # Queen + Seer pass, King blocks
+    def test_three_of_four_pass_still_blocked(self):
+        """Even when 3 of 4 pass, the single blocker prevents consensus."""
+        # Queen + Seer + Lyra pass, King blocks
         result = self.engine.evaluate_consensus(
             queen_confidence=0.70,
             king_health="STRAINED",
             seer_grade="CLEAR_SIGHT",
             seer_score=0.75,
+            lyra_grade="CLEAR_RESONANCE",
+            lyra_score=0.75,
         )
         self.assertFalse(result.passed)
         self.assertEqual(result.king_vote.vote, VoteResult.BLOCK.value)
         # Should recommend SELL due to STRAINED king
         self.assertEqual(result.action, ConsensusAction.SELL.value)
+
+    def test_lyra_dissonance_blocks_even_with_perfect_others(self):
+        """Lyra DISSONANCE blocks even when Queen+King+Seer are perfect."""
+        result = self.engine.evaluate_consensus(
+            queen_confidence=0.95,
+            king_health="SOVEREIGN",
+            seer_grade="DIVINE_CLARITY",
+            seer_score=0.95,
+            lyra_grade="DISSONANCE",
+            lyra_score=0.42,
+        )
+        self.assertFalse(result.passed)
+        self.assertEqual(result.lyra_vote.vote, VoteResult.BLOCK.value)
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -145,12 +193,14 @@ class TestQueenVetoPower(unittest.TestCase):
         self.engine = TriumvirateEngine()
 
     def test_queen_veto_overrides_all(self):
-        """Queen's veto overrides even perfect King+Seer scores."""
+        """Queen's veto overrides even perfect King+Seer+Lyra scores."""
         result = self.engine.evaluate_consensus(
             queen_confidence=0.20,  # Below QUEEN_VETO_THRESHOLD (0.30)
             king_health="SOVEREIGN",
             seer_grade="DIVINE_CLARITY",
             seer_score=0.95,
+            lyra_grade="DIVINE_HARMONY",
+            lyra_score=0.95,
         )
         self.assertTrue(result.queen_vetoed)
         self.assertFalse(result.passed)
@@ -232,6 +282,8 @@ class TestQueenVetoPower(unittest.TestCase):
             king_health="SOVEREIGN",
             seer_grade="DIVINE_CLARITY",
             seer_score=0.99,
+            lyra_grade="DIVINE_HARMONY",
+            lyra_score=0.99,
         )
         self.assertTrue(result.queen_vetoed)
         self.assertEqual(result.action, ConsensusAction.HALT.value)
@@ -239,13 +291,13 @@ class TestQueenVetoPower(unittest.TestCase):
 
 
 # ═══════════════════════════════════════════════════════════════════════════
-# TEST 3: KING AND SEER ANALYTICAL DATA FLOWS FREELY
+# TEST 3: ALL 4 PILLARS' ANALYTICAL DATA FLOWS FREELY
 # ═══════════════════════════════════════════════════════════════════════════
 
 class TestFreeDataExchange(unittest.TestCase):
     """
-    King and Seer need analytical data pulled free - it flows as a
-    freeway between all 3 systems. Each shares their data openly.
+    All 4 pillars need analytical data pulled free - it flows as a
+    freeway between all systems. Each shares their data openly.
     """
 
     def setUp(self):
@@ -336,22 +388,61 @@ class TestFreeDataExchange(unittest.TestCase):
         self.assertEqual(queen_shared["decision_score"], 0.72)
         self.assertEqual(queen_shared["subsystem_count"], len(QUEEN_CONNECTED_SYSTEMS))
 
+    def test_lyra_shares_harmonic_data(self):
+        """Lyra's harmonic and emotional data is shared freely with all pillars."""
+        lyra_data = {
+            "emotional_frequency": 528.0,
+            "emotional_zone": "LOVE",
+            "position_multiplier": 1.15,
+            "exit_urgency": "none",
+            "action": "BUY_BIAS",
+            "song": "The frequencies sing in harmony",
+            "emotion_score": 0.85,
+            "earth_score": 0.78,
+            "harmony_score": 0.90,
+            "voice_score": 0.72,
+            "solfeggio_score": 0.88,
+            "spirit_score": 0.80,
+            "trend": "HARMONIZING",
+        }
+        result = self.engine.evaluate_consensus(
+            queen_confidence=0.70,
+            king_health="PROSPEROUS",
+            seer_grade="CLEAR_SIGHT",
+            seer_score=0.77,
+            lyra_grade="CLEAR_RESONANCE",
+            lyra_score=0.80,
+            lyra_data=lyra_data,
+        )
+        exchange = result.data_exchange
+        self.assertIn("lyra_shares", exchange)
+        lyra_shared = exchange["lyra_shares"]
+        self.assertEqual(lyra_shared["emotional_frequency"], 528.0)
+        self.assertEqual(lyra_shared["emotional_zone"], "LOVE")
+        self.assertEqual(lyra_shared["position_multiplier"], 1.15)
+        self.assertEqual(lyra_shared["harmony_score"], 0.90)
+        self.assertEqual(lyra_shared["trend"], "HARMONIZING")
+
     def test_all_data_flows_bidirectionally(self):
-        """All 3 pillars share data that's available to all others."""
+        """All 4 pillars share data that's available to all others."""
         result = self.engine.evaluate_consensus(
             queen_confidence=0.70,
             king_health="PROSPEROUS",
             seer_grade="CLEAR_SIGHT",
             seer_score=0.75,
+            lyra_grade="CLEAR_RESONANCE",
+            lyra_score=0.75,
             queen_data={"direction": "BULLISH"},
             king_data={"win_rate": 60.0},
             seer_data={"gaia_score": 0.80},
+            lyra_data={"emotional_frequency": 432.0},
         )
         exchange = result.data_exchange
-        # All three share data
+        # All four share data
         self.assertIn("queen_shares", exchange)
         self.assertIn("king_shares", exchange)
         self.assertIn("seer_shares", exchange)
+        self.assertIn("lyra_shares", exchange)
         # System counts are tracked
         self.assertIn("total_systems", exchange)
         total = exchange["total_systems"]
@@ -360,7 +451,8 @@ class TestFreeDataExchange(unittest.TestCase):
             total,
             exchange["queen_systems_count"] +
             exchange["king_systems_count"] +
-            exchange["seer_systems_count"]
+            exchange["seer_systems_count"] +
+            exchange["lyra_systems_count"]
         )
 
     def test_king_audit_alerts_flow_to_consensus(self):
@@ -381,19 +473,23 @@ class TestFreeDataExchange(unittest.TestCase):
         self.assertEqual(result.king_vote.grade, "AUDIT_CRITICAL")
 
     def test_data_exchange_total_systems_count(self):
-        """The data exchange tracks total connected systems across all pillars."""
+        """The data exchange tracks total connected systems across all 4 pillars."""
         result = self.engine.evaluate_consensus(
             queen_confidence=0.70,
             king_health="PROSPEROUS",
             seer_grade="CLEAR_SIGHT",
             seer_score=0.75,
+            lyra_grade="CLEAR_RESONANCE",
+            lyra_score=0.75,
         )
         exchange = result.data_exchange
-        # Queen: 11, King: 5, Seer: 5 = 21 total
+        # Queen: 11, King: 5, Seer: 5, Lyra: 22 = 43 total
         self.assertEqual(exchange["queen_systems_count"], len(QUEEN_CONNECTED_SYSTEMS))
         self.assertEqual(exchange["king_systems_count"], 5)
         self.assertEqual(exchange["seer_systems_count"], 5)
-        self.assertEqual(exchange["total_systems"], len(QUEEN_CONNECTED_SYSTEMS) + 10)
+        self.assertEqual(exchange["lyra_systems_count"], len(LYRA_CONNECTED_SYSTEMS))
+        expected_total = len(QUEEN_CONNECTED_SYSTEMS) + 5 + 5 + len(LYRA_CONNECTED_SYSTEMS)
+        self.assertEqual(exchange["total_systems"], expected_total)
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -471,6 +567,43 @@ class TestControlHandoff(unittest.TestCase):
         )
         self.assertEqual(result.active_controller, PillarRole.SEER.value)
 
+    def test_lyra_takes_control_when_silent(self):
+        """Lyra takes control when resonance is SILENCE."""
+        result = self.engine.evaluate_consensus(
+            queen_confidence=0.70,
+            king_health="PROSPEROUS",
+            seer_grade="CLEAR_SIGHT",
+            seer_score=0.75,
+            lyra_grade="SILENCE",
+            lyra_score=0.15,
+        )
+        self.assertEqual(result.active_controller, PillarRole.LYRA.value)
+
+    def test_lyra_takes_control_when_dissonant(self):
+        """Lyra takes control when resonance is DISSONANCE."""
+        result = self.engine.evaluate_consensus(
+            queen_confidence=0.70,
+            king_health="PROSPEROUS",
+            seer_grade="CLEAR_SIGHT",
+            seer_score=0.75,
+            lyra_grade="DISSONANCE",
+            lyra_score=0.42,
+        )
+        self.assertEqual(result.active_controller, PillarRole.LYRA.value)
+
+    def test_lyra_takes_control_on_emotional_shift(self):
+        """Lyra takes control during emotional shift events."""
+        result = self.engine.evaluate_consensus(
+            queen_confidence=0.70,
+            king_health="PROSPEROUS",
+            seer_grade="CLEAR_SIGHT",
+            seer_score=0.75,
+            lyra_grade="CLEAR_RESONANCE",
+            lyra_score=0.75,
+            context={"event": "EMOTIONAL_SHIFT"},
+        )
+        self.assertEqual(result.active_controller, PillarRole.LYRA.value)
+
     def test_king_takes_control_for_profit_taking(self):
         """King takes control during profit-taking events."""
         result = self.engine.evaluate_consensus(
@@ -478,6 +611,8 @@ class TestControlHandoff(unittest.TestCase):
             king_health="PROSPEROUS",
             seer_grade="CLEAR_SIGHT",
             seer_score=0.75,
+            lyra_grade="CLEAR_RESONANCE",
+            lyra_score=0.75,
             context={"event": "PROFIT_TAKING"},
         )
         self.assertEqual(result.active_controller, PillarRole.KING.value)
@@ -489,6 +624,8 @@ class TestControlHandoff(unittest.TestCase):
             king_health="PROSPEROUS",
             seer_grade="CLEAR_SIGHT",
             seer_score=0.75,
+            lyra_grade="CLEAR_RESONANCE",
+            lyra_score=0.75,
             context={"event": "RISK_ADJUSTMENT"},
         )
         self.assertEqual(result.active_controller, PillarRole.SEER.value)
@@ -506,13 +643,14 @@ class TestControlHandoff(unittest.TestCase):
         self.assertTrue(result.queen_vetoed)
 
     def test_control_handoff_sequence(self):
-        """Test a sequence of control handoffs as conditions change."""
+        """Test a sequence of control handoffs as conditions change across all 4 pillars."""
         engine = TriumvirateEngine()
 
         # Step 1: Normal conditions - Queen leads
         r1 = engine.evaluate_consensus(
             queen_confidence=0.70, king_health="PROSPEROUS",
             seer_grade="CLEAR_SIGHT", seer_score=0.75,
+            lyra_grade="CLEAR_RESONANCE", lyra_score=0.75,
         )
         self.assertEqual(r1.active_controller, PillarRole.QUEEN.value)
 
@@ -520,6 +658,7 @@ class TestControlHandoff(unittest.TestCase):
         r2 = engine.evaluate_consensus(
             queen_confidence=0.70, king_health="BANKRUPT",
             seer_grade="CLEAR_SIGHT", seer_score=0.75,
+            lyra_grade="CLEAR_RESONANCE", lyra_score=0.75,
         )
         self.assertEqual(r2.active_controller, PillarRole.KING.value)
 
@@ -527,19 +666,29 @@ class TestControlHandoff(unittest.TestCase):
         r3 = engine.evaluate_consensus(
             queen_confidence=0.70, king_health="PROSPEROUS",
             seer_grade="BLIND", seer_score=0.15,
+            lyra_grade="CLEAR_RESONANCE", lyra_score=0.75,
         )
         self.assertEqual(r3.active_controller, PillarRole.SEER.value)
 
-        # Step 4: Back to normal - Queen resumes
+        # Step 4: Lyra goes SILENCE - Lyra takes control
         r4 = engine.evaluate_consensus(
             queen_confidence=0.70, king_health="PROSPEROUS",
             seer_grade="CLEAR_SIGHT", seer_score=0.75,
+            lyra_grade="SILENCE", lyra_score=0.15,
         )
-        self.assertEqual(r4.active_controller, PillarRole.QUEEN.value)
+        self.assertEqual(r4.active_controller, PillarRole.LYRA.value)
+
+        # Step 5: Back to normal - Queen resumes
+        r5 = engine.evaluate_consensus(
+            queen_confidence=0.70, king_health="PROSPEROUS",
+            seer_grade="CLEAR_SIGHT", seer_score=0.75,
+            lyra_grade="CLEAR_RESONANCE", lyra_score=0.75,
+        )
+        self.assertEqual(r5.active_controller, PillarRole.QUEEN.value)
 
         # Verify handoff history was recorded
         history = engine.get_handoff_history()
-        self.assertGreaterEqual(len(history), 3)  # At least 3 handoffs
+        self.assertGreaterEqual(len(history), 4)  # At least 4 handoffs
 
     def test_handoff_records_from_and_to(self):
         """Control handoff records track source and destination."""
@@ -569,19 +718,21 @@ class TestControlHandoff(unittest.TestCase):
 
 class TestConsensusStrength(unittest.TestCase):
     """
-    When all 3 pass, the strength of consensus determines the action.
+    When all 4 pass, the strength of consensus determines the action.
     """
 
     def setUp(self):
         self.engine = TriumvirateEngine()
 
     def test_strong_buy_requires_high_alignment(self):
-        """STRONG_BUY requires all pillars high and aligned."""
+        """STRONG_BUY requires all 4 pillars high and aligned."""
         result = self.engine.evaluate_consensus(
             queen_confidence=0.90,
             king_health="SOVEREIGN",
             seer_grade="DIVINE_CLARITY",
             seer_score=0.92,
+            lyra_grade="DIVINE_HARMONY",
+            lyra_score=0.92,
         )
         self.assertTrue(result.passed)
         self.assertEqual(result.action, ConsensusAction.STRONG_BUY.value)
@@ -593,6 +744,8 @@ class TestConsensusStrength(unittest.TestCase):
             king_health="PROSPEROUS",
             seer_grade="CLEAR_SIGHT",
             seer_score=0.73,
+            lyra_grade="CLEAR_RESONANCE",
+            lyra_score=0.73,
         )
         self.assertTrue(result.passed)
         self.assertIn(result.action, [
@@ -607,6 +760,8 @@ class TestConsensusStrength(unittest.TestCase):
             king_health="STABLE",
             seer_grade="PARTIAL_VISION",
             seer_score=0.55,
+            lyra_grade="PARTIAL_HARMONY",
+            lyra_score=0.55,
         )
         self.assertTrue(result.passed)
         self.assertIn(result.action, [
@@ -615,23 +770,28 @@ class TestConsensusStrength(unittest.TestCase):
         ])
 
     def test_alignment_score_high_when_pillars_agree(self):
-        """Alignment score is high when all pillars have similar scores."""
+        """Alignment score is high when all 4 pillars have similar scores."""
         result = self.engine.evaluate_consensus(
             queen_confidence=0.75,
             king_health="PROSPEROUS",  # score=0.75
             seer_grade="CLEAR_SIGHT",
             seer_score=0.75,
+            lyra_grade="CLEAR_RESONANCE",
+            lyra_score=0.75,
         )
         self.assertGreater(result.alignment_score, 0.90)
 
     def test_alignment_score_low_when_pillars_diverge(self):
-        """Alignment is lower when pillar scores diverge."""
+        """Alignment is lower when pillar scores diverge significantly."""
         result = self.engine.evaluate_consensus(
             queen_confidence=0.90,
             king_health="STABLE",  # score=0.55
             seer_grade="PARTIAL_VISION",
             seer_score=0.55,
+            lyra_grade="DIVINE_HARMONY",
+            lyra_score=0.92,
         )
+        # Queen 0.90, King 0.55, Seer 0.55, Lyra 0.92 - wide spread
         self.assertLess(result.alignment_score, 0.90)
 
 
@@ -774,6 +934,71 @@ class TestSeerEvaluator(unittest.TestCase):
         self.assertEqual(vote.data["risk_modifier"], 1.1)
 
 
+class TestLyraEvaluator(unittest.TestCase):
+    """Test Lyra's individual vote logic - emotional frequency & harmonics."""
+
+    def setUp(self):
+        self.evaluator = LyraEvaluator()
+
+    def test_lyra_pass_divine_harmony(self):
+        vote = self.evaluator.evaluate("DIVINE_HARMONY", 0.92)
+        self.assertEqual(vote.vote, VoteResult.PASS.value)
+        self.assertEqual(vote.pillar, "LYRA")
+
+    def test_lyra_pass_clear_resonance(self):
+        vote = self.evaluator.evaluate("CLEAR_RESONANCE", 0.77)
+        self.assertEqual(vote.vote, VoteResult.PASS.value)
+
+    def test_lyra_pass_partial_harmony(self):
+        vote = self.evaluator.evaluate("PARTIAL_HARMONY", 0.60)
+        self.assertEqual(vote.vote, VoteResult.PASS.value)
+
+    def test_lyra_block_dissonance(self):
+        vote = self.evaluator.evaluate("DISSONANCE", 0.42)
+        self.assertEqual(vote.vote, VoteResult.BLOCK.value)
+        self.assertEqual(vote.grade, "DISSONANCE")
+
+    def test_lyra_block_silence(self):
+        vote = self.evaluator.evaluate("SILENCE", 0.15)
+        self.assertEqual(vote.vote, VoteResult.BLOCK.value)
+        self.assertEqual(vote.grade, "SILENCE")
+
+    def test_lyra_block_on_exit_critical(self):
+        """Exit urgency CRITICAL blocks new entries."""
+        vote = self.evaluator.evaluate("CLEAR_RESONANCE", 0.77, {
+            "exit_urgency": "critical",
+        })
+        self.assertEqual(vote.vote, VoteResult.BLOCK.value)
+        self.assertEqual(vote.grade, "EXIT_CRITICAL")
+
+    def test_lyra_pass_with_non_critical_exit(self):
+        """Non-critical exit urgency doesn't block."""
+        vote = self.evaluator.evaluate("CLEAR_RESONANCE", 0.77, {
+            "exit_urgency": "moderate",
+        })
+        self.assertEqual(vote.vote, VoteResult.PASS.value)
+
+    def test_lyra_connected_systems_count(self):
+        vote = self.evaluator.evaluate("CLEAR_RESONANCE", 0.77)
+        self.assertEqual(vote.connected_systems, len(LYRA_CONNECTED_SYSTEMS))
+        self.assertGreaterEqual(vote.connected_systems, 22)
+
+    def test_lyra_shares_harmonic_data(self):
+        vote = self.evaluator.evaluate("CLEAR_RESONANCE", 0.77, {
+            "emotional_frequency": 528.0,
+            "harmony_score": 0.85,
+            "position_multiplier": 1.15,
+        })
+        self.assertEqual(vote.data["emotional_frequency"], 528.0)
+        self.assertEqual(vote.data["harmony_score"], 0.85)
+        self.assertEqual(vote.data["position_multiplier"], 1.15)
+
+    def test_lyra_grade_scores_mapping(self):
+        """Lyra uses default score from grade when score=0."""
+        vote = self.evaluator.evaluate("DIVINE_HARMONY", 0)
+        self.assertEqual(vote.score, 0.92)
+
+
 # ═══════════════════════════════════════════════════════════════════════════
 # TEST 7: CONTROL HANDOFF ENGINE (ISOLATED)
 # ═══════════════════════════════════════════════════════════════════════════
@@ -820,13 +1045,32 @@ class TestControlHandoffEngine(unittest.TestCase):
         self.assertEqual(controller, PillarRole.SEER)
         self.assertIsNotNone(handoff)
 
+    def test_lyra_silence_takes_control(self):
+        queen = self._make_vote("QUEEN", VoteResult.PASS.value, 0.7, "COMMANDING")
+        king = self._make_vote("KING", VoteResult.PASS.value, 0.75, "PROSPEROUS")
+        seer = self._make_vote("SEER", VoteResult.PASS.value, 0.75, "CLEAR_SIGHT")
+        lyra = self._make_vote("LYRA", VoteResult.BLOCK.value, 0.15, "SILENCE")
+
+        controller, handoff = self.engine.determine_controller(queen, king, seer, lyra)
+        self.assertEqual(controller, PillarRole.LYRA)
+        self.assertIsNotNone(handoff)
+
+    def test_lyra_dissonance_takes_control(self):
+        queen = self._make_vote("QUEEN", VoteResult.PASS.value, 0.7, "COMMANDING")
+        king = self._make_vote("KING", VoteResult.PASS.value, 0.75, "PROSPEROUS")
+        seer = self._make_vote("SEER", VoteResult.PASS.value, 0.75, "CLEAR_SIGHT")
+        lyra = self._make_vote("LYRA", VoteResult.BLOCK.value, 0.42, "DISSONANCE")
+
+        controller, handoff = self.engine.determine_controller(queen, king, seer, lyra)
+        self.assertEqual(controller, PillarRole.LYRA)
+
     def test_profit_taking_event_gives_king_control(self):
         queen = self._make_vote("QUEEN", VoteResult.PASS.value, 0.7, "COMMANDING")
         king = self._make_vote("KING", VoteResult.PASS.value, 0.75, "PROSPEROUS")
         seer = self._make_vote("SEER", VoteResult.PASS.value, 0.75, "CLEAR_SIGHT")
 
         controller, handoff = self.engine.determine_controller(
-            queen, king, seer, {"event": "PROFIT_TAKING"}
+            queen, king, seer, context={"event": "PROFIT_TAKING"}
         )
         self.assertEqual(controller, PillarRole.KING)
 
@@ -836,9 +1080,20 @@ class TestControlHandoffEngine(unittest.TestCase):
         seer = self._make_vote("SEER", VoteResult.PASS.value, 0.75, "CLEAR_SIGHT")
 
         controller, handoff = self.engine.determine_controller(
-            queen, king, seer, {"event": "RISK_ADJUSTMENT"}
+            queen, king, seer, context={"event": "RISK_ADJUSTMENT"}
         )
         self.assertEqual(controller, PillarRole.SEER)
+
+    def test_emotional_shift_gives_lyra_control(self):
+        queen = self._make_vote("QUEEN", VoteResult.PASS.value, 0.7, "COMMANDING")
+        king = self._make_vote("KING", VoteResult.PASS.value, 0.75, "PROSPEROUS")
+        seer = self._make_vote("SEER", VoteResult.PASS.value, 0.75, "CLEAR_SIGHT")
+        lyra = self._make_vote("LYRA", VoteResult.PASS.value, 0.75, "CLEAR_RESONANCE")
+
+        controller, handoff = self.engine.determine_controller(
+            queen, king, seer, lyra, context={"event": "EMOTIONAL_SHIFT"}
+        )
+        self.assertEqual(controller, PillarRole.LYRA)
 
     def test_declining_seer_takes_control(self):
         """Seer takes control when cosmic alignment is declining."""
@@ -849,6 +1104,17 @@ class TestControlHandoffEngine(unittest.TestCase):
 
         controller, handoff = self.engine.determine_controller(queen, king, seer)
         self.assertEqual(controller, PillarRole.SEER)
+
+    def test_dissonating_lyra_takes_control(self):
+        """Lyra takes control when emotional trend is dissonating."""
+        queen = self._make_vote("QUEEN", VoteResult.PASS.value, 0.7, "COMMANDING")
+        king = self._make_vote("KING", VoteResult.PASS.value, 0.75, "PROSPEROUS")
+        seer = self._make_vote("SEER", VoteResult.PASS.value, 0.75, "CLEAR_SIGHT")
+        lyra = self._make_vote("LYRA", VoteResult.PASS.value, 0.45, "PARTIAL_HARMONY",
+                               data={"trend": "DISSONATING"})
+
+        controller, handoff = self.engine.determine_controller(queen, king, seer, lyra)
+        self.assertEqual(controller, PillarRole.LYRA)
 
     def test_no_handoff_when_controller_unchanged(self):
         """No handoff record when controller stays the same."""
@@ -936,6 +1202,34 @@ class TestOverrideScenarios(unittest.TestCase):
             king_health="PROSPEROUS",
             seer_grade="FOG",
             seer_score=0.42,
+            lyra_grade="CLEAR_RESONANCE",
+            lyra_score=0.77,
+        )
+        self.assertFalse(result.passed)
+        self.assertEqual(result.action, ConsensusAction.HOLD.value)
+
+    def test_lyra_silence_results_in_halt(self):
+        """Lyra SILENCE results in HALT."""
+        result = self.engine.evaluate_consensus(
+            queen_confidence=0.90,
+            king_health="SOVEREIGN",
+            seer_grade="DIVINE_CLARITY",
+            seer_score=0.92,
+            lyra_grade="SILENCE",
+            lyra_score=0.15,
+        )
+        self.assertFalse(result.passed)
+        self.assertEqual(result.action, ConsensusAction.HALT.value)
+
+    def test_lyra_dissonance_results_in_hold(self):
+        """Lyra DISSONANCE results in HOLD (not as severe as SILENCE)."""
+        result = self.engine.evaluate_consensus(
+            queen_confidence=0.80,
+            king_health="PROSPEROUS",
+            seer_grade="CLEAR_SIGHT",
+            seer_score=0.77,
+            lyra_grade="DISSONANCE",
+            lyra_score=0.42,
         )
         self.assertFalse(result.passed)
         self.assertEqual(result.action, ConsensusAction.HOLD.value)
@@ -947,20 +1241,24 @@ class TestOverrideScenarios(unittest.TestCase):
             king_health="STRAINED",
             seer_grade="CLEAR_SIGHT",
             seer_score=0.75,
+            lyra_grade="CLEAR_RESONANCE",
+            lyra_score=0.77,
         )
         self.assertFalse(result.passed)
         self.assertEqual(result.action, ConsensusAction.SELL.value)
 
     def test_escalation_from_hold_to_halt(self):
-        """Conditions escalating from good to crisis."""
+        """Conditions escalating from good to crisis across all 4 pillars."""
         engine = TriumvirateEngine()
 
-        # Good conditions
+        # Good conditions - all 4 pass
         r1 = engine.evaluate_consensus(
             queen_confidence=0.80,
             king_health="PROSPEROUS",
             seer_grade="CLEAR_SIGHT",
             seer_score=0.75,
+            lyra_grade="CLEAR_RESONANCE",
+            lyra_score=0.75,
         )
         self.assertTrue(r1.passed)
         self.assertIn(r1.action, [ConsensusAction.BUY.value, ConsensusAction.STRONG_BUY.value])
@@ -971,6 +1269,8 @@ class TestOverrideScenarios(unittest.TestCase):
             king_health="PROSPEROUS",
             seer_grade="FOG",
             seer_score=0.42,
+            lyra_grade="CLEAR_RESONANCE",
+            lyra_score=0.75,
         )
         self.assertFalse(r2.passed)
         self.assertEqual(r2.action, ConsensusAction.HOLD.value)
@@ -981,16 +1281,20 @@ class TestOverrideScenarios(unittest.TestCase):
             king_health="STRAINED",
             seer_grade="FOG",
             seer_score=0.42,
+            lyra_grade="CLEAR_RESONANCE",
+            lyra_score=0.75,
         )
         self.assertFalse(r3.passed)
         self.assertEqual(r3.action, ConsensusAction.SELL.value)
 
-        # Queen vetoes - HALT
+        # Lyra goes silent + Queen vetoes - HALT
         r4 = engine.evaluate_consensus(
             queen_confidence=0.20,
             king_health="STRAINED",
             seer_grade="BLIND",
             seer_score=0.10,
+            lyra_grade="SILENCE",
+            lyra_score=0.10,
         )
         self.assertTrue(r4.queen_vetoed)
         self.assertEqual(r4.action, ConsensusAction.HALT.value)
@@ -1007,12 +1311,14 @@ class TestBoundaryConditions(unittest.TestCase):
         self.engine = TriumvirateEngine()
 
     def test_all_at_minimum_pass_thresholds(self):
-        """All three at their minimum passing thresholds."""
+        """All four at their minimum passing thresholds."""
         result = self.engine.evaluate_consensus(
             queen_confidence=0.46,  # Just above 0.45
             king_health="STABLE",   # Lowest passing grade
             seer_grade="PARTIAL_VISION",  # Lowest passing grade
             seer_score=0.56,
+            lyra_grade="PARTIAL_HARMONY",  # Lowest passing grade
+            lyra_score=0.56,
         )
         self.assertTrue(result.passed)
 
@@ -1054,6 +1360,8 @@ class TestBoundaryConditions(unittest.TestCase):
             king_health="SOVEREIGN",
             seer_grade="DIVINE_CLARITY",
             seer_score=1.0,
+            lyra_grade="DIVINE_HARMONY",
+            lyra_score=1.0,
         )
         self.assertTrue(result.passed)
         self.assertEqual(result.action, ConsensusAction.STRONG_BUY.value)
@@ -1066,6 +1374,8 @@ class TestBoundaryConditions(unittest.TestCase):
             king_health="BANKRUPT",
             seer_grade="BLIND",
             seer_score=0.0,
+            lyra_grade="SILENCE",
+            lyra_score=0.0,
         )
         self.assertFalse(result.passed)
         self.assertEqual(result.action, ConsensusAction.HALT.value)
@@ -1094,18 +1404,21 @@ class TestBoundaryConditions(unittest.TestCase):
         self.assertEqual(len(history), 5)
 
     def test_engine_summary(self):
-        """Engine provides summary of its state."""
+        """Engine provides summary of its state including Lyra."""
         self.engine.evaluate_consensus(
             queen_confidence=0.70,
             king_health="PROSPEROUS",
             seer_grade="CLEAR_SIGHT",
             seer_score=0.75,
+            lyra_grade="CLEAR_RESONANCE",
+            lyra_score=0.75,
         )
         summary = self.engine.get_summary()
         self.assertIn("active_controller", summary)
         self.assertIn("total_evaluations", summary)
         self.assertEqual(summary["total_evaluations"], 1)
         self.assertEqual(summary["queen_systems"], len(QUEEN_CONNECTED_SYSTEMS))
+        self.assertEqual(summary["lyra_systems"], len(LYRA_CONNECTED_SYSTEMS))
 
     def test_reason_includes_blocker_info(self):
         """When blocked, the reason identifies which pillar blocked."""
@@ -1145,12 +1458,12 @@ class TestSingleton(unittest.TestCase):
 
 class TestCompleteInteractionSimulation(unittest.TestCase):
     """
-    Simulate a complete trading session where all 3 systems interact,
+    Simulate a complete trading session where all 4 systems interact,
     hand off control, share data, and the Queen exercises veto.
     """
 
     def test_full_trading_session_simulation(self):
-        """Simulate a multi-phase trading session with all 3 pillars."""
+        """Simulate a multi-phase trading session with all 4 pillars."""
         engine = TriumvirateEngine()
         results = []
 
@@ -1160,9 +1473,12 @@ class TestCompleteInteractionSimulation(unittest.TestCase):
             king_health="STABLE",
             seer_grade="CLEAR_SIGHT",
             seer_score=0.72,
+            lyra_grade="CLEAR_RESONANCE",
+            lyra_score=0.72,
             queen_data={"direction": "BULLISH", "coherence": 0.75},
             king_data={"total_realized_pnl": 100, "win_rate": 55},
             seer_data={"gaia_score": 0.70, "trend": "STABLE"},
+            lyra_data={"emotional_frequency": 432.0, "trend": "STABLE"},
         )
         results.append(r)
         self.assertTrue(r.passed, "Phase 1 should pass - all systems healthy")
@@ -1174,6 +1490,8 @@ class TestCompleteInteractionSimulation(unittest.TestCase):
             king_health="STABLE",
             seer_grade="FOG",
             seer_score=0.42,
+            lyra_grade="PARTIAL_HARMONY",
+            lyra_score=0.60,
             seer_data={"trend": "DECLINING", "cosmos_score": 0.30},
         )
         results.append(r)
@@ -1188,6 +1506,8 @@ class TestCompleteInteractionSimulation(unittest.TestCase):
             king_health="STRAINED",
             seer_grade="FOG",
             seer_score=0.42,
+            lyra_grade="PARTIAL_HARMONY",
+            lyra_score=0.55,
             king_data={"total_realized_pnl": -30, "drawdown_pct": 12},
         )
         results.append(r)
@@ -1196,12 +1516,29 @@ class TestCompleteInteractionSimulation(unittest.TestCase):
                         "King should take control when STRAINED")
         self.assertEqual(r.action, ConsensusAction.SELL.value)
 
-        # ── Phase 4: Crisis - Queen vetoes everything ──
+        # ── Phase 4: Lyra detects emotional crisis - Lyra takes control ──
+        r = engine.evaluate_consensus(
+            queen_confidence=0.65,
+            king_health="STABLE",
+            seer_grade="PARTIAL_VISION",
+            seer_score=0.58,
+            lyra_grade="SILENCE",
+            lyra_score=0.10,
+            lyra_data={"exit_urgency": "critical", "trend": "DISSONATING"},
+        )
+        results.append(r)
+        self.assertFalse(r.passed)
+        self.assertEqual(r.active_controller, PillarRole.LYRA.value,
+                        "Lyra should take control in SILENCE")
+
+        # ── Phase 5: Crisis - Queen vetoes everything ──
         r = engine.evaluate_consensus(
             queen_confidence=0.20,
             king_health="STRAINED",
             seer_grade="BLIND",
             seer_score=0.10,
+            lyra_grade="SILENCE",
+            lyra_score=0.10,
         )
         results.append(r)
         self.assertTrue(r.queen_vetoed)
@@ -1209,38 +1546,45 @@ class TestCompleteInteractionSimulation(unittest.TestCase):
         self.assertEqual(r.active_controller, PillarRole.QUEEN.value,
                         "Queen takes control with VETO")
 
-        # ── Phase 5: Recovery - Systems gradually improve ──
+        # ── Phase 6: Recovery - Systems gradually improve ──
         r = engine.evaluate_consensus(
             queen_confidence=0.55,
             king_health="STABLE",
             seer_grade="PARTIAL_VISION",
             seer_score=0.58,
+            lyra_grade="PARTIAL_HARMONY",
+            lyra_score=0.58,
         )
         results.append(r)
-        self.assertTrue(r.passed, "Phase 5 should pass - systems recovering")
+        self.assertTrue(r.passed, "Phase 6 should pass - systems recovering")
         self.assertEqual(r.active_controller, PillarRole.QUEEN.value)
 
-        # ── Phase 6: Prosperity - All systems aligned ──
+        # ── Phase 7: Prosperity - All 4 systems aligned ──
         r = engine.evaluate_consensus(
             queen_confidence=0.88,
             king_health="SOVEREIGN",
             seer_grade="DIVINE_CLARITY",
             seer_score=0.90,
+            lyra_grade="DIVINE_HARMONY",
+            lyra_score=0.90,
             queen_data={"direction": "BULLISH", "decision_score": 0.85},
             king_data={"total_realized_pnl": 5000, "win_rate": 65, "equity": 125000},
             seer_data={"gaia_score": 0.88, "cosmos_score": 0.85, "trend": "IMPROVING"},
+            lyra_data={"emotional_frequency": 528.0, "trend": "HARMONIZING"},
         )
         results.append(r)
         self.assertTrue(r.passed)
         self.assertEqual(r.action, ConsensusAction.STRONG_BUY.value)
         self.assertGreater(r.alignment_score, 0.85)
 
-        # ── Phase 7: Profit-taking - King takes the lead ──
+        # ── Phase 8: Profit-taking - King takes the lead ──
         r = engine.evaluate_consensus(
             queen_confidence=0.80,
             king_health="SOVEREIGN",
             seer_grade="CLEAR_SIGHT",
             seer_score=0.75,
+            lyra_grade="CLEAR_RESONANCE",
+            lyra_score=0.75,
             context={"event": "PROFIT_TAKING"},
         )
         results.append(r)
@@ -1248,45 +1592,67 @@ class TestCompleteInteractionSimulation(unittest.TestCase):
         self.assertEqual(r.active_controller, PillarRole.KING.value,
                         "King should lead profit-taking")
 
+        # ── Phase 9: Emotional shift - Lyra leads ──
+        r = engine.evaluate_consensus(
+            queen_confidence=0.75,
+            king_health="PROSPEROUS",
+            seer_grade="CLEAR_SIGHT",
+            seer_score=0.72,
+            lyra_grade="CLEAR_RESONANCE",
+            lyra_score=0.72,
+            context={"event": "EMOTIONAL_SHIFT"},
+        )
+        results.append(r)
+        self.assertTrue(r.passed)
+        self.assertEqual(r.active_controller, PillarRole.LYRA.value,
+                        "Lyra should lead emotional shifts")
+
         # Verify we went through the full cycle
-        self.assertEqual(len(results), 7)
+        self.assertEqual(len(results), 9)
 
         # Verify handoff history captured the session
         history = engine.get_handoff_history()
-        self.assertGreaterEqual(len(history), 4, "At least 4 handoffs in the session")
+        self.assertGreaterEqual(len(history), 5, "At least 5 handoffs in the session")
 
-        # Verify data was shared in all phases
+        # Verify data was shared in all phases (all 4 pillars)
         for r in results:
             self.assertIn("queen_shares", r.data_exchange)
             self.assertIn("king_shares", r.data_exchange)
             self.assertIn("seer_shares", r.data_exchange)
+            self.assertIn("lyra_shares", r.data_exchange)
 
     def test_rapid_control_handoff_sequence(self):
-        """Test rapid handoffs don't cause issues."""
+        """Test rapid handoffs across all 4 pillars don't cause issues."""
         engine = TriumvirateEngine()
 
+        # (queen_conf, king_health, seer_grade, seer_score, lyra_grade, lyra_score)
         scenarios = [
-            (0.70, "PROSPEROUS", "CLEAR_SIGHT", 0.75),  # Queen leads
-            (0.70, "BANKRUPT", "CLEAR_SIGHT", 0.75),    # King takes over
-            (0.70, "PROSPEROUS", "BLIND", 0.15),         # Seer takes over
-            (0.15, "PROSPEROUS", "CLEAR_SIGHT", 0.75),   # Queen vetoes
-            (0.70, "PROSPEROUS", "CLEAR_SIGHT", 0.75),   # Queen leads again
-            (0.70, "STRAINED", "FOG", 0.42),             # King takes over
-            (0.70, "PROSPEROUS", "CLEAR_SIGHT", 0.75),   # Queen leads again
+            (0.70, "PROSPEROUS", "CLEAR_SIGHT", 0.75, "CLEAR_RESONANCE", 0.75),  # Queen leads
+            (0.70, "BANKRUPT", "CLEAR_SIGHT", 0.75, "CLEAR_RESONANCE", 0.75),    # King takes over
+            (0.70, "PROSPEROUS", "BLIND", 0.15, "CLEAR_RESONANCE", 0.75),         # Seer takes over
+            (0.70, "PROSPEROUS", "CLEAR_SIGHT", 0.75, "SILENCE", 0.15),           # Lyra takes over
+            (0.15, "PROSPEROUS", "CLEAR_SIGHT", 0.75, "CLEAR_RESONANCE", 0.75),   # Queen vetoes
+            (0.70, "PROSPEROUS", "CLEAR_SIGHT", 0.75, "CLEAR_RESONANCE", 0.75),   # Queen leads again
+            (0.70, "STRAINED", "FOG", 0.42, "DISSONANCE", 0.42),                  # King takes over
+            (0.70, "PROSPEROUS", "CLEAR_SIGHT", 0.75, "CLEAR_RESONANCE", 0.75),   # Queen leads again
         ]
 
-        for qc, kh, sg, ss in scenarios:
+        for qc, kh, sg, ss, lg, ls in scenarios:
             engine.evaluate_consensus(
                 queen_confidence=qc, king_health=kh,
                 seer_grade=sg, seer_score=ss,
+                lyra_grade=lg, lyra_score=ls,
             )
 
         history = engine.get_handoff_history()
         # Should have multiple handoffs
-        self.assertGreater(len(history), 3)
+        self.assertGreater(len(history), 4)
 
-        # All handoffs should have valid pillar names
-        valid_pillars = {PillarRole.QUEEN.value, PillarRole.KING.value, PillarRole.SEER.value}
+        # All handoffs should have valid pillar names (all 4 pillars)
+        valid_pillars = {
+            PillarRole.QUEEN.value, PillarRole.KING.value,
+            PillarRole.SEER.value, PillarRole.LYRA.value,
+        }
         for h in history:
             self.assertIn(h.from_pillar, valid_pillars)
             self.assertIn(h.to_pillar, valid_pillars)
@@ -1299,9 +1665,9 @@ class TestCompleteInteractionSimulation(unittest.TestCase):
 
 if __name__ == "__main__":
     print("=" * 70)
-    print("AUREON TRIUMVIRATE - COMPREHENSIVE INTEGRATION TEST SUITE")
-    print("Testing: Queen (11+ systems) + King (5 Deciphers) + Seer (5 Oracles)")
-    print("Freeway Consensus: All 3 must pass. Queen has absolute veto.")
+    print("AUREON QUADRUMVIRATE - COMPREHENSIVE INTEGRATION TEST SUITE")
+    print("Testing: Queen (11+) + King (5) + Seer (5) + Lyra (22+)")
+    print("Freeway Consensus: All 4 must pass. Queen has absolute veto.")
     print("=" * 70)
     print()
 

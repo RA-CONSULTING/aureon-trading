@@ -117,6 +117,22 @@ except ImportError:
     seer_should_trade = None
     get_triumvirate_consensus = None
 
+# AUREON LYRA - Emotional Frequency & Harmonics Engine
+try:
+    from aureon_lyra_integration import (
+        start_lyra, lyra_update_context, lyra_get_resonance,
+        lyra_get_position_multiplier, lyra_should_trade,
+    )
+    LYRA_AVAILABLE = True
+    print("Aureon Lyra loaded - emotional frequency & harmonics active!")
+except ImportError:
+    LYRA_AVAILABLE = False
+    start_lyra = None
+    lyra_update_context = None
+    lyra_get_resonance = None
+    lyra_get_position_multiplier = None
+    lyra_should_trade = None
+
 # ═══════════════════════════════════════════════════════════════
 # CONFIGURATION - THE UNIFIED PARAMETERS
 # ═══════════════════════════════════════════════════════════════
@@ -1058,6 +1074,17 @@ class AureonKrakenEcosystem:
         else:
             self.seer = None
 
+        # AUREON LYRA - Emotional Frequency & Harmonics Engine
+        if LYRA_AVAILABLE and start_lyra:
+            try:
+                self.lyra = start_lyra()
+                print("   Aureon Lyra awakened - emotional frequency & harmonics active!")
+            except Exception as e:
+                self.lyra = None
+                print(f"   Lyra could not awaken: {e}")
+        else:
+            self.lyra = None
+
         # Initialize capital pool
         self.capital_pool.update_equity(initial_balance)
         
@@ -1877,6 +1904,12 @@ class AureonKrakenEcosystem:
                 size_fraction *= seer_get_risk_modifier()
             except Exception:
                 pass
+        # 🎵 Apply Lyra's PHI-based position multiplier
+        if LYRA_AVAILABLE and lyra_get_position_multiplier:
+            try:
+                size_fraction *= lyra_get_position_multiplier()
+            except Exception:
+                pass
         if size_fraction <= 0:
             return
 
@@ -2570,6 +2603,17 @@ class AureonKrakenEcosystem:
                     except Exception:
                         pass
 
+                # 🎵 Feed Lyra emotional frequency data
+                if LYRA_AVAILABLE and lyra_update_context:
+                    try:
+                        lyra_update_context(
+                            positions=self.positions,
+                            ticker_cache=self.ticker_cache,
+                            market_data={"coherence": network_coherence, "lattice": l_state},
+                        )
+                    except Exception:
+                        pass
+
                 # Dynamic Portfolio Rebalancing - sell underperformers if better opportunities exist
                 freed_capital = 0.0
                 if all_opps and len(self.positions) >= CONFIG['MAX_POSITIONS'] // 2:
@@ -2667,14 +2711,22 @@ class AureonKrakenEcosystem:
                 print(f"   Pool: {curr_sym}{total_pool_profits:+.2f} total | {curr_sym}{capital_available:.2f} available | Scouts: {scout_count} | Splits: {split_count}{signal_str}")
                 print(f"   Runtime: {runtime:.1f} min | Positions: {len(self.positions)}/{CONFIG['MAX_POSITIONS']} | Max Gen: {max_gen}")
 
-                # 👁 The Triumvirate status (Queen + King + Seer)
+                # 🏛️ The Quadrumvirate status (Queen + King + Seer + Lyra)
                 if SEER_AVAILABLE and seer_get_vision:
                     try:
                         sv = seer_get_vision()
                         if sv and sv.get("grade"):
-                            seer_str = f"Seer: {sv['grade']} ({sv.get('unified_score', 0):.2f}) | Action: {sv.get('action', '?')} | Risk: {sv.get('risk_modifier', 1.0):.1f}x"
+                            seer_str = f"Seer: {sv['grade']} ({sv.get('unified_score', 0):.2f}) | Risk: {sv.get('risk_modifier', 1.0):.1f}x"
                             king_str = "King: Active" if KING_AVAILABLE else "King: N/A"
-                            print(f"   [TRIUMVIRATE] {seer_str} | {king_str}")
+                            lyra_str = ""
+                            if LYRA_AVAILABLE and lyra_get_resonance:
+                                try:
+                                    lr = lyra_get_resonance()
+                                    if lr and lr.get("grade"):
+                                        lyra_str = f" | Lyra: {lr['grade']} ({lr.get('score', 0):.2f})"
+                                except Exception:
+                                    pass
+                            print(f"   [QUADRUMVIRATE] {seer_str} | {king_str}{lyra_str}")
                     except Exception:
                         pass
                 

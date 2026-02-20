@@ -1,33 +1,44 @@
 #!/usr/bin/env python3
 """
-AUREON TRIUMVIRATE - Three-Pillar Freeway Consensus Engine
+AUREON QUADRUMVIRATE - Four-Pillar Freeway Consensus Engine
 =====================================================
-"Three minds, one truth. All must agree. The Queen has final say."
+"Four minds, one truth. All must agree. The Queen has final say."
 
-The Triumvirate is the governance system for the Aureon trading ecosystem.
-All three pillars must independently vote PASS for any action to proceed
+The Quadrumvirate is the governance system for the Aureon trading ecosystem.
+All FOUR pillars must independently vote PASS for any action to proceed
 (freeway consensus - all lanes must be clear). However, the Queen holds
 absolute veto power because she has the most systems connected to her
 (11+ subsystems: Temporal Dialer, Harmonic Chain Master, Probability
 Nexus, ThoughtBus, Elephant Memory, Queen Neuron, etc.).
 
+THE FOUR PILLARS:
+  Queen - Trading cognition (11+ systems = ABSOLUTE VETO)
+  King  - Financial truth (5 Royal Deciphers)
+  Seer  - Cosmic coherence (5 Oracles)
+  Lyra  - Emotional frequency & harmonics (6 Chambers, 22+ systems)
+
 FREEWAY CONSENSUS RULES:
-  1. All 3 pillars must independently vote PASS for an action to proceed
+  1. All 4 pillars must independently vote PASS for an action to proceed
   2. If ANY pillar votes BLOCK, the action is blocked
-  3. The Queen has ABSOLUTE VETO - she can override King+Seer agreement
+  3. The Queen has ABSOLUTE VETO - she can override all others
   4. The King has FINANCIAL VETO - BANKRUPT halts everything
   5. The Seer has COSMIC VETO - BLIND blocks new entries
+  6. Lyra has HARMONIC VETO - SILENCE blocks new entries
 
 CONTROL HANDOFF:
   The active controller shifts based on domain:
   - Queen leads: trade execution, position management, entries/exits
   - King leads:  profit-taking decisions, financial health, tax events
   - Seer leads:  risk adjustment, regime detection, cosmic alignment
+  - Lyra leads:  emotional regime changes, harmonic dissonance, exit urgency
 
-DATA FLOW (Freeway - all data flows freely between all 3):
+DATA FLOW (Freeway - all data flows freely between all 4):
   Queen <-> King:  P&L data, cost basis, position values
   Queen <-> Seer:  coherence scores, risk modifiers, vision grades
+  Queen <-> Lyra:  emotional frequency, harmonic field, position multipliers
   King  <-> Seer:  financial health, portfolio snapshots, prophecy
+  King  <-> Lyra:  exit urgency, emotional P&L context
+  Seer  <-> Lyra:  cosmic alignment, harmonic resonance, solfeggio
 
 Gary Leckey | February 2026
 """
@@ -54,10 +65,26 @@ QUEEN_CONNECTED_SYSTEMS = [
     "queen_neuron", "thought_bus",
 ]
 
+# Lyra's connected systems (22+ harmonic/emotional/frequency systems)
+LYRA_CONNECTED_SYSTEMS = [
+    "harmonic_waveform_scanner", "harmonic_chain_master",
+    "harmonic_signal_chain", "harmonic_fusion",
+    "schumann_resonance_bridge", "earth_resonance_engine",
+    "queen_harmonic_voice", "harmonic_alphabet",
+    "harmonic_reality", "global_harmonic_field",
+    "6d_harmonic_waveform", "harmonic_seed",
+    "hft_harmonic_mycelium", "harmonic_momentum_wave",
+    "harmonic_binary_protocol", "harmonic_counter_frequency",
+    "harmonic_liquid_aluminium", "harmonic_symbol_table",
+    "harmonic_underlay", "wave_simulation",
+    "planetary_harmonic_sweep", "queen_coherence_mandala",
+]
+
 # Minimum thresholds for each pillar to independently PASS
 QUEEN_PASS_THRESHOLD = 0.45      # Queen confidence must exceed this
 KING_PASS_GRADES = ["SOVEREIGN", "PROSPEROUS", "STABLE"]  # King must be healthy
 SEER_PASS_GRADES = ["DIVINE_CLARITY", "CLEAR_SIGHT", "PARTIAL_VISION"]  # Seer must see
+LYRA_PASS_GRADES = ["DIVINE_HARMONY", "CLEAR_RESONANCE", "PARTIAL_HARMONY"]  # Lyra must feel
 
 # Queen veto threshold - below this she blocks regardless
 QUEEN_VETO_THRESHOLD = 0.30
@@ -68,6 +95,7 @@ class PillarRole(Enum):
     QUEEN = "QUEEN"   # Trading cognition - entries, exits, position management
     KING = "KING"     # Financial truth - profit-taking, health, tax
     SEER = "SEER"     # Cosmic coherence - risk adjustment, regime detection
+    LYRA = "LYRA"     # Emotional frequency - harmonics, sentiment, exit urgency
 
 
 class ConsensusAction(Enum):
@@ -106,16 +134,17 @@ class PillarVote:
 
 @dataclass
 class TriumvirateConsensus:
-    """The final consensus of the three pillars."""
+    """The final consensus of the four pillars (Quadrumvirate)."""
     timestamp: float
     action: str                    # ConsensusAction value
-    passed: bool                   # Did all 3 pillars agree?
+    passed: bool                   # Did all 4 pillars agree?
     queen_vetoed: bool             # Did Queen exercise veto?
     active_controller: str         # Who has control right now
-    alignment_score: float         # 0.0 to 1.0 how aligned the three are
+    alignment_score: float         # 0.0 to 1.0 how aligned the four are
     queen_vote: PillarVote = None
     king_vote: PillarVote = None
     seer_vote: PillarVote = None
+    lyra_vote: PillarVote = None
     reason: str = ""               # Human-readable explanation
     data_exchange: Dict[str, Any] = field(default_factory=dict)  # Shared analytical data
 
@@ -401,6 +430,102 @@ class SeerEvaluator:
         )
 
 
+class LyraEvaluator:
+    """
+    Evaluates Lyra's vote. Lyra is the emotional frequency and harmonics
+    engine with 6 Resonance Chambers and 22+ connected systems.
+    She shares all harmonic and emotional data freely with all pillars.
+    """
+
+    GRADE_SCORES = {
+        "DIVINE_HARMONY": 0.92,
+        "CLEAR_RESONANCE": 0.77,
+        "PARTIAL_HARMONY": 0.60,
+        "DISSONANCE": 0.42,
+        "SILENCE": 0.15,
+    }
+
+    def evaluate(self, lyra_grade: str, lyra_score: float = 0.5,
+                 lyra_data: Dict[str, Any] = None) -> PillarVote:
+        """
+        Lyra votes based on emotional frequency and harmonic resonance.
+
+        Args:
+            lyra_grade: DIVINE_HARMONY/CLEAR_RESONANCE/PARTIAL_HARMONY/DISSONANCE/SILENCE
+            lyra_score: 0.0-1.0 unified resonance score
+            lyra_data: Data from 6 Resonance Chambers
+
+        Returns:
+            PillarVote with PASS or BLOCK
+        """
+        data = lyra_data or {}
+        score = lyra_score if lyra_score > 0 else self.GRADE_SCORES.get(lyra_grade, 0.5)
+
+        # Lyra shares all harmonic and emotional data freely
+        shared_data = {
+            "resonance_grade": lyra_grade,
+            "unified_score": score,
+            "emotional_frequency": data.get("emotional_frequency", 432.0),
+            "emotional_zone": data.get("emotional_zone", "BALANCE"),
+            "position_multiplier": data.get("position_multiplier", 1.0),
+            "exit_urgency": data.get("exit_urgency", "none"),
+            "action_bias": data.get("action", "HOLD"),
+            "song": data.get("song", ""),
+            "emotion_score": data.get("emotion_score", 0.5),
+            "earth_score": data.get("earth_score", 0.5),
+            "harmony_score": data.get("harmony_score", 0.5),
+            "voice_score": data.get("voice_score", 0.5),
+            "solfeggio_score": data.get("solfeggio_score", 0.5),
+            "spirit_score": data.get("spirit_score", 0.5),
+            "trend": data.get("trend", "STABLE"),
+        }
+
+        # Lyra's vote logic
+        if lyra_grade == "SILENCE":
+            return PillarVote(
+                pillar="LYRA",
+                vote=VoteResult.BLOCK.value,
+                score=score,
+                grade="SILENCE",
+                reason="Lyra BLOCKS - SILENCE, no harmonic coherence detected",
+                data=shared_data,
+                connected_systems=len(LYRA_CONNECTED_SYSTEMS),
+            )
+
+        if lyra_grade == "DISSONANCE":
+            return PillarVote(
+                pillar="LYRA",
+                vote=VoteResult.BLOCK.value,
+                score=score,
+                grade="DISSONANCE",
+                reason="Lyra BLOCKS - DISSONANCE, frequencies clashing",
+                data=shared_data,
+                connected_systems=len(LYRA_CONNECTED_SYSTEMS),
+            )
+
+        # Check exit urgency - critical urgency blocks new entries
+        if data.get("exit_urgency") == "critical":
+            return PillarVote(
+                pillar="LYRA",
+                vote=VoteResult.BLOCK.value,
+                score=score,
+                grade="EXIT_CRITICAL",
+                reason="Lyra BLOCKS - exit urgency is CRITICAL",
+                data=shared_data,
+                connected_systems=len(LYRA_CONNECTED_SYSTEMS),
+            )
+
+        return PillarVote(
+            pillar="LYRA",
+            vote=VoteResult.PASS.value,
+            score=score,
+            grade=lyra_grade,
+            reason=f"Lyra PASSES - resonance is {lyra_grade} (score {score:.2f})",
+            data=shared_data,
+            connected_systems=len(LYRA_CONNECTED_SYSTEMS),
+        )
+
+
 # ═══════════════════════════════════════════════════════════════════════════
 # CONTROL HANDOFF ENGINE
 # ═══════════════════════════════════════════════════════════════════════════
@@ -413,6 +538,7 @@ class ControlHandoffEngine:
     Queen leads: trade execution, entries, exits, position sizing
     King leads:  profit-taking, financial review, tax optimization
     Seer leads:  risk modulation, regime detection, cosmic events
+    Lyra leads:  emotional regime changes, harmonic dissonance, exit urgency
     """
 
     def __init__(self):
@@ -426,6 +552,7 @@ class ControlHandoffEngine:
     def determine_controller(self, queen_vote: PillarVote,
                              king_vote: PillarVote,
                              seer_vote: PillarVote,
+                             lyra_vote: PillarVote = None,
                              context: Dict[str, Any] = None) -> Tuple[PillarRole, Optional[ControlHandoff]]:
         """
         Determine which pillar should have active control.
@@ -451,21 +578,37 @@ class ControlHandoffEngine:
             new = PillarRole.SEER
             reason = f"Seer assumes control - vision: {seer_vote.grade}, managing risk"
 
-        # RULE 4: King leads for profit-taking decisions
+        # RULE 4: Lyra leads during emotional crisis / harmonic dissonance
+        elif lyra_vote and lyra_vote.grade in ["SILENCE", "DISSONANCE", "EXIT_CRITICAL"]:
+            new = PillarRole.LYRA
+            reason = f"Lyra assumes control - resonance: {lyra_vote.grade}, managing harmonics"
+
+        # RULE 5: King leads for profit-taking decisions
         elif ctx.get("event") == "PROFIT_TAKING":
             new = PillarRole.KING
             reason = "King leads profit-taking decision"
 
-        # RULE 5: Seer leads for risk modulation
+        # RULE 6: Seer leads for risk modulation
         elif ctx.get("event") == "RISK_ADJUSTMENT":
             new = PillarRole.SEER
             reason = "Seer leads risk adjustment"
 
-        # RULE 6: Seer leads when cosmic vision has significant shift
+        # RULE 7: Lyra leads for emotional/harmonic events
+        elif ctx.get("event") == "EMOTIONAL_SHIFT":
+            new = PillarRole.LYRA
+            reason = "Lyra leads emotional regime change"
+
+        # RULE 8: Seer leads when cosmic vision has significant shift
         elif (seer_vote.data.get("trend") == "DECLINING" and
               seer_vote.score < 0.5):
             new = PillarRole.SEER
             reason = "Seer assumes control - declining cosmic alignment detected"
+
+        # RULE 9: Lyra leads when emotional trend is dissonating
+        elif (lyra_vote and lyra_vote.data.get("trend") == "DISSONATING" and
+              lyra_vote.score < 0.5):
+            new = PillarRole.LYRA
+            reason = "Lyra assumes control - dissonating emotional trend detected"
 
         # DEFAULT: Queen leads (she has the most systems)
         else:
@@ -498,16 +641,17 @@ class ControlHandoffEngine:
 
 class TriumvirateEngine:
     """
-    The Triumvirate Engine enforces freeway consensus:
-    ALL three pillars must independently vote PASS for any action.
+    The Quadrumvirate Engine enforces freeway consensus:
+    ALL FOUR pillars must independently vote PASS for any action.
     The Queen holds absolute veto (most systems connected = 11+).
 
     FREEWAY RULES:
       Lane 1 (Queen): Must PASS with confidence >= 0.45
       Lane 2 (King):  Must PASS with health in [SOVEREIGN, PROSPEROUS, STABLE]
       Lane 3 (Seer):  Must PASS with vision in [DIVINE_CLARITY, CLEAR_SIGHT, PARTIAL_VISION]
+      Lane 4 (Lyra):  Must PASS with resonance in [DIVINE_HARMONY, CLEAR_RESONANCE, PARTIAL_HARMONY]
 
-      ALL THREE LANES MUST BE CLEAR.
+      ALL FOUR LANES MUST BE CLEAR.
       Queen can VETO at any time (overrides all other votes).
     """
 
@@ -515,6 +659,7 @@ class TriumvirateEngine:
         self.queen_eval = QueenEvaluator()
         self.king_eval = KingEvaluator()
         self.seer_eval = SeerEvaluator()
+        self.lyra_eval = LyraEvaluator()
         self.handoff_engine = ControlHandoffEngine()
         self._consensus_history: List[TriumvirateConsensus] = []
 
@@ -523,14 +668,17 @@ class TriumvirateEngine:
                            king_health: str,
                            seer_grade: str,
                            seer_score: float = 0.5,
+                           lyra_grade: str = "PARTIAL_HARMONY",
+                           lyra_score: float = 0.5,
                            queen_data: Dict[str, Any] = None,
                            king_data: Dict[str, Any] = None,
                            seer_data: Dict[str, Any] = None,
+                           lyra_data: Dict[str, Any] = None,
                            context: Dict[str, Any] = None) -> TriumvirateConsensus:
         """
         Run full freeway consensus evaluation.
 
-        All three pillars vote independently. All must PASS for consensus.
+        All FOUR pillars vote independently. All must PASS for consensus.
         Queen has absolute veto regardless of other votes.
 
         Args:
@@ -538,9 +686,12 @@ class TriumvirateEngine:
             king_health: SOVEREIGN/PROSPEROUS/STABLE/STRAINED/BANKRUPT
             seer_grade: DIVINE_CLARITY/CLEAR_SIGHT/PARTIAL_VISION/FOG/BLIND
             seer_score: 0.0-1.0 unified vision score
+            lyra_grade: DIVINE_HARMONY/CLEAR_RESONANCE/PARTIAL_HARMONY/DISSONANCE/SILENCE
+            lyra_score: 0.0-1.0 unified resonance score
             queen_data: Queen's subsystem data (shared freely)
             king_data: King's analytical data (shared freely)
             seer_data: Seer's oracle data (shared freely)
+            lyra_data: Lyra's harmonic/emotional data (shared freely)
             context: Additional context for control handoff
 
         Returns:
@@ -550,13 +701,14 @@ class TriumvirateEngine:
         queen_vote = self.queen_eval.evaluate(queen_confidence, queen_data)
         king_vote = self.king_eval.evaluate(king_health, king_data)
         seer_vote = self.seer_eval.evaluate(seer_grade, seer_score, seer_data)
+        lyra_vote = self.lyra_eval.evaluate(lyra_grade, lyra_score, lyra_data)
 
         # ─── Phase 2: Free data exchange between all pillars ───
-        data_exchange = self._exchange_data(queen_vote, king_vote, seer_vote)
+        data_exchange = self._exchange_data(queen_vote, king_vote, seer_vote, lyra_vote)
 
         # ─── Phase 3: Determine active controller ───
         active_controller, handoff = self.handoff_engine.determine_controller(
-            queen_vote, king_vote, seer_vote, context
+            queen_vote, king_vote, seer_vote, lyra_vote, context
         )
 
         # ─── Phase 4: Apply freeway consensus rules ───
@@ -564,15 +716,16 @@ class TriumvirateEngine:
         all_passed = (
             queen_vote.vote == VoteResult.PASS.value and
             king_vote.vote == VoteResult.PASS.value and
-            seer_vote.vote == VoteResult.PASS.value
+            seer_vote.vote == VoteResult.PASS.value and
+            lyra_vote.vote == VoteResult.PASS.value
         )
 
-        # Calculate alignment score (how closely the three agree)
-        alignment = self._calculate_alignment(queen_vote, king_vote, seer_vote)
+        # Calculate alignment score (how closely the four agree)
+        alignment = self._calculate_alignment(queen_vote, king_vote, seer_vote, lyra_vote)
 
         # Determine final action
         action, reason = self._determine_action(
-            queen_vote, king_vote, seer_vote,
+            queen_vote, king_vote, seer_vote, lyra_vote,
             all_passed, queen_vetoed, alignment,
             active_controller
         )
@@ -587,6 +740,7 @@ class TriumvirateEngine:
             queen_vote=queen_vote,
             king_vote=king_vote,
             seer_vote=seer_vote,
+            lyra_vote=lyra_vote,
             reason=reason,
             data_exchange=data_exchange,
         )
@@ -596,44 +750,49 @@ class TriumvirateEngine:
 
     def _exchange_data(self, queen_vote: PillarVote,
                        king_vote: PillarVote,
-                       seer_vote: PillarVote) -> Dict[str, Any]:
+                       seer_vote: PillarVote,
+                       lyra_vote: PillarVote) -> Dict[str, Any]:
         """
-        Free data exchange - all analytical data flows between all pillars.
-        King and Seer need analytical data pulled free.
+        Free data exchange - all analytical data flows between all 4 pillars.
+        King, Seer, and Lyra need analytical data pulled free.
         """
         return {
             "queen_shares": queen_vote.data,
             "king_shares": king_vote.data,
             "seer_shares": seer_vote.data,
+            "lyra_shares": lyra_vote.data,
             "queen_systems_count": queen_vote.connected_systems,
             "king_systems_count": king_vote.connected_systems,
             "seer_systems_count": seer_vote.connected_systems,
+            "lyra_systems_count": lyra_vote.connected_systems,
             "total_systems": (
                 queen_vote.connected_systems +
                 king_vote.connected_systems +
-                seer_vote.connected_systems
+                seer_vote.connected_systems +
+                lyra_vote.connected_systems
             ),
         }
 
     def _calculate_alignment(self, queen: PillarVote, king: PillarVote,
-                             seer: PillarVote) -> float:
-        """Calculate how aligned the three pillars are (0.0 to 1.0)."""
-        scores = [queen.score, king.score, seer.score]
-        avg = sum(scores) / 3.0
+                             seer: PillarVote, lyra: PillarVote) -> float:
+        """Calculate how aligned the four pillars are (0.0 to 1.0)."""
+        scores = [queen.score, king.score, seer.score, lyra.score]
+        avg = sum(scores) / 4.0
         # Variance-based alignment - low variance = high alignment
-        variance = sum((s - avg) ** 2 for s in scores) / 3.0
-        # Max possible variance is when one is 0 and others are 1: ~0.222
+        variance = sum((s - avg) ** 2 for s in scores) / 4.0
+        # Max possible variance is when one is 0 and others are 1: ~0.1875
         alignment = max(0.0, 1.0 - (variance / 0.25))
         return round(alignment, 3)
 
     def _determine_action(self, queen: PillarVote, king: PillarVote,
-                          seer: PillarVote, all_passed: bool,
+                          seer: PillarVote, lyra: PillarVote,
+                          all_passed: bool,
                           queen_vetoed: bool, alignment: float,
                           controller: PillarRole) -> Tuple[str, str]:
         """
         Determine the final consensus action.
 
-        FREEWAY RULE: All three must pass. Queen has absolute veto.
+        FREEWAY RULE: All four must pass. Queen has absolute veto.
         """
         # ─── Queen VETO overrides everything ───
         if queen_vetoed:
@@ -658,8 +817,10 @@ class TriumvirateEngine:
                 blockers.append(f"King ({king.grade})")
             if seer.vote != VoteResult.PASS.value:
                 blockers.append(f"Seer ({seer.grade})")
+            if lyra.vote != VoteResult.PASS.value:
+                blockers.append(f"Lyra ({lyra.grade})")
 
-            # If King or Seer block, action depends on severity
+            # Action depends on severity of the blocker
             if king.grade == "STRAINED":
                 return ConsensusAction.SELL.value, (
                     f"FREEWAY BLOCKED by {', '.join(blockers)}. "
@@ -670,10 +831,20 @@ class TriumvirateEngine:
                     f"FREEWAY BLOCKED by {', '.join(blockers)}. "
                     f"Seer is BLIND - no coherence detected."
                 )
+            if lyra.grade == "SILENCE":
+                return ConsensusAction.HALT.value, (
+                    f"FREEWAY BLOCKED by {', '.join(blockers)}. "
+                    f"Lyra is SILENT - no harmonic coherence."
+                )
             if seer.grade == "FOG":
                 return ConsensusAction.HOLD.value, (
                     f"FREEWAY BLOCKED by {', '.join(blockers)}. "
                     f"Seer sees FOG - holding positions."
+                )
+            if lyra.grade == "DISSONANCE":
+                return ConsensusAction.HOLD.value, (
+                    f"FREEWAY BLOCKED by {', '.join(blockers)}. "
+                    f"Lyra hears DISSONANCE - frequencies clashing."
                 )
 
             return ConsensusAction.HOLD.value, (
@@ -681,9 +852,9 @@ class TriumvirateEngine:
                 f"Consensus not reached - holding."
             )
 
-        # ─── ALL THREE PASSED - Determine strength of consensus ───
-        avg_score = (queen.score + king.score + seer.score) / 3.0
-        min_score = min(queen.score, king.score, seer.score)
+        # ─── ALL FOUR PASSED - Determine strength of consensus ───
+        avg_score = (queen.score + king.score + seer.score + lyra.score) / 4.0
+        min_score = min(queen.score, king.score, seer.score, lyra.score)
 
         if avg_score >= 0.80 and min_score >= 0.60 and alignment >= 0.85:
             action = ConsensusAction.STRONG_BUY.value
@@ -727,7 +898,7 @@ class TriumvirateEngine:
         return self.handoff_engine.get_handoff_history()
 
     def get_summary(self) -> Dict[str, Any]:
-        """Get a summary of the Triumvirate's state."""
+        """Get a summary of the Quadrumvirate's state."""
         last = self._consensus_history[-1] if self._consensus_history else None
         return {
             "active_controller": self.handoff_engine.current_controller.value,
@@ -737,6 +908,7 @@ class TriumvirateEngine:
             "last_passed": last.passed if last else None,
             "last_alignment": last.alignment_score if last else None,
             "queen_systems": len(QUEEN_CONNECTED_SYSTEMS),
+            "lyra_systems": len(LYRA_CONNECTED_SYSTEMS),
         }
 
 
