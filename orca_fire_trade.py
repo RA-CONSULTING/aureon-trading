@@ -241,17 +241,30 @@ class FireTrader:
         log_fire("\n🛒 No sell found - scanning for BUY opportunities with available cash...")
         log_fire(f"   [DEBUG] Cash available: Kraken=${kraken_cash:.2f}, Binance=${binance_cash:.2f}")
 
-        # Prefer Kraken if it has more cash (current setup often has Kraken USDC)
-        prefer_kraken = kraken_cash >= binance_cash and self.kraken is not None
+        # BUY ON BOTH EXCHANGES - maximize position coverage!
+        # Try Kraken AND Binance independently (not either/or)
 
         # Aggressive buy amount: 50% of funded exchange cash, capped at $20
-        # (30%/$15 was failing BTC minimum volume on Kraken at ~$3.42)
+        # Leave 10% headroom for exchange fee deduction from balance
         def _buy_amount(cash_amt: float) -> float:
-            return max(5.0, min(20.0, cash_amt * 0.50))
+            return max(3.0, min(20.0, cash_amt * 0.45))
 
-        watchlist = ["ETH", "SOL", "BTC", "ADA", "XRP", "LINK", "AVAX", "DOT", "ATOM", "TRX"]
+        watchlist = [
+            # Tier 1: Large caps - highest liquidity
+            "BTC", "ETH", "SOL", "XRP", "ADA", "AVAX", "DOT", "LINK", "ATOM", "TRX",
+            # Tier 2: Mid caps - good liquidity, higher volatility = faster profit
+            "MATIC", "DOGE", "SHIB", "UNI", "AAVE", "CRV", "NEAR", "FTM", "ALGO",
+            "SAND", "MANA", "APE", "LDO", "ARB", "OP", "INJ", "SUI", "SEI", "TIA",
+            # Tier 3: High-momentum plays - fast movers
+            "RENDER", "FET", "PEPE", "WIF", "BONK", "FLOKI", "IMX", "GRT", "FIL",
+            "THETA", "EOS", "XLM", "HBAR", "VET", "EGLD", "FLOW", "MINA", "KAVA",
+        ]
 
-        if prefer_kraken and kraken_cash >= 1.0:
+        bought_on_kraken = False
+        bought_on_binance = False
+
+        # --- KRAKEN BUY ---
+        if self.kraken is not None and kraken_cash >= 1.0:
             best_buy = None
             for base in watchlist:
                 for pair in (f"{base}USDC", f"{base}USD", f"X{base}ZUSD"):
@@ -268,7 +281,7 @@ class FireTrader:
                         price = float(ticker24.get('lastPrice', 0) or 0)
                         change_24h = float(ticker24.get('priceChangePercent', 0) or 0)
                         quote_vol = float(ticker24.get('quoteVolume', 0) or 0)
-                        if price <= 0 or quote_vol < 25000:
+                        if price <= 0 or quote_vol < 10000:
                             continue
                         # Favor positive momentum + high liquidity
                         score = change_24h + min(quote_vol / 1_000_000, 5)
@@ -303,11 +316,12 @@ class FireTrader:
                     log_result(f"BUY ORDER RESULT: {json.dumps(order, indent=2) if order else 'None'}")
                     if order and not order.get('error') and not order.get('rejected'):
                         log_fire("💥 BUY EXECUTED (Kraken)")
-                        return True
+                        bought_on_kraken = True
                     log_fire(f"❌ Buy not filled/rejected: {order}")
                 except Exception as e:
                     log_fire(f"❌ Kraken buy failed: {e}")
 
+        # --- BINANCE BUY (independent of Kraken result) ---
         if self.binance is not None and binance_cash >= 1.0:
             best_buy = None
             for base in watchlist:
@@ -338,10 +352,14 @@ class FireTrader:
                     log_result(f"BUY ORDER RESULT: {json.dumps(order, indent=2) if order else 'None'}")
                     if order and not order.get('error') and not order.get('rejected'):
                         log_fire("💥 BUY EXECUTED (Binance)")
-                        return True
+                        bought_on_binance = True
                     log_fire(f"❌ Buy not filled/rejected: {order}")
                 except Exception as e:
                     log_fire(f"❌ Binance buy failed: {e}")
+
+        if bought_on_kraken or bought_on_binance:
+            log_fire(f"   Bought on: {'Kraken ' if bought_on_kraken else ''}{'Binance' if bought_on_binance else ''}")
+            return True
 
         log_fire("⚠️ No valid buy opportunities after fallback scan")
         return False
