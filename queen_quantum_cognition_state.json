@@ -3,7 +3,7 @@
   "memory_capacity": 2.6,
   "processing_speed": 2.0,
   "pattern_recognition": 2.4,
-  "decision_confidence": 0.5307692307692308,
+  "decision_confidence": 0.7,
   "elite_hierarchy_score": 0.0,
   "deception_potential": 0.0,
   "manipulation_alert": false,
@@ -21,6 +21,6 @@
   "hft_cycles_per_second": 0.0,
   "hft_cache_hit_rate": 0.0,
   "hft_parallel_thoughts": 10,
-  "last_update": 1770319878.3898063,
-  "total_updates": 560
+  "last_update": 1771692326.5488753,
+  "total_updates": 800
 }

@@ -464,7 +464,7 @@
         "exchange": "kraken",
         "buy_price": 0.0,
         "quantity": 0.00274643,
-        "buy_timestamp": "2026-02-20T22:37:14.611296",
+        "buy_timestamp": "2026-02-21T17:31:38.231067",
         "auto_tracked": true,
         "source": "portfolio_truth_check"
     },
@@ -501,10 +501,10 @@
         "source": "portfolio_truth_check"
     },
     "XRPUSD": {
-        "exchange": "kraken",
+        "exchange": "binance",
         "buy_price": 0.0,
-        "quantity": 10.67672,
-        "buy_timestamp": "2026-02-05T20:54:56.053524",
+        "quantity": 6.39392,
+        "buy_timestamp": "2026-02-21T14:40:15.653214",
         "auto_tracked": true,
         "source": "portfolio_truth_check"
     },
@@ -703,8 +703,8 @@
     "XBTUSD": {
         "exchange": "kraken",
         "buy_price": 0.0,
-        "quantity": 0.0005005,
-        "buy_timestamp": "2026-02-20T22:37:14.612892",
+        "quantity": 0.00079819,
+        "buy_timestamp": "2026-02-21T17:31:38.232709",
         "auto_tracked": true,
         "source": "portfolio_truth_check"
     },
@@ -721,6 +721,22 @@
         "buy_price": 0.0,
         "quantity": 0.0010321541,
         "buy_timestamp": "2026-02-20T20:50:42.642672",
+        "auto_tracked": true,
+        "source": "portfolio_truth_check"
+    },
+    "ARBUSD": {
+        "exchange": "alpaca",
+        "buy_price": 0.0,
+        "quantity": 52.098247793,
+        "buy_timestamp": "2026-02-21T12:41:27.694488",
+        "auto_tracked": true,
+        "source": "portfolio_truth_check"
+    },
+    "LINKUSD": {
+        "exchange": "binance",
+        "buy_price": 0.0,
+        "quantity": 1.4885845,
+        "buy_timestamp": "2026-02-21T14:37:17.136643",
         "auto_tracked": true,
         "source": "portfolio_truth_check"
     }
