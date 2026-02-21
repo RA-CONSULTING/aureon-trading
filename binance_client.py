@@ -953,6 +953,31 @@ class BinanceClient:
             params["network"] = network
         return self._signed_request("GET", "/sapi/v1/capital/deposit/address", params)
 
+    # ── Simple Earn (Flexible) ──────────────────────────────────────────────
+    def get_flexible_positions(self, asset: str = None) -> Dict[str, Any]:
+        """Get Simple Earn flexible product positions."""
+        params: Dict[str, Any] = {"size": 100}
+        if asset:
+            params["asset"] = asset
+        return self._signed_request("GET", "/sapi/v1/simple-earn/flexible/position", params)
+
+    def redeem_flexible(self, product_id: str, amount: float = None, redeem_all: bool = False) -> Dict[str, Any]:
+        """Redeem from Simple Earn flexible product back to spot wallet.
+        
+        Args:
+            product_id: The product ID from get_flexible_positions()
+            amount: Amount to redeem (None = all)
+            redeem_all: If True, redeem entire position
+        """
+        params: Dict[str, Any] = {"productId": product_id}
+        if redeem_all:
+            params["redeemAll"] = True
+        elif amount is not None:
+            params["amount"] = str(amount)
+        else:
+            params["redeemAll"] = True
+        return self._signed_request("POST", "/sapi/v1/simple-earn/flexible/redeem", params)
+
     def get_my_trades(self, symbol: str, limit: int = 500, silent: bool = False) -> list:
         """Get trade history for a symbol.
         

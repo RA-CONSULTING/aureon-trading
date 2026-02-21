@@ -1210,9 +1210,9 @@ DEADLINE_DATE = "2026-02-20"
 
 # In DEADLINE MODE: We accept more risk for higher returns
 # Standard mode: 0.40% MIN_COP (conservative)
-# Deadline mode: 5.00% MIN_COP (aggressive) + leverage + multiple positions
-QUEEN_MIN_COP = 1.0500 if DEADLINE_MODE else 1.0040  # 5.0% or 0.40%
-QUEEN_MIN_PROFIT_PCT = 5.00 if DEADLINE_MODE else 0.40  # As percentage
+# Deadline mode: 0.75% MIN_COP (fast scalping, triggers GROWTH_MODE) + multiple positions
+QUEEN_MIN_COP = 1.0075 if DEADLINE_MODE else 1.0040  # 0.75% or 0.40%
+QUEEN_MIN_PROFIT_PCT = 0.75 if DEADLINE_MODE else 0.40  # < 1.0 = GROWTH MODE
 
 # DEADLINE MODE MULTIPLIERS
 DEADLINE_POSITION_MULTIPLIER = 3.0  # 3x position sizes
@@ -13471,23 +13471,6 @@ class OrcaKillCycle:
                     print(f"     Trades: {session_stats['total_trades']} |   Wins: {session_stats['winning_trades']} |   Losses: {session_stats['losing_trades']}")
                     print(f"     Session P&L: ${session_stats['total_pnl']:+.4f}")
                     print(f"     Best: ${session_stats['best_trade']:+.4f} |   Worst: ${session_stats['worst_trade']:+.4f}")
-                    # Quick portfolio profit ETA in header
-                    _fastest_eta_sym = None
-                    _fastest_eta_secs = float('inf')
-                    for _p in positions:
-                        if hasattr(_p, 'last_eta') and _p.last_eta is not None:
-                            _e = _p.last_eta.improved_eta
-                            if 0 < _e < _fastest_eta_secs and hasattr(_p.last_eta, 'velocity') and _p.last_eta.velocity > 0:
-                                _fastest_eta_secs = _e
-                                _fastest_eta_sym = _p.symbol
-                    if _fastest_eta_sym and _fastest_eta_secs < float('inf'):
-                        if _fastest_eta_secs < 60:
-                            _eta_hdr = f"{_fastest_eta_secs:.0f}s"
-                        elif _fastest_eta_secs < 3600:
-                            _eta_hdr = f"{_fastest_eta_secs/60:.1f}m"
-                        else:
-                            _eta_hdr = f"{_fastest_eta_secs/3600:.1f}h"
-                        print(f"     Next Profit ETA: {_fastest_eta_sym} in ~{_eta_hdr}")
                     print("="*80)
                     
                     #   Harmonic Liquid Aluminium Field visualization
@@ -13861,117 +13844,6 @@ class OrcaKillCycle:
                     # Footer
                     print(f"\n{'='*80}")
                     print(f"     UNREALIZED P&L: ${total_unrealized:+.4f}")
-                    
-                    # ─────────────────────────────────────────────────
-                    #   PORTFOLIO PROFIT ETA & GROWTH COGNITION
-                    # ─────────────────────────────────────────────────
-                    nearest_profit_pos = None
-                    nearest_profit_eta = float('inf')
-                    portfolio_etas = []
-                    positions_in_profit = 0
-                    positions_near_profit = 0  # within 1% of breakeven
-                    
-                    for pos in real_positions:
-                        try:
-                            if hasattr(pos, 'current_pnl') and pos.current_pnl > 0:
-                                positions_in_profit += 1
-                            
-                            # Check if near breakeven (within 1%)
-                            if hasattr(pos, 'current_pnl_pct') and abs(pos.current_pnl_pct) < 1.0:
-                                positions_near_profit += 1
-                            
-                            if hasattr(pos, 'last_eta') and pos.last_eta is not None:
-                                eta_val = pos.last_eta.improved_eta
-                                if eta_val > 0 and eta_val < float('inf'):
-                                    portfolio_etas.append({
-                                        'symbol': pos.symbol,
-                                        'exchange': pos.exchange,
-                                        'eta_seconds': eta_val,
-                                        'confidence': pos.last_eta.confidence,
-                                        'velocity': pos.last_eta.velocity,
-                                        'pnl': pos.current_pnl,
-                                        'pnl_pct': pos.current_pnl_pct,
-                                        'reliability': pos.last_eta.reliability_band,
-                                    })
-                                    # Track nearest to profit (positive velocity = approaching profit)
-                                    if pos.last_eta.velocity > 0 and eta_val < nearest_profit_eta:
-                                        nearest_profit_eta = eta_val
-                                        nearest_profit_pos = pos
-                        except Exception:
-                            pass
-                    
-                    # Sort ETAs by time (fastest first)
-                    portfolio_etas.sort(key=lambda x: x['eta_seconds'])
-                    
-                    if portfolio_etas:
-                        print(f"\n  {'─'*60}")
-                        print(f"     PROFIT ETA RADAR - FASTEST EXITS")
-                        print(f"  {'─'*60}")
-                        
-                        # Show top 5 nearest profit opportunities
-                        shown = 0
-                        for eta_info in portfolio_etas[:5]:
-                            # Format time
-                            secs = eta_info['eta_seconds']
-                            if secs < 60:
-                                t_str = f"{secs:.0f}s"
-                            elif secs < 3600:
-                                t_str = f"{secs/60:.1f}m"
-                            elif secs < 86400:
-                                t_str = f"{secs/3600:.1f}h"
-                            else:
-                                t_str = f"{secs/86400:.1f}d"
-                            
-                            conf_pct = eta_info['confidence'] * 100
-                            vel = eta_info['velocity'] * 60  # per minute
-                            vel_icon = " " if vel > 0 else " "
-                            rel_icon = " " if eta_info['reliability'] == "HIGH" else " " if eta_info['reliability'] == "MEDIUM" else " "
-                            
-                            pnl_str = f"${eta_info['pnl']:+.4f}"
-                            print(f"    {rel_icon} {eta_info['symbol']:>10s} ({eta_info['exchange'][:3].upper()}) | ETA: {t_str:>6s} | {conf_pct:4.0f}% conf | {vel_icon}${vel:+.4f}/min | {pnl_str}")
-                            shown += 1
-                        
-                        if len(portfolio_etas) > 5:
-                            print(f"       ... +{len(portfolio_etas)-5} more positions with ETAs")
-                    
-                    # Nearest profit highlight
-                    if nearest_profit_pos and nearest_profit_eta < float('inf'):
-                        if nearest_profit_eta < 60:
-                            eta_fmt = f"{nearest_profit_eta:.0f} seconds"
-                        elif nearest_profit_eta < 3600:
-                            eta_fmt = f"{nearest_profit_eta/60:.1f} minutes"
-                        elif nearest_profit_eta < 86400:
-                            eta_fmt = f"{nearest_profit_eta/3600:.1f} hours"
-                        else:
-                            eta_fmt = f"{nearest_profit_eta/86400:.1f} days"
-                        print(f"\n     FASTEST PROFIT EXIT: {nearest_profit_pos.symbol} in ~{eta_fmt}")
-                    
-                    # Growth cognition metrics
-                    runtime_hours = (time.time() - session_stats['start_time']) / 3600.0
-                    total_positions = len(real_positions)
-                    growth_rate = (session_stats['total_pnl'] / max(runtime_hours, 0.001))  # $/hour
-                    
-                    print(f"\n  {'─'*60}")
-                    print(f"     GROWTH COGNITION")
-                    print(f"  {'─'*60}")
-                    print(f"     Positions Active: {total_positions} | In Profit: {positions_in_profit} | Near Breakeven: {positions_near_profit}")
-                    print(f"     Growth Rate: ${growth_rate:+.4f}/hr | Realized P&L: ${session_stats['total_pnl']:+.4f}")
-                    
-                    # ETA to £100 target based on current growth rate
-                    target_remaining = 100.0 - session_stats['total_pnl']
-                    if growth_rate > 0 and target_remaining > 0:
-                        hours_to_target = target_remaining / growth_rate
-                        if hours_to_target < 24:
-                            target_eta = f"{hours_to_target:.1f} hours"
-                        else:
-                            target_eta = f"{hours_to_target/24:.1f} days"
-                        print(f"     ETA to 100 target: ~{target_eta} at current rate")
-                    elif session_stats['total_pnl'] >= 100:
-                        print(f"     TARGET REACHED!")
-                    else:
-                        print(f"     ETA to 100 target: Accumulating data...")
-                    
-                    print(f"{'='*80}")
                     print(f"     NO STOP LOSS - HOLDING UNTIL PROFIT!")
                     print(f"      Press Ctrl+C to stop")
                 
