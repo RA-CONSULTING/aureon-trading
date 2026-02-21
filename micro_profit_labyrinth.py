@@ -102,6 +102,14 @@ from typing import Any, Dict, List, Optional, Set, Tuple, TYPE_CHECKING
 from adaptive_prime_profit_gate import AdaptivePrimeProfitGate
 from cost_basis_tracker import CostBasisTracker
 
+# Quadrumvirate Consensus (Queen + King + Seer + Lyra)
+QUADRUMVIRATE_AVAILABLE = False
+try:
+    from aureon_seer_integration import quadrumvirate_should_trade, collapse_probability_field, get_temporal_consensus
+    QUADRUMVIRATE_AVAILABLE = True
+except ImportError:
+    pass
+
 
 @dataclass
 class TradeAuditRecord:
@@ -8064,7 +8072,31 @@ class MicroProfitLabyrinth:
         safe_print(f"\n🏁 ═══ FPTP SCAN #{self.turns_completed + 1}: ALL EXCHANGES ═══")
         
         # ═══════════════════════════════════════════════════════════════════════════
-        # 👑🧠 QUEEN DEEP THINK - Consult ALL 42+ systems before acting!
+        # � QUADRUMVIRATE TEMPORAL GATE - All 4 Pillars confer FIRST
+        # ═══════════════════════════════════════════════════════════════════════════
+        quad_sizing = 1.0
+        if QUADRUMVIRATE_AVAILABLE:
+            try:
+                quad_result = quadrumvirate_should_trade()
+                quad_go = quad_result.get('should_trade', True)
+                quad_sizing = quad_result.get('sizing_modifier', 1.0)
+                fc = quad_result.get('field_coherence', 0)
+                action = quad_result.get('action', '?')
+                safe_print(f"   🔮 QUADRUMVIRATE: {action} | Coherence={fc:.0%} | Sizing={quad_sizing:.2f}x")
+                if not quad_go:
+                    wait = quad_result.get('wait_guidance', {})
+                    reason = wait.get('reason', 'temporal misalignment')
+                    wait_h = wait.get('wait_human', '?')
+                    safe_print(f"   ⏳ GATE CLOSED: {reason} (wait {wait_h})")
+                    safe_print(f"   ⏳ Skipping FPTP scan - Quadrumvirate says NOT NOW")
+                    self.turns_completed += 1
+                    return [], 0
+            except Exception as e:
+                safe_print(f"   ⚠️ Quadrumvirate gate error (proceeding): {e}")
+                quad_sizing = 1.0
+
+        # ═══════════════════════════════════════════════════════════════════════════
+        # �👑🧠 QUEEN DEEP THINK - Consult ALL 42+ systems before acting!
         # ═══════════════════════════════════════════════════════════════════════════
         deep_think_result = None
         if hasattr(self, 'queen') and self.queen:

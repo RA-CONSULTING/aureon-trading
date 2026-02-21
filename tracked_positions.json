@@ -463,8 +463,8 @@
     "ADAUSD": {
         "exchange": "kraken",
         "buy_price": 0.0,
-        "quantity": 27.90370799,
-        "buy_timestamp": "2026-02-05T20:54:56.047628",
+        "quantity": 0.00274643,
+        "buy_timestamp": "2026-02-20T22:37:14.611296",
         "auto_tracked": true,
         "source": "portfolio_truth_check"
     },
@@ -703,8 +703,8 @@
     "XBTUSD": {
         "exchange": "kraken",
         "buy_price": 0.0,
-        "quantity": 0.00038867,
-        "buy_timestamp": "2026-02-18T23:48:11.163478",
+        "quantity": 0.0005005,
+        "buy_timestamp": "2026-02-20T22:37:14.612892",
         "auto_tracked": true,
         "source": "portfolio_truth_check"
     },
@@ -713,6 +713,14 @@
         "buy_price": 0.0,
         "quantity": 475.35520547,
         "buy_timestamp": "2026-02-18T22:27:09.686874",
+        "auto_tracked": true,
+        "source": "portfolio_truth_check"
+    },
+    "ETHUSD": {
+        "exchange": "kraken",
+        "buy_price": 0.0,
+        "quantity": 0.0010321541,
+        "buy_timestamp": "2026-02-20T20:50:42.642672",
         "auto_tracked": true,
         "source": "portfolio_truth_check"
     }

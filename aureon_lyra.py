@@ -63,6 +63,161 @@ from enum import Enum
 
 logger = logging.getLogger(__name__)
 
+
+# ═══════════════════════════════════════════════════════════════════════════
+# FEAR & GREED INDEX FETCHER - Live Emotional Data from the Markets
+# ═══════════════════════════════════════════════════════════════════════════
+
+class FearGreedFetcher:
+    """
+    Fetches REAL Fear & Greed Index data from open-source APIs.
+    Sources:
+      - alternative.me Crypto Fear & Greed Index (primary)
+      - Binance 24h ticker data for volume/momentum sentiment
+    Caches results to respect rate limits (refreshes every 5 minutes).
+    """
+
+    CRYPTO_FG_URL = "https://api.alternative.me/fng/?limit=1&format=json"
+    CACHE_TTL_SEC = 300  # 5 minutes
+
+    def __init__(self):
+        self._cache: Dict[str, Any] = {}
+        self._cache_time: float = 0
+        self._lock = threading.Lock()
+
+    def fetch(self) -> Dict[str, Any]:
+        """
+        Fetch the latest Fear & Greed data.
+        Returns {
+            'fear_greed_index': int (0-100),
+            'fear_greed_label': str,
+            'market_momentum': float (-1 to 1),
+            'volume_sentiment': float (0-1),
+            'social_sentiment': float (0-1),
+            'source': str,
+            'timestamp': str,
+            'fresh': bool,
+        }
+        """
+        now = time.time()
+        with self._lock:
+            if self._cache and (now - self._cache_time) < self.CACHE_TTL_SEC:
+                result = dict(self._cache)
+                result["fresh"] = False
+                return result
+
+        # Fetch live data
+        result = self._fetch_crypto_fg()
+
+        # Augment with Binance volume/momentum sentiment
+        binance_sentiment = self._fetch_binance_sentiment()
+        result["market_momentum"] = binance_sentiment.get("momentum", 0.0)
+        result["volume_sentiment"] = binance_sentiment.get("volume_score", 0.5)
+        result["btc_24h_change"] = binance_sentiment.get("btc_24h_change", 0.0)
+        result["eth_24h_change"] = binance_sentiment.get("eth_24h_change", 0.0)
+        result["top_gainers_ratio"] = binance_sentiment.get("gainers_ratio", 0.5)
+        result["fresh"] = True
+
+        with self._lock:
+            self._cache = dict(result)
+            self._cache_time = time.time()
+
+        return result
+
+    def _fetch_crypto_fg(self) -> Dict[str, Any]:
+        """Fetch Crypto Fear & Greed Index from alternative.me."""
+        try:
+            import urllib.request
+            req = urllib.request.Request(
+                self.CRYPTO_FG_URL,
+                headers={"User-Agent": "AureonLyra/1.0"},
+            )
+            with urllib.request.urlopen(req, timeout=10) as resp:
+                data = json.loads(resp.read().decode())
+
+            if "data" in data and len(data["data"]) > 0:
+                entry = data["data"][0]
+                index_val = int(entry.get("value", 50))
+                label = entry.get("value_classification", "Neutral")
+                ts = entry.get("timestamp", str(int(time.time())))
+
+                return {
+                    "fear_greed_index": index_val,
+                    "fear_greed_label": label,
+                    "source": "alternative.me",
+                    "timestamp": ts,
+                }
+        except Exception as e:
+            logger.debug(f"FearGreedFetcher crypto FG error: {e}")
+
+        return {
+            "fear_greed_index": 50,
+            "fear_greed_label": "Neutral",
+            "source": "default",
+            "timestamp": str(int(time.time())),
+        }
+
+    def _fetch_binance_sentiment(self) -> Dict[str, Any]:
+        """Derive sentiment from Binance public ticker data."""
+        try:
+            import urllib.request
+            url = "https://api.binance.com/api/v3/ticker/24hr"
+            req = urllib.request.Request(url, headers={"User-Agent": "AureonLyra/1.0"})
+            with urllib.request.urlopen(req, timeout=10) as resp:
+                tickers = json.loads(resp.read().decode())
+
+            # Focus on USDT pairs for sentiment
+            usdt_tickers = [t for t in tickers if t.get("symbol", "").endswith("USDT")]
+            if not usdt_tickers:
+                return {"momentum": 0.0, "volume_score": 0.5, "gainers_ratio": 0.5}
+
+            # Count gainers vs losers
+            gainers = sum(1 for t in usdt_tickers if float(t.get("priceChangePercent", 0)) > 0)
+            total = len(usdt_tickers)
+            gainers_ratio = gainers / total if total > 0 else 0.5
+
+            # BTC and ETH specific
+            btc_change = 0.0
+            eth_change = 0.0
+            for t in usdt_tickers:
+                sym = t.get("symbol", "")
+                if sym == "BTCUSDT":
+                    btc_change = float(t.get("priceChangePercent", 0))
+                elif sym == "ETHUSDT":
+                    eth_change = float(t.get("priceChangePercent", 0))
+
+            # Momentum: weighted average of top-cap changes
+            momentum = (btc_change * 0.4 + eth_change * 0.3 + (gainers_ratio - 0.5) * 60) / 100
+            momentum = max(-1.0, min(1.0, momentum))
+
+            # Volume score: high volume = more decisive sentiment
+            total_volume = sum(float(t.get("quoteVolume", 0)) for t in usdt_tickers[:20])
+            # Normalize (rough heuristic: $10B daily is "normal")
+            volume_score = min(1.0, total_volume / 10_000_000_000)
+
+            return {
+                "momentum": momentum,
+                "volume_score": volume_score,
+                "btc_24h_change": btc_change,
+                "eth_24h_change": eth_change,
+                "gainers_ratio": gainers_ratio,
+            }
+        except Exception as e:
+            logger.debug(f"FearGreedFetcher Binance sentiment error: {e}")
+            return {"momentum": 0.0, "volume_score": 0.5, "gainers_ratio": 0.5}
+
+
+# Global Fear & Greed fetcher singleton
+_fear_greed_fetcher: Optional[FearGreedFetcher] = None
+
+
+def get_fear_greed_fetcher() -> FearGreedFetcher:
+    """Get the singleton FearGreedFetcher."""
+    global _fear_greed_fetcher
+    if _fear_greed_fetcher is None:
+        _fear_greed_fetcher = FearGreedFetcher()
+    return _fear_greed_fetcher
+
 # ═══════════════════════════════════════════════════════════════════════════
 # SACRED CONSTANTS - Lyra's Frequencies
 # ═══════════════════════════════════════════════════════════════════════════
@@ -252,10 +407,15 @@ class ChamberOfEmotion:
     Reads the market's emotional frequency through the fear/greed spectrum.
     Maps raw sentiment (0-100) to frequency (35Hz-963Hz).
     Shadow zones warn of danger. Prime zones indicate flow.
+
+    NOW ENHANCED: Auto-fetches the Crypto Fear & Greed Index from
+    alternative.me + Binance market sentiment. No more guessing.
+    Lyra FEELS the real emotional pulse of the market.
     """
 
     def __init__(self):
         self._earth_engine = None
+        self._fg_fetcher = get_fear_greed_fetcher()
 
     def _load(self):
         if self._earth_engine is None:
@@ -287,13 +447,41 @@ class ChamberOfEmotion:
             except Exception as e:
                 logger.debug(f"Lyra Emotion earth read error: {e}")
 
-        # Map sentiment from market data if available
-        sentiment = 50  # Default neutral
+        # ── LIVE FEAR & GREED INDEX ── AUTO-FETCH FROM REAL APIS ──
+        fg_data = {}
+        try:
+            fg_data = self._fg_fetcher.fetch()
+        except Exception as e:
+            logger.debug(f"Lyra Emotion Fear/Greed fetch error: {e}")
+
+        # Map sentiment from Fear/Greed Index (primary) or market_data (fallback)
+        sentiment = fg_data.get("fear_greed_index", 50)
         if market_data:
-            sentiment = market_data.get("fear_greed_index", market_data.get("sentiment", 50))
+            # Market data can override if provided explicitly
+            sentiment = market_data.get("fear_greed_index", sentiment)
             volatility = market_data.get("volatility", 0)
-            details["raw_sentiment"] = sentiment
             details["volatility"] = volatility
+
+        # Record all Fear/Greed intelligence
+        details["raw_sentiment"] = sentiment
+        details["fear_greed_label"] = fg_data.get("fear_greed_label", "Unknown")
+        details["fear_greed_source"] = fg_data.get("source", "default")
+        details["market_momentum"] = fg_data.get("market_momentum", 0.0)
+        details["volume_sentiment"] = fg_data.get("volume_sentiment", 0.5)
+        details["btc_24h_change"] = fg_data.get("btc_24h_change", 0.0)
+        details["eth_24h_change"] = fg_data.get("eth_24h_change", 0.0)
+        details["top_gainers_ratio"] = fg_data.get("top_gainers_ratio", 0.5)
+        details["fg_fresh"] = fg_data.get("fresh", False)
+
+        # Social/momentum sentiment blend into the emotional reading
+        momentum = fg_data.get("market_momentum", 0.0)
+        vol_sent = fg_data.get("volume_sentiment", 0.5)
+        # Blend: 70% Fear/Greed Index + 20% momentum + 10% volume
+        blended_sentiment = sentiment * 0.70 + (momentum * 50 + 50) * 0.20 + vol_sent * 100 * 0.10
+        blended_sentiment = max(0, min(100, blended_sentiment))
+        details["blended_sentiment"] = blended_sentiment
+        # Use blended sentiment for frequency mapping
+        sentiment = blended_sentiment
 
         # Map sentiment to frequency
         frequency = self._sentiment_to_frequency(sentiment)

@@ -458,7 +458,16 @@ class CostBasisDecipher:
         sell_value = tx.quantity * tx.price
         gross_gain = sell_value - total_cost_basis
         total_fees = total_entry_fees + tx.fee
-        net_gain = gross_gain - tx.fee  # Entry fees already in cost_basis
+        # Net gain: gross minus ONLY the exit fee.
+        # Entry fees are already embedded in total_cost_basis (lot.cost = value + fee)
+        # so they are already subtracted from gross_gain.
+        net_gain = gross_gain - tx.fee
+
+        if remaining_qty > 0:
+            logger.warning(
+                f"King FIFO: {remaining_qty:.8f} of {tx.quantity:.8f} {tx.asset} "
+                f"could not be matched to buy lots — cost basis incomplete"
+            )
 
         hold_time = tx.timestamp - earliest_buy_time
 
@@ -629,8 +638,13 @@ class PnLDecipher:
         return (self.wins / total * 100) if total > 0 else 0.0
 
     def get_summary(self) -> Dict[str, Any]:
+        # total_realized already IS net of all fees:
+        #   net_gain = gross_gain - exit_fee (entry fees baked into cost_basis)
+        # gross_realized = total_realized + total_fees gives the pre-fee number
+        gross_realized = self.total_realized + self.total_fees_paid
         return {
             "total_realized_pnl": self.total_realized,
+            "gross_realized_pnl": gross_realized,
             "total_fees_paid": self.total_fees_paid,
             "net_after_fees": self.total_realized,
             "total_trades": self.wins + self.losses,
@@ -1144,6 +1158,9 @@ class TheKing:
         self.base_currency = KING_CONFIG["BASE_CURRENCY"]
         self.start_time = time.time()
 
+        # Order Flow Velocity - The King's Speedometer
+        self.order_flow = get_order_flow_velocity()
+
         # Autonomous monitoring state
         self._monitor_thread: Optional[threading.Thread] = None
         self._running = False
@@ -1171,6 +1188,13 @@ class TheKing:
                 fee=fee, order_id=order_id, is_margin=is_margin,
                 leverage=leverage, timestamp=timestamp,
             )
+
+            # ── ORDER FLOW VELOCITY ── Track buy/sell speed ──
+            trade_value = quantity * price
+            if side.lower() == "buy":
+                self.order_flow.record_buy(trade_value, exchange)
+            else:
+                self.order_flow.record_sell(trade_value, exchange)
 
             # Audit the transaction
             tx = self.treasury.sigma.transactions[-1]
@@ -1249,6 +1273,13 @@ class TheKing:
             "drawdown": drawdown,
             "positions": snapshot.positions,
         }
+
+    def get_velocity_report(self) -> Dict[str, Any]:
+        """
+        Get the King's Order Flow Velocity report.
+        Shows how fast buys/sells are happening and what it means.
+        """
+        return self.order_flow.get_velocity_report()
 
     def get_pnl_report(self, days: int = 30) -> Dict[str, Any]:
         """Get P&L report for the last N days."""
@@ -1551,6 +1582,226 @@ class TheKing:
         ])
 
         return "\n".join(lines)
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# ORDER FLOW VELOCITY TRACKER - The King's Speedometer
+# ═══════════════════════════════════════════════════════════════════════════
+
+class OrderFlowVelocity:
+    """
+    Tracks HOW FAST buys and sells are happening across all exchanges.
+    This gives the King a sense of WHERE people are buying and WHY.
+
+    Metrics tracked:
+      - buy_velocity:  Rate of buy orders per minute
+      - sell_velocity: Rate of sell orders per minute
+      - pressure_ratio: buy_vel / (buy_vel + sell_vel) [0 = all sells, 1 = all buys]
+      - acceleration:  Change in velocity over time (speeding up or slowing down)
+      - flow_momentum: Weighted moving average of pressure ratio
+      - surge_detected: True when velocity spikes above 2x average
+
+    The King uses this to understand market participant intent:
+      - High buy velocity + rising price = FOMO / strong demand
+      - High sell velocity + falling price = panic / capitulation
+      - High buy velocity + flat price = accumulation (smart money)
+      - High sell velocity + flat price = distribution (insiders selling)
+    """
+
+    def __init__(self, window_sec: float = 300.0):
+        self._window_sec = window_sec       # 5-minute rolling window
+        self._buys: List[Tuple[float, float, str]] = []   # (timestamp, value_usd, exchange)
+        self._sells: List[Tuple[float, float, str]] = []  # (timestamp, value_usd, exchange)
+        self._velocity_history: List[Dict[str, Any]] = []
+        self._lock = threading.Lock()
+
+    def record_buy(self, value_usd: float, exchange: str = ""):
+        """Record a buy order happening NOW."""
+        with self._lock:
+            self._buys.append((time.time(), value_usd, exchange))
+            self._prune()
+
+    def record_sell(self, value_usd: float, exchange: str = ""):
+        """Record a sell order happening NOW."""
+        with self._lock:
+            self._sells.append((time.time(), value_usd, exchange))
+            self._prune()
+
+    def _prune(self):
+        """Remove entries older than the window."""
+        cutoff = time.time() - self._window_sec
+        self._buys = [(t, v, e) for t, v, e in self._buys if t > cutoff]
+        self._sells = [(t, v, e) for t, v, e in self._sells if t > cutoff]
+
+    def get_velocity_report(self) -> Dict[str, Any]:
+        """
+        Get the current order flow velocity report.
+        Called by the Seer and other pillars to understand market flow.
+        """
+        with self._lock:
+            self._prune()
+            now = time.time()
+            window_min = self._window_sec / 60.0
+
+            # Count and value
+            buy_count = len(self._buys)
+            sell_count = len(self._sells)
+            buy_value = sum(v for _, v, _ in self._buys)
+            sell_value = sum(v for _, v, _ in self._sells)
+
+            # Velocity (trades per minute)
+            buy_velocity = buy_count / window_min if window_min > 0 else 0
+            sell_velocity = sell_count / window_min if window_min > 0 else 0
+            total_velocity = buy_velocity + sell_velocity
+
+            # Value velocity (USD per minute)
+            buy_value_velocity = buy_value / window_min if window_min > 0 else 0
+            sell_value_velocity = sell_value / window_min if window_min > 0 else 0
+
+            # Pressure ratio: 0 = all sells, 1 = all buys, 0.5 = balanced
+            if total_velocity > 0:
+                pressure_ratio = buy_velocity / total_velocity
+            else:
+                pressure_ratio = 0.5
+
+            # Value-weighted pressure
+            total_value = buy_value + sell_value
+            if total_value > 0:
+                value_pressure = buy_value / total_value
+            else:
+                value_pressure = 0.5
+
+            # Time-weighted recency (more recent = more weight)
+            buy_recency = self._calc_recency(self._buys, now)
+            sell_recency = self._calc_recency(self._sells, now)
+
+            # Acceleration: compare first half vs second half of window
+            acceleration = self._calc_acceleration()
+
+            # Exchange breakdown
+            exchange_flow = self._exchange_breakdown()
+
+            # Surge detection (velocity > 2x historical average)
+            avg_velocity = 0
+            if self._velocity_history:
+                avg_velocity = sum(h.get("total_velocity", 0) for h in self._velocity_history[-20:]) / min(20, len(self._velocity_history))
+            surge_detected = total_velocity > avg_velocity * 2.0 if avg_velocity > 0 else False
+
+            # Flow momentum: EMA of pressure ratio
+            flow_momentum = pressure_ratio
+            if self._velocity_history:
+                prev_momentum = self._velocity_history[-1].get("flow_momentum", 0.5)
+                alpha = 0.3  # EMA smoothing
+                flow_momentum = alpha * pressure_ratio + (1 - alpha) * prev_momentum
+
+            # Market intent interpretation
+            intent = self._interpret_intent(pressure_ratio, total_velocity, acceleration)
+
+            report = {
+                "timestamp": now,
+                "buy_velocity": round(buy_velocity, 3),
+                "sell_velocity": round(sell_velocity, 3),
+                "total_velocity": round(total_velocity, 3),
+                "buy_value_velocity": round(buy_value_velocity, 2),
+                "sell_value_velocity": round(sell_value_velocity, 2),
+                "pressure_ratio": round(pressure_ratio, 4),
+                "value_pressure": round(value_pressure, 4),
+                "acceleration": round(acceleration, 4),
+                "flow_momentum": round(flow_momentum, 4),
+                "surge_detected": surge_detected,
+                "buy_recency": round(buy_recency, 3),
+                "sell_recency": round(sell_recency, 3),
+                "exchange_flow": exchange_flow,
+                "intent": intent,
+                "buy_count": buy_count,
+                "sell_count": sell_count,
+                "window_sec": self._window_sec,
+            }
+
+            # Store in history
+            self._velocity_history.append(report)
+            if len(self._velocity_history) > 100:
+                self._velocity_history = self._velocity_history[-100:]
+
+            return report
+
+    def _calc_recency(self, trades: List[Tuple[float, float, str]], now: float) -> float:
+        """Calculate how recent the trades are (1.0 = very recent, 0.0 = old)."""
+        if not trades:
+            return 0.0
+        recencies = []
+        for t, _, _ in trades:
+            age = now - t
+            recency = max(0, 1.0 - (age / self._window_sec))
+            recencies.append(recency)
+        return sum(recencies) / len(recencies)
+
+    def _calc_acceleration(self) -> float:
+        """Acceleration: is trading speeding up or slowing down?"""
+        if len(self._velocity_history) < 2:
+            return 0.0
+        prev = self._velocity_history[-1].get("total_velocity", 0) if self._velocity_history else 0
+        # Compare current window halves
+        now = time.time()
+        mid = now - self._window_sec / 2
+        recent_buys = sum(1 for t, _, _ in self._buys if t > mid)
+        recent_sells = sum(1 for t, _, _ in self._sells if t > mid)
+        older_buys = sum(1 for t, _, _ in self._buys if t <= mid)
+        older_sells = sum(1 for t, _, _ in self._sells if t <= mid)
+        recent_total = recent_buys + recent_sells
+        older_total = older_buys + older_sells
+        if older_total > 0:
+            return (recent_total - older_total) / older_total
+        return 0.0
+
+    def _exchange_breakdown(self) -> Dict[str, Dict[str, float]]:
+        """Break down flow by exchange."""
+        exchanges: Dict[str, Dict[str, float]] = {}
+        for _, v, e in self._buys:
+            if e not in exchanges:
+                exchanges[e] = {"buys": 0, "sells": 0, "buy_value": 0, "sell_value": 0}
+            exchanges[e]["buys"] += 1
+            exchanges[e]["buy_value"] += v
+        for _, v, e in self._sells:
+            if e not in exchanges:
+                exchanges[e] = {"buys": 0, "sells": 0, "buy_value": 0, "sell_value": 0}
+            exchanges[e]["sells"] += 1
+            exchanges[e]["sell_value"] += v
+        return exchanges
+
+    def _interpret_intent(self, pressure: float, velocity: float,
+                          acceleration: float) -> str:
+        """Interpret what the order flow means about market participants."""
+        if velocity < 0.1:
+            return "QUIET"  # No significant activity
+        if pressure > 0.70:
+            if acceleration > 0.3:
+                return "FOMO_BUYING"       # Aggressive buy acceleration
+            else:
+                return "ACCUMULATION"      # Steady buying
+        elif pressure < 0.30:
+            if acceleration > 0.3:
+                return "PANIC_SELLING"     # Sell acceleration
+            else:
+                return "DISTRIBUTION"      # Steady selling
+        elif pressure > 0.55:
+            return "MILD_BUY_PRESSURE"
+        elif pressure < 0.45:
+            return "MILD_SELL_PRESSURE"
+        else:
+            return "BALANCED"
+
+
+# Global Order Flow Velocity singleton
+_order_flow_velocity: Optional[OrderFlowVelocity] = None
+
+
+def get_order_flow_velocity() -> OrderFlowVelocity:
+    """Get the singleton OrderFlowVelocity tracker."""
+    global _order_flow_velocity
+    if _order_flow_velocity is None:
+        _order_flow_velocity = OrderFlowVelocity()
+    return _order_flow_velocity
 
 
 # ═══════════════════════════════════════════════════════════════════════════

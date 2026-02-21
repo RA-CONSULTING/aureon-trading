@@ -70,3 +70,46 @@
 {"type": "handoff", "from_system": "queen", "to_system": "unknown", "elapsed": 0.001, "ts": 1771458402.1440005, "topic": "harmonic.field.snapshot"}
 {"type": "stage", "system": "orca", "stage": "intent", "ts": 1771458402.1634152, "topic": "orca.autonomous.intent"}
 {"type": "stale", "system": "queen", "last_seen": 1771458402.143249, "timeout_seconds": 15.0, "ts": 1771458418.1497612}
+{"type": "handoff", "from_system": "unknown", "to_system": "queen", "elapsed": 0.0, "ts": 1771620548.732879, "topic": "queen.broadcast"}
+{"type": "handoff", "from_system": "queen", "to_system": "unknown", "elapsed": 0.003, "ts": 1771620548.7361825, "topic": "harmonic.field.snapshot"}
+{"type": "stage", "system": "orca", "stage": "intent", "ts": 1771620549.1061606, "topic": "orca.autonomous.intent"}
+{"type": "stale", "system": "queen", "last_seen": 1771620548.732879, "timeout_seconds": 15.0, "ts": 1771620564.7402132}
+{"type": "handoff", "from_system": "unknown", "to_system": "queen", "elapsed": 0.0, "ts": 1771621082.7040672, "topic": "queen.broadcast"}
+{"type": "handoff", "from_system": "queen", "to_system": "unknown", "elapsed": 0.004, "ts": 1771621082.7079432, "topic": "harmonic.field.snapshot"}
+{"type": "stage", "system": "orca", "stage": "intent", "ts": 1771621082.8109634, "topic": "orca.autonomous.intent"}
+{"type": "stale", "system": "queen", "last_seen": 1771621082.7040672, "timeout_seconds": 15.0, "ts": 1771621098.7098124}
+{"type": "handoff", "from_system": "unknown", "to_system": "queen", "elapsed": 0.001, "ts": 1771621506.3330204, "topic": "queen.broadcast"}
+{"type": "handoff", "from_system": "queen", "to_system": "unknown", "elapsed": 0.0, "ts": 1771621506.3332846, "topic": "harmonic.field.snapshot"}
+{"type": "stage", "system": "orca", "stage": "intent", "ts": 1771621506.4534636, "topic": "orca.autonomous.intent"}
+{"type": "stale", "system": "queen", "last_seen": 1771621506.3330204, "timeout_seconds": 15.0, "ts": 1771621522.3428965}
+{"type": "handoff", "from_system": "unknown", "to_system": "queen", "elapsed": 0.0, "ts": 1771622320.40496, "topic": "queen.broadcast"}
+{"type": "handoff", "from_system": "queen", "to_system": "unknown", "elapsed": 0.003, "ts": 1771622320.4076867, "topic": "harmonic.field.snapshot"}
+{"type": "stage", "system": "orca", "stage": "intent", "ts": 1771622320.510462, "topic": "orca.autonomous.intent"}
+{"type": "stale", "system": "queen", "last_seen": 1771622320.40496, "timeout_seconds": 15.0, "ts": 1771622336.409271}
+{"type": "handoff", "from_system": "unknown", "to_system": "queen", "elapsed": 0.001, "ts": 1771622900.9262984, "topic": "queen.broadcast"}
+{"type": "handoff", "from_system": "queen", "to_system": "unknown", "elapsed": 0.003, "ts": 1771622900.928931, "topic": "harmonic.field.snapshot"}
+{"type": "stage", "system": "orca", "stage": "intent", "ts": 1771622900.9946554, "topic": "orca.autonomous.intent"}
+{"type": "stale", "system": "queen", "last_seen": 1771622900.9262984, "timeout_seconds": 15.0, "ts": 1771622916.9306958}
+{"type": "handoff", "from_system": "unknown", "to_system": "queen", "elapsed": 0.0, "ts": 1771623501.7520382, "topic": "queen.broadcast"}
+{"type": "handoff", "from_system": "queen", "to_system": "unknown", "elapsed": 0.001, "ts": 1771623501.7530205, "topic": "harmonic.field.snapshot"}
+{"type": "stage", "system": "orca", "stage": "intent", "ts": 1771623501.8215725, "topic": "orca.autonomous.intent"}
+{"type": "stale", "system": "queen", "last_seen": 1771623501.7520382, "timeout_seconds": 15.0, "ts": 1771623517.760344}
+{"type": "handoff", "from_system": "queen", "to_system": "unknown", "elapsed": 0.02, "ts": 1771624079.3188171, "topic": "harmonic.field.snapshot"}
+{"type": "stage", "system": "orca", "stage": "intent", "ts": 1771624079.371357, "topic": "orca.autonomous.intent"}
+{"type": "stale", "system": "queen", "last_seen": 1771624079.2990355, "timeout_seconds": 15.0, "ts": 1771624095.3018916}
+{"type": "handoff", "from_system": "unknown", "to_system": "queen", "elapsed": 0.001, "ts": 1771624697.9305325, "topic": "queen.broadcast"}
+{"type": "handoff", "from_system": "queen", "to_system": "unknown", "elapsed": 0.002, "ts": 1771624697.9321768, "topic": "harmonic.field.snapshot"}
+{"type": "stage", "system": "orca", "stage": "intent", "ts": 1771624698.0593317, "topic": "orca.autonomous.intent"}
+{"type": "stale", "system": "queen", "last_seen": 1771624697.9305325, "timeout_seconds": 15.0, "ts": 1771624713.9368336}
+{"type": "handoff", "from_system": "unknown", "to_system": "queen", "elapsed": 0.001, "ts": 1771625745.5848565, "topic": "queen.broadcast"}
+{"type": "handoff", "from_system": "queen", "to_system": "unknown", "elapsed": 0.003, "ts": 1771625745.5880604, "topic": "harmonic.field.snapshot"}
+{"type": "stage", "system": "orca", "stage": "intent", "ts": 1771625745.6908662, "topic": "orca.autonomous.intent"}
+{"type": "stale", "system": "queen", "last_seen": 1771625745.5848565, "timeout_seconds": 15.0, "ts": 1771625761.5909266}
+{"type": "handoff", "from_system": "queen", "to_system": "unknown", "elapsed": 0.019, "ts": 1771626496.61285, "topic": "harmonic.field.snapshot"}
+{"type": "stage", "system": "orca", "stage": "intent", "ts": 1771626496.6998668, "topic": "orca.autonomous.intent"}
+{"type": "stale", "system": "queen", "last_seen": 1771626496.5933673, "timeout_seconds": 15.0, "ts": 1771626512.595799}
+{"type": "handoff", "from_system": "unknown", "to_system": "queen", "elapsed": 0.002, "ts": 1771626939.3974652, "topic": "queen.broadcast"}
+{"type": "handoff", "from_system": "queen", "to_system": "unknown", "elapsed": 0.0, "ts": 1771626939.397942, "topic": "harmonic.field.snapshot"}
+{"type": "stage", "system": "orca", "stage": "intent", "ts": 1771626939.4715788, "topic": "orca.autonomous.intent"}
+{"type": "stale", "system": "queen", "last_seen": 1771626939.3974652, "timeout_seconds": 15.0, "ts": 1771626955.4022744}
+{"type": "stage", "system": "orca", "stage": "plan", "ts": 1771627165.025987, "topic": "orca.scan.plan"}

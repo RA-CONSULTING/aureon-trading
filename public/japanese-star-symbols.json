@@ -1,0 +1,539 @@
+{
+  "tradition": "Japanese / Shinto-Buddhist-Onmyōdō",
+  "description": "Japan's astronomical encoding spans three interwoven layers: Shinto (the Way of the Gods — shrine alignments, solar and lunar deities), Onmyōdō (the Way of Yin-Yang — esoteric cosmology mapping five elements to planets), and Buddhist-Taoist star worship (Myōken Bosatsu / Pole Star veneration). The 20-year rebuilding cycle of Ise Grand Shrine mirrors the Jupiter-Saturn conjunction. The Seven Lucky Gods map to the seven visible celestial bodies. Mount Fuji's geometry encodes the same sacred angles found in every pyramid and stone circle on Earth. Same sky, same pattern — different language.",
+  "source_tradition": "Shinto / Onmyōdō / Mikkyō / Japanese Imperial Court astronomy, Japan (660 BCE legendary founding — present), inheriting Chinese astronomical frameworks reinterpreted through indigenous Shinto cosmology",
+  "symbols": [
+    {
+      "id": "jp_amaterasu",
+      "name": "Amaterasu (天照大御神)",
+      "meaning": "Great Goddess who Illuminates Heaven — the Sun itself",
+      "group": "Shinto Celestial Kami",
+      "kanji": "天照",
+      "deity": "Amaterasu Ōmikami",
+      "element": "Fire",
+      "astronomical_identity": "Amaterasu IS the Sun. When she hid in the cave (Ama-no-Iwato), the world went dark — a solar eclipse. Sun-Jupiter trine = she emerges, light returns, expansion.",
+      "star_chart": {
+        "geometry": "SOLAR_MIRROR",
+        "angular_aspect": "trine",
+        "trigger_angle_deg": 120,
+        "tolerance_deg": 8,
+        "planet_pair": ["Sun", "Jupiter"],
+        "sacred_ratio": 1.618
+      },
+      "trading_signal": { "bias": "BUY", "domain": "crypto_stocks", "strength": 0.90 }
+    },
+    {
+      "id": "jp_tsukuyomi",
+      "name": "Tsukuyomi (月読命)",
+      "meaning": "Moon Reader — the god who counts the months",
+      "group": "Shinto Celestial Kami",
+      "kanji": "月読",
+      "deity": "Tsukuyomi-no-Mikoto",
+      "element": "Water",
+      "astronomical_identity": "Tsukuyomi IS the Moon. Born from Izanagi's right eye (Amaterasu from the left). Moon-Neptune trine = intuitive flow, the unseen tide.",
+      "star_chart": {
+        "geometry": "MOON_READING",
+        "angular_aspect": "trine",
+        "trigger_angle_deg": 120,
+        "tolerance_deg": 8,
+        "planet_pair": ["Moon", "Neptune"],
+        "sacred_ratio": 1.618
+      },
+      "trading_signal": { "bias": "BUY", "domain": "crypto", "strength": 0.75 }
+    },
+    {
+      "id": "jp_susanoo",
+      "name": "Susanoo (須佐之男命)",
+      "meaning": "The Tempest — storm god, slayer of the eight-headed serpent",
+      "group": "Shinto Celestial Kami",
+      "kanji": "須佐之男",
+      "deity": "Susanoo-no-Mikoto",
+      "element": "Water/Fire",
+      "astronomical_identity": "Susanoo's rage = Mars-Uranus conjunction. Sudden violent disruption that ultimately saves (he killed Yamata-no-Orochi and found the Kusanagi sword inside).",
+      "star_chart": {
+        "geometry": "STORM_BLADE",
+        "angular_aspect": "conjunction",
+        "trigger_angle_deg": 0,
+        "tolerance_deg": 8,
+        "planet_pair": ["Mars", "Uranus"],
+        "sacred_ratio": 1.0
+      },
+      "trading_signal": { "bias": "SELL", "domain": "crypto_stocks", "strength": 0.30 }
+    },
+    {
+      "id": "jp_izanagi_izanami",
+      "name": "Izanagi & Izanami (伊邪那岐・伊邪那美)",
+      "meaning": "He Who Invites & She Who Invites — the creation pair who stirred the cosmic ocean",
+      "group": "Shinto Celestial Kami",
+      "kanji": "伊邪那岐美",
+      "deity": "Izanagi-no-Mikoto & Izanami-no-Mikoto",
+      "element": "All",
+      "astronomical_identity": "The primal duality — Sun-Moon opposition. They stand on the Floating Bridge of Heaven (the ecliptic) and stir the ocean below with the Jeweled Spear (the Earth's axis).",
+      "star_chart": {
+        "geometry": "HEAVENLY_BRIDGE",
+        "angular_aspect": "opposition",
+        "trigger_angle_deg": 180,
+        "tolerance_deg": 10,
+        "planet_pair": ["Sun", "Moon"],
+        "sacred_ratio": 2.0
+      },
+      "trading_signal": { "bias": "HOLD", "domain": "crypto_stocks", "strength": 0.50 }
+    },
+    {
+      "id": "jp_inari",
+      "name": "Inari Ōkami (稲荷大神)",
+      "meaning": "God of foxes, rice, fertility, prosperity — the most worshipped kami in Japan (32,000 shrines)",
+      "group": "Shinto Celestial Kami",
+      "kanji": "稲荷",
+      "deity": "Inari Ōkami",
+      "element": "Earth",
+      "astronomical_identity": "Inari = prosperity through abundance. Venus-Jupiter conjunction = maximum financial blessing, the fox spirit of wealth.",
+      "star_chart": {
+        "geometry": "FOX_GATE",
+        "angular_aspect": "conjunction",
+        "trigger_angle_deg": 0,
+        "tolerance_deg": 8,
+        "planet_pair": ["Venus", "Jupiter"],
+        "sacred_ratio": 1.618
+      },
+      "trading_signal": { "bias": "BUY", "domain": "crypto_stocks", "strength": 0.92 }
+    },
+    {
+      "id": "jp_raijin_fujin",
+      "name": "Raijin & Fūjin (雷神・風神)",
+      "meaning": "Thunder God & Wind God — the guardians at every temple gate",
+      "group": "Shinto Celestial Kami",
+      "kanji": "雷風",
+      "deity": "Raijin and Fūjin",
+      "element": "Air/Fire",
+      "astronomical_identity": "Jupiter (thunder) square to Uranus (sudden wind) = the volatile gate. Great energy but dangerous to cross unprepared.",
+      "star_chart": {
+        "geometry": "THUNDER_WIND_GATE",
+        "angular_aspect": "square",
+        "trigger_angle_deg": 90,
+        "tolerance_deg": 8,
+        "planet_pair": ["Jupiter", "Uranus"],
+        "sacred_ratio": 1.414
+      },
+      "trading_signal": { "bias": "HOLD", "domain": "crypto_stocks", "strength": 0.45 }
+    },
+    {
+      "id": "jp_benzaiten",
+      "name": "Benzaiten (弁財天)",
+      "meaning": "Goddess of everything that flows — water, music, eloquence, wealth",
+      "group": "Shichifukujin (Seven Lucky Gods)",
+      "kanji": "弁財天",
+      "deity": "Benzaiten (from Hindu Saraswati)",
+      "element": "Water",
+      "astronomical_identity": "Venus in her flowing form — Venus-Neptune sextile, beauty dissolving into the cosmic ocean of abundance.",
+      "star_chart": {
+        "geometry": "FLOWING_LUTE",
+        "angular_aspect": "sextile",
+        "trigger_angle_deg": 60,
+        "tolerance_deg": 6,
+        "planet_pair": ["Venus", "Neptune"],
+        "sacred_ratio": 1.732
+      },
+      "trading_signal": { "bias": "BUY", "domain": "crypto_stocks", "strength": 0.80 }
+    },
+    {
+      "id": "jp_daikokuten",
+      "name": "Daikokuten (大黒天)",
+      "meaning": "God of great darkness and great wealth — stands on rice bales with magic mallet",
+      "group": "Shichifukujin (Seven Lucky Gods)",
+      "kanji": "大黒天",
+      "deity": "Daikokuten (from Hindu Mahakala/Shiva)",
+      "element": "Earth",
+      "astronomical_identity": "Saturn (great darkness, structure) trine Jupiter (abundance) = patient wealth through discipline. He carries the mallet of fulfillment.",
+      "star_chart": {
+        "geometry": "RICE_BALE_MALLET",
+        "angular_aspect": "trine",
+        "trigger_angle_deg": 120,
+        "tolerance_deg": 8,
+        "planet_pair": ["Saturn", "Jupiter"],
+        "sacred_ratio": 1.618
+      },
+      "trading_signal": { "bias": "BUY", "domain": "stocks", "strength": 0.82 }
+    },
+    {
+      "id": "jp_ebisu",
+      "name": "Ebisu (恵比寿)",
+      "meaning": "God of fishermen, merchants, honest labour — the only purely Japanese of the Seven Lucky Gods",
+      "group": "Shichifukujin (Seven Lucky Gods)",
+      "kanji": "恵比寿",
+      "deity": "Ebisu (Hiruko / Kotoshironushi)",
+      "element": "Water",
+      "astronomical_identity": "Mercury (commerce) sextile Moon (tides, fishing) = honest trade follows natural rhythms. Ebisu always carries a sea bream (tai = auspicious).",
+      "star_chart": {
+        "geometry": "FISHING_ROD",
+        "angular_aspect": "sextile",
+        "trigger_angle_deg": 60,
+        "tolerance_deg": 6,
+        "planet_pair": ["Mercury", "Moon"],
+        "sacred_ratio": 1.732
+      },
+      "trading_signal": { "bias": "BUY", "domain": "stocks", "strength": 0.74 }
+    },
+    {
+      "id": "jp_bishamonten",
+      "name": "Bishamonten (毘沙門天)",
+      "meaning": "God of warriors and protectors — guardian of the North, treasure pagoda in hand",
+      "group": "Shichifukujin (Seven Lucky Gods)",
+      "kanji": "毘沙門天",
+      "deity": "Bishamonten (from Hindu Vaisravana)",
+      "element": "Fire",
+      "astronomical_identity": "Mars (warrior) trine Saturn (fortress) = disciplined defense that protects wealth. He guards the treasure pagoda.",
+      "star_chart": {
+        "geometry": "TREASURE_PAGODA",
+        "angular_aspect": "trine",
+        "trigger_angle_deg": 120,
+        "tolerance_deg": 8,
+        "planet_pair": ["Mars", "Saturn"],
+        "sacred_ratio": 1.618
+      },
+      "trading_signal": { "bias": "BUY", "domain": "crypto_stocks", "strength": 0.78 }
+    },
+    {
+      "id": "jp_ise_shrine",
+      "name": "Ise Grand Shrine (伊勢神宮)",
+      "meaning": "Most sacred Shinto shrine — rebuilt every 20 years (Shikinen Sengū) since 690 CE",
+      "group": "Sacred Sites",
+      "kanji": "伊勢神宮",
+      "location": { "lat": 34.4550, "lon": 136.7256, "country": "Japan" },
+      "builder_tradition": "Imperial Shinto (continuous since 4 BCE legendary, 690 CE documented)",
+      "astronomical_identity": "The 20-year rebuilding cycle = Jupiter-Saturn conjunction cycle (19.86 years). Every renewal happens when the two great planets meet. This is the same cycle Stonehenge and Göbekli Tepe tracked.",
+      "star_chart": {
+        "geometry": "ETERNAL_RENEWAL",
+        "angular_aspect": "conjunction",
+        "trigger_angle_deg": 0,
+        "tolerance_deg": 10,
+        "planet_pair": ["Jupiter", "Saturn"],
+        "sacred_ratio": 1.0
+      },
+      "trading_signal": { "bias": "BUY", "domain": "crypto_stocks", "strength": 0.88 }
+    },
+    {
+      "id": "jp_mt_fuji",
+      "name": "Mount Fuji (富士山)",
+      "meaning": "Sacred mountain — 3,776m, visible from Tokyo, pilgrimage peak, the axis mundi of Japan",
+      "group": "Sacred Sites",
+      "kanji": "富士山",
+      "location": { "lat": 35.3606, "lon": 138.7274, "country": "Japan" },
+      "builder_tradition": "Natural formation venerated since prehistoric Jōmon period",
+      "astronomical_identity": "The perfect cone = the connection between Earth and Heaven. Sun-Saturn trine = structured, patient ascent to the summit. Fuji's slope angle (approximately 35°) relates to the co-latitude of the sacred sites band.",
+      "star_chart": {
+        "geometry": "SACRED_CONE",
+        "angular_aspect": "trine",
+        "trigger_angle_deg": 120,
+        "tolerance_deg": 8,
+        "planet_pair": ["Sun", "Saturn"],
+        "sacred_ratio": 1.618
+      },
+      "trading_signal": { "bias": "BUY", "domain": "stocks", "strength": 0.80 }
+    },
+    {
+      "id": "jp_izumo_taisha",
+      "name": "Izumo Taisha (出雲大社)",
+      "meaning": "Grand Shrine of Izumo — second holiest shrine, where all gods gather in October (Kamiarizuki)",
+      "group": "Sacred Sites",
+      "kanji": "出雲大社",
+      "location": { "lat": 35.4021, "lon": 132.6855, "country": "Japan" },
+      "builder_tradition": "Ancient Shinto (mythological founding by Ōkuninushi)",
+      "astronomical_identity": "All 8 million kami gather here in October = the great conjunction. Jupiter-Venus trine = when gods of expansion and beauty meet, all blessings converge.",
+      "star_chart": {
+        "geometry": "GOD_GATHERING",
+        "angular_aspect": "trine",
+        "trigger_angle_deg": 120,
+        "tolerance_deg": 8,
+        "planet_pair": ["Jupiter", "Venus"],
+        "sacred_ratio": 1.618
+      },
+      "trading_signal": { "bias": "BUY", "domain": "crypto_stocks", "strength": 0.85 }
+    },
+    {
+      "id": "jp_kumano",
+      "name": "Kumano Sanzan (熊野三山)",
+      "meaning": "Three Grand Shrines of Kumano — the most important pilgrimage in Japan, walked by emperors and peasants alike",
+      "group": "Sacred Sites",
+      "kanji": "熊野三山",
+      "location": { "lat": 33.8403, "lon": 135.7730, "country": "Japan" },
+      "builder_tradition": "Pre-Shinto mountain worship (sangaku shinkō), formalized 10th century CE",
+      "astronomical_identity": "Three shrines = three points of a trine. The pilgrimage path itself traces the 120° angle across the mountains. Sun-Neptune sextile = spiritual illumination through dedicated journey.",
+      "star_chart": {
+        "geometry": "THREE_MOUNTAIN_PATH",
+        "angular_aspect": "sextile",
+        "trigger_angle_deg": 60,
+        "tolerance_deg": 8,
+        "planet_pair": ["Sun", "Neptune"],
+        "sacred_ratio": 1.732
+      },
+      "trading_signal": { "bias": "BUY", "domain": "crypto_stocks", "strength": 0.72 }
+    },
+    {
+      "id": "jp_moku_wood",
+      "name": "Moku (木) — Wood Phase",
+      "meaning": "Growth, spring, expansion, the liver, the dragon, the colour green",
+      "group": "Onmyōdō Gogyō (Five Phases)",
+      "kanji": "木",
+      "deity": "Seiryū (Azure Dragon of the East)",
+      "element": "Wood",
+      "astronomical_identity": "Wood = Jupiter. Growth phase. Jupiter-Sun sextile = controlled expansion, the sapling reaching toward light.",
+      "star_chart": {
+        "geometry": "GROWING_BRANCH",
+        "angular_aspect": "sextile",
+        "trigger_angle_deg": 60,
+        "tolerance_deg": 6,
+        "planet_pair": ["Jupiter", "Sun"],
+        "sacred_ratio": 1.732
+      },
+      "trading_signal": { "bias": "BUY", "domain": "crypto_stocks", "strength": 0.76 }
+    },
+    {
+      "id": "jp_ka_fire",
+      "name": "Ka (火) — Fire Phase",
+      "meaning": "Transformation, summer, passion, the heart, the phoenix, the colour red",
+      "group": "Onmyōdō Gogyō (Five Phases)",
+      "kanji": "火",
+      "deity": "Suzaku (Vermillion Bird of the South)",
+      "element": "Fire",
+      "astronomical_identity": "Fire = Mars. Transformation phase. Mars-Sun conjunction = maximum solar fire, the peak of yang energy.",
+      "star_chart": {
+        "geometry": "PHOENIX_FLAME",
+        "angular_aspect": "conjunction",
+        "trigger_angle_deg": 0,
+        "tolerance_deg": 8,
+        "planet_pair": ["Mars", "Sun"],
+        "sacred_ratio": 1.0
+      },
+      "trading_signal": { "bias": "BUY", "domain": "crypto", "strength": 0.78 }
+    },
+    {
+      "id": "jp_do_earth",
+      "name": "Do (土) — Earth Phase",
+      "meaning": "Stability, centre, harvest, the spleen, the yellow dragon, balance between all phases",
+      "group": "Onmyōdō Gogyō (Five Phases)",
+      "kanji": "土",
+      "deity": "Kōryū (Yellow Dragon of the Centre)",
+      "element": "Earth",
+      "astronomical_identity": "Earth = Saturn. Centre/stability phase. Saturn-Venus sextile = beauty grounded in structure, the golden mean.",
+      "star_chart": {
+        "geometry": "CENTRE_PILLAR",
+        "angular_aspect": "sextile",
+        "trigger_angle_deg": 60,
+        "tolerance_deg": 6,
+        "planet_pair": ["Saturn", "Venus"],
+        "sacred_ratio": 1.618
+      },
+      "trading_signal": { "bias": "HOLD", "domain": "stocks", "strength": 0.55 }
+    },
+    {
+      "id": "jp_gon_metal",
+      "name": "Gon/Kin (金) — Metal Phase",
+      "meaning": "Contraction, autumn, grief, the lungs, the white tiger, the colour white",
+      "group": "Onmyōdō Gogyō (Five Phases)",
+      "kanji": "金",
+      "deity": "Byakko (White Tiger of the West)",
+      "element": "Metal",
+      "astronomical_identity": "Metal = Venus (gold/copper). Contraction phase. Venus-Saturn square = beauty tested by restriction, refinement through pressure.",
+      "star_chart": {
+        "geometry": "TIGER_BLADE",
+        "angular_aspect": "square",
+        "trigger_angle_deg": 90,
+        "tolerance_deg": 8,
+        "planet_pair": ["Venus", "Saturn"],
+        "sacred_ratio": 1.414
+      },
+      "trading_signal": { "bias": "HOLD", "domain": "crypto_stocks", "strength": 0.42 }
+    },
+    {
+      "id": "jp_sui_water",
+      "name": "Sui (水) — Water Phase",
+      "meaning": "Dissolution, winter, fear, the kidneys, the black tortoise, the colour black",
+      "group": "Onmyōdō Gogyō (Five Phases)",
+      "kanji": "水",
+      "deity": "Genbu (Black Tortoise of the North)",
+      "element": "Water",
+      "astronomical_identity": "Water = Mercury (flow). Dissolution phase. Mercury-Neptune conjunction = communication dissolves into the unconscious, deep introspection.",
+      "star_chart": {
+        "geometry": "TORTOISE_SHELL",
+        "angular_aspect": "conjunction",
+        "trigger_angle_deg": 0,
+        "tolerance_deg": 8,
+        "planet_pair": ["Mercury", "Neptune"],
+        "sacred_ratio": 1.0
+      },
+      "trading_signal": { "bias": "HOLD", "domain": "crypto", "strength": 0.45 }
+    },
+    {
+      "id": "jp_myoken",
+      "name": "Myōken Bosatsu (妙見菩薩)",
+      "meaning": "Bodhisattva of the Pole Star — the unmoved mover, the axis around which all stars rotate",
+      "group": "Buddhist Star Worship",
+      "kanji": "妙見",
+      "deity": "Myōken Bosatsu (North Star deification)",
+      "element": "Void",
+      "astronomical_identity": "The Pole Star doesn't move — everything else orbits around it. Saturn-Pluto trine = deepest structural transformation around an immovable truth.",
+      "star_chart": {
+        "geometry": "POLE_STAR_AXIS",
+        "angular_aspect": "trine",
+        "trigger_angle_deg": 120,
+        "tolerance_deg": 8,
+        "planet_pair": ["Saturn", "Pluto"],
+        "sacred_ratio": 1.618
+      },
+      "trading_signal": { "bias": "BUY", "domain": "crypto_stocks", "strength": 0.78 }
+    },
+    {
+      "id": "jp_tanabata",
+      "name": "Tanabata (七夕)",
+      "meaning": "Star Festival — Orihime (Vega) and Hikoboshi (Altair) meet across the Milky Way once per year on July 7th",
+      "group": "Astronomical Festivals",
+      "kanji": "七夕",
+      "deity": "Orihime (Vega) & Hikoboshi (Altair)",
+      "element": "Air",
+      "astronomical_identity": "The lovers separated by the Milky Way meet at Venus-Mars opposition = the magnetic attraction of opposites across the greatest distance.",
+      "star_chart": {
+        "geometry": "STAR_CROSSED_BRIDGE",
+        "angular_aspect": "opposition",
+        "trigger_angle_deg": 180,
+        "tolerance_deg": 10,
+        "planet_pair": ["Venus", "Mars"],
+        "sacred_ratio": 2.0
+      },
+      "trading_signal": { "bias": "HOLD", "domain": "crypto_stocks", "strength": 0.50 }
+    },
+    {
+      "id": "jp_setsubun",
+      "name": "Setsubun (節分)",
+      "meaning": "Division of Seasons — throwing beans to drive out oni (demons), the day before spring",
+      "group": "Astronomical Festivals",
+      "kanji": "節分",
+      "deity": "Household protective kami",
+      "element": "Earth",
+      "astronomical_identity": "The exact cross-quarter day between winter solstice and spring equinox. Sun-Mars sextile = energized purification, driving out stagnation.",
+      "star_chart": {
+        "geometry": "BEAN_SCATTER",
+        "angular_aspect": "sextile",
+        "trigger_angle_deg": 60,
+        "tolerance_deg": 6,
+        "planet_pair": ["Sun", "Mars"],
+        "sacred_ratio": 1.732
+      },
+      "trading_signal": { "bias": "BUY", "domain": "crypto_stocks", "strength": 0.70 }
+    },
+    {
+      "id": "jp_torii",
+      "name": "Torii Gate (鳥居)",
+      "meaning": "The sacred gate — threshold between profane and sacred, found at every shrine entrance",
+      "group": "Sacred Geometry",
+      "kanji": "鳥居",
+      "deity": "Gateway to all kami",
+      "element": "Wood/Fire",
+      "astronomical_identity": "The torii is a portal — the exact moment of transition. Mercury-Uranus sextile = the flash of insight when crossing between worlds.",
+      "star_chart": {
+        "geometry": "SACRED_GATE",
+        "angular_aspect": "sextile",
+        "trigger_angle_deg": 60,
+        "tolerance_deg": 6,
+        "planet_pair": ["Mercury", "Uranus"],
+        "sacred_ratio": 1.732
+      },
+      "trading_signal": { "bias": "BUY", "domain": "crypto", "strength": 0.72 }
+    },
+    {
+      "id": "jp_shimenawa",
+      "name": "Shimenawa (注連縄)",
+      "meaning": "Sacred rope — marks the boundary of sacred space, twisted from rice straw",
+      "group": "Sacred Geometry",
+      "kanji": "注連縄",
+      "deity": "Boundary marker for all kami",
+      "element": "Earth",
+      "astronomical_identity": "The twisted rope encodes the double helix — Moon-Saturn sextile = disciplined boundary, the sacred container that holds cosmic energy safely.",
+      "star_chart": {
+        "geometry": "TWISTED_ROPE_BOUNDARY",
+        "angular_aspect": "sextile",
+        "trigger_angle_deg": 60,
+        "tolerance_deg": 6,
+        "planet_pair": ["Moon", "Saturn"],
+        "sacred_ratio": 1.732
+      },
+      "trading_signal": { "bias": "HOLD", "domain": "stocks", "strength": 0.55 }
+    },
+    {
+      "id": "jp_magatama",
+      "name": "Magatama (勾玉)",
+      "meaning": "Curved jewel — one of the Three Imperial Regalia, the comma-shaped bead, yin-yang in stone",
+      "group": "Sacred Geometry",
+      "kanji": "勾玉",
+      "deity": "Part of the Imperial Regalia (Yasakani no Magatama)",
+      "element": "Water",
+      "astronomical_identity": "The magatama IS a yin-yang diagram in 3D — the spiral that contains both polarities. Venus-Moon quintile (72°) = the golden spiral of beauty and intuition.",
+      "star_chart": {
+        "geometry": "COMMA_SPIRAL",
+        "angular_aspect": "quintile",
+        "trigger_angle_deg": 72,
+        "tolerance_deg": 5,
+        "planet_pair": ["Venus", "Moon"],
+        "sacred_ratio": 1.618
+      },
+      "trading_signal": { "bias": "BUY", "domain": "crypto_stocks", "strength": 0.80 }
+    },
+    {
+      "id": "jp_kusanagi",
+      "name": "Kusanagi no Tsurugi (草薙剣)",
+      "meaning": "Grass-Cutting Sword — found inside Yamata-no-Orochi by Susanoo, one of the Three Imperial Regalia",
+      "group": "Sacred Geometry",
+      "kanji": "草薙剣",
+      "deity": "Part of the Imperial Regalia, kept at Atsuta Shrine",
+      "element": "Metal/Fire",
+      "astronomical_identity": "The sword found inside the chaos serpent = Mars-Pluto trine. The warrior who descends into death and emerges with the weapon of truth.",
+      "star_chart": {
+        "geometry": "SERPENT_SWORD",
+        "angular_aspect": "trine",
+        "trigger_angle_deg": 120,
+        "tolerance_deg": 8,
+        "planet_pair": ["Mars", "Pluto"],
+        "sacred_ratio": 1.618
+      },
+      "trading_signal": { "bias": "BUY", "domain": "crypto_stocks", "strength": 0.82 }
+    },
+    {
+      "id": "jp_yata_mirror",
+      "name": "Yata no Kagami (八咫鏡)",
+      "meaning": "Eight-Span Mirror — used to lure Amaterasu from her cave, one of the Three Imperial Regalia",
+      "group": "Sacred Geometry",
+      "kanji": "八咫鏡",
+      "deity": "Part of the Imperial Regalia, kept at Ise Grand Shrine inner sanctum",
+      "element": "Fire/Metal",
+      "astronomical_identity": "The mirror that reflects the Sun goddess back to herself = Sun-Venus sextile, self-awareness through beauty, truth reflected.",
+      "star_chart": {
+        "geometry": "EIGHT_SPAN_MIRROR",
+        "angular_aspect": "sextile",
+        "trigger_angle_deg": 60,
+        "tolerance_deg": 6,
+        "planet_pair": ["Sun", "Venus"],
+        "sacred_ratio": 1.732
+      },
+      "trading_signal": { "bias": "BUY", "domain": "crypto_stocks", "strength": 0.78 }
+    },
+    {
+      "id": "jp_enso",
+      "name": "Ensō (円相)",
+      "meaning": "The Zen circle — drawn in a single brushstroke, represents enlightenment, the universe, the void",
+      "group": "Zen / Buddhist Astronomy",
+      "kanji": "円相",
+      "deity": "Mu (無) — the Void itself",
+      "element": "Void",
+      "astronomical_identity": "The perfect circle = the complete orbit. Neptune-Pluto sextile = the longest planetary cycle visible (492 years), the great wheel that turns behind all smaller wheels.",
+      "star_chart": {
+        "geometry": "ZEN_CIRCLE",
+        "angular_aspect": "sextile",
+        "trigger_angle_deg": 60,
+        "tolerance_deg": 10,
+        "planet_pair": ["Neptune", "Pluto"],
+        "sacred_ratio": 1.618
+      },
+      "trading_signal": { "bias": "HOLD", "domain": "crypto_stocks", "strength": 0.55 }
+    }
+  ]
+}

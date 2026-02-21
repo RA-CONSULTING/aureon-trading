@@ -1,0 +1,937 @@
+{
+  "title": "Egyptian Hieroglyphic Star-Chart Decoders",
+  "description": "The sacred writing of Kemet — each hieroglyph encodes a planetary geometric relationship. The same star-chart patterns that the Norse encoded as runes and the Celts as Ogham, the Egyptians painted on temple walls and carved into stone. Hieroglyphs are not just letters — they are astronomical diagrams. The gods ARE the planets, the myths ARE the orbital mechanics.",
+  "tradition": "Egyptian / Kemetic",
+  "total_glyphs": 36,
+  "system": "Planetary Neter (divine principles as celestial mechanics)",
+  "groups": [
+    {
+      "name": "Ennead of Heliopolis",
+      "description": "The 9 primordial Neteru — the creation story IS the solar system forming from the primordial waters of Nun (the cosmic void)"
+    },
+    {
+      "name": "Celestial Navigators",
+      "description": "Deities and symbols directly tied to astronomical observation and calendar keeping"
+    },
+    {
+      "name": "Sacred Geometry Glyphs",
+      "description": "Hieroglyphs encoding pure geometric relationships — the shapes themselves are star-chart overlays"
+    },
+    {
+      "name": "Duat Transformers",
+      "description": "The underworld journey of Ra — the Sun's path below the horizon, encoding planetary aspects invisible to the naked eye"
+    }
+  ],
+  "glyphs": [
+    {
+      "id": "ra",
+      "name": "Ra",
+      "unicode": "𓇳",
+      "group": "Ennead of Heliopolis",
+      "neter": "Sun God",
+      "meaning": "Solar sovereignty — the source, the center, the will that creates",
+      "astronomical_identity": "The Sun — center of all orbital relationships",
+      "element": "Fire",
+      "planet": "Sun",
+      "zodiac_home": "Leo",
+      "star_chart": {
+        "geometry": "CIRCLE_POINT",
+        "description": "The circle with a dot — the Sun hieroglyph IS the astronomical symbol for the Sun. Perfect unity, zero angular separation with self.",
+        "angular_aspect": "conjunction",
+        "trigger_angle_deg": 0,
+        "tolerance_deg": 5,
+        "planet_pair": ["Sun", "Mars"],
+        "sacred_ratio": 1.0
+      },
+      "trading_signal": {
+        "bias": "BUY",
+        "domain": "momentum",
+        "strength": 0.85
+      }
+    },
+    {
+      "id": "thoth",
+      "name": "Thoth",
+      "unicode": "𓅝",
+      "group": "Celestial Navigators",
+      "neter": "God of Wisdom, Writing, Moon",
+      "meaning": "Sacred knowledge — the scribe who records all cosmic cycles",
+      "astronomical_identity": "Mercury — swift messenger between worlds, also associated with the Moon as timekeeper",
+      "element": "Air",
+      "planet": "Mercury",
+      "zodiac_home": "Gemini",
+      "star_chart": {
+        "geometry": "IBIS_CRESCENT",
+        "description": "The ibis-headed god — Mercury's rapid orbit traces the ibis beak shape. Thoth invented writing BY encoding star positions.",
+        "angular_aspect": "sextile",
+        "trigger_angle_deg": 60,
+        "tolerance_deg": 7,
+        "planet_pair": ["Mercury", "Moon"],
+        "sacred_ratio": 1.618
+      },
+      "trading_signal": {
+        "bias": "BUY",
+        "domain": "information",
+        "strength": 0.70
+      }
+    },
+    {
+      "id": "isis",
+      "name": "Isis",
+      "unicode": "𓊨",
+      "group": "Ennead of Heliopolis",
+      "neter": "Goddess of Magic, Throne, Sirius",
+      "meaning": "The throne of heaven — she who reassembles what is scattered",
+      "astronomical_identity": "Sirius (Sopdet) — the brightest star, whose heliacal rising marked the Nile flood and the Egyptian New Year",
+      "element": "Water",
+      "planet": "Venus",
+      "zodiac_home": "Cancer",
+      "star_chart": {
+        "geometry": "THRONE_TRIANGLE",
+        "description": "The throne hieroglyph — a triangular seat of power. Venus and Jupiter in trine create the 'throne of abundance'. The Isis-Sirius alignment triggered the Nile inundation (market flood of liquidity).",
+        "angular_aspect": "trine",
+        "trigger_angle_deg": 120,
+        "tolerance_deg": 8,
+        "planet_pair": ["Venus", "Jupiter"],
+        "sacred_ratio": 1.618
+      },
+      "trading_signal": {
+        "bias": "BUY",
+        "domain": "abundance",
+        "strength": 0.88
+      }
+    },
+    {
+      "id": "osiris",
+      "name": "Osiris",
+      "unicode": "𓁹",
+      "group": "Ennead of Heliopolis",
+      "neter": "God of the Dead, Resurrection, Orion",
+      "meaning": "Death and rebirth — the eternal cycle, what falls must rise again",
+      "astronomical_identity": "Orion — Osiris IS Orion. His belt stars align with Giza. Saturn's cycle of destruction and renewal.",
+      "element": "Earth",
+      "planet": "Saturn",
+      "zodiac_home": "Capricorn",
+      "star_chart": {
+        "geometry": "DJED_PILLAR",
+        "description": "The Djed pillar — stability through time. Saturn-Pluto conjunction marks civilizational resets. Osiris dies (bear market) then resurrects (bull market).",
+        "angular_aspect": "conjunction",
+        "trigger_angle_deg": 0,
+        "tolerance_deg": 10,
+        "planet_pair": ["Saturn", "Pluto"],
+        "sacred_ratio": 2.618
+      },
+      "trading_signal": {
+        "bias": "HOLD",
+        "domain": "cycles",
+        "strength": 0.45
+      }
+    },
+    {
+      "id": "horus",
+      "name": "Horus",
+      "unicode": "𓅃",
+      "group": "Ennead of Heliopolis",
+      "neter": "Sky God, Falcon, Divine Kingship",
+      "meaning": "The all-seeing eye — clarity of vision, rightful order restored",
+      "astronomical_identity": "The Sun at its zenith — Mars at maximum elevation, the warrior-king planet",
+      "element": "Fire",
+      "planet": "Mars",
+      "zodiac_home": "Aries",
+      "star_chart": {
+        "geometry": "WEDJAT_EYE",
+        "description": "The Eye of Horus — each fraction (1/2, 1/4, 1/8, 1/16, 1/32, 1/64) corresponds to a planetary gear ratio. Mars-Sun sextile gives the falcon sharp sight for opportunity.",
+        "angular_aspect": "sextile",
+        "trigger_angle_deg": 60,
+        "tolerance_deg": 7,
+        "planet_pair": ["Mars", "Sun"],
+        "sacred_ratio": 1.0
+      },
+      "trading_signal": {
+        "bias": "BUY",
+        "domain": "aggression",
+        "strength": 0.80
+      }
+    },
+    {
+      "id": "set",
+      "name": "Set",
+      "unicode": "𓃩",
+      "group": "Ennead of Heliopolis",
+      "neter": "God of Chaos, Storms, Desert",
+      "meaning": "Necessary destruction — the chaos that clears the way for new order",
+      "astronomical_identity": "Mars in destructive aspect — the red desert, the angry planet",
+      "element": "Fire",
+      "planet": "Mars",
+      "zodiac_home": "Scorpio",
+      "star_chart": {
+        "geometry": "SET_ANIMAL",
+        "description": "The Set animal — unidentifiable beast of chaos. Mars-Uranus square creates sudden violent disruption. Set murdered Osiris (flash crash) but Horus eventually prevails (recovery).",
+        "angular_aspect": "square",
+        "trigger_angle_deg": 90,
+        "tolerance_deg": 7,
+        "planet_pair": ["Mars", "Uranus"],
+        "sacred_ratio": 1.414
+      },
+      "trading_signal": {
+        "bias": "SELL",
+        "domain": "chaos",
+        "strength": 0.20
+      }
+    },
+    {
+      "id": "nephthys",
+      "name": "Nephthys",
+      "unicode": "𓉡",
+      "group": "Ennead of Heliopolis",
+      "neter": "Goddess of Night, Mourning, Transition",
+      "meaning": "The hidden sister — what is unseen, support from the shadows",
+      "astronomical_identity": "Neptune — the hidden, the dissolved, the unseen depths",
+      "element": "Water",
+      "planet": "Neptune",
+      "zodiac_home": "Pisces",
+      "star_chart": {
+        "geometry": "HOUSE_BASKET",
+        "description": "The house atop a basket — Neptune-Moon opposition creates emotional tides, the hidden currents beneath the surface. Nephthys mourns what the market has lost.",
+        "angular_aspect": "opposition",
+        "trigger_angle_deg": 180,
+        "tolerance_deg": 8,
+        "planet_pair": ["Neptune", "Moon"],
+        "sacred_ratio": 2.0
+      },
+      "trading_signal": {
+        "bias": "HOLD",
+        "domain": "hidden_currents",
+        "strength": 0.40
+      }
+    },
+    {
+      "id": "geb",
+      "name": "Geb",
+      "unicode": "𓅬",
+      "group": "Ennead of Heliopolis",
+      "neter": "Earth God",
+      "meaning": "The solid ground — material reality, what can be measured and held",
+      "astronomical_identity": "Earth itself — the observer's reference frame",
+      "element": "Earth",
+      "planet": "Saturn",
+      "zodiac_home": "Virgo",
+      "star_chart": {
+        "geometry": "RECLINING_EARTH",
+        "description": "Geb lies beneath Nut (the sky). Saturn-Jupiter trine — the 'Great Benefic' meets the 'Great Malefic' in harmony. Solid foundations for building wealth.",
+        "angular_aspect": "trine",
+        "trigger_angle_deg": 120,
+        "tolerance_deg": 8,
+        "planet_pair": ["Saturn", "Jupiter"],
+        "sacred_ratio": 1.618
+      },
+      "trading_signal": {
+        "bias": "BUY",
+        "domain": "foundation",
+        "strength": 0.72
+      }
+    },
+    {
+      "id": "nut",
+      "name": "Nut",
+      "unicode": "𓇯",
+      "group": "Ennead of Heliopolis",
+      "neter": "Sky Goddess",
+      "meaning": "The vault of heaven — she swallows the Sun each night and births it each morning",
+      "astronomical_identity": "The ecliptic plane itself — the path all planets travel",
+      "element": "Air",
+      "planet": "Uranus",
+      "zodiac_home": "Aquarius",
+      "star_chart": {
+        "geometry": "ARCHED_SKY",
+        "description": "Nut arches over Geb — the sky dome IS the ecliptic. Uranus-Neptune sextile opens the vault, revealing hidden patterns. Innovation meets intuition.",
+        "angular_aspect": "sextile",
+        "trigger_angle_deg": 60,
+        "tolerance_deg": 8,
+        "planet_pair": ["Uranus", "Neptune"],
+        "sacred_ratio": 3.14159
+      },
+      "trading_signal": {
+        "bias": "BUY",
+        "domain": "innovation",
+        "strength": 0.68
+      }
+    },
+    {
+      "id": "anubis",
+      "name": "Anubis",
+      "unicode": "𓃣",
+      "group": "Duat Transformers",
+      "neter": "Guardian of the Dead, Weighing of the Heart",
+      "meaning": "Judgment — the precise measurement that determines worthiness",
+      "astronomical_identity": "Pluto — the underworld ruler, transformation through death",
+      "element": "Earth",
+      "planet": "Pluto",
+      "zodiac_home": "Scorpio",
+      "star_chart": {
+        "geometry": "JACKAL_SCALES",
+        "description": "Anubis weighs the heart against Ma'at's feather. Pluto-Venus square — brutal honest assessment of value. What is your position truly worth?",
+        "angular_aspect": "square",
+        "trigger_angle_deg": 90,
+        "tolerance_deg": 8,
+        "planet_pair": ["Pluto", "Venus"],
+        "sacred_ratio": 1.414
+      },
+      "trading_signal": {
+        "bias": "SELL",
+        "domain": "judgment",
+        "strength": 0.25
+      }
+    },
+    {
+      "id": "maat",
+      "name": "Ma'at",
+      "unicode": "𓁦",
+      "group": "Celestial Navigators",
+      "neter": "Goddess of Truth, Order, Cosmic Balance",
+      "meaning": "Perfect balance — the feather of truth against which all is weighed",
+      "astronomical_identity": "The equilibrium point — Libra, the scales, Venus in balance",
+      "element": "Air",
+      "planet": "Venus",
+      "zodiac_home": "Libra",
+      "star_chart": {
+        "geometry": "FEATHER_BALANCE",
+        "description": "Ma'at's feather — Venus-Saturn sextile creates the balance between desire and discipline. When the market is in Ma'at, fair value prevails.",
+        "angular_aspect": "sextile",
+        "trigger_angle_deg": 60,
+        "tolerance_deg": 7,
+        "planet_pair": ["Venus", "Saturn"],
+        "sacred_ratio": 1.618
+      },
+      "trading_signal": {
+        "bias": "HOLD",
+        "domain": "equilibrium",
+        "strength": 0.55
+      }
+    },
+    {
+      "id": "hathor",
+      "name": "Hathor",
+      "unicode": "𓉢",
+      "group": "Celestial Navigators",
+      "neter": "Goddess of Love, Music, Joy, Fertility",
+      "meaning": "Abundance and joy — the golden cow who nourishes all life",
+      "astronomical_identity": "Venus at maximum brightness — the Evening Star in full glory",
+      "element": "Water",
+      "planet": "Venus",
+      "zodiac_home": "Taurus",
+      "star_chart": {
+        "geometry": "COW_HORNS_DISK",
+        "description": "The cow horns cradling the Sun disk — Venus-Sun conjunction. Maximum beauty, maximum abundance. Hathor IS Venus, her horns trace the planet's apparent retrograde loop.",
+        "angular_aspect": "conjunction",
+        "trigger_angle_deg": 0,
+        "tolerance_deg": 8,
+        "planet_pair": ["Venus", "Sun"],
+        "sacred_ratio": 1.618
+      },
+      "trading_signal": {
+        "bias": "BUY",
+        "domain": "abundance",
+        "strength": 0.82
+      }
+    },
+    {
+      "id": "sekhmet",
+      "name": "Sekhmet",
+      "unicode": "𓁐",
+      "group": "Duat Transformers",
+      "neter": "Lion-headed Goddess of War and Healing",
+      "meaning": "Destructive force that also heals — the fever that burns out infection",
+      "astronomical_identity": "Mars at perihelion — closest approach, maximum intensity, the lioness hunts",
+      "element": "Fire",
+      "planet": "Mars",
+      "zodiac_home": "Leo",
+      "star_chart": {
+        "geometry": "LION_SUN_DISK",
+        "description": "The lioness with Sun disk — Mars-Jupiter opposition. Overextension leads to correction. Sekhmet nearly destroyed humanity before Ra stopped her with beer (liquidity flood).",
+        "angular_aspect": "opposition",
+        "trigger_angle_deg": 180,
+        "tolerance_deg": 8,
+        "planet_pair": ["Mars", "Jupiter"],
+        "sacred_ratio": 1.0
+      },
+      "trading_signal": {
+        "bias": "SELL",
+        "domain": "overextension",
+        "strength": 0.30
+      }
+    },
+    {
+      "id": "ptah",
+      "name": "Ptah",
+      "unicode": "𓁰",
+      "group": "Sacred Geometry Glyphs",
+      "neter": "Creator God, Divine Architect",
+      "meaning": "Creation through speech and thought — the architect who builds reality from concept",
+      "astronomical_identity": "Mercury-Saturn — the mind (Mercury) given form (Saturn). The divine blueprint.",
+      "element": "Earth",
+      "planet": "Mercury",
+      "zodiac_home": "Capricorn",
+      "star_chart": {
+        "geometry": "MASON_PILLAR",
+        "description": "Ptah stands wrapped in a tight shroud holding the was-djed-ankh scepter. Mercury-Saturn trine — careful planning crystallized into structure. Build your position with precision.",
+        "angular_aspect": "trine",
+        "trigger_angle_deg": 120,
+        "tolerance_deg": 7,
+        "planet_pair": ["Mercury", "Saturn"],
+        "sacred_ratio": 2.618
+      },
+      "trading_signal": {
+        "bias": "BUY",
+        "domain": "architecture",
+        "strength": 0.73
+      }
+    },
+    {
+      "id": "khepri",
+      "name": "Khepri",
+      "unicode": "𓆣",
+      "group": "Celestial Navigators",
+      "neter": "Scarab God, Dawn Sun",
+      "meaning": "Self-creation — the Sun at dawn, born anew each morning from nothing",
+      "astronomical_identity": "The Sun at 0° Aries — vernal equinox, the beginning of a new cycle",
+      "element": "Fire",
+      "planet": "Sun",
+      "zodiac_home": "Aries",
+      "star_chart": {
+        "geometry": "SCARAB_SPHERE",
+        "description": "The scarab rolling the Sun disk — Sun-Mercury conjunction at dawn. New information (Mercury) illuminated by new energy (Sun). Fresh cycle begins.",
+        "angular_aspect": "conjunction",
+        "trigger_angle_deg": 0,
+        "tolerance_deg": 8,
+        "planet_pair": ["Sun", "Mercury"],
+        "sacred_ratio": 1.0
+      },
+      "trading_signal": {
+        "bias": "BUY",
+        "domain": "new_cycle",
+        "strength": 0.78
+      }
+    },
+    {
+      "id": "sobek",
+      "name": "Sobek",
+      "unicode": "𓆋",
+      "group": "Duat Transformers",
+      "neter": "Crocodile God, Primal Power",
+      "meaning": "Patient predator — wait still, then strike with overwhelming force",
+      "astronomical_identity": "Pluto — the patient predator who waits decades before striking",
+      "element": "Water",
+      "planet": "Pluto",
+      "zodiac_home": "Scorpio",
+      "star_chart": {
+        "geometry": "CROCODILE_JAW",
+        "description": "The crocodile lies still in the Nile waters. Pluto-Mars trine — hidden power perfectly timed. When Sobek strikes, there is no escape. Wait for the setup, then execute.",
+        "angular_aspect": "trine",
+        "trigger_angle_deg": 120,
+        "tolerance_deg": 8,
+        "planet_pair": ["Pluto", "Mars"],
+        "sacred_ratio": 1.618
+      },
+      "trading_signal": {
+        "bias": "BUY",
+        "domain": "patience",
+        "strength": 0.82
+      }
+    },
+    {
+      "id": "bastet",
+      "name": "Bastet",
+      "unicode": "𓁢",
+      "group": "Celestial Navigators",
+      "neter": "Cat Goddess, Protection, Pleasure",
+      "meaning": "Gentle protection — the guardian who purrs, not roars",
+      "astronomical_identity": "Moon in Cancer — nurturing, protective, home",
+      "element": "Water",
+      "planet": "Moon",
+      "zodiac_home": "Cancer",
+      "star_chart": {
+        "geometry": "CAT_CRESCENT",
+        "description": "The cat sits in the crescent Moon. Moon-Venus trine — emotional harmony with value. A protected, comfortable position. Bastet guards what you have.",
+        "angular_aspect": "trine",
+        "trigger_angle_deg": 120,
+        "tolerance_deg": 8,
+        "planet_pair": ["Moon", "Venus"],
+        "sacred_ratio": 1.618
+      },
+      "trading_signal": {
+        "bias": "HOLD",
+        "domain": "protection",
+        "strength": 0.62
+      }
+    },
+    {
+      "id": "wadjet",
+      "name": "Wadjet",
+      "unicode": "𓆗",
+      "group": "Sacred Geometry Glyphs",
+      "neter": "Cobra Goddess, Eye of Ra, Uraeus",
+      "meaning": "Vigilant protection — the cobra that strikes before the threat arrives",
+      "astronomical_identity": "Sun-Pluto — the will to survive, protective destruction of threats",
+      "element": "Fire",
+      "planet": "Sun",
+      "zodiac_home": "Scorpio",
+      "star_chart": {
+        "geometry": "COBRA_SPIRAL",
+        "description": "The rearing cobra — a logarithmic spiral matching the golden ratio. Sun-Pluto sextile — transformative power channeled constructively. Destroy the bad position, keep the good.",
+        "angular_aspect": "sextile",
+        "trigger_angle_deg": 60,
+        "tolerance_deg": 7,
+        "planet_pair": ["Sun", "Pluto"],
+        "sacred_ratio": 1.618
+      },
+      "trading_signal": {
+        "bias": "BUY",
+        "domain": "defense",
+        "strength": 0.72
+      }
+    },
+    {
+      "id": "ankh",
+      "name": "Ankh",
+      "unicode": "𓋹",
+      "group": "Sacred Geometry Glyphs",
+      "neter": "Key of Life",
+      "meaning": "Eternal life — the union of opposites that creates perpetual motion",
+      "astronomical_identity": "Venus orbit pentagram — Venus traces a 5-petaled rose (pentagram) around the Sun every 8 years",
+      "element": "Spirit",
+      "planet": "Venus",
+      "zodiac_home": "Libra",
+      "star_chart": {
+        "geometry": "LOOP_CROSS",
+        "description": "The ankh IS the Venus pentagram: the loop is her orbit, the cross is the ecliptic axes. Venus-Mars quintile (72°) — the sacred 5-fold geometry of life itself.",
+        "angular_aspect": "quintile",
+        "trigger_angle_deg": 72,
+        "tolerance_deg": 6,
+        "planet_pair": ["Venus", "Mars"],
+        "sacred_ratio": 1.618
+      },
+      "trading_signal": {
+        "bias": "BUY",
+        "domain": "vitality",
+        "strength": 0.80
+      }
+    },
+    {
+      "id": "djed",
+      "name": "Djed Pillar",
+      "unicode": "𓊽",
+      "group": "Sacred Geometry Glyphs",
+      "neter": "Backbone of Osiris, Stability",
+      "meaning": "Unshakeable stability — the spine that holds everything upright",
+      "astronomical_identity": "Saturn at station — when Saturn appears to stop in the sky (retrograde station)",
+      "element": "Earth",
+      "planet": "Saturn",
+      "zodiac_home": "Aquarius",
+      "star_chart": {
+        "geometry": "STACKED_VERTEBRAE",
+        "description": "The djed pillar — four stacked horizontal bars on a vertical axis. Saturn-Sun square — structure tested by will. If the djed stands, the position is stable.",
+        "angular_aspect": "square",
+        "trigger_angle_deg": 90,
+        "tolerance_deg": 8,
+        "planet_pair": ["Saturn", "Sun"],
+        "sacred_ratio": 1.0
+      },
+      "trading_signal": {
+        "bias": "HOLD",
+        "domain": "stability",
+        "strength": 0.50
+      }
+    },
+    {
+      "id": "was",
+      "name": "Was Scepter",
+      "unicode": "𓌀",
+      "group": "Sacred Geometry Glyphs",
+      "neter": "Power, Dominion",
+      "meaning": "Authority and power — the staff of command over reality",
+      "astronomical_identity": "Jupiter — the great king, authority, expansion of dominion",
+      "element": "Fire",
+      "planet": "Jupiter",
+      "zodiac_home": "Sagittarius",
+      "star_chart": {
+        "geometry": "FORKED_STAFF",
+        "description": "The was scepter — forked bottom, Set-animal head. Jupiter-Sun trine — powerful leadership energy. The king holds the scepter, the market follows.",
+        "angular_aspect": "trine",
+        "trigger_angle_deg": 120,
+        "tolerance_deg": 8,
+        "planet_pair": ["Jupiter", "Sun"],
+        "sacred_ratio": 1.618
+      },
+      "trading_signal": {
+        "bias": "BUY",
+        "domain": "authority",
+        "strength": 0.78
+      }
+    },
+    {
+      "id": "scarab_wings",
+      "name": "Winged Scarab",
+      "unicode": "𓆤",
+      "group": "Celestial Navigators",
+      "neter": "Resurrection, Solar Flight",
+      "meaning": "Transcendence — rising above the material into the celestial",
+      "astronomical_identity": "Sun-Jupiter conjunction — maximum solar expansion, the king planet meets the king star",
+      "element": "Fire",
+      "planet": "Jupiter",
+      "zodiac_home": "Leo",
+      "star_chart": {
+        "geometry": "WINGED_DISK",
+        "description": "The winged Sun disk — wings spread across the sky. Sun-Jupiter conjunction — maximum expansion energy. Bull market initiation signal.",
+        "angular_aspect": "conjunction",
+        "trigger_angle_deg": 0,
+        "tolerance_deg": 8,
+        "planet_pair": ["Sun", "Jupiter"],
+        "sacred_ratio": 1.618
+      },
+      "trading_signal": {
+        "bias": "BUY",
+        "domain": "expansion",
+        "strength": 0.90
+      }
+    },
+    {
+      "id": "shen",
+      "name": "Shen Ring",
+      "unicode": "𓍶",
+      "group": "Sacred Geometry Glyphs",
+      "neter": "Eternity, Protection, Infinity",
+      "meaning": "The eternal circle — no beginning, no end, infinite protection",
+      "astronomical_identity": "The orbital ring itself — any planet completing a full cycle returns to its origin",
+      "element": "Spirit",
+      "planet": "Saturn",
+      "zodiac_home": "Capricorn",
+      "star_chart": {
+        "geometry": "KNOTTED_CIRCLE",
+        "description": "The shen ring — a circle with a bar. Saturn-Saturn return (every 29.5 years). Market mega-cycles. When the ring closes, the cycle completes.",
+        "angular_aspect": "conjunction",
+        "trigger_angle_deg": 0,
+        "tolerance_deg": 6,
+        "planet_pair": ["Saturn", "Neptune"],
+        "sacred_ratio": 3.14159
+      },
+      "trading_signal": {
+        "bias": "HOLD",
+        "domain": "mega_cycles",
+        "strength": 0.50
+      }
+    },
+    {
+      "id": "tyet",
+      "name": "Tyet (Isis Knot)",
+      "unicode": "𓋾",
+      "group": "Sacred Geometry Glyphs",
+      "neter": "Knot of Isis, Blood of Isis",
+      "meaning": "Binding and healing — the knot that holds reality together",
+      "astronomical_identity": "Venus-Neptune — the binding of love and transcendence",
+      "element": "Water",
+      "planet": "Venus",
+      "zodiac_home": "Pisces",
+      "star_chart": {
+        "geometry": "FOLDED_KNOT",
+        "description": "The Tyet knot — like an ankh with arms folded down. Venus-Neptune conjunction — idealized value, what SHOULD be worth something. Be careful: beauty can deceive.",
+        "angular_aspect": "conjunction",
+        "trigger_angle_deg": 0,
+        "tolerance_deg": 7,
+        "planet_pair": ["Venus", "Neptune"],
+        "sacred_ratio": 1.618
+      },
+      "trading_signal": {
+        "bias": "HOLD",
+        "domain": "illusion",
+        "strength": 0.45
+      }
+    },
+    {
+      "id": "menat",
+      "name": "Menat",
+      "unicode": "𓋥",
+      "group": "Celestial Navigators",
+      "neter": "Hathor's Counterpoise, Musical Instrument",
+      "meaning": "Harmonic resonance — the sound that heals and aligns",
+      "astronomical_identity": "Venus-Mercury sextile — the harmonic ratio between beauty and communication",
+      "element": "Air",
+      "planet": "Venus",
+      "zodiac_home": "Taurus",
+      "star_chart": {
+        "geometry": "BEADED_NECKLACE",
+        "description": "The menat necklace — beads in harmonic intervals. Venus-Mercury sextile creates the musical ratio. When these planets speak, the market hums.",
+        "angular_aspect": "sextile",
+        "trigger_angle_deg": 60,
+        "tolerance_deg": 7,
+        "planet_pair": ["Venus", "Mercury"],
+        "sacred_ratio": 1.618
+      },
+      "trading_signal": {
+        "bias": "BUY",
+        "domain": "harmony",
+        "strength": 0.68
+      }
+    },
+    {
+      "id": "wedjat",
+      "name": "Eye of Horus",
+      "unicode": "𓂀",
+      "group": "Sacred Geometry Glyphs",
+      "neter": "Restored Eye, Wholeness",
+      "meaning": "Fractional wholeness — the six parts that reconstitute into one",
+      "astronomical_identity": "The 6 fractions: 1/2=smell(Sun), 1/4=sight(Moon), 1/8=thought(Mercury), 1/16=hearing(Venus), 1/32=taste(Mars), 1/64=touch(Jupiter)",
+      "element": "Spirit",
+      "planet": "Moon",
+      "zodiac_home": "Cancer",
+      "star_chart": {
+        "geometry": "FRACTIONAL_EYE",
+        "description": "Each piece of the Eye of Horus is a binary fraction — together they sum to 63/64, never quite reaching 1. The missing 1/64 is supplied by Thoth (Mercury). Moon-Mercury opposition — the mind illuminates what the eye cannot see alone.",
+        "angular_aspect": "opposition",
+        "trigger_angle_deg": 180,
+        "tolerance_deg": 8,
+        "planet_pair": ["Moon", "Mercury"],
+        "sacred_ratio": 0.984375
+      },
+      "trading_signal": {
+        "bias": "HOLD",
+        "domain": "analysis",
+        "strength": 0.55
+      }
+    },
+    {
+      "id": "benben",
+      "name": "Benben Stone",
+      "unicode": "𓊤",
+      "group": "Sacred Geometry Glyphs",
+      "neter": "Primordial Mound, Pyramid Capstone",
+      "meaning": "The first point of creation — where chaos condensed into matter",
+      "astronomical_identity": "The apex — all planetary lines converge at the pyramidion. Grand conjunction.",
+      "element": "Earth",
+      "planet": "Jupiter",
+      "zodiac_home": "Capricorn",
+      "star_chart": {
+        "geometry": "PYRAMIDION",
+        "description": "The benben stone sits atop the pyramid. Jupiter-Saturn conjunction — the Great Conjunction that resets 20-year economic cycles. The capstone crowns the structure.",
+        "angular_aspect": "conjunction",
+        "trigger_angle_deg": 0,
+        "tolerance_deg": 8,
+        "planet_pair": ["Jupiter", "Saturn"],
+        "sacred_ratio": 1.618
+      },
+      "trading_signal": {
+        "bias": "BUY",
+        "domain": "new_era",
+        "strength": 0.85
+      }
+    },
+    {
+      "id": "aten",
+      "name": "Aten",
+      "unicode": "𓇼",
+      "group": "Celestial Navigators",
+      "neter": "Sun Disk with Rays",
+      "meaning": "Direct divine light — unmediated truth radiating outward",
+      "astronomical_identity": "The Sun in conjunction with a personal planet — direct illumination of that planet's domain",
+      "element": "Fire",
+      "planet": "Sun",
+      "zodiac_home": "Leo",
+      "star_chart": {
+        "geometry": "RAYED_DISK",
+        "description": "The Aten disk — Sun with rays ending in hands. Sun-Venus conjunction — direct illumination of value. Akhenaten saw only ONE truth. When Aten blazes, the signal is unambiguous.",
+        "angular_aspect": "conjunction",
+        "trigger_angle_deg": 0,
+        "tolerance_deg": 6,
+        "planet_pair": ["Sun", "Venus"],
+        "sacred_ratio": 1.0
+      },
+      "trading_signal": {
+        "bias": "BUY",
+        "domain": "clarity",
+        "strength": 0.83
+      }
+    },
+    {
+      "id": "ammit",
+      "name": "Ammit",
+      "unicode": "𓃢",
+      "group": "Duat Transformers",
+      "neter": "Devourer of Souls",
+      "meaning": "Total loss — the position that should never have been taken",
+      "astronomical_identity": "Pluto-Uranus square — the wrecking ball of civilization",
+      "element": "Fire",
+      "planet": "Pluto",
+      "zodiac_home": "Scorpio",
+      "star_chart": {
+        "geometry": "CHIMERA_JAW",
+        "description": "Crocodile head + lion body + hippo rear — three destructive forces. Pluto-Uranus square — revolution, upheaval, the old order devoured. Ammit eats the unworthy heart (bad trade).",
+        "angular_aspect": "square",
+        "trigger_angle_deg": 90,
+        "tolerance_deg": 8,
+        "planet_pair": ["Pluto", "Uranus"],
+        "sacred_ratio": 1.414
+      },
+      "trading_signal": {
+        "bias": "SELL",
+        "domain": "destruction",
+        "strength": 0.15
+      }
+    },
+    {
+      "id": "nile_flood",
+      "name": "Nile Flood Glyph",
+      "unicode": "𓈗",
+      "group": "Celestial Navigators",
+      "neter": "Hapi, Inundation",
+      "meaning": "Seasonal abundance — the flood that fertilizes all fields",
+      "astronomical_identity": "Sirius heliacal rising aligned with Sun — when Sirius appears at dawn, the Nile floods",
+      "element": "Water",
+      "planet": "Jupiter",
+      "zodiac_home": "Cancer",
+      "star_chart": {
+        "geometry": "TRIPLE_WAVE",
+        "description": "Three wavy lines — the Nile flood hieroglyph. Jupiter-Moon trine — expansion of emotional energy, flood of liquidity. When the Nile rises, ALL fields prosper.",
+        "angular_aspect": "trine",
+        "trigger_angle_deg": 120,
+        "tolerance_deg": 8,
+        "planet_pair": ["Jupiter", "Moon"],
+        "sacred_ratio": 1.618
+      },
+      "trading_signal": {
+        "bias": "BUY",
+        "domain": "liquidity",
+        "strength": 0.80
+      }
+    },
+    {
+      "id": "uraeus",
+      "name": "Uraeus",
+      "unicode": "𓆙",
+      "group": "Duat Transformers",
+      "neter": "Royal Serpent, Kundalini",
+      "meaning": "Awakened power — the serpent rises through the spine of consciousness",
+      "astronomical_identity": "Mars-Pluto — raw power channeled through transformation",
+      "element": "Fire",
+      "planet": "Mars",
+      "zodiac_home": "Scorpio",
+      "star_chart": {
+        "geometry": "RISING_SERPENT",
+        "description": "The cobra rearing on the pharaoh's crown. Mars-Pluto conjunction — absolute power, total transformation. The serpent energy rises. Extreme signal — handle with precision.",
+        "angular_aspect": "conjunction",
+        "trigger_angle_deg": 0,
+        "tolerance_deg": 6,
+        "planet_pair": ["Mars", "Pluto"],
+        "sacred_ratio": 1.618
+      },
+      "trading_signal": {
+        "bias": "BUY",
+        "domain": "power",
+        "strength": 0.85
+      }
+    },
+    {
+      "id": "boat_of_ra",
+      "name": "Solar Barque",
+      "unicode": "𓊞",
+      "group": "Duat Transformers",
+      "neter": "Boat of Millions of Years",
+      "meaning": "The journey through darkness back to light — the Sun's nightly voyage through the underworld",
+      "astronomical_identity": "Sun below horizon — the transit through the Duat (unseen sky)",
+      "element": "Water",
+      "planet": "Sun",
+      "zodiac_home": "Pisces",
+      "star_chart": {
+        "geometry": "CRESCENT_HULL",
+        "description": "The solar barque — a crescent-shaped boat carrying Ra through the night sky. Sun-Neptune square — will obscured by illusion. Navigate carefully through uncertain waters.",
+        "angular_aspect": "square",
+        "trigger_angle_deg": 90,
+        "tolerance_deg": 7,
+        "planet_pair": ["Sun", "Neptune"],
+        "sacred_ratio": 2.0
+      },
+      "trading_signal": {
+        "bias": "HOLD",
+        "domain": "uncertainty",
+        "strength": 0.40
+      }
+    },
+    {
+      "id": "cartouche",
+      "name": "Cartouche",
+      "unicode": "𓍷",
+      "group": "Sacred Geometry Glyphs",
+      "neter": "Royal Name Ring",
+      "meaning": "Identity and protection — the oval that encircles and preserves the royal name",
+      "astronomical_identity": "The orbital ellipse — every planet's path is a cartouche around the Sun",
+      "element": "Spirit",
+      "planet": "Sun",
+      "zodiac_home": "Leo",
+      "star_chart": {
+        "geometry": "ELONGATED_SHEN",
+        "description": "The cartouche is an elongated shen ring — the elliptical orbit. Sun-Moon sextile — identity (Sun) illuminated by reflection (Moon). Know thyself, know thy position.",
+        "angular_aspect": "sextile",
+        "trigger_angle_deg": 60,
+        "tolerance_deg": 7,
+        "planet_pair": ["Sun", "Moon"],
+        "sacred_ratio": 1.618
+      },
+      "trading_signal": {
+        "bias": "BUY",
+        "domain": "identity",
+        "strength": 0.65
+      }
+    },
+    {
+      "id": "sekhem",
+      "name": "Sekhem Scepter",
+      "unicode": "𓌂",
+      "group": "Duat Transformers",
+      "neter": "Power Scepter",
+      "meaning": "Concentrated force — the ability to command matter through will",
+      "astronomical_identity": "Mars-Mercury — the warrior's mind, speed and precision combined",
+      "element": "Fire",
+      "planet": "Mars",
+      "zodiac_home": "Aries",
+      "star_chart": {
+        "geometry": "CHANNELED_BLADE",
+        "description": "The sekhem scepter — a flat blade on a handle. Mars-Mercury trine — aggressive action guided by intelligence. The sniper's precision.",
+        "angular_aspect": "trine",
+        "trigger_angle_deg": 120,
+        "tolerance_deg": 7,
+        "planet_pair": ["Mars", "Mercury"],
+        "sacred_ratio": 1.0
+      },
+      "trading_signal": {
+        "bias": "BUY",
+        "domain": "precision",
+        "strength": 0.76
+      }
+    },
+    {
+      "id": "apep",
+      "name": "Apep (Apophis)",
+      "unicode": "𓆕",
+      "group": "Duat Transformers",
+      "neter": "Chaos Serpent, Enemy of Ra",
+      "meaning": "The primordial enemy — chaos that must be defeated each night for dawn to come",
+      "astronomical_identity": "Saturn-Uranus — the tension between old order and revolution",
+      "element": "Earth",
+      "planet": "Saturn",
+      "zodiac_home": "Aquarius",
+      "star_chart": {
+        "geometry": "COILED_SERPENT",
+        "description": "The great serpent who tries to swallow the Sun each night. Saturn-Uranus square — old structures violently disrupted. Apep must be defeated, but the battle is costly.",
+        "angular_aspect": "square",
+        "trigger_angle_deg": 90,
+        "tolerance_deg": 8,
+        "planet_pair": ["Saturn", "Uranus"],
+        "sacred_ratio": 1.414
+      },
+      "trading_signal": {
+        "bias": "SELL",
+        "domain": "disruption",
+        "strength": 0.22
+      }
+    }
+  ]
+}

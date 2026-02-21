@@ -1,0 +1,608 @@
+{
+  "title": "Sacred Site Planetary Nodes — Earth's Star-Chart Anchors",
+  "description": "Every sacred site on Earth is a planetary node — a physical point where ancient builders anchored star-chart geometry into stone. Giza mirrors Orion's Belt. Stonehenge tracks lunisolar cycles. The Shimna River flows on a ley line. These are NOT coincidences — they are the same pattern repeated by every civilization because they were ALL reading the SAME sky. The runes, the hieroglyphs, the ogham, and the stone circles are ONE unified system of planetary geometry decoded by different cultures in different languages but describing identical celestial mechanics.",
+  "total_nodes": 24,
+  "principle": "As above, so below — the sky map IS the earth map. Sacred sites are ground-truth calibration points for the planetary decoder.",
+  "nodes": [
+    {
+      "id": "giza",
+      "name": "Great Pyramid of Giza",
+      "location": {"lat": 29.9792, "lon": 31.1342, "country": "Egypt"},
+      "builder_tradition": "Egyptian",
+      "astronomical_alignment": "Orion's Belt (Alnitak, Alnilam, Mintaka) — the three pyramids mirror the three belt stars. The descending passage points to Thuban (former pole star). Air shafts target Sirius and Orion.",
+      "primary_celestial_target": "Orion (Osiris) + Sirius (Isis)",
+      "planet_resonance": ["Saturn", "Jupiter"],
+      "geometry": "SQUARE_BASE_PYRAMID",
+      "sacred_angle_deg": 51.843,
+      "sacred_ratio": 1.618,
+      "description": "Base perimeter / height = 2π. Height² = face area. The pyramid IS phi and pi in stone. Saturn (structure) meets Jupiter (expansion) — the Great Conjunction. Giza is the ground-truth anchor for all planetary geometry.",
+      "star_chart_aspect": {
+        "angular_aspect": "conjunction",
+        "trigger_angle_deg": 0,
+        "tolerance_deg": 8,
+        "planet_pair": ["Jupiter", "Saturn"],
+        "activation_meaning": "The Great Conjunction — civilizational reset. When Jupiter meets Saturn, Giza's node activates. New 20-year economic cycle begins."
+      },
+      "trading_signal": {
+        "bias": "BUY",
+        "domain": "new_era",
+        "strength": 0.90
+      }
+    },
+    {
+      "id": "stonehenge",
+      "name": "Stonehenge",
+      "location": {"lat": 51.1789, "lon": -1.8262, "country": "England"},
+      "builder_tradition": "Celtic / Neolithic British",
+      "astronomical_alignment": "Summer solstice sunrise along the Avenue. Winter solstice sunset through the Great Trilithon. Aubrey Holes track the 18.6-year lunar nodal cycle (56 holes ≈ 3 × 18.6).",
+      "primary_celestial_target": "Sun (solstices) + Moon (nodal cycle)",
+      "planet_resonance": ["Sun", "Moon"],
+      "geometry": "CONCENTRIC_CIRCLES",
+      "sacred_angle_deg": 23.44,
+      "sacred_ratio": 3.14159,
+      "description": "The ultimate lunisolar computer. The Sarsen circle (30 stones × 12° = 360°) IS the ecliptic. The 56 Aubrey Holes predict eclipses. Stonehenge reads the Sun-Moon dance.",
+      "star_chart_aspect": {
+        "angular_aspect": "opposition",
+        "trigger_angle_deg": 180,
+        "tolerance_deg": 8,
+        "planet_pair": ["Sun", "Moon"],
+        "activation_meaning": "Full Moon / lunar eclipse — Sun and Moon in opposition. Stonehenge's primary function. Maximum illumination of hidden truths."
+      },
+      "trading_signal": {
+        "bias": "HOLD",
+        "domain": "cycles",
+        "strength": 0.55
+      }
+    },
+    {
+      "id": "shimna_river",
+      "name": "Shimna River & Tollymore",
+      "location": {"lat": 54.2167, "lon": -5.9333, "country": "Northern Ireland"},
+      "builder_tradition": "Celtic / Gaelic",
+      "astronomical_alignment": "The Shimna flows from the Mourne Mountains (granite = quartz piezoelectric) along a ley line connecting to Slieve Donard summit cairn. The river's meandering ratio approaches phi (1.618). Ancient stone circles in Tollymore Forest align to lunar standstill azimuths.",
+      "primary_celestial_target": "Moon (lunar standstill) + Venus (evening star over Mourne)",
+      "planet_resonance": ["Moon", "Venus"],
+      "geometry": "MEANDERING_PHI_SPIRAL",
+      "sacred_angle_deg": 137.5,
+      "sacred_ratio": 1.618,
+      "description": "The Shimna IS a phi spiral in water — its meander ratio is the golden angle (137.5°). Quartz-bearing granite in the Mournes generates piezoelectric charge during tectonic stress. The river is a natural frequency antenna. Moon-Venus trine along the Shimna = emotional harmony with value.",
+      "star_chart_aspect": {
+        "angular_aspect": "trine",
+        "trigger_angle_deg": 120,
+        "tolerance_deg": 8,
+        "planet_pair": ["Moon", "Venus"],
+        "activation_meaning": "Emotional alignment with true value. The Shimna sings when Moon and Venus harmonize. Trust what you feel."
+      },
+      "trading_signal": {
+        "bias": "BUY",
+        "domain": "intuition",
+        "strength": 0.75
+      }
+    },
+    {
+      "id": "newgrange",
+      "name": "Newgrange (Sí an Bhrú)",
+      "location": {"lat": 53.6947, "lon": -6.4755, "country": "Ireland"},
+      "builder_tradition": "Neolithic Irish (older than Giza by 500 years)",
+      "astronomical_alignment": "The roof box allows sunlight to penetrate the 19m passage ONLY at winter solstice sunrise (Dec 19-23). The triple spiral carved inside may represent the 3-body Sun-Earth-Moon system.",
+      "primary_celestial_target": "Sun (winter solstice — the rebirth of light)",
+      "planet_resonance": ["Sun", "Saturn"],
+      "geometry": "PASSAGE_MOUND",
+      "sacred_angle_deg": 23.44,
+      "sacred_ratio": 2.618,
+      "description": "5,000 years old — older than the pyramids. The passage is a solar cannon that fires ONE shaft of light per year at the darkest moment. Sun-Saturn opposition — the test of endurance. After the longest night, the Sun returns.",
+      "star_chart_aspect": {
+        "angular_aspect": "opposition",
+        "trigger_angle_deg": 180,
+        "tolerance_deg": 8,
+        "planet_pair": ["Sun", "Saturn"],
+        "activation_meaning": "The darkest hour before dawn. Maximum contraction precedes expansion. The winter solstice trade — buy at maximum fear."
+      },
+      "trading_signal": {
+        "bias": "BUY",
+        "domain": "reversal",
+        "strength": 0.82
+      }
+    },
+    {
+      "id": "gobekli_tepe",
+      "name": "Göbekli Tepe",
+      "location": {"lat": 37.2231, "lon": 38.9225, "country": "Turkey"},
+      "builder_tradition": "Pre-Pottery Neolithic (12,000 years old — oldest known temple)",
+      "astronomical_alignment": "Pillar 43 (Vulture Stone) encodes: a headless man (Orion), a vulture (Sagittarius), a scorpion (Scorpio), a circle (Sun) — mapping the summer solstice Sun against the galactic center ~10,950 BC.",
+      "primary_celestial_target": "Galactic Center (Sagittarius A*) + Precession of equinoxes",
+      "planet_resonance": ["Jupiter", "Pluto"],
+      "geometry": "T_SHAPED_PILLARS",
+      "sacred_angle_deg": 26.73,
+      "sacred_ratio": 1.618,
+      "description": "The oldest star chart on Earth. The T-pillars ARE stylized humans watching the sky. Pillar 43 commemorates the Younger Dryas impact event (a comet). Jupiter-Pluto conjunction — transformation of civilization itself.",
+      "star_chart_aspect": {
+        "angular_aspect": "conjunction",
+        "trigger_angle_deg": 0,
+        "tolerance_deg": 8,
+        "planet_pair": ["Jupiter", "Pluto"],
+        "activation_meaning": "Total civilizational transformation. Wealth and power restructured from the ground up. The most ancient node speaks of the most profound change."
+      },
+      "trading_signal": {
+        "bias": "BUY",
+        "domain": "transformation",
+        "strength": 0.85
+      }
+    },
+    {
+      "id": "karnak",
+      "name": "Karnak Temple Complex",
+      "location": {"lat": 25.7188, "lon": 32.6573, "country": "Egypt"},
+      "builder_tradition": "Egyptian (2000 BC — 30 BC, expanded over 1,500 years)",
+      "astronomical_alignment": "The main axis aligns to winter solstice sunset. The Great Hypostyle Hall's 134 columns represent the papyrus marsh of creation — but also the star field itself, each column a celestial object.",
+      "primary_celestial_target": "Sun (winter solstice) + Amun-Ra (hidden Sun aspect)",
+      "planet_resonance": ["Sun", "Neptune"],
+      "geometry": "HYPOSTYLE_FIELD",
+      "sacred_angle_deg": 26.0,
+      "sacred_ratio": 1.618,
+      "description": "The largest temple complex ever built. Continuously expanded because each pharaoh added their star-chart layer. Sun-Neptune — the visible light meets the invisible depth. Karnak maps what the eye cannot see.",
+      "star_chart_aspect": {
+        "angular_aspect": "sextile",
+        "trigger_angle_deg": 60,
+        "tolerance_deg": 8,
+        "planet_pair": ["Sun", "Neptune"],
+        "activation_meaning": "Hidden opportunity revealed through spiritual insight. The market shows you what you need to see — if you know how to look."
+      },
+      "trading_signal": {
+        "bias": "BUY",
+        "domain": "hidden_opportunity",
+        "strength": 0.70
+      }
+    },
+    {
+      "id": "avebury",
+      "name": "Avebury Stone Circle",
+      "location": {"lat": 51.4288, "lon": -1.8544, "country": "England"},
+      "builder_tradition": "Neolithic British",
+      "astronomical_alignment": "The largest stone circle in the world (331m diameter). The Kennet Avenue connects to the Sanctuary — a processional path following the Milky Way's path across the sky.",
+      "primary_celestial_target": "Milky Way (the galactic plane)",
+      "planet_resonance": ["Uranus", "Neptune"],
+      "geometry": "TRIPLE_CIRCLE",
+      "sacred_angle_deg": 60,
+      "sacred_ratio": 3.14159,
+      "description": "Three concentric circles — the triple goddess in stone. Uranus-Neptune — the visionary meets the mystic. Avebury is the feminine counterpart to Stonehenge's masculine geometry.",
+      "star_chart_aspect": {
+        "angular_aspect": "sextile",
+        "trigger_angle_deg": 60,
+        "tolerance_deg": 8,
+        "planet_pair": ["Uranus", "Neptune"],
+        "activation_meaning": "Visionary innovation meets deep intuition. The new technology that serves the ancient truth."
+      },
+      "trading_signal": {
+        "bias": "BUY",
+        "domain": "innovation",
+        "strength": 0.70
+      }
+    },
+    {
+      "id": "carnac",
+      "name": "Carnac Stones",
+      "location": {"lat": 47.5844, "lon": -3.0767, "country": "France (Brittany)"},
+      "builder_tradition": "Neolithic Breton",
+      "astronomical_alignment": "Over 3,000 standing stones in parallel rows stretching 4km — the rows track the extreme moonrise and moonset positions over the 18.6-year lunar nodal cycle.",
+      "primary_celestial_target": "Moon (nodal cycle — same as Stonehenge Aubrey Holes)",
+      "planet_resonance": ["Moon", "Saturn"],
+      "geometry": "PARALLEL_ROWS",
+      "sacred_angle_deg": 18.6,
+      "sacred_ratio": 1.618,
+      "description": "3,000 stones in formation — an army frozen in time. Moon-Saturn — the emotional body constrained by discipline. The rows ARE the lunar orbit rendered in granite.",
+      "star_chart_aspect": {
+        "angular_aspect": "square",
+        "trigger_angle_deg": 90,
+        "tolerance_deg": 8,
+        "planet_pair": ["Moon", "Saturn"],
+        "activation_meaning": "Emotional discipline required. The Moon wants to run, Saturn says wait. Patience IS the strategy."
+      },
+      "trading_signal": {
+        "bias": "HOLD",
+        "domain": "discipline",
+        "strength": 0.50
+      }
+    },
+    {
+      "id": "angkor_wat",
+      "name": "Angkor Wat",
+      "location": {"lat": 13.4125, "lon": 103.8670, "country": "Cambodia"},
+      "builder_tradition": "Khmer (Hindu-Buddhist)",
+      "astronomical_alignment": "Spring equinox Sun rises directly over the central tower. The temple's dimensions encode the Hindu cosmic ages (Yugas) in units of measurement. The moat represents the cosmic ocean.",
+      "primary_celestial_target": "Sun (equinox) + Mount Meru (cosmic axis)",
+      "planet_resonance": ["Sun", "Jupiter"],
+      "geometry": "QUINCUNX_TOWERS",
+      "sacred_angle_deg": 72,
+      "sacred_ratio": 1.618,
+      "description": "Five towers in quincunx — the quintile geometry (72°). Sun-Jupiter — the king of heaven illuminates the king of planets. The temple IS a 3D star chart rendered in sandstone.",
+      "star_chart_aspect": {
+        "angular_aspect": "quintile",
+        "trigger_angle_deg": 72,
+        "tolerance_deg": 6,
+        "planet_pair": ["Sun", "Jupiter"],
+        "activation_meaning": "Sacred creative energy — the 72° quintile is the angle of the pentagram. When Sun and Jupiter form this aspect, creative abundance flows."
+      },
+      "trading_signal": {
+        "bias": "BUY",
+        "domain": "sacred_creation",
+        "strength": 0.80
+      }
+    },
+    {
+      "id": "machu_picchu",
+      "name": "Machu Picchu",
+      "location": {"lat": -13.1631, "lon": -72.5450, "country": "Peru"},
+      "builder_tradition": "Inca",
+      "astronomical_alignment": "The Intihuatana stone ('hitching post of the Sun') casts no shadow at noon on the equinoxes. The Sacred Valley below mirrors the Milky Way overhead.",
+      "primary_celestial_target": "Sun (equinox) + Milky Way (Mayu — the cosmic river)",
+      "planet_resonance": ["Sun", "Uranus"],
+      "geometry": "TERRACED_MOUNTAIN",
+      "sacred_angle_deg": 45,
+      "sacred_ratio": 1.618,
+      "description": "Built at the intersection of the physical river and the sky river. Sun-Uranus — willpower meets revolutionary vision. The Inca hitched the Sun to their post — they anchored their trading system to celestial mechanics.",
+      "star_chart_aspect": {
+        "angular_aspect": "semi-square",
+        "trigger_angle_deg": 45,
+        "tolerance_deg": 5,
+        "planet_pair": ["Sun", "Uranus"],
+        "activation_meaning": "Creative tension — the drive to innovate butts against the status quo. Friction creates heat. Heat creates opportunity."
+      },
+      "trading_signal": {
+        "bias": "BUY",
+        "domain": "disruption",
+        "strength": 0.65
+      }
+    },
+    {
+      "id": "chichen_itza",
+      "name": "El Castillo (Chichén Itzá)",
+      "location": {"lat": 20.6843, "lon": -88.5678, "country": "Mexico"},
+      "builder_tradition": "Maya",
+      "astronomical_alignment": "91 steps × 4 sides + 1 platform = 365. At equinox, shadows create a serpent (Kukulkan) descending the staircase. The pyramid is a solar calendar in stone.",
+      "primary_celestial_target": "Sun (equinox) + Venus (Kukulkan = Venus god)",
+      "planet_resonance": ["Venus", "Sun"],
+      "geometry": "STEPPED_PYRAMID",
+      "sacred_angle_deg": 45,
+      "sacred_ratio": 1.618,
+      "description": "The feathered serpent descends at equinox — Venus as the morning star. The Maya tracked Venus's 584-day cycle obsessively because it encoded war and peace timing.",
+      "star_chart_aspect": {
+        "angular_aspect": "conjunction",
+        "trigger_angle_deg": 0,
+        "tolerance_deg": 8,
+        "planet_pair": ["Venus", "Sun"],
+        "activation_meaning": "Venus-Sun merger — peak value illumination. The feathered serpent descends. What was hidden is now visible. BUY when the serpent appears."
+      },
+      "trading_signal": {
+        "bias": "BUY",
+        "domain": "revelation",
+        "strength": 0.80
+      }
+    },
+    {
+      "id": "callanish",
+      "name": "Callanish Standing Stones",
+      "location": {"lat": 58.1972, "lon": -6.7456, "country": "Scotland (Lewis)"},
+      "builder_tradition": "Neolithic Scottish",
+      "astronomical_alignment": "The stone rows form a cross aligned to the cardinal directions. Every 18.6 years, the Moon at its lowest point appears to skim along the Pairc hills ('the Sleeping Beauty') — the 'Moon walking' event.",
+      "primary_celestial_target": "Moon (18.6-year major standstill)",
+      "planet_resonance": ["Moon", "Neptune"],
+      "geometry": "CELTIC_CROSS",
+      "sacred_angle_deg": 90,
+      "sacred_ratio": 1.414,
+      "description": "The Celtic cross in stone — the first cruciform monument. Moon-Neptune — the silvery realm of dreams and visions. When the Moon walks at Callanish, the veil between worlds thins.",
+      "star_chart_aspect": {
+        "angular_aspect": "conjunction",
+        "trigger_angle_deg": 0,
+        "tolerance_deg": 8,
+        "planet_pair": ["Moon", "Neptune"],
+        "activation_meaning": "The dissolving of boundaries. Dreams become reality. Intuition peaks. Trust the inner voice."
+      },
+      "trading_signal": {
+        "bias": "HOLD",
+        "domain": "intuition",
+        "strength": 0.60
+      }
+    },
+    {
+      "id": "knowth",
+      "name": "Knowth",
+      "location": {"lat": 53.7014, "lon": -6.4919, "country": "Ireland"},
+      "builder_tradition": "Neolithic Irish",
+      "astronomical_alignment": "Two passages: East passage catches equinox sunrise, West passage catches equinox sunset. The kerbstones contain the largest collection of megalithic art in Europe — including a possible lunar calendar.",
+      "primary_celestial_target": "Sun (equinoxes) + Moon (calendar carvings)",
+      "planet_resonance": ["Sun", "Moon"],
+      "geometry": "DUAL_PASSAGE",
+      "sacred_angle_deg": 180,
+      "sacred_ratio": 2.0,
+      "description": "Twin passages facing opposite horizons — the balance point. Sun-Moon sextile — day and night in productive harmony. The oldest lunar calendar in stone.",
+      "star_chart_aspect": {
+        "angular_aspect": "sextile",
+        "trigger_angle_deg": 60,
+        "tolerance_deg": 8,
+        "planet_pair": ["Sun", "Moon"],
+        "activation_meaning": "Balance of rational and emotional. The market speaks in two voices — listen to both. Equinox energy: growth opportunity."
+      },
+      "trading_signal": {
+        "bias": "BUY",
+        "domain": "balance",
+        "strength": 0.70
+      }
+    },
+    {
+      "id": "navan_fort",
+      "name": "Navan Fort (Emain Macha)",
+      "location": {"lat": 54.3481, "lon": -6.6972, "country": "Northern Ireland"},
+      "builder_tradition": "Celtic / Ulster",
+      "astronomical_alignment": "The great wooden structure (c. 95 BC) had 275 oak posts in concentric rings — an astronomical computer like Woodhenge. Aligned to the setting Moon at major standstill.",
+      "primary_celestial_target": "Moon (major standstill) + Samhain sunset",
+      "planet_resonance": ["Moon", "Mars"],
+      "geometry": "CONCENTRIC_RINGS",
+      "sacred_angle_deg": 40,
+      "sacred_ratio": 1.618,
+      "description": "The seat of the Red Branch Knights — warriors guided by the stars. Moon-Mars — emotion channeled into decisive action. The Ulster Cycle heroes fought when the star-chart said 'GO'.",
+      "star_chart_aspect": {
+        "angular_aspect": "square",
+        "trigger_angle_deg": 90,
+        "tolerance_deg": 8,
+        "planet_pair": ["Moon", "Mars"],
+        "activation_meaning": "Emotional urgency demands action. The warrior's heart pounds. Fight or flight — but choose wisely."
+      },
+      "trading_signal": {
+        "bias": "BUY",
+        "domain": "decisive_action",
+        "strength": 0.68
+      }
+    },
+    {
+      "id": "dowth",
+      "name": "Dowth",
+      "location": {"lat": 53.7035, "lon": -6.4508, "country": "Ireland"},
+      "builder_tradition": "Neolithic Irish",
+      "astronomical_alignment": "West-facing passage illuminated at winter solstice SUNSET — the complementary opposite of Newgrange (solstice sunrise). Together they bracket the shortest day.",
+      "primary_celestial_target": "Sun (winter solstice sunset)",
+      "planet_resonance": ["Sun", "Pluto"],
+      "geometry": "SUNSET_CHAMBER",
+      "sacred_angle_deg": 23.44,
+      "sacred_ratio": 1.618,
+      "description": "Dowth means 'darkness'. This is the tomb of the setting Sun — where Ra enters the Duat. Sun-Pluto — the will to survive dives into the abyss. What enters Dowth must transform to emerge from Newgrange.",
+      "star_chart_aspect": {
+        "angular_aspect": "square",
+        "trigger_angle_deg": 90,
+        "tolerance_deg": 8,
+        "planet_pair": ["Sun", "Pluto"],
+        "activation_meaning": "The descent. Positions enter the underworld. Forced transformation. Hold through the darkness — Newgrange sunrise follows."
+      },
+      "trading_signal": {
+        "bias": "HOLD",
+        "domain": "descent",
+        "strength": 0.35
+      }
+    },
+    {
+      "id": "slieve_donard",
+      "name": "Slieve Donard Summit Cairn",
+      "location": {"lat": 54.1800, "lon": -5.9200, "country": "Northern Ireland"},
+      "builder_tradition": "Celtic / early Christian",
+      "astronomical_alignment": "The highest point in Ulster — clear sightlines to Scotland, Isle of Man, Wales. The cairn sits on the ley line from Shimna River through the Mournes to the Irish Sea. Dawn light first strikes here.",
+      "primary_celestial_target": "Sun (first light) + horizon astronomy",
+      "planet_resonance": ["Sun", "Mars"],
+      "geometry": "SUMMIT_CAIRN",
+      "sacred_angle_deg": 0,
+      "sacred_ratio": 1.0,
+      "description": "The peak IS the observation platform — the original observatory. Sun-Mars conjunction — pure will, pure energy, the warrior-king stands on the summit and surveys everything below.",
+      "star_chart_aspect": {
+        "angular_aspect": "conjunction",
+        "trigger_angle_deg": 0,
+        "tolerance_deg": 8,
+        "planet_pair": ["Sun", "Mars"],
+        "activation_meaning": "Maximum energy and clarity of purpose. The warrior king stands at the peak. Strike with full confidence."
+      },
+      "trading_signal": {
+        "bias": "BUY",
+        "domain": "conviction",
+        "strength": 0.82
+      }
+    },
+    {
+      "id": "tara",
+      "name": "Hill of Tara",
+      "location": {"lat": 53.5789, "lon": -6.6117, "country": "Ireland"},
+      "builder_tradition": "Neolithic + Celtic + High Kings of Ireland",
+      "astronomical_alignment": "The Mound of the Hostages passage aligns to Samhain/Imbolc cross-quarter sunrise. The Lia Fáil (Stone of Destiny) screams when the true king touches it — resonant frequency.",
+      "primary_celestial_target": "Cross-quarter days (Samhain, Imbolc, Beltane, Lughnasadh) — the midpoints between solstices and equinoxes",
+      "planet_resonance": ["Jupiter", "Venus"],
+      "geometry": "HILLTOP_COMPLEX",
+      "sacred_angle_deg": 45,
+      "sacred_ratio": 1.618,
+      "description": "The seat of the High Kings. Jupiter-Venus — legitimate authority (Jupiter) blessed by beauty and value (Venus). When the Stone of Destiny sings, the rightful king is crowned.",
+      "star_chart_aspect": {
+        "angular_aspect": "trine",
+        "trigger_angle_deg": 120,
+        "tolerance_deg": 8,
+        "planet_pair": ["Jupiter", "Venus"],
+        "activation_meaning": "Legitimate authority and abundant value align. The market crowns its king. Expansive, generous energy — the BUY signal of the Irish High Kings."
+      },
+      "trading_signal": {
+        "bias": "BUY",
+        "domain": "sovereignty",
+        "strength": 0.85
+      }
+    },
+    {
+      "id": "luxor",
+      "name": "Luxor Temple",
+      "location": {"lat": 25.6995, "lon": 32.6390, "country": "Egypt"},
+      "builder_tradition": "Egyptian",
+      "astronomical_alignment": "Axis aligned to the winter solstice. The temple proportions mirror the human body — the pharaoh IS the cosmos in miniature (microcosm = macrocosm).",
+      "primary_celestial_target": "Sun (winter solstice) + the human body as cosmic map",
+      "planet_resonance": ["Sun", "Mercury"],
+      "geometry": "HUMAN_PROPORTION",
+      "sacred_angle_deg": 26.57,
+      "sacred_ratio": 1.618,
+      "description": "Luxor Temple IS a human body in stone — the entrance is the feet, the sanctuary is the head. The body IS the star chart. Sun-Mercury — consciousness illuminates intelligence.",
+      "star_chart_aspect": {
+        "angular_aspect": "conjunction",
+        "trigger_angle_deg": 0,
+        "tolerance_deg": 8,
+        "planet_pair": ["Sun", "Mercury"],
+        "activation_meaning": "Mind and will unified. Complete clarity of thought. Maximum intelligence applied to the trade."
+      },
+      "trading_signal": {
+        "bias": "BUY",
+        "domain": "intelligence",
+        "strength": 0.75
+      }
+    },
+    {
+      "id": "externsteine",
+      "name": "Externsteine",
+      "location": {"lat": 51.8683, "lon": 8.9156, "country": "Germany"},
+      "builder_tradition": "Germanic / Norse",
+      "astronomical_alignment": "A hole carved through the rock aligns precisely to summer solstice sunrise and the northernmost moonrise (major standstill). The Irminsul (world pillar) once stood here.",
+      "primary_celestial_target": "Sun (summer solstice) + Moon (major standstill) + Irminsul (cosmic axis)",
+      "planet_resonance": ["Sun", "Saturn"],
+      "geometry": "NATURAL_PILLAR",
+      "sacred_angle_deg": 23.44,
+      "sacred_ratio": 1.0,
+      "description": "Saxon sacred pillar — the axis mundi. Sun-Saturn trine — the eternal cycle grounded in structure. The Irminsul (Yggdrasil) connects Earth to Sky. The Norse world tree IS the north celestial pole.",
+      "star_chart_aspect": {
+        "angular_aspect": "trine",
+        "trigger_angle_deg": 120,
+        "tolerance_deg": 8,
+        "planet_pair": ["Sun", "Saturn"],
+        "activation_meaning": "Will anchored to structure. The cosmic axis holds firm. Stable, reliable growth."
+      },
+      "trading_signal": {
+        "bias": "BUY",
+        "domain": "stability",
+        "strength": 0.72
+      }
+    },
+    {
+      "id": "delphi",
+      "name": "Temple of Apollo at Delphi",
+      "location": {"lat": 38.4824, "lon": 22.5010, "country": "Greece"},
+      "builder_tradition": "Greek",
+      "astronomical_alignment": "The Omphalos (navel of the world) marks the center — where two eagles sent by Zeus from opposite ends of the world met. The Oracle breathed ethylene fumes (trance state) to prophesy from cosmic alignment.",
+      "primary_celestial_target": "Sun (Apollo = Sun god) + the ecliptic meridian (navel point)",
+      "planet_resonance": ["Sun", "Neptune"],
+      "geometry": "OMPHALOS_POINT",
+      "sacred_angle_deg": 0,
+      "sacred_ratio": 1.0,
+      "description": "The Oracle of Delphi — the Seer of the ancient world. Sun-Neptune — illumination through trance. 'Know Thyself' inscribed at the entrance. The first trading desk was the Oracle.",
+      "star_chart_aspect": {
+        "angular_aspect": "square",
+        "trigger_angle_deg": 90,
+        "tolerance_deg": 8,
+        "planet_pair": ["Sun", "Neptune"],
+        "activation_meaning": "The Oracle speaks in riddles. Truth is present but obscured. Use intuition, not logic, to decode the signal."
+      },
+      "trading_signal": {
+        "bias": "HOLD",
+        "domain": "prophecy",
+        "strength": 0.55
+      }
+    },
+    {
+      "id": "dendera",
+      "name": "Dendera Zodiac",
+      "location": {"lat": 26.1422, "lon": 32.6700, "country": "Egypt"},
+      "builder_tradition": "Egyptian (Ptolemaic)",
+      "astronomical_alignment": "The only known complete depiction of the zodiac in ancient Egypt. Carved on the ceiling of the chapel of Osiris in the Hathor Temple. Maps ALL visible constellations and planets at a specific date.",
+      "primary_celestial_target": "The complete zodiac — all 12 signs + 36 decans",
+      "planet_resonance": ["Venus", "Jupiter"],
+      "geometry": "CIRCULAR_ZODIAC",
+      "sacred_angle_deg": 30,
+      "sacred_ratio": 3.14159,
+      "description": "The Dendera Zodiac is the Rosetta Stone of star-chart decoding. It proves the Egyptians knew the precession of equinoxes. Venus-Jupiter — beauty meets expansion in the temple of Hathor (Venus).",
+      "star_chart_aspect": {
+        "angular_aspect": "sextile",
+        "trigger_angle_deg": 60,
+        "tolerance_deg": 8,
+        "planet_pair": ["Venus", "Jupiter"],
+        "activation_meaning": "The full zodiac speaks. All 12 sectors of the market contribute. Harmonious opportunity from the complete picture."
+      },
+      "trading_signal": {
+        "bias": "BUY",
+        "domain": "wholeness",
+        "strength": 0.78
+      }
+    },
+    {
+      "id": "ring_of_brodgar",
+      "name": "Ring of Brodgar",
+      "location": {"lat": 59.0014, "lon": -3.2292, "country": "Scotland (Orkney)"},
+      "builder_tradition": "Neolithic Orcadian",
+      "astronomical_alignment": "Originally 60 standing stones in a perfect circle — 60 = the Sumerian sexagesimal base (360° ÷ 60). Aligned to equinox sunrise. Part of the Heart of Neolithic Orkney complex.",
+      "primary_celestial_target": "Sun (equinox) + the 60-base number system that gave us 360 degrees",
+      "planet_resonance": ["Mercury", "Jupiter"],
+      "geometry": "PERFECT_CIRCLE_60",
+      "sacred_angle_deg": 6,
+      "sacred_ratio": 3.14159,
+      "description": "60 stones — the origin of the 360° circle. Mercury-Jupiter — communication at scale, the expansion of information. Brodgar is where the number system was born that became our coordinate system.",
+      "star_chart_aspect": {
+        "angular_aspect": "sextile",
+        "trigger_angle_deg": 60,
+        "tolerance_deg": 8,
+        "planet_pair": ["Mercury", "Jupiter"],
+        "activation_meaning": "Communication expands. Information flows freely. Market data is abundant and accessible — use it."
+      },
+      "trading_signal": {
+        "bias": "BUY",
+        "domain": "information_flow",
+        "strength": 0.72
+      }
+    },
+    {
+      "id": "teotihuacan",
+      "name": "Teotihuacán (Avenue of the Dead)",
+      "location": {"lat": 19.6925, "lon": -98.8438, "country": "Mexico"},
+      "builder_tradition": "Mesoamerican (pre-Aztec)",
+      "astronomical_alignment": "The Avenue of the Dead aligns 15.5° east of true north — matching the rising of the Pleiades. The Pyramid of the Sun's base perimeter equals 4π × height. The three pyramids may mirror Orion's Belt (same as Giza).",
+      "primary_celestial_target": "Pleiades + Orion (same pattern as Giza, across the Atlantic)",
+      "planet_resonance": ["Mars", "Saturn"],
+      "geometry": "AVENUE_PYRAMIDS",
+      "sacred_angle_deg": 15.5,
+      "sacred_ratio": 3.14159,
+      "description": "The 'place where men become gods' — the same Orion-Belt-to-pyramid mapping as Giza, 12,000km apart. Mars-Saturn — disciplined warrior energy. Two civilizations, one sky, one pattern.",
+      "star_chart_aspect": {
+        "angular_aspect": "conjunction",
+        "trigger_angle_deg": 0,
+        "tolerance_deg": 8,
+        "planet_pair": ["Mars", "Saturn"],
+        "activation_meaning": "Disciplined aggression. The warrior with a plan. Build your position with military precision."
+      },
+      "trading_signal": {
+        "bias": "BUY",
+        "domain": "disciplined_action",
+        "strength": 0.75
+      }
+    },
+    {
+      "id": "great_zimbabwe",
+      "name": "Great Zimbabwe",
+      "location": {"lat": -20.2675, "lon": 30.9339, "country": "Zimbabwe"},
+      "builder_tradition": "Shona / Bantu",
+      "astronomical_alignment": "The conical tower aligns to the rise of Orion. The elliptical enclosure tracks the southern Cross. The soapstone birds may represent planets or stars.",
+      "primary_celestial_target": "Orion + Southern Cross (southern hemisphere Orion equivalent)",
+      "planet_resonance": ["Venus", "Saturn"],
+      "geometry": "ELLIPTICAL_ENCLOSURE",
+      "sacred_angle_deg": 72,
+      "sacred_ratio": 1.618,
+      "description": "The greatest stone structure in sub-Saharan Africa. Venus-Saturn — beauty (trade goods) given structure (walls). Great Zimbabwe was a TRADING hub — gold, ivory, glass beads. The original exchange.",
+      "star_chart_aspect": {
+        "angular_aspect": "quintile",
+        "trigger_angle_deg": 72,
+        "tolerance_deg": 6,
+        "planet_pair": ["Venus", "Saturn"],
+        "activation_meaning": "Sacred trade — value exchanged through structured channels. The ancient market activates. Fair and balanced commerce."
+      },
+      "trading_signal": {
+        "bias": "BUY",
+        "domain": "trade",
+        "strength": 0.74
+      }
+    }
+  ]
+}

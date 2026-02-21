@@ -261,6 +261,46 @@ except ImportError:
     awaken_queen = None
     print("   Queen not available - autonomous control disabled!")
 
+#   QUADRUMVIRATE CONSENSUS (Queen + King + Seer + Lyra)
+QUADRUMVIRATE_AVAILABLE = False
+quadrumvirate_should_trade = None
+collapse_probability_field = None
+get_temporal_consensus = None
+start_seer = None
+start_lyra = None
+try:
+    from aureon_seer_integration import (
+        quadrumvirate_should_trade as _quad_should_trade,
+        collapse_probability_field as _collapse_field,
+        get_temporal_consensus as _get_temporal,
+        start_seer as _start_seer,
+        seer_update_context as _seer_update_context,
+    )
+    quadrumvirate_should_trade = _quad_should_trade
+    collapse_probability_field = _collapse_field
+    get_temporal_consensus = _get_temporal
+    start_seer = _start_seer
+    QUADRUMVIRATE_AVAILABLE = True
+    print("  QUADRUMVIRATE Consensus WIRED! (Queen + King + Seer + Lyra)")
+except ImportError as e:
+    print(f"   Quadrumvirate not available: {e}")
+
+LYRA_INTEGRATION_AVAILABLE = False
+try:
+    from aureon_lyra_integration import (
+        start_lyra as _start_lyra,
+        lyra_update_context as _lyra_update_context,
+        lyra_get_exit_urgency as _lyra_get_exit_urgency,
+    )
+    start_lyra = _start_lyra
+    LYRA_INTEGRATION_AVAILABLE = True
+    print("  LYRA Integration WIRED! (Emotional Frequency)")
+except ImportError as e:
+    _start_lyra = None
+    _lyra_update_context = None
+    _lyra_get_exit_urgency = None
+    print(f"   Lyra integration not available: {e}")
+
 # Load environment variables from .env file (CRITICAL for API keys!)
 try:
     from dotenv import load_dotenv
@@ -7851,20 +7891,41 @@ class OrcaKillCycle:
                                 
                 elif exchange_name == 'binance':
                     balances = client.get_balance()
+                    # Batch fetch ALL Binance tickers in one API call
+                    _harv_bn = {}
+                    try:
+                        _harv_raw = client.get_24h_tickers()
+                        if _harv_raw:
+                            for _t in _harv_raw:
+                                _s = _t.get('symbol', '')
+                                if _s:
+                                    _harv_bn[_s] = float(_t.get('lastPrice', 0))
+                    except Exception:
+                        pass
                     for asset, qty in (balances or {}).items():
                         if asset in ['USD', 'USDT', 'USDC', 'BUSD', 'TUSD', 'DAI', 'FDUSD', 'GBP', 'EUR'] or asset.startswith('LD'):
                             continue
                         qty = float(qty or 0)
                         if qty > 0.0001:
-                            # Try to get price
-                            symbol = f"{asset}USDT"
-                            ticker = self._get_binance_ticker(client, symbol)
-                            if not ticker or float(ticker.get('price', 0) or 0) == 0:
-                                symbol = f"{asset}USDC"
+                            # Try batch first, then individual calls
+                            current_price = None
+                            symbol = None
+                            for quote in ['USDT', 'USDC', 'USD', 'BUSD']:
+                                pair = f"{asset}{quote}"
+                                if pair in _harv_bn and _harv_bn[pair] > 0:
+                                    current_price = _harv_bn[pair]
+                                    symbol = pair
+                                    break
+                            if not current_price and not _harv_bn:
+                                symbol = f"{asset}USDT"
                                 ticker = self._get_binance_ticker(client, symbol)
+                                if not ticker or float(ticker.get('price', 0) or 0) == 0:
+                                    symbol = f"{asset}USDC"
+                                    ticker = self._get_binance_ticker(client, symbol)
+                                if ticker:
+                                    current_price = float(ticker.get('price', 0) or 0)
                             
-                            if ticker and float(ticker.get('price', 0) or 0) > 0:
-                                current_price = float(ticker.get('price', 0))
+                            if current_price and current_price > 0:
                                 market_value = qty * current_price
                                 results['total_value'] += market_value
                                 
@@ -11807,6 +11868,31 @@ class OrcaKillCycle:
             print("   Continuing without Queen - using default settings.")
             queen = None
         
+        #   QUADRUMVIRATE - Awaken the Seer and Lyra pillars
+        if QUADRUMVIRATE_AVAILABLE and start_seer:
+            try:
+                start_seer()
+                print("  SEER: The Third Pillar STANDS (5 Oracles online)")
+            except Exception as e:
+                print(f"   Seer startup failed: {e}")
+        if LYRA_INTEGRATION_AVAILABLE and start_lyra:
+            try:
+                start_lyra()
+                print("  LYRA: The Fourth Pillar STANDS (6 Chambers online)")
+            except Exception as e:
+                print(f"   Lyra startup failed: {e}")
+        if QUADRUMVIRATE_AVAILABLE:
+            try:
+                temporal = get_temporal_consensus()
+                print(f"  TEMPORAL: Score={temporal['temporal_score']:.0%} | Sessions={', '.join(temporal['sessions'])} | {temporal['day_name']}")
+                if temporal.get('optimal_window'):
+                    ow = temporal['optimal_window']
+                    print(f"           Next prime window in {ow['wait_human']}: {ow['reason']}")
+                print(f"           Lunar: {temporal['lunar_phase']} (x{temporal['lunar_multiplier']:.2f})")
+                print(f"  QUADRUMVIRATE: Four Pillars ONLINE. Freeway Consensus ACTIVE.")
+            except Exception as e:
+                print(f"   Temporal consensus startup failed: {e}")
+
         #     QUANTUM COGNITION AMPLIFIER - Wire to Queen for enhanced decisions
         quantum_cognition = None
         quantum_stats = {'amplification': 1.0, 'hz': SCHUMANN_BASE_HZ, 'cycles': 0}
@@ -12434,12 +12520,24 @@ class OrcaKillCycle:
                     last_truth_check = current_time
                     self.monitor_portfolio_truth()
 
-                #    AVALANCHE HARVEST (Run independently of scanner)
+                print(f"  [DBG] Loop checkpoint: post-truth @ cycle {session_stats['cycles']}", flush=True)
+
+                #    AVALANCHE HARVEST (Run independently of scanner) — timeout-guarded
                 if self.avalanche and (current_time - last_avalanche_time >= avalanche_interval):
                     last_avalanche_time = current_time
+                    print("  [DBG] Avalanche starting...", flush=True)
                     try:
-                        # Non-blocking harvest check
-                        h_results = self.avalanche.run_harvest_cycle(dry_run=False)
+                        from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeout
+                        _av_exec = ThreadPoolExecutor(max_workers=1)
+                        try:
+                            _av_fut = _av_exec.submit(self.avalanche.run_harvest_cycle, dry_run=False)
+                            h_results = _av_fut.result(timeout=30)
+                        except FuturesTimeout:
+                            h_results = None
+                            print("   ⏰ Avalanche timed out (30s) — skipping this cycle", flush=True)
+                        finally:
+                            _av_exec.shutdown(wait=False)
+                        print(f"  [DBG] Avalanche done: {h_results}", flush=True)
                         harvested_count = int((h_results or {}).get('harvested_count', 0) or 0)
                         if harvested_count > 0:
                             amt = float((h_results or {}).get('total_harvested_usd', 0.0) or 0.0)
@@ -12448,6 +12546,8 @@ class OrcaKillCycle:
                             session_stats['total_pnl'] += amt
                     except Exception as e:
                         print(f"   Avalanche cycle error: {e}")
+
+                print(f"  [DBG] Post-avalanche, entering eternal machine check", flush=True)
 
                 #                                                            
                 #    QUEEN ETERNAL MACHINE CYCLE - Bloodless Quantum Leaps!
@@ -12591,11 +12691,21 @@ class OrcaKillCycle:
                     except Exception as e:
                         print(f"      Harvest all exchanges error: {e}")
 
+                    print('  [DBG] Phase 0.7: gathering intelligence', flush=True)
                     #                                                            
                     #   PHASE 0.7: GATHER ALL INTELLIGENCE (Master Launcher)
                     #                                                            
                     try:
-                        intel_report = self.gather_all_intelligence(batch_prices)
+                        from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeout
+                        _int_exec = ThreadPoolExecutor(max_workers=1)
+                        try:
+                            _int_fut = _int_exec.submit(self.gather_all_intelligence, batch_prices)
+                            intel_report = _int_fut.result(timeout=15)
+                        except FuturesTimeout:
+                            intel_report = {}
+                            print("     ⏰ Intelligence gathering timed out (15s)", flush=True)
+                        finally:
+                            _int_exec.shutdown(wait=False)
                         if intel_report.get('validated_signals'):
                             print(f"     INTELLIGENCE: {intel_report['total_sources']} sources | "
                                   f"{len(intel_report.get('validated_signals', []))} validated signals | "
@@ -12603,6 +12713,7 @@ class OrcaKillCycle:
                     except Exception as e:
                         print(f"      Intelligence gathering error: {e}")
 
+                    print('  [DBG] Phase 0.8: harmonic chain', flush=True)
                     #                                                            
                     #   PHASE 0.8: HARMONIC SIGNAL CHAIN (Frequency pipeline)
                     #                                                            
@@ -12615,12 +12726,22 @@ class OrcaKillCycle:
                                     signal_message = f"market_pulse:{','.join(sample_symbols)}"
                                 except Exception:
                                     signal_message = "market_pulse"
-                            chain_result = self.harmonic_signal_chain.send_signal(signal_message)
+                            from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeout
+                            _hsc_exec = ThreadPoolExecutor(max_workers=1)
+                            try:
+                                _hsc_fut = _hsc_exec.submit(self.harmonic_signal_chain.send_signal, signal_message)
+                                chain_result = _hsc_fut.result(timeout=10)
+                            except FuturesTimeout:
+                                chain_result = None
+                                print("     ⏰ Harmonic Signal Chain timed out (10s)", flush=True)
+                            finally:
+                                _hsc_exec.shutdown(wait=False)
                             if chain_result:
                                 print(f"     HARMONIC CHAIN: Signal processed through 5 frequency layers")
                         except Exception as e:
                             print(f"      Harmonic Signal Chain error: {e}")
 
+                    print('  [DBG] Phase 0.9: ocean/animal scanners', flush=True)
                     #                                                            
                     #   PHASE 0.9: OCEAN + ANIMAL SCANNERS (Wave & trend analysis)
                     #                                                            
@@ -12640,6 +12761,7 @@ class OrcaKillCycle:
                         except Exception as e:
                             print(f"      Animal Scanner error: {e}")
 
+                    print('  [DBG] Phase 0.95: options/bridge/predator', flush=True)
                     #                                                            
                     #   PHASE 0.95: OPTIONS SCANNER (Covered calls + cash-secured puts)
                     #                                                            
@@ -12688,6 +12810,7 @@ class OrcaKillCycle:
                         except Exception as e:
                             print(f"      Real Portfolio sync error: {e}")
 
+                    print('  [DBG] Re-scanning Kraken balances', flush=True)
                     #   RE-SCAN KRAKEN BALANCES FOR NEW MANUAL POSITIONS!
                     try:
                         kraken_client = self.clients.get('kraken')
@@ -12738,19 +12861,29 @@ class OrcaKillCycle:
                     except Exception as e:
                         pass  # Silently skip if Kraken scan fails
                     
+                    print('  [DBG] Re-scanning Binance balances (batch)', flush=True)
                     #   RE-SCAN BINANCE BALANCES FOR NEW MANUAL POSITIONS!
                     try:
                         binance_client = self.clients.get('binance')
                         if binance_client:
-                            # First, batch fetch prices for existing Binance positions
+                            # ─── Batch fetch ALL tickers in one API call ───
+                            _bn_all = {}
+                            try:
+                                _bn_raw = binance_client.get_24h_tickers()
+                                if _bn_raw:
+                                    for _t in _bn_raw:
+                                        _s = _t.get('symbol', '')
+                                        if _s:
+                                            _bn_all[_s] = float(_t.get('lastPrice', 0))
+                            except Exception:
+                                pass
+
+                            # Update existing Binance position prices from batch
                             binance_symbols = [p.symbol for p in positions if p.exchange == 'binance']
                             for sym in binance_symbols:
-                                try:
-                                    ticker = self._get_binance_ticker(binance_client, sym)
-                                    if ticker:
-                                        batch_prices[sym] = ticker.get('bid', ticker.get('price', 0))
-                                except Exception:
-                                    pass
+                                _norm = sym.replace('/', '')
+                                if _norm in _bn_all and _bn_all[_norm] > 0:
+                                    batch_prices[sym] = _bn_all[_norm]
                             
                             # Now scan for NEW positions
                             binance_balances = binance_client.get_balance()
@@ -12763,14 +12896,21 @@ class OrcaKillCycle:
                                 
                                 # Check if this is a NEW position not already tracked
                                 if qty > 0.000001:
-                                    # Try multiple quote currencies
+                                    # Try multiple quote currencies — use batch data
                                     symbol_variants = [f"{asset}/USDT", f"{asset}/USDC", f"{asset}/USD", f"{asset}/BUSD"]
                                     for symbol in symbol_variants:
                                         if symbol in current_binance_symbols:
                                             continue  # Already tracking
                                         
+                                        _norm = symbol.replace('/', '')
                                         try:
-                                            ticker = self._get_binance_ticker(binance_client, symbol)
+                                            # Fast path: batch data
+                                            if _norm in _bn_all and _bn_all[_norm] > 0:
+                                                ticker = {'price': _bn_all[_norm], 'bid': _bn_all[_norm], 'ask': _bn_all[_norm]}
+                                            elif not _bn_all:
+                                                ticker = self._get_binance_ticker(binance_client, symbol)
+                                            else:
+                                                ticker = None
                                             if ticker and float(ticker.get('bid', ticker.get('price', 0)) or 0) > 0:
                                                 current_price = float(ticker.get('bid', ticker.get('price', 0)) or 0)
                                                 market_value = qty * current_price
@@ -12866,6 +13006,7 @@ class OrcaKillCycle:
                         except Exception as sell_err:
                             print(f"   Sell check error for {pos.symbol}: {sell_err}")
                 
+                print(f"  [DBG] Approaching Phase 1 gate, cycle {session_stats['cycles']}", flush=True)
                 #                                                            
                 # PHASE 1: SCAN FOR NEW OPPORTUNITIES (   QUANTUM ENHANCED)
                 #                                                            
@@ -12888,6 +13029,38 @@ class OrcaKillCycle:
                         if total_cash < amount_per_position * 0.3:  # Only need 30% of target (more aggressive)
                             print(f"     Waiting for cash (${total_cash:.2f} available, need ${amount_per_position * 0.3:.2f})")
                         else:
+                            #                                                                
+                            #   QUADRUMVIRATE TEMPORAL GATE - All 4 Pillars confer FIRST
+                            #                                                                
+                            quad_sizing = 1.0
+                            quad_go = True
+                            if QUADRUMVIRATE_AVAILABLE:
+                                try:
+                                    quad_result = quadrumvirate_should_trade()
+                                    quad_go = quad_result.get('should_trade', True)
+                                    quad_sizing = quad_result.get('sizing_modifier', 1.0)
+                                    fc = quad_result.get('field_coherence', 0)
+                                    action = quad_result.get('action', '?')
+                                    print(f"     QUADRUMVIRATE: {action} | Coherence={fc:.0%} | Sizing={quad_sizing:.2f}x")
+                                    if not quad_go:
+                                        wait = quad_result.get('wait_guidance', {})
+                                        reason = wait.get('reason', 'temporal misalignment')
+                                        wait_h = wait.get('wait_human', '?')
+                                        print(f"      GATE CLOSED: {reason} (wait {wait_h})")
+                                        print(f"      Skipping scan - Quadrumvirate says NOT NOW")
+                                        # Feed context updates even when gate is closed
+                                        if seer_update_context:
+                                            try: seer_update_context(market_data={'prices': batch_prices or {}, 'cycle': session_stats['cycles']})
+                                            except Exception: pass
+                                        if LYRA_INTEGRATION_AVAILABLE and lyra_update_context:
+                                            try: lyra_update_context({'cycle': session_stats['cycles'], 'positions': len(positions), 'pnl': session_stats['total_pnl']})
+                                            except Exception: pass
+                                        continue  # Skip this scan cycle
+                                except Exception as e:
+                                    print(f"      Quadrumvirate gate error (proceeding): {e}")
+                                    quad_go = True
+                                    quad_sizing = 1.0
+
                             #                                                    
                             #   PRE-SCAN INTELLIGENCE ENRICHMENT (All available brains!)
                             #                                                    
@@ -13127,6 +13300,10 @@ class OrcaKillCycle:
                                                 # Adjust amount based on available cash
                                                 exchange_cash = cash.get(best.exchange, 0)
                                                 buy_amount = min(amount_per_position, exchange_cash * 0.9)
+                                                # Apply Quadrumvirate sizing modifier
+                                                if quad_sizing != 1.0:
+                                                    buy_amount = buy_amount * quad_sizing
+                                                    print(f"   [QUAD] Sizing adjusted: x{quad_sizing:.2f} -> ${buy_amount:.2f}")
                                                 print(f"   [DEBUG] Buy Calc: Cash={exchange_cash:.2f}, AmtPerPos={amount_per_position}, BuyAmt={buy_amount:.2f}")
 
                                                 # Kraken funding fallback:
@@ -13674,6 +13851,24 @@ class OrcaKillCycle:
                     # No positions - show scanning status
                     print(f"\r  No positions - scanning in {max(0, scan_interval - (current_time - last_scan_time)):.0f}s...", end="", flush=True)
                 
+                # Feed context to Seer + Lyra each cycle
+                _seer_ctx = {}
+                if positions:
+                    _seer_ctx['positions'] = {
+                        p.symbol: {'entry_price': p.entry_price, 'quantity': getattr(p, 'entry_qty', 0),
+                                   'momentum': getattr(p, 'momentum', 0), 'exchange': p.exchange}
+                        for p in positions
+                    }
+                if batch_prices:
+                    _seer_ctx['ticker_cache'] = batch_prices
+                _seer_ctx['market_data'] = {'prices': batch_prices or {}, 'cycle': session_stats['cycles']}
+                if QUADRUMVIRATE_AVAILABLE and seer_update_context:
+                    try: seer_update_context(**_seer_ctx)
+                    except Exception: pass
+                if LYRA_INTEGRATION_AVAILABLE and lyra_update_context:
+                    try: lyra_update_context({'cycle': session_stats['cycles'], 'positions': len(positions), 'pnl': session_stats['total_pnl']})
+                    except Exception: pass
+
                 time.sleep(monitor_interval)
                 
         except KeyboardInterrupt:

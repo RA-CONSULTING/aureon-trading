@@ -641,6 +641,18 @@ class AvalancheHarvester:
             # Get balance
             balance = self.binance_client.get_balance()
             
+            # ─── Batch fetch ALL 24h tickers in ONE API call ───
+            _all_tickers = {}
+            try:
+                _raw_tickers = self.binance_client.get_24h_tickers()
+                if _raw_tickers:
+                    for t in _raw_tickers:
+                        sym = t.get('symbol', '')
+                        if sym:
+                            _all_tickers[sym] = float(t.get('lastPrice', 0))
+            except Exception:
+                _all_tickers = {}  # fall back to per-asset calls below
+            
             for asset, qty in balance.items():
                 # Skip protected assets
                 if asset in self.PROTECTED_ASSETS:
@@ -650,19 +662,26 @@ class AvalancheHarvester:
                 if qty < 0.00000001:
                     continue
                 
-                # Get current price (try multiple stablecoins)
+                # Get current price — try batch cache first, then individual calls
                 current_price = None
                 ticker_symbol = None
                 for quote in ['USDT', 'USDC', 'USD', 'BUSD']:
-                    try:
-                        pair = f"{asset}{quote}"
-                        ticker = self.binance_client.get_ticker(pair)
-                        if ticker and 'price' in ticker:
-                            current_price = float(ticker['price'])
-                            ticker_symbol = pair
-                            break
-                    except:
-                        continue
+                    pair = f"{asset}{quote}"
+                    # Fast path: use batch data
+                    if pair in _all_tickers and _all_tickers[pair] > 0:
+                        current_price = _all_tickers[pair]
+                        ticker_symbol = pair
+                        break
+                    # Slow path fallback (only if batch failed)
+                    if not _all_tickers:
+                        try:
+                            ticker = self.binance_client.get_ticker(pair)
+                            if ticker and 'price' in ticker:
+                                current_price = float(ticker['price'])
+                                ticker_symbol = pair
+                                break
+                        except:
+                            continue
                 
                 if not current_price or current_price <= 0:
                     continue

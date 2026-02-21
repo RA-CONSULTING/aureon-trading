@@ -24,7 +24,8 @@ from dataclasses import dataclass
 logger = logging.getLogger(__name__)
 
 # NOAA SWPC API Endpoints (no API key required - public data!)
-NOAA_SOLAR_WIND_URL = 'https://services.swpc.noaa.gov/products/solar-wind/mag-7-day.json'
+NOAA_SOLAR_WIND_MAG_URL = 'https://services.swpc.noaa.gov/products/solar-wind/mag-7-day.json'
+NOAA_SOLAR_WIND_PLASMA_URL = 'https://services.swpc.noaa.gov/products/solar-wind/plasma-7-day.json'
 NOAA_KP_INDEX_URL = 'https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json'
 NOAA_KP_FORECAST_URL = 'https://services.swpc.noaa.gov/products/noaa-planetary-k-index-forecast.json'
 NOAA_3DAY_FORECAST_URL = 'https://services.swpc.noaa.gov/products/forecast.json'
@@ -171,36 +172,51 @@ class SpaceWeatherBridge:
             resp.raise_for_status()
             data = resp.json()
             
-            # Parse CSV format: skip header (1 row), get latest entry
+            # Format: ['time_tag', 'Kp', 'a_running', 'station_count']
+            # Kp is column 1 (NOT column 2 which is a_running)
             if len(data) > 1:
                 latest = data[-1]
-                # Format: [date, time, kp_index, ...]
-                kp = float(latest[2]) if len(latest) > 2 else 3.0
+                kp = float(latest[1]) if len(latest) > 1 else 3.0
                 return {'current_kp': kp}
         except Exception as e:
             logger.debug(f"Kp fetch error: {e}")
         return None
     
     def _fetch_solar_wind(self) -> Optional[Dict]:
-        """Fetch solar wind data from NOAA"""
+        """Fetch solar wind data from NOAA (plasma + magnetometer)"""
+        result = {'density': 5.0, 'speed': 400.0, 'bz': 0.0}
+        got_data = False
+        
+        # 1) Plasma data → density + speed
+        # Format: ['time_tag', 'density', 'speed', 'temperature']
         try:
-            resp = requests.get(NOAA_SOLAR_WIND_URL, timeout=5)
+            resp = requests.get(NOAA_SOLAR_WIND_PLASMA_URL, timeout=5)
             resp.raise_for_status()
             data = resp.json()
-            
-            # Parse CSV format: skip header, get most recent
             if len(data) > 1:
                 latest = data[-1]
-                # Format: [date, time, density, temperature, Bz, speed, ...]
-                if len(latest) > 5:
-                    return {
-                        'density': float(latest[2]) if latest[2] else 5.0,
-                        'bz': float(latest[4]) if latest[4] else 0.0,
-                        'speed': float(latest[5]) if latest[5] else 400.0,
-                    }
+                if len(latest) > 2:
+                    result['density'] = float(latest[1]) if latest[1] else 5.0
+                    result['speed'] = float(latest[2]) if latest[2] else 400.0
+                    got_data = True
         except Exception as e:
-            logger.debug(f"Solar wind fetch error: {e}")
-        return None
+            logger.debug(f"Plasma data fetch error: {e}")
+        
+        # 2) Magnetometer data → Bz component
+        # Format: ['time_tag', 'bx_gsm', 'by_gsm', 'bz_gsm', 'lon_gsm', 'lat_gsm', 'bt']
+        try:
+            resp = requests.get(NOAA_SOLAR_WIND_MAG_URL, timeout=5)
+            resp.raise_for_status()
+            data = resp.json()
+            if len(data) > 1:
+                latest = data[-1]
+                if len(latest) > 3:
+                    result['bz'] = float(latest[3]) if latest[3] else 0.0
+                    got_data = True
+        except Exception as e:
+            logger.debug(f"Mag data fetch error: {e}")
+        
+        return result if got_data else None
     
     def _fetch_3day_forecast(self) -> Optional[Dict]:
         """Fetch 3-day forecast from NOAA"""

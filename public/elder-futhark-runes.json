@@ -1,55 +1,365 @@
 {
-  "version": "1.0.0",
-  "schema": "elder-futhark-runes",
-  "description": "Complete Elder Futhark rune set for deterministic divination",
+  "version": "2.0.0",
+  "schema": "elder-futhark-runes-star-chart",
+  "description": "Complete Elder Futhark (24) rune set with star-chart geometric decoders. Each rune is a geometric shape formed by connecting planetary dots on the ecliptic. The angular relationships between planets at any moment decode which runes are active. Runes ARE star charts — connecting the dots of planetary positions.",
+
+  "aettir": {
+    "freyas_aett": {
+      "name": "Freya's Aett",
+      "domain": "Creation & Material World",
+      "planets": ["Venus", "Moon"],
+      "rune_ids": ["fehu", "uruz", "thurisaz", "ansuz", "raidho", "kenaz", "gebo", "wunjo"]
+    },
+    "heimdalls_aett": {
+      "name": "Heimdall's Aett",
+      "domain": "Transformation & Challenge",
+      "planets": ["Saturn", "Mars"],
+      "rune_ids": ["hagalaz", "nauthiz", "isa", "jera", "eihwaz", "perthro", "algiz", "sowilo"]
+    },
+    "tyrs_aett": {
+      "name": "Tyr's Aett",
+      "domain": "Spiritual Fulfillment & Victory",
+      "planets": ["Jupiter", "Sun"],
+      "rune_ids": ["tiwaz", "berkano", "ehwaz", "mannaz", "laguz", "ingwaz", "dagaz", "othala"]
+    }
+  },
+
   "runes": [
     {
-      "id": "fehu",
-      "name": "Fehu",
-      "meaning": "Wealth, resources, new beginnings",
+      "id": "fehu", "name": "Fehu", "unicode": "\u16a0", "number": 1, "aett": "freyas_aett",
+      "meaning": "Wealth, abundance, new beginnings, mobile property",
       "lesson": "Tend what you have and let it flow; invest energy where it grows",
       "warning": "Clinging, greed, or chasing status over substance",
-      "element": "Fire"
+      "element": "Fire", "planet": "Venus", "zodiac_home": "Taurus",
+      "star_chart": {
+        "geometry": "ASCENDING_LINE", "angular_aspect": "sextile",
+        "trigger_angle_deg": 60, "tolerance_deg": 8,
+        "planet_pair": ["Venus", "Jupiter"], "vertex_count": 3, "sacred_angle": 60,
+        "description": "Two parallel ascending strokes — the horns of cattle reaching upward. Formed when Venus-Jupiter align in ascending sextile (60\u00b0)."
+      },
+      "trading_signal": { "bias": "BUY", "domain": "accumulation", "strength": 0.75 }
     },
     {
-      "id": "uruz",
-      "name": "Uruz", 
-      "meaning": "Raw strength, life force, vitality",
+      "id": "uruz", "name": "Uruz", "unicode": "\u16a2", "number": 2, "aett": "freyas_aett",
+      "meaning": "Raw strength, vitality, primal power, the aurochs",
       "lesson": "Channel power with purpose and discipline",
       "warning": "Force without focus; burnout or stubbornness",
-      "element": "Earth"
+      "element": "Earth", "planet": "Mars", "zodiac_home": "Aries",
+      "star_chart": {
+        "geometry": "DOWNWARD_ARC", "angular_aspect": "trine",
+        "trigger_angle_deg": 120, "tolerance_deg": 8,
+        "planet_pair": ["Mars", "Moon"], "vertex_count": 3, "sacred_angle": 120,
+        "description": "Descending curve from apex — the back of the aurochs. Mars trine Moon (120\u00b0)."
+      },
+      "trading_signal": { "bias": "BUY", "domain": "momentum", "strength": 0.80 }
     },
     {
-      "id": "thurisaz",
-      "name": "Thurisaz",
-      "meaning": "Threshold, protection, catalytic force", 
+      "id": "thurisaz", "name": "Thurisaz", "unicode": "\u16a6", "number": 3, "aett": "freyas_aett",
+      "meaning": "Threshold, protection, catalytic force, Thor's hammer",
       "lesson": "Pause at the gateway; act consciously and defend your boundaries",
       "warning": "Reactivity, picking fights, rash decisions",
-      "element": "Fire"
+      "element": "Fire", "planet": "Mars", "zodiac_home": "Scorpio",
+      "star_chart": {
+        "geometry": "THORN_POINT", "angular_aspect": "square",
+        "trigger_angle_deg": 90, "tolerance_deg": 8,
+        "planet_pair": ["Mars", "Saturn"], "vertex_count": 3, "sacred_angle": 90,
+        "description": "A pointed thorn from a vertical — Mars square Saturn (90\u00b0), sharp angular collision."
+      },
+      "trading_signal": { "bias": "HOLD", "domain": "defense", "strength": 0.40 }
     },
     {
-      "id": "ansuz",
-      "name": "Ansuz",
-      "meaning": "Communication, wisdom, divine breath",
-      "lesson": "Listen deeply and speak truth with clarity", 
+      "id": "ansuz", "name": "Ansuz", "unicode": "\u16a8", "number": 4, "aett": "freyas_aett",
+      "meaning": "Divine breath, communication, wisdom, Odin's rune",
+      "lesson": "Listen deeply and speak truth with clarity",
       "warning": "Miscommunication, gossip, empty words",
-      "element": "Air"
+      "element": "Air", "planet": "Mercury", "zodiac_home": "Gemini",
+      "star_chart": {
+        "geometry": "BRANCHING_TREE", "angular_aspect": "conjunction",
+        "trigger_angle_deg": 0, "tolerance_deg": 10,
+        "planet_pair": ["Mercury", "Jupiter"], "vertex_count": 4, "sacred_angle": 30,
+        "description": "Two branches from a stave — Mercury conjunct Jupiter (0\u00b0), divine messages flow."
+      },
+      "trading_signal": { "bias": "BUY", "domain": "intelligence", "strength": 0.70 }
     },
     {
-      "id": "raidho",
-      "name": "Raidho",
-      "meaning": "Journey, rhythm, right order",
-      "lesson": "Move in step with timing; align travel and choices to purpose",
+      "id": "raidho", "name": "Raidho", "unicode": "\u16b1", "number": 5, "aett": "freyas_aett",
+      "meaning": "Journey, rhythm, chariot, cosmic order, right action",
+      "lesson": "Move in step with timing; align choices to purpose",
       "warning": "Forcing the pace; drifting without direction",
-      "element": "Air"
+      "element": "Air", "planet": "Mercury", "zodiac_home": "Sagittarius",
+      "star_chart": {
+        "geometry": "ANGULAR_PATH", "angular_aspect": "trine",
+        "trigger_angle_deg": 120, "tolerance_deg": 8,
+        "planet_pair": ["Mercury", "Mars"], "vertex_count": 4, "sacred_angle": 120,
+        "description": "R-shape with forward lean — Mercury trine Mars (120\u00b0), smooth transit."
+      },
+      "trading_signal": { "bias": "BUY", "domain": "timing", "strength": 0.72 }
     },
     {
-      "id": "kenaz",
-      "name": "Kenaz",
-      "meaning": "Torch, knowledge, illumination",
+      "id": "kenaz", "name": "Kenaz", "unicode": "\u16b2", "number": 6, "aett": "freyas_aett",
+      "meaning": "Torch, illumination, knowledge, controlled fire",
       "lesson": "Light the way with wisdom; teach and learn with passion",
       "warning": "Arrogance, false knowledge, burning out others",
-      "element": "Fire"
+      "element": "Fire", "planet": "Sun", "zodiac_home": "Leo",
+      "star_chart": {
+        "geometry": "TORCH_ANGLE", "angular_aspect": "sextile",
+        "trigger_angle_deg": 60, "tolerance_deg": 8,
+        "planet_pair": ["Sun", "Venus"], "vertex_count": 2, "sacred_angle": 60,
+        "description": "An opening angle like a flame — Sun sextile Venus (60\u00b0), creative fire."
+      },
+      "trading_signal": { "bias": "BUY", "domain": "clarity", "strength": 0.78 }
+    },
+    {
+      "id": "gebo", "name": "Gebo", "unicode": "\u16b7", "number": 7, "aett": "freyas_aett",
+      "meaning": "Gift, generosity, partnership, sacred exchange, balance",
+      "lesson": "True wealth flows both ways — give and receive in equilibrium",
+      "warning": "Obligation disguised as gift; strings attached",
+      "element": "Air", "planet": "Venus", "zodiac_home": "Libra",
+      "star_chart": {
+        "geometry": "X_CROSS", "angular_aspect": "opposition",
+        "trigger_angle_deg": 180, "tolerance_deg": 8,
+        "planet_pair": ["Venus", "Jupiter"], "vertex_count": 4, "sacred_angle": 45,
+        "description": "Perfect X — Venus-Jupiter opposition (180\u00b0), balanced exchange across the ecliptic."
+      },
+      "trading_signal": { "bias": "HOLD", "domain": "equilibrium", "strength": 0.50 }
+    },
+    {
+      "id": "wunjo", "name": "Wunjo", "unicode": "\u16b9", "number": 8, "aett": "freyas_aett",
+      "meaning": "Joy, bliss, harmony, clan prosperity, tribal wellbeing",
+      "lesson": "Celebrate alignment; share the harvest of good work",
+      "warning": "Excessive optimism; ignoring shadows",
+      "element": "Earth", "planet": "Jupiter", "zodiac_home": "Pisces",
+      "star_chart": {
+        "geometry": "FLAG_PENNANT", "angular_aspect": "trine",
+        "trigger_angle_deg": 120, "tolerance_deg": 8,
+        "planet_pair": ["Jupiter", "Sun"], "vertex_count": 3, "sacred_angle": 120,
+        "description": "A pennant flying from a pole — Jupiter trine Sun (120\u00b0), joy radiating."
+      },
+      "trading_signal": { "bias": "BUY", "domain": "prosperity", "strength": 0.85 }
+    },
+    {
+      "id": "hagalaz", "name": "Hagalaz", "unicode": "\u16ba", "number": 9, "aett": "heimdalls_aett",
+      "meaning": "Hail, disruption, uncontrolled forces, necessary destruction",
+      "lesson": "Accept the storm; what breaks was not built to last",
+      "warning": "Catastrophe, loss through external forces beyond control",
+      "element": "Water", "planet": "Uranus", "zodiac_home": "Aquarius",
+      "star_chart": {
+        "geometry": "H_BRIDGE", "angular_aspect": "square",
+        "trigger_angle_deg": 90, "tolerance_deg": 6,
+        "planet_pair": ["Uranus", "Pluto"], "vertex_count": 6, "sacred_angle": 90,
+        "description": "An H with diagonal bar — Uranus square Pluto (90\u00b0), cosmic hailstorm."
+      },
+      "trading_signal": { "bias": "SELL", "domain": "disruption", "strength": 0.20 }
+    },
+    {
+      "id": "nauthiz", "name": "Nauthiz", "unicode": "\u16be", "number": 10, "aett": "heimdalls_aett",
+      "meaning": "Need, constraint, friction, the need-fire, necessity as teacher",
+      "lesson": "Scarcity reveals what truly matters; endure with purpose",
+      "warning": "Poverty of spirit; want without willingness to act",
+      "element": "Fire", "planet": "Saturn", "zodiac_home": "Capricorn",
+      "star_chart": {
+        "geometry": "CROSSED_STAVE", "angular_aspect": "conjunction",
+        "trigger_angle_deg": 0, "tolerance_deg": 8,
+        "planet_pair": ["Saturn", "Moon"], "vertex_count": 2, "sacred_angle": 45,
+        "description": "A diagonal crossing a vertical — Saturn conjunct Moon (0\u00b0), karmic constraint."
+      },
+      "trading_signal": { "bias": "HOLD", "domain": "constraint", "strength": 0.30 }
+    },
+    {
+      "id": "isa", "name": "Isa", "unicode": "\u16c1", "number": 11, "aett": "heimdalls_aett",
+      "meaning": "Ice, stillness, stasis, the frozen moment, standstill",
+      "lesson": "Be still. Not all action is progress. The ice preserves",
+      "warning": "Paralysis, being frozen by fear, stagnation",
+      "element": "Water", "planet": "Saturn", "zodiac_home": "Capricorn",
+      "star_chart": {
+        "geometry": "VERTICAL_LINE", "angular_aspect": "stationary",
+        "trigger_angle_deg": 0, "tolerance_deg": 2,
+        "planet_pair": ["Saturn", "Saturn"], "vertex_count": 1, "sacred_angle": 0,
+        "description": "A single vertical line — Saturn stationary (0\u00b0 motion), cosmos stands still."
+      },
+      "trading_signal": { "bias": "HOLD", "domain": "stasis", "strength": 0.25 }
+    },
+    {
+      "id": "jera", "name": "Jera", "unicode": "\u16c3", "number": 12, "aett": "heimdalls_aett",
+      "meaning": "Year, harvest, cycles, reward for labor, natural timing",
+      "lesson": "Every season turns; plant in spring, harvest in autumn",
+      "warning": "Impatience with natural cycles; trying to harvest too early",
+      "element": "Earth", "planet": "Jupiter", "zodiac_home": "Virgo",
+      "star_chart": {
+        "geometry": "ROTATING_SYMMETRY", "angular_aspect": "sextile",
+        "trigger_angle_deg": 60, "tolerance_deg": 8,
+        "planet_pair": ["Jupiter", "Saturn"], "vertex_count": 4, "sacred_angle": 60,
+        "description": "Two interlocking angles — Jupiter sextile Saturn (60\u00b0), expansion/contraction balanced."
+      },
+      "trading_signal": { "bias": "BUY", "domain": "cycles", "strength": 0.70 }
+    },
+    {
+      "id": "eihwaz", "name": "Eihwaz", "unicode": "\u16c7", "number": 13, "aett": "heimdalls_aett",
+      "meaning": "Yew tree, endurance, death/rebirth axis, Yggdrasil's spine",
+      "lesson": "Stand firm between worlds; the axis connects all planes",
+      "warning": "Rigidity, fear of transformation, clinging to dead things",
+      "element": "Earth", "planet": "Pluto", "zodiac_home": "Scorpio",
+      "star_chart": {
+        "geometry": "S_CURVE_AXIS", "angular_aspect": "trine",
+        "trigger_angle_deg": 120, "tolerance_deg": 6,
+        "planet_pair": ["Pluto", "Sun"], "vertex_count": 3, "sacred_angle": 120,
+        "description": "A vertical zigzag — the world tree spine. Pluto trine Sun (120\u00b0), deep transformation."
+      },
+      "trading_signal": { "bias": "HOLD", "domain": "transformation", "strength": 0.55 }
+    },
+    {
+      "id": "perthro", "name": "Perthro", "unicode": "\u16c8", "number": 14, "aett": "heimdalls_aett",
+      "meaning": "Dice cup, fate, luck, wyrd, the unknown, probability well",
+      "lesson": "Honor the mystery; not everything can be calculated",
+      "warning": "Gambling, testing fate recklessly, addiction to chance",
+      "element": "Water", "planet": "Neptune", "zodiac_home": "Pisces",
+      "star_chart": {
+        "geometry": "CUP_VESSEL", "angular_aspect": "sextile",
+        "trigger_angle_deg": 60, "tolerance_deg": 8,
+        "planet_pair": ["Neptune", "Moon"], "vertex_count": 4, "sacred_angle": 60,
+        "description": "An open cup — Neptune sextile Moon (60\u00b0), the probability well opens."
+      },
+      "trading_signal": { "bias": "HOLD", "domain": "probability", "strength": 0.50 }
+    },
+    {
+      "id": "algiz", "name": "Algiz", "unicode": "\u16c9", "number": 15, "aett": "heimdalls_aett",
+      "meaning": "Elk sedge, protection, divine shield, higher self connection",
+      "lesson": "Reach upward for protection; connect to your highest guardian",
+      "warning": "False security, hidden dangers, taboo violation",
+      "element": "Air", "planet": "Jupiter", "zodiac_home": "Sagittarius",
+      "star_chart": {
+        "geometry": "TRIDENT_UP", "angular_aspect": "trine",
+        "trigger_angle_deg": 120, "tolerance_deg": 8,
+        "planet_pair": ["Jupiter", "Neptune"], "vertex_count": 4, "sacred_angle": 120,
+        "description": "Three branches skyward — Jupiter trine Neptune (120\u00b0), divine protection canopy."
+      },
+      "trading_signal": { "bias": "BUY", "domain": "protection", "strength": 0.80 }
+    },
+    {
+      "id": "sowilo", "name": "Sowilo", "unicode": "\u16ca", "number": 16, "aett": "heimdalls_aett",
+      "meaning": "Sun, victory, life force, wholeness, illumination",
+      "lesson": "Follow the light; the sun always returns. Victory is certain",
+      "warning": "Hubris, too much fire, sunburn of the ego",
+      "element": "Fire", "planet": "Sun", "zodiac_home": "Leo",
+      "star_chart": {
+        "geometry": "LIGHTNING_BOLT", "angular_aspect": "conjunction",
+        "trigger_angle_deg": 0, "tolerance_deg": 10,
+        "planet_pair": ["Sun", "Mars"], "vertex_count": 3, "sacred_angle": 30,
+        "description": "A zigzag lightning — Sun conjunct Mars (0\u00b0), pure solar fire and warrior victory."
+      },
+      "trading_signal": { "bias": "BUY", "domain": "victory", "strength": 0.90 }
+    },
+    {
+      "id": "tiwaz", "name": "Tiwaz", "unicode": "\u16cf", "number": 17, "aett": "tyrs_aett",
+      "meaning": "Tyr's rune, justice, honor, sacrifice, the North Star",
+      "lesson": "Point true north; sacrifice short-term for long-term honor",
+      "warning": "Injustice, faithlessness, losing one's guiding star",
+      "element": "Air", "planet": "Mars", "zodiac_home": "Aries",
+      "star_chart": {
+        "geometry": "ARROW_UP", "angular_aspect": "trine",
+        "trigger_angle_deg": 120, "tolerance_deg": 8,
+        "planet_pair": ["Mars", "Jupiter"], "vertex_count": 3, "sacred_angle": 120,
+        "description": "An upward arrow — Mars trine Jupiter (120\u00b0), warrior and king aligned."
+      },
+      "trading_signal": { "bias": "BUY", "domain": "conviction", "strength": 0.82 }
+    },
+    {
+      "id": "berkano", "name": "Berkano", "unicode": "\u16d2", "number": 18, "aett": "tyrs_aett",
+      "meaning": "Birch, rebirth, fertility, new growth, nurturing",
+      "lesson": "Nurture the new; tend the tender shoots of beginning",
+      "warning": "Smothering growth, refusing to let things emerge naturally",
+      "element": "Earth", "planet": "Moon", "zodiac_home": "Cancer",
+      "star_chart": {
+        "geometry": "DOUBLE_CURVE", "angular_aspect": "trine",
+        "trigger_angle_deg": 120, "tolerance_deg": 8,
+        "planet_pair": ["Moon", "Venus"], "vertex_count": 5, "sacred_angle": 120,
+        "description": "Two rounded bumps on a vertical — Moon trine Venus (120\u00b0), feminine nurturing."
+      },
+      "trading_signal": { "bias": "BUY", "domain": "growth", "strength": 0.68 }
+    },
+    {
+      "id": "ehwaz", "name": "Ehwaz", "unicode": "\u16d6", "number": 19, "aett": "tyrs_aett",
+      "meaning": "Horse, partnership, trust, movement, twin forces in harmony",
+      "lesson": "Move with your partner; rider and horse must be one",
+      "warning": "Mistrust, reckless speed, broken partnerships",
+      "element": "Earth", "planet": "Mercury", "zodiac_home": "Gemini",
+      "star_chart": {
+        "geometry": "M_SHAPE", "angular_aspect": "conjunction",
+        "trigger_angle_deg": 0, "tolerance_deg": 10,
+        "planet_pair": ["Mercury", "Venus"], "vertex_count": 4, "sacred_angle": 30,
+        "description": "An M of two mirrored angles — Mercury conjunct Venus (0\u00b0), twin messengers ride."
+      },
+      "trading_signal": { "bias": "BUY", "domain": "partnership", "strength": 0.74 }
+    },
+    {
+      "id": "mannaz", "name": "Mannaz", "unicode": "\u16d7", "number": 20, "aett": "tyrs_aett",
+      "meaning": "Mankind, the self, intelligence, social order, humanity",
+      "lesson": "Know thyself; the greatest rune is the human being",
+      "warning": "Self-deception, isolation, manipulation of others",
+      "element": "Air", "planet": "Mercury", "zodiac_home": "Aquarius",
+      "star_chart": {
+        "geometry": "DIAMOND_CROSS", "angular_aspect": "sextile",
+        "trigger_angle_deg": 60, "tolerance_deg": 8,
+        "planet_pair": ["Mercury", "Uranus"], "vertex_count": 5, "sacred_angle": 60,
+        "description": "An M with central cross — Mercury sextile Uranus (60\u00b0), mind amplified by cosmic insight."
+      },
+      "trading_signal": { "bias": "BUY", "domain": "intelligence", "strength": 0.72 }
+    },
+    {
+      "id": "laguz", "name": "Laguz", "unicode": "\u16da", "number": 21, "aett": "tyrs_aett",
+      "meaning": "Water, flow, intuition, the unconscious, dreams, lake",
+      "lesson": "Go with the flow; water finds its own level",
+      "warning": "Drowning in emotion, being swept away, fear of the depths",
+      "element": "Water", "planet": "Moon", "zodiac_home": "Cancer",
+      "star_chart": {
+        "geometry": "LEANING_STROKE", "angular_aspect": "sextile",
+        "trigger_angle_deg": 60, "tolerance_deg": 8,
+        "planet_pair": ["Moon", "Neptune"], "vertex_count": 2, "sacred_angle": 60,
+        "description": "A single leaning line — Moon sextile Neptune (60\u00b0), intuition flows."
+      },
+      "trading_signal": { "bias": "HOLD", "domain": "intuition", "strength": 0.55 }
+    },
+    {
+      "id": "ingwaz", "name": "Ingwaz", "unicode": "\u16dc", "number": 22, "aett": "tyrs_aett",
+      "meaning": "The seed, gestation, internal growth, Ing/Freyr, completion",
+      "lesson": "The seed is planted. Wait. Completion comes from within",
+      "warning": "Aborting the process early; not trusting the gestation",
+      "element": "Earth", "planet": "Venus", "zodiac_home": "Taurus",
+      "star_chart": {
+        "geometry": "DIAMOND", "angular_aspect": "trine",
+        "trigger_angle_deg": 120, "tolerance_deg": 8,
+        "planet_pair": ["Venus", "Moon"], "vertex_count": 4, "sacred_angle": 60,
+        "description": "A perfect diamond/rhombus — Venus trine Moon (120\u00b0), seed crystal geometry."
+      },
+      "trading_signal": { "bias": "HOLD", "domain": "gestation", "strength": 0.60 }
+    },
+    {
+      "id": "dagaz", "name": "Dagaz", "unicode": "\u16de", "number": 23, "aett": "tyrs_aett",
+      "meaning": "Day, dawn, breakthrough, awakening, polarity synthesis",
+      "lesson": "Dawn comes after the darkest hour; breakthrough is imminent",
+      "warning": "Blinding yourself to shadow; overconfidence at transition",
+      "element": "Fire", "planet": "Sun", "zodiac_home": "Leo",
+      "star_chart": {
+        "geometry": "HOURGLASS", "angular_aspect": "opposition",
+        "trigger_angle_deg": 180, "tolerance_deg": 8,
+        "planet_pair": ["Sun", "Moon"], "vertex_count": 4, "sacred_angle": 180,
+        "description": "A bowtie/hourglass — Sun opposition Moon (180\u00b0, Full Moon), polarity breaks."
+      },
+      "trading_signal": { "bias": "BUY", "domain": "breakthrough", "strength": 0.88 }
+    },
+    {
+      "id": "othala", "name": "Othala", "unicode": "\u16df", "number": 24, "aett": "tyrs_aett",
+      "meaning": "Ancestral property, inheritance, homeland, sacred enclosure",
+      "lesson": "Honor your roots; true wealth is what cannot be taken",
+      "warning": "Clannishness, exclusion, hoarding, loss of inheritance",
+      "element": "Earth", "planet": "Saturn", "zodiac_home": "Capricorn",
+      "star_chart": {
+        "geometry": "ENCLOSED_DIAMOND", "angular_aspect": "trine",
+        "trigger_angle_deg": 120, "tolerance_deg": 6,
+        "planet_pair": ["Saturn", "Venus"], "vertex_count": 5, "sacred_angle": 120,
+        "description": "A diamond atop a V-base — Saturn trine Venus (120\u00b0), ancestral inheritance locked in sacred geometry."
+      },
+      "trading_signal": { "bias": "HOLD", "domain": "preservation", "strength": 0.55 }
     }
   ]
 }

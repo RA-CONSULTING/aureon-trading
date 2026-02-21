@@ -69,7 +69,7 @@ from decimal import Decimal, ROUND_DOWN
 from enum import Enum
 
 # Exchange clients
-from binance_client import BinanceClient
+from binance_client import BinanceClient, get_binance_client
 from kraken_client import KrakenClient, get_kraken_client
 from alpaca_client import AlpacaClient
 from capital_client import CapitalClient
@@ -579,9 +579,19 @@ class HarmonicWaveformScanner:
         relay.total_power = sum(n.power for n in relay.nodes)
         relay.total_extractable = sum(n.extractable for n in relay.nodes)
     
+    _cached_field = None
+    _cached_field_time = 0.0
+    _FIELD_CACHE_TTL = 300  # 5 minutes cache — avoid hammering exchange APIs
+
     def scan_complete_field(self) -> HarmonicField:
-        """SCAN THE ENTIRE HARMONIC FIELD"""
-        
+        """SCAN THE ENTIRE HARMONIC FIELD (cached for 5 min to avoid API overload)"""
+
+        # Return cached result if fresh enough
+        now = time.time()
+        if (HarmonicWaveformScanner._cached_field is not None
+                and now - HarmonicWaveformScanner._cached_field_time < self._FIELD_CACHE_TTL):
+            return HarmonicWaveformScanner._cached_field
+
         print("\n" + "🌊"*60)
         print("   SCANNING QUEEN SERO'S HARMONIC WAVEFORM")
         print("🌊"*60 + "\n")
@@ -601,7 +611,19 @@ class HarmonicWaveformScanner:
         self.field.relays['ALP'] = self.scan_alpaca_relay()
         
         print("📡 Connecting to CAP (Capital.com)...")
-        self.field.relays['CAP'] = self.scan_capital_relay()
+        # Wrap Capital.com in a timeout — it hangs frequently
+        from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeout
+        _cap_executor = ThreadPoolExecutor(max_workers=1)
+        try:
+            future = _cap_executor.submit(self.scan_capital_relay)
+            self.field.relays['CAP'] = future.result(timeout=15)
+        except (FuturesTimeout, Exception) as e:
+            print(f"⚠️ Capital.com scan timed out/failed ({e}) — using empty relay")
+            cap_relay = HarmonicRelay(code='CAP', name='Capital.com')
+            self._aggregate_relay(cap_relay)
+            self.field.relays['CAP'] = cap_relay
+        finally:
+            _cap_executor.shutdown(wait=False)
         
         # Collect all nodes
         for relay in self.field.relays.values():
@@ -637,6 +659,9 @@ class HarmonicWaveformScanner:
             self.field.nodes_above_center = sum(1 for s in shifts if s > self.field.wave_center)
             self.field.nodes_below_center = sum(1 for s in shifts if s <= self.field.wave_center)
         
+        # Cache the result
+        HarmonicWaveformScanner._cached_field = self.field
+        HarmonicWaveformScanner._cached_field_time = time.time()
         return self.field
     
     # ═══════════════════════════════════════════════════════════════════════════════════════

@@ -1,38 +1,61 @@
 #!/usr/bin/env python3
 """
-AUREON THE SEER - Ecosystem Integration
+AUREON QUADRUMVIRATE CONSENSUS - Four-Pillar Ecosystem Integration
 =====================================================
-"The Seer stands between the Queen and the King,
- whispering what reality truly looks like."
+"Four minds, one truth. The Queen, King, Seer and Lyra must all agree.
+ When is the right moment? They confer, they calculate, they decide together."
 
-Wires Aureon the Seer into the Aureon trading ecosystem:
-  - Feeds live market data to the Seer's Oracles
-  - Provides the Seer's vision to the Queen for trading decisions
-  - Provides the Seer's vision to the King for risk assessment
-  - Generates three-pillar FREEWAY consensus (Queen + King + Seer)
-  - Broadcasts visions to the ThoughtBus
-  - Manages control handoff between the three pillars
+Wires ALL FOUR Pillars into the Aureon trading ecosystem:
+  - Feeds live market data to Seer's 5 Oracles and Lyra's 6 Chambers
+  - Runs FOUR-PILLAR freeway consensus (Queen + King + Seer + Lyra)
+  - Temporal Consensus Engine: "WHEN is the best time?" not just "should we?"
+  - Probability Field Collapse: each confirming signal narrows the outcome
+  - Deep Propagation: iterative multi-wave cognitive convergence
+  - Broadcasts consensus events to the ThoughtBus
 
-THE TRIUMVIRATE:
-  Queen (aureon_queen_hive_mind.py) - Trading cognition (11+ systems = VETO power)
-  King  (king_accounting.py)        - Financial truth (5 Royal Deciphers)
-  Seer  (aureon_seer.py)            - Cosmic coherence (5 Oracles)
+THE QUADRUMVIRATE (Four Pillars):
+  Queen (aureon_queen_hive_mind.py)  - Trading cognition (11+ systems = VETO power)
+  King  (king_accounting.py)         - Financial truth (5 Royal Deciphers)
+  Seer  (aureon_seer.py)             - Cosmic coherence (5 Oracles)
+  Lyra  (aureon_lyra.py)             - Emotional frequency (6 Chambers, 22+ systems)
 
 FREEWAY CONSENSUS:
-  All 3 must independently vote PASS. Queen has absolute veto.
+  ALL 4 must independently vote PASS. Queen has absolute veto.
+
+TEMPORAL CONSENSUS:
+  When consensus says "not now", the system computes WHEN:
+  - Market session windows (London/NY overlap = prime time)
+  - Day-of-week patterns (learned from history)
+  - Lunar/cosmic alignment windows
+  - Lyra emotional cycle phases
+  → Output: optimal_window_utc, wait_seconds, reasoning
+
+PROBABILITY FIELD COLLAPSE:
+  Each confirming signal reduces entropy in the decision field.
+  More signals aligned = tighter probability = more confident action.
+  Four-wave computation: Cognition → Emotion → Cosmos → Finance
+  Each wave either reinforces or attenuates the prior, collapsing the
+  probability distribution toward a decisive action.
 
 Gary Leckey | February 2026
 """
 
 import time
+import math
 import logging
-from typing import Dict, Any, Optional
+from datetime import datetime, timedelta, timezone
+from typing import Dict, Any, Optional, Tuple, List
 
 logger = logging.getLogger(__name__)
+
+# Sacred constants
+PHI = (1 + math.sqrt(5)) / 2  # Golden ratio 1.618...
+SCHUMANN_HZ = 7.83
 
 # Lazy imports
 _seer = None
 _king = None
+_lyra = None
 _triumvirate = None
 
 
@@ -53,6 +76,17 @@ def _get_king():
         except ImportError:
             _king = None
     return _king
+
+
+def _get_lyra():
+    global _lyra
+    if _lyra is None:
+        try:
+            from aureon_lyra import get_lyra
+            _lyra = get_lyra()
+        except ImportError:
+            _lyra = None
+    return _lyra
 
 
 def _get_triumvirate():
@@ -117,15 +151,17 @@ def seer_should_trade() -> bool:
 
 
 # ═══════════════════════════════════════════════════════════════════════════
-# THREE-PILLAR FREEWAY CONSENSUS
+# FOUR-PILLAR FREEWAY CONSENSUS (QUADRUMVIRATE)
 # ═══════════════════════════════════════════════════════════════════════════
 
 def get_triumvirate_consensus(queen_confidence: float = 0.5,
                               queen_data: Dict[str, Any] = None,
                               context: Dict[str, Any] = None) -> Dict[str, Any]:
     """
-    FREEWAY CONSENSUS: All 3 pillars must independently vote PASS.
+    FOUR-PILLAR FREEWAY CONSENSUS: All 4 pillars must independently vote PASS.
     Queen has ABSOLUTE VETO (she has 11+ connected systems).
+
+    Now includes Lyra (4th pillar) for emotional/harmonic gating.
 
     Args:
         queen_confidence: 0.0-1.0 from Queen's cognition systems
@@ -194,15 +230,49 @@ def get_triumvirate_consensus(queen_confidence: float = 0.5,
         except Exception:
             pass
 
-    # Run Triumvirate freeway consensus
+    # ─── Get Lyra's resonance and emotional data (4th pillar) ───
+    lyra_grade = "PARTIAL_HARMONY"
+    lyra_score = 0.5
+    lyra_data = {}
+    lyra = _get_lyra()
+    if lyra:
+        try:
+            if lyra.latest_resonance is None or (time.time() - lyra.latest_resonance.timestamp > 60):
+                lyra.feel()
+            res = lyra.latest_resonance
+            if res:
+                lyra_grade = res.grade
+                lyra_score = res.unified_score
+                lyra_data = {
+                    "emotional_frequency": res.emotional_frequency,
+                    "emotional_zone": res.emotional_zone,
+                    "position_multiplier": res.position_multiplier,
+                    "exit_urgency": res.exit_urgency,
+                    "action": res.action,
+                    "song": res.song if hasattr(res, 'song') else "",
+                    "emotion_score": getattr(res, 'emotion_score', 0.5),
+                    "earth_score": getattr(res, 'earth_score', 0.5),
+                    "harmony_score": getattr(res, 'harmony_score', 0.5),
+                    "voice_score": getattr(res, 'voice_score', 0.5),
+                    "solfeggio_score": getattr(res, 'solfeggio_score', 0.5),
+                    "spirit_score": getattr(res, 'spirit_score', 0.5),
+                    "trend": getattr(res, 'trend', "STABLE"),
+                }
+        except Exception as e:
+            logger.debug(f"Lyra resonance read error: {e}")
+
+    # ─── Run FOUR-PILLAR freeway consensus ───
     consensus = triumvirate.evaluate_consensus(
         queen_confidence=queen_confidence,
         king_health=king_health,
         seer_grade=seer_grade,
         seer_score=seer_score,
+        lyra_grade=lyra_grade,
+        lyra_score=lyra_score,
         queen_data=queen_data,
         king_data=king_data,
         seer_data=seer_data,
+        lyra_data=lyra_data,
         context=context,
     )
 
@@ -239,8 +309,21 @@ def get_triumvirate_consensus(queen_confidence: float = 0.5,
                 "connected_systems": consensus.seer_vote.connected_systems,
                 "role": "Cosmic Coherence",
             },
+            "lyra": {
+                "vote": consensus.lyra_vote.vote if consensus.lyra_vote else "ABSTAIN",
+                "grade": consensus.lyra_vote.grade if consensus.lyra_vote else "UNKNOWN",
+                "score": consensus.lyra_vote.score if consensus.lyra_vote else 0.5,
+                "reason": consensus.lyra_vote.reason if consensus.lyra_vote else "Lyra unavailable",
+                "connected_systems": consensus.lyra_vote.connected_systems if consensus.lyra_vote else 0,
+                "role": "Emotional Frequency",
+            },
         },
         "data_exchange": consensus.data_exchange,
+        # Actionable modifiers for sizing and urgency
+        "risk_modifier": seer_data.get("risk_modifier", 1.0),
+        "position_multiplier": lyra_data.get("position_multiplier", 1.0),
+        "exit_urgency": lyra_data.get("exit_urgency", "none"),
+        "combined_sizing_modifier": seer_data.get("risk_modifier", 1.0) * lyra_data.get("position_multiplier", 1.0),
     }
 
     # Broadcast to ThoughtBus
@@ -259,6 +342,531 @@ def get_triumvirate_summary() -> Dict[str, Any]:
     """Get the Triumvirate's current state summary."""
     triumvirate = _get_triumvirate()
     return triumvirate.get_summary()
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# TEMPORAL CONSENSUS ENGINE
+# "Not just should we trade — WHEN is the optimal moment?"
+# ═══════════════════════════════════════════════════════════════════════════
+
+# Market session definitions (UTC hours)
+MARKET_SESSIONS = {
+    "SYDNEY":      {"open": 22, "close": 7,  "weight": 0.50},  # 22:00-07:00 UTC
+    "TOKYO":       {"open": 0,  "close": 9,  "weight": 0.55},  # 00:00-09:00 UTC
+    "LONDON":      {"open": 8,  "close": 17, "weight": 0.75},  # 08:00-17:00 UTC
+    "NEW_YORK":    {"open": 13, "close": 22, "weight": 0.70},  # 13:00-22:00 UTC
+    "LONDON_NY":   {"open": 13, "close": 17, "weight": 0.90},  # 13:00-17:00 UTC (OVERLAP = PRIME)
+    "TOKYO_LONDON": {"open": 8, "close": 9,  "weight": 0.80},  # 08:00-09:00 UTC (OVERLAP)
+}
+
+# Day-of-week patterns (0=Monday, 6=Sunday) — empirical trading data
+DAY_WEIGHTS = {
+    0: 0.70,  # Monday — slow start, false signals after weekend
+    1: 0.80,  # Tuesday — good momentum
+    2: 0.85,  # Wednesday — PEAK mid-week activity
+    3: 0.80,  # Thursday — good, but watch for Friday positioning
+    4: 0.65,  # Friday — profit-taking, reduced conviction
+    5: 0.30,  # Saturday — crypto only, thin liquidity
+    6: 0.35,  # Sunday — crypto only, building before Monday
+}
+
+# Lunar phase multiplier (0.0=New Moon, 0.5=Full Moon, 1.0=next New)
+LUNAR_CYCLE_DAYS = 29.53
+# Reference: Jan 29, 2025 was a New Moon (epoch for calculation)
+LUNAR_EPOCH = datetime(2025, 1, 29, tzinfo=timezone.utc)
+
+
+def _get_lunar_phase() -> Tuple[float, str]:
+    """Calculate current lunar phase (0-1) and human-readable name."""
+    now = datetime.now(timezone.utc)
+    days_since_new = (now - LUNAR_EPOCH).total_seconds() / 86400.0
+    phase = (days_since_new % LUNAR_CYCLE_DAYS) / LUNAR_CYCLE_DAYS
+
+    if phase < 0.125:
+        name = "NEW_MOON"
+    elif phase < 0.25:
+        name = "WAXING_CRESCENT"
+    elif phase < 0.375:
+        name = "FIRST_QUARTER"
+    elif phase < 0.5:
+        name = "WAXING_GIBBOUS"
+    elif phase < 0.625:
+        name = "FULL_MOON"
+    elif phase < 0.75:
+        name = "WANING_GIBBOUS"
+    elif phase < 0.875:
+        name = "LAST_QUARTER"
+    else:
+        name = "WANING_CRESCENT"
+
+    return phase, name
+
+
+def _get_lunar_multiplier(phase: float) -> float:
+    """
+    Lunar tidal torsion scalar.
+    New Moon and Full Moon = syzygy = heightened market volatility.
+    Quarter moons = neap tides = calmer markets.
+    """
+    # Syzygy peaks at 0.0 (new) and 0.5 (full): +20% energy
+    # Neap troughs at 0.25 and 0.75: -10% energy
+    return 1.0 + 0.20 * abs(math.cos(2 * math.pi * phase))
+
+
+def _get_active_sessions(hour_utc: int) -> List[str]:
+    """Return list of active market sessions for the given UTC hour."""
+    active = []
+    for name, sess in MARKET_SESSIONS.items():
+        o, c = sess["open"], sess["close"]
+        if o < c:
+            if o <= hour_utc < c:
+                active.append(name)
+        else:  # Wraps midnight (e.g. Sydney 22-07)
+            if hour_utc >= o or hour_utc < c:
+                active.append(name)
+    return active
+
+
+def _compute_session_score(hour_utc: int) -> Tuple[float, List[str]]:
+    """Compute session quality score and list active sessions."""
+    active = _get_active_sessions(hour_utc)
+    if not active:
+        return 0.3, ["OFF_HOURS"]
+    # Take the best session weight (overlaps are already defined)
+    best_weight = max(MARKET_SESSIONS[s]["weight"] for s in active)
+    return best_weight, active
+
+
+def _find_next_prime_window(now_utc: datetime) -> Tuple[datetime, str, float]:
+    """
+    Scan forward from now to find the next high-quality trading window.
+    Returns (window_start_utc, reason, expected_score).
+    """
+    best_score = 0.0
+    best_hour_offset = 1
+    best_reason = ""
+
+    # Look ahead up to 24 hours in 1-hour increments
+    for offset_hours in range(1, 25):
+        future = now_utc + timedelta(hours=offset_hours)
+        future_hour = future.hour
+        future_dow = future.weekday()
+
+        session_score, sessions = _compute_session_score(future_hour)
+        day_weight = DAY_WEIGHTS.get(future_dow, 0.5)
+        combined = session_score * day_weight
+
+        if combined > best_score:
+            best_score = combined
+            best_hour_offset = offset_hours
+            best_reason = f"{', '.join(sessions)} on {future.strftime('%A')} {future.strftime('%H:%M')} UTC"
+
+    window_start = now_utc + timedelta(hours=best_hour_offset)
+    return window_start, best_reason, best_score
+
+
+def get_temporal_consensus() -> Dict[str, Any]:
+    """
+    TEMPORAL CONSENSUS: Multi-dimensional time analysis.
+    Combines market sessions, day patterns, lunar phase, Seer Oracle of Time,
+    and Lyra emotional cycles into a unified temporal score.
+
+    Returns:
+        Dict with:
+            temporal_score: 0.0-1.0 overall favorability of THIS moment
+            trade_now: bool - should we trade right now?
+            sessions: list of active market sessions
+            day_weight: float - day-of-week factor
+            lunar_phase: str - current lunar phase name
+            lunar_multiplier: float - tidal torsion scalar
+            optimal_window: dict - if not now, when is best?
+            reasoning: str - human-readable explanation
+    """
+    now = datetime.now(timezone.utc)
+    hour_utc = now.hour
+    dow = now.weekday()
+
+    # ─── Layer 1: Market session scoring ───
+    session_score, active_sessions = _compute_session_score(hour_utc)
+
+    # ─── Layer 2: Day-of-week scoring ───
+    day_weight = DAY_WEIGHTS.get(dow, 0.5)
+
+    # ─── Layer 3: Lunar phase ───
+    lunar_phase, lunar_name = _get_lunar_phase()
+    lunar_mul = _get_lunar_multiplier(lunar_phase)
+
+    # ─── Layer 4: Seer Oracle of Time (if available) ───
+    seer_time_score = 0.5
+    seer = _get_seer()
+    if seer and seer.latest_vision:
+        try:
+            tl = seer.latest_vision.timeline
+            if tl:
+                seer_time_score = tl.score
+        except Exception:
+            pass
+
+    # ─── Layer 5: Lyra emotional cycle phase ───
+    lyra_energy = 0.5
+    lyra = _get_lyra()
+    if lyra and lyra.latest_resonance:
+        try:
+            lyra_energy = lyra.latest_resonance.unified_score
+        except Exception:
+            pass
+
+    # ─── Combine with PHI-weighted convergence ───
+    # Session (30%) + Day (15%) + Lunar (10%) + Seer Time (25%) + Lyra (20%)
+    temporal_score = (
+        0.30 * session_score +
+        0.15 * day_weight +
+        0.10 * min(1.0, lunar_mul - 0.5) +  # Normalize lunar 0.8-1.2 → 0.3-0.7
+        0.25 * seer_time_score +
+        0.20 * lyra_energy
+    )
+
+    # Clamp
+    temporal_score = max(0.0, min(1.0, temporal_score))
+
+    # ─── Decision: trade now or wait? ───
+    trade_now = temporal_score >= 0.50
+
+    # ─── If not now, find the next good window ───
+    optimal_window = None
+    if not trade_now:
+        window_start, reason, expected_score = _find_next_prime_window(now)
+        wait_seconds = (window_start - now).total_seconds()
+        optimal_window = {
+            "window_start_utc": window_start.isoformat(),
+            "wait_seconds": int(wait_seconds),
+            "wait_human": f"{int(wait_seconds // 3600)}h {int((wait_seconds % 3600) // 60)}m",
+            "expected_score": round(expected_score, 3),
+            "reason": reason,
+        }
+
+    # ─── Build reasoning ───
+    reasons = []
+    if "LONDON_NY" in active_sessions:
+        reasons.append("London/NY overlap = PRIME trading window")
+    elif "LONDON" in active_sessions:
+        reasons.append("London session active")
+    elif "NEW_YORK" in active_sessions:
+        reasons.append("New York session active")
+    elif "TOKYO_LONDON" in active_sessions:
+        reasons.append("Tokyo/London overlap")
+    elif "TOKYO" in active_sessions:
+        reasons.append("Tokyo session (moderate)")
+    elif "SYDNEY" in active_sessions:
+        reasons.append("Sydney session (low liquidity)")
+    else:
+        reasons.append("OFF HOURS - no major sessions active")
+
+    reasons.append(f"{now.strftime('%A')} (weight {day_weight:.0%})")
+    reasons.append(f"Lunar: {lunar_name} (x{lunar_mul:.2f})")
+
+    if seer_time_score >= 0.7:
+        reasons.append(f"Seer sees FAVORABLE time ({seer_time_score:.0%})")
+    elif seer_time_score < 0.4:
+        reasons.append(f"Seer sees UNFAVORABLE time ({seer_time_score:.0%})")
+
+    if lyra_energy >= 0.7:
+        reasons.append(f"Lyra emotional energy HIGH ({lyra_energy:.0%})")
+    elif lyra_energy < 0.4:
+        reasons.append(f"Lyra emotional energy LOW ({lyra_energy:.0%})")
+
+    return {
+        "temporal_score": round(temporal_score, 4),
+        "trade_now": trade_now,
+        "sessions": active_sessions,
+        "session_score": round(session_score, 3),
+        "day_weight": round(day_weight, 3),
+        "day_name": now.strftime('%A'),
+        "hour_utc": hour_utc,
+        "lunar_phase": lunar_name,
+        "lunar_phase_value": round(lunar_phase, 4),
+        "lunar_multiplier": round(lunar_mul, 4),
+        "seer_time_score": round(seer_time_score, 4),
+        "lyra_energy": round(lyra_energy, 4),
+        "optimal_window": optimal_window,
+        "reasoning": " | ".join(reasons),
+    }
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# PROBABILITY FIELD COLLAPSE ENGINE
+# "Each confirming signal reduces entropy. Four waves converge."
+# ═══════════════════════════════════════════════════════════════════════════
+
+def collapse_probability_field(queen_confidence: float = 0.5,
+                               queen_data: Dict[str, Any] = None,
+                               symbol: str = "",
+                               context: Dict[str, Any] = None) -> Dict[str, Any]:
+    """
+    FOUR-WAVE PROBABILITY FIELD COLLAPSE
+
+    Each wave either reinforces or attenuates the decision field.
+    More aligned signals = lower entropy = more confident action.
+
+    Wave 1 - COGNITION (Queen): Trading algorithms, pattern recognition
+    Wave 2 - EMOTION (Lyra): Harmonic resonance, market sentiment frequency
+    Wave 3 - COSMOS (Seer): Cosmic alignment, temporal coherence, earth
+    Wave 4 - FINANCE (King): P&L truth, cost basis, portfolio health
+
+    The four waves propagate through the field. Each confirming wave
+    MULTIPLIES the coherence (phi-scaled), each contradicting wave
+    attenuates it. The field collapses toward a decisive action.
+
+    Returns:
+        Dict with:
+            field_coherence: 0.0-1.0 how collapsed the field is
+            field_entropy: inverse of coherence (uncertainty remaining)
+            action: STRONG_BUY / BUY / HOLD / SELL / STRONG_SELL / HALT
+            consensus: full Quadrumvirate consensus result
+            temporal: temporal consensus result
+            waves: individual wave readings
+            collapse_narrative: human-readable story
+    """
+    # ─── Wave 1: COGNITION (Queen) ───
+    wave1 = {
+        "name": "COGNITION",
+        "source": "Queen",
+        "score": queen_confidence,
+        "bias": "BUY" if queen_confidence >= 0.55 else ("SELL" if queen_confidence < 0.40 else "NEUTRAL"),
+    }
+
+    # ─── Wave 2: EMOTION (Lyra) ───
+    lyra = _get_lyra()
+    lyra_score = 0.5
+    lyra_bias = "NEUTRAL"
+    if lyra and lyra.latest_resonance:
+        try:
+            if time.time() - lyra.latest_resonance.timestamp > 60:
+                lyra.feel()
+            res = lyra.latest_resonance
+            lyra_score = res.unified_score
+            lyra_bias = res.action if res.action else "HOLD"
+        except Exception:
+            pass
+    wave2 = {"name": "EMOTION", "source": "Lyra", "score": lyra_score, "bias": lyra_bias}
+
+    # ─── Wave 3: COSMOS (Seer) ───
+    seer = _get_seer()
+    seer_score = 0.5
+    seer_bias = "NEUTRAL"
+    if seer:
+        try:
+            if seer.latest_vision is None or (time.time() - seer.latest_vision.timestamp > 60):
+                seer.see()
+            vis = seer.latest_vision
+            if vis:
+                seer_score = vis.unified_score
+                seer_bias = vis.action if vis.action else "HOLD"
+        except Exception:
+            pass
+    wave3 = {"name": "COSMOS", "source": "Seer", "score": seer_score, "bias": seer_bias}
+
+    # ─── Wave 4: FINANCE (King) ───
+    king = _get_king()
+    king_score = 0.5
+    king_bias = "NEUTRAL"
+    if king:
+        try:
+            pnl = king.treasury.omega.get_summary()
+            wr = pnl.get("win_rate", 50.0)
+            total_pnl = pnl.get("total_realized_pnl", 0)
+            king_score = min(1.0, max(0.0, wr / 100.0))
+            if total_pnl > 0 and wr >= 55:
+                king_bias = "BUY"
+                king_score = min(1.0, 0.5 + total_pnl / 500.0)
+            elif total_pnl < -20:
+                king_bias = "SELL"
+                king_score = max(0.1, 0.5 + total_pnl / 200.0)
+            else:
+                king_bias = "NEUTRAL"
+        except Exception:
+            pass
+    wave4 = {"name": "FINANCE", "source": "King", "score": king_score, "bias": king_bias}
+
+    waves = [wave1, wave2, wave3, wave4]
+
+    # ─── Probability Field Collapse Calculation ───
+    # 1. Compute mean signal strength
+    scores = [w["score"] for w in waves]
+    mean_score = sum(scores) / len(scores)
+
+    # 2. Compute variance (entropy proxy)
+    variance = sum((s - mean_score) ** 2 for s in scores) / len(scores)
+    # Max variance is 0.25 (one at 0, one at 1)
+    entropy = min(1.0, variance / 0.25)
+
+    # 3. Coherence = inverse entropy, boosted by phi when aligned
+    coherence = 1.0 - entropy
+
+    # 4. Bias alignment check: how many waves agree?
+    buy_signals = sum(1 for w in waves if w["bias"] in ("BUY", "BUY_BIAS", "STRONG_BUY", "BUY_BOOST"))
+    sell_signals = sum(1 for w in waves if w["bias"] in ("SELL", "SELL_BIAS", "STRONG_SELL", "SELL_PRESSURE"))
+    neutral_signals = len(waves) - buy_signals - sell_signals
+
+    # Alignment bonus: unanimous = phi boost, 3/4 = moderate boost
+    if buy_signals == 4 or sell_signals == 4:
+        coherence = min(1.0, coherence * PHI)  # Phi-scaled unanimous boost
+    elif buy_signals >= 3 or sell_signals >= 3:
+        coherence = min(1.0, coherence * 1.25)  # 3/4 aligned boost
+    elif buy_signals == 2 and sell_signals == 2:
+        coherence *= 0.5  # Split field = high entropy, low coherence
+
+    coherence = max(0.0, min(1.0, coherence))
+    entropy = 1.0 - coherence
+
+    # ─── Determine dominant action from collapsed field ───
+    if buy_signals > sell_signals:
+        if coherence >= 0.85 and mean_score >= 0.70:
+            action = "STRONG_BUY"
+        elif coherence >= 0.60 and mean_score >= 0.55:
+            action = "BUY"
+        else:
+            action = "HOLD"
+    elif sell_signals > buy_signals:
+        if coherence >= 0.85 and mean_score <= 0.35:
+            action = "STRONG_SELL"
+        elif coherence >= 0.60 and mean_score <= 0.45:
+            action = "SELL"
+        else:
+            action = "HOLD"
+    else:
+        action = "HOLD"
+
+    # ─── Run full Quadrumvirate consensus ───
+    consensus = get_triumvirate_consensus(
+        queen_confidence=queen_confidence,
+        queen_data=queen_data,
+        context=context,
+    )
+
+    # ─── Override action if consensus HALTs ───
+    if consensus.get("consensus_action") == "HALT":
+        action = "HALT"
+
+    # ─── Temporal analysis ───
+    temporal = get_temporal_consensus()
+
+    # If temporal says "not now" and field says BUY, downgrade to HOLD
+    if not temporal["trade_now"] and action in ("BUY", "STRONG_BUY"):
+        action = "HOLD"
+
+    # ─── Build collapse narrative ───
+    narrative_parts = []
+    narrative_parts.append(f"Field coherence: {coherence:.0%} (entropy {entropy:.0%})")
+    narrative_parts.append(f"Waves: {buy_signals} BUY, {sell_signals} SELL, {neutral_signals} NEUTRAL")
+    for w in waves:
+        narrative_parts.append(f"  {w['source']}: {w['bias']} ({w['score']:.0%})")
+    narrative_parts.append(f"Temporal: {temporal['reasoning']}")
+    if temporal.get("optimal_window"):
+        ow = temporal["optimal_window"]
+        narrative_parts.append(f"  Wait {ow['wait_human']} for {ow['reason']}")
+    narrative_parts.append(f"Quadrumvirate: {consensus.get('consensus_action', 'UNKNOWN')}")
+    narrative_parts.append(f"COLLAPSED ACTION: {action}")
+
+    return {
+        "field_coherence": round(coherence, 4),
+        "field_entropy": round(entropy, 4),
+        "action": action,
+        "mean_score": round(mean_score, 4),
+        "buy_signals": buy_signals,
+        "sell_signals": sell_signals,
+        "consensus": consensus,
+        "temporal": temporal,
+        "waves": waves,
+        "collapse_narrative": "\n".join(narrative_parts),
+        "symbol": symbol,
+    }
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# UNIFIED GATE: "Should we trade RIGHT NOW?"
+# Called once per scan cycle to gate all trading activity.
+# ═══════════════════════════════════════════════════════════════════════════
+
+def quadrumvirate_should_trade(queen_confidence: float = 0.5,
+                               queen_data: Dict[str, Any] = None) -> Dict[str, Any]:
+    """
+    UNIFIED PRE-SCAN GATE: All four pillars + temporal + field collapse.
+
+    Call this ONCE before any scan/trade cycle. Returns a simple
+    go/no-go with full reasoning and timing guidance.
+
+    Returns:
+        Dict with:
+            should_trade: bool
+            action: str ("BUY"/"SELL"/"HOLD"/"HALT")
+            field_coherence: float 0-1
+            temporal_score: float 0-1
+            alignment_score: float 0-1
+            sizing_modifier: float (apply to position size)
+            wait_guidance: dict or None (if should wait, when to resume)
+            summary: str (one-line summary)
+            detail: str (full narrative)
+    """
+    # Run the full probability field collapse
+    field = collapse_probability_field(
+        queen_confidence=queen_confidence,
+        queen_data=queen_data,
+    )
+
+    consensus = field["consensus"]
+    temporal = field["temporal"]
+    action = field["action"]
+
+    # Determine if we should trade
+    should_trade = (
+        action in ("BUY", "STRONG_BUY", "SELL", "STRONG_SELL") and
+        consensus.get("passed", False) and
+        temporal.get("trade_now", True)
+    )
+
+    # Combined sizing modifier from Seer risk + Lyra position multiplier
+    sizing_mod = consensus.get("combined_sizing_modifier", 1.0)
+
+    # Wait guidance if not trading
+    wait_guidance = None
+    if not should_trade and temporal.get("optimal_window"):
+        wait_guidance = temporal["optimal_window"]
+
+    # Summary line
+    pillars_status = []
+    for name in ["queen", "king", "seer", "lyra"]:
+        p = consensus.get("pillars", {}).get(name, {})
+        vote = p.get("vote", "?")
+        grade = p.get("grade", p.get("health", "?"))
+        emoji = "PASS" if vote == "PASS" else "BLOCK"
+        pillars_status.append(f"{name.capitalize()}={emoji}({grade})")
+
+    summary = (
+        f"{'GO' if should_trade else 'WAIT'} | "
+        f"Action={action} | "
+        f"Coherence={field['field_coherence']:.0%} | "
+        f"Time={temporal['temporal_score']:.0%} | "
+        f"{' | '.join(pillars_status)}"
+    )
+
+    return {
+        "should_trade": should_trade,
+        "action": action,
+        "field_coherence": field["field_coherence"],
+        "field_entropy": field["field_entropy"],
+        "temporal_score": temporal["temporal_score"],
+        "alignment_score": consensus.get("alignment_score", 0.0),
+        "sizing_modifier": sizing_mod,
+        "exit_urgency": consensus.get("exit_urgency", "none"),
+        "wait_guidance": wait_guidance,
+        "active_controller": consensus.get("active_controller", "QUEEN"),
+        "summary": summary,
+        "detail": field["collapse_narrative"],
+        "waves": field["waves"],
+        "temporal": temporal,
+        "consensus": consensus,
+    }
 
 
 # ═══════════════════════════════════════════════════════════════════════════

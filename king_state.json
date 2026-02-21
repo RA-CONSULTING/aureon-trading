@@ -1,0 +1,612 @@
+{
+  "saved_at": "2026-02-20T13:02:27.190412",
+  "transactions": [
+    {
+      "id": "TX-1771592538-000022",
+      "timestamp": 1771592538.1866379,
+      "tx_type": "BUY",
+      "exchange": "kraken",
+      "symbol": "BTCUSD",
+      "asset": "BTC",
+      "quote": "USD",
+      "side": "buy",
+      "quantity": 0.01,
+      "price": 50000.0,
+      "value": 500.0,
+      "fee": 0.8,
+      "fee_asset": "USD",
+      "order_id": "T1-BUY",
+      "is_margin": false,
+      "leverage": 1,
+      "margin_cost": 0.0,
+      "notes": ""
+    },
+    {
+      "id": "TX-1771592547-000023",
+      "timestamp": 1771592547.1806002,
+      "tx_type": "SELL",
+      "exchange": "kraken",
+      "symbol": "BTCUSD",
+      "asset": "BTC",
+      "quote": "USD",
+      "side": "sell",
+      "quantity": 0.01,
+      "price": 51000.0,
+      "value": 510.0,
+      "fee": 0.82,
+      "fee_asset": "USD",
+      "order_id": "T1-SELL",
+      "is_margin": false,
+      "leverage": 1,
+      "margin_cost": 0.0,
+      "notes": ""
+    },
+    {
+      "id": "TX-1771592547-000024",
+      "timestamp": 1771592547.181888,
+      "tx_type": "BUY",
+      "exchange": "binance",
+      "symbol": "ETHUSDT",
+      "asset": "ETH",
+      "quote": "USDT",
+      "side": "buy",
+      "quantity": 1.0,
+      "price": 3000.0,
+      "value": 3000.0,
+      "fee": 3.0,
+      "fee_asset": "USDT",
+      "order_id": "T2-BUY",
+      "is_margin": false,
+      "leverage": 1,
+      "margin_cost": 0.0,
+      "notes": ""
+    },
+    {
+      "id": "TX-1771592547-000025",
+      "timestamp": 1771592547.1830215,
+      "tx_type": "SELL",
+      "exchange": "binance",
+      "symbol": "ETHUSDT",
+      "asset": "ETH",
+      "quote": "USDT",
+      "side": "sell",
+      "quantity": 1.0,
+      "price": 2950.0,
+      "value": 2950.0,
+      "fee": 2.95,
+      "fee_asset": "USDT",
+      "order_id": "T2-SELL",
+      "is_margin": false,
+      "leverage": 1,
+      "margin_cost": 0.0,
+      "notes": ""
+    },
+    {
+      "id": "TX-1771592547-000026",
+      "timestamp": 1771592547.1842282,
+      "tx_type": "BUY",
+      "exchange": "kraken",
+      "symbol": "SOLUSD",
+      "asset": "SOL",
+      "quote": "USD",
+      "side": "buy",
+      "quantity": 10.0,
+      "price": 100.0,
+      "value": 1000.0,
+      "fee": 1.6,
+      "fee_asset": "USD",
+      "order_id": "T3-BUY1",
+      "is_margin": false,
+      "leverage": 1,
+      "margin_cost": 0.0,
+      "notes": ""
+    },
+    {
+      "id": "TX-1771592547-000027",
+      "timestamp": 1771592547.1855657,
+      "tx_type": "BUY",
+      "exchange": "kraken",
+      "symbol": "SOLUSD",
+      "asset": "SOL",
+      "quote": "USD",
+      "side": "buy",
+      "quantity": 10.0,
+      "price": 120.0,
+      "value": 1200.0,
+      "fee": 1.92,
+      "fee_asset": "USD",
+      "order_id": "T3-BUY2",
+      "is_margin": false,
+      "leverage": 1,
+      "margin_cost": 0.0,
+      "notes": ""
+    },
+    {
+      "id": "TX-1771592547-000028",
+      "timestamp": 1771592547.186869,
+      "tx_type": "SELL",
+      "exchange": "kraken",
+      "symbol": "SOLUSD",
+      "asset": "SOL",
+      "quote": "USD",
+      "side": "sell",
+      "quantity": 15.0,
+      "price": 130.0,
+      "value": 1950.0,
+      "fee": 3.12,
+      "fee_asset": "USD",
+      "order_id": "T3-SELL",
+      "is_margin": false,
+      "leverage": 1,
+      "margin_cost": 0.0,
+      "notes": ""
+    },
+    {
+      "id": "TX-1771592547-000029",
+      "timestamp": 1771592547.188283,
+      "tx_type": "BUY",
+      "exchange": "capital",
+      "symbol": "BTCUSD",
+      "asset": "BTC",
+      "quote": "USD",
+      "side": "buy",
+      "quantity": 0.001,
+      "price": 50000.0,
+      "value": 50.0,
+      "fee": 0.0,
+      "fee_asset": "USD",
+      "order_id": "T4-BUY",
+      "is_margin": false,
+      "leverage": 1,
+      "margin_cost": 0.0,
+      "notes": ""
+    },
+    {
+      "id": "TX-1771592547-000030",
+      "timestamp": 1771592547.1903768,
+      "tx_type": "SELL",
+      "exchange": "capital",
+      "symbol": "BTCUSD",
+      "asset": "BTC",
+      "quote": "USD",
+      "side": "sell",
+      "quantity": 0.001,
+      "price": 50100.0,
+      "value": 50.1,
+      "fee": 0.0,
+      "fee_asset": "USD",
+      "order_id": "T4-SELL",
+      "is_margin": false,
+      "leverage": 1,
+      "margin_cost": 0.0,
+      "notes": ""
+    }
+  ],
+  "tax_lots": {
+    "kraken:KRAKEN:ADA": [
+      {
+        "id": "LOT-1771590962-000002",
+        "timestamp": 1771590962.7330172,
+        "exchange": "kraken",
+        "symbol": "kraken:ADA",
+        "asset": "KRAKEN:ADA",
+        "quantity": 27.90370799,
+        "original_quantity": 27.90370799,
+        "price": 0.355773692073269,
+        "cost": 9.927405214136675,
+        "fee": 0.0,
+        "order_id": ""
+      }
+    ],
+    "kraken:KRAKEN:EUL": [
+      {
+        "id": "LOT-1771590962-000003",
+        "timestamp": 1771590962.733481,
+        "exchange": "kraken",
+        "symbol": "kraken:EUL",
+        "asset": "KRAKEN:EUL",
+        "quantity": 3.639386,
+        "original_quantity": 3.639386,
+        "price": 2.210968048532785,
+        "cost": 8.04656616227754,
+        "fee": 0.0,
+        "order_id": ""
+      }
+    ],
+    "kraken:KRAKEN:GHIBLI": [
+      {
+        "id": "LOT-1771590962-000004",
+        "timestamp": 1771590962.7339902,
+        "exchange": "kraken",
+        "symbol": "kraken:GHIBLI",
+        "asset": "KRAKEN:GHIBLI",
+        "quantity": 40400.0,
+        "original_quantity": 40400.0,
+        "price": 0.0008895438943894388,
+        "cost": 35.937573333333326,
+        "fee": 0.0,
+        "order_id": ""
+      }
+    ],
+    "kraken:KRAKEN:IN": [
+      {
+        "id": "LOT-1771590962-000005",
+        "timestamp": 1771590962.7346165,
+        "exchange": "kraken",
+        "symbol": "kraken:IN",
+        "asset": "KRAKEN:IN",
+        "quantity": 210.0,
+        "original_quantity": 210.0,
+        "price": 12.012823219512745,
+        "cost": 2522.6928760976766,
+        "fee": 0.0,
+        "order_id": ""
+      }
+    ],
+    "kraken:KRAKEN:MXC": [
+      {
+        "id": "LOT-1771590962-000006",
+        "timestamp": 1771590962.735204,
+        "exchange": "kraken",
+        "symbol": "kraken:MXC",
+        "asset": "KRAKEN:MXC",
+        "quantity": 3100.0,
+        "original_quantity": 3100.0,
+        "price": 0.0014337120000000002,
+        "cost": 4.4445072,
+        "fee": 0.0,
+        "order_id": ""
+      }
+    ],
+    "kraken:KRAKEN:OPEN": [
+      {
+        "id": "LOT-1771590962-000007",
+        "timestamp": 1771590962.7358088,
+        "exchange": "kraken",
+        "symbol": "kraken:OPEN",
+        "asset": "KRAKEN:OPEN",
+        "quantity": 10.78167,
+        "original_quantity": 10.78167,
+        "price": 0.18533863492390323,
+        "cost": 1.9982599999999997,
+        "fee": 0.0,
+        "order_id": ""
+      }
+    ],
+    "kraken:KRAKEN:SAHARA": [
+      {
+        "id": "LOT-1771590962-000008",
+        "timestamp": 1771590962.7364373,
+        "exchange": "kraken",
+        "symbol": "kraken:SAHARA",
+        "asset": "KRAKEN:SAHARA",
+        "quantity": 606.4649,
+        "original_quantity": 606.4649,
+        "price": 0.02652435187681742,
+        "cost": 16.086088408538888,
+        "fee": 0.0,
+        "order_id": ""
+      }
+    ],
+    "kraken:KRAKEN:SKR": [
+      {
+        "id": "LOT-1771590962-000009",
+        "timestamp": 1771590962.7371697,
+        "exchange": "kraken",
+        "symbol": "kraken:SKR",
+        "asset": "KRAKEN:SKR",
+        "quantity": 500.0,
+        "original_quantity": 500.0,
+        "price": 0.0357916,
+        "cost": 17.8958,
+        "fee": 0.0,
+        "order_id": ""
+      }
+    ],
+    "kraken:KRAKEN:SOL": [
+      {
+        "id": "LOT-1771590962-000010",
+        "timestamp": 1771590962.73835,
+        "exchange": "kraken",
+        "symbol": "kraken:SOL",
+        "asset": "KRAKEN:SOL",
+        "quantity": 0.0083389591,
+        "original_quantity": 0.0083389591,
+        "price": 124.79399982449354,
+        "cost": 1.0406520604618588,
+        "fee": 0.0,
+        "order_id": ""
+      }
+    ],
+    "kraken:KRAKEN:Z": [
+      {
+        "id": "LOT-1771590962-000011",
+        "timestamp": 1771590962.7391417,
+        "exchange": "kraken",
+        "symbol": "kraken:ZGBP",
+        "asset": "KRAKEN:Z",
+        "quantity": 50.8058,
+        "original_quantity": 50.8058,
+        "price": 2131.5356682547194,
+        "cost": 108294.37485421562,
+        "fee": 0.0,
+        "order_id": ""
+      },
+      {
+        "id": "LOT-1771590962-000012",
+        "timestamp": 1771590962.740452,
+        "exchange": "kraken",
+        "symbol": "kraken:ZUSD",
+        "asset": "KRAKEN:Z",
+        "quantity": 1.4581,
+        "original_quantity": 1.4581,
+        "price": 88779.42631058357,
+        "cost": 129449.2815034619,
+        "fee": 0.0,
+        "order_id": ""
+      }
+    ],
+    "alpaca:SHIB": [
+      {
+        "id": "LOT-1771590962-000013",
+        "timestamp": 1771590962.7415726,
+        "exchange": "alpaca",
+        "symbol": "SHIBUSD",
+        "asset": "SHIB",
+        "quantity": 934990.229265847,
+        "original_quantity": 934990.229265847,
+        "price": 6.963e-06,
+        "cost": 6.510336966378093,
+        "fee": 0.0,
+        "order_id": ""
+      }
+    ],
+    "test:BTC": [
+      {
+        "id": "LOT-1771590962-000014",
+        "timestamp": 1771590962.7430313,
+        "exchange": "test",
+        "symbol": "BTCUSDT",
+        "asset": "BTC",
+        "quantity": 0.30000000000000004,
+        "original_quantity": 0.30000000000000004,
+        "price": 54999.99999999999,
+        "cost": 16500.0,
+        "fee": 0.0,
+        "order_id": null
+      }
+    ],
+    "binance:BTC": [
+      {
+        "id": "LOT-1771590962-000015",
+        "timestamp": 1771590962.744123,
+        "exchange": "binance",
+        "symbol": "BTCUSDT",
+        "asset": "BTC",
+        "quantity": 1.0,
+        "original_quantity": 1.0,
+        "price": 50000.0,
+        "cost": 50000.0,
+        "fee": 0.0,
+        "order_id": "test_order_123"
+      }
+    ],
+    "test:TEST": [
+      {
+        "id": "LOT-1771590962-000016",
+        "timestamp": 1771590962.7455158,
+        "exchange": "test",
+        "symbol": "TEST/USD",
+        "asset": "TEST",
+        "quantity": 3.0,
+        "original_quantity": 3.0,
+        "price": 120.0,
+        "cost": 360.0,
+        "fee": 0.0,
+        "order_id": null
+      }
+    ],
+    "binance:ORCA": [
+      {
+        "id": "LOT-1771590962-000017",
+        "timestamp": 1771590962.746783,
+        "exchange": "binance",
+        "symbol": "ORCA/USD",
+        "asset": "ORCA",
+        "quantity": 2.0,
+        "original_quantity": 2.0,
+        "price": 200.0,
+        "cost": 400.0,
+        "fee": 0.0,
+        "order_id": "order123"
+      },
+      {
+        "id": "LOT-1771590962-000018",
+        "timestamp": 1771590962.748006,
+        "exchange": "binance",
+        "symbol": "ORCA/USD",
+        "asset": "ORCA",
+        "quantity": 2.0,
+        "original_quantity": 2.0,
+        "price": 200.0,
+        "cost": 400.0,
+        "fee": 0.0,
+        "order_id": "order123"
+      }
+    ],
+    "test:LOSS": [
+      {
+        "id": "LOT-1771590962-000019",
+        "timestamp": 1771590962.7490265,
+        "exchange": "test",
+        "symbol": "LOSS/USD",
+        "asset": "LOSS",
+        "quantity": 1.0,
+        "original_quantity": 1.0,
+        "price": 100.0,
+        "cost": 100.0,
+        "fee": 0.0,
+        "order_id": "loss_test"
+      },
+      {
+        "id": "LOT-1771590962-000020",
+        "timestamp": 1771590962.7503078,
+        "exchange": "test",
+        "symbol": "LOSS/USD",
+        "asset": "LOSS",
+        "quantity": 1.0,
+        "original_quantity": 1.0,
+        "price": 100.0,
+        "cost": 100.0,
+        "fee": 0.0,
+        "order_id": "loss_test"
+      }
+    ],
+    "kraken:SOL": [
+      {
+        "id": "LOT-1771592547-000023",
+        "timestamp": 1771592547.1855657,
+        "exchange": "kraken",
+        "symbol": "SOLUSD",
+        "asset": "SOL",
+        "quantity": 5.0,
+        "original_quantity": 10.0,
+        "price": 120.0,
+        "cost": 600.96,
+        "fee": 0.96,
+        "order_id": "T3-BUY2"
+      }
+    ]
+  },
+  "realized_gains": [
+    {
+      "id": "GAIN-1771590882-000000",
+      "timestamp": 1771590882.4101508,
+      "exchange": "kraken",
+      "symbol": "BTCUSD",
+      "asset": "BTC",
+      "quantity_sold": 0.001,
+      "sell_price": 50500.0,
+      "sell_value": 50.5,
+      "cost_basis": 50.08,
+      "gross_gain": 0.4200000000000017,
+      "total_fees": 0.16,
+      "net_gain": 0.3400000000000017,
+      "hold_time_seconds": 0.00044608116149902344,
+      "tax_lots_consumed": [
+        "LOT-1771590882-000001"
+      ],
+      "is_margin": false
+    },
+    {
+      "id": "GAIN-1771590962-000001",
+      "timestamp": 1771590962.7314804,
+      "exchange": "binance",
+      "symbol": "ETHUSDT",
+      "asset": "ETH",
+      "quantity_sold": 0.05,
+      "sell_price": 3050.0,
+      "sell_value": 152.5,
+      "cost_basis": 150.03,
+      "gross_gain": 2.469999999999999,
+      "total_fees": 0.06,
+      "net_gain": 2.439999999999999,
+      "hold_time_seconds": 14.071281671524048,
+      "tax_lots_consumed": [
+        "LOT-1771590948-000001"
+      ],
+      "is_margin": false
+    },
+    {
+      "id": "GAIN-1771592547-000002",
+      "timestamp": 1771592547.1806002,
+      "exchange": "kraken",
+      "symbol": "BTCUSD",
+      "asset": "BTC",
+      "quantity_sold": 0.01,
+      "sell_price": 51000.0,
+      "sell_value": 510.0,
+      "cost_basis": 500.8,
+      "gross_gain": 9.199999999999989,
+      "total_fees": 1.62,
+      "net_gain": 8.379999999999988,
+      "hold_time_seconds": 8.993962287902832,
+      "tax_lots_consumed": [
+        "LOT-1771592538-000020"
+      ],
+      "is_margin": false
+    },
+    {
+      "id": "GAIN-1771592547-000003",
+      "timestamp": 1771592547.1830215,
+      "exchange": "binance",
+      "symbol": "ETHUSDT",
+      "asset": "ETH",
+      "quantity_sold": 1.0,
+      "sell_price": 2950.0,
+      "sell_value": 2950.0,
+      "cost_basis": 3003.0,
+      "gross_gain": -53.0,
+      "total_fees": 5.95,
+      "net_gain": -55.95,
+      "hold_time_seconds": 0.0011334419250488281,
+      "tax_lots_consumed": [
+        "LOT-1771592547-000021"
+      ],
+      "is_margin": false
+    },
+    {
+      "id": "GAIN-1771592547-000004",
+      "timestamp": 1771592547.186869,
+      "exchange": "kraken",
+      "symbol": "SOLUSD",
+      "asset": "SOL",
+      "quantity_sold": 15.0,
+      "sell_price": 130.0,
+      "sell_value": 1950.0,
+      "cost_basis": 1602.56,
+      "gross_gain": 347.44000000000005,
+      "total_fees": 5.68,
+      "net_gain": 344.32000000000005,
+      "hold_time_seconds": 0.0026407241821289062,
+      "tax_lots_consumed": [
+        "LOT-1771592547-000022",
+        "LOT-1771592547-000023(partial)"
+      ],
+      "is_margin": false
+    },
+    {
+      "id": "GAIN-1771592547-000005",
+      "timestamp": 1771592547.1903768,
+      "exchange": "capital",
+      "symbol": "BTCUSD",
+      "asset": "BTC",
+      "quantity_sold": 0.001,
+      "sell_price": 50100.0,
+      "sell_value": 50.1,
+      "cost_basis": 50.0,
+      "gross_gain": 0.10000000000000142,
+      "total_fees": 0.0,
+      "net_gain": 0.10000000000000142,
+      "hold_time_seconds": 0.002093791961669922,
+      "tax_lots_consumed": [
+        "LOT-1771592547-000024"
+      ],
+      "is_margin": false
+    }
+  ],
+  "pnl_summary": {
+    "total_realized_pnl": 299.63000000000005,
+    "gross_realized_pnl": 313.1,
+    "total_fees_paid": 13.469999999999999,
+    "net_after_fees": 299.63000000000005,
+    "total_trades": 6,
+    "wins": 5,
+    "losses": 1,
+    "win_rate": 83.33333333333334,
+    "daily_pnl": {
+      "2026-02-20": 299.63000000000005
+    }
+  },
+  "audit_alerts": []
+}

@@ -1,0 +1,393 @@
+{
+  "saved_at": "2026-02-20T13:02:27.191639",
+  "entry_counter": 11,
+  "account_balances": {
+    "1100": 743.6399999999999,
+    "5100": 14.240000000000002,
+    "1002": -205.98000000000002,
+    "1001": -248.26000000000022,
+    "4000": 356.74000000000007,
+    "5000": 53.0,
+    "1004": 0.10000000000000142
+  },
+  "journal_entries": [
+    {
+      "id": "JE-1771590948-000001",
+      "timestamp": 1771590948.6609106,
+      "date": "2026-02-20 12:35:48",
+      "description": "Buy 0.05000000 ETH @ 3000.00 on binance",
+      "reference": "INT-B-001",
+      "lines": [
+        {
+          "account_code": "1100",
+          "account_name": "Crypto Holdings",
+          "debit": 150.0,
+          "credit": 0.0,
+          "asset": "ETH",
+          "exchange": "binance",
+          "memo": "Buy 0.05000000 ETH @ 3000.00"
+        },
+        {
+          "account_code": "5100",
+          "account_name": "Exchange Fees",
+          "debit": 0.03,
+          "credit": 0.0,
+          "asset": "",
+          "exchange": "binance",
+          "memo": "Fee on buy ETH"
+        },
+        {
+          "account_code": "1002",
+          "account_name": "Cash (binance)",
+          "debit": 0.0,
+          "credit": 150.03,
+          "asset": "ETH",
+          "exchange": "binance",
+          "memo": ""
+        }
+      ]
+    },
+    {
+      "id": "JE-1771592538-000003",
+      "timestamp": 1771592538.187514,
+      "date": "2026-02-20 13:02:18",
+      "description": "Buy 0.01000000 BTC @ 50000.00 on kraken",
+      "reference": "T1-BUY",
+      "lines": [
+        {
+          "account_code": "1100",
+          "account_name": "Crypto Holdings",
+          "debit": 500.0,
+          "credit": 0.0,
+          "asset": "BTC",
+          "exchange": "kraken",
+          "memo": "Buy 0.01000000 BTC @ 50000.00"
+        },
+        {
+          "account_code": "5100",
+          "account_name": "Exchange Fees",
+          "debit": 0.8,
+          "credit": 0.0,
+          "asset": "",
+          "exchange": "kraken",
+          "memo": "Fee on buy BTC"
+        },
+        {
+          "account_code": "1001",
+          "account_name": "Cash (kraken)",
+          "debit": 0.0,
+          "credit": 500.8,
+          "asset": "BTC",
+          "exchange": "kraken",
+          "memo": ""
+        }
+      ]
+    },
+    {
+      "id": "JE-1771592547-000004",
+      "timestamp": 1771592547.1815147,
+      "date": "2026-02-20 13:02:27",
+      "description": "Sell 0.01000000 BTC @ 51000.00 on kraken (gross: +9.2000, net: +8.3800)",
+      "reference": "T1-SELL",
+      "lines": [
+        {
+          "account_code": "1001",
+          "account_name": "Cash (kraken)",
+          "debit": 509.18,
+          "credit": 0.0,
+          "asset": "BTC",
+          "exchange": "kraken",
+          "memo": ""
+        },
+        {
+          "account_code": "1100",
+          "account_name": "Crypto Holdings",
+          "debit": 0.0,
+          "credit": 500.8,
+          "asset": "BTC",
+          "exchange": "kraken",
+          "memo": "Sell 0.01000000 BTC @ 51000.00"
+        },
+        {
+          "account_code": "5100",
+          "account_name": "Exchange Fees",
+          "debit": 0.82,
+          "credit": 0.0,
+          "asset": "",
+          "exchange": "kraken",
+          "memo": "Fee on sell BTC"
+        },
+        {
+          "account_code": "4000",
+          "account_name": "Trading Gains",
+          "debit": 0.0,
+          "credit": 9.199999999999989,
+          "asset": "BTC",
+          "exchange": "",
+          "memo": "Realized gain on BTC"
+        }
+      ]
+    },
+    {
+      "id": "JE-1771592547-000005",
+      "timestamp": 1771592547.1826673,
+      "date": "2026-02-20 13:02:27",
+      "description": "Buy 1.00000000 ETH @ 3000.00 on binance",
+      "reference": "T2-BUY",
+      "lines": [
+        {
+          "account_code": "1100",
+          "account_name": "Crypto Holdings",
+          "debit": 3000.0,
+          "credit": 0.0,
+          "asset": "ETH",
+          "exchange": "binance",
+          "memo": "Buy 1.00000000 ETH @ 3000.00"
+        },
+        {
+          "account_code": "5100",
+          "account_name": "Exchange Fees",
+          "debit": 3.0,
+          "credit": 0.0,
+          "asset": "",
+          "exchange": "binance",
+          "memo": "Fee on buy ETH"
+        },
+        {
+          "account_code": "1002",
+          "account_name": "Cash (binance)",
+          "debit": 0.0,
+          "credit": 3003.0,
+          "asset": "ETH",
+          "exchange": "binance",
+          "memo": ""
+        }
+      ]
+    },
+    {
+      "id": "JE-1771592547-000006",
+      "timestamp": 1771592547.1838427,
+      "date": "2026-02-20 13:02:27",
+      "description": "Sell 1.00000000 ETH @ 2950.00 on binance (gross: -53.0000, net: -55.9500)",
+      "reference": "T2-SELL",
+      "lines": [
+        {
+          "account_code": "1002",
+          "account_name": "Cash (binance)",
+          "debit": 2947.05,
+          "credit": 0.0,
+          "asset": "ETH",
+          "exchange": "binance",
+          "memo": ""
+        },
+        {
+          "account_code": "1100",
+          "account_name": "Crypto Holdings",
+          "debit": 0.0,
+          "credit": 3003.0,
+          "asset": "ETH",
+          "exchange": "binance",
+          "memo": "Sell 1.00000000 ETH @ 2950.00"
+        },
+        {
+          "account_code": "5100",
+          "account_name": "Exchange Fees",
+          "debit": 2.95,
+          "credit": 0.0,
+          "asset": "",
+          "exchange": "binance",
+          "memo": "Fee on sell ETH"
+        },
+        {
+          "account_code": "5000",
+          "account_name": "Trading Losses",
+          "debit": 53.0,
+          "credit": 0.0,
+          "asset": "ETH",
+          "exchange": "",
+          "memo": "Realized loss on ETH"
+        }
+      ]
+    },
+    {
+      "id": "JE-1771592547-000007",
+      "timestamp": 1771592547.1851654,
+      "date": "2026-02-20 13:02:27",
+      "description": "Buy 10.00000000 SOL @ 100.00 on kraken",
+      "reference": "T3-BUY1",
+      "lines": [
+        {
+          "account_code": "1100",
+          "account_name": "Crypto Holdings",
+          "debit": 1000.0,
+          "credit": 0.0,
+          "asset": "SOL",
+          "exchange": "kraken",
+          "memo": "Buy 10.00000000 SOL @ 100.00"
+        },
+        {
+          "account_code": "5100",
+          "account_name": "Exchange Fees",
+          "debit": 1.6,
+          "credit": 0.0,
+          "asset": "",
+          "exchange": "kraken",
+          "memo": "Fee on buy SOL"
+        },
+        {
+          "account_code": "1001",
+          "account_name": "Cash (kraken)",
+          "debit": 0.0,
+          "credit": 1001.6,
+          "asset": "SOL",
+          "exchange": "kraken",
+          "memo": ""
+        }
+      ]
+    },
+    {
+      "id": "JE-1771592547-000008",
+      "timestamp": 1771592547.1864278,
+      "date": "2026-02-20 13:02:27",
+      "description": "Buy 10.00000000 SOL @ 120.00 on kraken",
+      "reference": "T3-BUY2",
+      "lines": [
+        {
+          "account_code": "1100",
+          "account_name": "Crypto Holdings",
+          "debit": 1200.0,
+          "credit": 0.0,
+          "asset": "SOL",
+          "exchange": "kraken",
+          "memo": "Buy 10.00000000 SOL @ 120.00"
+        },
+        {
+          "account_code": "5100",
+          "account_name": "Exchange Fees",
+          "debit": 1.92,
+          "credit": 0.0,
+          "asset": "",
+          "exchange": "kraken",
+          "memo": "Fee on buy SOL"
+        },
+        {
+          "account_code": "1001",
+          "account_name": "Cash (kraken)",
+          "debit": 0.0,
+          "credit": 1201.92,
+          "asset": "SOL",
+          "exchange": "kraken",
+          "memo": ""
+        }
+      ]
+    },
+    {
+      "id": "JE-1771592547-000009",
+      "timestamp": 1771592547.1878045,
+      "date": "2026-02-20 13:02:27",
+      "description": "Sell 15.00000000 SOL @ 130.00 on kraken (gross: +347.4400, net: +344.3200)",
+      "reference": "T3-SELL",
+      "lines": [
+        {
+          "account_code": "1001",
+          "account_name": "Cash (kraken)",
+          "debit": 1946.88,
+          "credit": 0.0,
+          "asset": "SOL",
+          "exchange": "kraken",
+          "memo": ""
+        },
+        {
+          "account_code": "1100",
+          "account_name": "Crypto Holdings",
+          "debit": 0.0,
+          "credit": 1602.56,
+          "asset": "SOL",
+          "exchange": "kraken",
+          "memo": "Sell 15.00000000 SOL @ 130.00"
+        },
+        {
+          "account_code": "5100",
+          "account_name": "Exchange Fees",
+          "debit": 3.12,
+          "credit": 0.0,
+          "asset": "",
+          "exchange": "kraken",
+          "memo": "Fee on sell SOL"
+        },
+        {
+          "account_code": "4000",
+          "account_name": "Trading Gains",
+          "debit": 0.0,
+          "credit": 347.44000000000005,
+          "asset": "SOL",
+          "exchange": "",
+          "memo": "Realized gain on SOL"
+        }
+      ]
+    },
+    {
+      "id": "JE-1771592547-000010",
+      "timestamp": 1771592547.1896174,
+      "date": "2026-02-20 13:02:27",
+      "description": "Buy 0.00100000 BTC @ 50000.00 on capital",
+      "reference": "T4-BUY",
+      "lines": [
+        {
+          "account_code": "1100",
+          "account_name": "Crypto Holdings",
+          "debit": 50.0,
+          "credit": 0.0,
+          "asset": "BTC",
+          "exchange": "capital",
+          "memo": "Buy 0.00100000 BTC @ 50000.00"
+        },
+        {
+          "account_code": "1004",
+          "account_name": "Cash (capital)",
+          "debit": 0.0,
+          "credit": 50.0,
+          "asset": "BTC",
+          "exchange": "capital",
+          "memo": ""
+        }
+      ]
+    },
+    {
+      "id": "JE-1771592547-000011",
+      "timestamp": 1771592547.1916173,
+      "date": "2026-02-20 13:02:27",
+      "description": "Sell 0.00100000 BTC @ 50100.00 on capital (gross: +0.1000, net: +0.1000)",
+      "reference": "T4-SELL",
+      "lines": [
+        {
+          "account_code": "1004",
+          "account_name": "Cash (capital)",
+          "debit": 50.1,
+          "credit": 0.0,
+          "asset": "BTC",
+          "exchange": "capital",
+          "memo": ""
+        },
+        {
+          "account_code": "1100",
+          "account_name": "Crypto Holdings",
+          "debit": 0.0,
+          "credit": 50.0,
+          "asset": "BTC",
+          "exchange": "capital",
+          "memo": "Sell 0.00100000 BTC @ 50100.00"
+        },
+        {
+          "account_code": "4000",
+          "account_name": "Trading Gains",
+          "debit": 0.0,
+          "credit": 0.10000000000000142,
+          "asset": "BTC",
+          "exchange": "",
+          "memo": "Realized gain on BTC"
+        }
+      ]
+    }
+  ]
+}

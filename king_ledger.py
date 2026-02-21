@@ -184,10 +184,19 @@ class KingLedger:
     def _post_entry(self, entry: JournalEntry):
         """Validate and post a journal entry."""
         if not entry.is_balanced:
+            diff = abs(entry.total_debits - entry.total_credits)
             logger.error(
-                f"UNBALANCED ENTRY {entry.id}: "
-                f"debits={entry.total_debits:.8f} credits={entry.total_credits:.8f}"
+                f"UNBALANCED ENTRY {entry.id} (off by {diff:.8f}): "
+                f"debits={entry.total_debits:.8f} credits={entry.total_credits:.8f} "
+                f"desc='{entry.description}'"
             )
+            # Log each line for debugging
+            for i, line in enumerate(entry.lines):
+                logger.error(
+                    f"  Line {i}: {line.account_name} "
+                    f"DR={line.debit:.8f} CR={line.credit:.8f} "
+                    f"({line.memo})"
+                )
             return
 
         # Update account balances
@@ -290,15 +299,30 @@ class KingLedger:
                     order_id: str = "") -> JournalEntry:
         """
         Record a crypto sale with realized gain/loss.
-        DR  Cash (exchange)     (quantity * price - fee)
-        DR  Exchange Fees       fee
-        DR  Trading Losses      (if loss)
-          CR  Crypto Holdings   cost_basis
-          CR  Trading Gains     (if gain)
+
+        The fee is recorded as a SEPARATE expense line (DR Exchange Fees).
+        Therefore the gain/loss line uses GROSS P&L (proceeds - cost_basis),
+        NOT net P&L. This keeps debits = credits:
+
+        DR  Cash (exchange)     (proceeds - fee)   money we actually receive
+        DR  Exchange Fees       fee                 fee is an expense
+          CR  Crypto Holdings   cost_basis          remove asset at FIFO cost
+          CR  Trading Gains     (proceeds - cost_basis)  gross gain
+        -- OR --
+        DR  Trading Losses      (cost_basis - proceeds)  gross loss
+
+        Proof of balance:
+          Total DR = (proceeds - fee) + fee [+ loss if any] = proceeds [+ loss]
+          Total CR = cost_basis + (proceeds - cost_basis) [if gain] = proceeds
+          Balanced ✓
         """
         proceeds = quantity * price
         net_proceeds = proceeds - fee
-        pnl = proceeds - cost_basis - fee
+        # CRITICAL: Use GROSS P&L for the journal entry.
+        # The fee is tracked separately as an Exchange Fees debit.
+        # Using (proceeds - cost_basis - fee) here would double-count the fee
+        # and create an unbalanced entry that gets silently dropped!
+        gross_pnl = proceeds - cost_basis
         cash_acct = EXCHANGE_CASH_ACCOUNTS.get(exchange, AccountCode.CASH)
 
         lines = [
@@ -323,26 +347,29 @@ class KingLedger:
                 memo=f"Fee on sell {asset}",
             ))
 
-        if pnl >= 0:
+        if gross_pnl >= 0:
             lines.append(JournalLine(
                 account_code=AccountCode.TRADING_GAINS.value,
                 account_name="Trading Gains",
-                credit=pnl, asset=asset,
+                credit=gross_pnl, asset=asset,
                 memo=f"Realized gain on {asset}",
             ))
         else:
             lines.append(JournalLine(
                 account_code=AccountCode.TRADING_LOSSES.value,
                 account_name="Trading Losses",
-                debit=abs(pnl), asset=asset,
+                debit=abs(gross_pnl), asset=asset,
                 memo=f"Realized loss on {asset}",
             ))
+
+        # Net P&L (after fees) for the description only
+        net_pnl = gross_pnl - fee
 
         entry = JournalEntry(
             id=self._next_id(),
             timestamp=time.time(),
             date=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            description=f"Sell {quantity:.8f} {asset} @ {price:.2f} on {exchange} (P&L: {pnl:+.4f})",
+            description=f"Sell {quantity:.8f} {asset} @ {price:.2f} on {exchange} (gross: {gross_pnl:+.4f}, net: {net_pnl:+.4f})",
             reference=order_id,
             lines=lines,
         )
@@ -419,14 +446,25 @@ class KingLedger:
                             order_id: str = "") -> JournalEntry:
         """
         Record closing a margin position.
-        DR  Margin Deposits     margin_amount (return collateral)
-        DR  Margin Loans        borrowed (repay loan)
-        DR/CR Trading Gains/Losses  (P&L)
-          CR  Crypto Holdings   cost_basis
-          CR  Cash (exchange)   fee
+
+        Uses GROSS P&L (proceeds - cost_basis) for the gain/loss line,
+        with fees tracked separately, same as record_sell.
+
+        DR  Margin Deposits     margin_amount  (reclaim collateral)
+        DR  Margin Loans        borrowed       (repay loan)
+        DR  Cash (exchange)     proceeds - borrowed - fee  (net cash received)
+        DR  Exchange Fees       fee
+          CR  Crypto Holdings   cost_basis     (remove position at FIFO cost)
+          CR  Trading Gains     gross_pnl      (if profitable)
+        -- OR --
+        DR  Trading Losses      abs(gross_pnl) (if loss)
         """
         proceeds = quantity * price
-        pnl = proceeds - cost_basis - fee
+        # CRITICAL: Use GROSS P&L — fee is tracked separately
+        gross_pnl = proceeds - cost_basis
+        net_pnl = gross_pnl - fee
+        # Cash user actually receives: proceeds minus loan repayment minus fee
+        cash_received = proceeds - borrowed - fee
         cash_acct = EXCHANGE_CASH_ACCOUNTS.get(exchange, AccountCode.CASH)
 
         lines = [
@@ -449,33 +487,23 @@ class KingLedger:
             ),
         ]
 
-        if pnl >= 0:
-            # Net proceeds after repaying loan go to cash, gain recorded
+        # Cash received (may be zero or negative if loss exceeds collateral)
+        if cash_received > 0:
             lines.append(JournalLine(
                 account_code=cash_acct.value,
                 account_name=f"Cash ({exchange})",
-                debit=pnl + margin_amount - fee,
+                debit=cash_received,
                 exchange=exchange,
                 memo="Margin close proceeds",
             ))
-            lines.append(JournalLine(
-                account_code=AccountCode.TRADING_GAINS.value,
-                account_name="Trading Gains (Margin)",
-                credit=pnl, asset=asset,
-            ))
-        else:
-            net_return = margin_amount + pnl - fee  # pnl is negative
+        elif cash_received < 0:
+            # Margin call / loss exceeded collateral
             lines.append(JournalLine(
                 account_code=cash_acct.value,
                 account_name=f"Cash ({exchange})",
-                debit=max(0, net_return),
+                credit=abs(cash_received),
                 exchange=exchange,
-                memo="Margin close proceeds (after loss)",
-            ))
-            lines.append(JournalLine(
-                account_code=AccountCode.TRADING_LOSSES.value,
-                account_name="Trading Losses (Margin)",
-                debit=abs(pnl), asset=asset,
+                memo="Margin close deficit (loss > collateral)",
             ))
 
         if fee > 0:
@@ -483,24 +511,44 @@ class KingLedger:
                 account_code=AccountCode.EXCHANGE_FEES.value,
                 account_name="Exchange Fees",
                 debit=fee, exchange=exchange,
+                memo=f"Fee on margin close {asset}",
             ))
 
-        # Balance the entry by calculating any remaining difference
+        if gross_pnl >= 0:
+            lines.append(JournalLine(
+                account_code=AccountCode.TRADING_GAINS.value,
+                account_name="Trading Gains (Margin)",
+                credit=gross_pnl, asset=asset,
+                memo=f"Realized margin gain on {asset}",
+            ))
+        else:
+            lines.append(JournalLine(
+                account_code=AccountCode.TRADING_LOSSES.value,
+                account_name="Trading Losses (Margin)",
+                debit=abs(gross_pnl), asset=asset,
+                memo=f"Realized margin loss on {asset}",
+            ))
+
+        # Safety check: verify balance before posting
         total_dr = sum(l.debit for l in lines)
         total_cr = sum(l.credit for l in lines)
-        diff = total_dr - total_cr
-        if abs(diff) > 0.000001:
-            if diff > 0:
+        diff = abs(total_dr - total_cr)
+        if diff > 0.000001:
+            logger.warning(
+                f"Margin close entry off by {diff:.8f} — adding balancing line. "
+                f"DR={total_dr:.8f} CR={total_cr:.8f}"
+            )
+            if total_dr > total_cr:
                 lines.append(JournalLine(
                     account_code=AccountCode.RETAINED_PNL.value,
                     account_name="Retained P&L (Balancing)",
-                    credit=diff,
+                    credit=total_dr - total_cr,
                 ))
             else:
                 lines.append(JournalLine(
                     account_code=AccountCode.RETAINED_PNL.value,
                     account_name="Retained P&L (Balancing)",
-                    debit=abs(diff),
+                    debit=total_cr - total_dr,
                 ))
 
         entry = JournalEntry(
@@ -508,7 +556,8 @@ class KingLedger:
             timestamp=time.time(),
             date=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             description=(
-                f"Close margin {asset} position on {exchange} (P&L: {pnl:+.4f})"
+                f"Close margin {asset} on {exchange} "
+                f"(gross: {gross_pnl:+.4f}, net: {net_pnl:+.4f})"
             ),
             reference=order_id,
             lines=lines,

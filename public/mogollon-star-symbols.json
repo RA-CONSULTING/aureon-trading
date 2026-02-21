@@ -1,0 +1,487 @@
+{
+  "tradition": "Mogollon / Ancestral Puebloan",
+  "description": "The Mogollon culture of the American Southwest (300 BCE - 1450 CE) encoded planetary geometry into their cliff dwellings, kivas, petroglyphs, and ceramic designs. The Mimbres pottery tradition in particular contains some of the most sophisticated astronomical imagery in the ancient world. Their structures at Chaco Canyon, Casa Grande, Mesa Verde, and along the Gila River were precisely aligned to solstices, equinoxes, and lunar standstills — the same planetary angular relationships encoded by every other tradition on Earth.",
+  "source_tradition": "Mogollon / Mimbres / Ancestral Puebloan / Sinagua / Hohokam, American Southwest (300 BCE - 1450 CE), inheriting astronomical knowledge from earlier Archaic traditions dating to 8000+ BCE",
+  "symbols": [
+    {
+      "id": "mogollon_sun_dagger",
+      "name": "Sun Dagger (Fajada Butte)",
+      "meaning": "Solstice marker — dagger of light pierces the spiral petroglyph",
+      "group": "Chaco Canyon Alignments",
+      "site": "Fajada Butte, Chaco Canyon, NM",
+      "location": { "lat": 36.0603, "lon": -107.9559 },
+      "builder_tradition": "Ancestral Puebloan (Chacoan)",
+      "astronomical_alignment": "Summer solstice light dagger bisects spiral petroglyph at solar noon",
+      "primary_celestial_target": "Sun",
+      "star_chart": {
+        "geometry": "LIGHT_DAGGER",
+        "angular_aspect": "conjunction",
+        "trigger_angle_deg": 0,
+        "tolerance_deg": 8,
+        "planet_pair": ["Sun", "Mercury"],
+        "sacred_ratio": 1.0
+      },
+      "trading_signal": { "bias": "BUY", "domain": "crypto_stocks", "strength": 0.85 }
+    },
+    {
+      "id": "mogollon_pueblo_bonito",
+      "name": "Pueblo Bonito Great House",
+      "meaning": "Cardinal alignment — the great house faces true south with perfect E-W symmetry wall",
+      "group": "Chaco Canyon Alignments",
+      "site": "Pueblo Bonito, Chaco Canyon, NM",
+      "location": { "lat": 36.0607, "lon": -107.9611 },
+      "builder_tradition": "Ancestral Puebloan (Chacoan)",
+      "astronomical_alignment": "Central wall aligned true N-S, equinox sunrise through eastern doorway",
+      "primary_celestial_target": "Sun at equinox",
+      "star_chart": {
+        "geometry": "GREAT_HOUSE_AXIS",
+        "angular_aspect": "square",
+        "trigger_angle_deg": 90,
+        "tolerance_deg": 8,
+        "planet_pair": ["Sun", "Saturn"],
+        "sacred_ratio": 1.414
+      },
+      "trading_signal": { "bias": "HOLD", "domain": "stocks", "strength": 0.50 }
+    },
+    {
+      "id": "mogollon_casa_rinconada",
+      "name": "Casa Rinconada Great Kiva",
+      "meaning": "Circular ceremonial chamber — 19m diameter, aligned to cardinal and solstice points",
+      "group": "Chaco Canyon Alignments",
+      "site": "Casa Rinconada, Chaco Canyon, NM",
+      "location": { "lat": 36.0568, "lon": -107.9634 },
+      "builder_tradition": "Ancestral Puebloan (Chacoan)",
+      "astronomical_alignment": "28 niches = lunar month, solstice light enters through NE portal",
+      "primary_celestial_target": "Moon",
+      "star_chart": {
+        "geometry": "GREAT_KIVA_CIRCLE",
+        "angular_aspect": "trine",
+        "trigger_angle_deg": 120,
+        "tolerance_deg": 8,
+        "planet_pair": ["Moon", "Saturn"],
+        "sacred_ratio": 1.618
+      },
+      "trading_signal": { "bias": "BUY", "domain": "crypto_stocks", "strength": 0.78 }
+    },
+    {
+      "id": "mogollon_chimney_rock",
+      "name": "Chimney Rock Lunar Standstill",
+      "meaning": "Twin rock pillars frame the northern lunar standstill moonrise every 18.6 years",
+      "group": "Chaco Canyon Alignments",
+      "site": "Chimney Rock, Pagosa Springs, CO",
+      "location": { "lat": 37.1792, "lon": -107.3069 },
+      "builder_tradition": "Ancestral Puebloan (Chacoan outlier)",
+      "astronomical_alignment": "Northern major lunar standstill — Moon rises between twin pillars",
+      "primary_celestial_target": "Moon at lunar standstill",
+      "star_chart": {
+        "geometry": "TWIN_PILLARS_MOON",
+        "angular_aspect": "opposition",
+        "trigger_angle_deg": 180,
+        "tolerance_deg": 10,
+        "planet_pair": ["Moon", "Jupiter"],
+        "sacred_ratio": 2.0
+      },
+      "trading_signal": { "bias": "HOLD", "domain": "crypto_stocks", "strength": 0.48 }
+    },
+    {
+      "id": "mogollon_mimbres_fish",
+      "name": "Mimbres Fish Bowl",
+      "meaning": "Twin fish circling — Pisces duality, the dance of opposites in the cosmic ocean",
+      "group": "Mimbres Pottery Astronomy",
+      "site": "Mimbres Valley, SW New Mexico",
+      "location": { "lat": 32.8500, "lon": -108.0500 },
+      "builder_tradition": "Mogollon (Mimbres Classic Phase 1000-1150 CE)",
+      "astronomical_alignment": "Fish motif encodes Venus-Neptune opposition — two worlds circling each other",
+      "primary_celestial_target": "Venus and Neptune",
+      "star_chart": {
+        "geometry": "TWIN_FISH_CIRCLE",
+        "angular_aspect": "opposition",
+        "trigger_angle_deg": 180,
+        "tolerance_deg": 10,
+        "planet_pair": ["Venus", "Neptune"],
+        "sacred_ratio": 2.0
+      },
+      "trading_signal": { "bias": "HOLD", "domain": "crypto", "strength": 0.50 }
+    },
+    {
+      "id": "mogollon_mimbres_rabbit",
+      "name": "Mimbres Rabbit Bowl",
+      "meaning": "Rabbit on the Moon — the lunar hare seen across cultures (Aztec Tochtli, Chinese Moon Rabbit)",
+      "group": "Mimbres Pottery Astronomy",
+      "site": "Mimbres Valley, SW New Mexico",
+      "location": { "lat": 32.8500, "lon": -108.0500 },
+      "builder_tradition": "Mogollon (Mimbres Classic Phase)",
+      "astronomical_alignment": "Moon-Venus trine — lunar fertility and beauty, the rabbit that lives on the Moon",
+      "primary_celestial_target": "Moon",
+      "star_chart": {
+        "geometry": "LUNAR_RABBIT",
+        "angular_aspect": "trine",
+        "trigger_angle_deg": 120,
+        "tolerance_deg": 8,
+        "planet_pair": ["Moon", "Venus"],
+        "sacred_ratio": 1.618
+      },
+      "trading_signal": { "bias": "BUY", "domain": "crypto_stocks", "strength": 0.78 }
+    },
+    {
+      "id": "mogollon_mimbres_bighorn",
+      "name": "Mimbres Bighorn Sheep Bowl",
+      "meaning": "Mountain ram with spiral horns — Aries force, Mars energy encoded in ceramic",
+      "group": "Mimbres Pottery Astronomy",
+      "site": "Mimbres Valley, SW New Mexico",
+      "location": { "lat": 32.8500, "lon": -108.0500 },
+      "builder_tradition": "Mogollon (Mimbres Classic Phase)",
+      "astronomical_alignment": "Mars-Sun sextile — the warrior energy of Aries, controlled aggression",
+      "primary_celestial_target": "Mars",
+      "star_chart": {
+        "geometry": "RAM_HORNS_SPIRAL",
+        "angular_aspect": "sextile",
+        "trigger_angle_deg": 60,
+        "tolerance_deg": 6,
+        "planet_pair": ["Mars", "Sun"],
+        "sacred_ratio": 1.732
+      },
+      "trading_signal": { "bias": "BUY", "domain": "crypto_stocks", "strength": 0.72 }
+    },
+    {
+      "id": "mogollon_mimbres_thunderbird",
+      "name": "Mimbres Thunderbird Bowl",
+      "meaning": "The thunderbird brings lightning — Jupiter's bolt, expansion through power",
+      "group": "Mimbres Pottery Astronomy",
+      "site": "Mimbres Valley, SW New Mexico",
+      "location": { "lat": 32.8500, "lon": -108.0500 },
+      "builder_tradition": "Mogollon (Mimbres Classic Phase)",
+      "astronomical_alignment": "Jupiter-Sun conjunction — maximum expansion, the thunderbird's moment of power",
+      "primary_celestial_target": "Jupiter",
+      "star_chart": {
+        "geometry": "THUNDERBIRD_WINGS",
+        "angular_aspect": "conjunction",
+        "trigger_angle_deg": 0,
+        "tolerance_deg": 8,
+        "planet_pair": ["Jupiter", "Sun"],
+        "sacred_ratio": 1.0
+      },
+      "trading_signal": { "bias": "BUY", "domain": "crypto_stocks", "strength": 0.88 }
+    },
+    {
+      "id": "mogollon_mimbres_serpent",
+      "name": "Mimbres Plumed Serpent Bowl",
+      "meaning": "Feathered serpent — same as Quetzalcoatl, the Morning Star Venus, encoded 1000 miles north",
+      "group": "Mimbres Pottery Astronomy",
+      "site": "Mimbres Valley, SW New Mexico",
+      "location": { "lat": 32.8500, "lon": -108.0500 },
+      "builder_tradition": "Mogollon (Mimbres Classic Phase)",
+      "astronomical_alignment": "Venus quintile Sun — the sacred 72° geometry of Venus, the pentagonal star pattern Venus traces every 8 years",
+      "primary_celestial_target": "Venus",
+      "star_chart": {
+        "geometry": "PLUMED_SERPENT",
+        "angular_aspect": "quintile",
+        "trigger_angle_deg": 72,
+        "tolerance_deg": 6,
+        "planet_pair": ["Venus", "Sun"],
+        "sacred_ratio": 1.618
+      },
+      "trading_signal": { "bias": "BUY", "domain": "crypto_stocks", "strength": 0.84 }
+    },
+    {
+      "id": "mogollon_mimbres_scorpion",
+      "name": "Mimbres Scorpion Bowl",
+      "meaning": "Scorpion — Scorpio sting, Pluto's domain, the death that transforms",
+      "group": "Mimbres Pottery Astronomy",
+      "site": "Mimbres Valley, SW New Mexico",
+      "location": { "lat": 32.8500, "lon": -108.0500 },
+      "builder_tradition": "Mogollon (Mimbres Classic Phase)",
+      "astronomical_alignment": "Pluto-Mars square — deadly leverage, the scorpion strikes when planets war",
+      "primary_celestial_target": "Pluto",
+      "star_chart": {
+        "geometry": "SCORPION_TAIL",
+        "angular_aspect": "square",
+        "trigger_angle_deg": 90,
+        "tolerance_deg": 8,
+        "planet_pair": ["Pluto", "Mars"],
+        "sacred_ratio": 1.414
+      },
+      "trading_signal": { "bias": "SELL", "domain": "crypto_stocks", "strength": 0.25 }
+    },
+    {
+      "id": "mogollon_mesa_verde_tower",
+      "name": "Mesa Verde Sun Temple",
+      "meaning": "D-shaped temple with no doorways — pure astronomical observatory, not dwelling",
+      "group": "Mesa Verde / Cliff Dwelling Observatories",
+      "site": "Sun Temple, Mesa Verde, CO",
+      "location": { "lat": 37.1677, "lon": -108.4875 },
+      "builder_tradition": "Ancestral Puebloan (Mesa Verde Phase)",
+      "astronomical_alignment": "Sun Temple aligned to both summer solstice sunset AND winter solstice sunrise",
+      "primary_celestial_target": "Sun at solstice",
+      "star_chart": {
+        "geometry": "D_SHAPED_TEMPLE",
+        "angular_aspect": "trine",
+        "trigger_angle_deg": 120,
+        "tolerance_deg": 8,
+        "planet_pair": ["Sun", "Jupiter"],
+        "sacred_ratio": 1.618
+      },
+      "trading_signal": { "bias": "BUY", "domain": "crypto_stocks", "strength": 0.82 }
+    },
+    {
+      "id": "mogollon_cliff_palace",
+      "name": "Cliff Palace",
+      "meaning": "Largest cliff dwelling in North America — 150 rooms, 23 kivas, sheltered in alcove facing south-southwest",
+      "group": "Mesa Verde / Cliff Dwelling Observatories",
+      "site": "Cliff Palace, Mesa Verde, CO",
+      "location": { "lat": 37.1677, "lon": -108.4736 },
+      "builder_tradition": "Ancestral Puebloan (Mesa Verde Phase, 1190-1260 CE)",
+      "astronomical_alignment": "23 kivas may encode the 23.5° axial tilt. South-facing alcove captures winter sun for heating",
+      "primary_celestial_target": "Sun winter solstice",
+      "star_chart": {
+        "geometry": "CLIFF_ALCOVE",
+        "angular_aspect": "sextile",
+        "trigger_angle_deg": 60,
+        "tolerance_deg": 8,
+        "planet_pair": ["Sun", "Neptune"],
+        "sacred_ratio": 1.732
+      },
+      "trading_signal": { "bias": "BUY", "domain": "stocks", "strength": 0.70 }
+    },
+    {
+      "id": "mogollon_casa_grande",
+      "name": "Casa Grande (Great House)",
+      "meaning": "Four-story adobe structure with port holes aligned to equinox and solstice observations",
+      "group": "Hohokam / Sinagua Observatories",
+      "site": "Casa Grande Ruins, Coolidge, AZ",
+      "location": { "lat": 32.9948, "lon": -111.5327 },
+      "builder_tradition": "Hohokam / Sobaipuri (1300-1450 CE)",
+      "astronomical_alignment": "Circular port holes align with equinox sunset, and the lunar standstill rising point",
+      "primary_celestial_target": "Sun equinox and Moon standstill",
+      "star_chart": {
+        "geometry": "PORT_HOLE_ALIGNMENT",
+        "angular_aspect": "sextile",
+        "trigger_angle_deg": 60,
+        "tolerance_deg": 6,
+        "planet_pair": ["Moon", "Mars"],
+        "sacred_ratio": 1.732
+      },
+      "trading_signal": { "bias": "BUY", "domain": "crypto_stocks", "strength": 0.74 }
+    },
+    {
+      "id": "mogollon_montezuma_well",
+      "name": "Montezuma Well",
+      "meaning": "Natural sinkhole — the emergence point, where the People came from the world below",
+      "group": "Hohokam / Sinagua Observatories",
+      "site": "Montezuma Well, Camp Verde, AZ",
+      "location": { "lat": 34.6438, "lon": -111.7500 },
+      "builder_tradition": "Sinagua / Yavapai (700-1425 CE)",
+      "astronomical_alignment": "The Sipapuni — emergence from the third to the fourth world. The well reflects the sky perfectly, becoming a mirror telescope",
+      "primary_celestial_target": "Reflection sky observations",
+      "star_chart": {
+        "geometry": "EMERGENCE_WELL",
+        "angular_aspect": "conjunction",
+        "trigger_angle_deg": 0,
+        "tolerance_deg": 10,
+        "planet_pair": ["Neptune", "Pluto"],
+        "sacred_ratio": 1.0
+      },
+      "trading_signal": { "bias": "HOLD", "domain": "crypto_stocks", "strength": 0.50 }
+    },
+    {
+      "id": "mogollon_petroglyph_spiral",
+      "name": "Solar Spiral Petroglyph",
+      "meaning": "Spiral petroglyph found at dozens of Mogollon sites — encodes the 18.6-year lunar cycle",
+      "group": "Mogollon Petroglyphs",
+      "site": "Various sites along Gila River, NM/AZ",
+      "location": { "lat": 33.0500, "lon": -108.5500 },
+      "builder_tradition": "Mogollon (all phases, 300 BCE - 1450 CE)",
+      "astronomical_alignment": "Spiral arm count often = 18 or 19, encoding the 18.6-year lunar standstill cycle",
+      "primary_celestial_target": "Moon long cycle",
+      "star_chart": {
+        "geometry": "STONE_SPIRAL",
+        "angular_aspect": "trine",
+        "trigger_angle_deg": 120,
+        "tolerance_deg": 8,
+        "planet_pair": ["Moon", "Neptune"],
+        "sacred_ratio": 1.618
+      },
+      "trading_signal": { "bias": "BUY", "domain": "crypto", "strength": 0.72 }
+    },
+    {
+      "id": "mogollon_petroglyph_sunburst",
+      "name": "Sunburst Petroglyph",
+      "meaning": "Radiant sun with ray lines — marks solstice observation points across the Southwest",
+      "group": "Mogollon Petroglyphs",
+      "site": "Three Rivers Petroglyph Site, NM",
+      "location": { "lat": 33.3711, "lon": -106.0233 },
+      "builder_tradition": "Jornada Mogollon (900-1400 CE)",
+      "astronomical_alignment": "Sun-Venus conjunction at solstice — maximum solar energy combined with Venus beauty",
+      "primary_celestial_target": "Sun",
+      "star_chart": {
+        "geometry": "SUNBURST_RAYS",
+        "angular_aspect": "conjunction",
+        "trigger_angle_deg": 0,
+        "tolerance_deg": 8,
+        "planet_pair": ["Sun", "Venus"],
+        "sacred_ratio": 1.0
+      },
+      "trading_signal": { "bias": "BUY", "domain": "crypto_stocks", "strength": 0.80 }
+    },
+    {
+      "id": "mogollon_petroglyph_star_beings",
+      "name": "Star Beings Petroglyph",
+      "meaning": "Humanoid figures with star heads — the Kachina ancestors from the Pleiades",
+      "group": "Mogollon Petroglyphs",
+      "site": "Three Rivers Petroglyph Site, NM",
+      "location": { "lat": 33.3711, "lon": -106.0233 },
+      "builder_tradition": "Jornada Mogollon (900-1400 CE)",
+      "astronomical_alignment": "Jupiter-Saturn sextile — the great teachers arrive when the two great planets harmonize",
+      "primary_celestial_target": "Jupiter and Saturn",
+      "star_chart": {
+        "geometry": "STAR_BEING_FIGURE",
+        "angular_aspect": "sextile",
+        "trigger_angle_deg": 60,
+        "tolerance_deg": 8,
+        "planet_pair": ["Jupiter", "Saturn"],
+        "sacred_ratio": 1.732
+      },
+      "trading_signal": { "bias": "BUY", "domain": "crypto_stocks", "strength": 0.76 }
+    },
+    {
+      "id": "mogollon_medicine_wheel",
+      "name": "Medicine Wheel (Bighorn)",
+      "meaning": "28 spokes radiating from central cairn — lunar month, aligned to solstice and star risings",
+      "group": "Sacred Geometry Sites",
+      "site": "Bighorn Medicine Wheel, WY",
+      "location": { "lat": 44.8262, "lon": -107.9222 },
+      "builder_tradition": "Plains/Pueblo tradition (1200-1700 CE, possibly older)",
+      "astronomical_alignment": "28 spokes = 28-day lunar month. Cairns align to summer solstice sunrise and the rising of Aldebaran, Rigel, Sirius",
+      "primary_celestial_target": "Sun, Moon, Aldebaran, Rigel, Sirius",
+      "star_chart": {
+        "geometry": "MEDICINE_WHEEL_28",
+        "angular_aspect": "opposition",
+        "trigger_angle_deg": 180,
+        "tolerance_deg": 10,
+        "planet_pair": ["Sun", "Saturn"],
+        "sacred_ratio": 2.0
+      },
+      "trading_signal": { "bias": "HOLD", "domain": "crypto_stocks", "strength": 0.52 }
+    },
+    {
+      "id": "mogollon_sipapu_kiva",
+      "name": "Sipapu (Kiva Emergence Hole)",
+      "meaning": "Small hole in the kiva floor — the portal to the world below, the point of emergence into this world",
+      "group": "Sacred Geometry Sites",
+      "site": "Found in every Ancestral Puebloan kiva",
+      "location": { "lat": 36.0607, "lon": -107.9611 },
+      "builder_tradition": "Ancestral Puebloan (all phases)",
+      "astronomical_alignment": "The zenith tube — when the sun passes directly overhead, light enters the sipapu. Sun-Pluto trine = ancestral connection",
+      "primary_celestial_target": "Sun at zenith",
+      "star_chart": {
+        "geometry": "EMERGENCE_PORTAL",
+        "angular_aspect": "trine",
+        "trigger_angle_deg": 120,
+        "tolerance_deg": 8,
+        "planet_pair": ["Sun", "Pluto"],
+        "sacred_ratio": 1.618
+      },
+      "trading_signal": { "bias": "BUY", "domain": "crypto_stocks", "strength": 0.80 }
+    },
+    {
+      "id": "mogollon_mimbres_butterfly",
+      "name": "Mimbres Butterfly Bowl",
+      "meaning": "Butterfly transformation — the soul emerging after death, painted on bowls placed over the dead",
+      "group": "Mimbres Pottery Astronomy",
+      "site": "Mimbres Valley, SW New Mexico",
+      "location": { "lat": 32.8500, "lon": -108.0500 },
+      "builder_tradition": "Mogollon (Mimbres Classic Phase)",
+      "astronomical_alignment": "Venus-Mars trine — beauty emerging from conflict, the butterfly from the chrysalis",
+      "primary_celestial_target": "Venus",
+      "star_chart": {
+        "geometry": "BUTTERFLY_WINGS",
+        "angular_aspect": "trine",
+        "trigger_angle_deg": 120,
+        "tolerance_deg": 8,
+        "planet_pair": ["Venus", "Mars"],
+        "sacred_ratio": 1.618
+      },
+      "trading_signal": { "bias": "BUY", "domain": "crypto_stocks", "strength": 0.76 }
+    },
+    {
+      "id": "mogollon_supernova_petroglyph",
+      "name": "Supernova Petroglyph (SN 1054)",
+      "meaning": "Crescent Moon + Star — records the Crab Nebula supernova of July 4, 1054 CE, visible in daylight for 23 days",
+      "group": "Mogollon Petroglyphs",
+      "site": "Penasco Blanco, Chaco Canyon, NM",
+      "location": { "lat": 36.0700, "lon": -107.9800 },
+      "builder_tradition": "Ancestral Puebloan (Chacoan)",
+      "astronomical_alignment": "Moon near Venus when supernova exploded — recorded as crescent + bright star. Moon-Uranus conjunction = sudden cosmic revelation",
+      "primary_celestial_target": "Moon, Venus, guest star",
+      "star_chart": {
+        "geometry": "SUPERNOVA_CRESCENT",
+        "angular_aspect": "conjunction",
+        "trigger_angle_deg": 0,
+        "tolerance_deg": 10,
+        "planet_pair": ["Moon", "Uranus"],
+        "sacred_ratio": 1.0
+      },
+      "trading_signal": { "bias": "BUY", "domain": "crypto", "strength": 0.82 }
+    },
+    {
+      "id": "mogollon_gila_cliff_dwelling",
+      "name": "Gila Cliff Dwellings",
+      "meaning": "Five natural caves with 40 rooms — south-facing alcoves capture winter solstice sunlight deep into the caves",
+      "group": "Mogollon Core Sites",
+      "site": "Gila Cliff Dwellings, Silver City, NM",
+      "location": { "lat": 33.2272, "lon": -108.2722 },
+      "builder_tradition": "Mogollon (Tularosa Phase, 1275-1300 CE)",
+      "astronomical_alignment": "5 caves at specific elevations may encode Venus's 5-pointed cycle (5 inferior conjunctions in 8 years)",
+      "primary_celestial_target": "Venus synodic cycle",
+      "star_chart": {
+        "geometry": "FIVE_CAVES",
+        "angular_aspect": "quintile",
+        "trigger_angle_deg": 72,
+        "tolerance_deg": 5,
+        "planet_pair": ["Venus", "Mars"],
+        "sacred_ratio": 1.618
+      },
+      "trading_signal": { "bias": "BUY", "domain": "crypto_stocks", "strength": 0.75 }
+    },
+    {
+      "id": "mogollon_mimbres_turtle",
+      "name": "Mimbres Turtle Bowl",
+      "meaning": "Turtle carries the world — the Turtle Island creation story, patience and foundation",
+      "group": "Mimbres Pottery Astronomy",
+      "site": "Mimbres Valley, SW New Mexico",
+      "location": { "lat": 32.8500, "lon": -108.0500 },
+      "builder_tradition": "Mogollon (Mimbres Classic Phase)",
+      "astronomical_alignment": "Saturn-Jupiter trine — the slow giants in harmony, patience rewarded, structural growth",
+      "primary_celestial_target": "Saturn and Jupiter",
+      "star_chart": {
+        "geometry": "TURTLE_SHELL",
+        "angular_aspect": "trine",
+        "trigger_angle_deg": 120,
+        "tolerance_deg": 8,
+        "planet_pair": ["Saturn", "Jupiter"],
+        "sacred_ratio": 1.618
+      },
+      "trading_signal": { "bias": "BUY", "domain": "stocks", "strength": 0.80 }
+    },
+    {
+      "id": "mogollon_mimbres_crane",
+      "name": "Mimbres Crane Bowl",
+      "meaning": "Sandhill crane in flight — the traveller between worlds, seasonal migration encoded",
+      "group": "Mimbres Pottery Astronomy",
+      "site": "Mimbres Valley, SW New Mexico",
+      "location": { "lat": 32.8500, "lon": -108.0500 },
+      "builder_tradition": "Mogollon (Mimbres Classic Phase)",
+      "astronomical_alignment": "Mercury-Saturn sextile — the messenger meets structure, disciplined communication",
+      "primary_celestial_target": "Mercury",
+      "star_chart": {
+        "geometry": "CRANE_FLIGHT",
+        "angular_aspect": "sextile",
+        "trigger_angle_deg": 60,
+        "tolerance_deg": 6,
+        "planet_pair": ["Mercury", "Saturn"],
+        "sacred_ratio": 1.732
+      },
+      "trading_signal": { "bias": "BUY", "domain": "stocks", "strength": 0.68 }
+    }
+  ]
+}
