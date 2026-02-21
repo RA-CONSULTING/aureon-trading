@@ -244,10 +244,10 @@ class FireTrader:
         # Prefer Kraken if it has more cash (current setup often has Kraken USDC)
         prefer_kraken = kraken_cash >= binance_cash and self.kraken is not None
 
-        # Conservative buy amount: 30% of funded exchange cash, capped at $15
-        # (10% was too conservative - $3 buys fail exchange minimums)
+        # Aggressive buy amount: 50% of funded exchange cash, capped at $20
+        # (30%/$15 was failing BTC minimum volume on Kraken at ~$3.42)
         def _buy_amount(cash_amt: float) -> float:
-            return max(3.0, min(15.0, cash_amt * 0.30))
+            return max(5.0, min(20.0, cash_amt * 0.50))
 
         watchlist = ["ETH", "SOL", "BTC", "ADA", "XRP", "LINK", "AVAX", "DOT", "ATOM", "TRX"]
 
