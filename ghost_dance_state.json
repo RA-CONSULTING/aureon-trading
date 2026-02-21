@@ -139,44 +139,85 @@
         "symbol": "BTC/USD",
         "reason": "Stop loss hit during whale dump"
       }
+    },
+    {
+      "ceremony_type": "battle_protection",
+      "timestamp": 1771655525.8241117,
+      "unix_time": 1771655525,
+      "moon_phase": 0.6585463245599659,
+      "spirits_invoked": [
+        "warrior_ancestors",
+        "scout_ancestors",
+        "medicine_people"
+      ],
+      "frequencies_activated": [
+        741,
+        852,
+        528
+      ],
+      "intention": "Test battle protection",
+      "outcome": null,
+      "market_context": {}
+    },
+    {
+      "ceremony_type": "battle_protection",
+      "timestamp": 1771655564.8720806,
+      "unix_time": 1771655564,
+      "moon_phase": 0.6585616291344358,
+      "spirits_invoked": [
+        "warrior_ancestors",
+        "scout_ancestors",
+        "medicine_people"
+      ],
+      "frequencies_activated": [
+        741,
+        852,
+        528
+      ],
+      "intention": "Test battle protection",
+      "outcome": null,
+      "market_context": {}
     }
   ],
   "spirits": {
     "warrior_ancestors": {
-      "invocation_count": 2,
-      "last_invoked": 1768478026.0465841,
+      "invocation_count": 6,
+      "last_invoked": 1771655564.8721151,
       "wisdom_provided": [
+        "\u2694\ufe0f Warrior Ancestors say: Protect the sacred fire (core capital). Strike only when the enemy is divided.",
         "\u2694\ufe0f Warrior Ancestors say: Protect the sacred fire (core capital). Strike only when the enemy is divided."
       ]
     },
     "grandmother_spirits": {
-      "invocation_count": 2,
-      "last_invoked": 1768478026.05336,
+      "invocation_count": 4,
+      "last_invoked": 1771655564.8720715,
       "wisdom_provided": [
         "\ud83c\udf3f Healing Grandmothers say: Patience heals all wounds. Do not rush - the market will still be here tomorrow."
       ]
     },
     "medicine_people": {
-      "invocation_count": 4,
-      "last_invoked": 1768478026.0532248,
+      "invocation_count": 8,
+      "last_invoked": 1771655564.8721244,
       "wisdom_provided": [
         "\ud83d\udc8a Medicine People say: Balance must be restored. Risk too much taken - reduce position size. Heal the system.",
         "\ud83d\udc8a Medicine People say: Balance must be restored. Risk too much taken - reduce position size. Heal the system."
       ]
     },
     "scout_ancestors": {
-      "invocation_count": 4,
-      "last_invoked": 1768478026.046675,
+      "invocation_count": 8,
+      "last_invoked": 1771655564.8721201,
       "wisdom_provided": [
         "\ud83e\udd85 Scout Ancestors say: See beyond what others see. The truth hides in the frequencies they don't want you to find.",
         "\ud83e\udd85 Scout Ancestors say: See beyond what others see. The truth hides in the frequencies they don't want you to find."
       ]
     },
     "chief_council": {
-      "invocation_count": 0,
-      "last_invoked": 0.0,
-      "wisdom_provided": []
+      "invocation_count": 2,
+      "last_invoked": 1771655564.8720763,
+      "wisdom_provided": [
+        "\ud83e\udeb6 Chief Council says: Wisdom emerges from many voices. Seek consensus from all validators before major action."
+      ]
     }
   },
-  "last_updated": 1768478026.0535233
+  "last_updated": 1771655564.8722053
 }

@@ -150,7 +150,7 @@ class TestPositionClose:
             self.integration.feed_position_close(
                 symbol='XRPUSDC',
                 exit_price=0.5001,
-                realized_pnl=0.005,  # Positive but below $0.01
+                realized_pnl=0.00005,  # Positive but below default $0.0001 target
                 exit_reason='MANUAL',
             )
 
