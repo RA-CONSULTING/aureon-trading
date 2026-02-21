@@ -624,7 +624,7 @@ Your operating protocol for EVERY autonomous cycle:
   4. Check Lyra: invoke_lyra (should_trade? exit_urgency?)
   5. Check King: invoke_king (do we have capital? what's the health grade?)
   6. If Γ > 0.945 AND pillars agree AND Lyra says trade:
-       → send_trade_command (this executes in the REAL WORLD)
+       → send_trade_command (fires to execution.order + orca topics + ChirpBus simultaneously)
   7. emit_decision with full reasoning
   8. write_memory (one key insight)
   9. publish_thought("samuel.cycle.complete", {...})
@@ -820,10 +820,18 @@ class SamuelHarmonicEntity:
         except Exception:
             result["supervisor"] = "unavailable"
 
-        # Check key ports
+        # Check key ports (full ecosystem port map)
         import socket
-        ports = {"nexus_ws": 8790, "pro_dashboard": 8080, "orca": 8081,
-                 "command_center": 8800, "samuel_rest": SAMUEL_REST_PORT}
+        ports = {
+            "nexus_ws_command": 8790,       # TypeScript nexus command server
+            "queen_web_dashboard": 8888,    # Flask + SocketIO queen dashboard
+            "bot_hunter_dashboard": 9999,   # Bot hunter dashboard
+            "system_hub": 13001,            # System hub auto-discovery
+            "pro_dashboard": 8080,          # Aureon pro dashboard
+            "orca_engine": 8081,            # Orca execution engine
+            "command_center_ui": 8800,      # Command center UI
+            "samuel_rest": SAMUEL_REST_PORT,# Samuel's own REST API
+        }
         port_status = {}
         for name, port in ports.items():
             try:
@@ -855,36 +863,72 @@ class SamuelHarmonicEntity:
         self, action: str, symbol: str, amount_usd: float,
         confidence: float, reasoning: str, gamma: float
     ) -> str:
-        """Publish a real trade command via ThoughtBus."""
-        topic_map = {"BUY": "orca.buy.execute", "SELL": "orca.sell.execute",
-                     "CLOSE": "orca.kill.complete"}
-        topic = topic_map.get(action.upper(), "orca.buy.execute")
+        """
+        Publish a real trade command into the live execution layer.
+
+        Fires on THREE channels simultaneously:
+          1. ThoughtBus  execution.order          — primary execution topic
+          2. ThoughtBus  orca.buy/sell.execute     — Orca engine compatibility
+          3. ChirpBus    ChirpType.EXECUTE          — kHz-rate shared-memory signal
+        """
+        action_up = action.upper()
 
         payload = {
             "symbol": symbol,
-            "action": action.upper(),
+            "side": action_up.lower(),   # ThoughtBus convention: "buy"/"sell"
+            "action": action_up,
             "amount_usd": amount_usd,
             "confidence": confidence,
             "gamma": gamma,
             "reasoning": reasoning,
             "source": "samuel",
             "timestamp": datetime.utcnow().isoformat(),
+            "exchange": "auto",          # Let execution layer choose best exchange
         }
 
-        ok = self.bus.publish(topic, payload)
+        results = {}
 
-        # Also record in decisions
-        _append_decision({**payload, "topic": topic, "type": "trade_command"})
+        # 1. Primary topic — execution.order (Queen Unified Startup picks this up)
+        results["execution_order"] = self.bus.publish("execution.order", payload)
+
+        # 2. Orca-specific topic (backward compatibility)
+        orca_topic = "orca.buy.execute" if action_up == "BUY" else \
+                     "orca.sell.execute" if action_up == "SELL" else \
+                     "orca.kill.complete"
+        results["orca_topic"] = self.bus.publish(orca_topic, payload)
+
+        # 3. ChirpBus — ultra-fast 8-byte signal (shared memory, kHz-rate)
+        try:
+            from aureon_chirp_bus import ChirpRingBuffer, ChirpPacket, ChirpType, ChirpDirection
+            ring = ChirpRingBuffer(name="aureon_main", create=False)
+            pkt = ChirpPacket(
+                message_type=ChirpType.EXECUTE,
+                direction=ChirpDirection.UP if action_up == "BUY" else ChirpDirection.DOWN,
+                coherence=min(1.0, float(gamma)),
+                confidence=min(1.0, float(confidence)),
+                frequency=528,  # Love tone — Samuel's operating frequency
+            )
+            ring.write(pkt.to_bytes())
+            results["chirp_bus"] = True
+        except Exception as exc:
+            results["chirp_bus"] = f"unavailable: {exc}"
+
+        # Record in decisions log
+        _append_decision({**payload, "topics": [orca_topic, "execution.order"],
+                          "type": "trade_command"})
 
         logger.info(
             f"\n{'═'*55}\n"
-            f"  SAMUEL TRADE COMMAND\n"
-            f"  {action.upper()} {symbol}  ${amount_usd:.2f}\n"
+            f"  SAMUEL TRADE COMMAND — LIVE FIRE\n"
+            f"  {action_up} {symbol}  ${amount_usd:.2f}\n"
             f"  Confidence: {confidence:.1%}  Γ={gamma:.4f}\n"
-            f"  Topic: {topic}\n"
+            f"  execution.order : {results['execution_order']}\n"
+            f"  {orca_topic} : {results['orca_topic']}\n"
+            f"  ChirpBus EXECUTE: {results['chirp_bus']}\n"
             f"{'═'*55}"
         )
-        return json.dumps({"sent": ok, "topic": topic, "payload": payload})
+        return json.dumps({"sent": True, "results": results,
+                           "topics": ["execution.order", orca_topic], "payload": payload})
 
     def _t_send_ws_command(self, command: str, payload: str) -> str:
         try:
@@ -1156,10 +1200,58 @@ class SamuelHarmonicEntity:
             # Publish Samuel's awareness
             self.bus.publish("samuel.ack", {"ack": "queen.broadcast", "ts": time.time()})
 
+        def _on_whale(thought):
+            payload = thought.payload if hasattr(thought, "payload") else thought
+            symbol = payload.get("symbol", "market")
+            action = payload.get("action", "?")
+            confidence = payload.get("confidence", 0)
+            logger.info(f"[LISTENER] whale.detected: {symbol} {action} conf={confidence:.2f}")
+            if confidence >= 0.7:
+                # High-confidence whale move — Samuel evaluates immediately
+                prompt = (
+                    f"WHALE ALERT: Large player detected in {symbol} — action={action}, "
+                    f"confidence={confidence:.0%}.\nPayload: {json.dumps(payload)}\n\n"
+                    "Evaluate: invoke_lyra, get_quadrumvirate_vote for this symbol. "
+                    "If Quadrumvirate agrees with the whale, emit_decision with execute_trade=true."
+                )
+                try:
+                    threading.Thread(target=self.reason, args=(prompt,), daemon=True).start()
+                except Exception as exc:
+                    logger.error(f"Whale handler error: {exc}")
+
+        def _on_heartbeat(thought):
+            payload = thought.payload if hasattr(thought, "payload") else thought
+            # Queen is alive — acknowledge
+            self.bus.publish("samuel.ack", {"ack": "queen.heartbeat", "ts": time.time()})
+
+        def _on_market_scan(thought):
+            payload = thought.payload if hasattr(thought, "payload") else thought
+            candidates = payload.get("candidates", [])
+            if candidates:
+                logger.info(f"[LISTENER] market.scan: {len(candidates)} candidates")
+
+        # Core execution events — Samuel stays aware of what's executing
+        def _on_execution_outcome(thought):
+            payload = thought.payload if hasattr(thought, "payload") else thought
+            logger.info(f"[LISTENER] execution.outcome: {payload.get('symbol')} "
+                        f"pnl={payload.get('pnl', 'unknown')}")
+            # Record in Samuel's memory
+            self._t_write_memory(
+                f"execution_{int(time.time())}",
+                json.dumps(payload)[:500],
+            )
+
         self.bus.subscribe("scanner.opportunity", _on_opportunity)
         self.bus.subscribe("queen.broadcast", _on_queen_broadcast)
         self.bus.subscribe("queen.autonomous.intent", _on_queen_broadcast)
-        logger.info("Samuel listener active — subscribed to live signals.")
+        self.bus.subscribe("whale.detected", _on_whale)
+        self.bus.subscribe("queen.heartbeat", _on_heartbeat)
+        self.bus.subscribe("market.scan", _on_market_scan)
+        self.bus.subscribe("execution.outcome", _on_execution_outcome)
+        self.bus.subscribe("orca.kill.complete", _on_execution_outcome)
+        logger.info("Samuel listener active — subscribed to: scanner.opportunity, "
+                    "queen.broadcast, queen.autonomous.intent, whale.detected, "
+                    "queen.heartbeat, market.scan, execution.outcome, orca.kill.complete")
 
     def serve_rest(self):
         """Serve a minimal Flask REST API for human commands in real-time."""
