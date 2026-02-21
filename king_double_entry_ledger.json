@@ -1,11 +1,11 @@
 {
-  "saved_at": "2026-02-20T13:02:27.191639",
-  "entry_counter": 11,
+  "saved_at": "2026-02-21T07:11:00.980676",
+  "entry_counter": 12,
   "account_balances": {
-    "1100": 743.6399999999999,
-    "5100": 14.240000000000002,
+    "1100": 838.6399999999999,
+    "5100": 14.480000000000002,
     "1002": -205.98000000000002,
-    "1001": -248.26000000000022,
+    "1001": -343.5000000000002,
     "4000": 356.74000000000007,
     "5000": 53.0,
     "1004": 0.10000000000000142
@@ -386,6 +386,42 @@
           "asset": "BTC",
           "exchange": "",
           "memo": "Realized gain on BTC"
+        }
+      ]
+    },
+    {
+      "id": "JE-1771657860-000012",
+      "timestamp": 1771657860.9806316,
+      "date": "2026-02-21 07:11:00",
+      "description": "Buy 0.00100000 BTC @ 95000.00 on kraken",
+      "reference": "samuel_test_001",
+      "lines": [
+        {
+          "account_code": "1100",
+          "account_name": "Crypto Holdings",
+          "debit": 95.0,
+          "credit": 0.0,
+          "asset": "BTC",
+          "exchange": "kraken",
+          "memo": "Buy 0.00100000 BTC @ 95000.00"
+        },
+        {
+          "account_code": "5100",
+          "account_name": "Exchange Fees",
+          "debit": 0.24,
+          "credit": 0.0,
+          "asset": "",
+          "exchange": "kraken",
+          "memo": "Fee on buy BTC"
+        },
+        {
+          "account_code": "1001",
+          "account_name": "Cash (kraken)",
+          "debit": 0.0,
+          "credit": 95.24,
+          "asset": "BTC",
+          "exchange": "kraken",
+          "memo": ""
         }
       ]
     }

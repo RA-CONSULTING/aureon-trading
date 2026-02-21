@@ -1,0 +1,21 @@
+{
+  "entries": [
+    {
+      "key": "test_key_0",
+      "value": "Samuel capability test value 0",
+      "timestamp": "2026-02-21T07:14:14.925936"
+    },
+    {
+      "key": "test_key_1",
+      "value": "Samuel capability test value 1",
+      "timestamp": "2026-02-21T07:14:14.927151"
+    },
+    {
+      "key": "test_key_2",
+      "value": "Samuel capability test value 2",
+      "timestamp": "2026-02-21T07:14:14.928008"
+    }
+  ],
+  "last_decision": null,
+  "session_count": 0
+}
