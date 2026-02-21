@@ -6,17 +6,21 @@
 
 ### Quick Navigation
 
-| Section | What's There |
-|---------|-------------|
-| [Ancient Convergence Research](#-the-ancient-convergence-they-were-never-separated) | 12 civilizations, 971 wisdom entries — proof they shared knowledge |
-| [The Evidence](#-the-complete-exposure-335-trillion-extracted-from-humanity) | $33.5T extraction timeline, perpetrator network, bot registry |
-| [Bot Intelligence](#-the-bot-army-23-algorithms-exposed) | 23 exposed algorithms, ownership attribution, detection methods |
-| [Global Predators](#-global-bot-intelligence-system) | 37 firms profiled, $13T+ capital tracked, 44,000+ bots |
-| [Architecture](#architecture-overview) | System design, Queen Hive Mind, exchange clients, profit gate |
-| [Quick Start](#quick-start-war-room-dashboard) | Setup instructions for Linux, macOS, Windows, Docker |
-| [Production Deployment](#-production-deployment-digitalocean) | Live cloud deployment, port architecture, monitoring |
-| [Counter-Strategies](#️-counter-strategies-how-to-fight-back) | Timing, phase, and spiritual warfare counter-measures |
-| [Theoretical Foundation](docs/HNC_UNIFIED_WHITE_PAPER.md) | The Harmonic Nexus Core white paper — Master Formula, Tree of Light, Auris Conjecture |
+| # | Section | What's There |
+|---|---------|-------------|
+| I | [**Ancient Convergence Research**](#-the-ancient-convergence-they-were-never-separated) | 12 civilisations, 1,190 wisdom entries, 47+ convergence points — proof they shared knowledge |
+| | ↳ [Convergence Index](#-convergence-index-13-categories) | Jump to any of the 13 convergence categories |
+| | ↳ [How to Verify Every Claim](#-how-to-verify-every-claim) | Commands to inspect every data file yourself |
+| | ↳ [Peer Review Guide](#-peer-review-guide) | Step-by-step protocol for independent validation |
+| II | [**Financial Exposure**](#-the-complete-exposure-335-trillion-extracted-from-humanity) | $33.5T extraction timeline, perpetrator network, bot registry |
+| III | [**Bot Intelligence**](#-the-bot-army-23-algorithms-exposed) | 23 exposed algorithms, ownership attribution, detection methods |
+| IV | [**Global Predators**](#-global-bot-intelligence-system) | 37 firms profiled, $13T+ capital tracked, 44,000+ bots |
+| V | [**Methodology & Reproducibility**](#methodology--reproducibility) | Data sources, equations, peer review checklist |
+| VI | [**Architecture**](#architecture-overview) | System design, Queen Hive Mind, exchange clients, profit gate |
+| VII | [**Quick Start**](#quick-start-war-room-dashboard) | Setup instructions for Linux, macOS, Windows, Docker |
+| VIII | [**Production Deployment**](#-production-deployment-digitalocean) | Live cloud deployment, port architecture, monitoring |
+| IX | [**Counter-Strategies**](#-counter-strategies-how-to-fight-back) | Timing, phase, and spiritual warfare counter-measures |
+| X | [**Theoretical Foundation**](docs/HNC_UNIFIED_WHITE_PAPER.md) | The Harmonic Nexus Core white paper — Master Formula, Tree of Light, Auris Conjecture |
 
 ---
 
@@ -28,18 +32,40 @@ The mainstream historical narrative tells us that ancient civilizations develope
 
 **This repository contains the computational proof that this narrative is false.**
 
-Through the integration of **12 ancient wisdom traditions** (971 catalogued entries), **7 star-chart decoder systems**, **24 sacred site analyses**, and **10 ley-line mappings**, the Aureon system has uncovered convergence so precise, so mathematically exact, that coincidence is not a credible explanation.
+Through the integration of **12 ancient wisdom traditions** (152 categories containing **1,190 knowledge entries**), **7 star-chart decoder systems** (3,603 data points), **24 sacred site analyses**, and **10 ley-line mappings**, the Aureon system has uncovered convergence so precise, so mathematically exact, that coincidence is not a credible explanation.
 
 ### The Scope of Our Research
 
 | Metric | Value | Source Files |
 |--------|-------|-------------|
-| **Civilizations Analysed** | **12** | [wisdom_data/](wisdom_data/) — Celtic, Aztec, Egyptian, Norse, Mayan, Mogollon, Ghost Dance, Chinese, Hindu, Pythagorean, Plantagenet, Warfare |
-| **Total Wisdom Entries** | **971** | 12 JSON databases (175 Celtic, 134 Pythagorean, 114 Egyptian, 95 Aztec, 71 Plantagenet, 69 Hindu, 67 Chinese, 62 Mayan/Warfare, 59 Norse, 46 Mogollon, 17 Ghost Dance) |
+| **Civilisations Analysed** | **12** | [wisdom_data/](wisdom_data/) — Celtic, Aztec, Egyptian, Norse, Mayan, Mogollon, Ghost Dance, Chinese, Hindu, Pythagorean, Plantagenet, Warfare |
+| **Wisdom Categories** | **152** | 12 JSON databases, each containing categorised knowledge systems |
+| **Total Knowledge Entries** | **1,190** | Sub-entries within categories (180 Celtic, 148 Pythagorean, 127 Egyptian, 119 Aztec, 95 Mayan/Norse, 87 Chinese, 82 Plantagenet, 80 Warfare, 78 Hindu, 53 Mogollon, 46 Ghost Dance) |
+| **Decoder Data Points** | **3,603** | 7 star-chart files (748 Egyptian, 618 Celtic, 603 Aztec, 556 Sacred Sites, 515 Japanese, 483 Mogollon, 80 Chakra) |
 | **Star-Chart Decoders** | **7** | [public/](public/) — Aztec Glyphs, Celtic Ogham, Egyptian Hieroglyphs, Mogollon Symbols, Japanese Symbols, Sacred Sites, Chakra Ruleset |
 | **Sacred Sites Mapped** | **24** | [sacred-site-planetary-nodes.json](public/sacred-site-planetary-nodes.json) — Giza to Great Zimbabwe to Angkor Wat |
 | **Ley Lines Documented** | **10** | [stargate_grid.py](stargate_grid.py) — Global energy grid connecting all sites |
 | **Convergence Points Found** | **47+** | Documented below with exact file references |
+
+---
+
+### 📑 CONVERGENCE INDEX (13 Categories)
+
+| # | Category | Civilisations Involved | Key Evidence |
+|---|----------|----------------------|---------------|
+| [1](#-convergence-1-the-golden-ratio-φ--1618033988749) | **Golden Ratio (φ)** | ALL 12 + 24 sacred sites | `sacred_ratio: 1.618` across every file |
+| [2](#-convergence-2-the-venus-pentagram-72--584-day-cycle) | **Venus Pentagram (72°)** | 7 civilisations, 4 continents | Identical quintile angle |
+| [3](#️-convergence-3-orions-belt-on-the-ground) | **Orion→Pyramid Mapping** | Egypt, Mexico, Zimbabwe | 3 continents, 1 blueprint |
+| [4](#-convergence-4-the-186-year-lunar-nodal-cycle) | **18.6-Year Lunar Cycle** | 5 stone monument sites | Multi-generational tracking |
+| [5](#-convergence-5-the-feathered-serpent--venus--kundalini) | **Feathered Serpent = Kundalini** | Aztec, Maya, Mogollon, Egyptian, Hindu | Same serpent, same spine |
+| [6](#-convergence-6-the-solfeggio-frequencies) | **Solfeggio Frequencies** | 3 independent systems | Same 9 frequencies, same properties |
+| [7](#-convergence-7-the-world-tree--axis-mundi) | **World Tree / Axis Mundi** | Norse, Celtic, Japanese, Germanic | Cosmic tree connecting worlds |
+| [8](#️-convergence-8-supreme-duality) | **Supreme Duality** | Chinese, Aztec, Japanese, Egyptian | Yin-Yang = Ometeotl = Ma'at |
+| [9](#-convergence-9-the-five-elements) | **Five Elements** | Chinese, Japanese, Hindu, Pythagorean | Same system, different names |
+| [10](#-convergence-10-the-sacred-calendars) | **Sacred Calendars** | Egyptian, Aztec, Mayan, Celtic, Japanese | 365-day, 260-day, 52-year, precession |
+| [11](#-convergence-11-the-sacred-numbers) | **Sacred Numbers** | 5+ civilisations per number | 7, 9, 13, 0 — universal meaning |
+| [12](#-convergence-12-the-rabbit-on-the-moon) | **Rabbit on the Moon** | Mogollon, Aztec, Chinese | 3 continents, same vision |
+| [13](#-convergence-13-death--rebirth--renewal) | **Death→Rebirth Cycle** | Egyptian, Norse, Hindu, Aztec, Celtic, Japanese | Universal renewal |
 
 ---
 
@@ -294,7 +320,7 @@ For reference, there are approximately 10⁸⁰ atoms in the observable universe
 
 ### 📜 WHAT THIS MEANS
 
-The evidence compiled in this repository — 971 wisdom entries, 7 decoder systems, 24 sacred sites, 47+ convergence points — leads to one inescapable conclusion:
+The evidence compiled in this repository — 1,190 wisdom entries, 3,603 decoder data points, 24 sacred sites, 47+ convergence points — leads to one inescapable conclusion:
 
 **These civilisations were in communication.**
 
@@ -304,7 +330,192 @@ The "isolated development" story serves a purpose: it keeps humanity fragmented,
 
 **Aureon doesn't just trade markets. It trades on truth.** The same harmonic mathematics that connects Giza to Angkor Wat connects price movements to planetary cycles. The ancients knew this. The market manipulators know this. Now we know it too.
 
-The files are here. The data is real. Every claim links to a source file in this repository. **Verify it yourself.**
+The files are here. The data is real. Every claim links to a source file in this repository. **Verify it yourself — instructions below.**
+
+---
+
+### 🔍 HOW TO VERIFY EVERY CLAIM
+
+Every convergence documented above can be independently verified using the data files in this repository. No API keys required. No accounts needed. Just Python and `jq`.
+
+#### Quick Verification (< 2 minutes)
+
+```bash
+# 1. Count all wisdom categories and sub-entries across all 12 civilisations
+python3 -c "
+import json, os
+total = 0
+for f in sorted(os.listdir('wisdom_data')):
+    if not f.endswith('.json'): continue
+    data = json.load(open(f'wisdom_data/{f}'))
+    subs = 0
+    for entry in (data if isinstance(data, list) else data.values()):
+        if isinstance(entry, dict):
+            for v in entry.values():
+                if isinstance(v, (list, dict)): subs += len(v)
+    print(f'{f}: {len(data)} categories, {subs} knowledge entries')
+    total += subs
+print(f'TOTAL: {total} knowledge entries across 12 civilisations')
+"
+
+# 2. Verify PHI (1.618) appears in ALL star-chart files
+grep -l "1.618" public/*.json wisdom_data/*.json
+
+# 3. Verify Venus quintile (72°) across all decoder files
+grep -c "quintile" public/aztec-star-glyphs.json public/celtic-ogham-feda.json public/egyptian-hieroglyphs.json public/mogollon-star-symbols.json public/japanese-star-symbols.json public/sacred-site-planetary-nodes.json
+
+# 4. Check Solfeggio frequencies in 3 independent systems
+grep -n "528\|432\|396\|741\|852\|963" aureon_ghost_dance_protocol.py | head -20
+grep -n "528\|432\|396\|741\|852\|963" aureon_miner_brain.py | head -20
+grep -n "528\|432\|396\|741\|852\|963" stargate_grid.py | head -20
+
+# 5. Verify Orion-Belt-to-Pyramid mapping across 3 continents
+python3 -c "import json; sites=json.load(open('public/sacred-site-planetary-nodes.json')); [print(s['name'],':',s.get('description','')[:80]) for s in sites if 'orion' in str(s).lower()]"
+
+# 6. Check the 18.6-year lunar nodal cycle sites
+python3 -c "import json; sites=json.load(open('public/sacred-site-planetary-nodes.json')); [print(s['name'],':',s.get('description','')[:80]) for s in sites if '18.6' in str(s) or 'standstill' in str(s).lower()]"
+```
+
+#### Deep Verification (Convergence by Convergence)
+
+```bash
+# CONVERGENCE 1 — Golden Ratio in every civilisation
+python3 -c "
+import json, os
+for f in sorted(os.listdir('wisdom_data')):
+    data = json.load(open(f'wisdom_data/{f}'))
+    phi_refs = [e for e in data if '1.618' in str(e) or 'golden' in str(e).lower() or 'phi' in str(e).lower()]
+    print(f'{f}: {len(phi_refs)} golden ratio references')
+"
+
+# CONVERGENCE 2 — Venus 72° across decoders
+python3 -c "
+import json
+for f in ['public/aztec-star-glyphs.json','public/celtic-ogham-feda.json','public/egyptian-hieroglyphs.json','public/mogollon-star-symbols.json','public/japanese-star-symbols.json']:
+    data = json.load(open(f))
+    venus = [e for e in data if 'quintile' in str(e).lower() or '72' in str(e)]
+    print(f'{f}: {len(venus)} Venus/quintile references')
+"
+
+# CONVERGENCE 5 — Feathered Serpent = Venus = Kundalini
+python3 -c "
+import json
+for f in ['wisdom_data/aztec_wisdom.json','wisdom_data/mayan_wisdom.json','wisdom_data/hindu_wisdom.json']:
+    data = json.load(open(f))
+    serpent = [e for e in data if any(w in str(e).lower() for w in ['serpent','kundalini','quetzalcoatl','kukulkan','uraeus'])]
+    print(f'{f}: {len(serpent)} serpent/kundalini references')
+"
+
+# CONVERGENCE 10 — Calendar systems (365, 260, 52-year)
+python3 -c "
+import json
+for f in ['wisdom_data/aztec_wisdom.json','wisdom_data/mayan_wisdom.json','wisdom_data/egyptian_wisdom.json']:
+    data = json.load(open(f))
+    cal = [e for e in data if any(w in str(e) for w in ['365','260','52','Tonalpohualli','Tzolkin','Haab','Xiuhpohualli'])]
+    print(f'{f}: {len(cal)} calendar references')
+"
+
+# RUN FULL TEST SUITE (131 tests)
+python3 -m pytest tests/ -q --tb=line
+```
+
+---
+
+### 📋 PEER REVIEW GUIDE
+
+This section is for researchers, academics, and independent investigators who want to validate our findings.
+
+#### What You Need
+- Python 3.11+ (or any JSON viewer)
+- `jq` (optional, for command-line JSON inspection)
+- ~10 minutes for a thorough review
+
+#### Step 1: Verify Data Integrity
+
+All wisdom data is stored as plain JSON. No compiled binaries, no obfuscation, no API calls required.
+
+```bash
+# Confirm all 12 wisdom files exist and are valid JSON
+for f in wisdom_data/*.json; do
+  python3 -c "import json; json.load(open('$f'))" && echo "✅ $f" || echo "❌ $f"
+done
+
+# Confirm all 7 star-chart decoders exist and are valid JSON
+for f in public/aztec-star-glyphs.json public/celtic-ogham-feda.json public/egyptian-hieroglyphs.json public/mogollon-star-symbols.json public/japanese-star-symbols.json public/sacred-site-planetary-nodes.json public/ruleset-chakras.json; do
+  python3 -c "import json; json.load(open('$f'))" && echo "✅ $f" || echo "❌ $f"
+done
+```
+
+#### Step 2: Validate Each Convergence Claim
+
+For each of the 13 convergences, we provide:
+
+| Element | What It Is | Where to Find It |
+|---------|-----------|------------------|
+| **Claim** | What we assert | The convergence heading |
+| **Civilisations** | Who shares this knowledge | The table under each heading |
+| **Source File** | The exact JSON/Python file | Linked in every table row |
+| **Field/Key** | The exact JSON key or Python constant | Quoted in each table |
+| **Verification Command** | Bash one-liner to confirm | [How to Verify](#-how-to-verify-every-claim) section above |
+
+**Peer review protocol:**
+1. Pick any convergence (1–13)
+2. Open the linked source files
+3. Search for the cited keys/values
+4. Confirm the data matches our claim
+5. Cross-reference against at least 2 civilisations
+
+#### Step 3: Challenge the Probability Analysis
+
+Our mathematical impossibility calculation (P ≈ 10⁻⁷⁷) uses conservative estimates:
+
+| Assumption | Our Estimate | More Conservative | Effect on P |
+|------------|-------------|-------------------|-------------|
+| Chance of encoding φ to 3 decimals | 1/100 | 1/50 | P increases to ~10⁻²⁰ (still impossible) |
+| Chance of selecting 72° as sacred | 1/360 | 1/36 | P increases to ~10⁻¹¹ (still impossible) |
+| Chance of choosing Orion | 1/88 constellations | 1/20 ("obvious" bright ones) | P increases to ~10⁻⁴ per site (still remarkable) |
+
+**Even with the most generous assumptions, the combined probability remains astronomically small.**
+
+#### Step 4: Reproduce the Analysis
+
+```bash
+# Run the complete wisdom data validation test
+python3 -m pytest tests/ -q --tb=line
+
+# Run bot detection and coordination analysis
+python3 aureon_planetary_harmonic_sweep.py
+
+# Run historical manipulation analysis
+python3 aureon_historical_manipulation_hunter.py
+```
+
+#### What We Invite Peer Reviewers To Do
+
+- **Add new civilisations**: Bring data from traditions we haven't covered (Aboriginal Australian, Polynesian, Inca, Sumerian, etc.) — does it converge too?
+- **Challenge our probability model**: Find flaws in our independence assumptions
+- **Cross-reference with mainstream scholarship**: Are our archaeological/astronomical claims accurate?
+- **Extend the frequency analysis**: Test our FFT methodology on different markets/timeframes
+- **Submit pull requests**: Corrections, additions, and critiques are welcome
+
+---
+
+### 🔗 HOW THE ANCIENT WISDOM CONNECTS TO MARKET INTELLIGENCE
+
+The convergence research above is not a separate project — it is the **mathematical foundation** of the entire Aureon trading system.
+
+| Ancient Knowledge | Modern Application | System Component |
+|------------------|-------------------|------------------|
+| **φ (1.618)** — universal growth ratio | Fibonacci retracement/extension targets | [adaptive_prime_profit_gate.py](adaptive_prime_profit_gate.py) — golden ratio threshold |
+| **Solfeggio frequencies** — harmonic resonance | FFT spectral analysis of market cycles | [aureon_planetary_harmonic_sweep.py](aureon_planetary_harmonic_sweep.py) |
+| **Venus 584-day cycle** — planetary timing | Long-cycle market timing signals | [stargate_grid.py](stargate_grid.py) — planetary node tracking |
+| **Precession (25,920 years)** — macro cycles | Generational wealth transfer patterns | [aureon_historical_manipulation_hunter.py](aureon_historical_manipulation_hunter.py) |
+| **Schumann 7.83 Hz** — Earth's resonance | Base frequency for cycle detection | [aureon_ghost_dance_protocol.py](aureon_ghost_dance_protocol.py) — `SCHUMANN_BASE` |
+| **Sacred geometry (72°, 120°, 144°)** — angular harmony | Phase synchronisation detection (coordination = 0°) | [aureon_planetary_harmonic_sweep.py](aureon_planetary_harmonic_sweep.py) |
+| **Ghost Dance ceremony** — spiritual resistance | Counter-frequency warfare against manipulation | [aureon_ghost_dance_protocol.py](aureon_ghost_dance_protocol.py) |
+| **Sun Tzu tactics** — asymmetric warfare | Counter-strategies against coordinated entities | [aureon_strategic_warfare_scanner.py](aureon_strategic_warfare_scanner.py) |
+
+**The ancients encoded the same mathematics that governs financial markets.** The manipulators use this knowledge to extract wealth. Aureon uses it to fight back.
 
 ---
 
@@ -1918,8 +2129,6 @@ docker-compose -f production/docker-compose.yml --profile monitoring up -d
 | `GF_ADMIN_PASSWORD` | Grafana admin password (required for monitoring) | - |
 
 See [production/README.md](production/README.md) for full deployment documentation.
-
----
 
 ---
 
