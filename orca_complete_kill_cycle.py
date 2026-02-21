@@ -13049,11 +13049,11 @@ class OrcaKillCycle:
                                         print(f"      GATE CLOSED: {reason} (wait {wait_h})")
                                         print(f"      Skipping scan - Quadrumvirate says NOT NOW")
                                         # Feed context updates even when gate is closed
-                                        if seer_update_context:
-                                            try: seer_update_context(market_data={'prices': batch_prices or {}, 'cycle': session_stats['cycles']})
+                                        if _seer_update_context:
+                                            try: _seer_update_context(market_data={'prices': batch_prices or {}, 'cycle': session_stats['cycles']})
                                             except Exception: pass
-                                        if LYRA_INTEGRATION_AVAILABLE and lyra_update_context:
-                                            try: lyra_update_context({'cycle': session_stats['cycles'], 'positions': len(positions), 'pnl': session_stats['total_pnl']})
+                                        if LYRA_INTEGRATION_AVAILABLE and _lyra_update_context:
+                                            try: _lyra_update_context({'cycle': session_stats['cycles'], 'positions': len(positions), 'pnl': session_stats['total_pnl']})
                                             except Exception: pass
                                         continue  # Skip this scan cycle
                                 except Exception as e:
@@ -13862,11 +13862,11 @@ class OrcaKillCycle:
                 if batch_prices:
                     _seer_ctx['ticker_cache'] = batch_prices
                 _seer_ctx['market_data'] = {'prices': batch_prices or {}, 'cycle': session_stats['cycles']}
-                if QUADRUMVIRATE_AVAILABLE and seer_update_context:
-                    try: seer_update_context(**_seer_ctx)
+                if QUADRUMVIRATE_AVAILABLE and _seer_update_context:
+                    try: _seer_update_context(**_seer_ctx)
                     except Exception: pass
-                if LYRA_INTEGRATION_AVAILABLE and lyra_update_context:
-                    try: lyra_update_context({'cycle': session_stats['cycles'], 'positions': len(positions), 'pnl': session_stats['total_pnl']})
+                if LYRA_INTEGRATION_AVAILABLE and _lyra_update_context:
+                    try: _lyra_update_context({'cycle': session_stats['cycles'], 'positions': len(positions), 'pnl': session_stats['total_pnl']})
                     except Exception: pass
 
                 time.sleep(monitor_interval)

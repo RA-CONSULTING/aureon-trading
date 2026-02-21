@@ -244,9 +244,10 @@ class FireTrader:
         # Prefer Kraken if it has more cash (current setup often has Kraken USDC)
         prefer_kraken = kraken_cash >= binance_cash and self.kraken is not None
 
-        # Conservative buy amount: 10% of funded exchange cash, capped
+        # Conservative buy amount: 30% of funded exchange cash, capped at $15
+        # (10% was too conservative - $3 buys fail exchange minimums)
         def _buy_amount(cash_amt: float) -> float:
-            return max(1.0, min(10.0, cash_amt * 0.10))
+            return max(3.0, min(15.0, cash_amt * 0.30))
 
         watchlist = ["ETH", "SOL", "BTC", "ADA", "XRP", "LINK", "AVAX", "DOT", "ATOM", "TRX"]
 
@@ -310,7 +311,8 @@ class FireTrader:
         if self.binance is not None and binance_cash >= 1.0:
             best_buy = None
             for base in watchlist:
-                for pair in (f"{base}USDC", f"{base}USDT"):
+                # UK accounts: USDC pairs ONLY (USDT restricted)
+                for pair in (f"{base}USDC",):
                     try:
                         ticker = self.binance.get_24h_ticker(pair)
                         if not ticker:
