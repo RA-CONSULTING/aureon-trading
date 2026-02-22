@@ -122,7 +122,7 @@ class FireTrader:
                 amt = float(amt)
                 if amt > 0:
                     log_fire(f"   {asset}: {amt}")
-                    if asset in ['USD', 'ZUSD', 'USDC', 'USDT', 'TUSD']:
+                    if asset in ['USD', 'ZUSD', 'USDC', 'USDT']:
                         kraken_cash += amt
                     if asset in ['USD', 'ZUSD']:
                         kraken_usd_cash += amt
@@ -153,13 +153,14 @@ class FireTrader:
             log_fire(f"   Error: {e}")
         
         # Get prices and find best opportunity
-        log_fire("\n🔍 SCANNING FOR BEST SELL OPPORTUNITY ON BINANCE...")
+        log_fire("\n🔍 SCANNING FOR BEST SELL OPPORTUNITY ON BINANCE (USDC pairs)...")
         best_sell = None
         best_value = 0
         
         for asset, qty in tradeable_binance.items():
             try:
-                symbol = f"{asset}USDT"
+                # UK accounts: use USDC pairs only
+                symbol = f"{asset}USDC"
                 ticker = self.binance.get_24h_ticker(symbol)
                 if not ticker:
                     continue
@@ -171,27 +172,72 @@ class FireTrader:
                 if value <= 1:
                     continue
 
-                log_fire(f"   {asset}: {qty:.2f} @ ${price:.6f} = ${value:.2f} ({change:+.1f}%)")
+                # Check cost basis for profit calculation
+                cost_basis = None
+                try:
+                    with open('cost_basis_history.json', 'r') as f:
+                        cb_data = json.load(f)
+                        positions_dict = cb_data.get('positions', {})
+                        for try_key in (f"binance:{symbol}", f"binance:{asset}", f"binance:{asset}USDC", f"binance:{asset}USDT"):
+                            if try_key in positions_dict:
+                                entry = positions_dict[try_key]
+                                cost_basis = float(entry.get('avg_entry_price', 0) or entry.get('avg_fill_price', 0) or 0)
+                                if cost_basis > 0:
+                                    break
+                except Exception:
+                    pass
 
-                if change > 0 and value > best_value:
+                fee_rate = 0.001  # 0.1% Binance taker fee
+                net_price = price * (1 - fee_rate)
+                entry_ref = cost_basis if cost_basis and cost_basis > 0 else price
+                profit_margin = ((net_price - entry_ref) / entry_ref) * 100 if entry_ref > 0 else 0
+
+                log_fire(f"   [DEBUG] Binance {asset}: qty={qty:.4f}, price=${price:.4f}, "
+                         f"cost_basis=${cost_basis or 0:.4f}, profit={profit_margin:+.2f}%, "
+                         f"24h={change:+.1f}%")
+
+                if profit_margin > 0.3 and change > -2.0 and value > best_value:
                     best_sell = {
                         'asset': asset,
                         'symbol': symbol,
                         'qty': qty,
                         'price': price,
                         'value': value,
-                        'change': change
+                        'change': change,
+                        'profit_margin': profit_margin
                     }
                     best_value = value
             except Exception as e:
                 log_fire(f"   [DEBUG] Binance {asset}: error while evaluating sell opportunity - {e}")
 
         if best_sell:
-            log_fire(f"   [DEBUG] Binance candidate {best_sell['symbol']}: change={best_sell['change']:.2f}%, value=${best_sell['value']:.2f}")
+            log_fire(f"\n🎯 PROFIT OPPORTUNITY (Binance): {best_sell['asset']}")
+            log_fire(f"   Sell 50% to lock +{best_sell['profit_margin']:.2f}% profit")
+            sell_qty = best_sell['qty'] * 0.5
+            try:
+                order = self.binance.place_market_order(best_sell['symbol'], 'sell', sell_qty)
+                log_result(f"SELL ORDER RESULT: {json.dumps(order, indent=2) if order else 'None'}")
+                if order and order.get('status') == 'FILLED':
+                    log_fire(f"💥💥💥 BINANCE SELL FILLED! 💥💥💥")
+                    with open('orca_real_trades.json', 'a') as f:
+                        f.write(json.dumps({
+                            'timestamp': datetime.now().isoformat(),
+                            'exchange': 'binance',
+                            'symbol': best_sell['symbol'],
+                            'side': 'SELL',
+                            'qty': sell_qty,
+                            'price': best_sell['price'],
+                            'value': best_sell['value'],
+                            'order': order
+                        }) + '\n')
+                    return True
+                else:
+                    log_fire(f"❌ Binance sell not filled: {order}")
+            except Exception as e:
+                log_fire(f"❌ Binance sell failed: {e}")
         else:
-            log_fire("   [DEBUG] Binance: no positive change opportunities detected")
-        
-        # Skip Binance (too many UK restrictions), go straight to Kraken
+            log_fire("   [DEBUG] Binance: no profitable positions to sell")
+
         log_fire("\n🔍 Scanning Kraken for profit opportunities...")
         
         for asset, qty in tradeable_kraken.items():
@@ -307,13 +353,15 @@ class FireTrader:
         log_fire("\n🛒 No sell found - scanning for BUY opportunities with available cash...")
         log_fire(f"   [DEBUG] Cash available: Kraken=${kraken_cash:.2f}, Binance=${binance_cash:.2f}")
 
+        bought_any = False
+
         # Prefer Kraken if it has more cash (current setup often has Kraken USDC)
         prefer_kraken = kraken_cash >= binance_cash and self.kraken is not None
 
-        # Aggressive buy amount: 50% of funded exchange cash, capped at $20
-        # (30%/$15 was failing BTC minimum volume on Kraken at ~$3.42)
+        # Deploy 85% of funded exchange cash, capped at $20, minimum $5
+        # Higher deployment rate to maximize position size per trade
         def _buy_amount(cash_amt: float) -> float:
-            return max(5.0, min(20.0, cash_amt * 0.50))
+            return max(5.0, min(20.0, cash_amt * 0.85))
 
         watchlist = ["ETH", "SOL", "BTC", "ADA", "XRP", "LINK", "AVAX", "DOT", "ATOM", "TRX"]
 
@@ -334,7 +382,7 @@ class FireTrader:
                         price = float(ticker24.get('lastPrice', 0) or 0)
                         change_24h = float(ticker24.get('priceChangePercent', 0) or 0)
                         quote_vol = float(ticker24.get('quoteVolume', 0) or 0)
-                        if price <= 0 or quote_vol < 25000:
+                        if price <= 0 or quote_vol < 10000:
                             continue
                         # Favor positive momentum + high liquidity
                         score = change_24h + min(quote_vol / 1_000_000, 5)
@@ -371,8 +419,9 @@ class FireTrader:
                         log_fire("💥 BUY EXECUTED (Kraken)")
                         # Record cost basis so we can track profit and sell later
                         self._record_buy_cost_basis(best_buy['pair'], order, 'kraken')
-                        return True
-                    log_fire(f"❌ Buy not filled/rejected: {order}")
+                        bought_any = True
+                    else:
+                        log_fire(f"❌ Buy not filled/rejected: {order}")
                 except Exception as e:
                     log_fire(f"❌ Kraken buy failed: {e}")
 
@@ -388,7 +437,7 @@ class FireTrader:
                         price = float(ticker.get('lastPrice', 0) or 0)
                         change = float(ticker.get('priceChangePercent', 0) or 0)
                         volume = float(ticker.get('quoteVolume', 0) or 0)
-                        if price <= 0 or volume < 50000:
+                        if price <= 0 or volume < 25000:
                             continue
                         score = change + min(volume / 1_000_000, 5)
                         if best_buy is None or score > best_buy['score']:
@@ -408,13 +457,15 @@ class FireTrader:
                         log_fire("💥 BUY EXECUTED (Binance)")
                         # Record cost basis so we can track profit and sell later
                         self._record_buy_cost_basis(best_buy['pair'], order, 'binance')
-                        return True
-                    log_fire(f"❌ Buy not filled/rejected: {order}")
+                        bought_any = True
+                    else:
+                        log_fire(f"❌ Buy not filled/rejected: {order}")
                 except Exception as e:
                     log_fire(f"❌ Binance buy failed: {e}")
 
-        log_fire("⚠️ No valid buy opportunities after fallback scan")
-        return False
+        if not bought_any:
+            log_fire("⚠️ No valid buy opportunities after fallback scan")
+        return bought_any
 
 def main():
     # Only for standalone run
