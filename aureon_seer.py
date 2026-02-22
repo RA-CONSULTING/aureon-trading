@@ -1488,28 +1488,33 @@ class OracleOfSentiment:
         return self._fg_fetcher
 
     def read(self, market_data: Dict[str, Any] = None) -> OracleReading:
-        """Read the sentiment oracle — aggregates Fear/Greed + News + Velocity."""
+        """Read the sentiment oracle — aggregates Fear/Greed + News + Macro + Velocity."""
         scores = []
         details = {}
 
         # ── 1. FEAR & GREED INDEX ──
         fg_score, fg_details = self._read_fear_greed()
-        scores.append(("fear_greed", fg_score, 0.35))
+        scores.append(("fear_greed", fg_score, 0.25))
         details.update(fg_details)
 
         # ── 2. YAHOO FINANCE NEWS / GEOPOLITICS ──
         news_score, news_details = self._read_yahoo_news()
-        scores.append(("news_sentiment", news_score, 0.25))
+        scores.append(("news_sentiment", news_score, 0.18))
         details.update(news_details)
 
-        # ── 3. KING'S ORDER FLOW VELOCITY ──
+        # ── 3. GLOBAL MACRO LANDSCAPE ──
+        macro_score, macro_details = self._read_macro_landscape()
+        scores.append(("macro_landscape", macro_score, 0.30))
+        details.update(macro_details)
+
+        # ── 4. KING'S ORDER FLOW VELOCITY ──
         flow_score, flow_details = self._read_order_flow()
-        scores.append(("order_flow", flow_score, 0.25))
+        scores.append(("order_flow", flow_score, 0.18))
         details.update(flow_details)
 
-        # ── 4. LYRA RESONANCE (if available) ──
+        # ── 5. LYRA RESONANCE (if available) ──
         lyra_score, lyra_details = self._read_lyra_resonance()
-        scores.append(("lyra_resonance", lyra_score, 0.15))
+        scores.append(("lyra_resonance", lyra_score, 0.09))
         details.update(lyra_details)
 
         # Weighted combination
@@ -1687,6 +1692,225 @@ class OracleOfSentiment:
             logger.debug(f"OracleOfSentiment Lyra error: {e}")
         details["lyra_resonance_source_active"] = False
         return 0.5, details
+
+    # ── MACRO LANDSCAPE — full global view ──────────────────────────────
+
+    _MACRO_CACHE: Dict[str, Any] = {}
+    _MACRO_CACHE_TIME: float = 0.0
+    _MACRO_CACHE_TTL: float = 300.0  # 5 minutes
+
+    def _read_macro_landscape(self) -> Tuple[float, Dict]:
+        """
+        Reads the full global macro landscape from open-source APIs.
+        Sources (all free, no API key required):
+          • Yahoo Finance chart API  → S&P 500, NASDAQ, DXY, Gold, Oil, 10yr yield
+          • CoinGecko /global        → crypto market cap 24h change, BTC dominance
+          • CoinGecko /coins/markets → altcoin breadth (gainers vs losers in top 100)
+          • Alternative.me           → already in fear/greed, used for reference
+
+        Signal logic (crypto-centric):
+          BULLISH signals  → risk-on assets rising (SPX↑ NASDAQ↑ crypto-cap↑)
+          BEARISH signals  → risk-off flows (DXY↑ Gold↑ Yields rising fast)
+        """
+        import time as _time
+        now = _time.time()
+        if OracleOfSentiment._MACRO_CACHE and (now - OracleOfSentiment._MACRO_CACHE_TIME) < OracleOfSentiment._MACRO_CACHE_TTL:
+            return OracleOfSentiment._MACRO_CACHE.get("score", 0.5), OracleOfSentiment._MACRO_CACHE.get("details", {})
+
+        details: Dict[str, Any] = {"macro_source_active": False}
+        signals: List[Tuple[str, float, float]] = []  # (name, score 0-1, weight)
+
+        try:
+            import requests as _req
+
+            # ── 1. Yahoo Finance: S&P 500and NASDAQ (risk-on gauge) ──
+            for ticker, label, weight in [
+                ("^GSPC",    "sp500",   0.18),
+                ("^IXIC",    "nasdaq",  0.15),
+            ]:
+                try:
+                    r = _req.get(
+                        f"https://query1.finance.yahoo.com/v8/finance/chart/{ticker}",
+                        params={"interval": "1d", "range": "2d"},
+                        headers={"User-Agent": "AureonSeer/2.0"},
+                        timeout=6,
+                    )
+                    data = r.json()
+                    closes = data["chart"]["result"][0]["indicators"]["quote"][0]["close"]
+                    closes = [c for c in closes if c is not None]
+                    if len(closes) >= 2:
+                        chg_pct = (closes[-1] - closes[-2]) / closes[-2] * 100
+                        # Map: -3% → 0.0, 0% → 0.5, +3% → 1.0 (clamped)
+                        score = max(0.0, min(1.0, 0.5 + chg_pct / 6.0))
+                        signals.append((label, score, weight))
+                        details[f"macro_{label}_chg"] = round(chg_pct, 3)
+                        details[f"macro_{label}_score"] = round(score, 3)
+                except Exception:
+                    pass
+
+            # ── 2. Yahoo Finance: DXY (strong dollar = bearish crypto) ──
+            try:
+                r = _req.get(
+                    "https://query1.finance.yahoo.com/v8/finance/chart/DX-Y.NYB",
+                    params={"interval": "1d", "range": "2d"},
+                    headers={"User-Agent": "AureonSeer/2.0"},
+                    timeout=6,
+                )
+                data = r.json()
+                closes = data["chart"]["result"][0]["indicators"]["quote"][0]["close"]
+                closes = [c for c in closes if c is not None]
+                if len(closes) >= 2:
+                    chg_pct = (closes[-1] - closes[-2]) / closes[-2] * 100
+                    # INVERSE: DXY up = bearish for crypto
+                    score = max(0.0, min(1.0, 0.5 - chg_pct / 4.0))
+                    signals.append(("dxy", score, 0.20))
+                    details["macro_dxy_chg"] = round(chg_pct, 3)
+                    details["macro_dxy_score"] = round(score, 3)
+                    details["macro_dxy_signal"] = "bearish_crypto" if chg_pct > 0.3 else ("bullish_crypto" if chg_pct < -0.3 else "neutral")
+            except Exception:
+                pass
+
+            # ── 3. Yahoo Finance: Gold (risk-off safe haven) ──
+            try:
+                r = _req.get(
+                    "https://query1.finance.yahoo.com/v8/finance/chart/GC=F",
+                    params={"interval": "1d", "range": "2d"},
+                    headers={"User-Agent": "AureonSeer/2.0"},
+                    timeout=6,
+                )
+                data = r.json()
+                closes = data["chart"]["result"][0]["indicators"]["quote"][0]["close"]
+                closes = [c for c in closes if c is not None]
+                if len(closes) >= 2:
+                    chg_pct = (closes[-1] - closes[-2]) / closes[-2] * 100
+                    # Gold surging = risk-off flight → mild bearish for crypto
+                    score = max(0.0, min(1.0, 0.5 - chg_pct / 5.0))
+                    signals.append(("gold", score, 0.08))
+                    details["macro_gold_chg"] = round(chg_pct, 3)
+                    details["macro_gold_score"] = round(score, 3)
+            except Exception:
+                pass
+
+            # ── 4. Yahoo Finance: 10-Year Treasury Yield ──
+            try:
+                r = _req.get(
+                    "https://query1.finance.yahoo.com/v8/finance/chart/^TNX",
+                    params={"interval": "1d", "range": "5d"},
+                    headers={"User-Agent": "AureonSeer/2.0"},
+                    timeout=6,
+                )
+                data = r.json()
+                closes = data["chart"]["result"][0]["indicators"]["quote"][0]["close"]
+                closes = [c for c in closes if c is not None]
+                if len(closes) >= 2:
+                    chg_pct = (closes[-1] - closes[-2]) / closes[-2] * 100
+                    # Rising yields = tighter conditions = bearish risk assets
+                    score = max(0.0, min(1.0, 0.5 - chg_pct / 6.0))
+                    signals.append(("bonds_10yr", score, 0.12))
+                    details["macro_10yr_yield"] = round(closes[-1], 3)
+                    details["macro_10yr_chg"] = round(chg_pct, 3)
+                    details["macro_10yr_score"] = round(score, 3)
+            except Exception:
+                pass
+
+            # ── 5. Yahoo Finance: Crude Oil (WTI) ──
+            try:
+                r = _req.get(
+                    "https://query1.finance.yahoo.com/v8/finance/chart/CL=F",
+                    params={"interval": "1d", "range": "2d"},
+                    headers={"User-Agent": "AureonSeer/2.0"},
+                    timeout=6,
+                )
+                data = r.json()
+                closes = data["chart"]["result"][0]["indicators"]["quote"][0]["close"]
+                closes = [c for c in closes if c is not None]
+                if len(closes) >= 2:
+                    chg_pct = (closes[-1] - closes[-2]) / closes[-2] * 100
+                    # Moderate oil rise = growth signal (mildly bullish), spike = inflationary (bearish)
+                    score = max(0.0, min(1.0, 0.5 + chg_pct / 8.0)) if abs(chg_pct) < 3 else max(0.0, min(1.0, 0.5 - chg_pct / 10.0))
+                    signals.append(("oil", score, 0.05))
+                    details["macro_oil_chg"] = round(chg_pct, 3)
+            except Exception:
+                pass
+
+            # ── 6. CoinGecko: Global crypto market cap + BTC dominance ──
+            try:
+                r = _req.get(
+                    "https://api.coingecko.com/api/v3/global",
+                    timeout=8,
+                )
+                gdata = r.json().get("data", {})
+                cap_chg = gdata.get("market_cap_change_percentage_24h_usd", 0.0)
+                btc_dom = gdata.get("market_cap_percentage", {}).get("btc", 50.0)
+
+                # Crypto market cap 24h change
+                cap_score = max(0.0, min(1.0, 0.5 + cap_chg / 10.0))
+                signals.append(("crypto_cap", cap_score, 0.18))
+                details["macro_crypto_cap_chg"] = round(cap_chg, 3)
+                details["macro_crypto_cap_score"] = round(cap_score, 3)
+                details["macro_btc_dominance"] = round(btc_dom, 1)
+
+                # BTC dominance rising = altcoins bleeding (bearish for alts)
+                # Neutral signal — just informational
+                details["macro_btc_dom_signal"] = "alts_bleeding" if btc_dom > 55 else ("balanced" if btc_dom > 45 else "alts_leading")
+            except Exception:
+                pass
+
+            # ── 7. CoinGecko: Top-100 altcoin breadth (gainers vs losers) ──
+            try:
+                r = _req.get(
+                    "https://api.coingecko.com/api/v3/coins/markets",
+                    params={
+                        "vs_currency": "usd",
+                        "order": "market_cap_desc",
+                        "per_page": 100,
+                        "page": 1,
+                        "price_change_percentage": "24h",
+                    },
+                    timeout=10,
+                )
+                coins = r.json()
+                gainers = sum(1 for c in coins if (c.get("price_change_percentage_24h") or 0) > 0)
+                losers = len(coins) - gainers
+                breadth = gainers / len(coins) if coins else 0.5
+                signals.append(("altcoin_breadth", breadth, 0.04))
+                details["macro_altcoin_gainers"] = gainers
+                details["macro_altcoin_losers"] = losers
+                details["macro_altcoin_breadth"] = round(breadth, 3)
+            except Exception:
+                pass
+
+        except Exception as e:
+            logger.debug(f"OracleOfSentiment macro error: {e}")
+
+        if not signals:
+            details["macro_source_active"] = False
+            return 0.5, details
+
+        total_w = sum(w for _, _, w in signals)
+        macro_score = sum(s * w for _, s, w in signals) / total_w if total_w > 0 else 0.5
+        macro_score = max(0.0, min(1.0, macro_score))
+
+        details["macro_source_active"] = True
+        details["macro_unified_score"] = round(macro_score, 4)
+        details["macro_signals_count"] = len(signals)
+        details["macro_component_scores"] = {n: round(s, 3) for n, s, _ in signals}
+
+        # Human-readable macro summary
+        if macro_score >= 0.65:
+            details["macro_summary"] = "RISK-ON: Global macro favours crypto entry"
+        elif macro_score >= 0.52:
+            details["macro_summary"] = "MILD RISK-ON: Macro broadly supportive"
+        elif macro_score >= 0.48:
+            details["macro_summary"] = "NEUTRAL: Macro mixed signals"
+        elif macro_score >= 0.35:
+            details["macro_summary"] = "MILD RISK-OFF: Dollar/yields pressuring crypto"
+        else:
+            details["macro_summary"] = "RISK-OFF: Global macro headwinds for crypto"
+
+        OracleOfSentiment._MACRO_CACHE = {"score": macro_score, "details": details}
+        OracleOfSentiment._MACRO_CACHE_TIME = now
+        return macro_score, details
 
 
 # ═══════════════════════════════════════════════════════════════════════════

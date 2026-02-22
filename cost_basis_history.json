@@ -1772,6 +1772,166 @@
       "avg_fill_price": 85.32,
       "fills_verified": true,
       "last_fills": []
+    },
+    "SOLUSDC": {
+      "exchange": "binance",
+      "avg_entry_price": 85.32,
+      "total_quantity": 0.09,
+      "total_cost": 7.686478799999999,
+      "total_fees": 0,
+      "trade_count": 1,
+      "last_trade": 1771719067.0709515,
+      "synced_at": 1771719067.0709517
+    },
+    "binance:XRPUSDC": {
+      "exchange": "binance",
+      "symbol": "XRPUSDC",
+      "asset": "XRP",
+      "quote": "USDC",
+      "avg_entry_price": 1.4332,
+      "total_quantity": 4.5,
+      "total_cost": 6.4494,
+      "total_fees": 0.0064494,
+      "trade_count": 1,
+      "first_trade": 1771719067070,
+      "last_trade": 1771719067070,
+      "synced_at": 1771719067.0709875,
+      "source": "manual",
+      "order_ids": [
+        "3187845234"
+      ],
+      "last_order_id": "3187845234",
+      "avg_fill_price": 1.4332,
+      "fills_verified": true,
+      "last_fills": []
+    },
+    "XRPUSDC": {
+      "exchange": "binance",
+      "avg_entry_price": 1.4332,
+      "total_quantity": 4.5,
+      "total_cost": 6.4558494,
+      "total_fees": 0,
+      "trade_count": 1,
+      "last_trade": 1771774373.1955152,
+      "synced_at": 1771774373.1955154
+    },
+    "binance:BTCUSDC": {
+      "exchange": "binance",
+      "symbol": "BTCUSDC",
+      "asset": "BTC",
+      "quote": "USDC",
+      "avg_entry_price": 67776.0,
+      "total_quantity": 7e-05,
+      "total_cost": 4.744319999999999,
+      "total_fees": 0.004744319999999999,
+      "trade_count": 1,
+      "first_trade": 1771775144297,
+      "last_trade": 1771775144297,
+      "synced_at": 1771775144.2976882,
+      "source": "manual",
+      "order_ids": [
+        "8353529377"
+      ],
+      "last_order_id": "8353529377",
+      "avg_fill_price": 67776.0,
+      "fills_verified": true,
+      "last_fills": []
+    },
+    "BTCUSDC": {
+      "exchange": "binance",
+      "avg_entry_price": 67600.0,
+      "total_quantity": 7e-05,
+      "total_cost": 4.736731999999999,
+      "total_fees": 0,
+      "trade_count": 1,
+      "last_trade": 1771775126.0318964,
+      "synced_at": 1771775126.0318968
+    },
+    "kraken:XBTGBP": {
+      "exchange": "kraken",
+      "symbol": "XBTGBP",
+      "asset": "XBT",
+      "quote": "GBP",
+      "avg_entry_price": 50167.0,
+      "total_quantity": 0.00010275,
+      "total_cost": 5.15465925,
+      "total_fees": 0.013402114049999999,
+      "trade_count": 1,
+      "first_trade": 1771778999561,
+      "last_trade": 1771778999561,
+      "synced_at": 1771778999.5617585,
+      "source": "manual",
+      "order_ids": [
+        "OXJSD7-QL23B-L2GW5S"
+      ],
+      "last_order_id": "OXJSD7-QL23B-L2GW5S",
+      "avg_fill_price": 50167.0,
+      "fills_verified": true,
+      "last_fills": []
+    },
+    "XBTGBP": {
+      "exchange": "kraken",
+      "avg_entry_price": 50267.44860475608,
+      "total_quantity": 0.00015517,
+      "total_cost": 7.82028,
+      "total_fees": 0,
+      "trade_count": 1,
+      "last_trade": 1771775144.2976506,
+      "synced_at": 1771775144.297651
+    },
+    "binance:BCHUSDC": {
+      "exchange": "binance",
+      "symbol": "BCHUSDC",
+      "asset": "BCH",
+      "quote": "USDC",
+      "avg_entry_price": 572.8,
+      "total_quantity": 0.008,
+      "total_cost": 4.5824,
+      "total_fees": 0.0045823999999999995,
+      "trade_count": 1,
+      "first_trade": 1771778096941,
+      "last_trade": 1771778096941,
+      "synced_at": 1771778096.941639,
+      "source": "manual",
+      "order_ids": [
+        "415052250"
+      ],
+      "last_order_id": "415052250",
+      "avg_fill_price": 572.8,
+      "fills_verified": true,
+      "last_fills": []
+    },
+    "BCHUSDC": {
+      "exchange": "binance",
+      "avg_entry_price": 572.8,
+      "total_quantity": 0.008,
+      "total_cost": 4.5869824,
+      "total_fees": 0,
+      "trade_count": 1,
+      "last_trade": 1771778999.5617192,
+      "synced_at": 1771778999.5617197
+    },
+    "binance:SAPIENUSDC": {
+      "exchange": "binance",
+      "symbol": "SAPIENUSDC",
+      "asset": "SAPIEN",
+      "quote": "USDC",
+      "avg_entry_price": 0.0987,
+      "total_quantity": 70.3,
+      "total_cost": 6.93861,
+      "total_fees": 0.00693861,
+      "trade_count": 1,
+      "first_trade": 1771779014786,
+      "last_trade": 1771779014786,
+      "synced_at": 1771779014.7866554,
+      "source": "manual",
+      "order_ids": [
+        "39953905"
+      ],
+      "last_order_id": "39953905",
+      "avg_fill_price": 0.0987,
+      "fills_verified": true,
+      "last_fills": []
     }
   },
   "trade_lots": {
@@ -1846,8 +2006,88 @@
         "fee": 0.0076787999999999995,
         "order_id": "3349315221"
       }
+    ],
+    "binance:XRPUSDC": [
+      {
+        "price": 1.4332,
+        "quantity": 4.5,
+        "timestamp": 1771719067.0709825,
+        "fee": 0.0064494,
+        "order_id": "3187845234"
+      }
+    ],
+    "binance:BTCUSDC": [
+      {
+        "price": 67600.0,
+        "quantity": 7e-05,
+        "timestamp": 1771774373.1955504,
+        "fee": 0.004731999999999999,
+        "order_id": "8353439658"
+      },
+      {
+        "price": 67776.0,
+        "quantity": 7e-05,
+        "timestamp": 1771775144.2976828,
+        "fee": 0.004744319999999999,
+        "order_id": "8353529377"
+      }
+    ],
+    "kraken:XBTGBP": [
+      {
+        "price": 50267.44860475608,
+        "quantity": 0.00015517,
+        "timestamp": 1771775126.0319262,
+        "fee": 0.02028,
+        "order_id": "OTJCOW-CF2G2-5UL4XW"
+      },
+      {
+        "price": 50157.54613851199,
+        "quantity": 0.00015551,
+        "timestamp": 1771776719.624439,
+        "fee": 0.02028,
+        "order_id": "ORNV4D-6QRMI-GJIEYV"
+      },
+      {
+        "price": 50144.64802314369,
+        "quantity": 0.00015555,
+        "timestamp": 1771777200.03973,
+        "fee": 0.020280000000000003,
+        "order_id": "O62WAD-JWVSQ-BCTYMQ"
+      },
+      {
+        "price": 50126.55096347239,
+        "quantity": 0.00015413,
+        "timestamp": 1771778079.1540384,
+        "fee": 0.02008761378,
+        "order_id": "O7N5UP-ZCVD6-ISIHOZ"
+      },
+      {
+        "price": 50167.0,
+        "quantity": 0.00010275,
+        "timestamp": 1771778999.5617528,
+        "fee": 0.013402114049999999,
+        "order_id": "OXJSD7-QL23B-L2GW5S"
+      }
+    ],
+    "binance:BCHUSDC": [
+      {
+        "price": 572.8,
+        "quantity": 0.008,
+        "timestamp": 1771778096.94163,
+        "fee": 0.0045823999999999995,
+        "order_id": "415052250"
+      }
+    ],
+    "binance:SAPIENUSDC": [
+      {
+        "price": 0.0987,
+        "quantity": 70.3,
+        "timestamp": 1771779014.786649,
+        "fee": 0.00693861,
+        "order_id": "39953905"
+      }
     ]
   },
   "last_sync": 1770315858.832146,
-  "updated_at": "2026-02-21T23:39:51.769113"
+  "updated_at": "2026-02-22T16:50:14.786667"
 }

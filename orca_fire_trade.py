@@ -354,6 +354,8 @@ class FireTrader:
             log_fire("⚠️ Clients not initialized")
             return False
 
+        sell_executed = False  # track whether any sell fired this cycle
+
         # Check what we have
         log_fire("\n📊 CHECKING REAL BALANCES...")
         
@@ -408,10 +410,9 @@ class FireTrader:
         except Exception as e:
             log_fire(f"   Error: {e}")
         
-        # Get prices and find best opportunity
-        log_fire("\n🔍 SCANNING FOR BEST SELL OPPORTUNITY ON BINANCE (USDC pairs)...")
-        best_sell = None
-        best_value = 0
+        # Get prices and find ALL profitable opportunities
+        log_fire("\n🔍 SCANNING BINANCE FOR ALL PROFITABLE POSITIONS (any real gain after fees)...")
+        profitable_sells = []
         
         for asset, qty in tradeable_binance.items():
             try:
@@ -452,8 +453,9 @@ class FireTrader:
                          f"cost_basis=${cost_basis or 0:.4f}, profit={profit_margin:+.2f}%, "
                          f"24h={change:+.1f}%")
 
-                if profit_margin > 0.3 and change > -2.0 and value > best_value:
-                    best_sell = {
+                # ANY positive gain after fees is worth taking (user policy: take all real gains)
+                if profit_margin > 0.0 and change > -2.0:
+                    profitable_sells.append({
                         'asset': asset,
                         'symbol': symbol,
                         'qty': qty,
@@ -461,20 +463,28 @@ class FireTrader:
                         'value': value,
                         'change': change,
                         'profit_margin': profit_margin
-                    }
-                    best_value = value
+                    })
             except Exception as e:
                 log_fire(f"   [DEBUG] Binance {asset}: error while evaluating sell opportunity - {e}")
 
-        if best_sell:
-            log_fire(f"\n🎯 PROFIT OPPORTUNITY (Binance): {best_sell['asset']}")
-            log_fire(f"   Sell 50% to lock +{best_sell['profit_margin']:.2f}% profit")
-            sell_qty = best_sell['qty'] * 0.5
+        # Sell ALL profitable positions (not just the best one) — take every real gain
+        profitable_sells.sort(key=lambda x: -x['profit_margin'])
+        for best_sell in profitable_sells:
+            log_fire(f"\n🎯 PROFIT OPPORTUNITY (Binance): {best_sell['asset']} +{best_sell['profit_margin']:.2f}%")
+            # Sell 100% if position is small (avoids min_notional rejection on partial sells)
+            # Sell 50% if position is large enough that half still clears $5 notional
+            half_value = best_sell['value'] * 0.5
+            if half_value < 6.0:
+                sell_qty = best_sell['qty']  # sell 100% — position too small to split
+                log_fire(f"   Selling 100% (${best_sell['value']:.2f} — too small to split)")
+            else:
+                sell_qty = best_sell['qty'] * 0.5
+                log_fire(f"   Selling 50% to lock +{best_sell['profit_margin']:.2f}% profit")
             try:
                 order = self.binance.place_market_order(best_sell['symbol'], 'sell', sell_qty)
                 log_result(f"SELL ORDER RESULT: {json.dumps(order, indent=2) if order else 'None'}")
                 if order and order.get('status') == 'FILLED':
-                    log_fire(f"💥💥💥 BINANCE SELL FILLED! 💥💥💥")
+                    log_fire(f"💥💥💥 BINANCE SELL FILLED! +{best_sell['profit_margin']:.2f}% 💥💥💥")
                     with open('orca_real_trades.json', 'a') as f:
                         f.write(json.dumps({
                             'timestamp': datetime.now().isoformat(),
@@ -484,16 +494,16 @@ class FireTrader:
                             'qty': sell_qty,
                             'price': best_sell['price'],
                             'value': best_sell['value'],
+                            'profit_margin': best_sell['profit_margin'],
                             'order': order
                         }) + '\n')
-                    # Validate Seer prediction for this sell
                     self._validate_seer_predictions(best_sell['symbol'], 'binance', best_sell['price'])
-                    return True
+                    sell_executed = True
                 else:
                     log_fire(f"❌ Binance sell not filled: {order}")
             except Exception as e:
-                log_fire(f"❌ Binance sell failed: {e}")
-        else:
+                log_fire(f"❌ Binance sell failed ({best_sell['symbol']}): {e}")
+        if not profitable_sells:
             log_fire("   [DEBUG] Binance: no profitable positions to sell")
 
         log_fire("\n🔍 Scanning Kraken for profit opportunities...")
@@ -556,15 +566,19 @@ class FireTrader:
                 cost_basis_dbg = f"{cost_basis:.4f}" if cost_basis is not None else "0.0000"
                 log_fire(f"   [DEBUG] Kraken {asset}: cost_basis=${cost_basis_dbg}, net_after_fees=${net_price:.4f}, profit_margin={profit_margin:.2f}%")
 
-                # Sell if: (1) actual profit after fees > 0.3% and (2) momentum isn't strongly down
-                if profit_margin > 0.3 and change_24h > -2.0:
+                # ANY positive gain after fees (user policy: take all real gains, never sell at a loss)
+                if profit_margin > 0.0 and change_24h > -2.0:
                     log_fire(f"   📈 {asset}: ${value:.2f} @ ${price:.4f} (24h {change_24h:+.2f}%, +{profit_margin:.2f}% profit)")
                     
-                    # This is our best sell
                     log_fire(f"\n🎯 PROFIT OPPORTUNITY: {asset}")
-                    log_fire(f"   Sell 50% to lock +{profit_margin:.2f}% profit")
-                    
-                    sell_qty = qty * 0.5
+                    # Sell 100% if small (avoids min_notional); 50% if large
+                    half_value = value * 0.5
+                    if half_value < 6.0:
+                        sell_qty = qty  # 100% — position too small to split safely
+                        log_fire(f"   Selling 100% (${value:.2f} — too small to split)")
+                    else:
+                        sell_qty = qty * 0.5
+                        log_fire(f"   Selling 50% to lock +{profit_margin:.2f}% profit")
                     
                     log_fire(f"\n⚡ EXECUTING SELL: {sell_qty} {asset}...")
                     
@@ -591,32 +605,36 @@ class FireTrader:
                             }) + '\n')
                         # Validate Seer prediction for this sell
                         self._validate_seer_predictions(pair, 'kraken', price)
-                        return True
+                        sell_executed = True  # continue to buy phase instead of early-exit
+                        break  # one sell per cycle is enough
                     else:
                         log_fire(f"❌ Order not filled: {order}")
                         
             except Exception as e:
                 log_fire(f"   [DEBUG] Kraken {asset}: error while checking profit - {e}")
         
-        log_fire("\n⚠️ No profitable positions to sell")
+        if not sell_executed:
+            log_fire("\n⚠️ No profitable positions to sell")
+        else:
+            log_fire("\n✅ Sell(s) executed — proceeding to buy phase with available cash")
 
         # -----------------------------------------------------------------
-        # BUY FALLBACK: if we have real cash but no sell candidates, try a
-        # conservative momentum/dip entry with small size.
+        # BUY PHASE: always runs after sell scan so cash (e.g. ZGBP/TUSD)
+        # gets deployed in the same cycle that a sell fires.
         # -----------------------------------------------------------------
         total_cash = kraken_cash + binance_cash
         if total_cash < 1.0:
-            log_fire("   [DEBUG] Buy fallback skipped: insufficient total cash")
-            return False
+            log_fire("   [DEBUG] Buy phase skipped: insufficient total cash")
+            return sell_executed
 
-        log_fire("\n🛒 No sell found - scanning for BUY opportunities with available cash...")
+        log_fire("\n🛒 Scanning for BUY opportunities with available cash...")
         log_fire(f"   [DEBUG] Cash available: Kraken=${kraken_cash:.2f}, Binance=${binance_cash:.2f}")
 
         # ═══════ SEER GLOBAL GATE — Third Pillar must approve ═══════
         seer_ok, seer_risk_mod, seer_summary = self._seer_global_gate()
         if not seer_ok:
             log_fire("🚫 SEER BLOCKED all buys — waiting for better conditions")
-            return False
+            return sell_executed
 
         bought_any = False
 
@@ -628,147 +646,184 @@ class FireTrader:
         def _buy_amount(cash_amt: float) -> float:
             return max(5.0, min(20.0, cash_amt * 0.85))
 
-        watchlist = ["ETH", "SOL", "BTC", "ADA", "XRP", "LINK", "AVAX", "DOT", "ATOM", "TRX"]
-
+        # ─────────────────────────────────────────────────────────────────
+        # KRAKEN BUY — Full dynamic universe: discover ALL pairs from the
+        # exchange API for each funded quote currency (GBP / USDC / USD /
+        # TUSD). No hardcoded asset list — uses get_available_pairs().
+        # ─────────────────────────────────────────────────────────────────
         if prefer_kraken and kraken_cash >= 1.0:
-            best_buy = None
-            # Build candidate pairs based on what quote currency we have
-            kraken_pairs_to_try = []
-            if kraken_usdc_cash >= 1.0:
-                kraken_pairs_to_try += [(f"{b}USDC", 'USDC') for b in watchlist]
-            if kraken_usd_cash >= 1.0:
-                kraken_pairs_to_try += [(f"{b}USD", 'USD') for b in watchlist]
-                kraken_pairs_to_try += [(f"X{b}ZUSD", 'USD') for b in watchlist]
-            if kraken_gbp_cash >= 4.0:  # £4 minimum (~$5)
-                kraken_pairs_to_try += [(f"{b}GBP", 'GBP') for b in watchlist]
-                kraken_pairs_to_try += [("XBTGBP", 'GBP'), ("XXBTZGBP", 'GBP')]  # BTC/GBP Kraken format
-            if kraken_tusd_cash >= 1.0:
-                kraken_pairs_to_try += [(f"{b}TUSD", 'TUSD') for b in watchlist]
-            for pair, quote_ccy in kraken_pairs_to_try:
+            buy_candidates = []  # ranked list: try each in order on failure
+
+            kraken_quote_map = []  # [(pair_altname, quote_ccy), ...]
+            try:
+                if kraken_gbp_cash >= 4.0:
+                    gbp_pairs = self.kraken.get_available_pairs(quote='GBP')
+                    kraken_quote_map += [(p['pair'] if isinstance(p, dict) else p, 'GBP') for p in gbp_pairs]
+                if kraken_usdc_cash >= 1.0:
+                    usdc_pairs = self.kraken.get_available_pairs(quote='USDC')
+                    kraken_quote_map += [(p['pair'] if isinstance(p, dict) else p, 'USDC') for p in usdc_pairs]
+                if kraken_usd_cash >= 1.0:
+                    usd_pairs = self.kraken.get_available_pairs(quote='USD')
+                    kraken_quote_map += [(p['pair'] if isinstance(p, dict) else p, 'USD') for p in usd_pairs]
+                if kraken_tusd_cash >= 1.0:
+                    tusd_pairs = self.kraken.get_available_pairs(quote='TUSD')
+                    kraken_quote_map += [(p['pair'] if isinstance(p, dict) else p, 'TUSD') for p in tusd_pairs]
+            except Exception as e:
+                log_fire(f"   [WARN] Kraken pair discovery failed: {e} — using safe fallback")
+                if kraken_gbp_cash >= 4.0:
+                    kraken_quote_map += [("XBTGBP", 'GBP'), ("ETHGBP", 'GBP'), ("SOLGBP", 'GBP'),
+                                         ("ADAGBP", 'GBP'), ("XRPGBP", 'GBP'), ("AVAXGBP", 'GBP')]
+                if kraken_usdc_cash >= 1.0:
+                    kraken_quote_map += [("BTCUSDC", 'USDC'), ("ETHUSDC", 'USDC'), ("SOLUSDC", 'USDC')]
+                if kraken_usd_cash >= 1.0:
+                    kraken_quote_map += [("XBTUSD", 'USD'), ("ETHUSD", 'USD'), ("SOLUSD", 'USD')]
+
+            # Deduplicate while preserving order
+            seen_kp = set()
+            kraken_unique = []
+            for pair, qccy in kraken_quote_map:
+                if pair and pair not in seen_kp:
+                    seen_kp.add(pair)
+                    kraken_unique.append((pair, qccy))
+
+            log_fire(f"   [SCAN] Kraken: fetching tickers for {len(kraken_unique)} pairs across funded quote currencies")
+
+            for pair, quote_ccy in kraken_unique:
                 try:
-                    # compatibility enforced by pair selection above
                     ticker24 = self.kraken.get_24h_ticker(pair)
                     if not ticker24:
                         continue
                     price = float(ticker24.get('lastPrice', 0) or 0)
                     change_24h = float(ticker24.get('priceChangePercent', 0) or 0)
                     quote_vol = float(ticker24.get('quoteVolume', 0) or 0)
-                    if price <= 0 or quote_vol < 10000:
+                    if price <= 0 or quote_vol < 5000:
                         continue
-                    # Favor positive momentum + high liquidity
                     score = change_24h + min(quote_vol / 1_000_000, 5)
-                    if best_buy is None or score > best_buy['score']:
-                        best_buy = {
-                            'pair': pair,
-                            'price': price,
-                            'change_24h': change_24h,
-                            'quote_vol': quote_vol,
-                            'score': score,
-                            'quote_ccy': quote_ccy,
-                        }
+                    buy_candidates.append({
+                        'pair': pair, 'price': price, 'change_24h': change_24h,
+                        'quote_vol': quote_vol, 'score': score, 'quote_ccy': quote_ccy,
+                    })
                 except Exception:
                     continue
 
-            if best_buy:
+            # Rank descending by score; test top 8 through SEER, execute first approved
+            buy_candidates.sort(key=lambda x: -x['score'])
+            log_fire(f"   [SCAN] Kraken: {len(buy_candidates)} liquid pairs found, testing top 8 with SEER")
+
+            for candidate in buy_candidates[:8]:
                 # ═══ SEER PER-SYMBOL CHECK ═══
-                # Extract base asset from pair (e.g., "SOLUSDC" → "SOL")
-                base_for_seer = (best_buy['pair']
-                    .replace('USDC', '').replace('TUSD', '')
-                    .replace('ZGBP', '').replace('GBP', '')
-                    .replace('ZUSD', '').replace('USD', '')
-                    .lstrip('X'))
-                # Normalize Kraken BTC ticker (XBT → BTC)
+                base_for_seer = (candidate['pair']
+                    .replace('USDC', '').replace('TUSD', '').replace('ZGBP', '')
+                    .replace('GBP', '').replace('ZUSD', '').replace('USD', '').lstrip('X'))
                 if base_for_seer in ('XBT', 'XXBT', 'BT', ''):
                     base_for_seer = 'BTC'
                 sym_bullish, sym_conf, sym_details = self._seer_symbol_signal(base_for_seer)
                 if not sym_bullish:
-                    log_fire(f"   🔮 SEER rejects {base_for_seer} — per-symbol signal BEARISH, skipping Kraken buy")
-                else:
-                    if best_buy['pair'].endswith('USDC'):
-                        funded_cash = kraken_usdc_cash
-                        quote_ccy = 'USDC'
-                    elif best_buy['pair'].endswith('GBP') or best_buy['pair'].endswith('ZGBP'):
-                        funded_cash = kraken_gbp_cash
-                        quote_ccy = 'GBP'
-                    elif best_buy['pair'].endswith('TUSD'):
-                        funded_cash = kraken_tusd_cash
-                        quote_ccy = 'TUSD'
+                    log_fire(f"   🔮 SEER rejects {base_for_seer} — BEARISH, trying next")
+                    continue
+
+                qccy = candidate['quote_ccy']
+                funded_cash = (kraken_gbp_cash if qccy == 'GBP'
+                               else kraken_usdc_cash if qccy == 'USDC'
+                               else kraken_tusd_cash if qccy == 'TUSD'
+                               else kraken_usd_cash)
+                raw_qty = _buy_amount(funded_cash)
+                quote_qty = max(5.0, min(raw_qty * seer_risk_mod, funded_cash * 0.9))
+                log_fire(f"\n🎯 BUY OPPORTUNITY (Kraken): {candidate['pair']}")
+                log_fire(f"   Price=${candidate['price']:.6f} | 24h={candidate['change_24h']:+.2f}% | Vol=${candidate['quote_vol']:.0f}")
+                log_fire(f"   Seer risk_mod={seer_risk_mod:.2f} → qty={quote_qty:.2f} {qccy}")
+                try:
+                    order = self.kraken.place_market_order(candidate['pair'], 'buy', quote_qty=quote_qty)
+                    log_result(f"BUY ORDER RESULT: {json.dumps(order, indent=2) if order else 'None'}")
+                    if order and not order.get('error') and not order.get('rejected'):
+                        log_fire("💥 BUY EXECUTED (Kraken)")
+                        self._record_buy_cost_basis(candidate['pair'], order, 'kraken')
+                        self._log_seer_prediction(candidate['pair'], 'kraken', candidate['price'], seer_summary, sym_details)
+                        bought_any = True
+                        break
                     else:
-                        funded_cash = kraken_usd_cash
-                        quote_ccy = 'USD'
+                        log_fire(f"❌ Not filled: {order} — trying next")
+                except Exception as e:
+                    log_fire(f"❌ Kraken buy failed ({candidate['pair']}): {e} — trying next")
 
-                    # Apply Seer risk modifier to buy amount
-                    raw_qty = _buy_amount(funded_cash)
-                    quote_qty = min(raw_qty * seer_risk_mod, funded_cash * 0.9)
-                    quote_qty = max(5.0, quote_qty)  # Enforce minimum
-                    log_fire(f"\n🎯 BUY OPPORTUNITY (Kraken): {best_buy['pair']}")
-                    log_fire(
-                        f"   Price=${best_buy['price']:.6f} | 24h={best_buy['change_24h']:+.2f}% | "
-                        f"Vol=${best_buy['quote_vol']:.0f}"
-                    )
-                    log_fire(f"   Seer risk_mod={seer_risk_mod:.2f} → adjusted qty={quote_qty:.2f} {quote_ccy}")
-                    try:
-                        order = self.kraken.place_market_order(best_buy['pair'], 'buy', quote_qty=quote_qty)
-                        log_result(f"BUY ORDER RESULT: {json.dumps(order, indent=2) if order else 'None'}")
-                        if order and not order.get('error') and not order.get('rejected'):
-                            log_fire("💥 BUY EXECUTED (Kraken)")
-                            self._record_buy_cost_basis(best_buy['pair'], order, 'kraken')
-                            self._log_seer_prediction(best_buy['pair'], 'kraken', best_buy['price'], seer_summary, sym_details)
-                            bought_any = True
-                        else:
-                            log_fire(f"❌ Buy not filled/rejected: {order}")
-                    except Exception as e:
-                        log_fire(f"❌ Kraken buy failed: {e}")
-
+        # ─────────────────────────────────────────────────────────────────
+        # BINANCE BUY — Full UK universe: all 521 UK-FCA-allowed USDC pairs.
+        # Uses get_24h_tickers() (one API call for ALL pairs) filtered by
+        # get_allowed_pairs_uk() — no hardcoded watchlist.
+        # ─────────────────────────────────────────────────────────────────
         if self.binance is not None and binance_cash >= 1.0:
-            best_buy = None
-            for base in watchlist:
-                # UK accounts: USDC pairs ONLY (USDT restricted)
-                for pair in (f"{base}USDC",):
+            buy_candidates = []
+            try:
+                uk_allowed = self.binance.get_allowed_pairs_uk()   # 521 pairs, 1hr cache
+                all_tickers = self.binance.get_24h_tickers()       # ALL pairs, single call
+                log_fire(f"   [SCAN] Binance: {len(all_tickers)} total tickers, {len(uk_allowed)} UK-allowed pairs")
+
+                for t in all_tickers:
+                    sym = t.get('symbol', '')
+                    # UK accounts: USDC pairs ONLY (USDT not permitted)
+                    if not sym.endswith('USDC'):
+                        continue
+                    if uk_allowed and sym not in uk_allowed:
+                        continue
+                    price = float(t.get('lastPrice', 0) or 0)
+                    change = float(t.get('priceChangePercent', 0) or 0)
+                    volume = float(t.get('quoteVolume', 0) or 0)
+                    count = int(t.get('count', 0) or 0)
+                    if price <= 0 or volume < 25000 or count < 200:
+                        continue
+                    score = change + min(volume / 1_000_000, 5)
+                    buy_candidates.append({
+                        'pair': sym, 'price': price, 'change': change,
+                        'volume': volume, 'score': score,
+                    })
+            except Exception as e:
+                log_fire(f"   [WARN] Binance full-universe scan failed: {e} — using safe fallback")
+                for base in ["BTC", "ETH", "SOL", "BNB", "XRP", "ADA", "LINK", "AVAX", "DOT", "MATIC"]:
                     try:
-                        ticker = self.binance.get_24h_ticker(pair)
-                        if not ticker:
-                            continue
-                        price = float(ticker.get('lastPrice', 0) or 0)
-                        change = float(ticker.get('priceChangePercent', 0) or 0)
-                        volume = float(ticker.get('quoteVolume', 0) or 0)
-                        if price <= 0 or volume < 25000:
-                            continue
-                        score = change + min(volume / 1_000_000, 5)
-                        if best_buy is None or score > best_buy['score']:
-                            best_buy = {'pair': pair, 'price': price, 'change': change, 'volume': volume, 'score': score}
+                        ticker = self.binance.get_24h_ticker(f"{base}USDC")
+                        if ticker and float(ticker.get('lastPrice', 0)) > 0:
+                            buy_candidates.append({
+                                'pair': f"{base}USDC",
+                                'price': float(ticker.get('lastPrice', 0)),
+                                'change': float(ticker.get('priceChangePercent', 0)),
+                                'volume': float(ticker.get('quoteVolume', 0)),
+                                'score': float(ticker.get('priceChangePercent', 0)),
+                            })
                     except Exception:
                         continue
 
-            if best_buy:
+            buy_candidates.sort(key=lambda x: -x['score'])
+            log_fire(f"   [SCAN] Binance: {len(buy_candidates)} liquid UK USDC pairs found, testing top 8 with SEER")
+
+            for candidate in buy_candidates[:8]:
                 # ═══ SEER PER-SYMBOL CHECK ═══
-                base_for_seer = best_buy['pair'].replace('USDC', '').replace('USDT', '')
+                base_for_seer = candidate['pair'].replace('USDC', '').replace('USDT', '')
                 sym_bullish, sym_conf, sym_details = self._seer_symbol_signal(base_for_seer)
                 if not sym_bullish:
-                    log_fire(f"   🔮 SEER rejects {base_for_seer} — per-symbol signal BEARISH, skipping Binance buy")
-                else:
-                    raw_qty = _buy_amount(binance_cash)
-                    quote_qty = min(raw_qty * seer_risk_mod, binance_cash * 0.9)
-                    quote_qty = max(5.0, quote_qty)
-                    log_fire(f"\n🎯 BUY OPPORTUNITY (Binance): {best_buy['pair']}")
-                    log_fire(f"   Price=${best_buy['price']:.6f} | 24h={best_buy['change']:+.2f}% | Vol=${best_buy['volume']:.0f}")
-                    log_fire(f"   Seer risk_mod={seer_risk_mod:.2f} → adjusted qty=${quote_qty:.2f}")
-                    try:
-                        order = self.binance.place_market_order(best_buy['pair'], 'buy', quote_qty=quote_qty)
-                        log_result(f"BUY ORDER RESULT: {json.dumps(order, indent=2) if order else 'None'}")
-                        if order and not order.get('error') and not order.get('rejected'):
-                            log_fire("💥 BUY EXECUTED (Binance)")
-                            self._record_buy_cost_basis(best_buy['pair'], order, 'binance')
-                            self._log_seer_prediction(best_buy['pair'], 'binance', best_buy['price'], seer_summary, sym_details)
-                            bought_any = True
-                        else:
-                            log_fire(f"❌ Buy not filled/rejected: {order}")
-                    except Exception as e:
-                        log_fire(f"❌ Binance buy failed: {e}")
+                    log_fire(f"   🔮 SEER rejects {base_for_seer} — BEARISH, trying next")
+                    continue
+                raw_qty = _buy_amount(binance_cash)
+                quote_qty = max(5.0, min(raw_qty * seer_risk_mod, binance_cash * 0.9))
+                log_fire(f"\n🎯 BUY OPPORTUNITY (Binance): {candidate['pair']}")
+                log_fire(f"   Price=${candidate['price']:.6f} | 24h={candidate['change']:+.2f}% | Vol=${candidate['volume']:.0f}")
+                log_fire(f"   Seer risk_mod={seer_risk_mod:.2f} → qty=${quote_qty:.2f} USDC")
+                try:
+                    order = self.binance.place_market_order(candidate['pair'], 'buy', quote_qty=quote_qty)
+                    log_result(f"BUY ORDER RESULT: {json.dumps(order, indent=2) if order else 'None'}")
+                    if order and not order.get('error') and not order.get('rejected'):
+                        log_fire("💥 BUY EXECUTED (Binance)")
+                        self._record_buy_cost_basis(candidate['pair'], order, 'binance')
+                        self._log_seer_prediction(candidate['pair'], 'binance', candidate['price'], seer_summary, sym_details)
+                        bought_any = True
+                        break
+                    else:
+                        log_fire(f"❌ Not filled: {order} — trying next")
+                except Exception as e:
+                    log_fire(f"❌ Binance buy failed ({candidate['pair']}): {e} — trying next")
 
         if not bought_any:
-            log_fire("⚠️ No valid buy opportunities after fallback scan")
-        return bought_any
+            log_fire("⚠️ No valid buy opportunities after scan")
+        return sell_executed or bought_any
 
 def main():
     # Only for standalone run
