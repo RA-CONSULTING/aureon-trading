@@ -12383,6 +12383,36 @@ class OrcaKillCycle:
         last_sentience_check = 0
         sentience_check_interval = 300.0  # Validate sentience every 5 minutes
 
+        # ─────────────────────────────────────────────────────────────────
+        #   FAST FIRE THREAD — runs fire check every 3 min independently
+        #   Decoupled from the 30-min main cycle so short-lived profit
+        #   windows are never missed.
+        # ─────────────────────────────────────────────────────────────────
+        _fire_lock = threading.Lock()  # prevent overlap with main-cycle fire call
+        _fire_thread_interval = 180    # seconds between fire-check runs
+
+        def _fast_fire_loop():
+            """Background thread: run fire check every ~3 minutes."""
+            import time as _t
+            _t.sleep(30)  # stagger startup so engine init finishes first
+            while True:
+                try:
+                    if self.fire_trader:
+                        with _fire_lock:
+                            print(f"\n  [FAST-FIRE] Running fire check (background thread)...")
+                            self.fire_trader.run_fire_check()
+                            print(f"  [FAST-FIRE] Done. Next check in {_fire_thread_interval}s")
+                except Exception as _ffe:
+                    print(f"   [FAST-FIRE] Error: {_ffe}")
+                _t.sleep(_fire_thread_interval)
+
+        if self.fire_trader:
+            _fft = threading.Thread(target=_fast_fire_loop, daemon=True, name="FastFireThread")
+            _fft.start()
+            print(f"  FAST FIRE THREAD: LAUNCHED (every {_fire_thread_interval}s, independent of main cycle)")
+        else:
+            print("   Fast Fire Thread: skipped (fire_trader not available)")
+
         try:
             while True:  #    INFINITE LOOP
                 current_time = time.time()
@@ -12668,8 +12698,15 @@ class OrcaKillCycle:
                         try:
                             # Run fire check if we have positions or balances
                             # Fire trader scans balances directly from API, so independent of 'positions' list
-                            print("     FIRE TRADER: Checking for immediate execute opportunities...")
-                            self.fire_trader.run_fire_check()
+                            # Use _fire_lock so this never overlaps with the fast-fire background thread
+                            if _fire_lock.acquire(blocking=False):
+                                try:
+                                    print("     FIRE TRADER: Checking for immediate execute opportunities...")
+                                    self.fire_trader.run_fire_check()
+                                finally:
+                                    _fire_lock.release()
+                            else:
+                                print("     FIRE TRADER: skipped (fast-fire thread in progress)")
                         except Exception as e:
                             print(f"      Fire Trader check failed: {e}")
 
