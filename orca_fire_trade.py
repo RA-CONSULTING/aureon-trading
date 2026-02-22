@@ -111,11 +111,44 @@ class FireTrader:
     # SEER INTEGRATION — The Third Pillar gates every buy
     # ═══════════════════════════════════════════════════════════════════
 
+    # ── Goal-Aware Micro-Gains Configuration ──
+    _MICRO_GAINS_MAX_BUY = 5.0       # max $5 per micro-gains buy
+    _MICRO_GAINS_MIN_CONSENSUS = 1   # only 1/7 oracle needs to be bullish
+    _MICRO_GAINS_RISK_MOD = 0.25     # 75% position reduction in micro mode
+
+    def _load_goal_distance(self) -> float:
+        """Return dollars remaining to the nearest active goal."""
+        goal_file = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                  'quantum_goal_engine_state.json')
+        try:
+            with open(goal_file, 'r') as f:
+                data = json.load(f)
+            goals = data.get('active_goals', [])
+            if not goals:
+                log_fire("   [GOAL] No active_goals found in goal state file")
+                return 999999.0
+            # Find the nearest unfulfilled goal
+            distances = []
+            for g in goals:
+                target = float(g.get('target_value', 0))
+                current = float(g.get('current_value', 0))
+                if target > current:
+                    distances.append(target - current)
+            result = min(distances) if distances else 999999.0
+            return result
+        except Exception as e:
+            log_fire(f"   [GOAL] ⚠️ Failed to read goal distance: {e}")
+            return 999999.0
+
     def _seer_global_gate(self):
         """
         Consult the Seer before ANY buying.
         Returns (should_buy: bool, risk_mod: float, vision_summary: dict).
         Requires multi-oracle consensus: at least 3/7 oracles must score > 0.55.
+
+        MICRO-GAINS MODE: When close to a goal, relaxes gates to allow small
+        tactical buys ($3-5) even in FOG/SELL_BIAS conditions.  Individual
+        coins can move up while the macro market is down — we hunt those.
         """
         if not _seer_available:
             log_fire("   [SEER] Not available — proceeding without gate")
@@ -145,6 +178,10 @@ class FireTrader:
 
             consensus_ratio = oracles_bullish / oracles_total if oracles_total > 0 else 0
 
+            # ── Goal distance: decides whether micro-gains mode activates ──
+            goal_distance = self._load_goal_distance()
+            micro_mode = goal_distance < 50.0  # within $50 of any goal
+
             summary = {
                 "timestamp": datetime.now().isoformat(),
                 "unified_score": round(score, 4),
@@ -155,6 +192,8 @@ class FireTrader:
                 "prophecy": vision.prophecy[:200] if vision.prophecy else "",
                 "oracle_consensus": f"{oracles_bullish}/{oracles_total}",
                 "consensus_ratio": round(consensus_ratio, 3),
+                "micro_gains_mode": micro_mode,
+                "goal_distance": round(goal_distance, 2),
             }
 
             log_fire(f"\n🔮 SEER VISION: score={score:.3f} grade={grade} action={action} risk_mod={risk_mod:.2f}")
@@ -163,8 +202,36 @@ class FireTrader:
                 bull_mark = "✓" if sc > 0.55 else "✗"
                 log_fire(f"   [{bull_mark}] {name:10s}: score={sc:.3f} conf={conf:.2f}")
             log_fire(f"   Tactical: {vision.tactical_mode}")
+            log_fire(f"   Goal distance: ${goal_distance:.2f} — micro_mode={'ON' if micro_mode else 'OFF'}")
+            if micro_mode:
+                log_fire(f"   🎯 MICRO-GAINS MODE ACTIVE — ${goal_distance:.2f} to next goal")
             if vision.prophecy:
                 log_fire(f"   Prophecy: {vision.prophecy[:150]}")
+
+            # ═══════════════════════════════════════════════════════════
+            # MICRO-GAINS BYPASS: when close to goal, allow small tactical
+            # buys even in bearish conditions.  Individual coins can move
+            # up 2-5% in an hour while the macro market drops 1%.  We hunt
+            # those momentum movers with tiny $3-5 buys.
+            # ═══════════════════════════════════════════════════════════
+            if micro_mode:
+                # BLIND is still too dangerous even for micro
+                if grade in ("BLIND",):
+                    log_fire("   🚫 SEER BLIND — even micro-gains blocked (zero visibility)")
+                    return False, risk_mod, summary
+
+                # Micro needs at least 1 bullish oracle (any signal at all)
+                if oracles_bullish >= self._MICRO_GAINS_MIN_CONSENSUS:
+                    log_fire(f"   🎯 MICRO-GAINS APPROVED: {oracles_bullish}/{oracles_total} "
+                             f"oracle(s) bullish — small tactical buys allowed (max ${self._MICRO_GAINS_MAX_BUY})")
+                    return True, self._MICRO_GAINS_RISK_MOD, summary
+                else:
+                    log_fire(f"   🚫 MICRO-GAINS: 0 oracles bullish — even micro buys blocked")
+                    return False, risk_mod, summary
+
+            # ═══════════════════════════════════════════════════════════
+            # STANDARD GATES (unchanged for non-micro mode)
+            # ═══════════════════════════════════════════════════════════
 
             # ── CONSENSUS GATE: require at least 3 out of 7 oracles to be bullish ──
             if oracles_total >= 4 and consensus_ratio < 0.40:
@@ -743,6 +810,7 @@ class FireTrader:
 
         # ═══════ SEER GLOBAL GATE — Third Pillar must approve ═══════
         seer_ok, seer_risk_mod, seer_summary = self._seer_global_gate()
+        micro_mode = seer_summary.get('micro_gains_mode', False)
         if not seer_ok:
             log_fire("🚫 SEER BLOCKED all buys — waiting for better conditions")
             return sell_executed
@@ -753,9 +821,21 @@ class FireTrader:
         prefer_kraken = kraken_cash >= binance_cash and self.kraken is not None
 
         # Deploy 85% of funded exchange cash, capped at $20, minimum $5
-        # Higher deployment rate to maximize position size per trade
-        def _buy_amount(cash_amt: float) -> float:
-            return max(5.0, min(20.0, cash_amt * 0.85))
+        # In micro-gains mode: smaller buys to manage risk in bearish conditions
+        # Note: Binance min_notional is $5, Kraken allows $3+
+        if micro_mode:
+            def _buy_amount_kraken(cash_amt: float) -> float:
+                return max(3.0, min(self._MICRO_GAINS_MAX_BUY, cash_amt * 0.50))
+            def _buy_amount_binance(cash_amt: float) -> float:
+                return max(5.0, min(self._MICRO_GAINS_MAX_BUY + 1, cash_amt * 0.50))
+            max_candidates = 12  # scan wider in micro mode — looking for rare movers
+        else:
+            def _buy_amount_kraken(cash_amt: float) -> float:
+                return max(5.0, min(20.0, cash_amt * 0.85))
+            def _buy_amount_binance(cash_amt: float) -> float:
+                return max(5.0, min(20.0, cash_amt * 0.85))
+            max_candidates = 8
+
 
         # ─────────────────────────────────────────────────────────────────
         # KRAKEN BUY — Full dynamic universe: discover ALL pairs from the
@@ -809,7 +889,14 @@ class FireTrader:
                     quote_vol = float(ticker24.get('quoteVolume', 0) or 0)
                     if price <= 0 or quote_vol < 5000:
                         continue
-                    score = change_24h + min(quote_vol / 1_000_000, 5)
+                    # ── SCORING: in micro-gains mode, prioritize coins moving UP ──
+                    # against the bearish trend (positive change = counter-trend mover)
+                    if micro_mode:
+                        # Heavily weight positive changers — they're the movers we want
+                        momentum_bonus = max(0, change_24h) * 3  # 3x weight for positive change
+                        score = momentum_bonus + min(quote_vol / 1_000_000, 5)
+                    else:
+                        score = change_24h + min(quote_vol / 1_000_000, 5)
                     buy_candidates.append({
                         'pair': pair, 'price': price, 'change_24h': change_24h,
                         'quote_vol': quote_vol, 'score': score, 'quote_ccy': quote_ccy,
@@ -817,11 +904,11 @@ class FireTrader:
                 except Exception:
                     continue
 
-            # Rank descending by score; test top 8 through SEER, execute first approved
+            # Rank descending by score; test top candidates through SEER
             buy_candidates.sort(key=lambda x: -x['score'])
-            log_fire(f"   [SCAN] Kraken: {len(buy_candidates)} liquid pairs found, testing top 8 with SEER")
+            log_fire(f"   [SCAN] Kraken: {len(buy_candidates)} liquid pairs found, testing top {max_candidates} with SEER")
 
-            for candidate in buy_candidates[:8]:
+            for candidate in buy_candidates[:max_candidates]:
                 # ═══ SEER PER-SYMBOL CHECK ═══
                 base_for_seer = (candidate['pair']
                     .replace('USDC', '').replace('TUSD', '').replace('ZGBP', '')
@@ -830,17 +917,22 @@ class FireTrader:
                     base_for_seer = 'BTC'
                 sym_bullish, sym_conf, sym_details = self._seer_symbol_signal(base_for_seer)
                 if not sym_bullish:
-                    log_fire(f"   🔮 SEER rejects {base_for_seer} — BEARISH, trying next")
-                    continue
+                    # In micro-gains mode, allow if 24h change is positive (counter-trend mover)
+                    if micro_mode and candidate['change_24h'] > 1.0:
+                        log_fire(f"   🎯 MICRO: {base_for_seer} SEER bearish BUT +{candidate['change_24h']:.1f}% 24h — overriding for momentum play")
+                    else:
+                        log_fire(f"   🔮 SEER rejects {base_for_seer} — BEARISH, trying next")
+                        continue
 
                 qccy = candidate['quote_ccy']
                 funded_cash = (kraken_gbp_cash if qccy == 'GBP'
                                else kraken_usdc_cash if qccy == 'USDC'
                                else kraken_tusd_cash if qccy == 'TUSD'
                                else kraken_usd_cash)
-                raw_qty = _buy_amount(funded_cash)
-                quote_qty = max(5.0, min(raw_qty * seer_risk_mod, funded_cash * 0.9))
-                log_fire(f"\n🎯 BUY OPPORTUNITY (Kraken): {candidate['pair']}")
+                raw_qty = _buy_amount_kraken(funded_cash)
+                min_buy = 3.0 if micro_mode else 5.0
+                quote_qty = max(min_buy, min(raw_qty * seer_risk_mod, funded_cash * 0.9))
+                log_fire(f"\n🎯 BUY OPPORTUNITY (Kraken{' MICRO' if micro_mode else ''}): {candidate['pair']}")
                 log_fire(f"   Price=${candidate['price']:.6f} | 24h={candidate['change_24h']:+.2f}% | Vol=${candidate['quote_vol']:.0f}")
                 log_fire(f"   Seer risk_mod={seer_risk_mod:.2f} → qty={quote_qty:.2f} {qccy}")
                 try:
@@ -882,7 +974,12 @@ class FireTrader:
                     count = int(t.get('count', 0) or 0)
                     if price <= 0 or volume < 25000 or count < 200:
                         continue
-                    score = change + min(volume / 1_000_000, 5)
+                    # ── SCORING: in micro-gains mode, prioritize coins moving UP ──
+                    if micro_mode:
+                        momentum_bonus = max(0, change) * 3
+                        score = momentum_bonus + min(volume / 1_000_000, 5)
+                    else:
+                        score = change + min(volume / 1_000_000, 5)
                     buy_candidates.append({
                         'pair': sym, 'price': price, 'change': change,
                         'volume': volume, 'score': score,
@@ -904,18 +1001,23 @@ class FireTrader:
                         continue
 
             buy_candidates.sort(key=lambda x: -x['score'])
-            log_fire(f"   [SCAN] Binance: {len(buy_candidates)} liquid UK USDC pairs found, testing top 8 with SEER")
+            log_fire(f"   [SCAN] Binance: {len(buy_candidates)} liquid UK USDC pairs found, testing top {max_candidates} with SEER")
 
-            for candidate in buy_candidates[:8]:
+            for candidate in buy_candidates[:max_candidates]:
                 # ═══ SEER PER-SYMBOL CHECK ═══
                 base_for_seer = candidate['pair'].replace('USDC', '').replace('USDT', '')
                 sym_bullish, sym_conf, sym_details = self._seer_symbol_signal(base_for_seer)
                 if not sym_bullish:
-                    log_fire(f"   🔮 SEER rejects {base_for_seer} — BEARISH, trying next")
-                    continue
-                raw_qty = _buy_amount(binance_cash)
-                quote_qty = max(5.0, min(raw_qty * seer_risk_mod, binance_cash * 0.9))
-                log_fire(f"\n🎯 BUY OPPORTUNITY (Binance): {candidate['pair']}")
+                    # In micro-gains mode, allow if 24h change is positive (counter-trend mover)
+                    if micro_mode and candidate['change'] > 1.0:
+                        log_fire(f"   🎯 MICRO: {base_for_seer} SEER bearish BUT +{candidate['change']:.1f}% 24h — overriding for momentum play")
+                    else:
+                        log_fire(f"   🔮 SEER rejects {base_for_seer} — BEARISH, trying next")
+                        continue
+                raw_qty = _buy_amount_binance(binance_cash)
+                min_buy = 5.0  # Binance min_notional = $5
+                quote_qty = max(min_buy, min(raw_qty * seer_risk_mod, binance_cash * 0.9))
+                log_fire(f"\n🎯 BUY OPPORTUNITY (Binance{' MICRO' if micro_mode else ''}): {candidate['pair']}")
                 log_fire(f"   Price=${candidate['price']:.6f} | 24h={candidate['change']:+.2f}% | Vol=${candidate['volume']:.0f}")
                 log_fire(f"   Seer risk_mod={seer_risk_mod:.2f} → qty=${quote_qty:.2f} USDC")
                 try:
