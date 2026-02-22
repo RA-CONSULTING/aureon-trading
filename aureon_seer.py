@@ -46,6 +46,14 @@ from dataclasses import dataclass, field
 from collections import deque
 from enum import Enum
 
+# Proper astronomical ephemeris for geocentric ecliptic longitudes
+try:
+    import ephem as _ephem
+    _EPHEM_AVAILABLE = True
+except ImportError:
+    _ephem = None
+    _EPHEM_AVAILABLE = False
+
 logger = logging.getLogger(__name__)
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -842,6 +850,10 @@ class OracleOfRunes:
     }
 
     # Mean daily motion in degrees/day
+    # Sun & Moon rates are geocentric (as seen from Earth).
+    # Planet rates are HELIOCENTRIC (orbital period around the Sun).
+    # _get_planet_longitude() converts planets to geocentric using
+    # vector subtraction with semi-major axes (Kepler).
     _DAILY_MOTIONS = {
         "Sun":     0.9856474,
         "Moon":    13.176358,
@@ -853,6 +865,19 @@ class OracleOfRunes:
         "Uranus":  0.0117099,
         "Neptune": 0.0059810,
         "Pluto":   0.0039780,
+    }
+
+    # Semi-major axes in AU (from Kepler's third law)
+    # Used to convert heliocentric mean longitudes to geocentric
+    _SEMI_MAJOR_AXES = {
+        "Mercury": 0.387,
+        "Venus":   0.723,
+        "Mars":    1.524,
+        "Jupiter": 5.203,
+        "Saturn":  9.537,
+        "Uranus": 19.191,
+        "Neptune": 30.069,
+        "Pluto":  39.482,
     }
 
     J2000_EPOCH = datetime(2000, 1, 1, 12, 0, 0)
@@ -929,18 +954,58 @@ class OracleOfRunes:
                     logger.warning(f"Could not load {tradition}: {e}")
                     self._catalogues[tradition] = []
 
+    # Mapping planet names → ephem body constructors
+    _EPHEM_BODIES = {
+        "Sun": "Sun", "Moon": "Moon", "Mercury": "Mercury",
+        "Venus": "Venus", "Mars": "Mars", "Jupiter": "Jupiter",
+        "Saturn": "Saturn", "Uranus": "Uranus", "Neptune": "Neptune",
+        "Pluto": "Pluto",
+    }
+
     def _get_planet_longitude(self, planet: str, dt: datetime = None) -> float:
         """
-        Compute mean ecliptic longitude for a planet at a given time.
-        Uses simplified mean-motion formula from J2000.0 epoch.
-        Accurate to ~1-2° for inner planets, suitable for aspect detection.
+        Compute geocentric ecliptic longitude for a planet at a given time.
+
+        Primary: uses pyephem (proper VSOP87/DE430 ephemeris) — sub-degree accuracy.
+        Fallback: mean-motion + helio→geo vector correction if ephem unavailable.
         """
         if dt is None:
             dt = datetime.utcnow()
+
+        # ── Primary: pyephem (accurate to arc-seconds) ──
+        if _EPHEM_AVAILABLE and planet in self._EPHEM_BODIES:
+            try:
+                body = getattr(_ephem, self._EPHEM_BODIES[planet])()
+                obs = _ephem.Observer()
+                obs.date = _ephem.Date(dt)
+                body.compute(obs)
+                ecl = _ephem.Ecliptic(body)
+                return math.degrees(float(ecl.lon)) % 360.0
+            except Exception:
+                pass  # fall through to mean-motion
+
+        # ── Fallback: mean-motion with geocentric correction ──
         days_since_epoch = (dt - self.J2000_EPOCH).total_seconds() / 86400.0
         lon0 = self._EPOCH_LONGITUDES.get(planet, 0.0)
         rate = self._DAILY_MOTIONS.get(planet, 0.0)
-        return (lon0 + rate * days_since_epoch) % 360.0
+        mean_lon = (lon0 + rate * days_since_epoch) % 360.0
+
+        # Sun and Moon are already geocentric
+        if planet in ("Sun", "Moon"):
+            return mean_lon
+
+        # Heliocentric → geocentric via vector subtraction
+        sma = self._SEMI_MAJOR_AXES.get(planet)
+        if sma is None:
+            return mean_lon
+
+        sun_geo = self._get_planet_longitude("Sun", dt)
+        earth_helio = (sun_geo + 180.0) % 360.0
+        pl_rad = math.radians(mean_lon)
+        el_rad = math.radians(earth_helio)
+        dx = sma * math.cos(pl_rad) - math.cos(el_rad)
+        dy = sma * math.sin(pl_rad) - math.sin(el_rad)
+        return math.degrees(math.atan2(dy, dx)) % 360.0
 
     def _get_all_longitudes(self, dt: datetime = None) -> Dict[str, float]:
         """Get ecliptic longitudes for all planets."""
