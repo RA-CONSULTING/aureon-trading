@@ -9,11 +9,21 @@ This script makes REAL trades immediately.
 import os
 import sys
 import json
+import time
+import requests
 from datetime import datetime
 from dotenv import load_dotenv
 
 # Load environment
 load_dotenv()
+
+# ─── Seer Integration (Third Pillar) ───
+_seer_available = False
+try:
+    from aureon_seer import get_seer, SeerVision
+    _seer_available = True
+except ImportError:
+    pass
 
 def log_fire(msg):
     print(f"🔥 [FIRE] {msg}")
@@ -96,6 +106,243 @@ class FireTrader:
                 log_fire(f"   ⚠️ Failed to update tracked_positions: {e}")
         except Exception as e:
             log_fire(f"   ⚠️ Failed to record cost basis: {e}")
+
+    # ═══════════════════════════════════════════════════════════════════
+    # SEER INTEGRATION — The Third Pillar gates every buy
+    # ═══════════════════════════════════════════════════════════════════
+
+    def _seer_global_gate(self):
+        """
+        Consult the Seer before ANY buying.
+        Returns (should_buy: bool, risk_mod: float, vision_summary: dict).
+        """
+        if not _seer_available:
+            log_fire("   [SEER] Not available — proceeding without gate")
+            return True, 1.0, {"status": "unavailable"}
+
+        try:
+            seer = get_seer()
+            vision = seer.see()
+            grade = vision.grade
+            action = vision.action
+            risk_mod = vision.risk_modifier
+            score = vision.unified_score
+
+            summary = {
+                "timestamp": datetime.now().isoformat(),
+                "unified_score": round(score, 4),
+                "grade": grade,
+                "action": action,
+                "risk_modifier": round(risk_mod, 3),
+                "tactical_mode": vision.tactical_mode,
+                "prophecy": vision.prophecy[:200] if vision.prophecy else "",
+            }
+
+            log_fire(f"\n🔮 SEER VISION: score={score:.3f} grade={grade} action={action} risk_mod={risk_mod:.2f}")
+            log_fire(f"   Tactical: {vision.tactical_mode}")
+            if vision.prophecy:
+                log_fire(f"   Prophecy: {vision.prophecy[:150]}")
+
+            # GATE: Block buys on BLIND, FOG, or DEFEND/SELL_BIAS
+            if grade in ("BLIND",):
+                log_fire("   🚫 SEER SAYS BLIND — no visibility, blocking ALL buys")
+                return False, risk_mod, summary
+            if action in ("DEFEND",):
+                log_fire("   🛡️ SEER SAYS DEFEND — minimal exposure, blocking buys")
+                return False, risk_mod, summary
+            if action in ("SELL_BIAS",):
+                log_fire("   ⚠️ SEER SAYS SELL_BIAS — not ideal for new entries, blocking buys")
+                return False, risk_mod, summary
+            if grade in ("FOG",):
+                log_fire("   🌫️ SEER SEES FOG — reducing position sizes only")
+                return True, risk_mod * 0.5, summary
+
+            # CLEAR_SIGHT or DIVINE_CLARITY + BUY_BIAS/HOLD = green light
+            log_fire(f"   ✅ SEER APPROVES entry (grade={grade}, action={action})")
+            return True, risk_mod, summary
+
+        except Exception as e:
+            log_fire(f"   [SEER] Error consulting: {e} — proceeding cautiously")
+            return True, 0.8, {"status": "error", "error": str(e)}
+
+    def _seer_symbol_signal(self, base_asset: str):
+        """
+        Per-symbol directional signal using 1h candles from Binance public API.
+        Returns (bullish: bool, confidence: float, details: dict).
+
+        Checks:
+        1. Last 6 hourly candles — are closes trending up?
+        2. Price position in 24h range — near lows = better entry
+        3. Volume trend — increasing = conviction
+        """
+        symbol = f"{base_asset}USDT"  # Use USDT pair for data (most liquid)
+        details = {"symbol": symbol, "source": "binance_public_klines"}
+
+        try:
+            resp = requests.get(
+                "https://api.binance.com/api/v3/klines",
+                params={"symbol": symbol, "interval": "1h", "limit": 12},
+                timeout=5
+            )
+            if resp.status_code != 200:
+                log_fire(f"   [SEER-SYM] Kline fetch failed for {symbol}: HTTP {resp.status_code}")
+                return True, 0.5, details  # Don't block on data failure
+
+            candles = resp.json()
+            if len(candles) < 6:
+                return True, 0.5, details
+
+            # Parse candles: [timestamp, open, high, low, close, volume, ...]
+            closes = [float(c[4]) for c in candles]
+            opens = [float(c[1]) for c in candles]
+            highs = [float(c[2]) for c in candles]
+            lows = [float(c[3]) for c in candles]
+            volumes = [float(c[5]) for c in candles]
+
+            current_price = closes[-1]
+            high_24h = max(highs)
+            low_24h = min(lows)
+            price_range = high_24h - low_24h if high_24h > low_24h else 1
+
+            # ── Signal 1: Short-term trend (last 6 candles) ──
+            recent = candles[-6:]
+            bullish_candles = sum(1 for c in recent if float(c[4]) > float(c[1]))
+            trend_score = bullish_candles / 6.0
+
+            # ── Signal 2: Price momentum (last 3h vs prior 3h) ──
+            avg_recent_3 = sum(closes[-3:]) / 3
+            avg_prior_3 = sum(closes[-6:-3]) / 3
+            momentum_pct = ((avg_recent_3 - avg_prior_3) / avg_prior_3) * 100 if avg_prior_3 > 0 else 0
+
+            # ── Signal 3: Position in 24h range (0.0 = at low, 1.0 = at high) ──
+            range_position = (current_price - low_24h) / price_range
+
+            # ── Signal 4: Volume trend (recent vs prior) ──
+            vol_recent = sum(volumes[-3:])
+            vol_prior = sum(volumes[-6:-3])
+            vol_ratio = vol_recent / vol_prior if vol_prior > 0 else 1.0
+
+            # ── Combined directional score ──
+            momentum_signal = min(1.0, max(0.0, 0.5 + momentum_pct / 4))
+            range_signal = 1.0 - range_position  # Near low = high signal
+            vol_signal = min(1.0, max(0.0, 0.3 + vol_ratio * 0.35))
+
+            direction_score = (
+                trend_score * 0.35 +
+                momentum_signal * 0.30 +
+                range_signal * 0.15 +
+                vol_signal * 0.20
+            )
+
+            confidence = min(1.0, len(candles) / 12.0)
+            bullish = direction_score > 0.45
+
+            details.update({
+                "current_price": round(current_price, 6),
+                "trend_score": round(trend_score, 3),
+                "bullish_candles_6h": bullish_candles,
+                "momentum_pct": round(momentum_pct, 4),
+                "range_position": round(range_position, 3),
+                "vol_ratio": round(vol_ratio, 3),
+                "direction_score": round(direction_score, 4),
+                "bullish": bullish,
+                "confidence": round(confidence, 3),
+            })
+
+            direction = "BULLISH" if bullish else "BEARISH"
+            log_fire(f"   [SEER-SYM] {base_asset}: {direction} dir={direction_score:.3f} "
+                     f"trend={trend_score:.2f} mom={momentum_pct:+.2f}% "
+                     f"range={range_position:.2f} vol={vol_ratio:.2f}")
+
+            return bullish, confidence, details
+
+        except Exception as e:
+            log_fire(f"   [SEER-SYM] Error for {base_asset}: {e}")
+            return True, 0.3, {"error": str(e)}
+
+    def _log_seer_prediction(self, pair, exchange, buy_price, seer_summary, symbol_signal):
+        """Record the Seer's prediction at time of trade for later validation."""
+        try:
+            prediction = {
+                "timestamp": datetime.now().isoformat(),
+                "pair": pair,
+                "exchange": exchange,
+                "buy_price": buy_price,
+                "seer_global": seer_summary,
+                "symbol_signal": symbol_signal,
+                "validated": False,
+                "outcome": None,
+            }
+            log_path = "seer_trade_predictions.jsonl"
+            with open(log_path, "a") as f:
+                f.write(json.dumps(prediction) + "\n")
+            log_fire(f"   📝 Seer prediction logged for {exchange}:{pair}")
+        except Exception as e:
+            log_fire(f"   ⚠️ Failed to log prediction: {e}")
+
+    def _validate_seer_predictions(self, sold_pair, sold_exchange, sell_price):
+        """
+        When a sell executes, validate the Seer's prediction at buy time.
+        Closes the feedback loop so we know if the Seer was right.
+        """
+        log_path = "seer_trade_predictions.jsonl"
+        validated_path = "seer_validated_predictions.jsonl"
+        if not os.path.exists(log_path):
+            return
+
+        try:
+            remaining = []
+            validated = []
+            with open(log_path, "r") as f:
+                for line in f:
+                    line = line.strip()
+                    if not line:
+                        continue
+                    try:
+                        pred = json.loads(line)
+                    except json.JSONDecodeError:
+                        remaining.append(line)
+                        continue
+
+                    # Match by pair + exchange
+                    if (pred.get("pair") == sold_pair and
+                        pred.get("exchange") == sold_exchange and
+                        not pred.get("validated")):
+                        # Validate: was the prediction correct?
+                        buy_price = pred.get("buy_price", 0)
+                        if buy_price > 0 and sell_price > 0:
+                            profit_pct = ((sell_price - buy_price) / buy_price) * 100
+                            was_profitable = profit_pct > 0
+                            pred["validated"] = True
+                            pred["outcome"] = {
+                                "sell_price": sell_price,
+                                "profit_pct": round(profit_pct, 4),
+                                "was_profitable": was_profitable,
+                                "validated_at": datetime.now().isoformat(),
+                            }
+                            validated.append(pred)
+                            direction = pred.get("symbol_signal", {}).get("direction_score", 0)
+                            log_fire(f"   📊 SEER VALIDATION: {sold_exchange}:{sold_pair} "
+                                     f"profit={profit_pct:+.2f}% | Seer said dir={direction:.3f} | "
+                                     f"{'✅ CORRECT' if was_profitable else '❌ WRONG'}")
+                        else:
+                            remaining.append(json.dumps(pred))
+                    else:
+                        remaining.append(json.dumps(pred))
+
+            # Write back unvalidated predictions
+            with open(log_path, "w") as f:
+                for line in remaining:
+                    f.write(line + "\n")
+
+            # Append validated predictions to history
+            if validated:
+                with open(validated_path, "a") as f:
+                    for pred in validated:
+                        f.write(json.dumps(pred) + "\n")
+
+        except Exception as e:
+            log_fire(f"   ⚠️ Seer validation error: {e}")
 
     def run_fire_check(self):
         """Run the fire trade logic using SHARED clients."""
@@ -230,6 +477,8 @@ class FireTrader:
                             'value': best_sell['value'],
                             'order': order
                         }) + '\n')
+                    # Validate Seer prediction for this sell
+                    self._validate_seer_predictions(best_sell['symbol'], 'binance', best_sell['price'])
                     return True
                 else:
                     log_fire(f"❌ Binance sell not filled: {order}")
@@ -331,7 +580,8 @@ class FireTrader:
                                 'value': value,
                                 'order': order
                             }) + '\n')
-                            
+                        # Validate Seer prediction for this sell
+                        self._validate_seer_predictions(pair, 'kraken', price)
                         return True
                     else:
                         log_fire(f"❌ Order not filled: {order}")
@@ -352,6 +602,12 @@ class FireTrader:
 
         log_fire("\n🛒 No sell found - scanning for BUY opportunities with available cash...")
         log_fire(f"   [DEBUG] Cash available: Kraken=${kraken_cash:.2f}, Binance=${binance_cash:.2f}")
+
+        # ═══════ SEER GLOBAL GATE — Third Pillar must approve ═══════
+        seer_ok, seer_risk_mod, seer_summary = self._seer_global_gate()
+        if not seer_ok:
+            log_fire("🚫 SEER BLOCKED all buys — waiting for better conditions")
+            return False
 
         bought_any = False
 
@@ -398,32 +654,42 @@ class FireTrader:
                         continue
 
             if best_buy:
-                if best_buy['pair'].endswith('USDC'):
-                    funded_cash = kraken_usdc_cash
-                    quote_ccy = 'USDC'
+                # ═══ SEER PER-SYMBOL CHECK ═══
+                # Extract base asset from pair (e.g., "SOLUSDC" → "SOL")
+                base_for_seer = best_buy['pair'].replace('USDC', '').replace('USD', '').replace('ZUSD', '').lstrip('X')
+                sym_bullish, sym_conf, sym_details = self._seer_symbol_signal(base_for_seer)
+                if not sym_bullish:
+                    log_fire(f"   🔮 SEER rejects {base_for_seer} — per-symbol signal BEARISH, skipping Kraken buy")
                 else:
-                    funded_cash = kraken_usd_cash
-                    quote_ccy = 'USD'
-
-                quote_qty = min(_buy_amount(funded_cash), funded_cash * 0.9)
-                log_fire(f"\n🎯 BUY OPPORTUNITY (Kraken): {best_buy['pair']}")
-                log_fire(
-                    f"   Price=${best_buy['price']:.6f} | 24h={best_buy['change_24h']:+.2f}% | "
-                    f"Vol=${best_buy['quote_vol']:.0f}"
-                )
-                log_fire(f"   Executing BUY quote_qty={quote_qty:.2f} {quote_ccy}")
-                try:
-                    order = self.kraken.place_market_order(best_buy['pair'], 'buy', quote_qty=quote_qty)
-                    log_result(f"BUY ORDER RESULT: {json.dumps(order, indent=2) if order else 'None'}")
-                    if order and not order.get('error') and not order.get('rejected'):
-                        log_fire("💥 BUY EXECUTED (Kraken)")
-                        # Record cost basis so we can track profit and sell later
-                        self._record_buy_cost_basis(best_buy['pair'], order, 'kraken')
-                        bought_any = True
+                    if best_buy['pair'].endswith('USDC'):
+                        funded_cash = kraken_usdc_cash
+                        quote_ccy = 'USDC'
                     else:
-                        log_fire(f"❌ Buy not filled/rejected: {order}")
-                except Exception as e:
-                    log_fire(f"❌ Kraken buy failed: {e}")
+                        funded_cash = kraken_usd_cash
+                        quote_ccy = 'USD'
+
+                    # Apply Seer risk modifier to buy amount
+                    raw_qty = _buy_amount(funded_cash)
+                    quote_qty = min(raw_qty * seer_risk_mod, funded_cash * 0.9)
+                    quote_qty = max(5.0, quote_qty)  # Enforce minimum
+                    log_fire(f"\n🎯 BUY OPPORTUNITY (Kraken): {best_buy['pair']}")
+                    log_fire(
+                        f"   Price=${best_buy['price']:.6f} | 24h={best_buy['change_24h']:+.2f}% | "
+                        f"Vol=${best_buy['quote_vol']:.0f}"
+                    )
+                    log_fire(f"   Seer risk_mod={seer_risk_mod:.2f} → adjusted qty={quote_qty:.2f} {quote_ccy}")
+                    try:
+                        order = self.kraken.place_market_order(best_buy['pair'], 'buy', quote_qty=quote_qty)
+                        log_result(f"BUY ORDER RESULT: {json.dumps(order, indent=2) if order else 'None'}")
+                        if order and not order.get('error') and not order.get('rejected'):
+                            log_fire("💥 BUY EXECUTED (Kraken)")
+                            self._record_buy_cost_basis(best_buy['pair'], order, 'kraken')
+                            self._log_seer_prediction(best_buy['pair'], 'kraken', best_buy['price'], seer_summary, sym_details)
+                            bought_any = True
+                        else:
+                            log_fire(f"❌ Buy not filled/rejected: {order}")
+                    except Exception as e:
+                        log_fire(f"❌ Kraken buy failed: {e}")
 
         if self.binance is not None and binance_cash >= 1.0:
             best_buy = None
@@ -446,22 +712,30 @@ class FireTrader:
                         continue
 
             if best_buy:
-                quote_qty = min(_buy_amount(binance_cash), binance_cash * 0.9)
-                log_fire(f"\n🎯 BUY OPPORTUNITY (Binance): {best_buy['pair']}")
-                log_fire(f"   Price=${best_buy['price']:.6f} | 24h={best_buy['change']:+.2f}% | Vol=${best_buy['volume']:.0f}")
-                log_fire(f"   Executing BUY quote_qty=${quote_qty:.2f}")
-                try:
-                    order = self.binance.place_market_order(best_buy['pair'], 'buy', quote_qty=quote_qty)
-                    log_result(f"BUY ORDER RESULT: {json.dumps(order, indent=2) if order else 'None'}")
-                    if order and not order.get('error') and not order.get('rejected'):
-                        log_fire("💥 BUY EXECUTED (Binance)")
-                        # Record cost basis so we can track profit and sell later
-                        self._record_buy_cost_basis(best_buy['pair'], order, 'binance')
-                        bought_any = True
-                    else:
-                        log_fire(f"❌ Buy not filled/rejected: {order}")
-                except Exception as e:
-                    log_fire(f"❌ Binance buy failed: {e}")
+                # ═══ SEER PER-SYMBOL CHECK ═══
+                base_for_seer = best_buy['pair'].replace('USDC', '').replace('USDT', '')
+                sym_bullish, sym_conf, sym_details = self._seer_symbol_signal(base_for_seer)
+                if not sym_bullish:
+                    log_fire(f"   🔮 SEER rejects {base_for_seer} — per-symbol signal BEARISH, skipping Binance buy")
+                else:
+                    raw_qty = _buy_amount(binance_cash)
+                    quote_qty = min(raw_qty * seer_risk_mod, binance_cash * 0.9)
+                    quote_qty = max(5.0, quote_qty)
+                    log_fire(f"\n🎯 BUY OPPORTUNITY (Binance): {best_buy['pair']}")
+                    log_fire(f"   Price=${best_buy['price']:.6f} | 24h={best_buy['change']:+.2f}% | Vol=${best_buy['volume']:.0f}")
+                    log_fire(f"   Seer risk_mod={seer_risk_mod:.2f} → adjusted qty=${quote_qty:.2f}")
+                    try:
+                        order = self.binance.place_market_order(best_buy['pair'], 'buy', quote_qty=quote_qty)
+                        log_result(f"BUY ORDER RESULT: {json.dumps(order, indent=2) if order else 'None'}")
+                        if order and not order.get('error') and not order.get('rejected'):
+                            log_fire("💥 BUY EXECUTED (Binance)")
+                            self._record_buy_cost_basis(best_buy['pair'], order, 'binance')
+                            self._log_seer_prediction(best_buy['pair'], 'binance', best_buy['price'], seer_summary, sym_details)
+                            bought_any = True
+                        else:
+                            log_fire(f"❌ Buy not filled/rejected: {order}")
+                    except Exception as e:
+                        log_fire(f"❌ Binance buy failed: {e}")
 
         if not bought_any:
             log_fire("⚠️ No valid buy opportunities after fallback scan")
