@@ -256,17 +256,20 @@ class BinanceClient:
                 if attempt < self.max_retries:
                     continue
             if resp.status_code != 200:
-                # 🇬🇧 UK Mode: Cache -2010 errors (symbol not permitted)
+                # 🇬🇧 UK Mode: Cache ONLY genuine "not permitted" errors
+                # -2010 can mean "insufficient balance" OR "not permitted" — check message text
                 if self.uk_mode and resp.status_code == 400:
                     try:
                         error_data = resp.json()
-                        if error_data.get('code') == -2010:
-                            # Extract symbol from params and cache it
+                        error_msg = str(error_data.get('msg', '')).lower()
+                        if error_data.get('code') == -2010 and 'not permitted' in error_msg:
+                            # Genuine UK restriction — cache it
                             symbol = params.get('symbol') if params else None
                             if symbol:
                                 self._uk_restricted_symbols_cache.add(symbol)
                                 self._uk_restriction_cache_timestamp = time.time()
                                 print(f"   🇬🇧 Cached UK restricted symbol: {symbol}")
+                        # Don't cache insufficient balance as UK restricted
                     except Exception:
                         pass
                 raise RuntimeError(f"Binance error {resp.status_code}: {resp.text}")
@@ -364,8 +367,8 @@ class BinanceClient:
         # 🇬🇧 UK Mode: Check restrictions before attempting trade
         # Also check cached restricted symbols to skip known-bad symbols
         if self.uk_mode:
-            # Check cache first (even for SELLs to avoid wasted API calls)
-            if symbol in self._uk_restricted_symbols_cache:
+            # Check cache — but NEVER block SELLs (if we own it, we can sell it)
+            if symbol in self._uk_restricted_symbols_cache and side.upper() != 'SELL':
                 return {
                     "rejected": True,
                     "symbol": symbol,
