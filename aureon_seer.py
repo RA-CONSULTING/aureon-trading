@@ -2458,15 +2458,30 @@ class AureonTheSeer:
     # using open-source real market data (no API keys needed).
     # ─────────────────────────────────────────────────────────
 
-    _PREDICTION_FILE = "seer_trade_predictions.jsonl"
+    # ─────────────────────────────────────────────────────────────────
+    # Timeframe definitions — mirror those in orca_fire_trade.py
+    # ─────────────────────────────────────────────────────────────────
+    _TIMEFRAME_LAYERS = [
+        ("1m",    60),         ("5m",    300),
+        ("30m",   1_800),      ("1h",    3_600),
+        ("2h",    7_200),      ("3h",    10_800),
+        ("6h",    21_600),     ("12h",   43_200),
+        ("24h",   86_400),     ("48h",   172_800),
+        ("1w",    604_800),    ("2w",    1_209_600),
+        ("1mo",   2_592_000),  ("3mo",   7_776_000),
+        ("6mo",   15_552_000), ("1y",    31_536_000),
+    ]
+    _TIMEFRAME_DICT  = dict(_TIMEFRAME_LAYERS)        # label → seconds
     _ACCURACY_FILE   = "seer_prediction_accuracy.json"
-    _VALIDATE_AFTER_SEC = 1800   # validate predictions that are ≥30 min old
-    _VALIDATOR_INTERVAL = 300    # run validator every 5 minutes
+    _TF_ACCURACY_FILE = "seer_timeframe_accuracy.json"
+    _PREDICTION_FILE  = "seer_trade_predictions.jsonl"
+    _VALIDATE_AFTER_SEC = 60    # minimum age before any layer is checked
+    _VALIDATOR_INTERVAL = 300   # validator runs every 5 minutes
 
     def _prediction_validator_loop(self):
         """Background thread: validate SEER trade predictions against real prices."""
         import time as _t
-        _t.sleep(60)  # let the engine fully boot first
+        _t.sleep(60)   # let the engine fully boot first
         while self._running:
             try:
                 self._validate_pending_predictions()
@@ -2477,16 +2492,14 @@ class AureonTheSeer:
     def _fetch_open_source_price(self, symbol: str) -> float:
         """
         Fetch current price for a symbol via open-source APIs.
-        Priority: Binance public ticker → CoinGecko → Kraken public.
+        Priority: Binance public → CoinGecko → Kraken public.
         Returns 0.0 on failure (no API keys needed).
         """
         try:
             import urllib.request as _ur
             import json as _j
 
-            # ── 1. Normalise symbol → Binance USDT ticker ──────────────
             sym = symbol.upper().replace("/", "").replace("-", "")
-            # Strip common quote currencies to get base asset
             for q in ("USDC", "USDT", "USD", "GBP", "EUR", "BUSD", "TUSD"):
                 if sym.endswith(q):
                     base = sym[:-len(q)]
@@ -2494,67 +2507,93 @@ class AureonTheSeer:
             else:
                 base = sym
 
-            # Special mappings (Kraken uses XBT, Aureon uses XBTGBP etc.)
             _aliasmap = {
                 "XBT": "BTC", "XXBT": "BTC", "XETH": "ETH",
                 "XXLM": "XLM", "XXRP": "XRP",
             }
             base = _aliasmap.get(base, base)
 
-            binance_sym = f"{base}USDT"
-            url = f"https://api.binance.com/api/v3/ticker/price?symbol={binance_sym}"
+            # 1. Binance public
+            url = f"https://api.binance.com/api/v3/ticker/price?symbol={base}USDT"
             with _ur.urlopen(url, timeout=6) as r:
-                data = _j.loads(r.read().decode())
-            price = float(data.get("price", 0))
+                price = float(_j.loads(r.read().decode()).get("price", 0))
             if price > 0:
                 return price
         except Exception:
             pass
-
         try:
-            # ── 2. CoinGecko fallback ───────────────────────────────────
+            # 2. CoinGecko
             import urllib.request as _ur
             import json as _j
-            cg_id = base.lower()
             _cg_aliases = {
                 "btc": "bitcoin", "eth": "ethereum", "sol": "solana",
                 "ada": "cardano", "xrp": "ripple", "dot": "polkadot",
                 "link": "chainlink", "avax": "avalanche-2", "atom": "cosmos",
                 "bch": "bitcoin-cash", "ltc": "litecoin", "bnb": "binancecoin",
             }
-            cg_id = _cg_aliases.get(cg_id, cg_id)
-            url = f"https://api.coingecko.com/api/v3/simple/price?ids={cg_id}&vs_currencies=usd"
+            cg_id = _cg_aliases.get(base.lower(), base.lower())
+            url = (f"https://api.coingecko.com/api/v3/simple/price"
+                   f"?ids={cg_id}&vs_currencies=usd")
             with _ur.urlopen(url, timeout=8) as r:
-                data = _j.loads(r.read().decode())
-            price = float(data.get(cg_id, {}).get("usd", 0))
+                price = float(_j.loads(r.read().decode()).get(cg_id, {}).get("usd", 0))
             if price > 0:
                 return price
         except Exception:
             pass
-
         try:
-            # ── 3. Kraken public fallback ───────────────────────────────
+            # 3. Kraken public
             import urllib.request as _ur
             import json as _j
-            kraken_sym = f"XBT{'USD'}" if base == "BTC" else f"{base}USD"
+            kraken_sym = "XBTUSD" if base == "BTC" else f"{base}USD"
             url = f"https://api.kraken.com/0/public/Ticker?pair={kraken_sym}"
             with _ur.urlopen(url, timeout=6) as r:
-                data = _j.loads(r.read().decode())
-            result = data.get("result", {})
+                result = _j.loads(r.read().decode()).get("result", {})
             if result:
-                first = next(iter(result.values()))
-                price = float(first.get("c", [0])[0])
+                price = float(next(iter(result.values())).get("c", [0])[0])
                 if price > 0:
                     return price
         except Exception:
             pass
-
         return 0.0
+
+    def _ensure_timeframe_layers(self, pred: dict) -> bool:
+        """
+        Back-fill timeframe_layers onto any legacy prediction that lacks them.
+        Returns True if layers were added (pred mutated in place).
+        """
+        if "timeframe_layers" in pred and pred["timeframe_layers"]:
+            return False
+
+        import time as _t
+        try:
+            pred_time = datetime.fromisoformat(pred.get("timestamp", "")).timestamp()
+        except Exception:
+            pred_time = _t.time()
+
+        is_bullish = pred.get("symbol_signal", {}).get("bullish", True)
+        pred["timeframe_layers"] = [
+            {
+                "label":       label,
+                "seconds":     secs,
+                "validate_at": pred_time + secs,
+                "is_bullish":  is_bullish,
+                "validated":   False,
+                "outcome":     None,
+                "price_at":    None,
+                "pct_change":  None,
+            }
+            for label, secs in self._TIMEFRAME_LAYERS
+        ]
+        return True
 
     def _validate_pending_predictions(self):
         """
-        Read seer_trade_predictions.jsonl, validate unconfirmed entries,
-        rewrite file atomically, and update accuracy stats.
+        Read seer_trade_predictions.jsonl, validate any layer whose horizon
+        has passed, rewrite atomically, and update accuracy stats.
+
+        Each prediction carries 16 timeframe_layers (1m → 1y).
+        A layer is checked when now >= layer["validate_at"].
+        The top-level validated/outcome is set when the LAST layer resolves.
         """
         import time as _t
         import json as _j
@@ -2575,86 +2614,90 @@ class AureonTheSeer:
         if not predictions:
             return
 
-        now = _t.time()
-        changed = False
-        # price cache per symbol to avoid duplicate API hits
+        now  = _t.time()
+        any_changed = False
         price_cache: Dict[str, float] = {}
 
         for pred in predictions:
-            if pred.get("validated"):
-                continue
+            # Back-fill legacy predictions that have no timeframe_layers
+            if self._ensure_timeframe_layers(pred):
+                any_changed = True
 
-            ts_str = pred.get("timestamp", "")
-            try:
-                pred_time = datetime.fromisoformat(ts_str).timestamp()
-            except Exception:
-                continue  # can't parse time, skip
-
-            age_sec = now - pred_time
-            if age_sec < self._VALIDATE_AFTER_SEC:
-                continue  # too recent, let it breathe
-
-            # Determine symbol to price-check
-            sym_signal = pred.get("symbol_signal", {})
-            ticker_sym = sym_signal.get("symbol", pred.get("pair", ""))
-            if not ticker_sym:
-                continue
-
-            if ticker_sym not in price_cache:
-                price_cache[ticker_sym] = self._fetch_open_source_price(ticker_sym)
-
-            current_price = price_cache[ticker_sym]
-            if current_price <= 0:
-                continue  # couldn't get price, skip
-
+            layers = pred.get("timeframe_layers", [])
             buy_price = float(pred.get("buy_price", 0) or 0)
             if buy_price <= 0:
                 continue
 
-            pct_change = (current_price - buy_price) / buy_price * 100
-            is_bullish = sym_signal.get("bullish", True)
+            # Resolve each layer whose validate_at has passed
+            for layer in layers:
+                if layer.get("validated"):
+                    continue
+                if now < float(layer.get("validate_at", now + 1)):
+                    continue  # horizon not reached yet
 
-            # Outcome: HIT if price moved in predicted direction by ≥ 0.1%
-            if is_bullish and pct_change >= 0.1:
-                outcome = "HIT"
-            elif is_bullish and pct_change <= -0.1:
-                outcome = "MISS"
-            elif not is_bullish and pct_change <= -0.1:
-                outcome = "HIT"
-            elif not is_bullish and pct_change >= 0.1:
-                outcome = "MISS"
-            else:
-                outcome = "NEUTRAL"
+                # Fetch price (cache per symbol per validation run)
+                sym_signal  = pred.get("symbol_signal", {})
+                ticker_sym  = sym_signal.get("symbol", pred.get("pair", ""))
+                if not ticker_sym:
+                    continue
+                if ticker_sym not in price_cache:
+                    price_cache[ticker_sym] = self._fetch_open_source_price(ticker_sym)
 
-            pred["validated"] = True
-            pred["outcome"] = outcome
-            pred["price_at_validation"] = current_price
-            pred["pct_change"] = round(pct_change, 4)
-            pred["age_hours"] = round(age_sec / 3600, 2)
-            pred["validated_at"] = datetime.fromtimestamp(now).isoformat()
-            changed = True
-            logger.info(
-                f"[SeerValidator] {ticker_sym}: buy={buy_price:.6g} now={current_price:.6g} "
-                f"({pct_change:+.2f}%) → {outcome} (age {age_sec/3600:.1f}h)"
-            )
+                current_price = price_cache[ticker_sym]
+                if current_price <= 0:
+                    continue  # can't validate this layer right now
 
-        if changed:
-            # Atomic rewrite
+                pct = (current_price - buy_price) / buy_price * 100
+                is_bullish = layer.get("is_bullish", True)
+
+                if is_bullish and pct >= 0.1:
+                    outcome = "HIT"
+                elif is_bullish and pct <= -0.1:
+                    outcome = "MISS"
+                elif not is_bullish and pct <= -0.1:
+                    outcome = "HIT"
+                elif not is_bullish and pct >= 0.1:
+                    outcome = "MISS"
+                else:
+                    outcome = "NEUTRAL"
+
+                layer["validated"]  = True
+                layer["outcome"]    = outcome
+                layer["price_at"]   = current_price
+                layer["pct_change"] = round(pct, 4)
+                any_changed = True
+
+                logger.info(
+                    f"[SeerValidator] {pred.get('pair')} @{layer['label']}: "
+                    f"buy={buy_price:.6g} now={current_price:.6g} "
+                    f"({pct:+.2f}%) → {outcome}"
+                )
+
+            # Mark overall validated only when ALL layers are done
+            all_done = all(l.get("validated") for l in layers)
+            if all_done and not pred.get("validated"):
+                last_layer = layers[-1] if layers else {}
+                pred["validated"] = True
+                pred["outcome"]   = last_layer.get("outcome", "NEUTRAL")
+                any_changed = True
+
+        if any_changed:
             tmp = self._PREDICTION_FILE + ".tmp"
             with open(tmp, "w") as fh:
                 for p in predictions:
                     fh.write(_j.dumps(p) + "\n")
             os.replace(tmp, self._PREDICTION_FILE)
             self._update_prediction_accuracy_stats(predictions)
+            self._update_timeframe_accuracy_stats(predictions)
 
     def _update_prediction_accuracy_stats(self, predictions: list):
-        """Recompute and persist prediction accuracy stats."""
+        """Recompute and persist overall prediction accuracy stats."""
         import json as _j
 
         validated = [p for p in predictions if p.get("validated")]
-        total = len(validated)
-        hits = sum(1 for p in validated if p.get("outcome") == "HIT")
-        misses = sum(1 for p in validated if p.get("outcome") == "MISS")
+        total   = len(validated)
+        hits    = sum(1 for p in validated if p.get("outcome") == "HIT")
+        misses  = sum(1 for p in validated if p.get("outcome") == "MISS")
         neutral = sum(1 for p in validated if p.get("outcome") == "NEUTRAL")
         pending = sum(1 for p in predictions if not p.get("validated"))
         accuracy = hits / total if total > 0 else 0.0
@@ -2673,25 +2716,102 @@ class AureonTheSeer:
                 by_exchange[ex]["neutral"] += 1
 
         stats = {
-            "last_updated": datetime.now().isoformat(),
+            "last_updated":    datetime.now().isoformat(),
             "total_validated": total,
-            "pending": pending,
-            "hits": hits,
-            "misses": misses,
-            "neutral": neutral,
-            "accuracy_pct": round(accuracy * 100, 2),
-            "by_exchange": by_exchange,
+            "pending":         pending,
+            "hits":            hits,
+            "misses":          misses,
+            "neutral":         neutral,
+            "accuracy_pct":    round(accuracy * 100, 2),
+            "by_exchange":     by_exchange,
         }
-
         tmp = self._ACCURACY_FILE + ".tmp"
         with open(tmp, "w") as fh:
             _j.dump(stats, fh, indent=2)
         os.replace(tmp, self._ACCURACY_FILE)
 
         logger.info(
-            f"[SeerValidator] Accuracy: {accuracy*100:.1f}% "
-            f"({hits}H/{misses}M/{neutral}N from {total} validated, {pending} pending)"
+            f"[SeerValidator] Overall accuracy: {accuracy*100:.1f}% "
+            f"({hits}H/{misses}M/{neutral}N from {total} fully validated, {pending} pending)"
         )
+
+    def _update_timeframe_accuracy_stats(self, predictions: list):
+        """
+        Recompute per-timeframe-layer accuracy and write
+        seer_timeframe_accuracy.json — the timeline accuracy map.
+        """
+        import json as _j
+
+        # Accumulate hits/misses/neutral per label
+        tf_stats: Dict[str, Dict] = {}
+        for label, _ in self._TIMEFRAME_LAYERS:
+            tf_stats[label] = {"hits": 0, "misses": 0, "neutral": 0,
+                                "validated": 0, "pending": 0}
+
+        for pred in predictions:
+            for layer in pred.get("timeframe_layers", []):
+                label = layer.get("label", "?")
+                if label not in tf_stats:
+                    tf_stats[label] = {"hits": 0, "misses": 0, "neutral": 0,
+                                        "validated": 0, "pending": 0}
+                if layer.get("validated"):
+                    tf_stats[label]["validated"] += 1
+                    o = (layer.get("outcome") or "NEUTRAL").upper()
+                    if o == "HIT":
+                        tf_stats[label]["hits"] += 1
+                    elif o == "MISS":
+                        tf_stats[label]["misses"] += 1
+                    else:
+                        tf_stats[label]["neutral"] += 1
+                else:
+                    tf_stats[label]["pending"] += 1
+
+        # Compute accuracy & format for easy reading
+        timeline = []
+        for label, secs in self._TIMEFRAME_LAYERS:
+            s = tf_stats.get(label, {})
+            v = s.get("validated", 0)
+            h = s.get("hits", 0)
+            acc = round(h / v * 100, 2) if v > 0 else None
+            timeline.append({
+                "label":       label,
+                "seconds":     secs,
+                "validated":   v,
+                "pending":     s.get("pending", 0),
+                "hits":        h,
+                "misses":      s.get("misses", 0),
+                "neutral":     s.get("neutral", 0),
+                "accuracy_pct": acc,
+            })
+
+        output = {
+            "last_updated": datetime.now().isoformat(),
+            "description":  "SEER prediction accuracy layered by time horizon (1m → 1y)",
+            "total_predictions": len(predictions),
+            "timeline": timeline,
+        }
+
+        tmp = self._TF_ACCURACY_FILE + ".tmp"
+        with open(tmp, "w") as fh:
+            _j.dump(output, fh, indent=2)
+        os.replace(tmp, self._TF_ACCURACY_FILE)
+
+        # Print summary to engine log
+        lines = ["[SeerValidator] ── Timeframe Accuracy Map ──"]
+        for row in timeline:
+            if row["validated"] > 0:
+                bar = "█" * int((row["accuracy_pct"] or 0) / 10)
+                lines.append(
+                    f"  {row['label']:>4s}  {bar:<10s} {row['accuracy_pct']:5.1f}%  "
+                    f"({row['hits']}H/{row['misses']}M/{row['neutral']}N "
+                    f"of {row['validated']} validated, {row['pending']} pending)"
+                )
+            else:
+                lines.append(
+                    f"  {row['label']:>4s}  {'':10s}  --.--%  "
+                    f"(0 validated, {row['pending']} pending)"
+                )
+        logger.info("\n".join(lines))
 
     # ─────────────────────────────────────────────────────────
     # Queries

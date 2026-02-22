@@ -260,9 +260,50 @@ class FireTrader:
             log_fire(f"   [SEER-SYM] Error for {base_asset}: {e}")
             return True, 0.3, {"error": str(e)}
 
+    # Timeframe layers — every prediction is validated at ALL these horizons
+    _TIMEFRAME_LAYERS = [
+        ("1m",    60),
+        ("5m",    300),
+        ("30m",   1_800),
+        ("1h",    3_600),
+        ("2h",    7_200),
+        ("3h",    10_800),
+        ("6h",    21_600),
+        ("12h",   43_200),
+        ("24h",   86_400),
+        ("48h",   172_800),
+        ("1w",    604_800),
+        ("2w",    1_209_600),
+        ("1mo",   2_592_000),
+        ("3mo",   7_776_000),
+        ("6mo",   15_552_000),
+        ("1y",    31_536_000),
+    ]
+
     def _log_seer_prediction(self, pair, exchange, buy_price, seer_summary, symbol_signal):
-        """Record the Seer's prediction at time of trade for later validation."""
+        """Record the Seer's prediction at time of trade for later validation.
+        Embeds a layered timeline: 1m → 5m → 30m → 1h … → 1y.
+        Each layer is validated independently as its horizon matures.
+        """
         try:
+            import time as _t
+            now_ts = _t.time()
+            is_bullish = symbol_signal.get("bullish", True) if symbol_signal else True
+
+            timeframe_layers = [
+                {
+                    "label":       label,
+                    "seconds":     secs,
+                    "validate_at": now_ts + secs,       # epoch when to check
+                    "is_bullish":  is_bullish,
+                    "validated":   False,
+                    "outcome":     None,                 # HIT / MISS / NEUTRAL
+                    "price_at":    None,
+                    "pct_change":  None,
+                }
+                for label, secs in self._TIMEFRAME_LAYERS
+            ]
+
             prediction = {
                 "timestamp": datetime.now().isoformat(),
                 "pair": pair,
@@ -270,13 +311,15 @@ class FireTrader:
                 "buy_price": buy_price,
                 "seer_global": seer_summary,
                 "symbol_signal": symbol_signal,
-                "validated": False,
-                "outcome": None,
+                "validated": False,          # True when ALL layers done
+                "outcome": None,             # overall (last validated layer)
+                "timeframe_layers": timeframe_layers,
             }
             log_path = "seer_trade_predictions.jsonl"
             with open(log_path, "a") as f:
                 f.write(json.dumps(prediction) + "\n")
-            log_fire(f"   📝 Seer prediction logged for {exchange}:{pair}")
+            log_fire(f"   📝 Seer prediction logged for {exchange}:{pair} "
+                     f"(16 timeframe layers: 1m → 1y)")
         except Exception as e:
             log_fire(f"   ⚠️ Failed to log prediction: {e}")
 

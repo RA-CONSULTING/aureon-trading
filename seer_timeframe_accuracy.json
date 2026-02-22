@@ -1,0 +1,167 @@
+{
+  "last_updated": "2026-02-22T19:51:30.018491",
+  "description": "SEER prediction accuracy layered by time horizon (1m \u2192 1y)",
+  "total_predictions": 13,
+  "timeline": [
+    {
+      "label": "1m",
+      "seconds": 60,
+      "validated": 13,
+      "pending": 0,
+      "hits": 5,
+      "misses": 8,
+      "neutral": 0,
+      "accuracy_pct": 38.46
+    },
+    {
+      "label": "5m",
+      "seconds": 300,
+      "validated": 13,
+      "pending": 0,
+      "hits": 5,
+      "misses": 8,
+      "neutral": 0,
+      "accuracy_pct": 38.46
+    },
+    {
+      "label": "30m",
+      "seconds": 1800,
+      "validated": 9,
+      "pending": 4,
+      "hits": 5,
+      "misses": 4,
+      "neutral": 0,
+      "accuracy_pct": 55.56
+    },
+    {
+      "label": "1h",
+      "seconds": 3600,
+      "validated": 9,
+      "pending": 4,
+      "hits": 5,
+      "misses": 4,
+      "neutral": 0,
+      "accuracy_pct": 55.56
+    },
+    {
+      "label": "2h",
+      "seconds": 7200,
+      "validated": 9,
+      "pending": 4,
+      "hits": 5,
+      "misses": 4,
+      "neutral": 0,
+      "accuracy_pct": 55.56
+    },
+    {
+      "label": "3h",
+      "seconds": 10800,
+      "validated": 9,
+      "pending": 4,
+      "hits": 5,
+      "misses": 4,
+      "neutral": 0,
+      "accuracy_pct": 55.56
+    },
+    {
+      "label": "6h",
+      "seconds": 21600,
+      "validated": 0,
+      "pending": 13,
+      "hits": 0,
+      "misses": 0,
+      "neutral": 0,
+      "accuracy_pct": null
+    },
+    {
+      "label": "12h",
+      "seconds": 43200,
+      "validated": 0,
+      "pending": 13,
+      "hits": 0,
+      "misses": 0,
+      "neutral": 0,
+      "accuracy_pct": null
+    },
+    {
+      "label": "24h",
+      "seconds": 86400,
+      "validated": 0,
+      "pending": 13,
+      "hits": 0,
+      "misses": 0,
+      "neutral": 0,
+      "accuracy_pct": null
+    },
+    {
+      "label": "48h",
+      "seconds": 172800,
+      "validated": 0,
+      "pending": 13,
+      "hits": 0,
+      "misses": 0,
+      "neutral": 0,
+      "accuracy_pct": null
+    },
+    {
+      "label": "1w",
+      "seconds": 604800,
+      "validated": 0,
+      "pending": 13,
+      "hits": 0,
+      "misses": 0,
+      "neutral": 0,
+      "accuracy_pct": null
+    },
+    {
+      "label": "2w",
+      "seconds": 1209600,
+      "validated": 0,
+      "pending": 13,
+      "hits": 0,
+      "misses": 0,
+      "neutral": 0,
+      "accuracy_pct": null
+    },
+    {
+      "label": "1mo",
+      "seconds": 2592000,
+      "validated": 0,
+      "pending": 13,
+      "hits": 0,
+      "misses": 0,
+      "neutral": 0,
+      "accuracy_pct": null
+    },
+    {
+      "label": "3mo",
+      "seconds": 7776000,
+      "validated": 0,
+      "pending": 13,
+      "hits": 0,
+      "misses": 0,
+      "neutral": 0,
+      "accuracy_pct": null
+    },
+    {
+      "label": "6mo",
+      "seconds": 15552000,
+      "validated": 0,
+      "pending": 13,
+      "hits": 0,
+      "misses": 0,
+      "neutral": 0,
+      "accuracy_pct": null
+    },
+    {
+      "label": "1y",
+      "seconds": 31536000,
+      "validated": 0,
+      "pending": 13,
+      "hits": 0,
+      "misses": 0,
+      "neutral": 0,
+      "accuracy_pct": null
+    }
+  ]
+}

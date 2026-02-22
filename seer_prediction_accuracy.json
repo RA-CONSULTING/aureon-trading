@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-02-22T19:41:29.888013",
+  "last_updated": "2026-02-22T19:51:30.017914",
   "total_validated": 9,
   "pending": 4,
   "hits": 5,
@@ -9,15 +9,13 @@
   "by_exchange": {
     "binance": {
       "hits": 0,
-      "misses": 0,
-      "neutral": 0,
-      "miss": 4
+      "misses": 4,
+      "neutral": 0
     },
     "kraken": {
-      "hits": 0,
+      "hits": 5,
       "misses": 0,
-      "neutral": 0,
-      "hit": 5
+      "neutral": 0
     }
   }
 }
