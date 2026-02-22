@@ -2418,7 +2418,7 @@ class AureonTheSeer:
     # ─────────────────────────────────────────────────────────
 
     def start_autonomous(self):
-        """Start the Seer's autonomous scanning loop."""
+        """Start the Seer's autonomous scanning loop + prediction validator."""
         if self._running:
             return
         self._running = True
@@ -2426,7 +2426,14 @@ class AureonTheSeer:
             target=self._autonomous_loop, daemon=True, name="AureonTheSeer"
         )
         self._monitor_thread.start()
-        logger.info("Aureon the Seer is watching. Autonomous perception engaged.")
+
+        # Start omnipresent prediction validator alongside the main loop
+        self._validator_thread = threading.Thread(
+            target=self._prediction_validator_loop, daemon=True,
+            name="SeerPredictionValidator"
+        )
+        self._validator_thread.start()
+        logger.info("Aureon the Seer is watching. Autonomous perception + prediction validation engaged.")
 
     def stop_autonomous(self):
         """Stop autonomous scanning."""
@@ -2444,6 +2451,247 @@ class AureonTheSeer:
             except Exception as e:
                 logger.error(f"Seer autonomous loop error: {e}")
                 time.sleep(10)
+
+    # ─────────────────────────────────────────────────────────
+    # OMNIPRESENT PREDICTION VALIDATION
+    # Continuously checks if past SEER buy-predictions came true
+    # using open-source real market data (no API keys needed).
+    # ─────────────────────────────────────────────────────────
+
+    _PREDICTION_FILE = "seer_trade_predictions.jsonl"
+    _ACCURACY_FILE   = "seer_prediction_accuracy.json"
+    _VALIDATE_AFTER_SEC = 1800   # validate predictions that are ≥30 min old
+    _VALIDATOR_INTERVAL = 300    # run validator every 5 minutes
+
+    def _prediction_validator_loop(self):
+        """Background thread: validate SEER trade predictions against real prices."""
+        import time as _t
+        _t.sleep(60)  # let the engine fully boot first
+        while self._running:
+            try:
+                self._validate_pending_predictions()
+            except Exception as _ve:
+                logger.error(f"[SeerValidator] error: {_ve}")
+            _t.sleep(self._VALIDATOR_INTERVAL)
+
+    def _fetch_open_source_price(self, symbol: str) -> float:
+        """
+        Fetch current price for a symbol via open-source APIs.
+        Priority: Binance public ticker → CoinGecko → Kraken public.
+        Returns 0.0 on failure (no API keys needed).
+        """
+        try:
+            import urllib.request as _ur
+            import json as _j
+
+            # ── 1. Normalise symbol → Binance USDT ticker ──────────────
+            sym = symbol.upper().replace("/", "").replace("-", "")
+            # Strip common quote currencies to get base asset
+            for q in ("USDC", "USDT", "USD", "GBP", "EUR", "BUSD", "TUSD"):
+                if sym.endswith(q):
+                    base = sym[:-len(q)]
+                    break
+            else:
+                base = sym
+
+            # Special mappings (Kraken uses XBT, Aureon uses XBTGBP etc.)
+            _aliasmap = {
+                "XBT": "BTC", "XXBT": "BTC", "XETH": "ETH",
+                "XXLM": "XLM", "XXRP": "XRP",
+            }
+            base = _aliasmap.get(base, base)
+
+            binance_sym = f"{base}USDT"
+            url = f"https://api.binance.com/api/v3/ticker/price?symbol={binance_sym}"
+            with _ur.urlopen(url, timeout=6) as r:
+                data = _j.loads(r.read().decode())
+            price = float(data.get("price", 0))
+            if price > 0:
+                return price
+        except Exception:
+            pass
+
+        try:
+            # ── 2. CoinGecko fallback ───────────────────────────────────
+            import urllib.request as _ur
+            import json as _j
+            cg_id = base.lower()
+            _cg_aliases = {
+                "btc": "bitcoin", "eth": "ethereum", "sol": "solana",
+                "ada": "cardano", "xrp": "ripple", "dot": "polkadot",
+                "link": "chainlink", "avax": "avalanche-2", "atom": "cosmos",
+                "bch": "bitcoin-cash", "ltc": "litecoin", "bnb": "binancecoin",
+            }
+            cg_id = _cg_aliases.get(cg_id, cg_id)
+            url = f"https://api.coingecko.com/api/v3/simple/price?ids={cg_id}&vs_currencies=usd"
+            with _ur.urlopen(url, timeout=8) as r:
+                data = _j.loads(r.read().decode())
+            price = float(data.get(cg_id, {}).get("usd", 0))
+            if price > 0:
+                return price
+        except Exception:
+            pass
+
+        try:
+            # ── 3. Kraken public fallback ───────────────────────────────
+            import urllib.request as _ur
+            import json as _j
+            kraken_sym = f"XBT{'USD'}" if base == "BTC" else f"{base}USD"
+            url = f"https://api.kraken.com/0/public/Ticker?pair={kraken_sym}"
+            with _ur.urlopen(url, timeout=6) as r:
+                data = _j.loads(r.read().decode())
+            result = data.get("result", {})
+            if result:
+                first = next(iter(result.values()))
+                price = float(first.get("c", [0])[0])
+                if price > 0:
+                    return price
+        except Exception:
+            pass
+
+        return 0.0
+
+    def _validate_pending_predictions(self):
+        """
+        Read seer_trade_predictions.jsonl, validate unconfirmed entries,
+        rewrite file atomically, and update accuracy stats.
+        """
+        import time as _t
+        import json as _j
+
+        if not os.path.exists(self._PREDICTION_FILE):
+            return
+
+        with open(self._PREDICTION_FILE, "r") as fh:
+            raw_lines = [l.strip() for l in fh if l.strip()]
+
+        predictions = []
+        for line in raw_lines:
+            try:
+                predictions.append(_j.loads(line))
+            except Exception:
+                pass
+
+        if not predictions:
+            return
+
+        now = _t.time()
+        changed = False
+        # price cache per symbol to avoid duplicate API hits
+        price_cache: Dict[str, float] = {}
+
+        for pred in predictions:
+            if pred.get("validated"):
+                continue
+
+            ts_str = pred.get("timestamp", "")
+            try:
+                pred_time = datetime.fromisoformat(ts_str).timestamp()
+            except Exception:
+                continue  # can't parse time, skip
+
+            age_sec = now - pred_time
+            if age_sec < self._VALIDATE_AFTER_SEC:
+                continue  # too recent, let it breathe
+
+            # Determine symbol to price-check
+            sym_signal = pred.get("symbol_signal", {})
+            ticker_sym = sym_signal.get("symbol", pred.get("pair", ""))
+            if not ticker_sym:
+                continue
+
+            if ticker_sym not in price_cache:
+                price_cache[ticker_sym] = self._fetch_open_source_price(ticker_sym)
+
+            current_price = price_cache[ticker_sym]
+            if current_price <= 0:
+                continue  # couldn't get price, skip
+
+            buy_price = float(pred.get("buy_price", 0) or 0)
+            if buy_price <= 0:
+                continue
+
+            pct_change = (current_price - buy_price) / buy_price * 100
+            is_bullish = sym_signal.get("bullish", True)
+
+            # Outcome: HIT if price moved in predicted direction by ≥ 0.1%
+            if is_bullish and pct_change >= 0.1:
+                outcome = "HIT"
+            elif is_bullish and pct_change <= -0.1:
+                outcome = "MISS"
+            elif not is_bullish and pct_change <= -0.1:
+                outcome = "HIT"
+            elif not is_bullish and pct_change >= 0.1:
+                outcome = "MISS"
+            else:
+                outcome = "NEUTRAL"
+
+            pred["validated"] = True
+            pred["outcome"] = outcome
+            pred["price_at_validation"] = current_price
+            pred["pct_change"] = round(pct_change, 4)
+            pred["age_hours"] = round(age_sec / 3600, 2)
+            pred["validated_at"] = datetime.fromtimestamp(now).isoformat()
+            changed = True
+            logger.info(
+                f"[SeerValidator] {ticker_sym}: buy={buy_price:.6g} now={current_price:.6g} "
+                f"({pct_change:+.2f}%) → {outcome} (age {age_sec/3600:.1f}h)"
+            )
+
+        if changed:
+            # Atomic rewrite
+            tmp = self._PREDICTION_FILE + ".tmp"
+            with open(tmp, "w") as fh:
+                for p in predictions:
+                    fh.write(_j.dumps(p) + "\n")
+            os.replace(tmp, self._PREDICTION_FILE)
+            self._update_prediction_accuracy_stats(predictions)
+
+    def _update_prediction_accuracy_stats(self, predictions: list):
+        """Recompute and persist prediction accuracy stats."""
+        import json as _j
+
+        validated = [p for p in predictions if p.get("validated")]
+        total = len(validated)
+        hits = sum(1 for p in validated if p.get("outcome") == "HIT")
+        misses = sum(1 for p in validated if p.get("outcome") == "MISS")
+        neutral = sum(1 for p in validated if p.get("outcome") == "NEUTRAL")
+        pending = sum(1 for p in predictions if not p.get("validated"))
+        accuracy = hits / total if total > 0 else 0.0
+
+        by_exchange: Dict[str, Dict] = {}
+        for p in validated:
+            ex = p.get("exchange", "unknown")
+            if ex not in by_exchange:
+                by_exchange[ex] = {"hits": 0, "misses": 0, "neutral": 0}
+            o = p.get("outcome", "NEUTRAL").upper()
+            if o == "HIT":
+                by_exchange[ex]["hits"] += 1
+            elif o == "MISS":
+                by_exchange[ex]["misses"] += 1
+            else:
+                by_exchange[ex]["neutral"] += 1
+
+        stats = {
+            "last_updated": datetime.now().isoformat(),
+            "total_validated": total,
+            "pending": pending,
+            "hits": hits,
+            "misses": misses,
+            "neutral": neutral,
+            "accuracy_pct": round(accuracy * 100, 2),
+            "by_exchange": by_exchange,
+        }
+
+        tmp = self._ACCURACY_FILE + ".tmp"
+        with open(tmp, "w") as fh:
+            _j.dump(stats, fh, indent=2)
+        os.replace(tmp, self._ACCURACY_FILE)
+
+        logger.info(
+            f"[SeerValidator] Accuracy: {accuracy*100:.1f}% "
+            f"({hits}H/{misses}M/{neutral}N from {total} validated, {pending} pending)"
+        )
 
     # ─────────────────────────────────────────────────────────
     # Queries

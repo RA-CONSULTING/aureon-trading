@@ -12413,6 +12413,45 @@ class OrcaKillCycle:
         else:
             print("   Fast Fire Thread: skipped (fire_trader not available)")
 
+        # ─────────────────────────────────────────────────────────────────
+        #   ETA OMNIPRESENT — validates ETA predictions vs real prices
+        # ─────────────────────────────────────────────────────────────────
+        try:
+            from eta_verification_system import get_eta_verifier
+            _eta_engine = get_eta_verifier()   # auto-starts omnipresent loop
+            print("  ETA OMNIPRESENT: Verification daemon STARTED (60s sweeps, open-source data)")
+        except Exception as _eta_e:
+            print(f"   ETA Omnipresent: skipped ({_eta_e})")
+
+        # ─────────────────────────────────────────────────────────────────
+        #   SEER PREDICTION VALIDATOR — validates SEER buy signals vs real prices
+        #   The Seer's start_autonomous() already launches this thread when
+        #   called via QUADRUMVIRATE startup above.  We force-start it here
+        #   as a safety net in case QUADRUMVIRATE is unavailable.
+        # ─────────────────────────────────────────────────────────────────
+        try:
+            from aureon_seer import get_seer
+            _seer_inst = get_seer()
+            if not getattr(_seer_inst, '_running', False):
+                _seer_inst.start_autonomous()
+                print("  SEER PREDICTION VALIDATOR: force-started (QUADRUMVIRATE unavailable)")
+            else:
+                # Already running — ensure validator thread is alive
+                _vt = getattr(_seer_inst, '_validator_thread', None)
+                if _vt is None or not _vt.is_alive():
+                    import threading as _th2
+                    _vt2 = _th2.Thread(
+                        target=_seer_inst._prediction_validator_loop,
+                        daemon=True, name="SeerPredictionValidator"
+                    )
+                    _seer_inst._validator_thread = _vt2
+                    _vt2.start()
+                    print("  SEER PREDICTION VALIDATOR: thread (re)started alongside running Seer")
+                else:
+                    print("  SEER PREDICTION VALIDATOR: already running (omnipresent)")
+        except Exception as _sv_e:
+            print(f"   Seer Prediction Validator: skipped ({_sv_e})")
+
         try:
             while True:  #    INFINITE LOOP
                 current_time = time.time()
