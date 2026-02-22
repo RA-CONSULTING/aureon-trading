@@ -363,19 +363,28 @@ class FireTrader:
         kraken_cash = 0.0
         kraken_usd_cash = 0.0
         kraken_usdc_cash = 0.0
+        kraken_gbp_cash = 0.0   # ZGBP balance in GBP
+        kraken_tusd_cash = 0.0  # TUSD balance
+        GBP_TO_USD = 1.27       # approximate conversion for cash comparison
         try:
             k_balances = self.kraken.get_balance()
             for asset, amt in k_balances.items():
                 amt = float(amt)
                 if amt > 0:
                     log_fire(f"   {asset}: {amt}")
-                    if asset in ['USD', 'ZUSD', 'USDC', 'USDT']:
+                    if asset in ['USD', 'ZUSD', 'USDC', 'USDT', 'TUSD']:
                         kraken_cash += amt
                     if asset in ['USD', 'ZUSD']:
                         kraken_usd_cash += amt
                     if asset == 'USDC':
                         kraken_usdc_cash += amt
-                    if asset not in ['USD', 'ZUSD', 'ZGBP']:
+                    if asset == 'TUSD':
+                        kraken_tusd_cash += amt  # kraken_cash already incremented above
+                    if asset == 'ZGBP':
+                        kraken_gbp_cash += amt
+                        kraken_cash += amt * GBP_TO_USD  # count as USD equivalent
+                        log_fire(f"   ZGBP → ~${amt * GBP_TO_USD:.2f} USD equivalent")
+                    if asset not in ['USD', 'ZUSD', 'ZGBP', 'USDC', 'USDT', 'TUSD']:
                         tradeable_kraken[asset] = amt
         except Exception as e:
             log_fire(f"   Error: {e}")
@@ -623,40 +632,54 @@ class FireTrader:
 
         if prefer_kraken and kraken_cash >= 1.0:
             best_buy = None
-            for base in watchlist:
-                for pair in (f"{base}USDC", f"{base}USD", f"X{base}ZUSD"):
-                    try:
-                        # Enforce quote-currency funding compatibility
-                        if pair.endswith("USDC") and kraken_usdc_cash < 1.0:
-                            continue
-                        if (pair.endswith("USD") or pair.endswith("ZUSD")) and kraken_usd_cash < 1.0:
-                            continue
-
-                        ticker24 = self.kraken.get_24h_ticker(pair)
-                        if not ticker24:
-                            continue
-                        price = float(ticker24.get('lastPrice', 0) or 0)
-                        change_24h = float(ticker24.get('priceChangePercent', 0) or 0)
-                        quote_vol = float(ticker24.get('quoteVolume', 0) or 0)
-                        if price <= 0 or quote_vol < 10000:
-                            continue
-                        # Favor positive momentum + high liquidity
-                        score = change_24h + min(quote_vol / 1_000_000, 5)
-                        if best_buy is None or score > best_buy['score']:
-                            best_buy = {
-                                'pair': pair,
-                                'price': price,
-                                'change_24h': change_24h,
-                                'quote_vol': quote_vol,
-                                'score': score,
-                            }
-                    except Exception:
+            # Build candidate pairs based on what quote currency we have
+            kraken_pairs_to_try = []
+            if kraken_usdc_cash >= 1.0:
+                kraken_pairs_to_try += [(f"{b}USDC", 'USDC') for b in watchlist]
+            if kraken_usd_cash >= 1.0:
+                kraken_pairs_to_try += [(f"{b}USD", 'USD') for b in watchlist]
+                kraken_pairs_to_try += [(f"X{b}ZUSD", 'USD') for b in watchlist]
+            if kraken_gbp_cash >= 4.0:  # £4 minimum (~$5)
+                kraken_pairs_to_try += [(f"{b}GBP", 'GBP') for b in watchlist]
+                kraken_pairs_to_try += [("XBTGBP", 'GBP'), ("XXBTZGBP", 'GBP')]  # BTC/GBP Kraken format
+            if kraken_tusd_cash >= 1.0:
+                kraken_pairs_to_try += [(f"{b}TUSD", 'TUSD') for b in watchlist]
+            for pair, quote_ccy in kraken_pairs_to_try:
+                try:
+                    # compatibility enforced by pair selection above
+                    ticker24 = self.kraken.get_24h_ticker(pair)
+                    if not ticker24:
                         continue
+                    price = float(ticker24.get('lastPrice', 0) or 0)
+                    change_24h = float(ticker24.get('priceChangePercent', 0) or 0)
+                    quote_vol = float(ticker24.get('quoteVolume', 0) or 0)
+                    if price <= 0 or quote_vol < 10000:
+                        continue
+                    # Favor positive momentum + high liquidity
+                    score = change_24h + min(quote_vol / 1_000_000, 5)
+                    if best_buy is None or score > best_buy['score']:
+                        best_buy = {
+                            'pair': pair,
+                            'price': price,
+                            'change_24h': change_24h,
+                            'quote_vol': quote_vol,
+                            'score': score,
+                            'quote_ccy': quote_ccy,
+                        }
+                except Exception:
+                    continue
 
             if best_buy:
                 # ═══ SEER PER-SYMBOL CHECK ═══
                 # Extract base asset from pair (e.g., "SOLUSDC" → "SOL")
-                base_for_seer = best_buy['pair'].replace('USDC', '').replace('USD', '').replace('ZUSD', '').lstrip('X')
+                base_for_seer = (best_buy['pair']
+                    .replace('USDC', '').replace('TUSD', '')
+                    .replace('ZGBP', '').replace('GBP', '')
+                    .replace('ZUSD', '').replace('USD', '')
+                    .lstrip('X'))
+                # Normalize Kraken BTC ticker (XBT → BTC)
+                if base_for_seer in ('XBT', 'XXBT', 'BT', ''):
+                    base_for_seer = 'BTC'
                 sym_bullish, sym_conf, sym_details = self._seer_symbol_signal(base_for_seer)
                 if not sym_bullish:
                     log_fire(f"   🔮 SEER rejects {base_for_seer} — per-symbol signal BEARISH, skipping Kraken buy")
@@ -664,6 +687,12 @@ class FireTrader:
                     if best_buy['pair'].endswith('USDC'):
                         funded_cash = kraken_usdc_cash
                         quote_ccy = 'USDC'
+                    elif best_buy['pair'].endswith('GBP') or best_buy['pair'].endswith('ZGBP'):
+                        funded_cash = kraken_gbp_cash
+                        quote_ccy = 'GBP'
+                    elif best_buy['pair'].endswith('TUSD'):
+                        funded_cash = kraken_tusd_cash
+                        quote_ccy = 'TUSD'
                     else:
                         funded_cash = kraken_usd_cash
                         quote_ccy = 'USD'
