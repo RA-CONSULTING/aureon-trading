@@ -543,6 +543,7 @@ class FireTrader:
         kraken_cash = 0.0
         kraken_usd_cash = 0.0
         kraken_usdc_cash = 0.0
+        kraken_usdt_cash = 0.0  # USDT balance
         kraken_gbp_cash = 0.0   # ZGBP balance in GBP
         kraken_tusd_cash = 0.0  # TUSD balance
         GBP_TO_USD = 1.27       # approximate conversion for cash comparison
@@ -558,6 +559,8 @@ class FireTrader:
                         kraken_usd_cash += amt
                     if asset == 'USDC':
                         kraken_usdc_cash += amt
+                    if asset == 'USDT':
+                        kraken_usdt_cash += amt
                     if asset == 'TUSD':
                         kraken_tusd_cash += amt  # kraken_cash already incremented above
                     if asset == 'ZGBP':
@@ -856,6 +859,9 @@ class FireTrader:
                 if kraken_usd_cash >= 1.0:
                     usd_pairs = self.kraken.get_available_pairs(quote='USD')
                     kraken_quote_map += [(p['pair'] if isinstance(p, dict) else p, 'USD') for p in usd_pairs]
+                if kraken_usdt_cash >= 1.0:
+                    usdt_pairs = self.kraken.get_available_pairs(quote='USDT')
+                    kraken_quote_map += [(p['pair'] if isinstance(p, dict) else p, 'USDT') for p in usdt_pairs]
                 if kraken_tusd_cash >= 1.0:
                     tusd_pairs = self.kraken.get_available_pairs(quote='TUSD')
                     kraken_quote_map += [(p['pair'] if isinstance(p, dict) else p, 'TUSD') for p in tusd_pairs]
@@ -866,6 +872,8 @@ class FireTrader:
                                          ("ADAGBP", 'GBP'), ("XRPGBP", 'GBP'), ("AVAXGBP", 'GBP')]
                 if kraken_usdc_cash >= 1.0:
                     kraken_quote_map += [("BTCUSDC", 'USDC'), ("ETHUSDC", 'USDC'), ("SOLUSDC", 'USDC')]
+                if kraken_usdt_cash >= 1.0:
+                    kraken_quote_map += [("XBTUSDT", 'USDT'), ("ETHUSDT", 'USDT'), ("SOLUSDT", 'USDT')]
                 if kraken_usd_cash >= 1.0:
                     kraken_quote_map += [("XBTUSD", 'USD'), ("ETHUSD", 'USD'), ("SOLUSD", 'USD')]
 
@@ -927,6 +935,7 @@ class FireTrader:
                 qccy = candidate['quote_ccy']
                 funded_cash = (kraken_gbp_cash if qccy == 'GBP'
                                else kraken_usdc_cash if qccy == 'USDC'
+                               else kraken_usdt_cash if qccy == 'USDT'
                                else kraken_tusd_cash if qccy == 'TUSD'
                                else kraken_usd_cash)
                 raw_qty = _buy_amount_kraken(funded_cash)
