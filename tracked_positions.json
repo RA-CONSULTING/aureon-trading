@@ -745,7 +745,7 @@
         "exchange": "kraken",
         "buy_price": 0.0,
         "quantity": 0.00274643,
-        "buy_timestamp": "2026-02-22T16:49:34.011006",
+        "buy_timestamp": "2026-02-22T21:52:42.846261",
         "auto_tracked": true,
         "source": "portfolio_truth_check"
     },
@@ -800,18 +800,12 @@
         "source": "portfolio_truth_check"
     },
     "XRPUSD": {
-        "exchange": "binance",
-        "buy_price": 1.4344,
-        "quantity": 6.39392,
-        "buy_timestamp": "2026-02-21T14:40:15.653214",
+        "exchange": "kraken",
+        "buy_price": 0.0,
+        "quantity": 2.15617925,
+        "buy_timestamp": "2026-02-22T22:04:19.321608",
         "auto_tracked": true,
-        "source": "portfolio_truth_check",
-        "entry_price": 1.4344,
-        "entry_cost": 9.180610286847998,
-        "entry_fee": 0.009171438847999999,
-        "breakeven_price": 1.4372687999999998,
-        "cost_basis_reset": "2026-02-21T23:26:45.877121",
-        "cost_basis_reset_reason": "was_zero_set_to_current_price"
+        "source": "portfolio_truth_check"
     },
     "LDZECUSD": {
         "exchange": "binance",
@@ -1008,8 +1002,8 @@
     "XBTUSD": {
         "exchange": "kraken",
         "buy_price": 0.0,
-        "quantity": 0.00062036,
-        "buy_timestamp": "2026-02-22T16:49:34.013450",
+        "quantity": 0.00072311,
+        "buy_timestamp": "2026-02-22T22:04:19.318546",
         "auto_tracked": true,
         "source": "portfolio_truth_check"
     },
@@ -1144,6 +1138,76 @@
         "entry_fee": 0.00693861,
         "breakeven_price": 0.0988974,
         "buy_timestamp": "2026-02-22T16:50:14.789989",
+        "source": "fire_trade",
+        "auto_tracked": false
+    },
+    "USDTGBP": {
+        "symbol": "USDTGBP",
+        "exchange": "kraken",
+        "entry_price": 0.7414000002111507,
+        "buy_price": 0.7414000002111507,
+        "entry_qty": 6.74399784,
+        "quantity": 6.74399784,
+        "entry_cost": 5.013,
+        "entry_fee": 0.013,
+        "breakeven_price": 0.7452552802122487,
+        "buy_timestamp": "2026-02-22T19:26:54.902991",
+        "source": "fire_trade",
+        "auto_tracked": false
+    },
+    "KITEUSDC": {
+        "symbol": "KITEUSDC",
+        "exchange": "binance",
+        "entry_price": 0.2534,
+        "buy_price": 0.2534,
+        "entry_qty": 19.7,
+        "quantity": 19.7,
+        "entry_cost": 4.99697198,
+        "entry_fee": 0.00499198,
+        "breakeven_price": 0.2539068,
+        "buy_timestamp": "2026-02-22T21:31:53.949025",
+        "source": "fire_trade",
+        "auto_tracked": false
+    },
+    "ZEUSUSD": {
+        "symbol": "ZEUSUSD",
+        "exchange": "kraken",
+        "entry_price": 0.0122999999508,
+        "buy_price": 0.0122999999508,
+        "entry_qty": 243.90244,
+        "quantity": 243.90244,
+        "entry_cost": 3.0078,
+        "entry_fee": 0.0078,
+        "breakeven_price": 0.012363959950544161,
+        "buy_timestamp": "2026-02-22T21:31:52.581718",
+        "source": "fire_trade",
+        "auto_tracked": false
+    },
+    "BANANAS31USDC": {
+        "symbol": "BANANAS31USDC",
+        "exchange": "binance",
+        "entry_price": 0.004641,
+        "buy_price": 0.004641,
+        "entry_qty": 646.0,
+        "quantity": 646.0,
+        "entry_cost": 3.001084086,
+        "entry_fee": 0.0029980860000000005,
+        "breakeven_price": 0.004650282,
+        "buy_timestamp": "2026-02-22T20:57:11.313611",
+        "source": "fire_trade",
+        "auto_tracked": false
+    },
+    "XRPUSDT": {
+        "symbol": "XRPUSDT",
+        "exchange": "kraken",
+        "entry_price": 1.390829998200266,
+        "buy_price": 1.390829998200266,
+        "entry_qty": 2.1569854,
+        "quantity": 2.1569854,
+        "entry_cost": 3.0078,
+        "entry_fee": 0.0078,
+        "breakeven_price": 1.3980623141909077,
+        "buy_timestamp": "2026-02-22T22:06:41.087689",
         "source": "fire_trade",
         "auto_tracked": false
     }

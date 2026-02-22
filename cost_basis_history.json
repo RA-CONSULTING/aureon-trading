@@ -1932,6 +1932,176 @@
       "avg_fill_price": 0.0987,
       "fills_verified": true,
       "last_fills": []
+    },
+    "SAPIENUSDC": {
+      "exchange": "binance",
+      "avg_entry_price": 0.0987,
+      "total_quantity": 70.3,
+      "total_cost": 6.9455486099999995,
+      "total_fees": 0,
+      "trade_count": 1,
+      "last_trade": 1771788358.4265654,
+      "synced_at": 1771788358.4265656
+    },
+    "kraken:USDTGBP": {
+      "exchange": "kraken",
+      "symbol": "USDTGBP",
+      "asset": "USDT",
+      "quote": "GBP",
+      "avg_entry_price": 0.7414000002111507,
+      "total_quantity": 6.74399784,
+      "total_cost": 5.0,
+      "total_fees": 0.013,
+      "trade_count": 1,
+      "first_trade": 1771788414899,
+      "last_trade": 1771788414899,
+      "synced_at": 1771788414.8998942,
+      "source": "manual",
+      "order_ids": [
+        "OSM36Z-6P565-OAC6XV"
+      ],
+      "last_order_id": "OSM36Z-6P565-OAC6XV",
+      "avg_fill_price": 0.7414000002111507,
+      "fills_verified": true,
+      "last_fills": []
+    },
+    "USDTGBP": {
+      "exchange": "kraken",
+      "avg_entry_price": 0.7416000002503642,
+      "total_quantity": 6.74217907,
+      "total_cost": 5.013,
+      "total_fees": 0,
+      "trade_count": 1,
+      "last_trade": 1771788373.703025,
+      "synced_at": 1771788373.7030253
+    },
+    "binance:KITEUSDC": {
+      "exchange": "binance",
+      "symbol": "KITEUSDC",
+      "asset": "KITE",
+      "quote": "USDC",
+      "avg_entry_price": 0.2534,
+      "total_quantity": 19.7,
+      "total_cost": 4.99198,
+      "total_fees": 0.00499198,
+      "trade_count": 1,
+      "first_trade": 1771795913945,
+      "last_trade": 1771795913945,
+      "synced_at": 1771795913.9457471,
+      "source": "manual",
+      "order_ids": [
+        "24559135"
+      ],
+      "last_order_id": "24559135",
+      "avg_fill_price": 0.2534,
+      "fills_verified": true,
+      "last_fills": []
+    },
+    "KITEUSDC": {
+      "exchange": "binance",
+      "avg_entry_price": 0.2519,
+      "total_quantity": 19.8,
+      "total_cost": 4.99260762,
+      "total_fees": 0,
+      "trade_count": 1,
+      "last_trade": 1771790576.5312326,
+      "synced_at": 1771790576.5312328
+    },
+    "kraken:ZEUSUSD": {
+      "exchange": "kraken",
+      "symbol": "ZEUSUSD",
+      "asset": "ZEUS",
+      "quote": "USD",
+      "avg_entry_price": 0.0122999999508,
+      "total_quantity": 243.90244,
+      "total_cost": 3.0,
+      "total_fees": 0.0078,
+      "trade_count": 1,
+      "first_trade": 1771795912578,
+      "last_trade": 1771795912578,
+      "synced_at": 1771795912.5784943,
+      "source": "manual",
+      "order_ids": [
+        "OMTUKK-LGJQW-MSSMB5"
+      ],
+      "last_order_id": "OMTUKK-LGJQW-MSSMB5",
+      "avg_fill_price": 0.0122999999508,
+      "fills_verified": true,
+      "last_fills": []
+    },
+    "ZEUSUSD": {
+      "exchange": "kraken",
+      "avg_entry_price": 0.01180000009912,
+      "total_quantity": 423.72881,
+      "total_cost": 5.013,
+      "total_fees": 0,
+      "trade_count": 1,
+      "last_trade": 1771793781.0813913,
+      "synced_at": 1771793781.0813916
+    },
+    "binance:BANANAS31USDC": {
+      "exchange": "binance",
+      "symbol": "BANANAS31USDC",
+      "asset": "BANANAS31",
+      "quote": "USDC",
+      "avg_entry_price": 0.004641,
+      "total_quantity": 646.0,
+      "total_cost": 2.9980860000000003,
+      "total_fees": 0.0029980860000000005,
+      "trade_count": 1,
+      "first_trade": 1771793831310,
+      "last_trade": 1771793831310,
+      "synced_at": 1771793831.3104944,
+      "source": "manual",
+      "order_ids": [
+        "199378911"
+      ],
+      "last_order_id": "199378911",
+      "avg_fill_price": 0.004641,
+      "fills_verified": true,
+      "last_fills": []
+    },
+    "BANANAS31USDC": {
+      "exchange": "binance",
+      "avg_entry_price": 0.004641,
+      "total_quantity": 646.0,
+      "total_cost": 3.001084086,
+      "total_fees": 0,
+      "trade_count": 1,
+      "last_trade": 1771794695.948861,
+      "synced_at": 1771794695.9488611
+    },
+    "kraken:XRPUSDT": {
+      "exchange": "kraken",
+      "symbol": "XRPUSDT",
+      "asset": "XRP",
+      "quote": "USDT",
+      "avg_entry_price": 1.390829998200266,
+      "total_quantity": 2.1569854,
+      "total_cost": 3.0,
+      "total_fees": 0.0078,
+      "trade_count": 1,
+      "first_trade": 1771798001083,
+      "last_trade": 1771798001083,
+      "synced_at": 1771798001.0834289,
+      "source": "manual",
+      "order_ids": [
+        "OV5OCH-RJWUC-7UHPR6"
+      ],
+      "last_order_id": "OV5OCH-RJWUC-7UHPR6",
+      "avg_fill_price": 1.390829998200266,
+      "fills_verified": true,
+      "last_fills": []
+    },
+    "XRPUSDT": {
+      "exchange": "kraken",
+      "avg_entry_price": 1.3908399991619724,
+      "total_quantity": 2.15696989,
+      "total_cost": 3.0078,
+      "total_fees": 0,
+      "trade_count": 1,
+      "last_trade": 1771798001.0833802,
+      "synced_at": 1771798001.0833807
     }
   },
   "trade_lots": {
@@ -2086,8 +2256,158 @@
         "fee": 0.00693861,
         "order_id": "39953905"
       }
+    ],
+    "kraken:USDTGBP": [
+      {
+        "price": 0.7416000002503642,
+        "quantity": 6.74217907,
+        "timestamp": 1771788358.4266381,
+        "fee": 0.013,
+        "order_id": "O4MD5T-DD5HE-R6VFNB"
+      },
+      {
+        "price": 0.7414000002111507,
+        "quantity": 6.74399784,
+        "timestamp": 1771788414.8998892,
+        "fee": 0.013,
+        "order_id": "OSM36Z-6P565-OAC6XV"
+      }
+    ],
+    "binance:KITEUSDC": [
+      {
+        "price": 0.2514,
+        "quantity": 19.8,
+        "timestamp": 1771788373.703116,
+        "fee": 0.004977720000000001,
+        "order_id": "24521312"
+      },
+      {
+        "price": 0.2519,
+        "quantity": 19.8,
+        "timestamp": 1771788418.0228972,
+        "fee": 0.004987620000000001,
+        "order_id": "24521503"
+      },
+      {
+        "price": 0.2525,
+        "quantity": 19.8,
+        "timestamp": 1771794719.2374709,
+        "fee": 0.0049995000000000005,
+        "order_id": "24551990"
+      },
+      {
+        "price": 0.2522,
+        "quantity": 19.8,
+        "timestamp": 1771794909.214513,
+        "fee": 0.004993559999999999,
+        "order_id": "24552924"
+      },
+      {
+        "price": 0.2522,
+        "quantity": 19.8,
+        "timestamp": 1771795113.3686807,
+        "fee": 0.004993559999999999,
+        "order_id": "24554240"
+      },
+      {
+        "price": 0.2527,
+        "quantity": 19.7,
+        "timestamp": 1771795323.3067698,
+        "fee": 0.0049781899999999995,
+        "order_id": "24555445"
+      },
+      {
+        "price": 0.2534,
+        "quantity": 19.7,
+        "timestamp": 1771795913.9457421,
+        "fee": 0.00499198,
+        "order_id": "24559135"
+      }
+    ],
+    "kraken:ZEUSUSD": [
+      {
+        "price": 0.01180000009912,
+        "quantity": 423.72881,
+        "timestamp": 1771790576.5312638,
+        "fee": 0.013,
+        "order_id": "OS6TWN-52IZ4-GJAWO7"
+      },
+      {
+        "price": 0.0125,
+        "quantity": 240.0,
+        "timestamp": 1771793781.0814219,
+        "fee": 0.0078,
+        "order_id": "O7NWTI-6ET7X-LSVSZW"
+      },
+      {
+        "price": 0.011599999984533333,
+        "quantity": 258.62069,
+        "timestamp": 1771794695.9489048,
+        "fee": 0.0078,
+        "order_id": "ODMATV-ASFM6-DTDIN5"
+      },
+      {
+        "price": 0.012100000209733338,
+        "quantity": 247.93388,
+        "timestamp": 1771795112.62073,
+        "fee": 0.0078,
+        "order_id": "ONPC6V-FNGCS-YYQQNL"
+      },
+      {
+        "price": 0.012100000209733338,
+        "quantity": 247.93388,
+        "timestamp": 1771795322.5672517,
+        "fee": 0.0078,
+        "order_id": "OUB2CP-DIHIX-D5FIY7"
+      },
+      {
+        "price": 0.012199999967466667,
+        "quantity": 245.90164,
+        "timestamp": 1771795716.1600132,
+        "fee": 0.0078,
+        "order_id": "OFWQEX-XZOZC-WJ3ATH"
+      },
+      {
+        "price": 0.0122999999508,
+        "quantity": 243.90244,
+        "timestamp": 1771795912.5784893,
+        "fee": 0.0078,
+        "order_id": "OMTUKK-LGJQW-MSSMB5"
+      }
+    ],
+    "binance:BANANAS31USDC": [
+      {
+        "price": 0.004641,
+        "quantity": 646.0,
+        "timestamp": 1771793831.3104885,
+        "fee": 0.0029980860000000005,
+        "order_id": "199378911"
+      }
+    ],
+    "kraken:XRPUSDT": [
+      {
+        "price": 1.3913500002376888,
+        "quantity": 2.15617925,
+        "timestamp": 1771797637.5740986,
+        "fee": 0.0078,
+        "order_id": "OORQBM-4AUKE-PELSOR"
+      },
+      {
+        "price": 1.3908399991619724,
+        "quantity": 2.15696989,
+        "timestamp": 1771797912.635767,
+        "fee": 0.0078,
+        "order_id": "OTC2OX-RIW4X-3RWP7E"
+      },
+      {
+        "price": 1.390829998200266,
+        "quantity": 2.1569854,
+        "timestamp": 1771798001.0834246,
+        "fee": 0.0078,
+        "order_id": "OV5OCH-RJWUC-7UHPR6"
+      }
     ]
   },
   "last_sync": 1770315858.832146,
-  "updated_at": "2026-02-22T16:50:14.786667"
+  "updated_at": "2026-02-22T22:06:41.083439"
 }

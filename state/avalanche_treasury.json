@@ -1,9 +1,9 @@
 {
-  "total_usd": 0.3609683275218224,
+  "total_usd": 0.3685834655854305,
   "reserves": {
-    "USDC": 0.3609683275218224
+    "USDC": 0.3685834655854305
   },
-  "total_harvested_all_time": 0.3609683275218224,
+  "total_harvested_all_time": 0.3685834655854305,
   "total_deployed_all_time": 0.0,
-  "last_updated": 1771778977.0632906
+  "last_updated": 1771797165.883647
 }

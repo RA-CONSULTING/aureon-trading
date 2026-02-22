@@ -468,5 +468,125 @@
     "stablecoin": "USDC",
     "received_amount": 0.00035857896076799996,
     "profit_pct": 2.1216099143377707
+  },
+  {
+    "timestamp": 1771788390.8267527,
+    "exchange": "alpaca",
+    "asset": "ADAUSD",
+    "harvest_qty": 0.0012630911999999999,
+    "harvest_value_usd": 0.00035857896076799996,
+    "stablecoin": "USDC",
+    "received_amount": 0.00035857896076799996,
+    "profit_pct": 2.1216099143377707
+  },
+  {
+    "timestamp": 1771788391.8365839,
+    "exchange": "alpaca",
+    "asset": "BTCUSD",
+    "harvest_qty": 1.3499999999999998e-08,
+    "harvest_value_usd": 0.0009105944669999998,
+    "stablecoin": "USDC",
+    "received_amount": 0.0009105944669999998,
+    "profit_pct": 0.6627836805030104
+  },
+  {
+    "timestamp": 1771789332.8173373,
+    "exchange": "alpaca",
+    "asset": "ADAUSD",
+    "harvest_qty": 0.0012630911999999999,
+    "harvest_value_usd": 0.00035857896076799996,
+    "stablecoin": "USDC",
+    "received_amount": 0.00035857896076799996,
+    "profit_pct": 2.1216099143377707
+  },
+  {
+    "timestamp": 1771789333.8317292,
+    "exchange": "alpaca",
+    "asset": "BTCUSD",
+    "harvest_qty": 1.3499999999999998e-08,
+    "harvest_value_usd": 0.0009105944669999998,
+    "stablecoin": "USDC",
+    "received_amount": 0.0009105944669999998,
+    "profit_pct": 0.6627836805030104
+  },
+  {
+    "timestamp": 1771790094.4825175,
+    "exchange": "alpaca",
+    "asset": "BTCUSD",
+    "harvest_qty": 1.3499999999999998e-08,
+    "harvest_value_usd": 0.0009110826,
+    "stablecoin": "USDC",
+    "received_amount": 0.0009110826,
+    "profit_pct": 0.7291118444722072
+  },
+  {
+    "timestamp": 1771790095.4895475,
+    "exchange": "alpaca",
+    "asset": "ADAUSD",
+    "harvest_qty": 0.0012630911999999999,
+    "harvest_value_usd": 0.00035857896076799996,
+    "stablecoin": "USDC",
+    "received_amount": 0.00035857896076799996,
+    "profit_pct": 2.1216099143377707
+  },
+  {
+    "timestamp": 1771790908.6748817,
+    "exchange": "alpaca",
+    "asset": "ADAUSD",
+    "harvest_qty": 0.0012630911999999999,
+    "harvest_value_usd": 0.00035857896076799996,
+    "stablecoin": "USDC",
+    "received_amount": 0.00035857896076799996,
+    "profit_pct": 2.1216099143377707
+  },
+  {
+    "timestamp": 1771790909.6884487,
+    "exchange": "alpaca",
+    "asset": "BTCUSD",
+    "harvest_qty": 1.3499999999999998e-08,
+    "harvest_value_usd": 0.0009093464999999998,
+    "stablecoin": "USDC",
+    "received_amount": 0.0009093464999999998,
+    "profit_pct": 0.5301273525646168
+  },
+  {
+    "timestamp": 1771794696.1145787,
+    "exchange": "alpaca",
+    "asset": "BTCUSD",
+    "harvest_qty": 1.3499999999999998e-08,
+    "harvest_value_usd": 0.0009102708449999999,
+    "stablecoin": "USDC",
+    "received_amount": 0.0009102708449999999,
+    "profit_pct": 0.6296195985184121
+  },
+  {
+    "timestamp": 1771794697.1258514,
+    "exchange": "alpaca",
+    "asset": "ADAUSD",
+    "harvest_qty": 0.0012630911999999999,
+    "harvest_value_usd": 0.00035857896076799996,
+    "stablecoin": "USDC",
+    "received_amount": 0.00035857896076799996,
+    "profit_pct": 2.1216099143377707
+  },
+  {
+    "timestamp": 1771797164.8735495,
+    "exchange": "alpaca",
+    "asset": "BTCUSD",
+    "harvest_qty": 1.3499999999999998e-08,
+    "harvest_value_usd": 0.0009117754199999999,
+    "stablecoin": "USDC",
+    "received_amount": 0.0009117754199999999,
+    "profit_pct": 0.7954400084414042
+  },
+  {
+    "timestamp": 1771797165.8844295,
+    "exchange": "alpaca",
+    "asset": "ADAUSD",
+    "harvest_qty": 0.0012630911999999999,
+    "harvest_value_usd": 0.00035857896076799996,
+    "stablecoin": "USDC",
+    "received_amount": 0.00035857896076799996,
+    "profit_pct": 2.1216099143377707
   }
 ]
