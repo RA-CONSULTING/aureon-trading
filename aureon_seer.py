@@ -2624,9 +2624,28 @@ class AureonTheSeer:
                 any_changed = True
 
             layers = pred.get("timeframe_layers", [])
-            buy_price = float(pred.get("buy_price", 0) or 0)
+            # Use buy_price_usd if available (GBP pairs need USD-normalized comparison)
+            buy_price = float(pred.get("buy_price_usd", 0) or pred.get("buy_price", 0) or 0)
             if buy_price <= 0:
                 continue
+
+            # Back-fill buy_price_usd for legacy GBP predictions
+            if "buy_price_usd" not in pred and pred.get("exchange") == "kraken":
+                pair_str = (pred.get("pair") or "").upper()
+                if "GBP" in pair_str:
+                    raw_gbp = float(pred.get("buy_price", 0) or 0)
+                    if raw_gbp > 0:
+                        try:
+                            import urllib.request as _u_fx
+                            _fx_r = _u_fx.urlopen('https://api.binance.com/api/v3/ticker/price?symbol=GBPUSDT', timeout=5)
+                            gbp_rate = float(_j.loads(_fx_r.read().decode()).get('price', 1.27))
+                        except Exception:
+                            gbp_rate = 1.27
+                        buy_price = round(raw_gbp * gbp_rate, 6)
+                        pred["buy_price_usd"] = buy_price
+                        pred["quote_currency"] = "GBP"
+                        any_changed = True
+                        logger.info(f"[SeerValidator] Back-filled buy_price_usd for {pred.get('pair')}: £{raw_gbp:.2f} → ${buy_price:.2f}")
 
             # Resolve each layer whose validate_at has passed
             for layer in layers:

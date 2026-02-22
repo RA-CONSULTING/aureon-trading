@@ -115,6 +115,7 @@ class FireTrader:
         """
         Consult the Seer before ANY buying.
         Returns (should_buy: bool, risk_mod: float, vision_summary: dict).
+        Requires multi-oracle consensus: at least 3/7 oracles must score > 0.55.
         """
         if not _seer_available:
             log_fire("   [SEER] Not available — proceeding without gate")
@@ -128,6 +129,22 @@ class FireTrader:
             risk_mod = vision.risk_modifier
             score = vision.unified_score
 
+            # ── Multi-oracle consensus: count oracles > 0.55 (bullish threshold) ──
+            oracles_bullish = 0
+            oracles_total = 0
+            oracle_scores = []
+            for name, oracle in [("gaia", vision.gaia), ("cosmos", vision.cosmos),
+                                  ("harmony", vision.harmony), ("spirits", vision.spirits),
+                                  ("timeline", vision.timeline), ("runes", vision.runes),
+                                  ("sentiment", vision.sentiment)]:
+                if oracle and hasattr(oracle, 'score'):
+                    oracles_total += 1
+                    oracle_scores.append((name, oracle.score, oracle.confidence))
+                    if oracle.score > 0.55:
+                        oracles_bullish += 1
+
+            consensus_ratio = oracles_bullish / oracles_total if oracles_total > 0 else 0
+
             summary = {
                 "timestamp": datetime.now().isoformat(),
                 "unified_score": round(score, 4),
@@ -136,12 +153,23 @@ class FireTrader:
                 "risk_modifier": round(risk_mod, 3),
                 "tactical_mode": vision.tactical_mode,
                 "prophecy": vision.prophecy[:200] if vision.prophecy else "",
+                "oracle_consensus": f"{oracles_bullish}/{oracles_total}",
+                "consensus_ratio": round(consensus_ratio, 3),
             }
 
             log_fire(f"\n🔮 SEER VISION: score={score:.3f} grade={grade} action={action} risk_mod={risk_mod:.2f}")
+            log_fire(f"   Oracle consensus: {oracles_bullish}/{oracles_total} bullish (ratio={consensus_ratio:.2f})")
+            for name, sc, conf in oracle_scores:
+                bull_mark = "✓" if sc > 0.55 else "✗"
+                log_fire(f"   [{bull_mark}] {name:10s}: score={sc:.3f} conf={conf:.2f}")
             log_fire(f"   Tactical: {vision.tactical_mode}")
             if vision.prophecy:
                 log_fire(f"   Prophecy: {vision.prophecy[:150]}")
+
+            # ── CONSENSUS GATE: require at least 3 out of 7 oracles to be bullish ──
+            if oracles_total >= 4 and consensus_ratio < 0.40:
+                log_fire(f"   🚫 ORACLE CONSENSUS TOO LOW ({oracles_bullish}/{oracles_total} < 40%) — blocking buys")
+                return False, risk_mod, summary
 
             # GATE: Block buys on BLIND, FOG, or DEFEND/SELL_BIAS
             if grade in ("BLIND",):
@@ -154,10 +182,19 @@ class FireTrader:
                 log_fire("   ⚠️ SEER SAYS SELL_BIAS — not ideal for new entries, blocking buys")
                 return False, risk_mod, summary
             if grade in ("FOG",):
-                log_fire("   🌫️ SEER SEES FOG — reducing position sizes only")
-                return True, risk_mod * 0.5, summary
+                # FOG with low score = unreliable, block buys
+                if score < 0.50:
+                    log_fire("   🌫️ SEER FOG + low score (<0.50) — blocking buys")
+                    return False, risk_mod, summary
+                # FOG with score >= 0.50 but action HOLD = marginal, heavy reduction
+                log_fire(f"   🌫️ SEER FOG (score={score:.3f}) — heavy position reduction")
+                return True, risk_mod * 0.3, summary
 
-            # CLEAR_SIGHT or DIVINE_CLARITY + BUY_BIAS/HOLD = green light
+            if grade in ("PARTIAL_VISION",):
+                log_fire(f"   👁️ SEER PARTIAL_VISION — moderate reduction (score={score:.3f})")
+                return True, risk_mod * 0.6, summary
+
+            # CLEAR_SIGHT or DIVINE_CLARITY = green light
             log_fire(f"   ✅ SEER APPROVES entry (grade={grade}, action={action})")
             return True, risk_mod, summary
 
@@ -234,8 +271,18 @@ class FireTrader:
                 vol_signal * 0.20
             )
 
-            confidence = min(1.0, len(candles) / 12.0)
-            bullish = direction_score > 0.45
+            # ── Confidence = signal strength, NOT data availability ──
+            # Strong signal = direction_score far from 0.5 (coin-flip neutral)
+            # Also factor in momentum conviction and trend agreement
+            signal_strength = abs(direction_score - 0.5) * 2  # 0..1 how far from neutral
+            momentum_conviction = min(1.0, abs(momentum_pct) / 2.0)  # stronger momentum = more conviction
+            trend_agreement = 1.0 if (trend_score >= 0.5 and momentum_pct > 0) or (trend_score < 0.5 and momentum_pct < 0) else 0.4
+            confidence = min(1.0, signal_strength * 0.5 + momentum_conviction * 0.3 + trend_agreement * 0.2)
+
+            # ── BULLISH requires direction_score > 0.55 AND positive momentum ──
+            # Old threshold was 0.45 (coin-flip), now requires real conviction
+            bullish = (direction_score > 0.55 and momentum_pct > -0.3 and
+                       trend_score >= 0.33 and confidence >= 0.15)
 
             details.update({
                 "current_price": round(current_price, 6),
@@ -247,11 +294,14 @@ class FireTrader:
                 "direction_score": round(direction_score, 4),
                 "bullish": bullish,
                 "confidence": round(confidence, 3),
+                "signal_strength": round(signal_strength, 3),
+                "momentum_conviction": round(momentum_conviction, 3),
+                "trend_agreement": round(trend_agreement, 3),
             })
 
             direction = "BULLISH" if bullish else "BEARISH"
             log_fire(f"   [SEER-SYM] {base_asset}: {direction} dir={direction_score:.3f} "
-                     f"trend={trend_score:.2f} mom={momentum_pct:+.2f}% "
+                     f"conf={confidence:.3f} trend={trend_score:.2f} mom={momentum_pct:+.2f}% "
                      f"range={range_position:.2f} vol={vol_ratio:.2f}")
 
             return bullish, confidence, details
@@ -304,11 +354,29 @@ class FireTrader:
                 for label, secs in self._TIMEFRAME_LAYERS
             ]
 
+            # Convert GBP buy_price to USD for accurate validation
+            buy_price_usd = buy_price
+            if exchange == 'kraken' and pair and ('GBP' in pair.upper()):
+                try:
+                    gbp_to_usd = 1.27  # reasonable GBP→USD rate
+                    try:
+                        import urllib.request as _ur2
+                        _fx = _ur2.urlopen('https://api.binance.com/api/v3/ticker/price?symbol=GBPUSDT', timeout=5)
+                        gbp_to_usd = float(json.loads(_fx.read().decode()).get('price', 1.27))
+                    except Exception:
+                        pass  # use fallback rate
+                    buy_price_usd = round(buy_price * gbp_to_usd, 6)
+                    log_fire(f"   💱 GBP→USD conversion: £{buy_price:.2f} × {gbp_to_usd:.4f} = ${buy_price_usd:.2f}")
+                except Exception:
+                    pass  # keep raw price
+
             prediction = {
                 "timestamp": datetime.now().isoformat(),
                 "pair": pair,
                 "exchange": exchange,
                 "buy_price": buy_price,
+                "buy_price_usd": buy_price_usd,  # always in USD for accurate validation
+                "quote_currency": "GBP" if (pair and 'GBP' in pair.upper()) else "USD",
                 "seer_global": seer_summary,
                 "symbol_signal": symbol_signal,
                 "validated": False,          # True when ALL layers done
