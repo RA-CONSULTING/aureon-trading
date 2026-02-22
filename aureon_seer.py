@@ -880,6 +880,21 @@ class OracleOfRunes:
         "Pluto":  39.482,
     }
 
+    # ═══════════════════════════════════════════════════════════════════
+    # SPEED TIERS — seconds to years, layered like nature intended
+    # Relative daily motion of a planet pair determines how fast an
+    # aspect changes. Moon-Mercury flickers hourly; Neptune-Pluto
+    # holds for decades. Each tier carries its own weight for trading.
+    # Ordered fastest → slowest so classification hits the first match.
+    # ═══════════════════════════════════════════════════════════════════
+    _SPEED_TIERS = {
+        "SWIFT":   {"min_speed": 5.0,  "label": "Hours",  "weight": 0.30},
+        "QUICK":   {"min_speed": 1.0,  "label": "Days",   "weight": 0.25},
+        "STEADY":  {"min_speed": 0.3,  "label": "Weeks",  "weight": 0.20},
+        "SLOW":    {"min_speed": 0.04, "label": "Months", "weight": 0.15},
+        "GLACIAL": {"min_speed": 0.0,  "label": "Years",  "weight": 0.10},
+    }
+
     J2000_EPOCH = datetime(2000, 1, 1, 12, 0, 0)
 
     # Six traditions — one sky, one truth
@@ -1234,6 +1249,26 @@ class OracleOfRunes:
             "traditions_voting": net_votes,
         }
 
+    def _get_pair_speed_tier(self, planet_pair: str) -> str:
+        """Classify a planet pair into a speed tier based on relative daily motion.
+
+        Uses _DAILY_MOTIONS to compute how fast an aspect changes.
+        Moon-Mercury (~9°/day) is SWIFT, Neptune-Pluto (~0.002°/day) is GLACIAL.
+        Returns the tier name: SWIFT, QUICK, STEADY, SLOW, or GLACIAL.
+        """
+        parts = planet_pair.split("-")
+        if len(parts) != 2:
+            return "STEADY"  # safe mid-range fallback
+        p1, p2 = parts
+        speed1 = self._DAILY_MOTIONS.get(p1, 0.5)
+        speed2 = self._DAILY_MOTIONS.get(p2, 0.5)
+        rel_speed = abs(speed1 - speed2)
+
+        for tier_name, cfg in self._SPEED_TIERS.items():
+            if rel_speed >= cfg["min_speed"]:
+                return tier_name
+        return "GLACIAL"
+
     def read(self) -> OracleReading:
         """
         Cast the ancient star-chart decoder across all four traditions.
@@ -1259,62 +1294,118 @@ class OracleOfRunes:
         # Detect convergence (multiple civilizations on same aspect)
         convergence = self._detect_convergence(all_activations)
 
-        # Compute aggregate score
+        # ═══════════════════════════════════════════════════════════
+        # LAYERED TIMEFRAME SCORING
+        # Planet pairs have vastly different speeds. Moon aspects last
+        # hours, Mercury days, Venus/Mars weeks, outer planets years.
+        # Score each tier separately, then combine with cross-tier
+        # agreement weighting. No more additive bonus stacking.
+        # ═══════════════════════════════════════════════════════════
         if all_activations:
-            total_weight = sum(a["activation_strength"] for a in all_activations)
-            if total_weight > 0:
-                score = sum(
-                    a["signal_strength"] * a["activation_strength"]
-                    for a in all_activations
-                ) / total_weight
-            else:
-                score = 0.5
-
-            # Count biases
+            # Count biases (used for details + phase)
             buy_count = sum(1 for a in all_activations if a["trading_bias"] == "BUY")
             sell_count = sum(1 for a in all_activations if a["trading_bias"] == "SELL")
             hold_count = sum(1 for a in all_activations if a["trading_bias"] == "HOLD")
 
-            # Bias shift
-            bias_shift = (buy_count - sell_count) * 0.02
-            score = max(0.0, min(1.0, score + bias_shift))
+            # ── Classify activations into speed tiers ──
+            tier_activations: Dict[str, List[Dict]] = {}
+            for a in all_activations:
+                tier = self._get_pair_speed_tier(a["planet_pair"])
+                tier_activations.setdefault(tier, []).append(a)
 
-            # ═══════════════════════════════════════════════════════════
-            # COMBINATION INTELLIGENCE (backtested on 14,094 asset-days)
-            # ═══════════════════════════════════════════════════════════
+            # ── Compute per-tier scores ──
+            tier_scores: Dict[str, Dict] = {}
+            for tier_name, tier_acts in tier_activations.items():
+                t_weight = sum(a["activation_strength"] for a in tier_acts)
+                if t_weight > 0:
+                    t_score = sum(
+                        a["signal_strength"] * a["activation_strength"]
+                        for a in tier_acts
+                    ) / t_weight
+                else:
+                    t_score = 0.5
 
-            # 1. ASPECT BRIDGE BONUS — the strongest cultural connections
-            #    Sun-Saturn trine + 2+ cultures = 76.8% accuracy historically
-            bridge_bonus = 0.0
+                t_buy = sum(1 for a in tier_acts if a["trading_bias"] == "BUY")
+                t_sell = sum(1 for a in tier_acts if a["trading_bias"] == "SELL")
+                t_hold = sum(1 for a in tier_acts if a["trading_bias"] == "HOLD")
+
+                if t_buy > t_sell:
+                    t_direction = "BUY"
+                elif t_sell > t_buy:
+                    t_direction = "SELL"
+                else:
+                    t_direction = "HOLD"
+
+                # Small bias shift within tier (capped to prevent inflation)
+                bias_shift = (t_buy - t_sell) * 0.01
+                t_score = max(0.0, min(1.0, t_score + bias_shift))
+
+                tier_label = self._SPEED_TIERS.get(tier_name, {}).get("label", "?")
+                tier_scores[tier_name] = {
+                    "score": round(t_score, 4),
+                    "direction": t_direction,
+                    "label": tier_label,
+                    "buy": t_buy,
+                    "sell": t_sell,
+                    "hold": t_hold,
+                    "count": len(tier_acts),
+                    "symbols": [a["rune_name"] for a in tier_acts],
+                }
+
+            # ── Weighted combination of tier scores ──
+            total_tier_weight = 0.0
+            weighted_score_sum = 0.0
+            for tier_name, t_data in tier_scores.items():
+                tw = self._SPEED_TIERS.get(tier_name, {}).get("weight", 0.10)
+                weighted_score_sum += t_data["score"] * tw
+                total_tier_weight += tw
+
+            if total_tier_weight > 0:
+                score = weighted_score_sum / total_tier_weight
+            else:
+                score = 0.5
+
+            # ── Cross-tier agreement factor ──
+            # All tiers agree → confident score. Disagreement → pull toward 0.5.
+            tier_directions = [
+                t["direction"] for t in tier_scores.values()
+                if t["direction"] != "HOLD"
+            ]
+            if tier_directions:
+                dominant_dir = max(set(tier_directions), key=tier_directions.count)
+                agreement_ratio = tier_directions.count(dominant_dir) / len(tier_directions)
+                # Disagreement pulls score toward 0.5 (uncertainty)
+                disagreement = 1.0 - agreement_ratio
+                score = score * (1.0 - disagreement * 0.4) + 0.5 * (disagreement * 0.4)
+            else:
+                agreement_ratio = 0.0
+                score = 0.5  # All HOLD = pure uncertainty
+
+            # ── Combination Intelligence as MULTIPLIERS (not additive) ──
+            # Bridge bonus: multiplicative, capped at 8% boost
+            bridge_best = 0.0
             for bridge in convergence.get("bridge_activations", []):
-                bridge_bonus = max(bridge_bonus, bridge["bridge_bonus"])
-            if bridge_bonus > 0:
-                score = min(1.0, score + bridge_bonus)
+                bridge_best = max(bridge_best, bridge.get("bridge_bonus", 0))
+            if bridge_best > 0:
+                score *= (1.0 + min(bridge_best, 0.08))
 
-            # 2. GOLDEN FIVE CONSENSUS — the optimal 5-tradition combo
-            #    Ogham + Hieroglyph + Sacred Sites + Aztec + Japanese = 57.9%
+            # Golden Five: confirms direction, max 5% multiplier
             golden = convergence.get("golden_five", {})
-            if golden.get("unanimous"):
-                g5_bonus = 0.08 if golden["consensus_strength"] >= 1.0 else 0.05
-                # Direction alignment: boost MORE if Golden Five agrees with overall bias
+            if golden.get("unanimous") and golden.get("consensus_direction"):
                 overall_lean = "BUY" if buy_count > sell_count else "SELL"
                 if golden["consensus_direction"] == overall_lean:
-                    g5_bonus += 0.03  # Golden Five confirms the overall signal
-                score = min(1.0, score + g5_bonus)
+                    score *= 1.05  # Direction confirmed
+                if golden.get("japanese_keystone"):
+                    score *= 1.02  # Keystone tradition agrees
 
-            # 3. JAPANESE KEYSTONE — Japanese in consensus adds extra weight
-            if golden.get("japanese_keystone"):
-                score = min(1.0, score + 0.02)
-
-            # 4. Legacy convergence bonus (original logic, kept as baseline)
-            elif convergence["max_traditions"] >= 3:
-                score = min(1.0, score + 0.05)  # 3+ traditions agree
-            elif convergence["max_traditions"] >= 2:
-                score = min(1.0, score + 0.02)  # 2 traditions agree
+            score = max(0.0, min(1.0, score))
 
         else:
             score = 0.5
             buy_count = sell_count = hold_count = 0
+            tier_scores = {}
+            tier_directions = []
+            agreement_ratio = 0.0
 
         # Determine phase
         if score >= 0.80:
@@ -1376,6 +1467,7 @@ class OracleOfRunes:
             "max_convergence_traditions": convergence["max_traditions"],
             "convergence_message": conv_msg,
             "convergences": convergence["convergences"],
+            "timeframe_layers": tier_scores,
             # Combination Intelligence fields
             "bridge_count": convergence.get("bridge_count", 0),
             "bridge_activations": convergence.get("bridge_activations", []),
@@ -1408,18 +1500,24 @@ class OracleOfRunes:
                 f"({golden['active_count']}/5 agree) — {g5_trads}"
             )
 
-        # Confidence: more activations + convergence + bridges = higher confidence
+        # Confidence: based on tier coverage, cross-tier agreement,
+        # and convergence — no more jumping to 0.97 on any bridge.
         if all_activations:
-            _conf = 0.65 + min(0.20, len(all_activations) * 0.01)
+            active_tier_count = len(tier_scores)
+            # Base: more tiers covered = more complete picture
+            _conf = 0.40 + min(0.30, active_tier_count * 0.06)
+            # Cross-tier agreement boosts confidence
+            if tier_directions:
+                _conf += agreement_ratio * 0.15
+            # Convergence adds modest boost (not 0.15 anymore!)
             if convergence.get("bridge_count", 0) > 0:
-                # Aspect bridges are the strongest evidence
-                _conf = min(0.97, _conf + 0.15)
+                _conf = min(0.92, _conf + 0.08)
             elif golden.get("unanimous"):
-                _conf = min(0.95, _conf + 0.12)
+                _conf = min(0.90, _conf + 0.06)
             elif convergence["max_traditions"] >= 3:
-                _conf = min(0.95, _conf + 0.10)
+                _conf = min(0.88, _conf + 0.04)
             elif convergence["max_traditions"] >= 2:
-                _conf = min(0.90, _conf + 0.05)
+                _conf = min(0.85, _conf + 0.02)
         else:
             _conf = 0.3
 
