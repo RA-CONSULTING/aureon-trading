@@ -900,8 +900,40 @@ class PillarCouncil:
             delta -= 0.02
             reactions.append("Lyra detects EUPHORIA — beware of overleveraging")
 
+        # React to QGITA structural events (from Seer's data)
+        seer_qgita_regime = seer_d.get("qgita_regime", "")
+        seer_qgita_conf = seer_d.get("qgita_confidence", 0.5)
+        if seer_qgita_regime == "coherent" and seer_qgita_conf > 0.65:
+            delta += 0.04
+            reactions.append(
+                f"The Seer's QGITA reads COHERENT regime ({seer_qgita_conf:.0%}) — "
+                "the Fibonacci lattice confirms my pattern recognition"
+            )
+        elif seer_qgita_regime == "chaotic":
+            delta -= 0.04
+            reactions.append(
+                "The Seer's QGITA warns of CHAOTIC regime — "
+                "structural noise clouds my signals"
+            )
+
+        # React to Lighthouse spectral signal (from Lyra's data)
+        lh_coherence = lyra_d.get("lighthouse_coherence_score", 0)
+        lh_distortion = lyra_d.get("lighthouse_distortion_index", 0)
+        if lh_coherence > 0.6 and lh_distortion < 0.3:
+            delta += 0.03
+            reactions.append(
+                f"Lyra's Lighthouse shows clean spectrum (coherence {lh_coherence:.2f}, "
+                f"distortion {lh_distortion:.2f}) — my signals are riding a clear wave"
+            )
+        elif lh_distortion > 0.6:
+            delta -= 0.04
+            reactions.append(
+                f"Lyra's Lighthouse shows high distortion ({lh_distortion:.2f}) — "
+                "the price signal is contaminated, I reduce confidence"
+            )
+
         # Clamp delta
-        delta = max(-0.15, min(0.10, delta))
+        delta = max(-0.15, min(0.15, delta))
 
         if not reactions:
             reactions.append("All pillars present a coherent picture. I hold my position")
@@ -968,7 +1000,39 @@ class PillarCouncil:
             delta += 0.01
             reactions.append("Lyra's calm emotional field suggests stable market conditions")
 
-        delta = max(-0.15, min(0.10, delta))
+        # React to QGITA structural risk (from Seer's data)
+        seer_d = seer_speech.data_shared
+        qgita_risk = seer_d.get("qgita_risk_level", "")
+        qgita_lh_intensity = seer_d.get("qgita_lighthouse_intensity", 0)
+        if qgita_risk == "HIGH":
+            delta -= 0.05
+            reactions.append(
+                f"Seer's QGITA flags HIGH risk regime — "
+                "the treasury tightens position limits"
+            )
+        elif qgita_risk == "LOW" and qgita_lh_intensity > 0.5:
+            delta += 0.03
+            reactions.append(
+                f"Seer's QGITA reads LOW risk with strong Lighthouse ({qgita_lh_intensity:.2f}) — "
+                "the treasury can extend allocations"
+            )
+
+        # React to Lighthouse maker bias (profit tendency)
+        lh_maker_bias = lyra_d.get("lighthouse_maker_bias", 0.5)
+        if lh_maker_bias > 0.6:
+            delta += 0.02
+            reactions.append(
+                f"Lyra's Lighthouse shows positive maker bias ({lh_maker_bias:.2f}) — "
+                "capital flows favor profitability"
+            )
+        elif lh_maker_bias < 0.35:
+            delta -= 0.03
+            reactions.append(
+                f"Lyra's Lighthouse shows negative maker bias ({lh_maker_bias:.2f}) — "
+                "capital flows work against us"
+            )
+
+        delta = max(-0.15, min(0.15, delta))
 
         if not reactions:
             reactions.append("Treasury remains open for business — all signals nominal")
@@ -1043,7 +1107,33 @@ class PillarCouncil:
             delta += 0.01
             reactions.append(f"Lyra's frequency ({freq:.1f} Hz) near Schumann resonance — Earth-aligned")
 
-        delta = max(-0.15, min(0.10, delta))
+        # React to QGITA regime state (from Queen's data if available)
+        queen_d = queen_speech.data_shared
+        qgita_dir = queen_d.get("qgita_direction", "")
+        qgita_regime = queen_d.get("qgita_regime", "")
+        if qgita_regime == "coherent" and qgita_dir in ("BULLISH", "BEARISH"):
+            delta += 0.03
+            reactions.append(
+                f"Queen's QGITA confirms {qgita_regime} regime with {qgita_dir} direction — "
+                "my cosmic reading gains geometric validation"
+            )
+        elif qgita_regime == "chaotic":
+            delta -= 0.03
+            reactions.append(
+                "Queen's QGITA signals CHAOTIC regime — "
+                "my cosmic timeline may be unreliable in turbulent geometry"
+            )
+
+        # React to Lighthouse structural events
+        qgita_structural = queen_d.get("qgita_structural_event", False)
+        if qgita_structural:
+            delta += 0.04
+            reactions.append(
+                "QGITA STRUCTURAL EVENT DETECTED — "
+                "the Fibonacci lattice confirms a temporal inflection point!"
+            )
+
+        delta = max(-0.15, min(0.15, delta))
 
         if not reactions:
             reactions.append("The cosmos agrees with this moment — all pillars in harmony")
@@ -1123,7 +1213,34 @@ class PillarCouncil:
             delta += 0.01
             reactions.append("Queen's strong confidence adds energy to my resonance field")
 
-        delta = max(-0.15, min(0.10, delta))
+        # React to QGITA structural event (from Seer or Queen data)
+        seer_d = seer_speech.data_shared
+        qgita_structural = queen_d.get("qgita_structural_event", False)
+        qgita_confidence = seer_d.get("qgita_confidence", 0.5)
+        if qgita_structural and qgita_confidence > 0.6:
+            delta += 0.04
+            reactions.append(
+                f"QGITA structural event with {qgita_confidence:.0%} confidence — "
+                "my harmonic field amplifies at the temporal inflection point"
+            )
+
+        # React to own Lighthouse spectral data (self-awareness)
+        lh_emotion = lyra_vote.data.get("lighthouse_emotion", "")
+        lh_coherence = lyra_vote.data.get("lighthouse_coherence_score", 0)
+        if lh_emotion in ("AWE (Resonant)", "LOVE (528Hz)") and lh_coherence > 0.5:
+            delta += 0.03
+            reactions.append(
+                f"My Lighthouse reads {lh_emotion} — the spectral harmony "
+                "validates my emotional reading"
+            )
+        elif lh_emotion == "ANGER (Chaotic)":
+            delta -= 0.04
+            reactions.append(
+                "My Lighthouse reads ANGER (Chaotic) — the spectral analysis "
+                "contradicts my emotional state, I reduce resonance"
+            )
+
+        delta = max(-0.15, min(0.15, delta))
 
         if not reactions:
             reactions.append("The emotional field is clear — all pillars contribute to harmony")
