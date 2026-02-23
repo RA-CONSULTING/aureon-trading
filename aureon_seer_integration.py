@@ -223,10 +223,35 @@ def get_triumvirate_consensus(queen_confidence: float = 0.5,
                 "total_realized_pnl": total_pnl,
                 "win_rate": wr,
                 "unrealized_pnl": pnl.get("unrealized_pnl", 0),
-                "total_fees": pnl.get("total_fees", 0),
+                "total_fees": pnl.get("total_fees_paid", pnl.get("total_fees", 0)),
                 "equity": pnl.get("equity", 0),
+                "wins": pnl.get("wins", 0),
+                "losses": pnl.get("losses", 0),
+                "total_trades": pnl.get("total_trades", 0),
                 "cost_basis_available": True,
+                "drawdown_pct": 0.0,
+                "tax_liability": 0.0,
             }
+
+            # Enrich with portfolio snapshot if available
+            try:
+                gamma = king.treasury.gamma
+                if gamma and hasattr(gamma, 'peak_equity') and gamma.peak_equity > 0:
+                    equity = king_data.get("equity", 0) or gamma.peak_equity
+                    if equity > 0:
+                        dd = ((gamma.peak_equity - equity) / gamma.peak_equity) * 100
+                        king_data["drawdown_pct"] = round(max(0, dd), 2)
+            except Exception:
+                pass
+
+            # Enrich with tax data if available
+            try:
+                psi = king.treasury.psi
+                if psi and hasattr(psi, 'get_tax_summary'):
+                    tax_sum = psi.get_tax_summary()
+                    king_data["tax_liability"] = tax_sum.get("total_taxable", 0)
+            except Exception:
+                pass
         except Exception:
             pass
 
@@ -319,6 +344,8 @@ def get_triumvirate_consensus(queen_confidence: float = 0.5,
             },
         },
         "data_exchange": consensus.data_exchange,
+        # ─── Pillar Council dialogue ───
+        "council": {},
         # Actionable modifiers for sizing and urgency
         "risk_modifier": seer_data.get("risk_modifier", 1.0),
         "position_multiplier": lyra_data.get("position_multiplier", 1.0),
@@ -326,8 +353,43 @@ def get_triumvirate_consensus(queen_confidence: float = 0.5,
         "combined_sizing_modifier": seer_data.get("risk_modifier", 1.0) * lyra_data.get("position_multiplier", 1.0),
     }
 
-    # Broadcast to ThoughtBus
+    # ─── Include Pillar Council dialogue if session was held ───
+    cs = consensus.council_session
+    if cs:
+        result["council"] = {
+            "session_id": cs.session_id,
+            "consensus_impact": cs.consensus_impact,
+            "transcript": cs.transcript,
+            "puzzle_pieces": {
+                b.pillar.lower(): b.key_insight for b in cs.briefings
+            },
+            "adjustments": {
+                pillar: {
+                    "original": adj.get("original_score", 0),
+                    "adjusted": adj.get("adjusted_score", 0),
+                    "delta": adj.get("delta", 0),
+                    "reason": adj.get("reason", ""),
+                }
+                for pillar, adj in cs.adjustments.items()
+            },
+        }
+        logger.info(
+            "PILLAR COUNCIL #%d complete | Impact: %s",
+            cs.session_id, cs.consensus_impact
+        )
+
+    # Broadcast to ThoughtBus (consensus + council dialogue)
     _broadcast("TRIUMVIRATE_FREEWAY_CONSENSUS", result)
+
+    # Broadcast the council transcript separately for any listener
+    if cs:
+        _broadcast("PILLAR_COUNCIL_DIALOGUE", {
+            "session_id": cs.session_id,
+            "impact": cs.consensus_impact,
+            "puzzle_pieces": result["council"].get("puzzle_pieces", {}),
+            "adjustments": result["council"].get("adjustments", {}),
+            "transcript": cs.transcript,
+        })
 
     return result
 

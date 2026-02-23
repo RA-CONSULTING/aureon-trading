@@ -147,6 +147,7 @@ class TriumvirateConsensus:
     lyra_vote: PillarVote = None
     reason: str = ""               # Human-readable explanation
     data_exchange: Dict[str, Any] = field(default_factory=dict)  # Shared analytical data
+    council_session: Any = None    # CouncilSession dialogue (if council convened)
 
 
 @dataclass
@@ -157,6 +158,29 @@ class ControlHandoff:
     to_pillar: str
     reason: str
     context: Dict[str, Any] = field(default_factory=dict)
+
+
+@dataclass
+class PillarSpeech:
+    """What a pillar says during a council session."""
+    pillar: str
+    round_num: int       # 1=briefing, 2=reaction
+    message: str         # Natural language speech
+    key_insight: str     # Their unique piece of the puzzle (one line)
+    data_shared: Dict[str, Any] = field(default_factory=dict)
+    timestamp: float = 0.0
+
+
+@dataclass
+class CouncilSession:
+    """A complete Pillar Council dialogue — where the four minds talk."""
+    session_id: int
+    timestamp: float
+    briefings: List[PillarSpeech] = field(default_factory=list)
+    reactions: List[PillarSpeech] = field(default_factory=list)
+    adjustments: Dict[str, Dict[str, Any]] = field(default_factory=dict)
+    transcript: str = ""
+    consensus_impact: str = ""
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -636,6 +660,570 @@ class ControlHandoffEngine:
 
 
 # ═══════════════════════════════════════════════════════════════════════════
+# PILLAR COUNCIL - Where the Four Minds Speak, Listen, and React
+# "Each has a different piece of the puzzle. They must talk."
+# ═══════════════════════════════════════════════════════════════════════════
+
+class PillarCouncil:
+    """
+    THE PILLAR COUNCIL
+    ==================
+    "Four minds, each with a different piece. They speak, listen,
+     react, and find the truth together."
+
+    Round 1 — BRIEFINGS:   Each pillar speaks what they see
+    Round 2 — CROSS-TALK:  Each pillar reacts to the others' insights
+    Output  — ADJUSTMENTS: Score modifications based on the dialogue
+
+    The Council does NOT override votes (PASS/BLOCK stay unchanged).
+    It adjusts confidence SCORES which affect consensus strength and
+    action grading. This is how the pillars TALK to each other.
+    """
+
+    def __init__(self):
+        self._session_count = 0
+        self._sessions: List[CouncilSession] = []
+
+    def convene(self, queen_vote: PillarVote, king_vote: PillarVote,
+                seer_vote: PillarVote, lyra_vote: PillarVote) -> CouncilSession:
+        """
+        Convene a council session. All four pillars speak, listen, react.
+        Returns a CouncilSession with the full dialogue and score adjustments.
+        """
+        self._session_count += 1
+        now = time.time()
+
+        # ── Round 1: Briefings — each pillar shares their piece ──
+        queen_brief = self._queen_speaks(queen_vote, now)
+        king_brief = self._king_speaks(king_vote, now)
+        seer_brief = self._seer_speaks(seer_vote, now)
+        lyra_brief = self._lyra_speaks(lyra_vote, now)
+        briefings = [queen_brief, king_brief, seer_brief, lyra_brief]
+
+        # ── Round 2: Cross-talk — each pillar reacts to the others ──
+        queen_react, queen_adj = self._queen_reacts(queen_vote, king_brief, seer_brief, lyra_brief, now)
+        king_react, king_adj = self._king_reacts(king_vote, queen_brief, seer_brief, lyra_brief, now)
+        seer_react, seer_adj = self._seer_reacts(seer_vote, queen_brief, king_brief, lyra_brief, now)
+        lyra_react, lyra_adj = self._lyra_reacts(lyra_vote, queen_brief, king_brief, seer_brief, now)
+        reactions = [queen_react, king_react, seer_react, lyra_react]
+
+        adjustments = {
+            "queen": queen_adj,
+            "king": king_adj,
+            "seer": seer_adj,
+            "lyra": lyra_adj,
+        }
+
+        # ── Build transcript ──
+        transcript = self._build_transcript(
+            self._session_count, now, briefings, reactions, adjustments
+        )
+
+        # ── Determine consensus impact ──
+        total_delta = sum(abs(a.get("delta", 0)) for a in adjustments.values())
+        if total_delta < 0.02:
+            impact = "Minimal — pillars are well-aligned, no significant adjustments"
+        elif total_delta < 0.10:
+            impact = "Moderate — cross-pillar dialogue refined the picture"
+        else:
+            impact = "Significant — pillar reactions materially shifted confidence"
+
+        session = CouncilSession(
+            session_id=self._session_count,
+            timestamp=now,
+            briefings=briefings,
+            reactions=reactions,
+            adjustments=adjustments,
+            transcript=transcript,
+            consensus_impact=impact,
+        )
+
+        self._sessions.append(session)
+        # Keep last 50 sessions
+        if len(self._sessions) > 50:
+            self._sessions = self._sessions[-50:]
+
+        return session
+
+    # ── Queen Speaks: Trading Cognition ──
+    def _queen_speaks(self, vote: PillarVote, ts: float) -> PillarSpeech:
+        d = vote.data
+        confidence = vote.score
+        direction = d.get("direction", "NEUTRAL")
+        harmonic = d.get("harmonic_integrity", 0)
+        nexus = d.get("probability_nexus", 0)
+        systems = vote.connected_systems
+        emotion = d.get("emotional_state", "VIGILANT")
+
+        msg = (
+            f"I see {direction} momentum with {confidence:.0%} confidence. "
+            f"The probability nexus reads {nexus:.2f}. "
+            f"My {systems} systems report {vote.grade}. "
+            f"Harmonic integrity: {harmonic:.2f}. Emotional state: {emotion}. "
+            f"I vote {vote.vote}."
+        )
+
+        insight = f"Trading cognition: {direction} at {confidence:.0%} confidence"
+
+        return PillarSpeech(
+            pillar="QUEEN", round_num=1, message=msg,
+            key_insight=insight, data_shared=d, timestamp=ts
+        )
+
+    # ── King Speaks: Financial Truth ──
+    def _king_speaks(self, vote: PillarVote, ts: float) -> PillarSpeech:
+        d = vote.data
+        health = d.get("health_grade", vote.grade)
+        pnl = d.get("total_realized_pnl", 0)
+        wr = d.get("win_rate", 50)
+        fees = d.get("total_fees", 0)
+        equity = d.get("equity", 0)
+        cb = d.get("cost_basis_available", False)
+        tax = d.get("tax_liability", 0)
+        drawdown = d.get("drawdown_pct", 0)
+
+        msg = (
+            f"The treasury is {health}. "
+            f"We've realized ${pnl:.2f} profit with a {wr:.1f}% win rate. "
+            f"Total fees paid: ${fees:.2f}. Portfolio equity: ${equity:.2f}. "
+            f"Drawdown: {drawdown:.1f}%. "
+            f"{'Cost basis tracked across all positions' if cb else 'Cost basis incomplete'}. "
+            f"Tax liability: ${tax:.2f}. I vote {vote.vote}."
+        )
+
+        insight = f"Financial truth: {health}, P&L ${pnl:.2f}, win rate {wr:.1f}%"
+
+        return PillarSpeech(
+            pillar="KING", round_num=1, message=msg,
+            key_insight=insight, data_shared=d, timestamp=ts
+        )
+
+    # ── Seer Speaks: Cosmic Coherence ──
+    def _seer_speaks(self, vote: PillarVote, ts: float) -> PillarSpeech:
+        d = vote.data
+        grade = d.get("vision_grade", vote.grade)
+        score = vote.score
+        gaia = d.get("gaia_score", 0.5)
+        cosmos = d.get("cosmos_score", 0.5)
+        harmony = d.get("harmony_score", 0.5)
+        risk_mod = d.get("risk_modifier", 1.0)
+        trend = d.get("trend", "STABLE")
+        prophecy = d.get("prophecy", "")
+
+        msg = (
+            f"My vision is {grade} — unified score {score:.2f}. "
+            f"Gaia reads {gaia:.2f}, the Cosmos {cosmos:.2f}, Harmony {harmony:.2f}. "
+            f"The trend is {trend}. Risk modifier: {risk_mod:.1f}x. "
+            f"{'Prophecy: ' + prophecy + '. ' if prophecy else ''}"
+            f"I vote {vote.vote}."
+        )
+
+        insight = f"Cosmic coherence: {grade}, trend {trend}, risk {risk_mod:.1f}x"
+
+        return PillarSpeech(
+            pillar="SEER", round_num=1, message=msg,
+            key_insight=insight, data_shared=d, timestamp=ts
+        )
+
+    # ── Lyra Speaks: Emotional Frequency ──
+    def _lyra_speaks(self, vote: PillarVote, ts: float) -> PillarSpeech:
+        d = vote.data
+        grade = d.get("resonance_grade", vote.grade)
+        freq = d.get("emotional_frequency", 432.0)
+        zone = d.get("emotional_zone", "BALANCE")
+        urgency = d.get("exit_urgency", "none")
+        pos_mul = d.get("position_multiplier", 1.0)
+        trend = d.get("trend", "STABLE")
+        song = d.get("song", "")
+
+        msg = (
+            f"I feel {zone} with frequency {freq:.1f} Hz. "
+            f"The harmonic resonance is {grade}. "
+            f"Exit urgency: {urgency}. Position multiplier: {pos_mul:.2f}x. "
+            f"My {vote.connected_systems} systems feel {trend}. "
+            f"{'Song: ' + song + '. ' if song else ''}"
+            f"I vote {vote.vote}."
+        )
+
+        insight = f"Emotional frequency: {zone} at {freq:.1f} Hz, resonance {grade}"
+
+        return PillarSpeech(
+            pillar="LYRA", round_num=1, message=msg,
+            key_insight=insight, data_shared=d, timestamp=ts
+        )
+
+    # ── Cross-Talk: Queen Reacts ──
+    def _queen_reacts(self, queen_vote, king_speech, seer_speech, lyra_speech, ts):
+        delta = 0.0
+        reactions = []
+
+        # React to King's financial data
+        king_d = king_speech.data_shared
+        wr = king_d.get("win_rate", 50)
+        pnl = king_d.get("total_realized_pnl", 0)
+
+        if wr < 25:
+            delta -= 0.05
+            reactions.append(f"King's low win rate ({wr:.1f}%) concerns me — too many small losses")
+        elif wr > 60:
+            delta += 0.03
+            reactions.append(f"King reports strong win rate ({wr:.1f}%) — confidence reinforced")
+
+        if pnl < -20:
+            delta -= 0.05
+            reactions.append(f"King's negative P&L (${pnl:.2f}) warrants caution")
+        elif pnl > 50:
+            delta += 0.02
+            reactions.append(f"King's positive P&L (${pnl:.2f}) supports continued trading")
+
+        # React to Seer's cosmic data
+        seer_d = seer_speech.data_shared
+        seer_grade = seer_d.get("vision_grade", "PARTIAL_VISION")
+        if seer_grade in ("BLIND", "FOG"):
+            delta -= 0.05
+            reactions.append(f"Seer's {seer_grade} vision clouds my confidence")
+        elif seer_grade == "DIVINE_CLARITY":
+            delta += 0.03
+            reactions.append("Seer's divine clarity aligns with my pattern recognition")
+
+        # React to Lyra's emotional data
+        lyra_d = lyra_speech.data_shared
+        urgency = lyra_d.get("exit_urgency", "none")
+        if urgency in ("critical", "high"):
+            delta -= 0.05
+            reactions.append(f"Lyra's exit urgency ({urgency}) demands I reconsider")
+        zone = lyra_d.get("emotional_zone", "BALANCE")
+        if zone == "FEAR":
+            delta -= 0.03
+            reactions.append("Lyra detects FEAR in the emotional field — I temper my optimism")
+        elif zone == "EUPHORIA":
+            delta -= 0.02
+            reactions.append("Lyra detects EUPHORIA — beware of overleveraging")
+
+        # Clamp delta
+        delta = max(-0.15, min(0.10, delta))
+
+        if not reactions:
+            reactions.append("All pillars present a coherent picture. I hold my position")
+
+        msg = (
+            " ".join(reactions) +
+            f" [Confidence: {queen_vote.score:.2f} -> {queen_vote.score + delta:.2f} ({delta:+.2f})]"
+        )
+
+        adj = {
+            "original_score": queen_vote.score,
+            "adjusted_score": queen_vote.score + delta,
+            "delta": delta,
+            "reason": "; ".join(reactions),
+        }
+
+        speech = PillarSpeech(
+            pillar="QUEEN", round_num=2, message=msg,
+            key_insight=f"Confidence adjusted by {delta:+.2f}",
+            data_shared={"delta": delta}, timestamp=ts
+        )
+
+        return speech, adj
+
+    # ── Cross-Talk: King Reacts ──
+    def _king_reacts(self, king_vote, queen_speech, seer_speech, lyra_speech, ts):
+        delta = 0.0
+        reactions = []
+
+        # React to Queen's confidence
+        queen_d = queen_speech.data_shared
+        qconf = queen_d.get("coherence", 0.5)
+        direction = queen_d.get("direction", "NEUTRAL")
+
+        if qconf >= 0.75:
+            delta += 0.03
+            reactions.append(
+                f"Queen's {qconf:.0%} confidence is strong — "
+                f"the portfolio can support {direction} entries"
+            )
+        elif qconf < 0.35:
+            delta -= 0.03
+            reactions.append(f"Queen's low confidence ({qconf:.0%}) suggests reducing exposure")
+
+        # React to Seer's risk modifier
+        seer_d = seer_speech.data_shared
+        risk_mod = seer_d.get("risk_modifier", 1.0)
+        if risk_mod > 1.2:
+            delta += 0.02
+            reactions.append(f"Seer's risk modifier ({risk_mod:.1f}x) allows larger allocations")
+        elif risk_mod < 0.7:
+            delta -= 0.03
+            reactions.append(f"Seer's risk modifier ({risk_mod:.1f}x) demands conservative sizing")
+
+        # React to Lyra's emotional zone
+        lyra_d = lyra_speech.data_shared
+        urgency = lyra_d.get("exit_urgency", "none")
+        zone = lyra_d.get("emotional_zone", "BALANCE")
+
+        if urgency in ("critical", "high"):
+            delta -= 0.05
+            reactions.append(f"Lyra signals {urgency} exit urgency — treasury prepares for drawdown")
+        elif zone == "CALM":
+            delta += 0.01
+            reactions.append("Lyra's calm emotional field suggests stable market conditions")
+
+        delta = max(-0.15, min(0.10, delta))
+
+        if not reactions:
+            reactions.append("Treasury remains open for business — all signals nominal")
+
+        msg = (
+            " ".join(reactions) +
+            f" [Health score: {king_vote.score:.2f} -> {king_vote.score + delta:.2f} ({delta:+.2f})]"
+        )
+
+        adj = {
+            "original_score": king_vote.score,
+            "adjusted_score": king_vote.score + delta,
+            "delta": delta,
+            "reason": "; ".join(reactions),
+        }
+
+        speech = PillarSpeech(
+            pillar="KING", round_num=2, message=msg,
+            key_insight=f"Health score adjusted by {delta:+.2f}",
+            data_shared={"delta": delta}, timestamp=ts
+        )
+
+        return speech, adj
+
+    # ── Cross-Talk: Seer Reacts ──
+    def _seer_reacts(self, seer_vote, queen_speech, king_speech, lyra_speech, ts):
+        delta = 0.0
+        reactions = []
+
+        # React to Queen's direction and confidence
+        queen_d = queen_speech.data_shared
+        qconf = queen_d.get("coherence", 0.5)
+
+        if qconf >= 0.70:
+            delta += 0.02
+            reactions.append(f"Queen's cognition ({qconf:.0%}) aligns with my cosmic reading")
+        elif qconf < 0.30:
+            delta -= 0.02
+            reactions.append(f"Queen's uncertainty ({qconf:.0%}) creates dissonance with my vision")
+
+        # React to King's financial health
+        king_d = king_speech.data_shared
+        pnl = king_d.get("total_realized_pnl", 0)
+        drawdown = king_d.get("drawdown_pct", 0)
+        health = king_d.get("health_grade", "STABLE")
+
+        if health in ("BANKRUPT", "STRAINED"):
+            delta -= 0.05
+            reactions.append(f"King's {health} treasury warns of material instability")
+        elif pnl > 0:
+            delta += 0.01
+            reactions.append(f"King's positive P&L (${pnl:.2f}) reinforces cosmic stability")
+
+        if drawdown > 15:
+            delta -= 0.03
+            reactions.append(f"King reports {drawdown:.1f}% drawdown — the stars warn of deeper loss")
+
+        # React to Lyra's harmonic data
+        lyra_d = lyra_speech.data_shared
+        harmony = lyra_d.get("harmony_score", 0.5)
+        freq = lyra_d.get("emotional_frequency", 432)
+
+        if harmony > 0.7:
+            delta += 0.02
+            reactions.append(f"Lyra's harmonic resonance ({harmony:.2f}) resonates with my cosmic field")
+        elif harmony < 0.3:
+            delta -= 0.02
+            reactions.append(f"Lyra's harmonic dissonance ({harmony:.2f}) contradicts my orbital readings")
+
+        # Schumann resonance alignment check
+        if abs(freq - 7.83) < 2:
+            delta += 0.01
+            reactions.append(f"Lyra's frequency ({freq:.1f} Hz) near Schumann resonance — Earth-aligned")
+
+        delta = max(-0.15, min(0.10, delta))
+
+        if not reactions:
+            reactions.append("The cosmos agrees with this moment — all pillars in harmony")
+
+        msg = (
+            " ".join(reactions) +
+            f" [Vision score: {seer_vote.score:.2f} -> {seer_vote.score + delta:.2f} ({delta:+.2f})]"
+        )
+
+        adj = {
+            "original_score": seer_vote.score,
+            "adjusted_score": seer_vote.score + delta,
+            "delta": delta,
+            "reason": "; ".join(reactions),
+        }
+
+        speech = PillarSpeech(
+            pillar="SEER", round_num=2, message=msg,
+            key_insight=f"Vision score adjusted by {delta:+.2f}",
+            data_shared={"delta": delta}, timestamp=ts
+        )
+
+        return speech, adj
+
+    # ── Cross-Talk: Lyra Reacts ──
+    def _lyra_reacts(self, lyra_vote, queen_speech, king_speech, seer_speech, ts):
+        delta = 0.0
+        reactions = []
+
+        # React to Seer's cosmic data
+        seer_d = seer_speech.data_shared
+        seer_grade = seer_d.get("vision_grade", "PARTIAL_VISION")
+        cosmos = seer_d.get("cosmos_score", 0.5)
+
+        if seer_grade in ("DIVINE_CLARITY", "CLEAR_SIGHT"):
+            delta += 0.02
+            reactions.append(f"Seer's {seer_grade} vision harmonizes with my frequency field")
+        elif seer_grade in ("BLIND", "FOG"):
+            delta -= 0.03
+            reactions.append(f"Seer's {seer_grade} vision creates static in my harmonic field")
+
+        if cosmos > 0.7:
+            delta += 0.01
+            reactions.append(f"Seer's cosmic score ({cosmos:.2f}) resonates with my emotional reading")
+
+        # React to King's P&L (losses create fear vibration, gains create calm)
+        king_d = king_speech.data_shared
+        pnl = king_d.get("total_realized_pnl", 0)
+        wr = king_d.get("win_rate", 50)
+
+        if pnl < -30:
+            delta -= 0.04
+            reactions.append(f"King's losses (${pnl:.2f}) amplify fear frequency in the field")
+        elif pnl > 30:
+            delta += 0.02
+            reactions.append(f"King's profits (${pnl:.2f}) generate calm financial vibration")
+
+        if wr < 20:
+            delta -= 0.02
+            reactions.append(f"King's low win rate ({wr:.1f}%) creates anxiety undertones")
+        elif wr > 60:
+            delta += 0.01
+            reactions.append(f"King's win rate ({wr:.1f}%) adds confidence to the harmonic field")
+
+        # React to Queen's emotional state
+        queen_d = queen_speech.data_shared
+        q_emotion = queen_d.get("emotional_state", "VIGILANT")
+        qconf = queen_d.get("coherence", 0.5)
+
+        if q_emotion in ("AGGRESSIVE", "EUPHORIC"):
+            delta -= 0.02
+            reactions.append(f"Queen's {q_emotion} state creates harmonic tension — I temper the melody")
+        elif q_emotion in ("CAUTIOUS", "FEARFUL"):
+            delta -= 0.01
+            reactions.append(f"Queen's {q_emotion} state adds minor dissonance")
+        elif qconf > 0.75:
+            delta += 0.01
+            reactions.append("Queen's strong confidence adds energy to my resonance field")
+
+        delta = max(-0.15, min(0.10, delta))
+
+        if not reactions:
+            reactions.append("The emotional field is clear — all pillars contribute to harmony")
+
+        msg = (
+            " ".join(reactions) +
+            f" [Resonance: {lyra_vote.score:.2f} -> {lyra_vote.score + delta:.2f} ({delta:+.2f})]"
+        )
+
+        adj = {
+            "original_score": lyra_vote.score,
+            "adjusted_score": lyra_vote.score + delta,
+            "delta": delta,
+            "reason": "; ".join(reactions),
+        }
+
+        speech = PillarSpeech(
+            pillar="LYRA", round_num=2, message=msg,
+            key_insight=f"Resonance adjusted by {delta:+.2f}",
+            data_shared={"delta": delta}, timestamp=ts
+        )
+
+        return speech, adj
+
+    # ── Build the Council Transcript ──
+    def _build_transcript(self, session_id, timestamp, briefings, reactions, adjustments):
+        """Build a human-readable council transcript."""
+        from datetime import datetime as _dt, timezone as _tz
+        dt = _dt.fromtimestamp(timestamp, tz=_tz.utc)
+
+        lines = [
+            "",
+            "=" * 60,
+            f"  PILLAR COUNCIL SESSION #{session_id}",
+            f"  {dt.strftime('%Y-%m-%d %H:%M:%S UTC')}",
+            "=" * 60,
+            "",
+            "-- ROUND 1: BRIEFINGS (Each pillar shares their piece) --",
+            "",
+        ]
+
+        icons = {"QUEEN": "QUEEN", "KING": "KING", "SEER": "SEER", "LYRA": "LYRA"}
+
+        for b in briefings:
+            lines.append(f"  [{icons.get(b.pillar, b.pillar)}] speaks:")
+            lines.append(f'   "{b.message}"')
+            lines.append(f"   >> Puzzle piece: {b.key_insight}")
+            lines.append("")
+
+        lines.append("-- ROUND 2: CROSS-TALK (Each pillar reacts) --")
+        lines.append("")
+
+        for r in reactions:
+            lines.append(f"  [{icons.get(r.pillar, r.pillar)}] responds:")
+            lines.append(f'   "{r.message}"')
+            lines.append("")
+
+        lines.append("-- ADJUSTMENTS --")
+        lines.append("")
+        for pillar, adj in adjustments.items():
+            delta = adj.get("delta", 0)
+            if abs(delta) > 0.001:
+                lines.append(
+                    f"  {pillar.upper()}: "
+                    f"{adj['original_score']:.3f} -> {adj['adjusted_score']:.3f} "
+                    f"({delta:+.3f})"
+                )
+                lines.append(f"    Reason: {adj['reason']}")
+            else:
+                lines.append(f"  {pillar.upper()}: No adjustment needed")
+        lines.append("")
+
+        lines.append("-- COUNCIL CONCLUSION --")
+
+        total_delta = sum(abs(adjustments[p].get("delta", 0)) for p in adjustments)
+        if total_delta < 0.02:
+            lines.append("  The four pieces of the puzzle fit together cleanly.")
+            lines.append("  Minimal adjustments — the pillars are well-aligned.")
+        elif total_delta < 0.10:
+            lines.append("  The dialogue refined the picture.")
+            lines.append("  Moderate adjustments — cross-pillar insights added clarity.")
+        else:
+            lines.append("  Significant dialogue shifted the picture.")
+            lines.append("  The pillars revealed tensions that changed the outcome.")
+
+        lines.append("")
+        lines.append("=" * 60)
+
+        return "\n".join(lines)
+
+    def get_latest_session(self) -> Optional[CouncilSession]:
+        """Get the most recent council session."""
+        return self._sessions[-1] if self._sessions else None
+
+    def get_session_count(self) -> int:
+        """How many council sessions have been held."""
+        return self._session_count
+
+
+# ═══════════════════════════════════════════════════════════════════════════
 # THE TRIUMVIRATE ENGINE - Three-Way Freeway Consensus
 # ═══════════════════════════════════════════════════════════════════════════
 
@@ -661,6 +1249,7 @@ class TriumvirateEngine:
         self.seer_eval = SeerEvaluator()
         self.lyra_eval = LyraEvaluator()
         self.handoff_engine = ControlHandoffEngine()
+        self.council = PillarCouncil()
         self._consensus_history: List[TriumvirateConsensus] = []
 
     def evaluate_consensus(self,
@@ -706,6 +1295,20 @@ class TriumvirateEngine:
         # ─── Phase 2: Free data exchange between all pillars ───
         data_exchange = self._exchange_data(queen_vote, king_vote, seer_vote, lyra_vote)
 
+        # ─── Phase 2.5: PILLAR COUNCIL — the four minds speak and react ───
+        council_session = self.council.convene(queen_vote, king_vote, seer_vote, lyra_vote)
+        # Apply council score adjustments (votes PASS/BLOCK stay, only scores shift)
+        for pillar_name, vote in [("queen", queen_vote), ("king", king_vote),
+                                   ("seer", seer_vote), ("lyra", lyra_vote)]:
+            adj = council_session.adjustments.get(pillar_name, {})
+            adj_delta = adj.get("delta", 0)
+            if abs(adj_delta) > 0.001:
+                vote.score = max(0.0, min(1.0, vote.score + adj_delta))
+        logger.info(
+            "PILLAR COUNCIL #%d: %s",
+            council_session.session_id, council_session.consensus_impact
+        )
+
         # ─── Phase 3: Determine active controller ───
         active_controller, handoff = self.handoff_engine.determine_controller(
             queen_vote, king_vote, seer_vote, lyra_vote, context
@@ -743,6 +1346,7 @@ class TriumvirateEngine:
             lyra_vote=lyra_vote,
             reason=reason,
             data_exchange=data_exchange,
+            council_session=council_session,
         )
 
         self._consensus_history.append(consensus)
@@ -900,13 +1504,16 @@ class TriumvirateEngine:
     def get_summary(self) -> Dict[str, Any]:
         """Get a summary of the Quadrumvirate's state."""
         last = self._consensus_history[-1] if self._consensus_history else None
+        council_latest = self.council.get_latest_session()
         return {
             "active_controller": self.handoff_engine.current_controller.value,
             "total_evaluations": len(self._consensus_history),
             "total_handoffs": len(self.handoff_engine.get_handoff_history()),
+            "total_council_sessions": self.council.get_session_count(),
             "last_action": last.action if last else None,
             "last_passed": last.passed if last else None,
             "last_alignment": last.alignment_score if last else None,
+            "last_council_impact": council_latest.consensus_impact if council_latest else None,
             "queen_systems": len(QUEEN_CONNECTED_SYSTEMS),
             "lyra_systems": len(LYRA_CONNECTED_SYSTEMS),
         }
