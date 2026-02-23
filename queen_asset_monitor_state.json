@@ -1,277 +1,151 @@
 {
   "positions": {
-    "binance:BREVUSDC": {
-      "symbol": "BREVUSDC",
-      "exchange": "binance",
-      "quantity": 262.03587128,
-      "entry_price": 0.1291,
-      "cost_basis": 33.82883098224799
-    },
-    "binance:ROSEUSDC": {
-      "symbol": "ROSEUSDC",
-      "exchange": "binance",
-      "quantity": 2027.36513903,
-      "entry_price": 0.0136,
-      "cost_basis": 27.572165890807998
+    "kraken:XXBTZUSD": {
+      "symbol": "XXBTZUSD",
+      "exchange": "kraken",
+      "quantity": 0.00072311,
+      "entry_price": 66277.7,
+      "cost_basis": 47.926067646999996
     },
     "kraken:GHIBLIUSD": {
       "symbol": "GHIBLIUSD",
       "exchange": "kraken",
-      "quantity": 40400.0,
-      "entry_price": 0.000588,
-      "cost_basis": 23.7552
-    },
-    "binance:TURTLEUSDC": {
-      "symbol": "TURTLEUSDC",
-      "exchange": "binance",
-      "quantity": 415.3,
-      "entry_price": 0.0427,
-      "cost_basis": 17.733310000000003
-    },
-    "binance:STOUSDC": {
-      "symbol": "STOUSDC",
-      "exchange": "binance",
-      "quantity": 255.1,
-      "entry_price": 0.0584,
-      "cost_basis": 14.89784
-    },
-    "binance:AVNTUSDC": {
-      "symbol": "AVNTUSDC",
-      "exchange": "binance",
-      "quantity": 72.2,
-      "entry_price": 0.1949,
-      "cost_basis": 14.07178
-    },
-    "kraken:XXRPZUSD": {
-      "symbol": "XXRPZUSD",
-      "exchange": "kraken",
-      "quantity": 10.67672,
-      "entry_price": 1.23349,
-      "cost_basis": 13.1696273528
-    },
-    "kraken:CROUSDT": {
-      "symbol": "CROUSDT",
-      "exchange": "kraken",
-      "quantity": 172.37,
-      "entry_price": 0.07359,
-      "cost_basis": 12.6847083
-    },
-    "kraken:SKRUSD": {
-      "symbol": "SKRUSD",
-      "exchange": "kraken",
-      "quantity": 500.0,
-      "entry_price": 0.02261,
-      "cost_basis": 11.305000000000001
-    },
-    "binance:PENGUUSDC": {
-      "symbol": "PENGUUSDC",
-      "exchange": "binance",
-      "quantity": 1710.0,
-      "entry_price": 0.006346,
-      "cost_basis": 10.85166
+      "quantity": 43229.581,
+      "entry_price": 0.0,
+      "cost_basis": 0.0
     },
     "kraken:INUSD": {
       "symbol": "INUSD",
       "exchange": "kraken",
       "quantity": 210.0,
-      "entry_price": 0.04731,
-      "cost_basis": 9.9351
+      "entry_price": 0.0609,
+      "cost_basis": 12.822251399999999
     },
-    "binance:SOMIUSDC": {
-      "symbol": "SOMIUSDC",
-      "exchange": "binance",
-      "quantity": 53.9,
-      "entry_price": 0.1774,
-      "cost_basis": 9.56186
+    "kraken:XXRPZUSD": {
+      "symbol": "XXRPZUSD",
+      "exchange": "kraken",
+      "quantity": 8.62772494,
+      "entry_price": 1.40433,
+      "cost_basis": 12.1161729649902
     },
-    "binance:ZROUSDC": {
-      "symbol": "ZROUSDC",
-      "exchange": "binance",
-      "quantity": 5.95746638,
-      "entry_price": 1.586,
-      "cost_basis": 9.44854167868
+    "kraken:SKRUSD": {
+      "symbol": "SKRUSD",
+      "exchange": "kraken",
+      "quantity": 500.0,
+      "entry_price": 0.0,
+      "cost_basis": 0.0
     },
     "kraken:SAHARAUSD": {
       "symbol": "SAHARAUSD",
       "exchange": "kraken",
       "quantity": 606.4649,
-      "entry_price": 0.01534,
-      "cost_basis": 9.303171566
+      "entry_price": 0.0,
+      "cost_basis": 0.0
     },
-    "kraken:ADAUSDT": {
-      "symbol": "ADAUSDT",
+    "kraken:CHILLHOUSEUSD": {
+      "symbol": "CHILLHOUSEUSD",
       "exchange": "kraken",
-      "quantity": 27.90370799,
-      "entry_price": 0.255145,
-      "cost_basis": 7.11949157510855
+      "quantity": 1501.8797,
+      "entry_price": 0.003929999992926,
+      "cost_basis": 3.0078
     },
-    "kraken:ICNTUSD": {
-      "symbol": "ICNTUSD",
-      "exchange": "kraken",
-      "quantity": 16.0,
-      "entry_price": 0.3663,
-      "cost_basis": 5.8608
-    },
-    "alpaca:SHIBUSD": {
-      "symbol": "SHIBUSD",
+    "alpaca:ARBUSD": {
+      "symbol": "ARBUSD",
       "exchange": "alpaca",
-      "quantity": 934990.229265847,
-      "entry_price": 6.962e-06,
-      "cost_basis": 6.509401976148826
-    },
-    "binance:ENSOUSDC": {
-      "symbol": "ENSOUSDC",
-      "exchange": "binance",
-      "quantity": 3.88346538,
-      "entry_price": 1.313,
-      "cost_basis": 5.09899004394
-    },
-    "binance:RESOLVUSDC": {
-      "symbol": "RESOLVUSDC",
-      "exchange": "binance",
-      "quantity": 59.943,
-      "entry_price": 0.0782,
-      "cost_basis": 4.6875426000000004
-    },
-    "binance:SSVUSDC": {
-      "symbol": "SSVUSDC",
-      "exchange": "binance",
-      "quantity": 1.23982105,
-      "entry_price": 3.615,
-      "cost_basis": 4.48195309575
-    },
-    "binance:FUSDC": {
-      "symbol": "FUSDC",
-      "exchange": "binance",
-      "quantity": 819.221,
-      "entry_price": 0.00536,
-      "cost_basis": 4.39102456
-    },
-    "binance:BEAMXUSDC": {
-      "symbol": "BEAMXUSDC",
-      "exchange": "binance",
-      "quantity": 1791.0,
-      "entry_price": 0.002171,
-      "cost_basis": 3.8882610000000004
+      "quantity": 52.098247793,
+      "entry_price": 0.0,
+      "cost_basis": 0.0
     },
     "kraken:EULUSD": {
       "symbol": "EULUSD",
       "exchange": "kraken",
       "quantity": 3.639386,
-      "entry_price": 0.974,
-      "cost_basis": 3.544761964
-    },
-    "binance:NOMUSDC": {
-      "symbol": "NOMUSDC",
-      "exchange": "binance",
-      "quantity": 524.0,
-      "entry_price": 0.00592,
-      "cost_basis": 3.10208
-    },
-    "binance:AXSUSDC": {
-      "symbol": "AXSUSDC",
-      "exchange": "binance",
-      "quantity": 2.28,
-      "entry_price": 1.345,
-      "cost_basis": 3.0665999999999998
-    },
-    "binance:ZECUSDC": {
-      "symbol": "ZECUSDC",
-      "exchange": "binance",
-      "quantity": 0.014,
-      "entry_price": 210.08,
-      "cost_basis": 2.94112
-    },
-    "kraken:FIGHTUSD": {
-      "symbol": "FIGHTUSD",
-      "exchange": "kraken",
-      "quantity": 374.5,
-      "entry_price": 0.0073,
-      "cost_basis": 2.73385
+      "entry_price": 0.0,
+      "cost_basis": 0.0
     },
     "kraken:MXCUSD": {
       "symbol": "MXCUSD",
       "exchange": "kraken",
       "quantity": 3100.0,
-      "entry_price": 0.000838,
-      "cost_basis": 2.5978
+      "entry_price": 0.0,
+      "cost_basis": 0.0
     },
-    "binance:SHELLUSDC": {
-      "symbol": "SHELLUSDC",
-      "exchange": "binance",
-      "quantity": 82.72358723,
-      "entry_price": 0.0303,
-      "cost_basis": 2.506524693069
+    "kraken:FIGHTUSD": {
+      "symbol": "FIGHTUSD",
+      "exchange": "kraken",
+      "quantity": 374.5,
+      "entry_price": 0.0,
+      "cost_basis": 0.0
+    },
+    "kraken:XETHZUSD": {
+      "symbol": "XETHZUSD",
+      "exchange": "kraken",
+      "quantity": 0.0010321541,
+      "entry_price": 1925.12,
+      "cost_basis": 1.987020500992
     },
     "kraken:FISUSD": {
       "symbol": "FISUSD",
       "exchange": "kraken",
       "quantity": 105.576,
-      "entry_price": 0.01684,
-      "cost_basis": 1.77789984
+      "entry_price": 0.0,
+      "cost_basis": 0.0
     },
     "kraken:OPENUSD": {
       "symbol": "OPENUSD",
       "exchange": "kraken",
       "quantity": 10.78167,
-      "entry_price": 0.1495,
-      "cost_basis": 1.6118596649999999
+      "entry_price": 0.0,
+      "cost_basis": 0.0
     },
-    "binance:LPTUSDC": {
-      "symbol": "LPTUSDC",
-      "exchange": "binance",
-      "quantity": 0.56567817,
-      "entry_price": 2.353,
-      "cost_basis": 1.3310407340100001
+    "alpaca:AAVEUSD": {
+      "symbol": "AAVEUSD",
+      "exchange": "alpaca",
+      "quantity": 0.008587482,
+      "entry_price": 0.0,
+      "cost_basis": 0.0
     },
-    "binance:KAIAUSDC": {
-      "symbol": "KAIAUSDC",
-      "exchange": "binance",
-      "quantity": 21.89421909,
-      "entry_price": 0.0508,
-      "cost_basis": 1.1122263297719999
-    },
-    "kraken:SOLUSDT": {
-      "symbol": "SOLUSDT",
-      "exchange": "kraken",
-      "quantity": 0.0083389591,
-      "entry_price": 82.48,
-      "cost_basis": 0.687797346568
-    },
-    "kraken:TRXUSD": {
-      "symbol": "TRXUSD",
-      "exchange": "kraken",
-      "quantity": 0.00906042,
-      "entry_price": 0.272516,
-      "cost_basis": 0.00246910941672
-    },
-    "kraken:XETHZUSD": {
-      "symbol": "XETHZUSD",
-      "exchange": "kraken",
-      "quantity": 1.1035e-06,
-      "entry_price": 1937.87,
-      "cost_basis": 0.0021384395449999998
+    "alpaca:SHIBUSD": {
+      "symbol": "SHIBUSD",
+      "exchange": "alpaca",
+      "quantity": 718.179072059,
+      "entry_price": 6.963e-06,
+      "cost_basis": 6.510336966378093
     },
     "kraken:SCRTUSD": {
       "symbol": "SCRTUSD",
       "exchange": "kraken",
-      "quantity": 0.00947493,
-      "entry_price": 0.0949,
-      "cost_basis": 0.000899170857
+      "quantity": 0.02688199,
+      "entry_price": 0.0,
+      "cost_basis": 0.0
+    },
+    "kraken:TRXUSD": {
+      "symbol": "TRXUSD",
+      "exchange": "kraken",
+      "quantity": 0.00432442,
+      "entry_price": 0.0,
+      "cost_basis": 0.0
+    },
+    "kraken:ADAUSDT": {
+      "symbol": "ADAUSDT",
+      "exchange": "kraken",
+      "quantity": 0.00274643,
+      "entry_price": 0.273255,
+      "cost_basis": 0.00075047572965
     },
     "kraken:KTAUSD": {
       "symbol": "KTAUSD",
       "exchange": "kraken",
       "quantity": 0.00028,
-      "entry_price": 0.2456,
-      "cost_basis": 6.8768e-05
+      "entry_price": 0.0,
+      "cost_basis": 0.0
     },
     "kraken:BABYUSD": {
       "symbol": "BABYUSD",
       "exchange": "kraken",
-      "quantity": 0.00017,
-      "entry_price": 0.01237,
-      "cost_basis": 2.1029000000000002e-06
+      "quantity": 0.0004,
+      "entry_price": 0.0,
+      "cost_basis": 0.0
     }
   },
   "cost_basis": {
@@ -549,6 +423,6 @@
     "binance:SSVUSDC": 0,
     "binance:STOUSDC": 0
   },
-  "positions_updated": 1770319900.489807,
-  "saved_at": 1770319900.4898076
+  "positions_updated": 1771854115.6491864,
+  "saved_at": 1771854115.6491897
 }

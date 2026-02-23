@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-02-23T13:22:36.298949",
+  "last_updated": "2026-02-23T13:54:13.284324",
   "description": "SEER prediction accuracy layered by time horizon (1m \u2192 1y)",
   "total_predictions": 20,
   "timeline": [
@@ -16,22 +16,22 @@
     {
       "label": "5m",
       "seconds": 300,
-      "validated": 15,
-      "pending": 5,
+      "validated": 16,
+      "pending": 4,
       "hits": 6,
-      "misses": 7,
+      "misses": 8,
       "neutral": 2,
-      "accuracy_pct": 40.0
+      "accuracy_pct": 37.5
     },
     {
       "label": "30m",
       "seconds": 1800,
-      "validated": 13,
-      "pending": 7,
-      "hits": 6,
+      "validated": 16,
+      "pending": 4,
+      "hits": 7,
       "misses": 7,
-      "neutral": 0,
-      "accuracy_pct": 46.15
+      "neutral": 2,
+      "accuracy_pct": 43.75
     },
     {
       "label": "1h",

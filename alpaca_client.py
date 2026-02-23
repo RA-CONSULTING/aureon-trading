@@ -2729,3 +2729,36 @@ class AlpacaClient:
         if self._global_rate_budget:
             return self._global_rate_budget.get_stats()
         return {"error": "GlobalRateBudget not available"}
+
+
+# ─── Singleton factory (mirrors get_binance_client / get_kraken_client) ───────
+_alpaca_client_instance = None
+_alpaca_client_lock = None
+
+
+def get_alpaca_client() -> 'AlpacaClient':
+    """
+    Return the singleton AlpacaClient instance.
+
+    Thread-safe lazy initialisation — only one connection is created regardless
+    of how many modules import this helper.
+
+    Returns:
+        AlpacaClient instance, or None if credentials are missing.
+    """
+    global _alpaca_client_instance, _alpaca_client_lock
+    if _alpaca_client_lock is None:
+        import threading
+        _alpaca_client_lock = threading.Lock()
+    if _alpaca_client_instance is None:
+        with _alpaca_client_lock:
+            if _alpaca_client_instance is None:
+                try:
+                    _alpaca_client_instance = AlpacaClient()
+                    import logging as _lg
+                    _lg.getLogger(__name__).info('🦙 Alpaca singleton client initialized')
+                except Exception as e:
+                    import logging as _lg
+                    _lg.getLogger(__name__).warning(f'⚠️ Alpaca client unavailable: {e}')
+                    return None
+    return _alpaca_client_instance

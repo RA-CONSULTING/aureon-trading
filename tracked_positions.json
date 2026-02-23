@@ -1003,7 +1003,7 @@
         "exchange": "kraken",
         "buy_price": 0.0,
         "quantity": 0.00072311,
-        "buy_timestamp": "2026-02-23T13:25:53.917738",
+        "buy_timestamp": "2026-02-23T14:13:49.374058",
         "auto_tracked": true,
         "source": "portfolio_truth_check"
     },

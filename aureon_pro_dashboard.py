@@ -3173,6 +3173,7 @@ class AureonProDashboard:
         self.app.router.add_get('/api/portfolio', self.handle_portfolio)
         self.app.router.add_get('/api/prices', self.handle_prices)
         self.app.router.add_get('/api/balances', self.handle_balances)
+        self.app.router.add_get('/api/intelligence', self.handle_intelligence)
         self.app.router.add_get('/api/bots', self.handle_bots)
         self.app.router.add_get('/api/ocean', self.handle_ocean)
         self.app.router.add_get('/health', self.handle_health)
@@ -3357,6 +3358,17 @@ class AureonProDashboard:
     
     async def handle_balances(self, request):
         return web.json_response(self.exchange_balances)
+
+    async def handle_intelligence(self, request):
+        """Serve portfolio intelligence snapshot (updated every 5 min by engine)."""
+        try:
+            intel_path = os.path.join(os.getenv("AUREON_STATE_DIR", "."), "portfolio_intelligence_snapshot.json")
+            if os.path.exists(intel_path):
+                with open(intel_path, "r") as f:
+                    return web.json_response(json.load(f))
+            return web.json_response({"error": "No intelligence snapshot yet"}, status=404)
+        except Exception as e:
+            return web.json_response({"error": str(e)}, status=500)
 
     async def handle_bots(self, request):
         await self.refresh_bots()
@@ -4648,6 +4660,43 @@ class AureonProDashboard:
             
         except Exception as e:
             self.logger.error(f"❌ Portfolio refresh error: {e}", exc_info=True)
+            # 🆕 ULTIMATE FALLBACK: Read from portfolio_intelligence_snapshot.json
+            # This file is written every 5 minutes by the engine's Phase 0.75
+            try:
+                intel_path = os.path.join(os.getenv("AUREON_STATE_DIR", "."), "portfolio_intelligence_snapshot.json")
+                if os.path.exists(intel_path) and not self.portfolio.get('positions'):
+                    with open(intel_path, "r") as f:
+                        intel = json.load(f)
+                    positions = []
+                    total_value = 0.0
+                    total_cost = 0.0
+                    for pos in intel.get("positions", []):
+                        cv = float(pos.get("current_value", 0) or 0)
+                        ec = float(pos.get("entry_cost", 0) or 0)
+                        positions.append({
+                            "symbol": pos.get("symbol", "?"),
+                            "quantity": float(pos.get("quantity", 0) or 0),
+                            "avgCost": float(pos.get("entry_price", 0) or 0),
+                            "currentPrice": float(pos.get("current_price", 0) or 0),
+                            "currentValue": cv,
+                            "unrealizedPnl": float(pos.get("pnl_usd", 0) or 0),
+                            "pnlPercent": float(pos.get("pnl_pct", 0) or 0),
+                            "exchange": pos.get("exchange", "unknown"),
+                        })
+                        total_value += cv
+                        total_cost += ec
+                    positions.sort(key=lambda x: x.get("currentValue", 0), reverse=True)
+                    self.portfolio = {
+                        "totalValue": total_value,
+                        "costBasis": total_cost,
+                        "unrealizedPnl": total_value - total_cost,
+                        "todayPnl": 0,
+                        "total_positions": len(positions),
+                        "positions": positions,
+                    }
+                    self.logger.info(f"✅ Portfolio (intelligence snapshot fallback): {len(positions)} positions, ${total_value:,.2f}")
+            except Exception as e2:
+                self.logger.warning(f"⚠️ Intelligence snapshot fallback also failed: {e2}")
     
     async def refresh_prices(self):
         """Fetch real crypto prices with timeout protection - NOW INCLUDES POSITION PRICES!"""

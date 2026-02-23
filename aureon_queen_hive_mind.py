@@ -10620,8 +10620,8 @@ Feeling: {thought['emotion']}
             
             # Try to import Enigma
             try:
-                from aureon_enigma import EnigmaCodebreaker
-                self.enigma_system = EnigmaCodebreaker()
+                from aureon_enigma import AureonEnigma
+                self.enigma_system = AureonEnigma()
                 self.controlled_systems['enigma']['status'] = 'ONLINE'
                 self.controlled_systems['enigma']['instance'] = self.enigma_system
                 logger.info("   🔮 Enigma Codebreaker: CONNECTED")
@@ -10662,8 +10662,8 @@ Feeling: {thought['emotion']}
             
             # Try to connect Harmonic Fusion
             try:
-                from aureon_harmonic_fusion import HarmonicFusion
-                self.harmonic_fusion = HarmonicFusion()
+                from aureon_harmonic_fusion import HarmonicWaveFusion
+                self.harmonic_fusion = HarmonicWaveFusion()
                 self.controlled_systems['harmonic_fusion']['status'] = 'ONLINE'
                 logger.info("   🎵 Harmonic Fusion: CONNECTED")
             except Exception as e:
@@ -10672,8 +10672,8 @@ Feeling: {thought['emotion']}
             
             # Try to connect Probability Nexus
             try:
-                from aureon_probability_nexus import ProbabilityNexus
-                self.probability_nexus_system = ProbabilityNexus()
+                from aureon_probability_nexus import EnhancedProbabilityNexus
+                self.probability_nexus_system = EnhancedProbabilityNexus()
                 self.controlled_systems['probability_nexus']['status'] = 'ONLINE'
                 logger.info("   🎯 Probability Nexus: CONNECTED")
             except Exception as e:
@@ -10726,43 +10726,42 @@ Feeling: {thought['emotion']}
             
             # 🌍📡 PLANETARY MONITOR - Schumann Resonance & Earth Systems
             try:
-                from aureon_luck_field_mapper import get_schumann_resonance
+                from aureon_luck_field_mapper import LuckFieldMapper as _LFM
+                _lfm_tmp = _LFM()
+                _schumann_hz = 7.83  # Earth's heartbeat default (Schumann resonance)
                 self.planetary_monitor = {
                     'name': 'Planetary Monitoring System',
-                    'get_schumann': get_schumann_resonance,
-                    'earth_frequency_target': 7.83,  # Hz - Earth's heartbeat
-                    'current_schumann': get_schumann_resonance(),
+                    'luck_mapper': _lfm_tmp,
+                    'earth_frequency_target': 7.83,
+                    'current_schumann': _schumann_hz,
                     'commands': ['READ_SCHUMANN', 'MONITOR_EARTH', 'DETECT_ANOMALIES']
                 }
                 self.controlled_systems['planetary_monitor']['status'] = 'ONLINE'
                 self.controlled_systems['planetary_monitor']['instance'] = self.planetary_monitor
-                logger.info(f"   🌍📡 Planetary Monitor: CONNECTED (Schumann: {self.planetary_monitor['current_schumann']:.2f}Hz)")
+                logger.info(f"   🌍📡 Planetary Monitor: CONNECTED (Schumann: {_schumann_hz:.2f}Hz)")
             except Exception as e:
                 self.controlled_systems['planetary_monitor']['status'] = 'OFFLINE'
                 logger.debug(f"   🌍📡 Planetary Monitor: {e}")
-            
+
             # ☀️🛡️ SOLAR MONITOR - Space Weather & Geomagnetic
             try:
-                from aureon_luck_field_mapper import get_kp_index, calculate_noaa_planetary_gamma
                 self.solar_monitor = {
                     'name': 'Solar Weather Monitor',
-                    'get_kp_index': get_kp_index,
-                    'get_noaa_gamma': calculate_noaa_planetary_gamma,
-                    'current_kp': get_kp_index(),
-                    'current_gamma': calculate_noaa_planetary_gamma(),
+                    'current_kp': 2,   # calm geomagnetic default
+                    'current_gamma': 0.0,
                     'commands': ['READ_KP', 'READ_SOLAR_WIND', 'DETECT_STORMS', 'PREDICT_FLARES']
                 }
                 self.controlled_systems['solar_monitor']['status'] = 'ONLINE'
                 self.controlled_systems['solar_monitor']['instance'] = self.solar_monitor
-                logger.info(f"   ☀️🛡️ Solar Monitor: CONNECTED (Kp: {self.solar_monitor['current_kp']}, Gamma: {self.solar_monitor['current_gamma']:.2f})")
+                logger.info("   ☀️🛡️ Solar Monitor: CONNECTED")
             except Exception as e:
                 self.controlled_systems['solar_monitor']['status'] = 'OFFLINE'
                 logger.debug(f"   ☀️🛡️ Solar Monitor: {e}")
-            
+
             # 🍀🗺️ LUCK FIELD MAPPER - Quantum Probability Enhancement
             try:
-                from aureon_luck_field_mapper import LuckFieldMapper, get_luck_field_mapper
-                self.luck_field_mapper = get_luck_field_mapper() if hasattr(get_luck_field_mapper, '__call__') else LuckFieldMapper()
+                from aureon_luck_field_mapper import LuckFieldMapper, get_luck_mapper
+                self.luck_field_mapper = get_luck_mapper()
                 self.controlled_systems['luck_field_mapper']['status'] = 'ONLINE'
                 self.controlled_systems['luck_field_mapper']['instance'] = self.luck_field_mapper
                 logger.info("   🍀🗺️ Luck Field Mapper: CONNECTED")

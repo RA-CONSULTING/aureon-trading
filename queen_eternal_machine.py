@@ -35,6 +35,7 @@ import json
 import asyncio
 import logging
 import requests
+import concurrent.futures
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Any, Tuple
 from datetime import datetime, timedelta
@@ -1202,48 +1203,80 @@ class QueenEternalMachine:
 
         held_symbols = {_base_symbol(s) for s in self.friends.keys() if s and s != "CASH"}
         exchange_fetches: List[str] = []
+        _FETCH_TIMEOUT = 20  # seconds per exchange - prevents hang
 
-        # 1) Binance broad market scan
-        try:
+        def _fetch_binance_tickers():
             from binance_client import BinanceClient
-            binance = BinanceClient()
-            for ticker in binance.get_24h_tickers() or []:
-                _add_ticker(ticker, quote_suffix="USDC")
-            exchange_fetches.append("binance")
+            return BinanceClient().get_24h_tickers() or []
+
+        def _fetch_alpaca_tickers():
+            from alpaca_client import AlpacaClient
+            return AlpacaClient().get_24h_tickers() or []
+
+        def _fetch_kraken_tickers():
+            from kraken_client import KrakenClient
+            return KrakenClient().get_24h_tickers() or []
+
+        # 1) Binance broad market scan (with timeout to prevent hang)
+        try:
+            with concurrent.futures.ThreadPoolExecutor(max_workers=1) as _ex:
+                _fut = _ex.submit(_fetch_binance_tickers)
+                try:
+                    for ticker in _fut.result(timeout=_FETCH_TIMEOUT):
+                        _add_ticker(ticker, quote_suffix="USDC")
+                    exchange_fetches.append("binance")
+                except concurrent.futures.TimeoutError:
+                    logger.warning(f"⚠️ Binance market data TIMED OUT after {_FETCH_TIMEOUT}s — skipping")
+                    _fut.cancel()
         except Exception as e:
             logger.warning(f"⚠️ Binance market data unavailable: {e}")
 
-        # 2) Alpaca crypto scan (only if available)
+        # 2) Alpaca crypto scan (with timeout)
         try:
-            from alpaca_client import AlpacaClient
-            alpaca = AlpacaClient()
-            for ticker in alpaca.get_24h_tickers() or []:
-                _add_ticker(ticker, quote_suffix="USD")
-            exchange_fetches.append("alpaca")
+            with concurrent.futures.ThreadPoolExecutor(max_workers=1) as _ex:
+                _fut = _ex.submit(_fetch_alpaca_tickers)
+                try:
+                    for ticker in _fut.result(timeout=_FETCH_TIMEOUT):
+                        _add_ticker(ticker, quote_suffix="USD")
+                    exchange_fetches.append("alpaca")
+                except concurrent.futures.TimeoutError:
+                    logger.debug(f"⚠️ Alpaca market data TIMED OUT after {_FETCH_TIMEOUT}s — skipping")
+                    _fut.cancel()
         except Exception as e:
             logger.debug(f"⚠️ Alpaca market data unavailable: {e}")
 
-        # 3) Kraken scan (available symbols often have multiple quote formats)
+        # 3) Kraken scan (with timeout)
         try:
-            from kraken_client import KrakenClient
-            kraken = KrakenClient()
-            for ticker in kraken.get_24h_tickers() or []:
-                symbol = str(ticker.get('symbol', ''))
-                if symbol.endswith("USD"):
-                    _add_ticker(ticker, quote_suffix="USD")
-                elif symbol.endswith("USDC"):
-                    _add_ticker(ticker, quote_suffix="USDC")
-            exchange_fetches.append("kraken")
+            with concurrent.futures.ThreadPoolExecutor(max_workers=1) as _ex:
+                _fut = _ex.submit(_fetch_kraken_tickers)
+                try:
+                    for ticker in _fut.result(timeout=_FETCH_TIMEOUT):
+                        symbol = str(ticker.get('symbol', ''))
+                        if symbol.endswith("USD"):
+                            _add_ticker(ticker, quote_suffix="USD")
+                        elif symbol.endswith("USDC"):
+                            _add_ticker(ticker, quote_suffix="USDC")
+                    exchange_fetches.append("kraken")
+                except concurrent.futures.TimeoutError:
+                    logger.debug(f"⚠️ Kraken market data TIMED OUT after {_FETCH_TIMEOUT}s — skipping")
+                    _fut.cancel()
         except Exception as e:
             logger.debug(f"⚠️ Kraken market data unavailable: {e}")
 
         # 4) Hard guarantee: every held symbol gets a live exchange quote
         # so leap logic always uses real exchange data for our actual portfolio.
+        # Only run individual lookups for friends missed by the broad scans —
+        # cap per-call at 8s to prevent hanging on obscure/delisted pairs.
+        _PER_SYMBOL_TIMEOUT = 8
         for friend in self.friends.values():
             friend_symbol = _base_symbol(friend.symbol)
             if friend_symbol in self.market_data:
                 # Keep alias key so update_friends_prices can resolve raw symbols too
                 self.market_data.setdefault(friend.symbol, self.market_data[friend_symbol])
+                continue
+
+            # Skip if no broad data was fetched at all (all exchanges timed out)
+            if not exchange_fetches:
                 continue
 
             primary_exchange = str(friend.exchange or self.exchange or "binance").lower().split(":")[-1]
@@ -1252,19 +1285,18 @@ class QueenEternalMachine:
             candidate_exchanges = [ex for ex in candidate_exchanges if not (ex in seen or seen.add(ex))]
 
             for ex in candidate_exchanges:
-                try:
+                def _fetch_single(ex=ex, friend_symbol=friend_symbol):
                     pair = f"{friend_symbol}USDC"
                     if ex == 'kraken':
                         pair = f"{friend_symbol}USD"
                     elif ex == 'alpaca':
                         pair = f"{friend_symbol}/USD"
-
                     if ex == 'binance':
                         from binance_client import BinanceClient
-                        t = BinanceClient().get_24h_ticker(pair)
+                        return ('USDC', BinanceClient().get_24h_ticker(pair))
                     elif ex == 'kraken':
                         from kraken_client import KrakenClient
-                        t = KrakenClient().get_24h_ticker(pair)
+                        return ('USD', KrakenClient().get_24h_ticker(pair))
                     elif ex == 'alpaca':
                         from alpaca_client import AlpacaClient
                         t = AlpacaClient().get_ticker(pair)
@@ -1277,14 +1309,20 @@ class QueenEternalMachine:
                                 'highPrice': t.get('high_24h', t.get('price', 0)),
                                 'lowPrice': t.get('low_24h', t.get('price', 0)),
                             }
-                    else:
-                        continue
-
-                    if t and _to_float(t.get('lastPrice')) > 0:
-                        _add_ticker(t, quote_suffix="USD" if ex in {'kraken', 'alpaca'} else "USDC")
-                        if friend_symbol in self.market_data:
-                            self.market_data.setdefault(friend.symbol, self.market_data[friend_symbol])
-                        break
+                        return ('USD', t)
+                    return (None, None)
+                try:
+                    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as _ex2:
+                        _sfut = _ex2.submit(_fetch_single)
+                        try:
+                            quote_sfx, t = _sfut.result(timeout=_PER_SYMBOL_TIMEOUT)
+                            if t and _to_float(t.get('lastPrice')) > 0:
+                                _add_ticker(t, quote_suffix=quote_sfx or "USDC")
+                                if friend_symbol in self.market_data:
+                                    self.market_data.setdefault(friend.symbol, self.market_data[friend_symbol])
+                                break
+                        except concurrent.futures.TimeoutError:
+                            logger.debug(f"⚠️ {ex} ticker fetch timed out for {friend_symbol} — skipping")
                 except Exception:
                     continue
 
