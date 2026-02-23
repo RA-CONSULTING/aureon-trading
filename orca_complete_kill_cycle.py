@@ -13681,7 +13681,7 @@ class OrcaKillCycle:
                                     action = quad_result.get('action', '?')
                                     print(f"     QUADRUMVIRATE: {action} | Coherence={fc:.0%} | Sizing={quad_sizing:.2f}x")
                                     if not quad_go:
-                                        wait = quad_result.get('wait_guidance', {})
+                                        wait = quad_result.get('wait_guidance') or {}
                                         reason = wait.get('reason', 'temporal misalignment')
                                         wait_h = wait.get('wait_human', '?')
                                         print(f"      GATE CLOSED: {reason} (wait {wait_h})")
