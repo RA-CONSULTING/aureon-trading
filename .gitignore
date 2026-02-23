@@ -82,3 +82,4 @@ RAINBOW-main/
 # Python virtual environments
 .venv*/
 venv*/
+state/baton_relay.jsonl

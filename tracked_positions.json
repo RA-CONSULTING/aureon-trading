@@ -1003,7 +1003,7 @@
         "exchange": "kraken",
         "buy_price": 0.0,
         "quantity": 0.00072311,
-        "buy_timestamp": "2026-02-22T22:04:19.318546",
+        "buy_timestamp": "2026-02-23T13:25:53.917738",
         "auto_tracked": true,
         "source": "portfolio_truth_check"
     },
@@ -1197,18 +1197,28 @@
         "source": "fire_trade",
         "auto_tracked": false
     },
-    "XRPUSDT": {
-        "symbol": "XRPUSDT",
+    "LAUSD": {
+        "exchange": "binance",
+        "buy_price": 0.0,
+        "quantity": 20.080905,
+        "buy_timestamp": "2026-02-23T00:24:43.372654",
+        "auto_tracked": true,
+        "source": "portfolio_truth_check"
+    },
+    "ZRCUSD": {
         "exchange": "kraken",
-        "entry_price": 1.390829998200266,
-        "buy_price": 1.390829998200266,
-        "entry_qty": 2.1569854,
-        "quantity": 2.1569854,
-        "entry_cost": 3.0078,
-        "entry_fee": 0.0078,
-        "breakeven_price": 1.3980623141909077,
-        "buy_timestamp": "2026-02-22T22:06:41.087689",
-        "source": "fire_trade",
-        "auto_tracked": false
+        "buy_price": 0.0,
+        "quantity": 2744.776,
+        "buy_timestamp": "2026-02-23T10:48:10.900367",
+        "auto_tracked": true,
+        "source": "portfolio_truth_check"
+    },
+    "CHILLHOUSEUSD": {
+        "exchange": "kraken",
+        "buy_price": 0.0,
+        "quantity": 1513.35878,
+        "buy_timestamp": "2026-02-23T13:16:37.730966",
+        "auto_tracked": true,
+        "source": "portfolio_truth_check"
     }
 }
