@@ -297,7 +297,7 @@ class CostBasisTracker:
                 _safe_print(f"⚠️ Failed to integrate tracked positions: {e}")
     
     def _save(self):
-        """Save cost basis data to file."""
+        """Save cost basis data to file (atomic write: temp → rename)."""
         try:
             # 🆕 Serialize trade lots
             trade_lots_serializable = {
@@ -311,10 +311,39 @@ class CostBasisTracker:
                 'last_sync': self.last_sync,
                 'updated_at': datetime.now().isoformat()
             }
-            with open(self.filepath, 'w') as f:
-                json.dump(data, f, indent=2)
+            import tempfile
+            tmp_dir = os.path.dirname(os.path.abspath(self.filepath)) or '.'
+            fd, tmp_path = tempfile.mkstemp(dir=tmp_dir, suffix='.tmp', prefix='cost_basis_')
+            try:
+                with os.fdopen(fd, 'w') as f:
+                    json.dump(data, f, indent=2)
+                os.replace(tmp_path, self.filepath)
+            except Exception:
+                try:
+                    os.unlink(tmp_path)
+                except OSError:
+                    pass
+                raise
         except Exception as e:
             print(f"⚠️ Failed to save cost basis file: {e}")
+
+    def _should_update_position(self, position_key: str, new_cost: float) -> bool:
+        """Guard: don't overwrite FIFO-reconciled positions with worse data.
+        
+        Returns True if the position should be updated, False if the existing
+        reconciled data should be preserved.
+        """
+        existing = self.positions.get(position_key)
+        if not existing:
+            return True  # New position, always accept
+        
+        # If existing was reconciled from real trade history, protect it
+        if existing.get('source') == 'full_reconcile':
+            existing_cost = existing.get('total_cost', 0)
+            # Only allow update if new data is strictly better (has real cost and existing is zero)
+            if existing_cost > 0 and (new_cost == 0 or new_cost is None):
+                return False  # Protect: don't overwrite real cost with zero
+        return True
     
     def sync_from_binance(self, symbols: list = None) -> int:
         """Sync cost basis from Binance trade history.
@@ -362,6 +391,8 @@ class CostBasisTracker:
                     cost_basis = client.calculate_cost_basis(symbol)
                     if cost_basis and cost_basis['total_quantity'] > 0:
                         position_key = f"binance:{symbol}"
+                        if not self._should_update_position(position_key, cost_basis.get('total_cost', 0)):
+                            break  # Protected reconciled position
                         self.positions[position_key] = {
                             'exchange': 'binance',
                             'symbol': symbol,
@@ -475,7 +506,8 @@ class CostBasisTracker:
                 # Normalize pair name without stripping in-symbol X/Z characters
                 symbol = self._normalize_kraken_pair(pair)
                 position_key = f"kraken:{symbol}"
-                
+                if not self._should_update_position(position_key, total_cost):
+                    continue  # Protected reconciled position
                 self.positions[position_key] = {
                     'exchange': 'kraken',
                     'symbol': symbol,
@@ -526,6 +558,9 @@ class CostBasisTracker:
             
             if avg_entry > 0 and qty > 0:
                 position_key = f"alpaca:{symbol}"
+                if not self._should_update_position(position_key, avg_entry * qty):
+                    updated += 1
+                    continue  # Protected reconciled position
                 
                 # 🆕 Create a single trade lot for Alpaca positions since it gives aggregates
                 self.trade_lots[position_key] = [Trade(price=avg_entry, quantity=qty)]
@@ -582,6 +617,9 @@ class CostBasisTracker:
             
             if avg_entry > 0 and qty != 0:
                 position_key = f"capital:{symbol}"
+                if not self._should_update_position(position_key, avg_entry * abs(qty)):
+                    updated += 1
+                    continue  # Protected reconciled position
 
                 # 🆕 Create a single trade lot for Capital positions
                 if qty > 0: # Only for LONG positions
@@ -1476,6 +1514,409 @@ class CostBasisTracker:
             'last_sync': self.last_sync,
             'positions': list(self.positions.keys())
         }
+
+    # ══════════════════════════════════════════════════════════════════════════════
+    # 📜 FULL TRADE HISTORY & RECONCILIATION
+    # ══════════════════════════════════════════════════════════════════════════════
+
+    def get_full_trade_history(self) -> List[Dict[str, Any]]:
+        """
+        Pull ALL trade history from every exchange into a single unified list,
+        sorted by timestamp.  Each record carries a consistent schema:
+
+            {
+                'exchange': str,
+                'symbol': str,      # base+quote (normalised)
+                'side': 'buy'|'sell',
+                'quantity': float,
+                'price': float,
+                'cost': float,      # qty * price
+                'fee': float,
+                'fee_asset': str,
+                'timestamp': float,  # unix epoch
+                'datetime': str,     # ISO-8601
+                'order_id': str,     # exchange-native ID
+                'source': str,       # 'trade_history'|'order_fills'|'ledger'
+            }
+        """
+        all_trades: List[Dict[str, Any]] = []
+
+        # ── KRAKEN ────────────────────────────────────────────────────────
+        try:
+            if self.clients and 'kraken' in self.clients:
+                kc = self.clients['kraken']
+            else:
+                from kraken_client import KrakenClient, get_kraken_client
+                kc = get_kraken_client()
+
+            if not getattr(kc, 'dry_run', False):
+                _safe_print("📜 Pulling Kraken trade history...")
+                raw = kc.get_trades_history()  # Dict[trade_id, trade]
+                if isinstance(raw, dict):
+                    trades_iter = raw.items()
+                elif isinstance(raw, list):
+                    trades_iter = [(t.get('id', ''), t) for t in raw]
+                else:
+                    trades_iter = []
+
+                for tid, t in trades_iter:
+                    pair = t.get('pair', '')
+                    ts = float(t.get('time', 0))
+                    all_trades.append({
+                        'exchange': 'kraken',
+                        'symbol': self._normalize_kraken_pair(pair),
+                        'side': t.get('type', ''),
+                        'quantity': float(t.get('vol', 0)),
+                        'price': float(t.get('price', 0)),
+                        'cost': float(t.get('cost', 0)),
+                        'fee': float(t.get('fee', 0)),
+                        'fee_asset': '',
+                        'timestamp': ts,
+                        'datetime': datetime.utcfromtimestamp(ts).isoformat() if ts else '',
+                        'order_id': tid,
+                        'source': 'trade_history',
+                    })
+                _safe_print(f"   → {len([t for t in all_trades if t['exchange']=='kraken'])} Kraken trades")
+        except Exception as e:
+            _safe_print(f"⚠️ Kraken trade history fetch failed: {e}")
+
+        # ── BINANCE ───────────────────────────────────────────────────────
+        try:
+            if self.clients and 'binance' in self.clients:
+                bc = self.clients['binance']
+            else:
+                from binance_client import BinanceClient, get_binance_client
+                bc = get_binance_client()
+
+            _safe_print("📜 Pulling Binance trade history...")
+            all_my = bc.get_all_my_trades(limit_per_symbol=500)
+            binance_count = 0
+            for sym, trades in all_my.items():
+                for t in trades:
+                    ts = t.get('time', 0) / 1000.0 if t.get('time', 0) > 1e12 else float(t.get('time', 0))
+                    all_trades.append({
+                        'exchange': 'binance',
+                        'symbol': sym,
+                        'side': 'buy' if t.get('isBuyer') else 'sell',
+                        'quantity': float(t.get('qty', 0)),
+                        'price': float(t.get('price', 0)),
+                        'cost': float(t.get('qty', 0)) * float(t.get('price', 0)),
+                        'fee': float(t.get('commission', 0)),
+                        'fee_asset': t.get('commissionAsset', ''),
+                        'timestamp': ts,
+                        'datetime': datetime.utcfromtimestamp(ts).isoformat() if ts else '',
+                        'order_id': str(t.get('orderId', '')),
+                        'source': 'trade_history',
+                    })
+                    binance_count += 1
+            _safe_print(f"   → {binance_count} Binance trades")
+        except Exception as e:
+            _safe_print(f"⚠️ Binance trade history fetch failed: {e}")
+
+        # ── ALPACA ────────────────────────────────────────────────────────
+        try:
+            if self.clients and 'alpaca' in self.clients:
+                ac = self.clients['alpaca']
+            else:
+                from alpaca_client import AlpacaClient
+                ac = AlpacaClient()
+
+            _safe_print("📜 Pulling Alpaca order fills...")
+            orders = ac.get_all_orders(status='closed', limit=500)
+            alpaca_count = 0
+            for o in orders:
+                if o.get('status') != 'filled':
+                    continue
+                filled_qty = float(o.get('filled_qty', 0) or 0)
+                filled_price = float(o.get('filled_avg_price', 0) or 0)
+                if filled_qty <= 0 or filled_price <= 0:
+                    continue
+                filled_at = o.get('filled_at', '') or o.get('updated_at', '') or ''
+                ts = 0.0
+                if filled_at:
+                    try:
+                        from dateutil.parser import parse as dtparse
+                        ts = dtparse(filled_at).timestamp()
+                    except Exception:
+                        pass
+                all_trades.append({
+                    'exchange': 'alpaca',
+                    'symbol': o.get('symbol', ''),
+                    'side': o.get('side', ''),
+                    'quantity': filled_qty,
+                    'price': filled_price,
+                    'cost': filled_qty * filled_price,
+                    'fee': 0.0,  # Alpaca is commission-free
+                    'fee_asset': 'USD',
+                    'timestamp': ts,
+                    'datetime': filled_at,
+                    'order_id': o.get('id', ''),
+                    'source': 'order_fills',
+                })
+                alpaca_count += 1
+            _safe_print(f"   → {alpaca_count} Alpaca fills")
+        except Exception as e:
+            _safe_print(f"⚠️ Alpaca order fill fetch failed: {e}")
+
+        # Sort everything by timestamp
+        all_trades.sort(key=lambda t: t.get('timestamp', 0))
+        _safe_print(f"\n📊 Total: {len(all_trades)} trades across all exchanges")
+        return all_trades
+
+    def full_reconcile(self, backup: bool = True) -> Dict[str, Any]:
+        """
+        FULL TRADE HISTORY RECONCILIATION
+        ═══════════════════════════════════
+        Rebuilds cost basis from SCRATCH using real exchange API data.
+
+        Steps:
+        1. Backup current cost_basis_history.json
+        2. Pull ALL trade history from every exchange
+        3. Replay every trade chronologically using FIFO accounting
+        4. Cross-reference with live balances
+        5. Report full audit findings
+
+        Returns dict with reconciliation results.
+        """
+        print("\n" + "=" * 70)
+        print("🔄 FULL TRADE HISTORY RECONCILIATION")
+        print("=" * 70)
+
+        # ── Step 1: Backup ────────────────────────────────────────────────
+        if backup and os.path.exists(self.filepath):
+            backup_path = self.filepath.replace('.json', f'_backup_{int(time.time())}.json')
+            import shutil
+            shutil.copy2(self.filepath, backup_path)
+            _safe_print(f"💾 Backed up to {backup_path}")
+
+        # ── Step 2: Pull ALL trade history ────────────────────────────────
+        all_trades = self.get_full_trade_history()
+        if not all_trades:
+            _safe_print("⚠️ No trade history found from any exchange")
+            return {'status': 'no_data', 'trades': 0}
+
+        # ── Step 3: Replay trades chronologically ─────────────────────────
+        _safe_print(f"\n🔄 Replaying {len(all_trades)} trades chronologically...")
+
+        # Clear existing positions and lots for a clean rebuild
+        new_positions: Dict[str, Dict[str, Any]] = {}
+        new_lots: Dict[str, List[Trade]] = {}
+
+        stats = {
+            'total_trades': len(all_trades),
+            'buys': 0, 'sells': 0,
+            'total_bought': 0.0, 'total_sold': 0.0,
+            'total_fees': 0.0,
+            'exchanges': {},
+            'symbols': {},
+        }
+
+        for t in all_trades:
+            exchange = t['exchange']
+            symbol = t['symbol']
+            side = t['side'].lower()
+            qty = t['quantity']
+            price = t['price']
+            fee = t['fee']
+            ts = t['timestamp']
+
+            if qty <= 0 or price <= 0:
+                continue
+
+            position_key = f"{exchange}:{symbol}"
+
+            # Track stats
+            stats['exchanges'].setdefault(exchange, {'buys': 0, 'sells': 0, 'fees': 0.0})
+            stats['symbols'].setdefault(position_key, {'buys': 0, 'sells': 0, 'net_qty': 0.0, 'total_cost': 0.0})
+            stats['total_fees'] += fee
+            stats['exchanges'][exchange]['fees'] += fee
+
+            if position_key not in new_lots:
+                new_lots[position_key] = []
+
+            if side == 'buy':
+                stats['buys'] += 1
+                stats['total_bought'] += qty * price
+                stats['exchanges'][exchange]['buys'] += 1
+                stats['symbols'][position_key]['buys'] += 1
+
+                new_lots[position_key].append(
+                    Trade(price=price, quantity=qty, fee=fee, timestamp=ts)
+                )
+            elif side == 'sell':
+                stats['sells'] += 1
+                stats['total_sold'] += qty * price
+                stats['exchanges'][exchange]['sells'] += 1
+                stats['symbols'][position_key]['sells'] += 1
+
+                # FIFO sell
+                sell_rem = qty
+                for lot in new_lots.get(position_key, []):
+                    if sell_rem <= 0:
+                        break
+                    take = min(lot.quantity, sell_rem)
+                    lot.quantity -= take
+                    sell_rem -= take
+                # Remove empty lots
+                new_lots[position_key] = [l for l in new_lots.get(position_key, []) if l.quantity > 0.000001]
+
+        # ── Step 4: Rebuild positions from remaining lots ─────────────────
+        _safe_print("\n📦 Rebuilding positions from remaining lots...")
+        for position_key, lots in new_lots.items():
+            if not lots:
+                continue
+            total_qty = sum(l.quantity for l in lots)
+            total_cost = sum(l.quantity * l.price for l in lots)
+            total_fees = sum(l.fee for l in lots)
+            buy_count = len(lots)
+
+            if total_qty < 0.0000001:
+                continue
+
+            avg_entry = total_cost / total_qty if total_qty > 0 else 0
+            parts = position_key.split(':', 1)
+            exchange = parts[0] if len(parts) == 2 else 'unknown'
+            symbol = parts[1] if len(parts) == 2 else position_key
+
+            # Try to extract asset/quote
+            asset = self._strip_known_quote(symbol)
+            quote = symbol[len(asset):] if len(symbol) > len(asset) else 'USD'
+
+            new_positions[position_key] = {
+                'exchange': exchange,
+                'symbol': symbol,
+                'asset': asset,
+                'quote': quote,
+                'avg_entry_price': avg_entry,
+                'total_quantity': total_qty,
+                'total_cost': total_cost,
+                'total_fees': total_fees,
+                'trade_count': buy_count,
+                'first_trade': int(lots[0].timestamp * 1000) if lots else None,
+                'last_trade': int(lots[-1].timestamp * 1000) if lots else None,
+                'synced_at': time.time(),
+                'source': 'full_reconcile',
+            }
+            stats['symbols'][position_key]['net_qty'] = total_qty
+            stats['symbols'][position_key]['total_cost'] = total_cost
+
+        # ── Step 5: Merge with Alpaca live positions (they give avg_entry directly) ──
+        try:
+            if self.clients and 'alpaca' in self.clients:
+                ac = self.clients['alpaca']
+            else:
+                from alpaca_client import AlpacaClient
+                ac = AlpacaClient()
+            positions = ac.get_positions()
+            for pos in (positions or []):
+                sym = pos.get('symbol', '')
+                avg_entry = float(pos.get('avg_entry_price', 0))
+                q = float(pos.get('qty', 0))
+                if avg_entry > 0 and q > 0:
+                    pk = f"alpaca:{sym}"
+                    if pk not in new_positions:
+                        new_positions[pk] = {
+                            'exchange': 'alpaca',
+                            'symbol': sym,
+                            'asset': sym,
+                            'quote': 'USD',
+                            'avg_entry_price': avg_entry,
+                            'total_quantity': q,
+                            'total_cost': avg_entry * q,
+                            'total_fees': 0,
+                            'trade_count': 1,
+                            'synced_at': time.time(),
+                            'source': 'live_position',
+                        }
+                        new_lots[pk] = [Trade(price=avg_entry, quantity=q)]
+        except Exception as e:
+            _safe_print(f"⚠️ Could not merge Alpaca live positions: {e}")
+
+        # ── Step 6: Apply ─────────────────────────────────────────────────
+        self.positions = new_positions
+        self.trade_lots = new_lots
+        self.last_sync = time.time()
+        self._save()
+
+        # ── Step 7: Report ────────────────────────────────────────────────
+        open_positions = {k: v for k, v in new_positions.items()
+                         if v.get('total_quantity', 0) > 0.0000001}
+        total_invested = sum(v.get('total_cost', 0) for v in open_positions.values())
+
+        print("\n" + "=" * 70)
+        print("📊 RECONCILIATION RESULTS")
+        print("=" * 70)
+        print(f"  Total trades replayed: {stats['total_trades']}")
+        print(f"  Buys: {stats['buys']}  |  Sells: {stats['sells']}")
+        print(f"  Total bought: ${stats['total_bought']:.2f}")
+        print(f"  Total sold:   ${stats['total_sold']:.2f}")
+        print(f"  Total fees:   ${stats['total_fees']:.4f}")
+        print()
+        for ex, ex_stats in stats['exchanges'].items():
+            print(f"  {ex.upper()}: {ex_stats['buys']} buys / {ex_stats['sells']} sells / ${ex_stats['fees']:.4f} fees")
+        print()
+        print(f"  Open positions: {len(open_positions)}")
+        print(f"  Total invested: ${total_invested:.2f}")
+        print()
+
+        print(f"  {'Position':<30} {'Qty':>15} {'Avg Entry':>12} {'Cost':>10} {'Trades':>7}")
+        print("  " + "-" * 76)
+        for pk in sorted(open_positions.keys()):
+            p = open_positions[pk]
+            print(f"  {pk:<30} {p['total_quantity']:>15.6f} ${p['avg_entry_price']:>10.4f} ${p['total_cost']:>9.2f} {p['trade_count']:>6}")
+        print("  " + "-" * 76)
+        print(f"  {'TOTAL INVESTED':<30} {'':<15} {'':<12} ${total_invested:>9.2f}")
+        print("=" * 70)
+
+        stats['open_positions'] = len(open_positions)
+        stats['total_invested'] = total_invested
+        stats['status'] = 'success'
+        return stats
+
+    def print_trade_history_report(self):
+        """Print a human-readable report of ALL trades across all exchanges."""
+        trades = self.get_full_trade_history()
+        if not trades:
+            print("No trade history found.")
+            return
+
+        print("\n" + "=" * 100)
+        print("📜 COMPLETE TRADE HISTORY REPORT")
+        print("=" * 100)
+        print(f"{'Date':<22} {'Exchange':<9} {'Side':<5} {'Symbol':<16} {'Quantity':>14} {'Price':>12} {'Cost':>10} {'Fee':>8}")
+        print("-" * 100)
+
+        by_exchange = {}
+        for t in trades:
+            dt = t.get('datetime', '')[:19]
+            ex = t['exchange']
+            side = t['side'].upper()[:4]
+            sym = t['symbol'][:15]
+            qty = t['quantity']
+            price = t['price']
+            cost = t['cost']
+            fee = t['fee']
+
+            marker = '🟢' if side == 'BUY' else '🔴'
+            print(f"{dt:<22} {ex:<9} {marker}{side:<4} {sym:<16} {qty:>14.6f} ${price:>10.4f} ${cost:>9.2f} ${fee:>7.4f}")
+
+            by_exchange.setdefault(ex, {'buys': 0, 'sells': 0, 'buy_vol': 0, 'sell_vol': 0, 'fees': 0})
+            if side.startswith('BUY'):
+                by_exchange[ex]['buys'] += 1
+                by_exchange[ex]['buy_vol'] += cost
+            else:
+                by_exchange[ex]['sells'] += 1
+                by_exchange[ex]['sell_vol'] += cost
+            by_exchange[ex]['fees'] += fee
+
+        print("-" * 100)
+        print(f"\n{'Exchange':<10} {'Buys':>6} {'Buy Vol':>12} {'Sells':>6} {'Sell Vol':>12} {'Fees':>10} {'Net':>12}")
+        print("-" * 62)
+        for ex, s in by_exchange.items():
+            net = s['buy_vol'] - s['sell_vol']
+            print(f"{ex:<10} {s['buys']:>6} ${s['buy_vol']:>10.2f} {s['sells']:>6} ${s['sell_vol']:>10.2f} ${s['fees']:>8.4f} ${net:>10.2f}")
+        print("=" * 100)
+
     
     def print_status(self):
         """Print current cost basis status."""
@@ -1516,21 +1957,27 @@ def get_cost_basis_tracker() -> CostBasisTracker:
 
 
 if __name__ == "__main__":
-    # Test/sync mode
-    tracker = get_cost_basis_tracker()
-    
-    # Example of new FIFO flow
-    print("--- FIFO Example ---")
-    tracker.record_trade("FIFO/USD", "buy", 10, 100, "test")
-    tracker.record_trade("FIFO/USD", "buy", 5, 120, "test")
-    tracker.print_status()
-    
-    can_sell, info = tracker.can_sell_profitably("FIFO/USD", 115, "test", quantity=12)
-    print(f"Can sell 12 units at $115? {can_sell}, Info: {info}")
-    
-    tracker.record_trade("FIFO/USD", "sell", 12, 115, "test")
-    tracker.print_status()
-    print("--------------------")
+    import argparse
+    parser = argparse.ArgumentParser(description="Cost Basis Tracker - Real Exchange Trade Accounting")
+    parser.add_argument('--reconcile', action='store_true', help='Full trade history reconciliation (rebuild from scratch)')
+    parser.add_argument('--history', action='store_true', help='Print complete trade history report')
+    parser.add_argument('--sync', action='store_true', help='Sync from exchanges (incremental)')
+    parser.add_argument('--status', action='store_true', help='Print current cost basis status')
+    parser.add_argument('--no-backup', action='store_true', help='Skip backup during reconcile')
+    args = parser.parse_args()
 
-    tracker.sync_with_cleanup()
-    tracker.print_status()
+    tracker = get_cost_basis_tracker()
+
+    if args.reconcile:
+        tracker.full_reconcile(backup=not args.no_backup)
+    elif args.history:
+        tracker.print_trade_history_report()
+    elif args.sync:
+        tracker.sync_with_cleanup()
+        tracker.print_status()
+    elif args.status:
+        tracker.print_status()
+    else:
+        # Default: show status
+        tracker.print_status()
+        print("\nUsage: python cost_basis_tracker.py --reconcile|--history|--sync|--status")
