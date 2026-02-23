@@ -30,8 +30,18 @@ Gary Leckey | January 2026 | "Listen to the market's song."
 from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
+import io
 if sys.platform == 'win32':
     os.environ['PYTHONIOENCODING'] = 'utf-8'
+    try:
+        def _is_utf8_wrapper(stream):
+            return (isinstance(stream, io.TextIOWrapper) and 
+                    hasattr(stream, 'encoding') and stream.encoding and
+                    stream.encoding.lower().replace('-', '') == 'utf8')
+        if hasattr(sys.stdout, 'buffer') and not _is_utf8_wrapper(sys.stdout):
+            sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace', line_buffering=True)
+    except Exception:
+        pass
 
 import math
 import time

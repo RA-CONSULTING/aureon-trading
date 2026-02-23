@@ -19,14 +19,63 @@ It provides the missing operational infrastructure:
 """
 
 import os
+import sys
+import io
 import time
 import json
-import fcntl
 import logging
 import threading
+import tempfile
 from datetime import datetime, timezone
 from typing import Dict, Optional, Tuple, Any
 from pathlib import Path
+
+# ═══════════════════════════════════════════════════════════════════════════
+# WINDOWS UTF-8 FIX
+# ═══════════════════════════════════════════════════════════════════════════
+if sys.platform == 'win32':
+    os.environ['PYTHONIOENCODING'] = 'utf-8'
+    try:
+        def _is_utf8_wrapper(stream):
+            return (isinstance(stream, io.TextIOWrapper) and 
+                    hasattr(stream, 'encoding') and stream.encoding and
+                    stream.encoding.lower().replace('-', '') == 'utf8')
+        if hasattr(sys.stdout, 'buffer') and not _is_utf8_wrapper(sys.stdout):
+            sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace', line_buffering=True)
+    except Exception:
+        pass
+
+# Cross-platform file locking
+if sys.platform == 'win32':
+    import msvcrt
+    def _lock_file(fh, exclusive=True, blocking=False):
+        try:
+            msvcrt.locking(fh.fileno(), msvcrt.LK_NBLCK if not blocking else msvcrt.LK_LOCK, 1)
+            return True
+        except (IOError, OSError):
+            return False
+    def _unlock_file(fh):
+        try:
+            fh.seek(0)
+            msvcrt.locking(fh.fileno(), msvcrt.LK_UNLCK, 1)
+        except Exception:
+            pass
+else:
+    import fcntl
+    def _lock_file(fh, exclusive=True, blocking=False):
+        try:
+            flags = fcntl.LOCK_EX if exclusive else fcntl.LOCK_SH
+            if not blocking:
+                flags |= fcntl.LOCK_NB
+            fcntl.flock(fh.fileno(), flags)
+            return True
+        except (IOError, OSError):
+            return False
+    def _unlock_file(fh):
+        try:
+            fcntl.flock(fh.fileno(), fcntl.LOCK_UN)
+        except Exception:
+            pass
 
 logger = logging.getLogger("AUREON_OPS")
 
@@ -274,7 +323,9 @@ class TradeLock:
     Uses fcntl.flock for cross-process safety.
     """
 
-    def __init__(self, lock_dir: str = "/tmp/aureon_trade_locks"):
+    def __init__(self, lock_dir: str = None):
+        if lock_dir is None:
+            lock_dir = os.path.join(tempfile.gettempdir(), "aureon_trade_locks")
         self._lock_dir = Path(lock_dir)
         self._lock_dir.mkdir(parents=True, exist_ok=True)
         self._held_locks: Dict[str, Any] = {}  # symbol -> file handle
@@ -295,19 +346,21 @@ class TradeLock:
         while time.time() - start < timeout:
             try:
                 fh = open(lock_path, 'w')
-                fcntl.flock(fh.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
-                # Write lock info
-                fh.write(json.dumps({
-                    'symbol': symbol,
-                    'pid': os.getpid(),
-                    'acquired': datetime.now(timezone.utc).isoformat(),
-                }))
-                fh.flush()
+                if _lock_file(fh, exclusive=True, blocking=False):
+                    # Write lock info
+                    fh.write(json.dumps({
+                        'symbol': symbol,
+                        'pid': os.getpid(),
+                        'acquired': datetime.now(timezone.utc).isoformat(),
+                    }))
+                    fh.flush()
 
-                with self._lock:
-                    self._held_locks[symbol] = fh
+                    with self._lock:
+                        self._held_locks[symbol] = fh
 
-                return True, "LOCKED"
+                    return True, "LOCKED"
+                else:
+                    raise IOError("Lock held")
             except (IOError, OSError):
                 # Lock held by another process
                 try:
@@ -325,7 +378,7 @@ class TradeLock:
 
         if fh:
             try:
-                fcntl.flock(fh.fileno(), fcntl.LOCK_UN)
+                _unlock_file(fh)
                 fh.close()
             except Exception:
                 pass
@@ -478,8 +531,10 @@ class StatePulse:
     Tracks freshness and alerts if state goes stale.
     """
 
-    def __init__(self, state_dir: str = "/tmp/aureon_state",
+    def __init__(self, state_dir: str = None,
                  stale_threshold: float = 300.0):  # 5 minutes
+        if state_dir is None:
+            state_dir = os.path.join(tempfile.gettempdir(), "aureon_state")
         self._state_dir = Path(state_dir)
         self._state_dir.mkdir(parents=True, exist_ok=True)
         self._stale_threshold = stale_threshold

@@ -27,10 +27,39 @@ Gary Leckey | The Math Works | January 2026
                                                                                
 """
 
+# ═══════════════════════════════════════════════════════════════════════════
+# WINDOWS UTF-8 FIX - MUST BE AT VERY TOP BEFORE ALL OTHER IMPORTS
+# ═══════════════════════════════════════════════════════════════════════════
+import os
+import sys
+import io
+
+if sys.platform == 'win32':
+    # Set environment variable for Python's default encoding
+    os.environ['PYTHONIOENCODING'] = 'utf-8'
+    
+    # Force UTF-8 encoding for stdout/stderr to support emojis
+    try:
+        def _is_utf8_wrapper(stream):
+            return (isinstance(stream, io.TextIOWrapper) and 
+                    hasattr(stream, 'encoding') and stream.encoding and
+                    stream.encoding.lower().replace('-', '') == 'utf8')
+        def _is_buffer_valid(stream):
+            if not hasattr(stream, 'buffer'):
+                return False
+            try:
+                return stream.buffer is not None and not stream.buffer.closed
+            except (ValueError, AttributeError):
+                return False
+        if _is_buffer_valid(sys.stdout) and not _is_utf8_wrapper(sys.stdout):
+            sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace', line_buffering=True)
+        # Skip stderr wrapping (causes Windows exit errors)
+    except Exception:
+        pass
+
 #                                                                                
 #   HEALTH CHECK HTTP SERVER - Runs in background thread for container probes
 #                                                                                
-import os
 import http.server
 import socketserver
 import threading
@@ -5698,6 +5727,368 @@ class OrcaKillCycle:
         except Exception:
             pass
     
+    # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    #  PORTFOLIO INTELLIGENCE ENGINE — enriched snapshot for all pillars
+    # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+    # CoinGecko symbol → ID mapping for open-source market enrichment
+    _GECKO_MAP = {
+        'BTC': 'bitcoin', 'XBT': 'bitcoin', 'ETH': 'ethereum', 'XRP': 'ripple',
+        'SOL': 'solana', 'LINK': 'chainlink', 'XLM': 'stellar', 'ADA': 'cardano',
+        'BCH': 'bitcoin-cash', 'ZEC': 'zcash', 'BNB': 'binancecoin', 'TRX': 'tron',
+        'USDT': 'tether', 'USDC': 'usd-coin', 'SHIB': 'shiba-inu',
+        'ROSE': 'oasis-network', 'PENGU': 'pudgy-penguins', 'LPT': 'livepeer',
+        'SSV': 'ssv-network', 'BEAMX': 'beam-2', 'KAIA': 'kaia',
+        'AAVE': 'aave', 'ARB': 'arbitrum', 'GHIBLI': 'ghibli-the-dog',
+        'IN': 'inchain', 'SAHARA': 'sahara', 'MXC': 'mxc',
+        'EUL': 'euler', 'FIS': 'stafi', 'CRO': 'crypto-com-chain',
+        'FIGHT': 'fight-night', 'ZRO': 'layerzero', 'PYTH': 'pyth-network',
+        'NOM': 'nom', 'RESOLV': 'resolv', 'SHELL': 'myshell', 'AVNT': 'advent',
+        'TURTLE': 'turtle', 'F': 'formless', 'KITE': 'kiteai', 'LA': 'laion',
+        'BANANAS31': 'bananas31', 'SKR': 'sekoia', 'OPEN': 'openledger',
+        'ZRC': 'zircuit', 'DOGE': 'dogecoin', 'DOT': 'polkadot',
+    }
+
+    _KRAKEN_ASSET_NORM = {
+        'XXBT': 'BTC', 'XXRP': 'XRP', 'XETH': 'ETH', 'ZUSD': 'USD',
+        'ZGBP': 'GBP', 'USDT': 'USDT', 'USDC': 'USDC', 'TUSD': 'TUSD',
+    }
+
+    def generate_portfolio_intelligence(self) -> dict:
+        """
+        Build a fully-enriched portfolio snapshot across ALL exchanges.
+
+        Gathers:
+          - Live balances from Kraken, Binance, Alpaca
+          - Live prices from each exchange's public API
+          - Cost basis / entry data from cost_basis_history.json
+          - Market intelligence from CoinGecko (market cap, volume, 24h/7d changes, ATH)
+
+        Writes atomic JSON to portfolio_intelligence_snapshot.json
+        and publishes 'portfolio_snapshot' event on ThoughtBus for all pillars.
+
+        Called every 5 minutes from the main engine loop (Phase 0.75).
+        """
+        import urllib.request
+        import urllib.parse
+        import hmac as _hmac
+        import hashlib as _hashlib
+        import base64 as _b64
+        import tempfile as _tmpfile
+        from datetime import datetime, timezone
+
+        _safe_print("  📊 [INTEL] Portfolio Intelligence Engine: gathering cross-exchange data...")
+
+        # --- Load cost basis ---
+        cost_positions = {}
+        try:
+            if os.path.exists("cost_basis_history.json"):
+                with open("cost_basis_history.json", 'r') as _f:
+                    _cb = json.load(_f)
+                cost_positions = _cb.get('positions', {})
+        except Exception:
+            pass
+
+        def _parse_ts(ts):
+            try:
+                if isinstance(ts, str): return ts[:16]
+                if isinstance(ts, (int, float)) and 1e9 < ts < 2e9:
+                    return datetime.fromtimestamp(ts, tz=timezone.utc).strftime('%Y-%m-%d %H:%M')
+                if isinstance(ts, (int, float)) and ts > 1e12:
+                    return datetime.fromtimestamp(ts / 1000, tz=timezone.utc).strftime('%Y-%m-%d %H:%M')
+            except Exception:
+                pass
+            return '?'
+
+        def _days_held(ts):
+            try:
+                if isinstance(ts, (int, float)) and 1e9 < ts < 2e9:
+                    return max(0, int((time.time() - ts) / 86400))
+                if isinstance(ts, (int, float)) and ts > 1e12:
+                    return max(0, int((time.time() - ts / 1000) / 86400))
+            except Exception:
+                pass
+            return -1
+
+        # --- CoinGecko enrichment (open source, no key needed) ---
+        gecko_data = {}
+        try:
+            gecko_ids = list(set(self._GECKO_MAP.values()))
+            for i in range(0, len(gecko_ids), 50):
+                batch = ','.join(gecko_ids[i:i + 50])
+                _url = (f'https://api.coingecko.com/api/v3/coins/markets'
+                        f'?vs_currency=usd&ids={batch}'
+                        f'&order=market_cap_desc&per_page=50&page=1'
+                        f'&sparkline=false&price_change_percentage=1h,24h,7d')
+                _req = urllib.request.Request(_url, headers={
+                    'Accept': 'application/json', 'User-Agent': 'Aureon/1.0'
+                })
+                _resp = urllib.request.urlopen(_req, timeout=15)
+                for coin in json.loads(_resp.read()):
+                    gecko_data[coin['id']] = coin
+                time.sleep(0.5)  # rate-limit courtesy
+            _safe_print(f"  📊 [INTEL] CoinGecko: {len(gecko_data)} coins enriched")
+        except Exception as e:
+            _safe_print(f"  📊 [INTEL] CoinGecko partial: {len(gecko_data)} coins ({e})")
+
+        def _gecko(symbol):
+            gid = self._GECKO_MAP.get(symbol.upper())
+            return gecko_data.get(gid) if gid else None
+
+        def _cb_lookup(exchange, asset, asset_raw=''):
+            for k in [f'{exchange}:{asset}', f'{exchange}:{asset_raw}']:
+                if k in cost_positions:
+                    return cost_positions[k]
+            return None
+
+        def _build_entry(exchange, symbol, qty, entry_price, current_price, cost,
+                         value, pnl, pnl_pct, entry_date, days, trades, etype):
+            g = _gecko(symbol)
+            return {
+                'exchange': exchange, 'symbol': symbol, 'quantity': qty,
+                'entry_price': entry_price, 'current_price': current_price,
+                'entry_cost': cost, 'current_value': value,
+                'pnl_usd': pnl, 'pnl_pct': pnl_pct,
+                'entry_date': entry_date, 'days_held': days, 'trade_count': trades,
+                'market_cap': (g or {}).get('market_cap', 0) or 0,
+                'volume_24h': (g or {}).get('total_volume', 0) or 0,
+                'change_1h': (g or {}).get('price_change_percentage_1h_in_currency', 0) or 0,
+                'change_24h': (g or {}).get('price_change_percentage_24h', 0) or 0,
+                'change_7d': (g or {}).get('price_change_percentage_7d_in_currency', 0) or 0,
+                'ath': (g or {}).get('ath', 0) or 0,
+                'ath_change_pct': (g or {}).get('ath_change_percentage', 0) or 0,
+                'type': etype,
+            }
+
+        enriched = []
+
+        # ── KRAKEN ──
+        try:
+            _key = os.environ.get('KRAKEN_API_KEY', '')
+            _sec = os.environ.get('KRAKEN_API_SECRET', '')
+            if _key and _sec:
+                _nonce = str(int(time.time() * 1000000))
+                _urlpath = '/0/private/Balance'
+                _post = urllib.parse.urlencode({'nonce': _nonce})
+                _enc = (_nonce + _post).encode()
+                _msg = _urlpath.encode() + _hashlib.sha256(_enc).digest()
+                _sig = _hmac.new(_b64.b64decode(_sec), _msg, _hashlib.sha512)
+                _sigd = _b64.b64encode(_sig.digest()).decode()
+                _headers = {'API-Key': _key, 'API-Sign': _sigd,
+                            'Content-Type': 'application/x-www-form-urlencoded'}
+                _req = urllib.request.Request(
+                    f'https://api.kraken.com{_urlpath}',
+                    data=_post.encode(), headers=_headers)
+                _resp = urllib.request.urlopen(_req, timeout=15)
+                _kbal = json.loads(_resp.read()).get('result', {})
+
+                for asset_raw, bal_str in _kbal.items():
+                    amt = float(bal_str)
+                    if amt < 0.0001:
+                        continue
+                    asset = self._KRAKEN_ASSET_NORM.get(asset_raw, asset_raw)
+                    price = 0
+                    if asset in ('USD', 'USDT', 'USDC'):
+                        price = 1
+                    elif asset == 'GBP':
+                        price = 1.27
+                    elif asset == 'TUSD':
+                        price = 0.61
+                    else:
+                        for _pair in [f'{asset}USD', f'{asset_raw}USD']:
+                            try:
+                                _r = json.loads(urllib.request.urlopen(
+                                    f'https://api.kraken.com/0/public/Ticker?pair={_pair}',
+                                    timeout=10).read())
+                                if _r.get('result'):
+                                    price = float(list(_r['result'].values())[0]['c'][0])
+                                    if price > 0:
+                                        break
+                            except Exception:
+                                pass
+                    val = amt * price
+                    if val < 0.01:
+                        continue
+                    cb = _cb_lookup('kraken', asset, asset_raw)
+                    ep = cb['avg_entry_price'] if cb else 0
+                    ec = cb['total_cost'] if cb else 0
+                    ed = _parse_ts(cb.get('last_trade', 0)) if cb else '?'
+                    dh = _days_held(cb.get('last_trade', 0)) if cb else -1
+                    tc = cb.get('trade_count', 0) if cb else 0
+                    pnl = val - ec if ec > 0 else 0
+                    pp = (pnl / ec * 100) if ec > 0 else 0
+                    etype = 'cash' if asset in ('USD', 'USDT', 'USDC', 'GBP', 'TUSD') else 'position'
+                    enriched.append(_build_entry(
+                        'Kraken', asset, amt, ep, price, ec, val, pnl, pp, ed, dh, tc, etype))
+                _safe_print(f"  📊 [INTEL] Kraken: {sum(1 for e in enriched if e['exchange']=='Kraken')} assets")
+        except Exception as e:
+            _safe_print(f"  📊 [INTEL] Kraken error: {e}")
+
+        # ── BINANCE ──
+        try:
+            _bkey = os.environ.get('BINANCE_API_KEY', '')
+            _bsec = os.environ.get('BINANCE_API_SECRET', '')
+            if _bkey and _bsec:
+                _ts = str(int(time.time() * 1000))
+                _query = f'recvWindow=60000&timestamp={_ts}'
+                _bsig = _hmac.new(_bsec.encode(), _query.encode(), _hashlib.sha256).hexdigest()
+                _burl = f'https://api.binance.com/api/v3/account?{_query}&signature={_bsig}'
+                _req = urllib.request.Request(_burl, headers={'X-MBX-APIKEY': _bkey})
+                _acct = json.loads(urllib.request.urlopen(_req, timeout=15).read())
+                # Prices
+                _presp = urllib.request.urlopen(
+                    'https://api.binance.com/api/v3/ticker/price', timeout=15)
+                _bprices = {p['symbol']: float(p['price'])
+                            for p in json.loads(_presp.read())}
+
+                for b in _acct.get('balances', []):
+                    amt = float(b['free']) + float(b['locked'])
+                    if amt < 0.0001:
+                        continue
+                    raw = b['asset']
+                    asset = raw[2:] if raw.startswith('LD') else raw
+                    price = 0
+                    if asset in ('USDT', 'USDC', 'BUSD', 'FDUSD'):
+                        price = 1
+                    elif asset == 'GBP':
+                        price = 1.27
+                    else:
+                        for _pair in [f'{asset}USDT', f'{asset}USDC']:
+                            if _pair in _bprices:
+                                price = _bprices[_pair]
+                                break
+                    val = amt * price
+                    if val < 0.01:
+                        continue
+                    cb = _cb_lookup('binance', asset, raw)
+                    ep = cb['avg_entry_price'] if cb else 0
+                    ec = cb['total_cost'] if cb else 0
+                    ed = _parse_ts(cb.get('last_trade', 0)) if cb else '?'
+                    dh = _days_held(cb.get('last_trade', 0)) if cb else -1
+                    tc = cb.get('trade_count', 0) if cb else 0
+                    pnl = val - ec if ec > 0 else 0
+                    pp = (pnl / ec * 100) if ec > 0 else 0
+                    etype = 'earn' if raw.startswith('LD') else (
+                        'cash' if asset in ('USDT', 'USDC') else 'position')
+                    enriched.append(_build_entry(
+                        'Binance', asset, amt, ep, price, ec, val, pnl, pp, ed, dh, tc, etype))
+                _safe_print(f"  📊 [INTEL] Binance: {sum(1 for e in enriched if e['exchange']=='Binance')} assets")
+        except Exception as e:
+            _safe_print(f"  📊 [INTEL] Binance error: {e}")
+
+        # ── ALPACA ──
+        try:
+            _ak = os.environ.get('ALPACA_API_KEY', '')
+            _as = os.environ.get('ALPACA_SECRET_KEY', '')
+            if _ak and _as:
+                _hdrs = {'APCA-API-KEY-ID': _ak, 'APCA-API-SECRET-KEY': _as}
+                _req = urllib.request.Request(
+                    'https://api.alpaca.markets/v2/account', headers=_hdrs)
+                _aacct = json.loads(urllib.request.urlopen(_req, timeout=15).read())
+                _req2 = urllib.request.Request(
+                    'https://api.alpaca.markets/v2/positions', headers=_hdrs)
+                _apos = json.loads(urllib.request.urlopen(_req2, timeout=15).read())
+
+                cash = float(_aacct.get('cash', 0))
+                if cash >= 0.01:
+                    enriched.append(_build_entry(
+                        'Alpaca', 'USD', cash, 1, 1, cash, cash, 0, 0, '-', -1, 0, 'cash'))
+
+                for p in _apos:
+                    sym = p['symbol'].replace('USD', '')
+                    enriched.append(_build_entry(
+                        'Alpaca', sym, float(p['qty']),
+                        float(p['avg_entry_price']), float(p['current_price']),
+                        float(p['cost_basis']), float(p['market_value']),
+                        float(p['unrealized_pl']),
+                        float(p['unrealized_plpc']) * 100,
+                        '?', -1, 1, 'position'))
+                _safe_print(f"  📊 [INTEL] Alpaca: {sum(1 for e in enriched if e['exchange']=='Alpaca')} assets")
+        except Exception as e:
+            _safe_print(f"  📊 [INTEL] Alpaca error: {e}")
+
+        # ── Build snapshot ──
+        now_iso = datetime.now(timezone.utc).isoformat()
+        totals = {
+            'kraken': sum(e['current_value'] for e in enriched if e['exchange'] == 'Kraken'),
+            'binance': sum(e['current_value'] for e in enriched if e['exchange'] == 'Binance'),
+            'alpaca': sum(e['current_value'] for e in enriched if e['exchange'] == 'Alpaca'),
+        }
+        totals['grand_total'] = sum(totals.values())
+
+        pos_only = [e for e in enriched if e['type'] not in ('cash',)]
+        winners = sum(1 for e in pos_only if e['pnl_usd'] > 0)
+        losers = sum(1 for e in pos_only if e['pnl_usd'] < 0)
+        total_invested = sum(e['entry_cost'] for e in pos_only if e['entry_cost'] > 0)
+        total_pnl = sum(e['pnl_usd'] for e in pos_only)
+
+        snapshot = {
+            'timestamp': now_iso,
+            'positions': enriched,
+            'totals': totals,
+            'summary': {
+                'total_positions': len(pos_only),
+                'total_invested': total_invested,
+                'total_pnl_usd': total_pnl,
+                'winners': winners,
+                'losers': losers,
+                'win_rate': (winners / (winners + losers) * 100) if (winners + losers) > 0 else 0,
+                'total_cash': sum(e['current_value'] for e in enriched if e['type'] == 'cash'),
+            }
+        }
+
+        # ── Atomic write ──
+        try:
+            _tmp = _tmpfile.NamedTemporaryFile(
+                mode='w', dir='.', suffix='.tmp', delete=False)
+            json.dump(snapshot, _tmp, indent=2)
+            _tmp.close()
+            os.rename(_tmp.name, 'portfolio_intelligence_snapshot.json')
+        except Exception as e:
+            _safe_print(f"  📊 [INTEL] Write error: {e}")
+
+        # ── Emit to ThoughtBus for all pillars ──
+        if self.bus:
+            try:
+                from aureon_thought_bus import Thought
+                self.bus.publish(Thought(
+                    source="portfolio_intelligence_engine",
+                    topic="portfolio_snapshot",
+                    payload={
+                        'timestamp': now_iso,
+                        'total_value_usd': totals['grand_total'],
+                        'total_pnl_usd': total_pnl,
+                        'positions_count': len(pos_only),
+                        'profitable_count': winners,
+                        'exchanges': totals,
+                        'positions': enriched,
+                        'summary': snapshot['summary'],
+                    }
+                ))
+                _safe_print(f"  📊 [INTEL] ThoughtBus → portfolio_snapshot emitted to all pillars")
+            except Exception as e:
+                _safe_print(f"  📊 [INTEL] ThoughtBus emit error: {e}")
+
+        # ── Update internal state (same handler format) ──
+        self.portfolio_state = {
+            'timestamp': time.time(),
+            'totals': {
+                'total_value_usd': totals['grand_total'],
+                'total_pnl_usd': total_pnl,
+                'positions_count': len(pos_only),
+                'profitable_count': winners,
+            },
+            'exchanges': totals,
+        }
+        self.portfolio_last_update = time.time()
+
+        _safe_print(
+            f"  📊 [INTEL] Portfolio Intelligence: ${totals['grand_total']:.2f} total | "
+            f"{len(enriched)} positions | P&L ${total_pnl:+.2f} | "
+            f"W:{winners} L:{losers} ({snapshot['summary']['win_rate']:.0f}%)")
+
+        return snapshot
+
     def refresh_portfolio_state(self):
         """Manually refresh portfolio state from file."""
         try:
@@ -11972,6 +12363,9 @@ class OrcaKillCycle:
         #    Quantum cognition timing
         quantum_cognition_interval = 5.0  # Amplify every 5 seconds
         last_quantum_amplification = 0.0
+        #  📊 Portfolio Intelligence Engine timing (enriched cross-exchange snapshots)
+        portfolio_intelligence_interval = 300.0  # Every 5 minutes
+        last_portfolio_intelligence = 0.0
         
         #     ASSET COMMAND CENTER + OCEAN VIEW - Full visibility of ALL assets
         asset_command_center = None
@@ -12766,6 +13160,31 @@ class OrcaKillCycle:
                                 positions[:] = [p for p in positions if not (p.symbol == h['symbol'] and p.exchange == h['exchange'])]
                     except Exception as e:
                         print(f"      Harvest all exchanges error: {e}")
+
+                    #                                                            
+                    #  📊 PHASE 0.75: PORTFOLIO INTELLIGENCE ENGINE
+                    #     Enriched cross-exchange snapshot → ThoughtBus → all pillars
+                    #     Runs every 5 minutes (separate timer from the 30s portfolio scan)
+                    #                                                            
+                    if current_time - last_portfolio_intelligence >= portfolio_intelligence_interval:
+                        last_portfolio_intelligence = current_time
+                        try:
+                            from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeout
+                            _pi_exec = ThreadPoolExecutor(max_workers=1)
+                            try:
+                                _pi_fut = _pi_exec.submit(self.generate_portfolio_intelligence)
+                                _pi_result = _pi_fut.result(timeout=60)
+                                if _pi_result:
+                                    print(f"     📊 PORTFOLIO INTELLIGENCE: ${_pi_result['totals']['grand_total']:.2f} "
+                                          f"| {len(_pi_result['positions'])} positions "
+                                          f"| P&L ${_pi_result['summary']['total_pnl_usd']:+.2f} "
+                                          f"→ ThoughtBus → ALL PILLARS", flush=True)
+                            except FuturesTimeout:
+                                print("     ⏰ Portfolio Intelligence timed out (60s)", flush=True)
+                            finally:
+                                _pi_exec.shutdown(wait=False)
+                        except Exception as e:
+                            print(f"      Portfolio Intelligence error: {e}")
 
                     print('  [DBG] Phase 0.7: gathering intelligence', flush=True)
                     #                                                            
@@ -14743,12 +15162,18 @@ _ORCA_LOCK_HANDLE = None
 def _acquire_orca_singleton_lock(lock_name: str = "orca_autonomous_live.lock") -> bool:
     """Acquire singleton lock so only one autonomous Orca process can run."""
     global _ORCA_LOCK_HANDLE
-    lock_path = os.path.join("/tmp", lock_name)
+    import tempfile
+    lock_dir = tempfile.gettempdir()  # Cross-platform: /tmp on Linux, %TEMP% on Windows
+    lock_path = os.path.join(lock_dir, lock_name)
     try:
         lock_f = open(lock_path, "w")
         try:
-            import fcntl
-            fcntl.flock(lock_f.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+            if sys.platform == 'win32':
+                import msvcrt
+                msvcrt.locking(lock_f.fileno(), msvcrt.LK_NBLCK, 1)
+            else:
+                import fcntl
+                fcntl.flock(lock_f.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
         except Exception:
             # Lock acquisition failed (usually another running process) -> enforce singleton.
             try:
