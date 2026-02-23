@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-02-23T14:11:33.385171",
+  "timestamp": "2026-02-23T20:11:40.689731",
   "initial_vault": 80.0,
   "available_cash": 0.0,
   "main_position": {
@@ -11,7 +11,7 @@
   },
   "breadcrumbs": {},
   "statistics": {
-    "total_cycles": 153,
+    "total_cycles": 233,
     "total_leaps": 2,
     "total_breadcrumbs": 2,
     "total_scalps": 4,

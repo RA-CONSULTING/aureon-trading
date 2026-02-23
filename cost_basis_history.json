@@ -709,20 +709,20 @@
       "symbol": "ESPUSDC",
       "asset": "ESP",
       "quote": "USDC",
-      "avg_entry_price": 0.10708,
+      "avg_entry_price": 0.10801,
       "total_quantity": 46.0,
-      "total_cost": 4.92568,
-      "total_fees": 0.00492568,
+      "total_cost": 4.968459999999999,
+      "total_fees": 0.004968459999999999,
       "trade_count": 1,
-      "first_trade": 1771873067422,
-      "last_trade": 1771873067422,
-      "synced_at": 1771873067.4221509,
+      "first_trade": 1771876368000,
+      "last_trade": 1771876368000,
+      "synced_at": 1771876368.0007007,
       "source": "manual",
       "order_ids": [
-        "9574615"
+        "9617344"
       ],
-      "last_order_id": "9574615",
-      "avg_fill_price": 0.10708,
+      "last_order_id": "9617344",
+      "avg_fill_price": 0.10801,
       "fills_verified": true,
       "last_fills": []
     },
@@ -2890,6 +2890,132 @@
         "timestamp": 1771873067.422144,
         "fee": 0.00492568,
         "order_id": "9574615"
+      },
+      {
+        "price": 0.10725,
+        "quantity": 46.0,
+        "timestamp": 1771873177.4513354,
+        "fee": 0.0049334999999999995,
+        "order_id": "9576236"
+      },
+      {
+        "price": 0.10772,
+        "quantity": 46.0,
+        "timestamp": 1771873290.5402956,
+        "fee": 0.00495512,
+        "order_id": "9578278"
+      },
+      {
+        "price": 0.1072,
+        "quantity": 46.0,
+        "timestamp": 1771873417.7009404,
+        "fee": 0.0049312,
+        "order_id": "9580817"
+      },
+      {
+        "price": 0.10841,
+        "quantity": 46.0,
+        "timestamp": 1771873524.3683379,
+        "fee": 0.00498686,
+        "order_id": "9583085"
+      },
+      {
+        "price": 0.10822,
+        "quantity": 46.0,
+        "timestamp": 1771873658.651405,
+        "fee": 0.00497812,
+        "order_id": "9585238"
+      },
+      {
+        "price": 0.10843,
+        "quantity": 46.0,
+        "timestamp": 1771873741.305283,
+        "fee": 0.00498778,
+        "order_id": "9586524"
+      },
+      {
+        "price": 0.10903,
+        "quantity": 45.0,
+        "timestamp": 1771874226.4842162,
+        "fee": 0.00490635,
+        "order_id": "9592376"
+      },
+      {
+        "price": 0.10962,
+        "quantity": 45.0,
+        "timestamp": 1771874403.8620465,
+        "fee": 0.0049329000000000005,
+        "order_id": "9594706"
+      },
+      {
+        "price": 0.10964,
+        "quantity": 45.0,
+        "timestamp": 1771874425.8921099,
+        "fee": 0.0049337999999999995,
+        "order_id": "9594881"
+      },
+      {
+        "price": 0.10798,
+        "quantity": 46.0,
+        "timestamp": 1771874633.4854898,
+        "fee": 0.0049670800000000005,
+        "order_id": "9598130"
+      },
+      {
+        "price": 0.10764,
+        "quantity": 46.0,
+        "timestamp": 1771874678.5485966,
+        "fee": 0.00495144,
+        "order_id": "9599115"
+      },
+      {
+        "price": 0.10794,
+        "quantity": 46.0,
+        "timestamp": 1771875006.1965826,
+        "fee": 0.00496524,
+        "order_id": "9603601"
+      },
+      {
+        "price": 0.10869,
+        "quantity": 46.0,
+        "timestamp": 1771875172.5143285,
+        "fee": 0.00499974,
+        "order_id": "9606418"
+      },
+      {
+        "price": 0.10843,
+        "quantity": 46.0,
+        "timestamp": 1771875227.8519442,
+        "fee": 0.00498778,
+        "order_id": "9607159"
+      },
+      {
+        "price": 0.10785,
+        "quantity": 46.0,
+        "timestamp": 1771875417.3603504,
+        "fee": 0.0049611,
+        "order_id": "9609593"
+      },
+      {
+        "price": 0.10771,
+        "quantity": 46.0,
+        "timestamp": 1771875469.1368587,
+        "fee": 0.00495466,
+        "order_id": "9610202"
+      },
+      {
+        "price": 0.10815,
+        "quantity": 46.0,
+        "timestamp": 1771876293.3616326,
+        "fee": 0.0049749,
+        "order_id": "9616790"
+      },
+      {
+        "price": 0.10801,
+        "quantity": 46.0,
+        "timestamp": 1771876368.0006955,
+        "fee": 0.004968459999999999,
+        "order_id": "9617344"
       }
     ],
     "alpaca:AAVEUSD": [
@@ -2921,5 +3047,5 @@
     ]
   },
   "last_sync": 1771872455.3439832,
-  "updated_at": "2026-02-23T18:57:47.422193"
+  "updated_at": "2026-02-23T19:52:48.000726"
 }
