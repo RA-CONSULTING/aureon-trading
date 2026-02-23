@@ -12846,6 +12846,32 @@ class OrcaKillCycle:
         except Exception as _sv_e:
             print(f"   Seer Prediction Validator: skipped ({_sv_e})")
 
+        # ─────────────────────────────────────────────────────────────────
+        #   LIVE MONITOR DASHBOARD — Bloomberg-style portfolio dashboard
+        #   Runs as a daemon thread on port 14000, reads state files only.
+        # ─────────────────────────────────────────────────────────────────
+        try:
+            from aureon_live_monitor import AureonLiveMonitor
+            _monitor_port = int(os.getenv('AUREON_MONITOR_PORT', '14000'))
+            _monitor = AureonLiveMonitor(port=_monitor_port)
+
+            def _run_monitor():
+                """Background thread: run live monitor dashboard."""
+                try:
+                    import asyncio as _aio
+                    loop = _aio.new_event_loop()
+                    _aio.set_event_loop(loop)
+                    from aiohttp import web as _web
+                    _web.run_app(_monitor.app, host='0.0.0.0', port=_monitor_port, print=None)
+                except Exception as _me:
+                    print(f"   Live Monitor thread error: {_me}")
+
+            _monitor_thread = threading.Thread(target=_run_monitor, daemon=True, name="LiveMonitorDashboard")
+            _monitor_thread.start()
+            print(f"  LIVE MONITOR: Dashboard on http://localhost:{_monitor_port}")
+        except Exception as _lm_e:
+            print(f"   Live Monitor: skipped ({_lm_e})")
+
         try:
             while True:  #    INFINITE LOOP
                 current_time = time.time()
