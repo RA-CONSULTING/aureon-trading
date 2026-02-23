@@ -207,10 +207,18 @@ class SuperIntelligenceGate:
         momentum: float = 0.0,
         win_rate: float = 0.5,
         king_health: float = 0.8,
-        side: str = "SELL"
+        side: str = "SELL",
+        quadrumvirate_result: Optional[Dict[str, Any]] = None
     ) -> SuperIntelligenceResult:
         """
         Evaluate trade through ALL intelligence systems.
+        
+        Args:
+            quadrumvirate_result: REAL output from quadrumvirate_should_trade().
+                When provided, the Council vote uses LIVE Four Pillar data
+                instead of simplified proxies. Keys used:
+                    alignment_score, field_coherence, consensus.passed,
+                    consensus.pillars.{queen,king,seer,lyra}
         
         Returns SuperIntelligenceResult with combined confidence and should_trade decision.
         """
@@ -355,16 +363,65 @@ class SuperIntelligenceGate:
                 confidences.append(0.5)
         
         # ─────────────────────────────────────────────────────────────────
-        # 6. PILLAR COUNCIL
+        # 6. PILLAR COUNCIL (REAL Four Pillars when available)
         # ─────────────────────────────────────────────────────────────────
-        if self.council is not None:
+        if quadrumvirate_result is not None:
+            # ── REAL FOUR PILLARS from live Quadrumvirate ──
+            try:
+                alignment = quadrumvirate_result.get("alignment_score", 0.0)
+                fc = quadrumvirate_result.get("field_coherence", 0.0)
+                cons = quadrumvirate_result.get("consensus", {})
+                passed = cons.get("passed", False)
+                pillars = cons.get("pillars", {})
+                
+                # Build reasoning from real pillar votes
+                pillar_parts = []
+                for name in ("queen", "king", "seer", "lyra"):
+                    p = pillars.get(name, {})
+                    v = p.get("vote", "?")
+                    g = p.get("grade", p.get("health", "?"))
+                    pillar_parts.append(f"{name[0].upper()}={v}({g})")
+                
+                # Council approved if alignment high AND field coherent AND consensus passed
+                approved = passed and alignment >= 0.70 and fc >= 0.50
+                # Confidence blends alignment + field coherence (both real signals)
+                conf = alignment * 0.6 + fc * 0.4
+                
+                votes.append(SystemVote(
+                    system_name="Council",
+                    approved=approved,
+                    confidence=conf,
+                    reasoning=f"LIVE align={alignment:.2f} fc={fc:.2f} {' '.join(pillar_parts)}"
+                ))
+                confidences.append(conf)
+                logger.info(f"  👑 Council: REAL 4-Pillar data | align={alignment:.2f} fc={fc:.2f} passed={passed}")
+            except Exception as e:
+                votes.append(SystemVote("Council", True, 0.5, f"QuadErr: {str(e)[:25]}"))
+                confidences.append(0.5)
+        elif self.council is not None:
+            # ── FALLBACK: simplified council when quad data unavailable ──
             try:
                 seer_score = 0.5 + momentum * 0.3
                 lyra_score = win_rate * 0.6 + 0.4 * 0.5
                 
+                # Map king_health float to grade string
+                if isinstance(king_health, (int, float)):
+                    if king_health >= 0.9:
+                        kh_str = "SOVEREIGN"
+                    elif king_health >= 0.7:
+                        kh_str = "PROSPEROUS"
+                    elif king_health >= 0.5:
+                        kh_str = "STABLE"
+                    elif king_health >= 0.3:
+                        kh_str = "STRAINED"
+                    else:
+                        kh_str = "BANKRUPT"
+                else:
+                    kh_str = str(king_health)
+                
                 consensus = self.council.evaluate_consensus(
                     queen_confidence=win_rate,
-                    king_health=king_health,
+                    king_health=kh_str,
                     seer_grade="CLEAR_SIGHT" if seer_score > 0.65 else "PARTIAL_VISION",
                     seer_score=seer_score,
                     lyra_grade="PARTIAL_HARMONY" if lyra_score > 0.4 else "DISSONANCE",
@@ -378,7 +435,7 @@ class SuperIntelligenceGate:
                     system_name="Council",
                     approved=approved,
                     confidence=alignment,
-                    reasoning=f"align={alignment:.2f}"
+                    reasoning=f"fallback align={alignment:.2f}"
                 ))
                 confidences.append(alignment)
             except Exception:
