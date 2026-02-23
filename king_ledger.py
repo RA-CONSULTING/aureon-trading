@@ -250,12 +250,16 @@ class KingLedger:
 
     def record_buy(self, exchange: str, asset: str, quantity: float,
                    price: float, fee: float = 0.0,
-                   order_id: str = "") -> JournalEntry:
+                   order_id: str = "",
+                   ts: float = None) -> JournalEntry:
         """
         Record a crypto purchase.
         DR  Crypto Holdings    (quantity * price)
         DR  Exchange Fees      fee
           CR  Cash (exchange)  (quantity * price + fee)
+
+        Args:
+            ts: Optional historical timestamp (epoch). If None, uses current time.
         """
         total_cost = quantity * price
         total_outflow = total_cost + fee
@@ -282,10 +286,12 @@ class KingLedger:
                 memo=f"Fee on buy {asset}",
             ))
 
+        _ts = ts or time.time()
+        _dt = datetime.fromtimestamp(_ts).strftime("%Y-%m-%d %H:%M:%S")
         entry = JournalEntry(
             id=self._next_id(),
-            timestamp=time.time(),
-            date=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            timestamp=_ts,
+            date=_dt,
             description=f"Buy {quantity:.8f} {asset} @ {price:.2f} on {exchange}",
             reference=order_id,
             lines=lines,
@@ -296,7 +302,8 @@ class KingLedger:
 
     def record_sell(self, exchange: str, asset: str, quantity: float,
                     price: float, cost_basis: float, fee: float = 0.0,
-                    order_id: str = "") -> JournalEntry:
+                    order_id: str = "",
+                    ts: float = None) -> JournalEntry:
         """
         Record a crypto sale with realized gain/loss.
 
@@ -365,10 +372,12 @@ class KingLedger:
         # Net P&L (after fees) for the description only
         net_pnl = gross_pnl - fee
 
+        _ts = ts or time.time()
+        _dt = datetime.fromtimestamp(_ts).strftime("%Y-%m-%d %H:%M:%S")
         entry = JournalEntry(
             id=self._next_id(),
-            timestamp=time.time(),
-            date=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            timestamp=_ts,
+            date=_dt,
             description=f"Sell {quantity:.8f} {asset} @ {price:.2f} on {exchange} (gross: {gross_pnl:+.4f}, net: {net_pnl:+.4f})",
             reference=order_id,
             lines=lines,
