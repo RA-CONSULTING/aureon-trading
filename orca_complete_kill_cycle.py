@@ -630,6 +630,17 @@ except ImportError:
     TradeEntry = None
     TradeExit = None
 
+# 👑 THE KING - Financial-Grade Double-Entry Accounting
+try:
+    from king_integration import king_on_buy, king_on_sell, king_on_deposit, king_on_withdrawal
+    KING_ACCOUNTING_AVAILABLE = True
+except ImportError:
+    KING_ACCOUNTING_AVAILABLE = False
+    king_on_buy = None
+    king_on_sell = None
+    king_on_deposit = None
+    king_on_withdrawal = None
+
 #   Truth Prediction Bridge - 95% accuracy intelligence
 try:
     from aureon_truth_prediction_bridge import get_truth_bridge, TruthPredictionBridge
@@ -4028,6 +4039,22 @@ class OrcaKillCycle:
                 print("  Trade Logger: WIRED! (Entry/Exit tracking)")
             except Exception as e:
                 print(f"  Trade Logger: {e}")
+
+        # 12b. 👑 THE KING - Financial-Grade Double-Entry Accounting
+        self.king_accounting = KING_ACCOUNTING_AVAILABLE
+        if self.king_accounting:
+            try:
+                from king_integration import _get_king
+                _king = _get_king()
+                if _king:
+                    _king.start_autonomous()
+                    print("  👑 The King: WIRED! (Double-entry ledger + FIFO cost basis + tax reports)")
+                else:
+                    self.king_accounting = False
+                    print("  👑 The King: Init returned None")
+            except Exception as e:
+                self.king_accounting = False
+                print(f"  👑 The King: {e}")
         
         # 13. Active positions with ORDER IDs and exact costs
         self.tracked_positions: Dict[str, dict] = {}  # symbol -> {order_id, entry_price, entry_qty, entry_cost, entry_fee, breakeven_price}
@@ -8836,6 +8863,18 @@ class OrcaKillCycle:
                 )
             except Exception as e:
                 print(f"   Cost basis tracker error: {e}")
+
+        # 👑 THE KING - Record buy in double-entry ledger
+        if self.king_accounting and king_on_buy:
+            try:
+                king_on_buy(
+                    exchange=exchange, symbol=symbol,
+                    quantity=fill_qty, price=fill_price,
+                    fee=breakeven_info.get('entry_fee', 0),
+                    order_id=order_id
+                )
+            except Exception as e:
+                print(f"   👑 King accounting (buy): {e}")
         
         # Log to trade logger if available
         if self.trade_logger and TradeEntry:
@@ -9633,6 +9672,18 @@ class OrcaKillCycle:
                     )
                 except Exception as e:
                     print(f"   Sell log error: {e}")
+
+            # 👑 THE KING - Record sell in double-entry ledger
+            if self.king_accounting and king_on_sell:
+                try:
+                    king_on_sell(
+                        exchange=exchange, symbol=symbol,
+                        quantity=fill_qty, price=fill_price,
+                        fee=exit_value * fee_rate,
+                        order_id=order_id
+                    )
+                except Exception as e:
+                    print(f"   👑 King accounting (sell): {e}")
             
             #   Position Removal & Save
             if symbol in self.tracked_positions:
