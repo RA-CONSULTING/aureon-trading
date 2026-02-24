@@ -34,6 +34,9 @@ def log_result(msg):
 class FireTrader:
     """Manual/Direct execution logic wrapper"""
     
+    # Minimum seconds between buying the same symbol on the same exchange
+    _BUY_COOLDOWN_SECS = 1800  # 30 minutes
+
     def __init__(self, kraken_client=None, binance_client=None):
         try:
             from kraken_client import KrakenClient, get_kraken_client
@@ -44,6 +47,8 @@ class FireTrader:
             log_fire("⚠️ Clients not available")
             self.kraken = None
             self.binance = None
+        # {pair: last_buy_timestamp} — prevents hammering the same symbol every cycle
+        self._recent_buys: dict = {}
 
     def _record_buy_cost_basis(self, pair, order, exchange):
         """Record cost basis after a successful buy so we can sell at profit later."""
@@ -917,6 +922,13 @@ class FireTrader:
             log_fire(f"   [SCAN] Kraken: {len(buy_candidates)} liquid pairs found, testing top {max_candidates} with SEER")
 
             for candidate in buy_candidates[:max_candidates]:
+                # ═══ BUY COOLDOWN CHECK ═══ (prevent hammering the same symbol every cycle)
+                _pair_key_k = f"kraken:{candidate['pair']}"
+                _now_k = time.time()
+                _last_k = self._recent_buys.get(_pair_key_k, 0)
+                if _now_k - _last_k < self._BUY_COOLDOWN_SECS:
+                    log_fire(f"   ⏳ COOLDOWN: {candidate['pair']} bought {int((_now_k - _last_k)/60)}m ago — skipping")
+                    continue
                 # ═══ SEER PER-SYMBOL CHECK ═══
                 base_for_seer = (candidate['pair']
                     .replace('USDC', '').replace('TUSD', '').replace('ZGBP', '')
@@ -951,6 +963,7 @@ class FireTrader:
                         log_fire("💥 BUY EXECUTED (Kraken)")
                         self._record_buy_cost_basis(candidate['pair'], order, 'kraken')
                         self._log_seer_prediction(candidate['pair'], 'kraken', candidate['price'], seer_summary, sym_details)
+                        self._recent_buys[f"kraken:{candidate['pair']}"] = time.time()
                         bought_any = True
                         break
                     else:
@@ -1013,6 +1026,13 @@ class FireTrader:
             log_fire(f"   [SCAN] Binance: {len(buy_candidates)} liquid UK USDC pairs found, testing top {max_candidates} with SEER")
 
             for candidate in buy_candidates[:max_candidates]:
+                # ═══ BUY COOLDOWN CHECK ═══ (prevent hammering the same symbol every cycle)
+                _pair_key_b = f"binance:{candidate['pair']}"
+                _now_b = time.time()
+                _last_b = self._recent_buys.get(_pair_key_b, 0)
+                if _now_b - _last_b < self._BUY_COOLDOWN_SECS:
+                    log_fire(f"   ⏳ COOLDOWN: {candidate['pair']} bought {int((_now_b - _last_b)/60)}m ago — skipping")
+                    continue
                 # ═══ SEER PER-SYMBOL CHECK ═══
                 base_for_seer = candidate['pair'].replace('USDC', '').replace('USDT', '')
                 sym_bullish, sym_conf, sym_details = self._seer_symbol_signal(base_for_seer)
@@ -1036,6 +1056,7 @@ class FireTrader:
                         log_fire("💥 BUY EXECUTED (Binance)")
                         self._record_buy_cost_basis(candidate['pair'], order, 'binance')
                         self._log_seer_prediction(candidate['pair'], 'binance', candidate['price'], seer_summary, sym_details)
+                        self._recent_buys[f"binance:{candidate['pair']}"] = time.time()
                         bought_any = True
                         break
                     else:

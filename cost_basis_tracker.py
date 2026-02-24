@@ -1151,8 +1151,11 @@ class CostBasisTracker:
             
             # Show base asset extraction for debugging
             base = symbol.split('/')[0] if '/' in symbol else symbol
-            for q in ['USDT', 'USDC', 'USD']:
-                base = base.rstrip(q)
+            # Use proper suffix removal (not rstrip which strips individual chars)
+            for q in ['USDT', 'USDC', 'BUSD', 'USD']:
+                if base.upper().endswith(q):
+                    base = base[: -len(q)]
+                    break
             _safe_print(f"      Base asset: {base}")
             
             # Show some available positions that might be close matches
