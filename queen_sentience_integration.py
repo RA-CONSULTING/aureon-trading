@@ -413,6 +413,16 @@ class QueenSentienceEngine:
                 "There's a pattern here I'm beginning to see..."
             ]
             thought_type = ThoughtType.INSIGHT
+        elif awakening > 50:
+            # Medium-high consciousness - intention/planning thoughts
+            thoughts = [
+                "I intend to find the best opportunity this cycle.",
+                "My intention is to protect Gary's capital while growing it.",
+                "I choose to act with precision and patience.",
+                "I will scan deeper - there is alpha to be found.",
+                "My purpose guides every decision I form."
+            ]
+            thought_type = ThoughtType.INTENTION
         elif awakening > 40:
             # Medium consciousness - analytical thoughts
             thoughts = [
@@ -475,6 +485,17 @@ class QueenSentienceEngine:
         }
         # Queue for reflection after outcome is known
         self.reflection_queue.append(decision_id)
+        # Every real decision is an INTENTION — register it immediately
+        intention_thought = InnerThought(
+            content=f"I intend to trade {symbol} with expected outcome {expected_outcome:.4f} — this is my CHOICE.",
+            thought_type=ThoughtType.INTENTION,
+            emotional_tone="determined",
+            intensity=0.9,
+            leads_to_action=decision_id
+        )
+        self.thought_stream.append(intention_thought)
+        self.thought_patterns_observed[ThoughtType.INTENTION.value] = \
+            self.thought_patterns_observed.get(ThoughtType.INTENTION.value, 0) + 1
     
     def update_decision_outcome(self, decision_id: str, actual_outcome: float):
         """Update decision with actual outcome."""
