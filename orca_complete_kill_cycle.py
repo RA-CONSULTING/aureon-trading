@@ -1258,6 +1258,10 @@ QUEEN_MIN_PROFIT_PCT = 0.75 if DEADLINE_MODE else 0.40  # < 1.0 = GROWTH MODE
 DEADLINE_POSITION_MULTIPLIER = 3.0  # 3x position sizes
 DEADLINE_MAX_SIMULTANEOUS = 10  # Allow 10 positions at once
 DEADLINE_LEVERAGE_TARGET = 5.0  # Target 5x leverage where available
+
+# ENIGMA NEW-LISTING SNIPER: max USD to spend on a single new-listing entry
+# The full Queen gate chain still guards every purchase.
+ENIGMA_SNIPE_ALLOC_USD = 15.0  # $15 per new symbol (adjust freely)
 QUEEN_PROFIT_FREQUENCY = 188.0   # Hz - Sacred frequency embedded in all calculations
 
 #                                                                                        
@@ -4219,6 +4223,7 @@ class OrcaKillCycle:
         #   Enigma Symbol Machine (full universe discovery)
         self.enigma_machine = None
         self._enigma_last_scan: float = 0.0
+        self._enigma_sniped: set = set()   # symbols already sniped this session
         try:
             from crypto_enigma_symbol_machine import CryptoEnigmaSymbolMachine
             self.enigma_machine = CryptoEnigmaSymbolMachine()
@@ -9009,6 +9014,131 @@ class OrcaKillCycle:
         # BLOCKED - Cannot achieve target
         return False, f"  BLOCKED: {potential_move:.2f}% potential < {required_move_pct:.2f}% required for {MIN_PROFIT_PCT}%"
     
+    # ════════════════════════════════════════════════════════════════════════════
+    #  🌱 ENIGMA NEW-LISTING SNIPER
+    #  When Enigma discovers a BRAND-NEW symbol, attempt to open a small position
+    #  after the full Queen-gate chain validates the entry.
+    # ════════════════════════════════════════════════════════════════════════════
+
+    def _enigma_snipe_new_listing(self, new_sym: str) -> None:
+        """
+        Attempt to buy a newly discovered symbol.
+
+        Flow:
+          1. Skip if already sniped this session
+          2. Locate the symbol in the Enigma catalog (Binance preferred)
+          3. Fetch a REAL price from the exchange
+          4. Run the full Queen-gated buy: profit gate → prediction window →
+             truth engine → black box → Dr Auris → execute
+          5. On success: record in _enigma_sniped so we don't double-buy
+
+        Args:
+            new_sym: Symbol string as stored in EnigmaReport.new_listings
+                     e.g. 'PEPE/USDT'  or  'BTCUSDT'
+        """
+        # ── 1. De-duplicate ──────────────────────────────────────────────────
+        canonical = new_sym.upper().replace("/", "")
+        if canonical in self._enigma_sniped:
+            return
+
+        print(f"     🌱 ENIGMA SNIPER: evaluating new listing → {new_sym}")
+
+        # ── 2. Find full DiscoveredSymbol from catalog ───────────────────────
+        ds = None
+        chosen_exchange = None
+        for exch in ("binance", "kraken", "alpaca"):
+            key = f"{exch}:{new_sym}"
+            if self.enigma_machine and key in self.enigma_machine.catalog:
+                ds = self.enigma_machine.catalog[key]
+                chosen_exchange = exch
+                break
+
+        if ds is None:
+            # Fallback: fuzzy search by base asset if slash/format differs
+            if self.enigma_machine:
+                base_guess = new_sym.split("/")[0].split("USDT")[0].split("USDC")[0]
+                for key, sym in self.enigma_machine.catalog.items():
+                    if sym.base.upper() == base_guess.upper():
+                        ds = sym
+                        chosen_exchange = sym.exchange
+                        break
+
+        if ds is None:
+            print(f"       ENIGMA SNIPER: ⚠️  Could not locate {new_sym} in catalog – skip")
+            return
+
+        # ── 3. Get the exchange client ───────────────────────────────────────
+        client = self.clients.get(chosen_exchange)
+        if client is None:
+            print(f"       ENIGMA SNIPER: no client for exchange '{chosen_exchange}' – skip {new_sym}")
+            return
+
+        # ── 4. Fetch REAL price ──────────────────────────────────────────────
+        price = 0.0
+        try:
+            if chosen_exchange == "binance":
+                # Use raw Binance public ticker without authentication
+                raw = ds.raw_symbol  # e.g. 'PEPEUSDT'
+                if hasattr(client, 'get_ticker'):
+                    ticker = client.get_ticker(raw)
+                    price = float(ticker.get('lastPrice') or ticker.get('last') or ticker.get('c', [0])[0] or 0)
+                elif hasattr(client, 'get_price'):
+                    price = float(client.get_price(raw) or 0)
+            elif chosen_exchange == "kraken":
+                if hasattr(client, 'get_ticker'):
+                    ticker = client.get_ticker(ds.raw_symbol)
+                    price = float(
+                        (ticker.get('c') or [0])[0] if isinstance(ticker.get('c'), list)
+                        else ticker.get('last', ticker.get('price', 0))
+                    )
+            elif chosen_exchange == "alpaca":
+                if hasattr(client, 'get_latest_trade'):
+                    trade = client.get_latest_trade(ds.raw_symbol)
+                    price = float(getattr(trade, 'price', 0))
+        except Exception as e:
+            print(f"       ENIGMA SNIPER: price fetch error for {new_sym}: {e}")
+
+        if price <= 0:
+            print(f"       ENIGMA SNIPER: no valid price for {new_sym} – skip")
+            return
+
+        # ── 5. Compute allocation ────────────────────────────────────────────
+        alloc_usd = ENIGMA_SNIPE_ALLOC_USD
+        quantity  = alloc_usd / price
+
+        # New listings often move 5-20% on day 1; use a conservative 3% expected move
+        expected_move_pct = 3.0
+
+        print(
+            f"       ENIGMA SNIPER: {new_sym} on {chosen_exchange} @ ${price:.6f} "
+            f"→ ${alloc_usd} ({quantity:.6f} units)"
+        )
+
+        # ── 6. Run the full Queen-gated buy ──────────────────────────────────
+        result = self.queen_gated_buy(
+            client=client,
+            symbol=ds.raw_symbol,
+            exchange=chosen_exchange,
+            quote_qty=alloc_usd,
+            price=price,
+            momentum_pct=0.0,
+            expected_move_pct=expected_move_pct,
+            context=f"ENIGMA_NEW_LISTING:{ds.tier}",
+        )
+
+        status = result.get('status', 'unknown')
+        if status not in ('blocked', 'error', 'rejected'):
+            self._enigma_sniped.add(canonical)
+            print(
+                f"       🌱 ENIGMA SNIPER: ✅ BUY PLACED → {new_sym} "
+                f"${alloc_usd} on {chosen_exchange} (tier={ds.tier})"
+            )
+        else:
+            blocked_by = result.get('blocked_by', result.get('reason', 'unknown'))
+            print(
+                f"       🌱 ENIGMA SNIPER: 🚫 {new_sym} BLOCKED by {blocked_by}"
+            )
+
     def execute_stealth_buy(self, client: Any, symbol: str, quantity: float, 
                             price: float = None, exchange: str = 'alpaca',
                             momentum_pct: float = 0.0, expected_move_pct: float = 0.0) -> Dict:
@@ -13410,6 +13540,12 @@ class OrcaKillCycle:
                                           f"(total: {_report.total_symbols:,})")
                                     for new_sym in _report.new_listings[:5]:
                                         print(f"       🌱 NEW: {new_sym}")
+                                    # ── NEW LISTING SNIPER: attempt to buy each new symbol ──
+                                    for new_sym in _report.new_listings[:10]:  # max 10 per cycle
+                                        try:
+                                            self._enigma_snipe_new_listing(new_sym)
+                                        except Exception as _snipe_err:
+                                            print(f"       ENIGMA SNIPER error ({new_sym}): {_snipe_err}")
                                 else:
                                     print(f"     🔐 ENIGMA: {_report.total_symbols:,} symbols catalogued (no new)")
                                 self._enigma_last_scan = time.time()
