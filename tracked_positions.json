@@ -1003,7 +1003,7 @@
         "exchange": "kraken",
         "buy_price": 0.0,
         "quantity": 0.00072311,
-        "buy_timestamp": "2026-02-23T20:36:59.569998",
+        "buy_timestamp": "2026-02-24T02:47:26.111715",
         "auto_tracked": true,
         "source": "portfolio_truth_check"
     },
@@ -1250,6 +1250,22 @@
         "buy_price": 0.0,
         "quantity": 253.7587,
         "buy_timestamp": "2026-02-23T18:49:40.868311",
+        "auto_tracked": true,
+        "source": "portfolio_truth_check"
+    },
+    "SENTUSD": {
+        "exchange": "binance",
+        "buy_price": 0.0,
+        "quantity": 196.81285,
+        "buy_timestamp": "2026-02-23T21:22:40.786409",
+        "auto_tracked": true,
+        "source": "portfolio_truth_check"
+    },
+    "EATUSD": {
+        "exchange": "kraken",
+        "buy_price": 0.0,
+        "quantity": 169.7793,
+        "buy_timestamp": "2026-02-23T21:59:03.671885",
         "auto_tracked": true,
         "source": "portfolio_truth_check"
     }
