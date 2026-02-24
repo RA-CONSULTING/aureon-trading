@@ -9703,49 +9703,16 @@ class OrcaKillCycle:
         #     EXECUTE THE BUY - THE QUEEN HAS GRANTED PERMISSION!
         #                                                                    
         
-        # Check for margin trading opportunity (Kraken only, for now)
-        # Master kill switch: MARGIN_ENABLED env var MUST be '1' for margin to activate
-        margin_enabled = os.getenv('MARGIN_ENABLED', '0') == '1'
-        use_margin = False
-        leverage = 1
-        if (margin_enabled and
-            exchange == "kraken" and 
-            margin_recommendation in ("LONG", "SHORT") and 
-            margin_leverage >= 2 and 
-            margin_conviction >= 0.4):
-            use_margin = True
-            leverage = min(margin_leverage, 5)  # Cap at 5x
-            print(f"   💰 MARGIN TRADING ACTIVATED: {margin_recommendation} at {leverage}x leverage (conviction {margin_conviction:.0%})")
-        
-        # Determine order type based on parameters
-        if use_margin:
-            # Use margin order for leveraged trading
-            if quote_qty and quote_qty > 0:
-                return client.place_margin_order(
-                    symbol=symbol, 
-                    side='buy' if margin_recommendation == "LONG" else 'sell',
-                    quote_qty=quote_qty,
-                    leverage=leverage
-                )
-            elif quantity and quantity > 0:
-                return client.place_margin_order(
-                    symbol=symbol, 
-                    side='buy' if margin_recommendation == "LONG" else 'sell',
-                    quantity=quantity,
-                    leverage=leverage
-                )
-            else:
-                print(f"  No quantity specified for margin buy: {symbol}")
-                return {'status': 'error', 'reason': 'No quantity specified'}
+        # ═══════════════════════════════════════════════════════════════
+        #  ALWAYS EXECUTE SPOT ORDER - This is the primary trading path
+        # ═══════════════════════════════════════════════════════════════
+        if quote_qty and quote_qty > 0:
+            return client.place_market_order(symbol=symbol, side='buy', quote_qty=quote_qty)
+        elif quantity and quantity > 0:
+            return client.place_market_order(symbol=symbol, side='buy', quantity=quantity)
         else:
-            # Standard spot order
-            if quote_qty and quote_qty > 0:
-                return client.place_market_order(symbol=symbol, side='buy', quote_qty=quote_qty)
-            elif quantity and quantity > 0:
-                return client.place_market_order(symbol=symbol, side='buy', quantity=quantity)
-            else:
-                print(f"  No quantity specified for buy: {symbol}")
-                return {'status': 'error', 'reason': 'No quantity specified'}
+            print(f"  No quantity specified for buy: {symbol}")
+            return {'status': 'error', 'reason': 'No quantity specified'}
     
     def execute_sell_with_logging(self, client: Any, symbol: str, quantity: float,
                                    exchange: str, current_price: float = 0, 
@@ -14279,6 +14246,9 @@ class OrcaKillCycle:
                                                                     buy_price, buy_qty, fee_rate, target_pct_current
                                                                 )
                                                                 
+                                                                # ═══════════════════════════════════════════════
+                                                                #  SPOT POSITION - Always created
+                                                                # ═══════════════════════════════════════════════
                                                                 pos = LivePosition(
                                                                     symbol=symbol_clean,
                                                                     exchange=best.exchange,
@@ -14289,10 +14259,10 @@ class OrcaKillCycle:
                                                                     target_price=target_price,
                                                                     client=client,
                                                                     stop_price=0.0,  # NO STOP LOSS!
-                                                                    # Margin fields
-                                                                    is_margin=use_margin,
-                                                                    leverage=leverage if use_margin else 1,
-                                                                    margin_amount=buy_amount if use_margin else 0.0,
+                                                                    # Spot position - no margin
+                                                                    is_margin=False,
+                                                                    leverage=1,
+                                                                    margin_amount=0.0,
                                                                 )
                                                                 positions.append(pos)
                                                                 
@@ -14305,15 +14275,64 @@ class OrcaKillCycle:
                                                                     meta={"symbol": symbol_clean, "exchange": best.exchange},
                                                                 )
                                                                 
-                                                                # Update efficiency metrics (bought)
-                                                                
-                                                                # Update position health
-                                                                
-                                                                print(f"     BOUGHT: {buy_qty:.6f} @ ${buy_price:,.4f}")
+                                                                print(f"     SPOT BOUGHT: {buy_qty:.6f} @ ${buy_price:,.4f}")
                                                                 print(f"        Target: ${target_price:,.4f} ({target_pct_current:.2f}%)")
                                                                 print(f"        NO STOP LOSS - HOLD UNTIL PROFIT!")
                                                                 
                                                                 session_stats['total_trades'] += 1
+                                                                
+                                                                # ═══════════════════════════════════════════════
+                                                                #  MARGIN POSITION - Simultaneous, Kraken only
+                                                                #  Fires ALONGSIDE spot, never instead of it
+                                                                # ═══════════════════════════════════════════════
+                                                                if (best.exchange == "kraken" and
+                                                                    margin_rec in ("LONG", "SHORT") and
+                                                                    margin_lev >= 2 and
+                                                                    margin_conv >= 0.4 and
+                                                                    hasattr(client, 'place_margin_order')):
+                                                                    
+                                                                    m_leverage = min(margin_lev, 5)
+                                                                    print(f"   💰 MARGIN TRADE (SIMULTANEOUS): {margin_rec} at {m_leverage}x leverage (conviction {margin_conv:.0%})")
+                                                                    try:
+                                                                        m_side = 'buy' if margin_rec == "LONG" else 'sell'
+                                                                        m_raw = client.place_margin_order(
+                                                                            symbol=symbol_clean,
+                                                                            side=m_side,
+                                                                            quote_qty=buy_amount,
+                                                                            leverage=m_leverage
+                                                                        )
+                                                                        m_order = self.normalize_order_response(m_raw, best.exchange) if m_raw else None
+                                                                        if m_order and m_order.get('status') != 'rejected':
+                                                                            m_qty = m_order.get('filled_qty', 0)
+                                                                            m_price = m_order.get('filled_avg_price', buy_price)
+                                                                            if m_qty > 0 and m_price > 0:
+                                                                                m_breakeven = m_price * (1 + fee_rate) / (1 - fee_rate)
+                                                                                m_target = m_breakeven * (1 + target_pct_current / 100)
+                                                                                margin_pos = LivePosition(
+                                                                                    symbol=symbol_clean,
+                                                                                    exchange=best.exchange,
+                                                                                    entry_price=m_price,
+                                                                                    entry_qty=m_qty,
+                                                                                    entry_cost=m_price * m_qty * (1 + fee_rate),
+                                                                                    breakeven_price=m_breakeven,
+                                                                                    target_price=m_target,
+                                                                                    client=client,
+                                                                                    stop_price=0.0,
+                                                                                    is_margin=True,
+                                                                                    leverage=m_leverage,
+                                                                                    margin_amount=buy_amount,
+                                                                                )
+                                                                                positions.append(margin_pos)
+                                                                                session_stats['total_trades'] += 1
+                                                                                print(f"     MARGIN BOUGHT: {m_qty:.6f} @ ${m_price:,.4f} ({m_leverage}x leverage)")
+                                                                                print(f"        Margin Target: ${m_target:,.4f} | Collateral: ${buy_amount:.2f}")
+                                                                            else:
+                                                                                print(f"      Margin order filled but zero qty/price")
+                                                                        else:
+                                                                            print(f"      Margin order not filled: {m_order}")
+                                                                    except Exception as margin_err:
+                                                                        print(f"      ⚠️ Margin order failed (spot still good): {margin_err}")
+                                                                        # Spot position is already created - margin failure is non-fatal
                                                 else:
                                                     print(f"      BUY SKIPPED: insufficient funded quote amount on {best.exchange.upper()} (buy_amount={buy_amount:.4f})")
                                         except Exception as e:
@@ -15692,7 +15711,6 @@ if __name__ == "__main__":
         parser.add_argument("--symbols", type=str, help="Comma-separated list of symbols to trade")
         parser.add_argument("--initial-capital", type=float, default=1000, help="Initial capital amount")
         parser.add_argument("--dry-run", action="store_true", help="Dry run mode - no real trades")
-        parser.add_argument("--margin", action="store_true", help="Enable margin trading (sets MARGIN_ENABLED=1)")
         parser.add_argument("--allow-multi-instance", action="store_true", help="Allow multiple autonomous Orca instances (not recommended)")
         # Positional args passed by start_orca.sh: max_positions position_size min_target
         parser.add_argument("max_positions", nargs="?", type=int, default=0, help="Max concurrent positions (<=0 for unlimited, default: unlimited)")
@@ -15700,10 +15718,6 @@ if __name__ == "__main__":
         parser.add_argument("min_target", nargs="?", type=float, default=1.0, help="Min profit target percent (default: 1.0)")
         
         args = parser.parse_args()
-
-        # Margin trading flag (can be set via --margin CLI arg OR MARGIN_ENABLED env var)
-        if args.margin:
-            os.environ['MARGIN_ENABLED'] = '1'
 
         # Force consistent runtime mode flags for all subsystems.
         # `--autonomous` without `--dry-run` must run fully LIVE.
@@ -15759,7 +15773,7 @@ if __name__ == "__main__":
             print("  AUTONOMOUS MODE ACTIVATED")
             print(f"  {'LIVE MODE - REAL TRADES' if not args.dry_run else 'DRY-RUN MODE'}")
             print(f"  Runtime gate state: LIVE={os.getenv('LIVE')} DRY_RUN={os.getenv('DRY_RUN')} KRAKEN_DRY_RUN={os.getenv('KRAKEN_DRY_RUN')} BINANCE_DRY_RUN={os.getenv('BINANCE_DRY_RUN')} ALPACA_DRY_RUN={os.getenv('ALPACA_DRY_RUN')}")
-            print(f"  Margin trading: {'ENABLED' if os.getenv('MARGIN_ENABLED') == '1' else 'DISABLED'} (MARGIN_ENABLED={os.getenv('MARGIN_ENABLED', '0')})")
+            print(f"  Margin trading: ALWAYS-ON (spot + margin simultaneous on Kraken)")
 
             # Production readiness checks (live mode only)
             _production_preflight(orca, live_mode=not args.dry_run)

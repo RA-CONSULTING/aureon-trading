@@ -284,8 +284,8 @@ while true; do
     echo "   Using Python: $PYTHON_CMD"
     # 👑 QUEEN'S PARAMETERS: 50 positions, $10 each, 1% minimum target, IRA Sniper armed
     # Increased to 50 to handle full portfolio: 19 Binance + 18 Kraken + Alpaca
-    # --margin enables Kraken margin trading via OracleOfMargin (Seer 8th Oracle)
-    $PYTHON_CMD -u orca_complete_kill_cycle.py --autonomous --margin 50 10.0 1.0
+    # Margin trading is ALWAYS-ON: spot + margin fire simultaneously on Kraken
+    $PYTHON_CMD -u orca_complete_kill_cycle.py --autonomous 50 10.0 1.0
     EXIT_CODE=$?
     echo "$(date): Orca exited with code $EXIT_CODE"
     

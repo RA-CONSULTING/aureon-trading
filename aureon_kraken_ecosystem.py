@@ -225,8 +225,8 @@ CONFIG = {
     # State Persistence
     'STATE_FILE': 'aureon_kraken_state.json',
 
-    # Margin Trading (Kraken Leveraged Positions)
-    'MARGIN_ENABLED': os.getenv('MARGIN_ENABLED', '0') == '1',
+    # Margin Trading (Kraken Leveraged Positions) - ALWAYS-ON by default
+    'MARGIN_ENABLED': os.getenv('MARGIN_ENABLED', '1') == '1',
     'MARGIN_DEFAULT_LEVERAGE': int(os.getenv('MARGIN_DEFAULT_LEVERAGE', '2')),
     'MARGIN_MAX_LEVERAGE': int(os.getenv('MARGIN_MAX_LEVERAGE', '5')),
     'MARGIN_MAX_EXPOSURE_PCT': float(os.getenv('MARGIN_MAX_EXPOSURE_PCT', '0.30')),  # Max 30% of equity in margin
