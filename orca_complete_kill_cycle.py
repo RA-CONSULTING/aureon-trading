@@ -6065,7 +6065,7 @@ class OrcaKillCycle:
                 mode='w', dir='.', suffix='.tmp', delete=False)
             json.dump(snapshot, _tmp, indent=2)
             _tmp.close()
-            os.rename(_tmp.name, 'portfolio_intelligence_snapshot.json')
+            os.replace(_tmp.name, 'portfolio_intelligence_snapshot.json')
         except Exception as e:
             _safe_print(f"  📊 [INTEL] Write error: {e}")
 
@@ -13392,6 +13392,8 @@ class OrcaKillCycle:
                             options_opps = self.options_scanner.scan_covered_calls() if hasattr(self.options_scanner, 'scan_covered_calls') else []
                             if options_opps:
                                 print(f"     OPTIONS SCANNER: {len(options_opps)} option opportunities found")
+                        except TypeError:
+                            options_opps = []  # scan_covered_calls requires underlying+price; skip when not applicable
                         except Exception as e:
                             print(f"      Options Scanner error: {e}")
 

@@ -892,7 +892,10 @@ class CostBasisTracker:
             self.positions[position_key] = {
                 'exchange': exchange,
                 'symbol': symbol,
-                'asset': symbol.split('/')[0] if '/' in symbol else symbol.rstrip('USDT').rstrip('USDC').rstrip('USD'),
+                'asset': symbol.split('/')[0] if '/' in symbol else next(
+                    (symbol[: -len(q)] for q in ['USDT', 'USDC', 'BUSD', 'USD'] if symbol.upper().endswith(q)),
+                    symbol
+                ),
                 'quote': symbol.split('/')[1] if '/' in symbol else symbol[-3:],
                 'avg_entry_price': 0,
                 'total_quantity': 0,
