@@ -1199,7 +1199,12 @@ class QueenEternalMachine:
             )
 
         def _base_symbol(symbol: str) -> str:
-            return str(symbol).split(":")[-1].split("/")[0].upper()
+            raw = str(symbol).split(":")[-1].split("/")[0].upper()
+            # Strip Kraken staking/bond suffixes so ADA.S → ADA, SCRT21.S → SCRT21
+            for _sfx in (".S", ".B", ".F", ".M", ".P"):
+                if raw.endswith(_sfx):
+                    raw = raw[:-len(_sfx)]
+            return raw
 
         held_symbols = {_base_symbol(s) for s in self.friends.keys() if s and s != "CASH"}
         exchange_fetches: List[str] = []

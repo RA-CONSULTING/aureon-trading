@@ -159,6 +159,12 @@ class CapitalClient:
         # Handle invalid session
         if resp.status_code in (401, 403) or ('error.invalid.session.token' in (resp.text or '').lower()):
             logger.warning("Capital.com session invalid; attempting re-login and retry")
+            # Clear stale tokens and re-enable so _create_session does a real POST
+            self.cst = None
+            self.x_security_token = None
+            self.session_start_time = 0.0
+            self.enabled = True
+            self._session_error_logged = False
             self._create_session()
             headers = self._get_headers()
             resp = requests.request(method.upper(), url, headers=headers, params=params, json=json_body, timeout=20)
