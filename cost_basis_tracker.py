@@ -1945,6 +1945,701 @@ class CostBasisTracker:
         print("=" * 75)
 
 
+# ═══════════════════════════════════════════════════════════════════════════════
+# 🔍 COST BASIS TRUTH FINDER
+# ═══════════════════════════════════════════════════════════════════════════════
+# Finds the REAL cost basis for every position using:
+#   1. Exchange trade history APIs (Kraken, Binance, Alpaca)
+#   2. Kraken Ledger API (catches conversions, staking, transfers)
+#   3. CoinGecko historical price API (fallback for timestamp-based lookup)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# CoinGecko ID mapping for historical price lookups
+GECKO_ID_MAP = {
+    'BTC': 'bitcoin', 'XBT': 'bitcoin', 'ETH': 'ethereum', 'XRP': 'ripple',
+    'SOL': 'solana', 'LINK': 'chainlink', 'XLM': 'stellar', 'ADA': 'cardano',
+    'BCH': 'bitcoin-cash', 'ZEC': 'zcash', 'BNB': 'binancecoin', 'TRX': 'tron',
+    'USDT': 'tether', 'USDC': 'usd-coin', 'SHIB': 'shiba-inu',
+    'ROSE': 'oasis-network', 'PENGU': 'pudgy-penguins', 'LPT': 'livepeer',
+    'SSV': 'ssv-network', 'BEAMX': 'beam-2', 'KAIA': 'kaia',
+    'AAVE': 'aave', 'ARB': 'arbitrum', 'GHIBLI': 'ghiblification',
+    'IN': 'inchain', 'SAHARA': 'sahara-ai', 'MXC': 'mxc',
+    'EUL': 'euler', 'FIS': 'stafi', 'CRO': 'crypto-com-chain',
+    'FIGHT': 'fight-night', 'ZRO': 'layerzero', 'PYTH': 'pyth-network',
+    'NOM': 'nom', 'RESOLV': 'resolv', 'SHELL': 'myshell', 'AVNT': 'advent',
+    'TURTLE': 'turtle', 'F': 'formless', 'KITE': 'kiteai', 'LA': 'laion',
+    'BANANAS31': 'bananas31', 'SKR': 'sekoia-by-virtuals', 'OPEN': 'openledger',
+    'ZRC': 'zircuit', 'DOGE': 'dogecoin', 'DOT': 'polkadot',
+    'ATOM': 'cosmos', 'SCRT': 'secret', 'BABY': 'babylon',
+    'KTA': 'keeta', 'CHILLHOUSE': 'chill-house',
+    'TUSD': 'true-usd', 'DYDX': 'dydx-chain',
+    'COTI': 'coti',
+}
+
+# Kraken asset name normalization
+KRAKEN_ASSET_NORM = {
+    'XXBT': 'BTC', 'XXRP': 'XRP', 'XETH': 'ETH', 'ZUSD': 'USD',
+    'ZGBP': 'GBP', 'USDT': 'USDT', 'USDC': 'USDC', 'TUSD': 'TUSD',
+    'XXLM': 'XLM', 'XZEC': 'ZEC', 'XXDG': 'DOGE', 'XLTC': 'LTC',
+    'ETH2': 'ETH', 'ETH2.S': 'ETH',
+}
+
+
+def _gecko_historical_price(coin_id: str, timestamp: float) -> Optional[float]:
+    """
+    Get historical USD price from CoinGecko for a specific date.
+    
+    Uses /coins/{id}/history?date=dd-mm-yyyy endpoint.
+    Free tier: 10-30 calls/min.
+    """
+    import urllib.request
+    try:
+        dt = datetime.utcfromtimestamp(timestamp)
+        date_str = dt.strftime('%d-%m-%Y')
+        url = (f'https://api.coingecko.com/api/v3/coins/{coin_id}/history'
+               f'?date={date_str}&localization=false')
+        req = urllib.request.Request(url, headers={
+            'Accept': 'application/json', 'User-Agent': 'Aureon/1.0'
+        })
+        resp = urllib.request.urlopen(req, timeout=15)
+        data = json.loads(resp.read())
+        price = data.get('market_data', {}).get('current_price', {}).get('usd')
+        if price and price > 0:
+            return float(price)
+    except Exception as e:
+        _safe_print(f"      [CoinGecko] Failed {coin_id} @ {date_str}: {e}")
+    return None
+
+
+def _gecko_current_price(coin_id: str) -> Optional[float]:
+    """Get current USD price from CoinGecko."""
+    import urllib.request
+    try:
+        url = f'https://api.coingecko.com/api/v3/simple/price?ids={coin_id}&vs_currencies=usd'
+        req = urllib.request.Request(url, headers={
+            'Accept': 'application/json', 'User-Agent': 'Aureon/1.0'
+        })
+        resp = urllib.request.urlopen(req, timeout=10)
+        data = json.loads(resp.read())
+        return data.get(coin_id, {}).get('usd')
+    except Exception:
+        return None
+
+
+def _normalize_kraken_asset(asset: str) -> str:
+    """Normalize Kraken asset names: XXBT→BTC, ADA.S→ADA, etc."""
+    asset = (asset or '').upper()
+    # Check direct mapping
+    if asset in KRAKEN_ASSET_NORM:
+        return KRAKEN_ASSET_NORM[asset]
+    # Return as-is for modern Kraken names (ADA, FIS, GHIBLI, etc.)
+    # Only strip X/Z prefix for classic 4-char Kraken names (XXBT, XETH, XXRP)
+    if len(asset) == 4 and asset[0] in ('X', 'Z') and asset not in ('ZUSD',):
+        stripped = asset[1:]
+        if stripped in KRAKEN_ASSET_NORM:
+            return KRAKEN_ASSET_NORM[stripped]
+        return stripped
+    return asset
+
+
+def _kraken_api_with_retry(client, method_name: str, max_retries: int = 5,
+                            initial_wait: float = 15.0, **kwargs):
+    """Call a Kraken client method with rate-limit-aware exponential backoff."""
+    wait = initial_wait
+    for attempt in range(max_retries):
+        try:
+            method = getattr(client, method_name)
+            return method(**kwargs)
+        except Exception as e:
+            err_str = str(e)
+            if 'Rate limit' in err_str or 'EAPI:Rate' in err_str:
+                _safe_print(f"      [Kraken] Rate limited on {method_name}, waiting {wait:.0f}s (attempt {attempt+1}/{max_retries})...")
+                time.sleep(wait)
+                wait = min(wait * 1.5, 120)  # cap at 2 min
+            else:
+                raise
+    _safe_print(f"      [Kraken] {method_name} failed after {max_retries} retries")
+    return None
+
+
+def find_cost_basis_truth(tracker: 'CostBasisTracker' = None) -> dict:
+    """
+    🔍 COST BASIS TRUTH FINDER
+    
+    Master function that finds the REAL cost basis for every position by:
+    
+    1. Getting current real balances from all exchanges
+    2. Fetching trade history from exchanges (with rate-limit retry)
+    3. Parsing Kraken ledgers for conversions/staking/transfers
+    4. Looking up CoinGecko historical prices when exchange data is missing
+    5. Reconciling and saving the truth to cost_basis_history.json
+    
+    Returns dict of {position_key: {entry_price, qty, timestamp, source, ...}}
+    """
+    if tracker is None:
+        tracker = get_cost_basis_tracker()
+    
+    _safe_print("\n" + "=" * 80)
+    _safe_print("🔍 COST BASIS TRUTH FINDER - Finding REAL entry prices for ALL positions")
+    _safe_print("=" * 80)
+    
+    results = {}
+    
+    # ═══════════════════════════════════════════════════════════════════════════
+    # STEP 1: Get current REAL balances from all exchanges
+    # ═══════════════════════════════════════════════════════════════════════════
+    _safe_print("\n📊 STEP 1: Fetching real balances from all exchanges...")
+    
+    kraken_balances = {}
+    binance_balances = {}
+    alpaca_positions = []
+    
+    # --- Kraken ---
+    try:
+        from kraken_client import get_kraken_client
+        kraken_client = get_kraken_client()
+        if not getattr(kraken_client, 'dry_run', False):
+            raw_bal = kraken_client.get_balance()
+            for asset, amount in raw_bal.items():
+                amt = float(amount)
+                if amt > 0.0000001:
+                    norm = _normalize_kraken_asset(asset)
+                    # Keep both raw and normalized
+                    kraken_balances[asset] = {'amount': amt, 'normalized': norm}
+            _safe_print(f"   🐙 Kraken: {len(kraken_balances)} assets with balance")
+    except Exception as e:
+        _safe_print(f"   ⚠️ Kraken balance failed: {e}")
+    
+    # --- Binance ---
+    try:
+        from binance_client import get_binance_client
+        bin_client = get_binance_client()
+        account = bin_client.account()
+        for bal in account.get('balances', []):
+            asset = bal['asset']
+            total = float(bal.get('free', 0)) + float(bal.get('locked', 0))
+            if total > 0.0000001 and asset not in ('USDC', 'USDT', 'USD', 'BUSD', 'FDUSD'):
+                binance_balances[asset] = total
+        _safe_print(f"   🟡 Binance: {len(binance_balances)} assets with balance")
+    except Exception as e:
+        _safe_print(f"   ⚠️ Binance balance failed: {e}")
+    
+    # --- Alpaca ---
+    try:
+        from alpaca_client import AlpacaClient
+        alp_client = AlpacaClient()
+        alpaca_positions = alp_client.get_positions() or []
+        _safe_print(f"   🦙 Alpaca: {len(alpaca_positions)} positions")
+    except Exception as e:
+        _safe_print(f"   ⚠️ Alpaca positions failed: {e}")
+    
+    # ═══════════════════════════════════════════════════════════════════════════
+    # STEP 2: Fetch Kraken trade history + ledgers
+    # ═══════════════════════════════════════════════════════════════════════════
+    _safe_print("\n📜 STEP 2: Fetching Kraken trade history & ledgers (rate-limit aware)...")
+    
+    kraken_trades = {}
+    kraken_ledgers = []
+    
+    try:
+        from kraken_client import get_kraken_client
+        kc = get_kraken_client()
+        if not getattr(kc, 'dry_run', False):
+            # Try trades first
+            kraken_trades = _kraken_api_with_retry(kc, 'get_trades_history') or {}
+            _safe_print(f"   📦 Kraken trades: {len(kraken_trades)} entries")
+            
+            if kraken_trades:
+                # Wait before hitting ledgers
+                time.sleep(5)
+            
+            # Then ledgers (captures conversions, staking, deposits)
+            kraken_ledgers = _kraken_api_with_retry(kc, 'get_ledgers', max_records=2000) or []
+            _safe_print(f"   📒 Kraken ledgers: {len(kraken_ledgers)} entries")
+    except Exception as e:
+        _safe_print(f"   ⚠️ Kraken history fetch: {e}")
+    
+    # ═══════════════════════════════════════════════════════════════════════════
+    # STEP 3: Build cost basis from Kraken trades
+    # ═══════════════════════════════════════════════════════════════════════════
+    _safe_print("\n🔨 STEP 3: Building cost basis from trade data...")
+    
+    # Group Kraken trades by normalized pair
+    from collections import defaultdict
+    kraken_pair_trades = defaultdict(list)
+    for tid, trade in kraken_trades.items():
+        pair = trade.get('pair', '')
+        kraken_pair_trades[pair].append(trade)
+    
+    # Process each Kraken pair
+    for pair, trades_list in kraken_pair_trades.items():
+        norm_pair = CostBasisTracker._normalize_kraken_pair(pair)
+        
+        total_qty = 0.0
+        total_cost = 0.0
+        total_fees = 0.0
+        buy_count = 0
+        first_ts = None
+        last_ts = None
+        
+        for trade in sorted(trades_list, key=lambda x: float(x.get('time', 0))):
+            trade_type = trade.get('type', '')
+            qty = float(trade.get('vol', 0))
+            price = float(trade.get('price', 0))
+            fee = float(trade.get('fee', 0))
+            ts = float(trade.get('time', 0))
+            
+            if trade_type == 'buy':
+                total_qty += qty
+                total_cost += qty * price
+                total_fees += fee
+                buy_count += 1
+            elif trade_type == 'sell':
+                total_qty -= qty
+                if total_qty > 0 and (total_qty + qty) > 0:
+                    avg = total_cost / (total_qty + qty)
+                    total_cost = total_qty * avg
+            
+            if first_ts is None or ts < first_ts:
+                first_ts = ts
+            if last_ts is None or ts > last_ts:
+                last_ts = ts
+        
+        if total_qty > 0.0000001 and buy_count > 0:
+            avg_entry = total_cost / total_qty
+            # Extract base asset from normalized pair
+            base = CostBasisTracker._strip_known_quote(norm_pair)
+            position_key = f"kraken:{norm_pair}"
+            results[position_key] = {
+                'exchange': 'kraken',
+                'symbol': norm_pair,
+                'asset': base,
+                'avg_entry_price': avg_entry,
+                'total_quantity': total_qty,
+                'total_cost': total_cost,
+                'total_fees': total_fees,
+                'trade_count': buy_count,
+                'first_trade': first_ts,
+                'last_trade': last_ts,
+                'source': 'kraken_trades',
+                'synced_at': time.time(),
+            }
+            _safe_print(f"   ✅ {position_key}: ${avg_entry:.6f} x {total_qty:.4f} ({buy_count} trades)")
+    
+    # ═══════════════════════════════════════════════════════════════════════════
+    # STEP 4: Parse Kraken ledgers for conversions, staking, deposits
+    # ═══════════════════════════════════════════════════════════════════════════
+    _safe_print("\n📒 STEP 4: Parsing Kraken ledgers (conversions, staking, deposits)...")
+    
+    # Group ledger entries by refid to find conversion pairs
+    ledger_by_refid = defaultdict(list)
+    for entry in kraken_ledgers:
+        refid = entry.get('refid', '')
+        if refid:
+            ledger_by_refid[refid].append(entry)
+    
+    # Track which assets we found via ledger (first acquisition timestamp)
+    ledger_first_acquisition = {}  # {asset: timestamp}
+    
+    for refid, entries in ledger_by_refid.items():
+        for entry in entries:
+            asset_raw = entry.get('asset', '')
+            asset = _normalize_kraken_asset(asset_raw)
+            amount = float(entry.get('amount', 0))
+            ltype = entry.get('type', '')
+            ts = float(entry.get('time', 0))
+            
+            # Track first time we received each asset (positive amount = credit)
+            if amount > 0 and ltype in ('trade', 'deposit', 'transfer', 'staking', 'conversion'):
+                if asset not in ledger_first_acquisition or ts < ledger_first_acquisition[asset]:
+                    ledger_first_acquisition[asset] = ts
+    
+    _safe_print(f"   📋 First acquisition timestamps for {len(ledger_first_acquisition)} assets")
+    
+    # For conversions: find pairs where one asset decreases and another increases
+    conversion_costs = {}  # {received_asset: {cost_usd, timestamp, from_asset}}
+    
+    for refid, entries in ledger_by_refid.items():
+        if len(entries) < 2:
+            continue
+        
+        inflows = []   # Positive amounts (received)
+        outflows = []  # Negative amounts (spent)
+        
+        for entry in entries:
+            asset = _normalize_kraken_asset(entry.get('asset', ''))
+            amount = float(entry.get('amount', 0))
+            ts = float(entry.get('time', 0))
+            ltype = entry.get('type', '')
+            
+            if amount > 0:
+                inflows.append({'asset': asset, 'amount': amount, 'time': ts, 'type': ltype})
+            elif amount < 0:
+                outflows.append({'asset': asset, 'amount': abs(amount), 'time': ts, 'type': ltype})
+        
+        # If we spent USD/USDT/USDC/GBP to get something, that's a direct cost basis
+        for debit in outflows:
+            if debit['asset'] in ('USD', 'USDT', 'USDC', 'GBP', 'EUR'):
+                for credit in inflows:
+                    if credit['asset'] not in ('USD', 'USDT', 'USDC', 'GBP', 'EUR'):
+                        usd_cost = debit['amount']
+                        if debit['asset'] == 'GBP':
+                            usd_cost *= 1.27  # Approximate GBP→USD
+                        elif debit['asset'] == 'EUR':
+                            usd_cost *= 1.08  # Approximate EUR→USD
+                        
+                        if credit['asset'] not in conversion_costs:
+                            conversion_costs[credit['asset']] = []
+                        conversion_costs[credit['asset']].append({
+                            'cost_usd': usd_cost,
+                            'quantity': credit['amount'],
+                            'price_per_unit': usd_cost / credit['amount'] if credit['amount'] > 0 else 0,
+                            'timestamp': credit['time'],
+                            'from_asset': debit['asset'],
+                            'refid': refid,
+                        })
+    
+    _safe_print(f"   💱 Found conversion/purchase data for {len(conversion_costs)} assets via ledger")
+    
+    # ═══════════════════════════════════════════════════════════════════════════
+    # STEP 5: Reconcile Kraken positions — merge trades + ledger + CoinGecko
+    # ═══════════════════════════════════════════════════════════════════════════
+    _safe_print("\n🎯 STEP 5: Reconciling Kraken positions with truth data...")
+    
+    gecko_cache = {}  # Cache CoinGecko lookups to avoid repeat calls
+    
+    for raw_asset, bal_info in kraken_balances.items():
+        amount = bal_info['amount']
+        norm_asset = bal_info['normalized']
+        
+        # Skip stablecoins and dust
+        if norm_asset in ('USD', 'USDT', 'USDC', 'GBP', 'EUR', 'TUSD'):
+            continue
+        
+        # Determine base asset (strip .S staking suffix)
+        is_staking = '.S' in raw_asset
+        if is_staking:
+            # ADA.S→ADA, SCRT21.S→SCRT, SOL03.S→SOL, TRX.S→TRX
+            base_asset = raw_asset.split('.')[0]  # Remove .S suffix
+            # Strip numbered staking variants (SCRT21→SCRT, SOL03→SOL)
+            for suffix in ('01', '02', '03', '21', '28'):
+                if base_asset.endswith(suffix) and len(base_asset) > len(suffix):
+                    base_asset = base_asset[:-len(suffix)]
+                    break
+            base_asset = _normalize_kraken_asset(base_asset)
+        else:
+            base_asset = norm_asset
+        
+        position_key = f"kraken:{norm_asset}USD"
+        
+        # Already have from trade history?
+        if position_key in results and results[position_key]['total_quantity'] > 0:
+            # Update quantity to match current balance
+            results[position_key]['total_quantity'] = amount
+            results[position_key]['total_cost'] = results[position_key]['avg_entry_price'] * amount
+            continue
+        
+        # Check if we have conversion data from ledger
+        entry_price = None
+        entry_ts = None
+        source = None
+        
+        if norm_asset in conversion_costs:
+            # Calculate weighted average from all conversions
+            conv_list = conversion_costs[norm_asset]
+            total_cost = sum(c['cost_usd'] for c in conv_list)
+            total_qty = sum(c['quantity'] for c in conv_list)
+            if total_qty > 0:
+                entry_price = total_cost / total_qty
+                entry_ts = conv_list[-1]['timestamp']
+                source = f"kraken_ledger_conversion"
+                _safe_print(f"   💱 {norm_asset}: Entry ${entry_price:.6f} from {len(conv_list)} conversions (ledger)")
+        
+        # Also check base asset for staking positions
+        if entry_price is None and is_staking and base_asset in conversion_costs:
+            conv_list = conversion_costs[base_asset]
+            total_cost = sum(c['cost_usd'] for c in conv_list)
+            total_qty = sum(c['quantity'] for c in conv_list)
+            if total_qty > 0:
+                entry_price = total_cost / total_qty
+                entry_ts = conv_list[-1]['timestamp']
+                source = f"kraken_ledger_staking_base"
+                _safe_print(f"   🥩 {norm_asset} (staking): Using base {base_asset} entry ${entry_price:.6f}")
+        
+        # Still no entry? Try CoinGecko historical price at first acquisition
+        if entry_price is None:
+            # Find acquisition timestamp
+            acq_ts = ledger_first_acquisition.get(norm_asset) or ledger_first_acquisition.get(base_asset)
+            
+            gecko_id = GECKO_ID_MAP.get(base_asset) or GECKO_ID_MAP.get(norm_asset)
+            
+            if gecko_id and acq_ts and acq_ts > 1e9:
+                cache_key = f"{gecko_id}:{int(acq_ts / 86400)}"
+                if cache_key in gecko_cache:
+                    entry_price = gecko_cache[cache_key]
+                else:
+                    time.sleep(1.2)  # CoinGecko rate limit
+                    entry_price = _gecko_historical_price(gecko_id, acq_ts)
+                    gecko_cache[cache_key] = entry_price
+                
+                if entry_price:
+                    entry_ts = acq_ts
+                    acq_date = datetime.utcfromtimestamp(acq_ts).strftime('%Y-%m-%d')
+                    source = f"coingecko_historical_{acq_date}"
+                    _safe_print(f"   🌐 {norm_asset}: CoinGecko ${entry_price:.6f} on {acq_date}")
+            
+            # No ledger timestamp? Try CoinGecko current price as last resort
+            if entry_price is None and gecko_id:
+                if gecko_id not in gecko_cache:
+                    time.sleep(1.2)
+                    gecko_cache[gecko_id] = _gecko_current_price(gecko_id)
+                entry_price = gecko_cache.get(gecko_id)
+                if entry_price:
+                    entry_ts = time.time()
+                    source = "coingecko_current_snapshot"
+                    _safe_print(f"   📸 {norm_asset}: CoinGecko current ${entry_price:.6f} (no history found)")
+        
+        # FALLBACK: Use existing estimated price from cost_basis_history.json
+        if entry_price is None or entry_price <= 0:
+            # Search multiple key patterns in existing tracker positions
+            search_keys = [
+                position_key,                        # kraken:GHIBLIUSD
+                f"{norm_asset}USD",                   # GHIBLIUSD
+                f"kraken:{base_asset}USD",            # kraken:GHIBLIUSD
+                f"{base_asset}USD",                   # GHIBLIUSD
+                f"kraken:{norm_asset}/USD",            # kraken:GHIBLI/USD
+            ]
+            # Add raw Kraken name variants (XBTUSD, XXRPUSD)
+            search_keys.append(f"{raw_asset}USD")
+            search_keys.append(f"kraken:{raw_asset}USD")
+            # Reverse-mapping: if norm is BTC, also try XBT
+            reverse_map = {'BTC': 'XBT', 'XRP': 'XRP', 'ETH': 'ETH', 'DOGE': 'XDG',
+                          'XLM': 'XLM', 'ZEC': 'ZEC', 'LTC': 'LTC'}
+            alt_name = reverse_map.get(base_asset)
+            if alt_name:
+                search_keys.extend([f"{alt_name}USD", f"kraken:{alt_name}USD"])
+            # Also check USDC, EUR, GBP pairs (common alternatives)
+            for alt_quote in ('USDC', 'EUR', 'GBP'):
+                search_keys.extend([
+                    f"{base_asset}{alt_quote}",
+                    f"{norm_asset}{alt_quote}",
+                    f"binance:{base_asset}{alt_quote}",
+                    f"kraken:{base_asset}{alt_quote}",
+                ])
+                if alt_name:
+                    search_keys.extend([f"{alt_name}{alt_quote}", f"kraken:{alt_name}{alt_quote}"])
+            for sk in search_keys:
+                existing_pos = tracker.positions.get(sk)
+                if existing_pos:
+                    ep = existing_pos.get('avg_entry_price', 0) or 0
+                    if ep > 0:
+                        entry_price = ep
+                        entry_ts = existing_pos.get('first_trade') or existing_pos.get('synced_at') or time.time()
+                        source = f"existing_estimated ({existing_pos.get('source', 'unknown')})"
+                        _safe_print(f"   📋 {norm_asset}: Using existing estimated ${entry_price:.6f} from {sk}")
+                        break
+        
+        # Store the result
+        if entry_price and entry_price > 0:
+            results[position_key] = {
+                'exchange': 'kraken',
+                'symbol': f"{norm_asset}USD",
+                'asset': base_asset,
+                'quote': 'USD',
+                'avg_entry_price': entry_price,
+                'total_quantity': amount,
+                'total_cost': entry_price * amount,
+                'total_fees': 0,
+                'trade_count': 1,
+                'first_trade': entry_ts,
+                'last_trade': entry_ts,
+                'source': source,
+                'synced_at': time.time(),
+            }
+        else:
+            _safe_print(f"   ❌ {norm_asset}: Could not determine cost basis (qty={amount})")
+    
+    # ═══════════════════════════════════════════════════════════════════════════
+    # STEP 6: Sync Binance positions
+    # ═══════════════════════════════════════════════════════════════════════════
+    _safe_print("\n🟡 STEP 6: Reconciling Binance positions...")
+    
+    try:
+        from binance_client import get_binance_client
+        bc = get_binance_client()
+        
+        for asset, qty in binance_balances.items():
+            if asset.startswith('LD'):
+                # Binance Earn — use base asset
+                base = asset[2:]
+            else:
+                base = asset
+            
+            # Try to get cost basis from Binance trade history
+            for quote in ['USDC', 'USDT']:
+                symbol = f"{base}{quote}"
+                position_key = f"binance:{symbol}"
+                
+                # Skip if already have good data
+                if position_key in results and results[position_key].get('total_quantity', 0) > 0:
+                    break
+                
+                try:
+                    cb = bc.calculate_cost_basis(symbol)
+                    if cb and cb.get('total_quantity', 0) > 0:
+                        results[position_key] = {
+                            'exchange': 'binance',
+                            'symbol': symbol,
+                            'asset': base,
+                            'quote': quote,
+                            'avg_entry_price': cb['avg_entry_price'],
+                            'total_quantity': qty,  # Use CURRENT balance
+                            'total_cost': cb['avg_entry_price'] * qty,
+                            'total_fees': cb.get('total_fees', 0),
+                            'trade_count': cb.get('trade_count', 0),
+                            'first_trade': cb.get('first_trade'),
+                            'last_trade': cb.get('last_trade'),
+                            'source': 'binance_trades',
+                            'synced_at': time.time(),
+                        }
+                        _safe_print(f"   ✅ {position_key}: ${cb['avg_entry_price']:.6f} x {qty:.4f} ({cb.get('trade_count', 0)} trades)")
+                        break
+                except Exception:
+                    continue
+            else:
+                # Fallback: CoinGecko current price
+                gecko_id = GECKO_ID_MAP.get(base)
+                if gecko_id:
+                    if gecko_id not in gecko_cache:
+                        time.sleep(1.2)
+                        gecko_cache[gecko_id] = _gecko_current_price(gecko_id)
+                    price = gecko_cache.get(gecko_id)
+                    if price:
+                        position_key = f"binance:{base}USDC"
+                        if position_key not in results:
+                            results[position_key] = {
+                                'exchange': 'binance',
+                                'symbol': f"{base}USDC",
+                                'asset': base,
+                                'quote': 'USDC',
+                                'avg_entry_price': price,
+                                'total_quantity': qty,
+                                'total_cost': price * qty,
+                                'total_fees': 0,
+                                'trade_count': 0,
+                                'source': 'coingecko_current_snapshot',
+                                'synced_at': time.time(),
+                            }
+                            _safe_print(f"   📸 {position_key}: CoinGecko ${price:.6f}")
+    except Exception as e:
+        _safe_print(f"   ⚠️ Binance reconciliation error: {e}")
+    
+    # ═══════════════════════════════════════════════════════════════════════════
+    # STEP 7: Sync Alpaca positions (they provide entry price directly!)
+    # ═══════════════════════════════════════════════════════════════════════════
+    _safe_print("\n🦙 STEP 7: Syncing Alpaca positions...")
+    
+    for pos in alpaca_positions:
+        symbol = pos.get('symbol', '')
+        avg_entry = float(pos.get('avg_entry_price', 0))
+        qty = float(pos.get('qty', 0))
+        
+        if avg_entry > 0 and qty > 0:
+            position_key = f"alpaca:{symbol}"
+            results[position_key] = {
+                'exchange': 'alpaca',
+                'symbol': symbol,
+                'asset': symbol.replace('/USD', '').replace('USD', ''),
+                'quote': 'USD',
+                'avg_entry_price': avg_entry,
+                'total_quantity': qty,
+                'total_cost': avg_entry * qty,
+                'total_fees': 0,
+                'trade_count': 1,
+                'source': 'alpaca_positions',
+                'synced_at': time.time(),
+            }
+            _safe_print(f"   ✅ {position_key}: ${avg_entry:.6f} x {qty:.6f}")
+    
+    # ═══════════════════════════════════════════════════════════════════════════
+    # STEP 8: Merge results into cost_basis_history.json
+    # ═══════════════════════════════════════════════════════════════════════════
+    _safe_print(f"\n💾 STEP 8: Saving {len(results)} positions to cost_basis_history.json...")
+    
+    # Load existing data
+    existing = tracker.positions.copy()
+    
+    # Priority merge: new truth data overwrites existing only if it's better
+    new_count = 0
+    updated_count = 0
+    
+    for key, data in results.items():
+        existing_entry = existing.get(key)
+        
+        if existing_entry is None:
+            # New position — also store without exchange prefix for compat
+            existing[key] = data
+            new_count += 1
+            # Also store bare symbol (e.g., BTCUSD) for backward compatibility
+            bare = data.get('symbol', key.split(':', 1)[-1] if ':' in key else key)
+            if bare not in existing or (existing[bare].get('total_quantity', 0) or 0) < 0.0000001:
+                existing[bare] = data.copy()
+        else:
+            # Existing — update if new data is better
+            old_qty = existing_entry.get('total_quantity', 0) or 0
+            old_entry = existing_entry.get('avg_entry_price', 0) or 0
+            old_source = existing_entry.get('source', '')
+            new_qty = data.get('total_quantity', 0) or 0
+            new_entry = data.get('avg_entry_price', 0) or 0
+            new_source = data.get('source', '')
+            
+            # Source quality ranking
+            source_rank = {
+                'kraken_trades': 5, 'binance_trades': 5, 'alpaca_positions': 5,
+                'full_reconcile': 4,
+                'kraken_ledger_conversion': 4, 'kraken_ledger_staking_base': 4,
+                'manual': 3,
+            }
+            old_rank = source_rank.get(old_source, 1)
+            new_rank = max(source_rank.get(new_source, 1), 
+                          3 if new_source.startswith('coingecko_historical') else 1)
+            
+            should_update = False
+            if old_qty < 0.0000001 and new_qty > 0:
+                should_update = True  # Was zero qty, now has real qty
+            elif old_entry < 0.0000001 and new_entry > 0:
+                should_update = True  # Had no entry price, now has one
+            elif new_rank > old_rank:
+                should_update = True  # Better data source
+            
+            if should_update:
+                existing[key] = data
+                updated_count += 1
+                # Also update bare symbol
+                bare = data.get('symbol', key.split(':', 1)[-1] if ':' in key else key)
+                if bare in existing and (existing[bare].get('total_quantity', 0) or 0) < 0.0000001:
+                    existing[bare] = data.copy()
+    
+    # Save
+    tracker.positions = existing
+    tracker._save()
+    
+    _safe_print(f"\n{'='*80}")
+    _safe_print(f"✅ TRUTH FINDER COMPLETE")
+    _safe_print(f"   New: {new_count} | Updated: {updated_count} | Total: {len(existing)}")
+    _safe_print(f"   Sources: Kraken trades, Kraken ledger conversions, Binance trades, Alpaca, CoinGecko")
+    _safe_print(f"{'='*80}")
+    
+    # Print summary of all positions with their sources
+    _safe_print(f"\n{'Symbol':<30} {'Entry $':<14} {'Qty':<16} {'Source':<30}")
+    _safe_print("-" * 90)
+    for key in sorted(results.keys()):
+        r = results[key]
+        _safe_print(f"{key:<30} ${r['avg_entry_price']:<13.6f} {r['total_quantity']:<16.6f} {r.get('source','?')}")
+    
+    return results
+
+
 # Singleton instance for ecosystem integration
 _tracker_instance: Optional[CostBasisTracker] = None
 
@@ -1963,12 +2658,15 @@ if __name__ == "__main__":
     parser.add_argument('--history', action='store_true', help='Print complete trade history report')
     parser.add_argument('--sync', action='store_true', help='Sync from exchanges (incremental)')
     parser.add_argument('--status', action='store_true', help='Print current cost basis status')
+    parser.add_argument('--truth', action='store_true', help='🔍 Run Truth Finder - find REAL cost basis for ALL positions')
     parser.add_argument('--no-backup', action='store_true', help='Skip backup during reconcile')
     args = parser.parse_args()
 
     tracker = get_cost_basis_tracker()
 
-    if args.reconcile:
+    if args.truth:
+        find_cost_basis_truth(tracker)
+    elif args.reconcile:
         tracker.full_reconcile(backup=not args.no_backup)
     elif args.history:
         tracker.print_trade_history_report()
@@ -1980,4 +2678,4 @@ if __name__ == "__main__":
     else:
         # Default: show status
         tracker.print_status()
-        print("\nUsage: python cost_basis_tracker.py --reconcile|--history|--sync|--status")
+        print("\nUsage: python cost_basis_tracker.py --truth|--reconcile|--history|--sync|--status")

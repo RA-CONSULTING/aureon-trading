@@ -5776,14 +5776,16 @@ class OrcaKillCycle:
         'USDT': 'tether', 'USDC': 'usd-coin', 'SHIB': 'shiba-inu',
         'ROSE': 'oasis-network', 'PENGU': 'pudgy-penguins', 'LPT': 'livepeer',
         'SSV': 'ssv-network', 'BEAMX': 'beam-2', 'KAIA': 'kaia',
-        'AAVE': 'aave', 'ARB': 'arbitrum', 'GHIBLI': 'ghibli-the-dog',
-        'IN': 'inchain', 'SAHARA': 'sahara', 'MXC': 'mxc',
+        'AAVE': 'aave', 'ARB': 'arbitrum', 'GHIBLI': 'ghiblification',
+        'IN': 'inchain', 'SAHARA': 'sahara-ai', 'MXC': 'mxc',
         'EUL': 'euler', 'FIS': 'stafi', 'CRO': 'crypto-com-chain',
         'FIGHT': 'fight-night', 'ZRO': 'layerzero', 'PYTH': 'pyth-network',
         'NOM': 'nom', 'RESOLV': 'resolv', 'SHELL': 'myshell', 'AVNT': 'advent',
         'TURTLE': 'turtle', 'F': 'formless', 'KITE': 'kiteai', 'LA': 'laion',
-        'BANANAS31': 'bananas31', 'SKR': 'sekoia', 'OPEN': 'openledger',
+        'BANANAS31': 'bananas31', 'SKR': 'sekoia-by-virtuals', 'OPEN': 'openledger',
         'ZRC': 'zircuit', 'DOGE': 'dogecoin', 'DOT': 'polkadot',
+        'ATOM': 'cosmos', 'SCRT': 'secret', 'BABY': 'babylon',
+        'KTA': 'keeta', 'CHILLHOUSE': 'chill-house', 'COTI': 'coti',
     }
 
     _KRAKEN_ASSET_NORM = {
