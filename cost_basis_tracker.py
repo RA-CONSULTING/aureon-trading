@@ -902,10 +902,7 @@ class CostBasisTracker:
             self.positions[position_key] = {
                 'exchange': exchange,
                 'symbol': symbol,
-                'asset': symbol.split('/')[0] if '/' in symbol else next(
-                    (symbol[: -len(q)] for q in ['USDT', 'USDC', 'BUSD', 'USD'] if symbol.upper().endswith(q)),
-                    symbol
-                ),
+                'asset': symbol.split('/')[0] if '/' in symbol else self._strip_known_quote(symbol),
                 'quote': symbol.split('/')[1] if '/' in symbol else symbol[-3:],
                 'avg_entry_price': 0,
                 'total_quantity': 0,
@@ -1164,12 +1161,7 @@ class CostBasisTracker:
             _safe_print(f"      Exchange: {exchange}")
             
             # Show base asset extraction for debugging
-            base = symbol.split('/')[0] if '/' in symbol else symbol
-            # Use proper suffix removal (not rstrip which strips individual chars)
-            for q in ['USDT', 'USDC', 'BUSD', 'USD']:
-                if base.upper().endswith(q):
-                    base = base[: -len(q)]
-                    break
+            base = symbol.split('/')[0] if '/' in symbol else self._strip_known_quote(symbol)
             _safe_print(f"      Base asset: {base}")
             
             # Show some available positions that might be close matches
