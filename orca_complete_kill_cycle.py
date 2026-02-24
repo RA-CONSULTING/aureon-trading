@@ -3518,6 +3518,11 @@ class LivePosition:
     avg_entry_price: float = 0.0         # Average entry price (cost basis)
     rising_star_candidate: object = None  # Original RisingStarCandidate if applicable
     is_existing: bool = False            # True if loaded from exchange at startup (not opened by Rising Star)
+    #   Margin trading support
+    is_margin: bool = False              # True if this is a leveraged margin position
+    leverage: int = 1                    # Leverage multiplier (1 = spot, 2-5 = margin)
+    margin_amount: float = 0.0           # Amount of margin collateral used
+    unrealized_pnl_margin: float = 0.0   # Unrealized P&L from margin position
 
 
 @dataclass
@@ -9388,7 +9393,9 @@ class OrcaKillCycle:
     def queen_gated_buy(self, client: Any, symbol: str, exchange: str,
                         quote_qty: float = None, quantity: float = None,
                         price: float = 0, momentum_pct: float = 0,
-                        expected_move_pct: float = 0, context: str = "unknown") -> Dict:
+                        expected_move_pct: float = 0, context: str = "unknown",
+                        margin_recommendation: str = "NONE", margin_leverage: int = 0,
+                        margin_conviction: float = 0.0) -> Dict:
         """
           THE QUEEN'S SACRED GATED BUY - ALL BUYS MUST GO THROUGH THIS!
         
@@ -9696,14 +9703,46 @@ class OrcaKillCycle:
         #     EXECUTE THE BUY - THE QUEEN HAS GRANTED PERMISSION!
         #                                                                    
         
+        # Check for margin trading opportunity (Kraken only, for now)
+        use_margin = False
+        leverage = 1
+        if (exchange == "kraken" and 
+            margin_recommendation in ("LONG", "SHORT") and 
+            margin_leverage >= 2 and 
+            margin_conviction >= 0.4):
+            use_margin = True
+            leverage = min(margin_leverage, 5)  # Cap at 5x
+            print(f"   💰 MARGIN TRADING ACTIVATED: {margin_recommendation} at {leverage}x leverage (conviction {margin_conviction:.0%})")
+        
         # Determine order type based on parameters
-        if quote_qty and quote_qty > 0:
-            return client.place_market_order(symbol=symbol, side='buy', quote_qty=quote_qty)
-        elif quantity and quantity > 0:
-            return client.place_market_order(symbol=symbol, side='buy', quantity=quantity)
+        if use_margin:
+            # Use margin order for leveraged trading
+            if quote_qty and quote_qty > 0:
+                return client.place_margin_order(
+                    symbol=symbol, 
+                    side='buy' if margin_recommendation == "LONG" else 'sell',
+                    quote_qty=quote_qty,
+                    leverage=leverage
+                )
+            elif quantity and quantity > 0:
+                return client.place_margin_order(
+                    symbol=symbol, 
+                    side='buy' if margin_recommendation == "LONG" else 'sell',
+                    quantity=quantity,
+                    leverage=leverage
+                )
+            else:
+                print(f"  No quantity specified for margin buy: {symbol}")
+                return {'status': 'error', 'reason': 'No quantity specified'}
         else:
-            print(f"  No quantity specified for buy: {symbol}")
-            return {'status': 'error', 'reason': 'No quantity specified'}
+            # Standard spot order
+            if quote_qty and quote_qty > 0:
+                return client.place_market_order(symbol=symbol, side='buy', quote_qty=quote_qty)
+            elif quantity and quantity > 0:
+                return client.place_market_order(symbol=symbol, side='buy', quantity=quantity)
+            else:
+                print(f"  No quantity specified for buy: {symbol}")
+                return {'status': 'error', 'reason': 'No quantity specified'}
     
     def execute_sell_with_logging(self, client: Any, symbol: str, quantity: float,
                                    exchange: str, current_price: float = 0, 
@@ -14192,6 +14231,16 @@ class OrcaKillCycle:
                                                             meta={"symbol": best.symbol, "exchange": best.exchange, "quantum_amp": quantum_stats['amplification']},
                                                         )
                                                         #   FULL ARSENAL BUY - Queen Gated (6 validation gates!)
+                                                        # Get margin signals from quadrumvirate consensus
+                                                        margin_rec = "NONE"
+                                                        margin_lev = 0
+                                                        margin_conv = 0.0
+                                                        if hasattr(self, '_last_quad_result') and self._last_quad_result:
+                                                            quad_data = self._last_quad_result
+                                                            margin_rec = quad_data.get('margin_recommendation', 'NONE')
+                                                            margin_lev = quad_data.get('margin_leverage', 0)
+                                                            margin_conv = quad_data.get('margin_conviction', 0.0)
+                                                        
                                                         raw_order = self.queen_gated_buy(
                                                             client=client,
                                                             symbol=symbol_clean,
@@ -14200,7 +14249,10 @@ class OrcaKillCycle:
                                                             price=best.price,
                                                             momentum_pct=best.change_pct,
                                                             expected_move_pct=best.change_pct * 0.5,
-                                                            context='autonomous_queen_loop'
+                                                            context='autonomous_queen_loop',
+                                                            margin_recommendation=margin_rec,
+                                                            margin_leverage=margin_lev,
+                                                            margin_conviction=margin_conv
                                                         )
                                                         
                                                         # If queen_gated_buy returned a block, skip
@@ -14233,7 +14285,11 @@ class OrcaKillCycle:
                                                                     breakeven_price=breakeven,
                                                                     target_price=target_price,
                                                                     client=client,
-                                                                    stop_price=0.0  # NO STOP LOSS!
+                                                                    stop_price=0.0,  # NO STOP LOSS!
+                                                                    # Margin fields
+                                                                    is_margin=use_margin,
+                                                                    leverage=leverage if use_margin else 1,
+                                                                    margin_amount=buy_amount if use_margin else 0.0,
                                                                 )
                                                                 positions.append(pos)
                                                                 
@@ -14391,6 +14447,50 @@ class OrcaKillCycle:
                             pos.current_pnl = net_pnl
                             pos.current_pnl_pct = pnl_pct
                             
+                            # ── Margin position monitoring ──
+                            if pos.is_margin and pos.exchange == 'kraken':
+                                try:
+                                    # Get margin account health
+                                    trade_balance = pos.client.get_trade_balance()
+                                    margin_level = float(trade_balance.get('margin_level', 0) or 0)
+                                    free_margin = float(trade_balance.get('free_margin', 0) or 0)
+                                    
+                                    # Get open margin positions for this symbol
+                                    margin_positions = pos.client.get_open_margin_positions()
+                                    symbol_margin_pos = None
+                                    for mp in margin_positions:
+                                        if mp.get('pair') == pos.symbol.replace('/', ''):
+                                            symbol_margin_pos = mp
+                                            break
+                                    
+                                    if symbol_margin_pos:
+                                        unrealized_margin = float(symbol_margin_pos.get('unrealized_pnl', 0) or 0)
+                                        pos.unrealized_pnl_margin = unrealized_margin
+                                        
+                                        # Adjust P&L for margin leverage
+                                        leveraged_pnl = net_pnl * pos.leverage
+                                        pos.current_pnl = leveraged_pnl
+                                        pos.current_pnl_pct = (leveraged_pnl / pos.margin_amount * 100) if pos.margin_amount > 0 else 0
+                                        
+                                        # Check liquidation risk
+                                        if margin_level < 120:  # Below 120% margin level = liquidation risk
+                                            print(f"      ⚠️  MARGIN LIQUIDATION RISK: Level {margin_level:.1f}%")
+                                            # Force close if critically low
+                                            if margin_level < 110:
+                                                should_sell = True
+                                                sell_reason = 'MARGIN_LIQUIDATION_RISK'
+                                                print(f"      🚨 CRITICAL: Force closing margin position to avoid liquidation!")
+                                    
+                                    # Display margin info
+                                    margin_info = f" | Margin {pos.leverage}x (${pos.margin_amount:.2f})"
+                                    if pos.unrealized_pnl_margin != 0:
+                                        margin_info += f" | Unrealized: ${pos.unrealized_pnl_margin:+.2f}"
+                                except Exception as e:
+                                    print(f"      Margin monitoring error: {e}")
+                                    margin_info = " | Margin monitoring offline"
+                            else:
+                                margin_info = ""
+                            
                             # Skip dust positions (< $0.01 value)
                             market_value = current * pos.entry_qty
                             if market_value < 0.01:
@@ -14546,7 +14646,8 @@ class OrcaKillCycle:
                             # Display with CORRECT values
                             pnl_color = '\033[92m' if net_pnl >= 0 else '\033[91m'
                             reset = '\033[0m'
-                            print(f"\n  {pos.symbol} ({pos.exchange.upper()}) | Value: ${market_value:.2f}")
+                            margin_indicator = f" [MARGIN {pos.leverage}x]" if pos.is_margin else ""
+                            print(f"\n  {pos.symbol} ({pos.exchange.upper()}){margin_indicator} | Value: ${market_value:.2f}{margin_info}")
                             print(f"     Entry: ${pos.entry_price:,.6f} | Current: ${current:,.6f} | Target: ${pos.target_price:,.6f}")
                             print(f"   [{bar}] {raw_progress:+.1f}% to target | {pnl_color}${net_pnl:+.4f} ({price_change_pct:+.2f}% price){reset}")
                             if eta_str:
@@ -14632,17 +14733,32 @@ class OrcaKillCycle:
                             
                             # Execute sell if ready
                             if should_sell:
-                                sell_order = self.execute_stealth_sell(
-                                    client=pos.client,
-                                    symbol=pos.symbol,
-                                    quantity=pos.entry_qty,
-                                    price=current,
-                                    exchange=pos.exchange
-                                )
+                                if pos.is_margin and pos.exchange == 'kraken':
+                                    # Close margin position
+                                    print(f"      Closing margin position ({pos.leverage}x leverage)")
+                                    sell_order = pos.client.close_margin_position(
+                                        symbol=pos.symbol,
+                                        side='sell' if pos.leverage > 1 else 'buy',  # Close long position
+                                        volume=pos.entry_qty
+                                    )
+                                else:
+                                    # Regular spot sell
+                                    sell_order = self.execute_stealth_sell(
+                                        client=pos.client,
+                                        symbol=pos.symbol,
+                                        quantity=pos.entry_qty,
+                                        price=current,
+                                        exchange=pos.exchange
+                                    )
+                                
                                 if sell_order:
                                     sell_price = float(sell_order.get('filled_avg_price', current))
                                     final_exit = sell_price * pos.entry_qty * (1 - fee_rate)
                                     final_pnl = final_exit - entry_cost
+                                    
+                                    # For margin positions, account for leverage in P&L
+                                    if pos.is_margin:
+                                        final_pnl = pos.unrealized_pnl_margin  # Use margin P&L
                                     
                                     # Update session stats
                                     session_stats['total_pnl'] += final_pnl

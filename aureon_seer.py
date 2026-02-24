@@ -161,11 +161,15 @@ class SeerVision:
     timeline: Optional[OracleReading] = None
     runes: Optional[OracleReading] = None
     sentiment: Optional[OracleReading] = None  # 7th Oracle: Fear/Greed + News + Velocity
+    margin: Optional[OracleReading] = None     # 8th Oracle: Kraken margin opportunity
     prophecy: str = ""         # The Seer's proclamation
     action: str = "HOLD"       # BUY_BIAS / SELL_BIAS / HOLD / DEFEND
     risk_modifier: float = 1.0 # Multiplier for position sizing
     tactical_mode: str = "STANDARD"  # War counsel tactical mode
     war_counsel: str = ""      # War counsel advisory message
+    margin_recommendation: str = "NONE"  # LONG / SHORT / NONE
+    margin_leverage: int = 0     # 0 = no margin, 2-5 = recommended leverage
+    margin_conviction: float = 0.0  # 0-1 directional confidence for margin
 
 
 @dataclass
@@ -2160,6 +2164,219 @@ class WarCounsel:
 
 
 # ═══════════════════════════════════════════════════════════════════════════
+# 8th ORACLE: ORACLE OF MARGIN - Leveraged Opportunity Intelligence
+# ═══════════════════════════════════════════════════════════════════════════
+
+class OracleOfMargin:
+    """
+    Oracle of Margin - Reads Kraken margin account health, available
+    leverage pairs, and market conditions to predict whether leveraged
+    positions can generate additional revenue safely.
+
+    Signals:
+      - margin_score:  0-1 how favourable conditions are for margin trading
+      - leverage_rec:  recommended leverage (2-5x) or 0 if not recommended
+      - direction:     'LONG' or 'SHORT' or 'NONE'
+      - conviction:    0-1 how strongly the oracle believes in the direction
+      - eligible_pairs: list of pairs currently supporting margin
+    """
+
+    def __init__(self):
+        self._kraken = None
+        self._last_margin_pairs: dict = {}
+        self._last_trade_balance: dict = {}
+        self._last_fetch_ts: float = 0
+        self._cache_ttl: float = 120  # refresh margin data every 2 min
+
+    def _load_kraken(self):
+        if self._kraken is None:
+            try:
+                from kraken_client import KrakenClient
+                self._kraken = KrakenClient()
+            except ImportError:
+                pass
+
+    def _refresh_margin_data(self):
+        """Refresh margin account & pair data (rate-limit aware)."""
+        if time.time() - self._last_fetch_ts < self._cache_ttl:
+            return
+        self._load_kraken()
+        if not self._kraken:
+            return
+        try:
+            self._last_trade_balance = self._kraken.get_trade_balance() or {}
+        except Exception as e:
+            logger.debug(f"OracleOfMargin: trade_balance error: {e}")
+        try:
+            self._last_margin_pairs = self._kraken.get_margin_pairs() or {}
+        except Exception as e:
+            logger.debug(f"OracleOfMargin: margin_pairs error: {e}")
+        self._last_fetch_ts = time.time()
+
+    def read(self, market_data: dict = None, vision_score: float = 0.5,
+             trend: str = "STABLE") -> OracleReading:
+        """
+        Take a margin reading.
+
+        Uses:
+          - Kraken trade balance (equity, free_margin, margin_level)
+          - Number of margin-eligible pairs (opportunity breadth)
+          - Seer's unified vision score (cosmic alignment for leverage)
+          - Market trend direction (IMPROVING / DECLINING / STABLE)
+        """
+        self._refresh_margin_data()
+
+        score = 0.0
+        phase = "MARGIN_OFFLINE"
+        dominant = "none"
+        details = {}
+        conviction = 0.0
+        direction = "NONE"
+        leverage_rec = 0
+
+        tb = self._last_trade_balance
+        mp = self._last_margin_pairs
+
+        if not tb:
+            # No margin data — return neutral
+            return OracleReading(
+                oracle="MARGIN",
+                timestamp=time.time(),
+                score=0.3,
+                phase="MARGIN_OFFLINE",
+                dominant_signal="no_margin_data",
+                details={"reason": "Kraken margin data unavailable"},
+                confidence=0.2,
+            )
+
+        # ── Account health scoring ──
+        equity = float(tb.get('equity_value', 0) or 0)
+        free_margin = float(tb.get('free_margin', 0) or 0)
+        margin_used = float(tb.get('margin_amount', 0) or 0)
+        margin_level = float(tb.get('margin_level', 0) or 0)
+        unrealized = float(tb.get('unrealized_pnl', 0) or 0)
+
+        details['equity'] = equity
+        details['free_margin'] = free_margin
+        details['margin_used'] = margin_used
+        details['margin_level'] = margin_level
+        details['unrealized_pnl'] = unrealized
+
+        if equity <= 0:
+            return OracleReading(
+                oracle="MARGIN", timestamp=time.time(), score=0.1,
+                phase="NO_EQUITY", dominant_signal="zero_equity",
+                details=details, confidence=0.1,
+            )
+
+        # Free margin ratio (higher = safer to trade margin)
+        free_ratio = free_margin / equity if equity > 0 else 0
+        details['free_margin_ratio'] = round(free_ratio, 4)
+
+        # Exposure ratio (lower = more room)
+        exposure_ratio = margin_used / equity if equity > 0 else 1.0
+        details['exposure_ratio'] = round(exposure_ratio, 4)
+
+        # Health score: well-funded, low exposure, healthy margin level
+        health_score = 0.0
+        if free_ratio >= 0.80:
+            health_score = 1.0
+        elif free_ratio >= 0.50:
+            health_score = 0.75
+        elif free_ratio >= 0.20:
+            health_score = 0.5
+        else:
+            health_score = 0.2
+
+        # Margin level bonus (>200% = very healthy, <120% = danger)
+        if margin_level > 0:
+            if margin_level >= 300:
+                health_score = min(1.0, health_score + 0.1)
+            elif margin_level < 150:
+                health_score *= 0.5
+            elif margin_level < 120:
+                health_score *= 0.2
+
+        # ── Opportunity breadth: how many pairs support margin ──
+        n_margin_pairs = len(mp) if isinstance(mp, dict) else 0
+        details['margin_eligible_pairs'] = n_margin_pairs
+        breadth_score = min(1.0, n_margin_pairs / 50.0)  # 50+ pairs = full score
+
+        # ── Cosmic alignment: is Seer confident enough for leverage? ──
+        # High vision = leverage is cosmically supported
+        cosmic_score = vision_score
+
+        # ── Trend direction → directional conviction ──
+        if trend == "IMPROVING" and vision_score >= 0.65:
+            direction = "LONG"
+            conviction = min(1.0, vision_score * 1.2)
+        elif trend == "DECLINING" and vision_score >= 0.55:
+            direction = "SHORT"
+            conviction = min(1.0, (1.0 - vision_score) * 1.5)
+        else:
+            direction = "NONE"
+            conviction = 0.0
+
+        # ── Leverage recommendation ──
+        # Only recommend leverage when all conditions are favourable
+        if conviction > 0.3 and health_score >= 0.5 and cosmic_score >= 0.55:
+            if conviction >= 0.80 and health_score >= 0.75:
+                leverage_rec = 5
+            elif conviction >= 0.65 and health_score >= 0.60:
+                leverage_rec = 3
+            elif conviction >= 0.45:
+                leverage_rec = 2
+            else:
+                leverage_rec = 0
+        else:
+            leverage_rec = 0
+
+        # ── Final margin score (weighted blend) ──
+        # Health 40%, Cosmic 30%, Breadth 15%, Conviction 15%
+        score = (
+            health_score * 0.40 +
+            cosmic_score * 0.30 +
+            breadth_score * 0.15 +
+            conviction * 0.15
+        )
+        score = max(0.0, min(1.0, score))
+
+        # Determine phase
+        if score >= 0.75 and leverage_rec >= 3:
+            phase = "MARGIN_PRIME"
+            dominant = f"leverage_{leverage_rec}x_{direction.lower()}"
+        elif score >= 0.55 and leverage_rec >= 2:
+            phase = "MARGIN_READY"
+            dominant = f"leverage_{leverage_rec}x_{direction.lower()}"
+        elif score >= 0.40:
+            phase = "MARGIN_CAUTIOUS"
+            dominant = "low_conviction"
+        else:
+            phase = "MARGIN_AVOID"
+            dominant = "conditions_unfavourable"
+
+        details['direction'] = direction
+        details['conviction'] = round(conviction, 4)
+        details['leverage_rec'] = leverage_rec
+        details['health_score'] = round(health_score, 4)
+        details['cosmic_score'] = round(cosmic_score, 4)
+        details['breadth_score'] = round(breadth_score, 4)
+
+        eligible_pairs = list(mp.keys())[:20] if isinstance(mp, dict) else []
+        details['eligible_pairs'] = eligible_pairs
+
+        return OracleReading(
+            oracle="MARGIN",
+            timestamp=time.time(),
+            score=score,
+            phase=phase,
+            dominant_signal=dominant,
+            details=details,
+            confidence=min(1.0, score * 0.9 + 0.1),
+        )
+
+
+# ═══════════════════════════════════════════════════════════════════════════
 # THE ALL-SEEING EYE - Unified Vision
 # ═══════════════════════════════════════════════════════════════════════════
 
@@ -2179,8 +2396,9 @@ class AllSeeingEye:
                 harmony: OracleReading, spirits: OracleReading,
                 timeline: OracleReading,
                 runes: OracleReading = None,
-                sentiment: OracleReading = None) -> SeerVision:
-        """Combine all 7 Oracle readings into unified vision, then apply War Counsel."""
+                sentiment: OracleReading = None,
+                margin: OracleReading = None) -> SeerVision:
+        """Combine all 8 Oracle readings into unified vision, then apply War Counsel."""
 
         # Weighted combination
         w = SEER_CONFIG
@@ -2225,9 +2443,29 @@ class AllSeeingEye:
         # Apply war counsel risk modifier (blend with action-based modifier)
         risk_mod = risk_mod * 0.6 + war_risk_mod * 0.4
 
+        # ── Margin Oracle integration ──
+        margin_rec = "NONE"
+        margin_lev = 0
+        margin_conv = 0.0
+        if margin and margin.details:
+            margin_rec = margin.details.get('direction', 'NONE')
+            margin_lev = margin.details.get('leverage_rec', 0)
+            margin_conv = margin.details.get('conviction', 0.0)
+            # Only recommend margin when vision grade is strong enough
+            if grade.value in ("FOG", "BLIND"):
+                margin_rec = "NONE"
+                margin_lev = 0
+                margin_conv = 0.0
+
         # Generate prophecy
         prophecy = self._prophecy(unified, grade, gaia, cosmos, harmony,
                                   spirits, timeline, runes, sentiment, war_says)
+
+        # Add margin insight to prophecy
+        if margin_lev >= 2 and margin_rec != "NONE":
+            prophecy += (f" MARGIN ORACLE: {margin_rec} at {margin_lev}x leverage "
+                         f"(conviction {margin_conv:.0%}). "
+                         f"Account health: {margin.phase if margin else 'unknown'}.")
 
         return SeerVision(
             timestamp=time.time(),
@@ -2240,11 +2478,15 @@ class AllSeeingEye:
             timeline=timeline,
             runes=runes,
             sentiment=sentiment,
+            margin=margin,
             prophecy=prophecy,
             action=action,
             risk_modifier=risk_mod,
             tactical_mode=tactical_mode,
             war_counsel=war_says,
+            margin_recommendation=margin_rec,
+            margin_leverage=margin_lev,
+            margin_conviction=margin_conv,
         )
 
     def _grade(self, score: float) -> VisionGrade:
@@ -2423,7 +2665,7 @@ class AureonTheSeer:
     """
 
     def __init__(self):
-        # The 7 Oracles
+        # The 8 Oracles
         self.oracle_gaia = OracleOfGaia()
         self.oracle_cosmos = OracleOfCosmos()
         self.oracle_harmony = OracleOfHarmony()
@@ -2431,6 +2673,7 @@ class AureonTheSeer:
         self.oracle_time = OracleOfTime()
         self.oracle_runes = OracleOfRunes()
         self.oracle_sentiment = OracleOfSentiment()  # 7th Oracle: Fear/Greed + News + Velocity
+        self.oracle_margin = OracleOfMargin()        # 8th Oracle: Kraken margin opportunity
 
         # The All-Seeing Eye
         self.eye = AllSeeingEye()
@@ -2453,7 +2696,7 @@ class AureonTheSeer:
         self._market_data: Dict = {}
         self._trade_history: List = []
 
-        logger.info("Aureon the Seer has awakened. The Third Pillar stands. 7 Oracles active.")
+        logger.info("Aureon the Seer has awakened. The Third Pillar stands. 8 Oracles active.")
 
     # ─────────────────────────────────────────────────────────
     # Perception - The Seer Sees
@@ -2461,7 +2704,7 @@ class AureonTheSeer:
 
     def see(self) -> SeerVision:
         """
-        Take a complete reading from all 7 Oracles and combine
+        Take a complete reading from all 8 Oracles and combine
         into a unified vision. This is the Seer's primary method.
         """
         with self._lock:
@@ -2473,8 +2716,28 @@ class AureonTheSeer:
             runes = self.oracle_runes.read()
             sentiment = self.oracle_sentiment.read(self._market_data)
 
+            # 8th Oracle: Margin — needs current vision score + trend
+            # Use a preliminary score from the first 7 oracles
+            w = SEER_CONFIG
+            _prelim_score = (
+                gaia.score * w["WEIGHT_GAIA"] +
+                cosmos.score * w["WEIGHT_COSMOS"] +
+                harmony.score * w["WEIGHT_HARMONY"] +
+                spirits.score * w["WEIGHT_SPIRITS"] +
+                timeline.score * w["WEIGHT_TIME"] +
+                (runes.score if runes else 0.5) * w["WEIGHT_RUNES"] +
+                (sentiment.score if sentiment else 0.5) * w["WEIGHT_SENTIMENT"]
+            )
+            _trend_info = self.get_trend()
+            _trend = _trend_info.get('trend', 'STABLE')
+            margin = self.oracle_margin.read(
+                market_data=self._market_data,
+                vision_score=_prelim_score,
+                trend=_trend,
+            )
+
             vision = self.eye.combine(gaia, cosmos, harmony, spirits, timeline,
-                                      runes, sentiment)
+                                      runes, sentiment, margin)
             self.latest_vision = vision
             self.vision_history.append(vision)
 
@@ -2962,7 +3225,11 @@ class AureonTheSeer:
                 "timeline": _oracle_dict(v.timeline),
                 "runes": _oracle_dict(v.runes) if hasattr(v, 'runes') else None,
                 "sentiment": _oracle_dict(v.sentiment) if hasattr(v, 'sentiment') else None,
+                "margin": _oracle_dict(v.margin) if hasattr(v, 'margin') else None,
             },
+            "margin_recommendation": getattr(v, 'margin_recommendation', 'NONE'),
+            "margin_leverage": getattr(v, 'margin_leverage', 0),
+            "margin_conviction": getattr(v, 'margin_conviction', 0.0),
         }
         return summary
 
@@ -3069,7 +3336,10 @@ class AureonTheSeer:
                     "timeline": vision.timeline.score if vision.timeline else None,
                     "runes": vision.runes.score if hasattr(vision, 'runes') and vision.runes else None,
                     "sentiment": vision.sentiment.score if hasattr(vision, 'sentiment') and vision.sentiment else None,
+                    "margin": vision.margin.score if hasattr(vision, 'margin') and vision.margin else None,
                 },
+                "margin_recommendation": getattr(vision, 'margin_recommendation', 'NONE'),
+                "margin_leverage": getattr(vision, 'margin_leverage', 0),
             }
             with open(SEER_CONFIG["VISION_LOG"], "a") as f:
                 f.write(json.dumps(entry) + "\n")

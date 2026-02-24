@@ -436,6 +436,10 @@ class SeerEvaluator:
             "spirits_score": data.get("spirits_score", 0.5),
             "time_score": data.get("time_score", 0.5),
             "trend": data.get("trend", "STABLE"),
+            # ── Margin signals for revenue maximization ──
+            "margin_recommendation": data.get("margin_recommendation", "NONE"),
+            "margin_leverage": data.get("margin_leverage", 0),
+            "margin_conviction": data.get("margin_conviction", 0.0),
         }
 
         # Seer's vote logic

@@ -531,6 +531,10 @@ def get_triumvirate_consensus(queen_confidence: float = 0.5,
         "position_multiplier": lyra_data.get("position_multiplier", 1.0),
         "exit_urgency": lyra_data.get("exit_urgency", "none"),
         "combined_sizing_modifier": seer_data.get("risk_modifier", 1.0) * lyra_data.get("position_multiplier", 1.0),
+        # ─── Margin signals for revenue maximization ───
+        "margin_recommendation": seer_data.get("margin_recommendation", "NONE"),
+        "margin_leverage": seer_data.get("margin_leverage", 0),
+        "margin_conviction": seer_data.get("margin_conviction", 0.0),
     }
 
     # ─── Include Pillar Council dialogue if session was held ───
