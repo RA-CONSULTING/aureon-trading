@@ -9025,9 +9025,11 @@ class OrcaKillCycle:
     #  after the full Queen-gate chain validates the entry.
     # ════════════════════════════════════════════════════════════════════════════
 
-    def _enigma_snipe_new_listing(self, new_sym: str) -> None:
+    def _enigma_snipe_new_listing(self, new_sym: str) -> 'LivePosition | None':
         """
-        Attempt to buy a newly discovered symbol.
+        Attempt to buy a newly discovered symbol with VERIFIED order execution.
+
+        Returns a LivePosition on confirmed kill, or None if blocked/failed.
 
         Flow:
           1. Skip if already sniped this session
@@ -9035,16 +9037,21 @@ class OrcaKillCycle:
           3. Fetch a REAL price from the exchange
           4. Run the full Queen-gated buy: profit gate → prediction window →
              truth engine → black box → Dr Auris → execute
-          5. On success: record in _enigma_sniped so we don't double-buy
+          5. VALIDATE: normalize response, confirm order_id + fill_qty > 0
+          6. On verified kill: create LivePosition, track order, log order_id as PROOF
+          7. On blank (no fill/no order_id): log BLANK FIRED with raw response
 
         Args:
             new_sym: Symbol string as stored in EnigmaReport.new_listings
                      e.g. 'PEPE/USDT'  or  'BTCUSDT'
+
+        Returns:
+            LivePosition if kill confirmed, None otherwise
         """
         # ── 1. De-duplicate ──────────────────────────────────────────────────
         canonical = new_sym.upper().replace("/", "")
         if canonical in self._enigma_sniped:
-            return
+            return None
 
         print(f"     🌱 ENIGMA SNIPER: evaluating new listing → {new_sym}")
 
@@ -9070,13 +9077,13 @@ class OrcaKillCycle:
 
         if ds is None:
             print(f"       ENIGMA SNIPER: ⚠️  Could not locate {new_sym} in catalog – skip")
-            return
+            return None
 
         # ── 3. Get the exchange client ───────────────────────────────────────
         client = self.clients.get(chosen_exchange)
         if client is None:
             print(f"       ENIGMA SNIPER: no client for exchange '{chosen_exchange}' – skip {new_sym}")
-            return
+            return None
 
         # ── 4. Fetch REAL price ──────────────────────────────────────────────
         price = 0.0
@@ -9105,7 +9112,7 @@ class OrcaKillCycle:
 
         if price <= 0:
             print(f"       ENIGMA SNIPER: no valid price for {new_sym} – skip")
-            return
+            return None
 
         # ── 5. Compute allocation ────────────────────────────────────────────
         alloc_usd = ENIGMA_SNIPE_ALLOC_USD
@@ -9131,18 +9138,87 @@ class OrcaKillCycle:
             context=f"ENIGMA_NEW_LISTING:{ds.tier}",
         )
 
-        status = result.get('status', 'unknown')
-        if status not in ('blocked', 'error', 'rejected'):
-            self._enigma_sniped.add(canonical)
-            print(
-                f"       🌱 ENIGMA SNIPER: ✅ BUY PLACED → {new_sym} "
-                f"${alloc_usd} on {chosen_exchange} (tier={ds.tier})"
-            )
-        else:
+        # ── 7. VALIDATE THE KILL — No blanks allowed ─────────────────────────
+        # queen_gated_buy returns either a gate-block dict or raw exchange response
+        status = result.get('status', 'unknown') if result else 'error'
+        if status in ('blocked', 'error', 'rejected'):
             blocked_by = result.get('blocked_by', result.get('reason', 'unknown'))
             print(
                 f"       🌱 ENIGMA SNIPER: 🚫 {new_sym} BLOCKED by {blocked_by}"
             )
+            return None
+
+        # Normalize the raw exchange response to get real order details
+        normalized = self.normalize_order_response(result, chosen_exchange)
+        order_id = normalized.get('order_id', None)
+        filled_qty = normalized.get('filled_qty', 0)
+        filled_price = normalized.get('filled_avg_price', 0)
+        fill_status = normalized.get('status', 'unknown')
+
+        # ── BLANK CHECK: order_id MUST exist and fill MUST be non-zero ──
+        if not order_id or order_id == 'DRY_RUN':
+            print(
+                f"       🌱 ENIGMA SNIPER: ❌ BLANK FIRED → {new_sym} "
+                f"(no order_id returned — exchange may have rejected silently)"
+            )
+            print(f"         Raw response: {result}")
+            return None
+
+        if filled_qty <= 0 or filled_price <= 0:
+            print(
+                f"       🌱 ENIGMA SNIPER: ❌ BLANK FIRED → {new_sym} "
+                f"(order_id={order_id} but fill_qty={filled_qty}, fill_price={filled_price})"
+            )
+            print(f"         Status: {fill_status} | The order was placed but NOT filled")
+            return None
+
+        # ── KILL CONFIRMED: real order_id + real fill ────────────────────────
+        self._enigma_sniped.add(canonical)
+
+        # Track the order for cost basis / breakeven
+        self.track_buy_order(ds.raw_symbol, normalized, chosen_exchange)
+
+        # Calculate proper position levels
+        fee_rate = self.fee_rates.get(chosen_exchange, 0.0025)
+        breakeven = filled_price * (1 + fee_rate) / (1 - fee_rate)
+        target_price = breakeven * 1.03  # 3% target for new listings
+        entry_cost = filled_price * filled_qty * (1 + fee_rate)
+
+        # Create a real LivePosition so it's tracked + monitored + sold properly
+        snipe_pos = LivePosition(
+            symbol=ds.raw_symbol,
+            exchange=chosen_exchange,
+            entry_price=filled_price,
+            entry_qty=filled_qty,
+            entry_cost=entry_cost,
+            breakeven_price=breakeven,
+            target_price=target_price,
+            client=client,
+            stop_price=0.0,
+            is_margin=False,
+            leverage=1,
+            margin_amount=0.0,
+        )
+
+        # ── VERIFIED KILL LOG — order_id is PROOF ────────────────────────────
+        print(
+            f"       🌱 ENIGMA SNIPER: 🎯 KILL CONFIRMED → {new_sym} "
+            f"on {chosen_exchange} (tier={ds.tier})"
+        )
+        print(
+            f"         ORDER ID: {order_id}"
+        )
+        print(
+            f"         Fill: {filled_qty:.6f} @ ${filled_price:,.6f} = ${entry_cost:,.4f}"
+        )
+        print(
+            f"         Breakeven: ${breakeven:,.6f} | Target: ${target_price:,.6f}"
+        )
+        print(
+            f"         Status: {fill_status} | Exchange confirmed"
+        )
+
+        return snipe_pos
 
     def execute_stealth_buy(self, client: Any, symbol: str, quantity: float, 
                             price: float = None, exchange: str = 'alpaca',
@@ -13552,7 +13628,11 @@ class OrcaKillCycle:
                                     # ── NEW LISTING SNIPER: attempt to buy each new symbol ──
                                     for new_sym in _report.new_listings[:10]:  # max 10 per cycle
                                         try:
-                                            self._enigma_snipe_new_listing(new_sym)
+                                            snipe_pos = self._enigma_snipe_new_listing(new_sym)
+                                            if snipe_pos is not None:
+                                                positions.append(snipe_pos)
+                                                session_stats['total_trades'] += 1
+                                                print(f"       🌱 ENIGMA SNIPER: Position tracked ({len(positions)} total live)")
                                         except Exception as _snipe_err:
                                             print(f"       ENIGMA SNIPER error ({new_sym}): {_snipe_err}")
                                 else:
