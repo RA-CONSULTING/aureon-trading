@@ -8,8 +8,9 @@ User=root
 WorkingDirectory=/root/aureon-trading
 Environment=PYTHONUNBUFFERED=1
 Environment=AUREON_ENV=production
+Environment=MARGIN_ENABLED=1
 # Point to the VirtualEnv Python to satisfy numpy/pandas deps
-ExecStart=/root/aureon-trading/venv/bin/python orca_complete_kill_cycle.py --autonomous 3 1.0 1.0
+ExecStart=/root/aureon-trading/venv/bin/python orca_complete_kill_cycle.py --autonomous --margin 3 1.0 1.0
 Restart=always
 RestartSec=10
 StartLimitBurst=5

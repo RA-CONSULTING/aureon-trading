@@ -9704,9 +9704,12 @@ class OrcaKillCycle:
         #                                                                    
         
         # Check for margin trading opportunity (Kraken only, for now)
+        # Master kill switch: MARGIN_ENABLED env var MUST be '1' for margin to activate
+        margin_enabled = os.getenv('MARGIN_ENABLED', '0') == '1'
         use_margin = False
         leverage = 1
-        if (exchange == "kraken" and 
+        if (margin_enabled and
+            exchange == "kraken" and 
             margin_recommendation in ("LONG", "SHORT") and 
             margin_leverage >= 2 and 
             margin_conviction >= 0.4):
@@ -15689,6 +15692,7 @@ if __name__ == "__main__":
         parser.add_argument("--symbols", type=str, help="Comma-separated list of symbols to trade")
         parser.add_argument("--initial-capital", type=float, default=1000, help="Initial capital amount")
         parser.add_argument("--dry-run", action="store_true", help="Dry run mode - no real trades")
+        parser.add_argument("--margin", action="store_true", help="Enable margin trading (sets MARGIN_ENABLED=1)")
         parser.add_argument("--allow-multi-instance", action="store_true", help="Allow multiple autonomous Orca instances (not recommended)")
         # Positional args passed by start_orca.sh: max_positions position_size min_target
         parser.add_argument("max_positions", nargs="?", type=int, default=0, help="Max concurrent positions (<=0 for unlimited, default: unlimited)")
@@ -15696,6 +15700,10 @@ if __name__ == "__main__":
         parser.add_argument("min_target", nargs="?", type=float, default=1.0, help="Min profit target percent (default: 1.0)")
         
         args = parser.parse_args()
+
+        # Margin trading flag (can be set via --margin CLI arg OR MARGIN_ENABLED env var)
+        if args.margin:
+            os.environ['MARGIN_ENABLED'] = '1'
 
         # Force consistent runtime mode flags for all subsystems.
         # `--autonomous` without `--dry-run` must run fully LIVE.
@@ -15751,6 +15759,7 @@ if __name__ == "__main__":
             print("  AUTONOMOUS MODE ACTIVATED")
             print(f"  {'LIVE MODE - REAL TRADES' if not args.dry_run else 'DRY-RUN MODE'}")
             print(f"  Runtime gate state: LIVE={os.getenv('LIVE')} DRY_RUN={os.getenv('DRY_RUN')} KRAKEN_DRY_RUN={os.getenv('KRAKEN_DRY_RUN')} BINANCE_DRY_RUN={os.getenv('BINANCE_DRY_RUN')} ALPACA_DRY_RUN={os.getenv('ALPACA_DRY_RUN')}")
+            print(f"  Margin trading: {'ENABLED' if os.getenv('MARGIN_ENABLED') == '1' else 'DISABLED'} (MARGIN_ENABLED={os.getenv('MARGIN_ENABLED', '0')})")
 
             # Production readiness checks (live mode only)
             _production_preflight(orca, live_mode=not args.dry_run)

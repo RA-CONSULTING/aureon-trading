@@ -19,6 +19,7 @@ services:
       - KRAKEN_NONCE_PATH=/app/state/kraken_nonce.json
       - KRAKEN_PRIVATE_LOCK_PATH=/app/state/kraken_private.lock
       - AUREON_ENABLE_AUTONOMOUS_CONTROL=1
+      - MARGIN_ENABLED=1
       
       # ⚡ 99.99% EFFICIENCY TUNING
       - PYTHONMALLOC=malloc

@@ -1179,6 +1179,7 @@ if __name__ == '__main__':
     
     parser = argparse.ArgumentParser(description="Queen's Full Autonomous System")
     parser.add_argument('--dry-run', action='store_true', help='Dry run mode (no real trades)')
+    parser.add_argument('--margin', action='store_true', help='Enable margin trading (sets MARGIN_ENABLED=1)')
     parser.add_argument('--verbose', '-v', action='store_true', help='Verbose output')
     args = parser.parse_args()
     
@@ -1188,6 +1189,10 @@ if __name__ == '__main__':
     if args.dry_run:
         os.environ['AUREON_DRY_RUN'] = '1'
         logger.info("🏜️ DRY RUN MODE - No real trades will be executed")
+
+    # Enable margin trading if requested via --margin CLI arg or MARGIN_ENABLED env var
+    if args.margin:
+        os.environ['MARGIN_ENABLED'] = '1'
 
     # Ensure autonomous control is explicitly enabled for this launcher
     os.environ.setdefault('AUREON_ENABLE_AUTONOMOUS_CONTROL', '1')
