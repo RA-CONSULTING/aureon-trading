@@ -13850,8 +13850,20 @@ class OrcaKillCycle:
                                             from aureon_seer_integration import flush_pillar_snipe_requests
                                             _p_snipes = flush_pillar_snipe_requests()
                                             if _p_snipes:
-                                                print(f"     🌱 PILLARS NOMINATED {len(_p_snipes)} new listing(s) for sniping")
-                                                for _snipe in _p_snipes[:10]:
+                                                # ── UNANIMOUS RULE: all 4 Pillars must agree ─────
+                                                _ALL_PILLARS = {"QUEEN", "KING", "SEER", "LYRA"}
+                                                _unanimous = [s for s in _p_snipes
+                                                              if _ALL_PILLARS.issubset(set(s.get("nominators", [])))]
+                                                _vetoed    = [s for s in _p_snipes if s not in _unanimous]
+                                                if _vetoed:
+                                                    print(f"     🛡️  {len(_vetoed)} nomination(s) VETOED (not unanimous):")
+                                                    for _v in _vetoed[:5]:
+                                                        _vs = _v.get("symbol", "?")
+                                                        _vw = "/".join(_v.get("nominators", []))
+                                                        print(f"       ❌ {_vs} ← only {_vw}")
+                                                if _unanimous:
+                                                    print(f"     🌱 ALL 4 PILLARS AGREE on {len(_unanimous)} new listing(s)")
+                                                for _snipe in _unanimous[:10]:
                                                     _sym  = _snipe.get("symbol", "")
                                                     _who  = "/".join(_snipe.get("nominators", []))
                                                     _nsco = _snipe.get("score_sum", 0)
