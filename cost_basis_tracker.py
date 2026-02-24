@@ -181,7 +181,17 @@ class CostBasisTracker:
         self.trade_lots: Dict[str, List[Trade]] = {}  # 🆕 For FIFO
         self.last_sync: float = 0
         self.clients = clients or {}
+        self._last_reload: float = 0  # timestamp of last full disk reload
         self._load()
+        self._last_reload = time.time()
+
+    _RELOAD_INTERVAL_SECS = 120  # re-read disk at most every 2 minutes
+
+    def _reload_if_stale(self):
+        """Reload positions from disk if the cache is older than _RELOAD_INTERVAL_SECS."""
+        if time.time() - self._last_reload > self._RELOAD_INTERVAL_SECS:
+            self._load()
+            self._last_reload = time.time()
     
     def set_clients(self, clients):
         """Inject shared exchange clients."""
@@ -1144,7 +1154,8 @@ class CostBasisTracker:
             - potential_loss: float (if negative)
             - recommendation: str
         """
-        # 🔍 Use the centralized 5-strategy matching logic
+        # 🔍 Use the centralized 5-strategy matching logic (reload cache if stale)
+        self._reload_if_stale()
         pos, matched_key = self._find_position(symbol, exchange)
         
         # 🚨 NO POSITION FOUND - Critical debugging info
