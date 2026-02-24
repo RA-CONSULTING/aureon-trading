@@ -270,6 +270,15 @@ class QueenEvaluator:
         else:
             grade = "CAUTIOUS"
 
+        # ── Enigma new-listing nominations: Queen nominates newborns when she PASSES ──
+        _q_universe = data.get("symbol_universe", {})
+        _q_newborns = _q_universe.get("newborns", [])[:5]
+        if _q_newborns:
+            shared_data["nominated_snipes"] = [
+                {"symbol": s, "nominator": "QUEEN", "score": queen_confidence}
+                for s in _q_newborns
+            ]
+
         return PillarVote(
             pillar="QUEEN",
             vote=VoteResult.PASS.value,
@@ -364,6 +373,15 @@ class KingEvaluator:
                 connected_systems=5,
             )
 
+        # ── Enigma nominations: King nominates if treasury is healthy enough to speculate ──
+        _k_universe = data.get("symbol_universe", {})
+        _k_newborns = _k_universe.get("newborns", [])[:3]  # King is more conservative: top 3
+        if _k_newborns and king_health in ("SOVEREIGN", "PROSPEROUS"):
+            shared_data["nominated_snipes"] = [
+                {"symbol": s, "nominator": "KING", "score": score}
+                for s in _k_newborns
+            ]
+
         return PillarVote(
             pillar="KING",
             vote=VoteResult.PASS.value,
@@ -442,6 +460,15 @@ class SeerEvaluator:
                 data=shared_data,
                 connected_systems=5,
             )
+
+        # ── Enigma nominations: Seer reads cosmic timing for new listings ──
+        _s_universe = data.get("symbol_universe", {})
+        _s_newborns = _s_universe.get("newborns", [])[:4]
+        if _s_newborns and seer_grade in ("DIVINE_CLARITY", "CLEAR_SIGHT"):
+            shared_data["nominated_snipes"] = [
+                {"symbol": s, "nominator": "SEER", "score": score}
+                for s in _s_newborns
+            ]
 
         return PillarVote(
             pillar="SEER",
@@ -538,6 +565,15 @@ class LyraEvaluator:
                 data=shared_data,
                 connected_systems=len(LYRA_CONNECTED_SYSTEMS),
             )
+
+        # ── Enigma nominations: Lyra feels the harmonic excitement of new energy ──
+        _l_universe = data.get("symbol_universe", {})
+        _l_newborns = _l_universe.get("newborns", [])[:4]
+        if _l_newborns and lyra_grade in ("DIVINE_HARMONY", "CLEAR_RESONANCE"):
+            shared_data["nominated_snipes"] = [
+                {"symbol": s, "nominator": "LYRA", "score": score}
+                for s in _l_newborns
+            ]
 
         return PillarVote(
             pillar="LYRA",
@@ -1340,6 +1376,31 @@ class PillarCouncil:
         return self._session_count
 
 
+def _agg_nominated_snipes(*votes) -> list:
+    """
+    Aggregate Enigma newborn snipe nominations from N PillarVote objects.
+    Returns a deduplicated list sorted by number of nominators (most agreed-upon first).
+    Called internally by TriumvirateEngine._exchange_data().
+    """
+    all_nominations: Dict[str, Dict] = {}
+    for vote in votes:
+        for nom in (vote.data.get("nominated_snipes") or []):
+            sym = nom.get("symbol", "")
+            if not sym:
+                continue
+            if sym not in all_nominations:
+                all_nominations[sym] = {"symbol": sym, "nominators": [], "score_sum": 0.0}
+            nominator = nom.get("nominator", "?")
+            if nominator not in all_nominations[sym]["nominators"]:
+                all_nominations[sym]["nominators"].append(nominator)
+            all_nominations[sym]["score_sum"] += nom.get("score", 0.5)
+    return sorted(
+        all_nominations.values(),
+        key=lambda x: (len(x["nominators"]), x["score_sum"]),
+        reverse=True,
+    )
+
+
 # ═══════════════════════════════════════════════════════════════════════════
 # THE TRIUMVIRATE ENGINE - Three-Way Freeway Consensus
 # ═══════════════════════════════════════════════════════════════════════════
@@ -1491,6 +1552,11 @@ class TriumvirateEngine:
                 king_vote.connected_systems +
                 seer_vote.connected_systems +
                 lyra_vote.connected_systems
+            ),
+            # ── Aggregated Pillar snipe nominations ──────────────────────────────────
+            # Symbols that multiple Pillars all want to snipe rise to the top.
+            "nominated_snipes": _agg_nominated_snipes(
+                queen_vote, king_vote, seer_vote, lyra_vote
             ),
         }
 

@@ -73,6 +73,9 @@ _ENIGMA_SYMBOL_UNIVERSE: Dict[str, Any] = {
 }
 _enigma_bus_wired: bool = False
 
+# Pillar snipe nominations — populated by collapse_probability_field(), drained by orca
+_PENDING_PILLAR_SNIPE_REQUESTS: List[Dict[str, Any]] = []
+
 
 def _on_enigma_discovery(thought) -> None:
     """
@@ -183,6 +186,36 @@ def get_enigma_universe_snapshot() -> Dict[str, Any]:
         "staleness_secs": round(time.time() - _ENIGMA_SYMBOL_UNIVERSE["last_update"], 0)
             if _ENIGMA_SYMBOL_UNIVERSE["last_update"] else None,
     }
+
+
+def flush_pillar_snipe_requests() -> List[Dict[str, Any]]:
+    """
+    Return and clear all pending Pillar snipe nominations.
+    Called by orca after every Quadrumvirate consensus so the engine can
+    attempt to buy each symbol the 4 Pillars nominated.
+
+    Returns:
+        List of dicts: [{"symbol": str, "nominators": [str], "score_sum": float}, ...]
+        Sorted by number of nominators descending (most agreed-upon first).
+    """
+    global _PENDING_PILLAR_SNIPE_REQUESTS
+    if not _PENDING_PILLAR_SNIPE_REQUESTS:
+        return []
+    # Deduplicate: merge nominations for the same symbol
+    merged: Dict[str, Dict] = {}
+    for nom in _PENDING_PILLAR_SNIPE_REQUESTS:
+        sym = nom.get("symbol", "")
+        if not sym:
+            continue
+        if sym not in merged:
+            merged[sym] = {"symbol": sym, "nominators": [], "score_sum": 0.0}
+        for nr in nom.get("nominators", [nom.get("nominator", "?")]):
+            if nr not in merged[sym]["nominators"]:
+                merged[sym]["nominators"].append(nr)
+        merged[sym]["score_sum"] += nom.get("score_sum", nom.get("score", 0.5))
+    _PENDING_PILLAR_SNIPE_REQUESTS = []  # Clear
+    result = sorted(merged.values(), key=lambda x: (len(x["nominators"]), x["score_sum"]), reverse=True)
+    return result
 
 
 def _get_seer():
@@ -412,6 +445,17 @@ def get_triumvirate_consensus(queen_confidence: float = 0.5,
         except Exception as e:
             logger.debug(f"Lyra resonance read error: {e}")
 
+    # ─── Inject Enigma symbol universe into every Pillar’s data dict ───
+    # Each Pillar evaluator will read this and nominate newborns for sniping.
+    _univ = get_enigma_universe_snapshot()
+    if _univ["total_symbols"] > 0 and (_univ.get("staleness_secs") or 9999) < 3600:
+        _universe_ctx = {"symbol_universe": _univ}
+        queen_data = dict(queen_data or {})
+        queen_data.update(_universe_ctx)
+        king_data  = dict(king_data);  king_data.update(_universe_ctx)
+        seer_data  = dict(seer_data);  seer_data.update(_universe_ctx)
+        lyra_data  = dict(lyra_data);  lyra_data.update(_universe_ctx)
+
     # ─── Run FOUR-PILLAR freeway consensus ───
     consensus = triumvirate.evaluate_consensus(
         queen_confidence=queen_confidence,
@@ -426,6 +470,16 @@ def get_triumvirate_consensus(queen_confidence: float = 0.5,
         lyra_data=lyra_data,
         context=context,
     )
+
+    # ─── Collect Pillar snipe nominations into global pending queue ───
+    _pillar_snipes = (consensus.data_exchange or {}).get("nominated_snipes", [])
+    if _pillar_snipes:
+        _PENDING_PILLAR_SNIPE_REQUESTS.extend(_pillar_snipes)
+        logger.info(
+            "Pillars nominated %d symbol(s) for sniping: %s",
+            len(_pillar_snipes),
+            [n.get("symbol") for n in _pillar_snipes[:5]],
+        )
 
     result = {
         "timestamp": consensus.timestamp,

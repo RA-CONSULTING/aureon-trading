@@ -13844,6 +13844,24 @@ class OrcaKillCycle:
                                     fc = quad_result.get('field_coherence', 0)
                                     action = quad_result.get('action', '?')
                                     print(f"     QUADRUMVIRATE: {action} | Coherence={fc:.0%} | Sizing={quad_sizing:.2f}x")
+                                    # ── Pillar-nominated new-listing snipes ───────────────────────────────
+                                    if self.enigma_machine:
+                                        try:
+                                            from aureon_seer_integration import flush_pillar_snipe_requests
+                                            _p_snipes = flush_pillar_snipe_requests()
+                                            if _p_snipes:
+                                                print(f"     🌱 PILLARS NOMINATED {len(_p_snipes)} new listing(s) for sniping")
+                                                for _snipe in _p_snipes[:10]:
+                                                    _sym  = _snipe.get("symbol", "")
+                                                    _who  = "/".join(_snipe.get("nominators", []))
+                                                    _nsco = _snipe.get("score_sum", 0)
+                                                    print(f"       📍 {_sym} ← {_who} (score={_nsco:.2f})")
+                                                    try:
+                                                        self._enigma_snipe_new_listing(_sym)
+                                                    except Exception as _se:
+                                                        print(f"         Pillar snipe error ({_sym}): {_se}")
+                                        except Exception:
+                                            pass
                                     if not quad_go:
                                         wait = quad_result.get('wait_guidance') or {}
                                         reason = wait.get('reason', 'temporal misalignment')
