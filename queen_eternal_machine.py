@@ -1648,8 +1648,8 @@ class QueenEternalMachine:
                 logger.warning(f"🛡️ CRITICAL WHALE ATTACK on {symbol}!")
                 logger.warning(f"   🚫 NO STOP LOSS - HOLDING STRONG!")
                 logger.warning(f"   📍 Current Price: ${danger['current_price']:.8f}")
-                logger.warning(f"   💰 Cost Basis: ${danger['cost_basis']:.2f}")
-                logger.warning(f"   🧳 Baggage: {danger['baggage_pct']:.2f}%")
+                logger.warning(f"   💰 Cost Basis: ${danger.get('cost_basis_price', 0):.2f}")
+                logger.warning(f"   🧳 Baggage: {danger.get('current_loss', 0):.2f}%")
                 logger.warning(f"   💪 Action: HOLD FOR RECOVERY")
             elif "HIGH ALERT" in danger['danger_level']:
                 action = "HIGH_ALERT_HOLD"
