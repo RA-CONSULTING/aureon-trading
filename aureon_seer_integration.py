@@ -58,6 +58,132 @@ _king = None
 _lyra = None
 _triumvirate = None
 
+# ─── Enigma Symbol Universe (updated via Thought Bus) ───
+# Shared state updated whenever the CryptoEnigmaSymbolMachine publishes a
+# `symbol.new_discoveries` thought.  All four Pillars read this dict during
+# their wave calculations so they are aware of new / emerging assets.
+_ENIGMA_SYMBOL_UNIVERSE: Dict[str, Any] = {
+    "total": 0,
+    "newborns": [],          # symbols ≤ 7 days old
+    "emerging": [],           # 8-30 days old
+    "new_count": 0,           # count in most recent discovery batch
+    "tiers": {},              # {tier_label: [sym, ...]} full breakdown
+    "last_update": 0.0,       # unix timestamp of last Thought Bus update
+    "source": "none",         # 'thought_bus' or 'enigma_direct'
+}
+_enigma_bus_wired: bool = False
+
+
+def _on_enigma_discovery(thought) -> None:
+    """
+    Thought Bus handler for ``symbol.new_discoveries``.
+    Keeps _ENIGMA_SYMBOL_UNIVERSE in sync so every Pillar can see new listings.
+    """
+    global _ENIGMA_SYMBOL_UNIVERSE
+    try:
+        payload = thought.payload if hasattr(thought, "payload") else (thought or {})
+        if isinstance(payload, dict):
+            _ENIGMA_SYMBOL_UNIVERSE["new_count"] = payload.get("count", 0)
+            new_syms = payload.get("new_symbols", [])
+            # Accumulate newborns (keep last 200 unique)
+            seen = set(_ENIGMA_SYMBOL_UNIVERSE["newborns"])
+            for s in new_syms:
+                if s not in seen:
+                    _ENIGMA_SYMBOL_UNIVERSE["newborns"].append(s)
+                    seen.add(s)
+            _ENIGMA_SYMBOL_UNIVERSE["newborns"] = _ENIGMA_SYMBOL_UNIVERSE["newborns"][-200:]
+            total = payload.get("total", 0)
+            if total:
+                _ENIGMA_SYMBOL_UNIVERSE["total"] = total
+            _ENIGMA_SYMBOL_UNIVERSE["last_update"] = time.time()
+            _ENIGMA_SYMBOL_UNIVERSE["source"] = "thought_bus"
+            logger.debug(
+                "Enigma universe updated via Thought Bus: %d total, %d new",
+                _ENIGMA_SYMBOL_UNIVERSE["total"],
+                _ENIGMA_SYMBOL_UNIVERSE["new_count"],
+            )
+    except Exception as e:
+        logger.debug("_on_enigma_discovery error: %s", e)
+
+
+def update_enigma_universe_direct(report) -> None:
+    """
+    Direct injection from orca (or any caller holding an EnigmaReport).
+    Called after every 30-min rediscovery cycle so the Pillars always have
+    fresh data even when ThoughtBus pubsub is unavailable.
+
+    Args:
+        report: EnigmaReport dataclass from CryptoEnigmaSymbolMachine.discover_all()
+                Fields used:
+                  total_symbols     - int   total catalogued symbols
+                  new_since_last_scan - int count of new symbols in this scan
+                  new_listings      - List[str] symbols new in this scan
+                  by_tier           - Dict[str, List[str]] tier breakdown (if present)
+    """
+    global _ENIGMA_SYMBOL_UNIVERSE
+    try:
+        # new_listings is List[str] (raw symbol strings)
+        new_listings = list(getattr(report, "new_listings", []))
+        new_count = int(getattr(report, "new_since_last_scan", len(new_listings)))
+        total = int(getattr(report, "total_symbols", _ENIGMA_SYMBOL_UNIVERSE["total"]))
+        # by_tier may be Dict[str, List[str]] or Dict[str, List[DiscoveredSymbol]]
+        tiers: Dict[str, list] = {}
+        for tier_label, syms in getattr(report, "by_tier", {}).items():
+            if syms and hasattr(syms[0], "symbol"):
+                tiers[str(tier_label)] = [s.symbol for s in syms[:50]]
+            else:
+                tiers[str(tier_label)] = [str(s) for s in syms[:50]]
+        emerging = tiers.get("🚀 EMERGING", tiers.get("EMERGING", []))
+        # Merge new_listings into accumulated newborns list (keep last 200)
+        prev_newborns = _ENIGMA_SYMBOL_UNIVERSE["newborns"]
+        combined = list(dict.fromkeys(new_listings + prev_newborns))  # dedup, new first
+        _ENIGMA_SYMBOL_UNIVERSE.update({
+            "total": total,
+            "newborns": combined[:200],
+            "emerging": emerging[:100],
+            "new_count": new_count,
+            "tiers": tiers,
+            "last_update": time.time(),
+            "source": "enigma_direct",
+        })
+        logger.info(
+            "Enigma universe (direct): %d total symbols, %d new this scan, %d emerging",
+            total, new_count, len(emerging),
+        )
+    except Exception as e:
+        logger.debug("update_enigma_universe_direct error: %s", e)
+
+
+def _wire_enigma_subscription() -> None:
+    """Subscribe to symbol.new_discoveries on the Thought Bus (called once at import)."""
+    global _enigma_bus_wired
+    if _enigma_bus_wired:
+        return
+    try:
+        from aureon_thought_bus import ThoughtBus as _TB
+        bus = _TB.get_instance() if hasattr(_TB, "get_instance") else None
+        if bus and hasattr(bus, "subscribe"):
+            bus.subscribe("symbol.new_discoveries", _on_enigma_discovery)
+            _enigma_bus_wired = True
+            logger.info("Seer Integration subscribed to symbol.new_discoveries")
+    except Exception as e:
+        logger.debug("Could not wire Enigma Thought Bus subscription: %s", e)
+
+
+def get_enigma_universe_snapshot() -> Dict[str, Any]:
+    """Return a lightweight copy of the current Enigma symbol universe for pillar use."""
+    return {
+        "total_symbols": _ENIGMA_SYMBOL_UNIVERSE["total"],
+        "newborns": list(_ENIGMA_SYMBOL_UNIVERSE["newborns"][:20]),
+        "emerging": list(_ENIGMA_SYMBOL_UNIVERSE["emerging"][:20]),
+        "new_count": _ENIGMA_SYMBOL_UNIVERSE["new_count"],
+        "tiers_summary": {k: len(v) for k, v in _ENIGMA_SYMBOL_UNIVERSE["tiers"].items()},
+        "last_update": _ENIGMA_SYMBOL_UNIVERSE["last_update"],
+        "source": _ENIGMA_SYMBOL_UNIVERSE["source"],
+        "staleness_secs": round(time.time() - _ENIGMA_SYMBOL_UNIVERSE["last_update"], 0)
+            if _ENIGMA_SYMBOL_UNIVERSE["last_update"] else None,
+    }
+
 
 def _get_seer():
     global _seer
@@ -799,6 +925,35 @@ def collapse_probability_field(queen_confidence: float = 0.5,
     else:
         action = "HOLD"
 
+    # ─── Wave 0 enhancement: Enigma Symbol Universe awareness ───
+    # If the Enigma Machine has discovered new NEWBORN/EMERGING symbols recently,
+    # the discovery momentum is factored into Queen's cognition wave so all
+    # four Pillars are aware when fresh instruments enter the ecosystem.
+    universe = get_enigma_universe_snapshot()
+    if universe["total_symbols"] > 0:
+        newborn_count = len(universe["newborns"])
+        emerging_count = len(universe["emerging"])
+        recent = (universe["staleness_secs"] or 9999) < 1800  # fresh within 30 min
+        if newborn_count > 0 and recent:
+            # New assets detected: slightly boost Queen's wave score (discovery confidence)
+            discovery_boost = min(0.05, newborn_count * 0.003)
+            wave1["score"] = min(1.0, wave1["score"] + discovery_boost)
+            wave1["discovery_boost"] = discovery_boost
+            wave1["newborns_detected"] = newborn_count
+            logger.debug(
+                "Enigma discovery boost +%.3f applied (newborns=%d, emerging=%d)",
+                discovery_boost, newborn_count, emerging_count,
+            )
+        # Attach universe context for Lyra (emotional excitement around new assets)
+        if emerging_count > 5 and recent:
+            wave2["emerging_market_energy"] = min(1.0, 0.5 + emerging_count * 0.005)
+        # Pass universe into context so triumvirate.evaluate_consensus() can use it
+        if context is None:
+            context = {}
+        context["symbol_universe"] = universe
+        context["enigma_newborns"] = universe["newborns"]
+        context["enigma_total"] = universe["total_symbols"]
+
     # ─── Run full Quadrumvirate consensus ───
     consensus = get_triumvirate_consensus(
         queen_confidence=queen_confidence,
@@ -981,3 +1136,7 @@ def _broadcast(event_type: str, data: Dict):
             })
     except (ImportError, Exception):
         pass
+
+
+# ─── Wire Enigma subscription at module load time ───
+_wire_enigma_subscription()

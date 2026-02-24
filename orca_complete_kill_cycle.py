@@ -13399,6 +13399,12 @@ class OrcaKillCycle:
                                 _report = self.enigma_machine.discover_all()
                                 if self.ocean_scanner:
                                     self.enigma_machine.enrich_ocean_scanner(self.ocean_scanner)
+                                # Feed fresh discovery data into the 4-Pillar Quadrumvirate
+                                try:
+                                    from aureon_seer_integration import update_enigma_universe_direct
+                                    update_enigma_universe_direct(_report)
+                                except Exception:
+                                    pass
                                 if _report.new_since_last_scan > 0:
                                     print(f"     🔐 ENIGMA: {_report.new_since_last_scan} NEW symbols discovered! "
                                           f"(total: {_report.total_symbols:,})")
