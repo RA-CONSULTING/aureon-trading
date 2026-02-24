@@ -1,4 +1,4 @@
-import os, time, json, math, hmac, hashlib, base64, threading, random
+import os, time, json, math, hmac, hashlib, base64, threading, random, logging
 from typing import Dict, Any, List, Tuple
 from decimal import Decimal
 
@@ -30,6 +30,32 @@ KRAKEN_BASE = "https://api.kraken.com"
 
 ASSETPAIR_CACHE_TTL = 300  # seconds
 KRAKEN_TRADES_PAGE_SIZE = 50
+
+logger = logging.getLogger(__name__)
+
+# Import TokenBucket for proper rate limiting
+try:
+    from rate_limiter import TokenBucket, TTLCache
+    _RATE_LIMITER_AVAILABLE = True
+except ImportError:
+    _RATE_LIMITER_AVAILABLE = False
+
+# ─── Kraken Rate Limit Tiers ──────────────────────────────────────────
+# Kraken uses a decaying counter model. Each private API call adds to the
+# counter; it decays at a fixed rate depending on verification tier.
+#   Starter:      max 15, decay 0.33/sec → sustain ~1 call / 3s
+#   Intermediate: max 20, decay 0.5 /sec → sustain ~1 call / 2s
+#   Pro:          max 20, decay 1.0 /sec → sustain ~1 call / 1s
+# Matching orders add 0 (limit) or 1 (market). Ledger/TradesHistory add 2.
+# Public endpoints have a separate, looser limit (~1 call/sec sustained).
+KRAKEN_TIER = os.getenv("KRAKEN_TIER", "starter").lower()  # starter|intermediate|pro
+
+_TIER_SETTINGS: Dict[str, Dict[str, float]] = {
+    "starter":      {"capacity": 15, "decay": 0.33, "private_interval": 2.0, "page_interval": 4.0},
+    "intermediate": {"capacity": 20, "decay": 0.50, "private_interval": 1.5, "page_interval": 3.0},
+    "pro":          {"capacity": 20, "decay": 1.00, "private_interval": 1.0, "page_interval": 2.0},
+}
+_TIER = _TIER_SETTINGS.get(KRAKEN_TIER, _TIER_SETTINGS["starter"])
 
 # 🔐 CROSS-PROCESS NONCE MANAGER
 # Prevents "Invalid nonce" errors when multiple processes share the same API key
@@ -186,10 +212,40 @@ class KrakenClient:
         self._alt_to_int: Dict[str, str] = {}
         self._int_to_alt: Dict[str, str] = {}
         
-        # Rate limiting to prevent nonce errors
-        self._last_private_call: float = 0.0
+        # ── Rate Limiting (production-grade) ──────────────────────────────
+        # Private API: token bucket mirroring Kraken's decaying counter model
         self._private_lock = threading.Lock()
-        self._min_call_interval: float = 0.5  # 500ms between private API calls
+        self._last_private_call: float = 0.0
+        self._min_call_interval: float = _TIER["private_interval"]
+        # Heavier interval for paginated endpoints (ledgers, trades history)
+        self._page_call_interval: float = _TIER["page_interval"]
+
+        if _RATE_LIMITER_AVAILABLE:
+            # Private bucket: match Kraken tier capacity & decay rate
+            self._private_bucket = TokenBucket(
+                rate=_TIER["decay"],
+                capacity=_TIER["capacity"],
+                name="kraken_private",
+            )
+            # Public bucket: ~1 call/sec sustained, burst up to 15
+            self._public_bucket = TokenBucket(
+                rate=1.0,
+                capacity=15.0,
+                name="kraken_public",
+            )
+        else:
+            self._private_bucket = None
+            self._public_bucket = None
+        
+        # ── Response Caching (reduce redundant API calls) ─────────────────
+        # Balance cache: 30s TTL — get_balance() is called 5+ times per Orca cycle
+        self._balance_cache: Dict[str, Any] = {}
+        self._balance_cache_time: float = 0.0
+        self._balance_cache_ttl: float = 30.0
+        # Backoff state for EAPI:Rate limit recovery
+        self._rate_limit_backoff: float = 0.0
+        self._rate_limit_until: float = 0.0
+        self._consecutive_rate_limits: int = 0
 
     def _normalize_asset_name(self, asset: str) -> str:
         asset_up = (asset or "").upper()
@@ -234,53 +290,130 @@ class KrakenClient:
         sigdigest = base64.b64encode(mac.digest()).decode()
         return sigdigest
 
-    def _private(self, path: str, data: Dict[str, Any]) -> Dict[str, Any]:
+    def _private(self, path: str, data: Dict[str, Any], _cost: float = 1.0) -> Dict[str, Any]:
+        """Execute a private (authenticated) Kraken API call with production-grade rate limiting.
+        
+        Args:
+            path: API endpoint path (e.g. /0/private/Balance)
+            data: POST data dict
+            _cost: Rate limit cost — 1 for normal calls, 2 for ledger/trades queries
+        """
         if self.dry_run:
             raise RuntimeError("Private Kraken endpoint used in dry-run. Provide balances via env or disable dry-run.")
         if not self.api_key or not self.api_secret:
             raise RuntimeError("Missing KRAKEN_API_KEY / KRAKEN_API_SECRET")
         
-        # Thread-safe rate limiting to prevent nonce errors
-        with self._private_lock:
-            # Ensure minimum interval between calls
-            now = time.time()
-            elapsed = now - self._last_private_call
-            if elapsed < self._min_call_interval:
-                time.sleep(self._min_call_interval - elapsed)
-            
-            data = dict(data)
-            # 🔐 Use cross-process safe nonce (prevents "Invalid nonce" in Docker/parallel)
-            # Old: time.time() * 1000000000 (nanoseconds) - BREAKS with multiple processes!
-            # New: file-based atomic counter with locking
-            data["nonce"] = str(_get_next_nonce())
-            headers = {
-                "API-Key": self.api_key,
-                "API-Sign": self._kraken_sign(path, data)
-            }
-            url = f"{self.base}{path}"
-            
-            # Update last call time before making request
-            self._last_private_call = time.time()
-            
-            r = self.session.post(url, data=data, headers=headers, timeout=15)
-            r.raise_for_status()
-            res = r.json()
-            if res.get("error"):
-                raise RuntimeError(f"Kraken error: {res['error']}")
-            return res.get("result", {})
+        max_retries = 3
+        for attempt in range(max_retries):
+            # Thread-safe rate limiting
+            with self._private_lock:
+                # 1. Check if we're in a backoff period from a previous rate limit error
+                now = time.time()
+                if now < self._rate_limit_until:
+                    wait_time = self._rate_limit_until - now
+                    logger.warning(f"Kraken rate limit backoff: waiting {wait_time:.1f}s")
+                    time.sleep(wait_time)
+                    now = time.time()
+                
+                # 2. TokenBucket gate — mirrors Kraken's decaying counter model
+                if self._private_bucket:
+                    self._private_bucket.wait(tokens=_cost)
+                
+                # 3. Minimum interval between calls (prevents nonce errors too)
+                elapsed = now - self._last_private_call
+                if elapsed < self._min_call_interval:
+                    time.sleep(self._min_call_interval - elapsed)
+                
+                data = dict(data)
+                data["nonce"] = str(_get_next_nonce())
+                headers = {
+                    "API-Key": self.api_key,
+                    "API-Sign": self._kraken_sign(path, data)
+                }
+                url = f"{self.base}{path}"
+                
+                # Update last call time before making request
+                self._last_private_call = time.time()
+                
+                r = self.session.post(url, data=data, headers=headers, timeout=15)
+                r.raise_for_status()
+                res = r.json()
+                
+                errors = res.get("error", [])
+                if errors:
+                    error_str = str(errors)
+                    # Handle rate limit errors with exponential backoff
+                    if "EAPI:Rate limit exceeded" in error_str or "EGeneral:Too many requests" in error_str:
+                        self._consecutive_rate_limits += 1
+                        # Exponential backoff: 15s, 30s, 60s, 120s cap
+                        backoff = min(15 * (2 ** (self._consecutive_rate_limits - 1)), 120)
+                        self._rate_limit_until = time.time() + backoff
+                        self._rate_limit_backoff = backoff
+                        logger.warning(
+                            f"Kraken RATE LIMIT on {path} (attempt {attempt+1}/{max_retries}). "
+                            f"Backing off {backoff}s (consecutive: {self._consecutive_rate_limits})"
+                        )
+                        if attempt < max_retries - 1:
+                            time.sleep(backoff)
+                            continue  # Retry
+                        else:
+                            raise RuntimeError(f"Kraken error: {errors}")
+                    
+                    # Handle invalid nonce (retry with fresh nonce)
+                    if "EAPI:Invalid nonce" in error_str and attempt < max_retries - 1:
+                        logger.warning(f"Kraken invalid nonce on {path}, retrying...")
+                        time.sleep(0.5)
+                        continue
+                    
+                    raise RuntimeError(f"Kraken error: {errors}")
+                
+                # Success — reset backoff state
+                if self._consecutive_rate_limits > 0:
+                    logger.info(f"Kraken rate limit recovered after {self._consecutive_rate_limits} consecutive limits")
+                    self._consecutive_rate_limits = 0
+                    self._rate_limit_backoff = 0.0
+                
+                # Invalidate balance cache after order/cancel operations
+                if "AddOrder" in path or "CancelOrder" in path:
+                    self._balance_cache = {}
+                    self._balance_cache_time = 0.0
+                
+                return res.get("result", {})
 
     # ──────────────────────────────────────────────────────────────────────
     # Public helpers and Binance-like interface
     # ──────────────────────────────────────────────────────────────────────
-    def _load_asset_pairs(self, force: bool = False) -> Dict[str, Any]:
-        if not force and time.time() - self._pairs_cache_time < ASSETPAIR_CACHE_TTL and self._pairs_cache:
-            return self._pairs_cache
-        r = self.session.get(f"{self.base}/0/public/AssetPairs", timeout=20)
+    def _public_get(self, endpoint: str, params: Dict[str, Any] | None = None, timeout: int = 20) -> Dict[str, Any]:
+        """Execute a public Kraken API call with rate limiting.
+        
+        All public GET requests should go through this method.
+        """
+        if self._public_bucket:
+            self._public_bucket.wait(tokens=1.0)
+        
+        url = f"{self.base}{endpoint}"
+        r = self.session.get(url, params=params, timeout=timeout)
         r.raise_for_status()
         data = r.json()
         if data.get("error"):
-            raise RuntimeError(f"Kraken AssetPairs error: {data['error']}")
-        pairs = data.get("result", {})
+            error_str = str(data["error"])
+            if "EAPI:Rate limit" in error_str or "EGeneral:Too many" in error_str:
+                logger.warning(f"Kraken public rate limit on {endpoint}, waiting 5s...")
+                time.sleep(5)
+                # Retry once
+                r = self.session.get(url, params=params, timeout=timeout)
+                r.raise_for_status()
+                data = r.json()
+                if data.get("error"):
+                    raise RuntimeError(f"Kraken error: {data['error']}")
+            else:
+                raise RuntimeError(f"Kraken error: {data['error']}")
+        return data.get("result", {})
+
+    def _load_asset_pairs(self, force: bool = False) -> Dict[str, Any]:
+        if not force and time.time() - self._pairs_cache_time < ASSETPAIR_CACHE_TTL and self._pairs_cache:
+            return self._pairs_cache
+        pairs = self._public_get("/0/public/AssetPairs")
         self._pairs_cache = pairs
         self._pairs_cache_time = time.time()
         # Build alt<->internal maps
@@ -300,8 +433,11 @@ class KrakenClient:
             data["start"] = int(since)
         ledgers: List[Dict[str, Any]] = []
         total = None
+        page = 0
         while True:
-            res = self._private("/0/private/Ledgers", data)
+            # Ledger queries cost 2 rate limit tokens per Kraken docs
+            res = self._private("/0/private/Ledgers", data, _cost=2)
+            page += 1
             batch = res.get("ledger", {}) or {}
             count = int(res.get("count", 0) or 0)
             if total is None:
@@ -318,6 +454,8 @@ class KrakenClient:
             data["ofs"] += len(batch)
             if total is not None and data["ofs"] >= total:
                 break
+            # Extra delay between pages to avoid rate limit saturation
+            time.sleep(self._page_call_interval)
         ledgers.sort(key=lambda x: x.get("time", 0))
         return ledgers
 
@@ -329,8 +467,11 @@ class KrakenClient:
             data["start"] = int(since)
         trades: List[Dict[str, Any]] = []
         total = None
+        page = 0
         while True:
-            res = self._private("/0/private/TradesHistory", data)
+            # TradesHistory queries cost 2 rate limit tokens per Kraken docs
+            res = self._private("/0/private/TradesHistory", data, _cost=2)
+            page += 1
             batch = res.get("trades", {}) or {}
             count = int(res.get("count", 0) or 0)
             if total is None:
@@ -357,6 +498,8 @@ class KrakenClient:
             data["ofs"] += len(batch)
             if total is not None and data["ofs"] >= total:
                 break
+            # Extra delay between pages to avoid rate limit saturation
+            time.sleep(self._page_call_interval)
         trades.sort(key=lambda x: x.get("time", 0))
         return trades
 
@@ -522,12 +665,7 @@ class KrakenClient:
 
         # Batch request (Kraken accepts comma-separated list)
         pairs_param = ",".join(internal_names)
-        r = self.session.get(f"{self.base}/0/public/Ticker", params={"pair": pairs_param}, timeout=20)
-        r.raise_for_status()
-        data = r.json()
-        if data.get("error"):
-            raise RuntimeError(f"Kraken Ticker error: {data['error']}")
-        result = data.get("result", {})
+        result = self._public_get("/0/public/Ticker", params={"pair": pairs_param})
         # If empty result, try normalized alternatives once
         if not result and len(altnames) == 1:
             alts = self._normalize_symbol(altnames[0])
@@ -537,12 +675,7 @@ class KrakenClient:
                     internal_names.append(self._alt_to_int[a])
             if internal_names:
                 pairs_param = ",".join(internal_names)
-                r = self.session.get(f"{self.base}/0/public/Ticker", params={"pair": pairs_param}, timeout=20)
-                r.raise_for_status()
-                data = r.json()
-                if data.get("error"):
-                    raise RuntimeError(f"Kraken Ticker error: {data['error']}")
-                result = data.get("result", {})
+                result = self._public_get("/0/public/Ticker", params={"pair": pairs_param})
         return result
 
     def get_24h_tickers(self) -> list:
@@ -555,10 +688,18 @@ class KrakenClient:
         # Include *all* listed asset pairs to cover every Kraken market, including alt coins
         alts = sorted({info.get("altname") or internal for internal, info in pairs.items()})
         out = []
-        # Batch in chunks of 40
-        for i in range(0, len(alts), 40):
+        # Batch in chunks of 40 with rate-limit-safe delay between chunks
+        total_chunks = (len(alts) + 39) // 40
+        for chunk_idx in range(total_chunks):
+            i = chunk_idx * 40
             chunk = alts[i:i+40]
-            result = self._ticker(chunk)
+            try:
+                result = self._ticker(chunk)
+            except RuntimeError as e:
+                if "Rate limit" in str(e):
+                    logger.warning(f"Kraken 24h ticker rate limited at chunk {chunk_idx+1}/{total_chunks}, stopping")
+                    break
+                raise
             for internal, t in result.items():
                 alt = self._int_to_alt.get(internal, internal)
                 try:
@@ -647,7 +788,12 @@ class KrakenClient:
                 if free > 0:
                     balances.append({"asset": asset, "free": str(free), "locked": "0"})
             return {"balances": balances}
-        # If not dry-run, try private Balance
+        # Check balance cache first (30s TTL — prevents hammering for repeated calls)
+        now = time.time()
+        if self._balance_cache and (now - self._balance_cache_time) < self._balance_cache_ttl:
+            return self._balance_cache
+        
+        # Live API call
         result = self._private("/0/private/Balance", {})
         balances = []
         for asset, amt in result.items():
@@ -658,7 +804,12 @@ class KrakenClient:
             # Kraken uses asset codes like XBT -> map common ones
             norm = {"XBT": "BTC", "XETH": "ETH"}.get(asset, asset)
             balances.append({"asset": norm, "free": str(free), "locked": "0"})
-        return {"balances": balances}
+        account_data = {"balances": balances}
+        
+        # Update cache
+        self._balance_cache = account_data
+        self._balance_cache_time = time.time()
+        return account_data
 
     def get_account_balance(self) -> Dict[str, float]:
         """Return balances as a simple asset -> amount map (free+locked)."""
@@ -687,6 +838,31 @@ class KrakenClient:
     def get_balance(self) -> Dict[str, float]:
         """Alias for get_account_balance for Alpaca-compatible interface."""
         return self.get_account_balance()
+
+    def invalidate_balance_cache(self) -> None:
+        """Force next get_balance() to make a live API call.
+        Call this after placing/canceling orders."""
+        self._balance_cache = {}
+        self._balance_cache_time = 0.0
+
+    def get_rate_limit_status(self) -> Dict[str, Any]:
+        """Return current rate limit state for diagnostics."""
+        status = {
+            "tier": KRAKEN_TIER,
+            "min_call_interval": self._min_call_interval,
+            "page_call_interval": self._page_call_interval,
+            "consecutive_rate_limits": self._consecutive_rate_limits,
+            "backoff_seconds": self._rate_limit_backoff,
+            "backoff_until": self._rate_limit_until,
+            "in_backoff": time.time() < self._rate_limit_until,
+        }
+        if self._private_bucket:
+            status["private_bucket_tokens"] = self._private_bucket._tokens
+            status["private_bucket_capacity"] = self._private_bucket.capacity
+        if self._public_bucket:
+            status["public_bucket_tokens"] = self._public_bucket._tokens
+            status["public_bucket_capacity"] = self._public_bucket.capacity
+        return status
 
     def get_free_balance(self, asset: str) -> float:
         acct = self.account()
@@ -826,7 +1002,8 @@ class KrakenClient:
             while page < max_pages:
                 page_params = dict(params)
                 page_params["ofs"] = next_ofs
-                result = self._private("/0/private/TradesHistory", page_params)
+                # TradesHistory costs 2 rate limit tokens per Kraken docs
+                result = self._private("/0/private/TradesHistory", page_params, _cost=2)
                 trades = result.get("trades", {}) or {}
 
                 if not trades:
@@ -839,6 +1016,8 @@ class KrakenClient:
                     break
 
                 next_ofs += len(trades)
+                # Extra delay between pages to avoid rate limit saturation
+                time.sleep(self._page_call_interval)
 
             return all_trades
         except Exception as e:

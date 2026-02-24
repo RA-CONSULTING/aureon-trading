@@ -5901,31 +5901,15 @@ class OrcaKillCycle:
 
         enriched = []
 
-        # ── KRAKEN ──
+        # ── KRAKEN (uses KrakenClient with built-in rate limiting) ──
         try:
-            _key = os.environ.get('KRAKEN_API_KEY', '')
-            _sec = os.environ.get('KRAKEN_API_SECRET', '')
-            if _key and _sec:
-                _nonce = str(int(time.time() * 1000000))
-                _urlpath = '/0/private/Balance'
-                _post = urllib.parse.urlencode({'nonce': _nonce})
-                _enc = (_nonce + _post).encode()
-                _msg = _urlpath.encode() + _hashlib.sha256(_enc).digest()
-                _sig = _hmac.new(_b64.b64decode(_sec), _msg, _hashlib.sha512)
-                _sigd = _b64.b64encode(_sig.digest()).decode()
-                _headers = {'API-Key': _key, 'API-Sign': _sigd,
-                            'Content-Type': 'application/x-www-form-urlencoded'}
-                _req = urllib.request.Request(
-                    f'https://api.kraken.com{_urlpath}',
-                    data=_post.encode(), headers=_headers)
-                _resp = urllib.request.urlopen(_req, timeout=15)
-                _kbal = json.loads(_resp.read()).get('result', {})
+            kraken_client = self.clients.get('kraken')
+            if kraken_client and not getattr(kraken_client, 'dry_run', True):
+                _kbal = kraken_client.get_balance()
 
-                for asset_raw, bal_str in _kbal.items():
-                    amt = float(bal_str)
+                for asset, amt in _kbal.items():
                     if amt < 0.0001:
                         continue
-                    asset = self._KRAKEN_ASSET_NORM.get(asset_raw, asset_raw)
                     price = 0
                     if asset in ('USD', 'USDT', 'USDC'):
                         price = 1
@@ -5934,21 +5918,20 @@ class OrcaKillCycle:
                     elif asset == 'TUSD':
                         price = 0.61
                     else:
-                        for _pair in [f'{asset}USD', f'{asset_raw}USD']:
+                        # Try cache first, then API through KrakenClient
+                        cached = get_cached_price(asset) if UNIFIED_CACHE_AVAILABLE else None
+                        if cached and cached > 0:
+                            price = cached
+                        else:
                             try:
-                                _r = json.loads(urllib.request.urlopen(
-                                    f'https://api.kraken.com/0/public/Ticker?pair={_pair}',
-                                    timeout=10).read())
-                                if _r.get('result'):
-                                    price = float(list(_r['result'].values())[0]['c'][0])
-                                    if price > 0:
-                                        break
+                                ticker = kraken_client.get_ticker(f'{asset}USD')
+                                price = float(ticker.get('price', 0) or 0)
                             except Exception:
                                 pass
                     val = amt * price
                     if val < 0.01:
                         continue
-                    cb = _cb_lookup('kraken', asset, asset_raw)
+                    cb = _cb_lookup('kraken', asset, asset)
                     ep = cb['avg_entry_price'] if cb else 0
                     ec = cb['total_cost'] if cb else 0
                     ed = _parse_ts(cb.get('last_trade', 0)) if cb else '?'
