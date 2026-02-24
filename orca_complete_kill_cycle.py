@@ -3874,6 +3874,7 @@ class OrcaKillCycle:
             self.immune_system = None
             self.moby_dick = None
             self.ocean_scanner = None
+            self.enigma_machine = None
             self.animal_scanner = None
             self.stargate = None
             self.quantum_mirror = None
@@ -4214,6 +4215,21 @@ class OrcaKillCycle:
             print("  Ocean Scanner: WIRED! (Wave Analysis)")
         except ImportError:
             pass
+
+        #   Enigma Symbol Machine (full universe discovery)
+        self.enigma_machine = None
+        self._enigma_last_scan: float = 0.0
+        try:
+            from crypto_enigma_symbol_machine import CryptoEnigmaSymbolMachine
+            self.enigma_machine = CryptoEnigmaSymbolMachine()
+            # Enrich Ocean Scanner immediately with ALL known symbols
+            if self.ocean_scanner:
+                added = self.enigma_machine.enrich_ocean_scanner(self.ocean_scanner)
+                print(f"  🔐 Enigma Symbol Machine: WIRED! ({len(self.enigma_machine.catalog)} symbols, +{added} injected into Ocean Scanner)")
+            else:
+                print(f"  🔐 Enigma Symbol Machine: WIRED! ({len(self.enigma_machine.catalog)} symbols in catalog)")
+        except Exception as e:
+            print(f"  🔐 Enigma Symbol Machine: unavailable ({e})")
 
         #   Animal Momentum Scanner (Trend Strength)
         self.animal_scanner = None
@@ -13374,6 +13390,25 @@ class OrcaKillCycle:
                                 print(f"     OCEAN SCANNER: Wave analysis complete")
                         except Exception as e:
                             print(f"      Ocean Scanner error: {e}")
+
+                    # 🔐 ENIGMA SYMBOL MACHINE: re-discover every 30 min
+                    if self.enigma_machine:
+                        _ENIGMA_INTERVAL = 1800  # 30 minutes
+                        if time.time() - self._enigma_last_scan > _ENIGMA_INTERVAL:
+                            try:
+                                _report = self.enigma_machine.discover_all()
+                                if self.ocean_scanner:
+                                    self.enigma_machine.enrich_ocean_scanner(self.ocean_scanner)
+                                if _report.new_since_last_scan > 0:
+                                    print(f"     🔐 ENIGMA: {_report.new_since_last_scan} NEW symbols discovered! "
+                                          f"(total: {_report.total_symbols:,})")
+                                    for new_sym in _report.new_listings[:5]:
+                                        print(f"       🌱 NEW: {new_sym}")
+                                else:
+                                    print(f"     🔐 ENIGMA: {_report.total_symbols:,} symbols catalogued (no new)")
+                                self._enigma_last_scan = time.time()
+                            except Exception as e:
+                                print(f"      Enigma scan error: {e}")
 
                     if self.animal_scanner:
                         try:
