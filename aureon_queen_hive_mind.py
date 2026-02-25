@@ -3364,13 +3364,17 @@ class QueenHiveMind:
         - net_profit_threshold: Minimum profit needed to be worth it
         """
         if not hasattr(self, 'fee_tracker') or not self.fee_tracker:
-            # Fallback to default estimates
+            # Conservative fallback: assume worst-case fees when tracker unavailable
+            notional = (quantity * price) if price and quantity else 0.0
+            conservative_fee = notional * 0.0025  # 25 bps worst-case taker
+            conservative_spread = notional * 0.001  # 10 bps spread estimate
+            total = conservative_fee + conservative_spread
             return {
-                'fee_usd': 0.0,
-                'spread_cost_usd': 0.0,
-                'total_cost_usd': 0.0,
-                'net_profit_threshold': 0.001,  # $0.001 minimum
-                'source': 'default'
+                'fee_usd': conservative_fee,
+                'spread_cost_usd': conservative_spread,
+                'total_cost_usd': total,
+                'net_profit_threshold': max(total * 1.5, 0.001),
+                'source': 'conservative_default'
             }
         
         try:
@@ -3389,11 +3393,16 @@ class QueenHiveMind:
             }
         except Exception as e:
             logger.debug(f"Fee tracker cost error: {e}")
+            # Conservative fallback on error: never assume zero cost
+            notional = (quantity * price) if price and quantity else 0.0
+            conservative_fee = notional * 0.0025  # 25 bps worst-case
+            conservative_spread = notional * 0.001  # 10 bps spread
+            total = conservative_fee + conservative_spread
             return {
-                'fee_usd': 0.0,
-                'spread_cost_usd': 0.0,
-                'total_cost_usd': 0.0,
-                'net_profit_threshold': 0.001,
+                'fee_usd': conservative_fee,
+                'spread_cost_usd': conservative_spread,
+                'total_cost_usd': total,
+                'net_profit_threshold': max(total * 1.5, 0.001),
                 'source': 'error_fallback'
             }
 

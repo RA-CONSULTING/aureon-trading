@@ -17679,32 +17679,40 @@ if __name__ == "__main__":
             verification['verified_pnl'] = verified_pnl
             
             # Check for discrepancy between expected and verified P&L
-            discrepancy = abs(verification['expected_pnl'] - verified_pnl)
-            verification['discrepancy'] = discrepancy
+            disc_expected = abs(verification['expected_pnl'] - verified_pnl)
+            verification['discrepancy_vs_expected'] = disc_expected
+            disc_expected_pct = 0.0
             
             if abs(verification['expected_pnl']) > 0.0001:
-                verification['discrepancy_pct'] = (discrepancy / abs(verification['expected_pnl'])) * 100
+                disc_expected_pct = (disc_expected / abs(verification['expected_pnl'])) * 100
+            verification['discrepancy_vs_expected_pct'] = disc_expected_pct
             
             # Flag significant discrepancies (>5%)
-            if verification['discrepancy_pct'] > 5.0:
+            if disc_expected_pct > 5.0:
                 verification['valid'] = False
                 verification['warnings'].append(
-                    f"P&L discrepancy: expected ${verification['expected_pnl']:.4f} vs verified ${verified_pnl:.4f} ({verification['discrepancy_pct']:.1f}%)"
+                    f"P&L discrepancy: expected ${verification['expected_pnl']:.4f} vs verified ${verified_pnl:.4f} ({disc_expected_pct:.1f}%)"
                 )
             
-            # Check for discrepancy
-            discrepancy = abs(calculated_pnl - verified_pnl)
-            verification['discrepancy'] = discrepancy
+            # Check for discrepancy between calculated and verified P&L
+            disc_calculated = abs(calculated_pnl - verified_pnl)
+            verification['discrepancy_vs_calculated'] = disc_calculated
+            disc_calculated_pct = 0.0
             
             if abs(calculated_pnl) > 0.0001:
-                verification['discrepancy_pct'] = (discrepancy / abs(calculated_pnl)) * 100
+                disc_calculated_pct = (disc_calculated / abs(calculated_pnl)) * 100
+            verification['discrepancy_vs_calculated_pct'] = disc_calculated_pct
             
             # Flag significant discrepancies (>5%)
-            if verification['discrepancy_pct'] > 5.0:
+            if disc_calculated_pct > 5.0:
                 verification['valid'] = False
                 verification['warnings'].append(
-                    f"P&L discrepancy: calculated ${calculated_pnl:.4f} vs verified ${verified_pnl:.4f} ({verification['discrepancy_pct']:.1f}%)"
+                    f"P&L discrepancy: calculated ${calculated_pnl:.4f} vs verified ${verified_pnl:.4f} ({disc_calculated_pct:.1f}%)"
                 )
+            
+            # Primary discrepancy = the WORSE of the two (conservative)
+            verification['discrepancy'] = max(disc_expected, disc_calculated)
+            verification['discrepancy_pct'] = max(disc_expected_pct, disc_calculated_pct)
         else:
             verification['verified_pnl'] = calculated_pnl
         

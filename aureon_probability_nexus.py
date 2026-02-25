@@ -224,6 +224,7 @@ WHALE_CONFIDENCE_THRESHOLD = 0.6 # Minimum confidence for whale signals
 # Miscellaneous
 MIN_TRADE_VOLUME = 1.0          # Minimum trade volume
 MAX_TRADE_SLIPPAGE = 0.01       # Maximum slippage for trades
+MIN_COST_VIABILITY_RATIO = 1.5  # Signal confidence must exceed this × estimated round-trip cost
 
 # Runtime storage for processed market snapshots
 MARKET_SNAPSHOTS = []  # List[Dict]: stores processed/filtered market snapshots
@@ -527,6 +528,18 @@ def make_predictions():
 
     # Sort by confidence descending
     predictions.sort(key=lambda p: p['confidence'], reverse=True)
+
+    # ── Cost-viability filter (additive safety net, does not replace signal logic) ──
+    # Demote BUY/SELL signals where confidence is too low relative to estimated costs
+    _estimated_roundtrip_cost_pct = 0.007  # 70 bps conservative (fees + spread both legs)
+    for pred in predictions:
+        if pred['signal'] in ('BUY', 'SELL') and pred.get('price', 0) > 0:
+            pred['cost_viability'] = round(pred['confidence'] / max(_estimated_roundtrip_cost_pct, 0.001), 4)
+            if pred['cost_viability'] < MIN_COST_VIABILITY_RATIO:
+                pred['original_signal'] = pred['signal']  # preserve for debugging
+                pred['signal'] = 'HOLD'
+                pred['cost_filtered'] = True
+
     # Optional Dr Auris Throne harmonic nexus validation (real data only)
     _apply_sero_validations(predictions)
     print(f"🎯 Generated {len(predictions)} predictions.")
