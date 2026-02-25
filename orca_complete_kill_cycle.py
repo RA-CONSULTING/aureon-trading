@@ -3523,6 +3523,7 @@ class LivePosition:
     leverage: int = 1                    # Leverage multiplier (1 = spot, 2-5 = margin)
     margin_amount: float = 0.0           # Amount of margin collateral used
     unrealized_pnl_margin: float = 0.0   # Unrealized P&L from margin position
+    margin_side: str = 'LONG'            # 'LONG' or 'SHORT' - needed for correct close logic
 
 
 @dataclass
@@ -14383,10 +14384,12 @@ class OrcaKillCycle:
                                                                     print(f"   💰 MARGIN TRADE (SIMULTANEOUS): {margin_rec} at {m_leverage}x leverage (conviction {margin_conv:.0%})")
                                                                     try:
                                                                         m_side = 'buy' if margin_rec == "LONG" else 'sell'
+                                                                        # Convert quote amount (USD) to base asset quantity
+                                                                        m_base_qty = buy_amount / best.price if best.price > 0 else 0.0
                                                                         m_raw = client.place_margin_order(
                                                                             symbol=symbol_clean,
                                                                             side=m_side,
-                                                                            quote_qty=buy_amount,
+                                                                            quantity=m_base_qty,
                                                                             leverage=m_leverage
                                                                         )
                                                                         m_order = self.normalize_order_response(m_raw, best.exchange) if m_raw else None
@@ -14394,8 +14397,14 @@ class OrcaKillCycle:
                                                                             m_qty = m_order.get('filled_qty', 0)
                                                                             m_price = m_order.get('filled_avg_price', buy_price)
                                                                             if m_qty > 0 and m_price > 0:
-                                                                                m_breakeven = m_price * (1 + fee_rate) / (1 - fee_rate)
-                                                                                m_target = m_breakeven * (1 + target_pct_current / 100)
+                                                                                if margin_rec == 'LONG':
+                                                                                    # LONG: target ABOVE entry (price must rise)
+                                                                                    m_breakeven = m_price * (1 + fee_rate) / (1 - fee_rate)
+                                                                                    m_target = m_breakeven * (1 + target_pct_current / 100)
+                                                                                else:
+                                                                                    # SHORT: target BELOW entry (price must fall)
+                                                                                    m_breakeven = m_price * (1 - fee_rate) / (1 + fee_rate)
+                                                                                    m_target = m_breakeven * (1 - target_pct_current / 100)
                                                                                 margin_pos = LivePosition(
                                                                                     symbol=symbol_clean,
                                                                                     exchange=best.exchange,
@@ -14409,6 +14418,7 @@ class OrcaKillCycle:
                                                                                     is_margin=True,
                                                                                     leverage=m_leverage,
                                                                                     margin_amount=buy_amount,
+                                                                                    margin_side=margin_rec,  # 'LONG' or 'SHORT'
                                                                                 )
                                                                                 positions.append(margin_pos)
                                                                                 session_stats['total_trades'] += 1
@@ -14546,7 +14556,12 @@ class OrcaKillCycle:
                             fee_rate = self.fee_rates.get(pos.exchange, 0.0025)
                             entry_cost = pos.entry_price * pos.entry_qty * (1 + fee_rate)
                             exit_value = current * pos.entry_qty * (1 - fee_rate)
-                            net_pnl = exit_value - entry_cost
+                            
+                            # For SHORT margin: profit when price DROPS (sold high, buy back low)
+                            if pos.is_margin and pos.margin_side == 'SHORT':
+                                net_pnl = entry_cost - exit_value  # Inverted: entry > exit = profit
+                            else:
+                                net_pnl = exit_value - entry_cost
                             
                             #   CORRECT MATH: Calculate P&L % from PRICE change, not cost
                             price_change_pct = ((current - pos.entry_price) / pos.entry_price * 100) if pos.entry_price > 0 else 0
@@ -14611,7 +14626,13 @@ class OrcaKillCycle:
                             
                             #   FIXED PROGRESS BAR: Show negative when underwater!
                             # Progress from entry to target (can be negative if underwater)
-                            if pos.target_price > pos.entry_price:
+                            if pos.is_margin and pos.margin_side == 'SHORT':
+                                # SHORT: progress when price DROPS toward target
+                                if pos.entry_price > pos.target_price:
+                                    raw_progress = (pos.entry_price - current) / (pos.entry_price - pos.target_price) * 100
+                                else:
+                                    raw_progress = 0
+                            elif pos.target_price > pos.entry_price:
                                 raw_progress = (current - pos.entry_price) / (pos.target_price - pos.entry_price) * 100
                             else:
                                 raw_progress = 0
@@ -14816,7 +14837,15 @@ class OrcaKillCycle:
                             )
                             
                             # 1. Target hit + Queen approved - PERFECT EXIT!
-                            if current >= pos.target_price and can_exit:
+                            # For LONG: price must rise ABOVE target
+                            # For SHORT: price must fall BELOW target
+                            target_hit = False
+                            if pos.is_margin and pos.margin_side == 'SHORT':
+                                target_hit = current <= pos.target_price
+                            else:
+                                target_hit = current >= pos.target_price
+                            
+                            if target_hit and can_exit:
                                 should_sell = True
                                 sell_reason = 'TARGET_HIT_QUEEN_APPROVED'
                                 print(f"      TARGET HIT & QUEEN APPROVED! SELLING!   ")
@@ -14844,12 +14873,15 @@ class OrcaKillCycle:
                             # Execute sell if ready
                             if should_sell:
                                 if pos.is_margin and pos.exchange == 'kraken':
-                                    # Close margin position
-                                    print(f"      Closing margin position ({pos.leverage}x leverage)")
+                                    # Close margin position - side depends on LONG vs SHORT
+                                    # Close LONG = sell, Close SHORT = buy
+                                    close_side = 'sell' if pos.margin_side == 'LONG' else 'buy'
+                                    print(f"      Closing margin {pos.margin_side} position ({pos.leverage}x leverage)")
                                     sell_order = pos.client.close_margin_position(
                                         symbol=pos.symbol,
-                                        side='sell' if pos.leverage > 1 else 'buy',  # Close long position
-                                        volume=pos.entry_qty
+                                        side=close_side,
+                                        volume=pos.entry_qty,
+                                        leverage=pos.leverage
                                     )
                                 else:
                                     # Regular spot sell
