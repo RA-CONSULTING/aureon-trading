@@ -13932,7 +13932,15 @@ class OrcaKillCycle:
                                     quad_sizing = quad_result.get('sizing_modifier', 1.0)
                                     fc = quad_result.get('field_coherence', 0)
                                     action = quad_result.get('action', '?')
+                                    # ─── Log margin signals from OracleOfMargin ───
+                                    _m_rec = quad_result.get('margin_recommendation', 'NONE')
+                                    _m_lev = quad_result.get('margin_leverage', 0)
+                                    _m_conv = quad_result.get('margin_conviction', 0.0)
                                     print(f"     QUADRUMVIRATE: {action} | Coherence={fc:.0%} | Sizing={quad_sizing:.2f}x")
+                                    if _m_rec != "NONE":
+                                        print(f"     💰 MARGIN SIGNAL: {_m_rec} {_m_lev}x leverage (conviction {_m_conv:.0%})")
+                                    else:
+                                        print(f"     📊 MARGIN: {_m_rec} (lev={_m_lev}, conv={_m_conv:.0%})")
                                     # ── Pillar-nominated new-listing snipes ───────────────────────────────
                                     if self.enigma_machine:
                                         try:
