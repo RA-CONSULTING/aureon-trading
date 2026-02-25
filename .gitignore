@@ -98,3 +98,4 @@ RAINBOW-main/
 .venv*/
 venv*/
 state/baton_relay.jsonl
+cached_candles_1yr_hourly.json

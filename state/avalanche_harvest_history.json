@@ -588,5 +588,45 @@
     "stablecoin": "USDC",
     "received_amount": 0.00035857896076799996,
     "profit_pct": 2.1216099143377707
+  },
+  {
+    "timestamp": 1772048698.7851772,
+    "exchange": "alpaca",
+    "asset": "ARBUSD",
+    "harvest_qty": 0.0156294744,
+    "harvest_value_usd": 0.00159733228368,
+    "stablecoin": "USDC",
+    "received_amount": 0.00159733228368,
+    "profit_pct": 3.0549691019709795
+  },
+  {
+    "timestamp": 1772048699.7940607,
+    "exchange": "alpaca",
+    "asset": "SHIBUSD",
+    "harvest_qty": 215.45372161769998,
+    "harvest_value_usd": 0.001383212892785634,
+    "stablecoin": "USDC",
+    "received_amount": 0.001383212892785634,
+    "profit_pct": 2.2960114441841992
+  },
+  {
+    "timestamp": 1772049452.8138795,
+    "exchange": "alpaca",
+    "asset": "ARBUSD",
+    "harvest_qty": 0.0156294744,
+    "harvest_value_usd": 0.00159733228368,
+    "stablecoin": "USDC",
+    "received_amount": 0.00159733228368,
+    "profit_pct": 3.0549691019709795
+  },
+  {
+    "timestamp": 1772049453.8293073,
+    "exchange": "alpaca",
+    "asset": "SHIBUSD",
+    "harvest_qty": 215.45372161769998,
+    "harvest_value_usd": 0.001372440206704749,
+    "stablecoin": "USDC",
+    "received_amount": 0.001372440206704749,
+    "profit_pct": 1.4973408353318014
   }
 ]
