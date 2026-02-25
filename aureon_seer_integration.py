@@ -354,6 +354,10 @@ def get_triumvirate_consensus(queen_confidence: float = 0.5,
             "spirits_score": vision.spirits.score if vision.spirits else 0.5,
             "time_score": vision.timeline.score if vision.timeline else 0.5,
             "trend": seer.get_trend().get("trend", "STABLE"),
+            # ─── Margin signals from OracleOfMargin via SeerVision ───
+            "margin_recommendation": getattr(vision, 'margin_recommendation', 'NONE'),
+            "margin_leverage": getattr(vision, 'margin_leverage', 0),
+            "margin_conviction": getattr(vision, 'margin_conviction', 0.0),
         }
 
     # Get King's health and analytical data
@@ -1141,6 +1145,10 @@ def quadrumvirate_should_trade(queen_confidence: float = 0.5,
         "waves": field["waves"],
         "temporal": temporal,
         "consensus": consensus,
+        # ─── Margin signals (bubbled up so Orca can read them at top level) ───
+        "margin_recommendation": consensus.get("margin_recommendation", "NONE"),
+        "margin_leverage": consensus.get("margin_leverage", 0),
+        "margin_conviction": consensus.get("margin_conviction", 0.0),
     }
 
 
