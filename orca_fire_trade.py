@@ -7,7 +7,6 @@ This script makes REAL trades immediately.
 """
 
 import os
-import sys
 import json
 import time
 import requests
@@ -20,7 +19,7 @@ load_dotenv()
 # ─── Seer Integration (Third Pillar) ───
 _seer_available = False
 try:
-    from aureon_seer import get_seer, SeerVision
+    from aureon_seer import get_seer
     _seer_available = True
 except ImportError:
     pass
@@ -39,8 +38,8 @@ class FireTrader:
 
     def __init__(self, kraken_client=None, binance_client=None):
         try:
-            from kraken_client import KrakenClient, get_kraken_client
-            from binance_client import BinanceClient, get_binance_client
+            from kraken_client import get_kraken_client
+            from binance_client import BinanceClient
             self.kraken = kraken_client if kraken_client else get_kraken_client()
             self.binance = binance_client if binance_client else BinanceClient()
         except ImportError:
@@ -101,7 +100,6 @@ class FireTrader:
                     'source': 'fire_trade',
                     'auto_tracked': False,
                 }
-                import tempfile
                 tmp = tp_file + '.tmp'
                 with open(tmp, 'w') as f:
                     json.dump(tp, f, indent=4)
@@ -303,7 +301,7 @@ class FireTrader:
 
             # Parse candles: [timestamp, open, high, low, close, volume, ...]
             closes = [float(c[4]) for c in candles]
-            opens = [float(c[1]) for c in candles]
+            _opens = [float(c[1]) for c in candles]
             highs = [float(c[2]) for c in candles]
             lows = [float(c[3]) for c in candles]
             volumes = [float(c[5]) for c in candles]
@@ -942,7 +940,7 @@ class FireTrader:
                     .replace('GBP', '').replace('ZUSD', '').replace('USD', '').lstrip('X'))
                 if base_for_seer in ('XBT', 'XXBT', 'BT', ''):
                     base_for_seer = 'BTC'
-                sym_bullish, sym_conf, sym_details = self._seer_symbol_signal(base_for_seer)
+                sym_bullish, _sym_conf, sym_details = self._seer_symbol_signal(base_for_seer)
                 if not sym_bullish:
                     # In micro-gains mode, allow if 24h change is positive (counter-trend mover)
                     if micro_mode and candidate['change_24h'] > 1.0:
@@ -1042,7 +1040,7 @@ class FireTrader:
                     continue
                 # ═══ SEER PER-SYMBOL CHECK ═══
                 base_for_seer = candidate['pair'].replace('USDC', '').replace('USDT', '')
-                sym_bullish, sym_conf, sym_details = self._seer_symbol_signal(base_for_seer)
+                sym_bullish, _sym_conf, sym_details = self._seer_symbol_signal(base_for_seer)
                 if not sym_bullish:
                     # In micro-gains mode, allow if 24h change is positive (counter-trend mover)
                     if micro_mode and candidate['change'] > 1.0:

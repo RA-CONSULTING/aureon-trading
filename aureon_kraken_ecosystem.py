@@ -41,20 +41,19 @@ try:
 except ImportError:
     websockets = None
     WEBSOCKETS_AVAILABLE = False
-import threading
 from datetime import datetime
-from typing import Dict, List, Optional, Tuple, Any
+from typing import Dict, List, Optional, Tuple
 from dataclasses import dataclass, field
 from collections import deque
 from threading import Thread, Lock
 
 sys.path.insert(0, '/workspaces/aureon-trading')
-from kraken_client import KrakenClient, get_kraken_client
+from kraken_client import get_kraken_client
 from aureon_lattice import LatticeEngine
 
 # 🧬 SANDBOX EVOLVED PARAMETERS - 454 Generations of Learning
 try:
-    from penny_profit_engine import get_evolved_exits, SandboxEvolvedExits, check_penny_exit, get_penny_engine
+    from penny_profit_engine import get_evolved_exits, check_penny_exit, get_penny_engine
     SANDBOX_EVOLVED_AVAILABLE = True
     PENNY_PROFIT_AVAILABLE = True
     _evolved = get_evolved_exits()
@@ -79,7 +78,7 @@ except ImportError:
 
 # 💎 TRADE PROFIT VALIDATOR - NO PHANTOM GAINS!
 try:
-    from trade_profit_validator import TradeProfitValidator, validate_buy, validate_sell, is_real_profit, get_validator
+    from trade_profit_validator import validate_buy, validate_sell, is_real_profit, get_validator
     TRADE_VALIDATOR_AVAILABLE = True
     print("💎 Trade Profit Validator loaded - no phantom gains!")
 except ImportError:
@@ -374,7 +373,6 @@ class PositionSplitter:
     def execute_split(self, position: 'Position') -> Tuple['Position', 'Position']:
         """Split position into two child positions"""
         # Each child gets half the value
-        split_value = position.size * position.current_price / 2
         split_size = position.size / 2
         
         # Create two children at next generation
@@ -772,7 +770,7 @@ class MyceliumNetwork:
                 
         # 2. Strengthen incoming connections to this symbol (harder to find in this structure, 
         #    so we iterate - optimization: keep reverse map if needed, but loop is fine for small N)
-        for source, synapses in self.synapses.items():
+        for _source, synapses in self.synapses.items():
             for synapse in synapses:
                 if synapse.target == symbol:
                     synapse.strengthen(profit_pct)
@@ -891,7 +889,7 @@ class PerformanceTracker:
         if net_pnl > 0:
             self.wins += 1
             # 🇮🇪 IRA SNIPER CELEBRATION!
-            import random
+            import random  # noqa: F811
             quote = random.choice(self.IRA_SNIPER_QUOTES)
             print(f"\n🇮🇪🇮🇪🇮🇪 IRA SNIPER WIN! 🇮🇪🇮🇪🇮🇪")
             print(f"    💰 +${net_pnl:.4f} on {symbol}")
@@ -1466,7 +1464,7 @@ class AureonKrakenEcosystem:
         🔧 FIX: MIN_NET_PROFIT was 0.03 which blocked many small wins.
         Now using 0.0001 (1/10th of a cent) to allow any real profit.
         """
-        change_pct = (current_price - pos.entry_price) / pos.entry_price
+        _change_pct = (current_price - pos.entry_price) / pos.entry_price
         
         # Calculate gross P&L (threshold handles fee math)
         exit_value = pos.quantity * current_price
@@ -2518,7 +2516,7 @@ class AureonKrakenEcosystem:
     def run(self, interval: float = 5.0):
         """Main trading loop"""
         # 🛠️ CRITICAL: Compute REAL wallet balance BEFORE banner!
-        total, cash, holdings = self.compute_total_equity()
+        total, cash, _holdings = self.compute_total_equity()
         if self.tracker.initial_balance == 1000.0 and self.tracker.total_trades == 0:
             if abs(total - 1000.0) > 1.0 and total > 0:
                 print(f"\n   ⚖️  AUTO-CORRECTING BALANCE: ${self.tracker.initial_balance:.2f} -> ${total:.2f} (Actual Wallet)\n")
@@ -2642,13 +2640,13 @@ class AureonKrakenEcosystem:
 
                 # Show positions
                 if self.positions:
-                    spot_count = sum(1 for p in self.positions.values() if not p.is_margin)
+                    _spot_count = sum(1 for p in self.positions.values() if not p.is_margin)
                     margin_count = sum(1 for p in self.positions.values() if p.is_margin)
                     label = f"{len(self.positions)}/{CONFIG['MAX_POSITIONS']}"
                     if margin_count > 0:
                         label += f" ({margin_count} margin)"
                     print(f"\n   Active Positions ({label}):")
-                    for symbol, pos in self.positions.items():
+                    for _sym_key, pos in self.positions.items():
                         lookup = pos.symbol
                         rt = self.get_realtime_price(lookup)
                         if rt:
@@ -2686,7 +2684,7 @@ class AureonKrakenEcosystem:
                 
                 # 🌟 Swarm orchestrator stats
                 capital_available = self.capital_pool.get_available()
-                cycle_profits = self.capital_pool.profits_this_cycle
+                _cycle_profits = self.capital_pool.profits_this_cycle
                 total_pool_profits = self.capital_pool.total_profits
                 
                 # Count scouts and generations
@@ -2739,7 +2737,7 @@ class AureonKrakenEcosystem:
                 
                 # 🐕 WATCHDOG HEARTBEAT: Write timestamp file for external monitoring
                 try:
-                    import json
+                    import json  # noqa: F811
                     with open('.aureon_heartbeat', 'w') as hb:
                         hb.write(json.dumps({
                             'timestamp': time.time(),

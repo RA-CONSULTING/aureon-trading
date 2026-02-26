@@ -1492,7 +1492,7 @@ class TriumvirateEngine:
         )
 
         # ─── Phase 3: Determine active controller ───
-        active_controller, handoff = self.handoff_engine.determine_controller(
+        active_controller, _handoff = self.handoff_engine.determine_controller(
             queen_vote, king_vote, seer_vote, lyra_vote, context
         )
 

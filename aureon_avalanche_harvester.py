@@ -69,7 +69,6 @@ import argparse
 from dataclasses import dataclass, field, asdict
 from typing import Dict, List, Optional, Any
 from pathlib import Path
-from datetime import datetime
 
 # Sacred constants
 PHI = (1 + math.sqrt(5)) / 2  # 1.618... Golden ratio
@@ -224,7 +223,7 @@ class AvalancheHarvester:
         """Lazy load Kraken client."""
         if self._kraken_client is None:
             try:
-                from kraken_client import KrakenClient, get_kraken_client
+                from kraken_client import get_kraken_client
                 self._kraken_client = get_kraken_client()
                 logger.info("✓ Kraken client loaded")
             except Exception as e:
@@ -250,7 +249,7 @@ class AvalancheHarvester:
         """Lazy load Binance client."""
         if self._binance_client is None:
             try:
-                from binance_client import BinanceClient, get_binance_client
+                from binance_client import get_binance_client
                 self._binance_client = get_binance_client()
                 logger.info("✓ Binance client loaded")
             except Exception as e:

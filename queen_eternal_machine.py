@@ -30,17 +30,14 @@ from __future__ import annotations
 import sys
 import os
 import math
-import time
 import json
 import asyncio
 import logging
-import requests
 import concurrent.futures
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Dict, List, Optional, Any, Tuple
-from datetime import datetime, timedelta
+from datetime import datetime
 from pathlib import Path
-from collections import deque
 from enum import Enum, auto
 
 # UTF-8 Windows fix
@@ -821,7 +818,7 @@ class QueenEternalMachine:
             logger.warning(f"   ⚠️ Alpaca unavailable: {e}")
         
         # 3. KRAKEN - Try live API first, cached snapshot ONLY as emergency fallback
-        kraken_success = False
+        _kraken_success = False
         try:
             from kraken_client import KrakenClient
             kraken = KrakenClient()
@@ -838,7 +835,7 @@ class QueenEternalMachine:
                         else:
                             balances[clean_asset] = (qty, 'kraken')
             logger.info(f"   📍 Kraken: {len([q for q in kraken_bals.values() if float(q) > 0])} assets (LIVE API)")
-            kraken_success = True
+            _kraken_success = True
         except Exception as e:
             logger.warning(f"   ⚠️ Kraken LIVE API failed: {e}")
             # ONLY use cached snapshot as emergency fallback
@@ -1372,7 +1369,7 @@ class QueenEternalMachine:
             whale_description = "No whale activity detected"
             
             # Check if scanner has detected whales on this symbol
-            for bot_id, bot in self.ocean_scanner.bots.items():
+            for _bot_id, bot in self.ocean_scanner.bots.items():
                 if bot.symbol == symbol and bot.size_class in ['whale', 'megalodon']:
                     has_whale_activity = True
                     # Get direction from recent activity
@@ -1869,7 +1866,7 @@ class QueenEternalMachine:
             fee_adjusted_multiplier = actual_new_qty / leap_qty if leap_qty > 0 else 0
             
             # Minimum dip advantage required to cover fees
-            fee_percent = (total_cost / gross_value) * 100
+            _fee_percent = (total_cost / gross_value) * 100
             
             # ✅ INTELLIGENT LEAP CRITERIA - Only leap for RECOVERY, not just fee mitigation
             # Check 1: Must not lose excessive fees (baseline)
@@ -1913,12 +1910,12 @@ class QueenEternalMachine:
             
             # 🌊 BONUS: Check for whale activity on target coin!
             # If whales are BUYING the target coin, recovery is MORE likely!
-            whale_bonus = False
+            _whale_bonus = False
             whale_info = ""
             if is_smart_leap:
                 has_whale_action, whale_desc = self.detect_whale_activity(symbol)
                 if has_whale_action and "BUYING" in whale_desc:
-                    whale_bonus = True
+                    _whale_bonus = True
                     whale_info = f" | 🐋 {whale_desc}"
                     logger.info(f"   🌊 WHALE BOOST DETECTED: {whale_desc}")
             
@@ -2292,7 +2289,7 @@ class QueenEternalMachine:
         
         for symbol, crumb in self.breadcrumbs.items():
             if symbol in self.market_data:
-                old_value = crumb.current_value
+                _old_value = crumb.current_value
                 crumb.update_price(self.market_data[symbol].price)
                 updates[symbol] = crumb.unrealized_pnl
         
@@ -2581,7 +2578,7 @@ class QueenEternalMachine:
         
         # 6. SCALP (+ MOUNTAIN CLIMBING LEARNING)
         scalp_opps = self.find_scalp_opportunities()
-        for symbol, pnl_pct in scalp_opps[:3]:  # Max 3 scalps per cycle
+        for symbol, _pnl_pct in scalp_opps[:3]:  # Max 3 scalps per cycle
             profit = self.execute_scalp(symbol)
             if profit > 0:
                 stats.scalps_executed += 1

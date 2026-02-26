@@ -64,7 +64,7 @@ logger = logging.getLogger(__name__)
 
 # Import our systems
 try:
-    from aureon_queen_hive_mind import QueenHiveMind, QueenState
+    from aureon_queen_hive_mind import QueenHiveMind
     QUEEN_AVAILABLE = True
 except ImportError as e:
     logger.warning(f"Queen Hive Mind not available: {e}")
@@ -73,7 +73,6 @@ except ImportError as e:
 try:
     from test_live_mycelium_100_accuracy import (
         MyceliumAccuracyEngine,
-        ValidationResult
     )
     MYCELIUM_AVAILABLE = True
 except ImportError as e:
@@ -87,13 +86,13 @@ except ImportError:
     STARGATE_AVAILABLE = False
 
 try:
-    from kraken_client import KrakenClient, get_kraken_client
+    from kraken_client import get_kraken_client
     KRAKEN_AVAILABLE = True
 except ImportError:
     KRAKEN_AVAILABLE = False
 
 try:
-    from binance_client import BinanceClient, get_binance_client
+    from binance_client import BinanceClient
     BINANCE_AVAILABLE = True
 except ImportError:
     BINANCE_AVAILABLE = False

@@ -25,7 +25,7 @@ import logging
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Optional, Any, Tuple
+from typing import Dict, List, Optional, Any
 
 # UTF-8 fix for Windows
 if sys.platform == 'win32':
@@ -189,7 +189,6 @@ class RealPortfolioTracker:
     def _save_state(self) -> None:
         """Save state to disk (atomic write - temp file then rename)."""
         try:
-            import tempfile
             data = {
                 'starting_capital': self.starting_capital,
                 'last_update': time.time(),
@@ -277,7 +276,7 @@ class RealPortfolioTracker:
         """Get REAL Kraken balance (stablecoins + crypto priced via tickers)."""
         try:
             if self._kraken_client is None:
-                from kraken_client import KrakenClient, get_kraken_client
+                from kraken_client import get_kraken_client
                 self._kraken_client = get_kraken_client()
             
             balances = self._kraken_client.get_balance()
@@ -322,7 +321,7 @@ class RealPortfolioTracker:
         """Get REAL Binance balance (stablecoins + crypto priced via tickers)."""
         try:
             if self._binance_client is None:
-                from binance_client import BinanceClient, get_binance_client
+                from binance_client import get_binance_client
                 self._binance_client = get_binance_client()
             
             # get_balance() returns Dict[str, float] = {asset: free_amount}
@@ -408,7 +407,7 @@ class RealPortfolioTracker:
             total_trades = 0
             total_fees = 0.0
             
-            for symbol, pos in positions.items():
+            for _symbol, pos in positions.items():
                 total_trades += int(pos.get('trade_count', 0))
                 total_fees += float(pos.get('total_fees', 0))
             
@@ -608,9 +607,9 @@ class RealPortfolioTracker:
         try:
             self.history.append(snapshot.__dict__) # Serialize
         except:
-             # Fallback if __dict__ fails (dataclass normally supports it, but just in case)
-             pass
-             
+            # Fallback if __dict__ fails (dataclass normally supports it, but just in case)
+            pass
+
         self._save_state()
         
         return snapshot
