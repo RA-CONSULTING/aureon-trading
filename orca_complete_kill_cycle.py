@@ -3662,7 +3662,8 @@ class OrcaKillCycle:
         self.symbol_whitelist = symbol_whitelist if symbol_whitelist else []
         self.initial_capital = initial_capital
         self.autonomous_mode = autonomous_mode
-        self.require_prediction_window = os.getenv("REQUIRE_PREDICTION_WINDOW", "true").lower() in ("1", "true", "yes")
+        # Default to FALSE - prediction window was blocking ALL sells when Nexus subsystem not running
+        self.require_prediction_window = os.getenv("REQUIRE_PREDICTION_WINDOW", "false").lower() in ("1", "true", "yes")
         self.allow_no_predictions = os.getenv("ALLOW_NO_PREDICTIONS", "false").lower() in ("1", "true", "yes")
         if self.allow_no_predictions:
             self.require_prediction_window = False
@@ -9870,7 +9871,10 @@ class OrcaKillCycle:
             print(f"   IRA SNIPER KILL APPROVED FOR THE QUEEN: {symbol} (Profit Target SECURED). Bypassing prediction window.")
         
         if not pred_ok and not is_sniper_kill:
-            pnl_pct_log = (net_pnl / entry_cost * 100) if entry_cost > 0 else 0
+            # Calculate estimated PnL for logging (net_pnl computed after sell, use estimate here)
+            est_exit_value = quantity * current_price * 0.998 if current_price > 0 else 0
+            est_net_pnl = est_exit_value - entry_cost if entry_cost > 0 else 0
+            pnl_pct_log = (est_net_pnl / entry_cost * 100) if entry_cost > 0 else 0
             reason_msg = pred_info.get('reason')
             print(f"   PREDICTION WINDOW BLOCKED SELL: {symbol} [{exchange}]")
             print(f"     Reason: {reason_msg}")
@@ -10333,25 +10337,11 @@ class OrcaKillCycle:
                  print(f"      IRA SNIPER BYPASS: {symbol} hit ${net_pnl:.4f} (Target ${target_pnl_amt:.4f}) - IGNORING Prediction Window!")
         else:
             info['prediction_window'] = {'reason': 'PREDICTION_WINDOW_DISABLED'}
-        target_hit_override = False
-        target_pnl_amt = confirmed_cost * (QUEEN_MIN_PROFIT_PCT / 100.0) if 'confirmed_cost' in locals() else entry_cost * (QUEEN_MIN_PROFIT_PCT / 100.0)
-        
-        if net_pnl >= target_pnl_amt and net_pnl > 0:
-            target_hit_override = True
-            print(f"     IRA SNIPER: PROFIT TARGET HIT (${net_pnl:.4f} >= ${target_pnl_amt:.4f})")
-            print(f"     ACTION: BYPASSING PREDICTION GATE -> SECURING STABLECOIN!")
 
-        #                                                                    
-        # CHECK 1A: REQUIRE 30s VALIDATED PREDICTION WINDOW (Unless Target Hit)
-        #                                                                    
-        if self.require_prediction_window:
-            pred_ok, pred_info = self._prediction_window_ready(symbol)
-            info['prediction_window'] = pred_info
-            
-            if not pred_ok and not target_hit_override:
-                info['blocked_reason'] = f"PREDICTION_WINDOW_BLOCKED ({pred_info.get('reason')})"
-                print(f"      EXIT BLOCKED: {symbol} - {pred_info.get('reason')}")
-                return False, info
+        # NOTE: Duplicate prediction window check was removed here.
+        # The first prediction window check (above) already handles target hit
+        # bypass via is_sniper_kill logic. A second check was BLOCKING sells
+        # even after the first check passed.
 
         #                                                                    
         # CHECK 1B: BLACK BOX TRUTH GATE - PROFIT MUST BE > 3  TOTAL COSTS

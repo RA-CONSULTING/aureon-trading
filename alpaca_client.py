@@ -185,9 +185,11 @@ class AlpacaClient:
 
         # Global Rate Budget integration (Phase 2 optimization)
         self._global_rate_budget = None
+        self._classify_request_type = None
         try:
             from global_rate_budget import get_global_rate_budget, classify_request_type
             self._global_rate_budget = get_global_rate_budget()
+            self._classify_request_type = classify_request_type
         except ImportError:
             logger.warning("GlobalRateBudget not available - running without priority budgeting")
 
@@ -238,9 +240,9 @@ class AlpacaClient:
                         cache_key = None
 
                 # Phase 2: Global Rate Budget with priority allocation
-                if self._global_rate_budget:
+                if self._global_rate_budget and self._classify_request_type:
                     try:
-                        priority = classify_request_type(endpoint, method)
+                        priority = self._classify_request_type(endpoint, method)
                         is_trading = request_type == 'trading'
                         if not self._global_rate_budget.wait_for_slot(priority, is_trading):
                             # Request rejected due to high-priority backoff
@@ -268,9 +270,9 @@ class AlpacaClient:
                     self._rate_limiter.on_429_error()
 
                     # Phase 2: Notify GlobalRateBudget of 429
-                    if self._global_rate_budget:
+                    if self._global_rate_budget and self._classify_request_type:
                         try:
-                            priority = classify_request_type(endpoint, method)
+                            priority = self._classify_request_type(endpoint, method)
                             self._global_rate_budget.on_429_error(priority)
                         except Exception as e:
                             logger.debug(f"GlobalRateBudget 429 notification failed: {e}")
@@ -799,12 +801,6 @@ class AlpacaClient:
                 symbols.append(symbol)
 
         return symbols
-        """Get list of assets."""
-        params = {
-            "status": status,
-            "asset_class": asset_class
-        }
-        return self._request("GET", "/v2/assets", params=params)
 
     def get_order(self, order_id: str) -> Dict[str, Any]:
         """Get order details by ID."""

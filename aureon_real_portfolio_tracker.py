@@ -524,30 +524,23 @@ class RealPortfolioTracker:
         capital = self._get_capital_balance()
         
         # 1. Calculate Base Equity (Cash + value)
-        # Note: Internal _get methods often miss specific crypto position values
-        # So we prefer live_profit_state.json if available for TOTAL VALUE
+        # ALWAYS use live exchange balances as primary source of truth.
+        # live_profit_state.json is only used as supplementary pricing data,
+        # NOT as a replacement for actual exchange API calls.
+        total_usd = (
+            alpaca.total_usd + 
+            kraken.total_usd + 
+            binance.total_usd + 
+            capital.total_usd
+        )
         
+        # If live exchange totals are near-zero but live state has data,
+        # it means exchange calls failed — use live state as FALLBACK only
         live_state = self._load_live_profit_source()
-        
-        if live_state and 'totals' in live_state:
-            # TRUST THE LIVE STATE (It has better pricing)
+        if total_usd < 1.0 and live_state and 'totals' in live_state:
             total_usd = float(live_state['totals']['total_value_usd'])
-            floating_pnl = float(live_state['totals']['total_pnl_usd'])
-            
-            # Override exchange breakdowns if possible (optional, keeping simple for now)
-            # Just ensure total matches reality
+            floating_pnl = float(live_state['totals'].get('total_pnl_usd', 0.0))
         else:
-            # Fallback to internal check (might undervalue)
-            total_usd = (
-                alpaca.total_usd + 
-                kraken.total_usd + 
-                binance.total_usd + 
-                capital.total_usd
-            )
-            # Estimate floating from alpaca (others assume 0 in current impl)
-            floating_pnl = alpaca.positions_usd - (alpaca.total_usd - alpaca.cash_usd) # Rough approx
-            # Actually, alpaca.positions_usd is Value. PnL is harder to derive without cost basis here.
-            # We will default to 0 if live_state missing.
             floating_pnl = 0.0
 
         # Get trade stats

@@ -1,4 +1,4 @@
-import os, time, json, math, hmac, hashlib, base64, threading, random, logging
+import os, time, json, hmac, hashlib, base64, threading, random, logging
 from typing import Dict, Any, List, Tuple
 from decimal import Decimal
 
@@ -35,7 +35,7 @@ logger = logging.getLogger(__name__)
 
 # Import TokenBucket for proper rate limiting
 try:
-    from rate_limiter import TokenBucket, TTLCache
+    from rate_limiter import TokenBucket
     _RATE_LIMITER_AVAILABLE = True
 except ImportError:
     _RATE_LIMITER_AVAILABLE = False
@@ -164,7 +164,7 @@ def _get_next_nonce() -> int:
                     _unlock_file(f)
                 return new_nonce
                 
-        except Exception as e:
+        except Exception:
             # Fallback: use time + PID + random (less safe but works)
             return current_us + (os.getpid() % 10000) * 1000 + random.randint(1, 999)
 
@@ -620,8 +620,8 @@ class KrakenClient:
         Get trading filters for a symbol (ordermin, lot_decimals, costmin).
         Returns dict with: min_qty, step_size, min_notional
         """
-        pairs = self._load_asset_pairs()
-        pair, pair_info = self._resolve_pair(symbol)
+        _pairs = self._load_asset_pairs()
+        _pair, pair_info = self._resolve_pair(symbol)
         if not pair_info:
             return {}
         
@@ -801,8 +801,20 @@ class KrakenClient:
                 free = float(amt)
             except Exception:
                 free = 0.0
-            # Kraken uses asset codes like XBT -> map common ones
-            norm = {"XBT": "BTC", "XETH": "ETH"}.get(asset, asset)
+            # Kraken uses asset codes like XXBT, XETH, ZUSD -> map to standard symbols
+            kraken_norm = {
+                "XBT": "BTC", "XXBT": "BTC",
+                "XETH": "ETH", "XLTC": "LTC",
+                "XXRP": "XRP", "XXLM": "XLM",
+                "XXDG": "DOGE", "XZEC": "ZEC",
+                "XMLN": "MLN", "XREP": "REP",
+                "XETC": "ETC", "XXMR": "XMR",
+                "ZUSD": "USD", "ZEUR": "EUR",
+                "ZGBP": "GBP", "ZCAD": "CAD",
+                "ZJPY": "JPY", "ZAUD": "AUD",
+                "ZKRW": "KRW",
+            }
+            norm = kraken_norm.get(asset, asset)
             balances.append({"asset": norm, "free": str(free), "locked": "0"})
         account_data = {"balances": balances}
         
@@ -988,7 +1000,7 @@ class KrakenClient:
             pass
         return 0.0
 
-    def get_trades_history(self, start: int = None, end: int = None, ofs: int = 0) -> Dict[str, Any]:
+    def get_trades_history_dict(self, start: int = None, end: int = None, ofs: int = 0) -> Dict[str, Any]:
         """Get trade history from Kraken.
         
         Returns dict of trades with entry prices, quantities, fees etc.
@@ -1050,7 +1062,7 @@ class KrakenClient:
                 'trade_count': int
             }
         """
-        trades = self.get_trades_history()
+        trades = self.get_trades_history_dict()
         if not trades:
             return None
         
@@ -1068,7 +1080,7 @@ class KrakenClient:
         total_fees = 0.0
         buy_trades = 0
         
-        for trade_id, trade in trades.items():
+        for _trade_id, trade in trades.items():
             pair = trade.get('pair', '')
             # Check if this trade matches our target symbol
             if pair not in target_pairs and symbol not in pair:
@@ -1755,15 +1767,15 @@ class KrakenClient:
         if from_asset == to_asset:
             return []
         
-        # Normalize BTC/XBT
-        from_norm = 'XBT' if from_asset == 'BTC' else from_asset
-        to_norm = 'XBT' if to_asset == 'BTC' else to_asset
+        # Normalize BTC/XBT (for matching purposes below)
+        _from_norm = 'XBT' if from_asset == 'BTC' else from_asset
+        _to_norm = 'XBT' if to_asset == 'BTC' else to_asset
         
         # 🐍 MEDUSA: Normalize Kraken quote currencies
         # ZUSD = USD (Kraken internal naming)
         quote_currencies = ['USD', 'ZUSD', 'USDT', 'USDC', 'EUR', 'ZEUR']
-        from_is_quote = from_asset in quote_currencies
-        to_is_quote = to_asset in quote_currencies
+        _from_is_quote = from_asset in quote_currencies
+        _to_is_quote = to_asset in quote_currencies
         
         # Normalize ZUSD -> USD for matching purposes
         from_match = 'USD' if from_asset == 'ZUSD' else from_asset
@@ -2032,7 +2044,7 @@ class KrakenClient:
         # Build conversion map
         conversions = {}
 
-        for internal, info in pairs.items():
+        for _internal, info in pairs.items():
             base = info.get("base", "").lstrip("XZ")
             quote = info.get("quote", "").lstrip("XZ")
 
@@ -2209,7 +2221,7 @@ class KrakenClient:
         Returns:
             Dict with leverage info or empty dict if pair doesn't support margin
         """
-        pair, pair_info = self._resolve_pair(symbol)
+        _pair, pair_info = self._resolve_pair(symbol)
         if not pair_info:
             return {}
 

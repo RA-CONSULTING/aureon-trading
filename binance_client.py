@@ -1,5 +1,5 @@
-import os, time, hmac, hashlib, requests, json
-from decimal import Decimal, InvalidOperation, ROUND_DOWN, ROUND_UP
+import os, time, hmac, hashlib, requests, json, logging
+from decimal import Decimal, InvalidOperation, ROUND_DOWN
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 try:
@@ -7,7 +7,7 @@ try:
     load_dotenv()
 except Exception:
     pass
-from typing import Dict, Any, Set, List, Optional, Tuple
+from typing import Dict, Any, Set, List, Optional
 
 # Rate limiting utilities (TokenBucket, TTLCache)
 try:
@@ -327,7 +327,7 @@ class BinanceClient:
         return 0.0
 
     def get_balance(self) -> Dict[str, float]:
-        """Compatibility: return free balances as {asset: amount}."""
+        """Compatibility: return total balances (free + locked) as {asset: amount}."""
         balances: Dict[str, float] = {}
         try:
             acct = self.account()
@@ -339,8 +339,13 @@ class BinanceClient:
                     free_amt = float(bal.get("free", 0) or 0)
                 except Exception:
                     free_amt = 0.0
-                if free_amt > 0:
-                    balances[asset] = free_amt
+                try:
+                    locked_amt = float(bal.get("locked", 0) or 0)
+                except Exception:
+                    locked_amt = 0.0
+                total_amt = free_amt + locked_amt
+                if total_amt > 0:
+                    balances[asset] = total_amt
         except Exception:
             return {}
         return balances
@@ -1934,15 +1939,12 @@ def get_binance_client() -> Optional['BinanceClient']:
             if _binance_client_instance is None:
                 try:
                     _binance_client_instance = BinanceClient()
-                    import logging
                     logging.getLogger(__name__).info("🟡 Binance singleton client initialized")
                 except ValueError as e:
                     # Missing credentials
-                    import logging
                     logging.getLogger(__name__).warning(f"⚠️ Binance client unavailable: {e}")
                     return None
                 except Exception as e:
-                    import logging
                     logging.getLogger(__name__).error(f"❌ Binance client init failed: {e}")
                     return None
     
