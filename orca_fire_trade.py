@@ -640,7 +640,8 @@ class FireTrader:
                          f"24h={change:+.1f}%")
 
                 # ANY positive gain after fees is worth taking (user policy: take all real gains)
-                if profit_margin > 0.0 and change > -2.0:
+                # But skip positions below Binance min_notional ($5) — they CAN'T be sold
+                if profit_margin > 0.0 and change > -2.0 and value >= 5.0:
                     profitable_sells.append({
                         'asset': asset,
                         'symbol': symbol,
@@ -650,6 +651,8 @@ class FireTrader:
                         'change': change,
                         'profit_margin': profit_margin
                     })
+                elif profit_margin > 0.0 and value < 5.0:
+                    log_fire(f"   [SKIP] {asset}: profitable +{profit_margin:.2f}% but ${value:.2f} < $5 min_notional")
             except Exception as e:
                 log_fire(f"   [DEBUG] Binance {asset}: error while evaluating sell opportunity - {e}")
 
@@ -773,7 +776,11 @@ class FireTrader:
                     log_result(f"ORDER RESULT: {json.dumps(order, indent=2) if order else 'None'}")
                     
                     if order and order.get('status') == 'FILLED':
-                        received = float(order.get('receivedQty', 0))
+                        # Calculate received amount: prefer cummulativeQuoteQty, fallback to qty*price
+                        received = float(order.get('cummulativeQuoteQty', 0))
+                        if received <= 0:
+                            exec_qty = float(order.get('executedQty', sell_qty))
+                            received = exec_qty * price
                         log_fire(f"💥💥💥 TRADE FILLED! 💥💥💥")
                         log_fire(f"   Received: ${received:.2f}")
                         

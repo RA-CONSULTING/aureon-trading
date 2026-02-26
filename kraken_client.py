@@ -928,6 +928,19 @@ class KrakenClient:
         res = self._private("/0/private/AddOrder", params)
         txid = res.get("txid", ["unknown"])[0]
         
+        # Estimate cummulativeQuoteQty from current best price when not a quote_qty order
+        cumm_quote = "0.00000000"
+        if quote_qty:
+            cumm_quote = str(quote_qty)
+        else:
+            try:
+                price_info = self.best_price(symbol)
+                best_px = float(price_info.get("price", 0))
+                if best_px > 0:
+                    cumm_quote = str(round(vol * best_px, 8))
+            except Exception:
+                pass
+        
         # Return Binance-compatible response structure
         return {
             "symbol": symbol,
@@ -937,7 +950,7 @@ class KrakenClient:
             "price": "0.00000000",
             "origQty": params.get("volume"),
             "executedQty": params.get("volume"), # Assumed filled
-            "cummulativeQuoteQty": str(quote_qty) if quote_qty else "0.00000000",
+            "cummulativeQuoteQty": cumm_quote,
             "status": "FILLED",
             "timeInForce": "GTC",
             "type": "MARKET",
