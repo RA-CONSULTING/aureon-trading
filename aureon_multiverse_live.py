@@ -2970,7 +2970,12 @@ class MultiverseLiveEngine:
                 # Look at our positioned assets and find better paths to profit
                 for symbol, pos in list(self.positions.items()):
                     # Extract base asset from symbol (e.g., BTCUSDT -> BTC)
-                    base_asset = symbol.replace("USDT", "").replace("USDC", "").replace("USD", "").replace("BTC", "").replace("ETH", "")
+                    # MUST use endswith() — .replace() corrupts symbols like ETHFI, BTCB
+                    base_asset = symbol
+                    for _q in ['USDT', 'USDC', 'BUSD', 'USD', 'BTC', 'ETH']:
+                        if symbol.endswith(_q):
+                            base_asset = symbol[:-len(_q)]
+                            break
                     if not base_asset or len(base_asset) < 2:
                         continue
                     

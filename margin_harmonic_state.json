@@ -1,0 +1,400 @@
+{
+  "timestamp": 1772087126.451928,
+  "elapsed_seconds": 24046,
+  "global_frequency": 450.78812948578366,
+  "global_coherence": 0.9819846244478125,
+  "total_energy": 91985.27633099727,
+  "current_direction": "RESONATING",
+  "current_signal": "HOLD",
+  "signal_confidence": 0.0,
+  "signal_locked": false,
+  "locked_signal": null,
+  "consecutive_long": 0,
+  "consecutive_short": 0,
+  "phi_alignment": 0.8877611534597009,
+  "schumann_harmonic": 0,
+  "cymatics_pattern": "STAR",
+  "frequency_trend": -0.0021824581943064914,
+  "amplitude_trend": -0.0004904665563116751,
+  "total_samples": 2000,
+  "total_lighthouses": 500,
+  "lighthouses": [
+    {
+      "prime_second": 23833,
+      "price": 2069.6,
+      "coherence": 0.9814275735491422,
+      "distortion": 0.000656926594416166,
+      "emotion": "AWE (Resonant)",
+      "signal": "HOLD",
+      "confidence": 0.0,
+      "phi": 0.8878282838739551
+    },
+    {
+      "prime_second": 23862,
+      "price": 2069.25,
+      "coherence": 0.9814904304672998,
+      "distortion": 0.0006527588985650413,
+      "emotion": "AWE (Resonant)",
+      "signal": "HOLD",
+      "confidence": 0.0,
+      "phi": 0.8877884630562585
+    },
+    {
+      "prime_second": 23869,
+      "price": 2069.47,
+      "coherence": 0.981505594837836,
+      "distortion": 0.0006517462676373697,
+      "emotion": "AWE (Resonant)",
+      "signal": "HOLD",
+      "confidence": 0.0,
+      "phi": 0.8878134940707049
+    },
+    {
+      "prime_second": 23876,
+      "price": 2068.9,
+      "coherence": 0.981524324801891,
+      "distortion": 0.0006506101940297311,
+      "emotion": "AWE (Resonant)",
+      "signal": "HOLD",
+      "confidence": 0.0,
+      "phi": 0.8877486355025639
+    },
+    {
+      "prime_second": 23883,
+      "price": 2068.77,
+      "coherence": 0.9815429575878913,
+      "distortion": 0.0006494826176431477,
+      "emotion": "AWE (Resonant)",
+      "signal": "HOLD",
+      "confidence": 0.0,
+      "phi": 0.8877338406951147
+    },
+    {
+      "prime_second": 23890,
+      "price": 2068.76,
+      "coherence": 0.9815611001688994,
+      "distortion": 0.0006483779039514155,
+      "emotion": "AWE (Resonant)",
+      "signal": "HOLD",
+      "confidence": 0.0,
+      "phi": 0.887732702594496
+    },
+    {
+      "prime_second": 23897,
+      "price": 2068.93,
+      "coherence": 0.9815775086123887,
+      "distortion": 0.000647340754928304,
+      "emotion": "AWE (Resonant)",
+      "signal": "HOLD",
+      "confidence": 0.0,
+      "phi": 0.8877520495568786
+    },
+    {
+      "prime_second": 23904,
+      "price": 2068.93,
+      "coherence": 0.9815940214847769,
+      "distortion": 0.0006463055992585985,
+      "emotion": "AWE (Resonant)",
+      "signal": "HOLD",
+      "confidence": 0.1,
+      "phi": 0.8877520495568786
+    },
+    {
+      "prime_second": 23911,
+      "price": 2068.93,
+      "coherence": 0.9816111998643757,
+      "distortion": 0.0006452525105933708,
+      "emotion": "AWE (Resonant)",
+      "signal": "HOLD",
+      "confidence": 0.0,
+      "phi": 0.8877520495568786
+    },
+    {
+      "prime_second": 23918,
+      "price": 2069.42,
+      "coherence": 0.9816280437350378,
+      "distortion": 0.0006442173838986805,
+      "emotion": "AWE (Resonant)",
+      "signal": "HOLD",
+      "confidence": 0.0,
+      "phi": 0.8878078054374545
+    },
+    {
+      "prime_second": 23933,
+      "price": 2070.85,
+      "coherence": 0.9816619061818574,
+      "distortion": 0.000642159064883626,
+      "emotion": "AWE (Resonant)",
+      "signal": "HOLD",
+      "confidence": 0.0,
+      "phi": 0.8879704461267958
+    },
+    {
+      "prime_second": 23961,
+      "price": 2069.35,
+      "coherence": 0.9817194999311859,
+      "distortion": 0.0006384740383785938,
+      "emotion": "AWE (Resonant)",
+      "signal": "HOLD",
+      "confidence": 0.0,
+      "phi": 0.8877998411199901
+    },
+    {
+      "prime_second": 23975,
+      "price": 2069.9,
+      "coherence": 0.981757909789907,
+      "distortion": 0.0006363247714067321,
+      "emotion": "AWE (Resonant)",
+      "signal": "HOLD",
+      "confidence": 0.0,
+      "phi": 0.887862410643831
+    },
+    {
+      "prime_second": 23982,
+      "price": 2069.9,
+      "coherence": 0.9817776756171903,
+      "distortion": 0.0006352393594756634,
+      "emotion": "AWE (Resonant)",
+      "signal": "HOLD",
+      "confidence": 0.0,
+      "phi": 0.887862410643831
+    },
+    {
+      "prime_second": 23996,
+      "price": 2070.16,
+      "coherence": 0.98181769613897,
+      "distortion": 0.0006330701292164933,
+      "emotion": "AWE (Resonant)",
+      "signal": "HOLD",
+      "confidence": 0.0,
+      "phi": 0.8878919831770781
+    },
+    {
+      "prime_second": 24003,
+      "price": 2069.95,
+      "coherence": 0.9818406479409996,
+      "distortion": 0.0006318912172617258,
+      "emotion": "AWE (Resonant)",
+      "signal": "HOLD",
+      "confidence": 0.0,
+      "phi": 0.8878680979579308
+    },
+    {
+      "prime_second": 24010,
+      "price": 2070.06,
+      "coherence": 0.9818621515272324,
+      "distortion": 0.00063077053534663,
+      "emotion": "AWE (Resonant)",
+      "signal": "HOLD",
+      "confidence": 0.0,
+      "phi": 0.8878806095653956
+    },
+    {
+      "prime_second": 24025,
+      "price": 2070.01,
+      "coherence": 0.9819089528101158,
+      "distortion": 0.0006284169106439796,
+      "emotion": "AWE (Resonant)",
+      "signal": "HOLD",
+      "confidence": 0.0,
+      "phi": 0.887874922553515
+    },
+    {
+      "prime_second": 24032,
+      "price": 2070.01,
+      "coherence": 0.9819328847965759,
+      "distortion": 0.0006272327063930249,
+      "emotion": "AWE (Resonant)",
+      "signal": "HOLD",
+      "confidence": 0.0,
+      "phi": 0.887874922553515
+    },
+    {
+      "prime_second": 24046,
+      "price": 2069.01,
+      "coherence": 0.9819846244478125,
+      "distortion": 0.000624751055932306,
+      "emotion": "AWE (Resonant)",
+      "signal": "HOLD",
+      "confidence": 0.0,
+      "phi": 0.8877611534597009
+    }
+  ],
+  "lyra_observer": {
+    "available": true,
+    "collapsed": false,
+    "direction": null,
+    "confidence": 0.0,
+    "consensus": {
+      "consensus": "HOLD",
+      "strength": 0.0,
+      "observations": 10,
+      "collapsed": 0
+    },
+    "resonance_grade": "DISSONANCE",
+    "resonance_score": 0.49137386704521013,
+    "observer_history": [
+      {
+        "timestamp": 1772086992.0311954,
+        "observer_effect": 0.9635605476991794,
+        "lyra_score": 0.49126394778056803,
+        "collapsed": false,
+        "direction": null,
+        "confidence": 0.0
+      },
+      {
+        "timestamp": 1772086999.0948257,
+        "observer_effect": 0.9635936162470772,
+        "lyra_score": 0.4913235738366927,
+        "collapsed": false,
+        "direction": null,
+        "confidence": 0.0
+      },
+      {
+        "timestamp": 1772087006.1747146,
+        "observer_effect": 0.9635936162470772,
+        "lyra_score": 0.4912974437210068,
+        "collapsed": false,
+        "direction": null,
+        "confidence": 0.0
+      },
+      {
+        "timestamp": 1772087013.2662027,
+        "observer_effect": 0.9636600980485979,
+        "lyra_score": 0.4914736240357829,
+        "collapsed": false,
+        "direction": null,
+        "confidence": 0.0
+      },
+      {
+        "timestamp": 1772087020.3477147,
+        "observer_effect": 0.9636600980485979,
+        "lyra_score": 0.4913026863854312,
+        "collapsed": false,
+        "direction": null,
+        "confidence": 0.0
+      },
+      {
+        "timestamp": 1772087027.4280753,
+        "observer_effect": 0.9636600980485979,
+        "lyra_score": 0.4912539931952215,
+        "collapsed": false,
+        "direction": null,
+        "confidence": 0.0
+      },
+      {
+        "timestamp": 1772087034.4912837,
+        "observer_effect": 0.9636600980485979,
+        "lyra_score": 0.49124805575228836,
+        "collapsed": false,
+        "direction": null,
+        "confidence": 0.0
+      },
+      {
+        "timestamp": 1772087041.5667872,
+        "observer_effect": 0.9637731765451377,
+        "lyra_score": 0.49142458135751593,
+        "collapsed": false,
+        "direction": null,
+        "confidence": 0.0
+      },
+      {
+        "timestamp": 1772087048.6374555,
+        "observer_effect": 0.9637731765451377,
+        "lyra_score": 0.4913509947499326,
+        "collapsed": false,
+        "direction": null,
+        "confidence": 0.0
+      },
+      {
+        "timestamp": 1772087055.708764,
+        "observer_effect": 0.9638485934350471,
+        "lyra_score": 0.4913123822018951,
+        "collapsed": false,
+        "direction": null,
+        "confidence": 0.0
+      },
+      {
+        "timestamp": 1772087062.7773337,
+        "observer_effect": 0.963887404340293,
+        "lyra_score": 0.491312669794682,
+        "collapsed": false,
+        "direction": null,
+        "confidence": 0.0
+      },
+      {
+        "timestamp": 1772087069.8621273,
+        "observer_effect": 0.963887404340293,
+        "lyra_score": 0.4913435350268833,
+        "collapsed": false,
+        "direction": null,
+        "confidence": 0.0
+      },
+      {
+        "timestamp": 1772087076.946396,
+        "observer_effect": 0.9639659884516347,
+        "lyra_score": 0.491263378641268,
+        "collapsed": false,
+        "direction": null,
+        "confidence": 0.0
+      },
+      {
+        "timestamp": 1772087084.025616,
+        "observer_effect": 0.9640110579492018,
+        "lyra_score": 0.49125421735020414,
+        "collapsed": false,
+        "direction": null,
+        "confidence": 0.0
+      },
+      {
+        "timestamp": 1772087091.0903006,
+        "observer_effect": 0.9640532846016859,
+        "lyra_score": 0.4912675887525493,
+        "collapsed": false,
+        "direction": null,
+        "confidence": 0.0
+      },
+      {
+        "timestamp": 1772087098.1529262,
+        "observer_effect": 0.9640532846016859,
+        "lyra_score": 0.49126165219907153,
+        "collapsed": false,
+        "direction": null,
+        "confidence": 0.0
+      },
+      {
+        "timestamp": 1772087105.2207592,
+        "observer_effect": 0.9641451916086582,
+        "lyra_score": 0.4912670816549929,
+        "collapsed": false,
+        "direction": null,
+        "confidence": 0.0
+      },
+      {
+        "timestamp": 1772087112.2937863,
+        "observer_effect": 0.9641921902449256,
+        "lyra_score": 0.4912567463917231,
+        "collapsed": false,
+        "direction": null,
+        "confidence": 0.0
+      },
+      {
+        "timestamp": 1772087119.3616855,
+        "observer_effect": 0.9641921902449256,
+        "lyra_score": 0.4913434228349857,
+        "collapsed": false,
+        "direction": null,
+        "confidence": 0.0
+      },
+      {
+        "timestamp": 1772087126.4517124,
+        "observer_effect": 0.9642938026519114,
+        "lyra_score": 0.49137386704521013,
+        "collapsed": false,
+        "direction": null,
+        "confidence": 0.0
+      }
+    ]
+  },
+  "math_angel_available": true
+}

@@ -17248,9 +17248,24 @@ if __name__ == "__main__":
             if hasattr(client, 'convert_crypto'):
                 # Use convert if available (like Alpaca)
                 result = client.convert_crypto(opp.from_asset, opp.to_asset, opp.from_amount)
+            elif hasattr(client, 'place_market_order'):
+                # Standard trade execution (Kraken/Binance use place_market_order)
+                result = client.place_market_order(symbol, 'sell', quantity=opp.from_amount)
             elif hasattr(client, 'execute_trade'):
-                # Standard trade execution
-                result = client.execute_trade(symbol, 'sell', opp.from_amount)
+                # Alpaca async execute_trade — must handle coroutine
+                import asyncio
+                import inspect
+                coro = client.execute_trade(symbol, 'sell', opp.from_amount)
+                if inspect.isawaitable(coro):
+                    try:
+                        loop = asyncio.get_running_loop()
+                        import concurrent.futures
+                        with concurrent.futures.ThreadPoolExecutor() as pool:
+                            result = loop.run_in_executor(pool, asyncio.run, coro)
+                    except RuntimeError:
+                        result = asyncio.run(coro)
+                else:
+                    result = coro
             else:
                 safe_print(f"   ❌ {exchange.upper()} client missing execute method")
                 return False

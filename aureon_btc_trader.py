@@ -301,7 +301,8 @@ class AureonBTCTrader:
                     size_btc = min(btc_balance * 0.9, CONFIG['MIN_BTC_VALUE'] * 1.5)
                 
                 # Calculate quantity
-                base = symbol.replace('BTC', '')
+                # MUST use endswith() — .replace() corrupts symbols like BTCB
+                base = symbol[:-3] if symbol.endswith('BTC') else symbol
                 qty = size_btc / p['price']
                 qty_str = self.lot_mgr.format_qty(symbol, qty)
                 

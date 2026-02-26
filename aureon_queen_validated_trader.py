@@ -456,10 +456,11 @@ class QueenValidatedTrader:
                 quantity = 0.01
                 
                 # Execute the trade
+                # Kraken & Binance use place_market_order(), not execute_trade()
                 if trade.action == "BUY":
-                    result = client.execute_trade(trade.symbol, "buy", quantity)
+                    result = client.place_market_order(trade.symbol, "buy", quantity=quantity)
                 elif trade.action == "SELL":
-                    result = client.execute_trade(trade.symbol, "sell", quantity)
+                    result = client.place_market_order(trade.symbol, "sell", quantity=quantity)
                 else:
                     logger.error(f"   ❌ Unknown action: {trade.action}")
                     return

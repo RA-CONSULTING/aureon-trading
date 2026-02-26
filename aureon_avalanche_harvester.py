@@ -985,9 +985,9 @@ class AvalancheHarvester:
             pair = f"{opportunity.asset}/{stablecoin}"
             logger.info(f"Selling {opportunity.harvest_qty_max:.6f} {opportunity.asset} for {stablecoin}")
             
-            result = self.kraken_client.execute_trade(
-                symbol=pair,
-                side='sell',
+            # KrakenClient uses place_market_order(), NOT execute_trade()
+            result = self.kraken_client.place_market_order(
+                pair, 'sell',
                 quantity=opportunity.harvest_qty_max
             )
             

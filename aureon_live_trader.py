@@ -274,7 +274,8 @@ def check_positions(prices, btc_price):
             
             # Verify we have enough balance
             account = get_account()
-            asset = symbol.replace('BTC', '')
+            # MUST use endswith() — .replace() corrupts symbols like BTCB
+            asset = symbol[:-3] if symbol.endswith('BTC') else symbol
             actual_balance = 0
             for b in account.get('balances', []):
                 if b['asset'] == asset:
