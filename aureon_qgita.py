@@ -733,8 +733,13 @@ class AureonQGITATrader:
             return
         
         try:
-            # Extract base asset
-            base = symbol.replace('USDT', '').replace('BTC', '').replace('ETH', '').replace('BNB', '')
+            # Extract base asset by stripping known quote suffix
+            # MUST use endswith() — .replace() corrupts symbols like ETHFIUSDC → FI
+            base = symbol
+            for _q in ('USDT', 'USDC', 'BUSD', 'FDUSD', 'TUSD', 'USD', 'BTC', 'BNB', 'ETH'):
+                if symbol.endswith(_q) and len(symbol) > len(_q):
+                    base = symbol[:-len(_q)]
+                    break
             
             # Get actual balance
             balance = self.client.get_free_balance(base)

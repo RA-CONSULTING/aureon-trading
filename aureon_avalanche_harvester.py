@@ -1047,6 +1047,7 @@ class AvalancheHarvester:
     def _execute_alpaca_harvest(self, opportunity: HarvestOpportunity) -> bool:
         """Execute harvest on Alpaca exchange."""
         try:
+            import asyncio
             # Determine stablecoin (USDC for crypto, USD for stocks)
             is_crypto = any(opportunity.symbol.endswith(suffix) for suffix in ['USD', 'USDT', 'USDC'])
             stablecoin = 'USDC' if is_crypto else 'USD'
@@ -1054,11 +1055,22 @@ class AvalancheHarvester:
             # Execute sell order
             logger.info(f"Selling {opportunity.harvest_qty_max:.6f} {opportunity.asset}")
             
-            result = self.alpaca_client.execute_trade(
+            # execute_trade is async — run it properly
+            coro = self.alpaca_client.execute_trade(
                 symbol=opportunity.symbol,
                 side='sell',
                 quantity=opportunity.harvest_qty_max
             )
+            try:
+                loop = asyncio.get_running_loop()
+            except RuntimeError:
+                loop = None
+            if loop and loop.is_running():
+                import concurrent.futures
+                with concurrent.futures.ThreadPoolExecutor() as pool:
+                    result = pool.submit(asyncio.run, coro).result(timeout=30)
+            else:
+                result = asyncio.run(coro)
             
             if result:
                 # Calculate actual received amount (estimate)

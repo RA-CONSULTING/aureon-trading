@@ -394,9 +394,14 @@ class BinanceClient:
         # 🚨 CRITICAL: Verify balance before SELL orders to prevent insufficient funds errors
         if side.upper() == 'SELL' and quantity:
             try:
-                # Extract base asset from symbol (e.g., "BTC" from "BTCUSDT")
-                base_asset = symbol.replace('USDT', '').replace('USDC', '').replace('BUSD', '').replace('BTC', '').replace('BNB', '').replace('ETH', '')
-                if not base_asset:
+                # Extract base asset from symbol by stripping known quote suffix
+                # MUST use endswith() — .replace() corrupts symbols like ETHFIUSDC → FI
+                base_asset = symbol
+                for _q in ("USDT", "USDC", "BUSD", "FDUSD", "TUSD", "USD", "EUR", "GBP", "BTC", "BNB", "ETH"):
+                    if symbol.endswith(_q) and len(symbol) > len(_q):
+                        base_asset = symbol[:-len(_q)]
+                        break
+                if not base_asset or base_asset == symbol:
                     # Fallback: guess base asset is the first 3-4 chars
                     base_asset = symbol[:4] if len(symbol) > 4 else symbol[:3]
                 

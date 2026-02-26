@@ -2444,10 +2444,10 @@ class QueenEternalMachine:
         try:
             self._load_friends_from_real_positions()
             self._sync_main_position_to_real_holdings()
-            print(f"   🐸 [SYNC] Friends: {len(self.friends)} | Main: {self.main_position.symbol if self.main_position else 'NONE'}")
+            logger.info(f"   🐸 [SYNC] Friends: {len(self.friends)} | Main: {self.main_position.symbol if self.main_position else 'NONE'}")
         except Exception as e:
             logger.warning(f"⚠️ Real position sync failed (using cached): {e}")
-            print(f"   🐸 [SYNC] FAILED: {e}")
+            logger.warning(f"   🐸 [SYNC] FAILED: {e}")
         
         # 👑⚛️ QUEEN'S AUTONOMOUS DECISION - Full cognitive control
         queen_decision = None
@@ -2542,7 +2542,7 @@ class QueenEternalMachine:
         
         # 2. SCAN
         self.fetch_market_data()
-        print(f"   🐸 [SCAN] Market data: {len(self.market_data)} coins scanned")
+        logger.info(f"   🐸 [SCAN] Market data: {len(self.market_data)} coins scanned")
         
         # 3. UPDATE
         if self.main_position and self.main_position.symbol in self.market_data:
@@ -2553,7 +2553,7 @@ class QueenEternalMachine:
         
         # 4. ANALYZE
         opportunities = self.find_leap_opportunities()
-        print(f"   🐸 [ANALYZE] Leap opportunities found: {len(opportunities)}")
+        logger.info(f"   🐸 [ANALYZE] Leap opportunities found: {len(opportunities)}")
         
         # 5. LEAP (if good opportunity AND Queen approves)
         if opportunities and queen_decision and queen_decision['has_control']:
