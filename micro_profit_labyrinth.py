@@ -113,7 +113,7 @@ except ImportError:
 # 💎 Super Intelligence Gate (100% Win Rate Layer)
 SUPER_INTELLIGENCE_AVAILABLE = False
 try:
-    from super_intelligence_gate import get_super_intelligence_gate, SuperIntelligenceGate
+    from super_intelligence_gate import get_super_intelligence_gate, SuperIntelligenceGate as _SuperIntelligenceGate
     SUPER_INTELLIGENCE_AVAILABLE = True
 except ImportError:
     pass
@@ -256,7 +256,6 @@ except ModuleNotFoundError:
 
 if callable(load_dotenv):
     # Try multiple paths to find .env file
-    from pathlib import Path
     env_paths = [
         Path(__file__).resolve().parent / ".env",  # Same dir as this script
         Path.cwd() / ".env",                        # Current working directory
@@ -476,7 +475,7 @@ except ImportError as e:
 
 # 🏆🌀 LABYRINTH SNOWBALL ENGINE - V14 + All systems combined
 try:
-    from labyrinth_snowball_engine import LabyrinthSnowball, LabyrinthStep, LabyrinthState
+    from labyrinth_snowball_engine import LabyrinthSnowball, LabyrinthStep as _LabyrinthStep, LabyrinthState as _LabyrinthState
     safe_print("🏆🌀 Labyrinth Snowball Engine LOADED!")
     LABYRINTH_SNOWBALL_AVAILABLE = True
 except ImportError as e:
@@ -743,7 +742,7 @@ except ImportError:
 # 🫒🔄 Barter Navigator - Trade through intermediaries to reach any asset
 try:
     from aureon_barter_navigator import (
-        BarterNavigator, BarterPath, get_navigator,
+        BarterNavigator, BarterPath as _BarterPath, get_navigator,
         find_barter_path, get_barter_score
     )
     BARTER_NAVIGATOR_AVAILABLE = True
@@ -772,9 +771,9 @@ except ImportError:
 
 # 👑🍄 Queen Hive Mind - The Dreaming Queen who guides all children
 try:
-    from aureon_queen_hive_mind import QueenHiveMind, QueenWisdom, get_queen
+    from aureon_queen_hive_mind import QueenHiveMind, QueenWisdom as _QueenWisdom, get_queen
     from queen_harmonic_voice import QueenHarmonicVoice
-    from aureon_harmonic_signal_chain import HarmonicSignalChain, HarmonicSignal
+    from aureon_harmonic_signal_chain import HarmonicSignalChain, HarmonicSignal as _HarmonicSignal
     QUEEN_HIVE_MIND_AVAILABLE = True
     safe_print("👑🍄 Queen Hive Mind LOADED! (The Dreaming Queen + Harmonic Voice)")
 except Exception as e:
@@ -2805,7 +2804,7 @@ class LiveBarterMatrix:
         )
         
         # 👑 2. ANALYZE QUEEN'S DREAMS
-        queen_dream_status = "NEUTRAL"
+        _queen_dream_status = "NEUTRAL"
         if hasattr(self, 'queen') and self.queen:
             try:
                 dream_vision = self.queen.dream_of_winning({
@@ -2816,7 +2815,7 @@ class LiveBarterMatrix:
                 # Check vision
                 queen_confidence = dream_vision.get('final_confidence', 0.5)
                 if dream_vision.get('will_win', False) and queen_confidence >= 0.65:
-                    queen_dream_status = "STRONG_WIN"
+                    _queen_dream_status = "STRONG_WIN"
             except Exception as e:
                 logger.debug(f"Could not consult Queen's dreams: {e}")
         
@@ -2923,8 +2922,8 @@ class LiveBarterMatrix:
         is_risky_conversion = from_type == 'meme' or to_type == 'meme'
         
         # Calculate breakeven requirement
-        breakeven_gain_pct = total_cost_pct
-        breakeven_gain_usd = total_cost_usd
+        _breakeven_gain_pct = total_cost_pct
+        _breakeven_gain_usd = total_cost_usd
         
         # Required price improvement to guarantee profit
         required_improvement_pct = total_cost_pct + (min_profit_usd / from_value_usd) if from_value_usd > 0 else 1.0
@@ -5514,7 +5513,7 @@ class MicroProfitLabyrinth:
             try:
                 self.seven_day_planner = Aureon7DayPlanner()
                 # Create initial 7-day plan
-                plan = self.seven_day_planner.plan_7_days()
+                _plan = self.seven_day_planner.plan_7_days()
                 summary = self.seven_day_planner.get_week_summary()
                 stats = self.seven_day_planner.get_validation_stats()
                 safe_print(f"📅🔮 7-Day Planner: WIRED (edge: {summary['total_predicted_edge']:+.2f}%, accuracy: {stats['accuracy']:.0%})")
@@ -5611,7 +5610,7 @@ class MicroProfitLabyrinth:
                 
                 # 👑🔮 Wire Queen's Dream Engine (Monte Carlo Simulation + Validation)
                 try:
-                    from aureon_queen_dream_engine import QueenDreamEngine, create_queen_dream_engine
+                    from aureon_queen_dream_engine import QueenDreamEngine as _QueenDreamEngine, create_queen_dream_engine
                     self.dream_engine = create_queen_dream_engine()
                     if hasattr(self.queen, 'wire_dream_engine_simulation'):
                         self.queen.wire_dream_engine_simulation(self.dream_engine)
@@ -6110,7 +6109,7 @@ class MicroProfitLabyrinth:
                     
                     def get_24h_ticker(self, symbol):
                         """Get 24h stats for a symbol"""
-                        for cached_sym, data in self.labyrinth.ticker_cache.items():
+                        for _cached_sym, data in self.labyrinth.ticker_cache.items():
                             base = data.get('base', '')
                             quote = data.get('quote', '')
                             if f"{base}{quote}" == symbol or f"{base}/USD" == symbol:
@@ -7142,8 +7141,6 @@ class MicroProfitLabyrinth:
         - Per-symbol patterns
         - Multi-exchange training data
         """
-        from datetime import datetime
-        import json
         
         score = 0.5  # Neutral default
         reasons = []
@@ -7277,7 +7274,7 @@ class MicroProfitLabyrinth:
                 avg_profit = path_profit / path_trades
                 
                 # Adjust score based on historical avg trade size
-                avg_trade_size = history.get('avg_trade_size', 10.0)  # Default $10 avg trade
+                _avg_trade_size = history.get('avg_trade_size', 10.0)  # Default $10 avg trade
                 
                 # Boost score based on historical success
                 if avg_profit > 0.01:  # Profitable path
@@ -8478,7 +8475,7 @@ class MicroProfitLabyrinth:
         # Cycle through ALL opportunities, execute FIRST one that passes ALL gates
         # ════════════════════════════════════════════════════════════════════════
         conversions = 0
-        executed_opportunity = None
+        _executed_opportunity = None
         rejected_count = 0
         queen_rejections = {}  # Track rejection reasons
         
@@ -8539,7 +8536,7 @@ class MicroProfitLabyrinth:
             
             if success:
                 conversions = 1
-                executed_opportunity = opp
+                _executed_opportunity = opp
                 actual_pnl = getattr(opp, 'actual_pnl_usd', opp.expected_pnl_usd)
                 self.exchange_stats[opp.source_exchange]['conversions'] += 1
                 self.exchange_stats[opp.source_exchange]['profit'] += actual_pnl
@@ -9144,7 +9141,7 @@ class MicroProfitLabyrinth:
         if binance_cache:
             # Use Binance data for scanning (FREE and comprehensive!)
             ticker_cache = binance_cache.get('ticker_cache', {})
-            prices_from_cache = binance_cache.get('prices', {})
+            _prices_from_cache = binance_cache.get('prices', {})
             
             safe_print(f"   🟡🦙 BINANCE→ALPACA: Using Binance WS cache ({len(ticker_cache)} tickers) for heavy lifting!")
             
@@ -10430,7 +10427,7 @@ class MicroProfitLabyrinth:
             # Calculate win rate from barter history for this exchange
             wins = 0
             total = 0
-            for (from_a, to_a), hist in self.barter_matrix.barter_history.items():
+            for (from_a, _to_a), hist in self.barter_matrix.barter_history.items():
                 # Attribute to exchange based on source exchange tracking
                 total += hist.get('trades', 0)
                 wins += hist.get('wins', 0)
@@ -10578,7 +10575,7 @@ class MicroProfitLabyrinth:
         # �🌊⚡ MOMENTUM WAVE CHECK - Look for wave jumping opportunities
         momentum_opp = self.find_momentum_opportunity()
         if momentum_opp:
-            from_asset, to_asset, from_amount, net_adv, mom_diff = momentum_opp
+            from_asset, to_asset, _from_amount, net_adv, mom_diff = momentum_opp
             safe_print(f"   🌊 WAVE DETECTED: {from_asset}→{to_asset} | Momentum diff: {mom_diff*100:.2f}%/min")
         
         # 🦁 LION HUNT - Stablecoins hunt for waves! (NOW 10x MORE AGGRESSIVE!)
@@ -10608,7 +10605,7 @@ class MicroProfitLabyrinth:
                 
                 # Get volume data from ticker cache
                 volume_data = {}
-                for sym, data in self.ticker_cache.items():
+                for _sym, data in self.ticker_cache.items():
                     base = data.get('base', '')
                     if base:
                         volume_data[base] = data.get('volume', 0) * data.get('price', 1)
@@ -10758,7 +10755,7 @@ class MicroProfitLabyrinth:
         await self.validate_dreams()
         
         # 👑🍄 QUEEN'S PULSE - Queen observes market state BEFORE filtering
-        queen_pulse = await self.queen_observe_market(current_exchange, exchange_assets)
+        _queen_pulse = await self.queen_observe_market(current_exchange, exchange_assets)
         
         # Find opportunities ON THIS EXCHANGE ONLY
         scan_start = time.time()
@@ -10803,7 +10800,7 @@ class MicroProfitLabyrinth:
                 quantum = perception.get('quantum', {})
                 omega = quantum.get('omega', 0.5)
                 direction = quantum.get('direction', 'NEUTRAL')
-                field_confidence = quantum.get('confidence', 0.5)
+                _field_confidence = quantum.get('confidence', 0.5)
                 source = quantum.get('source', 'Unknown')
                 
                 # Show Gaia and Crown alignment
@@ -10995,7 +10992,7 @@ class MicroProfitLabyrinth:
         # Ladder: 0.07 pip (0.0007%) to 1.4 pip (0.014%)
         # Higher confidence = lower threshold needed!
         # Calculate price from value/amount (from_price not stored on MicroOpportunity)
-        from_price = opportunity.from_value_usd / opportunity.from_amount if opportunity.from_amount > 0 else 1.0
+        _from_price = opportunity.from_value_usd / opportunity.from_amount if opportunity.from_amount > 0 else 1.0
         trade_value = opportunity.from_value_usd  # Already have this!
         
         # 👑 PROFIT LADDER THRESHOLDS (in pips: 1 pip = 0.01% = 0.0001)
@@ -11018,7 +11015,7 @@ class MicroProfitLabyrinth:
         path_history = self.barter_matrix.barter_history.get((from_asset, to_asset), {})
         path_trades = path_history.get('trades', 0)
         path_wins = path_history.get('wins', 0)
-        path_profit = path_history.get('total_profit', 0)
+        _path_profit = path_history.get('total_profit', 0)
         
         if path_trades > 0:
             win_rate = path_wins / path_trades
@@ -11251,7 +11248,7 @@ class MicroProfitLabyrinth:
                     reasons.append(f"🌌 Stargate low ({stargate_signal:.0%})")
                     
                 # 🌌 BONUS: Check if any planetary node is at peak activation
-                for sg_id, sg in self.stargate_engine.stargates.items():
+                for _sg_id, sg in self.stargate_engine.stargates.items():
                     if sg.activation_level > 0.8:
                         signals.append(0.75)  # Bonus for peak activation
                         reasons.append(f"⭐ {sg.name} PEAK")
@@ -11414,7 +11411,7 @@ class MicroProfitLabyrinth:
             exchange_tag = "🔶BINANCE"
         elif source_exchange == 'alpaca':
             # Alpaca: Medium fees
-            base_min = 0.001  # Just $0.001 base
+            _base_min = 0.001  # Just $0.001 base
             min_confidence = 0.05  # 🔓 ULTRA-LOWERED to allow trades with any confidence
             exchange_tag = "🦙ALPACA"
             
@@ -11428,7 +11425,7 @@ class MicroProfitLabyrinth:
                     return False, 0.0, f"👑 SERO BLOCKS 🦙ALPACA: {from_asset}→{to_asset} (need >$0.01 arb)"
         else:
             # Kraken: Lowest fees, Sero can go aggressive on ladder!
-            base_min = 0.0005  # Just $0.0005 base (Kraken is cheapest)
+            _base_min = 0.0005  # Just $0.0005 base (Kraken is cheapest)
             min_confidence = 0.05  # 🔓 ULTRA-LOWERED to allow trades with any confidence
             exchange_tag = "🐙KRAKEN"
             
@@ -12498,7 +12495,7 @@ if __name__ == "__main__":
         
         Returns: dict with queen's observations
         """
-        icon = {'kraken': '🐙', 'alpaca': '🦙', 'binance': '🟡'}.get(exchange, '📊')
+        _icon = {'kraken': '🐙', 'alpaca': '🦙', 'binance': '🟡'}.get(exchange, '📊')
         
         observations = {
             'exchange': exchange,
@@ -12544,7 +12541,7 @@ if __name__ == "__main__":
         momentum_sum = 0.0
         momentum_count = 0
         for asset in exchange_assets.keys():
-            for symbol, data in self.ticker_cache.items():
+            for _symbol, data in self.ticker_cache.items():
                 if data.get('base') == asset:
                     change = data.get('change24h', 0)
                     momentum_sum += change
@@ -12910,7 +12907,6 @@ if __name__ == "__main__":
     
     def update_momentum(self, asset: str, price: float):
         """Update momentum tracking for an asset - FROM MOMENTUM SNOWBALL ENGINE"""
-        import time
         now = time.time()
         
         # Record price
@@ -13245,7 +13241,7 @@ if __name__ == "__main__":
                             )
                         elif dust.exchange == 'binance':
                             # Binance uses market orders
-                            result = client.create_order(
+                            _result = client.create_order(
                                 symbol=pair,
                                 side='SELL',
                                 type='MARKET',
@@ -13861,7 +13857,7 @@ if __name__ == "__main__":
                 continue  # Path is blocked - skip it entirely!
             
             # 🚫 CHECK PRE-EXECUTION REJECTION BLOCK - Avoid wasting turns!
-            is_preexec_blocked, preexec_reason = self.barter_matrix.is_preexec_blocked(from_asset, to_asset)
+            is_preexec_blocked, _preexec_reason = self.barter_matrix.is_preexec_blocked(from_asset, to_asset)
             if is_preexec_blocked:
                 continue  # Skip - repeatedly fails min checks
             
@@ -14321,7 +14317,7 @@ if __name__ == "__main__":
                         symbol_for_turbo = f"{to_asset}/{quote_asset}"
 
                     # Get turbo-enhanced threshold - uses real spread & fee tier
-                    turbo_threshold = self.penny_turbo.get_enhanced_threshold(
+                    _turbo_threshold = self.penny_turbo.get_enhanced_threshold(
                         exchange=source_exchange,
                         symbol=symbol_for_turbo,
                         value_usd=from_value
@@ -14463,13 +14459,13 @@ if __name__ == "__main__":
                 # Too small for exchange minimums - skip silently
                 continue
             
-            total_cost_estimate = from_value * total_cost_pct  # ~0.46% in fees
+            _total_cost_estimate = from_value * total_cost_pct  # ~0.46% in fees
             
             # 👑 QUEEN'S LEARNED WISDOM: Check if this path has ANY history
             path_key = (from_asset.upper(), to_asset.upper())
             path_history = self.barter_matrix.barter_history.get(path_key, {})
             path_trades = path_history.get('trades', 0)
-            path_win_rate = path_history.get('wins', 0) / max(path_trades, 1)
+            _path_win_rate = path_history.get('wins', 0) / max(path_trades, 1)
             path_profit = path_history.get('total_profit', 0)
             
             # 🔓🔓🔓 FULL AUTONOMOUS MODE - NO FILTERS! 🔓🔓🔓
@@ -15065,13 +15061,13 @@ if __name__ == "__main__":
                  # No checkpoint exception in epsilon mode; rely on net-positive gates
 
                 if self.adaptive_gate:
-                    gate_result = self.adaptive_gate.calculate_gates(
+                    _gate_result = self.adaptive_gate.calculate_gates(
                         exchange=source_exchange,
                         trade_value=from_value,
                         use_cache=True,
                     )
                 else:
-                    gate_result = None
+                    _gate_result = None
                 
                 # Debug: Log first few candidates on first scan
                 if debug_first_scans and valid_pairs_found <= 3:
@@ -15398,8 +15394,7 @@ if __name__ == "__main__":
         # ════════════════════════════════════════════════════════════════
         
         # Calculate temporal priority for each opportunity
-        import time as _time
-        now = _time.time()
+        now = time.time()
         PRIME_SENTINEL_HZ = 2.111991  # Gary Leckey 02/11/1991
         temporal_cycle = now % (1.0 / PRIME_SENTINEL_HZ)
         temporal_alignment = 1.0 - (temporal_cycle * PRIME_SENTINEL_HZ)
@@ -15577,7 +15572,6 @@ if __name__ == "__main__":
         Returns:
             Execution result dict
         """
-        import asyncio
         
         try:
             # Parse symbol
@@ -16213,7 +16207,7 @@ if __name__ == "__main__":
         
         # 🇮🇪🎯 IRA SNIPER EXECUTION - Celtic precision
         try:
-            from ira_sniper_mode import get_celtic_sniper, IraCelticSniper
+            from ira_sniper_mode import get_celtic_sniper, IraCelticSniper as _IraCelticSniper
             sniper = get_celtic_sniper(dry_run=False)
             
             # Validate entry with Celtic intelligence
@@ -18012,7 +18006,7 @@ if __name__ == "__main__":
                 # Determine final_amount from validation (what we actually received)
                 final_amount = validation.get('final_amount', buy_amount)
                 entry_price = validation.get('avg_buy_price', self.prices.get(to_up, 0))
-                exit_price = validation.get('avg_sell_price', self.prices.get(from_up, 0))
+                _exit_price = validation.get('avg_sell_price', self.prices.get(from_up, 0))
                 fees_usd = validation.get('total_fees', 0)
 
                 if is_buy:
@@ -18291,7 +18285,6 @@ if __name__ == "__main__":
         # This prevents the loop bug where we keep trying to trade stale cached balance
         exchange = opp.source_exchange or 'unknown'
         try:
-            import asyncio
             loop = asyncio.get_event_loop()
             if loop.is_running():
                 # Create task for background refresh
@@ -18413,7 +18406,7 @@ if __name__ == "__main__":
         """Async wrapper for loss analysis to not block main trading loop."""
         try:
             error_msg = kwargs.pop('error_msg', '')
-            loss = await self.loss_learning.analyze_loss(**kwargs)
+            _loss = await self.loss_learning.analyze_loss(**kwargs)
             
             # Check if we should auto-block this path
             avoid, reason = self.loss_learning.should_avoid_trade(
@@ -18474,8 +18467,6 @@ if __name__ == "__main__":
         Stores all order IDs, execution details, and P&L verification
         for post-trade auditing and compliance.
         """
-        import json
-        from datetime import datetime
         
         audit_file = "aureon_order_audit.json"
         
@@ -18849,7 +18840,7 @@ if __name__ == "__main__":
             
             # Global Feed Update (every 90s - reduced frequency)
             last_global_feed_time = 0
-            global_feed_interval = 90  # Was 60s
+            _global_feed_interval = 90  # Was 60s
             
             # 👑🌐 QUEEN'S ONLINE RESEARCH - Throttled to avoid constant code generation
             last_research_time = 0
@@ -18976,16 +18967,16 @@ if __name__ == "__main__":
                 
                 # Collect signals from ALL systems
                 signals = await self.collect_all_signals()
-                signal_count = sum(len(v) for v in signals.values())
+                _signal_count = sum(len(v) for v in signals.values())
                 
                 # � EXECUTION: FPTP or Turn-Based
                 try:
                     if self.fptp_mode:
                         # 🏁 FIRST PAST THE POST - All exchanges, immediate execution!
-                        turn_opportunities, turn_conversions = await self.execute_fptp_scan()
+                        _turn_opportunities, turn_conversions = await self.execute_fptp_scan()
                     else:
                         # 🎯 TURN-BASED - One exchange at a time
-                        turn_opportunities, turn_conversions = await self.execute_turn()
+                        _turn_opportunities, turn_conversions = await self.execute_turn()
                 except AttributeError as e:
                     # 👑🔧 SELF-REPAIR TRIGGER - Publish error to ThoughtBus for Queen to fix
                     error_msg = str(e)
@@ -19021,11 +19012,11 @@ if __name__ == "__main__":
                             logger.error(f"Could not publish error to ThoughtBus: {pub_err}")
                     
                     # Continue running (skip this turn)
-                    turn_opportunities, turn_conversions = 0, 0
+                    _turn_opportunities, turn_conversions = 0, 0
                 except Exception as e:
                     # Other exceptions - log but don't trigger self-repair
                     logger.error(f"Error in execute_turn: {e}")
-                    turn_opportunities, turn_conversions = 0, 0
+                    _turn_opportunities, turn_conversions = 0, 0
                 
                 # Calculate current value
                 current_value = sum(

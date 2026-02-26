@@ -61,15 +61,13 @@ if sys.platform == 'win32':
     except Exception:
         pass
 
-import asyncio
 import threading
 import time
 import signal
 import logging
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Any, Callable
+from typing import Dict, List, Optional
 from enum import Enum
-from datetime import datetime
 import json
 
 # 💰 BILLION DOLLAR GOAL TRACKER
@@ -94,7 +92,7 @@ except ImportError:
 
 # 🌀 PHASE TRANSITION DETECTOR - Geometric Regime Change Detection
 try:
-    from aureon_phase_transition_detector import PhaseTransitionDetector
+    from aureon_phase_transition_detector import PhaseTransitionDetector as _PhaseTransitionDetector  # noqa: F401
     PHASE_DETECTOR_BOOT = True
     print("🌀 Phase Transition Detector: LOADED (Takens embedding + curvature analysis)")
 except ImportError:
@@ -102,7 +100,7 @@ except ImportError:
 
 # ☀️ CROSS-SUBSTRATE SOLAR MONITOR
 try:
-    from aureon_cross_substrate_monitor import CrossSubstrateMonitor
+    from aureon_cross_substrate_monitor import CrossSubstrateMonitor as _CrossSubstrateMonitor  # noqa: F401
     SOLAR_MONITOR_BOOT = True
     print("☀️ Cross-Substrate Solar Monitor: LOADED (NOAA SWPC + Granger causality)")
 except ImportError:
@@ -374,7 +372,6 @@ class QueenFullAutonomous:
             logger.warning(f"⚠️ Orca Kill Cycle creation failed: {e}")
             # Try alternative init
             try:
-                from orca_complete_kill_cycle import OrcaKillCycle
                 self._orca = OrcaKillCycle()
                 logger.info("✅ Orca Kill Cycle: HUNTING (standalone)")
                 return True

@@ -28,98 +28,10 @@ import json
 import os
 import time
 import builtins
-from typing import Dict, Any, Optional, Tuple
+from typing import Dict, Any, Optional, Tuple, List
 from datetime import datetime
 from dotenv import load_dotenv
 from dataclasses import dataclass, field
-from typing import List
-
-# ═══════════════════════════════════════════════════════════════════════════════
-# 🔇 WINDOWS UTF-8 FIX - MUST BE BEFORE ANY PRINT STATEMENTS!
-# ═══════════════════════════════════════════════════════════════════════════════
-import sys
-if sys.platform == 'win32':
-    os.environ['PYTHONIOENCODING'] = 'utf-8'
-    try:
-        import io
-        def _is_utf8_wrapper(stream):
-            """Check if stream is already a UTF-8 TextIOWrapper."""
-            return (isinstance(stream, io.TextIOWrapper) and 
-                    hasattr(stream, 'encoding') and stream.encoding and
-                    stream.encoding.lower().replace('-', '') == 'utf8')
-        def _is_buffer_valid(stream):
-            """Check if stream buffer is valid and not closed."""
-            if not hasattr(stream, 'buffer'):
-                return False
-            try:
-                return stream.buffer is not None and not stream.buffer.closed
-            except (ValueError, AttributeError):
-                return False
-        # Only wrap if not already UTF-8 wrapped AND buffer is valid (prevents re-wrapping + closed buffer errors)
-        if _is_buffer_valid(sys.stdout) and not _is_utf8_wrapper(sys.stdout):
-            sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace', line_buffering=True)
-        if _is_buffer_valid(sys.stderr) and not _is_utf8_wrapper(sys.stderr):
-            sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace', line_buffering=True)
-    except Exception:
-        pass
-
-def _safe_print(*args, **kwargs):
-    """Safe print that handles closed stdout/stderr."""
-    try:
-        builtins.print(*args, **kwargs)
-    except (ValueError, OSError, IOError):
-        # Silently ignore if stdout/stderr is closed
-        pass
-
-load_dotenv()
-
-COST_BASIS_FILE = "cost_basis_history.json"
-
-
-@dataclass
-class Trade:
-    """Represents a single buy trade lot."""
-    price: float
-    quantity: float
-    timestamp: float = field(default_factory=time.time)
-    fee: float = 0.0
-    order_id: Optional[str] = None
-
-"""
-💰 COST BASIS TRACKER
-═══════════════════════════════════════════════════════════════
-
-Tracks real purchase prices for all positions across exchanges.
-This data feeds into the ecosystem to prevent selling at a loss.
-
-Features:
-- Fetches real trade history from exchanges
-- Calculates FIFO/average cost basis
-- Persists to JSON for session continuity
-- Provides profit/loss checks before any sale
-
-Usage:
-    tracker = CostBasisTracker()
-    tracker.sync_from_exchanges()  # Fetch real purchase prices
-    
-    # Before selling:
-    can_sell, info = tracker.can_sell_profitably('BTCUSDC', current_price=95000)
-    if can_sell:
-        # Proceed with sale
-    else:
-        print(f"Would lose ${info['potential_loss']}")
-"""
-
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
-import json
-import os
-import time
-import builtins
-from typing import Dict, Any, Optional, Tuple
-from datetime import datetime
-from dotenv import load_dotenv
-from dataclasses import dataclass, field
-from typing import List
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # 🔇 WINDOWS UTF-8 FIX - MUST BE BEFORE ANY PRINT STATEMENTS!
@@ -364,7 +276,7 @@ class CostBasisTracker:
             if self.clients and 'binance' in self.clients:
                 client = self.clients['binance']
             else:
-                from binance_client import BinanceClient
+                from binance_client import get_binance_client
                 client = get_binance_client()
         except Exception as e:
             print(f"⚠️ Failed to initialize Binance client: {e}")
@@ -434,7 +346,7 @@ class CostBasisTracker:
             if self.clients and 'kraken' in self.clients:
                 client = self.clients['kraken']
             else:
-                from kraken_client import KrakenClient, get_kraken_client
+                from kraken_client import get_kraken_client
                 client = get_kraken_client()
 
             if getattr(client, 'dry_run', False):
@@ -446,7 +358,7 @@ class CostBasisTracker:
         
         # Get trade history
         try:
-            trades = client.get_trades_history()
+            trades = client.get_trades_history_dict()
             if not trades:
                 print("   ⚪ No Kraken trade history found")
                 return 0
@@ -456,7 +368,7 @@ class CostBasisTracker:
         
         # Group trades by pair and calculate cost basis
         pair_trades = {}
-        for trade_id, trade in trades.items():
+        for _trade_id, trade in trades.items():
             pair = trade.get('pair', '')
             if pair not in pair_trades:
                 pair_trades[pair] = []
@@ -693,7 +605,7 @@ class CostBasisTracker:
         5. Deep base asset match (SHELL → any SHELL-based pair)
         """
         pos = None
-        matched_key = None
+        _matched_key = None
 
         def _is_open_position(candidate: Optional[Dict[str, Any]]) -> bool:
             """Ignore stale/closed snapshots so they don't shadow real open positions."""
@@ -796,12 +708,12 @@ class CostBasisTracker:
     
     def get_cost_basis(self, symbol: str, exchange: str = None) -> Optional[Dict[str, Any]]:
         """Get cost basis for a symbol, optionally scoped to an exchange."""
-        pos, matched_key = self._find_position(symbol, exchange)
+        pos, _matched_key = self._find_position(symbol, exchange)
         return pos
 
     def get_entry_price(self, symbol: str, exchange: str = None) -> Optional[float]:
         """Get average entry price for a symbol using 5-strategy matching."""
-        pos, matched_key = self._find_position(symbol, exchange)
+        pos, _matched_key = self._find_position(symbol, exchange)
         if pos:
             # Prefer verified fills when available
             if pos.get('fills_verified') and pos.get('avg_fill_price'):
@@ -811,7 +723,7 @@ class CostBasisTracker:
 
     def get_verified_entry_price(self, symbol: str, exchange: str = None) -> Optional[float]:
         """Return entry price only if backed by verified fills + order_id."""
-        pos, matched_key = self._find_position(symbol, exchange)
+        pos, _matched_key = self._find_position(symbol, exchange)
         if not pos:
             return None
         if not pos.get('fills_verified'):
@@ -1109,7 +1021,7 @@ class CostBasisTracker:
         if executed_qty <= 0:
             return
 
-        is_buy = str(side or '').upper() == 'BUY'
+        _is_buy = str(side or '').upper() == 'BUY'
         price = float(avg_fill_price or 0)
         if price <= 0:
             return
@@ -1369,7 +1281,7 @@ class CostBasisTracker:
             Dict with verification results and corrections made
         """
         corrections = []
-        removed = []
+        _removed = []
         
         for key, pos in list(self.positions.items()):
             pos_exchange = pos.get('exchange', '')
@@ -1514,7 +1426,7 @@ class CostBasisTracker:
         total_cost = 0
         total_positions = len(self.positions)
         
-        for symbol, pos in self.positions.items():
+        for _symbol, pos in self.positions.items():
             total_cost += pos.get('total_cost', 0)
         
         return {
@@ -1555,12 +1467,12 @@ class CostBasisTracker:
             if self.clients and 'kraken' in self.clients:
                 kc = self.clients['kraken']
             else:
-                from kraken_client import KrakenClient, get_kraken_client
+                from kraken_client import get_kraken_client
                 kc = get_kraken_client()
 
             if not getattr(kc, 'dry_run', False):
                 _safe_print("📜 Pulling Kraken trade history...")
-                raw = kc.get_trades_history()  # Dict[trade_id, trade]
+                raw = kc.get_trades_history_dict()  # Dict[trade_id, trade]
                 if isinstance(raw, dict):
                     trades_iter = raw.items()
                 elif isinstance(raw, list):
@@ -1594,7 +1506,7 @@ class CostBasisTracker:
             if self.clients and 'binance' in self.clients:
                 bc = self.clients['binance']
             else:
-                from binance_client import BinanceClient, get_binance_client
+                from binance_client import get_binance_client
                 bc = get_binance_client()
 
             _safe_print("📜 Pulling Binance trade history...")
@@ -1644,7 +1556,7 @@ class CostBasisTracker:
                 ts = 0.0
                 if filled_at:
                     try:
-                        from dateutil.parser import parse as dtparse
+                        from dateutil.parser import parse as dtparse  # type: ignore[import]
                         ts = dtparse(filled_at).timestamp()
                     except Exception:
                         pass
@@ -2151,11 +2063,11 @@ def find_cost_basis_truth(tracker: 'CostBasisTracker' = None) -> dict:
     kraken_ledgers = []
     
     try:
-        from kraken_client import get_kraken_client
+        from kraken_client import get_kraken_client  # type: ignore[import]
         kc = get_kraken_client()
         if not getattr(kc, 'dry_run', False):
             # Try trades first
-            kraken_trades = _kraken_api_with_retry(kc, 'get_trades_history') or {}
+            kraken_trades = _kraken_api_with_retry(kc, 'get_trades_history_dict') or {}
             _safe_print(f"   📦 Kraken trades: {len(kraken_trades)} entries")
             
             if kraken_trades:
@@ -2176,7 +2088,7 @@ def find_cost_basis_truth(tracker: 'CostBasisTracker' = None) -> dict:
     # Group Kraken trades by normalized pair
     from collections import defaultdict
     kraken_pair_trades = defaultdict(list)
-    for tid, trade in kraken_trades.items():
+    for _tid, trade in kraken_trades.items():
         pair = trade.get('pair', '')
         kraken_pair_trades[pair].append(trade)
     
@@ -2474,7 +2386,7 @@ def find_cost_basis_truth(tracker: 'CostBasisTracker' = None) -> dict:
     _safe_print("\n🟡 STEP 6: Reconciling Binance positions...")
     
     try:
-        from binance_client import get_binance_client
+        from binance_client import get_binance_client  # type: ignore[import]
         bc = get_binance_client()
         
         for asset, qty in binance_balances.items():

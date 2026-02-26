@@ -38,9 +38,9 @@ import time
 import logging
 import threading
 import requests
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone
 from dataclasses import dataclass, field, asdict
-from typing import Dict, List, Optional, Set, Tuple, Any
+from typing import Dict, List, Optional, Set, Tuple
 from collections import defaultdict
 
 # Windows UTF-8 fix (MANDATORY per project convention)
@@ -324,7 +324,7 @@ class CryptoEnigmaSymbolMachine:
 
         report      = EnigmaReport(scan_time=time.time())
         now         = time.time()
-        seen_before = set(self.catalog.keys())
+        _seen_before = set(self.catalog.keys())
         newly_found : List[str] = []
 
         # ── 1. Binance ──────────────────────────────────────────────────
@@ -459,7 +459,7 @@ class CryptoEnigmaSymbolMachine:
         result: List[str] = []
         # Priority: binance > kraken > alpaca > coingecko
         for exchange in ("binance", "kraken", "alpaca", "coingecko"):
-            for key, sym in self.catalog.items():
+            for _key, sym in self.catalog.items():
                 if sym.exchange != exchange:
                     continue
                 canon = f"{sym.base}/{sym.quote}"
@@ -473,7 +473,6 @@ class CryptoEnigmaSymbolMachine:
         if not self.thought_bus or not new_keys:
             return
         try:
-            from aureon_thought_bus import Thought
             payload = {
                 "new_symbols": [k.split(":", 1)[1] for k in new_keys[:50]],
                 "count": len(new_keys),
