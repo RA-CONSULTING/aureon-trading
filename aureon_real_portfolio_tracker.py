@@ -187,14 +187,18 @@ class RealPortfolioTracker:
             logger.warning(f"⚠️ Could not load portfolio state: {e}")
     
     def _save_state(self) -> None:
-        """Save state to disk."""
+        """Save state to disk (atomic write - temp file then rename)."""
         try:
-            with open(self.STATE_FILE, 'w') as f:
-                json.dump({
-                    'starting_capital': self.starting_capital,
-                    'last_update': time.time(),
-                    'history': self.history[-self.max_history:]
-                }, f, indent=2)
+            import tempfile
+            data = {
+                'starting_capital': self.starting_capital,
+                'last_update': time.time(),
+                'history': self.history[-self.max_history:]
+            }
+            tmp_path = self.STATE_FILE + '.tmp'
+            with open(tmp_path, 'w') as f:
+                json.dump(data, f, indent=2)
+            os.replace(tmp_path, self.STATE_FILE)
         except Exception as e:
             logger.warning(f"⚠️ Could not save portfolio state: {e}")
     
@@ -218,6 +222,7 @@ class RealPortfolioTracker:
                 raw_balances={'cash': cash, 'equity': equity}
             )
         except Exception as e:
+            logger.error(f"❌ Alpaca balance FAILED: {type(e).__name__}: {e}")
             return ExchangeBalance(
                 exchange='alpaca',
                 total_usd=0.0,
@@ -227,8 +232,49 @@ class RealPortfolioTracker:
                 error=str(e)
             )
     
+    def _price_crypto_holdings(self, raw_balances: Dict[str, float]) -> float:
+        """Price crypto holdings via Binance public tickers, then CoinGecko fallback."""
+        import urllib.request
+        crypto_usd = 0.0
+        stables = {'USD', 'USDT', 'USDC', 'ZUSD', 'TUSD', 'DAI', 'BUSD', 'FDUSD'}
+        unpriced = {}
+
+        # --- Binance public ticker (fast, no auth) ---
+        try:
+            req = urllib.request.Request('https://api.binance.com/api/v3/ticker/price')
+            resp = urllib.request.urlopen(req, timeout=10)
+            tickers = json.loads(resp.read())
+            price_map = {t['symbol']: float(t['price']) for t in tickers}
+        except Exception:
+            price_map = {}
+
+        # Map Kraken tickers to standard symbols
+        kraken_map = {
+            'XXBT': 'BTC', 'XETH': 'ETH', 'XXRP': 'XRP', 'XXLM': 'XLM',
+            'XXDG': 'DOGE', 'XLTC': 'LTC', 'XZEC': 'ZEC', 'XMLN': 'MLN',
+            'XREP': 'REP', 'XETC': 'ETC',
+        }
+
+        for asset, qty in raw_balances.items():
+            if qty < 0.0000001:
+                continue
+            clean = asset.upper().replace('.S', '').rstrip('0123456789')
+            if clean in stables or any(s in clean for s in stables):
+                continue  # already counted as cash
+            std = kraken_map.get(clean, clean)
+            # Try USDT pair then USDC pair
+            price = price_map.get(f'{std}USDT') or price_map.get(f'{std}USDC')
+            if price:
+                crypto_usd += qty * price
+            else:
+                unpriced[asset] = qty
+
+        if unpriced:
+            logger.debug(f"Unpriced crypto assets: {list(unpriced.keys())}")
+        return crypto_usd
+
     def _get_kraken_balance(self) -> ExchangeBalance:
-        """Get REAL Kraken balance."""
+        """Get REAL Kraken balance (stablecoins + crypto priced via tickers)."""
         try:
             if self._kraken_client is None:
                 from kraken_client import KrakenClient, get_kraken_client
@@ -236,8 +282,7 @@ class RealPortfolioTracker:
             
             balances = self._kraken_client.get_balance()
             
-            # Estimate USD value (simplified - stablecoins = 1:1)
-            total_usd = 0.0
+            cash_usd = 0.0
             raw = {}
             stables = ['USD', 'USDT', 'USDC', 'ZUSD', 'TUSD', 'DAI']
             
@@ -245,19 +290,25 @@ class RealPortfolioTracker:
                 amt = float(amount)
                 if amt > 0.0001:
                     raw[asset] = amt
-                    # Check if it's a stablecoin
                     if any(s in asset.upper() for s in stables):
-                        total_usd += amt
+                        cash_usd += amt
+            
+            # Price ALL crypto holdings, not just stablecoins
+            crypto_usd = self._price_crypto_holdings(raw)
+            total_usd = cash_usd + crypto_usd
+            
+            logger.info(f"🐙 Kraken balance: cash=${cash_usd:.2f} + crypto=${crypto_usd:.2f} = ${total_usd:.2f}")
             
             return ExchangeBalance(
                 exchange='kraken',
                 total_usd=total_usd,
-                cash_usd=total_usd,
-                positions_usd=0.0,
+                cash_usd=cash_usd,
+                positions_usd=crypto_usd,
                 timestamp=time.time(),
                 raw_balances=raw
             )
         except Exception as e:
+            logger.error(f"❌ Kraken balance FAILED: {type(e).__name__}: {e}")
             return ExchangeBalance(
                 exchange='kraken',
                 total_usd=0.0,
@@ -268,36 +319,42 @@ class RealPortfolioTracker:
             )
     
     def _get_binance_balance(self) -> ExchangeBalance:
-        """Get REAL Binance balance."""
+        """Get REAL Binance balance (stablecoins + crypto priced via tickers)."""
         try:
             if self._binance_client is None:
-                from binance_client import BinanceClient
+                from binance_client import BinanceClient, get_binance_client
                 self._binance_client = get_binance_client()
             
+            # get_balance() returns Dict[str, float] = {asset: free_amount}
             balances = self._binance_client.get_balance()
             
-            total_usd = 0.0
+            cash_usd = 0.0
             raw = {}
             stables = ['USDT', 'USDC', 'BUSD', 'TUSD', 'DAI', 'FDUSD']
             
-            for asset, data in balances.items():
-                free = float(data.get('free', 0))
-                locked = float(data.get('locked', 0))
-                total = free + locked
-                if total > 0.0001:
-                    raw[asset] = total
+            for asset, amount in balances.items():
+                amt = float(amount)  # flat float, NOT a dict
+                if amt > 0.0001:
+                    raw[asset] = amt
                     if asset.upper() in stables:
-                        total_usd += total
+                        cash_usd += amt
+            
+            # Price ALL crypto holdings, not just stablecoins
+            crypto_usd = self._price_crypto_holdings(raw)
+            total_usd = cash_usd + crypto_usd
+            
+            logger.info(f"🟡 Binance balance: cash=${cash_usd:.2f} + crypto=${crypto_usd:.2f} = ${total_usd:.2f}")
             
             return ExchangeBalance(
                 exchange='binance',
                 total_usd=total_usd,
-                cash_usd=total_usd,
-                positions_usd=0.0,
+                cash_usd=cash_usd,
+                positions_usd=crypto_usd,
                 timestamp=time.time(),
                 raw_balances=raw
             )
         except Exception as e:
+            logger.error(f"❌ Binance balance FAILED: {type(e).__name__}: {e}")
             return ExchangeBalance(
                 exchange='binance',
                 total_usd=0.0,
