@@ -1157,8 +1157,9 @@ if QUEEN_SOVEREIGN_CONTROL:
 # Epsilon profit policy: any net-positive trade after real costs is acceptable.
 # Global epsilon (USD) used across gating.
 EPSILON_PROFIT_USD = 0.0001
-# 🔓 FULL AUTONOMOUS: Lowered min profit to enable more trades (was $0.005)
-MIN_NET_PROFIT_USD = float(os.getenv("MIN_NET_PROFIT_USD", "0.001"))
+# � FIX: Raised from $0.001 → $0.01 to survive fee estimation errors
+# Forensic analysis showed avg fees ~$0.05/round trip; $0.001 net was too thin
+MIN_NET_PROFIT_USD = float(os.getenv("MIN_NET_PROFIT_USD", "0.01"))
 
 # Speed is key - small gains compound fast!
 MICRO_CONFIG = {
@@ -4102,7 +4103,8 @@ class ProfitHarvester:
     """
     
     # 👑💰 FULL-CYCLE HARVEST RULES - Any confirmed profit gets harvested 💰👑
-    MIN_PROFIT_USD = 0.001      # Minimal absolute profit ($0.001 floor)
+    # 🔧 FIX: Raised from $0.001 → $0.01 — must clear round-trip fees 
+    MIN_PROFIT_USD = 0.01       # $0.01 floor — ensures net positive after sell fees
     MIN_PROFIT_PCT = 0.30       # 🎯 0.30% minimum - allows micro-profits to complete full cycle!
     MIN_POSITION_VALUE = 1.00   # Position must be worth at least $1.00 to avoid dust harvesting
     
@@ -4507,7 +4509,8 @@ class MicroProfitLabyrinth:
         # 🛡️ PROFIT REQUIREMENTS - Allow more trades while maintaining edge
         # Lowered from 0.5% to 0.10% to enable more trading activity for portfolio growth
         self.alpaca_min_net_profit_pct = float(os.getenv("ALPACA_MIN_NET_PROFIT_PCT", "0.10"))  # Require >=0.10% net profit
-        self.alpaca_min_net_profit_usd = float(os.getenv("ALPACA_MIN_NET_PROFIT_USD", "0.001"))  # $0.001 minimum (dust filter)
+        # 🔧 FIX: Raised from $0.001 → $0.01 — forensic audit showed $0.001 too thin
+        self.alpaca_min_net_profit_usd = float(os.getenv("ALPACA_MIN_NET_PROFIT_USD", "0.01"))  # $0.01 minimum net profit
         # 🟢 Enable Alpaca auto exits so we take profit at the configured level
         self.alpaca_auto_exits = os.getenv("ALPACA_AUTO_EXITS", "true").lower() == "true"
         # Take profit target: 0.5% (aggressive profit capture)
@@ -15789,12 +15792,10 @@ if __name__ == "__main__":
         # ════════════════════════════════════════════════════════════════════════
         # 💰 ALPACA FEE TRACKER GATE - PREVENT "DEATH BY 1000 CUTS"
         # Uses REAL orderbook spread + volume-tiered fees for accurate cost check
-        # 🔓🔓🔓 FULL AUTONOMOUS MODE - FEE TRACKER DISABLED! 🔓🔓🔓
+        # � FIX: Re-enabled — forensic audit showed fees eating all profits
         # ════════════════════════════════════════════════════════════════════════
         exchange = opp.source_exchange or 'alpaca'
-        safe_print(f"   🔓 AUTONOMOUS: Fee tracker bypassed for {opp.from_asset}→{opp.to_asset}")
-        # DISABLED for full autonomous mode:
-        if False and self.live and exchange.lower() == 'alpaca' and hasattr(self, 'fee_tracker') and self.fee_tracker:
+        if self.live and exchange.lower() == 'alpaca' and hasattr(self, 'fee_tracker') and self.fee_tracker:
             try:
                 # Try to get full pair format for Alpaca
                 alpaca_symbol = f"{from_upper}/{to_upper}"

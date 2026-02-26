@@ -467,6 +467,68 @@ def _broadcast_financial_event(event_type: str, data: Dict):
 # HISTORICAL RECONCILIATION - Feed all past trades through the King
 # ═══════════════════════════════════════════════════════════════════════════
 
+# ── Live price cache for fee-to-USD conversion ──
+_fee_price_cache: Dict[str, float] = {}
+_fee_price_cache_ts: float = 0.0
+_FEE_PRICE_CACHE_TTL = 300  # 5 minutes
+
+
+def _fetch_live_price_usd(asset: str) -> float:
+    """
+    Fetch a LIVE USD price for an asset using Binance public API.
+    Uses a short-lived cache to avoid hammering rate limits during batch reconciliation.
+    Returns 0.0 if the price can't be determined.
+    """
+    global _fee_price_cache, _fee_price_cache_ts
+
+    asset_upper = asset.upper()
+
+    # Expire stale cache
+    if time.time() - _fee_price_cache_ts > _FEE_PRICE_CACHE_TTL:
+        _fee_price_cache.clear()
+        _fee_price_cache_ts = time.time()
+
+    if asset_upper in _fee_price_cache:
+        return _fee_price_cache[asset_upper]
+
+    # Try Binance public ticker (no auth needed)
+    import requests
+    for quote in ("USDC", "USDT", "USD"):
+        try:
+            url = f"https://api.binance.com/api/v3/ticker/price?symbol={asset_upper}{quote}"
+            r = requests.get(url, timeout=3)
+            if r.status_code == 200:
+                price = float(r.json().get("price", 0))
+                if price > 0:
+                    _fee_price_cache[asset_upper] = price
+                    return price
+        except Exception:
+            pass
+
+    # Try Kraken public (for assets that exist there but not Binance)
+    kraken_map = {"XXBT": "BTC", "XETH": "ETH", "XBT": "BTC"}
+    kraken_asset = asset_upper
+    for k, v in kraken_map.items():
+        if asset_upper == v:
+            kraken_asset = k
+    try:
+        url = f"https://api.kraken.com/0/public/Ticker?pair={kraken_asset}USD"
+        r = requests.get(url, timeout=3)
+        if r.status_code == 200:
+            data = r.json()
+            if not data.get("error"):
+                for pair_data in data.get("result", {}).values():
+                    price = float(pair_data["c"][0])
+                    if price > 0:
+                        _fee_price_cache[asset_upper] = price
+                        return price
+    except Exception:
+        pass
+
+    _fee_price_cache[asset_upper] = 0.0
+    return 0.0
+
+
 def _estimate_fee_usd(fee_raw: float, fee_asset: str, trade_price: float,
                       trade_symbol: str) -> float:
     """
@@ -475,7 +537,8 @@ def _estimate_fee_usd(fee_raw: float, fee_asset: str, trade_price: float,
     Strategy:
       1. If fee_asset is already USD/USDC/USDT → use raw value
       2. If fee_asset matches the traded base asset → use trade_price * fee_raw
-      3. Fallback: use known approximate prices for common assets
+      3. Fetch LIVE price from Binance/Kraken public API (cached 5 min)
+      4. Last resort: fee_raw * 1 (conservative fallback, logged)
     """
     if fee_raw == 0 or fee_raw is None:
         return 0.0
@@ -498,20 +561,14 @@ def _estimate_fee_usd(fee_raw: float, fee_asset: str, trade_price: float,
     if fee_asset.upper() == base.upper():
         return fee_raw * trade_price
 
-    # Fallback: approximate USD prices for common fee assets (conservative)
-    approx_prices = {
-        "BTC": 95000, "ETH": 2800, "BNB": 650, "SOL": 170,
-        "XRP": 2.5, "LINK": 18, "BCH": 350, "ZEC": 40,
-        "XLM": 0.35, "AVNT": 0.05, "TRX": 0.08, "ROSE": 0.08,
-        "LPT": 8, "SSV": 25, "PENGU": 0.01, "SHELL": 0.5,
-        "BANANAS31": 0.02, "RESOLV": 0.03, "NOM": 0.05,
-        "LA": 0.5, "ESP": 0.5, "F": 10,
-    }
-    approx = approx_prices.get(fee_asset.upper(), 0)
-    if approx:
-        return fee_raw * approx
+    # ── NEW: Fetch LIVE price instead of using stale hardcoded values ──
+    live_price = _fetch_live_price_usd(fee_asset)
+    if live_price > 0:
+        return fee_raw * live_price
 
     # Last resort: if the fee amount itself is tiny, treat it as negligible
+    logger.warning(f"_estimate_fee_usd: No price found for fee asset '{fee_asset}', "
+                   f"using 1:1 fallback (fee_raw={fee_raw:.6f})")
     return fee_raw  # Assume 1:1 as conservative fallback
 
 

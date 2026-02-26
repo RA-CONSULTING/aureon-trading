@@ -3,13 +3,15 @@
 import sys
 import json
 import time
+import tempfile
+import os
 from pathlib import Path
 from typing import Dict, Any
 sys.path.insert(0, '/workspaces/aureon-trading')
 
 from alpaca_client import AlpacaClient
 from kraken_client import KrakenClient, get_kraken_client  
-from binance_client import BinanceClient
+from binance_client import BinanceClient, get_binance_client
 
 # Try to import Thought Bus for Queen integration
 try:
@@ -18,6 +20,7 @@ except:
     THOUGHT_BUS_AVAILABLE = False
 
 PROFIT_STATE_FILE = "live_profit_state.json"
+BALANCE_SNAPSHOT_FILE = "_pre_trade_balance_snapshot.json"
 
 def load_cost_basis():
     """Load cost basis history."""
@@ -40,6 +43,82 @@ def get_current_price(exchange, symbol):
             return float(ticker.get('price', 0))
     except:
         return 0
+
+
+def save_balance_snapshot() -> Dict[str, Any]:
+    """
+    Save a complete balance snapshot across ALL 3 exchanges.
+    Uses atomic write (tmp + rename) to prevent corruption.
+    Called before any trade cycle begins and after each cycle ends.
+    """
+    snapshot = {
+        "timestamp": time.time(),
+        "datetime": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        "exchanges": {}
+    }
+    total_usd = 0.0
+
+    # ── Kraken ──
+    try:
+        kraken = get_kraken_client()
+        balances = kraken.get_balance()
+        kraken_bal = {}
+        if balances:
+            for asset, amount in balances.items():
+                if amount > 0.0:
+                    kraken_bal[asset] = amount
+        snapshot["exchanges"]["kraken"] = {"balances": kraken_bal}
+    except Exception as e:
+        snapshot["exchanges"]["kraken"] = {"error": str(e)}
+
+    # ── Alpaca ──
+    try:
+        alpaca = AlpacaClient()
+        account = alpaca.get_account()
+        positions = alpaca.get_positions()
+        alpaca_bal = {
+            "cash": float(account.get("cash", 0)),
+            "portfolio_value": float(account.get("portfolio_value", 0)),
+        }
+        if positions:
+            for pos in positions:
+                alpaca_bal[pos["symbol"]] = {
+                    "qty": float(pos["qty"]),
+                    "market_value": float(pos["market_value"]),
+                    "avg_entry_price": float(pos["avg_entry_price"]),
+                    "current_price": float(pos["current_price"]),
+                }
+        snapshot["exchanges"]["alpaca"] = {"balances": alpaca_bal}
+        total_usd += alpaca_bal["portfolio_value"]
+    except Exception as e:
+        snapshot["exchanges"]["alpaca"] = {"error": str(e)}
+
+    # ── Binance (was MISSING — this is the key fix) ──
+    try:
+        binance = get_binance_client()
+        balances = binance.get_balance() if binance else {}
+        binance_bal = {}
+        if balances:
+            for asset, amount in balances.items():
+                if amount > 0.0:
+                    binance_bal[asset] = amount
+        snapshot["exchanges"]["binance"] = {"balances": binance_bal}
+    except Exception as e:
+        snapshot["exchanges"]["binance"] = {"error": str(e)}
+
+    snapshot["total_estimated_usd"] = total_usd  # Rough — Kraken/Binance need pricing
+
+    # Atomic write: temp file → rename
+    try:
+        fd, tmp_path = tempfile.mkstemp(dir=".", suffix=".tmp", prefix="_snap_")
+        with os.fdopen(fd, 'w') as f:
+            json.dump(snapshot, f, indent=2)
+        os.replace(tmp_path, BALANCE_SNAPSHOT_FILE)
+    except Exception as e:
+        print(f"⚠️ Failed to write balance snapshot: {e}")
+
+    return snapshot
+
 
 def get_portfolio_snapshot() -> Dict[str, Any]:
     """
@@ -252,39 +331,41 @@ def get_portfolio_snapshot() -> Dict[str, Any]:
         }
         
         if balances:
-            for asset, balance in list(balances.items())[:20]:
+            for asset, balance in balances.items():  # Process ALL positions (was [:20])
                 if balance > 0:
                     ticker_pair = f"{asset}USDC"
                     cost_data = cost_basis.get(ticker_pair) or cost_basis.get(f"binance:{ticker_pair}")
                     
+                    entry_price = 0
                     if cost_data and cost_data.get('exchange') == 'binance':
                         entry_price = cost_data.get('avg_entry_price', 0)
-                        try:
-                            ticker = binance.get_ticker(ticker_pair)
-                            current_price = float(ticker.get('last', 0))
+                    
+                    try:
+                        ticker = binance.get_ticker(ticker_pair)
+                        current_price = float(ticker.get('last', 0))
+                        
+                        if current_price > 0:
+                            value = balance * current_price
+                            pnl = balance * (current_price - entry_price) if entry_price > 0 else 0
                             
-                            if entry_price > 0 and current_price > 0:
-                                value = balance * current_price
-                                pnl = balance * (current_price - entry_price)
-                                
-                                binance_data["positions"].append({
-                                    "symbol": asset,
-                                    "qty": balance,
-                                    "entry_price": entry_price,
-                                    "current_price": current_price,
-                                    "value": value,
-                                    "pnl": pnl,
-                                    "pnl_pct": ((current_price - entry_price) / entry_price) * 100
-                                })
-                                
-                                binance_data["total_value"] += value
-                                binance_data["total_pnl"] += pnl
-                                binance_data["count"] += 1
-                                
-                                if pnl > 0:
-                                    binance_data["profitable_count"] += 1
-                        except:
-                            pass
+                            binance_data["positions"].append({
+                                "symbol": asset,
+                                "qty": balance,
+                                "entry_price": entry_price,
+                                "current_price": current_price,
+                                "value": value,
+                                "pnl": pnl,
+                                "pnl_pct": ((current_price - entry_price) / entry_price) * 100 if entry_price > 0 else 0
+                            })
+                            
+                            binance_data["total_value"] += value
+                            binance_data["total_pnl"] += pnl
+                            binance_data["count"] += 1
+                            
+                            if pnl > 0:
+                                binance_data["profitable_count"] += 1
+                    except:
+                        pass  # Skip assets with no USDC pair
         
         snapshot["exchanges"]["binance"] = binance_data
         snapshot["totals"]["total_value_usd"] += binance_data["total_value"]
@@ -330,6 +411,10 @@ def publish_to_thought_bus(snapshot: Dict[str, Any]):
 def main():
     print("\n💰 LIVE POSITION & PROFIT MONITOR\n")
     print("=" * 80)
+    
+    # Save raw balance snapshot FIRST (all 3 exchanges, atomic write)
+    print("📸 Taking pre-trade balance snapshot (all exchanges)...")
+    save_balance_snapshot()
     
     # Get structured snapshot
     snapshot = get_portfolio_snapshot()
@@ -544,7 +629,7 @@ def main():
             count = 0
             profitable_count = 0
             
-            for asset, balance in list(balances.items())[:10]:
+            for asset, balance in balances.items():  # Process ALL positions (was [:10])
                 if balance > 0:
                     # Check cost basis - try both key formats
                     ticker_pair = f"{asset}USDC"
