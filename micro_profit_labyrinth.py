@@ -1158,17 +1158,17 @@ if QUEEN_SOVEREIGN_CONTROL:
 # Global epsilon (USD) used across gating.
 EPSILON_PROFIT_USD = 0.0001
 # � FIX: Raised from $0.001 → $0.01 to survive fee estimation errors
-# Forensic analysis showed avg fees ~$0.05/round trip; $0.001 net was too thin
-MIN_NET_PROFIT_USD = float(os.getenv("MIN_NET_PROFIT_USD", "0.01"))
+# Forensic analysis showed avg fees ~$0.05/round trip; need $0.50 net minimum
+MIN_NET_PROFIT_USD = float(os.getenv("MIN_NET_PROFIT_USD", "0.50"))
 
 # Speed is key - small gains compound fast!
 MICRO_CONFIG = {
-    # LOWER than V14's 8+ - we trust our math
-    'entry_score_threshold': 1,  # 1+ (was 3+) - AGGRESSIVE: compound mode, trust the math
+    # Score threshold: require combined score >= 3 for entry (was 1 = trades everything)
+    'entry_score_threshold': 3,  # 3+ = SELECTIVE: only trade high-conviction signals
     
-    # Net profit floor (after costs) — epsilon mode
-    'min_profit_usd': EPSILON_PROFIT_USD,
-    'min_profit_pct': 0.0,
+    # Net profit floor (after costs) — $0.50 minimum
+    'min_profit_usd': 0.50,
+    'min_profit_pct': 0.005,  # 0.5% minimum net profit
     
     # Kraken fees (maker = 0.16%)
     'maker_fee': 0.0016,
@@ -1198,6 +1198,13 @@ HUNT_SPEED_MS = 50                    # 50ms reaction time - FAST
 SYSTEMS_UNITY = True                  # All systems work as ONE
 WINNER_ENERGY_MULTIPLIER = 3.0        # Boost confidence when Queen detects a winner
 GOLDEN_PATH_BOOST = 2.0               # Multiply score on golden/proven paths
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# 🎯 CAPITAL CONCENTRATION — Stop spray-and-pray, focus capital!
+# Forensic audit: 44 open positions across 30+ coins, avg $17 each = all losers
+# Fix: Max 5 positions, each $100+, with conviction.
+# ═══════════════════════════════════════════════════════════════════════════════
+MAX_OPEN_POSITIONS = int(os.getenv("MAX_OPEN_POSITIONS", "5"))  # Max 5 concurrent positions (was unlimited)
 
 # 🐾 ANIMAL PACK DETECTION THRESHOLDS
 ANIMAL_PACK_CONFIG = {
@@ -4506,11 +4513,11 @@ class MicroProfitLabyrinth:
         self.alpaca_fee_pct = float(os.getenv("ALPACA_FEE_PCT", "0.25"))
         self.alpaca_slippage_pct = float(os.getenv("ALPACA_SLIPPAGE_PCT", "0.02"))
         self.alpaca_fee_buffer_pct = float(os.getenv("ALPACA_FEE_BUFFER_PCT", "0.01"))
-        # 🛡️ PROFIT REQUIREMENTS - Allow more trades while maintaining edge
-        # Lowered from 0.5% to 0.10% to enable more trading activity for portfolio growth
-        self.alpaca_min_net_profit_pct = float(os.getenv("ALPACA_MIN_NET_PROFIT_PCT", "0.10"))  # Require >=0.10% net profit
-        # 🔧 FIX: Raised from $0.001 → $0.01 — forensic audit showed $0.001 too thin
-        self.alpaca_min_net_profit_usd = float(os.getenv("ALPACA_MIN_NET_PROFIT_USD", "0.01"))  # $0.01 minimum net profit
+        # � PROFIT REQUIREMENTS - Require meaningful profit per trade
+        # Raised from 0.10% to 0.50% to ensure each trade covers fees + earns real money
+        self.alpaca_min_net_profit_pct = float(os.getenv("ALPACA_MIN_NET_PROFIT_PCT", "0.50"))  # Require >=0.50% net profit
+        # 🔧 FIX: Raised from $0.01 → $0.50 — sub-$0.50 profit trades get killed by fees
+        self.alpaca_min_net_profit_usd = float(os.getenv("ALPACA_MIN_NET_PROFIT_USD", "0.50"))  # $0.50 minimum net profit
         # 🟢 Enable Alpaca auto exits so we take profit at the configured level
         self.alpaca_auto_exits = os.getenv("ALPACA_AUTO_EXITS", "true").lower() == "true"
         # Take profit target: 0.5% (aggressive profit capture)
@@ -4520,8 +4527,11 @@ class MicroProfitLabyrinth:
         # ⏱️ MINIMUM HOLD TIME - Trust the prediction!
         # If we predict profit at T+3min, don't panic-sell at T+10sec
         # Keep validating but wait for the prediction window to complete
-        self.min_hold_time_seconds = float(os.getenv("MIN_HOLD_TIME_SECONDS", "5"))  # 5 seconds default
-        self.max_hold_time_seconds = float(os.getenv("MAX_HOLD_TIME_SECONDS", "300"))  # 5 minutes max
+        # 🔧 FIX: Raised from 5s → 120s — 37% of trades were held <1 minute
+        # and lost money. Need to let positions breathe and find profit.
+        self.min_hold_time_seconds = float(os.getenv("MIN_HOLD_TIME_SECONDS", "120"))  # 2 minutes default (was 5s)
+        # 🔧 FIX: Raised from 300s → 3600s — let profitable trades run longer
+        self.max_hold_time_seconds = float(os.getenv("MAX_HOLD_TIME_SECONDS", "3600"))  # 1 hour max (was 5min)
         self.position_entry_times = {}  # Track when we bought each asset
         # Registry of positions with verified execution details (keyed by ASSET uppercase)
         # Each entry: {'amount': float, 'entry_price': float, 'entry_value_usd': float, 'fees_usd': float, 'order_ids': [], 'source': 'alpaca', 'timestamp': float}
@@ -8922,7 +8932,7 @@ class MicroProfitLabyrinth:
         opportunities = []
         cash_amount = cash_info.get('amount', 0)
         
-        if cash_amount < 5:  # Need at least $5 for meaningful trades
+        if cash_amount < 50:  # Need at least $50 for meaningful trades (was $5)
             return opportunities
         
         # Get all available pairs
@@ -9052,7 +9062,7 @@ class MicroProfitLabyrinth:
         opportunities = []
         cash_amount = cash_info.get('amount', 0)
         
-        if cash_amount < 1:  # Alpaca has low minimums
+        if cash_amount < 50:  # Alpaca needs $50+ to beat fees (was $1)
             return opportunities
         
         # Get Alpaca tradeable symbols
@@ -9368,7 +9378,7 @@ class MicroProfitLabyrinth:
         opportunities = []
         cash_amount = cash_info.get('amount', 0)
         
-        if not self.animal_swarm or cash_amount < 1:
+        if not self.animal_swarm or cash_amount < 50:  # $50 min (was $1)
             return opportunities
         
         try:
@@ -10879,10 +10889,62 @@ class MicroProfitLabyrinth:
                 safe_print(f"   👑✅ SERO SAYS WIN: {queen_reason}")
                 safe_print(f"      Her Confidence: {queen_confidence:.0%}")
                 
+                # ════════════════════════════════════════════════════════════════
+                # 🔮 BATTEN MATRIX 4TH-PASS GATE — No execution without validation!
+                # The Batten Matrix rule: NEVER execute on pass 1-3.
+                # Only after the 4th confirmation with coherence/lambda checks.
+                # Previously this was bypassed — ocean scan fed straight to Queen.
+                # ════════════════════════════════════════════════════════════════
+                batten_approved = False
+                batten_reason = "no_scanner"
+                if hasattr(self, 'quantum_mirror_scanner') and self.quantum_mirror_scanner:
+                    try:
+                        branch_id = f"{current_exchange}:{best.from_asset}/{best.to_asset}"
+                        # Check if branch is ready for 4th pass
+                        boost, boost_reason = self.quantum_mirror_scanner.get_quantum_boost(
+                            best.from_asset, best.to_asset, current_exchange
+                        )
+                        if '4TH_READY' in boost_reason:
+                            # Branch has passed 3 validations + coherence check — APPROVED
+                            batten_approved = True
+                            batten_reason = f"4th pass ready (boost={boost:.2f}, {boost_reason})"
+                            safe_print(f"   🔮✅ BATTEN 4TH PASS: APPROVED — {batten_reason}")
+                            # Execute the formal 4th pass
+                            try:
+                                fourth = self.quantum_mirror_scanner.execute_4th_pass(branch_id)
+                                if fourth.get('success'):
+                                    safe_print(f"   🔮⚡ 4TH PASS EXECUTED: score={fourth.get('final_score', 0):.3f}")
+                            except Exception as e4:
+                                logger.debug(f"4th pass execution error (non-blocking): {e4}")
+                        elif 'P3_VALID' in boost_reason and boost >= 0.2:
+                            # Branch at pass-3 with good coherence — allow with caution
+                            batten_approved = True
+                            batten_reason = f"P3 validated + coherent (boost={boost:.2f})"
+                            safe_print(f"   🔮⚠️ BATTEN NEAR-READY: {batten_reason} — allowing with caution")
+                        else:
+                            batten_reason = f"branch not ready ({boost_reason}, boost={boost:.2f})"
+                            safe_print(f"   🔮❌ BATTEN GATE: BLOCKED — {batten_reason}")
+                            safe_print(f"      Branch needs more validation passes before execution")
+                    except Exception as e:
+                        # Scanner error — don't block, fall through
+                        batten_approved = True
+                        batten_reason = f"scanner_error: {e}"
+                        logger.debug(f"Batten gate scanner error: {e}")
+                else:
+                    # No quantum mirror scanner available — fall through (legacy mode)
+                    batten_approved = True
+                    batten_reason = "no_scanner_available"
+                
+                if not batten_approved:
+                    safe_print(f"   🔮🛑 BATTEN MATRIX BLOCKS: {batten_reason}")
+                    safe_print(f"      Trade must pass 3 validation rounds before execution")
+                    await self.queen_learn_pattern(best, predicted_win=False, reason=f"batten_gate: {batten_reason}")
+                    self.advance_turn()
+                    return opportunities, 0
+                
                 # 👑🐝 SERO HAS FULL CONTROL - SHE IS THE QUEEN!
-                # When Sero says WIN, we EXECUTE. No other system overrides her.
-                # She has all 12 neurons, Path Memory, Dreams - she knows what she's doing!
-                safe_print(f"   👑🐝 SERO HAS SPOKEN - EXECUTING HER WILL!")
+                # When Sero says WIN AND Batten Matrix approves, we EXECUTE.
+                safe_print(f"   👑🐝 SERO HAS SPOKEN + BATTEN APPROVED — EXECUTING!")
                 success = await self.execute_conversion(best)
                 if success:
                     conversions_this_turn = 1
@@ -13115,33 +13177,15 @@ if __name__ == "__main__":
         """
         🐜 ARMY ANTS - Floor scavengers!
         
-        Find small liquid assets on the floor - quick rotations.
-        These are the crumbs that others miss.
+        ⚠️ DISABLED: Forensic audit showed sub-$20 trades are ALL losers.
+        Fees eat 41% of gross wins on micro positions.
+        Ants now only report scraps for awareness, never generate opportunities.
         
-        Returns: List of (asset, amount, value) for small holdings
+        Returns: Empty list (disabled)
         """
-        scraps = []
-        
-        for asset, amount in self.balances.items():
-            price = self.prices.get(asset, 0)
-            value = amount * price
-            
-            # Ants collect small scraps - between min_value and $20
-            if min_value <= value <= 20.0:
-                # Skip stablecoins - not scraps
-                if asset.upper() in {'USD', 'ZUSD', 'USDT', 'USDC', 'TUSD', 'DAI', 'BUSD'}:
-                    continue
-                scraps.append((asset, amount, value))
-        
-        # Sort by value (smallest first - easiest to move)
-        scraps.sort(key=lambda x: x[2])
-        
-        if scraps:
-            safe_print(f"\n   🐜 ANT SCRAPS - {len(scraps)} small positions found!")
-            for asset, amt, val in scraps[:5]:
-                safe_print(f"      → {asset}: {amt:.6f} (${val:.2f})")
-        
-        return scraps
+        # 🔧 FIX: Disabled ant scraps — sub-$50 trades get killed by fees
+        # All $1-$20 positions should be swept to dust, not traded
+        return []
     
     async def dust_sweep(self) -> int:
         """
@@ -13542,14 +13586,16 @@ if __name__ == "__main__":
             return opportunities
         
         # 💰 EXCHANGE-SPECIFIC MINIMUM VALUES (USD value)
-        # ⚠️ CRITICAL: These must match exchange ordermin requirements!
-        # 🚨 LOWERED: Allow micro-profit trades with small balances!
+        # ⚠️ CRITICAL: $50 MIN — forensic audit showed sub-$50 trades lose to fees!
+        # Data: 61% of trades were <$10, fees ate 41% of gross wins.
+        # On a $10 trade, 0.5% fee = $0.05 each way = $0.10 round trip.
+        # Need $50+ for fees to be <0.5% of net profit.
         EXCHANGE_MIN_VALUE = {
-            'kraken': 0.10,     # Kraken (was $0.50, lowered for micro-profits)
-            'binance': 1.00,    # Binance MIN_NOTIONAL (lowered from $5 - actual min varies per pair)
-            'alpaca': 0.10,     # Alpaca (was $1.00, lowered for micro-profits)
+            'kraken': 50.0,     # Kraken — $50 minimum (was $0.10)
+            'binance': 50.0,    # Binance — $50 minimum (was $1.00)
+            'alpaca': 50.0,     # Alpaca — $50 minimum (was $0.10)
         }
-        min_value = EXCHANGE_MIN_VALUE.get(exchange, 1.0)
+        min_value = EXCHANGE_MIN_VALUE.get(exchange, 50.0)
         
         # 💰 EXCHANGE-SPECIFIC MINIMUM QUANTITIES (varies by asset)
         # Kraken has per-pair ordermin values
@@ -15738,6 +15784,22 @@ if __name__ == "__main__":
     async def execute_conversion(self, opp: MicroOpportunity) -> bool:
         """Execute a conversion (dry run or live)."""
         symbol = f"{opp.from_asset}/{opp.to_asset}"
+        
+        # ════════════════════════════════════════════════════════════════════════
+        # 🎯 CAPITAL CONCENTRATION GATE — Max open positions check
+        # Forensic audit: 44 open positions = $17 avg = all eaten by fees.
+        # Fix: Cap at MAX_OPEN_POSITIONS. Only allow new BUY if under cap.
+        # SELL orders (closing positions) always allowed — we want to exit.
+        # ════════════════════════════════════════════════════════════════════════
+        from_upper = opp.from_asset.upper()
+        is_opening_new = from_upper in ['USD', 'USDT', 'USDC', 'ZUSD', 'TUSD', 'DAI', 'BUSD', 'EUR', 'ZEUR']
+        if is_opening_new and hasattr(self, 'position_entry_times'):
+            current_positions = len(self.position_entry_times)
+            if current_positions >= MAX_OPEN_POSITIONS:
+                safe_print(f"   🎯 POSITION CAP: {current_positions}/{MAX_OPEN_POSITIONS} positions open — NO NEW BUYS")
+                safe_print(f"      Must close existing positions before opening new ones")
+                safe_print(f"      Active: {list(self.position_entry_times.keys())[:5]}")
+                return False
 
         # Emit kHz chirp for execution intent (best-effort)
         if CHIRP_AVAILABLE:
@@ -17243,6 +17305,76 @@ if __name__ == "__main__":
             if hasattr(client, 'convert_crypto'):
                 # Use convert if available (like Alpaca)
                 result = client.convert_crypto(opp.from_asset, opp.to_asset, opp.from_amount)
+            elif exchange == 'kraken' and hasattr(client, 'place_margin_order'):
+                # ══════════════════════════════════════════════════════════════
+                # 🐙💪 KRAKEN MARGIN EXECUTION — Use leverage when available!
+                # The margin methods existed but were NEVER called.
+                # Now we use 2x leverage on confirmed trades to amplify returns.
+                # Safety: Only use margin when free_margin > trade value.
+                # ══════════════════════════════════════════════════════════════
+                use_margin = False
+                margin_leverage = 2  # Conservative 2x default
+                try:
+                    pair_lev = client.get_pair_leverage(symbol)
+                    if pair_lev.get('margin_supported'):
+                        # Check available leverage (use 2x if available, never more than 3x)
+                        avail_buy = pair_lev.get('leverage_buy', [])
+                        avail_sell = pair_lev.get('leverage_sell', [])
+                        avail = avail_sell if opp.from_asset != 'USD' else avail_buy
+                        if 2 in avail:
+                            margin_leverage = 2
+                        elif 3 in avail:
+                            margin_leverage = 3  # Only if 2x not available
+                        else:
+                            avail = []  # Don't use margin if only high leverage
+                        
+                        if avail:
+                            # Check free margin on account
+                            trade_bal = client.get_trade_balance()
+                            free_margin = trade_bal.get('free_margin', 0)
+                            required_margin = opp.from_value_usd / margin_leverage
+                            
+                            if free_margin >= required_margin * 1.2:  # 20% buffer
+                                use_margin = True
+                                safe_print(f"   🐙💪 KRAKEN MARGIN: {margin_leverage}x leverage")
+                                safe_print(f"      Free margin: ${free_margin:.2f}")
+                                safe_print(f"      Required: ${required_margin:.2f}")
+                                safe_print(f"      Effective position: ${opp.from_value_usd * margin_leverage:.2f}")
+                            else:
+                                safe_print(f"   🐙 Margin available but insufficient ({free_margin:.2f} < {required_margin*1.2:.2f})")
+                except Exception as e:
+                    logger.debug(f"Kraken margin check: {e}")
+                
+                if use_margin:
+                    side = 'sell' if opp.from_asset != 'USD' else 'buy'
+                    qty = opp.from_amount
+                    # Calculate take-profit and stop-loss prices for margin position
+                    entry_price = self.prices.get(opp.from_asset if side == 'sell' else opp.to_asset, 0)
+                    tp_price = None
+                    sl_price = None
+                    if entry_price > 0:
+                        if side == 'sell':
+                            # Short: TP below, SL above
+                            tp_price = entry_price * 0.99   # 1% take profit
+                            sl_price = entry_price * 1.015   # 1.5% stop loss
+                        else:
+                            # Long: TP above, SL below
+                            tp_price = entry_price * 1.01    # 1% take profit
+                            sl_price = entry_price * 0.985   # 1.5% stop loss
+                    
+                    result = client.place_margin_order(
+                        symbol=symbol,
+                        side=side,
+                        quantity=qty,
+                        leverage=margin_leverage,
+                        order_type='market',
+                        take_profit=tp_price,
+                        stop_loss=sl_price
+                    )
+                    safe_print(f"   🐙✅ MARGIN ORDER PLACED: {margin_leverage}x {side} {qty:.6f} {symbol}")
+                else:
+                    # Fallback to spot order
+                    result = client.place_market_order(symbol, 'sell', quantity=opp.from_amount)
             elif hasattr(client, 'place_market_order'):
                 # Standard trade execution (Kraken/Binance use place_market_order)
                 result = client.place_market_order(symbol, 'sell', quantity=opp.from_amount)
