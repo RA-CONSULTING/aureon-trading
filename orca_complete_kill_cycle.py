@@ -8089,8 +8089,8 @@ class OrcaKillCycle:
              # Just ensure positive PnL that isn't microscopic noise
              required_pnl = total_costs_value * 0.1 # Minimal hurdle
              
-             # Also ensure it hits the configured target percentage to be "Quality"
-             target_pnl = entry_cost * (QUEEN_MIN_PROFIT_PCT / 100.0)
+             # Also ensure it hits the configured target percentage OR 1 penny — whichever is higher
+             target_pnl = max(entry_cost * (QUEEN_MIN_PROFIT_PCT / 100.0), 0.01)  # MIN $0.01 (1 penny)
              if net_pnl >= target_pnl:
                  approved = True
                  reason = f"GROWTH_MODE PASS: net_pnl=${net_pnl:.4f} >= target=${target_pnl:.4f}"
@@ -10314,7 +10314,8 @@ class OrcaKillCycle:
         hit_target_profit = False
         target_pnl_amt = 0.0
         if QUEEN_MIN_PROFIT_PCT < 1.0: # Growth Mode
-             target_pnl_amt = confirmed_cost * (QUEEN_MIN_PROFIT_PCT / 100.0) if 'confirmed_cost' in locals() else entry_cost * (QUEEN_MIN_PROFIT_PCT / 100.0)
+             _cost_basis = confirmed_cost if 'confirmed_cost' in locals() else entry_cost
+             target_pnl_amt = max(_cost_basis * (QUEEN_MIN_PROFIT_PCT / 100.0), 0.01)  # MIN $0.01 (1 penny)
              if net_pnl >= target_pnl_amt:
                  hit_target_profit = True
 
@@ -12667,15 +12668,15 @@ class OrcaKillCycle:
         # Current positions - will be loaded from portfolio
         positions: List[LivePosition] = []
         
-        # Timing - SLOWER to avoid rate limits!
-        base_scan_interval = 10  # Every 10 seconds (was 5)
+        # Timing - PENNY SPEED MODE: as fast as possible without rate-limit bans
+        base_scan_interval = 5   # Every 5 seconds — penny hunts need speed!
         scan_interval = base_scan_interval
-        monitor_interval = 1.0  # 1 second updates (was 0.1) - PREVENTS RATE LIMITS!
+        monitor_interval = 0.5  # 0.5s updates — faster position monitoring
         whale_update_interval = 5.0  # Every 5 seconds (was 2)
         last_scan_time = 0
         last_whale_update = 0
         last_portfolio_scan = 0
-        portfolio_scan_interval = 30  # Scan portfolio every 30 seconds (was 10)
+        portfolio_scan_interval = 15  # Scan portfolio every 15 seconds (was 30)
         truth_check_interval = 60.0
         last_truth_check = 0.0
         # Queen-driven pacing & profit target
@@ -12695,7 +12696,7 @@ class OrcaKillCycle:
         asset_monitor = None
         ocean_view = None
         last_asset_scan = 0
-        asset_scan_interval = 60.0  # Full asset scan every 60 seconds (respects rate limits)
+        asset_scan_interval = 20.0  # Full asset scan every 20 seconds (penny speed)
         
         if ASSET_COMMAND_CENTER_AVAILABLE and get_asset_command_center:
             try:
@@ -12712,7 +12713,7 @@ class OrcaKillCycle:
         ira_sniper = None
         ira_kill_scanner = None
         last_ira_scan = 0
-        ira_scan_interval = 15.0  # IRA scan every 15 seconds
+        ira_scan_interval = 5.0  # IRA scan every 5 seconds (penny speed)
         
         _try_load_ira_sniper()  # Deferred load
         if IRA_SNIPER_AVAILABLE and get_celtic_sniper:
@@ -12739,9 +12740,9 @@ class OrcaKillCycle:
                 confidence = 0.5
                 direction = 'NEUTRAL'
 
-            # Speed: higher confidence -> faster scans
+            # Speed: higher confidence -> faster scans (penny speed: 2s-8s range)
             speed_factor = max(0.5, min(1.5, 1.5 - confidence))
-            scan_interval = max(3.0, min(20.0, base_scan_interval * speed_factor))
+            scan_interval = max(2.0, min(8.0, base_scan_interval * speed_factor))
 
             # Profit target: higher confidence -> higher target, bearish -> more conservative
             target_factor = 0.8 + (confidence * 0.6)
@@ -13137,7 +13138,7 @@ class OrcaKillCycle:
         #   windows are never missed.
         # ─────────────────────────────────────────────────────────────────
         _fire_lock = threading.Lock()  # prevent overlap with main-cycle fire call
-        _fire_thread_interval = 180    # seconds between fire-check runs
+        _fire_thread_interval = 60     # seconds between fire-check runs (penny speed: was 180)
 
         def _fast_fire_loop():
             """Background thread: run fire check every ~3 minutes."""
