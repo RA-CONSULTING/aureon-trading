@@ -3698,7 +3698,7 @@ class OrcaKillCycle:
             self.profit_gate = None
             self.get_fee_profile = None
             self.is_real_win = None
-            self.epsilon_profit_usd = 0.0001
+            self.epsilon_profit_usd = 0.01  # 1 penny minimum
             _safe_print(f"   Adaptive Profit Gate: {e}")
         
         # Initialize clients for BOTH exchanges (unless specific client provided)
@@ -10368,7 +10368,7 @@ class OrcaKillCycle:
         #                                                                    
         # CHECK 2: Is net P&L POSITIVE (mathematically certain profit)?
         #                                                                    
-        MIN_PROFIT_THRESHOLD = 0.0001  # At least $0.0001 net profit required
+        MIN_PROFIT_THRESHOLD = 0.01  # At least $0.01 (1 penny) net profit required
         if net_pnl < MIN_PROFIT_THRESHOLD:
             info['blocked_reason'] = f'NET_PNL_NEGATIVE_OR_ZERO ({net_pnl:.6f})'
             print(f"      EXIT BLOCKED: {symbol} - Net P&L ${net_pnl:.6f} < ${MIN_PROFIT_THRESHOLD:.4f} threshold")
@@ -10420,7 +10420,7 @@ class OrcaKillCycle:
                 if not win_check.get('is_win', False):
                     net_pnl = win_check.get('net_pnl')
                     gross_pnl = win_check.get('gross_pnl')
-                    epsilon = getattr(self, 'epsilon_profit_usd', 0.0001)
+                    epsilon = getattr(self, 'epsilon_profit_usd', 0.01)  # 1 penny minimum
 
                     # Override: allow exit if net PnL is clearly positive beyond epsilon
                     if net_pnl is not None and net_pnl >= epsilon and (gross_pnl is None or gross_pnl > 0):

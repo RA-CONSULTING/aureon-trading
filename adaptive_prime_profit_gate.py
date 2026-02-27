@@ -45,8 +45,8 @@ from datetime import datetime
 logger = logging.getLogger(__name__)
 
 
-# Global epsilon profit policy: accept any net-positive edge after costs.
-EPSILON_PROFIT_USD = 0.0001
+# Global epsilon profit policy: minimum 1 penny net profit required after costs.
+EPSILON_PROFIT_USD = 0.01
 
 
 # ═══════════════════════════════════════════════════════════════
