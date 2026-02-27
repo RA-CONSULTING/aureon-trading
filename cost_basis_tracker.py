@@ -85,9 +85,32 @@ class Trade:
     order_id: Optional[str] = None
 
 class CostBasisTracker:
-    """Track real cost basis for all positions."""
+    """Track real cost basis for all positions.
     
+    Singleton pattern: multiple callers share the same in-memory instance
+    to avoid loading the JSON file from disk multiple times during startup.
+    Call CostBasisTracker() normally — the constructor returns the cached
+    instance (refreshing clients if supplied).
+    """
+    _instance = None  # singleton holder
+
+    def __new__(cls, filepath: str = COST_BASIS_FILE, clients=None):
+        if cls._instance is not None:
+            # Reuse existing instance; inject new clients if provided
+            if clients:
+                cls._instance.clients.update(clients)
+            return cls._instance
+        inst = super().__new__(cls)
+        cls._instance = inst
+        return inst
+
     def __init__(self, filepath: str = COST_BASIS_FILE, clients=None):
+        if getattr(self, '_initialized', False):
+            # Already initialised — just merge clients
+            if clients:
+                self.clients.update(clients)
+            return
+        self._initialized = True
         self.filepath = filepath
         self.positions: Dict[str, Dict[str, Any]] = {}
         self.trade_lots: Dict[str, List[Trade]] = {}  # 🆕 For FIFO
@@ -704,6 +727,57 @@ class CostBasisTracker:
             ):
                 return (p, s)
         
+        # ─── Strategy 6: STALE POSITION FALLBACK ────────────────────────
+        # If all strategies above failed (usually because total_quantity == 0
+        # from a previous sell), re-run matching WITHOUT the qty check.
+        # This recovers entry-price data for positions that were sold and
+        # re-bought outside the tracker's visibility (manual buys, buys made
+        # before tracker existed, etc.).  The caller gets the LAST KNOWN
+        # entry price — better than falling back to current_price.
+        def _has_valid_entry(candidate: Optional[Dict[str, Any]]) -> bool:
+            if not candidate:
+                return False
+            try:
+                entry = float(candidate.get('avg_entry_price', 0) or 0)
+            except (TypeError, ValueError):
+                return False
+            return entry > 0
+
+        # Try strategies 1-5 again, this time accepting qty==0 positions
+        # with a recorded entry price.  Priority: exchange-prefixed → bare.
+        if exchange:
+            for test_key in [f"{exchange.lower()}:{symbol}",
+                             f"{exchange.lower()}:{symbol.replace('/', '')}",
+                             symbol,
+                             symbol.replace('/', '')]:
+                pos = self.positions.get(test_key)
+                if _has_valid_entry(pos) and _exchange_matches(test_key, pos):
+                    return (pos, test_key)
+
+        # Quote-swap pass (relaxed)
+        for quote_in in ['USDT', 'USDC', 'USD', 'EUR', 'GBP']:
+            if symbol.endswith(quote_in) or symbol.endswith(f'/{quote_in}'):
+                for quote_out in ['USDT', 'USDC', 'USD', 'ZUSD']:
+                    for fmt in [f"{base_asset}/{quote_out}", f"{base_asset}{quote_out}"]:
+                        for test_key in ([f"{exchange.lower()}:{fmt}", fmt]
+                                         if exchange else [fmt]):
+                            pos = self.positions.get(test_key)
+                            if _has_valid_entry(pos) and _exchange_matches(test_key, pos):
+                                return (pos, test_key)
+                break  # only first matching quote_in
+
+        # Deep base-asset scan (relaxed)
+        for s, p in self.positions.items():
+            stored_symbol = p.get('symbol') or s
+            symbol_part = stored_symbol.split(':', 1)[1] if ':' in stored_symbol else stored_symbol
+            normalized_symbol = symbol_part.replace('/', '')
+            if (
+                normalized_symbol.startswith(base_asset)
+                and _has_valid_entry(p)
+                and _exchange_matches(s, p)
+            ):
+                return (p, s)
+
         return (None, None)
     
     def get_cost_basis(self, symbol: str, exchange: str = None) -> Optional[Dict[str, Any]]:

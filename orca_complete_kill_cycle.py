@@ -12898,10 +12898,12 @@ class OrcaKillCycle:
                                     if market_value > 0.0:  # Track all positions
                                         print(f"     {symbol} (KRAKEN): {qty:.6f} @ ~${current_price:.6f} (${market_value:.2f})")
                                         
-                                        # For Kraken we don't have entry price stored - use current price as estimate
-                                        # This means we'll track from NOW and wait for profit from this point
+                                        # Try cost basis tracker FIRST for real entry price
                                         fee_rate = self.fee_rates.get(exchange_name, 0.0026)
-                                        entry_price = current_price  # Best estimate for manual buys
+                                        cb_entry = None
+                                        if self.cost_basis_tracker:
+                                            cb_entry = self.cost_basis_tracker.get_entry_price(symbol, exchange_name)
+                                        entry_price = cb_entry if cb_entry and cb_entry > 0 else current_price
                                         entry_cost = entry_price * qty * (1 + fee_rate)
                                         breakeven = entry_price * (1 + fee_rate) / (1 - fee_rate)
                                         target_price = breakeven * (1 + target_pct_current / 100)
@@ -12952,6 +12954,16 @@ class OrcaKillCycle:
                                             else:
                                                 print(f"        {blocked_reason} - keeping position")
                                         
+                                        # 📝 SEED COST BASIS: if tracker has no record, register
+                                        # the position so future lookups succeed.
+                                        if self.cost_basis_tracker:
+                                            existing = self.cost_basis_tracker.get_entry_price(symbol, exchange_name)
+                                            if not existing or existing <= 0:
+                                                self.cost_basis_tracker.set_entry_price(
+                                                    symbol, entry_price, qty,
+                                                    exchange=exchange_name, fee=0.0
+                                                )
+                                        
                                         #   ADD KRAKEN POSITION TO MONITORING LIST!
                                         print(f"        Adding to monitor list (tracking from current price)")
                                         pos = LivePosition(
@@ -12999,8 +13011,18 @@ class OrcaKillCycle:
                                             if market_value > 0.0:  # Track all positions
                                                 print(f"     {symbol} (BINANCE): {qty:.6f} @ ${current_price:.6f} (${market_value:.2f})")
                                                 
+                                                # Try cost basis tracker FIRST for real entry price
                                                 fee_rate = self.fee_rates.get(exchange_name, 0.001)  # 0.1% Binance fee
-                                                entry_price = current_price  # Estimate for manual positions
+                                                cb_entry = None
+                                                if self.cost_basis_tracker:
+                                                    cb_entry = self.cost_basis_tracker.get_entry_price(symbol, exchange_name)
+                                                    if not cb_entry:
+                                                        # Also try bare asset format (BTCUSDC, BTCUSD, etc.)
+                                                        for q in ['USDC', 'USDT', 'USD']:
+                                                            cb_entry = self.cost_basis_tracker.get_entry_price(f"{asset}{q}", exchange_name)
+                                                            if cb_entry and cb_entry > 0:
+                                                                break
+                                                entry_price = cb_entry if cb_entry and cb_entry > 0 else current_price
                                                 entry_cost = entry_price * qty * (1 + fee_rate)
                                                 breakeven = entry_price * (1 + fee_rate) / (1 - fee_rate)
                                                 target_price = breakeven * (1 + target_pct_current / 100)
@@ -13045,6 +13067,15 @@ class OrcaKillCycle:
                                                     blocked_reason = exit_info.get('blocked_reason', 'unknown')
                                                     print(f"        HOLDING - {blocked_reason}")
                                                 
+                                                # 📝 SEED COST BASIS: if tracker has no record, register it
+                                                if self.cost_basis_tracker:
+                                                    existing = self.cost_basis_tracker.get_entry_price(symbol, exchange_name)
+                                                    if not existing or existing <= 0:
+                                                        self.cost_basis_tracker.set_entry_price(
+                                                            symbol, entry_price, qty,
+                                                            exchange=exchange_name, fee=0.0
+                                                        )
+
                                                 # Add to monitoring if not closed
                                                 print(f"        Adding to monitor list")
                                                 exit_value = current_price * qty * (1 - fee_rate)
