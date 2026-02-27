@@ -1,389 +1,9 @@
 {
-  "created_at": "2026-02-21T06:35:15.398764",
+  "created_at": "2026-02-26T23:48:10.633929",
   "total_predicted_edge": -1.2712715389859297,
   "days": [
     {
-      "date": "2026-02-21T06:35:15.398764",
-      "daily_edge": -0.5867665418227197,
-      "day_of_week": 5,
-      "is_optimal_day": false,
-      "is_avoid_day": false,
-      "windows": [
-        {
-          "start_time": "2026-02-21T21:00:00",
-          "end_time": "2026-02-21T21:59:59",
-          "symbol": "DOGE",
-          "expected_edge": 6.577199163754919,
-          "confidence": 1.0,
-          "reasons": [
-            "global_optimal_hour(21)",
-            "symbol_optimal_hour(21)"
-          ],
-          "actual_result": null,
-          "was_correct": null,
-          "validated_at": null
-        },
-        {
-          "start_time": "2026-02-21T21:00:00",
-          "end_time": "2026-02-21T21:59:59",
-          "symbol": "SOL",
-          "expected_edge": 6.02925395827546,
-          "confidence": 1.0,
-          "reasons": [
-            "global_optimal_hour(21)",
-            "symbol_optimal_hour(21)"
-          ],
-          "actual_result": null,
-          "was_correct": null,
-          "validated_at": null
-        },
-        {
-          "start_time": "2026-02-21T21:00:00",
-          "end_time": "2026-02-21T21:59:59",
-          "symbol": "BCH",
-          "expected_edge": 5.93916755602989,
-          "confidence": 1.0,
-          "reasons": [
-            "global_optimal_hour(21)"
-          ],
-          "actual_result": null,
-          "was_correct": null,
-          "validated_at": null
-        },
-        {
-          "start_time": "2026-02-21T21:00:00",
-          "end_time": "2026-02-21T21:59:59",
-          "symbol": "BNB",
-          "expected_edge": 5.93916755602989,
-          "confidence": 1.0,
-          "reasons": [
-            "global_optimal_hour(21)"
-          ],
-          "actual_result": null,
-          "was_correct": null,
-          "validated_at": null
-        },
-        {
-          "start_time": "2026-02-21T21:00:00",
-          "end_time": "2026-02-21T21:59:59",
-          "symbol": "BONK",
-          "expected_edge": 5.93916755602989,
-          "confidence": 1.0,
-          "reasons": [
-            "global_optimal_hour(21)"
-          ],
-          "actual_result": null,
-          "was_correct": null,
-          "validated_at": null
-        }
-      ]
-    },
-    {
-      "date": "2026-02-22T06:35:15.398764",
-      "daily_edge": 0.055107604849469194,
-      "day_of_week": 6,
-      "is_optimal_day": false,
-      "is_avoid_day": false,
-      "windows": [
-        {
-          "start_time": "2026-02-22T21:00:00",
-          "end_time": "2026-02-22T21:59:59",
-          "symbol": "DOGE",
-          "expected_edge": 6.577199163754919,
-          "confidence": 1.0,
-          "reasons": [
-            "global_optimal_hour(21)",
-            "symbol_optimal_hour(21)"
-          ],
-          "actual_result": null,
-          "was_correct": null,
-          "validated_at": null
-        },
-        {
-          "start_time": "2026-02-22T21:00:00",
-          "end_time": "2026-02-22T21:59:59",
-          "symbol": "SOL",
-          "expected_edge": 6.02925395827546,
-          "confidence": 1.0,
-          "reasons": [
-            "global_optimal_hour(21)",
-            "symbol_optimal_hour(21)"
-          ],
-          "actual_result": null,
-          "was_correct": null,
-          "validated_at": null
-        },
-        {
-          "start_time": "2026-02-22T21:00:00",
-          "end_time": "2026-02-22T21:59:59",
-          "symbol": "BCH",
-          "expected_edge": 5.93916755602989,
-          "confidence": 1.0,
-          "reasons": [
-            "global_optimal_hour(21)"
-          ],
-          "actual_result": null,
-          "was_correct": null,
-          "validated_at": null
-        },
-        {
-          "start_time": "2026-02-22T21:00:00",
-          "end_time": "2026-02-22T21:59:59",
-          "symbol": "BNB",
-          "expected_edge": 5.93916755602989,
-          "confidence": 1.0,
-          "reasons": [
-            "global_optimal_hour(21)"
-          ],
-          "actual_result": null,
-          "was_correct": null,
-          "validated_at": null
-        },
-        {
-          "start_time": "2026-02-22T21:00:00",
-          "end_time": "2026-02-22T21:59:59",
-          "symbol": "BONK",
-          "expected_edge": 5.93916755602989,
-          "confidence": 1.0,
-          "reasons": [
-            "global_optimal_hour(21)"
-          ],
-          "actual_result": null,
-          "was_correct": null,
-          "validated_at": null
-        }
-      ]
-    },
-    {
-      "date": "2026-02-23T06:35:15.398764",
-      "daily_edge": -0.21303258145363158,
-      "day_of_week": 0,
-      "is_optimal_day": false,
-      "is_avoid_day": false,
-      "windows": [
-        {
-          "start_time": "2026-02-23T21:00:00",
-          "end_time": "2026-02-23T21:59:59",
-          "symbol": "DOGE",
-          "expected_edge": 6.577199163754919,
-          "confidence": 1.0,
-          "reasons": [
-            "global_optimal_hour(21)",
-            "symbol_optimal_hour(21)"
-          ],
-          "actual_result": null,
-          "was_correct": null,
-          "validated_at": null
-        },
-        {
-          "start_time": "2026-02-23T21:00:00",
-          "end_time": "2026-02-23T21:59:59",
-          "symbol": "SOL",
-          "expected_edge": 6.02925395827546,
-          "confidence": 1.0,
-          "reasons": [
-            "global_optimal_hour(21)",
-            "symbol_optimal_hour(21)"
-          ],
-          "actual_result": null,
-          "was_correct": null,
-          "validated_at": null
-        },
-        {
-          "start_time": "2026-02-23T21:00:00",
-          "end_time": "2026-02-23T21:59:59",
-          "symbol": "BCH",
-          "expected_edge": 5.93916755602989,
-          "confidence": 1.0,
-          "reasons": [
-            "global_optimal_hour(21)"
-          ],
-          "actual_result": null,
-          "was_correct": null,
-          "validated_at": null
-        },
-        {
-          "start_time": "2026-02-23T21:00:00",
-          "end_time": "2026-02-23T21:59:59",
-          "symbol": "BNB",
-          "expected_edge": 5.93916755602989,
-          "confidence": 1.0,
-          "reasons": [
-            "global_optimal_hour(21)"
-          ],
-          "actual_result": null,
-          "was_correct": null,
-          "validated_at": null
-        },
-        {
-          "start_time": "2026-02-23T21:00:00",
-          "end_time": "2026-02-23T21:59:59",
-          "symbol": "BONK",
-          "expected_edge": 5.93916755602989,
-          "confidence": 1.0,
-          "reasons": [
-            "global_optimal_hour(21)"
-          ],
-          "actual_result": null,
-          "was_correct": null,
-          "validated_at": null
-        }
-      ]
-    },
-    {
-      "date": "2026-02-24T06:35:15.398764",
-      "daily_edge": -1.1279608973555566,
-      "day_of_week": 1,
-      "is_optimal_day": false,
-      "is_avoid_day": false,
-      "windows": [
-        {
-          "start_time": "2026-02-24T21:00:00",
-          "end_time": "2026-02-24T21:59:59",
-          "symbol": "DOGE",
-          "expected_edge": 6.577199163754919,
-          "confidence": 1.0,
-          "reasons": [
-            "global_optimal_hour(21)",
-            "symbol_optimal_hour(21)"
-          ],
-          "actual_result": null,
-          "was_correct": null,
-          "validated_at": null
-        },
-        {
-          "start_time": "2026-02-24T21:00:00",
-          "end_time": "2026-02-24T21:59:59",
-          "symbol": "SOL",
-          "expected_edge": 6.02925395827546,
-          "confidence": 1.0,
-          "reasons": [
-            "global_optimal_hour(21)",
-            "symbol_optimal_hour(21)"
-          ],
-          "actual_result": null,
-          "was_correct": null,
-          "validated_at": null
-        },
-        {
-          "start_time": "2026-02-24T21:00:00",
-          "end_time": "2026-02-24T21:59:59",
-          "symbol": "BCH",
-          "expected_edge": 5.93916755602989,
-          "confidence": 1.0,
-          "reasons": [
-            "global_optimal_hour(21)"
-          ],
-          "actual_result": null,
-          "was_correct": null,
-          "validated_at": null
-        },
-        {
-          "start_time": "2026-02-24T21:00:00",
-          "end_time": "2026-02-24T21:59:59",
-          "symbol": "BNB",
-          "expected_edge": 5.93916755602989,
-          "confidence": 1.0,
-          "reasons": [
-            "global_optimal_hour(21)"
-          ],
-          "actual_result": null,
-          "was_correct": null,
-          "validated_at": null
-        },
-        {
-          "start_time": "2026-02-24T21:00:00",
-          "end_time": "2026-02-24T21:59:59",
-          "symbol": "BONK",
-          "expected_edge": 5.93916755602989,
-          "confidence": 1.0,
-          "reasons": [
-            "global_optimal_hour(21)"
-          ],
-          "actual_result": null,
-          "was_correct": null,
-          "validated_at": null
-        }
-      ]
-    },
-    {
-      "date": "2026-02-25T06:35:15.398764",
-      "daily_edge": 1.250548486178149,
-      "day_of_week": 2,
-      "is_optimal_day": false,
-      "is_avoid_day": false,
-      "windows": [
-        {
-          "start_time": "2026-02-25T21:00:00",
-          "end_time": "2026-02-25T21:59:59",
-          "symbol": "DOGE",
-          "expected_edge": 6.577199163754919,
-          "confidence": 1.0,
-          "reasons": [
-            "global_optimal_hour(21)",
-            "symbol_optimal_hour(21)"
-          ],
-          "actual_result": null,
-          "was_correct": null,
-          "validated_at": null
-        },
-        {
-          "start_time": "2026-02-25T21:00:00",
-          "end_time": "2026-02-25T21:59:59",
-          "symbol": "SOL",
-          "expected_edge": 6.02925395827546,
-          "confidence": 1.0,
-          "reasons": [
-            "global_optimal_hour(21)",
-            "symbol_optimal_hour(21)"
-          ],
-          "actual_result": null,
-          "was_correct": null,
-          "validated_at": null
-        },
-        {
-          "start_time": "2026-02-25T21:00:00",
-          "end_time": "2026-02-25T21:59:59",
-          "symbol": "BCH",
-          "expected_edge": 5.93916755602989,
-          "confidence": 1.0,
-          "reasons": [
-            "global_optimal_hour(21)"
-          ],
-          "actual_result": null,
-          "was_correct": null,
-          "validated_at": null
-        },
-        {
-          "start_time": "2026-02-25T21:00:00",
-          "end_time": "2026-02-25T21:59:59",
-          "symbol": "BNB",
-          "expected_edge": 5.93916755602989,
-          "confidence": 1.0,
-          "reasons": [
-            "global_optimal_hour(21)"
-          ],
-          "actual_result": null,
-          "was_correct": null,
-          "validated_at": null
-        },
-        {
-          "start_time": "2026-02-25T21:00:00",
-          "end_time": "2026-02-25T21:59:59",
-          "symbol": "BONK",
-          "expected_edge": 5.93916755602989,
-          "confidence": 1.0,
-          "reasons": [
-            "global_optimal_hour(21)"
-          ],
-          "actual_result": null,
-          "was_correct": null,
-          "validated_at": null
-        }
-      ]
-    },
-    {
-      "date": "2026-02-26T06:35:15.398764",
+      "date": "2026-02-26T23:48:10.633929",
       "daily_edge": -1.4052697616060206,
       "day_of_week": 3,
       "is_optimal_day": false,
@@ -459,7 +79,7 @@
       ]
     },
     {
-      "date": "2026-02-27T06:35:15.398764",
+      "date": "2026-02-27T23:48:10.633929",
       "daily_edge": 0.7561021522243805,
       "day_of_week": 4,
       "is_optimal_day": false,
@@ -533,79 +153,389 @@
           "validated_at": null
         }
       ]
+    },
+    {
+      "date": "2026-02-28T23:48:10.633929",
+      "daily_edge": -0.5867665418227197,
+      "day_of_week": 5,
+      "is_optimal_day": false,
+      "is_avoid_day": false,
+      "windows": [
+        {
+          "start_time": "2026-02-28T21:00:00",
+          "end_time": "2026-02-28T21:59:59",
+          "symbol": "DOGE",
+          "expected_edge": 6.577199163754919,
+          "confidence": 1.0,
+          "reasons": [
+            "global_optimal_hour(21)",
+            "symbol_optimal_hour(21)"
+          ],
+          "actual_result": null,
+          "was_correct": null,
+          "validated_at": null
+        },
+        {
+          "start_time": "2026-02-28T21:00:00",
+          "end_time": "2026-02-28T21:59:59",
+          "symbol": "SOL",
+          "expected_edge": 6.02925395827546,
+          "confidence": 1.0,
+          "reasons": [
+            "global_optimal_hour(21)",
+            "symbol_optimal_hour(21)"
+          ],
+          "actual_result": null,
+          "was_correct": null,
+          "validated_at": null
+        },
+        {
+          "start_time": "2026-02-28T21:00:00",
+          "end_time": "2026-02-28T21:59:59",
+          "symbol": "BCH",
+          "expected_edge": 5.93916755602989,
+          "confidence": 1.0,
+          "reasons": [
+            "global_optimal_hour(21)"
+          ],
+          "actual_result": null,
+          "was_correct": null,
+          "validated_at": null
+        },
+        {
+          "start_time": "2026-02-28T21:00:00",
+          "end_time": "2026-02-28T21:59:59",
+          "symbol": "BNB",
+          "expected_edge": 5.93916755602989,
+          "confidence": 1.0,
+          "reasons": [
+            "global_optimal_hour(21)"
+          ],
+          "actual_result": null,
+          "was_correct": null,
+          "validated_at": null
+        },
+        {
+          "start_time": "2026-02-28T21:00:00",
+          "end_time": "2026-02-28T21:59:59",
+          "symbol": "BONK",
+          "expected_edge": 5.93916755602989,
+          "confidence": 1.0,
+          "reasons": [
+            "global_optimal_hour(21)"
+          ],
+          "actual_result": null,
+          "was_correct": null,
+          "validated_at": null
+        }
+      ]
+    },
+    {
+      "date": "2026-03-01T23:48:10.633929",
+      "daily_edge": 0.055107604849469194,
+      "day_of_week": 6,
+      "is_optimal_day": false,
+      "is_avoid_day": false,
+      "windows": [
+        {
+          "start_time": "2026-03-01T21:00:00",
+          "end_time": "2026-03-01T21:59:59",
+          "symbol": "DOGE",
+          "expected_edge": 6.577199163754919,
+          "confidence": 1.0,
+          "reasons": [
+            "global_optimal_hour(21)",
+            "symbol_optimal_hour(21)"
+          ],
+          "actual_result": null,
+          "was_correct": null,
+          "validated_at": null
+        },
+        {
+          "start_time": "2026-03-01T21:00:00",
+          "end_time": "2026-03-01T21:59:59",
+          "symbol": "SOL",
+          "expected_edge": 6.02925395827546,
+          "confidence": 1.0,
+          "reasons": [
+            "global_optimal_hour(21)",
+            "symbol_optimal_hour(21)"
+          ],
+          "actual_result": null,
+          "was_correct": null,
+          "validated_at": null
+        },
+        {
+          "start_time": "2026-03-01T21:00:00",
+          "end_time": "2026-03-01T21:59:59",
+          "symbol": "BCH",
+          "expected_edge": 5.93916755602989,
+          "confidence": 1.0,
+          "reasons": [
+            "global_optimal_hour(21)"
+          ],
+          "actual_result": null,
+          "was_correct": null,
+          "validated_at": null
+        },
+        {
+          "start_time": "2026-03-01T21:00:00",
+          "end_time": "2026-03-01T21:59:59",
+          "symbol": "BNB",
+          "expected_edge": 5.93916755602989,
+          "confidence": 1.0,
+          "reasons": [
+            "global_optimal_hour(21)"
+          ],
+          "actual_result": null,
+          "was_correct": null,
+          "validated_at": null
+        },
+        {
+          "start_time": "2026-03-01T21:00:00",
+          "end_time": "2026-03-01T21:59:59",
+          "symbol": "BONK",
+          "expected_edge": 5.93916755602989,
+          "confidence": 1.0,
+          "reasons": [
+            "global_optimal_hour(21)"
+          ],
+          "actual_result": null,
+          "was_correct": null,
+          "validated_at": null
+        }
+      ]
+    },
+    {
+      "date": "2026-03-02T23:48:10.633929",
+      "daily_edge": -0.21303258145363158,
+      "day_of_week": 0,
+      "is_optimal_day": false,
+      "is_avoid_day": false,
+      "windows": [
+        {
+          "start_time": "2026-03-02T21:00:00",
+          "end_time": "2026-03-02T21:59:59",
+          "symbol": "DOGE",
+          "expected_edge": 6.577199163754919,
+          "confidence": 1.0,
+          "reasons": [
+            "global_optimal_hour(21)",
+            "symbol_optimal_hour(21)"
+          ],
+          "actual_result": null,
+          "was_correct": null,
+          "validated_at": null
+        },
+        {
+          "start_time": "2026-03-02T21:00:00",
+          "end_time": "2026-03-02T21:59:59",
+          "symbol": "SOL",
+          "expected_edge": 6.02925395827546,
+          "confidence": 1.0,
+          "reasons": [
+            "global_optimal_hour(21)",
+            "symbol_optimal_hour(21)"
+          ],
+          "actual_result": null,
+          "was_correct": null,
+          "validated_at": null
+        },
+        {
+          "start_time": "2026-03-02T21:00:00",
+          "end_time": "2026-03-02T21:59:59",
+          "symbol": "BCH",
+          "expected_edge": 5.93916755602989,
+          "confidence": 1.0,
+          "reasons": [
+            "global_optimal_hour(21)"
+          ],
+          "actual_result": null,
+          "was_correct": null,
+          "validated_at": null
+        },
+        {
+          "start_time": "2026-03-02T21:00:00",
+          "end_time": "2026-03-02T21:59:59",
+          "symbol": "BNB",
+          "expected_edge": 5.93916755602989,
+          "confidence": 1.0,
+          "reasons": [
+            "global_optimal_hour(21)"
+          ],
+          "actual_result": null,
+          "was_correct": null,
+          "validated_at": null
+        },
+        {
+          "start_time": "2026-03-02T21:00:00",
+          "end_time": "2026-03-02T21:59:59",
+          "symbol": "BONK",
+          "expected_edge": 5.93916755602989,
+          "confidence": 1.0,
+          "reasons": [
+            "global_optimal_hour(21)"
+          ],
+          "actual_result": null,
+          "was_correct": null,
+          "validated_at": null
+        }
+      ]
+    },
+    {
+      "date": "2026-03-03T23:48:10.633929",
+      "daily_edge": -1.1279608973555566,
+      "day_of_week": 1,
+      "is_optimal_day": false,
+      "is_avoid_day": false,
+      "windows": [
+        {
+          "start_time": "2026-03-03T21:00:00",
+          "end_time": "2026-03-03T21:59:59",
+          "symbol": "DOGE",
+          "expected_edge": 6.577199163754919,
+          "confidence": 1.0,
+          "reasons": [
+            "global_optimal_hour(21)",
+            "symbol_optimal_hour(21)"
+          ],
+          "actual_result": null,
+          "was_correct": null,
+          "validated_at": null
+        },
+        {
+          "start_time": "2026-03-03T21:00:00",
+          "end_time": "2026-03-03T21:59:59",
+          "symbol": "SOL",
+          "expected_edge": 6.02925395827546,
+          "confidence": 1.0,
+          "reasons": [
+            "global_optimal_hour(21)",
+            "symbol_optimal_hour(21)"
+          ],
+          "actual_result": null,
+          "was_correct": null,
+          "validated_at": null
+        },
+        {
+          "start_time": "2026-03-03T21:00:00",
+          "end_time": "2026-03-03T21:59:59",
+          "symbol": "BCH",
+          "expected_edge": 5.93916755602989,
+          "confidence": 1.0,
+          "reasons": [
+            "global_optimal_hour(21)"
+          ],
+          "actual_result": null,
+          "was_correct": null,
+          "validated_at": null
+        },
+        {
+          "start_time": "2026-03-03T21:00:00",
+          "end_time": "2026-03-03T21:59:59",
+          "symbol": "BNB",
+          "expected_edge": 5.93916755602989,
+          "confidence": 1.0,
+          "reasons": [
+            "global_optimal_hour(21)"
+          ],
+          "actual_result": null,
+          "was_correct": null,
+          "validated_at": null
+        },
+        {
+          "start_time": "2026-03-03T21:00:00",
+          "end_time": "2026-03-03T21:59:59",
+          "symbol": "BONK",
+          "expected_edge": 5.93916755602989,
+          "confidence": 1.0,
+          "reasons": [
+            "global_optimal_hour(21)"
+          ],
+          "actual_result": null,
+          "was_correct": null,
+          "validated_at": null
+        }
+      ]
+    },
+    {
+      "date": "2026-03-04T23:48:10.633929",
+      "daily_edge": 1.250548486178149,
+      "day_of_week": 2,
+      "is_optimal_day": false,
+      "is_avoid_day": false,
+      "windows": [
+        {
+          "start_time": "2026-03-04T21:00:00",
+          "end_time": "2026-03-04T21:59:59",
+          "symbol": "DOGE",
+          "expected_edge": 6.577199163754919,
+          "confidence": 1.0,
+          "reasons": [
+            "global_optimal_hour(21)",
+            "symbol_optimal_hour(21)"
+          ],
+          "actual_result": null,
+          "was_correct": null,
+          "validated_at": null
+        },
+        {
+          "start_time": "2026-03-04T21:00:00",
+          "end_time": "2026-03-04T21:59:59",
+          "symbol": "SOL",
+          "expected_edge": 6.02925395827546,
+          "confidence": 1.0,
+          "reasons": [
+            "global_optimal_hour(21)",
+            "symbol_optimal_hour(21)"
+          ],
+          "actual_result": null,
+          "was_correct": null,
+          "validated_at": null
+        },
+        {
+          "start_time": "2026-03-04T21:00:00",
+          "end_time": "2026-03-04T21:59:59",
+          "symbol": "BCH",
+          "expected_edge": 5.93916755602989,
+          "confidence": 1.0,
+          "reasons": [
+            "global_optimal_hour(21)"
+          ],
+          "actual_result": null,
+          "was_correct": null,
+          "validated_at": null
+        },
+        {
+          "start_time": "2026-03-04T21:00:00",
+          "end_time": "2026-03-04T21:59:59",
+          "symbol": "BNB",
+          "expected_edge": 5.93916755602989,
+          "confidence": 1.0,
+          "reasons": [
+            "global_optimal_hour(21)"
+          ],
+          "actual_result": null,
+          "was_correct": null,
+          "validated_at": null
+        },
+        {
+          "start_time": "2026-03-04T21:00:00",
+          "end_time": "2026-03-04T21:59:59",
+          "symbol": "BONK",
+          "expected_edge": 5.93916755602989,
+          "confidence": 1.0,
+          "reasons": [
+            "global_optimal_hour(21)"
+          ],
+          "actual_result": null,
+          "was_correct": null,
+          "validated_at": null
+        }
+      ]
     }
   ],
   "best_windows": [
-    {
-      "start_time": "2026-02-21T21:00:00",
-      "end_time": "2026-02-21T21:59:59",
-      "symbol": "DOGE",
-      "expected_edge": 6.577199163754919,
-      "confidence": 1.0,
-      "reasons": [
-        "global_optimal_hour(21)",
-        "symbol_optimal_hour(21)"
-      ],
-      "actual_result": null,
-      "was_correct": null,
-      "validated_at": null
-    },
-    {
-      "start_time": "2026-02-22T21:00:00",
-      "end_time": "2026-02-22T21:59:59",
-      "symbol": "DOGE",
-      "expected_edge": 6.577199163754919,
-      "confidence": 1.0,
-      "reasons": [
-        "global_optimal_hour(21)",
-        "symbol_optimal_hour(21)"
-      ],
-      "actual_result": null,
-      "was_correct": null,
-      "validated_at": null
-    },
-    {
-      "start_time": "2026-02-23T21:00:00",
-      "end_time": "2026-02-23T21:59:59",
-      "symbol": "DOGE",
-      "expected_edge": 6.577199163754919,
-      "confidence": 1.0,
-      "reasons": [
-        "global_optimal_hour(21)",
-        "symbol_optimal_hour(21)"
-      ],
-      "actual_result": null,
-      "was_correct": null,
-      "validated_at": null
-    },
-    {
-      "start_time": "2026-02-24T21:00:00",
-      "end_time": "2026-02-24T21:59:59",
-      "symbol": "DOGE",
-      "expected_edge": 6.577199163754919,
-      "confidence": 1.0,
-      "reasons": [
-        "global_optimal_hour(21)",
-        "symbol_optimal_hour(21)"
-      ],
-      "actual_result": null,
-      "was_correct": null,
-      "validated_at": null
-    },
-    {
-      "start_time": "2026-02-25T21:00:00",
-      "end_time": "2026-02-25T21:59:59",
-      "symbol": "DOGE",
-      "expected_edge": 6.577199163754919,
-      "confidence": 1.0,
-      "reasons": [
-        "global_optimal_hour(21)",
-        "symbol_optimal_hour(21)"
-      ],
-      "actual_result": null,
-      "was_correct": null,
-      "validated_at": null
-    },
     {
       "start_time": "2026-02-26T21:00:00",
       "end_time": "2026-02-26T21:59:59",
@@ -635,8 +565,78 @@
       "validated_at": null
     },
     {
-      "start_time": "2026-02-21T21:00:00",
-      "end_time": "2026-02-21T21:59:59",
+      "start_time": "2026-02-28T21:00:00",
+      "end_time": "2026-02-28T21:59:59",
+      "symbol": "DOGE",
+      "expected_edge": 6.577199163754919,
+      "confidence": 1.0,
+      "reasons": [
+        "global_optimal_hour(21)",
+        "symbol_optimal_hour(21)"
+      ],
+      "actual_result": null,
+      "was_correct": null,
+      "validated_at": null
+    },
+    {
+      "start_time": "2026-03-01T21:00:00",
+      "end_time": "2026-03-01T21:59:59",
+      "symbol": "DOGE",
+      "expected_edge": 6.577199163754919,
+      "confidence": 1.0,
+      "reasons": [
+        "global_optimal_hour(21)",
+        "symbol_optimal_hour(21)"
+      ],
+      "actual_result": null,
+      "was_correct": null,
+      "validated_at": null
+    },
+    {
+      "start_time": "2026-03-02T21:00:00",
+      "end_time": "2026-03-02T21:59:59",
+      "symbol": "DOGE",
+      "expected_edge": 6.577199163754919,
+      "confidence": 1.0,
+      "reasons": [
+        "global_optimal_hour(21)",
+        "symbol_optimal_hour(21)"
+      ],
+      "actual_result": null,
+      "was_correct": null,
+      "validated_at": null
+    },
+    {
+      "start_time": "2026-03-03T21:00:00",
+      "end_time": "2026-03-03T21:59:59",
+      "symbol": "DOGE",
+      "expected_edge": 6.577199163754919,
+      "confidence": 1.0,
+      "reasons": [
+        "global_optimal_hour(21)",
+        "symbol_optimal_hour(21)"
+      ],
+      "actual_result": null,
+      "was_correct": null,
+      "validated_at": null
+    },
+    {
+      "start_time": "2026-03-04T21:00:00",
+      "end_time": "2026-03-04T21:59:59",
+      "symbol": "DOGE",
+      "expected_edge": 6.577199163754919,
+      "confidence": 1.0,
+      "reasons": [
+        "global_optimal_hour(21)",
+        "symbol_optimal_hour(21)"
+      ],
+      "actual_result": null,
+      "was_correct": null,
+      "validated_at": null
+    },
+    {
+      "start_time": "2026-02-26T21:00:00",
+      "end_time": "2026-02-26T21:59:59",
       "symbol": "SOL",
       "expected_edge": 6.02925395827546,
       "confidence": 1.0,
@@ -649,8 +649,8 @@
       "validated_at": null
     },
     {
-      "start_time": "2026-02-22T21:00:00",
-      "end_time": "2026-02-22T21:59:59",
+      "start_time": "2026-02-27T21:00:00",
+      "end_time": "2026-02-27T21:59:59",
       "symbol": "SOL",
       "expected_edge": 6.02925395827546,
       "confidence": 1.0,
@@ -663,8 +663,8 @@
       "validated_at": null
     },
     {
-      "start_time": "2026-02-23T21:00:00",
-      "end_time": "2026-02-23T21:59:59",
+      "start_time": "2026-02-28T21:00:00",
+      "end_time": "2026-02-28T21:59:59",
       "symbol": "SOL",
       "expected_edge": 6.02925395827546,
       "confidence": 1.0,

@@ -36394,24 +36394,77 @@
         "rejection_breakdown": {},
         "top_opportunities": []
       }
+    },
+    {
+      "timestamp": 1772155198.4349134,
+      "timestamp_human": "2026-02-27T01:19:58.434914+00:00",
+      "queen": {
+        "market_regime": "QUIET",
+        "global_momentum": 0.0,
+        "global_coherence": 0.5,
+        "queen_confidence": 0.5,
+        "queen_strategy": "SNIPER",
+        "portfolio_value": 140.99,
+        "cash_available": 20.81,
+        "positions_held": 17,
+        "directives": {
+          "min_momentum_threshold": 0.1,
+          "min_coherence_threshold": 0.55,
+          "max_position_size": 2.0805784005952,
+          "target_exchanges": [],
+          "queen_strategy": "SNIPER",
+          "queen_confidence": 0.5,
+          "market_regime": "QUIET"
+        }
+      },
+      "hive_cluster": {
+        "exchanges_active": 0,
+        "total_symbols": 0,
+        "validators_active": 0,
+        "validator_agreement": 0.0,
+        "market_sentiment": "NEUTRAL",
+        "opportunity_density": 0.0,
+        "recommended_action": "WAIT",
+        "system_fill_rate": 0.0,
+        "total_fees_paid": 0.0
+      },
+      "bee_swarm": {
+        "total_scanned": 0,
+        "with_momentum": 0,
+        "rejected": 0,
+        "executed": 0,
+        "momentum_distribution": {
+          "up": 0,
+          "down": 0,
+          "flat": 0
+        },
+        "avg_momentum": 0.0,
+        "max_momentum": 0.0,
+        "max_momentum_symbol": "",
+        "avg_pip_score": 0.0,
+        "avg_coherence": 0.0,
+        "above_phi_threshold": 0,
+        "rejection_breakdown": {},
+        "top_opportunities": []
+      }
     }
   ],
   "last_snapshot": {
-    "timestamp": 1771452596.5457008,
-    "timestamp_human": "2026-02-18T22:09:56.545701+00:00",
+    "timestamp": 1772155198.4349134,
+    "timestamp_human": "2026-02-27T01:19:58.434914+00:00",
     "queen": {
       "market_regime": "QUIET",
       "global_momentum": 0.0,
       "global_coherence": 0.5,
       "queen_confidence": 0.5,
       "queen_strategy": "SNIPER",
-      "portfolio_value": 159.17,
-      "cash_available": 56.49,
-      "positions_held": 13,
+      "portfolio_value": 140.99,
+      "cash_available": 20.81,
+      "positions_held": 17,
       "directives": {
         "min_momentum_threshold": 0.1,
         "min_coherence_threshold": 0.55,
-        "max_position_size": 5.648540418,
+        "max_position_size": 2.0805784005952,
         "target_exchanges": [],
         "queen_strategy": "SNIPER",
         "queen_confidence": 0.5,
