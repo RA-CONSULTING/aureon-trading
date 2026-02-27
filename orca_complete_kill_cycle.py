@@ -8351,7 +8351,7 @@ class OrcaKillCycle:
                             # Try batch first, then individual calls
                             current_price = None
                             symbol = None
-                            for quote in ['USDT', 'USDC', 'USD', 'BUSD']:
+                            for quote in ['USDC', 'USDT']:
                                 pair = f"{asset}{quote}"
                                 if pair in _harv_bn and _harv_bn[pair] > 0:
                                     current_price = _harv_bn[pair]
@@ -12997,8 +12997,8 @@ class OrcaKillCycle:
                                 continue
                             qty = float(qty)
                             if qty > 0.000001:
-                                # Try multiple quote currencies (USDT is most common on Binance)
-                                symbol_variants = [f"{asset}/USDT", f"{asset}/USDC", f"{asset}/USD", f"{asset}/BUSD"]
+                                # Try USDC first (UK accounts), then USDT. Skip BUSD (delisted/stale prices).
+                                symbol_variants = [f"{asset}/USDC", f"{asset}/USDT"]
                                 found_price = False
                                 
                                 for symbol in symbol_variants:
@@ -13800,6 +13800,11 @@ class OrcaKillCycle:
                             # Now scan for NEW positions
                             binance_balances = binance_client.get_balance()
                             current_binance_symbols = [p.symbol for p in positions if p.exchange == 'binance']
+                            # Build set of BASE assets already tracked (prevent BTC/USDT + BTC/USDC dupes)
+                            _tracked_bases = set()
+                            for _sym in current_binance_symbols:
+                                _b = _sym.split('/')[0] if '/' in _sym else _sym
+                                _tracked_bases.add(_b.upper())
                             
                             for asset, qty in binance_balances.items():
                                 if asset in ['USD', 'USDT', 'USDC', 'BUSD', 'TUSD', 'DAI', 'FDUSD', 'GBP', 'EUR']:
@@ -13807,9 +13812,12 @@ class OrcaKillCycle:
                                 qty = float(qty)
                                 
                                 # Check if this is a NEW position not already tracked
+                                # Skip if ANY quote variant of this base is already monitored
+                                if asset.upper() in _tracked_bases:
+                                    continue
                                 if qty > 0.000001:
-                                    # Try multiple quote currencies — use batch data
-                                    symbol_variants = [f"{asset}/USDT", f"{asset}/USDC", f"{asset}/USD", f"{asset}/BUSD"]
+                                    # Try USDC first (UK accounts), then USDT. Skip BUSD (delisted/stale prices).
+                                    symbol_variants = [f"{asset}/USDC", f"{asset}/USDT"]
                                     for symbol in symbol_variants:
                                         if symbol in current_binance_symbols:
                                             continue  # Already tracking

@@ -598,6 +598,14 @@ class FireTrader:
         log_fire("\n🔍 SCANNING BINANCE FOR ALL PROFITABLE POSITIONS (any real gain after fees)...")
         profitable_sells = []
         
+        # Use CostBasisTracker for accurate 6-strategy matching
+        _fire_tracker = None
+        try:
+            from cost_basis_tracker import CostBasisTracker
+            _fire_tracker = CostBasisTracker()
+        except Exception:
+            pass
+        
         for asset, qty in tradeable_binance.items():
             try:
                 # UK accounts: use USDC pairs only
@@ -613,20 +621,21 @@ class FireTrader:
                 if value <= 1:
                     continue
 
-                # Check cost basis for profit calculation
+                # Check cost basis using the CostBasisTracker (6-strategy matching)
                 cost_basis = None
-                try:
-                    with open('cost_basis_history.json', 'r') as f:
-                        cb_data = json.load(f)
-                        positions_dict = cb_data.get('positions', {})
-                        for try_key in (f"binance:{symbol}", f"binance:{asset}", f"binance:{asset}USDC", f"binance:{asset}USDT"):
-                            if try_key in positions_dict:
-                                entry = positions_dict[try_key]
-                                cost_basis = float(entry.get('avg_entry_price', 0) or entry.get('avg_fill_price', 0) or 0)
-                                if cost_basis > 0:
+                if _fire_tracker:
+                    try:
+                        cb_entry = _fire_tracker.get_entry_price(symbol, 'binance')
+                        if not cb_entry or cb_entry <= 0:
+                            # Also try bare format
+                            for q in ['USDC', 'USDT', 'USD']:
+                                cb_entry = _fire_tracker.get_entry_price(f"{asset}{q}", 'binance')
+                                if cb_entry and cb_entry > 0:
                                     break
-                except Exception:
-                    pass
+                        if cb_entry and cb_entry > 0:
+                            cost_basis = cb_entry
+                    except Exception:
+                        pass
 
                 fee_rate = 0.001  # 0.1% Binance taker fee
                 net_price = price * (1 - fee_rate)
@@ -728,21 +737,20 @@ class FireTrader:
                     f"24h_change={change_24h:+.2f}%, vol=${quote_vol:,.0f}"
                 )
 
-                # Load cost basis to ensure we're not selling at a loss
+                # Load cost basis using CostBasisTracker (6-strategy matching)
                 cost_basis = None
-                try:
-                    with open('cost_basis_history.json', 'r') as f:
-                        cb_data = json.load(f)
-                        positions_dict = cb_data.get('positions', {})
-                        # Try multiple key formats: kraken:ADAUSD, kraken:ADA, kraken:ADAUSDC
-                        for try_key in (f"kraken:{pair}", f"kraken:{asset}", f"kraken:{asset}USD", f"kraken:{asset}USDC"):
-                            if try_key in positions_dict:
-                                entry = positions_dict[try_key]
-                                cost_basis = float(entry.get('avg_entry_price', 0) or entry.get('avg_fill_price', 0) or 0)
-                                if cost_basis > 0:
+                if _fire_tracker:
+                    try:
+                        cb_entry = _fire_tracker.get_entry_price(pair, 'kraken')
+                        if not cb_entry or cb_entry <= 0:
+                            for q in ['USD', 'USDC']:
+                                cb_entry = _fire_tracker.get_entry_price(f"{asset}{q}", 'kraken')
+                                if cb_entry and cb_entry > 0:
                                     break
-                except Exception:
-                    pass
+                        if cb_entry and cb_entry > 0:
+                            cost_basis = cb_entry
+                    except Exception:
+                        pass
                 
                 # Calculate profit margin including 0.26% taker fee
                 fee_rate = 0.0026
