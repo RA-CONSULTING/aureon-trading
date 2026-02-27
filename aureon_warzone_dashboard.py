@@ -126,6 +126,92 @@ except ImportError:
 except Exception as e:
     logger.warning(f"🧠 Anthropic init error: {e} — Samuel AI in LOCAL mode")
 
+# ─── API Key Validation ───────────────────────────────────────────────────────
+# Validates the Anthropic API key on startup and caches the result.
+# Uses a minimal API call (1-token response) to confirm the key is live.
+
+_api_key_status: Dict[str, Any] = {
+    "status": "unknown",       # unknown | active | invalid | missing | placeholder | error
+    "checked_at": None,
+    "partial_hint": None,
+    "error": None,
+    "model_access": None,
+}
+
+
+async def _validate_api_key_async() -> Dict[str, Any]:
+    """Validate the Anthropic API key with a lightweight probe."""
+    global _api_key_status
+    raw_key = os.environ.get("ANTHROPIC_API_KEY", "")
+
+    if not raw_key:
+        _api_key_status = {"status": "missing", "checked_at": time.time(),
+                          "partial_hint": None, "error": "No ANTHROPIC_API_KEY env var",
+                          "model_access": None}
+        return _api_key_status
+
+    if raw_key == "your_anthropic_api_key_here":
+        _api_key_status = {"status": "placeholder", "checked_at": time.time(),
+                          "partial_hint": "your_ant...here", "error": "Placeholder — set a real key",
+                          "model_access": None}
+        return _api_key_status
+
+    # Build a partial hint: first 7 chars + ... + last 4 chars
+    hint = f"{raw_key[:7]}...{raw_key[-4:]}" if len(raw_key) > 12 else "***"
+
+    if not _anthropic_client:
+        _api_key_status = {"status": "error", "checked_at": time.time(),
+                          "partial_hint": hint, "error": "Client not initialised",
+                          "model_access": None}
+        return _api_key_status
+
+    # Probe with a minimal messages.create call (max_tokens=1)
+    try:
+        loop = asyncio.get_event_loop()
+        resp = await loop.run_in_executor(None, lambda: _anthropic_client.messages.create(
+            model="claude-sonnet-4-20250514",
+            max_tokens=1,
+            messages=[{"role": "user", "content": "ping"}],
+        ))
+        _api_key_status = {
+            "status": "active",
+            "checked_at": time.time(),
+            "partial_hint": hint,
+            "error": None,
+            "model_access": resp.model if hasattr(resp, 'model') else "claude",
+        }
+        logger.info(f"🔑 API key validated — ACTIVE (model: {_api_key_status['model_access']})")
+    except Exception as e:
+        err_str = str(e)
+        # Classify the error
+        if "authentication" in err_str.lower() or "401" in err_str or "invalid" in err_str.lower():
+            status = "invalid"
+        elif "rate" in err_str.lower() or "429" in err_str:
+            status = "active"  # Rate-limited means the key IS valid
+        elif "permission" in err_str.lower() or "403" in err_str:
+            status = "inactive"
+        else:
+            status = "error"
+        _api_key_status = {
+            "status": status,
+            "checked_at": time.time(),
+            "partial_hint": hint,
+            "error": err_str[:200],
+            "model_access": None,
+        }
+        if status == "active":
+            logger.info(f"🔑 API key validated — ACTIVE (rate-limited but valid)")
+        else:
+            logger.warning(f"🔑 API key validation: {status} — {err_str[:120]}")
+
+    return _api_key_status
+
+
+def get_api_key_status() -> Dict[str, Any]:
+    """Return cached API key status (non-blocking)."""
+    return _api_key_status.copy()
+
+
 # ─── ThoughtBus (read-only — we just tail the JSONL, no heavy import) ─────────
 # The full ThoughtBus import cascades into the entire ecosystem (Queen, Kraken, etc.)
 # We stay lightweight by reading the JSONL file directly.
@@ -274,6 +360,7 @@ def gather_warzone_intel() -> Dict[str, Any]:
         "recent_thoughts": recent_thoughts[-10:],
         "queen_message": snapshot.get("queen_message", ""),
         "cycles": snapshot.get("cycles", 0),
+        "api_key_status": get_api_key_status(),
     }
 
 
@@ -551,8 +638,22 @@ async def api_health(request):
         "status": "OPERATIONAL",
         "samuel_ai": "claude" if ANTHROPIC_AVAILABLE else "local",
         "thought_bus": THOUGHT_BUS_AVAILABLE,
+        "api_key": get_api_key_status(),
         "uptime": time.time(),
     })
+
+
+async def api_key_status(request):
+    """GET /api/key-status — check Anthropic API key health.
+
+    Query params:
+        revalidate=1  — force a fresh probe (otherwise returns cached result)
+    """
+    if request.query.get("revalidate") == "1":
+        result = await _validate_api_key_async()
+    else:
+        result = get_api_key_status()
+    return web.json_response(result)
 
 
 async def index_handler(request):
@@ -562,6 +663,8 @@ async def index_handler(request):
 
 async def start_background_tasks(app):
     app['broadcast_task'] = asyncio.ensure_future(broadcast_loop(app))
+    # Validate API key on startup (non-blocking)
+    asyncio.ensure_future(_validate_api_key_async())
 
 
 async def cleanup_background_tasks(app):
@@ -862,7 +965,8 @@ body::after{
   <div class="meta">
     <span id="clock">--:--:--</span> UTC |
     <span id="cycle-count">0</span> cycles |
-    AI: <span id="ai-status">INIT</span>
+    AI: <span id="ai-status">INIT</span> |
+    🔑 <span id="key-status" style="color:var(--dim)">--</span>
   </div>
 </div>
 
@@ -947,9 +1051,13 @@ body::after{
     <div class="comms-header">
       <h2>◆ COMMS — SAMUEL AI</h2>
       <div class="samuel-indicator">
-        <div class="samuel-pulse"></div>
-        <span>SAMUEL ONLINE</span>
+        <div class="samuel-pulse" id="samuel-pulse-dot"></div>
+        <span id="samuel-status-text">SAMUEL ONLINE</span>
         <span class="ai-mode" id="ai-mode-label"></span>
+      </div>
+      <div id="key-detail" style="font-size:0.65em;color:var(--dim);margin-top:4px;cursor:pointer" title="Click to revalidate key">
+        🔑 Key: <span id="key-detail-status">checking...</span>
+        <span id="key-detail-hint" style="color:var(--border)"></span>
       </div>
     </div>
 
@@ -1101,6 +1209,9 @@ function updateDashboard(d) {
   // AI mode label
   document.getElementById('ai-mode-label').textContent =
     d.ai_mode ? `(${d.ai_mode})` : '';
+
+  // API key status
+  updateKeyStatus(d.api_key_status || {});
 }
 
 // ── Heatmap ───────────────────────────────────────────────────
@@ -1168,6 +1279,66 @@ function updateThoughts(thoughts) {
     `<div class="thought-item"><span class="src">[${t.source||'?'}]</span> <span class="topic">${t.topic||'thought'}</span></div>`
   ).join('');
 }
+
+// ── API Key Status ────────────────────────────────────────────
+function updateKeyStatus(ks) {
+  if (!ks || !ks.status) return;
+  const badge = document.getElementById('key-status');
+  const detail = document.getElementById('key-detail-status');
+  const hint = document.getElementById('key-detail-hint');
+  const pulseDot = document.getElementById('samuel-pulse-dot');
+  const samuelText = document.getElementById('samuel-status-text');
+
+  const statusMap = {
+    active:      { color: 'var(--green)',  label: 'ACTIVE',      short: 'VALID' },
+    invalid:     { color: 'var(--red)',    label: 'INVALID',     short: 'INVALID' },
+    inactive:    { color: 'var(--amber)',  label: 'INACTIVE',    short: 'INACTIVE' },
+    missing:     { color: 'var(--red)',    label: 'MISSING',     short: 'NO KEY' },
+    placeholder: { color: 'var(--amber)',  label: 'PLACEHOLDER', short: 'PLACEHOLDER' },
+    error:       { color: 'var(--red)',    label: 'ERROR',       short: 'ERROR' },
+    unknown:     { color: 'var(--dim)',    label: 'CHECKING...',  short: '--' },
+  };
+  const info = statusMap[ks.status] || statusMap.unknown;
+
+  badge.textContent = info.short;
+  badge.style.color = info.color;
+  detail.textContent = info.label;
+  detail.style.color = info.color;
+
+  if (hint && ks.partial_hint) {
+    hint.textContent = ` (${ks.partial_hint})`;
+  }
+
+  // Update Samuel indicator based on key status
+  if (ks.status === 'active') {
+    pulseDot.style.background = 'var(--green)';
+    pulseDot.style.boxShadow = '0 0 8px var(--green)';
+    samuelText.textContent = 'SAMUEL ONLINE — CLAUDE';
+    samuelText.style.color = 'var(--green)';
+  } else {
+    pulseDot.style.background = 'var(--amber)';
+    pulseDot.style.boxShadow = '0 0 8px var(--amber)';
+    samuelText.textContent = 'SAMUEL LOCAL MODE';
+    samuelText.style.color = 'var(--amber)';
+  }
+
+  // Show error tooltip if present
+  if (ks.error) {
+    document.getElementById('key-detail').title = `Error: ${ks.error}\nClick to revalidate`;
+  }
+}
+
+// Revalidate key on click
+document.getElementById('key-detail').addEventListener('click', async () => {
+  try {
+    document.getElementById('key-detail-status').textContent = 'revalidating...';
+    const res = await fetch('/api/key-status?revalidate=1');
+    const ks = await res.json();
+    updateKeyStatus(ks);
+  } catch (e) {
+    document.getElementById('key-detail-status').textContent = 'fetch error';
+  }
+});
 
 // ── Chat Functions ────────────────────────────────────────────
 function sendMessage() {
@@ -1325,6 +1496,7 @@ def create_app() -> web.Application:
     app.router.add_get('/api/intel', api_intel)
     app.router.add_post('/api/chat', api_chat)
     app.router.add_get('/api/health', api_health)
+    app.router.add_get('/api/key-status', api_key_status)
     app.on_startup.append(start_background_tasks)
     app.on_cleanup.append(cleanup_background_tasks)
     return app
