@@ -115,9 +115,68 @@ class FireTrader:
     # ═══════════════════════════════════════════════════════════════════
 
     # ── Goal-Aware Micro-Gains Configuration ──
-    _MICRO_GAINS_MAX_BUY = 5.0       # max $5 per micro-gains buy
+    _MICRO_GAINS_MAX_BUY = 5.50      # max $5.50 per micro-gains buy (10-9-2 model min)
     _MICRO_GAINS_MIN_CONSENSUS = 1   # only 1/7 oracle needs to be bullish
     _MICRO_GAINS_RISK_MOD = 0.25     # 75% position reduction in micro mode
+
+    # ── 10-9-2 Creature Growth Model ─────────────────────────────────
+    # "Only take the scalp, not the body"
+    # Scalp = profit portion above cost basis (body stays invested forever)
+    # Prime-number cent targets: 2¢, 3¢, 5¢, 7¢, 11¢, 13¢... (primorial steps)
+    # 10-9-2 distribution of each scalp received:
+    #   89% → free cash (realized profit)
+    #    9% → DCA reinvestment back into the same symbol (body grows)
+    #    2% → reinvestment pool for new position seeds
+    _MIN_POSITION_USD   = 5.50       # $5.50 minimum position size
+    _MIN_NOTIONAL_USD   = 5.50       # $5.50 minimum sell notional (exchange safe)
+    _MODEL_DCA_BACK_PCT = 0.09       # 9% of scalp → DCA back into symbol
+    _MODEL_REINVEST_PCT = 0.02       # 2% of scalp → reinvestment pool
+    # Prime-number cent scalp targets (cents)
+    _PRIME_CENTS = [
+        2,3,5,7,11,13,17,19,23,29,31,37,41,43,47,53,59,61,67,71,79,83,89,97,
+        101,103,107,109,113,127,131,137,139,149,151,157,163,167,173,179,181,
+        191,193,197,199,211,223,227,229,233,239,241,251,257,263,269,271,277,
+        281,283,293,307,311,313,317,331,337,347,349,353,359,367,373,379,383,
+        389,397,401,409,419,421,431,433,439,443,449,457,461,463,467,479,487,
+        491,499,503,509,521,523,541,547,557,563,569,571,577,587,593,599,601,
+        607,613,617,619,631,641,643,647,653,659,661,673,677,683,691,701,709,
+        719,727,733,739,743,751,757,761,769,773,787,797,809,811,821,823,827,
+        829,839,853,857,859,863,877,881,883,887,907,911,919,929,937,941,947,
+        953,967,971,977,983,991,997,
+    ]
+
+    def _floor_prime_cents(self, profit_usd: float) -> float:
+        """Return the LARGEST prime-number of cents that fits within profit_usd.
+        e.g. $0.18 → 17¢ (prime), $0.04 → 3¢, $0.01 → 0 (can't prime yet)"""
+        profit_cents = profit_usd * 100.0
+        result = 0
+        for p in self._PRIME_CENTS:
+            if p <= profit_cents:
+                result = p
+            else:
+                break
+        return result / 100.0   # 0 means not enough yet
+
+    def _scalp_qty(self, total_qty: float, price: float, cost_basis: float,
+                   fee_rate: float = 0.001) -> tuple:
+        """Compute scalp-only sell quantity using 10-9-2 prime-cent targeting.
+        Returns (sell_qty, prime_target_usd, body_qty, log_msg).
+        sell_qty=0 means body is protected and no prime threshold reached yet."""
+        if cost_basis and cost_basis > 0 and price > 0:
+            body_qty    = cost_basis / price          # coins covering principal
+        else:
+            body_qty    = total_qty * 0.90            # no cost basis → protect 90%
+        scalp_avail   = max(0.0, total_qty - body_qty)
+        if scalp_avail <= 0:
+            return 0.0, 0.0, body_qty, "body fully covered — no scalp available"
+        gross_scalp   = scalp_avail * price * (1.0 - fee_rate)
+        prime_target  = self._floor_prime_cents(gross_scalp)
+        if prime_target < 0.02:   # below 2¢ prime floor
+            return 0.0, 0.0, body_qty, (f"scalp ${gross_scalp*100:.1f}¢ < 2¢ prime threshold")
+        sell_qty      = min(scalp_avail, prime_target / (price * (1.0 - fee_rate)))
+        msg = (f"PRIME SCALP {int(prime_target*100)}¢ | gross ${gross_scalp:.4f} | "
+               f"body {body_qty:.4f} units (${body_qty*price:.2f} protected)")
+        return sell_qty, prime_target, body_qty, msg
 
     def _load_goal_distance(self) -> float:
         """Return dollars remaining to the nearest active goal."""
@@ -646,10 +705,9 @@ class FireTrader:
                          f"cost_basis=${cost_basis or 0:.4f}, profit={profit_margin:+.2f}%, "
                          f"24h={change:+.1f}%")
 
-                # ANY positive gain after fees is worth taking (user policy: take all real gains)
-                # Skip positions below $6 — Binance min_notional is $5 but lot-size rounding
-                # can drop the actual notional below threshold, causing NOTIONAL rejection
-                if profit_margin > 0.0 and change > -2.0 and value >= 6.0:
+                # Prime-scalp policy: take only scalp (not body), only at prime-cent targets
+                # Skip positions below $5.50 notional — exchange safety margin
+                if profit_margin > 0.0 and change > -2.0 and value >= self._MIN_NOTIONAL_USD:
                     profitable_sells.append({
                         'asset': asset,
                         'symbol': symbol,
@@ -657,51 +715,64 @@ class FireTrader:
                         'price': price,
                         'value': value,
                         'change': change,
-                        'profit_margin': profit_margin
+                        'profit_margin': profit_margin,
+                        'cost_basis': cost_basis or 0.0,
                     })
-                elif profit_margin > 0.0 and value < 6.0:
-                    log_fire(f"   [SKIP] {asset}: profitable +{profit_margin:.2f}% but ${value:.2f} < $6 notional safety margin")
+                elif profit_margin > 0.0 and value < self._MIN_NOTIONAL_USD:
+                    log_fire(f"   [SKIP] {asset}: profitable +{profit_margin:.2f}% but ${value:.2f} < ${self._MIN_NOTIONAL_USD} notional safety")
             except Exception as e:
                 log_fire(f"   [DEBUG] Binance {asset}: error while evaluating sell opportunity - {e}")
 
-        # Sell ALL profitable positions (not just the best one) — take every real gain
+        # Sell ALL profitable positions — SCALP-NOT-BODY with prime-cent targeting
         profitable_sells.sort(key=lambda x: -x['profit_margin'])
         for best_sell in profitable_sells:
-            log_fire(f"\n🎯 PROFIT OPPORTUNITY (Binance): {best_sell['asset']} +{best_sell['profit_margin']:.2f}%")
-            # Sell 100% if position is small (avoids min_notional rejection on partial sells)
-            # Sell 50% if position is large enough that half still clears $5 notional
-            half_value = best_sell['value'] * 0.5
-            if half_value < 6.0:
-                sell_qty = best_sell['qty']  # sell 100% — position too small to split
-                log_fire(f"   Selling 100% (${best_sell['value']:.2f} — too small to split)")
-            else:
-                sell_qty = best_sell['qty'] * 0.5
-                log_fire(f"   Selling 50% to lock +{best_sell['profit_margin']:.2f}% profit")
+            log_fire(f"\n🎯 PRIME SCALP OPPORTUNITY (Binance): {best_sell['asset']} +{best_sell['profit_margin']:.2f}%")
+            # ── Scalp-not-body: only sell the profit coins, principal stays forever ──
+            fee_rate_b = 0.001  # Binance taker
+            sell_qty, prime_target, body_qty, scalp_msg = self._scalp_qty(
+                best_sell['qty'], best_sell['price'], best_sell['cost_basis'], fee_rate_b
+            )
+            if sell_qty <= 0:
+                log_fire(f"   ⏸ BODY PROTECTED ({best_sell['asset']}): {scalp_msg}")
+                continue
+            log_fire(f"   🔢 {scalp_msg}")
+            log_fire(f"   🏛 BODY STAYS: {body_qty:.6f} {best_sell['asset']} (${body_qty*best_sell['price']:.2f} principal protected)")
             try:
                 order = self.binance.place_market_order(best_sell['symbol'], 'sell', sell_qty)
                 log_result(f"SELL ORDER RESULT: {json.dumps(order, indent=2) if order else 'None'}")
                 if order and order.get('status') == 'FILLED':
-                    log_fire(f"💥💥💥 BINANCE SELL FILLED! +{best_sell['profit_margin']:.2f}% 💥💥💥")
+                    scalp_received = prime_target
+                    # ── 10-9-2 Creature Growth Model ──
+                    dca_back   = scalp_received * self._MODEL_DCA_BACK_PCT   # 9%
+                    reinvest   = scalp_received * self._MODEL_REINVEST_PCT   # 2%
+                    free_cash  = scalp_received * (1.0 - self._MODEL_DCA_BACK_PCT - self._MODEL_REINVEST_PCT)  # 89%
+                    log_fire(f"💥 PRIME SCALP FILLED! {int(prime_target*100)}¢ | +{best_sell['profit_margin']:.2f}%")
+                    log_fire(f"   💎 10-9-2 CREATURE GROWTH: ${free_cash:.4f} free | ${dca_back:.4f} DCA-back | ${reinvest:.4f} reinvest")
                     with open('orca_real_trades.json', 'a') as f:
                         f.write(json.dumps({
                             'timestamp': datetime.now().isoformat(),
                             'exchange': 'binance',
                             'symbol': best_sell['symbol'],
-                            'side': 'SELL',
+                            'side': 'SCALP_SELL',
                             'qty': sell_qty,
                             'price': best_sell['price'],
                             'value': best_sell['value'],
+                            'prime_scalp_cents': int(prime_target * 100),
+                            'body_protected_qty': body_qty,
                             'profit_margin': best_sell['profit_margin'],
+                            '10_9_2_free': free_cash,
+                            '10_9_2_dca_back': dca_back,
+                            '10_9_2_reinvest': reinvest,
                             'order': order
                         }) + '\n')
                     self._validate_seer_predictions(best_sell['symbol'], 'binance', best_sell['price'])
                     sell_executed = True
                 else:
-                    log_fire(f"❌ Binance sell not filled: {order}")
+                    log_fire(f"❌ Binance scalp sell not filled: {order}")
             except Exception as e:
-                log_fire(f"❌ Binance sell failed ({best_sell['symbol']}): {e}")
+                log_fire(f"❌ Binance scalp sell failed ({best_sell['symbol']}): {e}")
         if not profitable_sells:
-            log_fire("   [DEBUG] Binance: no profitable positions to sell")
+            log_fire("   [DEBUG] Binance: no profitable positions to scalp")
 
         log_fire("\n🔍 Scanning Kraken for profit opportunities...")
         
@@ -729,8 +800,8 @@ class FireTrader:
                     continue
 
                 value = qty * price
-                
-                if value < 5:  # Skip small positions
+
+                if value < self._MIN_NOTIONAL_USD:  # Skip small positions ($5.50 floor)
                     continue
 
                 log_fire(
@@ -762,19 +833,20 @@ class FireTrader:
                 cost_basis_dbg = f"{cost_basis:.4f}" if cost_basis is not None else "0.0000"
                 log_fire(f"   [DEBUG] Kraken {asset}: cost_basis=${cost_basis_dbg}, net_after_fees=${net_price:.4f}, profit_margin={profit_margin:.2f}%")
 
-                # ANY positive gain after fees (user policy: take all real gains, never sell at a loss)
+                # Prime scalp policy: only take scalp (not body) at prime-cent targets
                 if profit_margin > 0.0 and change_24h > -2.0:
                     log_fire(f"   📈 {asset}: ${value:.2f} @ ${price:.4f} (24h {change_24h:+.2f}%, +{profit_margin:.2f}% profit)")
-                    
-                    log_fire(f"\n🎯 PROFIT OPPORTUNITY: {asset}")
-                    # Sell 100% if small (avoids min_notional); 50% if large
-                    half_value = value * 0.5
-                    if half_value < 6.0:
-                        sell_qty = qty  # 100% — position too small to split safely
-                        log_fire(f"   Selling 100% (${value:.2f} — too small to split)")
-                    else:
-                        sell_qty = qty * 0.5
-                        log_fire(f"   Selling 50% to lock +{profit_margin:.2f}% profit")
+                    log_fire(f"\n🎯 PRIME SCALP OPPORTUNITY: {asset}")
+                    # ── Scalp-not-body: body stays, only scalp coins sold ──
+                    fee_rate_k = 0.0026  # Kraken taker
+                    sell_qty, prime_target_k, body_qty_k, scalp_msg_k = self._scalp_qty(
+                        qty, price, cost_basis if cost_basis is not None else 0.0, fee_rate_k
+                    )
+                    if sell_qty <= 0:
+                        log_fire(f"   ⏸ BODY PROTECTED ({asset}): {scalp_msg_k}")
+                        break
+                    log_fire(f"   🔢 {scalp_msg_k}")
+                    log_fire(f"   🏛 BODY STAYS: {body_qty_k:.6f} {asset} (${body_qty_k*price:.2f} principal protected)")
                     
                     log_fire(f"\n⚡ EXECUTING SELL: {sell_qty} {asset}...")
                     
@@ -783,32 +855,38 @@ class FireTrader:
                     log_result(f"ORDER RESULT: {json.dumps(order, indent=2) if order else 'None'}")
                     
                     if order and order.get('status') == 'FILLED':
-                        # Calculate received amount: prefer cummulativeQuoteQty, fallback to qty*price
                         received = float(order.get('cummulativeQuoteQty', 0))
                         if received <= 0:
                             exec_qty = float(order.get('executedQty', sell_qty))
                             received = exec_qty * price
-                        log_fire(f"💥💥💥 TRADE FILLED! 💥💥💥")
+                        # ── 10-9-2 Creature Growth Model ──
+                        dca_back_k  = prime_target_k * self._MODEL_DCA_BACK_PCT   # 9%
+                        reinvest_k  = prime_target_k * self._MODEL_REINVEST_PCT   # 2%
+                        free_cash_k = prime_target_k * (1.0 - self._MODEL_DCA_BACK_PCT - self._MODEL_REINVEST_PCT)  # 89%
+                        log_fire(f"💥 PRIME SCALP FILLED! {int(prime_target_k*100)}¢ kraken")
+                        log_fire(f"   💎 10-9-2 CREATURE GROWTH: ${free_cash_k:.4f} free | ${dca_back_k:.4f} DCA-back | ${reinvest_k:.4f} reinvest")
                         log_fire(f"   Received: ${received:.2f}")
-                        
-                        # Log to file
                         with open('orca_real_trades.json', 'a') as f:
                             f.write(json.dumps({
                                 'timestamp': datetime.now().isoformat(),
                                 'exchange': 'kraken',
                                 'symbol': pair,
-                                'side': 'SELL',
+                                'side': 'SCALP_SELL',
                                 'qty': sell_qty,
                                 'price': price,
                                 'value': value,
+                                'prime_scalp_cents': int(prime_target_k * 100),
+                                'body_protected_qty': body_qty_k,
+                                '10_9_2_free': free_cash_k,
+                                '10_9_2_dca_back': dca_back_k,
+                                '10_9_2_reinvest': reinvest_k,
                                 'order': order
                             }) + '\n')
-                        # Validate Seer prediction for this sell
                         self._validate_seer_predictions(pair, 'kraken', price)
-                        sell_executed = True  # continue to buy phase instead of early-exit
-                        break  # one sell per cycle is enough
+                        sell_executed = True
+                        break
                     else:
-                        log_fire(f"❌ Order not filled: {order}")
+                        log_fire(f"❌ Kraken scalp sell not filled: {order}")
                         
             except Exception as e:
                 log_fire(f"   [DEBUG] Kraken {asset}: error while checking profit - {e}")
@@ -849,13 +927,13 @@ class FireTrader:
             def _buy_amount_kraken(cash_amt: float) -> float:
                 return max(3.0, min(self._MICRO_GAINS_MAX_BUY, cash_amt * 0.50))
             def _buy_amount_binance(cash_amt: float) -> float:
-                return max(5.0, min(self._MICRO_GAINS_MAX_BUY + 1, cash_amt * 0.50))
+                return max(self._MIN_POSITION_USD, min(self._MICRO_GAINS_MAX_BUY + 1, cash_amt * 0.50))
             max_candidates = 12  # scan wider in micro mode — looking for rare movers
         else:
             def _buy_amount_kraken(cash_amt: float) -> float:
-                return max(5.0, min(20.0, cash_amt * 0.85))
+                return max(self._MIN_POSITION_USD, min(20.0, cash_amt * 0.85))
             def _buy_amount_binance(cash_amt: float) -> float:
-                return max(5.0, min(20.0, cash_amt * 0.85))
+                return max(self._MIN_POSITION_USD, min(20.0, cash_amt * 0.85))
             max_candidates = 8
 
 
@@ -965,7 +1043,7 @@ class FireTrader:
                                else kraken_tusd_cash if qccy == 'TUSD'
                                else kraken_usd_cash)
                 raw_qty = _buy_amount_kraken(funded_cash)
-                min_buy = 3.0 if micro_mode else 5.0
+                min_buy = 3.0 if micro_mode else self._MIN_POSITION_USD
                 quote_qty = max(min_buy, min(raw_qty * seer_risk_mod, funded_cash * 0.9))
                 log_fire(f"\n🎯 BUY OPPORTUNITY (Kraken{' MICRO' if micro_mode else ''}): {candidate['pair']}")
                 log_fire(f"   Price=${candidate['price']:.6f} | 24h={candidate['change_24h']:+.2f}% | Vol=${candidate['quote_vol']:.0f}")
@@ -1061,7 +1139,7 @@ class FireTrader:
                         log_fire(f"   🔮 SEER rejects {base_for_seer} — BEARISH, trying next")
                         continue
                 raw_qty = _buy_amount_binance(binance_cash)
-                min_buy = 5.0  # Binance min_notional = $5
+                min_buy = self._MIN_POSITION_USD  # Binance min_notional ($5.50 with safety buffer)
                 quote_qty = max(min_buy, min(raw_qty * seer_risk_mod, binance_cash * 0.9))
                 log_fire(f"\n🎯 BUY OPPORTUNITY (Binance{' MICRO' if micro_mode else ''}): {candidate['pair']}")
                 log_fire(f"   Price=${candidate['price']:.6f} | 24h={candidate['change']:+.2f}% | Vol=${candidate['volume']:.0f}")
