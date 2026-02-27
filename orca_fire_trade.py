@@ -647,8 +647,9 @@ class FireTrader:
                          f"24h={change:+.1f}%")
 
                 # ANY positive gain after fees is worth taking (user policy: take all real gains)
-                # But skip positions below Binance min_notional ($5) — they CAN'T be sold
-                if profit_margin > 0.0 and change > -2.0 and value >= 5.0:
+                # Skip positions below $6 — Binance min_notional is $5 but lot-size rounding
+                # can drop the actual notional below threshold, causing NOTIONAL rejection
+                if profit_margin > 0.0 and change > -2.0 and value >= 6.0:
                     profitable_sells.append({
                         'asset': asset,
                         'symbol': symbol,
@@ -658,8 +659,8 @@ class FireTrader:
                         'change': change,
                         'profit_margin': profit_margin
                     })
-                elif profit_margin > 0.0 and value < 5.0:
-                    log_fire(f"   [SKIP] {asset}: profitable +{profit_margin:.2f}% but ${value:.2f} < $5 min_notional")
+                elif profit_margin > 0.0 and value < 6.0:
+                    log_fire(f"   [SKIP] {asset}: profitable +{profit_margin:.2f}% but ${value:.2f} < $6 notional safety margin")
             except Exception as e:
                 log_fire(f"   [DEBUG] Binance {asset}: error while evaluating sell opportunity - {e}")
 
@@ -1000,6 +1001,9 @@ class FireTrader:
                     sym = t.get('symbol', '')
                     # UK accounts: USDC pairs ONLY (USDT not permitted)
                     if not sym.endswith('USDC'):
+                        continue
+                    # Skip symbols with non-ASCII chars (e.g. 币安人生USDC) — breaks HMAC signature
+                    if not sym.isascii():
                         continue
                     if uk_allowed and sym not in uk_allowed:
                         continue
