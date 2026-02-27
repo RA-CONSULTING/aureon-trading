@@ -15784,11 +15784,48 @@ _ORCA_LOCK_HANDLE = None
 
 
 def _acquire_orca_singleton_lock(lock_name: str = "orca_autonomous_live.lock") -> bool:
-    """Acquire singleton lock so only one autonomous Orca process can run."""
+    """Acquire singleton lock so only one autonomous Orca process can run.
+    
+    Auto-detects stale locks from crashed/killed processes and reclaims them.
+    """
     global _ORCA_LOCK_HANDLE
     import tempfile
     lock_dir = tempfile.gettempdir()  # Cross-platform: /tmp on Linux, %TEMP% on Windows
     lock_path = os.path.join(lock_dir, lock_name)
+
+    # ── Stale lock detection: if lock file exists, check if its PID is alive ───
+    if os.path.exists(lock_path):
+        try:
+            with open(lock_path, 'r') as _lf:
+                old_pid_str = _lf.read().strip()
+            if old_pid_str.isdigit():
+                old_pid = int(old_pid_str)
+                pid_alive = False
+                try:
+                    if sys.platform == 'win32':
+                        import subprocess
+                        result = subprocess.run(
+                            ['tasklist', '/FI', f'PID eq {old_pid}', '/NH'],
+                            capture_output=True, text=True, timeout=3
+                        )
+                        pid_alive = str(old_pid) in result.stdout
+                    else:
+                        os.kill(old_pid, 0)   # signal 0 = just check existence
+                        pid_alive = True
+                except (ProcessLookupError, OSError):
+                    pid_alive = False
+                except Exception:
+                    pid_alive = True  # conservative: assume alive on unknown error
+
+                if not pid_alive:
+                    print(f"  Stale Orca lock detected (PID {old_pid} is dead) — reclaiming lock")
+                    try:
+                        os.remove(lock_path)
+                    except Exception:
+                        pass
+        except Exception:
+            pass  # Corrupted lock file — proceed and overwrite
+
     try:
         lock_f = open(lock_path, "w")
         try:
@@ -15799,11 +15836,14 @@ def _acquire_orca_singleton_lock(lock_name: str = "orca_autonomous_live.lock") -
                 import fcntl
                 fcntl.flock(lock_f.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
         except Exception:
-            # Lock acquisition failed (usually another running process) -> enforce singleton.
+            # Lock acquisition failed — truly another live process holds it.
             try:
                 lock_f.close()
             except Exception:
                 pass
+            import tempfile as _tmp
+            _lp = os.path.join(_tmp.gettempdir(), lock_name)
+            print(f"  Lock file: {_lp}  — delete it manually if no other Orca is running")
             return False
         lock_f.write(str(os.getpid()))
         lock_f.flush()
@@ -15861,6 +15901,7 @@ if __name__ == "__main__":
         parser.add_argument("--initial-capital", type=float, default=1000, help="Initial capital amount")
         parser.add_argument("--dry-run", action="store_true", help="Dry run mode - no real trades")
         parser.add_argument("--allow-multi-instance", action="store_true", help="Allow multiple autonomous Orca instances (not recommended)")
+        parser.add_argument("--clear-lock", action="store_true", help="Delete stale lock file and start fresh (use if 'another instance running' error persists)")
         # Positional args passed by start_orca.sh: max_positions position_size min_target
         parser.add_argument("max_positions", nargs="?", type=int, default=0, help="Max concurrent positions (<=0 for unlimited, default: unlimited)")
         parser.add_argument("position_size", nargs="?", type=float, default=10.0, help="Position size in USD (default: 10.0)")
@@ -15885,6 +15926,16 @@ if __name__ == "__main__":
             os.environ['DRY_RUN'] = '1'
             os.environ['DRY_RUN_MODE'] = 'true'
         
+        # --clear-lock: force-delete stale lock before doing anything else
+        if getattr(args, 'clear_lock', False):
+            import tempfile
+            _lp = os.path.join(tempfile.gettempdir(), "orca_autonomous.lock")
+            if os.path.exists(_lp):
+                os.remove(_lp)
+                print(f"  Lock cleared: {_lp}")
+            else:
+                print(f"  No lock file found at {_lp} — nothing to clear")
+
         print(f"  Args parsed: autonomous={args.autonomous}, dry_run={args.dry_run}, max_positions={args.max_positions}, position_size={args.position_size}, min_target={args.min_target}")
 
         # Prevent duplicate autonomous instances by default (production safety)
