@@ -685,214 +685,370 @@ WARZONE_HTML = r"""<!DOCTYPE html>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>⚔️ AUREON WARZONE — TACTICAL COMMAND</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <style>
 /* ─── RESET & BASE ─────────────────────────────────────────── */
 *{margin:0;padding:0;box-sizing:border-box}
 @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap');
 :root{
-  --bg:#050a0f;--bg2:#0a1219;--panel:#0c1a24;--border:#1a3a4a;
-  --green:#00ff88;--amber:#ffaa00;--red:#ff3344;--cyan:#00e5ff;
-  --gold:#ffd700;--purple:#a855f7;--dim:#3a5a6a;
+  --bg:#0d1117;--bg2:#161b22;--panel:#1c2333;--border:#30363d;
+  --green:#00ff88;--green-dim:rgba(0,255,136,0.15);
+  --amber:#ffaa00;--red:#ff3344;--cyan:#00e5ff;
+  --gold:#ffd700;--purple:#a855f7;--dim:#484f58;
+  --text:#c9d1d9;--text-bright:#e6edf3;
   --font-mono:'Share Tech Mono',monospace;--font-display:'Orbitron',sans-serif;
+  /* Exchange brand colors */
+  --kraken-color:#7b61ff;--alpaca-color:#f0b90b;--binance-color:#f0b90b;--capital-color:#00c896;
 }
-html,body{height:100%;overflow:hidden}
+html{height:100%}
 body{
-  font-family:var(--font-mono);background:var(--bg);color:var(--green);
+  min-height:100vh;
+  font-family:var(--font-mono);background:var(--bg);color:var(--text);
   display:flex;flex-direction:column;
+  font-size:14px;line-height:1.4;
 }
+
+/* ─── DENSITY TOGGLE ───────────────────────────────────────── */
+body.compact .panel-title{font-size:0.6em;margin-bottom:6px;padding-bottom:4px}
+body.compact .metric-box{padding:4px}
+body.compact .metric-box .value{font-size:1em}
+body.compact .metric-box .label{font-size:0.55em}
+body.compact .frontline-card{padding:6px;margin-bottom:4px}
+body.compact .pos-table td,body.compact .pos-table th{padding:3px 6px;font-size:0.7em}
+body.compact .chat-msg{padding:6px 8px;font-size:0.75em}
+body.compact .chat-input-area input{padding:6px 8px}
 
 /* ─── SCANLINE OVERLAY ─────────────────────────────────────── */
 body::after{
   content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;
-  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,255,136,0.015) 2px,rgba(0,255,136,0.015) 4px);
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,255,136,0.01) 2px,rgba(0,255,136,0.01) 4px);
 }
+
+/* ─── ENERGY FLOW BAR ──────────────────────────────────────── */
+.energy-bar{
+  height:3px;flex-shrink:0;
+  background:linear-gradient(90deg,var(--green),var(--cyan),var(--purple),var(--gold),var(--green));
+  background-size:200% 100%;
+  animation:energyFlow 3s linear infinite;
+}
+@keyframes energyFlow{0%{background-position:0% 50%}100%{background-position:200% 50%}}
 
 /* ─── TOP BAR ─────────────────────────────────────────────── */
 .topbar{
   display:flex;align-items:center;justify-content:space-between;
-  padding:8px 20px;background:linear-gradient(90deg,#0a1a10,#0a1520,#0a1a10);
-  border-bottom:2px solid var(--green);flex-shrink:0;
+  padding:6px 16px;background:var(--bg2);
+  border-bottom:1px solid var(--border);flex-shrink:0;
+  flex-wrap:wrap;gap:8px;
 }
 .topbar h1{
-  font-family:var(--font-display);font-size:1.1em;letter-spacing:3px;
+  font-family:var(--font-display);font-size:0.95em;letter-spacing:3px;
   background:linear-gradient(90deg,var(--green),var(--cyan),var(--green));
   -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  white-space:nowrap;
 }
+.topbar-center{display:flex;align-items:center;gap:12px}
 .topbar .threat{
-  font-family:var(--font-display);font-size:0.85em;padding:4px 16px;
+  font-family:var(--font-display);font-size:0.75em;padding:3px 12px;
   border-radius:4px;letter-spacing:2px;font-weight:700;
   animation:pulse 1.5s ease-in-out infinite;
 }
-.threat.GREEN{background:rgba(0,255,136,0.15);color:var(--green);border:1px solid var(--green)}
-.threat.AMBER{background:rgba(255,170,0,0.15);color:var(--amber);border:1px solid var(--amber)}
-.threat.RED{background:rgba(255,51,68,0.15);color:var(--red);border:1px solid var(--red);animation:flash 0.8s infinite}
+.threat.GREEN{background:rgba(0,255,136,0.12);color:var(--green);border:1px solid var(--green)}
+.threat.AMBER{background:rgba(255,170,0,0.12);color:var(--amber);border:1px solid var(--amber)}
+.threat.RED{background:rgba(255,51,68,0.12);color:var(--red);border:1px solid var(--red);animation:flash 0.8s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.7}}
 @keyframes flash{0%,100%{opacity:1}50%{opacity:0.3}}
-.topbar .meta{font-size:0.75em;color:var(--dim)}
+.topbar .meta{font-size:0.7em;color:var(--dim);white-space:nowrap}
+/* Density toggle in topbar */
+.density-btns{display:flex;gap:2px}
+.density-btns button{
+  padding:2px 8px;font-size:0.65em;border:1px solid var(--border);
+  background:var(--panel);color:var(--dim);cursor:pointer;
+  font-family:var(--font-mono);border-radius:3px;transition:all 0.2s;
+}
+.density-btns button.active{color:var(--cyan);border-color:var(--cyan);background:rgba(0,229,255,0.08)}
+
+/* ─── FLASH ANIMATIONS ─────────────────────────────────────── */
+@keyframes flashGreen{0%{background:rgba(0,255,136,0.25)}100%{background:transparent}}
+@keyframes flashRed{0%{background:rgba(255,51,68,0.25)}100%{background:transparent}}
+@keyframes numberPop{0%{transform:scale(1.3);filter:brightness(1.5)}100%{transform:scale(1);filter:brightness(1)}}
+.flash-green{animation:flashGreen 0.6s ease-out}
+.flash-red{animation:flashRed 0.6s ease-out}
+.number-pop{animation:numberPop 0.4s ease-out}
 
 /* ─── MAIN GRID ────────────────────────────────────────────── */
 .main{
-  display:grid;flex:1;overflow:hidden;
-  grid-template-columns:300px 1fr 340px;
+  display:grid;flex:1;
+  grid-template-columns:minmax(240px,280px) 1fr minmax(260px,320px);
   grid-template-rows:1fr;
-  gap:0;
+  gap:0;min-height:0;
 }
 
-/* ─── LEFT PANEL — FRONTLINES ──────────────────────────────── */
+/* ─── PANEL BASE ───────────────────────────────────────────── */
 .left-panel{
   background:var(--bg2);border-right:1px solid var(--border);
-  overflow-y:auto;padding:12px;
+  overflow-y:auto;padding:10px;
 }
 .panel-title{
-  font-family:var(--font-display);font-size:0.7em;letter-spacing:3px;
-  color:var(--cyan);margin-bottom:10px;padding-bottom:6px;
+  font-family:var(--font-display);font-size:0.65em;letter-spacing:2px;
+  color:var(--cyan);margin-bottom:8px;padding-bottom:4px;
   border-bottom:1px solid var(--border);
 }
+
+/* ─── EXCHANGE FRONTLINES (with colored dots) ──────────────── */
 .frontline-card{
   background:var(--panel);border:1px solid var(--border);border-radius:6px;
-  padding:10px;margin-bottom:8px;transition:border-color 0.3s;
+  padding:8px;margin-bottom:6px;transition:border-color 0.3s;
+  display:flex;align-items:center;gap:8px;
 }
-.frontline-card:hover{border-color:var(--green)}
-.frontline-card .name{font-family:var(--font-display);font-size:0.75em;letter-spacing:2px;color:var(--gold)}
-.frontline-card .stat{font-size:0.8em;margin-top:4px}
-.frontline-card .stat span{color:var(--green)}
+.frontline-card:hover{border-color:var(--cyan)}
+.ex-dot{
+  width:10px;height:10px;border-radius:50%;flex-shrink:0;
+  box-shadow:0 0 6px currentColor;
+}
+.ex-dot.kraken{color:var(--kraken-color);background:var(--kraken-color)}
+.ex-dot.alpaca{color:var(--alpaca-color);background:var(--alpaca-color)}
+.ex-dot.binance{color:var(--binance-color);background:var(--binance-color)}
+.ex-dot.capital{color:var(--capital-color);background:var(--capital-color)}
+.ex-dot.default{color:var(--green);background:var(--green)}
+.frontline-info{flex:1;min-width:0}
+.frontline-info .name{font-family:var(--font-display);font-size:0.65em;letter-spacing:1px;color:var(--text-bright)}
+.frontline-info .stat{font-size:0.75em;color:var(--dim)}
+.frontline-info .stat span{color:var(--green)}
+.ex-balance{font-size:0.9em;font-weight:700;color:var(--green);white-space:nowrap}
 .online{color:var(--green)}
 .offline{color:var(--red)}
 
-/* ─── METRICS ROW ──────────────────────────────────────────── */
+/* ─── METRIC BOXES ─────────────────────────────────────────── */
 .metric-row{
-  display:grid;grid-template-columns:repeat(4,1fr);gap:6px;
-  margin-bottom:10px;
+  display:grid;grid-template-columns:repeat(4,1fr);gap:4px;
+  margin-bottom:8px;
 }
 .metric-box{
   background:var(--panel);border:1px solid var(--border);border-radius:4px;
-  padding:8px;text-align:center;
+  padding:6px;text-align:center;
 }
-.metric-box .label{font-size:0.6em;color:var(--dim);text-transform:uppercase;letter-spacing:1px}
-.metric-box .value{font-size:1.3em;font-weight:700;margin-top:2px}
+.metric-box .label{font-size:0.55em;color:var(--dim);text-transform:uppercase;letter-spacing:1px}
+.metric-box .value{font-size:1.1em;font-weight:700;margin-top:2px}
 .metric-box .value.positive{color:var(--green)}
 .metric-box .value.negative{color:var(--red)}
 .metric-box .value.neutral{color:var(--amber)}
 
-/* ─── SYSTEMS STATUS ───────────────────────────────────────── */
-.systems-grid{
-  display:flex;flex-wrap:wrap;gap:4px;margin-top:8px;
+/* ─── LEADERS & LAGGARDS ───────────────────────────────────── */
+.leaders-section{display:flex;gap:6px;margin-bottom:8px}
+.leaders-col{flex:1}
+.leaders-col .col-title{font-size:0.6em;letter-spacing:1px;margin-bottom:4px;text-transform:uppercase}
+.leaders-col .col-title.winners{color:var(--green)}
+.leaders-col .col-title.losers{color:var(--red)}
+.leader-item{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:2px 4px;font-size:0.72em;border-radius:3px;margin-bottom:2px;
 }
+.leader-item.winner{background:rgba(0,255,136,0.06);color:var(--green)}
+.leader-item.loser{background:rgba(255,51,68,0.06);color:var(--red)}
+.leader-item .sym{color:var(--text-bright);font-weight:700}
+
+/* ─── BUY/SELL FLOW BARS ───────────────────────────────────── */
+.flow-section{margin-bottom:8px}
+.flow-row{display:flex;align-items:center;gap:6px;margin-bottom:4px;font-size:0.72em}
+.flow-row .sym{width:36px;color:var(--gold);font-weight:700}
+.flow-bar-track{flex:1;height:12px;background:var(--panel);border-radius:6px;overflow:hidden;display:flex}
+.flow-bar-buy{height:100%;background:linear-gradient(90deg,transparent,var(--green));border-radius:6px 0 0 6px;transition:width 0.6s}
+.flow-bar-sell{height:100%;background:linear-gradient(270deg,transparent,var(--red));border-radius:0 6px 6px 0;transition:width 0.6s}
+.flow-row .pct{width:32px;text-align:right;font-size:0.85em}
+
+/* ─── FEAR & GREED GAUGE ───────────────────────────────────── */
+.fg-mini{
+  display:flex;align-items:center;gap:8px;margin-bottom:8px;
+  padding:6px 8px;background:var(--panel);border:1px solid var(--border);border-radius:6px;
+}
+.fg-badge{
+  width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-weight:900;font-size:0.8em;flex-shrink:0;
+  background:conic-gradient(var(--red) 0deg,var(--amber) 120deg,var(--green) 240deg,var(--red) 360deg);
+}
+.fg-badge-inner{
+  width:28px;height:28px;border-radius:50%;background:var(--panel);
+  display:flex;align-items:center;justify-content:center;
+  font-size:0.85em;font-weight:900;color:var(--text-bright);
+}
+.fg-label{font-size:0.7em;color:var(--dim)}
+.fg-label span{color:var(--text-bright);font-weight:700}
+
+/* ─── SYSTEMS DOTS ─────────────────────────────────────────── */
+.systems-grid{display:flex;flex-wrap:wrap;gap:3px;margin-top:6px}
 .sys-dot{
-  width:10px;height:10px;border-radius:50%;
-  background:var(--green);
-  box-shadow:0 0 6px var(--green);
+  width:8px;height:8px;border-radius:50%;
+  background:var(--green);box-shadow:0 0 4px var(--green);
   cursor:pointer;position:relative;
 }
 .sys-dot:hover::after{
-  content:attr(data-name);position:absolute;bottom:14px;left:50%;transform:translateX(-50%);
+  content:attr(data-name);position:absolute;bottom:12px;left:50%;transform:translateX(-50%);
   background:#000;color:var(--green);padding:2px 6px;border-radius:3px;font-size:0.65em;
   white-space:nowrap;border:1px solid var(--border);z-index:10;
 }
 
-/* ─── CENTER PANEL — TACTICAL GRID ─────────────────────────── */
+/* ─── CENTER PANEL ─────────────────────────────────────────── */
 .center-panel{
-  display:flex;flex-direction:column;overflow:hidden;
+  display:flex;flex-direction:column;overflow-y:auto;
+  background:var(--bg);
 }
-.tactical-grid{
-  flex:1;overflow-y:auto;padding:12px;
-  background:
-    radial-gradient(circle at 50% 50%, rgba(0,229,255,0.03) 0%, transparent 70%),
-    var(--bg);
-}
+.center-content{padding:10px;flex:1}
 
-/* ─── RADAR DISPLAY ────────────────────────────────────────── */
+/* ─── CHART SECTION ────────────────────────────────────────── */
+.chart-section{
+  background:var(--panel);border:1px solid var(--border);border-radius:6px;
+  padding:10px;margin-bottom:10px;
+}
+.chart-stats{
+  display:flex;gap:12px;margin-bottom:6px;font-size:0.72em;flex-wrap:wrap;
+}
+.chart-stats .stat-item{color:var(--dim)}
+.chart-stats .stat-item span{font-weight:700}
+.chart-stats .stat-item span.up{color:var(--green)}
+.chart-stats .stat-item span.down{color:var(--red)}
+.chart-stats .stat-item span.flat{color:var(--amber)}
+#equity-chart{width:100%;height:180px}
+
+/* ─── POSITION CHIPS ───────────────────────────────────────── */
+.position-chips{
+  display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px;
+  max-height:60px;overflow-y:auto;
+}
+.pos-chip{
+  padding:2px 8px;border-radius:12px;font-size:0.68em;font-weight:700;
+  white-space:nowrap;border:1px solid;
+}
+.pos-chip.winner{background:rgba(0,255,136,0.08);border-color:rgba(0,255,136,0.3);color:var(--green)}
+.pos-chip.loser{background:rgba(255,51,68,0.08);border-color:rgba(255,51,68,0.3);color:var(--red)}
+.pos-chip.flat{background:rgba(255,170,0,0.08);border-color:rgba(255,170,0,0.3);color:var(--amber)}
+
+/* ─── RADAR DISPLAY (compact) ──────────────────────────────── */
+.radar-row{display:flex;gap:10px;align-items:flex-start;margin-bottom:10px}
 .radar-container{
-  position:relative;width:200px;height:200px;margin:0 auto 16px;
+  position:relative;width:140px;height:140px;flex-shrink:0;
 }
-.radar-ring{
-  position:absolute;border-radius:50%;border:1px solid rgba(0,229,255,0.15);
-}
+.radar-ring{position:absolute;border-radius:50%;border:1px solid rgba(0,229,255,0.12)}
 .radar-ring:nth-child(1){inset:0}
 .radar-ring:nth-child(2){inset:25%}
 .radar-ring:nth-child(3){inset:42%}
 .radar-crosshair{
   position:absolute;inset:0;
   background:
-    linear-gradient(0deg, transparent 48%, rgba(0,229,255,0.1) 49%, rgba(0,229,255,0.1) 51%, transparent 52%),
-    linear-gradient(90deg, transparent 48%, rgba(0,229,255,0.1) 49%, rgba(0,229,255,0.1) 51%, transparent 52%);
+    linear-gradient(0deg, transparent 48%, rgba(0,229,255,0.08) 49%, rgba(0,229,255,0.08) 51%, transparent 52%),
+    linear-gradient(90deg, transparent 48%, rgba(0,229,255,0.08) 49%, rgba(0,229,255,0.08) 51%, transparent 52%);
 }
 .radar-sweep{
   position:absolute;top:50%;left:50%;width:50%;height:2px;
-  background:linear-gradient(90deg,rgba(0,255,136,0.8),transparent);
+  background:linear-gradient(90deg,rgba(0,255,136,0.7),transparent);
   transform-origin:left center;animation:sweep 4s linear infinite;
 }
 @keyframes sweep{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
 .radar-dot{
-  position:absolute;width:6px;height:6px;border-radius:50%;
-  transform:translate(-50%,-50%);
-  animation:blip 2s ease-in-out infinite;
+  position:absolute;width:5px;height:5px;border-radius:50%;
+  transform:translate(-50%,-50%);animation:blip 2s ease-in-out infinite;
 }
-@keyframes blip{0%,100%{opacity:1;box-shadow:0 0 4px currentColor}50%{opacity:0.4;box-shadow:none}}
+@keyframes blip{0%,100%{opacity:1;box-shadow:0 0 3px currentColor}50%{opacity:0.4;box-shadow:none}}
 
-/* ─── POSITION HEATMAP ─────────────────────────────────────── */
-.heatmap{display:flex;flex-wrap:wrap;gap:3px;margin-top:12px}
-.heat-cell{
-  width:28px;height:28px;border-radius:3px;display:flex;align-items:center;
-  justify-content:center;font-size:0.5em;cursor:pointer;position:relative;
-  transition:transform 0.2s;border:1px solid transparent;
+/* ─── PRICE GRID (beside radar) ────────────────────────────── */
+.price-grid{
+  flex:1;display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:3px;
+  align-content:start;
 }
-.heat-cell:hover{transform:scale(1.8);z-index:10;border-color:var(--cyan)}
-.heat-cell:hover::after{
-  content:attr(data-info);position:absolute;bottom:32px;left:50%;transform:translateX(-50%);
-  background:#000;color:var(--green);padding:3px 8px;border-radius:3px;font-size:1.6em;
-  white-space:nowrap;border:1px solid var(--border);z-index:11;
+.price-cell{
+  background:var(--panel);border:1px solid var(--border);border-radius:4px;
+  padding:3px 6px;font-size:0.7em;
 }
+.price-cell .sym{color:var(--gold);font-weight:700}
+.price-cell .px{color:var(--green)}
+
+/* ─── POSITIONS TABLE ──────────────────────────────────────── */
+.positions-section{
+  background:var(--panel);border:1px solid var(--border);border-radius:6px;
+  overflow:hidden;
+}
+.pos-table-wrap{overflow-x:auto;max-height:300px;overflow-y:auto}
+.pos-table{
+  width:100%;border-collapse:collapse;font-size:0.75em;
+}
+.pos-table th{
+  position:sticky;top:0;background:var(--bg2);color:var(--cyan);
+  font-family:var(--font-display);font-size:0.7em;letter-spacing:1px;
+  text-transform:uppercase;padding:6px 8px;text-align:left;
+  border-bottom:1px solid var(--border);white-space:nowrap;
+  cursor:pointer;user-select:none;
+}
+.pos-table th:hover{color:var(--text-bright)}
+.pos-table td{
+  padding:4px 8px;border-bottom:1px solid rgba(48,54,61,0.5);
+  white-space:nowrap;color:var(--text);
+}
+.pos-table tr:hover td{background:rgba(0,229,255,0.03)}
+.pos-table .sym-cell{color:var(--text-bright);font-weight:700}
+.pos-table .pnl-pos{color:var(--green)}
+.pos-table .pnl-neg{color:var(--red)}
+
+/* ─── KILL FEED (Trade Log) ────────────────────────────────── */
+.kill-feed{margin-top:10px}
+.kill-item{
+  display:flex;align-items:center;gap:8px;
+  padding:4px 8px;font-size:0.72em;border-radius:4px;margin-bottom:3px;
+  border-left:3px solid;
+}
+.kill-item.buy-kill{border-color:var(--green);background:rgba(0,255,136,0.04)}
+.kill-item.sell-kill{border-color:var(--red);background:rgba(255,51,68,0.04)}
+.kill-item .time{color:var(--dim);font-size:0.85em}
+.kill-item .detail{color:var(--text)}
 
 /* ─── RIGHT PANEL — COMMS ──────────────────────────────────── */
 .right-panel{
   background:var(--bg2);border-left:1px solid var(--border);
-  display:flex;flex-direction:column;
+  display:flex;flex-direction:column;min-height:0;
 }
 .comms-header{
-  padding:12px;border-bottom:1px solid var(--border);
+  padding:10px;border-bottom:1px solid var(--border);flex-shrink:0;
 }
 .comms-header h2{
-  font-family:var(--font-display);font-size:0.7em;letter-spacing:3px;color:var(--cyan);
+  font-family:var(--font-display);font-size:0.65em;letter-spacing:2px;color:var(--cyan);
 }
 .samuel-indicator{
-  display:flex;align-items:center;gap:6px;margin-top:6px;font-size:0.75em;
+  display:flex;align-items:center;gap:6px;margin-top:4px;font-size:0.72em;
 }
 .samuel-pulse{
   width:8px;height:8px;border-radius:50%;
   background:var(--green);box-shadow:0 0 8px var(--green);
   animation:pulse 2s ease-in-out infinite;
 }
-.ai-mode{color:var(--dim);font-size:0.7em}
+.ai-mode{color:var(--dim);font-size:0.68em}
 
 /* ─── CHAT MESSAGES ────────────────────────────────────────── */
 .chat-messages{
-  flex:1;overflow-y:auto;padding:12px;
-  display:flex;flex-direction:column;gap:10px;
+  flex:1;overflow-y:auto;padding:10px;
+  display:flex;flex-direction:column;gap:8px;
+  min-height:120px;
 }
 .chat-msg{
-  padding:10px 12px;border-radius:8px;font-size:0.8em;line-height:1.5;
+  padding:8px 10px;border-radius:8px;font-size:0.78em;line-height:1.45;
   max-width:95%;animation:fadeIn 0.3s ease;
 }
-@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 .chat-msg.samuel{
-  background:linear-gradient(135deg,rgba(0,229,255,0.08),rgba(0,255,136,0.05));
-  border:1px solid rgba(0,229,255,0.2);border-radius:8px 8px 8px 2px;
+  background:linear-gradient(135deg,rgba(0,229,255,0.06),rgba(0,255,136,0.04));
+  border:1px solid rgba(0,229,255,0.15);border-radius:8px 8px 8px 2px;
   align-self:flex-start;
 }
-.chat-msg.samuel .sender{color:var(--cyan);font-family:var(--font-display);font-size:0.7em;letter-spacing:2px;margin-bottom:4px}
+.chat-msg.samuel .sender{color:var(--cyan);font-family:var(--font-display);font-size:0.65em;letter-spacing:2px;margin-bottom:3px}
 .chat-msg.user{
-  background:rgba(168,85,247,0.1);border:1px solid rgba(168,85,247,0.2);
+  background:rgba(168,85,247,0.08);border:1px solid rgba(168,85,247,0.15);
   border-radius:8px 8px 2px 8px;align-self:flex-end;
 }
-.chat-msg.user .sender{color:var(--purple);font-family:var(--font-display);font-size:0.7em;letter-spacing:2px;margin-bottom:4px}
-.chat-msg .text{color:#c0e0d0}
+.chat-msg.user .sender{color:var(--purple);font-family:var(--font-display);font-size:0.65em;letter-spacing:2px;margin-bottom:3px}
+.chat-msg .text{color:var(--text)}
 .chat-msg.system{
-  background:rgba(255,215,0,0.05);border:1px solid rgba(255,215,0,0.15);
-  font-size:0.7em;color:var(--gold);text-align:center;align-self:center;
+  background:rgba(255,215,0,0.04);border:1px solid rgba(255,215,0,0.12);
+  font-size:0.68em;color:var(--gold);text-align:center;align-self:center;
 }
 .typing-indicator{
-  display:none;padding:8px 12px;font-size:0.75em;color:var(--dim);
+  display:none;padding:6px 10px;font-size:0.72em;color:var(--dim);
   align-self:flex-start;
 }
 .typing-indicator.active{display:flex;align-items:center;gap:6px}
@@ -906,147 +1062,203 @@ body::after{
 
 /* ─── CHAT INPUT ───────────────────────────────────────────── */
 .chat-input-area{
-  padding:10px;border-top:1px solid var(--border);
-  display:flex;gap:6px;align-items:center;flex-shrink:0;
+  padding:8px;border-top:1px solid var(--border);
+  display:flex;gap:4px;align-items:center;flex-shrink:0;
 }
 .chat-input-area input{
   flex:1;background:var(--panel);border:1px solid var(--border);
-  border-radius:6px;padding:10px 12px;color:var(--green);
-  font-family:var(--font-mono);font-size:0.85em;outline:none;
+  border-radius:6px;padding:8px 10px;color:var(--green);
+  font-family:var(--font-mono);font-size:0.82em;outline:none;
 }
 .chat-input-area input:focus{border-color:var(--cyan)}
 .chat-input-area input::placeholder{color:var(--dim)}
 .btn-send,.btn-voice{
-  width:38px;height:38px;border-radius:6px;border:1px solid var(--border);
+  width:34px;height:34px;border-radius:6px;border:1px solid var(--border);
   background:var(--panel);color:var(--cyan);cursor:pointer;
   display:flex;align-items:center;justify-content:center;
-  font-size:1.1em;transition:all 0.2s;
+  font-size:1em;transition:all 0.2s;
 }
-.btn-send:hover,.btn-voice:hover{background:rgba(0,229,255,0.1);border-color:var(--cyan)}
-.btn-voice.recording{background:rgba(255,51,68,0.2);border-color:var(--red);color:var(--red);animation:pulse 1s infinite}
+.btn-send:hover,.btn-voice:hover{background:rgba(0,229,255,0.08);border-color:var(--cyan)}
+.btn-voice.recording{background:rgba(255,51,68,0.15);border-color:var(--red);color:var(--red);animation:pulse 1s infinite}
 
 /* ─── THOUGHT STREAM ───────────────────────────────────────── */
 .thought-stream{
-  padding:8px 12px;border-top:1px solid var(--border);
-  max-height:120px;overflow-y:auto;flex-shrink:0;
+  padding:6px 10px;border-top:1px solid var(--border);
+  max-height:100px;overflow-y:auto;flex-shrink:0;
 }
 .thought-stream .title{
-  font-size:0.6em;color:var(--dim);letter-spacing:2px;margin-bottom:4px;
+  font-size:0.55em;color:var(--dim);letter-spacing:2px;margin-bottom:3px;
   text-transform:uppercase;font-family:var(--font-display);
 }
 .thought-item{
-  font-size:0.65em;color:var(--dim);padding:2px 0;
-  border-bottom:1px solid rgba(26,58,74,0.3);
+  font-size:0.62em;color:var(--dim);padding:1px 0;
+  border-bottom:1px solid rgba(48,54,61,0.3);
 }
 .thought-item .src{color:var(--amber)}
 .thought-item .topic{color:var(--cyan)}
 
+/* ─── DATA FRESHNESS ───────────────────────────────────────── */
+.freshness{
+  display:inline-block;width:6px;height:6px;border-radius:50%;margin-left:4px;
+}
+.freshness.live{background:var(--green);box-shadow:0 0 4px var(--green)}
+.freshness.stale{background:var(--amber);box-shadow:0 0 4px var(--amber)}
+.freshness.dead{background:var(--red);box-shadow:0 0 4px var(--red)}
+
 /* ─── SCROLLBAR ────────────────────────────────────────────── */
-::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar{width:5px}
 ::-webkit-scrollbar-track{background:transparent}
-::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
 ::-webkit-scrollbar-thumb:hover{background:var(--dim)}
 
 /* ─── RESPONSIVE ───────────────────────────────────────────── */
-@media(max-width:1200px){.main{grid-template-columns:250px 1fr 300px}}
-@media(max-width:900px){
-  .main{grid-template-columns:1fr;grid-template-rows:auto 1fr auto}
-  .left-panel{max-height:200px}
-  .right-panel{max-height:350px}
+@media(max-width:1400px){
+  .main{grid-template-columns:minmax(220px,260px) 1fr minmax(240px,300px)}
+}
+@media(max-width:1100px){
+  .main{grid-template-columns:1fr 1fr;grid-template-rows:auto}
+  .left-panel{grid-column:1;grid-row:1}
+  .center-panel{grid-column:2;grid-row:1}
+  .right-panel{grid-column:1 / -1;grid-row:2;max-height:350px}
+}
+@media(max-width:768px){
+  .main{grid-template-columns:1fr;grid-template-rows:auto auto auto}
+  .left-panel{max-height:220px}
+  .right-panel{max-height:320px}
+  .topbar{padding:4px 8px}
+  .topbar h1{font-size:0.8em}
+  .radar-container{width:100px;height:100px}
 }
 </style>
 </head>
 <body>
 
+<!-- ═══ ENERGY FLOW BAR ═══════════════════════════════════════ -->
+<div class="energy-bar"></div>
+
 <!-- ═══ TOP BAR ════════════════════════════════════════════════ -->
 <div class="topbar">
   <h1>⚔️ AUREON WARZONE</h1>
-  <div class="threat GREEN" id="threat-badge">THREAT: GREEN</div>
+  <div class="topbar-center">
+    <div class="threat GREEN" id="threat-badge">THREAT: GREEN</div>
+    <div class="density-btns">
+      <button onclick="setDensity('comfort')" id="d-comfort" class="active">Comfort</button>
+      <button onclick="setDensity('compact')" id="d-compact">Compact</button>
+    </div>
+  </div>
   <div class="meta">
     <span id="clock">--:--:--</span> UTC |
     <span id="cycle-count">0</span> cycles |
     AI: <span id="ai-status">INIT</span> |
     🔑 <span id="key-status" style="color:var(--dim)">--</span>
+    <span class="freshness live" id="data-freshness" title="Data freshness"></span>
   </div>
 </div>
 
 <!-- ═══ MAIN 3-COLUMN GRID ════════════════════════════════════ -->
 <div class="main">
 
-  <!-- ═══ LEFT — FRONTLINES & METRICS ═════════════════════════ -->
+  <!-- ═══ LEFT PANEL ══════════════════════════════════════════ -->
   <div class="left-panel">
     <div class="panel-title">◆ EXCHANGE FRONTLINES</div>
     <div id="frontlines">
-      <div class="frontline-card">
-        <div class="name">⏳ LOADING...</div>
-      </div>
+      <div class="frontline-card"><div class="ex-dot default"></div><div class="frontline-info"><div class="name">⏳ LOADING...</div></div></div>
     </div>
 
-    <div class="panel-title" style="margin-top:16px">◆ BATTLE METRICS</div>
+    <div class="panel-title" style="margin-top:10px">◆ BATTLE METRICS</div>
     <div class="metric-row">
-      <div class="metric-box">
-        <div class="label">EQUITY</div>
-        <div class="value neutral" id="m-equity">--</div>
-      </div>
-      <div class="metric-box">
-        <div class="label">FRONTS</div>
-        <div class="value" id="m-fronts">--</div>
-      </div>
-      <div class="metric-box">
-        <div class="label">WIN</div>
-        <div class="value positive" id="m-win">--</div>
-      </div>
-      <div class="metric-box">
-        <div class="label">LOSS</div>
-        <div class="value negative" id="m-loss">--</div>
-      </div>
+      <div class="metric-box"><div class="label">EQUITY</div><div class="value neutral" id="m-equity">--</div></div>
+      <div class="metric-box"><div class="label">FRONTS</div><div class="value" id="m-fronts">--</div></div>
+      <div class="metric-box"><div class="label">WIN</div><div class="value positive" id="m-win">--</div></div>
+      <div class="metric-box"><div class="label">LOSS</div><div class="value negative" id="m-loss">--</div></div>
     </div>
     <div class="metric-row">
-      <div class="metric-box">
-        <div class="label">UNREAL P&L</div>
-        <div class="value" id="m-pnl">--</div>
-      </div>
-      <div class="metric-box">
-        <div class="label">PENDING</div>
-        <div class="value neutral" id="m-pending">--</div>
-      </div>
-      <div class="metric-box">
-        <div class="label">BOTS</div>
-        <div class="value" id="m-bots">--</div>
-      </div>
-      <div class="metric-box">
-        <div class="label">WHALES</div>
-        <div class="value" id="m-whales">--</div>
-      </div>
+      <div class="metric-box"><div class="label">UNREAL P&L</div><div class="value" id="m-pnl">--</div></div>
+      <div class="metric-box"><div class="label">PENDING</div><div class="value neutral" id="m-pending">--</div></div>
+      <div class="metric-box"><div class="label">BOTS</div><div class="value" id="m-bots">--</div></div>
+      <div class="metric-box"><div class="label">WHALES</div><div class="value" id="m-whales">--</div></div>
     </div>
 
-    <div class="panel-title" style="margin-top:12px">◆ SYSTEMS ONLINE</div>
+    <div class="panel-title" style="margin-top:8px">◆ LEADERS / LAGGARDS</div>
+    <div class="leaders-section">
+      <div class="leaders-col"><div class="col-title winners">▲ TOP 3</div><div id="leaders-win"></div></div>
+      <div class="leaders-col"><div class="col-title losers">▼ BOTTOM 3</div><div id="leaders-lose"></div></div>
+    </div>
+
+    <div class="panel-title">◆ FEAR & GREED</div>
+    <div class="fg-mini">
+      <div class="fg-badge"><div class="fg-badge-inner" id="fg-score">--</div></div>
+      <div class="fg-label">Sentiment: <span id="fg-text">--</span></div>
+    </div>
+
+    <div class="panel-title">◆ BUY / SELL FLOW</div>
+    <div class="flow-section" id="flow-bars"></div>
+
+    <div class="panel-title">◆ SYSTEMS ONLINE</div>
     <div class="systems-grid" id="systems-grid"></div>
   </div>
 
-  <!-- ═══ CENTER — TACTICAL GRID ══════════════════════════════ -->
+  <!-- ═══ CENTER PANEL ════════════════════════════════════════ -->
   <div class="center-panel">
-    <div class="tactical-grid">
-      <div class="panel-title" style="text-align:center">◆ TACTICAL OVERVIEW — ORACLE CONSENSUS RADAR</div>
+    <div class="center-content">
 
-      <!-- RADAR -->
-      <div class="radar-container" id="radar">
-        <div class="radar-ring"></div>
-        <div class="radar-ring"></div>
-        <div class="radar-ring"></div>
-        <div class="radar-crosshair"></div>
-        <div class="radar-sweep"></div>
+      <!-- EQUITY CHART -->
+      <div class="chart-section">
+        <div class="panel-title" style="border:none;margin-bottom:4px;padding:0">◆ EQUITY — LIVE CHART</div>
+        <div class="chart-stats" id="chart-stats">
+          <div class="stat-item">Current: <span class="flat" id="cs-current">--</span></div>
+          <div class="stat-item">High: <span class="up" id="cs-high">--</span></div>
+          <div class="stat-item">Low: <span class="down" id="cs-low">--</span></div>
+          <div class="stat-item">Points: <span class="flat" id="cs-points">0</span></div>
+        </div>
+        <canvas id="equity-chart"></canvas>
       </div>
 
-      <div class="panel-title">◆ POSITION HEATMAP — PROFIT/LOSS WARMAP</div>
-      <div class="heatmap" id="heatmap"></div>
+      <!-- POSITION CHIPS -->
+      <div class="panel-title">◆ POSITION TAGS</div>
+      <div class="position-chips" id="position-chips"></div>
 
-      <div class="panel-title" style="margin-top:16px">◆ TOP PRICES — LIVE FEED</div>
-      <div id="price-feed" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:4px;margin-top:6px"></div>
+      <!-- RADAR + PRICES ROW -->
+      <div class="radar-row">
+        <div class="radar-container" id="radar">
+          <div class="radar-ring"></div>
+          <div class="radar-ring"></div>
+          <div class="radar-ring"></div>
+          <div class="radar-crosshair"></div>
+          <div class="radar-sweep"></div>
+        </div>
+        <div class="price-grid" id="price-feed"></div>
+      </div>
+
+      <!-- POSITIONS TABLE -->
+      <div class="positions-section">
+        <div class="panel-title" style="padding:8px 10px;margin:0;border-bottom:1px solid var(--border);border-radius:0">◆ ALL POSITIONS</div>
+        <div class="pos-table-wrap">
+          <table class="pos-table">
+            <thead><tr>
+              <th onclick="sortPositions('symbol')">Symbol</th>
+              <th onclick="sortPositions('exchange')">Exch</th>
+              <th onclick="sortPositions('qty')">Qty</th>
+              <th onclick="sortPositions('entry')">Entry</th>
+              <th onclick="sortPositions('current')">Current</th>
+              <th onclick="sortPositions('value')">Value</th>
+              <th onclick="sortPositions('pnl')">P&L %</th>
+              <th onclick="sortPositions('pnl_usd')">P&L $</th>
+            </tr></thead>
+            <tbody id="pos-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- KILL FEED (recent trades) -->
+      <div class="kill-feed" id="kill-feed">
+        <div class="panel-title" style="margin-top:10px">◆ RECENT OPS (KILL FEED)</div>
+      </div>
+
     </div>
   </div>
 
-  <!-- ═══ RIGHT — COMMS (SAMUEL AI) ══════════════════════════ -->
+  <!-- ═══ RIGHT PANEL — COMMS (SAMUEL AI) ════════════════════ -->
   <div class="right-panel">
     <div class="comms-header">
       <h2>◆ COMMS — SAMUEL AI</h2>
@@ -1055,7 +1267,7 @@ body::after{
         <span id="samuel-status-text">SAMUEL ONLINE</span>
         <span class="ai-mode" id="ai-mode-label"></span>
       </div>
-      <div id="key-detail" style="font-size:0.65em;color:var(--dim);margin-top:4px;cursor:pointer" title="Click to revalidate key">
+      <div id="key-detail" style="font-size:0.62em;color:var(--dim);margin-top:3px;cursor:pointer" title="Click to revalidate key">
         🔑 Key: <span id="key-detail-status">checking...</span>
         <span id="key-detail-hint" style="color:var(--border)"></span>
       </div>
@@ -1075,22 +1287,138 @@ body::after{
     </div>
 
     <div class="chat-input-area">
-      <button class="btn-voice" id="btn-voice" title="Voice input (hold to speak)">🎙</button>
+      <button class="btn-voice" id="btn-voice" title="Voice input">🎙</button>
       <input type="text" id="chat-input" placeholder="Speak to Samuel..." autocomplete="off" />
       <button class="btn-send" id="btn-send" title="Send">➤</button>
     </div>
   </div>
 </div>
 
+<!-- ═══ BOTTOM ENERGY BAR ═════════════════════════════════════ -->
+<div class="energy-bar"></div>
+
 <script>
 // ═══════════════════════════════════════════════════════════════
-// WARZONE DASHBOARD — CLIENT JS
+// WARZONE DASHBOARD v2 — CLIENT JS
 // ═══════════════════════════════════════════════════════════════
 
 const wsUrl = `ws://${location.host}/ws`;
 let ws = null;
 let reconnectTimer = null;
 let latestIntel = null;
+let equityChart = null;
+let equityHistory = [];
+let equityHigh = -Infinity;
+let equityLow = Infinity;
+let sortField = 'pnl';
+let sortAsc = false;
+let lastDataTime = 0;
+
+// ── Density Toggle ────────────────────────────────────────────
+function setDensity(mode) {
+  if (mode === 'compact') {
+    document.body.classList.add('compact');
+  } else {
+    document.body.classList.remove('compact');
+  }
+  document.getElementById('d-comfort').classList.toggle('active', mode === 'comfort');
+  document.getElementById('d-compact').classList.toggle('active', mode === 'compact');
+  try { localStorage.setItem('wz_density', mode); } catch(e){}
+  if (equityChart) equityChart.resize();
+}
+// Restore density
+try {
+  const saved = localStorage.getItem('wz_density');
+  if (saved === 'compact') setDensity('compact');
+} catch(e){}
+
+// ── Chart.js — Equity Chart ──────────────────────────────────
+function initChart() {
+  const ctx = document.getElementById('equity-chart').getContext('2d');
+  const gradient = ctx.createLinearGradient(0, 0, 0, 180);
+  gradient.addColorStop(0, 'rgba(0,255,136,0.25)');
+  gradient.addColorStop(1, 'rgba(0,255,136,0.0)');
+
+  equityChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: [],
+      datasets: [{
+        label: 'Equity',
+        data: [],
+        borderColor: '#00ff88',
+        borderWidth: 1.5,
+        backgroundColor: gradient,
+        fill: true,
+        tension: 0.3,
+        pointRadius: 0,
+        pointHitRadius: 6,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: { duration: 400 },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#1c2333',
+          borderColor: '#30363d',
+          borderWidth: 1,
+          titleColor: '#00e5ff',
+          bodyColor: '#c9d1d9',
+          callbacks: {
+            label: (ctx) => `$${ctx.parsed.y.toFixed(2)}`
+          }
+        }
+      },
+      scales: {
+        x: {
+          display: true,
+          grid: { color: 'rgba(48,54,61,0.3)', drawBorder: false },
+          ticks: { color: '#484f58', font: { size: 9, family: 'Share Tech Mono' }, maxTicksLimit: 8 }
+        },
+        y: {
+          display: true,
+          grid: { color: 'rgba(48,54,61,0.3)', drawBorder: false },
+          ticks: {
+            color: '#484f58',
+            font: { size: 9, family: 'Share Tech Mono' },
+            callback: (v) => '$' + v.toFixed(0)
+          }
+        }
+      },
+      interaction: { intersect: false, mode: 'index' }
+    }
+  });
+}
+
+function updateChart(equity) {
+  if (!equityChart) return;
+  const now = new Date();
+  const label = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+  equityHistory.push(equity);
+  if (equityHistory.length > 200) equityHistory.shift();
+
+  equityChart.data.labels.push(label);
+  equityChart.data.datasets[0].data.push(equity);
+
+  if (equityChart.data.labels.length > 200) {
+    equityChart.data.labels.shift();
+    equityChart.data.datasets[0].data.shift();
+  }
+
+  equityChart.update('none');
+
+  // Stats
+  if (equity > equityHigh) equityHigh = equity;
+  if (equity < equityLow) equityLow = equity;
+  document.getElementById('cs-current').textContent = `$${equity.toFixed(2)}`;
+  document.getElementById('cs-high').textContent = `$${equityHigh.toFixed(2)}`;
+  document.getElementById('cs-low').textContent = equityLow === Infinity ? '--' : `$${equityLow.toFixed(2)}`;
+  document.getElementById('cs-points').textContent = equityHistory.length;
+}
 
 // ── WebSocket ─────────────────────────────────────────────────
 function connectWS() {
@@ -1131,8 +1459,17 @@ function connectWS() {
   };
 }
 
+// ── Animate value change ──────────────────────────────────────
+function animateValue(el) {
+  el.classList.remove('number-pop');
+  void el.offsetWidth; // reflow
+  el.classList.add('number-pop');
+}
+
 // ── Dashboard Update ──────────────────────────────────────────
 function updateDashboard(d) {
+  lastDataTime = Date.now();
+
   // Clock
   const now = new Date(d.timestamp * 1000);
   document.getElementById('clock').textContent = now.toUTCString().split(' ')[4];
@@ -1143,65 +1480,51 @@ function updateDashboard(d) {
   badge.textContent = `THREAT: ${d.threat_level}`;
   badge.className = `threat ${d.threat_level}`;
 
-  // Metrics
-  document.getElementById('m-equity').textContent = `$${(d.equity||0).toFixed(0)}`;
-  document.getElementById('m-fronts').textContent = d.positions_count || 0;
-  document.getElementById('m-win').textContent = d.profitable || 0;
-  document.getElementById('m-loss').textContent = d.losing || 0;
+  // Metrics with animation
+  setMetric('m-equity', `$${(d.equity||0).toFixed(0)}`, 'neutral');
+  setMetric('m-fronts', d.positions_count || 0);
+  setMetric('m-win', d.profitable || 0, 'positive');
+  setMetric('m-loss', d.losing || 0, 'negative');
 
-  const pnlEl = document.getElementById('m-pnl');
   const pnl = d.unrealized_pnl || 0;
-  pnlEl.textContent = `$${pnl >= 0 ? '+' : ''}${pnl.toFixed(2)}`;
-  pnlEl.className = `value ${pnl >= 0 ? 'positive' : 'negative'}`;
+  setMetric('m-pnl', `$${pnl >= 0 ? '+' : ''}${pnl.toFixed(2)}`, pnl >= 0 ? 'positive' : 'negative');
+  setMetric('m-pending', d.pending_validations || 0, 'neutral');
+  setMetric('m-bots', d.bot_count || 0);
+  setMetric('m-whales', (d.whale||{}).whale_count || 0);
 
-  document.getElementById('m-pending').textContent = d.pending_validations || 0;
-  document.getElementById('m-bots').textContent = d.bot_count || 0;
-  document.getElementById('m-whales').textContent = (d.whale||{}).whale_count || 0;
+  // Frontlines with colored dots
+  updateFrontlines(d);
 
-  // Frontlines
-  const fl = document.getElementById('frontlines');
-  let flHtml = '';
-  const frontlines = d.frontlines || {};
-  const exchangeNames = Object.keys(frontlines);
-  if (exchangeNames.length === 0) {
-    // Fallback from exchange_status
-    const es = d.exchange_status || {};
-    for (const [ex, data] of Object.entries(es)) {
-      if (typeof data === 'object') {
-        flHtml += `<div class="frontline-card">
-          <div class="name">${ex.toUpperCase()} THEATRE</div>
-          <div class="stat">Status: <span class="online">ACTIVE</span></div>
-        </div>`;
-      }
-    }
-  } else {
-    for (const [ex, data] of Object.entries(frontlines)) {
-      const statusClass = data.status === 'ONLINE' ? 'online' : 'offline';
-      flHtml += `<div class="frontline-card">
-        <div class="name">${ex.toUpperCase()} THEATRE</div>
-        <div class="stat">Status: <span class="${statusClass}">${data.status}</span></div>
-        <div class="stat">Balance: <span>$${(data.balance||0).toFixed(2)}</span></div>
-        <div class="stat">Positions: <span>${data.positions||0}</span></div>
-      </div>`;
-    }
-  }
-  fl.innerHTML = flHtml || '<div class="frontline-card"><div class="name">Scanning...</div></div>';
+  // Leaders / Laggards
+  updateLeaders(d.positions || []);
+
+  // Fear & Greed
+  updateFearGreed(d);
+
+  // Buy/Sell flow
+  updateFlowBars(d.positions || []);
 
   // Systems dots
   const sg = document.getElementById('systems-grid');
   const systems = d.systems || {};
   sg.innerHTML = Object.keys(systems).map(name =>
-    `<div class="sys-dot" data-name="${name}" style="background:var(--green);box-shadow:0 0 6px var(--green)"></div>`
+    `<div class="sys-dot" data-name="${name}"></div>`
   ).join('');
 
-  // Position heatmap
-  updateHeatmap(d.positions || []);
+  // Equity chart
+  updateChart(d.equity || 0);
+
+  // Position chips
+  updatePositionChips(d.positions || []);
 
   // Price feed
   updatePriceFeed(d.prices || {});
 
-  // Radar dots (from positions)
+  // Radar dots
   updateRadar(d);
+
+  // Positions table
+  updatePositionsTable(d.positions || []);
 
   // Thoughts
   updateThoughts(d.recent_thoughts || []);
@@ -1214,53 +1537,179 @@ function updateDashboard(d) {
   updateKeyStatus(d.api_key_status || {});
 }
 
-// ── Heatmap ───────────────────────────────────────────────────
-function updateHeatmap(positions) {
-  const hm = document.getElementById('heatmap');
-  if (!positions.length) { hm.innerHTML = '<span style="color:var(--dim);font-size:0.7em">Awaiting position data...</span>'; return; }
+// ── Set metric with pop animation ─────────────────────────────
+function setMetric(id, val, cls) {
+  const el = document.getElementById(id);
+  const prev = el.textContent;
+  el.textContent = val;
+  if (cls) el.className = `value ${cls}`;
+  if (prev !== String(val) && prev !== '--') {
+    animateValue(el);
+    // Flash green/red
+    const parent = el.closest('.metric-box');
+    if (parent) {
+      parent.classList.remove('flash-green', 'flash-red');
+      void parent.offsetWidth;
+      if (cls === 'positive' || (cls === 'neutral' && String(val).includes('+'))) {
+        parent.classList.add('flash-green');
+      } else if (cls === 'negative') {
+        parent.classList.add('flash-red');
+      }
+    }
+  }
+}
 
-  hm.innerHTML = positions.slice(0, 120).map(p => {
-    const sym = (p.symbol || p.asset || '?').replace(/[\/]/g,'');
+// ── Frontlines with exchange-colored dots ─────────────────────
+function updateFrontlines(d) {
+  const fl = document.getElementById('frontlines');
+  let flHtml = '';
+  const frontlines = d.frontlines || {};
+  const exchangeEmoji = { kraken: '🐙', alpaca: '🦙', binance: '💰', capital: '🏛️' };
+
+  const entries = Object.keys(frontlines).length > 0
+    ? Object.entries(frontlines).map(([ex, data]) => ({ name: ex, ...data }))
+    : Object.entries(d.exchange_status || {}).filter(([k, v]) => typeof v === 'object')
+        .map(([ex, data]) => ({ name: ex, status: 'ONLINE', balance: data.balance || 0, positions: data.position_count || 0 }));
+
+  for (const ex of entries) {
+    const dotClass = ex.name.toLowerCase().includes('kraken') ? 'kraken'
+      : ex.name.toLowerCase().includes('alpaca') ? 'alpaca'
+      : ex.name.toLowerCase().includes('binance') ? 'binance'
+      : ex.name.toLowerCase().includes('capital') ? 'capital' : 'default';
+    const emoji = exchangeEmoji[dotClass] || '📡';
+    const statusClass = ex.status === 'ONLINE' ? 'online' : 'offline';
+    flHtml += `<div class="frontline-card">
+      <div class="ex-dot ${dotClass}"></div>
+      <div class="frontline-info">
+        <div class="name">${emoji} ${ex.name.toUpperCase()}</div>
+        <div class="stat"><span class="${statusClass}">${ex.status}</span> · ${ex.positions||0} pos</div>
+      </div>
+      <div class="ex-balance">$${(ex.balance||0).toFixed(2)}</div>
+    </div>`;
+  }
+  fl.innerHTML = flHtml || '<div class="frontline-card"><div class="ex-dot default"></div><div class="frontline-info"><div class="name">Scanning...</div></div></div>';
+}
+
+// ── Leaders & Laggards ────────────────────────────────────────
+function updateLeaders(positions) {
+  if (!positions.length) return;
+  const sorted = [...positions].map(p => ({
+    sym: (p.symbol || p.asset || '?').replace(/\//g, ''),
+    pnl: p.unrealized_pnl_pct || p.pnl_pct || 0
+  })).sort((a, b) => b.pnl - a.pnl);
+
+  const top3 = sorted.slice(0, 3);
+  const bot3 = sorted.slice(-3).reverse();
+
+  document.getElementById('leaders-win').innerHTML = top3.map(p =>
+    `<div class="leader-item winner"><span class="sym">${p.sym.slice(0,8)}</span><span>+${p.pnl.toFixed(1)}%</span></div>`
+  ).join('');
+
+  document.getElementById('leaders-lose').innerHTML = bot3.map(p =>
+    `<div class="leader-item loser"><span class="sym">${p.sym.slice(0,8)}</span><span>${p.pnl.toFixed(1)}%</span></div>`
+  ).join('');
+}
+
+// ── Fear & Greed ──────────────────────────────────────────────
+function updateFearGreed(d) {
+  const profitable = d.profitable || 0;
+  const losing = d.losing || 0;
+  const total = profitable + losing;
+  const score = total > 0 ? Math.round((profitable / total) * 100) : 50;
+
+  document.getElementById('fg-score').textContent = score;
+  const label = score >= 75 ? 'EXTREME GREED' : score >= 55 ? 'GREED' : score >= 45 ? 'NEUTRAL' : score >= 25 ? 'FEAR' : 'EXTREME FEAR';
+  document.getElementById('fg-text').textContent = `${label} (${score})`;
+  document.getElementById('fg-text').style.color = score >= 55 ? 'var(--green)' : score >= 45 ? 'var(--amber)' : 'var(--red)';
+}
+
+// ── Buy/Sell Flow Bars ────────────────────────────────────────
+function updateFlowBars(positions) {
+  const fb = document.getElementById('flow-bars');
+  // Group by exchange-like category
+  const groups = {};
+  for (const p of positions) {
+    const ex = (p.exchange || 'other').toUpperCase().slice(0, 5);
+    if (!groups[ex]) groups[ex] = { buy: 0, sell: 0 };
     const pnl = p.unrealized_pnl_pct || p.pnl_pct || 0;
-    const val = p.market_value || p.value || 0;
-    let bg;
-    if (pnl > 5) bg = 'rgba(0,255,136,0.7)';
-    else if (pnl > 0) bg = 'rgba(0,255,136,0.35)';
-    else if (pnl > -5) bg = 'rgba(255,51,68,0.3)';
-    else bg = 'rgba(255,51,68,0.6)';
-    const label = sym.slice(0, 3);
-    return `<div class="heat-cell" style="background:${bg}" data-info="${sym} ${pnl>=0?'+':''}${pnl.toFixed(1)}% $${val.toFixed(2)}">${label}</div>`;
+    if (pnl >= 0) groups[ex].buy++;
+    else groups[ex].sell++;
+  }
+
+  // If no exchange grouping, use asset categories
+  if (Object.keys(groups).length <= 1) {
+    const cats = { CRYPTO: { buy: 0, sell: 0 }, STOCK: { buy: 0, sell: 0 }, OTHER: { buy: 0, sell: 0 } };
+    for (const p of positions) {
+      const sym = (p.symbol || p.asset || '').toUpperCase();
+      const cat = (sym.includes('BTC') || sym.includes('ETH') || sym.includes('SOL') || sym.includes('USD')) ? 'CRYPTO'
+        : sym.match(/^[A-Z]{1,5}$/) ? 'STOCK' : 'OTHER';
+      const pnl = p.unrealized_pnl_pct || p.pnl_pct || 0;
+      if (pnl >= 0) cats[cat].buy++;
+      else cats[cat].sell++;
+    }
+    Object.assign(groups, cats);
+    delete groups['OTHER']; // hide if empty
+    delete groups['other'];
+  }
+
+  let html = '';
+  for (const [name, data] of Object.entries(groups).slice(0, 4)) {
+    const total = data.buy + data.sell || 1;
+    const buyPct = Math.round((data.buy / total) * 100);
+    const sellPct = 100 - buyPct;
+    html += `<div class="flow-row">
+      <span class="sym">${name.slice(0,5)}</span>
+      <div class="flow-bar-track">
+        <div class="flow-bar-buy" style="width:${buyPct}%"></div>
+        <div class="flow-bar-sell" style="width:${sellPct}%"></div>
+      </div>
+      <span class="pct" style="color:${buyPct>=50?'var(--green)':'var(--red)'}">${buyPct}%</span>
+    </div>`;
+  }
+  fb.innerHTML = html || '<div style="font-size:0.7em;color:var(--dim)">No flow data</div>';
+}
+
+// ── Position Chips ────────────────────────────────────────────
+function updatePositionChips(positions) {
+  const container = document.getElementById('position-chips');
+  if (!positions.length) { container.innerHTML = ''; return; }
+
+  const sorted = [...positions].sort((a, b) =>
+    Math.abs(b.unrealized_pnl_pct || b.pnl_pct || 0) - Math.abs(a.unrealized_pnl_pct || a.pnl_pct || 0)
+  );
+
+  container.innerHTML = sorted.slice(0, 40).map(p => {
+    const sym = (p.symbol || p.asset || '?').replace(/\//g, '');
+    const pnl = p.unrealized_pnl_pct || p.pnl_pct || 0;
+    const cls = pnl > 0.5 ? 'winner' : pnl < -0.5 ? 'loser' : 'flat';
+    return `<span class="pos-chip ${cls}">${sym.slice(0,6)} ${pnl>=0?'+':''}${pnl.toFixed(1)}%</span>`;
   }).join('');
 }
 
 // ── Price Feed ────────────────────────────────────────────────
 function updatePriceFeed(prices) {
   const pf = document.getElementById('price-feed');
-  pf.innerHTML = Object.entries(prices).slice(0, 18).map(([sym, price]) => {
-    return `<div style="background:var(--panel);border:1px solid var(--border);border-radius:4px;padding:4px 8px;font-size:0.7em">
-      <span style="color:var(--gold)">${sym}</span><br>
-      <span style="color:var(--green)">$${price.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:6})}</span>
-    </div>`;
-  }).join('');
+  pf.innerHTML = Object.entries(prices).slice(0, 15).map(([sym, price]) =>
+    `<div class="price-cell">
+      <span class="sym">${sym}</span>
+      <span class="px">$${price.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:6})}</span>
+    </div>`
+  ).join('');
 }
 
 // ── Radar ─────────────────────────────────────────────────────
 function updateRadar(d) {
   const radar = document.getElementById('radar');
-  // Remove old dots
   radar.querySelectorAll('.radar-dot').forEach(el => el.remove());
 
-  // Place dots for profitable/losing positions
   const positions = d.positions || [];
-  const sample = positions.slice(0, 30);
+  const sample = positions.slice(0, 25);
   sample.forEach((p, i) => {
     const pnl = p.unrealized_pnl_pct || p.pnl_pct || 0;
     const color = pnl >= 0 ? 'var(--green)' : 'var(--red)';
-    // Spread dots in a spiral pattern
     const angle = (i / sample.length) * Math.PI * 2;
-    const dist = 20 + Math.abs(pnl) * 2;
-    const r = Math.min(dist, 90);
-    const x = 50 + r * Math.cos(angle); // percentage
+    const r = Math.min(20 + Math.abs(pnl) * 2, 45);
+    const x = 50 + r * Math.cos(angle);
     const y = 50 + r * Math.sin(angle);
     const dot = document.createElement('div');
     dot.className = 'radar-dot';
@@ -1268,6 +1717,67 @@ function updateRadar(d) {
     dot.title = `${p.symbol||p.asset||'?'}: ${pnl>=0?'+':''}${pnl.toFixed(1)}%`;
     radar.appendChild(dot);
   });
+}
+
+// ── Positions Table ───────────────────────────────────────────
+let currentPositions = [];
+
+function sortPositions(field) {
+  if (sortField === field) sortAsc = !sortAsc;
+  else { sortField = field; sortAsc = field === 'symbol' || field === 'exchange'; }
+  renderPositionsTable();
+}
+
+function updatePositionsTable(positions) {
+  currentPositions = positions;
+  renderPositionsTable();
+}
+
+function renderPositionsTable() {
+  const tbody = document.getElementById('pos-tbody');
+  if (!currentPositions.length) {
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--dim);padding:16px">Awaiting position data...</td></tr>';
+    return;
+  }
+
+  const sorted = [...currentPositions].sort((a, b) => {
+    let va, vb;
+    switch (sortField) {
+      case 'symbol': va = (a.symbol||a.asset||''); vb = (b.symbol||b.asset||''); break;
+      case 'exchange': va = (a.exchange||''); vb = (b.exchange||''); break;
+      case 'qty': va = a.quantity||a.qty||0; vb = b.quantity||b.qty||0; break;
+      case 'entry': va = a.entry_price||a.avg_price||0; vb = b.entry_price||b.avg_price||0; break;
+      case 'current': va = a.current_price||0; vb = b.current_price||0; break;
+      case 'value': va = a.market_value||a.value||0; vb = b.market_value||b.value||0; break;
+      case 'pnl': va = a.unrealized_pnl_pct||a.pnl_pct||0; vb = b.unrealized_pnl_pct||b.pnl_pct||0; break;
+      case 'pnl_usd': va = a.unrealized_pnl||0; vb = b.unrealized_pnl||0; break;
+      default: va = 0; vb = 0;
+    }
+    if (typeof va === 'string') return sortAsc ? va.localeCompare(vb) : vb.localeCompare(va);
+    return sortAsc ? va - vb : vb - va;
+  });
+
+  tbody.innerHTML = sorted.slice(0, 50).map(p => {
+    const sym = (p.symbol || p.asset || '?').replace(/\//g, '');
+    const ex = (p.exchange || '--').slice(0, 6);
+    const qty = p.quantity || p.qty || 0;
+    const entry = p.entry_price || p.avg_price || 0;
+    const cur = p.current_price || 0;
+    const val = p.market_value || p.value || 0;
+    const pnlPct = p.unrealized_pnl_pct || p.pnl_pct || 0;
+    const pnlUsd = p.unrealized_pnl || 0;
+    const pnlClass = pnlPct >= 0 ? 'pnl-pos' : 'pnl-neg';
+    return `<tr>
+      <td class="sym-cell">${sym}</td>
+      <td>${ex}</td>
+      <td>${qty > 100 ? qty.toFixed(0) : qty.toFixed(4)}</td>
+      <td>${entry > 0 ? '$'+entry.toFixed(entry<1?6:2) : '--'}</td>
+      <td>${cur > 0 ? '$'+cur.toFixed(cur<1?6:2) : '--'}</td>
+      <td>$${val.toFixed(2)}</td>
+      <td class="${pnlClass}">${pnlPct>=0?'+':''}${pnlPct.toFixed(1)}%</td>
+      <td class="${pnlClass}">${pnlUsd>=0?'+$':'−$'}${Math.abs(pnlUsd).toFixed(2)}</td>
+    </tr>`;
+  }).join('');
 }
 
 // ── Thoughts ──────────────────────────────────────────────────
@@ -1305,11 +1815,8 @@ function updateKeyStatus(ks) {
   detail.textContent = info.label;
   detail.style.color = info.color;
 
-  if (hint && ks.partial_hint) {
-    hint.textContent = ` (${ks.partial_hint})`;
-  }
+  if (hint && ks.partial_hint) hint.textContent = ` (${ks.partial_hint})`;
 
-  // Update Samuel indicator based on key status
   if (ks.status === 'active') {
     pulseDot.style.background = 'var(--green)';
     pulseDot.style.boxShadow = '0 0 8px var(--green)';
@@ -1322,7 +1829,6 @@ function updateKeyStatus(ks) {
     samuelText.style.color = 'var(--amber)';
   }
 
-  // Show error tooltip if present
   if (ks.error) {
     document.getElementById('key-detail').title = `Error: ${ks.error}\nClick to revalidate`;
   }
@@ -1339,6 +1845,15 @@ document.getElementById('key-detail').addEventListener('click', async () => {
     document.getElementById('key-detail-status').textContent = 'fetch error';
   }
 });
+
+// ── Data Freshness Indicator ──────────────────────────────────
+setInterval(() => {
+  const age = Date.now() - lastDataTime;
+  const dot = document.getElementById('data-freshness');
+  if (age < 5000) { dot.className = 'freshness live'; dot.title = 'Data: LIVE'; }
+  else if (age < 15000) { dot.className = 'freshness stale'; dot.title = 'Data: STALE'; }
+  else { dot.className = 'freshness dead'; dot.title = 'Data: NO FEED'; }
+}, 2000);
 
 // ── Chat Functions ────────────────────────────────────────────
 function sendMessage() {
@@ -1397,10 +1912,7 @@ let isRecording = false;
 
 function initVoice() {
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SpeechRecognition) {
-    console.warn('[WARZONE] Speech recognition not supported');
-    return;
-  }
+  if (!SpeechRecognition) return;
 
   recognition = new SpeechRecognition();
   recognition.continuous = false;
@@ -1418,16 +1930,15 @@ function initVoice() {
     document.getElementById('btn-voice').classList.remove('recording');
   };
 
-  recognition.onerror = (event) => {
-    console.error('[WARZONE] Speech error:', event.error);
+  recognition.onerror = () => {
     isRecording = false;
     document.getElementById('btn-voice').classList.remove('recording');
   };
 }
 
 function toggleVoice() {
-  if (!recognition) { initVoice(); }
-  if (!recognition) { addSystemMessage('Voice not supported in this browser.'); return; }
+  if (!recognition) initVoice();
+  if (!recognition) { addSystemMessage('Voice not supported.'); return; }
 
   if (isRecording) {
     recognition.stop();
@@ -1437,19 +1948,17 @@ function toggleVoice() {
     recognition.start();
     isRecording = true;
     document.getElementById('btn-voice').classList.add('recording');
-    addSystemMessage('🎙 Listening... speak now');
+    addSystemMessage('🎙 Listening...');
   }
 }
 
 function speak(text) {
   if (!('speechSynthesis' in window)) return;
-  // Cancel any ongoing speech
   speechSynthesis.cancel();
   const utterance = new SpeechSynthesisUtterance(text);
   utterance.rate = 0.95;
   utterance.pitch = 0.9;
   utterance.volume = 0.8;
-  // Prefer a male English voice
   const voices = speechSynthesis.getVoices();
   const preferred = voices.find(v => v.lang.startsWith('en') && v.name.toLowerCase().includes('male'))
     || voices.find(v => v.lang.startsWith('en-GB'))
@@ -1465,18 +1974,18 @@ document.getElementById('chat-input').addEventListener('keydown', (e) => {
 });
 document.getElementById('btn-voice').addEventListener('click', toggleVoice);
 
-// Load voices (async in some browsers)
 if ('speechSynthesis' in window) {
   speechSynthesis.onvoiceschanged = () => {};
   speechSynthesis.getVoices();
 }
 
-// ── Initial greeting from Samuel ──────────────────────────────
+// ── Init ──────────────────────────────────────────────────────
+initChart();
+
 setTimeout(() => {
   addSamuelMessage("Warzone online. All theatres reporting in. I'm reading the live feeds now — ask me anything about our positions, threats, or strategy. I'm here, commander.");
 }, 1500);
 
-// ── Connect ───────────────────────────────────────────────────
 connectWS();
 initVoice();
 
