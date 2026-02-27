@@ -226,11 +226,24 @@ else:
 # DATA LAYER — reads real state files
 # ═══════════════════════════════════════════════════════════════════════════════
 
+# Simple in-memory cache: reduces disk I/O from every 2s broadcast to every 5s
+_file_cache: Dict[str, Any] = {}
+_file_cache_time: Dict[str, float] = {}
+_FILE_CACHE_TTL = 5.0
+
+
 def _load_json(path: Path, default=None):
-    """Safely load a JSON file."""
+    """Safely load a JSON file with caching."""
+    key = str(path)
+    now = time.time()
+    if key in _file_cache and (now - _file_cache_time.get(key, 0)) < _FILE_CACHE_TTL:
+        return _file_cache[key]
     try:
         with open(path, 'r', encoding='utf-8') as f:
-            return json.load(f)
+            data = json.load(f)
+        _file_cache[key] = data
+        _file_cache_time[key] = now
+        return data
     except Exception:
         return default if default is not None else {}
 
@@ -617,7 +630,17 @@ async def api_intel(request):
 
 
 async def api_chat(request):
-    """POST /api/chat — send a message to Samuel."""
+    """POST /api/chat — send a message to Samuel (rate-limited)."""
+    # Rate limiting: 1 msg per 2s per client IP
+    client_ip = request.remote
+    now = time.time()
+    if not hasattr(api_chat, '_last_msg'):
+        api_chat._last_msg = {}
+    last = api_chat._last_msg.get(client_ip, 0)
+    if now - last < 2.0:
+        return web.json_response({"error": "rate limited — wait 2 seconds"}, status=429)
+    api_chat._last_msg[client_ip] = now
+
     body = await request.json()
     user_msg = body.get("message", "")
     if not user_msg.strip():
@@ -1105,6 +1128,57 @@ body::after{
 .freshness.stale{background:var(--amber);box-shadow:0 0 4px var(--amber)}
 .freshness.dead{background:var(--red);box-shadow:0 0 4px var(--red)}
 
+/* ─── CONNECTION BANNER ────────────────────────────────────── */
+.conn-banner{
+  display:none;position:fixed;top:0;left:0;right:0;z-index:10000;
+  padding:6px 16px;text-align:center;font-size:0.78em;font-weight:700;
+  font-family:var(--font-display);letter-spacing:2px;
+  animation:slideDown 0.3s ease;
+}
+.conn-banner.disconnected{display:block;background:rgba(255,51,68,0.92);color:#fff}
+.conn-banner.reconnecting{display:block;background:rgba(255,170,0,0.92);color:#000}
+@keyframes slideDown{from{transform:translateY(-100%)}to{transform:translateY(0)}}
+
+/* ─── POSITION SEARCH ──────────────────────────────────────── */
+.pos-search{
+  display:flex;gap:4px;padding:6px 10px;border-bottom:1px solid var(--border);background:var(--bg2);
+}
+.pos-search input{
+  flex:1;background:var(--panel);border:1px solid var(--border);
+  border-radius:4px;padding:4px 8px;color:var(--green);
+  font-family:var(--font-mono);font-size:0.75em;outline:none;
+}
+.pos-search input:focus{border-color:var(--cyan)}
+.pos-search input::placeholder{color:var(--dim)}
+.pos-search .count{font-size:0.68em;color:var(--dim);align-self:center;white-space:nowrap}
+
+/* ─── P&L SUMMARY BAR ─────────────────────────────────────── */
+.pnl-summary{
+  display:flex;gap:10px;flex-wrap:wrap;padding:8px 10px;
+  background:var(--panel);border:1px solid var(--border);border-radius:6px;
+  margin-bottom:10px;font-size:0.75em;
+}
+.pnl-summary .pnl-item{display:flex;flex-direction:column;align-items:center;min-width:70px}
+.pnl-summary .pnl-item .pnl-label{font-size:0.65em;color:var(--dim);text-transform:uppercase;letter-spacing:1px}
+.pnl-summary .pnl-item .pnl-val{font-weight:700;font-size:1.1em;margin-top:2px}
+.pnl-summary .pnl-item .pnl-val.up{color:var(--green)}
+.pnl-summary .pnl-item .pnl-val.down{color:var(--red)}
+.pnl-summary .pnl-item .pnl-val.flat{color:var(--amber)}
+
+/* ─── THREAT ALERT FLASH ──────────────────────────────────── */
+@keyframes threatPulse{0%{box-shadow:0 0 0 0 rgba(255,51,68,0.4)}70%{box-shadow:0 0 0 10px rgba(255,51,68,0)}100%{box-shadow:0 0 0 0 rgba(255,51,68,0)}}
+.threat-alert{animation:threatPulse 1s ease-out 3}
+
+/* ─── AUTO-SCROLL TOGGLE ──────────────────────────────────── */
+.scroll-toggle{
+  font-size:0.6em;cursor:pointer;color:var(--dim);
+  padding:1px 6px;border:1px solid var(--border);
+  border-radius:3px;user-select:none;transition:all 0.2s;
+}
+.scroll-toggle.active{color:var(--cyan);border-color:var(--cyan)}
+.scroll-toggle:hover{border-color:var(--cyan)}
+.kb-hint{font-size:0.55em;color:var(--dim);margin-left:4px}
+
 /* ─── SCROLLBAR ────────────────────────────────────────────── */
 ::-webkit-scrollbar{width:5px}
 ::-webkit-scrollbar-track{background:transparent}
@@ -1132,6 +1206,9 @@ body::after{
 </style>
 </head>
 <body>
+
+<!-- ═══ CONNECTION BANNER ════════════════════════════════ -->
+<div class="conn-banner" id="conn-banner"></div>
 
 <!-- ═══ ENERGY FLOW BAR ═══════════════════════════════════════ -->
 <div class="energy-bar"></div>
@@ -1202,6 +1279,16 @@ body::after{
   <div class="center-panel">
     <div class="center-content">
 
+      <!-- P&L SUMMARY BAR -->
+      <div class="pnl-summary" id="pnl-summary">
+        <div class="pnl-item"><span class="pnl-label">Total Equity</span><span class="pnl-val flat" id="ps-equity">--</span></div>
+        <div class="pnl-item"><span class="pnl-label">Unrealized</span><span class="pnl-val" id="ps-unrealized">--</span></div>
+        <div class="pnl-item"><span class="pnl-label">Win/Loss</span><span class="pnl-val flat" id="ps-winloss">--</span></div>
+        <div class="pnl-item"><span class="pnl-label">Win Rate</span><span class="pnl-val" id="ps-winrate">--</span></div>
+        <div class="pnl-item"><span class="pnl-label">Total Bal</span><span class="pnl-val flat" id="ps-totalbal">--</span></div>
+        <div class="pnl-item"><span class="pnl-label">Positions</span><span class="pnl-val flat" id="ps-poscount">--</span></div>
+      </div>
+
       <!-- EQUITY CHART -->
       <div class="chart-section">
         <div class="panel-title" style="border:none;margin-bottom:4px;padding:0">◆ EQUITY — LIVE CHART</div>
@@ -1232,7 +1319,11 @@ body::after{
 
       <!-- POSITIONS TABLE -->
       <div class="positions-section">
-        <div class="panel-title" style="padding:8px 10px;margin:0;border-bottom:1px solid var(--border);border-radius:0">◆ ALL POSITIONS</div>
+        <div class="panel-title" style="padding:8px 10px;margin:0;border-bottom:1px solid var(--border);border-radius:0">◆ ALL POSITIONS <span class="kb-hint">[Ctrl+K to search]</span></div>
+        <div class="pos-search">
+          <input type="text" id="pos-search-input" placeholder="Filter positions... (symbol, exchange)" />
+          <span class="count" id="pos-search-count"></span>
+        </div>
         <div class="pos-table-wrap">
           <table class="pos-table">
             <thead><tr>
@@ -1261,7 +1352,7 @@ body::after{
   <!-- ═══ RIGHT PANEL — COMMS (SAMUEL AI) ════════════════════ -->
   <div class="right-panel">
     <div class="comms-header">
-      <h2>◆ COMMS — SAMUEL AI</h2>
+      <h2>◆ COMMS — SAMUEL AI <span class="scroll-toggle active" id="auto-scroll-toggle" title="Toggle auto-scroll">⇩ Auto</span></h2>
       <div class="samuel-indicator">
         <div class="samuel-pulse" id="samuel-pulse-dot"></div>
         <span id="samuel-status-text">SAMUEL ONLINE</span>
@@ -1313,6 +1404,10 @@ let equityLow = Infinity;
 let sortField = 'pnl';
 let sortAsc = false;
 let lastDataTime = 0;
+let lastThreatLevel = 'GREEN';
+let autoScrollChat = true;
+let posSearchFilter = '';
+let killFeedItems = [];
 
 // ── Density Toggle ────────────────────────────────────────────
 function setDensity(mode) {
@@ -1420,12 +1515,31 @@ function updateChart(equity) {
   document.getElementById('cs-points').textContent = equityHistory.length;
 }
 
-// ── WebSocket ─────────────────────────────────────────────────
+// ── WebSocket with exponential backoff ────────────────────────
+let reconnectAttempts = 0;
+const MAX_RECONNECT_DELAY = 30000;
+
+function showConnBanner(state) {
+  const banner = document.getElementById('conn-banner');
+  if (state === 'connected') {
+    banner.className = 'conn-banner';
+    banner.textContent = '';
+  } else if (state === 'disconnected') {
+    banner.className = 'conn-banner disconnected';
+    banner.textContent = '\u26a0 CONNECTION LOST \u2014 ATTEMPTING RECONNECT...';
+  } else if (state === 'reconnecting') {
+    banner.className = 'conn-banner reconnecting';
+    banner.textContent = `\u21bb RECONNECTING (attempt ${reconnectAttempts})...`;
+  }
+}
+
 function connectWS() {
   ws = new WebSocket(wsUrl);
 
   ws.onopen = () => {
     console.log('[WARZONE] WebSocket connected');
+    reconnectAttempts = 0;
+    showConnBanner('connected');
     addSystemMessage('Link established. Real-time feed active.');
     document.getElementById('ai-status').textContent = 'LIVE';
     document.getElementById('ai-status').style.color = 'var(--green)';
@@ -1448,10 +1562,13 @@ function connectWS() {
   };
 
   ws.onclose = () => {
-    console.log('[WARZONE] WebSocket closed — reconnecting in 3s');
+    console.log('[WARZONE] WebSocket closed');
+    reconnectAttempts++;
+    const delay = Math.min(1000 * Math.pow(2, reconnectAttempts - 1), MAX_RECONNECT_DELAY);
+    showConnBanner(reconnectAttempts === 1 ? 'disconnected' : 'reconnecting');
     document.getElementById('ai-status').textContent = 'RECON';
     document.getElementById('ai-status').style.color = 'var(--amber)';
-    reconnectTimer = setTimeout(connectWS, 3000);
+    reconnectTimer = setTimeout(connectWS, delay);
   };
 
   ws.onerror = (e) => {
@@ -1459,11 +1576,17 @@ function connectWS() {
   };
 }
 
-// ── Animate value change ──────────────────────────────────────
+
 function animateValue(el) {
   el.classList.remove('number-pop');
   void el.offsetWidth; // reflow
   el.classList.add('number-pop');
+}
+
+// ── Safe HTML escape (XSS protection) ─────────────────────────
+function esc(s) {
+  if (typeof s !== 'string') s = String(s);
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
 // ── Dashboard Update ──────────────────────────────────────────
@@ -1475,10 +1598,28 @@ function updateDashboard(d) {
   document.getElementById('clock').textContent = now.toUTCString().split(' ')[4];
   document.getElementById('cycle-count').textContent = d.cycles || 0;
 
-  // Threat badge
+  // Threat badge + alert on change
   const badge = document.getElementById('threat-badge');
   badge.textContent = `THREAT: ${d.threat_level}`;
   badge.className = `threat ${d.threat_level}`;
+  if (d.threat_level !== lastThreatLevel) {
+    if (d.threat_level === 'RED' || (d.threat_level === 'AMBER' && lastThreatLevel === 'GREEN')) {
+      badge.classList.add('threat-alert');
+      setTimeout(() => badge.classList.remove('threat-alert'), 3000);
+      try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        osc.frequency.value = d.threat_level === 'RED' ? 440 : 330;
+        gain.gain.value = 0.1;
+        osc.start(); osc.stop(audioCtx.currentTime + 0.3);
+      } catch(e) {}
+      addSystemMessage(`\u26a0 THREAT LEVEL CHANGED: ${lastThreatLevel} \u2192 ${d.threat_level}`);
+    }
+    lastThreatLevel = d.threat_level;
+  }
+
 
   // Metrics with animation
   setMetric('m-equity', `$${(d.equity||0).toFixed(0)}`, 'neutral');
@@ -1535,6 +1676,11 @@ function updateDashboard(d) {
 
   // API key status
   updateKeyStatus(d.api_key_status || {});
+  // P&L summary bar
+  updatePnlSummary(d);
+
+  // Kill feed
+  updateKillFeed(d);
 }
 
 // ── Set metric with pop animation ─────────────────────────────
@@ -1669,6 +1815,45 @@ function updateFlowBars(positions) {
   fb.innerHTML = html || '<div style="font-size:0.7em;color:var(--dim)">No flow data</div>';
 }
 
+
+// ── P&L Summary Bar ──────────────────────────────────────────
+function updatePnlSummary(d) {
+  const eq = d.equity || 0;
+  const unr = d.unrealized_pnl || 0;
+  const wins = d.profitable || 0;
+  const losses = d.losing || 0;
+  const total = wins + losses;
+  const wr = total > 0 ? ((wins / total) * 100).toFixed(1) : '0.0';
+  const totalBal = d.total_balance || eq;
+  const posCount = d.positions_count || 0;
+
+  document.getElementById('ps-equity').textContent = `$${eq.toFixed(2)}`;
+  const unrEl = document.getElementById('ps-unrealized');
+  unrEl.textContent = `$${unr >= 0 ? '+' : ''}${unr.toFixed(2)}`;
+  unrEl.style.color = unr >= 0 ? 'var(--green)' : 'var(--red)';
+  document.getElementById('ps-winloss').textContent = `${wins}/${losses}`;
+  document.getElementById('ps-winrate').textContent = `${wr}%`;
+  document.getElementById('ps-totalbal').textContent = `$${totalBal.toFixed(2)}`;
+  document.getElementById('ps-poscount').textContent = posCount;
+}
+
+// ── Kill Feed (recent trades) ────────────────────────────────
+function updateKillFeed(d) {
+  const trades = d.recent_trades || [];
+  if (trades.length === 0) return;
+  for (const t of trades) {
+    const id = `${t.symbol}-${t.time}-${t.side}`;
+    if (killFeedItems.includes(id)) continue;
+    killFeedItems.push(id);
+    if (killFeedItems.length > 50) killFeedItems.shift();
+    const side = (t.side || 'buy').toUpperCase();
+    const color = side === 'BUY' ? 'var(--green)' : 'var(--red)';
+    const sym = esc(t.symbol || '???');
+    const qty = t.qty || t.quantity || '?';
+    const price = t.price ? `@$${Number(t.price).toFixed(2)}` : '';
+    addSystemMessage(`<span style="color:${color}">[${side}]</span> ${sym} x${qty} ${price}`);
+  }
+}
 // ── Position Chips ────────────────────────────────────────────
 function updatePositionChips(positions) {
   const container = document.getElementById('position-chips');
@@ -1757,7 +1942,17 @@ function renderPositionsTable() {
     return sortAsc ? va - vb : vb - va;
   });
 
-  tbody.innerHTML = sorted.slice(0, 50).map(p => {
+
+  // Apply search filter
+  let filtered = sorted;
+  if (posSearchFilter) {
+    const q = posSearchFilter.toLowerCase();
+    filtered = sorted.filter(p => (p.symbol||p.asset||'').toLowerCase().includes(q) || (p.exchange||'').toLowerCase().includes(q));
+  }
+  const countEl = document.getElementById('pos-search-count');
+  if (countEl) countEl.textContent = `${filtered.length} positions`;
+
+  tbody.innerHTML = filtered.slice(0, 50).map(p => {
     const sym = (p.symbol || p.asset || '?').replace(/\//g, '');
     const ex = (p.exchange || '--').slice(0, 6);
     const qty = p.quantity || p.qty || 0;
@@ -1894,6 +2089,7 @@ function addSystemMessage(text) {
 
 function scrollChat() {
   const c = document.getElementById('chat-messages');
+  if (!autoScrollChat) return;
   c.scrollTop = c.scrollHeight;
 }
 
@@ -1901,9 +2097,7 @@ function showTyping() { document.getElementById('typing-indicator').classList.ad
 function hideTyping() { document.getElementById('typing-indicator').classList.remove('active'); }
 
 function escapeHtml(s) {
-  const div = document.createElement('div');
-  div.textContent = s;
-  return div.innerHTML;
+  return esc(s);
 }
 
 // ── Voice (Web Speech API) ────────────────────────────────────
@@ -1983,8 +2177,55 @@ if ('speechSynthesis' in window) {
 initChart();
 
 setTimeout(() => {
-  addSamuelMessage("Warzone online. All theatres reporting in. I'm reading the live feeds now — ask me anything about our positions, threats, or strategy. I'm here, commander.");
+  // Context-aware greeting
+  fetch('/api/intel').then(r => r.json()).then(d => {
+    const eq = d.equity ? `Equity: $${d.equity.toFixed(2)}.` : '';
+    const pos = d.positions_count ? ` ${d.positions_count} active fronts.` : '';
+    const threat = d.threat_level ? ` Threat: ${d.threat_level}.` : '';
+    addSamuelMessage(`Warzone online. ${eq}${pos}${threat} Awaiting orders, commander.`);
+  }).catch(() => {
+    addSamuelMessage('Warzone online. All theatres reporting in. Awaiting your orders, commander.');
+  });
 }, 1500);
+
+
+  // ── SWOT: Auto-scroll toggle ──
+  const scrollToggle = document.getElementById('auto-scroll-toggle');
+  if (scrollToggle) {
+    scrollToggle.addEventListener('click', () => {
+      autoScrollChat = !autoScrollChat;
+      scrollToggle.classList.toggle('active', autoScrollChat);
+    });
+  }
+
+  // ── SWOT: Position search input ──
+  const posSearchInput = document.getElementById('pos-search-input');
+  if (posSearchInput) {
+    posSearchInput.addEventListener('input', (e) => {
+      posSearchFilter = e.target.value;
+      renderPositionsTable();
+    });
+  }
+
+  // ── SWOT: Keyboard shortcuts ──
+  document.addEventListener('keydown', (e) => {
+    // Ctrl+K: focus position search
+    if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+      e.preventDefault();
+      const si = document.getElementById('pos-search-input');
+      if (si) si.focus();
+    }
+    // Ctrl+/: focus chat input
+    if ((e.ctrlKey || e.metaKey) && e.key === '/') {
+      e.preventDefault();
+      const ci = document.getElementById('chat-input');
+      if (ci) ci.focus();
+    }
+    // Escape: blur active input
+    if (e.key === 'Escape') {
+      document.activeElement.blur();
+    }
+  });
 
 connectWS();
 initVoice();
