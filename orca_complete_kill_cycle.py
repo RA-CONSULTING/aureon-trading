@@ -14187,7 +14187,7 @@ class OrcaKillCycle:
                                     # PRIORITIZE opportunities on exchanges that actually have spendable cash
                                     funded_opps = [
                                         o for o in new_opps
-                                        if cash.get(o.exchange, 0.0) >= 0.10 and getattr(o, 'price', 0) and getattr(o, 'price', 0) > 0
+                                        if cash.get(o.exchange, 0.0) >= 50.0 and getattr(o, 'price', 0) and getattr(o, 'price', 0) > 0
                                     ]
                                     funded_opps.sort(key=lambda x: getattr(x, 'momentum_score', 0.0), reverse=True)
                                     if funded_opps:
@@ -14237,7 +14237,7 @@ class OrcaKillCycle:
                                             # let the Queen Arsenal perform final hard-gate validation.
                                             if not queen_approved:
                                                 setup_strong = abs(best.change_pct) >= max(0.10, min_change_pct * 2) and best.momentum_score >= 0.20
-                                                setup_funded = cash.get(best.exchange, 0.0) >= 0.10
+                                                setup_funded = cash.get(best.exchange, 0.0) >= 50.0
                                                 if action != 'BUY' and setup_strong and setup_funded:
                                                     print(f"      Queen fallback override: strong funded setup ({best.symbol}) -> sending to Queen Arsenal gates")
                                                     queen_approved = True
@@ -14302,7 +14302,7 @@ class OrcaKillCycle:
                                                     except Exception as kr_fallback_err:
                                                         print(f"      Kraken funding fallback error: {kr_fallback_err}")
                                                 
-                                                if buy_amount >= 0.10:  # Minimum $0.10 (exchange mins vary)
+                                                if buy_amount >= 50.0:  # Minimum $50 to prevent fee-dominated micro-trades (was $0.10)
                                                     fee_rate = self.fee_rates.get(best.exchange, 0.0025)
                                                     expected_qty = buy_amount / best.price if best.price > 0 else 0.0
                                                     cop_est, _, _, _ = self._expected_cop_for_buy(

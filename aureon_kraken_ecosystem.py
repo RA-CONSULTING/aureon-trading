@@ -158,7 +158,7 @@ CONFIG = {
     'USE_SANDBOX_EVOLVED': SANDBOX_EVOLVED_AVAILABLE,
     
     'MAX_POSITIONS': 20,            # More positions for dynamic portfolio! 🚀
-    'MIN_TRADE_USD': 3.0,           # Minimum trade notional in base currency
+    'MIN_TRADE_USD': 50.0,          # Minimum $50 trade to prevent fee-dominated micro-trades (was $3.0)
     'PORTFOLIO_RISK_BUDGET': 0.95,  # Use 95% of equity - fully dynamic!
     'MIN_EXPECTED_EDGE_GBP': -0.05, # Allow small negative edge - bet when winning!
     'DEFAULT_WIN_PROB': 0.55,       # Fallback win probability

@@ -901,6 +901,22 @@ class KrakenClient:
         if self.dry_run:
             return {"dryRun": True, "symbol": symbol, "side": side, "quantity": quantity, "quoteQty": quote_qty}
         
+        # ═══ SAFETY NET: $50 minimum trade value (last-resort gate across ALL code paths) ═══
+        MIN_TRADE_USD = 50.0
+        if side.lower() == 'buy':
+            usd_value = 0.0
+            if quote_qty:
+                usd_value = float(quote_qty)
+            elif quantity:
+                try:
+                    price_info = self.best_price(symbol)
+                    usd_value = float(quantity) * float(price_info.get('price', 0))
+                except Exception:
+                    pass
+            if 0 < usd_value < MIN_TRADE_USD:
+                print(f"   🚫 KRAKEN SAFETY NET: Buy ${usd_value:.2f} < ${MIN_TRADE_USD} minimum for {symbol} — BLOCKED")
+                return {"error": "below_minimum_trade_value", "symbol": symbol, "value": usd_value, "min": MIN_TRADE_USD}
+        
         # Resolve pair and get pair info for validation across *all* Kraken markets
         pair, pair_info = self._resolve_pair(symbol)
         if not pair or not pair_info:
