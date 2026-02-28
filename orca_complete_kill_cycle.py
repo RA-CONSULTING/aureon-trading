@@ -3698,7 +3698,7 @@ class OrcaKillCycle:
             self.profit_gate = None
             self.get_fee_profile = None
             self.is_real_win = None
-            self.epsilon_profit_usd = 0.01  # 1 penny minimum
+            self.epsilon_profit_usd = 0.017  # 1.7¢ — guaranteed net after all fees + slippage
             _safe_print(f"   Adaptive Profit Gate: {e}")
         
         # Initialize clients for BOTH exchanges (unless specific client provided)
@@ -8090,7 +8090,7 @@ class OrcaKillCycle:
              required_pnl = total_costs_value * 0.1 # Minimal hurdle
              
              # Also ensure it hits the configured target percentage OR 1 penny — whichever is higher
-             target_pnl = max(entry_cost * (QUEEN_MIN_PROFIT_PCT / 100.0), 0.01)  # MIN $0.01 (1 penny)
+             target_pnl = max(entry_cost * (QUEEN_MIN_PROFIT_PCT / 100.0), 0.017)  # MIN 1.7¢ guaranteed net
              if net_pnl >= target_pnl:
                  approved = True
                  reason = f"GROWTH_MODE PASS: net_pnl=${net_pnl:.4f} >= target=${target_pnl:.4f}"
@@ -8263,7 +8263,7 @@ class OrcaKillCycle:
 
         return anomalies
     
-    def harvest_all_exchanges(self, queen=None, min_profit_usd: float = 0.01) -> Dict[str, Any]:
+    def harvest_all_exchanges(self, queen=None, min_profit_usd: float = 0.017) -> Dict[str, Any]:
         """
           HARVEST ALL EXCHANGES - Scan ALL positions and sell profitable ones!
         
@@ -10315,7 +10315,7 @@ class OrcaKillCycle:
         target_pnl_amt = 0.0
         if QUEEN_MIN_PROFIT_PCT < 1.0: # Growth Mode
              _cost_basis = confirmed_cost if 'confirmed_cost' in locals() else entry_cost
-             target_pnl_amt = max(_cost_basis * (QUEEN_MIN_PROFIT_PCT / 100.0), 0.01)  # MIN $0.01 (1 penny)
+             target_pnl_amt = max(_cost_basis * (QUEEN_MIN_PROFIT_PCT / 100.0), 0.017)  # MIN 1.7c guaranteed net
              if net_pnl >= target_pnl_amt:
                  hit_target_profit = True
 
@@ -10369,10 +10369,10 @@ class OrcaKillCycle:
         #                                                                    
         # CHECK 2: Is net P&L POSITIVE (mathematically certain profit)?
         #                                                                    
-        MIN_PROFIT_THRESHOLD = 0.01  # At least $0.01 (1 penny) net profit required
+        MIN_PROFIT_THRESHOLD = 0.017  # HARD FLOOR: 1.7¢ guaranteed net after all fees + slippage
         if net_pnl < MIN_PROFIT_THRESHOLD:
-            info['blocked_reason'] = f'NET_PNL_NEGATIVE_OR_ZERO ({net_pnl:.6f})'
-            print(f"      EXIT BLOCKED: {symbol} - Net P&L ${net_pnl:.6f} < ${MIN_PROFIT_THRESHOLD:.4f} threshold")
+            info['blocked_reason'] = f'NET_PNL_BELOW_FLOOR ({net_pnl:.6f})'
+            print(f"      EXIT BLOCKED: {symbol} - Net P&L ${net_pnl:.6f} < ${MIN_PROFIT_THRESHOLD:.4f} (1.7¢ floor)")
             return False, info
 
         #                                                                    
@@ -10421,7 +10421,7 @@ class OrcaKillCycle:
                 if not win_check.get('is_win', False):
                     net_pnl = win_check.get('net_pnl')
                     gross_pnl = win_check.get('gross_pnl')
-                    epsilon = getattr(self, 'epsilon_profit_usd', 0.01)  # 1 penny minimum
+                    epsilon = getattr(self, 'epsilon_profit_usd', 0.017)  # 1.7¢ minimum
 
                     # Override: allow exit if net PnL is clearly positive beyond epsilon
                     if net_pnl is not None and net_pnl >= epsilon and (gross_pnl is None or gross_pnl > 0):
@@ -13529,7 +13529,7 @@ class OrcaKillCycle:
                     #                                                            
                     # harvest_all_exchanges scans ALL 4 exchanges for profitable positions
                     try:
-                        harvest_results = self.harvest_all_exchanges(queen=queen, min_profit_usd=0.01)
+                        harvest_results = self.harvest_all_exchanges(queen=queen, min_profit_usd=0.017)
                         if harvest_results.get('harvested'):
                             for h in harvest_results['harvested']:
                                 session_stats['positions_closed'] += 1

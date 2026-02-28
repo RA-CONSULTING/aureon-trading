@@ -46,7 +46,7 @@ logger = logging.getLogger(__name__)
 
 
 # Global epsilon profit policy: minimum 1 penny net profit required after costs.
-EPSILON_PROFIT_USD = 0.01
+EPSILON_PROFIT_USD = 0.017  # 1.7¢ — guaranteed net after all fees + slippage
 
 
 # ═══════════════════════════════════════════════════════════════

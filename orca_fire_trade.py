@@ -119,6 +119,15 @@ class FireTrader:
     _MICRO_GAINS_MIN_CONSENSUS = 1   # only 1/7 oracle needs to be bullish
     _MICRO_GAINS_RISK_MOD = 0.25     # 75% position reduction in micro mode
 
+    # ── Hard profit floor — NEVER sell unless this GUARANTEED net after EVERYTHING ──
+    # $0.017 = 1.7¢ net after: buy taker fee + sell taker fee + slippage buffer
+    # Binance: 0.1% buy + 0.1% sell + 0.2% slippage = 0.4% round-trip
+    # Kraken:  0.26% buy + 0.26% sell + 0.2% slippage = 0.72% round-trip
+    NET_PROFIT_FLOOR_USD  = 0.017    # 1.7¢ — hard minimum net profit required
+    _SLIPPAGE_BUFFER      = 0.002    # 0.2% slippage cushion on top of taker fees
+    _BINANCE_TAKER        = 0.001    # 0.1% Binance taker
+    _KRAKEN_TAKER         = 0.0026   # 0.26% Kraken taker
+
     # ── 10-9-2 Creature Growth Model ─────────────────────────────────
     # "Only take the scalp, not the body"
     # Scalp = profit portion above cost basis (body stays invested forever)
@@ -147,7 +156,10 @@ class FireTrader:
 
     def _floor_prime_cents(self, profit_usd: float) -> float:
         """Return the LARGEST prime-number of cents that fits within profit_usd.
-        e.g. $0.18 → 17¢ (prime), $0.04 → 3¢, $0.01 → 0 (can't prime yet)"""
+        Minimum is NET_PROFIT_FLOOR_USD (1.7¢) — below that we NEVER sell.
+        e.g. $0.18 → 17¢ (prime), $0.04 → 3¢, $0.015 → 0 (below 1.7¢ floor)"""
+        if profit_usd < self.NET_PROFIT_FLOOR_USD:
+            return 0.0  # not enough — holding
         profit_cents = profit_usd * 100.0
         result = 0
         for p in self._PRIME_CENTS:
@@ -160,22 +172,37 @@ class FireTrader:
     def _scalp_qty(self, total_qty: float, price: float, cost_basis: float,
                    fee_rate: float = 0.001) -> tuple:
         """Compute scalp-only sell quantity using 10-9-2 prime-cent targeting.
+        Accounts for FULL round-trip cost: buy fee (paid at entry, baked into
+        cost_basis), sell taker fee, AND slippage buffer.
         Returns (sell_qty, prime_target_usd, body_qty, log_msg).
-        sell_qty=0 means body is protected and no prime threshold reached yet."""
-        if cost_basis and cost_basis > 0 and price > 0:
-            body_qty    = cost_basis / price          # coins covering principal
+        sell_qty=0 means body protected or net < 1.7¢ floor."""
+        if not price or price <= 0:
+            return 0.0, 0.0, total_qty, "zero price"
+        buy_fee_rate  = fee_rate  # same taker rate was paid on entry
+        sell_fee_rate = fee_rate
+        # Body = coins needed to recover cost_basis (including original buy fee)
+        if cost_basis and cost_basis > 0:
+            # cost_basis is raw fill price; add buy fee to get true break-even unit cost
+            true_cost_per_coin = cost_basis * (1.0 + buy_fee_rate)
+            body_qty = true_cost_per_coin / price  # coins to cover what we paid
+            body_qty = min(body_qty, total_qty)     # can't protect more than we hold
         else:
-            body_qty    = total_qty * 0.90            # no cost basis → protect 90%
-        scalp_avail   = max(0.0, total_qty - body_qty)
+            body_qty = total_qty * 0.90             # no cost basis → protect 90%
+        scalp_avail = max(0.0, total_qty - body_qty)
         if scalp_avail <= 0:
             return 0.0, 0.0, body_qty, "body fully covered — no scalp available"
-        gross_scalp   = scalp_avail * price * (1.0 - fee_rate)
-        prime_target  = self._floor_prime_cents(gross_scalp)
-        if prime_target < 0.02:   # below 2¢ prime floor
-            return 0.0, 0.0, body_qty, (f"scalp ${gross_scalp*100:.1f}¢ < 2¢ prime threshold")
-        sell_qty      = min(scalp_avail, prime_target / (price * (1.0 - fee_rate)))
-        msg = (f"PRIME SCALP {int(prime_target*100)}¢ | gross ${gross_scalp:.4f} | "
-               f"body {body_qty:.4f} units (${body_qty*price:.2f} protected)")
+        # NET proceeds from selling scalp coins after sell fee AND slippage
+        net_scalp_usd = scalp_avail * price * (1.0 - sell_fee_rate - self._SLIPPAGE_BUFFER)
+        prime_target  = self._floor_prime_cents(net_scalp_usd)
+        if prime_target <= 0.0:  # below NET_PROFIT_FLOOR_USD (1.7¢)
+            return 0.0, 0.0, body_qty, (
+                f"net_scalp ${net_scalp_usd*100:.2f}¢ < {self.NET_PROFIT_FLOOR_USD*100:.1f}¢ floor"
+            )
+        # Qty needed to produce exactly prime_target net after sell fee+slippage
+        sell_qty = min(scalp_avail,
+                       prime_target / (price * (1.0 - sell_fee_rate - self._SLIPPAGE_BUFFER)))
+        msg = (f"PRIME SCALP {int(prime_target*100)}¢ net | net_avail ${net_scalp_usd:.4f} | "
+               f"body {body_qty:.4f} units (${body_qty*price:.2f} principal locked)")
         return sell_qty, prime_target, body_qty, msg
 
     def _load_goal_distance(self) -> float:
@@ -696,18 +723,21 @@ class FireTrader:
                     except Exception:
                         pass
 
-                fee_rate = 0.001  # 0.1% Binance taker fee
-                net_price = price * (1 - fee_rate)
+                # ── True net USD after FULL round-trip: buy fee + sell fee + slippage ──
                 entry_ref = cost_basis if cost_basis and cost_basis > 0 else price
-                profit_margin = ((net_price - entry_ref) / entry_ref) * 100 if entry_ref > 0 else 0
+                # Round-trip cost: buy taker (paid at entry) + sell taker + slippage buffer
+                _total_cost_rate = self._BINANCE_TAKER + self._BINANCE_TAKER + self._SLIPPAGE_BUFFER
+                net_usd = qty * (price * (1.0 - self._BINANCE_TAKER - self._SLIPPAGE_BUFFER)
+                                 - entry_ref * (1.0 + self._BINANCE_TAKER))
+                profit_margin = (net_usd / (qty * entry_ref) * 100) if (qty * entry_ref) > 0 else 0
 
                 log_fire(f"   [DEBUG] Binance {asset}: qty={qty:.4f}, price=${price:.4f}, "
-                         f"cost_basis=${cost_basis or 0:.4f}, profit={profit_margin:+.2f}%, "
-                         f"24h={change:+.1f}%")
+                         f"cost_basis=${entry_ref:.4f}, net_usd=${net_usd:.4f}, "
+                         f"profit={profit_margin:+.2f}%, 24h={change:+.1f}%")
 
-                # Prime-scalp policy: take only scalp (not body), only at prime-cent targets
-                # Skip positions below $5.50 notional — exchange safety margin
-                if profit_margin > 0.0 and change > -2.0 and value >= self._MIN_NOTIONAL_USD:
+                # HARD RULE: net profit after ALL fees+slippage must be >= 1.7¢
+                # Only queue if notional also clears exchange minimum
+                if net_usd >= self.NET_PROFIT_FLOOR_USD and change > -2.0 and value >= self._MIN_NOTIONAL_USD:
                     profitable_sells.append({
                         'asset': asset,
                         'symbol': symbol,
@@ -716,10 +746,13 @@ class FireTrader:
                         'value': value,
                         'change': change,
                         'profit_margin': profit_margin,
-                        'cost_basis': cost_basis or 0.0,
+                        'net_usd': net_usd,
+                        'cost_basis': entry_ref,
                     })
-                elif profit_margin > 0.0 and value < self._MIN_NOTIONAL_USD:
-                    log_fire(f"   [SKIP] {asset}: profitable +{profit_margin:.2f}% but ${value:.2f} < ${self._MIN_NOTIONAL_USD} notional safety")
+                elif net_usd > 0 and net_usd < self.NET_PROFIT_FLOOR_USD:
+                    log_fire(f"   [HOLD] {asset}: net ${net_usd:.4f} < ${self.NET_PROFIT_FLOOR_USD:.3f} floor — holding")
+                elif net_usd > 0 and value < self._MIN_NOTIONAL_USD:
+                    log_fire(f"   [SKIP] {asset}: net ${net_usd:.4f} but ${value:.2f} < ${self._MIN_NOTIONAL_USD} notional")
             except Exception as e:
                 log_fire(f"   [DEBUG] Binance {asset}: error while evaluating sell opportunity - {e}")
 
@@ -824,23 +857,24 @@ class FireTrader:
                     except Exception:
                         pass
                 
-                # Calculate profit margin including 0.26% taker fee
-                fee_rate = 0.0026
-                net_price = price * (1 - fee_rate)
-                entry_ref = cost_basis if cost_basis is not None else price
-                profit_margin = ((net_price - entry_ref) / entry_ref) * 100 if entry_ref > 0 else 0
+                # ── True net USD after FULL round-trip: buy fee + sell fee + slippage ──
+                entry_ref = cost_basis if cost_basis is not None and cost_basis > 0 else price
+                net_usd_k = qty * (price * (1.0 - self._KRAKEN_TAKER - self._SLIPPAGE_BUFFER)
+                                   - entry_ref * (1.0 + self._KRAKEN_TAKER))
+                profit_margin = (net_usd_k / (qty * entry_ref) * 100) if (qty * entry_ref) > 0 else 0
 
-                cost_basis_dbg = f"{cost_basis:.4f}" if cost_basis is not None else "0.0000"
-                log_fire(f"   [DEBUG] Kraken {asset}: cost_basis=${cost_basis_dbg}, net_after_fees=${net_price:.4f}, profit_margin={profit_margin:.2f}%")
+                cost_basis_dbg = f"{entry_ref:.4f}"
+                log_fire(f"   [DEBUG] Kraken {asset}: cost_basis=${cost_basis_dbg}, "
+                         f"net_usd=${net_usd_k:.4f}, profit_margin={profit_margin:.2f}%")
 
-                # Prime scalp policy: only take scalp (not body) at prime-cent targets
-                if profit_margin > 0.0 and change_24h > -2.0:
+                # HARD RULE: net profit after ALL fees+slippage must be >= 1.7¢
+                if net_usd_k >= self.NET_PROFIT_FLOOR_USD and change_24h > -2.0:
                     log_fire(f"   📈 {asset}: ${value:.2f} @ ${price:.4f} (24h {change_24h:+.2f}%, +{profit_margin:.2f}% profit)")
                     log_fire(f"\n🎯 PRIME SCALP OPPORTUNITY: {asset}")
                     # ── Scalp-not-body: body stays, only scalp coins sold ──
-                    fee_rate_k = 0.0026  # Kraken taker
+                    fee_rate_k = self._KRAKEN_TAKER
                     sell_qty, prime_target_k, body_qty_k, scalp_msg_k = self._scalp_qty(
-                        qty, price, cost_basis if cost_basis is not None else 0.0, fee_rate_k
+                        qty, price, entry_ref, fee_rate_k
                     )
                     if sell_qty <= 0:
                         log_fire(f"   ⏸ BODY PROTECTED ({asset}): {scalp_msg_k}")
