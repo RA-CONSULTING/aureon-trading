@@ -15487,13 +15487,15 @@ class OrcaKillCycle:
                                                                 if _is_margin_order and _order_leverage >= 2:
                                                                     # MARGIN POSITION — PENNY PROFIT TARGET (after ALL costs)
                                                                     # $0.01 realized profit after fees + slippage + spread.
-                                                                    # Target = breakeven + ($0.01 + slippage_cost + spread_cost) / qty
+                                                                    # realized_pnl = exit_price * qty * (1 - fee - friction) - entry * qty * (1 + fee)
+                                                                    # Solving for exit_price when realized_pnl = $0.01:
                                                                     _pf = EXCHANGE_FEES.get(best.exchange, {})
                                                                     _slip = _pf.get('slippage', 0.0005)
                                                                     _sprd = _pf.get('spread', 0.0008)
-                                                                    _friction_cost = (buy_price * buy_qty) * (_slip + _sprd)  # $ cost of friction
-                                                                    _penny_target_move = (0.01 + _friction_cost) / buy_qty if buy_qty > 0 else 0
-                                                                    target_price_margin = breakeven + _penny_target_move
+                                                                    _friction = _slip + _sprd
+                                                                    _denom = 1 - fee_rate - _friction  # exit-side cost factor
+                                                                    _entry_cost_total = buy_price * buy_qty * (1 + fee_rate)
+                                                                    target_price_margin = (_entry_cost_total + 0.01) / (buy_qty * _denom) if buy_qty > 0 else breakeven
                                                                     _margin_collateral = buy_price * buy_qty / _order_leverage * (1 + fee_rate)
                                                                     pos = LivePosition(
                                                                         symbol=symbol_clean,
