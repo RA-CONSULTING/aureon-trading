@@ -13576,6 +13576,8 @@ class OrcaKillCycle:
                     #                                                            
                     #   PHASE 0.7: GATHER ALL INTELLIGENCE (Master Launcher)
                     #                                                            
+                    _phase07_validated = []   # Carry forward to scoring
+                    _phase07_whales = []     # Carry forward to scoring
                     try:
                         from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeout
                         _int_exec = ThreadPoolExecutor(max_workers=1)
@@ -13584,13 +13586,15 @@ class OrcaKillCycle:
                             intel_report = _int_fut.result(timeout=15)
                         except FuturesTimeout:
                             intel_report = {}
-                            print("     ⏰ Intelligence gathering timed out (15s)", flush=True)
+                            print("     Intelligence gathering timed out (15s)", flush=True)
                         finally:
                             _int_exec.shutdown(wait=False)
-                        if intel_report.get('validated_signals'):
-                            print(f"     INTELLIGENCE: {intel_report['total_sources']} sources | "
-                                  f"{len(intel_report.get('validated_signals', []))} validated signals | "
-                                  f"{len(intel_report.get('whale_predictions', []))} whale predictions")
+                        _phase07_validated = intel_report.get('validated_signals', [])
+                        _phase07_whales = intel_report.get('whale_predictions', [])
+                        if _phase07_validated or _phase07_whales:
+                            print(f"     INTELLIGENCE: {intel_report.get('total_sources', 0)} sources | "
+                                  f"{len(_phase07_validated)} validated signals | "
+                                  f"{len(_phase07_whales)} whale predictions -> scoring")
                     except Exception as e:
                         print(f"      Intelligence gathering error: {e}")
 
@@ -13598,6 +13602,8 @@ class OrcaKillCycle:
                     #                                                            
                     #   PHASE 0.8: HARMONIC SIGNAL CHAIN (Frequency pipeline)
                     #                                                            
+                    _harmonic_direction = None  # 'UP' or 'DOWN' from chain
+                    _harmonic_coherence = 0.0   # Average coherence across nodes
                     if self.harmonic_signal_chain:
                         try:
                             signal_message = "market_pulse"
@@ -13614,11 +13620,24 @@ class OrcaKillCycle:
                                 chain_result = _hsc_fut.result(timeout=10)
                             except FuturesTimeout:
                                 chain_result = None
-                                print("     ⏰ Harmonic Signal Chain timed out (10s)", flush=True)
+                                print("     Harmonic Signal Chain timed out (10s)", flush=True)
                             finally:
                                 _hsc_exec.shutdown(wait=False)
                             if chain_result:
-                                print(f"     HARMONIC CHAIN: Signal processed through 5 frequency layers")
+                                # Extract direction and coherence from chain result
+                                _dir = getattr(chain_result, 'direction', None)
+                                if _dir:
+                                    _harmonic_direction = str(_dir).upper()
+                                    if 'UP' in _harmonic_direction:
+                                        _harmonic_direction = 'UP'
+                                    elif 'DOWN' in _harmonic_direction:
+                                        _harmonic_direction = 'DOWN'
+                                _coh_scores = getattr(chain_result, 'coherence_scores', {})
+                                if _coh_scores and isinstance(_coh_scores, dict):
+                                    _vals = [v for v in _coh_scores.values() if isinstance(v, (int, float))]
+                                    if _vals:
+                                        _harmonic_coherence = sum(_vals) / len(_vals)
+                                print(f"     HARMONIC CHAIN: dir={_harmonic_direction or '?'} coh={_harmonic_coherence:.2f} -> scoring")
                         except Exception as e:
                             print(f"      Harmonic Signal Chain error: {e}")
 
